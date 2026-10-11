@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Copy the Phaser 4 Kestrel Heavy cabinet into the iOS app bundle pack.
 
-Source of truth: artifacts/beckify/public/arcade/kestrel-heavy
+Source of truth: web
 Destination:     ios/KestrelHeavy/Game
 
 Patches the copied index.html so WKWebView can play offline:
@@ -20,7 +20,7 @@ import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SRC = ROOT / "artifacts" / "beckify" / "public" / "arcade" / "kestrel-heavy"
+SRC = ROOT / "web"
 DEST = ROOT / "ios" / "KestrelHeavy" / "Game"
 
 IOS_CSS = """
@@ -152,7 +152,7 @@ def copy_tree() -> None:
     index_path.write_text(patch_index(index_path.read_text()), encoding="utf-8")
     (DEST / "local-store.js").write_text(LOCAL_STORE_STUB, encoding="utf-8")
     (DEST / "PACK.md").write_text(
-        "Packed from `artifacts/beckify/public/arcade/kestrel-heavy` by "
+        "Packed from `web` by "
         "`ios/scripts/pack_kestrelheavy_game.py`.\n\n"
         "Do not edit files here by hand. Re-run the pack script after arcade changes.\n"
         "The KestrelHeavy Xcode target also runs this script as a pre-compile phase.\n",

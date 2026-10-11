@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const arcade = path.join(__dirname, '..', 'public/arcade/kestrel-heavy/js');
+const arcade = path.join(__dirname, '..', 'web/js');
 
 test('overlap hits; near-miss does not; Matter labels survive reshape', async () => {
   const {

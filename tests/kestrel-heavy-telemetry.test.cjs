@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const path = require('node:path');
 
-const arcade = path.join(__dirname, '..', 'public/arcade/kestrel-heavy/js');
+const arcade = path.join(__dirname, '..', 'web/js');
 
 test('playPhase reads real stage changes, not leftover terminal count', async () => {
   const { playPhase, playPhaseKind, playGoal } = await import(path.join(arcade, 'sequence.js'));

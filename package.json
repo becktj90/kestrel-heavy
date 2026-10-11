@@ -1,0 +1,9 @@
+{
+  "name": "kestrel-heavy",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node --test ./tests/*.test.cjs",
+    "pack:ios": "python3 ios/scripts/pack_kestrelheavy_game.py"
+  }
+}

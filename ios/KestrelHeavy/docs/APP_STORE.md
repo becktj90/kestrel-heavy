@@ -91,13 +91,13 @@ Suggested 3–6 shots:
 
 ## Content rights
 
-Arcade one-shots are short NASA public-mission trims plus generated SFX — see `artifacts/beckify/public/arcade/kestrel-heavy/audio/ATTRIBUTION.md`. Theme loop is a Suno instrumental by Trevor Beck. No NASA endorsement. Fictional vehicle and place names only.
+Arcade one-shots are short NASA public-mission trims plus generated SFX — see `web/audio/ATTRIBUTION.md`. Theme loop is a Suno instrumental by Trevor Beck. No NASA endorsement. Fictional vehicle and place names only.
 
 ## Remaining steps (Mac + App Store Connect)
 
 1. Register bundle ID `com.beckify.kestrelheavy` on the `9TR6R5LV8M` team if it is not already created.
 2. The TestFlight record already exists. Do not create a second app record. Repo build is **4**. If TestFlight already has **≥4**, bump `CURRENT_PROJECT_VERSION` before the next Archive; if **4** is not uploaded yet, the next binary is **1.0 (4)**.
-3. Open `ios/Beckify.xcodeproj`, scheme **KestrelHeavy**, confirm Signing & Capabilities.
+3. Open `ios/KestrelHeavy.xcodeproj`, scheme **KestrelHeavy**, confirm Signing & Capabilities.
 4. Run on a physical device at least once.
 5. Capture screenshots at required sizes.
 6. Archive **KestrelHeavy** (not Beckify, not LookCheck), upload, attach listing copy, submit.

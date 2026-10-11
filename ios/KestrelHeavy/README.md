@@ -34,7 +34,7 @@ Do **not** point Toolbox Archive-iOS at **KestrelHeavy** or **LookCheck**. Keep 
 ## What ships
 
 - SwiftUI shell (`KestrelHeavyApp`, full-bleed `WKWebView`).
-- Packed Phaser 4 cabinet from `artifacts/beckify/public/arcade/kestrel-heavy` → `ios/KestrelHeavy/Game/`.
+- Packed Phaser 4 cabinet from `web` → `ios/KestrelHeavy/Game/`.
 - Offline: vendor Phaser, ES modules, NASA/Suno audio served from `kestrel-heavy://game/` (not `file://`). Scores stay in WKWebView `localStorage`.
 - Portrait only — Info.plist + SwiftUI/WKWebView shell refuse landscape so the cabinet cannot pillarbox. Phaser 1280×720 `ENVELOP` fills the WKWebView; camera zoom keeps the corridor and booster in the cropped strip.
 - LaunchScreen storyboard (KH / Pier 7) plus a short in-app splash while the cabinet boots. Repo build is **1.0 (4)** — play-feel pack (one-tap launch, Haven paint cue). TestFlight record exists. If TestFlight already has **≥4**, bump before the next Archive; otherwise the next binary is **1.0 (4)**.
@@ -45,7 +45,7 @@ Do **not** point Toolbox Archive-iOS at **KestrelHeavy** or **LookCheck**. Keep 
 Linux CI can test `BeckifyMath` only. This environment cannot compile SwiftUI or archive.
 
 1. Install Xcode 15 or later.
-2. Open `ios/Beckify.xcodeproj`.
+2. Open `ios/KestrelHeavy.xcodeproj`.
 3. Select the **KestrelHeavy** scheme (not Beckify, not LookCheck).
 4. Signing: confirm Team `9TR6R5LV8M` on the KestrelHeavy target.
 5. Run on an iPhone / iPad simulator or device (portrait). The app does not rotate to landscape.
@@ -61,7 +61,7 @@ python3 ios/scripts/pack_kestrelheavy_game.py
 ```bash
 cd ios
 xcodebuild \
-  -project Beckify.xcodeproj \
+  -project KestrelHeavy.xcodeproj \
   -destination 'generic/platform=iOS Simulator' \
   -scheme KestrelHeavy \
   -configuration Debug \

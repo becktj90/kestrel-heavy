@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const path = require('node:path');
 
-const arcade = path.join(__dirname, '..', 'public/arcade/kestrel-heavy/js');
+const arcade = path.join(__dirname, '..', 'web/js');
 
 test('touch steer dead zone, clamp, and release', async () => {
   const {

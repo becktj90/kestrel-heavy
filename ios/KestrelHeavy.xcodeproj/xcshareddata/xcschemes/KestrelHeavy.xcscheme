@@ -17,7 +17,7 @@
                BlueprintIdentifier = "KHCF00000000000000000012"
                BuildableName = "KestrelHeavy.app"
                BlueprintName = "KestrelHeavy"
-               ReferencedContainer = "container:Beckify.xcodeproj">
+               ReferencedContainer = "container:KestrelHeavy.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -46,7 +46,7 @@
             BlueprintIdentifier = "KHCF00000000000000000012"
             BuildableName = "KestrelHeavy.app"
             BlueprintName = "KestrelHeavy"
-            ReferencedContainer = "container:Beckify.xcodeproj">
+            ReferencedContainer = "container:KestrelHeavy.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -63,7 +63,7 @@
             BlueprintIdentifier = "KHCF00000000000000000012"
             BuildableName = "KestrelHeavy.app"
             BlueprintName = "KestrelHeavy"
-            ReferencedContainer = "container:Beckify.xcodeproj">
+            ReferencedContainer = "container:KestrelHeavy.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
