@@ -1,0 +1,234 @@
+{
+  "source": "web/js/tod.js#TOD",
+  "palettes": {
+    "dawn": {
+      "label": "Dawn",
+      "sky": [
+        {
+          "pos": 0,
+          "color": "#010108"
+        },
+        {
+          "pos": 0.1,
+          "color": "#1a1838"
+        },
+        {
+          "pos": 0.22,
+          "color": "#3a2858"
+        },
+        {
+          "pos": 0.4,
+          "color": "#c45a48"
+        },
+        {
+          "pos": 0.55,
+          "color": "#f08a58"
+        },
+        {
+          "pos": 0.7,
+          "color": "#f6c888"
+        },
+        {
+          "pos": 0.86,
+          "color": "#8ec8e8"
+        },
+        {
+          "pos": 1,
+          "color": "#d8e8f4"
+        }
+      ],
+      "wash": {
+        "space": "#05010a",
+        "mid": "#2a1840",
+        "near": "#c45a48",
+        "horizon": "#f6c888",
+        "low": "#7eb4d8"
+      },
+      "stars": 0.22
+    },
+    "noon": {
+      "label": "Noon",
+      "sky": [
+        {
+          "pos": 0,
+          "color": "#010105"
+        },
+        {
+          "pos": 0.08,
+          "color": "#030610"
+        },
+        {
+          "pos": 0.2,
+          "color": "#050a18"
+        },
+        {
+          "pos": 0.34,
+          "color": "#071428"
+        },
+        {
+          "pos": 0.46,
+          "color": "#0c2048"
+        },
+        {
+          "pos": 0.58,
+          "color": "#163868"
+        },
+        {
+          "pos": 0.7,
+          "color": "#2a6aa0"
+        },
+        {
+          "pos": 0.82,
+          "color": "#5aa0d0"
+        },
+        {
+          "pos": 0.92,
+          "color": "#9ec8e8"
+        },
+        {
+          "pos": 1,
+          "color": "#d0e4f0"
+        }
+      ],
+      "wash": {
+        "space": "#010105",
+        "mid": "#0a2040",
+        "near": "#2a5a8c",
+        "horizon": "#6fb4e8",
+        "low": "#6fb4e8"
+      },
+      "stars": 0.08
+    },
+    "golden": {
+      "label": "Golden hour",
+      "sky": [
+        {
+          "pos": 0,
+          "color": "#08040c"
+        },
+        {
+          "pos": 0.12,
+          "color": "#241018"
+        },
+        {
+          "pos": 0.28,
+          "color": "#6a2818"
+        },
+        {
+          "pos": 0.44,
+          "color": "#d46828"
+        },
+        {
+          "pos": 0.58,
+          "color": "#f0a040"
+        },
+        {
+          "pos": 0.74,
+          "color": "#f8d078"
+        },
+        {
+          "pos": 0.88,
+          "color": "#c89068"
+        },
+        {
+          "pos": 1,
+          "color": "#e8c8a0"
+        }
+      ],
+      "wash": {
+        "space": "#08040c",
+        "mid": "#4a1810",
+        "near": "#d46828",
+        "horizon": "#f8d078",
+        "low": "#c89068"
+      },
+      "stars": 0.16
+    },
+    "dusk": {
+      "label": "Dusk",
+      "sky": [
+        {
+          "pos": 0,
+          "color": "#02010a"
+        },
+        {
+          "pos": 0.12,
+          "color": "#120828"
+        },
+        {
+          "pos": 0.26,
+          "color": "#2a1048"
+        },
+        {
+          "pos": 0.42,
+          "color": "#6a2468"
+        },
+        {
+          "pos": 0.58,
+          "color": "#c04858"
+        },
+        {
+          "pos": 0.74,
+          "color": "#e87850"
+        },
+        {
+          "pos": 0.88,
+          "color": "#3a4078"
+        },
+        {
+          "pos": 1,
+          "color": "#1a2848"
+        }
+      ],
+      "wash": {
+        "space": "#02010a",
+        "mid": "#2a1048",
+        "near": "#c04858",
+        "horizon": "#e87850",
+        "low": "#1a2848"
+      },
+      "stars": 0.45
+    },
+    "night": {
+      "label": "Night",
+      "sky": [
+        {
+          "pos": 0,
+          "color": "#000008"
+        },
+        {
+          "pos": 0.16,
+          "color": "#040618"
+        },
+        {
+          "pos": 0.32,
+          "color": "#081028"
+        },
+        {
+          "pos": 0.5,
+          "color": "#0c1838"
+        },
+        {
+          "pos": 0.68,
+          "color": "#102040"
+        },
+        {
+          "pos": 0.84,
+          "color": "#0a1830"
+        },
+        {
+          "pos": 1,
+          "color": "#061020"
+        }
+      ],
+      "wash": {
+        "space": "#000008",
+        "mid": "#040618",
+        "near": "#081028",
+        "horizon": "#102040",
+        "low": "#061020"
+      },
+      "stars": 0.92
+    }
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "specVersion": 1,
+  "sources": [
+    "web/js/vehicle/design.js",
+    "web/js/data/gen/engines.js",
+    "web/js/tod.js",
+    "web/js/stage.js",
+    "web/js/config.js"
+  ],
+  "world": {
+    "W": 1280,
+    "H": 720,
+    "scaleMode": "envelop",
+    "stageKMax": 2,
+    "stageEdgeMax": 4096,
+    "kStep": 0.25
+  },
+  "vehicle": {
+    "targetHeightDu": 230,
+    "pxPerMClamp": [
+      0.6,
+      6
+    ],
+    "minStageWidthDu": 10,
+    "ullage": 0.03,
+    "domeLengthFactor": 0.33,
+    "maxStages": 5,
+    "strapOnCounts": [
+      0,
+      2,
+      4
+    ],
+    "noseShapes": {
+      "ogive": 0.3,
+      "conic": 0.36,
+      "blunt": 0.5,
+      "von-karman": 0.28
+    },
+    "nozzle": {
+      "bellFraction": 0.8,
+      "coneHalfAngleDeg": 15,
+      "ringClearance": 1.05,
+      "bellColor": "#2b3038",
+      "throatColor": "#6d7380"
+    },
+    "fairingJettisonSec": 1.2,
+    "fairingJettisonDeg": 35
+  },
+  "plume": {
+    "scaleHeightKm": 7.0,
+    "pdFromThrustRatioGain": 6,
+    "pdClamp": [
+      0.02,
+      1.2
+    ],
+    "regimes": {
+      "overMax": 0.8,
+      "idealMax": 1.25,
+      "underMax": 20,
+      "vacuumPa": 0.001
+    },
+    "lengthD": {
+      "base": 6,
+      "throttleGain": 10,
+      "vacuumGain": 0.6
+    },
+    "widthClamp": [
+      0.7,
+      6
+    ],
+    "coreAlphaMax": 0.95,
+    "diamonds": {
+      "min": 3,
+      "throttleGain": 4,
+      "spacingD": 1.2,
+      "minPa": 0.05
+    },
+    "spaceParticleAltKm": 28,
+    "blend": "add",
+    "colors": {
+      "kerolox": {
+        "core": "#fff4d8",
+        "mid": "#ffb040",
+        "tail": "#ff6a1a",
+        "soot": 0.35
+      },
+      "methalox": {
+        "core": "#e8f0ff",
+        "mid": "#a0c8ff",
+        "tail": "#ff8a50",
+        "soot": 0.05
+      },
+      "hydrolox": {
+        "core": "#f0f8ff",
+        "mid": "#c8d8ff",
+        "tail": "#80a0ff",
+        "soot": 0.0
+      },
+      "solid-apcp": {
+        "core": "#ffffff",
+        "mid": "#fff0c0",
+        "tail": "#e0d8c8",
+        "soot": 0.6
+      },
+      "mmh-nto": {
+        "core": "#fff0d0",
+        "mid": "#ffb070",
+        "tail": "#c86040",
+        "soot": 0.1
+      },
+      "udmh-nto": {
+        "core": "#fff0d0",
+        "mid": "#ffb070",
+        "tail": "#c86040",
+        "soot": 0.1
+      },
+      "hybrid": {
+        "core": "#fff0d0",
+        "mid": "#ffa040",
+        "tail": "#d06030",
+        "soot": 0.4
+      }
+    }
+  },
+  "sky": {
+    "spaceBlendKm": [
+      6,
+      56
+    ],
+    "forceSpaceStatus": [
+      "SEP",
+      "JACKLYN"
+    ],
+    "layers": {
+      "sky": "1-t",
+      "stars": "t",
+      "milky": [
+        0.18,
+        0.9,
+        0.74
+      ],
+      "nebula": [
+        0.28,
+        1.0,
+        0.52
+      ],
+      "clouds": "1-smoothstep(0.04,0.58,t)",
+      "haze": "1-smoothstep(0,0.72,t)"
+    },
+    "paletteSource": "web/js/tod.js#TOD"
+  },
+  "portrait": {
+    "letterbox": false,
+    "fill": "lerp(wash.horizon, wash.space, t)",
+    "sideMarginPt": 8,
+    "minTouchPt": 44,
+    "vehicleAnchorY": 0.38,
+    "plumeMaxWidthOfVisible": 0.8,
+    "devices": [
+      {
+        "class": "iphone",
+        "pt": [
+          393,
+          852
+        ],
+        "dpr": 3,
+        "safe": [
+          59,
+          34
+        ]
+      },
+      {
+        "class": "iphone-promax",
+        "pt": [
+          440,
+          956
+        ],
+        "dpr": 3,
+        "safe": [
+          62,
+          34
+        ]
+      },
+      {
+        "class": "ipad",
+        "pt": [
+          820,
+          1180
+        ],
+        "dpr": 2,
+        "safe": [
+          24,
+          20
+        ]
+      },
+      {
+        "class": "ipad-large",
+        "pt": [
+          1032,
+          1376
+        ],
+        "dpr": 2,
+        "safe": [
+          24,
+          20
+        ]
+      }
+    ]
+  }
+}
