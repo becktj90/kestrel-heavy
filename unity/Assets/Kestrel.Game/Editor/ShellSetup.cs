@@ -63,12 +63,16 @@ namespace Kestrel.Game.Editor
             var ps = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelPath);
             if (ps == null) { ps = ScriptableObject.CreateInstance<PanelSettings>(); AssetDatabase.CreateAsset(ps, PanelPath); }
             ps.themeStyleSheet = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ThemePath);
-            // Constant physical size in points: 1 panel px = 1 iOS pt on every device, so 44 pt touch
-            // targets and 8 pt margins from VISUAL_SPEC map 1:1 to USS values. Big screens get more room
-            // (themed fill + wider layouts), never a blown-up phone UI.
-            ps.scaleMode = PanelScaleMode.ConstantPhysicalSize;
-            ps.referenceDpi = 160;     // Unity iOS reports dpi ~ 163 x scale; 160 dpi ≈ 1 pt
-            ps.fallbackDpi = 160;
+            // Scale With Screen Size, portrait reference = iPhone SE in points (375x667), match height.
+            // 1 USS px = 1 pt on SE; Pro Max (956 pt tall) scales 1.43x and iPad 13 (1376 pt) ~2.06x, so the
+            // Home and shell UI keep proportion instead of shrinking to a phone-sized island. Matching height
+            // (not width) guarantees the vertical layout fits on iPad, where width-matching would overflow,
+            // and keeps the 44 pt touch minimum at or above 44 pt on every device. Width in panel units:
+            // SE 375, Pro Max ~308, iPad ~500, so screens must lay out in ≥ 300 units of width.
+            ps.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            ps.referenceResolution = new Vector2Int(375, 667);
+            ps.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
+            ps.match = 1f;
             ps.clearColor = false;     // camera clear = themed fill
             ps.sortingOrder = 0;
             EditorUtility.SetDirty(ps);
