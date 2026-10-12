@@ -56,9 +56,25 @@ namespace Kestrel.Slice
             m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             m.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             m.SetInt("_ZWrite", 0);
+            // Depth-test against opaques (deck, tower). Explicit so a template edit can't turn it off.
+            if (m.HasProperty("_ZTest")) m.SetInt("_ZTest", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            ApplySoftParticles(m, QualitySettings.softParticles);
             if (m.HasProperty("_AlphaClip")) m.SetFloat("_AlphaClip", 0);
             m.DisableKeyword("_ALPHATEST_ON");
             return m;
+        }
+
+        /// <summary>URP soft particles: fade where the sprite meets opaque depth (needs the camera depth texture,
+        /// enabled per quality level in QualitySetup for Medium+). Off on Low: plain depth test only.</summary>
+        public const float SoftNear = 0f, SoftFar = 3f;
+        public static void ApplySoftParticles(Material m, bool on)
+        {
+            if (m == null) return;
+            if (m.HasProperty("_SoftParticlesEnabled")) m.SetFloat("_SoftParticlesEnabled", on ? 1 : 0);
+            if (m.HasProperty("_SoftParticlesNearFadeDistance")) m.SetFloat("_SoftParticlesNearFadeDistance", SoftNear);
+            if (m.HasProperty("_SoftParticlesFarFadeDistance")) m.SetFloat("_SoftParticlesFarFadeDistance", SoftFar);
+            if (on) m.EnableKeyword("_SOFTPARTICLES_ON"); else m.DisableKeyword("_SOFTPARTICLES_ON");
         }
     }
 }

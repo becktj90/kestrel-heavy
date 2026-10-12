@@ -37,6 +37,7 @@ namespace Kestrel.Game.Editor
                 rp.msaaSampleCount = p.msaa;
                 rp.supportsHDR = p.hdr;
                 rp.renderScale = 1f;               // runtime sets min(1, dprCap/dpr)
+                rp.supportsCameraDepthTexture = p.id != "low";   // soft particles (plume vs deck) on Medium+
                 rp.shadowDistance = p.shadows ? 400f : 0f;
                 EditorUtility.SetDirty(rp);
                 assets[i] = rp;

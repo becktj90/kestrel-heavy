@@ -12,6 +12,25 @@ namespace Kestrel.Slice
         public float ExitPressure = 70000f;  // Pa, nominal first-stage nozzle exit pressure (sea-level optimised ~0.7 bar)
         ParticleSystem core, diamonds;
 
+        /// <summary>Collide plume particles with the pad deck plane (top of deck, normal +Y) so the jet deflects
+        /// along the deck instead of tunnelling through it. Planes-mode collision: no physics scene, O(planes) per particle.</summary>
+        public void SetDeck(Transform deckTop)
+        {
+            foreach (var ps in new[] { core, diamonds }) if (ps != null) ConfigureDeckCollision(ps, deckTop);
+        }
+
+        public static void ConfigureDeckCollision(ParticleSystem ps, Transform deckTop)
+        {
+            var c = ps.collision;
+            c.enabled = deckTop != null;
+            if (deckTop == null) return;
+            c.type = ParticleSystemCollisionType.Planes;
+            c.mode = ParticleSystemCollisionMode.Collision3D;
+            c.SetPlane(0, deckTop);
+            c.bounce = 0.05f; c.dampen = 0.35f; c.lifetimeLoss = 0f; c.radiusScale = 0.5f;
+            c.enableDynamicColliders = false; c.sendCollisionMessages = false;
+        }
+
         public static PlumeController Create(Transform parent, Vector3 localPos, float exitDiameter, Material mat)
         {
             var go = new GameObject("Plume"); go.transform.SetParent(parent, false); go.transform.localPosition = localPos;

@@ -13,7 +13,7 @@ namespace Kestrel.Slice
     public sealed class SliceApp : MonoBehaviour
     {
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
-        Design design; Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck; FlightDriver flight; GameObject rocketGO;
+        Design design; Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
         VisualElement ui, designPanel, designBody, hud; Button designToggle; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted;
 
@@ -50,6 +50,8 @@ namespace Kestrel.Slice
             deck.localScale = new Vector3(2 * PadGround.MinDeckRadius, -PadGround.GroundY * 0.5f, 2 * PadGround.MinDeckRadius); // plinth GroundY..0
             if (bodyMat != null) { var dm = new Material(bodyMat) { color = new Color(0.55f, 0.55f, 0.53f) }; pad.GetComponent<Renderer>().sharedMaterial = dm; }
             flight.Anchor(deck, 0, PadGround.GroundY * 0.5, 0);
+            deckTop = new GameObject("DeckTop").transform; deckTop.SetParent(worldRoot, false); // plume collision plane (+Y), deck top at y=0
+            flight.Anchor(deckTop, 0, 0, 0);
             tower = PadTower.Create(bodyMat); tower.SetParent(worldRoot, false);
             flight.Anchor(tower, 0, 0, 0); // sized per design in BuildRocket
             flight.OnMeco += OnMeco;
@@ -176,6 +178,7 @@ namespace Kestrel.Slice
             var mr = rocketGO.AddComponent<MeshRenderer>();
             if (bodyMat != null) { var m = new Material(bodyMat); ColorUtility.TryParseHtmlString(design.liveryPrimary, out var col); m.color = col; mr.sharedMaterial = m; }
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, Mathf.Max(1f, Mathf.Sqrt(design.stages[0].engineCount) * r.exitDiameter), plumeMat);
+            flight.Plume.SetDeck(deckTop);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
             float rr = r.mesh.bounds.extents.x;
