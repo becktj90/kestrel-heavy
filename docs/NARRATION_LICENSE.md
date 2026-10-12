@@ -15,3 +15,7 @@ attribution is required**. Free-plan audio is not used anywhere in this game.
 - Updated 2026-10-11 (same subscription, model and voices): wording fixes, new variants, loudness normalized to -16 LUFS / -1.5 dBTP, 96 kbps mono
 - Per-clip details: `assets/narration/manifest.json`
 - Regenerate/extend: `tools/clipgen/` (skips unchanged lines by hash; needs `ELEVENLABS_API_KEY`)
+
+## Line list (planned additions)
+- Mission control + two webcast hosts (DECISIONS #55).
+- **Crew Talk** (DECISIONS #54): Bodie, Junie, Pearl, Sloane. Spanish-sourced lines voiced in English in each character's own dialect and style, full meaning kept, no stock or literal lines. Same Creator plan, no new spend.

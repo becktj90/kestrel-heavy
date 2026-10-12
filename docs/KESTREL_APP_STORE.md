@@ -1,3 +1,5 @@
+> **ARCHIVED.** This is the unreleased 1.0.1 Phaser/WKWebView listing. The shipping app is Unity 2.0.0. See docs/DECISIONS.md #30/#35 (2.0.0, bundle com.beckify.kestrelheavy), #34 (4+, Data Not Collected, not Kids), #37 (China mainland and Vietnam removed), #36 (Simulation primary, Arcade secondary), and APPSTORE_CONNECT.md. Price unchanged here.
+
 # Kestrel Heavy — 1.0.1 App Store listing (paid $0.99 draft)
 
 Prepared 2026-10-11. Nothing here has been submitted. Scheme **KestrelHeavy**, bundle ID `com.beckify.kestrelheavy`, team `9TR6R5LV8M`, version **1.0.1 (7)**.

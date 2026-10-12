@@ -1,13 +1,14 @@
 # Kestrel Heavy
 
-Retro lander arcade game. Ships as a standalone iOS app (`com.beckify.kestrelheavy`, team 9TR6R5LV8M) and plays on the web at beckify.com/games/kestrel-heavy.
+Rocket launch game. **The shipping app is the Unity 2.0.0 build** (`unity/`, DECISIONS #1, #30). 1.0.1 was never released (archived on `release/1.0.1`). The app ships as a standalone iOS app (`com.beckify.kestrelheavy`, team 9TR6R5LV8M) and plays on the web at beckify.com/games/kestrel-heavy.
 
 Split out of [becktj90/beckify](https://github.com/becktj90/beckify) with history preserved.
 
 ## Layout
 
-- `web/` – the Phaser 4 game. **Single source of truth.**
-- Current App Store version: **1.0.1 (7)** (`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in both configs of `ios/KestrelHeavy.xcodeproj`).
+- `unity/` – the Unity 6.3 game. **Ships as 2.0.0** (builds from 100).
+- `web/` – the Phaser 4 build. **Web demo only** (beckify.com), not the App Store app.
+- 1.0.1 (7) in `ios/KestrelHeavy.xcodeproj` was never released; it is the legacy Phaser/WKWebView wrapper.
 - `ios/` – standalone Xcode project `KestrelHeavy.xcodeproj` (scheme `KestrelHeavy`). The `Pack Kestrel Heavy game` build phase runs `ios/scripts/pack_kestrelheavy_game.py`, which copies `web/` into `ios/KestrelHeavy/Game` with iOS/offline patches.
 - `tests/` – Node tests (`npm test`).
 - `docs/` – App Store listing notes.

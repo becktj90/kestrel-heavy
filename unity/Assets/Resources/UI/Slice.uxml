@@ -3,6 +3,9 @@
     <ui:VisualElement name="root" class="root">
         <!-- DESIGN (portrait stub) -->
         <ui:VisualElement name="design" class="panel design">
+            <!-- Handle: tap or drag to collapse/expand. Collapsed = handle only (64 pt + safe area, set from code). -->
+            <ui:Button name="design-toggle" text="▼  Design" class="design-toggle" />
+            <ui:VisualElement name="design-body" class="design-body">
             <ui:Label text="KESTREL HEAVY · DESIGN" class="title" />
             <ui:DropdownField name="preset" label="Preset" class="row" />
             <ui:SliderInt name="engines" label="Stage 1 engines" low-value="1" high-value="33" value="9" class="row" />
@@ -13,6 +16,7 @@
                 <ui:Label name="r-cost" text="Cost —" />
                 <ui:Label name="r-rel" text="Reliability —" />
                 <ui:Label name="r-mass" text="Liftoff —" />
+            </ui:VisualElement>
             </ui:VisualElement>
             <ui:Button name="launch" text="ROLL OUT &amp; LAUNCH" class="launch" />
         </ui:VisualElement>

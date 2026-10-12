@@ -14,7 +14,7 @@ namespace Kestrel.Slice
     {
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
         Design design; Camera cam; Transform worldRoot, vehicleRoot, tower; FlightDriver flight; GameObject rocketGO;
-        VisualElement ui, designPanel, hud; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
+        VisualElement ui, designPanel, designBody, hud; Button designToggle; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted;
 
         void Awake()
@@ -57,7 +57,18 @@ namespace Kestrel.Slice
             doc.visualTreeAsset = Resources.Load<VisualTreeAsset>("UI/Slice");
             ui = doc.rootVisualElement;
             designPanel = ui.Q("design"); hud = ui.Q("hud");
-            ui.RegisterCallback<GeometryChangedEvent>(_ => ApplyHudSafeArea());
+            designBody = ui.Q("design-body"); designToggle = ui.Q<Button>("design-toggle");
+            ui.RegisterCallback<GeometryChangedEvent>(_ => { ApplyHudSafeArea(); ApplyDesignPanelMetrics(); ApplyDesignFraming(); });
+            designPanel.RegisterCallback<GeometryChangedEvent>(_ => ApplyDesignFraming());
+            designToggle.clicked += () => SetDesignCollapsed(!designCollapsed);
+            // Drag on the handle: down collapses, up expands (tap still toggles via clicked).
+            designToggle.RegisterCallback<PointerDownEvent>(e => dragStartY = e.position.y, TrickleDown.TrickleDown);
+            designToggle.RegisterCallback<PointerUpEvent>(e =>
+            {
+                float dy = e.position.y - dragStartY, min = 24f * UnitsPerPoint();
+                if (Mathf.Abs(dy) >= min) { SetDesignCollapsed(dy > 0); e.StopImmediatePropagation(); }
+            }, TrickleDown.TrickleDown);
+            SetDesignCollapsed(false);
             rDv = ui.Q<Label>("r-dv"); rTwr = ui.Q<Label>("r-twr"); rCost = ui.Q<Label>("r-cost"); rRel = ui.Q<Label>("r-rel"); rMass = ui.Q<Label>("r-mass");
             hT = ui.Q<Label>("h-t"); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
             hMach = ui.Q<Label>("h-mach"); hQ = ui.Q<Label>("h-q"); hThr = ui.Q<Label>("h-thr"); hDr = ui.Q<Label>("h-dr"); hMsg = ui.Q<Label>("h-msg");
@@ -70,7 +81,7 @@ namespace Kestrel.Slice
             ui.Q<SliderInt>("engines").RegisterValueChangedCallback(e => { design.stages[0].engineCount = e.newValue; Refresh(); });
             ui.Q<Slider>("prop").RegisterValueChangedCallback(e => { design.stages[0].propMass = Mathf.Round(e.newValue) * 1000.0; Refresh(); });
             ui.Q<Button>("launch").clicked += Launch;
-            again.clicked += () => { flight.enabled = false; hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); again.AddToClassList("hidden"); SelectPreset(design.id); };
+            again.clicked += () => { flight.enabled = false; cam.ResetProjectionMatrix(); hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); again.AddToClassList("hidden"); SelectPreset(design.id); };
             // Accessibility labels (VoiceOver wiring via UnityEngine.Accessibility is a listed gap; see RESULTS.md)
             ui.Q<Button>("launch").tooltip = "Roll out and launch the current design";
         }
@@ -83,6 +94,43 @@ namespace Kestrel.Slice
             float dpr = Screen.dpi > 0 ? Mathf.Max(1f, Mathf.Round(Screen.dpi / 160f)) : 3f;
             var p = HudLayout.SafePadding(new Vector2(Screen.width, Screen.height), Screen.safeArea, size, dpr);
             hud.style.paddingLeft = p.x; hud.style.paddingTop = p.y; hud.style.paddingRight = p.z; hud.style.paddingBottom = p.w;
+        }
+
+        /// <summary>Panel units per iOS point (panel scales with screen width, so this differs per device).</summary>
+        float UnitsPerPoint()
+        {
+            float dpr = Screen.dpi > 0 ? Mathf.Max(1f, Mathf.Round(Screen.dpi / 160f)) : 3f;
+            float wPt = Screen.width / dpr;
+            return ui != null && ui.layout.width > 0 && wPt > 0 ? ui.layout.width / wPt : 3f;
+        }
+
+        /// <summary>Handle is 64 pt tall (tap target ≥ 44 pt) and the panel clears the home indicator.</summary>
+        void ApplyDesignPanelMetrics()
+        {
+            if (ui.layout.height <= 0) return;
+            float upp = UnitsPerPoint();
+            designToggle.style.height = 64f * upp;
+            designToggle.style.minHeight = 44f * upp;
+            float bottom = Screen.safeArea.yMin * ui.layout.height / Mathf.Max(1, Screen.height);
+            designPanel.style.paddingBottom = Mathf.Max(24f, bottom + 8f * upp);
+        }
+
+        void SetDesignCollapsed(bool collapsed)
+        {
+            designCollapsed = collapsed;
+            designPanel.EnableInClassList("collapsed", collapsed);
+            ui.Q<Button>("launch").style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
+            designToggle.text = collapsed ? "▲  Design" : "▼  Design";
+            // Accessibility pattern in this project is tooltip text (VoiceOver bridge is a listed gap, RESULTS.md).
+            designToggle.tooltip = collapsed ? "Design panel, collapsed. Tap to expand." : "Design panel, expanded. Tap to collapse and see the whole rocket.";
+        }
+
+        /// <summary>Frame rocket + pad deck in the band above the panel's top edge (live rect, any device).</summary>
+        void ApplyDesignFraming()
+        {
+            if (cam == null || ui.layout.height <= 0 || designPanel.ClassListContains("hidden")) return;
+            float f = DesignFraming.VisibleFraction(ui.layout.height, designPanel.worldBound.yMin - ui.worldBound.yMin);
+            FrameCamera(rocketHeight, f);
         }
 
         void SelectPreset(string id)
@@ -126,16 +174,23 @@ namespace Kestrel.Slice
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
             PadTower.Apply(tower, r.height, r.mesh.bounds.extents.x);
-            FrameCamera(r.height);
+            rocketHeight = r.height; ApplyDesignFraming();
         }
 
         float rocketHeight = 70; Vector3 camOffset;
-        void FrameCamera(float h) { rocketHeight = h; cam.transform.position = new Vector3(h * 0.9f, h * 0.45f, -h * 1.4f); cam.transform.LookAt(new Vector3(0, h * 0.45f, 0)); camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero); }
+        void FrameCamera(float h, float visible)
+        {
+            rocketHeight = h; float k = DesignFraming.DistanceScale(visible);
+            var aim = new Vector3(0, h * DesignFraming.AimHeight, 0);
+            cam.transform.position = aim + new Vector3(h * 0.9f, h * (0.45f - DesignFraming.AimHeight), -h * 1.4f) * k;
+            cam.transform.LookAt(aim);
+            cam.ResetProjectionMatrix();
+            cam.projectionMatrix = DesignFraming.ShiftedProjection(cam.projectionMatrix, visible); camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero); }
 
         void Launch()
         {
             submitted = false;
-            designPanel.AddToClassList("hidden"); hud.RemoveFromClassList("hidden"); hMsg.text = "";
+            designPanel.AddToClassList("hidden"); hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
             flight.enabled = true;
             flight.Launch(design);
         }

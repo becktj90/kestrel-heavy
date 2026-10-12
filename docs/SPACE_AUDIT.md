@@ -44,7 +44,7 @@ Rules: no second sun direction, no second atmosphere table, no second camera rig
 | Planets (post-launch) | NASA/JPL/USGS Astrogeology mosaics | PD for NASA/USGS; exclude ESA/third-party credited items |
 | Stars | Yale Bright Star Catalogue BSC5; Hipparcos subset | PD / verify CDS terms; BSC5 preferred |
 | Ephemeris | Meeus-style analytic series (our implementation), checked against JPL Horizons values in tests | algorithms; Horizons output used only as test vectors, logged |
-| Thermosphere | NRLMSISE-00 (US Naval Research Lab) or simpler Jacchia-style exponential table | NRL code is US Gov; prefer own table from published coefficients |
+| Thermosphere | Jacchia-71-class model built from NASA/SAO reports, with USSA76 below 1000 km | Own implementation from published reports; NRLMSIS excluded (licence and patent) |
 | Earth J2, μ, radii | WGS-84 / EGM constants | Facts |
 
 ## 5. S1–S7
