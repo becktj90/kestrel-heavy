@@ -54,6 +54,9 @@ graph LR
   R3 --> S5[S5 Space visuals + eclipses] --> U4
   S3 --> S6[S6 Orbit event hooks] --> U7
   U9 --> S7[S7 Moon landing / interplanetary, post-launch]
+  K6 --> DV1[D/V P0-1 kit + umbilical contract] --> DV2[D1-D6 pad / V1-V6 vehicle] --> U6
+  DV2 --> DV3[D7 inspect + Pad Walk / V7 Data Sheet + Fleet] --> U8
+  R3 --> DV2
 ```
 
 ## Critical path
@@ -93,6 +96,9 @@ See SPACE_AUDIT.md. Shares astronomy (S1 = R2), atmosphere, body data and camera
 All Env decisions approved; 120 Hz via Auto=High on ProMotion with governor → 60. Space #1–4, #6–9 approved; **no on-demand textures in 2.0** (space ≤ 8 MB in IPA). Extras: Kármán-line event + narrator line (S2/S6, U7), exposure model + dark-adapted eye + labelled cinematic assist (R3), near-silence in vacuum (U7 mixer), spent stages persist in orbit and decay (S3), Photo Mode space shots (G7, 1.1), Codex Labs Orbit / Moon Phase / Sun-Sync / Exposure / Wind Shear (U8 Codex). LICENSES.md ledger live.
 **Later question for Trevor:** high-res textures via Apple On-Demand Resources vs GitHub Releases (post-2.0; touches build config).
 
+## Pad + Launch Vehicle Detail D1–D7 / V1–V7 (P0 for 2.0.0)
+See PAD_VEHICLE_DETAIL_AUDIT.md. One sequenced P0 track (replaces the earlier rocket-detail pass), ahead of lower-priority R/S items for Graphics Dev. Deepens the U6 seeded pad generator (G2/G3) and the existing `RocketMeshBuilder` + U8 Hangar Reveal; no duplicate generator or renderer. Shared `Kestrel.Kit` materials/LOD/instancing, one pad–vehicle **umbilical contract** in Core, element graph + inspect mode, animation via `MissionEvent.links` (no new schema). Budgets: pad+vehicle ≤ 4 MB shipped, ≤ 250 k tris / ≤ 120 draws on Low. Procedural only; references logged in REFERENCE_LEDGER.md (text or US-Gov PD only, nothing from Trevor's workplace, no real designs/markings). Steps P0-1 kit+contract → P0-2 D1 ∥ V2 → P0-3 D2/D5 ∥ V1/V3 → P0-4 D3/D4 ∥ V4 → P0-5 D6 ∥ V5/V6 (after R3) → P0-6 D7 ∥ V7 (after K6). Scope questions pending with Chief of Staff (audit §10).
+
 ## Risk register
 | # | Risk | L/I | Mitigation | Owner |
 |---|------|-----|-----------|-------|
@@ -115,9 +121,25 @@ All Env decisions approved; 120 Hz via Auto=High on ProMotion with governor → 
 | R18 | Lightning/flash harms photosensitive players | L/H | Reduced-flash rules + frame luminance test | UX, QA |
 | R19 | J2/decay changes destabilise golden vectors | M/M | One Core PR per effect, Physics ε review | Physics |
 | R20 | Float precision at orbital scale (jitter) | M/H | Double ECI sim, floating origin + scaled-space layer | Graphics Dev |
+| R21 | Pad/vehicle detail blows Low-tier tris/draws | M/H | Kit instancing + LOD + impostors; perf gate after P0-3 and P0-6 | Graphics Dev |
+| R22 | Detail reads as a specific real pad/vehicle | L/H | REFERENCE_LEDGER.md, no-direct-copy review, NAME_REVIEW for marks | Art, Kestrel Arcade |
 | R11 | Name trademark conflict | L/H | X6 check, draft for counsel | Marketing |
 
 ## Owners
-Kestrel Gameplay Dev (sim/core/HUD/economy) · Graphics Dev (render/shell/pad/hangar) · Sound (SFX/music) · Codex (edu/world) · Narrator Voice (scripts/clips) · Marketing (launch/store) · Physics (accuracy) · QA (tests/devices) · UX (flows/a11y) · Art (style/assets).
+Parallel split (DECISIONS #45). Each owner edits only their paths; cross-path changes go through the owner.
+
+| Owner | Scope | Paths |
+|---|---|---|
+| Graphics Dev | D1–D7, R visuals, shared kit, umbilical contract | `Pad/**`, `Kit/**`, `Environment/**` |
+| Art | V1–V6 | `Vehicle/**`, `Art/Vehicle/**`, `Livery/**` |
+| Gameplay Dev | S2/S3, R3 weather/commit, Data Sheet numbers, V7 Fleet | `Kestrel.Core/**` (except Astro), `data/**` |
+| Physics | Validation suites, PAD_ENGINEERING_RULES.md, VEHICLE_ENGINEERING_RULES.md | `docs/PAD_ENGINEERING_RULES.md`, `docs/VEHICLE_ENGINEERING_RULES.md`, validation tests |
+| Sound | Pad/vehicle sound anchors, vacuum silence | `Audio/**` |
+| Codex | Labs | `Codex/**` |
+| UX | Data Sheet, Fleet, inspect and Photo Mode screens | `UI/Screens/**` |
+| QA | CI, golden images, regression | `.github/workflows/**`, `tests/golden-images/**` |
+| Kestrel Arcade | Lead/integrator, merge queue, sole Unity CLI driver | integration (`SliceApp`/scene wiring) |
+
+Also: Narrator Voice (scripts/clips) · Marketing (launch/store).
 
 Decision log: DECISIONS.md. Living context: PROJECT_STATE.md.
