@@ -10,6 +10,7 @@
     "templates:build": "node tools/templates/build.mjs",
     "templates:check": "node tools/templates/build.mjs --check",
     "test:replay": "node --experimental-websocket --test --test-concurrency=1 tests/replay/",
-    "replay:record": "node --experimental-websocket tools/replay/record.mjs"
+    "replay:record": "node --experimental-websocket tools/replay/record.mjs",
+    "gen:tod": "node tools/export-tod.mjs"
   }
 }
