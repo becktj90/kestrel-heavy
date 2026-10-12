@@ -1,0 +1,7 @@
+{
+  "note": "Designer feel for the Phaser web demo. Unity can reuse the haptic patterns. Live stats are not stored here — they are the rocket equation and the headless ascent sim.",
+  "haptics": {
+    "snap": [12],
+    "payoff": [18, 30, 18]
+  }
+}

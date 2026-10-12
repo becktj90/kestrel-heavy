@@ -12,6 +12,8 @@ import { validateEngineering, makeItFly } from './validate.js';
 import { TIPS } from './glossary.js';
 import { getDesignStore } from './store.js';
 import { costPanel } from '../ui/finance/costPanel.js';
+import { STORAGE_KEY } from '../config.js';
+import { flightResult, hapticPattern, previewDelta, pulseHaptic } from './feel.js';
 
 const TABS = [
   ['stages', 'Stages'], ['strapons', 'Strap-ons'], ['engines', 'Engines'], ['propellants', 'Propellants'],
@@ -91,21 +93,66 @@ export class DesignerScreen {
   }
 
   // ---------- state ----------
-  set(mut) { mut(this.design); this.sim = null; this.refresh(); }
+  set(mut) {
+    this._before = this.quick || null;
+    mut(this.design);
+    this.sim = null;
+    this._snap = true;
+    this.refresh();
+  }
   load(design, id = null) { this.design = migrateDesign(design); this.savedId = id; this.stageIdx = 0; this.sim = null; this.refresh(); }
 
   refresh() {
     this.stageIdx = Math.min(this.stageIdx, this.design.stages.length - 1);
     this.validation = validateEngineering(this.design);
     this.quick = this.validation.readout;
+    if (this._snap) {
+      this._delta = previewDelta(this._before, this.quick);
+      this._snap = false;
+      this._doSnap = true;
+    }
     this.renderHeader(); this.renderTabs(); this.renderPanel(); this.renderSchematic(); this.renderReadout();
+    if (this._doSnap) {
+      this._doSnap = false;
+      this.kickSnap();
+    }
     clearTimeout(this.simTimer);
     if (this.quick && this.validation.ok) this.simTimer = setTimeout(() => this.runSim(), SIM_DEBOUNCE_MS);
   }
 
+  kickSnap() {
+    const node = this.schem;
+    if (node) {
+      node.classList.remove('is-snap');
+      void node.offsetWidth;
+      node.classList.add('is-snap');
+      clearTimeout(this._snapT);
+      this._snapT = setTimeout(() => node.classList.remove('is-snap'), 220);
+    }
+    pulseHaptic(hapticPattern('snap'));
+    const before = this._before;
+    const next = this.quick;
+    if (before && next && before.margin < 0 && next.margin >= 0) {
+      pulseHaptic(hapticPattern('payoff'));
+      this.toast('Clears the Δv budget. That is the payoff.');
+    }
+  }
+
+  lastArcadeFlight() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed?.bestFlight || null;
+    } catch {
+      return null;
+    }
+  }
+
   runSim() {
+    const prev = this.sim?.outcome;
     try { this.sim = simReadout(this.design, this.quick); } catch (_) { this.sim = null; }
     this.renderReadout(); this.renderSchematic();
+    if (prev && prev !== 'orbit' && this.sim?.outcome === 'orbit') pulseHaptic(hapticPattern('payoff'));
   }
 
   // ---------- header ----------
@@ -295,6 +342,7 @@ export class DesignerScreen {
     const svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'kd-svg'); svg.setAttribute('role', 'img');
     svg.setAttribute('aria-label', `${d.stages.length}-stage vehicle${d.strapOns.count ? ` with ${d.strapOns.count} strap-ons` : ''}`);
+    if (this.sim?.outcome === 'orbit') svg.classList.add('is-orbit');
     const add = (tag, a) => { const e = document.createElementNS(NS, tag); for (const [x, v] of Object.entries(a)) e.setAttribute(x, v); svg.append(e); return e; };
     for (let gx = 0; gx <= W; gx += 10) add('line', { x1: gx, y1: 0, x2: gx, y2: H, class: 'kd-grid' });
     for (let gy = 0; gy <= H; gy += 10) add('line', { x1: 0, y1: gy, x2: W, y2: gy, class: 'kd-grid' });
@@ -332,6 +380,21 @@ export class DesignerScreen {
   renderReadout() {
     const v = this.validation, r = this.quick, sim = this.sim;
     const rows = [];
+    const flight = flightResult(sim, r);
+    const last = this.lastArcadeFlight();
+    const delta = this._delta;
+    rows.push(h('section', { class: `kd-flight${flight?.outcome === 'orbit' ? ' is-orbit' : ''}` },
+      h('span', { class: 'kd-kicker', text: 'FLIGHT RESULT' }),
+      h('b', { class: 'kd-outcome', text: flight ? String(flight.outcome).toUpperCase() : (v.ok ? 'SIM RUNNING' : 'GROUNDED') }),
+      flight
+        ? h('p', { text: `Apogee ${fmtN(flight.apogeeKm)} km · losses ${kms(flight.totalLosses)} · expended ${kms(flight.deltaVExpended)} of ${kms(flight.idealDeltaV)} ideal` })
+        : h('p', { text: 'Headless sim fills this card from the integrator.' }),
+      delta
+        ? h('p', { class: 'kd-delta', text: `Live  Δv ${delta.deltaV >= 0 ? '+' : ''}${fmtN(delta.deltaV / 1000, 2)} km/s · TWR ${delta.twr >= 0 ? '+' : ''}${fmtN(delta.twr, 2)} · mass ${delta.mass >= 0 ? '+' : ''}${fmtN(delta.mass / 1000, 2)} t` })
+        : null,
+      last
+        ? h('p', { class: 'kd-last', text: `Last arcade flight  ${last.mission || 'KH'}  ${last.recovered ? 'RECOVERED' : (last.reason || 'flown')}  ·  score ${Number(last.score || 0).toLocaleString()}` })
+        : h('p', { class: 'kd-last', text: 'No arcade flight yet. This card is the build’s own result.' })));
     if (r) {
       const marginCls = r.margin >= 0.05 ? 'good' : r.margin >= 0 ? 'warn' : 'bad';
       rows.push(
@@ -358,7 +421,7 @@ export class DesignerScreen {
     const needsFix = v.blocks.length || v.warnings.some((w) => w.code === 'dv-margin' || w.code === 'twr-marginal');
     rows.push(notes,
       h('div', { class: 'kd-row kd-flyrow' },
-        h('button', { type: 'button', class: 'kd-btn kd-fly', disabled: !needsFix, onclick: () => { const f = makeItFly(this.design); this.design = f.design; this.sim = null; this.refresh(); this.toast(f.changes.length ? `Made it fly: ${f.changes.slice(0, 3).join(', ')}${f.changes.length > 3 ? '…' : ''}` : 'Already flyable!'); } }, '✨ Make it fly'),
+        h('button', { type: 'button', class: 'kd-btn kd-fly', disabled: !needsFix, onclick: () => { const before = this.quick; const f = makeItFly(this.design); this._before = before; this.design = f.design; this.sim = null; this._snap = true; this.refresh(); this.toast(f.changes.length ? `Made it fly: ${f.changes.slice(0, 3).join(', ')}${f.changes.length > 3 ? '…' : ''}` : 'Already flyable!'); } }, '✨ Make it fly'),
         h('button', { type: 'button', class: 'kd-btn kd-launch', disabled: true, 'aria-disabled': 'true', title: 'Flying your own designs is coming in M3' }, 'LAUNCH')),
       h('p', { class: 'kd-hint', text: 'Flying custom designs is coming in M3.' }));
     this.readEl.replaceChildren(...rows);
