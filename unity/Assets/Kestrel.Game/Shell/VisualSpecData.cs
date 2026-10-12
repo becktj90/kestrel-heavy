@@ -13,12 +13,15 @@ namespace Kestrel.Game.Shell
         public float sideMarginPt = 8, minTouchPt = 44, vehicleAnchorY = 0.38f, plumeMaxWidthOfVisible = 0.8f;
     }
     [Serializable] public sealed class SpecSky { public float[] spaceBlendKm = { 6, 56 }; public string[] forceSpaceStatus; }
+    // JsonUtility.FromJson fills these. The compiler cannot see that write, so CS0649 is a false alarm.
+#pragma warning disable CS0649
     [Serializable] sealed class SpecRoot { public int specVersion; public SpecWorld world; public SpecPortraitJson portrait; public SpecSky sky; }
 
     [Serializable] public sealed class Wash { public string space, mid, near, horizon, low; }
     [Serializable] public sealed class TodPalette { public string label; public Wash wash; public float stars; }
     [Serializable] sealed class TodPalettes { public TodPalette dawn, noon, golden, dusk, night; }
     [Serializable] sealed class TodRoot { public TodPalettes palettes; }
+#pragma warning restore CS0649
 
     public sealed class VisualSpecData
     {
