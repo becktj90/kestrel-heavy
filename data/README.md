@@ -13,6 +13,7 @@
 | fins.json | schemas/fins.schema.json | web/js/data/fins.js |
 | liveries.json | loader in Kestrel.Livery (no JSON Schema file) | earned paint schemes |
 | finishes.json | loader in Kestrel.Livery (no JSON Schema file) | per-part paint |
+| codex.json | schemas/codex.schema.json | CodexBook (Unity); web/js/data/gen/codex.js |
 | golden/*.json | see golden/README.md and docs/PHYSICS.md | ports (tolerances are per quantity for catalog-flight) |
 
 Economy constants stay in `web/js/economy-data/constants.json` (already JSON + schema).
