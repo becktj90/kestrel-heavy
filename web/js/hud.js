@@ -1,6 +1,6 @@
 /** Mission-control telemetry overlay — tabular, high contrast, aria-live banners. */
 
-import { climbArmedFromLabel, paintThumbSteer, peekTouchSteer, TOUCH_STEER_DEAD_PX } from './input.js';
+import { climbArmedFromLabel, paintThumbSteer, peekTouchSteer, setSteerSensitivity, TOUCH_STEER_DEAD_PX } from './input.js';
 
 function el(id) {
   return document.getElementById(id);
@@ -358,7 +358,8 @@ export function bindChrome(handlers) {
       const dx = x - originX;
       handlers.steerDrag(dx);
       if (!armed && Math.abs(dx) >= TOUCH_STEER_DEAD_PX) armed = true;
-      paintThumbSteer(node, peekTouchSteer(dx, armed));
+      const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : undefined;
+      paintThumbSteer(node, peekTouchSteer(dx, armed, { viewportWidth }));
     };
     node._syncClimb = () => {
       if (!held) return;
@@ -493,10 +494,12 @@ export function syncSettingsForm(settings) {
     }
     if (input.type === 'range') {
       const raw = Number(settings[key]);
-      const value = Number.isFinite(raw) ? raw : 0.72;
+      const fallback = key === 'steerSensitivity' ? 1 : 0.72;
+      const value = Number.isFinite(raw) ? raw : fallback;
       input.value = String(Math.round(value * 100));
     }
   });
+  setSteerSensitivity(settings.steerSensitivity);
 }
 
 export function readSettingsForm(settings) {
@@ -512,6 +515,7 @@ export function readSettingsForm(settings) {
       if (key === 'muted') settings.sound = !input.checked;
     }
   });
+  setSteerSensitivity(settings.steerSensitivity);
   return settings;
 }
 

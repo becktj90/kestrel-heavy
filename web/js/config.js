@@ -233,6 +233,7 @@ export const DEFAULT_SETTINGS = {
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   reducedFlashes: false,
   haptics: true,
+  steerSensitivity: 1,
   muted: false,
   volume: 0.72,
   sfxVolume: 1,
