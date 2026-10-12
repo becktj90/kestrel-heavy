@@ -181,3 +181,15 @@ Goldens for nodeSecular, ssoInclination, and frozenE are **hard-coded literals**
 | meanOscRoundTrip | 1 m (a), 1e-7 (e) | 0 | First-order map; inverse iterated to convergence, not a single pass. |
 | frozenE | 1e-5 | 0 | Against the external literal 0.0010276351869085109 at 800 km, 98.6°. |
 | nodeLiterature | 0.1 deg/day | 0 | ISS published-order check ≈ −5.0 deg/day (looser than nodeSecular). |
+## Coast (P5)
+
+`Kepler` converts ECI state ↔ classical elements (elliptic only) and coasts by advancing mean anomaly at the two-body mean motion. `OnRails` advances Ω, ω, and M with first-order J2 secular rates (same closed form as `Geopotential.Rates` / Vallado; J2 = 1.08262668e-3; rates match `Geopotential.Rates`). `Handoff` picks the coast mode from periapsis altitude: on-rails when periapsis ≥ 600 km geometric, otherwise numeric (two-body analytic for now; drag/decay arrives in a later P5 PR). Capture is `Kepler.FromState`; release is `Kepler.ToState`. Ascent stays on RK4 with point-mass gravity; this PR does not change `Headless` / `Ascent3Dof`.
+
+CLI: `propagate <kepler|onrails|auto> rx ry rz vx vy vz dt` returns the coasted ECI state as JSON.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| keplerAnalytic | 0 | 1e-12 | One-period analytic close and element round-trip. Exact two-body path; relative 1e-12 is the closed-form bar. |
+| keplerRk4Period | 1e-3 m | 0 | RK4 at dt = 1 s over one period vs the start state. Abs 1 mm is the audit golden. |
+| handoffRoundTrip | 1e-3 m | 0 | State → classical elements → state (ascent end → on-rails capture → release). Abs 1 mm. |
+| onRailsNode | 1e-3 deg/day | 0 | Secular Ω̇ vs the external ISS literal −4.946640707855562 deg/day (420 km, 51.64°, e = 0). |

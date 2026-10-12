@@ -1,5 +1,6 @@
-// Headless command surface for the dotnet CLI. mc and propagate are named and refused
-// until P8 and P5. simulate runs the built-in medium lifter. atmo is Atmosphere.At.
+// Headless command surface for the dotnet CLI. mc is named and refused until P8.
+// propagate runs Kepler or on-rails coast (P5). simulate runs the built-in medium lifter.
+// atmo is Atmosphere.At.
 using System;
 using System.Globalization;
 using System.Text;
@@ -35,9 +36,10 @@ namespace Kestrel.Core.Cli
                     var r = Headless.Simulate(Headless.MediumLifter(), new SimOptions { dt = 1, tMax = 2000 });
                     stdout = "{\"outcome\":\"" + r.outcome + "\",\"time\":" + r.time.ToString("R", inv) + "}";
                     return 0;
+                case "propagate":
+                    return Propagate(args, inv, out stdout);
                 case "predict":
                 case "mc":
-                case "propagate":
                     stdout = "{\"command\":\"" + args[0] + "\",\"status\":\"not-implemented\"}";
                     return 0;
                 default:
@@ -46,10 +48,44 @@ namespace Kestrel.Core.Cli
             }
         }
 
+        static int Propagate(string[] args, CultureInfo inv, out string stdout)
+        {
+            // propagate <kepler|onrails|auto> rx ry rz vx vy vz dt
+            if (args.Length != 9)
+            { stdout = Usage(); return 2; }
+            string mode = args[1].ToLowerInvariant();
+            if (mode != "kepler" && mode != "onrails" && mode != "auto")
+            { stdout = Usage(); return 2; }
+            if (!double.TryParse(args[2], NumberStyles.Float, inv, out double rx0)
+                || !double.TryParse(args[3], NumberStyles.Float, inv, out double ry0)
+                || !double.TryParse(args[4], NumberStyles.Float, inv, out double rz0)
+                || !double.TryParse(args[5], NumberStyles.Float, inv, out double vx0)
+                || !double.TryParse(args[6], NumberStyles.Float, inv, out double vy0)
+                || !double.TryParse(args[7], NumberStyles.Float, inv, out double vz0)
+                || !double.TryParse(args[8], NumberStyles.Float, inv, out double dt))
+            { stdout = Usage(); return 2; }
+
+            CoastMode? overrideMode = null;
+            if (mode == "kepler") overrideMode = CoastMode.Numeric;
+            else if (mode == "onrails") overrideMode = CoastMode.OnRails;
+
+            Handoff.PropagateCoast(rx0, ry0, rz0, vx0, vy0, vz0, dt,
+                out double rx, out double ry, out double rz, out double vx, out double vy, out double vz,
+                overrideMode);
+            string used = mode == "auto"
+                ? (Handoff.SelectCoast(rx0, ry0, rz0, vx0, vy0, vz0) == CoastMode.OnRails ? "onrails" : "kepler")
+                : mode;
+            stdout = "{\"mode\":\"" + used + "\",\"rx\":" + rx.ToString("R", inv)
+                + ",\"ry\":" + ry.ToString("R", inv) + ",\"rz\":" + rz.ToString("R", inv)
+                + ",\"vx\":" + vx.ToString("R", inv) + ",\"vy\":" + vy.ToString("R", inv)
+                + ",\"vz\":" + vz.ToString("R", inv) + "}";
+            return 0;
+        }
+
         static string Usage()
         {
             var sb = new StringBuilder();
-            sb.Append("kestrel atmo <zMetres> | era <year> <month> <day> <hoursUtc> | simulate | predict | mc | propagate");
+            sb.Append("kestrel atmo <zMetres> | era <year> <month> <day> <hoursUtc> | simulate | predict | mc | propagate <kepler|onrails|auto> <rx> <ry> <rz> <vx> <vy> <vz> <dt>");
             return sb.ToString();
         }
     }
