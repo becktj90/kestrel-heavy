@@ -1,0 +1,23 @@
+// One-line jargon tooltips (localization-ready: keyed strings).
+export const TIPS = Object.freeze({
+  dv: 'Δv (delta-v): how much the rocket can change its speed. Orbit needs about 9.4 km/s.',
+  twr: 'TWR: thrust ÷ weight. Above 1 lifts off; about 1.3 or more climbs briskly.',
+  isp: 'Isp: fuel efficiency in seconds. Higher means more push per kilogram of propellant.',
+  mdot: 'Mass flow: kilograms of propellant the engines burn each second.',
+  massRatio: 'Mass ratio: full mass ÷ empty mass. Bigger ratios give more Δv.',
+  burn: 'Burn time: how long the stage fires before its tanks run dry.',
+  losses: 'Losses: speed spent fighting gravity and air instead of going faster.',
+  apogee: 'Apogee: the highest point of the path.',
+  margin: 'Margin: spare Δv beyond what the target orbit needs.',
+  strapons: 'Strap-ons: side boosters that fire with the core and drop away when empty.',
+  crossfeed: 'Crossfeed: boosters feed fuel to the core so it starts full when they drop.',
+  fairing: 'Fairing: the nose shell that shields the payload through the air, then pops off.',
+  safety: 'Safety factor: how much stronger than needed the structure is. Higher = sturdier but heavier.',
+  avionics: 'Avionics: the flight computers. Redundant ones are heavier but more reliable.',
+  reserve: 'Landing reserve: propellant kept back so the booster can fly home and land.',
+  gridFins: 'Grid fins: lattice fins that steer the booster as it falls back.',
+  nose: 'Nose shape changes drag. Sleeker noses slip through the air more easily.',
+  reliability: 'Reliability: estimated chance the whole flight goes right. More engines = more ways to fail.',
+  tune: 'Tune: tweak this engine within ±15% of its catalog thrust and Isp.',
+  material: 'Material: lighter tanks cost more; steel is heavy but cheap and tough.',
+});

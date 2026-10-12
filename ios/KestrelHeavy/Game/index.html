@@ -9,6 +9,7 @@
       <meta name="arcade-asset-version" content="kestrel-22">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' kestrel-heavy:; script-src 'self' 'unsafe-inline' kestrel-heavy:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' kestrel-heavy:; worker-src 'self' blob:; media-src 'self' blob: kestrel-heavy:; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="./css/designer.css">
   <style>
     :root {
       --violet: #b7abff;
@@ -1289,6 +1290,9 @@
               <button type="button" id="ng-open-hangar">Hangar</button>
               <button type="button" id="ng-open-howto">How to play</button>
             </div>
+            <div class="cta-secondary">
+              <button type="button" id="ng-open-designer">Design</button>
+            </div>
           </div>
           <p id="ng-launch-tip">Tap to launch · then steer · stay between the dotted corridor rails · SEP ZONE then SEPARATE · glide then HOLD TO BURN Haven</p>
           <div class="manifest" role="group" aria-label="Flight manifest">
@@ -1517,5 +1521,6 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
   })();
   </script>
   <script type="module" src="./js/main.js"></script>
+  <script type="module" src="./js/designer/entry.js"></script>
 </body>
 </html>
