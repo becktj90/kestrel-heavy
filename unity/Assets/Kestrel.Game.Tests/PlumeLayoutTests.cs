@@ -165,7 +165,9 @@ namespace Kestrel.Game.Tests
                 pc.SetDeck(deck.transform);
                 Assert.That(pc.Body.collision.enabled, Is.True);
                 var c = pc.Body.collision;
-                Assert.That(c.lifetimeLoss.constant, Is.InRange(0.5f, 0.9f), "short-lived, faded after contact, not killed");
+                Assert.That(c.lifetimeLoss.constant, Is.EqualTo(0f), "#130: zero loss, deflected sprites shrink/fade by speed instead");
+                Assert.That(pc.Body.sizeBySpeed.enabled && pc.Body.colorBySpeed.enabled, Is.True, "deflected spray shrinks and greys by speed");
+                Assert.That(pc.Body.sizeOverLifetime.separateAxes, Is.True, "body sprites are born flat");
                 Assert.That(c.bounce.constant, Is.LessThanOrEqualTo(0.1f), "low bounce: slides sideways");
                 pc.Apply(0.9, PlumeShape.P0, 0);
                 Assert.That(pc.Body.transform.localPosition.magnitude, Is.LessThan(1e-4f), "body emitter at the nozzle plane");
@@ -202,7 +204,7 @@ namespace Kestrel.Game.Tests
             Assert.That(g.Evaluate(0.25f).a, Is.EqualTo(0.9f).Within(0.05f));
             var L = PlumeShape.ComputeLayout(1f, 1f, 14f, 7f, H, 20f);
             Assert.That(PlumeShape.BodyFadeRamp(L) * L.Length, Is.LessThanOrEqualTo(0.11f * 14f), "body ramp ~0.1 D of travel");
-            Assert.That(PlumeShape.BodyTailAlpha, Is.LessThanOrEqualTo(0.05f));
+            Assert.That(PlumeShape.BodyTailAt, Is.GreaterThanOrEqualTo(0.85f), "#130-v9: body stays visible over its designed length");
             Assert.That(PlumeShape.BodyDeckLifetimeLoss, Is.EqualTo(0f), "#130: deflected particles keep life/alpha so the body reaches its budget from ignition");
         }
 
@@ -214,10 +216,13 @@ namespace Kestrel.Game.Tests
             const float d = 12.38f, nozzleAboveDeck = 2.19f;
             var L = PlumeShape.ComputeLayout(0.9f, 1f, d, R, H, Deck);
             float tangential = (1f - PlumeShape.BodyDeckDampen) * Mathf.Sin((L.BodyConeDeg + 5f) * Mathf.Deg2Rad) + (1f - PlumeShape.BodyDeckDampen) * 0.2f;
-            float size = PlumeShape.BodySizeBySpeed(tangential) * L.BodyMax;
+            Assert.That(tangential, Is.LessThan(PlumeShape.DeflectSpeedFrac), "deflected particles fall in the shrunk/greyed band");
+            float size = PlumeShape.BodySizeBySpeed(tangential) * L.BodyMax * L.BodyGrow;
             float top = PlumeShape.BodyDeckRadiusScale * 0.5f * size + 0.5f * PlumeShape.PlumeFringeFraction * size;
             Assert.That(top, Is.LessThan(nozzleAboveDeck), "deflected sprite fringe stays below the nozzle exit on the pad");
             Assert.That(PlumeShape.BodySizeBySpeed(1f), Is.EqualTo(1f), "free-flying body unaffected");
+            Assert.That(PlumeShape.BodyDeflectSize, Is.LessThanOrEqualTo(0.06f), "#130-v9: no orange splash");
+            Assert.That(PlumeShape.DeflectAlpha, Is.LessThanOrEqualTo(0.35f));
         }
 
         // #130 review: core +2.84 m / diamonds +5.82 m above the exit at T+0.6 (deck bounce), diamonds 7-9.5 m below it later.
@@ -225,12 +230,27 @@ namespace Kestrel.Game.Tests
         public void CoreAndDiamondsStayAtTheExit()
         {
             Assert.That(PlumeShape.NearDeckBounce, Is.EqualTo(0f));
-            Assert.That(PlumeShape.NearDeckLifetimeLoss, Is.EqualTo(1f));
+            Assert.That(PlumeShape.NearDeckLifetimeLoss, Is.EqualTo(0f), "#130-v9: killing them left core 1/8, diamonds 2/20 at T+0.6");
             foreach (var d in new[] { 3f, 12.38f, 14f })
             {
                 float top = PlumeShape.DiamondTopDepth(d);
                 Assert.That(top, Is.GreaterThanOrEqualTo(0f), $"D {d}: no diamond fringe above the exit");
                 Assert.That(top, Is.LessThanOrEqualTo(0.5f), $"D {d}: first diamond touches the exit (<= 0.5 m below)");
+            }
+        }
+
+        // #130-v9 review: 4-5 m gap under the nozzle row at T+1.4-4.0, body topAboveNozzle +1.59 m at T+0.6.
+        [TestCase(1f, 1f), TestCase(0.9f, 1f), TestCase(0.4f, 1f), TestCase(1f, 0.3f)]
+        public void FlameStartsAtTheExitAndNothingAbove(float tf, float pa)
+        {
+            foreach (var d in new[] { 3f, 12.38f, 14f })
+            {
+                var L = PlumeShape.ComputeLayout(tf, pa, d, R, H, Deck);
+                Assert.That(PlumeShape.BodyTopAboveExit(L), Is.LessThanOrEqualTo(0f), $"D {d}: body fringe never above the exit");
+                Assert.That(PlumeShape.CoreTopAboveExit(L), Is.LessThanOrEqualTo(0f), $"D {d}: core fringe never above the exit");
+                Assert.That(PlumeShape.DiamondTopAboveExit(d), Is.LessThanOrEqualTo(0f), $"D {d}: diamonds never above the exit");
+                Assert.That(PlumeShape.BodyVisibleGap(L), Is.LessThanOrEqualTo(0.5f), $"D {d}: visible body starts within 0.5 m of the exit");
+                Assert.That(PlumeShape.DiamondTopDepth(d), Is.LessThanOrEqualTo(0.5f), $"D {d}: first diamond within 0.5 m of the exit");
             }
         }
 
