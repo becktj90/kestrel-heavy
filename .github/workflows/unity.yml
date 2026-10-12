@@ -43,6 +43,11 @@ jobs:
           restore-keys: |
             Library-test-${{ matrix.testMode }}-
             Library-
+      - name: Sync game data into Resources (gitignored copies; same as Kestrel > Sync Data)
+        if: env.HAS_LICENSE == 'true'
+        run: |
+          mkdir -p unity/Assets/Resources/KestrelData
+          cp data/*.json web/js/economy-data/constants.json unity/Assets/Resources/KestrelData/
       - uses: game-ci/unity-test-runner@v4
         if: env.HAS_LICENSE == 'true'
         id: tests
@@ -64,47 +69,14 @@ jobs:
         with:
           name: test-results-${{ matrix.testMode }}
           path: ${{ steps.tests.outputs.artifactsPath }}
-
-  capture:
-    name: Batchmode screenshots
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    env:
-      HAS_LICENSE: ${{ secrets.UNITY_LICENSE != '' }}
-    steps:
-      - uses: actions/checkout@v4
-        if: env.HAS_LICENSE == 'true'
-        with:
-          lfs: true
-      - uses: actions/cache@v4
-        if: env.HAS_LICENSE == 'true'
-        with:
-          path: unity/Library
-          key: Library-capture-${{ hashFiles('unity/Packages/manifest.json', 'unity/Packages/packages-lock.json', 'unity/ProjectSettings/**') }}
-          restore-keys: |
-            Library-capture-
-            Library-
-      # unity-builder's buildMethod runs any static editor method in batchmode (with a GPU-less
-      # software renderer); CiCapture writes PNGs and exits.
-      - uses: game-ci/unity-builder@v4
-        if: env.HAS_LICENSE == 'true'
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          unityVersion: ${{ env.UNITY_VERSION }}
-          projectPath: ${{ env.PROJECT_PATH }}
-          targetPlatform: iOS # iOS module needed to compile IconSetup.cs
-          buildMethod: Kestrel.EditorTools.CiCapture.Run
-          customParameters: -khCapOut /github/workspace/capture-out
-          allowDirtyBuild: true
+      # PlayMode = Kestrel.Capture.Tests: real scenes after 60 frames; fails on flat-colour images.
       - uses: actions/upload-artifact@v4
-        if: always() && env.HAS_LICENSE == 'true'
+        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'
         with:
           name: screenshots
-          path: capture-out/*.png
+          path: unity/CaptureOut/*.png
           if-no-files-found: warn
+
 
   ios-compile:
     name: iOS export compile-check (no Xcode)
@@ -125,6 +97,11 @@ jobs:
           restore-keys: |
             Library-iOS-
       # Produces the Xcode project only; compile errors in C# fail this step. Not archived or signed.
+      - name: Sync game data into Resources (gitignored copies; same as Kestrel > Sync Data)
+        if: env.HAS_LICENSE == 'true'
+        run: |
+          mkdir -p unity/Assets/Resources/KestrelData
+          cp data/*.json web/js/economy-data/constants.json unity/Assets/Resources/KestrelData/
       - uses: game-ci/unity-builder@v4
         if: env.HAS_LICENSE == 'true'
         env:
