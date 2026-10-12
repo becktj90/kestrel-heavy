@@ -20,13 +20,21 @@ namespace Kestrel.Slice.Editor
             Directory.CreateDirectory(path);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = new[] { SliceBootstrap.ScenePath },
+                scenes = BuildScenes(),
                 locationPathName = path,
                 target = BuildTarget.iOS,
                 options = BuildOptions.None,
             });
             Debug.Log($"[Kestrel] iOS export {report.summary.result} in {report.summary.totalTime} -> {path}");
             if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
+        }
+
+        // Ship the Build Settings scene list (Boot/Home/Design/Flight); fall back to the Slice sandbox only if empty.
+        static string[] BuildScenes()
+        {
+            var list = new System.Collections.Generic.List<string>();
+            foreach (var s in EditorBuildSettings.scenes) if (s.enabled) list.Add(s.path);
+            return list.Count > 0 ? list.ToArray() : new[] { SliceBootstrap.ScenePath };
         }
 
         static string Arg(string name)

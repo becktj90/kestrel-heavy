@@ -3,6 +3,7 @@
 // component (the editor bootstrap generates Assets/Scenes/Slice.unity).
 using System.Collections.Generic;
 using System.Linq;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
@@ -20,6 +21,10 @@ namespace Kestrel.Slice
         HangarCamera hangarCam; HangarExplodedView explodedView; Toggle explodeToggle;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
+        // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
+        public int OrbitsCompleted; public bool EngineerEnabled;
+        Label issueChip, launchReason; Button launchButton; DesignerState designerState;
+        static readonly string[] IssueControls = { "engines", "prop", "preset" };
 
         void Awake()
         {
@@ -108,7 +113,9 @@ namespace Kestrel.Slice
                 explodeToggle.tooltip = "Exploded view. Separates stages, engines and the fairing along the stack.";
                 explodeToggle.RegisterValueChangedCallback(e => SetExploded(e.newValue));
             }
-            ui.Q<Button>("launch").clicked += Launch;
+            launchButton = ui.Q<Button>("launch");
+            launchButton.clicked += Launch;
+            issueChip = ui.Q<Label>("issue-chip"); launchReason = ui.Q<Label>("launch-reason");
             again.clicked += () =>
             {
                 flight.enabled = false;
@@ -153,10 +160,11 @@ namespace Kestrel.Slice
             // Home control: top-left inside the safe area (+8 pt), 44 pt min target. Bottom handle and the
             // flight HUD never share this corner: Home is hidden whenever the HUD is shown.
             float sx = ui.layout.width / Mathf.Max(1, Screen.width), sy = ui.layout.height / Mathf.Max(1, Screen.height);
-            homeButton.style.left = Screen.safeArea.xMin * sx + 8f * upp;
-            homeButton.style.top = (Screen.height - Screen.safeArea.yMax) * sy + 8f * upp;
-            homeButton.style.minHeight = 44f * upp; homeButton.style.minWidth = 88f * upp;
-            homeButton.style.fontSize = 17f * upp;
+            homeButton.style.left = Screen.safeArea.xMin * sx + HomeButtonMetrics.InsetPt * upp;
+            homeButton.style.top = (Screen.height - Screen.safeArea.yMax) * sy + HomeButtonMetrics.InsetPt * upp;
+            // Fixed size in points on every device (was min-size only, with USS padding/radius in panel units,
+            // which are ~3.1 per pt on SE but ~1.1 per pt on iPad, so it grew on SE and shrank on iPad).
+            HomeButtonMetrics.Apply(homeButton.style, upp);
             designPanel.style.paddingBottom = designCollapsed ? bottom : Mathf.Max(8f * upp, bottom + 8f * upp);
         }
 
@@ -166,6 +174,7 @@ namespace Kestrel.Slice
             designPanel.EnableInClassList("collapsed", collapsed);
             if (ui != null) ApplyDesignPanelMetrics();
             ui.Q<Button>("launch").style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
+            var reason = ui.Q<Label>("launch-reason"); if (reason != null) reason.style.display = collapsed ? DisplayStyle.None : StyleKeyword.Null;
             designToggle.text = collapsed ? "▲  Design" : "▼  Design";
             // Accessibility pattern in this project is tooltip text (VoiceOver bridge is a listed gap, RESULTS.md).
             designToggle.tooltip = collapsed ? "Design panel, collapsed. Tap to expand." : "Design panel, expanded. Tap to collapse and see the whole rocket.";
@@ -208,7 +217,27 @@ namespace Kestrel.Slice
             rRel.text = $"Reliability {rel.reliability * 100:F1}%";
             rMass.text = $"Liftoff {m0 / 1000:N0} t";
             rTwr.style.color = twr < 1.15 ? new Color(1f, 0.4f, 0.4f) : new Color(0.78f, 0.86f, 1f);
+            ApplyValidation();
             BuildRocket();
+        }
+
+        /// <summary>U1: Validate.Engineering + Experience.Present -> chip, Launch gate + reason, control rings.</summary>
+        void ApplyValidation()
+        {
+            string layer = Experience.Resolve(OrbitsCompleted, EngineerEnabled, EngineerEnabled ? "engineer" : "standard").layer;
+            designerState = DesignerValidation.Evaluate(SliceData.Catalog, design, layer);
+            var st = designerState;
+            issueChip.text = st.chip;
+            issueChip.EnableInClassList("hidden", st.chip.Length == 0);
+            issueChip.EnableInClassList("warn-only", st.blocks.Count == 0);
+            issueChip.tooltip = st.chip.Length == 0 ? "" : st.chip + ". " + (st.blocks.Count > 0 ? DesignerValidation.Wording(st.blocks[0], layer) : DesignerValidation.Wording(st.warnings[0], layer));
+            launchButton.SetEnabled(st.launchEnabled);
+            launchReason.text = st.reason;
+            launchReason.EnableInClassList("hidden", st.launchEnabled);
+            launchButton.tooltip = st.launchEnabled ? "Roll out and launch the current design" : "Launch unavailable. " + st.reason;
+            foreach (var n in IssueControls) { var el = ui.Q(n); el.RemoveFromClassList("issue-block"); el.RemoveFromClassList("issue-warn"); }
+            foreach (var w in st.warnings) ui.Q(DesignerValidation.ControlFor(w))?.AddToClassList("issue-warn");
+            foreach (var b in st.blocks) { var el = ui.Q(DesignerValidation.ControlFor(b)); el?.RemoveFromClassList("issue-warn"); el?.AddToClassList("issue-block"); }
         }
 
         void BuildRocket()
@@ -364,8 +393,26 @@ namespace Kestrel.Slice
             UnityEngine.SceneManagement.SceneManager.LoadScene(0, UnityEngine.SceneManagement.LoadSceneMode.Single);
         }
 
+        /// <summary>◀ Home: 88 x 44 pt, 17 pt bold, 12 pt corners, 8 pt inset from the safe area.</summary>
+        public static class HomeButtonMetrics
+        {
+            public const float WidthPt = 88f, HeightPt = 44f, FontPt = 17f, RadiusPt = 12f, PadPt = 8f, InsetPt = 8f;
+            public static void Apply(IStyle st, float upp)
+            {
+                st.width = WidthPt * upp; st.height = HeightPt * upp;
+                st.minWidth = WidthPt * upp; st.minHeight = HeightPt * upp;
+                st.maxWidth = WidthPt * upp; st.maxHeight = HeightPt * upp;
+                st.fontSize = FontPt * upp;
+                st.paddingLeft = PadPt * upp; st.paddingRight = PadPt * upp; st.paddingTop = 0; st.paddingBottom = 0;
+                float r = RadiusPt * upp;
+                st.borderTopLeftRadius = r; st.borderTopRightRadius = r; st.borderBottomLeftRadius = r; st.borderBottomRightRadius = r;
+                st.unityTextAlign = TextAnchor.MiddleCenter;
+            }
+        }
+
         void Launch()
         {
+            if (designerState != null && !designerState.launchEnabled) return; // U1: blocks gate Launch
             submitted = false;
             if (explodeToggle != null) explodeToggle.SetValueWithoutNotify(false);
             if (explodedView != null) explodedView.SetExploded(false, true);
