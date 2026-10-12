@@ -1,9 +1,51 @@
 import { BOOST_BUFFER_SEC, BOOST_COYOTE_SEC } from './config.js';
+import { STEER } from './steer-tune.js';
 
 /** Pixels of thumb travel before climb-pad drag arms analog steer. */
-export const TOUCH_STEER_DEAD_PX = 14;
-/** Horizontal drag that maps to full analog deflection. */
-export const TOUCH_STEER_FULL_PX = 110;
+export const TOUCH_STEER_DEAD_PX = STEER.deadPx;
+/** Horizontal drag that maps to full analog deflection on a normal phone. */
+export const TOUCH_STEER_FULL_PX = STEER.fullPx;
+/** Shorter thumb travel to full deflection on a small phone. */
+export const TOUCH_STEER_FULL_PX_COMPACT = STEER.fullPxCompact;
+export const TOUCH_STEER_EXPO = STEER.expo;
+
+let steerSensitivity = STEER.sensitivity.default;
+
+export function clampSteerSensitivity(value) {
+  const n = Number(value);
+  const { min, max, default: fallback } = STEER.sensitivity;
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
+export function setSteerSensitivity(value) {
+  steerSensitivity = clampSteerSensitivity(value);
+  return steerSensitivity;
+}
+
+export function getSteerSensitivity() {
+  return steerSensitivity;
+}
+
+/** Full-scale thumb travel. Small portrait phones use the shorter range. */
+export function steerFullPx(viewportWidth) {
+  const w = Number(viewportWidth);
+  if (Number.isFinite(w) && w > 0 && w <= STEER.compactMaxWidth) return STEER.fullPxCompact;
+  return STEER.fullPx;
+}
+
+/**
+ * Expo curve: sign(dx) * (|dx| / (fullPx / sensitivity)) ^ expo, clamped to [-1, 1].
+ * At sensitivity 1 and fullPx 110 this is (dx/110)^1.6.
+ */
+export function applySteerCurve(dxPx, opts = {}) {
+  const sensitivity = clampSteerSensitivity(opts.sensitivity ?? steerSensitivity);
+  const full = (opts.fullPx ?? steerFullPx(opts.viewportWidth)) / sensitivity;
+  const span = Math.max(1, full);
+  const t = Math.max(-1, Math.min(1, dxPx / span));
+  const mag = Math.abs(t) ** TOUCH_STEER_EXPO;
+  return Math.max(-1, Math.min(1, Math.sign(t) * mag));
+}
 
 export function createInput() {
   return {
@@ -48,10 +90,10 @@ export function steerAxis(input) {
  * One-thumb climb pad: hold still does not steal ◀ ▶ / canvas analog.
  * Past the deadzone, horizontal drag is analog steer in [-1, 1].
  */
-export function peekTouchSteer(dxPx, armed = false) {
+export function peekTouchSteer(dxPx, armed = false, opts = {}) {
   if (dxPx == null || !Number.isFinite(dxPx)) return 0;
   if (!armed && Math.abs(dxPx) < TOUCH_STEER_DEAD_PX) return 0;
-  return Math.max(-1, Math.min(1, dxPx / TOUCH_STEER_FULL_PX));
+  return applySteerCurve(dxPx, opts);
 }
 
 export function setTouchSteer(input, dxPx) {
@@ -62,7 +104,8 @@ export function setTouchSteer(input, dxPx) {
   }
   if (!input.touchSteerArmed && Math.abs(dxPx) < TOUCH_STEER_DEAD_PX) return input.touchSteer;
   input.touchSteerArmed = true;
-  input.touchSteer = peekTouchSteer(dxPx, true);
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : undefined;
+  input.touchSteer = peekTouchSteer(dxPx, true, { viewportWidth });
   return input.touchSteer;
 }
 
