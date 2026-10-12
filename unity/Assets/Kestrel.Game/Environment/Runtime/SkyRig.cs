@@ -262,12 +262,19 @@ namespace Kestrel.Game.Environment
             if (_mat != null) return;
             var shader = Resources.Load<Shader>(ShaderResource);
             if (shader == null) shader = Shader.Find("Kestrel/Sky");
-            if (shader == null)
+            if (IsErrorShader(shader))
             {
                 Debug.LogError("[Kestrel] Kestrel/Sky shader missing");
                 return;
             }
             _mat = new Material(shader) { name = "KH_Sky" };
+            if (IsErrorShader(_mat.shader))
+            {
+                Destroy(_mat);
+                _mat = null;
+                Debug.LogError("[Kestrel] Kestrel/Sky shader failed; solid clear instead of magenta");
+                return;
+            }
             _mat.hideFlags = HideFlags.HideAndDontSave;
             RenderSettings.skybox = _mat;
             if (View != null) View.clearFlags = CameraClearFlags.Skybox;
@@ -305,8 +312,20 @@ namespace Kestrel.Game.Environment
             return null;
         }
 
+        static bool IsErrorShader(Shader shader)
+        {
+            if (shader == null) return true;
+            string n = shader.name;
+            return !string.IsNullOrEmpty(n) && n.IndexOf("InternalError", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         void Apply(SkyGrade g, SkyVec sun)
         {
+            if (_mat != null && IsErrorShader(_mat.shader))
+            {
+                Destroy(_mat);
+                _mat = null;
+            }
             var horizon = Display(g.Horizon);
             if (_mat == null)
             {
@@ -387,7 +406,10 @@ namespace Kestrel.Game.Environment
         static Color Display(Rgb c)
         {
             var s = c.ToSrgb();
-            return new Color((float)s.R, (float)s.G, (float)s.B, 1f);
+            var col = new Color((float)s.R, (float)s.G, (float)s.B, 1f);
+            // Missing-shader magenta must not become a clear colour or a fog colour.
+            if (col.r > 0.9f && col.b > 0.9f && col.g < 0.2f) return Color.black;
+            return col;
         }
 
         void OnDestroy()
