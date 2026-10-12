@@ -130,6 +130,25 @@ The absolute term is the floor (the quantity is allowed to be ~0). The relative 
 }
 ```
 
+## Upper atmosphere (S2)
+
+`UpperAtmosphere.At` is `Atmosphere.At`. There is no second density table and no new tolerance. The bands in the block above are unchanged. A coarse knot fit was dropped: log-linear segments were about 25% off in density between 120 and 150 km. The USSA76 5 km tabulation now lives inside `Atmosphere.At` (86–1000 km). NRLMSIS is not a source. The later model is Jacchia-71-class from the NASA/SAO reports.
+
+`asc.karman` is an observational MissionEvent at 100 km geometric altitude. It does not change the ascent step or the sim event list. Star positions, if a caller needs them, come from `StarCatalog` and `data/astro/bsc5p-compact.csv`.
+
+## Frames (P1)
+
+`Frames` is WGS-84 geodetic ↔ ECEF, and ECEF ↔ ECI by the IAU 2000 Earth rotation angle. No polar motion, no precession, no nutation. The calendar conversion is `Kestrel.Core.Astro.Time.JulianDate` at 0 h. UT1 is taken as UTC. ERA takes that midnight Julian date and the day fraction as two parts (SOFA era00); they are not added before the polynomial. `EraSiderealSeconds` is that angle in sidereal seconds, not the older GMST polynomial, so it is not yet a USNO sidereal-time comparison. J2 is a field on `data/bodies.json` and is not applied.
+
+The ellipsoid check at the equator is the defining semi-major axis. The pole is the derived semi-minor axis `a(1−f)`. Round trip is geodetic → ECEF → geodetic → ECEF, including the equator, both poles, height −1 km, and height 36,000 km.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| geodeticRoundTrip | 1e-6 m | 0 | Bowring plus two Newton updates, including ±90°, the equator, h = −1 km, and h = 36,000 km. One micrometre is far below a game frame and above the iteration leftover. |
+| ellipsoidAxis | 1e-4 m | 0 | Equator is `a` to 1e-6 m. The pole uses 1e-4 m because `cos(lat)` vanishes and the height split is the polar branch. |
+| eraClosed | 1e-9 rad | 0 | Two-part IAU polynomial, reduced to `[0, 2π)`. A packed JD is coarser than this band (about 1.4e-9 rad on the fractional-hour cases). 1e-9 rad is about 4 µs of Earth rotation. The band is not relaxed. |
+| eciRoundTrip | 1e-6 m | 0 | One rotation and its transpose, plus `ω × r` with `Earth.OMEGA_EARTH`. The angle is the two-part ERA. Velocity absolute is 1e-9 m/s. |
+
 ## 3-DOF ascent (P7a)
 
 `Ascent3Dof` integrates `[x, y, z, vx, vy, vz, m]` with the same guidance, atmosphere, and point-mass gravity as `Headless`. `SimulatePlanar` seeds `z = vz = 0` on that pad state and uses the same air rate, `Ω cos φ`. In that plane the steps match the 2-D flights: every `simulate.json` case and every catalog ascent. No J2, and no wind shear.

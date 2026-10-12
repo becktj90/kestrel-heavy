@@ -1,48 +1,48 @@
-// Launch tower for the slice pad.
-//
-// The "small grey box at the bottom left of 02-liftoff" was the old tower: a bare 4 x 90 x 4 m
-// CreatePrimitive(Cube) at (-14, 45, 0) with the default grey material (bodyMat was applied to the
-// ground only) and a fixed 90 m height regardless of the rocket. At T+4 s (~100 m) the chase camera,
-// below and to the right of the vehicle, sees only the tower's top end, so it read as a stray box.
-// Now it is a dark steel mast sized to the rocket (top just above the fairing), with a service arm,
-// set behind the vehicle (+z, away from the camera), with colliders removed.
+// Launch tower for the slice pad. Entry point kept from #81 (Create / Apply / Fit); since D1 the inside is the
+// seeded pad generator + instanced structural steel (Kestrel.Pad, docs/PAD_VEHICLE_DETAIL_AUDIT.md §10 Q2).
+// History: the original was a bare grey 4 x 90 x 4 m cube that read as a stray box at liftoff (#81 fixed sizing).
+// The generated pad's +Z axis (umbilical contract: "+Z toward the pad tower") is yawed to point at the Fit position,
+// behind the vehicle and away from the chase camera.
+using Kestrel.Pad;
 using UnityEngine;
 
 namespace Kestrel.Slice
 {
     public static class PadTower
     {
+        /// <summary>Kept for compatibility; the generated tower uses MaterialLibrary (Kit) roles.</summary>
         public static readonly Color Steel = new Color(0.16f, 0.17f, 0.19f);
         public const float MastWidth = 4f, Clearance = 6f, Behind = 6f, Overtop = 1.08f;
+        public const int DefaultSeed = 1;
 
-        /// <summary>Mast centre (x, z) and height for a rocket of height h and max half-width r (metres).</summary>
+        /// <summary>Tower direction (x, z) and minimum height for a rocket of height h and max half-width r (metres).</summary>
         public static (float x, float z, float height) Fit(float h, float r) =>
             (-(r + Clearance + MastWidth * 0.5f), Behind, Mathf.Max(20f, h * Overtop));
 
+        /// <summary>Same rule as Kestrel.Core.Timeline.Pad.For when only size is known: tower for stages >= 3 m across.</summary>
+        public static PadArchetype DefaultArchetype(float r) => r * 2f >= 3f ? PadArchetype.Tower : PadArchetype.Rail;
+
         public static Transform Create(Material template)
         {
+            // template no longer used (Kit materials are shared, SRP Batcher friendly); parameter kept for callers.
             var root = new GameObject("PadTower").transform;
-            Material m = null;
-            if (template != null) m = new Material(template) { color = Steel, name = "KH_TowerSteel" };
-            Part(root, "Mast", m); Part(root, "Arm", m);
+            var pad = new GameObject("Pad").transform; pad.SetParent(root, false);
             return root;
         }
 
-        static void Part(Transform root, string name, Material m)
-        {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; go.transform.SetParent(root, false);
-            Object.Destroy(go.GetComponent<Collider>());
-            if (m != null) go.GetComponent<Renderer>().sharedMaterial = m;
-        }
+        public static void Apply(Transform root, float h, float r) => Apply(root, h, r, DefaultArchetype(r), DefaultSeed);
 
-        /// <summary>Resize for the current design. root sits at the pad origin (anchored by FlightDriver).</summary>
-        public static void Apply(Transform root, float h, float r)
+        /// <summary>Regenerate for the current design. root sits at the pad origin (anchored by FlightDriver).
+        /// Same (h, r, archetype, seed) is a no-op.</summary>
+        public static PadRenderer Apply(Transform root, float h, float r, PadArchetype type, int seed)
         {
-            var (x, z, height) = Fit(h, r);
-            var mast = root.Find("Mast"); var arm = root.Find("Arm");
-            mast.localScale = new Vector3(MastWidth, height, MastWidth); mast.localPosition = new Vector3(x, height * 0.5f, z);
-            float armLen = -x - r * 0.5f;                       // reaches toward the vehicle without touching it
-            arm.localScale = new Vector3(armLen, 1.5f, 2f); arm.localPosition = new Vector3(x + armLen * 0.5f, h * 0.85f, z);
+            var pad = root.Find("Pad"); if (pad == null) { pad = new GameObject("Pad").transform; pad.SetParent(root, false); }
+            var (x, z, _) = Fit(h, r);
+            pad.localPosition = Vector3.zero; pad.localRotation = Quaternion.Euler(0, Mathf.Atan2(x, z) * Mathf.Rad2Deg, 0);
+            var existing = pad.GetComponent<PadRenderer>();
+            var L = existing != null ? existing.Layout : null;
+            if (L != null && L.Seed == seed && L.Archetype == type && Mathf.Approximately(L.Fit.VehicleHeight, h) && Mathf.Approximately(L.Fit.VehicleRadius, r)) return existing;
+            return PadBuilder.Build(pad, seed, type, new PadFit(h, r, Clearance));
         }
     }
 }

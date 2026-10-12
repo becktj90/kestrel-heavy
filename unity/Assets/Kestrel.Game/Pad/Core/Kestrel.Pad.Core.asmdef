@@ -1,0 +1,14 @@
+{
+    "name": "Kestrel.Pad.Core",
+    "rootNamespace": "Kestrel.Pad",
+    "references": ["Kestrel.Kit.Core", "Kestrel.Kit.Contracts"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -38,6 +38,8 @@ namespace Kestrel.Core.Physics
         public double maxQ, maxQTime, maxG, lossGravity, lossDrag, lossSteering, idealDeltaV, deltaVExpended, finalMass;
         public double x, y, vx, vy, m;
         public List<SimSample> samples; public List<string> warnings;
+        /// <summary>First integrator step with geometric altitude &gt;= 100 km. Observational: it does not change the step or the event list.</summary>
+        public double? KarmanTime;
     }
 
     public static class Headless
@@ -106,7 +108,7 @@ namespace Kestrel.Core.Physics
         public readonly List<SimSample> Samples = new List<SimSample>();
         public int StageCount => st.Length;
         double maxQ, maxQTime, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1;
-        bool liftedOff; string outcome = "timeout";
+        bool liftedOff, sawKarman; double karmanT; string outcome = "timeout";
 
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
         public double LastP, LastQ, LastMach, LastThrust;
@@ -245,6 +247,7 @@ namespace Kestrel.Core.Physics
 
             double r1 = JsMath.Hypot(Y[0], Y[1]), alt1 = r1 - Gravity.R_EARTH;
             if (!liftedOff && alt1 > 1) { liftedOff = true; Events.Add(new SimEvent { t = T, type = "liftoff" }); }
+            if (!sawKarman && alt1 >= UpperAtmosphere.KarmanM) { sawKarman = true; karmanT = T; }
             if (alt1 < 0)
             {
                 if (!liftedOff && Thrusting) { Y[0] = 0; Y[1] = Gravity.R_EARTH; Y[2] = -vSite; Y[3] = 0; return true; }
@@ -276,6 +279,7 @@ namespace Kestrel.Core.Physics
                 lossGravity = lossG, lossDrag = lossD, lossSteering = lossS,
                 idealDeltaV = Headless.StackDeltaV(stagesIn, o.payload).total, deltaVExpended = dvExp, finalMass = Y[4],
                 x = Y[0], y = Y[1], vx = Y[2], vy = Y[3], m = Y[4], samples = Samples, warnings = warnings,
+                KarmanTime = sawKarman ? (double?)karmanT : null,
             };
         }
     }
