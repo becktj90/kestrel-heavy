@@ -8,7 +8,7 @@ Read for this audit: `unity/` (Kestrel.Slice runtime, Kestrel.Core Vehicle/Timel
 
 | Area | What exists | Where | Gap |
 |---|---|---|---|
-| Pad geometry | `Plane` ground, `Cylinder` pad 30×0.5×30, `Cube` tower 4×90×4 at x=−14. Unity primitives, ~3 draw calls. | `SliceApp.cs:41-50` | No structure, no members, no plumbing. PadTower replacement (#81) is **not on main** (open/unmerged); D1 must reconcile with it, not fork it. |
+| Pad geometry | `Plane` ground, `Cylinder` pad 30×0.5×30, `Cube` tower 4×90×4 at x=−14. Unity primitives, ~3 draw calls. | `SliceApp.cs:41-50` | No structure, no members, no plumbing. #81 merged `PadTower` (`Kestrel.Slice/Runtime/PadTower.cs`) replacing the tower cube; D1 rebuilds its internals behind the same `PadTower` entry point, not a fork. |
 | Pad generator ("G") | **Not implemented in Unity.** Spec only: U6 "seeded pad generator" (G2/G3/G6). Logic stub `Pad.For(Catalog, Design)` returns hardware flags (`crewArms, strongback, umbilical, deluge, internalPower`, id `pad.tower`/`pad.rail`). | `Kestrel.Core/Timeline/PadMission.cs:8-45`, UNITY_SHIP_PLAN §U6 | D deepens this: `Pad` becomes the generator's output root; no second pad model. |
 | Rocket geometry | Lathe (surface-of-revolution) mesh, 32 segments, from the same core math as physics (`DesignMath.SizeTank`, catalog exit diameters). Stages + nested upper bells + fairing ogive. Single mesh, single material. | `RocketMeshBuilder.cs` (137 lines) | No interstage detail, cloned identical bells, no plumbing, welds, stringers, raceways, legs, grid fins, decals, frost. |
 | Materials | `Resources/Materials/KH_Body` (instanced per object with colour override: ground, pad, livery primary), `KH_Plume` + generated soft sprite (#79). | `SliceApp.cs:24-25,43,125` | Per-object `new Material()` breaks SRP Batcher grouping; no PBR maps, no masks, no LOD. |
@@ -110,7 +110,7 @@ Contract file `Umbilical.cs` lives in Core (Gameplay Dev path) but changes need 
 | Step | D | V | Gate / dependency | Collision notes |
 |---|---|---|---|---|
 | P0-1 | Kit + material palette + LOD rules; contract spec; ENGINEERING_RULES docs | — | U2 done | Kit only in `Kit/**`. |
-| P0-2 | D1 members (deepens G tower; absorbs #81 PadTower) | V2 shells/welds/stringers (deepens RocketMeshBuilder) | U4 render | SliceApp.cs: only Kestrel Arcade wires new builders, one PR per lane. |
+| P0-2 | D1 members (deepens G tower; rebuilds merged #81 PadTower internals) | V2 shells/welds/stringers (deepens RocketMeshBuilder) | U4 render | SliceApp.cs: only Kestrel Arcade wires new builders, one PR per lane. |
 | P0-3 | D2 piping/tanks + D5 umbilicals | V1 engines + V3 raceways/plates | contract merged | Both read `Umbilical.cs`; neither edits it. |
 | P0-4 | D3 deluge/trench, D4 utilities | V4 legs/fins | U6 G2/G3 seeded generator | Water particles share plume budget with R6 → joint perf test. |
 | P0-5 | D6 lighting/props/wear | V5 livery/decals/frost, V6 aging | R3 sky lighting for exposure | Wear model shared, owned by Kit. |
@@ -119,7 +119,7 @@ Ordering vs others: U1–U3 unaffected; D/V P0-1…P0-3 run in U4, P0-4…P0-6 i
 
 ## 10. Scope questions (with recommendations)
 1. **Pad generator (G) first?** G2/G3 seeded generator isn't built yet. *Rec:* build G's seeded layout as D's first PR (P0-2) rather than as a separate U6 item, so there is one generator.
-2. **#81 PadTower:** merge as-is and have D1 replace its internals, or close it? *Rec:* merge #81 (it's tested and visible), D1 replaces its mesh behind the same `PadTower` entry point.
+2. **#81 PadTower:** *Resolved:* #81 is merged; D1 replaces its mesh behind the same `PadTower` entry point.
 3. **Number of pad archetypes in 2.0:** *Rec:* 3 seeded archetypes (rail pad for small solids, tower pad, tower+strongback heavy pad), seed varies layout; more in 1.1.
 4. **Tank farm and cooling towers in 2.0?** *Rec:* yes, but D4 utilities/cooling towers as mid/far impostor-quality only.
 5. **Pad Walk in 2.0?** *Rec:* yes as a rail-guided portrait camera tour (Medium/High); Low gets orbit inspect only. Free-roam walk is 1.1.
@@ -139,3 +139,19 @@ Ordering vs others: U1–U3 unaffected; D/V P0-1…P0-3 run in U4, P0-4…P0-6 i
 19. **Trademark/marking check:** *Rec:* serial format, heritage marks and liveries go through the NAME_REVIEW process before 2.0 store screenshots.
 
 Gates unchanged: Trevor keeps spend, signing and App Store Connect.
+
+## 11. Approved scope (DECISIONS #46–#49)
+Chief of Staff approved all 19 recommendations in §10 (Q2 already resolved by #81's merge), with these notes:
+- **Umbilical contract (Q16):** Graphics Dev owns the contract doc and the visual side; Gameplay Dev owns the Core type `Umbilical.cs`. Any schema change needs review from Graphics Dev, Gameplay Dev and Art, plus a DECISIONS entry.
+- **Must be solid in 2.0 (Q10/Q13):** cutaway view, inspect mode and the Fleet/Reuse tracker (serial, flights, landings, wear level). These are release-blocking for 2.0, not stretch.
+- **Budget cuts (Q15):** if pad+vehicle exceed §3, cut far-field props first (site props, D4 utilities/cooling towers, distant lighting masts, impostor density), then mid-field. Close-up hero detail on the pad (tower, arms, umbilicals, deluge/trench) and the rocket is cut last.
+
+### Deferred to 1.1 (honest list)
+| Item | 2.0 | 1.1 |
+|---|---|---|
+| Exploded and load-path views | Only if P0-6 is on schedule; not promised | Committed |
+| Fleet tracker | Serial, flights, landings, wear | History charts |
+| Livery | Presets, 2 colours, fictional serial, earned heritage marks | Free-form decal painting |
+| Pad Walk | Rail-guided tour (Medium/High); Low = orbit inspect | Free-roam walk |
+| Pad archetypes | 3 seeded archetypes | More archetypes |
+| Photo Mode | Not in 2.0 (G7) | Photo Mode incl. pad/vehicle and space shots |
