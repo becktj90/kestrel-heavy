@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kestrel Heavy fins and grid fins (fictional)",
+  "type": "object",
+  "required": ["version", "fins"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "fins": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "kind", "planform", "span", "count", "mass", "cost"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "label": { "type": "string" },
+          "kind": { "enum": ["fin", "gridfin"] },
+          "planform": { "enum": ["trapezoid", "clipped-delta", "swept", "square-lattice", "diamond-lattice"] },
+          "span": { "type": "number", "exclusiveMinimum": 0, "description": "m, one fin, root to tip" },
+          "rootChord": { "type": "number", "exclusiveMinimum": 0, "description": "m" },
+          "count": { "type": "integer", "minimum": 3, "maximum": 4 },
+          "mass": { "type": "number", "exclusiveMinimum": 0, "description": "kg, whole set" },
+          "cost": { "type": "number", "minimum": 0, "description": "USD, whole set" },
+          "diameterMin": { "type": "number", "exclusiveMinimum": 0, "description": "m, smallest stage this set fits" },
+          "diameterMax": { "type": "number", "exclusiveMinimum": 0, "description": "m, largest stage this set fits" },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}

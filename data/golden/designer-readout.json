@@ -90,7 +90,7 @@
   {
    "kind": "hand",
    "name": "ogive-fins",
-    "cite": "Ogive Xn = 0.466 Ln. Fins: N = 4, unswept square, span = chord = 1 m, trailing edge at the base. Mid-chord l_F = span, so the CNa denominator is 1+sqrt(2). Kfb = 1 + R/(s+R).",
+   "cite": "Ogive Xn = 0.466 Ln. Fins: N = 4, unswept square, span = chord = 1 m, trailing edge at the base. Mid-chord l_F = span, so the CNa denominator is 1+sqrt(2). Kfb = 1 + R/(s+R).",
    "design": {
     "version": 1,
     "name": "Pencil",

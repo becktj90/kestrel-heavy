@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kestrel Heavy payload fairings (fictional)",
+  "type": "object",
+  "required": ["version", "fairings"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "fairings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "shape", "material", "diameter", "length", "mass", "cost", "cd"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "label": { "type": "string" },
+          "shape": { "enum": ["ogive", "von-karman", "conic", "biconic", "hammerhead", "capsule-tower"] },
+          "material": { "type": "string" },
+          "diameter": { "type": "number", "exclusiveMinimum": 0, "description": "m" },
+          "length": { "type": "number", "exclusiveMinimum": 0, "description": "m" },
+          "mass": { "type": "number", "exclusiveMinimum": 0, "description": "kg" },
+          "cost": { "type": "number", "minimum": 0, "description": "USD" },
+          "cd": { "type": "number", "exclusiveMinimum": 0, "description": "subsonic drag coefficient of this nose" },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}

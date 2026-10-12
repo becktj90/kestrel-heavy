@@ -41,6 +41,41 @@ test('engine catalog is generic and self-consistent', async () => {
   }
 });
 
+test('tank, fairing, interstage and fin catalogs reference real materials', async () => {
+  const { MATERIAL_BY_ID } = await import(path.join(js, 'data/materials.js'));
+  const { PROPELLANT_BY_ID } = await import(path.join(js, 'data/propellants.js'));
+  const { TANKS } = await import(path.join(js, 'data/tanks.js'));
+  const { FAIRINGS } = await import(path.join(js, 'data/fairings.js'));
+  const { INTERSTAGES } = await import(path.join(js, 'data/interstages.js'));
+  const { FINS } = await import(path.join(js, 'data/fins.js'));
+  const ids = (rows) => {
+    const seen = new Set();
+    for (const row of rows) {
+      assert.ok(!seen.has(row.id), `duplicate ${row.id}`);
+      seen.add(row.id);
+    }
+  };
+  ids(TANKS); ids(FAIRINGS); ids(INTERSTAGES); ids(FINS);
+  for (const t of TANKS) {
+    assert.ok(MATERIAL_BY_ID[t.material], t.id);
+    if (t.propellant) assert.ok(PROPELLANT_BY_ID[t.propellant], t.id);
+    assert.ok(t.dryMass > 0 && t.cost > 0 && t.diameter > 0 && t.length > 0, t.id);
+  }
+  for (const f of FAIRINGS) {
+    assert.ok(MATERIAL_BY_ID[f.material], f.id);
+    assert.ok(f.mass > 0 && f.cost > 0 && f.diameter > 0 && f.cd > 0 && f.cd < 1, f.id);
+  }
+  for (const s of INTERSTAGES) {
+    assert.ok(MATERIAL_BY_ID[s.material], s.id);
+    assert.ok(s.mass > 0 && s.cost > 0 && s.dragDeltaCd >= 0 && s.dragDeltaCd < 0.2, s.id);
+  }
+  for (const fin of FINS) {
+    assert.ok(fin.mass > 0 && fin.cost > 0 && fin.span > 0, fin.id);
+    assert.ok(fin.count === 3 || fin.count === 4, fin.id);
+    if (fin.diameterMin && fin.diameterMax) assert.ok(fin.diameterMax > fin.diameterMin, fin.id);
+  }
+});
+
 test('materials and payloads', async () => {
   const { MATERIALS } = await import(path.join(js, 'data/materials.js'));
   const { PAYLOADS, ORBITS } = await import(path.join(js, 'data/payloads.js'));
