@@ -1,6 +1,6 @@
-# Kestrel Heavy — 1.0 App Store listing (paid $0.99 draft)
+# Kestrel Heavy — 1.0.1 App Store listing (paid $0.99 draft)
 
-Prepared 2026-10-11. Nothing here has been submitted. Scheme **KestrelHeavy**, bundle ID `com.beckify.kestrelheavy`, team `9TR6R5LV8M`, version **1.0 (6)**.
+Prepared 2026-10-11. Nothing here has been submitted. Scheme **KestrelHeavy**, bundle ID `com.beckify.kestrelheavy`, team `9TR6R5LV8M`, version **1.0.1 (7)**.
 
 ## Listing
 
@@ -33,7 +33,7 @@ Kestrel Heavy is a one-thumb launch-and-landing arcade game. Light the engines a
 
 Kestrel Heavy, Pier 7 and Haven are original fiction. Not affiliated with any launch provider or space agency.
 
-**What's New (1.0):** First release: five flights, three skill levels, landing medals, Game Center leaderboards, hangar unlocks, fully offline.
+**What's New (1.0.1):** First release: five flights, three skill levels, landing medals, Game Center leaderboards, hangar unlocks, fully offline.
 
 Support URL https://beckify.com · Marketing URL https://beckify.com/games/kestrel-heavy · Privacy https://beckify.com/privacy · Copyright 2026 Trevor Beck
 
@@ -50,9 +50,9 @@ iPhone 6.9" (1320×2868) and iPad 13" (2064×2752, required because the target s
 
 ## Game Center leaderboards (create these in App Store Connect)
 
-The 1.0 (6) build submits one score per finished flight (the same score shown on the results screen) to that flight's leaderboard. It authenticates the local player quietly when the cabinet loads. Offline, signed out, or a leaderboard that isn't live yet are all silent no-ops (up to 20 scores are queued until sign-in). The bridge is the `kestrelGameCenter` WKWebView message handler (`Game/js/gamecenter.js` → `KestrelHeavyGameCenter` in `KestrelHeavyGameView.swift`).
+The 1.0.1 (7) build submits one score per finished flight (the same score shown on the results screen) to that flight's leaderboard. It authenticates the local player quietly when the cabinet loads. Offline, signed out, or a leaderboard that isn't live yet are all silent no-ops (up to 20 scores are queued until sign-in). The bridge is the `kestrelGameCenter` WKWebView message handler (`Game/js/gamecenter.js` → `KestrelHeavyGameCenter` in `KestrelHeavyGameView.swift`).
 
-App Store Connect → Apps → Kestrel Heavy → **Services → Game Center** (enable it for the app if prompted, and on the 1.0 version page tick **Game Center**). Then **Leaderboards → +** → **Classic Leaderboard**, five times:
+App Store Connect → Apps → Kestrel Heavy → **Services → Game Center** (enable it for the app if prompted, and on the 1.0.1 version page tick **Game Center**). Then **Leaderboards → +** → **Classic Leaderboard**, five times:
 
 | Leaderboard ID | Reference name | Display name (English U.S.) | Score format | Submission type | Sort order | Score range |
 |---|---|---|---|---|---|---|
@@ -62,7 +62,7 @@ App Store Connect → Apps → Kestrel Heavy → **Services → Game Center** (e
 | `com.beckify.kestrelheavy.lb.kh4` | KH-4 Nightglass | KH-4 · Nightglass | Integer | Best Score | High to Low | 0 – 10000000 |
 | `com.beckify.kestrelheavy.lb.kh5` | KH-5 Lumen Tug | KH-5 · Lumen Tug | Integer | Best Score | High to Low | 0 – 10000000 |
 
-For each one: **Score Format Suffix** none, **Leaderboard Image** optional (512×512 or 1024×1024), and add **English (U.S.)** localization with the display name above and Integer formatting. Leaderboard IDs are permanent, so type them exactly. Leaderboards go live with the app version they're attached to, so add all five to the 1.0 version before you submit it for review. Testing in TestFlight uses the Game Center sandbox automatically.
+For each one: **Score Format Suffix** none, **Leaderboard Image** optional (512×512 or 1024×1024), and add **English (U.S.)** localization with the display name above and Integer formatting. Leaderboard IDs are permanent, so type them exactly. Leaderboards go live with the app version they're attached to, so add all five to the 1.0.1 version before you submit it for review. Testing in TestFlight uses the Game Center sandbox automatically.
 
 ## Medals
 
