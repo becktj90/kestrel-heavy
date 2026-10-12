@@ -21,25 +21,28 @@ namespace Kestrel.Slice
 
     public static class DesignerValidation
     {
-        /// <summary>Kid wording per code (simple + standard). Engineer shows Issue.msg. Spec §11.3.</summary>
+        /// <summary>Kid wording per code. Blocks show in simple + standard; warnings are standard-only (Present hides them in simple). Engineer shows Issue.msg. Spec §6/§11.3.</summary>
         public static readonly IReadOnlyDictionary<string, string> KidWording = new Dictionary<string, string>
         {
-            ["zero-engines"] = "One stage has no engines. Give it at least one.",
-            ["zero-propellant"] = "One stage has no fuel. Add some fuel.",
+            ["zero-engines"] = "A stage or booster has no engines. Give it at least one.",
+            ["zero-propellant"] = "A stage or booster has no fuel. Add some fuel.",
             ["schema"] = Experience.KidSchema,
             ["math"] = "We couldn't work this rocket out. Try Make it fly.",
             ["twr-low"] = "Too heavy to lift off. Add engines to the bottom stage or use less fuel.",
             ["engines-dont-fit"] = "Too many engines for this width. Use fewer or make it wider.",
-            ["top-heavy"] = "The top is much wider than the bottom. Make it narrower.",
+            ["top-heavy"] = "One stage is much wider than the one under it. Make it narrower.",
             ["fairing-narrow"] = "The nose is too thin for the stage under it. Make it as wide as the stage.",
             ["payload-doesnt-fit"] = "The cargo doesn't fit in the nose. Make the nose longer or wider.",
             ["twr-marginal"] = "Slow off the pad. A bit more push helps.",
-            ["weak-upper"] = "An upper stage pushes gently. A stronger engine or lighter load helps.",
+            ["weak-upper"] = "One of the upper stages pushes gently. A stronger engine helps.",
             ["weak-upper-dv"] = "The top stage does little work. Give it more fuel.",
-            ["dv-margin"] = "Not quite enough speed for this trip (or only just enough). More fuel or a lighter cargo.",
-            ["landing-hardware"] = "Saved landing fuel but no legs or grid fins. Add both, or skip landing.",
+            ["dv-margin"] = "Not quite enough speed for this trip. More fuel or a lighter cargo.",
+            ["landing-hardware"] = "Saved landing fuel but no landing legs or grid fins. Add both, or skip landing.",
             ["heavy-fairing"] = "The nose weighs more than the cargo. Try a lighter nose.",
         };
+
+        /// <summary>dv-margin second message (Validate.cs: margin 0-5%, msg starts "Only").</summary>
+        public const string DvMarginThin = "You'll just make it. A little more fuel gives room to spare.";
 
         public const string KidFallback = "Something on this rocket needs a fix. Try Make it fly.";
 
@@ -48,6 +51,7 @@ namespace Kestrel.Slice
         {
             if (issue == null) return "";
             if (layer == "engineer") return issue.msg;
+            if (issue.code == "dv-margin" && issue.msg != null && issue.msg.StartsWith("Only")) return DvMarginThin;
             return issue.code != null && KidWording.TryGetValue(issue.code, out var w) ? w : KidFallback;
         }
 

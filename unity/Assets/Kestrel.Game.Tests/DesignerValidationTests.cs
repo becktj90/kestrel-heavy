@@ -27,6 +27,25 @@ namespace Kestrel.Game.Tests
             StringAssert.DoesNotContain("TWR", kid); StringAssert.DoesNotContain("Δv", kid);
         }
 
+        [Test]
+        public void DvMarginHasShortAndThinWording()
+        {
+            var shortIssue = new Issue { code = "dv-margin", msg = "About 300 m/s short of LEO 400 km. ..." };
+            var thinIssue = new Issue { code = "dv-margin", msg = "Only 3% \u0394v margin for LEO 400 km. ..." };
+            Assert.AreEqual(DesignerValidation.KidWording["dv-margin"], DesignerValidation.Wording(shortIssue, "standard"));
+            Assert.AreEqual(DesignerValidation.DvMarginThin, DesignerValidation.Wording(thinIssue, "standard"));
+        }
+
+        [Test]
+        public void BoosterAwareAndUpperStageWording()
+        {
+            StringAssert.Contains("booster", DesignerValidation.KidWording["zero-engines"]);
+            StringAssert.Contains("booster", DesignerValidation.KidWording["zero-propellant"]);
+            StringAssert.Contains("upper stages", DesignerValidation.KidWording["weak-upper"]);
+            StringAssert.Contains("the one under it", DesignerValidation.KidWording["top-heavy"]);
+            StringAssert.Contains("grid fins", DesignerValidation.KidWording["landing-hardware"]);
+        }
+
         [Test] public void SchemaUsesExperienceKidSchema() => Assert.AreEqual(Experience.KidSchema, DesignerValidation.KidWording["schema"]);
 
         [Test] public void UnknownCodeFallsBackToFriendlyLine() =>
