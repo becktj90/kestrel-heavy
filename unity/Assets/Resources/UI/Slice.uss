@@ -8,11 +8,13 @@
 .readout Label { font-size: 28px; color: rgb(200, 220, 255); }
 .readout .big { font-size: 44px; color: white; -unity-font-style: bold; }
 .launch { height: 96px; font-size: 32px; -unity-font-style: bold; background-color: rgb(200, 16, 46); color: white; border-width: 0; border-top-left-radius: 14px; border-top-right-radius: 14px; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; }
-.hud { position: absolute; left: 0; right: 0; top: 0; bottom: 0; padding: 24px; padding-top: 120px; justify-content: space-between; }
+.hud { position: absolute; left: 0; right: 0; top: 0; bottom: 0; padding: 24px; justify-content: flex-start; } /* safe-area padding set from code (HudLayout) */
+.hud-band { flex-shrink: 0; }
+.hud-spacer { flex-grow: 1; }
 .hud-top { flex-direction: row; justify-content: space-between; }
 .hud-big { font-size: 56px; color: white; -unity-font-style: bold; }
 .hud-chip { font-size: 30px; color: black; background-color: rgb(255, 176, 0); padding: 6px 14px; border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
-.hud-grid { flex-direction: row; flex-wrap: wrap; background-color: rgba(0, 0, 0, 0.55); padding: 12px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
-.hud-cell { width: 50%; font-size: 32px; color: rgb(180, 255, 200); margin-top: 4px; margin-bottom: 4px; }
+.hud-grid { margin-top: 10px; flex-direction: row; flex-wrap: wrap; flex-shrink: 0; background-color: rgba(0, 0, 0, 0.55); padding: 12px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+.hud-cell { width: 33.3%; flex-grow: 0; flex-shrink: 0; font-size: 28px; white-space: nowrap; color: rgb(180, 255, 200); margin-top: 4px; margin-bottom: 4px; }
 .hud-msg { font-size: 36px; color: rgb(255, 176, 0); -unity-text-align: middle-center; }
 .hidden { display: none; }
