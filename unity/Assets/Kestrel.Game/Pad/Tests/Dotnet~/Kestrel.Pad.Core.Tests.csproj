@@ -14,6 +14,8 @@
     <Compile Include="../../Core/**/*.cs" LinkBase="Pad.Core" />
     <Compile Include="../Core/**/*.cs" LinkBase="Tests.Core" />
     <Compile Include="../PadGeneratorTests.cs" LinkBase="Tests" />
+    <Compile Include="../TowerAnchorTests.cs" LinkBase="Tests" />
+    <Compile Include="../PadLightingTests.cs" LinkBase="Tests" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

@@ -125,9 +125,101 @@ namespace Kestrel.Slice
         /// SoftParticle.Falloff(r) = 0.5 at r = 0.36.</summary>
         public const float SpriteSolidFraction = 0.36f;
         /// <summary>How far (x cluster D) sprites may reach above the nozzle exit plane: they wrap the bell exits.</summary>
-        public const float NozzleOverlapD = 0.15f;
+        public const float NozzleOverlapD = 0f;   // #129-v6 shots: a 0.15 D allowance + linear fade-in = cream fringe over the cores
+        /// <summary>Alpha ramp (normalised life) after the fade-in point: alpha is exactly 0 until a sprite's
+        /// visible top has passed below the nozzle plane, then reaches full over this span.</summary>
+        public const float FadeRamp = 0.04f;
+        /// <summary>Body alpha ramp as normalised life: 0.1 D of travel (a fixed 0.04 of a ~15 D body was a 0.6 D
+        /// translucent band = the v7-sim gap under the nozzles).</summary>
+        public static float BodyFadeRamp(Layout L) => Mathf.Clamp(0.02f * L.VisualD / Mathf.Max(1f, L.Length), 0.002f, FadeRamp);
+
+        /// <summary>Dense body length cap (m): ~1.0 H at full throttle at sea level (70 m vehicle -> 60-70 m),
+        /// shorter at low throttle, +60% in near-vacuum (VISUAL_SPEC 3.2 lengthening).</summary>
+        public static float DenseLength(float vehicleHeight, float throttle, float paRatio) =>
+            Mathf.Max(5f, vehicleHeight) * (0.6f + 0.4f * Mathf.Clamp01(throttle)) * (1f + 0.6f * Smoothstep(0.2f, 0f, Mathf.Max(0f, paRatio)));
+
+        /// <summary>Gap (m) from the nozzle exit to where the body reads solid: emitter-equivalent offset minus the
+        /// newborn solid half, plus half the alpha ramp distance.</summary>
+        public static float NearNozzleGap(Layout L) => BodyStartGap(L) + 0.5f * BodyFadeRamp(L) * L.Length;
+
+        // #130-v9 review: 4-5 m gap under the nozzle row. Round sprites 5-20 m tall can only become visible once
+        // their top edge clears the exit, i.e. ~one radius down. Plume sprites are now born FLAT: full width
+        // (sizeOverLifetime X) but only YStart of their height (Y), reaching full height at YFullAt of life, so
+        // the newborn fringe is < 0.5 m and the visible flame starts at the exit.
+        public const float BodyYStart = 0.06f, CoreYStart = 0.1f;
+        /// <summary>Flat sprites grow to full height as fast as their travel allows (fringe growth <= 0.8 x travel),
+        /// per layout (Layout.BodyYFullAt / CoreYFullAt): fast for small vehicles, slower for big sprites.</summary>
+        public static float YFullAt(float yStart, float sizeMax, float travel, float coneDeg) =>
+            Mathf.Clamp((1f - yStart) * 0.5f * PlumeFringeFraction * sizeMax / Mathf.Max(0.1f, 0.8f * travel * Mathf.Cos(coneDeg * Mathf.Deg2Rad)), 0.02f, 0.6f);
+        public const float DiamondYStart = 0.1f, DiamondYFullAt = 0.5f;
+        public static float YSize(float u, float start, float fullAt) => Mathf.Lerp(start, 1f, Mathf.Clamp01(u / fullAt));
+        /// <summary>#130-v10: sprites grew out of the flat shape by ~10% of life and read as round puffs. Body height
+        /// now reaches full height only ~BodyYFullD below the exit (<= BodyYMinFullAt of life) and tops out at BodyYEnd of the width (0.9 keeps Low-budget D=3 overlap >= 2).</summary>
+        public const float BodyYEnd = 0.9f, BodyYMinFullAt = 0.6f, BodyYFullD = 1.5f;   // full height ~1.5 D below the exit (<= 0.6 of life)
+        public static float BodyYSize(Layout L, float u) => Mathf.Lerp(BodyYStart, BodyYEnd, Mathf.Clamp01(u / L.BodyYFullAt));
+        public static float CoreYSize(Layout L, float u) => YSize(u, CoreYStart, L.CoreYFullAt);
+        public static float DiamondYSize(float u) => YSize(u, DiamondYStart, DiamondYFullAt);
+
+        /// <summary>Highest point (m above the exit; must be &lt;= 0) of any sprite fringe with alpha &gt; 0, for an
+        /// emitter whose sprites travel `travel` m along the axis over life (cone half-angle coneDeg), fade in at
+        /// u = fadeIn, and have vertical size sizeMax x size(u) x ysize(u).</summary>
+        public static float TopAboveExit(float travel, float coneDeg, float fadeIn, float sizeMax, System.Func<float, float> size, System.Func<float, float> ysize)
+        {
+            float top = float.NegativeInfinity, c = Mathf.Cos(coneDeg * Mathf.Deg2Rad);
+            for (int i = 0; i <= 400; i++)
+            {
+                float u = i / 400f; if (u < fadeIn) continue;
+                top = Mathf.Max(top, 0.5f * PlumeFringeFraction * sizeMax * size(u) * ysize(u) - travel * u * c);
+            }
+            return top;
+        }
+        public static float BodyTopAboveExit(Layout L) => TopAboveExit(L.Length, L.BodyConeDeg, BodyFadeIn(L), L.BodyMax, u => BodySize(L, u), u => BodyYSize(L, u));
+        public static float CoreTopAboveExit(Layout L) => TopAboveExit(L.CoreLength, 0f, CoreFadeIn(L), L.CoreSize, CoreSize, u => CoreYSize(L, u));
+        public static float DiamondTopAboveExit(float d) => TopAboveExit(DiamondTravelD * d, 0f, DiamondFadeIn, DiamondSizeD * d, u => 1f, DiamondYSize);
+        public static float DiamondFadeInFor(float d) => FirstClearU(DiamondTravelD * d, 0f, DiamondSizeD * d, u => 1f, DiamondYSize);
+        /// <summary>Depth (m) below the exit where the body first reads solid (alpha at peak, solid half of a
+        /// newborn flat sprite): the visible gap under the nozzles.</summary>
+        public static float BodyVisibleGap(Layout L)
+        {
+            float u = BodyFadeIn(L) + BodyFadeRamp(L);
+            return Mathf.Max(0f, L.Length * u - 0.5f * PlumeSolidFraction * L.BodyMin * BodySize(L, u) * BodyYSize(L, u));
+        }
+
+        /// <summary>Sprite overlap along the first `span` m below the nozzles: particles in that span (uniform in
+        /// age along Length) x mean solid diameter there / span.</summary>
+        public static float NearOverlap(Layout L, int bodyParticles, float span)
+        {
+            // Vertical solid height of the sprites in the span (flat newborns count by their Y size).
+            float uEnd = Mathf.Clamp01(span / Mathf.Max(1f, L.Length)), sum = 0f; const int k = 50;
+            for (int i = 0; i < k; i++) { float u = (i + 0.5f) / k * uEnd; sum += BodySize(L, u) * BodyYSize(L, u); }
+            float solid = 0.5f * (L.BodyMin + L.BodyMax) * PlumeSolidFraction * sum / k;
+            return bodyParticles * uEnd * solid / Mathf.Max(0.1f, span);
+        }
+        /// <summary>#129-v7 cloud launch speed (x CloudRadius). 0.35-0.8 (14-32 m/s) with the weak limit-velocity
+        /// damping (probe-calibrated ~1/s) flung newborn billows 19 m out in 0.55 s: a thin, sparse ring.</summary>
+        public const float CloudSpeedMin = 0.08f, CloudSpeedMax = 0.25f;
+        /// <summary>#130 review: diamonds travelled 0.5 Length (~310 m/s) over 0.3 s, so the 0.08 fade-in put the
+        /// first visible knot 7-9.5 m below the exit (and deck bounces flung them +5.8 m above it). Now they drift
+        /// only DiamondTravelD x D over their life, i.e. a stationary pattern hanging off the exit, and fade in
+        /// exactly when the 5% fringe (0.5 x 0.74 x 0.5 D = 0.185 D) clears the plane: 0.185 / 1.5 = 0.123.</summary>
+        public const float DiamondTravelD = 1.5f, DiamondSizeD = 0.5f, DiamondLife = 0.3f;
+        public const float DiamondFadeIn = 0.02f;   // #130-v9: flat-born (DiamondYStart) so they show from ~0.3 m
+        /// <summary>Depth (m) below the exit of the top of the first visible diamond (its 5% fringe).</summary>
+        public static float DiamondTopDepth(float d) => -DiamondTopAboveExit(d);
+        /// <summary>Body alpha by the time deck-deflected particles exist (u >= 1 - lifetime loss): below ~0.05.</summary>
+        /// #130-v9: was 0.04 at 0.7 (to hide deck-deflected particles in the faded tail): the visible body ended at
+        /// 44-47 m of the designed 67. Deflection no longer uses the tail, so the body stays visible to ~u 0.97.
+        public const float BodyTailAlpha = 0.35f, BodyTailAt = 0.9f, BodyMidAlpha = 0.75f, BodyMidAt = 0.6f;
         /// <summary>Fraction of a particle's nominal size inside which the soft sprite is visible (alpha >= ~1%).</summary>
         public const float SpriteVisibleFraction = 0.8f;
+        // #129-v7 (cream fringe over the cores / gap under the nozzles): with the soft sprite the 1% fringe (0.8)
+        // is 2.2x the solid radius (0.36), so either the fringe climbs above the nozzles or the solid plume starts
+        // ~0.22 sprite sizes below them. Body/core/diamonds now use SoftParticle.TightTexture (flat to 0.55, soft
+        // edge to 0.85): solid 0.70, ~5%-alpha fringe 0.82. The ground cloud keeps the soft sprite.
+        /// <summary>TightFalloff(r) = 0.5 radius (fraction of nominal size) for the plume sprites.</summary>
+        public const float PlumeSolidFraction = 0.71f;
+        /// <summary>Radius past which a plume sprite is below ~5% of its peak alpha (TightFalloff 0.0556).</summary>
+        public const float PlumeFringeFraction = 0.74f;
         public const float CoreHdrHigh = 1.5f, CoreHdrLow = 1.1f, CoreAlphaMax = 0.8f;   // #129: alpha-blended now (cannot exceed its colour), 0.45 vanished in ascent
         public const int MaxCoreParticles = 8;
         public const float CoreSizeOverLife = 0.8f;   // core shrinks CoreSizeStart -> 0.8 over life
@@ -142,7 +234,7 @@ namespace Kestrel.Slice
         public struct Layout
         {
             public float VisualD, Length, Width, CoreSize, CoreLength, CoreEmitOffset, CoreSpawnRadius;
-            public float BodyMin, BodyMax, BodyGrow, BodyLife, BodySpawnRadius, BodyConeDeg, BodyEmitOffset;
+            public float BodyMin, BodyMax, BodyGrow, BodyLife, BodySpawnRadius, BodyConeDeg, BodyEmitOffset, BodyYFullAt, CoreYFullAt;
             public float CloudRadius, CloudSizeMin, CloudSizeMax, CloudSizeStart, CloudHeight, CloudSpawnRadius, CloudClearRadius;
         }
 
@@ -157,6 +249,11 @@ namespace Kestrel.Slice
             var s = Compute(tf, paRatio, d);
             var L = new Layout { VisualD = d };
             L.Length = Mathf.Max(s.Length, 0.6f * vehicleHeight * (0.4f + 0.6f * tf));
+            // Short body (lead's call after #130): the spec length (~15 D, ~190 m on the heavy) spread the same
+            // particles over far more plume than the frame shows, so the near-nozzle body was sparse (gap, blobs).
+            // The dense body is capped to ~what is in frame, scaled with the vehicle and still following the
+            // VISUAL_SPEC throttle and altitude-lengthening rules; altitude widening keeps using Width via the cone.
+            L.Length = Mathf.Min(L.Length, DenseLength(vehicleHeight, tf, paRatio));
             // Visible width: ~1.2 D at sea level (VISUAL_SPEC 0.7 D column reads too thin), then the spec curve.
             L.Width = Mathf.Max(s.Width, 1.2f * d);
 
@@ -167,27 +264,30 @@ namespace Kestrel.Slice
             // #129: the core travelled CoreLength (~2 D, 160+ m/s) over 0.15 s and was born small, so it showed as
             // 1-2 blobs metres below the centre engines. Now: small constant-size sprites over the whole cluster
             // disc at the nozzle plane, drifting only CoreLength = 0.5 D over CoreLife (low speed, no gravity).
-            L.CoreSize = 0.3f * d / SpriteSolidFraction;
+            L.CoreSize = 0.3f * d / PlumeSolidFraction;
             L.CoreSpawnRadius = 0.4f * d;
-            L.CoreLength = 0.5f * d;
+            L.CoreLength = 1.0f * d;   // #129-v6: at 0.5 D the fade-in point (0.67) was clamped to 0.6, so cores showed above the plane
             L.CoreEmitOffset = 0f;   // set below, once the sizes are known
 
             // Body: starts ~1 D solid, grows only a little; the cone supplies altitude expansion up to Width.
             L.BodySpawnRadius = 0.08f * d;
-            L.BodyMax = 1.15f * d / SpriteSolidFraction;
-            L.BodyMin = 0.95f * d / SpriteSolidFraction;
+            L.BodyMax = 1.15f * d / PlumeSolidFraction;
+            L.BodyMin = 0.95f * d / PlumeSolidFraction;
             L.BodyGrow = 1.15f;
             L.BodyLife = 0.6f;
-            float solidEnd = L.BodyMax * SpriteSolidFraction * L.BodyGrow + 2f * L.BodySpawnRadius;
+            float solidEnd = L.BodyMax * PlumeSolidFraction * L.BodyGrow + 2f * L.BodySpawnRadius;
             L.BodyConeDeg = Mathf.Atan2(Mathf.Max(0f, L.Width - solidEnd) * 0.5f, L.Length) * Mathf.Rad2Deg;
             // Smallest emitter offset keeping every sprite's top at or below the exit plane over its whole life
             // (born small -> offset ~ birth half-size; only grows if a sprite would outrun its own travel).
+            L.BodyYFullAt = Mathf.Max(Mathf.Min(BodyYMinFullAt, BodyYFullD * d / Mathf.Max(1f, L.Length)), YFullAt(BodyYStart, L.BodyMax * L.BodyGrow, L.Length, L.BodyConeDeg));
+            L.CoreYFullAt = YFullAt(CoreYStart, L.CoreSize, L.CoreLength, 0f);
             L.BodyEmitOffset = 0f; L.CoreEmitOffset = 0f;
             for (int i = 0; i <= TopEdgeSamples; i++)
             {
                 float u = i / (float)TopEdgeSamples;
-                L.BodyEmitOffset = Mathf.Max(L.BodyEmitOffset, 0.5f * SpriteVisibleFraction * L.BodyMax * BodySize(L, u) - L.Length * u - NozzleOverlapD * d);
-                L.CoreEmitOffset = Mathf.Max(L.CoreEmitOffset, 0.5f * SpriteVisibleFraction * L.CoreSize * CoreSize(u) - L.CoreLength * u - NozzleOverlapD * d);
+                float cone = Mathf.Cos(L.BodyConeDeg * Mathf.Deg2Rad);   // off-axis sprites travel less along the axis
+                L.BodyEmitOffset = Mathf.Max(L.BodyEmitOffset, 0.5f * PlumeFringeFraction * L.BodyMax * BodySize(L, u) * BodyYSize(L, u) - L.Length * u * cone - NozzleOverlapD * d);
+                L.CoreEmitOffset = Mathf.Max(L.CoreEmitOffset, 0.5f * PlumeFringeFraction * L.CoreSize * CoreSize(u) * CoreYSize(L, u) - L.CoreLength * u - NozzleOverlapD * d);
             }
 
             // Ground cloud: same billows, but spawned at the deck edge (outside a clear zone round the engines),
@@ -198,7 +298,7 @@ namespace Kestrel.Slice
             // sprites that walled off the frame in the v5 reference render.
             L.CloudSizeMax = Mathf.Max(0.55f * deck, 0.2f * vehicleHeight) / SpriteSolidFraction;
             L.CloudSizeMin = L.CloudSizeMax * 0.55f;
-            L.CloudSizeStart = 0.3f;   // #129: newborn billows covered the nozzles at T+0.5
+            L.CloudSizeStart = 0.45f;   // #129-v7: 0.3 (with fast spread) left a thin strip at T+0.6
             L.CloudClearRadius = Mathf.Max(1.5f * vehicleRadius, 1.5f * d);
             L.CloudSpawnRadius = Mathf.Max(1.5f * deck, L.CloudClearRadius + CloudHalfVisible(L, 0f));   // #129: ring pushed outward
             // Root cause B: centre ABOVE the deck top (pad origin, y = 0; ground is PadGround.GroundY = -1 m) by the solid
@@ -214,14 +314,44 @@ namespace Kestrel.Slice
         public const float CloudLiftM = 0.5f;
         /// <summary>Normalised body life over which alpha fades in when the emitter sits at the exit plane: the
         /// time a particle needs to travel BodyEmitOffset (so the visible silhouette equals an offset emitter).</summary>
-        public static float BodyFadeIn(Layout L) => Mathf.Clamp01(L.BodyEmitOffset / Mathf.Max(1f, L.Length));
+        public static float BodyFadeIn(Layout L) => FirstClearU(L.Length, L.BodyConeDeg, L.BodyMax, u => BodySize(L, u), u => BodyYSize(L, u));
+        /// <summary>Core alpha fade-in (normalised life).</summary>
+        public static float CoreFadeIn(Layout L) => FirstClearU(L.CoreLength, 0f, L.CoreSize, CoreSize, u => CoreYSize(L, u));
+        /// <summary>#130-v9: smallest u after which every sprite's fringe stays at or below the exit (travel along
+        /// the axis >= vertical fringe half), with a small margin. Replaces offset/length, which under-estimated the
+        /// fade-in once sprites are born flat and grow (body topAboveNozzle +0.16 m at T+4).</summary>
+        public static float FirstClearU(float travel, float coneDeg, float sizeMax, System.Func<float, float> size, System.Func<float, float> ysize)
+        {
+            float c = Mathf.Cos((coneDeg + 1f) * Mathf.Deg2Rad), last = 0f; const int n = 400;
+            for (int i = 0; i <= n; i++)
+            {
+                float u = i / (float)n;
+                if (0.5f * PlumeFringeFraction * sizeMax * size(u) * ysize(u) > travel * u * c) last = Mathf.Min(1f, (i + 1f) / n);
+            }
+            return Mathf.Min(0.9f, last);
+        }
         /// <summary>Core sprite lifetime (s).</summary>
         public const float CoreLife = 0.3f;
         /// <summary>Hold the plume's particle budget for this long after ignition, even if the governor steps the
         /// quality preset down (#129: caps dropped 208->48 between T+0.48 and T+1.31).</summary>
-        public const float LiftoffBudgetHoldSeconds = 15f;
+        // (#129-v6: the private 15 s budget hold is gone; QualityGovernor holds the tier for 20 s after ignition.)
         /// <summary>Body deck collision: deflect sideways, low bounce, high lifetime loss (short, faded spray).</summary>
-        public const float BodyDeckBounce = 0.05f, BodyDeckDampen = 0.7f, BodyDeckLifetimeLoss = 0.75f, BodyDeckRadiusScale = 0.1f;   // v6 sim: 0.5 loss made an orange band over the nozzles
+        /// #130 review: lifetimeLoss 0.75 killed/faded nearly every body particle while the 186 m body crossed the
+        /// deck, so the body sat at 48/212 live with alpha 0.02-0.06 until T+2.5. Now deflected particles keep
+        /// their life and alpha (count reaches the budget, opaque from ignition) and are instead SHRUNK by
+        /// size-by-speed: dampen 0.85 leaves 15% speed, so a deflected sprite is ~BodyDeflectSize of its size and
+        /// cannot climb over the nozzles / boosters (the v6 "orange band").
+        public const float BodyDeckBounce = 0f, BodyDeckDampen = 0.85f, BodyDeckLifetimeLoss = 0f, BodyDeckRadiusScale = 0.1f;
+        /// #130-v9: 0.12 still read as an orange splash at T+1.4 and put a sprite +1.59 m over the exit at T+0.6.
+        /// Deflected (speed &lt; 30%) sprites are now 5% size, greyed and at DeflectAlpha (colour-by-speed).
+        public const float BodyDeflectSize = 0.05f, DeflectSpeedFrac = 0.3f, FullSpeedFrac = 0.6f, DeflectAlpha = 0.04f;   // #130-v10: deflected sprites at the deck read +1.30 m over the exit at T+0.6; below the 5% visibility line now
+        /// <summary>Size multiplier vs speed fraction (speed / startSpeed): BodyDeflectSize up to 0.3, 1 from 0.6.</summary>
+        public static float BodySizeBySpeed(float speedFraction) => Mathf.Lerp(BodyDeflectSize, 1f, Mathf.InverseLerp(DeflectSpeedFrac, FullSpeedFrac, speedFraction));
+        /// <summary>Core and diamonds die on deck contact (no bounce): they are small near-nozzle features, and
+        /// their deck bounce put them +2.8 / +5.8 m above the nozzle exit at T+0.6 (#130 review).</summary>
+        /// #130-v9: killing them left core 1/8 and diamonds 2/20 live at T+0.6 (flame barely visible). They now
+        /// deflect like the body (no bounce, no loss) and shrink/grey by speed.
+        public const float NearDeckBounce = 0f, NearDeckLifetimeLoss = 0f;   // #129-v6: deflected spray climbed 150-200 px; no bounce, alpha <= BodyTailAlpha after the loss   // v6 sim: 0.5 loss made an orange band over the nozzles
         /// <summary>Visible half-size of the largest cloud billow at normalised life u (size curve start -> 1.6).</summary>
         public static float CloudHalfVisible(Layout L, float u) => 0.5f * SpriteVisibleFraction * L.CloudSizeMax * Mathf.Lerp(L.CloudSizeStart, CloudGrowEnd, Mathf.Clamp01(u));
         /// <summary>Closest a cloud billow's visible edge gets to the vehicle axis right after spawning.</summary>
@@ -229,7 +359,7 @@ namespace Kestrel.Slice
 
         /// <summary>Visible plume width at the end of the body (spawn spread + cone + grown particle).</summary>
         public static float BodyVisibleWidth(Layout L) =>
-            2f * L.BodySpawnRadius + 2f * L.Length * Mathf.Tan(L.BodyConeDeg * Mathf.Deg2Rad) + L.BodyMax * SpriteSolidFraction * L.BodyGrow;
+            2f * L.BodySpawnRadius + 2f * L.Length * Mathf.Tan(L.BodyConeDeg * Mathf.Deg2Rad) + L.BodyMax * PlumeSolidFraction * L.BodyGrow;
 
         /// <summary>Highest point (m above the nozzle-exit plane; &lt;= 0 means below it) any visible body or core
         /// sprite reaches over its life. Particles move down the axis at Length/life (body) or CoreLength/0.15 s.</summary>
@@ -239,8 +369,8 @@ namespace Kestrel.Slice
             for (int i = 0; i <= TopEdgeSamples; i++)
             {
                 float u = i / (float)TopEdgeSamples;
-                float bodyTop = 0.5f * SpriteVisibleFraction * L.BodyMax * BodySize(L, u) - L.BodyEmitOffset - L.Length * u;
-                float coreTop = 0.5f * SpriteVisibleFraction * L.CoreSize * CoreSize(u) - L.CoreEmitOffset - L.CoreLength * u;
+                float bodyTop = 0.5f * PlumeFringeFraction * L.BodyMax * BodySize(L, u) * BodyYSize(L, u) - L.BodyEmitOffset - L.Length * u;
+                float coreTop = 0.5f * PlumeFringeFraction * L.CoreSize * CoreSize(u) * CoreYSize(L, u) - L.CoreEmitOffset - L.CoreLength * u;
                 top = Mathf.Max(top, Mathf.Max(bodyTop, coreTop));
             }
             return top;
@@ -252,16 +382,16 @@ namespace Kestrel.Slice
         public static float CoreSize(float u) => u < CoreFullAt ? Mathf.Lerp(CoreSizeStart, 1f, u / CoreFullAt) : Mathf.Lerp(1f, CoreSizeOverLife, (u - CoreFullAt) / (1f - CoreFullAt));
         public const float CoreFullAt = 0.6f;
         /// <summary>Gap (m) between the nozzle exit and the first solid core sprite at birth.</summary>
-        public static float CoreStartGap(Layout L) => L.CoreEmitOffset - 0.5f * SpriteSolidFraction * L.CoreSize * CoreSizeStart;
+        public static float CoreStartGap(Layout L) => L.CoreEmitOffset - 0.5f * PlumeSolidFraction * L.CoreSize * CoreSizeStart * CoreYStart;
         public const float BodyFullAt = 0.15f;
         public const int TopEdgeSamples = 40;
         /// <summary>Gap (m) between the nozzle exit and the first solid body sprite at birth (should be ~0).</summary>
-        public static float BodyStartGap(Layout L) => L.BodyEmitOffset - 0.5f * SpriteSolidFraction * L.BodyMax * BodySizeStart;
+        public static float BodyStartGap(Layout L) => L.BodyEmitOffset - 0.5f * PlumeSolidFraction * L.BodyMax * BodySizeStart * BodyYStart;
 
         /// <summary>Peak additive core contribution on the axis: overlapping core sprites x alpha x HDR.</summary>
         public static float CorePeak(Layout L, int coreParticles, bool hdr)
         {
-            float overlap = Mathf.Max(1f, coreParticles * L.CoreSize * SpriteSolidFraction / Mathf.Max(0.1f, L.CoreLength + L.CoreSize * SpriteSolidFraction));
+            float overlap = Mathf.Max(1f, coreParticles * L.CoreSize * PlumeSolidFraction / Mathf.Max(0.1f, L.CoreLength + L.CoreSize * PlumeSolidFraction));
             return overlap * CoreAlphaMax * (hdr ? CoreHdrHigh : CoreHdrLow);
         }
 
@@ -269,7 +399,7 @@ namespace Kestrel.Slice
         /// means every point on the axis is covered by ~2 particles (continuous, no blobs).</summary>
         public static float BodyOverlap(Layout L, int bodyParticles)
         {
-            float mean = 0.5f * (L.BodyMin + L.BodyMax) * 0.5f * (1f + L.BodyGrow) * SpriteSolidFraction;
+            float mean = 0.5f * (L.BodyMin + L.BodyMax) * 0.5f * (1f + L.BodyGrow) * PlumeSolidFraction;
             return bodyParticles * mean / Mathf.Max(1f, L.Length);
         }
 

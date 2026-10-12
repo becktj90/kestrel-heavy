@@ -35,8 +35,15 @@ namespace Kestrel.Game.Quality
             BatterySaver = PlayerPrefs.GetInt(BatteryKey, 0) == 1;
             Governor = new QualityGovernor(Table.ToGovernorConfig(), chosen, floor);
             Governor.Changed += (_, to) => Apply(to);
+            // Editor/CLI captures run at editor frame rates (p95 > 20 ms) and stepped Medium -> Low mid-liftoff
+            // (#129 probe). Step-downs are for device thermals only; -khGovernorInEditor opts back in.
+            Governor.IgnoreFrameTimes = Application.isEditor && Array.IndexOf(Environment.GetCommandLineArgs(), "-khGovernorInEditor") < 0;
+            QualityHold.Requested += OnHoldRequested;
             Apply(Governor.Level);
         }
+
+        void OnHoldRequested(double seconds) => Governor?.HoldFor(seconds);
+        void OnDestroy() { if (Instance == this) { QualityHold.Requested -= OnHoldRequested; Instance = null; } }
 
         void Update() => Governor.Tick(Time.unscaledDeltaTime);
 

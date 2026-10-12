@@ -207,7 +207,7 @@ Goldens for onRailsNode are **hard-coded literals** computed outside the codebas
 
 **Shear draw (fictional, annual):** lognormal with median `0.0045 /s` and `σ_ln = 0.521497546971786`, chosen so `P(shear > 0.012) = 0.03` (a few percent, not the ~37% of a uniform 0.002–0.018 draw). Drawn via Box-Muller from two mulberry units. Real upper-wind hold rates are a few percent and seasonal; this is an annual stand-in.
 
-**Wind profile shape:** not a linear ramp to 12 km. Jet peak ≈ `min(100, surface + shear × 8000 m)` near 10.5 km (smoothstep rise, mild decay above). Median shear → ~40 m/s peak (jet class 30–70 m/s); hard cap 100 m/s.
+**Wind profile shape:** not a linear ramp to 12 km. Unsaturated peak `raw = surface + shear × 8000 m`, then algebraic soft saturation `SoftCap(raw) = raw / (1 + (raw/100)^4)^(1/4)` (asymptote 100 m/s, n = 4) near 10.5 km (smoothstep rise, mild decay above). Median shear → ~37–40 m/s peak (jet class 30–70 m/s). Soft saturation replaces a hard `min(100, raw)` clip so the ~3% of shear-fail days (raw ≳ 100) are not all pinned exactly at 100 m/s; they approach the asymptote from below (~85–98 m/s).
 
 Haven monthly means are calibrated to **NOAA NCEI U.S. Climate Normals 1991–2020** at **Melbourne Intl AP, FL (`USW00012838`)**: temperature from `MLY-TAVG-NORMAL`, wind from the monthly mean of `HLY-WIND-AVGSPD` (public domain; LICENSES.md). Thunder-day probabilities are a **fictional** Florida-coastal seasonality (~80 days/yr), not a NOAA station product. Original site name.
 

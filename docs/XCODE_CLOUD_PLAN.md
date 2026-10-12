@@ -1,6 +1,6 @@
 # Xcode Cloud plan (Kestrel Heavy 2.0.0)
 
-> **Shelved 2026-10-12 (DECISIONS #53):** builds go through Unity Build Automation (free tier). Kept for reference only.
+> **Active again 2026-10-12 (DECISIONS #59, reverses #53):** Trevor does the one-time Mac setup (docs/XCODE_CLOUD_FIRST_SETUP.md). The export branch is `xcode-export` (read `ios-export` below as `xcode-export`).
 
 Status: **PLAN ONLY.** No builds, no App Store Connect (ASC) changes, no signing changes, no workflow files,
 no Unity Build Automation (UBA) runs until Trevor says "ready". Decision: DECISIONS #52.

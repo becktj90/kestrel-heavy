@@ -34,12 +34,16 @@ namespace Kestrel.Pad
     {
         public const float StationSpacing = 8f;
         public const float WallThick = 0.42f;
+        /// <summary>Plates, grating, drains and edge marks stay inside this radius. Lightning masts can
+        /// push the concrete disc past 100 m; a 4 m plate grid out there exceeds the pad triangle budget.</summary>
+        public const float DetailRadiusCap = 36f;
 
         public static PadDetailBuild Build(TrenchSpec spec, float surfaceRadius)
         {
             if (spec == null) throw new ArgumentNullException(nameof(spec));
             var b = new PadDetailBuild();
             float deck = Math.Max(8f, surfaceRadius);
+            float detail = Math.Min(deck, DetailRadiusCap);
             var us = Stations(spec, deck);
             Channel(b.Concrete, spec, deck, us);
             Deflector(b.Refractory, spec);
@@ -48,10 +52,10 @@ namespace Kestrel.Pad
             if (spec.SpareDeflector) Spare(b, spec);
             Slab(b.Concrete, spec, deck);
             Plinth(b.Concrete, spec, deck);
-            Plates(b, spec, deck);
-            Grating(b.Galvanized, spec, deck);
-            Drains(b.Concrete, spec, deck);
-            EdgeMarks(b.Markings, spec, deck);
+            Plates(b, spec, detail);
+            Grating(b.Galvanized, spec, detail);
+            Drains(b.Concrete, spec, detail);
+            EdgeMarks(b.Markings, spec, detail);
             return b;
         }
 

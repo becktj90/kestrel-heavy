@@ -19,7 +19,18 @@ namespace Kestrel.Game.Quality
         readonly GovernorConfig _c;
         readonly double[] _ring, _scratch;
         int _count, _head;
-        double _overSec, _underSec;
+        double _overSec, _underSec, _holdSec;
+
+        /// <summary>Seconds the tier is held after ignition (no step-down, frame times not sampled).</summary>
+        public const double LiftoffHoldSeconds = 20.0;
+        /// <summary>When true, frame times are ignored entirely (editor / CLI captures: step-downs only on device).</summary>
+        public bool IgnoreFrameTimes { get; set; }
+        /// <summary>Remaining hold time (s).</summary>
+        public double HoldRemaining => _holdSec;
+
+        /// <summary>Hold the current tier for the given seconds (liftoff). Resets the window so the hold's frames
+        /// do not count afterwards.</summary>
+        public void HoldFor(double seconds) { _holdSec = Math.Max(_holdSec, seconds); Reset(); }
 
         public int Level { get; private set; }
         public int Floor { get; }
@@ -64,6 +75,8 @@ namespace Kestrel.Game.Quality
         public bool Tick(double dtSec)
         {
             if (!(dtSec > 0) || dtSec > 1.0) return false; // ignore pauses/backgrounding spikes
+            if (IgnoreFrameTimes) return false;            // editor: never step on editor frame times
+            if (_holdSec > 0) { _holdSec = Math.Max(0, _holdSec - dtSec); return false; }
             _ring[_head] = dtSec * 1000.0;
             _head = (_head + 1) % _ring.Length;
             if (_count < _ring.Length) { _count++; return false; }
@@ -84,6 +97,15 @@ namespace Kestrel.Game.Quality
             int from = Level; Level = to;
             Changed?.Invoke(from, to);
         }
+    }
+
+    /// <summary>Engine-free hook so gameplay/FX (which must not reference QualityService) can request a tier
+    /// hold at ignition. QualityService subscribes and forwards to its governor.</summary>
+    public static class QualityHold
+    {
+        public static event Action<double> Requested;
+        /// <summary>Call at engine ignition: holds the tier for QualityGovernor.LiftoffHoldSeconds.</summary>
+        public static void AtIgnition() => Requested?.Invoke(QualityGovernor.LiftoffHoldSeconds);
     }
 
     public static class QualityMath

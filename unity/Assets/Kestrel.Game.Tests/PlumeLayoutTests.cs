@@ -1,5 +1,6 @@
 using Kestrel.Slice;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Kestrel.Game.Tests
 {
@@ -22,12 +23,31 @@ namespace Kestrel.Game.Tests
             Assert.That(PlumeShape.BodyOverlap(L, b.Body), Is.GreaterThanOrEqualTo(2f), $"level {level}: body must overlap (no blobs)");
         }
 
+        // Short-body PR (lead's call): 208 body particles over the ~186 m spec length left a ~3 m translucent gap
+        // under the nozzles and a blobby body. Dense body ~ what's in frame (60-80 m), continuous near the nozzles.
+        [TestCase(0, 3f), TestCase(1, 3f), TestCase(2, 3f), TestCase(3, 3f), TestCase(0, 12.38f), TestCase(3, 12.38f), TestCase(0, 14f)]
+        public void ShortDenseBodyIsContinuousNearNozzles(int level, float d)
+        {
+            var b = PlumeShape.Split(PlumeShape.BudgetForLevel(level), level > 0);
+            foreach (var tf in new[] { 1f, 0.9f, 0.4f })
+            {
+                var L = PlumeShape.ComputeLayout(tf, 1f, d, R, H, Deck);
+                Assert.That(L.Length, Is.LessThanOrEqualTo(80f), $"tf {tf}: dense body <= 80 m at sea level");
+                Assert.That(PlumeShape.NearOverlap(L, b.Body, 3f * d), Is.GreaterThanOrEqualTo(2f), $"level {level} tf {tf}: >=2x sprite overlap in first 3 D");
+                Assert.That(PlumeShape.NearNozzleGap(L), Is.LessThanOrEqualTo(0.5f), $"tf {tf}: near-nozzle gap <= 0.5 m");
+            }
+            float full = PlumeShape.ComputeLayout(1f, 1f, d, R, H, Deck).Length, low = PlumeShape.ComputeLayout(0.4f, 1f, d, R, H, Deck).Length;
+            Assert.That(full, Is.GreaterThan(low), "throttle still lengthens the dense body");
+            Assert.That(PlumeShape.ComputeLayout(1f, 0.01f, d, R, H, Deck).Length, Is.GreaterThan(full), "near-vacuum still lengthens it");
+        }
+
         [TestCase(1f, 1f), TestCase(0.4f, 1f), TestCase(1f, 0.3f), TestCase(1f, 0.01f), TestCase(1f, 0f)]
         public void PlumeTopEdgeStaysBelowNozzlePlane(float throttle, float pa)
         {
             var L = PlumeShape.ComputeLayout(throttle, pa, ClusterD, R, H, Deck);
             float tol = PlumeShape.TopEdgeRelTolerance * H;   // float rounding (~3e-8) relative to vehicle height
-            Assert.That(PlumeShape.PlumeTopEdge(L), Is.LessThanOrEqualTo(PlumeShape.NozzleOverlapD * ClusterD + tol), "sprites only wrap the bell exits, never climb the boosters");
+            Assert.That(PlumeShape.PlumeTopEdge(L), Is.LessThanOrEqualTo(PlumeShape.NozzleOverlapD * ClusterD + tol), "#129-v7: nothing visible above the nozzle plane (overlap allowance is 0)");
+            Assert.That(PlumeShape.NozzleOverlapD, Is.EqualTo(0f));
             Assert.That(L.BodyEmitOffset, Is.GreaterThanOrEqualTo(0f)); Assert.That(L.CoreEmitOffset, Is.GreaterThanOrEqualTo(0f));
         }
 
@@ -39,10 +59,10 @@ namespace Kestrel.Game.Tests
             {
                 var L = PlumeShape.ComputeLayout(throttle, pa, d, R, H, Deck);
                 // #129: the core covers the exit zone; the solid body must begin inside it (no dark gap between them).
-                float coreEnd = L.CoreEmitOffset + L.CoreLength + 0.5f * PlumeShape.SpriteSolidFraction * L.CoreSize * PlumeShape.CoreSizeOverLife;
+                float coreEnd = L.CoreEmitOffset + L.CoreLength + 0.5f * PlumeShape.PlumeSolidFraction * L.CoreSize * PlumeShape.CoreSizeOverLife;
                 Assert.That(PlumeShape.BodyStartGap(L), Is.LessThanOrEqualTo(coreEnd), $"d={d}: body starts inside the core zone");
                 Assert.That(PlumeShape.BodySizeStart, Is.GreaterThanOrEqualTo(0.8f), "born near full size: in-frame sprites are young (#129 half-width)");
-                float nearSolid = L.BodyMin * PlumeShape.SpriteSolidFraction * PlumeShape.BodySizeStart;
+                float nearSolid = L.BodyMin * PlumeShape.PlumeSolidFraction * PlumeShape.BodySizeStart;
                 Assert.That(nearSolid / d, Is.InRange(0.8f, 1.4f), $"d={d}: visible body near the nozzles ~1.0-1.4x cluster");
                 Assert.That(PlumeShape.CoreStartGap(L), Is.LessThanOrEqualTo(0.05f * d), $"d={d}: core begins at the exit");
                 Assert.That(PlumeShape.PlumeTopEdge(L), Is.LessThanOrEqualTo(PlumeShape.NozzleOverlapD * d + PlumeShape.TopEdgeRelTolerance * H), $"d={d}");
@@ -83,7 +103,7 @@ namespace Kestrel.Game.Tests
         {
             var L = PlumeShape.ComputeLayout(1f, 1f, ClusterD, R, H, Deck);
             var b = PlumeShape.Split(PlumeShape.BudgetForLevel(level), level > 0);
-            Assert.That(L.CoreSize * PlumeShape.SpriteSolidFraction, Is.LessThanOrEqualTo(1.0f * ClusterD), "core solid size <= cluster");
+            Assert.That(L.CoreSize * PlumeShape.PlumeSolidFraction, Is.LessThanOrEqualTo(1.0f * ClusterD), "core solid size <= cluster");
             Assert.That(L.CoreLength, Is.LessThanOrEqualTo(0.15f * L.Length), "core is a small zone at the nozzle");
             Assert.That(b.Core, Is.LessThanOrEqualTo(PlumeShape.MaxCoreParticles));
             Assert.That(PlumeShape.CoreHdrHigh, Is.InRange(1.2f, 1.8f));
@@ -109,7 +129,7 @@ namespace Kestrel.Game.Tests
             Assert.That(L.CloudHeight, Is.GreaterThan(Kestrel.Slice.PadGround.GroundY), "emitter above the ground plane");
             // #129: low and outward so newborn billows don't cover the nozzles in the first second.
             Assert.That(L.CloudHeight, Is.LessThanOrEqualTo(1f), "centre near the deck top");
-            Assert.That(L.CloudHeight - Kestrel.Slice.PadGround.GroundY, Is.GreaterThanOrEqualTo(0.5f * PlumeShape.SpriteSolidFraction * L.CloudSizeMax * L.CloudSizeStart * 0.5f), "most of a newborn billow above the ground");
+            Assert.That(L.CloudHeight - Kestrel.Slice.PadGround.GroundY, Is.GreaterThanOrEqualTo(0.5f * PlumeShape.SpriteSolidFraction * L.CloudSizeMax * L.CloudSizeStart * 0.4f), "most of a newborn billow above the ground");
             Assert.That(L.CloudSpawnRadius, Is.GreaterThanOrEqualTo(1.5f * Deck), "spawn ring pushed outward");
             Assert.That(L.CloudClearRadius, Is.GreaterThanOrEqualTo(1.5f * R), "clear zone covers the vehicle base");
             Assert.That(PlumeShape.CloudInnerEdge(L), Is.GreaterThanOrEqualTo(L.CloudClearRadius - 1e-3f), "no billow inside the engine clear zone");
@@ -145,14 +165,19 @@ namespace Kestrel.Game.Tests
                 pc.SetDeck(deck.transform);
                 Assert.That(pc.Body.collision.enabled, Is.True);
                 var c = pc.Body.collision;
-                Assert.That(c.lifetimeLoss.constant, Is.InRange(0.5f, 0.9f), "short-lived, faded after contact, not killed");
+                Assert.That(c.lifetimeLoss.constant, Is.EqualTo(0f), "#130: zero loss, deflected sprites shrink/fade by speed instead");
+                Assert.That(pc.Body.sizeBySpeed.enabled && pc.Body.colorBySpeed.enabled, Is.True, "deflected spray shrinks and greys by speed");
+                Assert.That(pc.Body.sizeOverLifetime.separateAxes, Is.True, "body sprites are born flat (built in Create, before Apply)");
+                Assert.That(pc.Body.GetComponent<UnityEngine.ParticleSystemRenderer>().renderMode, Is.EqualTo(UnityEngine.ParticleSystemRenderMode.VerticalBillboard), "#130-v10: upright quads, no tilt over the bells");
                 Assert.That(c.bounce.constant, Is.LessThanOrEqualTo(0.1f), "low bounce: slides sideways");
                 pc.Apply(0.9, PlumeShape.P0, 0);
                 Assert.That(pc.Body.transform.localPosition.magnitude, Is.LessThan(1e-4f), "body emitter at the nozzle plane");
                 Assert.That(pc.Emitters[0].transform.localPosition.magnitude, Is.LessThan(1e-4f), "core emitter at the nozzle plane");
                 Assert.That(pc.Emitters[0].main.gravityModifier.constant, Is.EqualTo(0f));
                 Assert.That(pc.Emitters[0].main.simulationSpace, Is.EqualTo(UnityEngine.ParticleSystemSimulationSpace.Local));
-                Assert.That(pc.Emitters[0].main.startSpeed.constant * PlumeShape.CoreLife, Is.LessThanOrEqualTo(0.6f * 14f), "core drifts <= 0.6 D: stays attached");
+                Assert.That(pc.Emitters[0].main.startSpeed.constant * PlumeShape.CoreLife, Is.LessThanOrEqualTo(1.1f * 14f), "core drifts <= ~1 D: stays attached");
+                Assert.That(pc.Emitters[2].transform.localPosition.magnitude, Is.LessThan(1e-4f), "#129-v7: diamonds at the nozzle plane (was -2.25 m)");
+                Assert.That(c.bounce.constant, Is.EqualTo(0f), "#129-v7: deflected spray must not climb");
             }
             finally { UnityEngine.Object.DestroyImmediate(root); UnityEngine.Object.DestroyImmediate(deck); }
         }
@@ -161,13 +186,93 @@ namespace Kestrel.Game.Tests
         public void BodyFadeInMatchesOffsetSilhouette()
         {
             var L = PlumeShape.ComputeLayout(1f, 1f, 14f, 7f, H, 20f);
-            Assert.That(PlumeShape.BodyFadeIn(L) * L.Length, Is.EqualTo(L.BodyEmitOffset).Within(1e-3f));
-            Assert.That(PlumeShape.BodyFadeIn(L), Is.LessThan(0.35f));
+            // #130-v9: fade-in is the exact clear point (FirstClearU), at or past the legacy offset, never > 1 of life.
+            float fi = PlumeShape.BodyFadeIn(L);
+            Assert.That(fi * L.Length, Is.GreaterThanOrEqualTo(L.BodyEmitOffset - 1e-3f));
+            Assert.That(fi, Is.InRange(0f, 0.35f), "normalised life");
+            Assert.That(fi * L.Length, Is.LessThanOrEqualTo(0.15f * 14f), "fade-in within ~0.15 D of travel");
+            Assert.That(PlumeShape.BodyTopAboveExit(L), Is.LessThanOrEqualTo(0f));
         }
 
         // #129: QualityGovernor stepped Medium -> Low mid-liftoff and the plume rebuilt with Low caps.
         [Test]
-        public void LiftoffBudgetHeld() => Assert.That(PlumeShape.LiftoffBudgetHoldSeconds, Is.GreaterThanOrEqualTo(10f));
+        public void PlumeFollowsGovernorHold() => Assert.That(Kestrel.Game.Quality.QualityGovernor.LiftoffHoldSeconds, Is.GreaterThanOrEqualTo(20.0));
+
+        // #129-v7: the linear 0 -> peak fade-in showed alpha while sprites still reached above the nozzle plane.
+        [Test]
+        public void FadeKeysAreZeroUntilFadeIn()
+        {
+            var k = PlumeController.FadeKeys(0.2f, 0.9f, (0.6f, 0.4f));
+            var g = new UnityEngine.Gradient(); g.SetKeys(new[] { new UnityEngine.GradientColorKey(UnityEngine.Color.white, 0) }, k);
+            Assert.That(g.Evaluate(0.1f).a, Is.EqualTo(0f).Within(1e-4f));
+            Assert.That(g.Evaluate(0.2f).a, Is.EqualTo(0f).Within(1e-4f));
+            Assert.That(g.Evaluate(0.25f).a, Is.EqualTo(0.9f).Within(0.05f));
+            var L = PlumeShape.ComputeLayout(1f, 1f, 14f, 7f, H, 20f);
+            Assert.That(PlumeShape.BodyFadeRamp(L) * L.Length, Is.LessThanOrEqualTo(0.11f * 14f), "body ramp ~0.1 D of travel");
+            Assert.That(PlumeShape.BodyTailAt, Is.GreaterThanOrEqualTo(0.85f), "#130-v9: body stays visible over its designed length");
+            Assert.That(PlumeShape.BodyDeckLifetimeLoss, Is.EqualTo(0f), "#130: deflected particles keep life/alpha so the body reaches its budget from ignition");
+        }
+
+        // #130 review: body stuck at 48/212 live, alpha 0.02-0.06 until T+2.5 (life loss on the deck); deflected
+        // sprites must instead shrink so they cannot climb over the nozzles (nozzle exit ~2.2 m above the deck at T+0.6).
+        [Test]
+        public void DeflectedBodyShrinksInsteadOfDying()
+        {
+            const float d = 12.38f, nozzleAboveDeck = 2.19f;
+            var L = PlumeShape.ComputeLayout(0.9f, 1f, d, R, H, Deck);
+            float tangential = (1f - PlumeShape.BodyDeckDampen) * Mathf.Sin((L.BodyConeDeg + 5f) * Mathf.Deg2Rad) + (1f - PlumeShape.BodyDeckDampen) * 0.2f;
+            Assert.That(tangential, Is.LessThan(PlumeShape.DeflectSpeedFrac), "deflected particles fall in the shrunk/greyed band");
+            float size = PlumeShape.BodySizeBySpeed(tangential) * L.BodyMax * L.BodyGrow;
+            float top = PlumeShape.BodyDeckRadiusScale * 0.5f * size + 0.5f * PlumeShape.PlumeFringeFraction * size;
+            Assert.That(top, Is.LessThan(nozzleAboveDeck), "deflected sprite fringe stays below the nozzle exit on the pad");
+            Assert.That(PlumeShape.BodySizeBySpeed(1f), Is.EqualTo(1f), "free-flying body unaffected");
+            Assert.That(PlumeShape.BodyDeflectSize, Is.LessThanOrEqualTo(0.06f), "#130-v9: no orange splash");
+            Assert.That(PlumeShape.DeflectAlpha, Is.LessThan(0.05f), "#130-v10: deflected sprites below the probe's visibility line (topAboveNozzle +1.30 m at T+0.6)");
+        }
+
+        // #130 review: core +2.84 m / diamonds +5.82 m above the exit at T+0.6 (deck bounce), diamonds 7-9.5 m below it later.
+        [Test]
+        public void CoreAndDiamondsStayAtTheExit()
+        {
+            Assert.That(PlumeShape.NearDeckBounce, Is.EqualTo(0f));
+            Assert.That(PlumeShape.NearDeckLifetimeLoss, Is.EqualTo(0f), "#130-v9: killing them left core 1/8, diamonds 2/20 at T+0.6");
+            foreach (var d in new[] { 3f, 12.38f, 14f })
+            {
+                float top = PlumeShape.DiamondTopDepth(d);
+                Assert.That(top, Is.GreaterThanOrEqualTo(0f), $"D {d}: no diamond fringe above the exit");
+                Assert.That(top, Is.LessThanOrEqualTo(0.5f), $"D {d}: first diamond touches the exit (<= 0.5 m below)");
+            }
+        }
+
+        // #130-v9 review: 4-5 m gap under the nozzle row at T+1.4-4.0, body topAboveNozzle +1.59 m at T+0.6.
+        [TestCase(1f, 1f), TestCase(0.9f, 1f), TestCase(0.4f, 1f), TestCase(1f, 0.3f)]
+        public void FlameStartsAtTheExitAndNothingAbove(float tf, float pa)
+        {
+            foreach (var d in new[] { 3f, 12.38f, 14f })
+            {
+                var L = PlumeShape.ComputeLayout(tf, pa, d, R, H, Deck);
+                Assert.That(PlumeShape.BodyTopAboveExit(L), Is.LessThanOrEqualTo(0f), $"D {d}: body fringe never above the exit");
+                Assert.That(PlumeShape.CoreTopAboveExit(L), Is.LessThanOrEqualTo(0f), $"D {d}: core fringe never above the exit");
+                Assert.That(PlumeShape.DiamondTopAboveExit(d), Is.LessThanOrEqualTo(0f), $"D {d}: diamonds never above the exit");
+                Assert.That(PlumeShape.BodyVisibleGap(L), Is.LessThanOrEqualTo(0.5f), $"D {d}: visible body starts within 0.5 m of the exit");
+                Assert.That(PlumeShape.DiamondTopDepth(d), Is.LessThanOrEqualTo(0.5f), $"D {d}: first diamond within 0.5 m of the exit");
+                // #130-v10: elongated bands, not round puffs: height <= BodyYEnd (0.9) of width, full only ~1.5 D below the exit.
+                Assert.That(PlumeShape.BodyYSize(L, Mathf.Min(0.3f, d / L.Length)), Is.LessThanOrEqualTo(0.65f), $"D {d}: still flat (<= 0.65 of width) one D below the exit");
+                Assert.That(PlumeShape.BodyYSize(L, 1f), Is.LessThanOrEqualTo(0.9f + 1e-4f), "height <= 0.9 of width");
+            }
+        }
+
+        [Test]
+        public void TightSpriteFractionsMatch()
+        {
+            Assert.That(SoftParticle.TightFalloff(PlumeShape.PlumeSolidFraction), Is.EqualTo(0.5f).Within(0.02f));
+            Assert.That(SoftParticle.TightFalloff(PlumeShape.PlumeFringeFraction), Is.LessThanOrEqualTo(0.06f));
+            Assert.That(SoftParticle.TightFalloff(0.75f), Is.EqualTo(0f).Within(1e-5f));
+        }
+
+        // #129-v7 probe/sim: 14-32 m/s launch with ~1/s damping flung billows 19 m out in 0.55 s (thin strip).
+        [Test]
+        public void CloudLaunchIsGentle() => Assert.That(PlumeShape.CloudSpeedMax, Is.LessThanOrEqualTo(0.3f));
 
         // #129: _SOFTPARTICLES_ON was still on the core/body; core was additive (adds the blue sky: "blue core").
         [Test]

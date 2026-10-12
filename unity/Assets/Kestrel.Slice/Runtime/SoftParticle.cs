@@ -24,6 +24,40 @@ namespace Kestrel.Slice
             return s * s;                       // denser core, long soft tail
         }
 
+        /// <summary>#129-v7 plume sprite profile: opaque to r = 0.67, smooth edge to 0 at r = 0.75 (solid 0.71,
+        /// 5% fringe 0.74). Keeps the edge soft but the fringe close to the solid part, so a sprite can start at the
+        /// nozzle plane without a halo above it.</summary>
+        public static float TightFalloff(float r)
+        {
+            float t = Mathf.Clamp01((r - 0.67f) / 0.08f);   // short-body PR: edge 0.67-0.75 (solid 0.71, 5% at 0.74) so the body starts <= 0.5 m below the nozzles
+            return 1f - t * t * (3f - 2f * t);
+        }
+
+        static Texture2D tight;
+        public static Texture2D TightTexture => tight != null ? tight : (tight = Build("KH_TightParticle", TightFalloff));
+
+        static Texture2D Build(string name, System.Func<float, float> f)
+        {
+            var tex = new Texture2D(Size, Size, TextureFormat.RGBA32, true) { name = name, wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, anisoLevel = 0 };
+            var px = new Color32[Size * Size]; float c = (Size - 1) * 0.5f;
+            for (int y = 0; y < Size; y++)
+                for (int x = 0; x < Size; x++)
+                {
+                    float dx = (x - c) / c, dy = (y - c) / c;
+                    px[y * Size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(255f * f(Mathf.Sqrt(dx * dx + dy * dy))));
+                }
+            tex.SetPixels32(px); tex.Apply(true, true); return tex;
+        }
+
+        /// <summary>Plume (body/core/diamonds) material: PlumeMaterial with the tight sprite.</summary>
+        public static Material TightPlumeMaterial(Material template)
+        {
+            var m = PlumeMaterial(template); if (m == null) return null;
+            if (m.HasProperty("_BaseMap")) m.SetTexture("_BaseMap", TightTexture);
+            m.mainTexture = TightTexture; m.name = "KH_Plume (tight)";
+            return m;
+        }
+
         /// <summary>Shared 64x64 RGBA texture: white RGB, alpha = Falloff(radius). Bilinear, mipmapped, clamped.</summary>
         public static Texture2D Texture
         {
@@ -95,8 +129,8 @@ namespace Kestrel.Slice
         /// so the additive core stays a small bright zone instead of saturating to white).</summary>
         public static Material CoreMaterial(Material template, bool hdr)
         {
-            var m = PlumeMaterial(template); if (m == null) return null;
-            m.name = "KH_PlumeCore (soft, HDR alpha)";
+            var m = TightPlumeMaterial(template); if (m == null) return null;
+            m.name = "KH_PlumeCore (tight, HDR alpha)";
             // #129 "blue core": additive blending ADDS the sky behind it, so the faint edges of the core read as pale
             // blue against the day sky. Alpha-blend an HDR colour instead (bloom still picks it up on High).
             if (m.HasProperty("_Blend")) m.SetFloat("_Blend", 0);
