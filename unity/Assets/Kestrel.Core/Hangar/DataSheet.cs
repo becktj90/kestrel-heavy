@@ -135,6 +135,11 @@ namespace Kestrel.Core.Hangar
         {
             c.EngineById.TryGetValue(s.engine ?? "", out var e);
             var pt = EnginePoint.Of(e, s.nozzle);
+            // Same tune scaling as Stack.SerialStages, so the part row agrees with the phase rows.
+            double lim = DesignerLimits.Active.tuneLimitPct;
+            double K(double pct) => 1 + Math.Max(-lim, Math.Min(lim, double.IsNaN(pct) ? 0 : pct)) / 100;
+            double kt = s.tune != null ? K(s.tune.thrustPct) : 1, ki = s.tune != null ? K(s.tune.ispPct) : 1;
+            pt.thrustSL *= kt; pt.thrustVac *= kt; pt.ispSL *= ki; pt.ispVac *= ki;
             return new PartRow
             {
                 part = p, label = label, engineId = s.engine, engineLabel = e?.label ?? s.engine, nozzle = s.nozzle ?? "default",
