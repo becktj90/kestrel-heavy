@@ -88,11 +88,8 @@ namespace Kestrel.Slice.Editor
                 AssetDatabase.CreateAsset(rp, rpPath);
             }
             if (GraphicsSettings.defaultRenderPipeline != rp) GraphicsSettings.defaultRenderPipeline = rp;
-            for (int q = 0; q < QualitySettings.names.Length; q++)
-            {
-                QualitySettings.SetQualityLevel(q, false);
-                QualitySettings.renderPipeline = rp;
-            }
+            // Per-quality-level pipeline assets are owned by U2's QualitySetup (data/quality.json);
+            // don't overwrite them here. The default pipeline above is the fallback.
             EnsureMaterial("Assets/Resources/Materials/KH_Body.mat", "Universal Render Pipeline/Lit", m => { m.SetFloat("_Smoothness", 0.55f); m.SetFloat("_Metallic", 0.1f); });
             EnsureMaterial("Assets/Resources/Materials/KH_Plume.mat", "Universal Render Pipeline/Particles/Unlit", m =>
             {
