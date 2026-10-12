@@ -220,7 +220,7 @@ Files: UX owns `Resources/UI/Designer/**` (new UXML/USS) and `Kestrel.Slice/Runt
 | PR | Owner | Scope | Acceptance | Depends on |
 |---|---|---|---|---|
 | U1 | UX | Wire validation: call `Validate.Engineering` + `Experience.Present` from SliceApp; summary chip; Launch disabled + reason; kid wording table as `Experience` strings | `twr-low` preset disables Launch with kid text; goldens unchanged; EditMode test for wording map | — |
-| G1 | Gameplay | Readout v2 in Core: per-stage mass, CG, CP, stability margin, max-Q estimate; goldens in `data/golden/designer-readout*.json` | additive fields only, existing goldens unchanged; quick path ≤0.5 ms p95 on SE-class, reference ascent ≤30 ms off-frame (dotnet benchmark); epsilons per §13 | — |
+| G1 | Gameplay | Readout v2 in Core: per-stage mass, CG, CP, stability margin, max-Q estimate; goldens in `data/golden/designer-readout*.json` | additive fields only, existing goldens unchanged; quick path ≤0.5 ms p95 on SE-class, reference ascent ≤30 ms off-frame (dotnet benchmark); epsilons per §12 | — |
 | U2 | UX | New panel shell: readout strip (layered), tabs, stack list, stepper component (44 pt, long-press repeat, VO adjustable) | SE: Launch, handle and 3 rows visible at 50% detent; AX3 doesn't clip | U1 |
 | U3 | UX | Parameter rows for existing fields (stages, tanks, engines, propellant, boosters, fairing, payload, recovery, avionics, safety) | every `Design.cs` field editable at its layer; Shape errors impossible from UI | U2 |
 | G2 | Gameplay | Data: cluster patterns, nozzle expansion model, interstage shape, KH-n display names, preset set Hopper/Workhorse/Heavy/Lander, design `version` bump + `DesignMigration` | migration golden passes; old saves load | G1 |
@@ -405,7 +405,7 @@ Replaces Gameplay's earlier 13-rule proposal (`stability-low/high`, `too-skinny`
 | Design migration | Exists | `Save/DesignMigration.cs` |
 | Templates file | Missing / not found | – |
 
-## 13. Gameplay firm answers to §10 (folded in)
+## 12. Gameplay firm answers to §10 (folded in)
 
 Source: `/workspace/ux-142-answers.md` (Gameplay, main @ `db80a48`). These supersede the §10 questions and §11.1a estimates where they differ. **[Physics]** items need Kestrel Physics sign-off.
 1. **Readout v2 is additive** (`QuickReadout`/`StageReadout`; existing fields and goldens unchanged): `stages[i].dryMass_kg`, `stages[i].propMass_kg`, `stages[i].deltaVSL_mps` (pad-lit stages only, else null), `cg_m`, `cp_m` (from vehicle base, positive up), `stabilityCal` = (cg−cp)/refDiameter (positive = stable), `maxQ_kPa`, `maxQAlt_m` (nullable), `maxQStale` (bool). Max-Q comes from `Readout.Reference` (existing `Stack.SimInputs` → `Headless`), cached by design-JSON hash, run 300 ms after the last committed edit, off the main thread or ≤2 ms/frame chunks. **UI: a "max-Q stale" state** shows "≈ …" in the readout cell (no spinner, no flashing) while it reruns. Budgets: instant readout ≤0.5 ms p95 (SE-class), reference ascent ≤30 ms off-frame; both unmeasured until the G1 benchmark.
@@ -417,14 +417,14 @@ Source: `/workspace/ux-142-answers.md` (Gameplay, main @ `db80a48`). These super
 7. **Limits:** every range, step, enum and threshold lives in `data/designer-limits.json`, read by UI and `Validate` (moves the `designer` block out of params.json except `designer.layers`). Not enforced by Core today, becoming `Shape` checks: fairing length 1-40 m, payload mass 50 kg-100 t, landing reserve 0-30 %.
 8. **12 new codes:** §11.4. Core bug noted: `weak-upper` `index` is the serial readout index, not `designIndex`; Gameplay fixes it in G1 (until then UX rings the stage list, not a specific part, for `weak-upper`).
 
-## 14. Art and camera notes
+## 13. Art and camera notes
 
 - Kestrel Art confirmed the `data/finishes.json` and `data/liveries.json` schemas in §10 Art Q1-Q2 (liveries: no price, no expiry, no random fields).
 - Branding glyphs (12) and frames (6) are authored as SVG and rasterised at build time.
 - Trademark sign-off for branding and liveries goes to Chief of Staff; Trevor has the final say.
 - The Hangar Reveal camera (Art, U8 reveal) and the designer camera (R1, cloud agent) must share framing constants (`DesignFraming` margin, min visible fraction, tower margin); no second copy.
 
-## 12. Answers to Gameplay
+## 14. Answers to Gameplay
 
 1. **Where is the spec?** This file, `docs/DESIGNER_SPEC.md`, PR #142 (branch `ux/designer-spec`). Edit by PR comment or a follow-up PR into `Kestrel.Core`-owned sections only.
 2. **Tank editing:** edit **propellant mass**; length stays derived by `SizeTank` and is shown read-only (standard+). In simple, dragging the tank taller/shorter maps to propMass steps. No length-first editing in 2.0; keep `tankLength` derived/readonly.
