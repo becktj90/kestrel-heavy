@@ -2,6 +2,8 @@
 // mode 'record': a simple scripted pilot reads game state and presses keys;
 //                every key change is written to the trace.
 // mode 'replay': only the recorded trace drives input (no state reads).
+const ANCHOR_MS = 600000; // 10 min virtual; boot is far shorter
+const SETTLE_FRAMES = 120;
 window.__replayRun = async function replayRun({ mission, difficulty, seed, mode, trace, maxFrames = 60 * 240, every = 30 }) {
   const R = window.__replay;
   const game = window.__ngGame;
@@ -10,6 +12,12 @@ window.__replayRun = async function replayRun({ mission, difficulty, seed, mode,
   const r = (v, d = 3) => (v == null || Number.isNaN(v) ? null : Number(Number(v).toFixed(d)));
   const fnv = (s) => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16).padStart(8, '0'); };
   const key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code, key: code, bubbles: true }));
+
+  // Pin the virtual clock to the same absolute time on every run, then let
+  // Phaser's / Matter's delta smoothing settle on identical 1/60 s frames.
+  // Boot length varies with host speed; nothing after this point may depend on it.
+  R.anchor(ANCHOR_MS);
+  R.step(SETTLE_FRAMES);
 
   // Normalise menu state so every run starts identically.
   for (const c of ['ArrowLeft', 'ArrowRight', 'Space']) key('keyup', c);
