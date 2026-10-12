@@ -21,7 +21,9 @@ namespace Kestrel.Slice.Editor
     [InitializeOnLoad]
     public static class SliceBootstrap
     {
-        public const string DevBundleId = "com.beckify.kestrelheavy.unityproto";
+        public const string DevBundleId = "com.beckify.kestrelheavy.unityproto"; // legacy proto id, no longer stamped
+        public const string ShipBundleId = "com.beckify.kestrelheavy"; // Trevor 2026-10-12 12:27 PM (DECISIONS #59)
+        public const string ShipVersion = "2.0.0";
         public const string TeamId = "9TR6R5LV8M";
         public const string ScenePath = "Assets/Scenes/Slice.unity";
         static readonly string[] DataFiles = { "propellants", "engines", "materials", "payloads", "presets" };
@@ -72,8 +74,9 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
         public static void EnsurePlayerSettings()
         {
             PlayerSettings.companyName = "Beckify";
-            PlayerSettings.productName = "Kestrel Heavy Proto";
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, DevBundleId);
+            PlayerSettings.productName = "Kestrel Heavy";
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, ShipBundleId);
+            PlayerSettings.bundleVersion = ShipVersion;
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
             PlayerSettings.allowedAutorotateToPortrait = true;
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
