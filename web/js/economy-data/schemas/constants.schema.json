@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kestrel Heavy economy constants",
+  "type": "object",
+  "required": ["version", "currency", "engine", "structure", "propellant", "avionics", "recovery", "ops", "reliability", "failure", "difficulty"],
+  "properties": {
+    "version": { "const": 1 },
+    "currency": { "type": "object", "required": ["code", "minorPerCredit", "creditsPerKc"], "properties": { "code": { "const": "Kc" }, "minorPerCredit": { "type": "integer" }, "creditsPerKc": { "type": "integer" } } },
+    "engine": {
+      "type": "object",
+      "required": ["kDev", "kUnit", "learningRate", "cycleMultiplier", "trl"],
+      "properties": {
+        "kDev": { "type": "integer", "minimum": 0 }, "kUnit": { "type": "integer", "minimum": 0 },
+        "learningRate": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "cycleMultiplier": { "type": "object", "additionalProperties": { "type": "number", "exclusiveMinimum": 0 } },
+        "trl": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 1, "maximum": 9 } }
+      }
+    },
+    "structure": { "type": "object", "required": ["materialPerKg", "materialPerM2"], "properties": {
+      "materialPerKg": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+      "materialPerM2": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } } } },
+    "propellant": { "type": "object", "required": ["perKg", "standbyHours"], "properties": { "perKg": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } } } },
+    "avionics": { "type": "object", "required": ["basic", "standard", "redundant"] },
+    "recovery": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "ops": { "type": "object", "required": ["rangeFee", "crewDay"] },
+    "reliability": { "type": "object", "required": ["catastrophicFraction", "engineOutMinCount", "engineOutPerEngines", "cap"] },
+    "failure": { "type": "object", "required": ["policy", "padDamageFraction", "lessonsLearnedRefund", "bailoutAlwaysAvailable"] },
+    "difficulty": { "type": "object", "required": ["default"] }
+  }
+}

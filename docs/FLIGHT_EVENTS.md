@@ -68,6 +68,8 @@ Publishers today: `mission.js` (callout beats, aborts, flight begin/end) and `vo
 | `tip` | outcome |  |
 | `splash` | outcome | abortId (splash/fuelHaven) |
 | `radio.line` | radio | key, text (exact legacy radio text shown) |
+| `econ.quote` | economy | designId, recurring, dev, perKg (integer minor units), currency (`Kc`). Emitted by the DESIGN cost panel when the price changes. |
+| `econ.purchase` | economy | item, category, amount (integer minor units), currency (`Kc`). Reserved for E3; not emitted in 2.0. |
 
 Subscribe: `import flightBus from "./narration/bus.js"; const off = flightBus.on("maxq", (ev) => ...); flightBus.on("*", ...)`.
 

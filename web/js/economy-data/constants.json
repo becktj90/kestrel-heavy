@@ -1,0 +1,62 @@
+{
+  "$schema": "./schemas/constants.schema.json",
+  "version": 1,
+  "currency": { "code": "Kc", "label": "kilocredits (fictional in-game money, never purchasable)", "minorPerCredit": 100, "creditsPerKc": 1000 },
+  "units": "All money values in this file are integer MINOR units (1 Kc = 100,000 minor). Exponents and multipliers are plain numbers.",
+  "engine": {
+    "kDev": 1800000000,
+    "kUnit": 110000000,
+    "devThrustExp": 0.6, "devPcExp": 0.35, "unitThrustExp": 0.7, "unitPcExp": 0.25,
+    "refThrustN": 1000000, "refPcBar": 100,
+    "trlPenaltyPerLevel": 0.25,
+    "learningRate": 0.85,
+    "cycleMultiplier": { "pressure-fed": 0.5, "solid": 0.6, "hybrid": 0.7, "gas-generator": 1.0, "expander": 1.6, "staged-combustion": 2.2, "full-flow": 2.8 },
+    "trl": { "gg-kerolox": 9, "gg-kerolox-vac": 9, "sc-kerolox": 9, "sc-hydrolox": 9, "ff-methalox": 7, "ff-methalox-vac": 6, "exp-hydrolox": 9, "pf-hypergolic": 9, "pf-udmh": 9, "gg-methalox-small": 7, "srm-small": 9, "srm-large": 9, "hybrid-mid": 6 },
+    "defaultTrl": 7
+  },
+  "structure": {
+    "materialPerKg": { "steel": 800, "al-li": 6000, "composite": 30000 },
+    "materialPerM2": { "steel": 150000, "al-li": 400000, "composite": 1000000 },
+    "deepCryoFactor": 0.35,
+    "refSafetyFactor": 1.4,
+    "safetyFactorExp": 0.5,
+    "separationEvent": 10000000
+  },
+  "propellant": {
+    "perKg": { "kerolox": 30, "methalox": 25, "hydrolox": 120, "udmh-nto": 600, "mmh-nto": 800, "solid-apcp": 500, "hybrid": 300 },
+    "standbyHours": 6
+  },
+  "avionics": {
+    "basic": { "dev": 0, "unit": 50000000, "reliability": 0.985 },
+    "standard": { "dev": 150000000, "unit": 200000000, "reliability": 0.995 },
+    "redundant": { "dev": 400000000, "unit": 500000000, "reliability": 0.999 },
+    "perExtraStage": 0.25
+  },
+  "recovery": { "legs": 80000000, "gridFins": 40000000, "rcs": 30000000 },
+  "ops": {
+    "rangeFee": 150000000,
+    "crewDay": 12000000,
+    "baseDays": 3, "daysPerStage": 1,
+    "integrationPerStage": 30000000,
+    "transport": 50000000, "oversizeDiameterM": 5.2, "oversizeFactor": 1.8
+  },
+  "reliability": {
+    "catastrophicFraction": 0.3,
+    "engineOutMinCount": 5,
+    "engineOutPerEngines": 9,
+    "separationEvent": 0.998,
+    "lowSafetyFactor": 1.25, "lowSafetyPenalty": 0.97,
+    "highSafetyFactor": 1.5, "highSafetyBonus": 1.002,
+    "cap": 0.9999
+  },
+  "failure": {
+    "policy": "moderate",
+    "hardwareLost": true,
+    "padDamageFraction": [0.10, 0.40],
+    "reputationDip": true,
+    "lessonsLearnedRefund": 0.15,
+    "bailoutAlwaysAvailable": true,
+    "note": "Recorded for E4/E5; not used by E1 code."
+  },
+  "difficulty": { "default": "standard", "kidSuggested": "relaxed", "budgetMultiplier": { "relaxed": 1.4, "standard": 1.0, "hardcore": 0.8 } }
+}

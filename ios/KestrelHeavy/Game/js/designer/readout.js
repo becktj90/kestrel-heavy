@@ -1,11 +1,10 @@
 // Designer readout: pure math over a design (no DOM). Feeds the DESIGN screen and tests.
 // quickReadout(): instant (rocket equation, TWR, cost, reliability, required Δv).
 // simReadout():   runs the headless ascent sim (losses, apogee, outcome). Debounced by the UI.
-import { ENGINE_BY_ID } from '../data/engines.js';
-import { PROPELLANT_BY_ID } from '../data/propellants.js';
-import { MATERIAL_BY_ID } from '../data/materials.js';
+import { priceDesign } from '../economy/costModel.js';
+import { reliabilityOf } from '../economy/reliability.js';
 import { ORBITS } from '../data/payloads.js';
-import { vehicleMass, structureMass } from '../vehicle/mass.js';
+import { vehicleMass } from '../vehicle/mass.js';
 import { toSimStages } from '../vehicle/stack.js';
 import { stackDeltaV, simulate } from '../physics/headless.js';
 import { massFlow } from '../physics/rocket-eq.js';
@@ -16,8 +15,6 @@ export const G0 = 9.80665;
 export const LAUNCH_LATITUDE = 28.5;
 /** Budgeted ascent losses (gravity + drag + steering) for the required-Δv estimate, m/s. */
 export const LOSS_BUDGET = 1500;
-const AVIONICS_COST = { basic: 0.5e6, standard: 2e6, redundant: 5e6 };
-const AVIONICS_REL = { basic: 0.985, standard: 0.995, redundant: 0.999 };
 
 /**
  * Convert toSimStages() output into the plain serial list that physics/headless.js
@@ -78,32 +75,6 @@ export function requiredDeltaV(orbitId, latitude = LAUNCH_LATITUDE) {
   return { orbit: o, targetAlt: Math.min(o.periKm, 600) * 1000, required, vCirc };
 }
 
-function costOf(design, mass) {
-  let cost = 0;
-  const parts = design.stages.map((s) => ({ ...s, n: 1 }));
-  if (design.strapOns?.count) parts.push({ ...design.strapOns, n: design.strapOns.count });
-  for (const p of parts) {
-    const e = ENGINE_BY_ID[p.engine], pr = PROPELLANT_BY_ID[p.propellant], mat = MATERIAL_BY_ID[p.material];
-    if (e) cost += e.cost * p.engineCount * p.n;
-    if (pr) cost += pr.costPerKg * p.propMass * p.n;
-    if (mat) cost += mat.costPerKg * structureMass(p, design.safetyFactor) * p.n;
-  }
-  const fm = MATERIAL_BY_ID[design.fairing?.material];
-  if (fm) cost += fm.costPerKg * mass.fairing;
-  cost += AVIONICS_COST[design.avionics?.tier] ?? 2e6;
-  return cost;
-}
-
-function reliabilityOf(design) {
-  let r = AVIONICS_REL[design.avionics?.tier] ?? 0.995;
-  const parts = design.stages.map((s) => ({ ...s, n: 1 }));
-  if (design.strapOns?.count) parts.push({ ...design.strapOns, n: design.strapOns.count });
-  for (const p of parts) { const e = ENGINE_BY_ID[p.engine]; if (e) r *= e.reliability ** (p.engineCount * p.n); }
-  r *= 0.998 ** (design.stages.length - 1 + (design.strapOns?.count ? 1 : 0)); // each separation event
-  if (design.safetyFactor < 1.25) r *= 0.97; else if (design.safetyFactor >= 1.5) r *= 1.002;
-  return Math.min(0.9999, r);
-}
-
 /** Instant readout. Never throws on a shape-valid design; returns null fields if it can't compute. */
 export function quickReadout(design) {
   const mass = vehicleMass(design);
@@ -126,7 +97,8 @@ export function quickReadout(design) {
   return {
     mass, stages: per, serial: stages, payload, totalDeltaV: dv.total, liftoffMass: per[0]?.m0 ?? mass.liftoffMass,
     liftoffTWR: per[0]?.twr ?? 0, required: req.required, targetAlt: req.targetAlt, orbit: req.orbit, margin,
-    cost: costOf(design, mass), reliability: reliabilityOf(design),
+    // cost = per-launch (recurring) price in integer minor units of fictional Kc; price has the full breakdown.
+    ...(() => { const price = priceDesign(design); const rel = reliabilityOf(design); return { price, cost: price.recurring, reliability: rel.reliability, reliabilityDetail: rel }; })(),
   };
 }
 
