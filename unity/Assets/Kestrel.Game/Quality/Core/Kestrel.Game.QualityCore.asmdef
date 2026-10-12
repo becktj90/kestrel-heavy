@@ -1,0 +1,14 @@
+{
+    "name": "Kestrel.Game.QualityCore",
+    "rootNamespace": "Kestrel.Game.Quality",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -1,0 +1,29 @@
+{
+  "$comment": "G1 quality presets + thermal governor (GFX_AUDIT §7, UNITY_SHIP_PLAN U2). Single source for the Unity shell. Ultra ships in 1.1 (plan: release cut), so it is listed but not selectable in 2.0.",
+  "version": 1,
+  "presets": [
+    { "id": "low",    "label": "Low",    "renderScaleDprCap": 1.5, "msaa": 1, "hdr": false, "particleBudget": 150,  "plume": "basic",    "bloom": false, "shimmer": false, "padLayers": "baked",   "targetFps": 60, "fallbackFps": 30, "shadows": false, "selectable": true },
+    { "id": "medium", "label": "Medium", "renderScaleDprCap": 2.0, "msaa": 2, "hdr": false, "particleBudget": 400,  "plume": "diamonds", "bloom": false, "shimmer": false, "padLayers": "layered", "targetFps": 60, "fallbackFps": 30, "shadows": false, "selectable": true },
+    { "id": "high",   "label": "High",   "renderScaleDprCap": 2.5, "msaa": 4, "hdr": true,  "particleBudget": 800,  "plume": "diamonds", "bloom": true,  "shimmer": true,  "padLayers": "night",   "targetFps": 60, "fallbackFps": 30, "shadows": true,  "selectable": true },
+    { "id": "ultra",  "label": "Ultra",  "renderScaleDprCap": 3.0, "msaa": 4, "hdr": true,  "particleBudget": 1500, "plume": "full",     "bloom": true,  "shimmer": true,  "padLayers": "full",    "targetFps": 60, "fallbackFps": 30, "shadows": true,  "selectable": false, "release": "1.1" }
+  ],
+  "defaults": {
+    "$comment": "Pending Trevor (GFX_AUDIT decision 8): High on Pro-class devices, Medium otherwise. Memory proxy until a GPU probe exists.",
+    "rules": [
+      { "minMemoryMb": 7000, "preset": "high" },
+      { "minMemoryMb": 4000, "preset": "medium" },
+      { "minMemoryMb": 0,    "preset": "low" }
+    ],
+    "batterySaverFps": 30
+  },
+  "governor": {
+    "windowFrames": 120,
+    "percentile": 0.95,
+    "stepDownMs": 20.0,
+    "stepDownHoldSec": 3.0,
+    "recoverMs": 16.7,
+    "recoverHoldSec": 30.0,
+    "floor": "low",
+    "ceiling": "chosen"
+  }
+}
