@@ -1,0 +1,14 @@
+{
+    "name": "Kestrel.Vehicle",
+    "rootNamespace": "Kestrel.Vehicle",
+    "references": ["Kestrel.Vehicle.Core", "Kestrel.Kit", "Kestrel.Kit.Core", "Kestrel.Kit.Contracts"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
