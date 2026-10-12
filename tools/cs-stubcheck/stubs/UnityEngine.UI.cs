@@ -34,6 +34,9 @@ namespace UnityEngine.UIElements
     public class ClickEvent : EventBase<ClickEvent> { }
     public class PointerDownEvent : EventBase<PointerDownEvent> { public Vector3 position => default; public Vector3 localPosition => default; public int pointerId => 0; }
     public class PointerMoveEvent : EventBase<PointerMoveEvent> { public Vector3 position => default; public Vector3 localPosition => default; public int pointerId => 0; public Vector3 deltaPosition => default; }
+    public class PointerLeaveEvent : EventBase<PointerLeaveEvent> { public Vector3 position => default; public int pointerId => 0; }
+    public class PointerEnterEvent : EventBase<PointerEnterEvent> { public Vector3 position => default; public int pointerId => 0; }
+    public class PointerCancelEvent : EventBase<PointerCancelEvent> { public Vector3 position => default; public int pointerId => 0; }
     public class PointerUpEvent : EventBase<PointerUpEvent> { public Vector3 position => default; public Vector3 localPosition => default; public int pointerId => 0; }
     public class ChangeEvent<T> : EventBase<ChangeEvent<T>> { public T newValue => default; public T previousValue => default; }
     public delegate void EventCallback<in TEventType>(TEventType evt);
@@ -49,7 +52,9 @@ namespace UnityEngine.UIElements
     public class Label : TextElement { public Label() { } public Label(string t) { } }
     public class Button : TextElement { public Button() { } public Button(Action a) { } public event Action clicked; }
     public class Image : VisualElement { public Texture image { get; set; } public Sprite sprite { get; set; } }
-    public class ScrollView : VisualElement { }
+    public enum ScrollViewMode { Vertical, Horizontal, VerticalAndHorizontal }
+    public enum ScrollerVisibility { Auto, AlwaysVisible, Hidden }
+    public class ScrollView : VisualElement { public ScrollView() { } public ScrollView(ScrollViewMode m) { } public ScrollViewMode mode { get; set; } public ScrollerVisibility horizontalScrollerVisibility { get; set; } public ScrollerVisibility verticalScrollerVisibility { get; set; } public Vector2 scrollOffset { get; set; } public void ScrollTo(VisualElement e) { } }
     public interface INotifyValueChanged<T> { T value { get; set; } void SetValueWithoutNotify(T v); }
     public class BaseField<T> : VisualElement, INotifyValueChanged<T> { public T value { get; set; } public string label { get; set; } public void SetValueWithoutNotify(T v) { } }
     public static class INotifyValueChangedExtensions { public static bool RegisterValueChangedCallback<T>(this INotifyValueChanged<T> c, EventCallback<ChangeEvent<T>> cb) => true; public static bool UnregisterValueChangedCallback<T>(this INotifyValueChanged<T> c, EventCallback<ChangeEvent<T>> cb) => true; }
@@ -57,7 +62,7 @@ namespace UnityEngine.UIElements
     public class Slider : BaseField<float> { public Slider() { } public Slider(float a, float b) { } public float lowValue { get; set; } public float highValue { get; set; } }
     public class SliderInt : BaseField<int> { public SliderInt() { } public int lowValue { get; set; } public int highValue { get; set; } }
     public class DropdownField : BaseField<string> { public System.Collections.Generic.List<string> choices { get; set; } public int index { get; set; } }
-    public class TextField : BaseField<string> { }
+    public class TextField : BaseField<string> { public int maxLength { get; set; } public bool isDelayed { get; set; } public bool multiline { get; set; } public bool isReadOnly { get; set; } }
     public class StyleSheet : ScriptableObject { }
     public class ThemeStyleSheet : StyleSheet { }
     public class PanelSettings : ScriptableObject { public ThemeStyleSheet themeStyleSheet { get; set; } public PanelScaleMode scaleMode { get; set; } public Vector2Int referenceResolution { get; set; } public float match { get; set; } public float scale { get; set; } public int sortingOrder { get; set; } public PanelScreenMatchMode screenMatchMode { get; set; } public RenderTexture targetTexture { get; set; } public float referenceDpi { get; set; } public float fallbackDpi { get; set; } public bool clearColor { get; set; } public Color colorClearValue { get; set; } }

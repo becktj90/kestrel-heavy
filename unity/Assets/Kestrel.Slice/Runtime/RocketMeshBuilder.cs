@@ -113,6 +113,104 @@ namespace Kestrel.Slice
             return new Result { mesh = mesh, height = y, stage1Top = stage1Top, nozzleExits = exits.ToArray(), exitDiameter = exitD, tanks = slots };
         }
 
+        /// <summary>One Hangar part as its own mesh (vehicle-local, same stations as <see cref="Build"/>).
+        /// Boosters are one part with every strap-on in it; Offset is zero for parts on the axis.</summary>
+        public sealed class PartMesh
+        {
+            public Kestrel.Core.Hangar.PartRef Part;
+            public Mesh Mesh;
+            /// <summary>Axial span (metres above the stage-1 engine exits) and the widest radius.</summary>
+            public float Y0, Y1, Radius;
+            /// <summary>Engine bells of this part (separate so the Look tab can give engines their own finish).</summary>
+            public Mesh Engines;
+            /// <summary>Boosters only: one copy of Mesh/Engines per strap-on, at these axis offsets. Null for every other part.</summary>
+            public Vector3[] Instances;
+            public Vector3 Center => new Vector3(0, (Y0 + Y1) * 0.5f, 0);
+        }
+
+        /// <summary>
+        /// The same rocket split into Hangar parts: each stage body, each interstage, the fairing, the payload and the
+        /// booster set. Upper-stage engines are drawn too (they nest inside the interstage until the exploded view opens).
+        /// Stations match <see cref="Build"/>, so the parts reassemble into exactly the flight silhouette.
+        /// </summary>
+        public static List<PartMesh> BuildParts(Catalog c, Design d)
+        {
+            var parts = new List<PartMesh>();
+            float y = 0, dummyExit = 0; var exits = new List<Vector3>();
+            for (int i = 0; i < d.stages.Count; i++)
+            {
+                var s = d.stages[i]; var e = c.EngineById[s.engine];
+                float r = (float)s.diameter / 2;
+                float tank = (float)DesignMath.SizeTank(c, s.propellant, s.propMass, s.diameter).length;
+                float bell = Mathf.Clamp((float)e.diameter * 1.6f, 0.4f, 4f);
+                float thrustSection = 0.6f * r + (i == 0 ? 0 : bell * 0.7f);
+                float baseY = y + (i == 0 ? bell : 0);
+                var g = new Geo(); var eg = new Geo();
+                AddEngines(c, s, new Vector3(0, i == 0 ? 0 : baseY - bell * 0.7f, 0), bell, eg.v, eg.n, eg.uv, eg.t, exits, ref dummyExit);
+                float top = baseY + thrustSection + tank;
+                Lathe(new List<Vector2> { new Vector2(0, baseY), new Vector2(r, baseY), new Vector2(r, top), new Vector2(0, top) }, Vector3.zero, g.v, g.n, g.uv, g.t);
+                parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Stage(i), Mesh = g.ToMesh($"Stage{i + 1}"), Engines = eg.ToMesh($"Stage{i + 1}_Engines"), Y0 = i == 0 ? 0 : baseY - bell * 0.7f, Y1 = top, Radius = r });
+                y = top;
+                if (i < d.stages.Count - 1)
+                {
+                    float rn = (float)d.stages[i + 1].diameter / 2, inter = 1.2f * Mathf.Max(r, rn);
+                    var ig = new Geo();
+                    Lathe(new List<Vector2> { new Vector2(r, y), new Vector2(rn, y + inter) }, Vector3.zero, ig.v, ig.n, ig.uv, ig.t);
+                    parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Interstage(i + 1), Mesh = ig.ToMesh($"Interstage{i + 1}"), Y0 = y, Y1 = y + inter, Radius = Mathf.Max(r, rn) });
+                    y += inter;
+                }
+            }
+            {
+                float rf = (float)d.fairingDiameter / 2, L = (float)d.fairingLength;
+                float noseFrac = d.nose == "blunt" ? 0.25f : d.nose == "conic" ? 0.4f : 0.45f;
+                float cyl = L * (1 - noseFrac), nose = L * noseFrac;
+                var prof = new List<Vector2> { new Vector2(0, y), new Vector2(rf, y), new Vector2(rf, y + cyl) };
+                for (int k = 1; k <= 10; k++)
+                {
+                    float t = k / 10f;
+                    float rr = d.nose == "conic" ? rf * (1 - t) : rf * Mathf.Sqrt(Mathf.Max(0, 1 - t * t));
+                    prof.Add(new Vector2(k == 10 ? 0 : rr, y + cyl + nose * t));
+                }
+                var g = new Geo();
+                Lathe(prof, Vector3.zero, g.v, g.n, g.uv, g.t);
+                parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Fairing, Mesh = g.ToMesh("Fairing"), Y0 = y, Y1 = y + L, Radius = rf });
+                // Payload: a capsule inside the fairing barrel, sized to the fairing (seen when the view explodes).
+                float pr = rf * 0.55f, ph = Mathf.Max(0.5f, cyl * 0.6f), py = y + 0.15f * cyl;
+                var pg = new Geo();
+                Lathe(new List<Vector2> { new Vector2(0, py), new Vector2(pr, py), new Vector2(pr, py + ph * 0.75f), new Vector2(pr * 0.5f, py + ph), new Vector2(0, py + ph) }, Vector3.zero, pg.v, pg.n, pg.uv, pg.t);
+                parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Payload, Mesh = pg.ToMesh("Payload"), Y0 = py, Y1 = py + ph, Radius = pr });
+            }
+            if (d.strapOns != null && d.strapOns.count > 0)
+            {
+                var so = d.strapOns; var e = c.EngineById[so.engine];
+                float r = (float)so.diameter / 2, core = (float)d.stages[0].diameter / 2;
+                float bell = Mathf.Clamp((float)e.diameter * 1.6f, 0.4f, 4f);
+                float tank = (float)DesignMath.SizeTank(c, so.propellant, so.propMass, so.diameter).length;
+                var g = new Geo(); var eg = new Geo();
+                Lathe(new List<Vector2> { new Vector2(0, bell), new Vector2(r, bell), new Vector2(r, bell + tank), new Vector2(0, bell + tank + 2.2f * r) }, Vector3.zero, g.v, g.n, g.uv, g.t);
+                AddEngines(c, so, Vector3.zero, bell, eg.v, eg.n, eg.uv, eg.t, exits, ref dummyExit);
+                var at = new Vector3[so.count];
+                for (int k = 0; k < so.count; k++)
+                {
+                    float ang = k * Mathf.PI * 2 / so.count;
+                    at[k] = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)) * (core + r + 0.1f);
+                }
+                parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Boosters, Mesh = g.ToMesh("Booster"), Engines = eg.ToMesh("Booster_Engines"), Instances = at, Y0 = 0, Y1 = bell + tank + 2.2f * r, Radius = r });
+            }
+            return parts;
+        }
+
+        sealed class Geo
+        {
+            public readonly List<Vector3> v = new List<Vector3>(), n = new List<Vector3>(); public readonly List<Vector2> uv = new List<Vector2>(); public readonly List<int> t = new List<int>();
+            public Mesh ToMesh(string name)
+            {
+                var m = new Mesh { name = name, indexFormat = v.Count > 65000 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
+                m.SetVertices(v); m.SetNormals(n); m.SetUVs(0, uv); m.SetTriangles(t, 0); m.RecalculateBounds();
+                return m;
+            }
+        }
+
         /// <summary>Engine bells: one centre engine plus concentric rings (simple circle packer).</summary>
         static void AddEngines(Catalog c, StagePart s, Vector3 origin, float bell, List<Vector3> v, List<Vector3> n, List<Vector2> uv, List<int> t, List<Vector3> exits, ref float exitD)
         {

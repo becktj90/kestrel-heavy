@@ -29,7 +29,19 @@ namespace Kestrel.Slice
         bool mouseDown;
 #endif
 
+        /// <summary>A single tap on the 3D view (not on the panel), in screen pixels. The Hangar picks a part with it.</summary>
+        public event System.Action<Vector2> Tapped;
+        /// <summary>A finger that moves less than this (points) and lifts within TapSeconds is a tap, not an orbit.</summary>
+        public const float TapSlopPt = 4f, TapSeconds = 0.35f;
+        static float TapSlopPx => TapSlopPt * DesignFraming.PixelsPerPoint(Screen.width, Screen.height, Screen.dpi);
+
+        float focusAim = float.NaN, focusAimTarget = float.NaN, focusZoomTarget = float.NaN;
+        Vector2 tapStart; float tapStartTime; bool tapCandidate;
+
         public float YawDeg => orbit.YawDeg;
+        /// <summary>Aim height in metres while a part is focused, NaN at rest.</summary>
+        public float FocusAim => focusAim;
+        public bool Focused => !float.IsNaN(focusAimTarget);
         public float PitchDeg => orbit.PitchDeg;
         public float Zoom => orbit.Zoom > 0f ? orbit.Zoom : 1f;
         public float VehicleHeight => height;
@@ -61,9 +73,48 @@ namespace Kestrel.Slice
             ApplyPose();
         }
 
-        public void Reframe() => orbit.BeginReframe(ReduceMotion);
+        public void Reframe() { ClearFocus(); orbit.BeginReframe(ReduceMotion); }
+
+        /// <summary>Glide the aim to a part's centre and zoom so the part fills about half the view.</summary>
+        public void Focus(float aimY, float partHeight)
+        {
+            if (float.IsNaN(aimY) || float.IsInfinity(aimY)) { ClearFocus(); return; }
+            if (float.IsNaN(focusAim)) focusAim = height * DesignFraming.AimHeight;
+            focusAimTarget = aimY;
+            focusZoomTarget = HangarFocus.ZoomFor(height, partHeight);
+            orbit.Reframing = false;
+            if (ReduceMotion) { focusAim = focusAimTarget; orbit.Zoom = focusZoomTarget; }
+        }
+
+        /// <summary>Back to the whole-rocket aim (zoom is left where the player put it until Reframe).</summary>
+        public void ClearFocus()
+        {
+            if (float.IsNaN(focusAimTarget) && float.IsNaN(focusAim)) return;
+            focusAimTarget = float.NaN; focusZoomTarget = float.NaN;
+            if (ReduceMotion) focusAim = float.NaN;
+        }
+
+        void StepFocus(float dt)
+        {
+            bool reduce = ReduceMotion;
+            if (!float.IsNaN(focusAimTarget))
+            {
+                focusAim = HangarFocus.Approach(focusAim, focusAimTarget, dt, reduce);
+                if (!float.IsNaN(focusZoomTarget) && !pinching)
+                {
+                    orbit.Zoom = HangarFocus.Approach(orbit.Zoom > 0f ? orbit.Zoom : 1f, focusZoomTarget, dt, reduce);
+                    if (orbit.Zoom == focusZoomTarget) focusZoomTarget = float.NaN;
+                }
+            }
+            else if (!float.IsNaN(focusAim))
+            {
+                float rest = height * DesignFraming.AimHeight;
+                focusAim = HangarFocus.Approach(focusAim, rest, dt, reduce);
+                if (focusAim == rest) focusAim = float.NaN;
+            }
+        }
         public void Drag(float dxPx, float dyPx, float dt) => orbit.Drag(dxPx, dyPx, dt, ReduceMotion);
-        public void Pinch(float scale) => orbit.Pinch(scale);
+        public void Pinch(float scale) { focusZoomTarget = float.NaN; orbit.Pinch(scale); }
 
         public bool BlocksGesture(Vector2 screenPx)
         {
@@ -85,6 +136,10 @@ namespace Kestrel.Slice
             return f < 1f && screenPx.y <= screenH * (1f - f);
         }
 
+        /// <summary>A tap: short and still. Slop is in pixels at the caller's scale.</summary>
+        public static bool IsTap(Vector2 down, Vector2 up, float seconds, float slopPx)
+            => seconds >= 0f && seconds <= TapSeconds && Vector2.Distance(down, up) <= slopPx;
+
         void LateUpdate()
         {
             float dt = Time.unscaledDeltaTime;
@@ -95,6 +150,7 @@ namespace Kestrel.Slice
             ReadMouse(dt);
 #endif
             if (!dragging && !pinching) orbit.Step(dt, ReduceMotion);
+            StepFocus(dt);
             ApplyPose();
         }
 
@@ -108,7 +164,7 @@ namespace Kestrel.Slice
             float side = DesignFraming.SideVisibleFraction(w, h, Screen.dpi);
             float fov = cam.fieldOfView > 1f ? cam.fieldOfView : 50f;
             float k = DesignFraming.FitDistanceScale(hasFit ? fit : null, height, (float)w / h, fov, bottomVisible, side);
-            HangarOrbit.Pose(height, k, orbit.YawDeg, orbit.PitchDeg, orbit.Zoom, out var pos, out var aim);
+            HangarOrbit.PoseAt(height, k, orbit.YawDeg, orbit.PitchDeg, orbit.Zoom, focusAim, out var pos, out var aim);
             if (!DesignFraming.IsFinite(pos) || (pos - aim).sqrMagnitude < 1e-4f) return;
             transform.SetPositionAndRotation(pos, Quaternion.LookRotation(aim - pos));
             cam.ResetProjectionMatrix();
@@ -140,15 +196,24 @@ namespace Kestrel.Slice
             var t = Input.GetTouch(0);
             if (t.phase == TouchPhase.Began)
             {
+                tapCandidate = false;
                 if (BlocksGesture(t.position)) { dragging = false; dragFinger = int.MinValue; return; }
                 if (t.tapCount >= 2) { Reframe(); dragging = false; dragFinger = int.MinValue; return; }
                 dragging = true; dragFinger = t.fingerId;
+                tapCandidate = true; tapStart = t.position; tapStartTime = Time.unscaledTime;
                 return;
             }
             if (dragging && t.fingerId == dragFinger && (t.phase == TouchPhase.Moved || t.phase == TouchPhase.Stationary))
-                Drag(t.deltaPosition.x, t.deltaPosition.y, dt);
+            {
+                if (tapCandidate && Vector2.Distance(t.position, tapStart) > TapSlopPx) tapCandidate = false;
+                if (!tapCandidate) Drag(t.deltaPosition.x, t.deltaPosition.y, dt);
+            }
             else if (t.phase == TouchPhase.Ended || t.phase == TouchPhase.Canceled)
-            { dragging = false; dragFinger = int.MinValue; }
+            {
+                bool tap = tapCandidate && t.phase == TouchPhase.Ended && t.tapCount < 2 && IsTap(tapStart, t.position, Time.unscaledTime - tapStartTime, TapSlopPx);
+                dragging = false; dragFinger = int.MinValue; tapCandidate = false;
+                if (tap) Tapped?.Invoke(t.position);
+            }
         }
 
 #if UNITY_EDITOR
@@ -156,7 +221,9 @@ namespace Kestrel.Slice
         {
             if (Input.touchCount > 0) return;
             var m = Input.mousePosition;
-            if (Input.GetMouseButtonDown(0)) { mouseDown = !BlocksGesture(m); prevMouse = m; dragging = mouseDown; return; }
+            if (Input.GetMouseButtonDown(0)) { mouseDown = !BlocksGesture(m); prevMouse = m; dragging = mouseDown; tapCandidate = mouseDown; tapStart = m; tapStartTime = Time.unscaledTime; return; }
+            if (Input.GetMouseButtonUp(0) && mouseDown && tapCandidate && IsTap(tapStart, m, Time.unscaledTime - tapStartTime, TapSlopPx)) { mouseDown = false; dragging = false; tapCandidate = false; Tapped?.Invoke(m); return; }
+            if (Input.GetMouseButton(0) && mouseDown && tapCandidate && Vector2.Distance(m, tapStart) > TapSlopPx) tapCandidate = false;
             if (Input.GetMouseButton(0) && mouseDown)
             {
                 Drag(m.x - prevMouse.x, m.y - prevMouse.y, dt);
