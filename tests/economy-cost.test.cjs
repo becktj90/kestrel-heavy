@@ -75,7 +75,7 @@ test('all money is integer minor units and totals add exactly', async () => {
 
 test('developed engines are not charged dev again', async () => {
   const { PRESET_BY_ID, priceDesign } = await load();
-  const p = PRESET_BY_ID['medium-lift'];
+  const p = PRESET_BY_ID['tpl-medium-kerolox'];
   const r = priceDesign(p, { devDone: ['gg-kerolox', 'gg-kerolox-vac', 'avionics:standard'] });
   assert.strictEqual(r.dev, 0);
   assert.strictEqual(r.recurring, priceDesign(p).recurring);

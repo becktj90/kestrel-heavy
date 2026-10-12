@@ -31,6 +31,8 @@ export const ECON = Object.freeze({
     "trl": {
       "gg-kerolox": 9,
       "gg-kerolox-vac": 9,
+      "gg-kerolox-small": 8,
+      "gg-kerolox-small-vac": 8,
       "sc-kerolox": 9,
       "sc-hydrolox": 9,
       "ff-methalox": 7,

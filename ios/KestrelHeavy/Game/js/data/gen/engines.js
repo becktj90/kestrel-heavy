@@ -58,6 +58,52 @@ export default {
       "diameter": 3.3
     },
     {
+      "id": "gg-kerolox-small",
+      "label": "Small gas-generator kerolox",
+      "cycle": "gas-generator",
+      "propellant": "kerolox",
+      "thrustSL": 90600,
+      "thrustVac": 100000,
+      "ispSL": 282,
+      "ispVac": 311,
+      "mass": 95,
+      "pc": 60,
+      "throttle": [
+        0.6,
+        1
+      ],
+      "restart": false,
+      "restarts": 0,
+      "gimbal": 6,
+      "cost": 350000,
+      "reliability": 0.99,
+      "expansionRatio": 16,
+      "diameter": 0.5
+    },
+    {
+      "id": "gg-kerolox-small-vac",
+      "label": "Small gas-generator kerolox (vacuum nozzle)",
+      "cycle": "gas-generator",
+      "propellant": "kerolox",
+      "thrustSL": 0,
+      "thrustVac": 60000,
+      "ispSL": 0,
+      "ispVac": 342,
+      "mass": 70,
+      "pc": 60,
+      "throttle": [
+        0.5,
+        1
+      ],
+      "restart": true,
+      "restarts": 3,
+      "gimbal": 4,
+      "cost": 400000,
+      "reliability": 0.99,
+      "expansionRatio": 80,
+      "diameter": 1
+    },
+    {
       "id": "sc-kerolox",
       "label": "Staged-combustion kerolox",
       "cycle": "staged-combustion",

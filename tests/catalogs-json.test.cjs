@@ -65,7 +65,8 @@ test('loaders expose the catalogs and lookups', async () => {
   const js = path.join(root, 'web', 'js', 'data');
   const { PRESETS, PRESET_BY_ID } = await import(path.join(js, 'presets.js'));
   const { ENGINES, ENGINE_BY_ID, ENGINE_CYCLES } = await import(path.join(js, 'engines.js'));
-  assert.strictEqual(PRESETS.length, readJSON('data', 'presets.json').presets.length);
+  const { TEMPLATES } = await import(path.join(js, 'templates', 'index.js')); // T1 starter templates ride along
+  assert.strictEqual(PRESETS.length, readJSON('data', 'presets.json').presets.length + TEMPLATES.length);
   assert.strictEqual(PRESET_BY_ID.stock.stages[0].engineCount, 9);
   assert.ok(Object.isFrozen(ENGINES) && ENGINE_BY_ID['gg-kerolox'] && ENGINE_CYCLES.includes('full-flow'));
 });

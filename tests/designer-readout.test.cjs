@@ -66,7 +66,7 @@ test('sim readout comes from simulate(): same outcome, losses and ideal Δv', as
 
 test('archetype presets reach orbit in the headless sim; required Δv is in the real-world range', async () => {
   const { PRESET_BY_ID, quickReadout, simReadout, requiredDeltaV } = await load();
-  for (const id of ['scout', 'kid', 'small-lift', 'medium-lift', 'super-heavy']) {
+  for (const id of ['scout', 'kid', 'super-heavy']) {
     assert.strictEqual(simReadout(PRESET_BY_ID[id]).outcome, 'orbit', id);
   }
   const leo = requiredDeltaV('leo200').required;

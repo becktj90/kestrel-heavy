@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "strapOns": {
+    "count": 0,
+    "kind": "solid",
+    "propellant": "solid-apcp",
+    "engine": "srm-small",
+    "engineCount": 1,
+    "propMass": 0,
+    "diameter": 1.6,
+    "material": "steel",
+    "crossfeed": false
+  },
+  "aero": {
+    "nose": "ogive",
+    "fins": false
+  },
+  "landing": {
+    "legs": false,
+    "gridFins": false,
+    "rcs": false
+  },
+  "avionics": {
+    "tier": "standard"
+  },
+  "safetyFactor": 1.4,
+  "id": "tpl-hydrogen-upper",
+  "name": "Heron",
+  "tier": "medium",
+  "stages": [
+    {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 400000,
+      "diameter": 3.7
+    },
+    {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 30000,
+      "diameter": 4
+    }
+  ],
+  "payload": {
+    "type": "gto-comsat",
+    "mass": 4000,
+    "orbit": "gto"
+  },
+  "fairing": {
+    "diameter": 5,
+    "length": 12,
+    "material": "composite",
+    "jettisonAltitudeKm": 110
+  },
+  "livery": {
+    "primary": "#f5f1e6",
+    "accent": "#b5651d",
+    "name": "HERON"
+  },
+  "template": {
+    "version": 1,
+    "order": 5,
+    "difficulty": "medium",
+    "tags": [
+      "kerolox",
+      "hydrolox",
+      "2 stages",
+      "medium",
+      "GTO",
+      "high Isp"
+    ],
+    "tagline": "Dense fuel down low, hydrogen up high.",
+    "brief": "A kerosene first stage does the heavy lifting through the thick air, where dense propellant keeps tanks small. Above it, a wide, light hydrogen stage with two expander engines uses its high specific impulse (about 465 s) to push a 4 t satellite toward geostationary transfer orbit.",
+    "benchmark": {
+      "class": "Kerolox or solid booster with a hydrogen upper stage",
+      "text": "Hydrogen/oxygen upper stages have flown since the 1960s because their efficiency pays off most where every kilogram of stage mass must be pushed to orbital speed. Their low density makes tanks large, which is why they are rarely used alone on first stages.",
+      "sources": [
+        {
+          "title": "NASA Glenn: Centaur upper stage history",
+          "url": "https://www.nasa.gov/centaur/",
+          "claim": "first liquid hydrogen upper stage (TODO-review: link)"
+        },
+        {
+          "title": "Aerojet Rocketdyne / L3Harris: RL10 engine",
+          "url": "https://www.l3harris.com/all-capabilities/rl10-propulsion-system",
+          "claim": "expander-cycle hydrolox upper-stage engine, vacuum Isp ~450–465 s (TODO-review)"
+        }
+      ]
+    },
+    "thingsToTry": [
+      "Swap stage 2 to kerolox with the same tank size. What happens to Δv?",
+      "Narrow stage 2 to 3.7 m and watch it grow taller.",
+      "Retarget to LEO 400 and see how much payload you can carry."
+    ],
+    "refMission": {
+      "objective": "orbit",
+      "note": "Sim validates the parking orbit; the GTO burn is checked by the Δv margin (quick readout)."
+    },
+    "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+    },
+    "review": [
+      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+    ],
+    "stats": {
+      "stages": 2,
+      "liftoffMassT": 463.1,
+      "liftoffTWR": 1.67,
+      "deltaV": 12641,
+      "requiredDeltaV": 11330,
+      "marginPct": 11.6,
+      "payloadKg": 4000,
+      "target": "GTO",
+      "simOutcome": "orbit",
+      "simApogeeKm": 930,
+      "simPerigeeKm": 196,
+      "maxG": 13.5
+    }
+  }
+}

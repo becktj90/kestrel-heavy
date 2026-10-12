@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "strapOns": {
+    "count": 0,
+    "kind": "solid",
+    "propellant": "solid-apcp",
+    "engine": "srm-small",
+    "engineCount": 1,
+    "propMass": 0,
+    "diameter": 1.6,
+    "material": "steel",
+    "crossfeed": false
+  },
+  "aero": {
+    "nose": "ogive",
+    "fins": false
+  },
+  "landing": {
+    "legs": true,
+    "gridFins": true,
+    "rcs": true
+  },
+  "avionics": {
+    "tier": "standard"
+  },
+  "safetyFactor": 1.4,
+  "id": "tpl-medium-kerolox-reusable",
+  "name": "Curlew R",
+  "tier": "medium",
+  "stages": [
+    {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 35000,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 400000,
+      "diameter": 3.7
+    },
+    {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 100000,
+      "diameter": 3.7
+    }
+  ],
+  "payload": {
+    "type": "leo-sat",
+    "mass": 10500,
+    "orbit": "leo400"
+  },
+  "fairing": {
+    "diameter": 5.2,
+    "length": 13,
+    "material": "composite",
+    "jettisonAltitudeKm": 110
+  },
+  "livery": {
+    "primary": "#f2f2f2",
+    "accent": "#1a3c6e",
+    "name": "CURLEW R"
+  },
+  "template": {
+    "version": 1,
+    "order": 4,
+    "difficulty": "medium",
+    "variantOf": "tpl-medium-kerolox",
+    "tags": [
+      "kerolox",
+      "2 stages",
+      "9-engine cluster",
+      "medium",
+      "reusable",
+      "propulsive landing"
+    ],
+    "tagline": "Same rocket, but the booster flies home.",
+    "brief": "Identical to Curlew, plus landing legs, grid fins, cold-gas thrusters and 35 t of propellant held back for the landing burn. That reserve and hardware cost about 4.5 t of payload. Reuse trades payload for hardware you get to fly again.",
+    "benchmark": {
+      "class": "Medium-lift kerolox with propulsive first-stage landing",
+      "text": "Propulsive landing of an orbital-class booster became routine in the late 2010s. The booster keeps propellant in reserve for boost-back, entry and landing burns, which is why reusable missions carry noticeably less than expendable ones.",
+      "sources": [
+        {
+          "title": "SpaceX: Falcon 9 vehicle page",
+          "url": "https://www.spacex.com/vehicles/falcon-9/",
+          "claim": "reusable first stage with landing legs and grid fins (TODO-review: reusable payload figure not published on the page)"
+        }
+      ]
+    },
+    "thingsToTry": [
+      "Set the landing reserve to 0 and see how much payload you get back.",
+      "Remove the grid fins and read the warning.",
+      "Try 45 t of landing reserve. Still orbital?"
+    ],
+    "refMission": {
+      "objective": "orbit"
+    },
+    "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+    },
+    "review": [
+      "Landing itself is not simulated yet (M3); the reserve rides as dry mass."
+    ],
+    "stats": {
+      "stages": 2,
+      "liftoffMassT": 545,
+      "liftoffTWR": 1.42,
+      "deltaV": 9756,
+      "requiredDeltaV": 8760,
+      "marginPct": 11.4,
+      "payloadKg": 10500,
+      "target": "LEO 400 km",
+      "simOutcome": "orbit",
+      "simApogeeKm": 1271,
+      "simPerigeeKm": 158,
+      "maxG": 5.5
+    }
+  }
+}

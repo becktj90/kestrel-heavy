@@ -5,7 +5,7 @@
   "abs": 1e-9,
   "note": "closed form: |a-b| <= abs + rel*|b|"
  },
- "count": 6,
+ "count": 10,
  "cases": [
   {
    "preset": "stock",
@@ -834,538 +834,6 @@
    }
   },
   {
-   "preset": "small-lift",
-   "design": {
-    "version": 1,
-    "strapOns": {
-     "count": 0,
-     "kind": "solid",
-     "propellant": "solid-apcp",
-     "engine": "srm-small",
-     "engineCount": 1,
-     "propMass": 0,
-     "diameter": 1.6,
-     "material": "steel",
-     "crossfeed": false
-    },
-    "aero": {
-     "nose": "ogive",
-     "fins": false
-    },
-    "landing": {
-     "legs": false,
-     "gridFins": false,
-     "rcs": false
-    },
-    "avionics": {
-     "tier": "standard"
-    },
-    "safetyFactor": 1.4,
-    "livery": {
-     "primary": "#f2f2f2",
-     "accent": "#1a3c6e",
-     "name": ""
-    },
-    "id": "small-lift",
-    "name": "Small-lift (archetype)",
-    "tier": "small",
-    "stages": [
-     {
-      "interstageMass": 300,
-      "separationMass": 50,
-      "landingPropMass": 0,
-      "material": "al-li",
-      "name": "Stage 1",
-      "propellant": "kerolox",
-      "engine": "gg-kerolox",
-      "engineCount": 1,
-      "propMass": 45000,
-      "diameter": 2.4
-     },
-     {
-      "interstageMass": 0,
-      "separationMass": 50,
-      "landingPropMass": 0,
-      "material": "al-li",
-      "name": "Stage 2",
-      "propellant": "methalox",
-      "engine": "gg-methalox-small",
-      "engineCount": 1,
-      "propMass": 7000,
-      "diameter": 2.4
-     }
-    ],
-    "payload": {
-     "type": "leo-sat",
-     "mass": 400,
-     "orbit": "sso"
-    },
-    "fairing": {
-     "diameter": 2.4,
-     "length": 3.5,
-     "material": "composite",
-     "jettisonAltitudeKm": 105
-    }
-   },
-   "out": {
-    "stageMasses": [
-     {
-      "name": "Stage 1",
-      "dry": 2845,
-      "prop": 45000,
-      "wet": 47845,
-      "usableProp": 45000,
-      "landingProp": 0
-     },
-     {
-      "name": "Stage 2",
-      "dry": 660.9054552927568,
-      "prop": 7000,
-      "wet": 7660.905455292756,
-      "usableProp": 7000,
-      "landingProp": 0
-     }
-    ],
-    "strapOnMasses": {
-     "count": 0,
-     "dry": 0,
-     "prop": 0,
-     "wet": 0,
-     "each": {
-      "dry": 0,
-      "prop": 0
-     }
-    },
-    "vehicleMass": {
-     "stages": [
-      {
-       "name": "Stage 1",
-       "dry": 2845,
-       "prop": 45000,
-       "wet": 47845,
-       "usableProp": 45000,
-       "landingProp": 0
-      },
-      {
-       "name": "Stage 2",
-       "dry": 660.9054552927568,
-       "prop": 7000,
-       "wet": 7660.905455292756,
-       "usableProp": 7000,
-       "landingProp": 0
-      }
-     ],
-     "strapOns": {
-      "count": 0,
-      "dry": 0,
-      "prop": 0,
-      "wet": 0,
-      "each": {
-       "dry": 0,
-       "prop": 0
-      }
-     },
-     "payload": 400,
-     "fairing": 314.0336016528357,
-     "liftoffMass": 56219.93905694559,
-     "dryMass": 3505.905455292757,
-     "ratios": [
-      {
-       "m0": 56219.93905694559,
-       "mf": 11219.939056945594,
-       "massRatio": 5.010716971955671,
-       "propFraction": 0.800427762015522
-      },
-      {
-       "m0": 8374.939056945592,
-       "mf": 1374.9390569455918,
-       "massRatio": 6.09113474131021,
-       "propFraction": 0.8358269776536089
-      }
-     ]
-    },
-    "fairingMass": 314.0336016528357,
-    "baseCd": 0.3,
-    "referenceDiameter": 2.4,
-    "toSimStages": [
-     {
-      "thrustSL": 845000,
-      "thrustVac": 934000,
-      "ispSL": 282,
-      "ispVac": 311,
-      "propMass": 45000,
-      "dryMass": 2845,
-      "diameter": 2.4,
-      "Cd": 0.3,
-      "role": "core",
-      "index": 0,
-      "reserveMass": 0,
-      "throttle": [
-       0.57,
-       1
-      ],
-      "restart": true
-     },
-     {
-      "thrustSL": 90000,
-      "thrustVac": 100000,
-      "ispSL": 300,
-      "ispVac": 330,
-      "propMass": 7000,
-      "dryMass": 660.9054552927568,
-      "diameter": 2.4,
-      "Cd": 0.3,
-      "role": "core",
-      "index": 1,
-      "reserveMass": 0,
-      "throttle": [
-       0.6,
-       1
-      ],
-      "restart": true,
-      "payloadMass": 400,
-      "fairingMass": 314.0336016528357,
-      "fairingJettisonAltitudeM": 105000
-     }
-    ],
-    "idealDeltaV": {
-     "total": 10762.371028052292,
-     "perStage": [
-      4915.103503056439,
-      5847.267524995853
-     ]
-    },
-    "tanks": [
-     {
-      "volume": 45,
-      "length": 10.739183943243459,
-      "diameter": 2.4
-     },
-     {
-      "volume": 8.686746987951807,
-      "length": 2.712192670168282,
-      "diameter": 2.4
-     }
-    ],
-    "serialStages": {
-     "stages": [
-      {
-       "diameter": 2.4,
-       "cd": 0.3,
-       "thrustVac": 934000,
-       "thrustSL": 845000,
-       "ispVac": 311,
-       "ispSL": 282,
-       "propMass": 45000,
-       "dryMass": 2845,
-       "role": "core",
-       "index": 0,
-       "label": "Stage 1"
-      },
-      {
-       "diameter": 2.4,
-       "cd": 0.3,
-       "thrustVac": 100000,
-       "thrustSL": 90000,
-       "ispVac": 330,
-       "ispSL": 300,
-       "propMass": 7000,
-       "dryMass": 660.9054552927568,
-       "role": "core",
-       "index": 1,
-       "label": "Stage 2"
-      }
-     ],
-     "payload": 714.0336016528357
-    },
-    "requiredDeltaV": {
-     "orbit": {
-      "id": "sso",
-      "label": "Sun-sync 550 km",
-      "apoKm": 550,
-      "periKm": 550,
-      "incDeg": 97.6
-     },
-     "targetAlt": 550000,
-     "required": 8676.349692186206,
-     "vCirc": 7585.088535158763
-    },
-    "stackDeltaV": {
-     "perStage": [
-      4915.103503056439,
-      5847.267524995853
-     ],
-     "total": 10762.371028052292
-    }
-   }
-  },
-  {
-   "preset": "medium-lift",
-   "design": {
-    "version": 1,
-    "strapOns": {
-     "count": 0,
-     "kind": "solid",
-     "propellant": "solid-apcp",
-     "engine": "srm-small",
-     "engineCount": 1,
-     "propMass": 0,
-     "diameter": 1.6,
-     "material": "steel",
-     "crossfeed": false
-    },
-    "aero": {
-     "nose": "ogive",
-     "fins": false
-    },
-    "landing": {
-     "legs": false,
-     "gridFins": false,
-     "rcs": false
-    },
-    "avionics": {
-     "tier": "standard"
-    },
-    "safetyFactor": 1.4,
-    "livery": {
-     "primary": "#f2f2f2",
-     "accent": "#1a3c6e",
-     "name": ""
-    },
-    "id": "medium-lift",
-    "name": "Medium-lift (archetype)",
-    "tier": "medium",
-    "stages": [
-     {
-      "interstageMass": 1500,
-      "separationMass": 50,
-      "landingPropMass": 0,
-      "material": "al-li",
-      "name": "Stage 1",
-      "propellant": "kerolox",
-      "engine": "gg-kerolox",
-      "engineCount": 9,
-      "propMass": 400000,
-      "diameter": 3.7
-     },
-     {
-      "interstageMass": 0,
-      "separationMass": 50,
-      "landingPropMass": 0,
-      "material": "al-li",
-      "name": "Stage 2",
-      "propellant": "kerolox",
-      "engine": "gg-kerolox-vac",
-      "engineCount": 1,
-      "propMass": 100000,
-      "diameter": 3.7
-     }
-    ],
-    "payload": {
-     "type": "gto-comsat",
-     "mass": 5500,
-     "orbit": "gto"
-    },
-    "fairing": {
-     "diameter": 5.2,
-     "length": 13,
-     "material": "composite",
-     "jettisonAltitudeKm": 110
-    }
-   },
-   "out": {
-    "stageMasses": [
-     {
-      "name": "Stage 1",
-      "dry": 23780,
-      "prop": 400000,
-      "wet": 423780,
-      "usableProp": 400000,
-      "landingProp": 0
-     },
-     {
-      "name": "Stage 2",
-      "dry": 5220,
-      "prop": 100000,
-      "wet": 105220,
-      "usableProp": 100000,
-      "landingProp": 0
-     }
-    ],
-    "strapOnMasses": {
-     "count": 0,
-     "dry": 0,
-     "prop": 0,
-     "wet": 0,
-     "each": {
-      "dry": 0,
-      "prop": 0
-     }
-    },
-    "vehicleMass": {
-     "stages": [
-      {
-       "name": "Stage 1",
-       "dry": 23780,
-       "prop": 400000,
-       "wet": 423780,
-       "usableProp": 400000,
-       "landingProp": 0
-      },
-      {
-       "name": "Stage 2",
-       "dry": 5220,
-       "prop": 100000,
-       "wet": 105220,
-       "usableProp": 100000,
-       "landingProp": 0
-      }
-     ],
-     "strapOns": {
-      "count": 0,
-      "dry": 0,
-      "prop": 0,
-      "wet": 0,
-      "each": {
-       "dry": 0,
-       "prop": 0
-      }
-     },
-     "payload": 5500,
-     "fairing": 2527.2227942537734,
-     "liftoffMass": 537027.2227942537,
-     "dryMass": 29000,
-     "ratios": [
-      {
-       "m0": 537027.2227942537,
-       "mf": 137027.22279425373,
-       "massRatio": 3.9191279794132563,
-       "propFraction": 0.7448411980285183
-      },
-      {
-       "m0": 113247.22279425377,
-       "mf": 13247.222794253772,
-       "massRatio": 8.5487520330206,
-       "propFraction": 0.8830238617125192
-      }
-     ]
-    },
-    "fairingMass": 2527.2227942537734,
-    "baseCd": 0.3324324324324324,
-    "referenceDiameter": 5.2,
-    "toSimStages": [
-     {
-      "thrustSL": 7605000,
-      "thrustVac": 8406000,
-      "ispSL": 282,
-      "ispVac": 311,
-      "propMass": 400000,
-      "dryMass": 23780,
-      "diameter": 5.2,
-      "Cd": 0.3324324324324324,
-      "role": "core",
-      "index": 0,
-      "reserveMass": 0,
-      "throttle": [
-       0.57,
-       1
-      ],
-      "restart": true
-     },
-     {
-      "thrustSL": 0,
-      "thrustVac": 981000,
-      "ispSL": 0,
-      "ispVac": 348,
-      "propMass": 100000,
-      "dryMass": 5220,
-      "diameter": 5.2,
-      "Cd": 0.3324324324324324,
-      "role": "core",
-      "index": 1,
-      "reserveMass": 0,
-      "throttle": [
-       0.39,
-       1
-      ],
-      "restart": true,
-      "payloadMass": 5500,
-      "fairingMass": 2527.2227942537734,
-      "fairingJettisonAltitudeM": 110000
-     }
-    ],
-    "idealDeltaV": {
-     "total": 11488.67289520142,
-     "perStage": [
-      4165.720893363861,
-      7322.952001837559
-     ]
-    },
-    "tanks": [
-     {
-      "volume": 400.00000000000006,
-      "length": 38.423031986418195,
-      "diameter": 3.7
-     },
-     {
-      "volume": 100.00000000000001,
-      "length": 10.521507996604548,
-      "diameter": 3.7
-     }
-    ],
-    "serialStages": {
-     "stages": [
-      {
-       "diameter": 5.2,
-       "cd": 0.3324324324324324,
-       "thrustVac": 8406000,
-       "thrustSL": 7605000,
-       "ispVac": 311,
-       "ispSL": 282,
-       "propMass": 400000,
-       "dryMass": 23780,
-       "role": "core",
-       "index": 0,
-       "label": "Stage 1"
-      },
-      {
-       "diameter": 5.2,
-       "cd": 0.3324324324324324,
-       "thrustVac": 981000,
-       "thrustSL": 0,
-       "ispVac": 348,
-       "ispSL": 0,
-       "propMass": 100000,
-       "dryMass": 5220,
-       "role": "core",
-       "index": 1,
-       "label": "Stage 2"
-      }
-     ],
-     "payload": 8027.222794253774
-    },
-    "requiredDeltaV": {
-     "orbit": {
-      "id": "gto",
-      "label": "GTO",
-      "apoKm": 35786,
-      "periKm": 200,
-      "incDeg": 27
-     },
-     "targetAlt": 200000,
-     "required": 11330.110274980665,
-     "vCirc": 7784.2617485656265
-    },
-    "stackDeltaV": {
-     "perStage": [
-      4165.7208933638585,
-      7322.952001837559
-     ],
-     "total": 11488.672895201416
-    }
-   }
-  },
-  {
    "preset": "super-heavy",
    "design": {
     "version": 1,
@@ -1628,6 +1096,1869 @@
       7480.560189875016
      ],
      "total": 11207.31974073415
+    }
+   }
+  },
+  {
+   "preset": "tpl-sounding-solid",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "basic"
+    },
+    "safetyFactor": 1.4,
+    "id": "tpl-sounding-solid",
+    "name": "Pipit",
+    "tier": "starter",
+    "stages": [
+     {
+      "interstageMass": 0,
+      "separationMass": 0,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Motor",
+      "propellant": "solid-apcp",
+      "engine": "srm-small",
+      "engineCount": 1,
+      "propMass": 2300,
+      "diameter": 1.6
+     }
+    ],
+    "payload": {
+     "type": "kid-box",
+     "mass": 300,
+     "orbit": "suborbital"
+    },
+    "fairing": {
+     "diameter": 1.6,
+     "length": 2,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    },
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#ff6d00",
+     "name": "PIPIT"
+    },
+    "template": {
+     "version": 1,
+     "order": 1,
+     "difficulty": "beginner",
+     "tags": [
+      "solid",
+      "single stage",
+      "suborbital",
+      "tutorial"
+     ],
+     "tagline": "Light the motor, coast past 100 km, come home.",
+     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+     "benchmark": {
+      "class": "Single-stage solid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+      "sources": [
+       {
+        "title": "FAI: 100 km Kármán line (boundary of space)",
+        "url": "https://www.fai.org/page/icare-boundary",
+        "claim": "100 km reference altitude"
+       },
+       {
+        "title": "NASA Sounding Rockets Program overview",
+        "url": "https://www.nasa.gov/soundingrockets/",
+        "claim": "what sounding rockets are used for"
+       }
+      ]
+     },
+     "thingsToTry": [
+      "Add 500 kg of propellant and watch the apogee climb.",
+      "Swap fins off (Aero tab) and read the warnings.",
+      "Try the 100 km hop with a hybrid motor instead."
+     ],
+     "refMission": {
+      "objective": "apogee",
+      "minApogeeKm": 100
+     },
+     "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+     },
+     "review": [
+      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+     ],
+     "stats": {
+      "stages": 1,
+      "liftoffMassT": 3.1,
+      "liftoffTWR": 19.58,
+      "deltaV": 3593,
+      "requiredDeltaV": 2400,
+      "marginPct": 49.7,
+      "payloadKg": 300,
+      "target": "Suborbital 100 km",
+      "simOutcome": "suborbital",
+      "simApogeeKm": 114,
+      "simPerigeeKm": null,
+      "maxG": 20.6
+     }
+    }
+   },
+   "out": {
+    "stageMasses": [
+     {
+      "name": "Motor",
+      "dry": 405,
+      "prop": 2300,
+      "wet": 2705,
+      "usableProp": 2300,
+      "landingProp": 0
+     }
+    ],
+    "strapOnMasses": {
+     "count": 0,
+     "dry": 0,
+     "prop": 0,
+     "wet": 0,
+     "each": {
+      "dry": 0,
+      "prop": 0
+     }
+    },
+    "vehicleMass": {
+     "stages": [
+      {
+       "name": "Motor",
+       "dry": 405,
+       "prop": 2300,
+       "wet": 2705,
+       "usableProp": 2300,
+       "landingProp": 0
+      }
+     ],
+     "strapOns": {
+      "count": 0,
+      "dry": 0,
+      "prop": 0,
+      "wet": 0,
+      "each": {
+       "dry": 0,
+       "prop": 0
+      }
+     },
+     "payload": 300,
+     "fairing": 119.63184824869931,
+     "liftoffMass": 3124.6318482486995,
+     "dryMass": 405,
+     "ratios": [
+      {
+       "m0": 3124.6318482486995,
+       "mf": 824.6318482486995,
+       "massRatio": 3.7891234189955108,
+       "propFraction": 0.7360867173165085
+      }
+     ]
+    },
+    "fairingMass": 119.63184824869931,
+    "baseCd": 0.33999999999999997,
+    "referenceDiameter": 1.6,
+    "toSimStages": [
+     {
+      "thrustSL": 600000,
+      "thrustVac": 660000,
+      "ispSL": 245,
+      "ispVac": 275,
+      "propMass": 2300,
+      "dryMass": 405,
+      "diameter": 1.6,
+      "Cd": 0.33999999999999997,
+      "role": "core",
+      "index": 0,
+      "reserveMass": 0,
+      "throttle": [
+       1,
+       1
+      ],
+      "restart": false,
+      "payloadMass": 300,
+      "fairingMass": 119.63184824869931,
+      "fairingJettisonAltitudeM": 100000
+     }
+    ],
+    "idealDeltaV": {
+     "total": 3592.5391699122347,
+     "perStage": [
+      3592.5391699122347
+     ]
+    },
+    "tanks": [
+     {
+      "volume": 1.316111111111111,
+      "length": 0.6545799655984375,
+      "diameter": 1.6
+     }
+    ],
+    "serialStages": {
+     "stages": [
+      {
+       "diameter": 1.6,
+       "cd": 0.33999999999999997,
+       "thrustVac": 660000,
+       "thrustSL": 600000,
+       "ispVac": 275,
+       "ispSL": 245,
+       "propMass": 2300,
+       "dryMass": 405,
+       "role": "core",
+       "index": 0,
+       "label": "Motor"
+      }
+     ],
+     "payload": 419.6318482486993
+    },
+    "requiredDeltaV": {
+     "orbit": {
+      "id": "suborbital",
+      "label": "Suborbital 100 km",
+      "apoKm": 100,
+      "periKm": -6371,
+      "incDeg": 0
+     },
+     "targetAlt": 100000,
+     "required": 2400.474919446971
+    },
+    "stackDeltaV": {
+     "perStage": [
+      3592.5391699122347
+     ],
+     "total": 3592.5391699122347
+    }
+   }
+  },
+  {
+   "preset": "tpl-small-kerolox",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "id": "tpl-small-kerolox",
+    "name": "Wren",
+    "tier": "small",
+    "stages": [
+     {
+      "interstageMass": 200,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-small",
+      "engineCount": 5,
+      "propMass": 24000,
+      "diameter": 1.8
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 2",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-small-vac",
+      "engineCount": 1,
+      "propMass": 3500,
+      "diameter": 1.8
+     }
+    ],
+    "payload": {
+     "type": "cubesat",
+     "mass": 200,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 1.8,
+     "length": 2.5,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    },
+    "livery": {
+     "primary": "#202020",
+     "accent": "#e8e8e8",
+     "name": "WREN"
+    },
+    "template": {
+     "version": 1,
+     "order": 2,
+     "difficulty": "easy",
+     "tags": [
+      "kerolox",
+      "2 stages",
+      "small",
+      "orbital"
+     ],
+     "tagline": "The smallest rocket that can reach orbit.",
+     "brief": "Two kerosene/oxygen stages with a cluster of small engines below and one vacuum engine above. Carbon-composite tanks keep it light. About 200 kg to a 400 km orbit: a rideshare-sized payload, but a real orbit.",
+     "benchmark": {
+      "class": "Dedicated small launcher (two-stage kerolox)",
+      "text": "Dedicated small launchers carry roughly a few hundred kilograms to low Earth orbit, letting small satellites pick their own orbit and launch date. Several fly a cluster of small kerosene engines on the first stage, some driven by electric pumps instead of turbines.",
+      "sources": [
+       {
+        "title": "Rocket Lab: Electron launch vehicle",
+        "url": "https://www.rocketlabusa.com/launch/electron/",
+        "claim": "small-launcher class: ~300 kg to LEO, 9-engine kerolox first stage, carbon composite, electric-pump-fed (TODO-review: confirm current figures)"
+       }
+      ]
+     },
+     "thingsToTry": [
+      "Swap the composite tanks for Al-Li and see what happens to payload.",
+      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Make the upper stage 20% bigger. Does it still lift off well?"
+     ],
+     "refMission": {
+      "objective": "orbit"
+     },
+     "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+     },
+     "review": [
+      "TODO-review: gg-kerolox-small / gg-kerolox-small-vac are game archetypes scaled from the existing kerolox engines, not real-engine figures.",
+      "Electric-pump variant deferred: the engine catalog has no electric-pump cycle yet."
+     ],
+     "stats": {
+      "stages": 2,
+      "liftoffMassT": 29.7,
+      "liftoffTWR": 1.55,
+      "deltaV": 10833,
+      "requiredDeltaV": 8760,
+      "marginPct": 23.7,
+      "payloadKg": 200,
+      "target": "LEO 400 km",
+      "simOutcome": "orbit",
+      "simApogeeKm": 2043,
+      "simPerigeeKm": 308,
+      "maxG": 8.8
+     }
+    }
+   },
+   "out": {
+    "stageMasses": [
+     {
+      "name": "Stage 1",
+      "dry": 1493,
+      "prop": 24000,
+      "wet": 25493,
+      "usableProp": 24000,
+      "landingProp": 0
+     },
+     {
+      "name": "Stage 2",
+      "dry": 382,
+      "prop": 3500,
+      "wet": 3882,
+      "usableProp": 3500,
+      "landingProp": 0
+     }
+    ],
+    "strapOnMasses": {
+     "count": 0,
+     "dry": 0,
+     "prop": 0,
+     "wet": 0,
+     "each": {
+      "dry": 0,
+      "prop": 0
+     }
+    },
+    "vehicleMass": {
+     "stages": [
+      {
+       "name": "Stage 1",
+       "dry": 1493,
+       "prop": 24000,
+       "wet": 25493,
+       "usableProp": 24000,
+       "landingProp": 0
+      },
+      {
+       "name": "Stage 2",
+       "dry": 382,
+       "prop": 3500,
+       "wet": 3882,
+       "usableProp": 3500,
+       "landingProp": 0
+      }
+     ],
+     "strapOns": {
+      "count": 0,
+      "dry": 0,
+      "prop": 0,
+      "wet": 0,
+      "each": {
+       "dry": 0,
+       "prop": 0
+      }
+     },
+     "payload": 200,
+     "fairing": 168.2322865997334,
+     "liftoffMass": 29743.232286599734,
+     "dryMass": 1875,
+     "ratios": [
+      {
+       "m0": 29743.232286599734,
+       "mf": 5743.232286599734,
+       "massRatio": 5.1788315015566155,
+       "propFraction": 0.8069062490835187
+      },
+      {
+       "m0": 4250.232286599733,
+       "mf": 750.232286599733,
+       "massRatio": 5.665221775329078,
+       "propFraction": 0.8234844036724559
+      }
+     ]
+    },
+    "fairingMass": 168.2322865997334,
+    "baseCd": 0.3,
+    "referenceDiameter": 1.8,
+    "toSimStages": [
+     {
+      "thrustSL": 453000,
+      "thrustVac": 500000,
+      "ispSL": 282,
+      "ispVac": 311,
+      "propMass": 24000,
+      "dryMass": 1493,
+      "diameter": 1.8,
+      "Cd": 0.3,
+      "role": "core",
+      "index": 0,
+      "reserveMass": 0,
+      "throttle": [
+       0.6,
+       1
+      ],
+      "restart": false
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 60000,
+      "ispSL": 0,
+      "ispVac": 342,
+      "propMass": 3500,
+      "dryMass": 382,
+      "diameter": 1.8,
+      "Cd": 0.3,
+      "role": "core",
+      "index": 1,
+      "reserveMass": 0,
+      "throttle": [
+       0.5,
+       1
+      ],
+      "restart": true,
+      "payloadMass": 200,
+      "fairingMass": 168.2322865997334,
+      "fairingJettisonAltitudeM": 100000
+     }
+    ],
+    "idealDeltaV": {
+     "total": 10832.529108462255,
+     "perStage": [
+      5015.750490721731,
+      5816.778617740524
+     ]
+    },
+    "tanks": [
+     {
+      "volume": 24,
+      "length": 10.025404035075278,
+      "diameter": 1.8
+     },
+     {
+      "volume": 3.5,
+      "length": 1.9694130884484782,
+      "diameter": 1.8
+     }
+    ],
+    "serialStages": {
+     "stages": [
+      {
+       "diameter": 1.8,
+       "cd": 0.3,
+       "thrustVac": 500000,
+       "thrustSL": 453000,
+       "ispVac": 311,
+       "ispSL": 282,
+       "propMass": 24000,
+       "dryMass": 1493,
+       "role": "core",
+       "index": 0,
+       "label": "Stage 1"
+      },
+      {
+       "diameter": 1.8,
+       "cd": 0.3,
+       "thrustVac": 60000,
+       "thrustSL": 0,
+       "ispVac": 342,
+       "ispSL": 0,
+       "propMass": 3500,
+       "dryMass": 382,
+       "role": "core",
+       "index": 1,
+       "label": "Stage 2"
+      }
+     ],
+     "payload": 368.2322865997334
+    },
+    "requiredDeltaV": {
+     "orbit": {
+      "id": "leo400",
+      "label": "LEO 400 km",
+      "apoKm": 400,
+      "periKm": 400,
+      "incDeg": 51.6
+     },
+     "targetAlt": 400000,
+     "required": 8759.8193324345,
+     "vCirc": 7668.558175407055
+    },
+    "stackDeltaV": {
+     "perStage": [
+      5015.750490721731,
+      5816.7786177405205
+     ],
+     "total": 10832.529108462251
+    }
+   }
+  },
+  {
+   "preset": "tpl-medium-kerolox",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "id": "tpl-medium-kerolox",
+    "name": "Curlew",
+    "tier": "medium",
+    "stages": [
+     {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 400000,
+      "diameter": 3.7
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 100000,
+      "diameter": 3.7
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 15000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 5.2,
+     "length": 13,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": "CURLEW"
+    },
+    "template": {
+     "version": 1,
+     "order": 3,
+     "difficulty": "medium",
+     "variantOf": null,
+     "tags": [
+      "kerolox",
+      "2 stages",
+      "9-engine cluster",
+      "medium",
+      "expendable"
+     ],
+     "tagline": "The workhorse: nine engines, two stages, big payload.",
+     "brief": "Nine gas-generator kerosene engines on a 3.7 m first stage and a single vacuum engine above. Throwing the first stage away (expendable) lets it carry about 15 t to a 400 km orbit. Compare it with the reusable variant to see what landing costs.",
+     "benchmark": {
+      "class": "Medium-lift two-stage kerolox, nine-engine first stage",
+      "text": "The medium-lift workhorse class carries tens of tonnes to low Earth orbit. A cluster of nine engines gives engine-out tolerance and lets one engine design be mass-produced for both stages.",
+      "sources": [
+       {
+        "title": "SpaceX: Falcon 9 vehicle page",
+        "url": "https://www.spacex.com/vehicles/falcon-9/",
+        "claim": "9-engine kerolox first stage, single vacuum-engine second stage, 3.7 m diameter, 22.8 t to LEO expendable (TODO-review)"
+       }
+      ]
+     },
+     "thingsToTry": [
+      "Load the reusable variant and compare payload.",
+      "Drop to 7 engines. How does liftoff TWR change?",
+      "Point it at GTO with a 5.5 t comsat. Is there enough Δv?"
+     ],
+     "refMission": {
+      "objective": "orbit"
+     },
+     "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+     },
+     "review": [
+      "Payload is lower than the real class (~15 t vs ~22.8 t) because the game mass model is M1-level and the sim carries the fairing to orbit."
+     ],
+     "stats": {
+      "stages": 2,
+      "liftoffMassT": 546.5,
+      "liftoffTWR": 1.42,
+      "deltaV": 9768,
+      "requiredDeltaV": 8760,
+      "marginPct": 11.5,
+      "payloadKg": 15000,
+      "target": "LEO 400 km",
+      "simOutcome": "orbit",
+      "simApogeeKm": 1073,
+      "simPerigeeKm": 191,
+      "maxG": 5.8
+     }
+    }
+   },
+   "out": {
+    "stageMasses": [
+     {
+      "name": "Stage 1",
+      "dry": 23780,
+      "prop": 400000,
+      "wet": 423780,
+      "usableProp": 400000,
+      "landingProp": 0
+     },
+     {
+      "name": "Stage 2",
+      "dry": 5220,
+      "prop": 100000,
+      "wet": 105220,
+      "usableProp": 100000,
+      "landingProp": 0
+     }
+    ],
+    "strapOnMasses": {
+     "count": 0,
+     "dry": 0,
+     "prop": 0,
+     "wet": 0,
+     "each": {
+      "dry": 0,
+      "prop": 0
+     }
+    },
+    "vehicleMass": {
+     "stages": [
+      {
+       "name": "Stage 1",
+       "dry": 23780,
+       "prop": 400000,
+       "wet": 423780,
+       "usableProp": 400000,
+       "landingProp": 0
+      },
+      {
+       "name": "Stage 2",
+       "dry": 5220,
+       "prop": 100000,
+       "wet": 105220,
+       "usableProp": 100000,
+       "landingProp": 0
+      }
+     ],
+     "strapOns": {
+      "count": 0,
+      "dry": 0,
+      "prop": 0,
+      "wet": 0,
+      "each": {
+       "dry": 0,
+       "prop": 0
+      }
+     },
+     "payload": 15000,
+     "fairing": 2527.2227942537734,
+     "liftoffMass": 546527.2227942537,
+     "dryMass": 29000,
+     "ratios": [
+      {
+       "m0": 546527.2227942537,
+       "mf": 146527.22279425373,
+       "massRatio": 3.7298681594590803,
+       "propFraction": 0.7318940087831352
+      },
+      {
+       "m0": 122747.22279425377,
+       "mf": 22747.222794253772,
+       "massRatio": 5.396141054426267,
+       "propFraction": 0.8146823832227783
+      }
+     ]
+    },
+    "fairingMass": 2527.2227942537734,
+    "baseCd": 0.3324324324324324,
+    "referenceDiameter": 5.2,
+    "toSimStages": [
+     {
+      "thrustSL": 7605000,
+      "thrustVac": 8406000,
+      "ispSL": 282,
+      "ispVac": 311,
+      "propMass": 400000,
+      "dryMass": 23780,
+      "diameter": 5.2,
+      "Cd": 0.3324324324324324,
+      "role": "core",
+      "index": 0,
+      "reserveMass": 0,
+      "throttle": [
+       0.57,
+       1
+      ],
+      "restart": true
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 981000,
+      "ispSL": 0,
+      "ispVac": 348,
+      "propMass": 100000,
+      "dryMass": 5220,
+      "diameter": 5.2,
+      "Cd": 0.3324324324324324,
+      "role": "core",
+      "index": 1,
+      "reserveMass": 0,
+      "throttle": [
+       0.39,
+       1
+      ],
+      "restart": true,
+      "payloadMass": 15000,
+      "fairingMass": 2527.2227942537734,
+      "fairingJettisonAltitudeM": 110000
+     }
+    ],
+    "idealDeltaV": {
+     "total": 9767.521733317793,
+     "perStage": [
+      4014.7637417114706,
+      5752.757991606322
+     ]
+    },
+    "tanks": [
+     {
+      "volume": 400.00000000000006,
+      "length": 38.423031986418195,
+      "diameter": 3.7
+     },
+     {
+      "volume": 100.00000000000001,
+      "length": 10.521507996604548,
+      "diameter": 3.7
+     }
+    ],
+    "serialStages": {
+     "stages": [
+      {
+       "diameter": 5.2,
+       "cd": 0.3324324324324324,
+       "thrustVac": 8406000,
+       "thrustSL": 7605000,
+       "ispVac": 311,
+       "ispSL": 282,
+       "propMass": 400000,
+       "dryMass": 23780,
+       "role": "core",
+       "index": 0,
+       "label": "Stage 1"
+      },
+      {
+       "diameter": 5.2,
+       "cd": 0.3324324324324324,
+       "thrustVac": 981000,
+       "thrustSL": 0,
+       "ispVac": 348,
+       "ispSL": 0,
+       "propMass": 100000,
+       "dryMass": 5220,
+       "role": "core",
+       "index": 1,
+       "label": "Stage 2"
+      }
+     ],
+     "payload": 17527.222794253772
+    },
+    "requiredDeltaV": {
+     "orbit": {
+      "id": "leo400",
+      "label": "LEO 400 km",
+      "apoKm": 400,
+      "periKm": 400,
+      "incDeg": 51.6
+     },
+     "targetAlt": 400000,
+     "required": 8759.8193324345,
+     "vCirc": 7668.558175407055
+    },
+    "stackDeltaV": {
+     "perStage": [
+      4014.763741711469,
+      5752.757991606322
+     ],
+     "total": 9767.521733317792
+    }
+   }
+  },
+  {
+   "preset": "tpl-medium-kerolox-reusable",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": true,
+     "gridFins": true,
+     "rcs": true
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "id": "tpl-medium-kerolox-reusable",
+    "name": "Curlew R",
+    "tier": "medium",
+    "stages": [
+     {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 35000,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 400000,
+      "diameter": 3.7
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 100000,
+      "diameter": 3.7
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 10500,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 5.2,
+     "length": 13,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": "CURLEW R"
+    },
+    "template": {
+     "version": 1,
+     "order": 4,
+     "difficulty": "medium",
+     "variantOf": "tpl-medium-kerolox",
+     "tags": [
+      "kerolox",
+      "2 stages",
+      "9-engine cluster",
+      "medium",
+      "reusable",
+      "propulsive landing"
+     ],
+     "tagline": "Same rocket, but the booster flies home.",
+     "brief": "Identical to Curlew, plus landing legs, grid fins, cold-gas thrusters and 35 t of propellant held back for the landing burn. That reserve and hardware cost about 4.5 t of payload. Reuse trades payload for hardware you get to fly again.",
+     "benchmark": {
+      "class": "Medium-lift kerolox with propulsive first-stage landing",
+      "text": "Propulsive landing of an orbital-class booster became routine in the late 2010s. The booster keeps propellant in reserve for boost-back, entry and landing burns, which is why reusable missions carry noticeably less than expendable ones.",
+      "sources": [
+       {
+        "title": "SpaceX: Falcon 9 vehicle page",
+        "url": "https://www.spacex.com/vehicles/falcon-9/",
+        "claim": "reusable first stage with landing legs and grid fins (TODO-review: reusable payload figure not published on the page)"
+       }
+      ]
+     },
+     "thingsToTry": [
+      "Set the landing reserve to 0 and see how much payload you get back.",
+      "Remove the grid fins and read the warning.",
+      "Try 45 t of landing reserve. Still orbital?"
+     ],
+     "refMission": {
+      "objective": "orbit"
+     },
+     "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+     },
+     "review": [
+      "Landing itself is not simulated yet (M3); the reserve rides as dry mass."
+     ],
+     "stats": {
+      "stages": 2,
+      "liftoffMassT": 545,
+      "liftoffTWR": 1.42,
+      "deltaV": 9756,
+      "requiredDeltaV": 8760,
+      "marginPct": 11.4,
+      "payloadKg": 10500,
+      "target": "LEO 400 km",
+      "simOutcome": "orbit",
+      "simApogeeKm": 1271,
+      "simPerigeeKm": 158,
+      "maxG": 5.5
+     }
+    }
+   },
+   "out": {
+    "stageMasses": [
+     {
+      "name": "Stage 1",
+      "dry": 26747.05210282933,
+      "prop": 400000,
+      "wet": 426747.05210282933,
+      "usableProp": 365000,
+      "landingProp": 35000
+     },
+     {
+      "name": "Stage 2",
+      "dry": 5220,
+      "prop": 100000,
+      "wet": 105220,
+      "usableProp": 100000,
+      "landingProp": 0
+     }
+    ],
+    "strapOnMasses": {
+     "count": 0,
+     "dry": 0,
+     "prop": 0,
+     "wet": 0,
+     "each": {
+      "dry": 0,
+      "prop": 0
+     }
+    },
+    "vehicleMass": {
+     "stages": [
+      {
+       "name": "Stage 1",
+       "dry": 26747.05210282933,
+       "prop": 400000,
+       "wet": 426747.05210282933,
+       "usableProp": 365000,
+       "landingProp": 35000
+      },
+      {
+       "name": "Stage 2",
+       "dry": 5220,
+       "prop": 100000,
+       "wet": 105220,
+       "usableProp": 100000,
+       "landingProp": 0
+      }
+     ],
+     "strapOns": {
+      "count": 0,
+      "dry": 0,
+      "prop": 0,
+      "wet": 0,
+      "each": {
+       "dry": 0,
+       "prop": 0
+      }
+     },
+     "payload": 10500,
+     "fairing": 2527.2227942537734,
+     "liftoffMass": 544994.274897083,
+     "dryMass": 31967.05210282933,
+     "ratios": [
+      {
+       "m0": 544994.274897083,
+       "mf": 179994.27489708306,
+       "massRatio": 3.0278422755873726,
+       "propFraction": 0.6697318060248004
+      },
+      {
+       "m0": 118247.22279425377,
+       "mf": 18247.222794253772,
+       "massRatio": 6.480286020922097,
+       "propFraction": 0.8456858236239229
+      }
+     ]
+    },
+    "fairingMass": 2527.2227942537734,
+    "baseCd": 0.3624324324324324,
+    "referenceDiameter": 5.2,
+    "toSimStages": [
+     {
+      "thrustSL": 7605000,
+      "thrustVac": 8406000,
+      "ispSL": 282,
+      "ispVac": 311,
+      "propMass": 365000,
+      "dryMass": 26747.05210282933,
+      "diameter": 5.2,
+      "Cd": 0.3624324324324324,
+      "role": "core",
+      "index": 0,
+      "reserveMass": 35000,
+      "throttle": [
+       0.57,
+       1
+      ],
+      "restart": true
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 981000,
+      "ispSL": 0,
+      "ispVac": 348,
+      "propMass": 100000,
+      "dryMass": 5220,
+      "diameter": 5.2,
+      "Cd": 0.3624324324324324,
+      "role": "core",
+      "index": 1,
+      "reserveMass": 0,
+      "throttle": [
+       0.39,
+       1
+      ],
+      "restart": true,
+      "payloadMass": 10500,
+      "fairingMass": 2527.2227942537734,
+      "fairingJettisonAltitudeM": 110000
+     }
+    ],
+    "idealDeltaV": {
+     "total": 9756.356831074172,
+     "perStage": [
+      3378.797178948888,
+      6377.559652125285
+     ]
+    },
+    "tanks": [
+     {
+      "volume": 400.00000000000006,
+      "length": 38.423031986418195,
+      "diameter": 3.7
+     },
+     {
+      "volume": 100.00000000000001,
+      "length": 10.521507996604548,
+      "diameter": 3.7
+     }
+    ],
+    "serialStages": {
+     "stages": [
+      {
+       "diameter": 5.2,
+       "cd": 0.3624324324324324,
+       "thrustVac": 8406000,
+       "thrustSL": 7605000,
+       "ispVac": 311,
+       "ispSL": 282,
+       "propMass": 365000,
+       "dryMass": 61747.05210282933,
+       "role": "core",
+       "index": 0,
+       "label": "Stage 1"
+      },
+      {
+       "diameter": 5.2,
+       "cd": 0.3624324324324324,
+       "thrustVac": 981000,
+       "thrustSL": 0,
+       "ispVac": 348,
+       "ispSL": 0,
+       "propMass": 100000,
+       "dryMass": 5220,
+       "role": "core",
+       "index": 1,
+       "label": "Stage 2"
+      }
+     ],
+     "payload": 13027.222794253774
+    },
+    "requiredDeltaV": {
+     "orbit": {
+      "id": "leo400",
+      "label": "LEO 400 km",
+      "apoKm": 400,
+      "periKm": 400,
+      "incDeg": 51.6
+     },
+     "targetAlt": 400000,
+     "required": 8759.8193324345,
+     "vCirc": 7668.558175407055
+    },
+    "stackDeltaV": {
+     "perStage": [
+      3378.7971789488865,
+      6377.559652125285
+     ],
+     "total": 9756.356831074172
+    }
+   }
+  },
+  {
+   "preset": "tpl-hydrogen-upper",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "id": "tpl-hydrogen-upper",
+    "name": "Heron",
+    "tier": "medium",
+    "stages": [
+     {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 400000,
+      "diameter": 3.7
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 30000,
+      "diameter": 4
+     }
+    ],
+    "payload": {
+     "type": "gto-comsat",
+     "mass": 4000,
+     "orbit": "gto"
+    },
+    "fairing": {
+     "diameter": 5,
+     "length": 12,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "livery": {
+     "primary": "#f5f1e6",
+     "accent": "#b5651d",
+     "name": "HERON"
+    },
+    "template": {
+     "version": 1,
+     "order": 5,
+     "difficulty": "medium",
+     "tags": [
+      "kerolox",
+      "hydrolox",
+      "2 stages",
+      "medium",
+      "GTO",
+      "high Isp"
+     ],
+     "tagline": "Dense fuel down low, hydrogen up high.",
+     "brief": "A kerosene first stage does the heavy lifting through the thick air, where dense propellant keeps tanks small. Above it, a wide, light hydrogen stage with two expander engines uses its high specific impulse (about 465 s) to push a 4 t satellite toward geostationary transfer orbit.",
+     "benchmark": {
+      "class": "Kerolox or solid booster with a hydrogen upper stage",
+      "text": "Hydrogen/oxygen upper stages have flown since the 1960s because their efficiency pays off most where every kilogram of stage mass must be pushed to orbital speed. Their low density makes tanks large, which is why they are rarely used alone on first stages.",
+      "sources": [
+       {
+        "title": "NASA Glenn: Centaur upper stage history",
+        "url": "https://www.nasa.gov/centaur/",
+        "claim": "first liquid hydrogen upper stage (TODO-review: link)"
+       },
+       {
+        "title": "Aerojet Rocketdyne / L3Harris: RL10 engine",
+        "url": "https://www.l3harris.com/all-capabilities/rl10-propulsion-system",
+        "claim": "expander-cycle hydrolox upper-stage engine, vacuum Isp ~450–465 s (TODO-review)"
+       }
+      ]
+     },
+     "thingsToTry": [
+      "Swap stage 2 to kerolox with the same tank size. What happens to Δv?",
+      "Narrow stage 2 to 3.7 m and watch it grow taller.",
+      "Retarget to LEO 400 and see how much payload you can carry."
+     ],
+     "refMission": {
+      "objective": "orbit",
+      "note": "Sim validates the parking orbit; the GTO burn is checked by the Δv margin (quick readout)."
+     },
+     "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+     },
+     "review": [
+      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+     ],
+     "stats": {
+      "stages": 2,
+      "liftoffMassT": 463.1,
+      "liftoffTWR": 1.67,
+      "deltaV": 12641,
+      "requiredDeltaV": 11330,
+      "marginPct": 11.6,
+      "payloadKg": 4000,
+      "target": "GTO",
+      "simOutcome": "orbit",
+      "simApogeeKm": 930,
+      "simPerigeeKm": 196,
+      "maxG": 13.5
+     }
+    }
+   },
+   "out": {
+    "stageMasses": [
+     {
+      "name": "Stage 1",
+      "dry": 23780,
+      "prop": 400000,
+      "wet": 423780,
+      "usableProp": 400000,
+      "landingProp": 0
+     },
+     {
+      "name": "Stage 2",
+      "dry": 3083.5006021457493,
+      "prop": 30000,
+      "wet": 33083.50060214575,
+      "usableProp": 30000,
+      "landingProp": 0
+     }
+    ],
+    "strapOnMasses": {
+     "count": 0,
+     "dry": 0,
+     "prop": 0,
+     "wet": 0,
+     "each": {
+      "dry": 0,
+      "prop": 0
+     }
+    },
+    "vehicleMass": {
+     "stages": [
+      {
+       "name": "Stage 1",
+       "dry": 23780,
+       "prop": 400000,
+       "wet": 423780,
+       "usableProp": 400000,
+       "landingProp": 0
+      },
+      {
+       "name": "Stage 2",
+       "dry": 3083.5006021457493,
+       "prop": 30000,
+       "wet": 33083.50060214575,
+       "usableProp": 30000,
+       "landingProp": 0
+      }
+     ],
+     "strapOns": {
+      "count": 0,
+      "dry": 0,
+      "prop": 0,
+      "wet": 0,
+      "each": {
+       "dry": 0,
+       "prop": 0
+      }
+     },
+     "payload": 4000,
+     "fairing": 2243.097154663112,
+     "liftoffMass": 463106.59775680886,
+     "dryMass": 26863.50060214575,
+     "ratios": [
+      {
+       "m0": 463106.59775680886,
+       "mf": 63106.59775680886,
+       "massRatio": 7.3384814618189775,
+       "propFraction": 0.8637320261415321
+      },
+      {
+       "m0": 39326.597756808864,
+       "mf": 9326.597756808864,
+       "massRatio": 4.216607039592606,
+       "propFraction": 0.7628424962036262
+      }
+     ]
+    },
+    "fairingMass": 2243.097154663112,
+    "baseCd": 0.32,
+    "referenceDiameter": 5,
+    "toSimStages": [
+     {
+      "thrustSL": 7605000,
+      "thrustVac": 8406000,
+      "ispSL": 282,
+      "ispVac": 311,
+      "propMass": 400000,
+      "dryMass": 23780,
+      "diameter": 5,
+      "Cd": 0.32,
+      "role": "core",
+      "index": 0,
+      "reserveMass": 0,
+      "throttle": [
+       0.57,
+       1
+      ],
+      "restart": true
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 220000,
+      "ispSL": 0,
+      "ispVac": 465,
+      "propMass": 30000,
+      "dryMass": 3083.5006021457493,
+      "diameter": 5,
+      "Cd": 0.32,
+      "role": "core",
+      "index": 1,
+      "reserveMass": 0,
+      "throttle": [
+       0.5,
+       1
+      ],
+      "restart": true,
+      "payloadMass": 4000,
+      "fairingMass": 2243.097154663112,
+      "fairingJettisonAltitudeM": 110000
+     }
+    ],
+    "idealDeltaV": {
+     "total": 12640.902742999599,
+     "perStage": [
+      6078.789610085667,
+      6562.113132913932
+     ]
+    },
+    "tanks": [
+     {
+      "volume": 400.00000000000006,
+      "length": 38.423031986418195,
+      "diameter": 3.7
+     },
+     {
+      "volume": 85.83333333333333,
+      "length": 8.150399641027175,
+      "diameter": 4
+     }
+    ],
+    "serialStages": {
+     "stages": [
+      {
+       "diameter": 5,
+       "cd": 0.32,
+       "thrustVac": 8406000,
+       "thrustSL": 7605000,
+       "ispVac": 311,
+       "ispSL": 282,
+       "propMass": 400000,
+       "dryMass": 23780,
+       "role": "core",
+       "index": 0,
+       "label": "Stage 1"
+      },
+      {
+       "diameter": 5,
+       "cd": 0.32,
+       "thrustVac": 220000,
+       "thrustSL": 0,
+       "ispVac": 465,
+       "ispSL": 0,
+       "propMass": 30000,
+       "dryMass": 3083.5006021457493,
+       "role": "core",
+       "index": 1,
+       "label": "Stage 2"
+      }
+     ],
+     "payload": 6243.097154663112
+    },
+    "requiredDeltaV": {
+     "orbit": {
+      "id": "gto",
+      "label": "GTO",
+      "apoKm": 35786,
+      "periKm": 200,
+      "incDeg": 27
+     },
+     "targetAlt": 200000,
+     "required": 11330.110274980665,
+     "vCirc": 7784.2617485656265
+    },
+    "stackDeltaV": {
+     "perStage": [
+      6078.789610085667,
+      6562.113132913932
+     ],
+     "total": 12640.902742999599
+    }
+   }
+  },
+  {
+   "preset": "tpl-methane-reusable",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": true,
+     "gridFins": true,
+     "rcs": true
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "id": "tpl-methane-reusable",
+    "name": "Kite",
+    "tier": "medium",
+    "stages": [
+     {
+      "interstageMass": 3000,
+      "separationMass": 100,
+      "landingPropMass": 40000,
+      "material": "steel",
+      "name": "Booster",
+      "propellant": "methalox",
+      "engine": "ff-methalox",
+      "engineCount": 5,
+      "propMass": 500000,
+      "diameter": 5
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Upper",
+      "propellant": "methalox",
+      "engine": "ff-methalox-vac",
+      "engineCount": 1,
+      "propMass": 200000,
+      "diameter": 5
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 15000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 5.2,
+     "length": 13,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "livery": {
+     "primary": "#c9ccd1",
+     "accent": "#111111",
+     "name": "KITE"
+    },
+    "template": {
+     "version": 1,
+     "order": 6,
+     "difficulty": "hard",
+     "tags": [
+      "methalox",
+      "full-flow",
+      "2 stages",
+      "medium",
+      "reusable",
+      "steel"
+     ],
+     "tagline": "Clean-burning methane and a booster built to fly again.",
+     "brief": "Five full-flow methane engines on a stainless-steel booster that keeps 40 t of propellant to land. Methane burns cleanly (little soot to clean out between flights) and steel is cheap and tough, at the cost of heavier tanks.",
+     "benchmark": {
+      "class": "Reusable methalox medium launcher",
+      "text": "In the 2020s several launch companies moved to liquid methane for reusable boosters, because it leaves little soot inside engines, is denser than hydrogen and easier to store. Many of these vehicles are still in development, so performance numbers are not settled.",
+      "sources": [
+       {
+        "title": "Wikipedia: Methalox",
+        "url": "https://en.wikipedia.org/wiki/Methalox",
+        "claim": "methane/oxygen propellant: reuse-friendly, clean burning (TODO-review: replace with primary source)"
+       }
+      ]
+     },
+     "thingsToTry": [
+      "Swap steel for Al-Li. What do you gain, and what do you risk?",
+      "Add a sixth engine and compare liftoff TWR and margin.",
+      "Drop the landing reserve and see the payload jump."
+     ],
+     "refMission": {
+      "objective": "orbit"
+     },
+     "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+     },
+     "review": [
+      "TODO-review: no benchmark payload figures cited, since this class is mostly in development."
+     ],
+     "stats": {
+      "stages": 2,
+      "liftoffMassT": 795.2,
+      "liftoffTWR": 1.47,
+      "deltaV": 9925,
+      "requiredDeltaV": 8760,
+      "marginPct": 13.3,
+      "payloadKg": 15000,
+      "target": "LEO 400 km",
+      "simOutcome": "orbit",
+      "simApogeeKm": 2785,
+      "simPerigeeKm": 153,
+      "maxG": 7.2
+     }
+    }
+   },
+   "out": {
+    "stageMasses": [
+     {
+      "name": "Booster",
+      "dry": 58653.12099142117,
+      "prop": 500000,
+      "wet": 558653.1209914212,
+      "usableProp": 460000,
+      "landingProp": 40000
+     },
+     {
+      "name": "Upper",
+      "dry": 19009.78358536937,
+      "prop": 200000,
+      "wet": 219009.78358536935,
+      "usableProp": 200000,
+      "landingProp": 0
+     }
+    ],
+    "strapOnMasses": {
+     "count": 0,
+     "dry": 0,
+     "prop": 0,
+     "wet": 0,
+     "each": {
+      "dry": 0,
+      "prop": 0
+     }
+    },
+    "vehicleMass": {
+     "stages": [
+      {
+       "name": "Booster",
+       "dry": 58653.12099142117,
+       "prop": 500000,
+       "wet": 558653.1209914212,
+       "usableProp": 460000,
+       "landingProp": 40000
+      },
+      {
+       "name": "Upper",
+       "dry": 19009.78358536937,
+       "prop": 200000,
+       "wet": 219009.78358536935,
+       "usableProp": 200000,
+       "landingProp": 0
+      }
+     ],
+     "strapOns": {
+      "count": 0,
+      "dry": 0,
+      "prop": 0,
+      "wet": 0,
+      "each": {
+       "dry": 0,
+       "prop": 0
+      }
+     },
+     "payload": 15000,
+     "fairing": 2527.2227942537734,
+     "liftoffMass": 795190.1273710444,
+     "dryMass": 77662.90457679055,
+     "ratios": [
+      {
+       "m0": 795190.1273710444,
+       "mf": 335190.12737104436,
+       "massRatio": 2.3723554557166158,
+       "propFraction": 0.5784780069148909
+      },
+      {
+       "m0": 236537.00637962314,
+       "mf": 36537.00637962314,
+       "massRatio": 6.473902210870262,
+       "propFraction": 0.8455336569154674
+      }
+     ]
+    },
+    "fairingMass": 2527.2227942537734,
+    "baseCd": 0.33319999999999994,
+    "referenceDiameter": 5.2,
+    "toSimStages": [
+     {
+      "thrustSL": 11500000,
+      "thrustVac": 12500000,
+      "ispSL": 327,
+      "ispVac": 350,
+      "propMass": 460000,
+      "dryMass": 58653.12099142117,
+      "diameter": 5.2,
+      "Cd": 0.33319999999999994,
+      "role": "core",
+      "index": 0,
+      "reserveMass": 40000,
+      "throttle": [
+       0.4,
+       1
+      ],
+      "restart": true
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 2600000,
+      "ispSL": 0,
+      "ispVac": 380,
+      "propMass": 200000,
+      "dryMass": 19009.78358536937,
+      "diameter": 5.2,
+      "Cd": 0.33319999999999994,
+      "role": "core",
+      "index": 1,
+      "reserveMass": 0,
+      "throttle": [
+       0.4,
+       1
+      ],
+      "restart": true,
+      "payloadMass": 15000,
+      "fairingMass": 2527.2227942537734,
+      "fairingJettisonAltitudeM": 110000
+     }
+    ],
+    "idealDeltaV": {
+     "total": 9925.45955405866,
+     "perStage": [
+      2965.1304923775224,
+      6960.329061681136
+     ]
+    },
+    "tanks": [
+     {
+      "volume": 620.4819277108434,
+      "length": 33.25088508619801,
+      "diameter": 5
+     },
+     {
+      "volume": 248.19277108433738,
+      "length": 14.290354034479208,
+      "diameter": 5
+     }
+    ],
+    "serialStages": {
+     "stages": [
+      {
+       "diameter": 5.2,
+       "cd": 0.33319999999999994,
+       "thrustVac": 12500000,
+       "thrustSL": 11500000,
+       "ispVac": 350,
+       "ispSL": 327,
+       "propMass": 460000,
+       "dryMass": 98653.12099142116,
+       "role": "core",
+       "index": 0,
+       "label": "Booster"
+      },
+      {
+       "diameter": 5.2,
+       "cd": 0.33319999999999994,
+       "thrustVac": 2600000,
+       "thrustSL": 0,
+       "ispVac": 380,
+       "ispSL": 0,
+       "propMass": 200000,
+       "dryMass": 19009.78358536937,
+       "role": "core",
+       "index": 1,
+       "label": "Upper"
+      }
+     ],
+     "payload": 17527.222794253772
+    },
+    "requiredDeltaV": {
+     "orbit": {
+      "id": "leo400",
+      "label": "LEO 400 km",
+      "apoKm": 400,
+      "periKm": 400,
+      "incDeg": 51.6
+     },
+     "targetAlt": 400000,
+     "required": 8759.8193324345,
+     "vCirc": 7668.558175407055
+    },
+    "stackDeltaV": {
+     "perStage": [
+      2965.130492377522,
+      6960.329061681136
+     ],
+     "total": 9925.459554058658
     }
    }
   }

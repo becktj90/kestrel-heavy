@@ -11,7 +11,7 @@
     "trlPenaltyPerLevel": 0.25,
     "learningRate": 0.85,
     "cycleMultiplier": { "pressure-fed": 0.5, "solid": 0.6, "hybrid": 0.7, "gas-generator": 1.0, "expander": 1.6, "staged-combustion": 2.2, "full-flow": 2.8 },
-    "trl": { "gg-kerolox": 9, "gg-kerolox-vac": 9, "sc-kerolox": 9, "sc-hydrolox": 9, "ff-methalox": 7, "ff-methalox-vac": 6, "exp-hydrolox": 9, "pf-hypergolic": 9, "pf-udmh": 9, "gg-methalox-small": 7, "srm-small": 9, "srm-large": 9, "hybrid-mid": 6 },
+    "trl": { "gg-kerolox": 9, "gg-kerolox-vac": 9, "gg-kerolox-small": 8, "gg-kerolox-small-vac": 8, "sc-kerolox": 9, "sc-hydrolox": 9, "ff-methalox": 7, "ff-methalox-vac": 6, "exp-hydrolox": 9, "pf-hypergolic": 9, "pf-udmh": 9, "gg-methalox-small": 7, "srm-small": 9, "srm-large": 9, "hybrid-mid": 6 },
     "defaultTrl": 7
   },
   "structure": {

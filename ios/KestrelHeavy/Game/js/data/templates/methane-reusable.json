@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "strapOns": {
+    "count": 0,
+    "kind": "solid",
+    "propellant": "solid-apcp",
+    "engine": "srm-small",
+    "engineCount": 1,
+    "propMass": 0,
+    "diameter": 1.6,
+    "material": "steel",
+    "crossfeed": false
+  },
+  "aero": {
+    "nose": "ogive",
+    "fins": false
+  },
+  "landing": {
+    "legs": true,
+    "gridFins": true,
+    "rcs": true
+  },
+  "avionics": {
+    "tier": "standard"
+  },
+  "safetyFactor": 1.4,
+  "id": "tpl-methane-reusable",
+  "name": "Kite",
+  "tier": "medium",
+  "stages": [
+    {
+      "interstageMass": 3000,
+      "separationMass": 100,
+      "landingPropMass": 40000,
+      "material": "steel",
+      "name": "Booster",
+      "propellant": "methalox",
+      "engine": "ff-methalox",
+      "engineCount": 5,
+      "propMass": 500000,
+      "diameter": 5
+    },
+    {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Upper",
+      "propellant": "methalox",
+      "engine": "ff-methalox-vac",
+      "engineCount": 1,
+      "propMass": 200000,
+      "diameter": 5
+    }
+  ],
+  "payload": {
+    "type": "leo-sat",
+    "mass": 15000,
+    "orbit": "leo400"
+  },
+  "fairing": {
+    "diameter": 5.2,
+    "length": 13,
+    "material": "composite",
+    "jettisonAltitudeKm": 110
+  },
+  "livery": {
+    "primary": "#c9ccd1",
+    "accent": "#111111",
+    "name": "KITE"
+  },
+  "template": {
+    "version": 1,
+    "order": 6,
+    "difficulty": "hard",
+    "tags": [
+      "methalox",
+      "full-flow",
+      "2 stages",
+      "medium",
+      "reusable",
+      "steel"
+    ],
+    "tagline": "Clean-burning methane and a booster built to fly again.",
+    "brief": "Five full-flow methane engines on a stainless-steel booster that keeps 40 t of propellant to land. Methane burns cleanly (little soot to clean out between flights) and steel is cheap and tough, at the cost of heavier tanks.",
+    "benchmark": {
+      "class": "Reusable methalox medium launcher",
+      "text": "In the 2020s several launch companies moved to liquid methane for reusable boosters, because it leaves little soot inside engines, is denser than hydrogen and easier to store. Many of these vehicles are still in development, so performance numbers are not settled.",
+      "sources": [
+        {
+          "title": "Wikipedia: Methalox",
+          "url": "https://en.wikipedia.org/wiki/Methalox",
+          "claim": "methane/oxygen propellant: reuse-friendly, clean burning (TODO-review: replace with primary source)"
+        }
+      ]
+    },
+    "thingsToTry": [
+      "Swap steel for Al-Li. What do you gain, and what do you risk?",
+      "Add a sixth engine and compare liftoff TWR and margin.",
+      "Drop the landing reserve and see the payload jump."
+    ],
+    "refMission": {
+      "objective": "orbit"
+    },
+    "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+    },
+    "review": [
+      "TODO-review: no benchmark payload figures cited, since this class is mostly in development."
+    ],
+    "stats": {
+      "stages": 2,
+      "liftoffMassT": 795.2,
+      "liftoffTWR": 1.47,
+      "deltaV": 9925,
+      "requiredDeltaV": 8760,
+      "marginPct": 13.3,
+      "payloadKg": 15000,
+      "target": "LEO 400 km",
+      "simOutcome": "orbit",
+      "simApogeeKm": 2785,
+      "simPerigeeKm": 153,
+      "maxG": 7.2
+    }
+  }
+}

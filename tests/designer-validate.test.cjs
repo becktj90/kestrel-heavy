@@ -37,7 +37,7 @@ test('warnings: marginal TWR, weak upper stage, short margin, landing without ha
   const { PRESET_BY_ID, validateEngineering } = await load();
   let d = clone(PRESET_BY_ID.scout); d.stages[0].engineCount = 5;
   let v = validateEngineering(d); assert.ok(v.ok); assert.ok(codes(v.warnings).includes('twr-marginal'), JSON.stringify(v.warnings));
-  d = clone(PRESET_BY_ID['medium-lift']); d.stages[1].engine = 'exp-hydrolox'; d.stages[1].propellant = 'hydrolox';
+  d = clone(PRESET_BY_ID['tpl-medium-kerolox']); d.stages[1].engine = 'exp-hydrolox'; d.stages[1].propellant = 'hydrolox';
   assert.ok(codes(validateEngineering(d).warnings).includes('weak-upper'));
   d = clone(PRESET_BY_ID.scout); d.payload.mass = 3000;
   assert.ok(codes(validateEngineering(d).warnings).includes('dv-margin'));
