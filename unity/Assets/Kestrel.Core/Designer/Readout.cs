@@ -15,12 +15,17 @@ namespace Kestrel.Core.Designer
     {
         public string label, role;
         public int designIndex = -1;
-        public double m0, twr, twrVac, deltaV;
+        public double m0, twr, twrVac;
+        /// <summary>Δv (vac). Vacuum-Isp rocket equation for this serial phase. Not a loss model.</summary>
+        public double deltaV;
         /// <summary>Serial-stage dry mass, including the landing reserve held as dry.</summary>
         public double dryMass_kg;
         /// <summary>Usable propellant burned in this serial phase.</summary>
         public double propMass_kg;
-        /// <summary>Rocket equation with ispSL. Set only for the phase that lights on the pad; null otherwise.</summary>
+        /// <summary>
+        /// Δv (SL, pad stage). ispSL held for the whole burn: a sea-level bound, not a loss model.
+        /// Null except the phase that lights on the pad.
+        /// </summary>
         public double? deltaVSL_mps;
     }
 
@@ -32,13 +37,23 @@ namespace Kestrel.Core.Designer
         public long cost;
         public double reliability;
         public string orbitLabel;
-        /// <summary>Liftoff CG, metres from the vehicle base, positive up.</summary>
+        /// <summary>
+        /// Liftoff CG, metres from the vehicle base, positive up. Full tanks, including landing reserve.
+        /// TODO: a CG that follows the burn, and the stability at max-Q (about 60% of the propellant burned).
+        /// </summary>
         public double cg_m;
-        /// <summary>Liftoff CP, same datum. Barrowman-style nose, body transitions and fins.</summary>
+        /// <summary>CP at the liftoff shape, same datum. Barrowman-style nose, body transitions and fins.</summary>
         public double cp_m;
-        /// <summary>(cg_m − cp_m) / reference diameter. Positive means stable.</summary>
+        /// <summary>
+        /// Liftoff stability, (liftoff CG − CP) / reference diameter. Positive means the CG is above the CP.
+        /// TODO: the same margin at max-Q, once the CG follows the burn.
+        /// </summary>
         public double stabilityCal;
-        /// <summary>Peak dynamic pressure from the cached reference ascent. Null while stale.</summary>
+        /// <summary>
+        /// Peak dynamic pressure of the powered flight, from the cached reference ascent. Null while stale.
+        /// A dense descent reopens the early stop so a lofted fall under thrust is included.
+        /// Unpowered re-entry is not: the integrator stops when thrust ends.
+        /// </summary>
         public double? maxQ_kPa;
         /// <summary>Geometric altitude at that peak. Null while stale.</summary>
         public double? maxQAlt_m;
@@ -95,7 +110,7 @@ namespace Kestrel.Core.Designer
                 cg_m = bal.cg_m, cp_m = bal.cp_m, stabilityCal = bal.stabilityCal,
                 maxQStale = true,
             };
-            if (ReferenceAscent.TryGet(ReferenceAscent.DesignHash(design), out double qPa, out double alt))
+            if (ReferenceAscent.TryGet(ReferenceAscent.CanonicalKey(c, design), out double qPa, out double alt))
             {
                 readout.maxQ_kPa = qPa / 1000.0;
                 readout.maxQAlt_m = alt;
@@ -107,7 +122,7 @@ namespace Kestrel.Core.Designer
         /// <summary>
         /// Reference ascent for max-Q. Runs the Headless path once per design hash and caches it.
         /// Subsequent Quick() calls for the same hash return maxQStale false.
-        /// Cost: one Headless ascent at dt 0.2 s, stopped once max-Q is sealed. Not for the edit frame. Budget ≤ 30 ms.
+        /// Cost: one Headless ascent at dt 0.2 s. Stops once max-Q is sealed, and continues if a dense descent clears that stop. Not for the edit frame. Budget ≤ 30 ms.
         /// </summary>
         public static QuickReadout Reference(Catalog c, JsonObject design) => ReferenceAscent.Run(c, design);
     }

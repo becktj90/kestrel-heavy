@@ -1,4 +1,6 @@
 // Liftoff CG and a Barrowman-style CP. Game approximation, labelled as such.
+// TODO: CG and stability that follow the burn. The aerodynamic number that matters is
+// stability at max-Q, when about 60% of the propellant is gone, not the full-tank liftoff value.
 // Stations match RocketMeshBuilder (metres, +Y up, base of stage 1 at y = 0) so the
 // markers sit on the rocket the player sees. CP formulas: Barrowman 1967 as restated
 // in the USU MAE notes (cone 0.666 Ln, ogive 0.466 Ln) and Crowell 1996 (von Karman 0.500 Ln).
@@ -139,7 +141,10 @@ namespace Kestrel.Core.Designer
 
             if (d.fins && d.finCount > 0 && d.finSpanM > 0 && stages.Count > 0)
             {
-                double s = d.finSpanM, cr = s, ct = s, lf = 0, xr = 0;
+                // l_F is the mid-chord length, not 0. An unswept fin has x_t = 0, so l_F = span.
+                // sqrt(s^2 + (x_t + (c_t - c_r)/2)^2) keeps a later sweep key from needing a new formula.
+                double s = d.finSpanM, cr = s, ct = s, xt = 0, xr = 0;
+                double lf = Math.Sqrt(s * s + Sq(xt + (ct - cr) / 2));
                 int n = d.finCount;
                 double cna1 = (4.0 * n * Sq(s / dRef)) / (1 + Math.Sqrt(1 + Sq(2 * lf / (cr + ct))));
                 double radius = stages[0].diameter / 2;
@@ -151,7 +156,8 @@ namespace Kestrel.Core.Designer
 
             foreach (var cone in cones)
             {
-                // Conical nose, CP at 2/3 of the length aft of its own tip. Same factor as the core cone.
+                // Approximation, not a Barrowman body term: each strap-on nose is a full cone
+                // 2 (d/d_ref)^2 at the core reference diameter. Strap-on fins and base drag are omitted.
                 double yCp = cone.yTip - (2.0 / 3.0) * cone.length;
                 Add(cone.count * 2 * Sq(cone.diameter / dRef), length - yCp);
             }
@@ -181,7 +187,11 @@ namespace Kestrel.Core.Designer
             return 0.45;
         }
 
-        /// <summary>CP station as a fraction of nose length, measured from the tip.</summary>
+        /// <summary>
+        /// CP station as a fraction of nose length, measured from the tip.
+        /// Cone 2/3, ogive 0.466 and von Karman 1/2 are the cited Barrowman factors.
+        /// Blunt uses 1/3 as an elliptical-nose approximation; Barrowman does not give that shape.
+        /// </summary>
         public static double NoseCpFactor(string nose)
         {
             if (nose == "conic") return 2.0 / 3.0;

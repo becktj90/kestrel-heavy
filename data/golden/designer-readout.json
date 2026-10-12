@@ -7,7 +7,7 @@
   "stabilityAbs": 1e-9,
   "note": "External pencil literals, not Quick() fed back into itself. Bands for max-Q are literature, not a point match. See docs/PHYSICS.md."
  },
- "count": 3,
+ "count": 4,
  "cases": [
   {
    "kind": "hand",
@@ -90,7 +90,7 @@
   {
    "kind": "hand",
    "name": "ogive-fins",
-   "cite": "Ogive Xn = 0.466 Ln. Fins: N = 4, unswept square, span = chord = 1 m, trailing edge at the base, Kfb = 1 + R/(s+R), CNa = Kfb * (4 N (s/d)^2) / 2.",
+    "cite": "Ogive Xn = 0.466 Ln. Fins: N = 4, unswept square, span = chord = 1 m, trailing edge at the base. Mid-chord l_F = span, so the CNa denominator is 1+sqrt(2). Kfb = 1 + R/(s+R).",
    "design": {
     "version": 1,
     "name": "Pencil",
@@ -153,8 +153,8 @@
    "out": {
     "refDiameter_m": 1,
     "cg_m": 8.127399892657614,
-    "cp_m": 3.2234203337923635,
-    "stabilityCal": 4.903979558865251,
+    "cp_m": 3.6411391130660373,
+    "stabilityCal": 4.486260779591577,
     "stages": [
      {
       "dryMass_kg": 1980,
@@ -178,6 +178,12 @@
     5000,
     25000
    ]
+  },
+  {
+   "kind": "launchable",
+   "name": "orbital-templates",
+   "cite": "Finless orbital launchers are aerodynamically unstable and fly on engine steering. unstable is a warning, never a block, so every template whose payload orbit is not suborbital must still pass Engineering.ok.",
+   "excludeOrbit": "suborbital"
   }
  ]
 }

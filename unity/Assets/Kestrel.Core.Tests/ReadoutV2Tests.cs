@@ -39,13 +39,16 @@
 //     add(2.0, factor * fair_L * nose_frac)     # d_ref = 1
 //     if fins:
 //         s = cr = ct = 1.0
-//         cna1 = (4*4*(s)**2) / 2               # Lf = 0
+//         xt = 0.0
+//         lf = math.sqrt(s*s + (xt + (ct - cr)/2)**2)   # unswept: lf = span
+//         cna1 = (4*4*(s)**2) / (1 + math.sqrt(1 + (2*lf/(cr+ct))**2))
 //         kfb = 1 + 0.5/(s+0.5)
 //         xf = (L - cr) + (1/6)*(cr+ct - cr*ct/(cr+ct))
 //         add(kfb*cna1, xf)
 //     return L - cnx/cna
 // # cone, no fins: factor 2/3, nose fraction 0.40
 // # ogive + fins: factor 0.466, nose fraction 0.45
+// #   lf = 1, CP from the base = 3.6411391130660373 m, stability = 4.486260779591577 cal
 // PY
 //
 // Citations: Barrowman 1967 (USU MAE restatement: cone 0.666 Ln, ogive 0.466 Ln);
@@ -185,10 +188,15 @@ namespace Kestrel.Core.Tests
             var cold = Readout.Quick(Golden.Catalog, design);
             Assert.IsTrue(cold.maxQStale);
 
-            string hash = ReferenceAscent.DesignHash(design);
+            string hash = ReferenceAscent.DesignHash(Golden.Catalog, design);
+            Assert.AreEqual(16, hash.Length, "64-bit hash");
             var shuffled = JsonMut.CloneObject(design);
             shuffled.Order.Reverse();
-            Assert.AreEqual(hash, ReferenceAscent.DesignHash(shuffled));
+            Assert.AreEqual(hash, ReferenceAscent.DesignHash(Golden.Catalog, shuffled));
+            string version = Golden.Catalog.VersionKey;
+            Golden.Catalog.VersionKey = version + ".bump";
+            try { Assert.AreNotEqual(hash, ReferenceAscent.DesignHash(Golden.Catalog, design), "catalog version is in the key"); }
+            finally { Golden.Catalog.VersionKey = version; }
 
             var job = new ReferenceJob(Golden.Catalog, design);
             Assert.IsFalse(job.Step(0), "a zero budget still yields before a full ascent");
@@ -207,6 +215,11 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(direct.maxQAlt, filled.maxQAlt_m);
             Assert.AreEqual(cached.maxQ_kPa, filled.maxQ_kPa);
             Assert.AreEqual(cached.maxQAlt_m, filled.maxQAlt_m);
+
+            Golden.Catalog.VersionKey = version + ".bump";
+            try { Assert.IsTrue(Readout.Quick(Golden.Catalog, design).maxQStale, "a catalog version miss does not reuse the stored ascent"); }
+            finally { Golden.Catalog.VersionKey = version; }
+            Assert.IsFalse(Readout.Quick(Golden.Catalog, design).maxQStale, "the original key still hits");
 
             JsonMut.Set((JsonObject)design.Arr("stages")[0], "propMass", 11000d);
             Assert.IsTrue(Readout.Quick(Golden.Catalog, design).maxQStale, "a new hash is stale");
@@ -274,6 +287,119 @@ namespace Kestrel.Core.Tests
                 double err = System.Math.Abs(bal.mass_kg - lift);
                 Assert.LessOrEqual(err, 1e-9 * System.Math.Max(1, System.Math.Abs(lift)), design.Str("id"));
             }
+        }
+
+        [Test]
+        public void OrbitalTemplates_CanLaunch()
+        {
+            JsonObject rule = null;
+            foreach (JsonObject c in Golden.File("designer-readout").Arr("cases"))
+                if (c.Str("kind") == "launchable") rule = c;
+            Assert.IsNotNull(rule);
+            string skip = rule.Str("excludeOrbit");
+            var cat = Golden.Catalog;
+            int orbital = 0;
+            foreach (var design in ReadoutBench.LoadDesigns(Golden.Root))
+            {
+                if (!(design.Str("id") ?? "").StartsWith("tpl-")) continue;
+                bool sub = design.Obj("payload")?.Str("orbit") == skip;
+                var report = Validate.Engineering(cat, design);
+                if (sub) continue;
+                orbital++;
+                Assert.IsTrue(report.ok, (design.Str("id") ?? "?") + " " + string.Join(" | ", report.blocks.ConvertAll(b => b.code + ": " + b.msg)));
+                Assert.IsNull(report.blocks.Find(b => b.code == "unstable" || b.code == "maxq-high" || b.code == "overstable"));
+                var steered = report.warnings.Find(w => w.code == "unstable");
+                Assert.IsNotNull(steered, design.Str("id") + " is finless and unstable at liftoff");
+                StringAssert.Contains("engine-steered", steered.msg);
+            }
+            Assert.GreaterOrEqual(orbital, 5);
+        }
+
+        [Test]
+        public void StabilityBand_IsFinnedOrUnguided_AndMaxQHighDoesNotBlock()
+        {
+            var cat = Golden.Catalog;
+            var pencil = JsonMut.CloneObject(((JsonObject)Golden.File("designer-readout").Arr("cases")[1]).Obj("design"));
+            var finned = Validate.Engineering(cat, pencil);
+            Assert.IsTrue(finned.ok);
+            Assert.IsNotNull(finned.warnings.Find(w => w.code == "overstable"), "4.5 cal finned pencil is overstable, not blocked");
+            Assert.IsNull(finned.blocks.Find(b => b.code == "overstable" || b.code == "unstable"));
+
+            var bare = JsonMut.CloneObject(((JsonObject)Golden.File("designer-readout").Arr("cases")[0]).Obj("design"));
+            var liquid = Validate.Engineering(cat, bare);
+            Assert.IsTrue(liquid.ok);
+            var note = liquid.warnings.Find(w => w.code == "unstable");
+            Assert.IsNotNull(note);
+            StringAssert.Contains("engine-steered", note.msg);
+            Assert.IsNull(liquid.warnings.Find(w => w.code == "overstable"), "the 1-2 cal band and overstable do not apply to a finless steered rocket");
+
+            ReferenceAscent.Reset();
+            foreach (var id in new[] { "stock", "kid" })
+            {
+                var design = Preset(id);
+                var report = Readout.Reference(cat, design);
+                Assert.Greater(report.maxQ_kPa.Value, Validate.MaxQWarnKPa, id);
+                var eng = Validate.Engineering(cat, design);
+                Assert.IsTrue(eng.ok, id);
+                Assert.IsNotNull(eng.warnings.Find(w => w.code == "maxq-high"), id + " warns");
+                Assert.IsNull(eng.blocks.Find(b => b.code == "maxq-high"), id + " does not block");
+            }
+            if (System.Math.Abs(Readout.Reference(cat, Preset("stock")).maxQ_kPa.Value - 73.01) > 0.05)
+                Assert.Fail("stock max-Q left the documented 73 kPa");
+            if (System.Math.Abs(Readout.Reference(cat, Preset("kid")).maxQ_kPa.Value - 90.07) > 0.05)
+                Assert.Fail("kid max-Q left the documented 90 kPa");
+
+            var solid = Template("tpl-sounding-solid");
+            var q = Readout.Reference(cat, solid);
+            Assert.Greater(q.maxQ_kPa.Value, 600, "sounding rocket is the solid outlier, about 660 kPa");
+            var solidReport = Validate.Engineering(cat, solid);
+            Assert.IsTrue(solidReport.ok);
+            Assert.IsNull(solidReport.warnings.Find(w => w.code == "maxq-high"), "unguided solid is exempt");
+            Assert.IsNull(solidReport.blocks.Find(b => b.code == "maxq-high"));
+        }
+
+        [Test]
+        public void LoftedSuborbital_FallingQClearsTheEarlyStop()
+        {
+            var design = MiniJson.ParseObject(@"{
+                ""version"": 1, ""name"": ""Loft"", ""id"": ""loft"",
+                ""stages"": [{ ""name"": ""Booster"", ""propellant"": ""kerolox"", ""engine"": ""gg-kerolox-small"", ""engineCount"": 1,
+                  ""propMass"": 6500, ""diameter"": 1.2, ""material"": ""al-li"",
+                  ""interstageMass"": 0, ""separationMass"": 0, ""landingPropMass"": 0 }],
+                ""payload"": { ""type"": ""kid-box"", ""mass"": 20, ""orbit"": ""suborbital"" },
+                ""fairing"": { ""diameter"": 1.2, ""length"": 2, ""material"": ""composite"" },
+                ""aero"": { ""nose"": ""ogive"", ""fins"": true },
+                ""landing"": { ""legs"": false, ""gridFins"": false, ""rcs"": false },
+                ""avionics"": { ""tier"": ""basic"" }, ""safetyFactor"": 1.4
+            }");
+            var cat = Golden.Catalog;
+            var input = Stack.SimInputs(cat, Design.FromJson(design));
+            var sim = new AscentSim(input.stages, input.opts);
+            double climb = 0;
+            bool down = false;
+            while (sim.Tick())
+            {
+                double r = System.Math.Sqrt(sim.Y[0] * sim.Y[0] + sim.Y[1] * sim.Y[1]);
+                double vr = (sim.Y[2] * sim.Y[0] + sim.Y[3] * sim.Y[1]) / r;
+                double alt = r - Gravity.R_EARTH;
+                if (vr < -5 && alt > 1000) down = true;
+                if (!down && sim.LastQ > climb) climb = sim.LastQ;
+            }
+            Assert.IsTrue(down, "the lofted rocket falls back under thrust");
+            Assert.IsTrue(sim.DenseDescent);
+            var full = Headless.Simulate(input.stages, input.opts);
+            Assert.Greater(full.maxQ, climb + 50000, "the fall exceeds the climb peak");
+            ReferenceAscent.Reset();
+            var got = Readout.Reference(cat, design);
+            Assert.AreEqual(full.maxQ / 1000.0, got.maxQ_kPa.Value, 1e-9);
+            Assert.Greater(got.maxQ_kPa.Value, climb / 1000.0 + 50);
+        }
+
+        static JsonObject Template(string id)
+        {
+            foreach (var d in ReadoutBench.LoadDesigns(Golden.Root))
+                if (d.Str("id") == id) return d;
+            Assert.Fail(id); return null;
         }
 
         [Test]

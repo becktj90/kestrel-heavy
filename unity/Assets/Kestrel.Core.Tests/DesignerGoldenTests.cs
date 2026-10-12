@@ -64,7 +64,9 @@ namespace Kestrel.Core.Tests
                     var exp = c.Obj("out");
                     Assert.AreEqual(exp.Bool("ok"), got.ok, name);
                     SameIssues(exp.Arr("blocks"), got.blocks, name + " blocks");
-                    SameIssues(exp.Arr("warnings"), got.warnings, name + " warnings");
+                    // unstable / overstable / maxq-high are readout-v2 warnings. The JS golden
+                    // does not compute liftoff stability or cached max-Q, so it cannot list them.
+                    SameIssues(exp.Arr("warnings"), got.warnings.FindAll(w => !AeroV2(w.code)), name + " warnings");
                     SameReadout(name, got.readout, exp.Obj("readout"), rel, abs, relR);
                 }
                 else if (kind == "makeItFly")
@@ -97,6 +99,8 @@ namespace Kestrel.Core.Tests
                 o.Add(new Issue { code = x.Str("code"), tab = x.Str("tab"), msg = x.Str("msg"), index = x.ContainsKey("index") ? (int)x.Num("index") : (int?)null });
             return o;
         }
+
+        static bool AeroV2(string code) => code == "unstable" || code == "overstable" || code == "maxq-high";
 
         static void SameIssues(List<object> exp, List<Issue> got, string what)
         {

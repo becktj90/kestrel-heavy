@@ -49,13 +49,20 @@ namespace Kestrel.Core.Data
         public readonly Dictionary<string, OrbitTarget> Orbits = new Dictionary<string, OrbitTarget>();
         public readonly List<Vehicle.Design> Presets = new List<Vehicle.Design>();
         public JsonObject Econ;
+        /// <summary>propellants.engines.materials.payloads version numbers. Part of the max-Q cache key.</summary>
+        public string VersionKey = "0";
 
         public Vehicle.Design Preset(string id) => Presets.Find(p => p.id == id);
 
         public static Catalog FromJson(string propellants, string engines, string materials, string payloads, string presets, string economyConstants)
         {
             var c = new Catalog();
-            foreach (JsonObject o in MiniJson.ParseObject(propellants).Arr("propellants"))
+            var propDoc = MiniJson.ParseObject(propellants);
+            var engDoc = MiniJson.ParseObject(engines);
+            var matDoc = MiniJson.ParseObject(materials);
+            var payDoc = MiniJson.ParseObject(payloads);
+            c.VersionKey = Ver(propDoc) + "." + Ver(engDoc) + "." + Ver(matDoc) + "." + Ver(payDoc);
+            foreach (JsonObject o in propDoc.Arr("propellants"))
             {
                 var p = new Propellant
                 {
@@ -66,7 +73,7 @@ namespace Kestrel.Core.Data
                 };
                 c.Propellants.Add(p); c.PropellantById[p.id] = p;
             }
-            foreach (JsonObject o in MiniJson.ParseObject(engines).Arr("engines"))
+            foreach (JsonObject o in engDoc.Arr("engines"))
             {
                 var th = o.Arr("throttle");
                 var e = new Engine
@@ -90,7 +97,7 @@ namespace Kestrel.Core.Data
                 }
                 c.Engines.Add(e); c.EngineById[e.id] = e;
             }
-            foreach (JsonObject o in MiniJson.ParseObject(materials).Arr("materials"))
+            foreach (JsonObject o in matDoc.Arr("materials"))
             {
                 var m = new Material
                 {
@@ -99,7 +106,7 @@ namespace Kestrel.Core.Data
                 };
                 c.Materials.Add(m); c.MaterialById[m.id] = m;
             }
-            var pl = MiniJson.ParseObject(payloads);
+            var pl = payDoc;
             foreach (var k in pl.Obj("orbits").Order)
             {
                 var o = (JsonObject)pl.Obj("orbits")[k];
@@ -118,6 +125,8 @@ namespace Kestrel.Core.Data
             c.Econ = MiniJson.ParseObject(economyConstants);
             return c;
         }
+
+        static string Ver(JsonObject doc) => doc.Num("version", 0).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         /// <summary>Load from a checkout: data/*.json + web/js/economy-data/constants.json.</summary>
         public static Catalog LoadFromRepo(string repoRoot)

@@ -48,13 +48,13 @@ export async function register({ put }) {
     {
       kind: 'hand',
       name: 'ogive-fins',
-      cite: 'Ogive Xn = 0.466 Ln. Fins: N = 4, unswept square, span = chord = 1 m, trailing edge at the base, Kfb = 1 + R/(s+R), CNa = Kfb * (4 N (s/d)^2) / 2.',
+      cite: 'Ogive Xn = 0.466 Ln. Fins: N = 4, unswept square, span = chord = 1 m, trailing edge at the base. Mid-chord l_F = span, so the CNa denominator is 1+sqrt(2). Kfb = 1 + R/(s+R).',
       design: pencil('ogive', true),
       out: {
         refDiameter_m: 1,
         cg_m: 8.127399892657614,
-        cp_m: 3.2234203337923635,
-        stabilityCal: 4.903979558865251,
+        cp_m: 3.6411391130660373,
+        stabilityCal: 4.486260779591577,
         stages: [{ dryMass_kg: 1980, propMass_kg: 9000, deltaV_mps: 5014.542143124724, deltaVSL_mps: 4546.9481812256345 }],
       },
     },
@@ -65,6 +65,12 @@ export async function register({ put }) {
       cite: 'Medium kerolox orbital class. Public Falcon 9 max-Q is about 30 kPa near 11 km. The accepted sanity window is 25–40 kPa and 5–25 km (ux-142 answers §6, widened so one integrator step cannot walk out of the band). Not a bit match.',
       maxQ_kPa: [25, 40],
       maxQAlt_m: [5000, 25000],
+    },
+    {
+      kind: 'launchable',
+      name: 'orbital-templates',
+      cite: 'Finless orbital launchers are aerodynamically unstable and fly on engine steering. unstable is a warning, never a block, so every template whose payload orbit is not suborbital must still pass Engineering.ok.',
+      excludeOrbit: 'suborbital',
     },
   ]);
 }
