@@ -126,19 +126,23 @@ namespace Kestrel.Core.Physics
 
         public static MeanElements OsculatingToMean(MeanElements o)
         {
-            // Two fixed-point steps so mean→osc→mean stays inside the 1 m / 1e-7 band.
+            // Fixed-point iteration to convergence (not a fixed pass count).
             double a = o.a, e = o.e;
             double si = Math.Sin(o.i);
             double u = o.argp + o.m;
             double cos2u = Math.Cos(2.0 * u);
             double sin2u = Math.Sin(2.0 * u);
-            for (int k = 0; k < 2; k++)
+            for (int k = 0; k < 32; k++)
             {
                 double p = a * Math.Max(1.0 - e * e, 1e-12);
                 double kappa = J2 * (Gravity.R_EARTH / p) * (Gravity.R_EARTH / p);
                 double c = kappa * (1.0 - 1.5 * si * si);
-                a = o.a / (1.0 + c * cos2u);
-                e = o.e - 0.5 * c * sin2u * si;
+                double aNext = o.a / (1.0 + c * cos2u);
+                double eNext = o.e - 0.5 * c * sin2u * si;
+                bool done = Math.Abs(aNext - a) <= 1e-15 * Math.Max(Math.Abs(aNext), 1.0)
+                    && Math.Abs(eNext - e) <= 1e-15;
+                a = aNext; e = eNext;
+                if (done) break;
             }
             return new MeanElements
             {
