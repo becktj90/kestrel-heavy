@@ -123,10 +123,14 @@ namespace Kestrel.Pad.Tests
             Assert.That(g.Query(ElementCategory.SwingArm).Count, Is.EqualTo(L.Arms.Count));
             Assert.That(g.PathTo("tower.l03.col.ne"), Is.EqualTo(new[] { "pad", "tower", "tower.l03", "tower.l03.col.ne" }));
             Assert.That(g.Parent("tower.l03").Id, Is.EqualTo("tower"));
-            Assert.That(g.Descendants("tower").Count(), Is.EqualTo(g.Count - 2));   // everything but pad + tower
+            // everything but pad + tower + the free-standing lightning masts (D2: mast.N hang off pad, not the tower)
+            int masts = g.Query(ElementCategory.Structure, "lightning-mast").Count;
+            Assert.That(masts, Is.GreaterThan(0));
+            Assert.That(g.Query(ElementCategory.Structure, "lightning-mast").All(e => e.ParentId == "pad"), Is.True);
+            Assert.That(g.Descendants("tower").Count(), Is.EqualTo(g.Count - 2 - masts));
             foreach (var e in g.All) if (e.ParentId != null) Assert.That(g.Contains(e.ParentId), e.Id);
             // every built member has a graph element with the same id
-            foreach (var m in L.Members) Assert.That(g.Get(m.Id)?.Category, Is.EqualTo(m.Kind == MemberKind.Deck ? ElementCategory.Deck : ElementCategory.Member));
+            foreach (var m in L.Members.Where(m => m.ParentId == null || !m.ParentId.StartsWith("mast."))) Assert.That(g.Get(m.Id)?.Category, Is.EqualTo(m.Kind == MemberKind.Deck ? ElementCategory.Deck : ElementCategory.Member));
         }
 
         [Test]

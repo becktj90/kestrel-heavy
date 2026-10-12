@@ -38,22 +38,42 @@ namespace Kestrel.Core.Weather
         public const double JetAltKm = 10.5;
 
         /// <summary>
-        /// Characteristic depth (m) converting shear rate → jet peak increment:
-        /// jetPeak ≈ surface + shearPerSec × ShearLayerM, capped at <see cref="JetCapMs"/>.
+        /// Characteristic depth (m) converting shear rate → unsaturated jet peak increment:
+        /// rawPeak = surface + shearPerSec × ShearLayerM, then <see cref="SoftCap"/>.
         /// </summary>
         public const double ShearLayerM = 8000.0;
 
-        /// <summary>Hard cap on jet-peak wind (m/s). Real jets are ~30–70 m/s; rare cores &lt; 100 m/s.</summary>
+        /// <summary>
+        /// Soft-saturation asymptote (m/s) for jet-peak wind. Replaces a hard clip so the ~3% of
+        /// shear-fail days (rawPeak ≳ 100) are not all pinned exactly at the ceiling.
+        /// Real jets are ~30–70 m/s; rare cores approach this asymptote from below.
+        /// </summary>
         public const double JetCapMs = 100.0;
+
+        /// <summary>Exponent for algebraic soft cap: raw / (1 + (raw/cap)^n)^(1/n).</summary>
+        public const double SoftCapExponent = 4.0;
+
+        /// <summary>
+        /// Algebraic soft saturation toward <paramref name="cap"/> (n = <see cref="SoftCapExponent"/>).
+        /// Nearly linear below ~70 m/s; asymptotes to cap without a hard knee.
+        /// </summary>
+        public static double SoftCap(double raw, double cap = JetCapMs, double n = SoftCapExponent)
+        {
+            if (raw <= 0) return 0;
+            if (cap <= 0) return 0;
+            double x = raw / cap;
+            return raw / Math.Pow(1.0 + Math.Pow(x, n), 1.0 / n);
+        }
 
         /// <summary>
         /// Build a 5-level wind profile peaking near jet level.
         /// Smoothstep rise from surface to <see cref="JetAltKm"/>, mild decay above.
-        /// Jet peak = min(JetCapMs, surface + shearPerSec × ShearLayerM). Pure display kinematics.
+        /// Jet peak = SoftCap(surface + shearPerSec × ShearLayerM). Pure display kinematics.
         /// </summary>
         public static double[] FromSurface(double surfaceWindMs, double shearPerSec)
         {
-            double jetPeak = Math.Min(JetCapMs, surfaceWindMs + shearPerSec * ShearLayerM);
+            double rawPeak = surfaceWindMs + shearPerSec * ShearLayerM;
+            double jetPeak = SoftCap(rawPeak);
             var w = new double[AltitudeKm.Length];
             for (int i = 0; i < AltitudeKm.Length; i++)
             {

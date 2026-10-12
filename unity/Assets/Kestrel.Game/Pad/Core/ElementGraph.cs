@@ -6,7 +6,7 @@ using Kestrel.Kit.Contracts;
 
 namespace Kestrel.Pad
 {
-    public enum ElementCategory { Site, Structure, Level, Member, Deck, SwingArm, Connector, Pipe, Valve, Tank, Light, Prop }
+    public enum ElementCategory { Site, Structure, Level, Member, Deck, SwingArm, Connector, Pipe, Valve, Tank, Light, Prop, CrewArm }
 
     public sealed class PadElement
     {
