@@ -8,6 +8,10 @@ namespace Kestrel.Game.Tests
     // U1 (DESIGNER_SPEC §6, §11.3): kid wording per code, summary chip, Launch gate.
     public class DesignerValidationTests
     {
+        // Resources/KestrelData is generated (gitignored); a clean checkout (CI, fresh clone) needs it synced first.
+        [OneTimeSetUp]
+        public void SyncKestrelData() => Kestrel.Slice.Editor.SliceBootstrap.SyncData();
+
         static readonly string[] Codes =
         {
             "zero-engines", "zero-propellant", "schema", "math", "twr-low", "engines-dont-fit", "top-heavy",
