@@ -54,6 +54,8 @@ jobs:
           unityVersion: ${{ env.UNITY_VERSION }}
           projectPath: ${{ env.PROJECT_PATH }}
           testMode: ${{ matrix.testMode }}
+          # iOS module image: Assets/Editor/IconSetup.cs uses UnityEditor.iOS.
+          customImage: unityci/editor:ubuntu-${{ env.UNITY_VERSION }}-ios-3
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           checkName: Unity ${{ matrix.testMode }} results
           artifactsPath: test-results-${{ matrix.testMode }}
@@ -93,7 +95,7 @@ jobs:
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
           projectPath: ${{ env.PROJECT_PATH }}
-          targetPlatform: StandaloneLinux64
+          targetPlatform: iOS # iOS module needed to compile IconSetup.cs
           buildMethod: Kestrel.EditorTools.CiCapture.Run
           customParameters: -khCapOut /github/workspace/capture-out
           allowDirtyBuild: true
