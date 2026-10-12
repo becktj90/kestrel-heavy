@@ -153,8 +153,14 @@ namespace Kestrel.Slice
         /// <summary>#129-v7 cloud launch speed (x CloudRadius). 0.35-0.8 (14-32 m/s) with the weak limit-velocity
         /// damping (probe-calibrated ~1/s) flung newborn billows 19 m out in 0.55 s: a thin, sparse ring.</summary>
         public const float CloudSpeedMin = 0.08f, CloudSpeedMax = 0.25f;
-        /// <summary>Diamonds (size 0.5 D, travel 0.5 Length over life): visible half 0.2 D clears the plane by u ~ 0.4 D / Length; 0.08 covers L >= 5 D.</summary>
-        public const float DiamondFadeIn = 0.08f;
+        /// <summary>#130 review: diamonds travelled 0.5 Length (~310 m/s) over 0.3 s, so the 0.08 fade-in put the
+        /// first visible knot 7-9.5 m below the exit (and deck bounces flung them +5.8 m above it). Now they drift
+        /// only DiamondTravelD x D over their life, i.e. a stationary pattern hanging off the exit, and fade in
+        /// exactly when the 5% fringe (0.5 x 0.74 x 0.5 D = 0.185 D) clears the plane: 0.185 / 1.5 = 0.123.</summary>
+        public const float DiamondTravelD = 1.5f, DiamondSizeD = 0.5f, DiamondLife = 0.3f;
+        public const float DiamondFadeIn = 0.13f;
+        /// <summary>Depth (m) below the exit of the top of the first visible diamond (its 5% fringe).</summary>
+        public static float DiamondTopDepth(float d) => DiamondFadeIn * DiamondTravelD * d - 0.5f * PlumeFringeFraction * DiamondSizeD * d;
         /// <summary>Body alpha by the time deck-deflected particles exist (u >= 1 - lifetime loss): below ~0.05.</summary>
         public const float BodyTailAlpha = 0.04f, BodyTailAt = 0.7f;
         /// <summary>Fraction of a particle's nominal size inside which the soft sprite is visible (alpha >= ~1%).</summary>
@@ -265,7 +271,18 @@ namespace Kestrel.Slice
         /// quality preset down (#129: caps dropped 208->48 between T+0.48 and T+1.31).</summary>
         // (#129-v6: the private 15 s budget hold is gone; QualityGovernor holds the tier for 20 s after ignition.)
         /// <summary>Body deck collision: deflect sideways, low bounce, high lifetime loss (short, faded spray).</summary>
-        public const float BodyDeckBounce = 0f, BodyDeckDampen = 0.8f, BodyDeckLifetimeLoss = 0.75f, BodyDeckRadiusScale = 0.1f;   // #129-v6: deflected spray climbed 150-200 px; no bounce, alpha <= BodyTailAlpha after the loss   // v6 sim: 0.5 loss made an orange band over the nozzles
+        /// #130 review: lifetimeLoss 0.75 killed/faded nearly every body particle while the 186 m body crossed the
+        /// deck, so the body sat at 48/212 live with alpha 0.02-0.06 until T+2.5. Now deflected particles keep
+        /// their life and alpha (count reaches the budget, opaque from ignition) and are instead SHRUNK by
+        /// size-by-speed: dampen 0.85 leaves 15% speed, so a deflected sprite is ~BodyDeflectSize of its size and
+        /// cannot climb over the nozzles / boosters (the v6 "orange band").
+        public const float BodyDeckBounce = 0f, BodyDeckDampen = 0.85f, BodyDeckLifetimeLoss = 0f, BodyDeckRadiusScale = 0.1f;
+        public const float BodyDeflectSize = 0.12f;
+        /// <summary>Size multiplier vs speed fraction (speed / startSpeed): linear from BodyDeflectSize at 0 to 1 at 0.6+.</summary>
+        public static float BodySizeBySpeed(float speedFraction) => Mathf.Lerp(BodyDeflectSize, 1f, Mathf.Clamp01(speedFraction / 0.6f));
+        /// <summary>Core and diamonds die on deck contact (no bounce): they are small near-nozzle features, and
+        /// their deck bounce put them +2.8 / +5.8 m above the nozzle exit at T+0.6 (#130 review).</summary>
+        public const float NearDeckBounce = 0f, NearDeckLifetimeLoss = 1f;   // #129-v6: deflected spray climbed 150-200 px; no bounce, alpha <= BodyTailAlpha after the loss   // v6 sim: 0.5 loss made an orange band over the nozzles
         /// <summary>Visible half-size of the largest cloud billow at normalised life u (size curve start -> 1.6).</summary>
         public static float CloudHalfVisible(Layout L, float u) => 0.5f * SpriteVisibleFraction * L.CloudSizeMax * Mathf.Lerp(L.CloudSizeStart, CloudGrowEnd, Mathf.Clamp01(u));
         /// <summary>Closest a cloud billow's visible edge gets to the vehicle axis right after spawning.</summary>

@@ -66,7 +66,7 @@ def particles(t, v):
     """Return list of (pos[N,3], size[N], rgb[N,3], alpha[N], additive) for every emitter at real time t."""
     alt = alt_at(t); out = []
     tf, pa = 0.9, math.exp(-alt/8500)
-    if v in ('v5', 'v6', 'v7', 'v8'):
+    if v in ('v5', 'v6', 'v7', 'v8', 'v9'):
         L = P.layout(tf, pa, CD, VR, VH, DECK); ssf = P.SSF; collide_body = True; cloudH = L['CloudHeight']; ramp = 0.25; burst = 0.35
         core_spawn = L["CoreSpawnRadius"]; ncore = 12; csz = np.vectorize(P.csize)
     else:  # v4 (fee69ee) parameters
@@ -80,6 +80,8 @@ def particles(t, v):
         collide_body = False; cloudH = -0.1*DECK; ramp = 0.75; burst = 0.0; core_spawn = 0.05*CD; ncore = 8
         csz = lambda u: np.where(u < 0.15, 0.3+0.7*u/0.15, 1-0.2*(u-0.15)/0.85)
         P.SSF, P.NOZ, P.BodySizeStart, P.CoreSizeStart = 0.36, 0.15, 0.3, 0.35
+    if v == 'v9':
+        return particles_v9(t, L, alt) + cloud_part(t, v, L, cloudH, ramp, burst)
     if v in ('v7', 'v8'):
         return particles_v7(t, L, alt) + cloud_part(t, v, L, cloudH, ramp, burst)
     if v == 'v6':
@@ -110,7 +112,7 @@ CLOUD = {
     'u129': dict(cap=160, spd=(0.35, 0.8), k=1.0, start=0.3, vy=(-0.5, 1.0), lift=0.5, R0f=2, spawnf=1.5, sizef=1.0, life=(3.0, 4.5)),
 }
 def cloud_part(t, v, L, cloudH, ramp, burst):
-    C = CLOUD['v7' if v in ('v7', 'v8') else 'u129']
+    C = CLOUD['v7' if v in ('v7', 'v8', 'v9') else 'u129']
     out = []
     R0 = C['R0f']*max(DECK, 10); smax = C['sizef']*max(0.55*DECK, 0.2*VH)/0.36; smin = 0.55*smax
     spawnR = max(C['spawnf']*DECK, max(1.5*VR, 1.5*CD) + 0.4*smax*C['start'])
@@ -165,6 +167,34 @@ def particles_v7(t, L, alt):
     out.append((pos[k], np.full(k.sum(), 0.5*d), np.tile([255, 230, 170.], (k.sum(), 1)), fade(u[k], 0.08, 0.35, [(0.25, 0.4)]), False))
     return out
 
+def particles_v9(t, L, alt):
+    """#130 review fix: deck-deflected body keeps life/alpha but shrinks by size-by-speed (dampen 0.85);
+    core/diamonds die on deck contact; diamonds drift 1.5 D over 0.3 s with fade-in 0.13 (locked to the exit)."""
+    out = []; d = L['VisualD']
+    def fade(u, fi, peak, tail, ramp=0.04):
+        up = min(0.95, fi + max(0.002, ramp)); xs = [0, max(fi, 1e-3), up] + [tt for a_, tt in tail if tt > up] + [1]
+        ys = [0, 0, peak] + [a_ for a_, tt in tail if tt > up] + [0]; return np.interp(u, xs, ys)
+    n = 208; life = L['BodyLife']; u = rng.random(n); spd = L['Length']/life
+    fi = min(0.35, L['BodyEmitOffset']/max(1, L['Length']))
+    ang = math.radians(L['BodyConeDeg']); phi = rng.random(n)*2*np.pi; rr = np.sqrt(rng.random(n))*L['BodySpawnRadius']; th = rng.random(n)*ang
+    travel = spd*u*life; dy = np.cos(th)*travel; hit = (alt - dy) < 0
+    rad = rr + np.sin(th)*np.where(hit, alt, travel) + np.where(hit, 0.15*(travel - alt), 0)
+    shrink = np.where(hit, 0.19, 1.0)
+    size = rng.uniform(L['BodyMin'], L['BodyMax'], n)*np.array([P.bsize(L, x) for x in u])*shrink
+    y = np.where(hit, 0.1*0.5*size, alt - dy)
+    pos = np.stack([rad*np.cos(phi), y, rad*np.sin(phi)], -1)
+    rgb, _ = gradient(u, [(HEAD, 0), (MID, 0.3), (TAIL, 1)], [0, 0, 0])
+    a = fade(u, fi, 0.9, [(0.6, 0.4), (0.04, 0.7)], ramp=min(0.04, max(0.002, 0.02*d/L['Length'])))
+    out.append((pos, size, rgb, a, False))
+    n = 8; u = rng.random(n); phi = rng.random(n)*2*np.pi; rr = np.sqrt(rng.random(n))*L['CoreSpawnRadius']
+    pos = np.stack([rr*np.cos(phi), alt - L['CoreLength']*u, rr*np.sin(phi)], -1); size = L['CoreSize']*(1 - 0.2*u); k = pos[:, 1] > 0
+    cfi = min(0.9, L['CoreEmitOffset']/max(0.1, L['CoreLength']))
+    rgb, _ = gradient(u, [([255, 255, 255], 0), (CORE, 0.35), (MID, 1)], [0, 0, 0])
+    out.append((pos[k], size[k], np.minimum(rgb*1.5, 255)[k], fade(u, cfi, 0.8, [(0.3, 0.75)])[k], False))
+    n = 18; u = rng.random(n); pos = np.stack([np.zeros(n), alt - 1.5*d*u, np.zeros(n)], -1); k = pos[:, 1] > 0
+    out.append((pos[k], np.full(k.sum(), 0.5*d), np.tile([255, 230, 170.], (k.sum(), 1)), fade(u[k], 0.13, 0.35, [(0.25, 0.4)]), False))
+    return out
+
 def particles_v6(t, L, alt, cloudH, ramp, burst):
     """#129 emitters as Unity builds them (probe-checked): body emitter AT the exit plane with an alpha fade-in
     over BodyFadeIn, deck collision bounce 0.05 / dampen 0.6 / lifetimeLoss 0.5; core = up to 8 small
@@ -210,7 +240,7 @@ def render(t, v, path):
     allp = []
     plist = particles(t, v)
     for ei, (pos, size, rgb, a, add) in enumerate(plist):
-        tight = (v in ('v7', 'v8') and ei < 3)
+        tight = (v in ('v7', 'v8', 'v9') and ei < 3)
         for i in range(len(pos)): allp.append((pos[i], size[i], rgb[i], a[i], add, tight))
     def z(p): return np.dot(p[0]-cam, fwd)
     allp.sort(key=lambda p: -z(p))

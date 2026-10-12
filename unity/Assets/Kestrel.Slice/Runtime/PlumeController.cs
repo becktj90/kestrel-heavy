@@ -30,7 +30,12 @@ namespace Kestrel.Slice
         /// along the deck instead of tunnelling through it. Planes-mode collision: no physics scene, O(planes) per particle.</summary>
         public void SetDeck(Transform deckTop)
         {
-            foreach (var ps in new[] { core, diamonds }) if (ps != null) ConfigureDeckCollision(ps, deckTop);
+            foreach (var ps in new[] { core, diamonds })
+            {
+                if (ps == null) continue;
+                ConfigureDeckCollision(ps, deckTop); var nc = ps.collision;
+                if (nc.enabled) { nc.bounce = PlumeShape.NearDeckBounce; nc.lifetimeLoss = PlumeShape.NearDeckLifetimeLoss; }
+            }
             // v5 root cause D: body particles tunnelled through the deck and kept travelling ~Length (200 m) under
             // it. Billboards are camera-facing, so the upper half of every sprite just under the deck rim projected
             // ABOVE the deck/horizon, where only sky/far ground is behind it, and passed the depth test: the
@@ -87,6 +92,9 @@ namespace Kestrel.Slice
                 { var gd = new Gradient(); gd.SetKeys(new[] { new GradientColorKey(PlumeShape.Core, 0), new GradientColorKey(PlumeShape.BodyHead, 0.5f), new GradientColorKey(PlumeShape.Mid, 1) }, FadeKeys(PlumeShape.DiamondFadeIn, 0.35f, (0.25f, 0.4f)));
                   var dc = diamonds.colorOverLifetime; dc.enabled = true; dc.color = gd; }
                 var bs = body.sizeOverLifetime; bs.enabled = true; bs.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0, PlumeShape.BodySizeStart), new Keyframe(PlumeShape.BodyFullAt, 1f), new Keyframe(1, PlumeShape.ComputeLayout(1f, 1f, 1f, 1f, 10f, 10f).BodyGrow)));
+                // #130: deck-deflected body sprites shrink with their speed instead of dying (see BodyDeckLifetimeLoss).
+                var sbs = body.sizeBySpeed; sbs.enabled = true; sbs.separateAxes = false;
+                sbs.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, PlumeShape.BodySizeBySpeed(0f)), new Keyframe(0.6f, 1f), new Keyframe(1f, 1f)));
                 var cs = core.sizeOverLifetime; cs.enabled = true; cs.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0, PlumeShape.CoreSizeStart), new Keyframe(PlumeShape.CoreFullAt, 1f), new Keyframe(1, PlumeShape.CoreSizeOverLife)));
             }
             Cap(core, Budget.Core); Cap(body, Budget.Body); Cap(diamonds, Budget.Diamonds); if (cloud != null) Cap(cloud, Budget.Cloud);
@@ -156,7 +164,7 @@ namespace Kestrel.Slice
             fadeIn = Mathf.Clamp(fadeIn, 0f, 0.35f);
             var g = new Gradient();
             g.SetKeys(new[] { new GradientColorKey(PlumeShape.BodyHead, 0), new GradientColorKey(PlumeShape.Mid, 0.3f), new GradientColorKey(PlumeShape.Tail, 1) },
-                      FadeKeys(fadeIn, rampU, 0.9f, (0.6f, 0.4f), (PlumeShape.BodyTailAlpha, PlumeShape.BodyTailAt));
+                      FadeKeys(fadeIn, rampU, 0.9f, (0.6f, 0.4f), (PlumeShape.BodyTailAlpha, PlumeShape.BodyTailAt)));
             var col = ps.colorOverLifetime; col.enabled = true; col.color = g;
         }
 
@@ -170,7 +178,7 @@ namespace Kestrel.Slice
             fadeIn = Mathf.Clamp(fadeIn, 0f, 0.9f);
             float up = Mathf.Min(0.95f, fadeIn + Mathf.Max(0.002f, ramp));
             var k = new System.Collections.Generic.List<GradientAlphaKey> { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0f, Mathf.Max(0.001f, fadeIn)), new GradientAlphaKey(peak, up) };
-            foreach (var (a, t) in tail) if (t > up + 0.001f && t < 0.999f) k.Add(new GradientAlphaKey(a, t));
+            foreach (var kt in tail) if (kt.t > up + 0.001f && kt.t < 0.999f) k.Add(new GradientAlphaKey(kt.a, kt.t));
             k.Add(new GradientAlphaKey(0f, 1f));
             return k.ToArray();
         }
@@ -241,7 +249,7 @@ namespace Kestrel.Slice
             {
                 coreFadeIn = cfi; var g = new Gradient();
                 g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(PlumeShape.Core, 0.35f), new GradientColorKey(PlumeShape.Mid, 1) },
-                          FadeKeys(cfi, PlumeShape.CoreAlphaMax, (0.3f, 0.75f));
+                          FadeKeys(cfi, PlumeShape.CoreAlphaMax, (0.3f, 0.75f)));
                 var col = core.colorOverLifetime; col.enabled = true; col.color = g;
             }
             var cm = core.main; cm.startLifetime = PlumeShape.CoreLife; cm.startSpeed = L.CoreLength / PlumeShape.CoreLife; cm.startSize = L.CoreSize;
@@ -262,10 +270,13 @@ namespace Kestrel.Slice
             var bm = body.main; bm.startLifetime = life; bm.startSpeed = L.Length / life;
             bm.startSize = new ParticleSystem.MinMaxCurve(L.BodyMin, L.BodyMax);
             var bs = body.shape; bs.radius = L.BodySpawnRadius; bs.angle = L.BodyConeDeg;
+            var bsz = body.sizeBySpeed; bsz.range = new Vector2(0f, Mathf.Max(1f, L.Length / life));   // speed fraction 0..1 of startSpeed
             Rate(body, tf);
 
             // Shock diamonds: tight bright knots, only while over-expanded / near ideal at low altitude.
-            var dm = diamonds.main; dm.startLifetime = 0.3f; dm.startSpeed = L.Length * 0.5f / 0.3f; dm.startSize = d * 0.5f;
+            // #130: drift DiamondTravelD x D (was 0.5 Length, ~310 m/s): the pattern hangs off the exit.
+            var dm = diamonds.main; dm.startLifetime = PlumeShape.DiamondLife; dm.startSpeed = PlumeShape.DiamondTravelD * d / PlumeShape.DiamondLife; dm.startSize = d * PlumeShape.DiamondSizeD;
+            dm.simulationSpace = ParticleSystemSimulationSpace.Local; bm.simulationSpace = ParticleSystemSimulationSpace.Local;   // locked to the nozzles (inherit-velocity is a World-space-only module)
             diamonds.transform.localPosition = Vector3.zero;   // #129-v6: was CoreEmitOffset (-2.25 m); fades in instead
             var ds = diamonds.shape; ds.radius = d * 0.05f; ds.angle = 0f;
             Rate(diamonds, s.Diamonds > 0 ? tf : 0f);
