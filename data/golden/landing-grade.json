@@ -1,0 +1,210 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 1e-9,
+  "abs": 1e-9,
+  "note": "margins closed form; grade string exact; null grade is ungraded"
+ },
+ "count": 13,
+ "cases": [
+  {
+   "fn": "padRat",
+   "out": {
+    "padRatLandingVy": 4,
+    "difficulty": 4
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "water",
+   "kind": "water",
+   "vy": 1,
+   "dx": 0,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": false,
+   "out": {
+    "vyMargin": 0.8333333333333334,
+    "dxMargin": 1,
+    "margin": 0.8333333333333334,
+    "grade": null
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "perfect",
+   "kind": "deck",
+   "vy": 3,
+   "dx": 20,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": false,
+   "out": {
+    "vyMargin": 0.5,
+    "dxMargin": 0.5,
+    "margin": 0.5,
+    "grade": "Perfect"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "good",
+   "kind": "deck",
+   "vy": 4.2,
+   "dx": 28,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": false,
+   "out": {
+    "vyMargin": 0.29999999999999993,
+    "dxMargin": 0.30000000000000004,
+    "margin": 0.29999999999999993,
+    "grade": "Good"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "hard",
+   "kind": "deck",
+   "vy": 5.7,
+   "dx": 38,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": false,
+   "out": {
+    "vyMargin": 0.04999999999999993,
+    "dxMargin": 0.050000000000000044,
+    "margin": 0.04999999999999993,
+    "grade": "Hard"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "over-sink",
+   "kind": "deck",
+   "vy": 6.5,
+   "dx": 4,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": false,
+   "out": {
+    "vyMargin": -0.08333333333333326,
+    "dxMargin": 0.9,
+    "margin": -0.08333333333333326,
+    "grade": "Salvage"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "over-offset",
+   "kind": "deck",
+   "vy": 1,
+   "dx": 50,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": false,
+   "out": {
+    "vyMargin": 0.8333333333333334,
+    "dxMargin": -0.25,
+    "margin": -0.25,
+    "grade": "Salvage"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "tipped",
+   "kind": "deck",
+   "vy": 1,
+   "dx": 2,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": true,
+   "out": {
+    "vyMargin": 0.8333333333333334,
+    "dxMargin": 0.95,
+    "margin": 0.8333333333333334,
+    "grade": "Salvage"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "zero-limits",
+   "kind": "deck",
+   "vy": 0,
+   "dx": 0,
+   "landingVy": 0,
+   "landingTol": 0,
+   "tipped": false,
+   "out": {
+    "vyMargin": 1,
+    "dxMargin": 1,
+    "margin": 1,
+    "grade": "Perfect"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "negative-vy",
+   "kind": "deck",
+   "vy": -4.2,
+   "dx": -28,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": false,
+   "out": {
+    "vyMargin": 0.29999999999999993,
+    "dxMargin": 0.30000000000000004,
+    "margin": 0.29999999999999993,
+    "grade": "Good"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "edge-perfect",
+   "kind": "deck",
+   "vy": 3.3000000000000003,
+   "dx": 0,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": false,
+   "out": {
+    "vyMargin": 0.44999999999999996,
+    "dxMargin": 1,
+    "margin": 0.44999999999999996,
+    "grade": "Good"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "edge-good",
+   "kind": "deck",
+   "vy": 4.800000000000001,
+   "dx": 32,
+   "landingVy": 6,
+   "landingTol": 40,
+   "tipped": false,
+   "out": {
+    "vyMargin": 0.19999999999999984,
+    "dxMargin": 0.19999999999999996,
+    "margin": 0.19999999999999984,
+    "grade": "Hard"
+   }
+  },
+  {
+   "fn": "grade",
+   "name": "rud",
+   "kind": "rud",
+   "vy": 0.2,
+   "dx": 1,
+   "landingVy": 6,
+   "landingTol": 36,
+   "tipped": false,
+   "out": {
+    "vyMargin": 0.9666666666666667,
+    "dxMargin": 0.9722222222222222,
+    "margin": 0.9666666666666667,
+    "grade": null
+   }
+  }
+ ]
+}

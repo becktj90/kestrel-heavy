@@ -10,9 +10,16 @@ export const MAX_STAGES = 5;
 export const STRAPON_COUNTS = Object.freeze([0, 2, 4]);
 export const NOSE_SHAPES = Object.freeze({ ogive: 0.30, conic: 0.36, blunt: 0.50, 'von-karman': 0.28 });
 // Tank dome allowance: ellipsoidal domes (sqrt2:1) add ~1/3 diameter of length per tank pair.
-const DOME_LENGTH_FACTOR = 0.33;
+export const DOME_LENGTH_FACTOR = 0.33;
 // Ullage volume fraction.
-const ULLAGE = 0.03;
+export const TANK_ULLAGE = 0.03;
+export const ENGINE_COUNT_MIN = 1;
+export const ENGINE_COUNT_MAX = 40;
+export const DIAMETER_MIN = 0.3;
+export const DIAMETER_MAX = 15;
+export const SAFETY_MIN = 1;
+export const SAFETY_MAX = 3;
+export const AVIONICS_TIERS = Object.freeze(['basic', 'standard', 'redundant']);
 
 /**
  * Tank sizing from propellant mass and diameter.
@@ -21,7 +28,7 @@ const ULLAGE = 0.03;
 export function sizeTank(propellantId, propMass, diameter) {
   const p = PROPELLANT_BY_ID[propellantId];
   if (!p || !(diameter > 0)) return { volume: 0, length: 0, diameter: diameter || 0 };
-  const volume = (propMass / p.bulkDensity) * (1 + ULLAGE);
+  const volume = (propMass / p.bulkDensity) * (1 + TANK_ULLAGE);
   const area = Math.PI * (diameter / 2) ** 2;
   const length = volume / area + (p.storability === 'solid' ? 0 : DOME_LENGTH_FACTOR * diameter);
   return { volume, length, diameter };
@@ -49,7 +56,6 @@ export function defaultDesign(over = {}) {
 }
 
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
-const AVIONICS = ['basic', 'standard', 'redundant'];
 
 function checkStageLike(s, where, errs, { strap = false } = {}) {
   if (!s || typeof s !== 'object') { errs.push(`${where}: missing`); return; }
@@ -57,9 +63,9 @@ function checkStageLike(s, where, errs, { strap = false } = {}) {
   const e = ENGINE_BY_ID[s.engine];
   if (!e) errs.push(`${where}.engine: unknown "${s.engine}"`);
   else if (s.propellant && e.propellant !== s.propellant) errs.push(`${where}.engine: ${e.id} burns ${e.propellant}, stage has ${s.propellant}`);
-  if (!Number.isInteger(s.engineCount) || s.engineCount < 1 || s.engineCount > 40) errs.push(`${where}.engineCount: integer 1–40`);
+  if (!Number.isInteger(s.engineCount) || s.engineCount < ENGINE_COUNT_MIN || s.engineCount > ENGINE_COUNT_MAX) errs.push(`${where}.engineCount: integer 1–40`);
   if (!isNum(s.propMass) || s.propMass < (strap ? 0 : 1)) errs.push(`${where}.propMass: must be a positive number`);
-  if (!isNum(s.diameter) || s.diameter < 0.3 || s.diameter > 15) errs.push(`${where}.diameter: 0.3–15 m`);
+  if (!isNum(s.diameter) || s.diameter < DIAMETER_MIN || s.diameter > DIAMETER_MAX) errs.push(`${where}.diameter: 0.3–15 m`);
   if (!MATERIAL_BY_ID[s.material]) errs.push(`${where}.material: unknown "${s.material}"`);
 }
 
@@ -97,8 +103,8 @@ export function validateDesign(d) {
   else if (!MATERIAL_BY_ID[f.material]) errs.push(`fairing.material: unknown "${f.material}"`);
   if (!d.aero || !(d.aero.nose in NOSE_SHAPES)) errs.push(`aero.nose: one of ${Object.keys(NOSE_SHAPES).join(', ')}`);
   if (!d.landing || ['legs', 'gridFins', 'rcs'].some((k) => typeof d.landing[k] !== 'boolean')) errs.push('landing: legs/gridFins/rcs booleans');
-  if (!d.avionics || !AVIONICS.includes(d.avionics.tier)) errs.push(`avionics.tier: one of ${AVIONICS.join(', ')}`);
-  if (!isNum(d.safetyFactor) || d.safetyFactor < 1 || d.safetyFactor > 3) errs.push('safetyFactor: 1.0–3.0');
+  if (!d.avionics || !AVIONICS_TIERS.includes(d.avionics.tier)) errs.push(`avionics.tier: one of ${AVIONICS_TIERS.join(', ')}`);
+  if (!isNum(d.safetyFactor) || d.safetyFactor < SAFETY_MIN || d.safetyFactor > SAFETY_MAX) errs.push('safetyFactor: 1.0–3.0');
   if (!d.livery || typeof d.livery.primary !== 'string') errs.push('livery.primary: string');
   return { ok: errs.length === 0, errors: errs };
 }

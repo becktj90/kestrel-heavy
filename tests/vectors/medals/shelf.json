@@ -1,0 +1,94 @@
+{
+  "rule": "The medal is the shelf name of the Haven grade. Perfect is gold. Good is silver. Hard and Salvage are bronze, so every deck landing keeps a medal. Water and any non-deck touchdown have no medal. Tilt is not a second test, and the older 55/40/4 and 80/75/8 fractions are retired.",
+  "shelf": "KH-1 gold · KH-2 bronze · KH-3 —",
+  "cases": [
+    {
+      "id": "perfect-was-old-silver",
+      "kind": "deck",
+      "vy": 2,
+      "dx": 18,
+      "landingVy": 4,
+      "landingTol": 36,
+      "tipped": false,
+      "grade": "Perfect",
+      "medal": "gold"
+    },
+    {
+      "id": "perfect-inside-old-gold",
+      "kind": "deck",
+      "vy": 1.6,
+      "dx": 10.8,
+      "landingVy": 4,
+      "landingTol": 36,
+      "tipped": false,
+      "grade": "Perfect",
+      "medal": "gold"
+    },
+    {
+      "id": "good",
+      "kind": "deck",
+      "vy": 2.8,
+      "dx": 25.2,
+      "landingVy": 4,
+      "landingTol": 36,
+      "tipped": false,
+      "grade": "Good",
+      "medal": "silver"
+    },
+    {
+      "id": "hard",
+      "kind": "deck",
+      "vy": 3.6,
+      "dx": 10,
+      "landingVy": 4,
+      "landingTol": 36,
+      "tipped": false,
+      "grade": "Hard",
+      "medal": "bronze"
+    },
+    {
+      "id": "on-the-limit",
+      "kind": "deck",
+      "vy": 4,
+      "dx": 36,
+      "landingVy": 4,
+      "landingTol": 36,
+      "tipped": false,
+      "grade": "Hard",
+      "medal": "bronze"
+    },
+    {
+      "id": "past-the-limit",
+      "kind": "deck",
+      "vy": 5,
+      "dx": 10,
+      "landingVy": 4,
+      "landingTol": 36,
+      "tipped": false,
+      "grade": "Salvage",
+      "medal": "bronze"
+    },
+    {
+      "id": "tipped-inside",
+      "kind": "deck",
+      "vy": 1,
+      "dx": 5,
+      "landingVy": 4,
+      "landingTol": 36,
+      "tipped": true,
+      "grade": "Salvage",
+      "medal": "bronze"
+    },
+    {
+      "id": "water",
+      "kind": "water",
+      "vy": 1,
+      "dx": 1,
+      "landingVy": 4,
+      "landingTol": 36,
+      "tipped": false,
+      "grade": null,
+      "medal": null
+    }
+  ]
+}

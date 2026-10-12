@@ -4,12 +4,8 @@ import { ENGINES, ENGINE_BY_ID } from '../data/engines.js';
 import { PAYLOAD_BY_ID } from '../data/payloads.js';
 import { validateDesign } from '../vehicle/design.js';
 import { quickReadout } from './readout.js';
-
-export const MIN_TWR = 1.0;
-export const GOOD_TWR = 1.25;
-export const MIN_MARGIN = 0.05;
-/** Engines fit if Σ(nozzle d²) ≤ PACK·D² (loose circle packing incl. some overhang). */
-export const PACK = 1.1;
+import { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK } from './limits.js';
+export { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK } from './limits.js';
 
 /** Payload volume scaled from its archetype by mass^(2/3) (a lighter build of the same kind is smaller). */
 export function payloadVolume(d) {
