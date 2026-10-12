@@ -16,14 +16,29 @@ namespace Kestrel.Slice
         /// <summary>Points on the rocket the camera aims at, as a fraction of its height (slightly low so the deck is in).</summary>
         public const float AimHeight = 0.47f;
 
+        /// <summary>Portrait iPad (wider than a phone). Same cutoff as <see cref="PixelsPerPoint"/>.</summary>
+        public static bool HasSidePanel(float widthPx, float heightPx) => heightPx > 0f && widthPx / heightPx > 0.6f;
+
+        /// <summary>iPad Hangar panel width (DESIGNER_SPEC, DECISIONS #61). Right side, points.</summary>
+        public const float SidePanelPoints = 400f;
+
         /// <summary>Device pixels per iOS point. Screen.dpi is 0 or a desktop value in the editor / simulators, which
         /// made the 64 pt handle ~3x too tall on SE; fall back to the iOS scale by device shape.</summary>
         public static float PixelsPerPoint(float widthPx, float heightPx, float dpi)
         {
             if (dpi >= 200f) return Mathf.Max(1f, Mathf.Round(dpi / 160f));
-            bool tablet = heightPx > 0 && widthPx / heightPx > 0.6f;   // iPads are ~0.75, phones ≤ 0.56
-            if (tablet) return 2f;
+            if (HasSidePanel(widthPx, heightPx)) return 2f;             // iPads are ~0.75, phones ≤ 0.56
             return widthPx >= 1080f ? 3f : 2f;                          // SE/8 = 2x (750 px), Pro/Max = 3x
+        }
+
+        /// <summary>Share of the screen width left of the 400 pt right-hand panel. 1 on phones (no side panel).</summary>
+        public static float SideVisibleFraction(float widthPx, float heightPx, float dpi)
+        {
+            if (!HasSidePanel(widthPx, heightPx)) return 1f;
+            float ppp = PixelsPerPoint(widthPx, heightPx, dpi);
+            float points = ppp > 0f ? widthPx / ppp : 0f;
+            if (!(points > 0f) || float.IsNaN(points)) return 1f;
+            return Mathf.Clamp((points - SidePanelPoints) / points, MinVisibleFraction, 1f);
         }
 
         /// <summary>Margin over the tallest structure so the tower top never touches the top edge.</summary>
@@ -68,13 +83,27 @@ namespace Kestrel.Slice
         /// Band spans NDC y in [1 - 2f, 1]; its centre is 1 - f.</summary>
         public static float NdcShiftY(float visibleFraction) => 1f - Mathf.Clamp(visibleFraction, MinVisibleFraction, 1f);
 
+        /// <summary>Horizontal NDC offset that moves the image centre to the middle of the band left of a right-side panel.
+        /// Band spans NDC x in [-1, -1 + 2 fx]; its centre is fx - 1. Zero when the panel is absent (fx = 1).</summary>
+        public static float NdcShiftX(float sideVisibleFraction)
+        {
+            if (float.IsNaN(sideVisibleFraction) || float.IsInfinity(sideVisibleFraction)) return 0f;
+            float fx = Mathf.Clamp(sideVisibleFraction, MinVisibleFraction, 1f);
+            return fx >= 1f ? 0f : fx - 1f;
+        }
+
         /// <summary>Camera projection with the principal point moved up by NdcShiftY. Full-screen render
         /// (no viewport rect, so nothing is letterboxed); only the framing moves.</summary>
-        public static Matrix4x4 ShiftedProjection(Matrix4x4 baseProjection, float visibleFraction)
+        public static Matrix4x4 ShiftedProjection(Matrix4x4 baseProjection, float visibleFraction) =>
+            ShiftedProjection(baseProjection, visibleFraction, 1f);
+
+        /// <summary>As <see cref="ShiftedProjection(Matrix4x4, float)"/>, also shifted in X for a right-side panel.
+        /// ndc_x = (m00*x + m02*z) / -z, so subtracting s from m02 adds s to ndc_x.</summary>
+        public static Matrix4x4 ShiftedProjection(Matrix4x4 baseProjection, float visibleFraction, float sideVisibleFraction)
         {
             var p = baseProjection;
-            // ndc_y = (m11*y + m12*z) / -z  →  adding -s to m12 adds +s to ndc_y for every point.
             p.m12 -= NdcShiftY(visibleFraction);
+            p.m02 -= NdcShiftX(sideVisibleFraction);
             return p;
         }
 
@@ -93,39 +122,51 @@ namespace Kestrel.Slice
             return aim + new Vector3(h * 0.9f, h * (0.45f - AimHeight), -h * 1.4f) * k;
         }
 
-        /// <summary>NDC of a world point for the rig (h, k), aspect, vertical FOV, band f.</summary>
-        public static Vector2 Project(Vector3 p, float h, float k, float aspect, float vFovDeg, float visibleFraction)
+        /// <summary>NDC of a world point for the rig (h, k), aspect, vertical FOV, vertical band f and horizontal band fx.</summary>
+        public static Vector2 Project(Vector3 p, float h, float k, float aspect, float vFovDeg, float visibleFraction, float sideVisibleFraction = 1f)
         {
             var pos = CameraPosition(h, k, out var aim);
             var view = Matrix4x4.TRS(pos, Quaternion.LookRotation(aim - pos), new Vector3(1, 1, -1)).inverse;
-            var proj = ShiftedProjection(Matrix4x4.Perspective(vFovDeg, aspect, 0.5f, 200000f), visibleFraction);
+            var proj = ShiftedProjection(Matrix4x4.Perspective(vFovDeg, aspect, 0.5f, 200000f), visibleFraction, sideVisibleFraction);
             var c = proj * (view * new Vector4(p.x, p.y, p.z, 1));
             if (c.w <= 1e-4f) return new Vector2(float.PositiveInfinity, float.PositiveInfinity);
             return new Vector2(c.x / c.w, c.y / c.w);
         }
 
-        static bool Fits(IReadOnlyList<Vector3> pts, float h, float k, float aspect, float fov, float f)
+        /// <summary>NDC rectangle the subject must land in: above the bottom panel and left of a right-side panel.</summary>
+        public static void VisibleBand(float visibleFraction, float sideVisibleFraction, out float xLo, out float xHi, out float yLo, out float yHi)
         {
-            f = Mathf.Clamp(f, MinVisibleFraction, 1f);
-            float padY = FitPadding * 2f * f, padX = FitPadding * 2f;
-            float yLo = 1f - 2f * f + padY, yHi = 1f - padY, xLo = -1f + padX, xHi = 1f - padX;
+            float f = Mathf.Clamp(visibleFraction, MinVisibleFraction, 1f);
+            float side = float.IsNaN(sideVisibleFraction) || float.IsInfinity(sideVisibleFraction) ? 1f : Mathf.Clamp(sideVisibleFraction, MinVisibleFraction, 1f);
+            float padY = FitPadding * 2f * f, padX = FitPadding * 2f * side;
+            yLo = 1f - 2f * f + padY; yHi = 1f - padY; xLo = -1f + padX; xHi = -1f + 2f * side - padX;
+        }
+
+        static bool Fits(IReadOnlyList<Vector3> pts, float h, float k, float aspect, float fov, float f, float side)
+        {
+            VisibleBand(f, side, out float xLo, out float xHi, out float yLo, out float yHi);
             foreach (var p in pts)
             {
-                var n = Project(p, h, k, aspect, fov, f);
+                var n = Project(p, h, k, aspect, fov, f, side);
                 if (!(n.x > xLo && n.x < xHi && n.y > yLo && n.y < yHi)) return false;
             }
             return true;
         }
 
         /// <summary>Smallest distance scale (never tighter than DistanceScale(f)) at which all points fit the band.</summary>
-        public static float FitDistanceScale(IReadOnlyList<Vector3> pts, float h, float aspect, float vFovDeg, float visibleFraction)
+        public static float FitDistanceScale(IReadOnlyList<Vector3> pts, float h, float aspect, float vFovDeg, float visibleFraction) =>
+            FitDistanceScale(pts, h, aspect, vFovDeg, visibleFraction, 1f);
+
+        /// <summary>As <see cref="FitDistanceScale(IReadOnlyList{Vector3}, float, float, float, float)"/>, also keeping
+        /// every point left of a right-side panel (sideVisibleFraction = 1 is the phone path).</summary>
+        public static float FitDistanceScale(IReadOnlyList<Vector3> pts, float h, float aspect, float vFovDeg, float visibleFraction, float sideVisibleFraction)
         {
             float k0 = DistanceScale(visibleFraction);
             if (pts == null || pts.Count == 0 || h <= 0f || aspect <= 0f) return k0;
-            if (Fits(pts, h, k0, aspect, vFovDeg, visibleFraction)) return k0;
+            if (Fits(pts, h, k0, aspect, vFovDeg, visibleFraction, sideVisibleFraction)) return k0;
             float lo = k0, hi = k0 * 2f;
-            for (int i = 0; i < 12 && !Fits(pts, h, hi, aspect, vFovDeg, visibleFraction); i++) { lo = hi; hi *= 2f; }
-            for (int i = 0; i < 40; i++) { float mid = 0.5f * (lo + hi); if (Fits(pts, h, mid, aspect, vFovDeg, visibleFraction)) hi = mid; else lo = mid; }
+            for (int i = 0; i < 12 && !Fits(pts, h, hi, aspect, vFovDeg, visibleFraction, sideVisibleFraction); i++) { lo = hi; hi *= 2f; }
+            for (int i = 0; i < 40; i++) { float mid = 0.5f * (lo + hi); if (Fits(pts, h, mid, aspect, vFovDeg, visibleFraction, sideVisibleFraction)) hi = mid; else lo = mid; }
             return hi;
         }
 
