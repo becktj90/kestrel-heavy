@@ -17,8 +17,10 @@ namespace Kestrel.Pad
             r.Build(layout);
             var detail = root.GetComponent<PadDetailRenderer>(); if (detail == null) detail = root.gameObject.AddComponent<PadDetailRenderer>();
             detail.Build(layout);
-            var identity = new LocalPose(new Vec3(0, 0, 0), Quat.Identity);
+            var identity = UmbilicalRig.Identity;
             foreach (var arm in r.Arms) foreach (var p in pts) if (p.Id == arm.AttachId) arm.Connect(p, identity);
+            foreach (var u in r.Umbilicals) foreach (var p in pts) if (p.Id == u.AttachId) u.Connect(p, identity);
+            r.BindSequence(pts);
             // D5: lights. Night follows the scene sun (0 by day, so realtime lights stay off); -khNight or
             // PadLights.ForceNight forces full night for shots.
             var lights = PadLights.Attach(r, r.Quality);
