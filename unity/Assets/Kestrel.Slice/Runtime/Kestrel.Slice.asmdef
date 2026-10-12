@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Slice",
     "rootNamespace": "Kestrel.Slice",
-    "references": ["Kestrel.Core", "Kestrel.Pad", "Kestrel.Pad.Core", "Kestrel.Kit.Contracts", "Kestrel.Kit", "Kestrel.Kit.Core", "Kestrel.Vehicle", "Kestrel.Vehicle.Core", "Kestrel.Game.Shell", "Kestrel.Game.QualityCore", "Kestrel.Game.Environment"],
+    "references": ["Kestrel.Core", "Kestrel.Pad", "Kestrel.Pad.Core", "Kestrel.Kit.Contracts", "Kestrel.Kit", "Kestrel.Kit.Core", "Kestrel.Vehicle", "Kestrel.Vehicle.Core", "Kestrel.Game.Shell", "Kestrel.Game.QualityCore", "Kestrel.Game.Environment", "Kestrel.Site", "Kestrel.Site.Core"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

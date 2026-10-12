@@ -3,6 +3,7 @@
 // Plume speeds, lifetimes and collision are not touched here.
 using System.Collections.Generic;
 using Kestrel.Pad;
+using Kestrel.Site;
 using UnityEngine;
 
 namespace Kestrel.Slice
@@ -25,6 +26,12 @@ namespace Kestrel.Slice
 
         static void CutGround(Transform ground, Transform tower, TrenchSpec trench)
         {
+            var site = ground.GetComponent<SiteView>();
+            if (site != null)
+            {
+                site.SetGroundOpenings(trench == null ? null : SiteOpenings(ground, tower, trench));
+                return;
+            }
             var mf = ground.GetComponent<MeshFilter>();
             if (mf == null) return;
             if (trench == null)
@@ -59,6 +66,22 @@ namespace Kestrel.Slice
             var prev = mf.sharedMesh;
             mf.sharedMesh = mesh;
             if (prev != null && prev.name == GroundMeshName) Kill(prev);
+        }
+
+        static List<List<Vector2>> SiteOpenings(Transform ground, Transform tower, TrenchSpec trench)
+        {
+            var holes = new List<List<Vector2>>();
+            holes.Add(AsLocal(ToMetres(ground, tower, TrenchGrammar.GroundOpening(trench), 1f, 1f)));
+            foreach (var pond in TrenchGrammar.PondPolys(trench))
+                holes.Add(AsLocal(ToMetres(ground, tower, pond, 1f, 1f)));
+            return holes;
+        }
+
+        static List<Vector2> AsLocal(List<Vec2> ring)
+        {
+            var o = new List<Vector2>(ring.Count);
+            for (int i = 0; i < ring.Count; i++) o.Add(new Vector2(ring[i].X, ring[i].Y));
+            return o;
         }
 
         static List<Vec2> ToMetres(Transform ground, Transform tower, List<Vec2> padPoly, float sx, float sz)
