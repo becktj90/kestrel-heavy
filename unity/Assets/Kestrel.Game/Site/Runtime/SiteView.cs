@@ -11,7 +11,6 @@ namespace Kestrel.Site
         public const float FarClip = SiteHorizon.FarClip;
         static readonly int SunDirId = Shader.PropertyToID("_SunDir");
         static readonly int SunColorId = Shader.PropertyToID("_SunColor");
-        static readonly Color Haze = new Color(0.66f, 0.76f, 0.86f, 1f); // PadGround.HazeColor
 
         Material _land, _water;
         Light _sun;
@@ -44,7 +43,6 @@ namespace Kestrel.Site
             _water = Make("Site/KH_Water", "Kestrel/Water");
             AddMesh("Terrain", _site.Land(lod), _land);
             AddMesh("Water", _site.Water(lod), _water);
-            ApplyAerial(8f);
         }
 
         void AddMesh(string name, SiteMesh src, Material mat)
@@ -87,27 +85,7 @@ namespace Kestrel.Site
             return new Material(shader);
         }
 
-        void LateUpdate()
-        {
-            var cam = Camera.main;
-            if (cam != null) ApplyAerial(cam.transform.position.y - transform.position.y);
-            PushSun();
-        }
-
-        public void ApplyAerial(float cameraAltitude)
-        {
-            float h = cameraAltitude > 0f ? cameraAltitude : 0f;
-            float horizon = SiteHorizon.Distance(h);
-            RenderSettings.fog = true;
-            RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = Haze;
-            float start = Mathf.Max(6000f, horizon * 0.42f);
-            float end = Mathf.Max(start + 14000f, horizon * 1.02f);
-            end = Mathf.Min(end, FarClip * 0.98f);
-            if (end < start + 2000f) start = Mathf.Max(50f, end - 2000f);
-            RenderSettings.fogStartDistance = start;
-            RenderSettings.fogEndDistance = end;
-        }
+        void LateUpdate() => PushSun();
 
         void PushSun()
         {
