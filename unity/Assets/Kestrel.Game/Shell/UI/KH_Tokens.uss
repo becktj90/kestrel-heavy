@@ -1,5 +1,5 @@
-/* Kestrel Heavy UI tokens (U2). Units are iOS points: the shell PanelSettings use
-   ConstantPhysicalSize at 160 dpi, so 1 USS px = 1 pt on every device.
+/* Kestrel Heavy UI tokens (U2). Units are SE points: the shell PanelSettings use
+   Scale With Screen Size (375x667 ref, match height), so 1 USS px = 1 pt on SE and scales up on Pro Max / iPad.
    Spacing/touch values come from docs/VISUAL_SPEC.md §5 (sideMarginPt 8, minTouchPt 44).
    Colours: livery defaults from web/js/vehicle/design.js (#f2f2f2 / #1a3c6e) and the noon wash in
    data/tod.json. Art owns final palette/typography (plan §4); change tokens here, not per screen. */
@@ -56,6 +56,11 @@
     letter-spacing: 2px;
 }
 
+.kh-home { flex-grow: 1; justify-content: flex-start; align-items: center; padding: var(--kh-space-6) var(--kh-space-4) var(--kh-space-6) var(--kh-space-4); }
+.kh-home-title { font-size: 52px; -unity-font-style: bold; color: #ffffff; -unity-text-align: middle-center; letter-spacing: 4px; margin-top: 48px; -unity-text-outline-width: 1px; -unity-text-outline-color: rgba(1, 1, 5, 0.6); }
+.kh-home-subtitle { font-size: 20px; color: var(--kh-color-ink); -unity-text-align: middle-center; margin-top: var(--kh-space-3); }
+.kh-home-play { min-height: 64px; width: 80%; max-width: 360px; font-size: 26px; -unity-font-style: bold; margin-bottom: var(--kh-space-6); background-color: #c8102e; color: #ffffff; }
+.kh-subtitle { font-size: var(--kh-font-body); color: var(--kh-color-ink); -unity-text-align: middle-center; margin-bottom: var(--kh-space-6); }
 .kh-button {
     min-height: var(--kh-touch-min);
     min-width: var(--kh-touch-min);
