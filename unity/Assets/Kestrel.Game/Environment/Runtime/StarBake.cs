@@ -20,11 +20,8 @@ namespace Kestrel.Game.Environment
                     var s = stars[i];
                     SkyBodies.EquirectTexel(s.RaDeg, s.DecDeg, width, height, out int cx, out int cy);
                     var col = SkyBodies.ColorFromBv(s.BV);
-                    float bright = Mathf.Clamp01((float)s.Brightness);
-                    // Magnitude is a steep scale; keep dim stars visible without blowing Sirius out.
-                    float gain = Mathf.Lerp(0.35f, 1f, Mathf.Pow(bright, 0.35f));
-                    int radius = bright > 0.25f ? 2 : 1;
-                    Stamp(acc, width, height, cx, cy, col, gain, radius);
+                    float gain = Mathf.Clamp01((float)SkyBodies.DisplayGain(s.VMag));
+                    Stamp(acc, width, height, cx, cy, col, gain);
                 }
             }
             var tex = new Texture2D(width, height, TextureFormat.RGBA32, false)
@@ -32,7 +29,8 @@ namespace Kestrel.Game.Environment
                 name = "KH_Stars",
                 wrapModeU = TextureWrapMode.Repeat,
                 wrapModeV = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear,
+                filterMode = FilterMode.Point,
+                anisoLevel = 0,
                 hideFlags = HideFlags.HideAndDontSave,
             };
             tex.SetPixels(acc);
@@ -40,30 +38,15 @@ namespace Kestrel.Game.Environment
             return tex;
         }
 
-        static void Stamp(Color[] px, int w, int h, int cx, int cy, Rgb col, float gain, int radius)
+        static void Stamp(Color[] px, int w, int h, int cx, int cy, Rgb col, float gain)
         {
-            float rr = (radius + 0.75f) * (radius + 0.75f);
-            for (int dy = -radius; dy <= radius; dy++)
-            {
-                int y = cy + dy;
-                if (y < 0 || y >= h) continue;
-                for (int dx = -radius; dx <= radius; dx++)
-                {
-                    float fall = 1f - (dx * dx + dy * dy) / rr;
-                    if (fall <= 0f) continue;
-                    int x = cx + dx;
-                    x %= w;
-                    if (x < 0) x += w;
-                    int i = y * w + x;
-                    float a = gain * fall;
-                    var p = px[i];
-                    p.r = Mathf.Min(1f, p.r + (float)col.R * a);
-                    p.g = Mathf.Min(1f, p.g + (float)col.G * a);
-                    p.b = Mathf.Min(1f, p.b + (float)col.B * a);
-                    p.a = 1f;
-                    px[i] = p;
-                }
-            }
+            if (cy < 0 || cy >= h) return;
+            int x = cx % w;
+            if (x < 0) x += w;
+            int i = cy * w + x;
+            // One texel. A brighter star wins a shared cell. The shader draws it as 1–2 pixels.
+            if (px[i].a >= gain) return;
+            px[i] = new Color((float)col.R * gain, (float)col.G * gain, (float)col.B * gain, gain);
         }
     }
 }

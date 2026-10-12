@@ -1,5 +1,7 @@
 // Kestrel sky. One background pass: Rayleigh gradient, sun disc and glow, three soft cloud
 // decks, distance is handled by the fog colour the CPU uploads, stars from the BSC equirect.
+// Stars are 1–2 screen pixels (magnitude is brightness, not size). No motion-vector pass:
+// a far-plane velocity field turns those points into radial streaks.
 // Portrait-safe because every term is a view direction, not a screen-space stretch.
 // Mobile: no raymarch, no cubemap, two noise octaves, one texture sample.
 Shader "Kestrel/Sky"
@@ -21,6 +23,7 @@ Shader "Kestrel/Sky"
         _Eq1 ("eq y", Vector) = (0, 0, 1, 0)
         _Eq2 ("eq z", Vector) = (0, 1, 0, 0)
         _GalN ("galactic north", Vector) = (0.2, 0.4, 0.9, 0)
+        _StarTex ("star tex size", Vector) = (512, 256, 0, 0)
         _Stars ("Stars", 2D) = "black" {}
     }
 
@@ -55,6 +58,7 @@ Shader "Kestrel/Sky"
                 float4 _Eq1;
                 float4 _Eq2;
                 float4 _GalN;
+                float4 _StarTex;
             CBUFFER_END
 
             TEXTURE2D(_Stars);
@@ -68,7 +72,9 @@ Shader "Kestrel/Sky"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float3 dirWS : TEXCOORD0;
+                // Linear, not perspective-correct. Perspective correction across the skybox cube
+                // stretches points into radial streaks.
+                noperspective float3 dirWS : TEXCOORD0;
             };
 
             Varyings vert(Attributes input)
@@ -135,6 +141,34 @@ Shader "Kestrel/Sky"
                 return float3(dot(_Eq0.xyz, dir), dot(_Eq1.xyz, dir), dot(_Eq2.xyz, dir));
             }
 
+            // One catalogue texel becomes a 1–2 px point. Brightness is the baked magnitude, not the footprint.
+            float3 StarPoint(float2 uv, float3 eq)
+            {
+                if (_Milky.w < 0.5)
+                {
+                    float3 cell = floor(eq * 220.0);
+                    float h = hash21(cell.xy + cell.z * 17.0);
+                    float2 q = frac(eq.xy * 220.0) - 0.5;
+                    float pr = length(q / max(fwidth(eq.xy), float2(1e-4, 1e-4)));
+                    if (h > 0.992 && pr < 1.25)
+                        return (0.18 + 0.82 * pow(saturate(h), 6.0)) * float3(0.85, 0.92, 1.0);
+                    return float3(0, 0, 0);
+                }
+                float2 size = max(_StarTex.xy, float2(8, 8));
+                float2 g = fwidth(uv);
+                // atan2 jumps by 1 across the RA cut; that derivative would smear the point into a line.
+                if (max(g.x, g.y) > 0.02) return float3(0, 0, 0);
+                float2 p = uv * size;
+                float2 i = floor(p);
+                float2 f = p - i - 0.5;
+                float2 px = f / max(g * size, float2(1e-3, 1e-3));
+                float r = length(px);
+                float point = r < 0.55 ? 1.0 : saturate((1.25 - r) / 0.70);
+                if (point <= 0.0) return float3(0, 0, 0);
+                float2 cuv = (i + 0.5) / size;
+                return SAMPLE_TEXTURE2D_LOD(_Stars, sampler_Stars, cuv, 0).rgb * point;
+            }
+
             half4 frag(Varyings input) : SV_Target
             {
                 float3 dir = normalize(input.dirWS);
@@ -161,13 +195,7 @@ Shader "Kestrel/Sky"
                 float3 eq = normalize(Equatorial(dir));
                 float su = atan2(eq.y, eq.x) * (0.15915494) + 0.5;
                 float sv = asin(clamp(eq.z, -1.0, 1.0)) * (0.31830988) + 0.5;
-                float3 starCol = SAMPLE_TEXTURE2D(_Stars, sampler_Stars, float2(su, sv)).rgb;
-                if (_Milky.w < 0.5)
-                {
-                    float3 cell = floor(eq * 90.0);
-                    float h = hash21(cell.xy + cell.z * 13.1);
-                    starCol = (h > 0.993) ? pow(h, 12.0).xxx * float3(0.85, 0.9, 1.0) : float3(0, 0, 0);
-                }
+                float3 starCol = StarPoint(float2(su, sv), eq);
                 float sunMask = saturate(1.0 - glow * 1.6);
                 float milky = exp(-pow(dot(eq, normalize(_GalN.xyz)), 2.0) * 18.0) * _Milky.x;
                 col += milky * float3(0.55, 0.62, 0.82) * sunMask;

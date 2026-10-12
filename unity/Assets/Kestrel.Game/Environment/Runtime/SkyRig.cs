@@ -17,6 +17,28 @@ namespace Kestrel.Game.Environment
         /// <summary>Degrees. Same value as SkySun.ElevationDeg. Pad: Night = PadLighting.NightFactor(SkyRig.SunElevationDeg).</summary>
         public static float SunElevationDeg => SkySun.ElevationDeg;
 
+        /// <summary>
+        /// Force the sky and the published sun elevation from a local civil hour at the launch longitude.
+        /// -khNight calls this with SkyBodies.NightHoursLocal. PadLighting.NightFactor(SkySun.ElevationDeg) follows.
+        /// </summary>
+        public static void ForceTimeOfDay(double hoursLocal)
+        {
+            _forced = true;
+            _forcedLocal = hoursLocal;
+            var rig = _active;
+            double lat = rig != null ? rig.LatitudeDeg : SkyClock.LatitudeDeg;
+            double lon = rig != null ? rig.LongitudeDeg : SkyClock.LongitudeDeg;
+            int y = rig != null ? rig.Year : SkyClock.Year;
+            int mo = rig != null ? rig.Month : SkyClock.Month;
+            int d = rig != null ? rig.Day : SkyClock.Day;
+            SkySun.ApplyLocalHours(hoursLocal, lat, lon, y, mo, d);
+            if (rig == null) return;
+            rig.HoursUtc = SkyBodies.UtcFromLocalHours(hoursLocal, lon);
+            rig._sunReady = false;
+            rig._artReady = false;
+            rig.Refresh();
+        }
+
         public const string ShaderResource = "Shaders/KH_Sky";
 
         public Camera View;
@@ -36,6 +58,7 @@ namespace Kestrel.Game.Environment
         double _altitudeM;
         bool _artExplicit, _artReady, _sunReady;
         double _elev;
+        double _clockKey = double.NaN;
         SkyVec _sunDir;
 
         static readonly int ZenithId = Shader.PropertyToID("_Zenith");
@@ -53,7 +76,12 @@ namespace Kestrel.Game.Environment
         static readonly int Eq1Id = Shader.PropertyToID("_Eq1");
         static readonly int Eq2Id = Shader.PropertyToID("_Eq2");
         static readonly int GalNId = Shader.PropertyToID("_GalN");
+        static readonly int StarTexId = Shader.PropertyToID("_StarTex");
         static readonly int StarsId = Shader.PropertyToID("_Stars");
+
+        static bool _forced, _cliChecked;
+        static double _forcedLocal;
+        static SkyRig _active;
 
         public SkyGrade Grade { get; private set; }
 
@@ -65,10 +93,17 @@ namespace Kestrel.Game.Environment
             rig.View = cam;
             rig.SunLight = sun;
             rig.PickTier();
-            rig.LoadArt();
             rig.LoadWeather();
+            rig.SuppressSkyPost();
             rig.Refresh();
             return rig;
+        }
+
+        void OnEnable() => _active = this;
+
+        void OnDisable()
+        {
+            if (_active == this) _active = null;
         }
 
         /// <summary>Geometric altitude in metres. The flight loop calls this every frame.</summary>
@@ -163,14 +198,12 @@ namespace Kestrel.Game.Environment
 
         public void Refresh()
         {
+            ApplyCommandLine();
             EnsureMaterial();
-            if (!_sunReady)
-            {
-                _elev = SkyBodies.SunElevationRad(LatitudeDeg, LongitudeDeg, Year, Month, Day, HoursUtc);
-                _sunDir = SkyBodies.SunUnity(LatitudeDeg, LongitudeDeg, Year, Month, Day, HoursUtc);
-                _sunReady = true;
-            }
+            SuppressSkyPost();
+            bool newClock = SampleSun();
             SkySun.Publish(_elev);
+            if (newClock) _artReady = false;
             if (!_artReady)
             {
                 LoadArt();
@@ -178,6 +211,50 @@ namespace Kestrel.Game.Environment
             }
             Grade = SkyColor.At(_altitudeM, _elev, Art, Weather, null);
             Apply(Grade, _sunDir);
+        }
+
+        static void ApplyCommandLine()
+        {
+            if (_cliChecked) return;
+            _cliChecked = true;
+            if (SkyBodies.HasNightArg(System.Environment.GetCommandLineArgs()))
+                ForceTimeOfDay(SkyBodies.NightHoursLocal);
+        }
+
+        /// <summary>True when the clock changed, so the wash can follow day and night.</summary>
+        bool SampleSun()
+        {
+            if (_forced) HoursUtc = SkyBodies.UtcFromLocalHours(_forcedLocal, LongitudeDeg);
+            double key = HoursUtc + Day * 48.0 + Month * 2000.0 + Year * 40000.0 + LatitudeDeg * 0.01 + LongitudeDeg * 0.0001;
+            if (_sunReady && key == _clockKey) return false;
+            _clockKey = key;
+            _elev = SkyBodies.SunElevationRad(LatitudeDeg, LongitudeDeg, Year, Month, Day, HoursUtc);
+            _sunDir = SkyBodies.SunUnity(LatitudeDeg, LongitudeDeg, Year, Month, Day, HoursUtc);
+            _sunReady = true;
+            return true;
+        }
+
+        /// <summary>The flight camera's colour buffer is the sky. Post (motion blur especially) must not run on it.</summary>
+        void SuppressSkyPost()
+        {
+            if (View == null) return;
+            const string typeName = "UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime";
+            var t = Type.GetType(typeName);
+            if (t == null) return;
+            var data = View.GetComponent(t);
+            if (data == null) data = View.gameObject.AddComponent(t);
+            if (data == null) return;
+            SetMember(t, data, "renderPostProcessing", false);
+            SetMember(t, data, "dithering", false);
+            var aa = t.GetProperty("antialiasing");
+            if (aa != null && aa.CanWrite && aa.PropertyType.IsEnum)
+                aa.SetValue(data, Enum.ToObject(aa.PropertyType, 0), null);
+        }
+
+        static void SetMember(Type t, object target, string name, bool value)
+        {
+            var p = t.GetProperty(name);
+            if (p != null && p.CanWrite && p.PropertyType == typeof(bool)) p.SetValue(target, value, null);
         }
 
         void EnsureMaterial()
@@ -203,6 +280,8 @@ namespace Kestrel.Game.Environment
             string csv = ReadCatalog();
             if (string.IsNullOrEmpty(csv)) return;
             var stars = SkyBodies.LoadStars(csv, Tier);
+            for (int i = stars.Count - 1; i >= 0; i--)
+                if (stars[i].VMag > SkyBodies.VisualMaxMag) stars.RemoveAt(i);
             if (_stars != null) Destroy(_stars);
             _stars = StarBake.Bake(stars, Tier == "low" ? 256 : 512, Tier == "low" ? 128 : 256);
             _bakedTier = Tier;
@@ -257,7 +336,11 @@ namespace Kestrel.Game.Environment
             _mat.SetVector(Eq1Id, Vec(ay));
             _mat.SetVector(Eq2Id, Vec(az));
             _mat.SetVector(GalNId, Vec(SkyBodies.GalacticNorthEquatorial()));
-            if (_stars != null) _mat.SetTexture(StarsId, _stars);
+            if (_stars != null)
+            {
+                _mat.SetTexture(StarsId, _stars);
+                _mat.SetVector(StarTexId, new Vector4(_stars.width, _stars.height, 0f, 0f));
+            }
             if (View != null)
             {
                 View.clearFlags = CameraClearFlags.Skybox;
