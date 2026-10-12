@@ -5,7 +5,6 @@ using System.Linq;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Json;
-using Kestrel.Core.Physics;
 using Kestrel.Core.Save;
 using Kestrel.Core.Vehicle;
 using NUnit.Framework;
@@ -65,7 +64,8 @@ namespace Kestrel.Core.Tests
             }
             Assert.Greater(Literals.Obj("conical").Obj("flare").Num("cna"), 0, "a flare has CNα > 0");
             Assert.Less(Literals.Obj("conical").Obj("shoulder").Num("cna"), 0, "a shoulder has CNα < 0");
-            Assert.AreEqual(0.3, AeroBalanceCalc.FinCpFromTrailingEdge(1.2, 1.2, 0), 1e-12, "square fin is 0.25c");
+            Assert.AreEqual(0.3, Balance.FinCpAftOfRootLe(1.2, 1.2, 0), 1e-12, "square fin is 0.25c aft of the root leading edge");
+            Assert.AreEqual(0.9, 1.2 - Balance.FinCpAftOfRootLe(1.2, 1.2, 0), 1e-12, "trailing edge on the base puts the quarter chord at 0.75c");
         }
 
         [Test]
@@ -175,8 +175,12 @@ namespace Kestrel.Core.Tests
 
             var v1 = VehicleJson("straight");
             JsonMut.Set(v1, "version", 1d);
-            Assert.IsNull(Find(Report(v1).blocks, "unstable"));
-            Assert.IsNull(Find(Report(v1).warnings, "unstable"));
+            var v1Report = Report(v1);
+            Assert.IsNull(Find(v1Report.blocks, "unstable"), "v1 does not take the v2 block");
+            var v1Note = Find(v1Report.warnings, "unstable");
+            Assert.IsNotNull(v1Note, "v1 still gets the readout engine-steered note");
+            StringAssert.Contains("engine-steered", v1Note.msg);
+            Assert.IsNull(v1Note.kid, "the v2 kid text stays off until migration");
 
             var straps = VehicleJson("straight");
             var core = (JsonObject)straps.Arr("stages")[0];
@@ -257,14 +261,14 @@ namespace Kestrel.Core.Tests
         public void MaxQ_IsWarnOnly_AndSkipsUnguidedSolids()
         {
             var design = VehicleJson("straight");
-            DesignRules.NoteReference(design, new SimResult { maxQ = 46000, maxG = 1 });
+            NoteReference(design, 46000, 1);
             var report = Report(design);
             Assert.IsNull(Find(report.blocks, "maxq-high"));
             AssertIssue(Find(report.warnings, "maxq-high"), "aero", Words.Str("maxqMsg"), Words.Str("maxqKid"), null);
 
             var harder = JsonMut.CloneObject(design);
             JsonMut.Set(harder, "name", "Hard q");
-            DesignRules.NoteReference(harder, new SimResult { maxQ = 200000, maxG = 1 });
+            NoteReference(harder, 200000, 1);
             Assert.IsNull(Find(Report(harder).blocks, "maxq-high"), "max-Q never blocks");
             Assert.IsNotNull(Find(Report(harder).warnings, "maxq-high"));
 
@@ -273,13 +277,13 @@ namespace Kestrel.Core.Tests
             var s0 = (JsonObject)solid.Arr("stages")[0];
             JsonMut.Set(s0, "propellant", "solid-apcp");
             JsonMut.Set(s0, "engine", "srm-small");
-            DesignRules.NoteReference(solid, new SimResult { maxQ = 80000, maxG = 1 });
+            NoteReference(solid, 80000, 1);
             Assert.IsNull(Find(Report(solid).warnings, "maxq-high"));
             Assert.IsNull(Find(Report(solid).blocks, "maxq-high"));
 
             var quiet = VehicleJson("straight");
             JsonMut.Set(quiet, "name", "Under q");
-            DesignRules.NoteReference(quiet, new SimResult { maxQ = 44000, maxG = 1 });
+            NoteReference(quiet, 44000, 1);
             Assert.IsNull(Find(Report(quiet).warnings, "maxq-high"));
         }
 
@@ -288,7 +292,7 @@ namespace Kestrel.Core.Tests
         {
             var bumpy = VehicleJson("straight");
             JsonMut.Set(bumpy, "name", "Bumpy sat");
-            DesignRules.NoteReference(bumpy, new SimResult { maxQ = 1000, maxG = 7.5 });
+            NoteReference(bumpy, 1000, 7.5);
             var sat = Report(bumpy);
             Assert.IsNull(Find(sat.blocks, "payload-g"));
             AssertIssue(Find(sat.warnings, "payload-g"), "payload", Words.Str("payloadWarnMsg"), Words.Str("payloadWarnKid"), null);
@@ -296,7 +300,7 @@ namespace Kestrel.Core.Tests
             var crew = VehicleJson("straight");
             JsonMut.Set(crew, "name", "Bumpy crew");
             JsonMut.Set(crew.Obj("payload"), "type", "crew-capsule");
-            DesignRules.NoteReference(crew, new SimResult { maxQ = 1000, maxG = 5 });
+            NoteReference(crew, 1000, 5);
             var crewReport = Report(crew);
             Assert.IsNull(Find(crewReport.warnings, "payload-g"));
             AssertIssue(Find(crewReport.blocks, "payload-g"), "payload", Words.Str("payloadBlockMsg"), Words.Str("payloadBlockKid"), null);
@@ -360,7 +364,10 @@ namespace Kestrel.Core.Tests
             CollectionAssert.AreEqual(want, seen.OrderBy(s => s).ToList());
         }
 
-        static AeroBalance BalanceOf(string name) => AeroBalanceCalc.Of(Golden.Catalog, Design.FromJson(VehicleJson(name)));
+        static AeroBalance BalanceOf(string name) => Balance.Of(Golden.Catalog, Design.FromJson(VehicleJson(name)));
+
+        static void NoteReference(JsonObject design, double qPa, double maxG)
+            => ReferenceAscent.Store(ReferenceAscent.CanonicalKey(Golden.Catalog, design), qPa, 0, maxG);
 
         static EngineeringReport Report(JsonObject design) => Validate.Engineering(Golden.Catalog, design);
 
