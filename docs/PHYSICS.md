@@ -251,3 +251,26 @@ Seed→day and launch-anyway goldens are hard-coded literals from external snipp
 | shearViolation | exact | 0 | Generated seed 22 exceeds ShearLimitPerSec 0.012 (lognormal tail). |
 | shearExceedance | 3√(p(1−p)/N) | 0 | N=10 000 vs lognormal p=0.03 (median 0.0045 /s, σ_ln as above). |
 
+## Designer v2 (G2)
+
+`data/golden/design-v2-literals.json` is computed by `tools/design-v2-literals.py`. It is not a snapshot of the C# run. `DesignV2Tests` compares `InterstageAero` and `AeroBalanceCalc` to those literals. `data/golden/design-v2.json` holds the migration shape and the validation wording. Neither file is produced by `npm run gen:golden`.
+
+Interstage length is `0.6 × max(D_lower, D_upper)` for mass, drag station, and CP. That is the length `RocketMeshBuilder` draws (`1.2 ×` the larger radius). The older `0.5 · D_lower` figure is not used.
+
+Mass is areal density times the frustum lateral area `π (r1 + r2) √(L² + (r1 − r2)²)`. Areal density matches the fairing map: composite 14, al-li 20, steel 45 kg/m², default 20. An explicit `interstageMass`, including 0, is the Engineer override and is not replaced. A v1 save that already stored the joint on the lower stage does not gain a second copy on the upper stage.
+
+Drag for a flared or tapered joint is a flat `+0.02` Cd. A flare scales roughly as `k sin²θ (1 − (d_s / d_b)²)` and lands near 0.02–0.05. A taper lands near 0.005–0.01. The flat 0.02 is the labelled value for both. Straight, and a missing shape, add nothing.
+
+CP of the joint is the Barrowman conical term. `CNa = 2 ((d_aft / d_ref)² − (d_forward / d_ref)²)`. The CP sits `(L / 3) (1 + (1 − d_forward/d_aft) / (1 − (d_forward/d_aft)²))` aft of the forward end, and the term is skipped when that denominator is 0 or `CNa` is 0. Positive `CNa` is wider at the base: it moves vehicle CP aft (smaller `cp_m`, metres up from the base). Negative `CNa` is a shoulder and lowers `stabilityCal`. The shape name follows the diameters (`flared` when the upper stage is wider, `tapered` when it is narrower). The cone uses the diameters, not the label.
+
+Fins, when `aero.fins` is set, are an unswept square with the trailing edge at the base. CP is at mid-chord (`length − chord/2`), not the quarter-chord station.
+
+`maxq-high` warns above 45 kPa and never blocks. An unguided solid (stage-0 propellant storability `solid`, gimbal 0) is exempt. `unstable` blocks only for an unguided rocket with `stabilityCal < 0`. The 1–2 cal band and the `> 4` overstable warn apply only when the rocket is finned or unguided. A steered stage with no fins gets the engine-steered note instead of that band. Orbital templates stay launchable: after v1→v2 migration their engineering report has no blocks.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| interstageMass | 0 | 1e-12 | Frustum area and one multiply. Same closed form as the external literal. |
+| cgCp | 1e-9 m | 0 | `cg_m` and `cp_m` from the base, positive up, against `design-v2-literals.py`. 1e-9 m is the hangar marker bar. |
+| stabilityCal | 1e-9 | 0 | `(cg − cp) / d_ref` against the same literal. |
+| finMidChord | 1e-9 m | 0 | Unswept square fin CP at mid-chord. The literal also records the quarter-chord station; the C# CP must miss that station. |
+

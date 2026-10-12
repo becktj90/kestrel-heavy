@@ -35,7 +35,7 @@ namespace Kestrel.Core.Physics
     public sealed class SimResult
     {
         public string outcome; public double time; public List<SimEvent> events; public OrbitElements orbit;
-        public double maxQ, maxQTime, maxG, lossGravity, lossDrag, lossSteering, idealDeltaV, deltaVExpended, finalMass;
+        public double maxQ, maxQTime, maxQAlt, maxG, lossGravity, lossDrag, lossSteering, idealDeltaV, deltaVExpended, finalMass;
         public double x, y, vx, vy, m;
         public List<SimSample> samples; public List<string> warnings;
         /// <summary>First integrator step with geometric altitude &gt;= 100 km. Observational: it does not change the step or the event list.</summary>
@@ -107,7 +107,7 @@ namespace Kestrel.Core.Physics
         public readonly List<SimEvent> Events = new List<SimEvent>();
         public readonly List<SimSample> Samples = new List<SimSample>();
         public int StageCount => st.Length;
-        double maxQ, maxQTime, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1;
+        double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1;
         bool liftedOff, sawKarman; double karmanT; string outcome = "timeout";
 
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
@@ -217,7 +217,8 @@ namespace Kestrel.Core.Physics
             double p = 0, rho = 0, sound = 340;
             if (!o.vacuum && alt < 300e3) { var atm = Atmosphere.At(alt); p = atm.p; rho = atm.rho; sound = atm.a; }
             double q = 0.5 * rho * vrel * vrel;
-            if (q > maxQ) { maxQ = q; maxQTime = T; }
+            // Observational, like KarmanTime: recording the altitude does not change the step.
+            if (q > maxQ) { maxQ = q; maxQTime = T; maxQAlt = alt; }
             double gl = Gravity.MU_EARTH / (r * r);
             double v = JsMath.Hypot(vx, vy);
             LastP = p; LastQ = q; LastMach = vrel / sound; LastThrust = 0;
@@ -275,7 +276,7 @@ namespace Kestrel.Core.Physics
             foreach (var s in st) if (s.warn != null) warnings.Add(s.warn);
             return new SimResult
             {
-                outcome = outcome, time = T, events = Events, orbit = orb, maxQ = maxQ, maxQTime = maxQTime, maxG = maxG,
+                outcome = outcome, time = T, events = Events, orbit = orb, maxQ = maxQ, maxQTime = maxQTime, maxQAlt = maxQAlt, maxG = maxG,
                 lossGravity = lossG, lossDrag = lossD, lossSteering = lossS,
                 idealDeltaV = Headless.StackDeltaV(stagesIn, o.payload).total, deltaVExpended = dvExp, finalMass = Y[4],
                 x = Y[0], y = Y[1], vx = Y[2], vy = Y[3], m = Y[4], samples = Samples, warnings = warnings,

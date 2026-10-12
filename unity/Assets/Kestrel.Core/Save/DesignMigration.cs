@@ -1,5 +1,6 @@
-// Design schema migration. Port of migrateDesign() in web/js/vehicle/design.js.
-// Only v0 → v1 exists. There is no design v2; bumping DESIGN_VERSION would invalidate every preset.
+// Design schema migration. v0 → v1 fills defaults (the JS contract). v1 → v2 adds
+// cluster.pattern = auto, interstage.shape = straight on upper stages, and nozzle = default.
+// It does not rewrite interstageMass, so existing saves keep their masses.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Designer;
@@ -9,20 +10,56 @@ namespace Kestrel.Core.Save
 {
     public static class DesignMigration
     {
-        public const int DesignVersion = 1;
+        public const int DesignVersion = 2;
 
-        public static JsonObject Migrate(JsonObject input)
+        /// <param name="toVersion">Stop after this version. The JS golden still ends at 1. Omit to reach <see cref="DesignVersion"/>.</param>
+        public static JsonObject Migrate(JsonObject input, int toVersion = -1)
         {
+            int target = toVersion < 0 ? DesignVersion : toVersion;
             var d = input == null ? new JsonObject() : JsonMut.CloneObject(input);
             int v = JsonMut.IsInteger(d.ContainsKey("version") ? d["version"] : null) ? (int)d.Num("version") : 0;
             if (v > DesignVersion) throw new InvalidOperationException($"design version {v} is newer than supported {DesignVersion}");
-            while (v < DesignVersion)
+            while (v < target)
             {
-                if (v != 0) throw new InvalidOperationException($"no migration from design version {v}");
-                d = Migrate0(d);
+                if (v == 0) d = Migrate0(d);
+                else if (v == 1) d = Migrate1(d);
+                else throw new InvalidOperationException($"no migration from design version {v}");
                 v = (int)d.Num("version");
             }
             return d;
+        }
+
+        static JsonObject Migrate1(JsonObject d)
+        {
+            var stages = d.Arr("stages");
+            if (stages != null)
+            {
+                for (int i = 0; i < stages.Count; i++)
+                {
+                    if (stages[i] is JsonObject s) FillPart(s, i > 0);
+                }
+            }
+            var so = d.Obj("strapOns");
+            if (so != null) FillPart(so, false);
+            JsonMut.Set(d, "version", 2d);
+            return d;
+        }
+
+        static void FillPart(JsonObject s, bool upper)
+        {
+            if (s.Obj("cluster") == null)
+                JsonMut.Set(s, "cluster", Obj(("pattern", "auto")));
+            else if (s.Obj("cluster").Str("pattern") == null)
+                JsonMut.Set(s.Obj("cluster"), "pattern", "auto");
+            if (upper)
+            {
+                if (s.Obj("interstage") == null)
+                    JsonMut.Set(s, "interstage", Obj(("shape", "straight")));
+                else if (s.Obj("interstage").Str("shape") == null)
+                    JsonMut.Set(s.Obj("interstage"), "shape", "straight");
+            }
+            if (!s.ContainsKey("nozzle") || s["nozzle"] == null)
+                JsonMut.Set(s, "nozzle", "default");
         }
 
         static JsonObject Migrate0(JsonObject d)

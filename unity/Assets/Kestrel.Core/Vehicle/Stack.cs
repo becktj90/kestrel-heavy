@@ -33,6 +33,7 @@ namespace Kestrel.Core.Vehicle
             if (d.StrapOnCount > 0) cd += 0.03 * d.StrapOnCount;
             var top = d.stages[d.stages.Count - 1];
             if (d.fairingDiameter > top.diameter) cd += 0.08 * (d.fairingDiameter / top.diameter - 1);
+            cd += InterstageAero.DragCd(d);
             return cd;
         }
 
@@ -54,12 +55,12 @@ namespace Kestrel.Core.Vehicle
             var so = d.strapOns;
             if (so != null && so.count > 0)
             {
-                var m = Mass.StrapOnMasses(c, d); var e = c.EngineById[so.engine];
+                var m = Mass.StrapOnMasses(c, d); var e = EnginePoint.Of(c.EngineById[so.engine], so.nozzle);
                 o.Add(new StackEntry { thrustSL = e.thrustSL * so.engineCount * so.count, thrustVac = e.thrustVac * so.engineCount * so.count, ispSL = e.ispSL, ispVac = e.ispVac, propMass = m.prop, dryMass = m.dry, diameter = diameter, Cd = Cd, role = "strapons", parallel = true, crossfeed = so.crossfeed, count = so.count });
             }
             for (int i = 0; i < d.stages.Count; i++)
             {
-                var s = d.stages[i]; var m = masses[i]; var e = c.EngineById[s.engine]; int n = s.engineCount;
+                var s = d.stages[i]; var m = masses[i]; var e = EnginePoint.Of(c.EngineById[s.engine], s.nozzle); int n = s.engineCount;
                 o.Add(new StackEntry
                 {
                     thrustSL = e.thrustSL * n, thrustVac = e.thrustVac * n, ispSL = e.ispSL, ispVac = e.ispVac, propMass = m.usableProp, dryMass = m.dry,
@@ -89,7 +90,8 @@ namespace Kestrel.Core.Vehicle
         }
 
         // ---- from designer/readout.js ----
-        public const double TUNE_LIMIT = 15, LAUNCH_LATITUDE = 28.5, LOSS_BUDGET = 1500;
+        public static double TUNE_LIMIT => Designer.DesignerLimits.Active.tuneLimitPct;
+        public const double LAUNCH_LATITUDE = 28.5, LOSS_BUDGET = 1500;
 
         static void ApplyTune(StackEntry e, Tune t)
         {

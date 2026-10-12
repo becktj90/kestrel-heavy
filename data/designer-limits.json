@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "note": "Every designer range, step, enum and threshold. Validate and the hangar UI read this file. designer.layers stays in data/params.json because Params/Registry only reads the layer names. The numbers that used to live in the params designer block are here, unchanged.",
+  "stages": { "min": 1, "max": 5 },
+  "engineCount": { "min": 1, "max": 40, "step": 1 },
+  "diameterM": { "min": 0.3, "max": 15, "step": 0.1 },
+  "strapOnCounts": [0, 2, 4],
+  "safetyFactor": { "min": 1.0, "max": 3.0, "step": 0.05 },
+  "tunePct": { "limit": 15, "min": -15, "max": 15, "step": 1 },
+  "fairingLengthM": { "min": 1, "max": 40, "step": 0.1 },
+  "fairingDiameterM": { "minExclusive": 0 },
+  "jettisonAltitudeKm": { "min": 80, "max": 150, "default": 110 },
+  "payloadMassKg": { "min": 50, "max": 100000 },
+  "landingReserveFraction": { "min": 0, "max": 0.3 },
+  "twr": { "min": 1.0, "good": 1.25 },
+  "margin": { "min": 0.05 },
+  "pack": 1.1,
+  "topHeavyRatio": 1.6,
+  "fairingNarrowRatio": 0.5,
+  "weakUpperTwrVac": 0.5,
+  "weakUpperDvFraction": 0.2,
+  "heavyFairingKg": 500,
+  "stabilityCal": { "aimMin": 1, "aimMax": 2, "overstableAbove": 4 },
+  "maxQKPa": { "warnAbove": 45 },
+  "interstage": {
+    "lengthOverDiameter": 0.6,
+    "dragDeltaCd": 0.02,
+    "shapes": ["straight", "flared", "tapered"]
+  },
+  "arealKgPerM2": { "composite": 14, "al-li": 20, "steel": 45, "default": 20 },
+  "avionicsTiers": ["basic", "standard", "redundant"],
+  "noseCd": { "ogive": 0.3, "conic": 0.36, "blunt": 0.5, "von-karman": 0.28 },
+  "cluster": {
+    "note": "Count stays engineCount. Absent pattern means auto. minDiameterOverExit is the bounding-circle diameter in engine-exit diameters. custom and auto use the pack fit rule only.",
+    "patterns": [
+      { "id": "single", "count": 1, "minDiameterOverExit": 1.0 },
+      { "id": "row2", "count": 2, "minDiameterOverExit": 2.0 },
+      { "id": "row3", "count": 3, "minDiameterOverExit": 3.0 },
+      { "id": "ring7", "count": 7, "minDiameterOverExit": 3.0 },
+      { "id": "r1p8", "count": 9, "minDiameterOverExit": 3.61 },
+      { "id": "r3p9", "count": 12, "minDiameterOverExit": 4.15 },
+      { "id": "r3p10p20", "count": 33, "minDiameterOverExit": 7.39 },
+      { "id": "custom", "countMin": 1, "countMax": 40 },
+      { "id": "auto", "countMin": 1, "countMax": 40 }
+    ]
+  }
+}
