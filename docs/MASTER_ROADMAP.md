@@ -39,6 +39,21 @@ graph LR
   K3 --> K5[K5 Live tracker] --> U4
   K2 --> K6[K6 Subscribers] --> U7
   K5 --> K7[K7 Replay/a11y/calibration] --> U9
+  R1[R1 Env audit + ledger + budgets] --> R2[R2 Astronomy core]
+  R1 --> R5[R5 Weather + commit criteria]
+  K3 --> R5
+  R2 --> R3[R3 Physical sky] --> U4
+  R3 --> R4[R4 Sites + PBR terrain] --> U6
+  R5 --> R6[R6 Clouds + weather FX]
+  R3 --> R6 --> U6
+  R5 --> R7[R7 Narrator/SFX/telemetry hooks] --> U7
+  R6 --> U9
+  R2 -. same milestone .- S1[S1 Astronomy core]
+  S1 --> S2[S2 Upper atmo + decay] --> S3[S3 Bodies + J2 propagator] --> U4
+  S3 --> S4[S4 Frames + scaled-space camera] --> U4
+  R3 --> S5[S5 Space visuals + eclipses] --> U4
+  S3 --> S6[S6 Orbit event hooks] --> U7
+  U9 --> S7[S7 Moon landing / interplanetary, post-launch]
 ```
 
 ## Critical path
@@ -68,6 +83,12 @@ See ENGAGEMENT_SPEC.md and UNITY_SHIP_PLAN §8. 1.0: H2, H3, H4 (campaign/sandbo
 ## Launch Timeline K1–K7
 See MISSION_EVENTS.md and UNITY_SHIP_PLAN §9. All 1.0 except K7 achievements breadth (1.1). K2/K3 join the U1 critical path (one event schema before U3).
 
+## Environment Realism R1–R7
+See ENVIRONMENT_REALISM_AUDIT.md. Unity 6/URP, portrait, 120 Hz on ProMotion High tier, $0 CC0/procedural only (LICENSES.md ledger), fictional sites, reduced-flash safe. R1 audit (done) → R2 astronomy core ∥ U1 → R5 weather/commit criteria after K3 (is X4's weather item, uses `MissionEvent`) → R3 sky in U4 → R4 sites/terrain in U6 → R6 clouds/weather FX → R7 hooks in U7. Proposed 2.0: R1, R2, R3/R6 Low–Medium, R4 one site, R5, R7 core; 1.1: High volumetrics, planets, extra sites. Scope decisions pending with Chief of Staff (audit §8).
+
+## Upper Atmosphere and Outer Space S1–S7
+See SPACE_AUDIT.md. Shares astronomy (S1 = R2), atmosphere, body data and camera with R1–R7; nothing duplicated. 2.0 = Earth orbit only: true sky, Moon, eclipses, J2, orbital decay (S1–S6). S7 (lunar landing, interplanetary, solar-system view) is post-launch but `bodies.json` + SOI-ready propagator + scaled-space camera are built now. PD/CC0 data only, every licence logged in LICENSES.md; high-res planet textures are on-demand downloads.
+
 ## Risk register
 | # | Risk | L/I | Mitigation | Owner |
 |---|------|-----|-----------|-------|
@@ -85,6 +106,11 @@ See MISSION_EVENTS.md and UNITY_SHIP_PLAN §9. All 1.0 except K7 achievements br
 | R13 | Predict/success probability too slow on device | M/M | Coarse N runs, Burst, cache per design hash | Gameplay Dev |
 | R14 | Two event schemas creep back (narration vs SFX vs timeline) | M/M | One `MissionEvent`; PR review rule | Gameplay Dev |
 | R15 | Timeline realism reads as copying a real vehicle | L/M | Fictional names, original wording, compressed times | Codex, Physics |
+| R16 | Environment realism blows 8.3 ms @120 / IPA budget | M/H | Tiered techniques, env ≤ 8 MB, 120 Hz High-only, perf gate at U4/U6 | Graphics Dev |
+| R17 | Asset licence contamination | L/H | CC0/PD only, LICENSES.md ledger with SHA-256, no Asset Store | Art, Kestrel Arcade |
+| R18 | Lightning/flash harms photosensitive players | L/H | Reduced-flash rules + frame luminance test | UX, QA |
+| R19 | J2/decay changes destabilise golden vectors | M/M | One Core PR per effect, Physics ε review | Physics |
+| R20 | Float precision at orbital scale (jitter) | M/H | Double ECI sim, floating origin + scaled-space layer | Graphics Dev |
 | R11 | Name trademark conflict | L/H | X6 check, draft for counsel | Marketing |
 
 ## Owners
