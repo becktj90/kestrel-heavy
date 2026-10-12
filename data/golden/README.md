@@ -15,6 +15,11 @@ Every file is `{ generatedBy, tolerance, count, cases[] }`. `index.json` lists t
 | simulate.json | simulate(): medium lifter (vacuum, 200 km, overloaded) + every preset; outcome, events, maxQ, orbit, losses, samples | rel 1e-6 (libm ulp drift over thousands of RK4 steps); event types/order exact |
 | catalog-flight.json | every engine and every preset: ascent, staging, drag/max-Q, orbit determination | per quantity in docs/PHYSICS.md (absolute and relative). Harness: `tests/golden-harness.test.cjs` |
 | economy.json | priceDesign (fresh + with learning/dev done), reliabilityOf, engine dev/batch cost, learning factor, clusterReliability | money exact (integers), reliability rel 1e-12 |
+| steer.json | expo thumb-steer curve, sensitivity clamp, compact full-scale | rel 1e-9 |
+| landing-grade.json | Haven touchdown margins and Perfect/Good/Hard/Salvage | margins rel 1e-9; grade exact |
+| quick-retry.json | one-tap landing and sep resume clocks | exact; clocks match PACE |
+| mission-ramp.json | per-mission wind, landing fuel, swell, stars, unlock | stars and unlock exact; drift rel 1e-9 |
+| designer-validate.json | validateEngineering, quick readout, Make it fly, experience layers, Number.toFixed | messages exact; readout rel 1e-9; cost exact |
 | vehicle-migrate.json | migrateDesign v0→v1 (no v2 schema) | structural equality |
 | save-store.json | save envelopes, base-36 ids, native key policy | exact |
 

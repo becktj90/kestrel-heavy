@@ -1,0 +1,116 @@
+// Per-mission wind, landing fuel, and swell. Numbers are data/mission-ramp.json.
+// A deck finish unlocks the next mission. Stars rate the catch and never gate it.
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Kestrel.Core.Json;
+
+namespace Kestrel.Core.Flight
+{
+    public sealed class MissionRamp
+    {
+        public const double DriftWindFloor = 0.28;
+        public const double SwellOmega = 0.28;
+        public const double GustOmega = 0.62;
+        public const double GustForceScale = 0.0034;
+        public const double FuelMax = 100;
+
+        public readonly double ThreeMin, TwoMin;
+        public readonly double HavenLandingFuel, HavenSwellAmp;
+        readonly Dictionary<string, MissionAssist> missions = new Dictionary<string, MissionAssist>();
+
+        public static MissionRamp Load(string repoRoot, double havenLandingFuel, double havenSwellAmp)
+            => FromJson(MiniJson.ParseObject(File.ReadAllText(Path.Combine(repoRoot, "data", "mission-ramp.json"))), havenLandingFuel, havenSwellAmp);
+
+        public static MissionRamp FromJson(JsonObject o, double havenLandingFuel, double havenSwellAmp)
+        {
+            var stars = o.Obj("stars");
+            var ramp = new MissionRamp(stars.Num("threeMin"), stars.Num("twoMin"), havenLandingFuel, havenSwellAmp);
+            foreach (var kv in o.Obj("missions"))
+            {
+                var m = (JsonObject)kv.Value;
+                ramp.missions[kv.Key] = new MissionAssist(m.Num("wind"), m.Num("landingFuel"), m.Num("swellAmp"));
+            }
+            return ramp;
+        }
+
+        MissionRamp(double threeMin, double twoMin, double havenLandingFuel, double havenSwellAmp)
+        {
+            ThreeMin = threeMin; TwoMin = twoMin;
+            HavenLandingFuel = havenLandingFuel; HavenSwellAmp = havenSwellAmp;
+        }
+
+        public bool TryGet(string missionId, out MissionAssist assist) => missions.TryGetValue(missionId, out assist);
+
+        /// <summary>difficulty.wind * mission.wind. A missing mission keeps the difficulty wind (scale 1).</summary>
+        public double WindForce(double difficultyWind, string missionId)
+        {
+            double baseWind = double.IsNaN(difficultyWind) || double.IsInfinity(difficultyWind) ? 0 : difficultyWind;
+            double scale = 1;
+            if (missions.TryGetValue(missionId, out var m) && !double.IsNaN(m.Wind) && !double.IsInfinity(m.Wind)) scale = m.Wind;
+            return baseWind * scale;
+        }
+
+        public double LandingFuelFloor(string missionId)
+            => missions.TryGetValue(missionId, out var m) ? m.LandingFuel : HavenLandingFuel;
+
+        public double SwellAmplitude(string missionId)
+            => missions.TryGetValue(missionId, out var m) ? m.SwellAmp : HavenSwellAmp;
+
+        /// <summary>Session fuel is raised to the mission floor and capped at FuelMax. Extra fuel is kept.</summary>
+        public double HavenFuel(double sessionFuel, string missionId)
+            => Math.Min(FuelMax, Math.Max(sessionFuel, LandingFuelFloor(missionId)));
+
+        public HavenDrift Drift(double swellT, double difficultyWind, string missionId)
+        {
+            double product = WindForce(difficultyWind, missionId);
+            double wind = product == 0 || double.IsNaN(product) ? DriftWindFloor : product;
+            double t = double.IsNaN(swellT) || double.IsInfinity(swellT) ? 0 : swellT;
+            double swell = Math.Sin(t * SwellOmega) * SwellAmplitude(missionId);
+            double gust = Math.Sin(t * GustOmega) * wind;
+            return new HavenDrift(product, wind, swell, gust, gust * GustForceScale);
+        }
+
+        public bool UnlocksNext(string reason) => reason == "recovered" || reason == "salvage";
+
+        /// <summary>0 for a splash, RUD, or water. 1 for a tip, a miss, or a salvage. 2 or 3 only for a recovered catch.</summary>
+        public int Stars(string reason, string kind, double vy, double dx, double landingVy, double landingTol, bool tipped, bool recovered)
+        {
+            if (reason == "splash" || reason == "rud" || kind == "water") return 0;
+            if (kind != "deck") return 0;
+            double limVy = Limit(landingVy, 0.1);
+            double limDx = Limit(landingTol, 1);
+            double vyAbs = double.IsNaN(vy) || double.IsInfinity(vy) ? 0 : Math.Abs(vy);
+            double dxAbs = double.IsNaN(dx) || double.IsInfinity(dx) ? 0 : Math.Abs(dx);
+            double margin = Math.Min(1 - vyAbs / limVy, 1 - dxAbs / limDx);
+            if (tipped || margin < 0 || !recovered) return 1;
+            if (margin >= ThreeMin) return 3;
+            if (margin >= TwoMin) return 2;
+            return 1;
+        }
+
+        static double Limit(double value, double floor)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value) || value == 0) value = floor;
+            return Math.Max(floor, value);
+        }
+    }
+
+    public readonly struct MissionAssist
+    {
+        public readonly double Wind, LandingFuel, SwellAmp;
+        public MissionAssist(double wind, double landingFuel, double swellAmp)
+        {
+            Wind = wind; LandingFuel = landingFuel; SwellAmp = swellAmp;
+        }
+    }
+
+    public readonly struct HavenDrift
+    {
+        public readonly double WindForce, DriftWind, Swell, Gust, ForceX;
+        public HavenDrift(double windForce, double driftWind, double swell, double gust, double forceX)
+        {
+            WindForce = windForce; DriftWind = driftWind; Swell = swell; Gust = gust; ForceX = forceX;
+        }
+    }
+}

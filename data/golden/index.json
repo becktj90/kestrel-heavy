@@ -9,8 +9,13 @@
   "simulate": 13,
   "economy": 67,
   "catalog-flight": 100,
+  "designer-validate": 117,
+  "landing-grade": 13,
+  "mission-ramp": 39,
+  "quick-retry": 5,
   "vehicle-migrate": 9,
-  "save-store": 3
+  "save-store": 3,
+  "steer": 262
  },
- "total": 265
+ "total": 701
 }
