@@ -1,6 +1,7 @@
 // Product parameters from data/params.json. Portrait is a hard lock (decision 7).
 using System.IO;
 using Kestrel.Core.Json;
+using Kestrel.Core.Vehicle;
 
 namespace Kestrel.Core.Params
 {
@@ -21,6 +22,20 @@ namespace Kestrel.Core.Params
         public double WindLimitMs => Raw.Obj("weather").Num("windLimitMs");
         public bool KidHold => Raw.Obj("weather").Bool("kidHold");
         public bool RelaxedHold => Raw.Obj("weather").Bool("relaxedHold");
+
+        /// <summary>
+        /// data/params.json flight.launchLatitude. A missing or non-finite value uses Stack.LAUNCH_LATITUDE.
+        /// </summary>
+        public double LaunchLatitude
+        {
+            get
+            {
+                var flight = Raw?.Obj("flight");
+                if (flight != null && flight.TryGetValue("launchLatitude", out var v) && v is double d && !double.IsNaN(d) && !double.IsInfinity(d))
+                    return d;
+                return Stack.LAUNCH_LATITUDE;
+            }
+        }
 
         public Registry(JsonObject raw) { Raw = raw; }
 

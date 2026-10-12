@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Json;
+using Kestrel.Core.Params;
 using Kestrel.Core.Timeline;
 using Kestrel.Core.Vehicle;
 using NUnit.Framework;
@@ -144,26 +145,35 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void LatitudeHook_MatchesParamsShape()
+        public void Latitude_ComesFromTheParamsRegistry()
         {
             var cat = Golden.Catalog;
             var d = LoadTemplate("small-kerolox.json");
             var pad = Pad.For(cat, d);
-            var root = new JsonObject();
+            var shipped = Registry.Load(Golden.Root);
+            Assert.AreEqual(28.5, shipped.LaunchLatitude, 1e-12);
+            Assert.AreEqual(Stack.LAUNCH_LATITUDE, shipped.LaunchLatitude, 1e-12);
+            var missing = new Registry(new JsonObject());
+            Assert.AreEqual(Stack.LAUNCH_LATITUDE, missing.LaunchLatitude, 1e-12);
+
+            var raw = new JsonObject();
             var flight = new JsonObject();
             flight.Add("launchLatitude", 0d);
-            root.Add("flight", flight);
-            double lat = TimelineParams.LaunchLatitude(root);
-            Assert.AreEqual(0, lat, 1e-12);
-            var a = TimelineGenerator.Generate(cat, d, pad, new Mission { latitude = lat }, 1);
-            var b = TimelineGenerator.Generate(cat, d, pad, new Mission { latitude = 28.5 }, 1);
-            Assert.AreEqual(0, a.latitude, 1e-12);
-            Assert.AreEqual(28.5, b.latitude, 1e-12);
-            Assert.AreNotEqual(TimelineJson.Write(a), TimelineJson.Write(b));
-            bool simMoved = Find(a, "asc.maxq").actual != Find(b, "asc.maxq").actual
-                || Find(a, "asc.maxq").strings.explainWhy != Find(b, "asc.maxq").strings.explainWhy
-                || Find(a, "asc.meco")?.actual != Find(b, "asc.meco")?.actual;
-            Assert.IsTrue(simMoved, "latitude 0 vs 28.5 did not change the sim: " + Find(a, "asc.maxq").strings.explainWhy);
+            raw.Add("flight", flight);
+            var equator = new Registry(raw);
+            Assert.AreEqual(0, equator.LaunchLatitude, 1e-12);
+
+            var fromRegistry = TimelineGenerator.Generate(cat, d, pad, new Mission(), 1, equator);
+            var explicitLat = TimelineGenerator.Generate(cat, d, pad, new Mission { latitude = 28.5 }, 1, equator);
+            var shippedTl = TimelineGenerator.Generate(cat, d, pad, new Mission(), 1, shipped);
+            Assert.AreEqual(0, fromRegistry.latitude, 1e-12);
+            Assert.AreEqual(28.5, explicitLat.latitude, 1e-12);
+            Assert.AreEqual(28.5, shippedTl.latitude, 1e-12);
+            Assert.AreNotEqual(TimelineJson.Write(fromRegistry), TimelineJson.Write(explicitLat));
+            bool simMoved = Find(fromRegistry, "asc.maxq").actual != Find(explicitLat, "asc.maxq").actual
+                || Find(fromRegistry, "asc.maxq").strings.explainWhy != Find(explicitLat, "asc.maxq").strings.explainWhy
+                || Find(fromRegistry, "asc.meco")?.actual != Find(explicitLat, "asc.meco")?.actual;
+            Assert.IsTrue(simMoved, "latitude 0 vs 28.5 did not change the sim: " + Find(fromRegistry, "asc.maxq").strings.explainWhy);
         }
 
         [Test]
@@ -274,7 +284,8 @@ namespace Kestrel.Core.Tests
             }
         }
 
-        static Kestrel.Core.Timeline.Timeline Gen(Catalog cat, Design d) => TimelineGenerator.Generate(cat, d, Pad.For(cat, d), new Mission { mode = "standard" }, 1);
+        static Kestrel.Core.Timeline.Timeline Gen(Catalog cat, Design d)
+            => TimelineGenerator.Generate(cat, d, Pad.For(cat, d), new Mission { mode = "standard" }, 1, Registry.Load(Golden.Root));
 
         static void AssertMonotonic(Kestrel.Core.Timeline.Timeline t, string id)
         {
