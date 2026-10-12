@@ -6,8 +6,8 @@ import WebKit
 /// WKWebView shell for the packed Phaser 4 game.
 /// Loads `kestrel-heavy://game/index.html` through `KestrelHeavySchemeHandler`
 /// so ES modules, vendor/phaser.min.js, and audio/ share one origin.
-/// Hosted in a view controller that rotates freely; Phaser ENVELOP + camera.js
-/// adapt the playfield to portrait or landscape without pillarboxing.
+/// Hosted in a portrait-locked view controller so the cabinet cannot rotate
+/// into the landscape pillarbox Trevor saw on TestFlight 1.0 (2).
 struct KestrelHeavyGameView: UIViewControllerRepresentable {
     var onCabinetReady: () -> Void = {}
 
@@ -201,7 +201,7 @@ struct KestrelHeavyGameView: UIViewControllerRepresentable {
     }
 }
 
-/// Owns the WKWebView; rotates with the device (portrait + landscape).
+/// Owns the WKWebView and refuses landscape so Phaser cannot pillarbox.
 final class KestrelHeavyCabinetController: UIViewController {
     let webView: ArcadeWebView
 
@@ -221,7 +221,7 @@ final class KestrelHeavyCabinetController: UIViewController {
 
     override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation { .portrait }
 
-    override var shouldAutorotate: Bool { true }
+    override var shouldAutorotate: Bool { false }
 
     override func viewDidLoad() {
         super.viewDidLoad()
