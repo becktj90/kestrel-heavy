@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Slice",
     "rootNamespace": "Kestrel.Slice",
-    "references": ["Kestrel.Core", "Kestrel.Pad", "Kestrel.Pad.Core"],
+    "references": ["Kestrel.Core", "Kestrel.Pad", "Kestrel.Pad.Core", "Kestrel.Kit.Contracts"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
