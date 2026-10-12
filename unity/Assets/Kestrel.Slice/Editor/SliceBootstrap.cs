@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
+using Material = UnityEngine.Material;
 
 namespace Kestrel.Slice.Editor
 {
