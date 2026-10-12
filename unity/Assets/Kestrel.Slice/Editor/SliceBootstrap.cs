@@ -151,9 +151,12 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
                 app.PanelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/Resources/UI/KH_PanelSettings.asset");
                 EditorSceneManager.SaveScene(scene, ScenePath);
             }
-            // Keep the committed shell order (Boot, Home, Design, Flight first); Slice is appended, never first.
-            var list = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-            if (!list.Exists(s => s.path == ScenePath)) { list.Add(new EditorBuildSettingsScene(ScenePath, true)); EditorBuildSettings.scenes = list.ToArray(); }
+            // Slice.unity is a local, editor-generated sandbox (gitignored). Nothing loads it by name: the shell
+            // Design scene hosts SliceApp via ShellDesignHost. Keep it OUT of Build Settings so a clean checkout
+            // (cloud build) never references an untracked scene; drop any stale entry left by older bootstraps.
+            var scenes = EditorBuildSettings.scenes;
+            if (System.Array.Exists(scenes, s => s.path == ScenePath))
+                EditorBuildSettings.scenes = System.Array.FindAll(scenes, s => s.path != ScenePath);
         }
     }
 
