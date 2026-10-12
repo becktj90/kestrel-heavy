@@ -1,0 +1,578 @@
+{
+  "schema": "designer_templates_v1",
+  "note": "Hangar starter templates. Each fork gets meta.forkedFrom {templateId, templateVersion} (web/js/designer/templates-fork.js). Designs are schema v2. A test asserts every template has no blocks, at least the minimum \u0394v margin, and fits its orbit budget.",
+  "templates": [
+    {
+      "id": "hopper",
+      "version": 1,
+      "name": "Hopper",
+      "order": 1,
+      "kidBlurb": "A little rocket that hops up to space and back down.",
+      "engineerBlurb": "Single-stage kerolox sounding rocket, 3 small engines in a row, fins, suborbital 100 km.",
+      "design": {
+        "version": 2,
+        "id": "tpl-hopper",
+        "name": "Hopper",
+        "tier": "starter",
+        "stages": [
+          {
+            "name": "Hopper",
+            "propellant": "kerolox",
+            "engine": "gg-kerolox-small",
+            "engineCount": 3,
+            "propMass": 13000,
+            "diameter": 1.5,
+            "material": "al-li",
+            "separationMass": 50,
+            "landingPropMass": 0,
+            "cluster": {
+              "pattern": "row3"
+            },
+            "nozzle": "default"
+          }
+        ],
+        "strapOns": {
+          "count": 0,
+          "kind": "solid",
+          "propellant": "solid-apcp",
+          "engine": "srm-small",
+          "engineCount": 1,
+          "propMass": 0,
+          "diameter": 1.6,
+          "material": "steel",
+          "crossfeed": false,
+          "cluster": {
+            "pattern": "auto"
+          },
+          "nozzle": "default"
+        },
+        "payload": {
+          "type": "kid-box",
+          "mass": 300,
+          "orbit": "suborbital"
+        },
+        "fairing": {
+          "diameter": 1.5,
+          "length": 3,
+          "material": "composite",
+          "jettisonAltitudeKm": 110
+        },
+        "aero": {
+          "nose": "ogive",
+          "fins": true,
+          "finCount": 4,
+          "finSpanM": 1.2
+        },
+        "landing": {
+          "legs": false,
+          "gridFins": false,
+          "rcs": false
+        },
+        "avionics": {
+          "tier": "standard"
+        },
+        "safetyFactor": 1.4,
+        "livery": {
+          "primary": "#E8ECEF",
+          "accent": "#F2C21A",
+          "name": "HOPPER"
+        },
+        "look": {
+          "livery": "belt_stripes",
+          "finishes": {
+            "tank": "white_paint",
+            "fins": "carbon_composite",
+            "engine": "bare_metal"
+          },
+          "decals": [
+            {
+              "id": "decal_kestrel_wing",
+              "slot": "slot_insignia_upper",
+              "scale": 1,
+              "rotate": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "workhorse",
+      "version": 1,
+      "name": "Workhorse",
+      "order": 2,
+      "kidBlurb": "Two stages that carry a satellite all the way to orbit.",
+      "engineerBlurb": "Two-stage kerolox: 7 gas-generator engines in a ring, vacuum upper, 4 t to LEO 400 km.",
+      "design": {
+        "version": 2,
+        "id": "tpl-workhorse",
+        "name": "Workhorse",
+        "tier": "starter",
+        "stages": [
+          {
+            "name": "Booster",
+            "propellant": "kerolox",
+            "engine": "gg-kerolox",
+            "engineCount": 7,
+            "propMass": 260000,
+            "diameter": 3.7,
+            "material": "al-li",
+            "separationMass": 50,
+            "landingPropMass": 0,
+            "cluster": {
+              "pattern": "ring7"
+            },
+            "nozzle": "default"
+          },
+          {
+            "name": "Upper",
+            "propellant": "kerolox",
+            "engine": "gg-kerolox-vac",
+            "engineCount": 1,
+            "propMass": 70000,
+            "diameter": 3.7,
+            "material": "al-li",
+            "separationMass": 50,
+            "landingPropMass": 0,
+            "cluster": {
+              "pattern": "single"
+            },
+            "nozzle": "default",
+            "interstage": {
+              "shape": "straight"
+            }
+          }
+        ],
+        "strapOns": {
+          "count": 0,
+          "kind": "solid",
+          "propellant": "solid-apcp",
+          "engine": "srm-small",
+          "engineCount": 1,
+          "propMass": 0,
+          "diameter": 1.6,
+          "material": "steel",
+          "crossfeed": false,
+          "cluster": {
+            "pattern": "auto"
+          },
+          "nozzle": "default"
+        },
+        "payload": {
+          "type": "leo-sat",
+          "mass": 4000,
+          "orbit": "leo400"
+        },
+        "fairing": {
+          "diameter": 4.2,
+          "length": 11,
+          "material": "composite",
+          "jettisonAltitudeKm": 110
+        },
+        "aero": {
+          "nose": "ogive",
+          "fins": false,
+          "finCount": 4,
+          "finSpanM": 1.0
+        },
+        "landing": {
+          "legs": false,
+          "gridFins": false,
+          "rcs": false
+        },
+        "avionics": {
+          "tier": "standard"
+        },
+        "safetyFactor": 1.4,
+        "livery": {
+          "primary": "#E8ECEF",
+          "accent": "#1E3A5F",
+          "name": "WORKHORSE"
+        },
+        "look": {
+          "livery": "pathfinder_white",
+          "finishes": {
+            "tank": "white_paint",
+            "interstage": "carbon_composite",
+            "fairing": "white_paint",
+            "engine": "bare_metal"
+          },
+          "decals": [
+            {
+              "id": "decal_wordmark_block",
+              "slot": "slot_wordmark_vertical",
+              "scale": 1,
+              "rotate": 90
+            },
+            {
+              "id": "decal_serial_plate",
+              "slot": "slot_serial_aft",
+              "scale": 1,
+              "rotate": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "heavy",
+      "version": 1,
+      "name": "Heavy",
+      "order": 3,
+      "kidBlurb": "A big core with two boosters strapped on. Lifts heavy things high.",
+      "engineerBlurb": "Core + 2 liquid side boosters, 9 engines each, vacuum upper; 5.5 t comsat to GTO.",
+      "design": {
+        "version": 2,
+        "id": "tpl-heavy",
+        "name": "Heavy",
+        "tier": "starter",
+        "stages": [
+          {
+            "name": "Core",
+            "propellant": "kerolox",
+            "engine": "gg-kerolox",
+            "engineCount": 9,
+            "propMass": 300000,
+            "diameter": 3.7,
+            "material": "al-li",
+            "separationMass": 50,
+            "landingPropMass": 0,
+            "cluster": {
+              "pattern": "r1p8"
+            },
+            "nozzle": "default"
+          },
+          {
+            "name": "Upper",
+            "propellant": "kerolox",
+            "engine": "gg-kerolox-vac",
+            "engineCount": 1,
+            "propMass": 90000,
+            "diameter": 3.7,
+            "material": "al-li",
+            "separationMass": 50,
+            "landingPropMass": 0,
+            "cluster": {
+              "pattern": "single"
+            },
+            "nozzle": "default",
+            "interstage": {
+              "shape": "straight"
+            }
+          }
+        ],
+        "strapOns": {
+          "count": 2,
+          "kind": "liquid",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 9,
+          "propMass": 300000,
+          "diameter": 3.7,
+          "material": "al-li",
+          "crossfeed": false,
+          "cluster": {
+            "pattern": "auto"
+          },
+          "nozzle": "default"
+        },
+        "payload": {
+          "type": "gto-comsat",
+          "mass": 5500,
+          "orbit": "gto"
+        },
+        "fairing": {
+          "diameter": 5.2,
+          "length": 13,
+          "material": "composite",
+          "jettisonAltitudeKm": 110
+        },
+        "aero": {
+          "nose": "ogive",
+          "fins": false,
+          "finCount": 4,
+          "finSpanM": 1.0
+        },
+        "landing": {
+          "legs": false,
+          "gridFins": false,
+          "rcs": false
+        },
+        "avionics": {
+          "tier": "standard"
+        },
+        "safetyFactor": 1.4,
+        "livery": {
+          "primary": "#F2F2F2",
+          "accent": "#C8102E",
+          "name": "HEAVY"
+        },
+        "look": {
+          "livery": "split_stage",
+          "finishes": {
+            "tank": "white_paint",
+            "booster": "white_paint",
+            "interstage": "carbon_composite",
+            "fairing": "white_paint",
+            "engine": "bare_metal"
+          },
+          "decals": [
+            {
+              "id": "decal_wordmark_block",
+              "slot": "slot_wordmark_vertical",
+              "scale": 1.5,
+              "rotate": 90
+            },
+            {
+              "id": "decal_star_ring",
+              "slot": "slot_mission_patch",
+              "scale": 1,
+              "rotate": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "lander",
+      "version": 1,
+      "name": "Lander",
+      "order": 4,
+      "kidBlurb": "Flies to orbit, then the first stage comes back and lands on its legs.",
+      "engineerBlurb": "Reusable two-stage kerolox: landing reserve on stage 1, legs + grid fins + RCS.",
+      "design": {
+        "version": 2,
+        "id": "tpl-lander",
+        "name": "Lander",
+        "tier": "starter",
+        "stages": [
+          {
+            "name": "Booster",
+            "propellant": "kerolox",
+            "engine": "gg-kerolox",
+            "engineCount": 9,
+            "propMass": 320000,
+            "diameter": 3.7,
+            "material": "al-li",
+            "separationMass": 50,
+            "landingPropMass": 30000,
+            "cluster": {
+              "pattern": "r1p8"
+            },
+            "nozzle": "default"
+          },
+          {
+            "name": "Upper",
+            "propellant": "kerolox",
+            "engine": "gg-kerolox-vac",
+            "engineCount": 1,
+            "propMass": 80000,
+            "diameter": 3.7,
+            "material": "al-li",
+            "separationMass": 50,
+            "landingPropMass": 0,
+            "cluster": {
+              "pattern": "single"
+            },
+            "nozzle": "default",
+            "interstage": {
+              "shape": "straight"
+            }
+          }
+        ],
+        "strapOns": {
+          "count": 0,
+          "kind": "solid",
+          "propellant": "solid-apcp",
+          "engine": "srm-small",
+          "engineCount": 1,
+          "propMass": 0,
+          "diameter": 1.6,
+          "material": "steel",
+          "crossfeed": false,
+          "cluster": {
+            "pattern": "auto"
+          },
+          "nozzle": "default"
+        },
+        "payload": {
+          "type": "leo-sat",
+          "mass": 3000,
+          "orbit": "leo400"
+        },
+        "fairing": {
+          "diameter": 4.2,
+          "length": 11,
+          "material": "composite",
+          "jettisonAltitudeKm": 110
+        },
+        "aero": {
+          "nose": "ogive",
+          "fins": false,
+          "finCount": 4,
+          "finSpanM": 1.0
+        },
+        "landing": {
+          "legs": true,
+          "gridFins": true,
+          "rcs": true
+        },
+        "avionics": {
+          "tier": "standard"
+        },
+        "safetyFactor": 1.4,
+        "livery": {
+          "primary": "#14161A",
+          "accent": "#50DCF0",
+          "name": "LANDER"
+        },
+        "look": {
+          "livery": "night_shift",
+          "finishes": {
+            "tank": "white_paint",
+            "legs": "carbon_composite",
+            "gridfins": "bare_metal",
+            "engine": "bare_metal"
+          },
+          "decals": [
+            {
+              "id": "decal_kestrel_wing",
+              "slot": "slot_insignia_upper",
+              "scale": 1,
+              "rotate": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "moonshot",
+      "version": 1,
+      "name": "Moonshot",
+      "order": 5,
+      "kidBlurb": "Three stages and super-cold fuel to send a probe to the Moon.",
+      "engineerBlurb": "Three-stage: methalox booster, hydrolox second stage, expander hydrolox kick stage; 2.5 t to trans-lunar.",
+      "design": {
+        "version": 2,
+        "id": "tpl-moonshot",
+        "name": "Moonshot",
+        "tier": "starter",
+        "stages": [
+          {
+            "name": "Booster",
+            "propellant": "methalox",
+            "engine": "ff-methalox",
+            "engineCount": 7,
+            "propMass": 600000,
+            "diameter": 5,
+            "material": "steel",
+            "separationMass": 50,
+            "landingPropMass": 0,
+            "cluster": {
+              "pattern": "ring7"
+            },
+            "nozzle": "default"
+          },
+          {
+            "name": "Second",
+            "propellant": "hydrolox",
+            "engine": "sc-hydrolox",
+            "engineCount": 1,
+            "propMass": 100000,
+            "diameter": 5,
+            "material": "al-li",
+            "separationMass": 50,
+            "landingPropMass": 0,
+            "cluster": {
+              "pattern": "single"
+            },
+            "nozzle": "default",
+            "interstage": {
+              "shape": "straight"
+            }
+          },
+          {
+            "name": "Kicker",
+            "propellant": "hydrolox",
+            "engine": "exp-hydrolox",
+            "engineCount": 2,
+            "propMass": 25000,
+            "diameter": 5,
+            "material": "al-li",
+            "separationMass": 50,
+            "landingPropMass": 0,
+            "cluster": {
+              "pattern": "row2"
+            },
+            "nozzle": "default",
+            "interstage": {
+              "shape": "straight"
+            }
+          }
+        ],
+        "strapOns": {
+          "count": 0,
+          "kind": "solid",
+          "propellant": "solid-apcp",
+          "engine": "srm-small",
+          "engineCount": 1,
+          "propMass": 0,
+          "diameter": 1.6,
+          "material": "steel",
+          "crossfeed": false,
+          "cluster": {
+            "pattern": "auto"
+          },
+          "nozzle": "default"
+        },
+        "payload": {
+          "type": "lunar-probe",
+          "mass": 2500,
+          "orbit": "tli"
+        },
+        "fairing": {
+          "diameter": 5,
+          "length": 10,
+          "material": "composite",
+          "jettisonAltitudeKm": 110
+        },
+        "aero": {
+          "nose": "von-karman",
+          "fins": false,
+          "finCount": 4,
+          "finSpanM": 1.0
+        },
+        "landing": {
+          "legs": false,
+          "gridFins": false,
+          "rcs": false
+        },
+        "avionics": {
+          "tier": "standard"
+        },
+        "safetyFactor": 1.4,
+        "livery": {
+          "primary": "#E8ECEF",
+          "accent": "#7A4FA0",
+          "name": "MOONSHOT"
+        },
+        "look": {
+          "livery": "pathfinder_white",
+          "finishes": {
+            "tank": "foam_orange",
+            "interstage": "carbon_composite",
+            "fairing": "white_paint",
+            "engine": "bare_metal"
+          },
+          "decals": [
+            {
+              "id": "decal_star_ring",
+              "slot": "slot_insignia_upper",
+              "scale": 1,
+              "rotate": 0
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
