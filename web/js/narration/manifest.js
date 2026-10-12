@@ -7,7 +7,7 @@
  * original, number-free commentary. Coaching = gameplay instruction lines.
  *
  * Entry shape:
- *   { id, lines: [{ channel, variants: string[], priority?, tags?: string[] }] }
+ *   { id, lines: [{ channel, variants: string[], priority?, neverDuck?, tags?: string[] }] }
  * Tokens: {id} {payload} {mark} (see voice.js fillLine). No spoken numbers in
  * N1: lines must not contain digits other than inside tokens/names.
  */
@@ -29,6 +29,29 @@ export const SPEAKER = Object.freeze({
 
 /** Higher wins. CRITICAL preempts anything currently showing. */
 export const PRIORITY = Object.freeze({ LOW: 0, NORMAL: 1, HIGH: 2, CRITICAL: 3 });
+
+/**
+ * Style-guide priority tiers (kh-narr-style callouts.json) -> queue fields.
+ * P0 safety/status: critical + neverDuck (cannot be cut, never ducked by mix).
+ */
+export const STYLE_TIER = Object.freeze({
+  P0: { priority: 3, neverDuck: true },
+  P1: { priority: 2, neverDuck: false },
+  P2: { priority: 1, neverDuck: false },
+  P3: { priority: 0, neverDuck: false },
+});
+
+/** Normalize an external template ({channel, variants, priority:'P0'..'P3'|n, neverDuck}). */
+export function lineFromTemplate(t) {
+  const tier = typeof t.priority === 'string' ? STYLE_TIER[t.priority] : null;
+  return {
+    channel: t.channel || CHANNEL.MC,
+    variants: (t.variants || [t.text]).filter(Boolean),
+    priority: tier ? tier.priority : (Number.isFinite(t.priority) ? t.priority : PRIORITY.NORMAL),
+    neverDuck: t.neverDuck ?? tier?.neverDuck ?? false,
+    tags: t.tags || [],
+  };
+}
 
 const MC_CRITICAL = new Set(['liftoff', 'maxq', 'meco', 'ignition', 'sep-contact', 'touchdown', 'splash', 'tip']);
 const MC_HIGH = new Set(['terminal', 'ses1', 'fairing', 'seco', 'deploy', 'entry', 'landing', 'sep-clear', 'sep-wide', 'recovered', 'salvage', 'health-lethal']);
@@ -148,7 +171,7 @@ function buildManifest() {
     out[`abort-${abortId}`] = {
       id: `abort-${abortId}`,
       lines: [
-        { channel: CHANNEL.MC, variants: a.radio.slice(), priority: PRIORITY.CRITICAL, tags: ['anomaly', abortId] },
+        { channel: CHANNEL.MC, variants: a.radio.slice(), priority: PRIORITY.CRITICAL, neverDuck: true, tags: ['anomaly', abortId] },
         { channel: CHANNEL.COACH, variants: [a.coach], priority: PRIORITY.LOW, tags: ['anomaly', 'debrief', abortId] },
       ],
     };

@@ -1,7 +1,8 @@
 /**
  * Narration priority queue (text mode). One line on air at a time.
  *  - Higher priority first; same priority in event order (t, then seq).
- *  - CRITICAL lines preempt whatever is on air (the cut line is dropped).
+ *  - CRITICAL lines preempt whatever is on air (the cut line is dropped),
+ *    except a neverDuck (style-guide P0 safety) line, which always finishes.
  *  - Lines older than their staleness window when they would start are
  *    dropped (host/co-host/coach go stale fast; MC lasts longer).
  *  - The same text (or same id+channel) never airs twice in a row inside
@@ -64,6 +65,7 @@ export function createQueue(opts = {}) {
         text: item.text,
         t: Number(item.t) || 0,
         duration: item.duration,
+        neverDuck: item.neverDuck === true,
         seq: (seq += 1),
       };
       pending.push(entry);
@@ -74,7 +76,7 @@ export function createQueue(opts = {}) {
     tick(t) {
       if (current && t >= current.endsAt) { record('end', current, t); current = null; }
       if (current && pending.length && pending[0].priority === PRIORITY.CRITICAL
-        && current.priority <= PRIORITY.CRITICAL && pending[0].seq > current.seq) {
+        && !current.neverDuck && pending[0].seq > current.seq) {
         record('preempt', current, t);
         current = null;
       }

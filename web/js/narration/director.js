@@ -45,7 +45,7 @@ export function createDirector(bus, opts = {}) {
       const exact = ev.payload?.text && (line.channel === CHANNEL.MC || line.channel === CHANNEL.COACH)
         && line === entry.lines[0];
       const text = exact ? ev.payload.text : fillLine(pick(key, line.channel, line.variants), mission);
-      queue.push({ id: key, channel: line.channel, priority: line.priority, text, t: ev.t });
+      queue.push({ id: key, channel: line.channel, priority: line.priority, neverDuck: line.neverDuck, text, t: ev.t });
     }
   }
 

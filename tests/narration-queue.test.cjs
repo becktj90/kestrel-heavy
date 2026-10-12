@@ -66,3 +66,17 @@ test('reading-speed timing scales with text and is clamped', async () => {
   assert.ok(readingSeconds('x'.repeat(60)) > readingSeconds('x'.repeat(20)));
   assert.equal(readingSeconds('x'.repeat(500)), 7);
 });
+
+test('neverDuck (P0 safety) lines are not preempted; style tiers map', async () => {
+  const { q, P } = await mk();
+  const { lineFromTemplate } = await load('narration/manifest.js');
+  q.push({ id: 'abort', channel: 'mc', priority: P.CRITICAL, neverDuck: true, text: 'Anomaly.', t: 0 });
+  q.tick(0);
+  q.push({ id: 'maxq', channel: 'mc', priority: P.CRITICAL, text: 'Max-Q.', t: 0.5 });
+  assert.equal(q.tick(0.5).text, 'Anomaly.');
+  assert.equal(q.tick(2).text, 'Max-Q.');
+  const l = lineFromTemplate({ channel: 'mc', variants: ['a'], priority: 'P0' });
+  assert.equal(l.priority, P.CRITICAL);
+  assert.equal(l.neverDuck, true);
+  assert.equal(lineFromTemplate({ variants: ['b'], priority: 'P3' }).priority, P.LOW);
+});

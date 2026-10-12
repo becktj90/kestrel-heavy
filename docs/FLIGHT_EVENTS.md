@@ -2,6 +2,8 @@
 
 Shared, typed stream of what actually happened in a flight. Consumers: narration director (captions now, voice later) and the upcoming SFX system. Subscribers are output-only.
 
+Narration lines carry `{ channel, variants, priority, neverDuck, tags }`; `lineFromTemplate()` maps style-guide P0–P3 templates (P0 = critical + neverDuck).
+
 Event shape: `{ type, cat, t, seq, payload }`. `t` = game seconds (mission `nowSec`), `seq` = global emit order. Unknown types are rejected (`strict`) or dropped and counted.
 
 Publishers today: `mission.js` (callout beats, aborts, flight begin/end) and `voice.js` (`radio.line` mirror). Arcade numbers are cosmetic, so nothing is spoken numerically until the M3 sim publishes the same ids with `source: "sim"`.
