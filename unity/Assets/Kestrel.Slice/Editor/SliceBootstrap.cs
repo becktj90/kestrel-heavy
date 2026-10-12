@@ -26,7 +26,20 @@ namespace Kestrel.Slice.Editor
         public const string ScenePath = "Assets/Scenes/Slice.unity";
         static readonly string[] DataFiles = { "propellants", "engines", "materials", "payloads", "presets" };
 
-        static SliceBootstrap() { EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll(); }; }
+        static SliceBootstrap()
+        {
+            // Shell Design screen = the real designer (design panel, pad, vehicle, framing). ShellSetup builds the scene.
+            global::Kestrel.Game.Editor.ShellSetup.PopulateScreen = screen =>
+            {
+                if (screen != global::Kestrel.Game.Shell.AppScreen.Design) return false;
+                var go = new GameObject("Design");
+                go.AddComponent<ShellDesignHost>();
+                var app = go.AddComponent<SliceApp>();
+                app.PanelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/Resources/UI/KH_PanelSettings.asset");
+                return true;
+            };
+EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll(); };
+        }
 
         [MenuItem("Kestrel/Setup Project (idempotent)")]
         public static void EnsureAll()

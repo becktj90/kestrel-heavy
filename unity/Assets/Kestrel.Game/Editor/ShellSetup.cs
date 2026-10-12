@@ -27,6 +27,11 @@ namespace Kestrel.Game.Editor
         public const string TokensPath = "Assets/Kestrel.Game/Shell/UI/KH_Tokens.uss";
         public const string ThemePath = "Assets/Kestrel.Game/Shell/UI/KH_Theme.tss";
 
+        /// <summary>Optional content provider for a screen scene (called with the new scene active). Return true
+        /// when it populated the screen, so no ScreenStub is added. Kestrel.Slice.Editor registers the real Design
+        /// screen (SliceApp) here; this assembly cannot reference Kestrel.Slice directly.</summary>
+        public static System.Func<AppScreen, bool> PopulateScreen;
+
         static ShellSetup() { EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll(); }; }
 
         [MenuItem("Kestrel/Setup Shell (U2)")]
@@ -108,8 +113,11 @@ namespace Kestrel.Game.Editor
             {
                 string path = $"{SceneDir}/{SceneFlow.SceneNames[i]}.unity";
                 var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-                var stub = new GameObject(SceneFlow.SceneNames[i]).AddComponent<ScreenStub>();
-                stub.Kind = (AppScreen)i;
+                if (PopulateScreen == null || !PopulateScreen((AppScreen)i))
+                {
+                    var stub = new GameObject(SceneFlow.SceneNames[i]).AddComponent<ScreenStub>();
+                    stub.Kind = (AppScreen)i;
+                }
                 EditorSceneManager.SaveScene(s, path);
             }
         }
