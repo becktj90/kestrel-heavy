@@ -17,6 +17,10 @@ namespace Kestrel.Kit
         public static int PadDrawCalls(int q) => Pick(q, 60, 110, 160);
         /// <summary>Visible pad triangles per frame.</summary>
         public static int PadTriangles(int q) => Pick(q, 150_000, 300_000, 500_000);
+        /// <summary>Realtime (per-pixel) lights the pad may add on top of the sun. Everything else is emissive-only.</summary>
+        public static int PadRealtimeLights(int q) => Pick(q, 0, 2, 4);
+        /// <summary>Of those, how many may cast shadows.</summary>
+        public static int PadShadowedLights(int q) => Pick(q, 0, 0, 1);
         /// <summary>Max instances per RenderMeshInstanced batch (Unity caps at 1023 for the matrix path).</summary>
         public const int MaxInstancesPerBatch = 1023;
 
