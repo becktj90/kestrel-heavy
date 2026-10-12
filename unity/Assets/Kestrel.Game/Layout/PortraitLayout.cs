@@ -93,6 +93,43 @@ namespace Kestrel.Game.Layout
         /// VISUAL_SPEC device table. Used by tests and the editor preview harness.</summary>
         public static RectPx SafeFromInsets(double widthPt, double heightPt, double topPt, double bottomPt, double dpr)
             => new RectPx(0, bottomPt * dpr, widthPt * dpr, (heightPt - topPt - bottomPt) * dpr);
+
+        /// <summary>Insets of a screen-space content rect (bottom-left origin, px) expressed in panel units.
+        /// Fractions of the screen, so a panel laid out for a render target that is not <paramref name="screenW"/>
+        /// × <paramref name="screenH"/> still covers that screen instead of a corner of it. When the panel's
+        /// display rect is the screen, this matches dividing by the Scale-With-Screen-Size scale.</summary>
+        public static PanelEdgeInsets MapContentToPanel(double screenW, double screenH, RectPx content, double panelW, double panelH)
+        {
+            if (screenW <= 0 || screenH <= 0 || panelW <= 0 || panelH <= 0)
+                return new PanelEdgeInsets(0, 0, 0, 0);
+            double left = content.X / screenW * panelW;
+            double right = (screenW - content.XMax) / screenW * panelW;
+            double bottom = content.Y / screenH * panelH;
+            double top = (screenH - content.YMax) / screenH * panelH;
+            return new PanelEdgeInsets(Math.Max(0, left), Math.Max(0, top), Math.Max(0, right), Math.Max(0, bottom));
+        }
+
+        /// <summary>Largest font size in [<paramref name="minFont"/>, <paramref name="maxFont"/>] whose text,
+        /// measured at <paramref name="textWidthAtMax"/> when drawn at <paramref name="maxFont"/>, fits
+        /// <paramref name="available"/>. Linear in font size (dynamic UI Toolkit fonts).</summary>
+        public static double FitFontSize(double available, double maxFont, double minFont, double textWidthAtMax)
+        {
+            if (available <= 0 || textWidthAtMax <= 0 || maxFont <= 0 || double.IsNaN(available) || double.IsNaN(textWidthAtMax))
+                return minFont;
+            if (textWidthAtMax <= available) return maxFont;
+            double fit = maxFont * available / textWidthAtMax;
+            return fit < minFont ? minFont : fit;
+        }
+    }
+
+    /// <summary>Panel-space insets (left, top, right, bottom), same edge order as a UI Toolkit absolute element.</summary>
+    public readonly struct PanelEdgeInsets
+    {
+        public readonly double Left, Top, Right, Bottom;
+        public PanelEdgeInsets(double left, double top, double right, double bottom)
+        { Left = left; Top = top; Right = right; Bottom = bottom; }
+        public double Width(double panelW) => Math.Max(0, panelW - Left - Right);
+        public double Height(double panelH) => Math.Max(0, panelH - Top - Bottom);
     }
 
     /// <summary>VISUAL_SPEC §4: atmo→vacuum blend and the themed fill colour behind everything.</summary>
