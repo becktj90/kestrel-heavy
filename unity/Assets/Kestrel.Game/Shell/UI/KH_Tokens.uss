@@ -1,0 +1,82 @@
+/* Kestrel Heavy UI tokens (U2). Units are iOS points: the shell PanelSettings use
+   ConstantPhysicalSize at 160 dpi, so 1 USS px = 1 pt on every device.
+   Spacing/touch values come from docs/VISUAL_SPEC.md §5 (sideMarginPt 8, minTouchPt 44).
+   Colours: livery defaults from web/js/vehicle/design.js (#f2f2f2 / #1a3c6e) and the noon wash in
+   data/tod.json. Art owns final palette/typography (plan §4); change tokens here, not per screen. */
+
+:root {
+    --kh-space-1: 4px;
+    --kh-space-2: 8px;            /* = sideMarginPt */
+    --kh-space-3: 12px;
+    --kh-space-4: 16px;
+    --kh-space-6: 24px;
+    --kh-touch-min: 44px;         /* = minTouchPt */
+    --kh-radius: 10px;
+
+    --kh-color-ink: #f2f2f2;      /* livery.primary default */
+    --kh-color-accent: #1a3c6e;   /* livery.accent default */
+    --kh-color-accent-hi: #2a5a8c;/* noon wash.near */
+    --kh-color-sky: #6fb4e8;      /* noon wash.horizon */
+    --kh-color-space: #010105;    /* noon wash.space */
+    --kh-color-panel: rgba(1, 1, 5, 0.62);
+    --kh-color-warn: #f6c888;
+    --kh-color-danger: #c45a48;
+
+    --kh-font-title: 28px;
+    --kh-font-body: 17px;         /* iOS body */
+    --kh-font-caption: 13px;
+}
+
+.kh-root {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0); /* themed fill shows through from the camera */
+}
+
+.kh-safe {
+    /* position/insets are set from Screen.safeArea + 8 pt by SafeAreaRoot */
+    flex-direction: column;
+}
+
+.kh-screen {
+    flex-grow: 1;
+    align-items: stretch;
+    justify-content: center;
+    padding: var(--kh-space-4);
+    max-width: 600px;              /* iPad: keep a readable column, centred; fill stays edge to edge */
+    width: 100%;
+    align-self: center;
+}
+
+.kh-title {
+    -unity-font-style: bold;
+    font-size: var(--kh-font-title);
+    color: var(--kh-color-ink);
+    -unity-text-align: middle-center;
+    margin-bottom: var(--kh-space-6);
+    letter-spacing: 2px;
+}
+
+.kh-button {
+    min-height: var(--kh-touch-min);
+    min-width: var(--kh-touch-min);
+    margin: var(--kh-space-2) 0;
+    padding: var(--kh-space-2) var(--kh-space-4);
+    border-radius: var(--kh-radius);
+    border-width: 0;
+    background-color: var(--kh-color-accent);
+    color: var(--kh-color-ink);
+    font-size: var(--kh-font-body);
+    -unity-font-style: bold;
+}
+
+.kh-button:hover { background-color: var(--kh-color-accent-hi); }
+.kh-button:active { background-color: var(--kh-color-accent-hi); scale: 0.98 0.98; }
+.kh-button:focus { border-width: 2px; border-color: var(--kh-color-sky); }
+
+.kh-panel {
+    background-color: var(--kh-color-panel);
+    border-radius: var(--kh-radius);
+    padding: var(--kh-space-3);
+}
+
+.kh-caption { font-size: var(--kh-font-caption); color: var(--kh-color-ink); opacity: 0.8; }
