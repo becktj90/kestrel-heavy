@@ -46,10 +46,10 @@ namespace Kestrel.Pad
             }
             foreach (var mem in layout.Members)
             {
-                var key = (mem.Kind, mem.Material);
+                var key = (BatchKind(mem.Kind), mem.Material);
                 if (!_batches.ContainsKey(key))
                 {
-                    _batches[key] = new InstanceBatch(MeshFor(mem.Kind), MaterialLibrary.Get(mem.Material), mem.Kind == MemberKind.Deck ? DetailSize.Medium : DetailSize.Large);
+                    _batches[key] = new InstanceBatch(MeshFor(key.Item1), MaterialLibrary.Get(mem.Material), mem.Kind == MemberKind.Deck ? DetailSize.Medium : DetailSize.Large);
                     _local[key] = new List<Matrix4x4>();
                 }
                 _local[key].Add(MemberMatrix(mem));
@@ -61,6 +61,14 @@ namespace Kestrel.Pad
             }
             _builtFor = default; RefreshMatrices();
         }
+
+        /// <summary>Kinds that share a mesh share a batch (D2: masts/rails ride the brace mesh, arm braces the chord mesh).</summary>
+        public static MemberKind BatchKind(MemberKind k) => k switch
+        {
+            MemberKind.Mast or MemberKind.Rail => MemberKind.Brace,
+            MemberKind.ArmBrace => MemberKind.ArmChord,
+            _ => k,
+        };
 
         /// <summary>Unit +Y beam stretched from A to B. Pad-local.</summary>
         public static Matrix4x4 MemberMatrix(Member m)

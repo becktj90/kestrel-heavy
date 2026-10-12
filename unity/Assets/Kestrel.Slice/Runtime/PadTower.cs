@@ -34,7 +34,7 @@ namespace Kestrel.Slice
 
         /// <summary>Regenerate for the current design. root sits at the pad origin (anchored by FlightDriver).
         /// Same (h, r, archetype, seed) is a no-op.</summary>
-        public static PadRenderer Apply(Transform root, float h, float r, PadArchetype type, int seed)
+        public static PadRenderer Apply(Transform root, float h, float r, PadArchetype type, int seed, Transform vehicleMesh = null)
         {
             var pad = root.Find("Pad"); if (pad == null) { pad = new GameObject("Pad").transform; pad.SetParent(root, false); }
             var (x, z, _) = Fit(h, r);
@@ -42,7 +42,10 @@ namespace Kestrel.Slice
             var existing = pad.GetComponent<PadRenderer>();
             var L = existing != null ? existing.Layout : null;
             if (L != null && L.Seed == seed && L.Archetype == type && Mathf.Approximately(L.Fit.VehicleHeight, h) && Mathf.Approximately(L.Fit.VehicleRadius, r)) return existing;
-            return PadBuilder.Build(pad, seed, type, new PadFit(h, r, Clearance));
+            var fit = new PadFit(h, r, Clearance);
+            var mf = vehicleMesh != null ? vehicleMesh.GetComponent<MeshFilter>() : null;   // arms end at the real skin (#135)
+            if (mf != null) fit.SkinRadiusAt = VehicleSkin.FromMesh(mf.sharedMesh, pad.worldToLocalMatrix * vehicleMesh.localToWorldMatrix);
+            return PadBuilder.Build(pad, seed, type, fit);
         }
     }
 }

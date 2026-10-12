@@ -21,6 +21,18 @@ namespace Kestrel.Slice
             if (shell.Root != null) { prevDisplay = shell.Root.resolvedStyle.display; shell.Root.style.display = DisplayStyle.None; }
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>DEV ONLY (shot capture via CLI): collapse/expand the Design panel of the live SliceApp.
+        /// Calls SliceApp's private SetDesignCollapsed via SendMessage so SliceApp itself is untouched. Returns false when no SliceApp is loaded.</summary>
+        public static bool SetPanelCollapsed(bool collapsed)
+        {
+            var app = Object.FindAnyObjectByType<SliceApp>();
+            if (app == null) return false;
+            app.SendMessage("SetDesignCollapsed", collapsed, SendMessageOptions.DontRequireReceiver);
+            return true;
+        }
+#endif
+
         void OnDisable()
         {
             if (shellCam != null) shellCam.enabled = true;
