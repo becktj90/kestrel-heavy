@@ -60,5 +60,33 @@ namespace Kestrel.Slice
             m.DisableKeyword("_ALPHATEST_ON");
             return m;
         }
+
+        /// <summary>Additive core material with an HDR base colour (bloom picks it up on High/Ultra; on LDR presets
+        /// additive over the plume body still saturates to white).</summary>
+        public static Material CoreMaterial(Material template, bool hdr)
+        {
+            var m = PlumeMaterial(template); if (m == null) return null;
+            m.name = "KH_PlumeCore (soft, additive HDR)";
+            if (m.HasProperty("_Blend")) m.SetFloat("_Blend", 2);            // URP: Additive
+            m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            m.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+            var c = new Color(1f, 0.96f, 0.85f) * (hdr ? 4f : 1.5f); c.a = 1f;
+            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c); else m.color = c;
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 2;   // over the body
+            return m;
+        }
+
+        /// <summary>Alpha-blended cloud material with soft-particle depth fade OFF: the fade was erasing the cloud
+        /// where it sits on the deck (distance ~0 to the depth buffer).</summary>
+        public static Material CloudMaterial(Material template)
+        {
+            var m = PlumeMaterial(template); if (m == null) return null;
+            m.name = "KH_GroundCloud (soft)";
+            if (m.HasProperty("_SoftParticlesEnabled")) m.SetFloat("_SoftParticlesEnabled", 0);
+            m.DisableKeyword("_SOFTPARTICLES_ON");
+            if (m.HasProperty("_CameraFadingEnabled")) m.SetFloat("_CameraFadingEnabled", 0);
+            m.DisableKeyword("_FADING_ON");
+            return m;
+        }
     }
 }

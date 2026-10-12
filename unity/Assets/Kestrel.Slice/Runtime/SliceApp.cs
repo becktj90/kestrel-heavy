@@ -123,6 +123,7 @@ namespace Kestrel.Slice
             var mr = rocketGO.AddComponent<MeshRenderer>();
             if (bodyMat != null) { var m = new Material(bodyMat); ColorUtility.TryParseHtmlString(design.liveryPrimary, out var col); m.color = col; mr.sharedMaterial = m; }
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, Mathf.Max(1f, Mathf.Sqrt(design.stages[0].engineCount) * r.exitDiameter), plumeMat);
+            flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
             PadTower.Apply(tower, r.height, r.mesh.bounds.extents.x);
