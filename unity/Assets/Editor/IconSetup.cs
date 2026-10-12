@@ -27,7 +27,7 @@ namespace KestrelHeavy.EditorTools
                     throw new Exception($"Icon must be 1024x1024, got {tex.width}x{tex.height}");
 
                 // Default icon (fallback for any slot not set below).
-                PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Unknown, new[] { tex });
+                PlayerSettings.SetIcons(NamedBuildTarget.iOS, new[] { tex }, IconKind.Any);
                 Debug.Log($"[IconSetup] Default icon -> {IconPath}");
 
                 var target = NamedBuildTarget.iOS;
