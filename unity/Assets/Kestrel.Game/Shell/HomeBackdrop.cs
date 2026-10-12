@@ -19,6 +19,20 @@ namespace Kestrel.Game.Shell
         static readonly Color Ground = new Color32(0x14, 0x18, 0x24, 255);
         static readonly Color Stack = new Color32(0x06, 0x08, 0x12, 255);
 
+        /// <summary>Panel-y the stack must stay below (bottom of the title block + gap). Set by the Home
+        /// screen from the subtitle's live rect; NaN = fall back to 42% of the height.</summary>
+        public float ArtTopY = float.NaN;
+        public const float FallbackArtTop = 0.42f;
+
+        /// <summary>Stack unit so the tallest point (core + fairing = 10.6 u above the deck) stays below artTop,
+        /// and the tower/deck (6.4 u wide) fits the width. Pure, for tests.</summary>
+        public static float StackUnit(float W, float H, float artTop)
+        {
+            float deck = Horizon * H;
+            float room = Mathf.Max(0f, deck - artTop);
+            return Mathf.Max(0f, Mathf.Min(W / 10f, room / 10.6f));
+        }
+
         public HomeBackdrop()
         {
             name = "home-backdrop";
@@ -49,8 +63,9 @@ namespace Kestrel.Game.Shell
             Box(p, 0, hy, W, H - hy, Ground);
 
             // Sized from the smaller of width/height so the stack keeps proportion on every device.
-            float u = Mathf.Min(W / 10f, H / 18f);
-            float cx = W * 0.5f, deck = hy + u * 0.3f;
+            float artTop = float.IsNaN(ArtTopY) ? FallbackArtTop * H : ArtTopY - r.y;
+            float u = StackUnit(W, H, artTop);   // never overlaps the title block
+            float cx = W * 0.5f, deck = hy;
             Box(p, cx - 3.2f * u, deck, 6.4f * u, 0.5f * u, Stack);
             float coreH = 9f * u, coreW = 1.1f * u, boosterW = 0.9f * u, boosterH = 6.4f * u;
             Box(p, cx - coreW / 2, deck - coreH, coreW, coreH, Stack);
