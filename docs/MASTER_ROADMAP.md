@@ -34,6 +34,11 @@ graph LR
   H1 --> H4[H4 Goals/modes/advisor] --> U8
   H1 --> H5[H5 Streaks/social/wellbeing] --> U9
   H4 --> H6[H6 Balance sim + playtest] --> U9
+  K1[K1 Timeline spec] --> K2[K2 MissionEvent schema] --> K3[K3 Generator]
+  K3 --> K4[K4 Designer preview] --> U3
+  K3 --> K5[K5 Live tracker] --> U4
+  K2 --> K6[K6 Subscribers] --> U7
+  K5 --> K7[K7 Replay/a11y/calibration] --> U9
 ```
 
 ## Critical path
@@ -60,6 +65,9 @@ U1 ∥ U2 → U3 → U4 → U7 (audio/narrator/music) → U8 → U9. X6 (privacy
 ## Engagement H1–H6
 See ENGAGEMENT_SPEC.md and UNITY_SHIP_PLAN §8. 1.0: H2, H3, H4 (campaign/sandbox/daily/weekly/12 lab challenges, advisor, PBs, Next-up), H5 (streaks, calm mode, Game Center boards), H6 playtests. 1.1: contract rush, failure investigation, more lab, A/B flip polish.
 
+## Launch Timeline K1–K7
+See MISSION_EVENTS.md and UNITY_SHIP_PLAN §9. All 1.0 except K7 achievements breadth (1.1). K2/K3 join the U1 critical path (one event schema before U3).
+
 ## Risk register
 | # | Risk | L/I | Mitigation | Owner |
 |---|------|-----|-----------|-------|
@@ -75,6 +83,8 @@ See ENGAGEMENT_SPEC.md and UNITY_SHIP_PLAN §8. 1.0: H2, H3, H4 (campaign/sandbo
 | R10 | Scope creep from "every topic" brief | H/M | 1.0/1.1/later cut above; X specs are docs first | Kestrel Arcade |
 | R12 | Engagement features drift into dark patterns | L/H | Ban list + ethics PR checklist; negative-signal metrics | UX, QA |
 | R13 | Predict/success probability too slow on device | M/M | Coarse N runs, Burst, cache per design hash | Gameplay Dev |
+| R14 | Two event schemas creep back (narration vs SFX vs timeline) | M/M | One `MissionEvent`; PR review rule | Gameplay Dev |
+| R15 | Timeline realism reads as copying a real vehicle | L/M | Fictional names, original wording, compressed times | Codex, Physics |
 | R11 | Name trademark conflict | L/H | X6 check, draft for counsel | Marketing |
 
 ## Owners
