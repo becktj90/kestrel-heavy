@@ -72,3 +72,12 @@ Collision rules: Core folders `Astro/`, `Atmo/` (extends `Physics/Atmosphere.cs`
 7. **Accuracy target:** golden vectors for sun/Moon positions against JPL Horizons within 0.1° for 2000–2100, enough?
 8. **Re-entry of decayed stages:** visual re-entry + debris event narration in 2.0, or just a "decayed" status in the tracker?
 9. **Clock:** real current date by default for sky/eclipse, or mission-set date (shared with Env decision 9)?
+
+## 8. Approved extras (DECISIONS #39, #41)
+- **Kármán line:** `asc.karman` `MissionEvent` (sim condition: altitude ≥ 100 km, first crossing), narrator line batch item, Codex link. S2/S6.
+- **Exposure model:** shared with R3 (ENV §9): dark-adapted-eye mode + labelled cinematic assist; one exposure system for ground and orbit.
+- **Near-silence in vacuum:** U7 mixer snapshot driven by `Atmo` dynamic pressure/density — external air SFX fade to zero above ~80 km; only structure-borne engine rumble, pumps, mission audio and music remain.
+- **Spent stages stay in orbit:** stages and fairings that reach orbit become on-rails objects in the S3 propagator, decay under S2 drag, emit `orb.decay.reentry`; cap of tracked objects per save (proposed 64).
+- **Photo Mode space shots:** G7 photo mode (1.1 plan) gets orbit/limb/eclipse presets; 2.0 keeps the capture path (PortraitGameView helpers) for marketing only unless pulled in.
+- **Codex Labs:** Orbit (Ap/Pe, J2 node drift), Moon Phase (S1 ephemeris), Sun-Sync (J2 precession), Exposure (EV/eye adaptation), Wind Shear (R5). Each is a small interactive card driven by Core functions with golden vectors.
+- **Textures (#5 override):** 2.0 ships no on-demand downloads; all space assets ≤ 8 MB inside the IPA with procedural detail and ASTC compression. ODR vs GitHub Releases is a later question for Trevor; no build-config change. (Supersedes the "on-demand" lines in §3.)
