@@ -1,0 +1,42 @@
+[
+ {
+  "concept": "c1-kestrel-booster",
+  "closest": "Solar Smash 2D: Space Game",
+  "phash": 26,
+  "combined": 47
+ },
+ {
+  "concept": "c2-haven-landing",
+  "closest": "Galaxy Attack: Alien Shooter",
+  "phash": 24,
+  "combined": 44
+ },
+ {
+  "concept": "c3-mission-patch",
+  "closest": "Rocket Touchdown",
+  "phash": 24,
+  "combined": 38
+ },
+ {
+  "concept": "c4-gridfin-legs",
+  "closest": "Falcon Lander - SpaceX edition",
+  "phash": 22,
+  "combined": 41
+ },
+ {
+  "concept": "c5-kh-monogram",
+  "closest": "Bacterial Takeover - Idle game",
+  "phash": 18,
+  "combined": 41
+ },
+ {
+  "concept": "c6-ascent-arc",
+  "closest": "Ellipse: Rocket Simulator",
+  "phash": 20,
+  "combined": 39
+ },
+ {
+  "flags": [],
+  "n_refs": 111
+ }
+]
