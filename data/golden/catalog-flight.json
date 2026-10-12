@@ -5,7 +5,7 @@
   "block": "golden-tolerances",
   "note": "Per-quantity absolute and relative bands live in docs/PHYSICS.md. The golden harness reads that block. Regenerate with npm run gen:golden."
  },
- "count": 100,
+ "count": 136,
  "cases": [
   {
    "subject": {
@@ -4965,6 +4965,2982 @@
     "periAlt": -5619976.028962513,
     "apoAlt": 32101.27962817531,
     "period": 2135.4984750880008
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "gg-kerolox-heavy"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 6200000,
+      "thrustVac": 6900000,
+      "ispSL": 265,
+      "ispVac": 304,
+      "propMass": 193893.87195158046,
+      "dryMass": 16575.22423782112,
+      "diameter": 3.6,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 6200000,
+      "thrustVac": 6900000,
+      "ispSL": 265,
+      "ispVac": 304,
+      "propMass": 193893.87195158046,
+      "dryMass": 16635.22423782112,
+      "diameter": 3.6,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 484.5089854072323,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 173,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 3.6
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 193893.87195158046,
+    "diameter": 3.6,
+    "nozzleDiameter": 3.6,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 17205.971049883537,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "ascent",
+   "out": {
+    "outcome": "suborbital",
+    "time": 167.74799975933047,
+    "finalAlt": 63477.95054495148,
+    "finalV": 8368.239490605887,
+    "deltaVExpended": 9177.618127876536,
+    "idealDeltaV": 9325.049312840243,
+    "finalMass": 17119.733223228366,
+    "maxG": 40.041908615571906,
+    "losses": {
+     "gravity": 517.9028303806285,
+     "drag": 40.293965015168276,
+     "steering": 704.6367690931121
+    },
+    "state": {
+     "x": -317564.1837363425,
+     "y": 6433782.414745784,
+     "vx": -8367.387040680418,
+     "vy": -119.44154883988057,
+     "m": 17119.733223228366
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "gg-kerolox-heavy"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 6200000,
+      "thrustVac": 6900000,
+      "ispSL": 265,
+      "ispVac": 304,
+      "propMass": 193893.87195158046,
+      "dryMass": 16575.22423782112,
+      "diameter": 3.6,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 6200000,
+      "thrustVac": 6900000,
+      "ispSL": 265,
+      "ispVac": 304,
+      "propMass": 193893.87195158046,
+      "dryMass": 16635.22423782112,
+      "diameter": 3.6,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 484.5089854072323,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 173,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 3.6
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 193893.87195158046,
+    "diameter": 3.6,
+    "nozzleDiameter": 3.6,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 17205.971049883537,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "staging",
+   "out": {
+    "events": [
+     {
+      "t": 0,
+      "type": "ignition",
+      "stage": 1
+     },
+     {
+      "t": 0.8,
+      "type": "liftoff"
+     },
+     {
+      "t": 83.7739998796679,
+      "type": "burnout",
+      "stage": 1,
+      "alt": 26297.324237103574,
+      "v": 1202.8179750812444
+     },
+     {
+      "t": 83.7739998796679,
+      "type": "separation",
+      "stage": 1,
+      "alt": 26297.324237103574
+     },
+     {
+      "t": 83.7739998796679,
+      "type": "ignition",
+      "stage": 2,
+      "alt": 26297.324237103574
+     },
+     {
+      "t": 167.54799975933048,
+      "type": "burnout",
+      "stage": 2,
+      "alt": 63419.33350862283,
+      "v": 8368.532827586952
+     }
+    ]
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "gg-kerolox-heavy"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 6200000,
+      "thrustVac": 6900000,
+      "ispSL": 265,
+      "ispVac": 304,
+      "propMass": 193893.87195158046,
+      "dryMass": 16575.22423782112,
+      "diameter": 3.6,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 6200000,
+      "thrustVac": 6900000,
+      "ispSL": 265,
+      "ispVac": 304,
+      "propMass": 193893.87195158046,
+      "dryMass": 16635.22423782112,
+      "diameter": 3.6,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 484.5089854072323,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 173,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 3.6
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 193893.87195158046,
+    "diameter": 3.6,
+    "nozzleDiameter": 3.6,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 17205.971049883537,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "drag",
+   "out": {
+    "maxQ": 42142.441061575075,
+    "maxQTime": 58.40000000000029,
+    "dragLoss": 40.293965015168276,
+    "sample": {
+     "t": 58.000000000000284,
+     "alt": 10838.75289898552,
+     "vrel": 475.62074047911636,
+     "stage": 1,
+     "dragForce": 188816.25150593085,
+     "dynamicPressure": 42114.61201448996,
+     "cd": 0.4404652840879693
+    },
+    "machPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 524138.6141040817,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    },
+    "nozzleMachPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 524138.6141040817,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "gg-kerolox-heavy"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 6200000,
+      "thrustVac": 6900000,
+      "ispSL": 265,
+      "ispVac": 304,
+      "propMass": 193893.87195158046,
+      "dryMass": 16575.22423782112,
+      "diameter": 3.6,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 6200000,
+      "thrustVac": 6900000,
+      "ispSL": 265,
+      "ispVac": 304,
+      "propMass": 193893.87195158046,
+      "dryMass": 16635.22423782112,
+      "diameter": 3.6,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 484.5089854072323,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 173,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 3.6,
+    "r": [
+     -317564.1837363425,
+     6433782.414745784,
+     0
+    ],
+    "v": [
+     -8367.387040680418,
+     -119.44154883988057,
+     0
+    ]
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 193893.87195158046,
+    "diameter": 3.6,
+    "nozzleDiameter": 3.6,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 17205.971049883537,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "orbit",
+   "out": {
+    "a": 7418514.880957669,
+    "e": 0.13618757336981077,
+    "i": 0,
+    "energy": -26865245.146515362,
+    "h": 53871877957.66299,
+    "periapsis": 6408205.341312213,
+    "apoapsis": 8428824.420603124,
+    "periAlt": 30068.34131221287,
+    "apoAlt": 2050687.4206031244,
+    "period": 6358.965060847344
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-kerolox-vac"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 2200000,
+      "ispSL": 0,
+      "ispVac": 352,
+      "propMass": 69064.90699713114,
+      "dryMass": 5557.920814870901,
+      "diameter": 2.6,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 2200000,
+      "ispSL": 0,
+      "ispVac": 352,
+      "propMass": 69064.90699713114,
+      "dryMass": 5617.920814870901,
+      "diameter": 2.6,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 252.7222794253773,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 222,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.6
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 69064.90699713114,
+    "diameter": 2.6,
+    "nozzleDiameter": 2.6,
+    "liftoffTWR": 1.5000000000000002,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 28791.007547283505,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "ascent",
+   "out": {
+    "outcome": "suborbital",
+    "time": 214.5672592325472,
+    "finalAlt": 85126.2131163096,
+    "finalV": 9316.523215404279,
+    "deltaVExpended": 10171.488140607435,
+    "idealDeltaV": 10929.448517198447,
+    "finalMass": 7251.886455017364,
+    "maxG": 30.400717815606466,
+    "losses": {
+     "gravity": 625.9119125368314,
+     "drag": 0,
+     "steering": 668.1283257234483
+    },
+    "state": {
+     "x": -482021.8430808516,
+     "y": 6445263.86619008,
+     "vx": -9306.998637956278,
+     "vy": -421.16644719976347,
+     "m": 7251.886455017364
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-kerolox-vac"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 2200000,
+      "ispSL": 0,
+      "ispVac": 352,
+      "propMass": 69064.90699713114,
+      "dryMass": 5557.920814870901,
+      "diameter": 2.6,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 2200000,
+      "ispSL": 0,
+      "ispVac": 352,
+      "propMass": 69064.90699713114,
+      "dryMass": 5617.920814870901,
+      "diameter": 2.6,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 252.7222794253773,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 222,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.6
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 69064.90699713114,
+    "diameter": 2.6,
+    "nozzleDiameter": 2.6,
+    "liftoffTWR": 1.5000000000000002,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 28791.007547283505,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "staging",
+   "out": {
+    "events": [
+     {
+      "t": 0,
+      "type": "ignition",
+      "stage": 1
+     },
+     {
+      "t": 0.8,
+      "type": "liftoff"
+     },
+     {
+      "t": 108.36725923255183,
+      "type": "burnout",
+      "stage": 1,
+      "alt": 40466.277168547735,
+      "v": 1524.7774168670273
+     },
+     {
+      "t": 108.36725923255183,
+      "type": "separation",
+      "stage": 1,
+      "alt": 40466.277168547735
+     },
+     {
+      "t": 108.36725923255183,
+      "type": "ignition",
+      "stage": 2,
+      "alt": 40466.277168547735
+     },
+     {
+      "t": 214.5672592325472,
+      "type": "cutoff",
+      "stage": 2,
+      "alt": 85126.2131163096
+     }
+    ]
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-kerolox-vac"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 2200000,
+      "ispSL": 0,
+      "ispVac": 352,
+      "propMass": 69064.90699713114,
+      "dryMass": 5557.920814870901,
+      "diameter": 2.6,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 2200000,
+      "ispSL": 0,
+      "ispVac": 352,
+      "propMass": 69064.90699713114,
+      "dryMass": 5617.920814870901,
+      "diameter": 2.6,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 252.7222794253773,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 222,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.6
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 69064.90699713114,
+    "diameter": 2.6,
+    "nozzleDiameter": 2.6,
+    "liftoffTWR": 1.5000000000000002,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 28791.007547283505,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "drag",
+   "out": {
+    "maxQ": 0,
+    "maxQTime": 0,
+    "dragLoss": 0,
+    "sample": {
+     "t": 0,
+     "alt": 0,
+     "vrel": 5.684341886080802e-14,
+     "stage": 1,
+     "dragForce": 3.152275135527759e-27,
+     "dynamicPressure": 1.9790933720115076e-27,
+     "cd": 0.3
+    },
+    "machPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 273393.28945552406,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    },
+    "nozzleMachPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 273393.28945552406,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-kerolox-vac"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 2200000,
+      "ispSL": 0,
+      "ispVac": 352,
+      "propMass": 69064.90699713114,
+      "dryMass": 5557.920814870901,
+      "diameter": 2.6,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 2200000,
+      "ispSL": 0,
+      "ispVac": 352,
+      "propMass": 69064.90699713114,
+      "dryMass": 5617.920814870901,
+      "diameter": 2.6,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 252.7222794253773,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 222,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.6,
+    "r": [
+     -482021.8430808516,
+     6445263.86619008,
+     0
+    ],
+    "v": [
+     -9306.998637956278,
+     -421.16644719976347,
+     0
+    ]
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 69064.90699713114,
+    "diameter": 2.6,
+    "nozzleDiameter": 2.6,
+    "liftoffTWR": 1.5000000000000002,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 28791.007547283505,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "orbit",
+   "out": {
+    "a": 10906874.50388024,
+    "e": 0.40829888316098206,
+    "i": 0,
+    "energy": -18272899.429538384,
+    "h": 60189073451.022934,
+    "periapsis": 6453609.825168949,
+    "apoapsis": 15360139.182591531,
+    "periAlt": 75472.82516894862,
+    "apoAlt": 8982002.182591531,
+    "period": 11336.042218045484
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-methalox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 2100000,
+      "thrustVac": 2400000,
+      "ispSL": 311,
+      "ispVac": 348,
+      "propMass": 65444.66636783011,
+      "dryMass": 5830.698635469427,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 2100000,
+      "thrustVac": 2400000,
+      "ispSL": 311,
+      "ispVac": 348,
+      "propMass": 65444.66636783011,
+      "dryMass": 5890.698635469427,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 192,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 1.6
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 65444.66636783011,
+    "diameter": 2,
+    "nozzleDiameter": 1.6,
+    "liftoffTWR": 1.5000000000000002,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 21231.787357956146,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "ascent",
+   "out": {
+    "outcome": "suborbital",
+    "time": 186.31995185645903,
+    "finalAlt": 80668.48318874277,
+    "finalV": 9441.584618589703,
+    "deltaVExpended": 10401.853250983548,
+    "idealDeltaV": 10525.881552452967,
+    "finalMass": 6040.238445780298,
+    "maxG": 40.225145513053036,
+    "losses": {
+     "gravity": 608.6726819530878,
+     "drag": 25.292222708126467,
+     "steering": 779.1801461882661
+    },
+    "state": {
+     "x": -397546.0208575718,
+     "y": 6446559.193164156,
+     "vx": -9437.193164634728,
+     "vy": -287.9327757676514,
+     "m": 6040.238445780298
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-methalox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 2100000,
+      "thrustVac": 2400000,
+      "ispSL": 311,
+      "ispVac": 348,
+      "propMass": 65444.66636783011,
+      "dryMass": 5830.698635469427,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 2100000,
+      "thrustVac": 2400000,
+      "ispSL": 311,
+      "ispVac": 348,
+      "propMass": 65444.66636783011,
+      "dryMass": 5890.698635469427,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 192,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 1.6
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 65444.66636783011,
+    "diameter": 2,
+    "nozzleDiameter": 1.6,
+    "liftoffTWR": 1.5000000000000002,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 21231.787357956146,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "staging",
+   "out": {
+    "events": [
+     {
+      "t": 0,
+      "type": "ignition",
+      "stage": 1
+     },
+     {
+      "t": 0.8,
+      "type": "liftoff"
+     },
+     {
+      "t": 93.05997592823091,
+      "type": "burnout",
+      "stage": 1,
+      "alt": 35860.497203432955,
+      "v": 1403.2784264417808
+     },
+     {
+      "t": 93.05997592823091,
+      "type": "separation",
+      "stage": 1,
+      "alt": 35860.497203432955
+     },
+     {
+      "t": 93.05997592823091,
+      "type": "ignition",
+      "stage": 2,
+      "alt": 35860.497203432955
+     },
+     {
+      "t": 186.11995185645904,
+      "type": "burnout",
+      "stage": 2,
+      "alt": 80609.87139843777,
+      "v": 9441.665173407573
+     }
+    ]
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-methalox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 2100000,
+      "thrustVac": 2400000,
+      "ispSL": 311,
+      "ispVac": 348,
+      "propMass": 65444.66636783011,
+      "dryMass": 5830.698635469427,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 2100000,
+      "thrustVac": 2400000,
+      "ispSL": 311,
+      "ispVac": 348,
+      "propMass": 65444.66636783011,
+      "dryMass": 5890.698635469427,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 192,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 1.6
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 65444.66636783011,
+    "diameter": 2,
+    "nozzleDiameter": 1.6,
+    "liftoffTWR": 1.5000000000000002,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 21231.787357956146,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "drag",
+   "out": {
+    "maxQ": 41502.655749731784,
+    "maxQTime": 55.60000000000025,
+    "dragLoss": 25.292222708126467,
+    "sample": {
+     "t": 56.000000000000256,
+     "alt": 10895.18142953515,
+     "vrel": 473.8042710672518,
+     "stage": 1,
+     "dragForce": 57530.12906618331,
+     "dynamicPressure": 41495.86406742839,
+     "cd": 0.4413068445915233
+    },
+    "machPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 161771.1771926178,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    },
+    "nozzleMachPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 103533.5534032754,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-methalox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 2100000,
+      "thrustVac": 2400000,
+      "ispSL": 311,
+      "ispVac": 348,
+      "propMass": 65444.66636783011,
+      "dryMass": 5830.698635469427,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 2100000,
+      "thrustVac": 2400000,
+      "ispSL": 311,
+      "ispVac": 348,
+      "propMass": 65444.66636783011,
+      "dryMass": 5890.698635469427,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 192,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 1.6,
+    "r": [
+     -397546.0208575718,
+     6446559.193164156,
+     0
+    ],
+    "v": [
+     -9437.193164634728,
+     -287.9327757676514,
+     0
+    ]
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 65444.66636783011,
+    "diameter": 2,
+    "nozzleDiameter": 1.6,
+    "liftoffTWR": 1.5000000000000002,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 21231.787357956146,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "orbit",
+   "out": {
+    "a": 11626084.169752056,
+    "e": 0.44532702950261766,
+    "i": 0,
+    "energy": -17142506.280706756,
+    "h": 60951890882.422844,
+    "periapsis": 6448674.641688965,
+    "apoapsis": 16803493.697815146,
+    "periAlt": 70537.64168896526,
+    "apoAlt": 10425356.697815146,
+    "period": 12475.592330199212
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-methalox-vac"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 2550000,
+      "ispSL": 0,
+      "ispVac": 368,
+      "propMass": 79693.23910377648,
+      "dryMass": 6844.970335923601,
+      "diameter": 2.4,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 2550000,
+      "ispSL": 0,
+      "ispVac": 368,
+      "propMass": 79693.23910377648,
+      "dryMass": 6904.970335923601,
+      "diameter": 2.4,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 215.3373268476588,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 231,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.4
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 79693.23910377648,
+    "diameter": 2.4,
+    "nozzleDiameter": 2.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 31186.042739740464,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "ascent",
+   "out": {
+    "outcome": "suborbital",
+    "time": 221.98459717591717,
+    "finalAlt": 88137.59995529894,
+    "finalV": 9266.056325965612,
+    "deltaVExpended": 10123.930021604676,
+    "idealDeltaV": 11246.897144130968,
+    "finalMass": 9653.172672571935,
+    "maxG": 26.548353224731486,
+    "losses": {
+     "gravity": 635.4557932499317,
+     "drag": 0,
+     "steering": 657.5446876163628
+    },
+    "state": {
+     "x": -511976.7817759189,
+     "y": 6445974.478459361,
+     "vx": -9254.515866098585,
+     "vy": -462.31582289263974,
+     "m": 9653.172672571935
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-methalox-vac"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 2550000,
+      "ispSL": 0,
+      "ispVac": 368,
+      "propMass": 79693.23910377648,
+      "dryMass": 6844.970335923601,
+      "diameter": 2.4,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 2550000,
+      "ispSL": 0,
+      "ispVac": 368,
+      "propMass": 79693.23910377648,
+      "dryMass": 6904.970335923601,
+      "diameter": 2.4,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 215.3373268476588,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 231,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.4
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 79693.23910377648,
+    "diameter": 2.4,
+    "nozzleDiameter": 2.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 31186.042739740464,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "staging",
+   "out": {
+    "events": [
+     {
+      "t": 0,
+      "type": "ignition",
+      "stage": 1
+     },
+     {
+      "t": 0.8,
+      "type": "liftoff"
+     },
+     {
+      "t": 112.78459717592229,
+      "type": "burnout",
+      "stage": 1,
+      "alt": 42819.54849276878,
+      "v": 1595.2892863582174
+     },
+     {
+      "t": 112.78459717592229,
+      "type": "separation",
+      "stage": 1,
+      "alt": 42819.54849276878
+     },
+     {
+      "t": 112.78459717592229,
+      "type": "ignition",
+      "stage": 2,
+      "alt": 42819.54849276878
+     },
+     {
+      "t": 221.98459717591717,
+      "type": "cutoff",
+      "stage": 2,
+      "alt": 88137.59995529894
+     }
+    ]
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-methalox-vac"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 2550000,
+      "ispSL": 0,
+      "ispVac": 368,
+      "propMass": 79693.23910377648,
+      "dryMass": 6844.970335923601,
+      "diameter": 2.4,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 2550000,
+      "ispSL": 0,
+      "ispVac": 368,
+      "propMass": 79693.23910377648,
+      "dryMass": 6904.970335923601,
+      "diameter": 2.4,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 215.3373268476588,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 231,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.4
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 79693.23910377648,
+    "diameter": 2.4,
+    "nozzleDiameter": 2.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 31186.042739740464,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "drag",
+   "out": {
+    "maxQ": 0,
+    "maxQTime": 0,
+    "dragLoss": 0,
+    "sample": {
+     "t": 0,
+     "alt": 0,
+     "vrel": 5.684341886080802e-14,
+     "stage": 1,
+     "dragForce": 2.6859622456567887e-27,
+     "dynamicPressure": 1.9790933720115076e-27,
+     "cd": 0.3
+    },
+    "machPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 232950.49515736965,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    },
+    "nozzleMachPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 232950.49515736965,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "sc-methalox-vac"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 2550000,
+      "ispSL": 0,
+      "ispVac": 368,
+      "propMass": 79693.23910377648,
+      "dryMass": 6844.970335923601,
+      "diameter": 2.4,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 2550000,
+      "ispSL": 0,
+      "ispVac": 368,
+      "propMass": 79693.23910377648,
+      "dryMass": 6904.970335923601,
+      "diameter": 2.4,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 215.3373268476588,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 231,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.4,
+    "r": [
+     -511976.7817759189,
+     6445974.478459361,
+     0
+    ],
+    "v": [
+     -9254.515866098585,
+     -462.31582289263974,
+     0
+    ]
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 79693.23910377648,
+    "diameter": 2.4,
+    "nozzleDiameter": 2.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 31186.042739740464,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "orbit",
+   "out": {
+    "a": 10650315.726182431,
+    "e": 0.3937815581912636,
+    "i": 0,
+    "energy": -18713081.003790908,
+    "h": 59891068050.53738,
+    "periapsis": 6456417.804297392,
+    "apoapsis": 14844213.648067467,
+    "periAlt": 78280.80429739226,
+    "apoAlt": 8466076.648067467,
+    "period": 10938.422755924514
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "gg-hydrolox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 2900000,
+      "thrustVac": 3300000,
+      "ispSL": 355,
+      "ispVac": 410,
+      "propMass": 86036.11460736897,
+      "dryMass": 12398.783983740257,
+      "diameter": 2.4,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 2900000,
+      "thrustVac": 3300000,
+      "ispSL": 355,
+      "ispVac": 410,
+      "propMass": 86036.11460736897,
+      "dryMass": 12458.783983740257,
+      "diameter": 2.4,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 215.3373268476588,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 215,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.4
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 86036.11460736897,
+    "diameter": 2.4,
+    "nozzleDiameter": 2.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 26940.363292151967,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "ascent",
+   "out": {
+    "outcome": "suborbital",
+    "time": 209.22657150268367,
+    "finalAlt": 87810.56101818755,
+    "finalV": 9366.396552272396,
+    "deltaVExpended": 10312.97023505653,
+    "idealDeltaV": 10558.647828382655,
+    "finalMass": 13024.228675236815,
+    "maxG": 25.513234593949207,
+    "losses": {
+     "gravity": 626.5248070456694,
+     "drag": 24.319822531270244,
+     "steering": 734.049365129693
+    },
+    "state": {
+     "x": -488506.126359415,
+     "y": 6447467.6909889495,
+     "vx": -9356.575644408005,
+     "vy": -428.8083311820598,
+     "m": 13024.228675236815
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "gg-hydrolox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 2900000,
+      "thrustVac": 3300000,
+      "ispSL": 355,
+      "ispVac": 410,
+      "propMass": 86036.11460736897,
+      "dryMass": 12398.783983740257,
+      "diameter": 2.4,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 2900000,
+      "thrustVac": 3300000,
+      "ispSL": 355,
+      "ispVac": 410,
+      "propMass": 86036.11460736897,
+      "dryMass": 12458.783983740257,
+      "diameter": 2.4,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 215.3373268476588,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 215,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.4
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 86036.11460736897,
+    "diameter": 2.4,
+    "nozzleDiameter": 2.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 26940.363292151967,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "staging",
+   "out": {
+    "events": [
+     {
+      "t": 0,
+      "type": "ignition",
+      "stage": 1
+     },
+     {
+      "t": 0.8,
+      "type": "liftoff"
+     },
+     {
+      "t": 104.82657150268795,
+      "type": "burnout",
+      "stage": 1,
+      "alt": 40692.77717453148,
+      "v": 1554.6549459603464
+     },
+     {
+      "t": 104.82657150268795,
+      "type": "separation",
+      "stage": 1,
+      "alt": 40692.77717453148
+     },
+     {
+      "t": 104.82657150268795,
+      "type": "ignition",
+      "stage": 2,
+      "alt": 40692.77717453148
+     },
+     {
+      "t": 209.22657150268367,
+      "type": "cutoff",
+      "stage": 2,
+      "alt": 87810.56101818755
+     }
+    ]
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "gg-hydrolox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 2900000,
+      "thrustVac": 3300000,
+      "ispSL": 355,
+      "ispVac": 410,
+      "propMass": 86036.11460736897,
+      "dryMass": 12398.783983740257,
+      "diameter": 2.4,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 2900000,
+      "thrustVac": 3300000,
+      "ispSL": 355,
+      "ispVac": 410,
+      "propMass": 86036.11460736897,
+      "dryMass": 12458.783983740257,
+      "diameter": 2.4,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 215.3373268476588,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 215,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.4
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 86036.11460736897,
+    "diameter": 2.4,
+    "nozzleDiameter": 2.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 26940.363292151967,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "drag",
+   "out": {
+    "maxQ": 38728.99310898974,
+    "maxQTime": 59.400000000000304,
+    "dragLoss": 24.319822531270244,
+    "sample": {
+     "t": 59.0000000000003,
+     "alt": 10838.712529499084,
+     "vrel": 456.06606785819844,
+     "stage": 1,
+     "dragForce": 79315.51304264145,
+     "dynamicPressure": 38722.99819732047,
+     "cd": 0.452769117703101
+    },
+    "machPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 232950.49515736965,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    },
+    "nozzleMachPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 232950.49515736965,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "gg-hydrolox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 2900000,
+      "thrustVac": 3300000,
+      "ispSL": 355,
+      "ispVac": 410,
+      "propMass": 86036.11460736897,
+      "dryMass": 12398.783983740257,
+      "diameter": 2.4,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 2900000,
+      "thrustVac": 3300000,
+      "ispSL": 355,
+      "ispVac": 410,
+      "propMass": 86036.11460736897,
+      "dryMass": 12458.783983740257,
+      "diameter": 2.4,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 215.3373268476588,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 215,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2.4,
+    "r": [
+     -488506.126359415,
+     6447467.6909889495,
+     0
+    ],
+    "v": [
+     -9356.575644408005,
+     -428.8083311820598,
+     0
+    ]
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 86036.11460736897,
+    "diameter": 2.4,
+    "nozzleDiameter": 2.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 26940.363292151967,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "orbit",
+   "out": {
+    "a": 11208349.592493718,
+    "e": 0.4239751792355272,
+    "i": 0,
+    "energy": -17781406.553688534,
+    "h": 60535694662.431114,
+    "periapsis": 6456287.565081744,
+    "apoapsis": 15960411.619905692,
+    "periAlt": 78150.56508174445,
+    "apoAlt": 9582274.619905692,
+    "period": 11809.28171340695
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "exp-hydrolox-small"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 22000,
+      "ispSL": 0,
+      "ispVac": 450,
+      "propMass": 467.441858825195,
+      "dryMass": 175.58012553651537,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 22000,
+      "ispSL": 0,
+      "ispVac": 450,
+      "propMass": 467.441858825195,
+      "dryMass": 235.58012553651537,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 193,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.9
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 467.441858825195,
+    "diameter": 2,
+    "nozzleDiameter": 0.9,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 21554.44783643413,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "ascent",
+   "out": {
+    "outcome": "suborbital",
+    "time": 187.7288561074206,
+    "finalAlt": 59940.091097872704,
+    "finalV": 4474.370443925497,
+    "deltaVExpended": 5156.996786845451,
+    "idealDeltaV": 5160.793017842998,
+    "finalMass": 385.11993584738946,
+    "maxG": 5.812762787962462,
+    "losses": {
+     "gravity": 520.9807079242196,
+     "drag": 0,
+     "steering": 575.4914524127876
+    },
+    "state": {
+     "x": -291385.0640856278,
+     "y": 6431479.718956366,
+     "vx": -4473.889467716157,
+     "vy": 65.60411673434216,
+     "m": 385.11993584738946
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "exp-hydrolox-small"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 22000,
+      "ispSL": 0,
+      "ispVac": 450,
+      "propMass": 467.441858825195,
+      "dryMass": 175.58012553651537,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 22000,
+      "ispSL": 0,
+      "ispVac": 450,
+      "propMass": 467.441858825195,
+      "dryMass": 235.58012553651537,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 193,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.9
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 467.441858825195,
+    "diameter": 2,
+    "nozzleDiameter": 0.9,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 21554.44783643413,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "staging",
+   "out": {
+    "events": [
+     {
+      "t": 0,
+      "type": "ignition",
+      "stage": 1
+     },
+     {
+      "t": 0.8,
+      "type": "liftoff"
+     },
+     {
+      "t": 93.76442805371215,
+      "type": "burnout",
+      "stage": 1,
+      "alt": 26462.660789749585,
+      "v": 1159.0417692916633
+     },
+     {
+      "t": 93.76442805371215,
+      "type": "separation",
+      "stage": 1,
+      "alt": 26462.660789749585
+     },
+     {
+      "t": 93.76442805371215,
+      "type": "ignition",
+      "stage": 2,
+      "alt": 26462.660789749585
+     },
+     {
+      "t": 187.5288561074206,
+      "type": "burnout",
+      "stage": 2,
+      "alt": 59886.35602791514,
+      "v": 4474.485935241814
+     }
+    ]
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "exp-hydrolox-small"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 22000,
+      "ispSL": 0,
+      "ispVac": 450,
+      "propMass": 467.441858825195,
+      "dryMass": 175.58012553651537,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 22000,
+      "ispSL": 0,
+      "ispVac": 450,
+      "propMass": 467.441858825195,
+      "dryMass": 235.58012553651537,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 193,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.9
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 467.441858825195,
+    "diameter": 2,
+    "nozzleDiameter": 0.9,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 21554.44783643413,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "drag",
+   "out": {
+    "maxQ": 0,
+    "maxQTime": 0,
+    "dragLoss": 0,
+    "sample": {
+     "t": 0,
+     "alt": 0,
+     "vrel": 5.684341886080802e-14,
+     "stage": 1,
+     "dragForce": 1.865251559483881e-27,
+     "dynamicPressure": 1.9790933720115076e-27,
+     "cd": 0.3
+    },
+    "machPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 161771.1771926178,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    },
+    "nozzleMachPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 32758.663381505106,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "exp-hydrolox-small"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 0,
+      "thrustVac": 22000,
+      "ispSL": 0,
+      "ispVac": 450,
+      "propMass": 467.441858825195,
+      "dryMass": 175.58012553651537,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 0,
+      "thrustVac": 22000,
+      "ispSL": 0,
+      "ispVac": 450,
+      "propMass": 467.441858825195,
+      "dryMass": 235.58012553651537,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 193,
+     "vacuum": true,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.9,
+    "r": [
+     -291385.0640856278,
+     6431479.718956366,
+     0
+    ],
+    "v": [
+     -4473.889467716157,
+     65.60411673434216,
+     0
+    ]
+   },
+   "fixture": {
+    "vacuum": true,
+    "engineCount": 1,
+    "propMass": 467.441858825195,
+    "diameter": 2,
+    "nozzleDiameter": 0.9,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 21554.44783643413,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "orbit",
+   "out": {
+    "a": 3839861.6197701315,
+    "e": 0.678078996856559,
+    "i": 0,
+    "energy": -51902969.59501652,
+    "h": 28754613316.710037,
+    "periapsis": 1236132.1045683986,
+    "apoapsis": 6443591.1349718645,
+    "periAlt": -5142004.895431601,
+    "apoAlt": 65454.13497186452,
+    "period": 2368.0144104061337
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "pf-kerolox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 40000,
+      "thrustVac": 48000,
+      "ispSL": 230,
+      "ispVac": 270,
+      "propMass": 980.7193417688683,
+      "dryMass": 274.1323703795991,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 40000,
+      "thrustVac": 48000,
+      "ispSL": 230,
+      "ispVac": 270,
+      "propMass": 980.7193417688683,
+      "dryMass": 334.1323703795991,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 114,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.45
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 980.7193417688683,
+    "diameter": 2,
+    "nozzleDiameter": 0.45,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 7175.242279719486,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "ascent",
+   "out": {
+    "outcome": "suborbital",
+    "time": 108.39767749577506,
+    "finalAlt": 11723.929559665732,
+    "finalV": 821.0637764215062,
+    "deltaVExpended": 3876.4541217393685,
+    "idealDeltaV": 4117.599837847285,
+    "finalMass": 483.67218069047306,
+    "maxG": 1.5818140277014519,
+    "losses": {
+     "gravity": 205.45864598271416,
+     "drag": 2760.566186636479,
+     "steering": 606.1947584156425
+    },
+    "state": {
+     "x": -64618.75901077646,
+     "y": 6389534.186080941,
+     "vx": -820.7397270464163,
+     "vy": 23.06567578284281,
+     "m": 483.67218069047306
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "pf-kerolox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 40000,
+      "thrustVac": 48000,
+      "ispSL": 230,
+      "ispVac": 270,
+      "propMass": 980.7193417688683,
+      "dryMass": 274.1323703795991,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 40000,
+      "thrustVac": 48000,
+      "ispSL": 230,
+      "ispVac": 270,
+      "propMass": 980.7193417688683,
+      "dryMass": 334.1323703795991,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 114,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.45
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 980.7193417688683,
+    "diameter": 2,
+    "nozzleDiameter": 0.45,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 7175.242279719486,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "staging",
+   "out": {
+    "events": [
+     {
+      "t": 0,
+      "type": "ignition",
+      "stage": 1
+     },
+     {
+      "t": 0.8,
+      "type": "liftoff"
+     },
+     {
+      "t": 54.09883874788726,
+      "type": "burnout",
+      "stage": 1,
+      "alt": 7312.428158936091,
+      "v": 601.9507891961845
+     },
+     {
+      "t": 54.09883874788726,
+      "type": "separation",
+      "stage": 1,
+      "alt": 7312.428158936091
+     },
+     {
+      "t": 54.09883874788726,
+      "type": "ignition",
+      "stage": 2,
+      "alt": 7312.428158936091
+     },
+     {
+      "t": 108.19767749577505,
+      "type": "burnout",
+      "stage": 2,
+      "alt": 11717.325422289781,
+      "v": 839.084874580824
+     }
+    ]
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "pf-kerolox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 40000,
+      "thrustVac": 48000,
+      "ispSL": 230,
+      "ispVac": 270,
+      "propMass": 980.7193417688683,
+      "dryMass": 274.1323703795991,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 40000,
+      "thrustVac": 48000,
+      "ispSL": 230,
+      "ispVac": 270,
+      "propMass": 980.7193417688683,
+      "dryMass": 334.1323703795991,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 114,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.45
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 980.7193417688683,
+    "diameter": 2,
+    "nozzleDiameter": 0.45,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 7175.242279719486,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "drag",
+   "out": {
+    "maxQ": 30187.353583767017,
+    "maxQTime": 108.19767749577505,
+    "dragLoss": 2760.566186636479,
+    "sample": {
+     "t": 108.09883874788802,
+     "alt": 11713.89076244831,
+     "vrel": 429.9970550984563,
+     "stage": 2,
+     "dragForce": 44627.098994947795,
+     "dynamicPressure": 30164.08664866129,
+     "cd": 0.47093243588812705
+    },
+    "machPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 161771.1771926178,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    },
+    "nozzleMachPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 8189.665845376277,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "pf-kerolox"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 40000,
+      "thrustVac": 48000,
+      "ispSL": 230,
+      "ispVac": 270,
+      "propMass": 980.7193417688683,
+      "dryMass": 274.1323703795991,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 40000,
+      "thrustVac": 48000,
+      "ispSL": 230,
+      "ispVac": 270,
+      "propMass": 980.7193417688683,
+      "dryMass": 334.1323703795991,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 114,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.45,
+    "r": [
+     -64618.75901077646,
+     6389534.186080941,
+     0
+    ],
+    "v": [
+     -820.7397270464163,
+     23.06567578284281,
+     0
+    ]
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 980.7193417688683,
+    "diameter": 2,
+    "nozzleDiameter": 0.45,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 7175.242279719486,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "orbit",
+   "out": {
+    "a": 3212288.154299726,
+    "e": 0.9892087995279804,
+    "i": 0,
+    "energy": -62043070.648326434,
+    "h": 5242654068.492985,
+    "periapsis": 34664.4454469421,
+    "apoapsis": 6389911.86315251,
+    "periAlt": -6343472.554553058,
+    "apoAlt": 11774.863152509555,
+    "period": 1811.89374109365
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "srm-mid"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 1800000,
+      "thrustVac": 2000000,
+      "ispSL": 250,
+      "ispVac": 278,
+      "propMass": 55989.176948183725,
+      "dryMass": 5089.025925336535,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 1800000,
+      "thrustVac": 2000000,
+      "ispSL": 250,
+      "ispVac": 278,
+      "propMass": 55989.176948183725,
+      "dryMass": 5149.025925336535,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 158,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 55989.176948183725,
+    "diameter": 2,
+    "nozzleDiameter": 2,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 14280.38126352881,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "ascent",
+   "out": {
+    "outcome": "suborbital",
+    "time": 152.84042086905254,
+    "finalAlt": 56968.85629239958,
+    "finalV": 7432.068628017225,
+    "deltaVExpended": 8222.852831658973,
+    "idealDeltaV": 8341.810348148052,
+    "finalMass": 5298.565735647411,
+    "maxG": 37.66117822735718,
+    "losses": {
+     "gravity": 492.70492300048295,
+     "drag": 49.7588808188344,
+     "steering": 699.5124117247993
+    },
+    "state": {
+     "x": -260617.9056669399,
+     "y": 6429826.256512265,
+     "vx": -7432.068485647271,
+     "vy": -1.4547187054402697,
+     "m": 5298.565735647411
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "srm-mid"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 1800000,
+      "thrustVac": 2000000,
+      "ispSL": 250,
+      "ispVac": 278,
+      "propMass": 55989.176948183725,
+      "dryMass": 5089.025925336535,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 1800000,
+      "thrustVac": 2000000,
+      "ispSL": 250,
+      "ispVac": 278,
+      "propMass": 55989.176948183725,
+      "dryMass": 5149.025925336535,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 158,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 55989.176948183725,
+    "diameter": 2,
+    "nozzleDiameter": 2,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 14280.38126352881,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "staging",
+   "out": {
+    "events": [
+     {
+      "t": 0,
+      "type": "ignition",
+      "stage": 1
+     },
+     {
+      "t": 0.8,
+      "type": "liftoff"
+     },
+     {
+      "t": 76.320210434525,
+      "type": "burnout",
+      "stage": 1,
+      "alt": 23020.281356284395,
+      "v": 1092.578678694298
+     },
+     {
+      "t": 76.320210434525,
+      "type": "separation",
+      "stage": 1,
+      "alt": 23020.281356284395
+     },
+     {
+      "t": 76.320210434525,
+      "type": "ignition",
+      "stage": 2,
+      "alt": 23020.281356284395
+     },
+     {
+      "t": 152.64042086905255,
+      "type": "burnout",
+      "stage": 2,
+      "alt": 56908.925336857326,
+      "v": 7432.542332272774
+     }
+    ]
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "srm-mid"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 1800000,
+      "thrustVac": 2000000,
+      "ispSL": 250,
+      "ispVac": 278,
+      "propMass": 55989.176948183725,
+      "dryMass": 5089.025925336535,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 1800000,
+      "thrustVac": 2000000,
+      "ispSL": 250,
+      "ispVac": 278,
+      "propMass": 55989.176948183725,
+      "dryMass": 5149.025925336535,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 158,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 55989.176948183725,
+    "diameter": 2,
+    "nozzleDiameter": 2,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 14280.38126352881,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "drag",
+   "out": {
+    "maxQ": 43577.52707388731,
+    "maxQTime": 56.000000000000256,
+    "dragLoss": 49.7588808188344,
+    "sample": {
+     "t": 56.000000000000256,
+     "alt": 10936.34160377644,
+     "vrel": 486.8124539178057,
+     "stage": 1,
+     "dragForce": 59373.64634900332,
+     "dynamicPressure": 43577.52707388731,
+     "cd": 0.4336918563465881
+    },
+    "machPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 161771.1771926178,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    },
+    "nozzleMachPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 161771.1771926178,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "srm-mid"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 1800000,
+      "thrustVac": 2000000,
+      "ispSL": 250,
+      "ispVac": 278,
+      "propMass": 55989.176948183725,
+      "dryMass": 5089.025925336535,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 1800000,
+      "thrustVac": 2000000,
+      "ispSL": 250,
+      "ispVac": 278,
+      "propMass": 55989.176948183725,
+      "dryMass": 5149.025925336535,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 158,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 2,
+    "r": [
+     -260617.9056669399,
+     6429826.256512265,
+     0
+    ],
+    "v": [
+     -7432.068485647271,
+     -1.4547187054402697,
+     0
+    ]
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 55989.176948183725,
+    "diameter": 2,
+    "nozzleDiameter": 2,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 14280.38126352881,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "orbit",
+   "out": {
+    "a": 5806484.993667486,
+    "e": 0.11543824870664328,
+    "i": 0,
+    "energy": -34323729.608765975,
+    "h": 47787288214.95451,
+    "periapsis": 5136194.534857105,
+    "apoapsis": 6476775.452477865,
+    "periAlt": -1241942.4651428945,
+    "apoAlt": 98638.45247786492,
+    "period": 4403.327042786143
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "hybrid-small"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 25000,
+      "thrustVac": 30000,
+      "ispSL": 220,
+      "ispVac": 250,
+      "propMass": 589.331378276402,
+      "dryMass": 155.66222738310125,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 25000,
+      "thrustVac": 30000,
+      "ispSL": 220,
+      "ispVac": 250,
+      "propMass": 589.331378276402,
+      "dryMass": 215.66222738310125,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 102,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.4
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 589.331378276402,
+    "diameter": 2,
+    "nozzleDiameter": 0.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 5686.6784728621715,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "ascent",
+   "out": {
+    "outcome": "suborbital",
+    "time": 96.52277601290567,
+    "finalAlt": 8819.253105599433,
+    "finalV": 684.2442927861186,
+    "deltaVExpended": 3194.1455483954887,
+    "idealDeltaV": 3399.440060192449,
+    "finalMass": 365.2020376939754,
+    "maxG": 1.61349996679036,
+    "losses": {
+     "gravity": 164.02700200070802,
+     "drag": 2287.8008179588096,
+     "steering": 600.3349397039188
+    },
+    "state": {
+     "x": -53500.21850681683,
+     "y": 6386732.177389658,
+     "vx": -683.9714762560168,
+     "vy": 19.32024530229499,
+     "m": 365.2020376939754
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "hybrid-small"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 25000,
+      "thrustVac": 30000,
+      "ispSL": 220,
+      "ispVac": 250,
+      "propMass": 589.331378276402,
+      "dryMass": 155.66222738310125,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 25000,
+      "thrustVac": 30000,
+      "ispSL": 220,
+      "ispVac": 250,
+      "propMass": 589.331378276402,
+      "dryMass": 215.66222738310125,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 102,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.4
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 589.331378276402,
+    "diameter": 2,
+    "nozzleDiameter": 0.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 5686.6784728621715,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "staging",
+   "out": {
+    "events": [
+     {
+      "t": 0,
+      "type": "ignition",
+      "stage": 1
+     },
+     {
+      "t": 0.6000000000000001,
+      "type": "liftoff"
+     },
+     {
+      "t": 48.16138800645256,
+      "type": "burnout",
+      "stage": 1,
+      "alt": 5464.6501432405785,
+      "v": 550.8775300036391
+     },
+     {
+      "t": 48.16138800645256,
+      "type": "separation",
+      "stage": 1,
+      "alt": 5464.6501432405785
+     },
+     {
+      "t": 48.16138800645256,
+      "type": "ignition",
+      "stage": 2,
+      "alt": 5464.6501432405785
+     },
+     {
+      "t": 96.32277601290566,
+      "type": "burnout",
+      "stage": 2,
+      "alt": 8813.927978524007,
+      "v": 697.9013851548461
+     }
+    ]
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "hybrid-small"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 25000,
+      "thrustVac": 30000,
+      "ispSL": 220,
+      "ispVac": 250,
+      "propMass": 589.331378276402,
+      "dryMass": 155.66222738310125,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 25000,
+      "thrustVac": 30000,
+      "ispSL": 220,
+      "ispVac": 250,
+      "propMass": 589.331378276402,
+      "dryMass": 215.66222738310125,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 102,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.4
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 589.331378276402,
+    "diameter": 2,
+    "nozzleDiameter": 0.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 5686.6784728621715,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "drag",
+   "out": {
+    "maxQ": 22058.81133068503,
+    "maxQTime": 61.96138800645276,
+    "dragLoss": 2287.8008179588096,
+    "sample": {
+     "t": 62.16138800645276,
+     "alt": 7205.517205104232,
+     "vrel": 276.6674163303573,
+     "stage": 2,
+     "dragForce": 25134.909390977777,
+     "dynamicPressure": 22058.343290142002,
+     "cd": 0.3627058497660421
+    },
+    "machPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 161771.1771926178,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    },
+    "nozzleMachPeak": {
+     "gridAltitudeM": 0,
+     "mach": 1.1,
+     "dragForce": 6470.847087704712,
+     "dynamicPressure": 85822.27500000001,
+     "cd": 0.6
+    }
+   }
+  },
+  {
+   "subject": {
+    "type": "engine",
+    "id": "hybrid-small"
+   },
+   "in": {
+    "stages": [
+     {
+      "thrustSL": 25000,
+      "thrustVac": 30000,
+      "ispSL": 220,
+      "ispVac": 250,
+      "propMass": 589.331378276402,
+      "dryMass": 155.66222738310125,
+      "diameter": 2,
+      "cd": 0.3
+     },
+     {
+      "thrustSL": 25000,
+      "thrustVac": 30000,
+      "ispSL": 220,
+      "ispVac": 250,
+      "propMass": 589.331378276402,
+      "dryMass": 215.66222738310125,
+      "diameter": 2,
+      "cd": 0.3
+     }
+    ],
+    "opts": {
+     "payload": 149.53981031087415,
+     "targetAlt": 400000,
+     "latitude": 28.5,
+     "dt": 0.2,
+     "sampleEvery": 1,
+     "tMax": 102,
+     "vacuum": false,
+     "rotate": true,
+     "cutoff": true
+    },
+    "nozzleDiameter": 0.4,
+    "r": [
+     -53500.21850681683,
+     6386732.177389658,
+     0
+    ],
+    "v": [
+     -683.9714762560168,
+     19.32024530229499,
+     0
+    ]
+   },
+   "fixture": {
+    "vacuum": false,
+    "engineCount": 1,
+    "propMass": 589.331378276402,
+    "diameter": 2,
+    "nozzleDiameter": 0.4,
+    "liftoffTWR": 1.5,
+    "twrTarget": 1.5,
+    "minClimbM": 10,
+    "idealClimbM": 5686.6784728621715,
+    "note": "Input fixture only. Smallest engine count whose largest propellant load at twrTarget still has an ideal first-burn climb of minClimbM. Payload mass is 0. Expected outputs are simulate / dragForce / orbitalElements."
+   },
+   "kind": "orbit",
+   "out": {
+    "a": 3205502.0053658783,
+    "e": 0.992508066323412,
+    "i": 0,
+    "energy": -62174417.78741041,
+    "h": 4367308998.475731,
+    "periapsis": 24015.408424370697,
+    "apoapsis": 6386988.602307386,
+    "periAlt": -6354121.591575629,
+    "apoAlt": 8851.602307385765,
+    "period": 1806.1551753067938
    }
   },
   {

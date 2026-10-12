@@ -141,7 +141,15 @@ Shader "Kestrel/Sky"
                 return float3(dot(_Eq0.xyz, dir), dot(_Eq1.xyz, dir), dot(_Eq2.xyz, dir));
             }
 
-            // One catalogue texel becomes a 1–2 px point. Brightness is the baked magnitude, not the footprint.
+            // Unity's missing-shader / missing-texture colour. Never return it.
+            float3 KillMagenta(float3 c)
+            {
+                float bad = step(0.90, c.r) * step(0.90, c.b) * step(c.g, 0.20);
+                return c * (1.0 - bad);
+            }
+
+            // One catalogue texel becomes a 1–2 px star. Brightness is the baked magnitude, not the footprint.
+            // The mask variable is starMask: a variable named point is reserved and compiles to a magenta sky.
             float3 StarPoint(float2 uv, float3 eq)
             {
                 if (_Milky.w < 0.5)
@@ -156,7 +164,7 @@ Shader "Kestrel/Sky"
                 }
                 float2 size = max(_StarTex.xy, float2(8, 8));
                 float2 g = fwidth(uv);
-                // atan2 jumps by 1 across the RA cut; that derivative would smear the point into a line.
+                // atan2 jumps by 1 across the RA cut; that derivative would smear the star into a line.
                 if (max(g.x, g.y) > 0.02) return float3(0, 0, 0);
                 float2 p = uv * size;
                 float2 i = floor(p);
@@ -166,7 +174,8 @@ Shader "Kestrel/Sky"
                 float starMask = r < 0.55 ? 1.0 : saturate((1.25 - r) / 0.70);
                 if (starMask <= 0.0) return float3(0, 0, 0);
                 float2 cuv = (i + 0.5) / size;
-                return SAMPLE_TEXTURE2D_LOD(_Stars, sampler_Stars, cuv, 0).rgb * starMask;
+                float3 sampleCol = SAMPLE_TEXTURE2D_LOD(_Stars, sampler_Stars, cuv, 0).rgb;
+                return KillMagenta(sampleCol) * starMask;
             }
 
             half4 frag(Varyings input) : SV_Target
@@ -199,13 +208,39 @@ Shader "Kestrel/Sky"
                 float sunMask = saturate(1.0 - glow * 1.6);
                 float milky = exp(-pow(dot(eq, normalize(_GalN.xyz)), 2.0) * 18.0) * _Milky.x;
                 col += milky * float3(0.55, 0.62, 0.82) * sunMask;
-                col += starCol * _Params.y * sunMask * 1.35;
                 float ag = exp(-abs(mu) * 7.0) * _Milky.y;
                 col += ag * float3(0.25, 0.85, 0.55);
+                // starCol is already weighted by starMask (1–2 px). Gain rises as the sky goes dark.
+                float skyLum = dot(max(col, float3(0, 0, 0)), float3(0.2126, 0.7152, 0.0722));
+                float reveal = saturate(1.0 - skyLum);
+                col += starCol * _Params.y * sunMask * lerp(1.35, 2.85, reveal);
 
-                return half4(saturate(col), 1);
+                return half4(saturate(KillMagenta(col)), 1);
             }
             ENDHLSL
+        }
+    }
+
+    // When the URP pass does not match, draw black. FallBack Off would otherwise be the magenta error shader.
+    SubShader
+    {
+        Tags { "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" }
+        Pass
+        {
+            Name "SkyBlack"
+            ZWrite Off
+            Cull Off
+            Fog { Mode Off }
+
+            CGPROGRAM
+            #pragma vertex vertBlack
+            #pragma fragment fragBlack
+            #include "UnityCG.cginc"
+            struct app_black { float4 vertex : POSITION; };
+            struct v2fb { float4 pos : SV_POSITION; };
+            v2fb vertBlack(app_black v) { v2fb o; o.pos = UnityObjectToClipPos(v.vertex); return o; }
+            fixed4 fragBlack() : SV_Target { return fixed4(0, 0, 0, 1); }
+            ENDCG
         }
     }
     FallBack Off

@@ -1,7 +1,8 @@
 # Kestrel Heavy physics core (M1)
 
 Plain ES modules in `web/js/physics/`, no dependencies, SI units throughout
-(m, s, kg, N, Pa, K, rad; Isp in seconds). Nothing here is wired into the game yet.
+(m, s, kg, N, Pa, K, rad; Isp in seconds). The web demo calls these modules directly.
+The Unity core (`unity/Assets/Kestrel.Core`) is a port of them. Golden tolerances live in `docs/PHYSICS.md`.
 
 ## integrator.js
 - `createRK4(n)` → `rk4Step(deriv, t, y, dt)`: classic 4th-order Runge–Kutta, y ← y + dt/6·(k1+2k2+2k3+k4).

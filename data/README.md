@@ -7,6 +7,12 @@
 | materials.json | schemas/materials.schema.json | web/js/data/materials.js |
 | payloads.json | schemas/payloads.schema.json | web/js/data/payloads.js |
 | presets.json | schemas/presets.schema.json | web/js/data/presets.js |
+| tanks.json | schemas/tanks.schema.json | web/js/data/tanks.js |
+| fairings.json | schemas/fairings.schema.json | web/js/data/fairings.js |
+| interstages.json | schemas/interstages.schema.json | web/js/data/interstages.js |
+| fins.json | schemas/fins.schema.json | web/js/data/fins.js |
+| liveries.json | loader in Kestrel.Livery (no JSON Schema file) | earned paint schemes |
+| finishes.json | loader in Kestrel.Livery (no JSON Schema file) | per-part paint |
 | golden/*.json | see golden/README.md and docs/PHYSICS.md | ports (tolerances are per quantity for catalog-flight) |
 
 Economy constants stay in `web/js/economy-data/constants.json` (already JSON + schema).

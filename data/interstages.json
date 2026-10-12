@@ -1,0 +1,71 @@
+{
+  "$schema": "./schemas/interstages.schema.json",
+  "version": 1,
+  "interstages": [
+    {
+      "id": "straight-3p7-alli",
+      "label": "3.7 m skinned interstage",
+      "shape": "straight",
+      "material": "al-li",
+      "diameter": 3.7,
+      "diameterTop": 3.7,
+      "length": 2.22,
+      "mass": 516,
+      "cost": 100000,
+      "dragDeltaCd": 0,
+      "note": "Length is 0.6 × diameter. Mass is π D L × 20 kg/m². A straight skin adds no Cd."
+    },
+    {
+      "id": "truss-3p7",
+      "label": "3.7 m open truss",
+      "shape": "truss",
+      "material": "al-li",
+      "diameter": 3.7,
+      "diameterTop": 3.7,
+      "length": 2.5,
+      "mass": 261,
+      "cost": 90000,
+      "dragDeltaCd": 0.04,
+      "note": "About 45% of a skinned shell of this size. The open bay adds drag."
+    },
+    {
+      "id": "hot-staging-9m",
+      "label": "9 m vented hot-staging ring",
+      "shape": "hot-staging",
+      "material": "al-li",
+      "diameter": 9,
+      "diameterTop": 9,
+      "length": 5.4,
+      "mass": 2596,
+      "cost": 650000,
+      "dragDeltaCd": 0.03,
+      "note": "Perforated band, 85% of a solid skin. Length is 0.6 × diameter."
+    },
+    {
+      "id": "flare-3p7-to-2p4",
+      "label": "Flare 3.7 m to 2.4 m",
+      "shape": "flare",
+      "material": "composite",
+      "diameter": 3.7,
+      "diameterTop": 2.4,
+      "length": 2.22,
+      "mass": 310,
+      "cost": 125000,
+      "dragDeltaCd": 0.03,
+      "note": "Base is wider, so the flare is stabilizing. Mass is the composite frustum."
+    },
+    {
+      "id": "shoulder-5-to-3p7",
+      "label": "Shoulder 5 m to 3.7 m",
+      "shape": "shoulder",
+      "material": "al-li",
+      "diameter": 3.7,
+      "diameterTop": 5,
+      "length": 3,
+      "mass": 839,
+      "cost": 170000,
+      "dragDeltaCd": 0.008,
+      "note": "Upper end is wider. That moves the center of pressure forward."
+    }
+  ]
+}

@@ -58,7 +58,7 @@ namespace Kestrel.Livery
     {
         public static readonly string[] PartTypes = { "tank", "engine", "booster", "interstage", "fairing", "legs", "fins", "gridfins", "rcs" };
         public static readonly string[] Patterns = { "solid", "belt_stripes", "split_vertical", "checker_roll", "chevron_nose", "gradient_aft", "two_tone_stage" };
-        public const int FinishCount20 = 8, LiveryCount20 = 12;
+        public const int FinishCount20 = 12, LiveryCount20 = 16;
 
         static readonly Regex SnakeId = new Regex("^[a-z][a-z0-9]*(_[a-z0-9]+)*$");
         static readonly Regex Hex = new Regex("^#[0-9A-Fa-f]{6}$");

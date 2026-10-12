@@ -16,10 +16,12 @@ Split out of [becktj90/beckify](https://github.com/becktj90/beckify) with histor
 ## Common tasks
 
 ```sh
-npm test                 # game logic tests + iOS pack check
-npm run pack:ios         # refresh ios/KestrelHeavy/Game from web/
-open ios/KestrelHeavy.xcodeproj   # Product > Archive for App Store
+npm test                 # node game-logic tests
+dotnet test unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj
+npm run pack:ios         # refresh the legacy Phaser pack in ios/KestrelHeavy/Game
 ```
+
+The store build is the Unity project in `unity/` (portrait only, version 2.0.0, `com.beckify.kestrelheavy`). Unity CI is `.github/workflows/unity.yml` (EditMode, PlayMode, iOS export compile-check). Core tests without the Editor are `.github/workflows/core-dotnet.yml`.
 
 ## Releasing to beckify.com
 

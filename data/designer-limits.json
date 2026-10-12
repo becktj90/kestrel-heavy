@@ -27,7 +27,7 @@
     "dragDeltaCd": 0.02,
     "shapes": ["straight", "flare", "shoulder"]
   },
-  "arealKgPerM2": { "composite": 14, "al-li": 20, "steel": 45, "default": 20 },
+  "arealKgPerM2": { "composite": 14, "al-li": 20, "steel": 45, "al-cu": 22, "titanium": 18, "glass-phenolic": 16, "default": 20 },
   "avionicsTiers": ["basic", "standard", "redundant"],
   "noseCd": { "ogive": 0.3, "conic": 0.36, "blunt": 0.5, "von-karman": 0.28 },
   "cluster": {
