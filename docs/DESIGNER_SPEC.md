@@ -417,12 +417,16 @@ Source: `/workspace/ux-142-answers.md` (Gameplay, main @ `db80a48`). These super
 7. **Limits:** every range, step, enum and threshold lives in `data/designer-limits.json`, read by UI and `Validate` (moves the `designer` block out of params.json except `designer.layers`). Not enforced by Core today, becoming `Shape` checks: fairing length 1-40 m, payload mass 50 kg-100 t, landing reserve 0-30 %.
 8. **12 new codes:** §11.4. Core bug noted: `weak-upper` `index` is the serial readout index, not `designIndex`; Gameplay fixes it in G1 (until then UX rings the stage list, not a specific part, for `weak-upper`).
 
-## 13. Art and camera notes
+## 13. Art answers and camera notes
 
-- Kestrel Art confirmed the `data/finishes.json` and `data/liveries.json` schemas in §10 Art Q1-Q2 (liveries: no price, no expiry, no random fields).
-- Branding glyphs (12) and frames (6) are authored as SVG and rasterised at build time.
-- Trademark sign-off for branding and liveries goes to Chief of Staff; Trevor has the final say.
-- The Hangar Reveal camera (Art, U8 reveal) and the designer camera (R1, cloud agent) must share framing constants (`DesignFraming` margin, min visible fraction, tower margin); no second copy.
+Source: Art's final section `docs/DESIGNER_ART_SECTION.md` on branch `art/designer-spec` (@ `884cb44`, concept sketches in `docs/designer/art/`). These answer §10 Art Q1-Q6.
+1. **Finishes:** 8 at 2.0. `data/finishes.json` schema confirmed, plus an optional `earnRule` that defaults to `"start"` (3 finishes are earned).
+2. **Liveries:** 12 at 2.0. `data/liveries.json` schema confirmed (no price, expiry or random fields), with an added `"start"` unlock type alongside orbits / landings / mission.
+3. **Decals:** anchors `stageBand`, `interstage`, `fairing`; at most 6 per vehicle; each 256² in one 2048² atlas.
+4. **Branding:** 12 glyphs and 6 frames authored as SVG, built into 256² distance-field textures at build time; 16-colour palette. Trademark sign-off goes to Chief of Staff, with Trevor having the final say.
+5. **Swatches:** pre-rendered sprites (not live 3D).
+6. **Cameras:** the Hangar Reveal camera (Art) and the designer camera (R1, cloud agent) both read the same `DesignFraming` constants (margin, min visible fraction, tower margin). No second copy.
+7. **Earned items:** every earned finish, livery or mark shows in the UI how to earn it ("Reach orbit 3 times"). No timers, no rarity tiers, nothing expires.
 
 ## 14. Answers to Gameplay
 
