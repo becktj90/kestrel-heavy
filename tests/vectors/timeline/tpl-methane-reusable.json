@@ -1179,6 +1179,39 @@
       }
     },
     {
+      "id":"asc.karman",
+      "name":"tl.asc.karman.name",
+      "shortLabel":"tl.asc.karman.short",
+      "phase":"ascent",
+      "trigger": {"kind":"simCondition","expr":"alt>=100000"},
+      "preconditions": ["asc.maxq"],
+      "blocks": [],
+      "holdable":false,
+      "criticality":"nominal",
+      "abortRules": [],
+      "nominal":160.31,
+      "actual":160.31,
+      "tolerance":1,
+      "variance":0.16,
+      "status": {"state":"pending","progress":0},
+      "links": {
+        "narration": ["karman"],
+        "sfx": ["asc.karman"],
+        "music": [],
+        "telemetry": ["alt"],
+        "pad": ["vehicle"],
+        "codex": ["codex.asc.karman"]
+      },
+      "visibility":"kid",
+      "economy": {"costOnDone":0,"refundOnScrub":0,"currency":"Kc"},
+      "strings": {
+        "name":"Karman line",
+        "short":"Karman",
+        "explainWhy":"The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:40.31, on an integrator step.",
+        "anomaly":""
+      }
+    },
+    {
       "id":"stg.fairing",
       "name":"tl.stg.fairing.name",
       "shortLabel":"tl.stg.fairing.short",

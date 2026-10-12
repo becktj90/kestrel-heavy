@@ -35,6 +35,7 @@ Nominal times are game seconds. T- is compressed for this mode (engineer keeps r
 
 - `abort.crew` — Crew abort is absent because the payload is not crewed and does not need an abort system.
 - `abort.staging` — Separation abort is absent because this vehicle does not separate a stage or a booster.
+- `asc.karman` — The Karman line is absent because the sim, including a ballistic coast after burnout, never reaches 100 km geometric altitude.
 - `asc.meco` — MECO is absent because Motor is a solid motor. It burns out; it does not shut down.
 - `asc.throttle` — Throttle bucket is absent because no liftoff engine can throttle (the throttle range is closed).
 - `count.ch4.s1.chill` — Methane chilldown is absent because no stage flies methalox.
