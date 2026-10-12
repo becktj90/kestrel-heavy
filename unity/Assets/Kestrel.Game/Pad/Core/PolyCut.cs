@@ -225,10 +225,38 @@ namespace Kestrel.Pad
                     clipped = true;
                     break;
                 }
-                if (!clipped) throw new InvalidOperationException($"ear clip stalled at {idx.Count} verts");
+                if (clipped) continue;
+                // Stalled: usually duplicate or collinear verts (e.g. a cut edge lying on the ring).
+                // Dropping a flat vertex loses no area, so try that first.
+                if (DropDegenerate(poly, idx)) continue;
+                // Still stuck (near-degenerate input): clip the most convex corner without the containment
+                // test. May overlap slightly, but never throws at runtime.
+                int best = -1; float bestCr = 0f;
+                for (int i = 0; i < idx.Count; i++)
+                {
+                    int n = idx.Count;
+                    float cr = Cross(poly[idx[(i + n - 1) % n]], poly[idx[i]], poly[idx[(i + 1) % n]]);
+                    if (cr > bestCr) { bestCr = cr; best = i; }
+                }
+                if (best < 0) return;   // nothing convex left: the remainder is flat, no area to fill
+                { int n = idx.Count; tris.Add(idx[(best + n - 1) % n]); tris.Add(idx[best]); tris.Add(idx[(best + 1) % n]); idx.RemoveAt(best); }
             }
-            if (idx.Count == 3) { tris.Add(idx[0]); tris.Add(idx[1]); tris.Add(idx[2]); }
-            else if (idx.Count > 3) throw new InvalidOperationException("ear clip did not finish");
+            if (idx.Count == 3 && Math.Abs(Cross(poly[idx[0]], poly[idx[1]], poly[idx[2]])) > 0f) { tris.Add(idx[0]); tris.Add(idx[1]); tris.Add(idx[2]); }
+        }
+
+        /// <summary>Removes one duplicate or collinear vertex from the working ring. Returns false if none.</summary>
+        static bool DropDegenerate(List<Vec2> poly, List<int> idx)
+        {
+            int n = idx.Count;
+            if (n <= 3) return false;
+            for (int i = 0; i < n; i++)
+            {
+                var a = poly[idx[(i + n - 1) % n]]; var b = poly[idx[i]]; var c = poly[idx[(i + 1) % n]];
+                float scale = Math.Abs(a.X - c.X) + Math.Abs(a.Y - c.Y) + 1f;
+                bool dup = Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y) < Eps * scale;
+                if (dup || Math.Abs(Cross(a, b, c)) <= Eps * scale) { idx.RemoveAt(i); return true; }
+            }
+            return false;
         }
 
         static bool IsEar(List<Vec2> poly, List<int> idx, int i)

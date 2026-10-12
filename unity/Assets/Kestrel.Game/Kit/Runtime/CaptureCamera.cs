@@ -20,7 +20,12 @@ namespace Kestrel.Kit
         /// <summary>Camera to drive; null = Camera.main.</summary>
         public static Camera Target;
 
-        public static void Override(Vector3 pos, Vector3 lookAt) { Position = pos; LookAt = lookAt; Active = true; Driver.Ensure(); }
+        public static void Override(Vector3 pos, Vector3 lookAt)
+        {
+            Position = pos; LookAt = lookAt; Active = true; Driver.Ensure();
+            // Apply now too: the driver created on the first call may not tick before the next capture.
+            if (Application.isPlaying) Apply(Target != null ? Target : Camera.main);
+        }
         public static void Clear() { Active = false; }
 
         /// <summary>Parses "x,y,z:lx,ly,lz" (invariant culture). Returns false on malformed input.</summary>
@@ -72,6 +77,15 @@ namespace Kestrel.Kit
                 if (_i != null || !Application.isPlaying) return;
                 var go = new GameObject("KH_CaptureCamera") { hideFlags = HideFlags.HideAndDontSave };
                 DontDestroyOnLoad(go); _i = go.AddComponent<Driver>();
+            }
+            // Also re-apply right before the target renders, so a capture taken on the frame a controller
+            // re-framed the camera (e.g. after a Game view resize) still uses the override.
+            void OnEnable() { UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering += BeforeRender; }
+            void OnDisable() { UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering -= BeforeRender; }
+            static void BeforeRender(UnityEngine.Rendering.ScriptableRenderContext ctx, Camera c)
+            {
+                var t = Target != null ? Target : Camera.main;
+                if (c == t) Apply(c);
             }
             void LateUpdate() => Apply(Target != null ? Target : Camera.main);
         }
