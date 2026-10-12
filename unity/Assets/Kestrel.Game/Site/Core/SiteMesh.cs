@@ -11,15 +11,22 @@ namespace Kestrel.Site
         public int VertexCount => Positions.Length / 3;
         public int TriangleCount => Indices.Length / 3;
 
-        public bool ContainsXZ(float x, float z)
+        public bool ContainsXZ(float x, float z) => TrySurfaceY(x, z, out _);
+
+        /// <summary>Topmost triangle covering this XZ. Vertical cards and the underside are ignored.</summary>
+        public bool TrySurfaceY(float x, float z, out float y)
         {
+            y = float.NegativeInfinity;
+            bool hit = false;
             var p = Positions; var ix = Indices;
             for (int i = 0; i + 2 < ix.Length; i += 3)
             {
                 int a = ix[i] * 3, b = ix[i + 1] * 3, c = ix[i + 2] * 3;
-                if (InTri(x, z, p[a], p[a + 2], p[b], p[b + 2], p[c], p[c + 2])) return true;
+                if (!Bary(x, z, p[a], p[a + 2], p[b], p[b + 2], p[c], p[c + 2], out float u, out float v, out float w)) continue;
+                float hy = u * p[a + 1] + v * p[b + 1] + w * p[c + 1];
+                if (hy > y) { y = hy; hit = true; }
             }
-            return false;
+            return hit;
         }
 
         /// <summary>Drop triangles that overlap any hole. Holes are packed x,z pairs in the same space as the mesh.</summary>
@@ -104,15 +111,26 @@ namespace Kestrel.Site
             return n == 0 ? 0f : (float)(s / n);
         }
 
-        static bool InTri(float x, float z, float ax, float az, float bx, float bz, float cx, float cz)
+        static bool InTri(float x, float z, float ax, float az, float bx, float bz, float cx, float cz) =>
+            Bary(x, z, ax, az, bx, bz, cx, cz, out _, out _, out _);
+
+        static bool Bary(float x, float z, float ax, float az, float bx, float bz, float cx, float cz,
+            out float u, out float v, out float w)
         {
+            u = v = w = 0f;
             float c1 = (x - ax) * (bz - az) - (z - az) * (bx - ax);
             float c2 = (x - bx) * (cz - bz) - (z - bz) * (cx - bx);
             float c3 = (x - cx) * (az - cz) - (z - cz) * (ax - cx);
             const float e = 2f;
             bool neg = c1 <= e && c2 <= e && c3 <= e;
             bool pos = c1 >= -e && c2 >= -e && c3 >= -e;
-            return neg || pos;
+            if (!neg && !pos) return false;
+            float area = (bx - ax) * (cz - az) - (bz - az) * (cx - ax);
+            if (Math.Abs(area) < 1f) return false;
+            v = ((x - ax) * (cz - az) - (z - az) * (cx - ax)) / area;
+            w = ((bx - ax) * (z - az) - (bz - az) * (x - ax)) / area;
+            u = 1f - v - w;
+            return true;
         }
     }
 }

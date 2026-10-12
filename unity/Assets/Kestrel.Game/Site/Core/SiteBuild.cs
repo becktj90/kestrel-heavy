@@ -8,8 +8,9 @@ namespace Kestrel.Site
 {
     public static class SiteBuild
     {
-        static readonly float[] Inland = { 0f, 140f, 500f, 1600f, 5000f, 16000f, 50000f, 140000f, 400000f, 1000000f, 1700000f };
-        static readonly float[] Seaward = { 0f, 45f, 140f, 400f, 1200f, 4000f, 14000f, 45000f, 120000f, 320000f, 750000f, 1700000f };
+        // Spacing through the 13 km chase horizon (~407 km) stays under ~80 km so a chord cannot sag below that horizon.
+        static readonly float[] Inland = { 0f, 140f, 500f, 1600f, 5000f, 16000f, 50000f, 140000f, 240000f, 320000f, 400000f, 480000f, 1000000f, 1700000f };
+        static readonly float[] Seaward = { 0f, 45f, 140f, 400f, 1200f, 4000f, 14000f, 45000f, 120000f, 200000f, 280000f, 360000f, 440000f, 520000f, 750000f, 1700000f };
 
         public static SiteMesh Land(CoastalSite site, int lod)
         {
@@ -88,10 +89,7 @@ namespace Kestrel.Site
         {
             var zs = ZSamples(lod);
             float[] rings = land ? Inland : Seaward;
-            int ringStep = lod <= 0 ? 1 : lod == 1 ? 1 : 2;
-            var used = new List<int>();
-            for (int r = 0; r < rings.Length; r++)
-                if (r % ringStep == 0 || r == rings.Length - 1) used.Add(r);
+            var used = RingsToDraw(rings, lod);
             var idx = new int[zs.Count, used.Count];
             for (int s = 0; s < zs.Count; s++)
             for (int u = 0; u < used.Count; u++)
@@ -110,6 +108,29 @@ namespace Kestrel.Site
             }
         }
 
+        /// <summary>
+        /// LOD 2 may drop a far ring only when the gap stays inside ~80 km. The 13 km horizon is a
+        /// circle around the pad, so that budget applies from the shore out past the horizon, not
+        /// only on the ring at 407 km.
+        /// </summary>
+        static List<int> RingsToDraw(float[] rings, int lod)
+        {
+            float cover = SiteHorizon.Distance(SiteHorizon.ChaseAltitude) + 80000f;
+            const float maxGap = 80000f;
+            var used = new List<int>();
+            for (int r = 0; r < rings.Length; r++)
+            {
+                if (used.Count == 0) { used.Add(r); continue; }
+                float prev = rings[used[used.Count - 1]];
+                float gap = rings[r] - prev;
+                bool last = r == rings.Length - 1;
+                bool pastShoreDetail = rings[r] > 20000f && prev < cover;
+                if (lod >= 2 && !last && pastShoreDetail && gap < maxGap) continue;
+                used.Add(r);
+            }
+            return used;
+        }
+
         static bool AllDeep(Draft d, int a, int b, int c, int e) =>
             d.Deep(a) && d.Deep(b) && d.Deep(c) && d.Deep(e);
 
@@ -123,8 +144,9 @@ namespace Kestrel.Site
                 float az = Math.Abs(zc);
                 float step = az < 600f ? 20f : az < 4000f ? 80f : az < 20000f ? 400f : az < 80000f ? 1600f : az < 250000f ? 5000f : 14000f;
                 if (lod == 1) step *= 1.25f;
-                if (lod >= 2) step *= 1.7f;
-                if (az < 600f) step = Math.Min(step, 24f);
+                // Low LOD keeps the radial horizon rings and spends the triangle budget on those, not on shore samples.
+                if (lod >= 2) step *= az < 4000f ? 1.8f : 3.2f;
+                if (az < 600f) step = Math.Min(step, lod >= 2 ? 64f : 24f);
                 float next = Math.Min(limit, zc + step);
                 if (next <= zc) break;
                 zc = next; z.Add(zc);

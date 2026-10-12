@@ -195,6 +195,44 @@ namespace Kestrel.Site.Tests
         }
 
         [Test]
+        public void ChaseHorizonAt13KmSitsOnEveryLod()
+        {
+            const float alt = SiteHorizon.ChaseAltitude;
+            float horizon = SiteHorizon.Distance(alt);
+            Assert.That(horizon, Is.GreaterThan(400000f).And.LessThan(420000f));
+            Assert.That(SiteHorizon.ClipFor(alt), Is.GreaterThan(horizon));
+            Assert.That(SiteHorizon.WaterRadius, Is.GreaterThan(horizon));
+            Assert.That(SiteHorizon.ClipFor(0f), Is.EqualTo(SiteHorizon.ClipFor(alt)));
+            var s = Site();
+            for (int lod = 0; lod <= 2; lod++)
+            {
+                var land = s.Land(lod);
+                var water = s.Water(lod);
+                float maxR = 0f;
+                for (int i = 0; i < water.VertexCount; i++)
+                {
+                    float x = water.Positions[i * 3], z = water.Positions[i * 3 + 2];
+                    maxR = Math.Max(maxR, (float)Math.Sqrt(x * x + z * z));
+                }
+                Assert.That(maxR, Is.GreaterThan(horizon), $"lod {lod} water reaches the chase horizon");
+                for (int i = 0; i < 16; i++)
+                {
+                    double a = i / 16.0 * Math.PI * 2.0;
+                    float x = (float)(Math.Cos(a) * horizon);
+                    float z = (float)(Math.Sin(a) * horizon);
+                    float shore = Coastline.ShoreX(z);
+                    if (Math.Abs(x - shore) < 80f) x = shore + (x >= shore ? 120f : -120f);
+                    bool wet = Coastline.IsWater(x, z);
+                    var mesh = wet ? water : land;
+                    Assert.That(mesh.TrySurfaceY(x, z, out float y), Is.True, $"lod {lod} {(wet ? "water" : "land")} {x:0},{z:0}");
+                    float drop = SiteHorizon.Drop(x, z);
+                    // Chord sag under the geometric horizon. 400 m is under 0.06 deg from 13 km up.
+                    Assert.That(y, Is.EqualTo(-drop).Within(400f), $"lod {lod} surface at {x:0},{z:0} y={y} drop={drop}");
+                }
+            }
+        }
+
+        [Test]
         public void LodGetsCoarserButKeepsTheHorizon()
         {
             var s = Site();

@@ -8,7 +8,7 @@ namespace Kestrel.Site
     [DisallowMultipleComponent]
     public sealed class SiteView : MonoBehaviour
     {
-        public const float FarClip = SiteHorizon.FarClip;
+        public static float FarClip => SiteHorizon.ClipFor(SiteHorizon.ChaseAltitude);
         static readonly int SunDirId = Shader.PropertyToID("_SunDir");
         static readonly int SunColorId = Shader.PropertyToID("_SunColor");
 

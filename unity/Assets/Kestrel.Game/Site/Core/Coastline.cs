@@ -9,14 +9,26 @@ namespace Kestrel.Site
     {
         /// <summary>Same sphere the chase camera uses to keep the horizon in frame.</summary>
         public const float EarthRadius = 6371000f;
+        /// <summary>Altitude where the chase camera was looking at sky. The coast, every LOD and the far clip have to reach this horizon.</summary>
+        public const float ChaseAltitude = 13000f;
         /// <summary>Water and far land extend past the geometric horizon through a high ascent (~200 km).</summary>
         public const float WaterRadius = 1700000f;
+        /// <summary>Far plane for the built disc. <see cref="ClipFor"/> never goes past it, and never clips the chase horizon.</summary>
         public const float FarClip = 1800000f;
 
         public static float Distance(float altitude)
         {
             double h = altitude > 0f ? altitude : 0f;
             return (float)Math.Sqrt(2.0 * EarthRadius * h + h * h);
+        }
+
+        /// <summary>Camera far clip that still contains the curved horizon at this altitude. Floors at the 13 km chase view.</summary>
+        public static float ClipFor(float altitude)
+        {
+            float h = altitude > ChaseAltitude ? altitude : ChaseAltitude;
+            float clip = Distance(h) * 1.35f;
+            if (clip > FarClip) clip = FarClip;
+            return clip;
         }
 
         /// <summary>Paraxial drop below the local tangent plane, metres. Matches Distance: at the horizon, drop ≈ h + h²/2R.</summary>

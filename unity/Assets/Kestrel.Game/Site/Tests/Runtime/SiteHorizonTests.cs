@@ -16,5 +16,16 @@ namespace Kestrel.Site.Tests
             Assert.That(Coastline.ShoreX(0f), Is.LessThan(horizon), "the coast is in front of the pad-level horizon");
             Assert.That(Coastline.ShoreX(0f), Is.GreaterThan(0f), "sea is downrange of the pad");
         }
+
+        [Test]
+        public void FarClipAndHoldCoverThe13KmChaseHorizon()
+        {
+            float h = SiteHorizon.ChaseAltitude;
+            float slant = SiteHorizon.Distance(h);
+            Assert.That(SiteHorizon.ClipFor(h), Is.GreaterThan(slant));
+            Assert.That(SiteView.FarClip, Is.GreaterThan(slant));
+            Assert.That(ChaseCamera.HoldWeight(h), Is.EqualTo(1f));
+            Assert.That(ChaseCamera.HoldFullAlt, Is.GreaterThanOrEqualTo(h));
+        }
     }
 }
