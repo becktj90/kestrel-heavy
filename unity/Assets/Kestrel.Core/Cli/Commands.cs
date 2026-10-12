@@ -3,7 +3,10 @@
 // atmo is Atmosphere.At.
 using System;
 using System.Globalization;
+using System.IO;
 using System.Text;
+using Kestrel.Core.Data;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Physics;
 
 namespace Kestrel.Core.Cli
@@ -38,6 +41,8 @@ namespace Kestrel.Core.Cli
                     return 0;
                 case "propagate":
                     return Propagate(args, inv, out stdout);
+                case "readout-bench":
+                    return ReadoutBenchCommand(out stdout);
                 case "predict":
                 case "mc":
                     stdout = "{\"command\":\"" + args[0] + "\",\"status\":\"not-implemented\"}";
@@ -46,6 +51,28 @@ namespace Kestrel.Core.Cli
                     stdout = Usage();
                     return 2;
             }
+        }
+
+        static int ReadoutBenchCommand(out string stdout)
+        {
+            string root;
+            try { root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory()); }
+            catch (Exception e) { stdout = e.Message; return 2; }
+            var cat = Catalog.LoadFromRepo(root);
+            var designs = ReadoutBench.LoadDesigns(root);
+            var r = ReadoutBench.Measure(cat, designs);
+            var inv = CultureInfo.InvariantCulture;
+            stdout = "{\"designs\":" + r.designs.ToString(inv)
+                + ",\"quickP95Ms\":" + r.quickP95Ms.ToString("R", inv)
+                + ",\"validateP95Ms\":" + r.validateP95Ms.ToString("R", inv)
+                + ",\"referenceMaxMs\":" + r.referenceMaxMs.ToString("R", inv)
+                + ",\"quickWorst\":\"" + r.quickWorst + "\""
+                + ",\"validateWorst\":\"" + r.validateWorst + "\""
+                + ",\"referenceWorst\":\"" + r.referenceWorst + "\""
+                + ",\"quickBudgetMs\":" + ReadoutBench.QuickP95BudgetMs.ToString("R", inv)
+                + ",\"referenceBudgetMs\":" + ReadoutBench.ReferenceBudgetMs.ToString("R", inv)
+                + ",\"ok\":" + (r.ok ? "true" : "false") + "}";
+            return r.ok ? 0 : 1;
         }
 
         static int Propagate(string[] args, CultureInfo inv, out string stdout)
@@ -85,7 +112,7 @@ namespace Kestrel.Core.Cli
         static string Usage()
         {
             var sb = new StringBuilder();
-            sb.Append("kestrel atmo <zMetres> | era <year> <month> <day> <hoursUtc> | simulate | predict | mc | propagate <kepler|onrails|auto> <rx> <ry> <rz> <vx> <vy> <vz> <dt>");
+            sb.Append("kestrel atmo <zMetres> | era <year> <month> <day> <hoursUtc> | simulate | predict | mc | readout-bench | propagate <kepler|onrails|auto> <rx> <ry> <rz> <vx> <vy> <vz> <dt>");
             return sb.ToString();
         }
     }

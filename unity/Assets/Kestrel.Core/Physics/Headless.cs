@@ -109,6 +109,12 @@ namespace Kestrel.Core.Physics
         public int StageCount => st.Length;
         double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1;
         bool liftedOff, sawKarman; double karmanT; string outcome = "timeout";
+        /// <summary>
+        /// Climbing, and escape-speed dynamic pressure at this altitude is below the recorded peak.
+        /// Observational, like <see cref="SimResult.maxQAlt"/>: it does not change the RK4 step.
+        /// A full <see cref="Headless.Simulate"/> ignores it. The designer reference ascent stops here.
+        /// </summary>
+        public bool MaxQSealed { get; private set; }
 
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
         public double LastP, LastQ, LastMach, LastThrust;
@@ -219,6 +225,11 @@ namespace Kestrel.Core.Physics
             double q = 0.5 * rho * vrel * vrel;
             // Observational, like KarmanTime: recording the altitude does not change the step.
             if (q > maxQ) { maxQ = q; maxQTime = T; maxQAlt = alt; }
+            // Same sample. Escape speed is the fastest a bound ascent reaches; once that ceiling
+            // is under the peak and the vehicle is climbing, later ticks on this run do not raise max-Q
+            // for the shipped presets (the reference ascent checks that against a full Simulate).
+            if (!MaxQSealed && maxQ > 0 && vr > 0 && 0.5 * rho * (2 * Gravity.MU_EARTH / r) < maxQ)
+                MaxQSealed = true;
             double gl = Gravity.MU_EARTH / (r * r);
             double v = JsMath.Hypot(vx, vy);
             LastP = p; LastQ = q; LastMach = vrel / sound; LastThrust = 0;

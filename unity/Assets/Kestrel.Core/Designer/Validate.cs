@@ -67,7 +67,8 @@ namespace Kestrel.Core.Designer
                 for (int i = 1; i < r.stages.Count; i++)
                 {
                     var s = r.stages[i];
-                    if (s.twrVac < Lim.weakUpperTwrVac) warnings.Add(Iss("weak-upper", "engines", $"{s.label} pushes at only {Fmt(s.twrVac)} g. A stronger engine or lighter load would help it reach orbit.", i));
+                    // designIndex, not the serial readout index. With strap-ons, serial i=1 is still stage 0.
+                    if (s.twrVac < Lim.weakUpperTwrVac && s.designIndex >= 0) warnings.Add(Iss("weak-upper", "engines", $"{s.label} pushes at only {Fmt(s.twrVac)} g. A stronger engine or lighter load would help it reach orbit.", s.designIndex));
                 }
                 if (r.stages.Count > 1 && r.stages[r.stages.Count - 1].deltaV < Lim.weakUpperDvFraction * r.totalDeltaV)
                     warnings.Add(Iss("weak-upper-dv", "propellants", "The top stage does little of the work. More upper-stage propellant usually pays off."));

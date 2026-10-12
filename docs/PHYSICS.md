@@ -283,3 +283,29 @@ A v1 save with no `interstageMass` key migrates to an explicit `0`. A stored val
 | finQuarterChord | 1e-9 m | 0 | Unswept square fin, `l_F = span`, `x_f = 0.25 c` forward of the trailing edge at the base. |
 | cpAheadOfNose | exact | 0 | True when `cp_raw` is past the nose. The marker then equals vehicle length. |
 
+## Designer readout (G1)
+
+Additive fields on `QuickReadout` / `StageReadout`. Existing `deltaV` stays vacuum Isp for every serial phase (`Headless.StackDeltaV`). `deltaVSL_mps` is that same rocket equation with `ispSL`, and only on the phase that lights on the pad (the first serial phase: stage 1 alone, or core+strap-ons). Later phases are null, including the core continuation after strap-on burnout. A vacuum bell on the pad reports 0, not null.
+
+CG and CP are metres from the vehicle base, positive up, the same datum as the hangar mesh (`RocketMeshBuilder`, base at y = 0). `stabilityCal = (cg_m − cp_m) / Stack.ReferenceDiameter`. Positive means the CG is above the CP, so the CP is aft and the vehicle is stable. This is a labelled game approximation.
+
+Liftoff CG uses full tanks, including landing reserve. The rocket-equation split still holds that reserve as dry (`dryMass_kg` / `propMass_kg` on the serial stage). Stations follow the mesh: exposed stage-1 bell `clamp(engine.diameter × 1.6, 0.4, 4)`; upper-stage engines sit at the midpoint of the interstage below them; tank length is `DesignMath.SizeTank`; propellant is uniform in the barrel; structure is uniform over the thrust section plus the tank; interstage mass is uniform on the frustum `1.2 × max(r, r_next)`; separation, avionics, grid fins and RCS are points; the leg multiplier (6%) is a point at y = 0; the strap-on +80 kg fitting is at the booster tank midpoint. Fairing mass is uniform along the fairing. Payload sits at the middle of the cylindrical bay. Nose fraction of fairing length: blunt 0.25, conic 0.40, otherwise 0.45.
+
+CP is Barrowman 1967 (nose and fin terms as restated in the USU MAE flight-mechanics notes; von Karman from Crowell 1996). Nose CNa = 2 (d_fairing / d_ref)². Distance from the tip: conic 0.666 Ln, ogive 0.466 Ln, von Karman 0.500 Ln, blunt (elliptical) 0.333 Ln. Cylinders contribute CNa = 0. The body term is the conical transition: each interstage frustum, plus a zero-length shoulder where the fairing meets the top stage. Fins, when `aero.fins` is true, use `finCount` or 4 and `finSpanM` or 1 m (optional v1 keys, not a schema bump). The planform is an unswept square (chord = span) with the trailing edge at the base. Grid fins do not move CP. Each strap-on adds a cone of length 2.2 radii, the mesh nose, with the conical 2/3 station.
+
+Max-Q is not a closed form. `Readout.Quick` only reads a cache keyed by FNV-1a of canonical design JSON. A miss leaves `maxQ_kPa` and `maxQAlt_m` null and `maxQStale` true. `Readout.Reference` runs `Stack.SimInputs` into the same RK4 step as `Headless` (dt 0.2 s, default steering, no sample buffer) and stores the peak dynamic pressure in kPa and the geometric altitude at that peak (`SimResult.maxQAlt`). The run stops once `AscentSim.MaxQSealed` is set: the vehicle is climbing, and dynamic pressure at escape speed at the current altitude is already below the recorded peak. That flag is observational. It does not change the step, and `Headless.Simulate` ignores it, so the simulate goldens do not move. On every shipped preset and template the sealed peak equals the full-ascent peak (`ReadoutV2Tests`). The UI waits 300 ms after the last edit (`ReferenceDebounce`, the same delay as web `SIM_DEBOUNCE_MS`) and then runs the ascent off the main thread, or in slices via `ReferenceJob.Step` with a 2 ms budget. Cost of the instant path: no integration. Cost of max-Q: one sealed ascent, once per design hash, off the edit frame.
+
+`kestrel readout-bench` (and `ReadoutV2Tests.Recompute_MeetsLatencyBudget`) measures every preset and template after a warmup. Quick p95 and `Validate.Engineering` p95 are under 0.5 ms. The reference ascent is under 30 ms.
+
+Goldens in `data/golden/designer-readout.json` are external literals (the Python in `ReadoutV2Tests.cs`), not `Quick()` copied back onto itself. The medium-kerolox max-Q check is a sanity band, not a point: 25–40 kPa and 5–25 km, the public Falcon 9 class (~30 kPa near 11 km) widened so a one-step shift stays inside. Bit-level agreement of the integrator stays on `simulate.json`. `Reference` equals that Headless peak exactly.
+
+Kestrel Physics reviews these epsilons.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| dryMass_kg, propMass_kg | 0 | 1e-12 | Serial-stage masses. Algebraic in the catalog constants. 1e-12 is a few ulps on a tonne and tighter than the vehicle.json cross-check, because these expected values were not produced by the function under test. |
+| deltaV, deltaVSL_mps | 0 | 1e-12 | One logarithm per phase, g0 = 9.80665. Same closed-form bar. |
+| cg_m, cp_m | 1e-9 m | 0 | External pencil literals. 1e-9 m is far below a mesh vertex and above a summation-order ulp on a 17 m vehicle. |
+| stabilityCal | 1e-9 | 0 | (cg − cp) / d_ref. The absolute term binds because the caliber count is O(1) to O(10). |
+| maxQ band | n/a | n/a | 25–40 kPa and 5–25 km for `tpl-medium-kerolox`. Not a point golden. The integrator's own maxQ tolerance stays the simulate.json band (abs 1e-3 Pa, rel 1e-6). |
+
