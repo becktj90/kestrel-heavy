@@ -69,3 +69,5 @@ Plain ES modules in `web/js/physics/`, no dependencies, SI units throughout
 `tests/physics-core.test.cjs` (ISA table, Cd(M), rocket-eq, v_circ at 200 km = 7784 m/s, site speed, stepper),
 `tests/physics-orbit.test.cjs` (energy drift < 1e-8 over 3 orbits, circular after 10 periods),
 `tests/physics-ascent.test.cjs` (integrated Δv vs Tsiolkovsky < 1%, medium lifter + 10 t reaches LEO, 60 t does not).
+
+`data/golden/catalog-flight.json` is an ascent, staging, drag/max-Q, and orbit-determination vector for every catalog engine and every preset. Per-quantity absolute and relative tolerances are in `docs/PHYSICS.md`. Regenerate with `npm run gen:golden`.
