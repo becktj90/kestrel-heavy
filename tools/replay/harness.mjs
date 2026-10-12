@@ -35,6 +35,9 @@ export async function openGame() {
   await b.send('Page.enable');
   await b.send('Runtime.enable');
   await b.send('Network.enable');
+  // Pin the viewport: camera zoom (and so hazard spawn rows) depends on the parent size.
+  await b.send('Emulation.setDeviceMetricsOverride', { width: 430, height: 932, deviceScaleFactor: 1, mobile: false, screenWidth: 430, screenHeight: 932 });
+  await b.send('Emulation.setTouchEmulationEnabled', { enabled: false });
   await b.send('Network.setBlockedURLs', { urls: ['*fonts.googleapis.com*', '*fonts.gstatic.com*'] });
   await b.send('Page.addScriptToEvaluateOnNewDocument', { source: readFileSync(path.join(HERE, 'page-hooks.js'), 'utf8') });
   const errors = [];

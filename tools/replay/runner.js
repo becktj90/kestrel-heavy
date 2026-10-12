@@ -45,7 +45,8 @@ window.__replayRun = async function replayRun({ mission, difficulty, seed, mode,
     if (f % every === 0) {
       const b = scene.rocket?.body;
       const snap = [scene.status, s.stage, r(scene.rocket?.x), r(scene.rocket?.y), r(scene.rocket?.angle), r(b?.velocity?.x), r(b?.velocity?.y),
-        r(s.score, 2), r(s.health, 3), r(s.fuel, 4), r(s.tClock, 4), s.combo, r(s.altitudeKm, 3), r(scene.nowSec, 4)];
+        r(s.score, 2), r(s.health, 3), r(s.fuel, 4), r(s.tClock, 4), s.combo, r(s.altitudeKm, 3), r(scene.nowSec, 4),
+        r(scene.cameras?.main?.zoom, 4), r(scene.cameras?.main?.scrollY, 2), (scene.hazards?.getLength?.() ?? scene.hazards?.length ?? null), JSON.stringify(scene.playfieldSize?.())];
       checkpoints.push([f, fnv(JSON.stringify(snap)), snap]);
     }
     if (scene.status === 'SUMMARY' && endFrame == null) endFrame = f;
