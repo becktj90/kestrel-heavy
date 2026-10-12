@@ -49,6 +49,7 @@ namespace Kestrel.Core.Weather
             bool thunderDay = u7 < SiteClimatology.ThunderDayProbability[mi];
             double lightningKm = thunderDay ? 2.0 + 30.0 * u8 : 80.0 + 120.0 * u8;
             double shearPerSec = 0.004 + 0.025 * u9;
+            double[] shearWindMs = ShearProfile.FromSurface(windMs, shearPerSec);
 
             return new WeatherDay
             {
@@ -66,6 +67,7 @@ namespace Kestrel.Core.Weather
                 thunderDay = thunderDay,
                 lightningKm = lightningKm,
                 shearPerSec = shearPerSec,
+                shearWindMs = shearWindMs,
             };
         }
     }

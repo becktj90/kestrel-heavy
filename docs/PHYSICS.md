@@ -203,13 +203,13 @@ Goldens for onRailsNode are **hard-coded literals** computed outside the codebas
 
 `Kestrel.Core.Weather` is a new seeded climatology generator. It does **not** replace `Flight.Weather.Hold` (wind > 12 m/s policy; KID/Relaxed never hold) — that stub stays for params and timeline goldens.
 
-`WeatherGenerator.Generate(site, dayOfYear, seed)` draws one `WeatherDay` for Haven (fictional Florida coastal site) using mulberry32 (same as `Sensors`): Rayleigh surface wind with monthly mean, Box-Muller temperature, Bernoulli thunder day, cloud/precip/ceiling/lightning distance, and a characteristic upper shear (1/s). Monthly targets are NOAA NCEI 1991–2020–class coastal normals (public domain; LICENSES.md); original site name.
+`WeatherGenerator.Generate(site, dayOfYear, seed)` draws one `WeatherDay` for Haven (fictional Florida coastal site) using mulberry32 (same as `Sensors`): Rayleigh surface wind with monthly mean, Box-Muller temperature, Bernoulli thunder day, cloud/precip/ceiling/lightning distance, a characteristic upper shear (1/s), and a 5-level shear wind profile (0/3/6/9/12 km) for visuals and LCC display. Monthly targets are NOAA NCEI 1991–2020–class coastal normals (public domain; LICENSES.md); original site name.
 
-`LaunchCommit.Evaluate` applies a fictional LCC rule set modelled on public range weather facts (surface wind 12 m/s, gust 16 m/s, lightning 10 nmi, precip, ceiling 1500 m, temperature 2–35 °C, shear 0.030 /s). Lightning → Scrub; other violations → Hold. KID/Relaxed: `commitAllowed = false` and verdict stays Go. `WeatherEnsemble` runs N members with a splittable seed mix for violation probability.
+`LaunchCommit.Evaluate` applies a fictional LCC rule set modelled on public range weather facts (surface wind 12 m/s, gust 16 m/s, lightning 10 nmi, precip, ceiling 1500 m, temperature 2–35 °C, shear 0.030 /s). Lightning → Scrub; other violations → Hold. KID/Relaxed: `commitAllowed = false` and verdict stays Go (visual only). `WeatherCommit.Apply` drives an existing holdable `MissionEvent` (default `term.poll`) to `held` or `failed` (scrub) — **no new event schema**. `LaunchAnyway.ReliabilityPenalty` is an honest [0, 1] sum of external weights (wind 0.15, gust 0.10, lightning 1.0, precip 0.20, ceiling 0.15, temp 0.10, shear 0.20), capped at 1; override is allowed only for Hold (not Scrub). `WeatherEnsemble` runs N members with a splittable seed mix for violation probability.
 
-Upper winds are generated as a shear scalar for commit criteria; they are **not** fed into `Headless` / `Ascent3Dof` in this PR (avoids regenerating ascent goldens).
+Upper winds are for visuals and LCC only; they are **not** fed into `Headless` / `Ascent3Dof` (avoids regenerating ascent goldens).
 
-Seed→day goldens are hard-coded literals from an external mulberry32 + Rayleigh/Box-Muller snippet in `WeatherTests.cs`.
+Seed→day and launch-anyway goldens are hard-coded literals from external snippets in `WeatherTests.cs`.
 
 | quantity | absolute | relative | reasoning |
 |---|---|---|---|
@@ -219,4 +219,6 @@ Seed→day goldens are hard-coded literals from an external mulberry32 + Rayleig
 | climatologyThunder | 0 | 0.20 | Thunder-day frequency vs monthly Bernoulli parameter (±20 %). |
 | lccTruth | exact | 0 | 30 hand cases; verdict and violation count exact. |
 | ensembleExceedance | 0.05 | 0 | 50-member wind exceedance vs analytic Gaussian Φ̄. |
+| launchAnywayPenalty | 0 | 1e-12 | External weight sums: wind-only 0.15, wind+gust 0.25, lightning 1.0, all soft 0.90. |
+| missionEventHold | exact | 0 | Hold → `held`, Scrub → `failed` on holdable poll; KID leaves status untouched. |
 

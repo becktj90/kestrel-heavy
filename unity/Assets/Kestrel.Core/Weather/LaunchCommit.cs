@@ -98,6 +98,7 @@ namespace Kestrel.Core.Weather
                 thunderDay = lightningKm < LightningLimitKm,
                 lightningKm = lightningKm,
                 shearPerSec = shearPerSec,
+                shearWindMs = ShearProfile.FromSurface(windMs, shearPerSec),
             };
     }
 }

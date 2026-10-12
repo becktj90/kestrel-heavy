@@ -17,8 +17,13 @@
 //   PY
 //
 // Literals below match a verified Sensors.Mulberry32 stream (C# == Python).
+//
+// Launch-anyway penalty weights (external):
+//   wind 0.15, gust 0.10, lightning 1.0, precip 0.20, ceiling 0.15, temp 0.10, shear 0.20
+//   wind-only → 0.15; wind+gust → 0.25; lightning → 1.0; all soft → 0.90
 using System;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Timeline;
 using Kestrel.Core.Weather;
 using NUnit.Framework;
 
@@ -37,6 +42,11 @@ namespace Kestrel.Core.Tests
         const double Seed1CeilingM = 5051.309561120216;
         const double Seed1LightningKm = 131.09563425183296;
         const double Seed1ShearPerSec = 0.02887057364196517;
+        // External launch-anyway penalty literals (weights above).
+        const double PenaltyWindOnly = 0.15;
+        const double PenaltyWindGust = 0.25;
+        const double PenaltyLightning = 1.0;
+        const double PenaltyAllSoft = 0.90;
 
         [Test]
         public void FlightWeatherHold_Unchanged_KidNeverHolds()
@@ -181,6 +191,79 @@ namespace Kestrel.Core.Tests
         {
             int[] end = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
             return (end[month - 1] + end[month] + 1) / 2;
+        }
+
+        [Test]
+        public void LaunchAnyway_Penalty_ExternalLiterals()
+        {
+            var wind = LaunchCommit.Evaluate(LaunchCommit.HandCase(windMs: 13), "STANDARD");
+            Assert.AreEqual(LccVerdict.Hold, wind.verdict);
+            Assert.IsTrue(LaunchAnyway.CanOverride(wind));
+            Assert.AreEqual(PenaltyWindOnly, LaunchAnyway.ReliabilityPenalty(wind), 1e-12);
+
+            var windGust = LaunchCommit.Evaluate(LaunchCommit.HandCase(windMs: 13, gustMs: 17), "STANDARD");
+            Assert.AreEqual(PenaltyWindGust, LaunchAnyway.ReliabilityPenalty(windGust), 1e-12);
+
+            var scrub = LaunchCommit.Evaluate(LaunchCommit.HandCase(lightningKm: 5), "STANDARD");
+            Assert.AreEqual(LccVerdict.Scrub, scrub.verdict);
+            Assert.IsFalse(LaunchAnyway.CanOverride(scrub));
+            Assert.AreEqual(PenaltyLightning, LaunchAnyway.ReliabilityPenalty(scrub), 1e-12);
+
+            var soft = LaunchCommit.Evaluate(
+                LaunchCommit.HandCase(windMs: 13, gustMs: 17, precip: true, ceilingM: 1000, tempC: 40, shearPerSec: 0.04),
+                "STANDARD");
+            Assert.AreEqual(PenaltyAllSoft, LaunchAnyway.ReliabilityPenalty(soft), 1e-12);
+
+            var kid = LaunchCommit.Evaluate(LaunchCommit.HandCase(windMs: 20), "KID");
+            Assert.AreEqual(0, LaunchAnyway.ReliabilityPenalty(kid), 0);
+            Assert.IsFalse(LaunchAnyway.CanOverride(kid));
+        }
+
+        [Test]
+        public void WeatherCommit_DrivesMissionEventHoldAndScrub()
+        {
+            var poll = new MissionEvent
+            {
+                id = WeatherCommit.DefaultPollEventId,
+                holdable = true,
+                status = new EventStatus { state = TimelineStatus.Pending, progress = 0 },
+            };
+            var hold = LaunchCommit.Evaluate(LaunchCommit.HandCase(windMs: 13), "STANDARD");
+            Assert.IsTrue(WeatherCommit.Apply(hold, poll));
+            Assert.AreEqual(TimelineStatus.Held, poll.status.state);
+
+            poll.status.state = TimelineStatus.Pending;
+            var scrub = LaunchCommit.Evaluate(LaunchCommit.HandCase(lightningKm: 5), "STANDARD");
+            Assert.IsTrue(WeatherCommit.Apply(scrub, poll));
+            Assert.AreEqual(TimelineStatus.Failed, poll.status.state);
+
+            poll.status.state = TimelineStatus.Pending;
+            var kid = LaunchCommit.Evaluate(LaunchCommit.HandCase(windMs: 20), "KID");
+            Assert.IsFalse(WeatherCommit.Apply(kid, poll), "KID visual-only — no MissionEvent mutation");
+            Assert.AreEqual(TimelineStatus.Pending, poll.status.state);
+
+            var timeline = new Timeline.Timeline();
+            timeline.events.Add(new MissionEvent
+            {
+                id = "term.poll",
+                holdable = true,
+                status = new EventStatus { state = TimelineStatus.Pending, progress = 0 },
+            });
+            Assert.IsTrue(WeatherCommit.ApplyToTimeline(hold, timeline));
+            Assert.AreEqual(TimelineStatus.Held, timeline.events[0].status.state);
+        }
+
+        [Test]
+        public void ShearProfile_VisualOnly_NotAscentSim()
+        {
+            // Profile is kinematic from surface + shear; AscentSim / Headless do not reference it.
+            var day = WeatherGenerator.Generate(SiteClimatology.HavenId, 100, 1);
+            Assert.AreEqual(5, day.shearWindMs.Length);
+            Assert.AreEqual(Seed1WindMs, day.shearWindMs[0], RelSeedDay * Seed1WindMs);
+            double expect12 = Seed1WindMs + Seed1ShearPerSec * 12000.0;
+            Assert.AreEqual(expect12, day.shearWindMs[4], RelSeedDay * Math.Max(1, expect12));
+            Assert.AreEqual(0, ShearProfile.AltitudeKm[0], 0);
+            Assert.AreEqual(12, ShearProfile.AltitudeKm[4], 0);
         }
 
         static uint Mix(uint seed, uint index)
