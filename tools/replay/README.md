@@ -7,7 +7,8 @@ Proves arcade KH-1..KH-5 × KID/CADET/PAD_RAT fly identically across `mission.js
 
 How it is deterministic with zero changes to game code (`page-hooks.js`, injected before any page script):
 seeded `Math.random` (mulberry32, reseeded plus `Phaser.Math.RND.sow` at mission start), and a virtual clock for
-`performance.now`/`Date.now`/`requestAnimationFrame` advanced 1/60 s per `__replay.step()`. Each case gets a fresh page and
+`performance.now`/`Date.now`/`requestAnimationFrame` advanced 1/60 s per `__replay.step()`. Page `setTimeout`s (HUD banner timers) also run on
+the virtual clock; the viewport is pinned to 430×932 and focus is emulated (a blur would clear held keys). Each case gets a fresh page and
 empty storage. Rendering is skipped (it cannot change state); set `REPLAY_RENDER=1` to keep it.
 
 Recorded per case: key input trace (frame, key, down/up), phase sequence (status/sepPhase/jacklynPhase with frame), every

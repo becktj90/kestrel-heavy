@@ -38,6 +38,8 @@ export async function openGame() {
   // Pin the viewport: camera zoom (and so hazard spawn rows) depends on the parent size.
   await b.send('Emulation.setDeviceMetricsOverride', { width: 430, height: 932, deviceScaleFactor: 1, mobile: false, screenWidth: 430, screenHeight: 932 });
   await b.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  // Keep the page focused: a blur clears held keys (input.js) and resets Phaser's loop delta.
+  await b.send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await b.send('Network.setBlockedURLs', { urls: ['*fonts.googleapis.com*', '*fonts.gstatic.com*'] });
   await b.send('Page.addScriptToEvaluateOnNewDocument', { source: readFileSync(path.join(HERE, 'page-hooks.js'), 'utf8') });
   const errors = [];

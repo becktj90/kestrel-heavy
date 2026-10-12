@@ -17,6 +17,7 @@ window.__replayRun = async function replayRun({ mission, difficulty, seed, mode,
   scene.setDifficulty(difficulty);
   scene.setMission(mission);
   scene.nowSec = 0;
+  R.virtualTimers(true);
   R.reseed(seed);
   if (window.Phaser?.Math?.RND) window.Phaser.Math.RND.sow([String(seed)]);
 
