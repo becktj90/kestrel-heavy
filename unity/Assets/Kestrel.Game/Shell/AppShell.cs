@@ -1,0 +1,74 @@
+// App bootstrap. Lives in the generated Boot scene (the only object there): loads data, creates
+// the camera, quality service, portrait guard, UI root and scene flow, then enters Home.
+// Nothing here is placed by hand in a scene; ShellSetup only adds this component.
+using Kestrel.Game.Layout;
+using Kestrel.Game.Quality;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace Kestrel.Game.Shell
+{
+    [DefaultExecutionOrder(-1000)]
+    public sealed class AppShell : MonoBehaviour
+    {
+        public PanelSettings PanelSettings;
+        public StyleSheet Tokens;
+
+        public static AppShell Instance { get; private set; }
+        public VisualSpecData Spec { get; private set; }
+        public SceneFlow Flow { get; private set; }
+        public PortraitGuard Portrait { get; private set; }
+        public QualityService Quality { get; private set; }
+        public ThemedFillCamera Fill { get; private set; }
+        /// <summary>Full-bleed UI root (backgrounds) and its safe-area child (all interactive UI).</summary>
+        public VisualElement Root { get; private set; }
+        public VisualElement Safe { get; private set; }
+
+        void Awake()
+        {
+            if (Instance != null) { Destroy(gameObject); return; }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            Application.targetFrameRate = 60;
+
+            Spec = VisualSpecData.Load();
+            Quality = gameObject.AddComponent<QualityService>();
+
+            var camGo = new GameObject("ShellCamera");
+            camGo.transform.SetParent(transform, false);
+            camGo.transform.position = new Vector3(0, 0, -10);
+            camGo.AddComponent<Camera>();
+            Fill = camGo.AddComponent<ThemedFillCamera>();
+            Fill.Spec = Spec;
+
+            Portrait = gameObject.AddComponent<PortraitGuard>();
+            Portrait.Spec = Spec;
+
+            // Configure the UIDocument before it enables so it attaches with our PanelSettings.
+            var uiGo = new GameObject("ShellUI");
+            uiGo.SetActive(false);
+            uiGo.transform.SetParent(transform, false);
+            var doc = uiGo.AddComponent<UIDocument>();
+            doc.panelSettings = PanelSettings;
+            uiGo.SetActive(true);
+            Root = doc.rootVisualElement;
+            Root.AddToClassList("kh-root");
+            if (Tokens != null) Root.styleSheets.Add(Tokens);
+            Safe = new VisualElement { name = "safe" };
+            Safe.AddToClassList(SafeAreaRoot.SafeClass);
+            Root.Add(Safe);
+            Portrait.FrameChanged += OnFrame;
+            Root.RegisterCallback<GeometryChangedEvent>(_ => OnFrame(Portrait.Frame));
+
+            Flow = gameObject.AddComponent<SceneFlow>();
+        }
+
+        void Start() => Flow.Go(AppScreen.Home);
+
+        void OnFrame(PortraitFrame f)
+        {
+            if (f.Content.W <= 0) return;
+            SafeAreaRoot.Apply(Safe, f);
+        }
+    }
+}

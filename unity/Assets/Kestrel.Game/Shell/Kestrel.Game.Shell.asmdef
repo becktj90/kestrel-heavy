@@ -1,0 +1,14 @@
+{
+    "name": "Kestrel.Game.Shell",
+    "rootNamespace": "Kestrel.Game.Shell",
+    "references": ["Kestrel.Game.Layout", "Kestrel.Game.Quality", "Kestrel.Game.QualityCore"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
