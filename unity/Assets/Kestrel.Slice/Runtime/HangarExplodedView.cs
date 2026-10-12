@@ -37,6 +37,21 @@ namespace Kestrel.Slice
         public IReadOnlyList<HangarExplode.Part> Parts => parts;
         public bool IsExploded => toT > 0.5f;
         public float Shown => shown;
+        public int PartCount => nodes.Count;
+
+        /// <summary>Parent under the vehicle (stack axis is local +Y). Parts are not camera children.</summary>
+        public void AttachTo(Transform vehicle)
+        {
+            if (vehicle == null) return;
+            transform.SetParent(vehicle, false);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
+        }
+
+        public Vector3 PartLocal(int index) => nodes[index].Root.localPosition;
+        public Vector3 PartWorld(int index) => nodes[index].Root.position;
+        public bool PartDrawn(int index) => nodes[index].Root != null && nodes[index].Root.gameObject.activeInHierarchy;
 
         public void Build(Catalog c, Design d, UnityEngine.Material material)
         {
@@ -106,13 +121,21 @@ namespace Kestrel.Slice
         void Apply(float t)
         {
             shown = t;
+            // Closed: the assembled rocket is the picture. Part meshes stay at their rest pose but do not draw,
+            // so a view that was parented at the camera cannot fill the frame with grey caps.
+            bool open = t > 0.001f;
             HangarExplode.Callouts(parts, t, callouts);
             for (int i = 0; i < nodes.Count; i++)
             {
                 var n = nodes[i];
-                if (n.Root != null) n.Root.localPosition = HangarExplode.Position(n.Part, t);
-                if (n.Leader != null && i < callouts.Count)
-                    PlaceLeader(n.Leader, callouts[i].Anchor, callouts[i].End);
+                if (n.Root != null)
+                {
+                    n.Root.localPosition = HangarExplode.Position(n.Part, t);
+                    n.Root.gameObject.SetActive(open);
+                }
+                if (n.Leader == null) continue;
+                n.Leader.gameObject.SetActive(open && i < callouts.Count);
+                if (open && i < callouts.Count) PlaceLeader(n.Leader, callouts[i].Anchor, callouts[i].End);
             }
         }
 

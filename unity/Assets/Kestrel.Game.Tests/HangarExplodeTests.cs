@@ -218,5 +218,109 @@ namespace Kestrel.Game.Tests
             for (int i = 0; i < parts.Count; i++)
                 Assert.That(ids.Add(parts[i].Id), Is.True, parts[i].Id);
         }
+
+        [Test]
+        public void PartOffsetsStayInVehicleSpaceAlongTheStack()
+        {
+            var vehicle = new GameObject("Vehicle").transform;
+            var cam = new GameObject("Camera").transform;
+            var view = new GameObject("Exploded").AddComponent<HangarExplodedView>();
+            try
+            {
+                vehicle.SetPositionAndRotation(new Vector3(30f, 5f, -12f), Quaternion.Euler(0f, 25f, 18f));
+                cam.SetPositionAndRotation(new Vector3(-8f, 3f, 40f), Quaternion.Euler(70f, -40f, 15f));
+                view.AttachTo(vehicle);
+                view.Build(Cat(), Vehicle(), null);
+                Assert.That(view.transform.parent == vehicle, Is.True);
+                Assert.That(view.transform.IsChildOf(cam), Is.False);
+                Assert.That(view.PartCount, Is.GreaterThan(1));
+
+                view.SetExploded(false, true);
+                int seated = 0, lifted = 0;
+                for (int i = 0; i < view.PartCount; i++)
+                {
+                    var rest = view.Parts[i].RestLocal;
+                    var local = view.PartLocal(i);
+                    var world = view.PartWorld(i);
+                    Assert.That(local.x, Is.EqualTo(rest.x).Within(1e-4f));
+                    Assert.That(local.y, Is.EqualTo(rest.y).Within(1e-4f));
+                    Assert.That(local.z, Is.EqualTo(rest.z).Within(1e-4f));
+                    Assert.That(Vector3.Distance(world, vehicle.TransformPoint(rest)), Is.LessThan(1e-3f));
+                    Assert.That(Vector3.Distance(world, cam.TransformPoint(rest)), Is.GreaterThan(1f));
+                    Assert.That(view.PartDrawn(i), Is.False);
+                    if (view.Parts[i].ExplodeLift <= 1e-4f) seated++;
+                    else lifted++;
+                }
+                Assert.That(seated, Is.GreaterThan(0), "bottom engines stay on the stack when closed");
+                Assert.That(lifted, Is.GreaterThan(0));
+
+                view.SetExploded(true, true);
+                for (int i = 0; i < view.PartCount; i++)
+                {
+                    var part = view.Parts[i];
+                    var local = view.PartLocal(i);
+                    var world = view.PartWorld(i);
+                    var restWorld = vehicle.TransformPoint(part.RestLocal);
+                    var delta = world - restWorld;
+                    Assert.That(local.x, Is.EqualTo(part.RestLocal.x).Within(1e-4f));
+                    Assert.That(local.z, Is.EqualTo(part.RestLocal.z).Within(1e-4f));
+                    Assert.That(local.y, Is.EqualTo(part.RestLocal.y + part.ExplodeLift).Within(1e-3f));
+                    Assert.That(Vector3.Distance(world, vehicle.TransformPoint(local)), Is.LessThan(1e-3f));
+                    Assert.That(Vector3.Distance(world, cam.TransformPoint(local)), Is.GreaterThan(1f));
+                    Assert.That(delta.magnitude, Is.EqualTo(part.ExplodeLift).Within(1e-3f));
+                    if (part.ExplodeLift > 0.01f)
+                        Assert.That(Vector3.Dot(delta.normalized, vehicle.up), Is.EqualTo(1f).Within(1e-4f));
+                    Assert.That(view.PartDrawn(i), Is.True);
+                }
+                Assert.That(view.transform.parent == vehicle, Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(view.gameObject);
+                Object.DestroyImmediate(vehicle.gameObject);
+                Object.DestroyImmediate(cam.gameObject);
+            }
+        }
+
+        [Test]
+        public void HangarCameraDoesNotParentPartsToItself()
+        {
+            var camGo = new GameObject("Camera");
+            var vehicle = new GameObject("Vehicle").transform;
+            HangarExplodedView view = null;
+            try
+            {
+                camGo.AddComponent<Camera>();
+                var hangar = camGo.AddComponent<HangarCamera>();
+                camGo.transform.SetPositionAndRotation(new Vector3(0f, 2f, -30f), Quaternion.Euler(10f, 180f, 0f));
+                vehicle.SetPositionAndRotation(new Vector3(4f, 0f, 6f), Quaternion.Euler(0f, 15f, 0f));
+                view = new GameObject("Exploded").AddComponent<HangarExplodedView>();
+                view.AttachTo(vehicle);
+                view.Build(Cat(), Vehicle(), null);
+                hangar.ExplodedView = view;
+                hangar.ReduceMotion = true;
+                hangar.SetExploded(true);
+
+                Assert.That(hangar.Exploded, Is.True);
+                Assert.That(view.transform.parent == vehicle, Is.True);
+                Assert.That(view.transform.IsChildOf(camGo.transform), Is.False);
+                Assert.That(view.PartCount, Is.GreaterThan(0));
+                for (int i = 0; i < view.PartCount; i++)
+                {
+                    var local = view.PartLocal(i);
+                    var world = view.PartWorld(i);
+                    Assert.That(view.PartDrawn(i), Is.True);
+                    Assert.That(Vector3.Distance(world, vehicle.TransformPoint(local)), Is.LessThan(1e-3f));
+                    Assert.That(Vector3.Distance(world, camGo.transform.TransformPoint(local)), Is.GreaterThan(1f));
+                    Assert.That(view.PartLocal(i).y, Is.EqualTo(view.Parts[i].RestLocal.y + view.Parts[i].ExplodeLift).Within(1e-3f));
+                }
+            }
+            finally
+            {
+                if (view != null) Object.DestroyImmediate(view.gameObject);
+                Object.DestroyImmediate(vehicle.gameObject);
+                Object.DestroyImmediate(camGo);
+            }
+        }
     }
 }
