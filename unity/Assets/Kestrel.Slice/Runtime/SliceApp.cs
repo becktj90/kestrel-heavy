@@ -184,6 +184,7 @@ namespace Kestrel.Slice
             AddTankShells(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, Mathf.Max(1f, Mathf.Sqrt(design.stages[0].engineCount) * r.exitDiameter), plumeMat);
             flight.Plume.SetDeck(deckTop);
+            flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
             float rr = r.mesh.bounds.extents.x;
