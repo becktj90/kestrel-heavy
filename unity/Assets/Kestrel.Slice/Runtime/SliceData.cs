@@ -16,6 +16,19 @@ namespace Kestrel.Slice
         static HangarData hangar;
         static bool hangarTried;
         static DesignLibrary library;
+        static System.Collections.Generic.Dictionary<string, int[]> feel;
+
+        /// <summary>Haptic patterns from data/designer-feel.json ("snap", "payoff"). Empty when the file wasn't synced.</summary>
+        public static System.Collections.Generic.Dictionary<string, int[]> Feel
+        {
+            get
+            {
+                if (feel != null) return feel;
+                try { feel = HangarFeel.ParsePatterns(Optional("designer-feel")); }
+                catch (System.FormatException e) { Debug.LogWarning("[Hangar] designer-feel.json unreadable: " + e.Message); feel = new System.Collections.Generic.Dictionary<string, int[]>(); }
+                return feel;
+            }
+        }
 
         public static Catalog Catalog => catalog ??= Load();
 
