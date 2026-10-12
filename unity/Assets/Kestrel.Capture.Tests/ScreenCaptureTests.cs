@@ -29,7 +29,7 @@ namespace Kestrel.Capture.Tests
         [UnityTest] public IEnumerator Home() => Shot("Boot", "Home", null);
         [UnityTest] public IEnumerator Designer() => Shot("Design", "Designer", null);
         [UnityTest] public IEnumerator PadCloseup() => Shot("Design", "Pad", new[] { new Vector3(40, 25, -60), new Vector3(0, 30, 0) });
-        [UnityTest] public IEnumerator Flight() => Shot("Flight", "Flight", null);
+        // Flight.unity is still a ScreenStub with no camera (flight lives in Design/SliceApp); add a shot when it gets real content.
 
         static IEnumerator Shot(string scene, string name, Vector3[] cam)
         {
