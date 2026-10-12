@@ -63,13 +63,13 @@ namespace Kestrel.Core.Economy
             return Math.PI * d * len + Math.PI * d * d / 2;
         }
 
-        static long StructureCost(Catalog c, StagePart part, double sf)
+        static long StructureCost(Catalog c, Design d, StagePart part, double sf)
         {
             var S = c.Econ.Obj("structure");
             c.PropellantById.TryGetValue(part.propellant ?? "", out var prop);
             double cryo = prop?.storability == "deep-cryogenic" ? 1 + N(S, "deepCryoFactor") : 1;
             double sfk = Math.Pow(Math.Max(1, sf) / N(S, "refSafetyFactor"), N(S, "safetyFactorExp"));
-            double m = Mass.StructureMass(c, part, sf) + part.interstageMass + part.separationMass;
+            double m = Mass.StructureMass(c, part, sf) + InterstageAero.MassOf(c, d, part) + part.separationMass;
             return Int((m * Map(S.Obj("materialPerKg"), part.material, 0) + TankArea(c, part) * Map(S.Obj("materialPerM2"), part.material, 0)) * cryo * sfk);
         }
 
@@ -105,7 +105,7 @@ namespace Kestrel.Core.Economy
                     built[e.id] = b + count;
                     if (!devDone.Contains(e.id)) { devDone.Add(e.id); q.devLines.Add(new CostLine { cat = "engines", label = $"Develop {e.label}", amount = EngineDevCost(c, e) }); }
                 }
-                Add("structure", $"{g.label}: tanks & structure", StructureCost(c, p, sf) * g.n, g.key);
+                Add("structure", $"{g.label}: tanks & structure", StructureCost(c, d, p, sf) * g.n, g.key);
                 string plabel = c.PropellantById.TryGetValue(p.propellant ?? "", out var pr) ? pr.label : p.propellant;
                 Add("propellant", $"{g.label}: {plabel}", PropellantCost(c, p.propellant, p.propMass + p.landingPropMass) * g.n, g.key);
             }

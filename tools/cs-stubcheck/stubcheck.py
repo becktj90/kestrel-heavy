@@ -95,9 +95,18 @@ def main():
         refs = [r for r in (build(x) for x in A[n]["refs"]) if r]
         files = A[n]["files"]
         if not files: built[n] = None; return None
-        defs = ["UNITY_INCLUDE_TESTS", "UNITY_EDITOR", "UNITY_5_3_OR_NEWER", "UNITY_2021_1_OR_NEWER", "UNITY_6000_0_OR_NEWER"] if any(d == "UNITY_INCLUDE_TESTS" for d in A[n]["defines"]) or n.endswith("Tests") or "Editor" in n else ["UNITY_5_3_OR_NEWER", "UNITY_2021_1_OR_NEWER", "UNITY_6000_0_OR_NEWER"]
+        base = ["UNITY_5_3_OR_NEWER", "UNITY_2021_1_OR_NEWER", "UNITY_6000_0_OR_NEWER"]
+        is_test = any(d == "UNITY_INCLUDE_TESTS" for d in A[n]["defines"]) or n.endswith("Tests") or "Editor" in n
+        # Editor compile (what the Unity Editor and EditMode tests see): every assembly gets UNITY_EDITOR.
+        defs = ["UNITY_EDITOR"] + (["UNITY_INCLUDE_TESTS"] if is_test else []) + base
+        if not is_test:   # player compile too (iOS/web build): catches unguarded UnityEditor use in runtime code
+            code, msg = csc(os.path.join(work, n + ".player.dll"), files, refs + ([os.path.join(work, "UnityEngine.dll")] if A[n]["engine"] else []), base)
+            perrs = [l for l in msg.splitlines() if ": error " in l]
+            if code:
+                print(f"[FAIL] {n} (player build, no UNITY_EDITOR)"); failed = True
+                for l in perrs: print("   ", l.replace(assets + os.sep, ""))
         lib = [os.path.join(work, "UnityEngine.dll")] if A[n]["engine"] else []
-        if "UNITY_EDITOR" in defs: lib += [os.path.join(work, "UnityEditor.dll"), os.path.join(work, "nunit.framework.dll")]
+        lib += [os.path.join(work, "UnityEditor.dll"), os.path.join(work, "nunit.framework.dll")]
         out = os.path.join(work, n + ".dll")
         code, msg = csc(out, files, refs + lib, defs)
         errs = [l for l in msg.splitlines() if ": error " in l]

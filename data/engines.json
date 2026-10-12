@@ -32,7 +32,19 @@
       "cost": 1000000,
       "reliability": 0.995,
       "expansionRatio": 16,
-      "diameter": 0.92
+      "diameter": 0.92,
+      "nozzles": [
+        {
+          "id": "default",
+          "expansionRatio": 16,
+          "ispSL": 282,
+          "ispVac": 311,
+          "thrustSL": 845000,
+          "thrustVac": 934000,
+          "mass": 470,
+          "exitDiameter": 0.92
+        }
+      ]
     },
     {
       "id": "gg-kerolox-vac",

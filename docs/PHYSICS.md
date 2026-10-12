@@ -207,7 +207,7 @@ Goldens for onRailsNode are **hard-coded literals** computed outside the codebas
 
 **Shear draw (fictional, annual):** lognormal with median `0.0045 /s` and `σ_ln = 0.521497546971786`, chosen so `P(shear > 0.012) = 0.03` (a few percent, not the ~37% of a uniform 0.002–0.018 draw). Drawn via Box-Muller from two mulberry units. Real upper-wind hold rates are a few percent and seasonal; this is an annual stand-in.
 
-**Wind profile shape:** not a linear ramp to 12 km. Unsaturated peak `raw = surface + shear × 8000 m`, then algebraic soft saturation `SoftCap(raw) = raw / (1 + (raw/100)^4)^(1/4)` (asymptote 100 m/s, n = 4) near 10.5 km (smoothstep rise, mild decay above). Median shear → ~37–40 m/s peak (jet class 30–70 m/s). Soft saturation replaces a hard `min(100, raw)` clip so the ~3% of shear-fail days (raw ≳ 100) are not all pinned exactly at 100 m/s; they approach the asymptote from below (~85–98 m/s).
+**Wind profile shape:** not a linear ramp to 12 km. Unsaturated peak `raw = surface + shear × 8000 m`, then algebraic soft saturation `SoftCap(raw) = raw / (1 + (raw/100)^4)^(1/4)` (asymptote 100 m/s, n = 4) near 10.5 km (smoothstep rise, mild decay above). Median shear → ~37–40 m/s peak (jet class 30–70 m/s). Soft saturation replaces a hard `min(100, raw)` clip so the ~3% of shear-fail days (raw ≳ 100) are not all pinned exactly at 100 m/s; they approach the asymptote from below (~84–98 m/s).
 
 Haven monthly means are calibrated to **NOAA NCEI U.S. Climate Normals 1991–2020** at **Melbourne Intl AP, FL (`USW00012838`)**: temperature from `MLY-TAVG-NORMAL`, wind from the monthly mean of `HLY-WIND-AVGSPD` (public domain; LICENSES.md). Thunder-day probabilities are a **fictional** Florida-coastal seasonality (~80 days/yr), not a NOAA station product. Original site name.
 
@@ -250,4 +250,36 @@ Seed→day and launch-anyway goldens are hard-coded literals from external snipp
 | missionEventHold | exact | 0 | Hold (incl. lightning) → `held` on holdable poll; KID leaves status untouched. |
 | shearViolation | exact | 0 | Generated seed 22 exceeds ShearLimitPerSec 0.012 (lognormal tail). |
 | shearExceedance | 3√(p(1−p)/N) | 0 | N=10 000 vs lognormal p=0.03 (median 0.0045 /s, σ_ln as above). |
+
+## Designer v2 (G2)
+
+`data/golden/design-v2-literals.json` is computed by `tools/design-v2-literals.py`. It is not a snapshot of the C# run. `DesignV2Tests` compares `InterstageAero` and `AeroBalanceCalc` to those literals. `data/golden/design-v2.json` holds the migration shape and the validation wording. Neither file is produced by `npm run gen:golden`.
+
+Interstage length is `0.6 × max(D_lower, D_upper)` for mass, drag station, and CP. That is the length `RocketMeshBuilder` draws (`1.2 ×` the larger radius). The older `0.5 · D_lower` figure is not used.
+
+Mass is areal density times the frustum lateral area `π (r1 + r2) √(L² + (r1 − r2)²)`. Areal density matches the fairing map: composite 14, al-li 20, steel 45 kg/m², default 20. An explicit `interstageMass`, including 0, is the Engineer override and is not replaced. A v1 save that already stored the joint on the lower stage does not gain a second copy on the upper stage.
+
+One name per geometry. **Flare** is base-wider (`D_lower > D_upper`): `CNα > 0`, stabilizing, vehicle CP moves aft. **Shoulder** is upper-wider (`D_upper > D_lower`): `CNα < 0`, destabilizing. Equal diameters are **straight**, `CNα = 0`. Drag for a flare or a shoulder is a flat `+0.02` Cd. A flare scales roughly as `k sin²θ (1 − (d_s / d_b)²)` and lands near 0.02–0.05. A shoulder lands near 0.005–0.01. The flat 0.02 is the labelled value for both. Straight, and a missing shape, add nothing.
+
+CP of the joint is the Barrowman conical term. `CNa = 2 ((d_aft / d_ref)² − (d_forward / d_ref)²)`. The CP sits `(L / 3) (1 + (1 − d_forward/d_aft) / (1 − (d_forward/d_aft)²))` aft of the forward end, and the term is skipped when that denominator is 0 or `CNa` is 0. Positive `CNa` is a flare: it moves vehicle CP aft (smaller `cp_m`, metres up from the base). Negative `CNa` is a shoulder and lowers `stabilityCal`. The cone uses the diameters, not the stored label. A stored label that disagrees with the diameters warns with the actual name and the `CNα` sign.
+
+Fins, when `aero.fins` is set, are an unswept square (chord = span) with the trailing edge at the base. `l_F` equals the span. The fin CP is Barrowman's quarter-chord of the MAC, measured forward from that trailing edge:
+
+`x_f = (x_t / 3) (c_r + 2 c_t) / (c_r + c_t) + (1 / 6) (c_r + c_t − c_r c_t / (c_r + c_t))`
+
+`x_t = 0` for an unswept leading edge, so a square fin is `0.25 c`. The station on the vehicle is `length − x_f`. With `l_F = span` the finned fixture CP is 6.5304 m (0.3899 cal). The older mid-chord station (`length − 0.5 c`, 6.0100 m when `l_F` was 0) and the quarter-chord station with `l_F = 0` (5.8069 m) are not used.
+
+`cp_m` is the hangar marker. When the raw CP is ahead of the nose it is clamped to the vehicle length and `cpAheadOfNose` is set. `stabilityCal` keeps the raw CP, `(cg − cp_raw) / d_ref`, so the clamp does not hide a destabilizing shoulder. The shoulder fixture raw CP is 43.136 m on a 19.446 m vehicle; the marker sits on the nose.
+
+A v1 save with no `interstageMass` key migrates to an explicit `0`. A stored value, including 0, stays. The derived frustum is not written onto that save, so C# and JS keep the same mass.
+
+`maxq-high` warns above 45 kPa and never blocks. An unguided solid (stage-0 propellant storability `solid`, gimbal 0) is exempt. Pad steering is a gimbal on stage 0, or gimballed strap-ons on a gimbal-less core. `unstable` blocks when the rocket is unguided and `stabilityCal < 0`. That block stays. The 1–2 cal band and the `> 4` overstable warn apply only when the rocket is finned or unguided. A steered stage with no fins gets the engine-steered note instead of that band. Orbital templates stay launchable: after v1→v2 migration their engineering report has no blocks.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| interstageMass | 0 | 1e-12 | Frustum area and one multiply. Same closed form as the external literal. |
+| cgCp | 1e-9 m | 0 | `cg_m`, marker `cp_m`, and raw `cpRaw_m` from the base, positive up, against `design-v2-literals.py`. 1e-9 m is the hangar marker bar. |
+| stabilityCal | 1e-9 | 0 | `(cg − cp_raw) / d_ref` against the same literal. The marker clamp is not in this number. |
+| finQuarterChord | 1e-9 m | 0 | Unswept square fin, `l_F = span`, `x_f = 0.25 c` forward of the trailing edge at the base. |
+| cpAheadOfNose | exact | 0 | True when `cp_raw` is past the nose. The marker then equals vehicle length. |
 

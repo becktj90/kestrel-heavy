@@ -1,11 +1,13 @@
 // Vertical-slice entry point: DESIGN stub (UI Toolkit) -> flight liftoff..MECO -> HUD -> Game Center.
 // Everything is created from code at runtime; the scene only needs one GameObject with this
 // component (the editor bootstrap generates Assets/Scenes/Slice.unity).
+using System.Collections.Generic;
 using System.Linq;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Environment;
+using Kestrel.Kit.Contracts;
 using Kestrel.Site;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -204,14 +206,15 @@ namespace Kestrel.Slice
             rocketGO.AddComponent<MeshFilter>().sharedMesh = r.mesh;
             var mr = rocketGO.AddComponent<MeshRenderer>();
             if (bodyMat != null) { var m = new Material(bodyMat); ColorUtility.TryParseHtmlString(design.liveryPrimary, out var col); m.color = col; mr.sharedMaterial = m; }
-            AddTankShells(r);
+            var plates = new List<AttachPoint>();
+            AddTankShells(r, plates);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
             float rr = r.mesh.bounds.extents.x;
-            var padR = PadTower.Apply(tower, r.height, rr, PadTower.DefaultArchetype(rr), PadTower.DefaultSeed, rocketGO.transform);
+            var padR = PadTower.Apply(tower, r.height, rr, PadTower.DefaultArchetype(rr), PadTower.DefaultSeed, plates.Count > 0 ? plates : null, rocketGO.transform);
             float deckR = PadGround.DeckRadius(padR != null ? padR.Layout : null); // deck under every tower leg
             deck.localScale = new Vector3(2 * deckR, deck.localScale.y, 2 * deckR);
             framePoints = DesignFraming.SubjectPoints(r.height, rr, deckR,
@@ -257,9 +260,11 @@ namespace Kestrel.Slice
 
         /// <summary>V2a: overlay a procedural tank shell (welds, stiffener rings, isogrid normal map, LOD by distance)
         /// on every tank barrel. The shell sits 0.5% proud of the lathe body; its domes stay inside the body.</summary>
-        void AddTankShells(RocketMeshBuilder.Result r)
+        void AddTankShells(RocketMeshBuilder.Result r, List<AttachPoint> plates)
         {
             ulong seed = (ulong)(design.id ?? "kh").GetHashCode();
+            int strapIndex = 1;
+            var cat = SliceData.Catalog;
             for (int i = 0; i < r.tanks.Count; i++)
             {
                 var t = r.tanks[i];
@@ -268,10 +273,26 @@ namespace Kestrel.Slice
                 if (spec.Validate().Count > 0) continue;
                 var go = new GameObject($"TankShell_S{t.Stage + 1}{(t.StrapOn ? "_strap" + i : "")}", typeof(MeshFilter), typeof(MeshRenderer));
                 go.transform.SetParent(rocketGO.transform, false);
-                go.transform.localPosition = t.Offset + Vector3.up * (t.BarrelBottom - spec.DomeHeight);
+                var origin = t.Offset + Vector3.up * (t.BarrelBottom - spec.DomeHeight);
+                go.transform.localPosition = origin;
                 var view = go.AddComponent<Kestrel.Vehicle.TankShellView>();
                 view.ViewCamera = cam;
                 view.Init(spec, Kestrel.Kit.KitBudgets.Medium);
+                if (plates == null || cat == null) continue;
+                var part = t.StrapOn ? design.strapOns : (t.Stage >= 0 && t.Stage < design.stages.Count ? design.stages[t.Stage] : null);
+                if (part == null) continue;
+                bool liquid = cat.PropellantById.TryGetValue(part.propellant ?? "", out var prop) && prop.storability != "solid";
+                bool gimbal = false, purge = false;
+                if (part.engine != null && cat.EngineById.TryGetValue(part.engine, out var eng))
+                {
+                    gimbal = eng.gimbal > 0;
+                    purge = liquid && eng.cycle != "pressure-fed" && eng.cycle != "solid";
+                }
+                var release = !liquid || t.StrapOn ? ReleaseStyle.LanyardPull
+                    : t.Stage == 0 ? ReleaseStyle.TailServiceMastDrop : ReleaseStyle.SwingArmRetract;
+                int index = t.StrapOn ? strapIndex++ : 0;
+                plates.AddRange(Kestrel.Vehicle.TankShellUmbilicals.ForStage(spec, t.Stage, index,
+                    new Vec3(origin.x, origin.y, origin.z), liquid, gimbal, purge, release));
             }
         }
 
@@ -292,11 +313,20 @@ namespace Kestrel.Slice
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
             flight.enabled = true;
             flight.Launch(design);
+            var pad = tower != null ? tower.Find("Pad") : null;
+            var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
+            if (renderer != null) { renderer.ResetSequence(); renderer.AdvanceTo(0); }
         }
 
         void LateUpdate()
         {
             if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
+            if (flight != null && flight.Running && tower != null)
+            {
+                var pad = tower.Find("Pad");
+                var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
+                if (renderer != null) renderer.AdvanceTo(flight.SimTime);
+            }
             if (flight == null || flight.Sim == null || hud.ClassListContains("hidden")) return;
             // Chase camera, in floating-origin space (vehicle stays near the origin).
             // Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every

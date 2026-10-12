@@ -1,0 +1,176 @@
+{
+  "note": "Design v2 migration shape and validation wording. Numeric mass and CP live in design-v2-literals.json, computed by tools/design-v2-literals.py. This file is not produced by the JS exporter.",
+  "migration": {
+    "name": "v1-keeps-mass",
+    "input": {
+      "version": 1,
+      "name": "Keep mass",
+      "stages": [
+        {
+          "name": "Booster",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 1000,
+          "diameter": 2,
+          "material": "al-li",
+          "interstageMass": 1500,
+          "separationMass": 50,
+          "landingPropMass": 0
+        },
+        {
+          "name": "Upper",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox-vac",
+          "engineCount": 1,
+          "propMass": 100,
+          "diameter": 2,
+          "material": "al-li",
+          "interstageMass": 0,
+          "separationMass": 10,
+          "landingPropMass": 0
+        }
+      ]
+    },
+    "out": {
+      "version": 2,
+      "name": "Keep mass",
+      "stages": [
+        {
+          "name": "Booster",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 1000,
+          "diameter": 2,
+          "material": "al-li",
+          "interstageMass": 1500,
+          "separationMass": 50,
+          "landingPropMass": 0,
+          "cluster": { "pattern": "auto" },
+          "nozzle": "default"
+        },
+        {
+          "name": "Upper",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox-vac",
+          "engineCount": 1,
+          "propMass": 100,
+          "diameter": 2,
+          "material": "al-li",
+          "interstageMass": 0,
+          "separationMass": 10,
+          "landingPropMass": 0,
+          "cluster": { "pattern": "auto" },
+          "interstage": { "shape": "straight" },
+          "nozzle": "default"
+        }
+      ]
+    }
+  },
+  "migrationMissingMass": {
+    "name": "v1-missing-interstage-mass",
+    "input": {
+      "version": 1,
+      "name": "No joint mass",
+      "stages": [
+        {
+          "name": "Booster",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 1000,
+          "diameter": 2,
+          "material": "al-li",
+          "separationMass": 50,
+          "landingPropMass": 0
+        },
+        {
+          "name": "Upper",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 100,
+          "diameter": 2,
+          "material": "al-li",
+          "separationMass": 10,
+          "landingPropMass": 0
+        }
+      ]
+    },
+    "out": {
+      "version": 2,
+      "name": "No joint mass",
+      "stages": [
+        {
+          "name": "Booster",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 1000,
+          "diameter": 2,
+          "material": "al-li",
+          "separationMass": 50,
+          "landingPropMass": 0,
+          "cluster": { "pattern": "auto" },
+          "nozzle": "default",
+          "interstageMass": 0
+        },
+        {
+          "name": "Upper",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 100,
+          "diameter": 2,
+          "material": "al-li",
+          "separationMass": 10,
+          "landingPropMass": 0,
+          "cluster": { "pattern": "auto" },
+          "interstage": { "shape": "straight" },
+          "nozzle": "default",
+          "interstageMass": 0
+        }
+      ]
+    }
+  },
+  "wording": {
+    "unstableKid": "Your rocket would flip over! Add fins or put heavy parts higher.",
+    "unstableEngineer": "Stability margin {cal} cal (CP above CG). Aim for 1–2 cal.",
+    "engineSteeredKid": "The engines steer this rocket, so it can fly without the fin rule.",
+    "engineSteeredEngineer": "Stability margin {cal} cal. Engine-steered liquid stage; the 1–2 cal band is for finned or unguided rockets.",
+    "overstableKid": "Very steady, maybe too steady to steer well.",
+    "overstableEngineer": "Stability margin {cal} cal > 4; weathercocks in wind.",
+    "clusterCountMsg": "Pattern ring7 takes 7 engines; stage has 9.",
+    "clusterCountKid": "That engine pattern needs a different number of engines.",
+    "clusterOverhangMsg": "Pattern r3p10p20 needs D ≥ 6.80 m; stage is 6.00 m.",
+    "clusterOverhangKid": "The engines stick out past the edge. Make the stage a bit wider.",
+    "vacEngineMsg": "gg-kerolox-vac has zero sea-level thrust on a stage that lights at liftoff.",
+    "vacEngineKid": "This engine only works in space. Use a ground engine on the bottom.",
+    "nozzleUnknownMsg": "nozzle no-such not in gg-kerolox.nozzles.",
+    "nozzleUnknownKid": "That nozzle isn't in the shop.",
+    "interstageMsg": "Interstage straight with D 2.00→3.00 m (shoulder, CNα < 0).",
+    "interstageKid": "That joint is a shoulder: wider on top, CNα negative, so it makes the rocket less steady.",
+    "maxqMsg": "Max-Q 46.00 kPa > 45 kPa.",
+    "maxqKid": "The air pushes really hard on this rocket. Try a pointy nose or less push low down.",
+    "payloadWarnMsg": "Peak 7.50 g > payload maxG 6.00.",
+    "payloadWarnKid": "Too bumpy for your KH-2! Use gentler engines on the top stage.",
+    "payloadBlockMsg": "Peak 5.00 g > payload maxG 4.50.",
+    "payloadBlockKid": "Too bumpy for your KH-4! Use gentler engines on the top stage.",
+    "cryoMsg": "composite + hydrolox: cryoOK false (materials.json).",
+    "cryoKid": "Super-cold fuel can crack these tanks. Pick metal tanks.",
+    "rcsMsg": "Landing reserve set but `landing.rcs` is false.",
+    "rcsKid": "To land, your booster needs little steering jets.",
+    "engineOutKid": "If one engine stops, you'd sink back down. Add a spare.",
+    "engineOutEngineer": "Liftoff TWR with n−1 engines is {x} < 1.",
+    "unknownPattern": "stages[0].cluster.pattern: unknown \"nope\""
+  },
+  "launchable": [
+    "tpl-hydrogen-upper",
+    "tpl-medium-kerolox",
+    "tpl-medium-kerolox-reusable",
+    "tpl-methane-reusable",
+    "tpl-small-kerolox"
+  ],
+  "suborbitalExempt": ["tpl-sounding-solid"]
+}

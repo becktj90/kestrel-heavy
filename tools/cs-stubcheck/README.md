@@ -1,6 +1,6 @@
 # cs-stubcheck
 
-This is a compile check that runs without Unity. It compiles the repo's C# against hand-written stubs for the parts of UnityEngine, UIElements, URP and NUnit that we use, with Roslyn `csc` from the .NET 8 SDK (`~/.dotnet`), `-langversion:9` and netstandard2.1 references. Assemblies are split by the repo's `.asmdef` files. Test and Editor assemblies get the `UNITY_INCLUDE_TESTS` and `UNITY_EDITOR` defines.
+This is a compile check that runs without Unity. It compiles the repo's C# against hand-written stubs for the parts of UnityEngine, UIElements, URP and NUnit that we use, with Roslyn `csc` from the .NET 8 SDK (`~/.dotnet`), `-langversion:9` and netstandard2.1 references. Assemblies are split by the repo's `.asmdef` files. Each assembly is compiled the way the Editor sees it (`UNITY_EDITOR`, plus `UNITY_INCLUDE_TESTS` for test assemblies). Runtime assemblies are also compiled a second time as a player build, without `UNITY_EDITOR`, which catches unguarded `UnityEditor` use.
 
 ```
 tools/cs-stubcheck/stubcheck.py              # asmdefs touched by changes vs origin/main, plus untracked files (run before every push)
