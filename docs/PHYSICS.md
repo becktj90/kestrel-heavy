@@ -148,3 +148,17 @@ The ellipsoid check at the equator is the defining semi-major axis. The pole is 
 | ellipsoidAxis | 1e-4 m | 0 | Equator is `a` to 1e-6 m. The pole uses 1e-4 m because `cos(lat)` vanishes and the height split is the polar branch. |
 | eraClosed | 1e-9 rad | 0 | Two-part IAU polynomial, reduced to `[0, 2π)`. A packed JD is coarser than this band (about 1.4e-9 rad on the fractional-hour cases). 1e-9 rad is about 4 µs of Earth rotation. The band is not relaxed. |
 | eciRoundTrip | 1e-6 m | 0 | One rotation and its transpose, plus `ω × r` with `Earth.OMEGA_EARTH`. The angle is the two-part ERA. Velocity absolute is 1e-9 m/s. |
+
+## 3-DOF ascent (P7a)
+
+`Ascent3Dof` integrates `[x, y, z, vx, vy, vz, m]` with the same guidance, atmosphere, and point-mass gravity as `Headless`. `SimulatePlanar` seeds `z = vz = 0` on that pad state and uses the same air rate, `Ω cos φ`. In that plane the steps match the 2-D flights: every `simulate.json` case and every catalog ascent. No J2, and no wind shear.
+
+`LaunchAzimuth.InertialNortherlyDeg` is the non-rotating relation `sin Az = cos i / cos φ`, degrees from north toward east. For 51.6° from 28.5° N the northerly branch is 44.9751330989884° and the southerly branch is 135.0248669010116°. `|cos i| > |cos φ|` throws `ArgumentOutOfRangeException`. A pole throws as well. The result is never NaN.
+
+`RotatingNortherlyDeg` and `RotatingSoutherlyDeg` are the ground headings of a horizontal inertial velocity `v = sqrt(μ/R)` at `r = R` after the eastward site speed `ω R cos φ` is removed. For the same inclination and latitude those headings are 42.801031904016824° and 137.1989680959832°. A WGS-84 site in ECI waits on the frames work. This type does not keep a second ellipsoid.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| planar3dof | 1e-9 | 1e-9 | Same RK4 steps as Headless while `z = vz = 0`. Relative 1e-9 is the regression bar on the integrated state. Absolute 1e-9 covers components that sit near zero. |
+| launchAzimuthInertial | 0.01 deg | 0 | Non-rotating closed form, both branches, 51.6° from 28.5° N. The test also checks the arcsine identity to 1e-12 deg. |
+| launchAzimuthRotating | 1e-6 deg | 0 | Velocity triangle at surface circular speed. 1e-6 deg is about 0.004 arcsec, above `atan2` roundoff and well inside a guidance step. |
