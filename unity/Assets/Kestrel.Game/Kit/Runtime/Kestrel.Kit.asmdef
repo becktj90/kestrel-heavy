@@ -1,0 +1,14 @@
+{
+    "name": "Kestrel.Kit",
+    "rootNamespace": "Kestrel.Kit",
+    "references": ["Kestrel.Kit.Core", "Kestrel.Kit.Contracts", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.Core.Runtime"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
