@@ -7,11 +7,12 @@ const path = require('node:path');
 const test = require('node:test');
 const { execFileSync } = require('node:child_process');
 const root = path.join(__dirname, '..');
-const NAMES = ['propellants', 'engines', 'materials', 'payloads', 'presets', 'tanks', 'fairings', 'interstages', 'fins'];
+const NAMES = ['propellants', 'engines', 'materials', 'payloads', 'presets', 'tanks', 'fairings', 'interstages', 'fins', 'codex'];
 const readJSON = (...p) => JSON.parse(fs.readFileSync(path.join(root, ...p), 'utf8'));
 
 // Minimal JSON Schema (2020-12 subset) validator: type, const, enum, required, properties,
-// additionalProperties, items, minItems, maxItems, minimum, maximum, exclusiveMinimum, pattern, $ref (#/$defs).
+// additionalProperties, items, minItems, maxItems, minimum, maximum, exclusiveMinimum, pattern,
+// minLength, maxLength, $ref (#/$defs).
 function validate(schema, v, at, root, errs) {
   if (schema.$ref) return validate(schema.$ref.split('/').slice(1).reduce((o, k) => o[k], root), v, at, root, errs);
   const type = (x) => (x === null ? 'null' : Array.isArray(x) ? 'array' : Number.isInteger(x) ? 'integer' : typeof x);
@@ -26,7 +27,11 @@ function validate(schema, v, at, root, errs) {
     if (schema.maximum != null && v > schema.maximum) errs.push(`${at}: > maximum`);
     if (schema.exclusiveMinimum != null && v <= schema.exclusiveMinimum) errs.push(`${at}: <= exclusiveMinimum`);
   }
-  if (typeof v === 'string' && schema.pattern && !new RegExp(schema.pattern).test(v)) errs.push(`${at}: pattern`);
+  if (typeof v === 'string') {
+    if (schema.pattern && !new RegExp(schema.pattern).test(v)) errs.push(`${at}: pattern`);
+    if (schema.minLength != null && v.length < schema.minLength) errs.push(`${at}: minLength`);
+    if (schema.maxLength != null && v.length > schema.maxLength) errs.push(`${at}: maxLength`);
+  }
   if (Array.isArray(v)) {
     if (schema.minItems != null && v.length < schema.minItems) errs.push(`${at}: minItems`);
     if (schema.maxItems != null && v.length > schema.maxItems) errs.push(`${at}: maxItems`);
@@ -53,6 +58,13 @@ for (const n of NAMES) {
     assert.deepStrictEqual(JSON.parse(JSON.stringify(gen)), json);
   });
 }
+
+test('schema validator rejects codex strings outside minLength and maxLength', () => {
+  const schema = readJSON('data', 'schemas', 'codex.schema.json'), data = readJSON('data', 'codex.json'), errs = [];
+  data.entries[0] = { ...data.entries[0], title: 'x'.repeat(61), engineer: 'y'.repeat(79) };
+  validate(schema, data, 'codex', schema, errs);
+  assert.ok(errs.some((e) => e.includes('maxLength')) && errs.some((e) => e.includes('minLength')), errs.join('; '));
+});
 
 test('schema validator rejects a bad catalog entry', () => {
   const schema = readJSON('data', 'schemas', 'engines.schema.json'), data = readJSON('data', 'engines.json'), errs = [];
