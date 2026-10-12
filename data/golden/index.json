@@ -8,7 +8,9 @@
   "vehicle": 10,
   "simulate": 13,
   "economy": 67,
-  "catalog-flight": 100
+  "catalog-flight": 100,
+  "vehicle-migrate": 9,
+  "save-store": 3
  },
- "total": 253
+ "total": 265
 }
