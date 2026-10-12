@@ -227,6 +227,21 @@ namespace Kestrel.Site.Tests
         }
 
         [Test]
+        public void TrenchOpeningDropsOnlyTheTrianglesItCovers()
+        {
+            float[] pos =
+            {
+                0, 0, 0,  4, 0, 0,  0, 0, 4,
+                20, 0, 20,  24, 0, 20,  20, 0, 24
+            };
+            int[] idx = { 0, 1, 2, 3, 4, 5 };
+            float[] hole = { 0.2f, 0.2f, 1.2f, 0.2f, 0.2f, 1.2f };
+            var cut = SiteMesh.WithoutOpenings(pos, idx, new[] { hole });
+            Assert.That(cut, Is.EqualTo(new[] { 3, 4, 5 }));
+            Assert.That(SiteMesh.WithoutOpenings(pos, idx, null), Is.SameAs(idx));
+        }
+
+        [Test]
         public void GroundFacesUpAndIndicesAreInRange()
         {
             var land = Site().Land(0);

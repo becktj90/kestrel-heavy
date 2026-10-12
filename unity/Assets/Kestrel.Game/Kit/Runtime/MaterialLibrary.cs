@@ -28,6 +28,7 @@ namespace Kestrel.Kit
             MaterialRole.WarningStripes    => new MaterialSpec(new Color(1f, 1f, 1f), 0.10f, 0.35f, striped: true),
             MaterialRole.SafetyYellowSteel => new MaterialSpec(new Color(0.95f, 0.76f, 0.10f), 0.30f, 0.40f),
             MaterialRole.Glass             => new MaterialSpec(new Color(0.20f, 0.28f, 0.32f), 0.00f, 0.92f),
+            MaterialRole.Refractory        => new MaterialSpec(new Color(0.34f, 0.24f, 0.20f), 0.05f, 0.18f),
             _ => new MaterialSpec(Color.magenta, 0, 0)
         };
 

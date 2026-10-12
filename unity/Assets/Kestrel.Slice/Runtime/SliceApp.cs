@@ -225,6 +225,7 @@ namespace Kestrel.Slice
                     framePoints.Add(new Vector3(c.x, Mathf.Max(c.y, tower.position.y + topY), c.z));
             }
             flight.Plume.AttachGroundCloud(tower, deckR, PadTower.Fit(r.height, rr).height);
+            PadDetailLink.Apply(flight.Plume, tower, ground, deck, padR != null ? padR.Layout : null);
             rocketHeight = r.height; frameHeight = r.height;
             ApplyDesignFraming();
         }

@@ -4,7 +4,7 @@ using System;
 
 namespace Kestrel.Kit
 {
-    public enum MaterialRole { PaintedSteel, Galvanized, Concrete, RubberHose, Insulation, WarningStripes, SafetyYellowSteel, Glass }
+    public enum MaterialRole { PaintedSteel, Galvanized, Concrete, RubberHose, Insulation, WarningStripes, SafetyYellowSteel, Glass, Refractory }
 
     public static class KitBudgets
     {
