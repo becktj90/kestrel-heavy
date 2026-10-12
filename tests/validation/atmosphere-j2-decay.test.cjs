@@ -266,16 +266,15 @@ test('S2: 86-1000 km is continuous at 86 km and strictly decreasing in p and rho
 
 test.todo('S2: solar-cycle thermosphere density vs NRLMSIS 2.0 reference runs at F10.7 70/150/250 (needs NRLMSIS-class model)');
 
-// --- J2 ---------------------------------------------------------------------------------------------
-// Earth constants: WGS-84 a = 6378137 m, GM = 3.986004418e14; J2 = 1.08262668e-3 (EGM96/WGS-84 C20 unnormalised).
-// The sim is point-mass only today (gravity.js: "J2 not modeled in M1"), so these tests validate the
-// *reference* first-order secular formula that S3 must reproduce:
-//   dOmega/dt = -1.5 n J2 (R/p)^2 cos i.
-// Checks against two published facts:
-//   ISS (~420 km, i = 51.64 deg) node regression about -5.0 deg/day. eps 0.1 deg/day covers first-order J2
-//     (J2^2 and J4 terms are about 1%) and the rounding of the published figure.
-//   Sun-synchronous 800 km circular needs i of about 98.6 deg. eps 0.1 deg, same reasons.
-const J2 = 1.08262668e-3, RE = 6378137, MU = 3.986004418e14, DAY = 86400;
+// --- J2 / J3 / J4 (P2) ------------------------------------------------------------------------------
+// Earth constants: WGS-84 a = 6378137 m, GM = 3.986004418e14;
+// J2 = 1.08262668e-3, J3 = -2.53265648e-6, J4 = -1.61962159e-6 (EGM96 / NIMA TR8350.2 print).
+// gravityZonal is the Montenbruck & Gill 3.36–3.38 closed form, twin of Geopotential.Accel.
+// Secular Ω̇: dOmega/dt = -1.5 n J2 (R/p)^2 cos i.
+//   ISS (~420 km, i = 51.64 deg) node regression about -5.0 deg/day. eps 0.1 deg/day.
+//   Sun-synchronous 800 km circular needs i of about 98.6 deg. eps 0.1 deg.
+const J2 = 1.08262668e-3, J3 = -2.53265648e-6, J4 = -1.61962159e-6;
+const RE = 6378137, MU = 3.986004418e14, DAY = 86400;
 const nodeRateDegPerDay = (a, e, iDeg) => {
   const n = Math.sqrt(MU / a ** 3), p = a * (1 - e * e);
   return -1.5 * n * J2 * (RE / p) ** 2 * Math.cos(iDeg * Math.PI / 180) * DAY * 180 / Math.PI;
@@ -294,11 +293,35 @@ test('J2 reference: sun-synchronous inclination at 800 km about 98.6 deg', () =>
   assert.ok(Math.abs(iDeg - 98.6) <= 0.1, `sun-sync i ${iDeg}`);
 });
 
-test('J2 status: sim gravity is still point-mass (update this file when S3 lands)', async () => {
-  const fs = require('node:fs');
-  const src = fs.readFileSync(path.join(phys, 'gravity.js'), 'utf8');
-  assert.match(src, /J2 not modeled/, 'gravity.js changed: replace this guard with a propagator-vs-reference J2 test');
+test('P2: gravityZonal matches the Montenbruck closed form at six points (rel 1e-12)', async () => {
+  const { gravityZonal, J2: j2, J3: j3, J4: j4 } = await import(path.join(phys, 'gravity.js'));
+  assert.equal(j2, J2); assert.equal(j3, J3); assert.equal(j4, J4);
+  const pts = [
+    [RE + 400e3, 0, 0], [0, RE + 400e3, 0], [0, 0, RE + 400e3],
+    [0, 0, -(RE + 400e3)], [5e6, 3e6, 4e6], [-2e6, 6e6, -1e6],
+  ];
+  const out = [0, 0, 0];
+  for (const [x, y, z] of pts) {
+    gravityZonal(x, y, z, out);
+    const r2 = x * x + y * y + z * z, r = Math.sqrt(r2);
+    const r3 = r2 * r, r5 = r2 * r3, r7 = r5 * r2;
+    const zr2 = (z * z) / r2, zr4 = zr2 * zr2;
+    const pm = -MU / r3;
+    const k2 = -1.5 * MU * J2 * RE * RE / r5;
+    const k3 = -2.5 * MU * J3 * RE ** 3 / r7;
+    const k4 = 1.875 * MU * J4 * RE ** 4 / r7;
+    const ex = [
+      pm * x + k2 * x * (1 - 5 * zr2) + k3 * x * z * (3 - 7 * zr2) + k4 * x * (1 - 14 * zr2 + 21 * zr4),
+      pm * y + k2 * y * (1 - 5 * zr2) + k3 * y * z * (3 - 7 * zr2) + k4 * y * (1 - 14 * zr2 + 21 * zr4),
+      pm * z + k2 * z * (3 - 5 * zr2) + k3 * (6 * z * z - 7 * z * z * zr2 - 0.6 * r2)
+        + k4 * z * (5 - (70 / 3) * zr2 + 21 * zr4),
+    ];
+    for (let k = 0; k < 3; k++) {
+      const scale = Math.max(Math.abs(ex[k]), 1e-300);
+      assert.ok(Math.abs(out[k] - ex[k]) <= 1e-12 * scale, `pt ${x},${y},${z} k${k}`);
+    }
+  }
 });
 
-test.todo('S3: propagator nodal regression matches nodeRateDegPerDay within 1% over 10 days (needs S3 propagator)');
+test.todo('P5: propagator nodal regression matches nodeRateDegPerDay within 1% over 10 days (coast handoff)');
 test.todo('S2/S3: orbital decay lifetime vs reference (needs thermosphere density + decay model; DECISIONS on decay strength/F10.7 pending)');

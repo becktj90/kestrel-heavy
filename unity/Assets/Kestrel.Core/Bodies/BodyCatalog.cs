@@ -1,9 +1,10 @@
-// Earth record for P1. Loaded from data/bodies.json. μ, radius and ω must match
-// Gravity / Earth. J2 is stored for P2 and is not applied here.
+// Earth record. Loaded from data/bodies.json. μ, radius and ω must match Gravity / Earth.
+// J2–J4 match Geopotential and are applied by that type, not by Frames or Ascent.
 using System;
 using System.Collections.Generic;
 using System.IO;
 using Kestrel.Core.Json;
+using Kestrel.Core.Physics;
 
 namespace Kestrel.Core.Bodies
 {
@@ -11,7 +12,7 @@ namespace Kestrel.Core.Bodies
     {
         public string id, label, role;
         public bool gravity;
-        public double mu, radius, inverseFlattening, omega, j2;
+        public double mu, radius, inverseFlattening, omega, j2, j3, j4;
     }
 
     public static class BodyCatalog
@@ -34,6 +35,8 @@ namespace Kestrel.Core.Bodies
                     inverseFlattening = o.Num("inverseFlattening"),
                     omega = o.Num("omega"),
                     j2 = o.Num("j2"),
+                    j3 = o.ContainsKey("j3") ? o.Num("j3") : Geopotential.J3,
+                    j4 = o.ContainsKey("j4") ? o.Num("j4") : Geopotential.J4,
                 });
             }
             return list;

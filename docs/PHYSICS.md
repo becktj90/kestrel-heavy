@@ -138,7 +138,7 @@ The absolute term is the floor (the quantity is allowed to be ~0). The relative 
 
 ## Frames (P1)
 
-`Frames` is WGS-84 geodetic ↔ ECEF, and ECEF ↔ ECI by the IAU 2000 Earth rotation angle. No polar motion, no precession, no nutation. The calendar conversion is `Kestrel.Core.Astro.Time.JulianDate` at 0 h. UT1 is taken as UTC. ERA takes that midnight Julian date and the day fraction as two parts (SOFA era00); they are not added before the polynomial. `EraSiderealSeconds` is that angle in sidereal seconds, not the older GMST polynomial, so it is not yet a USNO sidereal-time comparison. J2 is a field on `data/bodies.json` and is not applied.
+`Frames` is WGS-84 geodetic ↔ ECEF, and ECEF ↔ ECI by the IAU 2000 Earth rotation angle. No polar motion, no precession, no nutation. The calendar conversion is `Kestrel.Core.Astro.Time.JulianDate` at 0 h. UT1 is taken as UTC. ERA takes that midnight Julian date and the day fraction as two parts (SOFA era00); they are not added before the polynomial. `EraSiderealSeconds` is that angle in sidereal seconds, not the older GMST polynomial, so it is not yet a USNO sidereal-time comparison. J2–J4 live on `data/bodies.json` and are applied by `Geopotential`, not by Frames.
 
 The ellipsoid check at the equator is the defining semi-major axis. The pole is the derived semi-minor axis `a(1−f)`. Round trip is geodetic → ECEF → geodetic → ECEF, including the equator, both poles, height −1 km, and height 36,000 km.
 
@@ -162,3 +162,19 @@ The ellipsoid check at the equator is the defining semi-major axis. The pole is 
 | planar3dof | 1e-9 | 1e-9 | Same RK4 steps as Headless while `z = vz = 0`. Relative 1e-9 is the regression bar on the integrated state. Absolute 1e-9 covers components that sit near zero. |
 | launchAzimuthInertial | 0.01 deg | 0 | Non-rotating closed form, both branches, 51.6° from 28.5° N. The test also checks the arcsine identity to 1e-12 deg. |
 | launchAzimuthRotating | 1e-6 deg | 0 | Velocity triangle at surface circular speed. 1e-6 deg is about 0.004 arcsec, above `atan2` roundoff and well inside a guidance step. |
+
+## Gravity (P2)
+
+`Geopotential.Accel` is point-mass plus zonal J2–J4 (Montenbruck & Gill 3.36–3.38). The twin is `gravityZonal` in `web/js/physics/gravity.js`. Constants: J2 = 1.08262668e-3, J3 = −2.53265648e-6, J4 = −1.61962159e-6 (EGM96 / NIMA TR8350.2 print on `data/bodies.json`). No tesseral terms. Ascent (`Headless`, `Ascent3Dof`) stays point-mass.
+
+Secular rates are first-order J2: Ω̇, ω̇, Ṁ. The SSO solver uses 360/365.2422 deg/day. Critical inclination is arccos(√(1/5)) = 63.43494882292201° (and the supplementary 116.56505117707799°). The frozen-orbit eccentricity is −½ (J3/J2) (R/a) sin i. Mean ↔ osculating is a first-order J2 short-period map, finite at e = 0.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| zonalAccel | 0 | 1e-12 | Same closed form in C# and JS. Relative 1e-12 is the cross-language bar on a few multiplies. |
+| nodeSecular | 0.1 deg/day | 0 | ISS 420 km, 51.64°. First-order J2; J2²/J4 are about 1 %. |
+| ssoInclination | 0.1 deg | 0 | Circular 800 km, mean-sun rate 360/365.2422 deg/day. |
+| criticalInclination | 0.01 deg | 0 | ω̇ = 0 at arccos(√(1/5)). |
+| nodeNumeric | 0 | 0.01 | 10-day RK4 with J2 only vs the secular Ω̇. Short-period oscillation is removed by a least-squares slope. |
+| meanOscRoundTrip | 1 m (a), 1e-7 (e) | 0 | First-order map and its inverse. |
+| frozenE | 0.0001 | 0 | ±10 % of e ≈ 0.001 at 800 km SSO. |

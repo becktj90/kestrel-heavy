@@ -22,6 +22,8 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(Earth.OMEGA_EARTH, earth.omega);
             Assert.AreEqual(Frames.InverseFlattening, earth.inverseFlattening);
             Assert.AreEqual(1.08262668e-3, earth.j2);
+            Assert.AreEqual(Geopotential.J3, earth.j3);
+            Assert.AreEqual(Geopotential.J4, earth.j4);
             Assert.IsTrue(earth.gravity);
             Assert.AreEqual(1, BodyCatalog.LoadFromRepo(Golden.Root).Count);
         }

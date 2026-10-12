@@ -1,6 +1,6 @@
 {
-  "doc": "docs/PHYSICS.md#frames-p1",
-  "note": "Earth only. J2 is stored for P2 and is not applied. No Moon, no third-body, no J3/J4.",
+  "doc": "docs/PHYSICS.md#gravity-p2",
+  "note": "Earth only. J2–J4 are the EGM96 / NIMA TR8350.2 zonal print used by Geopotential. No Moon, no tesseral, no third-body.",
   "bodies": [
     {
       "id": "earth",
@@ -11,7 +11,9 @@
       "radius": 6378137,
       "inverseFlattening": 298.257223563,
       "omega": 7.2921159e-5,
-      "j2": 1.08262668e-3
+      "j2": 1.08262668e-3,
+      "j3": -2.53265648e-6,
+      "j4": -1.61962159e-6
     }
   ]
 }
