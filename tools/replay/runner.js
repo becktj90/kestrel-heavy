@@ -14,6 +14,12 @@ window.__replayRun = async function replayRun({ mission, difficulty, seed, mode,
   // Normalise menu state so every run starts identically.
   for (const c of ['ArrowLeft', 'ArrowRight', 'Space']) key('keyup', c);
   if (scene.status !== 'MENU') scene.returnToMenu();
+  // The menu ships with only KH-1 unlocked. The gate is one trace per mission,
+  // so open the manifest here. Deck-finish unlock in the game is unchanged.
+  if (!Array.isArray(scene.settings.unlockedMissions)) scene.settings.unlockedMissions = [];
+  for (const id of ['KH-1', 'KH-2', 'KH-3', 'KH-4', 'KH-5']) {
+    if (!scene.settings.unlockedMissions.includes(id)) scene.settings.unlockedMissions.push(id);
+  }
   scene.setDifficulty(difficulty);
   scene.setMission(mission);
   scene.nowSec = 0;

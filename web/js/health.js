@@ -1,8 +1,11 @@
 /**
  * Stack integrity. Shield still eats one hit. Remaining health is visible so
  * a RUD is never silent — graze vs lethal is named on the banner.
+ * Damage scales with max HP. A short invulnerability window stops one contact
+ * cluster from emptying the bar.
  */
 import { DIFFICULTY } from './config.js';
+import { HEALTH } from './health-tune.js';
 
 export const HEALTH_MAX = {
   KID: 100,
@@ -10,14 +13,9 @@ export const HEALTH_MAX = {
   PAD_RAT: 64,
 };
 
-/** Per-hazard integrity loss after the aero shield is gone. */
-export const HAZARD_DAMAGE = {
-  bird: 28,
-  balloon: 16,
-  ice: 36,
-  debris: 42,
-  clutter: 24,
-};
+/** Per-hazard integrity loss at the reference HP, before the max-HP scale. */
+export const HAZARD_DAMAGE = HEALTH.base;
+export const HIT_INVULN_SEC = HEALTH.invulnSec;
 
 export const CORRIDOR_SCRAPE_DPS = 14;
 
@@ -27,9 +25,9 @@ export function healthMaxFor(diff) {
 
 export function hazardDamage(kind, diff) {
   const base = HAZARD_DAMAGE[kind] || HAZARD_DAMAGE.debris;
-  if (diff === 'PAD_RAT') return Math.round(base * 1.15);
-  if (diff === 'KID') return Math.round(base * 0.55);
-  return base;
+  const max = healthMaxFor(diff);
+  const mul = HEALTH.difficultyMul[diff] ?? 1;
+  return Math.max(1, Math.round(base * (max / HEALTH.damageRefHp) * mul));
 }
 
 /**
@@ -45,12 +43,17 @@ export function applyHit(session, kind, diff) {
   if ((session.grace || 0) > 0) {
     return { health, shield, kind: 'grace', damage: 0, remaining: health };
   }
+  if ((session.invuln || 0) > 0) {
+    return { health, shield, kind: 'invuln', damage: 0, remaining: health };
+  }
   if (shield > 0) {
+    session.invuln = HIT_INVULN_SEC;
     return { health, shield: shield - 1, kind: 'shield', damage: 0, remaining: health };
   }
 
   const damage = hazardDamage(kind, diff);
   let next = Math.max(0, health - damage);
+  session.invuln = HIT_INVULN_SEC;
   if (!mode.allowFail) {
     next = Math.max(8, next);
     return { health: next, shield: 0, kind: 'kid', damage, remaining: next };

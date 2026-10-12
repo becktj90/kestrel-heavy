@@ -202,7 +202,6 @@ export const PICKUP_TYPES = ['shield', 'fuel', 'boost'];
 export const TIPS = [
   'Kestrel Heavy is 7 m wide. Yes, that wide.',
   'Core engines burn liquid methane and LOX.',
-  'KH-2 landed the booster on Haven.',
   'Heavy lift. Soft catch.',
   'Pier 7 is a coastal launch complex — scrub, wind, and ocean.',
   'The service tower carries fully enclosed work platforms.',
