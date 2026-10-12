@@ -146,6 +146,6 @@ Dev-build-only screen (stripped from release): pick any cue/segment; sliders for
 4. Cut stems to bar lengths, export OGG, write the cue JSON.
 5. Add every file to `MUSIC_LICENSES.md` in the same PR. No row, no merge.
 
-## 8. Open questions for Trevor
-- The existing web `theme` loop came from an AI music service. Its commercial status depends on the plan it was made on (see `MUSIC_LICENSES.md`). Keep it in the Unity build or replace it with the original motif score?
+## 8. Decisions
+- **Legacy `theme` loop (2026-10-11):** it came from an AI music service and was not made on a paid plan, or Trevor isn't sure. Trevor decided on 2026-10-11 to replace it with the original Kestrel score. It is **excluded from the Unity/paid build** (see `MUSIC_LICENSES.md`). The CUE-03 title loop, built from the motif, takes its place. The existing files stay in the web demo and iOS folders for now; a separate replacement PR is planned.
 - Paid upgrades are listed in `MUSIC_LICENSES.md` as an optional ask; nothing is approved.
