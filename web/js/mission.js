@@ -229,9 +229,28 @@ export default class MissionScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(9).setVisible(false);
     this.setCorridorVisible(false);
     this.bgPad = this.add.image(W / 2, H / 2, 'pad').setDepth(0);
+    // Big-screen portrait: tall viewports (iPad, Pro Max) zoom out past the
+    // 1280x720 pad art. Stretch its top sky row and bottom deck row so there is
+    // no hard band (themed extension, not letterbox). Visual only.
+    this.padExtTop = this.add.image(W / 2, 1, 'pad').setOrigin(0.5, 1).setDepth(-0.65);
+    this.padExtBot = this.add.image(W / 2, H - 1, 'pad').setOrigin(0.5, 0).setDepth(0);
+    this.syncPadExt();
+    const padSetVisible = this.bgPad.setVisible.bind(this.bgPad);
+    this.bgPad.setVisible = (v) => {
+      this.padExtTop?.setVisible(v);
+      this.padExtBot?.setVisible(v);
+      return padSetVisible(v);
+    };
     this.oceanWash = this.add.graphics().setDepth(-1).setVisible(false);
     this.paintOceanWash();
     this.bgOcean = this.add.image(W / 2, 280, 'ocean').setVisible(false).setDepth(0).setDisplaySize(3600, 2400);
+    // Big-screen portrait: the zoomed-out Haven camera on iPad / Pro Max sees
+    // past the 3600x2400 sea art. Extend its edge column sideways and its top
+    // row upward (themed extension, mirrors the ocean's tint/visibility).
+    this.oceanExtSide = this.add.image(W / 2, 280, 'ocean').setVisible(false).setDepth(-0.01);
+    this.oceanExtTop = this.add.image(W / 2, 280 - 1200 + 1, 'ocean').setOrigin(0.5, 1).setVisible(false).setDepth(-0.01);
+    this.syncOceanExtFrames();
+    this.events.on('postupdate', this.syncOceanExt, this);
     this.jacklyn = this.add.image(W / 2, 620, 'jacklyn').setVisible(false).setDepth(2);
     this.smokeBank = this.add.image(W / 2, 620, 'smoke-bank').setVisible(false).setDepth(7).setAlpha(0);
     this.bloomFlash = this.add.image(W / 2, 620, 'bloom').setVisible(false).setDepth(8).setBlendMode('ADD').setAlpha(0);
@@ -2891,16 +2910,52 @@ export default class MissionScene extends Phaser.Scene {
     return getMission(this.settings.currentMission || FIRST_MISSION);
   }
 
+  syncPadExt() {
+    if (!this.padExtTop) return;
+    const tex = this.textures.get('pad');
+    if (!tex.has('kh-ext-top')) tex.add('kh-ext-top', 0, 0, 0, W, 2);
+    if (!tex.has('kh-ext-bot')) tex.add('kh-ext-bot', 0, 0, H - 2, W, 2);
+    this.padExtTop.setTexture('pad', 'kh-ext-top').setDisplaySize(W, 1400);
+    this.padExtBot.setTexture('pad', 'kh-ext-bot').setDisplaySize(W, 1400);
+  }
+
+  syncOceanExtFrames() {
+    if (!this.oceanExtSide) return;
+    const tex = this.textures.get('ocean');
+    const src = tex.getSourceImage();
+    const w = src.width || 2;
+    if (!tex.has('kh-ext-col')) tex.add('kh-ext-col', 0, w - 2, 0, 2, src.height);
+    if (!tex.has('kh-ext-row')) tex.add('kh-ext-row', 0, 0, 0, w, 2);
+    this.oceanExtSide.setTexture('ocean', 'kh-ext-col');
+    this.oceanExtTop.setTexture('ocean', 'kh-ext-row');
+  }
+
+  syncOceanExt() {
+    const o = this.bgOcean;
+    if (!o || !this.oceanExtSide) return;
+    const v = o.visible;
+    for (const e of [this.oceanExtSide, this.oceanExtTop]) {
+      e.setVisible(v);
+      if (!v) continue;
+      if (o.isTinted) e.setTint(o.tintTopLeft); else e.clearTint();
+    }
+    if (!v) return;
+    this.oceanExtSide.setPosition(o.x, o.y).setDisplaySize(14000, o.displayHeight);
+    this.oceanExtTop.setPosition(o.x, o.y - o.displayHeight / 2 + 1).setDisplaySize(14000, 3000);
+  }
+
   applyLook() {
     const flight = this.currentFlight();
     refreshTodTextures(this, flight.tod);
     refreshLoadoutTextures(this, this.settings.loadout, flight);
     if (this.bgPad) this.bgPad.setTexture('pad');
+    this.syncPadExt();
     if (this.bgSky) this.bgSky.setTexture('ascent-sky');
     if (this.cloudsFar) this.cloudsFar.setTexture('clouds-far');
     if (this.cloudsNear) this.cloudsNear.setTexture('clouds-near');
     if (this.hazeBand) this.hazeBand.setTexture('haze');
     if (this.bgOcean) this.bgOcean.setTexture('ocean');
+    this.syncOceanExtFrames();
     this.applyRocketSkin();
     this.paintSkyWash(this.status === 'SEP' ? 1 : 0);
   }

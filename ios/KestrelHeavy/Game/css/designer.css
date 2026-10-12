@@ -1,4 +1,4 @@
-/* DESIGN screen (blueprint). Touch-first: every control ≥ 44px. Safe-area aware, portrait + landscape. */
+/* DESIGN screen (blueprint). Touch-first: every control ≥ 44px. Safe-area aware, portrait-only. */
 .kd {
   --bp: #0b2a4a; --bp2: #0e3560; --line: rgba(160, 210, 255, 0.55); --ink: #e8f4ff; --dim: #9cc3e6;
   --good: #7dffb0; --warn: #ffcf5d; --bad: #ff8a6a;
@@ -19,7 +19,6 @@
 .kd-close { order: 2; }
 .kd-actions { order: 3; flex: 1 1 100%; }
 .kd-actions select { flex: 1 1 120px; min-width: 0; }
-@media (orientation: landscape) { .kd-actions { flex: 0 1 auto; order: 1; } .kd-close { order: 4; } }
 .kd-kicker { font-family: var(--font-mono, monospace); font-size: 0.7rem; letter-spacing: 0.14em; color: var(--dim); }
 .kd-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .kd-btn, .kd-in, .kd-tab, .kd-chip, .kd-card, .kd-link {
@@ -99,13 +98,7 @@
 .kd-sheet-card { background: var(--bp2); border: 1px solid var(--line); border-radius: 12px; padding: 16px; width: min(92%, 420px); max-height: 80%; overflow: auto; display: grid; gap: 8px; }
 .kd-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .kd-list li { display: flex; gap: 6px; } .kd-wide { flex: 1; text-align: left; }
-/* Landscape: schematic | editor | readout */
-@media (orientation: landscape) {
-  .kd-body { grid-template-columns: 120px minmax(0, 1fr) minmax(220px, 30%); grid-template-rows: minmax(0, 1fr); grid-template-areas: "schem edit readout"; }
-  .kd-readout { max-height: none; }
-  .kd-svg { max-height: 70vh; }
-}
-@media (min-width: 760px) and (orientation: portrait) {
+@media (min-width: 760px) {
   .kd-body { grid-template-columns: 180px minmax(0, 1fr); }
   .kd-readout { max-height: 34vh; font-size: 0.95rem; }
 }
@@ -132,3 +125,5 @@
 .kf-hints li { display: flex; justify-content: space-between; gap: 8px; }
 .kf-hints b { font-family: var(--font-mono, monospace); }
 .kf-sub span { white-space: nowrap; }
+/* Portrait phones: keep "Make it fly" pinned at the bottom of the readout instead of below the fold. */
+.kd-flyrow { position: sticky; bottom: 0; z-index: 2; background: var(--bp2); padding: 6px 0 2px; }

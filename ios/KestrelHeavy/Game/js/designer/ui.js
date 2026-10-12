@@ -357,7 +357,7 @@ export class DesignerScreen {
       !v.blocks.length && !v.warnings.length ? h('li', { class: 'good', text: 'Looks flyable. Nice work!' }) : null);
     const needsFix = v.blocks.length || v.warnings.some((w) => w.code === 'dv-margin' || w.code === 'twr-marginal');
     rows.push(notes,
-      h('div', { class: 'kd-row' },
+      h('div', { class: 'kd-row kd-flyrow' },
         h('button', { type: 'button', class: 'kd-btn kd-fly', disabled: !needsFix, onclick: () => { const f = makeItFly(this.design); this.design = f.design; this.sim = null; this.refresh(); this.toast(f.changes.length ? `Made it fly: ${f.changes.slice(0, 3).join(', ')}${f.changes.length > 3 ? '…' : ''}` : 'Already flyable!'); } }, '✨ Make it fly'),
         h('button', { type: 'button', class: 'kd-btn kd-launch', disabled: true, 'aria-disabled': 'true', title: 'Flying your own designs is coming in M3' }, 'LAUNCH')),
       h('p', { class: 'kd-hint', text: 'Flying custom designs is coming in M3.' }));
