@@ -81,18 +81,14 @@ Legend: **present / partial / absent**. Tolerances are |a−b| ≤ abs + rel·|b
   statistics: mean F10.7 within ±5 sfu of the target cycle mean, Ap ≥ 50 in 1–3 % of days.
 - Tier: **2.0** (density for decay is on the 2.0 list). Detailed composition/radiation: 1.1+.
 
-### P4 Weather generator, ensembles, LCC — **absent** (policy stub only)
-- Evidence: `Weather.Hold` = wind > 12 m/s, KID/Relaxed never hold (`Flight/Weather.cs:111-123`,
-  `web/js/flight/weather.js:1-7`). Holds exist in the timeline (`Timeline/TimelineClock.cs`). Validation B (#89) holds the
-  policy contract and climatology checks as todo. R5 in ENVIRONMENT_REALISM_AUDIT §4 is the same item.
-- Gap: seeded site climatology (surface wind/gust, temperature, cloud, precip, lightning, upper-level wind profile and
-  shear); ensemble (N members around the deterministic draw for "probability of violation"); fictional LCC rule set
-  modelled on public range rules (45th Weather Squadron facts, original wording); upper winds into the ascent drag.
-- Golden vectors: (1) seed→day weather, rel 1e-12. (2) climatology: 10 000 draws per month at the fictional Florida
-  site reproduce NOAA NCEI monthly normals (mean wind ±0.5 m/s, temp ±1 K, thunder-day frequency ±20 %). (3) LCC truth
-  table: 30 hand cases, exact. (4) Ensemble: 50 members, probability of LCC violation matches the analytic Gaussian
-  exceedance within ±0.05.
-- Tier: **2.0** (weather + LCC). Ensembles: **2.0 reduced** (shares the MC runner, P8a).
+### P4 Weather generator, ensembles, LCC — **landed** (see #113 / `Kestrel.Core.Weather`)
+- Evidence: `Kestrel.Core.Weather` seeded generator + LCC + ensemble; `Flight.Weather.Hold` policy stub unchanged
+  (KID/Relaxed never hold). Haven calibrated to NOAA NCEI 1991–2020 Melbourne `USW00012838` (LICENSES.md).
+  Lightning = Hold + 30 min (site distance); shear limit 0.012 /s with generator tail that can exceed it.
+  Upper winds are visual/LCC only (not in AscentSim) — known simplification until 6-DOF.
+- Golden vectors: see `docs/PHYSICS.md` § Weather (P4). Seed→day rel 1e-12; climatology vs hard-coded NOAA
+  literals with 3σ/√N + interannual bands; LCC 30 hand cases exact; Rayleigh wind exceedance at N=10 000.
+- Tier: **2.0** (weather + LCC). Ensembles: **2.0 reduced**. Upper winds into ascent drag: **1.1 / 6-DOF**.
 
 ### P5 Propagators/handoff, drag/decay, lifetime, re-entry heating — **partial**
 - Evidence: one RK4 at `dt` 0.05 s for ascent (`Headless.cs:22,97,197`), sim ends at cutoff (`Headless.cs:253-262`);
@@ -170,7 +166,7 @@ Legend: **present / partial / absent**. Tolerances are |a−b| ≤ abs + rel·|b
 | 3 | Gravity/J2 | reference formulas only (#90) | EGM2008 C20–C40, published Ω̇ |
 | 4 | Frames/time | absent | NGA TR8350.2, Vallado examples, USNO |
 | 5 | Propagation/decay | todo (#90) | own reference script + published bands |
-| 6 | Weather/LCC | todo (#89) | NOAA NCEI normals |
+| 6 | Weather/LCC | landed (#113) | NOAA NCEI 1991–2020 `USW00012838` (Melbourne); see PHYSICS.md § Weather |
 | 7 | Eclipse/β/SRP | absent | Horizons Sun + geometry |
 | 8 | Ascent performance | goldens are self-consistency only (`simulate.json`, `catalog-flight.json`) | rocket equation, published Δv-to-LEO budgets (bands) |
 | 9 | 6-DOF/slosh/loads | absent | NASA SP-106, textbook cases |
