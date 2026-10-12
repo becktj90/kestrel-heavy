@@ -1,0 +1,25 @@
+<!-- dotnet runner for the engine-free Pad Core tests (folder ends in ~ so Unity ignores it).
+     Run: dotnet test unity/Assets/Kestrel.Game/Pad/Tests/Dotnet~/Kestrel.Pad.Core.Tests.csproj -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../Kit/Contracts/**/*.cs" LinkBase="Kit.Contracts" />
+    <Compile Include="../../../Kit/Core/**/*.cs" LinkBase="Kit.Core" />
+    <Compile Include="../../Core/**/*.cs" LinkBase="Pad.Core" />
+    <Compile Include="../Core/**/*.cs" LinkBase="Tests.Core" />
+    <Compile Include="../PadGeneratorTests.cs" LinkBase="Tests" />
+    <Compile Include="../TowerAnchorTests.cs" LinkBase="Tests" />
+    <Compile Include="../PadLightingTests.cs" LinkBase="Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+</Project>

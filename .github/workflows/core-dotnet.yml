@@ -23,3 +23,4 @@ jobs:
       # That benchmark's budget is at least 8 ms median / 20 ms worst and grows with a same-process
       # calibration. Hard ceilings are 15 ms / 40 ms. The 2 ms / 5 ms figures stay the floor-device goal.
       - run: dotnet test unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj --logger "console;verbosity=normal"
+      - run: dotnet test unity/Assets/Kestrel.Game/Pad/Tests/Dotnet~/Kestrel.Pad.Core.Tests.csproj --logger "console;verbosity=normal"

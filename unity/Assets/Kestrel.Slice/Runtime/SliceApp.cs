@@ -5,6 +5,7 @@ using System.Linq;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
+using Kestrel.Game.Environment;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -15,7 +16,7 @@ namespace Kestrel.Slice
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
         Design design; Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
-        Material bodyMat, plumeMat; bool submitted;
+        Material bodyMat, plumeMat; bool submitted; SkyRig sky;
 
         void Awake()
         {
@@ -32,9 +33,10 @@ namespace Kestrel.Slice
         void BuildScene()
         {
             cam = new GameObject("Camera").AddComponent<Camera>(); cam.tag = "MainCamera";
-            cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.45f, 0.62f, 0.85f);
+            cam.clearFlags = CameraClearFlags.Skybox;
             cam.nearClipPlane = 0.5f; cam.farClipPlane = 200000f; cam.fieldOfView = 50;
             var sun = new GameObject("Sun").AddComponent<Light>(); sun.type = LightType.Directional; sun.intensity = 1.3f; sun.transform.rotation = Quaternion.Euler(40, -30, 0);
+            sky = SkyRig.Attach(cam, sun);
             worldRoot = new GameObject("World").transform;
             vehicleRoot = new GameObject("Vehicle").transform; vehicleRoot.SetParent(worldRoot, false);
             flight = gameObject.AddComponent<FlightDriver>(); flight.World = worldRoot; flight.Vehicle = vehicleRoot;
@@ -59,6 +61,8 @@ namespace Kestrel.Slice
             // keep everything SliceApp builds in its own scene so it unloads with Design.
             foreach (var root in new[] { cam.gameObject, sun.gameObject, worldRoot.gameObject })
                 if (root.scene != gameObject.scene) UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root, gameObject.scene);
+            // After PadGround's one-shot haze, the sky owns the live fog colour so the horizon matches.
+            if (sky != null) sky.Refresh();
         }
 
         void BuildUI()
@@ -219,6 +223,7 @@ namespace Kestrel.Slice
                     framePoints.Add(new Vector3(c.x, Mathf.Max(c.y, tower.position.y + topY), c.z));
             }
             flight.Plume.AttachGroundCloud(tower, deckR, PadTower.Fit(r.height, rr).height);
+            PadDetailLink.Apply(flight.Plume, tower, ground, deck, padR != null ? padR.Layout : null);
             rocketHeight = r.height; frameHeight = r.height;
             ApplyDesignFraming();
         }
@@ -289,6 +294,7 @@ namespace Kestrel.Slice
 
         void LateUpdate()
         {
+            if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
             if (flight == null || flight.Sim == null || hud.ClassListContains("hidden")) return;
             // Chase camera, in floating-origin space (vehicle stays near the origin).
             // Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every

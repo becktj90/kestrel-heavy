@@ -45,6 +45,8 @@ namespace Kestrel.Pad
         public readonly List<SwingArmSpec> Arms = new List<SwingArmSpec>();
         public ElementGraph Graph = new ElementGraph();
         public float DeckRadius;
+        /// <summary>Flame trench, deflector and deck surface (D3). Null only on layouts built before Register.</summary>
+        public TrenchSpec Trench;
         /// <summary>Named tower attach frames (null for Rail). See TowerAnchors and docs/UMBILICAL_CONTRACT.md.</summary>
         public TowerAnchors Anchors;
 
@@ -55,6 +57,11 @@ namespace Kestrel.Pad
             void F(float v) { h ^= (ulong)BitConverter.SingleToInt32Bits(v) & 0xffffffffUL; h *= 1099511628211UL; }
             void S(string s) { foreach (var c in s) { h ^= c; h *= 1099511628211UL; } }
             S(Archetype.ToString()); F(DeckRadius);
+            if (Trench != null)
+            {
+                S("trench"); F(Trench.BearingDeg); F(Trench.Width); F(Trench.Depth); F(Trench.FaceAngleDeg);
+                F(Trench.ExitLength); F(Trench.FlareDeg); F(Trench.PondCount); F(Trench.SpareDeflector ? 1f : 0f); F(Trench.PlateSize);
+            }
             foreach (var m in Members) { S(m.Id); F(m.A.X); F(m.A.Y); F(m.A.Z); F(m.B.X); F(m.B.Y); F(m.B.Z); }
             foreach (var a in Arms) { S(a.AttachId); F(a.Pivot.X); F(a.Pivot.Y); F(a.Pivot.Z); }
             return h;
@@ -63,7 +70,7 @@ namespace Kestrel.Pad
 
     public static class PadGenerator
     {
-        public const int Version = 2;   // bump when output for a given seed changes (invalidates caches/goldens)
+        public const int Version = 3;   // D3 trench/deck changes the seeded layout (invalidates caches/goldens)
 
         /// <summary>Same rule as Kestrel.Core.Timeline.Pad.For: tower for stages >= 3 m across, strongback for liquid + tower.</summary>
         public static PadArchetype ArchetypeFor(string corePadId, bool strongback) =>
@@ -77,6 +84,9 @@ namespace Kestrel.Pad
             L.DeckRadius = Math.Max(12f, fit.VehicleRadius * 4f) * rng.Range(1.0f, 1.3f);
             var site = L.Graph.Add(TowerLayout.SiteId, ElementCategory.Site, null, "pad", $"archetype:{type}");
             site.Center = new Vec3(0, 0, 0); site.Size = new Vec3(L.DeckRadius * 2, 1, L.DeckRadius * 2); site.DisplayName = "Launch pad";
+            // Separate stream: tower, rail and strongback keep the seed sequence they had before D3.
+            L.Trench = TrenchGrammar.Sample(seed, type, fit, L.DeckRadius);
+            TrenchGrammar.Register(L);
 
             if (type == PadArchetype.Rail) { BuildRail(L, ref rng); return L; }
 
