@@ -40,6 +40,7 @@ Nominal times are game seconds. T- is compressed for this mode (engineer keeps r
 | T+0:00 | T+0:00 | `term.liftoff` | terminal | Liftoff | Liftoff. The sim calls it when altitude passes 1 m. Nominal is T+0; the actual is the sim liftoff aligned to that zero. |
 | T+0:48 | T+0:48 | `asc.maxq` | ascent | Max-Q | Max-Q is the sim peak dynamic pressure (46949 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:48. |
 | T+0:48 | — | `asc.throttle` | ascent | Throttle | Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q. |
+| T+2:01 | T+2:01 | `asc.karman` | ascent | Karman | The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:01, on an integrator step. |
 | T+2:05 | T+2:05 | `stg.fairing` | staging | Fairing | Fairing separates once heating has fallen (after Max-Q) and altitude reaches 110 km. Time T+2:05 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude. |
 | T+2:24.128 | T+2:24.128 | `asc.meco` | ascent | MECO | Main engine cutoff at sim T+2:24.128. A medium kerolox public anchor is about T+2:25; this time is the sim burnout. |
 | T+2:24.128 | T+2:24.128 | `stg.sep.1` | staging | SEP s1 | Stage 1 separates at sim T+2:24.128, the same instant the sim records separation. The timeline orders it with the cutoff. |

@@ -130,6 +130,12 @@ The absolute term is the floor (the quantity is allowed to be ~0). The relative 
 }
 ```
 
+## Upper atmosphere (S2)
+
+`UpperAtmosphere.At` is `Atmosphere.At`. There is no second density table and no new tolerance. The bands in the block above are unchanged. A coarse knot fit was dropped: log-linear segments were about 25% off in density between 120 and 150 km. The USSA76 5 km tabulation now lives inside `Atmosphere.At` (86–1000 km). NRLMSIS is not a source. The later model is Jacchia-71-class from the NASA/SAO reports.
+
+`asc.karman` is an observational MissionEvent at 100 km geometric altitude. It does not change the ascent step or the sim event list. Star positions, if a caller needs them, come from `StarCatalog` and `data/astro/bsc5p-compact.csv`.
+
 ## Frames (P1)
 
 `Frames` is WGS-84 geodetic ↔ ECEF, and ECEF ↔ ECI by the IAU 2000 Earth rotation angle. No polar motion, no precession, no nutation. The calendar conversion is `Kestrel.Core.Astro.Time.JulianDate` at 0 h. UT1 is taken as UTC. ERA takes that midnight Julian date and the day fraction as two parts (SOFA era00); they are not added before the polynomial. `EraSiderealSeconds` is that angle in sidereal seconds, not the older GMST polynomial, so it is not yet a USNO sidereal-time comparison. J2 is a field on `data/bodies.json` and is not applied.

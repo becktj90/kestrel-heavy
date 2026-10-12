@@ -1,6 +1,7 @@
 // U.S. Standard Atmosphere 1976, 0–86 km geometric (layers by geopotential height); 86–1000 km
 // USSA76 Table I knots every 5 km (log-linear p and rho, linear T and sound speed), 995–1000 km
 // scale height above 1000 km. SI units. Port of web/js/physics/atmosphere.js.
+// Above 86 km, callers use this same Atmosphere.At. UpperAtmosphere does not keep a second table.
 using System;
 
 namespace Kestrel.Core.Physics

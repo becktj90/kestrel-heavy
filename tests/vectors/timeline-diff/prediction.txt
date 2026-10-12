@@ -3,6 +3,7 @@ after=scout
 seed=1
 added:
 removed:
+asc.karman | − Karman | t=111 | The Karman line is absent because the sim, including a ballistic coast after burnout, never reaches 100 km geometric altitude.
 stg.fairing | − Fairing | t=111 | Fairing separation is absent because the sim state never reaches 100 km, the jettison altitude.
 orb.insert | − Orbit | t=318.852 | Orbit insertion is absent because the sim outcome is suborbital, not orbit.
 shifted:
