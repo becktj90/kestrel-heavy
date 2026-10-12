@@ -55,6 +55,12 @@
         runTimers();
       }
     },
+    // Jump the virtual clock forward to a fixed absolute time. Boot steps a
+    // real-time-dependent number of frames (harness polls until the menu is up),
+    // so without this every later performance.now() differs per run and the
+    // float error in Phaser/Matter deltas (1000/60 is not exact) flips
+    // threshold checks (spawn timers, pickups) -> flaky D0 (KH-2_CADET, #56).
+    anchor(t) { if (t <= now) throw new Error(`replay anchor ${t} <= now ${now}; raise it`); now = t; },
     now: () => now,
   };
 })();
