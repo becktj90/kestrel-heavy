@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "note": "Hangar launch budgets in fictional Kc (CostModel.FormatKc units), per destination orbit. Over budget is a warning, never a block: kids can always launch. A design may carry its own budgetKc (a mission sets it); otherwise the orbit row, then defaultKc. nearFraction starts the 'getting close' note.",
+  "defaultKc": 40000,
+  "nearFraction": 0.9,
+  "byOrbit": {
+    "suborbital": 8000,
+    "leo200": 25000,
+    "leo400": 40000,
+    "sso": 45000,
+    "gto": 90000,
+    "tli": 140000
+  }
+}

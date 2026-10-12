@@ -440,6 +440,22 @@ Source: Art's final section `docs/DESIGNER_ART_SECTION.md` on branch `art/design
 8. **Warnings in simple:** hidden, as `Experience.Present` does today. Simple shows blocks only; standard and engineer show warnings. (A single friendly hint in simple may be revisited post-2.0.)
 9. **Version bump:** yes. New parts (fin count/span, RCS propellant, nozzle override, cluster pattern, interstage shape) bump the design to `version: 2` through `DesignMigration` with a golden; v1 saves load with defaults that reproduce today's numbers exactly.
 
+## 15. Hangar model (G3: `Kestrel.Core/Hangar`)
+
+Engine-free, so EditMode and `dotnet test` run the same tests. The UI calls these; it holds no rules of its own.
+
+| Piece | File | What it does |
+|---|---|---|
+| Document | `HangarSession` | The design JSON (schema v2) is the single document. `Apply(op, coalesceKey)` runs one `HangarEditor` op, records undo, and invalidates the derived `Report` (Validate.Engineering), `Sheet` and `Advisories`. `LaunchEnabled` = no blocks. `MakeItFly()` is one undo step. |
+| Edits | `HangarEditor` | Add/remove/reorder stages; per part: engine, count, cluster pattern, nozzle (`default`/`extended` from `data/engines.json` `nozzles[]`), propellant, material, width, propellant load, tank length (inverse of `SizeTank`), landing reserve, tune; interstage shape and mass override; boosters 0/2/4, kind, crossfeed; fairing length/width/material/nose/jettison; payload type/mass/orbit; fins (count, span), legs, grid fins, RCS, avionics, safety factor; paint, livery, per-slot finishes, decals. Every op clamps to `data/designer-limits.json` and keeps the shape valid (a seeded fuzz test checks it). |
+| Undo | `EditHistory` | 50 steps, whole-document JSON snapshots (exact restore), gesture coalescing until `EndGesture()`, labels like "Stage 1 engines 9 → 8" and VoiceOver text "… 9 to 8". |
+| Data sheet | `DataSheet` | Burn phases (Δv vac and SL, TWR, start/dry/prop mass, thrust), part rows (engines, Isp, tank length, dry/prop mass), totals, cost vs budget, CG/CP/calibres and a stability band (Steady / A bit wobbly / Would flip over / Too stiff / Engines keep it straight). All numbers come from `Readout.Quick`, `Balance`, `Stack`, `CostModel`. |
+| Warnings | `Advisories`, `KidWords` | Each Validate issue plus the budget check becomes headline + kid sentence + engineer detail, with the part to ring. Over budget warns, near budget is a note; neither blocks. |
+| Saves | `DesignLibrary` | 8 named slots on `NativeStore` (`kh.save.v1.design.*`), names 1–24 chars, rename/duplicate/delete, `UniqueName`. Loads migrate. |
+| Data | `HangarData` | `data/designer-templates.json` (5 starters: Hopper, Workhorse, Heavy, Lander, Moonshot; forks get `meta.forkedFrom`), `data/designer-look.json` (16-colour palette, finish slots, decal slots and earned decals, 6 per vehicle), `data/designer-budget.json` (Kc per orbit; a design's own `budgetKc` wins), plus `finishes.json` and `liveries.json`. |
+
+New optional design keys (no version bump; unknown to physics): `look.livery`, `look.finishes{slot: finishId}`, `look.decals[{id, slot, scale, rotate}]`, `budgetKc`, `meta.forkedFrom`.
+
 ## No dark patterns
 
 No energy, timers, loot boxes, purchases, FOMO, streak punishment, confirmshaming, social pressure or child-targeted reward pressure anywhere in the Hangar (`docs/ENGAGEMENT_SPEC.md` L60). Unlocks come from play or Settings. $0 spend.

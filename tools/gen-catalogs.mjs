@@ -3,7 +3,7 @@
 // `npm run pack:ios` copies web/ as before). tests/catalogs-json.test.cjs fails on drift.
 // Usage: node tools/gen-catalogs.mjs
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-export const CATALOGS = ['propellants', 'engines', 'materials', 'payloads', 'presets', 'tanks', 'fairings', 'interstages', 'fins'];
+export const CATALOGS = ['propellants', 'engines', 'materials', 'payloads', 'presets', 'tanks', 'fairings', 'interstages', 'fins', 'codex'];
 const root = new URL('../', import.meta.url);
 export function render(name) {
   const data = JSON.parse(readFileSync(new URL(`data/${name}.json`, root), 'utf8'));
