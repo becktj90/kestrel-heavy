@@ -420,8 +420,8 @@ Source: `/workspace/ux-142-answers.md` (Gameplay, main @ `db80a48`). These super
 ## 13. Art answers and camera notes
 
 Source: Art's final section `docs/DESIGNER_ART_SECTION.md` on branch `art/designer-spec` (@ `884cb44`, concept sketches in `docs/designer/art/`). These answer §10 Art Q1-Q6.
-1. **Finishes:** 8 at 2.0. `data/finishes.json` schema confirmed, plus an optional `earnRule` that defaults to `"start"` (3 finishes are earned).
-2. **Liveries:** 12 at 2.0. `data/liveries.json` schema confirmed (no price, expiry or random fields), with an added `"start"` unlock type alongside orbits / landings / mission.
+1. **Finishes:** 12 at 2.0. `data/finishes.json` schema confirmed, plus an optional `earnRule` that defaults to `"start"` (6 finishes are earned).
+2. **Liveries:** 16 at 2.0. `data/liveries.json` schema confirmed (no price, expiry or random fields), with an added `"start"` unlock type alongside orbits / landings / mission.
 3. **Decals:** anchors `stageBand`, `interstage`, `fairing`; at most 6 per vehicle; each 256² in one 2048² atlas.
 4. **Branding:** 12 glyphs and 6 frames authored as SVG, built into 256² distance-field textures at build time; 16-colour palette. Trademark sign-off goes to Chief of Staff, with Trevor having the final say.
 5. **Swatches:** pre-rendered sprites (not live 3D).

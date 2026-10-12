@@ -71,7 +71,9 @@ namespace Kestrel.Core.Hangar
             try { e = op(Design); }
             catch { Design = MiniJson.ParseObject(before); Invalidate(); throw; }
             if (!e.changed) return e;
-            string after = Snapshot(Design);
+            string after;
+            try { after = Snapshot(Design); }
+            catch { Design = MiniJson.ParseObject(before); Invalidate(); throw; }
             if (after == before) return Edit.None;
             history.Record(before, after, e.what, e.from, e.to, coalesceKey);
             Invalidate();
@@ -146,7 +148,7 @@ namespace Kestrel.Core.Hangar
             }
         }
 
-        public List<Advisory> Advisories => advisories ??= Hangar.Advisories.From(Report, Sheet, Design.Arr("stages")?.Count ?? 0);
+        public List<Advisory> Advisories => advisories ??= Hangar.Advisories.From(Report, Sheet, Design);
 
         /// <summary>Launch needs no blocks. Warnings (unstable, over budget, ...) never stop a launch.</summary>
         public bool LaunchEnabled => Report.ok && Report.blocks.Count == 0;
@@ -188,9 +190,10 @@ namespace Kestrel.Core.Hangar
 
         void MarkSaved(string id, string name)
         {
+            // The slot name lives outside the versioned document: writing it into the design here would leave every
+            // undo snapshot with the old name, so undo then redo would come back "renamed" and never clean.
             SavedId = id;
             SavedName = name;
-            JsonMut.Set(Design, "name", name);
             cleanSnapshot = Snapshot(Design);
         }
     }

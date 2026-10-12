@@ -1,0 +1,97 @@
+{
+  "$schema": "./schemas/tanks.schema.json",
+  "version": 1,
+  "tanks": [
+    {
+      "id": "barrel-1p6-alli",
+      "label": "1.6 m Al-Li barrel",
+      "shape": "barrel",
+      "material": "al-li",
+      "propellant": "kerolox",
+      "diameter": 1.6,
+      "length": 6,
+      "propellantMass": 12426,
+      "dryMass": 559,
+      "cost": 440000,
+      "note": "Dry mass is propellantMass × structuralFraction at safety factor 1.4. Cylinder volume, domes not added."
+    },
+    {
+      "id": "barrel-3p7-steel",
+      "label": "3.7 m stainless barrel",
+      "shape": "barrel",
+      "material": "steel",
+      "propellant": "kerolox",
+      "diameter": 3.7,
+      "length": 25,
+      "propellantMass": 276867,
+      "dryMass": 20765,
+      "cost": 4200000,
+      "note": "Heavy booster tank. Steel is cheap per kilogram and thick."
+    },
+    {
+      "id": "common-bulkhead-5m-hydrolox",
+      "label": "5 m common-bulkhead hydrolox",
+      "shape": "common-bulkhead",
+      "material": "al-li",
+      "propellant": "hydrolox",
+      "diameter": 5,
+      "length": 30,
+      "propellantMass": 212058,
+      "dryMass": 14850,
+      "cost": 19600000,
+      "note": "Shared dome is about 8% lighter than two separate barrels of this volume. Insulation is in the cost, not the dry mass."
+    },
+    {
+      "id": "sphere-pair-1p2-titanium",
+      "label": "1.2 m titanium sphere pair",
+      "shape": "sphere-pair",
+      "material": "titanium",
+      "propellant": "mmh-nto",
+      "diameter": 1.2,
+      "length": 2.4,
+      "propellantMass": 2153,
+      "dryMass": 84,
+      "cost": 200000,
+      "note": "Two spheres for a storable kick stage. Volume is two full spheres."
+    },
+    {
+      "id": "taper-3p7-to-2p5",
+      "label": "3.7 m to 2.5 m composite adapter",
+      "shape": "tapered",
+      "material": "composite",
+      "diameter": 3.7,
+      "diameterTop": 2.5,
+      "length": 1.5,
+      "propellantMass": 0,
+      "dryMass": 220,
+      "cost": 530000,
+      "note": "Dry structure only. Mass is composite areal density times the frustum lateral area."
+    },
+    {
+      "id": "stringer-2p4-alcu",
+      "label": "2.4 m stringer-stiffened aluminum-copper",
+      "shape": "barrel-stringer",
+      "material": "al-cu",
+      "propellant": "methalox",
+      "diameter": 2.4,
+      "length": 12,
+      "propellantMass": 45058,
+      "dryMass": 2761,
+      "cost": 1100000,
+      "note": "External stringers are in the structural fraction, not a separate mass."
+    },
+    {
+      "id": "case-1p5-glass",
+      "label": "1.5 m glass-phenolic motor case",
+      "shape": "barrel",
+      "material": "glass-phenolic",
+      "propellant": "solid-apcp",
+      "diameter": 1.5,
+      "length": 8,
+      "propellantMass": 25447,
+      "dryMass": 2545,
+      "cost": 610000,
+      "note": "Solid case uses 9% of propellant mass, scaled by structuralFraction / 0.045. Not for liquid hydrogen."
+    }
+  ]
+}

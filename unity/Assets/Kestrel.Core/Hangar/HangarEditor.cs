@@ -66,11 +66,12 @@ namespace Kestrel.Core.Hangar
                 Set(s, "cluster", Obj(("pattern", "auto")));
                 Set(s, "propMass", Math.Max(Lim.propMassMin, Math.Round(below.Num("propMass") * 0.25)));
                 Set(s, "landingPropMass", 0d);
-                s.Remove("tune"); s.Order.Remove("tune");
+                Remove(s, "tune");
             }
             Set(s, "name", "");
+            var before = Positions(stages);
             stages.Insert(at, s);
-            Normalize(d);
+            Restack(d, before);
             return new Edit($"Added stage {at + 1}");
         }
 
@@ -79,8 +80,9 @@ namespace Kestrel.Core.Hangar
             var stages = d.Arr("stages");
             if (stages == null || stages.Count <= Lim.stagesMin || i < 0 || i >= stages.Count) return Edit.None;
             string label = HangarParts.StageLabel(d, i);
+            var before = Positions(stages);
             stages.RemoveAt(i);
-            Normalize(d);
+            Restack(d, before);
             return new Edit($"Removed {label}");
         }
 
@@ -92,10 +94,11 @@ namespace Kestrel.Core.Hangar
             to = Math.Max(0, Math.Min(stages.Count - 1, to));
             if (from == to) return Edit.None;
             string label = HangarParts.StageLabel(d, from);
+            var before = Positions(stages);
             var s = stages[from];
             stages.RemoveAt(from);
             stages.Insert(to, s);
-            Normalize(d);
+            Restack(d, before);
             return new Edit($"Moved {label}", $"position {from + 1}", $"position {to + 1}");
         }
 
@@ -121,6 +124,7 @@ namespace Kestrel.Core.Hangar
             Set(s, "engine", e.id);
             if (s.Str("propellant") != e.propellant) Set(s, "propellant", e.propellant);
             if (!EnginePoint.NozzleKnown(e, s.Str("nozzle"))) Set(s, "nozzle", "default");
+            Remove(s, "tune"); // tuning belongs to the old engine (web picker does the same)
             if (p.kind == PartKind.Boosters) FixBoosterKind(c, s);
             return new Edit($"{HangarParts.Short(p)} engine", EngineLabel(c, old), EngineLabel(c, e.id));
         }
@@ -221,6 +225,7 @@ namespace Kestrel.Core.Hangar
             if (cur == null || cur.id != e.id)
             {
                 Set(s, "engine", e.id);
+                Remove(s, "tune");
                 if (!EnginePoint.NozzleKnown(e, s.Str("nozzle"))) Set(s, "nozzle", "default");
             }
             if (p.kind == PartKind.Boosters) FixBoosterKind(c, s);
@@ -334,6 +339,7 @@ namespace Kestrel.Core.Hangar
                 s.Remove("interstageMass"); s.Order.Remove("interstageMass");
                 return new Edit($"Interstage {upperStage}–{upperStage + 1} mass", Kg(old), "auto");
             }
+            if (double.IsNaN(kg.Value) || double.IsInfinity(kg.Value)) return Edit.None;
             double v = Math.Round(Math.Max(0, kg.Value));
             if (had && old == v) return Edit.None;
             Set(s, "interstageMass", v);
@@ -573,18 +579,18 @@ namespace Kestrel.Core.Hangar
         public static Edit SetFinish(HangarData h, HangarProgress progress, JsonObject d, string slot, string finishId)
         {
             if (h == null || slot == null || !h.finishSlots.Contains(slot)) return Edit.None;
-            var look = Look(d);
-            var fin = look.Obj("finishes");
+            var fin = d.Obj("look")?.Obj("finishes");
             string old = fin?.Str(slot);
             if (finishId == null)
             {
-                if (old == null) return Edit.None;
+                if (old == null) return Edit.None; // nothing to reset: never create an empty look
                 fin.Remove(slot); fin.Order.Remove(slot);
                 return new Edit($"{Cap(slot)} finish", old, "default");
             }
             var def = h.Finish(finishId);
             if (def == null || !def.partTypes.Contains(slot) || !(progress ?? HangarProgress.None).Earned(def.earn)) return Edit.None;
             if (old == finishId) return Edit.None;
+            var look = Look(d);
             if (fin == null) { fin = new JsonObject(); Set(look, "finishes", fin); }
             Set(fin, slot, finishId);
             return new Edit($"{Cap(slot)} finish", old ?? "default", finishId);
@@ -673,13 +679,39 @@ namespace Kestrel.Core.Hangar
                 if (s.Str("nozzle") == null) Set(s, "nozzle", "default");
                 if (!s.ContainsKey("separationMass")) Set(s, "separationMass", 50d);
                 if (!s.ContainsKey("landingPropMass")) Set(s, "landingPropMass", 0d);
-                string nm = s.Str("name", "");
-                if (nm.Length == 0 || DefaultName.IsMatch(nm)) Set(s, "name", $"Stage {i + 1}");
+                if (s.Str("name", "").Length == 0) Set(s, "name", $"Stage {i + 1}");
                 CapReserve(s);
             }
         }
 
-        static readonly Regex DefaultName = new Regex("^Stage [0-9]+$");
+        static Dictionary<JsonObject, int> Positions(List<object> stages)
+        {
+            var o = new Dictionary<JsonObject, int>();
+            for (int i = 0; i < stages.Count; i++) if (stages[i] is JsonObject j) o[j] = i;
+            return o;
+        }
+
+        /// <summary>
+        /// After add/remove/move: a name that was its old position's default ("Stage 3" at index 2) follows the new
+        /// position; any other name, including a custom "Stage 42", is kept. A stage that becomes the bottom stage
+        /// drops its interstage mass override, since the joint under it no longer exists.
+        /// </summary>
+        static void Restack(JsonObject d, Dictionary<JsonObject, int> before)
+        {
+            var stages = d.Arr("stages");
+            for (int i = 0; i < stages.Count; i++)
+            {
+                if (!(stages[i] is JsonObject s) || !before.TryGetValue(s, out int was) || was == i) continue;
+                if (s.Str("name", "") == $"Stage {was + 1}") Set(s, "name", $"Stage {i + 1}");
+                if (i == 0) Remove(s, "interstageMass");
+            }
+            Normalize(d);
+        }
+
+        static void Remove(JsonObject o, string k)
+        {
+            if (o != null && o.ContainsKey(k)) { o.Remove(k); o.Order.Remove(k); }
+        }
 
         // ---------------- helpers ----------------
 
@@ -781,7 +813,10 @@ namespace Kestrel.Core.Hangar
                 sb.Append(ch);
             }
             var o = sb.ToString();
-            return o.Length > max ? o.Substring(0, max).TrimEnd() : o;
+            if (o.Length <= max) return o;
+            int cut = max;
+            if (char.IsHighSurrogate(o[cut - 1])) cut--; // never split an emoji or other surrogate pair
+            return o.Substring(0, cut).TrimEnd();
         }
 
         static double Clamp(double v, double lo, double hi) => v < lo ? lo : v > hi ? hi : v;

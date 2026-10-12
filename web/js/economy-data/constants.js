@@ -43,7 +43,16 @@ export const ECON = Object.freeze({
       "gg-methalox-small": 7,
       "srm-small": 9,
       "srm-large": 9,
-      "hybrid-mid": 6
+      "hybrid-mid": 6,
+      "gg-kerolox-heavy": 9,
+      "sc-kerolox-vac": 8,
+      "sc-methalox": 7,
+      "sc-methalox-vac": 6,
+      "gg-hydrolox": 8,
+      "exp-hydrolox-small": 9,
+      "pf-kerolox": 8,
+      "srm-mid": 9,
+      "hybrid-small": 6
     },
     "defaultTrl": 7
   },
@@ -51,12 +60,18 @@ export const ECON = Object.freeze({
     "materialPerKg": {
       "steel": 800,
       "al-li": 6000,
-      "composite": 30000
+      "composite": 30000,
+      "al-cu": 3500,
+      "titanium": 12000,
+      "glass-phenolic": 2500
     },
     "materialPerM2": {
       "steel": 150000,
       "al-li": 400000,
-      "composite": 1000000
+      "composite": 1000000,
+      "al-cu": 250000,
+      "titanium": 700000,
+      "glass-phenolic": 180000
     },
     "deepCryoFactor": 0.35,
     "refSafetyFactor": 1.4,

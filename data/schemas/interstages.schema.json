@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kestrel Heavy interstages (fictional)",
+  "type": "object",
+  "required": ["version", "interstages"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "interstages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "shape", "material", "diameter", "length", "mass", "cost", "dragDeltaCd"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "label": { "type": "string" },
+          "shape": { "enum": ["straight", "truss", "hot-staging", "flare", "shoulder"] },
+          "material": { "type": "string" },
+          "diameter": { "type": "number", "exclusiveMinimum": 0, "description": "m, lower end" },
+          "diameterTop": { "type": "number", "exclusiveMinimum": 0, "description": "m, upper end" },
+          "length": { "type": "number", "exclusiveMinimum": 0, "description": "m" },
+          "mass": { "type": "number", "exclusiveMinimum": 0, "description": "kg" },
+          "cost": { "type": "number", "minimum": 0, "description": "USD" },
+          "dragDeltaCd": { "type": "number", "minimum": 0, "description": "added subsonic Cd from this shape" },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}

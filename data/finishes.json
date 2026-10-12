@@ -8,6 +8,10 @@
     { "id": "foam_orange", "label": "finish.foam_orange", "partTypes": ["tank", "booster"], "albedo": "#D27A3A", "roughness": 0.8, "metallic": 0.0, "earnRule": { "type": "start" } },
     { "id": "soot_weathered", "label": "finish.soot_weathered", "partTypes": ["tank", "booster", "interstage", "engine", "legs", "gridfins"], "albedo": "#C9CCD0", "roughness": 0.7, "metallic": 0.2, "tint": "#3A3330", "earnRule": { "type": "landings", "count": 3 } },
     { "id": "brushed_stainless", "label": "finish.brushed_stainless", "partTypes": ["tank", "booster", "interstage", "fairing"], "albedo": "#C4C9CE", "roughness": 0.25, "metallic": 1.0, "earnRule": { "type": "orbits", "count": 5 } },
-    { "id": "matte_black_ablative", "label": "finish.matte_black_ablative", "partTypes": ["interstage", "booster", "engine", "fairing"], "albedo": "#1C1D20", "roughness": 0.9, "metallic": 0.0, "earnRule": { "type": "mission", "missionId": "KH-4" } }
+    { "id": "matte_black_ablative", "label": "finish.matte_black_ablative", "partTypes": ["interstage", "booster", "engine", "fairing"], "albedo": "#1C1D20", "roughness": 0.9, "metallic": 0.0, "earnRule": { "type": "mission", "missionId": "KH-4" } },
+    { "id": "safety_yellow", "label": "finish.safety_yellow", "partTypes": ["legs", "interstage", "fins", "rcs"], "albedo": "#F2C21A", "roughness": 0.55, "metallic": 0.05, "earnRule": { "type": "start" } },
+    { "id": "heat_tint_copper", "label": "finish.heat_tint_copper", "partTypes": ["engine", "interstage", "booster"], "albedo": "#8A5A3A", "roughness": 0.55, "metallic": 0.65, "earnRule": { "type": "orbits", "count": 15 } },
+    { "id": "anodized_blue", "label": "finish.anodized_blue", "partTypes": ["tank", "fairing", "fins"], "albedo": "#3A6EA5", "roughness": 0.35, "metallic": 0.45, "earnRule": { "type": "mission", "missionId": "KH-2" } },
+    { "id": "cryo_frost", "label": "finish.cryo_frost", "partTypes": ["tank", "booster"], "albedo": "#F4FBFF", "roughness": 0.28, "metallic": 0.08, "earnRule": { "type": "orbits", "count": 1 } }
   ]
 }

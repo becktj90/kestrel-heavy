@@ -162,13 +162,28 @@ namespace Kestrel.Core.Sky
         /// <summary>Portrait-only product: taller than wide, square counts as portrait.</summary>
         public static bool IsPortrait(double widthPx, double heightPx) => heightPx >= widthPx;
 
+        /// <summary>Geometric altitude (km) where the flight sky and atmosphere start fading to black.</summary>
+        public const double BlackFadeLoKm = 30;
+        /// <summary>Geometric altitude (km) where the flight sky and atmosphere are fully black. The Kármán line.</summary>
+        public const double BlackFadeHiKm = 100;
+
         /// <summary>
-        /// VISUAL_SPEC §4 spaceBlend: smoothstep(6, 56 km). SEP, HAVEN and JACKLYN (the C# port's name) force 1.
+        /// Altitude black factor. 0 at or below 30 km, 1 at or above 100 km, strictly increasing in between.
+        /// Status does not change this value. The UI themed fill still uses VISUAL_SPEC §4 (6–56 km) via SkyBlend.
+        /// </summary>
+        public static double AltitudeBlend(double altKm)
+        {
+            if (double.IsNaN(altKm)) return 0;
+            return Smoothstep(BlackFadeLoKm, BlackFadeHiKm, altKm);
+        }
+
+        /// <summary>
+        /// Flight-sky vacuum factor: <see cref="AltitudeBlend"/>. SEP, HAVEN and JACKLYN force 1.
         /// </summary>
         public static double SpaceBlend(double altKm, string status = null)
         {
             if (status == "SEP" || status == "HAVEN" || status == "JACKLYN") return 1;
-            return Smoothstep(6, 56, altKm);
+            return AltitudeBlend(altKm);
         }
 
         /// <summary>Hydrostatic column, p(z)/p(0), from the active atmosphere mode. 1 at the pad, ~0 in orbit.</summary>
@@ -196,38 +211,42 @@ namespace Kestrel.Core.Sky
             double day = 1.0 - SkySun.NightFactor((float)elevDeg);
             double skyAlpha = 1.0 - spaceT;
 
-            var zenith = Shade(column, 1.0, day, art, weather) * skyAlpha;
-            var horizon = Shade(column, 0.0, day, art, weather) * skyAlpha;
+            var zenith = NoMagenta((Shade(column, 1.0, day, art, weather) * skyAlpha).Clamped());
+            var horizon = NoMagenta((Shade(column, 0.0, day, art, weather) * skyAlpha).Clamped());
             var limb = Shade(column, 0.12, day, art, weather);
             double warm = 1.0 - Smoothstep(0.5, 18, Math.Max(-2, elevDeg));
             limb = Rgb.Lerp(limb, Rgb.Lerp(limb, new Rgb(1, 0.42, 0.10), 0.72), warm * day);
-            limb = (limb * skyAlpha).Clamped();
-            zenith = zenith.Clamped();
-            horizon = horizon.Clamped();
-            var ground = (horizon * 0.42).Clamped();
+            limb = NoMagenta((limb * skyAlpha).Clamped());
+            var ground = NoMagenta((horizon * 0.42).Clamped());
 
             double cover = CloudCover(z, spaceT, weather);
-            double stars = Lerp(Clamp01(art.StarFloor) * (1.0 - day), 1.0, spaceT);
+            // Stars lead the black fade so they read while the atmosphere is still thinning.
+            double starT = Smoothstep(0.0, 0.55, spaceT);
+            double stars = Lerp(Clamp01(art.StarFloor) * (1.0 - day), 1.0, starT);
             stars *= 1.0 - 0.75 * cover;
             if (weather.Precip) stars *= 0.45;
             stars = Clamp01(stars);
 
             // Column term stays under 1 so cloud and precip can still thicken the pad haze.
+            // Every atmosphere term is gone once the 30–100 km fade finishes.
+            double vac = 1.0 - spaceT;
             double haze = (1.0 - Smoothstep(0, 0.72, spaceT)) * (0.22 + 0.48 * column);
-            if (weather.Precip) haze += 0.28;
-            haze += 0.18 * Clamp01(weather.CloudFraction) * (1.0 - spaceT);
+            if (weather.Precip) haze += 0.28 * vac;
+            haze += 0.18 * Clamp01(weather.CloudFraction) * vac;
             haze = Clamp01(haze);
 
             double sunDisc = Smoothstep(-0.7, 0.45, elevDeg);
             double sunGlow = Smoothstep(-8, 3, elevDeg) * (1.0 - 0.72 * Clamp01(weather.CloudFraction));
             if (weather.Precip) sunGlow *= 0.35;
+            sunGlow *= vac;
             var sun = Rgb.Lerp(new Rgb(1, 0.97, 0.90), new Rgb(1, 0.38, 0.07), Clamp01(warm));
-            sun = (sun * (0.35 + 0.65 * sunDisc) * (0.25 + 0.75 * day)).Clamped();
+            sun = NoMagenta((sun * (0.35 + 0.65 * sunDisc) * (0.25 + 0.75 * day)).Clamped());
 
             Decks(z, spaceT, weather, out var h0, out var h1, out var h2, out var a0, out var a1, out var a2);
             double wr = weather.WindDeg * Math.PI / 180.0;
             double milky = Smoothstep(0.18, 0.9, spaceT) * 0.74 * (1.0 - 0.6 * cover);
-            double air = Math.Exp(-Math.Pow((z / 1000.0 - 90.0) / 28.0, 2)) * (0.2 + 0.8 * spaceT) * 0.35;
+            // Airglow is atmosphere. It fades with the same factor and is 0 at 100 km.
+            double air = Math.Exp(-Math.Pow((z / 1000.0 - 90.0) / 28.0, 2)) * 0.35 * vac;
 
             return new SkyGrade
             {
@@ -274,7 +293,15 @@ namespace Kestrel.Core.Sky
                 double below = Smoothstep(0, 0.22, -mu);
                 c = Rgb.Lerp(c, g.Ground, below);
             }
-            return c.Clamped();
+            return NoMagenta(c.Clamped());
+        }
+
+        /// <summary>Unity's missing-shader colour is magenta (high red, low green, high blue). Never emit it.</summary>
+        public static Rgb NoMagenta(Rgb c)
+        {
+            c = c.Clamped();
+            if (c.R > 0.9 && c.B > 0.9 && c.G < 0.2) return new Rgb(0, 0, 0);
+            return c;
         }
 
         static Rgb Scatter(double airmass)

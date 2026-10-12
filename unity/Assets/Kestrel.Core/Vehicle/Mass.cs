@@ -17,7 +17,7 @@ namespace Kestrel.Core.Vehicle
     {
         const double REF_SAFETY = 1.4, SOLID_CASE_FRACTION = 0.09, LEG_FRACTION = 0.06, GRIDFIN_MASS_PER_M2 = 120, RCS_MASS = 250;
         static readonly Dictionary<string, double> AVIONICS_MASS = new Dictionary<string, double> { ["basic"] = 60, ["standard"] = 150, ["redundant"] = 300 };
-        static readonly Dictionary<string, double> FAIRING_AREAL = new Dictionary<string, double> { ["composite"] = 14, ["al-li"] = 20, ["steel"] = 45 };
+        static readonly Dictionary<string, double> FAIRING_AREAL = new Dictionary<string, double> { ["composite"] = 14, ["al-li"] = 20, ["steel"] = 45, ["al-cu"] = 22, ["titanium"] = 18, ["glass-phenolic"] = 16 };
 
         public static double StructureMass(Catalog c, StagePart part, double safetyFactor = REF_SAFETY)
         {

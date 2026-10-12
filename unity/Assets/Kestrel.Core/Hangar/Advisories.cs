@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Kestrel.Core.Designer;
+using Kestrel.Core.Json;
 
 namespace Kestrel.Core.Hangar
 {
@@ -83,13 +84,16 @@ namespace Kestrel.Core.Hangar
     public static class Advisories
     {
         /// <summary>Blocks first, then warnings, then notes. Over budget is a warning, near budget a note.</summary>
-        public static List<Advisory> From(EngineeringReport report, DataSheet sheet, int stageCount)
+        public static List<Advisory> From(EngineeringReport report, DataSheet sheet, JsonObject design)
+            => From(report, sheet, design?.Arr("stages")?.Count ?? 0, design);
+
+        public static List<Advisory> From(EngineeringReport report, DataSheet sheet, int stageCount, JsonObject design = null)
         {
             var o = new List<Advisory>();
             if (report != null)
             {
-                foreach (var b in report.blocks) o.Add(Make(b, AdvisorySeverity.Block, stageCount));
-                foreach (var w in report.warnings) o.Add(Make(w, AdvisorySeverity.Warn, stageCount));
+                foreach (var b in report.blocks) o.Add(Make(b, AdvisorySeverity.Block, stageCount, design));
+                foreach (var w in report.warnings) o.Add(Make(w, AdvisorySeverity.Warn, stageCount, design));
             }
             if (sheet != null && sheet.budget_Kc > 0 && (sheet.overBudget || sheet.nearBudget))
             {
@@ -109,13 +113,26 @@ namespace Kestrel.Core.Hangar
             return o;
         }
 
-        static Advisory Make(Issue i, AdvisorySeverity sev, int stageCount)
-            => new Advisory { code = i.code, tab = i.tab, severity = sev, headline = KidWords.Headline(i.code), kid = KidWords.For(i), engineer = i.msg, part = PartFor(i, stageCount) };
+        static Advisory Make(Issue i, AdvisorySeverity sev, int stageCount, JsonObject design)
+            => new Advisory { code = i.code, tab = i.tab, severity = sev, headline = KidWords.Headline(i.code), kid = KidWords.For(i), engineer = i.msg, part = PartFor(i, stageCount, design) };
 
-        /// <summary>Which part an issue points at, from its web tab id and stage index.</summary>
-        public static PartRef PartFor(Issue i, int stageCount)
+        /// <summary>Per-part rules that DesignRules/Validate report for the booster set with a null index.</summary>
+        static readonly HashSet<string> PartRules = new HashSet<string> { "nozzle-unknown", "cluster-count", "cluster-overhang", "vac-engine-pad" };
+
+        /// <summary>
+        /// Which part an issue points at, from its web tab id and stage index. Issues with no index that come from a
+        /// per-part rule belong to the boosters (stages always carry an index); cryo tanks and missing engines or fuel
+        /// are found in the design when it is given.
+        /// </summary>
+        public static PartRef PartFor(Issue i, int stageCount, JsonObject design = null)
         {
             int top = Math.Max(0, stageCount - 1);
+            if (i.index == null)
+            {
+                if (PartRules.Contains(i.code) && HangarParts.BoosterCount(design) > 0) return PartRef.Boosters;
+                var found = Find(i.code, design);
+                if (found.HasValue) return found.Value;
+            }
             int idx = i.index ?? 0;
             switch (i.code)
             {
@@ -131,6 +148,27 @@ namespace Kestrel.Core.Hangar
                 case "stages": case "engines": case "propellants": return PartRef.Stage(Math.Min(idx, top));
                 default: return PartRef.Stage(0);
             }
+        }
+
+        /// <summary>First part that breaks a part rule reported without an index (stages first, then boosters).</summary>
+        static PartRef? Find(string code, JsonObject design)
+        {
+            if (design == null) return null;
+            Func<JsonObject, bool> bad;
+            switch (code)
+            {
+                case "cryo-composite": bad = s => s.Str("material") == "composite" && s.Str("propellant") == "hydrolox"; break;
+                case "zero-engines": bad = s => !(s.Num("engineCount") >= 1); break;
+                case "zero-propellant": bad = s => !(s.Num("propMass") > 0); break;
+                default: return null;
+            }
+            var stages = design.Arr("stages");
+            if (stages != null)
+                for (int k = 0; k < stages.Count; k++)
+                    if (stages[k] is JsonObject s && bad(s)) return PartRef.Stage(k);
+            var so = design.Obj("strapOns");
+            if (so != null && so.Num("count") > 0 && bad(so)) return PartRef.Boosters;
+            return null;
         }
 
         static string Kc(double v) => Math.Round(v).ToString("N0", CultureInfo.InvariantCulture);

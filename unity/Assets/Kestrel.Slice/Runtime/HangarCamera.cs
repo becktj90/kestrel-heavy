@@ -1,5 +1,5 @@
 // Orbit, pinch-zoom and double-tap reframe for the Hangar. Sits on the design camera.
-// UX calls SetVehicle / SetBottomVisible / ReduceMotion. SliceApp and Slice.uxml stay untouched.
+// SliceApp assigns the vehicle and the exploded view; the designer toggle lives in Slice.uxml.
 // On iPad the projection shifts left by the 400 pt right-hand panel (DesignFraming.SideVisibleFraction).
 using System.Collections.Generic;
 using UnityEngine;
@@ -115,6 +115,17 @@ namespace Kestrel.Slice
         }
         public void Drag(float dxPx, float dyPx, float dt) => orbit.Drag(dxPx, dyPx, dt, ReduceMotion);
         public void Pinch(float scale) { focusZoomTarget = float.NaN; orbit.Pinch(scale); }
+
+        /// <summary>Vehicle-space exploded view. Assigned by the designer. Not a child of this camera.</summary>
+        public HangarExplodedView ExplodedView;
+        bool exploded;
+        public bool Exploded => exploded;
+
+        public void SetExploded(bool on)
+        {
+            exploded = on;
+            if (ExplodedView != null) ExplodedView.SetExploded(on, ReduceMotion);
+        }
 
         public bool BlocksGesture(Vector2 screenPx)
         {

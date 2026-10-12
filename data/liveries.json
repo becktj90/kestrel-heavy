@@ -12,6 +12,10 @@
     { "id": "tally_board", "label": "livery.tally_board", "primary": "#E8ECEF", "accent": "#2B7A5A", "pattern": "two_tone_stage", "earnRule": { "type": "landings", "count": 5 }, "codexText": "codex.livery.tally_board" },
     { "id": "iron_lander", "label": "livery.iron_lander", "primary": "#5A5E66", "accent": "#F2C21A", "pattern": "split_vertical", "earnRule": { "type": "landings", "count": 20 }, "codexText": "codex.livery.iron_lander" },
     { "id": "relay_blue", "label": "livery.relay_blue", "primary": "#1E3A5F", "accent": "#50DCF0", "pattern": "chevron_nose", "earnRule": { "type": "mission", "missionId": "KH-3" }, "codexText": "codex.livery.relay_blue" },
-    { "id": "heavy_lift_gold", "label": "livery.heavy_lift_gold", "primary": "#14161A", "accent": "#F2C21A", "pattern": "gradient_aft", "earnRule": { "type": "mission", "missionId": "KH-5" }, "codexText": "codex.livery.heavy_lift_gold" }
+    { "id": "heavy_lift_gold", "label": "livery.heavy_lift_gold", "primary": "#14161A", "accent": "#F2C21A", "pattern": "gradient_aft", "earnRule": { "type": "mission", "missionId": "KH-5" }, "codexText": "codex.livery.heavy_lift_gold" },
+    { "id": "dawn_wash", "label": "livery.dawn_wash", "primary": "#F4E4D4", "accent": "#C46A28", "pattern": "gradient_aft", "earnRule": { "type": "orbits", "count": 5 }, "codexText": "codex.livery.dawn_wash" },
+    { "id": "harbor_band", "label": "livery.harbor_band", "primary": "#E8F2F6", "accent": "#2B6B8A", "pattern": "belt_stripes", "earnRule": { "type": "orbits", "count": 20 }, "codexText": "codex.livery.harbor_band" },
+    { "id": "range_lime", "label": "livery.range_lime", "primary": "#14161A", "accent": "#7DFFB0", "pattern": "chevron_nose", "earnRule": { "type": "landings", "count": 10 }, "codexText": "codex.livery.range_lime" },
+    { "id": "chalk_check", "label": "livery.chalk_check", "primary": "#F7F4EF", "accent": "#5A5E66", "pattern": "checker_roll", "earnRule": { "type": "mission", "missionId": "KH-1" }, "codexText": "codex.livery.chalk_check" }
   ]
 }

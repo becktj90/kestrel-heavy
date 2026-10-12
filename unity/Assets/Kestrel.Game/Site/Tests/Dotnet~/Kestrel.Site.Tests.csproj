@@ -1,0 +1,21 @@
+<!-- dotnet runner for the engine-free site generator tests (folder ends in ~ so Unity ignores it).
+     Run: dotnet test unity/Assets/Kestrel.Game/Site/Tests/Dotnet~/Kestrel.Site.Tests.csproj -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../Kit/Core/**/*.cs" LinkBase="Kit.Core" />
+    <Compile Include="../../Core/**/*.cs" LinkBase="Site.Core" />
+    <Compile Include="../Core/**/*.cs" LinkBase="Tests.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+</Project>

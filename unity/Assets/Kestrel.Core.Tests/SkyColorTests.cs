@@ -49,6 +49,80 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(SkyAtmosphereMode.Ussa76, g.Mode);
         }
 
+        static void AssertNotMagenta(Rgb c, string label)
+        {
+            bool magenta = c.R > 0.9 && c.B > 0.9 && c.G < 0.2;
+            Assert.IsFalse(magenta, label + " is magenta");
+        }
+
+        [Test]
+        public void AltitudeBlendFadesFrom30To100Km()
+        {
+            Assert.AreEqual(0, SkyColor.AltitudeBlend(double.NaN), 1e-12);
+            foreach (var km in new[] { -20.0, 0, 6, 12, 29, 30 })
+                Assert.AreEqual(0, SkyColor.AltitudeBlend(km), 1e-12, "at or below 30 km, km=" + km);
+            foreach (var km in new[] { 100.0, 101, 154, 400 })
+                Assert.AreEqual(1, SkyColor.AltitudeBlend(km), 1e-12, "at or above 100 km, km=" + km);
+
+            double prev = SkyColor.AltitudeBlend(30);
+            for (double km = 31; km <= 100; km += 1)
+            {
+                double f = SkyColor.AltitudeBlend(km);
+                Assert.Greater(f, prev, "blend must rise at " + km + " km");
+                Assert.LessOrEqual(f, 1);
+                prev = f;
+            }
+
+            // The flight sky uses this factor: atmosphere still present at 30 km, black from 100 km up.
+            var low = Noon(30_000);
+            var mid = Noon(65_000);
+            var high = Noon(100_000);
+            var above = Noon(200_000);
+            Assert.AreEqual(0, low.SpaceT, 1e-12);
+            Assert.AreEqual(0.5, mid.SpaceT, 1e-9);
+            Assert.AreEqual(1, high.SpaceT, 1e-12);
+            Assert.AreEqual(1, above.SpaceT, 1e-12);
+            Assert.Greater(low.Zenith.Luminance, mid.Zenith.Luminance);
+            Assert.Greater(mid.Zenith.Luminance, high.Zenith.Luminance);
+            Assert.Less(high.Zenith.Luminance, 1e-8);
+            Assert.Less(high.Horizon.Luminance, 1e-8);
+            Assert.Less(high.Limb.Luminance, 1e-8);
+            Assert.Less(high.Ground.Luminance, 1e-8);
+            Assert.Less(above.Zenith.Luminance, 1e-8);
+            Assert.AreEqual(0, high.Haze, 1e-12);
+            Assert.AreEqual(0, above.Haze, 1e-12);
+            Assert.AreEqual(0, high.Airglow, 1e-12);
+            Assert.AreEqual(0, above.Airglow, 1e-12);
+            Assert.AreEqual(0, high.SunGlow, 1e-12);
+            Assert.AreEqual(0, high.CloudAlpha, 1e-9);
+            Assert.Greater(mid.StarAlpha, low.StarAlpha);
+            Assert.Greater(high.StarAlpha, mid.StarAlpha);
+            Assert.Greater(high.StarAlpha, 0.85);
+
+            var rain = SkyWeather.Clear;
+            rain.Precip = true;
+            rain.CloudFraction = 1;
+            var wet = SkyColor.At(120_000, SunHigh, SkyArt.Neutral, rain);
+            Assert.AreEqual(0, wet.Haze, 1e-12);
+            Assert.AreEqual(0, wet.Airglow, 1e-12);
+            Assert.Less(wet.Zenith.Luminance, 1e-8);
+            AssertNotMagenta(wet.Zenith, "orbit zenith");
+            AssertNotMagenta(wet.Horizon, "orbit horizon");
+            AssertNotMagenta(wet.Sun, "orbit sun");
+
+            foreach (var z in new[] { 0.0, 20_000, 45_000, 80_000, 110_000 })
+            {
+                var g = Noon(z);
+                AssertNotMagenta(g.Zenith, "zenith " + z);
+                AssertNotMagenta(g.Horizon, "horizon " + z);
+                AssertNotMagenta(g.Limb, "limb " + z);
+                AssertNotMagenta(g.Ground, "ground " + z);
+                AssertNotMagenta(g.Fog, "fog " + z);
+                AssertNotMagenta(g.Sun, "sun " + z);
+                AssertNotMagenta(SkyColor.View(g, 0.2), "view " + z);
+            }
+        }
+
         [Test]
         public void ZenithDarkensMonotonicallyTowardBlack()
         {

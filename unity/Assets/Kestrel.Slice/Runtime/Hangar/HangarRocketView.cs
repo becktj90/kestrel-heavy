@@ -1,6 +1,7 @@
 // The rocket as separate Hangar parts: one GameObject per stage, interstage, fairing, payload and booster set,
-// each with its own material so paint, liveries, finishes, selection and issue tints show per part, and so the
-// exploded view can move them apart. Geometry comes from RocketMeshBuilder.BuildParts (the flight stations).
+// each with its own material so paint, liveries, finishes, selection and issue tints show per part, and so a tap
+// can pick a part and the camera can focus on it. Geometry comes from RocketMeshBuilder.BuildParts (the flight
+// stations). The exploded view is R2's HangarExplodedView; this view only ever draws the assembled stack.
 using System.Collections.Generic;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
@@ -30,24 +31,16 @@ namespace Kestrel.Slice
         readonly List<Piece> pieces = new List<Piece>();
         readonly Dictionary<PartRef, AdvisorySeverity> issues = new Dictionary<PartRef, AdvisorySeverity>();
         Transform parent;
-        int stageCount;
-        float height = 70f;
-        float explodeElapsed, explodeFrom, explodeTo, explode;
         PartRef selected = PartRef.Stage(0);
         bool hasSelection;
 
         public IReadOnlyList<Piece> Pieces => pieces;
-        public bool Exploded => explodeTo > 0.5f;
-        /// <summary>Current explode amount, 0 assembled to 1 open.</summary>
-        public float Amount => explode;
 
-        /// <summary>Replace the parts. Old GameObjects and meshes are destroyed. Keeps the explode state.</summary>
-        public void Build(List<RocketMeshBuilder.PartMesh> parts, Transform parentTransform, Material template, int stages, float vehicleHeight)
+        /// <summary>Replace the parts. Old GameObjects and meshes are destroyed.</summary>
+        public void Build(List<RocketMeshBuilder.PartMesh> parts, Transform parentTransform, Material template)
         {
             Clear();
             parent = parentTransform;
-            stageCount = stages;
-            height = vehicleHeight;
             foreach (var p in parts)
             {
                 var go = new GameObject("Part_" + p.Part);
@@ -183,38 +176,15 @@ namespace Kestrel.Slice
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smoothness);
         }
 
-        public void SetExploded(bool on, bool reduceMotion)
-        {
-            float to = on ? 1f : 0f;
-            if (to == explodeTo && (reduceMotion || explode == to)) return;
-            explodeFrom = explode; explodeTo = to; explodeElapsed = 0f;
-            if (reduceMotion) { explode = to; explodeElapsed = ExplodedView.Seconds; Place(); }
-        }
-
-        /// <summary>Advance the explode animation. Returns true while moving.</summary>
-        public bool Step(float dt)
-        {
-            if (explode == explodeTo) return false;
-            explodeElapsed += Mathf.Max(0f, float.IsNaN(dt) ? 0f : dt);
-            explode = Mathf.Lerp(explodeFrom, explodeTo, ExplodedView.Ease(explodeElapsed));
-            if (explodeElapsed >= ExplodedView.Seconds) explode = explodeTo;
-            Place();
-            return explode != explodeTo;
-        }
-
         void Place()
         {
             foreach (var p in pieces)
             {
                 if (p.root == null) continue;
                 if (p.mesh.Instances != null)
-                    for (int k = 0; k < p.copies.Count && k < p.mesh.Instances.Length; k++)
-                    {
-                        var home = p.mesh.Instances[k];
-                        p.copies[k].localPosition = home + ExplodedView.Offset(p.mesh.Part, stageCount, height, explode, home);
-                    }
-                else p.root.localPosition = ExplodedView.Offset(p.mesh.Part, stageCount, height, explode, Vector3.zero);
-                p.root.gameObject.SetActive(p.mesh.Part.kind != PartKind.Payload || explode > 0.01f);
+                    for (int k = 0; k < p.copies.Count && k < p.mesh.Instances.Length; k++) p.copies[k].localPosition = p.mesh.Instances[k];
+                // The payload sits inside the fairing; it is only seen in R2's exploded view.
+                p.root.gameObject.SetActive(p.mesh.Part.kind != PartKind.Payload);
             }
         }
 

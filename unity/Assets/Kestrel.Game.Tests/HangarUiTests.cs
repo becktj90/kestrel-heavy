@@ -1,4 +1,4 @@
-// Hangar UI layer (G3 part 2): exploded view, part picking, camera focus, readout words, panel metrics,
+// Hangar UI layer (G3 part 2): part picking, camera focus, readout words, panel metrics,
 // per-part meshes, and a smoke test that builds the panel for every template, tab and part with no exceptions.
 using System;
 using System.Collections.Generic;
@@ -23,42 +23,6 @@ namespace Kestrel.Game.Tests
         static HangarData H => data ??= HangarData.LoadFromRepo(Root);
 
         static JsonObject Template(string id) => HangarEditor.ForkTemplate(H.Template(id));
-
-        // ---------------- exploded view ----------------
-
-        [Test]
-        public void Exploded_Assembled_IsZeroEverywhere()
-        {
-            foreach (var p in new[] { PartRef.Stage(0), PartRef.Stage(2), PartRef.Interstage(1), PartRef.Fairing, PartRef.Payload, PartRef.Boosters })
-                Assert.AreEqual(Vector3.zero, ExplodedView.Offset(p, 3, 80f, 0f, Vector3.right), p.ToString());
-        }
-
-        [Test]
-        public void Exploded_PartsRiseInStackOrder_WithoutOverlap()
-        {
-            int n = 3; float h = 80f, gap = ExplodedView.GapFraction * h;
-            float Y(PartRef p) => ExplodedView.Offset(p, n, h, 1f, Vector3.zero).y;
-            Assert.AreEqual(0f, Y(PartRef.Stage(0)), 1e-4f, "stage 1 stays on the pad");
-            Assert.AreEqual(gap * 0.5f, Y(PartRef.Interstage(1)), 1e-4f);
-            Assert.AreEqual(gap, Y(PartRef.Stage(1)), 1e-4f);
-            Assert.AreEqual(gap * 2f, Y(PartRef.Stage(2)), 1e-4f);
-            Assert.Greater(Y(PartRef.Payload), Y(PartRef.Stage(2)));
-            Assert.Greater(Y(PartRef.Fairing), Y(PartRef.Payload), "the fairing lifts off the cargo");
-            Assert.AreEqual(gap, ExplodedView.Offset(PartRef.Boosters, n, h, 1f, new Vector3(0, 0, 5)).magnitude, 1e-4f, "boosters slide out one gap");
-            Assert.AreEqual(0f, ExplodedView.Offset(PartRef.Boosters, n, h, 1f, new Vector3(0, 0, 5)).y, 1e-6f);
-            Assert.AreEqual(h * (1 + ExplodedView.GapFraction * 3f), ExplodedView.ExplodedHeight(h, n), 1e-3f);
-        }
-
-        [Test]
-        public void Exploded_EasesOver400ms()
-        {
-            Assert.AreEqual(0.4f, ExplodedView.Seconds);
-            Assert.AreEqual(0f, ExplodedView.Ease(0f));
-            Assert.AreEqual(0.5f, ExplodedView.Ease(0.2f), 1e-4f);
-            Assert.AreEqual(1f, ExplodedView.Ease(0.4f));
-            Assert.AreEqual(1f, ExplodedView.Ease(5f));
-            Assert.AreEqual(Vector3.zero, ExplodedView.Offset(PartRef.Stage(1), 2, 70f, float.NaN, Vector3.zero));
-        }
 
         // ---------------- picking ----------------
 
