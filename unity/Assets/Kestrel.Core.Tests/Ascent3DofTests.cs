@@ -36,8 +36,10 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Planar_MatchesHeadless_OnSimulateCases()
         {
+            int n = 0;
             foreach (var c in Golden.Cases("simulate"))
             {
+                n++;
                 var inp = c.Obj("in"); var oo = inp.Obj("opts");
                 var stages = new List<SimStage>();
                 foreach (JsonObject s in inp.Arr("stages"))
@@ -50,6 +52,7 @@ namespace Kestrel.Core.Tests
                 };
                 Compare(c.Str("name"), stages, opts);
             }
+            Assert.AreEqual(13, n);
         }
 
         [Test]
