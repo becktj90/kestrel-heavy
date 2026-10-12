@@ -66,7 +66,7 @@ def particles(t, v):
     """Return list of (pos[N,3], size[N], rgb[N,3], alpha[N], additive) for every emitter at real time t."""
     alt = alt_at(t); out = []
     tf, pa = 0.9, math.exp(-alt/8500)
-    if v in ('v5', 'v6', 'v7', 'v8', 'v9', 'v10'):
+    if v in ('v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11'):
         L = P.layout(tf, pa, CD, VR, VH, DECK); ssf = P.SSF; collide_body = True; cloudH = L['CloudHeight']; ramp = 0.25; burst = 0.35
         core_spawn = L["CoreSpawnRadius"]; ncore = 12; csz = np.vectorize(P.csize)
     else:  # v4 (fee69ee) parameters
@@ -80,6 +80,8 @@ def particles(t, v):
         collide_body = False; cloudH = -0.1*DECK; ramp = 0.75; burst = 0.0; core_spawn = 0.05*CD; ncore = 8
         csz = lambda u: np.where(u < 0.15, 0.3+0.7*u/0.15, 1-0.2*(u-0.15)/0.85)
         P.SSF, P.NOZ, P.BodySizeStart, P.CoreSizeStart = 0.36, 0.15, 0.3, 0.35
+    if v == 'v11':
+        return particles_v11(t, L, alt) + cloud_part(t, v, L, cloudH, ramp, burst)
     if v == 'v10':
         return particles_v10(t, L, alt) + cloud_part(t, v, L, cloudH, ramp, burst)
     if v == 'v9':
@@ -114,7 +116,7 @@ CLOUD = {
     'u129': dict(cap=160, spd=(0.35, 0.8), k=1.0, start=0.3, vy=(-0.5, 1.0), lift=0.5, R0f=2, spawnf=1.5, sizef=1.0, life=(3.0, 4.5)),
 }
 def cloud_part(t, v, L, cloudH, ramp, burst):
-    C = CLOUD['v7' if v in ('v7', 'v8', 'v9', 'v10') else 'u129']
+    C = CLOUD['v7' if v in ('v7', 'v8', 'v9', 'v10', 'v11') else 'u129']
     out = []
     R0 = C['R0f']*max(DECK, 10); smax = C['sizef']*max(0.55*DECK, 0.2*VH)/0.36; smin = 0.55*smax
     spawnR = max(C['spawnf']*DECK, max(1.5*VR, 1.5*CD) + 0.4*smax*C['start'])
@@ -206,7 +208,10 @@ def first_clear(travel, cone, smax, size, ysize):
         if 0.5*PFF*smax*size(u)*ysize(u) > travel*u*c: last = min(1, (i+1)/400)
     return min(0.9, last)
 
-def particles_v10(t, L, alt):
+def particles_v11(t, L, alt):
+    return particles_v10(t, L, alt, v11=True)
+
+def particles_v10(t, L, alt, v11=False):
     """#130-v9 review fix: flat-born sprites (full width, YStart height growing as fast as travel allows) so the
     flame starts at the exit; exact fade-in; body visible to ~u 0.97; every emitter deflects on the deck with no
     loss and shrinks to 5% / greys to alpha 0.3 when slow."""
@@ -214,19 +219,20 @@ def particles_v10(t, L, alt):
     def fade(u, fi, peak, tail, ramp=0.04):
         up = min(0.95, fi + max(0.002, ramp)); xs = [0, max(fi, 1e-3), up] + [tt for a_, tt in tail if tt > up] + [1]
         ys = [0, 0, peak] + [a_ for a_, tt in tail if tt > up] + [0]; return np.interp(u, xs, ys)
-    def ysz(u, y0, fa): return y0 + (1-y0)*np.clip(u/fa, 0, 1)
+    def ysz(u, y0, fa, ye=1.0): return y0 + (ye-y0)*np.clip(u/fa, 0, 1)
     # body
     n = 208; life = L['BodyLife']; u = rng.random(n); spd = L['Length']/life; cone = math.radians(L['BodyConeDeg'])
-    byf = yfull(0.06, L['BodyMax']*1.15, L['Length'], cone)
-    fi = first_clear(L['Length'], cone, L['BodyMax'], lambda x: P.bsize(L, x), lambda x: ysz(x, 0.06, byf))
+    byf = yfull(0.06, L['BodyMax']*1.15, L['Length'], cone); yend = 1.0; dal = 0.3
+    if v11: byf = max(min(0.6, 1.5*d/L['Length']), byf); yend = 0.9; dal = 0.04
+    fi = first_clear(L['Length'], cone, L['BodyMax'], lambda x: P.bsize(L, x), lambda x: ysz(x, 0.06, byf, yend))
     phi = rng.random(n)*2*np.pi; rr = np.sqrt(rng.random(n))*L['BodySpawnRadius']; th = rng.random(n)*cone
     travel = spd*u*life; dy = np.cos(th)*travel; hit = (alt - dy) < 0
     rad = rr + np.sin(th)*np.where(hit, alt, travel) + np.where(hit, 0.15*(travel - alt)*0.3, 0)
     size = rng.uniform(L['BodyMin'], L['BodyMax'], n)*np.array([P.bsize(L, x) for x in u])*np.where(hit, 0.05, 1.0)
-    ysc = np.where(hit, 1.0, ysz(u, 0.06, byf))
+    ysc = np.where(hit, 1.0, ysz(u, 0.06, byf, yend))
     y = np.where(hit, 0.05*size, alt - dy)
     rgb, _ = gradient(u, [(HEAD, 0), (MID, 0.3), (TAIL, 1)], [0, 0, 0]); rgb = np.where(hit[:, None], grey, rgb)
-    a = fade(u, fi, 0.9, [(0.75, 0.6), (0.35, 0.9)], ramp=min(0.04, max(0.002, 0.02*d/L['Length'])))*np.where(hit, 0.3, 1)
+    a = fade(u, fi, 0.9, [(0.75, 0.6), (0.35, 0.9)], ramp=min(0.04, max(0.002, 0.02*d/L['Length'])))*np.where(hit, dal, 1)
     out.append((np.stack([rad*np.cos(phi), y, rad*np.sin(phi)], -1), size, rgb, a, False, ysc))
     # core
     n = 8; u = rng.random(n); phi = rng.random(n)*2*np.pi; rr = np.sqrt(rng.random(n))*L['CoreSpawnRadius']
@@ -235,13 +241,13 @@ def particles_v10(t, L, alt):
     yy = alt - L['CoreLength']*u; hit = yy < 0
     size = L['CoreSize']*(1 - 0.2*u)*np.where(hit, 0.05, 1); ysc = np.where(hit, 1, ysz(u, 0.1, cyf))
     rgb, _ = gradient(u, [([255, 255, 255], 0), (CORE, 0.35), (MID, 1)], [0, 0, 0]); rgb = np.where(hit[:, None], grey, np.minimum(rgb*1.5, 255))
-    out.append((np.stack([rr*np.cos(phi), np.maximum(yy, 0.05*size), rr*np.sin(phi)], -1), size, rgb, fade(u, cfi, 0.8, [(0.3, 0.75)])*np.where(hit, 0.3, 1), False, ysc))
+    out.append((np.stack([rr*np.cos(phi), np.maximum(yy, 0.05*size), rr*np.sin(phi)], -1), size, rgb, fade(u, cfi, 0.8, [(0.3, 0.75)])*np.where(hit, dal, 1), False, ysc))
     # diamonds
     n = 18; u = rng.random(n); yy = alt - 1.5*d*u; hit = yy < 0
     dfi = first_clear(1.5*d, 0, 0.5*d, lambda x: 1.0, lambda x: ysz(x, 0.1, 0.5))
     size = np.full(n, 0.5*d)*np.where(hit, 0.05, 1); ysc = np.where(hit, 1, ysz(u, 0.1, 0.5))
     rgb = np.where(hit[:, None], grey, np.array([255, 230, 170.]))
-    out.append((np.stack([np.zeros(n), np.maximum(yy, 0.05*size), np.zeros(n)], -1), size, rgb, fade(u, dfi, 0.35, [(0.25, 0.4)])*np.where(hit, 0.3, 1), False, ysc))
+    out.append((np.stack([np.zeros(n), np.maximum(yy, 0.05*size), np.zeros(n)], -1), size, rgb, fade(u, dfi, 0.35, [(0.25, 0.4)])*np.where(hit, dal, 1), False, ysc))
     return out
 
 def particles_v6(t, L, alt, cloudH, ramp, burst):
@@ -290,7 +296,7 @@ def render(t, v, path):
     plist = particles(t, v)
     for ei, e in enumerate(plist):
         pos, size, rgb, a, add = e[:5]; ys = e[5] if len(e) > 5 else np.ones(len(pos))
-        tight = (v in ('v7', 'v8', 'v9', 'v10') and ei < 3)
+        tight = (v in ('v7', 'v8', 'v9', 'v10', 'v11') and ei < 3)
         for i in range(len(pos)): allp.append((pos[i], size[i], rgb[i], a[i], add, tight, ys[i]))
     def z(p): return np.dot(p[0]-cam, fwd)
     allp.sort(key=lambda p: -z(p))

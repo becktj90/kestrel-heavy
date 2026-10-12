@@ -153,7 +153,10 @@ namespace Kestrel.Slice
             Mathf.Clamp((1f - yStart) * 0.5f * PlumeFringeFraction * sizeMax / Mathf.Max(0.1f, 0.8f * travel * Mathf.Cos(coneDeg * Mathf.Deg2Rad)), 0.02f, 0.6f);
         public const float DiamondYStart = 0.1f, DiamondYFullAt = 0.5f;
         public static float YSize(float u, float start, float fullAt) => Mathf.Lerp(start, 1f, Mathf.Clamp01(u / fullAt));
-        public static float BodyYSize(Layout L, float u) => YSize(u, BodyYStart, L.BodyYFullAt);
+        /// <summary>#130-v10: sprites grew out of the flat shape by ~10% of life and read as round puffs. Body height
+        /// now reaches full height only ~BodyYFullD below the exit (<= BodyYMinFullAt of life) and tops out at BodyYEnd of the width (0.9 keeps Low-budget D=3 overlap >= 2).</summary>
+        public const float BodyYEnd = 0.9f, BodyYMinFullAt = 0.6f, BodyYFullD = 1.5f;   // full height ~1.5 D below the exit (<= 0.6 of life)
+        public static float BodyYSize(Layout L, float u) => Mathf.Lerp(BodyYStart, BodyYEnd, Mathf.Clamp01(u / L.BodyYFullAt));
         public static float CoreYSize(Layout L, float u) => YSize(u, CoreYStart, L.CoreYFullAt);
         public static float DiamondYSize(float u) => YSize(u, DiamondYStart, DiamondYFullAt);
 
@@ -276,7 +279,7 @@ namespace Kestrel.Slice
             L.BodyConeDeg = Mathf.Atan2(Mathf.Max(0f, L.Width - solidEnd) * 0.5f, L.Length) * Mathf.Rad2Deg;
             // Smallest emitter offset keeping every sprite's top at or below the exit plane over its whole life
             // (born small -> offset ~ birth half-size; only grows if a sprite would outrun its own travel).
-            L.BodyYFullAt = YFullAt(BodyYStart, L.BodyMax * L.BodyGrow, L.Length, L.BodyConeDeg);
+            L.BodyYFullAt = Mathf.Max(Mathf.Min(BodyYMinFullAt, BodyYFullD * d / Mathf.Max(1f, L.Length)), YFullAt(BodyYStart, L.BodyMax * L.BodyGrow, L.Length, L.BodyConeDeg));
             L.CoreYFullAt = YFullAt(CoreYStart, L.CoreSize, L.CoreLength, 0f);
             L.BodyEmitOffset = 0f; L.CoreEmitOffset = 0f;
             for (int i = 0; i <= TopEdgeSamples; i++)
@@ -341,7 +344,7 @@ namespace Kestrel.Slice
         public const float BodyDeckBounce = 0f, BodyDeckDampen = 0.85f, BodyDeckLifetimeLoss = 0f, BodyDeckRadiusScale = 0.1f;
         /// #130-v9: 0.12 still read as an orange splash at T+1.4 and put a sprite +1.59 m over the exit at T+0.6.
         /// Deflected (speed &lt; 30%) sprites are now 5% size, greyed and at DeflectAlpha (colour-by-speed).
-        public const float BodyDeflectSize = 0.05f, DeflectSpeedFrac = 0.3f, FullSpeedFrac = 0.6f, DeflectAlpha = 0.3f;
+        public const float BodyDeflectSize = 0.05f, DeflectSpeedFrac = 0.3f, FullSpeedFrac = 0.6f, DeflectAlpha = 0.04f;   // #130-v10: deflected sprites at the deck read +1.30 m over the exit at T+0.6; below the 5% visibility line now
         /// <summary>Size multiplier vs speed fraction (speed / startSpeed): BodyDeflectSize up to 0.3, 1 from 0.6.</summary>
         public static float BodySizeBySpeed(float speedFraction) => Mathf.Lerp(BodyDeflectSize, 1f, Mathf.InverseLerp(DeflectSpeedFrac, FullSpeedFrac, speedFraction));
         /// <summary>Core and diamonds die on deck contact (no bounce): they are small near-nozzle features, and

@@ -92,11 +92,17 @@ namespace Kestrel.Slice
                 { var gd = new Gradient(); gd.SetKeys(new[] { new GradientColorKey(PlumeShape.Core, 0), new GradientColorKey(PlumeShape.BodyHead, 0.5f), new GradientColorKey(PlumeShape.Mid, 1) }, FadeKeys(PlumeShape.DiamondFadeIn, 0.35f, (0.25f, 0.4f)));
                   var dc = diamonds.colorOverLifetime; dc.enabled = true; dc.color = gd; }
                 // #130-v9: sprites born flat (full width, YStart height) so the visible flame starts at the exit.
-                bodyYFull = coreYFull = -1f;   // Y (height) curves are per layout: built in Apply
+                bodyYFull = coreYFull = -1f;   // Y (height) curves are per layout (rebuilt in Apply when it changes)
+                // #130-v10: orange billows covered the centre core's bells and base from T+2.5. A camera-facing quad
+                // tilts back toward a camera that looks up, so a sprite below the exit (and nearer the camera along
+                // the view axis) projected over the bells. Vertical billboards keep each quad upright at its true
+                // depth/height, so the front bells occlude it and its top never rises above the exit plane.
+                foreach (var ps in new[] { body, core, diamonds }) ps.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.VerticalBillboard;
                 FlatBorn(diamonds, u => 1f, PlumeShape.DiamondYSize);
                 // #130: deck-deflected sprites shrink (and grey/fade, #130-v9) with their speed instead of dying.
                 foreach (var ps in new[] { body, core, diamonds }) DeflectBySpeed(ps);
             }
+            EnsureFlat(PlumeShape.ComputeLayout(1f, 1f, ExitDiameter, vehicleRadius, vehicleHeight, deckRadius));   // EditMode/Create path: flat-born curves exist before the first Apply
             Cap(core, Budget.Core); Cap(body, Budget.Body); Cap(diamonds, Budget.Diamonds); if (cloud != null) Cap(cloud, Budget.Cloud);
         }
 
@@ -138,6 +144,13 @@ namespace Kestrel.Slice
         public float ClusterDiameter => ExitDiameter;
 
         float bodyYFull = -1f, coreYFull = -1f;   // #130-v9: last flat-born Y curves built
+
+        /// <summary>Build the flat-born (separate-axes) size curves for this layout if they changed.</summary>
+        void EnsureFlat(PlumeShape.Layout L)
+        {
+            if (body != null && Mathf.Abs(L.BodyYFullAt - bodyYFull) > 0.005f) { bodyYFull = L.BodyYFullAt; FlatBorn(body, u => PlumeShape.BodySize(L, u), u => PlumeShape.BodySize(L, u) * PlumeShape.BodyYSize(L, u)); }
+            if (core != null && Mathf.Abs(L.CoreYFullAt - coreYFull) > 0.005f) { coreYFull = L.CoreYFullAt; FlatBorn(core, PlumeShape.CoreSize, u => PlumeShape.CoreSize(u) * PlumeShape.CoreYSize(L, u)); }
+        }
 
         void OnDestroy() { if (cloud != null) Destroy(cloud.gameObject); }
 
@@ -308,8 +321,7 @@ namespace Kestrel.Slice
             body.transform.localPosition = Vector3.zero;
             float fadeIn = PlumeShape.BodyFadeIn(L);
             if (Mathf.Abs(fadeIn - bodyFadeIn) > 0.005f) { bodyFadeIn = fadeIn; BodyGradient(body, fadeIn, PlumeShape.BodyFadeRamp(L)); }
-            if (Mathf.Abs(L.BodyYFullAt - bodyYFull) > 0.005f) { bodyYFull = L.BodyYFullAt; FlatBorn(body, u => PlumeShape.BodySize(L, u), u => PlumeShape.BodySize(L, u) * PlumeShape.BodyYSize(L, u)); }
-            if (Mathf.Abs(L.CoreYFullAt - coreYFull) > 0.005f) { coreYFull = L.CoreYFullAt; FlatBorn(core, PlumeShape.CoreSize, u => PlumeShape.CoreSize(u) * PlumeShape.CoreYSize(L, u)); }
+            EnsureFlat(L);
             var bm = body.main; bm.startLifetime = life; bm.startSpeed = L.Length / life;
             bm.startSize = new ParticleSystem.MinMaxCurve(L.BodyMin, L.BodyMax);
             var bs = body.shape; bs.radius = L.BodySpawnRadius; bs.angle = L.BodyConeDeg;

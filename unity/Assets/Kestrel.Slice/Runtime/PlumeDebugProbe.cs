@@ -76,7 +76,7 @@ namespace Kestrel.Slice
             var axis = t.forward;
             for (int i = 0; i < n; i++)
             {
-                float s = tmp[i].GetCurrentSize(ps) * sizeScale; float sy = tmp[i].GetCurrentSize3D(ps).y * sizeScale;   // #130-v9: flat-born sprites; vertical extent uses Y sum += s; max = Mathf.Max(max, s);
+                var s3 = tmp[i].GetCurrentSize3D(ps) * sizeScale; float s = s3.x;   // #130-v10: GetCurrentSize read 0 with separate-axes size float sy = s3.y;   // #130-v9: flat-born sprites; vertical extent uses Y sum += s; max = Mathf.Max(max, s);
                 float alpha = tmp[i].GetCurrentColor(ps).a / 255f; asum += alpha;
                 var w = main.simulationSpace == ParticleSystemSimulationSpace.Local ? t.TransformPoint(tmp[i].position) : tmp[i].position;
                 var flat = w - Vector3.Dot(w - t.position, axis) * axis;   // project onto the plane through the emitter

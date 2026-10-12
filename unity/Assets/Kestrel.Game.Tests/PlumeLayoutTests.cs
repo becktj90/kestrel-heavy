@@ -167,7 +167,8 @@ namespace Kestrel.Game.Tests
                 var c = pc.Body.collision;
                 Assert.That(c.lifetimeLoss.constant, Is.EqualTo(0f), "#130: zero loss, deflected sprites shrink/fade by speed instead");
                 Assert.That(pc.Body.sizeBySpeed.enabled && pc.Body.colorBySpeed.enabled, Is.True, "deflected spray shrinks and greys by speed");
-                Assert.That(pc.Body.sizeOverLifetime.separateAxes, Is.True, "body sprites are born flat");
+                Assert.That(pc.Body.sizeOverLifetime.separateAxes, Is.True, "body sprites are born flat (built in Create, before Apply)");
+                Assert.That(pc.Body.GetComponent<UnityEngine.ParticleSystemRenderer>().renderMode, Is.EqualTo(UnityEngine.ParticleSystemRenderMode.VerticalBillboard), "#130-v10: upright quads, no tilt over the bells");
                 Assert.That(c.bounce.constant, Is.LessThanOrEqualTo(0.1f), "low bounce: slides sideways");
                 pc.Apply(0.9, PlumeShape.P0, 0);
                 Assert.That(pc.Body.transform.localPosition.magnitude, Is.LessThan(1e-4f), "body emitter at the nozzle plane");
@@ -185,8 +186,12 @@ namespace Kestrel.Game.Tests
         public void BodyFadeInMatchesOffsetSilhouette()
         {
             var L = PlumeShape.ComputeLayout(1f, 1f, 14f, 7f, H, 20f);
-            Assert.That(PlumeShape.BodyFadeIn(L) * L.Length, Is.EqualTo(L.BodyEmitOffset).Within(1e-3f));
-            Assert.That(PlumeShape.BodyFadeIn(L), Is.LessThan(0.35f));
+            // #130-v9: fade-in is the exact clear point (FirstClearU), at or past the legacy offset, never > 1 of life.
+            float fi = PlumeShape.BodyFadeIn(L);
+            Assert.That(fi * L.Length, Is.GreaterThanOrEqualTo(L.BodyEmitOffset - 1e-3f));
+            Assert.That(fi, Is.InRange(0f, 0.35f), "normalised life");
+            Assert.That(fi * L.Length, Is.LessThanOrEqualTo(0.15f * 14f), "fade-in within ~0.15 D of travel");
+            Assert.That(PlumeShape.BodyTopAboveExit(L), Is.LessThanOrEqualTo(0f));
         }
 
         // #129: QualityGovernor stepped Medium -> Low mid-liftoff and the plume rebuilt with Low caps.
@@ -222,7 +227,7 @@ namespace Kestrel.Game.Tests
             Assert.That(top, Is.LessThan(nozzleAboveDeck), "deflected sprite fringe stays below the nozzle exit on the pad");
             Assert.That(PlumeShape.BodySizeBySpeed(1f), Is.EqualTo(1f), "free-flying body unaffected");
             Assert.That(PlumeShape.BodyDeflectSize, Is.LessThanOrEqualTo(0.06f), "#130-v9: no orange splash");
-            Assert.That(PlumeShape.DeflectAlpha, Is.LessThanOrEqualTo(0.35f));
+            Assert.That(PlumeShape.DeflectAlpha, Is.LessThan(0.05f), "#130-v10: deflected sprites below the probe's visibility line (topAboveNozzle +1.30 m at T+0.6)");
         }
 
         // #130 review: core +2.84 m / diamonds +5.82 m above the exit at T+0.6 (deck bounce), diamonds 7-9.5 m below it later.
@@ -251,6 +256,9 @@ namespace Kestrel.Game.Tests
                 Assert.That(PlumeShape.DiamondTopAboveExit(d), Is.LessThanOrEqualTo(0f), $"D {d}: diamonds never above the exit");
                 Assert.That(PlumeShape.BodyVisibleGap(L), Is.LessThanOrEqualTo(0.5f), $"D {d}: visible body starts within 0.5 m of the exit");
                 Assert.That(PlumeShape.DiamondTopDepth(d), Is.LessThanOrEqualTo(0.5f), $"D {d}: first diamond within 0.5 m of the exit");
+                // #130-v10: elongated bands, not round puffs: height <= BodyYEnd (0.9) of width, full only ~1.5 D below the exit.
+                Assert.That(PlumeShape.BodyYSize(L, Mathf.Min(0.3f, d / L.Length)), Is.LessThanOrEqualTo(0.65f), $"D {d}: still flat (<= 0.65 of width) one D below the exit");
+                Assert.That(PlumeShape.BodyYSize(L, 1f), Is.LessThanOrEqualTo(0.9f + 1e-4f), "height <= 0.9 of width");
             }
         }
 
