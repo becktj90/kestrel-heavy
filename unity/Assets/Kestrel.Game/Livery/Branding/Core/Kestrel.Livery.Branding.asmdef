@@ -1,0 +1,14 @@
+{
+    "name": "Kestrel.Livery.Branding",
+    "rootNamespace": "Kestrel.Livery.Branding",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
