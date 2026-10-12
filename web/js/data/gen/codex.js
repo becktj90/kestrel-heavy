@@ -31,12 +31,14 @@ export default {
       "id": "isp",
       "title": "Specific impulse",
       "kid": "Specific impulse, called Isp, scores how well an engine uses propellant. Higher Isp means more speed from each kilogram. At the pad, thick air cuts the number. In vacuum it is higher.",
-      "engineer": "Isp is in seconds. RocketEq.IspAt blends the catalog ends: IspVac minus (IspVac minus IspSL) times p / p0. p0 is Atmosphere.P0, 101325 Pa. RocketEq.ThrustAt uses the same blend. Mass flow is thrust divided by Isp times g0. An engine's ispVac cannot rise past its propellant's ispVacMax in propellants.json. The designer's delta-v total uses vacuum Isp. Headless and Ascent3Dof burn with the blended Isp at the local air pressure.",
+      "engineer": "Isp is in seconds. RocketEq.IspAt blends the catalog ends: IspVac minus (IspVac minus IspSL) times p / p0. p0 is Atmosphere.P0, 101325 Pa. RocketEq.ThrustAt uses the same blend. Mass flow is thrust divided by Isp times g0. Catalog ispVac stays at or under that propellant's ispVacMax in propellants.json. The engineer tune multiplies Isp by up to 15 percent (designer-limits.json tunePct) and does not clamp that product to ispVacMax. The designer's delta-v total uses vacuum Isp. Headless and Ascent3Dof burn with the blended Isp at the local air pressure.",
       "sources": [
         "RocketEq.IspAt",
         "RocketEq.ThrustAt",
         "Atmosphere.P0",
-        "propellants.json"
+        "propellants.json",
+        "Stack.ApplyTune",
+        "designer-limits.json"
       ]
     },
     {
