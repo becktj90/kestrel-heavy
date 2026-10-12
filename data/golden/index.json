@@ -10,7 +10,8 @@
   "economy": 67,
   "catalog-flight": 100,
   "landing-grade": 13,
+  "quick-retry": 5,
   "steer": 262
  },
- "total": 528
+ "total": 533
 }
