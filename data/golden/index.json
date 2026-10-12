@@ -9,7 +9,8 @@
   "simulate": 13,
   "economy": 67,
   "catalog-flight": 100,
+  "landing-grade": 13,
   "steer": 262
  },
- "total": 515
+ "total": 528
 }
