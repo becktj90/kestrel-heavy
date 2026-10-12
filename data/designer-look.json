@@ -1,0 +1,33 @@
+{
+  "schema": "designer_look_v1",
+  "note": "Hangar Look tab: paint palette, finish slots, decal slots and decals. Cosmetic only; nothing here changes mass, drag or cost. Decals are earned by play like liveries (start, orbits, landings, mission). No price, expiry, random or streak fields. Slots follow docs/DESIGNER_ART_SECTION.md section 4; auto slots are filled by the game and never placed by the player.",
+  "palette": [
+    "#F2F2F2", "#E8ECEF", "#9EA3A8", "#2A2C30",
+    "#14161A", "#1A3C6E", "#1E3A5F", "#50DCF0",
+    "#2E8B57", "#7BC043", "#F2C21A", "#FFB000",
+    "#D27A3A", "#C83C32", "#C8102E", "#7A4FA0"
+  ],
+  "finishSlots": ["tank", "booster", "interstage", "fairing", "engine", "fins", "legs", "gridfins"],
+  "decalLimits": { "maxPerVehicle": 6, "scales": [0.5, 1, 1.5], "rotations": [0, 90] },
+  "decalSlots": [
+    { "id": "slot_wordmark_vertical", "part": "stage", "maxSizeM": 12, "content": ["wordmark"], "auto": false },
+    { "id": "slot_insignia_upper", "part": "stage", "maxSizeM": 3, "content": ["insignia"], "auto": false },
+    { "id": "slot_serial_aft", "part": "stage", "maxSizeM": 1.5, "content": ["serial"], "auto": false },
+    { "id": "slot_flag_band", "part": "interstage", "maxSizeM": 2, "content": ["stripe", "insignia"], "auto": false },
+    { "id": "slot_mission_patch", "part": "fairing", "maxSizeM": 2.5, "content": ["patch", "insignia"], "auto": false },
+    { "id": "slot_heritage_marks", "part": "booster", "maxSizeM": 1.5, "content": ["marks"], "auto": false },
+    { "id": "slot_safety_stencils", "part": "stage", "maxSizeM": 0.6, "content": ["stencil"], "auto": true },
+    { "id": "slot_booster_number", "part": "booster", "maxSizeM": 1.2, "content": ["number"], "auto": true }
+  ],
+  "decals": [
+    { "id": "decal_kestrel_wing", "label": "decal.kestrel_wing", "content": "insignia", "earnRule": { "type": "start" } },
+    { "id": "decal_star_ring", "label": "decal.star_ring", "content": "insignia", "earnRule": { "type": "start" } },
+    { "id": "decal_wordmark_block", "label": "decal.wordmark_block", "content": "wordmark", "earnRule": { "type": "start" } },
+    { "id": "decal_serial_plate", "label": "decal.serial_plate", "content": "serial", "earnRule": { "type": "start" } },
+    { "id": "decal_twin_stripe", "label": "decal.twin_stripe", "content": "stripe", "earnRule": { "type": "start" } },
+    { "id": "decal_first_orbit_patch", "label": "decal.first_orbit_patch", "content": "patch", "earnRule": { "type": "orbits", "count": 1 } },
+    { "id": "decal_comet_patch", "label": "decal.comet_patch", "content": "patch", "earnRule": { "type": "orbits", "count": 5 } },
+    { "id": "decal_landing_tally", "label": "decal.landing_tally", "content": "marks", "earnRule": { "type": "landings", "count": 1 } },
+    { "id": "decal_moon_patch", "label": "decal.moon_patch", "content": "patch", "earnRule": { "type": "mission", "missionId": "KH-5" } }
+  ]
+}

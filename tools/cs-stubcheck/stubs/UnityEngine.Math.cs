@@ -66,3 +66,12 @@ namespace UnityEngine
         public static bool IsPowerOfTwo(int v) => false; public static int NextPowerOfTwo(int v) => 0; public static int ClosestPowerOfTwo(int v) => 0; public static float GammaToLinearSpace(float v) => 0; public static float LinearToGammaSpace(float v) => 0; }
     public static class Random { public static float value => 0; public static float Range(float a, float b) => 0; public static int Range(int a, int b) => 0; public static void InitState(int s) { } public static Vector3 insideUnitSphere => default; public static Vector2 insideUnitCircle => default; public static Vector3 onUnitSphere => default; }
 }
+namespace UnityEngine
+{
+    public enum TextAnchor { UpperLeft, UpperCenter, UpperRight, MiddleLeft, MiddleCenter, MiddleRight, LowerLeft, LowerCenter, LowerRight }
+    public enum FontStyle { Normal, Bold, Italic, BoldAndItalic }
+}
+namespace UnityEngine
+{
+    public static class ScreenCapture { public static void CaptureScreenshot(string path, int superSize = 1) { } public static Texture2D CaptureScreenshotAsTexture(int superSize = 1) => null; }
+}
