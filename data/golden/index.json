@@ -9,6 +9,7 @@
   "simulate": 13,
   "economy": 67,
   "catalog-flight": 100,
+  "d0-replay": 22,
   "designer-validate": 117,
   "landing-grade": 13,
   "mission-ramp": 39,
@@ -18,5 +19,5 @@
   "save-store": 3,
   "steer": 262
  },
- "total": 705
+ "total": 727
 }
