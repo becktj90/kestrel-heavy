@@ -1,5 +1,6 @@
 // U.S. Standard Atmosphere 1976, 0–86 km geometric (layers by geopotential height), isothermal
 // exponential tail above 86 km. SI units. Port of web/js/physics/atmosphere.js.
+// Above 86 km, callers use this same Atmosphere.At. UpperAtmosphere does not keep a second table.
 using System;
 
 namespace Kestrel.Core.Physics

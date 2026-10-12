@@ -552,6 +552,8 @@ namespace Kestrel.Core.Timeline
                     Absent("asc.throttle", "Throttle bucket is absent because no liftoff engine can throttle (the throttle range is closed).");
                 else Absent("asc.throttle", "Throttle bucket is absent because Max-Q did not occur.");
 
+                EmitKarman(sim, t0);
+
             bool anyBooster = false;
             string transferEndId = null;
             string mecoId = null;
@@ -748,6 +750,23 @@ namespace Kestrel.Core.Timeline
                     "Fairing separates once heating has fallen (after Max-Q) and altitude reaches " + d.fairingJettisonAltitudeKm.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + " km. Time " + TimelineClock.Clock(t) + " is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude.",
                     new[] { parent }, Hw("fairing"),
                     Trigger.Sim(expr), t, false, 1, narration: "fairing", music: "CUE-10", telemetry: new[] { "alt", "q" });
+            }
+
+            void EmitKarman(SimResult sim, double t0)
+            {
+                double? hit = sim.KarmanTime.HasValue ? (double?)TimelineClock.Round(sim.KarmanTime.Value - t0) : CoastAltitude(sim, t0, UpperAtmosphere.KarmanM);
+                if (hit == null)
+                {
+                    Absent("asc.karman", "The Karman line is absent because the sim, including a ballistic coast after burnout, never reaches 100 km geometric altitude.");
+                    return;
+                }
+                double karman = hit.Value;
+                string parent = Prior("asc.maxq", karman, "term.liftoff");
+                AddAt("asc.karman", "Karman line", "Karman", TimelinePhase.Ascent, karman,
+                    TimelineCriticality.Nominal, TimelineVisibility.Kid,
+                    "The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at " + TimelineClock.Clock(karman) + (sim.KarmanTime.HasValue ? ", on an integrator step." : ", on the ballistic coast after burnout."),
+                    new[] { parent }, Hw("vehicle"),
+                    Trigger.Sim("alt>=100000"), karman, false, 1, narration: "karman", telemetry: new[] { "alt" });
             }
 
             /// <summary>Ballistic coast from the sim's final state. The ascent sim stops at burnout.</summary>

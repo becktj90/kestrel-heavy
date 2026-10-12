@@ -653,6 +653,7 @@
   "absent": [
     {"id":"abort.crew","explainWhy":"Crew abort is absent because the payload is not crewed and does not need an abort system."},
     {"id":"abort.staging","explainWhy":"Separation abort is absent because this vehicle does not separate a stage or a booster."},
+    {"id":"asc.karman","explainWhy":"The Karman line is absent because the sim, including a ballistic coast after burnout, never reaches 100 km geometric altitude."},
     {"id":"asc.meco","explainWhy":"MECO is absent because Motor is a solid motor. It burns out; it does not shut down."},
     {"id":"asc.throttle","explainWhy":"Throttle bucket is absent because no liftoff engine can throttle (the throttle range is closed)."},
     {"id":"count.ch4.s1.chill","explainWhy":"Methane chilldown is absent because no stage flies methalox."},
