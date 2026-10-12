@@ -7,6 +7,7 @@ Split out of [becktj90/beckify](https://github.com/becktj90/beckify) with histor
 ## Layout
 
 - `web/` – the Phaser 4 game. **Single source of truth.**
+- Current App Store version: **1.0.1 (7)** (`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in both configs of `ios/KestrelHeavy.xcodeproj`).
 - `ios/` – standalone Xcode project `KestrelHeavy.xcodeproj` (scheme `KestrelHeavy`). The `Pack Kestrel Heavy game` build phase runs `ios/scripts/pack_kestrelheavy_game.py`, which copies `web/` into `ios/KestrelHeavy/Game` with iOS/offline patches.
 - `tests/` – Node tests (`npm test`).
 - `docs/` – App Store listing notes.
