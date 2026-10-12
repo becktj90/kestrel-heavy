@@ -9,6 +9,7 @@ using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Environment;
 using Kestrel.Kit.Contracts;
+using Kestrel.Site;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -42,18 +43,19 @@ namespace Kestrel.Slice
         {
             cam = new GameObject("Camera").AddComponent<Camera>(); cam.tag = "MainCamera";
             cam.clearFlags = CameraClearFlags.Skybox;
-            cam.nearClipPlane = 0.5f; cam.farClipPlane = 200000f; cam.fieldOfView = 50;
+            // The coast disc has to reach the geometric horizon the chase camera frames. SkyRig still owns fog.
+            cam.nearClipPlane = 0.5f; cam.farClipPlane = SiteView.FarClip; cam.fieldOfView = 50;
             hangarCam = cam.gameObject.AddComponent<HangarCamera>();
             var sun = new GameObject("Sun").AddComponent<Light>(); sun.type = LightType.Directional; sun.intensity = 1.3f; sun.transform.rotation = Quaternion.Euler(40, -30, 0);
             sky = SkyRig.Attach(cam, sun);
             worldRoot = new GameObject("World").transform;
             vehicleRoot = new GameObject("Vehicle").transform; vehicleRoot.SetParent(worldRoot, false);
             flight = gameObject.AddComponent<FlightDriver>(); flight.World = worldRoot; flight.Vehicle = vehicleRoot;
-            // Ground: 200 km, 1 m below the deck top, follows the vehicle downrange (LateUpdate); see PadGround.
-            var g = GameObject.CreatePrimitive(PrimitiveType.Plane); g.name = "Ground"; ground = g.transform; ground.SetParent(worldRoot, false);
-            ground.localScale = new Vector3(PadGround.Size / 10f, 1, PadGround.Size / 10f);
-            Destroy(g.GetComponent<Collider>());
-            if (bodyMat != null) { var gm = new Material(bodyMat) { color = PadGround.GroundColor }; g.GetComponent<Renderer>().sharedMaterial = gm; }
+            // Pier 7: scrub, road, coast and curved ocean. Sea level stays at GroundY so the chase-camera
+            // clamp still looks down onto the shore. The site is pad-anchored (it does not slide with the rocket).
+            var site = SiteView.Create(worldRoot, SiteGenerator.Pier7Seed, SiteView.LodForQuality(QualitySettings.GetQualityLevel()));
+            site.BindSun(sun);
+            ground = site.transform;
             flight.Anchor(ground, 0, PadGround.GroundY, 0);
             PadGround.ApplyHaze(cam.farClipPlane);
             var pad = GameObject.CreatePrimitive(PrimitiveType.Cylinder); pad.name = "Pad"; deck = pad.transform; deck.SetParent(worldRoot, false);
@@ -448,8 +450,9 @@ namespace Kestrel.Slice
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
             var v = vehicleRoot.position; var up = vehicleRoot.up;
             camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude), 4f, Time.deltaTime);
-            // Keep the ground in view from above, and keep it under the vehicle (no edge, horizon at any downrange).
-            ground.position = new Vector3(v.x, ground.position.y, ground.position.z);
+            // Grow the far plane with altitude so the coast under the framed horizon is never clipped.
+            cam.farClipPlane = SiteHorizon.ClipFor((float)flight.Altitude);
+            // Sea level is the anchored site root. Do not slide it: the coast has to stay under the pad.
             cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
             var cp = cam.transform.position;
             cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, cam.fieldOfView, (float)flight.Altitude, cp.y - ground.position.y);
