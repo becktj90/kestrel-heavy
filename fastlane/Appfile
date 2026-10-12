@@ -1,0 +1,2 @@
+# No secrets here. The ASC API key is read at runtime from env/CI secrets.
+app_identifier("com.beckify.kestrelheavy")

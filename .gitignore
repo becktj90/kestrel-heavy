@@ -2,3 +2,11 @@ node_modules/
 .DS_Store
 xcuserdata/
 DerivedData/
+# fastlane / App Store Connect secrets — never commit
+fastlane/*.p8
+fastlane/asc_key.json
+fastlane/report.xml
+fastlane/README.md.bak
+*.p8
+*.mobileprovision
+*.p12

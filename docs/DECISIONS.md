@@ -25,3 +25,8 @@ Trevor (2026-10-11, 10:20 PM) delegated design and technical calls to Chief of S
 | 19 | 10-11 | Own repo (becktj90/kestrel-heavy), not the beckify monorepo. |
 | 20 | 10-11 | Scope tiers per MASTER_ROADMAP.md; X1–X7 specs feed U1–U9. PROJECT_STATE.md is the living context file. |
 | 21 | 10-11 | Legal/compliance docs are "draft for counsel"; audience/age rating needs Trevor's explicit decision. |
+| 22 | 10-11 | Name review (docs/NAME_REVIEW.md, not legal advice): keep "Kestrel Heavy" provisionally (amber-green, counsel check before 1.0). Replace "Northwind Aerospace" (real aerospace firm North Wind). Fallback title: Updraft Heavy. |
+| 23 | 10-11 | First Unity release is version 2.0.0 (rename the unreleased 1.0.1 ASC version to 2.0 at G2); build numbers start at 100; bundle com.beckify.kestrelheavy. |
+| 24 | 10-11 | Recommend Games → Simulation primary, Arcade secondary for the Unity build (ASC change is Trevor's G2). |
+| 25 | 10-11 | Store listing claims are gated per milestone (APPSTORE_CONNECT.md); accessibility labels declare only Dark Interface and Reduced Motion until gaps close. Age rating recommendation 4+, not Made for Kids (Trevor decides). |
+| 26 | 10-11 | fastlane: default dry_run lane is local-only; ASC lanes require TREVOR_APPROVED=yes; no submit lane. Secrets only in CI/UBA. |
