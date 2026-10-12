@@ -47,14 +47,15 @@ namespace Kestrel.Slice
             var existing = pad.GetComponent<PadRenderer>();
             var L = existing != null ? existing.Layout : null;
             int stamp = UmbilicalRig.Stamp(attach);
+            var mf = vehicleMesh != null ? vehicleMesh.GetComponent<MeshFilter>() : null;   // arms end at the real skin (#135)
+            long meshKey = VehicleSkin.MeshKey(mf != null ? mf.sharedMesh : null);
             if (L != null && L.Seed == seed && L.Archetype == type && existing.AttachStamp == stamp
-                && Mathf.Approximately(L.Fit.VehicleHeight, h) && Mathf.Approximately(L.Fit.VehicleRadius, r)) return existing;
+                && Mathf.Approximately(L.Fit.VehicleHeight, h) && Mathf.Approximately(L.Fit.VehicleRadius, r) && existing.SourceMeshKey == meshKey) return existing;
             var fit = new PadFit(h, r, Clearance);
-            var mf = vehicleMesh != null ? vehicleMesh.GetComponent<MeshFilter>() : null;
             if (mf != null) fit.SkinRadiusAt = VehicleSkin.FromMesh(mf.sharedMesh, pad.worldToLocalMatrix * vehicleMesh.localToWorldMatrix);
             var padPts = attach == null ? null : UmbilicalRig.IntoPadFrame(attach, ContractMath.Yaw(-yaw));
             var built = PadBuilder.Build(pad, seed, type, fit, padPts);
-            built.AttachStamp = stamp;
+            built.AttachStamp = stamp; built.SourceMeshKey = meshKey;
             return built;
         }
     }

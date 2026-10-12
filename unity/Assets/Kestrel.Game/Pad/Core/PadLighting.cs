@@ -30,13 +30,16 @@ namespace Kestrel.Pad
 
     public static class PadLighting
     {
+        /// <summary>Target illuminance of tower floods / poles at their throw distance (URP units; daylight sun ≈ 1–2).</summary>
+        public const float FloodIllum = 4.5f, PoleIllum = 1.6f;
+        /// <summary>Near-pole exclusion around the design camera bearing (deg each side).</summary>
+        public const float CameraKeepOutDeg = 40f;
         public static readonly Vec3 Sodium = new Vec3(1.00f, 0.78f, 0.52f), Led = new Vec3(0.92f, 0.95f, 1.00f), AvRed = new Vec3(1f, 0.08f, 0.04f);
 
         /// <summary>Build the plan. Deterministic for (layout, quality).</summary>
         public static List<LightSpec> Plan(PadLayout L, int quality)
         {
             var o = new List<LightSpec>(); var rng = new PadRng(L.Seed * 31 + 7);
-            var target = new Vec3(0, L.Fit.VehicleHeight * 0.45f, 0);
             float hv = Math.Max(10f, L.Fit.VehicleHeight);
             var warm = rng.Next() % 2 == 0;     // fictional pad picks one palette
             var floodCol = warm ? Sodium : Led;
@@ -51,9 +54,12 @@ namespace Kestrel.Pad
                     foreach (var sx in new[] { -1f, 1f })
                     {
                         var p = new Vec3(sx * (hw - 0.6f), y + 0.4f, tp.NearFaceZ - 0.3f);
-                        float d = Dist(p, target);
-                        o.Add(new LightSpec { Id = $"flood.tower.l{l:00}.{(sx < 0 ? "w" : "e")}", Kind = LightKind.Flood, Position = p, Aim = Dir(p, target),
-                            Color = floodCol, Intensity = 6f, Throw = d, Illum = 2.2f, Range = d * 1.8f, SpotAngle = 34f, InnerSpotAngle = 16f, Halo = 4.5f });
+                        // aim each bank at the vehicle a little below its own height, so the banks together wash the
+                        // whole stack (and the tower face they hang on) instead of all hitting one spot
+                        var aim = new Vec3(0, Math.Max(hv * 0.08f, Math.Min(hv * 0.92f, y - tp.LevelHeight * 1.5f)), 0);
+                        float d = Dist(p, aim);
+                        o.Add(new LightSpec { Id = $"flood.tower.l{l:00}.{(sx < 0 ? "w" : "e")}", Kind = LightKind.Flood, Position = p, Aim = Dir(p, aim),
+                            Color = floodCol, Intensity = 8f, Throw = d, Illum = FloodIllum, Range = d * 2.2f, SpotAngle = 44f, InnerSpotAngle = 22f, Halo = 5f });
                     }
                 }
                 float top = tp.Height + tp.CapHeight;
@@ -80,11 +86,13 @@ namespace Kestrel.Pad
                 {
                     float b = ph + 360f * i / n; float bb = ((b % 360f) + 360f) % 360f;
                     if (Math.Abs(bb - 90f) < 25f || Math.Abs(bb - 270f) < 25f) continue;
+                    if (ring == 0 && AngleDiff(bb, PadGenerator.DefaultViewBearingDeg) < CameraKeepOutDeg) continue;   // don't stand in front of the design camera
                     double br = b * Math.PI / 180.0;
                     var p = new Vec3(r * (float)Math.Sin(br), poleH, r * (float)Math.Cos(br));
-                    var foot = new Vec3(p.X * 0.3f, 0, p.Z * 0.3f); float d = Dist(p, foot);
+                    // near ring lights the tower + vehicle base, far ring the apron
+                    var foot = ring == 0 && tp != null ? new Vec3(0, 2f, tp.StandOff * 0.5f) : new Vec3(p.X * 0.3f, 0, p.Z * 0.3f); float d = Dist(p, foot);
                     o.Add(new LightSpec { Id = $"pole.r{ring + 2}.{i:00}", Kind = LightKind.Pole, Position = p, Aim = Dir(p, foot),
-                        Color = floodCol, Intensity = ring == 0 ? 4f : 3f, Throw = d, Illum = 1.2f, Range = d * 1.6f, SpotAngle = 64f, InnerSpotAngle = 30f, Halo = ring == 0 ? 3.5f : 2.8f });
+                        Color = floodCol, Intensity = ring == 0 ? 4f : 3f, Throw = d, Illum = PoleIllum, Range = d * 1.6f, SpotAngle = 64f, InnerSpotAngle = 30f, Halo = ring == 0 ? 3.5f : 2.8f });
                 }
             }
 
@@ -107,6 +115,8 @@ namespace Kestrel.Pad
         }
 
         public static int CountRealtime(List<LightSpec> plan) { int n = 0; foreach (var s in plan) if (s.Realtime) n++; return n; }
+
+        public static float AngleDiff(float a, float b) { float d = Math.Abs(((a - b) % 360f + 360f) % 360f); return d > 180f ? 360f - d : d; }
 
         static float Dist(Vec3 a, Vec3 b) { float x = b.X - a.X, y = b.Y - a.Y, z = b.Z - a.Z; return (float)Math.Sqrt(x * x + y * y + z * z); }
 

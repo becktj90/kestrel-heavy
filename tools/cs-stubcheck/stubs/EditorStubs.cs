@@ -1,1 +1,2 @@
 namespace UnityEditor { public class Editor {} }
+namespace UnityEditor { public static class SessionState { public static int GetInt(string k, int d) => d; public static void SetInt(string k, int v) { } public static bool GetBool(string k, bool d) => d; public static void SetBool(string k, bool v) { } public static string GetString(string k, string d) => d; public static void SetString(string k, string v) { } public static void EraseInt(string k) { } } }
