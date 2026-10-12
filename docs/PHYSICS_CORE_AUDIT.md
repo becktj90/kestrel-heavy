@@ -166,7 +166,7 @@ Legend: **present / partial / absent**. Tolerances are |a−b| ≤ abs + rel·|b
 | 3 | Gravity/J2 | reference formulas only (#90) | EGM2008 C20–C40, published Ω̇ |
 | 4 | Frames/time | absent | NGA TR8350.2, Vallado examples, USNO |
 | 5 | Propagation/decay | todo (#90) | own reference script + published bands |
-| 6 | Weather/LCC | todo (#89) | NOAA NCEI normals |
+| 6 | Weather/LCC | landed (#113) | NOAA NCEI 1991–2020 `USW00012838` (Melbourne); see PHYSICS.md § Weather |
 | 7 | Eclipse/β/SRP | absent | Horizons Sun + geometry |
 | 8 | Ascent performance | goldens are self-consistency only (`simulate.json`, `catalog-flight.json`) | rocket equation, published Δv-to-LEO budgets (bands) |
 | 9 | 6-DOF/slosh/loads | absent | NASA SP-106, textbook cases |
