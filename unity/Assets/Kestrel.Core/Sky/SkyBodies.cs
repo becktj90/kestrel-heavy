@@ -80,7 +80,7 @@ namespace Kestrel.Core.Sky
         {
             if (args == null) return false;
             for (int i = 0; i < args.Length; i++)
-                if (args[i] == NightArg) return true;
+                if (string.Equals(args[i], NightArg, StringComparison.OrdinalIgnoreCase)) return true;
             return false;
         }
 
