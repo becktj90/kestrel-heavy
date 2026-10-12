@@ -44,7 +44,7 @@ namespace Kestrel.Core.Weather
         public const double TempMaxC = 35.0; // fictional; Shuttle ~37 °C (99 °F)
         /// <summary>
         /// Characteristic upper shear limit (1/s). Fictional, jet-level class: real jet shear is about
-        /// 0.005–0.015 /s. Generator draws 0.002…0.018 so the tail can exceed this.
+        /// 0.005–0.015 /s. Generator uses a lognormal draw (median 0.0045 /s) with P(exceed) = 0.03.
         /// </summary>
         public const double ShearLimitPerSec = 0.012;
         /// <summary>Eastern Range–class wait after lightning within 10 NM of the site (not a scrub).</summary>

@@ -3,7 +3,7 @@
 //
 // External seed→day golden (mulberry32 + Rayleigh/Box-Muller; verified C# == Python):
 //   Haven calibrated to NOAA USW00012838; April mean wind 4.46 m/s, temp 22.11 °C;
-//   shear = 0.002 + 0.016*u9. Seed=1, doy=100.
+//   shear = LogNormal(median=0.0045, σ_ln=0.521497546971786) via Box-Muller (u9,u10). Seed=1, doy=100.
 //
 // Launch-anyway penalty weights (fictional game abstraction; lightning has no weight):
 //   wind 0.15, gust 0.10, precip 0.20, ceiling 0.15, temp 0.10, shear 0.20
@@ -28,7 +28,9 @@ namespace Kestrel.Core.Tests
         const double Seed1Cloud = 0.281103502959013;
         const double Seed1CeilingM = 5051.309561120216;
         const double Seed1LightningKm = 131.09563425183296;
-        const double Seed1ShearPerSec = 0.017917167130857704;
+        const double Seed1ShearPerSec = 0.00427604296282097;
+        // Seed 22 is in the lognormal shear tail (external).
+        const uint SeedShearViolator = 22;
         // External launch-anyway penalty literals (fictional weights above).
         const double PenaltyWindOnly = 0.15;
         const double PenaltyWindGust = 0.25;
@@ -96,13 +98,34 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Shear_GeneratedDay_CanViolateLimit()
         {
-            // Seed 1 / doy 100 draws shear ≈ 0.0179 /s > ShearLimitPerSec 0.012.
-            var day = WeatherGenerator.Generate(SiteClimatology.HavenId, 100, 1);
+            // Seed 22 draws shear ≈ 0.0145 /s > ShearLimitPerSec 0.012 (lognormal tail).
+            var day = WeatherGenerator.Generate(SiteClimatology.HavenId, 100, SeedShearViolator);
             Assert.Greater(day.shearPerSec, LaunchCommit.ShearLimitPerSec,
                 "generator tail must be able to exceed the shear LCC");
             var r = LaunchCommit.Evaluate(day, "STANDARD");
             Assert.IsTrue(r.shear, "shear violation flag");
             Assert.AreEqual(LccVerdict.Hold, r.verdict);
+        }
+
+        [Test]
+        public void Shear_ExceedanceRate_MatchesLognormal_LargeN()
+        {
+            // Documented fictional annual rate: P(shear > 0.012) = 0.03 (lognormal median 0.0045).
+            const int N = 10000;
+            double analytic = WeatherEnsemble.LognormalExceedance(
+                WeatherGenerator.ShearLogMedianPerSec,
+                WeatherGenerator.ShearLogSigma,
+                LaunchCommit.ShearLimitPerSec);
+            Assert.AreEqual(WeatherGenerator.ShearExceedanceTarget, analytic, 1e-4, "documented target");
+            double band = WeatherEnsemble.BinomialThreeSigmaBand(analytic, N);
+            int viol = 0;
+            for (int i = 0; i < N; i++)
+            {
+                var d = WeatherGenerator.Generate(SiteClimatology.HavenId, 15, (uint)(i + 1));
+                if (d.shearPerSec > LaunchCommit.ShearLimitPerSec) viol++;
+            }
+            double sample = viol / (double)N;
+            Assert.AreEqual(analytic, sample, band, "shear exceedance large-N");
         }
 
         [Test]
@@ -287,12 +310,18 @@ namespace Kestrel.Core.Tests
         [Test]
         public void ShearProfile_VisualOnly_NotAscentSim()
         {
-            // Profile is kinematic from surface + shear; AscentSim / Headless do not reference it.
+            // Jet-shaped profile: peak near 10.5 km in the 30–70 m/s class; AscentSim does not read it.
             var day = WeatherGenerator.Generate(SiteClimatology.HavenId, 100, 1);
             Assert.AreEqual(5, day.shearWindMs.Length);
             Assert.AreEqual(Seed1WindMs, day.shearWindMs[0], RelSeedDay * Seed1WindMs);
-            double expect12 = Seed1WindMs + Seed1ShearPerSec * 12000.0;
-            Assert.AreEqual(expect12, day.shearWindMs[4], RelSeedDay * Math.Max(1, expect12));
+            double jetPeak = Math.Min(ShearProfile.JetCapMs,
+                Seed1WindMs + Seed1ShearPerSec * ShearProfile.ShearLayerM);
+            Assert.AreEqual(37.6463332034547, jetPeak, RelSeedDay * 40, "jet peak");
+            Assert.LessOrEqual(jetPeak, 70.0, "typical jet class for median-ish draw");
+            Assert.AreEqual(10.219818573116118, day.shearWindMs[1], RelSeedDay * 20, "3 km");
+            Assert.AreEqual(24.182407839470304, day.shearWindMs[2], RelSeedDay * 30, "6 km");
+            Assert.AreEqual(35.75141037444949, day.shearWindMs[3], RelSeedDay * 40, "9 km");
+            Assert.AreEqual(32.51508164806954, day.shearWindMs[4], RelSeedDay * 40, "12 km");
             Assert.AreEqual(0, ShearProfile.AltitudeKm[0], 0);
             Assert.AreEqual(12, ShearProfile.AltitudeKm[4], 0);
         }

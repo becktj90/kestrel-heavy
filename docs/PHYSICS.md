@@ -203,7 +203,11 @@ Goldens for onRailsNode are **hard-coded literals** computed outside the codebas
 
 `Kestrel.Core.Weather` is a new seeded climatology generator. It does **not** replace `Flight.Weather.Hold` (wind > 12 m/s policy; KID/Relaxed never hold) — that stub stays for params and timeline goldens.
 
-`WeatherGenerator.Generate(site, dayOfYear, seed)` draws one `WeatherDay` for Haven (fictional Florida coastal site) using mulberry32 (same as `Sensors`): Rayleigh surface wind with monthly mean, Box-Muller temperature, Bernoulli thunder day, cloud/precip/ceiling/lightning distance from the **site**, a characteristic upper shear (1/s) drawn as `0.002 + 0.016·u` (range 0.002…0.018 /s so the tail can exceed the LCC), and a 5-level shear wind profile (0/3/6/9/12 km) for visuals and LCC display.
+`WeatherGenerator.Generate(site, dayOfYear, seed)` draws one `WeatherDay` for Haven (fictional Florida coastal site) using mulberry32 (same as `Sensors`): Rayleigh surface wind with monthly mean, Box-Muller temperature, Bernoulli thunder day, cloud/precip/ceiling/lightning distance from the **site**, a characteristic upper shear (1/s), and a 5-level jet-shaped wind profile (0/3/6/9/12 km) for visuals and LCC display.
+
+**Shear draw (fictional, annual):** lognormal with median `0.0045 /s` and `σ_ln = 0.521497546971786`, chosen so `P(shear > 0.012) = 0.03` (a few percent, not the ~37% of a uniform 0.002–0.018 draw). Drawn via Box-Muller from two mulberry units. Real upper-wind hold rates are a few percent and seasonal; this is an annual stand-in.
+
+**Wind profile shape:** not a linear ramp to 12 km. Jet peak ≈ `min(100, surface + shear × 8000 m)` near 10.5 km (smoothstep rise, mild decay above). Median shear → ~40 m/s peak (jet class 30–70 m/s); hard cap 100 m/s.
 
 Haven monthly means are calibrated to **NOAA NCEI U.S. Climate Normals 1991–2020** at **Melbourne Intl AP, FL (`USW00012838`)**: temperature from `MLY-TAVG-NORMAL`, wind from the monthly mean of `HLY-WIND-AVGSPD` (public domain; LICENSES.md). Thunder-day probabilities are a **fictional** Florida-coastal seasonality (~80 days/yr), not a NOAA station product. Original site name.
 
@@ -226,7 +230,7 @@ Haven monthly means are calibrated to **NOAA NCEI U.S. Climate Normals 1991–20
 
 `LaunchAnyway.ReliabilityPenalty` is a **game-abstraction** reliability penalty (fictional weights, not derived from flight data). It multiplies failure probability (equivalently `reliability ← reliability × (1 − penalty)`). Weights: wind 0.15, gust 0.10, precip 0.20, ceiling 0.15, temp 0.10, shear 0.20, capped at 1. Lightning has **no weight** and cannot be overridden. Override is allowed only for soft Holds.
 
-`WeatherEnsemble` runs N members with a splittable seed mix for violation probability. Wind exceedance uses the exact Rayleigh tail `P(W > L) = exp(−L²/(2s²))`, `s = μ/√(π/2)`, with band `3√(p(1−p)/N)` at N = 10 000.
+`WeatherEnsemble` runs N members with a splittable seed mix for violation probability. Wind exceedance uses the exact Rayleigh tail `P(W > L) = exp(−L²/(2s²))`, `s = μ/√(π/2)`, with band `3√(p(1−p)/N)` at N = 10 000. Shear exceedance uses the lognormal tail `P(S > L) = Φ̄((ln L − ln m)/σ)` with the same binomial band at N = 10 000 (documented target p = 0.03).
 
 ### Shear not in AscentSim (known simplification)
 
@@ -244,5 +248,6 @@ Seed→day and launch-anyway goldens are hard-coded literals from external snipp
 | ensembleExceedance | 3√(p(1−p)/N) | 0 | N=10 000 wind exceedance vs exact Rayleigh; p≈exp(−L²/(2s²)). |
 | launchAnywayPenalty | 0 | 1e-12 | Fictional weight sums: wind-only 0.15, wind+gust 0.25, all soft 0.90; lightning → 0 / not overridable. |
 | missionEventHold | exact | 0 | Hold (incl. lightning) → `held` on holdable poll; KID leaves status untouched. |
-| shearViolation | exact | 0 | Generated seed 1 / doy 100 exceeds ShearLimitPerSec 0.012. |
+| shearViolation | exact | 0 | Generated seed 22 exceeds ShearLimitPerSec 0.012 (lognormal tail). |
+| shearExceedance | 3√(p(1−p)/N) | 0 | N=10 000 vs lognormal p=0.03 (median 0.0045 /s, σ_ln as above). |
 

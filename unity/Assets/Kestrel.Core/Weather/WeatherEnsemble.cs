@@ -56,12 +56,29 @@ namespace Kestrel.Core.Weather
             return Math.Exp(-0.5 * x * x);
         }
 
+        /// <summary>
+        /// Lognormal exceedance P(X &gt; L) = Φ̄((ln L − μ) / σ) with μ = ln(median).
+        /// </summary>
+        public static double LognormalExceedance(double median, double sigmaLn, double limit)
+        {
+            if (median <= 0 || sigmaLn <= 0) return limit < median ? 1.0 : 0.0;
+            if (limit <= 0) return 1.0;
+            double z = (Math.Log(limit) - Math.Log(median)) / sigmaLn;
+            return NormalUpperTail(z);
+        }
+
         /// <summary>Binomial 3σ sampling band: 3 √(p(1−p)/N).</summary>
         public static double BinomialThreeSigmaBand(double p, int n)
         {
             if (n <= 0) return 1.0;
             p = Math.Max(0, Math.Min(1, p));
             return 3.0 * Math.Sqrt(p * (1.0 - p) / n);
+        }
+
+        /// <summary>Φ̄(z) = 1 − Φ(z) via Abramowitz &amp; Stegun 7.1.26 erfc.</summary>
+        public static double NormalUpperTail(double z)
+        {
+            return 0.5 * Erfc(z / Math.Sqrt(2.0));
         }
 
         static uint Mix(uint seed, uint index)
@@ -78,5 +95,13 @@ namespace Kestrel.Core.Weather
             }
         }
 
+        static double Erfc(double x)
+        {
+            double ax = Math.Abs(x);
+            double t = 1.0 / (1.0 + 0.3275911 * ax);
+            double poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+            double ans = poly * Math.Exp(-ax * ax);
+            return x >= 0 ? ans : 2.0 - ans;
+        }
     }
 }
