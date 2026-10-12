@@ -21,7 +21,9 @@ namespace Kestrel.Slice.Editor
     [InitializeOnLoad]
     public static class SliceBootstrap
     {
-        public const string DevBundleId = "com.beckify.kestrelheavy.unityproto";
+        public const string DevBundleId = "com.beckify.kestrelheavy.unityproto"; // legacy proto id, no longer stamped
+        public const string ShipBundleId = "com.beckify.kestrelheavy"; // Trevor 2026-10-12 12:27 PM (DECISIONS #59)
+        public const string ShipVersion = "2.0.0";
         public const string TeamId = "9TR6R5LV8M";
         public const string ScenePath = "Assets/Scenes/Slice.unity";
         static readonly string[] DataFiles = { "propellants", "engines", "materials", "payloads", "presets" };
@@ -72,8 +74,9 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
         public static void EnsurePlayerSettings()
         {
             PlayerSettings.companyName = "Beckify";
-            PlayerSettings.productName = "Kestrel Heavy Proto";
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, DevBundleId);
+            PlayerSettings.productName = "Kestrel Heavy";
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, ShipBundleId);
+            PlayerSettings.bundleVersion = ShipVersion;
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
             PlayerSettings.allowedAutorotateToPortrait = true;
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
@@ -81,7 +84,7 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
             PlayerSettings.allowedAutorotateToLandscapeRight = false;
             PlayerSettings.iOS.appleDeveloperTeamID = TeamId;
             PlayerSettings.iOS.appleEnableAutomaticSigning = true;
-            PlayerSettings.iOS.targetOSVersionString = "15.0";
+            PlayerSettings.iOS.targetOSVersionString = "16.0";
             PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneAndiPad;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.iOS, ScriptingImplementation.IL2CPP);
             PlayerSettings.statusBarHidden = true;
@@ -148,9 +151,12 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
                 app.PanelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/Resources/UI/KH_PanelSettings.asset");
                 EditorSceneManager.SaveScene(scene, ScenePath);
             }
-            // Keep the committed shell order (Boot, Home, Design, Flight first); Slice is appended, never first.
-            var list = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-            if (!list.Exists(s => s.path == ScenePath)) { list.Add(new EditorBuildSettingsScene(ScenePath, true)); EditorBuildSettings.scenes = list.ToArray(); }
+            // Slice.unity is a local, editor-generated sandbox (gitignored). Nothing loads it by name: the shell
+            // Design scene hosts SliceApp via ShellDesignHost. Keep it OUT of Build Settings so a clean checkout
+            // (cloud build) never references an untracked scene; drop any stale entry left by older bootstraps.
+            var scenes = EditorBuildSettings.scenes;
+            if (System.Array.Exists(scenes, s => s.path == ScenePath))
+                EditorBuildSettings.scenes = System.Array.FindAll(scenes, s => s.path != ScenePath);
         }
     }
 

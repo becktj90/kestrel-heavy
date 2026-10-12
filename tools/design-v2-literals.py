@@ -172,7 +172,8 @@ def vehicle(d_lower, d_upper, fins, include_interstage_cone, prop=None, payload=
         cna1 = (4.0 * FIN_COUNT * (span / d_ref) ** 2) / (1.0 + math.sqrt(1.0 + (2.0 * lf / (cr + ct)) ** 2))
         radius = d_lower / 2.0
         kfb = 1.0 + radius / (span + radius)
-        add_cn(kfb * cna1, length - fin_cp_from_trailing_edge(cr, ct, 0.0))
+        xf = fin_cp_aft_of_root_le(cr, ct, 0.0)
+        add_cn(kfb * cna1, length - (cr - xf))
     cp = length / 2.0 if cna == 0.0 else length - cnx / cna
     stab = (cg - cp) / d_ref if d_ref > 0 else 0.0
     ahead = cp > length
@@ -188,8 +189,13 @@ def vehicle(d_lower, d_upper, fins, include_interstage_cone, prop=None, payload=
     }
 
 
-def fin_cp_from_trailing_edge(cr, ct, xt):
-    """Barrowman quarter-chord of the MAC. Square fin with x_t = 0 is 0.25c."""
+def fin_cp_aft_of_root_le(cr, ct, xt):
+    """Barrowman quarter-chord of the MAC, metres aft of the root leading edge.
+
+    A square fin with x_t = 0 is 0.25c. The trailing edge sits on the base, so the
+    hangar station from the nose is length - (c_r - x_f), which is length - 0.75c.
+    Measuring x_f forward from the trailing edge would land on the three-quarter chord.
+    """
     total = cr + ct
     if total <= 0:
         return 0.0
@@ -220,7 +226,7 @@ def main():
     shoulder = pack("shoulder", 2.0, 4.0, False)
     fin = pack("fin", 2.0, 2.0, True)
     over = pack("overstable", 0.8, 0.8, True, prop=(8000.0, 800.0), payload=20000.0, fairing_length=2.0, fin_span=2.0)
-    if abs(fin_cp_from_trailing_edge(1.2, 1.2, 0.0) - 0.25 * 1.2) > 1e-12:
+    if abs(fin_cp_aft_of_root_le(1.2, 1.2, 0.0) - 0.25 * 1.2) > 1e-12:
         raise SystemExit("square fin CP is not the quarter chord")
     if not (over["stabilityCal"] > 4.0):
         raise SystemExit("overstable fixture is not above 4 cal: " + str(over["stabilityCal"]))

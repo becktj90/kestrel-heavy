@@ -163,10 +163,10 @@ Shader "Kestrel/Sky"
                 float2 f = p - i - 0.5;
                 float2 px = f / max(g * size, float2(1e-3, 1e-3));
                 float r = length(px);
-                float point = r < 0.55 ? 1.0 : saturate((1.25 - r) / 0.70);
-                if (point <= 0.0) return float3(0, 0, 0);
+                float starMask = r < 0.55 ? 1.0 : saturate((1.25 - r) / 0.70);
+                if (starMask <= 0.0) return float3(0, 0, 0);
                 float2 cuv = (i + 0.5) / size;
-                return SAMPLE_TEXTURE2D_LOD(_Stars, sampler_Stars, cuv, 0).rgb * point;
+                return SAMPLE_TEXTURE2D_LOD(_Stars, sampler_Stars, cuv, 0).rgb * starMask;
             }
 
             half4 frag(Varyings input) : SV_Target

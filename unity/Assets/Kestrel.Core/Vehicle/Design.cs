@@ -16,7 +16,7 @@ namespace Kestrel.Core.Vehicle
         public string clusterPattern, interstageShape, nozzle;
         public int engineCount = 1, count; // count: strap-ons only
         public double propMass, diameter, interstageMass, separationMass, landingPropMass;
-        /// <summary>True when interstageMass is present in JSON, including 0. False means derive (upper stages only).</summary>
+        /// <summary>True when interstageMass is present in JSON, including 0. False means 0 on version 1 and a derived frustum on version 2 upper stages.</summary>
         public bool interstageSpecified;
         public bool crossfeed; public Tune tune;
         public StagePart Clone() { var s = (StagePart)MemberwiseClone(); return s; }

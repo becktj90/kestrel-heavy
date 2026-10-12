@@ -3,7 +3,6 @@
 using System.Collections.Generic;
 using Kestrel.Core.Data;
 using Kestrel.Core.Json;
-using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 
 namespace Kestrel.Core.Designer
@@ -44,8 +43,8 @@ namespace Kestrel.Core.Designer
                 Cryo(c, d, warnings);
                 Rcs(d, warnings);
                 Stability(c, d, blocks, warnings);
+                Reference(c, design, d, blocks, warnings);
             }
-            Reference(c, design, d, blocks, warnings);
         }
 
         public static void ShapeV2(Catalog c, JsonObject d, List<string> errs)
@@ -92,17 +91,6 @@ namespace Kestrel.Core.Designer
                 say("Matched the joint between stages to their sizes");
             }
         }
-
-        public static void NoteReference(JsonObject design, SimResult sim)
-        {
-            if (design == null || sim == null) return;
-            Cache[Key(design)] = (sim.maxQ, sim.maxQAlt, sim.maxG);
-        }
-
-        // Stringify cache stays until #157 merges. Rebase onto that branch, then drop this
-        // and AeroBalanceCalc and read Balance plus ReferenceAscent only.
-        static readonly Dictionary<string, (double qPa, double alt, double g)> Cache = new Dictionary<string, (double, double, double)>();
-        static string Key(JsonObject d) => Save.JsonWriter.Stringify(d);
 
         static void Cluster(Catalog c, Design d, List<Issue> blocks, List<Issue> warnings)
         {
@@ -226,11 +214,11 @@ namespace Kestrel.Core.Designer
         static void Stability(Catalog c, Design d, List<Issue> blocks, List<Issue> warnings)
         {
             if (d.stages.Count == 0) return;
-            var bal = AeroBalanceCalc.Of(c, d);
+            var bal = Balance.Of(c, d);
             double cal = bal.stabilityCal;
             var lim = DesignerLimits.Active;
             bool fins = d.fins;
-            bool steered = Steered(c, d);
+            bool steered = PadSteered(c, d);
             bool unguided = !steered;
             bool band = fins || unguided;
             if (band && cal > lim.overstableAbove)
@@ -257,25 +245,26 @@ namespace Kestrel.Core.Designer
 
         static void Reference(Catalog c, JsonObject design, Design d, List<Issue> blocks, List<Issue> warnings)
         {
-            if (!Cache.TryGetValue(Key(design), out var obs)) return;
+            if (!ReferenceAscent.TryGet(ReferenceAscent.CanonicalKey(c, design), out double qPa, out _, out double g)) return;
             var lim = DesignerLimits.Active;
-            double qKpa = obs.qPa / 1000.0;
+            double qKpa = qPa / 1000.0;
             if (qKpa > lim.maxQWarnKPa && !UnguidedSolid(c, d))
                 warnings.Add(Issue("maxq-high", "aero",
                     "Max-Q " + Fmt(qKpa) + " kPa > " + Num(lim.maxQWarnKPa) + " kPa.",
                     "The air pushes really hard on this rocket. Try a pointy nose or less push low down.", null));
             var plj = design.Obj("payload");
             if (plj == null || plj.Str("type") == null || !c.PayloadById.TryGetValue(plj.Str("type"), out var pl)) return;
-            if (!(obs.g > pl.maxG)) return;
+            if (!(g > pl.maxG)) return;
             string name = string.IsNullOrEmpty(pl.displayName) ? pl.label : pl.displayName;
             var issue = Issue("payload-g", "payload",
-                "Peak " + Fmt(obs.g) + " g > payload maxG " + Fmt(pl.maxG) + ".",
+                "Peak " + Fmt(g) + " g > payload maxG " + Fmt(pl.maxG) + ".",
                 "Too bumpy for your " + name + "! Use gentler engines on the top stage.", null);
             if (pl.crewed) blocks.Add(issue);
             else warnings.Add(issue);
         }
 
-        static bool Steered(Catalog c, Design d)
+        /// <summary>A gimbal on stage 1 or on a strap-on. Solids count. An upper stage does not steer the pad.</summary>
+        public static bool PadSteered(Catalog c, Design d)
         {
             if (d.stages.Count == 0) return false;
             if (Gimballed(c, d.stages[0])) return true;
@@ -288,7 +277,8 @@ namespace Kestrel.Core.Designer
             return e.gimbal > 0;
         }
 
-        static bool UnguidedSolid(Catalog c, Design d)
+        /// <summary>Stage 1 is an unguided solid: solid propellant and gimbal 0. Later stages do not change the exemption.</summary>
+        public static bool UnguidedSolid(Catalog c, Design d)
         {
             if (d.stages.Count == 0) return false;
             var s = d.stages[0];

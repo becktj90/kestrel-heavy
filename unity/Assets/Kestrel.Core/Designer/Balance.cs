@@ -1,12 +1,17 @@
-// Liftoff CG and a Barrowman-style CP. Game approximation.
-// Stations match RocketMeshBuilder (metres, +Y up, base of stage 1 at y = 0).
-// Nose CP: Barrowman 1967 (conic 2/3 Ln, ogive 0.466 Ln, von Karman 0.5 Ln, blunt 1/3 Ln).
-// Body CP: the conical transition on each interstage, length 0.6 × the larger diameter.
-// Fins, when aero.fins is set, are an unswept square (chord = span) with the trailing edge
-// at the base. l_F equals the span. CP is Barrowman's quarter-chord of the MAC (0.25c for a
-// square fin), measured up from that trailing edge. Grid fins do not move CP.
-// cp_m is the marker: it is clamped to the nose when the raw CP is ahead of the vehicle.
-// stabilityCal keeps the raw CP. Replaced by Balance from readout v2 once #157 is merged.
+// Liftoff CG and a Barrowman-style CP. Game approximation, labelled as such.
+// TODO: CG and stability that follow the burn. The aerodynamic number that matters is
+// stability at max-Q, when about 60% of the propellant is gone, not the full-tank liftoff value.
+// Stations match RocketMeshBuilder (metres, +Y up, base of stage 1 at y = 0) so the
+// markers sit on the rocket the player sees. CP formulas: Barrowman 1967 as restated
+// in the USU MAE notes (cone 0.666 Ln, ogive 0.466 Ln) and Crowell 1996 (von Karman 0.500 Ln).
+// Cylinders contribute CNa = 0. The body term is the conical transition on each interstage
+// (length 0.6 × the larger diameter) plus a zero-length shoulder where the fairing meets the top stage.
+// Fins, when aero.fins is set, are an unswept square (chord = span) with the trailing edge at the base.
+// l_F equals the span. CP is the quarter chord of the MAC, x_f metres aft of the root leading edge
+// (0.25c for a square fin). The hangar station from the nose is length − (c_r − x_f).
+// Grid fins are mass and drag only; they do not move CP.
+// cp_m is the hangar marker: clamped to the nose when the raw CP is ahead of the vehicle.
+// stabilityCal keeps the raw CP.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
@@ -20,7 +25,7 @@ namespace Kestrel.Core.Designer
         public bool cpAheadOfNose;
     }
 
-    public static class AeroBalanceCalc
+    public static class Balance
     {
         const double LegFraction = 0.06, GridFinKgPerM2 = 120, RcsKg = 250;
 
@@ -80,6 +85,7 @@ namespace Kestrel.Core.Designer
                     if (d.gridFins) Add(GridFinKgPerM2 * Math.PI * r * r, yTank1);
                     if (d.rcs) Add(RcsKg, yTank1);
                 }
+                // Full tanks at liftoff, including the landing reserve. The rocket equation holds that reserve as dry.
                 Add(s.propMass, (yProp0 + yTank1) / 2);
             }
 
@@ -143,19 +149,22 @@ namespace Kestrel.Core.Designer
 
             if (d.fins && d.finCount > 0 && d.finSpanM > 0 && stages.Count > 0)
             {
-                double s = d.finSpanM, cr = s, ct = s;
-                // Unswept: l_F is the span, not 0. x_t is 0 because the leading edge is unswept.
-                double lf = s, xt = 0;
+                // Unswept square: l_F is the span. The general mid-chord length
+                // sqrt(s^2 + (x_t + (c_t - c_r)/2)^2) equals the span when x_t = 0 and c_r = c_t.
+                double s = d.finSpanM, cr = s, ct = s, xt = 0;
+                double lf = s;
                 int n = d.finCount;
                 double cna1 = (4.0 * n * Sq(s / dRef)) / (1 + Math.Sqrt(1 + Sq(2 * lf / (cr + ct))));
                 double radius = stages[0].diameter / 2;
                 double kfb = 1 + radius / (s + radius);
-                double xf = FinCpFromTrailingEdge(cr, ct, xt);
-                Add(kfb * cna1, length - xf);
+                double xf = FinCpAftOfRootLe(cr, ct, xt);
+                Add(kfb * cna1, length - (cr - xf));
             }
 
             foreach (var cone in cones)
             {
+                // Approximation, not a Barrowman body term: each strap-on nose is a full cone
+                // 2 (d/d_ref)^2 at the core reference diameter. Strap-on fins and base drag are omitted.
                 double yCp = cone.yTip - (2.0 / 3.0) * cone.length;
                 Add(cone.count * 2 * Sq(cone.diameter / dRef), length - yCp);
             }
@@ -165,10 +174,12 @@ namespace Kestrel.Core.Designer
         }
 
         /// <summary>
-        /// Barrowman fin CP, metres forward of the trailing edge when that edge sits on the base.
-        /// x_f = (x_t/3)(c_r+2c_t)/(c_r+c_t) + (1/6)(c_r+c_t − c_r c_t/(c_r+c_t)). A square fin is 0.25c.
+        /// Barrowman fin CP, metres aft of the root leading edge.
+        /// x_f = (x_t/3)(c_r+2c_t)/(c_r+c_t) + (1/6)(c_r+c_t − c_r c_t/(c_r+c_t)).
+        /// A square unswept fin is 0.25c. With the trailing edge on the base the station
+        /// above the base is c_r − x_f (0.75c), not x_f itself.
         /// </summary>
-        public static double FinCpFromTrailingEdge(double cr, double ct, double xt)
+        public static double FinCpAftOfRootLe(double cr, double ct, double xt)
         {
             double sum = cr + ct;
             if (!(sum > 0)) return 0;
@@ -177,6 +188,7 @@ namespace Kestrel.Core.Designer
 
         static double Sq(double x) => x * x;
 
+        /// <summary>Exposed bell height. Same clamp as RocketMeshBuilder.</summary>
         public static double Bell(double engineDiameter)
         {
             double b = engineDiameter * 1.6;
@@ -185,6 +197,7 @@ namespace Kestrel.Core.Designer
             return b;
         }
 
+        /// <summary>Fraction of fairing length that is nose. Same split as RocketMeshBuilder.</summary>
         public static double NoseFraction(string nose)
         {
             if (nose == "blunt") return 0.25;
@@ -192,6 +205,11 @@ namespace Kestrel.Core.Designer
             return 0.45;
         }
 
+        /// <summary>
+        /// CP station as a fraction of nose length, measured from the tip.
+        /// Cone 2/3, ogive 0.466 and von Karman 1/2 are the cited Barrowman factors.
+        /// Blunt uses 1/3 as an elliptical-nose approximation; Barrowman does not give that shape.
+        /// </summary>
         public static double NoseCpFactor(string nose)
         {
             if (nose == "conic") return 2.0 / 3.0;
