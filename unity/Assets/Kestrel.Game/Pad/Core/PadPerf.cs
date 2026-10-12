@@ -18,6 +18,11 @@ namespace Kestrel.Pad
             foreach (var m in l.Members) { tris += TrisFor(m.Kind); kinds.Add((TrisFor(m.Kind) == IBeamTris, m.Material)); }
             foreach (var a in l.Arms) tris += (long)SwingArmTruss.MemberCount(a.MaxLength) * BeamTris;
             ledger.Add(kinds.Count + l.Arms.Count * ArmBatchesPerArm, tris);
+            if (l.Trench != null)
+            {
+                var detail = TrenchMeshBuilder.Build(l.Trench, TrenchGrammar.SurfaceRadius(l));
+                ledger.Add(detail.DrawCalls, detail.Triangles);
+            }
         }
     }
 }

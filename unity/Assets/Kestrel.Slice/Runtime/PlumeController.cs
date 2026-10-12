@@ -20,6 +20,7 @@ namespace Kestrel.Slice
         /// <summary>Time source for the ignition clock (the batch-mode probe steps it manually).</summary>
         public System.Func<float> Clock = () => Time.time;
         ParticleSystem core, body, diamonds, cloud;
+        Mesh mouthMesh;
         float heightAboveDeck, towerHeight = 80f, vehicleHeight = 70f, vehicleRadius = 4f, deckRadius = 15f;
         float bodyFadeIn = -1f, coreFadeIn = -1f; int builtLevel = -1; float ignitionTime = -1f; Material mat, coreMat, cloudMat;
 
@@ -112,7 +113,8 @@ namespace Kestrel.Slice
         {
             towerHeight = towerH; deckRadius = Mathf.Max(5f, deckR);
             var L = PlumeShape.ComputeLayout(1f, 1f, ExitDiameter, vehicleRadius, vehicleHeight, deckRadius);
-            if (cloud != null) Destroy(cloud.gameObject);
+            if (cloud != null) { var oldShape = cloud.shape; oldShape.mesh = null; Destroy(cloud.gameObject); cloud = null; }
+            DropMouthMesh();
             var stale = padRoot.Find("GroundCloud"); if (stale != null) Destroy(stale.gameObject); // from a previous design
             var go = new GameObject("GroundCloud"); go.transform.SetParent(padRoot, false);
             go.transform.localPosition = new Vector3(0, L.CloudHeight, 0); go.transform.localRotation = Quaternion.Euler(-90, 0, 0); // circle in XZ
@@ -137,6 +139,65 @@ namespace Kestrel.Slice
             cloud.Play();
         }
 
+        /// <summary>Re-aim the ground cloud so it leaves the trench mouths. Emitter placement and shape only:
+        /// start speed, lifetime, size, the velocity curves, collision and emission stay as
+        /// <see cref="AttachGroundCloud"/> set them. Mouth positions are in the cloud's parent space;
+        /// the quad sits at the cloud's own height (caller Y is ignored).</summary>
+        public void AimGroundCloudAtMouths(Vector3[] centers, Vector3[] outward, float[] width, float[] height)
+        {
+            if (cloud == null || centers == null || centers.Length == 0) return;
+            float y = cloud.transform.localPosition.y;
+            cloud.transform.localRotation = Quaternion.identity;
+            cloud.transform.localPosition = new Vector3(0f, y, 0f);
+            var mesh = MouthQuadMesh(centers, outward, width, height);
+            var sh = cloud.shape;
+            sh.shapeType = ParticleSystemShapeType.Mesh;
+            sh.meshShapeType = ParticleSystemMeshShapeType.Triangle;
+            sh.mesh = mesh;
+            var previous = mouthMesh;
+            mouthMesh = mesh;
+            if (previous != null) { if (Application.isPlaying) Destroy(previous); else DestroyImmediate(previous); }
+        }
+
+        static Mesh MouthQuadMesh(Vector3[] centers, Vector3[] outward, float[] width, float[] height)
+        {
+            int n = centers.Length;
+            var verts = new System.Collections.Generic.List<Vector3>(n * 4);
+            var norms = new System.Collections.Generic.List<Vector3>(n * 4);
+            var tris = new System.Collections.Generic.List<int>(n * 6);
+            for (int i = 0; i < n; i++)
+            {
+                Vector3 dir = outward != null && i < outward.Length ? outward[i] : Vector3.forward;
+                dir.y = 0f;
+                if (dir.sqrMagnitude < 1e-8f) dir = Vector3.forward;
+                else dir.Normalize();
+                float w = width != null && i < width.Length ? Mathf.Max(0.4f, width[i]) : 2f;
+                float h = height != null && i < height.Length ? Mathf.Max(0.4f, height[i]) : 2f;
+                // side = up × dir, so (b-a) × (b2-a) points along dir: the cloud leaves the mouth.
+                Vector3 side = Vector3.Cross(Vector3.up, dir) * w;
+                Vector3 c = centers[i];
+                Vector3 a = new Vector3(c.x, 0f, c.z) - side * 0.5f - Vector3.up * (h * 0.5f);
+                Vector3 b = a + side;
+                Vector3 b2 = b + Vector3.up * h;
+                Vector3 a2 = a + Vector3.up * h;
+                int k = verts.Count;
+                verts.Add(a); verts.Add(b); verts.Add(b2); verts.Add(a2);
+                norms.Add(dir); norms.Add(dir); norms.Add(dir); norms.Add(dir);
+                tris.Add(k); tris.Add(k + 1); tris.Add(k + 2);
+                tris.Add(k); tris.Add(k + 2); tris.Add(k + 3);
+            }
+            var mesh = new Mesh { name = "KH_TrenchMouths" };
+            mesh.SetVertices(verts); mesh.SetNormals(norms); mesh.SetTriangles(tris, 0); mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        void DropMouthMesh()
+        {
+            if (mouthMesh == null) return;
+            var old = mouthMesh; mouthMesh = null;
+            if (Application.isPlaying) Destroy(old); else DestroyImmediate(old);
+        }
+
         /// <summary>Every emitter (core, body, diamonds, ground cloud) for PlumeDebugProbe.</summary>
         public ParticleSystem[] Emitters => new[] { core, body, diamonds, cloud };
         public ParticleSystem Body => body;
@@ -152,7 +213,11 @@ namespace Kestrel.Slice
             if (core != null && Mathf.Abs(L.CoreYFullAt - coreYFull) > 0.005f) { coreYFull = L.CoreYFullAt; FlatBorn(core, PlumeShape.CoreSize, u => PlumeShape.CoreSize(u) * PlumeShape.CoreYSize(L, u)); }
         }
 
-        void OnDestroy() { if (cloud != null) Destroy(cloud.gameObject); }
+        void OnDestroy()
+        {
+            if (cloud != null) { var sh = cloud.shape; sh.mesh = null; Destroy(cloud.gameObject); }
+            DropMouthMesh();
+        }
 
         /// <summary>Nozzle height above the deck top (m); drives the ground cloud fall-off.</summary>
         public void SetHeightAboveDeck(float h) => heightAboveDeck = h;

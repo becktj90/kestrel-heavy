@@ -310,20 +310,29 @@ namespace Kestrel.Core.Tests
         [Test]
         public void ShearProfile_VisualOnly_NotAscentSim()
         {
-            // Jet-shaped profile: peak near 10.5 km in the 30–70 m/s class; AscentSim does not read it.
+            // Jet-shaped profile with soft saturation (not a hard 100 m/s clip).
             var day = WeatherGenerator.Generate(SiteClimatology.HavenId, 100, 1);
             Assert.AreEqual(5, day.shearWindMs.Length);
             Assert.AreEqual(Seed1WindMs, day.shearWindMs[0], RelSeedDay * Seed1WindMs);
-            double jetPeak = Math.Min(ShearProfile.JetCapMs,
-                Seed1WindMs + Seed1ShearPerSec * ShearProfile.ShearLayerM);
-            Assert.AreEqual(37.6463332034547, jetPeak, RelSeedDay * 40, "jet peak");
+            double rawPeak = Seed1WindMs + Seed1ShearPerSec * ShearProfile.ShearLayerM;
+            double jetPeak = ShearProfile.SoftCap(rawPeak);
+            Assert.AreEqual(37.4596312980994, jetPeak, RelSeedDay * 40, "jet peak soft-capped");
             Assert.LessOrEqual(jetPeak, 70.0, "typical jet class for median-ish draw");
-            Assert.AreEqual(10.219818573116118, day.shearWindMs[1], RelSeedDay * 20, "3 km");
-            Assert.AreEqual(24.182407839470304, day.shearWindMs[2], RelSeedDay * 30, "6 km");
-            Assert.AreEqual(35.75141037444949, day.shearWindMs[3], RelSeedDay * 40, "9 km");
-            Assert.AreEqual(32.51508164806954, day.shearWindMs[4], RelSeedDay * 40, "12 km");
+            Assert.AreEqual(10.182804784299325, day.shearWindMs[1], RelSeedDay * 20, "3 km");
+            Assert.AreEqual(24.069189191324817, day.shearWindMs[2], RelSeedDay * 30, "6 km");
+            Assert.AreEqual(35.57505055714594, day.shearWindMs[3], RelSeedDay * 40, "9 km");
+            Assert.AreEqual(32.356385028517536, day.shearWindMs[4], RelSeedDay * 40, "12 km");
             Assert.AreEqual(0, ShearProfile.AltitudeKm[0], 0);
             Assert.AreEqual(12, ShearProfile.AltitudeKm[4], 0);
+
+            // Shear-fail days (rawPeak ≳ 100) must not all pin exactly at the old hard ceiling.
+            var viol = WeatherGenerator.Generate(SiteClimatology.HavenId, 100, SeedShearViolator);
+            double rawViol = viol.windMs + viol.shearPerSec * ShearProfile.ShearLayerM;
+            double peakViol = ShearProfile.SoftCap(rawViol);
+            Assert.Greater(rawViol, ShearProfile.JetCapMs, "violator is in the saturation regime");
+            Assert.Less(peakViol, ShearProfile.JetCapMs, "soft cap stays below asymptote");
+            Assert.Greater(peakViol, 80.0, "still a strong jet, not collapsed");
+            Assert.AreNotEqual(ShearProfile.JetCapMs, peakViol, "must not hard-clip to the asymptote");
         }
 
         static uint Mix(uint seed, uint index)
