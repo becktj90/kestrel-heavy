@@ -33,6 +33,7 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - run: dotnet test unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj --logger "console;verbosity=normal"
+      - run: dotnet test unity/Assets/Kestrel.Game/Pad/Tests/Dotnet~/Kestrel.Pad.Core.Tests.csproj --logger "console;verbosity=normal"
 
   unity-export:
     name: EditMode tests + iOS Xcode export (Linux)

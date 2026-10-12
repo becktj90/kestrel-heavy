@@ -123,7 +123,11 @@ namespace Kestrel.Pad.Tests
             Assert.That(g.Query(ElementCategory.SwingArm).Count, Is.EqualTo(L.Arms.Count));
             Assert.That(g.PathTo("tower.l03.col.ne"), Is.EqualTo(new[] { "pad", "tower", "tower.l03", "tower.l03.col.ne" }));
             Assert.That(g.Parent("tower.l03").Id, Is.EqualTo("tower"));
-            Assert.That(g.Descendants("tower").Count(), Is.EqualTo(g.Count - 2));   // everything but pad + tower
+            // pad + tower, plus the D3 deck/trench subtree hung off the site (not the tower).
+            int aside = 0;
+            foreach (var id in new[] { "pad.deck", "pad.trench" })
+                if (g.Contains(id)) aside += 1 + g.Descendants(id).Count();
+            Assert.That(g.Descendants("tower").Count(), Is.EqualTo(g.Count - 2 - aside));
             foreach (var e in g.All) if (e.ParentId != null) Assert.That(g.Contains(e.ParentId), e.Id);
             // every built member has a graph element with the same id
             foreach (var m in L.Members) Assert.That(g.Get(m.Id)?.Category, Is.EqualTo(m.Kind == MemberKind.Deck ? ElementCategory.Deck : ElementCategory.Member));
