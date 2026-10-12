@@ -9,6 +9,7 @@ using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Environment;
 using Kestrel.Kit.Contracts;
+using Kestrel.Site;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -18,6 +19,7 @@ namespace Kestrel.Slice
     {
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
         Design design; Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
+        HangarCamera hangarCam; HangarExplodedView explodedView; Toggle explodeToggle;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
@@ -41,17 +43,19 @@ namespace Kestrel.Slice
         {
             cam = new GameObject("Camera").AddComponent<Camera>(); cam.tag = "MainCamera";
             cam.clearFlags = CameraClearFlags.Skybox;
-            cam.nearClipPlane = 0.5f; cam.farClipPlane = 200000f; cam.fieldOfView = 50;
+            // The coast disc has to reach the geometric horizon the chase camera frames. SkyRig still owns fog.
+            cam.nearClipPlane = 0.5f; cam.farClipPlane = SiteView.FarClip; cam.fieldOfView = 50;
+            hangarCam = cam.gameObject.AddComponent<HangarCamera>();
             var sun = new GameObject("Sun").AddComponent<Light>(); sun.type = LightType.Directional; sun.intensity = 1.3f; sun.transform.rotation = Quaternion.Euler(40, -30, 0);
             sky = SkyRig.Attach(cam, sun);
             worldRoot = new GameObject("World").transform;
             vehicleRoot = new GameObject("Vehicle").transform; vehicleRoot.SetParent(worldRoot, false);
             flight = gameObject.AddComponent<FlightDriver>(); flight.World = worldRoot; flight.Vehicle = vehicleRoot;
-            // Ground: 200 km, 1 m below the deck top, follows the vehicle downrange (LateUpdate); see PadGround.
-            var g = GameObject.CreatePrimitive(PrimitiveType.Plane); g.name = "Ground"; ground = g.transform; ground.SetParent(worldRoot, false);
-            ground.localScale = new Vector3(PadGround.Size / 10f, 1, PadGround.Size / 10f);
-            Destroy(g.GetComponent<Collider>());
-            if (bodyMat != null) { var gm = new Material(bodyMat) { color = PadGround.GroundColor }; g.GetComponent<Renderer>().sharedMaterial = gm; }
+            // Pier 7: scrub, road, coast and curved ocean. Sea level stays at GroundY so the chase-camera
+            // clamp still looks down onto the shore. The site is pad-anchored (it does not slide with the rocket).
+            var site = SiteView.Create(worldRoot, SiteGenerator.Pier7Seed, SiteView.LodForQuality(QualitySettings.GetQualityLevel()));
+            site.BindSun(sun);
+            ground = site.transform;
             flight.Anchor(ground, 0, PadGround.GroundY, 0);
             PadGround.ApplyHaze(cam.farClipPlane);
             var pad = GameObject.CreatePrimitive(PrimitiveType.Cylinder); pad.name = "Pad"; deck = pad.transform; deck.SetParent(worldRoot, false);
@@ -105,10 +109,23 @@ namespace Kestrel.Slice
             dd.RegisterValueChangedCallback(e => SelectPreset(presets.First(p => p.name == e.newValue).id));
             ui.Q<SliderInt>("engines").RegisterValueChangedCallback(e => { design.stages[0].engineCount = e.newValue; Refresh(); });
             ui.Q<Slider>("prop").RegisterValueChangedCallback(e => { design.stages[0].propMass = Mathf.Round(e.newValue) * 1000.0; Refresh(); });
+            explodeToggle = ui.Q<Toggle>("explode");
+            if (explodeToggle != null)
+            {
+                explodeToggle.tooltip = "Exploded view. Separates stages, engines and the fairing along the stack.";
+                explodeToggle.RegisterValueChangedCallback(e => SetExploded(e.newValue));
+            }
             launchButton = ui.Q<Button>("launch");
             launchButton.clicked += Launch;
             issueChip = ui.Q<Label>("issue-chip"); launchReason = ui.Q<Label>("launch-reason");
-            again.clicked += () => { flight.enabled = false; cam.ResetProjectionMatrix(); hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden"); SelectPreset(design.id); };
+            again.clicked += () =>
+            {
+                flight.enabled = false;
+                if (hangarCam != null) hangarCam.enabled = true;
+                cam.ResetProjectionMatrix();
+                hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
+                SelectPreset(design.id);
+            };
             // Accessibility labels (VoiceOver wiring via UnityEngine.Accessibility is a listed gap; see RESULTS.md)
             ui.Q<Button>("launch").tooltip = "Roll out and launch the current design";
         }
@@ -257,7 +274,44 @@ namespace Kestrel.Slice
             flight.Plume.AttachGroundCloud(tower, deckR, PadTower.Fit(r.height, rr).height);
             PadDetailLink.Apply(flight.Plume, tower, ground, deck, padR != null ? padR.Layout : null);
             rocketHeight = r.height; frameHeight = r.height;
+            var explodedGo = new GameObject("Exploded");
+            explodedView = explodedGo.AddComponent<HangarExplodedView>();
+            explodedView.AttachTo(rocketGO.transform);
+            explodedView.Build(SliceData.Catalog, design, mr.sharedMaterial);
+            if (hangarCam != null) hangarCam.ExplodedView = explodedView;
+            SetExploded(explodeToggle != null && explodeToggle.value);
             ApplyDesignFraming();
+        }
+
+        /// <summary>Separated parts live on the vehicle. The assembled rocket draws only while the view is closed.</summary>
+        void SetExploded(bool on)
+        {
+            if (hangarCam != null) hangarCam.SetExploded(on);
+            else if (explodedView != null) explodedView.SetExploded(on, false);
+            // While the ease is still open, the separated parts are the picture. The assembled
+            // rocket comes back only once they have seated (or immediately, when Reduce Motion snaps shut).
+            if (!on && explodedView != null && explodedView.Shown > 0.001f) return;
+            SetAssembledDrawn(!on);
+        }
+
+        void SetAssembledDrawn(bool drawn)
+        {
+            if (rocketGO == null) return;
+            var renderers = rocketGO.GetComponentsInChildren<Renderer>(true);
+            if (renderers == null) return;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                var r = renderers[i];
+                if (r == null || UnderExploded(r.transform)) continue;
+                r.enabled = drawn;
+            }
+        }
+
+        static bool UnderExploded(Transform t)
+        {
+            for (; t != null; t = t.parent)
+                if (t.GetComponent<HangarExplodedView>() != null) return true;
+            return false;
         }
 
         float rocketHeight = 70, frameHeight = 70; Vector3 camOffset;
@@ -275,6 +329,13 @@ namespace Kestrel.Slice
             if (cam == null || !DesignFraming.ValidViewport(cam.pixelWidth, cam.pixelHeight)) return;
             h = DesignFraming.SafeHeight(h); visible = DesignFraming.SafeVisible(visible);
             rocketHeight = h;
+            if (hangarCam != null && hangarCam.enabled)
+            {
+                hangarCam.SetBottomVisible(visible);
+                hangarCam.SetVehicle(h, framePoints);
+                camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
+                return;
+            }
             float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : cam.aspect;
             float k = DesignFraming.FitDistanceScale(framePoints, h, aspect, cam.fieldOfView, visible);
             var pos = DesignFraming.CameraPosition(h, k, out var aim);
@@ -355,6 +416,15 @@ namespace Kestrel.Slice
         {
             if (designerState != null && !designerState.launchEnabled) return; // U1: blocks gate Launch
             submitted = false;
+            if (explodeToggle != null) explodeToggle.SetValueWithoutNotify(false);
+            if (explodedView != null) explodedView.SetExploded(false, true);
+            if (hangarCam != null)
+            {
+                hangarCam.SetExploded(false);
+                if (cam != null && vehicleRoot != null) camOffset = cam.transform.position - vehicleRoot.position;
+                hangarCam.enabled = false;
+            }
+            SetAssembledDrawn(true);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
             flight.enabled = true;
             flight.Launch(design);
@@ -366,6 +436,8 @@ namespace Kestrel.Slice
         void LateUpdate()
         {
             if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
+            if (explodedView != null && hangarCam != null && hangarCam.enabled)
+                SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
             if (flight != null && flight.Running && tower != null)
             {
                 var pad = tower.Find("Pad");
@@ -378,8 +450,9 @@ namespace Kestrel.Slice
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
             var v = vehicleRoot.position; var up = vehicleRoot.up;
             camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude), 4f, Time.deltaTime);
-            // Keep the ground in view from above, and keep it under the vehicle (no edge, horizon at any downrange).
-            ground.position = new Vector3(v.x, ground.position.y, ground.position.z);
+            // Grow the far plane with altitude so the coast under the framed horizon is never clipped.
+            cam.farClipPlane = SiteHorizon.ClipFor((float)flight.Altitude);
+            // Sea level is the anchored site root. Do not slide it: the coast has to stay under the pad.
             cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
             var cp = cam.transform.position;
             cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, cam.fieldOfView, (float)flight.Altitude, cp.y - ground.position.y);

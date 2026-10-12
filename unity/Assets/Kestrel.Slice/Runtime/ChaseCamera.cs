@@ -26,7 +26,8 @@ namespace Kestrel.Slice
         // is clamped so the horizon sits in the lower HorizonMin..HorizonMax of the portrait frame; the hold
         // blends out between HoldFullAlt and HoldEndAlt.
         public const float HorizonMin = 0.15f, HorizonMax = 0.35f;     // viewport y (0 = bottom)
-        public const float HoldFullAlt = 1500f, HoldEndAlt = 4000f;   // m
+        // Held through the 13 km chase view. Above that the nose-up offset blends back in.
+        public const float HoldFullAlt = 13000f, HoldEndAlt = 20000f;   // m
         public const float EarthRadius = 6371000f;
 
         /// <summary>1 while the horizon hold is fully active, 0 once blended out (smoothstep).</summary>
