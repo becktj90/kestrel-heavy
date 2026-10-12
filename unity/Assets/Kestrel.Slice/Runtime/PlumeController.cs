@@ -17,6 +17,7 @@ namespace Kestrel.Slice
             var go = new GameObject("Plume"); go.transform.SetParent(parent, false); go.transform.localPosition = localPos;
             go.transform.localRotation = Quaternion.Euler(90, 0, 0); // emit along -Y (down the vehicle axis)
             var pc = go.AddComponent<PlumeController>(); pc.ExitDiameter = exitDiameter;
+            mat = SoftParticle.PlumeMaterial(mat); // soft round sprite; untextured quads were the blocky edge
             pc.core = Make(go.transform, "Core", mat, new Color(1f, 0.75f, 0.4f, 0.9f), 400);
             pc.diamonds = Make(go.transform, "Diamonds", mat, new Color(1f, 0.95f, 0.85f, 1f), 60);
             return pc;
@@ -32,10 +33,12 @@ namespace Kestrel.Slice
             var em = ps.emission; em.rateOverTime = rate;
             var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Cone; sh.angle = 4f; sh.radius = 0.5f;
             var col2 = ps.colorOverLifetime; col2.enabled = true;
-            var g = new Gradient(); g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(new Color(1f, 0.5f, 0.2f), 1) }, new[] { new GradientAlphaKey(1, 0), new GradientAlphaKey(0, 1) });
+            var g = new Gradient(); g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(new Color(1f, 0.5f, 0.2f), 1) }, new[] { new GradientAlphaKey(0.85f, 0), new GradientAlphaKey(0.55f, 0.4f), new GradientAlphaKey(0, 1) });
             col2.color = g;
             var sz = ps.sizeOverLifetime; sz.enabled = true; sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 0.6f, 1, 1.6f));
             var r = go.GetComponent<ParticleSystemRenderer>(); if (mat != null) r.sharedMaterial = mat;
+            r.renderMode = ParticleSystemRenderMode.Billboard; r.sortMode = ParticleSystemSortMode.YoungestInFront;
+            r.maxParticleSize = 2f; // allow the ballooning altitude plume past the 0.5-of-screen default cap
             ps.Play();
             return ps;
         }
