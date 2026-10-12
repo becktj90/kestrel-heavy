@@ -67,14 +67,19 @@ namespace Kestrel.Slice
             // #129: also the width of the first 3 cluster diameters below the emitter, i.e. what is in frame near the
             // nozzles (the all-particle width averaged in sprites ~200 m down the body and read 2x the screen).
             Vector3 nlo = Vector3.positiveInfinity, nhi = Vector3.negativeInfinity; int nn = 0;
+            // #129-v7: highest point (m) above the emitter (nozzle) plane reached by any sprite with alpha > 5%,
+            // and mean alpha. Plume emitters must report <= 0 (nothing visible above the nozzles).
+            bool isCloud = ps.name == "GroundCloud"; float topAbove = float.NegativeInfinity, asum = 0f;
             // Width is measured perpendicular to the emitter axis (plume) or in the deck plane (cloud).
             var axis = t.forward;
             for (int i = 0; i < n; i++)
             {
                 float s = tmp[i].GetCurrentSize(ps) * sizeScale; sum += s; max = Mathf.Max(max, s);
+                float alpha = tmp[i].GetCurrentColor(ps).a / 255f; asum += alpha;
                 var w = main.simulationSpace == ParticleSystemSimulationSpace.Local ? t.TransformPoint(tmp[i].position) : tmp[i].position;
                 var flat = w - Vector3.Dot(w - t.position, axis) * axis;   // project onto the plane through the emitter
-                float half = 0.5f * PlumeShape.SpriteSolidFraction * s;      // solid half of the soft sprite
+                if (!isCloud && alpha > 0.05f) topAbove = Mathf.Max(topAbove, -Vector3.Dot(w - t.position, axis) + 0.5f * PlumeShape.PlumeFringeFraction * s);
+                float half = 0.5f * (ps.name == "GroundCloud" ? PlumeShape.SpriteSolidFraction : PlumeShape.PlumeSolidFraction) * s;   // solid half (cloud: soft sprite, plume: tight)
                 lo = Vector3.Min(lo, flat - Vector3.one * half); hi = Vector3.Max(hi, flat + Vector3.one * half);
                 if (Vector3.Dot(w - t.position, axis) <= 3f * cluster) { nlo = Vector3.Min(nlo, flat - Vector3.one * half); nhi = Vector3.Max(nhi, flat + Vector3.one * half); nn++; }
             }
@@ -85,7 +90,7 @@ namespace Kestrel.Slice
                 : $"material={m.name} queue={m.renderQueue} surface={(m.HasProperty("_Surface") ? m.GetFloat("_Surface") : -1)} blend={(m.HasProperty("_Blend") ? m.GetFloat("_Blend") : -1)} " +
                   $"src={(m.HasProperty("_SrcBlend") ? m.GetFloat("_SrcBlend") : -1)} dst={(m.HasProperty("_DstBlend") ? m.GetFloat("_DstBlend") : -1)} keywords=[{string.Join(",", m.shaderKeywords)}]";
             return $"  {ps.name,-12} live={n}/{main.maxParticles} emitting={ps.emission.enabled}@{ps.emission.rateOverTime.constant:F0}/s " +
-                   $"size avg={(n > 0 ? sum / n : 0):F2} max={max:F2} m  solidWidth={width:F2} m ({width / cluster:F2}x cluster) near3D={near:F2} m ({near / cluster:F2}x, n={nn})  " +
+                   $"size avg={(n > 0 ? sum / n : 0):F2} max={max:F2} m  solidWidth={width:F2} m ({width / cluster:F2}x cluster) near3D={near:F2} m ({near / cluster:F2}x, n={nn}) alphaAvg={(n > 0 ? asum / n : 0):F2}" + (isCloud ? "" : $" topAboveNozzle={(float.IsNegativeInfinity(topAbove) ? 0f : topAbove):F2} m") + "  " +
                    $"pos={t.position} sim={main.simulationSpace} scaling={main.scalingMode} lossy={t.lossyScale.x:F3} " +
                    $"maxScreen={(r != null ? r.maxParticleSize : 0):F2} {mat}";
         }

@@ -66,7 +66,7 @@ def particles(t, v):
     """Return list of (pos[N,3], size[N], rgb[N,3], alpha[N], additive) for every emitter at real time t."""
     alt = alt_at(t); out = []
     tf, pa = 0.9, math.exp(-alt/8500)
-    if v in ('v5', 'v6'):
+    if v in ('v5', 'v6', 'v7'):
         L = P.layout(tf, pa, CD, VR, VH, DECK); ssf = P.SSF; collide_body = True; cloudH = L['CloudHeight']; ramp = 0.25; burst = 0.35
         core_spawn = L["CoreSpawnRadius"]; ncore = 12; csz = np.vectorize(P.csize)
     else:  # v4 (fee69ee) parameters
@@ -80,6 +80,8 @@ def particles(t, v):
         collide_body = False; cloudH = -0.1*DECK; ramp = 0.75; burst = 0.0; core_spawn = 0.05*CD; ncore = 8
         csz = lambda u: np.where(u < 0.15, 0.3+0.7*u/0.15, 1-0.2*(u-0.15)/0.85)
         P.SSF, P.NOZ, P.BodySizeStart, P.CoreSizeStart = 0.36, 0.15, 0.3, 0.35
+    if v == 'v7':
+        return particles_v7(t, L, alt) + cloud_part(t, v, L, cloudH, ramp, burst)
     if v == 'v6':
         return particles_v6(t, L, alt, cloudH, ramp, burst) + cloud_part(t, v, L, cloudH, ramp, burst)
     # ---- body (Local space: moves with the vehicle) ----
@@ -100,36 +102,67 @@ def particles(t, v):
     out += cloud_part(t, v, L, cloudH, ramp, burst)
     return out
 
+# Ground-cloud parameters per build. 'u129' = what #129 built, calibrated to the 129-v6 Unity probe
+# (cap 160 on Medium; outward spread 0.55 s -> ~19 m, 1.36 s -> ~24 m, 4 s -> ~38 m => effective damping k ~ 1/s,
+# not the 3.8/s the v5/v6 sim assumed; billows born at 0.3 size: avg 14 m at T+0.55 vs probe 14.3).
+CLOUD = {
+    'v7': dict(cap=160, spd=(0.08, 0.25), k=1.0, start=0.45, vy=(-0.3, 0.6), lift=0.5, R0f=2, spawnf=1.5, sizef=1.0, life=(3.0, 4.5)),
+    'u129': dict(cap=160, spd=(0.35, 0.8), k=1.0, start=0.3, vy=(-0.5, 1.0), lift=0.5, R0f=2, spawnf=1.5, sizef=1.0, life=(3.0, 4.5)),
+}
 def cloud_part(t, v, L, cloudH, ramp, burst):
-    out = []; alt = alt_at(t)
-    # ---- ground cloud (pad space), simulated from ignition (t=0) ----
-    cap = 320; lifeMin, lifeMax = 3.0, 4.5; R0 = (2 if v in ('v5','v6') else 3)*max(DECK, 10); smax = max(0.55*DECK, 0.2*VH)/0.36 if v in ('v5','v6') else max(0.9*DECK, 0.35*VH)/0.6; smin = 0.55*smax
-    spawnR = L['CloudSpawnRadius'] if v in ('v5','v6') else max(DECK, max(1.5*VR, 1.5*CD) + 0.4*smax*0.5)
-    ps = []; dt = 1/30.; acc = cap*burst
-    T = 0.0
+    C = CLOUD['v7' if v == 'v7' else 'u129']
+    out = []
+    R0 = C['R0f']*max(DECK, 10); smax = C['sizef']*max(0.55*DECK, 0.2*VH)/0.36; smin = 0.55*smax
+    spawnR = max(C['spawnf']*DECK, max(1.5*VR, 1.5*CD) + 0.4*smax*C['start'])
+    cap = C['cap']; ps = []; dt = 1/30.; acc = cap*burst; T = 0.0
     while T < t:
         h = alt_at(T); since = T
         frac = min(1, max(0, since/ramp)); frac = frac*frac*(3-2*frac)
         byh = 1 - P.ss(80, 200, h); byt = 1 - P.ss(5.5, 7.5, since); e = frac*max(byh, byt)
-        acc += cap/3.75*e*dt
+        acc += cap/sum(C['life'])*2*e*dt
         k = int(acc); acc -= k
         for _ in range(k):
-            ph = rng.random()*2*np.pi; ps.append([T, rng.uniform(lifeMin, lifeMax), ph, rng.uniform(0.35, 0.8)*R0, (rng.uniform(-1, 1.5) if v in ('v5','v6') else rng.uniform(-2, 4)), rng.uniform(smin, smax)])
+            ps.append([T, rng.uniform(*C['life']), rng.random()*2*np.pi, rng.uniform(*C['spd'])*R0, rng.uniform(*C['vy']), rng.uniform(smin, smax)])
         T += dt
     if ps:
-        A = np.array(ps); age = t - A[:, 0]; keep = (age < A[:, 1]); A, age = A[keep], age[keep]
-        A = A[-cap:]; age = age[-cap:]
-        lim = 0.08*R0; v0 = A[:, 3]
-        # limit-velocity with dampen 0.12/frame ~ exponential approach to the limit: rate = -ln(0.88)*30
-        k = -math.log(0.88)*30; vexc = np.maximum(v0 - lim, 0)
+        A = np.array(ps); age = t - A[:, 0]; keep = age < A[:, 1]; A, age = A[keep][-cap:], age[keep][-cap:]
+        lim = 0.08*R0; v0 = A[:, 3]; k = C['k']; vexc = np.maximum(v0 - lim, 0)
         dist = np.minimum(v0, lim)*age + vexc*(1-np.exp(-k*age))/k
         r = spawnR + dist; uu = age/A[:, 1]
-        pos = np.stack([r*np.cos(A[:, 2]), cloudH + A[:, 4]*age, r*np.sin(A[:, 2])], -1)
-        size = A[:, 5]*(0.5 + 1.1*uu)
-        keys = [(0, 0.85), (0.05, 1), (0.7, 0.95), (1, 0)] if v in ('v5','v6') else [(0, 0.85), (0.05, 1), (0.7, 0.95), (1, 0)]
-        a = np.interp(uu, [k_[0] for k_ in keys], [k_[1] for k_ in keys])
-        rgb = np.tile(np.array([235, 235, 236.]), (len(uu), 1))
-        out.append((pos, size, rgb, a, False))
+        pos = np.stack([r*np.cos(A[:, 2]), C['lift'] + A[:, 4]*age, r*np.sin(A[:, 2])], -1)
+        size = A[:, 5]*(C['start'] + (1.6 - C['start'])*uu)
+        a = np.interp(uu, [0, 0.05, 0.7, 1], [0.85, 1, 0.95, 0])
+        out.append((pos, size, np.tile(np.array([232, 232, 233.]), (len(uu), 1)), a, False))
+        print(f'  cloud T+{t}: live {len(uu)} avg size {size.mean():.1f} max {size.max():.1f} m, outer radius {(r+0.18*size).max():.0f} m', file=sys.stderr)
+    return out
+
+def particles_v7(t, L, alt):
+    """#129-v7: alpha exactly 0 until each sprite's top is below the nozzle plane (FadeKeys), body tail alpha
+    0.04 from u=0.7 so deck-deflected particles (u >= 0.75 after the loss) are invisible, no bounce;
+    core drifts 1 D in 0.3 s; diamonds at the exit plane with a fade-in."""
+    out = []; d = L['VisualD']
+    def fade(u, fi, peak, tail, ramp=0.04):
+        up = min(0.95, fi + max(0.002, ramp)); xs = [0, max(fi, 1e-3), up] + [tt for a_, tt in tail if tt > up] + [1]
+        ys = [0, 0, peak] + [a_ for a_, tt in tail if tt > up] + [0]; return np.interp(u, xs, ys)
+    n = 208; life = L['BodyLife']; u = rng.random(n); spd = L['Length']/life
+    fi = min(0.35, L['BodyEmitOffset']/max(1, L['Length']))
+    ang = math.radians(L['BodyConeDeg']); phi = rng.random(n)*2*np.pi; rr = np.sqrt(rng.random(n))*L['BodySpawnRadius']; th = rng.random(n)*ang
+    travel = spd*u*life; dy = np.cos(th)*travel; hit = (alt - dy) < 0
+    ue = np.where(hit, u + 0.75, u); alive = ue < 1
+    rad = rr + np.sin(th)*travel + np.where(hit, 0.2*(travel - alt), 0)
+    y = np.where(hit, 0.1*0.5*L['BodyMax'], alt - dy)
+    pos = np.stack([rad*np.cos(phi), y, rad*np.sin(phi)], -1)
+    size = rng.uniform(L['BodyMin'], L['BodyMax'], n)*np.array([P.bsize(L, min(x, 1)) for x in ue])
+    rgb, _ = gradient(np.minimum(ue, 1), [(HEAD, 0), (MID, 0.3), (TAIL, 1)], [0, 0, 0])
+    a = fade(np.minimum(ue, 1), fi, 0.9, [(0.6, 0.4), (0.04, 0.7)], ramp=min(0.04, max(0.002, 0.1*d/L['Length'])))
+    out.append((pos[alive], size[alive], rgb[alive], a[alive], False))
+    n = 8; u = rng.random(n); phi = rng.random(n)*2*np.pi; rr = np.sqrt(rng.random(n))*L['CoreSpawnRadius']
+    pos = np.stack([rr*np.cos(phi), alt - L['CoreLength']*u, rr*np.sin(phi)], -1); size = L['CoreSize']*(1 - 0.2*u)
+    cfi = min(0.9, L['CoreEmitOffset']/max(0.1, L['CoreLength']))
+    rgb, _ = gradient(u, [([255, 255, 255], 0), (CORE, 0.35), (MID, 1)], [0, 0, 0])
+    out.append((pos, size, np.minimum(rgb*1.5, 255), fade(u, cfi, 0.8, [(0.3, 0.75)]), False))
+    n = 18; u = rng.random(n); pos = np.stack([np.zeros(n), alt - 0.5*L['Length']*u, np.zeros(n)], -1); k = pos[:, 1] > 0
+    out.append((pos[k], np.full(k.sum(), 0.5*d), np.tile([255, 230, 170.], (k.sum(), 1)), fade(u[k], 0.08, 0.35, [(0.25, 0.4)]), False))
     return out
 
 def particles_v6(t, L, alt, cloudH, ramp, burst):
@@ -175,19 +208,21 @@ def render(t, v, path):
     alt = alt_at(t); C = camera(alt); cam, fwd, right, up, f = C
     img, depth = opaque(C, alt); img = img.astype(np.float64)
     allp = []
-    for pos, size, rgb, a, add in particles(t, v):
-        for i in range(len(pos)): allp.append((pos[i], size[i], rgb[i], a[i], add))
+    plist = particles(t, v)
+    for ei, (pos, size, rgb, a, add) in enumerate(plist):
+        tight = (v == 'v7' and ei < 3)
+        for i in range(len(pos)): allp.append((pos[i], size[i], rgb[i], a[i], add, tight))
     def z(p): return np.dot(p[0]-cam, fwd)
     allp.sort(key=lambda p: -z(p))
-    lut = np.array([P.falloff(r) for r in np.linspace(0, 1.5, 1501)])
-    for p, s, rgb, a, add in allp:
+    lut = np.array([P.falloff(r) for r in np.linspace(0, 1.5, 1501)]); lutT = np.array([P.tight(r) for r in np.linspace(0, 1.5, 1501)])
+    for p, s, rgb, a, add, tg in allp:
         d = p - cam; zc = np.dot(d, fwd)
         if zc < 0.5 or a <= 0.003: continue
         sx = W/2 + f*np.dot(d, right)/zc; sy = H/2 - f*np.dot(d, up)/zc; rp = 0.5*s*f/zc
         x0, x1 = int(max(0, sx-rp)), int(min(W, sx+rp+1)); y0, y1 = int(max(0, sy-rp)), int(min(H, sy+rp+1))
         if x0 >= x1 or y0 >= y1: continue
         X, Y = np.meshgrid(np.arange(x0, x1)+0.5, np.arange(y0, y1)+0.5)
-        rr = np.hypot(X-sx, Y-sy)/max(rp, 1e-6); al = lut[np.minimum((rr*1000).astype(int), 1500)]*a
+        rr = np.hypot(X-sx, Y-sy)/max(rp, 1e-6); al = (lutT if tg else lut)[np.minimum((rr*1000).astype(int), 1500)]*a
         al = np.where(depth[y0:y1, x0:x1] > zc, al, 0)[..., None]   # depth test against opaques
         if add: img[y0:y1, x0:x1] += al*np.asarray(rgb)
         else: img[y0:y1, x0:x1] = img[y0:y1, x0:x1]*(1-al) + al*np.asarray(rgb)
