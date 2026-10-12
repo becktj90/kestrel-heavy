@@ -17,7 +17,7 @@ namespace Kestrel.Pad.Tests
             var r = PadBuilder.Build(_root.transform, 11, PadArchetype.TowerStrongback, new PadFit(70f, 2.5f));
             int n = 0; foreach (var b in r.Batches.Values) n += b.Count;
             Assert.That(n, Is.EqualTo(r.Layout.Members.Count));
-            Assert.That(r.Batches.Count, Is.LessThanOrEqualTo(6));
+            Assert.That(r.Batches.Count, Is.LessThanOrEqualTo(9));   // D2: + crew arm, handrail, galvanized masts, insulator spikes
             Assert.That(_root.GetComponentsInChildren<MeshRenderer>(), Is.Empty, "no GameObject per member");
         }
 
@@ -66,7 +66,11 @@ namespace Kestrel.Pad.Tests
             PadBuilder.Build(_root.transform, 1, PadArchetype.Tower, new PadFit(70f, 2.5f));
             var r = PadBuilder.Build(_root.transform, 1, PadArchetype.Rail, new PadFit(20f, 0.7f));
             Assert.That(r.Arms, Is.Empty);
-            Assert.That(_root.transform.childCount, Is.EqualTo(0));
+            Assert.That(_root.GetComponentsInChildren<SwingArm>(), Is.Empty);
+            // only D5 realtime lights may remain as children, and never more than the tier allows
+            var lights = _root.GetComponent<PadLights>();
+            Assert.That(_root.transform.childCount, Is.EqualTo(lights.Realtime.Count));
+            Assert.That(lights.Realtime.Count, Is.LessThanOrEqualTo(KitBudgets.PadRealtimeLights(r.Quality)));
         }
     }
 }
