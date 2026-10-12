@@ -8,7 +8,8 @@
   "vehicle": 10,
   "simulate": 13,
   "economy": 67,
-  "catalog-flight": 100
+  "catalog-flight": 100,
+  "d0-replay": 22
  },
- "total": 253
+ "total": 275
 }
