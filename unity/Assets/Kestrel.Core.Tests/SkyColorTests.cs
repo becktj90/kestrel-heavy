@@ -2,6 +2,7 @@
 // The skybox only displays this grade; portrait size never enters it.
 using System;
 using System.IO;
+using Kestrel.Core.Astro;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Sky;
 using Kestrel.Core.Weather;
@@ -256,6 +257,53 @@ namespace Kestrel.Core.Tests
             var high = SkyBodies.LoadStars(File.ReadAllText(path), "high");
             Assert.AreEqual(9000, high.Count);
             Assert.Less(high[100].Brightness, high[0].Brightness);
+        }
+
+        [Test]
+        public void ForceTimeOfDayPublishesNightForThePad()
+        {
+            // SkyRig.ForceTimeOfDay and -khNight both call SkySun.ApplyLocalHours.
+            Assert.IsTrue(SkyBodies.HasNightArg(new[] { "Kestrel", SkyBodies.NightArg }));
+            Assert.IsFalse(SkyBodies.HasNightArg(new[] { "-khPlumeProbe" }));
+            Assert.IsFalse(SkyBodies.HasNightArg(null));
+
+            SkySun.ApplyLocalHours(SkyBodies.NightHoursLocal, SkyClock.LatitudeDeg, SkyClock.LongitudeDeg,
+                SkyClock.Year, SkyClock.Month, SkyClock.Day);
+            Assert.Less(SkySun.ElevationDeg, -6f, "local 02:00 at Haven is below civil twilight");
+            Assert.AreEqual(1f, SkySun.NightFactor(), 1e-5f);
+            var night = SkyColor.At(0, SkySun.ElevationRad, SkyArt.Neutral, SkyWeather.Clear);
+            var day = SkyColor.At(0, 50 * Math.PI / 180.0, SkyArt.Neutral, SkyWeather.Clear);
+            Assert.AreEqual(0, night.SunDisc, 1e-4);
+            Assert.Greater(night.StarAlpha, day.StarAlpha);
+            Assert.Greater(night.StarAlpha, 0.05);
+
+            // 05:00 UTC is night on this coast. A cached afternoon elevation must not survive a new hour.
+            SkySun.Publish(SkyBodies.SunElevationRad(SkyClock.LatitudeDeg, SkyClock.LongitudeDeg,
+                SkyClock.Year, SkyClock.Month, SkyClock.Day, 5));
+            Assert.Less(SkySun.ElevationDeg, -6f);
+            Assert.AreEqual(1f, SkySun.NightFactor(), 1e-5f);
+
+            SkySun.ApplyLocalHours(12, SkyClock.LatitudeDeg, SkyClock.LongitudeDeg,
+                SkyClock.Year, SkyClock.Month, SkyClock.Day);
+            Assert.Greater(SkySun.ElevationDeg, 6f);
+            Assert.AreEqual(0f, SkySun.NightFactor(), 1e-5f);
+        }
+
+        [Test]
+        public void ShippedStarsAreMagnitudeSixOrBrighter()
+        {
+            string path = Path.Combine(Golden.Root, "unity", "Assets", "StreamingAssets", "bsc5p-compact.csv");
+            Assert.IsTrue(File.Exists(path), path);
+            var stars = StarCatalog.Parse(File.ReadAllText(path));
+            Assert.Greater(stars.Count, 1000);
+            Assert.Less(stars.Count, 9000);
+            Assert.AreEqual(2491, stars[0].Id, "Sirius remains the brightest shipped star");
+            for (int i = 0; i < stars.Count; i++)
+                Assert.LessOrEqual(stars[i].VMag, SkyBodies.VisualMaxMag, "id " + stars[i].Id);
+            Assert.Greater(SkyBodies.DisplayGain(-1.46), SkyBodies.DisplayGain(2));
+            Assert.Greater(SkyBodies.DisplayGain(2), SkyBodies.DisplayGain(6));
+            Assert.Greater(SkyBodies.DisplayGain(6), 0.15);
+            Assert.Less(SkyBodies.DisplayGain(6), 0.25);
         }
     }
 }

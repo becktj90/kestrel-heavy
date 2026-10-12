@@ -40,6 +40,12 @@ namespace Kestrel.Core.Sky
     {
         public const double Deg2Rad = Math.PI / 180.0;
         public const double Rad2Deg = 180.0 / Math.PI;
+        /// <summary>Player command that forces a night sun. SkyRig reads this in Refresh.</summary>
+        public const string NightArg = "-khNight";
+        /// <summary>Local civil hour used by -khNight. At Haven on the default date the sun is about −31°.</summary>
+        public const double NightHoursLocal = 2.0;
+        /// <summary>Visual cap for the shipped star list. The full BSC file stays in data/astro.</summary>
+        public const double VisualMaxMag = 6.0;
 
         /// <summary>Equatorial unit vector (x toward the equinox, z toward the north pole) to Unity (x east, y up, z north).</summary>
         public static SkyVec EquatorialToUnity(double raDeg, double decDeg, double latDeg, double lonDeg, double jd1, double jd2)
@@ -59,6 +65,34 @@ namespace Kestrel.Core.Sky
             double north = -slat * clon * xe - slat * slon * ye + clat * ze;
             double up = clat * clon * xe + clat * slon * ye + slat * ze;
             return new SkyVec(east, up, north);
+        }
+
+        /// <summary>Mean solar local hours to UTC. Local = UTC + longitude/15. Hours may fall outside 0..24; the Julian date rolls the day.</summary>
+        public static double UtcFromLocalHours(double hoursLocal, double longitudeDeg)
+        {
+            if (double.IsNaN(hoursLocal)) hoursLocal = 0;
+            double local = hoursLocal % 24.0;
+            if (local < 0) local += 24.0;
+            return local - longitudeDeg / 15.0;
+        }
+
+        public static bool HasNightArg(string[] args)
+        {
+            if (args == null) return false;
+            for (int i = 0; i < args.Length; i++)
+                if (args[i] == NightArg) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Display weight for a V magnitude. 1 at V = −1.5, about 0.18 at V = 6.
+        /// Linear in magnitude so a mag-6 point is faint but still a point, not a missing texel.
+        /// </summary>
+        public static double DisplayGain(double vmag)
+        {
+            if (double.IsNaN(vmag)) vmag = VisualMaxMag;
+            double t = SkyColor.Clamp01((vmag + 1.5) / 7.5);
+            return 1.0 - 0.82 * t;
         }
 
         public static double SunElevationRad(double latDeg, double lonDeg, int year, int month, int day, double hoursUtc)
