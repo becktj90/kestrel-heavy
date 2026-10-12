@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.1",
   "scripts": {
-    "test": "node --test ./tests/*.test.cjs",
+    "test": "node --test ./tests/*.test.cjs ./tests/validation/",
     "pack:ios": "python3 ios/scripts/pack_kestrelheavy_game.py",
     "gen:catalogs": "node tools/gen-catalogs.mjs",
     "gen:golden": "node tools/export-golden.mjs",
