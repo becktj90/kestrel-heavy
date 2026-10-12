@@ -199,8 +199,9 @@ namespace Kestrel.Slice
             var mr = rocketGO.AddComponent<MeshRenderer>();
             if (bodyMat != null) { var m = new Material(bodyMat); ColorUtility.TryParseHtmlString(design.liveryPrimary, out var col); m.color = col; mr.sharedMaterial = m; }
             AddTankShells(r);
-            flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, Mathf.Max(1f, Mathf.Sqrt(design.stages[0].engineCount) * r.exitDiameter), plumeMat);
+            flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
             flight.Plume.SetDeck(deckTop);
+            flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
             float rr = r.mesh.bounds.extents.x;
@@ -217,6 +218,7 @@ namespace Kestrel.Slice
                 foreach (var c in DesignFraming.PadBounds(padR.Layout, tower.localToWorldMatrix))
                     framePoints.Add(new Vector3(c.x, Mathf.Max(c.y, tower.position.y + topY), c.z));
             }
+            flight.Plume.AttachGroundCloud(tower, deckR, PadTower.Fit(r.height, rr).height);
             rocketHeight = r.height; frameHeight = r.height;
             ApplyDesignFraming();
         }
@@ -298,6 +300,7 @@ namespace Kestrel.Slice
             cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
             var cp = cam.transform.position;
             cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, cam.fieldOfView, (float)flight.Altitude, cp.y - ground.position.y);
+            flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
             hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
