@@ -190,6 +190,7 @@ namespace Kestrel.Slice
             var padR = PadTower.Apply(tower, r.height, rr, PadTower.DefaultArchetype(rr), PadTower.DefaultSeed);
             float deckR = PadGround.DeckRadius(padR != null ? padR.Layout : null); // deck under every tower leg
             deck.localScale = new Vector3(2 * deckR, deck.localScale.y, 2 * deckR);
+            flight.Plume.AttachGroundCloud(tower, 15f, PadTower.Fit(r.height, rr).height);
             rocketHeight = r.height; ApplyDesignFraming();
         }
 
@@ -244,6 +245,7 @@ namespace Kestrel.Slice
             cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
             var cp = cam.transform.position;
             cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, cam.fieldOfView, (float)flight.Altitude, cp.y - ground.position.y);
+            flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
             hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
