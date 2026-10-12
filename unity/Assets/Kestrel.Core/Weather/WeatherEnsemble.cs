@@ -44,12 +44,24 @@ namespace Kestrel.Core.Weather
             };
         }
 
-        /// <summary>Analytic Gaussian exceedance Φ̄((limit − μ) / σ) for a single-threshold wind check.</summary>
-        public static double GaussianExceedance(double mean, double sigma, double limit)
+        /// <summary>
+        /// Exact Rayleigh exceedance P(W &gt; L) = exp(−L² / (2 s²)) with scale s = μ / √(π/2).
+        /// Surface wind is drawn Rayleigh with monthly mean μ.
+        /// </summary>
+        public static double RayleighExceedance(double mean, double limit)
         {
-            if (sigma <= 0) return mean > limit ? 1.0 : 0.0;
-            double z = (limit - mean) / sigma;
-            return 0.5 * Erfc(z / Math.Sqrt(2.0));
+            if (mean <= 0) return limit < 0 ? 1.0 : 0.0;
+            double s = mean / Math.Sqrt(Math.PI / 2.0);
+            double x = limit / s;
+            return Math.Exp(-0.5 * x * x);
+        }
+
+        /// <summary>Binomial 3σ sampling band: 3 √(p(1−p)/N).</summary>
+        public static double BinomialThreeSigmaBand(double p, int n)
+        {
+            if (n <= 0) return 1.0;
+            p = Math.Max(0, Math.Min(1, p));
+            return 3.0 * Math.Sqrt(p * (1.0 - p) / n);
         }
 
         static uint Mix(uint seed, uint index)
@@ -66,14 +78,5 @@ namespace Kestrel.Core.Weather
             }
         }
 
-        static double Erfc(double x)
-        {
-            // Abramowitz & Stegun 7.1.26
-            double ax = Math.Abs(x);
-            double t = 1.0 / (1.0 + 0.3275911 * ax);
-            double poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
-            double ans = poly * Math.Exp(-ax * ax);
-            return x >= 0 ? ans : 2.0 - ans;
-        }
     }
 }

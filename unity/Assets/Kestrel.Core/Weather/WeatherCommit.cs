@@ -1,5 +1,6 @@
 // Apply LCC verdicts to existing MissionEvent statuses (no new schema — DECISIONS #30).
-// Hold → TimelineStatus.Held; Scrub → TimelineStatus.Failed on the holdable poll.
+// Hold → TimelineStatus.Held (including lightning + 30-min clock on LccResult.holdMinutes).
+// Scrub → TimelineStatus.Failed (reserved; current LCC rules emit Hold only).
 // KID/Relaxed: visual only — events are not mutated.
 using System;
 using Tev = Kestrel.Core.Timeline;

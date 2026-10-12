@@ -203,22 +203,46 @@ Goldens for onRailsNode are **hard-coded literals** computed outside the codebas
 
 `Kestrel.Core.Weather` is a new seeded climatology generator. It does **not** replace `Flight.Weather.Hold` (wind > 12 m/s policy; KID/Relaxed never hold) — that stub stays for params and timeline goldens.
 
-`WeatherGenerator.Generate(site, dayOfYear, seed)` draws one `WeatherDay` for Haven (fictional Florida coastal site) using mulberry32 (same as `Sensors`): Rayleigh surface wind with monthly mean, Box-Muller temperature, Bernoulli thunder day, cloud/precip/ceiling/lightning distance, a characteristic upper shear (1/s), and a 5-level shear wind profile (0/3/6/9/12 km) for visuals and LCC display. Monthly targets are NOAA NCEI 1991–2020–class coastal normals (public domain; LICENSES.md); original site name.
+`WeatherGenerator.Generate(site, dayOfYear, seed)` draws one `WeatherDay` for Haven (fictional Florida coastal site) using mulberry32 (same as `Sensors`): Rayleigh surface wind with monthly mean, Box-Muller temperature, Bernoulli thunder day, cloud/precip/ceiling/lightning distance from the **site**, a characteristic upper shear (1/s) drawn as `0.002 + 0.016·u` (range 0.002…0.018 /s so the tail can exceed the LCC), and a 5-level shear wind profile (0/3/6/9/12 km) for visuals and LCC display.
 
-`LaunchCommit.Evaluate` applies a fictional LCC rule set modelled on public range weather facts (surface wind 12 m/s, gust 16 m/s, lightning 10 nmi, precip, ceiling 1500 m, temperature 2–35 °C, shear 0.030 /s). Lightning → Scrub; other violations → Hold. KID/Relaxed: `commitAllowed = false` and verdict stays Go (visual only). `WeatherCommit.Apply` drives an existing holdable `MissionEvent` (default `term.poll`) to `held` or `failed` (scrub) — **no new event schema**. `LaunchAnyway.ReliabilityPenalty` is an honest [0, 1] sum of external weights (wind 0.15, gust 0.10, lightning 1.0, precip 0.20, ceiling 0.15, temp 0.10, shear 0.20), capped at 1; override is allowed only for Hold (not Scrub). `WeatherEnsemble` runs N members with a splittable seed mix for violation probability.
+Haven monthly means are calibrated to **NOAA NCEI U.S. Climate Normals 1991–2020** at **Melbourne Intl AP, FL (`USW00012838`)**: temperature from `MLY-TAVG-NORMAL`, wind from the monthly mean of `HLY-WIND-AVGSPD` (public domain; LICENSES.md). Thunder-day probabilities are a **fictional** Florida-coastal seasonality (~80 days/yr), not a NOAA station product. Original site name.
 
-Upper winds are for visuals and LCC only; they are **not** fed into `Headless` / `Ascent3Dof` (avoids regenerating ascent goldens).
+### LCC citation table
 
-Seed→day and launch-anyway goldens are hard-coded literals from external snippets in `WeatherTests.cs`.
+| limit | value | source | real-world analogue |
+|---|---|---|---|
+| Surface wind | 12 m/s | **fictional** (kept from `Flight.Weather.DefaultWindLimitMs`) | Vehicle-dependent; Shuttle peak surface ~30 kt (~15 m/s) class |
+| Gust | 16 m/s | **fictional** | Vehicle-dependent gust / peak-wind LCC |
+| Lightning distance | 10 nmi (18.52 km) from **site** | 45 WS / NASA-STD lightning LCC class (Krider et al. 2006 BAMS) | Real rule: 30 min after lightning within 10 NM of the **flight path** |
+| Lightning wait | 30 min Hold (not scrub) | same | same |
+| Precipitation | any precip → Hold | **fictional** | Flight-through-precip / rain rules vary by vehicle |
+| Ceiling | 1500 m | **fictional** | Cloud-ceiling / visibility LCC; vehicle-dependent |
+| Temperature | 2–35 °C | **fictional** | Shuttle ~35–99 °F (~1.7–37 °C) class |
+| Upper shear | 0.012 /s | **fictional**, jet-level class | Real jet-level shear ~0.005–0.015 /s |
+
+**Lightning omissions (on purpose):** field-mill (|E| ≥ 1 kV/m within 5 NM), anvil (attached/detached 10 NM / 3 NM), and cumulus-tops distance rules are not modelled. Distance is measured from the site, not the flight path — a game simplification of the Eastern Range path rule. Lightning is a **Hold with a 30-minute clock** (`LccResult.holdMinutes = 30`), never a scrub, and is **not overridable**.
+
+`LaunchCommit.Evaluate`: any violation → Hold when commit is allowed; KID/Relaxed keep `commitAllowed = false` and verdict Go (visual only). `WeatherCommit.Apply` drives an existing holdable `MissionEvent` (default `term.poll`) to `held` — **no new event schema**. `Scrub` / `failed` remains reserved but unused by current rules.
+
+`LaunchAnyway.ReliabilityPenalty` is a **game-abstraction** reliability penalty (fictional weights, not derived from flight data). It multiplies failure probability (equivalently `reliability ← reliability × (1 − penalty)`). Weights: wind 0.15, gust 0.10, precip 0.20, ceiling 0.15, temp 0.10, shear 0.20, capped at 1. Lightning has **no weight** and cannot be overridden. Override is allowed only for soft Holds.
+
+`WeatherEnsemble` runs N members with a splittable seed mix for violation probability. Wind exceedance uses the exact Rayleigh tail `P(W > L) = exp(−L²/(2s²))`, `s = μ/√(π/2)`, with band `3√(p(1−p)/N)` at N = 10 000.
+
+### Shear not in AscentSim (known simplification)
+
+Upper winds are for visuals and LCC only; they are **not** fed into `Headless` / `Ascent3Dof`. The sim therefore ignores load-relief / q·α increase at max-Q, crosswind drift, and steering-loss change from the day-of-launch profile. The 6-DOF Engineer layer should add wind-relative α, qα load limits, bending/structural margin checks, and day-of-launch wind-biased trajectories.
+
+Seed→day and launch-anyway goldens are hard-coded literals from external snippets in `WeatherTests.cs`. Climatology compares 10 000 draws/month to hard-coded NOAA `USW00012838` literals (not to `SiteClimatology`), with bands `3σ/√N` + interannual spread.
 
 | quantity | absolute | relative | reasoning |
 |---|---|---|---|
 | seedDay | 0 | 1e-12 | Same seed → identical day; fields match external literals (seed 1, doy 100). |
-| climatologyWind | 0.5 m/s | 0 | 10 000 draws/month vs Haven monthly mean wind. |
-| climatologyTemp | 1 K | 0 | 10 000 draws/month vs Haven monthly mean temperature. |
-| climatologyThunder | 0 | 0.20 | Thunder-day frequency vs monthly Bernoulli parameter (±20 %). |
-| lccTruth | exact | 0 | 30 hand cases; verdict and violation count exact. |
-| ensembleExceedance | 0.05 | 0 | 50-member wind exceedance vs analytic Gaussian Φ̄. |
-| launchAnywayPenalty | 0 | 1e-12 | External weight sums: wind-only 0.15, wind+gust 0.25, lightning 1.0, all soft 0.90. |
-| missionEventHold | exact | 0 | Hold → `held`, Scrub → `failed` on holdable poll; KID leaves status untouched. |
+| climatologyWind | 3σ_R/√N + σ_inter | 0 | Rayleigh σ≈0.523μ; σ_inter = fictional 10% of monthly mean; N=10 000 vs NOAA wind literals. |
+| climatologyTemp | 3σ_draw/√N + σ_inter | 0 | σ_draw=2.5 K; σ_inter = NOAA MLY-TAVG-STDDEV; N=10 000 vs NOAA temp literals. |
+| climatologyThunder | 3√(p(1−p)/N) + 0.05 | 0 | Bernoulli sampling + fictional interannual spread on p. |
+| lccTruth | exact | 0 | 30 hand cases; verdict, violation count, holdMinutes exact. |
+| ensembleExceedance | 3√(p(1−p)/N) | 0 | N=10 000 wind exceedance vs exact Rayleigh; p≈exp(−L²/(2s²)). |
+| launchAnywayPenalty | 0 | 1e-12 | Fictional weight sums: wind-only 0.15, wind+gust 0.25, all soft 0.90; lightning → 0 / not overridable. |
+| missionEventHold | exact | 0 | Hold (incl. lightning) → `held` on holdable poll; KID leaves status untouched. |
+| shearViolation | exact | 0 | Generated seed 1 / doy 100 exceeds ShearLimitPerSec 0.012. |
 

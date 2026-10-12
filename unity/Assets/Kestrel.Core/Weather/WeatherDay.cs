@@ -1,5 +1,5 @@
 // One deterministic launch-day weather sample (surface + upper shear). No Unity types.
-// Shear profile is for visuals and LCC only — not consumed by Headless / Ascent3Dof.
+// Shear profile is for visuals and LCC only — not consumed by Headless / Ascent3Dof (known simplification).
 namespace Kestrel.Core.Weather
 {
     public struct WeatherDay
@@ -16,12 +16,13 @@ namespace Kestrel.Core.Weather
         public bool precip;
         public double ceilingM;
         public bool thunderDay;
+        /// <summary>Distance of nearest strike from the site (km), not from the flight path.</summary>
         public double lightningKm;
         /// <summary>Characteristic upper-level speed shear (1/s) across the ascent band (LCC).</summary>
         public double shearPerSec;
         /// <summary>
-        /// Horizontal wind (m/s) at <see cref="ShearAltitudeKm"/> levels for visuals / commit display.
-        /// Not fed into AscentSim in P4.
+        /// Horizontal wind (m/s) at <see cref="ShearProfile.AltitudeKm"/> levels for visuals / commit display.
+        /// Not fed into AscentSim in P4 (see PHYSICS.md — ignored load-relief/q·α, drift, steering loss).
         /// </summary>
         public double[] shearWindMs;
     }

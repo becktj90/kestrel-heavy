@@ -47,8 +47,11 @@ namespace Kestrel.Core.Weather
             bool precip = u6 < (0.12 + 0.25 * cloud);
             double ceilingM = 400.0 + 9000.0 * (1.0 - cloud) * (1.0 - cloud);
             bool thunderDay = u7 < SiteClimatology.ThunderDayProbability[mi];
+            // Lightning distance from the site (km). On thunder days the draw can fall inside 10 nmi.
             double lightningKm = thunderDay ? 2.0 + 30.0 * u8 : 80.0 + 120.0 * u8;
-            double shearPerSec = 0.004 + 0.025 * u9;
+            // Characteristic shear (1/s) across 0–12 km. Range 0.002…0.018 so the tail exceeds
+            // ShearLimitPerSec (0.012) at a climatologically plausible rate (~jet-level class).
+            double shearPerSec = 0.002 + 0.016 * u9;
             double[] shearWindMs = ShearProfile.FromSurface(windMs, shearPerSec);
 
             return new WeatherDay
