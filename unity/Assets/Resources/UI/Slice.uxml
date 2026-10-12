@@ -18,18 +18,22 @@
         </ui:VisualElement>
         <!-- FLIGHT HUD -->
         <ui:VisualElement name="hud" class="hud hidden">
-            <ui:VisualElement class="hud-top">
-                <ui:Label name="h-t" text="T+ 0.0" class="hud-big" />
-                <ui:Label name="h-stage" text="S1" class="hud-chip" />
+            <!-- Top band: clock + telemetry stay above the vehicle (anchor 0.38 from top, VISUAL_SPEC §5). -->
+            <ui:VisualElement name="hud-band" class="hud-band">
+                <ui:VisualElement class="hud-top">
+                    <ui:Label name="h-t" text="T+ 0.0" class="hud-big" />
+                    <ui:Label name="h-stage" text="S1" class="hud-chip" />
+                </ui:VisualElement>
+                <ui:VisualElement name="hud-grid" class="hud-grid">
+                    <ui:Label name="h-alt" text="ALT 0.0 km" class="hud-cell" />
+                    <ui:Label name="h-vel" text="VEL 0 m/s" class="hud-cell" />
+                    <ui:Label name="h-mach" text="MACH 0.00" class="hud-cell" />
+                    <ui:Label name="h-q" text="Q 0.0 kPa" class="hud-cell" />
+                    <ui:Label name="h-thr" text="THR 0%" class="hud-cell" />
+                    <ui:Label name="h-dr" text="DR 0.0 km" class="hud-cell" />
+                </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement class="hud-grid">
-                <ui:Label name="h-alt" text="ALT 0.0 km" class="hud-cell" />
-                <ui:Label name="h-vel" text="VEL 0 m/s" class="hud-cell" />
-                <ui:Label name="h-mach" text="MACH 0.00" class="hud-cell" />
-                <ui:Label name="h-q" text="Q 0.0 kPa" class="hud-cell" />
-                <ui:Label name="h-thr" text="THR 0%" class="hud-cell" />
-                <ui:Label name="h-dr" text="DR 0.0 km" class="hud-cell" />
-            </ui:VisualElement>
+            <ui:VisualElement class="hud-spacer" picking-mode="Ignore" />
             <ui:Label name="h-msg" text="" class="hud-msg" />
             <ui:Button name="again" text="BACK TO DESIGN" class="launch hidden" />
         </ui:VisualElement>
