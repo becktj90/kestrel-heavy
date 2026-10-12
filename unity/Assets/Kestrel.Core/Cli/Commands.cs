@@ -28,8 +28,8 @@ namespace Kestrel.Core.Cli
                         || !int.TryParse(args[3], NumberStyles.Integer, inv, out int d)
                         || !double.TryParse(args[4], NumberStyles.Float, inv, out double hours))
                     { stdout = Usage(); return 2; }
-                    double jd = Frames.JdUt1FromUtc(y, mo, d, hours);
-                    stdout = "{\"jdUt1\":" + jd.ToString("R", inv) + ",\"eraRad\":" + Frames.EraRad(jd).ToString("R", inv) + "}";
+                    Frames.JdUt1Parts(y, mo, d, hours, out double jd1, out double jd2);
+                    stdout = "{\"jd1\":" + jd1.ToString("R", inv) + ",\"jd2\":" + jd2.ToString("R", inv) + ",\"eraRad\":" + Frames.EraRad(jd1, jd2).ToString("R", inv) + "}";
                     return 0;
                 case "simulate":
                     var r = Headless.Simulate(Headless.MediumLifter(), new SimOptions { dt = 1, tMax = 2000 });
