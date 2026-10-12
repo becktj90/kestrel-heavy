@@ -129,3 +129,16 @@ The absolute term is the floor (the quantity is allowed to be ~0). The relative 
   }
 }
 ```
+
+## Frames (P1)
+
+`Frames` is WGS-84 geodetic ↔ ECEF, and ECEF ↔ ECI by the IAU 2000 Earth rotation angle. No polar motion, no precession, no nutation. Julian dates are `Kestrel.Core.Astro.Time`. UT1 is taken as UTC. `EraSiderealSeconds` is that angle in sidereal seconds, not the older GMST polynomial, so it is not yet a USNO sidereal-time comparison. J2 is a field on `data/bodies.json` and is not applied.
+
+The ellipsoid check at the equator is the defining semi-major axis. The pole is the derived semi-minor axis `a(1−f)`. Round trip is geodetic → ECEF → geodetic → ECEF.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| geodeticRoundTrip | 1e-6 m | 0 | Bowring plus two Newton updates. One micrometre is far below a game frame and above the iteration leftover. |
+| ellipsoidAxis | 1e-4 m | 0 | Equator is `a` to 1e-6 m. The pole uses 1e-4 m because `cos(lat)` vanishes and the height split is the polar branch. |
+| eraClosed | 1e-9 rad | 0 | The IAU turns polynomial, reduced to `[0, 2π)`. 1e-9 rad is about 4 µs of Earth rotation. |
+| eciRoundTrip | 1e-6 m | 0 | One rotation and its transpose, plus `ω × r` with `Earth.OMEGA_EARTH`. Velocity absolute is 1e-9 m/s. |
