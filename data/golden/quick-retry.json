@@ -1,0 +1,61 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 0,
+  "abs": 0,
+  "note": "exact clocks; a non-SUMMARY status or an unknown point is a no-op"
+ },
+ "count": 5,
+ "cases": [
+  {
+   "fn": "plan",
+   "point": "landing",
+   "status": "SUMMARY",
+   "out": {
+    "taps": 1,
+    "confirm": false,
+    "resultsToRelaunchSec": 2,
+    "preserveUnlocks": true,
+    "preserveBests": true,
+    "point": "landing",
+    "phase": "haven",
+    "tClock": 69.2,
+    "altitudeKm": null
+   }
+  },
+  {
+   "fn": "plan",
+   "point": "sep",
+   "status": "SUMMARY",
+   "out": {
+    "taps": 1,
+    "confirm": false,
+    "resultsToRelaunchSec": 2,
+    "preserveUnlocks": true,
+    "preserveBests": true,
+    "point": "sep",
+    "phase": "sep",
+    "tClock": 38.75,
+    "altitudeKm": 54
+   }
+  },
+  {
+   "fn": "plan",
+   "point": "landing",
+   "status": "PLAY",
+   "out": null
+  },
+  {
+   "fn": "plan",
+   "point": "sep",
+   "status": "MENU",
+   "out": null
+  },
+  {
+   "fn": "plan",
+   "point": "ascent",
+   "status": "SUMMARY",
+   "out": null
+  }
+ ]
+}

@@ -15,6 +15,6 @@ V7 does **not** delete older keys, so a leftover canvas bookmark can still see i
 
 Audio prefs (`sound`, `music`, `muted`, `volume` 0–1, `sfxVolume` 0–1, `musicVolume` 0–1) live on the same V7 blob. Mute is the master switch and stays in lockstep with Settings → Sound (`muted === !sound`); `prefers-reduced-motion` does not mute. `launchTipSeen` dismisses the one-line tip under LAUNCH after the first flight.
 
-Unlock rule: finishing Haven (soft recover, salvage, or splash — not RUD) unlocks the next KH-n. Hangar parts unlock from missions, recoveries, scores, and pickups. Difficulty stays KID / CADET / PAD RAT *inside* a flight.
+Unlock rule: a deck finish (soft recover or salvage, including a tip) unlocks the next KH-n. A splash does not, and stars never gate the next mission. Hangar parts unlock from missions, recoveries, scores, and pickups. Difficulty stays KID / CADET / PAD RAT *inside* a flight. Per-mission wind, landing fuel, and swell live in `data/mission-ramp.json`.
 
 `recordGameScore('kestrel-heavy', points)` still writes the toolbox cross-game best via `local-store.js`.

@@ -41,3 +41,9 @@ Trevor (2026-10-11, 10:20 PM) delegated design and technical calls to Chief of S
 | 35 | 10-11 | Trevor: Unity build ships as version 2.0.0 (rename the unreleased 1.0.1 record). |
 | 36 | 10-11 | Trevor: primary category Simulation, secondary Arcade. |
 | 37 | 10-11 | Trevor: remove China mainland and Vietnam from availability. |
+| 29 | 10-11 | Launch Timeline: every rocket gets a generated mission event sequence, shown in the designer and live in flight. |
+| 30 | 10-11 | One `MissionEvent` schema for narration, SFX, music, telemetry, pad, economy and Codex; N1 bus types become event ids. No parallel schemas. |
+| 31 | 10-11 | Generator is pure, deterministic C# in the shared core; golden timelines for all templates, property tests, <5 ms worst case. Fixed SPINE/PACE not ported. |
+| 32 | 10-11 | Events exist only if the hardware does (SES-n only for restartable engines, strongback only if the pad has one); Max-Q etc. are sim conditions, not scripted times. |
+| 33 | 10-11 | Calibrate ordering/spacing against public timelines; all names and wording original and fictional; times compressed per mode. |
+| 34 | 10-11 | Portrait bottom-sheet tracker: status by shape, tabular T±, `--:--:--` until an event happens, Δ vs nominal in Standard/Engineer. |

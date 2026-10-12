@@ -97,3 +97,6 @@ QA: test pass per milestone + device matrix · UX: flows/portrait/a11y review ·
 | H5 | Forgiving streaks, welcome-back, calm mode, opt-in notifications, Game Center social | U8, U9 | Gameplay Dev, UX |
 | H6 | Balance sim on headless core (`pacing.json`) + playtest kit (kids, casual adults, engineers) | U8–U9 | QA, Physics |
 Acceptance additions: U4 gate includes results→relaunch <2 s; U5 gate includes debrief numbers = Core; U9 gate includes ethics checklist pass.
+
+## 9. Launch Timeline K1–K7 (docs/MISSION_EVENTS.md)
+K2 schema + K3 generator in the shared core with U1–U3 (golden timelines for all templates, <5 ms). K4 designer preview in U3. K5 live tracker in U4 (anomalies U5, holds/recycle/scrub with the generated pad in U6). K6 narration/SFX/music/Codex/economy subscribers in U7–U8. K7 replay scrub, achievements, a11y/loc, calibration review in U5 and U9. The fixed `SPINE`/`PACE` tables are not ported.

@@ -441,8 +441,10 @@ export function setMissionButtons(settings, onPick) {
     const unlocked = (settings.unlockedMissions || []).includes(id);
     const active = settings.currentMission === id;
     const best = settings.missionBests?.[id]?.score || 0;
+    const stars = Math.max(0, Math.min(3, settings.missionBests?.[id]?.stars || 0));
+    const starBit = stars ? ` ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}` : '';
     btn.disabled = false;
-    const state = !unlocked ? 'LOCKED' : active ? 'SELECTED' : (best ? `PB ${best.toLocaleString()}` : 'READY');
+    const state = !unlocked ? 'LOCKED' : `${active ? 'SELECTED' : (best ? `PB ${best.toLocaleString()}` : 'READY')}${starBit}`;
     const name = btn.querySelector('.mf-name');
     const stateNode = btn.querySelector('.mf-state');
     const idNode = btn.querySelector('.mf-id');
@@ -451,7 +453,7 @@ export function setMissionButtons(settings, onPick) {
       stateNode.textContent = state;
     } else {
       const bestBit = best ? ` · ${best.toLocaleString()}` : '';
-      btn.textContent = unlocked ? `${label}${bestBit}` : `${id} · LOCKED`;
+      btn.textContent = unlocked ? `${label}${bestBit}${starBit}` : `${id} · LOCKED`;
     }
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     btn.setAttribute('aria-disabled', unlocked ? 'false' : 'true');

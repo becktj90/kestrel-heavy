@@ -1,11 +1,14 @@
 /**
  * Flight designations. Each KH-n is a different launch with a different payload.
  *
- * Difficulty scheme (documented for the PR):
+ * Difficulty scheme:
  *   KID / CADET / PAD RAT is the skill slider *inside* a mission.
- *   KH-n only changes payload, fairing mark, Haven flavor, time of day, and a light spawn nudge.
- *   Completing Haven (soft, salvage, or splash — not RUD) unlocks the next KH-n.
+ *   KH-n changes payload, fairing mark, Haven flavor, time of day, a light spawn nudge,
+ *   and the ramp in data/mission-ramp.json (wind multiplier, landing fuel, swell).
+ *   A deck finish (soft or salvage) unlocks the next KH-n. A splash does not.
+ *   Stars rate the catch. They do not gate the next mission.
  */
+import { MISSION_RAMP } from './mission-ramp.js';
 export const MISSIONS = [
   {
     id: 'KH-1',
@@ -26,6 +29,7 @@ export const MISSIONS = [
       salvage: 'Hard catch. Scout still uphill.',
       splash: 'Splash. Haven waits for the next flight.',
     },
+    ...MISSION_RAMP.missions['KH-1'],
   },
   {
     id: 'KH-2',
@@ -45,6 +49,7 @@ export const MISSIONS = [
       salvage: 'On deck, hard. Pair still go.',
       splash: 'Splash. Sats are fine; the barge is not.',
     },
+    ...MISSION_RAMP.missions['KH-2'],
   },
   {
     id: 'KH-3',
@@ -64,6 +69,7 @@ export const MISSIONS = [
       salvage: 'Salvage. Sat deployed, barge scuffed.',
       splash: 'Splash. Customer sat still coasts.',
     },
+    ...MISSION_RAMP.missions['KH-3'],
   },
   {
     id: 'KH-4',
@@ -83,6 +89,7 @@ export const MISSIONS = [
       salvage: 'Hard catch. Nightglass still talks.',
       splash: 'Splash. Payload does not care.',
     },
+    ...MISSION_RAMP.missions['KH-4'],
   },
   {
     id: 'KH-5',
@@ -102,6 +109,7 @@ export const MISSIONS = [
       salvage: 'Salvage. Tug separated anyway.',
       splash: 'Splash. Cadence still counts.',
     },
+    ...MISSION_RAMP.missions['KH-5'],
   },
 ];
 
