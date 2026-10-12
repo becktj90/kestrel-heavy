@@ -57,6 +57,7 @@ namespace Kestrel.Slice
             doc.visualTreeAsset = Resources.Load<VisualTreeAsset>("UI/Slice");
             ui = doc.rootVisualElement;
             designPanel = ui.Q("design"); hud = ui.Q("hud");
+            ui.RegisterCallback<GeometryChangedEvent>(_ => ApplyHudSafeArea());
             rDv = ui.Q<Label>("r-dv"); rTwr = ui.Q<Label>("r-twr"); rCost = ui.Q<Label>("r-cost"); rRel = ui.Q<Label>("r-rel"); rMass = ui.Q<Label>("r-mass");
             hT = ui.Q<Label>("h-t"); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
             hMach = ui.Q<Label>("h-mach"); hQ = ui.Q<Label>("h-q"); hThr = ui.Q<Label>("h-thr"); hDr = ui.Q<Label>("h-dr"); hMsg = ui.Q<Label>("h-msg");
@@ -72,6 +73,16 @@ namespace Kestrel.Slice
             again.clicked += () => { flight.enabled = false; hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); again.AddToClassList("hidden"); SelectPreset(design.id); };
             // Accessibility labels (VoiceOver wiring via UnityEngine.Accessibility is a listed gap; see RESULTS.md)
             ui.Q<Button>("launch").tooltip = "Roll out and launch the current design";
+        }
+
+        /// <summary>Pad the flight HUD to Screen.safeArea (+8 pt sides) so the top band clears the notch /
+        /// Dynamic Island and stays above the vehicle (see HudLayout).</summary>
+        void ApplyHudSafeArea()
+        {
+            var size = ui.layout.size; if (size.x <= 0 || size.y <= 0) return;
+            float dpr = Screen.dpi > 0 ? Mathf.Max(1f, Mathf.Round(Screen.dpi / 160f)) : 3f;
+            var p = HudLayout.SafePadding(new Vector2(Screen.width, Screen.height), Screen.safeArea, size, dpr);
+            hud.style.paddingLeft = p.x; hud.style.paddingTop = p.y; hud.style.paddingRight = p.z; hud.style.paddingBottom = p.w;
         }
 
         void SelectPreset(string id)
