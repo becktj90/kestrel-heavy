@@ -157,8 +157,14 @@ namespace Kestrel.Core.Tests
             StringAssert.Contains("\"eraRad\":", era);
             Assert.AreEqual(0, Commands.Run(new[] { "mc" }, out string mc));
             StringAssert.Contains("not-implemented", mc);
-            Assert.AreEqual(0, Commands.Run(new[] { "propagate" }, out string prop));
-            StringAssert.Contains("not-implemented", prop);
+            Assert.AreEqual(2, Commands.Run(new[] { "propagate" }, out string propBad));
+            Assert.AreEqual(0, Commands.Run(new[]
+            {
+                "propagate", "kepler",
+                "7000000", "0", "0", "0", "7546", "0", "60"
+            }, out string prop));
+            StringAssert.Contains("\"mode\":\"kepler\"", prop);
+            StringAssert.Contains("\"rx\":", prop);
             Assert.AreEqual(0, Commands.Run(new[] { "predict" }, out string pred));
             StringAssert.Contains("not-implemented", pred);
             Assert.AreEqual(2, Commands.Run(new string[0], out _));
