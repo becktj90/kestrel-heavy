@@ -154,4 +154,4 @@ Chief of Staff approved all 19 recommendations in §10 (Q2 already resolved by #
 | Livery | Presets, 2 colours, fictional serial, earned heritage marks | Free-form decal painting |
 | Pad Walk | Rail-guided tour (Medium/High); Low = orbit inspect | Free-roam walk |
 | Pad archetypes | 3 seeded archetypes | More archetypes |
-| Photo Mode | Not in 2.0 (G7) | Photo Mode incl. pad/vehicle and space shots |
+| Photo Mode (DECISIONS #50) | Basic: pause, orbit or rail camera, exposure + time-of-day sliders, hide HUD, a few space-shot presets, PNG export via share sheet only (no Photos permission) | Full lens + filter suite, free-roam camera, Orbital Photographer achievements |
