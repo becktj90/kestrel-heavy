@@ -122,6 +122,7 @@ namespace Kestrel.Slice
             rocketGO.AddComponent<MeshFilter>().sharedMesh = r.mesh;
             var mr = rocketGO.AddComponent<MeshRenderer>();
             if (bodyMat != null) { var m = new Material(bodyMat); ColorUtility.TryParseHtmlString(design.liveryPrimary, out var col); m.color = col; mr.sharedMaterial = m; }
+            AddTankShells(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, Mathf.Max(1f, Mathf.Sqrt(design.stages[0].engineCount) * r.exitDiameter), plumeMat);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
@@ -131,6 +132,26 @@ namespace Kestrel.Slice
 
         float rocketHeight = 70; Vector3 camOffset;
         void FrameCamera(float h) { rocketHeight = h; cam.transform.position = new Vector3(h * 0.9f, h * 0.45f, -h * 1.4f); cam.transform.LookAt(new Vector3(0, h * 0.45f, 0)); camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero); }
+
+        /// <summary>V2a: overlay a procedural tank shell (welds, stiffener rings, isogrid normal map, LOD by distance)
+        /// on every tank barrel. The shell sits 0.5% proud of the lathe body; its domes stay inside the body.</summary>
+        void AddTankShells(RocketMeshBuilder.Result r)
+        {
+            ulong seed = (ulong)(design.id ?? "kh").GetHashCode();
+            for (int i = 0; i < r.tanks.Count; i++)
+            {
+                var t = r.tanks[i];
+                if (t.BarrelLength <= 0.1f || t.Radius <= 0.05f) continue;
+                var spec = Kestrel.Vehicle.TankShellSpec.Default(t.Radius * 1.005f, t.BarrelLength, seed + (ulong)i * 7919UL);
+                if (spec.Validate().Count > 0) continue;
+                var go = new GameObject($"TankShell_S{t.Stage + 1}{(t.StrapOn ? "_strap" + i : "")}", typeof(MeshFilter), typeof(MeshRenderer));
+                go.transform.SetParent(rocketGO.transform, false);
+                go.transform.localPosition = t.Offset + Vector3.up * (t.BarrelBottom - spec.DomeHeight);
+                var view = go.AddComponent<Kestrel.Vehicle.TankShellView>();
+                view.ViewCamera = cam;
+                view.Init(spec, Kestrel.Kit.KitBudgets.Medium);
+            }
+        }
 
         void Launch()
         {

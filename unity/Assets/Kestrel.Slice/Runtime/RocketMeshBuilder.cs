@@ -42,12 +42,16 @@ namespace Kestrel.Slice
                 }
         }
 
-        public sealed class Result { public Mesh mesh; public float height; public float stage1Top; public Vector3[] nozzleExits; public float exitDiameter; }
+        /// <summary>Tank barrel placement on the vehicle (vehicle-local): the plain lathe body is the silhouette, and
+        /// SliceApp overlays a Kestrel.Vehicle TankShellView per tank for welds, stiffener rings and the isogrid normal map.</summary>
+        public readonly struct TankSlot { public readonly Vector3 Offset; public readonly float Radius, BarrelBottom, BarrelLength; public readonly int Stage; public readonly bool StrapOn;
+            public TankSlot(Vector3 off, float r, float y0, float len, int stage, bool strap) { Offset = off; Radius = r; BarrelBottom = y0; BarrelLength = len; Stage = stage; StrapOn = strap; } }
+        public sealed class Result { public Mesh mesh; public float height; public float stage1Top; public Vector3[] nozzleExits; public float exitDiameter; public List<TankSlot> tanks = new List<TankSlot>(); }
 
         public static Result Build(Catalog c, Design d)
         {
             var verts = new List<Vector3>(); var normals = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
-            float y = 0, stage1Top = 0; var exits = new List<Vector3>(); float exitD = 0;
+            float y = 0, stage1Top = 0; var exits = new List<Vector3>(); float exitD = 0; var slots = new List<TankSlot>();
 
             for (int i = 0; i < d.stages.Count; i++)
             {
@@ -59,6 +63,7 @@ namespace Kestrel.Slice
                 if (i == 0) AddEngines(c, s, new Vector3(0, 0, 0), bell, verts, normals, uvs, tris, exits, ref exitD);
                 float baseY = y + (i == 0 ? bell : 0);
                 var prof = new List<Vector2> { new Vector2(0, baseY), new Vector2(r, baseY), new Vector2(r, baseY + thrustSection + tank) };
+                slots.Add(new TankSlot(Vector3.zero, r, baseY + thrustSection, tank, i, false));
                 y = baseY + thrustSection + tank;
                 bool last = i == d.stages.Count - 1;
                 if (!last)
@@ -98,13 +103,14 @@ namespace Kestrel.Slice
                     var off = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)) * (core + r + 0.1f);
                     var prof = new List<Vector2> { new Vector2(0, bell), new Vector2(r, bell), new Vector2(r, bell + tank), new Vector2(0, bell + tank + 2.2f * r) };
                     Lathe(prof, off, verts, normals, uvs, tris);
+                    slots.Add(new TankSlot(off, r, bell, tank, 0, true));
                     AddEngines(c, so, off, bell, verts, normals, uvs, tris, exits, ref exitD);
                 }
             }
             var mesh = new Mesh { name = "Rocket_" + d.id, indexFormat = verts.Count > 65000 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
             mesh.SetVertices(verts); mesh.SetNormals(normals); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
             mesh.RecalculateBounds();
-            return new Result { mesh = mesh, height = y, stage1Top = stage1Top, nozzleExits = exits.ToArray(), exitDiameter = exitD };
+            return new Result { mesh = mesh, height = y, stage1Top = stage1Top, nozzleExits = exits.ToArray(), exitDiameter = exitD, tanks = slots };
         }
 
         /// <summary>Engine bells: one centre engine plus concentric rings (simple circle packer).</summary>
