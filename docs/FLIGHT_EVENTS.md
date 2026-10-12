@@ -11,7 +11,7 @@ Publishers today: `mission.js` (callout beats, aborts, flight begin/end) and `vo
 | type | category | payload |
 |---|---|---|
 | `flight.begin` | flight | missionId, payload, qa? |
-| `flight.status` | flight | status (MENU/PRELAUNCH/ASCENT/SEP/JACKLYN/SUMMARY), prev |
+| `flight.status` | flight | status (MENU/PRELAUNCH/ASCENT/SEP/HAVEN/SUMMARY), prev |
 | `flight.end` | flight | reason (rud/done/...), score |
 | `pad` | count | missionId |
 | `terminal` | count | tClock |

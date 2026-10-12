@@ -152,7 +152,7 @@ export function smoothstep(edge0, edge1, x) {
  * SEP / Haven sit at 1. Ascent crosses 6–56 km.
  */
 export function spaceBlend(altKm, status) {
-  if (status === 'SEP' || status === 'JACKLYN') return 1;
+  if (status === 'SEP' || status === 'HAVEN') return 1;
   return smoothstep(6, 56, Number(altKm) || 0);
 }
 

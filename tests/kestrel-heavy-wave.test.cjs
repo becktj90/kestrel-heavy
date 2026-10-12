@@ -38,8 +38,8 @@ test('aero-shield pickups spawn in the readable corridor, not sky-top pinpricks'
 
 test('Haven burn window OBJ says HOLD TO BURN, not do-not-burn', async () => {
   const { playGoal } = await import(path.join(arcade, 'sequence.js'));
-  assert.match(playGoal('JACKLYN', { jacklynPhase: 'glide' }, {}), /do not burn yet/i);
-  const open = playGoal('JACKLYN', { jacklynPhase: 'glide', burnWindow: true }, {});
+  assert.match(playGoal('HAVEN', { jacklynPhase: 'glide' }, {}), /do not burn yet/i);
+  const open = playGoal('HAVEN', { jacklynPhase: 'glide', burnWindow: true }, {});
   assert.match(open, /HOLD TO BURN/);
   assert.doesNotMatch(open, /do not burn yet/i);
 });

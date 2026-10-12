@@ -250,7 +250,7 @@ export function playPhase(status, session = {}, beatId = '') {
     if (session.sepPhase === 'window') return 'SEP ZONE';
     return 'MECO';
   }
-  if (status === 'JACKLYN') {
+  if (status === 'HAVEN') {
     const phase = session.jacklynPhase || 'glide';
     if (session.landingLock) return 'HAVEN';
     if (session.burnWindow || phase === 'burn' || phase === 'straighten' || phase === 'settle') {
@@ -294,7 +294,7 @@ export function playGoal(status, session = {}, flight = {}) {
     if (session.sepPhase === 'clear') return 'Open the gap, then Haven';
     return 'Hold attitude — sep zone incoming';
   }
-  if (status === 'JACKLYN') {
+  if (status === 'HAVEN') {
     const phase = session.jacklynPhase || 'glide';
     if (phase === 'reentry') return 'PITCH OVER  ·  reentry  ·  strakes stand by';
     if (session.burnWindow || phase === 'burn' || phase === 'straighten' || phase === 'settle') {
@@ -306,7 +306,7 @@ export function playGoal(status, session = {}, flight = {}) {
 }
 
 export function playNext(beats, tClock, status) {
-  if (status === 'JACKLYN' || status === 'SUMMARY' || status === 'MENU') return '';
+  if (status === 'HAVEN' || status === 'SUMMARY' || status === 'MENU') return '';
   const next = nextCoachBeat(beats, tClock);
   if (!next) return '';
   return `NEXT · ${next.stage} — ${next.coach}`;

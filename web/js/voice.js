@@ -9,16 +9,18 @@ export const LINES = {
     'Pier 7 standing by. Terminal count is armed.',
     'Pad is green. {id} on the mount. Range holding.',
     'Haven is on station. Pier 7 ready for {id}.',
+    'Pier 7 is green. Haven is on station downrange.',
   ],
   terminal: [
     'Pier 7 terminal count. {id} on the pad. Range is green.',
     'Terminal count. Auto-sequence running on {id}.',
     'T-minus eight. {id} is go for the count.',
+    'Terminal count is running. All stations are go.',
   ],
   tankpress: [
-    'Tank pressurization. LOX and LCH4 going flight pressure.',
+    'Tank press. LOX and methane to flight pressure.',
     'Prop tanks coming up. Flight pressure on both sides.',
-    'Pressurization complete path. Methane and LOX are live.',
+    'Tanks pressurized. Methane and LOX live.',
   ],
   internal: [
     'Vehicle on internal power. Ground power is safed.',
@@ -39,10 +41,11 @@ export const LINES = {
     'Liftoff. {id} clearing the tower.',
     'Liftoff. Tower clear. Pitch and roll are armed.',
     '{id} is off the pad. Vehicle is climbing.',
+    'Liftoff. Vehicle is climbing. Good thrust on all seven.',
   ],
   maxq: [
     'Max-Q. Vehicle through the region of maximum dynamic pressure.',
-    'Max-Q. q is peaking. Hold the line.',
+    'Max-Q. Pressure is peaking. Hold the line.',
     'Through Max-Q. Dynamic pressure is falling off.',
   ],
   meco: [
@@ -66,23 +69,25 @@ export const LINES = {
     'Not yet. Get ALIGN green first.',
   ],
   'sep-clear': [
-    'Booster clear. Keep the relative motion wide of the stack.',
+    'Booster clear. Keep wide of the stack.',
     'Sep confirmed. Open the gap, then Haven.',
     'Clean sep. Booster is free. Stay off the upper.',
   ],
   'sep-wide': [
-    'Sep wide. Relative motion is hot. Clear the stack.',
+    'Sep wide. Booster is hot. Clear the stack.',
     'Hot sep. Steer off the upper stage.',
-    'Wide sep. Combo is gone — stay clear.',
+    'Wide sep. Combo is gone. Stay clear.',
   ],
   'sep-contact': [
     'Stack contact. Combo gone. Stay clear.',
     'Recontact. Get away from the upper.',
+    'Stages touched. Open the gap now.',
   ],
   ses1: [
     'SES-1. Upper-stage engine is lit. {payload} still coasting under the fairing.',
     'Upper is burning. {payload} rides to insertion.',
     'SES-1 nominal. Second stage is making velocity.',
+    'Upper stage is lit. Good burn. Climbing to insertion.',
   ],
   fairing: [
     'Fairing jettison. {mark} — {payload} is free of the stack.',
@@ -95,13 +100,13 @@ export const LINES = {
     'Entry burn. Hold the pitch. Engines wait for the landing burn.',
   ],
   landing: [
-    'Landing burn. HOLD climb. Kill sink over the paint.',
+    'Landing burn. Hold climb. Kill sink over the paint.',
     'Landing burn. Fire engines, then straighten for the deck.',
     'Engines for the deck. Hold burn, then settle.',
   ],
   touchdown: [
-    'Touchdown. BOOSTER RECOVERED. Sea state nominal.',
-    'On Haven. Soft deck. Coffee earned.',
+    'Touchdown. Booster recovered. Sea state nominal.',
+    'On Haven. Soft deck. Nice flying.',
     'Deck is caught. Booster is standing.',
   ],
   seco: [
@@ -113,6 +118,8 @@ export const LINES = {
     '{payload} deploy confirmed. {id} is a good flight.',
     'Deploy. {payload} is free. {id} done.',
     'Spacecraft sep. {id} is in the book.',
+    'Spacecraft separation confirmed. Payload is free.',
+    'Deploy confirmed. Good flight.',
   ],
   'haven-slide': [
     'Haven downrange. Pitch over, then strakes. Glide the diagonal. Do not burn yet.',
@@ -204,8 +211,8 @@ export const LINES = {
     'That would have been RUD. KID lets it slide.',
   ],
   'struct-warn': [
-    'Structural hit — integrity is down. Another hit may be RUD.',
-    'Airframe is hurt. Watch the INT bar.',
+    'Structural hit. Integrity is down. Another hit may be RUD.',
+    'Airframe is hurt. Watch the integrity bar.',
   ],
   'health-graze': [
     'Grazed. Integrity holding. Fly cleaner.',
@@ -232,11 +239,11 @@ export const LINES = {
     'On the barge, but it was ugly. Score takes the hit.',
   ],
   tip: [
-    'Tip on deck. Gold ring kissed steel — score clipped.',
+    'Tip on deck. Gold ring kissed steel. Score clipped.',
     'Attitude was long at contact. Tip. Score clipped.',
   ],
   splash: [
-    'Splash. Combo reset — upper stage still flies.',
+    'Splash. Combo reset. Upper stage still flies.',
     'In the drink. Upper stage does not care. You do.',
   ],
 };
@@ -258,7 +265,7 @@ export const ABORTS = {
     banner: 'RUD — PROPELLANT STARVED',
     radio: [
       'Chambers are out. No propellant, no climb.',
-      'Fuel hit zero. Cores flamed out. Range safe.',
+      'Fuel hit zero. Cores flamed out.',
     ],
     coach: 'Hold a steady climb and grab LOX pickups. An empty stack cannot fly the corridor.',
   },
@@ -277,7 +284,7 @@ export const ABORTS = {
     reason: 'Corridor impact — structural limit exceeded',
     banner: 'RUD — CORRIDOR IMPACT',
     radio: [
-      'Structural limit exceeded. Vehicle is lost. Range safe.',
+      'Structural limit exceeded. Vehicle is lost.',
       'Impact in the corridor. Airframe is gone.',
     ],
     coach: 'Steer around birds, ice, and debris. An aero shield buys one hit.',
@@ -297,7 +304,7 @@ export const ABORTS = {
     reason: 'Ice shed impact — structural limit exceeded',
     banner: 'RUD — ICE IMPACT',
     radio: [
-      'Ice impact. Airframe exceeded. Range safe.',
+      'Ice impact. Airframe exceeded.',
       'Shed ice took the stack. Flight is over.',
     ],
     coach: 'Ice falls through the corridor after Max-Q. Nudge, do not freeze.',
@@ -317,7 +324,7 @@ export const ABORTS = {
     reason: 'Balloon / clutter strike — vehicle lost',
     banner: 'RUD — CORRIDOR CLUTTER',
     radio: [
-      'Clutter strike. Stack is gone. Range safe.',
+      'Clutter strike. Stack is gone.',
       'Low-altitude clutter. Flight terminated.',
     ],
     coach: 'Balloons look soft. At this speed they are not. Steer around them.',
@@ -337,7 +344,7 @@ export const ABORTS = {
     reason: 'Attitude exceedance through Max-Q — stack exceeded sideslip',
     banner: 'RUD — ATTITUDE EXCEEDANCE',
     radio: [
-      'Sideslip through Max-Q. Structural fail. Range safe.',
+      'Sideslip through Max-Q. Structural fail.',
       'Attitude was long in the q region. Vehicle lost.',
     ],
     coach: 'Keep the stack straight through Max-Q. Large steers at peak q are a RUD on PAD RAT.',
@@ -348,7 +355,7 @@ export const ABORTS = {
     banner: 'RUD — SEP FOUL',
     radio: [
       'Sep geometry was dirty. Stack fouled. Range safe.',
-      'Hot sep, bad angle. Stages kissed. Flight over.',
+      'Hot sep, bad angle. Stages touched. Flight over.',
     ],
     coach: 'Stay in the SEP ZONE, ALIGN green, then press SEPARATE. A cocked sep fouls the stack.',
   },
@@ -357,7 +364,7 @@ export const ABORTS = {
     reason: 'Recontact after sep — booster struck the upper stage',
     banner: 'RUD — RECONTACT',
     radio: [
-      'Recontact. Booster hit the upper. Range safe.',
+      'Recontact. Booster hit the upper.',
       'Relative motion closed. Stages collided.',
     ],
     coach: 'After pyros, open the gap. Do not drift back into the upper stage.',
@@ -367,7 +374,7 @@ export const ABORTS = {
     reason: 'Tip on deck — attitude over 14° at Haven contact',
     banner: 'TIP ON DECK — SCORE CLIPPED',
     radio: [
-      'Tip on deck. Gold ring kissed steel — score clipped.',
+      'Tip on deck. Gold ring kissed steel. Score clipped.',
       'Attitude was long at contact. Tip. Upper stage still flies.',
     ],
     coach: 'Straighten with RCS before the paint. A leaning booster is a tip, not a catch.',
@@ -378,7 +385,7 @@ export const ABORTS = {
     banner: 'HARD CATCH — SCORE CLIPPED',
     radio: [
       'Hard catch. Booster on deck, score clipped.',
-      'On Haven, but sink or miss-paint made it salvage.',
+      'On Haven, but off the paint. Salvage.',
     ],
     coach: 'Brake early over the painted deck. Soft sink, on the mark.',
   },
@@ -387,7 +394,7 @@ export const ABORTS = {
     reason: 'Missed Haven — booster in the water',
     banner: 'SPLASH — HAVEN MISSED',
     radio: [
-      'Splash. Combo reset — upper stage still flies.',
+      'Splash. Combo reset. Upper stage still flies.',
       'Off the barge. Booster is in the drink.',
     ],
     coach: 'Haven is small and downrange. Glide the diagonal, then fire the landing burn over the paint.',
@@ -546,7 +553,7 @@ export function pauseHintFor(status, sepPhase) {
     if (sepPhase === 'clear') return 'Open the gap. Stay off the upper stage, then Haven.';
     return 'MECO. Hold attitude. Sep zone is coming — straighten for ALIGN.';
   }
-  if (status === 'JACKLYN') return 'Pitch over, strakes out. Glide onto the PAINT, then HOLD TO BURN and keep holding while you steer onto the deck.';
+  if (status === 'HAVEN') return 'Pitch over, strakes out. Glide onto the PAINT, then HOLD TO BURN and keep holding while you steer onto the deck.';
   return 'Tap to launch, then steer. After MECO, SEP ZONE then SEPARATE. Glide Haven, then HOLD TO BURN.';
 }
 

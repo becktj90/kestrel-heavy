@@ -5,8 +5,8 @@ import {
   FUEL_MAX,
   H,
   HAVEN,
-  JACKLYN_BONUS,
-  JACKLYN_SALVAGE,
+  HAVEN_BONUS,
+  HAVEN_SALVAGE,
   OVERDRIVE_SEC,
   PAD_ROCKET_X,
   PAD_ROCKET_Y,
@@ -600,14 +600,14 @@ export default class MissionScene extends Phaser.Scene {
   lockVehicleCamera(lerpX = CAM.followLerpX, lerpY = CAM.followLerpY) {
     if (!this.rocket) return;
     const cam = this.cameras.main;
-    if (this.status === 'JACKLYN') {
+    if (this.status === 'HAVEN') {
       const bounds = expandedHavenBounds();
       cam.setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
     } else {
       cam.setBounds(-2400, CAM.worldTop, W + 4800, CAM.worldHeight);
     }
     cam.startFollow(this.rocket, false, lerpX, lerpY);
-    cam.setDeadzone(this.status === 'JACKLYN' ? 18 : CAM.deadzoneX, this.status === 'JACKLYN' ? 16 : CAM.deadzoneY);
+    cam.setDeadzone(this.status === 'HAVEN' ? 18 : CAM.deadzoneX, this.status === 'HAVEN' ? 16 : CAM.deadzoneY);
     if (typeof cam.setLerp === 'function') cam.setLerp(lerpX, lerpY);
     this.syncFollowOffset();
     this.snapVehicleIfOffscreen();
@@ -616,7 +616,7 @@ export default class MissionScene extends Phaser.Scene {
   /** iOS visualViewport / Scale.refresh can drop follow — put the live stack back. */
   relockFlightCamera() {
     if (!this.rocket || this.status === 'MENU' || this.status === 'SUMMARY') return;
-    if (this.status === 'JACKLYN') {
+    if (this.status === 'HAVEN') {
       this.cameras.main.centerOn(this.rocket.x, this.rocket.y);
       this.lockVehicleCamera(CAM.havenLerpX, CAM.havenLerpY);
       return;
@@ -648,7 +648,7 @@ export default class MissionScene extends Phaser.Scene {
   syncFollowOffset() {
     const cam = this.cameras.main;
     if (!cam || typeof cam.setFollowOffset !== 'function') return;
-    if (this.status === 'JACKLYN' && this.rocket && this.jacklyn) {
+    if (this.status === 'HAVEN' && this.rocket && this.jacklyn) {
       const { w: pw, h: ph } = this.playfieldSize();
       const vis = envelopVisibleWorld(pw, ph, W, H, cam.zoom || 1);
       const off = havenFollowOffset(
@@ -992,7 +992,7 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   enterSep() {
-    if (this.status === 'SEP' || this.status === 'JACKLYN') return;
+    if (this.status === 'SEP' || this.status === 'HAVEN') return;
     this.status = 'SEP';
     this.session.stage = 'MECO';
     this.session.sepPhase = 'coast';
@@ -1025,7 +1025,7 @@ export default class MissionScene extends Phaser.Scene {
 
   enterJacklyn() {
     const flight = this.currentFlight();
-    this.status = 'JACKLYN';
+    this.status = 'HAVEN';
     this.session.ascentScore = Math.round(this.session.ascentScore || this.session.score);
     this.session.stage = 'ENTRY BURN';
     this.session.landingLock = false;
@@ -1096,7 +1096,7 @@ export default class MissionScene extends Phaser.Scene {
       holdMs: 2200,
     });
     this.time.delayedCall(Math.round(HAVEN.reentrySec * 1000), () => {
-      if (this.status !== 'JACKLYN' || !this.rocket) return;
+      if (this.status !== 'HAVEN' || !this.rocket) return;
       this.session.jacklynPhase = 'strakes';
       this.session.stage = 'HAVEN';
       this.rocket.setTexture('booster-glide');
@@ -1108,7 +1108,7 @@ export default class MissionScene extends Phaser.Scene {
         holdMs: 2800,
       });
       this.time.delayedCall(1500, () => {
-        if (this.status === 'JACKLYN') {
+        if (this.status === 'HAVEN') {
           this.callout('haven-maxq', {
             banner: 'DESCENT MAX-Q — strakes working. Hold the glide',
             kind: 'info',
@@ -1118,7 +1118,7 @@ export default class MissionScene extends Phaser.Scene {
       });
     });
     this.time.delayedCall(Math.round((HAVEN.reentrySec + HAVEN.strakeSec + 1.2) * 1000), () => {
-      if (this.status === 'JACKLYN') this.callout('hint-haven');
+      if (this.status === 'HAVEN') this.callout('hint-haven');
     });
   }
 
@@ -1133,14 +1133,14 @@ export default class MissionScene extends Phaser.Scene {
     if (this.status === 'PRELAUNCH') this.updatePrelaunch(dt);
     else if (this.status === 'ASCENT') this.updateAscent(dt);
     else if (this.status === 'SEP') this.updateSep(dt);
-    else if (this.status === 'JACKLYN') this.updateJacklyn(dt);
+    else if (this.status === 'HAVEN') this.updateJacklyn(dt);
     if (this.inFlight()) this.syncScience(dt);
     this.updateSkyLayers(dt);
     this.updateFlightFx(dt);
     this.updateCorridor(dt);
     this.updateSepZone();
     this.updateFloaters(dt);
-    if (this.status !== 'JACKLYN' && this.status !== 'SUMMARY' && this.status !== 'MENU') {
+    if (this.status !== 'HAVEN' && this.status !== 'SUMMARY' && this.status !== 'MENU') {
       this.tickZoom(dt);
     }
     this.refreshHud();
@@ -1533,7 +1533,7 @@ export default class MissionScene extends Phaser.Scene {
       if ((beat.id === 'seco' || beat.id === 'deploy') && !this.session.landingLock) continue;
       if (beat.id === 'sep') continue;
       if ((beat.id === 'ses1' || beat.id === 'fairing') && this.status === 'SEP') continue;
-      if ((beat.id === 'entry' || beat.id === 'landing') && (this.status === 'JACKLYN' || this.status === 'SEP')) continue;
+      if ((beat.id === 'entry' || beat.id === 'landing') && (this.status === 'HAVEN' || this.status === 'SEP')) continue;
       this.session.fired[beat.id] = true;
       this.onBeat(beat);
     }
@@ -1720,9 +1720,9 @@ export default class MissionScene extends Phaser.Scene {
       if (!other) return;
       const go = other.gameObject;
       const label = other.label || go?.body?.label || '';
-      if (label === 'deck' && this.status === 'JACKLYN') {
+      if (label === 'deck' && this.status === 'HAVEN') {
         this.resolveLanding('deck');
-      } else if (label === 'water' && this.status === 'JACKLYN') {
+      } else if (label === 'water' && this.status === 'HAVEN') {
         this.resolveLanding('water');
       } else if ((label && label.startsWith('hazard')) || go?.hazardKind) {
         this.hitHazard(go, label || `hazard-${go.hazardKind}`);
@@ -1761,7 +1761,7 @@ export default class MissionScene extends Phaser.Scene {
 
     if (kind === 'deck' && onPaint && soft && !tipped) {
       this.session.recovered = true;
-      this.session.score += JACKLYN_BONUS;
+      this.session.score += HAVEN_BONUS;
       if (this.currentFlight().objective?.id === 'recover') this.completeObjective();
       if (this.currentFlight().objective?.id === 'recover-combo' && this.session.comboReady) this.completeObjective();
       this.session.combo += 2;
@@ -1788,7 +1788,7 @@ export default class MissionScene extends Phaser.Scene {
 
     if (kind === 'deck') {
       this.session.salvage = true;
-      this.session.score += JACKLYN_SALVAGE;
+      this.session.score += HAVEN_SALVAGE;
       if (tipped) {
         this.session.score = Math.max(0, this.session.score - TIP_PENALTY);
         this.markOutcome('tip');
@@ -1848,7 +1848,7 @@ export default class MissionScene extends Phaser.Scene {
    * old 48×48 near-miss offset (must not). Playtest the #172 fly-through.
    */
   spawnQaHitPair() {
-    const box = rocketHitSize(this.status === 'JACKLYN');
+    const box = rocketHitSize(this.status === 'HAVEN');
     const scale = Number(this.rocket.scaleX) || 1;
     const hw = (box.width * scale) / 2;
     const y = this.rocket.y - 40;
@@ -1950,7 +1950,7 @@ export default class MissionScene extends Phaser.Scene {
       return;
     }
     const kind = hazardKindOf(obj, label);
-    if (!contactsHazard(this.rocket, obj, kind, this.status === 'JACKLYN')) return;
+    if (!contactsHazard(this.rocket, obj, kind, this.status === 'HAVEN')) return;
     const atMaxQ = this.session.tClock >= PACE.MAXQ - 4 && this.session.tClock <= PACE.MAXQ + 8;
     const prevHealth = this.session.health;
     const result = applyHit(this.session, kind, this.settings.difficulty);
@@ -2085,7 +2085,7 @@ export default class MissionScene extends Phaser.Scene {
 
   emitPlume(power) {
     if (this.settings.reducedMotion) return;
-    const space = (this.session?.altitudeKm || 0) > 28 || this.status === 'SEP' || this.status === 'JACKLYN';
+    const space = (this.session?.altitudeKm || 0) > 28 || this.status === 'SEP' || this.status === 'HAVEN';
     const twr = this.session?.science?.twr || power;
     const strength = clamp(Math.max(power, twr * 0.28), 0, 1.6);
     const n = strength > 0.7 ? (space ? 8 + Math.round(strength * 6) : 10 + Math.round(strength * 8)) : 3 + Math.round(strength * 4);
@@ -2096,7 +2096,7 @@ export default class MissionScene extends Phaser.Scene {
       this.heat.setScale(0.7 + strength * 0.9, 0.9 + strength * 1.15);
       this.heat.setAngle((this.nowSec * 40) % 8 - 4);
     }
-    if (this.bloomFx && power > 0.75 && (this.status === 'JACKLYN' || this.status === 'PRELAUNCH')) {
+    if (this.bloomFx && power > 0.75 && (this.status === 'HAVEN' || this.status === 'PRELAUNCH')) {
       this.bloomFx.emitParticleAt(this.rocket.x, this.rocket.y + 102, this.settings.reducedMotion ? 2 : 6);
     }
     if (this.steam && power > 0.4 && !space) {
@@ -2458,7 +2458,7 @@ export default class MissionScene extends Phaser.Scene {
    */
   bindRocketBody() {
     const ignore = this.rocket.body?.ignoreGravity;
-    const haven = this.status === 'JACKLYN';
+    const haven = this.status === 'HAVEN';
     const box = haven ? BOOSTER_HIT : ROCKET_HIT;
     const scale = Number(this.rocket.scaleX) || 1;
     const vx = this.rocket.body?.velocity?.x ?? 0;
@@ -2479,7 +2479,7 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   inFlight() {
-    return this.status === 'PRELAUNCH' || this.status === 'ASCENT' || this.status === 'SEP' || this.status === 'JACKLYN';
+    return this.status === 'PRELAUNCH' || this.status === 'ASCENT' || this.status === 'SEP' || this.status === 'HAVEN';
   }
 
   paintSkyWash(spaceT) {
@@ -2510,7 +2510,7 @@ export default class MissionScene extends Phaser.Scene {
     if (this.hazeBand) this.hazeBand.setVisible(on);
     this.setCorridorVisible(on && (this.status === 'PRELAUNCH' || this.status === 'ASCENT'));
     if (this.bgWash) this.bgWash.setVisible(on);
-    if (this.oceanWash) this.oceanWash.setVisible(!on && this.status === 'JACKLYN');
+    if (this.oceanWash) this.oceanWash.setVisible(!on && this.status === 'HAVEN');
     if (this.bgOcean && on) this.bgOcean.setVisible(false);
   }
 
@@ -2526,7 +2526,7 @@ export default class MissionScene extends Phaser.Scene {
   }
 
   updateSkyLayers(dt = 0.016) {
-    if (!this.session || this.status === 'JACKLYN' || this.status === 'SUMMARY') return;
+    if (!this.session || this.status === 'HAVEN' || this.status === 'SUMMARY') return;
     const target = spaceBlend(this.session.altitudeKm || 0, this.status);
     const prev = Number.isFinite(this.session.spaceT) ? this.session.spaceT : target;
     const rate = this.status === 'SEP' ? 0.85 : 2.2;
@@ -2600,7 +2600,7 @@ export default class MissionScene extends Phaser.Scene {
       this.clearHavenPaint();
       return;
     }
-    if (this.status !== 'JACKLYN') {
+    if (this.status !== 'HAVEN') {
       this.clearHavenPaint();
       return;
     }
@@ -2962,7 +2962,7 @@ export default class MissionScene extends Phaser.Scene {
 
   applyRocketSkin() {
     const key = this.textures.exists('rocket-equipped') ? 'rocket-equipped' : 'rocket';
-    if (this.status === 'JACKLYN') return;
+    if (this.status === 'HAVEN') return;
     this.rocket.setTexture(key);
     this.bindRocketBody();
   }
@@ -3056,7 +3056,7 @@ export default class MissionScene extends Phaser.Scene {
       if (this.session.sepPhase === 'clear') return 'CLEAR THE STACK  ·  hold attitude';
       return 'MECO  ·  HOLD ATTITUDE  ·  sep zone incoming';
     }
-    if (this.status === 'JACKLYN') {
+    if (this.status === 'HAVEN') {
       const phase = this.session.jacklynPhase || 'glide';
       if (this.session.burnWindow || phase === 'burn' || phase === 'straighten' || phase === 'settle') {
         return this.session.burnLit
@@ -3127,7 +3127,7 @@ export default class MissionScene extends Phaser.Scene {
       nextTapeId: TAPE_IDS[TAPE_IDS.indexOf(beat?.id) + 1] || nextCoachBeat(s.beats || beatsFor(flight), s.tClock)?.id || '',
       phase: playPhase(this.status, s, beat?.id),
       phaseKind: playPhaseKind(playPhase(this.status, s, beat?.id)),
-      recover: this.status === 'JACKLYN' && this.rocket && this.jacklyn
+      recover: this.status === 'HAVEN' && this.rocket && this.jacklyn
         ? formatRecoverHud({
           altPx: this.jacklyn.y - 50 - this.rocket.y,
           dxPx: this.rocket.x - this.jacklyn.x,
@@ -3141,7 +3141,7 @@ export default class MissionScene extends Phaser.Scene {
         : '',
       muted: this.settings.muted,
       paused: this.paused,
-      boostLabel: this.status === 'JACKLYN'
+      boostLabel: this.status === 'HAVEN'
         ? ((s.burnWindow || s.jacklynPhase === 'burn' || s.jacklynPhase === 'straighten' || s.jacklynPhase === 'settle')
           ? 'HOLD TO BURN'
           : 'GLIDE')
@@ -3151,8 +3151,8 @@ export default class MissionScene extends Phaser.Scene {
             ? 'TAP TO LAUNCH'
             : 'DRAG TO STEER',
       boostHeld: boosting,
-      boostHold: this.status === 'JACKLYN' && s.burnWindow ? (s.burnHold || 0) : (boosting ? 1 : 0),
-      burnReady: this.status === 'JACKLYN' && Boolean(s.burnWindow || s.jacklynPhase === 'burn' || s.jacklynPhase === 'straighten' || s.jacklynPhase === 'settle'),
+      boostHold: this.status === 'HAVEN' && s.burnWindow ? (s.burnHold || 0) : (boosting ? 1 : 0),
+      burnReady: this.status === 'HAVEN' && Boolean(s.burnWindow || s.jacklynPhase === 'burn' || s.jacklynPhase === 'straighten' || s.jacklynPhase === 'settle'),
       thumbHeld: Boolean(this.inputState.thumbHeld),
       touchSteer: this.inputState.touchSteer,
       sepReady: this.status === 'SEP' && s.sepPhase === 'window' && !s.sepDone && this.inSepZone(),

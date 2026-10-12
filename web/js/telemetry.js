@@ -48,7 +48,7 @@ export function computeTelemetry(sample) {
   const dt = Math.max(0.008, Number(sample.dt) || 0.016);
   const prevVelMs = sample.prevVelMs;
   const sepPhase = sample.sepPhase || '';
-  const onBooster = status === 'SEP' || status === 'JACKLYN' || sepPhase === 'clear';
+  const onBooster = status === 'SEP' || status === 'HAVEN' || sepPhase === 'clear';
 
   let altKm = Math.max(0, Number(sample.altitudeKm) || 0);
   let velMs;
@@ -75,7 +75,7 @@ export function computeTelemetry(sample) {
     fpaDeg = clamp(38 - (sample.sepElapsed || 0) * 1.1, 8, 42);
     downrangeKm = 0.046 * Math.min(coast, 48) * Math.min(coast, 48) + (sample.sepElapsed || 0) * 1.6;
     chamberPct = sepPhase === 'clear' ? 0 : (throttle > 0.8 ? 0 : 0);
-  } else if (status === 'JACKLYN') {
+  } else if (status === 'HAVEN') {
     altKm = clamp(altKm, 0, 14);
     velMs = Math.max(0, Math.abs(vy) * 42 + 18);
     fpaDeg = clamp(-78 - angle * 0.4, -90, -40);
@@ -103,10 +103,10 @@ export function computeTelemetry(sample) {
     accG = sepPhase === 'clear' ? 0.05 : 0.12;
   } else if (prevVelMs != null && Number.isFinite(prevVelMs)) {
     const dv = (velMs - prevVelMs) / dt;
-    accG = clamp(dv / G0 + (status === 'JACKLYN' ? -0.15 : 0), -1.2, 6.2);
+    accG = clamp(dv / G0 + (status === 'HAVEN' ? -0.15 : 0), -1.2, 6.2);
   } else if (status === 'ASCENT') {
     accG = clamp(twr - Math.cos((fpaDeg * Math.PI) / 180) * 0.92, 0.2, 5.4);
-  } else if (status === 'JACKLYN') {
+  } else if (status === 'HAVEN') {
     accG = throttle > 0.5 ? clamp(1.1 + throttle * 1.4, 0.4, 3.6) : 0.2;
   } else {
     accG = throttle > 0.05 ? 0.15 : 0;
@@ -116,7 +116,7 @@ export function computeTelemetry(sample) {
   const loxPct = clamp(fuel * 0.97 - (100 - fuel) * 0.02, 0, 100);
   const lch4Pct = clamp(fuel * 1.01, 0, 100);
   const massFrac = propMax / wet;
-  const apoKm = status === 'JACKLYN'
+  const apoKm = status === 'HAVEN'
     ? altKm
     : clamp(altKm + (velMs * velMs) / (2 * G0) / 1000 * 0.42, altKm, 420);
 
