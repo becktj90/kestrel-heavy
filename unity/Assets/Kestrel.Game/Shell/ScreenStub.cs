@@ -1,4 +1,4 @@
-// Placeholder content for generated Home/Design/Flight scenes until U3/U4 land. Shows the screen
+// Home title screen, plus placeholder Design/Flight screens (unused on the play path) until U3/U4 land. Shows the screen
 // name inside the safe area plus nav buttons (≥44 pt), so the shell and scaling can be verified.
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -16,29 +16,40 @@ namespace Kestrel.Game.Shell
             if (shell == null) return;
             _view = new VisualElement();
             _view.AddToClassList("kh-screen");
-            var title = new Label(Kind == AppScreen.Home ? "KESTREL HEAVY" : Kind.ToString().ToUpperInvariant());
+            if (Kind == AppScreen.Home) { BuildHome(shell); return; }
+            var title = new Label(Kind.ToString().ToUpperInvariant() + " (placeholder)");
             title.AddToClassList("kh-title");
             _view.Add(title);
-            // Menu per screen: Home → Play (Design); Design → Launch (Flight) / Home; Flight → Design / Home.
-            if (Kind == AppScreen.Home)
-            {
-                var sub = new Label("Design a rocket. Launch it.");
-                sub.AddToClassList("kh-subtitle");
-                _view.Add(sub);
-                AddButton(shell, "Play", AppScreen.Design, "Play. Opens the rocket designer.");
-            }
-            else if (Kind == AppScreen.Design)
-            {
-                AddButton(shell, "Launch", AppScreen.Flight, "Launch the rocket.");
-                AddButton(shell, "Home", AppScreen.Home, "Back to the title screen.");
-            }
-            else
-            {
-                AddButton(shell, "Back to Design", AppScreen.Design, "Back to the rocket designer.");
-                AddButton(shell, "Home", AppScreen.Home, "Back to the title screen.");
-            }
+            // Not on the play path: Home > Play loads Slice.unity until the real Design/Flight screens land.
+            AddButton(shell, "Home", AppScreen.Home, "Back to the title screen.");
             shell.Safe.Add(_view);
             if (shell.Fill != null) shell.Fill.SpaceT = Kind == AppScreen.Flight ? 0f : 1f;
+        }
+
+        HomeBackdrop _backdrop;
+
+        /// <summary>Title screen: full-bleed dusk backdrop with the stack on the pad, big title, one-line
+        /// subtitle, one big Play button. Static (Reduce Motion safe), no other prompts.</summary>
+        void BuildHome(AppShell shell)
+        {
+            _backdrop = new HomeBackdrop();
+            shell.Root.Insert(0, _backdrop);              // behind the safe-area root, edge to edge
+            _view.AddToClassList("kh-home");
+            var title = new Label("KESTREL\nHEAVY");
+            title.AddToClassList("kh-home-title");
+            _view.Add(title);
+            var sub = new Label("Design a rocket. Launch it.");
+            sub.AddToClassList("kh-home-subtitle");
+            _view.Add(sub);
+            var spacer = new VisualElement { pickingMode = PickingMode.Ignore };
+            spacer.style.flexGrow = 1;
+            _view.Add(spacer);
+            var play = new Button(shell.EnterSlice) { text = "PLAY", tooltip = "Play. Opens the rocket designer on the pad." };
+            play.AddToClassList("kh-button");
+            play.AddToClassList("kh-home-play");
+            _view.Add(play);
+            shell.Safe.Add(_view);
+            if (shell.Fill != null) shell.Fill.SpaceT = 0.6f;
         }
 
         void AddButton(AppShell shell, string text, AppScreen target, string a11y)
@@ -48,6 +59,6 @@ namespace Kestrel.Game.Shell
             _view.Add(b);
         }
 
-        void OnDisable() => _view?.RemoveFromHierarchy();
+        void OnDisable() { _view?.RemoveFromHierarchy(); _backdrop?.RemoveFromHierarchy(); }
     }
 }

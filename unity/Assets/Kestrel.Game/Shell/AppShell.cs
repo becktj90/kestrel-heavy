@@ -67,6 +67,18 @@ namespace Kestrel.Game.Shell
 
         void Start() => Flow.Go(AppScreen.Home);
 
+        /// <summary>Real game entry until Graphics Dev moves the Design panel into the shell: Slice.unity owns
+        /// the pad, rocket, panel and flight. The shell (camera + UI) is torn down so Slice renders alone.</summary>
+        public const string SliceScene = "Slice";
+        public void EnterSlice()
+        {
+            if (!Application.CanStreamedLevelBeLoaded(SliceScene)) { Debug.LogError("[Kestrel] Slice.unity is not in Build Settings"); return; }
+            Destroy(gameObject);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(SliceScene, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
+
+        void OnDestroy() { if (Instance == this) Instance = null; }
+
         void OnFrame(PortraitFrame f)
         {
             if (f.Content.W <= 0) return;
