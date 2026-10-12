@@ -21,6 +21,26 @@ put the number in `RESULTS.md`.
 Catalogs are **not copied into git** here. `Kestrel > Sync Data` (which also runs automatically on load and before every build)
 copies `../data/*.json` and `../web/js/economy-data/constants.json` into `Assets/Resources/KestrelData/`, which is gitignored.
 
+## 0. Agent / automation workflow: Unity CLI only
+
+Unity ToS §17.2(ff) (June 30, 2026) lets AI agents and automation touch the Editor only through Authorized Agentic Access.
+On this project, the **only** sanctioned way for agents or scripts to drive Unity is Unity's own CLI (`unity`, installed to `~/.local/bin/unity`
+via `curl -fsSL https://unity.com/install.sh | bash`) together with the `com.unity.pipeline` package (now in `Packages/manifest.json`).
+**Never invoke the raw Editor binary with `-batchmode` / `-executeMethod`**, whether locally or from an agent.
+
+```bash
+unity auth status                         # must show the account owner signed in
+unity install 6000.3.26f1 -m ios          # Editor + iOS Build Support (Hub/CLI-managed install only)
+cd unity && unity pipeline install        # adds com.unity.pipeline (already committed)
+unity open .                              # opens the Editor; a human accepts any Editor terms dialog
+unity command                             # list commands the running Editor exposes
+unity command <test-command>              # run EditMode tests (golden vectors)
+unity command <build-command>             # iOS Xcode export -> build/iOS
+```
+
+Use `unity command --query test` and `unity command --query build` to find the exact command names, since the pipeline package is experimental.
+GameCI/CI workflows run on Unity's build infrastructure under the repo owner's license, separately from this agent path.
+
 ## 1. Install
 - **Unity 6.3 LTS, `6000.3.26f1`** (pinned in `ProjectSettings/ProjectVersion.txt`; released 2026-10-08, supported to Dec 2027).
   In Unity Hub, go to Installs → Install Editor → 6000.3.26f1 and add the **iOS Build Support** module.
@@ -49,8 +69,7 @@ offers for 6000.3 and note it in RESULTS.md.
 - **Regenerating vectors:** after changing JS physics or catalogs, run `npm run gen:golden` at the repo root, then rerun both test suites.
 
 ## 4. Build to iOS (local)
-1. File → Build Profiles → **iOS** → Switch Platform. (Or run `Kestrel.Slice.Editor.BuildScript.BuildIOS` in batch mode:
-   `/Applications/Unity/Hub/Editor/6000.3.26f1/Unity.app/Contents/MacOS/Unity -batchmode -quit -projectPath unity -executeMethod Kestrel.Slice.Editor.BuildScript.BuildIOS`.)
+1. File → Build Profiles → **iOS** → Switch Platform. (Agents use the Unity CLI flow in section 0 instead.)
 2. Build → choose `unity/build/iOS`. Unity exports an Xcode project.
 3. Open `build/iOS/Unity-iPhone.xcodeproj`. Under the Signing & Capabilities tab for target **Unity-iPhone**, check that it shows **Automatically manage signing**, Team **9TR6R5LV8M**
    and Bundle Identifier **com.beckify.kestrelheavy.unityproto**. All three are preset by the bootstrap, so this is only a check.
