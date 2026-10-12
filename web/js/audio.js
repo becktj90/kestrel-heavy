@@ -4,8 +4,14 @@
  * prefers-reduced-motion never mutes on its own.
  *
  * NASA trims live in ./audio/ (see ATTRIBUTION.md). Procedural tones are fallback only.
+ * S1: gains route through the audio core buses (./audio/core.js): master,
+ * music, sfx, engine, voice -> limiter. One-shots use a capped voice pool.
  * Theme: Suno instrumental "Kestrel Heavy" by trevorjohnbeck — looping BGM, quieter than SFX.
  */
+import { createAudioCore } from './audio/core.js';
+
+export const core = createAudioCore();
+
 const KEYS = {
   roar: { file: 'roar-loop', loop: true, vol: 0.36 },
   burn: { file: 'burn-loop', loop: true, vol: 0.32 },
@@ -53,27 +59,67 @@ const AudioApi = {
     scene.load.audio(`ng-${THEME.file}`, [`./audio/${THEME.file}.ogg`, `./audio/${THEME.file}.mp3`]);
   },
 
+  core,
+  settings: null,
+  phaserLimited: null,
+
   attach(scene) {
     this.scene = scene;
+    this.settings = scene.settings || this.settings;
+    core.mixer.onChange = () => { if (this.settings) this.mixTheme(this.settings); };
+    this.insertLimiter();
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      core.attachLifecycle({ getContexts: () => [this.scene?.sound?.context, this.ctx] });
+    }
     this.applyMix(scene.settings);
   },
 
-  masterVolume(settings) {
-    const value = Number(settings?.volume);
-    return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.72;
+  /** Put the master limiter between Phaser's master gain and the speakers. */
+  insertLimiter() {
+    const sound = this.scene?.sound;
+    const ctx = sound?.context;
+    const node = sound?.masterVolumeNode;
+    if (!ctx || !node || this.phaserLimited === ctx || typeof ctx.createDynamicsCompressor !== 'function') return;
+    try {
+      const lim = core.mixer.connect(ctx, ctx.destination).limiter;
+      node.disconnect();
+      node.connect(lim);
+      this.phaserLimited = ctx;
+    } catch { /* keep Phaser's default routing */ }
   },
 
-  sfxGain(settings) {
-    const value = Number(settings?.sfxVolume);
-    const sfx = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
-    return this.masterVolume(settings) * sfx;
+  /** Bus levels from settings (same defaults as before: 0.72 / 1 / 0.85). */
+  levels(settings) {
+    if (settings) {
+      this.settings = settings;
+      const cb = core.mixer.onChange;
+      core.mixer.onChange = null;
+      core.mixer.fromSettings(settings);
+      core.mixer.onChange = cb;
+    }
+    return core.mixer.level;
+  },
+
+  masterVolume(settings) {
+    return this.levels(settings).master;
+  },
+
+  sfxGain(settings, bus = 'sfx') {
+    const l = this.levels(settings);
+    return l.master * l[bus] * (core.mixer.duck[bus] ?? 1);
   },
 
   musicGain(settings) {
-    const value = Number(settings?.musicVolume);
-    const music = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.85;
-    return this.masterVolume(settings) * music;
+    const l = this.levels(settings);
+    return l.master * l.music * core.mixer.duck.music;
   },
+
+  /** Voice bus activity (narration, later N2). Ducks music/sfx/engine. */
+  voiceStart() { core.ducker.voiceStart(); },
+  voiceEnd() { core.ducker.voiceEnd(); },
+
+  /** Subscribe the audio core to the shared flight event bus (narration/bus.js). */
+  connectBus(bus) { return core.connectBus(bus); },
 
   silenced(settings) {
     return Boolean(settings?.muted) || settings?.sound === false;
@@ -145,7 +191,16 @@ const AudioApi = {
       try {
         const existing = typeof sound.get === 'function' ? sound.get(key) : null;
         if (existing?.isPlaying && lock >= 0.8) return;
-        sound.play(key, { volume: spec.vol * this.sfxGain(settings), loop: false });
+        const slot = core.voices.acquire(name, CRITICAL_SFX.has(name) ? 2 : 1);
+        if (!slot) return;
+        const inst = sound.add(key, { volume: spec.vol * this.sfxGain(settings), loop: false });
+        const done = () => {
+          slot.release();
+          try { inst.destroy(); } catch { /* ignore */ }
+        };
+        slot.stop = () => { try { inst.stop(); inst.destroy(); } catch { /* ignore */ } };
+        inst.once('complete', done);
+        inst.play();
         return;
       } catch {
         /* fallback */
@@ -169,7 +224,7 @@ const AudioApi = {
       return;
     }
     let bed = this.beds[name];
-    const target = (volume == null ? spec.vol : volume) * this.musicGain(settings);
+    const target = (volume == null ? spec.vol : volume) * this.musicGain(settings) * core.mixer.duck.engine;
     if (bed?.isPlaying || bed?.isPaused) {
       if (bed.isPaused) bed.resume();
       if (typeof bed.setVolume === 'function') bed.setVolume(target);
@@ -278,7 +333,10 @@ const AudioApi = {
     this.ctx = new AC();
     this.master = this.ctx.createGain();
     this.master.gain.value = 0.16;
-    this.master.connect(this.ctx.destination);
+    const graph = core.mixer.connect(this.ctx, this.ctx.destination);
+    // Fallback tones: their own 0.16 trim -> limiter (bus gains already folded into setMute).
+    this.master.connect(graph.limiter);
+    core.lifecycle?.watch();
     if (this.ctx.state === 'suspended') this.ctx.resume();
     this.unlocked = true;
     return true;
