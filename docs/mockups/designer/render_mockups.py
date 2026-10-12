@@ -87,7 +87,7 @@ def phone(name, w, h, top_inset, bot_inset, kid):
     else:
         if h > 800: stacklist(d, 12, y, w-24); y += 196
         stepper(d, 12, y, w-24, "Engine · full-flow methalox (ff-methalox)", "9", "× 2,300 kN SL", "1+8"); y += 60
-        stepper(d, 12, y, w-24, "Nozzle expansion ratio", "34", ":1", "Isp 327 SL / 350 vac"); y += 60
+        stepper(d, 12, y, w-24, "Nozzle (catalog variant)", "Ground bell", "", "pick from list"); y += 60
         if h > 800: stepper(d, 12, y, w-24, "Stage 1 tank length · Ø 5.0 m", "38.5", "m", "propellant 420 t"); y += 60
     R(d, 12, h-bot_inset-58, w-24, 50, (60,66,82), r=12)
     T(d, w/2, h-bot_inset-41, "LAUNCH", 15, DIM, True, "mm"); T(d, w/2, h-bot_inset-22, ("Fix first: too many engines for this width" if kid else "Fix first: engines don't fit under 5.0 m"), 10, WARN, False, "mm")
@@ -119,7 +119,7 @@ def ipad():
     for i,p in enumerate(["single","3-row","ring 7","1+8","3+9+21"]):
         pw = (ww-24-16)/5; R(d, x+12+i*(pw+4), y+32, pw, 48, CYAN if i==3 else PANEL, r=8); T(d, x+12+i*(pw+4)+pw/2, y+56, p, 10.5, NAVY if i==3 else TXT, True, "mm")
     y += 100
-    stepper(d, x, y, ww, "Nozzle expansion ratio", "34", ":1", "327 / 350 s"); y += 60
+    stepper(d, x, y, ww, "Nozzle (catalog variant)", "Ground bell", "", "pick from list"); y += 60
     stepper(d, x, y, ww, "Tank length · Ø 5.0 m", "38.5", "m", "", warn=True); y += 60
     R(d, x, y, ww, 56, (60,40,20), r=10, outline=WARN, width=2); T(d, x+12, y+10, "Engines don't fit (engines-dont-fit)", 11.5, WARN, True); T(d, x+12, y+30, "9 engines need Ø 5.3 m. Try 7, or widen the stage.", 11, TXT)
     R(d, x, h-24-58, ww, 50, (60,66,82), r=12); T(d, x+ww/2, h-24-41, "LAUNCH", 15, DIM, True, "mm"); T(d, x+ww/2, h-24-22, "Fix first: engines don't fit", 10, WARN, False, "mm")

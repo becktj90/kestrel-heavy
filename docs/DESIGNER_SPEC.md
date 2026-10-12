@@ -46,8 +46,8 @@ Columns: parameter · range / step · what it changes in the model · kid defaul
 | Tank | material | al-li / steel / composite (`data/materials.json`) | dry mass, cost | al-li | standard |
 | Engine | type | 15 ids in `data/engines.json`, filtered to propellant | thrust SL/vac, Isp SL/vac, mass | preset | simple (3 picks per stage: small / medium / big) ; full list engineer |
 | Engine | count | 1-40 integer (Shape L272) | thrust, mass, fit check | preset | simple |
-| Engine | cluster pattern | single, 2-row, 3-row, ring of 7 (1+6), 1+8, 3+9 (ring 12), 3+10+20, custom (new) | visual layout + `PlumeCluster.Footprint`; count snaps to pattern sizes | auto from count | standard |
-| Engine | nozzle expansion ratio | new: SL engines 8-40, vac engines 40-300, step 1 (bounded per engine; `nozzle-range` outside, `nozzle-sep` warning >40 on stage 1/boosters) | trades ispSL vs ispVac (and thrustSL); vac nozzles flagged thrustSL 0 | engine default | engineer |
+| Engine | cluster pattern | stored `cluster.pattern`: auto (default), single 1, row2 2, row3 3, ring7 7, r1p8 9, r3p9 12, r3p10p20 33, custom 1-40; count stays in `engineCount` | visual layout + `PlumeCluster.Footprint`; count snaps to pattern sizes | auto from count | standard |
+| Engine | nozzle | new: pick from the engine's catalog `nozzles[]` variants (discrete, no continuous expansion slider in 2.0); default = engine's top-level values; unknown id = `nozzle-unknown` | trades ispSL vs ispVac (and thrustSL); vac nozzles flagged thrustSL 0 | engine default | engineer |
 | Engine | tune thrust% / Isp% | existing `Tune` (Design.cs L10) ranges from Gameplay | thrust, Isp, reliability | 100% | engineer (`showTune`, Experience L55) |
 | Propellant | family | kerolox, methalox, hydrolox, solid (solid-apcp); engineer also sees udmh-nto, mmh-nto, hybrid | density, Isp class, boil-off flavour | kerolox | simple (4), engineer (7) |
 | Boosters | count | 0, 2, 4 (Shape L228) | liftoff thrust, parallel staging | 0 | simple ("Add boosters") |
@@ -56,7 +56,7 @@ Columns: parameter · range / step · what it changes in the model · kid defaul
 | Boosters | crossfeed | bool (liquid only) | prop transfer | off | engineer |
 | Interstage | mass | ≥0 t step 0.1 (existing `interstageMass`) | dry mass | auto | engineer |
 | Interstage | separation mass | ≥0 kg step 10 | staging mass drop | auto | engineer |
-| Interstage | shape | new: straight / flared / tapered (visual + mass) | mass, drag | straight | standard |
+| Interstage | shape | new `interstage.shape` on the upper stage: straight / flared / tapered; mass derived unless `interstageMass` override | mass, drag | straight | standard |
 | Fairing | diameter | 0.3-15 m step 0.1 (must be ≥0.5x top stage, `fairing-narrow`) | volume, mass, drag | top-stage width | simple ("Nose size") |
 | Fairing | length | 1-40 m step 0.1 | volume (π r² L 0.6, Geometry L318), mass | fits payload | standard |
 | Fairing | material | al-li / steel / composite | mass (`heavy-fairing`) | composite | standard |
@@ -96,7 +96,7 @@ Clustering snaps: picking a pattern sets count; changing count with +/- moves to
 | Cost | `cost`, `CostModel.FormatKc` | ✓ | ✓ | ✓ + category split (`CostModel.CATEGORIES`) | kc (fictional credits) |
 | Reliability | `reliability` | — | ✓ | ✓ | % |
 
-- Δv uses Tsiolkovsky per stage, Isp interpolated sea level -> vacuum for stage 1 / boosters and vacuum for upper stages (as `Headless.StackDeltaV`). Max-Q is an estimate from a fixed reference ascent, labelled "≈".
+- Δv uses Tsiolkovsky per stage with **vacuum Isp for every stage** today (`Headless.StackDeltaV`, Headless.cs L62-75). Readout v2 adds `deltaVSL_mps` (sea-level Isp) beside it for stages that light on the pad only; nothing else changes. Losses stay the flat `LOSS_BUDGET` 1500 m/s. Max-Q comes from a cached reference ascent (not a formula), labelled "≈" while `maxQStale` is true.
 - **Latency:** quick numbers (Δv, TWR, mass, cost, CG/CP) update the same frame as the edit (≤16 ms on SE). Max-Q and real losses (need a sim) are debounced 300 ms after the last edit like web `SIM_DEBOUNCE_MS` (ui.js L22), never run on the drag frame, run off the main thread or chunked ≤2 ms/frame, cached by design hash, and show "≈ …" while stale. Quick path budget ≤0.5 ms p95 on the lowest-tier iPhone (estimated, not measured; Gameplay adds a `dotnet` benchmark). Designer logic ≤1 ms per 16.6 ms frame.
 - **Honest physics note** (shown under the readout in engineer, in the Codex for kids): "Numbers come from the same model as flight. Max-Q is an estimate from a standard climb. Costs are fictional credits."
 
@@ -119,24 +119,24 @@ Every edit calls `Validate.Engineering(catalog, designJson)` then `Experience.Pr
 - **Summary chip** top-left under Home: kid "1 thing to fix" / engineer "1 block · 2 warnings". Tap lists all issues; tap an issue jumps to its tab and part.
 - **Launch:** disabled while `report.ok == false`, with the first shown block under the button ("Fix first: …"). Warnings never disable Launch.
 
-Kid wording (simple and standard; engineer shows the exact `msg` and the code; full table with exact messages in §11.3, proposed codes in §11.4):
+**All warnings are hidden in simple** (`Experience.Present`), so every Warn row below is standard-only. Kid wording (blocks: simple and standard; engineer shows the exact `msg` and the code; full table with exact messages in §11.3, proposed codes in §11.4):
 
 | code | tab | Block/Warn | Kid wording |
 |---|---|---|---|
-| zero-engines | engines | Block | "One stage has no engines. Give it at least one." |
-| zero-propellant | propellants | Block | "One stage has no fuel. Add some fuel." |
+| zero-engines | engines | Block | "A stage or booster has no engines. Give it at least one." |
+| zero-propellant | propellants | Block | "A stage or booster has no fuel. Add some fuel." |
 | schema | stages | Block | `Experience.KidSchema` (existing) |
 | math | stages | Block | "We couldn't work this rocket out. Try Make it fly." |
 | twr-low | engines | Block | "Too heavy to lift off. Add engines to the bottom stage or use less fuel." |
 | engines-dont-fit | stages/strapons | Block | "Too many engines for this width. Use fewer or make it wider." |
-| top-heavy | stages | Block | "The top is much wider than the bottom. Make it narrower." |
+| top-heavy | stages | Block | "One stage is much wider than the one under it. Make it narrower." |
 | fairing-narrow | payload | Block | "The nose is too thin for the stage under it. Make it as wide as the stage." |
 | payload-doesnt-fit | payload | Block | "The cargo doesn't fit in the nose. Make the nose longer or wider." |
-| twr-marginal | engines | Warn | hidden in simple (Present L52); standard: "Slow off the pad. A bit more push helps." |
-| weak-upper | engines | Warn | "An upper stage pushes gently. A stronger engine or lighter load helps." |
+| twr-marginal | engines | Warn | "Slow off the pad. A bit more push helps." |
+| weak-upper | engines | Warn | "One of the upper stages pushes gently. A stronger engine helps." |
 | weak-upper-dv | propellants | Warn | "The top stage does little work. Give it more fuel." |
-| dv-margin | propellants | Warn | "Not quite enough speed for this trip (or only just enough). More fuel or a lighter cargo." |
-| landing-hardware | recovery | Warn | "Saved landing fuel but no legs or grid fins. Add both, or skip landing." |
+| dv-margin | propellants | Warn | short (margin < 0): "Not quite enough speed for this trip. More fuel or a lighter cargo." · thin (0-5%): "You'll just make it. A little more fuel gives room to spare." |
+| landing-hardware | recovery | Warn | "Saved landing fuel but no landing legs or grid fins. Add both, or skip landing." |
 | heavy-fairing | payload | Warn | "The nose weighs more than the cargo. Try a lighter nose." |
 
 Note: `Issue.tab` values are web tab ids (`engines`, `propellants`, `stages`, `strapons`, `payload`, `recovery`). The Unity tab set below maps them: engines→Engines, propellants→Tanks, stages→Stack, strapons→Boosters, payload→Fairing/Payload, recovery→Recovery.
@@ -220,7 +220,7 @@ Files: UX owns `Resources/UI/Designer/**` (new UXML/USS) and `Kestrel.Slice/Runt
 | PR | Owner | Scope | Acceptance | Depends on |
 |---|---|---|---|---|
 | U1 | UX | Wire validation: call `Validate.Engineering` + `Experience.Present` from SliceApp; summary chip; Launch disabled + reason; kid wording table as `Experience` strings | `twr-low` preset disables Launch with kid text; goldens unchanged; EditMode test for wording map | — |
-| G1 | Gameplay | Readout v2 in Core: per-stage mass, CG, CP, stability margin, max-Q estimate; goldens in `data/golden/designer-readout*.json` | C# matches JS goldens to 1e-9; max-Q ≤ 1 ms on a 5-stage design | — |
+| G1 | Gameplay | Readout v2 in Core: per-stage mass, CG, CP, stability margin, max-Q estimate; goldens in `data/golden/designer-readout*.json` | additive fields only, existing goldens unchanged; quick path ≤0.5 ms p95 on SE-class, reference ascent ≤30 ms off-frame (dotnet benchmark); epsilons per §13 | — |
 | U2 | UX | New panel shell: readout strip (layered), tabs, stack list, stepper component (44 pt, long-press repeat, VO adjustable) | SE: Launch, handle and 3 rows visible at 50% detent; AX3 doesn't clip | U1 |
 | U3 | UX | Parameter rows for existing fields (stages, tanks, engines, propellant, boosters, fairing, payload, recovery, avionics, safety) | every `Design.cs` field editable at its layer; Shape errors impossible from UI | U2 |
 | G2 | Gameplay | Data: cluster patterns, nozzle expansion model, interstage shape, KH-n display names, preset set Hopper/Workhorse/Heavy/Lander, design `version` bump + `DesignMigration` | migration golden passes; old saves load | G1 |
@@ -347,40 +347,39 @@ All Geometry codes join `blocks` (verified in `Validate.Engineering`: `blocks.Ad
 
 | code | tab | Kind | Engineer `msg` (exact, `Validate.cs`) | Kid wording (simple/standard) |
 |---|---|---|---|---|
-| `zero-engines` | engines | Block | "Every stage needs at least one engine. Try adding one." | "One stage has no engines. Give it at least one." |
-| `zero-propellant` | propellants | Block | "A stage has no propellant. Try loading some fuel." | "One stage has no fuel. Add some fuel." |
+| `zero-engines` | engines | Block | "Every stage needs at least one engine. Try adding one." | "A stage or booster has no engines. Give it at least one." |
+| `zero-propellant` | propellants | Block | "A stage has no propellant. Try loading some fuel." | "A stage or booster has no fuel. Add some fuel." |
 | `schema` | stages | Block | "raw `Shape()` strings (e.g. `Stage 1.engineCount: integer 1–40`)" | `Experience.KidSchema`: "Some of these numbers are outside what the shop can build. Try Make it fly, or turn on Engineer in Settings to see the details." |
 | `math` | stages | Block | "Couldn't compute this design (…)." | "We couldn't work this rocket out. Try Make it fly." |
 | `twr-low` | engines | Block | "Liftoff thrust-to-weight is {x}; it must be above 1 to leave the pad. Try more first-stage engines or less propellant." | "Too heavy to lift off. Add engines to the bottom stage or use less fuel." |
 | `engines-dont-fit` | stages / strapons | Block | "{where}: {n} engines don't fit under a {D} m body. Try fewer engines or a wider stage." | "Too many engines for this width. Use fewer or make it wider." |
-| `top-heavy` | stages | Block | "{where} is much wider than the stage below it. Try a diameter under {x} m." | "The top is much wider than the bottom. Make it narrower." |
+| `top-heavy` | stages | Block | "{where} is much wider than the stage below it. Try a diameter under {x} m." | "One stage is much wider than the one under it. Make it narrower." |
 | `fairing-narrow` | payload | Block | "The fairing is narrower than half the top stage. Try a fairing at least as wide as the stage." | "The nose is too thin for the stage under it. Make it as wide as the stage." |
 | `payload-doesnt-fit` | payload | Block | "The {payload} needs about {v} m³; this fairing holds {v} m³. Try a longer or wider fairing." | "The cargo doesn't fit in the nose. Make the nose longer or wider." |
 | `twr-marginal` | engines | Warn | "Liftoff TWR {x} is slow off the pad (lots of gravity loss). Aim for 1.25 or more." | "Slow off the pad. A bit more push helps." |
-| `weak-upper` | engines | Warn | "{stage} pushes at only {x} g. A stronger engine or lighter load would help it reach orbit." | "An upper stage pushes gently. A stronger engine or lighter load helps." |
+| `weak-upper` | engines | Warn | "{stage} pushes at only {x} g. A stronger engine or lighter load would help it reach orbit." | "One of the upper stages pushes gently. A stronger engine helps." |
 | `weak-upper-dv` | propellants | Warn | "The top stage does little of the work. More upper-stage propellant usually pays off." | "The top stage does little work. Give it more fuel." |
-| `dv-margin` | propellants | Warn | "About {x} m/s short of {orbit}. … / Only {x}% Δv margin for {orbit}. …" | "Not quite enough speed for this trip (or only just enough). More fuel or a lighter cargo." |
-| `landing-hardware` | recovery | Warn | "Landing fuel is reserved but legs or grid fins are missing. Add them, or set the landing reserve to 0." | "Saved landing fuel but no legs or grid fins. Add both, or skip landing." |
+| `dv-margin` | propellants | Warn | "About {x} m/s short of {orbit}. Try more propellant, a lighter payload, or a higher-Isp upper stage." / "Only {x}% Δv margin for {orbit}. A little more propellant gives breathing room." | short: "Not quite enough speed for this trip. More fuel or a lighter cargo." · thin: "You'll just make it. A little more fuel gives room to spare." |
+| `landing-hardware` | recovery | Warn | "Landing fuel is reserved but legs or grid fins are missing. Add them, or set the landing reserve to 0." | "Saved landing fuel but no landing legs or grid fins. Add both, or skip landing." |
 | `heavy-fairing` | payload | Warn | "The fairing ({x} t) outweighs the payload. A composite or shorter fairing saves mass." | "The nose weighs more than the cargo. Try a lighter nose." |
 
-### 11.4 Proposed new rules (Gameplay; not in Core yet)
-Engineer `msg` for each is Gameplay's to write when the rule lands (format: number + fix, like the existing ones). Kid wording below is final from UX.
+### 11.4 New validation codes (Gameplay, firm: 12 codes, `/workspace/ux-142-answers.md` §8)
+Replaces Gameplay's earlier 13-rule proposal (`stability-low/high`, `too-skinny`, `nozzle-sep/-range`, `fins-on-upper`, `boiloff` are dropped or folded in). New tab id `aero` maps to the Stack tab in UX. `maxq-high` and `payload-g` come from the reference ascent: shown only when `maxQStale` is false, and they never block Launch while stale. Kid wording edits by UX (no "cracks", "stall" or "quits") keep the meaning.
 
-| code | tab | Kind | Trigger | Kid wording |
+| code | tab | Kind | Kid wording (standard; blocks also simple) | Engineer `msg` |
 |---|---|---|---|---|
-| `stability-low` | stages | Block | margin < 0.5 cal at max-Q | "Your rocket would wobble and flip! Add fins or move heavy parts higher." |
-| `stability-high` | stages | Warn | margin > 4 cal | "Very steady, maybe too steady. It'll be hard to steer." |
-| `too-skinny` | stages | Warn (Block > 25) | stack L/D > 20 | "That rocket is super skinny and might bend. Try making it wider." |
-| `maxq-high` | engines | Warn | max-Q > 45 kPa (Physics sign-off pending) | "The air pushes really hard on this rocket. Try a pointy nose or less thrust low down." |
-| `payload-g` | payload | Warn (Block if crewed) | sim peak g > payload maxG | "Too bumpy for your {payload}! Try gentler engines on the last stage." |
-| `nozzle-sep` | engines | Warn | stage-1 / strap-on expansion ratio > 40 | "That big bell works best in space, not near the ground. Use it on an upper stage." |
-| `nozzle-range` | engines | Block (schema) | expansion ratio outside allowed range | "That nozzle size can't be built in the shop." |
-| `cryo-composite` | propellants | Warn | composite + hydrolox | "Super-cold fuel can crack these tanks. Pick metal tanks or add a liner." |
-| `vac-engine-pad` | engines | Block | stage-1 engine thrustSL = 0 | "This engine only works in space. Pick a ground engine for the bottom stage." |
-| `rcs-for-landing` | recovery | Warn | landing reserve > 0 and no RCS | "To land, your booster needs little steering jets." |
-| `fins-on-upper` | stages | Warn | fins on a part with no atmosphere use [new part] | "Fins don't help up in space. They only add weight." |
-| `engine-out` | engines | Info (Engineer only) | count ≥ 3 and TWR with n−1 engines < 1 | "If one engine stops, you'd sink back down. Add one more for backup." |
-| `boiloff` | propellants | Info (Engineer only) | hydrolox upper + coast > boil-off budget | "Your super-cold fuel boils away on long trips." |
+| `unstable` | aero → Stack | Block if stabilityCal < 0; Warn 0-1 | "Your rocket would flip over! Add fins or put heavy parts higher." | "Stability margin {x} cal (CP above CG). Aim for 1–2 cal." |
+| `overstable` | aero → Stack | Warn (> 4 cal) | "Very steady, maybe too steady to steer well." | "Stability margin {x} cal > 4; weathercocks in wind." |
+| `cluster-count` | engines | Block | "That engine pattern needs a different number of engines." | "Pattern {p} takes {n} engines; stage has {m}." |
+| `cluster-overhang` | engines | Warn | "The engines stick out past the edge. Make the stage a bit wider." | "Pattern {p} needs D ≥ {x} m; stage is {D} m." |
+| `vac-engine-pad` | engines | Block | "This engine only works in space. Use a ground engine on the bottom." | "{engine} has zero sea-level thrust on a stage that lights at liftoff." |
+| `nozzle-unknown` | engines | Block (schema) | "That nozzle isn't in the shop." | "nozzle {id} not in {engine}.nozzles." |
+| `interstage-shape` | stages | Warn | "The joint between stages doesn't match their sizes." | "Interstage {shape} with D {a}→{b} m." |
+| `maxq-high` | aero → Stack | Warn (reference ascent) | "The air pushes really hard on this rocket. Try a pointy nose or less push low down." | "Max-Q {x} kPa > {limit} kPa [Physics: limit]." |
+| `payload-g` | payload | Warn; Block if crewed (reference ascent) | "Too bumpy for your {KH-n}! Use gentler engines on the top stage." | "Peak {g} g > payload maxG {max}." |
+| `cryo-composite` | propellants | Warn | "Super-cold fuel can crack these tanks. Pick metal tanks." | "composite + hydrolox: cryoOK false (materials.json)." |
+| `rcs-for-landing` | recovery | Warn | "To land, your booster needs little steering jets." | "Landing reserve set but landing.rcs is false." |
+| `engine-out` | engines | Warn (Engineer only) | "If one engine stops, you'd sink back down. Add a spare." | "Liftoff TWR with n−1 engines is {x} < 1." |
 
 ### 11.5 Core audit (exists / partial / missing)
 | Capability | Status | Where |
@@ -406,16 +405,35 @@ Engineer `msg` for each is Gameplay's to write when the rule lands (format: numb
 | Design migration | Exists | `Save/DesignMigration.cs` |
 | Templates file | Missing / not found | – |
 
+## 13. Gameplay firm answers to §10 (folded in)
+
+Source: `/workspace/ux-142-answers.md` (Gameplay, main @ `db80a48`). These supersede the §10 questions and §11.1a estimates where they differ. **[Physics]** items need Kestrel Physics sign-off.
+1. **Readout v2 is additive** (`QuickReadout`/`StageReadout`; existing fields and goldens unchanged): `stages[i].dryMass_kg`, `stages[i].propMass_kg`, `stages[i].deltaVSL_mps` (pad-lit stages only, else null), `cg_m`, `cp_m` (from vehicle base, positive up), `stabilityCal` = (cg−cp)/refDiameter (positive = stable), `maxQ_kPa`, `maxQAlt_m` (nullable), `maxQStale` (bool). Max-Q comes from `Readout.Reference` (existing `Stack.SimInputs` → `Headless`), cached by design-JSON hash, run 300 ms after the last committed edit, off the main thread or ≤2 ms/frame chunks. **UI: a "max-Q stale" state** shows "≈ …" in the readout cell (no spinner, no flashing) while it reruns. Budgets: instant readout ≤0.5 ms p95 (SE-class), reference ascent ≤30 ms off-frame; both unmeasured until the G1 benchmark.
+2. **Cluster:** `stage.cluster: {{ pattern }}` stored (strap-ons too); count stays `engineCount`; absent = `auto`. Mismatch = `cluster-count` block; pattern wider than stage = `cluster-overhang` warn; `engines-dont-fit` stays the only hard fit rule. Steppers jump between pattern counts (1, 2, 3, 7, 9, 12, 33); `custom` 1-40.
+3. **Nozzle:** separate SL and vac engine ids stay, plus optional `nozzles[]` catalog variants per engine (`id, expansionRatio, ispSL, ispVac, thrustSL, thrustVac, mass, exitDiameter`). **No continuous expansion slider in 2.0**; the engineer control is a discrete picker (mockups updated: "Nozzle (catalog variant) · Ground bell"). Kid names: "ground bell" / "space bell".
+4. **Interstage:** `stage.interstage: {{ shape }}` on the upper stage; mass derived (areal density × frustum, length 0.5·D_lower) unless `interstageMass` is set (Engineer override). Flared/tapered +0.02 Cd **[Physics]**.
+5. **Payload names:** `displayName` (KH-1…KH-5, KH-K) in `data/payloads.json`; UI strings only hold localised descriptions keyed by id.
+6. **Design v2** with a v1→v2 `DesignMigration` step (auto / straight / default nozzle; no mass changes) and goldens `design-migration.json`, `designer-readout.json`, extended `designer-validate.json`. Existing goldens must not change. Epsilons **[Physics]**: masses and `deltaVSL_mps` rel 1e-12; CG/CP abs 1e-9 m vs external literals; `stabilityCal` abs 1e-9; max-Q rel 1e-9 C# vs JS plus a 25-40 kPa sanity band.
+7. **Limits:** every range, step, enum and threshold lives in `data/designer-limits.json`, read by UI and `Validate` (moves the `designer` block out of params.json except `designer.layers`). Not enforced by Core today, becoming `Shape` checks: fairing length 1-40 m, payload mass 50 kg-100 t, landing reserve 0-30 %.
+8. **12 new codes:** §11.4. Core bug noted: `weak-upper` `index` is the serial readout index, not `designIndex`; Gameplay fixes it in G1 (until then UX rings the stage list, not a specific part, for `weak-upper`).
+
+## 14. Art and camera notes
+
+- Kestrel Art confirmed the `data/finishes.json` and `data/liveries.json` schemas in §10 Art Q1-Q2 (liveries: no price, no expiry, no random fields).
+- Branding glyphs (12) and frames (6) are authored as SVG and rasterised at build time.
+- Trademark sign-off for branding and liveries goes to Chief of Staff; Trevor has the final say.
+- The Hangar Reveal camera (Art, U8 reveal) and the designer camera (R1, cloud agent) must share framing constants (`DesignFraming` margin, min visible fraction, tower margin); no second copy.
+
 ## 12. Answers to Gameplay
 
 1. **Where is the spec?** This file, `docs/DESIGNER_SPEC.md`, PR #142 (branch `ux/designer-spec`). Edit by PR comment or a follow-up PR into `Kestrel.Core`-owned sections only.
 2. **Tank editing:** edit **propellant mass**; length stays derived by `SizeTank` and is shown read-only (standard+). In simple, dragging the tank taller/shorter maps to propMass steps. No length-first editing in 2.0; keep `tankLength` derived/readonly.
 3. **Simple numbers:** gauges first, plus exactly three short numbers with words: liftoff push ("1.4 × weight"), speed budget bar with "% of the way", and price tag. No kPa, calibres or Isp in simple.
 4. **CG/CP markers:** simple gets the wobbly/steady icon only; standard shows CG/CP markers on the rocket when the Stack tab is open; engineer always shows markers plus liftoff and burnout positions. Markers are static (no pulse) under Reduce Motion / Reduce Flashing.
-5. **Sim values:** 300 ms debounce (match web `SIM_DEBOUNCE_MS`, not 250) with "≈" while stale; no mandatory Test-fly button. Engineer gets an optional "Run full sim" button for a forced refresh.
+5. **Sim values:** 300 ms debounce (match web `SIM_DEBOUNCE_MS`, not 250) with "≈" while `maxQStale`; no mandatory Test-fly button. Engineer gets an optional "Run full sim" button for a forced refresh.
 6. **Display names:** UX owns the strings. Engines in simple: Small / Medium / Big per propellant; engineer names are fictional "KX-" series (e.g. KX-Hopper, KX-Torch, KX-Vac); propellants use generic chemical names (Kerosene + LOX, Methane + LOX, Hydrogen + LOX, Solid). No real trademarks. Gameplay adds a `label` field so UI never hardcodes ids.
 7. **Make it fly explanations:** yes. Show the `changes` list after the fix, one plain line each in kid wording in simple/standard ("Added 2 engines to the bottom stage"), and the raw text in engineer. One "Undo Make it fly" step restores the previous design (counts as one undo step).
-8. **Warnings in simple:** keep them out of the chip and never block, but show **one** friendly hint line under the readout (the first warning's kid wording) with no badge or colour pressure. This needs a small `Present` change (`hint` field) — Gameplay's call; until then simple shows none.
+8. **Warnings in simple:** hidden, as `Experience.Present` does today. Simple shows blocks only; standard and engineer show warnings. (A single friendly hint in simple may be revisited post-2.0.)
 9. **Version bump:** yes. New parts (fin count/span, RCS propellant, nozzle override, cluster pattern, interstage shape) bump the design to `version: 2` through `DesignMigration` with a golden; v1 saves load with defaults that reproduce today's numbers exactly.
 
 ## No dark patterns
