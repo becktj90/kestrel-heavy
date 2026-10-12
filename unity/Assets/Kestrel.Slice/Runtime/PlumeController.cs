@@ -1,22 +1,48 @@
-// Simple physically-driven plume: one ParticleSystem per vehicle base. Length scales with thrust
-// fraction; width / cone angle follow the under-/over-expansion ratio p_exit / p_ambient, so the
-// plume is a tight column at sea level and balloons as ambient pressure falls with altitude.
-// Shock-diamond banding appears only while the jet is over-expanded (p_ambient > p_exit).
+// Plume per VISUAL_SPEC §3: bright white-yellow core at the nozzle, a body that lengthens with throttle and
+// widens as ambient pressure drops (x = pd / pa), shock diamonds while over-expanded at low altitude, and a
+// liftoff ground cloud of smoke/steam that spreads across the pad and dies off once the vehicle clears the tower.
+//
+// Root cause of the "thin string of orange blobs" (main b514d53): one emitter with a 4 deg cone, 0.35-0.5 s life
+// and startSize ~1.2 D (old PlumeController.cs:188,198-201,221), tinted orange by BOTH startColor (1,.75,.4) and
+// the white->orange gradient (old :188,:203), so there was no white core; width used sqrt(70 kPa / pa) clamped
+// >= 0.6 (old :219) so at sea level it was narrower than the nozzle; and there was no ground cloud at all.
+// Particle counts are capped by the active quality preset's particleBudget (data/quality.json).
 using UnityEngine;
 
 namespace Kestrel.Slice
 {
     public sealed class PlumeController : MonoBehaviour
     {
-        public float ExitDiameter = 1f;      // m, from the engine catalog via RocketMeshBuilder
-        public float ExitPressure = 70000f;  // Pa, nominal first-stage nozzle exit pressure (sea-level optimised ~0.7 bar)
-        ParticleSystem core, diamonds;
+        public float ExitDiameter = 1f;      // m, cluster-equivalent exit diameter (RocketMeshBuilder)
+        public float DesignPressure = PlumeShape.DefaultPd;
+        public float ExitPressure = 70000f;  // kept for callers; regime now uses DesignPressure (VISUAL_SPEC §3.1)
+        public PlumeBudget Budget { get; private set; }
+        /// <summary>Time source for the ignition clock (the batch-mode probe steps it manually).</summary>
+        public System.Func<float> Clock = () => Time.time;
+        ParticleSystem core, body, diamonds, cloud;
+        float heightAboveDeck, towerHeight = 80f, vehicleHeight = 70f, vehicleRadius = 4f, deckRadius = 15f;
+        float bodyFadeIn = -1f, coreFadeIn = -1f; int builtLevel = -1; float ignitionTime = -1f; Material mat, coreMat, cloudMat;
+
+        /// <summary>Vehicle dimensions so the plume scales with what the camera frames, not the nozzle alone.</summary>
+        public void Configure(float height, float radius) { vehicleHeight = Mathf.Max(5f, height); vehicleRadius = Mathf.Max(0.5f, radius); }
 
         /// <summary>Collide plume particles with the pad deck plane (top of deck, normal +Y) so the jet deflects
         /// along the deck instead of tunnelling through it. Planes-mode collision: no physics scene, O(planes) per particle.</summary>
         public void SetDeck(Transform deckTop)
         {
             foreach (var ps in new[] { core, diamonds }) if (ps != null) ConfigureDeckCollision(ps, deckTop);
+            // v5 root cause D: body particles tunnelled through the deck and kept travelling ~Length (200 m) under
+            // it. Billboards are camera-facing, so the upper half of every sprite just under the deck rim projected
+            // ABOVE the deck/horizon, where only sky/far ground is behind it, and passed the depth test: the
+            // "white glow" over the deck. Deflecting them instead (tried in the v5 reference render) makes an
+            // orange wall across the frame. #129 probe: killing them (lifetimeLoss 1) left 0/208 live on the pad.
+            // Now they deflect sideways with low bounce and lose half their life on contact, so the spray is short
+            // and already in the faded tail of the colour gradient.
+            if (body != null)
+            {
+                ConfigureDeckCollision(body, deckTop); var bc = body.collision;
+                if (bc.enabled) { bc.bounce = PlumeShape.BodyDeckBounce; bc.dampen = PlumeShape.BodyDeckDampen; bc.lifetimeLoss = PlumeShape.BodyDeckLifetimeLoss; bc.radiusScale = PlumeShape.BodyDeckRadiusScale; }
+            }
         }
 
         public static void ConfigureDeckCollision(ParticleSystem ps, Transform deckTop)
@@ -36,48 +62,200 @@ namespace Kestrel.Slice
             var go = new GameObject("Plume"); go.transform.SetParent(parent, false); go.transform.localPosition = localPos;
             go.transform.localRotation = Quaternion.Euler(90, 0, 0); // emit along -Y (down the vehicle axis)
             var pc = go.AddComponent<PlumeController>(); pc.ExitDiameter = exitDiameter;
-            mat = SoftParticle.PlumeMaterial(mat); // soft round sprite; untextured quads were the blocky edge
-            pc.core = Make(go.transform, "Core", mat, new Color(1f, 0.75f, 0.4f, 0.9f), 400);
-            pc.diamonds = Make(go.transform, "Diamonds", mat, new Color(1f, 0.95f, 0.85f, 1f), 60);
+            pc.mat = SoftParticle.PlumeMaterial(mat);
+            pc.coreMat = SoftParticle.CoreMaterial(mat, QualitySettings.GetQualityLevel() >= 2);
+            pc.cloudMat = SoftParticle.CloudMaterial(mat);
+            pc.Build(QualitySettings.GetQualityLevel());
+            if (PlumeDebugProbe.RequestedOnCommandLine()) go.AddComponent<PlumeDebugProbe>();
             return pc;
         }
 
-        static ParticleSystem Make(Transform parent, string name, Material mat, Color col, int rate)
+        void Build(int level)
+        {
+            builtLevel = level;
+            Budget = PlumeShape.Split(PlumeShape.BudgetForLevel(level), level > 0);
+            if (core == null)
+            {
+                core = Make(transform, "Core", coreMat != null ? coreMat : mat, 0.12f);
+                body = Make(transform, "Body", mat, 0.45f);
+                diamonds = Make(transform, "Diamonds", mat, 0.3f);
+                // Core: white -> yellow -> orange, low alpha (additive; must not stack to flat white).
+                Grad(core, (Color.white, 0), (PlumeShape.Core, 0.35f), (PlumeShape.Mid, 1), PlumeShape.CoreAlphaMax, 0.3f, 0f);
+                // Body: yellow at the nozzle -> orange -> transparent red-orange tail.
+                Grad(body, (PlumeShape.BodyHead, 0), (PlumeShape.Mid, 0.3f), (PlumeShape.Tail, 1), 0.9f, 0.6f, 0f);
+                // #129: 7 m white alpha-1 knots running ~100 m down the axis read as detached white blobs under the centre engines.
+                Grad(diamonds, (PlumeShape.Core, 0), (PlumeShape.BodyHead, 0.5f), (PlumeShape.Mid, 1), 0.35f, 0.25f, 0f);
+                var bs = body.sizeOverLifetime; bs.enabled = true; bs.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0, PlumeShape.BodySizeStart), new Keyframe(PlumeShape.BodyFullAt, 1f), new Keyframe(1, PlumeShape.ComputeLayout(1f, 1f, 1f, 1f, 10f, 10f).BodyGrow)));
+                var cs = core.sizeOverLifetime; cs.enabled = true; cs.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0, PlumeShape.CoreSizeStart), new Keyframe(PlumeShape.CoreFullAt, 1f), new Keyframe(1, PlumeShape.CoreSizeOverLife)));
+            }
+            Cap(core, Budget.Core); Cap(body, Budget.Body); Cap(diamonds, Budget.Diamonds); if (cloud != null) Cap(cloud, Budget.Cloud);
+        }
+
+        /// <summary>Ground cloud parented to the pad root (pad origin on the deck, anchored by FlightDriver) so it
+        /// stays on the pad while the vehicle climbs.</summary>
+        public void AttachGroundCloud(Transform padRoot, float deckR, float towerH)
+        {
+            towerHeight = towerH; deckRadius = Mathf.Max(5f, deckR);
+            var L = PlumeShape.ComputeLayout(1f, 1f, ExitDiameter, vehicleRadius, vehicleHeight, deckRadius);
+            if (cloud != null) Destroy(cloud.gameObject);
+            var stale = padRoot.Find("GroundCloud"); if (stale != null) Destroy(stale.gameObject); // from a previous design
+            var go = new GameObject("GroundCloud"); go.transform.SetParent(padRoot, false);
+            go.transform.localPosition = new Vector3(0, L.CloudHeight, 0); go.transform.localRotation = Quaternion.Euler(-90, 0, 0); // circle in XZ
+            cloud = go.AddComponent<ParticleSystem>();
+            cloud.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var m = cloud.main; m.loop = true; m.playOnAwake = false; m.simulationSpace = ParticleSystemSimulationSpace.Local;
+            m.startLifetime = new ParticleSystem.MinMaxCurve(PlumeShape.CloudLifeMin, PlumeShape.CloudLifeMax); m.startSpeed = new ParticleSystem.MinMaxCurve(L.CloudRadius * 0.35f, L.CloudRadius * 0.8f);
+            m.startSize = new ParticleSystem.MinMaxCurve(L.CloudSizeMin, L.CloudSizeMax);
+            m.startRotation = new ParticleSystem.MinMaxCurve(0, Mathf.PI * 2); m.startColor = new ParticleSystem.MinMaxGradient(PlumeShape.Smoke, PlumeShape.Steam);
+            var sh = cloud.shape; sh.shapeType = ParticleSystemShapeType.Circle; sh.radius = L.CloudSpawnRadius; sh.radiusThickness = 0f; sh.arc = 360f;   // deck edge, outside the engine clear zone
+            // Billow: slow down along the deck, rise, and grow (radial spread to ~deck radius and beyond).
+            ConfigureCloudVelocity(cloud, L.CloudRadius);
+            var so = cloud.sizeOverLifetime; so.enabled = true; so.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, L.CloudSizeStart, 1, PlumeShape.CloudGrowEnd));
+            var rot = cloud.rotationOverLifetime; rot.enabled = true; rot.z = new ParticleSystem.MinMaxCurve(-0.3f, 0.3f);
+            var g = new Gradient(); g.SetKeys(new[] { new GradientColorKey(new Color(1f, 0.85f, 0.6f), 0), new GradientColorKey(Color.white, 0.15f), new GradientColorKey(new Color(0.85f, 0.85f, 0.85f), 1) },
+                                             System.Array.ConvertAll(PlumeShape.CloudAlphaKeys, k => new GradientAlphaKey(k.y, k.x)));
+            var col = cloud.colorOverLifetime; col.enabled = true; col.color = g;
+            var r = go.GetComponent<ParticleSystemRenderer>(); var cmat = cloudMat != null ? cloudMat : mat; if (cmat != null) r.sharedMaterial = cmat;
+            r.renderMode = ParticleSystemRenderMode.Billboard; r.sortMode = ParticleSystemSortMode.Distance; r.maxParticleSize = 4f; r.minParticleSize = 0f;
+            Cap(cloud, Budget.Cloud);
+            var em = cloud.emission; em.enabled = false;
+            cloud.Play();
+        }
+
+        /// <summary>Every emitter (core, body, diamonds, ground cloud) for PlumeDebugProbe.</summary>
+        public ParticleSystem[] Emitters => new[] { core, body, diamonds, cloud };
+        public ParticleSystem Body => body;
+        /// <summary>Cluster footprint (m) the layout was built from.</summary>
+        public float ClusterDiameter => ExitDiameter;
+
+        void OnDestroy() { if (cloud != null) Destroy(cloud.gameObject); }
+
+        /// <summary>Nozzle height above the deck top (m); drives the ground cloud fall-off.</summary>
+        public void SetHeightAboveDeck(float h) => heightAboveDeck = h;
+
+        static ParticleSystem Make(Transform parent, string name, Material mat, float sizeJitter)
         {
             var go = new GameObject(name); go.transform.SetParent(parent, false);
             var ps = go.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            var main = ps.main; main.loop = true; main.startLifetime = 0.35f; main.startSpeed = 60f; main.startSize = 2f;
-            main.startColor = col; main.simulationSpace = ParticleSystemSimulationSpace.Local; main.maxParticles = 2000; main.playOnAwake = false;
-            var em = ps.emission; em.rateOverTime = rate;
-            var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Cone; sh.angle = 4f; sh.radius = 0.5f;
-            var col2 = ps.colorOverLifetime; col2.enabled = true;
-            var g = new Gradient(); g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(new Color(1f, 0.5f, 0.2f), 1) }, new[] { new GradientAlphaKey(0.85f, 0), new GradientAlphaKey(0.55f, 0.4f), new GradientAlphaKey(0, 1) });
-            col2.color = g;
-            var sz = ps.sizeOverLifetime; sz.enabled = true; sz.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 0.6f, 1, 1.6f));
+            var main = ps.main; main.loop = true; main.startLifetime = 0.3f; main.startSpeed = 60f; main.startSize = 2f;
+            main.startColor = Color.white; main.simulationSpace = ParticleSystemSimulationSpace.Local; main.playOnAwake = false;
+            main.startRotation = new ParticleSystem.MinMaxCurve(0, Mathf.PI * 2);
+            var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Cone; sh.angle = 4f; sh.radius = 0.5f; sh.randomDirectionAmount = 0.02f;
             var r = go.GetComponent<ParticleSystemRenderer>(); if (mat != null) r.sharedMaterial = mat;
             r.renderMode = ParticleSystemRenderMode.Billboard; r.sortMode = ParticleSystemSortMode.YoungestInFront;
-            r.maxParticleSize = 2f; // allow the ballooning altitude plume past the 0.5-of-screen default cap
+            r.maxParticleSize = 2f;
             ps.Play();
             return ps;
+        }
+
+        /// <summary>Body colour/alpha over life with an alpha fade-in to u = fadeIn (see Apply).</summary>
+        public static void BodyGradient(ParticleSystem ps, float fadeIn)
+        {
+            fadeIn = Mathf.Clamp(fadeIn, 0f, 0.35f);
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(PlumeShape.BodyHead, 0), new GradientColorKey(PlumeShape.Mid, 0.3f), new GradientColorKey(PlumeShape.Tail, 1) },
+                      new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.9f, Mathf.Max(0.001f, fadeIn)), new GradientAlphaKey(0.6f, 0.4f), new GradientAlphaKey(0f, 1f) });
+            var col = ps.colorOverLifetime; col.enabled = true; col.color = g;
+        }
+
+        static void Grad(ParticleSystem ps, (Color c, float t) a, (Color c, float t) b, (Color c, float t) c, float a0, float a1, float a2)
+        {
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(a.c, a.t), new GradientColorKey(b.c, b.t), new GradientColorKey(c.c, c.t) },
+                      new[] { new GradientAlphaKey(a0, 0), new GradientAlphaKey(a1, 0.4f), new GradientAlphaKey(a2, 1) });
+            var col = ps.colorOverLifetime; col.enabled = true; col.color = g;
+        }
+
+        /// <summary>Cloud billow motion: slow down along the deck, sink off the edge then rise. Every velocity
+        /// curve (linear x/y/z, orbital x/y/z, radial) uses TwoConstants, and the limit is a single non-separate
+        /// constant: Unity logs "Particle Velocity curves must all be in the same mode" when they are mixed.</summary>
+        public static void ConfigureCloudVelocity(ParticleSystem ps, float cloudRadius)
+        {
+            var lv = ps.limitVelocityOverLifetime; lv.enabled = true; lv.separateAxes = false; lv.dampen = 0.12f;
+            lv.limit = new ParticleSystem.MinMaxCurve(cloudRadius * 0.08f);
+            var vo = ps.velocityOverLifetime; vo.enabled = true; vo.space = ParticleSystemSimulationSpace.World;
+            var zero = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vo.x = zero; vo.y = new ParticleSystem.MinMaxCurve(-0.5f, 1f); vo.z = zero;   // #129: slow rise so billows stay below the nozzles early
+            vo.orbitalX = zero; vo.orbitalY = zero; vo.orbitalZ = zero; vo.radial = zero;
+        }
+
+        static void Cap(ParticleSystem ps, int max) { var m = ps.main; m.maxParticles = Mathf.Max(0, max); }
+
+        static float Life(ParticleSystem ps) { var l = ps.main.startLifetime; return Mathf.Max(0.05f, l.mode == ParticleSystemCurveMode.TwoConstants ? (l.constantMin + l.constantMax) * 0.5f : l.constant); }
+
+        /// <summary>Emission rate that keeps the live count at the cap: N = rate * lifetime.</summary>
+        static void Rate(ParticleSystem ps, float fraction)
+        {
+            var em = ps.emission; em.enabled = fraction > 0.01f && ps.main.maxParticles > 0;
+            em.rateOverTime = ps.main.maxParticles / Life(ps) * Mathf.Clamp01(fraction);
         }
 
         /// <summary>thrustFraction 0..~1.1, ambient pressure Pa, vehicle speed m/s.</summary>
         public void Apply(double thrustFraction, double ambientP, double speed)
         {
             if (core == null) return;
+            int lvl = QualitySettings.GetQualityLevel();
+            // #129: QualityService's governor (QualityGovernor.Tick) steps the preset down after 3 s of p95 > 20 ms;
+            // the rebuild here then cut every cap mid-liftoff. Keep the liftoff budget for the first seconds.
+            bool hold = ignitionTime >= 0f && Clock() - ignitionTime < PlumeShape.LiftoffBudgetHoldSeconds;
+            if (lvl != builtLevel && !hold) Build(lvl);
             float tf = Mathf.Clamp((float)thrustFraction, 0, 1.2f);
-            float pa = Mathf.Max(1f, (float)ambientP);
-            float expansion = Mathf.Clamp(Mathf.Sqrt(ExitPressure / pa), 0.6f, 12f); // >1 under-expanded (altitude), <1 over-expanded
-            var sh = core.shape; sh.radius = ExitDiameter * 0.5f; sh.angle = Mathf.Clamp(3f + 9f * (expansion - 1f), 1f, 70f);
-            var m = core.main; m.startSpeed = 40f + 60f * tf; m.startSize = ExitDiameter * (0.8f + 0.5f * expansion);
-            m.startLifetime = 0.25f + 0.25f * tf;
-            var em = core.emission; em.enabled = tf > 0.01f; em.rateOverTime = 400f * tf;
+            float pa = Mathf.Max(0f, (float)ambientP) / PlumeShape.P0;
+            var s = PlumeShape.Compute(tf, pa, ExitDiameter, DesignPressure);
+            var L = PlumeShape.ComputeLayout(tf, pa, ExitDiameter, vehicleRadius, vehicleHeight, deckRadius);
+            float d = L.VisualD;
+            if (tf > 0.01f)
+            {
+                if (ignitionTime < 0f)
+                {
+                    ignitionTime = Clock();
+                    // Ignition burst so the ground cloud is already dense at T+0.4 (it only ramped in before).
+                    if (cloud != null && heightAboveDeck < towerHeight) cloud.Emit(Mathf.RoundToInt(cloud.main.maxParticles * PlumeShape.CloudIgnitionBurst));
+                }
+            }
+            else ignitionTime = -1f;
 
-            bool overExpanded = pa > ExitPressure * 0.9f;
-            var dem = diamonds.emission; dem.enabled = tf > 0.01f && overExpanded; dem.rateOverTime = 60f * tf;
-            var dsh = diamonds.shape; dsh.radius = ExitDiameter * 0.25f; dsh.angle = 1f;
-            var dm = diamonds.main; dm.startSize = ExitDiameter * 0.6f; dm.startSpeed = 30f;
+            // Core: small additive zone just below the nozzle. Emitter sits CoreEmitOffset below the exit plane
+            // (local +Z points down the axis) so no sprite reaches above it. Alpha comes from the gradient only.
+            // #129: pinned to the nozzle plane (emitter at the exit, fade-in over CoreEmitOffset, see body).
+            core.transform.localPosition = Vector3.zero;
+            float cfi = Mathf.Clamp(L.CoreEmitOffset / Mathf.Max(0.1f, L.CoreLength), 0f, 0.6f);
+            if (Mathf.Abs(cfi - coreFadeIn) > 0.005f)
+            {
+                coreFadeIn = cfi; var g = new Gradient();
+                g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(PlumeShape.Core, 0.35f), new GradientColorKey(PlumeShape.Mid, 1) },
+                          new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(PlumeShape.CoreAlphaMax, Mathf.Max(0.001f, cfi)), new GradientAlphaKey(0.3f, Mathf.Max(cfi + 0.01f, 0.7f)), new GradientAlphaKey(0f, 1f) });
+                var col = core.colorOverLifetime; col.enabled = true; col.color = g;
+            }
+            var cm = core.main; cm.startLifetime = PlumeShape.CoreLife; cm.startSpeed = L.CoreLength / PlumeShape.CoreLife; cm.startSize = L.CoreSize;
+            cm.gravityModifier = 0f; cm.simulationSpace = ParticleSystemSimulationSpace.Local;
+            var cs = core.shape; cs.radius = L.CoreSpawnRadius; cs.angle = 0f; cs.radiusThickness = 1f;   // spread over the cluster disc
+            cm.startColor = Color.white;
+            Rate(core, tf > 0.01f ? 1f : 0f);
+
+            // Body: ~1.2x cluster at sea level, widening with altitude via the cone (VISUAL_SPEC 3.2).
+            float life = L.BodyLife;
+            // #129: the emitter sat BodyEmitOffset (~1 D, 12-14 m) below the nozzles, under the deck at liftoff, so
+            // the streak "started well below the nozzles" and every particle was born inside the collision plane.
+            // Emit AT the exit plane and fade in over the same distance instead (alpha 0 until a sprite's top is
+            // below the plane): identical silhouette, but particles exist above the deck and can deflect off it.
+            body.transform.localPosition = Vector3.zero;
+            float fadeIn = PlumeShape.BodyFadeIn(L);
+            if (Mathf.Abs(fadeIn - bodyFadeIn) > 0.005f) { bodyFadeIn = fadeIn; BodyGradient(body, fadeIn); }
+            var bm = body.main; bm.startLifetime = life; bm.startSpeed = L.Length / life;
+            bm.startSize = new ParticleSystem.MinMaxCurve(L.BodyMin, L.BodyMax);
+            var bs = body.shape; bs.radius = L.BodySpawnRadius; bs.angle = L.BodyConeDeg;
+            Rate(body, tf);
+
+            // Shock diamonds: tight bright knots, only while over-expanded / near ideal at low altitude.
+            var dm = diamonds.main; dm.startLifetime = 0.3f; dm.startSpeed = L.Length * 0.5f / 0.3f; dm.startSize = d * 0.5f;
+            diamonds.transform.localPosition = new Vector3(0, 0, L.CoreEmitOffset);
+            var ds = diamonds.shape; ds.radius = d * 0.05f; ds.angle = 0f;
+            Rate(diamonds, s.Diamonds > 0 ? tf : 0f);
+
+            float since = ignitionTime < 0f ? 0f : Clock() - ignitionTime;
+            if (cloud != null) Rate(cloud, PlumeShape.GroundCloud(tf, heightAboveDeck, towerHeight, since));
         }
     }
 }
