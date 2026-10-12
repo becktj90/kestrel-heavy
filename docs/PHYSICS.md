@@ -129,3 +129,14 @@ The absolute term is the floor (the quantity is allowed to be ~0). The relative 
   }
 }
 ```
+
+## 3-DOF ascent (P7a)
+
+`Ascent3Dof` integrates `[x, y, z, vx, vy, vz, m]` with the same guidance, atmosphere, and point-mass gravity as `Headless`. `SimulatePlanar` seeds `z = vz = 0` on that pad state and uses the same air rate, `Ω cos φ`. In that plane the steps match the 2-D flights: every `simulate.json` case and every catalog ascent. No J2, and no wind shear.
+
+`LaunchAzimuth.FromNorthDeg` is the non-rotating relation `sin Az = cos i / cos φ`, degrees from north toward east. For 51.6° from 28.5° N that is 44.9751330989884°. The southbound track is `180 − Az` and is not returned. A WGS-84 site in ECI waits on the frames work. This type does not keep a second ellipsoid.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| planar3dof | 1e-9 | 1e-9 | Same RK4 steps as Headless while `z = vz = 0`. Relative 1e-9 is the regression bar on the integrated state. Absolute 1e-9 covers components that sit near zero. |
+| launchAzimuth | 0.01 deg | 0 | Non-rotating closed form, 51.6° from 28.5° N. The test also checks the arcsine identity to 1e-12 deg. |
