@@ -1,0 +1,76 @@
+// Hand-calculated readout v2 literals. Do not replace these with Quick() output.
+// Derivation: the Python block in unity/Assets/Kestrel.Core.Tests/ReadoutV2Tests.cs.
+// Tolerances: docs/PHYSICS.md "Designer readout (G1)". Kestrel Physics reviews the epsilons.
+
+const pencil = (nose, fins) => ({
+  version: 1,
+  name: 'Pencil',
+  id: nose === 'conic' ? 'pencil-conic' : 'pencil-ogive',
+  stages: [{
+    name: 'Stage 1', propellant: 'kerolox', engine: 'gg-kerolox', engineCount: 1,
+    propMass: 10000, diameter: 1, material: 'al-li',
+    interstageMass: 0, separationMass: 0, landingPropMass: 1000,
+  }],
+  strapOns: {
+    count: 0, kind: 'liquid', propellant: 'kerolox', engine: 'gg-kerolox',
+    engineCount: 1, propMass: 0, diameter: 1, material: 'al-li', crossfeed: false,
+  },
+  payload: { type: 'cubesat', mass: 100, orbit: 'suborbital' },
+  fairing: { diameter: 1, length: 2, material: 'composite', jettisonAltitudeKm: 110 },
+  aero: { nose, fins },
+  landing: { legs: false, gridFins: false, rcs: false },
+  avionics: { tier: 'basic' },
+  safetyFactor: 1.4,
+  livery: { primary: '#f2f2f2', accent: '#1a3c6e', name: 'PENCIL' },
+});
+
+export async function register({ put }) {
+  put('designer-readout', {
+    massRel: 1e-12,
+    deltaVRel: 1e-12,
+    positionAbs_m: 1e-9,
+    stabilityAbs: 1e-9,
+    note: 'External pencil literals, not Quick() fed back into itself. Bands for max-Q are literature, not a point match. See docs/PHYSICS.md.',
+  }, [
+    {
+      kind: 'hand',
+      name: 'cone-nofin',
+      cite: 'Barrowman 1967 conical nose: Xn = 0.666 Ln from the tip (USU MAE restatement). No fins, so that station is the whole CP. CG is the liftoff mass sum on hangar-mesh stations.',
+      design: pencil('conic', false),
+      out: {
+        refDiameter_m: 1,
+        cg_m: 8.127848131396961,
+        cp_m: 16.301062114018293,
+        stabilityCal: -8.173213982621332,
+        stages: [{ dryMass_kg: 1980, propMass_kg: 9000, deltaV_mps: 5014.542143124724, deltaVSL_mps: 4546.9481812256345 }],
+      },
+    },
+    {
+      kind: 'hand',
+      name: 'ogive-fins',
+      cite: 'Ogive Xn = 0.466 Ln. Fins: N = 4, unswept square, span = chord = 1 m, trailing edge at the base. Mid-chord l_F = span, so the CNa denominator is 1+sqrt(2). Kfb = 1 + R/(s+R).',
+      design: pencil('ogive', true),
+      out: {
+        refDiameter_m: 1,
+        cg_m: 8.127399892657614,
+        cp_m: 3.6411391130660373,
+        stabilityCal: 4.486260779591577,
+        stages: [{ dryMass_kg: 1980, propMass_kg: 9000, deltaV_mps: 5014.542143124724, deltaVSL_mps: 4546.9481812256345 }],
+      },
+    },
+    {
+      kind: 'maxq-band',
+      name: 'tpl-medium-kerolox',
+      template: 'web/js/data/templates/medium-kerolox.json',
+      cite: 'Medium kerolox orbital class. Public Falcon 9 max-Q is about 30 kPa near 11 km. The accepted sanity window is 25–40 kPa and 5–25 km (ux-142 answers §6, widened so one integrator step cannot walk out of the band). Not a bit match.',
+      maxQ_kPa: [25, 40],
+      maxQAlt_m: [5000, 25000],
+    },
+    {
+      kind: 'launchable',
+      name: 'orbital-templates',
+      cite: 'Finless orbital launchers are aerodynamically unstable and fly on engine steering. unstable is a warning, never a block, so every template whose payload orbit is not suborbital must still pass Engineering.ok.',
+      excludeOrbit: 'suborbital',
+    },
+  ]);
+}

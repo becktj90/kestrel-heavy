@@ -26,13 +26,15 @@ namespace Kestrel.Core.Vehicle
 
         /// <summary>
         /// Kilograms added to this stage's dry mass. An explicit interstageMass wins, including 0.
-        /// Derived mass sits on the upper stage of a joint whose lower stage did not already carry an override,
-        /// so a v1 save that stored the mass on the lower stage does not gain a second copy.
+        /// An absent key on a version 1 design is 0, matching JS. The frustum is derived only at
+        /// version 2 or higher, and only on the upper stage of a joint whose lower stage did not
+        /// already carry an override.
         /// </summary>
         public static double MassKg(Catalog c, Design d, int i)
         {
             var s = d.stages[i];
             if (s.interstageSpecified) return s.interstageMass;
+            if (d == null || d.version < 2) return 0;
             if (i <= 0) return 0;
             if (d.stages[i - 1].interstageSpecified) return 0;
             return DerivedMass(c, s.material, d.stages[i - 1].diameter, s.diameter);
