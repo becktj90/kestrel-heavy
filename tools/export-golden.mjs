@@ -4,7 +4,7 @@
 // in each file (see data/golden/README.md). catalog-flight.json is per quantity: absolute and
 // relative bands in docs/PHYSICS.md, applied by tests/golden-harness.test.cjs.
 // Usage: npm run gen:golden        (tests/catalogs-json.test.cjs fails if output drifts)
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { atmosphere, geopotential } from '../web/js/physics/atmosphere.js';
 import { cdMach, dragForce } from '../web/js/physics/aero.js';
 import { deltaV, massFlow, ispAt, thrustAt, burnTime } from '../web/js/physics/rocket-eq.js';
@@ -102,6 +102,14 @@ put('catalog-flight', {
   block: 'golden-tolerances',
   note: 'Per-quantity absolute and relative bands live in docs/PHYSICS.md. The golden harness reads that block. Regenerate with npm run gen:golden.',
 }, flightCases);
+
+const partsDir = new URL('./golden-parts/', import.meta.url);
+let partFiles = [];
+try { partFiles = readdirSync(partsDir).filter((f) => f.endsWith('.mjs')).sort(); } catch { partFiles = []; }
+for (const f of partFiles) {
+  const mod = await import(new URL(f, partsDir).href);
+  if (typeof mod.register === 'function') await mod.register({ put, REL, PRESETS, ENGINES });
+}
 
 const oi = process.argv.indexOf('--out');
 const dir = oi > 0 ? new URL(`file://${process.argv[oi + 1].replace(/\/?$/, '/')}`) : new URL('../data/golden/', import.meta.url);

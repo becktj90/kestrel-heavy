@@ -1,0 +1,302 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 1e-9,
+  "abs": 1e-9,
+  "note": "registry matches data/params.json; sensor draws are mulberry32; weather holds are the policy only"
+ },
+ "count": 4,
+ "cases": [
+  {
+   "kind": "registry",
+   "out": {
+    "version": 1,
+    "designVersion": 1,
+    "designer": {
+     "minTwr": 1,
+     "goodTwr": 1.25,
+     "minMargin": 0.05,
+     "pack": 1.1,
+     "tuneLimitPct": 15,
+     "engineCountMin": 1,
+     "engineCountMax": 40,
+     "diameterMinM": 0.3,
+     "diameterMaxM": 15,
+     "safetyMin": 1,
+     "safetyMax": 3,
+     "maxStages": 5,
+     "strapOnCounts": [
+      0,
+      2,
+      4
+     ],
+     "avionicsTiers": [
+      "basic",
+      "standard",
+      "redundant"
+     ],
+     "layers": {
+      "default": "simple",
+      "standardUnlock": "first-orbit",
+      "engineer": "settings-toggle"
+     }
+    },
+    "sensors": {
+     "kid": "exact",
+     "sandbox": "exact",
+     "standard": "light-noise",
+     "altitudeRel": 0.0015,
+     "speedRel": 0.002,
+     "angleDeg": 0.15
+    },
+    "weather": {
+     "kidHold": false,
+     "relaxedHold": false,
+     "windLimitMs": 12
+    },
+    "display": {
+     "orientation": "portrait",
+     "bigScreen": "themed-fill",
+     "refreshHz": 120,
+     "quality": "Auto",
+     "batterySaver": false
+    },
+    "comfort": {
+     "safeFlash": true,
+     "reducedMotion": "follow-os"
+    },
+    "career": {
+     "failurePenalty": "moderate"
+    },
+    "flight": {
+     "launchLatitude": 28.5,
+     "lossBudget": 1500,
+     "g0": 9.80665
+    }
+   }
+  },
+  {
+   "kind": "fidelity",
+   "cases": [
+    {
+     "difficulty": "KID",
+     "sandbox": false,
+     "layer": "simple",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "KID",
+     "sandbox": false,
+     "layer": "standard",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "KID",
+     "sandbox": false,
+     "layer": "engineer",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "KID",
+     "sandbox": true,
+     "layer": "simple",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "KID",
+     "sandbox": true,
+     "layer": "standard",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "KID",
+     "sandbox": true,
+     "layer": "engineer",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "CADET",
+     "sandbox": false,
+     "layer": "simple",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "CADET",
+     "sandbox": false,
+     "layer": "standard",
+     "mode": "light-noise"
+    },
+    {
+     "difficulty": "CADET",
+     "sandbox": false,
+     "layer": "engineer",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "CADET",
+     "sandbox": true,
+     "layer": "simple",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "CADET",
+     "sandbox": true,
+     "layer": "standard",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "CADET",
+     "sandbox": true,
+     "layer": "engineer",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "PAD_RAT",
+     "sandbox": false,
+     "layer": "simple",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "PAD_RAT",
+     "sandbox": false,
+     "layer": "standard",
+     "mode": "light-noise"
+    },
+    {
+     "difficulty": "PAD_RAT",
+     "sandbox": false,
+     "layer": "engineer",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "PAD_RAT",
+     "sandbox": true,
+     "layer": "simple",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "PAD_RAT",
+     "sandbox": true,
+     "layer": "standard",
+     "mode": "exact"
+    },
+    {
+     "difficulty": "PAD_RAT",
+     "sandbox": true,
+     "layer": "engineer",
+     "mode": "exact"
+    }
+   ]
+  },
+  {
+   "kind": "sense",
+   "truth": {
+    "altitude": 12000,
+    "speed": 320.5,
+    "angleDeg": 45,
+    "mass": 500000,
+    "propellant": 400000
+   },
+   "exact": {
+    "mode": "exact",
+    "altitude": 12000,
+    "speed": 320.5,
+    "angleDeg": 45,
+    "mass": 500000,
+    "propellant": 400000
+   },
+   "cases": [
+    {
+     "seed": 1,
+     "out": {
+      "mode": "light-noise",
+      "altitude": 12004.574661861174,
+      "speed": 319.862507194553,
+      "angleDeg": 45.00823411198799,
+      "mass": 500000,
+      "propellant": 400000
+     }
+    },
+    {
+     "seed": 1000,
+     "out": {
+      "mode": "light-noise",
+      "altitude": 12010.627016647719,
+      "speed": 320.9200959051736,
+      "angleDeg": 45.05745483173523,
+      "mass": 500000,
+      "propellant": 400000
+     }
+    },
+    {
+     "seed": 0,
+     "out": {
+      "mode": "light-noise",
+      "altitude": 11991.59145151265,
+      "speed": 319.85942273398814,
+      "angleDeg": 44.916981608234344,
+      "mass": 500000,
+      "propellant": 400000
+     }
+    },
+    {
+     "seed": 1831565813,
+     "out": {
+      "mode": "light-noise",
+      "altitude": 11982.011870845221,
+      "speed": 320.1452347391881,
+      "angleDeg": 44.89386064438149,
+      "mass": 500000,
+      "propellant": 400000
+     }
+    }
+   ]
+  },
+  {
+   "kind": "weather",
+   "cases": [
+    {
+     "difficulty": "KID",
+     "windMs": 40,
+     "out": {
+      "hold": false,
+      "allowed": false
+     }
+    },
+    {
+     "difficulty": "CADET",
+     "relaxed": true,
+     "windMs": 40,
+     "out": {
+      "hold": false,
+      "allowed": false
+     }
+    },
+    {
+     "difficulty": "CADET",
+     "windMs": 12,
+     "out": {
+      "allowed": true,
+      "hold": false
+     }
+    },
+    {
+     "difficulty": "CADET",
+     "windMs": 12.1,
+     "out": {
+      "allowed": true,
+      "hold": true
+     }
+    },
+    {
+     "difficulty": "PAD_RAT",
+     "windMs": 0,
+     "out": {
+      "allowed": true,
+      "hold": false
+     }
+    }
+   ]
+  }
+ ]
+}

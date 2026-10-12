@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "designVersion": 1,
+  "designer": {
+    "minTwr": 1,
+    "goodTwr": 1.25,
+    "minMargin": 0.05,
+    "pack": 1.1,
+    "tuneLimitPct": 15,
+    "engineCountMin": 1,
+    "engineCountMax": 40,
+    "diameterMinM": 0.3,
+    "diameterMaxM": 15,
+    "safetyMin": 1,
+    "safetyMax": 3,
+    "maxStages": 5,
+    "strapOnCounts": [
+      0,
+      2,
+      4
+    ],
+    "avionicsTiers": [
+      "basic",
+      "standard",
+      "redundant"
+    ],
+    "layers": {
+      "default": "simple",
+      "standardUnlock": "first-orbit",
+      "engineer": "settings-toggle"
+    }
+  },
+  "sensors": {
+    "kid": "exact",
+    "sandbox": "exact",
+    "standard": "light-noise",
+    "altitudeRel": 0.0015,
+    "speedRel": 0.002,
+    "angleDeg": 0.15
+  },
+  "weather": {
+    "kidHold": false,
+    "relaxedHold": false,
+    "windLimitMs": 12
+  },
+  "display": {
+    "orientation": "portrait",
+    "bigScreen": "themed-fill",
+    "refreshHz": 120,
+    "quality": "Auto",
+    "batterySaver": false
+  },
+  "comfort": {
+    "safeFlash": true,
+    "reducedMotion": "follow-os"
+  },
+  "career": {
+    "failurePenalty": "moderate"
+  },
+  "flight": {
+    "launchLatitude": 28.5,
+    "lossBudget": 1500,
+    "g0": 9.80665
+  }
+}
