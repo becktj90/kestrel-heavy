@@ -132,7 +132,6 @@ namespace Kestrel.Slice
             hangarCam = cam.gameObject.AddComponent<HangarCamera>();
             var sun = new GameObject("Sun").AddComponent<Light>(); sun.type = LightType.Directional; sun.intensity = 1.3f; sun.transform.rotation = Quaternion.Euler(40, -30, 0);
             sky = SkyRig.Attach(cam, sun);
-            hangarCam = cam.gameObject.AddComponent<HangarCamera>();
             hangarCam.Tapped += OnTapped;
             worldRoot = new GameObject("World").transform;
             vehicleRoot = new GameObject("Vehicle").transform; vehicleRoot.SetParent(worldRoot, false);
