@@ -4,4 +4,6 @@ Separate from LICENSES.md (that ledger covers shipped assets/data). This one log
 
 | # | Date | Source (URL or "text knowledge") | Licence / PD basis | Informed | Reviewer | No-direct-copy attested |
 |---|------|------------------------------------|--------------------|----------|----------|------|
-| — | — | (no entries yet) | — | — | — | — |
+| 1 | 2026-10-12 | Text knowledge: general lattice service-tower construction (square column frame, girts, X/K bracing, grated decks per level) | n/a (no imagery) | D1 `TowerLayout` | Graphics Dev | Yes: generic proportions, seeded; no specific pad |
+| 2 | 2026-10-12 | Text knowledge: swing-arm umbilical service arms (horizontal box truss, hinge at tower, swing-away retract) | n/a (no imagery) | D1 `SwingArm`, `SwingArmTruss` | Graphics Dev | Yes: dimensions from vehicle fit, not from any real arm |
+| 3 | 2026-10-12 | Text knowledge: hinged strongback erector and inclined launch rail for small solids | n/a (no imagery) | D1 `PadGenerator` archetypes | Graphics Dev | Yes: planar lattice / A-frame rail, seeded; no specific facility |
