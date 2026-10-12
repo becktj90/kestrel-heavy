@@ -13,7 +13,7 @@ namespace Kestrel.Slice
     public sealed class SliceApp : MonoBehaviour
     {
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
-        Design design; Camera cam; Transform worldRoot, vehicleRoot, tower; FlightDriver flight; GameObject rocketGO;
+        Design design; Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck; FlightDriver flight; GameObject rocketGO;
         VisualElement ui, designPanel, designBody, hud; Button designToggle; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted;
 
@@ -38,13 +38,18 @@ namespace Kestrel.Slice
             worldRoot = new GameObject("World").transform;
             vehicleRoot = new GameObject("Vehicle").transform; vehicleRoot.SetParent(worldRoot, false);
             flight = gameObject.AddComponent<FlightDriver>(); flight.World = worldRoot; flight.Vehicle = vehicleRoot;
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane); ground.name = "Ground"; ground.transform.SetParent(worldRoot, false);
-            ground.transform.localScale = new Vector3(400, 1, 400); // 4 km square
-            if (bodyMat != null) { var gm = new Material(bodyMat) { color = new Color(0.30f, 0.36f, 0.28f) }; ground.GetComponent<Renderer>().sharedMaterial = gm; }
-            flight.Anchor(ground.transform, 0, 0, 0);
-            var pad = GameObject.CreatePrimitive(PrimitiveType.Cylinder); pad.name = "Pad"; pad.transform.SetParent(worldRoot, false);
-            pad.transform.localScale = new Vector3(30, 0.5f, 30);
-            flight.Anchor(pad.transform, 0, -0.5, 0);
+            // Ground: 200 km, 1 m below the deck top, follows the vehicle downrange (LateUpdate); see PadGround.
+            var g = GameObject.CreatePrimitive(PrimitiveType.Plane); g.name = "Ground"; ground = g.transform; ground.SetParent(worldRoot, false);
+            ground.localScale = new Vector3(PadGround.Size / 10f, 1, PadGround.Size / 10f);
+            Destroy(g.GetComponent<Collider>());
+            if (bodyMat != null) { var gm = new Material(bodyMat) { color = PadGround.GroundColor }; g.GetComponent<Renderer>().sharedMaterial = gm; }
+            flight.Anchor(ground, 0, PadGround.GroundY, 0);
+            PadGround.ApplyHaze(cam.farClipPlane);
+            var pad = GameObject.CreatePrimitive(PrimitiveType.Cylinder); pad.name = "Pad"; deck = pad.transform; deck.SetParent(worldRoot, false);
+            Destroy(pad.GetComponent<Collider>());
+            deck.localScale = new Vector3(2 * PadGround.MinDeckRadius, -PadGround.GroundY * 0.5f, 2 * PadGround.MinDeckRadius); // plinth GroundY..0
+            if (bodyMat != null) { var dm = new Material(bodyMat) { color = new Color(0.55f, 0.55f, 0.53f) }; pad.GetComponent<Renderer>().sharedMaterial = dm; }
+            flight.Anchor(deck, 0, PadGround.GroundY * 0.5, 0);
             tower = PadTower.Create(bodyMat); tower.SetParent(worldRoot, false);
             flight.Anchor(tower, 0, 0, 0); // sized per design in BuildRocket
             flight.OnMeco += OnMeco;
@@ -173,7 +178,10 @@ namespace Kestrel.Slice
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, Mathf.Max(1f, Mathf.Sqrt(design.stages[0].engineCount) * r.exitDiameter), plumeMat);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
-            PadTower.Apply(tower, r.height, r.mesh.bounds.extents.x);
+            float rr = r.mesh.bounds.extents.x;
+            var padR = PadTower.Apply(tower, r.height, rr, PadTower.DefaultArchetype(rr), PadTower.DefaultSeed);
+            float deckR = PadGround.DeckRadius(padR != null ? padR.Layout : null); // deck under every tower leg
+            deck.localScale = new Vector3(2 * deckR, deck.localScale.y, 2 * deckR);
             rocketHeight = r.height; ApplyDesignFraming();
         }
 
@@ -203,7 +211,9 @@ namespace Kestrel.Slice
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
             var v = vehicleRoot.position; var up = vehicleRoot.up;
             camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight), 4f, Time.deltaTime);
-            cam.transform.position = v + camOffset;
+            // Keep the ground in view from above, and keep it under the vehicle (no edge, horizon at any downrange).
+            ground.position = new Vector3(v.x, ground.position.y, ground.position.z);
+            cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
             cam.transform.LookAt(v + up * rocketHeight * 0.5f);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
