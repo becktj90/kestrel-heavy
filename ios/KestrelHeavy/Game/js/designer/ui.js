@@ -11,6 +11,7 @@ import { quickReadout, simReadout, thrustCurve, TUNE_LIMIT } from './readout.js'
 import { validateEngineering, makeItFly } from './validate.js';
 import { TIPS } from './glossary.js';
 import { getDesignStore } from './store.js';
+import { costPanel } from '../ui/finance/costPanel.js';
 
 const TABS = [
   ['stages', 'Stages'], ['strapons', 'Strap-ons'], ['engines', 'Engines'], ['propellants', 'Propellants'],
@@ -34,7 +35,6 @@ const h = (tag, attrs = {}, ...kids) => {
 const fmtN = (n, d = 0) => (Number.isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d }) : '—');
 const kms = (v) => `${fmtN(v / 1000, 2)} km/s`;
 const tonnes = (kg) => `${fmtN(kg / 1000, kg < 10000 ? 2 : 1)} t`;
-const money = (usd) => (usd >= 1e9 ? `$${fmtN(usd / 1e9, 2)}B` : `$${fmtN(usd / 1e6, 1)}M`);
 
 function tip(key) {
   const t = TIPS[key];
@@ -340,8 +340,8 @@ export class DesignerScreen {
           h('span', { text: 'Liftoff mass' }), h('b', { text: tonnes(r.liftoffMass) }),
           h('span', {}, 'Losses ', tip('losses')), h('b', { text: sim ? kms(sim.totalLosses) : '…' }),
           h('span', {}, 'Sim apogee ', tip('apogee')), h('b', { text: sim ? `${fmtN(sim.apogeeKm)} km (${sim.outcome})` : '…' }),
-          h('span', { text: 'Cost' }), h('b', { text: money(r.cost) }),
           h('span', {}, 'Reliability ', tip('reliability')), h('b', { text: `${fmtN(r.reliability * 100, 1)}%` })),
+        costPanel(h, this.design, r, { tip, rerender: () => this.renderReadout() }),
         h('table', { class: 'kd-table' },
           h('thead', {}, h('tr', {}, ['Phase', 'Δv km/s', 'TWR', 'Burn s', 'ṁ kg/s', 'MR'].map((t) => h('th', { text: t })))),
           h('tbody', {}, r.stages.map((s) => h('tr', {}, h('td', { text: s.label }), h('td', { text: fmtN(s.deltaV / 1000, 2) }), h('td', { text: fmtN(s.twr, 2) }), h('td', { text: fmtN(s.burnTime) }), h('td', { text: fmtN(s.mdot) }), h('td', { text: fmtN(s.massRatio, 2) }))))));

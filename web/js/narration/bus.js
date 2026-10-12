@@ -29,6 +29,7 @@ export const CATEGORY = Object.freeze({
   ANOMALY: 'anomaly', // aborts and failures
   OUTCOME: 'outcome', // end-of-flight results
   RADIO: 'radio', // legacy text radio mirror
+  ECONOMY: 'economy', // prices, purchases (fictional Kc; never real money)
 });
 
 const C = CATEGORY;
@@ -104,6 +105,9 @@ export const EVENTS = Object.freeze({
   splash: { cat: C.OUTCOME, payload: 'abortId (splash|fuelHaven)' },
 
   'radio.line': { cat: C.RADIO, payload: 'key, text (exact legacy radio text shown)' },
+
+  'econ.quote': { cat: C.ECONOMY, payload: 'designId, recurring, dev, perKg (integer minor units), currency ("Kc")' },
+  'econ.purchase': { cat: C.ECONOMY, payload: 'item, category, amount (integer minor units), currency ("Kc"); reserved for E3, not emitted in 2.0' },
 });
 
 export const EVENT_TYPES = Object.freeze(Object.keys(EVENTS));

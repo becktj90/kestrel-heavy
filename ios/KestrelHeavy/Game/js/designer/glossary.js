@@ -17,7 +17,8 @@ export const TIPS = Object.freeze({
   reserve: 'Landing reserve: propellant kept back so the booster can fly home and land.',
   gridFins: 'Grid fins: lattice fins that steer the booster as it falls back.',
   nose: 'Nose shape changes drag. Sleeker noses slip through the air more easily.',
-  reliability: 'Reliability: estimated chance the whole flight goes right. More engines = more ways to fail.',
+  reliability: 'Reliability: estimated chance the whole flight goes right. More engines = more ways to fail, but big clusters can lose an engine and keep going (engine-out).',
+  cost: 'Cost per launch in Kc (fictional in-game credits). One-time development is shown separately and is not part of cost per kg.',
   tune: 'Tune: tweak this engine within ±15% of its catalog thrust and Isp.',
   material: 'Material: lighter tanks cost more; steel is heavy but cheap and tough.',
 });
