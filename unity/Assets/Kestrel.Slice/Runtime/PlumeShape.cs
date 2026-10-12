@@ -76,10 +76,19 @@ namespace Kestrel.Slice
             if (thrust <= 0.01f) return 0f;
             float t = Mathf.Max(10f, towerHeight);
             float ramp = Smoothstep(0f, CloudRampSeconds, sinceIgnition);   // builds up over ~0.75 s after ignition
-            return Mathf.Clamp01(thrust) * ramp * (1f - Smoothstep(t, 2.5f * t, heightAboveDeck));
+            float byHeight = 1f - Smoothstep(t, 2.5f * t, heightAboveDeck);
+            // #119 v3: the cloud was gone by T+2.7 s (vehicle clears the tower fast). Hold full emission for
+            // CloudHoldSeconds after ignition regardless of height, then fade over CloudFadeSeconds; billows
+            // live CloudLife s, so the cloud reads for ~6-10 s after liftoff.
+            float byTime = 1f - Smoothstep(CloudHoldSeconds, CloudHoldSeconds + CloudFadeSeconds, sinceIgnition);
+            return Mathf.Clamp01(thrust) * ramp * Mathf.Max(byHeight, byTime);
         }
 
         public const float CloudRampSeconds = 0.75f;
+        public const float CloudHoldSeconds = 5.5f, CloudFadeSeconds = 2f;
+        public const float CloudLifeMin = 3f, CloudLifeMax = 4.5f;
+        /// <summary>Cloud colour-over-life alpha keys (time, alpha): dense from birth (was 0.3 -> 0.95 -> 0.85).</summary>
+        public static readonly Vector2[] CloudAlphaKeys = { new Vector2(0f, 0.85f), new Vector2(0.05f, 1f), new Vector2(0.7f, 0.95f), new Vector2(1f, 0f) };
 
         // ---- Visual layout (P0-3 follow-up: "still a thin trail of orange blobs") -----------------------------
         // Root causes found in the #119 Unity capture:
@@ -105,7 +114,12 @@ namespace Kestrel.Slice
         public const float SpriteVisibleFraction = 0.8f;
         public const float CoreHdrHigh = 1.5f, CoreHdrLow = 1.1f, CoreAlphaMax = 0.45f;
         public const int MaxCoreParticles = 8;
-        public const float CoreSizeOverLife = 0.8f;   // core shrinks 1 -> 0.8 over life
+        public const float CoreSizeOverLife = 0.8f;   // core shrinks CoreSizeStart -> 0.8 over life
+        /// <summary>#119 v3 (gap below the nozzles): sprites are born small and grow, so the emitter can sit right
+        /// at the exit plane. Offset = visible half-size at birth only, which is a few cm, not half a full billow.</summary>
+        public const float BodySizeStart = 0.2f, CoreSizeStart = 0.3f;
+        /// <summary>Tolerance for "no sprite above the nozzle plane": float rounding (~3e-8) relative to height.</summary>
+        public const float TopEdgeRelTolerance = 1e-4f;
 
         public struct Layout
         {
@@ -131,7 +145,7 @@ namespace Kestrel.Slice
             // Core: small bright zone at the nozzle, ~0.9 D solid, ~12% of the plume (capped at 2.5 D).
             L.CoreSize = 0.9f * d / SpriteSolidFraction;
             L.CoreLength = Mathf.Min(0.12f * L.Length, 2.5f * d);
-            L.CoreEmitOffset = 0.5f * SpriteVisibleFraction * L.CoreSize;
+            L.CoreEmitOffset = 0f;   // set below, once the sizes are known
 
             // Body: starts ~1 D solid, grows only a little; the cone supplies altitude expansion up to Width.
             L.BodySpawnRadius = 0.08f * d;
@@ -141,7 +155,15 @@ namespace Kestrel.Slice
             L.BodyLife = 0.6f;
             float solidEnd = L.BodyMax * SpriteSolidFraction * L.BodyGrow + 2f * L.BodySpawnRadius;
             L.BodyConeDeg = Mathf.Atan2(Mathf.Max(0f, L.Width - solidEnd) * 0.5f, L.Length) * Mathf.Rad2Deg;
-            L.BodyEmitOffset = 0.5f * SpriteVisibleFraction * L.BodyMax;
+            // Smallest emitter offset keeping every sprite's top at or below the exit plane over its whole life
+            // (born small -> offset ~ birth half-size; only grows if a sprite would outrun its own travel).
+            L.BodyEmitOffset = 0f; L.CoreEmitOffset = 0f;
+            for (int i = 0; i <= TopEdgeSamples; i++)
+            {
+                float u = i / (float)TopEdgeSamples;
+                L.BodyEmitOffset = Mathf.Max(L.BodyEmitOffset, 0.5f * SpriteVisibleFraction * L.BodyMax * BodySize(L, u) - L.Length * u);
+                L.CoreEmitOffset = Mathf.Max(L.CoreEmitOffset, 0.5f * SpriteVisibleFraction * L.CoreSize * CoreSize(u) - L.CoreLength * u);
+            }
 
             // Ground cloud: same billows, but spawned at the deck edge (outside a clear zone round the engines),
             // a little below the deck top, moving outward and down before rising.
@@ -171,15 +193,23 @@ namespace Kestrel.Slice
         public static float PlumeTopEdge(Layout L)
         {
             float top = float.MinValue;
-            for (int i = 0; i <= 20; i++)
+            for (int i = 0; i <= TopEdgeSamples; i++)
             {
-                float u = i / 20f;
-                float bodyTop = 0.5f * SpriteVisibleFraction * L.BodyMax * Mathf.Lerp(1f, L.BodyGrow, u) - L.BodyEmitOffset - L.Length * u;
-                float coreTop = 0.5f * SpriteVisibleFraction * L.CoreSize * Mathf.Lerp(1f, CoreSizeOverLife, u) - L.CoreEmitOffset - L.CoreLength * u;
+                float u = i / (float)TopEdgeSamples;
+                float bodyTop = 0.5f * SpriteVisibleFraction * L.BodyMax * BodySize(L, u) - L.BodyEmitOffset - L.Length * u;
+                float coreTop = 0.5f * SpriteVisibleFraction * L.CoreSize * CoreSize(u) - L.CoreEmitOffset - L.CoreLength * u;
                 top = Mathf.Max(top, Mathf.Max(bodyTop, coreTop));
             }
             return top;
         }
+
+        /// <summary>Body size-over-life multiplier: born at BodySizeStart, full size by 15% of life, then grows to BodyGrow.</summary>
+        public static float BodySize(Layout L, float u) => u < BodyFullAt ? Mathf.Lerp(BodySizeStart, 1f, u / BodyFullAt) : Mathf.Lerp(1f, L.BodyGrow, (u - BodyFullAt) / (1f - BodyFullAt));
+        public static float CoreSize(float u) => u < BodyFullAt ? Mathf.Lerp(CoreSizeStart, 1f, u / BodyFullAt) : Mathf.Lerp(1f, CoreSizeOverLife, (u - BodyFullAt) / (1f - BodyFullAt));
+        public const float BodyFullAt = 0.15f;
+        public const int TopEdgeSamples = 40;
+        /// <summary>Gap (m) between the nozzle exit and the first solid body sprite at birth (should be ~0).</summary>
+        public static float BodyStartGap(Layout L) => L.BodyEmitOffset - 0.5f * SpriteSolidFraction * L.BodyMax * BodySizeStart;
 
         /// <summary>Peak additive core contribution on the axis: overlapping core sprites x alpha x HDR.</summary>
         public static float CorePeak(Layout L, int coreParticles, bool hdr)
@@ -204,6 +234,6 @@ namespace Kestrel.Slice
         }
 
         /// <summary>Minimum particles kept for the ground cloud even on Low, so it reads on every device.</summary>
-        public const int MinCloud = 48;
+        public const int MinCloud = 96;
     }
 }

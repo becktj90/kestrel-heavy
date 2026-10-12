@@ -69,8 +69,8 @@ namespace Kestrel.Slice
                 // Body: yellow at the nozzle -> orange -> transparent red-orange tail.
                 Grad(body, (PlumeShape.BodyHead, 0), (PlumeShape.Mid, 0.3f), (PlumeShape.Tail, 1), 0.8f, 0.55f, 0f);
                 Grad(diamonds, (Color.white, 0), (PlumeShape.Core, 0.5f), (PlumeShape.Mid, 1), 1f, 0.8f, 0f);
-                var bs = body.sizeOverLifetime; bs.enabled = true; bs.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 1f, 1, PlumeShape.ComputeLayout(1f, 1f, 1f, 1f, 10f, 10f).BodyGrow));
-                var cs = core.sizeOverLifetime; cs.enabled = true; cs.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 1f, 1, PlumeShape.CoreSizeOverLife));
+                var bs = body.sizeOverLifetime; bs.enabled = true; bs.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0, PlumeShape.BodySizeStart), new Keyframe(PlumeShape.BodyFullAt, 1f), new Keyframe(1, PlumeShape.ComputeLayout(1f, 1f, 1f, 1f, 10f, 10f).BodyGrow)));
+                var cs = core.sizeOverLifetime; cs.enabled = true; cs.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0, PlumeShape.CoreSizeStart), new Keyframe(PlumeShape.BodyFullAt, 1f), new Keyframe(1, PlumeShape.CoreSizeOverLife)));
             }
             Cap(core, Budget.Core); Cap(body, Budget.Body); Cap(diamonds, Budget.Diamonds); if (cloud != null) Cap(cloud, Budget.Cloud);
         }
@@ -88,18 +88,16 @@ namespace Kestrel.Slice
             cloud = go.AddComponent<ParticleSystem>();
             cloud.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var m = cloud.main; m.loop = true; m.playOnAwake = false; m.simulationSpace = ParticleSystemSimulationSpace.Local;
-            m.startLifetime = new ParticleSystem.MinMaxCurve(5f, 8f); m.startSpeed = new ParticleSystem.MinMaxCurve(L.CloudRadius * 0.35f, L.CloudRadius * 0.8f);
+            m.startLifetime = new ParticleSystem.MinMaxCurve(PlumeShape.CloudLifeMin, PlumeShape.CloudLifeMax); m.startSpeed = new ParticleSystem.MinMaxCurve(L.CloudRadius * 0.35f, L.CloudRadius * 0.8f);
             m.startSize = new ParticleSystem.MinMaxCurve(L.CloudSizeMin, L.CloudSizeMax);
             m.startRotation = new ParticleSystem.MinMaxCurve(0, Mathf.PI * 2); m.startColor = new ParticleSystem.MinMaxGradient(PlumeShape.Smoke, PlumeShape.Steam);
             var sh = cloud.shape; sh.shapeType = ParticleSystemShapeType.Circle; sh.radius = L.CloudSpawnRadius; sh.radiusThickness = 0f; sh.arc = 360f;   // deck edge, outside the engine clear zone
             // Billow: slow down along the deck, rise, and grow (radial spread to ~deck radius and beyond).
-            var lv = cloud.limitVelocityOverLifetime; lv.enabled = true; lv.dampen = 0.12f; lv.limit = L.CloudRadius * 0.08f;
-            var vo = cloud.velocityOverLifetime; vo.enabled = true; vo.space = ParticleSystemSimulationSpace.World;
-            vo.x = new ParticleSystem.MinMaxCurve(0f, 0f); vo.y = new ParticleSystem.MinMaxCurve(-2f, 4f);   // outward and down off the deck edge, then billowing up vo.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+            ConfigureCloudVelocity(cloud, L.CloudRadius);
             var so = cloud.sizeOverLifetime; so.enabled = true; so.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, L.CloudSizeStart, 1, PlumeShape.CloudGrowEnd));
             var rot = cloud.rotationOverLifetime; rot.enabled = true; rot.z = new ParticleSystem.MinMaxCurve(-0.3f, 0.3f);
             var g = new Gradient(); g.SetKeys(new[] { new GradientColorKey(new Color(1f, 0.85f, 0.6f), 0), new GradientColorKey(Color.white, 0.15f), new GradientColorKey(new Color(0.85f, 0.85f, 0.85f), 1) },
-                                             new[] { new GradientAlphaKey(0.3f, 0), new GradientAlphaKey(0.95f, 0.06f), new GradientAlphaKey(0.85f, 0.65f), new GradientAlphaKey(0f, 1) });
+                                             System.Array.ConvertAll(PlumeShape.CloudAlphaKeys, k => new GradientAlphaKey(k.y, k.x)));
             var col = cloud.colorOverLifetime; col.enabled = true; col.color = g;
             var r = go.GetComponent<ParticleSystemRenderer>(); var cmat = cloudMat != null ? cloudMat : mat; if (cmat != null) r.sharedMaterial = cmat;
             r.renderMode = ParticleSystemRenderMode.Billboard; r.sortMode = ParticleSystemSortMode.Distance; r.maxParticleSize = 4f; r.minParticleSize = 0f;
@@ -135,6 +133,19 @@ namespace Kestrel.Slice
             g.SetKeys(new[] { new GradientColorKey(a.c, a.t), new GradientColorKey(b.c, b.t), new GradientColorKey(c.c, c.t) },
                       new[] { new GradientAlphaKey(a0, 0), new GradientAlphaKey(a1, 0.4f), new GradientAlphaKey(a2, 1) });
             var col = ps.colorOverLifetime; col.enabled = true; col.color = g;
+        }
+
+        /// <summary>Cloud billow motion: slow down along the deck, sink off the edge then rise. Every velocity
+        /// curve (linear x/y/z, orbital x/y/z, radial) uses TwoConstants, and the limit is a single non-separate
+        /// constant: Unity logs "Particle Velocity curves must all be in the same mode" when they are mixed.</summary>
+        public static void ConfigureCloudVelocity(ParticleSystem ps, float cloudRadius)
+        {
+            var lv = ps.limitVelocityOverLifetime; lv.enabled = true; lv.separateAxes = false; lv.dampen = 0.12f;
+            lv.limit = new ParticleSystem.MinMaxCurve(cloudRadius * 0.08f);
+            var vo = ps.velocityOverLifetime; vo.enabled = true; vo.space = ParticleSystemSimulationSpace.World;
+            var zero = new ParticleSystem.MinMaxCurve(0f, 0f);
+            vo.x = zero; vo.y = new ParticleSystem.MinMaxCurve(-2f, 4f); vo.z = zero;
+            vo.orbitalX = zero; vo.orbitalY = zero; vo.orbitalZ = zero; vo.radial = zero;
         }
 
         static void Cap(ParticleSystem ps, int max) { var m = ps.main; m.maxParticles = Mathf.Max(0, max); }

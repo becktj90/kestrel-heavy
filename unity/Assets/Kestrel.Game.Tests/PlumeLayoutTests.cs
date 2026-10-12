@@ -26,8 +26,50 @@ namespace Kestrel.Game.Tests
         public void PlumeTopEdgeStaysBelowNozzlePlane(float throttle, float pa)
         {
             var L = PlumeShape.ComputeLayout(throttle, pa, ClusterD, R, H, Deck);
-            Assert.That(PlumeShape.PlumeTopEdge(L), Is.LessThanOrEqualTo(0f), "no visible plume sprite above the nozzle exit");
+            float tol = PlumeShape.TopEdgeRelTolerance * H;   // float rounding (~3e-8) relative to vehicle height
+            Assert.That(PlumeShape.PlumeTopEdge(L), Is.LessThanOrEqualTo(tol), "no visible plume sprite above the nozzle exit");
             Assert.That(L.BodyEmitOffset, Is.GreaterThan(0f)); Assert.That(L.CoreEmitOffset, Is.GreaterThan(0f));
+        }
+
+        // #119 v3: gap between the nozzles and the body.
+        [TestCase(1f, 1f), TestCase(0.4f, 1f), TestCase(1f, 0.01f)]
+        public void BodyStartsAtTheNozzleExit(float throttle, float pa)
+        {
+            foreach (var d in new[] { ClusterD, 12f })
+            {
+                var L = PlumeShape.ComputeLayout(throttle, pa, d, R, H, Deck);
+                Assert.That(PlumeShape.BodyStartGap(L), Is.LessThanOrEqualTo(0.1f * d), $"d={d}: solid body begins within 0.1 D of the exit");
+                Assert.That(PlumeShape.PlumeTopEdge(L), Is.LessThanOrEqualTo(PlumeShape.TopEdgeRelTolerance * H), $"d={d}");
+            }
+        }
+
+        [Test]
+        public void GroundCloudHoldsSixToTenSecondsAfterLiftoff()
+        {
+            const float tower = 80f, high = 2000f;   // vehicle long past the tower
+            Assert.That(PlumeShape.GroundCloud(1f, high, tower, 2.7f), Is.EqualTo(1f), "still full at T+2.7 (was gone)");
+            Assert.That(PlumeShape.GroundCloud(1f, high, tower, 5f), Is.EqualTo(1f));
+            Assert.That(PlumeShape.GroundCloud(1f, high, tower, 12f), Is.EqualTo(0f), "emission ends after the hold");
+            float lastVisible = PlumeShape.CloudHoldSeconds + PlumeShape.CloudFadeSeconds + PlumeShape.CloudLifeMax;
+            Assert.That(PlumeShape.CloudHoldSeconds + PlumeShape.CloudLifeMin, Is.GreaterThanOrEqualTo(6f));
+            Assert.That(lastVisible, Is.InRange(8f, 12.5f));
+            foreach (var k in PlumeShape.CloudAlphaKeys) if (k.x < 0.7f) Assert.That(k.y, Is.GreaterThanOrEqualTo(0.85f), "dense, not a haze");
+        }
+
+        [Test]
+        public void CloudVelocityCurvesShareOneMode()
+        {
+            var go = new UnityEngine.GameObject("cloud-test");
+            try
+            {
+                var ps = go.AddComponent<UnityEngine.ParticleSystem>();
+                PlumeController.ConfigureCloudVelocity(ps, 45f);
+                var v = ps.velocityOverLifetime;
+                foreach (var c in new[] { v.y, v.z, v.orbitalX, v.orbitalY, v.orbitalZ, v.radial })
+                    Assert.That(c.mode, Is.EqualTo(v.x.mode));
+                Assert.That(ps.limitVelocityOverLifetime.separateAxes, Is.False);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
         }
 
         [TestCase(0), TestCase(1), TestCase(2), TestCase(3)]
