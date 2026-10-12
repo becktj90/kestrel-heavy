@@ -14,7 +14,7 @@ The playable website stays at https://beckify.com/games/kestrel-heavy.
 | SKU | `kestrel-heavy` |
 | Version | Repo **1.0 (4)**. TestFlight record exists. If TestFlight already has **≥4**, bump before the next Archive; otherwise next binary is **1.0 (4)** |
 | Team prefix | `9TR6R5LV8M` (same Apple Developer team as Beckify Toolbox and Look Check) |
-| Deployment | iOS 17+, iPhone + iPad, **portrait only** (upside-down allowed) |
+| Deployment | iOS 17+, iPhone + iPad, **portrait + landscape** |
 | Price | Free, no IAP, no ads (v1) |
 
 **Why `com.beckify.kestrelheavy` and not `com.kestrelheavy.app`:** Beckify Toolbox is already `com.beckify.toolbox` on the same team; Look Check is `com.beckify.lookcheck`. A `com.beckify.*` sibling identifier keeps signing, App Store Connect, and the privacy URL under one developer record.
@@ -36,7 +36,7 @@ Do **not** point Toolbox Archive-iOS at **KestrelHeavy** or **LookCheck**. Keep 
 - SwiftUI shell (`KestrelHeavyApp`, full-bleed `WKWebView`).
 - Packed Phaser 4 cabinet from `web` → `ios/KestrelHeavy/Game/`.
 - Offline: vendor Phaser, ES modules, NASA/Suno audio served from `kestrel-heavy://game/` (not `file://`). Scores stay in WKWebView `localStorage`.
-- Portrait only — Info.plist + SwiftUI/WKWebView shell refuse landscape so the cabinet cannot pillarbox. Phaser 1280×720 `ENVELOP` fills the WKWebView; camera zoom keeps the corridor and booster in the cropped strip.
+- Portrait + landscape — Info.plist and the SwiftUI/WKWebView shell rotate freely; Phaser 1280×720 `ENVELOP` fills the WKWebView and camera.js zooms so the corridor and booster stay in frame at any aspect ratio.
 - LaunchScreen storyboard (KH / Pier 7) plus a short in-app splash while the cabinet boots. Repo build is **1.0 (4)** — play-feel pack (one-tap launch, Haven paint cue). TestFlight record exists. If TestFlight already has **≥4**, bump before the next Archive; otherwise the next binary is **1.0 (4)**.
 - Fictional **Kestrel Heavy / Pier 7 / Haven** branding. No Blue Origin or New Glenn marks.
 
@@ -48,7 +48,7 @@ Linux CI can test `BeckifyMath` only. This environment cannot compile SwiftUI or
 2. Open `ios/KestrelHeavy.xcodeproj`.
 3. Select the **KestrelHeavy** scheme (not Beckify, not LookCheck).
 4. Signing: confirm Team `9TR6R5LV8M` on the KestrelHeavy target.
-5. Run on an iPhone / iPad simulator or device (portrait). The app does not rotate to landscape.
+5. Run on an iPhone / iPad simulator or device (portrait or landscape).
 
 Refresh the local game pack after arcade changes (the KestrelHeavy target also runs this before compile):
 
