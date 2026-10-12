@@ -13,8 +13,8 @@ Every file is `{ generatedBy, tolerance, count, cases[] }`. `index.json` lists t
 | orbit.json | 9 | orbitalElements (elliptic + hyperbolic), circularVelocity | rel 1e-9 (non-finite as strings) |
 | vehicle.json | 10 | per preset: stage/strap-on/vehicle mass, toSimStages, baseCd, referenceDiameter, idealDeltaV, tank sizing, serialStages, requiredDeltaV | rel 1e-9 |
 | simulate.json | 13 | simulate(): medium lifter (vacuum, 200 km, overloaded) + every preset; outcome, events, maxQ, orbit, losses, samples | rel 1e-6 (libm ulp drift over thousands of RK4 steps); event types/order exact |
-| economy.json | 67 | priceDesign (fresh + with learning/dev done), reliabilityOf, engine dev/batch cost, learning factor, clusterReliability | money exact (integers), reliability rel 1e-12 |
-| catalog-flight.json | 100 | every engine and every preset: ascent, staging, drag/max-Q, orbit determination | per quantity in docs/PHYSICS.md (absolute and relative). Harness: `tests/golden-harness.test.cjs` |
+| economy.json | 85 | priceDesign (fresh + with learning/dev done), reliabilityOf, engine dev/batch cost, learning factor, clusterReliability | money exact (integers), reliability rel 1e-12 |
+| catalog-flight.json | 136 | every engine and every preset: ascent, staging, drag/max-Q, orbit determination | per quantity in docs/PHYSICS.md (absolute and relative). Harness: `tests/golden-harness.test.cjs` |
 | d0-replay.json | 22 | D0 seeds, portrait viewport, input clock, FNV-1a, medal grade | exact; Matter is not re-simulated |
 | designer-readout.json | 4 | readout v2 hand literals (cone, ogive+fins), a medium-kerolox max-Q band, and orbital templates that must still launch | mass and Δv rel 1e-12; CG/CP/stability abs 1e-9; max-Q is a band (docs/PHYSICS.md) |
 | designer-validate.json | 117 | validateEngineering, quick readout, Make it fly, experience layers, Number.toFixed | messages exact; readout rel 1e-9; cost exact |

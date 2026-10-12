@@ -7,7 +7,7 @@ const path = require('node:path');
 const test = require('node:test');
 const { execFileSync } = require('node:child_process');
 const root = path.join(__dirname, '..');
-const NAMES = ['propellants', 'engines', 'materials', 'payloads', 'presets', 'codex'];
+const NAMES = ['propellants', 'engines', 'materials', 'payloads', 'presets', 'tanks', 'fairings', 'interstages', 'fins', 'codex'];
 const readJSON = (...p) => JSON.parse(fs.readFileSync(path.join(root, ...p), 'utf8'));
 
 // Minimal JSON Schema (2020-12 subset) validator: type, const, enum, required, properties,

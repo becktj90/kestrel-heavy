@@ -32,6 +32,39 @@ export default {
       "maxTempK": 420,
       "cryoOK": false,
       "note": "needs liner for deep-cryogenic LH2"
+    },
+    {
+      "id": "al-cu",
+      "label": "Aluminum-copper alloy",
+      "structuralFraction": 0.055,
+      "density": 2840,
+      "yieldMPa": 400,
+      "costPerKg": 25,
+      "maxTempK": 450,
+      "cryoOK": true,
+      "note": "Fictional 2219-class weldable tank alloy. Heavier than Al-Li, cheaper, cryogenic-capable."
+    },
+    {
+      "id": "titanium",
+      "label": "Titanium alloy",
+      "structuralFraction": 0.042,
+      "density": 4430,
+      "yieldMPa": 880,
+      "costPerKg": 80,
+      "maxTempK": 700,
+      "cryoOK": true,
+      "note": "Fictional Ti-6Al-4V class. High yield lets the wall stay thin; the alloy itself is dense and costly."
+    },
+    {
+      "id": "glass-phenolic",
+      "label": "Glass-phenolic composite",
+      "structuralFraction": 0.05,
+      "density": 1900,
+      "yieldMPa": 350,
+      "costPerKg": 40,
+      "maxTempK": 500,
+      "cryoOK": false,
+      "note": "Fictional fiberglass case for solids, fairings and storables. Not for liquid hydrogen."
     }
   ]
 };

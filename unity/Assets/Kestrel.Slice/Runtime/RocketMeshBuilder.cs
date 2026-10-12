@@ -113,24 +113,35 @@ namespace Kestrel.Slice
             return new Result { mesh = mesh, height = y, stage1Top = stage1Top, nozzleExits = exits.ToArray(), exitDiameter = exitD, tanks = slots };
         }
 
+        /// <summary>Engine bell centres in the stage's XZ plane. One centre engine (odd counts) plus concentric rings.
+        /// Returns the drawn exit radius. Same packer the assembled lathe uses.</summary>
+        public static float EngineSpots(float stageDiameter, float engineDiameter, int count, List<Vector2> spots)
+        {
+            spots.Clear();
+            if (count <= 0) return 0f;
+            float stageR = stageDiameter / 2f;
+            float re = Mathf.Min(engineDiameter / 2f, stageR / Mathf.Max(1f, Mathf.Sqrt(count)) * 0.95f);
+            int left = count;
+            if (left % 2 == 1 || left == 1) { spots.Add(Vector2.zero); left--; }
+            float ringR = re * 2.1f;
+            int guard = 0;
+            while (left > 0 && guard++ < 64)
+            {
+                int cap = Mathf.Max(1, Mathf.FloorToInt(2f * Mathf.PI * ringR / (re * 2.1f)));
+                int k = Mathf.Min(cap, left);
+                for (int j = 0; j < k; j++) { float a = j * Mathf.PI * 2f / k; spots.Add(new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * ringR); }
+                left -= k; ringR += re * 2.1f;
+            }
+            return re;
+        }
+
         /// <summary>Engine bells: one centre engine plus concentric rings (simple circle packer).</summary>
         static void AddEngines(Catalog c, StagePart s, Vector3 origin, float bell, List<Vector3> v, List<Vector3> n, List<Vector2> uv, List<int> t, List<Vector3> exits, ref float exitD)
         {
             var e = c.EngineById[s.engine];
-            float stageR = (float)s.diameter / 2;
-            float re = Mathf.Min((float)e.diameter / 2, stageR / Mathf.Max(1, Mathf.Sqrt(s.engineCount)) * 0.95f);
-            exitD = Mathf.Max(exitD, re * 2);
             var spots = new List<Vector2>();
-            int left = s.engineCount;
-            if (left % 2 == 1 || left == 1) { spots.Add(Vector2.zero); left--; }
-            float ringR = re * 2.1f;
-            while (left > 0)
-            {
-                int cap = Mathf.Max(1, Mathf.FloorToInt(2 * Mathf.PI * ringR / (re * 2.1f)));
-                int k = Mathf.Min(cap, left);
-                for (int j = 0; j < k; j++) { float a = j * Mathf.PI * 2 / k; spots.Add(new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * ringR); }
-                left -= k; ringR += re * 2.1f;
-            }
+            float re = EngineSpots((float)s.diameter, (float)e.diameter, s.engineCount, spots);
+            exitD = Mathf.Max(exitD, re * 2);
             foreach (var p in spots)
             {
                 var off = origin + new Vector3(p.x, 0, p.y);

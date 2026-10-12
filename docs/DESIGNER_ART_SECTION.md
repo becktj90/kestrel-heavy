@@ -19,7 +19,7 @@ Sketches (procedural PIL, fictional marks only), in `docs/designer/art/`:
    - `id` is a stable snake_case string, `label` is a localisation key, `albedo` and `tint` are `#RRGGBB`, and roughness and metallic are 0–1.
    - `partTypes` is a subset of `tank, engine, booster, interstage, fairing, legs, fins, gridfins, rcs`.
    - Any field outside the schema is a validation error.
-   - **2.0 ships 8 finishes:**
+   - **2.0 ships 12 finishes:**
 
      | id | Covers #142's list | Earned? |
      |---|---|---|
@@ -31,13 +31,17 @@ Sketches (procedural PIL, fictional marks only), in `docs/designer/art/`:
      | `foam_orange` | | start |
      | `brushed_stainless` | | earned |
      | `matte_black_ablative` | | earned |
+     | `safety_yellow` | hardware yellow | start |
+     | `heat_tint_copper` | heat tint near bells | earned |
+     | `anodized_blue` | | earned |
+     | `cryo_frost` | pad frost look | earned |
 
-     The 3 earned finishes unlock the same way as liveries.
+     Earned finishes unlock the same way as liveries.
 2. **`data/liveries.json`: accepted** as `{ id, label, primary, accent, pattern, earnRule: { type: "start"|"orbits"|"landings"|"mission", count|missionId }, codexText }`.
    - I added `"start"` for the presets you own from the beginning.
    - There are no price, expiry, random, streak or time fields; the validator rejects any extra key.
    - Patterns: `solid`, `belt_stripes`, `split_vertical`, `checker_roll`, `chevron_nose`, `gradient_aft`, `two_tone_stage`.
-   - **2.0 ships 12 liveries**, 4 of them `start`.
+   - **2.0 ships 16 liveries**, 4 of them `start`.
 3. **Decals:** ids `decal_<name>` (§4), anchors `stageBand`, `interstage` and `fairing`.
    - **At most 6 per vehicle**, scale in 3 steps (0.5×, 1×, 1.5×), rotation 0 or 90.
    - Each decal is 256×256 in **one 2048×2048 atlas** (64 cells; 2.0 uses 24), ASTC 6×6, about 1.8 MB.
@@ -214,7 +218,7 @@ Structure:
   - There are no shop, currency, IAP or ad unlocks for any cosmetic.
   - Unlock state lives in save data. Gameplay Dev owns the flags; Art owns the ID list.
 - **Marks** (`mark_*`) are earned heritage marks: `mark_landing_tally`, `mark_reuse_flame`, `mark_first_orbit_star`, `mark_100_flights_laurel`. They are auto-placed in `slot_heritage_marks`.
-- **2.0 ships 12 presets**, 4 of them available at start.
+- **2.0 ships 16 presets**, 4 of them available at start.
 
 ## 6. Branding editor (original fictional brand)
 The player makes their own space agency or company identity from primitives. Nothing is uploaded or imported: no image import and no free drawing in 2.0.

@@ -9,7 +9,7 @@ const AVIONICS_MASS = { basic: 60, standard: 150, redundant: 300 };
 const LEG_FRACTION = 0.06;         // of stage dry mass, first stage only
 const GRIDFIN_MASS_PER_M2 = 120;   // per m^2 of stage cross-section (4 fins)
 const RCS_MASS = 250;
-const FAIRING_AREAL = { composite: 14, 'al-li': 20, steel: 45 }; // kg/m^2 of shell
+const FAIRING_AREAL = { composite: 14, 'al-li': 20, steel: 45, 'al-cu': 22, titanium: 18, 'glass-phenolic': 16 }; // kg/m^2 of shell
 
 /** Structural (tank/case) mass for a stage-like part. */
 export function structureMass(part, safetyFactor = REF_SAFETY) {
