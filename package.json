@@ -8,6 +8,8 @@
     "gen:catalogs": "node tools/gen-catalogs.mjs",
     "gen:golden": "node tools/export-golden.mjs",
     "templates:build": "node tools/templates/build.mjs",
-    "templates:check": "node tools/templates/build.mjs --check"
+    "templates:check": "node tools/templates/build.mjs --check",
+    "test:replay": "node --experimental-websocket --test --test-concurrency=1 tests/replay/",
+    "replay:record": "node --experimental-websocket tools/replay/record.mjs"
   }
 }
