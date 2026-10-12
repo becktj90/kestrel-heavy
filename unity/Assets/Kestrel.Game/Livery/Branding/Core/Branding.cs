@@ -47,7 +47,7 @@ namespace Kestrel.Livery.Branding
         {
             ["name_length"] = "Give your rocket a name, up to 20 letters.",
             ["name_chars"] = "Names can use letters, numbers, spaces, dashes, dots and apostrophes.",
-            ["name_brand"] = "That name belongs to a real space company. Make up your own!",
+            ["name_brand"] = NameGuard.TryAnotherName,
             ["glyph_unknown"] = "Pick a symbol from the list.",
             ["frame_unknown"] = "Pick a frame from the list.",
             ["colour_index"] = "Pick colours from the palette.",
@@ -116,6 +116,19 @@ namespace Kestrel.Livery.Branding
             }
             return b.ToString();
         }
+
+        /// <summary>Friendly copy shown when a name is too close to a real company. It never names the match.</summary>
+        public const string TryAnotherName = "That name is already used by a real company. Try another name!";
+
+        /// <summary>Result of a name check: Ok, or a friendly "try another name" message for the UI (never a bare block).</summary>
+        public readonly struct NameCheck
+        {
+            public readonly bool Ok; public readonly string Message;
+            public NameCheck(bool ok, string message) { Ok = ok; Message = message; }
+        }
+
+        /// <summary>Preferred API for the editor: returns the message to show instead of a bare true/false.</summary>
+        public static NameCheck Check(string name) => IsBlocked(name) ? new NameCheck(false, TryAnotherName) : new NameCheck(true, null);
 
         public static bool IsBlocked(string name)
         {
