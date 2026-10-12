@@ -47,3 +47,4 @@ Trevor (2026-10-11, 10:20 PM) delegated design and technical calls to Chief of S
 | 32 | 10-11 | Events exist only if the hardware does (SES-n only for restartable engines, strongback only if the pad has one); Max-Q etc. are sim conditions, not scripted times. |
 | 33 | 10-11 | Calibrate ordering/spacing against public timelines; all names and wording original and fictional; times compressed per mode. |
 | 34 | 10-11 | Portrait bottom-sheet tracker: status by shape, tabular T±, `--:--:--` until an event happens, Δ vs nominal in Standard/Engineer. |
+| 35 | 10-12 | Commit Unity `.meta` files for every tracked asset (standard Unity practice) so GUIDs stay stable across checkouts; generated scenes/settings assets stay code-first and untracked. |
