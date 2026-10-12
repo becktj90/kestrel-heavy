@@ -66,7 +66,11 @@ namespace Kestrel.Pad.Tests
             PadBuilder.Build(_root.transform, 1, PadArchetype.Tower, new PadFit(70f, 2.5f));
             var r = PadBuilder.Build(_root.transform, 1, PadArchetype.Rail, new PadFit(20f, 0.7f));
             Assert.That(r.Arms, Is.Empty);
-            Assert.That(_root.transform.childCount, Is.EqualTo(0));
+            Assert.That(_root.GetComponentsInChildren<SwingArm>(), Is.Empty);
+            // only D5 realtime lights may remain as children, and never more than the tier allows
+            var lights = _root.GetComponent<PadLights>();
+            Assert.That(_root.transform.childCount, Is.EqualTo(lights.Realtime.Count));
+            Assert.That(lights.Realtime.Count, Is.LessThanOrEqualTo(KitBudgets.PadRealtimeLights(r.Quality)));
         }
     }
 }

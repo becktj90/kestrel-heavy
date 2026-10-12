@@ -26,6 +26,36 @@ namespace Kestrel.Pad
         InstanceBatch _poles; Mesh _box, _poleMesh; Matrix4x4 _builtFor; float _lastNight = -1f; bool _blinkOn = true;
         static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor"), BaseColor = Shader.PropertyToID("_BaseColor");
 
+        /// <summary>When true, Night follows the scene sun every frame (see ResolveNight). Set false to drive Night yourself.</summary>
+        public bool FollowSun = true;
+
+        /// <summary>Global night override for shots: null = follow the sun. Also set by the -khNight command-line arg.</summary>
+        public static bool? ForceNight
+        {
+            get { if (!_argChecked) { _argChecked = true; if (HasArg("-khNight")) _force = true; } return _force; }
+            set { _argChecked = true; _force = value; }
+        }
+        static bool? _force; static bool _argChecked;
+        static bool HasArg(string a) { try { foreach (var s in System.Environment.GetCommandLineArgs()) if (string.Equals(s, a, System.StringComparison.OrdinalIgnoreCase)) return true; } catch { } return false; }
+
+        /// <summary>Directional light used as the sun: RenderSettings.sun, else the first enabled directional light.</summary>
+        public static Light FindSun()
+        {
+            var s = RenderSettings.sun; if (s != null && s.type == LightType.Directional) return s;
+            foreach (var l in Object.FindObjectsByType<Light>(FindObjectsSortMode.None)) if (l != null && l.enabled && l.type == LightType.Directional) return l;
+            return null;
+        }
+
+        /// <summary>Sun elevation (deg above horizon) from a directional light's forward (light travels along forward).</summary>
+        public static float SunElevation(Light sun) => Mathf.Asin(Mathf.Clamp(-sun.transform.forward.y, -1f, 1f)) * Mathf.Rad2Deg;
+
+        /// <summary>ForceNight → 1/0; else NightFactor(sun elevation) when a sun exists; else 0 (day).</summary>
+        public static float ResolveNight()
+        {
+            var f = ForceNight; if (f.HasValue) return f.Value ? 1f : 0f;
+            var sun = FindSun(); return sun != null ? PadLighting.NightFactor(SunElevation(sun)) : 0f;
+        }
+
         public static PadLights Attach(PadRenderer pad, int quality)
         {
             var l = pad.GetComponent<PadLights>(); if (l == null) l = pad.gameObject.AddComponent<PadLights>();
@@ -103,7 +133,7 @@ namespace Kestrel.Pad
         }
 
         /// <summary>Kind intensity → emission. Day keeps a faint glow so fixtures read as lamps.</summary>
-        void ApplyNight(double t)
+        public void ApplyNight(double t)
         {
             bool on = true; foreach (var i in _blinkers) { on = PadLighting.Blink(Plan[i].BlinkHz, t) > 0.5f; break; }
             if (Mathf.Abs(Night - _lastNight) < 1e-3f && on == _blinkOn) return;
@@ -120,6 +150,7 @@ namespace Kestrel.Pad
         void LateUpdate()
         {
             if (Plan == null) return;
+            if (FollowSun) Night = ResolveNight();
             Refresh(); ApplyNight(Time.timeAsDouble);
             var cam = ViewCamera != null ? ViewCamera : Camera.main; if (cam == null) return;
             int q = BuiltQuality; Ledger.Reset(); var p = cam.transform.position;
