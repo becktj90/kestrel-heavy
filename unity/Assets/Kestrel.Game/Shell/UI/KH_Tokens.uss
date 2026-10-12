@@ -56,6 +56,7 @@
     letter-spacing: 2px;
 }
 
+.kh-subtitle { font-size: var(--kh-font-body); color: var(--kh-color-ink); -unity-text-align: middle-center; margin-bottom: var(--kh-space-6); }
 .kh-button {
     min-height: var(--kh-touch-min);
     min-width: var(--kh-touch-min);

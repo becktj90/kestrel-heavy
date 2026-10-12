@@ -6,6 +6,18 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Shell/Boot.unity
+    guid: b67d2d2a4b8cddfb1f752f8953a3e685
+  - enabled: 1
+    path: Assets/Scenes/Shell/Home.unity
+    guid: 9f54dfd91b2dd26fc8c379211f2b2088
+  - enabled: 1
+    path: Assets/Scenes/Shell/Design.unity
+    guid: f25a2940183cb28ab34e04513bdbdf54
+  - enabled: 1
+    path: Assets/Scenes/Shell/Flight.unity
+    guid: b4ac86a0035271d399be44e8ff049ffc
+  - enabled: 1
     path: Assets/Scenes/Slice.unity
     guid: 709bf33d787b8b8e797b6504319a06e9
   m_configObjects: {}

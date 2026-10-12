@@ -31,6 +31,8 @@ namespace Kestrel.Game.Shell
             DontDestroyOnLoad(gameObject);
             Application.targetFrameRate = 60;
 
+            // Committed Boot.unity cannot reference the generated PanelSettings asset; load it by path.
+            if (PanelSettings == null) PanelSettings = Resources.Load<PanelSettings>("UI/KH_ShellPanelSettings");
             Spec = VisualSpecData.Load();
             Quality = gameObject.AddComponent<QualityService>();
 

@@ -135,7 +135,9 @@ namespace Kestrel.Slice.Editor
                 app.PanelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/Resources/UI/KH_PanelSettings.asset");
                 EditorSceneManager.SaveScene(scene, ScenePath);
             }
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+            // Keep the committed shell order (Boot, Home, Design, Flight first); Slice is appended, never first.
+            var list = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            if (!list.Exists(s => s.path == ScenePath)) { list.Add(new EditorBuildSettingsScene(ScenePath, true)); EditorBuildSettings.scenes = list.ToArray(); }
         }
     }
 

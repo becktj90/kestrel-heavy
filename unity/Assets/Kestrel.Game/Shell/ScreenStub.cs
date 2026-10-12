@@ -19,16 +19,33 @@ namespace Kestrel.Game.Shell
             var title = new Label(Kind == AppScreen.Home ? "KESTREL HEAVY" : Kind.ToString().ToUpperInvariant());
             title.AddToClassList("kh-title");
             _view.Add(title);
-            foreach (AppScreen s in System.Enum.GetValues(typeof(AppScreen)))
+            // Menu per screen: Home → Play (Design); Design → Launch (Flight) / Home; Flight → Design / Home.
+            if (Kind == AppScreen.Home)
             {
-                if (s == Kind) continue;
-                var target = s;
-                var b = new Button(() => shell.Flow.Go(target)) { text = target.ToString() };
-                b.AddToClassList("kh-button");
-                _view.Add(b);
+                var sub = new Label("Design a rocket. Launch it.");
+                sub.AddToClassList("kh-subtitle");
+                _view.Add(sub);
+                AddButton(shell, "Play", AppScreen.Design, "Play. Opens the rocket designer.");
+            }
+            else if (Kind == AppScreen.Design)
+            {
+                AddButton(shell, "Launch", AppScreen.Flight, "Launch the rocket.");
+                AddButton(shell, "Home", AppScreen.Home, "Back to the title screen.");
+            }
+            else
+            {
+                AddButton(shell, "Back to Design", AppScreen.Design, "Back to the rocket designer.");
+                AddButton(shell, "Home", AppScreen.Home, "Back to the title screen.");
             }
             shell.Safe.Add(_view);
             if (shell.Fill != null) shell.Fill.SpaceT = Kind == AppScreen.Flight ? 0f : 1f;
+        }
+
+        void AddButton(AppShell shell, string text, AppScreen target, string a11y)
+        {
+            var b = new Button(() => shell.Flow.Go(target)) { text = text, tooltip = a11y };
+            b.AddToClassList("kh-button");
+            _view.Add(b);
         }
 
         void OnDisable() => _view?.RemoveFromHierarchy();
