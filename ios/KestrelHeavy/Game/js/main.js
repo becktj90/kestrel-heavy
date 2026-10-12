@@ -6,9 +6,29 @@
 import Phaser from './phaser-global.js';
 import { H, W } from './config.js';
 import MissionScene from './mission.js';
+import { stageScaleFor, patchCameraForStageScale } from './stage.js';
 
 const parent = document.getElementById('ng-phaser-root');
-const debug = new URLSearchParams(window.location.search).get('debug') === '1';
+const query = new URLSearchParams(window.location.search);
+const debug = query.get('debug') === '1';
+
+// Backing-store scale: the canvas is W*k x H*k device pixels and the main
+// camera zoom is multiplied by k, so world coordinates, physics and every
+// gameplay zoom value stay in 1280x720 design units (see stage.js).
+const STAGE_K = stageScaleFor({
+  vw: window.innerWidth,
+  vh: window.innerHeight,
+  dpr: window.devicePixelRatio || 1,
+  W,
+  H,
+  override: Number(query.get('stagek')) || null,
+});
+window.__khStageK = STAGE_K;
+const origCreate = MissionScene.prototype.create;
+MissionScene.prototype.create = function createWithStageScale(...args) {
+  patchCameraForStageScale(this.cameras.main, STAGE_K);
+  return origCreate.apply(this, args);
+};
 
 function preferWebGL() {
   try {
@@ -26,8 +46,8 @@ function preferWebGL() {
 const game = new Phaser.Game({
   type: preferWebGL() ? Phaser.WEBGL : Phaser.AUTO, // WEBGL required; AUTO only if the device has no WebGL
   parent,
-  width: W,
-  height: H,
+  width: Math.round(W * STAGE_K),
+  height: Math.round(H * STAGE_K),
   backgroundColor: '#071018',
   banner: false,
   audio: { disableWebAudio: false },
@@ -46,8 +66,8 @@ const game = new Phaser.Game({
     mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     parent,
-    width: W,
-    height: H,
+    width: Math.round(W * STAGE_K),
+    height: Math.round(H * STAGE_K),
     expandParent: false,
   },
   input: {

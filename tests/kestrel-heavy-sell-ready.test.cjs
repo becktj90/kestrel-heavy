@@ -140,6 +140,20 @@ test('SOUND pills no longer cover the INT bar at phone width', () => {
   );
 });
 
+test('SOUND pill no longer covers the SUMMARY chip on the results screen at phone width', () => {
+  const html = fs.readFileSync(path.join(arcadeDir, 'index.html'), 'utf8');
+  assert.match(
+    html,
+    /@container cabinet \(max-width: 720px\) \{[^@]*body\[data-phase="SUMMARY"\] \.mc-hud \{\s*margin-top: 46px;/,
+  );
+});
+
+test('version is 1.0.1 (7) in both build configs', () => {
+  const pbx = fs.readFileSync(path.join(iosRoot, 'KestrelHeavy.xcodeproj/project.pbxproj'), 'utf8');
+  assert.equal((pbx.match(/MARKETING_VERSION = 1\.0\.1;/g) || []).length, 2);
+  assert.equal((pbx.match(/CURRENT_PROJECT_VERSION = 7;/g) || []).length, 2);
+});
+
 test('iOS Game pack is in sync with the web arcade (no drift)', () => {
   const walk = (dir, base = dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) => {
     const p = path.join(dir, d.name);
