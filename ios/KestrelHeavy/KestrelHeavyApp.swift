@@ -17,7 +17,6 @@ struct KestrelHeavyApp: App {
                 .preferredColorScheme(.dark)
                 .statusBarHidden(true)
                 .persistentSystemOverlays(.hidden)
-                .supportedInterfaceOrientations(.portrait.union(.portraitUpsideDown))
         }
     }
 }
