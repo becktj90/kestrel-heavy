@@ -58,6 +58,8 @@ import {
 import { liveCameraTop, spawnYAboveCamera, spawnYInView, SPAWN } from './spawn.js';
 import { lerpRgb, missionTod, skyLayerAlphas, spaceBlend } from './tod.js';
 import AudioApi from './audio.js';
+import flightBus from './narration/bus.js';
+import { initNarration } from './narration/index.js';
 import {
   bindChrome,
   flashIgnite,
@@ -149,6 +151,7 @@ export default class MissionScene extends Phaser.Scene {
     this.settings = loadSettings();
     AudioApi.attach(this);
     this.voice = createVoice();
+    this.narration = initNarration(flightBus);
     this.inputState = createInput();
     this.status = 'MENU';
     this.paused = false;
@@ -562,6 +565,7 @@ export default class MissionScene extends Phaser.Scene {
       ...extra,
     });
     if (!said) return null;
+    flightBus.emit(key, { text: said.radio, abortId: extra.abortId }, this.nowSec);
     this.session.radio = said.radio;
     if (said.banner) setBanner(said.banner, said.kind, said.holdMs);
     return said;
@@ -717,6 +721,7 @@ export default class MissionScene extends Phaser.Scene {
     this.session.failReason = abort.reason;
     this.session.coach = abort.coach;
     this.session.radio = abortRadio(this.voice, abort, this.currentFlight());
+    flightBus.emit('abort', { abortId: abort.id, reason: abort.reason, text: this.session.radio }, this.nowSec);
     AudioApi.play('rud', this.settings);
     setBanner(abort.banner, 'fail', 0);
     this.endMission('rud');
@@ -804,6 +809,7 @@ export default class MissionScene extends Phaser.Scene {
 
   bootQaFlight(tClock, enter) {
     this.voice.beginFlight();
+    { const f = this.currentFlight(); flightBus.emit('flight.begin', { missionId: f?.id, payload: f?.payload, mark: f?.mark }, this.nowSec); }
     this.session = this.freshSession();
     this.session.tClock = tClock;
     this.session.qaBooted = true;
@@ -831,6 +837,7 @@ export default class MissionScene extends Phaser.Scene {
     this.time.removeAllEvents();
     AudioApi.unlock(this.settings);
     this.voice.beginFlight();
+    { const f = this.currentFlight(); flightBus.emit('flight.begin', { missionId: f?.id, payload: f?.payload, mark: f?.mark }, this.nowSec); }
     this.session = this.freshSession();
     this.status = 'PRELAUNCH';
     this.session.stage = 'TERMINAL COUNT';
@@ -1099,6 +1106,7 @@ export default class MissionScene extends Phaser.Scene {
   update(_time, delta) {
     const dt = Math.min(0.033, delta / 1000);
     this.nowSec += dt;
+    this.narration?.tick(this.nowSec);
     if (this.paused || this.settingsOpen) {
       this.refreshHud();
       return;
@@ -2213,6 +2221,7 @@ export default class MissionScene extends Phaser.Scene {
 
   endMission(reason) {
     if (this.status === 'SUMMARY') return;
+    flightBus.emit('flight.end', { reason, score: Math.round(this.session?.score || 0) }, this.nowSec);
     this.status = 'SUMMARY';
     this.session.stage = 'SUMMARY';
     this.rocket.setVelocity(0, 0);
