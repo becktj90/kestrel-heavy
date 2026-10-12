@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kestrel Heavy payload archetypes and target orbits",
+  "type": "object",
+  "required": ["version", "orbits", "payloads"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "orbits": { "type": "object", "additionalProperties": {
+      "type": "object", "required": ["id", "label", "apoKm", "periKm", "incDeg"], "additionalProperties": false,
+      "properties": { "id": { "type": "string" }, "label": { "type": "string" }, "apoKm": { "type": "number" }, "periKm": { "type": "number" }, "incDeg": { "type": "number" } } } },
+    "payloads": { "type": "array", "minItems": 1, "items": {
+      "type": "object", "required": ["id", "label", "mass", "volume", "maxG", "maxHeatFlux", "orbit"], "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" }, "label": { "type": "string" },
+        "mass": { "type": "number", "exclusiveMinimum": 0 }, "volume": { "type": "number", "exclusiveMinimum": 0 },
+        "maxG": { "type": "number", "exclusiveMinimum": 0 }, "maxHeatFlux": { "type": "number", "exclusiveMinimum": 0 },
+        "orbit": { "type": "string", "description": "key of orbits" },
+        "crewed": { "type": "boolean" }, "needsAbort": { "type": "boolean" }
+      } } }
+  }
+}
