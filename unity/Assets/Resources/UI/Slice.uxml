@@ -1,0 +1,37 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="Slice.uss" />
+    <ui:VisualElement name="root" class="root">
+        <!-- DESIGN (portrait stub) -->
+        <ui:VisualElement name="design" class="panel design">
+            <ui:Label text="KESTREL HEAVY · DESIGN" class="title" />
+            <ui:DropdownField name="preset" label="Preset" class="row" />
+            <ui:SliderInt name="engines" label="Stage 1 engines" low-value="1" high-value="33" value="9" class="row" />
+            <ui:Slider name="prop" label="Stage 1 propellant (t)" low-value="10" high-value="4000" value="300" class="row" />
+            <ui:VisualElement class="readout">
+                <ui:Label name="r-dv" text="Δv —" class="big" />
+                <ui:Label name="r-twr" text="TWR —" />
+                <ui:Label name="r-cost" text="Cost —" />
+                <ui:Label name="r-rel" text="Reliability —" />
+                <ui:Label name="r-mass" text="Liftoff —" />
+            </ui:VisualElement>
+            <ui:Button name="launch" text="ROLL OUT &amp; LAUNCH" class="launch" />
+        </ui:VisualElement>
+        <!-- FLIGHT HUD -->
+        <ui:VisualElement name="hud" class="hud hidden">
+            <ui:VisualElement class="hud-top">
+                <ui:Label name="h-t" text="T+ 0.0" class="hud-big" />
+                <ui:Label name="h-stage" text="S1" class="hud-chip" />
+            </ui:VisualElement>
+            <ui:VisualElement class="hud-grid">
+                <ui:Label name="h-alt" text="ALT 0.0 km" class="hud-cell" />
+                <ui:Label name="h-vel" text="VEL 0 m/s" class="hud-cell" />
+                <ui:Label name="h-mach" text="MACH 0.00" class="hud-cell" />
+                <ui:Label name="h-q" text="Q 0.0 kPa" class="hud-cell" />
+                <ui:Label name="h-thr" text="THR 0%" class="hud-cell" />
+                <ui:Label name="h-dr" text="DR 0.0 km" class="hud-cell" />
+            </ui:VisualElement>
+            <ui:Label name="h-msg" text="" class="hud-msg" />
+            <ui:Button name="again" text="BACK TO DESIGN" class="launch hidden" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

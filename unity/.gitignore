@@ -1,0 +1,19 @@
+# Unity generated
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/MemoryCaptures/
+/*.csproj
+/*.sln
+*.pidb.meta
+*.pdb.meta
+# generated at import/build time from ../data (see Kestrel/Sync Data menu)
+/Assets/Resources/KestrelData/
+/Assets/Resources/KestrelData.meta
+# dotnet CLI outputs
+/dotnet/**/bin/
+/dotnet/**/obj/
