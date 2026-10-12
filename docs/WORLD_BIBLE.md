@@ -45,7 +45,10 @@ flight (DECISIONS #4), and quiet competence between them.
 
 ## 3. The launch company and home site [1.0]
 
-### Kestrel Launch Works [1.0]
+> **Provisional names, pending a trademark check by Trevor:** Kestrel Launch Works,
+> Tidewater Orbital, Lantern Rocketry, Northwind Aerospace.
+
+### Kestrel Launch Works [1.0, provisional name]
 The player runs (or joins as chief engineer, then runs) **Kestrel Launch Works**,
 "Kestrel" for short. It's a small reusable-launch outfit whose one product is
 dependable rides. Its flagship stack is the game's namesake, the **Kestrel Heavy**.
@@ -72,7 +75,7 @@ not a character; it doesn't talk.
 ### Around the pier [1.1 / Later]
 - **The Hangar [1.1, 3D]** where parts and liveries live. three.js 3D hangar arrives in
   1.1, and a 2.5D treatment in 2.0 (UNITY_SHIP_PLAN U8). The crew hang out here for
-  Crew Talk.
+  Hangar Talk.
 - **Harbor town [Later]**: backdrop vignettes, a diner, kids watching from the seawall.
 - **Tracking hut [Later]**: a codex nook for the Engineer layer.
 
@@ -83,7 +86,7 @@ Two different groups. Keep them apart.
 | Group | Who | Where they appear | Medium |
 |---|---|---|---|
 | **Broadcast voice cast** | Eric (mission control), Sarah (host), Chris (co-host) | In flight, on bus events | Static audio clips + captions |
-| **Crew cast** | Bodie, Junie, Pearl, Sloane (+ extras below) | Hangar, briefings, debriefs, Crew Talk | Text bubbles (1.0/1.1); voice is Later |
+| **Crew cast** | Rook, Marlo, Hollis, Tamsin (+ extras below) | Hangar, briefings, debriefs, Hangar Talk | Text bubbles (1.0/1.1); voice is Later |
 
 The voice cast spec lives in `docs/WRITING_BIBLE.md` section 6 and is the source of truth for them.
 Summary for world use:
@@ -94,16 +97,14 @@ Summary for world use:
 - **Chris, Co-host** [1.0]. He's the explainer on the stream and gives one plain fact per milestone.
   Curious, never cute.
 
-Crew members never speak over the flight channels. Eric never shows up in Crew Talk
+Crew members never speak over the flight channels. Eric never shows up in Hangar Talk
 (he's busy), though the crew mention him.
 
 ## 5. The crew cast [1.0 core four; 1.1 extras]
 
-> Note: Bodie, Junie, Pearl and Sloane are referenced in Crew Talk planning but have no
-> data on `main` yet. This section is the first canonical definition. Their dialect rules
-> are in WRITING_BIBLE section 7.
+> Kestrel-only originals, defined here first. Dialect rules are in WRITING_BIBLE section 7.
 
-### Bodie, propulsion lead [1.0]
+### Rook, propulsion lead [1.0]
 - **Role:** Runs engines and the test stand. He's the first one to the pier and the last to leave.
 - **Specialty:** Engines and feed systems: thrust, Isp, throttle range, ignition,
   turbopumps, chamber pressure.
@@ -112,7 +113,7 @@ Crew members never speak over the flight channels. Eric never shows up in Crew T
 - **Teaches:** Why Isp matters, why you can't throttle to zero, why a relight needs propellant settled.
 - **Kid hook:** He names every engine. He'll explain the "huff" before ignition.
 
-### Junie, guidance and landing [1.0]
+### Marlo, guidance and landing [1.0]
 - **Role:** Writes and tunes the landing guidance. She's the youngest on crew and the fastest thinker.
 - **Specialty:** GNC: attitude control, the landing burn
   (called the **landing burn** or **hoverslam** in-game), grid fins, the descent corridor.
@@ -120,7 +121,7 @@ Crew members never speak over the flight channels. Eric never shows up in Crew T
 - **Teaches:** Why you light late, why you aim off-deck then divert, why tipping happens.
 - **Kid hook:** She keeps a chart of every landing on the hangar wall, with stickers.
 
-### Pearl, structures and materials [1.0]
+### Hollis, structures and materials [1.0]
 - **Role:** Senior structures engineer. Owns tanks, interstage, legs, heat shielding.
 - **Specialty:** Loads and materials: Max-Q, g-limits, tank pressure, thermal margins,
   stainless vs. aluminum-lithium vs. composite (see `web/js/data/materials.js`).
@@ -129,7 +130,7 @@ Crew members never speak over the flight channels. Eric never shows up in Crew T
 - **Teaches:** Why Max-Q bends rockets, why payloads have g-limits, why margins aren't optional.
 - **Kid hook:** She keeps a jar of bolts from every recovered booster.
 
-### Sloane, mission manager and customers [1.0]
+### Tamsin, mission manager and customers [1.0]
 - **Role:** Runs the manifest. Brings in contracts, briefs the player, handles the
   customers, and keeps the books (once economy lands in 1.1).
 - **Specialty:** Mission design and orbits: delta-v budgets, target orbits (LEO, SSO,
@@ -139,7 +140,7 @@ Crew members never speak over the flight channels. Eric never shows up in Crew T
 - **Kid hook:** She gives every customer's payload a nickname.
 
 ### Extras [1.1]
-Optional, light-touch. Add only if Crew Talk needs them.
+Optional, light-touch. Add only if Hangar Talk needs them.
 - **Tomas, pad and ground ops.** He runs the deluge and fueling and is proud of Pier 7.
   Specialty: ground systems, propellant loading, the cryogenics. Voice: proud, chatty, harbor slang.
 - **Wren, Haven's deck boss.** She skippers the barge and secures the booster after a
@@ -159,32 +160,31 @@ Friendly competition. Rivals post results on the same contract board, wave from
 their own piers, and send congratulations. They never sabotage, steal, or gloat.
 Rivals don't fly in the player's sim; they appear as board entries and brief notes.
 
-### Tidewater Orbital [1.1]
+### Tidewater Orbital [1.1, provisional name]
 - Big, polished, by the book. Their rockets are expendable workhorses and they
   are proud of it.
 - **Flavor:** "Never lost a payload." Takes the safe contracts.
 - **Function:** Sets the reliability benchmark on the board. They win a contract if your
   reputation is low.
-- **Line sample (Sloane):** "Tidewater bid on it too. They're good. We're cheaper if we catch it."
+- **Line sample (Tamsin):** "Tidewater bid on it too. They're good. We're cheaper if we catch it."
 
-### Lantern Rocketry [1.1]
+### Lantern Rocketry [1.1, provisional name]
 - Two-person startup up the coast, all small solid sounding rockets and cubesat rideshares.
 - **Flavor:** scrappy and cheerful, always tinkering. Sometimes the kids' favorite.
 - **Function:** Competes for suborbital and CubeSat jobs. Offers occasional co-op
   "rideshare" contracts [Later].
 
-### Northwind Aerospace [Later]
+### Northwind Aerospace [Later, provisional name]
 - A methane-reusable rival on the far side of the ocean, racing for a first reusable upper stage.
 - **Function:** Late-game benchmark for heavy GTO and trans-lunar contracts.
   Gives the arc's final act a goal ("who catches the upper first?").
 
-Rival names are generic and must be checked against real company names before
-shipping (open question O3).
+All company names are provisional until Trevor completes a trademark check (O2).
 
 ## 7. Narrative arc [1.0 Act I; 1.1 Acts II–III; Later Act IV]
 
 **Rules:** Story beats fire only on the hangar or debrief screens, never in flight
-(flight belongs to the voice cast). Each beat is 1 to 4 short Crew Talk cards, one tap
+(flight belongs to the voice cast). Each beat is 1 to 4 short Hangar Talk cards, one tap
 each, with a "Skip" button always visible. Skipped beats can be reread in the
 Logbook. Progress triggers come from mission success, never from watching story.
 
@@ -192,9 +192,9 @@ Logbook. Progress triggers come from mission success, never from watching story.
 - **Premise:** The player arrives at Pier 7 as new chief engineer. The booster has
   never been caught.
 - **Beats:**
-  1. KH-1 brief: Sloane welcomes the Chief. Bodie shows the stack. (Simple layer.)
-  2. KH-2 debrief: First suborbital hop (Science box payload). Pearl's bolt jar starts.
-  3. KH-3 debrief: First orbit. Unlocks Standard designer layer (DECISIONS #4); Junie
+  1. KH-1 brief: Tamsin welcomes the Chief. Rook shows the stack. (Simple layer.)
+  2. KH-2 debrief: First suborbital hop (Science box payload). Hollis's bolt jar starts.
+  3. KH-3 debrief: First orbit. Unlocks Standard designer layer (DECISIONS #4); Marlo
      says landing is next.
   4. KH-4/KH-5: First attempted catch on Haven. On success, the crew cheer and the booster
      goes on the hangar wall. On failure, the crew offer kindly support and a "try again."
@@ -208,7 +208,7 @@ Logbook. Progress triggers come from mission success, never from watching story.
 
 ### Act III: "Heavy" [1.1], about KH-16 to KH-25
 - **Premise:** The full Heavy configuration and GTO work. Hard margins.
-- **Beats:** Pearl's big tank upgrade, a crew-capsule contract (escape system
+- **Beats:** Hollis's big tank upgrade, a crew-capsule contract (escape system
   always works, and the story says so), first rough sea at Haven (Wren appears), a
   milestone flight with town watching from the seawall.
 - **Payloads:** GTO comsats, crew capsule.
@@ -230,7 +230,7 @@ are just goals with stars, and nothing costs money. Numbers live in `economy.jso
 ### Currency [1.1]
 - **Credits** (in-world name, shown as "cr"). Earned only by flying. No purchase,
   no exchange, no real-money conversion, no premium currency, ever.
-- Running out isn't game over: Sloane offers a small bridge contract or a reserve
+- Running out isn't game over: Tamsin offers a small bridge contract or a reserve
   advance (the "reserves/loans" in U8), with friendly terms.
 
 ### Contracts [1.1]
@@ -279,7 +279,7 @@ Stock markets, real-time timers, ads, loot boxes, gacha, trading, multiplayer ec
 |---|---|
 | Pier 7, Haven, Kestrel Launch Works, KH-n naming | 1.0 |
 | Voice cast (Eric, Sarah, Chris) in flight | 1.0 |
-| Crew cast core four, Crew Talk text cards | 1.0 |
+| Crew cast core four, Hangar Talk text cards | 1.0 |
 | Act I story beats, Logbook, Story On/Light/Off | 1.0 |
 | Economy: credits, contract board, pricing, reputation | 1.1 |
 | three.js hangar (3D) | 1.1 |
@@ -289,10 +289,8 @@ Stock markets, real-time timers, ads, loot boxes, gacha, trading, multiplayer ec
 
 ## 10. Open questions
 
-- **O1.** Do the crew (Bodie, Junie, Pearl, Sloane) ever get voiced? Currently text-only
+- **O1.** Do the crew (Rook, Marlo, Hollis, Tamsin) ever get voiced? Currently text-only
   (no new ElevenLabs clips without Trevor's confirmation, DECISIONS #13).
-- **O2.** Where were Crew Talk dialect lines first drafted? Nothing on `main` names
-  these four. Merge any existing text into this bible.
-- **O3.** Trademark clearance on Kestrel Launch Works, Tidewater Orbital, Lantern
+- **O2.** Trademark clearance on Kestrel Launch Works, Tidewater Orbital, Lantern
   Rocketry, Northwind Aerospace before 1.1 ships.
-- **O4.** Does the player start as "Chief" (engineer) or own the company? Draft says Chief.
+- **O3.** Does the player start as "Chief" (engineer) or own the company? Draft says Chief.
