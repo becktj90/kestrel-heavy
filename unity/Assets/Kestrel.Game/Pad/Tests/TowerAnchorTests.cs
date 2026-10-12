@@ -42,6 +42,8 @@ namespace Kestrel.Pad.Tests
             Assert.That(c.Position.Y, Is.LessThan(Heavy.VehicleHeight)); Assert.That(c.Position.Y, Is.GreaterThan(Heavy.VehicleHeight * 0.5f));
             Assert.That(c.Level, Is.EqualTo(L.Tower.CrewLevel));
             Assert.That(L.Graph.Contains("tower.crewarm"), Is.True);
+            Assert.That(L.Graph.Query(ElementCategory.CrewArm).Count, Is.EqualTo(1));
+            Assert.That(L.Graph.Query(ElementCategory.SwingArm).Count, Is.EqualTo(L.Arms.Count), "crew arm is not a swing arm");
             Assert.That(L.Members.Any(m => m.ParentId == "tower.crewarm" && m.Kind == MemberKind.ArmChord), Is.True);
         }
 

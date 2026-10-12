@@ -105,7 +105,7 @@ namespace Kestrel.Pad
             const string id = "tower.crewarm";
             float y = (P.CrewLevel + 1) * P.LevelHeight, z0 = P.NearFaceZ, z1 = z0 - P.CrewArmReach, x = P.CrewArmX;
             const float hw = 0.9f, h = 2.4f;
-            var e = Graph.Add(id, ElementCategory.SwingArm, $"tower.l{P.CrewLevel:00}", "steel", "crew-access-arm", "walkable");
+            var e = Graph.Add(id, ElementCategory.CrewArm, $"tower.l{P.CrewLevel:00}", "steel", "crew-access-arm", "walkable");
             e.Center = new Vec3(x, y + h * 0.5f, (z0 + z1) * 0.5f); e.Size = new Vec3(hw * 2, h, P.CrewArmReach); e.DisplayName = "Crew access arm";
             int bays = Math.Max(2, (int)Math.Round(P.CrewArmReach / 2.4f));
             for (int i = 0; i < 4; i++)
