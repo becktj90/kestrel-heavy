@@ -18,3 +18,10 @@ Trevor (2026-10-11, 10:20 PM) delegated design and technical calls to Chief of S
 | 12 | 10-11 | Moderate failure penalty. 3D hangar. Physics stays honest, and difficulty comes from assists and presets. |
 | 13 | 10-11 | Narration: no free-tier ElevenLabs clips in the paid app. Use the existing paid account if Trevor confirms it's his, otherwise on-device speech. |
 | 14 | 10-11 | App Store screenshots get redone at the end. |
+| 15 | 10-11 | Player-first. Rivals are flavor plus a light market (contract price drift); never block progress. Deep studio/market sim is later. |
+| 16 | 10-11 | Narration (supersedes #13 and ship plan U7 text): ElevenLabs clips pre-generated once on Trevor's paid Creator plan, non-beta models, bundled; on-device TTS only for player-specific strings; no live server. |
+| 17 | 10-11 | Music: original Kestrel motif (4–7 notes, Lydian, 72–96 BPM); generative + MIDI-rendered stems with free instruments for 1.0; adaptive engine data-driven so stems swap as data. AI music only if terms clearly allow paid apps. |
+| 18 | 10-11 | Offline-first, $0, no backend in 1.0. Any future online leaderboard uses deterministic re-sim validation. Real-time multiplayer deferred. |
+| 19 | 10-11 | Own repo (becktj90/kestrel-heavy), not the beckify monorepo. |
+| 20 | 10-11 | Scope tiers per MASTER_ROADMAP.md; X1–X7 specs feed U1–U9. PROJECT_STATE.md is the living context file. |
+| 21 | 10-11 | Legal/compliance docs are "draft for counsel"; audience/age rating needs Trevor's explicit decision. |
