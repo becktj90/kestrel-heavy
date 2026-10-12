@@ -66,7 +66,7 @@ def particles(t, v):
     """Return list of (pos[N,3], size[N], rgb[N,3], alpha[N], additive) for every emitter at real time t."""
     alt = alt_at(t); out = []
     tf, pa = 0.9, math.exp(-alt/8500)
-    if v in ('v5', 'v6', 'v7'):
+    if v in ('v5', 'v6', 'v7', 'v8'):
         L = P.layout(tf, pa, CD, VR, VH, DECK); ssf = P.SSF; collide_body = True; cloudH = L['CloudHeight']; ramp = 0.25; burst = 0.35
         core_spawn = L["CoreSpawnRadius"]; ncore = 12; csz = np.vectorize(P.csize)
     else:  # v4 (fee69ee) parameters
@@ -80,7 +80,7 @@ def particles(t, v):
         collide_body = False; cloudH = -0.1*DECK; ramp = 0.75; burst = 0.0; core_spawn = 0.05*CD; ncore = 8
         csz = lambda u: np.where(u < 0.15, 0.3+0.7*u/0.15, 1-0.2*(u-0.15)/0.85)
         P.SSF, P.NOZ, P.BodySizeStart, P.CoreSizeStart = 0.36, 0.15, 0.3, 0.35
-    if v == 'v7':
+    if v in ('v7', 'v8'):
         return particles_v7(t, L, alt) + cloud_part(t, v, L, cloudH, ramp, burst)
     if v == 'v6':
         return particles_v6(t, L, alt, cloudH, ramp, burst) + cloud_part(t, v, L, cloudH, ramp, burst)
@@ -110,7 +110,7 @@ CLOUD = {
     'u129': dict(cap=160, spd=(0.35, 0.8), k=1.0, start=0.3, vy=(-0.5, 1.0), lift=0.5, R0f=2, spawnf=1.5, sizef=1.0, life=(3.0, 4.5)),
 }
 def cloud_part(t, v, L, cloudH, ramp, burst):
-    C = CLOUD['v7' if v == 'v7' else 'u129']
+    C = CLOUD['v7' if v in ('v7', 'v8') else 'u129']
     out = []
     R0 = C['R0f']*max(DECK, 10); smax = C['sizef']*max(0.55*DECK, 0.2*VH)/0.36; smin = 0.55*smax
     spawnR = max(C['spawnf']*DECK, max(1.5*VR, 1.5*CD) + 0.4*smax*C['start'])
@@ -154,7 +154,7 @@ def particles_v7(t, L, alt):
     pos = np.stack([rad*np.cos(phi), y, rad*np.sin(phi)], -1)
     size = rng.uniform(L['BodyMin'], L['BodyMax'], n)*np.array([P.bsize(L, min(x, 1)) for x in ue])
     rgb, _ = gradient(np.minimum(ue, 1), [(HEAD, 0), (MID, 0.3), (TAIL, 1)], [0, 0, 0])
-    a = fade(np.minimum(ue, 1), fi, 0.9, [(0.6, 0.4), (0.04, 0.7)], ramp=min(0.04, max(0.002, 0.1*d/L['Length'])))
+    a = fade(np.minimum(ue, 1), fi, 0.9, [(0.6, 0.4), (0.04, 0.7)], ramp=min(0.04, max(0.002, 0.02*d/L['Length'])))
     out.append((pos[alive], size[alive], rgb[alive], a[alive], False))
     n = 8; u = rng.random(n); phi = rng.random(n)*2*np.pi; rr = np.sqrt(rng.random(n))*L['CoreSpawnRadius']
     pos = np.stack([rr*np.cos(phi), alt - L['CoreLength']*u, rr*np.sin(phi)], -1); size = L['CoreSize']*(1 - 0.2*u)
@@ -210,7 +210,7 @@ def render(t, v, path):
     allp = []
     plist = particles(t, v)
     for ei, (pos, size, rgb, a, add) in enumerate(plist):
-        tight = (v == 'v7' and ei < 3)
+        tight = (v in ('v7', 'v8') and ei < 3)
         for i in range(len(pos)): allp.append((pos[i], size[i], rgb[i], a[i], add, tight))
     def z(p): return np.dot(p[0]-cam, fwd)
     allp.sort(key=lambda p: -z(p))

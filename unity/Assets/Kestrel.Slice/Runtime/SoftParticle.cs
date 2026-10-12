@@ -24,12 +24,12 @@ namespace Kestrel.Slice
             return s * s;                       // denser core, long soft tail
         }
 
-        /// <summary>#129-v7 plume sprite profile: opaque to r = 0.55, smooth edge to 0 at r = 0.85 (solid 0.70,
-        /// 5% fringe 0.82). Keeps the edge soft but the fringe close to the solid part, so a sprite can start at the
+        /// <summary>#129-v7 plume sprite profile: opaque to r = 0.67, smooth edge to 0 at r = 0.75 (solid 0.71,
+        /// 5% fringe 0.74). Keeps the edge soft but the fringe close to the solid part, so a sprite can start at the
         /// nozzle plane without a halo above it.</summary>
         public static float TightFalloff(float r)
         {
-            float t = Mathf.Clamp01((r - 0.55f) / 0.30f);
+            float t = Mathf.Clamp01((r - 0.67f) / 0.08f);   // short-body PR: edge 0.67-0.75 (solid 0.71, 5% at 0.74) so the body starts <= 0.5 m below the nozzles
             return 1f - t * t * (3f - 2f * t);
         }
 

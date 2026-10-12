@@ -22,6 +22,24 @@ namespace Kestrel.Game.Tests
             Assert.That(PlumeShape.BodyOverlap(L, b.Body), Is.GreaterThanOrEqualTo(2f), $"level {level}: body must overlap (no blobs)");
         }
 
+        // Short-body PR (lead's call): 208 body particles over the ~186 m spec length left a ~3 m translucent gap
+        // under the nozzles and a blobby body. Dense body ~ what's in frame (60-80 m), continuous near the nozzles.
+        [TestCase(0, 3f), TestCase(1, 3f), TestCase(2, 3f), TestCase(3, 3f), TestCase(0, 12.38f), TestCase(3, 12.38f), TestCase(0, 14f)]
+        public void ShortDenseBodyIsContinuousNearNozzles(int level, float d)
+        {
+            var b = PlumeShape.Split(PlumeShape.BudgetForLevel(level), level > 0);
+            foreach (var tf in new[] { 1f, 0.9f, 0.4f })
+            {
+                var L = PlumeShape.ComputeLayout(tf, 1f, d, R, H, Deck);
+                Assert.That(L.Length, Is.LessThanOrEqualTo(80f), $"tf {tf}: dense body <= 80 m at sea level");
+                Assert.That(PlumeShape.NearOverlap(L, b.Body, 3f * d), Is.GreaterThanOrEqualTo(2f), $"level {level} tf {tf}: >=2x sprite overlap in first 3 D");
+                Assert.That(PlumeShape.NearNozzleGap(L), Is.LessThanOrEqualTo(0.5f), $"tf {tf}: near-nozzle gap <= 0.5 m");
+            }
+            float full = PlumeShape.ComputeLayout(1f, 1f, d, R, H, Deck).Length, low = PlumeShape.ComputeLayout(0.4f, 1f, d, R, H, Deck).Length;
+            Assert.That(full, Is.GreaterThan(low), "throttle still lengthens the dense body");
+            Assert.That(PlumeShape.ComputeLayout(1f, 0.01f, d, R, H, Deck).Length, Is.GreaterThan(full), "near-vacuum still lengthens it");
+        }
+
         [TestCase(1f, 1f), TestCase(0.4f, 1f), TestCase(1f, 0.3f), TestCase(1f, 0.01f), TestCase(1f, 0f)]
         public void PlumeTopEdgeStaysBelowNozzlePlane(float throttle, float pa)
         {
@@ -192,7 +210,7 @@ namespace Kestrel.Game.Tests
         {
             Assert.That(SoftParticle.TightFalloff(PlumeShape.PlumeSolidFraction), Is.EqualTo(0.5f).Within(0.02f));
             Assert.That(SoftParticle.TightFalloff(PlumeShape.PlumeFringeFraction), Is.LessThanOrEqualTo(0.06f));
-            Assert.That(SoftParticle.TightFalloff(0.85f), Is.EqualTo(0f).Within(1e-5f));
+            Assert.That(SoftParticle.TightFalloff(0.75f), Is.EqualTo(0f).Within(1e-5f));
         }
 
         // #129-v7 probe/sim: 14-32 m/s launch with ~1/s damping flung billows 19 m out in 0.55 s (thin strip).

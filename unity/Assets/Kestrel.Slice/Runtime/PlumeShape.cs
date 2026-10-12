@@ -131,7 +131,25 @@ namespace Kestrel.Slice
         public const float FadeRamp = 0.04f;
         /// <summary>Body alpha ramp as normalised life: 0.1 D of travel (a fixed 0.04 of a ~15 D body was a 0.6 D
         /// translucent band = the v7-sim gap under the nozzles).</summary>
-        public static float BodyFadeRamp(Layout L) => Mathf.Clamp(0.1f * L.VisualD / Mathf.Max(1f, L.Length), 0.002f, FadeRamp);
+        public static float BodyFadeRamp(Layout L) => Mathf.Clamp(0.02f * L.VisualD / Mathf.Max(1f, L.Length), 0.002f, FadeRamp);
+
+        /// <summary>Dense body length cap (m): ~1.0 H at full throttle at sea level (70 m vehicle -> 60-70 m),
+        /// shorter at low throttle, +60% in near-vacuum (VISUAL_SPEC 3.2 lengthening).</summary>
+        public static float DenseLength(float vehicleHeight, float throttle, float paRatio) =>
+            Mathf.Max(5f, vehicleHeight) * (0.6f + 0.4f * Mathf.Clamp01(throttle)) * (1f + 0.6f * Smoothstep(0.2f, 0f, Mathf.Max(0f, paRatio)));
+
+        /// <summary>Gap (m) from the nozzle exit to where the body reads solid: emitter-equivalent offset minus the
+        /// newborn solid half, plus half the alpha ramp distance.</summary>
+        public static float NearNozzleGap(Layout L) => BodyStartGap(L) + 0.5f * BodyFadeRamp(L) * L.Length;
+
+        /// <summary>Sprite overlap along the first `span` m below the nozzles: particles in that span (uniform in
+        /// age along Length) x mean solid diameter there / span.</summary>
+        public static float NearOverlap(Layout L, int bodyParticles, float span)
+        {
+            float n = bodyParticles * Mathf.Clamp01(span / Mathf.Max(1f, L.Length));
+            float solid = 0.5f * (L.BodyMin + L.BodyMax) * BodySizeStart * PlumeSolidFraction;
+            return n * solid / Mathf.Max(0.1f, span);
+        }
         /// <summary>#129-v7 cloud launch speed (x CloudRadius). 0.35-0.8 (14-32 m/s) with the weak limit-velocity
         /// damping (probe-calibrated ~1/s) flung newborn billows 19 m out in 0.55 s: a thin, sparse ring.</summary>
         public const float CloudSpeedMin = 0.08f, CloudSpeedMax = 0.25f;
@@ -146,9 +164,9 @@ namespace Kestrel.Slice
         // ~0.22 sprite sizes below them. Body/core/diamonds now use SoftParticle.TightTexture (flat to 0.55, soft
         // edge to 0.85): solid 0.70, ~5%-alpha fringe 0.82. The ground cloud keeps the soft sprite.
         /// <summary>TightFalloff(r) = 0.5 radius (fraction of nominal size) for the plume sprites.</summary>
-        public const float PlumeSolidFraction = 0.70f;
+        public const float PlumeSolidFraction = 0.71f;
         /// <summary>Radius past which a plume sprite is below ~5% of its peak alpha (TightFalloff 0.0556).</summary>
-        public const float PlumeFringeFraction = 0.82f;
+        public const float PlumeFringeFraction = 0.74f;
         public const float CoreHdrHigh = 1.5f, CoreHdrLow = 1.1f, CoreAlphaMax = 0.8f;   // #129: alpha-blended now (cannot exceed its colour), 0.45 vanished in ascent
         public const int MaxCoreParticles = 8;
         public const float CoreSizeOverLife = 0.8f;   // core shrinks CoreSizeStart -> 0.8 over life
@@ -178,6 +196,11 @@ namespace Kestrel.Slice
             var s = Compute(tf, paRatio, d);
             var L = new Layout { VisualD = d };
             L.Length = Mathf.Max(s.Length, 0.6f * vehicleHeight * (0.4f + 0.6f * tf));
+            // Short body (lead's call after #130): the spec length (~15 D, ~190 m on the heavy) spread the same
+            // particles over far more plume than the frame shows, so the near-nozzle body was sparse (gap, blobs).
+            // The dense body is capped to ~what is in frame, scaled with the vehicle and still following the
+            // VISUAL_SPEC throttle and altitude-lengthening rules; altitude widening keeps using Width via the cone.
+            L.Length = Mathf.Min(L.Length, DenseLength(vehicleHeight, tf, paRatio));
             // Visible width: ~1.2 D at sea level (VISUAL_SPEC 0.7 D column reads too thin), then the spec curve.
             L.Width = Mathf.Max(s.Width, 1.2f * d);
 

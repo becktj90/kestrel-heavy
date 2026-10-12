@@ -1,6 +1,6 @@
 # Python port of Kestrel.Slice.PlumeShape (fix/p0-plume-look v5) for self-checks and the reference renderer.
 import math
-SSF=0.36; SVF=0.8; PSF=0.70; PFF=0.82; NOZ=0.0; BodySizeStart=0.9; CoreSizeStart=1.0; BodyFullAt=0.15; CoreSizeOverLife=0.8; CoreFullAt=0.6; N=40
+SSF=0.36; SVF=0.8; PSF=0.71; PFF=0.74; NOZ=0.0; BodySizeStart=0.9; CoreSizeStart=1.0; BodyFullAt=0.15; CoreSizeOverLife=0.8; CoreFullAt=0.6; N=40
 def ss(e0,e1,x):
     t=min(1,max(0,(x-e0)/(e1-e0))); return t*t*(3-2*t)
 def falloff(r):
@@ -12,7 +12,7 @@ def bsize(L,u): return BodySizeStart+(1-BodySizeStart)*u/BodyFullAt if u<BodyFul
 def csize(u): return CoreSizeStart+(1-CoreSizeStart)*u/CoreFullAt if u<CoreFullAt else 1+(CoreSizeOverLife-1)*(u-CoreFullAt)/(1-CoreFullAt)
 def layout(tf,pa,cd,R,H,deck):
     d=max(0.5,cd); tf=min(1,max(0,tf)); sl,sw=compute(tf,pa,d); L=dict(VisualD=d)
-    L['Length']=max(sl,0.6*H*(0.4+0.6*tf)); L['Width']=max(sw,1.2*d)
+    L['Length']=max(sl,0.6*H*(0.4+0.6*tf)); L['Length']=min(L['Length'],dense_length(H,tf,pa)); L['Width']=max(sw,1.2*d)
     L['CoreSize']=0.3*d/PSF; L['CoreSpawnRadius']=0.4*d; L['CoreLength']=1.0*d
     L['BodySpawnRadius']=0.08*d; L['BodyMax']=1.15*d/PSF; L['BodyMin']=0.95*d/PSF; L['BodyGrow']=1.15; L['BodyLife']=0.6
     solidEnd=L['BodyMax']*PSF*L['BodyGrow']+2*L['BodySpawnRadius']
@@ -45,4 +45,10 @@ if __name__=='__main__':
             L=layout(tf,pa,d,6,70,15); print(tf,pa,d,'top=%.3f (allow %.3f) gap=%.3f (<=%.2f) width=%.2f (%.2fD) emit=%.3f/%.3f coregap=%.3f cloudH=%.2f'%(top_edge(L),NOZ*d,start_gap(L),0.1*d,body_width(L),body_width(L)/d,L['BodyEmitOffset'],L['CoreEmitOffset'],L['CoreEmitOffset']-0.5*SSF*L['CoreSize']*CoreSizeStart,L['CloudHeight']))
 
 def tight(r):
-    t=min(1,max(0,(r-0.55)/0.30)); return 1-t*t*(3-2*t)
+    t=min(1,max(0,(r-0.67)/0.08)); return 1-t*t*(3-2*t)
+
+def dense_length(H,tf,pa): return max(5,H)*(0.6+0.4*min(1,max(0,tf)))*(1+0.6*ss(0.2,0,max(0,pa)))
+def ramp(L): return min(0.04,max(0.002,0.02*L['VisualD']/max(1,L['Length'])))
+def near_gap(L): return start_gap(L)+0.5*ramp(L)*L['Length']
+def near_overlap(L,n,span):
+    k=n*min(1,span/max(1,L['Length'])); solid=0.5*(L['BodyMin']+L['BodyMax'])*BodySizeStart*PSF; return k*solid/span
