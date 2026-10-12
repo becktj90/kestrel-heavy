@@ -101,8 +101,7 @@ namespace Kestrel.Slice
         /// <summary>Panel units per iOS point (panel scales with screen width, so this differs per device).</summary>
         float UnitsPerPoint()
         {
-            float dpr = Screen.dpi > 0 ? Mathf.Max(1f, Mathf.Round(Screen.dpi / 160f)) : 3f;
-            float wPt = Screen.width / dpr;
+            float wPt = Screen.width / DesignFraming.PixelsPerPoint(Screen.width, Screen.height, Screen.dpi);
             return ui != null && ui.layout.width > 0 && wPt > 0 ? ui.layout.width / wPt : 3f;
         }
 
@@ -111,16 +110,21 @@ namespace Kestrel.Slice
         {
             if (ui.layout.height <= 0) return;
             float upp = UnitsPerPoint();
-            designToggle.style.height = 64f * upp;
+            // 56 pt handle (44 pt min tap target), no padding above it. Collapsed = handle + bottom safe area only.
+            designToggle.style.height = 56f * upp;
             designToggle.style.minHeight = 44f * upp;
+            designToggle.style.paddingTop = 0; designToggle.style.paddingBottom = 0;
+            designToggle.style.marginTop = 0; designToggle.style.marginBottom = 0;
             float bottom = Screen.safeArea.yMin * ui.layout.height / Mathf.Max(1, Screen.height);
-            designPanel.style.paddingBottom = Mathf.Max(24f, bottom + 8f * upp);
+            designPanel.style.paddingTop = 0;
+            designPanel.style.paddingBottom = designCollapsed ? bottom : Mathf.Max(8f * upp, bottom + 8f * upp);
         }
 
         void SetDesignCollapsed(bool collapsed)
         {
             designCollapsed = collapsed;
             designPanel.EnableInClassList("collapsed", collapsed);
+            if (ui != null) ApplyDesignPanelMetrics();
             ui.Q<Button>("launch").style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
             designToggle.text = collapsed ? "▲  Design" : "▼  Design";
             // Accessibility pattern in this project is tooltip text (VoiceOver bridge is a listed gap, RESULTS.md).
