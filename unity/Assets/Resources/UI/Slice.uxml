@@ -12,6 +12,7 @@
             <ui:DropdownField name="preset" label="Preset" class="row" />
             <ui:SliderInt name="engines" label="Stage 1 engines" low-value="1" high-value="33" value="9" class="row" />
             <ui:Slider name="prop" label="Stage 1 propellant (t)" low-value="10" high-value="4000" value="300" class="row" />
+            <ui:Toggle name="explode" label="Exploded view" class="row explode" />
             <ui:VisualElement class="readout">
                 <ui:Label name="r-dv" text="Δv —" class="big" />
                 <ui:Label name="r-twr" text="TWR —" />
