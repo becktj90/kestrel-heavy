@@ -138,10 +138,11 @@ namespace Kestrel.Slice
             // Home control: top-left inside the safe area (+8 pt), 44 pt min target. Bottom handle and the
             // flight HUD never share this corner: Home is hidden whenever the HUD is shown.
             float sx = ui.layout.width / Mathf.Max(1, Screen.width), sy = ui.layout.height / Mathf.Max(1, Screen.height);
-            homeButton.style.left = Screen.safeArea.xMin * sx + 8f * upp;
-            homeButton.style.top = (Screen.height - Screen.safeArea.yMax) * sy + 8f * upp;
-            homeButton.style.minHeight = 44f * upp; homeButton.style.minWidth = 88f * upp;
-            homeButton.style.fontSize = 17f * upp;
+            homeButton.style.left = Screen.safeArea.xMin * sx + HomeButtonMetrics.InsetPt * upp;
+            homeButton.style.top = (Screen.height - Screen.safeArea.yMax) * sy + HomeButtonMetrics.InsetPt * upp;
+            // Fixed size in points on every device (was min-size only, with USS padding/radius in panel units,
+            // which are ~3.1 per pt on SE but ~1.1 per pt on iPad, so it grew on SE and shrank on iPad).
+            HomeButtonMetrics.Apply(homeButton.style, upp);
             designPanel.style.paddingBottom = designCollapsed ? bottom : Mathf.Max(8f * upp, bottom + 8f * upp);
         }
 
@@ -303,6 +304,23 @@ namespace Kestrel.Slice
             var shell = Kestrel.Game.Shell.AppShell.Instance;
             if (shell != null && shell.Flow != null) { shell.Flow.Go(Kestrel.Game.Shell.AppScreen.Home); return; }
             UnityEngine.SceneManagement.SceneManager.LoadScene(0, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
+
+        /// <summary>◀ Home: 88 x 44 pt, 17 pt bold, 12 pt corners, 8 pt inset from the safe area.</summary>
+        public static class HomeButtonMetrics
+        {
+            public const float WidthPt = 88f, HeightPt = 44f, FontPt = 17f, RadiusPt = 12f, PadPt = 8f, InsetPt = 8f;
+            public static void Apply(IStyle st, float upp)
+            {
+                st.width = WidthPt * upp; st.height = HeightPt * upp;
+                st.minWidth = WidthPt * upp; st.minHeight = HeightPt * upp;
+                st.maxWidth = WidthPt * upp; st.maxHeight = HeightPt * upp;
+                st.fontSize = FontPt * upp;
+                st.paddingLeft = PadPt * upp; st.paddingRight = PadPt * upp; st.paddingTop = 0; st.paddingBottom = 0;
+                float r = RadiusPt * upp;
+                st.borderTopLeftRadius = r; st.borderTopRightRadius = r; st.borderBottomLeftRadius = r; st.borderBottomRightRadius = r;
+                st.unityTextAlign = TextAnchor.MiddleCenter;
+            }
         }
 
         void Launch()
