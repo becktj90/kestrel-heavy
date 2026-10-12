@@ -22,7 +22,9 @@ struct KestrelHeavyApp: App {
 }
 
 enum KestrelHeavyOrientation {
-    static let mask: UIInterfaceOrientationMask = [.portrait, .portraitUpsideDown]
+    static var mask: UIInterfaceOrientationMask {
+        UIDevice.current.userInterfaceIdiom == .pad ? .all : .allButUpsideDown
+    }
 
     static func lockScene() {
         let prefs = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: mask)
@@ -33,7 +35,7 @@ enum KestrelHeavyOrientation {
     }
 }
 
-/// Info.plist is portrait-only; this keeps WKWebView from inheriting a landscape mask.
+/// Portrait + landscape on iPhone and iPad; keeps WKWebView on the same mask as Info.plist.
 final class KestrelHeavyAppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
