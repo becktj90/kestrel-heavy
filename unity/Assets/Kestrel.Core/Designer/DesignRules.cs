@@ -218,7 +218,7 @@ namespace Kestrel.Core.Designer
             double cal = bal.stabilityCal;
             var lim = DesignerLimits.Active;
             bool fins = d.fins;
-            bool steered = Steered(c, d);
+            bool steered = PadSteered(c, d);
             bool unguided = !steered;
             bool band = fins || unguided;
             if (band && cal > lim.overstableAbove)
@@ -263,7 +263,8 @@ namespace Kestrel.Core.Designer
             else warnings.Add(issue);
         }
 
-        static bool Steered(Catalog c, Design d)
+        /// <summary>A gimbal on stage 1 or on a strap-on. Solids count. An upper stage does not steer the pad.</summary>
+        public static bool PadSteered(Catalog c, Design d)
         {
             if (d.stages.Count == 0) return false;
             if (Gimballed(c, d.stages[0])) return true;
@@ -276,7 +277,8 @@ namespace Kestrel.Core.Designer
             return e.gimbal > 0;
         }
 
-        static bool UnguidedSolid(Catalog c, Design d)
+        /// <summary>Stage 1 is an unguided solid: solid propellant and gimbal 0. Later stages do not change the exemption.</summary>
+        public static bool UnguidedSolid(Catalog c, Design d)
         {
             if (d.stages.Count == 0) return false;
             var s = d.stages[0];
