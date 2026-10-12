@@ -123,12 +123,15 @@ namespace Kestrel.Core.Tests
             var missing = Spec.Obj("migrationMissingMass");
             JsonSame.Equal(DesignMigration.Migrate(missing.Obj("input")), missing["out"], missing.Str("name"));
             var src = VehicleJson("flare");
-            JsonMut.Set(src, "version", 1d);
             double derived = Mass.Of(Golden.Catalog, Design.FromJson(src)).liftoffMass;
-            var filled = DesignMigration.Migrate(JsonMut.CloneObject(src));
+            var asV1 = JsonMut.CloneObject(src);
+            JsonMut.Set(asV1, "version", 1d);
+            double bare = Mass.Of(Golden.Catalog, Design.FromJson(asV1)).liftoffMass;
+            Golden.Near("design-v2-literals", derived - bare, Literals.Obj("interstage")["massKg"], Literals.Obj("interstage").Num("massKg") * 1e-12, 0, "version 1 drops the derived frustum");
+            var filled = DesignMigration.Migrate(JsonMut.CloneObject(asV1));
             foreach (JsonObject s in filled.Arr("stages")) Assert.AreEqual(0, s.Num("interstageMass"));
             double pinned = Mass.Of(Golden.Catalog, Design.FromJson(filled)).liftoffMass;
-            Golden.Near("design-v2-literals", derived - pinned, Literals.Obj("interstage")["massKg"], Literals.Obj("interstage").Num("massKg") * 1e-12, 0, "migrated mass drops the derived frustum");
+            Assert.AreEqual(bare, pinned, 1e-9, "migration pins the missing key to 0");
 
             var cat = Golden.Catalog;
             foreach (JsonObject preset in MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "presets.json"))).Arr("presets"))
@@ -364,6 +367,85 @@ namespace Kestrel.Core.Tests
             CollectionAssert.AreEqual(want, seen.OrderBy(s => s).ToList());
         }
 
+        [Test]
+        public void GimballedSolidSounding_AgreesBetweenV1AndV2()
+        {
+            var v1 = FinlessSounding("srm-large");
+            var parsed = Design.FromJson(v1);
+            Assert.IsTrue(DesignRules.PadSteered(Golden.Catalog, parsed), "a gimballed solid on the pad steers");
+            Assert.IsFalse(DesignRules.UnguidedSolid(Golden.Catalog, parsed), "gimbal 8 is not the solid exemption");
+            var bal = Balance.Of(Golden.Catalog, parsed);
+            Assert.AreEqual("-1.12", JsFormat.ToFixed(bal.stabilityCal, 2));
+            NoteReference(v1, 80000, 1);
+            var report = Report(v1);
+            CollectionAssert.AreEqual(new[] { "engines-dont-fit" }, report.blocks.Select(b => b.code).ToList(),
+                "the 3.7 m motor does not fit the 1.6 m body; stability itself does not block");
+            var note = Only(report.warnings, "unstable");
+            StringAssert.Contains("engine-steered", note.msg);
+            Assert.IsNull(note.kid, "the v2 kid text stays off on a v1 save");
+            Assert.IsNotNull(Find(report.warnings, "maxq-high"), "a gimballed solid is not exempt from max-Q");
+
+            var v2 = DesignMigration.Migrate(JsonMut.CloneObject(v1));
+            NoteReference(v2, 80000, 1);
+            var migrated = Report(v2);
+            CollectionAssert.AreEqual(new[] { "engines-dont-fit" }, migrated.blocks.Select(b => b.code).ToList());
+            var v2note = Only(migrated.warnings, "unstable");
+            AssertWording(v2note, "aero", Words.Str("engineSteeredKid"), Words.Str("engineSteeredEngineer"), Balance.Of(Golden.Catalog, Design.FromJson(v2)));
+            Assert.IsNotNull(Find(migrated.warnings, "maxq-high"));
+
+            var mixed = VehicleJson("straight");
+            JsonMut.Set(mixed, "version", 1d);
+            var booster = (JsonObject)mixed.Arr("stages")[0];
+            JsonMut.Set(booster, "propellant", "solid-apcp");
+            JsonMut.Set(booster, "engine", "srm-small");
+            var mixedDesign = Design.FromJson(mixed);
+            Assert.IsTrue(DesignRules.UnguidedSolid(Golden.Catalog, mixedDesign), "a liquid upper does not remove the stage-1 solid exemption");
+            Assert.IsFalse(DesignRules.PadSteered(Golden.Catalog, mixedDesign));
+            NoteReference(mixed, 80000, 1);
+            var mixedReport = Report(mixed);
+            Assert.IsNotNull(mixedReport.readout);
+            Assert.IsNull(Find(mixedReport.warnings, "maxq-high"));
+            Assert.IsNull(Find(mixedReport.blocks, "maxq-high"));
+        }
+
+        [Test]
+        public void Version1_DoesNotDeriveInterstageMass()
+        {
+            JsonObject scout = null;
+            foreach (JsonObject p in MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "presets.json"))).Arr("presets"))
+                if (p.Str("id") == "scout") scout = JsonMut.CloneObject(p);
+            Assert.IsNotNull(scout);
+            double stored = Mass.Of(Golden.Catalog, Design.FromJson(scout)).liftoffMass;
+            foreach (JsonObject s in scout.Arr("stages"))
+            {
+                s.Remove("interstageMass");
+                s.Order.Remove("interstageMass");
+            }
+            double bare = Mass.Of(Golden.Catalog, Design.FromJson(scout)).liftoffMass;
+            Assert.AreEqual(44129.78, bare, 0.01, "absent key on version 1 is 0, matching JS");
+            Assert.AreEqual(200, stored - bare, 0.01, "dropping the keys also drops Scout's stored 200 kg");
+
+            var migrated = DesignMigration.Migrate(JsonMut.CloneObject(scout));
+            Assert.AreEqual(2, (int)migrated.Num("version"));
+            foreach (JsonObject s in migrated.Arr("stages")) Assert.AreEqual(0, s.Num("interstageMass"));
+            double after = Mass.Of(Golden.Catalog, Design.FromJson(migrated)).liftoffMass;
+            Assert.AreEqual(bare, after, 1e-6, "migration pins the missing key to 0 and does not derive");
+
+            var native = JsonMut.CloneObject(scout);
+            JsonMut.Set(native, "version", 2d);
+            double derived = Mass.Of(Golden.Catalog, Design.FromJson(native)).liftoffMass;
+            Assert.AreEqual(44215.28, derived, 0.01, "version 2 still derives the frustum when the key is absent");
+            Assert.Greater(derived, bare);
+        }
+
+        static JsonObject FinlessSounding(string engine)
+        {
+            var design = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "web", "js", "data", "templates", "sounding-solid.json")));
+            JsonMut.Set(design.Obj("aero"), "fins", false);
+            JsonMut.Set((JsonObject)design.Arr("stages")[0], "engine", engine);
+            return design;
+        }
+
         static AeroBalance BalanceOf(string name) => Balance.Of(Golden.Catalog, Design.FromJson(VehicleJson(name)));
 
         static void NoteReference(JsonObject design, double qPa, double maxG)
@@ -393,6 +475,13 @@ namespace Kestrel.Core.Tests
             if (list == null) return null;
             foreach (var i in list) if (i.code == code) return i;
             return null;
+        }
+
+        static Issue Only(List<Issue> list, string code)
+        {
+            var hits = list.Where(i => i.code == code).ToList();
+            Assert.AreEqual(1, hits.Count, code);
+            return hits[0];
         }
 
         static JsonObject VehicleJson(string name)
