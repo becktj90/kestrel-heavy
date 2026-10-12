@@ -46,7 +46,9 @@ flight (DECISIONS #4), and quiet competence between them.
 ## 3. The launch company and home site [1.0]
 
 > **Provisional names, pending a trademark check by Trevor:** Kestrel Launch Works,
-> Tidewater Orbital, Lantern Rocketry, Northwind Aerospace.
+> Pebblequay Orbital, Lantern Rocketry, Saltlark Aerospace. All four passed an agent
+> quick knockout screen on 2026-10-11 (web + App Store, per docs/NAME_REVIEW.md; not
+> legal advice). They replace two earlier names that the screen flagged.
 
 ### Kestrel Launch Works [1.0, provisional name]
 The player runs (or joins as chief engineer, then runs) **Kestrel Launch Works**,
@@ -160,13 +162,13 @@ Friendly competition. Rivals post results on the same contract board, wave from
 their own piers, and send congratulations. They never sabotage, steal, or gloat.
 Rivals don't fly in the player's sim; they appear as board entries and brief notes.
 
-### Tidewater Orbital [1.1, provisional name]
+### Pebblequay Orbital [1.1, provisional name]
 - Big, polished, by the book. Their rockets are expendable workhorses and they
   are proud of it.
 - **Flavor:** "Never lost a payload." Takes the safe contracts.
 - **Function:** Sets the reliability benchmark on the board. They win a contract if your
   reputation is low.
-- **Line sample (Tamsin):** "Tidewater bid on it too. They're good. We're cheaper if we catch it."
+- **Line sample (Tamsin):** "Pebblequay bid on it too. They're good. We're cheaper if we catch it."
 
 ### Lantern Rocketry [1.1, provisional name]
 - Two-person startup up the coast, all small solid sounding rockets and cubesat rideshares.
@@ -174,7 +176,7 @@ Rivals don't fly in the player's sim; they appear as board entries and brief not
 - **Function:** Competes for suborbital and CubeSat jobs. Offers occasional co-op
   "rideshare" contracts [Later].
 
-### Northwind Aerospace [Later, provisional name]
+### Saltlark Aerospace [Later, provisional name]
 - A methane-reusable rival on the far side of the ocean, racing for a first reusable upper stage.
 - **Function:** Late-game benchmark for heavy GTO and trans-lunar contracts.
   Gives the arc's final act a goal ("who catches the upper first?").
@@ -202,7 +204,7 @@ Logbook. Progress triggers come from mission success, never from watching story.
 
 ### Act II: "Regulars" [1.1], about KH-6 to KH-15
 - **Premise:** Contracts open (economy lands 1.1). Customers start to trust Kestrel.
-- **Beats:** First paid contract, first rival on the board (Tidewater), a reflight of a
+- **Beats:** First paid contract, first rival on the board (Pebblequay), a reflight of a
   caught booster ("flight-proven" badge), Lantern asks for a rideshare.
 - **Payloads:** LEO satellites, Sun-sync imagers, first GTO comsat.
 
@@ -214,7 +216,7 @@ Logbook. Progress triggers come from mission success, never from watching story.
 - **Payloads:** GTO comsats, crew capsule.
 
 ### Act IV: "Far Shore" [Later]
-- **Premise:** Trans-lunar and recovering the upper stage. Northwind races too.
+- **Premise:** Trans-lunar and recovering the upper stage. Saltlark races too.
   Ends with both outfits congratulating each other.
 - **Payloads:** Lunar probe.
 
@@ -249,7 +251,7 @@ Mapped to the existing catalog (`web/js/data/payloads.js`):
 | Starter | Science box (`kid-box`) | LEO 200 km | Kid path default |
 | Small | CubeSat rideshare (`cubesat`) | LEO 400 km | Lantern competes |
 | Medium | LEO satellite (`leo-sat`) | LEO 400 km | Bread-and-butter |
-| Heavy | GTO comsat (`gto-comsat`) | GTO | Tidewater competes |
+| Heavy | GTO comsat (`gto-comsat`) | GTO | Pebblequay competes |
 | Crewed | Crew capsule (`crew-capsule`) | LEO 400 km | Act III, gentler g-limits |
 | Deep | Lunar probe (`lunar-probe`) | Trans-lunar | Act IV, Later |
 
@@ -283,14 +285,15 @@ Stock markets, real-time timers, ads, loot boxes, gacha, trading, multiplayer ec
 | Act I story beats, Logbook, Story On/Light/Off | 1.0 |
 | Economy: credits, contract board, pricing, reputation | 1.1 |
 | three.js hangar (3D) | 1.1 |
-| Acts II–III, rivals Tidewater and Lantern, Tomas, Wren | 1.1 |
+| Acts II–III, rivals Pebblequay and Lantern, Tomas, Wren | 1.1 |
 | Hangar 2.5D treatment | 2.0 (Later) |
-| Act IV, Northwind, harbor town, Dot, crew voice audio | Later |
+| Act IV, Saltlark, harbor town, Dot, crew voice audio | Later |
 
 ## 10. Open questions
 
 - **O1.** Do the crew (Rook, Marlo, Hollis, Tamsin) ever get voiced? Currently text-only
   (no new ElevenLabs clips without Trevor's confirmation, DECISIONS #13).
-- **O2.** Trademark clearance on Kestrel Launch Works, Tidewater Orbital, Lantern
-  Rocketry, Northwind Aerospace before 1.1 ships.
+- **O2.** Trademark clearance (Trevor or counsel) on Kestrel Launch Works, Pebblequay
+  Orbital, Lantern Rocketry and Saltlark Aerospace before 1.1 ships. Quick screen passed
+  2026-10-11 for all four (docs/NAME_REVIEW.md); a full search is still open.
 - **O3.** Does the player start as "Chief" (engineer) or own the company? Draft says Chief.
