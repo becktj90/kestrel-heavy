@@ -36,7 +36,7 @@ namespace Kestrel.Core.Tests
         public void EveryEngineAndPreset_MatchesCatalogFlight()
         {
             var doc = Golden.File("catalog-flight");
-            Assert.AreEqual(100, (int)doc.Num("count"));
+            Assert.AreEqual(136, (int)doc.Num("count"));
             var cases = new List<JsonObject>();
             foreach (JsonObject c in doc.Arr("cases")) cases.Add(c);
             var order = new List<string>();
@@ -50,7 +50,7 @@ namespace Kestrel.Core.Tests
                 stages[key] = Stages(c.Obj("in").Arr("stages"));
                 opts[key] = Opts(c.Obj("in").Obj("opts"));
             }
-            Assert.AreEqual(25, order.Count, "one sim per engine and preset");
+            Assert.AreEqual(34, order.Count, "one sim per engine and preset");
             var stageList = new List<SimStage[]>();
             var optList = new List<SimOptions>();
             foreach (var key in order) { stageList.Add(stages[key]); optList.Add(opts[key]); }

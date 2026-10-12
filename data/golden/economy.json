@@ -6,7 +6,7 @@
   "note": "integer minor units: exact; reliability doubles: rel 1e-12",
   "relReliability": 1e-12
  },
- "count": 67,
+ "count": 85,
  "cases": [
   {
    "fn": "priceDesign",
@@ -5752,6 +5752,51 @@
    "out": 527353414
   },
   {
+   "fn": "engineDevCost",
+   "engine": "gg-kerolox-heavy",
+   "out": 5062514423
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "sc-kerolox-vac",
+   "out": 10948076174
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "sc-methalox",
+   "out": 11299468154
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "sc-methalox-vac",
+   "out": 13671058930
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "gg-hydrolox",
+   "out": 4605649478
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "exp-hydrolox-small",
+   "out": 191354436
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "pf-kerolox",
+   "out": 93654620
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "srm-mid",
+   "out": 1327910161
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "hybrid-small",
+   "out": 165561880
+  },
+  {
    "fn": "engineBatchCost",
    "engine": "gg-kerolox",
    "count": 9,
@@ -5855,6 +5900,69 @@
    "count": 9,
    "built": 3,
    "out": 96310957
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "gg-kerolox-heavy",
+   "count": 9,
+   "built": 3,
+   "out": 2186327804
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "sc-kerolox-vac",
+   "count": 9,
+   "built": 3,
+   "out": 2970639583
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "sc-methalox",
+   "count": 9,
+   "built": 3,
+   "out": 2731171445
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "sc-methalox-vac",
+   "count": 9,
+   "built": 3,
+   "out": 2849569280
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "gg-hydrolox",
+   "count": 9,
+   "built": 3,
+   "out": 1426284497
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "exp-hydrolox-small",
+   "count": 9,
+   "built": 3,
+   "out": 50622382
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "pf-kerolox",
+   "count": 9,
+   "built": 3,
+   "out": 22967202
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "srm-mid",
+   "count": 9,
+   "built": 3,
+   "out": 519050152
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "hybrid-small",
+   "count": 9,
+   "built": 3,
+   "out": 26291438
   },
   {
    "fn": "learningFactor",

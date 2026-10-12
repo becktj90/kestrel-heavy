@@ -111,7 +111,7 @@ namespace Kestrel.Core.Tests
                 };
                 Compare(c.Obj("subject").Str("id"), stages, opts);
             }
-            Assert.AreEqual(25, n);
+            Assert.AreEqual(34, n);
         }
 
         static void Compare(string name, IList<SimStage> stages, SimOptions opts)

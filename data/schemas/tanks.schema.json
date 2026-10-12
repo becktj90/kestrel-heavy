@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kestrel Heavy tank sections (fictional, M1 mass model)",
+  "type": "object",
+  "required": ["version", "tanks"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "tanks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "shape", "material", "diameter", "length", "dryMass", "cost"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "label": { "type": "string" },
+          "shape": { "enum": ["barrel", "barrel-stringer", "common-bulkhead", "sphere-pair", "tapered"] },
+          "material": { "type": "string", "description": "materials.json id" },
+          "propellant": { "type": "string", "description": "propellants.json id, when the section holds propellant" },
+          "diameter": { "type": "number", "exclusiveMinimum": 0, "description": "m, larger end on a taper" },
+          "diameterTop": { "type": "number", "exclusiveMinimum": 0, "description": "m, smaller or upper end" },
+          "length": { "type": "number", "exclusiveMinimum": 0, "description": "m" },
+          "propellantMass": { "type": "number", "minimum": 0, "description": "kg capacity at the listed propellant density" },
+          "dryMass": { "type": "number", "exclusiveMinimum": 0, "description": "kg at safety factor 1.4" },
+          "cost": { "type": "number", "minimum": 0, "description": "USD, structure only" },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}
