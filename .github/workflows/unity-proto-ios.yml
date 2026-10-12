@@ -4,13 +4,9 @@
 # UNITY_PASSWORD, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (base64 of the .p8).
 name: Unity prototype iOS
 
+# HELD: GameCI CI is disabled pending approval; manual dispatch only.
 on:
   workflow_dispatch:
-  push:
-    branches: [unity-prototype]
-    paths:
-      - 'unity/**'
-      - '.github/workflows/unity-proto-ios.yml'
 
 permissions:
   contents: read
