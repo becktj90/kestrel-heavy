@@ -20,6 +20,7 @@ namespace Kestrel.Slice
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
         Design design; Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
         HangarCamera hangarCam; HangarExplodedView explodedView; Toggle explodeToggle;
+        readonly ExplodedToggleLink explodeLink = new ExplodedToggleLink();
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
@@ -113,7 +114,9 @@ namespace Kestrel.Slice
             if (explodeToggle != null)
             {
                 explodeToggle.tooltip = "Exploded view. Separates stages, engines and the fairing along the stack.";
-                explodeToggle.RegisterValueChangedCallback(e => SetExploded(e.newValue));
+                // Two-way: the checkbox writes the camera, and code that opens or closes the view
+                // pushes the checkbox. Push uses SetValueWithoutNotify so the callback does not re-enter.
+                explodeLink.Bind(explodeToggle, explodeToggle.value, on => SetExploded(on));
             }
             launchButton = ui.Q<Button>("launch");
             launchButton.clicked += Launch;
@@ -289,13 +292,16 @@ namespace Kestrel.Slice
         }
 
         /// <summary>Separated parts live on the vehicle. The assembled rocket draws only while the view is closed.</summary>
-        void SetExploded(bool on)
+        void SetExploded(bool on) => SetExploded(on, false);
+
+        void SetExploded(bool on, bool immediate)
         {
-            if (hangarCam != null) hangarCam.SetExploded(on);
-            else if (explodedView != null) explodedView.SetExploded(on, false);
+            if (hangarCam != null) hangarCam.SetExploded(on, immediate);
+            else if (explodedView != null) explodedView.SetExploded(on, immediate);
+            explodeLink.Push(hangarCam != null ? hangarCam.Exploded : on);
             // While the ease is still open, the separated parts are the picture. The assembled
             // rocket comes back only once they have seated (or immediately, when Reduce Motion snaps shut).
-            if (!on && explodedView != null && explodedView.Shown > 0.001f) return;
+            if (!on && explodedView != null && explodedView.Shown > 0.001f && !immediate) return;
             SetAssembledDrawn(!on);
         }
 
@@ -541,11 +547,12 @@ namespace Kestrel.Slice
         {
             if (designerState != null && !designerState.launchEnabled) return; // U1: blocks gate Launch
             submitted = false;
-            if (explodeToggle != null) explodeToggle.SetValueWithoutNotify(false);
-            if (explodedView != null) explodedView.SetExploded(false, true);
+            SetExploded(false, true);
             if (hangarCam != null)
             {
-                hangarCam.SetExploded(false);
+                // Snap back to the assembled pose before sampling the chase offset, so liftoff
+                // does not inherit the closer exploded camera.
+                hangarCam.ApplyPose();
                 if (cam != null && vehicleRoot != null) camOffset = cam.transform.position - vehicleRoot.position;
                 hangarCam.enabled = false;
             }

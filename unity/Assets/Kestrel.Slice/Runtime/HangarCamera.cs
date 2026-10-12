@@ -1,8 +1,10 @@
 // Orbit, pinch-zoom and double-tap reframe for the Hangar. Sits on the design camera.
 // SliceApp assigns the vehicle and the exploded view; the designer toggle lives in Slice.uxml.
 // On iPad the projection shifts left by the 400 pt right-hand panel (DesignFraming.SideVisibleFraction).
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Kestrel.Slice
 {
@@ -70,10 +72,15 @@ namespace Kestrel.Slice
         bool exploded;
         public bool Exploded => exploded;
 
-        public void SetExploded(bool on)
+        /// <summary>Open or close the exploded view. <paramref name="immediate"/> snaps the part animation and the
+        /// camera pose (launch, Reduce Motion). Otherwise both ease over <see cref="HangarMotion.ExplodedSeconds"/>.</summary>
+        public void SetExploded(bool on, bool immediate = false)
         {
+            bool changed = exploded != on;
             exploded = on;
-            if (ExplodedView != null) ExplodedView.SetExploded(on, ReduceMotion);
+            bool snap = immediate || ReduceMotion;
+            if (ExplodedView != null) ExplodedView.SetExploded(on, snap);
+            if (changed) orbit.BeginExploded(on, snap);
         }
 
         public bool BlocksGesture(Vector2 screenPx)
@@ -178,5 +185,58 @@ namespace Kestrel.Slice
             if (Mathf.Abs(scroll) > 0.01f && !BlocksGesture(m)) Pinch(Mathf.Pow(1.08f, scroll));
         }
 #endif
+    }
+
+    /// <summary>Keeps an Exploded-view checkbox equal to the camera state. User edits call
+    /// <paramref name="onUser"/>; <see cref="Push"/> writes the checkbox without notifying, so the
+    /// two directions cannot call each other.</summary>
+    public sealed class ExplodedToggleLink
+    {
+        Toggle toggle;
+        EventCallback<ChangeEvent<bool>> callback;
+        Action<bool> onUser;
+        int depth;
+
+        public bool Value { get; private set; }
+
+        public void Bind(Toggle target, bool initial, Action<bool> userChanged)
+        {
+            Unbind();
+            toggle = target;
+            onUser = userChanged;
+            Value = initial;
+            if (toggle == null) return;
+            callback = OnToggle;
+            depth++;
+            toggle.SetValueWithoutNotify(initial);
+            depth--;
+            toggle.RegisterValueChangedCallback(callback);
+        }
+
+        public void Unbind()
+        {
+            if (toggle != null && callback != null) toggle.UnregisterValueChangedCallback(callback);
+            toggle = null;
+            callback = null;
+            onUser = null;
+        }
+
+        /// <summary>Code changed the exploded state. The checkbox follows and does not fire <c>onUser</c>.</summary>
+        public void Push(bool on)
+        {
+            Value = on;
+            if (toggle == null || toggle.value == on) return;
+            depth++;
+            toggle.SetValueWithoutNotify(on);
+            depth--;
+        }
+
+        void OnToggle(ChangeEvent<bool> e)
+        {
+            if (depth > 0 || e.newValue == Value) return;
+            Value = e.newValue;
+            var handler = onUser;
+            if (handler != null) handler(e.newValue);
+        }
     }
 }
