@@ -65,7 +65,11 @@ export class DesignerScreen {
     document.body.classList.add('kd-open');
     this.refresh();
     this.el.querySelector('.kd-close')?.focus();
+    if (!this.galleryShown) { this.galleryShown = true; this.showGallery(); }
   }
+
+  // T1: "New Design" gallery (designer/gallery.js). Shown on first open; "New" reopens it.
+  showGallery() { return import('./gallery.js').then((g) => g.openGallery(this)); }
 
   close() {
     if (!this.el) return;
@@ -114,6 +118,7 @@ export class DesignerScreen {
       h('button', { type: 'button', class: 'kd-btn kd-close', 'aria-label': 'Close designer', onclick: () => this.close() }, '✕'),
       h('div', { class: 'kd-actions' },
         presetSel,
+        h('button', { type: 'button', class: 'kd-btn', onclick: () => this.showGallery() }, 'New'),
         h('button', { type: 'button', class: 'kd-btn', onclick: () => this.save() }, 'Save'),
         h('button', { type: 'button', class: 'kd-btn', onclick: () => this.showLoad() }, 'Load'),
         h('button', { type: 'button', class: 'kd-btn', 'aria-label': 'Duplicate', onclick: () => this.duplicate() }, 'Copy')),

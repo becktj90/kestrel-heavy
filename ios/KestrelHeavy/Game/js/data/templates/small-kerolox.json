@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "strapOns": {
+    "count": 0,
+    "kind": "solid",
+    "propellant": "solid-apcp",
+    "engine": "srm-small",
+    "engineCount": 1,
+    "propMass": 0,
+    "diameter": 1.6,
+    "material": "steel",
+    "crossfeed": false
+  },
+  "aero": {
+    "nose": "ogive",
+    "fins": false
+  },
+  "landing": {
+    "legs": false,
+    "gridFins": false,
+    "rcs": false
+  },
+  "avionics": {
+    "tier": "standard"
+  },
+  "safetyFactor": 1.4,
+  "id": "tpl-small-kerolox",
+  "name": "Wren",
+  "tier": "small",
+  "stages": [
+    {
+      "interstageMass": 200,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-small",
+      "engineCount": 5,
+      "propMass": 24000,
+      "diameter": 1.8
+    },
+    {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 2",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-small-vac",
+      "engineCount": 1,
+      "propMass": 3500,
+      "diameter": 1.8
+    }
+  ],
+  "payload": {
+    "type": "cubesat",
+    "mass": 200,
+    "orbit": "leo400"
+  },
+  "fairing": {
+    "diameter": 1.8,
+    "length": 2.5,
+    "material": "composite",
+    "jettisonAltitudeKm": 100
+  },
+  "livery": {
+    "primary": "#202020",
+    "accent": "#e8e8e8",
+    "name": "WREN"
+  },
+  "template": {
+    "version": 1,
+    "order": 2,
+    "difficulty": "easy",
+    "tags": [
+      "kerolox",
+      "2 stages",
+      "small",
+      "orbital"
+    ],
+    "tagline": "The smallest rocket that can reach orbit.",
+    "brief": "Two kerosene/oxygen stages with a cluster of small engines below and one vacuum engine above. Carbon-composite tanks keep it light. About 200 kg to a 400 km orbit: a rideshare-sized payload, but a real orbit.",
+    "benchmark": {
+      "class": "Dedicated small launcher (two-stage kerolox)",
+      "text": "Dedicated small launchers carry roughly a few hundred kilograms to low Earth orbit, letting small satellites pick their own orbit and launch date. Several fly a cluster of small kerosene engines on the first stage, some driven by electric pumps instead of turbines.",
+      "sources": [
+        {
+          "title": "Rocket Lab: Electron launch vehicle",
+          "url": "https://www.rocketlabusa.com/launch/electron/",
+          "claim": "small-launcher class: ~300 kg to LEO, 9-engine kerolox first stage, carbon composite, electric-pump-fed (TODO-review: confirm current figures)"
+        }
+      ]
+    },
+    "thingsToTry": [
+      "Swap the composite tanks for Al-Li and see what happens to payload.",
+      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Make the upper stage 20% bigger. Does it still lift off well?"
+    ],
+    "refMission": {
+      "objective": "orbit"
+    },
+    "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+    },
+    "review": [
+      "TODO-review: gg-kerolox-small / gg-kerolox-small-vac are game archetypes scaled from the existing kerolox engines, not real-engine figures.",
+      "Electric-pump variant deferred: the engine catalog has no electric-pump cycle yet."
+    ],
+    "stats": {
+      "stages": 2,
+      "liftoffMassT": 29.7,
+      "liftoffTWR": 1.55,
+      "deltaV": 10833,
+      "requiredDeltaV": 8760,
+      "marginPct": 23.7,
+      "payloadKg": 200,
+      "target": "LEO 400 km",
+      "simOutcome": "orbit",
+      "simApogeeKm": 2043,
+      "simPerigeeKm": 308,
+      "maxG": 8.8
+    }
+  }
+}

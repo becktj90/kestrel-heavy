@@ -6,6 +6,8 @@
     "test": "node --test ./tests/*.test.cjs",
     "pack:ios": "python3 ios/scripts/pack_kestrelheavy_game.py",
     "gen:catalogs": "node tools/gen-catalogs.mjs",
-    "gen:golden": "node tools/export-golden.mjs"
+    "gen:golden": "node tools/export-golden.mjs",
+    "templates:build": "node tools/templates/build.mjs",
+    "templates:check": "node tools/templates/build.mjs --check"
   }
 }

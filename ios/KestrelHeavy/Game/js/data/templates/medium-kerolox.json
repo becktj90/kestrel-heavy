@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "strapOns": {
+    "count": 0,
+    "kind": "solid",
+    "propellant": "solid-apcp",
+    "engine": "srm-small",
+    "engineCount": 1,
+    "propMass": 0,
+    "diameter": 1.6,
+    "material": "steel",
+    "crossfeed": false
+  },
+  "aero": {
+    "nose": "ogive",
+    "fins": false
+  },
+  "landing": {
+    "legs": false,
+    "gridFins": false,
+    "rcs": false
+  },
+  "avionics": {
+    "tier": "standard"
+  },
+  "safetyFactor": 1.4,
+  "id": "tpl-medium-kerolox",
+  "name": "Curlew",
+  "tier": "medium",
+  "stages": [
+    {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 400000,
+      "diameter": 3.7
+    },
+    {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 100000,
+      "diameter": 3.7
+    }
+  ],
+  "payload": {
+    "type": "leo-sat",
+    "mass": 15000,
+    "orbit": "leo400"
+  },
+  "fairing": {
+    "diameter": 5.2,
+    "length": 13,
+    "material": "composite",
+    "jettisonAltitudeKm": 110
+  },
+  "livery": {
+    "primary": "#f2f2f2",
+    "accent": "#1a3c6e",
+    "name": "CURLEW"
+  },
+  "template": {
+    "version": 1,
+    "order": 3,
+    "difficulty": "medium",
+    "variantOf": null,
+    "tags": [
+      "kerolox",
+      "2 stages",
+      "9-engine cluster",
+      "medium",
+      "expendable"
+    ],
+    "tagline": "The workhorse: nine engines, two stages, big payload.",
+    "brief": "Nine gas-generator kerosene engines on a 3.7 m first stage and a single vacuum engine above. Throwing the first stage away (expendable) lets it carry about 15 t to a 400 km orbit. Compare it with the reusable variant to see what landing costs.",
+    "benchmark": {
+      "class": "Medium-lift two-stage kerolox, nine-engine first stage",
+      "text": "The medium-lift workhorse class carries tens of tonnes to low Earth orbit. A cluster of nine engines gives engine-out tolerance and lets one engine design be mass-produced for both stages.",
+      "sources": [
+        {
+          "title": "SpaceX: Falcon 9 vehicle page",
+          "url": "https://www.spacex.com/vehicles/falcon-9/",
+          "claim": "9-engine kerolox first stage, single vacuum-engine second stage, 3.7 m diameter, 22.8 t to LEO expendable (TODO-review)"
+        }
+      ]
+    },
+    "thingsToTry": [
+      "Load the reusable variant and compare payload.",
+      "Drop to 7 engines. How does liftoff TWR change?",
+      "Point it at GTO with a 5.5 t comsat. Is there enough Δv?"
+    ],
+    "refMission": {
+      "objective": "orbit"
+    },
+    "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+    },
+    "review": [
+      "Payload is lower than the real class (~15 t vs ~22.8 t) because the game mass model is M1-level and the sim carries the fairing to orbit."
+    ],
+    "stats": {
+      "stages": 2,
+      "liftoffMassT": 546.5,
+      "liftoffTWR": 1.42,
+      "deltaV": 9768,
+      "requiredDeltaV": 8760,
+      "marginPct": 11.5,
+      "payloadKg": 15000,
+      "target": "LEO 400 km",
+      "simOutcome": "orbit",
+      "simApogeeKm": 1073,
+      "simPerigeeKm": 191,
+      "maxG": 5.8
+    }
+  }
+}

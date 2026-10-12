@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "strapOns": {
+    "count": 0,
+    "kind": "solid",
+    "propellant": "solid-apcp",
+    "engine": "srm-small",
+    "engineCount": 1,
+    "propMass": 0,
+    "diameter": 1.6,
+    "material": "steel",
+    "crossfeed": false
+  },
+  "aero": {
+    "nose": "ogive",
+    "fins": true
+  },
+  "landing": {
+    "legs": false,
+    "gridFins": false,
+    "rcs": false
+  },
+  "avionics": {
+    "tier": "basic"
+  },
+  "safetyFactor": 1.4,
+  "id": "tpl-sounding-solid",
+  "name": "Pipit",
+  "tier": "starter",
+  "stages": [
+    {
+      "interstageMass": 0,
+      "separationMass": 0,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Motor",
+      "propellant": "solid-apcp",
+      "engine": "srm-small",
+      "engineCount": 1,
+      "propMass": 2300,
+      "diameter": 1.6
+    }
+  ],
+  "payload": {
+    "type": "kid-box",
+    "mass": 300,
+    "orbit": "suborbital"
+  },
+  "fairing": {
+    "diameter": 1.6,
+    "length": 2,
+    "material": "composite",
+    "jettisonAltitudeKm": 100
+  },
+  "livery": {
+    "primary": "#f2f2f2",
+    "accent": "#ff6d00",
+    "name": "PIPIT"
+  },
+  "template": {
+    "version": 1,
+    "order": 1,
+    "difficulty": "beginner",
+    "tags": [
+      "solid",
+      "single stage",
+      "suborbital",
+      "tutorial"
+    ],
+    "tagline": "Light the motor, coast past 100 km, come home.",
+    "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+    "benchmark": {
+      "class": "Single-stage solid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+      "sources": [
+        {
+          "title": "FAI: 100 km Kármán line (boundary of space)",
+          "url": "https://www.fai.org/page/icare-boundary",
+          "claim": "100 km reference altitude"
+        },
+        {
+          "title": "NASA Sounding Rockets Program overview",
+          "url": "https://www.nasa.gov/soundingrockets/",
+          "claim": "what sounding rockets are used for"
+        }
+      ]
+    },
+    "thingsToTry": [
+      "Add 500 kg of propellant and watch the apogee climb.",
+      "Swap fins off (Aero tab) and read the warnings.",
+      "Try the 100 km hop with a hybrid motor instead."
+    ],
+    "refMission": {
+      "objective": "apogee",
+      "minApogeeKm": 100
+    },
+    "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+    },
+    "review": [
+      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+    ],
+    "stats": {
+      "stages": 1,
+      "liftoffMassT": 3.1,
+      "liftoffTWR": 19.58,
+      "deltaV": 3593,
+      "requiredDeltaV": 2400,
+      "marginPct": 49.7,
+      "payloadKg": 300,
+      "target": "Suborbital 100 km",
+      "simOutcome": "suborbital",
+      "simApogeeKm": 114,
+      "simPerigeeKm": null,
+      "maxG": 20.6
+    }
+  }
+}

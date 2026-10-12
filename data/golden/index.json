@@ -5,9 +5,9 @@
   "rocket-eq": 16,
   "aero-gravity-earth": 17,
   "orbit": 9,
-  "vehicle": 6,
-  "simulate": 9,
-  "economy": 51
+  "vehicle": 10,
+  "simulate": 13,
+  "economy": 67
  },
- "total": 129
+ "total": 153
 }
