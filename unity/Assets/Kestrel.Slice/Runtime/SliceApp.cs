@@ -238,11 +238,12 @@ namespace Kestrel.Slice
             // Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
             var v = vehicleRoot.position; var up = vehicleRoot.up;
-            camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight), 4f, Time.deltaTime);
+            camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude), 4f, Time.deltaTime);
             // Keep the ground in view from above, and keep it under the vehicle (no edge, horizon at any downrange).
             ground.position = new Vector3(v.x, ground.position.y, ground.position.z);
             cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
-            cam.transform.LookAt(v + up * rocketHeight * 0.5f);
+            var cp = cam.transform.position;
+            cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, cam.fieldOfView, (float)flight.Altitude, cp.y - ground.position.y);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
             hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
