@@ -126,6 +126,7 @@ namespace Kestrel.Slice
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
             PadTower.Apply(tower, r.height, r.mesh.bounds.extents.x);
+            flight.Plume.AttachGroundCloud(tower, 15f, PadTower.Fit(r.height, r.mesh.bounds.extents.x).height);
             FrameCamera(r.height);
         }
 
@@ -150,6 +151,7 @@ namespace Kestrel.Slice
             camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight), 4f, Time.deltaTime);
             cam.transform.position = v + camOffset;
             cam.transform.LookAt(v + up * rocketHeight * 0.5f);
+            flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
             hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
