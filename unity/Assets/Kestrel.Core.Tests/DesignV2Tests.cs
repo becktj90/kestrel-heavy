@@ -5,7 +5,6 @@ using System.Linq;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Json;
-using Kestrel.Core.Physics;
 using Kestrel.Core.Save;
 using Kestrel.Core.Vehicle;
 using NUnit.Framework;
@@ -65,7 +64,8 @@ namespace Kestrel.Core.Tests
             }
             Assert.Greater(Literals.Obj("conical").Obj("flare").Num("cna"), 0, "a flare has CNα > 0");
             Assert.Less(Literals.Obj("conical").Obj("shoulder").Num("cna"), 0, "a shoulder has CNα < 0");
-            Assert.AreEqual(0.3, AeroBalanceCalc.FinCpFromTrailingEdge(1.2, 1.2, 0), 1e-12, "square fin is 0.25c");
+            Assert.AreEqual(0.3, Balance.FinCpAftOfRootLe(1.2, 1.2, 0), 1e-12, "square fin is 0.25c aft of the root leading edge");
+            Assert.AreEqual(0.9, 1.2 - Balance.FinCpAftOfRootLe(1.2, 1.2, 0), 1e-12, "trailing edge on the base puts the quarter chord at 0.75c");
         }
 
         [Test]
@@ -123,12 +123,15 @@ namespace Kestrel.Core.Tests
             var missing = Spec.Obj("migrationMissingMass");
             JsonSame.Equal(DesignMigration.Migrate(missing.Obj("input")), missing["out"], missing.Str("name"));
             var src = VehicleJson("flare");
-            JsonMut.Set(src, "version", 1d);
             double derived = Mass.Of(Golden.Catalog, Design.FromJson(src)).liftoffMass;
-            var filled = DesignMigration.Migrate(JsonMut.CloneObject(src));
+            var asV1 = JsonMut.CloneObject(src);
+            JsonMut.Set(asV1, "version", 1d);
+            double bare = Mass.Of(Golden.Catalog, Design.FromJson(asV1)).liftoffMass;
+            Golden.Near("design-v2-literals", derived - bare, Literals.Obj("interstage")["massKg"], Literals.Obj("interstage").Num("massKg") * 1e-12, 0, "version 1 drops the derived frustum");
+            var filled = DesignMigration.Migrate(JsonMut.CloneObject(asV1));
             foreach (JsonObject s in filled.Arr("stages")) Assert.AreEqual(0, s.Num("interstageMass"));
             double pinned = Mass.Of(Golden.Catalog, Design.FromJson(filled)).liftoffMass;
-            Golden.Near("design-v2-literals", derived - pinned, Literals.Obj("interstage")["massKg"], Literals.Obj("interstage").Num("massKg") * 1e-12, 0, "migrated mass drops the derived frustum");
+            Assert.AreEqual(bare, pinned, 1e-9, "migration pins the missing key to 0");
 
             var cat = Golden.Catalog;
             foreach (JsonObject preset in MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "presets.json"))).Arr("presets"))
@@ -175,8 +178,12 @@ namespace Kestrel.Core.Tests
 
             var v1 = VehicleJson("straight");
             JsonMut.Set(v1, "version", 1d);
-            Assert.IsNull(Find(Report(v1).blocks, "unstable"));
-            Assert.IsNull(Find(Report(v1).warnings, "unstable"));
+            var v1Report = Report(v1);
+            Assert.IsNull(Find(v1Report.blocks, "unstable"), "v1 does not take the v2 block");
+            var v1Note = Find(v1Report.warnings, "unstable");
+            Assert.IsNotNull(v1Note, "v1 still gets the readout engine-steered note");
+            StringAssert.Contains("engine-steered", v1Note.msg);
+            Assert.IsNull(v1Note.kid, "the v2 kid text stays off until migration");
 
             var straps = VehicleJson("straight");
             var core = (JsonObject)straps.Arr("stages")[0];
@@ -257,14 +264,14 @@ namespace Kestrel.Core.Tests
         public void MaxQ_IsWarnOnly_AndSkipsUnguidedSolids()
         {
             var design = VehicleJson("straight");
-            DesignRules.NoteReference(design, new SimResult { maxQ = 46000, maxG = 1 });
+            NoteReference(design, 46000, 1);
             var report = Report(design);
             Assert.IsNull(Find(report.blocks, "maxq-high"));
             AssertIssue(Find(report.warnings, "maxq-high"), "aero", Words.Str("maxqMsg"), Words.Str("maxqKid"), null);
 
             var harder = JsonMut.CloneObject(design);
             JsonMut.Set(harder, "name", "Hard q");
-            DesignRules.NoteReference(harder, new SimResult { maxQ = 200000, maxG = 1 });
+            NoteReference(harder, 200000, 1);
             Assert.IsNull(Find(Report(harder).blocks, "maxq-high"), "max-Q never blocks");
             Assert.IsNotNull(Find(Report(harder).warnings, "maxq-high"));
 
@@ -273,13 +280,13 @@ namespace Kestrel.Core.Tests
             var s0 = (JsonObject)solid.Arr("stages")[0];
             JsonMut.Set(s0, "propellant", "solid-apcp");
             JsonMut.Set(s0, "engine", "srm-small");
-            DesignRules.NoteReference(solid, new SimResult { maxQ = 80000, maxG = 1 });
+            NoteReference(solid, 80000, 1);
             Assert.IsNull(Find(Report(solid).warnings, "maxq-high"));
             Assert.IsNull(Find(Report(solid).blocks, "maxq-high"));
 
             var quiet = VehicleJson("straight");
             JsonMut.Set(quiet, "name", "Under q");
-            DesignRules.NoteReference(quiet, new SimResult { maxQ = 44000, maxG = 1 });
+            NoteReference(quiet, 44000, 1);
             Assert.IsNull(Find(Report(quiet).warnings, "maxq-high"));
         }
 
@@ -288,7 +295,7 @@ namespace Kestrel.Core.Tests
         {
             var bumpy = VehicleJson("straight");
             JsonMut.Set(bumpy, "name", "Bumpy sat");
-            DesignRules.NoteReference(bumpy, new SimResult { maxQ = 1000, maxG = 7.5 });
+            NoteReference(bumpy, 1000, 7.5);
             var sat = Report(bumpy);
             Assert.IsNull(Find(sat.blocks, "payload-g"));
             AssertIssue(Find(sat.warnings, "payload-g"), "payload", Words.Str("payloadWarnMsg"), Words.Str("payloadWarnKid"), null);
@@ -296,7 +303,7 @@ namespace Kestrel.Core.Tests
             var crew = VehicleJson("straight");
             JsonMut.Set(crew, "name", "Bumpy crew");
             JsonMut.Set(crew.Obj("payload"), "type", "crew-capsule");
-            DesignRules.NoteReference(crew, new SimResult { maxQ = 1000, maxG = 5 });
+            NoteReference(crew, 1000, 5);
             var crewReport = Report(crew);
             Assert.IsNull(Find(crewReport.warnings, "payload-g"));
             AssertIssue(Find(crewReport.blocks, "payload-g"), "payload", Words.Str("payloadBlockMsg"), Words.Str("payloadBlockKid"), null);
@@ -360,7 +367,89 @@ namespace Kestrel.Core.Tests
             CollectionAssert.AreEqual(want, seen.OrderBy(s => s).ToList());
         }
 
-        static AeroBalance BalanceOf(string name) => AeroBalanceCalc.Of(Golden.Catalog, Design.FromJson(VehicleJson(name)));
+        [Test]
+        public void GimballedSolidSounding_AgreesBetweenV1AndV2()
+        {
+            var v1 = FinlessSounding("srm-large");
+            var parsed = Design.FromJson(v1);
+            Assert.IsTrue(DesignRules.PadSteered(Golden.Catalog, parsed), "a gimballed solid on the pad steers");
+            Assert.IsFalse(DesignRules.UnguidedSolid(Golden.Catalog, parsed), "gimbal 8 is not the solid exemption");
+            var bal = Balance.Of(Golden.Catalog, parsed);
+            Assert.AreEqual("-1.12", JsFormat.ToFixed(bal.stabilityCal, 2));
+            NoteReference(v1, 80000, 1);
+            var report = Report(v1);
+            CollectionAssert.AreEqual(new[] { "engines-dont-fit" }, report.blocks.Select(b => b.code).ToList(),
+                "the 3.7 m motor does not fit the 1.6 m body; stability itself does not block");
+            var note = Only(report.warnings, "unstable");
+            StringAssert.Contains("engine-steered", note.msg);
+            Assert.IsNull(note.kid, "the v2 kid text stays off on a v1 save");
+            Assert.IsNotNull(Find(report.warnings, "maxq-high"), "a gimballed solid is not exempt from max-Q");
+
+            var v2 = DesignMigration.Migrate(JsonMut.CloneObject(v1));
+            NoteReference(v2, 80000, 1);
+            var migrated = Report(v2);
+            CollectionAssert.AreEqual(new[] { "engines-dont-fit" }, migrated.blocks.Select(b => b.code).ToList());
+            var v2note = Only(migrated.warnings, "unstable");
+            AssertWording(v2note, "aero", Words.Str("engineSteeredKid"), Words.Str("engineSteeredEngineer"), Balance.Of(Golden.Catalog, Design.FromJson(v2)));
+            Assert.IsNotNull(Find(migrated.warnings, "maxq-high"));
+
+            var mixed = VehicleJson("straight");
+            JsonMut.Set(mixed, "version", 1d);
+            var booster = (JsonObject)mixed.Arr("stages")[0];
+            JsonMut.Set(booster, "propellant", "solid-apcp");
+            JsonMut.Set(booster, "engine", "srm-small");
+            var mixedDesign = Design.FromJson(mixed);
+            Assert.IsTrue(DesignRules.UnguidedSolid(Golden.Catalog, mixedDesign), "a liquid upper does not remove the stage-1 solid exemption");
+            Assert.IsFalse(DesignRules.PadSteered(Golden.Catalog, mixedDesign));
+            NoteReference(mixed, 80000, 1);
+            var mixedReport = Report(mixed);
+            Assert.IsNotNull(mixedReport.readout);
+            Assert.IsNull(Find(mixedReport.warnings, "maxq-high"));
+            Assert.IsNull(Find(mixedReport.blocks, "maxq-high"));
+        }
+
+        [Test]
+        public void Version1_DoesNotDeriveInterstageMass()
+        {
+            JsonObject scout = null;
+            foreach (JsonObject p in MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "presets.json"))).Arr("presets"))
+                if (p.Str("id") == "scout") scout = JsonMut.CloneObject(p);
+            Assert.IsNotNull(scout);
+            double stored = Mass.Of(Golden.Catalog, Design.FromJson(scout)).liftoffMass;
+            foreach (JsonObject s in scout.Arr("stages"))
+            {
+                s.Remove("interstageMass");
+                s.Order.Remove("interstageMass");
+            }
+            double bare = Mass.Of(Golden.Catalog, Design.FromJson(scout)).liftoffMass;
+            Assert.AreEqual(44129.78, bare, 0.01, "absent key on version 1 is 0, matching JS");
+            Assert.AreEqual(200, stored - bare, 0.01, "dropping the keys also drops Scout's stored 200 kg");
+
+            var migrated = DesignMigration.Migrate(JsonMut.CloneObject(scout));
+            Assert.AreEqual(2, (int)migrated.Num("version"));
+            foreach (JsonObject s in migrated.Arr("stages")) Assert.AreEqual(0, s.Num("interstageMass"));
+            double after = Mass.Of(Golden.Catalog, Design.FromJson(migrated)).liftoffMass;
+            Assert.AreEqual(bare, after, 1e-6, "migration pins the missing key to 0 and does not derive");
+
+            var native = JsonMut.CloneObject(scout);
+            JsonMut.Set(native, "version", 2d);
+            double derived = Mass.Of(Golden.Catalog, Design.FromJson(native)).liftoffMass;
+            Assert.AreEqual(44215.28, derived, 0.01, "version 2 still derives the frustum when the key is absent");
+            Assert.Greater(derived, bare);
+        }
+
+        static JsonObject FinlessSounding(string engine)
+        {
+            var design = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "web", "js", "data", "templates", "sounding-solid.json")));
+            JsonMut.Set(design.Obj("aero"), "fins", false);
+            JsonMut.Set((JsonObject)design.Arr("stages")[0], "engine", engine);
+            return design;
+        }
+
+        static AeroBalance BalanceOf(string name) => Balance.Of(Golden.Catalog, Design.FromJson(VehicleJson(name)));
+
+        static void NoteReference(JsonObject design, double qPa, double maxG)
+            => ReferenceAscent.Store(ReferenceAscent.CanonicalKey(Golden.Catalog, design), qPa, 0, maxG);
 
         static EngineeringReport Report(JsonObject design) => Validate.Engineering(Golden.Catalog, design);
 
@@ -386,6 +475,13 @@ namespace Kestrel.Core.Tests
             if (list == null) return null;
             foreach (var i in list) if (i.code == code) return i;
             return null;
+        }
+
+        static Issue Only(List<Issue> list, string code)
+        {
+            var hits = list.Where(i => i.code == code).ToList();
+            Assert.AreEqual(1, hits.Count, code);
+            return hits[0];
         }
 
         static JsonObject VehicleJson(string name)
