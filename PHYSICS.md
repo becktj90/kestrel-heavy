@@ -15,8 +15,13 @@ Plain ES modules in `web/js/physics/`, no dependencies, SI units throughout
 - Layers (base h km / lapse K·m⁻¹): 0/−0.0065, 11/0, 20/+0.001, 32/+0.0028, 47/0, 51/−0.0028, 71/−0.002, 84.852 (=86 km geometric).
 - T = T_b + L·(h−h_b). p = p_b·(T/T_b)^(−g₀/(R·L)) if L≠0, else p_b·exp(−g₀(h−h_b)/(R·T_b)).
 - ρ = p/(R·T), a = √(γRT); R = 287.053 J/(kg·K), γ = 1.4, g₀ = 9.80665 m/s², T₀ = 288.15 K, p₀ = 101 325 Pa.
-- Above 86 km: **assumption** isothermal tail, T = 186.87 K, p = p₈₆·exp(−(z−86 km)/5.8 km). Not the 1976
-  upper-layer model; density error grows above ~120 km but drag there is negligible for ascent.
+- 86–1000 km: USSA76 Table I knots every 5 km (kinetic T, p, ρ, tabulated sound speed; 183 knots from 90 km),
+  ln p and ln ρ linear between knots, T and a linear; 86–90 km starts from the layer solution at 86 km so the
+  regimes meet. Exact to the table's 5 significant figures at knots; between knots ≤2.5 % (ρ, worst at 112.5 km
+  where T bends 240→300 K) and ≤0.3 % above 150 km vs the full USSA76 equations. Above 1000 km the 995–1000 km
+  scale height continues (**assumption**). One mean solar condition (1976, T∞ = 1000 K); no F10.7/Ap. Above
+  ~150 km a is the tabulated sound speed, not √(γRT) (mean molecular weight falls). Replaced the isothermal
+  5.8 km tail, which was +11 % in ρ at 100 km and orders of magnitude low above 120 km.
 - `atmosphere(z, out?)` → `{T, p, rho, a}`; `pressureAt(z)`, `densityAt(z)`, `geopotential(z)`.
 
 ## aero.js

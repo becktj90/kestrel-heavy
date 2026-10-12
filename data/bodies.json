@@ -1,0 +1,17 @@
+{
+  "doc": "docs/PHYSICS.md#frames-p1",
+  "note": "Earth only. J2 is stored for P2 and is not applied. No Moon, no third-body, no J3/J4.",
+  "bodies": [
+    {
+      "id": "earth",
+      "label": "Earth",
+      "role": "central",
+      "gravity": true,
+      "mu": 3.986004418e14,
+      "radius": 6378137,
+      "inverseFlattening": 298.257223563,
+      "omega": 7.2921159e-5,
+      "j2": 1.08262668e-3
+    }
+  ]
+}

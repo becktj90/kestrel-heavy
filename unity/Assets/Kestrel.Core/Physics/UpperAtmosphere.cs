@@ -1,9 +1,8 @@
 // Above 86 km, density is Atmosphere.At. There is no second knot table here.
 // A coarse log-linear fit of the 1976 table was up to ~25% off in density at 120–150 km.
-// The USSA76 5 km tabulation replaces the isothermal tail inside Atmosphere.At
-// (fix/atmo-above-86km). Rebase onto that once it lands. NRLMSIS is off limits
-// (licence and patent). The later upper atmosphere is Jacchia-71-class from the
-// NASA/SAO reports, not a copy of this file.
+// The USSA76 5 km tabulation now lives inside Atmosphere.At (86–1000 km). NRLMSIS is
+// off limits (licence and patent). The later upper atmosphere is Jacchia-71-class
+// from the NASA/SAO reports, not a copy of this file.
 // Stars, when a caller needs them, are Kestrel.Core.Astro.StarCatalog over
 // data/astro/bsc5p-compact.csv. This type does not keep a catalogue.
 namespace Kestrel.Core.Physics
