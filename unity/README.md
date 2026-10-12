@@ -82,19 +82,17 @@ into `unity/Packages/LocalTarballs/` and point the manifest there if you want CI
 `SubmitScore`) and has **not been compiled yet**. Fix any signature drift there.
 
 ## 7. CI: `.github/workflows/unity-proto-ios.yml`
-> **Install step (one time):** the agent's GitHub token lacks the `workflow` scope, so the file is committed at
-> `unity/ci/unity-proto-ios.yml`. Move it with
-> `git mv unity/ci/unity-proto-ios.yml .github/workflows/ && git commit -m "Add Unity proto iOS workflow" && git push`
-> from your Mac, or upload it in the GitHub web UI on this branch.
-
-This runs on `workflow_dispatch` and on pushes to `unity-prototype` that touch `unity/**`. It has two jobs:
-1. **ubuntu-latest:** GameCI `unity-test-runner@v4` (EditMode) and `unity-builder@v4` (`targetPlatform: iOS`,
+This runs on `workflow_dispatch` and on pushes to `unity-prototype` that touch `unity/**` or the workflow file itself. It has three jobs:
+1. **ubuntu-latest (`core-dotnet`):** `dotnet test` on `unity/dotnet/Kestrel.Core.Tests` (no Unity).
+2. **ubuntu-latest (`unity-export`):** GameCI `unity-test-runner@v4` (EditMode) and `unity-builder@v4` (`targetPlatform: iOS`,
    `buildMethod: Kestrel.Slice.Editor.BuildScript.BuildIOS`, build number = `github.run_number`). This produces the Xcode project as an artifact.
-2. **macos-latest:** a guard that fails unless the bundle id is exactly `com.beckify.kestrelheavy.unityproto`, then `xcodebuild archive` with **automatic signing
-   via the App Store Connect API key** (`-allowProvisioningUpdates -authenticationKey*`), `CURRENT_PROJECT_VERSION=run_number`, then
-   `xcodebuild -exportArchive` with `destination=upload` and `testFlightInternalTestingOnly`, which uploads to TestFlight.
+3. **macos-latest (`testflight`):** a guard that fails unless the bundle id is exactly `com.beckify.kestrelheavy.unityproto`, then `xcodebuild archive` with **automatic signing
+   via the App Store Connect API key** (`-allowProvisioningUpdates` plus `-authenticationKeyPath` / `-authenticationKeyID` / `-authenticationKeyIssuerID`), `CURRENT_PROJECT_VERSION=run_number`, then
+   `xcodebuild -exportArchive` with the same API-key flags, `destination=upload` and `testFlightInternalTestingOnly`, which uploads to TestFlight.
 
 It does not touch the existing CI workflow, `ios/`, or the shipping bundle id.
+
+**Signing role note:** Apple's docs and Xcode's cloud-managed distribution signing usually want an App Store Connect API key with **Admin**. Our current key is **App Manager** (key id `P2QM4S24MU`); that role successfully created the `com.beckify.kestrelheavy.unityproto` bundle ID and enabled Game Center via the API. The workflow always passes `-allowProvisioningUpdates` with the API key on both archive and export so Xcode can create/update profiles if App Manager is enough. If signing fails with a role error, regenerate the key as Admin and update `ASC_KEY_ID` / `ASC_KEY_P8`.
 
 ### CI secrets (repo → Settings → Secrets and variables → Actions → New repository secret)
 | Secret | How to get it |
@@ -103,7 +101,7 @@ It does not touch the existing CI workflow, `ios/`, or the shipping bundle id.
 | `UNITY_EMAIL` | The Unity ID email that license belongs to. |
 | `UNITY_PASSWORD` | That Unity ID's password. (Use an account without 2FA-by-SMS, or follow GameCI's activation notes.) |
 | `UNITY_SERIAL` | **Pro/Plus only, instead of `UNITY_LICENSE`:** your serial key. Leave it unset for Personal. |
-| `ASC_KEY_ID` | App Store Connect → Users and Access → Integrations → **App Store Connect API** → Team Keys → **+**. Choose access **Admin** (cloud-managed distribution signing needs Admin). The Key ID is shown in the list. |
+| `ASC_KEY_ID` | App Store Connect → Users and Access → Integrations → **App Store Connect API** → Team Keys → **+**. Prefer **Admin** for cloud-managed distribution signing; **App Manager** may work (ours created the proto bundle ID). The Key ID is shown in the list. |
 | `ASC_ISSUER_ID` | Shown at the top of that same Team Keys page ("Issuer ID"). |
 | `ASC_KEY_P8` | Download the `AuthKey_<KEYID>.p8` (one time only), then `base64 -i AuthKey_<KEYID>.p8 \| pbcopy` and paste. |
 
