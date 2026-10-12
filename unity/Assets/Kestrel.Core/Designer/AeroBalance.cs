@@ -3,7 +3,10 @@
 // Nose CP: Barrowman 1967 (conic 2/3 Ln, ogive 0.466 Ln, von Karman 0.5 Ln, blunt 1/3 Ln).
 // Body CP: the conical transition on each interstage, length 0.6 × the larger diameter.
 // Fins, when aero.fins is set, are an unswept square (chord = span) with the trailing edge
-// at the base. CP is at mid-chord. Grid fins do not move CP.
+// at the base. l_F equals the span. CP is Barrowman's quarter-chord of the MAC (0.25c for a
+// square fin), measured up from that trailing edge. Grid fins do not move CP.
+// cp_m is the marker: it is clamped to the nose when the raw CP is ahead of the vehicle.
+// stabilityCal keeps the raw CP. Replaced by Balance from readout v2 once #157 is merged.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
@@ -13,7 +16,8 @@ namespace Kestrel.Core.Designer
 {
     public struct AeroBalance
     {
-        public double cg_m, cp_m, stabilityCal, refDiameter_m, length_m, mass_kg;
+        public double cg_m, cp_m, cpRaw_m, stabilityCal, refDiameter_m, length_m, mass_kg;
+        public bool cpAheadOfNose;
     }
 
     public static class AeroBalanceCalc
@@ -107,11 +111,13 @@ namespace Kestrel.Core.Designer
             double length = yJoint + fairL;
             double dRef = stages.Count > 0 ? Stack.ReferenceDiameter(d) : 0;
             double cg = mSum == 0 ? 0 : my / mSum;
-            double cp = Cp(d, stages, length, dRef, fairD, fairL, transitions, cones);
+            double cpRaw = Cp(d, stages, length, dRef, fairD, fairL, transitions, cones);
+            bool ahead = cpRaw > length;
             return new AeroBalance
             {
-                cg_m = cg, cp_m = cp, refDiameter_m = dRef, length_m = length, mass_kg = mSum,
-                stabilityCal = dRef > 0 ? (cg - cp) / dRef : 0,
+                cg_m = cg, cpRaw_m = cpRaw, cp_m = ahead ? length : cpRaw, cpAheadOfNose = ahead,
+                refDiameter_m = dRef, length_m = length, mass_kg = mSum,
+                stabilityCal = dRef > 0 ? (cg - cpRaw) / dRef : 0,
             };
         }
 
@@ -137,14 +143,15 @@ namespace Kestrel.Core.Designer
 
             if (d.fins && d.finCount > 0 && d.finSpanM > 0 && stages.Count > 0)
             {
-                double s = d.finSpanM, cr = s, ct = s, lf = 0;
+                double s = d.finSpanM, cr = s, ct = s;
+                // Unswept: l_F is the span, not 0. x_t is 0 because the leading edge is unswept.
+                double lf = s, xt = 0;
                 int n = d.finCount;
                 double cna1 = (4.0 * n * Sq(s / dRef)) / (1 + Math.Sqrt(1 + Sq(2 * lf / (cr + ct))));
                 double radius = stages[0].diameter / 2;
                 double kfb = 1 + radius / (s + radius);
-                // Unswept square, trailing edge on the base. Mid-chord is half a chord up from the base.
-                double xFromNose = length - cr / 2;
-                Add(kfb * cna1, xFromNose);
+                double xf = FinCpFromTrailingEdge(cr, ct, xt);
+                Add(kfb * cna1, length - xf);
             }
 
             foreach (var cone in cones)
@@ -155,6 +162,17 @@ namespace Kestrel.Core.Designer
 
             if (cna == 0) return length / 2;
             return length - cnx / cna;
+        }
+
+        /// <summary>
+        /// Barrowman fin CP, metres forward of the trailing edge when that edge sits on the base.
+        /// x_f = (x_t/3)(c_r+2c_t)/(c_r+c_t) + (1/6)(c_r+c_t − c_r c_t/(c_r+c_t)). A square fin is 0.25c.
+        /// </summary>
+        public static double FinCpFromTrailingEdge(double cr, double ct, double xt)
+        {
+            double sum = cr + ct;
+            if (!(sum > 0)) return 0;
+            return (xt / 3.0) * (cr + 2 * ct) / sum + (1.0 / 6.0) * (sum - cr * ct / sum);
         }
 
         static double Sq(double x) => x * x;

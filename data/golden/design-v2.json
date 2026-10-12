@@ -68,6 +68,72 @@
       ]
     }
   },
+  "migrationMissingMass": {
+    "name": "v1-missing-interstage-mass",
+    "input": {
+      "version": 1,
+      "name": "No joint mass",
+      "stages": [
+        {
+          "name": "Booster",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 1000,
+          "diameter": 2,
+          "material": "al-li",
+          "separationMass": 50,
+          "landingPropMass": 0
+        },
+        {
+          "name": "Upper",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 100,
+          "diameter": 2,
+          "material": "al-li",
+          "separationMass": 10,
+          "landingPropMass": 0
+        }
+      ]
+    },
+    "out": {
+      "version": 2,
+      "name": "No joint mass",
+      "stages": [
+        {
+          "name": "Booster",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 1000,
+          "diameter": 2,
+          "material": "al-li",
+          "separationMass": 50,
+          "landingPropMass": 0,
+          "cluster": { "pattern": "auto" },
+          "nozzle": "default",
+          "interstageMass": 0
+        },
+        {
+          "name": "Upper",
+          "propellant": "kerolox",
+          "engine": "gg-kerolox",
+          "engineCount": 1,
+          "propMass": 100,
+          "diameter": 2,
+          "material": "al-li",
+          "separationMass": 10,
+          "landingPropMass": 0,
+          "cluster": { "pattern": "auto" },
+          "interstage": { "shape": "straight" },
+          "nozzle": "default",
+          "interstageMass": 0
+        }
+      ]
+    }
+  },
   "wording": {
     "unstableKid": "Your rocket would flip over! Add fins or put heavy parts higher.",
     "unstableEngineer": "Stability margin {cal} cal (CP above CG). Aim for 1–2 cal.",
@@ -83,8 +149,8 @@
     "vacEngineKid": "This engine only works in space. Use a ground engine on the bottom.",
     "nozzleUnknownMsg": "nozzle no-such not in gg-kerolox.nozzles.",
     "nozzleUnknownKid": "That nozzle isn't in the shop.",
-    "interstageMsg": "Interstage straight with D 2.00→3.00 m.",
-    "interstageKid": "The joint between stages doesn't match their sizes.",
+    "interstageMsg": "Interstage straight with D 2.00→3.00 m (shoulder, CNα < 0).",
+    "interstageKid": "That joint is a shoulder: wider on top, CNα negative, so it makes the rocket less steady.",
     "maxqMsg": "Max-Q 46.00 kPa > 45 kPa.",
     "maxqKid": "The air pushes really hard on this rocket. Try a pointy nose or less push low down.",
     "payloadWarnMsg": "Peak 7.50 g > payload maxG 6.00.",

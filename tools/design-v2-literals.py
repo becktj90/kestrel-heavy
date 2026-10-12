@@ -166,53 +166,40 @@ def vehicle(d_lower, d_upper, fins, include_interstage_cone, prop=None, payload=
         add_cn(cn, (length - t["y_forward"]) + x_fwd)
     if fins:
         span = fin_span
-        cr = span
-        # Unswept square, trailing edge on the base. Mid-chord.
-        cna1 = (4.0 * FIN_COUNT * (span / d_ref) ** 2) / (1.0 + math.sqrt(1.0 + 0.0))
+        cr = ct = span
+        # Unswept square, trailing edge on the base. l_F is the span. x_t is 0.
+        lf = span
+        cna1 = (4.0 * FIN_COUNT * (span / d_ref) ** 2) / (1.0 + math.sqrt(1.0 + (2.0 * lf / (cr + ct)) ** 2))
         radius = d_lower / 2.0
         kfb = 1.0 + radius / (span + radius)
-        add_cn(kfb * cna1, length - cr / 2.0)
+        add_cn(kfb * cna1, length - fin_cp_from_trailing_edge(cr, ct, 0.0))
     cp = length / 2.0 if cna == 0.0 else length - cnx / cna
-    # Quarter-chord station for the same fin, so the golden can show the mid-chord bug.
-    cp_quarter = None
-    if fins:
-        cna_q = 0.0
-        cnx_q = 0.0
-        ln = fairing_length * nose_frac
-        cn_nose = 2.0 * (fair_d / d_ref) ** 2
-        cna_q += cn_nose
-        cnx_q += cn_nose * (0.466 * ln)
-        for t in transitions:
-            cn, x_fwd = conical(t["d_aft"], t["d_forward"], t["length"], d_ref)
-            if cn == 0.0:
-                continue
-            x = (length - t["y_forward"]) + x_fwd
-            cna_q += cn
-            cnx_q += cn * x
-        span = fin_span
-        cna1 = (4.0 * FIN_COUNT * (span / d_ref) ** 2) / (1.0 + math.sqrt(1.0))
-        radius = d_lower / 2.0
-        kfb = 1.0 + radius / (span + radius)
-        x_quarter = length - span / 4.0
-        cna_q += kfb * cna1
-        cnx_q += kfb * cna1 * x_quarter
-        cp_quarter = length - cnx_q / cna_q
     stab = (cg - cp) / d_ref if d_ref > 0 else 0.0
+    ahead = cp > length
     return {
         "cg_m": cg,
-        "cp_m": cp,
+        "cpRaw_m": cp,
+        "cp_m": length if ahead else cp,
+        "cpAheadOfNose": ahead,
         "stabilityCal": stab,
         "mass_kg": m_sum,
         "length_m": length,
         "refDiameter_m": d_ref,
-        "cpQuarterChord_m": cp_quarter,
     }
+
+
+def fin_cp_from_trailing_edge(cr, ct, xt):
+    """Barrowman quarter-chord of the MAC. Square fin with x_t = 0 is 0.25c."""
+    total = cr + ct
+    if total <= 0:
+        return 0.0
+    return (xt / 3.0) * (cr + 2.0 * ct) / total + (1.0 / 6.0) * (total - cr * ct / total)
 
 
 def pack(name, d_lower, d_upper, fins, **kw):
     full = vehicle(d_lower, d_upper, fins, True, **kw)
     bare = vehicle(d_lower, d_upper, fins, False, **kw)
-    full["cpWithoutInterstage_m"] = bare["cp_m"]
+    full["cpWithoutInterstage_m"] = bare["cpRaw_m"]
     full["stabilityWithoutInterstage"] = bare["stabilityCal"]
     full["name"] = name
     full["dLower"] = d_lower
@@ -227,20 +214,28 @@ def pack(name, d_lower, d_upper, fins, **kw):
 
 def main():
     flare_cna, flare_x = conical(4.0, 2.0, length_m(4.0, 2.0), 4.0)
-    taper_cna, taper_x = conical(2.0, 4.0, length_m(2.0, 4.0), 4.0)
+    shoulder_cna, shoulder_x = conical(2.0, 4.0, length_m(2.0, 4.0), 4.0)
     straight = pack("straight", 2.0, 2.0, False)
     flare = pack("flare", 4.0, 2.0, False)
-    taper = pack("taper", 2.0, 4.0, False)
-    fin = pack("fin-midchord", 2.0, 2.0, True)
+    shoulder = pack("shoulder", 2.0, 4.0, False)
+    fin = pack("fin", 2.0, 2.0, True)
     over = pack("overstable", 0.8, 0.8, True, prop=(8000.0, 800.0), payload=20000.0, fairing_length=2.0, fin_span=2.0)
+    if abs(fin_cp_from_trailing_edge(1.2, 1.2, 0.0) - 0.25 * 1.2) > 1e-12:
+        raise SystemExit("square fin CP is not the quarter chord")
     if not (over["stabilityCal"] > 4.0):
-        raise SystemExit("overstable fixture is not above 4 cal")
-    if not (flare["cp_m"] < flare["cpWithoutInterstage_m"]):
+        raise SystemExit("overstable fixture is not above 4 cal: " + str(over["stabilityCal"]))
+    if not (flare_cna > 0):
+        raise SystemExit("flare CNa is not positive")
+    if not (flare["cpRaw_m"] < flare["cpWithoutInterstage_m"]):
         raise SystemExit("flare did not move CP aft")
-    if not (taper["stabilityCal"] < taper["stabilityWithoutInterstage"]):
-        raise SystemExit("taper was not destabilizing")
-    if fin["cpQuarterChord_m"] is None or abs(fin["cp_m"] - fin["cpQuarterChord_m"]) < 0.05:
-        raise SystemExit("mid-chord and quarter-chord CP are too close to tell apart")
+    if not (shoulder_cna < 0):
+        raise SystemExit("shoulder CNa is not negative")
+    if not (shoulder["stabilityCal"] < shoulder["stabilityWithoutInterstage"]):
+        raise SystemExit("shoulder was not destabilizing")
+    if not shoulder["cpAheadOfNose"] or not (shoulder["cpRaw_m"] > shoulder["length_m"]):
+        raise SystemExit("shoulder CP should sit ahead of the nose before the marker clamp")
+    if shoulder["cp_m"] != shoulder["length_m"]:
+        raise SystemExit("shoulder marker was not clamped to the nose")
     doc = {
         "source": "tools/design-v2-literals.py",
         "tolerance": {"massRel": 1e-12, "cpAbsM": 1e-9, "stabilityAbs": 1e-9},
@@ -257,18 +252,18 @@ def main():
             "flatCd": 0.02,
             "flareBand": [0.02, 0.05],
             "taperBand": [0.005, 0.01],
-            "note": "Flat labelled 0.02 for flared and tapered. Straight adds 0.",
+            "note": "Flat labelled 0.02 for flare and shoulder. Straight adds 0. A flare is about 0.02–0.05; a shoulder is about 0.005–0.01.",
         },
         "conical": {
             "flare": {
-                "note": "Wider at the base (dAft 4, dForward 2). Positive CNa, CP aft of the forward end.",
+                "note": "Base-wider (dAft 4, dForward 2). CNα > 0, stabilizing, CP moves aft.",
                 "dAft": 4.0, "dForward": 2.0, "length": length_m(4.0, 2.0), "dRef": 4.0,
                 "cna": flare_cna, "xFromForward": flare_x,
             },
-            "taper": {
-                "note": "Narrower at the base (dAft 2, dForward 4). Negative CNa, destabilizing.",
+            "shoulder": {
+                "note": "Upper-wider (dAft 2, dForward 4). CNα < 0, destabilizing.",
                 "dAft": 2.0, "dForward": 4.0, "length": length_m(2.0, 4.0), "dRef": 4.0,
-                "cna": taper_cna, "xFromForward": taper_x,
+                "cna": shoulder_cna, "xFromForward": shoulder_x,
             },
         },
         "fixture": {
@@ -290,8 +285,8 @@ def main():
         "vehicles": {
             "straight": straight,
             "flare": flare,
-            "taper": taper,
-            "fin-midchord": fin,
+            "fin": fin,
+            "shoulder": shoulder,
             "overstable": over,
         },
     }
@@ -299,8 +294,8 @@ def main():
     out.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
     print(out)
     print("flare cp", flare["cp_m"], "without", flare["cpWithoutInterstage_m"])
-    print("taper cal", taper["stabilityCal"], "without", taper["stabilityWithoutInterstage"])
-    print("fin cp", fin["cp_m"], "quarter", fin["cpQuarterChord_m"], "cal", fin["stabilityCal"])
+    print("shoulder cal", shoulder["stabilityCal"], "raw cp", shoulder["cpRaw_m"], "marker", shoulder["cp_m"], "length", shoulder["length_m"])
+    print("fin cp", fin["cp_m"], "cal", fin["stabilityCal"])
     print("overstable cal", over["stabilityCal"])
     print("straight cal", straight["stabilityCal"], "mass", straight["mass_kg"])
 

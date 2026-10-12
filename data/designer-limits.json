@@ -25,7 +25,7 @@
   "interstage": {
     "lengthOverDiameter": 0.6,
     "dragDeltaCd": 0.02,
-    "shapes": ["straight", "flared", "tapered"]
+    "shapes": ["straight", "flare", "shoulder"]
   },
   "arealKgPerM2": { "composite": 14, "al-li": 20, "steel": 45, "default": 20 },
   "avionicsTiers": ["basic", "standard", "redundant"],

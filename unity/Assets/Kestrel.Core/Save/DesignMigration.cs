@@ -1,6 +1,6 @@
 // Design schema migration. v0 → v1 fills defaults (the JS contract). v1 → v2 adds
 // cluster.pattern = auto, interstage.shape = straight on upper stages, and nozzle = default.
-// It does not rewrite interstageMass, so existing saves keep their masses.
+// A missing interstageMass becomes 0 so C# and JS keep the same mass. A stored value, including 0, stays.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Designer;
@@ -60,6 +60,8 @@ namespace Kestrel.Core.Save
             }
             if (!s.ContainsKey("nozzle") || s["nozzle"] == null)
                 JsonMut.Set(s, "nozzle", "default");
+            if (!s.ContainsKey("interstageMass") || s["interstageMass"] == null)
+                JsonMut.Set(s, "interstageMass", 0d);
         }
 
         static JsonObject Migrate0(JsonObject d)

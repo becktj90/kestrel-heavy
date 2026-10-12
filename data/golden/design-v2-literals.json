@@ -24,11 +24,11 @@
       0.005,
       0.01
     ],
-    "note": "Flat labelled 0.02 for flared and tapered. Straight adds 0."
+    "note": "Flat labelled 0.02 for flare and shoulder. Straight adds 0. A flare is about 0.02\u20130.05; a shoulder is about 0.005\u20130.01."
   },
   "conical": {
     "flare": {
-      "note": "Wider at the base (dAft 4, dForward 2). Positive CNa, CP aft of the forward end.",
+      "note": "Base-wider (dAft 4, dForward 2). CN\u03b1 > 0, stabilizing, CP moves aft.",
       "dAft": 4.0,
       "dForward": 2.0,
       "length": 2.4,
@@ -36,8 +36,8 @@
       "cna": 1.5,
       "xFromForward": 1.333333333333333
     },
-    "taper": {
-      "note": "Narrower at the base (dAft 2, dForward 4). Negative CNa, destabilizing.",
+    "shoulder": {
+      "note": "Upper-wider (dAft 2, dForward 4). CN\u03b1 < 0, destabilizing.",
       "dAft": 2.0,
       "dForward": 4.0,
       "length": 2.4,
@@ -68,12 +68,13 @@
   "vehicles": {
     "straight": {
       "cg_m": 7.310165930663161,
+      "cpRaw_m": 17.341347154594768,
       "cp_m": 17.341347154594768,
+      "cpAheadOfNose": false,
       "stabilityCal": -5.015590611965804,
       "mass_kg": 28264.876067994057,
       "length_m": 18.180147154594767,
       "refDiameter_m": 2.0,
-      "cpQuarterChord_m": null,
       "cpWithoutInterstage_m": 17.341347154594768,
       "stabilityWithoutInterstage": -5.015590611965804,
       "name": "straight",
@@ -90,12 +91,13 @@
     },
     "flare": {
       "cg_m": 5.656615221100106,
+      "cpRaw_m": 8.744336788648692,
       "cp_m": 8.744336788648692,
+      "cpAheadOfNose": false,
       "stabilityCal": -0.7719303918871465,
       "mass_kg": 28604.168074581758,
       "length_m": 15.865498861837906,
       "refDiameter_m": 4.0,
-      "cpQuarterChord_m": null,
       "cpWithoutInterstage_m": 15.026698861837906,
       "stabilityWithoutInterstage": -2.34252091018445,
       "name": "flare",
@@ -110,39 +112,18 @@
       "fairingLengthM": 4.0,
       "finSpanM": 1.2
     },
-    "taper": {
-      "cg_m": 7.781612601650207,
-      "cp_m": 43.13614715459477,
-      "stabilityCal": -8.83863363823614,
-      "mass_kg": 28903.247695203503,
-      "length_m": 19.44648508140555,
-      "refDiameter_m": 4.0,
-      "cpQuarterChord_m": null,
-      "cpWithoutInterstage_m": 18.607685081405553,
-      "stabilityWithoutInterstage": -2.7065181199388366,
-      "name": "taper",
-      "dLower": 2.0,
-      "dUpper": 4.0,
-      "fins": false,
-      "propMassKg": [
-        20000.0,
-        5000.0
-      ],
-      "payloadMassKg": 500.0,
-      "fairingLengthM": 4.0,
-      "finSpanM": 1.2
-    },
-    "fin-midchord": {
+    "fin": {
       "cg_m": 7.310165930663161,
-      "cp_m": 6.009953545844374,
-      "stabilityCal": 0.6501061924093938,
+      "cpRaw_m": 6.530433807728006,
+      "cp_m": 6.530433807728006,
+      "cpAheadOfNose": false,
+      "stabilityCal": 0.38986606146757774,
       "mass_kg": 28264.876067994057,
       "length_m": 18.180147154594767,
       "refDiameter_m": 2.0,
-      "cpQuarterChord_m": 5.806898316702187,
-      "cpWithoutInterstage_m": 6.009953545844374,
-      "stabilityWithoutInterstage": 0.6501061924093938,
-      "name": "fin-midchord",
+      "cpWithoutInterstage_m": 6.530433807728006,
+      "stabilityWithoutInterstage": 0.38986606146757774,
+      "name": "fin",
       "dLower": 2.0,
       "dUpper": 2.0,
       "fins": true,
@@ -154,16 +135,40 @@
       "fairingLengthM": 4.0,
       "finSpanM": 1.2
     },
+    "shoulder": {
+      "cg_m": 7.781612601650207,
+      "cpRaw_m": 43.13614715459477,
+      "cp_m": 19.44648508140555,
+      "cpAheadOfNose": true,
+      "stabilityCal": -8.83863363823614,
+      "mass_kg": 28903.247695203503,
+      "length_m": 19.44648508140555,
+      "refDiameter_m": 4.0,
+      "cpWithoutInterstage_m": 18.607685081405553,
+      "stabilityWithoutInterstage": -2.7065181199388366,
+      "name": "shoulder",
+      "dLower": 2.0,
+      "dUpper": 4.0,
+      "fins": false,
+      "propMassKg": [
+        20000.0,
+        5000.0
+      ],
+      "payloadMassKg": 500.0,
+      "fairingLengthM": 4.0,
+      "finSpanM": 1.2
+    },
     "overstable": {
       "cg_m": 18.243112834013917,
-      "cp_m": 1.731868853263265,
-      "stabilityCal": 20.639054975938315,
+      "cpRaw_m": 1.397290873371471,
+      "cp_m": 1.397290873371471,
+      "cpAheadOfNose": false,
+      "stabilityCal": 21.057277450803056,
       "mass_kg": 30469.94335570392,
       "length_m": 23.497443740108483,
       "refDiameter_m": 0.8,
-      "cpQuarterChord_m": 1.2484434388986223,
-      "cpWithoutInterstage_m": 1.731868853263265,
-      "stabilityWithoutInterstage": 20.639054975938315,
+      "cpWithoutInterstage_m": 1.397290873371471,
+      "stabilityWithoutInterstage": 21.057277450803056,
       "name": "overstable",
       "dLower": 0.8,
       "dUpper": 0.8,

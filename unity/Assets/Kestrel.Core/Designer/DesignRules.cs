@@ -99,6 +99,8 @@ namespace Kestrel.Core.Designer
             Cache[Key(design)] = (sim.maxQ, sim.maxQAlt, sim.maxG);
         }
 
+        // Stringify cache stays until #157 merges. Rebase onto that branch, then drop this
+        // and AeroBalanceCalc and read Balance plus ReferenceAscent only.
         static readonly Dictionary<string, (double qPa, double alt, double g)> Cache = new Dictionary<string, (double, double, double)>();
         static string Key(JsonObject d) => Save.JsonWriter.Stringify(d);
 
@@ -136,24 +138,39 @@ namespace Kestrel.Core.Designer
                 var below = d.stages[i - 1];
                 if (string.IsNullOrEmpty(up.interstageShape)) continue;
                 if (!Disagrees(up.interstageShape, below.diameter, up.diameter)) continue;
+                string actual = Agree(below.diameter, up.diameter);
                 warnings.Add(Issue("interstage-shape", "stages",
-                    "Interstage " + up.interstageShape + " with D " + Fmt(below.diameter) + "→" + Fmt(up.diameter) + " m.",
-                    "The joint between stages doesn't match their sizes.", i));
+                    "Interstage " + up.interstageShape + " with D " + Fmt(below.diameter) + "→" + Fmt(up.diameter) + " m (" + actual + ", " + CnSign(actual) + ").",
+                    KidJoint(actual), i));
             }
         }
 
         public static bool Disagrees(string shape, double dLower, double dUpper)
         {
             if (shape == "straight") return System.Math.Abs(dUpper - dLower) > 1e-9;
-            if (shape == "flared") return dUpper < dLower;
-            if (shape == "tapered") return dUpper > dLower;
+            if (shape == "flare") return !(dLower > dUpper);
+            if (shape == "shoulder") return !(dUpper > dLower);
             return false;
         }
 
         public static string Agree(double dLower, double dUpper)
         {
             if (System.Math.Abs(dUpper - dLower) <= 1e-9) return "straight";
-            return dUpper > dLower ? "flared" : "tapered";
+            return dLower > dUpper ? "flare" : "shoulder";
+        }
+
+        static string CnSign(string actual)
+        {
+            if (actual == "flare") return "CNα > 0";
+            if (actual == "shoulder") return "CNα < 0";
+            return "CNα = 0";
+        }
+
+        static string KidJoint(string actual)
+        {
+            if (actual == "flare") return "That joint is a flare: wider at the bottom, CNα positive, so it steadies the rocket.";
+            if (actual == "shoulder") return "That joint is a shoulder: wider on top, CNα negative, so it makes the rocket less steady.";
+            return "The joint between stages doesn't match their sizes.";
         }
 
         static void LiftoffEngines(Catalog c, Design d, QuickReadout r, List<Issue> blocks, List<Issue> warnings)
@@ -260,7 +277,14 @@ namespace Kestrel.Core.Designer
 
         static bool Steered(Catalog c, Design d)
         {
-            if (d.stages.Count == 0 || !c.EngineById.TryGetValue(d.stages[0].engine ?? "", out var e)) return false;
+            if (d.stages.Count == 0) return false;
+            if (Gimballed(c, d.stages[0])) return true;
+            return d.StrapOnCount > 0 && Gimballed(c, d.strapOns);
+        }
+
+        static bool Gimballed(Catalog c, StagePart s)
+        {
+            if (s == null || !c.EngineById.TryGetValue(s.engine ?? "", out var e)) return false;
             return e.gimbal > 0;
         }
 

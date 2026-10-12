@@ -1,7 +1,7 @@
 // One interstage length for mass, drag and CP: 0.6 × the larger stage diameter.
 // That is the mesh rule RocketMeshBuilder already draws (1.2 × max radius).
 // Mass is areal density × frustum lateral area. An explicit interstageMass is the Engineer override.
-// Flared and tapered add a flat +0.02 Cd. Straight adds none. See docs/PHYSICS.md.
+// Flare and shoulder add a flat +0.02 Cd. Straight adds none. See docs/PHYSICS.md.
 using System;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
@@ -46,7 +46,7 @@ namespace Kestrel.Core.Vehicle
             return part.interstageSpecified ? part.interstageMass : 0;
         }
 
-        /// <summary>Flat labelled drag. +0.02 per flared or tapered joint. Absent shape is straight.</summary>
+        /// <summary>Flat labelled drag. +0.02 per flare or shoulder. Absent shape is straight.</summary>
         public static double DragCd(Design d)
         {
             if (d?.stages == null) return 0;
@@ -54,7 +54,7 @@ namespace Kestrel.Core.Vehicle
             for (int i = 1; i < d.stages.Count; i++)
             {
                 var shape = d.stages[i].interstageShape;
-                if (shape == "flared" || shape == "tapered") cd += step;
+                if (shape == "flare" || shape == "shoulder") cd += step;
             }
             return cd;
         }

@@ -56,17 +56,16 @@ namespace Kestrel.Core.Tests
         [Test]
         public void ConicalTerm_MatchesExternalLiterals()
         {
-            foreach (var name in new[] { "flare", "taper" })
+            foreach (var name in new[] { "flare", "shoulder" })
             {
                 var row = Literals.Obj("conical").Obj(name);
                 InterstageAero.Conical(row.Num("dAft"), row.Num("dForward"), row.Num("length"), row.Num("dRef"), out double cna, out double x);
                 Golden.Near("design-v2-literals", cna, row["cna"], 0, 1e-9, name + " cna");
                 Golden.Near("design-v2-literals", x, row["xFromForward"], 0, 1e-9, name + " x");
             }
-            var flare = Literals.Obj("conical").Obj("flare");
-            var taper = Literals.Obj("conical").Obj("taper");
-            Assert.Greater(flare.Num("cna"), 0, "a base flare has positive CNa");
-            Assert.Less(taper.Num("cna"), 0, "a shoulder has negative CNa");
+            Assert.Greater(Literals.Obj("conical").Obj("flare").Num("cna"), 0, "a flare has CNα > 0");
+            Assert.Less(Literals.Obj("conical").Obj("shoulder").Num("cna"), 0, "a shoulder has CNα < 0");
+            Assert.AreEqual(0.3, AeroBalanceCalc.FinCpFromTrailingEdge(1.2, 1.2, 0), 1e-12, "square fin is 0.25c");
         }
 
         [Test]
@@ -75,23 +74,25 @@ namespace Kestrel.Core.Tests
             double abs = Literals.Obj("tolerance").Num("cpAbsM");
             double stab = Literals.Obj("tolerance").Num("stabilityAbs");
             double massRel = Literals.Obj("tolerance").Num("massRel");
-            foreach (var name in new[] { "straight", "flare", "taper", "fin-midchord", "overstable" })
+            foreach (var name in new[] { "straight", "flare", "shoulder", "fin", "overstable" })
             {
-                var want = Literals.Obj("vehicles").Obj(name);
-                var got = AeroBalanceCalc.Of(Golden.Catalog, Design.FromJson(VehicleJson(name)));
-                Golden.Near("design-v2-literals", got.cg_m, want["cg_m"], 0, abs, name + " cg");
-                Golden.Near("design-v2-literals", got.cp_m, want["cp_m"], 0, abs, name + " cp");
-                Golden.Near("design-v2-literals", got.stabilityCal, want["stabilityCal"], 0, stab, name + " cal");
-                Golden.Near("design-v2-literals", got.mass_kg, want["mass_kg"], want.Num("mass_kg") * massRel, 0, name + " mass");
+                var row = Literals.Obj("vehicles").Obj(name);
+                var bal = BalanceOf(name);
+                Golden.Near("design-v2-literals", bal.cg_m, row["cg_m"], 0, abs, name + " cg");
+                Golden.Near("design-v2-literals", bal.cp_m, row["cp_m"], 0, abs, name + " cp");
+                Golden.Near("design-v2-literals", bal.cpRaw_m, row["cpRaw_m"], 0, abs, name + " cp raw");
+                Golden.Near("design-v2-literals", bal.stabilityCal, row["stabilityCal"], 0, stab, name + " cal");
+                Golden.Near("design-v2-literals", bal.mass_kg, row["mass_kg"], massRel, 0, name + " mass");
+                Golden.Near("design-v2-literals", bal.length_m, row["length_m"], 0, abs, name + " length");
+                Assert.AreEqual(row.Bool("cpAheadOfNose"), bal.cpAheadOfNose, name + " ahead");
             }
             var flare = Literals.Obj("vehicles").Obj("flare");
-            var taper = Literals.Obj("vehicles").Obj("taper");
-            var fin = Literals.Obj("vehicles").Obj("fin-midchord");
-            Assert.Less(flare.Num("cp_m"), flare.Num("cpWithoutInterstage_m"), "a flare moves CP aft");
-            Assert.Less(taper.Num("stabilityCal"), taper.Num("stabilityWithoutInterstage"), "a taper is destabilizing");
-            Assert.Greater(Math.Abs(fin.Num("cp_m") - fin.Num("cpQuarterChord_m")), 0.05, "mid-chord is not the quarter-chord station");
-            var gotFin = AeroBalanceCalc.Of(Golden.Catalog, Design.FromJson(VehicleJson("fin-midchord")));
-            Assert.Greater(Math.Abs(gotFin.cp_m - fin.Num("cpQuarterChord_m")), 0.05);
+            Assert.Less(flare.Num("cpRaw_m"), flare.Num("cpWithoutInterstage_m"), "a flare moves CP aft");
+            var shoulder = Literals.Obj("vehicles").Obj("shoulder");
+            Assert.Less(shoulder.Num("stabilityCal"), shoulder.Num("stabilityWithoutInterstage"), "a shoulder lowers stability");
+            Assert.IsTrue(shoulder.Bool("cpAheadOfNose"));
+            Assert.AreEqual(shoulder.Num("length_m"), shoulder.Num("cp_m"), 1e-9);
+            Assert.Greater(shoulder.Num("cpRaw_m"), shoulder.Num("length_m"));
         }
 
         [Test]
@@ -100,15 +101,15 @@ namespace Kestrel.Core.Tests
             double step = Literals.Obj("drag").Num("flatCd");
             Assert.AreEqual(0.02, step);
             Assert.AreEqual(0, InterstageAero.DragCd(Design.FromJson(VehicleJson("straight"))));
-            var flared = VehicleJson("straight");
-            JsonMut.Set(((JsonObject)flared.Arr("stages")[1]).Obj("interstage"), "shape", "flared");
-            Assert.AreEqual(step, InterstageAero.DragCd(Design.FromJson(flared)));
-            JsonMut.Set(((JsonObject)flared.Arr("stages")[1]).Obj("interstage"), "shape", "tapered");
-            Assert.AreEqual(step, InterstageAero.DragCd(Design.FromJson(flared)));
-            var both = VehicleJson("taper");
-            JsonMut.Set(((JsonObject)both.Arr("stages")[1]).Obj("interstage"), "shape", "flared");
+            var shaped = VehicleJson("straight");
+            JsonMut.Set(((JsonObject)shaped.Arr("stages")[1]).Obj("interstage"), "shape", "flare");
+            Assert.AreEqual(step, InterstageAero.DragCd(Design.FromJson(shaped)));
+            JsonMut.Set(((JsonObject)shaped.Arr("stages")[1]).Obj("interstage"), "shape", "shoulder");
+            Assert.AreEqual(step, InterstageAero.DragCd(Design.FromJson(shaped)));
+            var both = VehicleJson("shoulder");
+            JsonMut.Set(((JsonObject)both.Arr("stages")[1]).Obj("interstage"), "shape", "flare");
             var third = JsonMut.CloneObject((JsonObject)both.Arr("stages")[1]);
-            JsonMut.Set(third.Obj("interstage"), "shape", "tapered");
+            JsonMut.Set(third.Obj("interstage"), "shape", "shoulder");
             both.Arr("stages").Add(third);
             Assert.AreEqual(step * 2, InterstageAero.DragCd(Design.FromJson(both)));
         }
@@ -119,6 +120,16 @@ namespace Kestrel.Core.Tests
             var row = Spec.Obj("migration");
             var got = DesignMigration.Migrate(row.Obj("input"));
             JsonSame.Equal(got, row["out"], row.Str("name"));
+            var missing = Spec.Obj("migrationMissingMass");
+            JsonSame.Equal(DesignMigration.Migrate(missing.Obj("input")), missing["out"], missing.Str("name"));
+            var src = VehicleJson("flare");
+            JsonMut.Set(src, "version", 1d);
+            double derived = Mass.Of(Golden.Catalog, Design.FromJson(src)).liftoffMass;
+            var filled = DesignMigration.Migrate(JsonMut.CloneObject(src));
+            foreach (JsonObject s in filled.Arr("stages")) Assert.AreEqual(0, s.Num("interstageMass"));
+            double pinned = Mass.Of(Golden.Catalog, Design.FromJson(filled)).liftoffMass;
+            Golden.Near("design-v2-literals", derived - pinned, Literals.Obj("interstage")["massKg"], Literals.Obj("interstage").Num("massKg") * 1e-12, 0, "migrated mass drops the derived frustum");
+
             var cat = Golden.Catalog;
             foreach (JsonObject preset in MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "presets.json"))).Arr("presets"))
             {
@@ -140,10 +151,10 @@ namespace Kestrel.Core.Tests
             Assert.IsNull(Find(steered.warnings, "overstable"));
             AssertWording(note, "aero", Words.Str("engineSteeredKid"), Words.Str("engineSteeredEngineer"), BalanceOf("straight"));
 
-            var finned = Report(VehicleJson("fin-midchord"));
+            var finned = Report(VehicleJson("fin"));
             Assert.IsNull(Find(finned.blocks, "unstable"), "a steered finned rocket is not blocked");
             Assert.IsNull(Find(finned.warnings, "overstable"));
-            AssertWording(Find(finned.warnings, "unstable"), "aero", Words.Str("unstableKid"), Words.Str("unstableEngineer"), BalanceOf("fin-midchord"));
+            AssertWording(Find(finned.warnings, "unstable"), "aero", Words.Str("unstableKid"), Words.Str("unstableEngineer"), BalanceOf("fin"));
 
             var over = Report(VehicleJson("overstable"));
             Assert.IsNull(Find(over.blocks, "unstable"));
@@ -166,6 +177,31 @@ namespace Kestrel.Core.Tests
             JsonMut.Set(v1, "version", 1d);
             Assert.IsNull(Find(Report(v1).blocks, "unstable"));
             Assert.IsNull(Find(Report(v1).warnings, "unstable"));
+
+            var straps = VehicleJson("straight");
+            var core = (JsonObject)straps.Arr("stages")[0];
+            JsonMut.Set(core, "propellant", "solid-apcp");
+            JsonMut.Set(core, "engine", "srm-small");
+            JsonMut.Set(straps.Obj("aero"), "fins", false);
+            var so = straps.Obj("strapOns");
+            JsonMut.Set(so, "count", 2d);
+            JsonMut.Set(so, "kind", "liquid");
+            JsonMut.Set(so, "propellant", "kerolox");
+            JsonMut.Set(so, "engine", "gg-kerolox");
+            JsonMut.Set(so, "engineCount", 1d);
+            JsonMut.Set(so, "propMass", 5000d);
+            JsonMut.Set(so, "crossfeed", false);
+            var boosted = Report(straps);
+            Assert.IsNotNull(boosted.readout);
+            Assert.IsNull(Find(boosted.blocks, "schema"));
+            Assert.IsNull(Find(boosted.blocks, "unstable"), "gimballed straps steer a gimbal-less core");
+
+            var dead = JsonMut.CloneObject(straps);
+            JsonMut.Set(dead.Obj("strapOns"), "kind", "solid");
+            JsonMut.Set(dead.Obj("strapOns"), "propellant", "solid-apcp");
+            JsonMut.Set(dead.Obj("strapOns"), "engine", "srm-small");
+            JsonMut.Set(dead.Obj("strapOns"), "crossfeed", false);
+            Assert.IsNotNull(Find(Report(dead).blocks, "unstable"), "unguided below 0 cal stays a block");
         }
 
         [Test]
