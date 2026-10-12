@@ -16,7 +16,11 @@ namespace Kestrel.Core.Physics
 
     public static class Handoff
     {
-        /// <summary>Perigee altitude (geometric, m above R_EARTH) at or above which coast uses on-rails.</summary>
+        /// <summary>
+        /// Periapsis altitude (geometric, m above R_EARTH) at or above which coast uses on-rails.
+        /// The gate is periapsis, not the current geometric altitude — a 300×800 km orbit stays Numeric
+        /// even while at apoapsis above 600 km, so drag-capable coast remains available.
+        /// </summary>
         public const double OnRailsPerigeeKm = 600.0;
         public const double OnRailsPerigeeM = OnRailsPerigeeKm * 1000.0;
 

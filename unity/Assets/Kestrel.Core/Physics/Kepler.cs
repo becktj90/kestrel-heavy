@@ -39,16 +39,21 @@ namespace Kestrel.Core.Physics
             double mu = Gravity.MU_EARTH)
         {
             double r = Math.Sqrt(rx * rx + ry * ry + rz * rz);
+            if (r <= 0) throw new ArgumentOutOfRangeException(nameof(rx), "position magnitude must be positive");
             double v2 = vx * vx + vy * vy + vz * vz;
             double rv = rx * vx + ry * vy + rz * vz;
             double hx = ry * vz - rz * vy, hy = rz * vx - rx * vz, hz = rx * vy - ry * vx;
             double h = Math.Sqrt(hx * hx + hy * hy + hz * hz);
             double energy = v2 / 2.0 - mu / r;
+            if (energy >= 0)
+                throw new ArgumentOutOfRangeException(nameof(vx), "Kepler supports elliptic orbits only (energy < 0)");
             double a = -mu / (2.0 * energy);
             double ex = ((v2 - mu / r) * rx - rv * vx) / mu;
             double ey = ((v2 - mu / r) * ry - rv * vy) / mu;
             double ez = ((v2 - mu / r) * rz - rv * vz) / mu;
             double e = Math.Sqrt(ex * ex + ey * ey + ez * ez);
+            if (e >= 1.0)
+                throw new ArgumentOutOfRangeException(nameof(vx), "Kepler supports elliptic orbits only (e < 1)");
             double i = h > 0 ? Math.Acos(Math.Max(-1, Math.Min(1, hz / h))) : 0;
             // Line of nodes n = ẑ × h = (−hy, hx, 0)
             double nx = -hy, ny = hx;
@@ -72,7 +77,7 @@ namespace Kestrel.Core.Physics
                     // Circular inclined: argument of latitude u = atan2( r · (ĥ × n̂), r · n̂ )
                     double cosU = (nx * rx + ny * ry) / (nxy * r);
                     double hxnX = -hz * ny, hxnY = hz * nx, hxnZ = hx * ny - hy * nx;
-                    double sinU = (rx * hxnX + ry * hxnY + rz * hxnZ) / (h * r);
+                    double sinU = (rx * hxnX + ry * hxnY + rz * hxnZ) / (h * nxy * r);
                     nu = Math.Atan2(sinU, cosU);
                     if (nu < 0) nu += 2.0 * Math.PI;
                 }
@@ -107,6 +112,8 @@ namespace Kestrel.Core.Physics
         public static void ToState(ClassicalElements el, out double rx, out double ry, out double rz,
             out double vx, out double vy, out double vz, double mu = Gravity.MU_EARTH)
         {
+            if (el.e < 0 || el.e >= 1.0 || el.a <= 0)
+                throw new ArgumentOutOfRangeException(nameof(el), "Kepler supports elliptic orbits only (0 ≤ e < 1, a > 0)");
             double E = EccentricAnomaly(el.m, el.e);
             double nu = TrueAnomaly(E, el.e);
             double p = el.a * (1.0 - el.e * el.e);
@@ -121,6 +128,8 @@ namespace Kestrel.Core.Physics
         /// <summary>Two-body analytic coast by Δt seconds. a, e, i, Ω, ω fixed; M advances by n·Δt.</summary>
         public static ClassicalElements Propagate(ClassicalElements el, double dt, double mu = Gravity.MU_EARTH)
         {
+            if (el.e < 0 || el.e >= 1.0 || el.a <= 0)
+                throw new ArgumentOutOfRangeException(nameof(el), "Kepler supports elliptic orbits only (0 ≤ e < 1, a > 0)");
             double n = Math.Sqrt(mu / (el.a * el.a * el.a));
             var o = el;
             o.m = WrapTwoPi(el.m + n * dt);
