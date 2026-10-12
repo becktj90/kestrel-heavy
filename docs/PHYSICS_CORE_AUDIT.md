@@ -56,7 +56,7 @@ Legend: **present / partial / absent**. Tolerances are |a−b| ≤ abs + rel·|b
   (4) Mean→osc→mean round trip, abs 1 m in a, 1e-7 in e. (5) J3 frozen-orbit e ≈ 0.001 at 800 km SSO, ±10 %.
 - Tier: **2.0** (J2+J3/J4 zonal). Tesseral/EGM coefficients beyond J4: **1.1+**.
 
-### P3 ISA + NRLMSIS-class upper atmosphere, F10.7/Ap, space-weather generator — **partial**
+### P3 ISA + Jacchia-71-class upper atmosphere (NASA/SAO reports; USSA76 below 1000 km; NRLMSIS excluded for licence and patent reasons), F10.7/Ap, space-weather generator — **partial**
 - Evidence: USSA76 0–86 km validated to 1e-4 (#90). Above 86 km an isothermal 5.8 km tail (`Atmosphere.cs:33` on
   main): **+11 % ρ at 100 km, orders of magnitude low above 120 km**. Ascent ignores the atmosphere above 300 km
   (`Headless.cs:136,216`). Draft #96 adds a separate `UpperAtmosphere` (USSA76 knots, no F10.7). PR

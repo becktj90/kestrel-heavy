@@ -123,6 +123,18 @@ lifetime/heating → P6 → P8 MC/determinism → P7 6-DOF; P4 in parallel after
 ## Pad + Launch Vehicle Detail D1–D7 / V1–V7 (P0 for 2.0.0)
 See PAD_VEHICLE_DETAIL_AUDIT.md. One sequenced P0 track (replaces the earlier rocket-detail pass), ahead of lower-priority R/S items for Graphics Dev. Deepens the U6 seeded pad generator (G2/G3) and the existing `RocketMeshBuilder` + U8 Hangar Reveal; no duplicate generator or renderer. Shared `Kestrel.Kit` materials/LOD/instancing, one pad–vehicle **umbilical contract** in Core, element graph + inspect mode, animation via `MissionEvent.links` (no new schema). Budgets: pad+vehicle ≤ 4 MB shipped, ≤ 250 k tris / ≤ 120 draws on Low. Procedural only; references logged in REFERENCE_LEDGER.md (text or US-Gov PD only, nothing from Trevor's workplace, no real designs/markings). Steps P0-1 kit+contract → P0-2 D1 ∥ V2 → P0-3 D2/D5 ∥ V1/V3 → P0-4 D3/D4 ∥ V4 → P0-5 D6 ∥ V5/V6 (after R3) → P0-6 D7 ∥ V7 (after K6). Scope approved (DECISIONS #46–#49, audit §11).
 
+## Rocket Designer M1–M3 (2.0)
+Owner: UX with Gameplay Dev. See UNITY_SHIP_PLAN §U3/U4 and GAP_ANALYSIS. M1 (Core design model, in U1) and M2 (DESIGN screen: stages, engines, propellant, structure, payload, recovery, cosmetics; live TWR/Δv/burn readouts, validation, "Make it fly", presets/saves, T1 templates, undo/symmetry, in U3) are merged. M3 is the flight half (U4: autopilot, staging, orbit determination, telemetry HUD, procedural vehicle renderer). M4–M6 follow per UNITY_SHIP_PLAN (U5, U8).
+
+## Webcast narrator N1–N6 (2.0)
+Owner: Narrator Voice (Gameplay Dev for bus/queue, Sound for mix, UX for subtitles). Lives in U7. Narration event bus, queue and director, subtitles, and a webcast overlay (mission clock, telemetry). Cast: mission control plus two webcast hosts (DECISIONS #55), a bundled ElevenLabs clip library pre-generated on Trevor's existing Creator plan, plus on-device TTS for player-specific strings only. No live server, no Fly.io, no new spend.
+
+## Crew Talk (2.0)
+Owners: Narrator Voice (voices), Codex (writing), Sound (mix). DECISIONS #54. Spanish-to-English crew lines for Bodie, Junie, Pearl and Sloane. The spoken line and the main English line keep the full meaning, rendered in each character's own dialect and style. Never canned stock lines, never literal translations. Lines are added to the ElevenLabs line list (NARRATION_LICENSE.md) and generated on the existing Creator plan.
+
+## Education layer L1–L7 (2.0 vs 1.1 TBD)
+Owner: Codex. Today the plan names Codex L1, moment cards and report explanations in 2.0 (U5, U8) and the educator kit X7 (GAP_ANALYSIS). Scope for each of L1–L7 (2.0 vs 1.1) is **TBD. Codex to propose** a breakdown for Chief of Staff and Trevor.
+
 ## Risk register
 | # | Risk | L/I | Mitigation | Owner |
 |---|------|-----|-----------|-------|
