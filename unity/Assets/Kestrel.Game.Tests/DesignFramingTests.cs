@@ -32,6 +32,25 @@ namespace Kestrel.Game.Tests
         }
 
         [Test]
+        public void StackFillsMostOfTheBand()
+        {
+            float h = 70f, f = 0.73f, k = DesignFraming.DistanceScale(f);
+            var aim = new Vector3(0, h * DesignFraming.AimHeight, 0);
+            var pos = aim + new Vector3(h * 0.9f, h * (0.45f - DesignFraming.AimHeight), -h * 1.4f) * k;
+            var view = Matrix4x4.TRS(pos, Quaternion.LookRotation(aim - pos), new Vector3(1, 1, -1)).inverse;
+            var proj = DesignFraming.ShiftedProjection(Matrix4x4.Perspective(50f, 375f / 667f, 0.5f, 200000f), f);
+            float Ndc(float y) { var c = proj * (view * new Vector4(0, y, 0, 1)); return c.y / c.w; }
+            Assert.That((Ndc(h) - Ndc(-0.5f)) / (2f * f), Is.GreaterThan(0.7f));
+        }
+
+        [TestCase(750f, 1334f, 0f, 2f)]
+        [TestCase(1320f, 2868f, 0f, 3f)]
+        [TestCase(2064f, 2752f, 96f, 2f)]
+        [TestCase(1320f, 2868f, 460f, 3f)]
+        public void PixelsPerPointFallback(float w, float h, float dpi, float expected) =>
+            Assert.That(DesignFraming.PixelsPerPoint(w, h, dpi), Is.EqualTo(expected));
+
+        [Test]
         public void VisibleFractionIsClamped()
         {
             Assert.That(DesignFraming.VisibleFraction(1000, 730), Is.EqualTo(0.73f).Within(1e-5));

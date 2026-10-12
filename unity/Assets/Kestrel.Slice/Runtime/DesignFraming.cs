@@ -11,9 +11,19 @@ namespace Kestrel.Slice
         /// <summary>The subject is never squeezed into less than this share of the screen height.</summary>
         public const float MinVisibleFraction = 0.35f;
         /// <summary>Extra room so the pad deck (y ≈ -0.5 m) and nose clear the band edges.</summary>
-        public const float Margin = 1.12f;
+        public const float Margin = 0.80f;   // stack + deck fill ~80% of the band (was 1.12 → ~58%)
         /// <summary>Points on the rocket the camera aims at, as a fraction of its height (slightly low so the deck is in).</summary>
-        public const float AimHeight = 0.46f;
+        public const float AimHeight = 0.47f;
+
+        /// <summary>Device pixels per iOS point. Screen.dpi is 0 or a desktop value in the editor / simulators, which
+        /// made the 64 pt handle ~3x too tall on SE; fall back to the iOS scale by device shape.</summary>
+        public static float PixelsPerPoint(float widthPx, float heightPx, float dpi)
+        {
+            if (dpi >= 200f) return Mathf.Max(1f, Mathf.Round(dpi / 160f));
+            bool tablet = heightPx > 0 && widthPx / heightPx > 0.6f;   // iPads are ~0.75, phones ≤ 0.56
+            if (tablet) return 2f;
+            return widthPx >= 1080f ? 3f : 2f;                          // SE/8 = 2x (750 px), Pro/Max = 3x
+        }
 
         /// <summary>Share of the root height, from the top, that is not covered by the panel.
         /// rootHeight and panelTop in the same (panel) units; panelTop measured from the top of the root.</summary>
