@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node-tests:
+    name: Game tests (Node)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm test
+
+  ios-build:
+    name: KestrelHeavy iOS ${{ matrix.configuration }} build
+    runs-on: macos-15
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Build the app without signing
+        run: >-
+          xcodebuild -project ios/KestrelHeavy.xcodeproj
+          -scheme KestrelHeavy -configuration ${{ matrix.configuration }}
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath '${{ runner.temp }}/KHDerivedData'
+          CODE_SIGNING_ALLOWED=NO build
