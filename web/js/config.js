@@ -3,6 +3,7 @@
  * Arcade-tuned constants. Real orbital telemetry is compressed, not simulated.
  * Matter forces are 0.01–0.1; velocities are ~1–15 per step, not pixels/sec.
  */
+import { LANDING } from './landing-tune.js';
 export const W = 1280;
 export const H = 720;
 
@@ -59,7 +60,7 @@ export const DIFFICULTY = {
     hitboxScale: 0.66,
     graceSec: 1.05,
     landingTol: 18,
-    landingVy: 3.1,
+    landingVy: LANDING.padRatLandingVy,
     allowFail: true,
     pickupMul: 0.64,
     fuelDrain: 0.084,

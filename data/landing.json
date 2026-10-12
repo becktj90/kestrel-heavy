@@ -1,0 +1,7 @@
+{
+  "note": "Haven touchdown grades for the Phaser web demo. Unity should use the same margins. Sink rate and offset are the physics values already compared to landingVy and landingTol; this file does not change the integrator.",
+  "padRatLandingVy": 4,
+  "perfectMin": 0.45,
+  "goodMin": 0.2,
+  "formula": "vyMargin = 1 - |vy| / landingVy; dxMargin = 1 - |dx| / landingTol; margin = min(vyMargin, dxMargin). Water is ungraded. Deck with tip, or either margin < 0, is Salvage. margin >= perfectMin is Perfect. margin >= goodMin is Good. Otherwise Hard."
+}

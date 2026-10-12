@@ -103,6 +103,7 @@ import {
 import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isAscentCruise, isBoosting, setBoostHeld, setTouchSteer } from './input.js';
 import { FIRST_MISSION, MISSIONS, getMission, isUnlocked, nextMissionId } from './missions.js';
 import { beatsFor, currentBeat, formatClock, nextCoachBeat, playPhase, playPhaseKind, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
+import { gradeTouchdown } from './landing-tune.js';
 import { gradeLanding, medalShelf, medalText, recordMedal } from './medals.js';
 import { submitFlightScore } from './gamecenter.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
@@ -1743,17 +1744,27 @@ export default class MissionScene extends Phaser.Scene {
     const mode = DIFFICULTY[this.settings.difficulty];
     const vy = Math.abs(this.rocket.body.velocity.y);
     const dx = Math.abs(this.rocket.x - this.jacklyn.x);
-    const onPaint = kind === 'deck' && dx <= mode.landingTol + 22;
+    const catchTol = mode.landingTol + 22;
+    const onPaint = kind === 'deck' && dx <= catchTol;
     const soft = vy <= mode.landingVy;
     const tipped = Math.abs(this.rocket.angle) > 14;
-    this.session.touchdown = { kind, vy, dx, tilt: Math.abs(this.rocket.angle) };
+    const landingGrade = gradeTouchdown({
+      kind,
+      vy,
+      dx,
+      landingVy: mode.landingVy,
+      landingTol: catchTol,
+      tipped,
+    });
+    this.session.landingGrade = landingGrade;
+    this.session.touchdown = { kind, vy, dx, tilt: Math.abs(this.rocket.angle), grade: landingGrade };
     this.session.medal = gradeLanding({
       kind,
       vy,
       dx,
       tilt: Math.abs(this.rocket.angle),
       landingVy: mode.landingVy,
-      landingTol: mode.landingTol + 22,
+      landingTol: catchTol,
       recovered: kind === 'deck' && onPaint && soft && !tipped,
     });
     this.rocket.setVelocity(0, 0);
@@ -1769,7 +1780,7 @@ export default class MissionScene extends Phaser.Scene {
       this.session.failReason = '';
       this.session.coach = 'Soft painted deck. That is the catch.';
       this.callout('recovered', {
-        banner: `BOOSTER RECOVERED — ${this.currentFlight().jacklyn.recovered}`,
+        banner: `${landingGrade.toUpperCase()} — ${this.currentFlight().jacklyn.recovered}`,
         kind: 'go',
         holdMs: 3600,
       });
@@ -1810,7 +1821,7 @@ export default class MissionScene extends Phaser.Scene {
     this.session.combo = 0;
     const splashId = this.session.fuel <= 1 ? 'fuelHaven' : 'splash';
     this.markOutcome(splashId);
-    this.callout(splashId === 'fuelHaven' ? 'splash' : 'splash', {
+    this.callout(splashId, {
       radio: abortRadio(this.voice, describeAbort(splashId), this.currentFlight()),
       banner: describeAbort(splashId).banner,
       kind: 'fail',
@@ -2311,9 +2322,13 @@ export default class MissionScene extends Phaser.Scene {
         ? `MEDAL  ${medalText(medal)}${medalRec.improved ? '  ·  NEW BEST' : ''}${td ? `\nSINK ${td.vy.toFixed(1)} · OFF ${Math.round(td.dx)} · TILT ${Math.round(td.tilt)}°` : ''}`
         : `MEDAL  — land on Haven for bronze, soft on the paint for silver/gold${medalRec.best ? `  ·  best ${medalText(medalRec.best)}` : ''}`,
     );
+    const touchLabel = td?.grade || (reason === 'splash' ? 'Splash' : '');
+    const tdLine = td
+      ? `Touchdown  ${touchLabel}  ·  speed ${td.vy.toFixed(1)}  ·  offset ${Math.round(td.dx)}\n`
+      : '';
     setSummaryCopy(
       `${this.currentFlight().id}  ${headline}`,
-      `${this.currentFlight().payload}\nScore ${points.toLocaleString()}  ·  Combo peak ×${this.session.bestCombo}${extra}\n${this.session.upperDone ? 'SECO + payload deploy — good flight.\n' : ''}${this.session.failReason ? `${this.session.failReason}\n` : ''}Tap continue or press Space`,
+      `${this.currentFlight().payload}\n${tdLine}Score ${points.toLocaleString()}  ·  Combo peak ×${this.session.bestCombo}${extra}\n${this.session.upperDone ? 'SECO + payload deploy — good flight.\n' : ''}${this.session.failReason ? `${this.session.failReason}\n` : ''}Tap continue or press Space`,
     );
     setSummaryBreakdown(
       `Ascent  ${ascent.toLocaleString()}`,
