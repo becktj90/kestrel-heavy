@@ -34,7 +34,8 @@ namespace Kestrel.Vehicle.Tests
         [Test]
         public void TwoDomeTankHasEquatorWeldOnly()
         {
-            var L = TankLayout.Build(Spec(1.2f, 0));
+            var sp = Spec(1.2f, 0); sp.AftDome = DomeStyle.Ellipsoidal;
+            var L = TankLayout.Build(sp);
             Assert.That(L.BarrelSections, Is.EqualTo(0));
             Assert.That(L.CircWelds.Count, Is.EqualTo(1));
             Assert.That(L.LongWelds, Is.Empty);
@@ -75,17 +76,17 @@ namespace Kestrel.Vehicle.Tests
         [Test]
         public void ProfileIsMonotonicWithPolesAndBarrel()
         {
-            var s = Spec();
+            foreach (var aft in new[] { DomeStyle.Flat, DomeStyle.Ellipsoidal })
             foreach (var lod in new[] { 0, 1, 2 })
             {
+                var s = Spec(); s.AftDome = aft;
                 var p = TankProfile.Build(s, TankLayout.Build(s), TankLod.For(lod));
                 Assert.That(p.First().R, Is.EqualTo(0f)); Assert.That(p.Last().R, Is.EqualTo(0f));
-                Assert.That(p.First().Y, Is.EqualTo(0f).Within(1e-4)); Assert.That(p.Last().Y, Is.EqualTo(s.TotalHeight).Within(1e-4));
+                Assert.That(p.First().Y, Is.EqualTo(s.ShellBottom).Within(1e-4)); Assert.That(p.Last().Y, Is.EqualTo(s.ShellTop).Within(1e-4));
                 for (int i = 1; i < p.Count; i++)
                 {
-                    Assert.That(p[i].Y, Is.GreaterThan(p[i - 1].Y), $"lod {lod} point {i}");
-                    Assert.That(p[i].V, Is.GreaterThan(p[i - 1].V));
-                    Assert.That(p[i].R, Is.LessThanOrEqualTo(s.Radius + 1e-4));
+                    Assert.That(p[i].Y, Is.GreaterThanOrEqualTo(p[i - 1].Y - 1e-6), $"{aft} lod {lod} point {i}");
+                    Assert.That(p[i].V, Is.GreaterThanOrEqualTo(p[i - 1].V));
                     Assert.That(Math.Sqrt(p[i].NR * p[i].NR + p[i].NY * p[i].NY), Is.EqualTo(1).Within(1e-4));
                 }
                 Assert.That(p.First().NY, Is.EqualTo(-1).Within(1e-4)); Assert.That(p.Last().NY, Is.EqualTo(1).Within(1e-4));
@@ -93,23 +94,50 @@ namespace Kestrel.Vehicle.Tests
         }
 
         [Test]
+        public void DomesNeverBulgePastBarrelOrBelowFlatEnd()
+        {
+            // #106: the aft dome hung below the barrel into the engine bay and the equator stood proud of the body.
+            foreach (var aft in new[] { DomeStyle.Flat, DomeStyle.Ellipsoidal })
+            foreach (var lod in new[] { 0, 1, 2 })
+            {
+                var s = Spec(); s.AftDome = aft;
+                var p = TankProfile.Build(s, TankLayout.Build(s), TankLod.For(lod));
+                foreach (var q in p)
+                {
+                    Assert.That(q.R, Is.LessThanOrEqualTo(s.Radius + 1e-6f), "nothing outside the barrel radius");
+                    bool onDome = q.Y < s.BarrelBottom - 1e-5f || q.Y > s.BarrelTop + 1e-5f;
+                    if (onDome) Assert.That(q.R, Is.LessThanOrEqualTo(s.DomeRadius + 1e-6f), "dome inset, no overshoot");
+                }
+                if (aft == DomeStyle.Flat) Assert.That(p.Min(q => q.Y), Is.EqualTo(s.BarrelBottom).Within(1e-6), "flat aft end is flush");
+            }
+            var d = Spec();
+            Assert.That(d.AftDome, Is.EqualTo(DomeStyle.Flat), "vehicle default: flush aft end");
+            Assert.That(d.DomeRadius, Is.LessThan(d.Radius));
+        }
+
+        [Test]
         public void LatheWindingFacesOutwardAndUvAreMetres()
         {
-            var s = Spec(); var L = TankLayout.Build(s);
-            var md = LatheMesh.Build(TankProfile.Build(s, L, TankLod.For(0)), 48);
-            Assert.That(md.TriangleCount, Is.EqualTo(TankBudget.ShellTriangles(TankProfile.Build(s, L, TankLod.For(0)).Count, 2, 48)));
-            int outward = 0, checkedTris = 0;
-            for (int t = 0; t < md.Triangles.Count; t += 3)
+            foreach (var aft in new[] { DomeStyle.Flat, DomeStyle.Ellipsoidal })
             {
-                var a = P(md, md.Triangles[t]); var b = P(md, md.Triangles[t + 1]); var c = P(md, md.Triangles[t + 2]);
-                var n = Cross(Sub(b, a), Sub(c, a)); double area = Len(n); if (area < 1e-9) continue;
-                var cen = ((a.x + b.x + c.x) / 3, (a.y + b.y + c.y) / 3 - s.TotalHeight / 2, (a.z + b.z + c.z) / 3);
-                checkedTris++; if (n.x * cen.Item1 + n.y * cen.Item2 + n.z * cen.Item3 > 0) outward++;
+                var s = Spec(); s.AftDome = aft; var L = TankLayout.Build(s);
+                var prof = TankProfile.Build(s, L, TankLod.For(0));
+                var md = LatheMesh.Build(prof, 48);
+                Assert.That(md.TriangleCount, Is.EqualTo(LatheMesh.CountTriangles(prof, 48)));
+                double cy = (s.ShellBottom + s.ShellTop) / 2;
+                int outward = 0, checkedTris = 0;
+                for (int t = 0; t < md.Triangles.Count; t += 3)
+                {
+                    var a = P(md, md.Triangles[t]); var b = P(md, md.Triangles[t + 1]); var c = P(md, md.Triangles[t + 2]);
+                    var n = Cross(Sub(b, a), Sub(c, a)); if (Len(n) < 1e-9) continue;
+                    var cen = ((a.x + b.x + c.x) / 3, (a.y + b.y + c.y) / 3 - cy, (a.z + b.z + c.z) / 3);
+                    checkedTris++; if (n.x * cen.Item1 + n.y * cen.Item2 + n.z * cen.Item3 > 0) outward++;
+                }
+                Assert.That(checkedTris, Is.EqualTo(md.TriangleCount), "no degenerate triangles");
+                Assert.That(outward, Is.EqualTo(checkedTris), "every triangle must face out of the tank");
+                double maxU = 0; for (int i = 0; i < md.Uv.Count; i += 2) maxU = Math.Max(maxU, md.Uv[i]);
+                Assert.That(maxU, Is.EqualTo(2 * Math.PI * s.Radius).Within(1e-3));
             }
-            Assert.That(outward, Is.EqualTo(checkedTris), "every triangle must face out of the tank");
-            // u at azimuth 2pi on the barrel equals the circumference in metres.
-            double maxU = 0; for (int i = 0; i < md.Uv.Count; i += 2) maxU = Math.Max(maxU, md.Uv[i]);
-            Assert.That(maxU, Is.EqualTo(2 * Math.PI * s.Radius).Within(1e-3));
         }
 
         [Test]
@@ -121,15 +149,38 @@ namespace Kestrel.Vehicle.Tests
         }
 
         [Test]
-        public void LodsReduceTriangles()
+        public void LodsReduceTrianglesAndLod0FitsCap()
         {
-            var s = Spec(); var L = TankLayout.Build(s); int[] sides = { 12, 6, 3 };   // LodPolicy.RadialSegments
-            int t0 = TankBudget.Triangles(s, L, TankLod.For(0), sides[0], out _, out _);
-            int t1 = TankBudget.Triangles(s, L, TankLod.For(1), sides[1], out _, out _);
-            int t2 = TankBudget.Triangles(s, L, TankLod.For(2), sides[2], out _, out int hw2);
-            Assert.That(t0, Is.GreaterThan(t1)); Assert.That(t1, Is.GreaterThan(t2)); Assert.That(hw2, Is.EqualTo(0));
-            // Per-tank caps that keep a 3-tank, 2-stage vehicle inside the V2 shell share (spec §6): LOD0 <= 30k.
-            Assert.That(t0, Is.LessThanOrEqualTo(30_000)); Assert.That(t2, Is.LessThanOrEqualTo(1_000));
+            // #106 measured ~28k per tank at LOD0. Cap is 14k for every tank size, including long cores.
+            foreach (var (r, len) in new[] { (1.85f, 9.6f), (1.85f, 30f), (2.6f, 42f), (1.2f, 3f), (0.9f, 60f) })
+            {
+                var L = TankLayout.Build(Spec(r, len));
+                int t0 = TankBudget.Triangles(L, TankLod.For(0), out _, out int hw0);
+                int t1 = TankBudget.Triangles(L, TankLod.For(1), out _, out _);
+                int t2 = TankBudget.Triangles(L, TankLod.For(2), out _, out int hw2);
+                Assert.That(t0, Is.LessThanOrEqualTo(TankLayout.Lod0TriangleCap), $"R{r} L{len}");
+                Assert.That(t0, Is.GreaterThan(t1)); Assert.That(t1, Is.GreaterThan(t2)); Assert.That(hw2, Is.EqualTo(0));
+                Assert.That(hw0, Is.GreaterThan(0), "close-up welds/rings kept");
+                Assert.That(L.CircWelds.Count, Is.GreaterThanOrEqualTo(2)); Assert.That(L.LongWelds, Is.Not.Empty);
+                Assert.That(L.Stiffeners.Count, Is.GreaterThanOrEqualTo(L.BarrelSections), $"R{r} L{len}: at least one ring per panel");
+            }
+            // A normal tank is not thinned: requested pitch kept.
+            var n = TankLayout.Build(Spec());
+            Assert.That(n.Fitted.StiffenerPitch, Is.EqualTo(Spec().StiffenerPitch));
+            Assert.That(n.Stiffeners, Is.Not.Empty);
+        }
+
+        [Test]
+        public void EstimateMatchesLatheExactly()
+        {
+            var s = Spec(); var L = TankLayout.Build(s);
+            for (int lod = 0; lod < 3; lod++)
+            {
+                var tl = TankLod.For(lod);
+                TankBudget.Triangles(L, tl, out int shell, out _);
+                Assert.That(shell, Is.EqualTo(LatheMesh.Build(TankProfile.Build(s, L, tl), tl.RadialSegments).TriangleCount));
+            }
+            Assert.That(TankBudget.TubeTriangles(49, 4), Is.EqualTo(48 * 4 * 2));
         }
 
         [Test]

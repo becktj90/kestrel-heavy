@@ -1,6 +1,8 @@
 // Builds V2 tank shell meshes from Kestrel.Vehicle.Core data using the shared kit (Kestrel.Kit):
-// KitMesh.Tube for weld beads and stiffener rings, MaterialLibrary for materials, LodPolicy for tube sides.
-// Output: one Mesh per LOD with 3 submeshes (0 shell, 1 welds, 2 stiffeners), matching TankShellBuilder.Materials().
+// KitMesh.Tube for weld beads and stiffener rings, MaterialLibrary for materials.
+// Output: one Mesh per LOD with ALWAYS 3 submeshes (0 shell, 1 welds, 2 stiffeners; a submesh may be empty),
+// matching TankShellBuilder.Materials(). Assembled by hand: Mesh.CombineMeshes drops empty inputs, which collapsed
+// LOD meshes to 1 submesh in #106.
 using System.Collections.Generic;
 using Kestrel.Kit;
 using UnityEngine;
@@ -10,7 +12,7 @@ namespace Kestrel.Vehicle
 {
     public static class TankShellBuilder
     {
-        public const int SubmeshShell = 0, SubmeshWelds = 1, SubmeshStiffeners = 2;
+        public const int SubmeshShell = 0, SubmeshWelds = 1, SubmeshStiffeners = 2, SubmeshCount = 3;
         public const float WeldBeadRadius = 0.012f;    // m, proud of the skin
         public const float StiffenerRadius = 0.025f;   // m, external hat ring stand-in
 
@@ -18,37 +20,41 @@ namespace Kestrel.Vehicle
         public static Mesh Build(TankShellSpec spec, int lod, float cutFrom = 0, float cutTo = 0)
         {
             var layout = TankLayout.Build(spec);
+            var s = layout.Fitted;
             var tl = TankLod.For(lod);
-            int sides = LodPolicy.RadialSegments(lod);
-            var shell = ToMesh(LatheMesh.Build(TankProfile.Build(spec, layout, tl), tl.RadialSegments, cutFrom, cutTo), "KH_TankShell");
+            var acc = new Accumulator();
 
-            var welds = new List<Mesh>(); var rings = new List<Mesh>();
-            float bead = spec.Radius + WeldBeadRadius * 0.5f;
-            if (tl.CircWelds) foreach (var w in layout.CircWelds) welds.Add(KitMesh.Tube(Circle(w.Y, bead, tl.RadialSegments), WeldBeadRadius, sides, "KH_WeldCirc"));
-            if (tl.DomeWelds) foreach (var w in layout.DomeWelds) welds.Add(KitMesh.Tube(Circle(w.Y, w.R + WeldBeadRadius * 0.5f, tl.RadialSegments), WeldBeadRadius, sides, "KH_WeldDome"));
-            if (tl.LongWelds) foreach (var s in layout.LongWelds)
+            acc.AddCore(LatheMesh.Build(TankProfile.Build(s, layout, tl), tl.RadialSegments, cutFrom, cutTo));
+
+            acc.Begin(SubmeshWelds);
+            float bead = s.Radius + WeldBeadRadius * 0.5f;
+            if (tl.CircWelds && layout.CircWelds.Count > 0)
             {
-                var d = new Vector3(Mathf.Sin(s.Azimuth), 0, Mathf.Cos(s.Azimuth)) * bead;
-                welds.Add(KitMesh.Tube(new[] { d + Vector3.up * s.Y0, d + Vector3.up * s.Y1 }, WeldBeadRadius, sides, "KH_WeldLong"));
+                // One shared ring mesh per (radius, sides), copied per weld height (same tris, one Tube build).
+                var ring = KitMesh.Tube(TankShellBuilder.Circle(0, bead, tl.RadialSegments), WeldBeadRadius, tl.WeldSides, "KH_WeldRing");
+                foreach (var w in layout.CircWelds) acc.Add(ring, w.Y);
+                Kill(ring);
             }
-            if (tl.Stiffeners) foreach (var r in layout.Stiffeners)
-                rings.Add(KitMesh.Tube(Circle(r.Y, spec.Radius + StiffenerRadius * 0.5f, tl.RadialSegments), StiffenerRadius, TankBudget.StiffenerSides, "KH_Stiffener"));
-
-            var mesh = new Mesh { name = $"KH_Tank_L{lod}" };
-            var weldsM = Merge(welds, "KH_Welds"); var ringsM = Merge(rings, "KH_Stiffeners");
-            long verts = shell.vertexCount + weldsM.vertexCount + ringsM.vertexCount;
-            if (verts > 65535) mesh.indexFormat = IndexFormat.UInt32;
-            mesh.CombineMeshes(new[]
+            if (tl.DomeWelds) foreach (var w in layout.DomeWelds)
             {
-                new CombineInstance { mesh = shell, transform = Matrix4x4.identity },
-                new CombineInstance { mesh = weldsM, transform = Matrix4x4.identity },
-                new CombineInstance { mesh = ringsM, transform = Matrix4x4.identity },
-            }, mergeSubMeshes: false, useMatrices: false);
-            mesh.RecalculateBounds();
-            Object.DestroyImmediate(shell); Object.DestroyImmediate(weldsM); Object.DestroyImmediate(ringsM);
-            foreach (var m in welds) Object.DestroyImmediate(m);
-            foreach (var m in rings) Object.DestroyImmediate(m);
-            return mesh;
+                var ring = KitMesh.Tube(Circle(w.Y, w.R + WeldBeadRadius * 0.5f, tl.RadialSegments), WeldBeadRadius, tl.WeldSides, "KH_WeldDome");
+                acc.Add(ring, 0); Kill(ring);
+            }
+            if (tl.LongWelds) foreach (var sm in layout.LongWelds)
+            {
+                var d = new Vector3(Mathf.Sin(sm.Azimuth), 0, Mathf.Cos(sm.Azimuth)) * bead;
+                var seam = KitMesh.Tube(new[] { d + Vector3.up * sm.Y0, d + Vector3.up * sm.Y1 }, WeldBeadRadius, tl.WeldSides, "KH_WeldLong");
+                acc.Add(seam, 0); Kill(seam);
+            }
+
+            acc.Begin(SubmeshStiffeners);
+            if (tl.Stiffeners && layout.Stiffeners.Count > 0)
+            {
+                var ring = KitMesh.Tube(Circle(0, s.Radius + StiffenerRadius * 0.5f, tl.RadialSegments), StiffenerRadius, tl.StiffenerSides, "KH_Stiffener");
+                foreach (var r in layout.Stiffeners) acc.Add(ring, r.Y);
+                Kill(ring);
+            }
+            return acc.ToMesh($"KH_Tank_L{lod}");
         }
 
         /// <summary>Shared materials in submesh order. Shell = kit PaintedSteel + isogrid normal (VehicleMaterials);
@@ -63,37 +69,58 @@ namespace Kestrel.Vehicle
         {
             var p = new Vector3[segments + 1];
             for (int j = 0; j <= segments; j++) { float a = 2 * Mathf.PI * j / segments; p[j] = new Vector3(r * Mathf.Sin(a), y, r * Mathf.Cos(a)); }
+            p[segments] = p[0];
             return p;
         }
 
-        internal static Mesh ToMesh(MeshData d, string name)
-        {
-            int n = d.VertexCount;
-            var v = new List<Vector3>(n); var nn = new List<Vector3>(n); var t = new List<Vector4>(n); var uv = new List<Vector2>(n);
-            for (int i = 0; i < n; i++)
-            {
-                v.Add(new Vector3(d.Positions[i * 3], d.Positions[i * 3 + 1], d.Positions[i * 3 + 2]));
-                nn.Add(new Vector3(d.Normals[i * 3], d.Normals[i * 3 + 1], d.Normals[i * 3 + 2]));
-                t.Add(new Vector4(d.Tangents[i * 4], d.Tangents[i * 4 + 1], d.Tangents[i * 4 + 2], d.Tangents[i * 4 + 3]));
-                uv.Add(new Vector2(d.Uv[i * 2], d.Uv[i * 2 + 1]));
-            }
-            var m = new Mesh { name = name };
-            if (n > 65535) m.indexFormat = IndexFormat.UInt32;
-            m.SetVertices(v); m.SetNormals(nn); m.SetTangents(t); m.SetUVs(0, uv);
-            m.SetTriangles(d.Triangles, 0); m.RecalculateBounds();
-            return m;
-        }
+        internal static void Kill(Object o) { if (o == null) return; if (Application.isPlaying) Object.Destroy(o); else Object.DestroyImmediate(o); }
 
-        static Mesh Merge(List<Mesh> parts, string name)
+        /// <summary>Concatenates geometry into fixed submeshes. Tube parts get a default tangent (no normal map on them).</summary>
+        sealed class Accumulator
         {
-            var m = new Mesh { name = name };
-            if (parts.Count == 0) return m;
-            long verts = 0; foreach (var p in parts) verts += p.vertexCount;
-            if (verts > 65535) m.indexFormat = IndexFormat.UInt32;
-            var ci = new CombineInstance[parts.Count];
-            for (int i = 0; i < parts.Count; i++) ci[i] = new CombineInstance { mesh = parts[i], transform = Matrix4x4.identity };
-            m.CombineMeshes(ci, mergeSubMeshes: true, useMatrices: false);
-            return m;
+            readonly List<Vector3> _v = new List<Vector3>(), _n = new List<Vector3>();
+            readonly List<Vector4> _t = new List<Vector4>(); readonly List<Vector2> _uv = new List<Vector2>();
+            readonly List<int>[] _tri = { new List<int>(), new List<int>(), new List<int>() };
+            int _sub;
+            readonly List<Vector3> _tmpV = new List<Vector3>(), _tmpN = new List<Vector3>(); readonly List<Vector2> _tmpUv = new List<Vector2>(); readonly List<int> _tmpT = new List<int>();
+
+            public void Begin(int submesh) => _sub = submesh;
+
+            public void AddCore(MeshData d)
+            {
+                int b = _v.Count;
+                for (int i = 0; i < d.VertexCount; i++)
+                {
+                    _v.Add(new Vector3(d.Positions[i * 3], d.Positions[i * 3 + 1], d.Positions[i * 3 + 2]));
+                    _n.Add(new Vector3(d.Normals[i * 3], d.Normals[i * 3 + 1], d.Normals[i * 3 + 2]));
+                    _t.Add(new Vector4(d.Tangents[i * 4], d.Tangents[i * 4 + 1], d.Tangents[i * 4 + 2], d.Tangents[i * 4 + 3]));
+                    _uv.Add(new Vector2(d.Uv[i * 2], d.Uv[i * 2 + 1]));
+                }
+                foreach (var i in d.Triangles) _tri[SubmeshShell].Add(b + i);
+            }
+
+            public void Add(Mesh m, float dy)
+            {
+                m.GetVertices(_tmpV); m.GetNormals(_tmpN); m.GetUVs(0, _tmpUv); m.GetTriangles(_tmpT, 0);
+                int b = _v.Count;
+                for (int i = 0; i < _tmpV.Count; i++)
+                {
+                    _v.Add(_tmpV[i] + new Vector3(0, dy, 0)); _n.Add(_tmpN[i]); _t.Add(new Vector4(1, 0, 0, 1));
+                    _uv.Add(i < _tmpUv.Count ? _tmpUv[i] : Vector2.zero);
+                }
+                foreach (var i in _tmpT) _tri[_sub].Add(b + i);
+            }
+
+            public Mesh ToMesh(string name)
+            {
+                var m = new Mesh { name = name };
+                if (_v.Count > 65535) m.indexFormat = IndexFormat.UInt32;
+                m.SetVertices(_v); m.SetNormals(_n); m.SetTangents(_t); m.SetUVs(0, _uv);
+                m.subMeshCount = SubmeshCount;
+                for (int s = 0; s < SubmeshCount; s++) m.SetTriangles(_tri[s], s, calculateBounds: false);
+                m.RecalculateBounds();
+                return m;
+            }
         }
     }
 }

@@ -45,6 +45,7 @@ namespace Kestrel.Vehicle
             bool cut = cutTo > cutFrom;
             for (int i = 0; i < P - 1; i++)
             {
+                if (Coincident(profile[i], profile[i + 1])) continue;   // crease: shared position, two normals
                 bool lowPole = profile[i].R <= 1e-6f, highPole = profile[i + 1].R <= 1e-6f;
                 for (int j = 0; j < S; j++)
                 {
@@ -55,6 +56,21 @@ namespace Kestrel.Vehicle
                 }
             }
             return md;
+        }
+
+        public static bool Coincident(ProfilePoint a, ProfilePoint b) => Math.Abs(a.R - b.R) < 1e-6f && Math.Abs(a.Y - b.Y) < 1e-6f;
+
+        /// <summary>Exact triangle count Build() will emit (no cutaway). Used by TankBudget.</summary>
+        public static int CountTriangles(IReadOnlyList<ProfilePoint> profile, int segments)
+        {
+            int S = Math.Max(3, segments), n = 0;
+            for (int i = 0; i < profile.Count - 1; i++)
+            {
+                if (Coincident(profile[i], profile[i + 1])) continue;
+                bool lo = profile[i].R <= 1e-6f, hi = profile[i + 1].R <= 1e-6f;
+                n += ((lo ? 0 : 1) + (hi ? 0 : 1)) * S;
+            }
+            return n;
         }
     }
 }

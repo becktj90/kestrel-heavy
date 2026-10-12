@@ -20,11 +20,31 @@ namespace Kestrel.Vehicle
 
         public const float DomeCapRadiusFraction = 0.35f;
 
+        /// <summary>Hero cap: LOD0 triangles per tank (shell + welds + rings). Build() widens stiffener pitch, then panel
+        /// length, until the tank fits, so long tanks keep their seams and some rings instead of blowing the budget.</summary>
+        public const int Lod0TriangleCap = 14_000;
+
+        /// <summary>Spec actually used after budget fitting (StiffenerPitch / PanelLength may be wider than requested).</summary>
+        public TankShellSpec Fitted { get; private set; }
+
         public static TankLayout Build(TankShellSpec s)
         {
             var errs = s.Validate();
             if (errs.Count > 0) throw new ArgumentException(string.Join("; ", errs));
-            var L = new TankLayout();
+            var L = BuildRaw(s);
+            for (int guard = 0; guard < 40 && TankBudget.Triangles(L, TankLod.For(0), out _, out _) > Lod0TriangleCap; guard++)
+            {
+                // Thin rings down to one per panel first, then lengthen panels (fewer seams and rings); never zero rings.
+                if (L.Stiffeners.Count > L.BarrelSections) s.StiffenerPitch *= 1.25f;
+                else { s.PanelLength *= 1.25f; s.StiffenerPitch = Math.Min(s.StiffenerPitch, s.PanelLength * 0.45f); }
+                L = BuildRaw(s);
+            }
+            return L;
+        }
+
+        static TankLayout BuildRaw(TankShellSpec s)
+        {
+            var L = new TankLayout { Fitted = s };
             float R = s.Radius, y0 = s.BarrelBottom, len = s.BarrelLength;
             int n = len <= 1e-4f ? 0 : Math.Max(1, (int)Math.Ceiling(len / s.PanelLength - 1e-6));
             L.BarrelSections = n;
@@ -32,10 +52,10 @@ namespace Kestrel.Vehicle
             if (n == 0) L.CircWelds.Add(new Ring(y0, R));   // equator weld of a two-dome tank
             else for (int k = 0; k <= n; k++) L.CircWelds.Add(new Ring(y0 + len * k / n, R));
 
-            // Dome cap welds where the dome radius is DomeCapRadiusFraction * R (ellipse: y offset = h * sqrt(1 - f^2)).
-            float h = s.DomeHeight, f = DomeCapRadiusFraction, dy = h * (float)Math.Sqrt(1 - f * f);
-            L.DomeWelds.Add(new Ring(s.BarrelBottom - dy, f * R));
-            L.DomeWelds.Add(new Ring(s.BarrelTop + dy, f * R));
+            // Dome cap welds (ellipsoidal ends only) where the dome radius is DomeCapRadiusFraction of the dome radius.
+            float f = DomeCapRadiusFraction, dy = s.DomeRise * (float)Math.Sqrt(1 - f * f);
+            if (s.AftDome == DomeStyle.Ellipsoidal) L.DomeWelds.Add(new Ring(s.BarrelBottom - dy, f * s.DomeRadius));
+            if (s.FwdDome == DomeStyle.Ellipsoidal) L.DomeWelds.Add(new Ring(s.BarrelTop + dy, f * s.DomeRadius));
 
             if (n > 0)
             {

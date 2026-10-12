@@ -11,8 +11,12 @@ namespace Kestrel.Vehicle
         public const int MaxRibs = 3000;
         public const float RibWidth = 0.012f, RibDepth = 0.03f;
 
-        /// <summary>Kit batch for rib instances (one mesh, one kit material, instanced).</summary>
-        public static InstanceBatch NewBatch() => new InstanceBatch(KitMesh.Beam(RibWidth, RibDepth), MaterialLibrary.Get(MaterialRole.PaintedSteel), DetailSize.Small);
+        public const string RibMeshKey = "KH_IsogridRib";
+
+        /// <summary>Kit batch for rib instances. The rib beam mesh is shared through SharedMeshes: pair every call with
+        /// SharedMeshes.Release(RibMeshKey).</summary>
+        public static InstanceBatch NewBatch() => new InstanceBatch(SharedMeshes.Acquire(RibMeshKey, () => KitMesh.Beam(RibWidth, RibDepth)),
+            MaterialLibrary.Get(MaterialRole.PaintedSteel), DetailSize.Small);
 
         /// <summary>Tank-local rib matrices for the barrel sector [cutFrom, cutTo) radians. Empty if the tank has no
         /// barrel. The cell grows until the rib count fits MaxRibs.</summary>

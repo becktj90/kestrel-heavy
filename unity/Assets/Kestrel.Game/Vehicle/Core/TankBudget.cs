@@ -2,26 +2,25 @@ using System;
 
 namespace Kestrel.Vehicle
 {
-    /// <summary>Triangle estimates for one tank at one LOD. tubeSides = Kestrel.Kit.LodPolicy.RadialSegments(lod)
-    /// (passed in so this assembly stays Contracts-only). Must match TankShellBuilder within a few percent.</summary>
+    /// <summary>Exact triangle counts for one tank at one LOD, from the same numbers TankShellBuilder uses
+    /// (KitMesh.Tube: (pathPoints - 1) * sides * 2; circle paths have RadialSegments + 1 points).</summary>
     public static class TankBudget
     {
-        public const int StiffenerSides = 4;   // low rectangular-ish hat ring
+        public static int TubeTriangles(int pathPoints, int sides) => Math.Max(0, pathPoints - 1) * Math.Max(3, sides) * 2;
 
-        public static int ShellTriangles(int profilePoints, int poles, int segments)
-            => Math.Max(0, (profilePoints - 1) * 2 * segments - poles * segments);
+        public static int Triangles(TankShellSpec s, TankLod lod, out int shell, out int hardware)
+            => Triangles(TankLayout.Build(s), lod, out shell, out hardware);
 
-        public static int Triangles(TankShellSpec s, TankLayout layout, TankLod lod, int tubeSides, out int shell, out int hardware)
+        public static int Triangles(TankLayout layout, TankLod lod, out int shell, out int hardware)
         {
-            var prof = TankProfile.Build(s, layout, lod);
-            int S = lod.RadialSegments;
-            shell = ShellTriangles(prof.Count, 2, S);
-            int ring = S * tubeSides * 2;
+            var s = layout.Fitted;
+            shell = LatheMesh.CountTriangles(TankProfile.Build(s, layout, lod), lod.RadialSegments);
+            int S = lod.RadialSegments, weldRing = TubeTriangles(S + 1, lod.WeldSides);
             hardware = 0;
-            if (lod.CircWelds) hardware += layout.CircWelds.Count * ring;
-            if (lod.DomeWelds) hardware += layout.DomeWelds.Count * ring;
-            if (lod.LongWelds) hardware += layout.LongWelds.Count * tubeSides * 2;
-            if (lod.Stiffeners) hardware += layout.Stiffeners.Count * S * StiffenerSides * 2;
+            if (lod.CircWelds) hardware += layout.CircWelds.Count * weldRing;
+            if (lod.DomeWelds) hardware += layout.DomeWelds.Count * weldRing;
+            if (lod.LongWelds) hardware += layout.LongWelds.Count * TubeTriangles(2, lod.WeldSides);
+            if (lod.Stiffeners) hardware += layout.Stiffeners.Count * TubeTriangles(S + 1, lod.StiffenerSides);
             return shell + hardware;
         }
     }
