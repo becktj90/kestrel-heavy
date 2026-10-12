@@ -20,7 +20,7 @@ Apple Developer Program ([Apple: Xcode Cloud](https://developer.apple.com/xcode-
    product + repository onboarding. This conflicts with "Trevor does no Mac setup"; see §7a for options.
 2. Manual-only is supported: a **Manual Start** start condition (Xcode 15.1+), with every other start condition
    removed. Builds started from ASC or the ASC API count as manual and need a matching Manual Start condition
-   ([WWDC24 "Extend your Xcode Cloud workflows"](https://developer.apple.com/videos/play/wwdc2024/10200/)).
+   ([WWDC24 "Extend your Xcode Cloud workflows"](https://www.youtube.com/watch?v=f__0R-W9H6k)).
    **Xcode proposes a Branch Changes condition on the default branch by default.** That default is what produced
    Beckify build 326; it must be deleted before the first save.
 3. Unity cannot run inside Xcode Cloud (macOS-only Apple images, no Unity license/Editor). So the export is
