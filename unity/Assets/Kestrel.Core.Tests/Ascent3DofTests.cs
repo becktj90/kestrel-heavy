@@ -12,25 +12,60 @@ namespace Kestrel.Core.Tests
         const double Abs = 1e-9;
 
         [Test]
-        public void IssFromCape_NonRotatingAzimuth()
+        public void IssFromCape_InertialBranches()
         {
-            double az = LaunchAzimuth.FromNorthDeg(51.6, 28.5);
-            Assert.AreEqual(44.9751330989884, az, 0.01, "audit band");
+            double north = LaunchAzimuth.InertialNortherlyDeg(51.6, 28.5);
+            double south = LaunchAzimuth.InertialSoutherlyDeg(51.6, 28.5);
+            Assert.AreEqual(44.9751330989884, north, 0.01, "northerly");
+            Assert.AreEqual(135.0248669010116, south, 0.01, "southerly");
             double s = Math.Cos(51.6 * Math.PI / 180) / Math.Cos(28.5 * Math.PI / 180);
-            Assert.AreEqual(Math.Asin(s) * 180 / Math.PI, az, 1e-12, "closed form");
+            Assert.AreEqual(Math.Asin(s) * 180 / Math.PI, north, 1e-12, "closed form");
+            Assert.AreEqual(180 - north, south, 1e-12, "southerly is the supplement");
+            Assert.AreEqual(north, LaunchAzimuth.InertialNortherlyDeg(51.6, -28.5), 1e-12, "cosine of latitude is even");
+        }
+
+        [Test]
+        public void IssFromCape_RotatingBranches()
+        {
+            double speed = Orbit.CircularVelocity(0);
+            double radius = Gravity.R_EARTH;
+            double north = LaunchAzimuth.RotatingNortherlyDeg(51.6, 28.5, speed, radius);
+            double south = LaunchAzimuth.RotatingSoutherlyDeg(51.6, 28.5, speed, radius);
+            Assert.AreEqual(42.801031904016824, north, 1e-6, "northerly rotating");
+            Assert.AreEqual(137.1989680959832, south, 1e-6, "southerly rotating");
+            Assert.AreEqual(Heading(LaunchAzimuth.InertialNortherlyDeg(51.6, 28.5), 28.5, speed, radius), north, 1e-9);
+            Assert.AreEqual(Heading(LaunchAzimuth.InertialSoutherlyDeg(51.6, 28.5), 28.5, speed, radius), south, 1e-9);
         }
 
         [Test]
         public void DueEast_WhenInclinationEqualsLatitude()
         {
-            Assert.AreEqual(90, LaunchAzimuth.FromNorthDeg(28.5, 28.5), 1e-9);
-            Assert.AreEqual(0, LaunchAzimuth.FromNorthDeg(90, 28.5), 1e-12);
+            Assert.AreEqual(90, LaunchAzimuth.InertialNortherlyDeg(28.5, 28.5), 1e-9);
+            Assert.AreEqual(90, LaunchAzimuth.InertialSoutherlyDeg(28.5, 28.5), 1e-9);
+            Assert.AreEqual(0, LaunchAzimuth.InertialNortherlyDeg(90, 28.5), 1e-12);
+            Assert.AreEqual(180, LaunchAzimuth.InertialSoutherlyDeg(90, 28.5), 1e-12);
+            double speed = Orbit.CircularVelocity(0);
+            Assert.AreEqual(90, LaunchAzimuth.RotatingNortherlyDeg(28.5, 28.5, speed, Gravity.R_EARTH), 1e-9);
         }
 
         [Test]
-        public void UnreachableInclination_IsNaN()
+        public void UnreachableInclination_Throws()
         {
-            Assert.IsTrue(double.IsNaN(LaunchAzimuth.FromNorthDeg(0, 28.5)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => LaunchAzimuth.InertialNortherlyDeg(0, 28.5));
+            Assert.Throws<ArgumentOutOfRangeException>(() => LaunchAzimuth.InertialSoutherlyDeg(0, 28.5));
+            Assert.Throws<ArgumentOutOfRangeException>(() => LaunchAzimuth.RotatingNortherlyDeg(0, 28.5, 7500, Gravity.R_EARTH));
+            Assert.Throws<ArgumentOutOfRangeException>(() => LaunchAzimuth.RotatingSoutherlyDeg(10, 28.5, 7500, Gravity.R_EARTH));
+            Assert.Throws<ArgumentOutOfRangeException>(() => LaunchAzimuth.InertialNortherlyDeg(51.6, 90));
+        }
+
+        static double Heading(double inertialAzDeg, double latitudeDeg, double speed, double radius)
+        {
+            double beta = inertialAzDeg * Math.PI / 180.0;
+            double vNorth = speed * Math.Cos(beta);
+            double vEast = speed * Math.Sin(beta) - Earth.OMEGA_EARTH * radius * Math.Cos(latitudeDeg * Math.PI / 180.0);
+            double deg = Math.Atan2(vEast, vNorth) * 180.0 / Math.PI;
+            if (deg < 0) deg += 360.0;
+            return deg;
         }
 
         [Test]
