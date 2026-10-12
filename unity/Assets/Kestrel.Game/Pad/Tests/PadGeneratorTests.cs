@@ -87,7 +87,8 @@ namespace Kestrel.Pad.Tests
             var L = PadGenerator.Generate(9, t, new PadFit(120f, 5f));
             var led = new BudgetLedger(); PadPerf.Estimate(L, led);
             Assert.That(led.Within(KitBudgets.Low), Is.True, led.Report(KitBudgets.Low));
-            Assert.That(led.DrawCalls, Is.LessThanOrEqualTo(12), led.Report(KitBudgets.High));
+            // D4 adds up to 2 pad draws (hose + plate batches) on top of the D3 trench budget.
+            Assert.That(led.DrawCalls, Is.LessThanOrEqualTo(14), led.Report(KitBudgets.High));
             Assert.That(led.Triangles, Is.LessThan(40_000), led.Report(KitBudgets.High));
         }
 

@@ -75,7 +75,10 @@ test('data/golden matches a fresh export (run node tools/export-golden.mjs)', ()
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'golden-'));
   execFileSync(process.execPath, [path.join(root, 'tools', 'export-golden.mjs'), '--out', tmp], { stdio: 'pipe' });
   const names = fs.readdirSync(tmp).filter((f) => f.endsWith('.json')).sort();
-  assert.deepStrictEqual(names, fs.readdirSync(path.join(root, 'data', 'golden')).filter((f) => f.endsWith('.json')).sort());
+  // C# design-v2 goldens are not produced by the JS exporter. They are checked by dotnet.
+  const csharpOnly = new Set(['design-v2.json', 'design-v2-literals.json']);
+  const committed = fs.readdirSync(path.join(root, 'data', 'golden')).filter((f) => f.endsWith('.json') && !csharpOnly.has(f)).sort();
+  assert.deepStrictEqual(names, committed);
   for (const f of names) assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(tmp, f), 'utf8')), readJSON('data', 'golden', f), f);
   assert.ok(readJSON('data', 'golden', 'index.json').total >= 100);
 });

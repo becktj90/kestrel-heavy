@@ -42,7 +42,7 @@ namespace Kestrel.Pad
             // Pad-space plate position relative to this arm's parent (the pad root).
             var sol = SwingArmSolver.Solve(Spec, padPos);
             if (!sol.Ok) { LastError = sol.Reason; return false; }
-            MatedYaw = sol.YawDeg; SetLength(Mathf.Max(Spec.MinLength, sol.Length - target.PlateRadius * 0.5f));
+            MatedYaw = sol.YawDeg; SetLength(SwingArmSolver.MatedLength(Spec, sol));
             State = UmbilicalStates.Apply(State, UmbilicalEventKind.Connect); _retractStartT = double.NaN; ApplyYaw();
             return true;
         }

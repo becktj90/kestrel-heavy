@@ -139,5 +139,22 @@ namespace Kestrel.Pad.Tests
                 }
             }
         }
+
+        [TestCase(6.19f, 6.19f)] [TestCase(6.19f, 2.5f)] [TestCase(2.5f, 2.5f)]
+        public void SwingArmTipLandsOnTheSkin(float overall, float skin)
+        {
+            var fit = new PadFit(70f, overall) { SkinRadiusAt = y => skin };
+            var pts = PadGenerator.DefaultAttachPoints(fit, PadArchetype.Tower);
+            var L = PadGenerator.Generate(1, PadArchetype.Tower, fit, pts);
+            Assert.That(L.Arms, Is.Not.Empty);
+            foreach (var a in L.Arms)
+            {
+                var p = pts.First(q => q.Id == a.AttachId);
+                var sol = SwingArmSolver.Solve(a, p.Pose.Position);
+                Assert.That(sol.Ok, Is.True, sol.Reason);
+                float tipZ = a.Pivot.Z - SwingArmSolver.MatedLength(a, sol);   // mated yaw 180: arm runs along -Z
+                Assert.That(System.Math.Abs(tipZ - skin), Is.LessThanOrEqualTo(0.05f), $"{a.AttachId}: tip z {tipZ:0.000} vs skin {skin}");
+            }
+        }
     }
 }

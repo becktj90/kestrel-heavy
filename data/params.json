@@ -2,28 +2,6 @@
   "version": 1,
   "designVersion": 1,
   "designer": {
-    "minTwr": 1,
-    "goodTwr": 1.25,
-    "minMargin": 0.05,
-    "pack": 1.1,
-    "tuneLimitPct": 15,
-    "engineCountMin": 1,
-    "engineCountMax": 40,
-    "diameterMinM": 0.3,
-    "diameterMaxM": 15,
-    "safetyMin": 1,
-    "safetyMax": 3,
-    "maxStages": 5,
-    "strapOnCounts": [
-      0,
-      2,
-      4
-    ],
-    "avionicsTiers": [
-      "basic",
-      "standard",
-      "redundant"
-    ],
     "layers": {
       "default": "simple",
       "standardUnlock": "first-orbit",

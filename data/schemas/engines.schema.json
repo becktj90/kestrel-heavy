@@ -28,7 +28,26 @@
         "reliability": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
         "expansionRatio": { "type": "number", "exclusiveMinimum": 0 },
         "diameter": { "type": "number", "exclusiveMinimum": 0, "description": "nozzle exit, m" },
-        "note": { "type": "string" }
+        "note": { "type": "string" },
+        "nozzles": {
+          "type": "array",
+          "description": "Optional discrete catalog bells. The engine's top-level values are the default when the stage omits nozzle or selects the default id. Sea-level and vacuum engines stay separate ids.",
+          "items": {
+            "type": "object",
+            "required": ["id", "expansionRatio", "ispSL", "ispVac", "thrustSL", "thrustVac", "mass", "exitDiameter"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "expansionRatio": { "type": "number", "exclusiveMinimum": 0 },
+              "ispSL": { "type": "number", "minimum": 0 },
+              "ispVac": { "type": "number", "exclusiveMinimum": 0 },
+              "thrustSL": { "type": "number", "minimum": 0 },
+              "thrustVac": { "type": "number", "exclusiveMinimum": 0 },
+              "mass": { "type": "number", "minimum": 0 },
+              "exitDiameter": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        }
       } } }
   }
 }

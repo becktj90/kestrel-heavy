@@ -48,6 +48,8 @@ namespace Kestrel.Core.Designer
                 else shown = nonSchema;
             }
             if (layer == "simple") warnings = new List<Issue>();
+            if (layer != "engineer") warnings.RemoveAll(w => w.code == "engine-out");
+            if (layer != "engineer") { ApplyKid(shown); ApplyKid(warnings); }
             string next = shown.Count > 0 ? shown[0].msg : warnings.Count > 0 ? warnings[0].msg : Ready;
             return new Presented
             {
@@ -60,8 +62,15 @@ namespace Kestrel.Core.Designer
         {
             var o = new List<Issue>();
             if (src == null) return o;
-            foreach (var x in src) o.Add(new Issue { code = x.code, tab = x.tab, msg = x.msg, index = x.index });
+            foreach (var x in src) o.Add(new Issue { code = x.code, tab = x.tab, msg = x.msg, kid = x.kid, index = x.index });
             return o;
+        }
+
+        static void ApplyKid(List<Issue> list)
+        {
+            if (list == null) return;
+            for (int i = 0; i < list.Count; i++)
+                if (!string.IsNullOrEmpty(list[i].kid)) list[i].msg = list[i].kid;
         }
     }
 

@@ -100,5 +100,32 @@ namespace Kestrel.Pad.Tests
             PadLights.ForceNight = null; m.Invoke(null, null);
             Assert.That(PadLights.ForceNight, Is.Null);
         }
+
+        [Test]
+        public void ConnectedArmsReachTheirPlates()
+        {
+            _root = new GameObject("pad");
+            var fit = new PadFit(70f, 6.19f);
+            var r = PadBuilder.Build(_root.transform, 2, PadArchetype.Tower, fit);
+            foreach (var arm in r.Arms)
+            {
+                float tipZ = arm.Spec.Pivot.Z - arm.Length;
+                Assert.That(Mathf.Abs(tipZ - 6.19f), Is.LessThanOrEqualTo(0.05f), arm.AttachId);
+            }
+        }
+
+        [Test]
+        public void MeshKeyChangesWithTheMesh()
+        {
+            var a = new Mesh(); a.vertices = new[] { Vector3.zero, Vector3.up, Vector3.right };
+            var b = new Mesh(); b.vertices = new[] { Vector3.zero, Vector3.up, Vector3.right };
+            try
+            {
+                Assert.That(VehicleSkin.MeshKey(a), Is.Not.EqualTo(VehicleSkin.MeshKey(b)));
+                Assert.That(VehicleSkin.MeshKey(a), Is.EqualTo(VehicleSkin.MeshKey(a)));
+                Assert.That(VehicleSkin.MeshKey(null), Is.EqualTo(0));
+            }
+            finally { Object.DestroyImmediate(a); Object.DestroyImmediate(b); }
+        }
     }
 }

@@ -41,5 +41,15 @@ namespace Kestrel.Core.Sky
         }
 
         public static float NightFactor() => NightFactor(ElevationDeg);
+
+        /// <summary>
+        /// Publish the sun at a local civil hour. SkyRig.ForceTimeOfDay calls this, and so does -khNight.
+        /// Pad lighting reads ElevationDeg: Night = PadLighting.NightFactor(SkySun.ElevationDeg).
+        /// </summary>
+        public static void ApplyLocalHours(double hoursLocal, double latitudeDeg, double longitudeDeg, int year, int month, int day)
+        {
+            double utc = SkyBodies.UtcFromLocalHours(hoursLocal, longitudeDeg);
+            Publish(SkyBodies.SunElevationRad(latitudeDeg, longitudeDeg, year, month, day, utc));
+        }
     }
 }
