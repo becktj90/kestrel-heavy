@@ -1,4 +1,4 @@
-// Home title screen, plus placeholder Design/Flight screens (unused on the play path) until U3/U4 land. Shows the screen
+// Home title screen, plus placeholder Flight screens (unused on the play path) until U3/U4 land. Shows the screen
 // name inside the safe area plus nav buttons (≥44 pt), so the shell and scaling can be verified.
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -44,7 +44,7 @@ namespace Kestrel.Game.Shell
             var spacer = new VisualElement { pickingMode = PickingMode.Ignore };
             spacer.style.flexGrow = 1;
             _view.Add(spacer);
-            var play = new Button(shell.EnterSlice) { text = "PLAY", tooltip = "Play. Opens the rocket designer on the pad." };
+            var play = new Button(() => shell.Flow.Go(AppScreen.Design)) { text = "PLAY", tooltip = "Play. Opens the rocket designer on the pad." };
             play.AddToClassList("kh-button");
             play.AddToClassList("kh-home-play");
             _view.Add(play);

@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Slice.Editor",
     "rootNamespace": "Kestrel.Slice.Editor",
-    "references": ["Kestrel.Slice", "Kestrel.Core", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.Core.Runtime"],
+    "references": ["Kestrel.Slice", "Kestrel.Core", "Kestrel.Game.Shell", "Kestrel.Game.Editor", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.Core.Runtime"],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

@@ -55,6 +55,10 @@ namespace Kestrel.Slice
             tower = PadTower.Create(bodyMat); tower.SetParent(worldRoot, false);
             flight.Anchor(tower, 0, 0, 0); // sized per design in BuildRocket
             flight.OnMeco += OnMeco;
+            // Shell Design scene is loaded additively, so Awake runs while Boot is still the active scene:
+            // keep everything SliceApp builds in its own scene so it unloads with Design.
+            foreach (var root in new[] { cam.gameObject, sun.gameObject, worldRoot.gameObject })
+                if (root.scene != gameObject.scene) UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root, gameObject.scene);
         }
 
         void BuildUI()
