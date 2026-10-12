@@ -64,7 +64,7 @@ jobs:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           checkName: Unity ${{ matrix.testMode }} results
           # Wall-clock latency budget is tuned for the M-series dev box; shared CI runners are 2-5x slower.
-          customParameters: -testFilter "!Kestrel.Core.Tests.ReadoutV2Tests.Recompute_MeetsLatencyBudget"
+          customParameters: -testFilter !Kestrel.Core.Tests.ReadoutV2Tests.Recompute_MeetsLatencyBudget
           artifactsPath: test-results-${{ matrix.testMode }}
       - uses: actions/upload-artifact@v4
         if: always() && env.HAS_LICENSE == 'true'
