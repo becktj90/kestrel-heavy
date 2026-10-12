@@ -1,8 +1,9 @@
-# Kestrel Heavy: Unity 6 vertical-slice prototype
+# Kestrel Heavy: Unity 6.3 LTS
 
-Draft prototype for the Phase 0 engine decision (`ENGINE_PHASE0.md` §5). **Not shipping code.**
-It has its own dev bundle id, **`com.beckify.kestrelheavy.unityproto`**, and is internal TestFlight only. The shipping
-app (`com.beckify.kestrelheavy`, `ios/`) is never touched.
+Shipping iOS app. Version **2.0.0**, bundle **`com.beckify.kestrelheavy`**, portrait only (DECISIONS #1, #7, #30).
+Phaser in `web/` is the web demo. `ios/` is the unreleased 1.0.1 wrapper. The held workflow
+`.github/workflows/unity-proto-ios.yml` still names the old prototype id `com.beckify.kestrelheavy.unityproto`.
+`SliceBootstrap` stamps `com.beckify.kestrelheavy` and `2.0.0`.
 
 Everything here is text authored without an editor. Count every hand edit you have to make in the editor and
 put the number in `RESULTS.md`.
@@ -59,7 +60,7 @@ If the Package Manager rejects a version in `Packages/manifest.json` (URP `17.3.
 offers for 6000.3 and note it in RESULTS.md.
 
 ## 3. Run the tests
-- **In Unity:** Window → General → **Test Runner** → EditMode → Run All. You should see 17 tests (physics, vehicle, 9 simulate runs and economy).
+- **In Unity:** Window → General → **Test Runner** → EditMode → Run All. The suite is `Kestrel.Core.Tests` plus the other EditMode assemblies. The old "17 tests" figure was the first prototype slice.
 - **Without Unity (same files):**
   ```bash
   cd unity/dotnet
@@ -72,10 +73,12 @@ offers for 6000.3 and note it in RESULTS.md.
 1. File → Build Profiles → **iOS** → Switch Platform. (Agents use the Unity CLI flow in section 0 instead.)
 2. Build → choose `unity/build/iOS`. Unity exports an Xcode project.
 3. Open `build/iOS/Unity-iPhone.xcodeproj`. Under the Signing & Capabilities tab for target **Unity-iPhone**, check that it shows **Automatically manage signing**, Team **9TR6R5LV8M**
-   and Bundle Identifier **com.beckify.kestrelheavy.unityproto**. All three are preset by the bootstrap, so this is only a check.
+   and Bundle Identifier **com.beckify.kestrelheavy**. Version is **2.0.0**. Portrait is the only orientation. The bootstrap sets these.
 4. Choose your device and press Run. For TestFlight, use Product → Archive → Distribute App → App Store Connect → **TestFlight Internal Only**.
 
-## 5. App Store Connect setup (one time, dev bundle only)
+## 5. App Store Connect setup (prototype record)
+
+The shipping identifier is `com.beckify.kestrelheavy` (DECISIONS #30). The steps below are the old internal prototype record.
 1. developer.apple.com → Identifiers → **+** → App ID `com.beckify.kestrelheavy.unityproto`, and tick **Game Center**.
    (Automatic signing can also register it on the first archive.)
 2. App Store Connect → Apps → **+ New App**: iOS, name e.g. "Kestrel Heavy Proto" (it must be unique; it is never released),
@@ -100,8 +103,16 @@ into `unity/Packages/LocalTarballs/` and point the manifest there if you want CI
 `AppleGameCenter.cs` was written against the plug-in's documented API (`GKLocalPlayer.Authenticate`, `GKLeaderboard.LoadLeaderboards`,
 `SubmitScore`) and has **not been compiled yet**. Fix any signature drift there.
 
-## 7. CI: `.github/workflows/unity-proto-ios.yml`
-This runs on `workflow_dispatch` and on pushes to `unity-prototype` that touch `unity/**` or the workflow file itself. It has three jobs:
+## 7. CI
+
+Shipping checks:
+
+- `.github/workflows/ci.yml` runs the node tests and the legacy iOS simulator build.
+- `.github/workflows/core-dotnet.yml` runs the core tests with no Editor. It still runs `TimelineTests.Generation_IsFasterThanAFewMilliseconds`.
+- `.github/workflows/unity.yml` runs EditMode, PlayMode screenshots, and an iOS export compile-check. It already skips `ReadoutV2Tests.Recompute_MeetsLatencyBudget` and `TimelineTests.Generation_IsFasterThanAFewMilliseconds` (PR #170). Those are the only wall-clock millisecond budgets in the suites.
+
+`.github/workflows/unity-proto-ios.yml` is manual (`workflow_dispatch` only). It is the held prototype workflow, and it still guards `com.beckify.kestrelheavy.unityproto`. Its jobs:
+
 1. **ubuntu-latest (`core-dotnet`):** `dotnet test` on `unity/dotnet/Kestrel.Core.Tests` (no Unity).
 2. **ubuntu-latest (`unity-export`):** GameCI `unity-test-runner@v4` (EditMode) and `unity-builder@v4` (`targetPlatform: iOS`,
    `buildMethod: Kestrel.Slice.Editor.BuildScript.BuildIOS`, build number = `github.run_number`). This produces the Xcode project as an artifact.

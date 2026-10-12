@@ -1,6 +1,8 @@
 # Kestrel Heavy (standalone iOS app)
 
-Native SwiftUI App Store product, **separate from Beckify Toolbox** and **Look Check**. One screen: a WKWebView that plays the existing Phaser 4 Pier 7 launch arcade from a **local bundled** `Game/` pack. This is not a website wrapper of beckify.com, and it is **not** a Toolbox catalog game.
+Unreleased 1.0.1 Phaser/WKWebView wrapper. The shipping app is Unity 2.0.0 in `unity/` (`com.beckify.kestrelheavy`, portrait only).
+
+Native SwiftUI shell, **separate from Beckify Toolbox** and **Look Check**. One screen: a WKWebView that plays the existing Phaser 4 Pier 7 launch arcade from a **local bundled** `Game/` pack. This is not a website wrapper of beckify.com, and it is **not** a Toolbox catalog game.
 
 The playable website stays at https://beckify.com/games/kestrel-heavy.
 

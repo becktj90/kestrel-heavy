@@ -1,11 +1,11 @@
 # Project state (living context; update every milestone)
 
-_Last updated: 2026-10-11 ~11:00 PM ET (K1)._
+_Last updated: 2026-10-12 (docs pass)._
 
 ## Now
 - Engine: Unity 6.3 LTS, portrait-only, 2.0 = first Unity release under the existing bundle/record. Phaser = beckify.com web demo. `release/1.0.1` archived.
 - Lanes: **U1** Gameplay Dev (core parity), **U2** Graphics Dev (shell/portrait). X1 + H1 docs done; X2–X7 starting; H2–H6 mapped into U3–U9 (UNITY_SHIP_PLAN §8). K1 (Launch Timeline spec) done; K2–K7 mapped (§9).
-- CI: dotnet + golden vectors on Ubuntu. Unity Build Automation connected (free tier, no card, read-only deploy key, **no build targets**). No builds until Trevor says ready.
+- CI: `ci.yml` (node tests and the legacy iOS simulator build), `core-dotnet.yml` (core tests, no Editor), `unity.yml` (EditMode, PlayMode, iOS export compile-check; the two wall-clock latency tests stay skipped). Store upload still waits for Trevor.
 - Narration: ElevenLabs library being pre-generated on Trevor's paid Creator plan (non-beta models), local copies kept.
 
 ## Open PRs (at X1)
@@ -23,7 +23,7 @@ _Last updated: 2026-10-11 ~11:00 PM ET (K1)._
 - **Xcode** project changes.
 - **Privacy-label**-affecting changes (analytics, accounts, network).
 - **Legal positions** (terms, privacy policy, trademarks).
-- **Age rating/audience:** draft recommends 4+, all ages, Data Not Collected, not Kids Category (AGE_RATING_RECOMMENDATION.md).
+- **Age rating/audience:** decided in DECISIONS #34 (4+, all ages, Data Not Collected, not Kids category). Submitting the listing still waits for Trevor.
 - **`UIRequiresFullScreen`** on iPad.
 - Optional asks: commissioned composer / paid AI music; Unity support email (drafted by Chief of Staff).
 
