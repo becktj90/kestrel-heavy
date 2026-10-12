@@ -169,7 +169,7 @@ switch as the reduced-particle threshold; `reducedMotion` disables plume emissio
 
 Use `tod.js` unchanged:
 
-* `spaceBlend(altKm, status) = smoothstep(6, 56, altKm)`; forced to 1 in `SEP` / `JACKLYN`.
+* `spaceBlend(altKm, status) = smoothstep(6, 56, altKm)`; forced to 1 in `SEP` / `HAVEN`.
 * Layer alphas from `t = spaceBlend`:
 
 | layer | alpha |
@@ -252,7 +252,7 @@ the narrowest (iPhone, ~332 du).
     }
   },
   "sky": {
-    "spaceBlendKm": [6, 56], "forceSpaceStatus": ["SEP", "JACKLYN"],
+    "spaceBlendKm": [6, 56], "forceSpaceStatus": ["SEP", "HAVEN"],
     "layers": {
       "sky": "1-t", "stars": "t",
       "milky": [0.18, 0.9, 0.74], "nebula": [0.28, 1.0, 0.52],

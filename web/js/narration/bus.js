@@ -40,7 +40,7 @@ const C = CATEGORY;
  */
 export const EVENTS = Object.freeze({
   'flight.begin': { cat: C.FLIGHT, payload: 'missionId, payload, qa?' },
-  'flight.status': { cat: C.FLIGHT, payload: 'status (MENU|PRELAUNCH|ASCENT|SEP|JACKLYN|SUMMARY), prev' },
+  'flight.status': { cat: C.FLIGHT, payload: 'status (MENU|PRELAUNCH|ASCENT|SEP|HAVEN|SUMMARY), prev' },
   'flight.end': { cat: C.FLIGHT, payload: 'reason (rud|done|...), score' },
 
   pad: { cat: C.COUNT, payload: 'missionId' },

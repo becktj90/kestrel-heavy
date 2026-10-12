@@ -192,8 +192,8 @@ export const SHIELD_MAX = 2;
 export const FUEL_MAX = 100;
 export const OVERDRIVE_SEC = 4.2;
 export const ASCENT_TARGET_KM = 42;
-export const JACKLYN_BONUS = 2800;
-export const JACKLYN_SALVAGE = 650;
+export const HAVEN_BONUS = 2800;
+export const HAVEN_SALVAGE = 650;
 export const SPLASH_PENALTY = 1200;
 export const TIP_PENALTY = 450;
 export const PICKUP_TYPES = ['shield', 'fuel', 'boost'];
@@ -217,7 +217,7 @@ export const RADIO = {
   MECO: 'MECO. Hold attitude. Sep zone incoming.',
   SEP: 'Sep zone. ALIGN green, then press SEPARATE.',
   SEP_CLEAR: 'Booster clear. Keep the relative motion wide of the stack.',
-  JACKLYN: 'Haven downrange. Pitch over, strakes out, glide, then burn the painted deck.',
+  HAVEN: 'Haven downrange. Pitch over, strakes out, glide, then burn the painted deck.',
   RECOVERED: 'Landed on Haven. Sea state nominal. Coffee earned.',
   SPLASH: 'Splash. Combo reset — upper stage still flies.',
   SALVAGE: 'Hard catch. Booster on deck, score clipped.',

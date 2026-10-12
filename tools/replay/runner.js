@@ -77,7 +77,7 @@ window.__replayRun = async function replayRun({ mission, difficulty, seed, mode,
     } else if (st === 'SEP') {
       target = rk.x; vxGain = 40;
       if (s.sepPhase === 'window' && (s.sepAlignHold || 0) > 0.35) space = fr % 12 < 2;
-    } else if (st === 'JACKLYN') {
+    } else if (st === 'HAVEN') {
       target = scene.deck?.x ?? rk.x; vxGain = 22;
       if (s.burnWindow && b.velocity.y > 1.2) space = true;
     }

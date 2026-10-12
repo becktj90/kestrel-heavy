@@ -57,7 +57,7 @@ test('Haven glide hold does not arm climb until the burn label', async () => {
   assert.equal(climbArmedFromLabel('DRAG TO STEER'), false);
   assert.equal(isAscentCruise('ASCENT'), true);
   assert.equal(isAscentCruise('PRELAUNCH'), false);
-  assert.equal(isAscentCruise('JACKLYN'), false);
+  assert.equal(isAscentCruise('HAVEN'), false);
 
   const node = {
     dataset: {},

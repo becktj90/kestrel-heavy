@@ -11,8 +11,8 @@ test('playPhase reads real stage changes, not leftover terminal count', async ()
   assert.equal(playPhase('ASCENT', { tClock: 4 }, 'liftoff'), 'LIFTOFF');
   assert.equal(playPhase('ASCENT', { tClock: 22 }, 'maxq'), 'MAX-Q');
   assert.equal(playPhase('SEP', { sepPhase: 'window' }), 'SEP ZONE');
-  assert.equal(playPhase('JACKLYN', { jacklynPhase: 'glide' }), 'GLIDE');
-  assert.equal(playPhase('JACKLYN', { jacklynPhase: 'glide', burnWindow: true }), 'LANDING BURN');
+  assert.equal(playPhase('HAVEN', { jacklynPhase: 'glide' }), 'GLIDE');
+  assert.equal(playPhase('HAVEN', { jacklynPhase: 'glide', burnWindow: true }), 'LANDING BURN');
   assert.equal(playPhaseKind('LIFTOFF'), 'go');
   assert.equal(playPhaseKind('LANDING BURN'), 'warn');
   assert.match(playGoal('PRELAUNCH', {}), /TAP TO LAUNCH/i);
@@ -45,7 +45,7 @@ test('ascent science evolves through Max-Q and MECO', async () => {
     status: 'SEP', tClock: 40, throttle: 0.2, fuel: 18, altitudeKm: 54, sepPhase: 'coast', prevVelMs: 400,
   });
   const haven = computeTelemetry({
-    status: 'JACKLYN', tClock: 70, throttle: 1, fuel: 24, altitudeKm: 4, vy: 1.6,
+    status: 'HAVEN', tClock: 70, throttle: 1, fuel: 24, altitudeKm: 4, vy: 1.6,
   });
 
   assert.equal(pad.velMs, 0);
@@ -162,8 +162,8 @@ test('corridor rails are play bounds and beat goals stay readable', async () => 
   assert.match(playGoal('ASCENT', { tClock: 6, objectiveDone: false }, mission), /aero shield/);
   assert.match(playGoal('ASCENT', { tClock: 18.6 }, mission), /Max-Q/);
   assert.match(playGoal('SEP', { sepPhase: 'window' }, mission), /SEPARATE/);
-  assert.match(playGoal('JACKLYN', { jacklynPhase: 'glide', jacklynElapsed: 1 }, mission), /glide|STRAKES/i);
-  assert.match(playGoal('JACKLYN', { jacklynPhase: 'burn', jacklynElapsed: 8 }, mission), /landing burn/i);
+  assert.match(playGoal('HAVEN', { jacklynPhase: 'glide', jacklynElapsed: 1 }, mission), /glide|STRAKES/i);
+  assert.match(playGoal('HAVEN', { jacklynPhase: 'burn', jacklynElapsed: 8 }, mission), /landing burn/i);
 
   const beats = beatsFor(mission);
   const next = nextCoachBeat(beats, -7);

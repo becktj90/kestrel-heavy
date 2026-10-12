@@ -12,5 +12,6 @@ attribution is required**. Free-plan audio is not used anywhere in this game.
 - Voices: ElevenLabs premade library voices: Eric (mission control),
   Sarah (host), Chris (co-host)
 - Scripts: original text from `web/js/narration/manifest.js` (no player-specific strings)
+- Updated 2026-10-11 (same subscription, model and voices): wording fixes, new variants, loudness normalized to -16 LUFS / -1.5 dBTP, 96 kbps mono
 - Per-clip details: `assets/narration/manifest.json`
 - Regenerate/extend: `tools/clipgen/` (skips unchanged lines by hash; needs `ELEVENLABS_API_KEY`)

@@ -69,6 +69,8 @@ const HOST_LINES = {
       'Welcome to launch coverage. {id} is on the pad and the team is working the count.',
       'Good to have you with us. {id} sits on the pad, and the count is moving.',
       'This is launch day for {id}. We will walk you through every step of the climb.',
+      'Welcome to launch coverage. The count is moving and the weather looks good.',
+      'Good evening and welcome. The team is working the count, and we are close.',
     ],
     cohost: [
       'On board is {payload}. Our job today is to get it safely to its orbit.',
@@ -79,6 +81,7 @@ const HOST_LINES = {
   liftoff: {
     host: [
       'And there it goes. {id} is climbing away from the pad.',
+      'And there it goes. Clean liftoff, and the vehicle is climbing.',
       'We have a clean departure. The vehicle is rising and rolling onto its heading.',
       'Off the pad and climbing. That is always the moment the room exhales.',
     ],
@@ -86,7 +89,7 @@ const HOST_LINES = {
   maxq: {
     cohost: [
       'That was Max-Q, the point where the air pushes hardest on the vehicle.',
-      'Max-Q is the toughest moment for the structure. From here the air only gets thinner.',
+      'Max-Q: peak stress on the structure. Air thins from here.',
       'Past the peak of aerodynamic pressure. The ride gets smoother now.',
     ],
   },
@@ -99,14 +102,14 @@ const HOST_LINES = {
   },
   ses1: {
     cohost: [
-      'The upper stage engine is lit. It carries the payload the rest of the way.',
+      'Upper stage is lit. It carries the payload from here.',
       'Second stage is burning. The booster is on its own now and heading home.',
       'Upper stage ignition. Two vehicles, two jobs from here.',
     ],
   },
   fairing: {
     host: [
-      'The nose fairing is off. We are high enough that the payload no longer needs it.',
+      'Fairing is off. The payload no longer needs it.',
       'Fairing separation. Those two halves protected the payload through the thick air.',
       'There goes the fairing. The payload sees space for the first time.',
     ],
@@ -130,11 +133,13 @@ const HOST_LINES = {
       '{payload} is on its own now. Congratulations to the whole team on {id}.',
       'Payload deployed. That is mission success for {id}.',
       'And that is the job done. {payload} is flying free.',
+      'Payload is away. That is a beautiful flight.',
+      'And there it goes, out on its own. Mission success.',
     ],
   },
   abort: {
     host: [
-      'We are seeing an anomaly. We will hold here while the team confirms what happened.',
+      'We have an anomaly. Holding while the team confirms.',
       'That is not the flight we wanted. The team will work through the data.',
       'We have lost the vehicle. Every flight teaches the team something.',
     ],
