@@ -19,7 +19,7 @@ namespace Kestrel.Slice
         public PlumeBudget Budget { get; private set; }
         ParticleSystem core, body, diamonds, cloud;
         float heightAboveDeck, towerHeight = 80f, vehicleHeight = 70f, vehicleRadius = 4f, deckRadius = 15f;
-        int builtLevel = -1; Material mat, coreMat, cloudMat;
+        int builtLevel = -1; float ignitionTime = -1f; Material mat, coreMat, cloudMat;
 
         /// <summary>Vehicle dimensions so the plume scales with what the camera frames, not the nozzle alone.</summary>
         public void Configure(float height, float radius) { vehicleHeight = Mathf.Max(5f, height); vehicleRadius = Mathf.Max(0.5f, radius); }
@@ -64,11 +64,13 @@ namespace Kestrel.Slice
                 core = Make(transform, "Core", coreMat != null ? coreMat : mat, 0.12f);
                 body = Make(transform, "Body", mat, 0.45f);
                 diamonds = Make(transform, "Diamonds", mat, 0.3f);
-                Grad(core, (Color.white, 0), (PlumeShape.Core, 0.7f), (PlumeShape.Core, 1), 1f, 1f, 0f);
-                Grad(body, (PlumeShape.Core, 0), (PlumeShape.Mid, 0.55f), (PlumeShape.Tail, 1), 0.95f, 0.85f, 0f);
+                // Core: white -> yellow -> orange, low alpha (additive; must not stack to flat white).
+                Grad(core, (Color.white, 0), (PlumeShape.Core, 0.35f), (PlumeShape.Mid, 1), PlumeShape.CoreAlphaMax, 0.3f, 0f);
+                // Body: yellow at the nozzle -> orange -> transparent red-orange tail.
+                Grad(body, (PlumeShape.BodyHead, 0), (PlumeShape.Mid, 0.3f), (PlumeShape.Tail, 1), 0.8f, 0.55f, 0f);
                 Grad(diamonds, (Color.white, 0), (PlumeShape.Core, 0.5f), (PlumeShape.Mid, 1), 1f, 0.8f, 0f);
-                var bs = body.sizeOverLifetime; bs.enabled = true; bs.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0, 1f, 1, 2.2f));
-                var cs = core.sizeOverLifetime; cs.enabled = true; cs.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 1f, 1, 0.8f));
+                var bs = body.sizeOverLifetime; bs.enabled = true; bs.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 1f, 1, PlumeShape.ComputeLayout(1f, 1f, 1f, 1f, 10f, 10f).BodyGrow));
+                var cs = core.sizeOverLifetime; cs.enabled = true; cs.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 1f, 1, PlumeShape.CoreSizeOverLife));
             }
             Cap(core, Budget.Core); Cap(body, Budget.Body); Cap(diamonds, Budget.Diamonds); if (cloud != null) Cap(cloud, Budget.Cloud);
         }
@@ -89,12 +91,12 @@ namespace Kestrel.Slice
             m.startLifetime = new ParticleSystem.MinMaxCurve(5f, 8f); m.startSpeed = new ParticleSystem.MinMaxCurve(L.CloudRadius * 0.35f, L.CloudRadius * 0.8f);
             m.startSize = new ParticleSystem.MinMaxCurve(L.CloudSizeMin, L.CloudSizeMax);
             m.startRotation = new ParticleSystem.MinMaxCurve(0, Mathf.PI * 2); m.startColor = new ParticleSystem.MinMaxGradient(PlumeShape.Smoke, PlumeShape.Steam);
-            var sh = cloud.shape; sh.shapeType = ParticleSystemShapeType.Circle; sh.radius = Mathf.Max(3f, L.VisualD); sh.arc = 360f;
+            var sh = cloud.shape; sh.shapeType = ParticleSystemShapeType.Circle; sh.radius = L.CloudSpawnRadius; sh.radiusThickness = 0f; sh.arc = 360f;   // deck edge, outside the engine clear zone
             // Billow: slow down along the deck, rise, and grow (radial spread to ~deck radius and beyond).
             var lv = cloud.limitVelocityOverLifetime; lv.enabled = true; lv.dampen = 0.12f; lv.limit = L.CloudRadius * 0.08f;
             var vo = cloud.velocityOverLifetime; vo.enabled = true; vo.space = ParticleSystemSimulationSpace.World;
-            vo.x = new ParticleSystem.MinMaxCurve(0f, 0f); vo.y = new ParticleSystem.MinMaxCurve(1.5f, 5f); vo.z = new ParticleSystem.MinMaxCurve(0f, 0f);
-            var so = cloud.sizeOverLifetime; so.enabled = true; so.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0, 0.7f, 1, 1.6f));
+            vo.x = new ParticleSystem.MinMaxCurve(0f, 0f); vo.y = new ParticleSystem.MinMaxCurve(-2f, 4f);   // outward and down off the deck edge, then billowing up vo.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+            var so = cloud.sizeOverLifetime; so.enabled = true; so.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, L.CloudSizeStart, 1, PlumeShape.CloudGrowEnd));
             var rot = cloud.rotationOverLifetime; rot.enabled = true; rot.z = new ParticleSystem.MinMaxCurve(-0.3f, 0.3f);
             var g = new Gradient(); g.SetKeys(new[] { new GradientColorKey(new Color(1f, 0.85f, 0.6f), 0), new GradientColorKey(Color.white, 0.15f), new GradientColorKey(new Color(0.85f, 0.85f, 0.85f), 1) },
                                              new[] { new GradientAlphaKey(0.3f, 0), new GradientAlphaKey(0.95f, 0.06f), new GradientAlphaKey(0.85f, 0.65f), new GradientAlphaKey(0f, 1) });
@@ -156,28 +158,32 @@ namespace Kestrel.Slice
             var s = PlumeShape.Compute(tf, pa, ExitDiameter, DesignPressure);
             var L = PlumeShape.ComputeLayout(tf, pa, ExitDiameter, vehicleRadius, vehicleHeight, deckRadius);
             float d = L.VisualD;
+            if (tf > 0.01f) { if (ignitionTime < 0f) ignitionTime = Time.time; } else ignitionTime = -1f;
 
-            // Core: HDR white-yellow (additive core material), ~1.3x the engine section, 30% of plume length.
-            // Alpha comes from the gradient only (startColor alpha 1) so it is not multiplied twice.
+            // Core: small additive zone just below the nozzle. Emitter sits CoreEmitOffset below the exit plane
+            // (local +Z points down the axis) so no sprite reaches above it. Alpha comes from the gradient only.
+            core.transform.localPosition = new Vector3(0, 0, L.CoreEmitOffset);
             var cm = core.main; cm.startLifetime = 0.15f; cm.startSpeed = L.CoreLength / 0.15f; cm.startSize = L.CoreSize;
-            var cs = core.shape; cs.radius = d * 0.3f; cs.angle = 2f;
+            var cs = core.shape; cs.radius = d * 0.05f; cs.angle = 0f;
             cm.startColor = Color.white;
             Rate(core, tf > 0.01f ? 1f : 0f);
 
-            // Body: wide and continuous; overlapping particles that grow 1x -> 2.2x over life (expansion).
+            // Body: ~1.2x cluster at sea level, widening with altitude via the cone (VISUAL_SPEC 3.2).
             float life = L.BodyLife;
+            body.transform.localPosition = new Vector3(0, 0, L.BodyEmitOffset);
             var bm = body.main; bm.startLifetime = life; bm.startSpeed = L.Length / life;
             bm.startSize = new ParticleSystem.MinMaxCurve(L.BodyMin, L.BodyMax);
-            var bs = body.shape; bs.radius = d * 0.45f;
-            bs.angle = Mathf.Clamp(Mathf.Atan2(Mathf.Max(0, L.Width - d) * 0.5f, L.Length) * Mathf.Rad2Deg + 3f, 3f, 70f);
+            var bs = body.shape; bs.radius = L.BodySpawnRadius; bs.angle = L.BodyConeDeg;
             Rate(body, tf);
 
             // Shock diamonds: tight bright knots, only while over-expanded / near ideal at low altitude.
-            var dm = diamonds.main; dm.startLifetime = 0.3f; dm.startSpeed = L.Length * 0.5f / 0.3f; dm.startSize = d * 0.9f;
-            var ds = diamonds.shape; ds.radius = d * 0.15f; ds.angle = 0.5f;
+            var dm = diamonds.main; dm.startLifetime = 0.3f; dm.startSpeed = L.Length * 0.5f / 0.3f; dm.startSize = d * 0.5f;
+            diamonds.transform.localPosition = new Vector3(0, 0, L.CoreEmitOffset);
+            var ds = diamonds.shape; ds.radius = d * 0.05f; ds.angle = 0f;
             Rate(diamonds, s.Diamonds > 0 ? tf : 0f);
 
-            if (cloud != null) Rate(cloud, PlumeShape.GroundCloud(tf, heightAboveDeck, towerHeight));
+            float since = ignitionTime < 0f ? 0f : Time.time - ignitionTime;
+            if (cloud != null) Rate(cloud, PlumeShape.GroundCloud(tf, heightAboveDeck, towerHeight, since));
         }
     }
 }

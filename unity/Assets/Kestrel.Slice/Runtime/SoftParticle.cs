@@ -77,8 +77,8 @@ namespace Kestrel.Slice
             if (on) m.EnableKeyword("_SOFTPARTICLES_ON"); else m.DisableKeyword("_SOFTPARTICLES_ON");
         }
 
-        /// <summary>Additive core material with an HDR base colour (bloom picks it up on High/Ultra; on LDR presets
-        /// additive over the plume body still saturates to white).</summary>
+        /// <summary>Additive core material with an HDR base colour (bloom picks it up on High/Ultra; kept low (~1.5 High, ~1.1 others)
+        /// so the additive core stays a small bright zone instead of saturating to white).</summary>
         public static Material CoreMaterial(Material template, bool hdr)
         {
             var m = PlumeMaterial(template); if (m == null) return null;
@@ -86,7 +86,7 @@ namespace Kestrel.Slice
             if (m.HasProperty("_Blend")) m.SetFloat("_Blend", 2);            // URP: Additive
             m.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             m.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
-            var c = new Color(1f, 0.96f, 0.85f) * (hdr ? 4f : 1.5f); c.a = 1f;
+            var c = new Color(1f, 0.96f, 0.85f) * (hdr ? PlumeShape.CoreHdrHigh : PlumeShape.CoreHdrLow); c.a = 1f;
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c); else m.color = c;
             m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 2;   // over the body
             return m;
