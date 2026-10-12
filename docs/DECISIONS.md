@@ -32,3 +32,8 @@ Trevor (2026-10-11, 10:20 PM) delegated design and technical calls to Chief of S
 | 26 | 10-11 | Streaks forgiving (freezes, 48 h grace, hideable); notifications opt-in, ≤1/week, none in KID; calm mode; social opt-in via Game Center only. |
 | 27 | 10-11 | Modes 1.0: campaign, sandbox, daily, weekly, challenge lab (12). 1.1: contract rush, failure investigation. Authored surprises only. |
 | 28 | 10-11 | Age rating draft: 4+, all ages, Data Not Collected, not Kids Category — **Trevor decides**. |
+| 29 | 10-11 | Name review (docs/NAME_REVIEW.md, not legal advice): keep "Kestrel Heavy" provisionally (amber-green, counsel check before 1.0). Replace "Northwind Aerospace" (real aerospace firm North Wind). Fallback title: Updraft Heavy. |
+| 30 | 10-11 | First Unity release is version 2.0.0 (rename the unreleased 1.0.1 ASC version to 2.0 at G2); build numbers start at 100; bundle com.beckify.kestrelheavy. |
+| 31 | 10-11 | Recommend Games → Simulation primary, Arcade secondary for the Unity build (ASC change is Trevor's G2). |
+| 32 | 10-11 | Store listing claims are gated per milestone (APPSTORE_CONNECT.md); accessibility labels declare only Dark Interface and Reduced Motion until gaps close. Age rating recommendation 4+, not Made for Kids (Trevor decides). |
+| 33 | 10-11 | fastlane: default dry_run lane is local-only; ASC lanes require TREVOR_APPROVED=yes; no submit lane. Secrets only in CI/UBA. |

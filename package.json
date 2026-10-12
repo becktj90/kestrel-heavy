@@ -11,6 +11,7 @@
     "templates:check": "node tools/templates/build.mjs --check",
     "test:replay": "node --experimental-websocket --test --test-concurrency=1 tests/replay/",
     "replay:record": "node --experimental-websocket tools/replay/record.mjs",
-    "gen:tod": "node tools/export-tod.mjs"
+    "gen:tod": "node tools/export-tod.mjs",
+    "asc:check": "node tools/asc/check_limits.mjs"
   }
 }

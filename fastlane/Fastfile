@@ -1,0 +1,50 @@
+# Kestrel Heavy fastlane — see docs/APPSTORE_CONNECT.md §12.
+# Default lane is a local dry run: no network, no ASC calls, no uploads.
+# Any lane that talks to App Store Connect refuses to run unless TREVOR_APPROVED=yes
+# is set for that single run (Trevor's explicit yes, per release gate).
+default_platform(:ios)
+
+def require_trevor!(action)
+  UI.user_error!("#{action} needs Trevor's explicit approval (set TREVOR_APPROVED=yes for this run only).") unless ENV["TREVOR_APPROVED"] == "yes"
+end
+
+def asc_key
+  # Expects ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (key contents) from CI secrets. Never written to the repo.
+  app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_content: ENV.fetch("ASC_KEY_P8"),
+    in_house: false
+  )
+end
+
+platform :ios do
+  desc "Dry run: check metadata limits and screenshot files locally. No network."
+  lane :dry_run do
+    sh("node", "../tools/asc/check_limits.mjs")
+    shots = Dir.glob("screenshots/**/*.{png,jpg,jpeg}")
+    UI.message("#{shots.count} screenshot file(s) staged (captured at the end per DECISIONS #14)")
+    UI.success("Dry run OK. Nothing was sent to App Store Connect.")
+  end
+
+  desc "Preview a metadata push without uploading (still contacts ASC read-only)."
+  lane :metadata_preview do
+    require_trevor!("metadata_preview")
+    deliver(api_key: asc_key, skip_binary_upload: true, skip_screenshots: true,
+            submit_for_review: false, verify_only: true, force: false)
+  end
+
+  desc "Upload an IPA built by Unity Build Automation to TestFlight. GATED."
+  lane :upload_testflight do |opts|
+    require_trevor!("upload_testflight")
+    upload_to_testflight(api_key: asc_key, ipa: opts[:ipa] || ENV.fetch("KESTREL_IPA"),
+                         skip_waiting_for_build_processing: true)
+  end
+
+  desc "Push metadata + screenshots, never submit. GATED."
+  lane :push_metadata do
+    require_trevor!("push_metadata")
+    deliver(api_key: asc_key, skip_binary_upload: true, submit_for_review: false, force: true)
+  end
+  # There is deliberately no submit lane: submission is a manual click by Trevor in ASC.
+end
