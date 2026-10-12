@@ -1,0 +1,152 @@
+# Unity vertical-slice prototype ONLY (unity/). Dev bundle com.beckify.kestrelheavy.unityproto,
+# team 9TR6R5LV8M. Never builds ios/ or the shipping app (com.beckify.kestrelheavy).
+# Secrets (see unity/README.md "CI secrets"): UNITY_LICENSE or UNITY_SERIAL, UNITY_EMAIL,
+# UNITY_PASSWORD, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (base64 of the .p8).
+name: Unity prototype iOS
+
+# HELD: GameCI CI is disabled pending approval; manual dispatch only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unity-proto-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UNITY_VERSION: 6000.3.26f1
+  DEV_BUNDLE_ID: com.beckify.kestrelheavy.unityproto
+  TEAM_ID: 9TR6R5LV8M
+
+jobs:
+  core-dotnet:
+    name: Kestrel.Core golden tests (dotnet, no Unity)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet test unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj --logger "console;verbosity=normal"
+
+  unity-export:
+    name: EditMode tests + iOS Xcode export (Linux)
+    needs: core-dotnet
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Free disk space (Unity iOS image is large)
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+      - uses: actions/cache@v4
+        with:
+          path: unity/Library
+          key: unity-library-ios-${{ hashFiles('unity/Packages/manifest.json', 'unity/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: unity-library-ios-
+      - name: EditMode tests (golden vectors)
+        uses: game-ci/unity-test-runner@v4
+        with:
+          projectPath: unity
+          unityVersion: ${{ env.UNITY_VERSION }}
+          testMode: editmode
+          artifactsPath: test-results
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          checkName: Unity EditMode results
+      - name: Export iOS Xcode project
+        uses: game-ci/unity-builder@v4
+        with:
+          customParameters: -khBuildNumber ${{ github.run_number }}
+          projectPath: unity
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: iOS
+          buildMethod: Kestrel.Slice.Editor.BuildScript.BuildIOS
+          buildsPath: build
+          buildName: iOS
+          versioning: None
+      - name: Pack Xcode project (keep exec bits)
+        run: tar -czf xcode-ios.tgz -C build/iOS .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xcode-ios
+          path: xcode-ios.tgz
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unity-test-results
+          path: test-results
+          retention-days: 7
+
+  testflight:
+    name: Archive + upload to TestFlight (macOS)
+    needs: unity-export
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: xcode-ios
+      - name: Unpack
+        run: mkdir -p xcode && tar -xzf xcode-ios.tgz -C xcode
+      - name: Guard - only the dev bundle id
+        working-directory: xcode
+        run: |
+          set -euo pipefail
+          ids=$(xcodebuild -project Unity-iPhone.xcodeproj -target Unity-iPhone -showBuildSettings | awk '/ PRODUCT_BUNDLE_IDENTIFIER =/{print $3}' | sort -u)
+          echo "bundle ids: $ids"
+          test "$ids" = "$DEV_BUNDLE_ID"
+      - name: App Store Connect API key
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/asc"
+          echo "$ASC_KEY_P8" | base64 --decode > "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8" >> "$GITHUB_ENV"
+      - name: Archive (automatic signing via API key)
+        working-directory: xcode
+        run: |
+          set -euo pipefail
+          xcodebuild -project Unity-iPhone.xcodeproj -scheme Unity-iPhone -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/KH.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            archive
+      - name: Export + upload to TestFlight
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>testFlightInternalTestingOnly</key><true/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/KH.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+      - name: Clean up key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"

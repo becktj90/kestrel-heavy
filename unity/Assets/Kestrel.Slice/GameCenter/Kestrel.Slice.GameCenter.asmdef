@@ -1,0 +1,16 @@
+{
+    "name": "Kestrel.Slice.GameCenter",
+    "rootNamespace": "Kestrel.Slice",
+    "references": ["Kestrel.Slice", "Apple.Core", "Apple.GameKit"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": ["KH_GAMEKIT"],
+    "versionDefines": [
+        { "name": "com.apple.unityplugin.gamekit", "expression": "", "define": "KH_GAMEKIT" }
+    ],
+    "noEngineReferences": false
+}

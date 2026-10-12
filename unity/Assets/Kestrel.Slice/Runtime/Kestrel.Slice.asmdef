@@ -1,0 +1,14 @@
+{
+    "name": "Kestrel.Slice",
+    "rootNamespace": "Kestrel.Slice",
+    "references": ["Kestrel.Core"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
