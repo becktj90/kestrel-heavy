@@ -118,8 +118,8 @@ namespace Kestrel.Slice
             FrameCamera(r.height);
         }
 
-        float rocketHeight = 70;
-        void FrameCamera(float h) { rocketHeight = h; cam.transform.position = new Vector3(h * 0.9f, h * 0.45f, -h * 1.4f); cam.transform.LookAt(new Vector3(0, h * 0.45f, 0)); }
+        float rocketHeight = 70; Vector3 camOffset;
+        void FrameCamera(float h) { rocketHeight = h; cam.transform.position = new Vector3(h * 0.9f, h * 0.45f, -h * 1.4f); cam.transform.LookAt(new Vector3(0, h * 0.45f, 0)); camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero); }
 
         void Launch()
         {
@@ -133,9 +133,11 @@ namespace Kestrel.Slice
         {
             if (flight == null || flight.Sim == null || hud.ClassListContains("hidden")) return;
             // Chase camera, in floating-origin space (vehicle stays near the origin).
+            // Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every
+            // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
             var v = vehicleRoot.position; var up = vehicleRoot.up;
-            var desired = v - up * rocketHeight * 0.6f + new Vector3(rocketHeight * 0.8f, 0, -rocketHeight * 1.6f);
-            cam.transform.position = Vector3.Lerp(cam.transform.position, desired, 1 - Mathf.Exp(-4 * Time.deltaTime));
+            camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight), 4f, Time.deltaTime);
+            cam.transform.position = v + camOffset;
             cam.transform.LookAt(v + up * rocketHeight * 0.5f);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
