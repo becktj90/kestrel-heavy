@@ -63,3 +63,26 @@ namespace Kestrel.Core.Tests
         }
     }
 }
+
+namespace Kestrel.Core.Tests
+{
+    public class StarCatalogDataTests
+    {
+        [Test]
+        public void ShippedBsc5pLoadsWithinTierCaps()
+        {
+            var csv = System.IO.File.ReadAllText(System.IO.Path.Combine(Golden.Root, "data", "astro", "bsc5p-compact.csv"));
+            var all = Kestrel.Core.Astro.StarCatalog.Parse(csv);
+            Assert.AreEqual(9000, all.Count);
+            Assert.AreEqual(2491, all[0].Id, "brightest is HR 2491 (Sirius)");
+            Assert.AreEqual(-1.46, all[0].VMag, 1e-9);
+            for (int i = 1; i < all.Count; i++) Assert.LessOrEqual(all[i - 1].VMag, all[i].VMag);
+            foreach (var t in new[] { "low", "medium", "high" })
+            {
+                int cap = Kestrel.Core.Astro.StarCatalog.BudgetForTier(t);
+                Assert.AreEqual(cap, Kestrel.Core.Astro.StarCatalog.Parse(csv, maxCount: cap).Count, t);
+            }
+            Assert.Less(all[4999].VMag, 6.5); // Medium stays naked-eye
+        }
+    }
+}

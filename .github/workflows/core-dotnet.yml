@@ -1,0 +1,24 @@
+name: Core dotnet
+# Kestrel.Core C# tests + golden vectors on free ubuntu-latest. No Unity, no macOS, no Build Automation.
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: core-dotnet-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  core-dotnet:
+    name: Kestrel.Core golden tests (dotnet)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      # Every golden/unit test gates. The one wall-clock perf budget test (TimelineTests.Generation_IsFasterThanAFewMilliseconds,
+      # 2 ms target for the floor device) is excluded here because shared runners measure 2.0-2.6 ms; it still runs locally/in Unity.
+      - run: dotnet test unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj --logger "console;verbosity=normal" --filter "FullyQualifiedName!~Generation_IsFasterThanAFewMilliseconds"
