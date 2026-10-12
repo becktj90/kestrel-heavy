@@ -25,7 +25,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("settings-toggle", reg.EngineerToggle);
             Assert.IsFalse(reg.KidHold);
             Assert.IsFalse(reg.RelaxedHold);
-            Assert.AreEqual(Weather.DefaultWindLimitMs, reg.WindLimitMs);
+            Assert.AreEqual(Flight.Weather.DefaultWindLimitMs, reg.WindLimitMs);
             Assert.AreEqual(28.5, reg.LaunchLatitude, 1e-12);
             Assert.AreEqual(Sensors.AltitudeRel, reg.Raw.Obj("sensors").Num("altitudeRel"));
             Assert.AreEqual(Sensors.SpeedRel, reg.Raw.Obj("sensors").Num("speedRel"));
@@ -51,7 +51,7 @@ namespace Kestrel.Core.Tests
                 if (c.Str("kind") == "weather")
                     foreach (JsonObject row in c.Arr("cases"))
                     {
-                        var got = Weather.Hold(row.Str("difficulty"), row.Bool("relaxed"), row.Num("windMs"));
+                        var got = Flight.Weather.Hold(row.Str("difficulty"), row.Bool("relaxed"), row.Num("windMs"));
                         var exp = row.Obj("out");
                         Assert.AreEqual(exp.Bool("hold"), got.hold, row.Str("difficulty"));
                         Assert.AreEqual(exp.Bool("allowed"), got.allowed, row.Str("difficulty"));

@@ -198,3 +198,25 @@ Goldens for onRailsNode are **hard-coded literals** computed outside the codebas
 | handoffRoundTrip | 1e-3 m (r), 1e-6 m/s (v) | 0 | State → classical elements → state. Continuity at the handoff instant: Numeric and OnRails at dt = 0 match the input (no r/v jump). |
 | onRailsNode | 1e-3 deg/day | 0 | Secular Ω̇ vs the external literal −4.946640707855562 deg/day (ISS 420 km, 51.64°, e = 0). |
 | nodeLiterature | 0.1 deg/day | 0 | ISS published-order check ≈ −5.0 deg/day (looser than onRailsNode). |
+
+## Weather (P4)
+
+`Kestrel.Core.Weather` is a new seeded climatology generator. It does **not** replace `Flight.Weather.Hold` (wind > 12 m/s policy; KID/Relaxed never hold) — that stub stays for params and timeline goldens.
+
+`WeatherGenerator.Generate(site, dayOfYear, seed)` draws one `WeatherDay` for Haven (fictional Florida coastal site) using mulberry32 (same as `Sensors`): Rayleigh surface wind with monthly mean, Box-Muller temperature, Bernoulli thunder day, cloud/precip/ceiling/lightning distance, and a characteristic upper shear (1/s). Monthly targets are NOAA NCEI 1991–2020–class coastal normals (public domain; LICENSES.md); original site name.
+
+`LaunchCommit.Evaluate` applies a fictional LCC rule set modelled on public range weather facts (surface wind 12 m/s, gust 16 m/s, lightning 10 nmi, precip, ceiling 1500 m, temperature 2–35 °C, shear 0.030 /s). Lightning → Scrub; other violations → Hold. KID/Relaxed: `commitAllowed = false` and verdict stays Go. `WeatherEnsemble` runs N members with a splittable seed mix for violation probability.
+
+Upper winds are generated as a shear scalar for commit criteria; they are **not** fed into `Headless` / `Ascent3Dof` in this PR (avoids regenerating ascent goldens).
+
+Seed→day goldens are hard-coded literals from an external mulberry32 + Rayleigh/Box-Muller snippet in `WeatherTests.cs`.
+
+| quantity | absolute | relative | reasoning |
+|---|---|---|---|
+| seedDay | 0 | 1e-12 | Same seed → identical day; fields match external literals (seed 1, doy 100). |
+| climatologyWind | 0.5 m/s | 0 | 10 000 draws/month vs Haven monthly mean wind. |
+| climatologyTemp | 1 K | 0 | 10 000 draws/month vs Haven monthly mean temperature. |
+| climatologyThunder | 0 | 0.20 | Thunder-day frequency vs monthly Bernoulli parameter (±20 %). |
+| lccTruth | exact | 0 | 30 hand cases; verdict and violation count exact. |
+| ensembleExceedance | 0.05 | 0 | 50-member wind exceedance vs analytic Gaussian Φ̄. |
+
