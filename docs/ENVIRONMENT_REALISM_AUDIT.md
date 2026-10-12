@@ -100,3 +100,9 @@ Order: **R1 → (R2 ∥ U1/K3) → R5 → R3 (U4) → R4 (U6) → R6 → R7 (U7)
 10. **Reduced flashing:** default the "Reduce flashing" toggle ON for everyone, or only when iOS Reduce Motion is on?
 11. **Asset budget:** accept ≤ 8 MB compressed environment assets inside the 40 MB IPA cap, or tighter?
 12. **Narration:** OK to add a batch of weather/hold lines to the pre-generated ElevenLabs library (existing Creator plan, no new spend), or cover weather with on-device TTS only?
+
+## 9. Approved extras (DECISIONS #38, #41)
+- **Photographic exposure model:** physical luminance (sun ~1.6e9 cd/m² → night sky ~1e-3) through an EV-based auto-exposure with slow adaptation; **dark-adapted-eye mode** (stars visible at night/orbit, scotopic desaturation); a clearly labelled **"Cinematic assist"** toggle that lifts stars/Earth past what a camera would show. Reduced-flash: adaptation never faster than 300 ms. Owner Graphics Dev, lands with R3.
+- **Wind Shear Codex Lab** uses the R5 upper-wind profile (see SPACE_AUDIT §8 for the full Codex Labs list).
+- 120 Hz: Auto chooses High on ProMotion; governor 120 → 60 under thermal pressure.
+- Weather "launch anyway": the reliability penalty is shown as a number before confirm; asked once, no repeat prompts.

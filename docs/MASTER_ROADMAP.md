@@ -89,6 +89,10 @@ See ENVIRONMENT_REALISM_AUDIT.md. Unity 6/URP, portrait, 120 Hz on ProMotion Hig
 ## Upper Atmosphere and Outer Space S1–S7
 See SPACE_AUDIT.md. Shares astronomy (S1 = R2), atmosphere, body data and camera with R1–R7; nothing duplicated. 2.0 = Earth orbit only: true sky, Moon, eclipses, J2, orbital decay (S1–S6). S7 (lunar landing, interplanetary, solar-system view) is post-launch but `bodies.json` + SOI-ready propagator + scaled-space camera are built now. PD/CC0 data only, every licence logged in LICENSES.md; high-res planet textures are on-demand downloads.
 
+### Approved scope (DECISIONS #38–#43)
+All Env decisions approved; 120 Hz via Auto=High on ProMotion with governor → 60. Space #1–4, #6–9 approved; **no on-demand textures in 2.0** (space ≤ 8 MB in IPA). Extras: Kármán-line event + narrator line (S2/S6, U7), exposure model + dark-adapted eye + labelled cinematic assist (R3), near-silence in vacuum (U7 mixer), spent stages persist in orbit and decay (S3), Photo Mode space shots (G7, 1.1), Codex Labs Orbit / Moon Phase / Sun-Sync / Exposure / Wind Shear (U8 Codex). LICENSES.md ledger live.
+**Later question for Trevor:** high-res textures via Apple On-Demand Resources vs GitHub Releases (post-2.0; touches build config).
+
 ## Risk register
 | # | Risk | L/I | Mitigation | Owner |
 |---|------|-----|-----------|-------|
