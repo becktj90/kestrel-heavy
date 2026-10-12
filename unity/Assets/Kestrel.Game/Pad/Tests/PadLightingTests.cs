@@ -70,5 +70,29 @@ namespace Kestrel.Pad.Tests
             Assert.That(PadLighting.Blink(0f, 3.3), Is.EqualTo(1f));
             Assert.That(PadLighting.Blink(0.5f, 0.1), Is.EqualTo(1f)); Assert.That(PadLighting.Blink(0.5f, 1.5), Is.LessThan(0.1f));
         }
+
+        [Test]
+        public void FloodsThrowEnoughLightAndLampsHaveHalos()
+        {
+            var plan = PadLighting.Plan(PadGenerator.Generate(3, PadArchetype.Tower, Heavy), 2);
+            foreach (var s in plan.Where(s => s.Kind == LightKind.Flood || s.Kind == LightKind.Pole))
+            {
+                Assert.That(s.Throw, Is.GreaterThan(5f), s.Id); Assert.That(s.Range, Is.GreaterThan(s.Throw * 1.3f), s.Id);
+                // inverse-square: intensity / Throw² == Illum at full night, zero by day
+                Assert.That(PadLighting.RealtimeIntensity(s, 1f) / (s.Throw * s.Throw), Is.EqualTo(s.Illum).Within(1e-3f), s.Id);
+                Assert.That(PadLighting.RealtimeIntensity(s, 0f), Is.EqualTo(0f));
+                Assert.That(s.Halo, Is.GreaterThan(1f), s.Id);
+                Assert.That(s.InnerSpotAngle, Is.LessThan(s.SpotAngle), s.Id);
+            }
+            Assert.That(plan.Where(s => s.Kind == LightKind.Aviation).All(s => s.Halo > 0), Is.True);
+        }
+
+        [Test]
+        public void VolumetricConesFollowTier()
+        {
+            Assert.That(PadLighting.HasCone(LightKind.Flood, 0), Is.False);
+            Assert.That(PadLighting.HasCone(LightKind.Flood, 1), Is.True); Assert.That(PadLighting.HasCone(LightKind.Pole, 1), Is.False);
+            Assert.That(PadLighting.HasCone(LightKind.Pole, 2), Is.True); Assert.That(PadLighting.HasCone(LightKind.Aviation, 2), Is.False);
+        }
     }
 }

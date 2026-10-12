@@ -76,5 +76,29 @@ namespace Kestrel.Pad.Tests
             foreach (var rt in l.Realtime) { Assert.That(rt.enabled, Is.True); Assert.That(rt.intensity, Is.GreaterThan(0f)); }
             PadLights.ForceNight = false; Assert.That(PadLights.ResolveNight(), Is.EqualTo(0f));
         }
+
+        [Test]
+        public void GlowBuiltWithFlaresAndTierCones()
+        {
+            _root = new GameObject("pad");
+            var r = PadBuilder.Build(_root.transform, 3, PadArchetype.Tower, new PadFit(70f, 2.5f));
+            var g = _root.GetComponent<PadLights>().Glow;
+            Assert.That(g, Is.Not.Null);
+            Assert.That(g.FlareCount, Is.GreaterThan(10));
+            Assert.That(g.ConeCount > 0, Is.EqualTo(r.Quality >= 1));
+            Assert.That(g.ConeTriangles, Is.LessThan(5000));
+        }
+
+        [Test]
+        public void ForceNightSurvivesReload()
+        {
+            PadLights.ForceNight = true;
+            var m = typeof(PadLights).GetMethod("ReloadForceNight", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            Assert.That(m, Is.Not.Null);
+            m.Invoke(null, null);   // what Play-mode entry runs after the domain reload
+            Assert.That(PadLights.ForceNight, Is.EqualTo(true));
+            PadLights.ForceNight = null; m.Invoke(null, null);
+            Assert.That(PadLights.ForceNight, Is.Null);
+        }
     }
 }
