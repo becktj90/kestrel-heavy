@@ -2,6 +2,8 @@
  * Launch-control voice. Phrase pools + cooldown + phase-once so the same
  * line does not loop. Variants rotate across retries. Tokens: {id} {payload} {mark}.
  */
+import flightBus from './narration/bus.js';
+
 export const LINES = {
   pad: [
     'Pier 7 standing by. Terminal count is armed.',
@@ -502,6 +504,7 @@ export function speak(voice, key, opts = {}) {
   voice.lastAt = t;
   const banner = opts.banner == null ? '' : opts.banner;
   if (banner) voice.lastBanner = banner;
+  flightBus.emit('radio.line', { key, text: radio }, t);
   return {
     key,
     radio,
