@@ -123,3 +123,12 @@ test('audio.js keeps behavior: same volumes, limiter inserted, pooled one-shots'
   A.core.lifecycle.detach();
   delete global.window; delete global.document;
 });
+
+test('audio core consumes the real shared flight bus (narration/bus.js)', async () => {
+  const { flightBus } = await import(path.join(__dirname, '..', 'web', 'js', 'narration', 'bus.js'));
+  const { default: A } = await import(path.join(__dirname, '..', 'web', 'js', 'audio.js'));
+  A.attach(mockScene());
+  const before = A.core.eventCounts.maxq || 0;
+  flightBus.emit('maxq', {}, 60);
+  assert.equal(A.core.eventCounts.maxq, before + 1);
+});

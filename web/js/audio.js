@@ -9,6 +9,7 @@
  * Theme: Suno instrumental "Kestrel Heavy" by trevorjohnbeck — looping BGM, quieter than SFX.
  */
 import { createAudioCore } from './audio/core.js';
+import flightBus from './narration/bus.js';
 
 export const core = createAudioCore();
 
@@ -68,6 +69,7 @@ const AudioApi = {
     this.settings = scene.settings || this.settings;
     core.mixer.onChange = () => { if (this.settings) this.mixTheme(this.settings); };
     this.insertLimiter();
+    if (!core.events.connected) core.connectBus(flightBus);
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       core.attachLifecycle({ getContexts: () => [this.scene?.sound?.context, this.ctx] });
     }
