@@ -81,7 +81,7 @@ Clustering snaps: picking a pattern sets count; changing count with +/- moves to
 - **Liveries**: earned by play only. Unlock rules are public on the card before you earn them ("Reach orbit 3 times"). Never sold, never time-limited, never random, nothing expires, no streaks. All earned liveries stay forever.
 - **Decals**: up to 6 per vehicle, placed on preset anchor rings (stage band, interstage, fairing), scale 3 steps, rotate 0/90.
 - **Branding editor** (original, fictional): vehicle name (existing `livery.name`, 1-20 chars, profanity filter offline), a mark built from shapes (pick 1 of 12 base glyphs + 1 of 6 frames + colour), primary/accent colours (existing `livery.primary/accent`) from a 16-colour palette plus a hex field in engineer. No real trademarks or agency marks: the editor ships no letterforms or logos copied from real companies and no real pad names. The catalog review rejects anything resembling Blue Origin, New Glenn, Jacklyn, LC-36, or agency logos.
-- **Scope (decided, DECISIONS #59-#64):** the exploded view ships in 2.0 (#59 overrides #48 for it). Template branding (12 glyphs, 6 frames, 16 colours) ships in 2.0; free-form livery stays 1.1 (#60). Liveries are earned only (#64).
+- **Scope (decided, DECISIONS #60-#65):** the exploded view ships in 2.0 (#60 overrides #48 for it). Template branding (12 glyphs, 6 frames, 16 colours) ships in 2.0; free-form livery stays 1.1 (#61). Liveries are earned only (#65).
 
 ## 3. Live readout
 
@@ -107,9 +107,9 @@ Depth unlocks only by progress (`standard` after the first orbit) or the Setting
 
 ## 5. Undo, compare, save, view
 
-- **Undo/redo:** 50 steps per session (DECISIONS #62), one step per committed edit (stepper release / slider end, not every tick). Buttons in the header (44 pt) plus a three-finger swipe left/right (system gesture) and shake-to-undo off by default. VoiceOver: "Undid: stage 1 engines 9 to 8".
+- **Undo/redo:** 50 steps per session (DECISIONS #63), one step per committed edit (stepper release / slider end, not every tick). Buttons in the header (44 pt) plus a three-finger swipe left/right (system gesture) and shake-to-undo off by default. VoiceOver: "Undid: stage 1 engines 9 to 8".
 - **Compare (A|B):** pins the current design as A, edits continue on B; side-by-side readout table with deltas, and both vehicles at the same scale. On iPad both render; on iPhone a toggle flips the 3D view. The table component is shared with the Vehicle Data Sheet compare view (UX owns both; same columns and order).
-- **Save slots:** 8 local slots (DECISIONS #63), named (default = preset name), duplicate, rename, delete with plain confirm ("Delete Slot 3? This can't be undone." Delete / Keep). Local only via the existing store keys (`kh.save.v1.design.*`, `web/js/designer/store.js`; Unity `Kestrel.Core/Save/NativeStore.cs`). No cloud, no account.
+- **Save slots:** 8 local slots (DECISIONS #64), named (default = preset name), duplicate, rename, delete with plain confirm ("Delete Slot 3? This can't be undone." Delete / Keep). Local only via the existing store keys (`kh.save.v1.design.*`, `web/js/designer/store.js`; Unity `Kestrel.Core/Save/NativeStore.cs`). No cloud, no account.
 - **3D:** one-finger drag rotates about the vehicle axis (yaw only, ±180°), pinch zooms 0.6x-3x around the touched part, double-tap reframes with `DesignFraming`. Exploded view separates stages, boosters and fairing along the axis by 0.15 x stage height with an eased 400 ms animation (instant with Reduce Motion). Tapping a part in 3D selects it in the stack list.
 
 ## 6. Validation
@@ -150,7 +150,7 @@ Note: `Issue.tab` values are web tab ids (`engines`, `propellants`, `stages`, `s
 4. Parameter rows: label, value + unit, consequence hint, −/+ steppers 44x44 pt; long-press repeats; sliders only for continuous values with the same 44 pt thumb, always paired with steppers.
 5. Launch, 50 pt, pinned above the bottom safe area, never scrolls.
 
-**iPad 13in: side panel (400 pt, right; DECISIONS #61).** Chosen over a wider bottom sheet because portrait iPad has the height to show the full vehicle and tower uncompressed, and tall stacks read best with full height. A bottom sheet would cut the rocket to ~50%. The panel also has room for the per-stage table, stack list and parameters at once. Needs a horizontal variant of `DesignFraming` (shift the projection in X by the panel width; §9 G2).
+**iPad 13in: side panel (400 pt, right; DECISIONS #62).** Chosen over a wider bottom sheet because portrait iPad has the height to show the full vehicle and tower uncompressed, and tall stacks read best with full height. A bottom sheet would cut the rocket to ~50%. The panel also has room for the per-stage table, stack list and parameters at once. Needs a horizontal variant of `DesignFraming` (shift the projection in X by the panel width; §9 G2).
 
 **Safe areas:** header below `Screen.safeArea` top + 8 pt (same as Home, SliceApp L135-136); Launch above the bottom safe area + 8 pt.
 **Reduced flash/motion:** exploded and reframe animations, haptic payoff sparkle, and the validation pulse become instant/static when iOS Reduce Motion is on **or** the in-game Reduce Flashing toggle is on.
@@ -197,7 +197,7 @@ Legend: ✅ present, ◐ partial, ❌ missing (Unity designer on `218af6a`).
 | 33 | Compare A/B | ❌ | none in Unity; `forkedFrom` in web templates-fork.js L4 |
 | 34 | Save slots | ❌ | Unity none; web store.js; `NativeStore.cs` exists |
 | 35 | 3D rotate/zoom | ❌ | fixed camera (SliceApp L236-249) |
-| 36 | Exploded view | ❌ | none; in 2.0 per DECISIONS #59 (R2) |
+| 36 | Exploded view | ❌ | none; in 2.0 per DECISIONS #60 (R2) |
 | 37 | Validation wired | ❌ | `Validate.Engineering` has no caller in Slice; only colour on TWR (SliceApp L189) |
 | 38 | Inline issue / chip | ❌ | none |
 | 39 | Launch disabled with reason | ❌ | Launch always enabled (SliceApp L97) |
@@ -215,7 +215,7 @@ Legend: ✅ present, ◐ partial, ❌ missing (Unity designer on `218af6a`).
 
 ## 9. PR order (small PRs, conflict-free order)
 
-Files: UX owns `Resources/UI/Designer/**` (new UXML/USS) and `Kestrel.Slice/Runtime/Designer/*Controller.cs`; Gameplay owns `Kestrel.Core/Designer/**`, `Kestrel.Core/Vehicle/**`, `data/*.json` + goldens; Art owns `data/finishes.json`, `data/liveries.json`, `Art/**`; Graphics owns `DesignFraming.cs` and `RocketMeshBuilder.cs`; the cloud agent (DECISIONS #59) owns new `Kestrel.Slice/Runtime/HangarCamera.cs` and the exploded view. Only UX edits `SliceApp.cs`/`Slice.uxml` in this series, to avoid conflicts.
+Files: UX owns `Resources/UI/Designer/**` (new UXML/USS) and `Kestrel.Slice/Runtime/Designer/*Controller.cs`; Gameplay owns `Kestrel.Core/Designer/**`, `Kestrel.Core/Vehicle/**`, `data/*.json` + goldens; Art owns `data/finishes.json`, `data/liveries.json`, `Art/**`; Graphics owns `DesignFraming.cs` and `RocketMeshBuilder.cs`; the cloud agent (DECISIONS #60) owns new `Kestrel.Slice/Runtime/HangarCamera.cs` and the exploded view. Only UX edits `SliceApp.cs`/`Slice.uxml` in this series, to avoid conflicts.
 
 | PR | Owner | Scope | Acceptance | Depends on |
 |---|---|---|---|---|
@@ -254,7 +254,7 @@ Order: U1 ∥ G1 ∥ R1 ∥ A1 → U2 → U3 ∥ G2 ∥ A2 → U4 ∥ U5 ∥ R2 
 3. Decal set: ids, anchor types (`stageBand`, `interstage`, `fairing`), max per vehicle, texture size.
 4. Branding: 12 base glyphs + 6 frames as SVG/PNG at what size; palette of 16 hex values; who signs the trademark-check list?
 5. Finish swatch thumbnails: rendered sprites or live 3D swatches?
-6. Ownership: `docs/HANGAR_REVEAL_UNITY_PLAN.md` L4 proposes Art owns vehicle staging/camera in the reveal; the designer camera (R1) goes to the cloud agent (DECISIONS #59). Confirm the reveal split.
+6. Ownership: `docs/HANGAR_REVEAL_UNITY_PLAN.md` L4 proposes Art owns vehicle staging/camera in the reveal; the designer camera (R1) goes to the cloud agent (DECISIONS #60). Confirm the reveal split.
 
 ## 11. Engineering model (Gameplay Dev section, merged)
 

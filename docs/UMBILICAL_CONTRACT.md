@@ -58,3 +58,17 @@ The MissionEvent timeline (DECISIONS #30 and #32) can override the times, but `U
 - no events for unknown IDs
 
 Per DECISIONS #32, events exist only for hardware that exists. A vehicle without a Purge point gets no purge events.
+
+## Tower anchors (D2): where pad-side arms mount
+Assembly: `Kestrel.Pad.Core` (`Pad/Core/TowerAnchors.cs`), engine-free. D4 umbilical and service arms attach to named anchors on the tower instead of re-deriving tower geometry. `PadLayout.Anchors` (null for Rail pads) and `TowerLayout.Anchors` expose them.
+
+- Frame: pad space. Origin on the vehicle centre line at deck level, +Y up, tower on +Z. An anchor's local +Z points out of the tower face it sits on (vehicle-side `s` anchors face pad −Z, toward the vehicle), and local +Y is up. `Rotation` is a contract `Quat`.
+- `TowerAnchor`: `Id`, `Position` (`Vec3`), `Rotation` (`Quat`), `Level` (0 = first deck at `LevelHeight`, −1 = ground, `Levels` = cap) and `Face` (`s|e|n|w|top`).
+- Ids:
+  - `level.{NN}.{s|e|n|w}`: centre of each face at the deck height of level NN, which is (NN+1) × `LevelHeight`
+  - `arm.crew`: root of the crew-access arm (`TowerAnchors.CrewArm`)
+  - `arm.{attachId}`: swing-arm pivot for each `SwingArmRetract` attach point (`TowerAnchors.ArmId`)
+  - `cap.top`: base of the lightning spike
+  - `ground.s`: foot of the vehicle face
+- API: `Get(id)` (throws `KeyNotFoundException` for an unknown id), `TryGet`, `Contains`, `All`, `LevelNearest(y)`, `OnFaceNear(y, face)`, and `Add(id, pos, face, level)` for generator-owned extras. Ids are unique, and the same seed always gives the same anchors.
+- D4 rule: mount a new arm or connector on `arm.{attachId}` when it exists. Otherwise use `OnFaceNear(attach.Y)`. Do not hard-code tower dimensions.

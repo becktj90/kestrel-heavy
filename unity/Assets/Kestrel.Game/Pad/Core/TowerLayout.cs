@@ -9,7 +9,7 @@ using Kestrel.Kit.Contracts;
 
 namespace Kestrel.Pad
 {
-    public enum MemberKind { Column, Girt, Brace, Deck, ArmChord, ArmBrace }
+    public enum MemberKind { Column, Girt, Brace, Deck, ArmChord, ArmBrace, Mast, Rail }
 
     public struct Member
     {
@@ -27,6 +27,10 @@ namespace Kestrel.Pad
         public float StandOff = 14f;         // vehicle centre line -> tower centre along +Z, m
         public float CapHeight = 4f;         // open top mast frame above the last level
         public int Seed = 1;                 // reserved for D7 wear variation; layout itself is deterministic
+        public int CrewLevel = -1;           // D2: level carrying the crew-access arm (-1 = none)
+        public float CrewArmX = 0f;          // lateral offset of the crew arm root on the s face
+        public float CrewArmReach = 0f;      // arm length from the s face toward the vehicle (0 = none)
+        public float SpikeHeight = 0f;       // D2: lightning spike on the cap (0 = none)
 
         /// <summary>Tower tall enough to clear the highest attach point by one level (min 6 levels).</summary>
         public static TowerParams ForVehicle(IReadOnlyList<AttachPoint> pts, float levelHeight = 6f)
@@ -46,11 +50,83 @@ namespace Kestrel.Pad
         public readonly ElementGraph Graph;
         public const string SiteId = "pad", TowerId = "tower";
 
+        public readonly TowerAnchors Anchors;
+
         public TowerLayout(TowerParams p, ElementGraph graph = null)
         {
             P = p ?? new TowerParams(); Graph = graph ?? new ElementGraph();
             if (!Graph.Contains(SiteId)) Graph.Add(SiteId, ElementCategory.Site, null, "pad");
             Build();
+            BuildDetail();
+            Anchors = new TowerAnchors(P);
+        }
+
+        Vec3 Lerp(Vec3 a, Vec3 b, float t) => new Vec3(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, a.Z + (b.Z - a.Z) * t);
+
+        // D2 detail: mid-bay struts + secondary lattice on each face (reads as truss, not 4 sticks),
+        // plan bracing under each deck, handrails on the vehicle face, crew-access arm, cap spike.
+        void BuildDetail()
+        {
+            for (int l = 0; l < P.Levels; l++)
+            {
+                float y0 = l * P.LevelHeight, y1 = y0 + P.LevelHeight, ym = (y0 + y1) * 0.5f;
+                string lid = $"tower.l{l:00}";
+                for (int f = 0; f < 4; f++)
+                {
+                    int a = f, b = (f + 1) % 4;
+                    Vec3 a0 = CornerAt(a, y0), b0 = CornerAt(b, y0), am = CornerAt(a, ym), bm = CornerAt(b, ym), a1 = CornerAt(a, y1), b1 = CornerAt(b, y1);
+                    Vec3 c0 = Lerp(a0, b0, 0.5f), c1 = Lerp(a1, b1, 0.5f);
+                    Add(lid, $"{lid}.strut.{Face[f]}", MemberKind.Brace, am, bm, MaterialRole.PaintedSteel, "strut", $"face:{Face[f]}");
+                    Add(lid, $"{lid}.post.{Face[f]}", MemberKind.Brace, c0, c1, MaterialRole.PaintedSteel, "post", $"face:{Face[f]}");
+                    // secondary lattice: small diamonds from post mid to the corner mids
+                    var cm = Lerp(c0, c1, 0.5f);
+                    Add(lid, $"{lid}.lat.{Face[f]}.0", MemberKind.Brace, Lerp(a0, c0, 0.5f), cm, MaterialRole.PaintedSteel, "lattice");
+                    Add(lid, $"{lid}.lat.{Face[f]}.1", MemberKind.Brace, cm, Lerp(b1, c1, 0.5f), MaterialRole.PaintedSteel, "lattice");
+                    Add(lid, $"{lid}.lat.{Face[f]}.2", MemberKind.Brace, Lerp(b0, c0, 0.5f), cm, MaterialRole.PaintedSteel, "lattice");
+                    Add(lid, $"{lid}.lat.{Face[f]}.3", MemberKind.Brace, cm, Lerp(a1, c1, 0.5f), MaterialRole.PaintedSteel, "lattice");
+                }
+                Add(lid, $"{lid}.plan.0", MemberKind.Brace, CornerAt(0, y1), CornerAt(2, y1), MaterialRole.PaintedSteel, "plan-brace");
+                Add(lid, $"{lid}.plan.1", MemberKind.Brace, CornerAt(1, y1), CornerAt(3, y1), MaterialRole.PaintedSteel, "plan-brace");
+                // handrail on the vehicle face, 1.1 m above the deck, inset 0.3 m
+                var r0 = CornerAt(0, y1 + 1.1f); var r1 = CornerAt(1, y1 + 1.1f); r0.Z -= 0.3f; r1.Z -= 0.3f;
+                Add(lid, $"{lid}.rail.s", MemberKind.Rail, r0, r1, MaterialRole.SafetyYellowSteel, "handrail");
+            }
+            if (P.CrewLevel >= 0 && P.CrewLevel < P.Levels && P.CrewArmReach > 0.5f) BuildCrewArm();
+            if (P.SpikeHeight > 0)
+            {
+                float top = P.Height + P.CapHeight;
+                Add("tower.cap", "tower.cap.spike", MemberKind.Mast, new Vec3(0, top, P.StandOff), new Vec3(0, top + P.SpikeHeight, P.StandOff), MaterialRole.Insulation, "lightning-spike");
+            }
+        }
+
+        // Fixed crew-access arm: box truss from the s face toward the vehicle, enclosed end room frame.
+        void BuildCrewArm()
+        {
+            const string id = "tower.crewarm";
+            float y = (P.CrewLevel + 1) * P.LevelHeight, z0 = P.NearFaceZ, z1 = z0 - P.CrewArmReach, x = P.CrewArmX;
+            const float hw = 0.9f, h = 2.4f;
+            var e = Graph.Add(id, ElementCategory.CrewArm, $"tower.l{P.CrewLevel:00}", "steel", "crew-access-arm", "walkable");
+            e.Center = new Vec3(x, y + h * 0.5f, (z0 + z1) * 0.5f); e.Size = new Vec3(hw * 2, h, P.CrewArmReach); e.DisplayName = "Crew access arm";
+            int bays = Math.Max(2, (int)Math.Round(P.CrewArmReach / 2.4f));
+            for (int i = 0; i < 4; i++)
+            {
+                float cx = x + (i % 2 == 0 ? -hw : hw), cy = y + (i < 2 ? 0 : h);
+                Add(id, $"{id}.chord.{i}", MemberKind.ArmChord, new Vec3(cx, cy, z0), new Vec3(cx, cy, z1), MaterialRole.PaintedSteel, "chord");
+            }
+            for (int b = 0; b <= bays; b++)
+            {
+                float z = z0 + (z1 - z0) * b / bays;
+                Add(id, $"{id}.ring.{b}.b", MemberKind.ArmBrace, new Vec3(x - hw, y, z), new Vec3(x + hw, y, z), MaterialRole.PaintedSteel, "ring");
+                Add(id, $"{id}.ring.{b}.t", MemberKind.ArmBrace, new Vec3(x - hw, y + h, z), new Vec3(x + hw, y + h, z), MaterialRole.PaintedSteel, "ring");
+                Add(id, $"{id}.ring.{b}.l", MemberKind.ArmBrace, new Vec3(x - hw, y, z), new Vec3(x - hw, y + h, z), MaterialRole.PaintedSteel, "ring");
+                Add(id, $"{id}.ring.{b}.r", MemberKind.ArmBrace, new Vec3(x + hw, y, z), new Vec3(x + hw, y + h, z), MaterialRole.PaintedSteel, "ring");
+                if (b == bays) continue;
+                float zn = z0 + (z1 - z0) * (b + 1) / bays; bool flip = b % 2 == 1;
+                Add(id, $"{id}.diag.{b}.l", MemberKind.ArmBrace, new Vec3(x - hw, flip ? y + h : y, z), new Vec3(x - hw, flip ? y : y + h, zn), MaterialRole.PaintedSteel, "diag");
+                Add(id, $"{id}.diag.{b}.r", MemberKind.ArmBrace, new Vec3(x + hw, flip ? y + h : y, z), new Vec3(x + hw, flip ? y : y + h, zn), MaterialRole.PaintedSteel, "diag");
+                Add(id, $"{id}.diag.{b}.t", MemberKind.ArmBrace, new Vec3(x - hw, y + h, z), new Vec3(x + hw, y + h, zn), MaterialRole.PaintedSteel, "diag");
+            }
+            Add(id, $"{id}.walk", MemberKind.Deck, new Vec3(x, y + 0.05f, z0), new Vec3(x, y + 0.05f, z1), MaterialRole.Galvanized, "walkway");
         }
 
         static readonly string[] Corner = { "sw", "se", "ne", "nw" };

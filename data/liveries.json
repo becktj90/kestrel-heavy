@@ -1,0 +1,17 @@
+{
+  "schema": "liveries_v1",
+  "liveries": [
+    { "id": "pathfinder_white", "label": "livery.pathfinder_white", "primary": "#E8ECEF", "accent": "#1E3A5F", "pattern": "solid", "earnRule": { "type": "start" }, "codexText": "codex.livery.pathfinder_white" },
+    { "id": "belt_stripes", "label": "livery.belt_stripes", "primary": "#E8ECEF", "accent": "#F2C21A", "pattern": "belt_stripes", "earnRule": { "type": "start" }, "codexText": "codex.livery.belt_stripes" },
+    { "id": "split_stage", "label": "livery.split_stage", "primary": "#1E3A5F", "accent": "#E8ECEF", "pattern": "two_tone_stage", "earnRule": { "type": "start" }, "codexText": "codex.livery.split_stage" },
+    { "id": "night_shift", "label": "livery.night_shift", "primary": "#14161A", "accent": "#50DCF0", "pattern": "split_vertical", "earnRule": { "type": "start" }, "codexText": "codex.livery.night_shift" },
+    { "id": "first_light", "label": "livery.first_light", "primary": "#E8ECEF", "accent": "#C83C32", "pattern": "chevron_nose", "earnRule": { "type": "orbits", "count": 1 }, "codexText": "codex.livery.first_light" },
+    { "id": "roll_check", "label": "livery.roll_check", "primary": "#E8ECEF", "accent": "#14161A", "pattern": "checker_roll", "earnRule": { "type": "orbits", "count": 3 }, "codexText": "codex.livery.roll_check" },
+    { "id": "ember_fade", "label": "livery.ember_fade", "primary": "#E8ECEF", "accent": "#D27A3A", "pattern": "gradient_aft", "earnRule": { "type": "orbits", "count": 10 }, "codexText": "codex.livery.ember_fade" },
+    { "id": "soft_touchdown", "label": "livery.soft_touchdown", "primary": "#2B7A5A", "accent": "#E8ECEF", "pattern": "belt_stripes", "earnRule": { "type": "landings", "count": 1 }, "codexText": "codex.livery.soft_touchdown" },
+    { "id": "tally_board", "label": "livery.tally_board", "primary": "#E8ECEF", "accent": "#2B7A5A", "pattern": "two_tone_stage", "earnRule": { "type": "landings", "count": 5 }, "codexText": "codex.livery.tally_board" },
+    { "id": "iron_lander", "label": "livery.iron_lander", "primary": "#5A5E66", "accent": "#F2C21A", "pattern": "split_vertical", "earnRule": { "type": "landings", "count": 20 }, "codexText": "codex.livery.iron_lander" },
+    { "id": "relay_blue", "label": "livery.relay_blue", "primary": "#1E3A5F", "accent": "#50DCF0", "pattern": "chevron_nose", "earnRule": { "type": "mission", "missionId": "KH-3" }, "codexText": "codex.livery.relay_blue" },
+    { "id": "heavy_lift_gold", "label": "livery.heavy_lift_gold", "primary": "#14161A", "accent": "#F2C21A", "pattern": "gradient_aft", "earnRule": { "type": "mission", "missionId": "KH-5" }, "codexText": "codex.livery.heavy_lift_gold" }
+  ]
+}

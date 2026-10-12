@@ -1,0 +1,13 @@
+{
+  "schema": "finishes_v1",
+  "finishes": [
+    { "id": "bare_metal", "label": "finish.bare_metal", "partTypes": ["tank", "engine", "interstage", "legs", "fins", "gridfins", "rcs"], "albedo": "#9EA3A8", "roughness": 0.35, "metallic": 0.9, "earnRule": { "type": "start" } },
+    { "id": "white_paint", "label": "finish.white_paint", "partTypes": ["tank", "booster", "interstage", "fairing", "fins"], "albedo": "#E8ECEF", "roughness": 0.45, "metallic": 0.1, "earnRule": { "type": "start" } },
+    { "id": "cork_insulation", "label": "finish.cork_insulation", "partTypes": ["tank", "booster", "interstage"], "albedo": "#B58A5A", "roughness": 0.85, "metallic": 0.0, "earnRule": { "type": "start" } },
+    { "id": "carbon_composite", "label": "finish.carbon_composite", "partTypes": ["interstage", "fairing", "fins", "legs"], "albedo": "#2A2C30", "roughness": 0.4, "metallic": 0.15, "earnRule": { "type": "start" } },
+    { "id": "foam_orange", "label": "finish.foam_orange", "partTypes": ["tank", "booster"], "albedo": "#D27A3A", "roughness": 0.8, "metallic": 0.0, "earnRule": { "type": "start" } },
+    { "id": "soot_weathered", "label": "finish.soot_weathered", "partTypes": ["tank", "booster", "interstage", "engine", "legs", "gridfins"], "albedo": "#C9CCD0", "roughness": 0.7, "metallic": 0.2, "tint": "#3A3330", "earnRule": { "type": "landings", "count": 3 } },
+    { "id": "brushed_stainless", "label": "finish.brushed_stainless", "partTypes": ["tank", "booster", "interstage", "fairing"], "albedo": "#C4C9CE", "roughness": 0.25, "metallic": 1.0, "earnRule": { "type": "orbits", "count": 5 } },
+    { "id": "matte_black_ablative", "label": "finish.matte_black_ablative", "partTypes": ["interstage", "booster", "engine", "fairing"], "albedo": "#1C1D20", "roughness": 0.9, "metallic": 0.0, "earnRule": { "type": "mission", "missionId": "KH-4" } }
+  ]
+}
