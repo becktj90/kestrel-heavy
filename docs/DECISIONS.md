@@ -37,3 +37,7 @@ Trevor (2026-10-11, 10:20 PM) delegated design and technical calls to Chief of S
 | 31 | 10-11 | Recommend Games → Simulation primary, Arcade secondary for the Unity build (ASC change is Trevor's G2). |
 | 32 | 10-11 | Store listing claims are gated per milestone (APPSTORE_CONNECT.md); accessibility labels declare only Dark Interface and Reduced Motion until gaps close. Age rating recommendation 4+, not Made for Kids (Trevor decides). |
 | 33 | 10-11 | fastlane: default dry_run lane is local-only; ASC lanes require TREVOR_APPROVED=yes; no submit lane. Secrets only in CI/UBA. |
+| 34 | 10-11 | Trevor: age rating 4+, all ages, Data Not Collected, not in Kids category. Unity analytics and crash reporting stay off. |
+| 35 | 10-11 | Trevor: Unity build ships as version 2.0.0 (rename the unreleased 1.0.1 record). |
+| 36 | 10-11 | Trevor: primary category Simulation, secondary Arcade. |
+| 37 | 10-11 | Trevor: remove China mainland and Vietnam from availability. |
