@@ -2,6 +2,7 @@
 // pad deck must be framed in the band ABOVE the panel's top edge, not in the full viewport (v4 captures:
 // the panel hid the bottom quarter of the stack and the whole pad deck on iPhone / Pro Max, more on iPad).
 // The band is measured from the live panel rect each layout pass, never a hardcoded pixel value.
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Kestrel.Slice
@@ -48,6 +49,83 @@ namespace Kestrel.Slice
             // ndc_y = (m11*y + m12*z) / -z  →  adding -s to m12 adds +s to ndc_y for every point.
             p.m12 -= NdcShiftY(visibleFraction);
             return p;
+        }
+
+        // ---- Pre-launch fit (P0-4, supersedes #120's PadFraming). Same camera rig as SliceApp.FrameCamera
+        // (offset direction (0.9, 0.45-AimHeight, -1.4) from the aim point, ShiftedProjection band), but the pull-back
+        // is solved so EVERY subject point (vehicle box, tower/arm bounds, deck rim at PadGround.DeckRadius) lands
+        // inside the band above the panel, on any portrait aspect, instead of only the vehicle's height.
+
+        /// <summary>Fraction of the band kept clear on each edge by FitDistanceScale.</summary>
+        public const float FitPadding = 0.04f;
+
+        /// <summary>Camera position for height h and distance scale k (identical to SliceApp.FrameCamera).</summary>
+        public static Vector3 CameraPosition(float h, float k, out Vector3 aim)
+        {
+            aim = new Vector3(0, h * AimHeight, 0);
+            return aim + new Vector3(h * 0.9f, h * (0.45f - AimHeight), -h * 1.4f) * k;
+        }
+
+        /// <summary>NDC of a world point for the rig (h, k), aspect, vertical FOV, band f.</summary>
+        public static Vector2 Project(Vector3 p, float h, float k, float aspect, float vFovDeg, float visibleFraction)
+        {
+            var pos = CameraPosition(h, k, out var aim);
+            var view = Matrix4x4.TRS(pos, Quaternion.LookRotation(aim - pos), new Vector3(1, 1, -1)).inverse;
+            var proj = ShiftedProjection(Matrix4x4.Perspective(vFovDeg, aspect, 0.5f, 200000f), visibleFraction);
+            var c = proj * (view * new Vector4(p.x, p.y, p.z, 1));
+            if (c.w <= 1e-4f) return new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+            return new Vector2(c.x / c.w, c.y / c.w);
+        }
+
+        static bool Fits(IReadOnlyList<Vector3> pts, float h, float k, float aspect, float fov, float f)
+        {
+            f = Mathf.Clamp(f, MinVisibleFraction, 1f);
+            float padY = FitPadding * 2f * f, padX = FitPadding * 2f;
+            float yLo = 1f - 2f * f + padY, yHi = 1f - padY, xLo = -1f + padX, xHi = 1f - padX;
+            foreach (var p in pts)
+            {
+                var n = Project(p, h, k, aspect, fov, f);
+                if (!(n.x > xLo && n.x < xHi && n.y > yLo && n.y < yHi)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>Smallest distance scale (never tighter than DistanceScale(f)) at which all points fit the band.</summary>
+        public static float FitDistanceScale(IReadOnlyList<Vector3> pts, float h, float aspect, float vFovDeg, float visibleFraction)
+        {
+            float k0 = DistanceScale(visibleFraction);
+            if (pts == null || pts.Count == 0 || h <= 0f || aspect <= 0f) return k0;
+            if (Fits(pts, h, k0, aspect, vFovDeg, visibleFraction)) return k0;
+            float lo = k0, hi = k0 * 2f;
+            for (int i = 0; i < 12 && !Fits(pts, h, hi, aspect, vFovDeg, visibleFraction); i++) { lo = hi; hi *= 2f; }
+            for (int i = 0; i < 40; i++) { float mid = 0.5f * (lo + hi); if (Fits(pts, h, mid, aspect, vFovDeg, visibleFraction)) hi = mid; else lo = mid; }
+            return hi;
+        }
+
+        /// <summary>Subject points: vehicle box (radius r, height h) on the deck, deck rim at deckRadius (y = 0 and
+        /// GroundY plinth foot), and any extra points (tower / arm bounds).</summary>
+        public static List<Vector3> SubjectPoints(float h, float r, float deckRadius, IEnumerable<Vector3> extra = null)
+        {
+            var pts = new List<Vector3>();
+            foreach (var y in new[] { 0f, h }) for (int i = 0; i < 4; i++) { float a = i * Mathf.PI / 2; pts.Add(new Vector3(r * Mathf.Cos(a), y, r * Mathf.Sin(a))); }
+            foreach (var y in new[] { 0f, PadGround.GroundY })
+                for (int i = 0; i < 12; i++) { float a = i * Mathf.PI / 6; pts.Add(new Vector3(deckRadius * Mathf.Cos(a), y, deckRadius * Mathf.Sin(a))); }
+            if (extra != null) pts.AddRange(extra);
+            return pts;
+        }
+
+        /// <summary>Corners of the generated pad members' bounds (tower, arms) through padToWorld.</summary>
+        public static IEnumerable<Vector3> PadBounds(Kestrel.Pad.PadLayout L, Matrix4x4 padToWorld)
+        {
+            if (L == null || L.Members == null || L.Members.Count == 0) yield break;
+            Vector3 mn = Vector3.positiveInfinity, mx = Vector3.negativeInfinity;
+            foreach (var m in L.Members)
+            {
+                var a = new Vector3(m.A.X, m.A.Y, m.A.Z); var b = new Vector3(m.B.X, m.B.Y, m.B.Z);
+                mn = Vector3.Min(mn, Vector3.Min(a, b)); mx = Vector3.Max(mx, Vector3.Max(a, b));
+            }
+            for (int i = 0; i < 8; i++)
+                yield return padToWorld.MultiplyPoint3x4(new Vector3((i & 1) == 0 ? mn.x : mx.x, (i & 2) == 0 ? mn.y : mx.y, (i & 4) == 0 ? mn.z : mx.z));
         }
     }
 }

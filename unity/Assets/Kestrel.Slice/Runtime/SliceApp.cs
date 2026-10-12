@@ -144,6 +144,9 @@ namespace Kestrel.Slice
             FrameCamera(rocketHeight, f);
         }
 
+        /// <summary>Vehicle + tower/arms + deck rim, refreshed in BuildRocket; FrameCamera fits all of them.</summary>
+        System.Collections.Generic.List<Vector3> framePoints;
+
         void SelectPreset(string id)
         {
             design = SliceData.Catalog.Preset(id).Clone();
@@ -190,15 +193,18 @@ namespace Kestrel.Slice
             var padR = PadTower.Apply(tower, r.height, rr, PadTower.DefaultArchetype(rr), PadTower.DefaultSeed);
             float deckR = PadGround.DeckRadius(padR != null ? padR.Layout : null); // deck under every tower leg
             deck.localScale = new Vector3(2 * deckR, deck.localScale.y, 2 * deckR);
+            framePoints = DesignFraming.SubjectPoints(r.height, rr, deckR,
+                padR != null ? DesignFraming.PadBounds(padR.Layout, tower.localToWorldMatrix) : null);
             rocketHeight = r.height; ApplyDesignFraming();
         }
 
         float rocketHeight = 70; Vector3 camOffset;
         void FrameCamera(float h, float visible)
         {
-            rocketHeight = h; float k = DesignFraming.DistanceScale(visible);
-            var aim = new Vector3(0, h * DesignFraming.AimHeight, 0);
-            cam.transform.position = aim + new Vector3(h * 0.9f, h * (0.45f - DesignFraming.AimHeight), -h * 1.4f) * k;
+            rocketHeight = h;
+            float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : cam.aspect;
+            float k = DesignFraming.FitDistanceScale(framePoints, h, aspect, cam.fieldOfView, visible);
+            cam.transform.position = DesignFraming.CameraPosition(h, k, out var aim);
             cam.transform.LookAt(aim);
             cam.ResetProjectionMatrix();
             cam.projectionMatrix = DesignFraming.ShiftedProjection(cam.projectionMatrix, visible); camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero); }
