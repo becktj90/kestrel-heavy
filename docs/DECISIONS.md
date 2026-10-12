@@ -1,0 +1,20 @@
+# Kestrel Heavy decisions log
+
+Trevor (2026-10-11, 10:20 PM) delegated design and technical calls to Chief of Staff and Kestrel Arcade. The goal is a breathtaking game that's fun for kids and engineers. Trevor still approves spending (budget $0), App Store submission, signing and certs, Xcode or bundle changes to the live record, and anything affecting the privacy label.
+
+| # | Date | Decision |
+|---|------|----------|
+| 1 | 10-11 | Unity 6.3 LTS is the shipping engine. 2.0 is the first Unity release, under the same bundle ID and App Store record. release/1.0.1 is archived. Phaser is web demo only. |
+| 2 | 10-11 | Editor automation goes through the official Unity CLI only. Unity Build Automation free tier, no card. No builds until Trevor says ready. Daily CI is dotnet plus golden vectors on Ubuntu. |
+| 3 | 10-11 | The 2.0 cut for C, G and M is ported into the U1–U9 plan (docs/UNITY_SHIP_PLAN.md). |
+| 4 | 10-11 | Designer layers: Simple by default, Standard unlocks after the first orbit, Engineer is a Settings toggle. The kid path gets big tactile parts, instant launch, and spectacle every flight. |
+| 5 | 10-11 | Sensors: exact values in KID and Sandbox, light noise in Standard, no weather holds in KID or Relaxed. |
+| 6 | 10-11 | Safe-flash on by default. Reduced motion follows the OS setting. |
+| 7 | 10-11 | Portrait-only with themed fill on big screens. iPad is full-screen portrait. UIRequiresFullScreen only if needed, and it changes the listing, so Trevor confirms first. |
+| 8 | 10-11 | 120 Hz on ProMotion, with a thermal governor, quality Auto, and battery saver off. |
+| 9 | 10-11 | Generic fictional pad. Photo and CSV export through the share sheet, with no Photos permission. |
+| 10 | 10-11 | Menu: a living title pad with the player's rocket, tap-to-ignite, one CONTINUE button, and 5 root sections. Diegetic first, with a flat list in Accessibility settings. |
+| 11 | 10-11 | Stack: URP, VFX Graph, Shader Graph, Cinemachine, Input System, UI Toolkit, Burst/Jobs, Addressables. Free assets only, logged in ASSETS_LICENSES.md. |
+| 12 | 10-11 | Moderate failure penalty. 3D hangar. Physics stays honest, and difficulty comes from assists and presets. |
+| 13 | 10-11 | Narration: no free-tier ElevenLabs clips in the paid app. Use the existing paid account if Trevor confirms it's his, otherwise on-device speech. |
+| 14 | 10-11 | App Store screenshots get redone at the end. |
