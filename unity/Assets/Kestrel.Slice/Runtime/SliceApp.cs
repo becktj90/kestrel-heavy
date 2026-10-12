@@ -201,13 +201,18 @@ namespace Kestrel.Slice
         float rocketHeight = 70; Vector3 camOffset;
         void FrameCamera(float h, float visible)
         {
+            if (cam == null || !DesignFraming.ValidViewport(cam.pixelWidth, cam.pixelHeight)) return;
+            h = DesignFraming.SafeHeight(h); visible = DesignFraming.SafeVisible(visible);
             rocketHeight = h;
             float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : cam.aspect;
             float k = DesignFraming.FitDistanceScale(framePoints, h, aspect, cam.fieldOfView, visible);
-            cam.transform.position = DesignFraming.CameraPosition(h, k, out var aim);
+            var pos = DesignFraming.CameraPosition(h, k, out var aim);
+            if (!DesignFraming.IsFinite(pos) || (pos - aim).sqrMagnitude < 1e-6f) return;
+            cam.transform.position = pos;
             cam.transform.LookAt(aim);
             cam.ResetProjectionMatrix();
-            cam.projectionMatrix = DesignFraming.ShiftedProjection(cam.projectionMatrix, visible); camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero); }
+            var proj = DesignFraming.ShiftedProjection(cam.projectionMatrix, visible);
+            if (DesignFraming.IsFinite(proj)) cam.projectionMatrix = proj; camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero); }
 
         /// <summary>V2a: overlay a procedural tank shell (welds, stiffener rings, isogrid normal map, LOD by distance)
         /// on every tank barrel. The shell sits 0.5% proud of the lathe body; its domes stay inside the body.</summary>

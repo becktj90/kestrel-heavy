@@ -112,5 +112,30 @@ namespace Kestrel.Game.Tests
             float kWide = DesignFraming.FitDistanceScale(DesignFraming.SubjectPoints(40f, 2f, 60f), 40f, a, 50f, f);
             Assert.That(kWide, Is.GreaterThan(kSmall));
         }
+
+        // Regression: camera NaN / IsMatrixValid on every play run (degenerate size during layout).
+        [Test]
+        public void DegenerateInputsNeverProduceNonFiniteCamera()
+        {
+            foreach (var h in new[] { 0f, -5f, float.NaN, float.PositiveInfinity, 0.2f })
+                Assert.That(DesignFraming.SafeHeight(h), Is.GreaterThanOrEqualTo(1f), $"h={h}");
+            foreach (var f in new[] { float.NaN, float.NegativeInfinity, -1f, 0f, 5f })
+            {
+                float v = DesignFraming.SafeVisible(f);
+                Assert.That(v, Is.InRange(DesignFraming.MinVisibleFraction, 1f), $"f={f}");
+                Assert.That(DesignFraming.IsFinite(DesignFraming.ShiftedProjection(Matrix4x4.Perspective(50f, 0.46f, 0.5f, 200000f), v)), Is.True);
+            }
+            Assert.That(DesignFraming.VisibleFraction(1000f, float.NaN), Is.EqualTo(1f));
+            Assert.That(DesignFraming.ValidViewport(0, 2796), Is.False);
+            Assert.That(DesignFraming.ValidViewport(1290, 0), Is.False);
+            Assert.That(DesignFraming.ValidViewport(1290, 2796), Is.True);
+            var m = Matrix4x4.identity; m.m12 = float.NaN; Assert.That(DesignFraming.IsFinite(m), Is.False);
+            m = Matrix4x4.identity; m.m00 = float.PositiveInfinity; Assert.That(DesignFraming.IsFinite(m), Is.False);
+            Assert.That(DesignFraming.IsFinite(new Vector3(0, float.NaN, 0)), Is.False);
+            // Sanitised height keeps the camera offset non-zero, so LookAt never gets a zero vector.
+            float sh = DesignFraming.SafeHeight(0f), k = DesignFraming.DistanceScale(DesignFraming.SafeVisible(float.NaN));
+            var off = new Vector3(sh * 0.9f, sh * (0.45f - DesignFraming.AimHeight), -sh * 1.4f) * k;
+            Assert.That(off.sqrMagnitude, Is.GreaterThan(1f));
+        }
     }
 }
