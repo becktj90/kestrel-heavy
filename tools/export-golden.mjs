@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Export golden vectors (inputs + outputs of the JS reference implementation) to data/golden/*.json.
-// Any port (C# Kestrel.Core, etc.) must reproduce them: closed-form functions to a relative 1e-9,
-// long simulate() runs to the tolerance recorded in each file (see data/golden/README.md).
-// Usage: node tools/export-golden.mjs        (tests/catalogs-json.test.cjs fails if output drifts)
+// Any port must reproduce them. Closed form and long simulate() runs use the tolerance recorded
+// in each file (see data/golden/README.md). catalog-flight.json is per quantity: absolute and
+// relative bands in docs/PHYSICS.md, applied by tests/golden-harness.test.cjs.
+// Usage: npm run gen:golden        (tests/catalogs-json.test.cjs fails if output drifts)
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { atmosphere, geopotential } from '../web/js/physics/atmosphere.js';
 import { cdMach, dragForce } from '../web/js/physics/aero.js';
@@ -19,6 +20,7 @@ import { priceDesign, engineDevCost, engineBatchCost, learningFactor } from '../
 import { reliabilityOf, clusterReliability, engineOutTolerance } from '../web/js/economy/reliability.js';
 import { PRESETS } from '../web/js/data/presets.js';
 import { ENGINES } from '../web/js/data/engines.js';
+import { ALTITUDE_GRID_M, catalogFlightCases, assertCatalogCoverage } from './golden-flight.mjs';
 
 const GEN = 'tools/export-golden.mjs (JS reference: web/js)';
 const files = {};
@@ -26,7 +28,7 @@ const put = (name, tolerance, cases) => { files[name] = { generatedBy: GEN, tole
 const REL = { rel: 1e-9, abs: 1e-9, note: 'closed form: |a-b| <= abs + rel*|b|' };
 
 // ---- physics-core ----
-const alts = [-500, 0, 1000, 5000, 11000, 15000, 20000, 25000, 32000, 40000, 47000, 51000, 60000, 71000, 80000, 84852, 86000, 90000, 100000, 150000, 250000];
+const alts = ALTITUDE_GRID_M;
 put('atmosphere', REL, alts.map((z) => ({ fn: 'atmosphere', in: { z }, out: { ...atmosphere(z), h: geopotential(z) } })));
 const tsi = [[311, 550000, 150000], [348, 120000, 12000], [452, 30000, 8000], [245, 1000, 600], [282, 1e6, 999999]];
 put('rocket-eq', REL, [
@@ -92,6 +94,14 @@ put('economy', { rel: 0, abs: 0, note: 'integer minor units: exact; reliability 
   ...[1, 2, 10, 100].map((n) => ({ fn: 'learningFactor', n, out: learningFactor(n) })),
   ...[[9, 0.995], [33, 0.98], [1, 0.99]].map(([n, r]) => { const e = { cycle: 'gas-generator' }; const k = engineOutTolerance(n, e); return { fn: 'clusterReliability', n, r, k, out: clusterReliability(n, r, k) }; }),
 ]);
+
+const flightCases = catalogFlightCases();
+assertCatalogCoverage(flightCases);
+put('catalog-flight', {
+  doc: 'docs/PHYSICS.md',
+  block: 'golden-tolerances',
+  note: 'Per-quantity absolute and relative bands live in docs/PHYSICS.md. The golden harness reads that block. Regenerate with npm run gen:golden.',
+}, flightCases);
 
 const oi = process.argv.indexOf('--out');
 const dir = oi > 0 ? new URL(`file://${process.argv[oi + 1].replace(/\/?$/, '/')}`) : new URL('../data/golden/', import.meta.url);

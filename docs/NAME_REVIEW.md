@@ -25,7 +25,7 @@
 | **Lantern Rocketry** | No app/web hits. | GREEN — keep |
 | **Northwind Aerospace** | **North Wind** (formerly Calspan Systems/ASE, Cerberus-owned since 2024) is a real *aerospace* test and hypersonics company. Same field. | **RED — replace** |
 
-Logged as DECISIONS #22: Northwind Aerospace is replaced. Kestrel Codex picks the replacement and runs this same screen on it before swapping it into WORLD_BIBLE.md (O2). (A first idea, "Saltmarsh Aerodyne", was dropped: "Saltmarsh" is a known tabletop-RPG adventure title.)
+Logged as DECISIONS #29: Northwind Aerospace is replaced. Kestrel Codex picks the replacement and runs this same screen on it before swapping it into WORLD_BIBLE.md (O2). (A first idea, "Saltmarsh Aerodyne", was dropped: "Saltmarsh" is a known tabletop-RPG adventure title.)
 
 ## Five fallback titles (if counsel says no)
 Quick App Store check only (2026-10-11); no USPTO check yet.

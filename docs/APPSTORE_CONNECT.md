@@ -6,7 +6,7 @@ Rule: every claim must be true of the shipping **Unity** build. Anything the Uni
 ## 0. Known current ASC state (set by Chief of Staff, 2026-10-11)
 Arcade category · $0.99 · 175 countries · privacy "Data Not Collected" · App Review contact copied from Beckify · sign-in required unticked · leaderboards kh1–kh5 · version record **1.0.1** (web-wrapper build, will not ship).
 
-## 1. Version plan (decision #23)
+## 1. Version plan (decision #30)
 - The app has **never been released**, so the 1.0.1 version record can simply be **renamed to 2.0** in ASC before the Unity build is attached (Trevor action, G2). No need to release 1.0.1.
 - Marketing version `CFBundleShortVersionString` = **2.0.0** (ASC shows "2.0"). Signals the full rebuild; matches MASTER_ROADMAP "1.0 (2.0 build)".
 - Build number `CFBundleVersion`: monotonic integer from Unity Build Automation; start at **100** so it can never collide with web builds (1.0.1 (7)). [TO CONFIRM highest build number already uploaded]
@@ -19,7 +19,7 @@ Arcade category · $0.99 · 175 countries · privacy "Data Not Collected" · App
 | Name | see block | 
 | Subtitle | see block |
 | Primary language | English (U.S.) |
-| Category | Games → **Simulation** primary, Games → **Arcade** secondary (decision #24: the Unity build is a rocket design + flight sim; Arcade-only undersells it). Changing the primary is a Trevor ASC action. |
+| Category | Games → **Simulation** primary, Games → **Arcade** secondary (decision #31: the Unity build is a rocket design + flight sim; Arcade-only undersells it). Changing the primary is a Trevor ASC action. |
 | Content rights | Does not contain third-party content requiring rights beyond those licensed (original art/music/fiction; ElevenLabs narration on Trevor's paid plan; free assets per ASSETS_LICENSES.md) |
 | Made for Kids | **No** (recommended — see §6) |
 | License agreement | Apple standard EULA |
