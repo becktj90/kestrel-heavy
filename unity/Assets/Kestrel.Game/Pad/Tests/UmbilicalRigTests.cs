@@ -191,7 +191,7 @@ namespace Kestrel.Pad.Tests
         public void ShellPlatesTrackDesignerDiameterAndHeight()
         {
             var small = ShellPoints(1.4f, 6f, 2f);
-            var large = ShellPoints(8f, 28f, 5f);
+            var large = ShellPoints(8f, 40f, 5f);
             float Radial(AttachPoint p, Vec3 origin) { float x = p.Pose.Position.X - origin.X, z = p.Pose.Position.Z - origin.Z; return (float)Math.Sqrt(x * x + z * z); }
             Assert.That(Radial(Fuel(large.Points), large.Origin), Is.GreaterThan(Radial(Fuel(small.Points), small.Origin) + 2f));
             Assert.That(Fuel(large.Points).Pose.Position.Y, Is.GreaterThan(Fuel(small.Points).Pose.Position.Y + 10f));

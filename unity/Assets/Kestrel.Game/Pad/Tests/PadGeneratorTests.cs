@@ -120,7 +120,8 @@ namespace Kestrel.Pad.Tests
             Assert.That(g.Query(ElementCategory.Level, "level:0").Count, Is.EqualTo(1));
             Assert.That(g.Query(ElementCategory.Member, "column").Count, Is.EqualTo(levels * 4));
             Assert.That(g.Query(ElementCategory.Member, "brace", "tower.l00", "face:s").Count, Is.EqualTo(2));
-            Assert.That(g.Query(ElementCategory.SwingArm).Count, Is.EqualTo(L.Arms.Count));
+            int crew = g.Contains("tower.crewarm") ? 1 : 0;
+            Assert.That(g.Query(ElementCategory.SwingArm).Count, Is.EqualTo(L.Arms.Count + crew));
             Assert.That(g.PathTo("tower.l03.col.ne"), Is.EqualTo(new[] { "pad", "tower", "tower.l03", "tower.l03.col.ne" }));
             Assert.That(g.Parent("tower.l03").Id, Is.EqualTo("tower"));
             // pad + tower, plus the D3 deck/trench subtree and the free-standing lightning masts (both hang off pad).
