@@ -1,0 +1,560 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 0,
+  "abs": 0,
+  "note": "structural equality with migrateDesign(); v0 fills defaults, v1 is unchanged, newer throws"
+ },
+ "count": 9,
+ "cases": [
+  {
+   "name": "empty",
+   "input": {},
+   "out": {
+    "version": 1,
+    "name": "Untitled",
+    "stages": [
+     {
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 1,
+      "propMass": 20000,
+      "diameter": 2,
+      "material": "al-li",
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0
+     }
+    ],
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "payload": {
+     "type": "leo-sat",
+     "mass": 1500,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 2,
+     "length": 5,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    }
+   }
+  },
+  {
+   "name": "name-only",
+   "input": {
+    "name": "Old"
+   },
+   "out": {
+    "version": 1,
+    "name": "Old",
+    "stages": [
+     {
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 1,
+      "propMass": 20000,
+      "diameter": 2,
+      "material": "al-li",
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0
+     }
+    ],
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "payload": {
+     "type": "leo-sat",
+     "mass": 1500,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 2,
+     "length": 5,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    }
+   }
+  },
+  {
+   "name": "version0",
+   "input": {
+    "version": 0,
+    "name": "Z"
+   },
+   "out": {
+    "version": 1,
+    "name": "Z",
+    "stages": [
+     {
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 1,
+      "propMass": 20000,
+      "diameter": 2,
+      "material": "al-li",
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0
+     }
+    ],
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "payload": {
+     "type": "leo-sat",
+     "mass": 1500,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 2,
+     "length": 5,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    }
+   }
+  },
+  {
+   "name": "version1-extra",
+   "input": {
+    "version": 1,
+    "name": "Stay",
+    "extra": true
+   },
+   "out": {
+    "version": 1,
+    "name": "Stay",
+    "extra": true
+   }
+  },
+  {
+   "name": "version2",
+   "input": {
+    "version": 2
+   },
+   "error": "design version 2 is newer than supported 1"
+  },
+  {
+   "name": "version-half",
+   "input": {
+    "version": 1.5,
+    "name": "Half"
+   },
+   "out": {
+    "version": 1,
+    "name": "Half",
+    "stages": [
+     {
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 1,
+      "propMass": 20000,
+      "diameter": 2,
+      "material": "al-li",
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0
+     }
+    ],
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "payload": {
+     "type": "leo-sat",
+     "mass": 1500,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 2,
+     "length": 5,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    }
+   }
+  },
+  {
+   "name": "negative",
+   "input": {
+    "version": -1
+   },
+   "error": "no migration from design version -1"
+  },
+  {
+   "name": "preset-scout",
+   "input": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#222222",
+     "accent": "#ffb000",
+     "name": "SCOUT"
+    },
+    "id": "scout",
+    "name": "Scout",
+    "tier": "small",
+    "stages": [
+     {
+      "interstageMass": 200,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 1",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 9,
+      "propMass": 35000,
+      "diameter": 1.8
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 2",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 1,
+      "propMass": 6000,
+      "diameter": 1.8
+     }
+    ],
+    "payload": {
+     "type": "cubesat",
+     "mass": 150,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 1.8,
+     "length": 2.5,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   },
+   "out": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#222222",
+     "accent": "#ffb000",
+     "name": "SCOUT"
+    },
+    "id": "scout",
+    "name": "Scout",
+    "tier": "small",
+    "stages": [
+     {
+      "interstageMass": 200,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 1",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 9,
+      "propMass": 35000,
+      "diameter": 1.8
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 2",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 1,
+      "propMass": 6000,
+      "diameter": 1.8
+     }
+    ],
+    "payload": {
+     "type": "cubesat",
+     "mass": 150,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 1.8,
+     "length": 2.5,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   }
+  },
+  {
+   "name": "default",
+   "input": {
+    "version": 1,
+    "name": "Untitled",
+    "stages": [
+     {
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 1,
+      "propMass": 20000,
+      "diameter": 2,
+      "material": "al-li",
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0
+     }
+    ],
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "payload": {
+     "type": "leo-sat",
+     "mass": 1500,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 2,
+     "length": 5,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    }
+   },
+   "out": {
+    "version": 1,
+    "name": "Untitled",
+    "stages": [
+     {
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 1,
+      "propMass": 20000,
+      "diameter": 2,
+      "material": "al-li",
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0
+     }
+    ],
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "payload": {
+     "type": "leo-sat",
+     "mass": 1500,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 2,
+     "length": 5,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    }
+   }
+  }
+ ]
+}

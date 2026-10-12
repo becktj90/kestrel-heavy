@@ -1,0 +1,382 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 1e-9,
+  "abs": 1e-9,
+  "note": "stars and unlock exact; Haven drift is sin, rel 1e-9. Stars never gate unlock."
+ },
+ "count": 39,
+ "cases": [
+  {
+   "fn": "fallback",
+   "out": {
+    "landingFuel": 36,
+    "swellAmp": 16,
+    "driftWind": 0.28,
+    "fuelMax": 100
+   }
+  },
+  {
+   "fn": "mission",
+   "mission": "KH-1",
+   "out": {
+    "wind": 0.55,
+    "landingFuel": 52,
+    "swellAmp": 6
+   }
+  },
+  {
+   "fn": "mission",
+   "mission": "KH-2",
+   "out": {
+    "wind": 0.75,
+    "landingFuel": 44,
+    "swellAmp": 10
+   }
+  },
+  {
+   "fn": "mission",
+   "mission": "KH-3",
+   "out": {
+    "wind": 1,
+    "landingFuel": 36,
+    "swellAmp": 16
+   }
+  },
+  {
+   "fn": "mission",
+   "mission": "KH-4",
+   "out": {
+    "wind": 1.2,
+    "landingFuel": 30,
+    "swellAmp": 22
+   }
+  },
+  {
+   "fn": "mission",
+   "mission": "KH-5",
+   "out": {
+    "wind": 1.45,
+    "landingFuel": 24,
+    "swellAmp": 28
+   }
+  },
+  {
+   "fn": "unlock",
+   "reason": "recovered",
+   "out": true
+  },
+  {
+   "fn": "unlock",
+   "reason": "salvage",
+   "out": true
+  },
+  {
+   "fn": "unlock",
+   "reason": "splash",
+   "out": false
+  },
+  {
+   "fn": "unlock",
+   "reason": "rud",
+   "out": false
+  },
+  {
+   "fn": "unlock",
+   "reason": "abort",
+   "out": false
+  },
+  {
+   "fn": "stars",
+   "name": "splash",
+   "touch": {
+    "reason": "splash",
+    "landingVy": 6,
+    "landingTol": 40,
+    "kind": "deck",
+    "recovered": true,
+    "tipped": false
+   },
+   "out": 0
+  },
+  {
+   "fn": "stars",
+   "name": "rud",
+   "touch": {
+    "reason": "rud",
+    "kind": "rud"
+   },
+   "out": 0
+  },
+  {
+   "fn": "stars",
+   "name": "water",
+   "touch": {
+    "reason": "recovered",
+    "kind": "water",
+    "vy": 0,
+    "dx": 0,
+    "landingVy": 6,
+    "landingTol": 40,
+    "recovered": true,
+    "tipped": false
+   },
+   "out": 0
+  },
+  {
+   "fn": "stars",
+   "name": "three",
+   "touch": {
+    "reason": "recovered",
+    "vy": 2,
+    "dx": 8,
+    "landingVy": 6,
+    "landingTol": 40,
+    "kind": "deck",
+    "recovered": true,
+    "tipped": false
+   },
+   "out": 3
+  },
+  {
+   "fn": "stars",
+   "name": "two",
+   "touch": {
+    "reason": "recovered",
+    "vy": 4.2,
+    "dx": 28,
+    "landingVy": 6,
+    "landingTol": 40,
+    "kind": "deck",
+    "recovered": true,
+    "tipped": false
+   },
+   "out": 2
+  },
+  {
+   "fn": "stars",
+   "name": "one",
+   "touch": {
+    "reason": "recovered",
+    "vy": 5.7,
+    "dx": 38,
+    "landingVy": 6,
+    "landingTol": 40,
+    "kind": "deck",
+    "recovered": true,
+    "tipped": false
+   },
+   "out": 1
+  },
+  {
+   "fn": "stars",
+   "name": "salvage",
+   "touch": {
+    "reason": "salvage",
+    "vy": 9,
+    "dx": 80,
+    "landingVy": 6,
+    "landingTol": 40,
+    "kind": "deck",
+    "recovered": false,
+    "tipped": false
+   },
+   "out": 1
+  },
+  {
+   "fn": "stars",
+   "name": "tipped",
+   "touch": {
+    "reason": "recovered",
+    "vy": 1,
+    "dx": 1,
+    "landingVy": 6,
+    "landingTol": 40,
+    "kind": "deck",
+    "recovered": true,
+    "tipped": true
+   },
+   "out": 1
+  },
+  {
+   "fn": "wind",
+   "difficulty": "KID",
+   "mission": "KH-1",
+   "difficultyWind": 0.14,
+   "out": 0.07700000000000001
+  },
+  {
+   "fn": "wind",
+   "difficulty": "KID",
+   "mission": "KH-2",
+   "difficultyWind": 0.14,
+   "out": 0.10500000000000001
+  },
+  {
+   "fn": "wind",
+   "difficulty": "KID",
+   "mission": "KH-3",
+   "difficultyWind": 0.14,
+   "out": 0.14
+  },
+  {
+   "fn": "wind",
+   "difficulty": "KID",
+   "mission": "KH-4",
+   "difficultyWind": 0.14,
+   "out": 0.168
+  },
+  {
+   "fn": "wind",
+   "difficulty": "KID",
+   "mission": "KH-5",
+   "difficultyWind": 0.14,
+   "out": 0.203
+  },
+  {
+   "fn": "wind",
+   "difficulty": "CADET",
+   "mission": "KH-1",
+   "difficultyWind": 0.32,
+   "out": 0.17600000000000002
+  },
+  {
+   "fn": "wind",
+   "difficulty": "CADET",
+   "mission": "KH-2",
+   "difficultyWind": 0.32,
+   "out": 0.24
+  },
+  {
+   "fn": "wind",
+   "difficulty": "CADET",
+   "mission": "KH-3",
+   "difficultyWind": 0.32,
+   "out": 0.32
+  },
+  {
+   "fn": "wind",
+   "difficulty": "CADET",
+   "mission": "KH-4",
+   "difficultyWind": 0.32,
+   "out": 0.384
+  },
+  {
+   "fn": "wind",
+   "difficulty": "CADET",
+   "mission": "KH-5",
+   "difficultyWind": 0.32,
+   "out": 0.46399999999999997
+  },
+  {
+   "fn": "wind",
+   "difficulty": "PAD_RAT",
+   "mission": "KH-1",
+   "difficultyWind": 0.52,
+   "out": 0.28600000000000003
+  },
+  {
+   "fn": "wind",
+   "difficulty": "PAD_RAT",
+   "mission": "KH-2",
+   "difficultyWind": 0.52,
+   "out": 0.39
+  },
+  {
+   "fn": "wind",
+   "difficulty": "PAD_RAT",
+   "mission": "KH-3",
+   "difficultyWind": 0.52,
+   "out": 0.52
+  },
+  {
+   "fn": "wind",
+   "difficulty": "PAD_RAT",
+   "mission": "KH-4",
+   "difficultyWind": 0.52,
+   "out": 0.624
+  },
+  {
+   "fn": "wind",
+   "difficulty": "PAD_RAT",
+   "mission": "KH-5",
+   "difficultyWind": 0.52,
+   "out": 0.754
+  },
+  {
+   "fn": "haven",
+   "mission": "KH-1",
+   "difficultyWind": 0.14,
+   "swellT": 0,
+   "sessionFuel": 10,
+   "out": {
+    "wind": 0.07700000000000001,
+    "driftWind": 0.07700000000000001,
+    "swell": 0,
+    "gust": 0,
+    "forceX": 0,
+    "fuel": 52
+   }
+  },
+  {
+   "fn": "haven",
+   "mission": "KH-1",
+   "difficultyWind": 0.14,
+   "swellT": 1,
+   "sessionFuel": 10,
+   "out": {
+    "wind": 0.07700000000000001,
+    "driftWind": 0.07700000000000001,
+    "swell": 1.6581338913846826,
+    "gust": 0.0447397073613725,
+    "forceX": 0.00015211500502866648,
+    "fuel": 52
+   }
+  },
+  {
+   "fn": "haven",
+   "mission": "KH-3",
+   "difficultyWind": 0,
+   "swellT": 4.2,
+   "sessionFuel": 80,
+   "out": {
+    "wind": 0,
+    "driftWind": 0.28,
+    "swell": 14.769198725368176,
+    "gust": 0.14337951654394254,
+    "forceX": 0.00048749035624940463,
+    "fuel": 80
+   }
+  },
+  {
+   "fn": "haven",
+   "mission": "KH-5",
+   "difficultyWind": 0.52,
+   "swellT": 2.5,
+   "sessionFuel": 120,
+   "out": {
+    "wind": 0.754,
+    "driftWind": 0.754,
+    "swell": 18.038095242655352,
+    "gust": 0.7538369581987752,
+    "forceX": 0.0025630456578758353,
+    "fuel": 100
+   }
+  },
+  {
+   "fn": "haven",
+   "mission": "KH-9",
+   "difficultyWind": 0.32,
+   "swellT": 1,
+   "sessionFuel": 10,
+   "out": {
+    "wind": 0.32,
+    "driftWind": 0.32,
+    "swell": 4.42169037702582,
+    "gust": 0.18593125137193764,
+    "forceX": 0.0006321662546645879,
+    "fuel": 36
+   }
+  }
+ ]
+}

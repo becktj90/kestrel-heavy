@@ -1,0 +1,23 @@
+{
+  "note": "One-tap resume from the result screen. Clocks match the Phaser PACE spine (ENTRY, and MECO minus sepLeadSec). Unlocks and personal bests stay. Phaser pixel poses stay in the web scene.",
+  "requiresStatus": "SUMMARY",
+  "taps": 1,
+  "confirm": false,
+  "resultsToRelaunchSec": 2,
+  "preserve": [
+    "unlocks",
+    "personalBests"
+  ],
+  "sepLeadSec": 0.05,
+  "points": {
+    "landing": {
+      "phase": "haven",
+      "tClock": 69.2
+    },
+    "sep": {
+      "phase": "sep",
+      "tClock": 38.75,
+      "altitudeKm": 54
+    }
+  }
+}
