@@ -13,7 +13,7 @@ namespace Kestrel.Slice
     public sealed class SliceApp : MonoBehaviour
     {
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
-        Design design; Camera cam; Transform worldRoot, vehicleRoot; FlightDriver flight; GameObject rocketGO;
+        Design design; Camera cam; Transform worldRoot, vehicleRoot, tower; FlightDriver flight; GameObject rocketGO;
         VisualElement ui, designPanel, hud; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted;
 
@@ -45,9 +45,8 @@ namespace Kestrel.Slice
             var pad = GameObject.CreatePrimitive(PrimitiveType.Cylinder); pad.name = "Pad"; pad.transform.SetParent(worldRoot, false);
             pad.transform.localScale = new Vector3(30, 0.5f, 30);
             flight.Anchor(pad.transform, 0, -0.5, 0);
-            var tower = GameObject.CreatePrimitive(PrimitiveType.Cube); tower.name = "Tower"; tower.transform.SetParent(worldRoot, false);
-            tower.transform.localScale = new Vector3(4, 90, 4);
-            flight.Anchor(tower.transform, -14, 45, 0);
+            tower = PadTower.Create(bodyMat); tower.SetParent(worldRoot, false);
+            flight.Anchor(tower, 0, 0, 0); // sized per design in BuildRocket
             flight.OnMeco += OnMeco;
         }
 
@@ -126,6 +125,7 @@ namespace Kestrel.Slice
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, Mathf.Max(1f, Mathf.Sqrt(design.stages[0].engineCount) * r.exitDiameter), plumeMat);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
+            PadTower.Apply(tower, r.height, r.mesh.bounds.extents.x);
             FrameCamera(r.height);
         }
 

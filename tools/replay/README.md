@@ -16,3 +16,9 @@ flight-bus event with its game time (beat times), outcome/score/medal/recovered/
 checksum every 30 frames (status, stage, rocket x/y/angle/vx/vy, score, INT, fuel, tClock, combo, altitude, nowSec).
 
 Needs Chrome/Chromium (`CHROME_BIN` to override) and Node ≥ 20.10 (`--experimental-websocket`). No npm dependency.
+
+Boot-length independence: `boot()` polls in real time, so the number of frames stepped before a case varies with
+host speed. The runner therefore jumps the virtual clock to a fixed anchor (`__replay.anchor(600000)`) and steps
+120 settle frames before every case. Without it, 1/60 s float error in Phaser/Matter deltas depends on the boot
+length and flips threshold checks (seen as `D0 replay KH-2_CADET` diverging at checkpoint 8 on PR #56; reproducible
+locally by stepping 11+ extra boot frames).
