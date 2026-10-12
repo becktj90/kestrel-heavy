@@ -30,5 +30,34 @@ PlayerSettings:
     iPhone: 1
   apiCompatibilityLevelPerPlatform: {}
   iOSRequireARKit: 0
+  m_BuildTargetIcons:
+  - m_BuildTarget: 
+    m_Icons:
+    - serializedVersion: 2
+      m_Icon: {fileID: 2800000, guid: ed8e57e638b64050a42e5e381705d1b1, type: 3}
+      m_Width: 1024
+      m_Height: 1024
+      m_Kind: 0
+  m_BuildTargetPlatformIcons:
+  - m_BuildTarget: iPhone
+    m_Icons:
+    - m_Textures:
+      - {fileID: 2800000, guid: ed8e57e638b64050a42e5e381705d1b1, type: 3}
+      m_Width: 180
+      m_Height: 180
+      m_Kind: 1
+      m_SubKind: iPhone
+    - m_Textures:
+      - {fileID: 2800000, guid: ed8e57e638b64050a42e5e381705d1b1, type: 3}
+      m_Width: 120
+      m_Height: 120
+      m_Kind: 1
+      m_SubKind: iPhone
+    - m_Textures:
+      - {fileID: 2800000, guid: ed8e57e638b64050a42e5e381705d1b1, type: 3}
+      m_Width: 1024
+      m_Height: 1024
+      m_Kind: 4
+      m_SubKind: 
   statusBarHidden: 1
   requiresFullScreen: 1

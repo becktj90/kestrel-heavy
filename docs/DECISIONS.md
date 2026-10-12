@@ -25,3 +25,4 @@ Trevor (2026-10-11, 10:20 PM) delegated design and technical calls to Chief of S
 | 19 | 10-11 | Own repo (becktj90/kestrel-heavy), not the beckify monorepo. |
 | 20 | 10-11 | Scope tiers per MASTER_ROADMAP.md; X1–X7 specs feed U1–U9. PROJECT_STATE.md is the living context file. |
 | 21 | 10-11 | Legal/compliance docs are "draft for counsel"; audience/age rating needs Trevor's explicit decision. |
+| 22 | 10-11 | A2 app icon: c1 kestrel-booster chosen as final (source art/icon/final, PR #41). |
