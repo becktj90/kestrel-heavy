@@ -1,3 +1,4 @@
+import GameKit
 import SwiftUI
 import UIKit
 import WebKit
@@ -40,6 +41,7 @@ struct KestrelHeavyGameView: UIViewControllerRepresentable {
             forMainFrameOnly: true
         ))
         controller.add(context.coordinator, name: "kestrelHaptics")
+        controller.add(context.coordinator, name: "kestrelGameCenter")
         config.userContentController = controller
 
         let webView = ArcadeWebView(frame: .zero, configuration: config)
@@ -80,6 +82,7 @@ struct KestrelHeavyGameView: UIViewControllerRepresentable {
 
     static func dismantleUIViewController(_ cabinet: KestrelHeavyCabinetController, coordinator: Coordinator) {
         cabinet.webView.configuration.userContentController.removeScriptMessageHandler(forName: "kestrelHaptics")
+        cabinet.webView.configuration.userContentController.removeScriptMessageHandler(forName: "kestrelGameCenter")
     }
 
     private static let bootScript = """
@@ -130,6 +133,7 @@ struct KestrelHeavyGameView: UIViewControllerRepresentable {
             webView.becomeFirstResponder()
             (webView as? ArcadeWebView)?.publishViewportIfNeeded(force: true)
             announceReady()
+            KestrelHeavyGameCenter.shared.authenticate()
         }
 
         func webView(
@@ -144,6 +148,10 @@ struct KestrelHeavyGameView: UIViewControllerRepresentable {
             _ userContentController: WKUserContentController,
             didReceive message: WKScriptMessage
         ) {
+            if message.name == "kestrelGameCenter" {
+                KestrelHeavyGameCenter.shared.handle(message.body)
+                return
+            }
             guard message.name == "kestrelHaptics" else { return }
             light.prepare()
             medium.prepare()
@@ -285,5 +293,111 @@ final class ArcadeWebView: WKWebView {
         })();
         """
         evaluateJavaScript(script, completionHandler: nil)
+    }
+}
+
+/// Game Center leaderboards, one per KH-n flight.
+/// The cabinet posts `{ type: "score", leaderboard, score }` on the
+/// `kestrelGameCenter` message handler at the end of a flight. Everything here
+/// fails silently: offline, signed out, or leaderboard not yet live in App
+/// Store Connect all just drop the score (a few are queued until sign-in).
+final class KestrelHeavyGameCenter {
+    static let shared = KestrelHeavyGameCenter()
+    static let leaderboardPrefix = "com.beckify.kestrelheavy.lb."
+
+    private var authStarted = false
+    private var pending: [(id: String, score: Int)] = []
+
+    func authenticate() {
+        DispatchQueue.main.async {
+            guard !self.authStarted else { return }
+            self.authStarted = true
+            GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, error in
+                DispatchQueue.main.async {
+                    if let viewController {
+                        Self.topViewController()?.present(viewController, animated: true)
+                        return
+                    }
+                    guard error == nil, GKLocalPlayer.local.isAuthenticated else { return }
+                    self?.flush()
+                }
+            }
+        }
+    }
+
+    func handle(_ body: Any) {
+        guard let dict = body as? [String: Any], let type = dict["type"] as? String else { return }
+        let id = dict["leaderboard"] as? String ?? ""
+        switch type {
+        case "score":
+            let score = (dict["score"] as? NSNumber)?.intValue ?? 0
+            submit(score: score, leaderboardID: id)
+        case "show":
+            show(leaderboardID: id)
+        default:
+            return
+        }
+    }
+
+    private func submit(score: Int, leaderboardID: String) {
+        guard score > 0, leaderboardID.hasPrefix(Self.leaderboardPrefix) else { return }
+        DispatchQueue.main.async {
+            guard GKLocalPlayer.local.isAuthenticated else {
+                self.pending.append((leaderboardID, score))
+                if self.pending.count > 20 { self.pending.removeFirst(self.pending.count - 20) }
+                self.authenticate()
+                return
+            }
+            GKLeaderboard.submitScore(
+                score,
+                context: 0,
+                player: GKLocalPlayer.local,
+                leaderboardIDs: [leaderboardID]
+            ) { _ in }
+        }
+    }
+
+    private func flush() {
+        let queued = pending
+        pending.removeAll()
+        for item in queued {
+            submit(score: item.score, leaderboardID: item.id)
+        }
+    }
+
+    private func show(leaderboardID: String) {
+        DispatchQueue.main.async {
+            guard GKLocalPlayer.local.isAuthenticated else { return }
+            let sheet: GKGameCenterViewController
+            if leaderboardID.hasPrefix(Self.leaderboardPrefix) {
+                sheet = GKGameCenterViewController(
+                    leaderboardID: leaderboardID,
+                    playerScope: .global,
+                    timeScope: .allTime
+                )
+            } else {
+                sheet = GKGameCenterViewController(state: .leaderboards)
+            }
+            sheet.gameCenterDelegate = GameCenterDismisser.shared
+            Self.topViewController()?.present(sheet, animated: true)
+        }
+    }
+
+    static func topViewController() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let window = scenes.flatMap(\.windows).first(where: { $0.isKeyWindow }) ?? scenes.first?.windows.first
+        var top = window?.rootViewController
+        while let next = top?.presentedViewController {
+            top = next
+        }
+        return top
+    }
+}
+
+private final class GameCenterDismisser: NSObject, GKGameCenterControllerDelegate {
+    static let shared = GameCenterDismisser()
+
+    func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
+        gameCenterViewController.dismiss(animated: true)
     }
 }
