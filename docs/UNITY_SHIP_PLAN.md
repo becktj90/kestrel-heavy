@@ -26,7 +26,7 @@ _Draft, Oct 11 2026. Not committed. Based on `unity-prototype` @ e908d00 (draft 
 | **U4 Flight (M3 + C2 + G4/G5 core)** | Flight scene: autopilot, staging, orbit determination, telemetry channel registry + HUD/drawer, procedural vehicle renderer, physics-driven plume + diamonds, sky→space fade, Earth curvature, camera rig | Flight replay matches `simulate.json`. p95 ≤16.7 ms on floor device | Gameplay Dev (sim/HUD logic); Graphics Dev (render/plume/sky/camera) | Art, Physics, QA |
 | **U5 Failures + report (M4)** | Failure modes, structural loads/Max-Q, flex visuals, post-flight report + plot, recorder | Loads/failure vectors. Report numbers match Core | Gameplay Dev | Physics, Graphics Dev (failure FX), Codex (explanations) |
 | **U6 Launch complex + recovery (G2/G3/G6, C4, C6-core)** | Pad requirements/compat, seeded pad generator, countdown + ignition substates, expendable/droneship (Haven strake-glide)/RTLS/parachute fairing | Pad-sizing + descent/landing-burn vectors. Golden-image gallery in CI | Graphics Dev (pad/FX/countdown); Gameplay Dev (recovery physics) | Art, Physics, QA |
-| **U7 Audio + narrator (S1, S3-core, N1–N6)** | Unity Audio Mixer port of S1 (buses, ducking, lifecycle), physics-driven engine/atmo/structural SFX, narration event bus + queue + director, subtitles, webcast overlay (mission clock, telemetry). **Existing bundled clip library + on-device iOS speech (AVSpeechSynthesizer) for player-specific strings. No ElevenLabs, no Fly.io.** | Event→callout mapping test. Mixer levels per S1 spec | Gameplay Dev (bus/queue) | Sound, Narrator Voice, UX (subtitles) |
+| **U7 Audio + narrator (S1, S3-core, N1–N6)** | Unity Audio Mixer port of S1 (buses, ducking, lifecycle), physics-driven engine/atmo/structural SFX, narration event bus + queue + director, subtitles, webcast overlay (mission clock, telemetry). **Bundled ElevenLabs clip library, pre-generated once on Trevor's paid Creator plan (non-beta models, commercial license kept), + on-device iOS speech (AVSpeechSynthesizer) for player-specific strings. No live server, no Fly.io.** | Event→callout mapping test. Mixer levels per S1 spec | Gameplay Dev (bus/queue) | Sound, Narrator Voice, UX (subtitles) |
 | **U8 Campaign + hangar 3D (C/E economy 1.1-lite, M6, edu)** | Budget, contracts, costs from Core, reserves/loans, **moderate failure penalty**, tech tree, hangar 3D reveal + inventory, tutorial/first 5 min, Codex L1 + moment cards | `economy.json` exact. Campaign sim vectors (N flights → balance) | Gameplay Dev (economy); Graphics Dev (hangar 3D) | Codex, UX, Art, QA |
 | **U9 Ship** | Game Center (Apple unityplugins, same leaderboard IDs), medals, achievements, VoiceOver/Dynamic Type gap closure, perf/thermal/IPA ≤40 MB, App Store assets, **bundle swap .unityproto → com.beckify.kestrelheavy** | RESULTS.md pass criteria all met. Full QA regression. Approved build in ASC | Kestrel Arcade (release/queue) | QA, Marketing, UX, Art, Sound |
 
@@ -38,7 +38,7 @@ _Draft, Oct 11 2026. Not committed. Based on `unity-prototype` @ e908d00 (draft 
 - **C1a** → U1/U3. **C2** → U4. **C4/C6-core** → U6. **C5** → U4 (core). C1b/C1c/C3/C7 → 1.1.
 - **G1** → U2. **G2/G3/G6** → U6. **G4/G5** → U4. **G7** gallery → CI in U6, photo mode in 1.1. VISUAL_SPEC.md is the contract.
 - **S1** → U7 (Unity Audio Mixer replaces the JS mixer; the S1 bus names and levels are the spec).
-- **Narrator** → U7. The manifest, subtitles and already-generated clips are reused as is. Drop the OGG duplicates (−4.3 MB). **ElevenLabs and the Fly.io backend are cut**; new or dynamic lines use on-device TTS or the existing clips only.
+- **Narrator** → U7. The manifest, subtitles and already-generated clips are reused as is. Drop the OGG duplicates (−4.3 MB). **ElevenLabs stays as pre-generated clips** on Trevor's paid Creator plan (DECISIONS #16); no live generation, Fly.io backend cut. Player-specific lines use on-device TTS.
 - **Arcade mission.js logic** (hazards, corridor, medals) is **rewritten, not translated**, inside U4/U5. Its scope is cut to what the designer game needs.
 
 ## 4. Specialist standing duties
@@ -86,3 +86,14 @@ QA: test pass per milestone + device matrix · UX: flows/portrait/a11y review ·
 - VoiceOver/Dynamic Type in UI Toolkit is a known gap, budgeted in U9.
 
 > Update 2026-10-11 10:17 PM: Trevor wants ElevenLabs narration kept: pre-generate clips on the free tier (pending terms check) and bundle them offline; no paid live server.
+
+## 8. Engagement H1–H6 (docs/ENGAGEMENT_SPEC.md)
+| H | Scope | Lands in | Owner |
+|---|-------|----------|-------|
+| H1 | Audit + spec + age rating draft (docs) | done | Kestrel Arcade |
+| H2 | Loop speed: RELAUNCH <2 s, quick-tweak w/ highlighted fix, shortening cinematics | U3 (tweak), U4 (relaunch, cinematics) | Gameplay Dev, UX |
+| H3 | Gap-to-goal debrief, near-miss, ghost + A/B flip, predict + success probability | U4 (ghost, predict), U5 (debrief) | Gameplay Dev, Physics |
+| H4 | Goals at 3 timescales, Next-up, mastery ladder, PBs, modes, offline advisor | U8 (1.0 modes), 1.1 rest | Gameplay Dev, UX, Codex |
+| H5 | Forgiving streaks, welcome-back, calm mode, opt-in notifications, Game Center social | U8, U9 | Gameplay Dev, UX |
+| H6 | Balance sim on headless core (`pacing.json`) + playtest kit (kids, casual adults, engineers) | U8–U9 | QA, Physics |
+Acceptance additions: U4 gate includes results→relaunch <2 s; U5 gate includes debrief numbers = Core; U9 gate includes ethics checklist pass.

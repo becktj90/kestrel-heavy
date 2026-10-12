@@ -27,6 +27,13 @@ graph LR
   X1 --> X6[X6 Legal/security/platform]
   X6 --> U9
   X7[X7 Launch/QA/accuracy] --> U9
+  H1[H1 Engagement spec] --> H2[H2 Loop speed]
+  H1 --> H3[H3 Debrief/ghost/predict]
+  H2 --> U4
+  H3 --> U5
+  H1 --> H4[H4 Goals/modes/advisor] --> U8
+  H1 --> H5[H5 Streaks/social/wellbeing] --> U9
+  H4 --> H6[H6 Balance sim + playtest] --> U9
 ```
 
 ## Critical path
@@ -50,6 +57,9 @@ U1 ∥ U2 → U3 → U4 → U7 (audio/narrator/music) → U8 → U9. X6 (privacy
 | X6 | Legal/compliance pack ("draft for counsel"), security threat model, platform evaluation | Kestrel Arcade | Marketing, QA | U9 |
 | X7 | Marketing, launch, beta, community, educators, live-ops + $0 cost model, accuracy review, master test plan, device matrix | Marketing | Physics (accuracy), QA (test/devices), Codex (educators) | U9 |
 
+## Engagement H1–H6
+See ENGAGEMENT_SPEC.md and UNITY_SHIP_PLAN §8. 1.0: H2, H3, H4 (campaign/sandbox/daily/weekly/12 lab challenges, advisor, PBs, Next-up), H5 (streaks, calm mode, Game Center boards), H6 playtests. 1.1: contract rush, failure investigation, more lab, A/B flip polish.
+
 ## Risk register
 | # | Risk | L/I | Mitigation | Owner |
 |---|------|-----|-----------|-------|
@@ -63,6 +73,8 @@ U1 ∥ U2 → U3 → U4 → U7 (audio/narrator/music) → U8 → U9. X6 (privacy
 | R8 | Kids audience triggers stricter rules | M/H | Explicit audience decision in X6; no analytics/ads | Trevor (decide), Kestrel Arcade |
 | R9 | UI Toolkit accessibility gaps | M/M | Flat accessible menu; U9 budget | UX |
 | R10 | Scope creep from "every topic" brief | H/M | 1.0/1.1/later cut above; X specs are docs first | Kestrel Arcade |
+| R12 | Engagement features drift into dark patterns | L/H | Ban list + ethics PR checklist; negative-signal metrics | UX, QA |
+| R13 | Predict/success probability too slow on device | M/M | Coarse N runs, Burst, cache per design hash | Gameplay Dev |
 | R11 | Name trademark conflict | L/H | X6 check, draft for counsel | Marketing |
 
 ## Owners

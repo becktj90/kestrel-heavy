@@ -25,3 +25,10 @@ Trevor (2026-10-11, 10:20 PM) delegated design and technical calls to Chief of S
 | 19 | 10-11 | Own repo (becktj90/kestrel-heavy), not the beckify monorepo. |
 | 20 | 10-11 | Scope tiers per MASTER_ROADMAP.md; X1–X7 specs feed U1–U9. PROJECT_STATE.md is the living context file. |
 | 21 | 10-11 | Legal/compliance docs are "draft for counsel"; audience/age rating needs Trevor's explicit decision. |
+| 22 | 10-11 | Engagement: loop Design→Predict→Launch→Learn→Improve→Relaunch. RELAUNCH <2 s from results, 10–30 s failure→fixed relaunch; cinematics shorten on repeat. |
+| 23 | 10-11 | Results screen primary button is RELAUNCH; TWEAK opens the designer on the failing part with one suggested fix. |
+| 24 | 10-11 | Ban list (ENGAGEMENT_SPEC §7) is non-negotiable; ethics checklist required on engagement PRs. |
+| 25 | 10-11 | Monetization: $0.99 premium, no IAP, no ads. Metrics are local on-device only, including negative signals. |
+| 26 | 10-11 | Streaks forgiving (freezes, 48 h grace, hideable); notifications opt-in, ≤1/week, none in KID; calm mode; social opt-in via Game Center only. |
+| 27 | 10-11 | Modes 1.0: campaign, sandbox, daily, weekly, challenge lab (12). 1.1: contract rush, failure investigation. Authored surprises only. |
+| 28 | 10-11 | Age rating draft: 4+, all ages, Data Not Collected, not Kids Category — **Trevor decides**. |

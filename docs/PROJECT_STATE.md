@@ -1,10 +1,10 @@
 # Project state (living context; update every milestone)
 
-_Last updated: 2026-10-11 ~10:30 PM ET (X1)._
+_Last updated: 2026-10-11 ~10:40 PM ET (H1)._
 
 ## Now
 - Engine: Unity 6.3 LTS, portrait-only, 2.0 = first Unity release under the existing bundle/record. Phaser = beckify.com web demo. `release/1.0.1` archived.
-- Lanes: **U1** Gameplay Dev (core parity), **U2** Graphics Dev (shell/portrait). X1 docs done; X2–X7 starting.
+- Lanes: **U1** Gameplay Dev (core parity), **U2** Graphics Dev (shell/portrait). X1 + H1 docs done; X2–X7 starting; H2–H6 mapped into U3–U9 (UNITY_SHIP_PLAN §8).
 - CI: dotnet + golden vectors on Ubuntu. Unity Build Automation connected (free tier, no card, read-only deploy key, **no build targets**). No builds until Trevor says ready.
 - Narration: ElevenLabs library being pre-generated on Trevor's paid Creator plan (non-beta models), local copies kept.
 
@@ -22,7 +22,8 @@ _Last updated: 2026-10-11 ~10:30 PM ET (X1)._
 - **Signing**/certs, ASC API key changes.
 - **Xcode** project changes.
 - **Privacy-label**-affecting changes (analytics, accounts, network).
-- **Legal positions** (terms, privacy policy, age rating/audience, trademarks).
+- **Legal positions** (terms, privacy policy, trademarks).
+- **Age rating/audience:** draft recommends 4+, all ages, Data Not Collected, not Kids Category (AGE_RATING_RECOMMENDATION.md).
 - **`UIRequiresFullScreen`** on iPad.
 - Optional asks: commissioned composer / paid AI music; Unity support email (drafted by Chief of Staff).
 
@@ -33,4 +34,5 @@ _Last updated: 2026-10-11 ~10:30 PM ET (X1)._
 4. Strictly original music and writing; no sound-alikes, no naming composers/works in prompts.
 5. All fictional names/pads; JSON packs are data, never code.
 6. Offline-first; no analytics; no server.
-7. Decide design/tech calls, log in DECISIONS.md; progress + demos to Chief of Staff each milestone.
+7. Engagement: no dark patterns (ENGAGEMENT_SPEC §7 ban list); ethics checklist on every engagement PR; $0.99 premium, no IAP, no ads.
+8. Decide design/tech calls, log in DECISIONS.md; progress + demos to Chief of Staff each milestone.
