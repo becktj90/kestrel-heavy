@@ -286,7 +286,7 @@ test('J2 reference: ISS nodal regression about -5.0 deg/day', () => {
 });
 
 test('J2 reference: sun-synchronous inclination at 800 km about 98.6 deg', () => {
-  const ssRate = 360 / 365.2422; // deg/day, mean Sun
+  const ssRate = 360 / 365.2421897; // deg/day, tropical year (matches Geopotential.MeanSunDegPerDay)
   const a = RE + 800e3, n = Math.sqrt(MU / a ** 3);
   const cosI = -ssRate / (DAY * 180 / Math.PI) / (1.5 * n * J2 * (RE / a) ** 2);
   const iDeg = Math.acos(cosI) * 180 / Math.PI;

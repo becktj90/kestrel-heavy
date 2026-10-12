@@ -167,14 +167,17 @@ The ellipsoid check at the equator is the defining semi-major axis. The pole is 
 
 `Geopotential.Accel` is point-mass plus zonal J2–J4 (Montenbruck & Gill 3.36–3.38). The twin is `gravityZonal` in `web/js/physics/gravity.js`. Constants: J2 = 1.08262668e-3, J3 = −2.53265648e-6, J4 = −1.61962159e-6 (EGM96 / NIMA TR8350.2 print on `data/bodies.json`). No tesseral terms. Ascent (`Headless`, `Ascent3Dof`) stays point-mass.
 
-Secular rates are first-order J2: Ω̇ = −1.5 n J2 (R/p)² cos i, plus ω̇ and Ṁ. The SSO solver uses that J2 rate alone against 360/365.2422 deg/day; **J4 is not included** in the SSO inclination. Critical inclination is arccos(√(1/5)) = 63.43494882292201° (and the supplementary 116.56505117707799°). The frozen-orbit eccentricity is −(J3 / 2 J2) (R/a) sin i. Mean ↔ osculating is a first-order J2 short-period map, finite at e = 0; the inverse is fixed-point iterated to convergence.
+Secular rates are first-order J2: Ω̇ = −1.5 n J2 (R/p)² cos i, plus ω̇ and Ṁ. The SSO solver uses that J2 rate alone against 360/365.2421897 deg/day (tropical year); **J4 is not included** in the SSO inclination. Critical inclination is arccos(√(1/5)) = 63.43494882292201° (and the supplementary 116.56505117707799°). The frozen-orbit eccentricity is −(J3 / 2 J2) (R/a) sin i. Mean ↔ osculating is a first-order J2 short-period map, finite at e = 0; the inverse is fixed-point iterated to convergence.
+
+Goldens for nodeSecular, ssoInclination, and frozenE are **hard-coded literals** computed outside the codebase (standalone Python in `GeopotentialTests.cs`, constants μ = 3.986004418e14, R = 6378137, J2 = 1.08262668e-3, J3 = −2.53265648e-6, tropical year 365.2421897 d). ssoInclination = 98.6031107° at 800 km was confirmed independently by Kestrel Physics. A separate literature check holds the ISS node near −5.0 deg/day at abs 0.1 deg/day.
 
 | quantity | absolute | relative | reasoning |
 |---|---|---|---|
 | zonalAccel | 0 | 1e-12 | Same closed form in C# and JS. Relative 1e-12 is the cross-language bar on a few multiplies. |
-| nodeSecular | 1e-3 deg/day | 0 | Against an independent first-order J2 closed form at ISS 420 km, 51.64°. Not against the −5.0 deg/day round number (that figure is about 0.05 deg/day off the first-order value). |
-| ssoInclination | 0.01 deg | 0 | Circular 800 km, mean-sun rate 360/365.2422 deg/day, **J2 only** (no J4). Against the independent closed form. |
+| nodeSecular | 1e-3 deg/day | 0 | Against the external literal −4.946640707855562 deg/day (ISS 420 km, 51.64°, first-order J2). |
+| ssoInclination | 0.01 deg | 0 | Against the external literal 98.6031107 deg at 800 km, **J2 only** (no J4), tropical year 365.2421897 d. |
 | criticalInclination | 0.01 deg | 0 | ω̇ = 0 at arccos(√(1/5)). |
-| nodeNumeric | 0 | 0.01 | RK4 with J2 only. Least-squares Ω̇ over an integer number of orbits (≥ 50) vs the first-order secular rate. J2² / J2 ≈ J2 ≈ 1e-3; the 1 % band is the claim that first-order secular dominates the fitted slope. |
+| nodeNumeric | 0 | 0.01 | RK4 with J2 only. Least-squares Ω̇ over an integer number of orbits (≥ 50) vs the external nodeSecular literal. J2² / J2 ≈ J2 ≈ 1e-3. |
 | meanOscRoundTrip | 1 m (a), 1e-7 (e) | 0 | First-order map; inverse iterated to convergence, not a single pass. |
-| frozenE | 1e-5 | 0 | Against −(J3 / 2 J2) (R/a) sin i at 800 km, 98.6°. Not against the 0.001 round number. |
+| frozenE | 1e-5 | 0 | Against the external literal 0.0010276351869085109 at 800 km, 98.6°. |
+| nodeLiterature | 0.1 deg/day | 0 | ISS published-order check ≈ −5.0 deg/day (looser than nodeSecular). |

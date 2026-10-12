@@ -22,8 +22,8 @@ namespace Kestrel.Core.Physics
         public const double J4 = -1.61962159e-6;
         public const double CriticalInclinationDeg = 63.43494882292201;
         public const double CriticalInclinationRetroDeg = 116.56505117707799;
-        /// <summary>Mean solar rate, deg/day, for the SSO solver (365.2422 day year).</summary>
-        public const double MeanSunDegPerDay = 360.0 / 365.2422;
+        /// <summary>Mean solar rate, deg/day, for the SSO solver (tropical year 365.2421897 d).</summary>
+        public const double MeanSunDegPerDay = 360.0 / 365.2421897;
 
         /// <summary>
         /// Point-mass plus zonal J2–J4. z is the Earth pole.

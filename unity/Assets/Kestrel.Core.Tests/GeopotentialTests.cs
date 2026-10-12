@@ -1,4 +1,28 @@
 // P2: zonal J2–J4, secular rates, mean ↔ osculating. Bands are "Gravity (P2)" in docs/PHYSICS.md.
+//
+// External goldens (computed OUTSIDE this repo; not derived from Geopotential):
+//
+//   MU = 3.986004418e14
+//   R  = 6378137
+//   J2 = 1.08262668e-3
+//   J3 = -2.53265648e-6
+//   tropical year = 365.2421897 d
+//
+//   python3 - <<'PY'
+//   import math
+//   MU,R,J2,J3 = 3.986004418e14, 6378137.0, 1.08262668e-3, -2.53265648e-6
+//   DAY, TY = 86400.0, 365.2421897
+//   a = R + 420e3
+//   n = math.sqrt(MU/a**3)
+//   print('nodeSecular', -1.5*n*J2*(R/a)**2*math.cos(math.radians(51.64))*DAY*180/math.pi)
+//   a = R + 800e3
+//   n = math.sqrt(MU/a**3)
+//   sun = (360/TY)*math.pi/180/DAY
+//   print('ssoInclination', math.degrees(math.acos(-sun/(1.5*n*J2*(R/a)**2))))
+//   print('frozenE', -(J3/(2*J2))*(R/a)*math.sin(math.radians(98.6)))
+//   PY
+//
+// ssoInclination = 98.6031107 deg was confirmed independently by Kestrel Physics with the same constants.
 using System;
 using Kestrel.Core.Bodies;
 using Kestrel.Core.Physics;
@@ -8,6 +32,11 @@ namespace Kestrel.Core.Tests
 {
     public class GeopotentialTests
     {
+        // Hard-coded literals from the external Python snippet above (and Physics for SSO).
+        const double NodeSecularIssDegPerDay = -4.946640707855562;
+        const double SsoInclination800KmDeg = 98.6031107;
+        const double FrozenE800KmSso = 0.0010276351869085109;
+
         static readonly double[][] Points =
         {
             new[] { Gravity.R_EARTH + 400e3, 0, 0 },
@@ -57,46 +86,47 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void NodeSecular_MatchesIndependentJ2ClosedForm()
+        public void NodeSecular_MatchesExternalLiteral()
         {
-            // Independent first-order J2: Ω̇ = −1.5 n J2 (R/p)² cos i. Not the −5.0 deg/day round number.
-            double a = Gravity.R_EARTH + 420e3;
-            double e = 0;
-            double iDeg = 51.64;
-            double expect = IndependentNodeRateDegPerDay(a, e, iDeg);
-            double got = Geopotential.NodeRateDegPerDay(a, e, iDeg);
-            Assert.AreEqual(expect, got, 1e-3, "nodeSecular");
-            TestContext.WriteLine("nodeSecular closed-form " + expect.ToString("G17") + " got " + got.ToString("G17")
-                + " err " + Math.Abs(got - expect).ToString("G17"));
+            // Literal: first-order J2 at a = R+420 km, e = 0, i = 51.64°. Source: external Python (file header).
+            double got = Geopotential.NodeRateDegPerDay(Gravity.R_EARTH + 420e3, 0, 51.64);
+            Assert.AreEqual(NodeSecularIssDegPerDay, got, 1e-3, "nodeSecular");
+            TestContext.WriteLine("nodeSecular literal " + NodeSecularIssDegPerDay.ToString("G17")
+                + " got " + got.ToString("G17") + " err " + Math.Abs(got - NodeSecularIssDegPerDay).ToString("G17"));
         }
 
         [Test]
-        public void SsoInclination_MatchesIndependentJ2ClosedForm()
+        public void NodeSecular_LiteratureIssAboutMinusFiveDegPerDay()
         {
-            // First-order J2 only. J3/J4 are not in the SSO solver.
+            // Published-order check (Vallado / common ISS figure): about −5.0 deg/day.
+            // Looser than nodeSecular; first-order J2 alone is ~0.05 deg/day off −5.0.
+            double got = Geopotential.NodeRateDegPerDay(Gravity.R_EARTH + 420e3, 0, 51.64);
+            Assert.AreEqual(-5.0, got, 0.1, "literature ISS node");
+        }
+
+        [Test]
+        public void SsoInclination_MatchesExternalLiteral()
+        {
+            // Literal 98.6031107 deg at 800 km: Kestrel Physics, mu/R/J2 as above, tropical year 365.2421897 d.
+            // J2 only; J4 is not in the SSO solver.
+            double got = Geopotential.SsoInclinationDeg(Gravity.R_EARTH + 800e3);
+            Assert.AreEqual(SsoInclination800KmDeg, got, 0.01, "ssoInclination");
+            TestContext.WriteLine("ssoInclination literal " + SsoInclination800KmDeg.ToString("G17")
+                + " got " + got.ToString("G17") + " err " + Math.Abs(got - SsoInclination800KmDeg).ToString("G17"));
             double a = Gravity.R_EARTH + 800e3;
-            double expect = IndependentSsoInclinationDeg(a);
-            double got = Geopotential.SsoInclinationDeg(a);
-            Assert.AreEqual(expect, got, 0.01, "ssoInclination");
-            TestContext.WriteLine("ssoInclination J2-only " + expect.ToString("G17") + " got " + got.ToString("G17")
-                + " err " + Math.Abs(got - expect).ToString("G17"));
             Assert.AreEqual(0.0, Geopotential.ArgpRateDegPerDay(a, 0, Geopotential.CriticalInclinationDeg), 1e-9);
             Assert.AreEqual(Geopotential.CriticalInclinationDeg, Math.Acos(Math.Sqrt(0.2)) * 180 / Math.PI, 1e-12);
             Assert.AreEqual(0.0, Geopotential.ArgpRateDegPerDay(a, 0, Geopotential.CriticalInclinationRetroDeg), 1e-9);
         }
 
         [Test]
-        public void FrozenOrbitEccentricity_MatchesIndependentFormula()
+        public void FrozenOrbitEccentricity_MatchesExternalLiteral()
         {
-            // e = −(J3 / 2 J2) (R/a) sin i. Independent transcription, not the 0.001 round number.
-            double a = Gravity.R_EARTH + 800e3;
-            double iDeg = 98.6;
-            double expect = -(Geopotential.J3 / (2.0 * Geopotential.J2)) * (Gravity.R_EARTH / a)
-                * Math.Sin(iDeg * Math.PI / 180.0);
-            double got = Geopotential.FrozenEccentricity(a, iDeg);
-            Assert.AreEqual(expect, got, 1e-5, "frozenE");
-            TestContext.WriteLine("frozenE formula " + expect.ToString("G17") + " got " + got.ToString("G17")
-                + " err " + Math.Abs(got - expect).ToString("G17"));
+            // Literal: e = −(J3/2J2)(R/a) sin i at a = R+800 km, i = 98.6°. Source: external Python (file header).
+            double got = Geopotential.FrozenEccentricity(Gravity.R_EARTH + 800e3, 98.6);
+            Assert.AreEqual(FrozenE800KmSso, got, 1e-5, "frozenE");
+            TestContext.WriteLine("frozenE literal " + FrozenE800KmSso.ToString("G17")
+                + " got " + got.ToString("G17") + " err " + Math.Abs(got - FrozenE800KmSso).ToString("G17"));
         }
 
         [Test]
@@ -117,7 +147,6 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(mean.e, back.e, 1e-7, "e");
             Assert.AreEqual(mean.i, back.i, 0);
             Assert.AreEqual(mean.raan, back.raan, 0);
-            // A second pass does not move the result: the inverse has converged.
             var again = Geopotential.OsculatingToMean(Geopotential.MeanToOsculating(back));
             Assert.AreEqual(back.a, again.a, 1e-9);
             Assert.AreEqual(back.e, again.e, 1e-12);
@@ -127,7 +156,8 @@ namespace Kestrel.Core.Tests
         public void NumericJ2_NodeDrift_FitsWholeOrbits()
         {
             // Circular ISS-like. J2 only. Fit Ω over an integer number of orbits (≥ 50).
-            // J2² / J2 ≈ J2 ≈ 1e-3; the band is rel 0.01 so that first-order secular is the claim.
+            // Compare to the external nodeSecular literal (not to Geopotential.Rates).
+            // J2² / J2 ≈ J2 ≈ 1e-3; the band is rel 0.01.
             double a = Gravity.R_EARTH + 420e3;
             double i = 51.64 * Math.PI / 180.0;
             double n = Math.Sqrt(Gravity.MU_EARTH / (a * a * a));
@@ -148,7 +178,6 @@ namespace Kestrel.Core.Tests
                 dy[0] = s[3]; dy[1] = s[4]; dy[2] = s[5];
                 dy[3] = g[0]; dy[4] = g[1]; dy[5] = g[2];
             };
-            // Land steps on the period so the span is exact.
             double dt = period / 200.0;
             int steps = orbits * 200;
             double sumT = 0, sumO = 0, sumTT = 0, sumTO = 0;
@@ -170,32 +199,12 @@ namespace Kestrel.Core.Tests
             }
             Assert.AreEqual(span, steps * dt, 1e-9 * span, "integer orbits");
             double slope = (nSamp * sumTO - sumT * sumO) / (nSamp * sumTT - sumT * sumT);
-            double secular = IndependentNodeRateRadPerSec(a, 0, i);
+            double secular = NodeSecularIssDegPerDay * Math.PI / 180.0 / 86400.0;
             double rel = Math.Abs(slope - secular) / Math.Abs(secular);
             TestContext.WriteLine("nodeNumeric orbits " + orbits + " period " + period.ToString("G17")
                 + " slope " + slope.ToString("G17") + " secular " + secular.ToString("G17")
                 + " rel err " + rel.ToString("G17"));
             Assert.Less(rel, 0.01, "nodeNumeric rel 0.01; J2² terms are about 1e-3");
-        }
-
-        /// <summary>Independent first-order J2 nodal rate, deg/day. Does not call Geopotential.Rates.</summary>
-        static double IndependentNodeRateDegPerDay(double a, double e, double iDeg)
-            => IndependentNodeRateRadPerSec(a, e, iDeg * Math.PI / 180.0) * 86400.0 * 180.0 / Math.PI;
-
-        static double IndependentNodeRateRadPerSec(double a, double e, double iRad)
-        {
-            double n = Math.Sqrt(Gravity.MU_EARTH / (a * a * a));
-            double p = a * (1.0 - e * e);
-            return -1.5 * n * Geopotential.J2 * (Gravity.R_EARTH / p) * (Gravity.R_EARTH / p) * Math.Cos(iRad);
-        }
-
-        /// <summary>Independent first-order J2 SSO inclination. No J3, no J4.</summary>
-        static double IndependentSsoInclinationDeg(double a)
-        {
-            double n = Math.Sqrt(Gravity.MU_EARTH / (a * a * a));
-            double sun = Geopotential.MeanSunDegPerDay * Math.PI / 180.0 / 86400.0;
-            double cosI = -sun / (1.5 * n * Geopotential.J2 * (Gravity.R_EARTH / a) * (Gravity.R_EARTH / a));
-            return Math.Acos(cosI) * 180.0 / Math.PI;
         }
 
         static double Raan(double[] s)
@@ -205,11 +214,11 @@ namespace Kestrel.Core.Tests
             return Math.Atan2(hx, -hy);
         }
 
-        /// <summary>Independent transcription of Montenbruck &amp; Gill 3.36–3.38.</summary>
+        /// <summary>Independent transcription of Montenbruck &amp; Gill 3.36–3.38 (constants inlined).</summary>
         static void ClosedFormAccel(double x, double y, double z, double[] o)
         {
-            double mu = Gravity.MU_EARTH, re = Gravity.R_EARTH;
-            double j2 = Geopotential.J2, j3 = Geopotential.J3, j4 = Geopotential.J4;
+            const double mu = 3.986004418e14, re = 6378137.0;
+            const double j2 = 1.08262668e-3, j3 = -2.53265648e-6, j4 = -1.61962159e-6;
             double r2 = x * x + y * y + z * z;
             double r = Math.Sqrt(r2);
             double r3 = r2 * r, r5 = r2 * r3, r7 = r5 * r2;
