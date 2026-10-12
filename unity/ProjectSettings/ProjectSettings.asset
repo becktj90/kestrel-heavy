@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!129 &1
+PlayerSettings:
+  m_ObjectHideFlags: 0
+  productGUID: 6b3c7e1a9d2f4c55b0e1a7c4d9f3e2b1
+  companyName: Beckify
+  productName: Kestrel Heavy Proto
+  defaultScreenOrientation: 0
+  allowedAutorotateToPortrait: 1
+  allowedAutorotateToPortraitUpsideDown: 0
+  allowedAutorotateToLandscapeRight: 0
+  allowedAutorotateToLandscapeLeft: 0
+  useOSAutorotation: 1
+  runInBackground: 0
+  bundleVersion: 0.1.0
+  applicationIdentifier:
+    iPhone: com.beckify.kestrelheavy.unityproto
+    Standalone: com.beckify.kestrelheavy.unityproto
+  buildNumber:
+    iPhone: 1
+  iOSTargetOSVersionString: 15.0
+  iOSTargetDevice: 2
+  appleDeveloperTeamID: 9TR6R5LV8M
+  iOSManualSigningProvisioningProfileType: 0
+  appleEnableAutomaticSigning: 1
+  iPhoneStrippingLevel: 0
+  iPhoneScriptCallOptimization: 0
+  scriptingBackend:
+    iPhone: 1
+  apiCompatibilityLevelPerPlatform: {}
+  iOSRequireARKit: 0
+  statusBarHidden: 1
+  requiresFullScreen: 1

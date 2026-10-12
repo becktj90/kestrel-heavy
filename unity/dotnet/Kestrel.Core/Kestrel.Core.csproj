@@ -1,0 +1,15 @@
+<!-- Builds the engine-agnostic core outside Unity from the SAME source files (linked, not copied).
+     netstandard2.1 matches Unity's API surface, so anything that builds here builds in Unity. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Kestrel.Core</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Kestrel.Core/**/*.cs" LinkBase="Kestrel.Core" />
+  </ItemGroup>
+</Project>
