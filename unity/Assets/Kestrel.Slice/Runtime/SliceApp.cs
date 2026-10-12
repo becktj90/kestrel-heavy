@@ -136,8 +136,7 @@ namespace Kestrel.Slice
         void ApplyDesignFraming()
         {
             if (cam == null || ui.layout.height <= 0 || designPanel.ClassListContains("hidden")) return;
-            float f = DesignFraming.VisibleFraction(ui.layout.height, designPanel.worldBound.yMin - ui.worldBound.yMin);
-            FrameCamera(rocketHeight, f);
+            FrameCamera(rocketHeight);
         }
 
         void SelectPreset(string id)
@@ -181,23 +180,34 @@ namespace Kestrel.Slice
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
-            float rr = r.mesh.bounds.extents.x;
-            var padR = PadTower.Apply(tower, r.height, rr, PadTower.DefaultArchetype(rr), PadTower.DefaultSeed);
-            float deckR = PadGround.DeckRadius(padR != null ? padR.Layout : null); // deck under every tower leg
-            deck.localScale = new Vector3(2 * deckR, deck.localScale.y, 2 * deckR);
+            float rr = r.mesh.bounds.extents.x; rocketRadius = rr;
+            padRenderer = PadTower.Apply(tower, r.height, rr, PadTower.DefaultArchetype(rr), PadTower.DefaultSeed);
+            deckRadius = PadGround.DeckRadius(padRenderer != null ? padRenderer.Layout : null); // deck under every tower leg
+            deck.localScale = new Vector3(2 * deckRadius, deck.localScale.y, 2 * deckRadius);
             flight.Plume.AttachGroundCloud(tower, 15f, PadTower.Fit(r.height, rr).height);
             rocketHeight = r.height; ApplyDesignFraming();
         }
 
-        float rocketHeight = 70; Vector3 camOffset;
-        void FrameCamera(float h, float visible)
+        float rocketHeight = 70, rocketRadius = 3, deckRadius = 15f; Vector3 camOffset; Kestrel.Pad.PadRenderer padRenderer;
+
+        /// <summary>Frame vehicle + tower + deck in the portrait viewport left above the design panel's live top edge
+        /// (PadFraming fit; panel fraction follows #115's collapse state).</summary>
+        void FrameCamera(float h)
         {
-            rocketHeight = h; float k = DesignFraming.DistanceScale(visible);
-            var aim = new Vector3(0, h * DesignFraming.AimHeight, 0);
-            cam.transform.position = aim + new Vector3(h * 0.9f, h * (0.45f - DesignFraming.AimHeight), -h * 1.4f) * k;
-            cam.transform.LookAt(aim);
+            rocketHeight = h;
             cam.ResetProjectionMatrix();
-            cam.projectionMatrix = DesignFraming.ShiftedProjection(cam.projectionMatrix, visible); camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero); }
+            float panel = 0f;
+            if (designPanel != null && ui != null && ui.layout.height > 0 && !designPanel.ClassListContains("hidden"))
+                panel = Mathf.Clamp01((ui.worldBound.yMax - designPanel.worldBound.yMin) / ui.layout.height);
+            float dpr = Screen.dpi > 0 ? Mathf.Max(1f, Mathf.Round(Screen.dpi / 160f)) : 3f;
+            var sa = Screen.safeArea;
+            var vp = PadFraming.Viewport(Screen.width, Screen.height, new Kestrel.Game.Layout.RectPx(sa.x, sa.y, sa.width, sa.height), dpr, panel);
+            var padT = tower != null ? tower.Find("Pad") : null;
+            var pts = PadFraming.Points(h, rocketRadius, deckRadius, PadFraming.PadBounds(padRenderer != null ? padRenderer.Layout : null, padT));
+            cam.transform.rotation = PadFraming.View;
+            cam.transform.position = PadFraming.Fit(pts, PadFraming.View, cam.fieldOfView, cam.aspect, vp);
+            camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
+        }
 
         void Launch()
         {
