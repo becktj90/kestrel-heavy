@@ -147,7 +147,7 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: 0.1.0
+  bundleVersion: 2.0.0
   preloadedAssets: []
   metroInputSource: 255
   wsaTransparentSwapchain: 0
@@ -173,12 +173,12 @@ PlayerSettings:
     Android: 
     Standalone: com.beckify.kestrelheavy.unityproto
     VisionOS: 
-    iPhone: com.beckify.kestrelheavy.unityproto
+    iPhone: com.beckify.kestrelheavy
     tvOS: 
   buildNumber:
     Standalone: 0
     VisionOS: 0
-    iPhone: 1
+    iPhone: 100
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
   AndroidBundleVersionCode: 1
