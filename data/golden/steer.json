@@ -1,0 +1,1993 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 1e-9,
+  "abs": 1e-9,
+  "note": "expo curve and sensitivity clamp; physics forces unchanged"
+ },
+ "count": 262,
+ "cases": [
+  {
+   "fn": "fullPx",
+   "viewportWidth": 0,
+   "out": 110
+  },
+  {
+   "fn": "fullPx",
+   "viewportWidth": 375,
+   "out": 72
+  },
+  {
+   "fn": "fullPx",
+   "viewportWidth": 390,
+   "out": 72
+  },
+  {
+   "fn": "fullPx",
+   "viewportWidth": 391,
+   "out": 110
+  },
+  {
+   "fn": "fullPx",
+   "viewportWidth": 800,
+   "out": 110
+  },
+  {
+   "fn": "clamp",
+   "sensitivity": 0,
+   "out": 0.6
+  },
+  {
+   "fn": "clamp",
+   "sensitivity": 0.6,
+   "out": 0.6
+  },
+  {
+   "fn": "clamp",
+   "sensitivity": 1,
+   "out": 1
+  },
+  {
+   "fn": "clamp",
+   "sensitivity": 1.6,
+   "out": 1.6
+  },
+  {
+   "fn": "clamp",
+   "sensitivity": 9,
+   "out": 1.6
+  },
+  {
+   "fn": "curve",
+   "dx": -200,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -200,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -200,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -200,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -200,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -200,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -200,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -110,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": -0.8700381626475668
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -0.8700381626475668
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.8700381626475668
+  },
+  {
+   "fn": "curve",
+   "dx": -110,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": -0.4416131536906999
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -0.4416131536906999
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.4416131536906999
+  },
+  {
+   "fn": "curve",
+   "dx": -110,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -110,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -110,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -110,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -110,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -72,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": -0.4416131536906999
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -0.4416131536906999
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.4416131536906999
+  },
+  {
+   "fn": "curve",
+   "dx": -72,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": -0.22415358990596934
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -0.22415358990596934
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.22415358990596934
+  },
+  {
+   "fn": "curve",
+   "dx": -72,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -72,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": -0.5075790610688277
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -0.5075790610688277
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.5075790610688277
+  },
+  {
+   "fn": "curve",
+   "dx": -72,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -72,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -72,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -55,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": -0.2870055595719446
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -0.2870055595719446
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.2870055595719446
+  },
+  {
+   "fn": "curve",
+   "dx": -55,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": -0.14567801244906112
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -0.14567801244906112
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.14567801244906112
+  },
+  {
+   "fn": "curve",
+   "dx": -55,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": -0.6499026516156707
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -0.6499026516156707
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.6499026516156707
+  },
+  {
+   "fn": "curve",
+   "dx": -55,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": -0.32987697769322355
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -0.32987697769322355
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.32987697769322355
+  },
+  {
+   "fn": "curve",
+   "dx": -55,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -1
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -1
+  },
+  {
+   "fn": "curve",
+   "dx": -55,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": -0.699751727323698
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -0.699751727323698
+  },
+  {
+   "fn": "peek",
+   "dx": -55,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.699751727323698
+  },
+  {
+   "fn": "curve",
+   "dx": -14,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": -0.03214510608901377
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -0.03214510608901377
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.03214510608901377
+  },
+  {
+   "fn": "curve",
+   "dx": -14,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": -0.016316182766619457
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -0.016316182766619457
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.016316182766619457
+  },
+  {
+   "fn": "curve",
+   "dx": -14,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": -0.07279019164254281
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -0.07279019164254281
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.07279019164254281
+  },
+  {
+   "fn": "curve",
+   "dx": -14,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": -0.0369467771289419
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -0.0369467771289419
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.0369467771289419
+  },
+  {
+   "fn": "curve",
+   "dx": -14,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": -0.15440623559204708
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": -0.15440623559204708
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.15440623559204708
+  },
+  {
+   "fn": "curve",
+   "dx": -14,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": -0.07837337208498346
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": -0.07837337208498346
+  },
+  {
+   "fn": "peek",
+   "dx": -14,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.07837337208498346
+  },
+  {
+   "fn": "curve",
+   "dx": -13,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": -0.028550871541088922
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.028550871541088922
+  },
+  {
+   "fn": "curve",
+   "dx": -13,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": -0.014491824569522626
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.014491824569522626
+  },
+  {
+   "fn": "curve",
+   "dx": -13,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": -0.06465131598205423
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.06465131598205423
+  },
+  {
+   "fn": "curve",
+   "dx": -13,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": -0.03281565426303517
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.03281565426303517
+  },
+  {
+   "fn": "curve",
+   "dx": -13,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": -0.13714164094914336
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": -0.13714164094914336
+  },
+  {
+   "fn": "curve",
+   "dx": -13,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": -0.06961022534640447
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": -13,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": -0.06961022534640447
+  },
+  {
+   "fn": "curve",
+   "dx": 0,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0
+  },
+  {
+   "fn": "curve",
+   "dx": 0,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0
+  },
+  {
+   "fn": "curve",
+   "dx": 0,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0
+  },
+  {
+   "fn": "curve",
+   "dx": 0,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0
+  },
+  {
+   "fn": "curve",
+   "dx": 0,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0
+  },
+  {
+   "fn": "curve",
+   "dx": 0,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 0,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0
+  },
+  {
+   "fn": "curve",
+   "dx": 13,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": 0.028550871541088922
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.028550871541088922
+  },
+  {
+   "fn": "curve",
+   "dx": 13,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": 0.014491824569522626
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.014491824569522626
+  },
+  {
+   "fn": "curve",
+   "dx": 13,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": 0.06465131598205423
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.06465131598205423
+  },
+  {
+   "fn": "curve",
+   "dx": 13,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": 0.03281565426303517
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.03281565426303517
+  },
+  {
+   "fn": "curve",
+   "dx": 13,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": 0.13714164094914336
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.13714164094914336
+  },
+  {
+   "fn": "curve",
+   "dx": 13,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": 0.06961022534640447
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0
+  },
+  {
+   "fn": "peek",
+   "dx": 13,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.06961022534640447
+  },
+  {
+   "fn": "curve",
+   "dx": 14,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": 0.03214510608901377
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.03214510608901377
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.03214510608901377
+  },
+  {
+   "fn": "curve",
+   "dx": 14,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": 0.016316182766619457
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.016316182766619457
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.016316182766619457
+  },
+  {
+   "fn": "curve",
+   "dx": 14,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": 0.07279019164254281
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.07279019164254281
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.07279019164254281
+  },
+  {
+   "fn": "curve",
+   "dx": 14,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": 0.0369467771289419
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.0369467771289419
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.0369467771289419
+  },
+  {
+   "fn": "curve",
+   "dx": 14,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": 0.15440623559204708
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.15440623559204708
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.15440623559204708
+  },
+  {
+   "fn": "curve",
+   "dx": 14,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": 0.07837337208498346
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.07837337208498346
+  },
+  {
+   "fn": "peek",
+   "dx": 14,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.07837337208498346
+  },
+  {
+   "fn": "curve",
+   "dx": 40,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": 0.17242728599059548
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.17242728599059548
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.17242728599059548
+  },
+  {
+   "fn": "curve",
+   "dx": 40,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": 0.08752047992575268
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.08752047992575268
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.08752047992575268
+  },
+  {
+   "fn": "curve",
+   "dx": 40,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": 0.39044870957662037
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.39044870957662037
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.39044870957662037
+  },
+  {
+   "fn": "curve",
+   "dx": 40,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": 0.1981835894024363
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.1981835894024363
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.1981835894024363
+  },
+  {
+   "fn": "curve",
+   "dx": 40,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": 0.8282395481737235
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.8282395481737235
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.8282395481737235
+  },
+  {
+   "fn": "curve",
+   "dx": 40,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": 0.42039705220208856
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.42039705220208856
+  },
+  {
+   "fn": "peek",
+   "dx": 40,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.42039705220208856
+  },
+  {
+   "fn": "curve",
+   "dx": 55,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": 0.2870055595719446
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.2870055595719446
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.2870055595719446
+  },
+  {
+   "fn": "curve",
+   "dx": 55,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": 0.14567801244906112
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.14567801244906112
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.14567801244906112
+  },
+  {
+   "fn": "curve",
+   "dx": 55,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": 0.6499026516156707
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.6499026516156707
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.6499026516156707
+  },
+  {
+   "fn": "curve",
+   "dx": 55,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": 0.32987697769322355
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.32987697769322355
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.32987697769322355
+  },
+  {
+   "fn": "curve",
+   "dx": 55,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 55,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": 0.699751727323698
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.699751727323698
+  },
+  {
+   "fn": "peek",
+   "dx": 55,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.699751727323698
+  },
+  {
+   "fn": "curve",
+   "dx": 72,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": 0.4416131536906999
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.4416131536906999
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.4416131536906999
+  },
+  {
+   "fn": "curve",
+   "dx": 72,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": 0.22415358990596934
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.22415358990596934
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.22415358990596934
+  },
+  {
+   "fn": "curve",
+   "dx": 72,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 72,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": 0.5075790610688277
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.5075790610688277
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.5075790610688277
+  },
+  {
+   "fn": "curve",
+   "dx": 72,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 72,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 72,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 110,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": 0.8700381626475668
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 0.8700381626475668
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 0.8700381626475668
+  },
+  {
+   "fn": "curve",
+   "dx": 110,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": 0.4416131536906999
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.4416131536906999
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.4416131536906999
+  },
+  {
+   "fn": "curve",
+   "dx": 110,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 110,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 110,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 110,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 110,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 150,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 0.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 150,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "out": 0.7253702152478242
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 0.7253702152478242
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 0.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 0.7253702152478242
+  },
+  {
+   "fn": "curve",
+   "dx": 150,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 1,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 150,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 1,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 150,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 1.6,
+   "viewportWidth": 375,
+   "armed": true,
+   "out": 1
+  },
+  {
+   "fn": "curve",
+   "dx": 150,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": false,
+   "out": 1
+  },
+  {
+   "fn": "peek",
+   "dx": 150,
+   "sensitivity": 1.6,
+   "viewportWidth": 800,
+   "armed": true,
+   "out": 1
+  }
+ ]
+}
