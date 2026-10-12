@@ -26,6 +26,7 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(reg.KidHold);
             Assert.IsFalse(reg.RelaxedHold);
             Assert.AreEqual(Weather.DefaultWindLimitMs, reg.WindLimitMs);
+            Assert.AreEqual(28.5, reg.LaunchLatitude, 1e-12);
             Assert.AreEqual(Sensors.AltitudeRel, reg.Raw.Obj("sensors").Num("altitudeRel"));
             Assert.AreEqual(Sensors.SpeedRel, reg.Raw.Obj("sensors").Num("speedRel"));
             Assert.AreEqual(Sensors.AngleDeg, reg.Raw.Obj("sensors").Num("angleDeg"));

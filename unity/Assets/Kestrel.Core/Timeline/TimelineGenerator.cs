@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
 using Kestrel.Core.Economy;
+using Kestrel.Core.Params;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 
@@ -13,11 +14,18 @@ namespace Kestrel.Core.Timeline
     public static class TimelineGenerator
     {
         public static Timeline Generate(Catalog catalog, Design vehicle, Pad pad, Mission mission, uint seed)
+            => Generate(catalog, vehicle, pad, mission, seed, null);
+
+        /// <summary>
+        /// When mission.latitude is null, latitude comes from registry.LaunchLatitude (data/params.json flight.launchLatitude).
+        /// An explicit mission latitude still wins. A null registry falls back to Stack.LAUNCH_LATITUDE.
+        /// </summary>
+        public static Timeline Generate(Catalog catalog, Design vehicle, Pad pad, Mission mission, uint seed, Registry registry)
         {
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
             if (vehicle == null) throw new ArgumentNullException(nameof(vehicle));
             if (vehicle.stages == null || vehicle.stages.Count == 0) throw new ArgumentException("vehicle has no stages");
-            var b = new Builder(catalog, vehicle, pad ?? Pad.For(catalog, vehicle), mission ?? new Mission(), seed);
+            var b = new Builder(catalog, vehicle, pad ?? Pad.For(catalog, vehicle), mission ?? new Mission(), seed, registry);
             return b.Run();
         }
 
@@ -65,11 +73,11 @@ namespace Kestrel.Core.Timeline
             long propRefund;
             string orbitLabel = "";
 
-            public Builder(Catalog catalog, Design vehicle, Pad pad, Mission mission, uint seed)
+            public Builder(Catalog catalog, Design vehicle, Pad pad, Mission mission, uint seed, Registry registry)
             {
                 c = catalog; d = vehicle; this.pad = pad; this.mission = mission; this.seed = seed;
                 mode = TimelineClock.NormalizeMode(mission.mode);
-                latitude = mission.latitude ?? Stack.LAUNCH_LATITUDE;
+                latitude = mission.latitude ?? registry?.LaunchLatitude ?? Stack.LAUNCH_LATITUDE;
             }
 
             public Timeline Run()

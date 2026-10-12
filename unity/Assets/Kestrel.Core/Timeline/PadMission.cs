@@ -1,7 +1,6 @@
 // Inputs to the timeline generator. The G2 pad generator is not in the core yet;
 // Pad is the hardware the generator is allowed to mention (docs/MISSION_EVENTS.md §2).
 using Kestrel.Core.Data;
-using Kestrel.Core.Json;
 using Kestrel.Core.Vehicle;
 
 namespace Kestrel.Core.Timeline
@@ -54,23 +53,7 @@ namespace Kestrel.Core.Timeline
         public string recovery;
         public bool stageParachute;
         public bool fairingParachute;
-        /// <summary>Launch latitude in degrees. Null uses Stack.LAUNCH_LATITUDE (the same constant the sim uses today).</summary>
+        /// <summary>Launch latitude in degrees. Null uses Registry.LaunchLatitude when a registry is passed, otherwise Stack.LAUNCH_LATITUDE.</summary>
         public double? latitude;
-    }
-
-    /// <summary>
-    /// Reads the flight section of data/params.json without taking a compile dependency on the U1 registry type.
-    /// When that registry is on main, pass its raw object here (key flight.launchLatitude).
-    /// </summary>
-    public static class TimelineParams
-    {
-        public const string LatitudeKey = "launchLatitude";
-
-        public static double LaunchLatitude(JsonObject root, double fallback = Stack.LAUNCH_LATITUDE)
-        {
-            var flight = root?.Obj("flight");
-            if (flight != null && flight.TryGetValue(LatitudeKey, out var v) && v is double d && !double.IsNaN(d) && !double.IsInfinity(d)) return d;
-            return fallback;
-        }
     }
 }
