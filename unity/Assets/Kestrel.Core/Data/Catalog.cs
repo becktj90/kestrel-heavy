@@ -51,6 +51,8 @@ namespace Kestrel.Core.Data
         public JsonObject Econ;
         /// <summary>propellants.engines.materials.payloads version numbers. Part of the max-Q cache key.</summary>
         public string VersionKey = "0";
+        /// <summary>FNV-1a 64 of the four raw catalog documents. A data edit with no version bump still misses the cache.</summary>
+        public string ContentHash = "0";
 
         public Vehicle.Design Preset(string id) => Presets.Find(p => p.id == id);
 
@@ -62,6 +64,7 @@ namespace Kestrel.Core.Data
             var matDoc = MiniJson.ParseObject(materials);
             var payDoc = MiniJson.ParseObject(payloads);
             c.VersionKey = Ver(propDoc) + "." + Ver(engDoc) + "." + Ver(matDoc) + "." + Ver(payDoc);
+            c.ContentHash = Fingerprint(propellants, engines, materials, payloads);
             foreach (JsonObject o in propDoc.Arr("propellants"))
             {
                 var p = new Propellant
@@ -127,6 +130,28 @@ namespace Kestrel.Core.Data
         }
 
         static string Ver(JsonObject doc) => doc.Num("version", 0).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        /// <summary>FNV-1a 64 of the four raw JSON documents, separated by 0x1F. 16 lowercase hex digits.</summary>
+        public static string Fingerprint(string propellants, string engines, string materials, string payloads)
+        {
+            ulong h = 14695981039346656037UL;
+            void Mix(string s)
+            {
+                if (s == null) s = "";
+                for (int i = 0; i < s.Length; i++)
+                {
+                    h ^= s[i];
+                    h *= 1099511628211UL;
+                }
+                h ^= 0x1F;
+                h *= 1099511628211UL;
+            }
+            Mix(propellants);
+            Mix(engines);
+            Mix(materials);
+            Mix(payloads);
+            return h.ToString("x16");
+        }
 
         /// <summary>Load from a checkout: data/*.json + web/js/economy-data/constants.json.</summary>
         public static Catalog LoadFromRepo(string repoRoot)

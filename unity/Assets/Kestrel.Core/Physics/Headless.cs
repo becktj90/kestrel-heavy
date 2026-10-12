@@ -109,19 +109,6 @@ namespace Kestrel.Core.Physics
         public int StageCount => st.Length;
         double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1;
         bool liftedOff, sawKarman; double karmanT; string outcome = "timeout";
-        /// <summary>
-        /// Climbing, and escape-speed dynamic pressure at this altitude is below the recorded peak.
-        /// Cleared when the vehicle descends back into air that can still raise the peak.
-        /// Observational: it does not change the RK4 step. <see cref="Headless.Simulate"/> ignores it.
-        /// </summary>
-        public bool MaxQSealed { get; private set; }
-        /// <summary>
-        /// True after the vehicle has fallen at least 500 m from a peak above 2 km while the air
-        /// at that altitude can still beat the recorded max-Q. The reference ascent then runs to
-        /// thrust cutoff instead of keeping the climb-only peak. Observational.
-        /// </summary>
-        public bool DenseDescent { get; private set; }
-        double maxAltSeen;
 
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
         public double LastP, LastQ, LastMach, LastThrust;
@@ -232,14 +219,6 @@ namespace Kestrel.Core.Physics
             double q = 0.5 * rho * vrel * vrel;
             // Observational, like KarmanTime: recording the altitude does not change the step.
             if (q > maxQ) { maxQ = q; maxQTime = T; maxQAlt = alt; }
-            // Same sample. Escape-speed dynamic pressure is a ceiling for a climb. A descent back
-            // into denser air clears it so the reference run does not freeze the ascent peak.
-            bool boundBelow = maxQ > 0 && 0.5 * rho * (2 * Gravity.MU_EARTH / r) < maxQ;
-            if (alt > maxAltSeen) maxAltSeen = alt;
-            if (vr < -1 && maxAltSeen > 2000 && alt < maxAltSeen - 500 && !boundBelow)
-                DenseDescent = true;
-            if (DenseDescent || (vr < 0 && !boundBelow)) MaxQSealed = false;
-            else if (vr > 0 && boundBelow) MaxQSealed = true;
             double gl = Gravity.MU_EARTH / (r * r);
             double v = JsMath.Hypot(vx, vy);
             LastP = p; LastQ = q; LastMach = vrel / sound; LastThrust = 0;

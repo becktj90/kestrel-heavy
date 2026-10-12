@@ -4,8 +4,14 @@
 // Stations match RocketMeshBuilder (metres, +Y up, base of stage 1 at y = 0) so the
 // markers sit on the rocket the player sees. CP formulas: Barrowman 1967 as restated
 // in the USU MAE notes (cone 0.666 Ln, ogive 0.466 Ln) and Crowell 1996 (von Karman 0.500 Ln).
-// Cylinders contribute CNa = 0. The body term is the conical transition (shoulders and interstages).
+// Cylinders contribute CNa = 0. The body term is the conical transition on each interstage
+// (length 0.6 × the larger diameter) plus a zero-length shoulder where the fairing meets the top stage.
+// Fins, when aero.fins is set, are an unswept square (chord = span) with the trailing edge at the base.
+// l_F equals the span. CP is the quarter chord of the MAC, x_f metres aft of the root leading edge
+// (0.25c for a square fin). The hangar station from the nose is length − (c_r − x_f).
 // Grid fins are mass and drag only; they do not move CP.
+// cp_m is the hangar marker: clamped to the nose when the raw CP is ahead of the vehicle.
+// stabilityCal keeps the raw CP.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
@@ -15,7 +21,8 @@ namespace Kestrel.Core.Designer
 {
     public struct AeroBalance
     {
-        public double cg_m, cp_m, stabilityCal, refDiameter_m, length_m, mass_kg;
+        public double cg_m, cp_m, cpRaw_m, stabilityCal, refDiameter_m, length_m, mass_kg;
+        public bool cpAheadOfNose;
     }
 
     public static class Balance
@@ -34,8 +41,9 @@ namespace Kestrel.Core.Designer
             for (int i = 0; i < stages.Count; i++)
             {
                 var s = stages[i];
-                c.EngineById.TryGetValue(s.engine ?? "", out var e);
-                double bell = Bell(e != null ? e.diameter : 0);
+                c.EngineById.TryGetValue(s.engine ?? "", out var eng);
+                var point = EnginePoint.Of(eng, s.nozzle);
+                double bell = Bell(point.known ? point.diameter : 0);
                 double r = s.diameter / 2;
                 bool bottom = i == 0, top = i == stages.Count - 1;
                 double thrust = 0.6 * r + (bottom ? 0 : bell * 0.7);
@@ -45,29 +53,34 @@ namespace Kestrel.Core.Designer
                 double yTank1 = yProp0 + tank;
 
                 double structure = Mass.StructureMass(c, s, d.safetyFactor);
-                double engines = Mass.EnginesMass(c, s);
+                double engines = point.known ? point.mass * s.engineCount : 0;
                 double av = top ? AvionicsKg(d.avionicsTier) : 0;
-                double yEngine = bottom ? bell / 2 : yBase - InterLength(stages[i - 1].diameter, s.diameter) / 2;
+                double yEngine = bottom ? bell / 2 : yBase - InterstageAero.Length(stages[i - 1].diameter, s.diameter) / 2;
                 Add(engines, yEngine);
                 Add(structure, (yBase + yTank1) / 2);
+                double interMass = InterstageAero.MassKg(c, d, i);
                 if (!top)
                 {
-                    double inter = InterLength(s.diameter, stages[i + 1].diameter);
-                    Add(s.interstageMass, yTank1 + inter / 2);
+                    double inter = InterstageAero.Length(s.diameter, stages[i + 1].diameter);
+                    bool derivedHere = !s.interstageSpecified && i > 0 && !stages[i - 1].interstageSpecified;
+                    if (derivedHere) Add(interMass, yBase - InterstageAero.Length(stages[i - 1].diameter, s.diameter) / 2);
+                    else Add(interMass, yTank1 + inter / 2);
                     Add(s.separationMass, yTank1);
                     transitions.Add(new Transition { yForward = yTank1 + inter, length = inter, dForward = stages[i + 1].diameter, dAft = s.diameter });
                     y = yTank1 + inter;
                 }
                 else
                 {
-                    Add(s.interstageMass, yTank1);
+                    if (i > 0 && !s.interstageSpecified && !stages[i - 1].interstageSpecified)
+                        Add(interMass, yBase - InterstageAero.Length(stages[i - 1].diameter, s.diameter) / 2);
+                    else Add(interMass, yTank1);
                     Add(s.separationMass, yTank1);
                     y = yTank1;
                 }
                 Add(av, yTank1);
                 if (bottom)
                 {
-                    double before = structure + engines + s.interstageMass + s.separationMass + av;
+                    double before = structure + engines + interMass + s.separationMass + av;
                     if (d.legs) Add(LegFraction * before, 0);
                     if (d.gridFins) Add(GridFinKgPerM2 * Math.PI * r * r, yTank1);
                     if (d.rcs) Add(RcsKg, yTank1);
@@ -86,14 +99,15 @@ namespace Kestrel.Core.Designer
             Add(d.payloadMass, yJoint + fairL * (1 - noseFrac) / 2);
 
             var so = d.strapOns;
-            if (so != null && so.count > 0 && c.EngineById.ContainsKey(so.engine ?? ""))
+            if (so != null && so.count > 0 && c.EngineById.TryGetValue(so.engine ?? "", out var soEng))
             {
-                double sb = Bell(c.EngineById[so.engine].diameter);
+                var sp = EnginePoint.Of(soEng, so.nozzle);
+                double sb = Bell(sp.diameter);
                 double sr = so.diameter / 2;
                 double stank = DesignMath.SizeTank(c, so.propellant, so.propMass, so.diameter).length;
                 double snose = 2.2 * sr;
                 int n = so.count;
-                Add(Mass.EnginesMass(c, so) * n, sb / 2);
+                Add(sp.mass * so.engineCount * n, sb / 2);
                 Add(80 * n, sb + stank / 2);
                 Add(Mass.StructureMass(c, so, d.safetyFactor) * n, sb + (stank + snose) / 2);
                 Add(so.propMass * n, sb + stank / 2);
@@ -103,11 +117,13 @@ namespace Kestrel.Core.Designer
             double length = yJoint + fairL;
             double dRef = stages.Count > 0 ? Stack.ReferenceDiameter(d) : 0;
             double cg = mSum == 0 ? 0 : my / mSum;
-            double cp = Cp(d, stages, length, dRef, fairD, fairL, transitions, cones);
+            double cpRaw = Cp(d, stages, length, dRef, fairD, fairL, transitions, cones);
+            bool ahead = cpRaw > length;
             return new AeroBalance
             {
-                cg_m = cg, cp_m = cp, refDiameter_m = dRef, length_m = length, mass_kg = mSum,
-                stabilityCal = dRef > 0 ? (cg - cp) / dRef : 0,
+                cg_m = cg, cpRaw_m = cpRaw, cp_m = ahead ? length : cpRaw, cpAheadOfNose = ahead,
+                refDiameter_m = dRef, length_m = length, mass_kg = mSum,
+                stabilityCal = dRef > 0 ? (cg - cpRaw) / dRef : 0,
             };
         }
 
@@ -126,32 +142,23 @@ namespace Kestrel.Core.Designer
 
             foreach (var t in transitions)
             {
-                if (!(t.dForward > 0) || !(t.dAft > 0)) continue;
-                double cn = 2 * (Sq(t.dAft / dRef) - Sq(t.dForward / dRef));
+                InterstageAero.Conical(t.dAft, t.dForward, t.length, dRef, out double cn, out double xFwd);
                 if (cn == 0) continue;
-                double x = length - t.yForward;
-                if (t.length > 0)
-                {
-                    double ratio = t.dForward / t.dAft;
-                    double denom = 1 - ratio * ratio;
-                    if (denom != 0) x += (t.length / 3) * (1 + (1 - ratio) / denom);
-                }
-                Add(cn, x);
+                Add(cn, (length - t.yForward) + xFwd);
             }
 
             if (d.fins && d.finCount > 0 && d.finSpanM > 0 && stages.Count > 0)
             {
-                // l_F is the mid-chord length, not 0. An unswept fin has x_t = 0, so l_F = span.
-                // sqrt(s^2 + (x_t + (c_t - c_r)/2)^2) keeps a later sweep key from needing a new formula.
-                double s = d.finSpanM, cr = s, ct = s, xt = 0, xr = 0;
-                double lf = Math.Sqrt(s * s + Sq(xt + (ct - cr) / 2));
+                // Unswept square: l_F is the span. The general mid-chord length
+                // sqrt(s^2 + (x_t + (c_t - c_r)/2)^2) equals the span when x_t = 0 and c_r = c_t.
+                double s = d.finSpanM, cr = s, ct = s, xt = 0;
+                double lf = s;
                 int n = d.finCount;
                 double cna1 = (4.0 * n * Sq(s / dRef)) / (1 + Math.Sqrt(1 + Sq(2 * lf / (cr + ct))));
                 double radius = stages[0].diameter / 2;
                 double kfb = 1 + radius / (s + radius);
-                double xb = length - cr;
-                double xf = xb + (xr / 3) * (cr + 2 * ct) / (cr + ct) + (1.0 / 6) * (cr + ct - cr * ct / (cr + ct));
-                Add(kfb * cna1, xf);
+                double xf = FinCpAftOfRootLe(cr, ct, xt);
+                Add(kfb * cna1, length - (cr - xf));
             }
 
             foreach (var cone in cones)
@@ -166,6 +173,19 @@ namespace Kestrel.Core.Designer
             return length - cnx / cna;
         }
 
+        /// <summary>
+        /// Barrowman fin CP, metres aft of the root leading edge.
+        /// x_f = (x_t/3)(c_r+2c_t)/(c_r+c_t) + (1/6)(c_r+c_t − c_r c_t/(c_r+c_t)).
+        /// A square unswept fin is 0.25c. With the trailing edge on the base the station
+        /// above the base is c_r − x_f (0.75c), not x_f itself.
+        /// </summary>
+        public static double FinCpAftOfRootLe(double cr, double ct, double xt)
+        {
+            double sum = cr + ct;
+            if (!(sum > 0)) return 0;
+            return (xt / 3.0) * (cr + 2 * ct) / sum + (1.0 / 6.0) * (sum - cr * ct / sum);
+        }
+
         static double Sq(double x) => x * x;
 
         /// <summary>Exposed bell height. Same clamp as RocketMeshBuilder.</summary>
@@ -176,8 +196,6 @@ namespace Kestrel.Core.Designer
             if (b > 4) return 4;
             return b;
         }
-
-        static double InterLength(double dLower, double dUpper) => 1.2 * Math.Max(dLower / 2, dUpper / 2);
 
         /// <summary>Fraction of fairing length that is nose. Same split as RocketMeshBuilder.</summary>
         public static double NoseFraction(string nose)

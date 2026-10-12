@@ -1,10 +1,11 @@
 // Cached Headless reference ascent for designer max-Q.
 // Quick() never runs this. A miss leaves maxQStale true.
 // Cost: Stack.SimInputs → the same RK4 step as Headless (dt 0.2 s, default steering, no sample buffer).
-// The run stops once MaxQSealed is set, unless a dense descent clears that stop (AscentSim.DenseDescent).
-// Headless.Simulate itself always runs to thrust cutoff and ignores the flag, so simulate goldens do not move.
-// It does not fly an unpowered re-entry: the integrator returns when thrust ends.
-// Budget: ≤ 30 ms off the edit frame, measured by `kestrel readout-bench`.
+// The run goes to thrust cutoff. There is no early stop: a climb-only seal drops a descent peak,
+// and a vacuum-periapsis bound both false-stopped the sounding rocket and ran slower than the full ascent.
+// The integrator returns when thrust ends, so this is not an unpowered re-entry.
+// Budget: the reference ascent is measured by `kestrel readout-bench`. Release builds of the shipped
+// presets stay under 30 ms. Debug (what CI runs) is posted against that budget in docs/PHYSICS.md.
 // The UI waits ReferenceDebounce.DebounceMs after the last edit, then calls Readout.Reference
 // off the main thread, or ReferenceJob.Step with a ≤ 2 ms budget.
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace Kestrel.Core.Designer
         public const double FrameBudgetMs = 2;
         public const double TotalBudgetMs = 30;
 
-        struct Entry { public string key; public double qPa, altM; }
+        struct Entry { public string key; public double qPa, altM, maxG; }
         static readonly Dictionary<ulong, Entry> Cache = new Dictionary<ulong, Entry>();
         static readonly object Gate = new object();
 
@@ -30,9 +31,16 @@ namespace Kestrel.Core.Designer
             lock (Gate) Cache.Clear();
         }
 
-        /// <summary>Catalog version plus canonical design JSON. The cache stores this and compares it on a hash hit.</summary>
+        /// <summary>
+        /// Catalog version, catalog content hash, and canonical design JSON.
+        /// The cache stores this and compares it on a hash hit.
+        /// </summary>
         public static string CanonicalKey(Catalog c, JsonObject design)
-            => "cat=" + (c != null && c.VersionKey != null ? c.VersionKey : "0") + "\n" + JsonWriter.Stringify(Canon(design));
+        {
+            string ver = c != null && c.VersionKey != null ? c.VersionKey : "0";
+            string body = c != null && c.ContentHash != null ? c.ContentHash : "0";
+            return "cat=" + ver + ":" + body + "\n" + JsonWriter.Stringify(Canon(design));
+        }
 
         /// <summary>FNV-1a 64-bit of <see cref="CanonicalKey"/>, 16 lowercase hex digits.</summary>
         public static string DesignHash(Catalog c, JsonObject design) => Fnv1a64(CanonicalKey(c, design)).ToString("x16");
@@ -49,22 +57,24 @@ namespace Kestrel.Core.Designer
             return h;
         }
 
-        public static bool TryGet(string key, out double qPa, out double altM)
+        public static bool TryGet(string key, out double qPa, out double altM) => TryGet(key, out qPa, out altM, out _);
+
+        public static bool TryGet(string key, out double qPa, out double altM, out double maxG)
         {
             lock (Gate)
             {
                 if (key != null && Cache.TryGetValue(Fnv1a64(key), out var e) && e.key == key)
                 {
-                    qPa = e.qPa; altM = e.altM; return true;
+                    qPa = e.qPa; altM = e.altM; maxG = e.maxG; return true;
                 }
             }
-            qPa = 0; altM = 0; return false;
+            qPa = 0; altM = 0; maxG = 0; return false;
         }
 
-        public static void Store(string key, double qPa, double altM)
+        public static void Store(string key, double qPa, double altM, double maxG)
         {
             if (key == null) return;
-            lock (Gate) Cache[Fnv1a64(key)] = new Entry { key = key, qPa = qPa, altM = altM };
+            lock (Gate) Cache[Fnv1a64(key)] = new Entry { key = key, qPa = qPa, altM = altM, maxG = maxG };
         }
 
         public static QuickReadout Run(Catalog c, JsonObject design)
@@ -73,7 +83,7 @@ namespace Kestrel.Core.Designer
             if (!TryGet(key, out _, out _))
             {
                 var sim = Simulate(c, design);
-                Store(key, sim.maxQ, sim.maxQAlt);
+                Store(key, sim.maxQ, sim.maxQAlt, sim.maxG);
             }
             return Readout.Quick(c, design);
         }
@@ -85,14 +95,9 @@ namespace Kestrel.Core.Designer
             return Fly(input.stages, input.opts);
         }
 
-        /// <summary>Same steps as Headless.Simulate, returning early only while the peak is sealed and no dense descent has reopened it.</summary>
+        /// <summary>The reference ascent is a full powered flight. Same steps as <see cref="Headless.Simulate"/>.</summary>
         public static SimResult Fly(System.Collections.Generic.IList<SimStage> stages, SimOptions opts)
-        {
-            var sim = new AscentSim(stages, opts);
-            while (sim.Tick())
-                if (sim.MaxQSealed && !sim.DenseDescent) break;
-            return sim.Finish();
-        }
+            => Headless.Simulate(stages, opts);
 
         static object Canon(object v)
         {
@@ -162,10 +167,10 @@ namespace Kestrel.Core.Designer
             var sw = System.Diagnostics.Stopwatch.StartNew();
             while (true)
             {
-                if (!sim.Tick() || (sim.MaxQSealed && !sim.DenseDescent))
+                if (!sim.Tick())
                 {
                     var r = sim.Finish();
-                    ReferenceAscent.Store(key, r.maxQ, r.maxQAlt);
+                    ReferenceAscent.Store(key, r.maxQ, r.maxQAlt, r.maxG);
                     done = true;
                     return true;
                 }

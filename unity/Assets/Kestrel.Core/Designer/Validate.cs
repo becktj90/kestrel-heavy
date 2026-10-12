@@ -85,28 +85,31 @@ namespace Kestrel.Core.Designer
                     warnings.Add(Iss("landing-hardware", "recovery", "Landing fuel is reserved but legs or grid fins are missing. Add them, or set the landing reserve to 0."));
                 if (r.mass.fairing > Math.Max(Lim.heavyFairingKg, r.mass.payload))
                     warnings.Add(Iss("heavy-fairing", "payload", $"The fairing ({Fmt(r.mass.fairing / 1000, 1)} t) outweighs the payload. A composite or shorter fairing saves mass."));
-                AeroNotes(c, design, r, warnings);
+                // Version 2 stability and max-Q wording lives in DesignRules. Emitting both would double the issues.
+                if ((int)design.Num("version") < 2)
+                    AeroNotes(c, design, r, blocks, warnings);
             }
             if (r != null) DesignRules.Append(c, design, blocks, warnings, r);
             return new EngineeringReport { ok = blocks.Count == 0, blocks = blocks, warnings = warnings, readout = r };
         }
 
         /// <summary>
-        /// Liftoff stability is a warning, never a block. The 1–2 cal band and the &gt;4 cal overstable
-        /// rule apply only to finned or unguided rockets. A liquid stage with gimbal gets an
-        /// engine-steered note instead of a launch block. maxq-high is warn-only and skips unguided solids.
+        /// v1 readout notes. An unguided rocket below 0 cal blocks. Pad steering is a gimbal on
+        /// stage 1 or on a strap-on; a gimballed upper stage does not count. The 1–2 cal band and
+        /// the &gt;4 cal overstable rule apply only to finned or pad-unguided rockets. A pad-lit
+        /// liquid with gimbal gets an engine-steered note. maxq-high is warn-only and skips unguided solids.
         /// </summary>
-        static void AeroNotes(Catalog c, JsonObject design, QuickReadout r, List<Issue> warnings)
+        static void AeroNotes(Catalog c, JsonObject design, QuickReadout r, List<Issue> blocks, List<Issue> warnings)
         {
             bool finned = design.Obj("aero") != null && design.Obj("aero").Bool("fins");
-            bool steered = AnyGimbal(c, design);
+            bool steered = PadSteered(c, design);
             bool aeroBand = finned || !steered;
             if (r.stabilityCal < 0)
             {
                 if (LiquidGimbal(c, design))
                     warnings.Add(Iss("unstable", "aero", $"Liftoff stability is {Fmt(r.stabilityCal)} cal (CP above the CG). Liquid stages are engine-steered, so this does not stop the launch."));
                 else
-                    warnings.Add(Iss("unstable", "aero", $"Liftoff stability is {Fmt(r.stabilityCal)} cal (CP above the CG). Add fins or move mass forward."));
+                    blocks.Add(Iss("unstable", "aero", "An unguided rocket below 0 cal cannot launch. Add fins or move mass forward."));
             }
             else if (aeroBand && r.stabilityCal < 1)
                 warnings.Add(Iss("unstable", "aero", $"Liftoff stability is {Fmt(r.stabilityCal)} cal. Finned and unguided rockets aim for 1–2 cal."));
@@ -114,6 +117,15 @@ namespace Kestrel.Core.Designer
                 warnings.Add(Iss("overstable", "aero", $"Liftoff stability is {Fmt(r.stabilityCal)} cal, past 4. It may weathercock in the wind."));
             if (!r.maxQStale && r.maxQ_kPa.HasValue && r.maxQ_kPa.Value > MaxQWarnKPa && !UnguidedSolid(c, design))
                 warnings.Add(Iss("maxq-high", "aero", $"Max-Q is {Fmt(r.maxQ_kPa.Value, 1)} kPa, above {MaxQWarnKPa.ToString(System.Globalization.CultureInfo.InvariantCulture)} kPa. This warns only; it does not stop the launch."));
+        }
+
+        /// <summary>Stage 1, or any strap-on, has a gimbal. An upper stage does not steer the pad.</summary>
+        static bool PadSteered(Catalog c, JsonObject design)
+        {
+            var stages = design.Arr("stages");
+            if (stages != null && stages.Count > 0 && Gimbal(c, stages[0] as JsonObject) > 0) return true;
+            var so = design.Obj("strapOns");
+            return so != null && so.Num("count") > 0 && Gimbal(c, so) > 0;
         }
 
         static bool AnyGimbal(Catalog c, JsonObject design)
@@ -124,10 +136,15 @@ namespace Kestrel.Core.Designer
             return so != null && so.Num("count") > 0 && Gimbal(c, so) > 0;
         }
 
+        /// <summary>A liquid engine with gimbal that lights on the pad: stage 1 or a strap-on. Not an upper stage.</summary>
         static bool LiquidGimbal(Catalog c, JsonObject design)
         {
-            foreach (JsonObject s in design.Arr("stages") ?? new List<object>())
-                if (Gimbal(c, s) > 0 && !Solid(c, s)) return true;
+            var stages = design.Arr("stages");
+            if (stages != null && stages.Count > 0)
+            {
+                var s0 = stages[0] as JsonObject;
+                if (Gimbal(c, s0) > 0 && !Solid(c, s0)) return true;
+            }
             var so = design.Obj("strapOns");
             return so != null && so.Num("count") > 0 && Gimbal(c, so) > 0 && !Solid(c, so);
         }

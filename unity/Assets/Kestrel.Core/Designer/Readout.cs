@@ -122,7 +122,7 @@ namespace Kestrel.Core.Designer
         /// <summary>
         /// Reference ascent for max-Q. Runs the Headless path once per design hash and caches it.
         /// Subsequent Quick() calls for the same hash return maxQStale false.
-        /// Cost: one Headless ascent at dt 0.2 s. Stops once max-Q is sealed, and continues if a dense descent clears that stop. Not for the edit frame. Budget ≤ 30 ms.
+        /// Cost: one Headless ascent at dt 0.2 s, through thrust cutoff. Not for the edit frame.
         /// </summary>
         public static QuickReadout Reference(Catalog c, JsonObject design) => ReferenceAscent.Run(c, design);
     }
