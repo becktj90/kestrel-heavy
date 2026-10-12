@@ -44,15 +44,20 @@ graph LR
   K3 --> R5
   R2 --> R3[R3 Physical sky] --> U4
   R3 --> R4[R4 Sites + PBR terrain] --> U6
+  R5 -. is .- P4[P4 Weather + LCC + ensembles]
   R5 --> R6[R6 Clouds + weather FX]
   R3 --> R6 --> U6
   R5 --> R7[R7 Narrator/SFX/telemetry hooks] --> U7
   R6 --> U9
   R2 -. same milestone .- S1[S1 Astronomy core]
-  S1 --> S2[S2 Upper atmo + decay] --> S3[S3 Bodies + J2 propagator] --> U4
-  S3 --> S4[S4 Frames + scaled-space camera] --> U4
+  S1 --> P1[P1 Frames/time WGS-84] --> P2[P2 J2-J4] --> P5[P5 Propagators + decay]
+  P1 --> P7[P7 3-DOF / 6-DOF Engineer] --> U4
+  P3[P3 Atmo + space weather, = S2] --> P5 --> U4
+  P5 --> P6[P6 Eclipses/beta/SRP] --> U4
+  P5 --> P8[P8 MC + determinism + validation] --> U5
+  P1 --> S4[S4 scaled-space camera] --> U4
   R3 --> S5[S5 Space visuals + eclipses] --> U4
-  S3 --> S6[S6 Orbit event hooks] --> U7
+  P5 --> S6[S6 Orbit event hooks] --> U7
   U9 --> S7[S7 Moon landing / interplanetary, post-launch]
   K6 --> DV1[D/V P0-1 kit + umbilical contract] --> DV2[D1-D6 pad / V1-V6 vehicle] --> U6
   DV2 --> DV3[D7 inspect + Pad Walk / V7 Data Sheet + Fleet] --> U8
@@ -90,11 +95,30 @@ See MISSION_EVENTS.md and UNITY_SHIP_PLAN §9. All 1.0 except K7 achievements br
 See ENVIRONMENT_REALISM_AUDIT.md. Unity 6/URP, portrait, 120 Hz on ProMotion High tier, $0 CC0/procedural only (LICENSES.md ledger), fictional sites, reduced-flash safe. R1 audit (done) → R2 astronomy core ∥ U1 → R5 weather/commit criteria after K3 (is X4's weather item, uses `MissionEvent`) → R3 sky in U4 → R4 sites/terrain in U6 → R6 clouds/weather FX → R7 hooks in U7. Proposed 2.0: R1, R2, R3/R6 Low–Medium, R4 one site, R5, R7 core; 1.1: High volumetrics, planets, extra sites. Scope decisions pending with Chief of Staff (audit §8).
 
 ## Upper Atmosphere and Outer Space S1–S7
-See SPACE_AUDIT.md. Shares astronomy (S1 = R2), atmosphere, body data and camera with R1–R7; nothing duplicated. 2.0 = Earth orbit only: true sky, Moon, eclipses, J2, orbital decay (S1–S6). S7 (lunar landing, interplanetary, solar-system view) is post-launch but `bodies.json` + SOI-ready propagator + scaled-space camera are built now. PD/CC0 data only, every licence logged in LICENSES.md; high-res planet textures are on-demand downloads.
+See SPACE_AUDIT.md. Shares astronomy (S1 = R2), atmosphere, body data and camera with R1–R7; nothing duplicated. 2.0 = Earth orbit only: true sky, Moon, eclipses, J2, orbital decay (S1–S6; the physics of S2/S3/S4-frames/S5-geometry now lives in P1–P8 below). S7 (lunar landing, interplanetary, solar-system view) is post-launch but `bodies.json` + SOI-ready propagator + scaled-space camera are built now. PD/CC0 data only, every licence logged in LICENSES.md; high-res planet textures are on-demand downloads.
 
 ### Approved scope (DECISIONS #38–#43)
 All Env decisions approved; 120 Hz via Auto=High on ProMotion with governor → 60. Space #1–4, #6–9 approved; **no on-demand textures in 2.0** (space ≤ 8 MB in IPA). Extras: Kármán-line event + narrator line (S2/S6, U7), exposure model + dark-adapted eye + labelled cinematic assist (R3), near-silence in vacuum (U7 mixer), spent stages persist in orbit and decay (S3), basic Photo Mode in 2.0 (pause, orbit/rail camera, exposure + time-of-day, hide HUD, space-shot presets, share-sheet PNG only; DECISIONS #50), full suite 1.1, Codex Labs Orbit / Moon Phase / Sun-Sync / Exposure / Wind Shear (U8 Codex). LICENSES.md ledger live.
 **Later question for Trevor:** high-res textures via Apple On-Demand Resources vs GitHub Releases (post-2.0; touches build config).
+
+## Physics Core P1–P8 (2.0)
+See PHYSICS_CORE_AUDIT.md (item status, golden vectors, tolerances, order). Pure C# core + golden vectors + `dotnet`
+headless CLI. This section **replaces** the physics halves of S2, S3, S4 (frames), S5 (eclipse geometry) and R5; those
+sections keep only their render/event halves. Astro #83 is validation category 1.
+
+| P | Scope (2.0) | Absorbs | 1.1+ |
+|---|---|---|---|
+| P1 | ECI/ECEF, geodetic WGS-84, GMST/ERA, launch azimuth | S4 frames | polar motion, IAU-2006 CIO |
+| P2 | J2+J3/J4 accel, secular rates, SSO, critical inc, mean↔osc | S3 J2 | tesseral geopotential |
+| P3 | USSA76 0–1000 km (fixed), Jacchia-71-class with F10.7/Ap, seeded space-weather generator; **no NRLMSIS (licence)** | S2 density | detailed radiation |
+| P4 | Seeded weather + upper winds, LCC, reduced ensembles | R5 = X4 weather | — |
+| P5 | Coast propagator + handoff, drag decay, lifetime, Sutton–Graves heating | S3 propagator, S2 decay, spent-stage decay | SGP4/TLE, CW/rendezvous |
+| P6 | Eclipses, β, cannonball SRP; Sun/Moon third-body for GTO/GEO secular drift only | S5 geometry | lunar patched-conic |
+| P7 | 3-DOF default; 6-DOF Engineer (attitude, CN/CA, slosh, loads, PEG) | — | elastic modes |
+| P8 | Reduced-fidelity MC; determinism (bit-exact per platform, tolerance across); 10-category validation suite | Astro #83, validation A–C | full-fidelity MC |
+
+Order (Gameplay Dev implements, Physics validates first): P1 + CLI → P7 3-DOF → P2 → P5 coast/handoff → P3 → P5 decay/
+lifetime/heating → P6 → P8 MC/determinism → P7 6-DOF; P4 in parallel after K3. One Core PR per effect (risk R19).
 
 ## Pad + Launch Vehicle Detail D1–D7 / V1–V7 (P0 for 2.0.0)
 See PAD_VEHICLE_DETAIL_AUDIT.md. One sequenced P0 track (replaces the earlier rocket-detail pass), ahead of lower-priority R/S items for Graphics Dev. Deepens the U6 seeded pad generator (G2/G3) and the existing `RocketMeshBuilder` + U8 Hangar Reveal; no duplicate generator or renderer. Shared `Kestrel.Kit` materials/LOD/instancing, one pad–vehicle **umbilical contract** in Core, element graph + inspect mode, animation via `MissionEvent.links` (no new schema). Budgets: pad+vehicle ≤ 4 MB shipped, ≤ 250 k tris / ≤ 120 draws on Low. Procedural only; references logged in REFERENCE_LEDGER.md (text or US-Gov PD only, nothing from Trevor's workplace, no real designs/markings). Steps P0-1 kit+contract → P0-2 D1 ∥ V2 → P0-3 D2/D5 ∥ V1/V3 → P0-4 D3/D4 ∥ V4 → P0-5 D6 ∥ V5/V6 (after R3) → P0-6 D7 ∥ V7 (after K6). Scope approved (DECISIONS #46–#49, audit §11).
@@ -132,8 +156,8 @@ Parallel split (DECISIONS #45). Each owner edits only their paths; cross-path ch
 |---|---|---|
 | Graphics Dev | D1–D7, R visuals, shared kit, umbilical contract | `Pad/**`, `Kit/**`, `Environment/**` |
 | Art | V1–V6 | `Vehicle/**`, `Art/Vehicle/**`, `Livery/**` |
-| Gameplay Dev | S2/S3, R3 weather/commit, Data Sheet numbers, V7 Fleet | `Kestrel.Core/**` (except Astro), `data/**` |
-| Physics | Validation suites, PAD_ENGINEERING_RULES.md, VEHICLE_ENGINEERING_RULES.md | `docs/PAD_ENGINEERING_RULES.md`, `docs/VEHICLE_ENGINEERING_RULES.md`, validation tests |
+| Gameplay Dev | P1–P8 implementation (was S2/S3), P4 weather/commit (R5), Data Sheet numbers, V7 Fleet | `Kestrel.Core/**` (except Astro), `data/**` |
+| Physics | P1–P8 validation + PHYSICS.md + PHYSICS_CORE_AUDIT.md, validation suites, PAD_ENGINEERING_RULES.md, VEHICLE_ENGINEERING_RULES.md | `docs/PAD_ENGINEERING_RULES.md`, `docs/VEHICLE_ENGINEERING_RULES.md`, validation tests |
 | Sound | Pad/vehicle sound anchors, vacuum silence | `Audio/**` |
 | Codex | Labs | `Codex/**` |
 | UX | Data Sheet, Fleet, inspect and Photo Mode screens | `UI/Screens/**` |
