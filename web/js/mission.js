@@ -409,6 +409,8 @@ export default class MissionScene extends Phaser.Scene {
       hold: () => this.holdStandby(),
       restart: () => this.restartMission(),
       nextFlight: () => this.flyNextMission(),
+      retryLanding: () => this.retryLanding(),
+      retryFromSep: () => this.retryFromSep(),
       openMissions: () => this.openScreen('missions'),
       openHangar: () => this.openHangar(),
       openHowto: () => this.openScreen('howto'),
@@ -2890,6 +2892,29 @@ export default class MissionScene extends Phaser.Scene {
     const nxt = nextMissionId(this.currentFlight().id);
     if (nxt && isUnlocked(this.settings, nxt)) this.setMission(nxt);
     this.startMission();
+  }
+
+  /** One tap from the result screen. Reuses the Haven QA boot at entry. */
+  retryLanding() {
+    if (this.status !== 'SUMMARY') return;
+    this.time.removeAllEvents();
+    clearFlightHolds(this.inputState);
+    this.bootQaFlight(PACE.ENTRY, () => this.enterJacklyn());
+  }
+
+  /** One tap from the result screen. Reuses the sep QA boot. */
+  retryFromSep() {
+    if (this.status !== 'SUMMARY') return;
+    this.time.removeAllEvents();
+    clearFlightHolds(this.inputState);
+    this.bootQaFlight(PACE.MECO - 0.05, () => {
+      this.session.altitudeKm = 54;
+      this.bgPad.setVisible(false);
+      this.rocket.setPosition(W / 2, -1480);
+      this.rocket.setVelocity(0.2, -0.35);
+      this.cameras.main.centerOn(W / 2, -1480);
+      this.enterSep();
+    });
   }
 
   async toggleFullscreen() {
