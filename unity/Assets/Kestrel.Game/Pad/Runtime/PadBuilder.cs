@@ -17,6 +17,10 @@ namespace Kestrel.Pad
             r.Build(layout);
             var identity = new LocalPose(new Vec3(0, 0, 0), Quat.Identity);
             foreach (var arm in r.Arms) foreach (var p in pts) if (p.Id == arm.AttachId) arm.Connect(p, identity);
+            // D5: lights. Night follows the scene sun (0 by day, so realtime lights stay off); -khNight or
+            // PadLights.ForceNight forces full night for shots.
+            var lights = PadLights.Attach(r, r.Quality);
+            lights.Night = PadLights.ResolveNight();
             return r;
         }
     }
