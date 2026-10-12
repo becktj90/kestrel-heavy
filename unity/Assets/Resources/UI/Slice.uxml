@@ -20,6 +20,8 @@
             </ui:VisualElement>
             <ui:Button name="launch" text="ROLL OUT &amp; LAUNCH" class="launch" />
         </ui:VisualElement>
+        <!-- HOME: top-left, safe-area placed from code; hidden during flight so it never meets the HUD. -->
+        <ui:Button name="home" text="◀  Home" class="home-button" />
         <!-- FLIGHT HUD -->
         <ui:VisualElement name="hud" class="hud hidden">
             <!-- Top band: clock + telemetry stay above the vehicle (anchor 0.38 from top, VISUAL_SPEC §5). -->

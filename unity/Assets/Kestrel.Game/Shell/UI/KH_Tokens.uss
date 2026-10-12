@@ -59,7 +59,9 @@
 .kh-home { flex-grow: 1; justify-content: flex-start; align-items: center; padding: var(--kh-space-6) var(--kh-space-4) var(--kh-space-6) var(--kh-space-4); }
 .kh-home-title { font-size: 52px; -unity-font-style: bold; color: #ffffff; -unity-text-align: middle-center; letter-spacing: 4px; margin-top: 48px; -unity-text-outline-width: 1px; -unity-text-outline-color: rgba(1, 1, 5, 0.6); }
 .kh-home-subtitle { font-size: 20px; color: var(--kh-color-ink); -unity-text-align: middle-center; margin-top: var(--kh-space-3); }
-.kh-home-play { min-height: 64px; width: 80%; max-width: 360px; font-size: 26px; -unity-font-style: bold; margin-bottom: var(--kh-space-6); background-color: #c8102e; color: #ffffff; }
+/* .kh-button.kh-home-play (two classes) so it outranks .kh-button, which is declared later in this file and
+   used to win the tie: min-height fell back to 44 and the background to accent blue (#116-v2 shots). */
+.kh-button.kh-home-play { height: 64px; min-height: 64px; width: 80%; max-width: 360px; font-size: 26px; -unity-font-style: bold; margin-bottom: var(--kh-space-6); background-color: #c8102e; color: #ffffff; }
 .kh-subtitle { font-size: var(--kh-font-body); color: var(--kh-color-ink); -unity-text-align: middle-center; margin-bottom: var(--kh-space-6); }
 .kh-button {
     min-height: var(--kh-touch-min);

@@ -26,6 +26,14 @@ namespace Kestrel.Slice
             return widthPx >= 1080f ? 3f : 2f;                          // SE/8 = 2x (750 px), Pro/Max = 3x
         }
 
+        /// <summary>Margin over the tallest structure so the tower top never touches the top edge.</summary>
+        public const float TowerMargin = 1.06f;
+
+        /// <summary>Height the design camera frames: the rocket, or the tower top plus margin if that is taller.
+        /// The framing math treats this as the subject height (aim and distance scale with it).</summary>
+        public static float FrameHeight(float rocketHeight, float towerTop) =>
+            Mathf.Max(rocketHeight, towerTop * TowerMargin);
+
         /// <summary>Share of the root height, from the top, that is not covered by the panel.
         /// rootHeight and panelTop in the same (panel) units; panelTop measured from the top of the root.</summary>
         public static float VisibleFraction(float rootHeight, float panelTop)

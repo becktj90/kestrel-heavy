@@ -14,7 +14,7 @@ namespace Kestrel.Slice
     {
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
         Design design; Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
-        VisualElement ui, designPanel, designBody, hud; Button designToggle; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
+        VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted;
 
         void Awake()
@@ -79,6 +79,9 @@ namespace Kestrel.Slice
                 float dy = e.position.y - dragStartY, min = 24f * UnitsPerPoint();
                 if (Mathf.Abs(dy) >= min) { SetDesignCollapsed(dy > 0); e.StopImmediatePropagation(); }
             }, TrickleDown.TrickleDown);
+            homeButton = ui.Q<Button>("home");
+            homeButton.clicked += GoHome;
+            homeButton.tooltip = "Home. Back to the title screen.";
             SetDesignCollapsed(false);
             rDv = ui.Q<Label>("r-dv"); rTwr = ui.Q<Label>("r-twr"); rCost = ui.Q<Label>("r-cost"); rRel = ui.Q<Label>("r-rel"); rMass = ui.Q<Label>("r-mass");
             hT = ui.Q<Label>("h-t"); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
@@ -92,7 +95,7 @@ namespace Kestrel.Slice
             ui.Q<SliderInt>("engines").RegisterValueChangedCallback(e => { design.stages[0].engineCount = e.newValue; Refresh(); });
             ui.Q<Slider>("prop").RegisterValueChangedCallback(e => { design.stages[0].propMass = Mathf.Round(e.newValue) * 1000.0; Refresh(); });
             ui.Q<Button>("launch").clicked += Launch;
-            again.clicked += () => { flight.enabled = false; cam.ResetProjectionMatrix(); hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); again.AddToClassList("hidden"); SelectPreset(design.id); };
+            again.clicked += () => { flight.enabled = false; cam.ResetProjectionMatrix(); hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden"); SelectPreset(design.id); };
             // Accessibility labels (VoiceOver wiring via UnityEngine.Accessibility is a listed gap; see RESULTS.md)
             ui.Q<Button>("launch").tooltip = "Roll out and launch the current design";
         }
@@ -114,7 +117,7 @@ namespace Kestrel.Slice
             return ui != null && ui.layout.width > 0 && wPt > 0 ? ui.layout.width / wPt : 3f;
         }
 
-        /// <summary>Handle is 64 pt tall (tap target ≥ 44 pt) and the panel clears the home indicator.</summary>
+        /// <summary>Handle is 56 pt tall (tap target ≥ 44 pt); collapsed panel = handle + bottom safe area only.</summary>
         void ApplyDesignPanelMetrics()
         {
             if (ui.layout.height <= 0) return;
@@ -126,6 +129,13 @@ namespace Kestrel.Slice
             designToggle.style.marginTop = 0; designToggle.style.marginBottom = 0;
             float bottom = Screen.safeArea.yMin * ui.layout.height / Mathf.Max(1, Screen.height);
             designPanel.style.paddingTop = 0;
+            // Home control: top-left inside the safe area (+8 pt), 44 pt min target. Bottom handle and the
+            // flight HUD never share this corner: Home is hidden whenever the HUD is shown.
+            float sx = ui.layout.width / Mathf.Max(1, Screen.width), sy = ui.layout.height / Mathf.Max(1, Screen.height);
+            homeButton.style.left = Screen.safeArea.xMin * sx + 8f * upp;
+            homeButton.style.top = (Screen.height - Screen.safeArea.yMax) * sy + 8f * upp;
+            homeButton.style.minHeight = 44f * upp; homeButton.style.minWidth = 88f * upp;
+            homeButton.style.fontSize = 17f * upp;
             designPanel.style.paddingBottom = designCollapsed ? bottom : Mathf.Max(8f * upp, bottom + 8f * upp);
         }
 
@@ -145,7 +155,7 @@ namespace Kestrel.Slice
         {
             if (cam == null || ui.layout.height <= 0 || designPanel.ClassListContains("hidden")) return;
             float f = DesignFraming.VisibleFraction(ui.layout.height, designPanel.worldBound.yMin - ui.worldBound.yMin);
-            FrameCamera(rocketHeight, f);
+            FrameCamera(frameHeight, f);
         }
 
         /// <summary>Vehicle + tower/arms + deck rim, refreshed in BuildRocket; FrameCamera fits all of them.</summary>
@@ -199,10 +209,28 @@ namespace Kestrel.Slice
             deck.localScale = new Vector3(2 * deckR, deck.localScale.y, 2 * deckR);
             framePoints = DesignFraming.SubjectPoints(r.height, rr, deckR,
                 padR != null ? DesignFraming.PadBounds(padR.Layout, tower.localToWorldMatrix) : null);
-            rocketHeight = r.height; ApplyDesignFraming();
+            // Tower top (levels + cap) x TowerMargin (1.06) is in the fit points, so the point fit never clips it.
+            float towerTop = TowerTop(padR);
+            if (towerTop > 0f)
+            {
+                float topY = DesignFraming.FrameHeight(0f, towerTop);
+                foreach (var c in DesignFraming.PadBounds(padR.Layout, tower.localToWorldMatrix))
+                    framePoints.Add(new Vector3(c.x, Mathf.Max(c.y, tower.position.y + topY), c.z));
+            }
+            rocketHeight = r.height; frameHeight = r.height;
+            ApplyDesignFraming();
         }
 
-        float rocketHeight = 70; Vector3 camOffset;
+        float rocketHeight = 70, frameHeight = 70; Vector3 camOffset;
+
+        /// <summary>Tower top above the pad (levels + open cap) from the generated layout. The pad steel is drawn
+        /// instanced, so there are no Renderers to measure; the layout is the source of truth.</summary>
+        static float TowerTop(Kestrel.Pad.PadRenderer pad)
+        {
+            var t = pad != null && pad.Layout != null ? pad.Layout.Tower : null;
+            return t != null ? t.Height + t.CapHeight : 0f;
+        }
+
         void FrameCamera(float h, float visible)
         {
             if (cam == null || !DesignFraming.ValidViewport(cam.pixelWidth, cam.pixelHeight)) return;
@@ -238,10 +266,21 @@ namespace Kestrel.Slice
             }
         }
 
+        /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every
+        /// object SliceApp built (camera, sun, world, UI); ShellDesignHost restores the shell camera and UI.
+        /// Opened standalone (Slice.unity), load build index 0 (Boot), which rebuilds the shell and enters Home.</summary>
+        void GoHome()
+        {
+            if (flight != null) flight.enabled = false;
+            var shell = Kestrel.Game.Shell.AppShell.Instance;
+            if (shell != null && shell.Flow != null) { shell.Flow.Go(Kestrel.Game.Shell.AppScreen.Home); return; }
+            UnityEngine.SceneManagement.SceneManager.LoadScene(0, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
+
         void Launch()
         {
             submitted = false;
-            designPanel.AddToClassList("hidden"); hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
+            designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
             flight.enabled = true;
             flight.Launch(design);
         }

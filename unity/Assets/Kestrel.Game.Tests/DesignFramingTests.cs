@@ -51,6 +51,26 @@ namespace Kestrel.Game.Tests
             Assert.That(DesignFraming.PixelsPerPoint(w, h, dpi), Is.EqualTo(expected));
 
         [Test]
+        public void TowerTopIsInTheFramingBounds()
+        {
+            Assert.That(DesignFraming.FrameHeight(70f, 0f), Is.EqualTo(70f));          // rail pad: rocket only
+            Assert.That(DesignFraming.FrameHeight(70f, 84f), Is.EqualTo(84f * DesignFraming.TowerMargin).Within(1e-4));
+        }
+
+        // Home: stack top (deck - 10.6 u) never rises above the title block, panel is 667 units tall (match height).
+        [TestCase(375f, 667f, 264f)]   // SE
+        [TestCase(307f, 667f, 307f)]   // Pro Max (43-unit safe top + title)
+        [TestCase(496f, 667f, 280f)]   // iPad 13
+        public void HomeStackStaysBelowTitle(float w, float h, float artTop)
+        {
+            float u = Kestrel.Game.Shell.HomeBackdrop.StackUnit(w, h, artTop);
+            float deck = Kestrel.Game.Shell.HomeBackdrop.Horizon * h;
+            Assert.That(deck - 10.6f * u, Is.GreaterThanOrEqualTo(artTop - 1e-3f));
+            Assert.That(6.4f * u, Is.LessThanOrEqualTo(w));
+            Assert.That(u, Is.GreaterThan(10f), "silhouette still readable");
+        }
+
+        [Test]
         public void VisibleFractionIsClamped()
         {
             Assert.That(DesignFraming.VisibleFraction(1000, 730), Is.EqualTo(0.73f).Within(1e-5));

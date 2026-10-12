@@ -41,6 +41,13 @@ namespace Kestrel.Game.Shell
             var sub = new Label("Design a rocket. Launch it.");
             sub.AddToClassList("kh-home-subtitle");
             _view.Add(sub);
+            // Keep the stack silhouette below the title block on every device (#116-v2: title overlapped the nose).
+            var bd = _backdrop;
+            sub.RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                float top = sub.worldBound.yMax - bd.worldBound.yMin + 16f;
+                if (!Mathf.Approximately(top, bd.ArtTopY)) { bd.ArtTopY = top; bd.MarkDirtyRepaint(); }
+            });
             var spacer = new VisualElement { pickingMode = PickingMode.Ignore };
             spacer.style.flexGrow = 1;
             _view.Add(spacer);
