@@ -23,6 +23,7 @@ namespace Kestrel.Pad
         readonly Dictionary<LightKind, InstanceBatch> _fix = new Dictionary<LightKind, InstanceBatch>();
         readonly Dictionary<LightKind, Material> _mats = new Dictionary<LightKind, Material>();
         readonly List<int> _blinkers = new List<int>();
+        PadGlow _glow; public PadGlow Glow => _glow;
         InstanceBatch _poles; Mesh _box, _poleMesh; Matrix4x4 _builtFor; float _lastNight = -1f; bool _blinkOn = true;
         static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor"), BaseColor = Shader.PropertyToID("_BaseColor");
 
@@ -32,9 +33,30 @@ namespace Kestrel.Pad
         /// <summary>Global night override for shots: null = follow the sun. Also set by the -khNight command-line arg.</summary>
         public static bool? ForceNight
         {
-            get { if (!_argChecked) { _argChecked = true; if (HasArg("-khNight")) _force = true; } return _force; }
-            set { _argChecked = true; _force = value; }
+            get { if (!_argChecked) { _argChecked = true; _force = ReadPersisted(); } return _force; }
+            set { _argChecked = true; _force = value; WritePersisted(value); }
         }
+        const string SessionKey = "Kestrel.PadLights.ForceNight";   // -1 follow sun, 0 day, 1 night
+
+        // Survives the domain reload when Play starts: the Editor keeps the value in SessionState (per editor session),
+        // and statics are re-read on load. -khNight on the command line always wins.
+        static bool? ReadPersisted()
+        {
+            if (HasArg("-khNight")) return true;
+#if UNITY_EDITOR
+            int v = UnityEditor.SessionState.GetInt(SessionKey, -1); if (v >= 0) return v == 1;
+#endif
+            return null;
+        }
+        static void WritePersisted(bool? v)
+        {
+#if UNITY_EDITOR
+            UnityEditor.SessionState.SetInt(SessionKey, v.HasValue ? (v.Value ? 1 : 0) : -1);
+#endif
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ReloadForceNight() { _argChecked = true; _force = ReadPersisted(); }
         static bool? _force; static bool _argChecked;
         static bool HasArg(string a) { try { foreach (var s in System.Environment.GetCommandLineArgs()) if (string.Equals(s, a, System.StringComparison.OrdinalIgnoreCase)) return true; } catch { } return false; }
 
@@ -86,6 +108,7 @@ namespace Kestrel.Pad
                 _fixLocal.Add((s.Kind, FixtureMatrix(s)));
                 if (s.Realtime) Realtime.Add(MakeLight(s));
             }
+            _glow = new PadGlow(Plan, BuiltQuality);
             _builtFor = default; _lastNight = -1f; Refresh();
         }
 
@@ -119,7 +142,7 @@ namespace Kestrel.Pad
             go.transform.localPosition = new Vector3(s.Position.X, s.Position.Y, s.Position.Z);
             go.transform.localRotation = Quaternion.LookRotation(new Vector3(s.Aim.X, s.Aim.Y, s.Aim.Z));
             var l = go.AddComponent<Light>();
-            l.type = LightType.Spot; l.range = s.Range; l.spotAngle = s.SpotAngle; l.color = new Color(s.Color.X, s.Color.Y, s.Color.Z);
+            l.type = LightType.Spot; l.range = s.Range; l.spotAngle = s.SpotAngle; l.innerSpotAngle = s.InnerSpotAngle > 0 ? s.InnerSpotAngle : s.SpotAngle * 0.5f; l.color = new Color(s.Color.X, s.Color.Y, s.Color.Z);
             l.shadows = s.Shadows ? LightShadows.Soft : LightShadows.None; l.renderMode = LightRenderMode.ForcePixel; l.intensity = 0f; l.enabled = false;
             return l;
         }
@@ -144,7 +167,8 @@ namespace Kestrel.Pad
                 float day = kv.Key == LightKind.Aviation ? 0.6f : 0.05f;
                 kv.Value.SetColor(EmissionColor, _matColor[kv.Key] * (k * Mathf.Lerp(day, 1f, Night)));
             }
-            foreach (var l in Realtime) { l.enabled = Night > 0.05f; l.intensity = Night * 3f; }
+            for (int i = 0, j = 0; i < Plan.Count; i++) if (Plan[i].Realtime && j < Realtime.Count)
+                { var l = Realtime[j++]; l.enabled = Night > 0.05f; l.intensity = l.enabled ? PadLighting.RealtimeIntensity(Plan[i], Night) : 0f; }
         }
 
         void LateUpdate()
@@ -156,6 +180,7 @@ namespace Kestrel.Pad
             int q = BuiltQuality; Ledger.Reset(); var p = cam.transform.position;
             foreach (var b in _fix.Values) b.Draw(p, q, Ledger);
             _poles.Draw(p, q, Ledger);
+            if (_glow != null && Night > 0.02f) { _glow.Draw(transform.localToWorldMatrix, cam, Night, Time.timeAsDouble, gameObject.layer); Ledger.Add((_glow.FlareCount > 0 ? 1 : 0) + (_glow.ConeCount > 0 ? 1 : 0), _glow.FlareCount * 2 + _glow.ConeTriangles); }
         }
 
         public void Clear()
@@ -165,6 +190,7 @@ namespace Kestrel.Pad
             foreach (var m in _mats.Values) if (m != null) DestroyImmediate(m);
             _mats.Clear();
             if (_box != null) DestroyImmediate(_box); if (_poleMesh != null) DestroyImmediate(_poleMesh);
+            _glow?.Dispose(); _glow = null;
             _box = _poleMesh = null; _poles = null; Plan = null; BuiltQuality = -1;
         }
 
