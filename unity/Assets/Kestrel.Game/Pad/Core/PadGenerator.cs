@@ -17,7 +17,14 @@ namespace Kestrel.Pad
     {
         public float VehicleHeight, VehicleRadius;
         public float Clearance;              // tower face to vehicle skin, m
-        public PadFit(float h, float r, float clearance = 6f) { VehicleHeight = h; VehicleRadius = r; Clearance = clearance; }
+        /// <summary>Optional skin profile: distance (m) from the vehicle axis to its skin along pad +Z (toward the
+        /// tower) at height y. Null = VehicleRadius everywhere. Lets arms reach a core that is narrower than the
+        /// overall half-width (side boosters sit off the tower axis). Not part of Hash (geometry follows it).</summary>
+        public Func<float, float> SkinRadiusAt;
+        public PadFit(float h, float r, float clearance = 6f) { VehicleHeight = h; VehicleRadius = r; Clearance = clearance; SkinRadiusAt = null; }
+        public float SkinAt(float y) { if (SkinRadiusAt == null) return VehicleRadius; float s = SkinRadiusAt(y); return float.IsNaN(s) || s < 0 ? VehicleRadius : Math.Min(s, VehicleRadius); }
+        /// <summary>Gap left between a fixed access arm's tip and the skin.</summary>
+        public const float ArmSkinGap = 0.6f;
     }
 
     /// <summary>Deterministic xorshift32; no System.Random (its sequence is not guaranteed across runtimes).</summary>
@@ -84,7 +91,8 @@ namespace Kestrel.Pad
             tp.StandOff = fit.VehicleRadius + fit.Clearance + tp.Width * 0.5f;
             // D2: crew-access arm one level below the vehicle tip, spike on the cap.
             tp.CrewLevel = Math.Max(0, Math.Min(tp.Levels - 1, (int)Math.Floor(fit.VehicleHeight * 0.85f / tp.LevelHeight) - 1));
-            tp.CrewArmReach = Math.Max(1f, fit.Clearance - 0.6f);
+            float crewY = (tp.CrewLevel + 1) * tp.LevelHeight;
+            tp.CrewArmReach = Math.Max(1f, tp.NearFaceZ - (fit.SkinAt(crewY) + PadFit.ArmSkinGap));
             tp.CrewArmX = 0f;
             tp.SpikeHeight = tp.CapHeight * 1.5f;
             L.Tower = tp;
@@ -101,7 +109,7 @@ namespace Kestrel.Pad
                     AttachId = p.Id, Type = p.Type,
                     Pivot = SwingArmSolver.PivotFor(tp, p.Pose.Position),
                     RetractYawDeg = rng.Range(80f, 110f) * (rng.Next() % 2 == 0 ? 1 : -1),
-                    MaxLength = fit.Clearance + fit.VehicleRadius + 4f,
+                    MaxLength = fit.Clearance + fit.VehicleRadius + 4f + (fit.VehicleRadius - fit.SkinAt(p.Pose.Position.Y)),
                 };
                 L.Arms.Add(spec);
                 L.Anchors.Add(TowerAnchors.ArmId(p.Id), spec.Pivot, "s", L.Anchors.LevelNearest(spec.Pivot.Y));
@@ -117,16 +125,25 @@ namespace Kestrel.Pad
 
         /// <summary>PAD_DETAIL_GRAMMAR §1: free-standing tapered square lattice lightning masts, clear of the
         /// tower (+Z) side, symmetric about the vehicle axis with ±10° jitter. Generic proportions only.</summary>
+        /// <summary>Pad-local bearings (deg, 0 = tower +Z, clockwise toward +X) for lightning masts: flanking the tower
+        /// and behind it, clear of the plume exits (90/270 ±25°, §6) and of the default design camera, which looks from
+        /// bearing ≈ 180–240 (see DefaultViewBearingDeg). Order fills the symmetric pair first.</summary>
+        public static readonly float[] MastSlots = { 40f, 320f, 130f, 0f };
+        public const float MastJitterDeg = 8f;
+        /// <summary>Pad-local bearing of the Slice design camera (PadTower yaw + DesignFraming rig), for tests and placement.</summary>
+        public const float DefaultViewBearingDeg = 208f;
+
         static void BuildMasts(PadLayout L, ref PadRng rng)
         {
             int n = L.Archetype == PadArchetype.TowerStrongback ? rng.Range(3, 5) : L.Archetype == PadArchetype.Tower ? rng.Range(2, 4) : rng.Range(0, 3);
             float hv = L.Fit.VehicleHeight, hm = hv * rng.Range(1.15f, 1.6f), spike = hm * rng.Range(0.06f, 0.12f), hl = hm - spike;
             float wb = hm / rng.Range(9f, 14f), wt = wb * rng.Range(0.35f, 0.6f);
             float r = Math.Max(hv * 0.5f * rng.Range(1.0f, 1.8f), L.DeckRadius + wb);
+            if (L.Tower != null) r = Math.Max(r, L.Tower.StandOff + L.Tower.Width * 0.75f + wb);   // slot 0 stands clear behind the tower
             for (int i = 0; i < n; i++)
             {
                 // spread over the back/side arc away from the tower; tower sits at bearing 0 (+Z)
-                float bearing = 180f + (n == 1 ? 0 : (i / (float)(n - 1) - 0.5f) * 220f) + rng.Range(-10f, 10f);
+                float bearing = MastSlots[i % MastSlots.Length] + rng.Range(-MastJitterDeg, MastJitterDeg);
                 double br = bearing * Math.PI / 180.0;
                 float cx = r * (float)Math.Sin(br), cz = r * (float)Math.Cos(br);
                 string id = $"mast.{i}";
@@ -163,7 +180,7 @@ namespace Kestrel.Pad
             void A(int stage, UmbilicalType t, float frac) => r.Add(new AttachPoint
             {
                 Id = UmbilicalIds.Make(stage, t, 0), Type = t, Stage = stage, PlateRadius = 0.4f, Release = ReleaseStyle.SwingArmRetract,
-                Pose = new LocalPose(new Vec3(0, fit.VehicleHeight * frac, fit.VehicleRadius), Quat.Identity),
+                Pose = new LocalPose(new Vec3(0, fit.VehicleHeight * frac, fit.SkinAt(fit.VehicleHeight * frac)), Quat.Identity),
             });
             A(0, UmbilicalType.Oxidizer, 0.30f); A(1, UmbilicalType.Fuel, 0.70f); A(1, UmbilicalType.PowerData, 0.85f);
             return r;

@@ -102,5 +102,42 @@ namespace Kestrel.Pad.Tests
                 Assert.That(r, Is.GreaterThan(L.DeckRadius), m.Id);
             }
         }
+
+        [Test]
+        public void CrewAndSwingArmsEndAtTheRealSkin()
+        {
+            // overall half-width 6.19 m (side boosters), but the core facing the tower is only 2.5 m
+            var fit = new PadFit(70f, 6.19f) { SkinRadiusAt = y => 2.5f };
+            var L = PadGenerator.Generate(1, PadArchetype.Tower, fit);
+            var crew = L.Members.Where(m => m.ParentId == "tower.crewarm" && m.Kind == MemberKind.ArmChord).ToList();
+            Assert.That(crew, Is.Not.Empty);
+            foreach (var c in crew) Assert.That(System.Math.Min(c.A.Z, c.B.Z), Is.EqualTo(2.5f + PadFit.ArmSkinGap).Within(1e-3f), c.Id);
+            foreach (var p in PadGenerator.DefaultAttachPoints(fit, PadArchetype.Tower)) Assert.That(p.Pose.Position.Z, Is.EqualTo(2.5f).Within(1e-4f));
+            foreach (var a in L.Arms)
+                Assert.That(SwingArmSolver.Solve(a, new Vec3(0, a.Pivot.Y, 2.5f)).Ok, Is.True, a.AttachId);
+            // no profile: falls back to the overall radius
+            var plain = PadGenerator.Generate(1, PadArchetype.Tower, new PadFit(70f, 2.5f));
+            foreach (var c in plain.Members.Where(m => m.ParentId == "tower.crewarm" && m.Kind == MemberKind.ArmChord))
+                Assert.That(System.Math.Min(c.A.Z, c.B.Z), Is.EqualTo(2.5f + PadFit.ArmSkinGap).Within(1e-3f));
+        }
+
+        [TestCase(PadArchetype.Tower)] [TestCase(PadArchetype.TowerStrongback)]
+        public void MastsStayOutOfTheDefaultCameraView(PadArchetype t)
+        {
+            double cb = PadGenerator.DefaultViewBearingDeg * System.Math.PI / 180;
+            float cx = (float)System.Math.Sin(cb), cz = (float)System.Math.Cos(cb);
+            for (int seed = 1; seed <= 12; seed++)
+            {
+                var L = PadGenerator.Generate(seed, t, Heavy);
+                foreach (var e in L.Graph.Query(ElementCategory.Structure, "lightning-mast"))
+                {
+                    float r = (float)System.Math.Sqrt(e.Center.X * e.Center.X + e.Center.Z * e.Center.Z);
+                    float dot = (e.Center.X * cx + e.Center.Z * cz) / r;
+                    Assert.That(dot, Is.LessThan(0.5f), $"seed {seed} {e.Id}: within 60° of the camera bearing");
+                    float b = (float)(System.Math.Atan2(e.Center.X, e.Center.Z) * 180 / System.Math.PI); b = (b + 360) % 360;
+                    Assert.That(System.Math.Abs(b - 90) >= 25f && System.Math.Abs(b - 270) >= 25f, Is.True, $"{e.Id} in plume sector");
+                }
+            }
+        }
     }
 }
