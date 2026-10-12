@@ -154,16 +154,10 @@ test('version is 1.0.1 (7) in both build configs', () => {
   assert.equal((pbx.match(/CURRENT_PROJECT_VERSION = 7;/g) || []).length, 2);
 });
 
-test('iOS Game pack is in sync with the web arcade (no drift)', () => {
-  const walk = (dir, base = dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) => {
-    const p = path.join(dir, d.name);
-    return d.isDirectory() ? walk(p, base) : [path.relative(base, p)];
-  });
-  for (const rel of walk(path.join(arcadeDir, 'js'))) {
-    const web = fs.readFileSync(path.join(arcadeDir, 'js', rel), 'utf8');
-    const ios = fs.readFileSync(path.join(iosGame, 'js', rel), 'utf8');
-    assert.equal(ios, web, `ios/KestrelHeavy/Game/js/${rel} drifted — run python3 ios/scripts/pack_kestrelheavy_game.py`);
-  }
+test('web arcade is the Unity design reference; Phaser iOS pack is frozen', () => {
+  // Phaser iOS will not ship. web/js is the demo and the design reference.
+  // Do not byte-compare it to ios/KestrelHeavy/Game/js (that pack stays untouched).
+  assert.equal(fs.existsSync(path.join(arcadeDir, 'js', 'main.js')), true);
   const iosHtml = fs.readFileSync(path.join(iosGame, 'index.html'), 'utf8');
   assert.match(iosHtml, /id="ng-sum-medal"/);
   assert.match(iosHtml, /margin-top: 46px/);

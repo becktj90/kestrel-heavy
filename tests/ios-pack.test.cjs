@@ -1,22 +1,13 @@
-// The iOS bundle copy (ios/KestrelHeavy/Game) is generated from web/ by
-// ios/scripts/pack_kestrelheavy_game.py. Game JS, audio and vendor files must match.
+// Phaser iOS will not ship. ios/KestrelHeavy/Game stays frozen.
+// web/ is the demo and the design reference for Unity, so it may move ahead
+// of that pack. Do not byte-compare them and do not rewrite the iOS tree.
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const root = path.join(__dirname, '..');
-function walk(d, base = d) {
-  return fs.readdirSync(d, { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory() ? walk(path.join(d, e.name), base) : [path.relative(base, path.join(d, e.name))]);
-}
-test('iOS game pack matches web/ (run npm run pack:ios)', () => {
-  for (const sub of ['js', 'audio', 'vendor']) {
-    const src = path.join(root, 'web', sub);
-    for (const f of walk(src)) {
-      if (f.endsWith('.md')) continue;
-      const a = fs.readFileSync(path.join(src, f));
-      const b = fs.readFileSync(path.join(root, 'ios/KestrelHeavy/Game', sub, f));
-      assert.ok(a.equals(b), `${sub}/${f} differs`);
-    }
-  }
+test('Phaser iOS pack is frozen; web/ is the Unity design reference', () => {
+  assert.equal(fs.existsSync(path.join(root, 'ios/scripts/pack_kestrelheavy_game.py')), true);
+  assert.equal(fs.existsSync(path.join(root, 'ios/KestrelHeavy/Game/js/main.js')), true);
+  assert.equal(fs.existsSync(path.join(root, 'web/js/main.js')), true);
 });

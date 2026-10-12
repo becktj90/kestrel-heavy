@@ -246,6 +246,8 @@ export function bindChrome(handlers) {
     ['ng-pause-howto', handlers.openHowto],
     ['ng-pause-abort', handlers.abortToMenu],
     ['ng-sum-next', handlers.nextFlight],
+    ['ng-sum-retry-land', handlers.retryLanding],
+    ['ng-sum-retry-sep', handlers.retryFromSep],
     ['ng-sep-btn', handlers.separate],
   ];
   clicks.forEach(([id, fn]) => {
