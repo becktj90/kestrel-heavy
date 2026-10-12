@@ -17,15 +17,23 @@ namespace Kestrel.EditorTools
         {
             string outDir = Arg("-khCapOut") ?? "CaptureOut";
             Directory.CreateDirectory(outDir);
-            int failures = 0;
+            int failures = 0, written = 0;
             foreach (var s in EditorBuildSettings.scenes)
             {
                 if (!s.enabled) continue;
+                if (!File.Exists(s.path)) { Debug.Log($"[CiCapture] {s.path} not in checkout, skipped"); continue; }
                 try
                 {
                     EditorSceneManager.OpenScene(s.path, OpenSceneMode.Single);
                     var cam = Camera.main != null ? Camera.main : UnityEngine.Object.FindFirstObjectByType<Camera>();
-                    if (cam == null) { Debug.Log($"[CiCapture] no camera in {s.path}, skipped"); continue; }
+                    if (cam == null)
+                    {
+                        // Shell scenes spawn their camera at runtime; use a temporary one (aim with -khCapCam).
+                        cam = new GameObject("CiCaptureCam").AddComponent<Camera>();
+                        cam.transform.position = new Vector3(40, 25, -60);
+                        cam.transform.LookAt(new Vector3(0, 30, 0));
+                        cam.farClipPlane = 100000f;
+                    }
                     ApplyCapCam(cam);
                     var rt = new RenderTexture(1179, 2556, 24);
                     cam.targetTexture = rt; cam.Render();
@@ -35,11 +43,11 @@ namespace Kestrel.EditorTools
                     cam.targetTexture = null; RenderTexture.active = null;
                     string file = Path.Combine(outDir, Path.GetFileNameWithoutExtension(s.path) + ".png");
                     File.WriteAllBytes(file, tex.EncodeToPNG());
-                    Debug.Log($"[CiCapture] wrote {file}");
+                    Debug.Log($"[CiCapture] wrote {file}"); written++;
                 }
                 catch (Exception e) { failures++; Debug.LogError($"[CiCapture] {s.path}: {e}"); }
             }
-            EditorApplication.Exit(failures == 0 ? 0 : 1);
+            EditorApplication.Exit(failures == 0 && written > 0 ? 0 : 1);
         }
 
         static void ApplyCapCam(Camera cam)
