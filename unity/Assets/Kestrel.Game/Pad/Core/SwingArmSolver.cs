@@ -33,6 +33,11 @@ namespace Kestrel.Pad
             return new ArmSolution { Ok = true, Length = len, YawDeg = (float)(Math.Atan2(dx, dz) * 180.0 / Math.PI) };
         }
 
+        /// <summary>Arm length when mated: the arm head reaches the attach point itself (the plate sits on the skin,
+        /// AttachPoint.Pose is on the skin), so no PlateRadius is subtracted. Was sol.Length − PlateRadius/2, which left
+        /// a visible 0.2 m gap (#135 v3).</summary>
+        public static float MatedLength(SwingArmSpec s, ArmSolution sol) => Math.Max(s.MinLength, sol.Length);
+
         /// <summary>Retract progress 0..1 (smoothstep) given seconds since ArmRetractStart.</summary>
         public static float RetractProgress(double since, float seconds)
         {

@@ -8,6 +8,18 @@ namespace Kestrel.Pad
 {
     public static class VehicleSkin
     {
+        /// <summary>Changes whenever a different or re-generated mesh is used (instance id + vertex count + bounds).</summary>
+        public static long MeshKey(Mesh m)
+        {
+            if (m == null) return 0;
+            unchecked
+            {
+                long h = m.GetInstanceID(); h = h * 31 + m.vertexCount;
+                var b = m.bounds; h = h * 31 + b.size.GetHashCode(); h = h * 31 + b.center.GetHashCode();
+                return h == 0 ? 1 : h;
+            }
+        }
+
         /// <param name="meshToPad">Mesh space → pad space (pad.worldToLocalMatrix * vehicle.localToWorldMatrix).</param>
         /// <param name="strip">Half-width (m) of the strip around the pad Z axis that counts as "facing the tower".</param>
         public static Func<float, float> FromMesh(Mesh mesh, Matrix4x4 meshToPad, float strip = 0.75f, float bin = 1f)

@@ -13,6 +13,9 @@ namespace Kestrel.Pad
         public const float ColumnFlange = 0.45f, ColumnDepth = 0.5f, Web = 0.04f, GirtFlange = 0.3f, GirtDepth = 0.35f, Brace = 0.2f, DeckW = 0.9f, DeckT = 0.08f, ArmMember = 0.14f;
 
         public PadLayout Layout { get; private set; }
+        /// <summary>Identity of the vehicle mesh the layout was fitted to (VehicleSkin.MeshKey); 0 = none. Callers
+        /// compare it to decide whether a rebuild is needed when only the mesh changed.</summary>
+        public long SourceMeshKey;
         public readonly List<SwingArm> Arms = new List<SwingArm>();
         public readonly BudgetLedger Ledger = new BudgetLedger();
         /// <summary>-1 = follow QualitySettings (clamped to Low/Medium/High).</summary>

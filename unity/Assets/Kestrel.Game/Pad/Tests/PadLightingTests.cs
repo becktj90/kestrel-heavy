@@ -94,5 +94,30 @@ namespace Kestrel.Pad.Tests
             Assert.That(PadLighting.HasCone(LightKind.Flood, 1), Is.True); Assert.That(PadLighting.HasCone(LightKind.Pole, 1), Is.False);
             Assert.That(PadLighting.HasCone(LightKind.Pole, 2), Is.True); Assert.That(PadLighting.HasCone(LightKind.Aviation, 2), Is.False);
         }
+
+        [Test]
+        public void NearPolesStayOutOfTheDesignCameraBearing()
+        {
+            for (int seed = 1; seed <= 12; seed++)
+                foreach (var s in PadLighting.Plan(PadGenerator.Generate(seed, PadArchetype.Tower, Heavy), 2).Where(s => s.Id.StartsWith("pole.r2.")))
+                {
+                    float b = (float)(System.Math.Atan2(s.Position.X, s.Position.Z) * 180 / System.Math.PI);
+                    Assert.That(PadLighting.AngleDiff(b, PadGenerator.DefaultViewBearingDeg), Is.GreaterThanOrEqualTo(PadLighting.CameraKeepOutDeg), $"seed {seed} {s.Id}");
+                }
+            Assert.That(PadLighting.AngleDiff(350f, 10f), Is.EqualTo(20f).Within(1e-4f));
+        }
+
+        [Test]
+        public void TowerFloodsAreBrightAndWashTheWholeStack()
+        {
+            var L = PadGenerator.Generate(3, PadArchetype.Tower, Heavy);
+            var floods = PadLighting.Plan(L, 2).Where(s => s.Kind == LightKind.Flood).ToList();
+            Assert.That(floods.All(s => s.Illum >= 4f), Is.True);
+            // aim points (fixture + aim · throw) spread over the vehicle height, not one spot
+            var ys = floods.Select(s => s.Position.Y + s.Aim.Y * s.Throw).ToList();
+            Assert.That(ys.Max() - ys.Min(), Is.GreaterThan(Heavy.VehicleHeight * 0.4f));
+            foreach (var s in floods) Assert.That(System.Math.Abs(s.Position.X + s.Aim.X * s.Throw), Is.LessThan(0.5f), s.Id);   // on the vehicle axis
+            Assert.That(PadLighting.CountRealtime(PadLighting.Plan(L, 2)), Is.LessThanOrEqualTo(KitBudgets.PadRealtimeLights(2)));
+        }
     }
 }

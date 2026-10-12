@@ -41,11 +41,12 @@ namespace Kestrel.Slice
             pad.localPosition = Vector3.zero; pad.localRotation = Quaternion.Euler(0, Mathf.Atan2(x, z) * Mathf.Rad2Deg, 0);
             var existing = pad.GetComponent<PadRenderer>();
             var L = existing != null ? existing.Layout : null;
-            if (L != null && L.Seed == seed && L.Archetype == type && Mathf.Approximately(L.Fit.VehicleHeight, h) && Mathf.Approximately(L.Fit.VehicleRadius, r)) return existing;
-            var fit = new PadFit(h, r, Clearance);
             var mf = vehicleMesh != null ? vehicleMesh.GetComponent<MeshFilter>() : null;   // arms end at the real skin (#135)
+            long meshKey = VehicleSkin.MeshKey(mf != null ? mf.sharedMesh : null);
+            if (L != null && L.Seed == seed && L.Archetype == type && Mathf.Approximately(L.Fit.VehicleHeight, h) && Mathf.Approximately(L.Fit.VehicleRadius, r) && existing.SourceMeshKey == meshKey) return existing;
+            var fit = new PadFit(h, r, Clearance);
             if (mf != null) fit.SkinRadiusAt = VehicleSkin.FromMesh(mf.sharedMesh, pad.worldToLocalMatrix * vehicleMesh.localToWorldMatrix);
-            return PadBuilder.Build(pad, seed, type, fit);
+            var built = PadBuilder.Build(pad, seed, type, fit); built.SourceMeshKey = meshKey; return built;
         }
     }
 }
