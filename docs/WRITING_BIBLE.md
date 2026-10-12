@@ -1,6 +1,6 @@
 # Kestrel Heavy: Writing Bible
 
-How every word in Kestrel Heavy sounds: captions, voice clips, Crew Talk, briefings,
+How every word in Kestrel Heavy sounds: captions, voice clips, Hangar Talk, briefings,
 debriefs, Codex, and UI. Player-first: short, skippable, honest.
 
 Tier tags: **[1.0]** current build, **[1.1]** next feature release, **[Later]** parked.
@@ -24,7 +24,7 @@ World facts (cast, places, arc, market) live in `docs/WORLD_BIBLE.md`.
 
 | Surface | Target | Notes |
 |---|---|---|
-| Captions, Crew Talk, UI | Grade 3–5 (Flesch-Kincaid) | Short words, one idea per sentence |
+| Captions, Hangar Talk, UI | Grade 3–5 (Flesch-Kincaid) | Short words, one idea per sentence |
 | Briefings, debriefs | Grade 5–6 | One technical term max per card |
 | Codex L1 [1.1] | Grade 6 | Diagram first, text second |
 | Codex Engineer layer [1.1] | Unrestricted | Equations, units, references allowed |
@@ -71,7 +71,7 @@ credits, never the save. The words match that weight: **serious, short, then for
 **Pattern (debrief card):** *What happened. Why. One fix. Back to it.*
 
 > Max-Q tore the fairing. You were at full throttle through the thick air.
-> Try throttling down near 12 km. Pearl's got a new fairing on the bench.
+> Try throttling down near 12 km. Hollis's got a new fairing on the bench.
 
 Rules:
 - Name the cause in the first five words.
@@ -185,36 +185,36 @@ on-device speech).
   it's not in the three-voice table. Who voices it, and is it text-only?
 - **N3.** Missing variants: `abort-salvage`, `abort-splash`, `abort-tip`, `liftoff` and
   `seco` (MC) have fewer than 2 clips in `assets/narration/`; `pad` (MC) has 1.
-- **N4.** Should the crew (Bodie, Junie, Pearl, Sloane) ever take a flight channel, or stay off-air?
+- **N4.** Should the crew (Rook, Marlo, Hollis, Tamsin) ever take a flight channel, or stay off-air?
   This draft says off-air.
 - **N5.** Localized clips: re-record per locale with the same voice IDs, or captions-only for non-English in 1.0?
 
-## 7. Character dialect guides: Crew Talk [1.0]
+## 7. Character dialect guides: Hangar Talk [1.0]
 
-Crew Talk is text cards in the hangar, briefings, and debriefs. Never in flight.
+Hangar Talk is text cards in the hangar, briefings, and debriefs. Never in flight.
 Each card is one speaker, at most 2 sentences, at most 90 characters (see section 10).
 A dialect is a set of habits, not an accent spelled out phonetically. Never write accents as
 misspellings.
 
-### Bodie, propulsion
+### Rook, propulsion
 - **Habits:** short sentences, "yep," shop words (bench, stand, burn, huff). Names engines.
 - **Never:** long explanations, jargon without a picture.
 - *"Yep. She lit clean. Good huff on start."*
 - *"Isp is how far the fuel gets you. More is better."*
 
-### Junie, guidance and landing
+### Marlo, guidance and landing
 - **Habits:** numbered steps out loud, quick exclamations, talks to her own charts.
 - **Never:** sarcasm, hedging forever.
 - *"Okay. One: aim off the deck. Two: divert late. Three: catch!"*
 - *"Light late, stop right at the deck. That's the whole trick."*
 
-### Pearl, structures
+### Hollis, structures
 - **Habits:** complete, calm sentences. Understatement. One-word praise ("Tidy.").
 - **Never:** exclamation marks, hurry.
 - *"The air pushes hardest near Max-Q. Ease off, and the tanks will thank you."*
 - *"Tidy landing. That bolt goes in the jar."*
 
-### Sloane, mission manager
+### Tamsin, mission manager
 - **Habits:** lists, schedules, "lovely," nicknames for payloads.
 - **Never:** pressure to spend, guilt, real-time urgency.
 - *"Lovely. Next up: one weather sat, polar orbit, nicknamed Puffin."*
@@ -226,7 +226,7 @@ misspellings.
 
 ### Shared rules
 - Characters address the player as "Chief." No names inserted into audio.
-- No character contradicts the sim. If Junie says "light late," the sim agrees.
+- No character contradicts the sim. If Marlo says "light late," the sim agrees.
 - One technical term per card at most.
 
 ## 8. Banned content [1.0]
@@ -246,7 +246,7 @@ misspellings.
 
 - **Meaning over words.** Each line is translated for its full meaning and rendered in the
   speaker's dialect in the target language. Never a stock phrase, never a literal translation.
-  Pearl stays understated in every language; Bodie stays short.
+  Hollis stays understated in every language; Rook stays short.
 - **Translator kit per line:** speaker, event or screen, intent (one sentence), max length,
   key word that must come first, and whether it's a static clip.
 - **Key word first survives translation.** If the grammar resists, restructure the line rather
@@ -269,7 +269,7 @@ Portrait-only (DECISIONS #7). The base is an iPhone-width at 390 pt; iPad gets t
 | HUD label | ≤ 12 chars | 1 |
 | Button | ≤ 14 chars, verb first | 1 |
 | Toast / warning | ≤ 40 chars | 1 |
-| Crew Talk card | ≤ 2 sentences, ≤ 90 chars | 3 |
+| Hangar Talk card | ≤ 2 sentences, ≤ 90 chars | 3 |
 | Debrief card | ≤ 3 sentences, ≤ 160 chars | 5 |
 | Contract card [1.1] | title ≤ 28, body ≤ 100 chars | 4 |
 | Codex L1 entry [1.1] | ≤ 300 chars + diagram | scroll |
