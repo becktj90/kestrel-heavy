@@ -84,7 +84,7 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
             PlayerSettings.allowedAutorotateToLandscapeRight = false;
             PlayerSettings.iOS.appleDeveloperTeamID = TeamId;
             PlayerSettings.iOS.appleEnableAutomaticSigning = true;
-            PlayerSettings.iOS.targetOSVersionString = "15.0";
+            PlayerSettings.iOS.targetOSVersionString = "16.0";
             PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneAndiPad;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.iOS, ScriptingImplementation.IL2CPP);
             PlayerSettings.statusBarHidden = true;
