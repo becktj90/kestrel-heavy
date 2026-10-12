@@ -102,6 +102,7 @@ import {
 } from './camera.js';
 import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isAscentCruise, isBoosting, setBoostHeld, setTouchSteer } from './input.js';
 import { FIRST_MISSION, MISSIONS, getMission, isUnlocked, nextMissionId } from './missions.js';
+import { starsForTouchdown, unlocksNextMission } from './mission-ramp.js';
 import { beatsFor, currentBeat, formatClock, nextCoachBeat, playPhase, playPhaseKind, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
 import { gradeTouchdown } from './landing-tune.js';
 import { gradeLanding, medalShelf, medalText, recordMedal } from './medals.js';
@@ -1037,7 +1038,9 @@ export default class MissionScene extends Phaser.Scene {
     this.session.fired.ses1 = true;
     this.session.fired.fairing = true;
     this.session.swellT = 0;
-    this.session.fuel = Math.min(FUEL_MAX, Math.max(this.session.fuel, HAVEN.landingFuel));
+    const fuelFloor = Number(flight.landingFuel);
+    const landingFuel = Number.isFinite(fuelFloor) ? fuelFloor : HAVEN.landingFuel;
+    this.session.fuel = Math.min(FUEL_MAX, Math.max(this.session.fuel, landingFuel));
     this.session.earlyBurnWarned = false;
     this.session.burnLit = false;
     this.session.burnWindow = false;
@@ -1189,6 +1192,7 @@ export default class MissionScene extends Phaser.Scene {
     const mode = DIFFICULTY[this.settings.difficulty];
     this.session.flightTime += dt;
     this.session.grace = Math.max(0, this.session.grace - dt);
+    this.session.invuln = Math.max(0, (this.session.invuln || 0) - dt);
     this.session.overdrive = Math.max(0, this.session.overdrive - dt);
     this.session.tClock += dt;
     this.fireDueBeats();
@@ -1227,7 +1231,7 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setAngle(clamp(this.rocket.body.velocity.x * 3.6 + axis * 5.2, -16, 16));
     this.enforceCorridor(dt);
     if (this.status !== 'ASCENT') return;
-    this.emitWind(mode.wind || 0);
+    this.emitWind(this.missionWind(mode));
 
     this.bgPad.setVisible(this.rocket.y > 80);
     const { w: pw, h: ph } = this.playfieldSize();
@@ -1470,7 +1474,7 @@ export default class MissionScene extends Phaser.Scene {
     this.rocket.setAngle(nextAngle);
 
     if (reentry) {
-      this.rocket.applyForce({ x: axis * 0.006 + (mode.wind || 0) * 0.0008, y: -0.016 });
+      this.rocket.applyForce({ x: axis * 0.006 + this.missionWind(mode) * 0.0008, y: -0.016 });
       this.session.throttle = 0.72;
       this.emitPlume(0.7);
       if (this.bloomFx) this.bloomFx.emitParticleAt(this.rocket.x, this.rocket.y + 96, this.settings.reducedMotion ? 1 : 3);
@@ -1481,7 +1485,7 @@ export default class MissionScene extends Phaser.Scene {
       }
     } else if (gliding) {
       this.rocket.applyForce({
-        x: axis * 0.009 + (mode.wind || 0) * 0.0012 + side * -0.0028,
+        x: axis * 0.009 + this.missionWind(mode) * 0.0012 + side * -0.0028,
         y: 0.0014,
       });
       this.session.throttle = 0.08;
@@ -1509,7 +1513,7 @@ export default class MissionScene extends Phaser.Scene {
       }
       AudioApi.setBed('burn', true, this.settings, 0.38);
     } else {
-      this.rocket.applyForce({ x: axis * 0.007 + (mode.wind || 0) * 0.0022, y: 0.01 });
+      this.rocket.applyForce({ x: axis * 0.007 + this.missionWind(mode) * 0.0022, y: 0.01 });
       this.session.throttle = 0.12;
       AudioApi.setBed('burn', false, this.settings);
     }
@@ -1967,6 +1971,10 @@ export default class MissionScene extends Phaser.Scene {
     const atMaxQ = this.session.tClock >= PACE.MAXQ - 4 && this.session.tClock <= PACE.MAXQ + 8;
     const prevHealth = this.session.health;
     const result = applyHit(this.session, kind, this.settings.difficulty);
+    if (result.kind === 'invuln') {
+      obj.destroy();
+      return;
+    }
     const soft = softenFirstFlightHit(this.session.corridorGrace, prevHealth, result);
     result.health = soft.health;
     result.kind = soft.kind;
@@ -2278,7 +2286,21 @@ export default class MissionScene extends Phaser.Scene {
     const medal = reason === 'rud' ? null : this.session.medal;
     const medalRec = recordMedal(this.settings, this.currentFlight().id, medal);
     submitFlightScore(this.currentFlight().id, points);
-    const nxt = reason === 'rud' ? null : nextMissionId(this.currentFlight().id);
+    const mode = DIFFICULTY[this.settings.difficulty] || DIFFICULTY.CADET;
+    const tdStars = this.session.touchdown;
+    const stars = starsForTouchdown({
+      reason,
+      kind: tdStars?.kind,
+      vy: tdStars?.vy,
+      dx: tdStars?.dx,
+      tipped: (tdStars?.tilt || 0) > 14 || this.session.abortId === 'tip',
+      recovered: Boolean(this.session.recovered),
+      landingVy: mode.landingVy,
+      landingTol: mode.landingTol + 22,
+    });
+    const starRow = this.settings.missionBests?.[this.currentFlight().id];
+    if (starRow && stars > (starRow.stars || 0)) starRow.stars = stars;
+    const nxt = unlocksNextMission(reason) ? nextMissionId(this.currentFlight().id) : null;
     const unlockedNext = nxt && !this.settings.unlockedMissions.includes(nxt);
     if (unlockedNext) this.settings.unlockedMissions.push(nxt);
     mergeUnlocks(this.settings);
@@ -2295,7 +2317,8 @@ export default class MissionScene extends Phaser.Scene {
         : reason === 'salvage'
           ? (this.session.abortId === 'tip' ? 'TIP ON DECK' : this.currentFlight().jacklyn.salvage)
           : (this.session.failReason ? `ABORT · ${this.session.failReason}` : 'MISSION ABORT');
-    const extra = unlockedNext ? `  ·  ${nxt} UNLOCKED` : '';
+    const starNote = stars > 0 ? `  ·  ${'★'.repeat(stars)}` : '';
+    const extra = `${unlockedNext ? `  ·  ${nxt} UNLOCKED` : ''}${starNote}`;
     const ascent = Math.round(this.session.ascentScore || (reason === 'rud' ? points : 0));
     const jacklynPts = points - ascent;
     const jacklynKind = reason === 'recovered'
@@ -2724,9 +2747,17 @@ export default class MissionScene extends Phaser.Scene {
     }
   }
 
+  missionWind(mode) {
+    const base = Number(mode?.wind) || 0;
+    const scale = Number(this.currentFlight()?.wind);
+    return base * (Number.isFinite(scale) ? scale : 1);
+  }
+
   applyHavenDrift(dt, mode) {
-    const wind = mode.wind || 0.28;
-    const swell = Math.sin((this.session.swellT || 0) * 0.28) * HAVEN.swellAmp;
+    const wind = this.missionWind(mode) || 0.28;
+    const amp = Number(this.currentFlight()?.swellAmp);
+    const swellAmp = Number.isFinite(amp) ? amp : HAVEN.swellAmp;
+    const swell = Math.sin((this.session.swellT || 0) * 0.28) * swellAmp;
     const gust = Math.sin((this.session.swellT || 0) * 0.62) * wind;
     const x = (this.session.havenHomeX || W / 2) + swell;
     this.jacklyn.setPosition(x, this.jacklyn.y);

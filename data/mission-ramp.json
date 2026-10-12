@@ -1,0 +1,17 @@
+{
+  "note": "Per-mission assists for the Phaser web demo. Unity should reuse these numbers. Wind is a multiplier on the difficulty wind force. landingFuel and swellAmp replace the Haven defaults. Physics integration is unchanged.",
+  "unlock": "A deck finish (recovered or salvage, including a tip) unlocks the next mission. A splash does not. Stars never gate the next mission.",
+  "windFormula": "windForce = difficulty.wind * mission.wind",
+  "stars": {
+    "threeMin": 0.45,
+    "twoMin": 0.2,
+    "formula": "Splash and RUD score 0. A tipped deck or any negative margin scores 1. A recovered catch scores 3 when min(1-|vy|/landingVy, 1-|dx|/landingTol) >= threeMin, 2 when >= twoMin, otherwise 1."
+  },
+  "missions": {
+    "KH-1": { "wind": 0.55, "landingFuel": 52, "swellAmp": 6 },
+    "KH-2": { "wind": 0.75, "landingFuel": 44, "swellAmp": 10 },
+    "KH-3": { "wind": 1, "landingFuel": 36, "swellAmp": 16 },
+    "KH-4": { "wind": 1.2, "landingFuel": 30, "swellAmp": 22 },
+    "KH-5": { "wind": 1.45, "landingFuel": 24, "swellAmp": 28 }
+  }
+}
