@@ -17,7 +17,7 @@ namespace Kestrel.Pad.Tests
             var r = PadBuilder.Build(_root.transform, 11, PadArchetype.TowerStrongback, new PadFit(70f, 2.5f));
             int n = 0; foreach (var b in r.Batches.Values) n += b.Count;
             Assert.That(n, Is.EqualTo(r.Layout.Members.Count));
-            Assert.That(r.Batches.Count, Is.LessThanOrEqualTo(6));
+            Assert.That(r.Batches.Count, Is.LessThanOrEqualTo(9));   // D2: + crew arm, handrail, galvanized masts, insulator spikes
             Assert.That(_root.GetComponentsInChildren<MeshRenderer>(), Is.Empty, "no GameObject per member");
         }
 

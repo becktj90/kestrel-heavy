@@ -38,6 +38,8 @@ namespace Kestrel.Pad
         public readonly List<SwingArmSpec> Arms = new List<SwingArmSpec>();
         public ElementGraph Graph = new ElementGraph();
         public float DeckRadius;
+        /// <summary>Named tower attach frames (null for Rail). See TowerAnchors and docs/UMBILICAL_CONTRACT.md.</summary>
+        public TowerAnchors Anchors;
 
         /// <summary>Stable fingerprint for golden tests and the generation cache key.</summary>
         public ulong Hash()
@@ -54,7 +56,7 @@ namespace Kestrel.Pad
 
     public static class PadGenerator
     {
-        public const int Version = 1;   // bump when output for a given seed changes (invalidates caches/goldens)
+        public const int Version = 2;   // bump when output for a given seed changes (invalidates caches/goldens)
 
         /// <summary>Same rule as Kestrel.Core.Timeline.Pad.For: tower for stages >= 3 m across, strongback for liquid + tower.</summary>
         public static PadArchetype ArchetypeFor(string corePadId, bool strongback) =>
@@ -80,9 +82,15 @@ namespace Kestrel.Pad
             if (type == PadArchetype.TowerStrongback) tp.Width += 2f;
             tp.Levels = Math.Max(6, (int)Math.Ceiling(fit.VehicleHeight * 1.05f / tp.LevelHeight));
             tp.StandOff = fit.VehicleRadius + fit.Clearance + tp.Width * 0.5f;
+            // D2: crew-access arm one level below the vehicle tip, spike on the cap.
+            tp.CrewLevel = Math.Max(0, Math.Min(tp.Levels - 1, (int)Math.Floor(fit.VehicleHeight * 0.85f / tp.LevelHeight) - 1));
+            tp.CrewArmReach = Math.Max(1f, fit.Clearance - 0.6f);
+            tp.CrewArmX = 0f;
+            tp.SpikeHeight = tp.CapHeight * 1.5f;
             L.Tower = tp;
             var tower = new TowerLayout(tp, L.Graph);
             L.Members.AddRange(tower.Members);
+            L.Anchors = tower.Anchors;
 
             var pts = attach ?? DefaultAttachPoints(fit, type);
             foreach (var p in pts)
@@ -96,13 +104,53 @@ namespace Kestrel.Pad
                     MaxLength = fit.Clearance + fit.VehicleRadius + 4f,
                 };
                 L.Arms.Add(spec);
+                L.Anchors.Add(TowerAnchors.ArmId(p.Id), spec.Pivot, "s", L.Anchors.LevelNearest(spec.Pivot.Y));
                 var e = L.Graph.Add($"tower.arm.{p.Id}", ElementCategory.SwingArm, LevelIdAt(tp, p.Pose.Position.Y), "steel", "swing-arm", $"umbilical:{UmbilicalIds.Short(p.Type)}", $"attach:{p.Id}");
                 float len = spec.Pivot.Z - p.Pose.Position.Z;
                 e.Center = new Vec3(spec.Pivot.X, spec.Pivot.Y, spec.Pivot.Z - len * 0.5f); e.Size = new Vec3(spec.Width, spec.Depth, len);
                 e.DisplayName = $"Swing arm ({UmbilicalIds.Short(p.Type)})";
             }
             if (type == PadArchetype.TowerStrongback) BuildStrongback(L, ref rng);
+            BuildMasts(L, ref rng);
             return L;
+        }
+
+        /// <summary>PAD_DETAIL_GRAMMAR §1: free-standing tapered square lattice lightning masts, clear of the
+        /// tower (+Z) side, symmetric about the vehicle axis with ±10° jitter. Generic proportions only.</summary>
+        static void BuildMasts(PadLayout L, ref PadRng rng)
+        {
+            int n = L.Archetype == PadArchetype.TowerStrongback ? rng.Range(3, 5) : L.Archetype == PadArchetype.Tower ? rng.Range(2, 4) : rng.Range(0, 3);
+            float hv = L.Fit.VehicleHeight, hm = hv * rng.Range(1.15f, 1.6f), spike = hm * rng.Range(0.06f, 0.12f), hl = hm - spike;
+            float wb = hm / rng.Range(9f, 14f), wt = wb * rng.Range(0.35f, 0.6f);
+            float r = Math.Max(hv * 0.5f * rng.Range(1.0f, 1.8f), L.DeckRadius + wb);
+            for (int i = 0; i < n; i++)
+            {
+                // spread over the back/side arc away from the tower; tower sits at bearing 0 (+Z)
+                float bearing = 180f + (n == 1 ? 0 : (i / (float)(n - 1) - 0.5f) * 220f) + rng.Range(-10f, 10f);
+                double br = bearing * Math.PI / 180.0;
+                float cx = r * (float)Math.Sin(br), cz = r * (float)Math.Cos(br);
+                string id = $"mast.{i}";
+                var e = L.Graph.Add(id, ElementCategory.Structure, TowerLayout.SiteId, "steel", "lightning-mast", "lattice");
+                e.Center = new Vec3(cx, hm * 0.5f, cz); e.Size = new Vec3(wb, hm, wb); e.DisplayName = $"Lightning mast {i + 1}";
+                float mean = (wb + wt) * 0.5f * 1.1f; int bays = Math.Max(10, Math.Min(22, (int)Math.Round(hl / mean)));
+                Vec3 C(int c, float y) { float w = (wb + (wt - wb) * (y / hl)) * 0.5f; return new Vec3(cx + ((c == 0 || c == 3) ? -w : w), y, cz + ((c == 0 || c == 1) ? -w : w)); }
+                void M(string mid, MemberKind k, Vec3 a, Vec3 b) => L.Members.Add(new Member { Id = mid, Kind = k, A = a, B = b, ParentId = id, Material = MaterialRole.Galvanized });
+                for (int b = 0; b < bays; b++)
+                {
+                    float y0 = hl * b / bays, y1 = hl * (b + 1) / bays;
+                    for (int c = 0; c < 4; c++)
+                    {
+                        int d = (c + 1) % 4;
+                        M($"{id}.b{b:00}.leg{c}", MemberKind.Mast, C(c, y0), C(c, y1));
+                        if (b % 2 == 1) M($"{id}.b{b:00}.h{c}", MemberKind.Brace, C(c, y1), C(d, y1));
+                        M($"{id}.b{b:00}.x{c}.0", MemberKind.Brace, C(c, y0), C(d, y1));
+                        M($"{id}.b{b:00}.x{c}.1", MemberKind.Brace, C(d, y0), C(c, y1));
+                    }
+                    if (b > 0 && b % 5 == 0) { M($"{id}.b{b:00}.plat.0", MemberKind.Deck, C(0, y0), C(2, y0)); }
+                }
+                M($"{id}.spike", MemberKind.Mast, new Vec3(cx, hl, cz), new Vec3(cx, hm, cz));
+                L.Members[L.Members.Count - 1] = new Member { Id = $"{id}.spike", Kind = MemberKind.Mast, A = new Vec3(cx, hl, cz), B = new Vec3(cx, hm, cz), ParentId = id, Material = MaterialRole.Insulation };
+            }
         }
 
         static string LevelIdAt(TowerParams tp, float y) => $"tower.l{Math.Max(0, Math.Min(tp.Levels - 1, (int)(y / tp.LevelHeight))):00}";
