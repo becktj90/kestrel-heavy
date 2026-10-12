@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kestrel Heavy in-game Codex",
+  "description": "Kid explanation plus an engineer paragraph. Numbers match the sim and the catalogs. No real company or vehicle names.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "entries"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "kid", "engineer", "sources"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "kid": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "engineer": { "type": "string", "minLength": 80, "maxLength": 1600 },
+          "sources": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": { "type": "string", "pattern": "^[A-Za-z0-9._/-]+$" }
+          }
+        }
+      }
+    }
+  }
+}

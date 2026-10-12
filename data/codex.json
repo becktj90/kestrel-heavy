@@ -1,0 +1,62 @@
+{
+  "$schema": "./schemas/codex.schema.json",
+  "version": 1,
+  "entries": [
+    {
+      "id": "delta-v",
+      "title": "Delta-v",
+      "kid": "Delta-v is the speed change a rocket can make. A 200 km orbit moves at about 7.8 km/s. Leaving Pier 7 for that orbit takes about 8.9 km/s. Gravity and air use the rest.",
+      "engineer": "Usable delta-v is RocketEq.DeltaV: Isp in seconds times g0 times ln(m0 / mf), with g0 = 9.80665 m/s². mf is m0 minus usable propellant. A landing reserve is held as dry mass and is not usable (Mass.StageMasses). The designer allows at most 30% of that stage's propellant (landingReserveFraction.max). Stack.RequiredDeltaV for a closed orbit is speed at periapsis, minus Earth.SiteRotationSpeed at 28.5 degrees, plus Stack.LOSS_BUDGET of 1500 m/s. Periapsis speed is sqrt(mu * (2/rp - 2/(rp+ra))), with mu = 3.986004418e14 m³/s² and Earth radius 6378137 m. Site speed there is about 409 m/s. For leo200 the budget is about 8876 m/s. Circular speed there is about 7784 m/s. A suborbital target is not a closed orbit. Its budget is sqrt(2 * g0 * h) + 1000 m/s. The 1500 m/s term is a flat allowance. The ascent sim's own losses can differ.",
+      "sources": ["RocketEq.DeltaV", "Stack.RequiredDeltaV", "Stack.LOSS_BUDGET", "Earth.SiteRotationSpeed", "Mass.StageMasses"]
+    },
+    {
+      "id": "twr",
+      "title": "Thrust-to-weight",
+      "kid": "Thrust-to-weight, called TWR, is push divided by weight. Above 1, the stack leaves the pad. At 1.25 or more, the climb wastes less speed on gravity. At 1 or below, it stays put.",
+      "engineer": "Pad TWR is sea-level thrust of the first phase divided by m0 * g0 (Readout.Quick, phase 0). Later phases use vacuum thrust. m0 is the payload, the fairing, and every stage still attached, propellant plus dry mass. Validate blocks the launch when liftoff TWR is not strictly above twr.min, which is 1.0. A twr-marginal warning fires below twr.good, which is 1.25. If losing one engine would drop liftoff TWR under 1, DesignRules adds an engine-out warning.",
+      "sources": ["Readout.Quick", "Validate", "DesignRules", "designer-limits.json"]
+    },
+    {
+      "id": "isp",
+      "title": "Specific impulse",
+      "kid": "Specific impulse, called Isp, scores how well an engine uses propellant. Higher Isp means more speed from each kilogram. At the pad, thick air cuts the number. In vacuum it is higher.",
+      "engineer": "Isp is in seconds. RocketEq.IspAt blends the catalog ends: IspVac minus (IspVac minus IspSL) times p / p0. p0 is Atmosphere.P0, 101325 Pa. RocketEq.ThrustAt uses the same blend. Mass flow is thrust divided by Isp times g0. An engine's ispVac cannot rise past its propellant's ispVacMax in propellants.json. The designer's delta-v total uses vacuum Isp. Headless and Ascent3Dof burn with the blended Isp at the local air pressure.",
+      "sources": ["RocketEq.IspAt", "RocketEq.ThrustAt", "Atmosphere.P0", "propellants.json"]
+    },
+    {
+      "id": "staging",
+      "title": "Staging",
+      "kid": "Staging drops empty tanks so the rocket left flying is lighter. The bottom stage lifts the whole stack. The top stage lifts only itself and the payload. Each stage adds its own delta-v.",
+      "engineer": "Stages stack from the bottom. For stage k, m0 is that stage's propellant and dry mass, plus every stage above it, plus payload and fairing (Stack.IdealDeltaV). That stage's delta-v is its vacuum Isp times g0 times ln(m0 / (m0 minus usable propellant)). Strap-ons burn beside the core and fold into one phase (Stack.SerialStages). Separation mass and interstage mass add to dry mass (Mass.StageMasses). An interstage is 0.6 times the larger diameter long. Each flare or shoulder adds 0.02 to Cd. A straight joint adds none (InterstageAero). That mass and drag do not reorder the burns. The fairing drops on its own, by default at 110 km (jettisonAltitudeKm.default).",
+      "sources": ["Stack.IdealDeltaV", "Stack.SerialStages", "Mass.StageMasses", "InterstageAero"]
+    },
+    {
+      "id": "max-q",
+      "title": "Max-Q",
+      "kid": "Max-Q is the hardest push from the air. The rocket is already fast, and the air is still thick. The designer warns above 45 kPa. That warning does not block the launch.",
+      "engineer": "Dynamic pressure is Aero.DynamicPressure: one half times density times speed relative to the air, squared. Headless and Ascent3Dof keep the peak. maxQKPa.warnAbove is 45. DesignRules files maxq-high as a warning, not a block, and it skips an unguided solid. Drag force is that pressure times Cd(Mach) times area. Cd holds its low-speed value up to Mach 0.8, rises to twice that value at Mach 1.1 (Aero.CdMach, PEAK_FACTOR 2), then falls as Mach climbs.",
+      "sources": ["Aero.DynamicPressure", "Aero.CdMach", "DesignRules", "designer-limits.json"]
+    },
+    {
+      "id": "cg-cp",
+      "title": "Center of mass and center of pressure",
+      "kid": "The center of mass is where the rocket balances. The center of pressure is where the air pushes. Keep the balance point ahead of the push point. Then the nose stays forward. Fins pull the push point back. Aim for 1 to 2 body widths of gap.",
+      "engineer": "stabilityCal is the center of gravity minus the raw center of pressure, divided by the reference diameter (Balance.Of). Stations are metres from the base, positive up. A positive caliber means the balance point is ahead of the push point, so the stack is stable on the pad. The hangar marker clamps the drawn center of pressure to the nose. The caliber keeps the raw value. The estimate uses full tanks at liftoff, landing reserve included. It is not the max-Q case, when much of the propellant is already gone. Finned or unguided rockets aim for 1 to 2 calibers (stabilityCal.aimMin and aimMax). Above 4 calibers warns that the rocket is overstable and will weathercock. An unguided rocket with a negative margin is blocked. A steered stage without fins gets a note instead, because the engines can point the stack. Grid fins add mass and drag. They do not move the center of pressure.",
+      "sources": ["Balance.Of", "DesignRules", "designer-limits.json"]
+    },
+    {
+      "id": "orbits",
+      "title": "Orbits",
+      "kid": "An orbit is a fall that keeps missing Earth. A 200 km circle moves at about 7.8 km/s. A 400 km circle is slower, about 7.7 km/s. Pier 7 already moves at about 0.41 km/s. That ground speed is free.",
+      "engineer": "Closed-orbit speed at periapsis is sqrt(mu * (2/rp - 2/(rp+ra))), with rp = R + periapsis and ra = R + apoapsis (Stack.RequiredDeltaV). mu is Gravity.MU_EARTH, 3.986004418e14 m³/s², and R is Gravity.R_EARTH, 6378137 m. Circular leo200 is about 7784 m/s. leo400 is about 7669 m/s. The 550 km sun-sync target is about 7585 m/s. GTO, 200 km by 35786 km, is about 10239 m/s at periapsis. Required delta-v then subtracts site rotation at latitude 28.5 degrees, about 409 m/s, and adds 1500 m/s of Stack.LOSS_BUDGET. That is about 8876 m/s for leo200, about 8760 m/s for leo400, about 8676 m/s for the sun-sync target, and about 11330 m/s for GTO. Inclination in payloads.json does not change this budget. Latitude does. The suborbital 100 km target is not a closed orbit. Its budget is about 2400 m/s, from sqrt(2 * g0 * h) + 1000.",
+      "sources": ["Stack.RequiredDeltaV", "Gravity.MU_EARTH", "Gravity.R_EARTH", "payloads.json"]
+    },
+    {
+      "id": "booster-landing",
+      "title": "Booster landing",
+      "kid": "The booster keeps some propellant for the trip home. That reserve does not count toward orbit. On Haven, a soft centered touchdown is Perfect. A tip, or a miss of the deck, is Salvage. A water landing is not graded.",
+      "engineer": "Landing reserve is landingPropMass. The designer allows 0 to 30% of that stage's propellant (landingReserveFraction). Mass.StageMasses will not count more reserve than propellant loaded. Only the rest enters the rocket equation. The reserve rides as dry mass (Stack.SerialStages), so the stack still lifts it. Legs multiply stage-0 dry mass by 1.06. Grid fins add 120 kg per square metre of the stage cross section. Steering jets add 250 kg. The ascent integrator does not fly the landing burn. Haven's grade comes from landing.json through LandingGrade. Sink margin is 1 minus the absolute sink rate over landingVy. Offset margin is 1 minus the absolute miss over landingTol. The grade uses the smaller one. Water is ungraded. On a deck, a tip or either margin below 0 is Salvage. At least 0.45 is Perfect. At least 0.2 is Good. Anything else on the deck is Hard.",
+      "sources": ["Mass.StageMasses", "Stack.SerialStages", "LandingGrade", "landing.json"]
+    }
+  ]
+}

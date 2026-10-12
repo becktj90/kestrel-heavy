@@ -7,6 +7,7 @@
 | materials.json | schemas/materials.schema.json | web/js/data/materials.js |
 | payloads.json | schemas/payloads.schema.json | web/js/data/payloads.js |
 | presets.json | schemas/presets.schema.json | web/js/data/presets.js |
+| codex.json | schemas/codex.schema.json | CodexBook (Unity); web/js/data/gen/codex.js |
 | golden/*.json | see golden/README.md and docs/PHYSICS.md | ports (tolerances are per quantity for catalog-flight) |
 
 Economy constants stay in `web/js/economy-data/constants.json` (already JSON + schema).
