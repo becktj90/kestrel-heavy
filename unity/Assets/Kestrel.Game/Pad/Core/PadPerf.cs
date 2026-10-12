@@ -17,7 +17,18 @@ namespace Kestrel.Pad
             long tris = 0; var kinds = new System.Collections.Generic.HashSet<(bool, MaterialRole)>();
             foreach (var m in l.Members) { tris += TrisFor(m.Kind); kinds.Add((TrisFor(m.Kind) == IBeamTris, m.Material)); }
             foreach (var a in l.Arms) tris += (long)SwingArmTruss.MemberCount(a.MaxLength) * BeamTris;
-            ledger.Add(kinds.Count + l.Arms.Count * ArmBatchesPerArm, tris);
+            int umbilicalDraws = 0;
+            if (l.Links != null && l.Links.Count > 0)
+            {
+                // One combined hose batch and one plate batch, whatever the strand count. Masts reuse the arm beam.
+                umbilicalDraws = 2;
+                foreach (var u in l.Links)
+                {
+                    tris += u.Mast.Count * BeamTris;
+                    tris += (u.Strands != null ? u.Strands.Length : 1) * 64;   // LOD2 tube, 8 samples × 4 sides
+                }
+            }
+            ledger.Add(kinds.Count + l.Arms.Count * ArmBatchesPerArm + umbilicalDraws, tris);
         }
     }
 }

@@ -3,6 +3,8 @@
 // History: the original was a bare grey 4 x 90 x 4 m cube that read as a stray box at liftoff (#81 fixed sizing).
 // The generated pad's +Z axis (umbilical contract: "+Z toward the pad tower") is yawed to point at the Fit position,
 // behind the vehicle and away from the chase camera.
+using System.Collections.Generic;
+using Kestrel.Kit.Contracts;
 using Kestrel.Pad;
 using UnityEngine;
 
@@ -33,16 +35,23 @@ namespace Kestrel.Slice
         public static void Apply(Transform root, float h, float r) => Apply(root, h, r, DefaultArchetype(r), DefaultSeed);
 
         /// <summary>Regenerate for the current design. root sits at the pad origin (anchored by FlightDriver).
-        /// Same (h, r, archetype, seed) is a no-op.</summary>
-        public static PadRenderer Apply(Transform root, float h, float r, PadArchetype type, int seed)
+        /// Same (h, r, archetype, seed, attach stamp) is a no-op. <paramref name="attach"/> is vehicle-frame;
+        /// it is rotated into pad space because the pad root is yawed so +Z points at the tower.</summary>
+        public static PadRenderer Apply(Transform root, float h, float r, PadArchetype type, int seed, IReadOnlyList<AttachPoint> attach = null)
         {
             var pad = root.Find("Pad"); if (pad == null) { pad = new GameObject("Pad").transform; pad.SetParent(root, false); }
             var (x, z, _) = Fit(h, r);
-            pad.localPosition = Vector3.zero; pad.localRotation = Quaternion.Euler(0, Mathf.Atan2(x, z) * Mathf.Rad2Deg, 0);
+            float yaw = Mathf.Atan2(x, z) * Mathf.Rad2Deg;
+            pad.localPosition = Vector3.zero; pad.localRotation = Quaternion.Euler(0, yaw, 0);
             var existing = pad.GetComponent<PadRenderer>();
             var L = existing != null ? existing.Layout : null;
-            if (L != null && L.Seed == seed && L.Archetype == type && Mathf.Approximately(L.Fit.VehicleHeight, h) && Mathf.Approximately(L.Fit.VehicleRadius, r)) return existing;
-            return PadBuilder.Build(pad, seed, type, new PadFit(h, r, Clearance));
+            int stamp = UmbilicalRig.Stamp(attach);
+            if (L != null && L.Seed == seed && L.Archetype == type && existing.AttachStamp == stamp
+                && Mathf.Approximately(L.Fit.VehicleHeight, h) && Mathf.Approximately(L.Fit.VehicleRadius, r)) return existing;
+            var padPts = attach == null ? null : UmbilicalRig.IntoPadFrame(attach, ContractMath.Yaw(-yaw));
+            var built = PadBuilder.Build(pad, seed, type, new PadFit(h, r, Clearance), padPts);
+            built.AttachStamp = stamp;
+            return built;
         }
     }
 }

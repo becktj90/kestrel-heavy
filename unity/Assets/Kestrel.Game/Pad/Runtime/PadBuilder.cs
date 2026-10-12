@@ -15,8 +15,10 @@ namespace Kestrel.Pad
             var layout = PadGenerator.Generate(seed, type, fit, pts);
             var r = root.GetComponent<PadRenderer>(); if (r == null) r = root.gameObject.AddComponent<PadRenderer>();
             r.Build(layout);
-            var identity = new LocalPose(new Vec3(0, 0, 0), Quat.Identity);
+            var identity = UmbilicalRig.Identity;
             foreach (var arm in r.Arms) foreach (var p in pts) if (p.Id == arm.AttachId) arm.Connect(p, identity);
+            foreach (var u in r.Umbilicals) foreach (var p in pts) if (p.Id == u.AttachId) u.Connect(p, identity);
+            r.BindSequence(pts);
             return r;
         }
     }

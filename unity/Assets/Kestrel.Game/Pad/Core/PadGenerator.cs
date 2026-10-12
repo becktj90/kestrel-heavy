@@ -36,6 +36,8 @@ namespace Kestrel.Pad
         public TowerParams Tower;            // null for Rail
         public readonly List<Member> Members = new List<Member>();
         public readonly List<SwingArmSpec> Arms = new List<SwingArmSpec>();
+        /// <summary>Hose bundles, quick-disconnect plates and masts for every attach point (D4). Empty on a bare rail.</summary>
+        public readonly List<ServiceLink> Links = new List<ServiceLink>();
         public ElementGraph Graph = new ElementGraph();
         public float DeckRadius;
         /// <summary>Named tower attach frames (null for Rail). See TowerAnchors and docs/UMBILICAL_CONTRACT.md.</summary>
@@ -50,13 +52,14 @@ namespace Kestrel.Pad
             S(Archetype.ToString()); F(DeckRadius);
             foreach (var m in Members) { S(m.Id); F(m.A.X); F(m.A.Y); F(m.A.Z); F(m.B.X); F(m.B.Y); F(m.B.Z); }
             foreach (var a in Arms) { S(a.AttachId); F(a.Pivot.X); F(a.Pivot.Y); F(a.Pivot.Z); }
+            foreach (var u in Links) { S(u.AttachId); S(u.AnchorId ?? ""); F(u.Anchor.X); F(u.Anchor.Y); F(u.Anchor.Z); F(u.Plate.X); F(u.Plate.Y); F(u.Plate.Z); }
             return h;
         }
     }
 
     public static class PadGenerator
     {
-        public const int Version = 2;   // bump when output for a given seed changes (invalidates caches/goldens)
+        public const int Version = 3;   // bump when output for a given seed changes (invalidates caches/goldens)
 
         /// <summary>Same rule as Kestrel.Core.Timeline.Pad.For: tower for stages >= 3 m across, strongback for liquid + tower.</summary>
         public static PadArchetype ArchetypeFor(string corePadId, bool strongback) =>
@@ -71,7 +74,7 @@ namespace Kestrel.Pad
             var site = L.Graph.Add(TowerLayout.SiteId, ElementCategory.Site, null, "pad", $"archetype:{type}");
             site.Center = new Vec3(0, 0, 0); site.Size = new Vec3(L.DeckRadius * 2, 1, L.DeckRadius * 2); site.DisplayName = "Launch pad";
 
-            if (type == PadArchetype.Rail) { BuildRail(L, ref rng); return L; }
+            if (type == PadArchetype.Rail) { BuildRail(L, ref rng); UmbilicalRig.Attach(L, attach, UmbilicalRig.Identity); return L; }
 
             var tp = new TowerParams
             {
@@ -103,6 +106,11 @@ namespace Kestrel.Pad
                     RetractYawDeg = rng.Range(80f, 110f) * (rng.Next() % 2 == 0 ? 1 : -1),
                     MaxLength = fit.Clearance + fit.VehicleRadius + 4f,
                 };
+                // Reach follows the plate, so a wider or offset designer vehicle still mates. The pivot itself
+                // stays on the anchor D2 published; this only lengthens the arm.
+                float adx = p.Pose.Position.X - spec.Pivot.X, adz = p.Pose.Position.Z - spec.Pivot.Z;
+                float reach = (float)Math.Sqrt(adx * adx + adz * adz);
+                if (reach + 1f > spec.MaxLength) spec.MaxLength = reach + 1f;
                 L.Arms.Add(spec);
                 L.Anchors.Add(TowerAnchors.ArmId(p.Id), spec.Pivot, "s", L.Anchors.LevelNearest(spec.Pivot.Y));
                 var e = L.Graph.Add($"tower.arm.{p.Id}", ElementCategory.SwingArm, LevelIdAt(tp, p.Pose.Position.Y), "steel", "swing-arm", $"umbilical:{UmbilicalIds.Short(p.Type)}", $"attach:{p.Id}");
@@ -112,6 +120,7 @@ namespace Kestrel.Pad
             }
             if (type == PadArchetype.TowerStrongback) BuildStrongback(L, ref rng);
             BuildMasts(L, ref rng);
+            UmbilicalRig.Attach(L, pts, UmbilicalRig.Identity);
             return L;
         }
 
