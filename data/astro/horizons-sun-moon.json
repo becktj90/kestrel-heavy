@@ -1,0 +1,510 @@
+{
+ "generatedBy": "NASA/JPL Horizons API v1.2 (ssd.jpl.nasa.gov/api/horizons.api), fetched 2026-10-12; scripts: tools/fetch-horizons-astro.py",
+ "frame": "geocentric (500@399) apparent RA/Dec of date, TT epochs (QUANTITIES 2,20)",
+ "tolerance": {
+  "angleDeg": 0.1
+ },
+ "count": 50,
+ "cases": [
+  {
+   "jdTT": 2451778.390781,
+   "utc_tt_label": "2000-Aug-21 21:22:43.478",
+   "sunRaDeg": 151.227370034,
+   "sunDecDeg": 11.786877427,
+   "sunDistAu": 1.01143523230909,
+   "moonRaDeg": 46.631545283,
+   "moonDecDeg": 12.53647526,
+   "moonDistAu": 0.00253188477083
+  },
+  {
+   "jdTT": 2452284.628926,
+   "utc_tt_label": "2002-Jan-10 03:05:39.206",
+   "sunRaDeg": 291.304036214,
+   "sunDecDeg": -21.994778789,
+   "sunDistAu": 0.98344518298817,
+   "moonRaDeg": 247.979274083,
+   "moonDecDeg": -20.276021602,
+   "moonDistAu": 0.00257275731655
+  },
+  {
+   "jdTT": 2453106.385701,
+   "utc_tt_label": "2004-Apr-10 21:15:24.566",
+   "sunRaDeg": 19.708187729,
+   "sunDecDeg": 8.31854174,
+   "sunDistAu": 1.00214161720538,
+   "moonRaDeg": 275.156548985,
+   "moonDecDeg": -27.575597057,
+   "moonDistAu": 0.00246450789086
+  },
+  {
+   "jdTT": 2453817.971919,
+   "utc_tt_label": "2006-Mar-23 11:19:33.802",
+   "sunRaDeg": 2.462656425,
+   "sunDecDeg": 1.067114971,
+   "sunDistAu": 0.99673416228446,
+   "moonRaDeg": 282.700177511,
+   "moonDecDeg": -28.204723545,
+   "moonDistAu": 0.00250699743592
+  },
+  {
+   "jdTT": 2454735.811993,
+   "utc_tt_label": "2008-Sep-26 07:29:16.195",
+   "sunRaDeg": 183.286533178,
+   "sunDecDeg": -1.4238661,
+   "sunDistAu": 1.00252009692615,
+   "moonRaDeg": 148.364993651,
+   "moonDecDeg": 11.99431555,
+   "moonDistAu": 0.00253056960844
+  },
+  {
+   "jdTT": 2455444.495313,
+   "utc_tt_label": "2010-Sep-04 23:53:15.043",
+   "sunRaDeg": 163.713763146,
+   "sunDecDeg": 6.931994857,
+   "sunDistAu": 1.008358875676,
+   "moonRaDeg": 115.678291438,
+   "moonDecDeg": 20.08988599,
+   "moonDistAu": 0.00244694606308
+  },
+  {
+   "jdTT": 2456253.645542,
+   "utc_tt_label": "2012-Nov-22 03:29:34.829",
+   "sunRaDeg": 238.066535978,
+   "sunDecDeg": -20.197607602,
+   "sunDistAu": 0.98761929938055,
+   "moonRaDeg": 347.633163974,
+   "moonDecDeg": 0.013777073,
+   "moonDistAu": 0.00261453704026
+  },
+  {
+   "jdTT": 2456690.232674,
+   "utc_tt_label": "2014-Feb-01 17:35:03.034",
+   "sunRaDeg": 315.244553713,
+   "sunDecDeg": -16.971982833,
+   "sunDistAu": 0.98545205117417,
+   "moonRaDeg": 338.72754619,
+   "moonDecDeg": -4.606712344,
+   "moonDistAu": 0.00242150547075
+  },
+  {
+   "jdTT": 2457543.001464,
+   "utc_tt_label": "2016-Jun-03 12:02:06.490",
+   "sunRaDeg": 71.92742933,
+   "sunDecDeg": 22.39490097,
+   "sunDistAu": 1.01446811358419,
+   "moonRaDeg": 49.419704905,
+   "moonDecDeg": 13.597354979,
+   "moonDistAu": 0.00241399069015
+  },
+  {
+   "jdTT": 2458130.375985,
+   "utc_tt_label": "2018-Jan-11 21:01:25.104",
+   "sunRaDeg": 293.32994,
+   "sunDecDeg": -21.703480267,
+   "sunDistAu": 0.98350518368215,
+   "moonRaDeg": 233.894558077,
+   "moonDecDeg": -13.986875688,
+   "moonDistAu": 0.002687479111
+  },
+  {
+   "jdTT": 2458929.802861,
+   "utc_tt_label": "2020-Mar-21 07:16:07.190",
+   "sunRaDeg": 1.041636731,
+   "sunDecDeg": 0.451468785,
+   "sunDistAu": 0.99624409288319,
+   "moonRaDeg": 330.971954004,
+   "moonDecDeg": -16.144383321,
+   "moonDistAu": 0.00269338162331
+  },
+  {
+   "jdTT": 2459764.95468,
+   "utc_tt_label": "2022-Jul-04 10:54:44.352",
+   "sunRaDeg": 103.5492582,
+   "sunDecDeg": 22.853619139,
+   "sunDistAu": 1.01671535909605,
+   "moonRaDeg": 164.737178712,
+   "moonDecDeg": 11.702840885,
+   "moonDistAu": 0.00265184022292
+  },
+  {
+   "jdTT": 2460320.685629,
+   "utc_tt_label": "2024-Jan-11 04:27:18.346",
+   "sunRaDeg": 292.086928957,
+   "sunDecDeg": -21.886393266,
+   "sunDistAu": 0.98346361685363,
+   "moonRaDeg": 288.189405782,
+   "moonDecDeg": -27.410502812,
+   "moonDistAu": 0.00244796772473
+  },
+  {
+   "jdTT": 2461114.075743,
+   "utc_tt_label": "2026-Mar-14 13:49:04.195",
+   "sunRaDeg": 354.479037527,
+   "sunDecDeg": -2.388563668,
+   "sunDistAu": 0.99424645200784,
+   "moonRaDeg": 302.170878623,
+   "moonDecDeg": -23.599068856,
+   "moonDistAu": 0.00263725507368
+  },
+  {
+   "jdTT": 2462009.20782,
+   "utc_tt_label": "2028-Aug-25 16:59:15.648",
+   "sunRaDeg": 154.955816857,
+   "sunDecDeg": 10.398295813,
+   "sunDistAu": 1.01064088610237,
+   "moonRaDeg": 221.861264267,
+   "moonDecDeg": -21.111281323,
+   "moonDistAu": 0.0024967888247
+  },
+  {
+   "jdTT": 2462701.40364,
+   "utc_tt_label": "2030-Jul-18 21:41:14.496",
+   "sunRaDeg": 118.32245397,
+   "sunDecDeg": 20.885333707,
+   "sunDistAu": 1.01625326283785,
+   "moonRaDeg": 345.297909932,
+   "moonDecDeg": -0.671410148,
+   "moonDistAu": 0.00256046553729
+  },
+  {
+   "jdTT": 2463313.460827,
+   "utc_tt_label": "2032-Mar-21 23:03:35.453",
+   "sunRaDeg": 1.734227585,
+   "sunDecDeg": 0.751323445,
+   "sunDistAu": 0.99636601540477,
+   "moonRaDeg": 126.817925824,
+   "moonDecDeg": 13.832639844,
+   "moonDistAu": 0.00270992830926
+  },
+  {
+   "jdTT": 2464178.581975,
+   "utc_tt_label": "2034-Aug-04 01:58:02.640",
+   "sunRaDeg": 134.259064738,
+   "sunDecDeg": 17.244504428,
+   "sunDistAu": 1.01462156787499,
+   "moonRaDeg": 0.1180848,
+   "moonDecDeg": -0.471120586,
+   "moonDistAu": 0.00250113058485
+  },
+  {
+   "jdTT": 2464989.442117,
+   "utc_tt_label": "2036-Oct-22 22:36:38.909",
+   "sunRaDeg": 208.01523277,
+   "sunDecDeg": -11.506897754,
+   "sunDistAu": 0.99501269424277,
+   "moonRaDeg": 252.831557907,
+   "moonDecDeg": -18.095033094,
+   "moonDistAu": 0.00259177887385
+  },
+  {
+   "jdTT": 2465426.872047,
+   "utc_tt_label": "2038-Jan-03 08:55:44.861",
+   "sunRaDeg": 284.19420007,
+   "sunDecDeg": -22.791928208,
+   "sunDistAu": 0.98335495079041,
+   "moonRaDeg": 254.634264061,
+   "moonDecDeg": -19.699555696,
+   "moonDistAu": 0.00251224801297
+  },
+  {
+   "jdTT": 2466449.124027,
+   "utc_tt_label": "2040-Oct-21 14:58:35.933",
+   "sunRaDeg": 206.789486426,
+   "sunDecDeg": -11.054750722,
+   "sunDistAu": 0.9953058303727,
+   "moonRaDeg": 44.212713648,
+   "moonDecDeg": 16.032477259,
+   "moonDistAu": 0.00256926580216
+  },
+  {
+   "jdTT": 2467140.320879,
+   "utc_tt_label": "2042-Sep-12 19:42:03.946",
+   "sunRaDeg": 170.976481228,
+   "sunDecDeg": 3.88962144,
+   "sunDistAu": 1.00644415188709,
+   "moonRaDeg": 156.272919041,
+   "moonDecDeg": 13.872082513,
+   "moonDistAu": 0.00267199816738
+  },
+  {
+   "jdTT": 2467740.191439,
+   "utc_tt_label": "2044-May-04 16:35:40.330",
+   "sunRaDeg": 42.395059836,
+   "sunDecDeg": 16.292298827,
+   "sunDistAu": 1.00846278279787,
+   "moonRaDeg": 141.388004401,
+   "moonDecDeg": 17.872843803,
+   "moonDistAu": 0.0025098148051
+  },
+  {
+   "jdTT": 2468403.250017,
+   "utc_tt_label": "2046-Feb-26 18:00:01.469",
+   "sunRaDeg": 339.936772336,
+   "sunDecDeg": -8.458329125,
+   "sunDistAu": 0.99010885502484,
+   "moonRaDeg": 233.229397691,
+   "moonDecDeg": -24.407255739,
+   "moonDistAu": 0.00253454084261
+  },
+  {
+   "jdTT": 2469426.382771,
+   "utc_tt_label": "2048-Dec-15 21:11:11.414",
+   "sunRaDeg": 264.094233201,
+   "sunDecDeg": -23.321138143,
+   "sunDistAu": 0.98417699710266,
+   "moonRaDeg": 32.893214619,
+   "moonDecDeg": 17.024640199,
+   "moonDistAu": 0.0026604721172
+  },
+  {
+   "jdTT": 2469930.357009,
+   "utc_tt_label": "2050-May-03 20:34:05.578",
+   "sunRaDeg": 41.153131506,
+   "sunDecDeg": 15.917999956,
+   "sunDistAu": 1.00805024180709,
+   "moonRaDeg": 185.79427349,
+   "moonDecDeg": -6.43195093,
+   "moonDistAu": 0.002667029389
+  },
+  {
+   "jdTT": 2470571.852233,
+   "utc_tt_label": "2052-Feb-04 08:27:12.931",
+   "sunRaDeg": 317.674751161,
+   "sunDecDeg": -16.267172717,
+   "sunDistAu": 0.98569516455744,
+   "moonRaDeg": 0.387749491,
+   "moonDecDeg": 1.609744852,
+   "moonDistAu": 0.00248524426502
+  },
+  {
+   "jdTT": 2471303.801478,
+   "utc_tt_label": "2054-Feb-05 07:14:07.699",
+   "sunRaDeg": 319.145687044,
+   "sunDecDeg": -15.826576688,
+   "sunDistAu": 0.98593831452733,
+   "moonRaDeg": 291.177322775,
+   "moonDecDeg": -18.093370549,
+   "moonDistAu": 0.00271514620661
+  },
+  {
+   "jdTT": 2472308.335444,
+   "utc_tt_label": "2056-Nov-05 20:03:02.362",
+   "sunRaDeg": 221.676728392,
+   "sunDecDeg": -16.075306998,
+   "sunDistAu": 0.99142273111279,
+   "moonRaDeg": 200.650080126,
+   "moonDecDeg": -3.252642941,
+   "moonDistAu": 0.00241330128759
+  },
+  {
+   "jdTT": 2472949.860001,
+   "utc_tt_label": "2058-Aug-09 08:38:24.086",
+   "sunRaDeg": 139.492630535,
+   "sunDecDeg": 15.723006585,
+   "sunDistAu": 1.01387926059328,
+   "moonRaDeg": 24.515532385,
+   "moonDecDeg": 6.15487043,
+   "moonDistAu": 0.00252386468487
+  },
+  {
+   "jdTT": 2473754.60182,
+   "utc_tt_label": "2060-Oct-22 02:26:37.248",
+   "sunRaDeg": 207.391331209,
+   "sunDecDeg": -11.277369949,
+   "sunDistAu": 0.9953118067159,
+   "moonRaDeg": 185.085746677,
+   "moonDecDeg": 0.206295024,
+   "moonDistAu": 0.00269905244621
+  },
+  {
+   "jdTT": 2474456.852102,
+   "utc_tt_label": "2062-Sep-24 08:27:01.613",
+   "sunRaDeg": 181.462192564,
+   "sunDecDeg": -0.63354853,
+   "sunDistAu": 1.00331547401866,
+   "moonRaDeg": 67.54504161,
+   "moonDecDeg": 27.044811578,
+   "moonDistAu": 0.00250658345467
+  },
+  {
+   "jdTT": 2475116.723253,
+   "utc_tt_label": "2064-Jul-15 05:21:29.059",
+   "sunRaDeg": 115.403426405,
+   "sunDecDeg": 21.380834443,
+   "sunDistAu": 1.01649015807296,
+   "moonRaDeg": 127.247909088,
+   "moonDecDeg": 20.081333111,
+   "moonDistAu": 0.00248998635821
+  },
+  {
+   "jdTT": 2476006.687254,
+   "utc_tt_label": "2066-Dec-22 04:29:38.746",
+   "sunRaDeg": 270.680116343,
+   "sunDecDeg": -23.428710283,
+   "sunDistAu": 0.98373959599319,
+   "moonRaDeg": 341.310502767,
+   "moonDecDeg": -2.460251227,
+   "moonDistAu": 0.00249216112207
+  },
+  {
+   "jdTT": 2476520.165048,
+   "utc_tt_label": "2068-May-18 15:57:40.147",
+   "sunRaDeg": 56.310897292,
+   "sunDecDeg": 19.827676723,
+   "sunDistAu": 1.01153297752727,
+   "moonRaDeg": 254.763421497,
+   "moonDecDeg": -21.429019664,
+   "moonDistAu": 0.00256448983381
+  },
+  {
+   "jdTT": 2477313.99483,
+   "utc_tt_label": "2070-Jul-21 11:52:33.312",
+   "sunRaDeg": 121.250062601,
+   "sunDecDeg": 20.326931767,
+   "sunDistAu": 1.01607639764458,
+   "moonRaDeg": 279.270004913,
+   "moonDecDeg": -18.23518196,
+   "moonDistAu": 0.00269190967457
+  },
+  {
+   "jdTT": 2478145.732702,
+   "utc_tt_label": "2072-Oct-30 05:35:05.453",
+   "sunRaDeg": 215.295647177,
+   "sunDecDeg": -14.056046639,
+   "sunDistAu": 0.99309881906345,
+   "moonRaDeg": 74.155996036,
+   "moonDecDeg": 17.564357889,
+   "moonDistAu": 0.00258915994958
+  },
+  {
+   "jdTT": 2478799.25971,
+   "utc_tt_label": "2074-Aug-14 18:13:58.944",
+   "sunRaDeg": 144.706677753,
+   "sunDecDeg": 14.055489226,
+   "sunDistAu": 1.01297934409715,
+   "moonRaDeg": 51.261506575,
+   "moonDecDeg": 13.561394464,
+   "moonDistAu": 0.00270070932253
+  },
+  {
+   "jdTT": 2479618.523019,
+   "utc_tt_label": "2076-Nov-11 00:33:08.842",
+   "sunRaDeg": 227.05298797,
+   "sunDecDeg": -17.599581096,
+   "sunDistAu": 0.9901259302235,
+   "moonRaDeg": 49.499948445,
+   "moonDecDeg": 15.869874539,
+   "moonDistAu": 0.00251668722109
+  },
+  {
+   "jdTT": 2480245.233533,
+   "utc_tt_label": "2078-Jul-30 17:36:17.251",
+   "sunRaDeg": 130.401255911,
+   "sunDecDeg": 18.264222773,
+   "sunDistAu": 1.01523796547917,
+   "moonRaDeg": 21.85733308,
+   "moonDecDeg": 7.064112906,
+   "moonDistAu": 0.00247477808408
+  },
+  {
+   "jdTT": 2481022.16872,
+   "utc_tt_label": "2080-Sep-14 16:02:57.408",
+   "sunRaDeg": 173.354449164,
+   "sunDecDeg": 2.871310633,
+   "sunDistAu": 1.00592446532251,
+   "moonRaDeg": 185.495092435,
+   "moonDecDeg": -2.628331193,
+   "moonDistAu": 0.00245657838388
+  },
+  {
+   "jdTT": 2481512.2259,
+   "utc_tt_label": "2082-Jan-17 17:25:17.760",
+   "sunRaDeg": 300.111833876,
+   "sunDecDeg": -20.550747959,
+   "sunDistAu": 0.98377432453743,
+   "moonRaDeg": 159.37106733,
+   "moonDecDeg": 8.569808399,
+   "moonDistAu": 0.00244434413104
+  },
+  {
+   "jdTT": 2482309.182871,
+   "utc_tt_label": "2084-Mar-24 16:23:20.054",
+   "sunRaDeg": 4.568471514,
+   "sunDecDeg": 1.97672686,
+   "sunDistAu": 0.99698328320478,
+   "moonRaDeg": 211.802639112,
+   "moonDecDeg": -18.154108318,
+   "moonDistAu": 0.0024902190872
+  },
+  {
+   "jdTT": 2483062.126607,
+   "utc_tt_label": "2086-Apr-16 15:02:18.845",
+   "sunRaDeg": 25.157020756,
+   "sunDecDeg": 10.436935824,
+   "sunDistAu": 1.00340577006094,
+   "moonRaDeg": 64.895248622,
+   "moonDecDeg": 22.102621214,
+   "moonDistAu": 0.00248747922963
+  },
+  {
+   "jdTT": 2483716.124072,
+   "utc_tt_label": "2088-Jan-30 14:58:39.821",
+   "sunRaDeg": 313.133931695,
+   "sunDecDeg": -17.546276681,
+   "sunDistAu": 0.98500913167434,
+   "moonRaDeg": 31.430896331,
+   "moonDecDeg": 13.429459568,
+   "moonDistAu": 0.00249479521371
+  },
+  {
+   "jdTT": 2484502.468674,
+   "utc_tt_label": "2090-Mar-26 23:14:53.434",
+   "sunRaDeg": 6.233305593,
+   "sunDecDeg": 2.693424279,
+   "sunDistAu": 0.99753209181213,
+   "moonRaDeg": 322.488383883,
+   "moonDecDeg": -11.275030819,
+   "moonDistAu": 0.00271188668326
+  },
+  {
+   "jdTT": 2485184.865522,
+   "utc_tt_label": "2092-Feb-07 08:46:21.101",
+   "sunRaDeg": 320.990375228,
+   "sunDecDeg": -15.254551681,
+   "sunDistAu": 0.98610060149787,
+   "moonRaDeg": 317.49894604,
+   "moonDecDeg": -15.53716167,
+   "moonDistAu": 0.00253215923921
+  },
+  {
+   "jdTT": 2485979.960365,
+   "utc_tt_label": "2094-Apr-12 11:02:55.536",
+   "sunRaDeg": 21.349580381,
+   "sunDecDeg": 8.963979685,
+   "sunDistAu": 1.00218372630788,
+   "moonRaDeg": 350.600167305,
+   "moonDecDeg": -9.066084048,
+   "moonDistAu": 0.0024431819173
+  },
+  {
+   "jdTT": 2486841.024822,
+   "utc_tt_label": "2096-Aug-20 12:35:44.621",
+   "sunRaDeg": 150.699312218,
+   "sunDecDeg": 11.973240866,
+   "sunDistAu": 1.01188660006496,
+   "moonRaDeg": 179.531585563,
+   "moonDecDeg": 4.849968269,
+   "moonDistAu": 0.00261946458879
+  },
+  {
+   "jdTT": 2487472.663745,
+   "utc_tt_label": "2098-May-14 03:55:47.568",
+   "sunRaDeg": 51.576192989,
+   "sunDecDeg": 18.751796326,
+   "sunDistAu": 1.01034812548796,
+   "moonRaDeg": 217.29814998,
+   "moonDecDeg": -16.262999087,
+   "moonDistAu": 0.00257202035082
+  }
+ ]
+}
