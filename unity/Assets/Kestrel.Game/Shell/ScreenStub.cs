@@ -1,4 +1,4 @@
-// Home title screen, plus placeholder Flight screens (unused on the play path) until U3/U4 land. Shows the screen
+// Home title screen (retro mix-v2), plus placeholder Flight screens (unused on the play path) until U3/U4 land. Shows the screen
 // name inside the safe area plus nav buttons (≥44 pt), so the shell and scaling can be verified.
 using Kestrel.Game.Layout;
 using UnityEngine;
@@ -29,15 +29,15 @@ namespace Kestrel.Game.Shell
 
         HomeBackdrop _backdrop;
 
-        /// <summary>Title screen: full-bleed dusk backdrop with the stack on the pad, big title, one-line
-        /// subtitle, one big Play button. Static (Reduce Motion safe), no other prompts.</summary>
+        /// <summary>Retro title screen (mix-v2): poster sky + striped sun + cream blueprint stack (HomeBackdrop),
+        /// cream KESTREL / orange HEAVY lockup, and a console panel: KH-1 patch, red LAUNCH key (= the old PLAY
+        /// action) and Hangar/Missions/Codex/Settings with status lamps. Static, so Reduce Motion safe.
+        /// Labels double as the accessible names (tooltip carries the spoken hint, as elsewhere in the shell).</summary>
         void BuildHome(AppShell shell)
         {
             _backdrop = new HomeBackdrop();
             shell.Root.Insert(0, _backdrop);              // behind the safe-area root, edge to edge
             _view.AddToClassList("kh-home");
-            // Two lines so white-space:nowrap cannot collapse the lockup into one overflowing line.
-            // Both share a font size fitted to the wider word (KESTREL) inside the safe column.
             var kestrel = new Label("KESTREL");
             kestrel.AddToClassList("kh-home-title");
             var heavy = new Label("HEAVY");
@@ -46,10 +46,9 @@ namespace Kestrel.Game.Shell
             _view.Add(kestrel);
             _view.Add(heavy);
             HomeTitleFit.Bind(kestrel, heavy);
-            var sub = new Label("Design a rocket. Launch it.");
+            var sub = new Label("DESIGN \u00B7 BUILD \u00B7 LAUNCH");
             sub.AddToClassList("kh-home-subtitle");
             _view.Add(sub);
-            // Keep the stack silhouette below the title block on every device (#116-v2: title overlapped the nose).
             var bd = _backdrop;
             sub.RegisterCallback<GeometryChangedEvent>(_ =>
             {
@@ -59,13 +58,52 @@ namespace Kestrel.Game.Shell
             var spacer = new VisualElement { pickingMode = PickingMode.Ignore };
             spacer.style.flexGrow = 1;
             _view.Add(spacer);
-            var play = new Button(() => shell.Flow.Go(AppScreen.Design)) { text = "PLAY", tooltip = "Play. Opens the rocket designer on the pad." };
-            play.AddToClassList("kh-button");
-            play.AddToClassList("kh-home-play");
-            _view.Add(play);
+            var console = BuildConsole(shell);
+            _view.Add(console);
+            console.RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                float top = console.worldBound.yMin - bd.worldBound.yMin;
+                if (!Mathf.Approximately(top, bd.ConsoleTopY)) { bd.ConsoleTopY = top; bd.MarkDirtyRepaint(); }
+            });
             shell.Safe.Add(_view);
             if (shell.Fill != null) shell.Fill.SpaceT = 0.6f;
         }
+
+        /// <summary>Console panel. Public + static so EditMode tests can build it without an AppShell.</summary>
+        public static VisualElement BuildConsole(System.Action launch, System.Action hangar)
+        {
+            var console = new VisualElement { name = "home-console" };
+            console.AddToClassList("kh-home-console");
+            var top = new VisualElement();
+            top.AddToClassList("kh-home-console-row");
+            var patch = new MissionPatch { name = "kh1-patch", tooltip = "KH-1 mission patch." };
+            patch.AddToClassList("kh-home-patch");
+            top.Add(patch);
+            var launchKey = new Button(launch) { name = "home-launch", text = "LAUNCH", tooltip = "Launch. Opens the rocket designer on the pad." };
+            launchKey.AddToClassList("kh-button");
+            launchKey.AddToClassList("kh-home-launch");
+            top.Add(launchKey);
+            console.Add(top);
+            var grid = new VisualElement();
+            grid.AddToClassList("kh-home-console-grid");
+            foreach (var (id, label, live, a11y) in HomeArt.ConsoleButtons)
+            {
+                var b = new Button(live && id == "hangar" ? hangar : null) { name = "home-" + id, text = label, tooltip = a11y };
+                b.AddToClassList("kh-button");
+                b.AddToClassList("kh-home-console-button");
+                var lamp = new VisualElement { name = "lamp", pickingMode = PickingMode.Ignore };
+                lamp.AddToClassList("kh-home-lamp");
+                lamp.AddToClassList(live ? "kh-home-lamp--on" : "kh-home-lamp--off");
+                b.Insert(0, lamp);
+                b.SetEnabled(live);   // Missions/Codex/Settings: no screen yet, disabled stubs.
+                grid.Add(b);
+            }
+            console.Add(grid);
+            return console;
+        }
+
+        static VisualElement BuildConsole(AppShell shell) =>
+            BuildConsole(() => shell.Flow.Go(AppScreen.Design), () => shell.Flow.Go(AppScreen.Design));
 
         void AddButton(AppShell shell, string text, AppScreen target, string a11y)
         {
