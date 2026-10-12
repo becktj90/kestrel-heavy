@@ -3,6 +3,7 @@
 // component (the editor bootstrap generates Assets/Scenes/Slice.unity).
 using System.Collections.Generic;
 using System.Linq;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
@@ -19,6 +20,10 @@ namespace Kestrel.Slice
         Design design; Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
+        // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
+        public int OrbitsCompleted; public bool EngineerEnabled;
+        Label issueChip, launchReason; Button launchButton; DesignerState designerState;
+        static readonly string[] IssueControls = { "engines", "prop", "preset" };
 
         void Awake()
         {
@@ -100,7 +105,9 @@ namespace Kestrel.Slice
             dd.RegisterValueChangedCallback(e => SelectPreset(presets.First(p => p.name == e.newValue).id));
             ui.Q<SliderInt>("engines").RegisterValueChangedCallback(e => { design.stages[0].engineCount = e.newValue; Refresh(); });
             ui.Q<Slider>("prop").RegisterValueChangedCallback(e => { design.stages[0].propMass = Mathf.Round(e.newValue) * 1000.0; Refresh(); });
-            ui.Q<Button>("launch").clicked += Launch;
+            launchButton = ui.Q<Button>("launch");
+            launchButton.clicked += Launch;
+            issueChip = ui.Q<Label>("issue-chip"); launchReason = ui.Q<Label>("launch-reason");
             again.clicked += () => { flight.enabled = false; cam.ResetProjectionMatrix(); hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden"); SelectPreset(design.id); };
             // Accessibility labels (VoiceOver wiring via UnityEngine.Accessibility is a listed gap; see RESULTS.md)
             ui.Q<Button>("launch").tooltip = "Roll out and launch the current design";
@@ -152,6 +159,7 @@ namespace Kestrel.Slice
             designPanel.EnableInClassList("collapsed", collapsed);
             if (ui != null) ApplyDesignPanelMetrics();
             ui.Q<Button>("launch").style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
+            var reason = ui.Q<Label>("launch-reason"); if (reason != null) reason.style.display = collapsed ? DisplayStyle.None : StyleKeyword.Null;
             designToggle.text = collapsed ? "▲  Design" : "▼  Design";
             // Accessibility pattern in this project is tooltip text (VoiceOver bridge is a listed gap, RESULTS.md).
             designToggle.tooltip = collapsed ? "Design panel, collapsed. Tap to expand." : "Design panel, expanded. Tap to collapse and see the whole rocket.";
@@ -194,7 +202,27 @@ namespace Kestrel.Slice
             rRel.text = $"Reliability {rel.reliability * 100:F1}%";
             rMass.text = $"Liftoff {m0 / 1000:N0} t";
             rTwr.style.color = twr < 1.15 ? new Color(1f, 0.4f, 0.4f) : new Color(0.78f, 0.86f, 1f);
+            ApplyValidation();
             BuildRocket();
+        }
+
+        /// <summary>U1: Validate.Engineering + Experience.Present -> chip, Launch gate + reason, control rings.</summary>
+        void ApplyValidation()
+        {
+            string layer = Experience.Resolve(OrbitsCompleted, EngineerEnabled, EngineerEnabled ? "engineer" : "standard").layer;
+            designerState = DesignerValidation.Evaluate(SliceData.Catalog, design, layer);
+            var st = designerState;
+            issueChip.text = st.chip;
+            issueChip.EnableInClassList("hidden", st.chip.Length == 0);
+            issueChip.EnableInClassList("warn-only", st.blocks.Count == 0);
+            issueChip.tooltip = st.chip.Length == 0 ? "" : st.chip + ". " + (st.blocks.Count > 0 ? DesignerValidation.Wording(st.blocks[0], layer) : DesignerValidation.Wording(st.warnings[0], layer));
+            launchButton.SetEnabled(st.launchEnabled);
+            launchReason.text = st.reason;
+            launchReason.EnableInClassList("hidden", st.launchEnabled);
+            launchButton.tooltip = st.launchEnabled ? "Roll out and launch the current design" : "Launch unavailable. " + st.reason;
+            foreach (var n in IssueControls) { var el = ui.Q(n); el.RemoveFromClassList("issue-block"); el.RemoveFromClassList("issue-warn"); }
+            foreach (var w in st.warnings) ui.Q(DesignerValidation.ControlFor(w))?.AddToClassList("issue-warn");
+            foreach (var b in st.blocks) { var el = ui.Q(DesignerValidation.ControlFor(b)); el?.RemoveFromClassList("issue-warn"); el?.AddToClassList("issue-block"); }
         }
 
         void BuildRocket()
@@ -325,6 +353,7 @@ namespace Kestrel.Slice
 
         void Launch()
         {
+            if (designerState != null && !designerState.launchEnabled) return; // U1: blocks gate Launch
             submitted = false;
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
             flight.enabled = true;
