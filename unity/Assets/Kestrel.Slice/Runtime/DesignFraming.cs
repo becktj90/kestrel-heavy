@@ -37,6 +37,25 @@ namespace Kestrel.Slice
         /// <summary>How far to pull the camera back so the stack that filled the full view fits the band.</summary>
         public static float DistanceScale(float visibleFraction) => Margin / Mathf.Clamp(visibleFraction, MinVisibleFraction, 1f);
 
+        /// <summary>Rocket height used for framing: non-finite or tiny values (layout pass before the rocket is
+        /// built, a zero-height mesh) fall back so the camera offset can never collapse onto the aim point.</summary>
+        public static float SafeHeight(float h) => float.IsNaN(h) || float.IsInfinity(h) || h < 1f ? 70f : h;
+
+        /// <summary>Band fraction with NaN / infinity mapped to the full screen.</summary>
+        public static float SafeVisible(float f) => float.IsNaN(f) || float.IsInfinity(f) ? 1f : Mathf.Clamp(f, MinVisibleFraction, 1f);
+
+        /// <summary>True when a camera of this pixel size has a usable aspect (size changes can report 0 x N).</summary>
+        public static bool ValidViewport(int pixelWidth, int pixelHeight) => pixelWidth > 0 && pixelHeight > 0;
+
+        /// <summary>Every element finite (Unity logs IsMatrixValid / NaN camera errors otherwise).</summary>
+        public static bool IsFinite(Matrix4x4 m)
+        {
+            for (int i = 0; i < 16; i++) { float v = m[i]; if (float.IsNaN(v) || float.IsInfinity(v)) return false; }
+            return true;
+        }
+
+        public static bool IsFinite(Vector3 v) => !(float.IsNaN(v.x) || float.IsNaN(v.y) || float.IsNaN(v.z) || float.IsInfinity(v.x) || float.IsInfinity(v.y) || float.IsInfinity(v.z));
+
         /// <summary>Vertical NDC offset that moves the image centre to the middle of the top band.
         /// Band spans NDC y in [1 - 2f, 1]; its centre is 1 - f.</summary>
         public static float NdcShiftY(float visibleFraction) => 1f - Mathf.Clamp(visibleFraction, MinVisibleFraction, 1f);
