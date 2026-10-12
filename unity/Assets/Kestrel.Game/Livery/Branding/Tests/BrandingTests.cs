@@ -79,5 +79,12 @@ namespace Kestrel.Livery.Branding.Tests
             var hex = Regex.Matches(pal, "#[0-9A-Fa-f]{6}").Cast<Match>().Select(m => m.Value).ToArray();
             Assert.That(hex, Is.EqualTo(BrandingCatalog.Palette), "palette.json must match BrandingCatalog.Palette order");
         }
+    
+        [TestCase("name_length")][TestCase("name_chars")][TestCase("name_brand")][TestCase("glyph_unknown")][TestCase("frame_unknown")]
+        [TestCase("colour_index")][TestCase("colours_same")][TestCase("glyph_contrast")][TestCase("mark_lookalike")][TestCase("serial_class")]
+        public void EveryCodeHasFriendlyMessage(string code) => Assert.That(BrandingValidator.Friendly.ContainsKey(code), code);
+
+        [Test] public void UnknownCodeFallsBackToFriendlyMessage() =>
+            Assert.AreEqual(BrandingValidator.FriendlyFallback, BrandingValidator.FriendlyMessage("new_rule"));
     }
 }

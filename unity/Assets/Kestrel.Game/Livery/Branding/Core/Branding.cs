@@ -41,6 +41,23 @@ namespace Kestrel.Livery.Branding
 
     public static class BrandingValidator
     {
+
+        /// <summary>Kid-friendly UX copy for each validator code. Unknown codes fall back to <see cref="FriendlyFallback"/>.</summary>
+        public static readonly IReadOnlyDictionary<string, string> Friendly = new Dictionary<string, string>
+        {
+            ["name_length"] = "Give your rocket a name, up to 20 letters.",
+            ["name_chars"] = "Names can use letters, numbers, spaces, dashes, dots and apostrophes.",
+            ["name_brand"] = "That name belongs to a real space company. Make up your own!",
+            ["glyph_unknown"] = "Pick a symbol from the list.",
+            ["frame_unknown"] = "Pick a frame from the list.",
+            ["colour_index"] = "Pick colours from the palette.",
+            ["colours_same"] = "Use two different main colours so your rocket stands out.",
+            ["glyph_contrast"] = "Your symbol is hard to see. Try a lighter or darker colour.",
+            ["mark_lookalike"] = "That badge looks a lot like a real agency's. Try another colour or symbol.",
+            ["serial_class"] = "Pick a serial letter from A to Z.",
+        };
+        public const string FriendlyFallback = "Something about this badge needs a fix. Try another choice.";
+        public static string FriendlyMessage(string code) => code != null && Friendly.TryGetValue(code, out var m) ? m : FriendlyFallback;
         /// <summary>Problems as codes for UX copy ("name_length", "name_brand", "mark_lookalike", ...). Empty = OK.</summary>
         public static List<string> Validate(BrandingV1 b)
         {
