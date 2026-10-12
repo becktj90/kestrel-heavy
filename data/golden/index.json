@@ -1,0 +1,13 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "files": {
+  "atmosphere": 21,
+  "rocket-eq": 16,
+  "aero-gravity-earth": 17,
+  "orbit": 9,
+  "vehicle": 6,
+  "simulate": 9,
+  "economy": 51
+ },
+ "total": 129
+}

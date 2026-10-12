@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kestrel Heavy preset designs (vehicle design schema v1, same as saved designs)",
+  "type": "object",
+  "required": ["version", "presets"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "presets": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/design" } }
+  },
+  "$defs": {
+    "stage": {
+      "type": "object",
+      "required": ["name", "propellant", "engine", "engineCount", "propMass", "diameter", "interstageMass", "separationMass", "landingPropMass", "material"],
+      "properties": {
+        "name": { "type": "string" }, "propellant": { "type": "string" }, "engine": { "type": "string" },
+        "engineCount": { "type": "integer", "minimum": 1 }, "propMass": { "type": "number", "minimum": 0 },
+        "diameter": { "type": "number", "exclusiveMinimum": 0 }, "interstageMass": { "type": "number", "minimum": 0 },
+        "separationMass": { "type": "number", "minimum": 0 }, "landingPropMass": { "type": "number", "minimum": 0 },
+        "material": { "type": "string" }
+      }
+    },
+    "design": {
+      "type": "object",
+      "required": ["version", "id", "name", "tier", "stages", "strapOns", "payload", "fairing", "aero", "landing", "avionics", "safetyFactor", "livery"],
+      "properties": {
+        "version": { "const": 1 }, "id": { "type": "string" }, "name": { "type": "string" }, "tier": { "type": "string" },
+        "stages": { "type": "array", "minItems": 1, "maxItems": 5, "items": { "$ref": "#/$defs/stage" } },
+        "strapOns": { "type": "object", "required": ["count", "kind", "propellant", "engine", "engineCount", "propMass", "diameter", "material", "crossfeed"],
+          "properties": { "count": { "enum": [0, 2, 4] }, "kind": { "enum": ["solid", "liquid"] }, "crossfeed": { "type": "boolean" } } },
+        "payload": { "type": "object", "required": ["type", "mass", "orbit"] },
+        "fairing": { "type": "object", "required": ["diameter", "length", "material", "jettisonAltitudeKm"] },
+        "aero": { "type": "object", "required": ["nose", "fins"], "properties": { "nose": { "enum": ["ogive", "conic", "blunt", "von-karman"] }, "fins": { "type": "boolean" } } },
+        "landing": { "type": "object", "required": ["legs", "gridFins", "rcs"] },
+        "avionics": { "type": "object", "required": ["tier"], "properties": { "tier": { "enum": ["basic", "standard", "redundant"] } } },
+        "safetyFactor": { "type": "number", "exclusiveMinimum": 1 },
+        "livery": { "type": "object", "required": ["primary", "accent", "name"] }
+      }
+    }
+  }
+}

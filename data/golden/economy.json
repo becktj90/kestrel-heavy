@@ -1,0 +1,3059 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 0,
+  "abs": 0,
+  "note": "integer minor units: exact; reliability doubles: rel 1e-12",
+  "relReliability": 1e-12
+ },
+ "count": 51,
+ "cases": [
+  {
+   "fn": "priceDesign",
+   "preset": "stock",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 2,
+     "kind": "liquid",
+     "propellant": "kerolox",
+     "engine": "gg-kerolox",
+     "engineCount": 9,
+     "propMass": 300000,
+     "diameter": 3.7,
+     "material": "al-li",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": true,
+     "gridFins": true,
+     "rcs": true
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#c8102e",
+     "name": "KESTREL HEAVY"
+    },
+    "id": "stock",
+    "name": "Stock Kestrel Heavy",
+    "tier": "arcade",
+    "stages": [
+     {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 25000,
+      "material": "al-li",
+      "name": "Core",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 300000,
+      "diameter": 3.7
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Upper",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 70000,
+      "diameter": 3.7
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 8000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 5.2,
+     "length": 13,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    }
+   },
+   "out": {
+    "recurring": 3523017644,
+    "dev": 3619960081,
+    "total": 7142977725,
+    "perKg": 440377,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Core: 9× Gas-generator kerolox",
+      "amount": 679919034,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Core: tanks & structure",
+      "amount": 224852875,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Core: RP-1 / LOX",
+      "amount": 9867000,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Upper: 1× Gas-generator kerolox (vacuum nozzle)",
+      "amount": 107709479,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Upper: tanks & structure",
+      "amount": 57190293,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Upper: RP-1 / LOX",
+      "amount": 2125200,
+      "group": "stage1"
+     },
+     {
+      "cat": "engines",
+      "label": "2 strap-ons: 18× Gas-generator kerolox",
+      "amount": 956936582,
+      "group": "strapons"
+     },
+     {
+      "cat": "structure",
+      "label": "2 strap-ons: tanks & structure",
+      "amount": 431105750,
+      "group": "strapons"
+     },
+     {
+      "cat": "propellant",
+      "label": "2 strap-ons: RP-1 / LOX",
+      "amount": 18216000,
+      "group": "strapons"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 235095431,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (2)",
+      "amount": 20000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "recovery",
+      "label": "Recovery hardware",
+      "amount": 150000000,
+      "group": "recovery"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 120000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Gas-generator kerolox",
+      "amount": 1709427703
+     },
+     {
+      "cat": "engines",
+      "label": "Develop Gas-generator kerolox (vacuum nozzle)",
+      "amount": 1760532378
+     },
+     {
+      "cat": "avionics",
+      "label": "Qualify standard avionics",
+      "amount": 150000000
+     }
+    ],
+    "byCategory": {
+     "engines": 1744565095,
+     "structure": 968244349,
+     "propellant": 30208200,
+     "avionics": 250000000,
+     "recovery": 150000000,
+     "ops": 380000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "scout",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#222222",
+     "accent": "#ffb000",
+     "name": "SCOUT"
+    },
+    "id": "scout",
+    "name": "Scout",
+    "tier": "small",
+    "stages": [
+     {
+      "interstageMass": 200,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 1",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 9,
+      "propMass": 35000,
+      "diameter": 1.8
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 2",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 1,
+      "propMass": 6000,
+      "diameter": 1.8
+     }
+    ],
+    "payload": {
+     "type": "cubesat",
+     "mass": 150,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 1.8,
+     "length": 2.5,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   },
+   "out": {
+    "recurring": 906949027,
+    "dev": 717174506,
+    "total": 1624123533,
+    "perKg": 6046327,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Stage 1: 9× Small gas-generator methalox",
+      "amount": 126199974,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 1: tanks & structure",
+      "amount": 143727461,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 1: CH4 / LOX",
+      "amount": 890750,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Stage 2: 1× Small gas-generator methalox",
+      "amount": 11258104,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 2: tanks & structure",
+      "amount": 29070194,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 2: CH4 / LOX",
+      "amount": 152700,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 15649844,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Small gas-generator methalox",
+      "amount": 567174506
+     },
+     {
+      "cat": "avionics",
+      "label": "Qualify standard avionics",
+      "amount": 150000000
+     }
+    ],
+    "byCategory": {
+     "engines": 137458078,
+     "structure": 198447499,
+     "propellant": 1043450,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 320000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "kid",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "blunt",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.6,
+    "livery": {
+     "primary": "#4fc3f7",
+     "accent": "#ff4081",
+     "name": "KID CRUISER"
+    },
+    "id": "kid",
+    "name": "Kid Cruiser",
+    "tier": "kid",
+    "stages": [
+     {
+      "interstageMass": 800,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Big Booster",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 5,
+      "propMass": 140000,
+      "diameter": 3
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Space Stage",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 12000,
+      "diameter": 3
+     }
+    ],
+    "payload": {
+     "type": "kid-box",
+     "mass": 300,
+     "orbit": "leo200"
+    },
+    "fairing": {
+     "diameter": 3,
+     "length": 4,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   },
+   "out": {
+    "recurring": 1282057086,
+    "dev": 2434121534,
+    "total": 3716178620,
+    "perKg": 4273524,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Big Booster: 5× Gas-generator kerolox",
+      "amount": 419517889,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Big Booster: tanks & structure",
+      "amount": 135177290,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Big Booster: RP-1 / LOX",
+      "amount": 4250400,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Space Stage: 2× Expander hydrolox upper",
+      "amount": 56561699,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Space Stage: tanks & structure",
+      "amount": 43290491,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Space Stage: LH2 / LOX",
+      "amount": 1526400,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 41732917,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Gas-generator kerolox",
+      "amount": 1709427703
+     },
+     {
+      "cat": "engines",
+      "label": "Develop Expander hydrolox upper",
+      "amount": 574693831
+     },
+     {
+      "cat": "avionics",
+      "label": "Qualify standard avionics",
+      "amount": 150000000
+     }
+    ],
+    "byCategory": {
+     "engines": 476079588,
+     "structure": 230200698,
+     "propellant": 5776800,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 320000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "small-lift",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    },
+    "id": "small-lift",
+    "name": "Small-lift (archetype)",
+    "tier": "small",
+    "stages": [
+     {
+      "interstageMass": 300,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 1,
+      "propMass": 45000,
+      "diameter": 2.4
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 1,
+      "propMass": 7000,
+      "diameter": 2.4
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 400,
+     "orbit": "sso"
+    },
+    "fairing": {
+     "diameter": 2.4,
+     "length": 3.5,
+     "material": "composite",
+     "jettisonAltitudeKm": 105
+    }
+   },
+   "out": {
+    "recurring": 792787039,
+    "dev": 2426602209,
+    "total": 3219389248,
+    "perKg": 1981968,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Stage 1: 1× Gas-generator kerolox",
+      "amount": 104070690,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 1: tanks & structure",
+      "amount": 46995328,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 1: RP-1 / LOX",
+      "amount": 1366200,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Stage 2: 1× Small gas-generator methalox",
+      "amount": 19316592,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 2: tanks & structure",
+      "amount": 11647037,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 2: CH4 / LOX",
+      "amount": 178150,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 29213042,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Gas-generator kerolox",
+      "amount": 1709427703
+     },
+     {
+      "cat": "engines",
+      "label": "Develop Small gas-generator methalox",
+      "amount": 567174506
+     },
+     {
+      "cat": "avionics",
+      "label": "Qualify standard avionics",
+      "amount": 150000000
+     }
+    ],
+    "byCategory": {
+     "engines": 123387282,
+     "structure": 97855407,
+     "propellant": 1544350,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 320000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "medium-lift",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    },
+    "id": "medium-lift",
+    "name": "Medium-lift (archetype)",
+    "tier": "medium",
+    "stages": [
+     {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 400000,
+      "diameter": 3.7
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 100000,
+      "diameter": 3.7
+     }
+    ],
+    "payload": {
+     "type": "gto-comsat",
+     "mass": 5500,
+     "orbit": "gto"
+    },
+    "fairing": {
+     "diameter": 5.2,
+     "length": 13,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    }
+   },
+   "out": {
+    "recurring": 1989625962,
+    "dev": 3619960081,
+    "total": 5609586043,
+    "perKg": 361750,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Stage 1: 9× Gas-generator kerolox",
+      "amount": 679919034,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 1: tanks & structure",
+      "amount": 293836606,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 1: RP-1 / LOX",
+      "amount": 12144000,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Stage 2: 1× Gas-generator kerolox (vacuum nozzle)",
+      "amount": 107709479,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 2: tanks & structure",
+      "amount": 77885412,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 2: RP-1 / LOX",
+      "amount": 3036000,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 235095431,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Gas-generator kerolox",
+      "amount": 1709427703
+     },
+     {
+      "cat": "engines",
+      "label": "Develop Gas-generator kerolox (vacuum nozzle)",
+      "amount": 1760532378
+     },
+     {
+      "cat": "avionics",
+      "label": "Qualify standard avionics",
+      "amount": 150000000
+     }
+    ],
+    "byCategory": {
+     "engines": 787628513,
+     "structure": 616817449,
+     "propellant": 15180000,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 320000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "super-heavy",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    },
+    "id": "super-heavy",
+    "name": "Super-heavy (archetype)",
+    "tier": "super-heavy",
+    "stages": [
+     {
+      "interstageMass": 10000,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Booster",
+      "propellant": "methalox",
+      "engine": "ff-methalox",
+      "engineCount": 33,
+      "propMass": 3400000,
+      "diameter": 9
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Upper",
+      "propellant": "methalox",
+      "engine": "ff-methalox-vac",
+      "engineCount": 3,
+      "propMass": 1200000,
+      "diameter": 9
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 60000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 9,
+     "length": 18,
+     "material": "steel",
+     "jettisonAltitudeKm": 120
+    }
+   },
+   "out": {
+    "recurring": 17790004186,
+    "dev": 42378269712,
+    "total": 60168273898,
+    "perKg": 296500,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Booster: 33× Full-flow methalox",
+      "amount": 14181541959,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Booster: tanks & structure",
+      "amount": 527470602,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Booster: CH4 / LOX",
+      "amount": 86530000,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Upper: 3× Full-flow methalox (vacuum nozzle)",
+      "amount": 2075374917,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Upper: tanks & structure",
+      "amount": 195717679,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Upper: CH4 / LOX",
+      "amount": 30540000,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 72829029,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport (oversize)",
+      "amount": 90000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Full-flow methalox",
+      "amount": 19243241927
+     },
+     {
+      "cat": "engines",
+      "label": "Develop Full-flow methalox (vacuum nozzle)",
+      "amount": 22985027785
+     },
+     {
+      "cat": "avionics",
+      "label": "Qualify standard avionics",
+      "amount": 150000000
+     }
+    ],
+    "byCategory": {
+     "engines": 16256916876,
+     "structure": 806017310,
+     "propellant": 117070000,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 360000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "stock",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 2,
+     "kind": "liquid",
+     "propellant": "kerolox",
+     "engine": "gg-kerolox",
+     "engineCount": 9,
+     "propMass": 300000,
+     "diameter": 3.7,
+     "material": "al-li",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": true,
+     "gridFins": true,
+     "rcs": true
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#c8102e",
+     "name": "KESTREL HEAVY"
+    },
+    "id": "stock",
+    "name": "Stock Kestrel Heavy",
+    "tier": "arcade",
+    "stages": [
+     {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 25000,
+      "material": "al-li",
+      "name": "Core",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 300000,
+      "diameter": 3.7
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Upper",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 70000,
+      "diameter": 3.7
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 8000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 5.2,
+     "length": 13,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    }
+   },
+   "companyState": {
+    "unitsBuilt": {
+     "gg-kerolox": 40
+    },
+    "devDone": [
+     "gg-kerolox",
+     "avionics:standard"
+    ]
+   },
+   "out": {
+    "recurring": 2992383384,
+    "dev": 1760532378,
+    "total": 4752915762,
+    "perKg": 374048,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Core: 9× Gas-generator kerolox",
+      "amount": 383846554,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Core: tanks & structure",
+      "amount": 224852875,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Core: RP-1 / LOX",
+      "amount": 9867000,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Upper: 1× Gas-generator kerolox (vacuum nozzle)",
+      "amount": 107709479,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Upper: tanks & structure",
+      "amount": 57190293,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Upper: RP-1 / LOX",
+      "amount": 2125200,
+      "group": "stage1"
+     },
+     {
+      "cat": "engines",
+      "label": "2 strap-ons: 18× Gas-generator kerolox",
+      "amount": 722374802,
+      "group": "strapons"
+     },
+     {
+      "cat": "structure",
+      "label": "2 strap-ons: tanks & structure",
+      "amount": 431105750,
+      "group": "strapons"
+     },
+     {
+      "cat": "propellant",
+      "label": "2 strap-ons: RP-1 / LOX",
+      "amount": 18216000,
+      "group": "strapons"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 235095431,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (2)",
+      "amount": 20000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "recovery",
+      "label": "Recovery hardware",
+      "amount": 150000000,
+      "group": "recovery"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 120000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Gas-generator kerolox (vacuum nozzle)",
+      "amount": 1760532378
+     }
+    ],
+    "byCategory": {
+     "engines": 1213930835,
+     "structure": 968244349,
+     "propellant": 30208200,
+     "avionics": 250000000,
+     "recovery": 150000000,
+     "ops": 380000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "scout",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#222222",
+     "accent": "#ffb000",
+     "name": "SCOUT"
+    },
+    "id": "scout",
+    "name": "Scout",
+    "tier": "small",
+    "stages": [
+     {
+      "interstageMass": 200,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 1",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 9,
+      "propMass": 35000,
+      "diameter": 1.8
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 2",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 1,
+      "propMass": 6000,
+      "diameter": 1.8
+     }
+    ],
+    "payload": {
+     "type": "cubesat",
+     "mass": 150,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 1.8,
+     "length": 2.5,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   },
+   "companyState": {
+    "unitsBuilt": {
+     "gg-kerolox": 40
+    },
+    "devDone": [
+     "gg-kerolox",
+     "avionics:standard"
+    ]
+   },
+   "out": {
+    "recurring": 906949027,
+    "dev": 567174506,
+    "total": 1474123533,
+    "perKg": 6046327,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Stage 1: 9× Small gas-generator methalox",
+      "amount": 126199974,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 1: tanks & structure",
+      "amount": 143727461,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 1: CH4 / LOX",
+      "amount": 890750,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Stage 2: 1× Small gas-generator methalox",
+      "amount": 11258104,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 2: tanks & structure",
+      "amount": 29070194,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 2: CH4 / LOX",
+      "amount": 152700,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 15649844,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Small gas-generator methalox",
+      "amount": 567174506
+     }
+    ],
+    "byCategory": {
+     "engines": 137458078,
+     "structure": 198447499,
+     "propellant": 1043450,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 320000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "kid",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "blunt",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.6,
+    "livery": {
+     "primary": "#4fc3f7",
+     "accent": "#ff4081",
+     "name": "KID CRUISER"
+    },
+    "id": "kid",
+    "name": "Kid Cruiser",
+    "tier": "kid",
+    "stages": [
+     {
+      "interstageMass": 800,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Big Booster",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 5,
+      "propMass": 140000,
+      "diameter": 3
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Space Stage",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 12000,
+      "diameter": 3
+     }
+    ],
+    "payload": {
+     "type": "kid-box",
+     "mass": 300,
+     "orbit": "leo200"
+    },
+    "fairing": {
+     "diameter": 3,
+     "length": 4,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   },
+   "companyState": {
+    "unitsBuilt": {
+     "gg-kerolox": 40
+    },
+    "devDone": [
+     "gg-kerolox",
+     "avionics:standard"
+    ]
+   },
+   "out": {
+    "recurring": 1078003284,
+    "dev": 574693831,
+    "total": 1652697115,
+    "perKg": 3593344,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Big Booster: 5× Gas-generator kerolox",
+      "amount": 215464087,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Big Booster: tanks & structure",
+      "amount": 135177290,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Big Booster: RP-1 / LOX",
+      "amount": 4250400,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Space Stage: 2× Expander hydrolox upper",
+      "amount": 56561699,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Space Stage: tanks & structure",
+      "amount": 43290491,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Space Stage: LH2 / LOX",
+      "amount": 1526400,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 41732917,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Expander hydrolox upper",
+      "amount": 574693831
+     }
+    ],
+    "byCategory": {
+     "engines": 272025786,
+     "structure": 230200698,
+     "propellant": 5776800,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 320000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "small-lift",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    },
+    "id": "small-lift",
+    "name": "Small-lift (archetype)",
+    "tier": "small",
+    "stages": [
+     {
+      "interstageMass": 300,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 1,
+      "propMass": 45000,
+      "diameter": 2.4
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 1,
+      "propMass": 7000,
+      "diameter": 2.4
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 400,
+     "orbit": "sso"
+    },
+    "fairing": {
+     "diameter": 2.4,
+     "length": 3.5,
+     "material": "composite",
+     "jettisonAltitudeKm": 105
+    }
+   },
+   "companyState": {
+    "unitsBuilt": {
+     "gg-kerolox": 40
+    },
+    "devDone": [
+     "gg-kerolox",
+     "avionics:standard"
+    ]
+   },
+   "out": {
+    "recurring": 732286258,
+    "dev": 567174506,
+    "total": 1299460764,
+    "perKg": 1830716,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Stage 1: 1× Gas-generator kerolox",
+      "amount": 43569909,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 1: tanks & structure",
+      "amount": 46995328,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 1: RP-1 / LOX",
+      "amount": 1366200,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Stage 2: 1× Small gas-generator methalox",
+      "amount": 19316592,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 2: tanks & structure",
+      "amount": 11647037,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 2: CH4 / LOX",
+      "amount": 178150,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 29213042,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Small gas-generator methalox",
+      "amount": 567174506
+     }
+    ],
+    "byCategory": {
+     "engines": 62886501,
+     "structure": 97855407,
+     "propellant": 1544350,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 320000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "medium-lift",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    },
+    "id": "medium-lift",
+    "name": "Medium-lift (archetype)",
+    "tier": "medium",
+    "stages": [
+     {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 400000,
+      "diameter": 3.7
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 100000,
+      "diameter": 3.7
+     }
+    ],
+    "payload": {
+     "type": "gto-comsat",
+     "mass": 5500,
+     "orbit": "gto"
+    },
+    "fairing": {
+     "diameter": 5.2,
+     "length": 13,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    }
+   },
+   "companyState": {
+    "unitsBuilt": {
+     "gg-kerolox": 40
+    },
+    "devDone": [
+     "gg-kerolox",
+     "avionics:standard"
+    ]
+   },
+   "out": {
+    "recurring": 1693553482,
+    "dev": 1760532378,
+    "total": 3454085860,
+    "perKg": 307919,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Stage 1: 9× Gas-generator kerolox",
+      "amount": 383846554,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 1: tanks & structure",
+      "amount": 293836606,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 1: RP-1 / LOX",
+      "amount": 12144000,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Stage 2: 1× Gas-generator kerolox (vacuum nozzle)",
+      "amount": 107709479,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Stage 2: tanks & structure",
+      "amount": 77885412,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Stage 2: RP-1 / LOX",
+      "amount": 3036000,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 235095431,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport",
+      "amount": 50000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Gas-generator kerolox (vacuum nozzle)",
+      "amount": 1760532378
+     }
+    ],
+    "byCategory": {
+     "engines": 491556033,
+     "structure": 616817449,
+     "propellant": 15180000,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 320000000
+    }
+   }
+  },
+  {
+   "fn": "priceDesign",
+   "preset": "super-heavy",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    },
+    "id": "super-heavy",
+    "name": "Super-heavy (archetype)",
+    "tier": "super-heavy",
+    "stages": [
+     {
+      "interstageMass": 10000,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Booster",
+      "propellant": "methalox",
+      "engine": "ff-methalox",
+      "engineCount": 33,
+      "propMass": 3400000,
+      "diameter": 9
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Upper",
+      "propellant": "methalox",
+      "engine": "ff-methalox-vac",
+      "engineCount": 3,
+      "propMass": 1200000,
+      "diameter": 9
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 60000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 9,
+     "length": 18,
+     "material": "steel",
+     "jettisonAltitudeKm": 120
+    }
+   },
+   "companyState": {
+    "unitsBuilt": {
+     "gg-kerolox": 40
+    },
+    "devDone": [
+     "gg-kerolox",
+     "avionics:standard"
+    ]
+   },
+   "out": {
+    "recurring": 17790004186,
+    "dev": 42228269712,
+    "total": 60018273898,
+    "perKg": 296500,
+    "lines": [
+     {
+      "cat": "engines",
+      "label": "Booster: 33× Full-flow methalox",
+      "amount": 14181541959,
+      "group": "stage0"
+     },
+     {
+      "cat": "structure",
+      "label": "Booster: tanks & structure",
+      "amount": 527470602,
+      "group": "stage0"
+     },
+     {
+      "cat": "propellant",
+      "label": "Booster: CH4 / LOX",
+      "amount": 86530000,
+      "group": "stage0"
+     },
+     {
+      "cat": "engines",
+      "label": "Upper: 3× Full-flow methalox (vacuum nozzle)",
+      "amount": 2075374917,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Upper: tanks & structure",
+      "amount": 195717679,
+      "group": "stage1"
+     },
+     {
+      "cat": "propellant",
+      "label": "Upper: CH4 / LOX",
+      "amount": 30540000,
+      "group": "stage1"
+     },
+     {
+      "cat": "structure",
+      "label": "Fairing",
+      "amount": 72829029,
+      "group": "fairing"
+     },
+     {
+      "cat": "structure",
+      "label": "Separation systems (1)",
+      "amount": 10000000,
+      "group": "sep"
+     },
+     {
+      "cat": "avionics",
+      "label": "Avionics (standard)",
+      "amount": 250000000,
+      "group": "avionics"
+     },
+     {
+      "cat": "ops",
+      "label": "Range fee",
+      "amount": 150000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Crew & standby",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Integration",
+      "amount": 60000000,
+      "group": "ops"
+     },
+     {
+      "cat": "ops",
+      "label": "Transport (oversize)",
+      "amount": 90000000,
+      "group": "ops"
+     }
+    ],
+    "devLines": [
+     {
+      "cat": "engines",
+      "label": "Develop Full-flow methalox",
+      "amount": 19243241927
+     },
+     {
+      "cat": "engines",
+      "label": "Develop Full-flow methalox (vacuum nozzle)",
+      "amount": 22985027785
+     }
+    ],
+    "byCategory": {
+     "engines": 16256916876,
+     "structure": 806017310,
+     "propellant": 117070000,
+     "avionics": 250000000,
+     "recovery": 0,
+     "ops": 360000000
+    }
+   }
+  },
+  {
+   "fn": "reliabilityOf",
+   "preset": "stock",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 2,
+     "kind": "liquid",
+     "propellant": "kerolox",
+     "engine": "gg-kerolox",
+     "engineCount": 9,
+     "propMass": 300000,
+     "diameter": 3.7,
+     "material": "al-li",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": true,
+     "gridFins": true,
+     "rcs": true
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#c8102e",
+     "name": "KESTREL HEAVY"
+    },
+    "id": "stock",
+    "name": "Stock Kestrel Heavy",
+    "tier": "arcade",
+    "stages": [
+     {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 25000,
+      "material": "al-li",
+      "name": "Core",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 300000,
+      "diameter": 3.7
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Upper",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 70000,
+      "diameter": 3.7
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 8000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 5.2,
+     "length": 13,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    }
+   },
+   "out": {
+    "reliability": 0.9447161652609607,
+    "stages": [
+     {
+      "engine": "gg-kerolox",
+      "count": 9,
+      "tolerance": 1,
+      "reliability": 0.9861514092301858
+     },
+     {
+      "engine": "gg-kerolox-vac",
+      "count": 1,
+      "tolerance": 0,
+      "reliability": 0.994
+     },
+     {
+      "engine": "gg-kerolox",
+      "count": 18,
+      "tolerance": 1,
+      "reliability": 0.9724946019266815
+     }
+    ]
+   }
+  },
+  {
+   "fn": "reliabilityOf",
+   "preset": "scout",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#222222",
+     "accent": "#ffb000",
+     "name": "SCOUT"
+    },
+    "id": "scout",
+    "name": "Scout",
+    "tier": "small",
+    "stages": [
+     {
+      "interstageMass": 200,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 1",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 9,
+      "propMass": 35000,
+      "diameter": 1.8
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 2",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 1,
+      "propMass": 6000,
+      "diameter": 1.8
+     }
+    ],
+    "payload": {
+     "type": "cubesat",
+     "mass": 150,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 1.8,
+     "length": 2.5,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   },
+   "out": {
+    "reliability": 0.9552097453056878,
+    "stages": [
+     {
+      "engine": "gg-methalox-small",
+      "count": 9,
+      "tolerance": 1,
+      "reliability": 0.9716501632325998
+     },
+     {
+      "engine": "gg-methalox-small",
+      "count": 1,
+      "tolerance": 0,
+      "reliability": 0.99
+     }
+    ]
+   }
+  },
+  {
+   "fn": "reliabilityOf",
+   "preset": "kid",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "blunt",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.6,
+    "livery": {
+     "primary": "#4fc3f7",
+     "accent": "#ff4081",
+     "name": "KID CRUISER"
+    },
+    "id": "kid",
+    "name": "Kid Cruiser",
+    "tier": "kid",
+    "stages": [
+     {
+      "interstageMass": 800,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Big Booster",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 5,
+      "propMass": 140000,
+      "diameter": 3
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Space Stage",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 12000,
+      "diameter": 3
+     }
+    ],
+    "payload": {
+     "type": "kid-box",
+     "mass": 300,
+     "orbit": "leo200"
+    },
+    "fairing": {
+     "diameter": 3,
+     "length": 4,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   },
+   "out": {
+    "reliability": 0.9834896208689856,
+    "stages": [
+     {
+      "engine": "gg-kerolox",
+      "count": 5,
+      "tolerance": 1,
+      "reliability": 0.9924013693828125
+     },
+     {
+      "engine": "exp-hydrolox",
+      "count": 2,
+      "tolerance": 0,
+      "reliability": 0.996004
+     }
+    ]
+   }
+  },
+  {
+   "fn": "reliabilityOf",
+   "preset": "small-lift",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    },
+    "id": "small-lift",
+    "name": "Small-lift (archetype)",
+    "tier": "small",
+    "stages": [
+     {
+      "interstageMass": 300,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 1,
+      "propMass": 45000,
+      "diameter": 2.4
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 1,
+      "propMass": 7000,
+      "diameter": 2.4
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 400,
+     "orbit": "sso"
+    },
+    "fairing": {
+     "diameter": 2.4,
+     "length": 3.5,
+     "material": "composite",
+     "jettisonAltitudeKm": 105
+    }
+   },
+   "out": {
+    "reliability": 0.9781645005,
+    "stages": [
+     {
+      "engine": "gg-kerolox",
+      "count": 1,
+      "tolerance": 0,
+      "reliability": 0.995
+     },
+     {
+      "engine": "gg-methalox-small",
+      "count": 1,
+      "tolerance": 0,
+      "reliability": 0.99
+     }
+    ]
+   }
+  },
+  {
+   "fn": "reliabilityOf",
+   "preset": "medium-lift",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    },
+    "id": "medium-lift",
+    "name": "Medium-lift (archetype)",
+    "tier": "medium",
+    "stages": [
+     {
+      "interstageMass": 1500,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 1",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 9,
+      "propMass": 400000,
+      "diameter": 3.7
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Stage 2",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox-vac",
+      "engineCount": 1,
+      "propMass": 100000,
+      "diameter": 3.7
+     }
+    ],
+    "payload": {
+     "type": "gto-comsat",
+     "mass": 5500,
+     "orbit": "gto"
+    },
+    "fairing": {
+     "diameter": 5.2,
+     "length": 13,
+     "material": "composite",
+     "jettisonAltitudeKm": 110
+    }
+   },
+   "out": {
+    "reliability": 0.9733826616143888,
+    "stages": [
+     {
+      "engine": "gg-kerolox",
+      "count": 9,
+      "tolerance": 1,
+      "reliability": 0.9861514092301858
+     },
+     {
+      "engine": "gg-kerolox-vac",
+      "count": 1,
+      "tolerance": 0,
+      "reliability": 0.994
+     }
+    ]
+   }
+  },
+  {
+   "fn": "reliabilityOf",
+   "preset": "super-heavy",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": false
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.4,
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#1a3c6e",
+     "name": ""
+    },
+    "id": "super-heavy",
+    "name": "Super-heavy (archetype)",
+    "tier": "super-heavy",
+    "stages": [
+     {
+      "interstageMass": 10000,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Booster",
+      "propellant": "methalox",
+      "engine": "ff-methalox",
+      "engineCount": 33,
+      "propMass": 3400000,
+      "diameter": 9
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Upper",
+      "propellant": "methalox",
+      "engine": "ff-methalox-vac",
+      "engineCount": 3,
+      "propMass": 1200000,
+      "diameter": 9
+     }
+    ],
+    "payload": {
+     "type": "leo-sat",
+     "mass": 60000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 9,
+     "length": 18,
+     "material": "steel",
+     "jettisonAltitudeKm": 120
+    }
+   },
+   "out": {
+    "reliability": 0.765380939215095,
+    "stages": [
+     {
+      "engine": "ff-methalox",
+      "count": 33,
+      "tolerance": 3,
+      "reliability": 0.8189281377356146
+     },
+     {
+      "engine": "ff-methalox-vac",
+      "count": 3,
+      "tolerance": 0,
+      "reliability": 0.9411919999999999
+     }
+    ]
+   }
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "gg-kerolox",
+   "out": 1709427703
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "gg-kerolox-vac",
+   "out": 1760532378
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "sc-kerolox",
+   "out": 8468611110
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "sc-hydrolox",
+   "out": 8361989565
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "ff-methalox",
+   "out": 19243241927
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "ff-methalox-vac",
+   "out": 22985027785
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "exp-hydrolox",
+   "out": 574693831
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "pf-hypergolic",
+   "out": 44365527
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "pf-udmh",
+   "out": 15709777
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "gg-methalox-small",
+   "out": 567174506
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "srm-small",
+   "out": 742906966
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "srm-large",
+   "out": 4320532800
+  },
+  {
+   "fn": "engineDevCost",
+   "engine": "hybrid-mid",
+   "out": 527353414
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "gg-kerolox",
+   "count": 9,
+   "built": 3,
+   "out": 585035407
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "gg-kerolox-vac",
+   "count": 9,
+   "built": 3,
+   "out": 605490933
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "sc-kerolox",
+   "count": 9,
+   "built": 3,
+   "out": 2856264496
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "sc-hydrolox",
+   "count": 9,
+   "built": 3,
+   "out": 2901952388
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "ff-methalox",
+   "count": 9,
+   "built": 3,
+   "out": 4327556583
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "ff-methalox-vac",
+   "count": 9,
+   "built": 3,
+   "out": 4448013460
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "exp-hydrolox",
+   "count": 9,
+   "built": 3,
+   "out": 171871724
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "pf-hypergolic",
+   "count": 9,
+   "built": 3,
+   "out": 13512374
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "pf-udmh",
+   "count": 9,
+   "built": 3,
+   "out": 3957904
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "gg-methalox-small",
+   "count": 9,
+   "built": 3,
+   "out": 108588596
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "srm-small",
+   "count": 9,
+   "built": 3,
+   "out": 253718959
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "srm-large",
+   "count": 9,
+   "built": 3,
+   "out": 2012030427
+  },
+  {
+   "fn": "engineBatchCost",
+   "engine": "hybrid-mid",
+   "count": 9,
+   "built": 3,
+   "out": 96310957
+  },
+  {
+   "fn": "learningFactor",
+   "n": 1,
+   "out": 1
+  },
+  {
+   "fn": "learningFactor",
+   "n": 2,
+   "out": 0.85
+  },
+  {
+   "fn": "learningFactor",
+   "n": 10,
+   "out": 0.582820402326798
+  },
+  {
+   "fn": "learningFactor",
+   "n": 100,
+   "out": 0.3396796213683707
+  },
+  {
+   "fn": "clusterReliability",
+   "n": 9,
+   "r": 0.995,
+   "k": 1,
+   "out": 0.9861514092301858
+  },
+  {
+   "fn": "clusterReliability",
+   "n": 33,
+   "r": 0.98,
+   "k": 3,
+   "out": 0.8189281377356146
+  },
+  {
+   "fn": "clusterReliability",
+   "n": 1,
+   "r": 0.99,
+   "k": 0,
+   "out": 0.99
+  }
+ ]
+}

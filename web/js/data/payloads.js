@@ -1,19 +1,8 @@
-// Payload archetypes. mass kg, volume m^3, maxG axial g-limit, maxHeatFlux W/m^2 at fairing jettison.
-// target orbits: altitudes in km, inclination deg.
-export const ORBITS = Object.freeze({
-  leo200: { id: 'leo200', label: 'LEO 200 km', apoKm: 200, periKm: 200, incDeg: 28.5 },
-  leo400: { id: 'leo400', label: 'LEO 400 km', apoKm: 400, periKm: 400, incDeg: 51.6 },
-  sso: { id: 'sso', label: 'Sun-sync 550 km', apoKm: 550, periKm: 550, incDeg: 97.6 },
-  gto: { id: 'gto', label: 'GTO', apoKm: 35786, periKm: 200, incDeg: 27 },
-  tli: { id: 'tli', label: 'Trans-lunar', apoKm: 384400, periKm: 200, incDeg: 28.5 },
-  suborbital: { id: 'suborbital', label: 'Suborbital 100 km', apoKm: 100, periKm: -6371, incDeg: 0 },
-});
-export const PAYLOADS = Object.freeze([
-  { id: 'cubesat', label: 'CubeSat rideshare', mass: 50, volume: 0.2, maxG: 10, maxHeatFlux: 1135, orbit: 'leo400' },
-  { id: 'leo-sat', label: 'LEO satellite', mass: 1500, volume: 12, maxG: 6, maxHeatFlux: 1135, orbit: 'leo400' },
-  { id: 'gto-comsat', label: 'GTO comsat', mass: 5500, volume: 60, maxG: 6, maxHeatFlux: 1135, orbit: 'gto' },
-  { id: 'crew-capsule', label: 'Crew capsule', mass: 12000, volume: 40, maxG: 4.5, maxHeatFlux: 2000, orbit: 'leo400', crewed: true, needsAbort: true },
-  { id: 'lunar-probe', label: 'Lunar probe', mass: 2500, volume: 20, maxG: 6, maxHeatFlux: 1135, orbit: 'tli' },
-  { id: 'kid-box', label: 'Science box', mass: 300, volume: 2, maxG: 12, maxHeatFlux: 3000, orbit: 'leo200' },
-]);
+// Payload archetypes + target orbits: thin loader over data/payloads.json.
+// mass kg, volume m^3, maxG axial g-limit, maxHeatFlux W/m^2 at fairing jettison;
+// orbits: altitudes km, inclination deg.
+import RAW from './gen/payloads.js';
+
+export const ORBITS = Object.freeze(RAW.orbits);
+export const PAYLOADS = Object.freeze(RAW.payloads);
 export const PAYLOAD_BY_ID = Object.freeze(Object.fromEntries(PAYLOADS.map((p) => [p.id, p])));

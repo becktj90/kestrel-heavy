@@ -1,0 +1,143 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 1e-9,
+  "abs": 1e-9,
+  "note": "closed form: |a-b| <= abs + rel*|b|"
+ },
+ "count": 17,
+ "cases": [
+  {
+   "fn": "cdMach",
+   "in": {
+    "mach": 0,
+    "cd0": 0.34
+   },
+   "out": 0.34
+  },
+  {
+   "fn": "cdMach",
+   "in": {
+    "mach": 0.5,
+    "cd0": 0.34
+   },
+   "out": 0.34
+  },
+  {
+   "fn": "cdMach",
+   "in": {
+    "mach": 0.8,
+    "cd0": 0.34
+   },
+   "out": 0.34
+  },
+  {
+   "fn": "cdMach",
+   "in": {
+    "mach": 0.9,
+    "cd0": 0.34
+   },
+   "out": 0.4281481481481481
+  },
+  {
+   "fn": "cdMach",
+   "in": {
+    "mach": 1,
+    "cd0": 0.34
+   },
+   "out": 0.5918518518518519
+  },
+  {
+   "fn": "cdMach",
+   "in": {
+    "mach": 1.1,
+    "cd0": 0.34
+   },
+   "out": 0.68
+  },
+  {
+   "fn": "cdMach",
+   "in": {
+    "mach": 1.5,
+    "cd0": 0.34
+   },
+   "out": 0.5228444444444446
+  },
+  {
+   "fn": "cdMach",
+   "in": {
+    "mach": 3,
+    "cd0": 0.34
+   },
+   "out": 0.38571111111111117
+  },
+  {
+   "fn": "cdMach",
+   "in": {
+    "mach": 8,
+    "cd0": 0.34
+   },
+   "out": 0.346428125
+  },
+  {
+   "fn": "dragForce",
+   "in": {
+    "rho": 0.4,
+    "v": 400,
+    "a": 300,
+    "cd0": 0.3,
+    "area": 10.75
+   },
+   "out": 173440.5
+  },
+  {
+   "fn": "gravityAccel",
+   "in": {
+    "r": 6378137
+   },
+   "out": 9.7982854791873
+  },
+  {
+   "fn": "gravityAccel",
+   "in": {
+    "r": 6578137
+   },
+   "out": 9.211533747348525
+  },
+  {
+   "fn": "gravityAccel",
+   "in": {
+    "r": 42164000
+   },
+   "out": 0.22420958065533492
+  },
+  {
+   "fn": "siteRotationSpeed",
+   "in": {
+    "lat": 0
+   },
+   "out": 465.101142300783
+  },
+  {
+   "fn": "siteRotationSpeed",
+   "in": {
+    "lat": 28.5
+   },
+   "out": 408.73884297255603
+  },
+  {
+   "fn": "siteRotationSpeed",
+   "in": {
+    "lat": 45
+   },
+   "out": 328.8761716584931
+  },
+  {
+   "fn": "siteRotationSpeed",
+   "in": {
+    "lat": 51.6
+   },
+   "out": 288.8965421450379
+  }
+ ]
+}

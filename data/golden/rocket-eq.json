@@ -1,0 +1,152 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 1e-9,
+  "abs": 1e-9,
+  "note": "closed form: |a-b| <= abs + rel*|b|"
+ },
+ "count": 16,
+ "cases": [
+  {
+   "fn": "deltaV",
+   "in": {
+    "isp": 311,
+    "m0": 550000,
+    "mf": 150000
+   },
+   "out": 3962.641791135838
+  },
+  {
+   "fn": "deltaV",
+   "in": {
+    "isp": 348,
+    "m0": 120000,
+    "mf": 12000
+   },
+   "out": 7858.064843569101
+  },
+  {
+   "fn": "deltaV",
+   "in": {
+    "isp": 452,
+    "m0": 30000,
+    "mf": 8000
+   },
+   "out": 5858.8226024895
+  },
+  {
+   "fn": "deltaV",
+   "in": {
+    "isp": 245,
+    "m0": 1000,
+    "mf": 600
+   },
+   "out": 1227.3245853096644
+  },
+  {
+   "fn": "deltaV",
+   "in": {
+    "isp": 282,
+    "m0": 1000000,
+    "mf": 999999
+   },
+   "out": 0.002765476682754152
+  },
+  {
+   "fn": "massFlow",
+   "in": {
+    "thrust": 934000,
+    "isp": 311
+   },
+   "out": 306.2427469200595
+  },
+  {
+   "fn": "massFlow",
+   "in": {
+    "thrust": 981000,
+    "isp": 348
+   },
+   "out": 287.4544841756746
+  },
+  {
+   "fn": "massFlow",
+   "in": {
+    "thrust": 2500000,
+    "isp": 350
+   },
+   "out": 728.3687235556631
+  },
+  {
+   "fn": "massFlow",
+   "in": {
+    "thrust": 4500,
+    "isp": 315
+   },
+   "out": 1.4567374471113261
+  },
+  {
+   "fn": "ispAt",
+   "in": {
+    "ispSL": 282,
+    "ispVac": 311,
+    "p": 0
+   },
+   "out": 311
+  },
+  {
+   "fn": "ispAt",
+   "in": {
+    "ispSL": 282,
+    "ispVac": 311,
+    "p": 101325
+   },
+   "out": 282
+  },
+  {
+   "fn": "ispAt",
+   "in": {
+    "ispSL": 282,
+    "ispVac": 311,
+    "p": 50000
+   },
+   "out": 296.6896126326178
+  },
+  {
+   "fn": "ispAt",
+   "in": {
+    "ispSL": 0,
+    "ispVac": 348,
+    "p": 30000
+   },
+   "out": 244.96521095484826
+  },
+  {
+   "fn": "ispAt",
+   "in": {
+    "ispSL": 327,
+    "ispVac": 363,
+    "p": 120000
+   },
+   "out": 320.3649148778683
+  },
+  {
+   "fn": "thrustAt",
+   "in": {
+    "thrustVac": 934000,
+    "ispSL": 282,
+    "ispVac": 311,
+    "p": 40000
+   },
+   "out": 899618.2590324503
+  },
+  {
+   "fn": "burnTime",
+   "in": {
+    "propMass": 100000,
+    "thrustVac": 981000,
+    "ispVac": 348
+   },
+   "out": 347.88116207951066
+  }
+ ]
+}
