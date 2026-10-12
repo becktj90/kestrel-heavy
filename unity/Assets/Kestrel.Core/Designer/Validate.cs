@@ -5,12 +5,13 @@ using System.Collections.Generic;
 using Kestrel.Core.Data;
 using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
+using Kestrel.Core.Vehicle;
 
 namespace Kestrel.Core.Designer
 {
     public sealed class Issue
     {
-        public string code, tab, msg;
+        public string code, tab, msg, kid;
         public int? index;
     }
 
@@ -25,6 +26,7 @@ namespace Kestrel.Core.Designer
     public static class Validate
     {
         public const double MIN_TWR = 1.0, GOOD_TWR = 1.25, MIN_MARGIN = 0.05, PACK = 1.1;
+        static DesignerLimits Lim => DesignerLimits.Active;
 
         public static double PayloadVolume(Catalog c, JsonObject d)
         {
@@ -52,6 +54,7 @@ namespace Kestrel.Core.Designer
             if (zeroEng) blocks.Add(Iss("zero-engines", "engines", "Every stage needs at least one engine. Try adding one."));
             if (zeroProp) blocks.Add(Iss("zero-propellant", "propellants", "A stage has no propellant. Try loading some fuel."));
             if (!shape.ok && !zeroEng && !zeroProp) foreach (var e in shape.errors) blocks.Add(Iss("schema", "stages", e));
+            DesignRules.SchemaBlocks(c, design, blocks);
             if (blocks.Count > 0) return new EngineeringReport { ok = false, blocks = blocks, warnings = warnings };
             blocks.AddRange(Geometry(c, design));
             QuickReadout r = null;
@@ -59,16 +62,16 @@ namespace Kestrel.Core.Designer
             catch (Exception e) { blocks.Add(Iss("math", "stages", "Couldn't compute this design (" + e.Message + ").")); }
             if (r != null)
             {
-                if (!(r.liftoffTWR > MIN_TWR)) blocks.Add(Iss("twr-low", "engines", $"Liftoff thrust-to-weight is {Fmt(r.liftoffTWR)}; it must be above 1 to leave the pad. Try more first-stage engines or less propellant."));
-                else if (r.liftoffTWR < GOOD_TWR) warnings.Add(Iss("twr-marginal", "engines", $"Liftoff TWR {Fmt(r.liftoffTWR)} is slow off the pad (lots of gravity loss). Aim for {GOOD_TWR.ToString(System.Globalization.CultureInfo.InvariantCulture)} or more."));
+                if (!(r.liftoffTWR > Lim.minTwr)) blocks.Add(Iss("twr-low", "engines", $"Liftoff thrust-to-weight is {Fmt(r.liftoffTWR)}; it must be above 1 to leave the pad. Try more first-stage engines or less propellant."));
+                else if (r.liftoffTWR < Lim.goodTwr) warnings.Add(Iss("twr-marginal", "engines", $"Liftoff TWR {Fmt(r.liftoffTWR)} is slow off the pad (lots of gravity loss). Aim for {Lim.goodTwr.ToString(System.Globalization.CultureInfo.InvariantCulture)} or more."));
                 for (int i = 1; i < r.stages.Count; i++)
                 {
                     var s = r.stages[i];
-                    if (s.twrVac < 0.5) warnings.Add(Iss("weak-upper", "engines", $"{s.label} pushes at only {Fmt(s.twrVac)} g. A stronger engine or lighter load would help it reach orbit.", i));
+                    if (s.twrVac < Lim.weakUpperTwrVac) warnings.Add(Iss("weak-upper", "engines", $"{s.label} pushes at only {Fmt(s.twrVac)} g. A stronger engine or lighter load would help it reach orbit.", i));
                 }
-                if (r.stages.Count > 1 && r.stages[r.stages.Count - 1].deltaV < 0.2 * r.totalDeltaV)
+                if (r.stages.Count > 1 && r.stages[r.stages.Count - 1].deltaV < Lim.weakUpperDvFraction * r.totalDeltaV)
                     warnings.Add(Iss("weak-upper-dv", "propellants", "The top stage does little of the work. More upper-stage propellant usually pays off."));
-                if (r.margin < MIN_MARGIN)
+                if (r.margin < Lim.minMargin)
                     warnings.Add(Iss("dv-margin", "propellants", r.margin < 0
                         ? $"About {Fmt(-r.margin * r.required, 0)} m/s short of {r.orbitLabel}. Try more propellant, a lighter payload, or a higher-Isp upper stage."
                         : $"Only {Fmt(r.margin * 100, 0)}% \u0394v margin for {r.orbitLabel}. A little more propellant gives breathing room."));
@@ -77,9 +80,10 @@ namespace Kestrel.Core.Designer
                 var landing = design.Obj("landing");
                 if (landingFuel && !(landing != null && landing.Bool("legs") && landing.Bool("gridFins")))
                     warnings.Add(Iss("landing-hardware", "recovery", "Landing fuel is reserved but legs or grid fins are missing. Add them, or set the landing reserve to 0."));
-                if (r.mass.fairing > Math.Max(500, r.mass.payload))
+                if (r.mass.fairing > Math.Max(Lim.heavyFairingKg, r.mass.payload))
                     warnings.Add(Iss("heavy-fairing", "payload", $"The fairing ({Fmt(r.mass.fairing / 1000, 1)} t) outweighs the payload. A composite or shorter fairing saves mass."));
             }
+            if (r != null) DesignRules.Append(c, design, blocks, warnings, r);
             return new EngineeringReport { ok = blocks.Count == 0, blocks = blocks, warnings = warnings, readout = r };
         }
 
@@ -107,8 +111,9 @@ namespace Kestrel.Core.Designer
             for (int i = 1; i < stages.Count; i++)
             {
                 var up = (JsonObject)stages[i]; var below = (JsonObject)stages[i - 1];
-                if (up.Num("diameter") > below.Num("diameter") * 1.6) { JsonMut.Set(up, "diameter", below.Num("diameter")); Say("Matched upper stage width to the stage below"); }
+                if (up.Num("diameter") > below.Num("diameter") * Lim.topHeavyRatio) { JsonMut.Set(up, "diameter", below.Num("diameter")); Say("Matched upper stage width to the stage below"); }
             }
+            DesignRules.FixInterstage(d, Say);
             var top = (JsonObject)stages[stages.Count - 1];
             var fairing = d.Obj("fairing");
             if (fairing.Num("diameter") < top.Num("diameter")) { JsonMut.Set(fairing, "diameter", top.Num("diameter")); Say("Widened the fairing to match the top stage"); }
@@ -139,9 +144,10 @@ namespace Kestrel.Core.Designer
                 if (r.liftoffTWR < 1.3)
                 {
                     var e = c.EngineById[s0.Str("engine")];
-                    double maxFit = Math.Floor(PACK * s0.Num("diameter") * s0.Num("diameter") / (e.diameter * e.diameter));
-                    if (s0.Num("engineCount") < Math.Min(40, maxFit)) { JsonMut.Set(s0, "engineCount", s0.Num("engineCount") + 1); Say("Added first-stage engines for a stronger liftoff"); }
-                    else if (s0.Num("diameter") < 15 && s0.Num("engineCount") < 40) { JsonMut.Set(s0, "diameter", Math.Min(15, JsFormat.ToFixedNumber(s0.Num("diameter") + 0.3, 1))); Say("Widened the first stage to fit more engines"); }
+                    var ep = EnginePoint.Of(e, s0.Str("nozzle"));
+                    double maxFit = Math.Floor(Lim.pack * s0.Num("diameter") * s0.Num("diameter") / (ep.diameter * ep.diameter));
+                    if (s0.Num("engineCount") < Math.Min(Lim.engineCountMax, maxFit)) { JsonMut.Set(s0, "engineCount", s0.Num("engineCount") + 1); Say("Added first-stage engines for a stronger liftoff"); }
+                    else if (s0.Num("diameter") < Lim.diameterMax && s0.Num("engineCount") < Lim.engineCountMax) { JsonMut.Set(s0, "diameter", Math.Min(Lim.diameterMax, JsFormat.ToFixedNumber(s0.Num("diameter") + 0.3, 1))); Say("Widened the first stage to fit more engines"); }
                     else { JsonMut.Set(s0, "propMass", s0.Num("propMass") * 0.9); Say("Trimmed first-stage propellant to lighten liftoff"); }
                     continue;
                 }
@@ -153,7 +159,7 @@ namespace Kestrel.Core.Designer
                     if (si >= 0 && si < stages.Count)
                     {
                         var s = (JsonObject)stages[si];
-                        if (s.Num("engineCount") < 40) { JsonMut.Set(s, "engineCount", s.Num("engineCount") + 1); Say("Added an engine to " + JsonMut.Shown(s, "name")); continue; }
+                        if (s.Num("engineCount") < Lim.engineCountMax) { JsonMut.Set(s, "engineCount", s.Num("engineCount") + 1); Say("Added an engine to " + JsonMut.Shown(s, "name")); continue; }
                     }
                 }
                 if (r.margin < MIN_MARGIN)
@@ -162,7 +168,7 @@ namespace Kestrel.Core.Designer
                     if (stages.Count > 1 && r.stages[r.stages.Count - 1].twrVac > 0.7 && iter % 2 == 0) { JsonMut.Set(up, "propMass", up.Num("propMass") * 1.15); Say("Added upper-stage propellant"); continue; }
                     if (r.liftoffTWR > 1.45) { JsonMut.Set(s0, "propMass", s0.Num("propMass") * 1.1); Say("Added first-stage propellant"); continue; }
                     var payload = d.Obj("payload");
-                    if (payload.Num("mass") > 50) { JsonMut.Set(payload, "mass", Math.Max(50, JsMath.Round(payload.Num("mass") * 0.85))); Say("Lightened the payload"); continue; }
+                    if (payload.Num("mass") > Lim.payloadMassMin) { JsonMut.Set(payload, "mass", Math.Max(Lim.payloadMassMin, JsMath.Round(payload.Num("mass") * 0.85))); Say("Lightened the payload"); continue; }
                 }
                 if (v.ok && r.margin >= MIN_MARGIN) break;
                 if (v.ok && iter > 60) break;
@@ -181,11 +187,11 @@ namespace Kestrel.Core.Designer
                 e = ne;
             }
             if (!(s.Num("engineCount") >= 1)) { JsonMut.Set(s, "engineCount", 1d); say($"Gave {NameOrStage(s)} an engine"); }
-            JsonMut.Set(s, "engineCount", Math.Min(40, JsMath.Round(s.Num("engineCount"))));
+            JsonMut.Set(s, "engineCount", Math.Min(Lim.engineCountMax, JsMath.Round(s.Num("engineCount"))));
             if (!(s.Num("propMass") > 0)) { JsonMut.Set(s, "propMass", upper ? 10000d : 50000d); say($"Loaded propellant into {NameOrStage(s)}"); }
-            var en = c.EngineById[s.Str("engine")];
-            double need = Math.Sqrt(s.Num("engineCount") * en.diameter * en.diameter / PACK) + 0.05;
-            if (s.Num("diameter") < need) { JsonMut.Set(s, "diameter", Math.Min(15, Math.Ceiling(need * 10) / 10)); say($"Widened {NameOrStage(s)} so the engines fit"); }
+            var en = EnginePoint.Of(c.EngineById[s.Str("engine")], s.Str("nozzle"));
+            double need = Math.Sqrt(s.Num("engineCount") * en.diameter * en.diameter / Lim.pack) + 0.05;
+            if (s.Num("diameter") < need) { JsonMut.Set(s, "diameter", Math.Min(Lim.diameterMax, Math.Ceiling(need * 10) / 10)); say($"Widened {NameOrStage(s)} so the engines fit"); }
         }
 
         static Engine EngineFor(Catalog c, string propellant, bool upper)
@@ -210,11 +216,11 @@ namespace Kestrel.Core.Designer
         {
             var errs = new List<string>();
             if (d == null) return (false, new List<string> { "design: not an object" });
-            if (!d.ContainsKey("version") || !(d["version"] is double ver) || ver != 1)
-                errs.Add($"version: expected 1, got {JsonMut.Shown(d, "version")} (run migrateDesign)");
+            if (!d.ContainsKey("version") || !(d["version"] is double ver) || (ver != 1 && ver != 2))
+                errs.Add($"version: expected 1 or 2, got {JsonMut.Shown(d, "version")} (run migrateDesign)");
             if (!(d.ContainsKey("name") && d["name"] is string)) errs.Add("name: string required");
             var stages = d.Arr("stages");
-            if (stages == null || stages.Count < 1 || stages.Count > 5) errs.Add("stages: 1\u20135 required");
+            if (stages == null || stages.Count < Lim.stagesMin || stages.Count > Lim.stagesMax) errs.Add("stages: 1\u20135 required");
             else for (int i = 0; i < stages.Count; i++)
             {
                 var s = stages[i] as JsonObject;
@@ -254,7 +260,8 @@ namespace Kestrel.Core.Designer
             if (landing == null || !BoolKey(landing, "legs") || !BoolKey(landing, "gridFins") || !BoolKey(landing, "rcs")) errs.Add("landing: legs/gridFins/rcs booleans");
             var av = d.Obj("avionics");
             if (av == null || !(av.Str("tier") is string tier) || (tier != "basic" && tier != "standard" && tier != "redundant")) errs.Add("avionics.tier: one of basic, standard, redundant");
-            if (!(d.ContainsKey("safetyFactor") && d["safetyFactor"] is double sf && !double.IsNaN(sf) && !double.IsInfinity(sf)) || sf < 1 || sf > 3) errs.Add("safetyFactor: 1.0\u20133.0");
+            if (!(d.ContainsKey("safetyFactor") && d["safetyFactor"] is double sf && !double.IsNaN(sf) && !double.IsInfinity(sf)) || sf < Lim.safetyMin || sf > Lim.safetyMax) errs.Add("safetyFactor: 1.0\u20133.0");
+            DesignRules.ShapeV2(c, d, errs);
             var liv = d.Obj("livery");
             if (liv == null || !(liv.ContainsKey("primary") && liv["primary"] is string)) errs.Add("livery.primary: string");
             return (errs.Count == 0, errs);
@@ -269,11 +276,18 @@ namespace Kestrel.Core.Designer
             var eid = s.Str("engine");
             if (eid == null || !c.EngineById.TryGetValue(eid, out var e)) errs.Add($"{where}.engine: unknown \"{JsonMut.Shown(s, "engine")}\"");
             else if (s.ContainsKey("propellant") && s["propellant"] is string prop && prop.Length > 0 && e.propellant != prop) errs.Add($"{where}.engine: {e.id} burns {e.propellant}, stage has {prop}");
-            if (!s.ContainsKey("engineCount") || !JsonMut.IsInteger(s["engineCount"]) || s.Num("engineCount") < 1 || s.Num("engineCount") > 40) errs.Add($"{where}.engineCount: integer 1\u201340");
+            if (!s.ContainsKey("engineCount") || !JsonMut.IsInteger(s["engineCount"]) || s.Num("engineCount") < Lim.engineCountMin || s.Num("engineCount") > Lim.engineCountMax) errs.Add($"{where}.engineCount: integer 1\u201340");
             double minProp = strap ? 0 : 1;
             if (!(s.ContainsKey("propMass") && s["propMass"] is double pmass && !double.IsNaN(pmass) && !double.IsInfinity(pmass)) || pmass < minProp) errs.Add($"{where}.propMass: must be a positive number");
-            if (!(s.ContainsKey("diameter") && s["diameter"] is double dia && !double.IsNaN(dia) && !double.IsInfinity(dia)) || dia < 0.3 || dia > 15) errs.Add($"{where}.diameter: 0.3\u201315 m");
+            if (!(s.ContainsKey("diameter") && s["diameter"] is double dia && !double.IsNaN(dia) && !double.IsInfinity(dia)) || dia < Lim.diameterMin || dia > Lim.diameterMax) errs.Add($"{where}.diameter: 0.3\u201315 m");
             if (s.Str("material") == null || !c.MaterialById.ContainsKey(s.Str("material"))) errs.Add($"{where}.material: unknown \"{JsonMut.Shown(s, "material")}\"");
+            var cluster = s.Obj("cluster");
+            if (cluster != null && cluster.ContainsKey("pattern"))
+            {
+                var pat = cluster.Str("pattern");
+                if (string.IsNullOrEmpty(pat) || !Lim.TryPattern(pat, out _))
+                    errs.Add($"{where}.cluster.pattern: unknown \"{JsonMut.Shown(cluster, "pattern")}\"");
+            }
         }
 
         static bool StrapCount(object v) => v is double d && (d == 0 || d == 2 || d == 4);
@@ -295,7 +309,7 @@ namespace Kestrel.Core.Designer
             if (JsonMut.TruthyNumber(so, "count")) parts.Add((so, "Strap-ons", "strapons", null));
             foreach (var (s, where, tab, index) in parts)
             {
-                if (s.Str("engine") != null && c.EngineById.TryGetValue(s.Str("engine"), out var e) && s.Num("engineCount") * e.diameter * e.diameter > PACK * s.Num("diameter") * s.Num("diameter"))
+                if (s.Str("engine") != null && c.EngineById.TryGetValue(s.Str("engine"), out var e) && s.Num("engineCount") * EnginePoint.Of(e, s.Str("nozzle")).diameter * EnginePoint.Of(e, s.Str("nozzle")).diameter > Lim.pack * s.Num("diameter") * s.Num("diameter"))
                     outp.Add(Iss("engines-dont-fit", tab, $"{where}: {CountText(s.Num("engineCount"))} engines don't fit under a {Fmt(s.Num("diameter"), 1)} m body. Try fewer engines or a wider stage.", index));
             }
             for (int i = 1; i < stages.Count; i++)
@@ -305,12 +319,12 @@ namespace Kestrel.Core.Designer
                 {
                     string nm = up.Str("name");
                     string where = string.IsNullOrEmpty(nm) ? $"Stage {i + 1}" : nm;
-                    outp.Add(Iss("top-heavy", "stages", $"{where} is much wider than the stage below it. Try a diameter under {Fmt(below.Num("diameter") * 1.6, 1)} m.", i));
+                    outp.Add(Iss("top-heavy", "stages", $"{where} is much wider than the stage below it. Try a diameter under {Fmt(below.Num("diameter") * Lim.topHeavyRatio, 1)} m.", i));
                 }
             }
             var top = (JsonObject)stages[stages.Count - 1];
             var fairing = d.Obj("fairing");
-            if (fairing != null && top != null && fairing.Num("diameter") < top.Num("diameter") * 0.5)
+            if (fairing != null && top != null && fairing.Num("diameter") < top.Num("diameter") * Lim.fairingNarrowRatio)
                 outp.Add(Iss("fairing-narrow", "payload", "The fairing is narrower than half the top stage. Try a fairing at least as wide as the stage."));
             var plj = d.Obj("payload");
             if (plj != null && fairing != null && plj.Str("type") != null && c.PayloadById.TryGetValue(plj.Str("type"), out var pl))

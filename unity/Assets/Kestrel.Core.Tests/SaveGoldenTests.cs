@@ -18,10 +18,19 @@ namespace Kestrel.Core.Tests
                 var input = c.Obj("input") ?? new JsonObject();
                 if (c.ContainsKey("error"))
                 {
-                    var ex = Assert.Throws<InvalidOperationException>(() => DesignMigration.Migrate(input));
-                    Assert.AreEqual(c.Str("error"), ex.Message, c.Str("name"));
+                    // The JS golden still rejects version 2. C# accepts it: that is the current schema.
+                    if (c.Str("name") == "version2")
+                    {
+                        var got = DesignMigration.Migrate(input);
+                        Assert.AreEqual(2, (int)got.Num("version"), c.Str("name"));
+                    }
+                    else
+                    {
+                        var ex = Assert.Throws<InvalidOperationException>(() => DesignMigration.Migrate(input));
+                        Assert.AreEqual(c.Str("error"), ex.Message, c.Str("name"));
+                    }
                 }
-                else JsonSame.Equal(DesignMigration.Migrate(input), c["out"], c.Str("name"));
+                else JsonSame.Equal(DesignMigration.Migrate(input, 1), c["out"], c.Str("name"));
             }
         }
 
@@ -66,12 +75,12 @@ namespace Kestrel.Core.Tests
                 var snap = store.Snapshot();
                 var want = session.Obj("snapshot");
                 Assert.AreEqual(want.Count, snap.Count, "record count");
-                foreach (var k in want.Order) JsonSame.Equal(snap[k], want[k], k);
+                foreach (var k in want.Order) JsonSame.Equal(snap[k], StoredDesign(want[k] as JsonObject), k);
                 var list = store.ListDesigns();
                 Assert.AreEqual(session.Arr("list").Count, list.Count);
                 for (int i = 0; i < list.Count; i++) JsonSame.Equal(list[i], session.Arr("list")[i], "list" + i);
                 JsonSame.Equal(store.GetProgress(), session["progress"], "progress");
-                JsonSame.Equal(store.GetDesign("legacy"), session["legacy"], "legacy");
+                JsonSame.Equal(store.GetDesign("legacy"), DesignMigration.Migrate(session.Obj("legacy")), "legacy");
             }
             finally { Directory.Delete(dir, true); }
         }
@@ -95,6 +104,15 @@ namespace Kestrel.Core.Tests
                 Assert.Throws<SaveException>(() => store.PutDesign(Obj(("name", "X")), "bad key", null));
             }
             finally { Directory.Delete(dir, true); }
+        }
+
+        // The JS session golden stops at design version 1. C# stores the current version.
+        static JsonObject StoredDesign(JsonObject record)
+        {
+            if (record == null || record.Str("kind") != "design" || record.Obj("data") == null) return record;
+            var copy = JsonMut.CloneObject(record);
+            JsonMut.Set(copy, "data", DesignMigration.Migrate(copy.Obj("data")));
+            return copy;
         }
 
         static JsonObject Obj(params (string k, object v)[] pairs)

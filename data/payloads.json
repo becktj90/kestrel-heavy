@@ -48,6 +48,7 @@
   "payloads": [
     {
       "id": "cubesat",
+      "displayName": "KH-1",
       "label": "CubeSat rideshare",
       "mass": 50,
       "volume": 0.2,
@@ -57,6 +58,7 @@
     },
     {
       "id": "leo-sat",
+      "displayName": "KH-2",
       "label": "LEO satellite",
       "mass": 1500,
       "volume": 12,
@@ -66,6 +68,7 @@
     },
     {
       "id": "gto-comsat",
+      "displayName": "KH-3",
       "label": "GTO comsat",
       "mass": 5500,
       "volume": 60,
@@ -75,6 +78,7 @@
     },
     {
       "id": "crew-capsule",
+      "displayName": "KH-4",
       "label": "Crew capsule",
       "mass": 12000,
       "volume": 40,
@@ -86,6 +90,7 @@
     },
     {
       "id": "lunar-probe",
+      "displayName": "KH-5",
       "label": "Lunar probe",
       "mass": 2500,
       "volume": 20,
@@ -95,6 +100,7 @@
     },
     {
       "id": "kid-box",
+      "displayName": "KH-K",
       "label": "Science box",
       "mass": 300,
       "volume": 2,

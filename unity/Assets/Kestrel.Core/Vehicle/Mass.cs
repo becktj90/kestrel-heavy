@@ -28,7 +28,11 @@ namespace Kestrel.Core.Vehicle
             return part.propMass * mat.structuralFraction * volScale * sfScale;
         }
 
-        public static double EnginesMass(Catalog c, StagePart part) => c.EngineById.TryGetValue(part.engine ?? "", out var e) ? e.mass * part.engineCount : 0;
+        public static double EnginesMass(Catalog c, StagePart part)
+        {
+            var p = EnginePoint.Of(c, part);
+            return p.known ? p.mass * part.engineCount : 0;
+        }
 
         public static double FairingMass(Design d)
         {
@@ -44,7 +48,7 @@ namespace Kestrel.Core.Vehicle
             for (int i = 0; i < d.stages.Count; i++)
             {
                 var s = d.stages[i];
-                double dry = StructureMass(c, s, sf) + EnginesMass(c, s) + s.interstageMass + s.separationMass;
+                double dry = StructureMass(c, s, sf) + EnginesMass(c, s) + InterstageAero.MassKg(c, d, i) + s.separationMass;
                 if (i == d.stages.Count - 1) dry += AVIONICS_MASS.TryGetValue(d.avionicsTier ?? "", out var av) ? av : 150;
                 if (i == 0)
                 {

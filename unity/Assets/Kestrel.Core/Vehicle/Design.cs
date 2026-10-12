@@ -1,4 +1,4 @@
-// Vehicle design (schema v1, same JSON as presets and saved designs) + tank sizing.
+// Vehicle design (schema v1 or v2, same JSON as presets and saved designs) + tank sizing.
 // Port of web/js/vehicle/design.js (data + sizeTank; shape validation stays in JS for now).
 using System;
 using System.Collections.Generic;
@@ -13,19 +13,33 @@ namespace Kestrel.Core.Vehicle
     public sealed class StagePart
     {
         public string name, propellant, engine, material, kind;
+        public string clusterPattern, interstageShape, nozzle;
         public int engineCount = 1, count; // count: strap-ons only
         public double propMass, diameter, interstageMass, separationMass, landingPropMass;
+        /// <summary>True when interstageMass is present in JSON, including 0. False means derive (upper stages only).</summary>
+        public bool interstageSpecified;
         public bool crossfeed; public Tune tune;
         public StagePart Clone() { var s = (StagePart)MemberwiseClone(); return s; }
 
-        internal static StagePart FromJson(JsonObject o) => o == null ? null : new StagePart
+        internal static StagePart FromJson(JsonObject o)
         {
-            name = o.Str("name"), propellant = o.Str("propellant"), engine = o.Str("engine"), material = o.Str("material"), kind = o.Str("kind"),
-            engineCount = (int)o.Num("engineCount", 1), count = (int)o.Num("count"), propMass = o.Num("propMass"), diameter = o.Num("diameter"),
-            interstageMass = o.Num("interstageMass"), separationMass = o.Num("separationMass"), landingPropMass = o.Num("landingPropMass"),
-            crossfeed = o.Bool("crossfeed"),
-            tune = o.Obj("tune") is JsonObject t ? new Tune { thrustPct = t.Num("thrustPct"), ispPct = t.Num("ispPct") } : null,
-        };
+            if (o == null) return null;
+            var s = new StagePart
+            {
+                name = o.Str("name"), propellant = o.Str("propellant"), engine = o.Str("engine"), material = o.Str("material"), kind = o.Str("kind"),
+                engineCount = (int)o.Num("engineCount", 1), count = (int)o.Num("count"), propMass = o.Num("propMass"), diameter = o.Num("diameter"),
+                interstageMass = o.Num("interstageMass"), separationMass = o.Num("separationMass"), landingPropMass = o.Num("landingPropMass"),
+                interstageSpecified = o.ContainsKey("interstageMass") && o["interstageMass"] != null,
+                crossfeed = o.Bool("crossfeed"),
+                nozzle = o.Str("nozzle"),
+                tune = o.Obj("tune") is JsonObject t ? new Tune { thrustPct = t.Num("thrustPct"), ispPct = t.Num("ispPct") } : null,
+            };
+            var cluster = o.Obj("cluster");
+            if (cluster != null) s.clusterPattern = cluster.Str("pattern");
+            var inter = o.Obj("interstage");
+            if (inter != null) s.interstageShape = inter.Str("shape");
+            return s;
+        }
     }
 
     public sealed class Design
@@ -37,6 +51,9 @@ namespace Kestrel.Core.Vehicle
         public string payloadType, payloadOrbit; public double payloadMass;
         public double fairingDiameter, fairingLength, fairingJettisonAltitudeKm = 110; public string fairingMaterial;
         public string nose = "ogive"; public bool fins;
+        // Optional keys. Absent means the defaults. Used when fins is true. Readout v2 uses the same pair.
+        public int finCount = 4;
+        public double finSpanM = 1;
         public bool legs, gridFins, rcs;
         public string avionicsTier = "standard";
         public double safetyFactor = 1.4;
@@ -60,7 +77,12 @@ namespace Kestrel.Core.Vehicle
             var p = o.Obj("payload"); d.payloadType = p.Str("type"); d.payloadMass = p.Num("mass"); d.payloadOrbit = p.Str("orbit");
             var f = o.Obj("fairing"); d.fairingDiameter = f.Num("diameter"); d.fairingLength = f.Num("length"); d.fairingMaterial = f.Str("material");
             d.fairingJettisonAltitudeKm = f.Num("jettisonAltitudeKm", 110);
-            var a = o.Obj("aero"); if (a != null) { d.nose = a.Str("nose", "ogive"); d.fins = a.Bool("fins"); }
+            var a = o.Obj("aero"); if (a != null)
+            {
+                d.nose = a.Str("nose", "ogive"); d.fins = a.Bool("fins");
+                if (a.ContainsKey("finCount") && a["finCount"] is double fc) d.finCount = (int)fc;
+                if (a.ContainsKey("finSpanM") && a["finSpanM"] is double fs) d.finSpanM = fs;
+            }
             var l = o.Obj("landing"); if (l != null) { d.legs = l.Bool("legs"); d.gridFins = l.Bool("gridFins"); d.rcs = l.Bool("rcs"); }
             d.avionicsTier = o.Obj("avionics")?.Str("tier", "standard") ?? "standard";
             d.safetyFactor = o.Num("safetyFactor", 1.4);

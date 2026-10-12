@@ -17,6 +17,13 @@ namespace Kestrel.Core.Data
         public string id, label, cycle, propellant;
         public double thrustSL, thrustVac, ispSL, ispVac, mass, pc, gimbal, cost, reliability, expansionRatio, diameter;
         public double[] throttle; public bool restart; public int restarts;
+        public System.Collections.Generic.List<NozzleVariant> nozzles;
+    }
+
+    public sealed class NozzleVariant
+    {
+        public string id;
+        public double expansionRatio, ispSL, ispVac, thrustSL, thrustVac, mass, exitDiameter;
     }
 
     public sealed class Material
@@ -26,7 +33,7 @@ namespace Kestrel.Core.Data
 
     public sealed class OrbitTarget { public string id, label; public double apoKm, periKm, incDeg; }
 
-    public sealed class Payload { public string id, label, orbit; public double mass, volume, maxG, maxHeatFlux; public bool crewed, needsAbort; }
+    public sealed class Payload { public string id, displayName, label, orbit; public double mass, volume, maxG, maxHeatFlux; public bool crewed, needsAbort; }
 
     /// <summary>All catalogs plus economy constants. Build with Catalog.FromJson(...) or Catalog.LoadFromRepo(root).</summary>
     public sealed class Catalog
@@ -70,6 +77,17 @@ namespace Kestrel.Core.Data
                     expansionRatio = o.Num("expansionRatio"), diameter = o.Num("diameter"),
                     throttle = new[] { (double)th[0], (double)th[1] }, restart = o.Bool("restart"), restarts = (int)o.Num("restarts"),
                 };
+                var nozzles = o.Arr("nozzles");
+                if (nozzles != null)
+                {
+                    e.nozzles = new System.Collections.Generic.List<NozzleVariant>();
+                    foreach (JsonObject n in nozzles)
+                        e.nozzles.Add(new NozzleVariant
+                        {
+                            id = n.Str("id"), expansionRatio = n.Num("expansionRatio"), ispSL = n.Num("ispSL"), ispVac = n.Num("ispVac"),
+                            thrustSL = n.Num("thrustSL"), thrustVac = n.Num("thrustVac"), mass = n.Num("mass"), exitDiameter = n.Num("exitDiameter"),
+                        });
+                }
                 c.Engines.Add(e); c.EngineById[e.id] = e;
             }
             foreach (JsonObject o in MiniJson.ParseObject(materials).Arr("materials"))
@@ -91,7 +109,7 @@ namespace Kestrel.Core.Data
             {
                 var p = new Payload
                 {
-                    id = o.Str("id"), label = o.Str("label"), orbit = o.Str("orbit"), mass = o.Num("mass"), volume = o.Num("volume"),
+                    id = o.Str("id"), displayName = o.Str("displayName", o.Str("label")), label = o.Str("label"), orbit = o.Str("orbit"), mass = o.Num("mass"), volume = o.Num("volume"),
                     maxG = o.Num("maxG"), maxHeatFlux = o.Num("maxHeatFlux"), crewed = o.Bool("crewed"), needsAbort = o.Bool("needsAbort"),
                 };
                 c.Payloads.Add(p); c.PayloadById[p.id] = p;
@@ -105,6 +123,7 @@ namespace Kestrel.Core.Data
         public static Catalog LoadFromRepo(string repoRoot)
         {
             string R(params string[] p) => System.IO.File.ReadAllText(System.IO.Path.Combine(repoRoot, System.IO.Path.Combine(p)));
+            Designer.DesignerLimits.Load(repoRoot);
             return FromJson(R("data", "propellants.json"), R("data", "engines.json"), R("data", "materials.json"),
                 R("data", "payloads.json"), R("data", "presets.json"), R("web", "js", "economy-data", "constants.json"));
         }
