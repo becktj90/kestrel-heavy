@@ -65,6 +65,19 @@ namespace Kestrel.Slice
         public void Drag(float dxPx, float dyPx, float dt) => orbit.Drag(dxPx, dyPx, dt, ReduceMotion);
         public void Pinch(float scale) => orbit.Pinch(scale);
 
+        /// <summary>Assigned by UX, or a <see cref="HangarExplodedView"/> on this camera's children.
+        /// <see cref="SetExploded"/> is the only call UX needs.</summary>
+        public HangarExplodedView ExplodedView;
+        bool exploded;
+        public bool Exploded => exploded;
+
+        public void SetExploded(bool on)
+        {
+            exploded = on;
+            var view = ExplodedView != null ? ExplodedView : GetComponentInChildren<HangarExplodedView>(true);
+            if (view != null) view.SetExploded(on, ReduceMotion);
+        }
+
         public bool BlocksGesture(Vector2 screenPx)
         {
             float w = cam != null && cam.pixelWidth > 0 ? cam.pixelWidth : Screen.width;
