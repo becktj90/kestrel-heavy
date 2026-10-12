@@ -1,0 +1,14 @@
+{
+    "name": "Kestrel.Core.Burst",
+    "rootNamespace": "Kestrel.Core.Burst",
+    "references": ["Kestrel.Core", "Unity.Burst", "Unity.Collections", "Unity.Jobs"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
