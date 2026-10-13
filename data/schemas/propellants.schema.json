@@ -19,7 +19,7 @@
         "bulkDensity": { "type": "number", "exclusiveMinimum": 0, "description": "kg/m^3 at mixture ratio" },
         "ispSL": { "type": "number", "exclusiveMinimum": 0, "description": "s" },
         "ispVac": { "type": "number", "exclusiveMinimum": 0, "description": "s" },
-        "ispVacMax": { "type": "number", "exclusiveMinimum": 0, "description": "s, best vacuum nozzle" },
+        "ispVacMax": { "type": "number", "exclusiveMinimum": 0, "description": "s, Isp ceiling: best vacuum nozzle. Catalog ispVac stays at or under this." },
         "storability": { "enum": ["cryogenic", "deep-cryogenic", "storable", "solid"] },
         "boiloffPerHour": { "type": "number", "minimum": 0 },
         "costPerKg": { "type": "number", "minimum": 0, "description": "USD per kg loaded" },

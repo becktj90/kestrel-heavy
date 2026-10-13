@@ -52,6 +52,7 @@ export default {
       "label": "CubeSat rideshare",
       "mass": 50,
       "volume": 0.2,
+      "diameter": 0.5,
       "maxG": 10,
       "maxHeatFlux": 1135,
       "orbit": "leo400"
@@ -62,6 +63,7 @@ export default {
       "label": "LEO satellite",
       "mass": 1500,
       "volume": 12,
+      "diameter": 2,
       "maxG": 6,
       "maxHeatFlux": 1135,
       "orbit": "leo400"
@@ -72,6 +74,7 @@ export default {
       "label": "GTO comsat",
       "mass": 5500,
       "volume": 60,
+      "diameter": 3.4,
       "maxG": 6,
       "maxHeatFlux": 1135,
       "orbit": "gto"
@@ -82,6 +85,7 @@ export default {
       "label": "Crew capsule",
       "mass": 12000,
       "volume": 40,
+      "diameter": 3.6,
       "maxG": 4.5,
       "maxHeatFlux": 2000,
       "orbit": "leo400",
@@ -94,6 +98,7 @@ export default {
       "label": "Lunar probe",
       "mass": 2500,
       "volume": 20,
+      "diameter": 2.2,
       "maxG": 6,
       "maxHeatFlux": 1135,
       "orbit": "tli"
@@ -104,6 +109,7 @@ export default {
       "label": "Science box",
       "mass": 300,
       "volume": 2,
+      "diameter": 1.1,
       "maxG": 12,
       "maxHeatFlux": 3000,
       "orbit": "leo200"
