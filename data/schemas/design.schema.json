@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kestrel Heavy vehicle design, schema v1–v3",
+  "description": "v3 fields are optional. Absent means v2 behaviour. engine stays a catalog id string; overrides are engineParams so v1/v2 readers keep working. Pass DesignMigration.Migrate(doc, 3) for the identity bump.",
+  "type": "object",
+  "required": ["version"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "enum": [1, 2, 3] },
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "tier": { "type": "string" },
+    "stages": { "type": "array", "minItems": 1, "maxItems": 5, "items": { "$ref": "#/$defs/stage" } },
+    "strapOns": { "$ref": "#/$defs/stage" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string" },
+        "mass": { "type": "number", "minimum": 0 },
+        "orbit": { "type": "string" }
+      }
+    },
+    "fairing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "diameter": { "type": "number", "exclusiveMinimum": 0 },
+        "length": { "type": "number", "exclusiveMinimum": 0 },
+        "material": { "type": "string" },
+        "jettisonAltitudeKm": { "type": "number" }
+      }
+    },
+    "aero": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "nose": { "type": "string" },
+        "fins": { "type": "boolean" },
+        "finCount": { "type": "integer", "minimum": 3, "maximum": 8 },
+        "finSpanM": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "fins": {
+      "type": "object",
+      "description": "fins.planform and fins.rootChord",
+      "additionalProperties": false,
+      "properties": {
+        "planform": { "type": "string" },
+        "rootChord": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "landing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "legs": { "type": "boolean" },
+        "gridFins": { "type": "boolean" },
+        "rcs": { "type": "boolean" }
+      }
+    },
+    "legs": {
+      "type": "object",
+      "description": "legs.kind: light (v2 +6% dry, 2 m/s) or heavy (4 m/s)",
+      "additionalProperties": false,
+      "properties": { "kind": { "enum": ["light", "heavy"] } }
+    },
+    "recovery": {
+      "type": "object",
+      "description": "recovery.mode",
+      "additionalProperties": false,
+      "properties": { "mode": { "enum": ["expendable", "rtls", "barge"] } }
+    },
+    "guidance": { "$ref": "#/$defs/guidance" },
+    "boosterSepPct": { "type": "number", "minimum": 0, "maximum": 100, "description": "Percent of the booster burn. Absent means separate at burnout." },
+    "gridFinDeployAltM": { "type": "number", "minimum": 0 },
+    "landingReserveFraction": { "type": "number", "minimum": 0, "maximum": 0.2, "description": "Fraction of stage-1 propellant. v2 landingPropMass stays the stored reserve until a later WP reads this." },
+    "heatShield": { "type": "boolean" },
+    "missionId": { "type": "string" },
+    "avionics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "tier": { "enum": ["basic", "standard", "redundant"] } }
+    },
+    "safetyFactor": { "type": "number", "exclusiveMinimum": 0 },
+    "livery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "type": "string" },
+        "accent": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "propellant": { "type": "string" },
+        "engine": { "type": "string", "description": "Catalog id. Numeric overrides are engineParams, not a nested engine object." },
+        "engineCount": { "type": "integer", "minimum": 1 },
+        "count": { "type": "integer", "minimum": 0 },
+        "propMass": { "type": "number", "minimum": 0 },
+        "diameter": { "type": "number", "exclusiveMinimum": 0 },
+        "material": { "type": "string" },
+        "kind": { "type": "string" },
+        "interstageMass": { "type": "number", "minimum": 0 },
+        "separationMass": { "type": "number", "minimum": 0 },
+        "landingPropMass": { "type": "number", "minimum": 0 },
+        "crossfeed": { "type": "boolean" },
+        "nozzle": { "type": "string" },
+        "tune": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "thrustPct": { "type": "number" },
+            "ispPct": { "type": "number" }
+          }
+        },
+        "cluster": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "pattern": { "type": "string" } }
+        },
+        "interstage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "shape": { "type": "string" } }
+        },
+        "engineParams": {
+          "type": "object",
+          "description": "engine.pc, engine.expansionRatio, engine.throttleMin, engine.gimbalDeg",
+          "additionalProperties": false,
+          "properties": {
+            "pc": { "type": "number", "exclusiveMinimum": 0, "description": "bar" },
+            "expansionRatio": { "type": "number", "exclusiveMinimum": 0 },
+            "throttleMin": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+            "gimbalDeg": { "type": "number", "minimum": 0 }
+          }
+        },
+        "mixtureOffsetPct": { "type": "number", "minimum": -10, "maximum": 10 },
+        "tank": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pressureBar": { "type": "number", "minimum": 1.5, "maximum": 6 },
+            "insulation": { "enum": ["none", "foam", "mli"] },
+            "commonBulkhead": { "type": "boolean" }
+          }
+        },
+        "sepMode": { "enum": ["cold", "hot", "springs"] },
+        "sepImpulse": { "type": "number", "minimum": 0 }
+      }
+    },
+    "guidance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pitchKickAlt": { "type": "number", "minimum": 0, "description": "m" },
+        "pitchKickDeg": { "type": "number" },
+        "turnShape": { "type": "number", "minimum": 0, "maximum": 1 },
+        "maxQThrottle": { "type": "number", "minimum": 0, "maximum": 100, "description": "percent" },
+        "gLimit": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    }
+  }
+}

@@ -11,7 +11,7 @@ namespace Kestrel.Core.Designer
 {
     public sealed class Issue
     {
-        public string code, tab, msg, kid;
+        public string code, tab, msg, kid, field;
         public int? index;
     }
 
@@ -249,8 +249,8 @@ namespace Kestrel.Core.Designer
         {
             var errs = new List<string>();
             if (d == null) return (false, new List<string> { "design: not an object" });
-            if (!d.ContainsKey("version") || !(d["version"] is double ver) || (ver != 1 && ver != 2))
-                errs.Add($"version: expected 1 or 2, got {JsonMut.Shown(d, "version")} (run migrateDesign)");
+            if (!d.ContainsKey("version") || !(d["version"] is double ver) || (ver != 1 && ver != 2 && ver != 3))
+                errs.Add($"version: expected 1, 2 or 3, got {JsonMut.Shown(d, "version")} (run migrateDesign)");
             if (!(d.ContainsKey("name") && d["name"] is string)) errs.Add("name: string required");
             var stages = d.Arr("stages");
             if (stages == null || stages.Count < Lim.stagesMin || stages.Count > Lim.stagesMax) errs.Add("stages: 1\u20135 required");

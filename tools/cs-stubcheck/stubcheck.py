@@ -53,10 +53,19 @@ def asmdefs(assets):
         j = json.load(open(f, encoding="utf-8-sig")); d = os.path.dirname(f)
         out[j["name"]] = dict(dir=d, refs=j.get("references", []), engine=not j.get("noEngineReferences", False),
                               defines=j.get("defineConstraints", []), editor="Editor" in j.get("includePlatforms", []))
-    for n, a in out.items():   # files belong to the nearest asmdef
-        nested = [o["dir"] for o in out.values() if o["dir"] != a["dir"] and o["dir"].startswith(a["dir"] + os.sep)]
-        a["files"] = sorted(f for f in glob.glob(os.path.join(a["dir"], "**", "*.cs"), recursive=True)
-                            if not any(f.startswith(x + os.sep) for x in nested))
+    # An .asmref folds its folder into the named asmdef (e.g. Kestrel.Game/Failure -> Kestrel.Slice).
+    refdirs = {}
+    for f in glob.glob(os.path.join(assets, "**", "*.asmref"), recursive=True):
+        j = json.load(open(f, encoding="utf-8-sig"))
+        if j.get("reference") in out: refdirs.setdefault(j["reference"], []).append(os.path.dirname(f))
+    roots = [o["dir"] for o in out.values()] + [d for ds in refdirs.values() for d in ds]
+    for n, a in out.items():   # files belong to the nearest asmdef or asmref
+        files = []
+        for root in [a["dir"]] + refdirs.get(n, []):
+            nested = [x for x in roots if x != root and x.startswith(root + os.sep)]
+            files += [f for f in glob.glob(os.path.join(root, "**", "*.cs"), recursive=True)
+                      if not any(f.startswith(x + os.sep) for x in nested)]
+        a["files"] = sorted(files)
     return out
 
 def build_stubs(work):
@@ -109,7 +118,7 @@ def main():
         lib += [os.path.join(work, "UnityEditor.dll"), os.path.join(work, "nunit.framework.dll")]
         out = os.path.join(work, n + ".dll")
         code, msg = csc(out, files, refs + lib, defs)
-        errs = [l for l in msg.splitlines() if ": error " in l]
+        errs = [l for l in msg.splitlines() if ": error " in l or l.startswith("error ")]
         rel = lambda s: s.replace(assets + os.sep, "")
         print(f"[{'ok' if code == 0 else 'FAIL'}] {n} ({len(files)} files)")
         for l in errs: print("   ", rel(l))

@@ -43,10 +43,23 @@ namespace Kestrel.Livery.Branding.Tests
         [TestCase("NASA")] [TestCase("nasa labs")] [TestCase("N4SA")] [TestCase("SpaceX")] [TestCase("Space-X")] [TestCase("SpaceY")]
         [TestCase("Blue Origin")] [TestCase("Blu Origin")] [TestCase("BlueOrigin Two")] [TestCase("New Glenn")] [TestCase("Jacklyn")]
         [TestCase("LC-36")] [TestCase("Falcon 9")] [TestCase("Rocket Lab")] [TestCase("Ariane")] [TestCase("Roscosmos")] [TestCase("Starship")]
-        public void RealBrandNamesBlocked(string n) { var b = Ok(); b.Name = n; Assert.That(BrandingValidator.Validate(b), Does.Contain("name_brand"), n); }
+        public void RealBrandNamesBlocked(string n)
+        {
+            var b = Ok(); b.Name = n; Assert.That(BrandingValidator.Validate(b), Does.Contain("name_brand"), n);
+            var c = NameGuard.Check(n);
+            Assert.That(c.Ok, Is.False, n);
+            Assert.That(c.Message, Is.EqualTo(NameGuard.TryAnotherName));
+            Assert.That(c.Message, Does.Contain("Try another name"));
+            Assert.That(c.Message.ToLowerInvariant(), Does.Not.Contain(n.ToLowerInvariant()), "message never echoes the real brand");
+            Assert.That(BrandingValidator.FriendlyMessage("name_brand"), Is.EqualTo(NameGuard.TryAnotherName));
+        }
 
         [TestCase("Tallowmere")] [TestCase("Kestrel Works")] [TestCase("Pine Ridge Rocketry")] [TestCase("Moth and Lantern")] [TestCase("KH Heavy Lift")] [TestCase("Bramble Orbital")]
-        public void OriginalNamesAllowed(string n) { var b = Ok(); b.Name = n; Assert.That(BrandingValidator.Validate(b), Does.Not.Contain("name_brand"), n); }
+        public void OriginalNamesAllowed(string n)
+        {
+            var b = Ok(); b.Name = n; Assert.That(BrandingValidator.Validate(b), Does.Not.Contain("name_brand"), n);
+            var c = NameGuard.Check(n); Assert.That(c.Ok, Is.True, n); Assert.That(c.Message, Is.Null);
+        }
 
         [Test]
         public void AgencyStyleLookalikesBlocked()

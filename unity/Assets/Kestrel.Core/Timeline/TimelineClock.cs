@@ -28,17 +28,34 @@ namespace Kestrel.Core.Timeline
         public static double GameSeconds(double realSeconds, string mode)
         {
             if (realSeconds >= 0) return realSeconds;
-            mode = NormalizeMode(mode);
-            double terminalSpan, prelude;
-            if (mode == "kid") { terminalSpan = 24; prelude = 8; }
-            else if (mode == "engineer") { terminalSpan = 240; prelude = 6960; }
-            else { terminalSpan = 90; prelude = 45; }
+            Spans(mode, out double terminalSpan, out double prelude);
             if (realSeconds >= RealHoldLate) return realSeconds / 240.0 * terminalSpan;
             double span = RealHoldLate - RealHoldEarly; // 6960
             double u = (realSeconds - RealHoldEarly) / span;
             if (u < 0) u = 0;
             if (u > 1) u = 1;
             return -terminalSpan - prelude * (1 - u);
+        }
+
+        /// <summary>Inverse of <see cref="GameSeconds"/>. The pad contract is in real seconds; the player clock is not.</summary>
+        public static double RealSeconds(double gameSeconds, string mode)
+        {
+            if (gameSeconds >= 0) return gameSeconds;
+            Spans(mode, out double terminalSpan, out double prelude);
+            if (NormalizeMode(mode) == "engineer") return gameSeconds;
+            if (gameSeconds >= -terminalSpan) return gameSeconds / terminalSpan * 240.0;
+            double u = (gameSeconds + terminalSpan + prelude) / prelude;
+            if (u < 0) u = 0;
+            if (u > 1) u = 1;
+            return RealHoldEarly + u * (RealHoldLate - RealHoldEarly);
+        }
+
+        static void Spans(string mode, out double terminalSpan, out double prelude)
+        {
+            mode = NormalizeMode(mode);
+            if (mode == "kid") { terminalSpan = 24; prelude = 8; }
+            else if (mode == "engineer") { terminalSpan = 240; prelude = 6960; }
+            else { terminalSpan = 90; prelude = 45; }
         }
 
         public static double Round(double v) => Math.Round(v, 3, MidpointRounding.AwayFromZero);

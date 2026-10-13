@@ -39,19 +39,20 @@ Only the lead agent (the sole Unity CLI driver) runs this, via the official CLI 
 (never the raw Editor with `-batchmode`).
 
 ```
-tools/ios-export/export.sh <build-number>      # described here; to be added in its own PR, not in this one
-  1. git worktree add /tmp/kh-ios-export origin/main   (clean tree, recorded main SHA)
-  2. unity build unity --target iOS \
-       --execute-method Kestrel.Slice.Editor.BuildScript.BuildIOS   (existing entry point)
+tools/ios-export/export.sh <build-number> [git-ref]   # Unity CLI on the box (signed-in `unity`)
+  # or GitHub Actions → workflow "Xcode export" (workflow_dispatch) with build_number + ref
+  1. clean worktree at the chosen ref (default origin/main); record SHA
+  2. unity build . --target iOS --execute-method Kestrel.Slice.Editor.BuildScript.BuildIOS
      env KH_BUILD_PATH=/tmp/kh-ios-out  KH_BUILD_NUMBER=<n>
-     (the BuildScript change to also stamp bundle id / version is a build-config change -> separate PR, Trevor's OK)
-  3. verify: Info.plist CFBundleIdentifier=com.beckify.kestrelheavy, CFBundleShortVersionString=2.0.0,
-     CFBundleVersion=<n>, UIRequiresFullScreen/orientation as already approved; Unity-iPhone.xcodeproj present
-  4. replace contents of the ios-export branch with /tmp/kh-ios-out (orphan, single commit, see §6),
-     commit "ios-export 2.0.0 (<n>) from main <sha>", tag export/2.0.0-<n>, push
+  3. verify: Info.plist CFBundleIdentifier=com.letterify.kestrelheavy, CFBundleShortVersionString=2.0.0,
+     CFBundleVersion=<n>, Unity-iPhone.xcodeproj present
+  4. tools/ios-export/publish.sh replaces orphan branch `xcode-export` (single commit + tag export/2.0.0-<n>)
 ```
 
-- `ios-export` is a dedicated branch. **Never merged to main**; main never contains generated Xcode output.
+CI also uploads a non-shipping `xcode-ios-compile` artifact from Unity CI's iOS compile-check; that artifact is for PR
+verification only. Shipping exports go through `export.sh` or the **Xcode export** workflow onto `xcode-export`.
+
+- `xcode-export` is a dedicated orphan branch. **Never merged to main**; main never contains generated Xcode output.
 - Stamping: `PlayerSettings.iOS.buildNumber` from `-khBuildNumber`/`KH_BUILD_NUMBER` (already supported in
   BuildScript.cs). Version string 2.0.0 and bundle id must move from the proto values
   (`bundleVersion: 0.1.0`, `com.beckify.kestrelheavy.unityproto`, build 1) to the shipping values **only when Trevor

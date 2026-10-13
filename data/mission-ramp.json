@@ -1,5 +1,6 @@
 {
   "note": "Per-mission assists for the Phaser web demo. Unity should reuse these numbers. Wind is a multiplier on the difficulty wind force. landingFuel and swellAmp replace the Haven defaults. Physics integration is unchanged.",
+  "designerCampaign": "data/campaign.json",
   "unlock": "A deck finish (recovered or salvage, including a tip) unlocks the next mission. A splash does not. Stars never gate the next mission.",
   "windFormula": "windForce = difficulty.wind * mission.wind",
   "stars": {

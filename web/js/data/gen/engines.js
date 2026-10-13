@@ -22,6 +22,11 @@ export default {
       "ispVac": 311,
       "mass": 470,
       "pc": 97,
+      "pcMin": 43.65,
+      "pcRated": 97,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.57,
         1
@@ -43,6 +48,16 @@ export default {
           "thrustVac": 934000,
           "mass": 470,
           "exitDiameter": 0.92
+        },
+        {
+          "id": "extended",
+          "expansionRatio": 30,
+          "ispSL": 274,
+          "ispVac": 322,
+          "thrustSL": 821000,
+          "thrustVac": 967000,
+          "mass": 503,
+          "exitDiameter": 1.26
         }
       ]
     },
@@ -57,6 +72,11 @@ export default {
       "ispVac": 348,
       "mass": 520,
       "pc": 97,
+      "pcMin": 43.65,
+      "pcRated": 97,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1,
       "throttle": [
         0.39,
         1
@@ -67,7 +87,29 @@ export default {
       "cost": 1400000,
       "reliability": 0.994,
       "expansionRatio": 165,
-      "diameter": 3.3
+      "diameter": 3.3,
+      "nozzles": [
+        {
+          "id": "default",
+          "expansionRatio": 165,
+          "ispSL": 0,
+          "ispVac": 348,
+          "thrustSL": 0,
+          "thrustVac": 981000,
+          "mass": 520,
+          "exitDiameter": 3.3
+        },
+        {
+          "id": "extended",
+          "expansionRatio": 240,
+          "ispSL": 0,
+          "ispVac": 358,
+          "thrustSL": 0,
+          "thrustVac": 1009000,
+          "mass": 572,
+          "exitDiameter": 3.98
+        }
+      ]
     },
     {
       "id": "gg-kerolox-small",
@@ -80,6 +122,11 @@ export default {
       "ispVac": 311,
       "mass": 95,
       "pc": 60,
+      "pcMin": 27,
+      "pcRated": 60,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.6,
         1
@@ -90,7 +137,29 @@ export default {
       "cost": 350000,
       "reliability": 0.99,
       "expansionRatio": 16,
-      "diameter": 0.5
+      "diameter": 0.5,
+      "nozzles": [
+        {
+          "id": "default",
+          "expansionRatio": 16,
+          "ispSL": 282,
+          "ispVac": 311,
+          "thrustSL": 90600,
+          "thrustVac": 100000,
+          "mass": 95,
+          "exitDiameter": 0.5
+        },
+        {
+          "id": "extended",
+          "expansionRatio": 30,
+          "ispSL": 274,
+          "ispVac": 322,
+          "thrustSL": 88000,
+          "thrustVac": 104000,
+          "mass": 102,
+          "exitDiameter": 0.68
+        }
+      ]
     },
     {
       "id": "gg-kerolox-small-vac",
@@ -103,6 +172,11 @@ export default {
       "ispVac": 342,
       "mass": 70,
       "pc": 60,
+      "pcMin": 27,
+      "pcRated": 60,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1,
       "throttle": [
         0.5,
         1
@@ -126,6 +200,11 @@ export default {
       "ispVac": 337,
       "mass": 2200,
       "pc": 250,
+      "pcMin": 125,
+      "pcRated": 250,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.5,
         1
@@ -136,7 +215,29 @@ export default {
       "cost": 7000000,
       "reliability": 0.99,
       "expansionRatio": 37,
-      "diameter": 1.5
+      "diameter": 1.5,
+      "nozzles": [
+        {
+          "id": "default",
+          "expansionRatio": 37,
+          "ispSL": 309,
+          "ispVac": 337,
+          "thrustSL": 1900000,
+          "thrustVac": 2080000,
+          "mass": 2200,
+          "exitDiameter": 1.5
+        },
+        {
+          "id": "extended",
+          "expansionRatio": 60,
+          "ispSL": 303,
+          "ispVac": 347,
+          "thrustSL": 1863000,
+          "thrustVac": 2142000,
+          "mass": 2332,
+          "exitDiameter": 1.91
+        }
+      ]
     },
     {
       "id": "sc-hydrolox",
@@ -149,6 +250,11 @@ export default {
       "ispVac": 452,
       "mass": 3500,
       "pc": 206,
+      "pcMin": 103,
+      "pcRated": 206,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.67,
         1.09
@@ -172,6 +278,11 @@ export default {
       "ispVac": 350,
       "mass": 1600,
       "pc": 300,
+      "pcMin": 165,
+      "pcRated": 300,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1.25,
       "throttle": [
         0.4,
         1
@@ -182,7 +293,29 @@ export default {
       "cost": 1500000,
       "reliability": 0.98,
       "expansionRatio": 34,
-      "diameter": 1.3
+      "diameter": 1.3,
+      "nozzles": [
+        {
+          "id": "default",
+          "expansionRatio": 34,
+          "ispSL": 327,
+          "ispVac": 350,
+          "thrustSL": 2300000,
+          "thrustVac": 2500000,
+          "mass": 1600,
+          "exitDiameter": 1.3
+        },
+        {
+          "id": "extended",
+          "expansionRatio": 50,
+          "ispSL": 320,
+          "ispVac": 360,
+          "thrustSL": 2251000,
+          "thrustVac": 2571000,
+          "mass": 1696,
+          "exitDiameter": 1.58
+        }
+      ]
     },
     {
       "id": "ff-methalox-vac",
@@ -195,6 +328,11 @@ export default {
       "ispVac": 380,
       "mass": 2100,
       "pc": 300,
+      "pcMin": 165,
+      "pcRated": 300,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1.25,
       "throttle": [
         0.4,
         1
@@ -205,7 +343,29 @@ export default {
       "cost": 2500000,
       "reliability": 0.98,
       "expansionRatio": 90,
-      "diameter": 2.3
+      "diameter": 2.3,
+      "nozzles": [
+        {
+          "id": "default",
+          "expansionRatio": 90,
+          "ispSL": 0,
+          "ispVac": 380,
+          "thrustSL": 0,
+          "thrustVac": 2600000,
+          "mass": 2100,
+          "exitDiameter": 2.3
+        },
+        {
+          "id": "extended",
+          "expansionRatio": 130,
+          "ispSL": 0,
+          "ispVac": 382,
+          "thrustSL": 0,
+          "thrustVac": 2662000,
+          "mass": 2268,
+          "exitDiameter": 2.76
+        }
+      ]
     },
     {
       "id": "exp-hydrolox",
@@ -218,6 +378,11 @@ export default {
       "ispVac": 465,
       "mass": 300,
       "pc": 44,
+      "pcMin": 24.2,
+      "pcRated": 44,
+      "epsMin": 8,
+      "epsMax": 400,
+      "cycleMassFactor": 1.05,
       "throttle": [
         0.5,
         1
@@ -228,7 +393,29 @@ export default {
       "cost": 17000000,
       "reliability": 0.998,
       "expansionRatio": 285,
-      "diameter": 2.1
+      "diameter": 2.1,
+      "nozzles": [
+        {
+          "id": "default",
+          "expansionRatio": 285,
+          "ispSL": 0,
+          "ispVac": 465,
+          "thrustSL": 0,
+          "thrustVac": 110000,
+          "mass": 300,
+          "exitDiameter": 2.1
+        },
+        {
+          "id": "extended",
+          "expansionRatio": 400,
+          "ispSL": 0,
+          "ispVac": 465,
+          "thrustSL": 0,
+          "thrustVac": 112000,
+          "mass": 336,
+          "exitDiameter": 2.49
+        }
+      ]
     },
     {
       "id": "pf-hypergolic",
@@ -241,6 +428,11 @@ export default {
       "ispVac": 316,
       "mass": 95,
       "pc": 9,
+      "pcMin": 4.5,
+      "pcRated": 9,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 0.8,
       "throttle": [
         1,
         1
@@ -264,6 +456,11 @@ export default {
       "ispVac": 315,
       "mass": 20,
       "pc": 10,
+      "pcMin": 5,
+      "pcRated": 10,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 0.8,
       "throttle": [
         1,
         1
@@ -287,6 +484,11 @@ export default {
       "ispVac": 330,
       "mass": 110,
       "pc": 60,
+      "pcMin": 27,
+      "pcRated": 60,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.6,
         1
@@ -297,7 +499,29 @@ export default {
       "cost": 400000,
       "reliability": 0.99,
       "expansionRatio": 20,
-      "diameter": 0.6
+      "diameter": 0.6,
+      "nozzles": [
+        {
+          "id": "default",
+          "expansionRatio": 20,
+          "ispSL": 300,
+          "ispVac": 330,
+          "thrustSL": 90000,
+          "thrustVac": 100000,
+          "mass": 110,
+          "exitDiameter": 0.6
+        },
+        {
+          "id": "extended",
+          "expansionRatio": 36,
+          "ispSL": 291,
+          "ispVac": 342,
+          "thrustSL": 87000,
+          "thrustVac": 104000,
+          "mass": 118,
+          "exitDiameter": 0.8
+        }
+      ]
     },
     {
       "id": "srm-small",
@@ -310,6 +534,11 @@ export default {
       "ispVac": 275,
       "mass": 0,
       "pc": 70,
+      "pcMin": 56,
+      "pcRated": 70,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         1,
         1
@@ -334,6 +563,11 @@ export default {
       "ispVac": 268,
       "mass": 0,
       "pc": 63,
+      "pcMin": 50.4,
+      "pcRated": 63,
+      "epsMin": 7.7,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         1,
         1
@@ -358,6 +592,11 @@ export default {
       "ispVac": 260,
       "mass": 400,
       "pc": 35,
+      "pcMin": 17.5,
+      "pcRated": 35,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.3,
         1
@@ -381,6 +620,11 @@ export default {
       "ispVac": 304,
       "mass": 7800,
       "pc": 70,
+      "pcMin": 31.5,
+      "pcRated": 70,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.7,
         1
@@ -405,6 +649,11 @@ export default {
       "ispVac": 352,
       "mass": 2400,
       "pc": 250,
+      "pcMin": 125,
+      "pcRated": 250,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.5,
         1
@@ -429,6 +678,11 @@ export default {
       "ispVac": 348,
       "mass": 2500,
       "pc": 140,
+      "pcMin": 70,
+      "pcRated": 140,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.4,
         1
@@ -453,6 +707,11 @@ export default {
       "ispVac": 368,
       "mass": 2800,
       "pc": 140,
+      "pcMin": 70,
+      "pcRated": 140,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.4,
         1
@@ -477,6 +736,11 @@ export default {
       "ispVac": 410,
       "mass": 5800,
       "pc": 100,
+      "pcMin": 45,
+      "pcRated": 100,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.57,
         1
@@ -501,6 +765,11 @@ export default {
       "ispVac": 450,
       "mass": 90,
       "pc": 30,
+      "pcMin": 16.5,
+      "pcRated": 30,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1.05,
       "throttle": [
         0.8,
         1
@@ -525,6 +794,11 @@ export default {
       "ispVac": 270,
       "mass": 180,
       "pc": 15,
+      "pcMin": 7.5,
+      "pcRated": 15,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 0.8,
       "throttle": [
         0.4,
         1
@@ -549,6 +823,11 @@ export default {
       "ispVac": 278,
       "mass": 0,
       "pc": 55,
+      "pcMin": 44,
+      "pcRated": 55,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         1,
         1
@@ -573,6 +852,11 @@ export default {
       "ispVac": 250,
       "mass": 80,
       "pc": 25,
+      "pcMin": 12.5,
+      "pcRated": 25,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.4,
         1

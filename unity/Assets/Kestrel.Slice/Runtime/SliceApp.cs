@@ -1,10 +1,14 @@
-// Vertical-slice entry point: DESIGN stub (UI Toolkit) -> flight liftoff..MECO -> HUD -> Game Center.
+// Vertical-slice entry point: Hangar designer (UI Toolkit) -> flight liftoff..MECO -> HUD -> Game Center.
+// The Hangar edits a Kestrel.Core.Hangar.HangarSession (undo/redo, validation, data sheet); HangarPanel is the view,
+// HangarRocketView draws the rocket per part (paint, selection, exploded view) and HangarCamera orbits and focuses.
 // Everything is created from code at runtime; the scene only needs one GameObject with this
 // component (the editor bootstrap generates Assets/Scenes/Slice.unity).
 using System.Collections.Generic;
 using System.Linq;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Economy;
+using Kestrel.Core.Hangar;
+using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Environment;
@@ -18,14 +22,17 @@ namespace Kestrel.Slice
     public sealed class SliceApp : MonoBehaviour
     {
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
-        Design design; Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
-        HangarCamera hangarCam; HangarExplodedView explodedView; Toggle explodeToggle;
-        VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label rDv, rTwr, rCost, rRel, rMass, hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
+        Design design; HangarSession session; DesignLibrary library; HangarPanel panel; HangarRocketView rocketView = new HangarRocketView(); HangarCamera hangarCam;
+        Button undoButton, redoButton, explodeButton; bool rocketDirty = true; float lastRocketBuild = -1f; Mesh combinedMesh; Material flightMat;
+        HangarExplodedView explodedView; Material explodedMat;
+        // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
+        FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
+        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
+        VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
         public int OrbitsCompleted; public bool EngineerEnabled;
-        Label issueChip, launchReason; Button launchButton; DesignerState designerState;
-        static readonly string[] IssueControls = { "engines", "prop", "preset" };
+        Label issueChip, launchReason; Button launchButton;
 
         void Awake()
         {
@@ -36,7 +43,156 @@ namespace Kestrel.Slice
             BuildScene();
             BuildUI();
             _ = GameCenterBridge.Impl.Authenticate();
-            SelectPreset("stock");
+            StartSession();
+        }
+
+        /// <summary>Open the most recent save, else the Workhorse template, else the stock preset.</summary>
+        void StartSession()
+        {
+            var c = SliceData.Catalog;
+            var h = SliceData.Hangar;
+            library = SliceData.Library;
+            JsonObject first = null; string id = null, name = null;
+            try
+            {
+                var saves = library?.List();
+                if (saves != null && saves.Count > 0) { id = saves[0].id; first = library.Load(id); name = saves[0].name; }
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Hangar] could not read saves: " + e.Message); first = null; id = null; }
+            if (first == null)
+            {
+                id = null;
+                var t = h?.Template("workhorse") ?? (h != null && h.templates.Count > 0 ? h.templates[0] : null);
+                if (t != null) { first = HangarEditor.ForkTemplate(t); name = t.name; }
+                else first = DesignerValidation.ToJson(c.Preset("stock"));
+            }
+            session = new HangarSession(c, h, first);
+            if (id != null) session.Load(first, id, name);
+            else if (name != null) session.Load(first, null, name);
+            session.Changed += OnDesignChanged;
+            session.SelectionChanged += OnSelectionChanged;
+            session.SaveStateChanged += UpdateHandle;
+            design = Design.FromJson(session.Design);
+            OnDesignChanged();
+            TryBuildPanel();
+        }
+
+        void TryBuildPanel()
+        {
+            if (session == null || ui == null) return;
+            float upp = UnitsPerPoint();
+            if (panel == null)
+            {
+                panel = new HangarPanel(session, library ?? new DesignLibrary(new Kestrel.Core.Save.NativeStore(System.IO.Path.Combine(Application.temporaryCachePath, "kh-hangar"), () => System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), () => Random.value)), designBody, upp);
+                panel.FocusRequested += FocusPart;
+                panel.ReduceMotionChanged += _ => ApplyReduceMotion();
+                panel.ExplodeRequested += SetExploded;
+                panel.EngineerChanged += _ => ApplyValidation();
+            }
+            else panel.SetScale(upp);
+            ApplyDesignPanelMetrics();
+        }
+
+        /// <summary>Every document change: readout gate, chip, undo labels, and a (rate-limited) rocket rebuild.</summary>
+        void OnDesignChanged()
+        {
+            if (session == null) return;
+            try { design = Design.FromJson(session.Design); }
+            catch (System.Exception e) { Debug.LogWarning("[Hangar] design parse: " + e.Message); }
+            rocketDirty = true;
+            ApplyValidation();
+            Feedback();
+            UpdateHandle();
+        }
+
+        /// <summary>Panel handle: collapse arrow, design name, and a dot while there are unsaved changes.</summary>
+        void UpdateHandle()
+        {
+            if (designToggle == null) return;
+            string name = session != null ? (session.SavedName ?? session.Design.Str("name") ?? "Design") + (session.Dirty ? " •" : "") : "Design";
+            designToggle.text = (designCollapsed ? "▲  " : "▼  ") + name;
+        }
+
+        void OnSelectionChanged(PartRef p)
+        {
+            rocketView.SetSelected(p, true);
+            if (session != null && session.Loading) return; // a load moved the selection; the player did not
+            PlayHaptic(Haptic.Snap);
+            var info = session != null ? HangarParts.List(session.Design).Find(x => x.part == p) : null;
+            Queue("Selected " + (info != null ? info.label : HangarParts.Short(p)) + ".");
+        }
+
+        /// <summary>After each change: a haptic now, and one announcement once the edits settle (a held stepper speaks once).</summary>
+        void Feedback()
+        {
+            if (session == null) return;
+            var before = feelNow;
+            feelNow = FeelState.Of(session);
+            // A load (open a save, start a template) clears history: no step to announce, no haptic.
+            if (nextIsLoad || session.Loading || (!session.history.CanUndo && !session.history.CanRedo)) { nextIsLoad = false; feelBase = feelNow; pendingAnnounce = null; return; }
+            if (pendingAnnounce == null) feelBase = before;
+            var step = nextIsRedo ? session.history.NextUndo : nextIsUndo ? session.history.NextRedo : session.history.NextUndo;
+            PlayHaptic(HangarFeel.For(before, feelNow, stepped: true));
+            Queue(HangarFeel.Announce(step, feelBase, feelNow, nextIsUndo, nextIsRedo));
+        }
+
+        void PlayHaptic(Haptic h)
+        {
+            if (h == Haptic.None) return;
+            if (h == Haptic.Snap && Time.unscaledTime - lastSnap < HangarFeel.SnapMinSeconds) return;
+            var pattern = HangarFeel.Pattern(h, SliceData.Feel);
+            if (pattern.Length == 0) return; // designer-feel.json can turn a pattern off
+            if (h == Haptic.Snap) lastSnap = Time.unscaledTime;
+            HangarNative.Play(h, pattern);
+        }
+
+        void Queue(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            pendingAnnounce = text;
+            announceAt = Time.unscaledTime + HangarFeel.AnnounceAfterSeconds;
+        }
+
+        void FlushAnnouncement()
+        {
+            if (pendingAnnounce == null || Time.unscaledTime < announceAt) return;
+            HangarNative.Announce(pendingAnnounce);
+            pendingAnnounce = null;
+            feelBase = feelNow;
+        }
+
+        /// <summary>The iOS Reduce Motion switch can change while the game is in the background.</summary>
+        void OnApplicationFocus(bool focused)
+        {
+            if (focused) ApplyReduceMotion();
+        }
+
+        /// <summary>Reduce Motion: the in-game switch or the iOS setting, whichever is on.</summary>
+        void ApplyReduceMotion()
+        {
+            if (hangarCam == null) return;
+            hangarCam.ReduceMotion = HangarNative.SystemReduceMotion
+                || PlayerPrefs.GetInt(HangarCamera.ReduceMotionPref, 0) != 0
+                || PlayerPrefs.GetInt(HangarCamera.ReduceFlashingPref, 0) != 0;
+        }
+
+        void FocusPart(PartRef p)
+        {
+            if (hangarCam == null) return;
+            if (rocketView.Bounds(p, out float y, out float h)) hangarCam.Focus(y, h);
+        }
+
+        void OnTapped(Vector2 screenPx)
+        {
+            if (session == null || hud == null || !hud.ClassListContains("hidden")) return;
+            if (hangarCam != null && hangarCam.Exploded) return; // picking reads the assembled parts
+            if (PartPicker.Pick(rocketView.Project(cam), screenPx, out var part))
+            {
+                session.Select(part);
+                panel?.Show(HangarPanel.Tab.Part);
+                FocusPart(part);
+                if (designCollapsed) SetDesignCollapsed(false);
+            }
         }
 
         void BuildScene()
@@ -48,6 +204,8 @@ namespace Kestrel.Slice
             hangarCam = cam.gameObject.AddComponent<HangarCamera>();
             var sun = new GameObject("Sun").AddComponent<Light>(); sun.type = LightType.Directional; sun.intensity = 1.3f; sun.transform.rotation = Quaternion.Euler(40, -30, 0);
             sky = SkyRig.Attach(cam, sun);
+            hangarCam.Tapped += OnTapped;
+            ApplyReduceMotion();
             worldRoot = new GameObject("World").transform;
             vehicleRoot = new GameObject("Vehicle").transform; vehicleRoot.SetParent(worldRoot, false);
             flight = gameObject.AddComponent<FlightDriver>(); flight.World = worldRoot; flight.Vehicle = vehicleRoot;
@@ -97,37 +255,23 @@ namespace Kestrel.Slice
             homeButton = ui.Q<Button>("home");
             homeButton.clicked += GoHome;
             homeButton.tooltip = "Home. Back to the title screen.";
-            SetDesignCollapsed(false);
-            rDv = ui.Q<Label>("r-dv"); rTwr = ui.Q<Label>("r-twr"); rCost = ui.Q<Label>("r-cost"); rRel = ui.Q<Label>("r-rel"); rMass = ui.Q<Label>("r-mass");
             hT = ui.Q<Label>("h-t"); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
             hMach = ui.Q<Label>("h-mach"); hQ = ui.Q<Label>("h-q"); hThr = ui.Q<Label>("h-thr"); hDr = ui.Q<Label>("h-dr"); hMsg = ui.Q<Label>("h-msg");
             again = ui.Q<Button>("again");
-
-            var presets = SliceData.Catalog.Presets;
-            var dd = ui.Q<DropdownField>("preset");
-            dd.choices = presets.Select(p => p.name).ToList();
-            dd.RegisterValueChangedCallback(e => SelectPreset(presets.First(p => p.name == e.newValue).id));
-            ui.Q<SliderInt>("engines").RegisterValueChangedCallback(e => { design.stages[0].engineCount = e.newValue; Refresh(); });
-            ui.Q<Slider>("prop").RegisterValueChangedCallback(e => { design.stages[0].propMass = Mathf.Round(e.newValue) * 1000.0; Refresh(); });
-            explodeToggle = ui.Q<Toggle>("explode");
-            if (explodeToggle != null)
-            {
-                explodeToggle.tooltip = "Exploded view. Separates stages, engines and the fairing along the stack.";
-                explodeToggle.RegisterValueChangedCallback(e => SetExploded(e.newValue));
-            }
             launchButton = ui.Q<Button>("launch");
             launchButton.clicked += Launch;
+            undoButton = ui.Q<Button>("undo"); redoButton = ui.Q<Button>("redo"); explodeButton = ui.Q<Button>("explode");
+            undoButton.clicked += () => { nextIsUndo = true; var st = session?.Undo(); nextIsUndo = false; if (st != null) undoButton.tooltip = "Undid: " + st.Spoken; };
+            redoButton.clicked += () => { nextIsRedo = true; var st = session?.Redo(); nextIsRedo = false; if (st != null) redoButton.tooltip = "Redid: " + st.Spoken; };
+            explodeButton.clicked += () => SetExploded(!(hangarCam != null && hangarCam.Exploded));
+            explodeButton.tooltip = "Exploded view: pull the parts apart";
             issueChip = ui.Q<Label>("issue-chip"); launchReason = ui.Q<Label>("launch-reason");
-            again.clicked += () =>
-            {
-                flight.enabled = false;
-                if (hangarCam != null) hangarCam.enabled = true;
-                cam.ResetProjectionMatrix();
-                hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
-                SelectPreset(design.id);
-            };
+            issueChip.RegisterCallback<ClickEvent>(_ => { panel?.Show(HangarPanel.Tab.Data); if (designCollapsed) SetDesignCollapsed(false); });
+            again.clicked += BackToDesign;
             // Accessibility labels (VoiceOver wiring via UnityEngine.Accessibility is a listed gap; see RESULTS.md)
-            ui.Q<Button>("launch").tooltip = "Roll out and launch the current design";
+            launchButton.tooltip = "Roll out and launch the current design";
+            SetDesignCollapsed(false);
+            ui.RegisterCallback<GeometryChangedEvent>(_ => { if (session != null) TryBuildPanel(); });
         }
 
         /// <summary>Pad the flight HUD to Screen.safeArea (+8 pt sides) so the top band clears the notch /
@@ -147,27 +291,68 @@ namespace Kestrel.Slice
             return ui != null && ui.layout.width > 0 && wPt > 0 ? ui.layout.width / wPt : 3f;
         }
 
-        /// <summary>Handle is 56 pt tall (tap target ≥ 44 pt); collapsed panel = handle + bottom safe area only.</summary>
+        /// <summary>
+        /// Phones: bottom sheet with a 56 pt handle, scrolling content capped so the rocket keeps at least
+        /// DesignFraming.MinVisibleFraction of the screen, and the thumb row above the bottom safe area.
+        /// iPad (portrait, wider than 0.6): a 400 pt panel on the right, full height inside the safe area.
+        /// </summary>
         void ApplyDesignPanelMetrics()
         {
-            if (ui.layout.height <= 0) return;
+            if (ui == null || ui.layout.height <= 0) return;
             float upp = UnitsPerPoint();
-            // 56 pt handle (44 pt min tap target), no padding above it. Collapsed = handle + bottom safe area only.
             designToggle.style.height = 56f * upp;
             designToggle.style.minHeight = 44f * upp;
+            designToggle.style.fontSize = 20f * upp;
             designToggle.style.paddingTop = 0; designToggle.style.paddingBottom = 0;
             designToggle.style.marginTop = 0; designToggle.style.marginBottom = 0;
-            float bottom = Screen.safeArea.yMin * ui.layout.height / Mathf.Max(1, Screen.height);
-            designPanel.style.paddingTop = 0;
-            // Home control: top-left inside the safe area (+8 pt), 44 pt min target. Bottom handle and the
-            // flight HUD never share this corner: Home is hidden whenever the HUD is shown.
             float sx = ui.layout.width / Mathf.Max(1, Screen.width), sy = ui.layout.height / Mathf.Max(1, Screen.height);
+            float bottom = Screen.safeArea.yMin * sy;
+            float top = (Screen.height - Screen.safeArea.yMax) * sy;
+            designPanel.style.paddingTop = 0;
+            designPanel.style.paddingLeft = Mathf.Max(12f * upp, Screen.safeArea.xMin * sx + 8f * upp);
+            designPanel.style.paddingRight = Mathf.Max(12f * upp, (Screen.width - Screen.safeArea.xMax) * sx + 8f * upp);
+            // Home control: top-left inside the safe area (+8 pt), 44 pt min target. Home is hidden whenever the HUD is shown.
             homeButton.style.left = Screen.safeArea.xMin * sx + HomeButtonMetrics.InsetPt * upp;
-            homeButton.style.top = (Screen.height - Screen.safeArea.yMax) * sy + HomeButtonMetrics.InsetPt * upp;
-            // Fixed size in points on every device (was min-size only, with USS padding/radius in panel units,
-            // which are ~3.1 per pt on SE but ~1.1 per pt on iPad, so it grew on SE and shrank on iPad).
+            homeButton.style.top = top + HomeButtonMetrics.InsetPt * upp;
             HomeButtonMetrics.Apply(homeButton.style, upp);
-            designPanel.style.paddingBottom = designCollapsed ? bottom : Mathf.Max(8f * upp, bottom + 8f * upp);
+            // Summary chip under Home (DESIGNER_SPEC §6).
+            issueChip.style.left = homeButton.style.left;
+            issueChip.style.top = top + (HomeButtonMetrics.InsetPt * 2 + HomeButtonMetrics.HeightPt) * upp;
+            issueChip.style.fontSize = 15f * upp;
+            issueChip.style.minHeight = 32f * upp;
+            issueChip.style.paddingLeft = 12f * upp; issueChip.style.paddingRight = 12f * upp;
+            issueChip.style.paddingTop = 6f * upp; issueChip.style.paddingBottom = 6f * upp;
+            // Thumb row: 44 pt tools and a 52 pt Launch.
+            foreach (var b in new[] { undoButton, redoButton, explodeButton })
+            {
+                if (b == null) continue;
+                b.style.height = 52f * upp; b.style.minWidth = 56f * upp; b.style.fontSize = 15f * upp;
+                b.style.marginRight = 6f * upp;
+                float r = 12f * upp;
+                b.style.borderTopLeftRadius = r; b.style.borderTopRightRadius = r; b.style.borderBottomLeftRadius = r; b.style.borderBottomRightRadius = r;
+            }
+            launchButton.style.height = 52f * upp; launchButton.style.fontSize = 20f * upp;
+            launchReason.style.fontSize = 14f * upp;
+
+            bool side = HangarPanelLayout.SidePanel(Screen.width, Screen.height);
+            designPanel.EnableInClassList("side", side);
+            if (side)
+            {
+                designPanel.style.width = DesignFraming.SidePanelPoints * upp;
+                designPanel.style.top = top;
+                designPanel.style.paddingBottom = Mathf.Max(8f * upp, bottom + 8f * upp);
+                panel?.SetContentMax(-1f);
+                designBody.style.flexGrow = 1;
+            }
+            else
+            {
+                designPanel.style.width = StyleKeyword.Null;
+                designPanel.style.top = StyleKeyword.Null;
+                designPanel.style.paddingBottom = designCollapsed ? bottom : Mathf.Max(8f * upp, bottom + 8f * upp);
+                float hPt = ui.layout.height / Mathf.Max(0.01f, upp);
+                panel?.SetContentMax(HangarPanelLayout.ContentMaxPt(hPt, bottom / Mathf.Max(0.01f, upp)) * upp);
+                designBody.style.flexGrow = 0;
+            }
         }
 
         void SetDesignCollapsed(bool collapsed)
@@ -175,83 +360,96 @@ namespace Kestrel.Slice
             designCollapsed = collapsed;
             designPanel.EnableInClassList("collapsed", collapsed);
             if (ui != null) ApplyDesignPanelMetrics();
-            ui.Q<Button>("launch").style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
-            var reason = ui.Q<Label>("launch-reason"); if (reason != null) reason.style.display = collapsed ? DisplayStyle.None : StyleKeyword.Null;
-            designToggle.text = collapsed ? "▲  Design" : "▼  Design";
+            var row = ui.Q("launch-row"); if (row != null) row.style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
+            if (launchReason != null) launchReason.style.display = collapsed ? DisplayStyle.None : StyleKeyword.Null;
+            UpdateHandle();
             // Accessibility pattern in this project is tooltip text (VoiceOver bridge is a listed gap, RESULTS.md).
             designToggle.tooltip = collapsed ? "Design panel, collapsed. Tap to expand." : "Design panel, expanded. Tap to collapse and see the whole rocket.";
         }
 
-        /// <summary>Frame rocket + pad deck in the band above the panel's top edge (live rect, any device).</summary>
+        /// <summary>Frame rocket + pad deck in the band above the panel's top edge (live rect, any device).
+        /// On iPad the panel is on the side, so the whole height is free and HangarCamera shifts left instead.</summary>
         void ApplyDesignFraming()
         {
             if (cam == null || ui.layout.height <= 0 || designPanel.ClassListContains("hidden")) return;
-            float f = DesignFraming.VisibleFraction(ui.layout.height, designPanel.worldBound.yMin - ui.worldBound.yMin);
-            FrameCamera(frameHeight, f);
+            bool side = HangarPanelLayout.SidePanel(Screen.width, Screen.height);
+            float f = side ? 1f : DesignFraming.VisibleFraction(ui.layout.height, designPanel.worldBound.yMin - ui.worldBound.yMin);
+            if (hangarCam != null && hangarCam.enabled) hangarCam.SetBottomVisible(f);
+            else FrameCamera(frameHeight, f);
         }
 
-        /// <summary>Vehicle + tower/arms + deck rim, refreshed in BuildRocket; FrameCamera fits all of them.</summary>
+        /// <summary>Vehicle + tower/arms + deck rim, refreshed in BuildRocket; the camera fits all of them.</summary>
         System.Collections.Generic.List<Vector3> framePoints;
 
-        void SelectPreset(string id)
-        {
-            design = SliceData.Catalog.Preset(id).Clone();
-            ui.Q<DropdownField>("preset").SetValueWithoutNotify(design.name);
-            ui.Q<SliderInt>("engines").SetValueWithoutNotify(design.stages[0].engineCount);
-            ui.Q<Slider>("prop").SetValueWithoutNotify((float)(design.stages[0].propMass / 1000));
-            Refresh();
-        }
-
-        /// <summary>Live readout from the ported core (same numbers as the web designer).</summary>
-        void Refresh()
-        {
-            var c = SliceData.Catalog;
-            var (stages, payload) = Stack.SerialStages(c, design);
-            var dv = Headless.StackDeltaV(stages.ConvertAll(s => s.ToSim()), payload);
-            double m0 = payload; foreach (var s in stages) m0 += s.propMass + s.dryMass;
-            double twr = stages[0].thrustSL / (m0 * Atmosphere.G0);
-            var req = Stack.RequiredDeltaV(c, design.payloadOrbit);
-            var price = CostModel.PriceDesign(c, design);
-            var rel = Reliability.Of(c, design);
-            rDv.text = $"Δv {dv.total:N0} m/s  (need {req.required:N0})";
-            rTwr.text = $"Liftoff TWR {twr:F2}";
-            rCost.text = $"Per launch {CostModel.FormatKc(c, price.recurring)}";
-            rRel.text = $"Reliability {rel.reliability * 100:F1}%";
-            rMass.text = $"Liftoff {m0 / 1000:N0} t";
-            rTwr.style.color = twr < 1.15 ? new Color(1f, 0.4f, 0.4f) : new Color(0.78f, 0.86f, 1f);
-            ApplyValidation();
-            BuildRocket();
-        }
-
-        /// <summary>U1: Validate.Engineering + Experience.Present -> chip, Launch gate + reason, control rings.</summary>
+        /// <summary>Launch gate, summary chip and reason from the session's advisories (kid words unless Engineer is on).</summary>
         void ApplyValidation()
         {
-            string layer = Experience.Resolve(OrbitsCompleted, EngineerEnabled, EngineerEnabled ? "engineer" : "standard").layer;
-            designerState = DesignerValidation.Evaluate(SliceData.Catalog, design, layer);
-            var st = designerState;
-            issueChip.text = st.chip;
-            issueChip.EnableInClassList("hidden", st.chip.Length == 0);
-            issueChip.EnableInClassList("warn-only", st.blocks.Count == 0);
-            issueChip.tooltip = st.chip.Length == 0 ? "" : st.chip + ". " + (st.blocks.Count > 0 ? DesignerValidation.Wording(st.blocks[0], layer) : DesignerValidation.Wording(st.warnings[0], layer));
-            launchButton.SetEnabled(st.launchEnabled);
-            launchReason.text = st.reason;
-            launchReason.EnableInClassList("hidden", st.launchEnabled);
-            launchButton.tooltip = st.launchEnabled ? "Roll out and launch the current design" : "Launch unavailable. " + st.reason;
-            foreach (var n in IssueControls) { var el = ui.Q(n); el.RemoveFromClassList("issue-block"); el.RemoveFromClassList("issue-warn"); }
-            foreach (var w in st.warnings) ui.Q(DesignerValidation.ControlFor(w))?.AddToClassList("issue-warn");
-            foreach (var b in st.blocks) { var el = ui.Q(DesignerValidation.ControlFor(b)); el?.RemoveFromClassList("issue-warn"); el?.AddToClassList("issue-block"); }
+            if (session == null || issueChip == null) return;
+            bool engineer = panel != null ? panel.Engineer : PlayerPrefs.GetInt(HangarPanel.EngineerPref, 0) != 0;
+            var adv = session.Advisories;
+            int blocks = 0, warns = 0;
+            foreach (var a in adv) { if (a.severity == AdvisorySeverity.Block) blocks++; else if (a.severity == AdvisorySeverity.Warn) warns++; }
+            string chip = DesignerValidation.Chip(blocks, warns, engineer ? "engineer" : "standard");
+            issueChip.text = chip;
+            issueChip.EnableInClassList("hidden", chip.Length == 0 || designPanel.ClassListContains("hidden"));
+            issueChip.EnableInClassList("warn-only", blocks == 0);
+            issueChip.tooltip = chip.Length == 0 ? "" : chip + ". " + adv[0].kid + " Tap to see them all.";
+            bool ok = session.LaunchEnabled;
+            launchButton.SetEnabled(ok);
+            var firstBlock = adv.Find(a => a.severity == AdvisorySeverity.Block);
+            string reason = ok ? "" : "Fix first: " + (firstBlock != null ? (engineer ? firstBlock.engineer : firstBlock.kid) : DesignerValidation.KidFallback);
+            launchReason.text = reason;
+            launchReason.EnableInClassList("hidden", ok);
+            launchButton.tooltip = ok ? "Roll out and launch the current design" : "Launch unavailable. " + reason;
+            if (undoButton != null)
+            {
+                undoButton.SetEnabled(session.history.CanUndo);
+                redoButton.SetEnabled(session.history.CanRedo);
+                undoButton.tooltip = session.history.CanUndo ? "Undo " + session.history.NextUndo.Spoken : "Nothing to undo";
+                redoButton.tooltip = session.history.CanRedo ? "Redo " + session.history.NextRedo.Spoken : "Nothing to redo";
+            }
+            rocketView.SetIssues(adv);
         }
 
+        /// <summary>
+        /// Rebuild the vehicle: per-part Hangar meshes (paint, selection, exploded view), tank shells on their stage,
+        /// plume, tower and framing. The combined flight mesh still sizes the plume and tower (same stations).
+        /// Any failure leaves the previous rocket and logs a warning; the panel keeps working.
+        /// </summary>
         void BuildRocket()
         {
+            rocketDirty = false;
+            lastRocketBuild = Time.unscaledTime;
+            if (design == null) return;
+            RocketMeshBuilder.Result r;
+            List<RocketMeshBuilder.PartMesh> parts;
+            try { r = RocketMeshBuilder.Build(SliceData.Catalog, design); parts = RocketMeshBuilder.BuildParts(SliceData.Catalog, design); }
+            catch (System.Exception e) { Debug.LogWarning("[Hangar] rocket build skipped: " + e.Message); return; }
+            rocketView.Clear();
             if (rocketGO != null) Destroy(rocketGO);
-            var r = RocketMeshBuilder.Build(SliceData.Catalog, design);
+            if (combinedMesh != null) Destroy(combinedMesh);
+            combinedMesh = r.mesh;
             rocketGO = new GameObject("Rocket"); rocketGO.transform.SetParent(vehicleRoot, false);
+            // The combined flight mesh sits on the root, undrawn in the Hangar (the parts are the picture). Its
+            // renderer is the gate the instanced bells, struts and livery marks follow, and the mesh FailureHost
+            // splits in flight. Launch swaps it in for the parts.
             rocketGO.AddComponent<MeshFilter>().sharedMesh = r.mesh;
             var mr = rocketGO.AddComponent<MeshRenderer>();
-            if (bodyMat != null) { var m = new Material(bodyMat); ColorUtility.TryParseHtmlString(design.liveryPrimary, out var col); m.color = col; mr.sharedMaterial = m; }
+            if (flightMat != null) Destroy(flightMat);
+            flightMat = bodyMat != null ? new Material(bodyMat) : null;
+            if (flightMat != null) { flightMat.color = HangarRocketView.Hex(design.liveryPrimary, Color.white); mr.sharedMaterial = flightMat; }
+            mr.forceRenderingOff = true;
+            rocketView.Build(parts, rocketGO.transform, bodyMat);
+            rocketView.ApplyLook(session?.Design, SliceData.Hangar);
+            if (session != null) { rocketView.SetSelected(session.Selected, true); rocketView.SetIssues(session.Advisories); }
             var plates = new List<AttachPoint>();
             AddTankShells(r, plates);
+            rocketView.Repaint(); // the shells hide most of each tank body, so they take its paint
+            AddBells(r);
+            AddAirframe(r);
+            AddLanding(r);
+            AddLivery(r);
+            AddFairing(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
@@ -274,24 +472,60 @@ namespace Kestrel.Slice
             flight.Plume.AttachGroundCloud(tower, deckR, PadTower.Fit(r.height, rr).height);
             PadDetailLink.Apply(flight.Plume, tower, ground, deck, padR != null ? padR.Layout : null);
             rocketHeight = r.height; frameHeight = r.height;
+            if (hangarCam != null)
+            {
+                hangarCam.SetVehicle(frameHeight, framePoints);
+                // A focused part may have moved or gone; aim at where the selection is now.
+                if (hangarCam.Focused)
+                {
+                    if (session != null && rocketView.Bounds(session.Selected, out float fy, out _)) hangarCam.Refocus(fy);
+                    else hangarCam.ClearFocus();
+                }
+            }
+            BuildExploded();
+            ApplyDesignFraming();
+            // One registration: failure visuals and the post-flight card.
+            Kestrel.Game.Failure.FailureHost.Attach(rocketGO, flight, ui, r);
+        }
+
+        /// <summary>R2's exploded view (HangarExplodedView), rebuilt with the rocket and painted in the livery's main colour.
+        /// It keeps its open/closed state across rebuilds so a held stepper doesn't snap it shut.</summary>
+        void BuildExploded()
+        {
+            bool open = hangarCam != null && hangarCam.Exploded;
+            if (explodedMat != null) Destroy(explodedMat);
+            explodedMat = bodyMat != null ? new Material(bodyMat) : null;
+            if (explodedMat != null) explodedMat.color = HangarRocketView.Hex(session?.Design.Obj("livery")?.Str("primary"), Color.white);
             var explodedGo = new GameObject("Exploded");
             explodedView = explodedGo.AddComponent<HangarExplodedView>();
             explodedView.AttachTo(rocketGO.transform);
-            explodedView.Build(SliceData.Catalog, design, mr.sharedMaterial);
+            explodedView.Build(SliceData.Catalog, design, explodedMat);
             if (hangarCam != null) hangarCam.ExplodedView = explodedView;
-            SetExploded(explodeToggle != null && explodeToggle.value);
-            ApplyDesignFraming();
+            if (open) explodedView.SetExploded(true, true);
+            SetAssembledDrawn(!open);
         }
 
         /// <summary>Separated parts live on the vehicle. The assembled rocket draws only while the view is closed.</summary>
-        void SetExploded(bool on)
+        void SetExploded(bool on) => SetExploded(on, false);
+
+        void SetExploded(bool on, bool immediate)
         {
-            if (hangarCam != null) hangarCam.SetExploded(on);
-            else if (explodedView != null) explodedView.SetExploded(on, false);
+            if (explodeButton != null) { explodeButton.text = on ? "Join" : "Parts"; explodeButton.tooltip = on ? "Put the rocket back together" : "Exploded view: pull the parts apart"; }
+            if (hangarCam != null) { hangarCam.ClearFocus(); hangarCam.SetExploded(on, immediate); }
+            else if (explodedView != null) explodedView.SetExploded(on, immediate);
             // While the ease is still open, the separated parts are the picture. The assembled
             // rocket comes back only once they have seated (or immediately, when Reduce Motion snaps shut).
-            if (!on && explodedView != null && explodedView.Shown > 0.001f) return;
+            if (!on && explodedView != null && explodedView.Shown > 0.001f && !immediate) return;
             SetAssembledDrawn(!on);
+        }
+
+        /// <summary>Flight draws the combined mesh (FailureHost can split it); the Hangar draws the parts.
+        /// BackToDesign rebuilds the rocket, which puts the parts back.</summary>
+        void ShowFlightMesh(bool on)
+        {
+            rocketView.SetVisible(!on);
+            var mr = rocketGO != null ? rocketGO.GetComponent<MeshRenderer>() : null;
+            if (mr != null) mr.forceRenderingOff = !on;
         }
 
         void SetAssembledDrawn(bool drawn)
@@ -351,7 +585,7 @@ namespace Kestrel.Slice
         void AddTankShells(RocketMeshBuilder.Result r, List<AttachPoint> plates)
         {
             ulong seed = (ulong)(design.id ?? "kh").GetHashCode();
-            int strapIndex = 1;
+            int strapIndex = 1, strapShell = 0;
             var cat = SliceData.Catalog;
             for (int i = 0; i < r.tanks.Count; i++)
             {
@@ -360,9 +594,14 @@ namespace Kestrel.Slice
                 var spec = Kestrel.Vehicle.TankShellSpec.Default(t.Radius * 1.005f, t.BarrelLength, seed + (ulong)i * 7919UL);
                 if (spec.Validate().Count > 0) continue;
                 var go = new GameObject($"TankShell_S{t.Stage + 1}{(t.StrapOn ? "_strap" + i : "")}", typeof(MeshFilter), typeof(MeshRenderer));
-                go.transform.SetParent(rocketGO.transform, false);
                 var origin = t.Offset + Vector3.up * (t.BarrelBottom - spec.DomeHeight);
-                go.transform.localPosition = origin;
+                // Ride on the Hangar part so the shell moves with it in the exploded view.
+                Transform host = rocketGO.transform; var local = origin;
+                if (t.StrapOn && rocketView.TryGet(PartRef.Boosters, out var bp) && strapShell < bp.copies.Count) { host = bp.copies[strapShell]; local = origin - t.Offset; }
+                else if (!t.StrapOn && rocketView.RootOf(PartRef.Stage(t.Stage)) is Transform sr) host = sr;
+                if (t.StrapOn) strapShell++;
+                go.transform.SetParent(host, false);
+                go.transform.localPosition = local;
                 var view = go.AddComponent<Kestrel.Vehicle.TankShellView>();
                 view.ViewCamera = cam;
                 view.Init(spec, Kestrel.Kit.KitBudgets.Medium);
@@ -382,6 +621,126 @@ namespace Kestrel.Slice
                 plates.AddRange(Kestrel.Vehicle.TankShellUmbilicals.ForStage(spec, t.Stage, index,
                     new Vec3(origin.x, origin.y, origin.z), liquid, gimbal, purge, release));
             }
+        }
+
+        /// <summary>V1a: one instanced bell per engine, shaped by expansion ratio and cycle. The body mesh no longer
+        /// carries a cloned cone. The cluster watches the body renderer so exploded view does not draw both.</summary>
+        void AddBells(RocketMeshBuilder.Result r)
+        {
+            if (r.engines == null || r.engines.Count == 0) return;
+            ulong seed = Kestrel.Vehicle.BellVariation.HashId(design.id ?? "kh");
+            var mounts = new List<Kestrel.Vehicle.BellMount>(r.engines.Count);
+            for (int i = 0; i < r.engines.Count; i++)
+            {
+                var e = r.engines[i];
+                mounts.Add(new Kestrel.Vehicle.BellMount
+                {
+                    EngineId = e.EngineId, Cycle = e.Cycle, ExpansionRatio = e.Expansion, ExitDiameter = e.ExitDiameter,
+                    X = e.Exit.x, Y = e.Exit.y, Z = e.Exit.z, Stage = e.Stage, Slot = e.Slot, Seed = seed,
+                    SkinRadius = e.StageRadius, Gimbal = e.GimbalDeg > 0.01f
+                });
+            }
+            var gate = rocketGO.GetComponent<MeshRenderer>();
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.BellCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = gate;
+            cluster.Init(mounts, Kestrel.Kit.KitBudgets.Medium);
+            var bay = rocketGO.AddComponent<Kestrel.Vehicle.BayCluster>();
+            bay.ViewCamera = cam;
+            bay.Gate = gate;
+            bay.Init(mounts, Kestrel.Kit.KitBudgets.Medium);
+        }
+
+        /// <summary>Interstage stringers and joint rings, plus one raceway on the tower side of each tank.
+        /// The lathe cone and barrel stay the silhouette; these tubes sit just outside them.</summary>
+        void AddAirframe(RocketMeshBuilder.Result r)
+        {
+            var poses = new List<Kestrel.Vehicle.StrutPose>();
+            if (r.interstages != null)
+                for (int i = 0; i < r.interstages.Count; i++)
+                {
+                    var s = r.interstages[i];
+                    poses.AddRange(Kestrel.Vehicle.AirframeLayout.Interstage(s.Y0, s.Y1, s.R0, s.R1));
+                }
+            if (r.tanks != null)
+                for (int i = 0; i < r.tanks.Count; i++)
+                {
+                    var t = r.tanks[i];
+                    if (t.BarrelLength <= 0.2f || t.Radius <= 0.05f) continue;
+                    poses.Add(Kestrel.Vehicle.AirframeLayout.RacewayRun(t.Offset.x, t.Offset.y, t.Offset.z, t.Radius, t.BarrelBottom, t.BarrelLength));
+                }
+            if (poses.Count == 0) return;
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(poses, Kestrel.Kit.KitBudgets.Medium);
+        }
+
+        /// <summary>Deployed legs and grid fins, only when the design asks for them. Stock Kestrel Heavy has both.</summary>
+        void AddLanding(RocketMeshBuilder.Result r)
+        {
+            if (design == null || (!design.legs && !design.gridFins)) return;
+            float radius = 0f;
+            if (r.tanks != null)
+                for (int i = 0; i < r.tanks.Count; i++)
+                    if (r.tanks[i].Stage == 0 && !r.tanks[i].StrapOn) radius = r.tanks[i].Radius;
+            if (radius < 0.05f) return;
+            var gate = rocketGO.GetComponent<MeshRenderer>();
+            if (design.legs)
+            {
+                var legs = Kestrel.Vehicle.LandingLayout.Legs(radius, r.stage1AftY);
+                var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
+                cluster.ViewCamera = cam;
+                cluster.Gate = gate;
+                cluster.Init(legs, Kestrel.Kit.KitBudgets.Medium);
+            }
+            if (design.gridFins)
+            {
+                float station = r.stage1Top;
+                if (r.interstages != null && r.interstages.Count > 0) station = r.interstages[0].Y0;
+                var fins = Kestrel.Vehicle.LandingLayout.Fins(radius, station);
+                var cluster = rocketGO.AddComponent<Kestrel.Vehicle.FinCluster>();
+                cluster.ViewCamera = cam;
+                cluster.Gate = gate;
+                cluster.Init(fins, Kestrel.Kit.KitBudgets.Medium);
+            }
+        }
+
+        /// <summary>Circumferential panel lines and two seams on every tank, plus an accent band and decal blocks
+        /// on the first stage. Paint comes from the livery colours, not a stripe texture.</summary>
+        void AddLivery(RocketMeshBuilder.Result r)
+        {
+            if (r.tanks == null || r.tanks.Count == 0) return;
+            var marks = new List<Kestrel.Vehicle.LiveryMark>();
+            bool accentUsed = false;
+            for (int i = 0; i < r.tanks.Count; i++)
+            {
+                var t = r.tanks[i];
+                if (t.BarrelLength <= 0.5f || t.Radius <= 0.05f) continue;
+                bool accent = !accentUsed && t.Stage == 0 && !t.StrapOn;
+                if (accent) accentUsed = true;
+                marks.AddRange(Kestrel.Vehicle.LiveryLayout.Tank(t.Offset.x, t.Offset.y, t.Offset.z, t.Radius, t.BarrelBottom, t.BarrelLength, accent));
+            }
+            if (marks.Count == 0) return;
+            var accentCol = new Color(0.10f, 0.24f, 0.43f);
+            if (design != null) ColorUtility.TryParseHtmlString(design.liveryAccent, out accentCol);
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.LiveryCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(marks, Kestrel.Kit.KitBudgets.Medium, accentCol);
+        }
+
+        /// <summary>Separation seams, base ring and shoulder on the fairing. The ogive lathe is unchanged, so plume height stays put.</summary>
+        void AddFairing(RocketMeshBuilder.Result r)
+        {
+            if (!r.fairing.Present) return;
+            var f = r.fairing;
+            var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic);
+            if (poses.Count == 0) return;
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(poses, Kestrel.Kit.KitBudgets.Medium);
         }
 
         /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every
@@ -414,24 +773,54 @@ namespace Kestrel.Slice
 
         void Launch()
         {
-            if (designerState != null && !designerState.launchEnabled) return; // U1: blocks gate Launch
+            if (session == null || !session.LaunchEnabled) return; // blocks gate Launch; warnings never do
+            if (rocketDirty) BuildRocket();
             submitted = false;
-            if (explodeToggle != null) explodeToggle.SetValueWithoutNotify(false);
-            if (explodedView != null) explodedView.SetExploded(false, true);
+            SetExploded(false, true);
+            // Nothing queued from the Hangar is spoken after the flight.
+            pendingAnnounce = null; feelBase = feelNow;
             if (hangarCam != null)
             {
-                hangarCam.SetExploded(false);
-                if (cam != null && vehicleRoot != null) camOffset = cam.transform.position - vehicleRoot.position;
+                // Snap back to the assembled pose before sampling the chase offset, so liftoff
+                // does not inherit the closer exploded camera.
+                hangarCam.ApplyPose();
                 hangarCam.enabled = false;
             }
             SetAssembledDrawn(true);
-            designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
+            if (explodeButton != null) explodeButton.text = "Parts";
+            rocketView.SetSelected(session.Selected, false);
+            rocketView.SetIssues(null);
+            ShowFlightMesh(true);
+            camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
+            designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
+            hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
             flight.enabled = true;
             flight.Launch(design);
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
             if (renderer != null) { renderer.ResetSequence(); renderer.AdvanceTo(0); }
         }
+
+        void BackToDesign()
+        {
+            flight.enabled = false; cam.ResetProjectionMatrix();
+            hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
+            if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
+            if (session != null) rocketView.SetSelected(session.Selected, true);
+            BuildRocket();
+            ApplyValidation();
+        }
+
+        /// <summary>Hangar per-frame work: a rate-limited rocket rebuild while a stepper is held.</summary>
+        void Update()
+        {
+            if (hud != null && !hud.ClassListContains("hidden")) return;
+            if (rocketDirty && Time.unscaledTime - lastRocketBuild >= RebuildEverySeconds) BuildRocket();
+            FlushAnnouncement();
+        }
+
+        /// <summary>Longest a held stepper waits for the 3D rocket to catch up (the readout updates every tick).</summary>
+        public const float RebuildEverySeconds = 0.12f;
 
         void LateUpdate()
         {

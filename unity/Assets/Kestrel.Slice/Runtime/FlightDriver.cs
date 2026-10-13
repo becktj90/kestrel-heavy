@@ -1,5 +1,6 @@
-// Runs the engine-agnostic core sim (Kestrel.Core.Physics.AscentSim) from liftoff to MECO at a
+// Runs the engine-agnostic core sim (Kestrel.Core.Physics.AscentSim) from liftoff through cutoff at a
 // fixed 1/120 s physics step, decoupled from the render rate, and presents it with a floating origin.
+// MECO is reported, and the sim keeps going so the launch sequence can call the rest of the flight.
 //
 // Frames: the sim is 2-D, Earth-centred inertial (double). We convert to a pad-fixed local frame
 // (downrange metres east, altitude metres up) in double, then render RELATIVE to a floating origin
@@ -9,11 +10,12 @@ using System;
 using System.Collections.Generic;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
+using Kestrel.Game.Audio;
 using UnityEngine;
 
 namespace Kestrel.Slice
 {
-    public sealed class FlightDriver : MonoBehaviour
+    public sealed class FlightDriver : MonoBehaviour, IFlightAudioBus
     {
         public const double PhysicsDt = 1.0 / 120;
         public const float RebaseDistance = 2000f;
@@ -22,6 +24,7 @@ namespace Kestrel.Slice
         public Transform Vehicle;      // rocket root (pivot at engine exit plane)
         public PlumeController Plume;
         public event Action<FlightDriver> OnMeco;
+        public IFlightEventSink Sink { get; set; }
 
         public AscentSim Sim { get; private set; }
         public double SimTime => Sim?.T ?? 0;
@@ -34,11 +37,14 @@ namespace Kestrel.Slice
         public double ThrustFraction { get; private set; }
         public bool Meco { get; private set; }
         public bool Running { get; private set; }
+        public SimResult Result { get; private set; }
         public double OriginX { get; private set; }   // floating origin in pad-local metres (double)
         public double OriginY { get; private set; }
         public int Rebases { get; private set; }
 
         double clock; int mecoStage; double thrustRef = 1; double prevX, prevY;
+        double[] thrustByStage = System.Array.Empty<double>();
+        int seenEvents; bool mecoSent;
         readonly List<(Transform t, double x, double y, double z)> anchored = new List<(Transform, double, double, double)>();
         double omegaAir;
 
@@ -50,14 +56,20 @@ namespace Kestrel.Slice
             var c = SliceData.Catalog;
             var (stages, opts) = Stack.SimInputs(c, d, PhysicsDt);
             opts.tMax = 600;
+            thrustByStage = new double[stages.Count];
+            for (int i = 0; i < stages.Count; i++) thrustByStage[i] = stages[i].thrustVac;
             Sim = new AscentSim(stages, opts);
             // MECO = burnout of the core first stage (serial entry whose role is core with index 0).
             var serial = Stack.SerialStages(c, d).stages;
             mecoStage = serial.FindIndex(s => s.role == "core" && s.index == 0) + 1;
             thrustRef = Math.Max(1, stages[0].thrustVac);
             omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
-            clock = 0; Meco = false; Running = true; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
+            clock = 0; Meco = false; Result = null; Running = true; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
+            seenEvents = 0; mecoSent = false;
             UpdateFrame();
+            Sink?.OnEvent("flight.begin");
+            PumpEvents();
+            PublishAudio();
         }
 
         void Update()
@@ -67,19 +79,44 @@ namespace Kestrel.Slice
             int guard = 0;
             while (Sim.T < clock && !Sim.Done && guard++ < 64)
             {
+                int before = Sim.Events.Count;
                 Sim.Tick();
-                if (!Meco && HasBurnout(mecoStage)) { Meco = true; Running = false; break; }
+                if (!Meco)
+                {
+                    for (int i = before; i < Sim.Events.Count; i++)
+                    {
+                        var ev = Sim.Events[i];
+                        if (ev.type == "burnout" && ev.stage == mecoStage) Meco = true;
+                    }
+                }
             }
-            if (Sim.Done && !Meco) Running = false;
+            if (Sim.Done)
+            {
+                Running = false;
+                if (Result == null) Result = Sim.Finish();
+            }
+            PumpEvents();
+            if (Meco && !mecoSent) { mecoSent = true; Sink?.OnEvent("meco"); }
             UpdateFrame();
+            PublishAudio();
             if (Meco) OnMeco?.Invoke(this);
         }
 
-        bool HasBurnout(int stage)
+        void PumpEvents()
         {
-            for (int i = Sim.Events.Count - 1; i >= 0 && i >= Sim.Events.Count - 4; i--)
-                if (Sim.Events[i].type == "burnout" && Sim.Events[i].stage == stage) return true;
-            return false;
+            if (Sink == null || Sim == null) return;
+            var ev = Sim.Events;
+            while (seenEvents < ev.Count)
+            {
+                var type = ev[seenEvents++].type;
+                if (!string.IsNullOrEmpty(type)) Sink.OnEvent(type);
+            }
+        }
+
+        void PublishAudio()
+        {
+            if (Sink == null || Sim == null) return;
+            Sink.SetFlightState((float)Altitude, (float)DynPressure, (float)ThrustFraction);
         }
 
         void UpdateFrame()
@@ -92,6 +129,8 @@ namespace Kestrel.Slice
             Altitude = r - Gravity.R_EARTH;
             double vx = Sim.Y[2] + omegaAir * y, vy = Sim.Y[3] - omegaAir * x; // air-relative (= ground-relative)
             Speed = Math.Sqrt(vx * vx + vy * vy);
+            int stage = Sim.StageIdx;
+            if (stage >= 0 && stage < thrustByStage.Length) thrustRef = Math.Max(1, thrustByStage[stage]);
             ThrustFraction = Sim.Thrusting ? Sim.LastThrust / thrustRef : 0;
 
             // Floating origin: rebase when the vehicle drifts too far from (OriginX, OriginY).

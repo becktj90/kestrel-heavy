@@ -16,6 +16,7 @@ namespace Kestrel.Core.Data
     {
         public string id, label, cycle, propellant;
         public double thrustSL, thrustVac, ispSL, ispVac, mass, pc, gimbal, cost, reliability, expansionRatio, diameter;
+        public double pcMin, pcRated, epsMin, epsMax, cycleMassFactor;
         public double[] throttle; public bool restart; public int restarts;
         public System.Collections.Generic.List<NozzleVariant> nozzles;
     }
@@ -28,7 +29,7 @@ namespace Kestrel.Core.Data
 
     public sealed class Material
     {
-        public string id, label; public double structuralFraction, density, yieldMPa, costPerKg, maxTempK; public bool cryoOK;
+        public string id, label; public double structuralFraction, density, yieldMPa, costPerKg, maxTempK, elasticGPa; public bool cryoOK;
     }
 
     public sealed class OrbitTarget { public string id, label; public double apoKm, periKm, incDeg; }
@@ -85,6 +86,8 @@ namespace Kestrel.Core.Data
                     thrustSL = o.Num("thrustSL"), thrustVac = o.Num("thrustVac"), ispSL = o.Num("ispSL"), ispVac = o.Num("ispVac"),
                     mass = o.Num("mass"), pc = o.Num("pc"), gimbal = o.Num("gimbal"), cost = o.Num("cost"), reliability = o.Num("reliability"),
                     expansionRatio = o.Num("expansionRatio"), diameter = o.Num("diameter"),
+                    pcMin = o.Num("pcMin"), pcRated = o.Num("pcRated"), epsMin = o.Num("epsMin"), epsMax = o.Num("epsMax"),
+                    cycleMassFactor = o.Num("cycleMassFactor"),
                     throttle = new[] { (double)th[0], (double)th[1] }, restart = o.Bool("restart"), restarts = (int)o.Num("restarts"),
                 };
                 var nozzles = o.Arr("nozzles");
@@ -105,7 +108,8 @@ namespace Kestrel.Core.Data
                 var m = new Material
                 {
                     id = o.Str("id"), label = o.Str("label"), structuralFraction = o.Num("structuralFraction"), density = o.Num("density"),
-                    yieldMPa = o.Num("yieldMPa"), costPerKg = o.Num("costPerKg"), maxTempK = o.Num("maxTempK"), cryoOK = o.Bool("cryoOK"),
+                    yieldMPa = o.Num("yieldMPa"), costPerKg = o.Num("costPerKg"), maxTempK = o.Num("maxTempK"), elasticGPa = o.Num("elasticGPa"),
+                    cryoOK = o.Bool("cryoOK"),
                 };
                 c.Materials.Add(m); c.MaterialById[m.id] = m;
             }

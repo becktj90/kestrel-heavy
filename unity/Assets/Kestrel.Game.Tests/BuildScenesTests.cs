@@ -13,6 +13,8 @@ namespace Kestrel.Game.Tests
             "Assets/Resources/UI/KH_PanelSettings.asset",
             "Assets/Resources/UI/KH_ShellPanelSettings.asset",
             "Assets/Resources/Materials/KH_Body.mat",
+            "Assets/Resources/Materials/KH_Metal.mat",
+            "Assets/Resources/Materials/KH_Ink.mat",
             "Assets/Resources/Materials/KH_Plume.mat",
         };
 

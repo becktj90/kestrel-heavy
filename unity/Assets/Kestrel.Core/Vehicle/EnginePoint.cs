@@ -1,5 +1,7 @@
 // Resolved engine performance. Absent nozzle, or "default", is the catalog top-level bell.
 // A listed nozzles[] entry replaces thrust, Isp, mass and exit diameter. Gimbal stays on the engine.
+// v3 engineParams or a mixture offset route through EngineModel. Anything else stays on this table,
+// including an existing tune (Stack still applies that on the catalog path).
 using Kestrel.Core.Data;
 
 namespace Kestrel.Core.Vehicle
@@ -10,6 +12,8 @@ namespace Kestrel.Core.Vehicle
         public double thrustSL, thrustVac, ispSL, ispVac, mass, diameter, gimbal;
         public double[] throttle;
         public bool restart;
+        public double hazardRate;
+        public bool flowSeparation;
 
         public static EnginePoint Of(Engine e, string nozzleId)
         {
@@ -39,7 +43,27 @@ namespace Kestrel.Core.Vehicle
         public static EnginePoint Of(Catalog c, StagePart part)
         {
             if (part == null || c == null || !c.EngineById.TryGetValue(part.engine ?? "", out var e)) return new EnginePoint();
-            return Of(e, part.nozzle);
+            if (!UsesModel(part)) return Of(e, part.nozzle);
+            var p = part.engineParams;
+            double pc = p != null && p.pcSet ? p.pc : e.pc;
+            double eps = p != null && p.expansionRatioSet ? p.expansionRatio : double.NaN;
+            double throttleMin = p != null && p.throttleMinSet ? p.throttleMin : double.NaN;
+            double gimbalDeg = p != null && p.gimbalDegSet ? p.gimbalDeg : double.NaN;
+            var r = EngineModel.Resolve(e, part.nozzle, pc, eps, throttleMin, gimbalDeg, part.MixtureOffsetPctOrZero, part.tune);
+            return new EnginePoint
+            {
+                known = true, thrustSL = r.thrustSL, thrustVac = r.thrustVac, ispSL = r.ispSL, ispVac = r.ispVac,
+                mass = r.mass, diameter = r.exitDiameter, gimbal = r.gimbalDeg,
+                throttle = new[] { r.throttleMin, r.throttleMax }, restart = e.restart,
+                hazardRate = r.hazardRate, flowSeparation = r.flowSeparation,
+            };
+        }
+
+        public static bool UsesModel(StagePart part)
+        {
+            if (part == null) return false;
+            if (part.mixtureOffsetSet) return true;
+            return part.engineParams != null && part.engineParams.Any;
         }
 
         public static bool NozzleKnown(Engine e, string nozzleId)

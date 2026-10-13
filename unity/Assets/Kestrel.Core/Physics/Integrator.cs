@@ -43,4 +43,23 @@ namespace Kestrel.Core.Physics
         }
         public void Reset() { Time = 0; Accumulator = 0; Alpha = 0; }
     }
+
+    /// <summary>
+    /// Gravity, drag and steering Δv (m/s) accumulated on a powered step.
+    /// gravity += g·(v_r/v)·dt, drag += |a_drag|·dt, steering += a_T·(1 − cos ψ)·dt.
+    /// The three operations match the expressions already in the ascent loops.
+    /// </summary>
+    public static class LossAccount
+    {
+        public static void Add(ref double gravity, ref double drag, ref double steering,
+            double radialG, double vr, double speed, double axialAccel, double thrustCos, double dragAccel, double dt)
+        {
+            if (speed > 1)
+            {
+                steering += axialAccel * (1 - thrustCos) * dt;
+                gravity += radialG * (vr / speed) * dt;
+            }
+            drag += dragAccel * dt;
+        }
+    }
 }

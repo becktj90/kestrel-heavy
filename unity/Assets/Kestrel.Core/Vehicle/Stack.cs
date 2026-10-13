@@ -3,13 +3,14 @@
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Physics;
 
 namespace Kestrel.Core.Vehicle
 {
     public sealed class StackEntry
     {
-        public double thrustSL, thrustVac, ispSL, ispVac, propMass, dryMass, diameter, Cd;
+        public double thrustSL, thrustVac, ispSL, ispVac, propMass, dryMass, diameter, Cd, throttleMin;
         public string role; public bool parallel, crossfeed; public int count, index = -1;
         public double reserveMass; public double[] throttle; public bool restart;
         public double payloadMass, fairingMass, fairingJettisonAltitudeM; public bool isLast;
@@ -18,15 +19,17 @@ namespace Kestrel.Core.Vehicle
 
     public sealed class SerialStage
     {
-        public double thrustSL, thrustVac, ispSL, ispVac, propMass, dryMass, diameter, cd;
+        public double thrustSL, thrustVac, ispSL, ispVac, propMass, dryMass, diameter, cd, throttleMin;
         public string role, label; public int index = -1;
-        public SimStage ToSim() => new SimStage { thrustSL = thrustSL, thrustVac = thrustVac, ispSL = ispSL, ispVac = ispVac, propMass = propMass, dryMass = dryMass, diameter = diameter, cd = cd };
+        public SimStage ToSim() => new SimStage { thrustSL = thrustSL, thrustVac = thrustVac, ispSL = ispSL, ispVac = ispVac, propMass = propMass, dryMass = dryMass, diameter = diameter, cd = cd, throttleMin = throttleMin };
     }
 
     public static class Stack
     {
         public static double BaseCd(Design d)
         {
+            // v3 catalogs replace the hard-coded terms only when v3 aero fields are present (§2.5).
+            if (AeroModel.HasV3Aero(d)) return AeroModel.Cd0(d);
             double cd = DesignMath.NoseShapes.TryGetValue(d.nose ?? "", out var n) ? n : 0.32;
             if (d.fins) cd += 0.04;
             if (d.gridFins) cd += 0.03;
@@ -55,17 +58,17 @@ namespace Kestrel.Core.Vehicle
             var so = d.strapOns;
             if (so != null && so.count > 0)
             {
-                var m = Mass.StrapOnMasses(c, d); var e = EnginePoint.Of(c.EngineById[so.engine], so.nozzle);
-                o.Add(new StackEntry { thrustSL = e.thrustSL * so.engineCount * so.count, thrustVac = e.thrustVac * so.engineCount * so.count, ispSL = e.ispSL, ispVac = e.ispVac, propMass = m.prop, dryMass = m.dry, diameter = diameter, Cd = Cd, role = "strapons", parallel = true, crossfeed = so.crossfeed, count = so.count });
+                var m = Mass.StrapOnMasses(c, d); var e = Point(c, so);
+                o.Add(new StackEntry { thrustSL = e.thrustSL * so.engineCount * so.count, thrustVac = e.thrustVac * so.engineCount * so.count, ispSL = e.ispSL, ispVac = e.ispVac, propMass = m.prop, dryMass = m.dry, diameter = diameter, Cd = Cd, role = "strapons", parallel = true, crossfeed = so.crossfeed, count = so.count, throttleMin = ThrottleMin(e) });
             }
             for (int i = 0; i < d.stages.Count; i++)
             {
-                var s = d.stages[i]; var m = masses[i]; var e = EnginePoint.Of(c.EngineById[s.engine], s.nozzle); int n = s.engineCount;
+                var s = d.stages[i]; var m = masses[i]; var e = Point(c, s); int n = s.engineCount;
                 o.Add(new StackEntry
                 {
                     thrustSL = e.thrustSL * n, thrustVac = e.thrustVac * n, ispSL = e.ispSL, ispVac = e.ispVac, propMass = m.usableProp, dryMass = m.dry,
                     diameter = i == 0 ? diameter : Math.Max(s.diameter, d.fairingDiameter), Cd = Cd, role = "core", index = i, reserveMass = m.landingProp,
-                    throttle = (double[])e.throttle.Clone(), restart = e.restart,
+                    throttle = e.throttle != null ? (double[])e.throttle.Clone() : null, restart = e.restart, throttleMin = ThrottleMin(e),
                 });
             }
             var last = o[o.Count - 1];
@@ -93,6 +96,15 @@ namespace Kestrel.Core.Vehicle
         public static double TUNE_LIMIT => Designer.DesignerLimits.Active.tuneLimitPct;
         public const double LAUNCH_LATITUDE = 28.5, LOSS_BUDGET = 1500;
 
+        /// <summary>v3 engineParams or a mixture offset already include tune. The catalog path still applies it here.</summary>
+        static EnginePoint Point(Catalog c, StagePart s)
+        {
+            if (EnginePoint.UsesModel(s)) return EnginePoint.Of(c, s);
+            return EnginePoint.Of(c.EngineById[s.engine], s.nozzle);
+        }
+
+        static double ThrottleMin(EnginePoint e) => e.throttle != null && e.throttle.Length > 0 ? e.throttle[0] : 0;
+
         static void ApplyTune(StackEntry e, Tune t)
         {
             if (t == null) return;
@@ -105,7 +117,11 @@ namespace Kestrel.Core.Vehicle
         public static (List<SerialStage> stages, double payload) SerialStages(Catalog c, Design d)
         {
             var sim = ToSimStages(c, d).ConvertAll(x => x.Clone());
-            foreach (var s in sim) ApplyTune(s, s.role == "strapons" ? d.strapOns?.tune : d.stages[s.index].tune);
+            foreach (var s in sim)
+            {
+                var part = s.role == "strapons" ? d.strapOns : d.stages[s.index];
+                if (!EnginePoint.UsesModel(part)) ApplyTune(s, part != null ? part.tune : null);
+            }
             var last = sim[sim.Count - 1];
             double payload = last.payloadMass + last.fairingMass;
             var o = new List<SerialStage>();
@@ -122,11 +138,11 @@ namespace Kestrel.Core.Vehicle
                     double ispVac = (s.thrustVac * tB + cc.thrustVac * (coreBurn / mdC)) / ((s.propMass + coreBurn) * G0);
                     double mdot = RocketEq.MassFlow(thrustVac, ispVac);
                     double ispSL = thrustSL / (mdot * G0);
-                    o.Add(new SerialStage { diameter = s.diameter, cd = s.Cd, thrustVac = thrustVac, thrustSL = thrustSL, ispVac = ispVac, ispSL = ispSL, propMass = s.propMass + coreBurn, dryMass = s.dryMass, role = "strapons+core", label = $"Core + {s.count} strap-ons" });
-                    o.Add(new SerialStage { diameter = cc.diameter, cd = s.Cd, thrustVac = cc.thrustVac, thrustSL = cc.thrustSL, ispVac = cc.ispVac, ispSL = cc.ispSL, propMass = cc.propMass - coreBurn, dryMass = cc.dryMass + cc.reserveMass, role = "core", index = cc.index, label = Name(d, cc.index) });
+                    o.Add(new SerialStage { diameter = s.diameter, cd = s.Cd, thrustVac = thrustVac, thrustSL = thrustSL, ispVac = ispVac, ispSL = ispSL, propMass = s.propMass + coreBurn, dryMass = s.dryMass, role = "strapons+core", label = $"Core + {s.count} strap-ons", throttleMin = Math.Min(s.throttleMin, cc.throttleMin) });
+                    o.Add(new SerialStage { diameter = cc.diameter, cd = s.Cd, thrustVac = cc.thrustVac, thrustSL = cc.thrustSL, ispVac = cc.ispVac, ispSL = cc.ispSL, propMass = cc.propMass - coreBurn, dryMass = cc.dryMass + cc.reserveMass, role = "core", index = cc.index, label = Name(d, cc.index), throttleMin = cc.throttleMin });
                     k++; continue;
                 }
-                o.Add(new SerialStage { diameter = s.diameter, cd = s.Cd, thrustVac = s.thrustVac, thrustSL = s.thrustSL, ispVac = s.ispVac, ispSL = s.ispSL, propMass = s.propMass, dryMass = s.dryMass + s.reserveMass, role = "core", index = s.index, label = Name(d, s.index) });
+                o.Add(new SerialStage { diameter = s.diameter, cd = s.Cd, thrustVac = s.thrustVac, thrustSL = s.thrustSL, ispVac = s.ispVac, ispSL = s.ispSL, propMass = s.propMass, dryMass = s.dryMass + s.reserveMass, role = "core", index = s.index, label = Name(d, s.index), throttleMin = s.throttleMin });
             }
             return (o, payload);
         }
@@ -149,7 +165,9 @@ namespace Kestrel.Core.Vehicle
         public static (List<SimStage> stages, SimOptions opts) SimInputs(Catalog c, Design d, double dt = 0.2, double sampleEvery = 0)
         {
             var s = SerialStages(c, d); var req = RequiredDeltaV(c, d.payloadOrbit);
-            return (s.stages.ConvertAll(x => x.ToSim()), new SimOptions { payload = s.payload, targetAlt = req.targetAlt, latitude = LAUNCH_LATITUDE, dt = dt, sampleEvery = sampleEvery, tMax = 2500 });
+            GuidanceProfile guidance = d.guidance != null && d.guidance.Any ? GuidanceProfile.From(d, req.targetAlt) : null;
+            FailureMonitor monitor = FailureMonitor.Engages(d) ? FailureMonitor.Create(c, d, req.targetAlt) : null;
+            return (s.stages.ConvertAll(x => x.ToSim()), new SimOptions { payload = s.payload, targetAlt = req.targetAlt, latitude = LAUNCH_LATITUDE, dt = dt, sampleEvery = sampleEvery, tMax = 2500, guidance = guidance, monitor = monitor });
         }
     }
 }

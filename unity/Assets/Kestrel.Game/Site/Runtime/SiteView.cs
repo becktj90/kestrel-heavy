@@ -11,6 +11,8 @@ namespace Kestrel.Site
         public static float FarClip => SiteHorizon.ClipFor(SiteHorizon.ChaseAltitude);
         static readonly int SunDirId = Shader.PropertyToID("_SunDir");
         static readonly int SunColorId = Shader.PropertyToID("_SunColor");
+        static readonly int FogColorId = Shader.PropertyToID("_FogColor");
+        static readonly int FogRangeId = Shader.PropertyToID("_FogRange");
 
         Material _land, _water;
         Light _sun;
@@ -121,8 +123,16 @@ namespace Kestrel.Site
             Color col = Color.white * 1.3f;
             if (_sun != null) { to = -_sun.transform.forward; col = _sun.color * _sun.intensity; }
             var sun = new Vector4(to.x, to.y, to.z, 0f);
-            if (_land != null) { _land.SetVector(SunDirId, sun); _land.SetColor(SunColorId, col); }
-            if (_water != null) { _water.SetVector(SunDirId, sun); _water.SetColor(SunColorId, col); }
+            var fog = new Vector4(RenderSettings.fogStartDistance, RenderSettings.fogEndDistance,
+                RenderSettings.fog && RenderSettings.fogMode == FogMode.Linear ? 1f : 0f, 0f);
+            if (_land != null) { _land.SetVector(SunDirId, sun); _land.SetColor(SunColorId, col); PushFog(_land, fog); }
+            if (_water != null) { _water.SetVector(SunDirId, sun); _water.SetColor(SunColorId, col); PushFog(_water, fog); }
+        }
+
+        static void PushFog(Material m, Vector4 range)
+        {
+            m.SetColor(FogColorId, RenderSettings.fogColor);
+            m.SetVector(FogRangeId, range);
         }
     }
 }

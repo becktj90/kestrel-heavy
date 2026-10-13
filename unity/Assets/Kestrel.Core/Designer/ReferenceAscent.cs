@@ -10,6 +10,7 @@
 // off the main thread, or ReferenceJob.Step with a ≤ 2 ms budget.
 using System.Collections.Generic;
 using Kestrel.Core.Data;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Save;
@@ -22,7 +23,25 @@ namespace Kestrel.Core.Designer
         public const double FrameBudgetMs = 2;
         public const double TotalBudgetMs = 30;
 
-        struct Entry { public string key; public double qPa, altM, maxG; }
+        struct Entry
+        {
+            public string key;
+            public double qPa, altM, maxG;
+            public bool flown;
+            public double lossGravity, lossDrag, lossSteering, minStability, minCar, burnoutSpeed;
+            public FailureEvent failure;
+            public List<FlightRisk> risks;
+        }
+
+        /// <summary>What Quick can copy out of a cached ascent. <see cref="flown"/> is false for a max-Q seed that did not run the failure model.</summary>
+        public struct CachedFlight
+        {
+            public bool hit, flown;
+            public double qPa, altM, maxG;
+            public double lossGravity, lossDrag, lossSteering, minStability, minCar, burnoutSpeed;
+            public FailureEvent failure;
+            public List<FlightRisk> risks;
+        }
         static readonly Dictionary<ulong, Entry> Cache = new Dictionary<ulong, Entry>();
         static readonly object Gate = new object();
 
@@ -77,13 +96,51 @@ namespace Kestrel.Core.Designer
             lock (Gate) Cache[Fnv1a64(key)] = new Entry { key = key, qPa = qPa, altM = altM, maxG = maxG };
         }
 
+        /// <summary>Full predict-ascent cache: losses, stability, risks and the first failure, if one was predicted.</summary>
+        public static void Store(string key, SimResult sim)
+        {
+            if (key == null || sim == null) return;
+            double burnout = double.NaN;
+            if (sim.events != null)
+                foreach (var e in sim.events)
+                    if (e.type == "burnout" && e.v.HasValue) { burnout = e.v.Value; break; }
+            lock (Gate)
+                Cache[Fnv1a64(key)] = new Entry
+                {
+                    key = key, qPa = sim.maxQ, altM = sim.maxQAlt, maxG = sim.maxG, flown = true,
+                    lossGravity = sim.lossGravity, lossDrag = sim.lossDrag, lossSteering = sim.lossSteering,
+                    minStability = sim.minStability, minCar = sim.minCar, burnoutSpeed = burnout,
+                    failure = sim.failure, risks = sim.risks,
+                };
+        }
+
+        public static bool TryGet(string key, out CachedFlight flight)
+        {
+            lock (Gate)
+            {
+                if (key != null && Cache.TryGetValue(Fnv1a64(key), out var e) && e.key == key)
+                {
+                    flight = new CachedFlight
+                    {
+                        hit = true, flown = e.flown, qPa = e.qPa, altM = e.altM, maxG = e.maxG,
+                        lossGravity = e.lossGravity, lossDrag = e.lossDrag, lossSteering = e.lossSteering,
+                        minStability = e.minStability, minCar = e.minCar, burnoutSpeed = e.burnoutSpeed,
+                        failure = e.failure, risks = e.risks,
+                    };
+                    return true;
+                }
+            }
+            flight = default;
+            return false;
+        }
+
         public static QuickReadout Run(Catalog c, JsonObject design)
         {
             string key = CanonicalKey(c, design);
             if (!TryGet(key, out _, out _))
             {
                 var sim = Simulate(c, design);
-                Store(key, sim.maxQ, sim.maxQAlt, sim.maxG);
+                Store(key, sim);
             }
             return Readout.Quick(c, design);
         }
@@ -92,6 +149,9 @@ namespace Kestrel.Core.Designer
         {
             var d = Design.FromJson(design);
             var input = Stack.SimInputs(c, d);
+            // Predict keeps flying after the first hit so the cached peak is the real max-Q.
+            // A live launch leaves Predict false and breaks up.
+            if (input.opts.monitor != null) input.opts.monitor.Predict = true;
             return Fly(input.stages, input.opts);
         }
 
@@ -157,6 +217,7 @@ namespace Kestrel.Core.Designer
             key = ReferenceAscent.CanonicalKey(c, design);
             var d = Design.FromJson(design);
             var input = Stack.SimInputs(c, d);
+            if (input.opts.monitor != null) input.opts.monitor.Predict = true;
             sim = new AscentSim(input.stages, input.opts);
         }
 
@@ -170,7 +231,7 @@ namespace Kestrel.Core.Designer
                 if (!sim.Tick())
                 {
                     var r = sim.Finish();
-                    ReferenceAscent.Store(key, r.maxQ, r.maxQAlt, r.maxG);
+                    ReferenceAscent.Store(key, r);
                     done = true;
                     return true;
                 }

@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using Kestrel.Core.Data;
 using Kestrel.Core.Vehicle;
+using Kestrel.Vehicle;
 using UnityEngine;
 
 namespace Kestrel.Slice
@@ -155,12 +156,29 @@ namespace Kestrel.Slice
             profile.Clear(); verts.Clear(); normals.Clear(); uvs.Clear(); tris.Clear();
             if (p.Kind == HangarPartKind.Engine)
             {
-                float re = Mathf.Max(0.02f, p.Radius), bell = Mathf.Max(0.05f, p.AxialLength);
-                profile.Add(new Vector2(re, 0f));
-                profile.Add(new Vector2(re * 0.45f, bell * 0.75f));
-                profile.Add(new Vector2(re * 0.3f, bell * 0.85f));
-                profile.Add(new Vector2(re * 0.5f, bell));
-                profile.Add(new Vector2(0f, bell));
+                float re = Mathf.Max(0.02f, p.Radius);
+                if (p.Expansion > 1.5f && BellSpec.TryParseCycle(p.Cycle, out var cycle))
+                {
+                    var spec = new BellSpec
+                    {
+                        EngineId = p.Id, Cycle = cycle, ExpansionRatio = p.Expansion,
+                        ExitDiameter = re * 2f, VehicleSeed = 1
+                    };
+                    if (spec.Validate().Count == 0)
+                    {
+                        var wall = BellProfile.Build(spec, 1).Wall;
+                        for (int i = 0; i < wall.Count; i++) profile.Add(new Vector2(wall[i].R, wall[i].Y));
+                    }
+                }
+                if (profile.Count < 2)
+                {
+                    float bell = Mathf.Max(0.05f, p.AxialLength);
+                    profile.Add(new Vector2(re, 0f));
+                    profile.Add(new Vector2(re * 0.45f, bell * 0.75f));
+                    profile.Add(new Vector2(re * 0.3f, bell * 0.85f));
+                    profile.Add(new Vector2(re * 0.5f, bell));
+                    profile.Add(new Vector2(0f, bell));
+                }
             }
             else if (p.Kind == HangarPartKind.Fairing || p.Kind == HangarPartKind.Booster)
             {
@@ -174,7 +192,7 @@ namespace Kestrel.Slice
                 for (int k = 1; k <= 8; k++)
                 {
                     float u = k / 8f;
-                    float rr = conic ? r * (1f - u) : r * Mathf.Sqrt(Mathf.Max(0f, 1f - u * u));
+                    float rr = RocketMeshBuilder.NoseRadius(conic ? "conic" : Mathf.Abs(noseFrac - RocketMeshBuilder.NoseFraction("von-karman")) < 0.001f ? "von-karman" : "ogive", r, u);
                     profile.Add(new Vector2(k == 8 ? 0f : rr, cyl + nose * u));
                 }
             }
