@@ -50,6 +50,10 @@ namespace Kestrel.Slice
         /// <summary>Frustum between two stages. The body lathe still draws the cone; StrutCluster draws stringers and joint rings proud of it.</summary>
         public readonly struct InterstageSlot { public readonly float Y0, Y1, R0, R1;
             public InterstageSlot(float y0, float y1, float r0, float r1) { Y0 = y0; Y1 = y1; R0 = r0; R1 = r1; } }
+        /// <summary>Fairing cylinder + nose. The lathe still draws the ogive; FairingLayout draws seams and rings proud of it.</summary>
+        public readonly struct FairingSlot { public readonly float BaseY, Radius, Length, NoseFraction; public readonly bool Conic, Present;
+            public FairingSlot(float baseY, float radius, float length, float noseFraction, bool conic, bool present)
+            { BaseY = baseY; Radius = radius; Length = length; NoseFraction = noseFraction; Conic = conic; Present = present; } }
         /// <summary>One engine bell. The mesh is drawn by Kestrel.Vehicle.BellCluster, not lathed into the body.</summary>
         public readonly struct EngineSlot
         {
@@ -58,7 +62,7 @@ namespace Kestrel.Slice
             public EngineSlot(Vector3 exit, float exitDiameter, float expansion, float gimbal, string id, string cycle, int stage, int slot, bool strap, float stageRadius)
             { Exit = exit; ExitDiameter = exitDiameter; Expansion = expansion; GimbalDeg = gimbal; EngineId = id; Cycle = cycle; Stage = stage; Slot = slot; StrapOn = strap; StageRadius = stageRadius; }
         }
-        public sealed class Result { public Mesh mesh; public float height; public float stage1Top; public float stage1AftY; public Vector3[] nozzleExits; public float exitDiameter; public List<TankSlot> tanks = new List<TankSlot>(); public List<EngineSlot> engines = new List<EngineSlot>(); public List<InterstageSlot> interstages = new List<InterstageSlot>(); }
+        public sealed class Result { public Mesh mesh; public float height; public float stage1Top; public float stage1AftY; public Vector3[] nozzleExits; public float exitDiameter; public List<TankSlot> tanks = new List<TankSlot>(); public List<EngineSlot> engines = new List<EngineSlot>(); public List<InterstageSlot> interstages = new List<InterstageSlot>(); public FairingSlot fairing; }
 
         /// <summary>Axial room the bell needs, from the catalog expansion ratio. Exit diameter is the packed cluster size.</summary>
         public static float BellHeight(Engine e, float stageDiameter, int count)
@@ -83,7 +87,7 @@ namespace Kestrel.Slice
         public static Result Build(Catalog c, Design d)
         {
             var verts = new List<Vector3>(); var normals = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
-            float y = 0, stage1Top = 0, stage1Aft = 0; var exits = new List<Vector3>(); float exitD = 0; var slots = new List<TankSlot>(); var bells = new List<EngineSlot>(); var spans = new List<InterstageSlot>();
+            float y = 0, stage1Top = 0, stage1Aft = 0; var exits = new List<Vector3>(); float exitD = 0; var slots = new List<TankSlot>(); var bells = new List<EngineSlot>(); var spans = new List<InterstageSlot>(); FairingSlot fairing = default;
 
             for (int i = 0; i < d.stages.Count; i++)
             {
@@ -113,6 +117,7 @@ namespace Kestrel.Slice
             {
                 float rf = (float)d.fairingDiameter / 2, L = (float)d.fairingLength;
                 float noseFrac = d.nose == "blunt" ? 0.25f : d.nose == "conic" ? 0.4f : 0.45f;
+                fairing = new FairingSlot(y, rf, L, noseFrac, d.nose == "conic", L > 0.2f && rf > 0.05f);
                 float cyl = L * (1 - noseFrac), nose = L * noseFrac;
                 var prof = new List<Vector2> { new Vector2(0, y), new Vector2(rf, y), new Vector2(rf, y + cyl) };
                 for (int k = 1; k <= 10; k++)
@@ -144,7 +149,7 @@ namespace Kestrel.Slice
             var mesh = new Mesh { name = "Rocket_" + d.id, indexFormat = verts.Count > 65000 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
             mesh.SetVertices(verts); mesh.SetNormals(normals); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
             mesh.RecalculateBounds();
-            return new Result { mesh = mesh, height = y, stage1Top = stage1Top, stage1AftY = stage1Aft, nozzleExits = exits.ToArray(), exitDiameter = exitD, tanks = slots, engines = bells, interstages = spans };
+            return new Result { mesh = mesh, height = y, stage1Top = stage1Top, stage1AftY = stage1Aft, nozzleExits = exits.ToArray(), exitDiameter = exitD, tanks = slots, engines = bells, interstages = spans, fairing = fairing };
         }
 
         /// <summary>Engine bell centres in the stage's XZ plane. One centre engine (odd counts) plus concentric rings.

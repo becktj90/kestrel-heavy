@@ -256,6 +256,7 @@ namespace Kestrel.Slice
             AddAirframe(r);
             AddLanding(r);
             AddLivery(r);
+            AddFairing(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
@@ -493,6 +494,19 @@ namespace Kestrel.Slice
             cluster.ViewCamera = cam;
             cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
             cluster.Init(marks, Kestrel.Kit.KitBudgets.Medium, accentCol);
+        }
+
+        /// <summary>Separation seams, base ring and shoulder on the fairing. The ogive lathe is unchanged, so plume height stays put.</summary>
+        void AddFairing(RocketMeshBuilder.Result r)
+        {
+            if (!r.fairing.Present) return;
+            var f = r.fairing;
+            var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic);
+            if (poses.Count == 0) return;
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(poses, Kestrel.Kit.KitBudgets.Medium);
         }
 
         /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every
