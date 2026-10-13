@@ -8,10 +8,15 @@ test('result screen retries landing at PACE.ENTRY and sep in one tap', () => {
   const html = fs.readFileSync(path.join(root, 'web/index.html'), 'utf8');
   const mission = fs.readFileSync(path.join(root, 'web/js/mission.js'), 'utf8');
   const hud = fs.readFileSync(path.join(root, 'web/js/hud.js'), 'utf8');
+  assert.match(html, /id="ng-sum-retry-flight"/);
   assert.match(html, /id="ng-sum-retry-land"[^>]*>Retry landing</);
   assert.match(html, /id="ng-sum-retry-sep"[^>]*>Retry from sep</);
   assert.match(mission, /retryLanding\(\) \{[\s\S]*?bootQaFlight\(PACE\.ENTRY, \(\) => this\.enterJacklyn\(\)\)/);
   assert.match(mission, /retryFromSep\(\) \{[\s\S]*?bootQaFlight\(PACE\.MECO - 0\.05/);
+  assert.match(mission, /showFlight: !reachedHaven/);
+  assert.match(mission, /showSep: reachedMeco/);
+  assert.match(mission, /showLanding: reachedHaven/);
+  assert.match(hud, /\['ng-sum-retry-flight', handlers\.retryFlight\]/);
   assert.match(hud, /\['ng-sum-retry-land', handlers\.retryLanding\]/);
   assert.match(hud, /\['ng-sum-retry-sep', handlers\.retryFromSep\]/);
   assert.doesNotMatch(mission, /retryLanding\(\) \{[\s\S]*?confirm\(/);

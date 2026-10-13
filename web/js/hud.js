@@ -246,6 +246,7 @@ export function bindChrome(handlers) {
     ['ng-pause-howto', handlers.openHowto],
     ['ng-pause-abort', handlers.abortToMenu],
     ['ng-sum-next', handlers.nextFlight],
+    ['ng-sum-retry-flight', handlers.retryFlight],
     ['ng-sum-retry-land', handlers.retryLanding],
     ['ng-sum-retry-sep', handlers.retryFromSep],
     ['ng-sep-btn', handlers.separate],
@@ -534,6 +535,19 @@ export function setSummaryMedal(medal, text) {
 export function setHangarMedals(text) {
   const node = el('ng-hangar-medals');
   if (node) node.textContent = text ? `MEDALS  ${text}` : '';
+}
+
+export function setSummaryRetries({ flightLabel, showFlight, showSep, showLanding }) {
+  const flight = el('ng-sum-retry-flight');
+  const sep = el('ng-sum-retry-sep');
+  const land = el('ng-sum-retry-land');
+  if (flight) {
+    flight.hidden = !showFlight;
+    if (showFlight && flightLabel) flight.textContent = flightLabel;
+    flight.classList.toggle('btn-go', Boolean(showFlight));
+  }
+  if (sep) sep.hidden = !showSep;
+  if (land) land.hidden = !showLanding;
 }
 
 export function setSummaryBreakdown(ascent, jacklyn, delta, nextLabel) {

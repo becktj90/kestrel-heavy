@@ -7,10 +7,8 @@
   <title>Kestrel Heavy</title>
   <meta name="robots" content="noindex">
       <meta name="arcade-asset-version" content="kestrel-22">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Sora:wght@400;600&display=swap" rel="stylesheet">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <!-- System faces only. Exo 2, Sora, and IBM Plex Mono are OFL, not CC0, so they are not fetched or bundled. -->
   <link rel="stylesheet" href="./css/designer.css">
   <style>
     :root {
@@ -21,8 +19,8 @@
       --fail: #ff8a6a;
       --fg: #eef0fa;
       --fg-muted: #9aa3c7;
-      --font-main: "Exo 2", "Sora", system-ui, sans-serif;
-      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+      --font-main: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+      --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", monospace;
     }
     html, body {
       margin: 0;
@@ -751,7 +749,10 @@
     }
     .sum-why { color: var(--amber); }
     .sum-medal { font-weight: 800; letter-spacing: 0.04em; white-space: pre-line; }
-    #ng-sum-medal[hidden] { display: none !important; }
+    #ng-sum-medal[hidden],
+    #ng-sum-retry-flight[hidden],
+    #ng-sum-retry-land[hidden],
+    #ng-sum-retry-sep[hidden] { display: none !important; }
     .sum-medal[data-medal="gold"] { color: #ffd54a; }
     .sum-medal[data-medal="silver"] { color: #d9e1ee; }
     .sum-medal[data-medal="bronze"] { color: #e0955a; }
@@ -1051,6 +1052,36 @@
          Drop the whole HUD stack below the pill row there too. */
       body[data-phase="SUMMARY"] .mc-hud {
         margin-top: 46px;
+      }
+    }
+    /* Results: live radio, payload, and objective used to ghost through the
+       summary headline on phone. The phase chip stays; the flight text does not. */
+    body[data-phase="SUMMARY"] .mc-callout,
+    body[data-phase="SUMMARY"] .mc-panel,
+    body[data-phase="SUMMARY"] .mc-met,
+    body[data-phase="SUMMARY"] #ng-health,
+    body[data-phase="SUMMARY"] #ng-banner {
+      display: none !important;
+    }
+    body[data-phase="SUMMARY"] #ng-summary {
+      background: #040810;
+    }
+    /* SOUND/PAUSE own the top band. The phase chip and #ng-banner start below
+       that row, including zoomed 6.9" and iPad pills. */
+    body:not([data-phase="MENU"]) #arcade-fs-wrapper .mc-hud {
+      top: max(64px, calc(env(safe-area-inset-top, 0px) + 56px));
+    }
+    @container cabinet (min-width: 700px) {
+      body:not([data-phase="MENU"]) #arcade-fs-wrapper .mc-hud {
+        top: max(96px, calc(env(safe-area-inset-top, 0px) + 84px));
+      }
+    }
+    @container cabinet (min-width: 980px) {
+      body:not([data-phase="MENU"]) #arcade-fs-wrapper .mc-hud {
+        top: max(112px, calc(env(safe-area-inset-top, 0px) + 100px));
+      }
+      body:not([data-phase="MENU"]) #ng-banner {
+        max-width: min(28rem, calc(100cqi - 22rem));
       }
     }
     /* Big portrait screens (Pro Max, iPad 11"/13"): the HUD, pills and cards
@@ -1427,8 +1458,9 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
         <div id="ng-sum-delta" class="sum-break"></div>
         <div class="ng-nav">
           <button class="btn btn-go" id="ng-sum-next" type="button" hidden>NEXT FLIGHT</button>
-          <button class="btn" id="ng-sum-retry-land" type="button">Retry landing</button>
-          <button class="btn" id="ng-sum-retry-sep" type="button">Retry from sep</button>
+          <button class="btn btn-go" id="ng-sum-retry-flight" type="button" hidden>RETRY</button>
+          <button class="btn" id="ng-sum-retry-land" type="button" hidden>Retry landing</button>
+          <button class="btn" id="ng-sum-retry-sep" type="button" hidden>Retry from sep</button>
           <button class="btn" id="ng-summary-continue" type="button">CONTINUE</button>
         </div>
       </div>
@@ -1461,7 +1493,7 @@ KID / CADET / PAD RAT change the margin. P pauses. M mutes. O opens settings.</p
       <div class="record-title">Mission record</div>
     </div>
   </main>
-  <script src="/toolbox/js/local-store.js"></script>
+  <script src="./local-store.js"></script>
   <script>
     window.recordGameScore = window.recordGameScore || function () { return Promise.resolve(null); };
   </script>

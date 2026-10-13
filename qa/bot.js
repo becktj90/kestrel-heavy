@@ -73,7 +73,7 @@
       return;
     }
     sepWindowAt = null;
-    if (st === 'JACKLYN') {
+    if (st === 'HAVEN' || st === 'JACKLYN') {
       const vx = sc.rocket.body?.velocity?.x || 0; const vy = sc.rocket.body?.velocity?.y || 0;
       const deckX = (sc.deck?.x ?? sc.jacklyn.x);
       const alt = sc.jacklyn.y - sc.rocket.y;
@@ -82,10 +82,12 @@
       steerTo(sc, deckX + (pred - sc.rocket.x) * -1 + (brnd() - 0.5) * SK.noise, 8);
       const now = sc.nowSec;
       if (ss.burnWindow) {
-        // throttle like a player: burn while descending faster than the skill's target sink rate
-        const sink = cfg.skill === 'low' ? 2.2 : cfg.skill === 'mid' ? 3.0 : 3.6;
+        // The prompt is HOLD TO BURN through the window. Glide sink is already
+        // softer than the old vy>3 threshold, which never lit the engines and
+        // tipped every catch at the -30° strake attitude.
+        const altPx = (sc.jacklyn?.y || 0) - sc.rocket.y;
         const late = SK.burnAlt < 1 && brnd() > SK.burnAlt;
-        const want = !late && vy > sink;
+        const want = !late && altPx > 70;
         inp.boostHeld = want; if (want) inp.boostUntil = now + 0.1;
       } else { inp.boostHeld = false; }
       return;
