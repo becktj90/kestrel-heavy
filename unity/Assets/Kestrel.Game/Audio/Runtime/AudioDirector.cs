@@ -42,6 +42,9 @@ namespace Kestrel.Game.Audio
                 throw new ArgumentException("Flight audio bus must be a component.", nameof(bus));
             var director = host.GetComponent<AudioDirector>();
             if (director == null) director = host.gameObject.AddComponent<AudioDirector>();
+            var narration = host.GetComponent<NarrationPlayer>() ?? host.gameObject.AddComponent<NarrationPlayer>();
+            narration.Bind(director);
+            director.ForwardTo(narration);
             bus.Sink = director;
             director.TryBindUi();
             return director;
@@ -61,6 +64,7 @@ namespace Kestrel.Game.Audio
             muted = on;
             PlayerPrefs.SetInt(MutePref, on ? 1 : 0);
             if (on) voices.StopAll();
+            if (on && forward is NarrationPlayer narration) narration.Stop();
             ApplyEngine();
         }
 

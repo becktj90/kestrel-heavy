@@ -36,6 +36,7 @@ namespace Kestrel.Game.Audio.Tests
             Assert.AreSame(director, flight.Sink);
             Assert.AreSame(director, AudioDirector.Attach(flight));
             Assert.AreEqual(1, go.GetComponents<AudioDirector>().Length);
+            Assert.AreEqual(1, go.GetComponents<NarrationPlayer>().Length);
         }
 
         [Test]
