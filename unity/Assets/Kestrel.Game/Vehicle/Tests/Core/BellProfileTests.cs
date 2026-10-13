@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
+using Kestrel.Core.Json;
 using NUnit.Framework;
 
 namespace Kestrel.Vehicle.Tests
@@ -151,14 +151,14 @@ namespace Kestrel.Vehicle.Tests
             }
             Assert.That(path, Is.Not.Null, "data/engines.json");
             var list = new List<BellSpec>();
-            using var doc = JsonDocument.Parse(File.ReadAllText(path));
-            foreach (var eng in doc.RootElement.GetProperty("engines").EnumerateArray())
+            var root = MiniJson.ParseObject(File.ReadAllText(path));
+            foreach (JsonObject eng in root.Arr("engines"))
             {
-                string id = eng.GetProperty("id").GetString();
-                string cycle = eng.GetProperty("cycle").GetString();
+                string id = eng.Str("id");
+                string cycle = eng.Str("cycle");
                 Assert.That(BellSpec.TryParseCycle(cycle, out var kind), Is.True, cycle);
-                float eps = (float)eng.GetProperty("expansionRatio").GetDouble();
-                float diameter = (float)eng.GetProperty("diameter").GetDouble();
+                float eps = (float)eng.Num("expansionRatio");
+                float diameter = (float)eng.Num("diameter");
                 var spec = Spec(id, kind, eps, diameter, seed: 42);
                 Assert.That(spec.Validate(), Is.Empty, id);
                 list.Add(spec);
