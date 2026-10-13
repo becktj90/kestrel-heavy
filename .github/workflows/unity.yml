@@ -114,4 +114,18 @@ jobs:
           unityVersion: ${{ env.UNITY_VERSION }}
           projectPath: ${{ env.PROJECT_PATH }}
           targetPlatform: iOS
+          buildMethod: Kestrel.Slice.Editor.BuildScript.BuildIOS
+          buildsPath: build
+          buildName: iOS
+          versioning: None
           allowDirtyBuild: true
+          customParameters: -khBuildNumber ${{ github.run_number }}
+      # Artifact only — does not touch the orphan xcode-export branch. Publish via
+      # workflow "Xcode export" (workflow_dispatch) or tools/ios-export/export.sh.
+      - uses: actions/upload-artifact@v4
+        if: env.HAS_LICENSE == 'true' && success()
+        with:
+          name: xcode-ios-compile
+          path: build/iOS
+          retention-days: 7
+          if-no-files-found: warn
