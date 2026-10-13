@@ -13,6 +13,7 @@ namespace Kestrel.Game.Tests
             "Assets/Resources/UI/KH_PanelSettings.asset",
             "Assets/Resources/UI/KH_ShellPanelSettings.asset",
             "Assets/Resources/Materials/KH_Body.mat",
+            "Assets/Resources/Materials/KH_LitEmission.mat",
             "Assets/Resources/Materials/KH_Plume.mat",
         };
 
@@ -51,6 +52,17 @@ namespace Kestrel.Game.Tests
                 Assert.That(File.Exists(p), Is.True, $"missing {p}");
                 Assert.That(File.Exists(p + ".meta"), Is.True, $"missing {p}.meta");
             }
+        }
+
+        [Test]
+        public void LitKeepersRequestTheInstancedPlayerVariant()
+        {
+            // RenderMeshInstanced draws nothing on device unless the built URP/Lit material asks for INSTANCING_ON.
+            string body = File.ReadAllText("Assets/Resources/Materials/KH_Body.mat");
+            string lamps = File.ReadAllText("Assets/Resources/Materials/KH_LitEmission.mat");
+            Assert.That(body, Does.Contain("m_EnableInstancingVariants: 1"));
+            Assert.That(lamps, Does.Contain("m_EnableInstancingVariants: 1"));
+            Assert.That(lamps, Does.Contain("_EMISSION"));
         }
     }
 }
