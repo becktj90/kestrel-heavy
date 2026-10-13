@@ -141,13 +141,21 @@ namespace Kestrel.Vehicle.Tests
 
         public static List<BellSpec> CatalogEngines()
         {
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            // Unity EditMode BaseDirectory is the Editor install; also walk from cwd (repo or unity/).
             string path = null;
-            while (dir != null)
+            foreach (var start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
             {
-                string candidate = Path.Combine(dir.FullName, "data", "engines.json");
-                if (File.Exists(candidate)) { path = candidate; break; }
-                dir = dir.Parent;
+                var dir = new DirectoryInfo(start);
+                while (dir != null)
+                {
+                    string candidate = Path.Combine(dir.FullName, "data", "engines.json");
+                    if (File.Exists(candidate)) { path = candidate; break; }
+                    candidate = Path.Combine(dir.FullName, "..", "data", "engines.json");
+                    candidate = Path.GetFullPath(candidate);
+                    if (File.Exists(candidate)) { path = candidate; break; }
+                    dir = dir.Parent;
+                }
+                if (path != null) break;
             }
             Assert.That(path, Is.Not.Null, "data/engines.json");
             var list = new List<BellSpec>();
