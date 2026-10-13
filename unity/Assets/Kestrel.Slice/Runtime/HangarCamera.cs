@@ -77,6 +77,15 @@ namespace Kestrel.Slice
 
         public void Reframe() { ClearFocus(); orbit.BeginReframe(ReduceMotion); }
 
+        /// <summary>The focused part moved (a rebuild): glide the aim to its new centre, keeping the player's zoom.</summary>
+        public void Refocus(float aimY)
+        {
+            if (!Focused) return;
+            if (float.IsNaN(aimY) || float.IsInfinity(aimY)) { ClearFocus(); return; }
+            focusAimTarget = aimY;
+            if (ReduceMotion) focusAim = aimY;
+        }
+
         /// <summary>Glide the aim to a part's centre and zoom so the part fills about half the view.</summary>
         public void Focus(float aimY, float partHeight)
         {
@@ -196,6 +205,7 @@ namespace Kestrel.Slice
             if (n <= 0) { dragging = false; pinching = false; havePinchMid = false; dragFinger = int.MinValue; return; }
             if (n >= 2)
             {
+                tapCandidate = false; // a second finger makes it a pinch, never a tap
                 var a = Input.GetTouch(0);
                 var b = Input.GetTouch(1);
                 if (BlocksGesture(a.position) && BlocksGesture(b.position)) { pinching = false; return; }

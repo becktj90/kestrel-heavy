@@ -28,6 +28,8 @@ namespace Kestrel.Core.Hangar
         public event Action Changed;
         /// <summary>Raised when the selected part changes.</summary>
         public event Action<PartRef> SelectionChanged;
+        /// <summary>Raised when the save slot, its name or the saved state changes without a document edit (save, rename).</summary>
+        public event Action SaveStateChanged;
 
         string cleanSnapshot;
         EngineeringReport report;
@@ -195,6 +197,15 @@ namespace Kestrel.Core.Hangar
             SavedId = id;
             SavedName = name;
             cleanSnapshot = Snapshot(Design);
+            SaveStateChanged?.Invoke();
+        }
+
+        /// <summary>The library renamed a slot. When it is the open one, the session follows, so the next Save keeps the new name.</summary>
+        public void SlotRenamed(string id, string name)
+        {
+            if (id == null || id != SavedId || name == SavedName) return;
+            SavedName = name;
+            SaveStateChanged?.Invoke();
         }
     }
 }

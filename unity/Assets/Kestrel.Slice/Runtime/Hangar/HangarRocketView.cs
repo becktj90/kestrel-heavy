@@ -36,6 +36,14 @@ namespace Kestrel.Slice
 
         public IReadOnlyList<Piece> Pieces => pieces;
 
+        /// <summary>Finish slots this view can show. Bells, legs, grid fins and fins are drawn by the instanced
+        /// clusters with their own materials, so the Look tab offers finishes only for these.</summary>
+        public static readonly string[] PaintedSlots = { "tank", "booster", "interstage", "fairing" };
+        public static bool Paints(string slot) => System.Array.IndexOf(PaintedSlots, slot) >= 0;
+
+        static readonly int BaseColorId = Shader.PropertyToID("_BaseColor"), MetallicId = Shader.PropertyToID("_Metallic"), SmoothnessId = Shader.PropertyToID("_Smoothness");
+        MaterialPropertyBlock shellBlock;
+
         /// <summary>Replace the parts. Old GameObjects and meshes are destroyed.</summary>
         public void Build(List<RocketMeshBuilder.PartMesh> parts, Transform parentTransform, Material template)
         {
@@ -132,7 +140,6 @@ namespace Kestrel.Slice
                 }
                 p.baseColor = c;
                 p.engineColor = EngineMetal;
-                if (fins?.Str("engine") is string eid && data?.Finish(eid) is FinishDef ef) p.engineColor = Hex(ef.albedo, EngineMetal);
             }
             Paint();
         }
@@ -164,6 +171,30 @@ namespace Kestrel.Slice
                 if (hasSelection && p.mesh.Part == selected) c = Color.Lerp(c, SelectTint, 0.4f);
                 Set(p.body, c, p.metallic, p.smoothness);
                 Set(p.engines, p.engineColor, 0.8f, 0.45f);
+                PaintShells(p, c);
+            }
+        }
+
+        /// <summary>Re-apply colours, e.g. after tank shells were added under the parts.</summary>
+        public void Repaint() => Paint();
+
+        /// <summary>The tank shells sit just outside the part body and hide most of it, so the skin submesh of each
+        /// shell takes the part's colour and finish too (a property block; the shared shell materials stay untouched).
+        /// Welds and stiffeners keep their metal.</summary>
+        void PaintShells(Piece p, Color c)
+        {
+            if (p.root == null) return;
+            var shells = p.root.GetComponentsInChildren<Kestrel.Vehicle.TankShellView>(true);
+            if (shells == null || shells.Length == 0) return;
+            shellBlock ??= new MaterialPropertyBlock();
+            shellBlock.Clear();
+            shellBlock.SetColor(BaseColorId, c);
+            shellBlock.SetFloat(MetallicId, p.metallic);
+            shellBlock.SetFloat(SmoothnessId, p.smoothness);
+            foreach (var sh in shells)
+            {
+                var mr = sh != null ? sh.GetComponent<MeshRenderer>() : null;
+                if (mr != null) mr.SetPropertyBlock(shellBlock, Kestrel.Vehicle.TankShellBuilder.SubmeshShell);
             }
         }
 

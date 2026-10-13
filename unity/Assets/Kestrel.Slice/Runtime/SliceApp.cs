@@ -69,6 +69,7 @@ namespace Kestrel.Slice
             else if (name != null) session.Load(first, null, name);
             session.Changed += OnDesignChanged;
             session.SelectionChanged += OnSelectionChanged;
+            session.SaveStateChanged += UpdateHandle;
             design = Design.FromJson(session.Design);
             OnDesignChanged();
             TryBuildPanel();
@@ -83,6 +84,7 @@ namespace Kestrel.Slice
                 panel = new HangarPanel(session, library ?? new DesignLibrary(new Kestrel.Core.Save.NativeStore(System.IO.Path.Combine(Application.temporaryCachePath, "kh-hangar"), () => System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), () => Random.value)), designBody, upp);
                 panel.FocusRequested += FocusPart;
                 panel.ExplodeRequested += SetExploded;
+                panel.EngineerChanged += _ => ApplyValidation();
             }
             else panel.SetScale(upp);
             ApplyDesignPanelMetrics();
@@ -96,7 +98,15 @@ namespace Kestrel.Slice
             catch (System.Exception e) { Debug.LogWarning("[Hangar] design parse: " + e.Message); }
             rocketDirty = true;
             ApplyValidation();
-            if (designToggle != null) designToggle.text = (designCollapsed ? "▲  " : "▼  ") + (session.SavedName ?? session.Design.Str("name") ?? "Design") + (session.Dirty ? " •" : "");
+            UpdateHandle();
+        }
+
+        /// <summary>Panel handle: collapse arrow, design name, and a dot while there are unsaved changes.</summary>
+        void UpdateHandle()
+        {
+            if (designToggle == null) return;
+            string name = session != null ? (session.SavedName ?? session.Design.Str("name") ?? "Design") + (session.Dirty ? " •" : "") : "Design";
+            designToggle.text = (designCollapsed ? "▲  " : "▼  ") + name;
         }
 
         void OnSelectionChanged(PartRef p)
@@ -289,8 +299,7 @@ namespace Kestrel.Slice
             if (ui != null) ApplyDesignPanelMetrics();
             var row = ui.Q("launch-row"); if (row != null) row.style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
             if (launchReason != null) launchReason.style.display = collapsed ? DisplayStyle.None : StyleKeyword.Null;
-            string name = session != null ? (session.SavedName ?? session.Design.Str("name") ?? "Design") + (session.Dirty ? " •" : "") : "Design";
-            designToggle.text = (collapsed ? "▲  " : "▼  ") + name;
+            UpdateHandle();
             // Accessibility pattern in this project is tooltip text (VoiceOver bridge is a listed gap, RESULTS.md).
             designToggle.tooltip = collapsed ? "Design panel, collapsed. Tap to expand." : "Design panel, expanded. Tap to collapse and see the whole rocket.";
         }
@@ -372,6 +381,7 @@ namespace Kestrel.Slice
             if (session != null) { rocketView.SetSelected(session.Selected, true); rocketView.SetIssues(session.Advisories); }
             var plates = new List<AttachPoint>();
             AddTankShells(r, plates);
+            rocketView.Repaint(); // the shells hide most of each tank body, so they take its paint
             AddBells(r);
             AddAirframe(r);
             AddLanding(r);
@@ -399,7 +409,16 @@ namespace Kestrel.Slice
             flight.Plume.AttachGroundCloud(tower, deckR, PadTower.Fit(r.height, rr).height);
             PadDetailLink.Apply(flight.Plume, tower, ground, deck, padR != null ? padR.Layout : null);
             rocketHeight = r.height; frameHeight = r.height;
-            if (hangarCam != null) hangarCam.SetVehicle(frameHeight, framePoints);
+            if (hangarCam != null)
+            {
+                hangarCam.SetVehicle(frameHeight, framePoints);
+                // A focused part may have moved or gone; aim at where the selection is now.
+                if (hangarCam.Focused)
+                {
+                    if (session != null && rocketView.Bounds(session.Selected, out float fy, out _)) hangarCam.Refocus(fy);
+                    else hangarCam.ClearFocus();
+                }
+            }
             BuildExploded();
             ApplyDesignFraming();
             // One registration: failure visuals and the post-flight card.

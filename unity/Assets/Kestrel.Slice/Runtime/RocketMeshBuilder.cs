@@ -65,23 +65,57 @@ namespace Kestrel.Slice
         public sealed class Result { public Mesh mesh; public float height; public float stage1Top; public float stage1AftY; public Vector3[] nozzleExits; public float exitDiameter; public List<TankSlot> tanks = new List<TankSlot>(); public List<EngineSlot> engines = new List<EngineSlot>(); public List<InterstageSlot> interstages = new List<InterstageSlot>(); public FairingSlot fairing; }
 
         /// <summary>Axial room the bell needs, from the catalog expansion ratio. Exit diameter is the packed cluster size.</summary>
-        public static float BellHeight(Engine e, float stageDiameter, int count)
+        public static float BellHeight(Engine e, float stageDiameter, int count) => BellHeight(e, stageDiameter, count, null);
+
+        /// <summary>Bell room for the chosen nozzle (null or "default" = the catalog nozzle).</summary>
+        public static float BellHeight(Engine e, float stageDiameter, int count, string nozzle)
         {
             if (e == null) return 0.8f;
+            NozzleOf(e, nozzle, out float nozzleD, out float eps);
             var spots = new List<Vector2>();
-            float re = EngineSpots(stageDiameter, (float)e.diameter, Mathf.Max(1, count), spots);
+            float re = EngineSpots(stageDiameter, nozzleD, Mathf.Max(1, count), spots);
             float exitDiameter = Mathf.Max(0.1f, re * 2f);
             if (!BellSpec.TryParseCycle(e.cycle, out var cycle)) return Mathf.Clamp(exitDiameter * 1.6f, 0.4f, 4f);
             var spec = new BellSpec
             {
                 EngineId = string.IsNullOrEmpty(e.id) ? "engine" : e.id,
                 Cycle = cycle,
-                ExpansionRatio = Mathf.Max(2f, (float)e.expansionRatio),
+                ExpansionRatio = Mathf.Max(2f, eps),
                 ExitDiameter = exitDiameter,
                 VehicleSeed = 1
             };
             if (spec.Validate().Count > 0) return Mathf.Clamp(exitDiameter * 1.6f, 0.4f, 4f);
             return Mathf.Max(0.2f, BellProfile.Build(spec, 1).Length);
+        }
+
+        /// <summary>Exit diameter and expansion ratio of the selected nozzle variant, else the engine's own.</summary>
+        public static void NozzleOf(Engine e, string nozzle, out float exitDiameter, out float expansion)
+        {
+            exitDiameter = (float)e.diameter; expansion = (float)e.expansionRatio;
+            if (string.IsNullOrEmpty(nozzle) || nozzle == "default" || e.nozzles == null) return;
+            foreach (var n in e.nozzles)
+            {
+                if (n == null || n.id != nozzle) continue;
+                if (n.exitDiameter > 0) exitDiameter = (float)n.exitDiameter;
+                if (n.expansionRatio > 0) expansion = (float)n.expansionRatio;
+                return;
+            }
+        }
+
+        /// <summary>Nose share of the fairing length, by aero.nose.</summary>
+        public static float NoseFraction(string nose) => nose == "blunt" ? 0.25f : nose == "conic" ? 0.4f : nose == "von-karman" ? 0.5f : 0.45f;
+
+        /// <summary>Nose radius at t (0 = shoulder, 1 = tip). Von Kármán is the LD-Haack series (C = 0).</summary>
+        public static float NoseRadius(string nose, float rf, float t)
+        {
+            t = Mathf.Clamp01(t);
+            if (nose == "conic") return rf * (1 - t);
+            if (nose == "von-karman")
+            {
+                float th = Mathf.Acos(Mathf.Clamp(1f - 2f * (1f - t), -1f, 1f));
+                return rf * Mathf.Sqrt(Mathf.Max(0f, (th - Mathf.Sin(2f * th) * 0.5f) / Mathf.PI));
+            }
+            return rf * Mathf.Sqrt(Mathf.Max(0, 1 - t * t)); // tangent ogive approximation
         }
 
         public static Result Build(Catalog c, Design d)
@@ -94,7 +128,7 @@ namespace Kestrel.Slice
                 var s = d.stages[i]; var e = c.EngineById[s.engine];
                 float r = (float)s.diameter / 2;
                 float tank = (float)DesignMath.SizeTank(c, s.propellant, s.propMass, s.diameter).length;
-                float bell = BellHeight(e, (float)s.diameter, s.engineCount);
+                float bell = BellHeight(e, (float)s.diameter, s.engineCount, s.nozzle);
                 float thrustSection = 0.6f * r + (i == 0 ? 0 : bell * 0.7f); // upper-stage bells nest inside the interstage
                 if (i == 0) AddEngines(c, s, new Vector3(0, 0, 0), i, false, 0, exits, ref exitD, bells);
                 float baseY = y + (i == 0 ? bell : 0);
@@ -116,14 +150,14 @@ namespace Kestrel.Slice
             // Fairing: cylinder + ogive-ish nose (length from design; nose fraction from aero.nose).
             {
                 float rf = (float)d.fairingDiameter / 2, L = (float)d.fairingLength;
-                float noseFrac = d.nose == "blunt" ? 0.25f : d.nose == "conic" ? 0.4f : 0.45f;
+                float noseFrac = NoseFraction(d.nose);
                 fairing = new FairingSlot(y, rf, L, noseFrac, d.nose == "conic", L > 0.2f && rf > 0.05f);
                 float cyl = L * (1 - noseFrac), nose = L * noseFrac;
                 var prof = new List<Vector2> { new Vector2(0, y), new Vector2(rf, y), new Vector2(rf, y + cyl) };
                 for (int k = 1; k <= 10; k++)
                 {
-                    float t = k / 10f; // tangent ogive approximation: r = rf * sqrt(1 - t^2)
-                    float rr = d.nose == "conic" ? rf * (1 - t) : rf * Mathf.Sqrt(Mathf.Max(0, 1 - t * t));
+                    float t = k / 10f;
+                    float rr = NoseRadius(d.nose, rf, t);
                     prof.Add(new Vector2(k == 10 ? 0 : rr, y + cyl + nose * t));
                 }
                 Lathe(prof, Vector3.zero, verts, normals, uvs, tris);
@@ -134,7 +168,7 @@ namespace Kestrel.Slice
             {
                 var so = d.strapOns; var e = c.EngineById[so.engine];
                 float r = (float)so.diameter / 2, core = (float)d.stages[0].diameter / 2;
-                float bell = BellHeight(e, (float)so.diameter, so.engineCount);
+                float bell = BellHeight(e, (float)so.diameter, so.engineCount, so.nozzle);
                 float tank = (float)DesignMath.SizeTank(c, so.propellant, so.propMass, so.diameter).length;
                 for (int k = 0; k < so.count; k++)
                 {
@@ -182,7 +216,7 @@ namespace Kestrel.Slice
                 var s = d.stages[i]; var e = c.EngineById[s.engine];
                 float r = (float)s.diameter / 2;
                 float tank = (float)DesignMath.SizeTank(c, s.propellant, s.propMass, s.diameter).length;
-                float bell = Mathf.Clamp((float)e.diameter * 1.6f, 0.4f, 4f);
+                float bell = BellHeight(e, (float)s.diameter, s.engineCount, s.nozzle);
                 float thrustSection = 0.6f * r + (i == 0 ? 0 : bell * 0.7f);
                 float baseY = y + (i == 0 ? bell : 0);
                 var g = new Geo();
@@ -201,13 +235,13 @@ namespace Kestrel.Slice
             }
             {
                 float rf = (float)d.fairingDiameter / 2, L = (float)d.fairingLength;
-                float noseFrac = d.nose == "blunt" ? 0.25f : d.nose == "conic" ? 0.4f : 0.45f;
+                float noseFrac = NoseFraction(d.nose);
                 float cyl = L * (1 - noseFrac), nose = L * noseFrac;
                 var prof = new List<Vector2> { new Vector2(0, y), new Vector2(rf, y), new Vector2(rf, y + cyl) };
                 for (int k = 1; k <= 10; k++)
                 {
                     float t = k / 10f;
-                    float rr = d.nose == "conic" ? rf * (1 - t) : rf * Mathf.Sqrt(Mathf.Max(0, 1 - t * t));
+                    float rr = NoseRadius(d.nose, rf, t);
                     prof.Add(new Vector2(k == 10 ? 0 : rr, y + cyl + nose * t));
                 }
                 var g = new Geo();
@@ -223,7 +257,7 @@ namespace Kestrel.Slice
             {
                 var so = d.strapOns; var e = c.EngineById[so.engine];
                 float r = (float)so.diameter / 2, core = (float)d.stages[0].diameter / 2;
-                float bell = Mathf.Clamp((float)e.diameter * 1.6f, 0.4f, 4f);
+                float bell = BellHeight(e, (float)so.diameter, so.engineCount, so.nozzle);
                 float tank = (float)DesignMath.SizeTank(c, so.propellant, so.propMass, so.diameter).length;
                 var g = new Geo();
                 Lathe(new List<Vector2> { new Vector2(0, bell), new Vector2(r, bell), new Vector2(r, bell + tank), new Vector2(0, bell + tank + 2.2f * r) }, Vector3.zero, g.v, g.n, g.uv, g.t);
@@ -275,15 +309,16 @@ namespace Kestrel.Slice
         static void AddEngines(Catalog c, StagePart s, Vector3 origin, int stage, bool strap, int slotBase, List<Vector3> exits, ref float exitD, List<EngineSlot> slots)
         {
             var e = c.EngineById[s.engine];
+            NozzleOf(e, s.nozzle, out float nozzleD, out float eps);
             var spots = new List<Vector2>();
-            float re = EngineSpots((float)s.diameter, (float)e.diameter, s.engineCount, spots);
+            float re = EngineSpots((float)s.diameter, nozzleD, s.engineCount, spots);
             exitD = Mathf.Max(exitD, re * 2);
             for (int n = 0; n < spots.Count; n++)
             {
                 var p = spots[n];
                 var off = origin + new Vector3(p.x, 0, p.y);
                 exits.Add(off);
-                slots.Add(new EngineSlot(off, re * 2f, (float)e.expansionRatio, (float)e.gimbal, e.id, e.cycle, stage, slotBase + n, strap, (float)s.diameter * 0.5f));
+                slots.Add(new EngineSlot(off, re * 2f, eps, (float)e.gimbal, e.id, e.cycle, stage, slotBase + n, strap, (float)s.diameter * 0.5f));
             }
         }
     }
