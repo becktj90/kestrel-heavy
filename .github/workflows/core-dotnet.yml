@@ -26,3 +26,4 @@ jobs:
       - name: Pier 7 terrain generator
         run: dotnet test unity/Assets/Kestrel.Game/Site/Tests/Dotnet~/Kestrel.Site.Tests.csproj --logger "console;verbosity=normal"
       - run: dotnet test unity/Assets/Kestrel.Game/Pad/Tests/Dotnet~/Kestrel.Pad.Core.Tests.csproj --logger "console;verbosity=normal"
+      - run: dotnet test unity/Assets/Kestrel.Game/Vehicle/Tests/Dotnet~/Kestrel.Vehicle.Core.Tests.csproj --logger "console;verbosity=normal"

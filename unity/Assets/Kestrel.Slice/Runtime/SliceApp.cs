@@ -257,6 +257,7 @@ namespace Kestrel.Slice
             if (bodyMat != null) { var m = new Material(bodyMat); ColorUtility.TryParseHtmlString(design.liveryPrimary, out var col); m.color = col; mr.sharedMaterial = m; }
             var plates = new List<AttachPoint>();
             AddTankShells(r, plates);
+            AddBells(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
@@ -387,6 +388,28 @@ namespace Kestrel.Slice
                 plates.AddRange(Kestrel.Vehicle.TankShellUmbilicals.ForStage(spec, t.Stage, index,
                     new Vec3(origin.x, origin.y, origin.z), liquid, gimbal, purge, release));
             }
+        }
+
+        /// <summary>V1a: one instanced bell per engine, shaped by expansion ratio and cycle. The body mesh no longer
+        /// carries a cloned cone. The cluster watches the body renderer so exploded view does not draw both.</summary>
+        void AddBells(RocketMeshBuilder.Result r)
+        {
+            if (r.engines == null || r.engines.Count == 0) return;
+            ulong seed = Kestrel.Vehicle.BellVariation.HashId(design.id ?? "kh");
+            var mounts = new List<Kestrel.Vehicle.BellMount>(r.engines.Count);
+            for (int i = 0; i < r.engines.Count; i++)
+            {
+                var e = r.engines[i];
+                mounts.Add(new Kestrel.Vehicle.BellMount
+                {
+                    EngineId = e.EngineId, Cycle = e.Cycle, ExpansionRatio = e.Expansion, ExitDiameter = e.ExitDiameter,
+                    X = e.Exit.x, Y = e.Exit.y, Z = e.Exit.z, Stage = e.Stage, Slot = e.Slot, Seed = seed
+                });
+            }
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.BellCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(mounts, Kestrel.Kit.KitBudgets.Medium);
         }
 
         /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every

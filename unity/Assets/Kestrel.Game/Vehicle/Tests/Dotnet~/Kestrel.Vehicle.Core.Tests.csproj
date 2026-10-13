@@ -12,6 +12,7 @@
     <Compile Include="../../../Kit/Contracts/**/*.cs" LinkBase="Kit.Contracts" />
     <Compile Include="../../Core/**/*.cs" LinkBase="Vehicle.Core" />
     <Compile Include="../Core/**/*.cs" LinkBase="Tests.Core" />
+    <Compile Include="../../../../Kestrel.Core/Json/MiniJson.cs" LinkBase="Core.Json" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
