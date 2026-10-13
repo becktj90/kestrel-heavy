@@ -254,6 +254,7 @@ namespace Kestrel.Slice
             AddTankShells(r, plates);
             AddBells(r);
             AddAirframe(r);
+            AddLanding(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
@@ -437,6 +438,36 @@ namespace Kestrel.Slice
             cluster.ViewCamera = cam;
             cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
             cluster.Init(poses, Kestrel.Kit.KitBudgets.Medium);
+        }
+
+        /// <summary>Deployed legs and grid fins, only when the design asks for them. Stock Kestrel Heavy has both.</summary>
+        void AddLanding(RocketMeshBuilder.Result r)
+        {
+            if (design == null || (!design.legs && !design.gridFins)) return;
+            float radius = 0f;
+            if (r.tanks != null)
+                for (int i = 0; i < r.tanks.Count; i++)
+                    if (r.tanks[i].Stage == 0 && !r.tanks[i].StrapOn) radius = r.tanks[i].Radius;
+            if (radius < 0.05f) return;
+            var gate = rocketGO.GetComponent<MeshRenderer>();
+            if (design.legs)
+            {
+                var legs = Kestrel.Vehicle.LandingLayout.Legs(radius, r.stage1AftY);
+                var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
+                cluster.ViewCamera = cam;
+                cluster.Gate = gate;
+                cluster.Init(legs, Kestrel.Kit.KitBudgets.Medium);
+            }
+            if (design.gridFins)
+            {
+                float station = r.stage1Top;
+                if (r.interstages != null && r.interstages.Count > 0) station = r.interstages[0].Y0;
+                var fins = Kestrel.Vehicle.LandingLayout.Fins(radius, station);
+                var cluster = rocketGO.AddComponent<Kestrel.Vehicle.FinCluster>();
+                cluster.ViewCamera = cam;
+                cluster.Gate = gate;
+                cluster.Init(fins, Kestrel.Kit.KitBudgets.Medium);
+            }
         }
 
         /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every
