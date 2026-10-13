@@ -109,7 +109,7 @@ def main():
         lib += [os.path.join(work, "UnityEditor.dll"), os.path.join(work, "nunit.framework.dll")]
         out = os.path.join(work, n + ".dll")
         code, msg = csc(out, files, refs + lib, defs)
-        errs = [l for l in msg.splitlines() if ": error " in l]
+        errs = [l for l in msg.splitlines() if ": error " in l or l.startswith("error ")]
         rel = lambda s: s.replace(assets + os.sep, "")
         print(f"[{'ok' if code == 0 else 'FAIL'}] {n} ({len(files)} files)")
         for l in errs: print("   ", rel(l))
