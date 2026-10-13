@@ -128,7 +128,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(table.thrustVac * 1.1, raised.thrustVac, 1e-6, "F ∝ pc");
             Assert.AreEqual(table.mass * Math.Sqrt(1.1), raised.mass, 1e-6, "mass ∝ pc^0.5");
             Assert.Greater(raised.ispVac, table.ispVac);
-            Assert.AreEqual(0, raised.hazardRate, 1e-12, "1.1 is still under the rated pressure");
+            Assert.AreEqual(0.02 * 0.1 * 0.1, raised.hazardRate, 1e-12, "pc/pcRated = 1.1 is over rated and under the 1.15 cap");
         }
 
         [Test]
