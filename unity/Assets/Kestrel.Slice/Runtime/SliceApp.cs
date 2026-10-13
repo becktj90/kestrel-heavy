@@ -253,6 +253,7 @@ namespace Kestrel.Slice
             var plates = new List<AttachPoint>();
             AddTankShells(r, plates);
             AddBells(r);
+            AddAirframe(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
@@ -411,6 +412,31 @@ namespace Kestrel.Slice
             bay.ViewCamera = cam;
             bay.Gate = gate;
             bay.Init(mounts, Kestrel.Kit.KitBudgets.Medium);
+        }
+
+        /// <summary>Interstage stringers and joint rings, plus one raceway on the tower side of each tank.
+        /// The lathe cone and barrel stay the silhouette; these tubes sit just outside them.</summary>
+        void AddAirframe(RocketMeshBuilder.Result r)
+        {
+            var poses = new List<Kestrel.Vehicle.StrutPose>();
+            if (r.interstages != null)
+                for (int i = 0; i < r.interstages.Count; i++)
+                {
+                    var s = r.interstages[i];
+                    poses.AddRange(Kestrel.Vehicle.AirframeLayout.Interstage(s.Y0, s.Y1, s.R0, s.R1));
+                }
+            if (r.tanks != null)
+                for (int i = 0; i < r.tanks.Count; i++)
+                {
+                    var t = r.tanks[i];
+                    if (t.BarrelLength <= 0.2f || t.Radius <= 0.05f) continue;
+                    poses.Add(Kestrel.Vehicle.AirframeLayout.RacewayRun(t.Offset.x, t.Offset.y, t.Offset.z, t.Radius, t.BarrelBottom, t.BarrelLength));
+                }
+            if (poses.Count == 0) return;
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(poses, Kestrel.Kit.KitBudgets.Medium);
         }
 
         /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every
