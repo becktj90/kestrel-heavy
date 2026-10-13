@@ -23,7 +23,7 @@ namespace Kestrel.Game.Failure
 
     public sealed class FailureCue
     {
-        public float QPa = FailureModel.TumbleQPa;
+        public float QPa = (float)FailureModel.TumbleQPa;
         public float AllowableN;
         public FailureJoint[] Joints = Array.Empty<FailureJoint>();
         public int EngineCount = 1;
