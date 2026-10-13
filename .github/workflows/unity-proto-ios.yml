@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  checks: write   # unity-test-runner posts its EditMode results as a check run (same as unity.yml)
 
 concurrency:
   group: unity-proto-ios-${{ github.ref }}
