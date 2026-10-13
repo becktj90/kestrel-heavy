@@ -75,6 +75,7 @@ import {
   setOverlay,
   setSummaryBreakdown,
   setSummaryCopy,
+  setSummaryRetries,
   setSummaryWhy,
   setSummaryMedal,
   setHangarMedals,
@@ -105,6 +106,7 @@ import { FIRST_MISSION, MISSIONS, getMission, isUnlocked, nextMissionId } from '
 import { starsForTouchdown, unlocksNextMission } from './mission-ramp.js';
 import { beatsFor, currentBeat, formatClock, nextCoachBeat, playPhase, playPhaseKind, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
 import { gradeTouchdown } from './landing-tune.js';
+import { HAVEN_LEVEL_ALT, havenBurnLift, havenSettleVy, havenWantAngle } from './haven-control.js';
 import { gradeLanding, medalShelf, medalText, recordMedal } from './medals.js';
 import { submitFlightScore } from './gamecenter.js';
 import { loadSettings, recordMissionResult, resetRecord, saveSettings } from './storage.js';
@@ -412,6 +414,7 @@ export default class MissionScene extends Phaser.Scene {
       nextFlight: () => this.flyNextMission(),
       retryLanding: () => this.retryLanding(),
       retryFromSep: () => this.retryFromSep(),
+      retryFlight: () => this.restartMission(),
       openMissions: () => this.openScreen('missions'),
       openHangar: () => this.openHangar(),
       openHowto: () => this.openScreen('howto'),
@@ -476,6 +479,7 @@ export default class MissionScene extends Phaser.Scene {
     this.input.on('pointerdown', (pointer) => {
       AudioApi.unlock(this.settings);
       if (this.status === 'SUMMARY') this.onPrimary();
+      else if (this.session?.landingLock) this.skipLandingEpilogue();
       else if (this.status === 'PRELAUNCH') this.requestLaunch();
       else if (this.status !== 'MENU') this.inputState.pointerX = pointer.worldX;
     });
@@ -536,6 +540,7 @@ export default class MissionScene extends Phaser.Scene {
       coach: '',
       abortId: '',
       recovered: false,
+      reachedHaven: false,
       medal: null,
       touchdown: null,
       splash: false,
@@ -913,6 +918,7 @@ export default class MissionScene extends Phaser.Scene {
 
   onPrimary() {
     AudioApi.unlock(this.settings);
+    if (this.skipLandingEpilogue()) return;
     if (this.status === 'MENU') {
       if (this.screen === 'menu' && !this.settingsOpen) this.startMission();
       return;
@@ -1030,6 +1036,7 @@ export default class MissionScene extends Phaser.Scene {
   enterJacklyn() {
     const flight = this.currentFlight();
     this.status = 'HAVEN';
+    this.session.reachedHaven = true;
     this.session.ascentScore = Math.round(this.session.ascentScore || this.session.score);
     this.session.stage = 'ENTRY BURN';
     this.session.landingLock = false;
@@ -1387,6 +1394,12 @@ export default class MissionScene extends Phaser.Scene {
       this.session.tClock += dt;
       this.fireDueBeats();
       this.updateHavenPaint();
+      if (this.nowSec - (this.session.epilogueAt || 0) >= 0.8) {
+        const banner = document.getElementById('ng-banner');
+        if (!banner || banner.hidden || !/TAP TO SKIP/i.test(banner.textContent || '')) {
+          setBanner('TAP TO SKIP', 'info', 0);
+        }
+      }
       return;
     }
     const mode = DIFFICULTY[this.settings.difficulty];
@@ -1419,11 +1432,14 @@ export default class MissionScene extends Phaser.Scene {
       });
       flashIgnite();
     }
-    if (burnWindow && boosting && this.session.fuel > 0) {
-      this.session.jacklynPhase = 'burn';
-      this.session.gearDeployed = true;
+    const holdingBurn = burnWindow && boosting && this.session.fuel > 0;
+    const stopping = holdingBurn && this.rocket.body.velocity.y > havenSettleVy(mode.landingVy, alt);
+    if (holdingBurn) {
       this.session.burnLit = true;
+      this.session.gearDeployed = true;
+      this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 9 * dt);
       this.session.burnHold = clamp((this.session.burnHold || 0) + dt * 1.35, 0, 1);
+      if (stopping) this.session.jacklynPhase = alt < 200 ? 'straighten' : 'burn';
       if (!this.session.burnAck) {
         this.session.burnAck = true;
         this.callout('haven-burn-hold', { banner: 'BURN HOLD — keep holding, drag onto the paint', kind: 'go', holdMs: 1600 });
@@ -1440,7 +1456,8 @@ export default class MissionScene extends Phaser.Scene {
     } else {
       this.session.burnHold = 0;
     }
-    if (alt < 200 && this.session.burnLit && this.session.jacklynPhase === 'burn') {
+    if (alt < 200 && this.session.burnLit && !this.session.straightenCalled) {
+      this.session.straightenCalled = true;
       this.session.jacklynPhase = 'straighten';
       this.emitRcs();
       this.callout('haven-straighten', { banner: 'RCS — straighten for the painted deck', kind: 'info', holdMs: 1600 });
@@ -1448,7 +1465,8 @@ export default class MissionScene extends Phaser.Scene {
 
     const reentry = this.session.jacklynPhase === 'reentry';
     const gliding = this.session.jacklynPhase === 'strakes' || this.session.jacklynPhase === 'glide';
-    const burning = this.session.jacklynPhase === 'burn'
+    const burning = stopping
+      || this.session.jacklynPhase === 'burn'
       || this.session.jacklynPhase === 'straighten'
       || this.session.jacklynPhase === 'settle';
     if (assist > 0) {
@@ -1457,17 +1475,25 @@ export default class MissionScene extends Phaser.Scene {
       axis = clamp(axis + err * mix, -1, 1);
     }
 
-    this.matter.world.setGravity(0, reentry ? HAVEN.reentryGravity : (gliding ? HAVEN.glideGravity : HAVEN.gravity));
-    this.rocket.setFrictionAir((reentry || gliding) ? HAVEN.glideAir : HAVEN.frictionAir);
+    // Soft holds keep glide gravity. Upward thrust only while the sink is fast,
+    // so HOLD TO BURN reaches the paint instead of hovering above it.
+    this.matter.world.setGravity(0, reentry ? HAVEN.reentryGravity : (stopping ? HAVEN.gravity : HAVEN.glideGravity));
+    this.rocket.setFrictionAir((reentry || !stopping) ? HAVEN.glideAir : HAVEN.frictionAir);
 
     const side = this.session.havenSide || -1;
-    const wantAngle = reentry
-      ? side * -46
-      : gliding
-        ? clamp(side * -30 + this.rocket.body.velocity.x * 1.4 + axis * 6, -40, 40)
-        : clamp(-axis * 18 + this.rocket.body.velocity.x * 1.1, -24, 24);
+    const firstFlight = isFirstFlightGrace(this.currentFlight().id, this.settings);
+    const wantAngle = havenWantAngle({
+      phase: this.session.jacklynPhase,
+      side,
+      vx: this.rocket.body.velocity.x,
+      axis,
+      alt,
+      burnLit: Boolean(this.session.burnLit),
+      firstFlight,
+    });
     const nowAngle = this.rocket.angle || 0;
-    const slew = reentry ? 2.2 : gliding ? 1.35 : 3.1;
+    const leveling = !reentry && alt < HAVEN_LEVEL_ALT && (this.session.burnLit || firstFlight);
+    const slew = reentry ? 2.2 : leveling ? 3.1 : gliding ? 1.35 : 3.1;
     const nextAngle = nowAngle + (wantAngle - nowAngle) * Math.min(1, dt * slew);
     if (Math.abs(nextAngle - nowAngle) > 0.7) this.emitRcs();
     this.rocket.setAngularVelocity(0);
@@ -1483,24 +1509,8 @@ export default class MissionScene extends Phaser.Scene {
         this.session.earlyBurnWarned = true;
         setBanner('TOO EARLY — hold the glide', 'warn', 1400);
       }
-    } else if (gliding) {
-      this.rocket.applyForce({
-        x: axis * 0.009 + this.missionWind(mode) * 0.0012 + side * -0.0028,
-        y: 0.0014,
-      });
-      this.session.throttle = 0.08;
-      AudioApi.setBed('burn', false, this.settings);
-      if (boosting && !burnWindow) {
-        if (!this.session.earlyBurnWarned) {
-          this.session.earlyBurnWarned = true;
-          setBanner('TOO EARLY — hold the glide', 'warn', 1400);
-        }
-        this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 4 * dt);
-      }
-    } else if (boosting && this.session.fuel > 0) {
-      this.session.burnLit = true;
-      this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 9 * dt);
-      this.rocket.applyForce({ x: axis * 0.016, y: -0.032 });
+    } else if (stopping) {
+      this.rocket.applyForce({ x: axis * 0.016, y: havenBurnLift(this.rocket.body.velocity.y, alt, mode.landingVy) });
       this.session.throttle = 1;
       this.emitPlume(0.9);
       if (alt < 240) this.emitBloom();
@@ -1513,9 +1523,19 @@ export default class MissionScene extends Phaser.Scene {
       }
       AudioApi.setBed('burn', true, this.settings, 0.38);
     } else {
-      this.rocket.applyForce({ x: axis * 0.007 + this.missionWind(mode) * 0.0022, y: 0.01 });
-      this.session.throttle = 0.12;
-      AudioApi.setBed('burn', false, this.settings);
+      this.rocket.applyForce({
+        x: axis * 0.009 + this.missionWind(mode) * 0.0012 + side * -0.0028,
+        y: 0.0014,
+      });
+      this.session.throttle = holdingBurn ? 0.55 : 0.08;
+      AudioApi.setBed('burn', holdingBurn, this.settings, holdingBurn ? 0.22 : 0);
+      if (boosting && !burnWindow) {
+        if (!this.session.earlyBurnWarned) {
+          this.session.earlyBurnWarned = true;
+          setBanner('TOO EARLY — hold the glide', 'warn', 1400);
+        }
+        this.session.fuel = Math.max(0, this.session.fuel - mode.fuelDrain * 4 * dt);
+      }
     }
     if (this.session.jacklynElapsed < HAVEN.earlySec && this.rocket.body.velocity.y > HAVEN.maxVyEarly) {
       this.rocket.setVelocityY(HAVEN.maxVyEarly);
@@ -1799,7 +1819,7 @@ export default class MissionScene extends Phaser.Scene {
       this.vibrate([40, 30, 40]);
       this.session.tClock = Math.max(this.session.tClock, PACE.TOUCHDOWN);
       this.session.fired.touchdown = true;
-      this.time.delayedCall(2400, () => this.finishUpper());
+      this.armEpilogue('recovered', 800);
       return;
     }
 
@@ -1818,7 +1838,7 @@ export default class MissionScene extends Phaser.Scene {
       this.rocket.setPosition(this.jacklyn.x + clamp(this.rocket.x - this.jacklyn.x, -40, 40), this.jacklyn.y - 74);
       AudioApi.stopBeds();
       AudioApi.play('hit', this.settings);
-      this.time.delayedCall(1400, () => this.finishUpper());
+      this.armEpilogue('salvage', 700);
       return;
     }
 
@@ -1835,19 +1855,61 @@ export default class MissionScene extends Phaser.Scene {
     });
     AudioApi.stopBeds();
     AudioApi.play('splash', this.settings);
-    this.time.delayedCall(1300, () => this.finishUpper());
+    this.armEpilogue('splash', 600);
+  }
+
+  /**
+   * Contact → summary. The SECO/deploy beats still play, but the chain stays
+   * under 1.5s and a tap after 0.8s skips the rest.
+   */
+  armEpilogue(reason, firstMs) {
+    if (!this.session || this.status === 'SUMMARY') return;
+    this.session.epilogueReason = reason;
+    this.session.epilogueAt = this.nowSec;
+    this._epilogue = [];
+    const wait = (ms, fn) => {
+      const ev = this.time.delayedCall(ms, fn);
+      this._epilogue.push(ev);
+      return ev;
+    };
+    wait(firstMs, () => this.finishUpper());
   }
 
   finishUpper() {
-    if (this.status === 'SUMMARY') return;
+    if (this.status === 'SUMMARY' || !this.session) return;
     this.session.tClock = Math.max(this.session.tClock, PACE.SECO);
     this.fireDueBeats();
-    this.time.delayedCall(900, () => {
+    const reason = this.session.epilogueReason
+      || (this.session.recovered ? 'recovered' : this.session.salvage ? 'salvage' : 'splash');
+    this.session.epilogueReason = reason;
+    if (!this.session.epilogueAt) this.session.epilogueAt = this.nowSec;
+    const deploy = this.time.delayedCall(350, () => {
+      if (this.status === 'SUMMARY' || !this.session) return;
       this.session.tClock = Math.max(this.session.tClock, PACE.DEPLOY);
       this.fireDueBeats();
-      const reason = this.session.recovered ? 'recovered' : this.session.salvage ? 'salvage' : 'splash';
-      this.time.delayedCall(700, () => this.endMission(reason));
+      const end = this.time.delayedCall(280, () => {
+        if (this.session && this.status !== 'SUMMARY') this.endMission(this.session.epilogueReason || reason);
+      });
+      this._epilogue = this._epilogue || [];
+      this._epilogue.push(end);
     });
+    this._epilogue = this._epilogue || [];
+    this._epilogue.push(deploy);
+  }
+
+  skipLandingEpilogue() {
+    if (!this.session?.landingLock || this.status === 'SUMMARY' || this.status === 'MENU') return false;
+    if (this.nowSec - (this.session.epilogueAt || 0) < 0.8) return false;
+    (this._epilogue || []).forEach((ev) => {
+      try { this.time.removeEvent(ev); } catch { /* already fired */ }
+    });
+    this._epilogue = [];
+    this.session.tClock = Math.max(this.session.tClock || 0, PACE.DEPLOY);
+    this.fireDueBeats();
+    const reason = this.session.epilogueReason
+      || (this.session.recovered ? 'recovered' : this.session.salvage ? 'salvage' : 'splash');
+    this.endMission(reason);
+    return true;
   }
 
   spawnHazard() {
@@ -2361,6 +2423,14 @@ export default class MissionScene extends Phaser.Scene {
       deltaLine,
       nextFlight ? `NEXT · ${nextFlight.id} ${nextFlight.mark}` : '',
     );
+    const reachedHaven = Boolean(this.session.reachedHaven);
+    const reachedMeco = Boolean(this.session.fired?.meco);
+    setSummaryRetries({
+      flightLabel: `RETRY ${this.currentFlight().id}`,
+      showFlight: !reachedHaven,
+      showSep: reachedMeco,
+      showLanding: reachedHaven,
+    });
     hideScreens();
     setOverlay('ng-summary', true);
     clearFlightHolds(this.inputState);

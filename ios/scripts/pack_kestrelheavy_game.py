@@ -16,6 +16,7 @@ Usage:
 
 from __future__ import annotations
 
+import re
 import shutil
 from pathlib import Path
 
@@ -109,16 +110,26 @@ def patch_index(html: str) -> str:
             'content="width=device-width, initial-scale=1.0"',
             ios_viewport,
         )
-    html = html.replace(
-        'content="default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; font-src \'self\' https://fonts.gstatic.com data:; img-src \'self\' data: blob:; connect-src \'self\'; worker-src \'self\' blob:; object-src \'none\'; base-uri \'self\'; form-action \'self\';"',
-        'content="default-src \'self\' kestrel-heavy:; script-src \'self\' \'unsafe-inline\' kestrel-heavy:; style-src \'self\' \'unsafe-inline\'; font-src \'self\' data:; img-src \'self\' data: blob:; connect-src \'self\' kestrel-heavy:; worker-src \'self\' blob:; media-src \'self\' blob: kestrel-heavy:; object-src \'none\'; base-uri \'self\'; form-action \'self\';"',
+    html = re.sub(
+        r'<meta http-equiv="Content-Security-Policy" content="[^"]*">',
+        '<meta http-equiv="Content-Security-Policy" content="default-src \'self\' kestrel-heavy:; script-src \'self\' \'unsafe-inline\' kestrel-heavy:; style-src \'self\' \'unsafe-inline\'; font-src \'self\' data:; img-src \'self\' data: blob:; connect-src \'self\' kestrel-heavy:; worker-src \'self\' blob:; media-src \'self\' blob: kestrel-heavy:; object-src \'none\'; base-uri \'self\'; form-action \'self\';">',
+        html,
+        count=1,
     )
-    html = html.replace(
-        '  <link rel="preconnect" href="https://fonts.googleapis.com">\n'
-        '  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-        '  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Sora:wght@400;600&display=swap" rel="stylesheet">\n',
-        "  <meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n",
+    html = re.sub(
+        r'\s*<link rel="preconnect" href="https://fonts\.googleapis\.com">\s*'
+        r'<link rel="preconnect" href="https://fonts\.gstatic\.com" crossorigin>\s*'
+        r'<link href="https://fonts\.googleapis\.com/css2\?[^"]+" rel="stylesheet">\s*',
+        '\n  <meta name="apple-mobile-web-app-capable" content="yes">\n',
+        html,
+        count=1,
     )
+    if 'apple-mobile-web-app-capable' not in html:
+        html = html.replace(
+            '<meta name="robots" content="noindex">',
+            '<meta name="robots" content="noindex">\n  <meta name="apple-mobile-web-app-capable" content="yes">',
+            1,
+        )
     html = html.replace(
         '<script src="/toolbox/js/local-store.js"></script>',
         '<script src="./local-store.js"></script>',

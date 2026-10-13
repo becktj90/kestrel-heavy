@@ -125,6 +125,9 @@ test('Game Center: one leaderboard per KH-n, bridged only in the iOS app', async
   assert.match(swift, /removeScriptMessageHandler\(forName: "kestrelGameCenter"\)/);
   assert.match(swift, /GKLocalPlayer\.local\.authenticateHandler/);
   assert.match(swift, /GKLeaderboard\.submitScore/);
+  assert.match(swift, /willEnterForegroundNotification/);
+  assert.match(swift, /authStarted = false/);
+  assert.match(swift, /error != nil/);
   assert.match(swift, /com\.beckify\.kestrelheavy\.lb\./);
   const ent = fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavy.entitlements'), 'utf8');
   assert.match(ent, /com\.apple\.developer\.game-center/);
@@ -138,6 +141,22 @@ test('SOUND pills no longer cover the INT bar at phone width', () => {
     html,
     /@container cabinet \(max-width: 720px\) \{\s*body:not\(\[data-phase="MENU"\]\):not\(\[data-phase="SUMMARY"\]\) \.mc-hud \{\s*margin-top: 46px;/,
   );
+});
+
+test('standalone web does not request Google Fonts or the toolbox store', () => {
+  const html = fs.readFileSync(path.join(arcadeDir, 'index.html'), 'utf8');
+  assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
+  assert.match(html, /src="\.\/local-store\.js"/);
+  assert.equal(fs.existsSync(path.join(arcadeDir, 'local-store.js')), true);
+  const stub = fs.readFileSync(path.join(arcadeDir, 'local-store.js'), 'utf8');
+  assert.match(stub, /recordGameScore/);
+});
+
+test('summary hides the live HUD text that ghosted through the headline', () => {
+  const html = fs.readFileSync(path.join(arcadeDir, 'index.html'), 'utf8');
+  assert.match(html, /body\[data-phase="SUMMARY"\] \.mc-callout/);
+  assert.match(html, /body\[data-phase="SUMMARY"\] #ng-summary \{\s*background: #040810;/);
+  assert.match(html, /body:not\(\[data-phase="MENU"\]\) #arcade-fs-wrapper \.mc-hud \{\s*top: max\(64px/);
 });
 
 test('SOUND pill no longer covers the SUMMARY chip on the results screen at phone width', () => {

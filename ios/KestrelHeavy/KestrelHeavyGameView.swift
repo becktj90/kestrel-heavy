@@ -298,18 +298,20 @@ final class ArcadeWebView: WKWebView {
 
 /// Game Center leaderboards, one per KH-n flight.
 /// The cabinet posts `{ type: "score", leaderboard, score }` on the
-/// `kestrelGameCenter` message handler at the end of a flight. Everything here
-/// fails silently: offline, signed out, or leaderboard not yet live in App
-/// Store Connect all just drop the score (a few are queued until sign-in).
+/// `kestrelGameCenter` message handler at the end of a flight. Offline and
+/// failed submits stay queued (signed-out scores too) and flush on the next
+/// foreground, or when Game Center auth succeeds.
 final class KestrelHeavyGameCenter {
     static let shared = KestrelHeavyGameCenter()
     static let leaderboardPrefix = "com.beckify.kestrelheavy.lb."
 
     private var authStarted = false
+    private var foregroundHooked = false
     private var pending: [(id: String, score: Int)] = []
 
     func authenticate() {
         DispatchQueue.main.async {
+            self.hookForeground()
             guard !self.authStarted else { return }
             self.authStarted = true
             GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, error in
@@ -318,10 +320,38 @@ final class KestrelHeavyGameCenter {
                         Self.topViewController()?.present(viewController, animated: true)
                         return
                     }
-                    guard error == nil, GKLocalPlayer.local.isAuthenticated else { return }
+                    guard error == nil, GKLocalPlayer.local.isAuthenticated else {
+                        // A failed or offline attempt must be retryable. Leaving
+                        // authStarted set blocked every later submit until GameKit
+                        // called back on its own.
+                        self?.authStarted = false
+                        return
+                    }
                     self?.flush()
                 }
             }
+        }
+    }
+
+    private func hookForeground() {
+        guard !foregroundHooked else { return }
+        foregroundHooked = true
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.authStarted = false
+            self.authenticate()
+            self.flush()
+        }
+    }
+
+    private func enqueue(score: Int, leaderboardID: String) {
+        pending.append((leaderboardID, score))
+        if pending.count > 20 {
+            pending.removeFirst(pending.count - 20)
         }
     }
 
@@ -343,8 +373,7 @@ final class KestrelHeavyGameCenter {
         guard score > 0, leaderboardID.hasPrefix(Self.leaderboardPrefix) else { return }
         DispatchQueue.main.async {
             guard GKLocalPlayer.local.isAuthenticated else {
-                self.pending.append((leaderboardID, score))
-                if self.pending.count > 20 { self.pending.removeFirst(self.pending.count - 20) }
+                self.enqueue(score: score, leaderboardID: leaderboardID)
                 self.authenticate()
                 return
             }
@@ -353,7 +382,14 @@ final class KestrelHeavyGameCenter {
                 context: 0,
                 player: GKLocalPlayer.local,
                 leaderboardIDs: [leaderboardID]
-            ) { _ in }
+            ) { error in
+                // Signed-in but offline (or the board is not live yet): keep the
+                // score and try again on the next foreground.
+                guard error != nil else { return }
+                DispatchQueue.main.async {
+                    self.enqueue(score: score, leaderboardID: leaderboardID)
+                }
+            }
         }
     }
 

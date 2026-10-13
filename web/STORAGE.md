@@ -17,4 +17,4 @@ Audio prefs (`sound`, `music`, `muted`, `volume` 0–1, `sfxVolume` 0–1, `musi
 
 Unlock rule: a deck finish (soft recover or salvage, including a tip) unlocks the next KH-n. A splash does not, and stars never gate the next mission. Hangar parts unlock from missions, recoveries, scores, and pickups. Difficulty stays KID / CADET / PAD RAT *inside* a flight. Per-mission wind, landing fuel, and swell live in `data/mission-ramp.json`.
 
-`recordGameScore('kestrel-heavy', points)` still writes the toolbox cross-game best via `local-store.js`.
+`recordGameScore('kestrel-heavy', points)` calls `local-store.js`. The file shipped here is an offline no-op so a standalone load does not 404 `/toolbox/js/local-store.js`. The beckify host can replace that file with the toolbox store.
