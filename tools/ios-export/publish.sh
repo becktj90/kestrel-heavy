@@ -63,8 +63,25 @@ PY
 )
   fi
   echo "Info.plist: id=$bid version=$ver build=$bld"
-  if [[ -n "$bid" && "$bid" != "com.letterify.kestrelheavy" ]]; then
-    echo "error: refused to publish bundle id '$bid' (expected com.letterify.kestrelheavy)" >&2
+  # Unity leaves CFBundleIdentifier as ${PRODUCT_BUNDLE_IDENTIFIER}. The real id is in the Xcode project.
+  # Shipping id is com.beckify.kestrelheavy (DECISIONS #30 / #59), which is what xcode-export already carries.
+  EXPECTED_ID="com.beckify.kestrelheavy"
+  PBX="$EXPORT_DIR/Unity-iPhone.xcodeproj/project.pbxproj"
+  if [[ "$bid" == '${PRODUCT_BUNDLE_IDENTIFIER}' ]]; then
+    if [[ ! -f "$PBX" ]]; then
+      echo "error: Info.plist bundle id is unresolved and $PBX is missing" >&2
+      exit 1
+    fi
+    if ! grep -q "PRODUCT_BUNDLE_IDENTIFIER = ${EXPECTED_ID};" "$PBX"; then
+      echo "error: Xcode project is not $EXPECTED_ID" >&2
+      exit 1
+    fi
+  elif [[ -n "$bid" && "$bid" != "$EXPECTED_ID" ]]; then
+    echo "error: refused to publish bundle id '$bid' (expected $EXPECTED_ID)" >&2
+    exit 1
+  fi
+  if [[ -f "$PBX" ]] && grep -q "kestrelheavy.unityproto" "$PBX"; then
+    echo "error: refused proto bundle id in $PBX" >&2
     exit 1
   fi
   if [[ -n "$ver" && "$ver" != "$VERSION" ]]; then
@@ -124,7 +141,7 @@ fi
 cat > "$STAGE/README.md" <<EOF
 # xcode-export
 
-Generated Unity 6000.3.26f1 iOS export of Kestrel Heavy $VERSION ($BUILD_NUMBER), com.letterify.kestrelheavy, minimum iOS 16.0, from $SOURCE_LABEL $SOURCE_SHA. Never merge into main. Setup: docs/XCODE_CLOUD_FIRST_SETUP.md
+Generated Unity 6000.3.26f1 iOS export of Kestrel Heavy $VERSION ($BUILD_NUMBER), com.beckify.kestrelheavy, minimum iOS 16.0, from $SOURCE_LABEL $SOURCE_SHA. Never merge into main. Setup: docs/XCODE_CLOUD_FIRST_SETUP.md
 EOF
 
 cd "$STAGE"

@@ -44,7 +44,7 @@ tools/ios-export/export.sh <build-number> [git-ref]   # Unity CLI on the box (si
   1. clean worktree at the chosen ref (default origin/main); record SHA
   2. unity build . --target iOS --execute-method Kestrel.Slice.Editor.BuildScript.BuildIOS
      env KH_BUILD_PATH=/tmp/kh-ios-out  KH_BUILD_NUMBER=<n>
-  3. verify: Info.plist CFBundleIdentifier=com.letterify.kestrelheavy, CFBundleShortVersionString=2.0.0,
+  3. verify: Info.plist CFBundleIdentifier=com.beckify.kestrelheavy (Unity may leave \${PRODUCT_BUNDLE_IDENTIFIER}; the Xcode project must set it), CFBundleShortVersionString=2.0.0,
      CFBundleVersion=<n>, Unity-iPhone.xcodeproj present
   4. tools/ios-export/publish.sh replaces orphan branch `xcode-export` (single commit + tag export/2.0.0-<n>)
 ```
