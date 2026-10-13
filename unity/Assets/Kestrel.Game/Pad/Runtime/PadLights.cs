@@ -128,7 +128,9 @@ namespace Kestrel.Pad
         Material MatFor(LightKind k, Kestrel.Kit.Contracts.Vec3 c)
         {
             var src = MaterialLibrary.Get(MaterialRole.Glass);
-            var m = src != null ? new Material(src) : new Material(Shader.Find(MaterialLibrary.LitShader));
+            var sh = src != null ? src.shader : MaterialLibrary.Lit();
+            var m = src != null ? new Material(src) : (sh != null ? new Material(sh) : null);
+            if (m == null) return null;
             m.name = "Pad_Light_" + k; m.enableInstancing = true;
             m.SetColor(BaseColor, new Color(c.X * 0.3f, c.Y * 0.3f, c.Z * 0.3f));
             m.EnableKeyword("_EMISSION"); m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;

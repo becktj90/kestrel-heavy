@@ -1,6 +1,9 @@
 // Procedural URP material library keyed by MaterialRole. No textures shipped: colour, smoothness and metallic
 // come from the table below; stripes and wear come from a tiny generated texture (64x8, ~2 KB) shared by all.
 // Materials are created on first use and cached; all have GPU instancing enabled.
+// The player build only keeps INSTANCING_ON when a Resources material asks for it (KH_Body, KH_LitEmission).
+// Shader.Find succeeds in the editor for every imported shader, then the device strips the unused variant
+// and Graphics.RenderMeshInstanced draws nothing — the pad and the lit vehicle parts vanish.
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -34,13 +37,45 @@ namespace Kestrel.Kit
 
         static readonly Dictionary<MaterialRole, Material> Cache = new Dictionary<MaterialRole, Material>();
         static Texture2D _stripe;
+        static Shader _lit;
+
+        /// <summary>
+        /// Touch the Resources materials that pin URP/Lit variants into the player.
+        /// KH_Body pins opaque instancing. KH_LitEmission pins the emissive instanced lamps.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static void KeepDeviceVariants()
+        {
+            _ = Resources.Load<Material>("Materials/KH_Body");
+            _ = Resources.Load<Material>("Materials/KH_LitEmission");
+        }
+
+        public static Shader Lit()
+        {
+            if (Usable(_lit)) return _lit;
+            var keep = Resources.Load<Material>("Materials/KH_Body");
+            if (keep != null && Usable(keep.shader)) { _lit = keep.shader; return _lit; }
+            var sh = Shader.Find(LitShader);
+            if (!Usable(sh)) sh = Shader.Find(FallbackShader);
+            if (!Usable(sh)) { Debug.LogError("[Kestrel.Kit] URP Lit shader not found"); return null; }
+            _lit = sh;
+            return _lit;
+        }
+
+        static bool Usable(Shader sh)
+        {
+            if (sh == null) return false;
+            string n = sh.name;
+            if (string.IsNullOrEmpty(n)) return true;
+            return n.IndexOf("InternalError", System.StringComparison.OrdinalIgnoreCase) < 0
+                && n.IndexOf("FallbackError", System.StringComparison.OrdinalIgnoreCase) < 0;
+        }
 
         public static Material Get(MaterialRole role)
         {
             if (Cache.TryGetValue(role, out var m) && m != null) return m;
-            var sh = Shader.Find(LitShader);
-            if (sh == null) sh = Shader.Find(FallbackShader);
-            if (sh == null) { Debug.LogError("[Kestrel.Kit] URP Lit shader not found"); return null; }
+            var sh = Lit();
+            if (sh == null) return null;
             var s = Spec(role);
             m = new Material(sh) { name = "Kit_" + role, enableInstancing = true };
             m.SetColor("_BaseColor", s.BaseColor);
