@@ -2,6 +2,7 @@
 // cryo tanks, landing RCS, engine-out. Messages match the Hangar answers (engineer msg + kid text).
 using System.Collections.Generic;
 using Kestrel.Core.Data;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
 using Kestrel.Core.Vehicle;
 
@@ -44,6 +45,7 @@ namespace Kestrel.Core.Designer
                 Rcs(d, warnings);
                 Stability(c, d, blocks, warnings);
                 Reference(c, design, d, blocks, warnings);
+                RedRisks(c, design, d, warnings);
             }
         }
 
@@ -263,6 +265,23 @@ namespace Kestrel.Core.Designer
             else warnings.Add(issue);
         }
 
+        /// <summary>Red predict-ascent risks become warnings with a tab and a field. They do not block launch.</summary>
+        static void RedRisks(Catalog c, JsonObject design, Design d, List<Issue> warnings)
+        {
+            if (!FailureMonitor.Engages(d)) return;
+            if (!ReferenceAscent.TryGet(ReferenceAscent.CanonicalKey(c, design), out var flight) || !flight.flown || flight.risks == null) return;
+            for (int i = 0; i < flight.risks.Count; i++)
+            {
+                var risk = flight.risks[i];
+                if (risk == null || risk.level != "red") continue;
+                int? index = risk.stage >= 0 ? (int?)risk.stage : null;
+                warnings.Add(Issue("risk-" + risk.kind, string.IsNullOrEmpty(risk.tab) ? "stages" : risk.tab,
+                    string.IsNullOrEmpty(risk.engineer) ? risk.kind : risk.engineer,
+                    string.IsNullOrEmpty(risk.kid) ? risk.kind : risk.kid,
+                    index, risk.field));
+            }
+        }
+
         /// <summary>A gimbal on stage 1 or on a strap-on. Solids count. An upper stage does not steer the pad.</summary>
         public static bool PadSteered(Catalog c, Design d)
         {
@@ -287,8 +306,8 @@ namespace Kestrel.Core.Designer
             return !(e.gimbal > 0);
         }
 
-        static Issue Issue(string code, string tab, string msg, string kid, int? index)
-            => new Issue { code = code, tab = tab, msg = msg, kid = kid, index = index };
+        static Issue Issue(string code, string tab, string msg, string kid, int? index, string field = null)
+            => new Issue { code = code, tab = tab, msg = msg, kid = kid, index = index, field = field };
 
         static string Fmt(double n) => JsFormat.ToFixed(n, 2);
         static string Num(double n) => n.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
