@@ -364,7 +364,7 @@ export default {
           "id": "extended",
           "expansionRatio": 400,
           "ispSL": 0,
-          "ispVac": 472,
+          "ispVac": 465,
           "thrustSL": 0,
           "thrustVac": 112000,
           "mass": 336,
