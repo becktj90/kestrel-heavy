@@ -33,10 +33,24 @@ namespace Kestrel.Site.Tests
 
         static string ReadAsset(string underAssets)
         {
-            string a = Path.Combine("Assets", underAssets);
-            if (File.Exists(a)) return File.ReadAllText(a);
-            string b = Path.Combine("unity", "Assets", underAssets);
-            if (File.Exists(b)) return File.ReadAllText(b);
+            // dotnet test often runs with cwd under Dotnet~/bin; walk up for the repo Assets tree.
+            foreach (var start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
+            {
+                var dir = new DirectoryInfo(start);
+                while (dir != null)
+                {
+                    foreach (var rel in new[]
+                    {
+                        Path.Combine("Assets", underAssets),
+                        Path.Combine("unity", "Assets", underAssets),
+                    })
+                    {
+                        string candidate = Path.Combine(dir.FullName, rel);
+                        if (File.Exists(candidate)) return File.ReadAllText(candidate);
+                    }
+                    dir = dir.Parent;
+                }
+            }
             Assert.Fail("missing " + underAssets);
             return "";
         }
