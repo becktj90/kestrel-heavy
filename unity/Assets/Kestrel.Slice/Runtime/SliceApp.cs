@@ -432,7 +432,7 @@ namespace Kestrel.Slice
             flight.enabled = false;
             var cat = SliceData.Catalog;
             // Kid compression is the playable full count (about 32 s). Engineer keeps real hours, which this slice does not sit through.
-            sequence = LaunchSequence.Open(TimelineGenerator.Generate(cat, design, Pad.For(cat, design), new Mission { mode = "kid", id = design.id }, 1));
+            sequence = LaunchSequence.Open(TimelineGenerator.Generate(cat, design, Kestrel.Core.Timeline.Pad.For(cat, design), new Mission { mode = "kid", id = design.id }, 1));
             counting = !sequence.Liftoff;
             var renderer = PadNow();
             if (renderer != null) renderer.ResetSequence();
