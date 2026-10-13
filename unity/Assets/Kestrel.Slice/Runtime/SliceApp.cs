@@ -1,4 +1,4 @@
-// Vertical-slice entry point: DESIGN stub (UI Toolkit) -> flight liftoff..MECO -> HUD -> Game Center.
+// Vertical-slice entry point: DESIGN stub (UI Toolkit) -> countdown through cutoff -> HUD -> Game Center.
 // Everything is created from code at runtime; the scene only needs one GameObject with this
 // component (the editor bootstrap generates Assets/Scenes/Slice.unity).
 using System.Collections.Generic;
@@ -6,6 +6,7 @@ using System.Linq;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Physics;
+using Kestrel.Core.Timeline;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Environment;
 using Kestrel.Kit.Contracts;
@@ -25,6 +26,7 @@ namespace Kestrel.Slice
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
         public int OrbitsCompleted; public bool EngineerEnabled;
         Label issueChip, launchReason; Button launchButton; DesignerState designerState;
+        LaunchSequence sequence; bool counting, flightEnded; float preThrust;
         static readonly string[] IssueControls = { "engines", "prop", "preset" };
 
         void Awake()
@@ -121,6 +123,7 @@ namespace Kestrel.Slice
             again.clicked += () =>
             {
                 flight.enabled = false;
+                counting = false; sequence = null; flightEnded = false; preThrust = 0;
                 if (hangarCam != null) hangarCam.enabled = true;
                 cam.ResetProjectionMatrix();
                 hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
@@ -438,7 +441,7 @@ namespace Kestrel.Slice
         void Launch()
         {
             if (designerState != null && !designerState.launchEnabled) return; // U1: blocks gate Launch
-            submitted = false;
+            submitted = false; flightEnded = false; preThrust = 0;
             if (explodeToggle != null) explodeToggle.SetValueWithoutNotify(false);
             if (explodedView != null) explodedView.SetExploded(false, true);
             if (hangarCam != null)
@@ -449,38 +452,102 @@ namespace Kestrel.Slice
             }
             SetAssembledDrawn(true);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
+            flight.enabled = false;
+            var cat = SliceData.Catalog;
+            // Kid compression is the playable full count (about 32 s). Engineer keeps real hours, which this slice does not sit through.
+            sequence = LaunchSequence.Open(TimelineGenerator.Generate(cat, design, Kestrel.Core.Timeline.Pad.For(cat, design), new Mission { mode = "kid", id = design.id }, 1));
+            counting = !sequence.Liftoff;
+            var renderer = PadNow();
+            if (renderer != null) renderer.ResetSequence();
+            DrivePad(sequence.Liftoff ? 0 : TimelineClock.RealSeconds(sequence.Time, sequence.Mode));
+            ApplyIgnition(sequence.Fired);
+            PaintCount();
+            if (sequence.Liftoff) BeginAscent();
+        }
+
+        /// <summary>Compressed countdown. Liftoff hands the clock to the ascent sim.</summary>
+        void Update()
+        {
+            if (!counting || sequence == null) return;
+            var fired = sequence.Step(Mathf.Min(Time.deltaTime, 0.1f));
+            ApplyIgnition(fired);
+            DrivePad(TimelineClock.RealSeconds(sequence.Time, sequence.Mode));
+            if (flight != null && flight.Plume != null) flight.Plume.Apply(preThrust, Atmosphere.P0, 0);
+            PaintCount();
+            if (sequence.Liftoff) { counting = false; BeginAscent(); }
+        }
+
+        void BeginAscent()
+        {
+            counting = false;
             flight.enabled = true;
             flight.Launch(design);
+            DrivePad(0);
+            // Launch samples thrust before the first tick, which would snuff the ignition plume.
+            if (flight.Plume != null && flight.ThrustFraction < 0.05) flight.Plume.Apply(1, Atmosphere.P0, 0);
+        }
+
+        void ApplyIgnition(System.Collections.Generic.IReadOnlyList<LaunchBeat> fired)
+        {
+            if (fired == null) return;
+            for (int i = 0; i < fired.Count; i++)
+            {
+                string id = fired[i].Id;
+                if (id == "ign.stagger" || id == "ign.light") preThrust = 0.4f;
+                else if (id == "ign.thrustok") preThrust = 0.85f;
+                else if (id == "ign.release" || id == "term.liftoff") preThrust = 1f;
+            }
+        }
+
+        void PaintCount()
+        {
+            if (sequence == null) return;
+            hT.text = sequence.Clock;
+            hStage.text = string.IsNullOrEmpty(sequence.Phase) ? "" : sequence.Phase.ToUpperInvariant();
+            hMsg.text = sequence.Banner ?? "";
+            hAlt.text = "ALT 0.0 km";
+            hVel.text = "VEL 0 m/s";
+            hMach.text = "MACH 0.00";
+            hQ.text = "Q 0.0 kPa";
+            hThr.text = $"THR {preThrust * 100f:F0}%";
+            hDr.text = "DR 0.0 km";
+        }
+
+        Kestrel.Pad.PadRenderer PadNow()
+        {
             var pad = tower != null ? tower.Find("Pad") : null;
-            var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
-            if (renderer != null) { renderer.ResetSequence(); renderer.AdvanceTo(0); }
+            return pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
+        }
+
+        void DrivePad(double missionT)
+        {
+            var renderer = PadNow();
+            if (renderer != null) renderer.AdvanceTo(missionT);
         }
 
         void LateUpdate()
         {
-            if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
+            if (sky != null && flight != null) sky.SetAltitude(counting || flight.Sim == null ? 0 : flight.Altitude);
             if (explodedView != null && hangarCam != null && hangarCam.enabled)
                 SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
-            if (flight != null && flight.Running && tower != null)
+            if (counting)
             {
-                var pad = tower.Find("Pad");
-                var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
-                if (renderer != null) renderer.AdvanceTo(flight.SimTime);
+                Chase(0);
+                if (flight != null && flight.Plume != null) flight.Plume.SetHeightAboveDeck(0);
+                return;
+            }
+            if (flight != null && flight.Sim != null && sequence != null)
+            {
+                double t = flight.SimTime;
+                if (flight.Result != null) t += 0.05; // closing callout, if the planned nominal landed on the last step
+                var fired = sequence.AdvanceSim(t);
+                if (fired.Count > 0) hMsg.text = sequence.Banner;
+                DrivePad(flight.SimTime);
             }
             if (flight == null || flight.Sim == null || hud.ClassListContains("hidden")) return;
-            // Chase camera, in floating-origin space (vehicle stays near the origin).
-            // Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every
-            // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
-            var v = vehicleRoot.position; var up = vehicleRoot.up;
-            camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude), 4f, Time.deltaTime);
-            // Grow the far plane with altitude so the coast under the framed horizon is never clipped.
-            cam.farClipPlane = SiteHorizon.ClipFor((float)flight.Altitude);
-            // Sea level is the anchored site root. Do not slide it: the coast has to stay under the pad.
-            cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
-            var cp = cam.transform.position;
-            cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, cam.fieldOfView, (float)flight.Altitude, cp.y - ground.position.y);
-            flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
-            hT.text = $"T+ {flight.SimTime:F1}";
+            Chase(flight.Altitude);
+            if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
+            hT.text = TimelineClock.Clock(flight.SimTime);
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
             hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
             hVel.text = $"VEL {flight.Speed:N0} m/s";
@@ -488,16 +555,41 @@ namespace Kestrel.Slice
             hQ.text = $"Q {flight.DynPressure / 1000:F1} kPa";
             hThr.text = $"THR {flight.ThrustFraction * 100:F0}%";
             hDr.text = $"DR {flight.Downrange / 1000:F1} km";
-            if (!flight.Running && !flight.Meco && flight.Sim.Done) { hMsg.text = "Flight ended before MECO"; again.RemoveFromClassList("hidden"); }
+            if (flight.Result != null && !flightEnded) EndFlight();
+        }
+
+        /// <summary>Chase camera, in floating-origin space (vehicle stays near the origin).
+        /// Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every
+        /// floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).</summary>
+        void Chase(double altitude)
+        {
+            if (cam == null || vehicleRoot == null || ground == null) return;
+            var v = vehicleRoot.position; var up = vehicleRoot.up;
+            camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)altitude), 4f, Time.deltaTime);
+            cam.farClipPlane = SiteHorizon.ClipFor((float)altitude);
+            cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
+            var cp = cam.transform.position;
+            cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, cam.fieldOfView, (float)altitude, cp.y - ground.position.y);
+        }
+
+        string scoreNote;
+
+        void EndFlight()
+        {
+            flightEnded = true;
+            string banner = sequence != null && !string.IsNullOrEmpty(sequence.Banner) ? sequence.Banner : "Flight ended";
+            if (flight.Result != null && flight.Result.outcome == "crash") banner = "Impact";
+            hMsg.text = $"{banner}  ·  {flight.Altitude / 1000:F1} km  ·  {flight.Speed:N0} m/s";
+            if (!string.IsNullOrEmpty(scoreNote)) hMsg.text += "\n" + scoreNote;
+            again.RemoveFromClassList("hidden");
         }
 
         async void OnMeco(FlightDriver f)
         {
             if (submitted) return; submitted = true;
-            hMsg.text = $"MECO  ·  {f.Altitude / 1000:F1} km  ·  {f.Speed:N0} m/s";
-            again.RemoveFromClassList("hidden");
             bool ok = await GameCenterBridge.Impl.SubmitScore(GameCenterBridge.MecoAltitudeBoard, (long)System.Math.Round(f.Altitude));
-            hMsg.text += ok ? "\nScore sent to Game Center" : "";
+            scoreNote = ok ? "Score sent to Game Center" : "";
+            if (flightEnded && ok) hMsg.text += "\n" + scoreNote;
         }
     }
 }
