@@ -192,7 +192,7 @@ namespace Kestrel.Slice
                 for (int k = 1; k <= 8; k++)
                 {
                     float u = k / 8f;
-                    float rr = conic ? r * (1f - u) : r * Mathf.Sqrt(Mathf.Max(0f, 1f - u * u));
+                    float rr = RocketMeshBuilder.NoseRadius(conic ? "conic" : Mathf.Abs(noseFrac - RocketMeshBuilder.NoseFraction("von-karman")) < 0.001f ? "von-karman" : "ogive", r, u);
                     profile.Add(new Vector2(k == 8 ? 0f : rr, cyl + nose * u));
                 }
             }

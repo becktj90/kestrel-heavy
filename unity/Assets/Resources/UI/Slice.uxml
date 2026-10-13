@@ -5,26 +5,20 @@
         <ui:VisualElement name="design" class="panel design">
             <!-- Handle: tap or drag to collapse/expand. Collapsed = handle only (64 pt + safe area, set from code). -->
             <ui:Button name="design-toggle" text="▼  Design" class="design-toggle" />
-            <ui:VisualElement name="design-body" class="design-body">
-            <ui:Label text="KESTREL HEAVY · DESIGN" class="title" />
-            <!-- U1: summary chip (kid "N things to fix" / engineer "N block · N warning"); hidden when clean. -->
-            <ui:Label name="issue-chip" text="" class="issue-chip hidden" />
-            <ui:DropdownField name="preset" label="Preset" class="row" />
-            <ui:SliderInt name="engines" label="Stage 1 engines" low-value="1" high-value="33" value="9" class="row" />
-            <ui:Slider name="prop" label="Stage 1 propellant (t)" low-value="10" high-value="4000" value="300" class="row" />
-            <ui:Toggle name="explode" label="Exploded view" class="row explode" />
-            <ui:VisualElement class="readout">
-                <ui:Label name="r-dv" text="Δv —" class="big" />
-                <ui:Label name="r-twr" text="TWR —" />
-                <ui:Label name="r-cost" text="Cost —" />
-                <ui:Label name="r-rel" text="Reliability —" />
-                <ui:Label name="r-mass" text="Liftoff —" />
+            <!-- Hangar panel (readout strip, tabs, part editor): built from code by HangarPanel. -->
+            <ui:VisualElement name="design-body" class="design-body" />
+            <!-- Thumb row: undo, redo, exploded view, Launch. Never scrolls. -->
+            <ui:VisualElement name="launch-row" class="launch-row">
+                <ui:Button name="undo" text="Undo" class="tool" />
+                <ui:Button name="redo" text="Redo" class="tool" />
+                <ui:Button name="explode" text="Parts" class="tool" />
+                <ui:Button name="launch" text="LAUNCH" class="launch" />
             </ui:VisualElement>
-            </ui:VisualElement>
-            <ui:Button name="launch" text="ROLL OUT &amp; LAUNCH" class="launch" />
             <!-- U1: why Launch is off ("Fix first: …"); hidden when Launch is enabled. -->
             <ui:Label name="launch-reason" text="" class="launch-reason hidden" />
         </ui:VisualElement>
+        <!-- Summary chip (DESIGNER_SPEC §6): top-left under Home; tap opens the Data tab. Placed from code. -->
+        <ui:Label name="issue-chip" text="" class="issue-chip hidden" />
         <!-- HOME: top-left, safe-area placed from code; hidden during flight so it never meets the HUD. -->
         <ui:Button name="home" text="◀  Home" class="home-button" />
         <!-- FLIGHT HUD -->

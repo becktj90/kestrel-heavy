@@ -26,6 +26,32 @@ namespace Kestrel.Slice
         public const float VelocityStop = 2f;
     }
 
+    /// <summary>Focus on one part: aim height and the zoom that makes it fill about half the view.</summary>
+    public static class HangarFocus
+    {
+        /// <summary>Share of the framed height the focused part should fill.</summary>
+        public const float Fill = 0.5f;
+        /// <summary>Exponential approach rate of the aim and zoom, per second (about 0.25 s to settle).</summary>
+        public const float Rate = 12f;
+
+        /// <summary>Zoom for a part of <paramref name="partHeight"/> on a vehicle framed at <paramref name="vehicleHeight"/>.</summary>
+        public static float ZoomFor(float vehicleHeight, float partHeight)
+        {
+            vehicleHeight = DesignFraming.SafeHeight(vehicleHeight);
+            if (!(partHeight > 0.1f) || float.IsNaN(partHeight) || float.IsInfinity(partHeight)) return 1f;
+            return HangarOrbit.ClampZoom(Fill * vehicleHeight / partHeight);
+        }
+
+        /// <summary>One smoothing step toward a target (instant when Reduce Motion is on or dt is bad).</summary>
+        public static float Approach(float current, float target, float dt, bool reduceMotion)
+        {
+            if (reduceMotion || float.IsNaN(current) || !(dt > 0f) || float.IsNaN(dt)) return target;
+            float k = 1f - Mathf.Exp(-Rate * dt);
+            float v = current + (target - current) * k;
+            return Mathf.Abs(target - v) < 1e-3f ? target : v;
+        }
+    }
+
     /// <summary>Yaw, pitch and zoom plus flick velocity. Zoom 0 means "not set" and is treated as 1.</summary>
     public struct HangarOrbit
     {
@@ -214,13 +240,19 @@ namespace Kestrel.Slice
 
         /// <summary>World pose. Distance tracks vehicle height and the framing scale, then zoom.</summary>
         public static void Pose(float height, float distanceScale, float yawDeg, float pitchDeg, float zoom, out Vector3 position, out Vector3 aim)
+            => PoseAt(height, distanceScale, yawDeg, pitchDeg, zoom, float.NaN, out position, out aim);
+
+        /// <summary>Same pose, but aimed at <paramref name="aimY"/> metres up the axis (a focused part). NaN aims at the rest point.
+        /// The camera keeps the rest offset, so focusing slides the view along the rocket rather than swinging it.</summary>
+        public static void PoseAt(float height, float distanceScale, float yawDeg, float pitchDeg, float zoom, float aimY, out Vector3 position, out Vector3 aim)
         {
             height = DesignFraming.SafeHeight(height);
             if (!(distanceScale > 0.05f) || float.IsNaN(distanceScale) || float.IsInfinity(distanceScale)) distanceScale = 1f;
             zoom = ClampZoom(zoom);
             yawDeg = ClampYaw(yawDeg);
             pitchDeg = ClampPitch(pitchDeg);
-            aim = new Vector3(0f, height * DesignFraming.AimHeight, 0f);
+            float restY = height * DesignFraming.AimHeight;
+            aim = new Vector3(0f, float.IsNaN(aimY) || float.IsInfinity(aimY) ? restY : Mathf.Clamp(aimY, 0f, height * 1.2f), 0f);
             var rest = new Vector3(height * 0.9f, height * (0.45f - DesignFraming.AimHeight), -height * 1.4f) * (distanceScale / zoom);
             position = aim + Offset(rest, yawDeg, pitchDeg);
         }
