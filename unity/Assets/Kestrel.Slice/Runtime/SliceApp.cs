@@ -255,6 +255,7 @@ namespace Kestrel.Slice
             AddBells(r);
             AddAirframe(r);
             AddLanding(r);
+            AddLivery(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
@@ -468,6 +469,30 @@ namespace Kestrel.Slice
                 cluster.Gate = gate;
                 cluster.Init(fins, Kestrel.Kit.KitBudgets.Medium);
             }
+        }
+
+        /// <summary>Circumferential panel lines and two seams on every tank, plus an accent band and decal blocks
+        /// on the first stage. Paint comes from the livery colours, not a stripe texture.</summary>
+        void AddLivery(RocketMeshBuilder.Result r)
+        {
+            if (r.tanks == null || r.tanks.Count == 0) return;
+            var marks = new List<Kestrel.Vehicle.LiveryMark>();
+            bool accentUsed = false;
+            for (int i = 0; i < r.tanks.Count; i++)
+            {
+                var t = r.tanks[i];
+                if (t.BarrelLength <= 0.5f || t.Radius <= 0.05f) continue;
+                bool accent = !accentUsed && t.Stage == 0 && !t.StrapOn;
+                if (accent) accentUsed = true;
+                marks.AddRange(Kestrel.Vehicle.LiveryLayout.Tank(t.Offset.x, t.Offset.y, t.Offset.z, t.Radius, t.BarrelBottom, t.BarrelLength, accent));
+            }
+            if (marks.Count == 0) return;
+            var accentCol = new Color(0.10f, 0.24f, 0.43f);
+            if (design != null) ColorUtility.TryParseHtmlString(design.liveryAccent, out accentCol);
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.LiveryCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(marks, Kestrel.Kit.KitBudgets.Medium, accentCol);
         }
 
         /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every
