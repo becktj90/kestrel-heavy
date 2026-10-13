@@ -79,8 +79,7 @@ namespace Kestrel.Core.Designer
             for (int i = 0; i < stages.Count; i++)
             {
                 var s = stages[i];
-                c.EngineById.TryGetValue(s.engine ?? "", out var eng);
-                var point = EnginePoint.Of(eng, s.nozzle);
+                var point = EnginePoint.Of(c, s);
                 double bell = Bell(point.known ? point.diameter : 0);
                 double r = s.diameter / 2;
                 bool bottom = i == 0, top = i == stages.Count - 1;
@@ -147,9 +146,9 @@ namespace Kestrel.Core.Designer
             Add(d.payloadMass, yJoint + fairL * (1 - noseFrac) / 2);
 
             var so = d.strapOns;
-            if (so != null && so.count > 0 && c.EngineById.TryGetValue(so.engine ?? "", out var soEng))
+            if (so != null && so.count > 0 && c.EngineById.ContainsKey(so.engine ?? ""))
             {
-                var sp = EnginePoint.Of(soEng, so.nozzle);
+                var sp = EnginePoint.Of(c, so);
                 double sb = Bell(sp.diameter);
                 double sr = so.diameter / 2;
                 double stank = DesignMath.SizeTank(c, so.propellant, so.propMass, so.diameter).length;

@@ -1,0 +1,16 @@
+{
+  "generatedBy": "designer-v3 WP-E. Spec §8 GV1–GV10. GV11 is the campaign package.",
+  "tolerance": { "rel": 1e-9, "abs": 0.05 },
+  "cases": [
+    { "id": "GV1", "isp": 311, "m0_kg": 550000, "mf_kg": 150000, "deltaV_mps": 3962.6 },
+    { "id": "GV2", "isp_s": [350.00, 360.80, 373.96, 347.17] },
+    { "id": "GV3", "rho": 0.4135, "v": 300, "q_kPa": 18.608 },
+    { "id": "GV4", "mass_kg": 100000, "ratePerHour": 0.002, "insulation": "foam", "hours": 3, "remain_kg": 99760.2 },
+    { "id": "GV5", "safetyFactor": 1.4, "pressure_bar": 3, "radius_m": 1.85, "yield_MPa": 500, "wall_mm": 1.554 },
+    { "id": "GV6", "engines": 9, "thrust_N": 2300000, "gimbal_deg": 5, "arm_m": 30, "moment_MNm": 54.12 },
+    { "id": "GV7", "note": "Every preset and template without v3 fields leaves the failure monitor off, so designer-readout, simulate and catalog-flight stay byte-identical." },
+    { "id": "GV8", "kind": "cryo-material", "t": 0 },
+    { "id": "GV9", "kind": "tumble", "level": "red", "field": "fins" },
+    { "id": "GV10", "kind": "structural-maxq", "safetyFactor": 1.1, "yield_MPa": 500, "qLim_kPa": 27.5 }
+  ]
+}

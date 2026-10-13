@@ -6,12 +6,13 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Kestrel.Core.Flight;
 
 namespace Kestrel.Core.Physics
 {
     public sealed class SimStage
     {
-        public double thrustSL, thrustVac, ispSL, ispVac, propMass, dryMass, diameter, cd = 0.3;
+        public double thrustSL, thrustVac, ispSL, ispVac, propMass, dryMass, diameter, cd = 0.3, throttleMin;
         // derived by Normalize
         public double mdot, area; public string warn;
         public SimStage Clone() => (SimStage)MemberwiseClone();
@@ -22,6 +23,10 @@ namespace Kestrel.Core.Physics
         public double payload = 0, targetAlt = 200e3, latitude = 28.5, dt = 0.05, tMax = 3000;
         public double kickSpeed = 60, kickAngleDeg = 4, sampleEvery = 0;
         public bool vacuum = false, rotate = true, cutoff = true;
+        /// <summary>Null keeps the built-in kick. A profile adds its pitch program and throttle caps.</summary>
+        public Flight.GuidanceProfile guidance;
+        /// <summary>Null leaves the flight on the v2 path: no failure checks, identical steps.</summary>
+        public Flight.FailureMonitor monitor;
     }
 
     public sealed class SimEvent
@@ -38,6 +43,9 @@ namespace Kestrel.Core.Physics
         public double maxQ, maxQTime, maxQAlt, maxG, lossGravity, lossDrag, lossSteering, idealDeltaV, deltaVExpended, finalMass;
         public double x, y, vx, vy, m;
         public List<SimSample> samples; public List<string> warnings;
+        public Flight.FailureEvent failure;
+        public List<Flight.FlightRisk> risks;
+        public double minStability = double.NaN, minCar = double.NaN, qLimPa = double.NaN;
         /// <summary>First integrator step with geometric altitude &gt;= 100 km. Observational: it does not change the step or the event list.</summary>
         public double? KarmanTime;
     }
@@ -83,6 +91,17 @@ namespace Kestrel.Core.Physics
             return sim.Finish();
         }
 
+        /// <summary>
+        /// The built-in kick, including its 3 s dwell, stays unless the profile changes the pitch program.
+        /// A max-Q or g throttle cap still applies on that path. 100% leaves the scale at 1.
+        /// </summary>
+        public static bool LegacyPitch(GuidanceProfile g)
+        {
+            if (g == null) return true;
+            if (g.useAltitudeKick || g.turnShapeSet) return false;
+            return g.pitchKickDeg == GuidanceProfile.DefaultKickDeg;
+        }
+
         /// <summary>Generic two-stage medium-lift archetype (kerosene/LOX, ~550 t GLOW).</summary>
         public static SimStage[] MediumLifter() => new[]
         {
@@ -107,7 +126,7 @@ namespace Kestrel.Core.Physics
         public readonly List<SimEvent> Events = new List<SimEvent>();
         public readonly List<SimSample> Samples = new List<SimSample>();
         public int StageCount => st.Length;
-        double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1;
+        double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1;
         bool liftedOff, sawKarman; double karmanT; string outcome = "timeout";
 
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
@@ -148,10 +167,12 @@ namespace Kestrel.Core.Physics
             {
                 var S = st[StageIdx];
                 double F = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, p);
+                mdot = S.mdot;
+                if (thrustScale != 1) { F *= thrustScale; mdot *= thrustScale; }
                 double dx, dyy;
                 if (Mode == 2 && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
                 else { double c = Math.Cos(PitchCmd), sn = Math.Sin(PitchCmd); dx = c * tx + sn * ux; dyy = c * ty + sn * uy; }
-                ax += F * dx / m; ay += F * dyy / m; mdot = S.mdot;
+                ax += F * dx / m; ay += F * dyy / m;
             }
             dy[0] = vx; dy[1] = vy; dy[2] = ax; dy[3] = ay; dy[4] = -mdot;
         }
@@ -173,25 +194,43 @@ namespace Kestrel.Core.Physics
             // ---- guidance ----
             if (Thrusting)
             {
-                if (StageIdx == 0)
+                thrustScale = o.monitor != null ? o.monitor.ThrustFactor : 1;
+                if (Headless.LegacyPitch(o.guidance))
                 {
-                    if (Mode == 0 && vrel >= o.kickSpeed) { Mode = 1; kickStart = T; PitchCmd = Math.PI / 2 - kickAngle; }
-                    else if (Mode == 1)
+                    if (StageIdx == 0)
                     {
-                        double vgam = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
-                        if (T - kickStart > 3 && vgam <= PitchCmd + 0.002) Mode = 2;
+                        if (Mode == 0 && vrel >= o.kickSpeed) { Mode = 1; kickStart = T; PitchCmd = Math.PI / 2 - kickAngle; }
+                        else if (Mode == 1)
+                        {
+                            double vgam = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
+                            if (T - kickStart > 3 && vgam <= PitchCmd + 0.002) Mode = 2;
+                        }
+                    }
+                    else
+                    {
+                        Mode = 3;
+                        double g = Gravity.MU_EARTH / (r * r) - vt * vt / r;
+                        double vrCmd = Math.Max(-150, Math.Min(250, (o.targetAlt - alt) / 40));
+                        var S = st[StageIdx];
+                        var atmG = Atmosphere.At(Math.Min(alt, 300e3));
+                        double aT = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, o.vacuum ? 0 : atmG.p) / m;
+                        double sinP = Math.Max(-0.6, Math.Min(0.95, (g + 0.03 * (vrCmd - vr)) / aT));
+                        PitchCmd = Math.Asin(sinP);
+                    }
+                    if (o.guidance != null && (o.guidance.maxQThrottleSet || o.guidance.gLimitSet))
+                    {
+                        double cap = o.guidance.Command(Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel)).throttle;
+                        if (cap != 1) thrustScale *= cap;
                     }
                 }
                 else
                 {
-                    Mode = 3;
-                    double g = Gravity.MU_EARTH / (r * r) - vt * vt / r;
-                    double vrCmd = Math.Max(-150, Math.Min(250, (o.targetAlt - alt) / 40));
-                    var S = st[StageIdx];
-                    var atmG = Atmosphere.At(Math.Min(alt, 300e3));
-                    double aT = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, o.vacuum ? 0 : atmG.p) / m;
-                    double sinP = Math.Max(-0.6, Math.Min(0.95, (g + 0.03 * (vrCmd - vr)) / aT));
-                    PitchCmd = Math.Asin(sinP);
+                    double flight = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
+                    var cmd = o.guidance.Command(Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel, flight));
+                    PitchCmd = cmd.pitchRad;
+                    if (StageIdx > 0) Mode = 3;
+                    else if (Mode == 2) Mode = 1;
+                    if (cmd.throttle != 1) thrustScale *= cmd.throttle;
                 }
             }
 
@@ -202,7 +241,16 @@ namespace Kestrel.Core.Physics
                 double remain = m - StageEndMass();
                 if (remain <= 1e-6)
                 {
-                    Events.Add(new SimEvent { t = T, type = "burnout", stage = StageIdx + 1, alt = alt, v = JsMath.Hypot(vx, vy) });
+                    double spd = JsMath.Hypot(vx, vy);
+                    Events.Add(new SimEvent { t = T, type = "burnout", stage = StageIdx + 1, alt = alt, v = spd });
+                    bool fail = false;
+                    if (o.monitor != null)
+                    {
+                        bool last = StageIdx >= st.Length - 1;
+                        if (o.monitor.OnEmpty(T, alt, last, o.targetAlt)) fail = true;
+                        if (!last && o.monitor.OnSeparation(T, alt, Dynamic(alt, vrel), StageIdx, st[StageIdx].dryMass, upperMass[StageIdx + 1])) fail = true;
+                    }
+                    if (fail) { Fail(alt, spd); return true; }
                     StageIdx++;
                     if (StageIdx >= st.Length) { Thrusting = false; Mode = 4; return true; }
                     Y[4] = upperMass[StageIdx];
@@ -210,7 +258,9 @@ namespace Kestrel.Core.Physics
                     Events.Add(new SimEvent { t = T, type = "ignition", stage = StageIdx + 1, alt = alt });
                     return true;
                 }
-                dt = Math.Min(o.dt, remain / st[StageIdx].mdot);
+                double flow = st[StageIdx].mdot;
+                if (thrustScale != 1) flow *= thrustScale;
+                dt = Math.Min(o.dt, flow > 0 ? remain / flow : o.dt);
             }
 
             // ---- diagnostics ----
@@ -222,19 +272,21 @@ namespace Kestrel.Core.Physics
             double gl = Gravity.MU_EARTH / (r * r);
             double v = JsMath.Hypot(vx, vy);
             LastP = p; LastQ = q; LastMach = vrel / sound; LastThrust = 0;
+            if (o.monitor != null && Watch(alt, q, m, vrel, p, rho, sound, avx, avy, ux, uy, tx, ty, dt))
+                Fail(alt, v);
             if (Thrusting && StageIdx < st.Length)
             {
                 var S = st[StageIdx];
                 double F = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, p);
+                if (thrustScale != 1) F *= thrustScale;
                 LastThrust = F;
                 double aT = F / m; dvExp += aT * dt;
                 double dx, dyy;
                 if (Mode == 2 && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
                 else { double c = Math.Cos(PitchCmd), sn = Math.Sin(PitchCmd); dx = c * tx + sn * ux; dyy = c * ty + sn * uy; }
-                if (v > 1) lossS += aT * (1 - (dx * vx + dyy * vy) / v) * dt;
+                double cos = v > 1 ? (dx * vx + dyy * vy) / v : 0;
                 double Dm = rho > 0 ? 0.5 * rho * vrel * vrel * Aero.CdMach(vrel / sound, S.cd) * S.area / m : 0;
-                lossD += Dm * dt;
-                if (v > 1) lossG += gl * (vr / v) * dt;
+                LossAccount.Add(ref lossG, ref lossD, ref lossS, gl, vr, v, aT, cos, Dm, dt);
                 double gload = (aT - Dm) / Atmosphere.G0; if (gload > maxG) maxG = gload;
             }
             if (o.sampleEvery > 0 && T >= nextSample)
@@ -252,7 +304,13 @@ namespace Kestrel.Core.Physics
             if (alt1 < 0)
             {
                 if (!liftedOff && Thrusting) { Y[0] = 0; Y[1] = Gravity.R_EARTH; Y[2] = -vSite; Y[3] = 0; return true; }
-                outcome = "crash"; Events.Add(new SimEvent { t = T, type = "impact" }); Done = true; return false;
+                if (o.monitor != null && outcome != "failure")
+                {
+                    double sink = r1 > 0 ? -(Y[2] * Y[0] + Y[3] * Y[1]) / r1 : 0;
+                    if (o.monitor.OnImpact(T, sink)) Fail(0, sink);
+                }
+                if (outcome != "failure") outcome = "crash";
+                Events.Add(new SimEvent { t = T, type = "impact" }); Done = true; return false;
             }
             if (Thrusting && Mode == 3 && o.cutoff)
             {
@@ -263,8 +321,85 @@ namespace Kestrel.Core.Physics
                     Events.Add(new SimEvent { t = T, type = "cutoff", stage = StageIdx + 1, alt = alt1 });
                 }
             }
-            if (!Thrusting) { Done = true; return false; }
+            // Debris after a real failure coasts until impact or tMax. A clean cutoff still ends the run.
+            if (!Thrusting && outcome != "failure") { Done = true; return false; }
             return true;
+        }
+
+        void Fail(double alt, double speed)
+        {
+            if (outcome == "failure") return;
+            outcome = "failure";
+            Thrusting = false;
+            thrustScale = 0;
+            Mode = 4;
+            int stage = StageIdx < st.Length ? StageIdx + 1 : st.Length;
+            Events.Add(new SimEvent { t = T, type = "failure", stage = stage, alt = alt, v = speed });
+        }
+
+        double Dynamic(double alt, double vrel)
+        {
+            if (o.vacuum || !(alt < 300e3) || !(vrel > 0)) return 0;
+            return 0.5 * Atmosphere.At(alt).rho * vrel * vrel;
+        }
+
+        GuidanceState Guide(double alt, double m, double vr, double g, double vrel, double flight = 0)
+        {
+            double p = 0, rho = 0;
+            if (!o.vacuum && alt < 300e3) { var atm = Atmosphere.At(alt); p = atm.p; rho = atm.rho; }
+            double F = 0, tMin = 0;
+            if (StageIdx < st.Length)
+            {
+                var S = st[StageIdx];
+                F = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, p);
+                tMin = S.throttleMin;
+            }
+            return new GuidanceState
+            {
+                alt = alt, vrel = vrel, flightPathRad = flight, vr = vr, g = g, q = 0.5 * rho * vrel * vrel,
+                mass = m, thrustN = F, throttleMin = tMin, stageIndex = StageIdx,
+            };
+        }
+
+        /// <summary>True when this step must stop thrusting. Predict records the hit and returns false.</summary>
+        bool Watch(double alt, double q, double m, double vrel, double p, double rho, double sound, double avx, double avy, double ux, double uy, double tx, double ty, double dt)
+        {
+            int si = StageIdx < st.Length ? StageIdx : st.Length - 1;
+            if (si < 0) si = 0;
+            var body = st[si];
+            double propFrac = 1;
+            if (Thrusting && StageIdx < st.Length && st[StageIdx].propMass > 0)
+            {
+                propFrac = (Y[4] - StageEndMass()) / st[StageIdx].propMass;
+                if (propFrac < 0) propFrac = 0;
+                else if (propFrac > 1) propFrac = 1;
+            }
+            double aAxial = 0;
+            if (Thrusting && StageIdx < st.Length && m > 0)
+            {
+                var S = st[StageIdx];
+                double F = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, p);
+                if (thrustScale != 1) F *= thrustScale;
+                double Dm = rho > 0 ? 0.5 * rho * vrel * vrel * Aero.CdMach(vrel / sound, S.cd) * S.area / m : 0;
+                aAxial = F / m - Dm;
+            }
+            double alpha = 0;
+            if (Thrusting && Mode != 2 && vrel > 1)
+            {
+                double c = Math.Cos(PitchCmd), sn = Math.Sin(PitchCmd);
+                double dx = c * tx + sn * ux, dyy = c * ty + sn * uy;
+                double cosA = (dx * avx + dyy * avy) / vrel;
+                if (cosA > 1) cosA = 1;
+                else if (cosA < -1) cosA = -1;
+                alpha = Math.Acos(cosA);
+            }
+            var step = new FailureMonitor.Step
+            {
+                t = T, dt = dt, alt = alt, qPa = q, accel = aAxial, alphaRad = alpha,
+                mass = m, area = body.area, cd = body.cd, stageIndex = StageIdx, propFraction = propFrac,
+                thrusting = Thrusting, targetAlt = o.targetAlt,
+            };
+            return o.monitor.Consider(step);
         }
 
         public SimResult Finish()
@@ -274,7 +409,7 @@ namespace Kestrel.Core.Physics
             if (outcome == "orbit") Events.Add(new SimEvent { t = T, type = "orbit", apoAlt = orb.apoAlt, periAlt = orb.periAlt });
             var warnings = new List<string>();
             foreach (var s in st) if (s.warn != null) warnings.Add(s.warn);
-            return new SimResult
+            var result = new SimResult
             {
                 outcome = outcome, time = T, events = Events, orbit = orb, maxQ = maxQ, maxQTime = maxQTime, maxQAlt = maxQAlt, maxG = maxG,
                 lossGravity = lossG, lossDrag = lossD, lossSteering = lossS,
@@ -282,6 +417,16 @@ namespace Kestrel.Core.Physics
                 x = Y[0], y = Y[1], vx = Y[2], vy = Y[3], m = Y[4], samples = Samples, warnings = warnings,
                 KarmanTime = sawKarman ? (double?)karmanT : null,
             };
+            if (o.monitor != null)
+            {
+                o.monitor.Finish(maxQ);
+                result.failure = o.monitor.Event;
+                result.risks = o.monitor.Risks;
+                result.minStability = o.monitor.MinStability;
+                result.minCar = o.monitor.MinCar;
+                result.qLimPa = o.monitor.QLimPa;
+            }
+            return result;
         }
     }
 }

@@ -182,6 +182,10 @@ namespace Kestrel.Core.Vehicle
 
         public static EngineEnvelope EnvelopeFor(Engine engine)
         {
+            // Catalog.Engine carries the envelope once FromJson has read it. The file table
+            // remains for a caller that built an Engine without those fields.
+            if (engine != null && engine.pcRated > 0 && engine.cycleMassFactor > 0)
+                return new EngineEnvelope(engine.pcMin, engine.pcRated, engine.epsMin, engine.epsMax, engine.cycleMassFactor);
             if (engine != null && Table().TryGetValue(engine.id ?? "", out var env)) return env;
             return Synthesize(engine);
         }

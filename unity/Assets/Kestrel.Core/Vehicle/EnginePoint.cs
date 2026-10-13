@@ -59,8 +59,9 @@ namespace Kestrel.Core.Vehicle
             };
         }
 
-        static bool UsesModel(StagePart part)
+        public static bool UsesModel(StagePart part)
         {
+            if (part == null) return false;
             if (part.mixtureOffsetSet) return true;
             return part.engineParams != null && part.engineParams.Any;
         }
