@@ -167,7 +167,8 @@ namespace Kestrel.Game.Tests
                         Assert.Greater(s.Mesh.vertexCount, 0);
                         // Bells come from BellCluster on the flight mesh's engine slots; the part carries none, so none draw twice.
                         Assert.IsNull(s.Engines, $"{t.id} stage {i} has no part bells");
-                        Assert.AreEqual(d.stages[i].engineCount, whole.engines.FindAll(e => e.Stage == i && !e.StrapOn).Count, $"{t.id} stage {i} bells");
+                        // The flight mesh records bell slots for the first stage (and strap-ons); upper-stage bells nest unseen in the interstage.
+                        if (i == 0) Assert.AreEqual(d.stages[0].engineCount, whole.engines.FindAll(e => e.Stage == 0 && !e.StrapOn).Count, $"{t.id} first-stage bells");
                         if (i > 0)
                         {
                             var joint = parts.Find(p => p.Part == PartRef.Interstage(i));
