@@ -10,7 +10,8 @@
       "yieldMPa": 500,
       "costPerKg": 60,
       "maxTempK": 450,
-      "cryoOK": true
+      "cryoOK": true,
+      "elasticGPa": 78
     },
     {
       "id": "steel",
@@ -20,7 +21,8 @@
       "yieldMPa": 1000,
       "costPerKg": 8,
       "maxTempK": 1100,
-      "cryoOK": true
+      "cryoOK": true,
+      "elasticGPa": 193
     },
     {
       "id": "composite",
@@ -31,6 +33,7 @@
       "costPerKg": 300,
       "maxTempK": 420,
       "cryoOK": false,
+      "elasticGPa": 70,
       "note": "needs liner for deep-cryogenic LH2"
     },
     {
@@ -42,6 +45,7 @@
       "costPerKg": 25,
       "maxTempK": 450,
       "cryoOK": true,
+      "elasticGPa": 73,
       "note": "Fictional 2219-class weldable tank alloy. Heavier than Al-Li, cheaper, cryogenic-capable."
     },
     {
@@ -53,6 +57,7 @@
       "costPerKg": 80,
       "maxTempK": 700,
       "cryoOK": true,
+      "elasticGPa": 114,
       "note": "Fictional Ti-6Al-4V class. High yield lets the wall stay thin; the alloy itself is dense and costly."
     },
     {
@@ -64,6 +69,7 @@
       "costPerKg": 40,
       "maxTempK": 500,
       "cryoOK": false,
+      "elasticGPa": 25,
       "note": "Fictional fiberglass case for solids, fairings and storables. Not for liquid hydrogen."
     }
   ]
