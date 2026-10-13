@@ -144,6 +144,42 @@ namespace Kestrel.Core.Economy
             return q;
         }
 
+        /// <summary>
+        /// Recovered hardware refunds 70% minus refurbishment. Refurbishment is
+        /// (10% + 5% × prior flights) of that hardware. The result is minor units, never negative.
+        /// </summary>
+        public const double ReuseRefundFraction = 0.70;
+        public const double RefurbBase = 0.10;
+        public const double RefurbPerFlight = 0.05;
+
+        public static long ReuseRefundMinor(long hardwareMinor, int priorFlights)
+        {
+            if (hardwareMinor <= 0) return 0;
+            int flown = priorFlights < 0 ? 0 : priorFlights;
+            double fraction = ReuseRefundFraction - (RefurbBase + RefurbPerFlight * flown);
+            if (fraction <= 0) return 0;
+            return (long)JsMath.Round(hardwareMinor * fraction);
+        }
+
+        /// <summary>
+        /// Engines, tanks and recovery hardware that come home. Avionics, propellant and ops stay spent.
+        /// Stage groups are "stage0" and, when the boosters fly home too, "strapons".
+        /// </summary>
+        public static long RecoveredHardwareMinor(Quote quote, bool stage1, bool boosters)
+        {
+            if (quote == null) return 0;
+            long sum = 0;
+            foreach (var line in quote.lines)
+            {
+                if (line.cat != "engines" && line.cat != "structure" && line.cat != "recovery") continue;
+                bool stage = stage1 && line.group == "stage0";
+                bool strap = boosters && line.group == "strapons";
+                bool gear = (stage1 || boosters) && line.group == "recovery";
+                if (stage || strap || gear) sum += line.amount;
+            }
+            return sum;
+        }
+
         /// <summary>"850 Kc", "34.1k Kc", "1.23M Kc".</summary>
         public static string FormatKc(Catalog c, long minor)
         {
