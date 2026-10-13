@@ -19,6 +19,8 @@ namespace Kestrel.Slice
         public string firstBlockKid;
         public double liftoffTwr, totalDv, requiredDv;
         public bool valid;
+        /// <summary>Each block as "code@part", so an edit that swaps one block for another still counts as a new one.</summary>
+        public HashSet<string> blockKeys;
 
         public static FeelState Of(HangarSession s)
         {
@@ -27,7 +29,11 @@ namespace Kestrel.Slice
             st.launchEnabled = s.LaunchEnabled;
             foreach (var a in s.Advisories)
             {
-                if (a.severity == AdvisorySeverity.Block) { if (st.blocks++ == 0) st.firstBlockKid = a.kid; }
+                if (a.severity == AdvisorySeverity.Block)
+                {
+                    if (st.blocks++ == 0) st.firstBlockKid = a.kid;
+                    (st.blockKeys ??= new HashSet<string>()).Add(a.code + "@" + a.part);
+                }
                 else if (a.severity == AdvisorySeverity.Warn) st.warnings++;
             }
             var sheet = s.Sheet;
@@ -52,8 +58,17 @@ namespace Kestrel.Slice
         {
             if (!after.valid) return Haptic.None;
             if (before.valid && !before.launchEnabled && after.launchEnabled) return Haptic.Payoff;
-            if (before.valid && after.blocks > before.blocks) return Haptic.Warning;
+            if (before.valid && HasNewBlock(before, after)) return Haptic.Warning;
             return stepped ? Haptic.Snap : Haptic.None;
+        }
+
+        /// <summary>True when <paramref name="after"/> has a block <paramref name="before"/> did not (more blocks, or a different one).</summary>
+        public static bool HasNewBlock(FeelState before, FeelState after)
+        {
+            if (after.blocks > before.blocks) return true;
+            if (after.blockKeys == null) return false;
+            foreach (var k in after.blockKeys) if (before.blockKeys == null || !before.blockKeys.Contains(k)) return true;
+            return false;
         }
 
         /// <summary>Taptic pattern for a haptic, from designer-feel.json (milliseconds of each pulse).</summary>

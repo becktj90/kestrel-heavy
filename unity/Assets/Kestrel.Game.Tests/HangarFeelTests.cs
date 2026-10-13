@@ -60,10 +60,11 @@ namespace Kestrel.Game.Tests
             try
             {
                 PlayerPrefs.SetInt(HangarFeel.HapticsPref, 1);
-                HangarNative.Play(Haptic.Payoff);
+                HangarNative.Play(Haptic.Payoff, new[] { 18, 30, 18 });
                 Assert.AreEqual(Haptic.Payoff, HangarNative.LastHaptic);
+                CollectionAssert.AreEqual(new[] { 18, 30, 18 }, HangarNative.LastPattern, "the designer-feel.json pattern reaches the native call");
                 PlayerPrefs.SetInt(HangarFeel.HapticsPref, 0);
-                HangarNative.Play(Haptic.Warning);
+                HangarNative.Play(Haptic.Warning, new[] { 12 });
                 Assert.AreEqual(Haptic.Payoff, HangarNative.LastHaptic, "off means off");
                 HangarNative.Announce("Ready to launch.");
                 Assert.AreEqual("Ready to launch.", HangarNative.LastAnnouncement);
@@ -88,6 +89,32 @@ namespace Kestrel.Game.Tests
             Assert.GreaterOrEqual(bad.blocks, 1);
             Assert.AreEqual("Too heavy to lift off. Add engines to the bottom stage or use less fuel.", bad.firstBlockKid);
             Assert.AreEqual(Haptic.Warning, HangarFeel.For(ok, bad, true));
+        }
+
+        [Test]
+        public void Haptics_ASwappedBlockIsStillANewBlock()
+        {
+            var a = S(false, 1); a.blockKeys = new System.Collections.Generic.HashSet<string> { "twr-low@Stage 1" };
+            var b = S(false, 1); b.blockKeys = new System.Collections.Generic.HashSet<string> { "engines-dont-fit@Stage 1" };
+            Assert.AreEqual(Haptic.Warning, HangarFeel.For(a, b, stepped: true), "same count, different block");
+            var same = S(false, 1); same.blockKeys = new System.Collections.Generic.HashSet<string> { "twr-low@Stage 1" };
+            Assert.AreEqual(Haptic.Snap, HangarFeel.For(a, same, stepped: true), "the same block again is not new");
+        }
+
+        [Test]
+        public void Load_IsFlaggedWhileItsEventsRun()
+        {
+            var c = Catalog.LoadFromRepo(Root);
+            var h = HangarData.LoadFromRepo(Root);
+            var s = new HangarSession(c, h, HangarEditor.ForkTemplate(h.Template("moonshot")));
+            s.Select(PartRef.Stage(2));
+            bool selectionDuringLoad = false, changedDuringLoad = false;
+            s.SelectionChanged += _ => selectionDuringLoad = s.Loading;
+            s.Changed += () => changedDuringLoad = s.Loading;
+            s.Load(HangarEditor.ForkTemplate(h.Template("hopper")), null, "Hopper");
+            Assert.IsTrue(selectionDuringLoad, "the fallback selection comes from the load, so no snap");
+            Assert.IsTrue(changedDuringLoad);
+            Assert.IsFalse(s.Loading);
         }
 
         [Test]

@@ -9,7 +9,7 @@ namespace Kestrel.Slice
     public static class HangarNative
     {
 #if UNITY_IOS && !UNITY_EDITOR
-        [DllImport("__Internal")] static extern void KHHangarHaptic(int kind);
+        [DllImport("__Internal")] static extern void KHHangarHaptic(int kind, int[] pattern, int count);
         [DllImport("__Internal")] static extern void KHHangarAnnounce(string text);
         [DllImport("__Internal")] static extern int KHHangarReduceMotion();
 #endif
@@ -17,15 +17,19 @@ namespace Kestrel.Slice
         /// <summary>Last thing announced, for tests and the Editor (where there is no VoiceOver).</summary>
         public static string LastAnnouncement { get; private set; } = "";
         public static Haptic LastHaptic { get; private set; }
+        public static int[] LastPattern { get; private set; } = System.Array.Empty<int>();
 
         public static bool HapticsOn => PlayerPrefs.GetInt(HangarFeel.HapticsPref, 1) != 0;
 
-        public static void Play(Haptic h)
+        /// <summary>Play a haptic with its designer-feel.json pattern: pulse, gap, pulse … in milliseconds (the web
+        /// vibrate convention). On iOS each pulse is one Taptic tap, stronger for a longer pulse; gaps space them.</summary>
+        public static void Play(Haptic h, int[] pattern)
         {
-            if (h == Haptic.None || !HapticsOn) return;
+            if (h == Haptic.None || !HapticsOn || pattern == null || pattern.Length == 0) return;
             LastHaptic = h;
+            LastPattern = pattern;
 #if UNITY_IOS && !UNITY_EDITOR
-            KHHangarHaptic((int)h);
+            KHHangarHaptic((int)h, pattern, pattern.Length);
 #endif
         }
 

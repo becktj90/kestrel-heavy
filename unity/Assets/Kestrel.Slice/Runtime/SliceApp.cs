@@ -116,6 +116,7 @@ namespace Kestrel.Slice
         void OnSelectionChanged(PartRef p)
         {
             rocketView.SetSelected(p, true);
+            if (session != null && session.Loading) return; // a load moved the selection; the player did not
             PlayHaptic(Haptic.Snap);
             var info = session != null ? HangarParts.List(session.Design).Find(x => x.part == p) : null;
             Queue("Selected " + (info != null ? info.label : HangarParts.Short(p)) + ".");
@@ -128,7 +129,7 @@ namespace Kestrel.Slice
             var before = feelNow;
             feelNow = FeelState.Of(session);
             // A load (open a save, start a template) clears history: no step to announce, no haptic.
-            if (nextIsLoad || (!session.history.CanUndo && !session.history.CanRedo)) { nextIsLoad = false; feelBase = feelNow; pendingAnnounce = null; return; }
+            if (nextIsLoad || session.Loading || (!session.history.CanUndo && !session.history.CanRedo)) { nextIsLoad = false; feelBase = feelNow; pendingAnnounce = null; return; }
             if (pendingAnnounce == null) feelBase = before;
             var step = nextIsRedo ? session.history.NextUndo : nextIsUndo ? session.history.NextRedo : session.history.NextUndo;
             PlayHaptic(HangarFeel.For(before, feelNow, stepped: true));
@@ -139,9 +140,10 @@ namespace Kestrel.Slice
         {
             if (h == Haptic.None) return;
             if (h == Haptic.Snap && Time.unscaledTime - lastSnap < HangarFeel.SnapMinSeconds) return;
-            if (HangarFeel.Pattern(h, SliceData.Feel).Length == 0) return; // designer-feel.json can turn a pattern off
+            var pattern = HangarFeel.Pattern(h, SliceData.Feel);
+            if (pattern.Length == 0) return; // designer-feel.json can turn a pattern off
             if (h == Haptic.Snap) lastSnap = Time.unscaledTime;
-            HangarNative.Play(h);
+            HangarNative.Play(h, pattern);
         }
 
         void Queue(string text)
@@ -157,6 +159,12 @@ namespace Kestrel.Slice
             HangarNative.Announce(pendingAnnounce);
             pendingAnnounce = null;
             feelBase = feelNow;
+        }
+
+        /// <summary>The iOS Reduce Motion switch can change while the game is in the background.</summary>
+        void OnApplicationFocus(bool focused)
+        {
+            if (focused) ApplyReduceMotion();
         }
 
         /// <summary>Reduce Motion: the in-game switch or the iOS setting, whichever is on.</summary>
@@ -769,6 +777,8 @@ namespace Kestrel.Slice
             if (rocketDirty) BuildRocket();
             submitted = false;
             SetExploded(false, true);
+            // Nothing queued from the Hangar is spoken after the flight.
+            pendingAnnounce = null; feelBase = feelNow;
             if (hangarCam != null)
             {
                 // Snap back to the assembled pose before sampling the chase offset, so liftoff
