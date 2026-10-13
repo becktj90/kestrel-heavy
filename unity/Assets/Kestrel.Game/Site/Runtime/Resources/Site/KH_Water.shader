@@ -13,6 +13,8 @@ Shader "Kestrel/Water"
         _GlintCap ("Glint Cap", Float) = 0.32
         _FoamColor ("Foam", Color) = (0.72, 0.78, 0.74, 1)
         _GlintColor ("Glint", Color) = (1.0, 0.96, 0.86, 1)
+        _FogColor ("Fog", Color) = (0.75, 0.86, 0.94, 1)
+        _FogRange ("start end on", Vector) = (5000, 150000, 0, 0)
     }
     SubShader
     {
@@ -29,7 +31,6 @@ Shader "Kestrel/Water"
             #pragma target 2.0
             #pragma vertex vert
             #pragma fragment frag
-            #pragma multi_compile_fog
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -41,6 +42,8 @@ Shader "Kestrel/Water"
                 float _GlintCap;
                 float4 _FoamColor;
                 float4 _GlintColor;
+                float4 _FogColor;
+                float4 _FogRange;
             CBUFFER_END
 
             struct Attributes
@@ -104,8 +107,11 @@ Shader "Kestrel/Water"
                 half3 col = input.color.rgb;
                 col = lerp(col, _FoamColor.rgb, foam * 0.55);
                 col += _GlintColor.rgb * spec * _SunColor.rgb;
-                real fogFactor = InitializeInputDataFog(float4(input.positionWS, 1.0), 0.0);
-                col = MixFog(col, fogFactor);
+                // Same ramp as SiteFog.Weight / KH_Terrain. One variant so device fog cannot strip the pass.
+                float dist = length(input.positionWS - _WorldSpaceCameraPos.xyz);
+                float span = max(_FogRange.y - _FogRange.x, 0.001);
+                float w = saturate((dist - _FogRange.x) / span) * _FogRange.z;
+                col = lerp(col, _FogColor.rgb, w);
                 return half4(col, 1);
             }
             ENDHLSL
