@@ -25,6 +25,8 @@ namespace Kestrel.Slice
         Design design; HangarSession session; DesignLibrary library; HangarPanel panel; HangarRocketView rocketView = new HangarRocketView(); HangarCamera hangarCam;
         Button undoButton, redoButton, explodeButton; bool rocketDirty = true; float lastRocketBuild = -1f; Mesh combinedMesh; Material flightMat;
         HangarExplodedView explodedView; Material explodedMat;
+        // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
+        FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
@@ -83,6 +85,7 @@ namespace Kestrel.Slice
             {
                 panel = new HangarPanel(session, library ?? new DesignLibrary(new Kestrel.Core.Save.NativeStore(System.IO.Path.Combine(Application.temporaryCachePath, "kh-hangar"), () => System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), () => Random.value)), designBody, upp);
                 panel.FocusRequested += FocusPart;
+                panel.ReduceMotionChanged += _ => ApplyReduceMotion();
                 panel.ExplodeRequested += SetExploded;
                 panel.EngineerChanged += _ => ApplyValidation();
             }
@@ -98,6 +101,7 @@ namespace Kestrel.Slice
             catch (System.Exception e) { Debug.LogWarning("[Hangar] design parse: " + e.Message); }
             rocketDirty = true;
             ApplyValidation();
+            Feedback();
             UpdateHandle();
         }
 
@@ -112,6 +116,64 @@ namespace Kestrel.Slice
         void OnSelectionChanged(PartRef p)
         {
             rocketView.SetSelected(p, true);
+            if (session != null && session.Loading) return; // a load moved the selection; the player did not
+            PlayHaptic(Haptic.Snap);
+            var info = session != null ? HangarParts.List(session.Design).Find(x => x.part == p) : null;
+            Queue("Selected " + (info != null ? info.label : HangarParts.Short(p)) + ".");
+        }
+
+        /// <summary>After each change: a haptic now, and one announcement once the edits settle (a held stepper speaks once).</summary>
+        void Feedback()
+        {
+            if (session == null) return;
+            var before = feelNow;
+            feelNow = FeelState.Of(session);
+            // A load (open a save, start a template) clears history: no step to announce, no haptic.
+            if (nextIsLoad || session.Loading || (!session.history.CanUndo && !session.history.CanRedo)) { nextIsLoad = false; feelBase = feelNow; pendingAnnounce = null; return; }
+            if (pendingAnnounce == null) feelBase = before;
+            var step = nextIsRedo ? session.history.NextUndo : nextIsUndo ? session.history.NextRedo : session.history.NextUndo;
+            PlayHaptic(HangarFeel.For(before, feelNow, stepped: true));
+            Queue(HangarFeel.Announce(step, feelBase, feelNow, nextIsUndo, nextIsRedo));
+        }
+
+        void PlayHaptic(Haptic h)
+        {
+            if (h == Haptic.None) return;
+            if (h == Haptic.Snap && Time.unscaledTime - lastSnap < HangarFeel.SnapMinSeconds) return;
+            var pattern = HangarFeel.Pattern(h, SliceData.Feel);
+            if (pattern.Length == 0) return; // designer-feel.json can turn a pattern off
+            if (h == Haptic.Snap) lastSnap = Time.unscaledTime;
+            HangarNative.Play(h, pattern);
+        }
+
+        void Queue(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            pendingAnnounce = text;
+            announceAt = Time.unscaledTime + HangarFeel.AnnounceAfterSeconds;
+        }
+
+        void FlushAnnouncement()
+        {
+            if (pendingAnnounce == null || Time.unscaledTime < announceAt) return;
+            HangarNative.Announce(pendingAnnounce);
+            pendingAnnounce = null;
+            feelBase = feelNow;
+        }
+
+        /// <summary>The iOS Reduce Motion switch can change while the game is in the background.</summary>
+        void OnApplicationFocus(bool focused)
+        {
+            if (focused) ApplyReduceMotion();
+        }
+
+        /// <summary>Reduce Motion: the in-game switch or the iOS setting, whichever is on.</summary>
+        void ApplyReduceMotion()
+        {
+            if (hangarCam == null) return;
+            hangarCam.ReduceMotion = HangarNative.SystemReduceMotion
+                || PlayerPrefs.GetInt(HangarCamera.ReduceMotionPref, 0) != 0
+                || PlayerPrefs.GetInt(HangarCamera.ReduceFlashingPref, 0) != 0;
         }
 
         void FocusPart(PartRef p)
@@ -143,6 +205,7 @@ namespace Kestrel.Slice
             var sun = new GameObject("Sun").AddComponent<Light>(); sun.type = LightType.Directional; sun.intensity = 1.3f; sun.transform.rotation = Quaternion.Euler(40, -30, 0);
             sky = SkyRig.Attach(cam, sun);
             hangarCam.Tapped += OnTapped;
+            ApplyReduceMotion();
             worldRoot = new GameObject("World").transform;
             vehicleRoot = new GameObject("Vehicle").transform; vehicleRoot.SetParent(worldRoot, false);
             flight = gameObject.AddComponent<FlightDriver>(); flight.World = worldRoot; flight.Vehicle = vehicleRoot;
@@ -198,8 +261,8 @@ namespace Kestrel.Slice
             launchButton = ui.Q<Button>("launch");
             launchButton.clicked += Launch;
             undoButton = ui.Q<Button>("undo"); redoButton = ui.Q<Button>("redo"); explodeButton = ui.Q<Button>("explode");
-            undoButton.clicked += () => { var st = session?.Undo(); if (st != null) undoButton.tooltip = "Undid: " + st.Spoken; };
-            redoButton.clicked += () => { var st = session?.Redo(); if (st != null) redoButton.tooltip = "Redid: " + st.Spoken; };
+            undoButton.clicked += () => { nextIsUndo = true; var st = session?.Undo(); nextIsUndo = false; if (st != null) undoButton.tooltip = "Undid: " + st.Spoken; };
+            redoButton.clicked += () => { nextIsRedo = true; var st = session?.Redo(); nextIsRedo = false; if (st != null) redoButton.tooltip = "Redid: " + st.Spoken; };
             explodeButton.clicked += () => SetExploded(!(hangarCam != null && hangarCam.Exploded));
             explodeButton.tooltip = "Exploded view: pull the parts apart";
             issueChip = ui.Q<Label>("issue-chip"); launchReason = ui.Q<Label>("launch-reason");
@@ -714,6 +777,8 @@ namespace Kestrel.Slice
             if (rocketDirty) BuildRocket();
             submitted = false;
             SetExploded(false, true);
+            // Nothing queued from the Hangar is spoken after the flight.
+            pendingAnnounce = null; feelBase = feelNow;
             if (hangarCam != null)
             {
                 // Snap back to the assembled pose before sampling the chase offset, so liftoff
@@ -751,6 +816,7 @@ namespace Kestrel.Slice
         {
             if (hud != null && !hud.ClassListContains("hidden")) return;
             if (rocketDirty && Time.unscaledTime - lastRocketBuild >= RebuildEverySeconds) BuildRocket();
+            FlushAnnouncement();
         }
 
         /// <summary>Longest a held stepper waits for the 3D rocket to catch up (the readout updates every tick).</summary>

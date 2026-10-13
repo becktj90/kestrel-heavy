@@ -45,6 +45,8 @@ namespace Kestrel.Slice
         public event Action<bool> EngineerChanged;
         /// <summary>Exploded view toggle from the toolbar.</summary>
         public event Action<bool> ExplodeRequested;
+        /// <summary>The in-game Reduce Motion switch changed (SliceApp re-reads it together with the iOS setting).</summary>
+        public event Action<bool> ReduceMotionChanged;
         public bool ExplodedOn { get; private set; }
         public bool Engineer => engineer;
 
@@ -557,6 +559,12 @@ namespace Kestrel.Slice
         {
             var s = session.Sheet;
             content.Add(ui.Switch("Engineer numbers", "Every number, plus the exact warning text", () => engineer, SetEngineer, refreshers));
+            content.Add(ui.Switch("Reduce motion", "No glides or easing; also follows the iPhone setting",
+                () => PlayerPrefs.GetInt(HangarCamera.ReduceMotionPref, 0) != 0,
+                on => { PlayerPrefs.SetInt(HangarCamera.ReduceMotionPref, on ? 1 : 0); ReduceMotionChanged?.Invoke(on); Refresh(); }, refreshers));
+            content.Add(ui.Switch("Haptics", "A light tap for each change",
+                () => PlayerPrefs.GetInt(HangarFeel.HapticsPref, 1) != 0,
+                on => { PlayerPrefs.SetInt(HangarFeel.HapticsPref, on ? 1 : 0); Refresh(); }, refreshers));
             var adv = session.Advisories;
             content.Add(ui.Section(adv.Count == 0 ? "All good" : $"Things to check ({adv.Count})"));
             if (adv.Count == 0) content.Add(ui.Text(Experience.Ready, HangarUi.BodyPt, HangarUi.Green));

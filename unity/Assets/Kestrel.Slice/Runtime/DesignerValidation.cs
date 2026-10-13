@@ -21,30 +21,13 @@ namespace Kestrel.Slice
 
     public static class DesignerValidation
     {
-        /// <summary>Kid wording per code. Blocks show in simple + standard; warnings are standard-only (Present hides them in simple). Engineer shows Issue.msg. Spec §6/§11.3.</summary>
-        public static readonly IReadOnlyDictionary<string, string> KidWording = new Dictionary<string, string>
-        {
-            ["zero-engines"] = "A stage or booster has no engines. Give it at least one.",
-            ["zero-propellant"] = "A stage or booster has no fuel. Add some fuel.",
-            ["schema"] = Experience.KidSchema,
-            ["math"] = "We couldn't work this rocket out. Try Make it fly.",
-            ["twr-low"] = "Too heavy to lift off. Add engines to the bottom stage or use less fuel.",
-            ["engines-dont-fit"] = "Too many engines for this width. Use fewer or make it wider.",
-            ["top-heavy"] = "One stage is much wider than the one under it. Make it narrower.",
-            ["fairing-narrow"] = "The nose is too thin for the stage under it. Make it as wide as the stage.",
-            ["payload-doesnt-fit"] = "The cargo doesn't fit in the nose. Make the nose longer or wider.",
-            ["twr-marginal"] = "Slow off the pad. A bit more push helps.",
-            ["weak-upper"] = "One of the upper stages pushes gently. A stronger engine helps.",
-            ["weak-upper-dv"] = "The top stage does little work. Give it more fuel.",
-            ["dv-margin"] = "Not quite enough speed for this trip. More fuel or a lighter cargo.",
-            ["landing-hardware"] = "Saved landing fuel but no landing legs or grid fins. Add both, or skip landing.",
-            ["heavy-fairing"] = "The nose weighs more than the cargo. Try a lighter nose.",
-        };
+        /// <summary>Kid wording per code: the Hangar table (Kestrel.Core.Hangar.KidWords), so the U1 chip and the Hangar warnings never drift. Engineer shows Issue.msg. Spec §6/§11.3.</summary>
+        public static readonly IReadOnlyDictionary<string, string> KidWording = Kestrel.Core.Hangar.KidWords.Table;
 
         /// <summary>dv-margin second message (Validate.cs: margin 0-5%, msg starts "Only").</summary>
-        public const string DvMarginThin = "You'll just make it. A little more fuel gives room to spare.";
+        public const string DvMarginThin = Kestrel.Core.Hangar.KidWords.DvMarginThin;
 
-        public const string KidFallback = "Something on this rocket needs a fix. Try Make it fly.";
+        public const string KidFallback = Kestrel.Core.Hangar.KidWords.Fallback;
 
         /// <summary>Text shown for an issue on a layer: engineer = exact msg; otherwise kid wording.</summary>
         public static string Wording(Issue issue, string layer)

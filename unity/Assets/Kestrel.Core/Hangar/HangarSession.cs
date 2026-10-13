@@ -23,6 +23,8 @@ namespace Kestrel.Core.Hangar
         /// <summary>Save id this design was loaded from or last saved to. Null for a fresh fork.</summary>
         public string SavedId { get; private set; }
         public string SavedName { get; private set; }
+        /// <summary>True while <see cref="Load"/> replaces the document, including during the events it raises.</summary>
+        public bool Loading { get; private set; }
 
         /// <summary>Raised after every document change: edit, undo, redo, load.</summary>
         public event Action Changed;
@@ -51,14 +53,19 @@ namespace Kestrel.Core.Hangar
         {
             var d = DesignMigration.Migrate(design);
             HangarEditor.Normalize(d);
-            Design = d;
-            SavedId = savedId;
-            SavedName = savedName;
-            history.Clear();
-            cleanSnapshot = savedId != null ? Snapshot(d) : null;
-            Invalidate();
-            KeepSelection();
-            Changed?.Invoke();
+            Loading = true;
+            try
+            {
+                Design = d;
+                SavedId = savedId;
+                SavedName = savedName;
+                history.Clear();
+                cleanSnapshot = savedId != null ? Snapshot(d) : null;
+                Invalidate();
+                KeepSelection();
+                Changed?.Invoke();
+            }
+            finally { Loading = false; }
         }
 
         /// <summary>
