@@ -9,11 +9,12 @@ using System;
 using System.Collections.Generic;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
+using Kestrel.Game.Audio;
 using UnityEngine;
 
 namespace Kestrel.Slice
 {
-    public sealed class FlightDriver : MonoBehaviour
+    public sealed class FlightDriver : MonoBehaviour, IFlightAudioBus
     {
         public const double PhysicsDt = 1.0 / 120;
         public const float RebaseDistance = 2000f;
@@ -22,6 +23,7 @@ namespace Kestrel.Slice
         public Transform Vehicle;      // rocket root (pivot at engine exit plane)
         public PlumeController Plume;
         public event Action<FlightDriver> OnMeco;
+        public IFlightEventSink Sink { get; set; }
 
         public AscentSim Sim { get; private set; }
         public double SimTime => Sim?.T ?? 0;
@@ -39,6 +41,7 @@ namespace Kestrel.Slice
         public int Rebases { get; private set; }
 
         double clock; int mecoStage; double thrustRef = 1; double prevX, prevY;
+        int seenEvents; bool mecoSent;
         readonly List<(Transform t, double x, double y, double z)> anchored = new List<(Transform, double, double, double)>();
         double omegaAir;
 
@@ -57,7 +60,11 @@ namespace Kestrel.Slice
             thrustRef = Math.Max(1, stages[0].thrustVac);
             omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
             clock = 0; Meco = false; Running = true; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
+            seenEvents = 0; mecoSent = false;
             UpdateFrame();
+            Sink?.OnEvent("flight.begin");
+            PumpEvents();
+            PublishAudio();
         }
 
         void Update()
@@ -71,8 +78,28 @@ namespace Kestrel.Slice
                 if (!Meco && HasBurnout(mecoStage)) { Meco = true; Running = false; break; }
             }
             if (Sim.Done && !Meco) Running = false;
+            PumpEvents();
+            if (Meco && !mecoSent) { mecoSent = true; Sink?.OnEvent("meco"); }
             UpdateFrame();
+            PublishAudio();
             if (Meco) OnMeco?.Invoke(this);
+        }
+
+        void PumpEvents()
+        {
+            if (Sink == null || Sim == null) return;
+            var ev = Sim.Events;
+            while (seenEvents < ev.Count)
+            {
+                var type = ev[seenEvents++].type;
+                if (!string.IsNullOrEmpty(type)) Sink.OnEvent(type);
+            }
+        }
+
+        void PublishAudio()
+        {
+            if (Sink == null || Sim == null) return;
+            Sink.SetFlightState((float)Altitude, (float)DynPressure, (float)ThrustFraction);
         }
 
         bool HasBurnout(int stage)

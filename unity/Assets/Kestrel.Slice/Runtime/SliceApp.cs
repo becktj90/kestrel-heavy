@@ -7,6 +7,7 @@ using Kestrel.Core.Designer;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
+using Kestrel.Game.Audio;
 using Kestrel.Game.Environment;
 using Kestrel.Kit.Contracts;
 using Kestrel.Site;
@@ -35,6 +36,7 @@ namespace Kestrel.Slice
             plumeMat = Resources.Load<Material>("Materials/KH_Plume");
             BuildScene();
             BuildUI();
+            AudioDirector.Attach(flight);
             _ = GameCenterBridge.Impl.Authenticate();
             SelectPreset("stock");
         }
