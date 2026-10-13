@@ -19,13 +19,21 @@ namespace Kestrel.Core.Vehicle
         static readonly Dictionary<string, double> AVIONICS_MASS = new Dictionary<string, double> { ["basic"] = 60, ["standard"] = 150, ["redundant"] = 300 };
         static readonly Dictionary<string, double> FAIRING_AREAL = new Dictionary<string, double> { ["composite"] = 14, ["al-li"] = 20, ["steel"] = 45, ["al-cu"] = 22, ["titanium"] = 18, ["glass-phenolic"] = 16 };
 
-        public static double StructureMass(Catalog c, StagePart part, double safetyFactor = REF_SAFETY)
+        /// <summary>v2 shell: structural fraction, density scale, safety factor. Solids keep the case fraction.</summary>
+        public static double StructuralFractionMass(Catalog c, StagePart part, double safetyFactor = REF_SAFETY)
         {
             if (!c.PropellantById.TryGetValue(part.propellant ?? "", out var prop) || !c.MaterialById.TryGetValue(part.material ?? "", out var mat)) return 0;
             double sfScale = safetyFactor / REF_SAFETY;
             if (prop.storability == "solid") return part.propMass * SOLID_CASE_FRACTION * (mat.structuralFraction / 0.045) * sfScale;
             double volScale = Math.Sqrt(1030 / prop.bulkDensity);
             return part.propMass * mat.structuralFraction * volScale * sfScale;
+        }
+
+        public static double StructureMass(Catalog c, StagePart part, double safetyFactor = REF_SAFETY)
+        {
+            double legacy = StructuralFractionMass(c, part, safetyFactor);
+            if (part.tank != null && part.tank.Any) return TankModel.StructureMass(c, part, safetyFactor, legacy);
+            return legacy;
         }
 
         public static double EnginesMass(Catalog c, StagePart part)

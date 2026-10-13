@@ -8,14 +8,16 @@
     "version": { "const": 1 },
     "materials": { "type": "array", "minItems": 1, "items": {
       "type": "object",
-      "required": ["id", "label", "structuralFraction", "density", "yieldMPa", "costPerKg", "maxTempK", "cryoOK"],
+      "required": ["id", "label", "structuralFraction", "density", "yieldMPa", "costPerKg", "maxTempK", "cryoOK", "elasticGPa"],
       "additionalProperties": false,
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9-]+$" }, "label": { "type": "string" },
         "structuralFraction": { "type": "number", "exclusiveMinimum": 0, "maximum": 1, "description": "dry kg per kg propellant" },
         "density": { "type": "number", "exclusiveMinimum": 0 }, "yieldMPa": { "type": "number", "exclusiveMinimum": 0 },
         "costPerKg": { "type": "number", "minimum": 0 }, "maxTempK": { "type": "number", "exclusiveMinimum": 0 },
-        "cryoOK": { "type": "boolean" }, "note": { "type": "string" }
+        "cryoOK": { "type": "boolean" },
+        "elasticGPa": { "type": "number", "exclusiveMinimum": 0, "description": "Young's modulus, GPa" },
+        "note": { "type": "string" }
       } } }
   }
 }
