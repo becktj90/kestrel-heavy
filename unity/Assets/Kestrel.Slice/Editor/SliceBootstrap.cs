@@ -113,8 +113,14 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
                 m.SetColor("_BaseColor", new Color(0.45f, 0.47f, 0.50f)); m.color = new Color(0.45f, 0.47f, 0.50f);
                 m.SetFloat("_Smoothness", 0.62f); m.SetFloat("_Metallic", 0.85f); m.enableInstancing = true;
             });
+            EnsureMaterial("Assets/Resources/Materials/KH_Ink.mat", "Universal Render Pipeline/Lit", m =>
+            {
+                m.SetColor("_BaseColor", new Color(0.07f, 0.08f, 0.10f)); m.color = new Color(0.07f, 0.08f, 0.10f);
+                m.SetFloat("_Smoothness", 0.35f); m.SetFloat("_Metallic", 0.15f); m.enableInstancing = true;
+            });
             KeepInstancing("Assets/Resources/Materials/KH_Body.mat");
             KeepInstancing("Assets/Resources/Materials/KH_Metal.mat");
+            KeepInstancing("Assets/Resources/Materials/KH_Ink.mat");
             EnsureMaterial("Assets/Resources/Materials/KH_Plume.mat", "Universal Render Pipeline/Particles/Unlit", m =>
             {
                 // Additive transparent particles.

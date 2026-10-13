@@ -9,6 +9,7 @@ namespace Kestrel.Vehicle
     {
         public const string BodyResource = "Materials/KH_Body";
         public const string MetalResource = "Materials/KH_Metal";
+        public const string InkResource = "Materials/KH_Ink";
 
         /// <summary>Painted body. Callers that tint per design clone this; the shader stays the asset's.</summary>
         public static Material Body() => Pin(Resources.Load<Material>(BodyResource));
@@ -18,6 +19,13 @@ namespace Kestrel.Vehicle
         {
             var m = Pin(Resources.Load<Material>(MetalResource));
             return m != null ? m : Body();
+        }
+
+        /// <summary>Dark panel lines. Shared asset, instancing on, so rings survive on device.</summary>
+        public static Material Ink()
+        {
+            var m = Pin(Resources.Load<Material>(InkResource));
+            return m != null ? m : Metal();
         }
 
         public static Material Pin(Material m)
@@ -31,6 +39,7 @@ namespace Kestrel.Vehicle
         {
             Pin(Resources.Load<Material>(BodyResource));
             Pin(Resources.Load<Material>(MetalResource));
+            Pin(Resources.Load<Material>(InkResource));
         }
     }
 }
