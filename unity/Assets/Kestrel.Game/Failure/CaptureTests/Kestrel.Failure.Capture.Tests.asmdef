@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Failure.Capture.Tests",
     "rootNamespace": "Kestrel.Game.Failure.Capture",
-    "references": ["Kestrel.Slice", "UnityEngine.TestRunner"],
+    "references": ["Kestrel.Core", "Kestrel.Slice", "UnityEngine.TestRunner"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
