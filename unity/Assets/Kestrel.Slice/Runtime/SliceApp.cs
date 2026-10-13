@@ -289,6 +289,8 @@ namespace Kestrel.Slice
             if (hangarCam != null) hangarCam.ExplodedView = explodedView;
             SetExploded(explodeToggle != null && explodeToggle.value);
             ApplyDesignFraming();
+            // #187–#192 are on main. One registration: failure visuals and the post-flight card.
+            Kestrel.Game.Failure.FailureHost.Attach(rocketGO, flight, ui, r);
         }
 
         /// <summary>Separated parts live on the vehicle. The assembled rocket draws only while the view is closed.</summary>
