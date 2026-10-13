@@ -149,6 +149,31 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(0, reopened.history.UndoCount, "a load starts a fresh history");
         }
 
+        [Test]
+        public void Session_SaveAndRename_RaiseSaveStateAndKeepTheName()
+        {
+            var lib = Lib();
+            var s = new HangarSession(Golden.Catalog, HangarFixtures.Data, HangarEditor.ForkTemplate(HangarFixtures.Data.Template("hopper")));
+            int raised = 0;
+            s.SaveStateChanged += () => raised++;
+            var r = s.SaveTo(lib, "Hopper");
+            Assert.AreEqual(1, raised, "a save tells the handle (name, unsaved dot) without a document edit");
+
+            var renamed = lib.Rename(r.id, "Hop Hop");
+            Assert.IsTrue(renamed.ok, renamed.error);
+            s.SlotRenamed(r.id, renamed.name);
+            Assert.AreEqual("Hop Hop", s.SavedName);
+            Assert.AreEqual(2, raised);
+            Assert.IsFalse(s.Dirty, "a rename is not an edit");
+
+            s.SlotRenamed("some-other-slot", "Nope");
+            Assert.AreEqual("Hop Hop", s.SavedName, "renaming another slot leaves the open one alone");
+            Assert.AreEqual(2, raised);
+
+            Assert.AreEqual("Hop Hop", s.SaveTo(lib).name, "the next Save keeps the new name instead of renaming it back");
+            Assert.AreEqual("Hop Hop", lib.NameOf(r.id));
+        }
+
         // ---------------- starter templates ----------------
 
         [Test]

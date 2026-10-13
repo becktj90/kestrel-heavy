@@ -188,6 +188,54 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        [Test]
+        public void ExtendedNozzle_ChangesTheDrawnBells()
+        {
+            var d = Template("workhorse");
+            var plain = Design.FromJson(d);
+            var s0 = d.Arr("stages")[0] as JsonObject;
+            Kestrel.Core.Designer.JsonMut.Set(s0, "nozzle", "extended");
+            var ext = Design.FromJson(d);
+            var a = RocketMeshBuilder.Build(C, plain);
+            var b = RocketMeshBuilder.Build(C, ext);
+            try
+            {
+                var e = C.EngineById[plain.stages[0].engine];
+                RocketMeshBuilder.NozzleOf(e, "extended", out _, out float eps);
+                Assert.Greater(eps, (float)e.expansionRatio);
+                var core = b.engines.FindAll(x => x.Stage == 0 && !x.StrapOn);
+                Assert.IsNotEmpty(core);
+                foreach (var x in core) Assert.AreEqual(eps, x.Expansion, 1e-4f, "bells use the selected nozzle's expansion ratio");
+                Assert.GreaterOrEqual(b.height, a.height - 1e-3f, "a longer bell never shortens the stack");
+                Assert.AreEqual(b.height, RocketMeshBuilder.BuildParts(C, ext).Find(p => p.Part == PartRef.Fairing).Y1, 1e-3f, "parts follow the same stations");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(a.mesh); UnityEngine.Object.DestroyImmediate(b.mesh); }
+        }
+
+        [Test]
+        public void VonKarmanNose_IsItsOwnShape()
+        {
+            const float rf = 2.5f;
+            foreach (var nose in new[] { "ogive", "conic", "blunt", "von-karman" })
+            {
+                Assert.AreEqual(rf, RocketMeshBuilder.NoseRadius(nose, rf, 0f), 1e-3f, nose + " starts at the shoulder radius");
+                Assert.AreEqual(0f, RocketMeshBuilder.NoseRadius(nose, rf, 1f), 1e-3f, nose + " closes at the tip");
+                float prev = rf;
+                for (int k = 1; k <= 10; k++) { float r = RocketMeshBuilder.NoseRadius(nose, rf, k / 10f); Assert.LessOrEqual(r, prev + 1e-4f, nose + " narrows"); prev = r; }
+            }
+            Assert.Greater(RocketMeshBuilder.NoseFraction("von-karman"), RocketMeshBuilder.NoseFraction("ogive"));
+            Assert.Greater(Mathf.Abs(RocketMeshBuilder.NoseRadius("ogive", rf, 0.5f) - RocketMeshBuilder.NoseRadius("von-karman", rf, 0.5f)), 1e-3f, "von Karman is not the ogive");
+        }
+
+        [Test]
+        public void LookTab_OffersOnlyFinishesTheHangarCanShow()
+        {
+            Assert.IsTrue(HangarRocketView.Paints("tank"));
+            Assert.IsTrue(HangarRocketView.Paints("fairing"));
+            Assert.IsFalse(HangarRocketView.Paints("engine"), "bells are BellCluster's; an engine finish would show nothing");
+            foreach (var slot in HangarRocketView.PaintedSlots) CollectionAssert.Contains(H.finishSlots, slot, "painted slots come from designer-look.json");
+        }
+
         // ---------------- panel smoke test ----------------
 
         [Test]

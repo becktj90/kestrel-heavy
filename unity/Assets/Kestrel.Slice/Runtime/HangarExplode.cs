@@ -83,7 +83,7 @@ namespace Kestrel.Slice
             {
                 var so = d.strapOns;
                 EngineOf(c, so, out var bEng);
-                float bBell = Bell(bEng, (float)so.diameter, so.engineCount);
+                float bBell = Bell(bEng, (float)so.diameter, so.engineCount, so.nozzle);
                 float bR = Mathf.Max(0.05f, (float)so.diameter * 0.5f);
                 float coreR = Mathf.Max(0.05f, (float)d.stages[0].diameter * 0.5f);
                 float bTank = Tank(c, so);
@@ -120,7 +120,7 @@ namespace Kestrel.Slice
             {
                 var s = d.stages[i];
                 EngineOf(c, s, out var eng);
-                float bell = Bell(eng, (float)s.diameter, s.engineCount);
+                float bell = Bell(eng, (float)s.diameter, s.engineCount, s.nozzle);
                 radius[i] = Mathf.Max(0.05f, (float)s.diameter * 0.5f);
                 float tank = Tank(c, s);
                 float thrust = 0.6f * radius[i] + (i == 0 ? 0f : bell * 0.7f);
@@ -140,7 +140,7 @@ namespace Kestrel.Slice
             {
                 var s = d.stages[i];
                 EngineOf(c, s, out var eng);
-                float bell = Bell(eng, (float)s.diameter, s.engineCount);
+                float bell = Bell(eng, (float)s.diameter, s.engineCount, s.nozzle);
                 float engineY = i == 0 ? 0f : bodyY[i] - inter[i - 1];
                 int before = into.Count;
                 AddEngines(s, eng, i, false, Vector3.zero, engineY, bell, stageH[i], spots, Add);
@@ -166,7 +166,7 @@ namespace Kestrel.Slice
             {
                 int before = into.Count;
                 float rf = Mathf.Max(0.05f, (float)d.fairingDiameter * 0.5f);
-                float nose = d.nose == "blunt" ? 0.25f : d.nose == "conic" ? 0.4f : 0.45f;
+                float nose = RocketMeshBuilder.NoseFraction(d.nose);
                 Add(new Part("fairing", "Fairing", HangarPartKind.Fairing, 0, -1, false,
                     new Vector3(0f, y, 0f), fairingL, rf, 0f, nose, fairingL, 0f));
                 EndGroup(fairingL, before);
@@ -225,7 +225,7 @@ namespace Kestrel.Slice
             c.EngineById.TryGetValue(s.engine, out eng);
         }
 
-        static float Bell(Engine e, float stageDiameter, int count) => RocketMeshBuilder.BellHeight(e, stageDiameter, count);
+        static float Bell(Engine e, float stageDiameter, int count, string nozzle) => RocketMeshBuilder.BellHeight(e, stageDiameter, count, nozzle);
 
         static float Tank(Catalog c, StagePart s)
         {

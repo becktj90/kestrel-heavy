@@ -41,6 +41,8 @@ namespace Kestrel.Slice
 
         /// <summary>The player asked to see a part (tap on a row): SliceApp focuses the camera on it.</summary>
         public event Action<PartRef> FocusRequested;
+        /// <summary>Kid words or engineer numbers changed; outside chrome (chip, Launch reason) re-words itself.</summary>
+        public event Action<bool> EngineerChanged;
         /// <summary>Exploded view toggle from the toolbar.</summary>
         public event Action<bool> ExplodeRequested;
         /// <summary>The in-game Reduce Motion switch changed (SliceApp re-reads it together with the iOS setting).</summary>
@@ -99,6 +101,7 @@ namespace Kestrel.Slice
             engineer = on;
             PlayerPrefs.SetInt(EngineerPref, on ? 1 : 0);
             Rebuild();
+            EngineerChanged?.Invoke(on);
         }
 
         public void Show(Tab t)
@@ -145,7 +148,8 @@ namespace Kestrel.Slice
         string AdvisorySignature()
         {
             var sb = new System.Text.StringBuilder();
-            foreach (var a in session.Advisories) sb.Append(a.code).Append(a.part).Append(';');
+            // The card text is in the key: engineer details carry live numbers (TWR, counts), and cards have no refresher.
+            foreach (var a in session.Advisories) sb.Append(a.code).Append(a.part).Append(a.severity).Append(a.kid).Append(a.engineer).Append(';');
             return sb.ToString();
         }
 
@@ -480,7 +484,7 @@ namespace Kestrel.Slice
             content.Add(ui.Section("Finishes"));
             foreach (var slot in h.finishSlots)
             {
-                if (!SlotPresent(slot)) continue;
+                if (!HangarRocketView.Paints(slot) || !SlotPresent(slot)) continue;
                 var s = slot;
                 var fs = new List<HangarUi.Choice> { new HangarUi.Choice("", "Paint") };
                 foreach (var f in h.FinishesFor(s)) fs.Add(new HangarUi.Choice(f.id, Words(f.id), progress.Earned(f.earn) ? Words(f.id) : Words(f.id) + ". " + f.earn.Describe(), !progress.Earned(f.earn)));
@@ -706,15 +710,15 @@ namespace Kestrel.Slice
                 }
                 else if (pendingConfirm == "open:" + info.id)
                 {
-                    r.Add(ui.Text("Your changes aren't saved. Open anyway?", HangarUi.SmallPt, HangarUi.Amber));
+                    r.Add(ui.Text(info.id == session.SavedId ? "Go back to the saved version? Your changes will be lost." : "Your changes aren't saved. Open anyway?", HangarUi.SmallPt, HangarUi.Amber));
                     r.Add(ui.Btn("Open", () => { pendingConfirm = null; Open(info.id); }));
                     r.Add(ui.Btn("Stay", () => { pendingConfirm = null; Rebuild(); }));
                 }
                 else
                 {
-                    r.Add(ui.Btn("Open", () => { if (session.Dirty && info.id != session.SavedId) { pendingConfirm = "open:" + info.id; Rebuild(); } else Open(info.id); }, "Open " + info.name));
+                    r.Add(ui.Btn("Open", () => { if (session.Dirty) { pendingConfirm = "open:" + info.id; Rebuild(); } else Open(info.id); }, "Open " + info.name));
                     r.Add(ui.Btn("Copy", () => { var o = library.Duplicate(info.id); status = o.ok ? "Copied as " + o.name + "." : Problem(o.error); Rebuild(); }, "Copy " + info.name));
-                    r.Add(ui.Btn("Rename", () => { var o = library.Rename(info.id, name.value); status = o.ok ? "Renamed to " + o.name + "." : Problem(o.error); Rebuild(); }, "Rename it to the name above"));
+                    r.Add(ui.Btn("Rename", () => { var o = library.Rename(info.id, name.value); if (o.ok) session.SlotRenamed(info.id, o.name); status = o.ok ? "Renamed to " + o.name + "." : Problem(o.error); Rebuild(); }, "Rename it to the name above"));
                     r.Add(ui.Btn("Delete", () => { pendingConfirm = "delete:" + info.id; Rebuild(); }, "Delete " + info.name));
                 }
                 r.style.flexWrap = Wrap.Wrap;
