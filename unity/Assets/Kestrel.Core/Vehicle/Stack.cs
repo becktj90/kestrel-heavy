@@ -27,6 +27,8 @@ namespace Kestrel.Core.Vehicle
     {
         public static double BaseCd(Design d)
         {
+            // v3 catalogs replace the hard-coded terms only when v3 aero fields are present (§2.5).
+            if (AeroModel.HasV3Aero(d)) return AeroModel.Cd0(d);
             double cd = DesignMath.NoseShapes.TryGetValue(d.nose ?? "", out var n) ? n : 0.32;
             if (d.fins) cd += 0.04;
             if (d.gridFins) cd += 0.03;
