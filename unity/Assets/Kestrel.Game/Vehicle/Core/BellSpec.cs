@@ -61,6 +61,9 @@ namespace Kestrel.Vehicle
         public float X, Y, Z;
         public int Stage, Slot;
         public ulong Seed;
+        /// <summary>Aft-skirt radius (m). Bay parts are placed inside it. 0 means the caller has no skirt yet.</summary>
+        public float SkinRadius;
+        public bool Gimbal;
     }
 
     /// <summary>Per-engine placement. Roll and the rest gimbal live on the instance, so the shared mesh stays one batch.</summary>

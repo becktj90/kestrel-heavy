@@ -50,10 +50,10 @@ namespace Kestrel.Slice
         /// <summary>One engine bell. The mesh is drawn by Kestrel.Vehicle.BellCluster, not lathed into the body.</summary>
         public readonly struct EngineSlot
         {
-            public readonly Vector3 Exit; public readonly float ExitDiameter, Expansion, GimbalDeg;
+            public readonly Vector3 Exit; public readonly float ExitDiameter, Expansion, GimbalDeg, StageRadius;
             public readonly string EngineId, Cycle; public readonly int Stage, Slot; public readonly bool StrapOn;
-            public EngineSlot(Vector3 exit, float exitDiameter, float expansion, float gimbal, string id, string cycle, int stage, int slot, bool strap)
-            { Exit = exit; ExitDiameter = exitDiameter; Expansion = expansion; GimbalDeg = gimbal; EngineId = id; Cycle = cycle; Stage = stage; Slot = slot; StrapOn = strap; }
+            public EngineSlot(Vector3 exit, float exitDiameter, float expansion, float gimbal, string id, string cycle, int stage, int slot, bool strap, float stageRadius)
+            { Exit = exit; ExitDiameter = exitDiameter; Expansion = expansion; GimbalDeg = gimbal; EngineId = id; Cycle = cycle; Stage = stage; Slot = slot; StrapOn = strap; StageRadius = stageRadius; }
         }
         public sealed class Result { public Mesh mesh; public float height; public float stage1Top; public Vector3[] nozzleExits; public float exitDiameter; public List<TankSlot> tanks = new List<TankSlot>(); public List<EngineSlot> engines = new List<EngineSlot>(); }
 
@@ -176,7 +176,7 @@ namespace Kestrel.Slice
                 var p = spots[n];
                 var off = origin + new Vector3(p.x, 0, p.y);
                 exits.Add(off);
-                slots.Add(new EngineSlot(off, re * 2f, (float)e.expansionRatio, (float)e.gimbal, e.id, e.cycle, stage, slotBase + n, strap));
+                slots.Add(new EngineSlot(off, re * 2f, (float)e.expansionRatio, (float)e.gimbal, e.id, e.cycle, stage, slotBase + n, strap, (float)s.diameter * 0.5f));
             }
         }
     }
