@@ -1,0 +1,114 @@
+# Rebuild the orphan `xcode-export` branch (Unity iOS export for Xcode Cloud).
+# Manual only. Never merges into main. See docs/XCODE_CLOUD_PLAN.md / DECISIONS #59.
+#
+# Secrets: UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD (same as Unity CI).
+name: Xcode export
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "CFBundleVersion / export tag (must be > last export/2.0.0-N, ≥ 100)"
+        required: true
+        type: string
+      ref:
+        description: "Git ref to export (branch, tag, or SHA). Default: main"
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xcode-export
+  cancel-in-progress: false
+
+env:
+  UNITY_VERSION: 6000.3.26f1
+  PROJECT_PATH: unity
+  TEAM_ID: 9TR6R5LV8M
+
+jobs:
+  export-and-publish:
+    name: Unity iOS export → xcode-export
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      HAS_LICENSE: ${{ secrets.UNITY_LICENSE != '' }}
+      BUILD_NUMBER: ${{ inputs.build_number }}
+    steps:
+      - name: Require Unity license
+        if: env.HAS_LICENSE != 'true'
+        run: |
+          echo "UNITY_LICENSE secret is empty; cannot export." >&2
+          exit 1
+
+      - name: Validate build number
+        run: |
+          set -euo pipefail
+          n="$BUILD_NUMBER"
+          [[ "$n" =~ ^[0-9]+$ ]] || { echo "build_number must be an integer"; exit 1; }
+          (( n >= 100 )) || { echo "build_number must be >= 100"; exit 1; }
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          lfs: true
+
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+
+      - uses: actions/cache@v4
+        with:
+          path: unity/Library
+          key: Library-iOS-export-${{ hashFiles('unity/Packages/manifest.json', 'unity/Packages/packages-lock.json', 'unity/ProjectSettings/**') }}
+          restore-keys: |
+            Library-iOS-export-
+            Library-iOS-
+
+      - name: Sync game data into Resources
+        run: |
+          mkdir -p unity/Assets/Resources/KestrelData
+          cp data/*.json web/js/economy-data/constants.json unity/Assets/Resources/KestrelData/
+
+      - name: Export iOS Xcode project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          projectPath: ${{ env.PROJECT_PATH }}
+          targetPlatform: iOS
+          buildMethod: Kestrel.Slice.Editor.BuildScript.BuildIOS
+          buildsPath: build
+          buildName: iOS
+          versioning: None
+          allowDirtyBuild: true
+          customParameters: -khBuildNumber ${{ env.BUILD_NUMBER }}
+
+      - name: Install git-lfs + rsync
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq git-lfs rsync
+          git lfs install
+
+      - name: Publish orphan xcode-export branch
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          chmod +x tools/ios-export/publish.sh
+          tools/ios-export/publish.sh "$BUILD_NUMBER" build/iOS "${SOURCE_SHA:0:12}" "$SOURCE_REF"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xcode-export-${{ env.BUILD_NUMBER }}
+          path: build/iOS
+          retention-days: 7
+          if-no-files-found: warn
