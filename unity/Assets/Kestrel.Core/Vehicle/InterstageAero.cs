@@ -62,6 +62,26 @@ namespace Kestrel.Core.Vehicle
         }
 
         /// <summary>
+        /// §2.5 Σ dragDeltaCd from the interstage catalog, matched by shape.
+        /// A shape the catalog does not list keeps the v2 flat label (flare and shoulder).
+        /// Straight and an absent shape add nothing. DragCd stays the v2 path.
+        /// </summary>
+        public static double CatalogDragCd(Design d, System.Func<string, double?> dragOfShape)
+        {
+            if (d?.stages == null) return 0;
+            double cd = 0, step = DesignerLimits.Active.interstageDragCd;
+            for (int i = 1; i < d.stages.Count; i++)
+            {
+                var shape = d.stages[i].interstageShape;
+                if (string.IsNullOrEmpty(shape) || shape == "straight") continue;
+                double? catalog = dragOfShape != null ? dragOfShape(shape) : null;
+                if (catalog.HasValue) cd += catalog.Value;
+                else if (shape == "flare" || shape == "shoulder") cd += step;
+            }
+            return cd;
+        }
+
+        /// <summary>
         /// Barrowman conical transition. CNa uses dRef. xFromForward is the CP distance aft of the
         /// forward end of the frustum (0 when the term is skipped). Positive CNa is a base flare
         /// (wider aft) and moves vehicle CP aft. Negative CNa is a shoulder and is destabilizing.
