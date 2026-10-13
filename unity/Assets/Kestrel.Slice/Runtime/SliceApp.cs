@@ -23,7 +23,7 @@ namespace Kestrel.Slice
     {
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
         Design design; HangarSession session; DesignLibrary library; HangarPanel panel; HangarRocketView rocketView = new HangarRocketView(); HangarCamera hangarCam;
-        Button undoButton, redoButton, explodeButton; bool rocketDirty = true; float lastRocketBuild = -1f; Mesh combinedMesh;
+        Button undoButton, redoButton, explodeButton; bool rocketDirty = true; float lastRocketBuild = -1f; Mesh combinedMesh; Material flightMat;
         HangarExplodedView explodedView; Material explodedMat;
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
@@ -358,11 +358,25 @@ namespace Kestrel.Slice
             if (combinedMesh != null) Destroy(combinedMesh);
             combinedMesh = r.mesh;
             rocketGO = new GameObject("Rocket"); rocketGO.transform.SetParent(vehicleRoot, false);
+            // The combined flight mesh sits on the root, undrawn in the Hangar (the parts are the picture). Its
+            // renderer is the gate the instanced bells, struts and livery marks follow, and the mesh FailureHost
+            // splits in flight. Launch swaps it in for the parts.
+            rocketGO.AddComponent<MeshFilter>().sharedMesh = r.mesh;
+            var mr = rocketGO.AddComponent<MeshRenderer>();
+            if (flightMat != null) Destroy(flightMat);
+            flightMat = bodyMat != null ? new Material(bodyMat) : null;
+            if (flightMat != null) { flightMat.color = HangarRocketView.Hex(design.liveryPrimary, Color.white); mr.sharedMaterial = flightMat; }
+            mr.forceRenderingOff = true;
             rocketView.Build(parts, rocketGO.transform, bodyMat);
             rocketView.ApplyLook(session?.Design, SliceData.Hangar);
             if (session != null) { rocketView.SetSelected(session.Selected, true); rocketView.SetIssues(session.Advisories); }
             var plates = new List<AttachPoint>();
             AddTankShells(r, plates);
+            AddBells(r);
+            AddAirframe(r);
+            AddLanding(r);
+            AddLivery(r);
+            AddFairing(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
@@ -388,6 +402,8 @@ namespace Kestrel.Slice
             if (hangarCam != null) hangarCam.SetVehicle(frameHeight, framePoints);
             BuildExploded();
             ApplyDesignFraming();
+            // One registration: failure visuals and the post-flight card.
+            Kestrel.Game.Failure.FailureHost.Attach(rocketGO, flight, ui, r);
         }
 
         /// <summary>R2's exploded view (HangarExplodedView), rebuilt with the rocket and painted in the livery's main colour.
@@ -408,15 +424,26 @@ namespace Kestrel.Slice
         }
 
         /// <summary>Separated parts live on the vehicle. The assembled rocket draws only while the view is closed.</summary>
-        void SetExploded(bool on)
+        void SetExploded(bool on) => SetExploded(on, false);
+
+        void SetExploded(bool on, bool immediate)
         {
             if (explodeButton != null) { explodeButton.text = on ? "Join" : "Parts"; explodeButton.tooltip = on ? "Put the rocket back together" : "Exploded view: pull the parts apart"; }
-            if (hangarCam != null) { hangarCam.ClearFocus(); hangarCam.SetExploded(on); }
-            else if (explodedView != null) explodedView.SetExploded(on, false);
+            if (hangarCam != null) { hangarCam.ClearFocus(); hangarCam.SetExploded(on, immediate); }
+            else if (explodedView != null) explodedView.SetExploded(on, immediate);
             // While the ease is still open, the separated parts are the picture. The assembled
             // rocket comes back only once they have seated (or immediately, when Reduce Motion snaps shut).
-            if (!on && explodedView != null && explodedView.Shown > 0.001f) return;
+            if (!on && explodedView != null && explodedView.Shown > 0.001f && !immediate) return;
             SetAssembledDrawn(!on);
+        }
+
+        /// <summary>Flight draws the combined mesh (FailureHost can split it); the Hangar draws the parts.
+        /// BackToDesign rebuilds the rocket, which puts the parts back.</summary>
+        void ShowFlightMesh(bool on)
+        {
+            rocketView.SetVisible(!on);
+            var mr = rocketGO != null ? rocketGO.GetComponent<MeshRenderer>() : null;
+            if (mr != null) mr.forceRenderingOff = !on;
         }
 
         void SetAssembledDrawn(bool drawn)
@@ -514,6 +541,126 @@ namespace Kestrel.Slice
             }
         }
 
+        /// <summary>V1a: one instanced bell per engine, shaped by expansion ratio and cycle. The body mesh no longer
+        /// carries a cloned cone. The cluster watches the body renderer so exploded view does not draw both.</summary>
+        void AddBells(RocketMeshBuilder.Result r)
+        {
+            if (r.engines == null || r.engines.Count == 0) return;
+            ulong seed = Kestrel.Vehicle.BellVariation.HashId(design.id ?? "kh");
+            var mounts = new List<Kestrel.Vehicle.BellMount>(r.engines.Count);
+            for (int i = 0; i < r.engines.Count; i++)
+            {
+                var e = r.engines[i];
+                mounts.Add(new Kestrel.Vehicle.BellMount
+                {
+                    EngineId = e.EngineId, Cycle = e.Cycle, ExpansionRatio = e.Expansion, ExitDiameter = e.ExitDiameter,
+                    X = e.Exit.x, Y = e.Exit.y, Z = e.Exit.z, Stage = e.Stage, Slot = e.Slot, Seed = seed,
+                    SkinRadius = e.StageRadius, Gimbal = e.GimbalDeg > 0.01f
+                });
+            }
+            var gate = rocketGO.GetComponent<MeshRenderer>();
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.BellCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = gate;
+            cluster.Init(mounts, Kestrel.Kit.KitBudgets.Medium);
+            var bay = rocketGO.AddComponent<Kestrel.Vehicle.BayCluster>();
+            bay.ViewCamera = cam;
+            bay.Gate = gate;
+            bay.Init(mounts, Kestrel.Kit.KitBudgets.Medium);
+        }
+
+        /// <summary>Interstage stringers and joint rings, plus one raceway on the tower side of each tank.
+        /// The lathe cone and barrel stay the silhouette; these tubes sit just outside them.</summary>
+        void AddAirframe(RocketMeshBuilder.Result r)
+        {
+            var poses = new List<Kestrel.Vehicle.StrutPose>();
+            if (r.interstages != null)
+                for (int i = 0; i < r.interstages.Count; i++)
+                {
+                    var s = r.interstages[i];
+                    poses.AddRange(Kestrel.Vehicle.AirframeLayout.Interstage(s.Y0, s.Y1, s.R0, s.R1));
+                }
+            if (r.tanks != null)
+                for (int i = 0; i < r.tanks.Count; i++)
+                {
+                    var t = r.tanks[i];
+                    if (t.BarrelLength <= 0.2f || t.Radius <= 0.05f) continue;
+                    poses.Add(Kestrel.Vehicle.AirframeLayout.RacewayRun(t.Offset.x, t.Offset.y, t.Offset.z, t.Radius, t.BarrelBottom, t.BarrelLength));
+                }
+            if (poses.Count == 0) return;
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(poses, Kestrel.Kit.KitBudgets.Medium);
+        }
+
+        /// <summary>Deployed legs and grid fins, only when the design asks for them. Stock Kestrel Heavy has both.</summary>
+        void AddLanding(RocketMeshBuilder.Result r)
+        {
+            if (design == null || (!design.legs && !design.gridFins)) return;
+            float radius = 0f;
+            if (r.tanks != null)
+                for (int i = 0; i < r.tanks.Count; i++)
+                    if (r.tanks[i].Stage == 0 && !r.tanks[i].StrapOn) radius = r.tanks[i].Radius;
+            if (radius < 0.05f) return;
+            var gate = rocketGO.GetComponent<MeshRenderer>();
+            if (design.legs)
+            {
+                var legs = Kestrel.Vehicle.LandingLayout.Legs(radius, r.stage1AftY);
+                var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
+                cluster.ViewCamera = cam;
+                cluster.Gate = gate;
+                cluster.Init(legs, Kestrel.Kit.KitBudgets.Medium);
+            }
+            if (design.gridFins)
+            {
+                float station = r.stage1Top;
+                if (r.interstages != null && r.interstages.Count > 0) station = r.interstages[0].Y0;
+                var fins = Kestrel.Vehicle.LandingLayout.Fins(radius, station);
+                var cluster = rocketGO.AddComponent<Kestrel.Vehicle.FinCluster>();
+                cluster.ViewCamera = cam;
+                cluster.Gate = gate;
+                cluster.Init(fins, Kestrel.Kit.KitBudgets.Medium);
+            }
+        }
+
+        /// <summary>Circumferential panel lines and two seams on every tank, plus an accent band and decal blocks
+        /// on the first stage. Paint comes from the livery colours, not a stripe texture.</summary>
+        void AddLivery(RocketMeshBuilder.Result r)
+        {
+            if (r.tanks == null || r.tanks.Count == 0) return;
+            var marks = new List<Kestrel.Vehicle.LiveryMark>();
+            bool accentUsed = false;
+            for (int i = 0; i < r.tanks.Count; i++)
+            {
+                var t = r.tanks[i];
+                if (t.BarrelLength <= 0.5f || t.Radius <= 0.05f) continue;
+                bool accent = !accentUsed && t.Stage == 0 && !t.StrapOn;
+                if (accent) accentUsed = true;
+                marks.AddRange(Kestrel.Vehicle.LiveryLayout.Tank(t.Offset.x, t.Offset.y, t.Offset.z, t.Radius, t.BarrelBottom, t.BarrelLength, accent));
+            }
+            if (marks.Count == 0) return;
+            var accentCol = new Color(0.10f, 0.24f, 0.43f);
+            if (design != null) ColorUtility.TryParseHtmlString(design.liveryAccent, out accentCol);
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.LiveryCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(marks, Kestrel.Kit.KitBudgets.Medium, accentCol);
+        }
+
+        /// <summary>Separation seams, base ring and shoulder on the fairing. The ogive lathe is unchanged, so plume height stays put.</summary>
+        void AddFairing(RocketMeshBuilder.Result r)
+        {
+            if (!r.fairing.Present) return;
+            var f = r.fairing;
+            var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic);
+            if (poses.Count == 0) return;
+            var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
+            cluster.ViewCamera = cam;
+            cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
+            cluster.Init(poses, Kestrel.Kit.KitBudgets.Medium);
+        }
+
         /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every
         /// object SliceApp built (camera, sun, world, UI); ShellDesignHost restores the shell camera and UI.
         /// Opened standalone (Slice.unity), load build index 0 (Boot), which rebuilds the shell and enters Home.</summary>
@@ -547,12 +694,19 @@ namespace Kestrel.Slice
             if (session == null || !session.LaunchEnabled) return; // blocks gate Launch; warnings never do
             if (rocketDirty) BuildRocket();
             submitted = false;
-            if (explodedView != null) explodedView.SetExploded(false, true);
-            if (hangarCam != null) { hangarCam.SetExploded(false); hangarCam.ClearFocus(); hangarCam.enabled = false; }
+            SetExploded(false, true);
+            if (hangarCam != null)
+            {
+                // Snap back to the assembled pose before sampling the chase offset, so liftoff
+                // does not inherit the closer exploded camera.
+                hangarCam.ApplyPose();
+                hangarCam.enabled = false;
+            }
             SetAssembledDrawn(true);
             if (explodeButton != null) explodeButton.text = "Parts";
             rocketView.SetSelected(session.Selected, false);
             rocketView.SetIssues(null);
+            ShowFlightMesh(true);
             camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
             hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";

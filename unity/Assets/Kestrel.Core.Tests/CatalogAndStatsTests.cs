@@ -184,32 +184,41 @@ namespace Kestrel.Core.Tests
                 Assert.Greater(t0, 0, id);
                 Assert.LessOrEqual(t0, t1, id);
                 Assert.Greater(e.Num("reliability"), 0, id);
-                Assert.Less(e.Num("reliability"), 1, id);
+                // Schema maximum is inclusive 1 (engines.schema.json).
+                Assert.LessOrEqual(e.Num("reliability"), 1, id);
                 Assert.Greater(e.Num("pc"), 0, id);
                 Assert.Greater(e.Num("expansionRatio"), 0, id);
                 Assert.Greater(e.Num("diameter"), 0, id);
-                Assert.GreaterOrEqual(e.Num("mass"), 0, id);
                 Assert.GreaterOrEqual(e.Num("cost"), 0, id);
-                if (e.Num("mass") > 0)
+                bool solid = e.Str("cycle") == "solid";
+                if (solid)
                 {
+                    // Solids use stage casing mass; engine mass stays 0.
+                    Assert.AreEqual(0, e.Num("mass"), id);
+                    Assert.IsFalse(e.Bool("restart"), id);
+                    Assert.AreEqual(1, t0, id);
+                }
+                else
+                {
+                    // Mass.EnginesMass uses this value directly for liquid/hybrid.
+                    Assert.Greater(e.Num("mass"), 0, id);
                     double twr = e.Num("thrustVac") / (e.Num("mass") * 9.80665);
                     Assert.Greater(twr, 10, id);
                     Assert.Less(twr, 220, id);
                 }
-                if (e.Str("cycle") == "solid")
-                {
-                    Assert.IsFalse(e.Bool("restart"), id);
-                    Assert.AreEqual(1, t0, id);
-                }
                 var nozzles = e.Arr("nozzles");
                 if (nozzles != null)
                 {
+                    double ispCap = c.PropellantById[e.Str("propellant")].ispVacMax;
                     var seen = new HashSet<string>();
                     foreach (JsonObject n in nozzles)
                     {
-                        Assert.IsTrue(seen.Add(n.Str("id")), id + " nozzle " + n.Str("id"));
-                        Assert.Greater(n.Num("thrustVac"), 0, id);
-                        Assert.Greater(n.Num("exitDiameter"), 0, id);
+                        string nid = id + " nozzle " + n.Str("id");
+                        Assert.IsTrue(seen.Add(n.Str("id")), nid);
+                        Assert.Greater(n.Num("thrustVac"), 0, nid);
+                        Assert.Greater(n.Num("exitDiameter"), 0, nid);
+                        // EnginePoint.Of uses the variant Isp; same propellant cap as the default bell.
+                        Assert.LessOrEqual(n.Num("ispVac"), ispCap, nid);
                     }
                 }
             }

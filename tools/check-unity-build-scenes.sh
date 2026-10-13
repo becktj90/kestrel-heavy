@@ -13,6 +13,7 @@ required="$scenes
 Assets/Resources/UI/KH_PanelSettings.asset
 Assets/Resources/UI/KH_ShellPanelSettings.asset
 Assets/Resources/Materials/KH_Body.mat
+Assets/Resources/Materials/KH_LitEmission.mat
 Assets/Resources/Materials/KH_Plume.mat"
 while IFS= read -r p; do
   for f in "unity/$p" "unity/$p.meta"; do

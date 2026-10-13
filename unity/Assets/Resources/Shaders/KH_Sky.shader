@@ -77,11 +77,27 @@ Shader "Kestrel/Sky"
                 noperspective float3 dirWS : TEXCOORD0;
             };
 
+            // Far clip in the current API. A unit skybox cube sits on the camera; with near
+            // clip at 0.5 a corner of that cube is cut by the near plane and shows up as a
+            // black triangle (the clear colour, or a NaN direction saturated to black).
+            // Pinning z to the far plane keeps every in-front vertex inside the frustum.
+            float SkyFarZ(float clipW)
+            {
+                // Stay just inside the far plane. Exactly on it is clipped by some GL drivers,
+                // which brings the black corner back.
+                #if UNITY_REVERSED_Z
+                return clipW > 0.0 ? 1e-4 * clipW : clipW;
+                #else
+                return clipW > 0.0 ? clipW * 0.999 : clipW;
+                #endif
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings o;
                 float3 posOS = input.positionOS.xyz;
                 o.positionCS = TransformObjectToHClip(posOS);
+                o.positionCS.z = SkyFarZ(o.positionCS.w);
                 o.dirWS = mul((float3x3)UNITY_MATRIX_M, posOS);
                 return o;
             }
@@ -180,7 +196,11 @@ Shader "Kestrel/Sky"
 
             half4 frag(Varyings input) : SV_Target
             {
-                float3 dir = normalize(input.dirWS);
+                // A clipped cube corner interpolates a non-finite direction and saturates to
+                // a black wedge. Drop that fragment; the unclipped sky faces already covered it.
+                float3 dir = input.dirWS;
+                if (any(isnan(dir)) || any(isinf(dir)) || dot(dir, dir) < 1e-8) discard;
+                dir = normalize(dir);
                 float3 sunDir = normalize(_SunDir.xyz);
                 float mu = dir.y;
                 float u = saturate(mu);
@@ -238,7 +258,18 @@ Shader "Kestrel/Sky"
             #include "UnityCG.cginc"
             struct app_black { float4 vertex : POSITION; };
             struct v2fb { float4 pos : SV_POSITION; };
-            v2fb vertBlack(app_black v) { v2fb o; o.pos = UnityObjectToClipPos(v.vertex); return o; }
+            v2fb vertBlack(app_black v)
+            {
+                v2fb o;
+                o.pos = UnityObjectToClipPos(v.vertex);
+                // Same far-plane pin as the URP pass: a near-clipped cube corner is a black triangle.
+                #if UNITY_REVERSED_Z
+                o.pos.z = o.pos.w > 0.0 ? 1e-4 * o.pos.w : o.pos.w;
+                #else
+                o.pos.z = o.pos.w > 0.0 ? o.pos.w * 0.999 : o.pos.w;
+                #endif
+                return o;
+            }
             fixed4 fragBlack() : SV_Target { return fixed4(0, 0, 0, 1); }
             ENDCG
         }

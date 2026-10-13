@@ -1,6 +1,7 @@
 using Kestrel.Slice;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Kestrel.Game.Tests
 {
@@ -189,6 +190,107 @@ namespace Kestrel.Game.Tests
             Assert.That(yaw, Is.Not.EqualTo(0f));
             Assert.That(pitch, Is.Not.EqualTo(0f));
             Assert.That(zoom, Is.EqualTo(2f));
+        }
+
+        [Test]
+        public void ExplodedViewMovesCloserAndRestoresThePose()
+        {
+            Assert.That(HangarMotion.ExplodedSeconds, Is.EqualTo(HangarExplode.Seconds));
+            Assert.That(HangarMotion.ExplodedZoom, Is.GreaterThan(1f).And.LessThanOrEqualTo(HangarMotion.ZoomMax));
+            Assert.That(HangarMotion.ExplodedPitchDeg, Is.GreaterThan(HangarMotion.PitchMinDeg).And.LessThan(HangarMotion.PitchMaxDeg));
+
+            HangarOrbit.Pose(70f, 1f, 0f, 0f, 1f, out var framed, out var aim);
+            HangarOrbit.Pose(70f, 1f, 20f, HangarMotion.ExplodedPitchDeg, HangarMotion.ExplodedZoom, out var close, out var aimC);
+            Assert.That((close - aimC).magnitude, Is.LessThan((framed - aim).magnitude / HangarMotion.ExplodedZoom + 1f));
+
+            var o = HangarOrbit.Rest();
+            o.Drag(40f, 8f, 0.05f, false);
+            float yaw = o.YawDeg, pitch = o.PitchDeg, zoom = o.Zoom;
+            o.BeginExploded(false, false);
+            Assert.That(o.ExplodeFraming, Is.False, "closing a view that was never open does not move the camera");
+            Assert.That(o.Zoom, Is.EqualTo(zoom).Within(1e-4f));
+
+            o.BeginExploded(true, false);
+            Assert.That(o.ExplodeFraming, Is.True);
+            o.Step(HangarMotion.ExplodedSeconds * 0.5f, false);
+            float midZoom = Mathf.Lerp(zoom, HangarMotion.ExplodedZoom, 0.5f);
+            float midPitch = Mathf.Lerp(pitch, HangarMotion.ExplodedPitchDeg, 0.5f);
+            Assert.That(o.Zoom, Is.EqualTo(midZoom).Within(1e-3f));
+            Assert.That(o.PitchDeg, Is.EqualTo(midPitch).Within(1e-3f));
+            Assert.That(o.YawDeg, Is.EqualTo(yaw).Within(1e-3f));
+            o.Step(HangarMotion.ExplodedSeconds, false);
+            Assert.That(o.ExplodeFraming, Is.False);
+            Assert.That(o.Zoom, Is.EqualTo(HangarMotion.ExplodedZoom).Within(1e-3f));
+            Assert.That(o.PitchDeg, Is.EqualTo(HangarMotion.ExplodedPitchDeg).Within(1e-3f));
+            Assert.That(o.YawDeg, Is.EqualTo(yaw).Within(1e-3f));
+
+            // A second open must not recapture the closer pose as the one to restore.
+            o.BeginExploded(true, true);
+            Assert.That(o.Zoom, Is.EqualTo(HangarMotion.ExplodedZoom).Within(1e-3f));
+            o.BeginExploded(false, true);
+            Assert.That(o.YawDeg, Is.EqualTo(yaw).Within(1e-3f));
+            Assert.That(o.PitchDeg, Is.EqualTo(pitch).Within(1e-3f));
+            Assert.That(o.Zoom, Is.EqualTo(zoom).Within(1e-3f));
+            Assert.That(o.ExplodeFraming, Is.False);
+        }
+
+        [Test]
+        public void ExplodedToggleFollowsCodeAndTheCameraFollowsTheToggle()
+        {
+            var camGo = new GameObject("Camera");
+            var uiGo = new GameObject("UI");
+            try
+            {
+                camGo.AddComponent<Camera>();
+                var hangar = camGo.AddComponent<HangarCamera>();
+                hangar.ReduceMotion = true;
+                var doc = uiGo.AddComponent<UIDocument>();
+                doc.panelSettings = Resources.Load<PanelSettings>("UI/KH_PanelSettings");
+                Assert.That(doc.panelSettings, Is.Not.Null);
+                Assert.That(doc.rootVisualElement, Is.Not.Null);
+                var toggle = new Toggle { name = "explode" };
+                doc.rootVisualElement.Add(toggle);
+
+                var link = new ExplodedToggleLink();
+                int calls = 0;
+                link.Bind(toggle, false, on =>
+                {
+                    calls++;
+                    Assert.That(calls, Is.LessThan(3), "exploded toggle fed back into itself");
+                    hangar.SetExploded(on);
+                    link.Push(hangar.Exploded);
+                });
+
+                Assert.That(toggle.value, Is.False);
+                Assert.That(hangar.Exploded, Is.False);
+                Assert.That(hangar.Zoom, Is.EqualTo(1f).Within(1e-3f));
+
+                hangar.SetExploded(true);
+                link.Push(hangar.Exploded);
+                Assert.That(calls, Is.EqualTo(0), "Push must not notify the checkbox");
+                Assert.That(hangar.Exploded, Is.True);
+                Assert.That(toggle.value, Is.True);
+                Assert.That(link.Value, Is.True);
+                Assert.That(hangar.Zoom, Is.EqualTo(HangarMotion.ExplodedZoom).Within(1e-3f));
+
+                toggle.value = false;
+                Assert.That(calls, Is.EqualTo(1));
+                Assert.That(hangar.Exploded, Is.False);
+                Assert.That(toggle.value, Is.False);
+                Assert.That(link.Value, Is.False);
+                Assert.That(hangar.Zoom, Is.EqualTo(1f).Within(1e-3f));
+
+                toggle.value = true;
+                Assert.That(calls, Is.EqualTo(2));
+                Assert.That(hangar.Exploded, Is.True);
+                Assert.That(hangar.Zoom, Is.EqualTo(HangarMotion.ExplodedZoom).Within(1e-3f));
+                link.Unbind();
+            }
+            finally
+            {
+                Object.DestroyImmediate(uiGo);
+                Object.DestroyImmediate(camGo);
+            }
         }
 
         [Test]

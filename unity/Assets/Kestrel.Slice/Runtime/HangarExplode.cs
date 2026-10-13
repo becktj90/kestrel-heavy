@@ -23,17 +23,21 @@ namespace Kestrel.Slice
             public readonly bool StrapOn;
             public readonly Vector3 RestLocal;
             public readonly float AxialLength, Radius, TopRadius, NoseFraction, StageHeight, ExplodeLift;
+            public readonly string Cycle;
+            public readonly float Expansion;
 
             public Part(string id, string label, HangarPartKind kind, int order, int stageIndex, bool strapOn,
-                Vector3 rest, float axial, float radius, float topRadius, float noseFraction, float stageHeight, float lift)
+                Vector3 rest, float axial, float radius, float topRadius, float noseFraction, float stageHeight, float lift,
+                string cycle = null, float expansion = 0f)
             {
                 Id = id; Label = label; Kind = kind; Order = order; StageIndex = stageIndex; StrapOn = strapOn;
                 RestLocal = rest; AxialLength = axial; Radius = radius; TopRadius = topRadius;
                 NoseFraction = noseFraction; StageHeight = stageHeight; ExplodeLift = lift;
+                Cycle = cycle; Expansion = expansion;
             }
 
             public Part At(int order, float lift) => new Part(Id, Label, Kind, order, StageIndex, StrapOn,
-                RestLocal, AxialLength, Radius, TopRadius, NoseFraction, StageHeight, lift);
+                RestLocal, AxialLength, Radius, TopRadius, NoseFraction, StageHeight, lift, Cycle, Expansion);
         }
 
         public readonly struct Callout
@@ -79,7 +83,7 @@ namespace Kestrel.Slice
             {
                 var so = d.strapOns;
                 EngineOf(c, so, out var bEng);
-                float bBell = Bell(bEng);
+                float bBell = Bell(bEng, (float)so.diameter, so.engineCount);
                 float bR = Mathf.Max(0.05f, (float)so.diameter * 0.5f);
                 float coreR = Mathf.Max(0.05f, (float)d.stages[0].diameter * 0.5f);
                 float bTank = Tank(c, so);
@@ -116,7 +120,7 @@ namespace Kestrel.Slice
             {
                 var s = d.stages[i];
                 EngineOf(c, s, out var eng);
-                float bell = Bell(eng);
+                float bell = Bell(eng, (float)s.diameter, s.engineCount);
                 radius[i] = Mathf.Max(0.05f, (float)s.diameter * 0.5f);
                 float tank = Tank(c, s);
                 float thrust = 0.6f * radius[i] + (i == 0 ? 0f : bell * 0.7f);
@@ -136,7 +140,7 @@ namespace Kestrel.Slice
             {
                 var s = d.stages[i];
                 EngineOf(c, s, out var eng);
-                float bell = Bell(eng);
+                float bell = Bell(eng, (float)s.diameter, s.engineCount);
                 float engineY = i == 0 ? 0f : bodyY[i] - inter[i - 1];
                 int before = into.Count;
                 AddEngines(s, eng, i, false, Vector3.zero, engineY, bell, stageH[i], spots, Add);
@@ -204,7 +208,7 @@ namespace Kestrel.Slice
             {
                 var at = origin + new Vector3(spots[j].x, y, spots[j].y);
                 add(new Part(prefix + j, engName + " " + (j + 1), HangarPartKind.Engine, 0, index, strap,
-                    at, bell, re, re, 0f, stageH, 0f));
+                    at, bell, re, re, 0f, stageH, 0f, eng != null ? eng.cycle : null, eng != null ? (float)eng.expansionRatio : 0f));
             }
         }
 
@@ -221,11 +225,7 @@ namespace Kestrel.Slice
             c.EngineById.TryGetValue(s.engine, out eng);
         }
 
-        static float Bell(Engine e)
-        {
-            float diam = e != null ? (float)e.diameter : 0.5f;
-            return Mathf.Clamp(diam * 1.6f, 0.4f, 4f);
-        }
+        static float Bell(Engine e, float stageDiameter, int count) => RocketMeshBuilder.BellHeight(e, stageDiameter, count);
 
         static float Tank(Catalog c, StagePart s)
         {

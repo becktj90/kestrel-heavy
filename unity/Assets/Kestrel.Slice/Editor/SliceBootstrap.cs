@@ -107,7 +107,20 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
             if (GraphicsSettings.defaultRenderPipeline != rp) GraphicsSettings.defaultRenderPipeline = rp;
             // Per-quality-level pipeline assets are owned by U2's QualitySetup (data/quality.json);
             // don't overwrite them here. The default pipeline above is the fallback.
-            EnsureMaterial("Assets/Resources/Materials/KH_Body.mat", "Universal Render Pipeline/Lit", m => { m.SetFloat("_Smoothness", 0.55f); m.SetFloat("_Metallic", 0.1f); });
+            EnsureMaterial("Assets/Resources/Materials/KH_Body.mat", "Universal Render Pipeline/Lit", m => { m.SetFloat("_Smoothness", 0.55f); m.SetFloat("_Metallic", 0.1f); m.enableInstancing = true; });
+            EnsureMaterial("Assets/Resources/Materials/KH_Metal.mat", "Universal Render Pipeline/Lit", m =>
+            {
+                m.SetColor("_BaseColor", new Color(0.45f, 0.47f, 0.50f)); m.color = new Color(0.45f, 0.47f, 0.50f);
+                m.SetFloat("_Smoothness", 0.62f); m.SetFloat("_Metallic", 0.85f); m.enableInstancing = true;
+            });
+            EnsureMaterial("Assets/Resources/Materials/KH_Ink.mat", "Universal Render Pipeline/Lit", m =>
+            {
+                m.SetColor("_BaseColor", new Color(0.07f, 0.08f, 0.10f)); m.color = new Color(0.07f, 0.08f, 0.10f);
+                m.SetFloat("_Smoothness", 0.35f); m.SetFloat("_Metallic", 0.15f); m.enableInstancing = true;
+            });
+            KeepInstancing("Assets/Resources/Materials/KH_Body.mat");
+            KeepInstancing("Assets/Resources/Materials/KH_Metal.mat");
+            KeepInstancing("Assets/Resources/Materials/KH_Ink.mat");
             EnsureMaterial("Assets/Resources/Materials/KH_Plume.mat", "Universal Render Pipeline/Particles/Unlit", m =>
             {
                 // Additive transparent particles.
@@ -125,6 +138,16 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
             if (sh == null) { Debug.LogError($"[Kestrel] shader not found: {shader} (is URP installed?)"); return; }
             var m = new Material(sh); setup(m);
             AssetDatabase.CreateAsset(m, path);
+        }
+
+        /// <summary>Committed materials already exist, so EnsureMaterial will not recreate them. Instancing has to
+        /// stay on or Graphics.RenderMeshInstanced drops the mesh on device.</summary>
+        static void KeepInstancing(string path)
+        {
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m == null || m.enableInstancing) return;
+            m.enableInstancing = true;
+            EditorUtility.SetDirty(m);
         }
 
         static void EnsurePanelSettings()

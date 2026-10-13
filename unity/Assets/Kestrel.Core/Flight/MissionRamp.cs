@@ -113,4 +113,132 @@ namespace Kestrel.Core.Flight
             WindForce = windForce; DriftWind = driftWind; Swell = swell; Gust = gust; ForceX = forceX;
         }
     }
+
+    /// <summary>One §4 contract. The payload mass, volume and target drive the goal.</summary>
+    public sealed class CampaignMission
+    {
+        public int Index;
+        public string Id, Name, PayloadId;
+        public double MassKg, VolumeM3, DiameterM;
+        public string TargetKind;
+        public double ApoKm, PeriKm, IncDeg, C3Km2PerS2;
+        public double BudgetKc, RewardKc;
+        public bool GentleDefault;
+        public double CoastHours, MaxG = double.NaN, ReliabilityMin = double.NaN;
+        public bool MarginNonNegative, StrapOnsAllowed, NoRedRisks, RandomFailures, LandBoosters;
+        public string LandingMode, LandingGrade, LandingSite;
+        public readonly List<string> Unlocks = new List<string>();
+
+        public bool HasInclination => TargetKind == "circular" || TargetKind == "ellipse" || TargetKind == "c3";
+        public bool LandingRequired => LandingMode == "rtls" || LandingMode == "barge";
+
+        /// <summary>
+        /// Altitude the guidance law and the prop-depletion check use.
+        /// An apogee hop coasts after burnout, so depletion is judged against a 1 km floor.
+        /// The pass check still requires the Kepler apogee within ±5% of ApoKm.
+        /// Ellipse and C3 insert at periapsis. Circular aims at the orbit altitude.
+        /// </summary>
+        public double GuidanceAltM
+        {
+            get
+            {
+                if (TargetKind == "apogee") return 1000;
+                if (TargetKind == "circular") return ApoKm * 1000;
+                return PeriKm * 1000;
+            }
+        }
+
+        public double RequiredDeltaV(double latitudeDeg = 28.5)
+            => MissionScore.RequiredDeltaV(TargetKind, ApoKm, PeriKm, C3Km2PerS2, latitudeDeg);
+    }
+
+    /// <summary>The 10-mission campaign. data/campaign.json. Haven assists stay on MissionRamp.</summary>
+    public sealed class Campaign
+    {
+        public int Version;
+        public double StartingBankKc;
+        public bool Timers, Energy, Ads;
+        public readonly List<string> StarterUnlocks = new List<string>();
+        public readonly List<ulong> Seeds = new List<ulong>();
+        public readonly List<CampaignMission> Missions = new List<CampaignMission>();
+
+        public static Campaign Load(string repoRoot)
+            => FromJson(MiniJson.ParseObject(File.ReadAllText(Path.Combine(repoRoot, "data", "campaign.json"))));
+
+        public static Campaign FromJson(JsonObject o)
+        {
+            var c = new Campaign { Version = (int)o.Num("version", 1), StartingBankKc = o.Num("startingBankKc") };
+            var dark = o.Obj("darkPatterns");
+            if (dark != null) { c.Timers = dark.Bool("timers"); c.Energy = dark.Bool("energy"); c.Ads = dark.Bool("ads"); }
+            var starter = o.Arr("starterUnlocks");
+            if (starter != null) foreach (var x in starter) if (x is string s) c.StarterUnlocks.Add(s);
+            var seeds = o.Arr("seeds");
+            if (seeds != null) foreach (var x in seeds) if (x is double d) c.Seeds.Add((ulong)d);
+            foreach (JsonObject m in o.Arr("missions")) c.Missions.Add(ReadMission(m));
+            return c;
+        }
+
+        public CampaignMission Mission(int index)
+        {
+            for (int i = 0; i < Missions.Count; i++) if (Missions[i].Index == index) return Missions[i];
+            return null;
+        }
+
+        public CampaignMission ById(string id)
+        {
+            for (int i = 0; i < Missions.Count; i++) if (Missions[i].Id == id) return Missions[i];
+            return null;
+        }
+
+        static CampaignMission ReadMission(JsonObject o)
+        {
+            var m = new CampaignMission
+            {
+                Index = (int)o.Num("index"),
+                Id = o.Str("id"),
+                Name = o.Str("name"),
+                PayloadId = o.Str("payloadId"),
+                MassKg = o.Num("massKg"),
+                VolumeM3 = o.Num("volumeM3"),
+                DiameterM = o.Num("diameterM"),
+                BudgetKc = o.Num("budgetKc"),
+                RewardKc = o.Num("rewardKc"),
+                GentleDefault = o.Bool("gentleDefault"),
+            };
+            var t = o.Obj("target");
+            if (t != null)
+            {
+                m.TargetKind = t.Str("kind");
+                m.ApoKm = t.Num("apoKm");
+                m.PeriKm = t.Num("periKm");
+                m.IncDeg = t.Num("incDeg");
+                m.C3Km2PerS2 = t.Num("c3Km2PerS2");
+            }
+            var reqs = o.Arr("requirements");
+            if (reqs != null)
+            {
+                foreach (JsonObject r in reqs)
+                {
+                    string id = r.Str("id");
+                    if (id == "margin") m.MarginNonNegative = true;
+                    else if (id == "maxG") m.MaxG = r.Num("max");
+                    else if (id == "strapOns") m.StrapOnsAllowed = r.Bool("allow");
+                    else if (id == "landing")
+                    {
+                        m.LandingMode = r.Str("mode");
+                        m.LandingGrade = r.Str("grade");
+                        m.LandingSite = r.Str("site");
+                        m.LandBoosters = r.Bool("boosters");
+                    }
+                    else if (id == "reliability") m.ReliabilityMin = r.Num("min");
+                    else if (id == "noRedRisks") m.NoRedRisks = r.Bool("noRedRisks", true);
+                    else if (id == "randomFailures") m.RandomFailures = r.Bool("randomFailures", true);
+                    else if (id == "coastHours") m.CoastHours = r.Num("hours");
+                }
+            }
+            var unlocks = o.Arr("unlocks");
+            if (unlocks != null) foreach (var x in unlocks) if (x is string s) m.Unlocks.Add(s);
+            return m;
+        }
+    }
 }

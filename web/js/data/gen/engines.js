@@ -22,6 +22,11 @@ export default {
       "ispVac": 311,
       "mass": 470,
       "pc": 97,
+      "pcMin": 43.65,
+      "pcRated": 97,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.57,
         1
@@ -67,6 +72,11 @@ export default {
       "ispVac": 348,
       "mass": 520,
       "pc": 97,
+      "pcMin": 43.65,
+      "pcRated": 97,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1,
       "throttle": [
         0.39,
         1
@@ -112,6 +122,11 @@ export default {
       "ispVac": 311,
       "mass": 95,
       "pc": 60,
+      "pcMin": 27,
+      "pcRated": 60,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.6,
         1
@@ -157,6 +172,11 @@ export default {
       "ispVac": 342,
       "mass": 70,
       "pc": 60,
+      "pcMin": 27,
+      "pcRated": 60,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1,
       "throttle": [
         0.5,
         1
@@ -180,6 +200,11 @@ export default {
       "ispVac": 337,
       "mass": 2200,
       "pc": 250,
+      "pcMin": 125,
+      "pcRated": 250,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.5,
         1
@@ -225,6 +250,11 @@ export default {
       "ispVac": 452,
       "mass": 3500,
       "pc": 206,
+      "pcMin": 103,
+      "pcRated": 206,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.67,
         1.09
@@ -248,6 +278,11 @@ export default {
       "ispVac": 350,
       "mass": 1600,
       "pc": 300,
+      "pcMin": 165,
+      "pcRated": 300,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1.25,
       "throttle": [
         0.4,
         1
@@ -293,6 +328,11 @@ export default {
       "ispVac": 380,
       "mass": 2100,
       "pc": 300,
+      "pcMin": 165,
+      "pcRated": 300,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1.25,
       "throttle": [
         0.4,
         1
@@ -319,7 +359,7 @@ export default {
           "id": "extended",
           "expansionRatio": 130,
           "ispSL": 0,
-          "ispVac": 389,
+          "ispVac": 382,
           "thrustSL": 0,
           "thrustVac": 2662000,
           "mass": 2268,
@@ -338,6 +378,11 @@ export default {
       "ispVac": 465,
       "mass": 300,
       "pc": 44,
+      "pcMin": 24.2,
+      "pcRated": 44,
+      "epsMin": 8,
+      "epsMax": 400,
+      "cycleMassFactor": 1.05,
       "throttle": [
         0.5,
         1
@@ -364,7 +409,7 @@ export default {
           "id": "extended",
           "expansionRatio": 400,
           "ispSL": 0,
-          "ispVac": 472,
+          "ispVac": 465,
           "thrustSL": 0,
           "thrustVac": 112000,
           "mass": 336,
@@ -383,6 +428,11 @@ export default {
       "ispVac": 316,
       "mass": 95,
       "pc": 9,
+      "pcMin": 4.5,
+      "pcRated": 9,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 0.8,
       "throttle": [
         1,
         1
@@ -406,6 +456,11 @@ export default {
       "ispVac": 315,
       "mass": 20,
       "pc": 10,
+      "pcMin": 5,
+      "pcRated": 10,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 0.8,
       "throttle": [
         1,
         1
@@ -429,6 +484,11 @@ export default {
       "ispVac": 330,
       "mass": 110,
       "pc": 60,
+      "pcMin": 27,
+      "pcRated": 60,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.6,
         1
@@ -474,6 +534,11 @@ export default {
       "ispVac": 275,
       "mass": 0,
       "pc": 70,
+      "pcMin": 56,
+      "pcRated": 70,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         1,
         1
@@ -498,6 +563,11 @@ export default {
       "ispVac": 268,
       "mass": 0,
       "pc": 63,
+      "pcMin": 50.4,
+      "pcRated": 63,
+      "epsMin": 7.7,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         1,
         1
@@ -522,6 +592,11 @@ export default {
       "ispVac": 260,
       "mass": 400,
       "pc": 35,
+      "pcMin": 17.5,
+      "pcRated": 35,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.3,
         1
@@ -545,6 +620,11 @@ export default {
       "ispVac": 304,
       "mass": 7800,
       "pc": 70,
+      "pcMin": 31.5,
+      "pcRated": 70,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.7,
         1
@@ -569,6 +649,11 @@ export default {
       "ispVac": 352,
       "mass": 2400,
       "pc": 250,
+      "pcMin": 125,
+      "pcRated": 250,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.5,
         1
@@ -593,6 +678,11 @@ export default {
       "ispVac": 348,
       "mass": 2500,
       "pc": 140,
+      "pcMin": 70,
+      "pcRated": 140,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.4,
         1
@@ -617,6 +707,11 @@ export default {
       "ispVac": 368,
       "mass": 2800,
       "pc": 140,
+      "pcMin": 70,
+      "pcRated": 140,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1.15,
       "throttle": [
         0.4,
         1
@@ -641,6 +736,11 @@ export default {
       "ispVac": 410,
       "mass": 5800,
       "pc": 100,
+      "pcMin": 45,
+      "pcRated": 100,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.57,
         1
@@ -665,6 +765,11 @@ export default {
       "ispVac": 450,
       "mass": 90,
       "pc": 30,
+      "pcMin": 16.5,
+      "pcRated": 30,
+      "epsMin": 8,
+      "epsMax": 250,
+      "cycleMassFactor": 1.05,
       "throttle": [
         0.8,
         1
@@ -689,6 +794,11 @@ export default {
       "ispVac": 270,
       "mass": 180,
       "pc": 15,
+      "pcMin": 7.5,
+      "pcRated": 15,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 0.8,
       "throttle": [
         0.4,
         1
@@ -713,6 +823,11 @@ export default {
       "ispVac": 278,
       "mass": 0,
       "pc": 55,
+      "pcMin": 44,
+      "pcRated": 55,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         1,
         1
@@ -737,6 +852,11 @@ export default {
       "ispVac": 250,
       "mass": 80,
       "pc": 25,
+      "pcMin": 12.5,
+      "pcRated": 25,
+      "epsMin": 8,
+      "epsMax": 120,
+      "cycleMassFactor": 1,
       "throttle": [
         0.4,
         1

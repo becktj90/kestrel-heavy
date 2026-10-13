@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using Kestrel.Core.Data;
 using Kestrel.Core.Vehicle;
+using Kestrel.Vehicle;
 using UnityEngine;
 
 namespace Kestrel.Slice
@@ -46,22 +47,58 @@ namespace Kestrel.Slice
         /// SliceApp overlays a Kestrel.Vehicle TankShellView per tank for welds, stiffener rings and the isogrid normal map.</summary>
         public readonly struct TankSlot { public readonly Vector3 Offset; public readonly float Radius, BarrelBottom, BarrelLength; public readonly int Stage; public readonly bool StrapOn;
             public TankSlot(Vector3 off, float r, float y0, float len, int stage, bool strap) { Offset = off; Radius = r; BarrelBottom = y0; BarrelLength = len; Stage = stage; StrapOn = strap; } }
-        public sealed class Result { public Mesh mesh; public float height; public float stage1Top; public Vector3[] nozzleExits; public float exitDiameter; public List<TankSlot> tanks = new List<TankSlot>(); }
+        /// <summary>Frustum between two stages. The body lathe still draws the cone; StrutCluster draws stringers and joint rings proud of it.</summary>
+        public readonly struct InterstageSlot { public readonly float Y0, Y1, R0, R1;
+            public InterstageSlot(float y0, float y1, float r0, float r1) { Y0 = y0; Y1 = y1; R0 = r0; R1 = r1; } }
+        /// <summary>Fairing cylinder + nose. The lathe still draws the ogive; FairingLayout draws seams and rings proud of it.</summary>
+        public readonly struct FairingSlot { public readonly float BaseY, Radius, Length, NoseFraction; public readonly bool Conic, Present;
+            public FairingSlot(float baseY, float radius, float length, float noseFraction, bool conic, bool present)
+            { BaseY = baseY; Radius = radius; Length = length; NoseFraction = noseFraction; Conic = conic; Present = present; } }
+        /// <summary>One engine bell. The mesh is drawn by Kestrel.Vehicle.BellCluster, not lathed into the body.</summary>
+        public readonly struct EngineSlot
+        {
+            public readonly Vector3 Exit; public readonly float ExitDiameter, Expansion, GimbalDeg, StageRadius;
+            public readonly string EngineId, Cycle; public readonly int Stage, Slot; public readonly bool StrapOn;
+            public EngineSlot(Vector3 exit, float exitDiameter, float expansion, float gimbal, string id, string cycle, int stage, int slot, bool strap, float stageRadius)
+            { Exit = exit; ExitDiameter = exitDiameter; Expansion = expansion; GimbalDeg = gimbal; EngineId = id; Cycle = cycle; Stage = stage; Slot = slot; StrapOn = strap; StageRadius = stageRadius; }
+        }
+        public sealed class Result { public Mesh mesh; public float height; public float stage1Top; public float stage1AftY; public Vector3[] nozzleExits; public float exitDiameter; public List<TankSlot> tanks = new List<TankSlot>(); public List<EngineSlot> engines = new List<EngineSlot>(); public List<InterstageSlot> interstages = new List<InterstageSlot>(); public FairingSlot fairing; }
+
+        /// <summary>Axial room the bell needs, from the catalog expansion ratio. Exit diameter is the packed cluster size.</summary>
+        public static float BellHeight(Engine e, float stageDiameter, int count)
+        {
+            if (e == null) return 0.8f;
+            var spots = new List<Vector2>();
+            float re = EngineSpots(stageDiameter, (float)e.diameter, Mathf.Max(1, count), spots);
+            float exitDiameter = Mathf.Max(0.1f, re * 2f);
+            if (!BellSpec.TryParseCycle(e.cycle, out var cycle)) return Mathf.Clamp(exitDiameter * 1.6f, 0.4f, 4f);
+            var spec = new BellSpec
+            {
+                EngineId = string.IsNullOrEmpty(e.id) ? "engine" : e.id,
+                Cycle = cycle,
+                ExpansionRatio = Mathf.Max(2f, (float)e.expansionRatio),
+                ExitDiameter = exitDiameter,
+                VehicleSeed = 1
+            };
+            if (spec.Validate().Count > 0) return Mathf.Clamp(exitDiameter * 1.6f, 0.4f, 4f);
+            return Mathf.Max(0.2f, BellProfile.Build(spec, 1).Length);
+        }
 
         public static Result Build(Catalog c, Design d)
         {
             var verts = new List<Vector3>(); var normals = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
-            float y = 0, stage1Top = 0; var exits = new List<Vector3>(); float exitD = 0; var slots = new List<TankSlot>();
+            float y = 0, stage1Top = 0, stage1Aft = 0; var exits = new List<Vector3>(); float exitD = 0; var slots = new List<TankSlot>(); var bells = new List<EngineSlot>(); var spans = new List<InterstageSlot>(); FairingSlot fairing = default;
 
             for (int i = 0; i < d.stages.Count; i++)
             {
                 var s = d.stages[i]; var e = c.EngineById[s.engine];
                 float r = (float)s.diameter / 2;
                 float tank = (float)DesignMath.SizeTank(c, s.propellant, s.propMass, s.diameter).length;
-                float bell = Mathf.Clamp((float)e.diameter * 1.6f, 0.4f, 4f);
+                float bell = BellHeight(e, (float)s.diameter, s.engineCount);
                 float thrustSection = 0.6f * r + (i == 0 ? 0 : bell * 0.7f); // upper-stage bells nest inside the interstage
-                if (i == 0) AddEngines(c, s, new Vector3(0, 0, 0), bell, verts, normals, uvs, tris, exits, ref exitD);
+                if (i == 0) AddEngines(c, s, new Vector3(0, 0, 0), i, false, 0, exits, ref exitD, bells);
                 float baseY = y + (i == 0 ? bell : 0);
+                if (i == 0) stage1Aft = baseY;
                 var prof = new List<Vector2> { new Vector2(0, baseY), new Vector2(r, baseY), new Vector2(r, baseY + thrustSection + tank) };
                 slots.Add(new TankSlot(Vector3.zero, r, baseY + thrustSection, tank, i, false));
                 y = baseY + thrustSection + tank;
@@ -69,6 +106,7 @@ namespace Kestrel.Slice
                 if (!last)
                 {
                     float rn = (float)d.stages[i + 1].diameter / 2, inter = 1.2f * Mathf.Max(r, rn);
+                    spans.Add(new InterstageSlot(y, y + inter, r, rn));
                     prof.Add(new Vector2(rn, y + inter)); y += inter; prof.Add(new Vector2(0, y));
                 }
                 else prof.Add(new Vector2(0, y));
@@ -79,6 +117,7 @@ namespace Kestrel.Slice
             {
                 float rf = (float)d.fairingDiameter / 2, L = (float)d.fairingLength;
                 float noseFrac = d.nose == "blunt" ? 0.25f : d.nose == "conic" ? 0.4f : 0.45f;
+                fairing = new FairingSlot(y, rf, L, noseFrac, d.nose == "conic", L > 0.2f && rf > 0.05f);
                 float cyl = L * (1 - noseFrac), nose = L * noseFrac;
                 var prof = new List<Vector2> { new Vector2(0, y), new Vector2(rf, y), new Vector2(rf, y + cyl) };
                 for (int k = 1; k <= 10; k++)
@@ -95,7 +134,7 @@ namespace Kestrel.Slice
             {
                 var so = d.strapOns; var e = c.EngineById[so.engine];
                 float r = (float)so.diameter / 2, core = (float)d.stages[0].diameter / 2;
-                float bell = Mathf.Clamp((float)e.diameter * 1.6f, 0.4f, 4f);
+                float bell = BellHeight(e, (float)so.diameter, so.engineCount);
                 float tank = (float)DesignMath.SizeTank(c, so.propellant, so.propMass, so.diameter).length;
                 for (int k = 0; k < so.count; k++)
                 {
@@ -104,13 +143,13 @@ namespace Kestrel.Slice
                     var prof = new List<Vector2> { new Vector2(0, bell), new Vector2(r, bell), new Vector2(r, bell + tank), new Vector2(0, bell + tank + 2.2f * r) };
                     Lathe(prof, off, verts, normals, uvs, tris);
                     slots.Add(new TankSlot(off, r, bell, tank, 0, true));
-                    AddEngines(c, so, off, bell, verts, normals, uvs, tris, exits, ref exitD);
+                    AddEngines(c, so, off, 0, true, (k + 1) * 16, exits, ref exitD, bells);
                 }
             }
             var mesh = new Mesh { name = "Rocket_" + d.id, indexFormat = verts.Count > 65000 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
             mesh.SetVertices(verts); mesh.SetNormals(normals); mesh.SetUVs(0, uvs); mesh.SetTriangles(tris, 0);
             mesh.RecalculateBounds();
-            return new Result { mesh = mesh, height = y, stage1Top = stage1Top, nozzleExits = exits.ToArray(), exitDiameter = exitD, tanks = slots };
+            return new Result { mesh = mesh, height = y, stage1Top = stage1Top, stage1AftY = stage1Aft, nozzleExits = exits.ToArray(), exitDiameter = exitD, tanks = slots, engines = bells, interstages = spans, fairing = fairing };
         }
 
         /// <summary>One Hangar part as its own mesh (vehicle-local, same stations as <see cref="Build"/>).
@@ -121,7 +160,8 @@ namespace Kestrel.Slice
             public Mesh Mesh;
             /// <summary>Axial span (metres above the stage-1 engine exits) and the widest radius.</summary>
             public float Y0, Y1, Radius;
-            /// <summary>Engine bells of this part (separate so the Look tab can give engines their own finish).</summary>
+            /// <summary>Optional engine mesh for this part. Null now: BellCluster draws every bell, instanced from the
+            /// flight mesh's engine slots, so the parts carry none and nothing is drawn twice.</summary>
             public Mesh Engines;
             /// <summary>Boosters only: one copy of Mesh/Engines per strap-on, at these axis offsets. Null for every other part.</summary>
             public Vector3[] Instances;
@@ -130,13 +170,13 @@ namespace Kestrel.Slice
 
         /// <summary>
         /// The same rocket split into Hangar parts: each stage body, each interstage, the fairing, the payload and the
-        /// booster set. Upper-stage engines are drawn too (they nest inside the interstage until the exploded view opens).
+        /// booster set. Engine bells are not here: BellCluster draws them on the assembled rocket.
         /// Stations match <see cref="Build"/>, so the parts reassemble into exactly the flight silhouette.
         /// </summary>
         public static List<PartMesh> BuildParts(Catalog c, Design d)
         {
             var parts = new List<PartMesh>();
-            float y = 0, dummyExit = 0; var exits = new List<Vector3>();
+            float y = 0;
             for (int i = 0; i < d.stages.Count; i++)
             {
                 var s = d.stages[i]; var e = c.EngineById[s.engine];
@@ -145,11 +185,10 @@ namespace Kestrel.Slice
                 float bell = Mathf.Clamp((float)e.diameter * 1.6f, 0.4f, 4f);
                 float thrustSection = 0.6f * r + (i == 0 ? 0 : bell * 0.7f);
                 float baseY = y + (i == 0 ? bell : 0);
-                var g = new Geo(); var eg = new Geo();
-                AddEngines(c, s, new Vector3(0, i == 0 ? 0 : baseY - bell * 0.7f, 0), bell, eg.v, eg.n, eg.uv, eg.t, exits, ref dummyExit);
+                var g = new Geo();
                 float top = baseY + thrustSection + tank;
                 Lathe(new List<Vector2> { new Vector2(0, baseY), new Vector2(r, baseY), new Vector2(r, top), new Vector2(0, top) }, Vector3.zero, g.v, g.n, g.uv, g.t);
-                parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Stage(i), Mesh = g.ToMesh($"Stage{i + 1}"), Engines = eg.ToMesh($"Stage{i + 1}_Engines"), Y0 = i == 0 ? 0 : baseY - bell * 0.7f, Y1 = top, Radius = r });
+                parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Stage(i), Mesh = g.ToMesh($"Stage{i + 1}"), Y0 = i == 0 ? 0 : baseY - bell * 0.7f, Y1 = top, Radius = r });
                 y = top;
                 if (i < d.stages.Count - 1)
                 {
@@ -186,16 +225,15 @@ namespace Kestrel.Slice
                 float r = (float)so.diameter / 2, core = (float)d.stages[0].diameter / 2;
                 float bell = Mathf.Clamp((float)e.diameter * 1.6f, 0.4f, 4f);
                 float tank = (float)DesignMath.SizeTank(c, so.propellant, so.propMass, so.diameter).length;
-                var g = new Geo(); var eg = new Geo();
+                var g = new Geo();
                 Lathe(new List<Vector2> { new Vector2(0, bell), new Vector2(r, bell), new Vector2(r, bell + tank), new Vector2(0, bell + tank + 2.2f * r) }, Vector3.zero, g.v, g.n, g.uv, g.t);
-                AddEngines(c, so, Vector3.zero, bell, eg.v, eg.n, eg.uv, eg.t, exits, ref dummyExit);
                 var at = new Vector3[so.count];
                 for (int k = 0; k < so.count; k++)
                 {
                     float ang = k * Mathf.PI * 2 / so.count;
                     at[k] = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)) * (core + r + 0.1f);
                 }
-                parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Boosters, Mesh = g.ToMesh("Booster"), Engines = eg.ToMesh("Booster_Engines"), Instances = at, Y0 = 0, Y1 = bell + tank + 2.2f * r, Radius = r });
+                parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Boosters, Mesh = g.ToMesh("Booster"), Instances = at, Y0 = 0, Y1 = bell + tank + 2.2f * r, Radius = r });
             }
             return parts;
         }
@@ -233,19 +271,19 @@ namespace Kestrel.Slice
             return re;
         }
 
-        /// <summary>Engine bells: one centre engine plus concentric rings (simple circle packer).</summary>
-        static void AddEngines(Catalog c, StagePart s, Vector3 origin, float bell, List<Vector3> v, List<Vector3> n, List<Vector2> uv, List<int> t, List<Vector3> exits, ref float exitD)
+        /// <summary>Records bell centres. The contour is drawn by BellCluster so each engine type keeps its own shape.</summary>
+        static void AddEngines(Catalog c, StagePart s, Vector3 origin, int stage, bool strap, int slotBase, List<Vector3> exits, ref float exitD, List<EngineSlot> slots)
         {
             var e = c.EngineById[s.engine];
             var spots = new List<Vector2>();
             float re = EngineSpots((float)s.diameter, (float)e.diameter, s.engineCount, spots);
             exitD = Mathf.Max(exitD, re * 2);
-            foreach (var p in spots)
+            for (int n = 0; n < spots.Count; n++)
             {
+                var p = spots[n];
                 var off = origin + new Vector3(p.x, 0, p.y);
-                var prof = new List<Vector2> { new Vector2(re, 0), new Vector2(re * 0.45f, bell * 0.75f), new Vector2(re * 0.3f, bell * 0.85f), new Vector2(re * 0.5f, bell), new Vector2(0, bell) };
-                Lathe(prof, off, v, n, uv, t);
                 exits.Add(off);
+                slots.Add(new EngineSlot(off, re * 2f, (float)e.expansionRatio, (float)e.gimbal, e.id, e.cycle, stage, slotBase + n, strap, (float)s.diameter * 0.5f));
             }
         }
     }

@@ -188,6 +188,13 @@ namespace Kestrel.Slice
             }
         }
 
+        /// <summary>Show or hide every part (the payload stays hidden; it lives inside the fairing).</summary>
+        public void SetVisible(bool on)
+        {
+            foreach (var p in pieces)
+                if (p.root != null) p.root.gameObject.SetActive(on && p.mesh.Part.kind != PartKind.Payload);
+        }
+
         /// <summary>Axis of each visible part on screen, for tap picking.</summary>
         public List<ScreenPart> Project(Camera cam)
         {
