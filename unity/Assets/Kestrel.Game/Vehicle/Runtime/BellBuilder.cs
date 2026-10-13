@@ -1,7 +1,6 @@
-// Copies an engine-free bell mesh into a Unity mesh. The material is the kit's Galvanized role
-// (stand-in until Graphics Dev adds a nozzle role). No per-object material, so the bells instance.
+// Copies an engine-free bell mesh into a Unity mesh. The material is the instanced KH_Metal asset
+// so the player keeps INSTANCING_ON. No per-object material, so the bells stay one batch.
 using System.Collections.Generic;
-using Kestrel.Kit;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -11,7 +10,7 @@ namespace Kestrel.Vehicle
     {
         public const float HeroLodBias = 1.5f;
 
-        public static Material Material() => MaterialLibrary.Get(MaterialRole.Galvanized);
+        public static Material Material() => VehicleLook.Metal();
 
         public static Mesh Build(BellContour contour, int lod)
         {

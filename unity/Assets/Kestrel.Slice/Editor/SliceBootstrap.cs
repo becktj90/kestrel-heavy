@@ -107,16 +107,14 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
             if (GraphicsSettings.defaultRenderPipeline != rp) GraphicsSettings.defaultRenderPipeline = rp;
             // Per-quality-level pipeline assets are owned by U2's QualitySetup (data/quality.json);
             // don't overwrite them here. The default pipeline above is the fallback.
-            EnsureMaterial("Assets/Resources/Materials/KH_Body.mat", "Universal Render Pipeline/Lit", m => { m.SetFloat("_Smoothness", 0.55f); m.SetFloat("_Metallic", 0.1f); });
-            EnsureMaterial("Assets/Resources/Materials/KH_LitEmission.mat", "Universal Render Pipeline/Lit", m =>
+            EnsureMaterial("Assets/Resources/Materials/KH_Body.mat", "Universal Render Pipeline/Lit", m => { m.SetFloat("_Smoothness", 0.55f); m.SetFloat("_Metallic", 0.1f); m.enableInstancing = true; });
+            EnsureMaterial("Assets/Resources/Materials/KH_Metal.mat", "Universal Render Pipeline/Lit", m =>
             {
-                m.SetFloat("_Smoothness", 0.45f); m.SetFloat("_Metallic", 0.1f);
-                m.SetColor("_EmissionColor", Color.white);
-                m.EnableKeyword("_EMISSION");
-                m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.BakedEmissive;
+                m.SetColor("_BaseColor", new Color(0.45f, 0.47f, 0.50f)); m.color = new Color(0.45f, 0.47f, 0.50f);
+                m.SetFloat("_Smoothness", 0.62f); m.SetFloat("_Metallic", 0.85f); m.enableInstancing = true;
             });
-            KeepInstancing("Assets/Resources/Materials/KH_Body.mat", false);
-            KeepInstancing("Assets/Resources/Materials/KH_LitEmission.mat", true);
+            KeepInstancing("Assets/Resources/Materials/KH_Body.mat");
+            KeepInstancing("Assets/Resources/Materials/KH_Metal.mat");
             EnsureMaterial("Assets/Resources/Materials/KH_Plume.mat", "Universal Render Pipeline/Particles/Unlit", m =>
             {
                 // Additive transparent particles.
@@ -132,36 +130,18 @@ EditorApplication.delayCall += () => { if (!Application.isBatchMode) EnsureAll()
             if (AssetDatabase.LoadAssetAtPath<Material>(path) != null) return;
             var sh = Shader.Find(shader);
             if (sh == null) { Debug.LogError($"[Kestrel] shader not found: {shader} (is URP installed?)"); return; }
-            var m = new Material(sh); setup(m); m.enableInstancing = true;
+            var m = new Material(sh); setup(m);
             AssetDatabase.CreateAsset(m, path);
         }
 
-        /// <summary>
-        /// Player builds strip INSTANCING_ON unless a material that ships asks for it. The pad is
-        /// drawn with RenderMeshInstanced, so without this flag the device shows no pad.
-        /// </summary>
-        static void KeepInstancing(string path, bool emission)
+        /// <summary>Committed materials already exist, so EnsureMaterial will not recreate them. Instancing has to
+        /// stay on or Graphics.RenderMeshInstanced drops the mesh on device.</summary>
+        static void KeepInstancing(string path)
         {
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (m == null) return;
-            bool dirty = false;
-            if (!m.enableInstancing) { m.enableInstancing = true; dirty = true; }
-            if (emission && !HasKeyword(m, "_EMISSION"))
-            {
-                m.EnableKeyword("_EMISSION");
-                m.SetColor("_EmissionColor", Color.white);
-                m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.BakedEmissive;
-                dirty = true;
-            }
-            if (dirty) EditorUtility.SetDirty(m);
-        }
-
-        static bool HasKeyword(Material m, string keyword)
-        {
-            var keys = m.shaderKeywords;
-            if (keys == null) return false;
-            for (int i = 0; i < keys.Length; i++) if (keys[i] == keyword) return true;
-            return false;
+            if (m == null || m.enableInstancing) return;
+            m.enableInstancing = true;
+            EditorUtility.SetDirty(m);
         }
 
         static void EnsurePanelSettings()

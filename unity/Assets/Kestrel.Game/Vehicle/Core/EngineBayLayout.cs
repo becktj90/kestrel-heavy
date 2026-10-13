@@ -110,6 +110,73 @@ namespace Kestrel.Vehicle
             return n;
         }
 
+        /// <summary>Instance pose. The mesh is unit (radius 1, height 1, centred). Scale (Radius, Length, Radius)
+        /// and aim +Y along the axis. The centre stays inside the skirt.</summary>
+        public readonly struct BayPose
+        {
+            public readonly string Kind;
+            public readonly float X, Y, Z;
+            public readonly float Radius, Length;
+            public readonly float AxisX, AxisY, AxisZ;
+            public BayPose(string kind, float x, float y, float z, float radius, float length, float ax, float ay, float az)
+            { Kind = kind; X = x; Y = y; Z = z; Radius = radius; Length = length; AxisX = ax; AxisY = ay; AxisZ = az; }
+        }
+
+        public static List<BayPose> Poses(BellSpec spec, bool gimbal, float skinRadius)
+        {
+            var parts = Build(spec, gimbal, skinRadius);
+            float bay = BellProfile.Build(spec, 2).Length;
+            var list = new List<BayPose>(parts.Count);
+            for (int i = 0; i < parts.Count; i++)
+            {
+                var p = parts[i];
+                Size(p.Kind, skinRadius, bay, out float radius, out float length);
+                Axis(p.Kind, p.X, p.Z, out float ax, out float ay, out float az);
+                list.Add(new BayPose(p.Kind, p.X, p.Y, p.Z, radius, length, ax, ay, az));
+            }
+            return list;
+        }
+
+        /// <summary>Metres. Kept small relative to the skirt so the part, including its half-length, stays inside the skin.</summary>
+        public static void Size(string kind, float skinRadius, float bayHeight, out float radius, out float length)
+        {
+            float h = Math.Max(0.2f, bayHeight);
+            switch (kind)
+            {
+                case Turbopump: radius = 0.10f * skinRadius; length = Math.Min(0.28f * h, 0.36f * skinRadius); break;
+                case Preburner: radius = 0.065f * skinRadius; length = Math.Min(0.18f * h, 0.24f * skinRadius); break;
+                case ExhaustDuct: radius = 0.040f * skinRadius; length = Math.Min(0.32f * h, 0.40f * skinRadius); break;
+                case FeedLine: radius = 0.025f * skinRadius; length = Math.Min(0.40f * h, 0.50f * skinRadius); break;
+                case Valve: radius = 0.045f * skinRadius; length = Math.Min(0.09f * h, 0.12f * skinRadius); break;
+                case Actuator: radius = 0.020f * skinRadius; length = 0.28f * skinRadius; break;
+                default: radius = 0.04f * skinRadius; length = 0.10f * h; break;
+            }
+        }
+
+        /// <summary>Feed lines stand on the bell axis. Ducts and actuators point out through the skirt.</summary>
+        public static void Axis(string kind, float x, float z, out float ax, out float ay, out float az)
+        {
+            if (kind == Actuator || kind == ExhaustDuct)
+            {
+                float radial = (float)Math.Sqrt(x * x + z * z);
+                if (radial < 1e-4f) { ax = 0f; ay = 1f; az = 0f; return; }
+                ax = x / radial; az = z / radial; ay = kind == ExhaustDuct ? 0.35f : 0.12f;
+                float m = (float)Math.Sqrt(ax * ax + ay * ay + az * az);
+                ax /= m; ay /= m; az /= m;
+                return;
+            }
+            ax = 0f; ay = 1f; az = 0f;
+        }
+
+        /// <summary>Centre plus the part's own reach (radius and the horizontal half-length) stays inside the skin, and the part sits above the exit plane.</summary>
+        public static bool InsideSkin(BayPose p, float skinRadius)
+        {
+            float radial = (float)Math.Sqrt(p.X * p.X + p.Z * p.Z);
+            float horiz = (float)Math.Sqrt(p.AxisX * p.AxisX + p.AxisZ * p.AxisZ) * (p.Length * 0.5f);
+            float above = p.Length * 0.5f * Math.Abs(p.AxisY);
+            return radial + p.Radius + horiz < skinRadius + 1e-3f && p.Y + 1e-3f > above;
+        }
+
         static void Place(List<BayPart> list, string kind, float azimuth, float radius, float y)
         {
             list.Add(new BayPart(kind, radius * (float)Math.Sin(azimuth), y, radius * (float)Math.Cos(azimuth)));
