@@ -45,5 +45,45 @@
       { "id": "custom", "countMin": 1, "countMax": 40 },
       { "id": "auto", "countMin": 1, "countMax": 40 }
     ]
+  },
+  "v3": {
+    "note": "Designer v3 ranges from DESIGNER_V3_SPEC §2.1, §2.4, §2.8 and §2.9. The historical keys above stay as they are: strapOnCounts is still [0, 2, 4] and landingReserveFraction.max is still 0.3. Hangar reads those. v3 consumers read this block.",
+    "mixtureOffsetPct": { "min": -10, "max": 10, "step": 1, "hazardAbs": 6, "ispPenaltyPerPct": 0.006 },
+    "engine": {
+      "expansionRatio": { "min": 8, "max": 120, "vacuumMax": 250 },
+      "overpressureAboveRated": 1.15,
+      "deepThrottleBelow": 0.4,
+      "gimbalDeg": { "min": 0, "note": "max is that engine's catalog gimbal" }
+    },
+    "tank": {
+      "pressureBar": { "min": 1.5, "max": 6 },
+      "insulation": ["none", "foam", "mli"],
+      "insulationBoiloff": { "none": 1, "foam": 0.4, "mli": 0.15 },
+      "insulationKgPerM2": { "none": 0, "foam": 1.2, "mli": 2.5 },
+      "commonBulkheadMassFactor": 0.92,
+      "commonBulkheadHazardDeltaPBar": 2
+    },
+    "sepMode": ["cold", "hot", "springs"],
+    "separation": { "minRelSpeedMps": 0.5, "qKPaTerm": 0.02 },
+    "boosterSepPct": { "min": 0, "max": 100, "note": "absent means separate at burnout" },
+    "strapOnCounts": [0, 2, 3, 4, 6, 8],
+    "fins": {
+      "planforms": ["trapezoid", "clipped-delta", "swept", "square-lattice", "diamond-lattice"],
+      "rootChordMinM": 0.1,
+      "rootChordMaxM": 6,
+      "rootChordStepM": 0.1
+    },
+    "gridFinDeployAltM": { "min": 0, "max": 120000 },
+    "legs": { "kinds": ["light", "heavy"], "lightTouchdownMps": 2, "heavyTouchdownMps": 4, "lightDryFraction": 0.06, "heavyDryFraction": 0.09 },
+    "recovery": { "modes": ["expendable", "rtls", "barge"] },
+    "landingReserveFraction": { "min": 0, "max": 0.2 },
+    "guidance": {
+      "pitchKickAltM": { "min": 0, "max": 50000 },
+      "pitchKickDeg": { "min": 0, "max": 30 },
+      "turnShape": { "min": 0, "max": 1 },
+      "maxQThrottlePct": { "min": 0, "max": 100 },
+      "gLimit": { "min": 1, "max": 12 }
+    },
+    "payloadFit": { "radiusFactor": 0.45, "lengthFactor": 0.8, "diameterClearanceM": 0.2 }
   }
 }

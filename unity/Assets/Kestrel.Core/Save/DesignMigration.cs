@@ -1,6 +1,9 @@
 // Design schema migration. v0 → v1 fills defaults (the JS contract). v1 → v2 adds
 // cluster.pattern = auto, interstage.shape = straight on upper stages, and nozzle = default.
 // A missing interstageMass becomes 0 so C# and JS keep the same mass. A stored value, including 0, stays.
+// v2 → v3 is an identity on every number except the version integer. v3 fields stay absent,
+// which is the v2 behaviour. The default stop is still v2 so the existing goldens stay exact.
+// Pass toVersion 3 to take the identity step.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Designer;
@@ -11,21 +14,32 @@ namespace Kestrel.Core.Save
     public static class DesignMigration
     {
         public const int DesignVersion = 2;
+        /// <summary>Newest schema this migration can write. Opt-in: <see cref="Migrate"/> stops at <see cref="DesignVersion"/> unless told otherwise.</summary>
+        public const int LatestVersion = 3;
 
-        /// <param name="toVersion">Stop after this version. The JS golden still ends at 1. Omit to reach <see cref="DesignVersion"/>.</param>
+        /// <param name="toVersion">Stop after this version. The JS golden still ends at 1. Omit to reach <see cref="DesignVersion"/> (v2). Pass 3 for the v2→v3 identity.</param>
         public static JsonObject Migrate(JsonObject input, int toVersion = -1)
         {
             int target = toVersion < 0 ? DesignVersion : toVersion;
+            if (target > LatestVersion) throw new InvalidOperationException($"design version {target} is newer than supported {LatestVersion}");
             var d = input == null ? new JsonObject() : JsonMut.CloneObject(input);
             int v = JsonMut.IsInteger(d.ContainsKey("version") ? d["version"] : null) ? (int)d.Num("version") : 0;
-            if (v > DesignVersion) throw new InvalidOperationException($"design version {v} is newer than supported {DesignVersion}");
+            if (v > LatestVersion) throw new InvalidOperationException($"design version {v} is newer than supported {LatestVersion}");
             while (v < target)
             {
                 if (v == 0) d = Migrate0(d);
                 else if (v == 1) d = Migrate1(d);
+                else if (v == 2) d = Migrate2(d);
                 else throw new InvalidOperationException($"no migration from design version {v}");
                 v = (int)d.Num("version");
             }
+            return d;
+        }
+
+        /// <summary>v2 → v3. Sets version to 3 and leaves every other key, including every number, untouched.</summary>
+        static JsonObject Migrate2(JsonObject d)
+        {
+            JsonMut.Set(d, "version", 3d);
             return d;
         }
 
