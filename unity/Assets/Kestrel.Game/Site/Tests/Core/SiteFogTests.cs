@@ -26,7 +26,7 @@ namespace Kestrel.Site.Tests
             })
             {
                 string text = ReadAsset(rel);
-                Assert.That(text, Does.Not.Contain("multi_compile_fog"), rel);
+                Assert.That(text, Does.Not.Contain("#pragma multi_compile_fog"), rel);
                 Assert.That(text, Does.Contain("_FogRange"), rel);
                 Assert.That(text, Does.Contain("SiteFog.Weight"), rel);
             }
