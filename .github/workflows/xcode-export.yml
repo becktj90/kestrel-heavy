@@ -107,6 +107,10 @@ jobs:
           if len(apps) != 1:
               raise SystemExit('Expected one shipping App Store Connect app')
           print('App Store Connect access to Kestrel Heavy verified', flush=True)
+          builds = request('/v1/builds?' + urllib.parse.urlencode({'filter[app]': apps[0]['id'], 'sort': '-uploadedDate', 'limit': 5}))['data']
+          print('Recent Apple builds:', json.dumps([{'build': item['attributes']['version'],
+              'processing': item['attributes']['processingState'],
+              'uploaded': item['attributes']['uploadedDate']} for item in builds]), flush=True)
           PYTHON
       - name: Finalize uploaded build without rebuilding
         if: inputs.finalize_build
