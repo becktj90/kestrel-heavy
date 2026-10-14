@@ -61,6 +61,52 @@ jobs:
           done
           exit "$missing"
 
+      - name: Verify Apple key format
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s' "$ASC_KEY_P8" | base64 --decode > "$RUNNER_TEMP/asc/AuthKey.p8"
+          openssl pkey -in "$RUNNER_TEMP/asc/AuthKey.p8" -noout
+      - name: Verify Apple app access before building
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/asc-venv"
+          "$RUNNER_TEMP/asc-venv/bin/pip" install --disable-pip-version-check 'cryptography==50.0.0'
+          "$RUNNER_TEMP/asc-venv/bin/python" - <<'PYTHON'
+          import base64, json, os, pathlib, time, urllib.parse, urllib.request, urllib.error
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import ec, utils
+          def encode(value):
+              return base64.urlsafe_b64encode(value).rstrip(b'=').decode()
+          header = {'alg': 'ES256', 'kid': os.environ['ASC_KEY_ID'], 'typ': 'JWT'}
+          payload = {'iss': os.environ['ASC_ISSUER_ID'], 'iat': int(time.time()),
+                     'exp': int(time.time()) + 1200, 'aud': 'appstoreconnect-v1'}
+          message = encode(json.dumps(header).encode()) + '.' + encode(json.dumps(payload).encode())
+          key_path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'asc/AuthKey.p8'
+          key = serialization.load_pem_private_key(key_path.read_bytes(), password=None)
+          r, s = utils.decode_dss_signature(key.sign(message.encode(), ec.ECDSA(hashes.SHA256())))
+          token = message + '.' + encode(r.to_bytes(32, 'big') + s.to_bytes(32, 'big'))
+          def request(path, body=None):
+              data = json.dumps(body).encode() if body is not None else None
+              req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, data=data,
+                  headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as response:
+                      result = response.read()
+                      return json.loads(result) if result else {}
+              except urllib.error.HTTPError as error:
+                  raise SystemExit('App Store Connect API HTTP ' + str(error.code) + ': ' + error.read().decode())
+          apps = request('/v1/apps?' + urllib.parse.urlencode({'filter[bundleId]': 'com.beckify.kestrelheavy'}))['data']
+          if len(apps) != 1:
+              raise SystemExit('Expected one shipping App Store Connect app')
+          print('App Store Connect access to Kestrel Heavy verified', flush=True)
+          PYTHON
+      - name: Remove preflight API key
+        if: always()
+        run: |
+          rm -rf "$RUNNER_TEMP/asc"
+
   export-and-publish:
     needs: apple-credentials
     if: always() && !inputs.credentials_only && (!inputs.upload_testflight || needs.apple-credentials.result == 'success')
