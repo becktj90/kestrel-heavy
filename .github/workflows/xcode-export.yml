@@ -166,8 +166,9 @@ jobs:
               time.sleep(30)
           if not build or build['attributes']['processingState'] != 'VALID':
               raise SystemExit('Upload finished, but Apple processing has not completed; check App Store Connect')
-          request('/v1/builds/' + build['id'], {'data': {'type': 'builds', 'id': build['id'],
-              'attributes': {'usesNonExemptEncryption': False}}}, method='PATCH')
+          if build['attributes'].get('usesNonExemptEncryption') is not False:
+              request('/v1/builds/' + build['id'], {'data': {'type': 'builds', 'id': build['id'],
+                  'attributes': {'usesNonExemptEncryption': False}}}, method='PATCH')
           groups = request('/v1/apps/' + app['id'] + '/betaGroups?limit=200')['data']
           internal = [group for group in groups if group['attributes']['isInternalGroup']]
           if not internal:
@@ -442,8 +443,9 @@ jobs:
               time.sleep(30)
           if not build or build['attributes']['processingState'] != 'VALID':
               raise SystemExit('Upload finished, but Apple processing has not completed; check App Store Connect')
-          request('/v1/builds/' + build['id'], {'data': {'type': 'builds', 'id': build['id'],
-              'attributes': {'usesNonExemptEncryption': False}}}, method='PATCH')
+          if build['attributes'].get('usesNonExemptEncryption') is not False:
+              request('/v1/builds/' + build['id'], {'data': {'type': 'builds', 'id': build['id'],
+                  'attributes': {'usesNonExemptEncryption': False}}}, method='PATCH')
           groups = request('/v1/apps/' + app['id'] + '/betaGroups?limit=200')['data']
           internal = [group for group in groups if group['attributes']['isInternalGroup']]
           if not internal:
