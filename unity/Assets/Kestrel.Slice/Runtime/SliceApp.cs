@@ -32,6 +32,7 @@ namespace Kestrel.Slice
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
+        BirdFlockView birds;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
@@ -201,6 +202,7 @@ namespace Kestrel.Slice
             hangarCam.ReduceMotion = HangarNative.SystemReduceMotion
                 || PlayerPrefs.GetInt(HangarCamera.ReduceMotionPref, 0) != 0
                 || PlayerPrefs.GetInt(HangarCamera.ReduceFlashingPref, 0) != 0;
+            if (birds != null) birds.FlapScale = hangarCam.ReduceMotion ? 0f : 1f;
         }
 
         void FocusPart(PartRef p)
@@ -243,6 +245,10 @@ namespace Kestrel.Slice
             site.BindSun(sun);
             ground = site.transform;
             flight.Anchor(ground, 0, PadGround.GroundY, 0);
+            birds = BirdFlockView.Create(worldRoot);
+            birds.Bind(new BirdTrack(flight));
+            birds.BindSun(sun);
+            birds.FlapScale = hangarCam != null && hangarCam.ReduceMotion ? 0f : 1f;
             PadGround.ApplyHaze(cam.farClipPlane);
             var pad = GameObject.CreatePrimitive(PrimitiveType.Cylinder); pad.name = "Pad"; deck = pad.transform; deck.SetParent(worldRoot, false);
             Destroy(pad.GetComponent<Collider>());
@@ -940,6 +946,7 @@ namespace Kestrel.Slice
                 SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
                 ApplyTankCutaway();
             }
+            if (birds != null) birds.TrackFlight = hud != null && !hud.ClassListContains("hidden");
             if (counting) { TickCount(); return; }
             if (flight != null && flight.Running && tower != null)
             {
@@ -1040,6 +1047,16 @@ namespace Kestrel.Slice
             again.RemoveFromClassList("hidden");
             bool ok = await GameCenterBridge.Impl.SubmitScore(GameCenterBridge.MecoAltitudeBoard, (long)System.Math.Round(f.Altitude));
             hMsg.text += ok ? "\nScore sent to Game Center" : "";
+        }
+
+        sealed class BirdTrack : BirdFlockView.FlightDriverSource
+        {
+            readonly FlightDriver flight;
+            public BirdTrack(FlightDriver flight) { this.flight = flight; }
+            public double Downrange => flight != null ? flight.Downrange : 0;
+            public double Altitude => flight != null ? flight.Altitude : 0;
+            public double OriginX => flight != null ? flight.OriginX : 0;
+            public double OriginY => flight != null ? flight.OriginY : 0;
         }
     }
 }
