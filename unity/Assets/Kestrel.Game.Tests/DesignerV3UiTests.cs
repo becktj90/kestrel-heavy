@@ -103,15 +103,16 @@ namespace Kestrel.Game.Tests
             string orbit = "gto";
             var steps = DesignerV3Tutorial.Leo200(() => orbit, () => twr, () => margin, () => fins, () => fit);
             Assert.AreEqual(6, steps.Count);
-            Assert.AreEqual(0, DesignerV3Tutorial.Advance(steps, 0), "welcome done, engines not");
+            // Welcome is already done → Advance skips it and stops on Engines.
+            Assert.AreEqual(1, DesignerV3Tutorial.Advance(steps, 0), "welcome done, engines not");
             twr = 1.3;
-            Assert.AreEqual(1, DesignerV3Tutorial.Advance(steps, 0));
+            Assert.AreEqual(2, DesignerV3Tutorial.Advance(steps, 0), "engines done, tanks not");
             margin = 0.1;
-            Assert.AreEqual(2, DesignerV3Tutorial.Advance(steps, 0));
+            Assert.AreEqual(3, DesignerV3Tutorial.Advance(steps, 0), "tanks done, aero not");
             fins = true;
-            Assert.AreEqual(3, DesignerV3Tutorial.Advance(steps, 0));
+            Assert.AreEqual(4, DesignerV3Tutorial.Advance(steps, 0), "aero done, payload not");
             orbit = DesignerV3Tutorial.TargetOrbitId;
-            Assert.AreEqual(4, DesignerV3Tutorial.Advance(steps, 0));
+            Assert.AreEqual(5, DesignerV3Tutorial.Advance(steps, 0), "payload done, on go");
             Assert.IsTrue(DesignerV3Tutorial.Complete(steps));
         }
 
