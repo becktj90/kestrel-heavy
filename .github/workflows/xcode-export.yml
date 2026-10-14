@@ -172,10 +172,17 @@ jobs:
           internal = [group for group in groups if group['attributes']['isInternalGroup']]
           if not internal:
               raise SystemExit('Build processed, but no internal TestFlight tester group exists for this app')
-          for group in internal:
-              if not group['attributes'].get('hasAccessToAllBuilds'):
-                  request('/v1/betaGroups/' + group['id'] + '/relationships/builds',
-                          {'data': [{'type': 'builds', 'id': build['id']}]})
+          request('/v1/builds/' + build['id'] + '/relationships/betaGroups',
+                  {'data': [{'type': 'betaGroups', 'id': group['id']} for group in internal]})
+          for attempt in range(12):
+              detail = request('/v1/builds/' + build['id'] + '/buildBetaDetail')['data']['attributes']
+              state = detail.get('internalBuildState')
+              print('Internal TestFlight state:', state, flush=True)
+              if state == 'IN_BETA_TESTING':
+                  break
+              time.sleep(5)
+          if state != 'IN_BETA_TESTING':
+              raise SystemExit('Build compliance is complete, but internal testing has not activated: ' + str(state))
           notes = 'Updated Unity source and shipping iOS build validation. Test startup, home, design, flight, and Game Center.'
           localizations = request('/v1/builds/' + build['id'] + '/betaBuildLocalizations?limit=200')['data']
           existing = next((item for item in localizations if item['attributes']['locale'] == 'en-US'), None)
@@ -441,10 +448,17 @@ jobs:
           internal = [group for group in groups if group['attributes']['isInternalGroup']]
           if not internal:
               raise SystemExit('Build processed, but no internal TestFlight tester group exists for this app')
-          for group in internal:
-              if not group['attributes'].get('hasAccessToAllBuilds'):
-                  request('/v1/betaGroups/' + group['id'] + '/relationships/builds',
-                          {'data': [{'type': 'builds', 'id': build['id']}]})
+          request('/v1/builds/' + build['id'] + '/relationships/betaGroups',
+                  {'data': [{'type': 'betaGroups', 'id': group['id']} for group in internal]})
+          for attempt in range(12):
+              detail = request('/v1/builds/' + build['id'] + '/buildBetaDetail')['data']['attributes']
+              state = detail.get('internalBuildState')
+              print('Internal TestFlight state:', state, flush=True)
+              if state == 'IN_BETA_TESTING':
+                  break
+              time.sleep(5)
+          if state != 'IN_BETA_TESTING':
+              raise SystemExit('Build compliance is complete, but internal testing has not activated: ' + str(state))
           notes = 'Updated Unity source and shipping iOS build validation. Test startup, home, design, flight, and Game Center.'
           localizations = request('/v1/builds/' + build['id'] + '/betaBuildLocalizations?limit=200')['data']
           existing = next((item for item in localizations if item['attributes']['locale'] == 'en-US'), None)
