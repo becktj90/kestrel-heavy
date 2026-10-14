@@ -892,7 +892,7 @@ namespace Kestrel.Slice
                 var cat = SliceData.Catalog;
                 if (cat == null || design == null || design.stages == null || design.stages.Count == 0) return null;
                 string mode = EngineerEnabled ? "engineer" : "standard";
-                var tl = TimelineGenerator.Generate(cat, design, Pad.For(cat, design), new Mission { mode = mode }, 1);
+                var tl = TimelineGenerator.Generate(cat, design, Kestrel.Core.Timeline.Pad.For(cat, design), new Mission { mode = mode }, 1);
                 return LaunchSequence.Open(tl);
             }
             catch (System.Exception) { return null; }
