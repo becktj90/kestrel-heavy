@@ -1,21 +1,15 @@
 # Project state (living context; update every milestone)
 
-_Last updated: 2026-10-14 (standing brief + designer WP-UI)._
+_Last updated: 2026-10-14 (main is through #215; WP-H is next)._
 
 ## Now
-- Standing brief: `docs/STANDING_BRIEF.md` (Vehicle Designer top priority; WP-UI next).
+- Standing brief: `docs/STANDING_BRIEF.md` (Vehicle Designer top priority; WP-H next).
 - Engine: Unity 6.3 LTS, portrait-only, 2.0 = first Unity release under the existing bundle/record. Phaser = beckify.com web demo. `release/1.0.1` archived.
+- Feature work through #215 is on `main`. No open pull requests. `xcode-export` is the orphan Xcode Cloud branch and is never merged. The audio-delivery review branch's game fixes landed in #210–#212; its screenshot commits stay off main.
+- Shipping export tag `export/2.0.0-108` is behind current main (#212–#215). The next export number is 109.
 - Lanes: **U1** Gameplay Dev (core parity), **U2** Graphics Dev (shell/portrait). X1 + H1 docs done; X2–X7 starting; H2–H6 mapped into U3–U9 (UNITY_SHIP_PLAN §8). K1 (Launch Timeline spec) done; K2–K7 mapped (§9).
 - CI: `ci.yml` (node tests and the legacy iOS simulator build), `core-dotnet.yml` (core tests, no Editor), `unity.yml` (EditMode, PlayMode, iOS export compile-check; the two wall-clock latency tests stay skipped). Store upload still waits for Trevor.
 - Narration: ElevenLabs library being pre-generated on Trevor's paid Creator plan (non-beta models), local copies kept.
-
-## Open PRs (at X1)
-| PR | What |
-|----|------|
-| #13 (+#24 follow-up) | Unity prototype foundation; lands first |
-| #18–#22 | U2 stack: data, layout, quality-g1, app-shell, ui-theme (in order, after #13; #24 before #20) |
-| #25, #26, #28, #29, #32 | Gameplay feel: steer expo, graded landings, quick retry, mission ramp, tactile designer |
-| #31 (draft) | Golden flight vectors for every engine and preset |
 
 ## Pending with Trevor (never do without his yes)
 - Any **spend** (budget $0; no card on file anywhere).

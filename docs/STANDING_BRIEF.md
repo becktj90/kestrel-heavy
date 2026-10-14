@@ -16,7 +16,7 @@ This is the most important part of the game. It must be a comprehensive, highly 
 - **Live stats:** mass, TWR, delta-v, and per-stage readouts, with honest physics and a failure model.
 - Spec and mockups ship to Trevor before net-new designer features that contradict `docs/DESIGNER_V3_SPEC.md`. Existing v3 specs and mockups under `docs/mockups/designer/` and `docs/designer/art/` are the approved package unless Trevor says otherwise.
 
-Designer v3 work packages: `docs/designer-v3/prompts/`. Waves A→H. WP-A–G are on main; remaining: **WP-UI**, then **WP-H**.
+Designer v3 work packages: `docs/designer-v3/prompts/`. Waves A→H. WP-A–G and WP-UI are on main; remaining: **WP-H**.
 
 ## Home and menu
 
