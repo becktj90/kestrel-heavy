@@ -69,6 +69,54 @@ namespace Kestrel.Game.Tests
             };
             Assert.IsTrue(DesignerV3Strip.HasRedRisk(red));
             Assert.AreEqual(2, DesignerV3Strip.RiskChips(red).Count);
+
+            var q = cells.Find(c => c.id == "q");
+            Assert.AreEqual("Run a sim", q.value);
+            var cost = cells.Find(c => c.id == "cost");
+            Assert.AreEqual(DesignerV3Strip.CompactMoney(r.cost), cost.value);
+            Assert.IsFalse(cost.value.Contains(","));
+            StringAssert.Contains(r.cost.ToString("N0", System.Globalization.CultureInfo.InvariantCulture), cost.hint);
+        }
+
+        [Test]
+        public void CompactMoney_UsesBillionsForTheWorkhorseScale()
+        {
+            Assert.AreEqual("$1.66B", DesignerV3Strip.CompactMoney(1660781357));
+            Assert.AreEqual("$1.66M", DesignerV3Strip.CompactMoney(1660781));
+            Assert.AreEqual("$16.61k", DesignerV3Strip.CompactMoney(16607));
+            Assert.AreEqual("$850", DesignerV3Strip.CompactMoney(850));
+        }
+
+        [Test]
+        public void Engines_ShowCatalogDefaultsUntilEdited()
+        {
+            var d = Template("workhorse");
+            var stage = d.Arr("stages")[0] as JsonObject;
+            Assert.IsNull(stage.Obj("engineParams"));
+            Assert.AreEqual(97, DesignerV3Edits.ShownPc(C, d, 0), 1e-9);
+            Assert.AreEqual(16, DesignerV3Edits.ShownExpansion(C, d, 0), 1e-9);
+            Assert.AreEqual(5, DesignerV3Edits.ShownGimbal(C, d, 0), 1e-9);
+
+            DesignerV3Edits.SetEnginePc(d, 0, DesignerV3Edits.ShownPc(C, d, 0) + 5);
+            Assert.AreEqual(102, DesignerV3Edits.ShownPc(C, d, 0), 1e-9);
+            Assert.AreEqual("gg-kerolox", stage.Str("engine"));
+        }
+
+        [Test]
+        public void Strip_MaxQShowsKilopascalsAfterReference()
+        {
+            ReferenceAscent.Reset();
+            try
+            {
+                var s = new HangarSession(C, H, Template("workhorse"));
+                var flown = Readout.Reference(C, s.Design);
+                Assert.IsFalse(flown.maxQStale);
+                Assert.IsTrue(flown.maxQ_kPa.HasValue);
+                var q = DesignerV3Strip.Cells(flown, true).Find(c => c.id == "q");
+                StringAssert.Contains("kPa", q.value);
+                StringAssert.DoesNotContain("Run a sim", q.value);
+            }
+            finally { ReferenceAscent.Reset(); }
         }
 
         [Test]

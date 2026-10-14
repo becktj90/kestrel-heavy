@@ -47,7 +47,7 @@ namespace Kestrel.Slice.DesignerV3
 
             string qVal;
             CellState qState = CellState.Neutral;
-            if (r.maxQStale || !r.maxQ_kPa.HasValue) qVal = "…";
+            if (r.maxQStale || !r.maxQ_kPa.HasValue) qVal = "Run a sim";
             else
             {
                 qVal = r.maxQ_kPa.Value.ToString("0.0", Inv) + " kPa";
@@ -60,15 +60,30 @@ namespace Kestrel.Slice.DesignerV3
             }
             list.Add(new StripCell("q", "Max-Q", qVal, qState));
 
-            string costVal = engineer ? r.cost.ToString("N0", Inv) : HangarFormat.Kc(r.cost);
+            string costVal = CompactMoney(r.cost);
+            string costHint = r.cost.ToString("N0", Inv);
             CellState costState = CellState.Neutral;
             if (r.budget.HasValue && r.budget.Value > 0)
             {
-                costVal += " / " + (engineer ? r.budget.Value.ToString("N0", Inv) : HangarFormat.Kc(r.budget.Value));
+                costVal += " / " + CompactMoney(r.budget.Value);
+                costHint += " / " + r.budget.Value.ToString("N0", Inv);
                 costState = r.cost <= r.budget.Value ? CellState.Good : CellState.Bad;
             }
-            list.Add(new StripCell("cost", "Cost", costVal, costState));
+            list.Add(new StripCell("cost", "Cost", costVal, costState, costHint));
             return list;
+        }
+
+        /// <summary>Strip cost. 1660781357 → "$1.66B". The exact integer stays on the tooltip.</summary>
+        public static string CompactMoney(long amount)
+        {
+            double v = amount;
+            double a = Math.Abs(v);
+            string body;
+            if (a >= 1e9) body = (v / 1e9).ToString("0.00", Inv) + "B";
+            else if (a >= 1e6) body = (v / 1e6).ToString("0.00", Inv) + "M";
+            else if (a >= 1e3) body = (v / 1e3).ToString("0.00", Inv) + "k";
+            else body = v.ToString("N0", Inv);
+            return "$" + body;
         }
 
         public static List<FlightRisk> RiskChips(QuickReadout r)

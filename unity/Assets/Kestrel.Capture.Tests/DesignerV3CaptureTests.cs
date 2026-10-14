@@ -46,6 +46,14 @@ namespace Kestrel.Capture.Tests
         }
 #endif
 
+        static bool HasLabel(VisualElement root, string title, string value)
+        {
+            var labels = root.Query<Label>().ToList();
+            for (int i = 0; i < labels.Count - 1; i++)
+                if (labels[i].text == title && labels[i + 1].text == value) return true;
+            return false;
+        }
+
         static string OutDir()
         {
             var d = Environment.GetEnvironmentVariable("KH_CAP_OUT");
@@ -88,6 +96,7 @@ namespace Kestrel.Capture.Tests
                 app.ShowDesigner(true);
                 Assert.IsNotNull(app.Designer, name + " panel");
                 app.Designer.SetEngineer(true);
+                app.Designer.FinishReference();
                 for (int i = 0; i < 5; i++) yield return null;
 
                 var doc = UnityEngine.Object.FindAnyObjectByType<UIDocument>();
@@ -103,6 +112,13 @@ namespace Kestrel.Capture.Tests
                 var toggle = doc.rootVisualElement.Q<Button>(DesignerV3Panel.ToggleName);
                 Assert.IsNotNull(toggle, name);
                 Assert.AreEqual("Hangar", toggle.text, name);
+                Assert.IsTrue(HasLabel(designer, "Chamber pressure", "97 bar"), name + " chamber pressure");
+                Assert.IsTrue(HasLabel(designer, "Expansion ratio", "16"), name + " expansion ratio");
+                var qText = designer.Q<Label>("strip-value-q")?.text ?? "";
+                StringAssert.Contains("kPa", qText, name + " max-Q");
+                var costText = designer.Q<Label>("strip-value-cost")?.text ?? "";
+                StringAssert.StartsWith("$", costText, name + " cost");
+                StringAssert.DoesNotContain(",", costText, name + " cost wraps when unformatted");
 
                 var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
                 var cams = Camera.allCameras.Where(c => c.enabled && c.targetTexture == null).OrderBy(c => c.depth).ToArray();
