@@ -1,5 +1,5 @@
 // PlayMode capture tests (CI screenshots). Each loads a real build scene, lets the runtime builders
-// run for 60 frames, then renders every camera plus UI Toolkit panels into a 1179x2556 RT and writes a PNG.
+// run for 60 frames, then captures normal URP frames plus UI Toolkit panels into a 1179x2556 RT and writes a PNG.
 // Output: $KH_CAP_OUT or <project>/CaptureOut. Fails if the image is a single flat colour.
 using System;
 using System.Collections;
@@ -17,6 +17,28 @@ namespace Kestrel.Capture.Tests
     public class ScreenCaptureTests
     {
         const int W = 1179, H = 2556, Frames = 60;
+
+#if UNITY_EDITOR
+        uint priorWidth, priorHeight;
+
+        [UnitySetUp]
+        public IEnumerator UsePortraitViewport()
+        {
+            UnityEditor.PlayModeWindow.GetRenderingResolution(out priorWidth, out priorHeight);
+            UnityEditor.PlayModeWindow.SetCustomRenderingResolution(W, H, "Kestrel portrait capture");
+            for (int i = 0; i < Frames && (Screen.width != W || Screen.height != H); i++) yield return null;
+            Assert.AreEqual(W, Screen.width, "Capture UI and camera must use the portrait target width.");
+            Assert.AreEqual(H, Screen.height, "Capture UI and camera must use the portrait target height.");
+        }
+
+        [UnityTearDown]
+        public IEnumerator RestoreViewport()
+        {
+            if (priorWidth > 0 && priorHeight > 0)
+                UnityEditor.PlayModeWindow.SetCustomRenderingResolution(priorWidth, priorHeight, "Previous capture viewport");
+            yield return null;
+        }
+#endif
 
         static string OutDir()
         {
@@ -84,9 +106,11 @@ namespace Kestrel.Capture.Tests
 
             var rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32);
             var cams = Camera.allCameras.Where(c => c.enabled && c.targetTexture == null).OrderBy(c => c.depth).ToArray();
-            foreach (var c in cams) { c.targetTexture = rt; c.Render(); c.targetTexture = null; }
+            // Keep the target attached during normal rendering. Camera.Render() after LateUpdate
+            // does not preserve the procedural instancing submissions used by pad and vehicle detail.
+            foreach (var c in cams) c.targetTexture = rt;
 
-            // UI Toolkit: draw panels over the 3D frame for one frame.
+            // UI Toolkit and the cameras draw into the same target during normal frames.
             var panels = UnityEngine.Object.FindObjectsByType<UIDocument>(FindObjectsSortMode.None)
                 .Select(d => d.panelSettings).Where(p => p != null).Distinct().ToArray();
             var oldTargets = panels.Select(p => p.targetTexture).ToArray();
@@ -94,6 +118,7 @@ namespace Kestrel.Capture.Tests
             foreach (var p in panels) { p.targetTexture = rt; p.clearColor = false; }
             // (WaitForEndOfFrame never fires in batchmode; panels render into targetTexture during the frame.)
             for (int i = 0; i < 3; i++) yield return null;
+            foreach (var c in cams) c.targetTexture = null;
             for (int i = 0; i < panels.Length; i++) { panels[i].targetTexture = oldTargets[i]; panels[i].clearColor = oldClear[i]; }
 
             var prev = RenderTexture.active; RenderTexture.active = rt;
