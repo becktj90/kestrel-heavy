@@ -29,7 +29,7 @@
     margin-bottom: 6px;
 }
 
-.designer-v3 #launch-row {
+.designer-v3 #designer-launch {
     margin-top: 8px;
     justify-content: center;
 }

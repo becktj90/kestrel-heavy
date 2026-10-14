@@ -17,6 +17,7 @@ namespace Kestrel.Slice.DesignerV3
     public sealed class DesignerV3Panel
     {
         public const string RootName = "designer-v3";
+        public const string ToggleName = "open-designer";
         public const string EngineerPref = "kh.designer.v3.engineer";
         public const string TutorialPref = "kh.designer.v3.tutorial";
 
@@ -28,10 +29,14 @@ namespace Kestrel.Slice.DesignerV3
         readonly Dictionary<DesignerV3Tab, Button> tabButtons = new Dictionary<DesignerV3Tab, Button>();
         readonly CultureInfo inv = CultureInfo.InvariantCulture;
 
+        static DesignerV3Panel mounted;
+
         DesignerV3Tab tab = DesignerV3Tab.Engines;
         bool engineer;
         bool launchConfirmArmed;
         bool tutorialOn;
+        bool sheetCollapsed;
+        Button toggle;
         int tutorialIndex;
         List<TutorialStep> tutorialSteps;
         string lastDelta = "";
@@ -44,6 +49,7 @@ namespace Kestrel.Slice.DesignerV3
         public event Action<string> FieldFocused;
 
         public bool Engineer => engineer;
+        public bool Open { get; private set; }
         public DesignerV3Tab Tab => tab;
         public bool TutorialOn => tutorialOn;
         public bool LaunchConfirmArmed => launchConfirmArmed;
@@ -79,6 +85,8 @@ namespace Kestrel.Slice.DesignerV3
 
             tabs = ui.Row(2f);
             tabs.name = "tab-bar";
+            tabs.style.flexWrap = Wrap.Wrap;
+            tabs.style.width = Length.Percent(100);
             root.Add(tabs);
 
             scroll = new ScrollView(ScrollViewMode.Vertical) { name = "designer-scroll" };
@@ -89,7 +97,7 @@ namespace Kestrel.Slice.DesignerV3
             root.Add(scroll);
 
             confirmRow = ui.Row(2f);
-            confirmRow.name = "launch-row";
+            confirmRow.name = "designer-launch";
             root.Add(confirmRow);
 
             BuildTabs();
@@ -98,7 +106,101 @@ namespace Kestrel.Slice.DesignerV3
             Rebuild();
         }
 
-        public void Detach() => session.Changed -= OnChanged;
+        /// <summary>
+        /// One registration from SliceApp, same shape as FailureHost.Attach.
+        /// Mounts this panel in the design sheet, directly above the Hangar thumb row,
+        /// and adds a Designer / Hangar toggle so the player can reach it without replacing Hangar G3.
+        /// </summary>
+        public static DesignerV3Panel Attach(HangarSession session, VisualElement ui, float upp)
+        {
+            if (session == null || ui == null) return null;
+            var design = ui.Q("design");
+            var body = design != null ? design.Q("design-body") : null;
+            if (design == null || body == null) return null;
+
+            if (mounted != null && ReferenceEquals(mounted.session, session) && ui.Q(RootName) == mounted.root)
+            {
+                mounted.SetScale(upp);
+                return mounted;
+            }
+            if (mounted != null) mounted.Detach();
+
+            var host = new VisualElement { name = RootName };
+            host.style.display = DisplayStyle.None;
+            host.style.flexShrink = 1;
+            VisualElement chrome = null;
+            foreach (var child in design.Children())
+                if (child.name == "launch-row") { chrome = child; break; }
+            if (chrome != null) design.Insert(design.IndexOf(chrome), host);
+            else
+            {
+                int at = design.IndexOf(body);
+                if (at >= 0) design.Insert(at + 1, host);
+                else design.Add(host);
+            }
+
+            var panel = new DesignerV3Panel(session, host, upp);
+            if (chrome != null && chrome.Q(ToggleName) == null)
+            {
+                var open = new Button(() => panel.SetOpen(!panel.Open))
+                {
+                    name = ToggleName,
+                    text = "Designer",
+                    tooltip = "Open the vehicle designer, next to the Hangar.",
+                };
+                open.AddToClassList("tool");
+                var launch = chrome.Q("launch");
+                if (launch != null) chrome.Insert(chrome.IndexOf(launch), open);
+                else chrome.Add(open);
+                panel.toggle = open;
+            }
+            panel.SetOpen(false);
+            mounted = panel;
+            return panel;
+        }
+
+        public void Detach()
+        {
+            session.Changed -= OnChanged;
+            if (mounted != this) return;
+            toggle?.RemoveFromHierarchy();
+            var body = root != null && root.parent != null ? root.parent.Q("design-body") : null;
+            if (body != null && body != root) body.style.display = StyleKeyword.Null;
+            root?.RemoveFromHierarchy();
+            mounted = null;
+        }
+
+        /// <summary>Show the designer in the Hangar sheet, or return the sheet to Hangar G3.</summary>
+        public void SetOpen(bool on)
+        {
+            Open = on;
+            ApplyVisibility();
+        }
+
+        /// <summary>The design sheet handle collapsed. Keeps the open/closed choice for when it expands.</summary>
+        public void SetSheetCollapsed(bool collapsed)
+        {
+            sheetCollapsed = collapsed;
+            ApplyVisibility();
+        }
+
+        void ApplyVisibility()
+        {
+            if (root == null) return;
+            root.style.display = Open && !sheetCollapsed ? DisplayStyle.Flex : DisplayStyle.None;
+            var body = root.parent != null ? root.parent.Q("design-body") : null;
+            if (body != null && body != root)
+                body.style.display = Open ? DisplayStyle.None : StyleKeyword.Null;
+            if (toggle != null)
+            {
+                toggle.text = Open ? "Hangar" : "Designer";
+                toggle.tooltip = Open
+                    ? "Back to the Hangar."
+                    : "Open the vehicle designer, next to the Hangar.";
+                var launch = toggle.parent != null ? toggle.parent.Q<Button>("launch") : null;
+                if (launch != null) launch.style.display = Open ? DisplayStyle.None : StyleKeyword.Null;
+            }
+        }
 
         public void SetScale(float upp)
         {

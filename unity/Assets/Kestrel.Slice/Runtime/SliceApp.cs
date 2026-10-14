@@ -14,6 +14,7 @@ using Kestrel.Core.Vehicle;
 using Kestrel.Game.Environment;
 using Kestrel.Kit.Contracts;
 using Kestrel.Site;
+using Kestrel.Slice.DesignerV3;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -22,7 +23,7 @@ namespace Kestrel.Slice
     public sealed class SliceApp : MonoBehaviour
     {
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
-        Design design; HangarSession session; DesignLibrary library; HangarPanel panel; HangarRocketView rocketView = new HangarRocketView(); HangarCamera hangarCam;
+        Design design; HangarSession session; DesignLibrary library; HangarPanel panel; DesignerV3Panel designer; HangarRocketView rocketView = new HangarRocketView(); HangarCamera hangarCam;
         Button undoButton, redoButton, explodeButton; bool rocketDirty = true; float lastRocketBuild = -1f; Mesh combinedMesh; Material flightMat;
         public bool TankCutaway { get; private set; }
         HangarExplodedView explodedView; Material explodedMat;
@@ -91,9 +92,27 @@ namespace Kestrel.Slice
                 panel.ExplodeRequested += SetExploded;
                 panel.TankCutawayRequested += () => SetTankCutaway(!TankCutaway);
                 panel.EngineerChanged += _ => ApplyValidation();
+                // #213 is on main. One registration: portrait designer beside the Hangar.
+                designer = DesignerV3Panel.Attach(session, ui, upp);
+                if (designer != null) designer.LaunchRequested += Launch;
             }
-            else panel.SetScale(upp);
+            else
+            {
+                panel.SetScale(upp);
+                designer?.SetScale(upp);
+            }
             ApplyDesignPanelMetrics();
+        }
+
+        /// <summary>The portrait designer mounted beside the Hangar, once the design sheet exists.</summary>
+        public DesignerV3Panel Designer => designer;
+
+        /// <summary>Open the vehicle designer in the sheet, or return to the Hangar.</summary>
+        public void ShowDesigner(bool on = true)
+        {
+            if (designer == null) TryBuildPanel();
+            if (on && designCollapsed) SetDesignCollapsed(false);
+            designer?.SetOpen(on);
         }
 
         /// <summary>Every document change: readout gate, chip, undo labels, and a (rate-limited) rocket rebuild.</summary>
@@ -327,7 +346,8 @@ namespace Kestrel.Slice
             issueChip.style.paddingLeft = 12f * upp; issueChip.style.paddingRight = 12f * upp;
             issueChip.style.paddingTop = 6f * upp; issueChip.style.paddingBottom = 6f * upp;
             // Thumb row: 44 pt tools and a 52 pt Launch.
-            foreach (var b in new[] { undoButton, redoButton, explodeButton })
+            var designerToggle = ui.Q<Button>(DesignerV3Panel.ToggleName);
+            foreach (var b in new[] { undoButton, redoButton, explodeButton, designerToggle })
             {
                 if (b == null) continue;
                 b.style.height = 52f * upp; b.style.minWidth = 56f * upp; b.style.fontSize = 15f * upp;
@@ -340,22 +360,27 @@ namespace Kestrel.Slice
 
             bool side = HangarPanelLayout.SidePanel(Screen.width, Screen.height);
             designPanel.EnableInClassList("side", side);
+            float hPt = ui.layout.height / Mathf.Max(0.01f, upp);
+            float safeBottomPt = bottom / Mathf.Max(0.01f, upp);
             if (side)
             {
                 designPanel.style.width = DesignFraming.SidePanelPoints * upp;
                 designPanel.style.top = top;
                 designPanel.style.paddingBottom = Mathf.Max(8f * upp, bottom + 8f * upp);
                 panel?.SetContentMax(-1f);
+                designer?.SetContentMax(-1f);
                 designBody.style.flexGrow = 1;
+                if (designer != null) designer.Root.style.flexGrow = 1;
             }
             else
             {
                 designPanel.style.width = StyleKeyword.Null;
                 designPanel.style.top = StyleKeyword.Null;
                 designPanel.style.paddingBottom = designCollapsed ? bottom : Mathf.Max(8f * upp, bottom + 8f * upp);
-                float hPt = ui.layout.height / Mathf.Max(0.01f, upp);
-                panel?.SetContentMax(HangarPanelLayout.ContentMaxPt(hPt, bottom / Mathf.Max(0.01f, upp)) * upp);
+                panel?.SetContentMax(HangarPanelLayout.ContentMaxPt(hPt, safeBottomPt) * upp);
+                designer?.SetContentMax(DesignerV3Layout.ContentMaxPt(hPt, safeBottomPt, true) * upp);
                 designBody.style.flexGrow = 0;
+                if (designer != null) designer.Root.style.flexGrow = 0;
             }
         }
 
@@ -363,6 +388,7 @@ namespace Kestrel.Slice
         {
             designCollapsed = collapsed;
             designPanel.EnableInClassList("collapsed", collapsed);
+            designer?.SetSheetCollapsed(collapsed);
             if (ui != null) ApplyDesignPanelMetrics();
             var row = ui.Q("launch-row"); if (row != null) row.style.display = collapsed ? DisplayStyle.None : DisplayStyle.Flex;
             if (launchReason != null) launchReason.style.display = collapsed ? DisplayStyle.None : StyleKeyword.Null;

@@ -8,6 +8,6 @@
         <ui:ScrollView name="designer-scroll">
             <ui:VisualElement name="tab-content" />
         </ui:ScrollView>
-        <ui:VisualElement name="launch-row" />
+        <ui:VisualElement name="designer-launch" />
     </ui:VisualElement>
 </ui:UXML>

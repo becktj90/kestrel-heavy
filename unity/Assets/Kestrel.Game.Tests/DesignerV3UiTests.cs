@@ -181,5 +181,62 @@ namespace Kestrel.Game.Tests
             Assert.IsFalse(panel.LaunchConfirmArmed);
             panel.Detach();
         }
+
+        [Test]
+        public void Attach_MountsBesideHangar_AndTogglesWithoutClearingIt()
+        {
+            var ui = new VisualElement { name = "root" };
+            var design = new VisualElement { name = "design" };
+            var body = new VisualElement { name = "design-body" };
+            body.Add(new Label("hangar-stays"));
+            var row = new VisualElement { name = "launch-row" };
+            var launch = new Button { name = "launch", text = "LAUNCH" };
+            row.Add(launch);
+            design.Add(new Button { name = "design-toggle", text = "Design" });
+            design.Add(body);
+            design.Add(row);
+            ui.Add(design);
+
+            var session = new HangarSession(C, H, Template("workhorse"));
+            DesignerV3Panel panel = null;
+            try
+            {
+                panel = DesignerV3Panel.Attach(session, ui, 2f);
+                Assert.IsNotNull(panel);
+                Assert.AreSame(panel, DesignerV3Panel.Attach(session, ui, 2f));
+                Assert.AreEqual("hangar-stays", body.Q<Label>().text);
+                Assert.AreEqual(DesignerV3Panel.RootName, panel.Root.name);
+                Assert.AreEqual(body.parent, panel.Root.parent);
+                Assert.Less(design.IndexOf(panel.Root), design.IndexOf(row), "designer sits above the Hangar thumb row");
+                Assert.AreEqual(DisplayStyle.None, panel.Root.style.display.value);
+                Assert.AreEqual(DesignerV3Panel.ToggleName, row[0].name);
+                Assert.AreSame(launch, row[1]);
+
+                panel.SetOpen(true);
+                Assert.IsTrue(panel.Open);
+                Assert.AreEqual(DisplayStyle.Flex, panel.Root.style.display.value);
+                Assert.AreEqual(DisplayStyle.None, body.style.display.value);
+                Assert.AreEqual("Hangar", row.Q<Button>(DesignerV3Panel.ToggleName).text);
+                Assert.AreEqual(DisplayStyle.None, launch.style.display.value);
+                Assert.IsNotNull(panel.Root.Q("designer-launch"));
+                Assert.IsNotNull(panel.Root.Q("tab-bar"));
+
+                panel.SetSheetCollapsed(true);
+                Assert.AreEqual(DisplayStyle.None, panel.Root.style.display.value);
+                panel.SetSheetCollapsed(false);
+                Assert.AreEqual(DisplayStyle.Flex, panel.Root.style.display.value);
+
+                panel.SetOpen(false);
+                Assert.IsFalse(panel.Open);
+                Assert.AreEqual(DisplayStyle.None, panel.Root.style.display.value);
+                Assert.AreEqual(StyleKeyword.Null, body.style.display.keyword);
+                Assert.AreEqual(StyleKeyword.Null, launch.style.display.keyword);
+                Assert.AreEqual("Designer", row.Q<Button>(DesignerV3Panel.ToggleName).text);
+            }
+            finally
+            {
+                panel?.Detach();
+            }
+        }
     }
 }
