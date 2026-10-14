@@ -98,11 +98,11 @@ jobs:
 
       - name: Publish orphan xcode-export branch
         env:
-          SOURCE_SHA: ${{ github.sha }}
           SOURCE_REF: ${{ inputs.ref }}
         run: |
           set -euo pipefail
           chmod +x tools/ios-export/publish.sh
+          SOURCE_SHA=$(git rev-parse HEAD)
           # GameCI passes -customBuildPath <buildsPath>/<targetPlatform>/<buildName>, so the project is in build/iOS/iOS.
           tools/ios-export/publish.sh "$BUILD_NUMBER" build/iOS/iOS "${SOURCE_SHA:0:12}" "$SOURCE_REF"
 
@@ -112,4 +112,4 @@ jobs:
           name: xcode-export-${{ env.BUILD_NUMBER }}
           path: build/iOS/iOS
           retention-days: 7
-          if-no-files-found: warn
+          if-no-files-found: error

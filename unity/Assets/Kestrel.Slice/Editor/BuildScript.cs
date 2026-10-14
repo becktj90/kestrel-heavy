@@ -13,10 +13,16 @@ namespace Kestrel.Slice.Editor
     {
         public static void BuildIOS()
         {
-            SliceBootstrap.EnsureAll();
             string path = Arg("-customBuildPath") ?? Environment.GetEnvironmentVariable("KH_BUILD_PATH") ?? "build/iOS";
             var buildNumber = Arg("-khBuildNumber") ?? Environment.GetEnvironmentVariable("KH_BUILD_NUMBER");
-            if (!string.IsNullOrEmpty(buildNumber)) PlayerSettings.iOS.buildNumber = buildNumber;
+            if (!string.IsNullOrEmpty(buildNumber))
+            {
+                if (!int.TryParse(buildNumber, out var number) || number < 100)
+                    throw new ArgumentException("Shipping iOS build number must be an integer >= 100.");
+                PlayerSettings.iOS.buildNumber = number.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+            SliceBootstrap.EnsureAll();
+            global::Kestrel.Game.Editor.ShellSetup.EnsureAll();
             Directory.CreateDirectory(path);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
@@ -29,12 +35,21 @@ namespace Kestrel.Slice.Editor
             if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
         }
 
-        // Ship the Build Settings scene list (Boot/Home/Design/Flight); fall back to the Slice sandbox only if empty.
+        // Export the shipping shell; never silently substitute the local Slice sandbox.
         static string[] BuildScenes()
         {
             var list = new System.Collections.Generic.List<string>();
             foreach (var s in EditorBuildSettings.scenes) if (s.enabled) list.Add(s.path);
-            return list.Count > 0 ? list.ToArray() : new[] { SliceBootstrap.ScenePath };
+            var required = new[] { "Boot", "Home", "Design", "Flight" };
+            foreach (var name in required)
+            {
+                var path = $"Assets/Scenes/Shell/{name}.unity";
+                if (!list.Contains(path) || !File.Exists(path))
+                    throw new InvalidOperationException($"Shipping iOS build requires enabled scene {path}.");
+            }
+            if (list[0] != "Assets/Scenes/Shell/Boot.unity")
+                throw new InvalidOperationException("Shipping iOS build must start with the Boot scene.");
+            return list.ToArray();
         }
 
         static string Arg(string name)

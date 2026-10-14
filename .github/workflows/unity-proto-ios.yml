@@ -90,7 +90,7 @@ jobs:
           # Same as unity.yml ios-compile.
           allowDirtyBuild: true
       - name: Pack Xcode project (keep exec bits)
-        run: tar -czf xcode-ios.tgz -C build/iOS .
+        run: tar -czf xcode-ios.tgz -C build/iOS/iOS .
       - uses: actions/upload-artifact@v4
         with:
           name: xcode-ios
