@@ -18,6 +18,14 @@ namespace Kestrel.Slice.Editor
         {
             if (report.summary.platform != BuildTarget.iOS) return;
             string root = report.summary.outputPath;
+            // The game uses only exempt OS HTTPS (Game Center). Without this declaration,
+            // processed Xcode Cloud builds stay unavailable as MISSING_EXPORT_COMPLIANCE.
+            string plistPath = Path.Combine(root, "Info.plist");
+            var plist = new PlistDocument();
+            plist.ReadFromFile(plistPath);
+            plist.root.SetBoolean("ITSAppUsesNonExemptEncryption", false);
+            plist.WriteToFile(plistPath);
+
             string projPath = PBXProject.GetPBXProjectPath(root);
             var proj = new PBXProject();
             proj.ReadFromFile(projPath);

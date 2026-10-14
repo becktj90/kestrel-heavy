@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net8.0</TargetFramework><IsPackable>false</IsPackable><LangVersion>9.0</LangVersion></PropertyGroup>
-  <ItemGroup><Compile Include="../../Assets/Kestrel.Slice/Editor/BuildScript.cs" Link="BuildScript.cs" /></ItemGroup>
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><IsPackable>false</IsPackable><LangVersion>9.0</LangVersion><DefineConstants>UNITY_IOS</DefineConstants></PropertyGroup>
+  <ItemGroup><Compile Include="../../Assets/Kestrel.Slice/Editor/BuildScript.cs" Link="BuildScript.cs" /><Compile Include="../../Assets/Kestrel.Slice/Editor/IosXcodePostprocess.cs" Link="IosXcodePostprocess.cs" /></ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="NUnit" Version="3.14.0" />
