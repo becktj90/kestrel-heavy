@@ -805,6 +805,7 @@ namespace Kestrel.Slice
 
         void BackToDesign()
         {
+            Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
             flight.enabled = false; cam.ResetProjectionMatrix();
             hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
             if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }

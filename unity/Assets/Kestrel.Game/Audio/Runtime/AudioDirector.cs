@@ -8,7 +8,7 @@ namespace Kestrel.Game.Audio
     /// <summary>
     /// Pooled one-shots, a throttle/q engine loop, UI clicks, and mute.
     /// External air drops out by 80 km; structure-borne rumble stays while the engines burn.
-    /// Wire with <see cref="Attach"/> once. No music.
+    /// Wire with <see cref="Attach"/> once. Original music is managed by MusicPlayer.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class AudioDirector : MonoBehaviour, IFlightEventSink
@@ -55,6 +55,7 @@ namespace Kestrel.Game.Audio
 
         public void SetVoiceDuck(bool active)
         {
+            MusicPlayer.Instance?.SetVoiceDuck(active);
             duck = active ? MixerLevels.VoiceDuck : 1f;
             ApplyEngine();
         }
@@ -71,7 +72,7 @@ namespace Kestrel.Game.Audio
         public void OnEvent(string id)
         {
             if (string.IsNullOrEmpty(id)) return;
-            if (id == "flight.begin") BeginFlight();
+            if (id == "flight.begin") { MusicPlayer.Instance?.Suspend(true); BeginFlight(); }
             else PlaySfx(id);
             if (forward != null) forward.OnEvent(id);
         }

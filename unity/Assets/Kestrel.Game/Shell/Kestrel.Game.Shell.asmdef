@@ -1,7 +1,12 @@
 {
     "name": "Kestrel.Game.Shell",
     "rootNamespace": "Kestrel.Game.Shell",
-    "references": ["Kestrel.Game.Layout", "Kestrel.Game.Quality", "Kestrel.Game.QualityCore"],
+    "references": [
+        "Kestrel.Game.Layout",
+        "Kestrel.Game.Quality",
+        "Kestrel.Game.QualityCore",
+        "Kestrel.Game.Audio"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

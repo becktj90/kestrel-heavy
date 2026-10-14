@@ -28,6 +28,28 @@ namespace Kestrel.Game.Audio.Tests
         }
 
         [Test]
+        public void OriginalScoreLoadsAndRespectsVoiceMuteAndFlightSuspension()
+        {
+            var music = NewGo("music").AddComponent<MusicPlayer>();
+            PlayerPrefs.SetInt(AudioDirector.MutePref, 0);
+            music.Select(true);
+            Assert.IsNotNull(music.Clip);
+            Assert.Greater(music.Clip.length, 90f);
+            float full = music.Volume;
+            music.SetVoiceDuck(true);
+            Assert.AreEqual(full * 0.35f, music.Volume, 1e-5f);
+            music.Suspend(true);
+            Assert.AreEqual(0f, music.Volume);
+            music.Select(false);
+            Assert.IsNotNull(music.Clip);
+            Assert.Greater(music.Clip.length, 47f);
+            Assert.Greater(music.Volume, 0f);
+            PlayerPrefs.SetInt(AudioDirector.MutePref, 1);
+            music.SetVoiceDuck(false);
+            Assert.AreEqual(0f, music.Volume);
+        }
+
+        [Test]
         public void AttachIsTheOnlyHookAndIsIdempotent()
         {
             var go = NewGo("flight");

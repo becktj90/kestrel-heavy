@@ -17,6 +17,7 @@ namespace Kestrel.Game.Shell
         public AppScreen? Current { get; private set; }
         public bool Busy { get; private set; }
         public event Action<AppScreen> Entered;
+        public event Action Leaving;
 
         public void Go(AppScreen to)
         {
@@ -27,6 +28,7 @@ namespace Kestrel.Game.Shell
         IEnumerator Switch(AppScreen to)
         {
             Busy = true;
+            Leaving?.Invoke();
             if (Current.HasValue)
             {
                 var op = SceneManager.UnloadSceneAsync(SceneNames[(int)Current.Value]);

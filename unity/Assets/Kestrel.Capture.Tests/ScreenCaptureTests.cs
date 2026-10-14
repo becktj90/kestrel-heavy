@@ -38,6 +38,15 @@ namespace Kestrel.Capture.Tests
             if (cam != null) CaptureCamera.Override(cam[0], cam[1]);
             for (int i = 0; i < Frames; i++) yield return null;
 
+            if (scene == "Boot")
+            {
+                var music = Kestrel.Game.Audio.MusicPlayer.Instance;
+                Assert.IsNotNull(music, "Shipping Boot must start the original title score.");
+                Assert.IsNotNull(music.Clip);
+                var listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None)
+                    .Count(listener => listener.isActiveAndEnabled);
+                Assert.AreEqual(1, listeners, "Home needs exactly one active listener.");
+            }
             if (scene == "Design")
             {
                 var flight = UnityEngine.Object.FindObjectsByType<Kestrel.Slice.FlightDriver>(FindObjectsSortMode.None).Single();

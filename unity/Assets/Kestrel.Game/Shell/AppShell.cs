@@ -62,7 +62,15 @@ namespace Kestrel.Game.Shell
             Portrait.FrameChanged += OnFrame;
             Root.RegisterCallback<GeometryChangedEvent>(_ => OnFrame(Portrait.Frame));
 
+            var listener = camGo.AddComponent<AudioListener>();
+            var music = gameObject.AddComponent<Kestrel.Game.Audio.MusicPlayer>();
             Flow = gameObject.AddComponent<SceneFlow>();
+            Flow.Leaving += () => listener.enabled = false;
+            Flow.Entered += screen =>
+            {
+                listener.enabled = screen == AppScreen.Home;
+                music.Select(screen == AppScreen.Home);
+            };
         }
 
         void Start() => Flow.Go(AppScreen.Home);
