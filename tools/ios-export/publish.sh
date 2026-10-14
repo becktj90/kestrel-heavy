@@ -157,6 +157,13 @@ git tag -a "$TAG" -m "$MSG"
 
 echo "Publishing $BRANCH @ $TAG ..."
 git remote add origin "$(git -C "$REPO_ROOT" remote get-url origin)"
+# In GitHub Actions, actions/checkout keeps the token as an http extraheader in the checkout's own git config
+# (directly or through an includeIf file). This staging repo is fresh, so carry the header over or the push
+# (and the LFS upload) has no credentials. Locally there is no header and your own git credentials are used.
+AUTH_HEADER=$(git -C "$REPO_ROOT" config --get http.https://github.com/.extraheader 2>/dev/null || true)
+if [[ -n "$AUTH_HEADER" ]]; then
+  git config --local http.https://github.com/.extraheader "$AUTH_HEADER"
+fi
 git push -f origin "HEAD:refs/heads/$BRANCH"
 git push -f origin "refs/tags/$TAG"
 
