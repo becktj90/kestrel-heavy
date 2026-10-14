@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="DesignerV3.uss" />
+    <ui:VisualElement name="designer-v3" class="designer-v3">
+        <ui:VisualElement name="tutorial-banner" />
+        <ui:VisualElement name="sticky-strip" />
+        <ui:VisualElement name="risk-chips" />
+        <ui:VisualElement name="tab-bar" />
+        <ui:ScrollView name="designer-scroll">
+            <ui:VisualElement name="tab-content" />
+        </ui:ScrollView>
+        <ui:VisualElement name="launch-row" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,40 @@
+/* Designer v3 portrait shell — Beckify charcoal / navy / cyan. Sizes are relative; HangarUi scales in points. */
+.designer-v3 {
+    flex-grow: 1;
+    background-color: rgba(8, 12, 20, 0.92);
+    padding: 8px;
+}
+
+.designer-v3 #sticky-strip {
+    min-height: 64px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    margin-bottom: 6px;
+}
+
+.designer-v3 #risk-chips {
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.designer-v3 #tab-bar {
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.designer-v3 #tutorial-banner {
+    background-color: rgba(30, 200, 255, 0.12);
+    border-radius: 10px;
+    padding: 8px;
+    margin-bottom: 6px;
+}
+
+.designer-v3 #launch-row {
+    margin-top: 8px;
+    justify-content: center;
+}
+
+.designer-v3 #delta-chip {
+    -unity-font-style: bold;
+    color: rgb(49, 219, 255);
+}

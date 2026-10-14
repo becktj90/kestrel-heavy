@@ -1,8 +1,9 @@
 # Project state (living context; update every milestone)
 
-_Last updated: 2026-10-12 (docs pass)._
+_Last updated: 2026-10-14 (standing brief + designer WP-UI)._
 
 ## Now
+- Standing brief: `docs/STANDING_BRIEF.md` (Vehicle Designer top priority; WP-UI next).
 - Engine: Unity 6.3 LTS, portrait-only, 2.0 = first Unity release under the existing bundle/record. Phaser = beckify.com web demo. `release/1.0.1` archived.
 - Lanes: **U1** Gameplay Dev (core parity), **U2** Graphics Dev (shell/portrait). X1 + H1 docs done; X2–X7 starting; H2–H6 mapped into U3–U9 (UNITY_SHIP_PLAN §8). K1 (Launch Timeline spec) done; K2–K7 mapped (§9).
 - CI: `ci.yml` (node tests and the legacy iOS simulator build), `core-dotnet.yml` (core tests, no Editor), `unity.yml` (EditMode, PlayMode, iOS export compile-check; the two wall-clock latency tests stay skipped). Store upload still waits for Trevor.
