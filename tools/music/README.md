@@ -53,3 +53,14 @@ example LMMS or Ardour) or mute tracks before rendering. Before shipping any
 rendered audio, add a row per file to `MUSIC_LICENSES.md` naming the soundfont
 used. Do not use a soundfont whose license is unclear or non-commercial.
 Rendered `.wav` files are not committed here.
+
+## Shipped original title and designer loops
+
+`render_score.py` renders the approved motif and Lydian harmony into 32-bar
+84 BPM title and 16-bar 80 BPM designer loops. Its additive instruments use
+no samples or soundfont. Install the requirements above plus numpy, then run
+`python tools/music/render_score.py` with ffmpeg on PATH. Output is stereo,
+48 kHz Vorbis, normalised to -17 LUFS. Release tails wrap into the loop start.
+Unity streams these assets; narration ducks them to 35%, mute silences them,
+and launch suspends the designer bed so ignition and flight cues stay clear.
+The adaptive ascent score and remaining cue library are still outstanding.

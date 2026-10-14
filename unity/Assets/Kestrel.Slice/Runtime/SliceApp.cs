@@ -24,6 +24,7 @@ namespace Kestrel.Slice
         public PanelSettings PanelSettings;   // assigned by the editor bootstrap (Resources/UI/KH_PanelSettings)
         Design design; HangarSession session; DesignLibrary library; HangarPanel panel; HangarRocketView rocketView = new HangarRocketView(); HangarCamera hangarCam;
         Button undoButton, redoButton, explodeButton; bool rocketDirty = true; float lastRocketBuild = -1f; Mesh combinedMesh; Material flightMat;
+        public bool TankCutaway { get; private set; }
         HangarExplodedView explodedView; Material explodedMat;
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
@@ -88,6 +89,7 @@ namespace Kestrel.Slice
                 panel.FocusRequested += FocusPart;
                 panel.ReduceMotionChanged += _ => ApplyReduceMotion();
                 panel.ExplodeRequested += SetExploded;
+                panel.TankCutawayRequested += () => SetTankCutaway(!TankCutaway);
                 panel.EngineerChanged += _ => ApplyValidation();
             }
             else panel.SetScale(upp);
@@ -485,6 +487,7 @@ namespace Kestrel.Slice
                 }
             }
             BuildExploded();
+            ApplyTankCutaway();
             ApplyDesignFraming();
             // One registration: failure visuals and the post-flight card.
             Kestrel.Game.Failure.FailureHost.Attach(rocketGO, flight, ui, r);
@@ -512,6 +515,7 @@ namespace Kestrel.Slice
 
         void SetExploded(bool on, bool immediate)
         {
+            if (on && TankCutaway) SetTankCutaway(false);
             if (explodeButton != null) { explodeButton.text = on ? "Join" : "Parts"; explodeButton.tooltip = on ? "Put the rocket back together" : "Exploded view: pull the parts apart"; }
             if (hangarCam != null) { hangarCam.ClearFocus(); hangarCam.SetExploded(on, immediate); }
             else if (explodedView != null) explodedView.SetExploded(on, immediate);
@@ -540,6 +544,28 @@ namespace Kestrel.Slice
                 var r = renderers[i];
                 if (r == null || UnderExploded(r.transform)) continue;
                 r.enabled = drawn;
+            }
+        }
+
+        /// <summary>Expose the existing tank interior and isogrid in the real designer.</summary>
+        public void SetTankCutaway(bool on)
+        {
+            if (on) SetExploded(false, true);
+            TankCutaway = on;
+            panel?.SetTankCutaway(on);
+            SetAssembledDrawn(true);
+            ApplyTankCutaway();
+        }
+
+        void ApplyTankCutaway()
+        {
+            if (rocketGO == null) return;
+            foreach (var shell in rocketGO.GetComponentsInChildren<Kestrel.Vehicle.TankShellView>(true))
+            {
+                shell.SetCutaway(TankCutaway);
+                // The original solid lathe behind this overlay would fill the removed sector.
+                var solid = shell.transform.parent.GetComponent<MeshRenderer>();
+                if (TankCutaway && solid != null) solid.enabled = false;
             }
         }
 
@@ -778,6 +804,7 @@ namespace Kestrel.Slice
             if (session == null || !session.LaunchEnabled) return; // blocks gate Launch; warnings never do
             if (rocketDirty) BuildRocket();
             submitted = false;
+            SetTankCutaway(false);
             SetExploded(false, true);
             // Nothing queued from the Hangar is spoken after the flight.
             pendingAnnounce = null; feelBase = feelNow;
@@ -805,6 +832,7 @@ namespace Kestrel.Slice
 
         void BackToDesign()
         {
+            Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
             flight.enabled = false; cam.ResetProjectionMatrix();
             hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
             if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
@@ -828,7 +856,10 @@ namespace Kestrel.Slice
         {
             if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
             if (explodedView != null && hangarCam != null && hangarCam.enabled)
+            {
                 SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
+                ApplyTankCutaway();
+            }
             if (flight != null && flight.Running && tower != null)
             {
                 var pad = tower.Find("Pad");

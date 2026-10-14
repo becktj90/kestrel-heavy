@@ -45,6 +45,9 @@ namespace Kestrel.Slice
         public event Action<bool> EngineerChanged;
         /// <summary>Exploded view toggle from the toolbar.</summary>
         public event Action<bool> ExplodeRequested;
+        public event Action TankCutawayRequested;
+        bool tankCutaway;
+        public void SetTankCutaway(bool on) { tankCutaway = on; Rebuild(); }
         /// <summary>The in-game Reduce Motion switch changed (SliceApp re-reads it together with the iOS setting).</summary>
         public event Action<bool> ReduceMotionChanged;
         public bool ExplodedOn { get; private set; }
@@ -281,6 +284,9 @@ namespace Kestrel.Slice
             title.Add(t);
             title.Add(ui.Btn("Show", () => FocusRequested?.Invoke(p), "Point the camera at this part"));
             content.Add(title);
+            if (p.kind == PartKind.Stage || p.kind == PartKind.Boosters)
+                content.Add(ui.Btn(tankCutaway ? "Close tank cutaway" : "Open tank cutaway",
+                    () => TankCutawayRequested?.Invoke(), "Inspect the tank shell and internal isogrid. Drag the rocket to rotate."));
             switch (p.kind)
             {
                 case PartKind.Stage: BuildEngined(p); if (p.index == 0) BuildRecovery(); break;

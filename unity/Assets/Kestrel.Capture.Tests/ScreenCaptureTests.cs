@@ -29,15 +29,25 @@ namespace Kestrel.Capture.Tests
         [UnityTest] public IEnumerator Home() => Shot("Boot", "Home", null);
         [UnityTest] public IEnumerator Designer() => Shot("Design", "Designer", null);
         [UnityTest] public IEnumerator PadCloseup() => Shot("Design", "Pad", new[] { new Vector3(40, 25, -60), new Vector3(0, 30, 0) });
+        [UnityTest] public IEnumerator TankCutaway() => Shot("Design", "TankCutaway", null, true);
         // Flight.unity is still a ScreenStub with no camera (flight lives in Design/SliceApp); add a shot when it gets real content.
 
-        static IEnumerator Shot(string scene, string name, Vector3[] cam)
+        static IEnumerator Shot(string scene, string name, Vector3[] cam, bool cutaway = false)
         {
             CaptureCamera.Clear();
             SceneManager.LoadScene(scene, LoadSceneMode.Single);
             if (cam != null) CaptureCamera.Override(cam[0], cam[1]);
             for (int i = 0; i < Frames; i++) yield return null;
 
+            if (scene == "Boot")
+            {
+                var music = Kestrel.Game.Audio.MusicPlayer.Instance;
+                Assert.IsNotNull(music, "Shipping Boot must start the original title score.");
+                Assert.IsNotNull(music.Clip);
+                var listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None)
+                    .Count(listener => listener.isActiveAndEnabled);
+                Assert.AreEqual(1, listeners, "Home needs exactly one active listener.");
+            }
             if (scene == "Design")
             {
                 var flight = UnityEngine.Object.FindObjectsByType<Kestrel.Slice.FlightDriver>(FindObjectsSortMode.None).Single();
@@ -58,6 +68,18 @@ namespace Kestrel.Capture.Tests
                         "A UI cue must load a sound clip into an audible source.");
                 }
                 finally { audio.SetMuted(priorMute); }
+            }
+
+            if (cutaway)
+            {
+                var app = UnityEngine.Object.FindAnyObjectByType<Kestrel.Slice.SliceApp>();
+                app.SetTankCutaway(true);
+                yield return null;
+                var shells = UnityEngine.Object.FindObjectsByType<Kestrel.Vehicle.TankShellView>(FindObjectsSortMode.None);
+                Assert.Greater(shells.Length, 0);
+                Assert.IsTrue(shells.All(shell => shell.Cutaway));
+                Assert.IsTrue(shells.All(shell => !shell.transform.parent.GetComponent<MeshRenderer>().enabled),
+                    "Solid tank geometry must not fill the cutaway sector.");
             }
 
             var rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32);
@@ -85,6 +107,13 @@ namespace Kestrel.Capture.Tests
             var px = tex.GetPixels32();
             int distinct = px.Where((_, i) => i % 97 == 0).Select(p => (p.r << 16) | (p.g << 8) | p.b).Distinct().Count();
             Debug.Log($"[Capture] {name}: {path} cams={cams.Length} panels={panels.Length} distinctColours={distinct}");
+            if (cutaway)
+            {
+                UnityEngine.Object.FindAnyObjectByType<Kestrel.Slice.SliceApp>().SetTankCutaway(false);
+                yield return null;
+                Assert.IsTrue(UnityEngine.Object.FindObjectsByType<Kestrel.Vehicle.TankShellView>(FindObjectsSortMode.None)
+                    .All(shell => !shell.Cutaway && shell.transform.parent.GetComponent<MeshRenderer>().enabled));
+            }
             Assert.Greater(distinct, 8, $"{name} capture is flat colour ({distinct} colours)");
         }
     }
