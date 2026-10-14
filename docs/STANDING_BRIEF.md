@@ -45,7 +45,7 @@ The home screen must be rich and polished, in Beckify’s retro engineering styl
 ## Process
 
 - **$0 spend:** free tiers and free tools only; no paid assets. Ask Trevor before any spending.
-- Use Cursor cloud agents. Squash-merge PRs once CI is green, delete branches after merging, keep the repo clean, merge in order.
+- Use Cursor cloud agents. Always squash-merge a PR the moment required checks are green, then delete the branch. If checks are still running, enable auto-merge (squash, delete branch). Do not leave a green PR open. Merge in order and keep the repo clean. Decision #66.
 - Builds go through Xcode Cloud: regenerate `xcode-export` from main, then a manual start sends the build to internal TestFlight.
 - Ask Trevor before any App Store submission, signing, privacy, or App Store Connect change.
 - Never put secrets in chat or commit them.

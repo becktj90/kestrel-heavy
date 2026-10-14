@@ -7,4 +7,4 @@ Paste one file per agent. Waves:
 4. F ∥ G ∥ UI
 5. H
 
-Archive each agent after its PR opens. The lead validates and merges one PR at a time.
+Archive each agent after its PR is squash-merged. Merge as soon as required checks are green, one PR at a time, and delete the branch. Decision #66.

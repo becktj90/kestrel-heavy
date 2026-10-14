@@ -3,7 +3,7 @@
 You are a Cursor cloud agent on becktj90/kestrel-heavy (Unity 6.3 LTS, C#, portrait-only iOS game).
 
 ## Hard rules (read first)
-- NEVER merge. No auto-merge. Do not enable merge queues. Open a PR and STOP. The lead merges.
+- Squash-merge the PR as soon as required checks are green, then delete the branch. If checks are still running, enable auto-merge (squash, delete branch). Do not leave a green PR open. Decision #66.
 - Never touch the `xcode-export` branch, `ios/` signing, or App Store files.
 - No Unity GUI. Use batchmode CLI/CI only. The GameCI Unity CI (EditMode, PlayMode capture, iOS export) and every required check must pass.
 - Portrait-only. Never add landscape.
@@ -35,4 +35,4 @@ Tests must cover GV9 stability sign, the guidance determinism, and v2 identity.
 - Unity CI and all required checks are green on your branch, rebased on main.
 - There are new tests with the formulas from the spec, and the existing goldens are unchanged.
 - A PR titled `designer-v3(WP-D): Aero, guidance, recovery` is opened as DRAFT. The body lists the files touched, the test results, the spec traceability IDs covered (§10) and the follow-ups.
-- Then STOP. Do not merge and do not enable auto-merge.
+- Then squash-merge when those checks are green (enable auto-merge if they are still running) and delete the branch.
