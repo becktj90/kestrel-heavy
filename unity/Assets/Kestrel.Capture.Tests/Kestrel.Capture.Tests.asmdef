@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Capture.Tests",
     "rootNamespace": "Kestrel.Capture.Tests",
-    "references": ["Kestrel.Kit", "UnityEngine.TestRunner"],
+    "references": ["Kestrel.Kit", "Kestrel.Slice", "Kestrel.Game.Audio", "UnityEngine.TestRunner"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
