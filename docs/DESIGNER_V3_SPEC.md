@@ -1,6 +1,6 @@
 # Designer v3: every knob flies
 
-Status: DRAFT spec, docs only. Owner: Trevor Beck. Target: Kestrel Heavy 2.x, Unity 6.3 LTS, portrait only.
+Status: Spec on main; WP-A–G merged. WP-UI in progress (portrait designer v3). WP-H next. Owner: Trevor Beck. Target: Kestrel Heavy 2.x, Unity 6.3 LTS, portrait only.
 Base documents:
 - Trevor's **Rocket Designer Overhaul** prompt (2026-10-11), ported from Phaser/WKWebView to Unity C# (`Kestrel.Core`).
 - The Economy/Contracts prompt.
