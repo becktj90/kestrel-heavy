@@ -1,14 +1,24 @@
 {
     "name": "Kestrel.Capture.Tests",
     "rootNamespace": "Kestrel.Capture.Tests",
-    "references": ["Kestrel.Kit", "Kestrel.Slice", "Kestrel.Game.Audio", "UnityEngine.TestRunner"],
+    "references": [
+        "Kestrel.Kit",
+        "Kestrel.Slice",
+        "Kestrel.Game.Audio",
+        "UnityEngine.TestRunner",
+        "Kestrel.Vehicle"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
-    "precompiledReferences": ["nunit.framework.dll"],
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
     "autoReferenced": false,
-    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
     "versionDefines": [],
     "noEngineReferences": false
 }

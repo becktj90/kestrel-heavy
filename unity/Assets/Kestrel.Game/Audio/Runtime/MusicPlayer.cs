@@ -16,6 +16,12 @@ namespace Kestrel.Game.Audio
         void Awake()
         {
             if (Instance != null) { Destroy(this); return; }
+            Initialize();
+        }
+
+        void Initialize()
+        {
+            if (source != null) return;
             Instance = this;
             source = gameObject.AddComponent<AudioSource>();
             source.playOnAwake = false;
@@ -26,6 +32,7 @@ namespace Kestrel.Game.Audio
 
         public void Select(bool home)
         {
+            Initialize();
             suspended = false;
             voice = false;
             var clip = Resources.Load<AudioClip>(home ? "Music/kestrel-title" : "Music/kestrel-designer");
