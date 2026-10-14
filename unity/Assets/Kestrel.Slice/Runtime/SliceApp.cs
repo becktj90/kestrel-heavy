@@ -7,9 +7,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Economy;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
+using Kestrel.Core.Timeline;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Environment;
 using Kestrel.Kit.Contracts;
@@ -35,6 +37,9 @@ namespace Kestrel.Slice
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
         public int OrbitsCompleted; public bool EngineerEnabled;
         Label issueChip, launchReason; Button launchButton;
+        LaunchSequence sequence; bool counting; string pinnedEvent, chipSig;
+        double requiredMps, spareMps; double? maxQKpa; string orbitLabel = "";
+        VisualElement seqRow; Label hVerdict, hPulse, hCallout; Button skipCount;
 
         void Awake()
         {
@@ -280,6 +285,9 @@ namespace Kestrel.Slice
             homeButton.tooltip = "Home. Back to the title screen.";
             hT = ui.Q<Label>("h-t"); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
             hMach = ui.Q<Label>("h-mach"); hQ = ui.Q<Label>("h-q"); hThr = ui.Q<Label>("h-thr"); hDr = ui.Q<Label>("h-dr"); hMsg = ui.Q<Label>("h-msg");
+            hVerdict = ui.Q<Label>("h-verdict"); hPulse = ui.Q<Label>("h-pulse"); hCallout = ui.Q<Label>("h-callout");
+            seqRow = ui.Q("h-seq"); skipCount = ui.Q<Button>("skip-count");
+            if (skipCount != null) skipCount.clicked += SkipCount;
             again = ui.Q<Button>("again");
             launchButton = ui.Q<Button>("launch");
             launchButton.clicked += Launch;
@@ -849,17 +857,62 @@ namespace Kestrel.Slice
             camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
             hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
-            flight.enabled = true;
-            flight.Launch(design);
+            pinnedEvent = null; chipSig = null;
+            var sheet = session.Sheet;
+            requiredMps = sheet != null ? sheet.requiredDeltaV_mps : 0;
+            spareMps = sheet != null ? sheet.totalDeltaV_mps - sheet.requiredDeltaV_mps : 0;
+            maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
+            orbitLabel = sheet != null ? sheet.orbitLabel : "";
+            sequence = OpenSequence();
+            if (sequence != null && !sequence.Liftoff)
+            {
+                // The full count is long. Open on the last few seconds, the part a webcast actually shows.
+                if (sequence.Time < -12) sequence.Step(-12 - sequence.Time);
+                counting = !sequence.Liftoff;
+            }
+            else counting = false;
+            if (skipCount != null) skipCount.EnableInClassList("hidden", !counting);
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
-            if (renderer != null) { renderer.ResetSequence(); renderer.AdvanceTo(0); }
+            if (renderer != null) renderer.ResetSequence();
+            if (!counting) BeginAscent();
+            else RefreshWebcast(sequence.Time, false);
+        }
+
+        LaunchSequence OpenSequence()
+        {
+            try
+            {
+                var cat = SliceData.Catalog;
+                if (cat == null || design == null || design.stages == null || design.stages.Count == 0) return null;
+                string mode = EngineerEnabled ? "engineer" : "standard";
+                var tl = TimelineGenerator.Generate(cat, design, Pad.For(cat, design), new Mission { mode = mode }, 1);
+                return LaunchSequence.Open(tl);
+            }
+            catch (System.Exception) { return null; }
+        }
+
+        void SkipCount()
+        {
+            if (!counting || sequence == null) return;
+            sequence.Step(1e6);
+            counting = false;
+            if (skipCount != null) skipCount.AddToClassList("hidden");
+            BeginAscent();
+        }
+
+        void BeginAscent()
+        {
+            counting = false;
+            if (skipCount != null) skipCount.AddToClassList("hidden");
+            flight.enabled = true;
+            flight.Launch(design);
         }
 
         void BackToDesign()
         {
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
-            flight.enabled = false; cam.ResetProjectionMatrix();
+            counting = false; sequence = null; flight.enabled = false; cam.ResetProjectionMatrix();
             hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
             if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
             if (session != null) rocketView.SetSelected(session.Selected, true);
@@ -887,6 +940,7 @@ namespace Kestrel.Slice
                 SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
                 ApplyTankCutaway();
             }
+            if (counting) { TickCount(); return; }
             if (flight != null && flight.Running && tower != null)
             {
                 var pad = tower.Find("Pad");
@@ -914,7 +968,66 @@ namespace Kestrel.Slice
             hQ.text = $"Q {flight.DynPressure / 1000:F1} kPa";
             hThr.text = $"THR {flight.ThrustFraction * 100:F0}%";
             hDr.text = $"DR {flight.Downrange / 1000:F1} km";
+            RefreshWebcast(flight.SimTime, true);
             if (!flight.Running && !flight.Meco && flight.Sim.Done) { hMsg.text = "Flight ended before MECO"; again.RemoveFromClassList("hidden"); }
+        }
+
+        void TickCount()
+        {
+            if (sequence == null) { counting = false; BeginAscent(); return; }
+            sequence.Step(UnityEngine.Time.deltaTime);
+            var pad = tower != null ? tower.Find("Pad") : null;
+            var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
+            if (renderer != null) renderer.AdvanceTo(TimelineClock.RealSeconds(sequence.Time, sequence.Mode));
+            if (hT != null) hT.text = sequence.Clock;
+            if (hStage != null) hStage.text = "COUNT";
+            RefreshWebcast(sequence.Time, false);
+            if (sequence.Liftoff) { counting = false; BeginAscent(); }
+        }
+
+        void RefreshWebcast(double time, bool flying)
+        {
+            if (hVerdict == null) return;
+            double alt = flying && flight != null ? flight.Altitude : 0;
+            double spd = flying && flight != null ? flight.Speed : 0;
+            double q = flying && flight != null ? flight.DynPressure : 0;
+            var pulse = WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel);
+            hVerdict.text = pulse.Verdict;
+            hPulse.text = pulse.Detail;
+            var beats = sequence != null ? sequence.Beats : null;
+            var chips = WebcastBoard.Window(beats, time);
+            var sig = new System.Text.StringBuilder();
+            foreach (var c in chips) sig.Append(c.Id).Append((int)c.State).Append(c.Id == pinnedEvent ? "*" : "");
+            if (sig.ToString() != chipSig && seqRow != null)
+            {
+                chipSig = sig.ToString();
+                seqRow.Clear();
+                foreach (var c in chips)
+                {
+                    var chip = c;
+                    var b = new Button { text = chip.Label + "  " + chip.Clock };
+                    b.AddToClassList("webcast-chip");
+                    if (chip.State == ChipState.Now) b.AddToClassList("webcast-now");
+                    else if (chip.State == ChipState.Past) b.AddToClassList("webcast-past");
+                    if (chip.Id == pinnedEvent) b.AddToClassList("webcast-pin");
+                    b.clicked += () => PinEvent(chip.Id);
+                    seqRow.Add(b);
+                }
+            }
+            if (hCallout == null) return;
+            LaunchBeat pinned = null;
+            if (beats != null && !string.IsNullOrEmpty(pinnedEvent))
+                for (int i = 0; i < beats.Count; i++)
+                    if (beats[i] != null && beats[i].Id == pinnedEvent) { pinned = beats[i]; break; }
+            hCallout.text = pinned != null ? WebcastBoard.Callout(pinned, pulse, alt) : "Tap an event.";
+        }
+
+        void PinEvent(string id)
+        {
+            pinnedEvent = id;
+            chipSig = null;
+            double t = counting && sequence != null ? sequence.Time : flight != null ? flight.SimTime : 0;
+            RefreshWebcast(t, flight != null && flight.Sim != null);
         }
 
         async void OnMeco(FlightDriver f)
