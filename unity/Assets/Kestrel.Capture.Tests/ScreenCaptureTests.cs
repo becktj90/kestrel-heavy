@@ -18,6 +18,28 @@ namespace Kestrel.Capture.Tests
     {
         const int W = 1179, H = 2556, Frames = 60;
 
+#if UNITY_EDITOR
+        uint priorWidth, priorHeight;
+
+        [UnitySetUp]
+        public IEnumerator UsePortraitViewport()
+        {
+            UnityEditor.PlayModeWindow.GetRenderingResolution(out priorWidth, out priorHeight);
+            UnityEditor.PlayModeWindow.SetCustomRenderingResolution(W, H, "Kestrel portrait capture");
+            for (int i = 0; i < Frames && (Screen.width != W || Screen.height != H); i++) yield return null;
+            Assert.AreEqual(W, Screen.width, "Capture UI and camera must use the portrait target width.");
+            Assert.AreEqual(H, Screen.height, "Capture UI and camera must use the portrait target height.");
+        }
+
+        [UnityTearDown]
+        public IEnumerator RestoreViewport()
+        {
+            if (priorWidth > 0 && priorHeight > 0)
+                UnityEditor.PlayModeWindow.SetCustomRenderingResolution(priorWidth, priorHeight, "Previous capture viewport");
+            yield return null;
+        }
+#endif
+
         static string OutDir()
         {
             var d = Environment.GetEnvironmentVariable("KH_CAP_OUT");
