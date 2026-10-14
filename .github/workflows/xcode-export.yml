@@ -113,13 +113,10 @@ jobs:
               'uploaded': item['attributes']['uploadedDate']} for item in builds]), flush=True)
           for item in builds[:3]:
               detail = request('/v1/builds/' + item['id'] + '/buildBetaDetail')['data']['attributes']
-              groups = request('/v1/builds/' + item['id'] + '/betaGroups?limit=200')['data']
               print('TestFlight availability:', json.dumps({'build': item['attributes']['version'],
                   'exemptDeclaration': item['attributes'].get('usesNonExemptEncryption'),
                   'internalState': detail.get('internalBuildState'),
-                  'externalState': detail.get('externalBuildState'),
-                  'internalGroups': sum(bool(group['attributes']['isInternalGroup']) for group in groups),
-                  'externalGroups': sum(not group['attributes']['isInternalGroup'] for group in groups)}), flush=True)
+                  'externalState': detail.get('externalBuildState')}), flush=True)
           PYTHON
       - name: Finalize uploaded build without rebuilding
         if: inputs.finalize_build
