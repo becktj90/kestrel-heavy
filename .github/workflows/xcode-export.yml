@@ -21,12 +21,17 @@ on:
         required: false
         default: false
         type: boolean
+      credentials_only:
+        description: "Check Apple secret bindings without building or uploading"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
 
 concurrency:
-  group: xcode-export
+  group: ${{ inputs.credentials_only && format('testflight-credentials-{0}', github.run_id) || 'xcode-export' }}
   cancel-in-progress: false
 
 env:
@@ -35,7 +40,30 @@ env:
   TEAM_ID: 9TR6R5LV8M
 
 jobs:
+  apple-credentials:
+    name: App Store Connect credential preflight
+    if: inputs.upload_testflight || inputs.credentials_only
+    runs-on: ubuntu-latest
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+    steps:
+      - name: Check required bindings without exposing values
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing GitHub Actions secret $name. Add it securely in repository settings."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
   export-and-publish:
+    needs: apple-credentials
+    if: always() && !inputs.credentials_only && (!inputs.upload_testflight || needs.apple-credentials.result == 'success')
     name: Unity iOS export → xcode-export
     runs-on: ubuntu-latest
     timeout-minutes: 120
