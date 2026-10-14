@@ -103,12 +103,13 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x tools/ios-export/publish.sh
-          tools/ios-export/publish.sh "$BUILD_NUMBER" build/iOS "${SOURCE_SHA:0:12}" "$SOURCE_REF"
+          # GameCI passes -customBuildPath <buildsPath>/<targetPlatform>/<buildName>, so the project is in build/iOS/iOS.
+          tools/ios-export/publish.sh "$BUILD_NUMBER" build/iOS/iOS "${SOURCE_SHA:0:12}" "$SOURCE_REF"
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: xcode-export-${{ env.BUILD_NUMBER }}
-          path: build/iOS
+          path: build/iOS/iOS
           retention-days: 7
           if-no-files-found: warn
