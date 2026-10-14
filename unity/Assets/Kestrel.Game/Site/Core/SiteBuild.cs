@@ -35,6 +35,7 @@ namespace Kestrel.Site
             Road(d, site);
             Buildings(d, site);
             Clumps(d, site, lod);
+            if (lod < 2) Dressing(d, site);
             return d.Finish();
         }
 
@@ -202,6 +203,49 @@ namespace Kestrel.Site
             Face(x0, y0, z1, x0, y0, z0, x1, y0, z0, x1, y0, z1, 0, -1, 0, false);
         }
 
+        static void Dressing(Draft d, CoastalSite s)
+        {
+            foreach (var p in s.Props)
+            {
+                float y0 = p.Kind == 0 || p.Kind == 1 || p.Kind == 4
+                    ? -0.05f - SiteHorizon.Drop(p.X, p.Z)
+                    : Coastline.SurfaceY(p.X, p.Z, s.Seed, 0.05f);
+                if (p.Kind == 2)
+                {
+                    ColoredCard(d, p.X, y0 + 6f, p.Z, p.W, 0.9f, 0.4f, Coastline.Gull);
+                    continue;
+                }
+                var col = p.Kind == 0 ? Coastline.Buoy : p.Kind == 1 ? Coastline.Hull : p.Kind == 3 ? Coastline.Rock
+                    : p.Kind == 4 ? Coastline.Foam : Coastline.Seam;
+                PropBox(d, p.X - p.W * 0.5f, y0, p.Z - p.D * 0.5f, p.X + p.W * 0.5f, y0 + p.H, p.Z + p.D * 0.5f, col);
+            }
+            foreach (var b in s.Buildings)
+            {
+                float y0 = Coastline.SurfaceY(b.X, b.Z, s.Seed, 0.06f);
+                float wx = Math.Min(1.2f, b.W * 0.15f);
+                PropBox(d, b.X - wx, y0 + b.H * 0.45f, b.Z + b.D * 0.5f, b.X + wx, y0 + b.H * 0.72f, b.Z + b.D * 0.5f + 0.15f, Coastline.Window);
+            }
+        }
+
+        static void PropBox(Draft d, float x0, float y0, float z0, float x1, float y1, float z1, float[] col)
+        {
+            void Face(float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz, float dx, float dy, float dz, float nx, float ny, float nz)
+            {
+                int i0 = d.VertRaw(ax, ay, az, nx, ny, nz, col);
+                int i1 = d.VertRaw(bx, by, bz, nx, ny, nz, col);
+                int i2 = d.VertRaw(cx, cy, cz, nx, ny, nz, col);
+                int i3 = d.VertRaw(dx, dy, dz, nx, ny, nz, col);
+                d.TriFacing(i0, i1, i2, nx, ny, nz);
+                d.TriFacing(i0, i2, i3, nx, ny, nz);
+            }
+            Face(x0, y0, z0, x0, y1, z0, x1, y1, z0, x1, y0, z0, 0, 0, -1);
+            Face(x1, y0, z1, x1, y1, z1, x0, y1, z1, x0, y0, z1, 0, 0, 1);
+            Face(x0, y0, z1, x0, y1, z1, x0, y1, z0, x0, y0, z0, -1, 0, 0);
+            Face(x1, y0, z0, x1, y1, z0, x1, y1, z1, x1, y0, z1, 1, 0, 0);
+            Face(x0, y1, z0, x0, y1, z1, x1, y1, z1, x1, y1, z0, 0, 1, 0);
+            Face(x0, y0, z1, x0, y0, z0, x1, y0, z0, x1, y0, z1, 0, -1, 0);
+        }
+
         static void Clumps(Draft d, CoastalSite s, int lod)
         {
             int n = Math.Min(SiteGenerator.ClumpCount(lod), s.Clumps.Count);
@@ -212,6 +256,17 @@ namespace Kestrel.Site
                 Card(d, c.X, y, c.Z, c.Radius, c.Height, 0.7f, 0.7f);
                 Card(d, c.X, y, c.Z, c.Radius, c.Height, -0.7f, 0.7f);
             }
+        }
+
+        static void ColoredCard(Draft d, float x, float y, float z, float radius, float dx, float dz, float[] col)
+        {
+            float x0 = x - dx * radius, x1 = x + dx * radius, z0 = z - dz * radius, z1 = z + dz * radius;
+            int a = d.VertRaw(x0, y, z0, dx, 0, dz, col);
+            int b = d.VertRaw(x0, y + 0.4f, z0, dx, 0, dz, col);
+            int c = d.VertRaw(x1, y + 0.4f, z1, dx, 0, dz, col);
+            int e = d.VertRaw(x1, y, z1, dx, 0, dz, col);
+            d.TriRaw(a, b, c); d.TriRaw(a, c, e);
+            d.TriRaw(a, c, b); d.TriRaw(a, e, c);
         }
 
         static void Card(Draft d, float x, float y, float z, float radius, float height, float dx, float dz)

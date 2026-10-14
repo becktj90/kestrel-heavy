@@ -39,6 +39,14 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement class="hud-spacer" picking-mode="Ignore" />
+            <!-- Webcast strip: the mission sequence, and how this design is doing. -->
+            <ui:VisualElement name="webcast" class="webcast">
+                <ui:Label name="h-verdict" text="" class="webcast-verdict" />
+                <ui:Label name="h-pulse" text="" class="webcast-pulse" />
+                <ui:Label name="h-callout" text="Tap an event." class="webcast-pulse" />
+                <ui:VisualElement name="h-seq" class="webcast-seq" />
+                <ui:Button name="skip-count" text="Skip count" class="webcast-skip" />
+            </ui:VisualElement>
             <ui:Label name="h-msg" text="" class="hud-msg" />
             <ui:Button name="again" text="BACK TO DESIGN" class="launch hidden" />
         </ui:VisualElement>

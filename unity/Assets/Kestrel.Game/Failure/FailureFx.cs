@@ -34,6 +34,11 @@ namespace Kestrel.Game.Failure
         public float VLeg = 6f;
     }
 
+    public struct ShardPose
+    {
+        public float X, Y, Z, Spin, Scale;
+    }
+
     public sealed class FailurePlan
     {
         public string Mode = FailureFx.BreakMode;
@@ -296,6 +301,11 @@ namespace Kestrel.Game.Failure
             }
             if (plan.JointIndex >= 0 && cue.Joints != null && plan.JointIndex < cue.Joints.Length)
                 plan.JointY = cue.Joints[plan.JointIndex].Y;
+            if (plan.Mode == BreakMode && !reduceMotion)
+            {
+                plan.ParticleSpeed = 22f;
+                plan.AngleDeg = age * 280f;
+            }
             plan.Gap = Gap(plan.Mode, age, reduceMotion);
             plan.PlumeScale = PlumeScale(plan.Mode, cue.EngineCount);
             plan.Burst = BurstCount(plan.Mode, reduceMotion);
@@ -306,9 +316,26 @@ namespace Kestrel.Game.Failure
             return plan;
         }
 
+        /// <summary>Debris flung off a breaking joint. Positions are a function of age, so the host can replay them.</summary>
+        public static ShardPose Shard(int index, int count, float gap, float jointY, float age)
+        {
+            if (count < 1) count = 1;
+            if (index < 0) index = 0;
+            double ang = index * Math.PI * 2.0 / count;
+            float lift = (index % 2 == 0 ? 0.85f : -0.25f) * gap;
+            return new ShardPose
+            {
+                X = (float)Math.Cos(ang) * gap * 0.55f,
+                Y = jointY + lift,
+                Z = (float)Math.Sin(ang) * gap * 0.55f,
+                Spin = age * 240f + index * 30f,
+                Scale = 0.35f + (index % 3) * 0.22f,
+            };
+        }
+
         public static float Gap(string mode, float age, bool reduceMotion)
         {
-            if (mode == BreakMode) return reduceMotion ? 6f : Math.Min(age * 8f, 10f);
+            if (mode == BreakMode) return reduceMotion ? 6f : Math.Min(age * 42f, 28f);
             if (mode == TumbleMode)
             {
                 if (reduceMotion) return 6f;

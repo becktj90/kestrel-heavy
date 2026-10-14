@@ -25,6 +25,13 @@ namespace Kestrel.Site
         public float X, Z, Height, Radius;
     }
 
+    /// <summary>A small prop merged into the coast mesh. Kind: 0 buoy, 1 boat, 2 gull, 3 rock, 4 foam, 5 apron seam.</summary>
+    public struct SiteProp
+    {
+        public float X, Z, W, H, D;
+        public byte Kind;
+    }
+
     public sealed class CoastalSite
     {
         public const int Version = 1;
@@ -33,6 +40,7 @@ namespace Kestrel.Site
         public float[] RoadX = Array.Empty<float>(), RoadZ = Array.Empty<float>();
         public readonly List<SiteBox> Buildings = new List<SiteBox>();
         public readonly List<ScrubClump> Clumps = new List<ScrubClump>();
+        public readonly List<SiteProp> Props = new List<SiteProp>();
 
         SiteMesh[] _land = new SiteMesh[3], _water = new SiteMesh[3];
 
@@ -84,6 +92,7 @@ namespace Kestrel.Site
             if (!TryPlaceHaven(out s.Haven)) throw new InvalidOperationException("Pier 7 has no clear water for Haven");
             PlaceBuildings(s, seed);
             PlaceClumps(s, seed);
+            PlaceProps(s, seed);
             return s;
         }
 
@@ -191,6 +200,48 @@ namespace Kestrel.Site
                 });
             }
             s.Clumps.Sort((a, b) => (a.X * a.X + a.Z * a.Z).CompareTo(b.X * b.X + b.Z * b.Z));
+        }
+
+        static void PlaceProps(CoastalSite s, int seed)
+        {
+            // Buoys and one work boat just off the beach, clear of Haven and of the shoreline samples the tests poke.
+            for (int i = 0; i < 8; i++)
+            {
+                float z = 180f + i * 95f;
+                float x = Coastline.ShoreX(z) + 55f + (i % 3) * 28f + (seed & 3) * 0.25f;
+                if (s.Haven.Contains(x, z) || !Coastline.IsWater(x, z)) continue;
+                s.Props.Add(new SiteProp { X = x, Z = z, W = 1.6f, H = 2.4f, D = 1.6f, Kind = 0 });
+            }
+            float bz = 640f;
+            float bx = Coastline.ShoreX(bz) + 90f;
+            if (Coastline.IsWater(bx, bz) && !s.Haven.Contains(bx, bz))
+                s.Props.Add(new SiteProp { X = bx, Z = bz, W = 16f, H = 3.2f, D = 5f, Kind = 1 });
+            for (int i = 0; i < 10; i++)
+            {
+                float z = -900f + i * 160f;
+                float x = Coastline.ShoreX(z) - 40f - (i % 4) * 12f;
+                if (!Coastline.IsBeach(x, z)) continue;
+                s.Props.Add(new SiteProp { X = x, Z = z, W = 1.4f + (i % 3) * 0.6f, H = 0.7f, D = 1.1f, Kind = 3 });
+                s.Props.Add(new SiteProp { X = x - 8f, Z = z + 6f, W = 2.2f, H = 0.35f, D = 0.15f, Kind = 2 });
+            }
+            for (int i = 0; i < 12; i++)
+            {
+                float z = -700f + i * 110f;
+                float x = Coastline.ShoreX(z) + 8f;
+                if (!Coastline.IsWater(x, z) || s.Haven.Contains(x, z)) continue;
+                s.Props.Add(new SiteProp { X = x, Z = z, W = 6f, H = 0.12f, D = 1.4f, Kind = 4 });
+            }
+            // Apron plate seams, off the origin so the pad centre sample stays the ground.
+            for (int i = 0; i < 6; i++)
+            {
+                float a = i * 1.05f;
+                float r = 28f + (i % 2) * 18f;
+                s.Props.Add(new SiteProp
+                {
+                    X = (float)Math.Cos(a) * r, Z = (float)Math.Sin(a) * r,
+                    W = 7f, H = 0.04f, D = 0.35f, Kind = 5,
+                });
+            }
         }
 
         static bool ClumpOk(CoastalSite s, float x, float z)

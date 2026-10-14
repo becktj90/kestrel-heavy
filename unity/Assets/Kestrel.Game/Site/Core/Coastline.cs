@@ -59,6 +59,13 @@ namespace Kestrel.Site
         public static readonly float[] Veg = { 0.16f, 0.30f, 0.13f, 1f };
         public static readonly float[] DeepWater = { 0.05f, 0.18f, 0.20f, 0f };
         public static readonly float[] ShallowWater = { 0.24f, 0.42f, 0.36f, 1f };
+        public static readonly float[] Buoy = { 0.92f, 0.45f, 0.12f, 1f };
+        public static readonly float[] Hull = { 0.12f, 0.20f, 0.26f, 1f };
+        public static readonly float[] Gull = { 0.93f, 0.94f, 0.96f, 1f };
+        public static readonly float[] Rock = { 0.45f, 0.40f, 0.34f, 1f };
+        public static readonly float[] Foam = { 0.84f, 0.88f, 0.86f, 1f };
+        public static readonly float[] Seam = { 0.34f, 0.33f, 0.31f, 1f };
+        public static readonly float[] Window = { 0.55f, 0.74f, 0.80f, 1f };
 
         /// <summary>Shore line x (metres). Land is x &lt;= ShoreX(z). Zero-mean waves plus a breakwater under the pad.</summary>
         public static float ShoreX(float z)

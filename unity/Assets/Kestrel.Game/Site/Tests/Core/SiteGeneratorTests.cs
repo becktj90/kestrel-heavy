@@ -295,6 +295,27 @@ namespace Kestrel.Site.Tests
             Assert.That(max, Is.LessThan(land.VertexCount));
         }
 
+        [Test]
+        public void TheCoastHasBuoysABoatAndRocks()
+        {
+            var s = Site();
+            Assert.That(s.Props.Count, Is.GreaterThan(20));
+            int buoys = 0, rocks = 0, boats = 0;
+            foreach (var p in s.Props)
+            {
+                if (p.Kind == 0) buoys++;
+                if (p.Kind == 1) boats++;
+                if (p.Kind == 3) rocks++;
+                Assert.That(s.Haven.Contains(p.X, p.Z), Is.False, "props stay out of Haven");
+            }
+            Assert.That(buoys, Is.GreaterThan(4));
+            Assert.That(boats, Is.EqualTo(1));
+            Assert.That(rocks, Is.GreaterThan(4));
+            Assert.That(CountColor(s.Land(0), Coastline.Buoy), Is.GreaterThan(20));
+            Assert.That(CountColor(s.Land(0), Coastline.Rock), Is.GreaterThan(20));
+            Assert.That(CountColor(s.Land(2), Coastline.Buoy), Is.EqualTo(0), "low LOD keeps the triangle budget");
+        }
+
         static int CountColor(SiteMesh m, float[] rgba)
         {
             int n = 0;
