@@ -147,11 +147,14 @@ EOF
 cd "$STAGE"
 git init -q
 git lfs install --local
+# Identity for both the commit and the annotated tag (CI runners have no global git identity).
+git config --local user.name 'kestrel-ios-export'
+git config --local user.email 'ios-export@users.noreply.github.com'
 git checkout -q -b "$BRANCH"
 git add -A
 # Single orphan commit; force-push replaces the branch each export.
 MSG="xcode-export $VERSION ($BUILD_NUMBER), iOS 16.0 minimum, from $SOURCE_LABEL $SOURCE_SHA"
-git -c user.name='kestrel-ios-export' -c user.email='ios-export@users.noreply.github.com' commit -q -m "$MSG"
+git commit -q -m "$MSG"
 TAG="export/$VERSION-$BUILD_NUMBER"
 git tag -a "$TAG" -m "$MSG"
 
