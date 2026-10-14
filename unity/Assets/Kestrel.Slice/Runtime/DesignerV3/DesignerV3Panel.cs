@@ -41,6 +41,8 @@ namespace Kestrel.Slice.DesignerV3
         List<TutorialStep> tutorialSteps;
         string lastDelta = "";
         double debounceUntil;
+        ReferenceJob referenceJob;
+        string referenceKey;
 
         public event Action<DesignerV3Tab> TabChanged;
         public event Action<bool> EngineerChanged;
@@ -358,7 +360,9 @@ namespace Kestrel.Slice.DesignerV3
                 cell.style.alignItems = Align.Center;
                 cell.Add(ui.Text(c.label, HangarUi.SmallPt, HangarUi.Dim));
                 var v = ui.Text(c.value, engineer ? HangarUi.BodyPt : HangarUi.TitlePt, StateColor(c.state), bold: true);
+                v.name = "strip-value-" + c.id;
                 v.style.unityTextAlign = TextAnchor.MiddleCenter;
+                v.style.whiteSpace = WhiteSpace.NoWrap;
                 cell.Add(v);
                 cell.tooltip = c.label + " " + c.value + (c.hint != null ? ", " + c.hint : "");
                 strip.Add(cell);
@@ -457,17 +461,17 @@ namespace Kestrel.Slice.DesignerV3
                 End, "eng.count", refreshers));
             if (engineer)
             {
-                content.Add(ui.Stepper("Chamber pressure", () => (Stage0()?.Obj("engineParams")?.Num("pc") ?? 0).ToString("0", inv) + " bar",
+                content.Add(ui.Stepper("Chamber pressure", () => DesignerV3Edits.ShownPc(C, D, 0).ToString("0", inv) + " bar",
                     () => "Higher pc: more thrust and Isp, overpressure risk",
-                    (dir, key) => Do(d => DesignerV3Edits.SetEnginePc(d, 0, ParamNum(d, "pc", 100) + dir * 5), key),
+                    (dir, key) => Do(d => DesignerV3Edits.SetEnginePc(d, 0, DesignerV3Edits.ShownPc(C, d, 0) + dir * 5), key),
                     End, "eng.pc", refreshers));
-                content.Add(ui.Stepper("Expansion ratio", () => (Stage0()?.Obj("engineParams")?.Num("expansionRatio") ?? 0).ToString("0", inv),
+                content.Add(ui.Stepper("Expansion ratio", () => DesignerV3Edits.ShownExpansion(C, D, 0).ToString("0", inv),
                     () => "Bigger ε: better vacuum, worse pad",
-                    (dir, key) => Do(d => DesignerV3Edits.SetExpansionRatio(d, 0, ParamNum(d, "expansionRatio", 34) + dir * 2), key),
+                    (dir, key) => Do(d => DesignerV3Edits.SetExpansionRatio(d, 0, DesignerV3Edits.ShownExpansion(C, d, 0) + dir * 2), key),
                     End, "eng.eps", refreshers));
-                content.Add(ui.Stepper("Gimbal", () => (Stage0()?.Obj("engineParams")?.Num("gimbalDeg") ?? 0).ToString("0.0", inv) + "°",
+                content.Add(ui.Stepper("Gimbal", () => DesignerV3Edits.ShownGimbal(C, D, 0).ToString("0.0", inv) + "°",
                     () => "Control authority vs mass",
-                    (dir, key) => Do(d => DesignerV3Edits.SetGimbal(d, 0, ParamNum(d, "gimbalDeg", 5) + dir * 0.5), key),
+                    (dir, key) => Do(d => DesignerV3Edits.SetGimbal(d, 0, DesignerV3Edits.ShownGimbal(C, d, 0) + dir * 0.5), key),
                     End, "eng.gimbal", refreshers));
             }
         }
@@ -654,10 +658,40 @@ namespace Kestrel.Slice.DesignerV3
 
         static double? StageNum(JsonObject d, string key) => (d.Arr("stages")?[0] as JsonObject)?.Num(key);
 
-        static double ParamNum(JsonObject d, string key, double def)
+        /// <summary>Advance the debounced max-Q ascent by one frame budget. SliceApp calls this from Update.</summary>
+        public void TickReference()
         {
-            var s = d.Arr("stages")?[0] as JsonObject;
-            return s?.Obj("engineParams")?.Num(key, def) ?? def;
+            try
+            {
+                if (!Readout.Quick(C, D).maxQStale) { referenceJob = null; return; }
+                EnsureReferenceJob();
+                if (referenceJob == null || referenceJob.Done) return;
+                if (referenceJob.Step(ReferenceAscent.FrameBudgetMs)) BuildStrip();
+            }
+            catch (Exception e) { Debug.LogWarning("[DesignerV3] max-Q sim: " + e.Message); referenceJob = null; }
+        }
+
+        /// <summary>Finish the reference ascent so the strip can show max-Q. Capture uses this; play steps it per frame.</summary>
+        public void FinishReference()
+        {
+            try
+            {
+                if (!Readout.Quick(C, D).maxQStale) { BuildStrip(); return; }
+                EnsureReferenceJob();
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                while (referenceJob != null && !referenceJob.Done && sw.Elapsed.TotalMilliseconds < 2000)
+                    referenceJob.Step(50);
+                BuildStrip();
+            }
+            catch (Exception e) { Debug.LogWarning("[DesignerV3] max-Q sim: " + e.Message); }
+        }
+
+        void EnsureReferenceJob()
+        {
+            string key = ReferenceAscent.CanonicalKey(C, D);
+            if (referenceJob != null && referenceKey == key) return;
+            referenceKey = key;
+            referenceJob = new ReferenceJob(C, D);
         }
 
         static List<HangarUi.Choice> Ids(IEnumerable<string> ids)

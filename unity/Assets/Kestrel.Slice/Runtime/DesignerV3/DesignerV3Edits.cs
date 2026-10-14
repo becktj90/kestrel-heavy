@@ -1,5 +1,6 @@
 // Optional v3 field edits for the portrait designer. Uses HangarSession.Apply; does not extend HangarEditor.
 using System.Globalization;
+using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
@@ -106,6 +107,50 @@ namespace Kestrel.Slice.DesignerV3
             JsonMut.Set(landing, "legs", true);
             JsonMut.Set(landing, "legsKind", kind ?? "light");
             return new Edit("Legs", from, kind ?? "light");
+        }
+
+        /// <summary>Chamber pressure the Engines tab shows: an edited engineParams.pc, otherwise the catalog engine.</summary>
+        public static double ShownPc(Catalog c, JsonObject design, int stage)
+        {
+            var s = Stage(design, stage);
+            var over = s?.Obj("engineParams");
+            if (over != null && over.ContainsKey("pc")) return over.Num("pc");
+            var e = EngineOf(c, s);
+            return e != null && e.pc > 0 ? e.pc : 0;
+        }
+
+        /// <summary>Expansion ratio: an edited override, otherwise the selected nozzle, otherwise the catalog bell.</summary>
+        public static double ShownExpansion(Catalog c, JsonObject design, int stage)
+        {
+            var s = Stage(design, stage);
+            var over = s?.Obj("engineParams");
+            if (over != null && over.ContainsKey("expansionRatio")) return over.Num("expansionRatio");
+            var e = EngineOf(c, s);
+            if (e == null) return 0;
+            string nozzle = s.Str("nozzle");
+            if (!string.IsNullOrEmpty(nozzle) && nozzle != "default" && e.nozzles != null)
+                for (int i = 0; i < e.nozzles.Count; i++)
+                    if (e.nozzles[i].id == nozzle && e.nozzles[i].expansionRatio > 0)
+                        return e.nozzles[i].expansionRatio;
+            return e.expansionRatio;
+        }
+
+        /// <summary>Gimbal degrees: an edited override, otherwise the catalog engine.</summary>
+        public static double ShownGimbal(Catalog c, JsonObject design, int stage)
+        {
+            var s = Stage(design, stage);
+            var over = s?.Obj("engineParams");
+            if (over != null && over.ContainsKey("gimbalDeg")) return over.Num("gimbalDeg");
+            var e = EngineOf(c, s);
+            return e != null ? e.gimbal : 0;
+        }
+
+        static Engine EngineOf(Catalog c, JsonObject stage)
+        {
+            if (c == null || stage == null) return null;
+            string id = stage.Str("engine");
+            if (string.IsNullOrEmpty(id) || !c.EngineById.TryGetValue(id, out var e)) return null;
+            return e;
         }
 
         static JsonObject Stage(JsonObject d, int i)

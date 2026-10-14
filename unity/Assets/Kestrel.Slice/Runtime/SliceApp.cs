@@ -871,6 +871,7 @@ namespace Kestrel.Slice
         void Update()
         {
             if (hud != null && !hud.ClassListContains("hidden")) return;
+            designer?.TickReference();
             if (rocketDirty && Time.unscaledTime - lastRocketBuild >= RebuildEverySeconds) BuildRocket();
             FlushAnnouncement();
         }
