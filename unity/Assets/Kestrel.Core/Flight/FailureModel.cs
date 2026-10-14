@@ -447,22 +447,7 @@ namespace Kestrel.Core.Flight
                 for (int i = 0; i < d.stages.Count; i++) list.Add(Make(c, d, d.stages[i], i > 0));
             }
             if (list.Count == 0) list.Add(new Info());
-            double qLim = 0;
-            if (d != null && c != null)
-            {
-                for (int i = 0; i < d.stages.Count; i++)
-                {
-                    double q = StageQ(c, d, d.stages[i]);
-                    if (q > 0 && (qLim <= 0 || q < qLim)) qLim = q;
-                }
-                if (d.StrapOnCount > 0)
-                {
-                    double q = StageQ(c, d, d.strapOns);
-                    if (q > 0 && (qLim <= 0 || q < qLim)) qLim = q;
-                }
-                double fair = StructureModel.FairingQLimPa(c, d);
-                if (fair > 0 && (qLim <= 0 || fair < qLim)) qLim = fair;
-            }
+            double qLim = StructuralQLimPa(c, d);
             double maxG = 8;
             if (c != null && d != null && d.payloadType != null && c.PayloadById.TryGetValue(d.payloadType, out var pl) && pl.maxG > 0 && pl.maxG < maxG)
                 maxG = pl.maxG;
@@ -474,6 +459,26 @@ namespace Kestrel.Core.Flight
             double vleg = land ? RecoveryModel.VLeg(d.legsKind) : 0;
             var knots = Knots(c, d);
             return new FailureMonitor(list.ToArray(), knots, qLim, maxG, maxT, heat, vleg, land, GentleTier(d), designHash, missionSeed);
+        }
+
+        /// <summary>Lowest structural q_lim on the stack, including the fairing. Pascals. 0 when the design has none.</summary>
+        public static double StructuralQLimPa(Catalog c, Design d)
+        {
+            double qLim = 0;
+            if (d == null || c == null) return 0;
+            for (int i = 0; i < d.stages.Count; i++)
+            {
+                double q = StageQ(c, d, d.stages[i]);
+                if (q > 0 && (qLim <= 0 || q < qLim)) qLim = q;
+            }
+            if (d.StrapOnCount > 0)
+            {
+                double q = StageQ(c, d, d.strapOns);
+                if (q > 0 && (qLim <= 0 || q < qLim)) qLim = q;
+            }
+            double fair = StructureModel.FairingQLimPa(c, d);
+            if (fair > 0 && (qLim <= 0 || fair < qLim)) qLim = fair;
+            return qLim;
         }
 
         static double StageQ(Catalog c, Design d, StagePart s)

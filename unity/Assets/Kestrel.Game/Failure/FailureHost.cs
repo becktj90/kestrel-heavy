@@ -120,11 +120,13 @@ namespace Kestrel.Game.Failure
             if (upper != null)
             {
                 upper.localPosition = new Vector3(plan.Shake, plan.Gap, 0f);
-                upper.localRotation = Quaternion.Euler(0f, 0f, plan.AngleDeg * 0.25f);
+                float spin = plan.Mode == FailureFx.BreakMode ? plan.AngleDeg : plan.AngleDeg * 0.25f;
+                upper.localRotation = Quaternion.Euler(spin * 0.15f, 0f, spin);
             }
             if (plan.Mode == FailureFx.TumbleMode || plan.Mode == FailureFx.BumpMode || plan.Mode == FailureFx.FoldMode)
                 transform.localRotation = baseRotation * Quaternion.Euler(0f, 0f, plan.AngleDeg);
             if (plan.Mode == FailureFx.FoldMode) PlaceLegs();
+            else if (plan.Mode == FailureFx.BreakMode) PlaceShards();
             else HideBits();
             ShowMarker();
             CutPlume();
@@ -134,7 +136,8 @@ namespace Kestrel.Game.Failure
         void ShowMarker()
         {
             bool on = plan.Mode == FailureFx.BellMode || plan.Mode == FailureFx.SputterMode
-                || plan.Mode == FailureFx.GlowMode || plan.Mode == FailureFx.FrostMode;
+                || plan.Mode == FailureFx.GlowMode || plan.Mode == FailureFx.FrostMode
+                || plan.Mode == FailureFx.BreakMode;
             if (!on)
             {
                 if (marker != null) marker.gameObject.SetActive(false);
@@ -151,7 +154,7 @@ namespace Kestrel.Game.Failure
             }
             marker.gameObject.SetActive(true);
             marker.localPosition = BurstPoint(0f);
-            float size = plan.Flash ? 1.8f : 1.1f;
+            float size = plan.Mode == FailureFx.BreakMode ? 2.4f + plan.Gap * 0.45f : plan.Flash ? 1.8f : 1.1f;
             marker.localScale = Vector3.one * size;
             var renderer = marker.GetComponent<Renderer>();
             if (renderer != null)
@@ -179,6 +182,23 @@ namespace Kestrel.Game.Failure
             var mr = go.AddComponent<MeshRenderer>();
             if (renderer != null) mr.sharedMaterial = renderer.sharedMaterial;
             upper = go.transform;
+        }
+
+        void PlaceShards()
+        {
+            if (plan.Gap < 0.4f) { HideBits(); return; }
+            const int n = 8;
+            EnsureBits(n);
+            for (int i = 0; i < n; i++)
+            {
+                var shard = FailureFx.Shard(i, n, plan.Gap, plan.JointY, age);
+                var bit = bits[i];
+                if (bit == null) continue;
+                bit.gameObject.SetActive(true);
+                bit.localPosition = new Vector3(shard.X, shard.Y, shard.Z);
+                bit.localRotation = Quaternion.Euler(shard.Spin, shard.Spin * 0.7f, i * 20f);
+                bit.localScale = new Vector3(shard.Scale, shard.Scale * 1.5f, shard.Scale);
+            }
         }
 
         void PlaceLegs()
@@ -247,16 +267,20 @@ namespace Kestrel.Game.Failure
             emit.applyShapeToPosition = false;
             var tint = Tint(plan.Tint);
             emit.startColor = tint;
-            emit.startSize = plan.Mode == FailureFx.BellMode ? 0.8f : 1.6f;
-            emit.startLifetime = reduce ? 8f : 1.4f;
+            bool blast = plan.Mode == FailureFx.BreakMode;
+            emit.startSize = blast ? 3.4f : plan.Mode == FailureFx.BellMode ? 0.8f : 1.6f;
+            emit.startLifetime = blast ? 0.85f : reduce ? 8f : 1.4f;
             for (int i = 0; i < n; i++)
             {
                 pool.Acquire();
                 float ang = i * Mathf.PI * 2f / n;
                 Vector3 at = BurstPoint(ang);
-                Vector3 vel = reduce || plan.ParticleSpeed <= 0f
-                    ? Vector3.zero
-                    : new Vector3(Mathf.Cos(ang), 0.6f, Mathf.Sin(ang)) * plan.ParticleSpeed;
+                Vector3 vel = Vector3.zero;
+                if (!reduce && plan.ParticleSpeed > 0f)
+                {
+                    var dir = new Vector3(Mathf.Cos(ang), blast ? 1.35f : 0.6f, Mathf.Sin(ang));
+                    vel = dir.normalized * plan.ParticleSpeed;
+                }
                 emit.position = transform.TransformPoint(at);
                 emit.velocity = vel;
                 ps.Emit(emit, 1);

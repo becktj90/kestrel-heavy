@@ -969,7 +969,8 @@ namespace Kestrel.Slice
             hThr.text = $"THR {flight.ThrustFraction * 100:F0}%";
             hDr.text = $"DR {flight.Downrange / 1000:F1} km";
             RefreshWebcast(flight.SimTime, true);
-            if (!flight.Running && !flight.Meco && flight.Sim.Done) { hMsg.text = "Flight ended before MECO"; again.RemoveFromClassList("hidden"); }
+            if (flight.Lost) { hMsg.text = "Vehicle lost"; again.RemoveFromClassList("hidden"); }
+            else if (!flight.Running && !flight.Meco && flight.Sim.Done) { hMsg.text = "Flight ended before MECO"; again.RemoveFromClassList("hidden"); }
         }
 
         void TickCount()
@@ -991,7 +992,9 @@ namespace Kestrel.Slice
             double alt = flying && flight != null ? flight.Altitude : 0;
             double spd = flying && flight != null ? flight.Speed : 0;
             double q = flying && flight != null ? flight.DynPressure : 0;
-            var pulse = WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel);
+            var pulse = flying && flight != null && flight.Lost
+                ? WebcastBoard.Lost(flight.Result.failure.kind, alt)
+                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
             var beats = sequence != null ? sequence.Beats : null;

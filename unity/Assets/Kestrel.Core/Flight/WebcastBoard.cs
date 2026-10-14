@@ -100,6 +100,21 @@ namespace Kestrel.Core.Flight
             return pulse;
         }
 
+        /// <summary>The stack has come apart. The verdict stays on the board for the rest of the flight.</summary>
+        public static DesignPulse Lost(string kind, double altitudeM)
+        {
+            string where = $"{altitudeM / 1000:0.0} km";
+            string detail;
+            switch (kind)
+            {
+                case "structural-maxq": detail = "The stack broke apart at " + where + "."; break;
+                case "overg": detail = "The push snapped the stack at " + where + "."; break;
+                case "tumble": detail = "It tumbled and came apart at " + where + "."; break;
+                default: detail = "The vehicle came apart at " + where + "."; break;
+            }
+            return new DesignPulse { Verdict = "Vehicle lost", Detail = detail };
+        }
+
         /// <summary>One line for a tapped event, using the live numbers. The same beat and the same pulse always read the same.</summary>
         public static string Callout(LaunchBeat beat, DesignPulse pulse, double altitudeM)
         {
