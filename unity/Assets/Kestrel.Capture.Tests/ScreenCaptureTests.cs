@@ -38,6 +38,28 @@ namespace Kestrel.Capture.Tests
             if (cam != null) CaptureCamera.Override(cam[0], cam[1]);
             for (int i = 0; i < Frames; i++) yield return null;
 
+            if (scene == "Design")
+            {
+                var flight = UnityEngine.Object.FindObjectsByType<Kestrel.Slice.FlightDriver>(FindObjectsSortMode.None).Single();
+                var audio = flight.GetComponent<Kestrel.Game.Audio.AudioDirector>();
+                Assert.IsNotNull(audio, "Playable scene must attach its audio director.");
+                Assert.AreSame(audio, flight.Sink, "Flight events must reach the audio director.");
+                Assert.IsNotNull(flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>());
+                var listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None)
+                    .Where(listener => listener.isActiveAndEnabled).ToArray();
+                Assert.AreEqual(1, listeners.Length, "Playable scene needs exactly one active audio listener.");
+                Assert.IsNotNull(listeners[0].GetComponent<Camera>());
+                var priorMute = audio.Muted;
+                try
+                {
+                    audio.SetMuted(false);
+                    audio.OnEvent("ui");
+                    Assert.IsTrue(audio.GetComponentsInChildren<AudioSource>().Any(source => source.clip != null && source.volume > 0f),
+                        "A UI cue must load a sound clip into an audible source.");
+                }
+                finally { audio.SetMuted(priorMute); }
+            }
+
             var rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32);
             var cams = Camera.allCameras.Where(c => c.enabled && c.targetTexture == null).OrderBy(c => c.depth).ToArray();
             foreach (var c in cams) { c.targetTexture = rt; c.Render(); c.targetTexture = null; }

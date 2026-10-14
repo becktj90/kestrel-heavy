@@ -42,6 +42,7 @@ namespace Kestrel.Slice
             plumeMat = Resources.Load<Material>("Materials/KH_Plume");
             BuildScene();
             BuildUI();
+            Kestrel.Game.Audio.AudioDirector.Attach(flight);
             _ = GameCenterBridge.Impl.Authenticate();
             StartSession();
         }
@@ -198,6 +199,7 @@ namespace Kestrel.Slice
         void BuildScene()
         {
             cam = new GameObject("Camera").AddComponent<Camera>(); cam.tag = "MainCamera";
+            cam.gameObject.AddComponent<AudioListener>();
             cam.clearFlags = CameraClearFlags.Skybox;
             // The coast disc has to reach the geometric horizon the chase camera frames. SkyRig still owns fog.
             cam.nearClipPlane = 0.5f; cam.farClipPlane = SiteView.FarClip; cam.fieldOfView = 50;

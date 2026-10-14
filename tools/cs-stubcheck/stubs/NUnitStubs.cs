@@ -48,3 +48,9 @@ namespace NUnit.Framework.Constraints
     public class EqualConstraint : Constraint { public new EqualConstraint Within(object t) => this; }
     public class ConstraintExpression : IResolveConstraint { public Constraint Contain(object o) => null; public Constraint EqualTo(object e) => null; public Constraint GreaterThan(object e) => null; public Constraint GreaterThanOrEqualTo(object e) => null; public Constraint LessThan(object e) => null; public Constraint LessThanOrEqualTo(object e) => null; public Constraint InRange(object a, object b) => null; public Constraint Null => null; public Constraint Empty => null; public Constraint True => null; public Constraint False => null; public Constraint NaN => null; public Constraint Contains(object o) => null; public Constraint Member(object o) => null; public Constraint Positive => null; public Constraint Negative => null; public Constraint Zero => null; public Constraint Matches<T>(Predicate<T> p) => null; public Constraint SameAs(object o) => null; public Constraint InstanceOf<T>() => null; public Constraint EquivalentTo(IEnumerable e) => null; public Constraint SubsetOf(IEnumerable e) => null; public Constraint StartWith(string s) => null; public Constraint EndWith(string s) => null; public Constraint EndsWith(string s) => null; public ConstraintExpression Not => this; public ConstraintExpression Some => this; public ConstraintExpression All => this; public ConstraintExpression Property(string n) => this; public Constraint AtLeast(object o) => null; public Constraint AtMost(object o) => null; public Constraint Unique => null; public Constraint Ordered => null; public Constraint Default => null; }
 }
+
+namespace UnityEngine.TestTools
+{
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public sealed class UnityTestAttribute : System.Attribute { }
+}
