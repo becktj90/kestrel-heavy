@@ -126,6 +126,6 @@ jobs:
         if: env.HAS_LICENSE == 'true' && success()
         with:
           name: xcode-ios-compile
-          path: build/iOS
+          path: build/iOS/iOS
           retention-days: 7
-          if-no-files-found: warn
+          if-no-files-found: error

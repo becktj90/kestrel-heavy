@@ -27,3 +27,5 @@ jobs:
         run: dotnet test unity/Assets/Kestrel.Game/Site/Tests/Dotnet~/Kestrel.Site.Tests.csproj --logger "console;verbosity=normal"
       - run: dotnet test unity/Assets/Kestrel.Game/Pad/Tests/Dotnet~/Kestrel.Pad.Core.Tests.csproj --logger "console;verbosity=normal"
       - run: dotnet test unity/Assets/Kestrel.Game/Vehicle/Tests/Dotnet~/Kestrel.Vehicle.Core.Tests.csproj --logger "console;verbosity=normal"
+      - name: Shipping iOS build entry point (editor boundary fakes)
+        run: dotnet test unity/dotnet/Kestrel.Build.Tests/Kestrel.Build.Tests.csproj --logger "console;verbosity=normal"
