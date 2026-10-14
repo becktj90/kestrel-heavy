@@ -21,6 +21,11 @@ on:
         required: false
         default: false
         type: boolean
+      finalize_build:
+        description: "Complete compliance and tester assignment for an already-uploaded build"
+        required: false
+        default: false
+        type: boolean
       credentials_only:
         description: "Check Apple secret bindings without building or uploading"
         required: false
@@ -31,7 +36,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ${{ inputs.credentials_only && format('testflight-credentials-{0}', github.run_id) || 'xcode-export' }}
+  group: ${{ (inputs.credentials_only || inputs.finalize_build) && format('testflight-credentials-{0}', github.run_id) || 'xcode-export' }}
   cancel-in-progress: false
 
 env:
@@ -42,9 +47,10 @@ env:
 jobs:
   apple-credentials:
     name: App Store Connect credential preflight
-    if: inputs.upload_testflight || inputs.credentials_only
+    if: inputs.upload_testflight || inputs.credentials_only || inputs.finalize_build
     runs-on: ubuntu-latest
     env:
+      BUILD_NUMBER: ${{ inputs.build_number }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
@@ -87,10 +93,10 @@ jobs:
           key = serialization.load_pem_private_key(key_path.read_bytes(), password=None)
           r, s = utils.decode_dss_signature(key.sign(message.encode(), ec.ECDSA(hashes.SHA256())))
           token = message + '.' + encode(r.to_bytes(32, 'big') + s.to_bytes(32, 'big'))
-          def request(path, body=None):
+          def request(path, body=None, method=None):
               data = json.dumps(body).encode() if body is not None else None
               req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, data=data,
-                  headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
+                  headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}, method=method)
               try:
                   with urllib.request.urlopen(req, timeout=60) as response:
                       result = response.read()
@@ -102,6 +108,77 @@ jobs:
               raise SystemExit('Expected one shipping App Store Connect app')
           print('App Store Connect access to Kestrel Heavy verified', flush=True)
           PYTHON
+      - name: Finalize uploaded build without rebuilding
+        if: inputs.finalize_build
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/asc-venv"
+          "$RUNNER_TEMP/asc-venv/bin/pip" install --disable-pip-version-check 'cryptography==50.0.0'
+          "$RUNNER_TEMP/asc-venv/bin/python" - <<'PYTHON'
+          import base64, json, os, pathlib, time, urllib.parse, urllib.request, urllib.error
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import ec, utils
+          def encode(value):
+              return base64.urlsafe_b64encode(value).rstrip(b'=').decode()
+          header = {'alg': 'ES256', 'kid': os.environ['ASC_KEY_ID'], 'typ': 'JWT'}
+          payload = {'iss': os.environ['ASC_ISSUER_ID'], 'iat': int(time.time()),
+                     'exp': int(time.time()) + 1200, 'aud': 'appstoreconnect-v1'}
+          message = encode(json.dumps(header).encode()) + '.' + encode(json.dumps(payload).encode())
+          key_path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'asc/AuthKey.p8'
+          key = serialization.load_pem_private_key(key_path.read_bytes(), password=None)
+          r, s = utils.decode_dss_signature(key.sign(message.encode(), ec.ECDSA(hashes.SHA256())))
+          token = message + '.' + encode(r.to_bytes(32, 'big') + s.to_bytes(32, 'big'))
+          def request(path, body=None, method=None):
+              data = json.dumps(body).encode() if body is not None else None
+              req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, data=data,
+                  headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}, method=method)
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as response:
+                      result = response.read()
+                      return json.loads(result) if result else {}
+              except urllib.error.HTTPError as error:
+                  raise SystemExit('App Store Connect API HTTP ' + str(error.code) + ': ' + error.read().decode())
+          apps = request('/v1/apps?' + urllib.parse.urlencode({'filter[bundleId]': 'com.beckify.kestrelheavy'}))['data']
+          if len(apps) != 1:
+              raise SystemExit('Expected one shipping App Store Connect app')
+          app = apps[0]
+          build = None
+          for attempt in range(20):
+              params = urllib.parse.urlencode({'filter[app]': app['id'], 'filter[version]': os.environ['BUILD_NUMBER'], 'limit': 10})
+              builds = request('/v1/builds?' + params)['data']
+              build = builds[0] if builds else None
+              state = build['attributes']['processingState'] if build else None
+              print('Apple processing:', state or 'build not visible yet', flush=True)
+              if state == 'VALID':
+                  break
+              if state in ('FAILED', 'INVALID'):
+                  raise SystemExit('Apple rejected processing for this build')
+              time.sleep(30)
+          if not build or build['attributes']['processingState'] != 'VALID':
+              raise SystemExit('Upload finished, but Apple processing has not completed; check App Store Connect')
+          request('/v1/builds/' + build['id'], {'data': {'type': 'builds', 'id': build['id'],
+              'attributes': {'usesNonExemptEncryption': False}}}, method='PATCH')
+          groups = request('/v1/apps/' + app['id'] + '/betaGroups?limit=200')['data']
+          internal = [group for group in groups if group['attributes']['isInternalGroup']]
+          if not internal:
+              raise SystemExit('Build processed, but no internal TestFlight tester group exists for this app')
+          for group in internal:
+              if not group['attributes'].get('hasAccessToAllBuilds'):
+                  request('/v1/betaGroups/' + group['id'] + '/relationships/builds',
+                          {'data': [{'type': 'builds', 'id': build['id']}]})
+          notes = 'Updated Unity source and shipping iOS build validation. Test startup, home, design, flight, and Game Center.'
+          localizations = request('/v1/builds/' + build['id'] + '/betaBuildLocalizations?limit=200')['data']
+          existing = next((item for item in localizations if item['attributes']['locale'] == 'en-US'), None)
+          if existing:
+              request('/v1/betaBuildLocalizations/' + existing['id'], {'data': {'type': 'betaBuildLocalizations',
+                  'id': existing['id'], 'attributes': {'whatsNew': notes}}}, method='PATCH')
+          else:
+              request('/v1/betaBuildLocalizations', {'data': {'type': 'betaBuildLocalizations',
+                  'attributes': {'locale': 'en-US', 'whatsNew': notes},
+                  'relationships': {'build': {'data': {'type': 'builds', 'id': build['id']}}}}})
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('Kestrel Heavy 2.0.0 (' + os.environ['BUILD_NUMBER'] + ') processed successfully and assigned to ' + str(len(internal)) + ' existing internal TestFlight group(s).\n')
+          PYTHON
       - name: Remove preflight API key
         if: always()
         run: |
@@ -109,7 +186,7 @@ jobs:
 
   export-and-publish:
     needs: apple-credentials
-    if: always() && !inputs.credentials_only && (!inputs.upload_testflight || needs.apple-credentials.result == 'success')
+    if: always() && !inputs.credentials_only && !inputs.finalize_build && (!inputs.upload_testflight || needs.apple-credentials.result == 'success')
     name: Unity iOS export → xcode-export
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -248,6 +325,8 @@ jobs:
           pbx = (root / 'Unity-iPhone.xcodeproj/project.pbxproj').read_text()
           if 'kestrelheavy.unityproto' in pbx:
               raise SystemExit('Refusing prototype bundle')
+          info['ITSAppUsesNonExemptEncryption'] = False
+          (root / 'Info.plist').write_bytes(plistlib.dumps(info))
           if not re.search(r'PRODUCT_BUNDLE_IDENTIFIER = "?com\.beckify\.kestrelheavy"?;', pbx):
               raise SystemExit('Shipping bundle identity missing')
           PYTHON
@@ -318,10 +397,10 @@ jobs:
           key = serialization.load_pem_private_key(key_path.read_bytes(), password=None)
           r, s = utils.decode_dss_signature(key.sign(message.encode(), ec.ECDSA(hashes.SHA256())))
           token = message + '.' + encode(r.to_bytes(32, 'big') + s.to_bytes(32, 'big'))
-          def request(path, body=None):
+          def request(path, body=None, method=None):
               data = json.dumps(body).encode() if body is not None else None
               req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, data=data,
-                  headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
+                  headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}, method=method)
               try:
                   with urllib.request.urlopen(req, timeout=60) as response:
                       result = response.read()
@@ -346,6 +425,8 @@ jobs:
               time.sleep(30)
           if not build or build['attributes']['processingState'] != 'VALID':
               raise SystemExit('Upload finished, but Apple processing has not completed; check App Store Connect')
+          request('/v1/builds/' + build['id'], {'data': {'type': 'builds', 'id': build['id'],
+              'attributes': {'usesNonExemptEncryption': False}}}, method='PATCH')
           groups = request('/v1/apps/' + app['id'] + '/betaGroups?limit=200')['data']
           internal = [group for group in groups if group['attributes']['isInternalGroup']]
           if not internal:
@@ -354,9 +435,16 @@ jobs:
               if not group['attributes'].get('hasAccessToAllBuilds'):
                   request('/v1/betaGroups/' + group['id'] + '/relationships/builds',
                           {'data': [{'type': 'builds', 'id': build['id']}]})
-          request('/v1/betaBuildLocalizations', {'data': {'type': 'betaBuildLocalizations',
-              'attributes': {'locale': 'en-US', 'whatsNew': 'Updated Unity source and shipping iOS build validation. Test startup, home, design, flight, and Game Center.'},
-              'relationships': {'build': {'data': {'type': 'builds', 'id': build['id']}}}}})
+          notes = 'Updated Unity source and shipping iOS build validation. Test startup, home, design, flight, and Game Center.'
+          localizations = request('/v1/builds/' + build['id'] + '/betaBuildLocalizations?limit=200')['data']
+          existing = next((item for item in localizations if item['attributes']['locale'] == 'en-US'), None)
+          if existing:
+              request('/v1/betaBuildLocalizations/' + existing['id'], {'data': {'type': 'betaBuildLocalizations',
+                  'id': existing['id'], 'attributes': {'whatsNew': notes}}}, method='PATCH')
+          else:
+              request('/v1/betaBuildLocalizations', {'data': {'type': 'betaBuildLocalizations',
+                  'attributes': {'locale': 'en-US', 'whatsNew': notes},
+                  'relationships': {'build': {'data': {'type': 'builds', 'id': build['id']}}}}})
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
               summary.write('Kestrel Heavy 2.0.0 (' + os.environ['BUILD_NUMBER'] + ') processed successfully and assigned to ' + str(len(internal)) + ' existing internal TestFlight group(s).\n')
           PYTHON
