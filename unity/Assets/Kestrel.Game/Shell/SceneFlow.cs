@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using Kestrel.Core.Flight;
+using Kestrel.Game.MissionSelect;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -49,7 +50,7 @@ namespace Kestrel.Game.Shell
             Present(GameSession.Apply(route, null, null, card));
         }
 
-        /// <summary>Placeholder list (until the campaign map lands): the chosen KH-n becomes the carried session.</summary>
+        /// <summary>The chosen KH-n is carried, then the briefing overlay opens on the map. Build it enters the designer.</summary>
         public void StartMission(string missionId)
         {
             if (Busy) return;
@@ -62,10 +63,11 @@ namespace Kestrel.Game.Shell
                 try { card = MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign)); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
             }
-            Present(GameSession.Apply(RouteId.MissionChosen, campaign, missionId, card));
+            Present(BriefingBoard.BeforeDesign(GameSession.Apply(RouteId.MissionChosen, campaign, missionId, card)));
         }
 
         public void BuildFromBriefing() => Route(RouteId.BriefingBuild);
+        public void BackFromBriefing() => Route(RouteId.BriefingBack);
         public void BackFromDesigner() => Route(RouteId.DesignerBack);
         public void OpenReport() => Route(RouteId.OpenReport);
         public void ReportNext() => Route(RouteId.ReportNext, ScreenStub.LoadCampaign());
