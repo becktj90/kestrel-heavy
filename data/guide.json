@@ -1,0 +1,1463 @@
+{
+  "version": 1,
+  "speaker": "thrum",
+  "character": {
+    "id": "mabel-thrum-pike",
+    "name": "Mabel Thrum Pike",
+    "call": "Thrum",
+    "role": "Hangar Keeper",
+    "wrench": "Dolores",
+    "kestrel": "Sprocket"
+  },
+  "speeds": {
+    "slow": 25,
+    "normal": 40,
+    "fast": 70,
+    "instant": 0
+  },
+  "sizes": [
+    "normal",
+    "large",
+    "extra-large"
+  ],
+  "tips": [
+    "on",
+    "warnings",
+    "off"
+  ],
+  "priorities": [
+    "safety",
+    "decision",
+    "failure",
+    "chatter"
+  ],
+  "note": "Mabel Thrum Pike, hangar keeper. Original fictional character. Kid line first, engineer line with a sim number. Tokens stay in braces. Text is the source of truth; voice clips are optional.",
+  "lines": [
+    {
+      "id": "first.1",
+      "trigger": "guide.first",
+      "when": "1",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "first.1.c1",
+          "kid": "Oh! A visitor. Mind the oil. I am Thrum. I keep this hangar, and I talk to wrenches.",
+          "eng": "Hangar keeper. g0 is 9.80665 m/s^2. Weight is mass times that."
+        }
+      ]
+    },
+    {
+      "id": "first.2",
+      "trigger": "guide.first",
+      "when": "2",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "first.2.c1",
+          "kid": "This is Dolores. She says hello. She also says you hold wrenches wrong.",
+          "eng": "Dolores is a wrench. A bad mix starts at a 6% offset from nominal."
+        },
+        {
+          "id": "first.2.c2",
+          "kid": "She is wrong. Today we build a rocket and send it up. Nothing here costs real money.",
+          "eng": "Kc stays in the game. The KH-1 budget is 2000000 Kc."
+        }
+      ]
+    },
+    {
+      "id": "first.3",
+      "trigger": "guide.first",
+      "when": "3",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "first.3.c1",
+          "kid": "A rocket is a pushy tube with a plan. Build it, pick a goal, press go.",
+          "eng": "Liftoff needs TWR >= 1.30. TWR is thrust over mass times 9.80665."
+        }
+      ]
+    },
+    {
+      "id": "first.4",
+      "trigger": "guide.first",
+      "when": "4",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "first.4.c1",
+          "kid": "I pop in with tips. Tap to move on. Tap SKIP and I hush. I take it well.",
+          "eng": "Tips play once. Safety lines repeat. Type runs at 40 characters a second."
+        }
+      ]
+    },
+    {
+      "id": "first.5",
+      "trigger": "guide.first",
+      "when": "5",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "first.5.c1",
+          "kid": "First job: the First Hop. Straight up ten kilometres. Let's go!",
+          "eng": "KH-1 apogee is 10 km. The kid-box is 50 kg. Loss term is 1000 m/s."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh1",
+      "trigger": "guide.brief",
+      "when": "m1",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh1.c1",
+          "kid": "Ten kilometres up, then home. A little box rides on top.",
+          "eng": "Target apogee is 10 km. The apogee loss term is 1000 m/s."
+        },
+        {
+          "id": "brief.kh1.c2",
+          "kid": "It is called kid-box. It is very brave.",
+          "eng": "kid-box mass is 50 kg. Volume is 0.2 m^3. Diameter is 0.6 m."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh3",
+      "trigger": "guide.brief",
+      "when": "m3",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh3.c1",
+          "kid": "Orbit! Not up and down: up and sideways. Sideways is the hard part.",
+          "eng": "A 200 km circle needs about 7.8 km/s. Gravity and drag add 1.5 km/s."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh6",
+      "trigger": "guide.brief",
+      "when": "m6",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh6.c1",
+          "kid": "Come Back: your first stage flies home and lands on its legs.",
+          "eng": "RTLS boostback is 2 times speed at MECO. The barge factor is 0.3."
+        },
+        {
+          "id": "brief.kh6.c2",
+          "kid": "Save some fuel for the landing.",
+          "eng": "Landing reserve is capped at 30% of that stage's propellant."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh8",
+      "trigger": "guide.brief",
+      "when": "m8",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh8.c1",
+          "kid": "Crew Day. People ride this one. Be gentle with the g, and a little paranoid.",
+          "eng": "Crew g cap is 4.5. Reliability must be at least 0.98."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh9",
+      "trigger": "guide.brief",
+      "when": "m9",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh9.c1",
+          "kid": "Moon Shot! Cold fuel is sleepy fuel. It boils off while you coast. Pack extra.",
+          "eng": "Coast is 3 h. Foam boil-off factor is 0.4. MLI factor is 0.15."
+        }
+      ]
+    },
+    {
+      "id": "brief.contract",
+      "trigger": "guide.brief",
+      "when": "contract",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.contract.c1",
+          "kid": "New contract on the board. Heavier, higher, harder. You already started.",
+          "eng": "Payload mass grows by 0.1 each contract cleared, and then it caps."
+        }
+      ]
+    },
+    {
+      "id": "brief.bonus",
+      "trigger": "guide.brief",
+      "when": "bonus",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.bonus.c1",
+          "kid": "Bonus goals are extras. Skip them and it still counts. A medal if you nab them.",
+          "eng": "Stars do not gate the next mission. A pass with 1 star opens it."
+        }
+      ]
+    },
+    {
+      "id": "brief.wind",
+      "trigger": "guide.brief",
+      "when": "wind",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "brief.wind.c1",
+          "kid": "Wind {kt} knots from the {dir}. The rocket will lean. That is fine. We plan for it.",
+          "eng": "Surface wind above 12 m/s is a hold. 12 m/s is about 23 knots."
+        }
+      ]
+    },
+    {
+      "id": "step.1",
+      "trigger": "guide.step",
+      "when": "1",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "step.1.c1",
+          "kid": "Pick the job first. The payload decides how big, how heavy, how high.",
+          "eng": "A hit is altitude within 5%, or within 0.5 degrees of inclination."
+        },
+        {
+          "id": "step.1.c2",
+          "kid": "Everything after this is just building a ride for it.",
+          "eng": "Required speed comes from the target. An apogee adds 1000 m/s."
+        }
+      ]
+    },
+    {
+      "id": "step.2",
+      "trigger": "guide.step",
+      "when": "2",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "step.2.c1",
+          "kid": "Engines push. Weight pulls back. Push must win, with a little to spare.",
+          "eng": "Need liftoff TWR >= 1.30. TWR = F/(m*g0). g0 = 9.80665."
+        }
+      ]
+    },
+    {
+      "id": "step.2.pass",
+      "trigger": "guide.step",
+      "when": "2.pass",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "step.2.pass.c1",
+          "kid": "Tidy! {twr} bananas of push for every banana of weight. That rises.",
+          "eng": "TWR is {twr}. The pass line is 1.30. The block line is 1.00."
+        }
+      ]
+    },
+    {
+      "id": "step.2.fail.twr",
+      "trigger": "guide.step",
+      "when": "2.fail.twr",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "step.2.fail.twr.c1",
+          "kid": "Your rocket weighs more than it pushes! Add an engine, or trim the tank, and try again.",
+          "eng": "Liftoff TWR is under 1.00. The step passes at 1.30."
+        }
+      ]
+    },
+    {
+      "id": "step.2.fail.mix",
+      "trigger": "guide.step",
+      "when": "2.fail.mix",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "step.2.fail.mix.c1",
+          "kid": "That mixture is off by {pct}%. Engines sulk when they are fed wrong. Nudge it back.",
+          "eng": "Hazard starts past a 6% offset. Isp drops 0.6% per 1% off."
+        }
+      ]
+    },
+    {
+      "id": "step.3",
+      "trigger": "guide.step",
+      "when": "3",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "step.3.c1",
+          "kid": "Fuel is how far you can go. More fuel is heavier, so it is a trade.",
+          "eng": "delta-v = Isp*g0*ln(m0/mf). Aim for a margin >= 0."
+        },
+        {
+          "id": "step.3.c2",
+          "kid": "Rockets are all trades.",
+          "eng": "g0 in that formula is 9.80665 m/s^2. Margin under 0 is short."
+        }
+      ]
+    },
+    {
+      "id": "step.3.fail.dv",
+      "trigger": "guide.step",
+      "when": "3.fail.dv",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "step.3.fail.dv.c1",
+          "kid": "You run dry {dv} m/s short of the goal. Add fuel or a second stage.",
+          "eng": "Short by {dv} m/s. An apogee hop also adds a 1000 m/s loss."
+        }
+      ]
+    },
+    {
+      "id": "step.3.warn.maxq",
+      "trigger": "guide.step",
+      "when": "3.warn.maxq",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "step.3.warn.maxq.c1",
+          "kid": "Strong, but thin walls get squeezed by fast air. Think thicker or slower.",
+          "eng": "Amber when q is over 0.85 of q_lim. A warn also sits at 45 kPa."
+        }
+      ]
+    },
+    {
+      "id": "step.4",
+      "trigger": "guide.step",
+      "when": "4",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "step.4.c1",
+          "kid": "A pointy nose and fins keep it straight. The fairing is the payload's coat. It must fit.",
+          "eng": "Stable when CG is ahead of CP. S = (x_cg - x_cp)/D >= 0."
+        }
+      ]
+    },
+    {
+      "id": "step.4.fail.fit",
+      "trigger": "guide.step",
+      "when": "4.fail.fit",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "step.4.fail.fit.c1",
+          "kid": "The payload does not fit its coat. Pick a wider fairing or a smaller payload.",
+          "eng": "Need diameter plus 0.2 m inside the fairing. Volume uses 0.45 and 0.8."
+        }
+      ]
+    },
+    {
+      "id": "step.4.fail.tumble",
+      "trigger": "guide.step",
+      "when": "4.fail.tumble",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "step.4.fail.tumble.c1",
+          "kid": "Top-heavy and finless. That is a wobbly pencil. Add fins, or move weight up.",
+          "eng": "Tumble holds 0.5 s under stability 0. Or alpha passes 15 deg above 20 kPa."
+        }
+      ]
+    },
+    {
+      "id": "step.5",
+      "trigger": "guide.step",
+      "when": "5",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "step.5.c1",
+          "kid": "Want it back? Legs and spare fuel bring it home. Or let it go. Both are fine.",
+          "eng": "Reserve must cover the landing delta-v. The cap is 30% of propellant."
+        }
+      ]
+    },
+    {
+      "id": "step.5.skip",
+      "trigger": "guide.step",
+      "when": "5.skip",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "step.5.skip.c1",
+          "kid": "No landing needed here. I will tuck the legs away. Dolores approves.",
+          "eng": "No landing grade on this job. Light legs are 6% of dry mass."
+        }
+      ]
+    },
+    {
+      "id": "step.5.fail.reserve",
+      "trigger": "guide.step",
+      "when": "5.fail.reserve",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "step.5.fail.reserve.c1",
+          "kid": "Not enough fuel set aside to land. Hold back {pct}% more.",
+          "eng": "Light legs take 2 m/s. Heavy legs take 4 m/s. The cap is 30%."
+        }
+      ]
+    },
+    {
+      "id": "step.6",
+      "trigger": "guide.step",
+      "when": "6",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "step.6.c1",
+          "kid": "Paint is free and changes nothing about physics. Paint it loud. I would.",
+          "eng": "Paint adds 0 kg. A recovered stage refunds 70% of its cost."
+        }
+      ]
+    },
+    {
+      "id": "step.7",
+      "trigger": "guide.step",
+      "when": "7",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "step.7.c1",
+          "kid": "Last look. Green is go, amber is careful, red is trouble. Tap a row to fix it.",
+          "eng": "Red blocks the launch. Amber can still fly. Pass TWR is 1.30."
+        }
+      ]
+    },
+    {
+      "id": "pre.green",
+      "trigger": "guide.pre",
+      "when": "green",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.green.c1",
+          "kid": "All green. Honestly. I checked twice. Dolores checked once, she gets tired.",
+          "eng": "No red risk is open. The q amber line is 0.85 of q_lim."
+        }
+      ]
+    },
+    {
+      "id": "pre.maxq",
+      "trigger": "guide.pre",
+      "when": "maxq",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.maxq.c1",
+          "kid": "Walls may buckle near max-Q. Raise the safety factor, or throttle down.",
+          "eng": "q peaks at {q} kPa. The limit is {qlim} kPa. Ref SF is 1.4."
+        }
+      ]
+    },
+    {
+      "id": "pre.twr",
+      "trigger": "guide.pre",
+      "when": "twr",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.twr.c1",
+          "kid": "Barely lifts off. A slow rocket wastes fuel fighting gravity.",
+          "eng": "TWR is under 1.30. Gravity loss grows when the climb is slow."
+        }
+      ]
+    },
+    {
+      "id": "pre.stability",
+      "trigger": "guide.pre",
+      "when": "stability",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.stability.c1",
+          "kid": "It may tumble. Make the fins bigger, or move weight toward the nose.",
+          "eng": "Need S = (x_cg - x_cp)/D >= 0. Weight toward the nose raises CG."
+        }
+      ]
+    },
+    {
+      "id": "pre.overg",
+      "trigger": "guide.pre",
+      "when": "overg",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.overg.c1",
+          "kid": "Too many g for the payload. Squishing a satellite is rude. Throttle down.",
+          "eng": "Crew cap is 4.5 g. Weather Eye cap is 6 g. Breakup ref is 8 g."
+        }
+      ]
+    },
+    {
+      "id": "pre.cryo",
+      "trigger": "guide.pre",
+      "when": "cryo",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.cryo.c1",
+          "kid": "Cold fuel in a tank that hates cold. It cracks on the pad. Change material.",
+          "eng": "composite plus hydrolox has cryoOK false. Tank pressure is 1.5 to 6 bar."
+        }
+      ]
+    },
+    {
+      "id": "pre.sep",
+      "trigger": "guide.pre",
+      "when": "sep",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.sep.c1",
+          "kid": "Stages may bump when they part. A little push-off spring fixes it.",
+          "eng": "Separate within 2 s. v_min is 0.5 m/s plus 0.02 per kPa."
+        }
+      ]
+    },
+    {
+      "id": "pre.leg",
+      "trigger": "guide.pre",
+      "when": "leg",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.leg.c1",
+          "kid": "Landing legs may fold. Heavier legs, or slow down more.",
+          "eng": "Light legs fold above 2 m/s. Heavy legs fold above 4 m/s."
+        }
+      ]
+    },
+    {
+      "id": "pre.odds",
+      "trigger": "guide.pre",
+      "when": "odds",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.odds.c1",
+          "kid": "{pct}% chance an engine sulks mid-flight. More engines and good avionics help.",
+          "eng": "One engine out is tolerated at 7 engines if TWR stays above 1.05."
+        }
+      ]
+    },
+    {
+      "id": "pre.red.confirm",
+      "trigger": "guide.pre",
+      "when": "red",
+      "speaker": "thrum",
+      "priority": "decision",
+      "once": false,
+      "cards": [
+        {
+          "id": "pre.red.confirm.c1",
+          "kid": "That is a red light. You may still launch. Rockets are allowed to teach us.",
+          "eng": "Red is a failed check. Amber may still launch. Pass TWR is 1.30."
+        }
+      ],
+      "actions": [
+        "Launch anyway"
+      ]
+    },
+    {
+      "id": "asc.liftoff",
+      "trigger": "liftoff",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.liftoff.c1",
+          "kid": "Liftoff! Say hello to the sky.",
+          "eng": "Thrust now beats weight. The pad hold is 2 s under 5 m."
+        }
+      ]
+    },
+    {
+      "id": "asc.pitch",
+      "trigger": "guide.asc",
+      "when": "pitch",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.pitch.c1",
+          "kid": "Time to lean over. Nudge the pitch. Small nudges, please.",
+          "eng": "The pitch kick is 4 deg, and it arms near 60 m/s."
+        }
+      ]
+    },
+    {
+      "id": "asc.maxq.warn",
+      "trigger": "maxq",
+      "when": "warn",
+      "speaker": "thrum",
+      "priority": "decision",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.maxq.warn.c1",
+          "kid": "Max-Q is close. Air pushes hardest now. Throttle down?",
+          "eng": "The throttle bucket opens at 17.5 kPa, half of the 35 kPa reference."
+        }
+      ],
+      "actions": [
+        "Yes",
+        "No"
+      ]
+    },
+    {
+      "id": "asc.maxq.perfect",
+      "trigger": "maxq",
+      "when": "perfect",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.maxq.perfect.c1",
+          "kid": "Perfect timing! Tidy as a pin.",
+          "eng": "Throttle eased inside the bucket. Reference q is 35 kPa."
+        }
+      ]
+    },
+    {
+      "id": "asc.maxq.late",
+      "trigger": "maxq",
+      "when": "late",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.maxq.late.c1",
+          "kid": "A bit late, but she held. Next time, earlier.",
+          "eng": "q was already past 17.5 kPa. The reference scale is 35 kPa."
+        }
+      ]
+    },
+    {
+      "id": "asc.meco",
+      "trigger": "meco",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.meco.c1",
+          "kid": "First stage is done. Get ready to let it go.",
+          "eng": "MECO ends stage 1. The staging window that follows is 2 s."
+        }
+      ]
+    },
+    {
+      "id": "asc.stage.window",
+      "trigger": "sep",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "decision",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.stage.window.c1",
+          "kid": "Staging window is open. Now, please!",
+          "eng": "Separate within 2 s. v_min is 0.5 m/s plus 0.02 per kPa."
+        }
+      ]
+    },
+    {
+      "id": "asc.stage.good",
+      "trigger": "sep-clear",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.stage.good.c1",
+          "kid": "Clean split!",
+          "eng": "Relative speed cleared v_min. The window is 2 s."
+        }
+      ]
+    },
+    {
+      "id": "asc.stage.late",
+      "trigger": "sep-wide",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.stage.late.c1",
+          "kid": "Bumpy. Still flying.",
+          "eng": "Outside the tidy split. The window was 2 s."
+        }
+      ]
+    },
+    {
+      "id": "asc.fairing",
+      "trigger": "fairing",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.fairing.c1",
+          "kid": "Drop the coat when the air is thin. Too soon cooks the payload.",
+          "eng": "Default jettison is 110 km. Live heating limit is {flux} W/m^2."
+        }
+      ]
+    },
+    {
+      "id": "asc.engineout",
+      "trigger": "guide.asc",
+      "when": "engineout",
+      "speaker": "thrum",
+      "priority": "decision",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.engineout.c1",
+          "kid": "One engine just quit. Shut it down, or ride it out? Your call.",
+          "eng": "One quit is survivable at 7 engines if TWR stays above 1.05."
+        }
+      ],
+      "actions": [
+        "Shut it down",
+        "Ride it out"
+      ]
+    },
+    {
+      "id": "asc.engineout.ok",
+      "trigger": "guide.asc",
+      "when": "engineout.ok",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.engineout.ok.c1",
+          "kid": "{left} engines left, and still climbing.",
+          "eng": "Thrust factor is (n-1)/n. Tolerance needs 7 engines and TWR 1.05."
+        }
+      ]
+    },
+    {
+      "id": "asc.engineout.bad",
+      "trigger": "guide.asc",
+      "when": "engineout.bad",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.engineout.bad.c1",
+          "kid": "That one hurt. Redundant avionics next time.",
+          "eng": "The cluster could not hold TWR above 1.05. Crew reliability is 0.98."
+        }
+      ]
+    },
+    {
+      "id": "asc.shear",
+      "trigger": "guide.asc",
+      "when": "shear",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.shear.c1",
+          "kid": "Wind shear! Ease the throttle and let it lean.",
+          "eng": "Shear limit is 0.012 per second. The jet layer sits near 10.5 km."
+        }
+      ]
+    },
+    {
+      "id": "asc.fuel",
+      "trigger": "fuel-low",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "safety",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.fuel.c1",
+          "kid": "Tanks are lopsided. Flip the crossfeed to balance.",
+          "eng": "Crossfeed comes after KH-5. Ullage in a tank is 3%."
+        }
+      ]
+    },
+    {
+      "id": "asc.seco",
+      "trigger": "seco",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.seco.c1",
+          "kid": "Engine off. Coasting to the top.",
+          "eng": "SECO means thrust is 0 N. Coast keeps the speed you already have."
+        }
+      ]
+    },
+    {
+      "id": "asc.orbit",
+      "trigger": "guide.asc",
+      "when": "orbit",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.orbit.c1",
+          "kid": "A fast line sideways, so it keeps missing the ground. That is orbit.",
+          "eng": "Perigee {peri} km, apogee {apo} km. A 200 km circle is about 7.8 km/s."
+        }
+      ]
+    },
+    {
+      "id": "asc.deploy",
+      "trigger": "deploy",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.deploy.c1",
+          "kid": "Payload away! Say goodbye. It is very brave.",
+          "eng": "Release follows the fairing. Default jettison altitude is 110 km."
+        }
+      ]
+    },
+    {
+      "id": "asc.landing",
+      "trigger": "landing",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.landing.c1",
+          "kid": "Legs out. Slow, slow, slow.",
+          "eng": "Light legs fold above 2 m/s. Heavy legs fold above 4 m/s."
+        }
+      ]
+    },
+    {
+      "id": "asc.touch.perfect",
+      "trigger": "touchdown",
+      "when": "perfect",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.touch.perfect.c1",
+          "kid": "Touchdown! Tidy.",
+          "eng": "Sink rate is inside the leg limit: 2 m/s light, or 4 m/s heavy."
+        }
+      ]
+    },
+    {
+      "id": "asc.auto",
+      "trigger": "guide.asc",
+      "when": "auto",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "asc.auto.c1",
+          "kid": "Autopilot has the calls. You can still tap for a shinier medal.",
+          "eng": "A pass starts at 1000 points. A perfect landing adds 200."
+        }
+      ]
+    },
+    {
+      "id": "win.1",
+      "trigger": "guide.win",
+      "when": "1",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "win.1.c1",
+          "kid": "She flew! She really flew. Dolores is crying.",
+          "eng": "A pass scores 1000 points before the margin term and the landing."
+        },
+        {
+          "id": "win.1.c2",
+          "kid": "Dolores is a wrench. Don't tell her I said.",
+          "eng": "The margin term peaks when 5% of the fuel is left over."
+        }
+      ]
+    },
+    {
+      "id": "win.margin",
+      "trigger": "guide.win",
+      "when": "margin",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "win.margin.c1",
+          "kid": "You had {pct}% fuel to spare. Spare is wise. Too much spare is just heavy.",
+          "eng": "Star margin runs from 2% to 10%. The score weight on margin is 300."
+        }
+      ]
+    },
+    {
+      "id": "win.budget",
+      "trigger": "guide.win",
+      "when": "budget",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "win.budget.c1",
+          "kid": "And under budget by {kc} Kc. Spend it on something shiny.",
+          "eng": "A recovered stage refunds 70% of cost. Refurb starts at 10%."
+        }
+      ]
+    },
+    {
+      "id": "win.unlock",
+      "trigger": "guide.win",
+      "when": "unlock",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "win.unlock.c1",
+          "kid": "New toy: {part}. Open the Hangar and try it on.",
+          "eng": "KH-1 unlocks fins and a nose. The starter bank is 2000000 Kc."
+        }
+      ]
+    },
+    {
+      "id": "win.next",
+      "trigger": "guide.win",
+      "when": "next",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "win.next.c1",
+          "kid": "Next up: KH-{n}. Heavier, higher. Want it?",
+          "eng": "KH-{n} opens on any pass. 1 star is enough. Stars never gate progress."
+        }
+      ]
+    },
+    {
+      "id": "win.final",
+      "trigger": "guide.win",
+      "when": "final",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "win.final.c1",
+          "kid": "That's the whole board. You built every rung. I am only the keeper.",
+          "eng": "KH-10 is the last hand-built mission. Ten missions, in 4 acts."
+        }
+      ]
+    },
+    {
+      "id": "fail.structural-maxq",
+      "trigger": "abort",
+      "when": "structural-maxq",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.structural-maxq.c1",
+          "kid": "She bent in the middle. The air pushed {q} kPa.",
+          "eng": "q_ref is 35 kPa at safety factor 1.4. Yield ref is 500 MPa."
+        },
+        {
+          "id": "fail.structural-maxq.c2",
+          "kid": "The walls held {qlim}. Thicker walls, or ease the throttle.",
+          "eng": "Ease off near the bucket at 17.5 kPa, half of 35 kPa."
+        }
+      ]
+    },
+    {
+      "id": "fail.overg",
+      "trigger": "abort",
+      "when": "overg",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.overg.c1",
+          "kid": "Too many g. The payload did not enjoy that. Throttle down earlier.",
+          "eng": "Over-g is accel above the payload limit. Crew cap is 4.5 g."
+        }
+      ]
+    },
+    {
+      "id": "fail.tumble",
+      "trigger": "abort",
+      "when": "tumble",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.tumble.c1",
+          "kid": "Round and round! No fins to steer her. Add fins or move weight up.",
+          "eng": "Hold is 0.5 s under stability 0. Or 15 deg at q above 20 kPa."
+        }
+      ]
+    },
+    {
+      "id": "fail.engine-overpressure",
+      "trigger": "abort",
+      "when": "engine-overpressure",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.engine-overpressure.c1",
+          "kid": "The engine got too much squeeze. Lower the chamber pressure and try again.",
+          "eng": "pc above 1.15 times pc_rated pops it. The hazard term is 0.02 per second."
+        }
+      ]
+    },
+    {
+      "id": "fail.bad-mixture",
+      "trigger": "abort",
+      "when": "bad-mixture",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.bad-mixture.c1",
+          "kid": "Fed the wrong mix, the plume sputtered. Nudge it back to nominal.",
+          "eng": "Offset past 6% is a hazard. Isp falls 0.6% for each 1% off."
+        }
+      ]
+    },
+    {
+      "id": "fail.thermal",
+      "trigger": "abort",
+      "when": "thermal",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.thermal.c1",
+          "kid": "She got too warm. A heat shield, or a smoother nose, helps.",
+          "eng": "Blunt nose Cd is 0.50. Ogive nose Cd is 0.30. Smoother flies cooler."
+        }
+      ]
+    },
+    {
+      "id": "fail.cryo-material",
+      "trigger": "abort",
+      "when": "cryo-material",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.cryo-material.c1",
+          "kid": "Cold fuel cracked the tank before we even left. Pick a cold-friendly material.",
+          "eng": "composite with hydrolox has cryoOK false. Pressure band is 1.5 to 6 bar."
+        }
+      ]
+    },
+    {
+      "id": "fail.prop-depletion",
+      "trigger": "abort",
+      "when": "prop-depletion",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.prop-depletion.c1",
+          "kid": "Out of fuel, {dv} m/s short. More fuel, or another stage.",
+          "eng": "delta-v uses g0 of 9.80665. Orbital losses add 1500 m/s."
+        }
+      ]
+    },
+    {
+      "id": "fail.separation-collision",
+      "trigger": "abort",
+      "when": "separation-collision",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.separation-collision.c1",
+          "kid": "The stages bumped. A little push-off spring fixes it.",
+          "eng": "v_rel stayed under v_min for 2 s. v_min is 0.5 m/s plus 0.02*q."
+        }
+      ]
+    },
+    {
+      "id": "fail.leg-collapse",
+      "trigger": "abort",
+      "when": "leg-collapse",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.leg-collapse.c1",
+          "kid": "The legs folded. Heavier legs, or a slower landing.",
+          "eng": "Light legs fold above 2 m/s. Heavy legs fold above 4 m/s."
+        }
+      ]
+    },
+    {
+      "id": "fail.engine-out",
+      "trigger": "abort",
+      "when": "engine-out",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.engine-out.c1",
+          "kid": "An engine quit and the others could not cope. More engines next time.",
+          "eng": "Tolerance needs 7 engines, redundant avionics, and TWR above 1.05."
+        }
+      ]
+    },
+    {
+      "id": "fail.miss",
+      "trigger": "flight.end",
+      "when": "miss",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.miss.c1",
+          "kid": "Great flight, wrong place. You reached {apo} km. The goal was {goal}. So close.",
+          "eng": "Altitude must fall within 5% of the goal, or 0.5 deg of tilt."
+        }
+      ]
+    },
+    {
+      "id": "fail.payload",
+      "trigger": "abort",
+      "when": "payload",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.payload.c1",
+          "kid": "The ride was fine. The cargo was not. Check the g limit.",
+          "eng": "Over-g breaks the payload. Crew cap is 4.5 g. Weather Eye is 6."
+        }
+      ]
+    },
+    {
+      "id": "fail.landing.splash",
+      "trigger": "splash",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.landing.splash.c1",
+          "kid": "Splashdown. The ocean wins this round. Keep more fuel for the landing.",
+          "eng": "The landing burn was short. Reserve is capped at 30% of propellant."
+        }
+      ]
+    },
+    {
+      "id": "fail.landing.tip",
+      "trigger": "tip",
+      "when": "",
+      "speaker": "thrum",
+      "priority": "failure",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.landing.tip.c1",
+          "kid": "Tipped over. Wind was strong. Wider legs, steadier descent.",
+          "eng": "Heavy legs are 9% of dry mass and hold 4 m/s. Light legs hold 2."
+        }
+      ]
+    },
+    {
+      "id": "fail.retry",
+      "trigger": "guide.fail",
+      "when": "retry",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.retry.c1",
+          "kid": "Fix it with one tap, or try again as-is. Rockets love a second go.",
+          "eng": "One more launch keeps the seed. A pass still starts at 1000 points."
+        }
+      ]
+    },
+    {
+      "id": "fail.repeat",
+      "trigger": "guide.fail",
+      "when": "repeat",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "fail.repeat.c1",
+          "kid": "Stuck? Try Gentle mode, or a starter template. No shame. Dolores flunked twice.",
+          "eng": "Gentle mode starts on for the first 3 missions. Dolores flunked 2 times."
+        }
+      ]
+    },
+    {
+      "id": "medal.bronze",
+      "trigger": "guide.medal",
+      "when": "bronze",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "medal.bronze.c1",
+          "kid": "Bronze! It counts, and it shines.",
+          "eng": "A landing short of good adds 0 points. The pass itself is 1000."
+        }
+      ]
+    },
+    {
+      "id": "medal.silver",
+      "trigger": "guide.medal",
+      "when": "silver",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "medal.silver.c1",
+          "kid": "Silver! Smooth hands.",
+          "eng": "A good landing adds 100 points on top of the 1000 for a pass."
+        }
+      ]
+    },
+    {
+      "id": "medal.gold",
+      "trigger": "guide.medal",
+      "when": "gold",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "medal.gold.c1",
+          "kid": "Gold! I am putting this on the wall. Over the sandwich.",
+          "eng": "A perfect landing adds 200 points. That is the gold bump."
+        }
+      ]
+    },
+    {
+      "id": "medal.star1",
+      "trigger": "guide.medal",
+      "when": "star1",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "medal.star1.c1",
+          "kid": "One star. You did it. That is the star that matters.",
+          "eng": "1 star is a pass. It opens the next mission. Base score is 1000."
+        }
+      ]
+    },
+    {
+      "id": "medal.star2",
+      "trigger": "guide.medal",
+      "when": "star2",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "medal.star2.c1",
+          "kid": "Two stars. Good fuel sense, good wallet sense.",
+          "eng": "2 stars need a margin from 2% to 10%, and cost inside the budget."
+        }
+      ]
+    },
+    {
+      "id": "medal.star3",
+      "trigger": "guide.medal",
+      "when": "star3",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "medal.star3.c1",
+          "kid": "Three! Neat as a pin.",
+          "eng": "3 stars need a perfect landing. Or peak g stays at 0.8 of the limit."
+        }
+      ]
+    },
+    {
+      "id": "medal.perfect.timing",
+      "trigger": "guide.medal",
+      "when": "perfect",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "medal.perfect.timing.c1",
+          "kid": "Every call on time. Are you a clock?",
+          "eng": "Every call landed in its window. Staging gives you 2 s."
+        }
+      ]
+    },
+    {
+      "id": "medal.bonus",
+      "trigger": "guide.medal",
+      "when": "bonus",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "medal.bonus.c1",
+          "kid": "Bonus goal done: {goal}. Extra shine.",
+          "eng": "Bonus goals never gate the pass. 1 star still opens the next mission."
+        }
+      ]
+    },
+    {
+      "id": "medal.cosmetic",
+      "trigger": "guide.medal",
+      "when": "cosmetic",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": false,
+      "cards": [
+        {
+          "id": "medal.cosmetic.c1",
+          "kid": "New paint: {name}. Free, earned, yours.",
+          "eng": "Paint adds 0 kg and costs 0 Kc. It changes no physics number."
+        }
+      ]
+    }
+  ]
+}
