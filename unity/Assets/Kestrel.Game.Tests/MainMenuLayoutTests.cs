@@ -229,6 +229,37 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        [Test]
+        public void WordsAreSeparateGlyphsInFrontOfTheSlabAndReadLeftToRight()
+        {
+            Assert.That(MainMenuText.LocalX(0f, 1f), Is.GreaterThan(MainMenuText.LocalX(8f, 1f)));
+            Assert.That(MainMenuText.FaceZ(0.07f), Is.GreaterThan(0.035f));
+            Assert.That(MainMenuText.FaceZ(0.035f), Is.GreaterThan(0.0175f));
+
+            var glyphs = new[]
+            {
+                new MainMenuText.GlyphStamp(0f, 8f, 0f, 16f, 10f, Vector2.zero, Vector2.right, Vector2.up, Vector2.one),
+                new MainMenuText.GlyphStamp(1f, 7f, 0f, 14f, 10f, Vector2.zero, Vector2.right, Vector2.up, Vector2.one),
+            };
+            var verts = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var tris = new List<int>();
+            Assert.That(MainMenuText.Layout(glyphs, 1.2f, 0.3f, 0f, verts, uvs, tris), Is.True);
+            Assert.That(verts.Count, Is.EqualTo(8));
+            Assert.That(tris.Count, Is.EqualTo(12));
+            float first = (verts[0].x + verts[1].x) * 0.5f;
+            float second = (verts[4].x + verts[5].x) * 0.5f;
+            Assert.That(first, Is.GreaterThan(second), "the first letter sits to the screen-left of the second");
+            float a0 = Mathf.Min(verts[0].x, verts[1].x), b0 = Mathf.Max(verts[0].x, verts[1].x);
+            float a1 = Mathf.Min(verts[4].x, verts[5].x), b1 = Mathf.Max(verts[4].x, verts[5].x);
+            Assert.That(b1 < a0 || b0 < a1, Is.True, "glyphs must not fuse into one bar");
+            foreach (var p in verts)
+            {
+                Assert.That(p.x, Is.InRange(-0.7f, 0.7f));
+                Assert.That(p.y, Is.InRange(-0.16f, 0.16f));
+            }
+        }
+
         static void AssertOutward(Mesh mesh)
         {
             var v = mesh.vertices;

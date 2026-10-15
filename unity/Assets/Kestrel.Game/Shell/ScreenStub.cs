@@ -30,8 +30,9 @@ namespace Kestrel.Game.Shell
         MainMenuController _menu;
 
         /// <summary>Home is the 3D hangar (MainMenuController): KH-1 on the deck, telemetry and glass
-        /// panels at different depths, launch bar closest. The UI Toolkit view does not pick; it only
-        /// holds hidden spoken labels. BuildConsole remains for the EditMode hit-target tests.</summary>
+        /// panels at different depths, launch bar closest. Words are glyph meshes on those panels.
+        /// The UI Toolkit view does not pick; it only holds hidden spoken labels. BuildConsole remains
+        /// for the EditMode hit-target tests.</summary>
         void BuildHome(AppShell shell)
         {
             _view.AddToClassList("kh-home");
