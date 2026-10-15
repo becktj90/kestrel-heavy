@@ -313,31 +313,64 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(GuideState.Fresh(false, false).Settings.VoiceAvailable);
             Assert.IsTrue(GuideState.Parse("{\"firstRunDone\":false}", true).Settings.VoiceOn);
             Assert.IsFalse(GuideState.Parse("{\"voiceOn\":false}", true).Settings.VoiceOn);
-            Assert.IsFalse(GuideVoice.ClipsPresent(Golden.Root));
 
+            // The shipped manifest and mp3s live in the repo, so voice defaults on and a card resolves.
+            Assert.IsTrue(GuideVoice.ClipsPresent(Golden.Root));
+            var shipped = GuideState.Fresh(GuideVoice.ClipsPresent(Golden.Root), false);
+            Assert.IsTrue(shipped.Settings.VoiceOn);
+            Assert.IsTrue(shipped.Settings.VoiceAvailable);
+            var catalog = GuideClipCatalog.Load(Golden.Root);
+            Assert.Greater(catalog.Count, 0);
+            Assert.IsTrue(catalog.TryCard("first.1.c1", out var hello));
+            string helloPath = Path.Combine(Golden.Root, "assets", "narration", "guide", "first.1.c1.mp3");
+            Assert.AreEqual(helloPath, hello.FullPath);
+            Assert.AreEqual(helloPath, GuideVoice.ClipFor(Golden.Root, "first.1.c1"));
+            Assert.IsTrue(catalog.TryBeat("first.2", out var firstOfTwo));
+            Assert.AreEqual("first.2.c1", firstOfTwo.Id);
+            Assert.AreEqual(
+                Path.Combine(Golden.Root, "assets", "narration", "guide", "first.2.c1.mp3"),
+                GuideVoice.ClipFor(Golden.Root, "first.2"));
+            Assert.IsFalse(catalog.TryBeat("asc.liftoff", out _));
+            var loaded = GuideBinder.Load(Golden.Root, false);
+            Assert.IsTrue(loaded.State.Settings.VoiceOn);
+            loaded.Queue.Settings.Speed = GuideSpeed.Instant;
+            var welcome = loaded.Offer("guide.first", "1", 0, null);
+            Assert.IsTrue(welcome.TextShown);
+            Assert.AreEqual(helloPath, welcome.VoiceClip);
+
+            // An empty fake manifest, with no audio files, keeps voice off and the line as text.
             string root = TempDir();
             try
             {
                 string dir = Path.Combine(root, "assets", "narration", "guide");
                 Directory.CreateDirectory(dir);
-                string clip = Path.Combine(dir, "asc.liftoff.mp3");
-                File.WriteAllBytes(clip, new byte[] { 0 });
-                Assert.IsTrue(GuideVoice.ClipsPresent(root));
-                Assert.AreEqual(clip, GuideVoice.ClipFor(root, "asc.liftoff"));
+                File.WriteAllText(Path.Combine(dir, "manifest.json"), "{\"clips\":[]}");
+                Assert.IsFalse(GuideVoice.ClipsPresent(root));
+                Assert.AreEqual(0, GuideClipCatalog.Load(root).Count);
+                Assert.IsNull(GuideVoice.ClipFor(root, "first.1.c1"));
                 Assert.IsNull(GuideVoice.ClipFor(root, "asc.pitch"));
-
-                var state = GuideState.Fresh(true, false);
-                var binder = new GuideBinder(GuideScript.Load(Golden.Root), state, new GuideQueue(), root);
+                var quiet = GuideState.Fresh(GuideVoice.ClipsPresent(root), false);
+                Assert.IsFalse(quiet.Settings.VoiceOn);
+                Assert.IsFalse(quiet.Settings.VoiceAvailable);
+                var binder = new GuideBinder(GuideScript.Load(Golden.Root), quiet, new GuideQueue(), root);
                 binder.Queue.Settings.Speed = GuideSpeed.Instant;
-                var face = binder.Offer("liftoff", null, 0, null);
-                Assert.IsTrue(face.TextShown);
-                Assert.AreEqual(clip, face.VoiceClip);
-                Assert.Greater(face.Full.Length, 0);
-                binder.Queue.Clear();
                 var silent = binder.Offer("guide.asc", "pitch", 0, null);
                 Assert.IsTrue(silent.TextShown);
                 Assert.IsNull(silent.VoiceClip);
                 Assert.IsTrue(silent.Full.Contains("pitch"));
+
+                // A file on disk still counts when the manifest does not name it.
+                string clip = Path.Combine(dir, "asc.liftoff.mp3");
+                File.WriteAllBytes(clip, new byte[] { 0 });
+                Assert.IsTrue(GuideVoice.ClipsPresent(root));
+                Assert.AreEqual(clip, GuideVoice.ClipFor(root, "asc.liftoff"));
+                var state = GuideState.Fresh(true, false);
+                var talking = new GuideBinder(GuideScript.Load(Golden.Root), state, new GuideQueue(), root);
+                talking.Queue.Settings.Speed = GuideSpeed.Instant;
+                var face = talking.Offer("liftoff", null, 0, null);
+                Assert.IsTrue(face.TextShown);
+                Assert.AreEqual(clip, face.VoiceClip);
+                Assert.Greater(face.Full.Length, 0);
             }
             finally { TryDelete(root); }
         }
