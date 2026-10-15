@@ -1,5 +1,7 @@
-// Portrait ascent HUD (mockups 9 and 10). One thumb, bottom action zone, safe-area padded
-// because it lives inside the flight HUD. Pause and the camera rig are not touched.
+// Portrait ascent HUD. Clock and stage chip stay in the flight header. Under them: one telemetry
+// strip, then a short translucent flight-path plot and the stages panel with the rocket between
+// them. Auto-assist, nudges, and the medal line share a bottom dock. Long notes sit behind Info.
+// Pause, pinch, orbit, and Follow are not touched. Guide copy is not touched.
 using System;
 using System.Globalization;
 using Kestrel.Core.Flight;
@@ -12,16 +14,19 @@ namespace Kestrel.Slice
     {
         const int CellCount = 4;
 
-        VisualElement hud, root, actions, nudgeRow;
-        Label caption;
+        VisualElement hud, root, cards, gap, actions, nudgeRow, promptRow, assistRow, help, dockSpacer;
+        VisualElement stages, webcastHome;
+        int webcastHomeIndex = -1;
+        Label medal, quote, detail, caption, bonus, extra;
+        Label[] cellKey = new Label[CellCount];
+        Label[] cellVal = new Label[CellCount];
+        Button primary, alternate, skip, assist, nudgeDown, nudgeUp, info;
+        VisualElement marker, green, bar;
         AscentPlot plot;
-        Label code, quote, detail, bonus;
-        Label[] cells = new Label[CellCount];
-        Button primary, alternate, skip, assist, nudgeDown, nudgeUp;
-        VisualElement marker, green;
         AscentCall shown;
         FlightDriver flight;
         float upp = 1f;
+        bool infoOpen, nudgeRowOpen = true;
 
         public void Open(VisualElement flightHud, float unitsPerPoint)
         {
@@ -29,26 +34,41 @@ namespace Kestrel.Slice
             hud = flightHud;
             upp = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
             if (hud == null) return;
+            var grid = hud.Q("hud-grid");
+            if (grid != null) grid.style.display = DisplayStyle.None;
             root = new VisualElement { name = "ascent-hud", pickingMode = PickingMode.Ignore };
             root.style.flexShrink = 0;
-            BuildPlot();
+            BuildStrip();
+            BuildCards();
             BuildActions();
             var band = hud.Q("hud-band");
             if (band != null) hud.Insert(hud.IndexOf(band) + 1, root);
             else hud.Insert(0, root);
+            dockSpacer = new VisualElement { name = "ascent-dock-spacer", pickingMode = PickingMode.Ignore };
             var pause = hud.Q("pause-menu");
             if (pause != null) hud.Insert(hud.IndexOf(pause), actions);
             else hud.Add(actions);
+            if (pause != null) hud.Insert(hud.IndexOf(pause), dockSpacer);
+            else hud.Add(dockSpacer);
             pause?.BringToFront();
+            var tools = hud.Q("flight-tools");
+            if (tools != null) tools.pickingMode = PickingMode.Ignore;
             Layout(upp);
         }
 
         public void Close()
         {
+            infoOpen = false;
+            if (hud != null) hud.EnableInClassList("hud-info", false);
+            RestoreStages();
+            var grid = hud != null ? hud.Q("hud-grid") : null;
+            if (grid != null) grid.style.display = StyleKeyword.Null;
             if (root != null && root.parent != null) root.RemoveFromHierarchy();
             if (actions != null && actions.parent != null) actions.RemoveFromHierarchy();
+            if (dockSpacer != null && dockSpacer.parent != null) dockSpacer.RemoveFromHierarchy();
             root = null;
             actions = null;
+            dockSpacer = null;
             hud = null;
         }
 
@@ -56,47 +76,95 @@ namespace Kestrel.Slice
         {
             upp = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
             if (root == null) return;
-            float plotH = AscentLayout.Px(168f, upp);
-            root.style.marginTop = AscentLayout.Px(8f, upp);
-            root.style.height = plotH;
+            float gapPx = Px(FlightHudLayout.GapPt);
+            float plotH = Px(FlightHudLayout.PlotPt);
+            root.style.marginTop = gapPx;
+            var strip = root.Q("ascent-telemetry");
+            if (strip != null)
+            {
+                strip.style.height = Px(FlightHudLayout.TelemetryPt);
+                strip.style.marginBottom = gapPx;
+                strip.style.paddingLeft = Px(FlightHudLayout.CellPadPt);
+                strip.style.paddingRight = Px(FlightHudLayout.CellPadPt);
+                strip.style.borderTopLeftRadius = Px(10f);
+                strip.style.borderTopRightRadius = Px(10f);
+                strip.style.borderBottomLeftRadius = Px(10f);
+                strip.style.borderBottomRightRadius = Px(10f);
+            }
+            for (int i = 0; i < CellCount; i++)
+            {
+                if (cellKey[i] != null) cellKey[i].style.fontSize = Px(FlightHudLayout.LabelFontPt);
+                if (cellVal[i] != null) cellVal[i].style.fontSize = Px(FlightHudLayout.ValueFontPt);
+            }
+            if (cards != null) cards.style.height = plotH;
             if (plot != null)
             {
                 plot.style.height = plotH;
-                plot.style.borderTopLeftRadius = AscentLayout.Px(16f, upp);
-                plot.style.borderTopRightRadius = AscentLayout.Px(16f, upp);
-                plot.style.borderBottomLeftRadius = AscentLayout.Px(16f, upp);
-                plot.style.borderBottomRightRadius = AscentLayout.Px(16f, upp);
+                plot.style.width = Length.Percent(FlightHudLayout.CardFraction * 100f);
+                float r = Px(12f);
+                plot.style.borderTopLeftRadius = r;
+                plot.style.borderTopRightRadius = r;
+                plot.style.borderBottomLeftRadius = r;
+                plot.style.borderBottomRightRadius = r;
             }
-            if (code != null) code.style.fontSize = AscentLayout.Px(12f, upp);
-            for (int i = 0; i < cells.Length; i++)
-            {
-                if (cells[i] == null) continue;
-                cells[i].style.minHeight = AscentLayout.Px(44f, upp);
-                cells[i].style.fontSize = AscentLayout.Px(13f, upp);
-                cells[i].style.borderTopLeftRadius = AscentLayout.Px(10f, upp);
-                cells[i].style.borderTopRightRadius = AscentLayout.Px(10f, upp);
-                cells[i].style.borderBottomLeftRadius = AscentLayout.Px(10f, upp);
-                cells[i].style.borderBottomRightRadius = AscentLayout.Px(10f, upp);
-                cells[i].style.marginRight = AscentLayout.Px(6f, upp);
-            }
+            StyleStages();
             if (actions == null) return;
-            actions.style.minHeight = AscentLayout.Px(AscentLayout.ActionZonePt, upp);
-            actions.style.paddingLeft = AscentLayout.Px(4f, upp);
-            actions.style.paddingRight = AscentLayout.Px(4f, upp);
-            actions.style.paddingTop = AscentLayout.Px(8f, upp);
-            actions.style.paddingBottom = AscentLayout.Px(4f, upp);
-            actions.style.borderTopLeftRadius = AscentLayout.Px(18f, upp);
-            actions.style.borderTopRightRadius = AscentLayout.Px(18f, upp);
-            StyleButton(primary, true);
-            StyleButton(alternate, false);
-            StyleButton(skip, false);
-            StyleButton(assist, false);
-            StyleButton(nudgeDown, false);
-            StyleButton(nudgeUp, false);
-            if (quote != null) quote.style.fontSize = AscentLayout.Px(16f, upp);
-            if (detail != null) detail.style.fontSize = AscentLayout.Px(12f, upp);
-            if (caption != null) caption.style.fontSize = AscentLayout.Px(12f, upp);
-            if (bonus != null) bonus.style.fontSize = AscentLayout.Px(12f, upp);
+            actions.style.paddingLeft = Px(FlightHudLayout.PadPt);
+            actions.style.paddingRight = Px(FlightHudLayout.PadPt);
+            actions.style.paddingTop = Px(FlightHudLayout.PadPt);
+            actions.style.paddingBottom = Px(FlightHudLayout.PadPt);
+            float radius = Px(16f);
+            actions.style.borderTopLeftRadius = radius;
+            actions.style.borderTopRightRadius = radius;
+            StyleButton(primary);
+            StyleButton(alternate);
+            StyleButton(skip);
+            StyleButton(assist);
+            StyleButton(nudgeDown);
+            StyleButton(nudgeUp);
+            if (info != null)
+            {
+                float s = Px(FlightHudLayout.InfoPt);
+                info.style.width = s;
+                info.style.minWidth = s;
+                info.style.height = s;
+                info.style.minHeight = s;
+                info.style.fontSize = Px(16f);
+                info.style.marginTop = 0;
+                info.style.marginLeft = Px(FlightHudLayout.GapPt);
+            }
+            if (medal != null) medal.style.fontSize = Px(13f);
+            var medalRow = actions.Q("ascent-medal-row");
+            if (medalRow != null)
+            {
+                medalRow.style.height = Px(FlightHudLayout.ButtonPt);
+                medalRow.style.minHeight = Px(FlightHudLayout.ButtonPt);
+                medalRow.style.maxHeight = Px(FlightHudLayout.ButtonPt);
+            }
+            if (quote != null)
+            {
+                quote.style.fontSize = Px(13f);
+                quote.style.height = Px(FlightHudLayout.QuotePt);
+                quote.style.marginTop = Px(FlightHudLayout.GapPt);
+            }
+            if (bar != null)
+            {
+                bar.style.height = Px(FlightHudLayout.TimerPt);
+                bar.style.marginTop = Px(FlightHudLayout.GapPt);
+            }
+            if (help != null)
+            {
+                help.style.maxHeight = Px(FlightHudLayout.HelpPt);
+                help.style.marginTop = Px(FlightHudLayout.GapPt);
+            }
+            if (detail != null) detail.style.fontSize = Px(12f);
+            if (caption != null) caption.style.fontSize = Px(12f);
+            if (bonus != null) bonus.style.fontSize = Px(12f);
+            if (extra != null) extra.style.fontSize = Px(12f);
+            if (promptRow != null) promptRow.style.marginTop = Px(FlightHudLayout.GapPt);
+            if (assistRow != null) assistRow.style.marginTop = Px(FlightHudLayout.GapPt);
+            if (nudgeRow != null) nudgeRow.style.marginTop = Px(FlightHudLayout.GapPt);
+            PlaceDockSpacer();
         }
 
         public void Present(FlightDriver driver)
@@ -113,16 +181,17 @@ namespace Kestrel.Slice
             root.style.display = DisplayStyle.Flex;
             if (actions != null) actions.style.display = DisplayStyle.Flex;
             var inv = CultureInfo.InvariantCulture;
-            if (code != null)
-                code.text = Clock(flight.SimTime) + "    " + director.FlightCode + "  ·  AUTO-ASSIST " + (director.AutoAssist ? "ON" : "OFF");
             double alt = director.LiveAlt > 0 ? director.LiveAlt : flight.Altitude;
             double speed = director.LiveSpeed > 0 ? director.LiveSpeed : flight.Speed;
             double q = director.LiveQ > 0 ? director.LiveQ : flight.DynPressure;
             double g = director.LiveG;
             var prompts = director.OpenPrompts();
             bool anomaly = prompts.Length > 0 && prompts[0].Call == AscentCall.EngineOut;
+            string speedText = speed >= 1000
+                ? (speed / 1000.0).ToString("0.00", inv) + " km/s"
+                : speed.ToString("0", inv) + " m/s";
             SetCell(0, "ALT", (alt / 1000.0).ToString("0.0", inv) + " km", new Color(0.85f, 0.92f, 0.96f));
-            SetCell(1, "SPEED", speed >= 1000 ? (speed / 1000.0).ToString("0.00", inv) + " km/s" : speed.ToString("0", inv) + " m/s", new Color(0.85f, 0.92f, 0.96f));
+            SetCell(1, "SPEED", speedText, new Color(0.85f, 0.92f, 0.96f));
             if (anomaly)
             {
                 SetCell(2, "TWR", director.LiveTwr.ToString("0.0", inv), new Color(0.94f, 0.63f, 0.12f));
@@ -140,20 +209,32 @@ namespace Kestrel.Slice
                 plot.MarkDirtyRepaint();
             }
             var score = director.Score();
-            if (prompts.Length == 0)
+            if (medal != null)
+                medal.text = score.Decided > 0 ? "Medal timing: " + score.Summary : "Flying the plan.";
+            bool prompt = prompts.Length > 0;
+            if (!prompt)
             {
                 shown = default;
-                if (quote != null) quote.text = score.Decided > 0 ? score.Summary : "Flying the plan.";
-                if (detail != null) detail.text = director.Engineer ? "Engineer nudge offsets the planned pitch. The amber path is that offset." : "Auto-assist flies the timed calls. Tap one for a gold medal.";
+                if (quote != null) quote.style.display = DisplayStyle.None;
+                if (bar != null) bar.style.display = DisplayStyle.None;
                 if (primary != null) primary.style.display = DisplayStyle.None;
                 if (alternate != null) alternate.style.display = DisplayStyle.None;
                 if (skip != null) skip.style.display = DisplayStyle.None;
+                if (detail != null)
+                    detail.text = director.Engineer
+                        ? "Engineer nudge offsets the planned pitch. The amber path is that offset."
+                        : "Auto-assist flies the timed calls. Tap one for a gold medal.";
             }
             else
             {
                 var p = prompts[0];
                 shown = p.Call;
-                if (quote != null) quote.text = p.Quote;
+                if (quote != null)
+                {
+                    quote.text = p.Quote;
+                    quote.style.display = infoOpen ? DisplayStyle.None : DisplayStyle.Flex;
+                }
+                if (bar != null) bar.style.display = DisplayStyle.Flex;
                 if (detail != null) detail.text = p.Eyebrow + "  ·  " + p.Detail;
                 if (primary != null)
                 {
@@ -185,22 +266,72 @@ namespace Kestrel.Slice
                     ? "Auto-assist is on. The planned calls fly themselves. Tap to take over."
                     : "Auto-assist is off. Tap to let the planned calls fly themselves.";
             }
-            if (nudgeRow != null) nudgeRow.style.display = director.Engineer ? DisplayStyle.Flex : DisplayStyle.None;
+            PlaceAssist(prompt);
+            if (promptRow != null) promptRow.style.display = prompt ? DisplayStyle.Flex : DisplayStyle.None;
+            if (assistRow != null) assistRow.style.display = prompt ? DisplayStyle.None : DisplayStyle.Flex;
+            bool showAlternate = prompt && prompts[0].ShowAlternate;
+            bool showNudgeRow = director.Engineer || showAlternate;
+            if (nudgeRow != null) nudgeRow.style.display = showNudgeRow ? DisplayStyle.Flex : DisplayStyle.None;
+            if (nudgeDown != null) nudgeDown.style.display = director.Engineer ? DisplayStyle.Flex : DisplayStyle.None;
+            if (nudgeUp != null) nudgeUp.style.display = director.Engineer ? DisplayStyle.Flex : DisplayStyle.None;
+            nudgeRowOpen = showNudgeRow;
             if (nudgeDown != null) nudgeDown.text = "Nudge −1°";
             GuideBinder.Prompts(flight);
             if (nudgeUp != null) nudgeUp.text = "Nudge +1°";
             if (caption != null)
-                caption.text = "Perfect window = green. Auto-assist does this for you in Simple.";
+                caption.text = "Perfect window = green. Auto-assist does this for you in Simple. Cyan is the plan. Amber is the nudged path.";
             if (bonus != null) bonus.text = BonusLine(score);
+            if (extra != null) extra.text = ExtraLine(director);
+            if (info != null)
+            {
+                info.tooltip = infoOpen ? "Hide the flight notes." : "Flight notes. Timing, the path colours, and the extra readouts.";
+                info.style.backgroundColor = infoOpen
+                    ? new Color(1f, 0.69f, 0f, 0.95f)
+                    : new Color(0.1f, 0.14f, 0.2f, 0.72f);
+                info.style.color = infoOpen ? new Color(0.08f, 0.08f, 0.1f) : Color.white;
+            }
+            StyleStages();
+            PlaceDockSpacer();
         }
 
-        static string Clock(double seconds)
+        void PlaceAssist(bool prompt)
         {
-            int s = (int)Math.Floor(seconds);
-            if (s < 0) s = 0;
-            int m = s / 60;
-            int r = s % 60;
-            return "T+" + m.ToString("00", CultureInfo.InvariantCulture) + ":" + r.ToString("00", CultureInfo.InvariantCulture);
+            if (assist == null) return;
+            var host = prompt ? promptRow : assistRow;
+            if (host != null && assist.parent != host)
+            {
+                assist.RemoveFromHierarchy();
+                host.Add(assist);
+            }
+            assist.style.flexGrow = 1;
+            assist.style.marginTop = 0;
+            assist.style.marginRight = prompt ? Px(FlightHudLayout.GapPt) : 0;
+        }
+
+        void PlaceDockSpacer()
+        {
+            if (dockSpacer == null || hud == null) return;
+            bool prompt = shown != default;
+            float pt = FlightHudLayout.DockHeight(infoOpen, prompt);
+            if (!nudgeRowOpen) pt -= FlightHudLayout.ButtonPt + FlightHudLayout.GapPt;
+            dockSpacer.style.height = Px(pt);
+        }
+
+        string ExtraLine(AscentDirector director)
+        {
+            var inv = CultureInfo.InvariantCulture;
+            string line = director.FlightCode
+                + "  ·  MACH " + flight.Mach.ToString("0.00", inv)
+                + "  ·  THR " + (flight.ThrustFraction * 100.0).ToString("0", inv) + "%"
+                + "  ·  DR " + (flight.Downrange / 1000.0).ToString("0.0", inv) + " km";
+            var pulse = hud != null ? hud.Q<Label>("h-pulse") : null;
+            var callout = hud != null ? hud.Q<Label>("h-callout") : null;
+            if (pulse != null && !string.IsNullOrEmpty(pulse.text)) line = pulse.text + "\n" + line;
+            if (callout != null && !string.IsNullOrEmpty(callout.text) && callout.text != "Tap an event.")
+                line = callout.text + "\n" + line;
+            if (infoOpen && shown != default && quote != null && !string.IsNullOrEmpty(quote.text))
+                line = quote.text + "\n" + line;
+            return line;
         }
 
         static string BonusLine(AscentFlightScore score)
@@ -219,46 +350,167 @@ namespace Kestrel.Slice
 
         void SetCell(int i, string name, string value, Color color)
         {
-            if (cells[i] == null) return;
-            cells[i].text = name + "\n" + value;
-            cells[i].style.color = color;
+            if (cellKey[i] != null) cellKey[i].text = name;
+            if (cellVal[i] == null) return;
+            cellVal[i].text = value;
+            cellVal[i].style.color = color;
         }
 
-        void BuildPlot()
+        void BuildStrip()
         {
-            plot = new AscentPlot { name = "ascent-plot", pickingMode = PickingMode.Ignore };
-            plot.style.backgroundColor = new Color(0.03f, 0.06f, 0.11f, 0.92f);
-            plot.style.paddingLeft = 8;
-            plot.style.paddingRight = 8;
-            plot.style.paddingTop = 8;
-            plot.style.paddingBottom = 8;
-            plot.style.flexGrow = 1;
-            code = new Label { name = "ascent-code", pickingMode = PickingMode.Ignore };
-            code.style.color = new Color(0.75f, 0.82f, 0.9f);
-            code.style.unityFontStyleAndWeight = FontStyle.Bold;
-            plot.Add(code);
-            var row = new VisualElement { name = "ascent-cells", pickingMode = PickingMode.Ignore };
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.marginTop = 6;
+            var strip = new VisualElement { name = "ascent-telemetry", pickingMode = PickingMode.Ignore };
+            strip.style.flexDirection = FlexDirection.Row;
+            strip.style.alignItems = Align.Center;
+            strip.style.backgroundColor = new Color(0.03f, 0.06f, 0.11f, 0.40f);
+            strip.style.flexShrink = 0;
             for (int i = 0; i < CellCount; i++)
             {
-                var cell = new Label { name = "ascent-cell-" + i, pickingMode = PickingMode.Ignore };
+                var cell = new VisualElement { name = "ascent-cell-" + i, pickingMode = PickingMode.Ignore };
                 cell.style.flexGrow = 1;
-                cell.style.backgroundColor = new Color(0.07f, 0.1f, 0.16f, 0.95f);
-                cell.style.unityTextAlign = TextAnchor.MiddleCenter;
-                cell.style.whiteSpace = WhiteSpace.Normal;
-                cell.style.paddingTop = 4;
-                cell.style.paddingBottom = 4;
-                cells[i] = cell;
-                row.Add(cell);
+                cell.style.flexShrink = 1;
+                cell.style.alignItems = Align.Center;
+                cell.style.overflow = Overflow.Hidden;
+                if (i < CellCount - 1) cell.style.marginRight = Px(FlightHudLayout.CellGapPt);
+                var key = new Label { name = "ascent-cell-" + i + "-k", pickingMode = PickingMode.Ignore };
+                key.style.unityTextAlign = TextAnchor.MiddleCenter;
+                key.style.whiteSpace = WhiteSpace.NoWrap;
+                key.style.color = new Color(0.65f, 0.75f, 0.82f);
+                key.style.unityFontStyleAndWeight = FontStyle.Bold;
+                var val = new Label { name = "ascent-cell-" + i + "-v", pickingMode = PickingMode.Ignore };
+                val.style.unityTextAlign = TextAnchor.MiddleCenter;
+                val.style.whiteSpace = WhiteSpace.NoWrap;
+                val.style.unityFontStyleAndWeight = FontStyle.Bold;
+                cell.Add(key);
+                cell.Add(val);
+                cellKey[i] = key;
+                cellVal[i] = val;
+                strip.Add(cell);
             }
-            plot.Add(row);
-            var legend = new Label { name = "ascent-legend", text = "PLAN (cyan) vs NUDGED (amber)  ·  MAX-Q ZONE", pickingMode = PickingMode.Ignore };
-            legend.style.color = new Color(0.65f, 0.75f, 0.82f);
-            legend.style.marginTop = 4;
-            legend.style.fontSize = 11;
-            plot.Add(legend);
-            root.Add(plot);
+            root.Add(strip);
+        }
+
+        void BuildCards()
+        {
+            cards = new VisualElement { name = "ascent-cards", pickingMode = PickingMode.Ignore };
+            cards.style.flexDirection = FlexDirection.Row;
+            cards.style.flexShrink = 0;
+            plot = new AscentPlot { name = "ascent-plot", pickingMode = PickingMode.Ignore };
+            plot.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.PlotAlpha);
+            plot.style.flexGrow = 0;
+            plot.style.flexShrink = 0;
+            plot.style.overflow = Overflow.Hidden;
+            gap = new VisualElement { name = "ascent-gap", pickingMode = PickingMode.Ignore };
+            gap.style.flexGrow = 1;
+            AdoptStages();
+            cards.Add(plot);
+            cards.Add(gap);
+            cards.Add(stages);
+            root.Add(cards);
+        }
+
+        void AdoptStages()
+        {
+            var cast = hud.Q("webcast");
+            if (cast != null && cast.parent != null)
+            {
+                webcastHome = cast.parent;
+                webcastHomeIndex = webcastHome.IndexOf(cast);
+                cast.RemoveFromHierarchy();
+                stages = cast;
+            }
+            else stages = new VisualElement { name = "ascent-stages" };
+            stages.pickingMode = PickingMode.Position;
+            HideStageSentences();
+        }
+
+        void RestoreStages()
+        {
+            if (stages != null && webcastHome != null && stages.name == "webcast")
+            {
+                if (stages.parent != null) stages.RemoveFromHierarchy();
+                ClearCardStyle(stages);
+                int i = webcastHomeIndex;
+                if (i < 0 || i > webcastHome.childCount) webcastHome.Add(stages);
+                else webcastHome.Insert(i, stages);
+                var pulse = stages.Q("h-pulse");
+                if (pulse != null) pulse.style.display = StyleKeyword.Null;
+                var callout = stages.Q("h-callout");
+                if (callout != null) callout.style.display = StyleKeyword.Null;
+            }
+            webcastHome = null;
+            webcastHomeIndex = -1;
+            stages = null;
+        }
+
+        static void ClearCardStyle(VisualElement e)
+        {
+            e.style.width = StyleKeyword.Auto;
+            e.style.height = StyleKeyword.Auto;
+            e.style.flexGrow = StyleKeyword.Null;
+            e.style.flexShrink = StyleKeyword.Null;
+            e.style.backgroundColor = StyleKeyword.Null;
+            e.style.overflow = StyleKeyword.Null;
+            e.style.marginTop = StyleKeyword.Null;
+            e.style.marginBottom = StyleKeyword.Null;
+            e.style.marginLeft = StyleKeyword.Null;
+            e.style.marginRight = StyleKeyword.Null;
+            e.style.paddingTop = StyleKeyword.Null;
+            e.style.paddingBottom = StyleKeyword.Null;
+            e.style.paddingLeft = StyleKeyword.Null;
+            e.style.paddingRight = StyleKeyword.Null;
+            e.style.borderTopLeftRadius = StyleKeyword.Null;
+            e.style.borderTopRightRadius = StyleKeyword.Null;
+            e.style.borderBottomLeftRadius = StyleKeyword.Null;
+            e.style.borderBottomRightRadius = StyleKeyword.Null;
+        }
+
+        void StyleStages()
+        {
+            if (stages == null) return;
+            stages.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.StagesAlpha);
+            stages.style.width = Length.Percent(FlightHudLayout.CardFraction * 100f);
+            stages.style.height = Px(FlightHudLayout.PlotPt);
+            stages.style.flexGrow = 0;
+            stages.style.flexShrink = 0;
+            stages.style.overflow = Overflow.Hidden;
+            stages.style.marginTop = 0;
+            stages.style.marginBottom = 0;
+            stages.style.marginLeft = 0;
+            stages.style.paddingTop = Px(4f);
+            stages.style.paddingBottom = Px(4f);
+            stages.style.paddingLeft = Px(4f);
+            stages.style.paddingRight = Px(4f);
+            float r = Px(12f);
+            stages.style.borderTopLeftRadius = r;
+            stages.style.borderTopRightRadius = r;
+            stages.style.borderBottomLeftRadius = r;
+            stages.style.borderBottomRightRadius = r;
+            var verdict = stages.Q<Label>("h-verdict");
+            if (verdict != null)
+            {
+                verdict.style.fontSize = Px(12f);
+                verdict.style.whiteSpace = WhiteSpace.NoWrap;
+            }
+            stages.Query<Button>().ForEach(b =>
+            {
+                b.style.fontSize = Px(11f);
+                b.style.marginTop = Px(2f);
+                b.style.marginRight = Px(2f);
+                b.style.paddingLeft = Px(4f);
+                b.style.paddingRight = Px(4f);
+                b.style.minHeight = Px(22f);
+                b.style.height = StyleKeyword.Auto;
+            });
+            HideStageSentences();
+        }
+
+        void HideStageSentences()
+        {
+            if (stages == null) return;
+            var pulse = stages.Q("h-pulse");
+            if (pulse != null) pulse.style.display = DisplayStyle.None;
+            var callout = stages.Q("h-callout");
+            if (callout != null) callout.style.display = DisplayStyle.None;
         }
 
         void BuildActions()
@@ -268,23 +520,46 @@ namespace Kestrel.Slice
             actions.style.left = 0;
             actions.style.right = 0;
             actions.style.bottom = 0;
-            actions.style.backgroundColor = new Color(0.03f, 0.05f, 0.09f, 0.94f);
+            actions.style.backgroundColor = new Color(0.03f, 0.05f, 0.09f, FlightHudLayout.DockAlpha);
+            var medalRow = new VisualElement { name = "ascent-medal-row" };
+            medalRow.style.flexDirection = FlexDirection.Row;
+            medalRow.style.alignItems = Align.Center;
+            medalRow.style.overflow = Overflow.Hidden;
+            medalRow.style.flexShrink = 0;
+            medal = new Label { name = "ascent-medal", pickingMode = PickingMode.Ignore };
+            medal.style.color = new Color(0.85f, 0.95f, 0.9f);
+            medal.style.whiteSpace = WhiteSpace.Normal;
+            medal.style.overflow = Overflow.Hidden;
+            medal.style.flexGrow = 1;
+            medal.style.flexShrink = 1;
+            medal.style.unityFontStyleAndWeight = FontStyle.Bold;
+            info = Action("ascent-info", () => OnInfo());
+            info.text = "i";
+            info.tooltip = "Flight notes. Timing, the path colours, and the extra readouts.";
+            medalRow.Add(medal);
+            medalRow.Add(info);
+            help = new VisualElement { name = "ascent-help", pickingMode = PickingMode.Ignore };
+            help.AddToClassList("flight-help");
+            help.style.overflow = Overflow.Hidden;
+            detail = Note("ascent-detail", new Color(0.78f, 0.84f, 0.9f));
+            caption = Note("ascent-caption", new Color(0.65f, 0.75f, 0.82f));
+            bonus = Note("ascent-bonus", new Color(0.65f, 0.78f, 0.72f));
+            extra = Note("ascent-extra", new Color(0.7f, 0.78f, 0.86f));
+            help.Add(detail);
+            help.Add(caption);
+            help.Add(bonus);
+            help.Add(extra);
             quote = new Label { name = "ascent-quote", pickingMode = PickingMode.Ignore };
             quote.style.color = Color.white;
-            quote.style.whiteSpace = WhiteSpace.Normal;
+            quote.style.whiteSpace = WhiteSpace.NoWrap;
+            quote.style.overflow = Overflow.Hidden;
             quote.style.unityFontStyleAndWeight = FontStyle.Bold;
-            detail = new Label { name = "ascent-detail", pickingMode = PickingMode.Ignore };
-            detail.style.color = new Color(0.7f, 0.78f, 0.86f);
-            detail.style.whiteSpace = WhiteSpace.Normal;
-            detail.style.marginTop = 4;
-            var bar = new VisualElement { name = "ascent-timer", pickingMode = PickingMode.Ignore };
-            bar.style.height = 10;
-            bar.style.marginTop = 8;
+            bar = new VisualElement { name = "ascent-timer", pickingMode = PickingMode.Ignore };
             bar.style.backgroundColor = new Color(0.15f, 0.2f, 0.28f);
-            bar.style.borderTopLeftRadius = 5;
-            bar.style.borderTopRightRadius = 5;
-            bar.style.borderBottomLeftRadius = 5;
-            bar.style.borderBottomRightRadius = 5;
+            bar.style.borderTopLeftRadius = 3;
+            bar.style.borderTopRightRadius = 3;
+            bar.style.borderBottomLeftRadius = 3;
+            bar.style.borderBottomRightRadius = 3;
             green = new VisualElement { name = "ascent-green", pickingMode = PickingMode.Ignore };
             green.style.position = Position.Absolute;
             green.style.top = 0;
@@ -292,18 +567,16 @@ namespace Kestrel.Slice
             green.style.backgroundColor = new Color(0.2f, 0.85f, 0.55f);
             marker = new VisualElement { name = "ascent-marker", pickingMode = PickingMode.Ignore };
             marker.style.position = Position.Absolute;
-            marker.style.top = -3;
-            marker.style.bottom = -3;
+            marker.style.top = -2;
+            marker.style.bottom = -2;
             marker.style.width = 3;
             marker.style.backgroundColor = Color.white;
             bar.Add(green);
             bar.Add(marker);
-            caption = new Label { name = "ascent-caption", pickingMode = PickingMode.Ignore };
-            caption.style.color = new Color(0.65f, 0.75f, 0.82f);
-            caption.style.whiteSpace = WhiteSpace.Normal;
-            caption.style.marginTop = 4;
-            primary = Action("ascent-primary", true, () => Press(true));
-            alternate = Action("ascent-alternate", false, () => Press(false));
+            primary = Action("ascent-primary", () => Press(true));
+            primary.style.backgroundColor = new Color(0.23f, 0.83f, 0.96f);
+            primary.style.color = new Color(0.03f, 0.08f, 0.12f);
+            alternate = Action("ascent-alternate", () => Press(false));
             alternate.style.backgroundColor = new Color(0.08f, 0.1f, 0.14f, 0.2f);
             alternate.style.color = new Color(0.95f, 0.35f, 0.42f);
             alternate.style.borderTopWidth = 2;
@@ -314,44 +587,51 @@ namespace Kestrel.Slice
             alternate.style.borderRightColor = new Color(0.89f, 0.23f, 0.29f);
             alternate.style.borderBottomColor = new Color(0.89f, 0.23f, 0.29f);
             alternate.style.borderLeftColor = new Color(0.89f, 0.23f, 0.29f);
-            var row = new VisualElement { name = "ascent-skip-row" };
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.marginTop = 6;
-            skip = Action("ascent-skip", false, OnSkip);
+            skip = Action("ascent-skip", OnSkip);
             skip.text = "Skip";
             skip.tooltip = "Skip. The autopilot takes the planned action. This is not a fail.";
-            skip.style.flexGrow = 1;
-            skip.style.marginRight = 6;
-            assist = Action("ascent-assist", false, OnAssist);
+            assist = Action("ascent-assist", OnAssist);
             assist.text = "Auto-assist";
-            assist.style.flexGrow = 1;
-            row.Add(skip);
-            row.Add(assist);
+            promptRow = new VisualElement { name = "ascent-prompt-row" };
+            promptRow.style.flexDirection = FlexDirection.Row;
+            primary.style.flexGrow = 1;
+            skip.style.flexGrow = 1;
+            primary.style.marginRight = Px(FlightHudLayout.GapPt);
+            skip.style.marginRight = Px(FlightHudLayout.GapPt);
+            promptRow.Add(primary);
+            promptRow.Add(skip);
+            assistRow = new VisualElement { name = "ascent-assist-row" };
+            assistRow.Add(assist);
             nudgeRow = new VisualElement { name = "ascent-nudge" };
             nudgeRow.style.flexDirection = FlexDirection.Row;
-            nudgeRow.style.marginTop = 6;
-            nudgeDown = Action("ascent-nudge-down", false, () => Nudge(-AscentDecisions.NudgeStepDeg));
-            nudgeUp = Action("ascent-nudge-up", false, () => Nudge(AscentDecisions.NudgeStepDeg));
+            nudgeDown = Action("ascent-nudge-down", () => Nudge(-AscentDecisions.NudgeStepDeg));
+            nudgeUp = Action("ascent-nudge-up", () => Nudge(AscentDecisions.NudgeStepDeg));
             nudgeDown.style.flexGrow = 1;
             nudgeUp.style.flexGrow = 1;
-            nudgeDown.style.marginRight = 6;
+            alternate.style.flexGrow = 1;
+            alternate.style.marginRight = Px(FlightHudLayout.GapPt);
+            nudgeDown.style.marginRight = Px(FlightHudLayout.GapPt);
             nudgeDown.tooltip = "Pitch the planned kick down one degree.";
             nudgeUp.tooltip = "Pitch the planned kick up one degree.";
+            nudgeRow.Add(alternate);
             nudgeRow.Add(nudgeDown);
             nudgeRow.Add(nudgeUp);
-            bonus = new Label { name = "ascent-bonus", pickingMode = PickingMode.Ignore };
-            bonus.style.color = new Color(0.65f, 0.78f, 0.72f);
-            bonus.style.whiteSpace = WhiteSpace.Normal;
-            bonus.style.marginTop = 4;
-            actions.Add(detail);
+            actions.Add(medalRow);
+            actions.Add(help);
             actions.Add(quote);
             actions.Add(bar);
-            actions.Add(caption);
-            actions.Add(primary);
-            actions.Add(alternate);
-            actions.Add(row);
+            actions.Add(promptRow);
+            actions.Add(assistRow);
             actions.Add(nudgeRow);
-            actions.Add(bonus);
+        }
+
+        static Label Note(string name, Color color)
+        {
+            var label = new Label { name = name, pickingMode = PickingMode.Ignore };
+            label.style.color = color;
+            label.style.whiteSpace = WhiteSpace.Normal;
+            label.style.marginTop = 2;
+            return label;
         }
 
         void Press(bool accept)
@@ -375,6 +655,13 @@ namespace Kestrel.Slice
             Present(flight);
         }
 
+        void OnInfo()
+        {
+            infoOpen = !infoOpen;
+            if (hud != null) hud.EnableInClassList("hud-info", infoOpen);
+            Present(flight);
+        }
+
         void Nudge(double delta)
         {
             if (flight == null || flight.Decisions == null) return;
@@ -382,28 +669,29 @@ namespace Kestrel.Slice
             Present(flight);
         }
 
-        void StyleButton(Button b, bool fill)
+        void StyleButton(Button b)
         {
             if (b == null) return;
-            float h = AscentLayout.Px(AscentLayout.ButtonMinPt, upp);
+            float h = Px(FlightHudLayout.ButtonPt);
             b.style.minHeight = h;
             b.style.height = h;
-            b.style.fontSize = AscentLayout.Px(16f, upp);
-            b.style.marginTop = AscentLayout.Px(6f, upp);
-            float r = AscentLayout.Px(12f, upp);
+            b.style.fontSize = Px(12f);
+            b.style.marginTop = 0;
+            b.style.marginRight = Px(FlightHudLayout.GapPt);
+            b.style.paddingLeft = Px(4f);
+            b.style.paddingRight = Px(4f);
+            b.style.whiteSpace = WhiteSpace.Normal;
+            b.style.overflow = Overflow.Hidden;
+            float r = Px(10f);
             b.style.borderTopLeftRadius = r;
             b.style.borderTopRightRadius = r;
             b.style.borderBottomLeftRadius = r;
             b.style.borderBottomRightRadius = r;
             b.style.unityFontStyleAndWeight = FontStyle.Bold;
-            if (fill)
-            {
-                b.style.color = new Color(0.03f, 0.08f, 0.12f);
-                b.style.backgroundColor = new Color(0.23f, 0.83f, 0.96f);
-            }
+            b.style.flexShrink = 1;
         }
 
-        static Button Action(string name, bool fill, Action click)
+        static Button Action(string name, Action click)
         {
             var b = new Button(click) { name = name };
             b.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -411,13 +699,12 @@ namespace Kestrel.Slice
             b.style.borderRightWidth = 0;
             b.style.borderBottomWidth = 0;
             b.style.borderLeftWidth = 0;
-            if (!fill)
-            {
-                b.style.color = Color.white;
-                b.style.backgroundColor = new Color(0.1f, 0.14f, 0.2f, 0.95f);
-            }
+            b.style.color = Color.white;
+            b.style.backgroundColor = new Color(0.1f, 0.14f, 0.2f, 0.95f);
             return b;
         }
+
+        float Px(float pt) => AscentLayout.Px(pt, upp);
 
         sealed class AscentPlot : VisualElement
         {
@@ -433,10 +720,10 @@ namespace Kestrel.Slice
             {
                 var box = contentRect;
                 if (box.width < 8 || box.height < 8) return;
-                float left = 10f, right = box.width - 8f, top = 78f, bottom = box.height - 10f;
-                if (bottom - top < 20f) { top = 8f; bottom = box.height - 8f; }
+                float left = 6f, right = box.width - 6f, top = 6f, bottom = box.height - 6f;
+                if (bottom - top < 12f) return;
                 var paint = ctx.painter2D;
-                paint.strokeColor = new Color(0.2f, 0.32f, 0.45f, 0.8f);
+                paint.strokeColor = new Color(0.7f, 0.82f, 0.92f, 0.45f);
                 paint.lineWidth = 1f;
                 paint.BeginPath();
                 paint.MoveTo(new Vector2(left, bottom));
@@ -457,21 +744,21 @@ namespace Kestrel.Slice
                     }
                 }
                 if (!(maxDown > 1)) maxDown = 1;
-                Vector2 Map(double alt, double down)
+                Vector2 Map(double a, double down)
                 {
                     float x = left + (float)(down / maxDown) * (right - left);
-                    float y = bottom - (float)(alt / maxAlt) * (bottom - top);
+                    float y = bottom - (float)(a / maxAlt) * (bottom - top);
                     return new Vector2(x, y);
                 }
                 paint.strokeColor = new Color(0.24f, 0.86f, 1f, 0.95f);
-                paint.lineWidth = 2.5f;
+                paint.lineWidth = 2f;
                 paint.BeginPath();
                 bool moved = false;
                 int steps = 24;
                 for (int i = 0; i <= steps; i++)
                 {
-                    double alt = maxAlt * i / steps;
-                    var v = Map(alt, AscentTrack.PlanDownrange(alt, maxAlt));
+                    double a = maxAlt * i / steps;
+                    var v = Map(a, AscentTrack.PlanDownrange(a, maxAlt));
                     if (!moved) { paint.MoveTo(v); moved = true; }
                     else paint.LineTo(v);
                 }
@@ -486,16 +773,16 @@ namespace Kestrel.Slice
                     var c = Map(Track[hot].AltM, Track[hot].DownM);
                     paint.fillColor = new Color(0.78f, 0.48f, 0.1f, 0.35f);
                     paint.BeginPath();
-                    paint.MoveTo(new Vector2(c.x - 18f, c.y - 18f));
-                    paint.LineTo(new Vector2(c.x + 18f, c.y - 18f));
-                    paint.LineTo(new Vector2(c.x + 18f, c.y + 18f));
-                    paint.LineTo(new Vector2(c.x - 18f, c.y + 18f));
+                    paint.MoveTo(new Vector2(c.x - 8f, c.y - 8f));
+                    paint.LineTo(new Vector2(c.x + 8f, c.y - 8f));
+                    paint.LineTo(new Vector2(c.x + 8f, c.y + 8f));
+                    paint.LineTo(new Vector2(c.x - 8f, c.y + 8f));
                     paint.ClosePath();
                     paint.Fill();
                 }
                 bool amber = Track.Nudged;
                 paint.strokeColor = amber ? new Color(0.94f, 0.63f, 0.13f, 0.95f) : new Color(0.24f, 0.86f, 1f, 0.35f);
-                paint.lineWidth = 2.5f;
+                paint.lineWidth = 2f;
                 for (int i = 1; i < Track.Count; i++)
                 {
                     if (amber && (i % 2 == 0)) continue;

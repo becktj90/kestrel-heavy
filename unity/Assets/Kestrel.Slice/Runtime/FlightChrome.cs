@@ -80,8 +80,9 @@ namespace Kestrel.Slice
         {
             float upp = unitsPerPoint >= 0.5f ? unitsPerPoint : 1f;
             float h = TouchPt * upp;
-            StyleTool(follow, upp, h, 148f);
-            StyleTool(pause, upp, h, 88f);
+            StyleTool(follow, upp, h, Kestrel.Core.Flight.FlightHudLayout.FollowWidthPt);
+            StyleTool(pause, upp, h, Kestrel.Core.Flight.FlightHudLayout.PauseWidthPt);
+            if (follow != null) follow.style.fontSize = 13f * upp;
             if (menu == null) return;
             var title = menu.Q<Label>("pause-title");
             if (title != null) title.style.fontSize = 22f * upp;

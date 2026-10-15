@@ -23,9 +23,11 @@
 .hud-cell.q-hot { color: rgb(255, 176, 0); }
 .hud-cell.q-crit { color: rgb(255, 138, 106); }
 .hud-msg { font-size: 36px; color: rgb(255, 176, 0); -unity-text-align: middle-center; }
-.webcast { flex-shrink: 0; background-color: rgba(0, 0, 0, 0.62); padding: 10px 12px; margin-bottom: 8px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
-.webcast-verdict { font-size: 30px; color: rgb(255, 176, 0); -unity-font-style: bold; }
-.webcast-pulse { font-size: 22px; color: rgb(210, 230, 220); white-space: normal; margin-top: 2px; }
+.webcast { flex-shrink: 0; background-color: rgba(8, 14, 24, 0.32); padding: 6px 8px; margin-bottom: 8px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+.webcast-verdict { font-size: 22px; color: rgb(255, 176, 0); -unity-font-style: bold; white-space: normal; }
+.webcast-pulse { font-size: 16px; color: rgb(210, 230, 220); white-space: normal; margin-top: 2px; }
+.flight-help { display: none; }
+.hud.hud-info .flight-help { display: flex; flex-direction: column; }
 .webcast-seq { flex-direction: row; flex-wrap: wrap; margin-top: 8px; }
 .webcast-chip { font-size: 20px; color: white; background-color: rgba(255, 255, 255, 0.14); margin-right: 6px; margin-top: 6px; padding: 6px 10px; border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
 .webcast-now { background-color: rgb(255, 176, 0); color: black; -unity-font-style: bold; }

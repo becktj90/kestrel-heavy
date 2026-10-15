@@ -55,6 +55,28 @@ namespace Kestrel.Game.Tests
         }
 
         [Test]
+        public void DefaultChaseFramesTheWholeStackWithSky()
+        {
+            const float alt = 6600f;
+            var offset = ChaseCamera.DesiredOffset(Vector3.up, H, alt);
+            float radial = new Vector2(offset.x, offset.z).magnitude / H;
+            Assert.That(radial, Is.GreaterThan(4f), "default follow stands far enough back to show the stack and the sky");
+            Assert.That(ChaseCamera.DesiredOffset(Vector3.up, H).y, Is.LessThan(PadGround.GroundY));
+            var rot = ChaseCamera.Aim(offset, Vector3.up * H * 0.5f, VFov, alt, alt + offset.y);
+            foreach (var aspect in new[] { 375f / 667f, 440f / 956f, 1032f / 1376f })
+            {
+                var b = Project(Vector3.zero, offset, rot, aspect);
+                var top = Project(Vector3.up * H, offset, rot, aspect);
+                float lo = Mathf.Min(b.y, top.y), hi = Mathf.Max(b.y, top.y);
+                Assert.That(hi - lo, Is.InRange(0.12f, 0.34f), "stack span " + aspect);
+                Assert.That(lo, Is.GreaterThan(0.08f), "sky above the stack");
+                Assert.That(hi, Is.LessThan(0.92f), "sky below the stack");
+                Assert.That(b.x, Is.InRange(0.15f, 0.85f));
+                Assert.That(top.x, Is.InRange(0.15f, 0.85f));
+            }
+        }
+
+        [Test]
         public void HoldBlendsOut()
         {
             Assert.That(ChaseCamera.HoldWeight(0f), Is.EqualTo(1f));
