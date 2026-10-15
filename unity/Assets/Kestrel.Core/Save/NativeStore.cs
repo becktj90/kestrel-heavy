@@ -21,6 +21,10 @@ namespace Kestrel.Core.Save
         public const string Prefix = "kh.save.v1.";
         public const string DesignPrefix = Prefix + "design.";
         public const string ProgressKey = Prefix + "progress";
+        /// <summary>Career bank, unlocks, and contract counters. Schema stays <see cref="Schema"/>.</summary>
+        public const string CareerKey = Prefix + "career";
+        /// <summary>Per-mission bests. Schema stays <see cref="Schema"/>.</summary>
+        public const string MissionsKey = Prefix + "missions";
         public const int MaxKeyLength = 200;
         public const int MaxValueBytes = 1_000_000;
 
@@ -140,6 +144,62 @@ namespace Kestrel.Core.Save
         }
 
         public void DeleteProgress() => Remove(ProgressKey);
+
+        /// <summary>
+        /// Write one non-design record with the same envelope as progress (schema 1).
+        /// A previous envelope keeps its createdAt. The kind is also the id and the name.
+        /// </summary>
+        public JsonObject PutRecord(string key, string kind, JsonObject data)
+        {
+            if (string.IsNullOrEmpty(kind) || !KeyChars(kind)) throw new SaveException("invalid-key", "invalid kind");
+            var prev = Read(key);
+            object created = prev != null && prev.ContainsKey("createdAt") ? prev["createdAt"] : (object)(double)now();
+            var env = Envelope(kind, kind, kind, data ?? new JsonObject(), created);
+            Write(key, env);
+            return env;
+        }
+
+        /// <summary>True when the main file or its interrupted temp file exists.</summary>
+        public bool HasBytes(string key)
+        {
+            if (!CheckKey(key)) throw new SaveException("invalid-key", "invalid key");
+            string main = PathFor(key);
+            return File.Exists(main) || File.Exists(main + ".tmp");
+        }
+
+        /// <summary>
+        /// Copy a record to <c>key.json.bak</c> once. A backup that already exists is left as it is.
+        /// Returns true when the backup is on disk after the call.
+        /// </summary>
+        public bool KeepBackup(string key)
+        {
+            if (!CheckKey(key)) throw new SaveException("invalid-key", "invalid key");
+            string main = PathFor(key);
+            string source = File.Exists(main) ? main : main + ".tmp";
+            if (!File.Exists(source)) return false;
+            string bak = main + ".bak";
+            if (File.Exists(bak)) return true;
+            try { File.Copy(source, bak); return true; }
+            catch (Exception e) { throw new SaveException("write", e.Message); }
+        }
+
+        /// <summary>
+        /// If the main file exists and does not parse as a JSON object, copy it to
+        /// <c>key.json.bak</c> before any temp-file recovery replaces it.
+        /// A file larger than <see cref="MaxValueBytes"/> is not copied.
+        /// </summary>
+        public bool BackupCorruptMain(string key)
+        {
+            if (!CheckKey(key)) throw new SaveException("invalid-key", "invalid key");
+            string main = PathFor(key);
+            if (!File.Exists(main)) return false;
+            string raw;
+            try { raw = File.ReadAllText(main); }
+            catch (Exception e) { throw new SaveException("write", e.Message); }
+            if (TryParse(raw) != null) return false;
+            if (new FileInfo(main).Length > MaxValueBytes) return false;
+            return KeepBackup(key);
+        }
 
         public Dictionary<string, JsonObject> Snapshot()
         {

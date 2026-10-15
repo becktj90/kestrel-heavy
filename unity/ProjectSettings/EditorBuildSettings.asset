@@ -17,5 +17,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Shell/Flight.unity
     guid: b4ac86a0035271d399be44e8ff049ffc
+  - enabled: 1
+    path: Assets/Scenes/Shell/Missions.unity
+    guid: 20c4a1d170764c638593d81a1230e0bf
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

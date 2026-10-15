@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "note": "Open contracts after KH-10. Fictional payloads and the orbit bands the batch can be asked for. Sites and wind tables are the S4 files. A cell is offered only when data/golden/contracts-viable.json has three designs that pass FlightBatch on seeds 1 through 5. Difficulty is d = 1 + 0.15k, mass is base times (1 + 0.1k) capped at 12 t, wind scale is (1 + 0.05k) capped at 1.6, and one ladder requirement is added every 3 contracts up to 3. The offered mass, wind and requirements are the viable cell at or below k, never an unflown step. Reward Kc equals the budget, the same rule as campaign.json. No timers, no expiry, no daily refresh, no purchases.",
+  "after": "KH-10",
+  "labelPrefix": "KH",
+  "firstNumber": 11,
+  "offerCount": 3,
+  "massCapKg": 12000,
+  "windCap": 1.6,
+  "maxExtraRequirements": 3,
+  "requirementsEvery": 3,
+  "orbitFloorEvery": 3,
+  "difficultyPerCleared": 0.15,
+  "massPerCleared": 0.1,
+  "windPerCleared": 0.05,
+  "currency": "Kc",
+  "reward": "equals budget",
+  "darkPatterns": { "timers": false, "energy": false, "ads": false, "expiry": false, "purchases": false, "daily": false },
+  "seeds": [1, 2, 3, 4, 5],
+  "sites": "data/sites.json",
+  "weather": "data/weather.json",
+  "viable": "data/golden/contracts-viable.json",
+  "physics": "FlightBatch is the fairness gate: gentle physics off, five campaign seeds, calm air. Briefing wind is the S4 seeded profile multiplied by the cell wind scale. It is shown on the card and is not an input FlightBatch reads. A pad is chosen from data/sites.json only when its latitude can reach the target inclination. The integrator still flies the equatorial plane, the same altitude rule as campaign.json. TLI uses the KH-9 energy (C3 -2 km^2/s^2 at 200 km) and a 3 hour coast, because that is the trans-lunar cell the batch has already shown can be won. GTO inclination is 28.5 degrees so Pier 7 can fly it.",
+  "archetypes": [
+    { "id": "tern", "name": "Tern-{n}", "kind": "Weather sat", "catalogId": "leo-sat", "baseMassKg": 2500, "volumeM3": 12, "diameterM": 2.0, "maxG": 6 },
+    { "id": "comsat", "name": "Comsat-{n}", "kind": "Comsat", "catalogId": "gto-comsat", "baseMassKg": 5500, "volumeM3": 60, "diameterM": 3.4, "maxG": 6 },
+    { "id": "lark", "name": "Lark-{n}", "kind": "Probe", "catalogId": "lunar-probe", "baseMassKg": 3000, "volumeM3": 15, "diameterM": 2.1, "maxG": 6 },
+    { "id": "flock", "name": "Flock-{n}", "kind": "Cubesat flock", "catalogId": "cubesat", "baseMassKg": 20, "volumeM3": 0.05, "diameterM": 0.4, "maxG": 8 },
+    { "id": "finch", "name": "Finch-{n}", "kind": "Crew capsule", "catalogId": "crew-capsule", "baseMassKg": 10400, "volumeM3": 25, "diameterM": 3.5, "maxG": 4.5 },
+    { "id": "pantry", "name": "Pantry-{n}", "kind": "Station supply", "catalogId": "leo-sat", "baseMassKg": 8000, "volumeM3": 30, "diameterM": 2.9, "maxG": 6 }
+  ],
+  "orbits": [
+    { "id": "leo200", "band": "LEO", "label": "LEO 200 km", "step": 0, "kind": "circular", "apoKm": 200, "periKm": 200, "incDeg": 28.5 },
+    { "id": "leo400", "band": "LEO", "label": "LEO 400 km", "step": 1, "kind": "circular", "apoKm": 400, "periKm": 400, "incDeg": 51.6 },
+    { "id": "leo600", "band": "LEO", "label": "LEO 600 km", "step": 2, "kind": "circular", "apoKm": 600, "periKm": 600, "incDeg": 51.6 },
+    { "id": "sso", "band": "SSO", "label": "Sun-sync 550 km", "step": 3, "kind": "circular", "apoKm": 550, "periKm": 550, "incDeg": 97.6 },
+    { "id": "gto", "band": "GTO", "label": "GTO", "step": 4, "kind": "ellipse", "apoKm": 35786, "periKm": 200, "incDeg": 28.5 },
+    { "id": "tli", "band": "TLI", "label": "Trans-lunar", "step": 5, "kind": "c3", "apoKm": 0, "periKm": 200, "incDeg": 28.5, "c3Km2PerS2": -2, "coastHours": 3 }
+  ],
+  "requirementLadder": [
+    { "id": "margin", "min": 0 },
+    { "id": "maxG", "fromArchetype": true },
+    { "id": "reliability", "min": 0.98 }
+  ]
+}

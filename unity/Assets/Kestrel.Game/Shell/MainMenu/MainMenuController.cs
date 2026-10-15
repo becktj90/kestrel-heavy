@@ -213,7 +213,7 @@ namespace Kestrel.Game.Shell
             var rend = plate.Slab != null ? plate.Slab.GetComponent<MeshRenderer>() : null;
             h.Face = rend != null ? rend.sharedMaterial : null;
             h.RestTint = a.Id == "launch" ? MainMenuMaterials.LaunchRed : MainMenuMaterials.GlassTint;
-            h.Pressed = () => { if (_shell != null && _shell.Flow != null) _shell.Flow.Go(AppScreen.Design); };
+            h.Pressed = () => { if (_shell != null && _shell.Flow != null) _shell.Flow.HomePressed(h.Id); };
             var box = plate.Slab.gameObject.AddComponent<BoxCollider>();
             box.size = Vector3.one;
             h.Snap(false, true);

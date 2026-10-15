@@ -1,6 +1,11 @@
 // Home is the 3D hangar menu. Flight stays a placeholder until U3/U4 land. BuildConsole is the
 // flat console the EditMode tests still construct; the live Home path does not show it.
 using System;
+using System.IO;
+using Kestrel.Core.Data;
+using Kestrel.Core.Flight;
+using Kestrel.Core.Json;
+using Kestrel.Game.MissionSelect;
 using Kestrel.Game.Layout;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -16,16 +21,37 @@ namespace Kestrel.Game.Shell
         {
             var shell = AppShell.Instance;
             if (shell == null) return;
+            if (Kind == AppScreen.Home)
+            {
+                _view = new VisualElement();
+                _view.AddToClassList("kh-screen");
+                BuildHome(shell);
+                return;
+            }
+            if (Kind == AppScreen.Missions)
+            {
+                _view = MissionSelectScreen.Build(LoadCampaign(), id => shell.Flow.StartMission(id), () => shell.Flow.ExitToHome());
+                shell.Safe.Add(_view);
+                if (shell.Fill != null) shell.Fill.SpaceT = 0.35f;
+                return;
+            }
+            if (Kind == AppScreen.Flight)
+            {
+                _view = BuildFlightRoutes(() => shell.Flow.OpenReport(), () => shell.Flow.ExitToMissions(), () => shell.Flow.ExitToHome());
+                shell.Safe.Add(_view);
+                if (shell.Fill != null) shell.Fill.SpaceT = 0f;
+                return;
+            }
             _view = new VisualElement();
             _view.AddToClassList("kh-screen");
-            if (Kind == AppScreen.Home) { BuildHome(shell); return; }
             var title = new Label(Kind.ToString().ToUpperInvariant() + " (placeholder)");
             title.AddToClassList("kh-title");
             _view.Add(title);
-            // Not on the play path: Home > Play loads Slice.unity until the real Design/Flight screens land.
-            AddButton(shell, "Home", AppScreen.Home, "Back to the title screen.");
+            var back = new Button(() => shell.Flow.BackFromDesigner()) { text = "Back", tooltip = "Back to the briefing. The design stays." };
+            back.AddToClassList("kh-button");
+            _view.Add(back);
             shell.Safe.Add(_view);
-            if (shell.Fill != null) shell.Fill.SpaceT = Kind == AppScreen.Flight ? 0f : 1f;
+            if (shell.Fill != null) shell.Fill.SpaceT = 1f;
         }
 
         MainMenuController _menu;
@@ -52,10 +78,11 @@ namespace Kestrel.Game.Shell
             if (MainMenuLayout.UseOverlay)
             {
                 // Mix overlay: 2D title card, LAUNCH bar and tiles are the controls (UI Toolkit picks them and
-                // supplies VoiceOver labels via tooltip). Both LAUNCH and HANGAR open the designer for now.
+                // supplies VoiceOver labels via tooltip). LAUNCH opens the mission list. HANGAR is a free build.
                 _view.pickingMode = PickingMode.Ignore;
-                Action toDesign = () => shell.Flow.Go(AppScreen.Design);
-                _overlay = MainMenuOverlay.Build(shell.Root, _view, toDesign, toDesign, MainMenuLayout.ReducedMotion());
+                Action launch = () => shell.Flow.HomePressed("launch");
+                Action hangar = () => shell.Flow.HomePressed("hangar");
+                _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, hangar, MainMenuLayout.ReducedMotion());
                 // The reel-bar layer (mm-full) is added to the shell root above the safe area and would hide
                 // the #224 mix toggles, so they go on the root, last (topmost), and follow the safe inset.
                 shell.Root.Add(audio);
@@ -115,15 +142,112 @@ namespace Kestrel.Game.Shell
         }
 
         static VisualElement BuildConsole(AppShell shell) =>
-            BuildConsole(() => shell.Flow.Go(AppScreen.Design), () => shell.Flow.Go(AppScreen.Design));
+            BuildConsole(() => shell.Flow.HomePressed("launch"), () => shell.Flow.HomePressed("hangar"));
 
         static VisualElement shellFullLayer() => AppShell.Instance?.Root?.Q("mm-full");
 
-        void AddButton(AppShell shell, string text, AppScreen target, string a11y)
+        /// <summary>Repo root when data/campaign.json is on disk. Null in a player build that only has Resources.</summary>
+        public static string RepoRoot()
         {
-            var b = new Button(() => shell.Flow.Go(target)) { text = text, tooltip = a11y };
+            try { return Catalog.FindRepoRoot(Directory.GetCurrentDirectory()); }
+            catch (Exception) { return null; }
+        }
+
+        /// <summary>data/campaign.json, then the synced Resources copy the player build carries.</summary>
+        public static Campaign LoadCampaign()
+        {
+            string root = RepoRoot();
+            if (root != null && File.Exists(Path.Combine(root, "data", "campaign.json")))
+                return Campaign.Load(root);
+            var asset = Resources.Load<TextAsset>("KestrelData/campaign");
+            if (asset != null && !string.IsNullOrWhiteSpace(asset.text))
+                return Campaign.FromJson(MiniJson.ParseObject(asset.text));
+            return null;
+        }
+
+        /// <summary>Flight scene stub. The live ascent stays in Design; these are the same leave routes.</summary>
+        public static VisualElement BuildFlightRoutes(Action report, Action missions, Action home)
+        {
+            var root = new VisualElement { name = "flight-routes" };
+            root.AddToClassList("kh-screen");
+            var title = new Label("Flight") { name = "flight-title" };
+            title.AddToClassList("kh-title");
+            root.Add(title);
+            root.Add(RouteButton("flight-report", "Flight report", "Flight report. What the flight did.", report));
+            root.Add(RouteButton("flight-missions", "Missions", "Exit to Missions.", missions));
+            root.Add(RouteButton("flight-home", "Home", "Exit to Home.", home));
+            return root;
+        }
+
+        public static VisualElement BuildRouteCard(string overlay, MissionContext ctx, SceneFlow flow)
+        {
+            if (overlay == SessionScreens.Report)
+                return BuildReport(ctx, () => flow?.ReportNext(), () => flow?.ReportRetry(), () => flow?.ExitToMissions(), () => flow?.ExitToHome());
+            if (overlay == SessionScreens.Briefing)
+                return BuildBriefing(ctx, () => flow?.BuildFromBriefing(), () => flow?.BackFromBriefing());
+            return null;
+        }
+
+        public static VisualElement BuildBriefing(MissionContext ctx, Action build, Action back)
+            => BriefingScreen.Build(ctx, build, back);
+
+        public static VisualElement BuildReport(MissionContext ctx, Action next, Action retry, Action missions, Action home)
+        {
+            var card = Card("report-card", "Flight report");
+            card.Q("card-body").Add(Body("report-job", JobLine(ctx)));
+            card.Add(RouteButton("report-next", "Next mission", "Next mission. Opens the list.", next));
+            card.Add(RouteButton("report-retry", "One more launch", "One more launch. Same mission, same seed.", retry));
+            card.Add(RouteButton("report-missions", "Missions", "Back to the mission list.", missions));
+            card.Add(RouteButton("report-home", "Home", "Exit to Home.", home));
+            return card;
+        }
+
+        static VisualElement Card(string name, string title)
+        {
+            var card = new VisualElement { name = name };
+            card.AddToClassList("kh-screen");
+            card.style.position = Position.Absolute;
+            card.style.left = 8;
+            card.style.right = 8;
+            card.style.top = 8;
+            card.style.bottom = 8;
+            card.style.backgroundColor = new Color(0.106f, 0.122f, 0.165f, 0.96f);
+            card.style.justifyContent = Justify.FlexStart;
+            var heading = new Label(title) { name = name + "-title" };
+            heading.AddToClassList("kh-title");
+            heading.style.flexShrink = 0;
+            card.Add(heading);
+            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "card-body" };
+            scroll.style.flexGrow = 1;
+            card.Add(scroll);
+            return card;
+        }
+
+        static Label Body(string name, string text)
+        {
+            var line = new Label(text) { name = name };
+            line.AddToClassList("kh-caption");
+            line.style.whiteSpace = WhiteSpace.Normal;
+            return line;
+        }
+
+        static string JobLine(MissionContext ctx)
+        {
+            if (ctx == null || ctx.IsFree) return "Free build.";
+            string line = ctx.ListText();
+            if (ctx.Mass > 0) line += ". " + ctx.Mass.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " kg";
+            if (ctx.Gentle) line += ". Gentle on.";
+            else line += ". Gentle off.";
+            return line;
+        }
+
+        static Button RouteButton(string name, string text, string tip, Action click)
+        {
+            var b = new Button(click) { name = name, text = text, tooltip = tip };
             b.AddToClassList("kh-button");
-            _view.Add(b);
+            b.style.minHeight = 44;
+            b.style.flexShrink = 0;
+            return b;
         }
 
         void OnDisable()
