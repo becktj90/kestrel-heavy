@@ -49,7 +49,8 @@ namespace Kestrel.Game.Audio
             director.ForwardTo(narration);
             bus.Sink = director;
             director.TryBindUi();
-            if (MusicPlayer.Instance == null) host.gameObject.AddComponent<MusicPlayer>();
+            if (MusicPlayer.Instance == null && host.GetComponent<MusicPlayer>() == null)
+                host.gameObject.AddComponent<MusicPlayer>();
             return director;
         }
 

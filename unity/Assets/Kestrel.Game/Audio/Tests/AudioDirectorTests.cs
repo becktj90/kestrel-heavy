@@ -40,9 +40,10 @@ namespace Kestrel.Game.Audio.Tests
         public void OriginalScoreLoadsAndDucksUnderNarrationAndPause()
         {
             var music = NewGo("music").AddComponent<MusicPlayer>();
-            var director = music.GetComponent<MusicDirector>();
             PlayerPrefs.SetInt(AudioDirector.MutePref, 0);
             music.Select(true);
+            var director = music.GetComponent<MusicDirector>();
+            Assert.IsNotNull(director);
             Assert.AreEqual(MusicBed.Menu, director.Bed);
             Assert.IsNotNull(music.Clip);
             Assert.Greater(music.Clip.length, 90f);

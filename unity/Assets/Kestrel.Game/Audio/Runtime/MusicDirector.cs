@@ -27,6 +27,15 @@ namespace Kestrel.Game.Audio
         void Awake()
         {
             if (Instance != null && Instance != this) { Destroy(this); return; }
+            EnsureBuses();
+        }
+
+        void Reset() => EnsureBuses();
+
+        /// <summary>Build the two buses. EditMode calls this before Awake.</summary>
+        public void EnsureBuses()
+        {
+            if (bus != null) return;
             Instance = this;
             bus = new AudioSource[2];
             for (int i = 0; i < 2; i++)
@@ -44,6 +53,7 @@ namespace Kestrel.Game.Audio
 
         public void Play(MusicBed next)
         {
+            EnsureBuses();
             if (bus == null) return;
             suspended = false;
             var clip = Resources.Load<AudioClip>(MusicBeds.Resource(next));
@@ -80,6 +90,7 @@ namespace Kestrel.Game.Audio
 
         public void Apply()
         {
+            EnsureBuses();
             if (bus == null) return;
             float gain = MusicBeds.Gain(AudioPrefs.MusicMuted, suspended, voice, performancePaused);
             float inn = fading ? fade : 1f;
