@@ -132,7 +132,7 @@ namespace Kestrel.Core.Tests
             Assert.That(hits, Does.Contain(1));
             Assert.That(hits, Does.Contain(2));
             Assert.That(hits, Does.Contain(3));
-            Assert.That(hits, Does.Not.Contain(9));
+            CollectionAssert.DoesNotContain(hits, 9);
             grid.Query(-0.2, -0.2, 1, hits);
             Assert.That(hits, Does.Contain(1));
             var sw = Stopwatch.StartNew();
