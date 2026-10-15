@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "note": "Fictional pads. Latitude is the free inclination (Earth.MinInclination) and the Earth-rotation boost (Earth.SiteRotationSpeed). A coastal pad with barge can host Haven. No real spaceport names or coordinates.",
+  "sites": [
+    {
+      "id": "pier-7",
+      "name": "Pier 7",
+      "latitudeDeg": 28.5,
+      "coastal": true,
+      "barge": true,
+      "bargeName": "Haven"
+    },
+    {
+      "id": "coastal-pad-b",
+      "name": "Coastal Pad B",
+      "latitudeDeg": 31.4,
+      "coastal": true,
+      "barge": true,
+      "bargeName": "Haven"
+    },
+    {
+      "id": "salt-flat",
+      "name": "Salt Flat Pad",
+      "latitudeDeg": 41.0,
+      "coastal": false,
+      "barge": false
+    },
+    {
+      "id": "north-reach",
+      "name": "North Reach",
+      "latitudeDeg": 57.5,
+      "coastal": true,
+      "barge": false
+    }
+  ]
+}

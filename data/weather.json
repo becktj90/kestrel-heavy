@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "note": "Seeded launch-day wind for mission briefings. The profile is horizontal only. Density still comes from Atmosphere.At. A calm (zero) profile leaves ascent q and alpha unchanged. Time of day is lighting and launch-window flavor, not a force. Compass points are the direction the wind comes from.",
+  "ktPerMs": 1.9438444924406046,
+  "levelsKm": [0, 3, 6, 9, 12],
+  "jetAltKm": 10.5,
+  "shearLayerM": 8000,
+  "softCapMs": 100,
+  "softCapExponent": 4,
+  "decayAboveJet": 0.15,
+  "fadeAltKm": 20,
+  "rayleighScaleMs": 4.2,
+  "shearMedianPerSec": 0.0045,
+  "shearLogSigma": 0.45,
+  "directions": [
+    { "id": "N", "fromDeg": 0 },
+    { "id": "NE", "fromDeg": 45 },
+    { "id": "E", "fromDeg": 90 },
+    { "id": "SE", "fromDeg": 135 },
+    { "id": "S", "fromDeg": 180 },
+    { "id": "SW", "fromDeg": 225 },
+    { "id": "W", "fromDeg": 270 },
+    { "id": "NW", "fromDeg": 315 }
+  ],
+  "timesOfDay": [
+    { "id": "dawn", "label": "Dawn", "hour": 6, "lighting": "dawn" },
+    { "id": "morning", "label": "Morning", "hour": 9, "lighting": "day" },
+    { "id": "noon", "label": "Noon", "hour": 12, "lighting": "noon" },
+    { "id": "afternoon", "label": "Afternoon", "hour": 15, "lighting": "day" },
+    { "id": "dusk", "label": "Dusk", "hour": 18, "lighting": "dusk" },
+    { "id": "night", "label": "Night", "hour": 21, "lighting": "night" }
+  ]
+}

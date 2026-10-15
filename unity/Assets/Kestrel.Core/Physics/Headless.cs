@@ -27,6 +27,8 @@ namespace Kestrel.Core.Physics
         public Flight.GuidanceProfile guidance;
         /// <summary>Null leaves the flight on the v2 path: no failure checks, identical steps.</summary>
         public Flight.FailureMonitor monitor;
+        /// <summary>Null is calm air. Drag, q and alpha stay on the nominal path.</summary>
+        public Flight.SeededWind wind;
     }
 
     public sealed class SimEvent
@@ -174,6 +176,8 @@ namespace Kestrel.Core.Physics
             if (!o.vacuum && alt < 300e3) { var atm = Atmosphere.At(alt); p = atm.p; rho = atm.rho; a = atm.a; }
             double avx = vx + omegaAir * yy, avy = vy - omegaAir * x;
             double vrel = Math.Sqrt(avx * avx + avy * avy);
+            if (o.wind != null && !o.vacuum && alt < 300e3)
+                vrel = o.wind.Retarget(alt, tx, ty, ref avx, ref avy, vrel);
             if (rho > 0 && vrel > 0)
             {
                 var S = st[Math.Min(StageIdx, st.Length - 1)];
@@ -207,6 +211,8 @@ namespace Kestrel.Core.Physics
             double vr = vx * ux + vy * uy, vt = vx * tx + vy * ty;
             double avx = vx + omegaAir * yy, avy = vy - omegaAir * x;
             double vrel = JsMath.Hypot(avx, avy);
+            if (o.wind != null && !o.vacuum && alt < 300e3)
+                vrel = o.wind.Retarget(alt, tx, ty, ref avx, ref avy, vrel);
 
             // ---- guidance ----
             if (Thrusting)
