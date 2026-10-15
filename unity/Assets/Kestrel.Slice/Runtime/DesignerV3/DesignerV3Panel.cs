@@ -1,6 +1,7 @@
 // Portrait designer v3 panel (§5–§6). Composes over HangarSession; does not edit HangarPanel.
 // Sticky strip, 10-tab bar (Simple subset / Engineer full), delta chips, risk chips, Launch anyway,
 // and the guided 200 km LEO tutorial.
+// The guided stepper is one hook (AttachStepper): same design, All parts keeps these tabs.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -9,6 +10,7 @@ using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
+using Kestrel.Slice.DesignerV3.Stepper;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -37,6 +39,7 @@ namespace Kestrel.Slice.DesignerV3
         bool tutorialOn;
         bool sheetCollapsed;
         Button toggle;
+        DesignerStepperShell stepper;
         int tutorialIndex;
         List<TutorialStep> tutorialSteps;
         string lastDelta = "";
@@ -56,6 +59,7 @@ namespace Kestrel.Slice.DesignerV3
         public bool TutorialOn => tutorialOn;
         public bool LaunchConfirmArmed => launchConfirmArmed;
         public VisualElement Root => root;
+        public DesignerStepperShell Stepper => stepper;
         public string LastDeltaChip => lastDelta;
 
         Catalog C => session.catalog;
@@ -105,7 +109,32 @@ namespace Kestrel.Slice.DesignerV3
             BuildTabs();
             session.Changed += OnChanged;
             RebuildTutorial();
+            AttachStepper();
             Rebuild();
+        }
+
+        /// <summary>Guided seven-step shell. All parts is the tab bar already built above. Both edit this session.</summary>
+        void AttachStepper()
+        {
+            var bridge = new DesignerStepperBridge
+            {
+                Session = session,
+                Ui = ui,
+                Engineer = () => engineer,
+                SetEngineer = SetEngineer,
+                Apply = (op, key) => Do(op, key),
+                EndGesture = End,
+                Focus = f => FieldFocused?.Invoke(f),
+                Launch = () => LaunchRequested?.Invoke(),
+                JumpRisk = JumpToRisk,
+                LaunchArmed = () => launchConfirmArmed,
+                SetLaunchArmed = v => launchConfirmArmed = v,
+                Tab = () => tab,
+                HideWhenGuided = new[] { tutorialBanner, strip, riskRow, tabs, scroll, confirmRow },
+                Rebuild = () => Rebuild(),
+            };
+            stepper = new DesignerStepperShell(bridge);
+            root.Add(stepper.Root);
         }
 
         /// <summary>
@@ -215,6 +244,7 @@ namespace Kestrel.Slice.DesignerV3
         public void SetContentMax(float units)
         {
             scroll.style.maxHeight = units > 0 ? units : StyleKeyword.Null;
+            stepper?.SetContentMax(units);
         }
 
         public void SetEngineer(bool on)
@@ -330,6 +360,7 @@ namespace Kestrel.Slice.DesignerV3
             BuildRisks();
             BuildLaunchRow();
             foreach (var r in refreshers) r();
+            stepper?.Sync();
         }
 
         void BuildTutorialBanner()
@@ -666,7 +697,11 @@ namespace Kestrel.Slice.DesignerV3
                 if (!Readout.Quick(C, D).maxQStale) { referenceJob = null; return; }
                 EnsureReferenceJob();
                 if (referenceJob == null || referenceJob.Done) return;
-                if (referenceJob.Step(ReferenceAscent.FrameBudgetMs)) BuildStrip();
+                if (referenceJob.Step(ReferenceAscent.FrameBudgetMs))
+                {
+                    BuildStrip();
+                    stepper?.RefreshLive();
+                }
             }
             catch (Exception e) { Debug.LogWarning("[DesignerV3] max-Q sim: " + e.Message); referenceJob = null; }
         }
@@ -682,6 +717,7 @@ namespace Kestrel.Slice.DesignerV3
                 while (referenceJob != null && !referenceJob.Done && sw.Elapsed.TotalMilliseconds < 2000)
                     referenceJob.Step(50);
                 BuildStrip();
+                stepper?.RefreshLive();
             }
             catch (Exception e) { Debug.LogWarning("[DesignerV3] max-Q sim: " + e.Message); }
         }
