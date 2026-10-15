@@ -193,7 +193,7 @@ namespace Kestrel.Game.Guide
             var pri = MapPri(line.Priority);
             var cards = new GuideCard[line.Cards.Count];
             for (int i = 0; i < line.Cards.Count; i++)
-                cards[i] = new GuideCard { Kid = line.Cards[i].Kid, Eng = line.Cards[i].Eng };
+                cards[i] = new GuideCard { Id = line.Cards[i].Id, Kid = line.Cards[i].Kid, Eng = line.Cards[i].Eng };
             var copy = new Dictionary<string, string>();
             if (tokens != null)
                 foreach (var pair in tokens)

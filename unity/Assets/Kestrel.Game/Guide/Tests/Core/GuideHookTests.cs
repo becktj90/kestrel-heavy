@@ -31,6 +31,9 @@ namespace Kestrel.Game.Guide.Tests
             var engine = Engine(false);
             GuideHooks.Home(engine);
             Assert.AreEqual("first.1", engine.Pending[0].Id);
+            Assert.AreEqual("first.1.c1", engine.Pending[0].Cards[0].Id);
+            Assert.AreEqual("first.2.c1", engine.Pending[1].Cards[0].Id);
+            Assert.AreEqual("first.2.c2", engine.Pending[1].Cards[1].Id);
             Assert.AreEqual(5, engine.Pending.Count);
             engine.Complete("first.1");
             engine.Complete("first.2");
@@ -326,26 +329,32 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
-        public void VoiceStaysOffUntilAGuideClipExists()
+        public void VoiceDefaultsOnWithTheRealManifestAndOffForAnEmptyOne()
         {
-            var silent = Engine(false);
-            Assert.IsFalse(silent.ClipVoice);
-            Assert.IsTrue(silent.Settings.SubtitlesOn);
-            Assert.IsFalse(silent.Settings.ReadAloud);
-            silent.Offer("guide.step", "6", null, "6", false);
-            Assert.IsTrue(string.IsNullOrEmpty(Find(silent, "step.6").VoiceClip));
+            var state = GuideState.Fresh(true, false);
+            var voiced = new LiveGuideEngine(json, state, root);
+            Assert.IsTrue(voiced.ClipVoice);
+            Assert.IsTrue(voiced.Settings.SubtitlesOn);
+            Assert.IsFalse(voiced.Settings.ReadAloud);
+            voiced.Offer("guide.step", "6", null, "6", false);
+            string clip = Path.Combine(root, "assets", "narration", "guide", "step.6.c1.mp3");
+            Assert.AreEqual(clip, Find(voiced, "step.6").VoiceClip);
+            Assert.Greater(GuidePages.Of(Find(voiced, "step.6"), false)[0].Length, 0);
 
             string dir = Path.Combine(Path.GetTempPath(), "thrum-clips-" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(Path.Combine(dir, "assets", "narration", "guide"));
-            string clip = Path.Combine(dir, "assets", "narration", "guide", "step.6.mp3");
-            File.WriteAllBytes(clip, new byte[] { 1, 2, 3 });
+            string guide = Path.Combine(dir, "assets", "narration", "guide");
+            Directory.CreateDirectory(guide);
+            File.WriteAllText(Path.Combine(guide, "manifest.json"), "{\"clips\":[]}");
             try
             {
-                var state = GuideState.Fresh(true, true);
-                var voiced = new LiveGuideEngine(json, state, dir);
-                Assert.IsTrue(voiced.ClipVoice);
-                voiced.Offer("guide.step", "6", null, "6", false);
-                Assert.AreEqual(clip, Find(voiced, "step.6").VoiceClip);
+                var quiet = GuideState.Fresh(true, true);
+                var silent = new LiveGuideEngine(json, quiet, dir);
+                Assert.IsFalse(silent.ClipVoice);
+                Assert.IsFalse(silent.State.Settings.VoiceOn);
+                Assert.IsTrue(silent.Settings.SubtitlesOn);
+                silent.Offer("guide.step", "6", null, "6", false);
+                Assert.IsTrue(string.IsNullOrEmpty(Find(silent, "step.6").VoiceClip));
+                Assert.Greater(GuidePages.Of(Find(silent, "step.6"), false)[0].Length, 0);
             }
             finally { Directory.Delete(dir, true); }
         }

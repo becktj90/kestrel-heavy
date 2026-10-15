@@ -3,7 +3,8 @@ using UnityEngine.UIElements;
 
 namespace Kestrel.Game.Guide
 {
-    /// <summary>The retro subtitle stack. Ink panel, cream border, hard shadow.
+    /// <summary>Legacy subtitle stack, still built by view tests. The player shows GuidePopView instead.
+    /// Ink panel, cream border, hard shadow.
     /// Ascent docks under the header and stays out of the thumb zone. Menu screens dock one box
     /// above the Home key and leave the mission list the space under it. Empty space does not pick,
     /// so buttons underneath still receive touches.</summary>

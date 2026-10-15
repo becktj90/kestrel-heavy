@@ -233,7 +233,8 @@ namespace Kestrel.Core.Guide
         }
     }
 
-    /// <summary>Pre-generated clips under assets/narration/guide. Text stays the source of truth.</summary>
+    /// <summary>Pre-generated clips under assets/narration/guide. Text stays the source of truth.
+    /// The manifest maps a card id (and its beat) to a file. A missing clip is silence, not an error.</summary>
     public static class GuideVoice
     {
         public const string RelativeDir = "assets/narration/guide";
@@ -241,33 +242,32 @@ namespace Kestrel.Core.Guide
         public static bool ClipsPresent(string repoRoot)
         {
             string dir = Dir(repoRoot);
-            if (!Directory.Exists(dir)) return false;
-            foreach (var file in Directory.GetFiles(dir))
+            if (Directory.Exists(dir))
             {
-                string ext = Path.GetExtension(file);
-                if (ext == ".mp3" || ext == ".wav" || ext == ".ogg") return true;
+                foreach (var file in Directory.GetFiles(dir))
+                {
+                    string ext = Path.GetExtension(file);
+                    if (ext == ".mp3" || ext == ".wav" || ext == ".ogg") return true;
+                }
             }
-            string manifest = Path.Combine(dir, "manifest.json");
-            if (!File.Exists(manifest)) return false;
-            try
-            {
-                var root = MiniJson.ParseObject(File.ReadAllText(manifest));
-                var clips = root.Arr("clips");
-                return clips != null && clips.Count > 0;
-            }
-            catch (FormatException) { return false; }
+            return GuideClipCatalog.Load(repoRoot).Count > 0;
         }
 
+        /// <summary>A file that exists for this card or beat id, or null. The catalog entry can still
+        /// name a Resources path when the file has not been copied yet.</summary>
         public static string ClipFor(string repoRoot, string lineId)
         {
             if (string.IsNullOrEmpty(repoRoot) || string.IsNullOrEmpty(lineId)) return null;
             string dir = Dir(repoRoot);
-            string[] ext = { ".mp3", ".wav", ".ogg" };
+            string[] ext = { ".mp3", ".ogg", ".wav" };
             for (int i = 0; i < ext.Length; i++)
             {
                 string path = Path.Combine(dir, lineId + ext[i]);
                 if (File.Exists(path)) return path;
             }
+            var catalog = GuideClipCatalog.Load(repoRoot);
+            if (catalog.TryCard(lineId, out var card) && File.Exists(card.FullPath)) return card.FullPath;
+            if (catalog.TryBeat(lineId, out var first) && File.Exists(first.FullPath)) return first.FullPath;
             return null;
         }
 
