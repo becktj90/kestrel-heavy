@@ -1,6 +1,8 @@
 // Code-first iOS app icon setup for Kestrel Heavy (A2: c1 kestrel-booster).
 // Menu: Kestrel > Apply iOS App Icon
 // CLI:  Unity -batchmode -quit -projectPath unity -executeMethod KestrelHeavy.EditorTools.IconSetup.Apply
+// Excluded when the active target is WebGL: the GameCI WebGL editor image has no UnityEditor.iOS.
+#if !UNITY_WEBGL
 using System;
 using UnityEditor;
 using UnityEditor.Build;
@@ -88,3 +90,4 @@ namespace KestrelHeavy.EditorTools
         }
     }
 }
+#endif

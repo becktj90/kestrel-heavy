@@ -153,7 +153,11 @@ namespace Kestrel.Core.Physics
         {
             if (altitudeM == null) throw new System.ArgumentNullException(nameof(altitudeM));
             if (rho == null || rho.Length != altitudeM.Length) throw new System.ArgumentException("rho length");
+            #if UNITY_WEBGL && !UNITY_EDITOR
+            if (false) // WebGL has no worker threads
+#else
             if (altitudeM.Length >= 32)
+#endif
                 System.Threading.Tasks.Parallel.For(0, altitudeM.Length, i => rho[i] = At(altitudeM[i]).rho);
             else
                 for (int i = 0; i < altitudeM.Length; i++) rho[i] = At(altitudeM[i]).rho;

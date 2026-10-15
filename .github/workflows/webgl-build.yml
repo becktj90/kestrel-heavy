@@ -1,0 +1,82 @@
+# Unity WebGL player for beckify.com. Manual dispatch (plus PRs that touch only the WebGL build files).
+# Official GameCI unity-builder (free; public repo). Uses the same UNITY_LICENSE secrets as Unity CI.
+# Output: artifact "webgl-build" (zip of build/WebGL: index.html, Build/, TemplateData). Does NOT deploy anywhere.
+name: WebGL build
+
+on:
+  # Also runs on a PR that edits this workflow or the WebGL template/build script (lets the PR prove itself
+  # before the file exists on main; workflow_dispatch needs the file on the default branch).
+  pull_request:
+    paths:
+      - .github/workflows/webgl-build.yml
+      - unity/Assets/WebGLTemplates/**
+      - unity/Assets/Kestrel.Slice/Editor/BuildScript.cs
+  workflow_dispatch:
+    inputs:
+      compression:
+        description: Build file compression (Brotli, Gzip or Disabled). Fallback decompression is always on unless Disabled.
+        type: choice
+        default: Brotli
+        options: [Brotli, Gzip, Disabled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: webgl-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UNITY_VERSION: 6000.3.26f1
+  PROJECT_PATH: unity
+
+jobs:
+  webgl:
+    name: Unity WebGL build (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      HAS_LICENSE: ${{ secrets.UNITY_LICENSE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.HAS_LICENSE == 'true'
+        with:
+          lfs: true
+          persist-credentials: false
+      - uses: actions/cache@v4
+        if: env.HAS_LICENSE == 'true'
+        with:
+          path: unity/Library
+          key: Library-webgl-${{ hashFiles('unity/Packages/manifest.json', 'unity/Packages/packages-lock.json', 'unity/ProjectSettings/**') }}
+          restore-keys: Library-webgl-
+      - name: Sync game data into Resources (gitignored copies; same as Kestrel > Sync Data)
+        if: env.HAS_LICENSE == 'true'
+        run: |
+          mkdir -p unity/Assets/Resources/KestrelData
+          cp data/*.json web/js/economy-data/constants.json unity/Assets/Resources/KestrelData/
+      - uses: game-ci/unity-builder@v4
+        if: env.HAS_LICENSE == 'true'
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          projectPath: ${{ env.PROJECT_PATH }}
+          targetPlatform: WebGL
+          buildMethod: Kestrel.Slice.Editor.BuildScript.BuildWebGL
+          customParameters: -khWebCompression ${{ inputs.compression || 'Brotli' }}
+          buildsPath: build
+          buildName: WebGL
+          versioning: None
+      - name: Report size
+        if: env.HAS_LICENSE == 'true'
+        run: |
+          du -sh build/WebGL; find build/WebGL -type f -printf '%s %p\n' | sort -rn | head -15
+      - uses: actions/upload-artifact@v4
+        if: env.HAS_LICENSE == 'true'
+        with:
+          name: webgl-build
+          path: build/WebGL
+          retention-days: 14
+          if-no-files-found: error
