@@ -3,7 +3,7 @@
 Owner: Kestrel Sound (lane X2). Status: spec. Ships on Unity (U7 audio lane); the Phaser web demo keeps its current `theme` loop.
 Companion docs: `docs/CUES.md` (cue sheet), `tools/music/` (MIDI sketches), `MUSIC_LICENSES.md` (rights ledger).
 
-**Hard rules.** Every note is original. No sound-alikes, no "in the style of", no references to existing composers or works in briefs, prompts, file names, or comments. $0: generative + MIDI rendered with free instruments. AI music only if its terms clearly allow paid apps (none in use). Narration and alarms always win over music.
+**Hard rules.** Title and designer are original. No sound-alikes, no "in the style of", no references to existing composers or works in briefs, prompts, file names, or comments. $0: generative + MIDI rendered with free instruments. AI music only if its terms clearly allow paid apps. The flight bed is the one approved Gemini track (see `MUSIC_LICENSES.md`). Narration and alarms always win over music.
 
 ## 1. Musical identity
 

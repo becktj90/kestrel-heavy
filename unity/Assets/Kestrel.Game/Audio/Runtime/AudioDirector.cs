@@ -8,7 +8,7 @@ namespace Kestrel.Game.Audio
     /// <summary>
     /// Pooled one-shots, a throttle/q engine loop, UI clicks, and mute.
     /// External air drops out by 80 km; structure-borne rumble stays while the engines burn.
-    /// Wire with <see cref="Attach"/> once. Original music is managed by MusicPlayer.
+    /// Wire with <see cref="Attach"/> once. Music is managed by MusicPlayer.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class AudioDirector : MonoBehaviour, IFlightEventSink

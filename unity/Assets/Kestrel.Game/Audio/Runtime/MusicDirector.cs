@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Kestrel.Game.Audio
 {
     /// <summary>
-    /// Loops the original menu, hangar, and flight beds and crossfades between them.
+    /// Loops the menu, hangar, and flight beds and crossfades between them.
     /// Music stays under SFX (mixer bus) and ducks further under narration and while the flight is paused.
     /// </summary>
     [DisallowMultipleComponent]

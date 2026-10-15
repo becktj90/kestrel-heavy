@@ -61,6 +61,8 @@ Rendered `.wav` files are not committed here.
 no samples or soundfont. Install the requirements above plus numpy, then run
 `python tools/music/render_score.py` with ffmpeg on PATH. Output is stereo,
 48 kHz Vorbis, normalised to -17 LUFS. Release tails wrap into the loop start.
-Unity streams these assets; narration ducks them to 35%, mute silences them,
+Narration ducks them to 35%, mute silences them,
 and launch suspends the designer bed so ignition and flight cues stay clear.
+`kestrel-flight.ogg` is not written here. It is Trevor Beck's approved Gemini
+gameplay loop; see `MUSIC_LICENSES.md`.
 The adaptive ascent score and remaining cue library are still outstanding.

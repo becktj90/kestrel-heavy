@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Kestrel.Game.Audio
 {
-    /// <summary>Shell hook for <see cref="MusicDirector"/>. One player, two buses, original beds only.</summary>
+    /// <summary>Shell hook for <see cref="MusicDirector"/>. One player, two buses.</summary>
     [DisallowMultipleComponent]
     public sealed class MusicPlayer : MonoBehaviour
     {
