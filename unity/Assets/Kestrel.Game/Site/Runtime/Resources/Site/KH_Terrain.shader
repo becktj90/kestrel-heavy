@@ -65,6 +65,11 @@ Shader "Kestrel/Terrain"
                 half3 n = normalize(input.normalWS);
                 half ndotl = saturate(dot(n, normalize(_SunDir.xyz)));
                 half3 col = input.color.rgb * (_Ambient.rgb + _SunColor.rgb * ndotl);
+                // Grain and a broader blotch, so scrub, beach and apron read as a surface rather than a flat fill.
+                float2 xz = input.positionWS.xz;
+                float grain = frac(sin(dot(xz, float2(12.9898, 78.233))) * 43758.5453);
+                float blot = frac(sin(dot(floor(xz * 0.08), float2(19.19, 47.77))) * 12543.2);
+                col *= lerp(0.90, 1.08, grain) * lerp(0.94, 1.05, blot);
                 // Per-pixel fog. Same ramp as SiteFog.Weight. One variant: multi_compile_fog is stripped
                 // from player builds (no scene has fog at build time) and the coast then fails to draw
                 // once SkyRig turns fog on.

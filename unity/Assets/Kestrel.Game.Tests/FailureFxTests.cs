@@ -96,6 +96,11 @@ namespace Kestrel.Game.Tests
             Assert.That(bulk.JointIndex, Is.EqualTo(0));
             Assert.That(over.JointIndex, Is.EqualTo(2));
             Assert.That(over.Mode, Is.EqualTo(FailureFx.BreakMode));
+            Assert.That(q.Gap, Is.GreaterThan(12f), "a structural break opens fast");
+            Assert.That(q.ParticleSpeed, Is.GreaterThan(10f));
+            Assert.That(q.AngleDeg, Is.GreaterThan(40f));
+            var shard = FailureFx.Shard(0, 8, q.Gap, q.JointY, 0.5f);
+            Assert.That(Math.Abs(shard.X) + Math.Abs(shard.Z), Is.GreaterThan(1f));
         }
 
         [Test]

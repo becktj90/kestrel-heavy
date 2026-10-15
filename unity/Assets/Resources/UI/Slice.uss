@@ -21,6 +21,15 @@
 .hud-grid { margin-top: 10px; flex-direction: row; flex-wrap: wrap; flex-shrink: 0; background-color: rgba(0, 0, 0, 0.55); padding: 12px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
 .hud-cell { width: 33.3%; flex-grow: 0; flex-shrink: 0; font-size: 28px; white-space: nowrap; color: rgb(180, 255, 200); margin-top: 4px; margin-bottom: 4px; }
 .hud-msg { font-size: 36px; color: rgb(255, 176, 0); -unity-text-align: middle-center; }
+.webcast { flex-shrink: 0; background-color: rgba(0, 0, 0, 0.62); padding: 10px 12px; margin-bottom: 8px; border-top-left-radius: 12px; border-top-right-radius: 12px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+.webcast-verdict { font-size: 30px; color: rgb(255, 176, 0); -unity-font-style: bold; }
+.webcast-pulse { font-size: 22px; color: rgb(210, 230, 220); white-space: normal; margin-top: 2px; }
+.webcast-seq { flex-direction: row; flex-wrap: wrap; margin-top: 8px; }
+.webcast-chip { font-size: 20px; color: white; background-color: rgba(255, 255, 255, 0.14); margin-right: 6px; margin-top: 6px; padding: 6px 10px; border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+.webcast-now { background-color: rgb(255, 176, 0); color: black; -unity-font-style: bold; }
+.webcast-past { color: rgba(255, 255, 255, 0.55); }
+.webcast-pin { border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-left-color: white; border-right-color: white; border-top-color: white; border-bottom-color: white; }
+.webcast-skip { font-size: 22px; margin-top: 8px; color: white; background-color: rgba(255, 255, 255, 0.16); border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
 .home-button { position: absolute; -unity-font-style: bold; color: white; background-color: rgba(8, 12, 20, 0.80); border-width: 0; margin: 0; } /* size, padding, radius in points: SliceApp.HomeButtonMetrics */
 .hidden { display: none; }
 /* U1 designer validation (DESIGNER_SPEC §6). Static rings, no pulse (Reduce Motion / Reduce Flashing safe). */

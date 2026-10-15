@@ -128,6 +128,7 @@ namespace Kestrel.Core.Physics
         public int StageCount => st.Length;
         double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1;
         bool liftedOff, sawKarman; double karmanT; string outcome = "timeout";
+        FailureEvent playedBreak;
 
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
         public double LastP, LastQ, LastMach, LastThrust;
@@ -326,6 +327,25 @@ namespace Kestrel.Core.Physics
             return true;
         }
 
+        /// <summary>
+        /// End the played flight at a breakup so the explosion can play.
+        /// Headless.Simulate never calls this, so a recorded failure there still coasts to impact.
+        /// </summary>
+        public void BreakUp(FailureEvent ev)
+        {
+            if (ev != null)
+            {
+                playedBreak = ev;
+                if (o.monitor != null && o.monitor.Event == null) o.monitor.Event = ev;
+            }
+            if (outcome != "failure")
+            {
+                double r = JsMath.Hypot(Y[0], Y[1]);
+                Fail(r - Gravity.R_EARTH, JsMath.Hypot(Y[2], Y[3]));
+            }
+            Done = true;
+        }
+
         void Fail(double alt, double speed)
         {
             if (outcome == "failure") return;
@@ -426,6 +446,7 @@ namespace Kestrel.Core.Physics
                 result.minCar = o.monitor.MinCar;
                 result.qLimPa = o.monitor.QLimPa;
             }
+            if (result.failure == null && playedBreak != null) result.failure = playedBreak;
             return result;
         }
     }

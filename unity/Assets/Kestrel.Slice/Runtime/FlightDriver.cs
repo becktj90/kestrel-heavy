@@ -8,6 +8,7 @@
 // camera stays sub-millimetre at any altitude/downrange.
 using System;
 using System.Collections.Generic;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Audio;
@@ -38,11 +39,14 @@ namespace Kestrel.Slice
         public bool Meco { get; private set; }
         public bool Running { get; private set; }
         public SimResult Result { get; private set; }
+        public bool Lost => Result != null && Result.failure != null;
         public double OriginX { get; private set; }   // floating origin in pad-local metres (double)
         public double OriginY { get; private set; }
         public int Rebases { get; private set; }
 
         double clock; int mecoStage; double thrustRef = 1; double prevX, prevY;
+        bool arcadeBreaks;
+        double breakupQPa, liftoffTwr, dvMargin;
         double[] thrustByStage = System.Array.Empty<double>();
         int seenEvents; bool mecoSent;
         readonly List<(Transform t, double x, double y, double z)> anchored = new List<(Transform, double, double, double)>();
@@ -59,6 +63,12 @@ namespace Kestrel.Slice
             thrustByStage = new double[stages.Count];
             for (int i = 0; i < stages.Count; i++) thrustByStage[i] = stages[i].thrustVac;
             Sim = new AscentSim(stages, opts);
+            arcadeBreaks = PlayedBreakup.Arcade(d);
+            breakupQPa = FailureMonitor.StructuralQLimPa(c, d);
+            liftoffTwr = stages.Count > 0 && Sim.Y[4] > 1 ? stages[0].thrustSL / (Sim.Y[4] * Atmosphere.G0) : 0;
+            double ideal = Headless.StackDeltaV(stages, opts.payload).total;
+            double required = Stack.RequiredDeltaV(c, d != null ? d.payloadOrbit : null).required;
+            dvMargin = PlayedBreakup.Margin(ideal, required);
             // MECO = burnout of the core first stage (serial entry whose role is core with index 0).
             var serial = Stack.SerialStages(c, d).stages;
             mecoStage = serial.FindIndex(s => s.role == "core" && s.index == 0) + 1;
@@ -89,6 +99,7 @@ namespace Kestrel.Slice
                         if (ev.type == "burnout" && ev.stage == mecoStage) Meco = true;
                     }
                 }
+                if (StopForBreakup()) break;
             }
             if (Sim.Done)
             {
@@ -96,10 +107,48 @@ namespace Kestrel.Slice
                 if (Result == null) Result = Sim.Finish();
             }
             PumpEvents();
-            if (Meco && !mecoSent) { mecoSent = true; Sink?.OnEvent("meco"); }
+            if (Meco && !mecoSent && !Lost) { mecoSent = true; Sink?.OnEvent("meco"); }
             UpdateFrame();
             PublishAudio();
-            if (Meco) OnMeco?.Invoke(this);
+            if (Meco && !Lost) OnMeco?.Invoke(this);
+        }
+
+        /// <summary>True when this step ends the played flight in a breakup. The result is published once the sim is done.</summary>
+        bool StopForBreakup()
+        {
+            if (HasEvent("failure")) { Sim.BreakUp(null); return true; }
+            FailureEvent ev = null;
+            double alt = LiveAlt();
+            if (HasEvent("impact")) ev = PlayedBreakup.Impact(Sim.T);
+            else if (Meco && dvMargin < 0) ev = PlayedBreakup.Short(Sim.T, dvMargin);
+            else if (arcadeBreaks)
+            {
+                double mass = Sim.Y[4];
+                double accel = mass > 1 ? Sim.LastThrust / mass : 0;
+                var sample = new PlayedBreakup.Sample
+                {
+                    T = Sim.T, AltM = alt, QPa = Sim.LastQ, AccelMps2 = accel,
+                    QLimPa = breakupQPa, LiftoffTwr = liftoffTwr, Thrusting = Sim.Thrusting,
+                };
+                ev = PlayedBreakup.At(sample);
+            }
+            if (ev == null) return false;
+            Sim.BreakUp(ev);
+            return true;
+        }
+
+        double LiveAlt()
+        {
+            double x = Sim.Y[0], y = Sim.Y[1];
+            return Math.Sqrt(x * x + y * y) - Gravity.R_EARTH;
+        }
+
+        bool HasEvent(string type)
+        {
+            var ev = Sim.Events;
+            for (int i = ev.Count - 1; i >= 0; i--)
+                if (ev[i].type == type) return true;
+            return false;
         }
 
         void PumpEvents()
