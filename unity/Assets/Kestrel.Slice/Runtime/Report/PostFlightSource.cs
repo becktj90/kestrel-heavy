@@ -75,8 +75,8 @@ namespace Kestrel.Slice
             if (result != null)
             {
                 facts.PeakG = result.maxG;
-                if (result.orbit != null) facts.ApoKm = result.orbit.apoAlt / 1000.0;
-                double peri = result.orbit != null ? result.orbit.periAlt : 0;
+                facts.ApoKm = result.orbit.apoAlt / 1000.0;
+                double peri = result.orbit.periAlt;
                 CampaignMission row = Row(mission);
                 if (row != null)
                 {
@@ -86,7 +86,7 @@ namespace Kestrel.Slice
                     facts.RequiredMps = row.RequiredDeltaV();
                     facts.Margin = facts.RequiredMps > 1 ? (result.idealDeltaV - facts.RequiredMps) / facts.RequiredMps : 0;
                     bool intact = ev == null && result.outcome != "failure" && result.outcome != "crash";
-                    facts.Passed = FlightDebrief.GoalMet(row, intact, result.orbit != null ? result.orbit.apoAlt : 0, peri, result.maxG, null);
+                    facts.Passed = FlightDebrief.GoalMet(row, intact, result.orbit.apoAlt, peri, result.maxG, null);
                 }
             }
             if (flight != null && flight.Decisions != null)
