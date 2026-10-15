@@ -86,6 +86,6 @@ if __name__ == '__main__':
         render('kestrel-title', 84, 32)
     if want_name('kestrel-designer'):
         render('kestrel-designer', 80, 16, quiet=True)
-    # Short flight bed. Same motif and additive instruments as the title, quieter and slower.
-    if want_name('kestrel-flight'):
-        render('kestrel-flight', 72, 8, quiet=True, quality=1)
+    # Flight is the approved Gemini bed (kestrel-flight.ogg). This script must not overwrite it.
+    if 'kestrel-flight' in want:
+        print('kestrel-flight is the approved Gemini gameplay bed and is not rendered here')

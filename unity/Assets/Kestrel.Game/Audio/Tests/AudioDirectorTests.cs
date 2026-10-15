@@ -74,8 +74,9 @@ namespace Kestrel.Game.Audio.Tests
             Assert.AreEqual(MusicBed.Flight, director.Bed);
             Assert.IsFalse(director.Fading);
             Assert.IsNotNull(music.Clip);
-            Assert.Greater(music.Clip.length, 20f);
-            Assert.Less(music.Clip.length, 40f);
+            // Approved Gemini gameplay loop (~2:40 after the seam crossfade), not the short motif cut.
+            Assert.Greater(music.Clip.length, 158f);
+            Assert.Less(music.Clip.length, 163f);
             Assert.Greater(music.Volume, 0f);
             Assert.IsFalse(System.IO.File.Exists("Assets/Kestrel.Game/Audio/Runtime/Resources/Music/theme.ogg"));
             Assert.IsFalse(System.IO.File.Exists("Assets/Kestrel.Game/Audio/Runtime/Resources/Music/theme.mp3"));

@@ -12,13 +12,17 @@ Policy: original material only; no sound-alikes; never name composers or existin
 | Cue sketches (`tools/music/out/cue*.mid`) | Original, same script | Owned by Trevor Beck, all rights reserved | Yes | None required |
 | `tools/music/gen_midi.py` | Original code in this repo | Repo license / Trevor Beck | Yes | None |
 | Seeded generative texture (runtime, Bible §6.3) | Original algorithm, generated at runtime | Owned by Trevor Beck | Yes | None |
-| `kestrel-title.ogg`, `kestrel-designer.ogg`, `kestrel-flight.ogg` (`unity/Assets/Kestrel.Game/Audio/Runtime/Resources/Music`) | Original Kestrel motif/harmony from `gen_midi.py`, rendered by `render_score.py` using original additive synthesis; no soundfont or third-party samples. `kestrel-flight.ogg` is the short flight bed (8 bars, quieter). | Composition and synthesis: Trevor Beck, all rights reserved | Yes | None |
+| `kestrel-title.ogg`, `kestrel-designer.ogg` (`unity/Assets/Kestrel.Game/Audio/Runtime/Resources/Music`) | Original Kestrel motif/harmony from `gen_midi.py`, rendered by `render_score.py` using original additive synthesis; no soundfont or third-party samples. | Composition and synthesis: Trevor Beck, all rights reserved | Yes | None |
+| `kestrel-flight.ogg` (same folder) | Gameplay / flight bed. Trevor Beck generated the source with Gemini on his paid Google plan and approved it for this game. Shipped as 48 kHz stereo Vorbis q5, about −17 LUFS, true peak under −1 dBTP. A 12 s equal-power crossfade wraps the ending into the opening so the bed loops without a fade to silence. | Google Terms of Service: Google won't claim ownership over content you generate. Paid plan, approved by Trevor for the paid app. | Yes | Trevor Beck, generated with Gemini on a paid plan |
 | Additional rendered stems/cues (none yet) | Will be rendered from the original MIDI with FluidSynth + FluidR3_GM soundfont | Composition: Trevor Beck. Samples: FluidR3_GM, MIT license | Yes (MIT permits commercial use) | Keep the MIT notice in this file when rendered audio ships |
 | FluidSynth (tool only, not shipped) | https://www.fluidsynth.org/ | LGPL-2.1 | N/A (offline render tool; not linked into the app) | None |
 | `theme` (`ios/KestrelHeavy/Game/audio/theme.*`, `web/audio/`) existing web-demo BGM | AI music service (Suno), per `ATTRIBUTION.md`, made by Trevor's account | Suno terms: commercial rights only for songs generated while on a paid Pro/Premier plan; free-plan songs are non-commercial and are not licensed retroactively by upgrading. Trevor says it was not made on a paid plan, or he isn't sure | **EXCLUDED from the Unity/paid build.** Trevor decided on 2026-10-11 to replace it with the original Kestrel score. The files stay in the web demo and iOS folders for now; a replacement PR is planned | Free plan requires credit to Suno while it remains anywhere |
 
 ### AI-generated music
-None approved for the Unity build. The legacy `theme` above is the only AI track in the repo. It is EXCLUDED from the Unity/paid build (Trevor's decision, 2026-10-11) and will be replaced by the original Kestrel score.
+
+Trevor Beck, generated with Gemini on a paid plan.
+
+That line credits `kestrel-flight.ogg`, the gameplay bed. Trevor generated it with Gemini on his paid Google plan and approved it for Kestrel Heavy. The legacy Suno `theme` stays excluded from the Unity build.
 
 ## Optional paid upgrades (ask Trevor, not approved)
 
