@@ -145,6 +145,9 @@ namespace Kestrel.Game.Shell
         /// <summary>3D plates the overlay replaces.</summary>
         public static bool ReplacedByOverlay(MenuAnchor a) => a.Clickable || a.Id == "title" || a.Id == "subtitle";
 
+        /// <summary>All menu type sizes for a panel (see MenuTypeScale).</summary>
+        public static MenuTypeScale.Sizes TypeScale(float w, float h, float topInset = 0f, float bottomInset = 0f) => MenuTypeScale.Compute(w, h, topInset, bottomInset);
+
         public static bool ReducedMotion() =>
             PlayerPrefs.GetInt(ReduceMotionPref, 0) != 0 || PlayerPrefs.GetInt(ReduceFlashingPref, 0) != 0;
 

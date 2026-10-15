@@ -46,7 +46,6 @@ namespace Kestrel.Game.Shell
             var r = new VisualElement { pickingMode = PickingMode.Ignore }; r.AddToClassList("kh-mm-rule");
             rule.Add(l); rule.Add(heavy); rule.Add(r);
             title.Add(kestrel); title.Add(rule);
-            FitKestrel(kestrel);
             root.Add(title);
 
             var spacer = new VisualElement { pickingMode = PickingMode.Ignore }; spacer.style.flexGrow = 1; root.Add(spacer);
@@ -70,9 +69,11 @@ namespace Kestrel.Game.Shell
             {
                 float h = full.resolvedStyle.height;
                 if (h <= 0f) return;
-                root.EnableInClassList("kh-mm-narrow", MainMenuCopy.IsNarrow(full.resolvedStyle.width));
+                float w = full.resolvedStyle.width;
+                root.EnableInClassList("kh-mm-narrow", MainMenuCopy.IsNarrow(w));
                 float topInset = Mathf.Max(0f, safe.worldBound.yMin - full.worldBound.yMin);
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
+                ApplyScale(root, MenuTypeScale.Compute(w, h, topInset, botInset));
                 top.style.height = MainMenuCopy.BarHeight(h, topInset);
                 bottom.style.height = MainMenuCopy.BarHeight(h, botInset);
             });
@@ -118,24 +119,36 @@ namespace Kestrel.Game.Shell
             return b;
         }
 
-        static void FitKestrel(Label k)
+        /// <summary>Applies MenuTypeScale to every piece of menu type and the heights derived from it. Inline styles,
+        /// so they win over the USS defaults (which stay as the pre-layout fallback).</summary>
+        public static void ApplyScale(VisualElement root, MenuTypeScale.Sizes z)
         {
-            float applied = -1f, at100 = -1f; bool busy = false;
-            k.style.fontSize = 100f;
-            k.RegisterCallback<GeometryChangedEvent>(_ =>
+            void Font(string cls, float size, float trackEm)
             {
-                if (busy) return;
-                float avail = k.contentRect.width - 4f; if (avail <= 4f) return;
-                if (at100 <= 0f)
-                {
-                    if (k.resolvedStyle.fontSize < 99f) return;   // wait until the 100px start size is resolved
-                    at100 = k.MeasureTextSize(MainMenuCopy.TitleTop, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
-                    if (at100 <= 0f) return;
-                }
-                float size = MainMenuCopy.FitTitle(avail, at100);
-                if (Mathf.Abs(size - applied) < 0.5f) return;
-                busy = true; applied = size; k.style.fontSize = size; k.style.letterSpacing = size * 0.04f; busy = false;
-            });
+                root.Query(className: cls).ForEach(e => { e.style.fontSize = size; e.style.letterSpacing = size * trackEm; });
+            }
+            Font("kh-mm-kestrel", z.Title, .04f);
+            Font("kh-mm-heavy", z.Tagline, .5f);
+            Font("kh-mm-launch-label", z.LaunchLabel, .10f);
+            Font("kh-mm-launch-caption", z.LaunchCaption, 0f);
+            Font("kh-mm-tile-caption", z.TileCaption, 0f);
+            Font("kh-mm-soon", z.Soon, .15f);
+            Font("kh-mm-hint", z.Hint, .18f);
+            var launch = root.Q("home-launch");
+            if (launch != null)
+            {
+                launch.style.minHeight = z.LaunchH;
+                float padH = MenuTypeScale.Clamp(16f * z.Scale, 12f, 20f), padV = MenuTypeScale.Clamp(10f * z.Scale, 8f, 14f);
+                launch.style.paddingLeft = padH; launch.style.paddingRight = padH; launch.style.paddingTop = padV; launch.style.paddingBottom = padV;
+            }
+            foreach (var it in MainMenuCopy.Tiles)
+            {
+                var b = root.Q("home-" + it.Id); if (b == null) continue;
+                b.style.minHeight = z.TileH;
+                b.style.paddingLeft = z.Pad; b.style.paddingRight = z.Pad; b.style.paddingTop = z.Pad; b.style.paddingBottom = z.Pad;
+                var name = b.Q(className: "kh-mm-tile-name");
+                if (name != null) { float n = MenuTypeScale.FitName(z, it.Label, !it.Live); name.style.fontSize = n; name.style.letterSpacing = n * .03f; }
+            }
         }
 
         /// <summary>Intro per motion-spec.md: elements start hidden (kh-mm-anim) and get kh-mm-in on a staggered schedule.

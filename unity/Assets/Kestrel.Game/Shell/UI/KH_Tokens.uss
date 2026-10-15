@@ -143,10 +143,10 @@
 .kh-button.kh-mm-tile:focus { border-color: var(--kh-home-cream); }
 .kh-button.kh-mm-tile:disabled { opacity: 0.8; }
 .kh-mm-tile-head { flex-direction: row; align-items: center; justify-content: space-between; min-height: 24px; }
-.kh-mm-tile-name { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/Fraunces-Bold.ttf?fileID=12800000&guid=9ff7f267923c419eb9c234ff08737b2f&type=3"); font-size: 22px; letter-spacing: 1px; color: var(--kh-home-cream); -unity-text-align: middle-left; flex-shrink: 1; white-space: nowrap; }
+.kh-mm-tile-name { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/Fraunces-Bold.ttf?fileID=12800000&guid=9ff7f267923c419eb9c234ff08737b2f&type=3"); font-size: 22px; letter-spacing: 1px; color: var(--kh-home-cream); -unity-text-align: middle-left; flex-shrink: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kh-mm-tile--focus .kh-mm-tile-name { color: var(--kh-home-navy); }
 .kh-mm-tile--soon .kh-mm-tile-name { color: #9c9282; }
-.kh-mm-tile-caption { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Medium.ttf?fileID=12800000&guid=da73225191314e37b12604307d854801&type=3"); font-size: 14px; color: #d6c8b0; white-space: normal; margin-top: var(--kh-space-1); -unity-text-align: upper-left; }
+.kh-mm-tile-caption { overflow: hidden; -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Medium.ttf?fileID=12800000&guid=da73225191314e37b12604307d854801&type=3"); font-size: 14px; color: #d6c8b0; white-space: normal; margin-top: var(--kh-space-1); -unity-text-align: upper-left; }
 .kh-mm-tile--focus .kh-mm-tile-caption { color: #50463c; }
 .kh-mm-tile--soon .kh-mm-tile-caption { color: #928874; }
 .kh-mm-soon { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Bold.ttf?fileID=12800000&guid=8d76cbbc81224bc2a01f5e17341dae63&type=3"); font-size: 11px; letter-spacing: 2px; color: #a09682; border-width: 1px; border-color: #a09682; border-radius: 4px; padding: 1px 5px; margin-left: var(--kh-space-1); flex-shrink: 0; }

@@ -12,7 +12,7 @@ namespace Kestrel.Game.Shell
         /// <summary>LAUNCH opens the designer today (no start-mission route exists), so the caption says that
         /// and not "Next: KH-1 · First Hop". Swap the caption when a real route lands.</summary>
         public const string LaunchCaption = "Opens the pad. Build, then launch.";
-        public const string TapHint = "TAP LAUNCH TO GO TO THE PAD  \u00B7  TAP A TILE TO OPEN";
+        public const string TapHint = "TAP A TILE OR LAUNCH TO BEGIN";
         public const string SoonTag = "SOON";
 
         public struct Item

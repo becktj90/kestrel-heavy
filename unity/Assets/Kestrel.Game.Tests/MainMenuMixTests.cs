@@ -178,5 +178,108 @@ namespace Kestrel.Game.Tests
             Assert.That(File.Exists("Assets/Art/Fonts/Resources/KHFonts/Fraunces-Black.ttf"));
             Assert.That(MainMenuFonts.Dir, Is.EqualTo("KHFonts/"));
         }
+
+        // ---- Responsive type (MenuTypeScale): points, insets are typical safe areas. ----
+        static readonly (string name, float w, float h, float top, float bottom)[] Devices =
+        {
+            ("SE", 375f, 667f, 20f, 0f), ("iPhone", 390f, 844f, 47f, 34f), ("ProMax", 440f, 956f, 62f, 34f),
+            ("iPad13", 1032f, 1376f, 24f, 20f), ("iPadSplit", 507f, 1194f, 24f, 20f),
+        };
+
+        [Test]
+        public void MinimumSizesHoldOnEveryDevice()
+        {
+            foreach (var d in Devices)
+            {
+                var z = MenuTypeScale.Compute(d.w, d.h, d.top, d.bottom);
+                Assert.That(z.TileCaption, Is.GreaterThanOrEqualTo(MenuTypeScale.CaptionFloor), d.name);
+                Assert.That(z.LaunchCaption, Is.GreaterThanOrEqualTo(MenuTypeScale.CaptionFloor), d.name);
+                Assert.That(z.Soon, Is.GreaterThanOrEqualTo(MenuTypeScale.Soon.Min), d.name);
+                Assert.That(z.Hint, Is.GreaterThanOrEqualTo(MenuTypeScale.Hint.Min), d.name);
+                Assert.That(z.TileName, Is.GreaterThanOrEqualTo(MenuTypeScale.TileName.Min), d.name);
+                Assert.That(z.Title, Is.InRange(MenuTypeScale.Title.Min, MenuTypeScale.Title.Max), d.name);
+                Assert.That(z.Tagline, Is.GreaterThanOrEqualTo(MenuTypeScale.Tagline.Min), d.name);
+            }
+        }
+
+        [Test]
+        public void EveryElementFitsItsContainer()
+        {
+            foreach (var d in Devices)
+            {
+                var z = MenuTypeScale.Compute(d.w, d.h, d.top, d.bottom);
+                float col = d.w - 2f * MenuTypeScale.SideMargin;
+                Assert.That(MenuTypeScale.TextW("KESTREL", z.Title), Is.LessThanOrEqualTo(col), d.name + " title");
+                Assert.That(MenuTypeScale.TextW("HEAVY", z.Tagline), Is.LessThanOrEqualTo(col * 0.5f), d.name + " tagline leaves room for the rules");
+                Assert.That(MenuTypeScale.TextW("LAUNCH", z.LaunchLabel), Is.LessThanOrEqualTo(z.LaunchCaptionW), d.name + " launch label");
+                Assert.That(MenuTypeScale.TextW(MainMenuCopy.TapHint, z.Hint), Is.LessThanOrEqualTo(col), d.name + " hint on one line");
+                foreach (var t in MainMenuCopy.Tiles)
+                {
+                    float n = MenuTypeScale.FitName(z, t.Label, !t.Live);
+                    Assert.That(MenuTypeScale.NameFits(z, t.Label, !t.Live, n), d.name + " " + t.Label + " name beside its lamp/tag");
+                    // Caption: wraps to the lines the tile height was derived from, never more.
+                    float lines = MenuTypeScale.TextW(t.Caption, z.TileCaption) * 1.08f / z.TileInner;
+                    Assert.That(lines, Is.LessThanOrEqualTo(z.TileCaptionLines + 0.001f), d.name + " " + t.Id + " caption lines");
+                }
+                // Tile height is derived from the scaled type, and still a >= 44 target.
+                float need = 2f * MenuTypeScale.TileBorder + 2f * z.Pad + System.Math.Max(24f, z.TileName * 1.25f) + 4f + z.TileCaptionLines * z.TileCaption * 1.3f;
+                Assert.That(z.TileH, Is.GreaterThanOrEqualTo(need - 0.01f), d.name);
+                Assert.That(z.TileH, Is.GreaterThanOrEqualTo(MenuTypeScale.HitMin), d.name);
+                Assert.That(z.LaunchH, Is.GreaterThanOrEqualTo(MenuTypeScale.HitMin), d.name);
+            }
+        }
+
+        [Test]
+        public void ControlsAndTitleLeaveTheHeroVisible()
+        {
+            foreach (var d in Devices)
+            {
+                var z = MenuTypeScale.Compute(d.w, d.h, d.top, d.bottom);
+                Assert.That(1f - z.ControlsH / d.h, Is.GreaterThanOrEqualTo(MainMenuCopy.HeroBottomFrac), d.name + ": controls cover the rocket/telemetry");
+                float block = 40f + z.Title * 1.2f + z.Tagline * 1.3f;
+                Assert.That(block / d.h, Is.LessThanOrEqualTo(0.25f), d.name + ": title block reaches the rocket nose");
+            }
+        }
+
+        [Test]
+        public void ScalingIsMonotonicInWidthAndHeight()
+        {
+            float[] ws = { 320f, 375f, 390f, 440f, 600f, 834f, 1032f };
+            for (int i = 1; i < ws.Length; i++)
+            {
+                var a = MenuTypeScale.Compute(ws[i - 1], 1200f); var b = MenuTypeScale.Compute(ws[i], 1200f);   // height large so width limits
+                Assert.That(b.Scale, Is.GreaterThanOrEqualTo(a.Scale));
+                Assert.That(b.TileCaption, Is.GreaterThanOrEqualTo(a.TileCaption)); Assert.That(b.TileName, Is.GreaterThanOrEqualTo(a.TileName));
+                Assert.That(b.LaunchLabel, Is.GreaterThanOrEqualTo(a.LaunchLabel)); Assert.That(b.Soon, Is.GreaterThanOrEqualTo(a.Soon));
+            }
+            float[] hs = { 568f, 667f, 812f, 844f, 932f, 1194f };
+            for (int i = 1; i < hs.Length; i++)
+            {
+                var a = MenuTypeScale.Compute(1200f, hs[i - 1]); var b = MenuTypeScale.Compute(1200f, hs[i]);   // width large so height limits
+                Assert.That(b.Scale, Is.GreaterThanOrEqualTo(a.Scale));
+                Assert.That(b.TileCaption, Is.GreaterThanOrEqualTo(a.TileCaption)); Assert.That(b.LaunchCaption, Is.GreaterThanOrEqualTo(a.LaunchCaption));
+            }
+            Assert.That(MenuTypeScale.Compute(390f, 844f, 47f, 34f).Scale, Is.LessThan(MenuTypeScale.Compute(390f, 844f).Scale), "insets shrink the usable height");
+        }
+
+        [Test]
+        public void ScaleFormulaMatchesTheSpec()
+        {
+            Assert.That(MenuTypeScale.Scale(390f, 844f), Is.EqualTo(1f).Within(1e-5f));
+            Assert.That(MenuTypeScale.TileCaption.At(1f), Is.EqualTo(13f));
+            Assert.That(MenuTypeScale.TileCaption.At(0.1f), Is.EqualTo(11f), "floor");
+            Assert.That(MenuTypeScale.TileCaption.At(9f), Is.EqualTo(18f), "cap");
+        }
+
+        [Test]
+        public void ApplyScaleSetsInlineSizesOnTheBuiltOverlay()
+        {
+            var root = Build(false, out _, out _, out _);
+            var z = MenuTypeScale.Compute(390f, 844f, 47f, 34f);
+            MainMenuOverlay.ApplyScale(root, z);
+            Assert.That(root.Q<Label>("mm-kestrel").style.fontSize.value.value, Is.EqualTo(z.Title).Within(0.01f));
+            Assert.That(root.Q<Button>("home-hangar").style.minHeight.value.value, Is.EqualTo(z.TileH).Within(0.01f));
+            Assert.That(root.Q<Button>("home-missions").Q(className: "kh-mm-soon").style.fontSize.value.value, Is.EqualTo(z.Soon).Within(0.01f));
+        }
     }
 }
