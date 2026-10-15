@@ -38,6 +38,9 @@ namespace Kestrel.Game.Shell
         string _fuelS, _loxS, _massS, _thrustS, _windS, _statusS;
         MainMenuHotspot _hover;
 
+        /// <summary>Hide the 3D title/launch/glass plates (and their colliders) because the 2D overlay replaces them.</summary>
+        public bool OverlayMode;
+
         public void Attach(AppShell shell)
         {
             _shell = shell;
@@ -54,6 +57,9 @@ namespace Kestrel.Game.Shell
             BuildPlates();
             _aspect = AspectOfScreen();
             for (int i = 0; i < _plates.Count; i++) Place(_plates[i], _aspect);
+            if (OverlayMode)
+                for (int i = 0; i < _plates.Count; i++)
+                    if (MainMenuLayout.ReplacedByOverlay(_plates[i].Anchor)) _plates[i].Root.gameObject.SetActive(false);
             ApplyCamera(MainMenuLayout.ReducedMotion());
         }
 
@@ -118,12 +124,12 @@ namespace Kestrel.Game.Shell
             }
             if (_hudTrim != null)
             {
-                float h = reduce ? 0.85f : 0.65f + 0.35f * MainMenuLayout.Pulse(time + 0.4f, false);
+                // Steady, same cyan accent, no pulse and no bloom-level emission: the frame no longer glows into the text.
                 var c = MainMenuMaterials.Cyan;
-                c.a = 0.45f + 0.4f * h;
+                c.a = 0.85f;
                 _hudTrim.SetColor("_BaseColor", c);
                 _hudTrim.SetColor("_Color", c);
-                if (_hudTrim.HasProperty("_EmissionColor")) _hudTrim.SetColor("_EmissionColor", MainMenuMaterials.Cyan * (1.4f + 2.2f * h));
+                if (_hudTrim.HasProperty("_EmissionColor")) _hudTrim.SetColor("_EmissionColor", MainMenuMaterials.Cyan * 1.0f);
             }
             float title = MainMenuLayout.TitleGlow(time, reduce);
             for (int i = 0; i < _glowLabels.Count; i++) _glowLabels[i].SetGlow(title);
@@ -164,7 +170,7 @@ namespace Kestrel.Game.Shell
                 var a = anchors[i];
                 var plate = new Plate { Anchor = a };
                 plate.Root = New(a.Id, _root);
-                bool slab = a.Clickable || a.Role == MenuTextRole.Hud;
+                bool slab = a.Clickable || a.Role == MenuTextRole.Hud || a.Id == "kh1";
                 if (slab) plate.Slab = Slab(plate.Root, a);
                 if (a.Id == "launch") plate.Trim = Trim(plate.Root, ref _trimMat);
                 else if (a.Role == MenuTextRole.Hud) plate.Trim = Trim(plate.Root, ref _hudTrim);
@@ -179,9 +185,12 @@ namespace Kestrel.Game.Shell
         {
             var t = AddMesh(parent, "Slab", _cube, null, Vector3.zero, Quaternion.identity, Vector3.one);
             var rend = t.GetComponent<MeshRenderer>();
+            // Telemetry sits on an opaque dark panel (no emissive cyan glass behind the text): high contrast on every phone.
             Material mat = a.Id == "launch"
                 ? MainMenuMaterials.Body(MainMenuMaterials.LaunchRed, 0.35f, 0.58f, new Color(0.35f, 0.01f, 0.03f))
-                : MainMenuMaterials.Glass(MainMenuMaterials.GlassTint, 0.45f);
+                : a.Role == MenuTextRole.Hud || a.Id == "kh1"
+                    ? MainMenuMaterials.Body(MainMenuMaterials.HudPanel, 0f, 0.05f, Color.black)
+                    : MainMenuMaterials.Glass(MainMenuMaterials.GlassTint, 0.45f);
             rend.sharedMaterial = Own(mat);
             return t;
         }
@@ -247,7 +256,7 @@ namespace Kestrel.Game.Shell
             }
             else if (a.Id == "kh1")
             {
-                Glow(MakeLabel(plate, MainMenuLayout.Designation, MenuTextRole.Dial, true));
+                MakeLabel(plate, MainMenuLayout.Designation, MenuTextRole.Dial, true);   // steady: no brightness pulse
             }
             else if (a.Id == "launch")
             {
@@ -319,7 +328,7 @@ namespace Kestrel.Game.Shell
             if (labels == null || labels.Count == 0) return;
             if (p.Anchor.Id == "kh1")
             {
-                labels[0].Place(new Vector3(0f, 0f, z), size.x * 0.72f, size.y * 0.34f);
+                labels[0].Place(new Vector3(0f, 0f, z), size.x * 0.84f, size.y * 0.46f);
                 return;
             }
             if (p.Anchor.Id == "launch" && labels.Count >= 2)
@@ -341,7 +350,7 @@ namespace Kestrel.Game.Shell
             float step = span / labels.Count;
             float hLine = step * 0.88f;
             float top = span * 0.5f - step * 0.5f;
-            float wLine = size.x * 0.88f;
+            float wLine = size.x * 0.92f;
             for (int i = 0; i < labels.Count; i++)
                 labels[i].Place(new Vector3(0f, top - i * step, z), wLine, hLine);
         }
@@ -403,7 +412,8 @@ namespace Kestrel.Game.Shell
                 AddMesh(root, "Crew", crew, suit, at[i], yaw, Vector3.one);
             }
             // Service tower, just outside the left booster, so the bay has a structure at the vehicle's scale.
-            for (int k = 0; k < 8; k++)
+            // Overlay mode skips it: its thin pole read as a stray vertical line beside the rocket on phones.
+            for (int k = 0; k < 8 && !OverlayMode; k++)
             {
                 float y = 3f + k * 5.5f;
                 AddMesh(root, "Tower", _cube, metal, new Vector3(-6.8f, y, 0.4f), Quaternion.identity, new Vector3(0.35f, 5f, 0.35f));
@@ -443,7 +453,9 @@ namespace Kestrel.Game.Shell
             AddMesh(_root, "Left", _cube, steel, new Vector3(-fullW * 0.5f, deck.y + height * 0.5f, midZ), Quaternion.identity, new Vector3(0.2f, height, len));
             AddMesh(_root, "Right", _cube, steel, new Vector3(fullW * 0.5f, deck.y + height * 0.5f, midZ), Quaternion.identity, new Vector3(0.2f, height, len));
             float ceil = deck.y + height;
-            for (int i = -1; i <= 1; i++)
+            // The emissive white bay-light bars read as stray bars over the overlay title, so skip them in overlay mode
+            // (the Key/Fill Light objects below still light the scene).
+            for (int i = -1; i <= 1 && !OverlayMode; i++)
             {
                 AddMesh(_root, "Bay light", _cube, lamp, new Vector3(i * fullW * 0.22f, ceil - 0.08f, deck.z + 1.2f), Quaternion.identity, new Vector3(0.55f, 0.08f, 0.18f));
             }
@@ -480,6 +492,15 @@ namespace Kestrel.Game.Shell
             _cam.clearFlags = CameraClearFlags.SolidColor;
             _cam.backgroundColor = MainMenuMaterials.Bay;
             _cam.transform.SetPositionAndRotation(pose.Eye, Quaternion.LookRotation(pose.Forward, Vector3.up));
+            // Lens shift: move the whole 3D view up by HeroLift of the panel height so it never sits under the controls.
+            _cam.ResetProjectionMatrix();
+            float lift = Mathf.Clamp(MainMenuLayout.HeroLift, 0f, 0.2f);
+            if (lift > 0f)
+            {
+                var m = _cam.projectionMatrix;
+                m[1, 2] = -2f * lift;    // NDC y shift up (view space looks down -Z)
+                _cam.projectionMatrix = m;
+            }
         }
 
         void Capture()
@@ -506,6 +527,7 @@ namespace Kestrel.Game.Shell
             _cam.clearFlags = _clear;
             _cam.backgroundColor = _bg;
             _cam.transform.SetPositionAndRotation(_pos, _rot);
+            _cam.ResetProjectionMatrix();
             _captured = false;
         }
 

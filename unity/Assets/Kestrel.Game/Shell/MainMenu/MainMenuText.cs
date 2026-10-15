@@ -75,11 +75,16 @@ namespace Kestrel.Game.Shell
 
     public static class MainMenuText
     {
-        public const int PixelSize = 96;
+        public const int PixelSize = 48;   // atlas size close to the on-screen size: 96 px minified 3x+ shimmered on phones
+        /// <summary>Longest telemetry line. HUD lines are laid out as if this wide so every line gets the same glyph size.</summary>
+        public const string HudWidest = "THRUST: 851 kN";
         public const float FaceClearance = 0.02f;
         public const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./%+, \u00B7-";
 
         static Font _font;
+
+        /// <summary>Telemetry and the KH-1 plate use the bold face: the normal weight is hairline at ~15 px on a phone.</summary>
+        public static FontStyle StyleFor(MenuTextRole role) => role == MenuTextRole.Hud || role == MenuTextRole.Dial ? FontStyle.Bold : FontStyle.Normal;
 
         /// <summary>One glyph in font pixels, origin at the pen, y up the way CharacterInfo is.</summary>
         public readonly struct GlyphStamp
@@ -107,6 +112,18 @@ namespace Kestrel.Game.Shell
         /// <summary>Font x grows to the right. On a camera-facing panel that is local −X, which is screen-right.</summary>
         public static float LocalX(float fontX, float fit) => -fontX * fit;
 
+        /// <summary>Which channel holds glyph coverage: 1 (red) only for formats with no alpha channel, else 0 (alpha).</summary>
+        public static float CoverageModeFor(TextureFormat f)
+        {
+            switch (f)
+            {
+                case TextureFormat.R8: case TextureFormat.R16: case TextureFormat.RFloat: case TextureFormat.RHalf:
+                case TextureFormat.RGB24: case TextureFormat.RGB565: case TextureFormat.RGB9e5Float: case TextureFormat.DXT1: case TextureFormat.ETC_RGB4: case TextureFormat.ETC2_RGB:
+                    return 1f;
+                default: return 0f;
+            }
+        }
+
         public static void Warmup()
         {
             var font = OsFont();
@@ -116,6 +133,7 @@ namespace Kestrel.Game.Shell
                 + MainMenuLayout.Tagline + MainMenuLayout.Designation;
             for (int i = 0; i < read.All().Length; i++) sample += read.All()[i];
             font.RequestCharactersInTexture(sample, PixelSize, FontStyle.Normal);
+            font.RequestCharactersInTexture(sample, PixelSize, FontStyle.Bold);
         }
 
         public static bool Fill(string text, float worldW, float worldH, MenuTextRole role, Mesh mesh, Material mat)
@@ -143,6 +161,7 @@ namespace Kestrel.Game.Shell
             {
                 mat.SetTexture("_BaseMap", tex);
                 mat.mainTexture = tex;
+                if (mat.HasProperty("_CoverageMode")) mat.SetFloat("_CoverageMode", CoverageModeFor(tex is Texture2D t2 ? t2.format : TextureFormat.Alpha8));
             }
             return tex != null;
         }
@@ -156,10 +175,11 @@ namespace Kestrel.Game.Shell
                 var font = OsFont();
                 if (font != null)
                 {
-                    font.RequestCharactersInTexture(text, PixelSize, FontStyle.Normal);
+                    var fs = StyleFor(role);
+                    font.RequestCharactersInTexture(text, PixelSize, fs);
                     for (int i = 0; i < text.Length; i++)
                     {
-                        if (font.GetCharacterInfo(text[i], out var info, PixelSize, FontStyle.Normal))
+                        if (font.GetCharacterInfo(text[i], out var info, PixelSize, fs))
                             glyphs.Add(GlyphStamp.From(info));
                         else
                             glyphs.Add(new GlyphStamp(0f, 0f, 0f, 0f, PixelSize * 0.33f, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero));
@@ -167,12 +187,23 @@ namespace Kestrel.Game.Shell
                 }
             }
             float extra = MainMenuLayout.Style(role).CharacterSpacing * PixelSize * 0.01f;
-            return Layout(glyphs, worldW, worldH, extra, verts, uvs, tris);
+            float minPxW = 0f;
+            if (role == MenuTextRole.Hud && glyphs.Count > 0)
+            {
+                var font = OsFont();
+                if (font != null)
+                {
+                    font.RequestCharactersInTexture(HudWidest, PixelSize, StyleFor(role));
+                    for (int i = 0; i < HudWidest.Length; i++)
+                        if (font.GetCharacterInfo(HudWidest[i], out var info, PixelSize, StyleFor(role))) minPxW += Mathf.Max(0f, info.advance) + extra;
+                }
+            }
+            return Layout(glyphs, worldW, worldH, extra, verts, uvs, tris, minPxW);
         }
 
         /// <summary>Writes one quad per visible glyph, centered in the box. False when there is nothing to draw.</summary>
         public static bool Layout(IList<GlyphStamp> glyphs, float worldW, float worldH, float extraPx,
-            List<Vector3> verts, List<Vector2> uvs, List<int> tris)
+            List<Vector3> verts, List<Vector2> uvs, List<int> tris, float minPxW = 0f)
         {
             if (verts == null || uvs == null || tris == null) return false;
             verts.Clear();
@@ -192,6 +223,7 @@ namespace Kestrel.Game.Shell
                 minY = Mathf.Min(minY, g.MinY);
                 maxY = Mathf.Max(maxY, g.MaxY);
             }
+            pxW = Mathf.Max(pxW, minPxW);
             float pxH = maxY - minY;
             if (drawn == 0 || pxW < 1f || pxH < 0.5f) return false;
             float fit = Mathf.Min(worldW / pxW, worldH / pxH);
