@@ -66,7 +66,9 @@
 .kh-home { flex-grow: 1; justify-content: flex-start; align-items: center; padding: var(--kh-space-6) var(--kh-space-4) var(--kh-space-6) var(--kh-space-4); }
 /* Title and subtitle stretch across the safe column (align-self beats the centered column).
    HomeTitleFit shrinks the 52px wordmark until KESTREL fits that width; the subtitle wraps. */
-.kh-home-title { font-size: 52px; -unity-font-style: bold; color: var(--kh-home-cream); -unity-text-align: middle-center; letter-spacing: 4px; margin-top: 32px; -unity-text-outline-width: 1px; -unity-text-outline-color: rgba(20, 31, 52, 0.8); width: 100%; max-width: 100%; white-space: nowrap; align-self: stretch; }
+/* Outline stays off. A 1px UITK outline redrew every stroke and read as a doubled letter.
+   The hangar wordmark is TextMeshPro with an SDF glow instead. */
+.kh-home-title { font-size: 52px; -unity-font-style: bold; color: var(--kh-home-cream); -unity-text-align: middle-center; letter-spacing: 4px; margin-top: 32px; -unity-text-outline-width: 0; width: 100%; max-width: 100%; white-space: nowrap; align-self: stretch; }
 .kh-home-title-rest { margin-top: 0; color: var(--kh-home-orange); }
 .kh-home-subtitle { font-size: 15px; color: var(--kh-home-cream); letter-spacing: 3px; -unity-text-align: middle-center; margin-top: var(--kh-space-2); width: 100%; max-width: 100%; white-space: normal; align-self: stretch; }
 .kh-subtitle { font-size: var(--kh-font-body); color: var(--kh-color-ink); -unity-text-align: middle-center; margin-bottom: var(--kh-space-6); }

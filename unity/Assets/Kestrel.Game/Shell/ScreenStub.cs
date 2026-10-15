@@ -1,5 +1,5 @@
-// Home title screen (retro mix-v2), plus placeholder Flight screens (unused on the play path) until U3/U4 land. Shows the screen
-// name inside the safe area plus nav buttons (≥44 pt), so the shell and scaling can be verified.
+// Home is the 3D hangar menu. Flight stays a placeholder until U3/U4 land. BuildConsole is the
+// flat console the EditMode tests still construct; the live Home path does not show it.
 using Kestrel.Game.Layout;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -27,46 +27,37 @@ namespace Kestrel.Game.Shell
             if (shell.Fill != null) shell.Fill.SpaceT = Kind == AppScreen.Flight ? 0f : 1f;
         }
 
-        HomeBackdrop _backdrop;
+        MainMenuController _menu;
 
-        /// <summary>Retro title screen (mix-v2): poster sky + striped sun + cream blueprint stack (HomeBackdrop),
-        /// cream KESTREL / orange HEAVY lockup, and a console panel: KH-1 patch, red LAUNCH key (= the old PLAY
-        /// action) and Hangar/Missions/Codex/Settings with status lamps. Static, so Reduce Motion safe.
-        /// Labels double as the accessible names (tooltip carries the spoken hint, as elsewhere in the shell).</summary>
+        /// <summary>Home is the 3D hangar (MainMenuController): KH-1 on the deck, telemetry and glass
+        /// panels at different depths, launch bar closest. The UI Toolkit view does not pick; it only
+        /// holds hidden spoken labels. BuildConsole remains for the EditMode hit-target tests.</summary>
         void BuildHome(AppShell shell)
         {
-            _backdrop = new HomeBackdrop();
-            shell.Root.Insert(0, _backdrop);              // behind the safe-area root, edge to edge
             _view.AddToClassList("kh-home");
-            var kestrel = new Label("KESTREL");
-            kestrel.AddToClassList("kh-home-title");
-            var heavy = new Label("HEAVY");
-            heavy.AddToClassList("kh-home-title");
-            heavy.AddToClassList("kh-home-title-rest");
-            _view.Add(kestrel);
-            _view.Add(heavy);
-            HomeTitleFit.Bind(kestrel, heavy);
-            var sub = new Label("DESIGN \u00B7 BUILD \u00B7 LAUNCH");
-            sub.AddToClassList("kh-home-subtitle");
-            _view.Add(sub);
-            var bd = _backdrop;
-            sub.RegisterCallback<GeometryChangedEvent>(_ =>
-            {
-                float top = sub.worldBound.yMax - bd.worldBound.yMin + 16f;
-                if (!Mathf.Approximately(top, bd.ArtTopY)) { bd.ArtTopY = top; bd.MarkDirtyRepaint(); }
-            });
-            var spacer = new VisualElement { pickingMode = PickingMode.Ignore };
-            spacer.style.flexGrow = 1;
-            _view.Add(spacer);
-            var console = BuildConsole(shell);
-            _view.Add(console);
-            console.RegisterCallback<GeometryChangedEvent>(_ =>
-            {
-                float top = console.worldBound.yMin - bd.worldBound.yMin;
-                if (!Mathf.Approximately(top, bd.ConsoleTopY)) { bd.ConsoleTopY = top; bd.MarkDirtyRepaint(); }
-            });
+            _view.pickingMode = PickingMode.Ignore;
+            _view.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0f));
             shell.Safe.Add(_view);
-            if (shell.Fill != null) shell.Fill.SpaceT = 0.6f;
+            if (shell.Fill != null) shell.Fill.SpaceT = 0.85f;
+            // Spoken strings stay on UI Toolkit labels (the project's VoiceOver stand-in) but do not
+            // pick, so the raycasts hit the 3D panels instead of a flat overlay.
+            AddSpoken("home-launch", MainMenuLayout.LaunchLabel, MainMenuLayout.Find("launch").Spoken);
+            foreach (var id in new[] { "hangar", "missions", "codex", "settings" })
+            {
+                var a = MainMenuLayout.Find(id);
+                AddSpoken("home-" + id, a.Label, a.Spoken);
+            }
+            AddSpoken("kh1-readout", MainMenuLayout.Designation, MainMenuLayout.Find("kh1").Spoken);
+            _menu = gameObject.AddComponent<MainMenuController>();
+            _menu.Attach(shell);
+        }
+
+        void AddSpoken(string name, string label, string spoken)
+        {
+            var line = new Label { name = name, text = label, tooltip = spoken };
+            line.pickingMode = PickingMode.Ignore;
+            line.style.display = DisplayStyle.None;
+            _view.Add(line);
         }
 
         /// <summary>Console panel. Public + static so EditMode tests can build it without an AppShell.</summary>
@@ -112,7 +103,11 @@ namespace Kestrel.Game.Shell
             _view.Add(b);
         }
 
-        void OnDisable() { _view?.RemoveFromHierarchy(); _backdrop?.RemoveFromHierarchy(); }
+        void OnDisable()
+        {
+            _view?.RemoveFromHierarchy();
+            if (_menu != null) { Destroy(_menu); _menu = null; }
+        }
     }
 
     /// <summary>Shrinks the Home wordmark so the wider line stays inside the safe column. The 52px
