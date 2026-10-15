@@ -42,6 +42,9 @@ namespace Kestrel.Game.Shell
             _view.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0f));
             shell.Safe.Add(_view);
             if (shell.Fill != null) shell.Fill.SpaceT = 0.85f;
+            // #224: music/sound/narration toggles live on Home in both the overlay and the 3D fallback.
+            var audio = AudioBar.Build();
+            _view.Add(audio);
             _menu = gameObject.AddComponent<MainMenuController>();
             _menu.OverlayMode = MainMenuLayout.UseOverlay;
             _menu.Attach(shell);
@@ -52,6 +55,7 @@ namespace Kestrel.Game.Shell
                 _view.pickingMode = PickingMode.Ignore;
                 Action toDesign = () => shell.Flow.Go(AppScreen.Design);
                 _overlay = MainMenuOverlay.Build(shell.Root, _view, toDesign, toDesign, MainMenuLayout.ReducedMotion());
+                audio.BringToFront(); // keep the mix toggles tappable above the overlay card
                 return;
             }
             // Fallback (UseOverlay = false): the original 3D controls with hidden spoken labels.

@@ -38,6 +38,9 @@ namespace Kestrel.Slice
         public double ThrustFraction { get; private set; }
         public bool Meco { get; private set; }
         public bool Running { get; private set; }
+        /// <summary>Pause. The sim clock does not advance until <see cref="Hold"/> is cleared.</summary>
+        public bool Held { get; private set; }
+        public void Hold(bool on) => Held = on;
         public SimResult Result { get; private set; }
         public bool Lost => Result != null && Result.failure != null;
         public double OriginX { get; private set; }   // floating origin in pad-local metres (double)
@@ -88,7 +91,7 @@ namespace Kestrel.Slice
 
         void Update()
         {
-            if (!Running || Sim == null) return;
+            if (Held || !Running || Sim == null) return;
             clock += Math.Min(Time.deltaTime, 0.1); // clamp hitches; physics catches up at fixed dt
             int guard = 0;
             while (Sim.T < clock && !Sim.Done && guard++ < 64)

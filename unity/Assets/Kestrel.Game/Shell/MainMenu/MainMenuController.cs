@@ -88,7 +88,7 @@ namespace Kestrel.Game.Shell
             }
             var hit = Ray(pos);
             _hover = hit;
-            if (down && hit != null && hit.Live && _cool <= 0f)
+            if (down && hit != null && hit.Live && _cool <= 0f && !AudioBar.Blocks(pos))
             {
                 _cool = 0.35f;
                 hit.Pressed?.Invoke();

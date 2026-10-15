@@ -22,8 +22,18 @@ namespace Kestrel.Game.Audio
         public int Started { get; private set; }
         public string LastResource { get; private set; }
         public bool Busy => schedule.Busy;
+        public bool Held { get; private set; }
 
         public void Bind(AudioDirector audio) => director = audio;
+
+        /// <summary>Pause the take with the flight. Unpause continues the same sample.</summary>
+        public void Hold(bool on)
+        {
+            Held = on;
+            if (voice == null) return;
+            if (on) { if (voice.isPlaying) voice.Pause(); }
+            else voice.UnPause();
+        }
 
         public void Use(NarrationCatalog next) => catalog = next ?? NarrationCatalog.Empty;
 
@@ -35,7 +45,7 @@ namespace Kestrel.Game.Audio
                 StopVoice();
                 return;
             }
-            var start = schedule.Push(catalog, id, director != null && director.Muted);
+            var start = schedule.Push(catalog, id, AudioPrefs.NarrationMuted);
             if (start != null) StartVoice(start);
         }
 
@@ -64,7 +74,7 @@ namespace Kestrel.Game.Audio
 
         void Update()
         {
-            if (!schedule.Busy || !Application.isPlaying || voice == null) return;
+            if (Held || !schedule.Busy || !Application.isPlaying || voice == null) return;
             if (voice.isPlaying) { sawAudio = true; return; }
             if (!sawAudio && Time.unscaledTime < startedAt + 0.1f) return;
             if (Time.unscaledTime < startedAt + playFor && !sawAudio) return;
