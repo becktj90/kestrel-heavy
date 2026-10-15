@@ -7,10 +7,17 @@ namespace Kestrel.Game.Audio.Tests
     public class AudioDirectorTests
     {
         readonly List<GameObject> gos = new List<GameObject>();
-        int priorMute;
+        int priorMute, priorMusic, priorVoice;
 
         [SetUp]
-        public void SetUp() => priorMute = PlayerPrefs.GetInt(AudioDirector.MutePref, 0);
+        public void SetUp()
+        {
+            priorMute = PlayerPrefs.GetInt(AudioDirector.MutePref, 0);
+            priorMusic = PlayerPrefs.GetInt(AudioPrefs.MusicMutePref, 0);
+            priorVoice = PlayerPrefs.GetInt(AudioPrefs.NarrationMutePref, 0);
+            PlayerPrefs.SetInt(AudioPrefs.MusicMutePref, 0);
+            PlayerPrefs.SetInt(AudioPrefs.NarrationMutePref, 0);
+        }
 
         [TearDown]
         public void TearDown()
@@ -18,6 +25,8 @@ namespace Kestrel.Game.Audio.Tests
             for (int i = 0; i < gos.Count; i++)
                 if (gos[i] != null) Object.DestroyImmediate(gos[i]);
             PlayerPrefs.SetInt(AudioDirector.MutePref, priorMute);
+            PlayerPrefs.SetInt(AudioPrefs.MusicMutePref, priorMusic);
+            PlayerPrefs.SetInt(AudioPrefs.NarrationMutePref, priorVoice);
         }
 
         GameObject NewGo(string name)
@@ -28,25 +37,58 @@ namespace Kestrel.Game.Audio.Tests
         }
 
         [Test]
-        public void OriginalScoreLoadsAndRespectsVoiceMuteAndFlightSuspension()
+        public void OriginalScoreLoadsAndDucksUnderNarrationAndPause()
         {
             var music = NewGo("music").AddComponent<MusicPlayer>();
+            var director = music.GetComponent<MusicDirector>();
             PlayerPrefs.SetInt(AudioDirector.MutePref, 0);
             music.Select(true);
+            Assert.AreEqual(MusicBed.Menu, director.Bed);
             Assert.IsNotNull(music.Clip);
             Assert.Greater(music.Clip.length, 90f);
             float full = music.Volume;
+            Assert.Greater(full, 0f);
             music.SetVoiceDuck(true);
-            Assert.AreEqual(full * 0.35f, music.Volume, 1e-5f);
+            Assert.AreEqual(full * MusicBeds.NarrationDuck, music.Volume, 1e-5f);
+            music.SetVoiceDuck(false);
+            music.SetPaused(true);
+            Assert.AreEqual(full * MusicBeds.PauseDuck, music.Volume, 1e-5f);
+            music.SetPaused(false);
             music.Suspend(true);
             Assert.AreEqual(0f, music.Volume);
-            music.Select(false);
+            music.Play(MusicBed.Hangar);
             Assert.IsNotNull(music.Clip);
             Assert.Greater(music.Clip.length, 47f);
             Assert.Greater(music.Volume, 0f);
+            // Sound-effect mute must not silence the score.
             PlayerPrefs.SetInt(AudioDirector.MutePref, 1);
-            music.SetVoiceDuck(false);
+            director.Tick(0f);
+            Assert.Greater(music.Volume, 0f);
+            AudioPrefs.SetMusicMuted(true);
             Assert.AreEqual(0f, music.Volume);
+            AudioPrefs.SetMusicMuted(false);
+            director.Tick(0f);
+            music.Play(MusicBed.Flight);
+            director.Tick(MusicBeds.FadeSeconds);
+            Assert.AreEqual(MusicBed.Flight, director.Bed);
+            Assert.IsFalse(director.Fading);
+            Assert.IsNotNull(music.Clip);
+            Assert.Greater(music.Clip.length, 20f);
+            Assert.Less(music.Clip.length, 40f);
+            Assert.Greater(music.Volume, 0f);
+            Assert.IsFalse(System.IO.File.Exists("Assets/Kestrel.Game/Audio/Runtime/Resources/Music/theme.ogg"));
+            Assert.IsFalse(System.IO.File.Exists("Assets/Kestrel.Game/Audio/Runtime/Resources/Music/theme.mp3"));
+        }
+
+        [Test]
+        public void FlightBeginCrossfadesToTheFlightBed()
+        {
+            var music = NewGo("music").AddComponent<MusicPlayer>();
+            music.Select(true);
+            var audio = NewGo("audio").AddComponent<AudioDirector>();
+            audio.OnEvent("flight.begin");
+            Assert.AreEqual(MusicBed.Flight, music.Bed);
+            Assert.Greater(music.Volume, 0f);
         }
 
         [Test]

@@ -36,5 +36,27 @@ namespace Kestrel.Game.Audio.Tests
                 Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<AudioClip>(path), name);
             }
         }
+
+        [Test]
+        public void OriginalMusicBedsDecompressAndDoNotIncludeTheExcludedTheme()
+        {
+            const string dir = "Assets/Kestrel.Game/Audio/Runtime/Resources/Music";
+            foreach (var name in new[] { "kestrel-title", "kestrel-designer", "kestrel-flight" })
+            {
+                var path = dir + "/" + name + ".ogg";
+                Assert.IsTrue(File.Exists(path), path);
+                var imp = (AudioImporter)AssetImporter.GetAtPath(path);
+                Assert.IsNotNull(imp, path);
+                Assert.IsFalse(imp.forceToMono, name);
+                var settings = imp.defaultSampleSettings;
+                Assert.AreEqual(AudioClipLoadType.DecompressOnLoad, settings.loadType, name);
+                Assert.AreEqual(AudioCompressionFormat.Vorbis, settings.compressionFormat, name);
+                Assert.IsTrue(settings.preloadAudioData, name);
+                Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<AudioClip>(path), name);
+            }
+            Assert.IsFalse(File.Exists(dir + "/theme.ogg"));
+            Assert.IsFalse(File.Exists(dir + "/theme.mp3"));
+            Assert.AreEqual(3, Directory.GetFiles(dir, "*.ogg").Length);
+        }
     }
 }

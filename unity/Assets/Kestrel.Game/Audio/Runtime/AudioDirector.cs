@@ -34,6 +34,8 @@ namespace Kestrel.Game.Audio
         public float EnginePitch { get; private set; }
         /// <summary>One-shots that passed mute, vacuum, and the retrigger lock.</summary>
         public int Accepted { get; private set; }
+        /// <summary>Flight pause. Sources are paused, not stopped, so Resume continues the same sample.</summary>
+        public bool Held { get; private set; }
 
         /// <summary>The only flight hook. Assigns this director as the bus sink and binds UI clicks.</summary>
         public static AudioDirector Attach(IFlightAudioBus bus)
@@ -47,6 +49,7 @@ namespace Kestrel.Game.Audio
             director.ForwardTo(narration);
             bus.Sink = director;
             director.TryBindUi();
+            if (MusicPlayer.Instance == null) host.gameObject.AddComponent<MusicPlayer>();
             return director;
         }
 
@@ -64,15 +67,27 @@ namespace Kestrel.Game.Audio
         {
             muted = on;
             PlayerPrefs.SetInt(MutePref, on ? 1 : 0);
-            if (on) voices.StopAll();
-            if (on && forward is NarrationPlayer narration) narration.Stop();
+            if (on)
+            {
+                if (Held) ReleaseSources();
+                voices.StopAll();
+            }
             ApplyEngine();
+        }
+
+        /// <summary>Freeze engine and one-shots with the sim. Music is not paused here.</summary>
+        public void Hold(bool on)
+        {
+            if (Held == on) return;
+            Held = on;
+            if (on) PauseSources();
+            else ReleaseSources();
         }
 
         public void OnEvent(string id)
         {
             if (string.IsNullOrEmpty(id)) return;
-            if (id == "flight.begin") { MusicPlayer.Instance?.Suspend(true); BeginFlight(); }
+            if (id == "flight.begin") { MusicPlayer.Instance?.Play(MusicBed.Flight); BeginFlight(); }
             else PlaySfx(id);
             if (forward != null) forward.OnEvent(id);
         }
@@ -148,10 +163,25 @@ namespace Kestrel.Game.Audio
             engine.pitch = EnginePitch;
             engine.volume = EngineVolume;
             bool should = EngineVolume > 0.001f && engine.clip != null && !muted;
-            if (!Application.isPlaying) return;
+            if (!Application.isPlaying || Held) return;
             if (should && !engine.isPlaying) engine.Play();
             else if (!should && engine.isPlaying) engine.Stop();
         }
+
+        void PauseSources()
+        {
+            PauseOne(engine);
+            for (int i = 0; i < pool.Length; i++) PauseOne(pool[i]);
+        }
+
+        void ReleaseSources()
+        {
+            ReleaseOne(engine);
+            for (int i = 0; i < pool.Length; i++) ReleaseOne(pool[i]);
+        }
+
+        static void PauseOne(AudioSource source) { if (source != null && source.isPlaying) source.Pause(); }
+        static void ReleaseOne(AudioSource source) { if (source != null) source.UnPause(); }
 
         void TryBindUi()
         {

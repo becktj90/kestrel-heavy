@@ -1,6 +1,7 @@
 // App bootstrap. Lives in the generated Boot scene (the only object there): loads data, creates
 // the camera, quality service, portrait guard, UI root and scene flow, then enters Home.
 // Nothing here is placed by hand in a scene; ShellSetup only adds this component.
+using Kestrel.Game.Audio;
 using Kestrel.Game.Layout;
 using Kestrel.Game.Quality;
 using UnityEngine;
@@ -68,8 +69,10 @@ namespace Kestrel.Game.Shell
             Flow.Leaving += () => listener.enabled = false;
             Flow.Entered += screen =>
             {
-                listener.enabled = screen == AppScreen.Home;
-                music.Select(screen == AppScreen.Home);
+                listener.enabled = ShellAudio.ShellListenerOn(screen);
+                if (screen == AppScreen.Home) music.Play(MusicBed.Menu);
+                else if (screen == AppScreen.Flight) music.Play(MusicBed.Flight);
+                else music.Play(MusicBed.Hangar);
             };
         }
 

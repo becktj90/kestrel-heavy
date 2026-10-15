@@ -32,6 +32,7 @@ namespace Kestrel.Slice
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
+        FlightChrome chrome; Design flyingDesign;
         BirdFlockView birds;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
@@ -305,6 +306,9 @@ namespace Kestrel.Slice
             issueChip = ui.Q<Label>("issue-chip"); launchReason = ui.Q<Label>("launch-reason");
             issueChip.RegisterCallback<ClickEvent>(_ => { panel?.Show(HangarPanel.Tab.Data); if (designCollapsed) SetDesignCollapsed(false); });
             again.clicked += BackToDesign;
+            chrome = gameObject.AddComponent<FlightChrome>();
+            chrome.Bind(hud, SetFlightPaused, RestartFlight, ExitToHome);
+            chrome.Layout(UnitsPerPoint());
             // Accessibility labels (VoiceOver wiring via UnityEngine.Accessibility is a listed gap; see RESULTS.md)
             launchButton.tooltip = "Roll out and launch the current design";
             SetDesignCollapsed(false);
@@ -319,6 +323,7 @@ namespace Kestrel.Slice
             float dpr = Screen.dpi > 0 ? Mathf.Max(1f, Mathf.Round(Screen.dpi / 160f)) : 3f;
             var p = HudLayout.SafePadding(new Vector2(Screen.width, Screen.height), Screen.safeArea, size, dpr);
             hud.style.paddingLeft = p.x; hud.style.paddingTop = p.y; hud.style.paddingRight = p.z; hud.style.paddingBottom = p.w;
+            chrome?.Layout(UnitsPerPoint());
         }
 
         /// <summary>Panel units per iOS point (panel scales with screen width, so this differs per device).</summary>
@@ -843,6 +848,41 @@ namespace Kestrel.Slice
         {
             if (session == null || !session.LaunchEnabled) return; // blocks gate Launch; warnings never do
             if (rocketDirty) BuildRocket();
+            flyingDesign = design;
+            EnterFlight();
+        }
+
+        /// <summary>Same design that left the pad. The launch gate already passed.</summary>
+        void RestartFlight()
+        {
+            SetFlightPaused(false);
+            if (flyingDesign != null) design = flyingDesign;
+            if (design == null) return;
+            EnterFlight();
+        }
+
+        void ExitToHome()
+        {
+            SetFlightPaused(false);
+            GoHome();
+        }
+
+        void SetFlightPaused(bool on)
+        {
+            if (flight != null) flight.Hold(on);
+            var audio = flight != null ? flight.GetComponent<Kestrel.Game.Audio.AudioDirector>() : null;
+            if (audio != null) audio.Hold(on);
+            var voice = flight != null ? flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>() : null;
+            if (voice != null) voice.Hold(on);
+            Kestrel.Game.Audio.MusicPlayer.Instance?.SetPaused(on);
+            chrome?.Show(on);
+        }
+
+        void EnterFlight()
+        {
+            if (session == null || design == null) return;
+            SetFlightPaused(false);
+            Kestrel.Game.Audio.MusicPlayer.Instance?.Play(Kestrel.Game.Audio.MusicBed.Flight);
             submitted = false;
             SetTankCutaway(false);
             SetExploded(false, true);
@@ -883,6 +923,7 @@ namespace Kestrel.Slice
             if (renderer != null) renderer.ResetSequence();
             if (!counting) BeginAscent();
             else RefreshWebcast(sequence.Time, false);
+            chrome?.OnFlightStarted();
         }
 
         LaunchSequence OpenSequence()
@@ -917,6 +958,7 @@ namespace Kestrel.Slice
 
         void BackToDesign()
         {
+            SetFlightPaused(false);
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
             counting = false; sequence = null; flight.enabled = false; cam.ResetProjectionMatrix();
             hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
@@ -929,7 +971,7 @@ namespace Kestrel.Slice
         /// <summary>Hangar per-frame work: a rate-limited rocket rebuild while a stepper is held.</summary>
         void Update()
         {
-            if (hud != null && !hud.ClassListContains("hidden")) return;
+            if (hud != null && !hud.ClassListContains("hidden")) { chrome?.TickInput(); return; }
             designer?.TickReference();
             if (rocketDirty && Time.unscaledTime - lastRocketBuild >= RebuildEverySeconds) BuildRocket();
             FlushAnnouncement();
@@ -947,6 +989,7 @@ namespace Kestrel.Slice
                 ApplyTankCutaway();
             }
             if (birds != null) birds.TrackFlight = hud != null && !hud.ClassListContains("hidden");
+            if (chrome != null && chrome.Paused) return;
             if (counting) { TickCount(); return; }
             if (flight != null && flight.Running && tower != null)
             {
@@ -960,10 +1003,12 @@ namespace Kestrel.Slice
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
             var v = vehicleRoot.position; var up = vehicleRoot.up;
             camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude), 4f, Time.deltaTime);
+            // Manual orbit/zoom rides on the chase offset. Follow leaves the chase pose unchanged.
+            var framed = chrome != null ? chrome.Frame(camOffset) : camOffset;
             // Grow the far plane with altitude so the coast under the framed horizon is never clipped.
             cam.farClipPlane = SiteHorizon.ClipFor((float)flight.Altitude);
             // Sea level is the anchored site root. Do not slide it: the coast has to stay under the pad.
-            cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
+            cam.transform.position = PadGround.ClampAboveGround(v + framed, ground.position.y);
             var cp = cam.transform.position;
             cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, cam.fieldOfView, (float)flight.Altitude, cp.y - ground.position.y);
             flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
