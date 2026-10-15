@@ -55,7 +55,10 @@ namespace Kestrel.Game.Tests
             {
                 var b = root.Q<Button>("home-" + id);
                 Assert.That(b.enabledSelf, Is.False, id);
-                Assert.That(b.Q<Label>("soon"), Is.Not.Null, id + " needs a SOON tag");
+                var tag = b.Q<Label>("soon");
+                Assert.That(tag, Is.Not.Null, id + " needs a SOON tag");
+                Assert.That(tag.parent.ClassListContains("kh-mm-tile-head"), id + ": SOON sits in the title row, not over the caption");
+                Assert.That(b.Q(className: "kh-mm-tile-caption").parent, Is.SameAs(b));
             }
             Assert.That(root.Query<Label>("soon").ToList().Count, Is.EqualTo(3));
             Assert.That(root.Query<VisualElement>("lamp").ToList().Count, Is.EqualTo(2));
@@ -134,7 +137,7 @@ namespace Kestrel.Game.Tests
         [Test]
         public void FontsShipSubsetAndUssPointsAtTheirGuids()
         {
-            string dir = "Assets/Art/Fonts/";
+            string dir = "Assets/Art/Fonts/Resources/KHFonts/";
             long total = 0; string uss = File.ReadAllText(Uss);
             foreach (var n in new[] { "Fraunces-Black", "Fraunces-Bold", "SpaceGrotesk-Medium", "SpaceGrotesk-Bold" })
             {
@@ -144,6 +147,36 @@ namespace Kestrel.Game.Tests
                 StringAssert.Contains("guid=" + guid, uss, n + " guid must match its meta");
             }
             Assert.That(total, Is.LessThan(120 * 1024), "font IPA budget");
+        }
+    
+        [Test]
+        public void ControlsStartBelowTheThreeDHeroOnEveryDevice()
+        {
+            foreach (var (w, h) in new[] { (375f, 667f), (440f, 956f), (1032f, 1376f) })
+            {
+                float need = MainMenuCopy.MinControlsHeight(MainMenuCopy.IsNarrow(w));
+                Assert.That(1f - need / h, Is.GreaterThanOrEqualTo(MainMenuCopy.HeroBottomFrac - 0.01f), w + "x" + h + ": controls would cover the rocket/telemetry");
+            }
+        }
+
+        [Test]
+        public void NarrowClassAppliesBelow500AndTargetsStayLarge()
+        {
+            Assert.That(MainMenuCopy.IsNarrow(375f)); Assert.That(MainMenuCopy.IsNarrow(440f)); Assert.That(MainMenuCopy.IsNarrow(1032f), Is.False);
+            string uss = File.ReadAllText(Uss);
+            foreach (var m in Regex.Matches(uss, @"\.kh-mm-narrow \.(?:kh-mm-launch|kh-button\.kh-mm-tile) \{[^}]*min-height:\s*(\d+)px").Cast<Match>())
+                Assert.That(int.Parse(m.Groups[1].Value), Is.GreaterThanOrEqualTo(44));
+            StringAssert.DoesNotContain("height: 88px; height", uss);
+        }
+
+        [Test]
+        public void OverlayDoesNotDimTheTelemetryAndFontsLoadFromResources()
+        {
+            string uss = File.ReadAllText(Uss);
+            var m = Regex.Match(uss, @"\.kh-mm \.kh-home-grain \{ opacity: ([0-9.]+);");
+            Assert.That(m.Success && float.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) <= 0.3f, "grain stays light over the 3D text");
+            Assert.That(File.Exists("Assets/Art/Fonts/Resources/KHFonts/Fraunces-Black.ttf"));
+            Assert.That(MainMenuFonts.Dir, Is.EqualTo("KHFonts/"));
         }
     }
 }

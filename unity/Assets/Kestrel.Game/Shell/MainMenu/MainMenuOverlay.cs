@@ -63,12 +63,14 @@ namespace Kestrel.Game.Shell
             hint.AddToClassList("kh-mm-hint");
             root.Add(hint);
             safe.Add(root);
+            MainMenuFonts.Apply(root);
 
             // Bars follow the safe insets so the hint always sits inside the bottom bar.
             root.RegisterCallback<GeometryChangedEvent>(_ =>
             {
                 float h = full.resolvedStyle.height;
                 if (h <= 0f) return;
+                root.EnableInClassList("kh-mm-narrow", MainMenuCopy.IsNarrow(full.resolvedStyle.width));
                 float topInset = Mathf.Max(0f, safe.worldBound.yMin - full.worldBound.yMin);
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
                 top.style.height = MainMenuCopy.BarHeight(h, topInset);
@@ -104,12 +106,13 @@ namespace Kestrel.Game.Shell
             {
                 var lamp = new VisualElement { name = "lamp", pickingMode = PickingMode.Ignore }; lamp.AddToClassList("kh-mm-lamp"); lamp.AddToClassList("kh-mm-lamp--on"); head.Add(lamp);
             }
-            var cap = new Label(it.Caption) { pickingMode = PickingMode.Ignore }; cap.AddToClassList("kh-mm-tile-caption");
-            b.Add(head); b.Add(cap);
             if (!it.Live)
             {
-                var tag = new Label(MainMenuCopy.SoonTag) { name = "soon", pickingMode = PickingMode.Ignore }; tag.AddToClassList("kh-mm-soon"); b.Add(tag);
+                // Own slot in the title row, so it can never overlap the caption below.
+                var tag = new Label(MainMenuCopy.SoonTag) { name = "soon", pickingMode = PickingMode.Ignore }; tag.AddToClassList("kh-mm-soon"); head.Add(tag);
             }
+            var cap = new Label(it.Caption) { pickingMode = PickingMode.Ignore }; cap.AddToClassList("kh-mm-tile-caption");
+            b.Add(head); b.Add(cap);
             b.text = string.Empty;
             b.SetEnabled(it.Live);
             return b;

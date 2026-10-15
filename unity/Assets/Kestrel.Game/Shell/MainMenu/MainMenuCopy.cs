@@ -32,13 +32,22 @@ namespace Kestrel.Game.Shell
         };
         public static readonly Item Launch = new Item("launch", "LAUNCH", LaunchCaption, "Launch. Opens the rocket designer on the pad.", true, "launch");
 
-        public const float TitleMax = 96f, TitleMin = 24f;
+        public const float TitleMax = 80f, TitleMin = 24f;
         /// <summary>Font size that fits <paramref name="avail"/> px, from the width measured at 100 px.</summary>
         public static float FitTitle(float avail, float widthAt100)
         {
             if (avail <= 0f || widthAt100 <= 0f) return TitleMin;
             return Math.Max(TitleMin, Math.Min(TitleMax, 100f * avail / widthAt100));
         }
+
+        /// <summary>Panels narrower than this (points) get the compact type/padding class.</summary>
+        public const float NarrowBelow = 500f;
+        public static bool IsNarrow(float panelWidth) => panelWidth > 0f && panelWidth < NarrowBelow;
+
+        /// <summary>Minimum height of LAUNCH + two tile rows + gaps + hint padding, matching the USS min-heights.
+        /// The 3D rocket and telemetry end near 53% of the height, so controls must start below that.</summary>
+        public static float MinControlsHeight(bool narrow) => (narrow ? 60f : 68f) + 8f + 2f * (narrow ? 76f : 88f) + 8f + 34f;
+        public const float HeroBottomFrac = 0.53f;
 
         /// <summary>Letterbox bar height as a share of panel height (reel bars, mockup = 150/2532).</summary>
         public const float BarFrac = 0.06f;

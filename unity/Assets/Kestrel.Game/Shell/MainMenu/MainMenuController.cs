@@ -449,7 +449,9 @@ namespace Kestrel.Game.Shell
             AddMesh(_root, "Left", _cube, steel, new Vector3(-fullW * 0.5f, deck.y + height * 0.5f, midZ), Quaternion.identity, new Vector3(0.2f, height, len));
             AddMesh(_root, "Right", _cube, steel, new Vector3(fullW * 0.5f, deck.y + height * 0.5f, midZ), Quaternion.identity, new Vector3(0.2f, height, len));
             float ceil = deck.y + height;
-            for (int i = -1; i <= 1; i++)
+            // The emissive white bay-light bars read as stray bars over the overlay title, so skip them in overlay mode
+            // (the Key/Fill Light objects below still light the scene).
+            for (int i = -1; i <= 1 && !OverlayMode; i++)
             {
                 AddMesh(_root, "Bay light", _cube, lamp, new Vector3(i * fullW * 0.22f, ceil - 0.08f, deck.z + 1.2f), Quaternion.identity, new Vector3(0.55f, 0.08f, 0.18f));
             }
