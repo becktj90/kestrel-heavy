@@ -134,6 +134,17 @@ namespace Kestrel.Core.Physics
 
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
         public double LastP, LastQ, LastMach, LastThrust;
+        /// <summary>Running loss totals (m/s). Read by the ascent HUD. Writing them does not feed the step.</summary>
+        public double LossGravity => lossG;
+        public double LossDrag => lossD;
+        public double LossSteering => lossS;
+        /// <summary>
+        /// Player or autopilot nudge. 1 and 0 leave the step untouched, so a sim that never
+        /// sets these matches the golden path. Throttle scale multiplies the guidance scale.
+        /// Pitch offset is radians added to the command, the same channel as the kick.
+        /// </summary>
+        public double LiveThrottleScale = 1;
+        public double LivePitchOffsetRad;
 
         /// <summary>
         /// Propellant left in the burning stage, 1 full to 0 empty. NaN while coasting or after cutoff:
@@ -254,6 +265,21 @@ namespace Kestrel.Core.Physics
                     if (StageIdx > 0) Mode = 3;
                     else if (Mode == 2) Mode = 1;
                     if (cmd.throttle != 1) thrustScale *= cmd.throttle;
+                }
+                if (LiveThrottleScale != 1)
+                {
+                    double s = LiveThrottleScale;
+                    if (double.IsNaN(s) || s <= 0) s = 1;
+                    else if (s > 1) s = 1;
+                    if (s != 1) thrustScale *= s;
+                }
+                if (LivePitchOffsetRad != 0 && !double.IsNaN(LivePitchOffsetRad))
+                {
+                    double dp = LivePitchOffsetRad;
+                    double lim = 10 * Math.PI / 180.0;
+                    if (dp > lim) dp = lim;
+                    else if (dp < -lim) dp = -lim;
+                    PitchCmd += dp;
                 }
             }
 
