@@ -194,7 +194,18 @@ namespace Kestrel.Game.Shell
         public static VisualElement BuildReport(MissionContext ctx, Action next, Action retry, Action missions, Action home)
         {
             var card = Card("report-card", "Flight report");
-            card.Q("card-body").Add(Body("report-job", JobLine(ctx)));
+            var body = card.Q("card-body");
+            body.Add(Body("report-job", JobLine(ctx)));
+            var outcome = FlightDebrief.Latest;
+            if (outcome != null)
+            {
+                body.Add(Body("report-cause", outcome.CauseTitle));
+                body.Add(Body("report-numbers", outcome.Numbers));
+                body.Add(Body("report-stars", outcome.StarsLine));
+                body.Add(Body("report-medals", outcome.MedalsLine));
+                body.Add(Body("report-kc", outcome.KcLine));
+                if (!string.IsNullOrEmpty(outcome.NarratorKid)) body.Add(Body("report-narrator", outcome.NarratorKid));
+            }
             card.Add(RouteButton("report-next", "Next mission", "Next mission. Opens the list.", next));
             card.Add(RouteButton("report-retry", "One more launch", "One more launch. Same mission, same seed.", retry));
             card.Add(RouteButton("report-missions", "Missions", "Back to the mission list.", missions));

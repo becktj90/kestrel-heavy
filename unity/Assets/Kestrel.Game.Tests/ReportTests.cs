@@ -126,6 +126,34 @@ namespace Kestrel.Game.Tests
             Assert.That(card.Q("failure-plots").tooltip, Does.Contain("Altitude"));
         }
 
+        [Test]
+        public void DebriefCardShowsTheCauseNumbersStarsAndExits()
+        {
+            var hit = new FailureHit { on = true, kind = FailureKind.StructuralMaxQ, cause = 0, value = 41000, limit = 33000, engine = -1, stage = 1 };
+            var ev = FailureModel.Explain(hit, 62, 41000);
+            var facts = new FlightFacts { Failure = ev, Passed = false, Seed = 2 };
+            var debrief = FlightDebrief.Compose(null, MissionContext.Free(), facts, NarrationPool.Empty, 100000, null);
+            Assert.AreEqual("Structural breakup", debrief.CauseTitle);
+            Assert.That(debrief.Numbers, Does.Contain("41 kPa"));
+            Assert.That(debrief.Numbers, Does.Contain("33 kPa"));
+            var log = new TelemetryLog();
+            log.Push(0, 0, 0, 0, 1, 1000, 0, 0, 0);
+            var frame = ReportLayout.Solve(375, 667, 20, 0, 0, 0, true);
+            var card = ReportView.Build(ev, log, frame, true, null, debrief, null);
+            Assert.That(card.Q<Label>("failure-cause").text, Is.EqualTo("Structural breakup"));
+            Assert.That(card.Q<Label>("failure-numbers").text, Does.Contain("41 kPa"));
+            Assert.That(card.Q<Label>("failure-kid").text, Is.EqualTo(ev.kid));
+            Assert.That(card.Q<Label>("failure-engineer").text, Is.EqualTo(ev.engineer));
+            Assert.That(card.Q<Label>("report-stars").text, Does.Contain("Stars"));
+            Assert.That(card.Q<Button>("report-retry").text, Is.EqualTo("One more launch"));
+            Assert.That(card.Q<Button>("report-retry").tooltip, Does.Contain("same seed"));
+            Assert.IsNotNull(card.Q<Button>("report-next"));
+            Assert.IsNotNull(card.Q<Button>("report-missions"));
+            Assert.IsNotNull(card.Q<Button>("report-home"));
+            Assert.That(card.Q<Button>("failure-fix").style.minHeight.value.value, Is.GreaterThanOrEqualTo(44f));
+            Assert.IsTrue(card.ClassListContains("portrait"));
+        }
+
         static void Expect(string kind, string tab, string field)
         {
             var link = FixField.For(kind);

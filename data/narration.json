@@ -1,0 +1,253 @@
+{
+  "version": 1,
+  "note": "Post-flight callouts for S7. Text is the whole experience and stays offline. The same seed repeats a line. Another seed may pick another variant of the same kind. Tokens are filled from the flight that just flew. No audio files, no network, no timers, no prices.",
+  "causes": [
+    { "kind": "structural-maxq", "title": "Structural breakup", "family": "structural-breakup" },
+    { "kind": "engine-out", "title": "Engine failure", "family": "engine-failure" },
+    { "kind": "engine-overpressure", "title": "Engine failure", "family": "engine-failure" },
+    { "kind": "bad-mixture", "title": "Engine failure", "family": "engine-failure" },
+    { "kind": "tumble", "title": "Tumble", "family": "tumble" },
+    { "kind": "prop-depletion", "title": "Out of fuel", "family": "out-of-fuel" },
+    { "kind": "separation-collision", "title": "Stage collision", "family": "stage-collision" },
+    { "kind": "overg", "title": "Too many g", "family": "over-g" },
+    { "kind": "thermal", "title": "Overheating", "family": "thermal" },
+    { "kind": "cryo-material", "title": "Cold tank crack", "family": "cryo" },
+    { "kind": "leg-collapse", "title": "Legs folded", "family": "legs" },
+    { "kind": "pass", "title": "She flew", "family": "pass" },
+    { "kind": "miss", "title": "Wrong place", "family": "miss" }
+  ],
+  "lines": [
+    {
+      "id": "narr.structural.q.1",
+      "kind": "structural-maxq",
+      "when": "q",
+      "design": "any",
+      "kid": "She bent in the middle. The air pushed {q} kPa. The walls held {qlim} kPa.",
+      "eng": "structural-maxq: q {qPa} Pa > q_lim {qlimPa} Pa at T+{t} s."
+    },
+    {
+      "id": "narr.structural.q.2",
+      "kind": "structural-maxq",
+      "when": "q",
+      "design": "any",
+      "kid": "The stack folded at T+{t} s. {q} kPa of air, and the walls stop at {qlim} kPa.",
+      "eng": "q {qPa} Pa against q_lim {qlimPa} Pa. Safety factor or a lower max-Q throttle."
+    },
+    {
+      "id": "narr.structural.margin.1",
+      "kind": "structural-maxq",
+      "when": "margin",
+      "design": "any",
+      "kid": "The stack was loaded past the tanks at T+{t} s. Margin {value}.",
+      "eng": "structural-maxq (margin): MS {value} at T+{t} s."
+    },
+    {
+      "id": "narr.structural.margin.2",
+      "kind": "structural-maxq",
+      "when": "margin",
+      "design": "any",
+      "kid": "She came apart under her own load at T+{t} s. The margin was {value}.",
+      "eng": "MS {value} < 0 at T+{t} s. A higher safety factor, or less mass."
+    },
+    {
+      "id": "narr.engine.pc.1",
+      "kind": "engine-overpressure",
+      "when": "any",
+      "design": "any",
+      "kid": "Engine failure. Chamber pressure was {n0} bar. It is rated {n0lim} bar.",
+      "eng": "engine-overpressure: pc {value} bar, rated {limit} bar, at T+{t} s."
+    },
+    {
+      "id": "narr.engine.pc.2",
+      "kind": "engine-overpressure",
+      "when": "any",
+      "design": "any",
+      "kid": "The nozzle let go at T+{t} s. {n0} bar against a rated {n0lim} bar.",
+      "eng": "pc {n0} bar > 1.15 times rated {n0lim} bar."
+    },
+    {
+      "id": "narr.engine.out.1",
+      "kind": "engine-out",
+      "when": "any",
+      "design": "any",
+      "kid": "Engine failure. {n0} of {n0lim} engines quit at T+{t} s.",
+      "eng": "engine-out: {n0} dead of {n0lim} at T+{t} s. More engines raise the odds of staying up."
+    },
+    {
+      "id": "narr.engine.out.2",
+      "kind": "engine-out",
+      "when": "any",
+      "design": "any",
+      "kid": "The cluster lost {n0} engine at T+{t} s. {n0lim} were lit.",
+      "eng": "engine-out value {value} of limit {limit}."
+    },
+    {
+      "id": "narr.engine.out.redundant.1",
+      "kind": "engine-out",
+      "when": "any",
+      "design": "redundant",
+      "kid": "Engine failure. Redundant avionics were aboard and still {n0} of {n0lim} quit.",
+      "eng": "engine-out with redundant avionics: {n0} of {n0lim} at T+{t} s."
+    },
+    {
+      "id": "narr.engine.out.redundant.2",
+      "kind": "engine-out",
+      "when": "any",
+      "design": "redundant",
+      "kid": "The spare brain could not cover {n0} quiet engine out of {n0lim}.",
+      "eng": "redundant avionics, engine-out {value} / {limit} at T+{t} s."
+    },
+    {
+      "id": "narr.engine.mix.1",
+      "kind": "bad-mixture",
+      "when": "any",
+      "design": "any",
+      "kid": "Engine failure. The mix was off by {n1} percent at T+{t} s.",
+      "eng": "bad-mixture: offset {value} percent, band {limit} percent."
+    },
+    {
+      "id": "narr.engine.mix.2",
+      "kind": "bad-mixture",
+      "when": "any",
+      "design": "any",
+      "kid": "Wrong feed. The mixture sat {n1} percent off nominal.",
+      "eng": "mixture offset {n1} percent at T+{t} s. Nominal is within {limit} percent."
+    },
+    {
+      "id": "narr.tumble.alpha.1",
+      "kind": "tumble",
+      "when": "alpha",
+      "design": "any",
+      "kid": "Tumble. She was {n0} degrees sideways. The limit is {n0lim} degrees.",
+      "eng": "tumble (alpha): {value} deg at T+{t} s, limit {limit} deg."
+    },
+    {
+      "id": "narr.tumble.alpha.2",
+      "kind": "tumble",
+      "when": "alpha",
+      "design": "any",
+      "kid": "Round and round at T+{t} s. {n0} degrees of side slip in thick air.",
+      "eng": "alpha {n0} deg > {n0lim} deg while q was high."
+    },
+    {
+      "id": "narr.tumble.stability.1",
+      "kind": "tumble",
+      "when": "stability",
+      "design": "any",
+      "kid": "Tumble. No fins to steer her. Stability was {value} cal.",
+      "eng": "tumble (stability): S {value} cal at T+{t} s."
+    },
+    {
+      "id": "narr.tumble.stability.2",
+      "kind": "tumble",
+      "when": "stability",
+      "design": "any",
+      "kid": "The heavy end was the wrong way. Stability {value} cal at T+{t} s.",
+      "eng": "S {value} cal and CAR under 1 for the hold time."
+    },
+    {
+      "id": "narr.fuel.1",
+      "kind": "prop-depletion",
+      "when": "any",
+      "design": "any",
+      "kid": "Out of fuel at T+{t} s, short of the goal.",
+      "eng": "prop-depletion at T+{t} s. Add propellant or a stage."
+    },
+    {
+      "id": "narr.fuel.2",
+      "kind": "prop-depletion",
+      "when": "any",
+      "design": "any",
+      "kid": "The tanks ran dry at T+{t} s. The trip still wanted more speed.",
+      "eng": "propellant hit empty at T+{t} s, below the target altitude."
+    },
+    {
+      "id": "narr.sep.1",
+      "kind": "separation-collision",
+      "when": "any",
+      "design": "any",
+      "kid": "Stage collision. They parted at {value} m/s and needed {limit} m/s.",
+      "eng": "separation-collision: rel {value} m/s < {limit} m/s at T+{t} s."
+    },
+    {
+      "id": "narr.sep.2",
+      "kind": "separation-collision",
+      "when": "any",
+      "design": "any",
+      "kid": "The stages bumped at T+{t} s. Separation was {value} m/s, short of {limit} m/s.",
+      "eng": "sep speed {value} m/s, minimum {limit} m/s. A stronger push-off spring."
+    },
+    {
+      "id": "narr.overg.1",
+      "kind": "overg",
+      "when": "any",
+      "design": "any",
+      "kid": "Too many g at T+{t} s. The push hit {g} g and the limit is {glim} g.",
+      "eng": "overg: {value} g > limit {limit} g."
+    },
+    {
+      "id": "narr.overg.2",
+      "kind": "overg",
+      "when": "any",
+      "design": "any",
+      "kid": "The payload took {g} g. It was rated {glim} g.",
+      "eng": "peak {g} g against g_lim {glim} g at T+{t} s."
+    },
+    {
+      "id": "narr.thermal.1",
+      "kind": "thermal",
+      "when": "any",
+      "design": "any",
+      "kid": "She got too warm at T+{t} s. The skin reached {n0} K. It handles {n0lim} K.",
+      "eng": "thermal: {value} K > {limit} K at T+{t} s."
+    },
+    {
+      "id": "narr.cryo.1",
+      "kind": "cryo-material",
+      "when": "any",
+      "design": "any",
+      "kid": "Cold fuel cracked the tank on the pad, at T+{t} s.",
+      "eng": "cryo-material before liftoff. The tank material is not rated for this propellant."
+    },
+    {
+      "id": "narr.legs.1",
+      "kind": "leg-collapse",
+      "when": "any",
+      "design": "any",
+      "kid": "The legs folded. She was falling at {n1} m/s. The legs take {limit} m/s.",
+      "eng": "leg-collapse: sink {value} m/s > v_leg {limit} m/s."
+    },
+    {
+      "id": "narr.pass.1",
+      "kind": "pass",
+      "when": "any",
+      "design": "any",
+      "kid": "She flew. {stars} on the board. That counts.",
+      "eng": "Pass. Stars {stars}. Apogee {apo} km, goal {goal} km."
+    },
+    {
+      "id": "narr.pass.2",
+      "kind": "pass",
+      "when": "any",
+      "design": "any",
+      "kid": "Up and done. {stars} for this flight.",
+      "eng": "Pass at apogee {apo} km. The goal was {goal} km."
+    },
+    {
+      "id": "narr.miss.1",
+      "kind": "miss",
+      "when": "any",
+      "design": "any",
+      "kid": "Great flight, wrong place. Reached {apo} km. The goal was {goal} km.",
+      "eng": "Intact, off target. Apo {apo} km, goal {goal} km."
+    },
+    {
+      "id": "narr.miss.2",
+      "kind": "miss",
+      "when": "any",
+      "design": "any",
+      "kid": "She flew to {apo} km. This job asked for {goal} km.",
+      "eng": "Target miss. Apo {apo} km versus {goal} km."
+    }
+  ]
+}

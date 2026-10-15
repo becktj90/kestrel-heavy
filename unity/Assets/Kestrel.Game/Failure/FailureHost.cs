@@ -23,6 +23,7 @@ namespace Kestrel.Game.Failure
         Vector3[] exits = new Vector3[0];
         readonly TelemetryLog log = new TelemetryLog();
         bool played;
+        bool reported;
         float age;
         bool reduce;
         FailureEvent failure;
@@ -88,10 +89,21 @@ namespace Kestrel.Game.Failure
                 return;
             }
             var result = flight.Result;
-            if (result == null || result.failure == null) return;
+            if (result == null || reported) return;
+            if (result.failure == null)
+            {
+                if (flight.Running) return;
+                reported = true;
+                reduce = Comfort.ReduceMotion;
+                StampLosses(result);
+                failure = null;
+                ShowCard();
+                return;
+            }
             reduce = Comfort.ReduceMotion;
             StampLosses(result);
             Begin(result.failure);
+            reported = true;
         }
 
         void Begin(FailureEvent ev)
@@ -361,7 +373,8 @@ namespace Kestrel.Game.Failure
 
         void ShowCard()
         {
-            if (ui == null || failure == null) return;
+            // A finished flight with no failure event still owes the report. Only a missing tree bails.
+            if (ui == null) return;
             var old = ui.Q(ReportView.RootName);
             if (old != null && old.userData == this) old.RemoveFromHierarchy();
             else if (old != null) old.RemoveFromHierarchy();
@@ -378,7 +391,12 @@ namespace Kestrel.Game.Failure
             float scale = dpr;
             if (ui.layout.width > 1f && wPt > 1f) scale = ui.layout.width / wPt;
             frame = Scale(frame, scale);
-            Card = ReportView.Build(failure, log, frame, reduce, () => FixField.Apply(ui, FixField.For(failure.kind)));
+            FlightDebrief debrief = null;
+            try { debrief = PostFlightSource.Publish(flight, failure); }
+            catch (System.Exception e) { Debug.LogWarning("[Kestrel] post-flight report: " + e.Message); }
+            var actions = PostFlightSource.Actions();
+            if (actions != null) actions.Fix = () => FixField.Apply(ui, FixField.For(failure != null ? failure.kind : ""));
+            Card = ReportView.Build(failure, log, frame, reduce, () => FixField.Apply(ui, FixField.For(failure != null ? failure.kind : "")), debrief, actions);
             Card.userData = this;
             ui.Add(Card);
         }

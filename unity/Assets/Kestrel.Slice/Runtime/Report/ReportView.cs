@@ -13,8 +13,10 @@ namespace Kestrel.Slice
 
         static readonly string[] ChannelLabels = { "Altitude", "Speed", "Dynamic pressure", "g load", "Delta-v losses" };
 
-        public static VisualElement Build(FailureEvent failure, TelemetryLog log, ReportFrame frame, bool reduceMotion, Action onFix)
+        public static VisualElement Build(FailureEvent failure, TelemetryLog log, ReportFrame frame, bool reduceMotion, Action onFix, FlightDebrief debrief = null, ReportActions actions = null)
         {
+            if (debrief != null)
+                return RewardsCard.Build(failure, log, frame, reduceMotion, onFix, debrief, actions);
             var link = FixField.For(failure != null ? failure.kind : "");
             var root = new VisualElement { name = RootName, pickingMode = PickingMode.Position };
             root.AddToClassList("post-flight");
@@ -121,10 +123,18 @@ namespace Kestrel.Slice
             }
         }
 
-        static VisualElement Plots(TelemetryLog log, ReportRect rect)
+        public static VisualElement Plots(TelemetryLog log, ReportRect rect, bool flow = false)
         {
             var wrap = new VisualElement { name = "failure-plots" };
-            Place(wrap, rect);
+            if (flow)
+            {
+                wrap.style.position = Position.Relative;
+                wrap.style.height = 96;
+                wrap.style.marginLeft = 12;
+                wrap.style.marginRight = 12;
+                wrap.style.marginBottom = 8;
+            }
+            else Place(wrap, rect);
             wrap.style.flexDirection = FlexDirection.Row;
             var built = ReportPlot.Build(log);
             for (int i = 0; i < built.Length; i++)
