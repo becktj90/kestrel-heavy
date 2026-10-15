@@ -2,7 +2,7 @@ namespace Kestrel.Game.Audio
 {
     public enum MusicBed { Menu, Hangar, Flight }
 
-    /// <summary>Original score resources and the mix under SFX and narration. No samples, no AI tracks.</summary>
+    /// <summary>Menu and hangar are the original score. Flight is the approved Gemini bed. Mix stays under SFX and narration.</summary>
     public static class MusicBeds
     {
         public const float FadeSeconds = 0.75f;
