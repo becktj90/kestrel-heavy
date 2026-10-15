@@ -17,6 +17,9 @@ namespace Kestrel.Game.Guide
         public string Spoken = "";
         public string Index = "";
         public bool Portrait;
+        public string CardId = "";
+        /// <summary>Kid page. An engineer page keeps the card id and does not play the kid clip.</summary>
+        public bool Speaks;
         public bool Caret;
         public bool Announce;
         public bool Fallback;
@@ -32,6 +35,7 @@ namespace Kestrel.Game.Guide
         {
             public GuideBeat Beat;
             public string[] Pages = Array.Empty<string>();
+            public GuideLinePage[] Leaves = Array.Empty<GuideLinePage>();
             public int Page;
             public readonly Typewriter Typer = new Typewriter();
             public float OnScreen;
@@ -219,7 +223,7 @@ namespace Kestrel.Game.Guide
         void Start(GuideBeat beat)
         {
             var slot = new Slot { Beat = beat, Engineer = Settings.Engineer };
-            slot.Pages = GuidePages.Of(beat, Settings.Engineer);
+            SetLeaves(slot, Settings.Engineer);
             if (slot.Pages.Length == 0) return;
             active.Add(slot);
             StartPage(slot, 0);
@@ -246,6 +250,14 @@ namespace Kestrel.Game.Guide
             }
         }
 
+        static void SetLeaves(Slot slot, bool engineer)
+        {
+            slot.Leaves = GuidePages.Pages(slot.Beat, engineer);
+            var texts = new string[slot.Leaves.Length];
+            for (int i = 0; i < texts.Length; i++) texts[i] = slot.Leaves[i].Text;
+            slot.Pages = texts;
+        }
+
         void StartPage(Slot slot, int page)
         {
             slot.Page = page;
@@ -263,7 +275,7 @@ namespace Kestrel.Game.Guide
             {
                 int page = slot.Page;
                 slot.Engineer = Settings.Engineer;
-                slot.Pages = GuidePages.Of(slot.Beat, Settings.Engineer);
+                SetLeaves(slot, Settings.Engineer);
                 if (slot.Pages.Length == 0) slot.Pages = new[] { "" };
                 if (page >= slot.Pages.Length) page = slot.Pages.Length - 1;
                 StartPage(slot, page);
@@ -356,6 +368,7 @@ namespace Kestrel.Game.Guide
             var beat = slot.Beat;
             bool done = slot.Typer.Done;
             string hint = !done ? "TAP: finish" : (slot.Page + 1 < slot.Pages.Length ? "TAP: next" : "TAP: close");
+            var leaf = slot.Page >= 0 && slot.Page < slot.Leaves.Length ? slot.Leaves[slot.Page] : default;
             return new GuideBoxModel
             {
                 Id = beat.Id,
@@ -367,6 +380,8 @@ namespace Kestrel.Game.Guide
                 Spoken = slot.Spoken,
                 Index = (slot.Page + 1) + "/" + slot.Pages.Length,
                 Portrait = GuideSpeakers.HasPortrait(beat.Speaker),
+                CardId = leaf.CardId ?? "",
+                Speaks = leaf.Speaks,
                 Caret = !done && (Reduce || ((int)(slot.OnScreen * 2f) % 2) == 0),
                 Announce = slot.AnnounceNow,
                 Fallback = Glyphs != null && !Glyphs.Covers(slot.Typer.Full),

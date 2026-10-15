@@ -19,3 +19,9 @@ attribution is required**. Free-plan audio is not used anywhere in this game.
 ## Line list (planned additions)
 - Mission control + two webcast hosts (DECISIONS #55).
 - **Crew Talk** (DECISIONS #54): Bodie, Junie, Pearl, Sloane. Spanish-sourced lines voiced in English in each character's own dialect and style, full meaning kept, no stock or literal lines. Same Creator plan, no new spend.
+
+## Thrum guide voice (added 2026-10-15)
+- 78 clips in `assets/narration/guide/` (kid-line cards of `data/guide.json`, one file per card id, e.g. `first.2.c1.mp3`), voiced as Mabel "Thrum" Pike.
+- Generated with ElevenLabs text-to-speech (`eleven_multilingual_v2`) on Trevor Beck's **paid Creator plan**, no new spend. Voice: "Junie Pell v2", a voice generated on Trevor's own account (not a shared-library voice).
+- Cards that carry `{tokens}` use a token-free spoken variant; the on-screen caption keeps the live numbers. Ascent (`asc.*`) beats are not voiced.
+- Per-clip details: `assets/narration/guide/manifest.json`. Regenerate: `python3 tools/clipgen/gen_guide.py` (needs `ELEVENLABS_API_KEY`).

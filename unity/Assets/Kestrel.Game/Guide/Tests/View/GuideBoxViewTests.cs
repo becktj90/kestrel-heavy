@@ -59,6 +59,37 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
+        public void PopIsAPointFilteredPortraitWithAnOptionalCaption()
+        {
+            var host = new VisualElement { name = "host" };
+            var art = GuideArt.Load();
+            var view = new GuidePopView(host)
+            {
+                Portrait = art.Portrait,
+                Glyphs = art.Glyphs,
+                Atlas = art.Atlas,
+            };
+            var screen = new GuideScreen(375f, 667f, 20f, 0f, 0f, 0f, 0f, false);
+            var quiet = GuidePopLayout.Place(screen, 1f, true, false);
+            view.Show(quiet, 1f, false, "", GuideCaption.Glyph(SubtitleSize.Normal));
+            var pop = host.Q("guide-pop");
+            Assert.IsNotNull(pop);
+            Assert.AreEqual(PickingMode.Position, pop.pickingMode);
+            Assert.That(pop.tooltip, Does.Contain("Thrum, hangar keeper"));
+            var portrait = pop.Q("guide-portrait");
+            Assert.AreEqual(GuidePopLayout.DisplayPt, portrait.style.width.value.value, 0.1f);
+            Assert.AreEqual(GuidePopLayout.DisplayPt, portrait.style.height.value.value, 0.1f);
+            Assert.AreEqual(DisplayStyle.None, pop.Q("guide-caption").style.display.value);
+
+            var spoken = GuidePopLayout.Place(screen, 1f, true, true);
+            view.Show(spoken, 1f, true, "Mind the oil.", GuideCaption.Glyph(SubtitleSize.Normal));
+            Assert.AreEqual(DisplayStyle.Flex, pop.Q("guide-caption").style.display.value);
+            Assert.AreEqual("Mind the oil.", pop.Q<BitmapTextElement>("guide-caption").Text);
+            view.Hide();
+            Assert.AreEqual(DisplayStyle.None, pop.style.display.value);
+        }
+
+        [Test]
         public void ArtIsPointFilteredAndSixteenPixels()
         {
             var art = GuideArt.Load();
