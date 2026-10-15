@@ -6,6 +6,7 @@ using Kestrel.Core.Flight;
 using Kestrel.Game.Audio;
 using Kestrel.Game.Guide;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Kestrel.Slice
 {
