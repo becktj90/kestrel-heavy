@@ -170,7 +170,7 @@ namespace Kestrel.Game.Shell
                 var a = anchors[i];
                 var plate = new Plate { Anchor = a };
                 plate.Root = New(a.Id, _root);
-                bool slab = a.Clickable || a.Role == MenuTextRole.Hud;
+                bool slab = a.Clickable || a.Role == MenuTextRole.Hud || a.Id == "kh1";
                 if (slab) plate.Slab = Slab(plate.Root, a);
                 if (a.Id == "launch") plate.Trim = Trim(plate.Root, ref _trimMat);
                 else if (a.Role == MenuTextRole.Hud) plate.Trim = Trim(plate.Root, ref _hudTrim);
@@ -188,7 +188,7 @@ namespace Kestrel.Game.Shell
             // Telemetry sits on an opaque dark panel (no emissive cyan glass behind the text): high contrast on every phone.
             Material mat = a.Id == "launch"
                 ? MainMenuMaterials.Body(MainMenuMaterials.LaunchRed, 0.35f, 0.58f, new Color(0.35f, 0.01f, 0.03f))
-                : a.Role == MenuTextRole.Hud
+                : a.Role == MenuTextRole.Hud || a.Id == "kh1"
                     ? MainMenuMaterials.Body(MainMenuMaterials.HudPanel, 0f, 0.05f, Color.black)
                     : MainMenuMaterials.Glass(MainMenuMaterials.GlassTint, 0.45f);
             rend.sharedMaterial = Own(mat);
@@ -328,7 +328,7 @@ namespace Kestrel.Game.Shell
             if (labels == null || labels.Count == 0) return;
             if (p.Anchor.Id == "kh1")
             {
-                labels[0].Place(new Vector3(0f, 0f, z), size.x * 0.72f, size.y * 0.34f);
+                labels[0].Place(new Vector3(0f, 0f, z), size.x * 0.84f, size.y * 0.46f);
                 return;
             }
             if (p.Anchor.Id == "launch" && labels.Count >= 2)
@@ -350,7 +350,7 @@ namespace Kestrel.Game.Shell
             float step = span / labels.Count;
             float hLine = step * 0.88f;
             float top = span * 0.5f - step * 0.5f;
-            float wLine = size.x * 0.88f;
+            float wLine = size.x * 0.92f;
             for (int i = 0; i < labels.Count; i++)
                 labels[i].Place(new Vector3(0f, top - i * step, z), wLine, hLine);
         }
@@ -412,7 +412,8 @@ namespace Kestrel.Game.Shell
                 AddMesh(root, "Crew", crew, suit, at[i], yaw, Vector3.one);
             }
             // Service tower, just outside the left booster, so the bay has a structure at the vehicle's scale.
-            for (int k = 0; k < 8; k++)
+            // Overlay mode skips it: its thin pole read as a stray vertical line beside the rocket on phones.
+            for (int k = 0; k < 8 && !OverlayMode; k++)
             {
                 float y = 3f + k * 5.5f;
                 AddMesh(root, "Tower", _cube, metal, new Vector3(-6.8f, y, 0.4f), Quaternion.identity, new Vector3(0.35f, 5f, 0.35f));

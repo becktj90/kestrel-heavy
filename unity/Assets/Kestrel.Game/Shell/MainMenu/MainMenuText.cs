@@ -83,6 +83,9 @@ namespace Kestrel.Game.Shell
 
         static Font _font;
 
+        /// <summary>Telemetry and the KH-1 plate use the bold face: the normal weight is hairline at ~15 px on a phone.</summary>
+        public static FontStyle StyleFor(MenuTextRole role) => role == MenuTextRole.Hud || role == MenuTextRole.Dial ? FontStyle.Bold : FontStyle.Normal;
+
         /// <summary>One glyph in font pixels, origin at the pen, y up the way CharacterInfo is.</summary>
         public readonly struct GlyphStamp
         {
@@ -118,6 +121,7 @@ namespace Kestrel.Game.Shell
                 + MainMenuLayout.Tagline + MainMenuLayout.Designation;
             for (int i = 0; i < read.All().Length; i++) sample += read.All()[i];
             font.RequestCharactersInTexture(sample, PixelSize, FontStyle.Normal);
+            font.RequestCharactersInTexture(sample, PixelSize, FontStyle.Bold);
         }
 
         public static bool Fill(string text, float worldW, float worldH, MenuTextRole role, Mesh mesh, Material mat)
@@ -158,10 +162,11 @@ namespace Kestrel.Game.Shell
                 var font = OsFont();
                 if (font != null)
                 {
-                    font.RequestCharactersInTexture(text, PixelSize, FontStyle.Normal);
+                    var fs = StyleFor(role);
+                    font.RequestCharactersInTexture(text, PixelSize, fs);
                     for (int i = 0; i < text.Length; i++)
                     {
-                        if (font.GetCharacterInfo(text[i], out var info, PixelSize, FontStyle.Normal))
+                        if (font.GetCharacterInfo(text[i], out var info, PixelSize, fs))
                             glyphs.Add(GlyphStamp.From(info));
                         else
                             glyphs.Add(new GlyphStamp(0f, 0f, 0f, 0f, PixelSize * 0.33f, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero));
@@ -175,9 +180,9 @@ namespace Kestrel.Game.Shell
                 var font = OsFont();
                 if (font != null)
                 {
-                    font.RequestCharactersInTexture(HudWidest, PixelSize, FontStyle.Normal);
+                    font.RequestCharactersInTexture(HudWidest, PixelSize, StyleFor(role));
                     for (int i = 0; i < HudWidest.Length; i++)
-                        if (font.GetCharacterInfo(HudWidest[i], out var info, PixelSize, FontStyle.Normal)) minPxW += Mathf.Max(0f, info.advance) + extra;
+                        if (font.GetCharacterInfo(HudWidest[i], out var info, PixelSize, StyleFor(role))) minPxW += Mathf.Max(0f, info.advance) + extra;
                 }
             }
             return Layout(glyphs, worldW, worldH, extra, verts, uvs, tris, minPxW);

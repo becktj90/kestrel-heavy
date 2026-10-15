@@ -225,8 +225,12 @@ namespace Kestrel.Game.Tests
             foreach (var d in Devices)
             {
                 var z = MenuTypeScale.Compute(d.w, d.h, d.top, d.bottom);
-                // The controls end at the bottom safe inset; they start ControlsH above it.
-                Assert.That(z.ControlsTop, Is.EqualTo(d.h - d.bottom - z.ControlsH).Within(0.01f), d.name);
+                // The controls end above the bottom film-reel bar (which already spans the bottom safe inset); they start ControlsH above that.
+                float bar = MainMenuCopy.BarHeight(d.h, d.bottom);
+                Assert.That(z.BottomReserve, Is.EqualTo(bar).Within(0.01f), d.name);
+                Assert.That(z.ControlsTop, Is.EqualTo(d.h - bar - z.ControlsH).Within(0.01f), d.name);
+                Assert.That(z.ControlsTop + z.ControlsH, Is.LessThanOrEqualTo(d.h - bar + 0.01f), d.name + ": the 2x2 tiles run under the bottom reel bar");
+                Assert.That(z.HintBand + d.bottom, Is.GreaterThanOrEqualTo(bar - 0.01f), d.name + ": root padding-bottom plus safe inset clears the bar");
                 // After the lens-shift lift, the rocket base (and so the telemetry panels above it) ends above the LAUNCH bar.
                 Assert.That(MenuTypeScale.HeroOverlapPx(z, d.h), Is.LessThanOrEqualTo(-MenuTypeScale.HeroGapPx + 0.5f), d.name + ": LAUNCH bar cuts the rocket base or telemetry");
                 // ...and the nose stays below the title block.
@@ -331,7 +335,7 @@ namespace Kestrel.Game.Tests
             Assert.That(MenuTypeScale.Scale(390f, 844f), Is.EqualTo(1f).Within(1e-5f));
             Assert.That(MenuTypeScale.TileCaption.At(1f), Is.EqualTo(13f));
             Assert.That(MenuTypeScale.TileCaption.At(0.1f), Is.EqualTo(11f), "floor");
-            Assert.That(MenuTypeScale.TileCaption.At(9f), Is.EqualTo(18f), "cap");
+            Assert.That(MenuTypeScale.TileCaption.At(9f), Is.EqualTo(18f), "cap = 18 per the type-scale table");
         }
 
         [Test]

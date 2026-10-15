@@ -92,7 +92,7 @@ namespace Kestrel.Game.Shell
                 case MenuTextRole.Launch: return Color.white;
                 case MenuTextRole.Hud: return HudInk;
                 case MenuTextRole.Subtitle: return new Color(0.78f, 0.86f, 0.92f, 1f);
-                case MenuTextRole.Dial: return Cyan;
+                case MenuTextRole.Dial: return Color.white;   // KH-1 plate: white on the dark plate (the Cyan accent itself is unchanged)
                 case MenuTextRole.Glass:
                     return live ? Cream : new Color(0.82f, 0.86f, 0.90f, 0.72f);
                 default: return Cream;
