@@ -1,0 +1,172 @@
+/* Guided designer stepper. Sizes in the shell are set in points from HangarUi, because a fixed
+   USS px tracks the panel scale and would jump between SE and iPad. This sheet is the colour and
+   state layer: inline styles still win, and these classes are what the shell tags. */
+
+.designer-stepper {
+    flex-direction: column;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.designer-stepper.reduce-motion {
+    opacity: 1;
+}
+
+.stepper-portrait {
+    flex-direction: column;
+}
+
+#stepper-header {
+    flex-direction: column;
+}
+
+#stepper-depth {
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.10);
+    border-radius: 16px;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+#stepper-progress {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+}
+
+.stepper-seg {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    min-height: 44px;
+    border-radius: 8px;
+    border-width: 1px;
+    -unity-text-align: middle-center;
+    font-size: 10px;
+    color: rgba(178, 194, 219, 1);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-left-color: rgba(255, 255, 255, 0.08);
+    border-right-color: rgba(255, 255, 255, 0.08);
+    border-top-color: rgba(255, 255, 255, 0.08);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    margin-left: 1px;
+    margin-right: 1px;
+}
+
+.stepper-seg--current {
+    background-color: rgb(79, 219, 255);
+    color: rgb(15, 20, 31);
+    border-left-color: rgb(79, 219, 255);
+    border-right-color: rgb(79, 219, 255);
+    border-top-color: rgb(79, 219, 255);
+    border-bottom-color: rgb(79, 219, 255);
+}
+
+.stepper-seg--done {
+    background-color: rgba(0, 0, 0, 0);
+    color: rgb(79, 219, 255);
+    border-left-color: rgb(79, 219, 255);
+    border-right-color: rgb(79, 219, 255);
+    border-top-color: rgb(79, 219, 255);
+    border-bottom-color: rgb(79, 219, 255);
+}
+
+.stepper-seg--warn {
+    background-color: rgba(0, 0, 0, 0);
+    color: rgb(255, 176, 0);
+    border-left-color: rgb(255, 176, 0);
+    border-right-color: rgb(255, 176, 0);
+    border-top-color: rgb(255, 176, 0);
+    border-bottom-color: rgb(255, 176, 0);
+}
+
+.stepper-seg--failed {
+    background-color: rgba(0, 0, 0, 0);
+    color: rgb(235, 69, 69);
+    border-left-color: rgb(235, 69, 69);
+    border-right-color: rgb(235, 69, 69);
+    border-top-color: rgb(235, 69, 69);
+    border-bottom-color: rgb(235, 69, 69);
+}
+
+.stepper-seg--locked,
+.stepper-seg--skipped,
+.stepper-seg--open {
+    opacity: 1;
+}
+
+.stepper-seg--locked,
+.stepper-seg--skipped {
+    opacity: 0.45;
+}
+
+#stepper-rocket {
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    min-height: 112px;
+    max-height: 112px;
+}
+
+#stepper-goal {
+    border-left-width: 3px;
+    border-left-color: rgb(79, 219, 255);
+}
+
+#stepper-why-engineer {
+    color: rgba(178, 194, 219, 1);
+    white-space: normal;
+}
+
+#stepper-why-kid,
+#stepper-goal-body,
+#stepper-check-body {
+    white-space: normal;
+}
+
+#stepper-stats {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#stepper-nav {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+#stepper-back,
+#stepper-forward,
+#stepper-guided,
+#stepper-go,
+#stepper-stay {
+    min-height: 52px;
+    -unity-text-align: middle-center;
+}
+
+.stepper-forward--go {
+    background-color: rgb(79, 219, 255);
+    color: rgb(15, 20, 31);
+}
+
+.stepper-forward--amber {
+    background-color: rgb(255, 176, 0);
+    color: rgb(15, 20, 31);
+}
+
+.stepper-forward--fix {
+    background-color: rgb(235, 69, 69);
+    color: rgb(240, 245, 255);
+}
+
+.stepper-focus {
+    border-width: 2px;
+    border-left-color: rgb(79, 219, 255);
+    border-right-color: rgb(79, 219, 255);
+    border-top-color: rgb(79, 219, 255);
+    border-bottom-color: rgb(79, 219, 255);
+}
