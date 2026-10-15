@@ -1,6 +1,7 @@
 // App bootstrap. Lives in the generated Boot scene (the only object there): loads data, creates
 // the camera, quality service, portrait guard, UI root and scene flow, then enters Home.
 // Nothing here is placed by hand in a scene; ShellSetup only adds this component.
+using Kestrel.Core.Flight;
 using Kestrel.Game.Audio;
 using Kestrel.Game.Layout;
 using Kestrel.Game.Quality;
@@ -24,6 +25,7 @@ namespace Kestrel.Game.Shell
         /// <summary>Full-bleed UI root (backgrounds) and its safe-area child (all interactive UI).</summary>
         public VisualElement Root { get; private set; }
         public VisualElement Safe { get; private set; }
+        VisualElement routeCard;
 
         void Awake()
         {
@@ -67,13 +69,24 @@ namespace Kestrel.Game.Shell
             var music = gameObject.AddComponent<Kestrel.Game.Audio.MusicPlayer>();
             Flow = gameObject.AddComponent<SceneFlow>();
             Flow.Leaving += () => listener.enabled = false;
+            Flow.OverlayChanged += _ => ShowRouteCard();
             Flow.Entered += screen =>
             {
                 listener.enabled = ShellAudio.ShellListenerOn(screen);
-                if (screen == AppScreen.Home) music.Play(MusicBed.Menu);
+                if (screen == AppScreen.Home || screen == AppScreen.Missions) music.Play(MusicBed.Menu);
                 else if (screen == AppScreen.Flight) music.Play(MusicBed.Flight);
                 else music.Play(MusicBed.Hangar);
+                ShowRouteCard();
             };
+        }
+
+        /// <summary>Briefing and report sit on the shell, above the screen that just loaded, inside the safe area.</summary>
+        void ShowRouteCard()
+        {
+            if (routeCard != null) { routeCard.RemoveFromHierarchy(); routeCard = null; }
+            if (Flow == null || Safe == null) return;
+            routeCard = ScreenStub.BuildRouteCard(Flow.Overlay, GameSession.Current, Flow);
+            if (routeCard != null) Safe.Add(routeCard);
         }
 
         void Start() => Flow.Go(AppScreen.Home);

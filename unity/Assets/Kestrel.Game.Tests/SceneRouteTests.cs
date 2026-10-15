@@ -1,0 +1,95 @@
+// EditMode checks for the mission list and the report / exit routes. No scene load.
+using Kestrel.Core.Data;
+using Kestrel.Core.Flight;
+using Kestrel.Game.Shell;
+using NUnit.Framework;
+using UnityEngine.UIElements;
+
+namespace Kestrel.Game.Tests
+{
+    public class SceneRouteTests
+    {
+        [Test]
+        public void ScreenOrderKeepsHomeDesignFlightAndAddsMissions()
+        {
+            Assert.AreEqual(AppScreen.Home, (AppScreen)0);
+            Assert.AreEqual(AppScreen.Design, (AppScreen)1);
+            Assert.AreEqual(AppScreen.Flight, (AppScreen)2);
+            Assert.AreEqual(AppScreen.Missions, (AppScreen)3);
+            CollectionAssert.AreEqual(new[] { "Home", "Design", "Flight", "Missions" }, SceneFlow.SceneNames);
+            Assert.IsTrue(SceneFlow.TryScreen(SessionScreens.Missions, out var screen));
+            Assert.AreEqual(AppScreen.Missions, screen);
+            Assert.IsTrue(SceneFlow.TryHomeControl("launch", out var launch));
+            Assert.AreEqual(RouteId.HomeLaunch, launch);
+            Assert.IsTrue(SceneFlow.TryHomeControl("hangar", out var hangar));
+            Assert.AreEqual(RouteId.HomeHangar, hangar);
+            Assert.IsFalse(SceneFlow.TryHomeControl("codex", out _));
+            Assert.IsFalse(SceneFlow.TryHomeControl("missions", out _));
+        }
+
+        [Test]
+        public void MissionsKeepsTheShellListener()
+        {
+            Assert.IsTrue(ShellAudio.ShellListenerOn(AppScreen.Missions));
+            Assert.IsTrue(ShellAudio.ShellListenerOn(AppScreen.Home));
+            Assert.IsTrue(ShellAudio.ShellListenerOn(AppScreen.Flight));
+            Assert.IsFalse(ShellAudio.ShellListenerOn(AppScreen.Design));
+        }
+
+        [Test]
+        public void PlaceholderListsKh1ThroughKh10()
+        {
+            var campaign = Campaign.Load(Catalog.FindRepoRoot(System.IO.Directory.GetCurrentDirectory()));
+            var root = ScreenStub.BuildMissionList(campaign, _ => { }, () => { });
+            Assert.AreEqual(10, campaign.Missions.Count);
+            for (int i = 1; i <= 10; i++)
+            {
+                var b = root.Q<Button>("mission-m" + i);
+                Assert.IsNotNull(b, "m" + i);
+                StringAssert.StartsWith("KH-" + i, b.text);
+                Assert.IsNotEmpty(b.tooltip);
+                Assert.IsTrue(b.ClassListContains("kh-button"));
+                Assert.AreEqual(44f, b.style.minHeight.value.value);
+            }
+            var home = root.Q<Button>("missions-home");
+            Assert.IsNotNull(home);
+            Assert.AreEqual("Home", home.text);
+            Assert.IsNotEmpty(home.tooltip);
+            Assert.AreEqual(44f, home.style.minHeight.value.value);
+        }
+
+        [Test]
+        public void EmptyCampaignStillOffersHome()
+        {
+            var root = ScreenStub.BuildMissionList(null, _ => { }, () => { });
+            Assert.IsNotNull(root.Q<Label>("missions-empty"));
+            Assert.IsNull(root.Q<Button>("mission-m1"));
+            Assert.IsNotNull(root.Q<Button>("missions-home"));
+        }
+
+        [Test]
+        public void ReportAndBriefingCardsExposeExitsAt44()
+        {
+            var ctx = MissionContext.FromCampaign(Campaign.Load(Catalog.FindRepoRoot(System.IO.Directory.GetCurrentDirectory())), "m1");
+            var report = ScreenStub.BuildReport(ctx, () => { }, () => { }, () => { }, () => { });
+            foreach (var name in new[] { "report-next", "report-retry", "report-missions", "report-home" })
+            {
+                var b = report.Q<Button>(name);
+                Assert.IsNotNull(b, name);
+                Assert.IsNotEmpty(b.text, name);
+                Assert.IsNotEmpty(b.tooltip, name);
+                Assert.IsTrue(b.ClassListContains("kh-button"));
+                Assert.AreEqual(44f, b.style.minHeight.value.value);
+            }
+            StringAssert.Contains("KH-1", report.Q<Label>("report-job").text);
+            var brief = ScreenStub.BuildBriefing(ctx, () => { }, () => { });
+            Assert.IsNotNull(brief.Q<Button>("briefing-build"));
+            Assert.IsNotNull(brief.Q<Button>("briefing-back"));
+            Assert.AreEqual(44f, brief.Q<Button>("briefing-build").style.minHeight.value.value);
+            var flight = ScreenStub.BuildFlightRoutes(() => { }, () => { }, () => { });
+            Assert.IsNotNull(flight.Q<Button>("flight-report"));
+            Assert.IsNotNull(flight.Q<Button>("flight-missions"));
+            Assert.IsNotNull(flight.Q<Button>("flight-home"));
+        }
+    }
+}
