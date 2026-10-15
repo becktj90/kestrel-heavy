@@ -1,8 +1,8 @@
 // Home is a perspective hangar, not a flat poster. The launch bar, the two glass rows, the
 // telemetry and the KH-1 stack are separate objects along the camera, so a small yaw parallaxes
-// them apart. Pointers hit colliders. Text is TextMeshPro on world-space canvases.
+// them apart. Pointers hit colliders. Labels are OS-font quads in front of each slab: a runtime
+// SDF atlas rendered as a solid white bar on device and left every control blank.
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 namespace Kestrel.Game.Shell
@@ -14,10 +14,9 @@ namespace Kestrel.Game.Shell
         sealed class Plate
         {
             public MenuAnchor Anchor;
-            public Transform Root, Slab, Icon, Dial;
+            public Transform Root, Slab, Icon;
             public Transform[] Trim;
-            public Canvas Canvas;
-            public float Pixels;
+            public readonly List<MainMenuLabel> Labels = new List<MainMenuLabel>();
             public MainMenuHotspot Hot;
         }
 
@@ -29,7 +28,7 @@ namespace Kestrel.Game.Shell
         Color _bg;
         Vector3 _pos;
         Quaternion _rot;
-        Transform _root, _dialOuter, _dialInner;
+        Transform _root;
         Material _trimMat, _hudTrim;
         Mesh _cube;
         readonly List<Plate> _plates = new List<Plate>();
@@ -51,6 +50,7 @@ namespace Kestrel.Game.Shell
             _cube = Own(MainMenuMesh.UnitBox());
             BuildRocket();
             BuildHangar();
+            MainMenuText.Warmup();
             BuildPlates();
             _aspect = AspectOfScreen();
             for (int i = 0; i < _plates.Count; i++) Place(_plates[i], _aspect);
@@ -127,8 +127,6 @@ namespace Kestrel.Game.Shell
             }
             float title = MainMenuLayout.TitleGlow(time, reduce);
             for (int i = 0; i < _glowLabels.Count; i++) _glowLabels[i].SetGlow(title);
-            if (_dialOuter != null) _dialOuter.localRotation = Quaternion.Euler(0f, 0f, MainMenuLayout.DialAngle(time, reduce, 1f));
-            if (_dialInner != null) _dialInner.localRotation = Quaternion.Euler(0f, 0f, MainMenuLayout.DialAngle(time, reduce, -0.65f));
             for (int i = 0; i < _plates.Count; i++)
             {
                 var h = _plates[i].Hot;
@@ -145,9 +143,9 @@ namespace Kestrel.Game.Shell
 
         static void SetLine(MainMenuLabel label, ref string cache, string next)
         {
-            if (label == null || label.Text == null || cache == next) return;
+            if (label == null || cache == next) return;
             cache = next;
-            label.Text.text = next;
+            label.SetText(next);
         }
 
         MainMenuHotspot Ray(Vector2 screen)
@@ -164,7 +162,7 @@ namespace Kestrel.Game.Shell
             for (int i = 0; i < anchors.Length; i++)
             {
                 var a = anchors[i];
-                var plate = new Plate { Anchor = a, Pixels = PixelsFor(a) };
+                var plate = new Plate { Anchor = a };
                 plate.Root = New(a.Id, _root);
                 bool slab = a.Clickable || a.Role == MenuTextRole.Hud;
                 if (slab) plate.Slab = Slab(plate.Root, a);
@@ -172,8 +170,7 @@ namespace Kestrel.Game.Shell
                 else if (a.Role == MenuTextRole.Hud) plate.Trim = Trim(plate.Root, ref _hudTrim);
                 if (a.Clickable) plate.Hot = Hot(plate, a);
                 if (!string.IsNullOrEmpty(a.Icon)) plate.Icon = Icon(plate.Root, a.Icon);
-                plate.Canvas = CanvasFor(plate, a);
-                if (a.Id == "kh1") plate.Dial = Dials(plate.Root);
+                FillLabels(plate, a);
                 _plates.Add(plate);
             }
         }
@@ -221,75 +218,69 @@ namespace Kestrel.Game.Shell
             return AddMesh(parent, kind, mesh, mat, Vector3.zero, Quaternion.identity, Vector3.one);
         }
 
-        Canvas CanvasFor(Plate plate, MenuAnchor a)
+        void FillLabels(Plate plate, MenuAnchor a)
         {
-            var canvas = MainMenuText.CreateCanvas(plate.Root, 1f, 0.4f, plate.Pixels, 400 - Mathf.RoundToInt(a.Depth * 12f), _cam);
-            bool glass = a.Role == MenuTextRole.Glass;
-            var align = glass ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.Center;
-            float inset = glass ? plate.Pixels * 0.34f : 8f;
             if (a.Id == "title")
             {
-                AddGlow(MainMenuText.Line(canvas.transform, MainMenuLayout.TitleTop, MenuTextRole.Title, 0.26f, TextAlignmentOptions.Center, 0f));
-                AddGlow(MainMenuText.Line(canvas.transform, MainMenuLayout.TitleBottom, MenuTextRole.Title, -0.26f, TextAlignmentOptions.Center, 0f));
+                Glow(MakeLabel(plate, MainMenuLayout.TitleTop, MenuTextRole.Title, true));
+                Glow(MakeLabel(plate, MainMenuLayout.TitleBottom, MenuTextRole.Title, true));
             }
             else if (a.Id == "subtitle")
             {
-                MainMenuText.Line(canvas.transform, MainMenuLayout.Tagline, MenuTextRole.Subtitle, 0f, TextAlignmentOptions.Center, 0f);
+                MakeLabel(plate, MainMenuLayout.Tagline, MenuTextRole.Subtitle, true);
             }
             else if (a.Id == "tel-l" || a.Id == "tel-r")
             {
                 var read = MainMenuLayout.Readout(0f, true);
                 if (a.Id == "tel-l")
                 {
-                    _fuel = Hud(canvas.transform, read.LeftFuel, 0.30f);
-                    _lox = Hud(canvas.transform, read.LeftLox, 0f);
-                    _mass = Hud(canvas.transform, read.LeftMass, -0.30f);
+                    _fuel = MakeLabel(plate, read.LeftFuel, MenuTextRole.Hud, true);
+                    _lox = MakeLabel(plate, read.LeftLox, MenuTextRole.Hud, true);
+                    _mass = MakeLabel(plate, read.LeftMass, MenuTextRole.Hud, true);
                 }
                 else
                 {
-                    _thrust = Hud(canvas.transform, read.RightThrust, 0.30f);
-                    _wind = Hud(canvas.transform, read.RightWind, 0f);
-                    _status = Hud(canvas.transform, read.RightStatus, -0.30f);
+                    _thrust = MakeLabel(plate, read.RightThrust, MenuTextRole.Hud, true);
+                    _wind = MakeLabel(plate, read.RightWind, MenuTextRole.Hud, true);
+                    _status = MakeLabel(plate, read.RightStatus, MenuTextRole.Hud, true);
                 }
             }
             else if (a.Id == "kh1")
             {
-                AddGlow(MainMenuText.Line(canvas.transform, MainMenuLayout.Designation, MenuTextRole.Dial, 0f, TextAlignmentOptions.Center, 0f));
+                Glow(MakeLabel(plate, MainMenuLayout.Designation, MenuTextRole.Dial, true));
+            }
+            else if (a.Id == "launch")
+            {
+                MakeLabel(plate, "LAUNCH", MenuTextRole.Launch, true);
+                MakeLabel(plate, a.Label, MenuTextRole.Launch, true);
             }
             else if (!string.IsNullOrEmpty(a.Label))
             {
-                var line = MainMenuText.Line(canvas.transform, a.Label, a.Role, 0f, align, inset);
-                if (line == null) MainMenuText.Fallback(plate.Root, a.Label, 0.6f, 0.15f, 64, _owned);
+                MakeLabel(plate, a.Label, a.Role, a.Live);
             }
-            if (a.Id == "title" && canvas.transform.childCount == 0)
-            {
-                MainMenuText.Fallback(plate.Root, MainMenuLayout.TitleTop, 0.8f, 0.12f, 72, _owned);
-                MainMenuText.Fallback(plate.Root, MainMenuLayout.TitleBottom, 0.7f, 0.1f, 72, _owned);
-            }
-            return canvas;
         }
 
-        MainMenuLabel Hud(Transform canvas, string text, float y)
+        MainMenuLabel MakeLabel(Plate plate, string text, MenuTextRole role, bool live)
         {
-            var line = MainMenuText.Line(canvas, text, MenuTextRole.Hud, y, TextAlignmentOptions.Center, 0f);
-            if (line != null) _glowLabels.Add(line);
-            return line;
+            var t = New(string.IsNullOrEmpty(text) ? role.ToString() : text, plate.Root);
+            var filter = t.gameObject.AddComponent<MeshFilter>();
+            var rend = t.gameObject.AddComponent<MeshRenderer>();
+            var mesh = Own(new Mesh { name = "KH_Label" });
+            var mat = Own(MainMenuMaterials.Font());
+            filter.sharedMesh = mesh;
+            rend.sharedMaterial = mat;
+            rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            rend.receiveShadows = false;
+            var label = t.gameObject.AddComponent<MainMenuLabel>();
+            label.Bind(filter, rend, mesh, mat, role, MainMenuMaterials.InkFor(role, live));
+            label.SetText(text);
+            plate.Labels.Add(label);
+            return label;
         }
 
-        void AddGlow(MainMenuLabel label) { if (label != null) _glowLabels.Add(label); }
-
-        Transform Dials(Transform parent)
+        void Glow(MainMenuLabel label)
         {
-            var rig = New("Dials", parent);
-            var mat = Own(MainMenuMaterials.Additive(MainMenuMaterials.Cyan));
-            var outer = Own(MainMenuMesh.Ticks(0.72f, 48, 0.12f, 0.025f, 0.02f));
-            var inner = Own(MainMenuMesh.Ticks(0.5f, 24, 0.08f, 0.02f, 0.02f));
-            _dialOuter = AddMesh(rig, "Outer", outer, mat, Vector3.zero, Quaternion.identity, Vector3.one);
-            _dialInner = AddMesh(rig, "Inner", inner, mat, Vector3.zero, Quaternion.identity, Vector3.one);
-            var disc = Own(MainMenuMesh.Disc(0.34f, 32));
-            var face = Own(MainMenuMaterials.Body(new Color(0.05f, 0.08f, 0.12f, 0.85f), 0.1f, 0.7f, MainMenuMaterials.Cyan * 0.35f));
-            AddMesh(rig, "Plate", disc, face, new Vector3(0f, 0f, 0.01f), Quaternion.identity, Vector3.one);
-            return rig;
+            if (label != null) _glowLabels.Add(label);
         }
 
         void Place(Plate p, float aspect)
@@ -300,29 +291,59 @@ namespace Kestrel.Game.Shell
             p.Root.SetPositionAndRotation(w, Quaternion.LookRotation(toCam.sqrMagnitude > 1e-6f ? toCam : Vector3.back, Vector3.up));
             Vector2 size = MainMenuLayout.WorldSize(p.Anchor, aspect);
             float thick = p.Anchor.Id == "launch" ? 0.07f : 0.035f;
+            float z = MainMenuText.FaceZ(thick);
             if (p.Slab != null) p.Slab.localScale = new Vector3(size.x, size.y, thick);
             if (p.Icon != null)
             {
-                float s = size.y * 0.5f;
+                float s = size.y * 0.42f;
                 p.Icon.localScale = new Vector3(s, s, s);
-                p.Icon.localPosition = new Vector3(-size.x * 0.3f, 0f, thick * 0.5f + 0.012f);
+                // local +X is screen-left: the panel's +Z points back at the camera.
+                p.Icon.localPosition = new Vector3(size.x * 0.30f, 0f, z);
             }
-            if (p.Canvas != null)
-            {
-                MainMenuText.FitCanvas(p.Canvas, size.x * 0.94f, size.y * 0.82f, p.Pixels);
-                p.Canvas.transform.localPosition = new Vector3(0f, 0f, thick * 0.5f + 0.014f);
-            }
+            PlaceLabels(p, size, z);
             if (p.Trim != null)
             {
-                float b = Mathf.Clamp(size.y * 0.14f, 0.008f, 0.03f);
-                float z = -thick * 0.2f;
-                float tz = thick * 0.4f;
-                Edge(p.Trim[0], new Vector3(-size.x * 0.5f, 0f, z), new Vector3(b, size.y + b, tz));
-                Edge(p.Trim[1], new Vector3(size.x * 0.5f, 0f, z), new Vector3(b, size.y + b, tz));
-                Edge(p.Trim[2], new Vector3(0f, size.y * 0.5f, z), new Vector3(size.x + b, b, tz));
-                Edge(p.Trim[3], new Vector3(0f, -size.y * 0.5f, z), new Vector3(size.x + b, b, tz));
+                float b = Mathf.Clamp(Mathf.Min(size.x, size.y) * 0.04f, 0.006f, 0.016f);
+                float tz = thick * 0.35f;
+                float ez = -thick * 0.15f;
+                Edge(p.Trim[0], new Vector3(-size.x * 0.5f, 0f, ez), new Vector3(b, size.y + b, tz));
+                Edge(p.Trim[1], new Vector3(size.x * 0.5f, 0f, ez), new Vector3(b, size.y + b, tz));
+                Edge(p.Trim[2], new Vector3(0f, size.y * 0.5f, ez), new Vector3(size.x + b, b, tz));
+                Edge(p.Trim[3], new Vector3(0f, -size.y * 0.5f, ez), new Vector3(size.x + b, b, tz));
             }
-            if (p.Dial != null) p.Dial.localScale = Vector3.one * (size.y * 0.55f);
+        }
+
+        static void PlaceLabels(Plate p, Vector2 size, float z)
+        {
+            var labels = p.Labels;
+            if (labels == null || labels.Count == 0) return;
+            if (p.Anchor.Id == "kh1")
+            {
+                labels[0].Place(new Vector3(0f, 0f, z), size.x * 0.72f, size.y * 0.34f);
+                return;
+            }
+            if (p.Anchor.Id == "launch" && labels.Count >= 2)
+            {
+                labels[0].Place(new Vector3(0f, size.y * 0.16f, z), size.x * 0.78f, size.y * 0.46f);
+                labels[1].Place(new Vector3(0f, -size.y * 0.26f, z), size.x * 0.88f, size.y * 0.24f);
+                return;
+            }
+            if (labels.Count == 1)
+            {
+                bool glass = p.Icon != null;
+                float x = glass ? -size.x * 0.10f : 0f;
+                float w = glass ? size.x * 0.50f : size.x * 0.90f;
+                float h = size.y * (p.Anchor.Role == MenuTextRole.Launch ? 0.62f : 0.70f);
+                labels[0].Place(new Vector3(x, 0f, z), w, h);
+                return;
+            }
+            float span = size.y * 0.82f;
+            float step = span / labels.Count;
+            float hLine = step * 0.88f;
+            float top = span * 0.5f - step * 0.5f;
+            float wLine = size.x * 0.88f;
+            for (int i = 0; i < labels.Count; i++)
+                labels[i].Place(new Vector3(0f, top - i * step, z), wLine, hLine);
         }
 
         static void Edge(Transform t, Vector3 pos, Vector3 scale)
@@ -444,13 +465,6 @@ namespace Kestrel.Game.Shell
             fill.intensity = 1.6f;
             fill.range = 16f;
             fill.shadows = LightShadows.None;
-        }
-
-        static float PixelsFor(MenuAnchor a)
-        {
-            if (a.Role == MenuTextRole.Launch || a.Role == MenuTextRole.Title) return 1400f;
-            if (a.Role == MenuTextRole.Hud || a.Role == MenuTextRole.Dial) return 800f;
-            return 1000f;
         }
 
         static float AspectOfScreen() => Screen.height > 0 ? (float)Screen.width / Screen.height : 0.56f;

@@ -11,6 +11,7 @@ namespace Kestrel.Game.Shell
         public const string GlowResource = "Materials/KH_Plume";
         public const string GlassResource = "Materials/KH_Glass";
         public const string TmpResource = "UI/KH_MenuTmp";
+        public const string FontResource = "Materials/KH_Font";
 
         public static readonly Color Cyan = new Color(0.25f, 0.95f, 1f, 1f);
         public static readonly Color LaunchRed = new Color(0.72f, 0.04f, 0.09f, 1f);
@@ -61,6 +62,39 @@ namespace Kestrel.Game.Shell
             m.SetFloat("_ZWrite", 0f);
             m.renderQueue = 3000;
             return m;
+        }
+
+        /// <summary>Unlit font cutout. Cloned so each label can tint without fighting the others.
+        /// The Resources material keeps Kestrel/Font in the player; Shader.Find alone would not.</summary>
+        public static Material Font()
+        {
+            var src = Resources.Load<Material>(FontResource);
+            Material m = null;
+            if (src != null && Usable(src.shader)) m = new Material(src) { name = "KH_Font_Menu" };
+            if (m == null)
+            {
+                var sh = Shader.Find("Kestrel/Font");
+                if (!Usable(sh)) return null;
+                m = new Material(sh) { name = "KH_Font_Menu" };
+            }
+            m.renderQueue = 3100;
+            m.SetColor("_BaseColor", Color.white);
+            if (m.HasProperty("_Color")) m.SetColor("_Color", Color.white);
+            return m;
+        }
+
+        public static Color InkFor(MenuTextRole role, bool live)
+        {
+            switch (role)
+            {
+                case MenuTextRole.Launch: return Color.white;
+                case MenuTextRole.Hud: return new Color(0.93f, 0.98f, 1f, 1f);
+                case MenuTextRole.Subtitle: return new Color(0.78f, 0.86f, 0.92f, 1f);
+                case MenuTextRole.Dial: return Cyan;
+                case MenuTextRole.Glass:
+                    return live ? Cream : new Color(0.82f, 0.86f, 0.90f, 0.72f);
+                default: return Cream;
+            }
         }
 
         public static Material TmpShaderSource()
