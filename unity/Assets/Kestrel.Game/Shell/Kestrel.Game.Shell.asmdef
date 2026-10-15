@@ -6,6 +6,7 @@
         "Kestrel.Game.Quality",
         "Kestrel.Game.QualityCore",
         "Kestrel.Game.Audio",
+        "Kestrel.Core",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],
