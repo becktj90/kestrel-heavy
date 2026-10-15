@@ -8,6 +8,7 @@
   "starterUnlocks": ["core-stage", "engines", "tanks", "fairing"],
   "darkPatterns": { "timers": false, "energy": false, "ads": false },
   "seeds": [1, 2, 3, 4, 5],
+  "flightPrefix": "KH",
   "viabilityGentle": false,
   "reuse": { "refundFraction": 0.7, "refurbBase": 0.1, "refurbPerFlight": 0.05 },
   "score": {
@@ -37,7 +38,15 @@
       "budgetKc": 2000000,
       "rewardKc": 2000000,
       "unlocks": ["fins", "nose"],
-      "gentleDefault": true
+      "gentleDefault": true,
+      "briefing": {
+        "payloadName": "Pebble",
+        "payloadKind": "Sounding box",
+        "goal": "Toss a 50 kg box to a 10 km apogee.",
+        "bonuses": [
+          { "id": "soft-ride", "label": "Keep peak g under 6", "maxG": 6 }
+        ]
+      }
     },
     {
       "index": 2,
@@ -52,7 +61,16 @@
       "budgetKc": 5000000,
       "rewardKc": 5000000,
       "unlocks": ["stage-2"],
-      "gentleDefault": true
+      "gentleDefault": true,
+      "briefing": {
+        "payloadName": "Lantern",
+        "payloadKind": "Sounding box",
+        "goal": "Carry a 100 kg box to a 100 km apogee.",
+        "bonuses": [
+          { "id": "karman", "label": "Cross 100 km" },
+          { "id": "soft-ride", "label": "Keep peak g under 6", "maxG": 6 }
+        ]
+      }
     },
     {
       "index": 3,
@@ -67,7 +85,15 @@
       "budgetKc": 15000000,
       "rewardKc": 15000000,
       "unlocks": ["nozzle-expansion"],
-      "gentleDefault": true
+      "gentleDefault": true,
+      "briefing": {
+        "payloadName": "Mote",
+        "payloadKind": "Cubesat",
+        "goal": "Park a 20 kg cubesat in a 200 km orbit.",
+        "bonuses": [
+          { "id": "margin", "label": "Finish with speed to spare" }
+        ]
+      }
     },
     {
       "index": 4,
@@ -82,7 +108,16 @@
       "budgetKc": 40000000,
       "rewardKc": 40000000,
       "unlocks": ["pc", "throttle"],
-      "gentleDefault": false
+      "gentleDefault": false,
+      "briefing": {
+        "payloadName": "Tern-3",
+        "payloadKind": "Weather sat",
+        "goal": "Put a 2,500 kg fictional weather sat in a 500 km, 51.6° orbit.",
+        "bonuses": [
+          { "id": "land-booster", "label": "Land the booster" },
+          { "id": "peak-g", "label": "Keep peak g under 4", "maxG": 4 }
+        ]
+      }
     },
     {
       "index": 5,
@@ -97,7 +132,16 @@
       "budgetKc": 90000000,
       "rewardKc": 90000000,
       "unlocks": ["crossfeed"],
-      "gentleDefault": false
+      "gentleDefault": false,
+      "briefing": {
+        "payloadName": "Bargeload",
+        "payloadKind": "Cargo sat",
+        "goal": "Lift 12,000 kg to a 400 km, 51.6° orbit.",
+        "bonuses": [
+          { "id": "strap-ons", "label": "Fly with the strap-ons" },
+          { "id": "fuel", "label": "Save fuel on the way up" }
+        ]
+      }
     },
     {
       "index": 6,
@@ -113,7 +157,15 @@
       "budgetKc": 70000000,
       "rewardKc": 70000000,
       "unlocks": ["legs", "grid-fins"],
-      "gentleDefault": false
+      "gentleDefault": false,
+      "briefing": {
+        "payloadName": "Homebound",
+        "payloadKind": "Cargo sat",
+        "goal": "Put 8,000 kg in a 200 km orbit and bring the booster home.",
+        "bonuses": [
+          { "id": "perfect-pad", "label": "Stick the pad landing" }
+        ]
+      }
     },
     {
       "index": 7,
@@ -128,7 +180,16 @@
       "budgetKc": 110000000,
       "rewardKc": 110000000,
       "unlocks": ["insulation"],
-      "gentleDefault": false
+      "gentleDefault": false,
+      "briefing": {
+        "payloadName": "Harbor-1",
+        "payloadKind": "Comsat",
+        "goal": "Send a 5,500 kg comsat to a transfer orbit and land on Haven.",
+        "bonuses": [
+          { "id": "barge", "label": "Land the booster on Haven" },
+          { "id": "soft-ride", "label": "Keep peak g under 5", "maxG": 5 }
+        ]
+      }
     },
     {
       "index": 8,
@@ -149,7 +210,16 @@
       "budgetKc": 160000000,
       "rewardKc": 160000000,
       "unlocks": ["redundant-avionics"],
-      "gentleDefault": false
+      "gentleDefault": false,
+      "briefing": {
+        "payloadName": "Nest",
+        "payloadKind": "Crew capsule",
+        "goal": "Fly a 12,000 kg crew capsule to a 400 km orbit.",
+        "bonuses": [
+          { "id": "peak-g", "label": "Keep peak g under 4", "maxG": 4 },
+          { "id": "quiet", "label": "Fly with no red risks" }
+        ]
+      }
     },
     {
       "index": 9,
@@ -164,7 +234,16 @@
       "budgetKc": 180000000,
       "rewardKc": 180000000,
       "unlocks": ["hydrolox-upper"],
-      "gentleDefault": false
+      "gentleDefault": false,
+      "briefing": {
+        "payloadName": "Lumen",
+        "payloadKind": "Lunar probe",
+        "goal": "Send a 3,000 kg probe on a path out toward the Moon.",
+        "bonuses": [
+          { "id": "coast", "label": "Coast for three hours" },
+          { "id": "window", "label": "Leave on the planned path" }
+        ]
+      }
     },
     {
       "index": 10,
@@ -179,7 +258,16 @@
       "budgetKc": 120000000,
       "rewardKc": 120000000,
       "unlocks": [],
-      "gentleDefault": false
+      "gentleDefault": false,
+      "briefing": {
+        "payloadName": "Twin Harbor",
+        "payloadKind": "Comsat",
+        "goal": "Send a 7,000 kg comsat to transfer orbit and land the boosters.",
+        "bonuses": [
+          { "id": "boosters", "label": "Land the booster and the strap-ons" },
+          { "id": "fuel", "label": "Save fuel on the way up" }
+        ]
+      }
     }
   ]
 }

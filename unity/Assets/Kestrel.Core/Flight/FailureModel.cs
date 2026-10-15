@@ -2,6 +2,8 @@
 // Random draws are splitmix64 seeded by (design hash, mission seed). Strings are built
 // once, when the first hit is explained, not on the step.
 // Gentle physics suppresses the three random kinds. Deterministic kinds stay on.
+// EventModel (S5) discloses design-influenced odds on the predict risk list and
+// applies staging jitter and landing gusts. It uses its own seed stream.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -101,6 +103,10 @@ namespace Kestrel.Core.Flight
         public double margin, value, limit;
         public int stage = -1;
         public int engineIndex = -1;
+        /// <summary>Seeded event probability in [0, 1]. Negative when this row is not one of the three fair events.</summary>
+        public double odds = -1;
+        /// <summary>Review line for that probability. Empty until predict discloses it.</summary>
+        public string oddsLine;
     }
 
     public static class FailureModel
@@ -377,6 +383,7 @@ namespace Kestrel.Core.Flight
         readonly int stages;
         readonly double qLimPa, limitG, maxTempK, heatFactor, vLeg;
         readonly bool legs, gentle;
+        readonly EventSchedule schedule;
         FailureScratch scratch;
         double sepV, sepT;
         bool sepLive;
@@ -386,7 +393,7 @@ namespace Kestrel.Core.Flight
         public FailureEvent Event;
         public List<FlightRisk> Risks;
 
-        FailureMonitor(Info[] infos, Knot[] knots, double qLimPa, double limitG, double maxTempK, double heatFactor, double vLeg, bool legs, bool gentle, ulong hash, ulong seed)
+        FailureMonitor(Info[] infos, Knot[] knots, double qLimPa, double limitG, double maxTempK, double heatFactor, double vLeg, bool legs, bool gentle, ulong hash, ulong seed, EventSchedule schedule)
         {
             this.infos = infos;
             this.knots = knots;
@@ -399,8 +406,12 @@ namespace Kestrel.Core.Flight
             this.legs = legs;
             this.gentle = gentle;
             Gentle = gentle;
+            this.schedule = schedule;
             scratch = FailureModel.Fresh(hash, seed);
         }
+
+        /// <summary>Replayable engine, staging, and gust draw for this design hash and mission seed.</summary>
+        public EventSchedule Events => schedule;
 
         public double ThrustFactor => scratch.thrustFactor > 0 ? scratch.thrustFactor : 1;
         public double QLimPa => qLimPa;
@@ -458,7 +469,36 @@ namespace Kestrel.Core.Flight
             bool land = d != null && d.legs && d.recoveryMode != null && d.recoveryMode != "expendable";
             double vleg = land ? RecoveryModel.VLeg(d.legsKind) : 0;
             var knots = Knots(c, d);
-            return new FailureMonitor(list.ToArray(), knots, qLim, maxG, maxT, heat, vleg, land, GentleTier(d), designHash, missionSeed);
+            var built = list.ToArray();
+            var schedule = ScheduleOf(built, d, land, designHash, missionSeed);
+            return new FailureMonitor(built, knots, qLim, maxG, maxT, heat, vleg, land, GentleTier(d), designHash, missionSeed, schedule);
+        }
+
+        static EventSchedule ScheduleOf(Info[] infos, Design d, bool landing, ulong designHash, ulong missionSeed)
+        {
+            var stages = new EventStage[infos.Length];
+            for (int i = 0; i < infos.Length; i++)
+                stages[i] = new EventStage { engineCount = infos[i].engines, pc = infos[i].pc, pcRated = infos[i].pcRated };
+            var vehicle = new EventVehicle
+            {
+                avionicsTier = d != null ? d.avionicsTier : "standard",
+                safetyFactor = d != null ? d.safetyFactor : 1.4,
+                reserveFraction = ReserveFraction(d),
+                landing = landing,
+                canStage = infos.Length > 1,
+            };
+            // The draw is the Review odds and the replayable schedule. It does not replace
+            // the per-step reliability roll inside Evaluate, so existing golden flights keep their seeds.
+            return EventModel.Roll(designHash, missionSeed, stages, vehicle, GentleTier(d));
+        }
+
+        static double ReserveFraction(Design d)
+        {
+            if (d == null) return 0;
+            if (d.landingReserveSet) return d.landingReserveFraction;
+            if (d.stages != null && d.stages.Count > 0 && d.stages[0] != null && d.stages[0].propMass > 0)
+                return d.stages[0].landingPropMass / d.stages[0].propMass;
+            return 0;
         }
 
         /// <summary>Lowest structural q_lim on the stack, including the fairing. Pascals. 0 when the design has none.</summary>
@@ -689,7 +729,8 @@ namespace Kestrel.Core.Flight
                 if (hit.on && !Predict) return true;
             }
             if (!info.sepCheck) return false;
-            sepV = RecoveryModel.SeparationRelSpeed(info.sepImpulse, massAft, massForward);
+            double scale = Gentle || gentle || schedule == null ? 1 : schedule.SepScale(next);
+            sepV = RecoveryModel.SeparationRelSpeed(info.sepImpulse * scale, massAft, massForward);
             sepT = t;
             sepLive = true;
             sepStage = next;
@@ -700,10 +741,11 @@ namespace Kestrel.Core.Flight
         public bool OnImpact(double t, double sink)
         {
             if (!legs || !(vLeg > 0)) return false;
+            double gust = Gentle || gentle || schedule == null ? 0 : schedule.GustMps;
             var sample = new FailureSample
             {
                 t = t,
-                sinkRate = sink,
+                sinkRate = sink + gust,
                 vLeg = vLeg,
                 legsArmed = true,
                 stage = 1,
@@ -770,6 +812,7 @@ namespace Kestrel.Core.Flight
             Add(list, FailureKind.LegCollapse, EventKind(FailureKind.LegCollapse) ? -1 : (legs ? 0.2 : 1), vLeg, vLeg, "recovery", "legs.kind", EventKind(FailureKind.LegCollapse));
             bool fatalOut = EventKind(FailureKind.EngineOut);
             Add(list, FailureKind.EngineOut, fatalOut ? -1 : 0.5, scratch.enginesOut, 0, "engines", "engineCount", fatalOut);
+            EventModel.Disclose(list, schedule, Gentle || gentle);
             return list;
         }
 
