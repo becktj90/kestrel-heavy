@@ -1,7 +1,7 @@
 // 3-DOF translational ascent. State y = [x, y, z, vx, vy, vz, m] (m, m/s, kg).
 // SimulatePlanar seeds z = vz = 0 on the Headless pad and uses that type's air-rate
 // (Ω cos φ) and guidance, so the in-plane RK4 steps match the 2-D flight.
-// Point-mass gravity. No J2. No wind shear.
+// Point-mass gravity. No J2. SimOptions.wind null keeps these steps free of wind.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Flight;
@@ -58,6 +58,8 @@ namespace Kestrel.Core.Physics
             if (!o.vacuum && alt < 300e3) { var atm = Atmosphere.At(alt); p = atm.p; rho = atm.rho; a = atm.a; }
             double avx = vx + omegaAir * yy, avy = vy - omegaAir * x, avz = vz;
             double vrel = Math.Sqrt(avx * avx + avy * avy + avz * avz);
+            if (o.wind != null && !o.vacuum && alt < 300e3)
+                vrel = o.wind.Retarget(alt, tx, ty, ref avx, ref avy, vrel, avz);
             if (rho > 0 && vrel > 0)
             {
                 var S = st[Math.Min(StageIdx, st.Length - 1)];
@@ -91,6 +93,8 @@ namespace Kestrel.Core.Physics
             double vr = vx * ux + vy * uy + vz * uz, vt = vx * tx + vy * ty + vz * tz;
             double avx = vx + omegaAir * yy, avy = vy - omegaAir * x, avz = vz;
             double vrel = JsMath.Hypot(avx, avy);
+            if (o.wind != null && !o.vacuum && alt < 300e3)
+                vrel = o.wind.Retarget(alt, tx, ty, ref avx, ref avy, vrel);
 
             if (Thrusting)
             {
