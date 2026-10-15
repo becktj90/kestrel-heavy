@@ -173,6 +173,46 @@
     .hp-bar[data-kind="warn"] #ng-health-fill { background: var(--amber); }
     .hp-bar[data-kind="fail"] #ng-health-fill { background: var(--fail); }
     .hp-bar[hidden] { display: none !important; }
+    .hp-bar.is-hit { box-shadow: 0 0 0 2px var(--fail); }
+    .risk-strip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 9.5rem;
+      margin-top: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(4, 8, 16, 0.88);
+      border: 1px solid rgba(180, 236, 255, 0.35);
+      font: 700 0.58rem/1 var(--font-mono);
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+    }
+    .risk-strip[hidden] { display: none !important; }
+    .risk-track {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
+    #ng-q-fill {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--cyan);
+    }
+    .risk-strip[data-band="warm"] { color: var(--amber); border-color: var(--amber); }
+    .risk-strip[data-band="warm"] #ng-q-fill { background: var(--amber); }
+    .risk-strip[data-band="scorched"],
+    .risk-strip[data-band="critical"],
+    .risk-strip[data-band="lost"] { color: var(--fail); border-color: var(--fail); }
+    .risk-strip[data-band="scorched"] #ng-q-fill,
+    .risk-strip[data-band="critical"] #ng-q-fill,
+    .risk-strip[data-band="lost"] #ng-q-fill { background: var(--fail); }
+    @media (prefers-reduced-motion: reduce) {
+      .hp-bar.is-hit { box-shadow: none; }
+    }
     .mc-met {
       display: flex;
       flex-direction: column;
@@ -1060,6 +1100,7 @@
     body[data-phase="SUMMARY"] .mc-panel,
     body[data-phase="SUMMARY"] .mc-met,
     body[data-phase="SUMMARY"] #ng-health,
+    body[data-phase="SUMMARY"] #ng-risk,
     body[data-phase="SUMMARY"] #ng-banner {
       display: none !important;
     }
@@ -1240,6 +1281,10 @@
               <span class="hp-label">INT</span>
               <span class="hp-track"><span id="ng-health-fill"></span></span>
               <span id="t-health-chip">100</span>
+            </div>
+            <div id="ng-risk" class="risk-strip" role="meter" aria-label="Dynamic pressure" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-band="nominal" hidden>
+              <span id="ng-risk-label">NOMINAL</span>
+              <span class="risk-track"><span id="ng-q-fill"></span></span>
             </div>
             <div id="ng-banner" hidden data-kind="info"></div>
           </div>

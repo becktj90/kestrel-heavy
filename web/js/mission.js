@@ -102,6 +102,8 @@ import {
   vehicleInView,
 } from './camera.js';
 import { bindKeyboard, clearFlightHolds, createInput, flightAxis, isAscentCruise, isBoosting, setBoostHeld, setTouchSteer } from './input.js';
+import { shapeFlightAxis } from './feel/stick.js';
+import { DISPLAY_Q_LIM_PA } from './feel/feedback.js';
 import { FIRST_MISSION, MISSIONS, getMission, isUnlocked, nextMissionId } from './missions.js';
 import { starsForTouchdown, unlocksNextMission } from './mission-ramp.js';
 import { beatsFor, currentBeat, formatClock, nextCoachBeat, playPhase, playPhaseKind, playGoal, playNext, T0_LEAD, TAPE_IDS } from './sequence.js';
@@ -1195,6 +1197,20 @@ export default class MissionScene extends Phaser.Scene {
     ) this.liftoff();
   }
 
+  /**
+   * Analog touch keeps a little inertia. Keyboard and the on-screen pads stay
+   * instant: the D0 traces drive those, and their checkpoints lock the pose.
+   */
+  shapeAxis(raw, dt) {
+    const analog = this.inputState.touchSteer != null || this.inputState.pointerX != null;
+    const shaped = shapeFlightAxis(raw, this.session?.feltAxis || 0, dt, analog, Boolean(this.session?.feelCoast));
+    if (this.session) {
+      this.session.feltAxis = shaped.felt;
+      this.session.feelCoast = shaped.coast;
+    }
+    return shaped.axis;
+  }
+
   updateAscent(dt) {
     const mode = DIFFICULTY[this.settings.difficulty];
     this.session.flightTime += dt;
@@ -1213,7 +1229,7 @@ export default class MissionScene extends Phaser.Scene {
       this.session.throttle = clamp(this.session.throttle - dt * 1.8, 0, 0.08);
     }
 
-    const axis = flightAxis(this.inputState, this.rocket.x, 140);
+    const axis = this.shapeAxis(flightAxis(this.inputState, this.rocket.x, 140), dt);
     const alt = this.session.altitudeKm || 0;
     const space = spaceBlend(alt, this.status);
     this.matter.world.setGravity(0, PHYS.ascentG * (1 - space * 0.82));
@@ -1294,7 +1310,7 @@ export default class MissionScene extends Phaser.Scene {
     this.fireDueBeats();
     this.lockVehicleCamera(CAM.sepLerpX, CAM.sepLerpY);
 
-    let axis = flightAxis(this.inputState, this.rocket.x, 150);
+    let axis = this.shapeAxis(flightAxis(this.inputState, this.rocket.x, 150), dt);
     if (mode.assist > 0 && this.session.sepPhase !== 'clear') {
       axis = clamp(axis - this.rocket.body.velocity.x * 0.18 * mode.assist, -1, 1);
     }
@@ -1410,7 +1426,7 @@ export default class MissionScene extends Phaser.Scene {
     this.applyHavenDrift(dt, mode);
 
     const boosting = isBoosting(this.inputState, this.nowSec);
-    let axis = flightAxis(this.inputState, this.rocket.x, 210);
+    let axis = this.shapeAxis(flightAxis(this.inputState, this.rocket.x, 210), dt);
     const deckX = this.deck.x;
     const assist = this.isHavenQa() ? Math.max(mode.assist, 0.28) : mode.assist;
     const alt = this.jacklyn.y - 50 - this.rocket.y;
@@ -3252,6 +3268,17 @@ export default class MissionScene extends Phaser.Scene {
         healthMaxFor(this.settings.difficulty),
       ),
       hideHealth: this.status === 'MENU' || this.status === 'SUMMARY',
+      nowSec: this.nowSec,
+      reducedMotion: !!this.settings.reducedMotion,
+      reducedFlashes: !!this.settings.reducedFlashes,
+      risk: {
+        health01: (s.health == null ? healthMaxFor(this.settings.difficulty) : s.health) / healthMaxFor(this.settings.difficulty),
+        throttle01: Math.max(0, Math.min(1, Number(s.throttle) || 0)),
+        fuel01: Math.max(0, Math.min(1, (Number(s.fuel) || 0) / 100)),
+        qPa: (sci.qKpa || 0) * 1000,
+        qLimPa: DISPLAY_Q_LIM_PA,
+        dvMargin: 0,
+      },
       diff: this.settings.difficulty,
       pauseHint: pauseHintFor(this.status, s.sepPhase),
       stage: this.status === 'MENU' ? 'STANDBY' : (this.status === 'SUMMARY' ? 'SUMMARY' : (s.stage && s.stage !== 'MENU' ? s.stage : 'STANDBY')),

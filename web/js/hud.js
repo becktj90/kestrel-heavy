@@ -1,6 +1,7 @@
 /** Mission-control telemetry overlay — tabular, high contrast, aria-live banners. */
 
 import { climbArmedFromLabel, paintThumbSteer, peekTouchSteer, setSteerSensitivity, TOUCH_STEER_DEAD_PX } from './input.js';
+import { evaluateRisk, qMeterNow } from './feel/feedback.js';
 
 function el(id) {
   return document.getElementById(id);
@@ -156,6 +157,7 @@ export function renderHud(snapshot) {
   document.body.classList.toggle('is-kid', snapshot.diff === 'KID');
   renderTape(snapshot.tapeId, snapshot.nextTapeId);
   renderHealth(snapshot);
+  renderRisk(snapshot);
 }
 
 export function setSummaryWhy(text) {
@@ -406,6 +408,28 @@ export function renderHealth(snapshot) {
   if (label && snapshot.healthText != null) label.textContent = snapshot.healthText;
   const chip = el('t-health-chip');
   if (chip) chip.textContent = snapshot.healthText || `${Math.round(pct)}`;
+  const calm = snapshot.reducedMotion || snapshot.reducedFlashes;
+  const now = Number(snapshot.nowSec);
+  if (!calm && Number.isFinite(now) && bar._khHp != null && hp < bar._khHp - 0.5) bar.dataset.hitAt = String(now);
+  bar._khHp = hp;
+  const hitAt = Number(bar.dataset.hitAt);
+  bar.classList.toggle('is-hit', !calm && Number.isFinite(hitAt) && Number.isFinite(now) && now - hitAt < 0.18 && now - hitAt >= 0);
+}
+
+export function renderRisk(snapshot) {
+  const node = el('ng-risk');
+  if (!node) return;
+  const hide = snapshot.hideHealth === true || !snapshot.risk;
+  node.hidden = hide;
+  if (hide) return;
+  const risk = evaluateRisk(snapshot.risk);
+  node.dataset.band = risk.band;
+  const shown = qMeterNow(risk.qRisk);
+  node.setAttribute('aria-valuenow', String(shown));
+  const label = el('ng-risk-label');
+  if (label && label.textContent !== risk.call) label.textContent = risk.call;
+  const fill = el('ng-q-fill');
+  if (fill) fill.style.width = `${shown}%`;
 }
 
 export function setHangar(settings, catalog, combo, onEquip) {
