@@ -184,27 +184,12 @@ namespace Kestrel.Game.Shell
             if (overlay == SessionScreens.Report)
                 return BuildReport(ctx, () => flow?.ReportNext(), () => flow?.ReportRetry(), () => flow?.ExitToMissions(), () => flow?.ExitToHome());
             if (overlay == SessionScreens.Briefing)
-                return BuildBriefing(ctx, () => flow?.BuildFromBriefing(), () => flow?.ExitToMissions());
+                return BuildBriefing(ctx, () => flow?.BuildFromBriefing(), () => flow?.BackFromBriefing());
             return null;
         }
 
         public static VisualElement BuildBriefing(MissionContext ctx, Action build, Action back)
-        {
-            var card = Card("briefing-card", "Briefing");
-            var body = card.Q("card-body");
-            body.Add(Body("briefing-job", JobLine(ctx)));
-            if (ctx != null && !string.IsNullOrEmpty(ctx.Goal)) body.Add(Body("briefing-goal", ctx.Goal));
-            if (ctx != null && ctx.BudgetKc > 0)
-                body.Add(Body("briefing-budget", "Budget " + Kc(ctx.BudgetKc) + " Kc. Reward " + Kc(ctx.RewardKc) + " Kc."));
-            if (ctx != null && (!string.IsNullOrEmpty(ctx.Weather) || !string.IsNullOrEmpty(ctx.Site) || !string.IsNullOrEmpty(ctx.TimeOfDay)))
-                body.Add(Body("briefing-pad", PadLine(ctx)));
-            if (ctx != null && ctx.BonusGoals.Count > 0)
-                body.Add(Body("briefing-bonus", "Bonus: " + string.Join(". ", ctx.BonusGoals) + "."));
-            if (ctx != null && !string.IsNullOrEmpty(ctx.EngineerLine)) body.Add(Body("briefing-engineer", ctx.EngineerLine));
-            card.Add(RouteButton("briefing-build", "Build it", "Build it. Opens the designer with this mission.", build));
-            card.Add(RouteButton("briefing-back", "Back", "Back to the mission list.", back));
-            return card;
-        }
+            => BriefingScreen.Build(ctx, build, back);
 
         public static VisualElement BuildReport(MissionContext ctx, Action next, Action retry, Action missions, Action home)
         {
@@ -255,17 +240,6 @@ namespace Kestrel.Game.Shell
             else line += ". Gentle off.";
             return line;
         }
-
-        static string PadLine(MissionContext ctx)
-        {
-            var parts = new System.Collections.Generic.List<string>();
-            if (!string.IsNullOrEmpty(ctx.Weather)) parts.Add("Wind " + ctx.Weather);
-            if (!string.IsNullOrEmpty(ctx.TimeOfDay)) parts.Add(ctx.TimeOfDay);
-            if (!string.IsNullOrEmpty(ctx.Site)) parts.Add(ctx.Site);
-            return string.Join(". ", parts) + ".";
-        }
-
-        static string Kc(double value) => value.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
 
         static Button RouteButton(string name, string text, string tip, Action click)
         {

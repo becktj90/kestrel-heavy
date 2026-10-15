@@ -1,0 +1,92 @@
+/* Mission briefing overlay. Portrait column on the mission map. Tokens live on the shell.
+   Touch targets stay at least 44 px. No motion, no glow, no outside images. */
+
+.briefing {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-grow: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    background-color: var(--kh-home-navy);
+}
+
+.briefing-column {
+    width: 100%;
+    max-width: 600px;
+    flex-grow: 1;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: var(--kh-space-3);
+    align-self: center;
+}
+
+.briefing-title {
+    font-size: var(--kh-font-title);
+    -unity-font-style: bold;
+    color: var(--kh-home-cream);
+    white-space: normal;
+    -unity-text-align: middle-left;
+    margin-bottom: var(--kh-space-2);
+    flex-shrink: 0;
+}
+
+.briefing-scroll {
+    flex-grow: 1;
+}
+
+.briefing-heading {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: var(--kh-home-orange);
+    white-space: normal;
+    margin-top: var(--kh-space-3);
+    margin-bottom: var(--kh-space-1);
+    -unity-text-align: middle-left;
+}
+
+.briefing-body {
+    font-size: var(--kh-font-body);
+    color: var(--kh-home-cream);
+    white-space: normal;
+    margin-top: 2px;
+    -unity-text-align: middle-left;
+}
+
+.briefing-note {
+    font-size: 15px;
+    color: var(--kh-home-cream);
+    white-space: normal;
+    -unity-text-align: middle-left;
+}
+
+.briefing-engineer {
+    font-size: 15px;
+    color: var(--kh-home-cream);
+    white-space: normal;
+    margin-top: 2px;
+    -unity-text-align: middle-left;
+}
+
+.kh-button.briefing-build {
+    flex-shrink: 0;
+    margin-top: var(--kh-space-3);
+    min-height: var(--kh-touch-min);
+    background-color: var(--kh-home-orange);
+    color: var(--kh-home-navy);
+    border-width: 0;
+}
+
+.kh-button.briefing-back {
+    flex-shrink: 0;
+    margin-top: var(--kh-space-2);
+    margin-bottom: var(--kh-space-2);
+    min-height: var(--kh-touch-min);
+    background-color: var(--kh-home-navy);
+    color: var(--kh-home-cream);
+    border-width: 1px;
+    border-color: rgba(250, 240, 215, 0.4);
+}
