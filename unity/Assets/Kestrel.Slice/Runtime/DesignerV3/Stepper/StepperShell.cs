@@ -99,7 +99,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             try { SyncCore(); }
             catch (Exception e)
             {
-                Debug.LogWarning("[Stepper] " + e.Message);
+                Debug.LogWarning("[Stepper] " + e);
                 root.style.display = DisplayStyle.None;
                 ClearHiddenChrome();
             }
@@ -584,9 +584,10 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 el.style.borderRightColor = HangarUi.ChipOn;
                 el.style.borderTopColor = HangarUi.ChipOn;
                 el.style.borderBottomColor = HangarUi.ChipOn;
-                scroll?.ScrollTo(el);
             }
             bridge.Focus?.Invoke(field);
+            if (el != null && scroll != null && scroll.panel != null)
+                scroll.ScrollTo(el);
         }
 
         VisualElement FindField(string field)
