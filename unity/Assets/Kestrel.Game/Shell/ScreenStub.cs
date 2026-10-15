@@ -30,6 +30,7 @@ namespace Kestrel.Game.Shell
 
         MainMenuController _menu;
         VisualElement _overlay;
+        VisualElement _audio;
 
         /// <summary>Home is the 3D hangar (MainMenuController): KH-1 on the deck, telemetry and glass
         /// panels at different depths, launch bar closest. Words are glyph meshes on those panels.
@@ -44,7 +45,7 @@ namespace Kestrel.Game.Shell
             if (shell.Fill != null) shell.Fill.SpaceT = 0.85f;
             // #224: music/sound/narration toggles live on Home in both the overlay and the 3D fallback.
             var audio = AudioBar.Build();
-            _view.Add(audio);
+            if (!MainMenuLayout.UseOverlay) _view.Add(audio);
             _menu = gameObject.AddComponent<MainMenuController>();
             _menu.OverlayMode = MainMenuLayout.UseOverlay;
             _menu.Attach(shell);
@@ -55,7 +56,11 @@ namespace Kestrel.Game.Shell
                 _view.pickingMode = PickingMode.Ignore;
                 Action toDesign = () => shell.Flow.Go(AppScreen.Design);
                 _overlay = MainMenuOverlay.Build(shell.Root, _view, toDesign, toDesign, MainMenuLayout.ReducedMotion());
-                audio.BringToFront(); // keep the mix toggles tappable above the overlay card
+                // The reel-bar layer (mm-full) is added to the shell root above the safe area and would hide
+                // the #224 mix toggles, so they go on the root, last (topmost), and follow the safe inset.
+                shell.Root.Add(audio);
+                audio.RegisterCallback<GeometryChangedEvent>(_ => audio.style.top = shell.Safe.resolvedStyle.paddingTop);
+                _audio = audio;
                 return;
             }
             // Fallback (UseOverlay = false): the original 3D controls with hidden spoken labels.
@@ -125,6 +130,7 @@ namespace Kestrel.Game.Shell
         {
             _view?.RemoveFromHierarchy();
             _overlay?.RemoveFromHierarchy();
+            _audio?.RemoveFromHierarchy();
             shellFullLayer()?.RemoveFromHierarchy();
             if (_menu != null) { Destroy(_menu); _menu = null; }
         }
