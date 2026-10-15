@@ -1,0 +1,2287 @@
+{
+  "schema": "designer_stepper_copy_v1",
+  "version": 1,
+  "locale": "en",
+  "note": "Player copy for the guided designer. Step ids match DesignerStep. Check codes match StepperChecks and FailureKind. Every string has a stable id. Simple is the kid voice. Engineer cites the units and formulas. Live numbers stay in the readout.",
+  "depths": [
+    "simple",
+    "engineer"
+  ],
+  "steps": {
+    "mission": {
+      "id": "mission",
+      "number": 1,
+      "enum": "Mission",
+      "simple": {
+        "goal": {
+          "id": "step.mission.simple.goal",
+          "text": "Pick the job. What are we carrying, and where is it going?"
+        },
+        "why": {
+          "kid": {
+            "id": "step.mission.simple.why.kid",
+            "text": "The cargo decides the rocket. A small box and a heavy satellite need different ships."
+          },
+          "engineer": {
+            "id": "step.mission.simple.why.engineer",
+            "text": "Cargo mass is in kg. The trip asks for a change in speed, Δv, in m/s."
+          }
+        },
+        "pass": {
+          "id": "step.mission.simple.pass",
+          "text": "The job is set. Next you build a rocket that can do it."
+        }
+      },
+      "engineer": {
+        "goal": {
+          "id": "step.mission.engineer.goal",
+          "text": "Choose a mission, a payload, and a target orbit. Payload mass (kg) and the required Δv (m/s) come from that job."
+        },
+        "why": {
+          "kid": {
+            "id": "step.mission.engineer.why.kid",
+            "text": "What you carry, and how far it goes, decide how big the rocket must be."
+          },
+          "engineer": {
+            "id": "step.mission.engineer.why.engineer",
+            "text": "Payload mass (kg), volume (m³), and maxG come from the mission. A hit is altitude within ±5%, inclination within ±0.5°, or the required Δv (m/s) reached."
+          }
+        },
+        "pass": {
+          "id": "step.mission.engineer.pass",
+          "text": "Payload and orbit are set. The required Δv (m/s) is now a real target."
+        }
+      }
+    },
+    "engines": {
+      "id": "engines",
+      "number": 2,
+      "enum": "Engines",
+      "simple": {
+        "goal": {
+          "id": "step.engines.simple.goal",
+          "text": "Give it a shove strong enough to leave the ground."
+        },
+        "why": {
+          "kid": {
+            "id": "step.engines.simple.why.kid",
+            "text": "If the push is weaker than the weight, the rocket stays on the pad. A little extra shove gets it climbing."
+          },
+          "engineer": {
+            "id": "step.engines.simple.why.engineer",
+            "text": "Liftoff TWR = F/(m·g0), with g0 = 9.80665 m/s². The step passes at TWR ≥ 1.3 and blocks below 1.0."
+          }
+        },
+        "pass": {
+          "id": "step.engines.simple.pass",
+          "text": "It can lift off. The shove beats the weight with room to spare."
+        }
+      },
+      "engineer": {
+        "goal": {
+          "id": "step.engines.engineer.goal",
+          "text": "Lift off with TWR ≥ 1.3. TWR = F/(m·g0) and g0 = 9.80665 m/s²."
+        },
+        "why": {
+          "kid": {
+            "id": "step.engines.engineer.why.kid",
+            "text": "A rocket that only just equals its weight barely moves. Extra push makes the climb quick and honest."
+          },
+          "engineer": {
+            "id": "step.engines.engineer.why.engineer",
+            "text": "TWR = F/(m·g0), g0 = 9.80665 m/s². Pass at ≥ 1.3; red below 1.0. Isp drops 0.6% per 1% mixture offset, and ±6% is the sputter line. Overpressure λ = 0.02·max(0, pc/pc_rated−1)² per second."
+          }
+        },
+        "pass": {
+          "id": "step.engines.engineer.pass",
+          "text": "Liftoff TWR ≥ 1.3. TWR = F/(m·g0), g0 = 9.80665 m/s²."
+        }
+      }
+    },
+    "tanks": {
+      "id": "tanks",
+      "number": 3,
+      "enum": "Tanks",
+      "simple": {
+        "goal": {
+          "id": "step.tanks.simple.goal",
+          "text": "Pack enough fuel to finish the whole trip."
+        },
+        "why": {
+          "kid": {
+            "id": "step.tanks.simple.why.kid",
+            "text": "Fuel is how the rocket gets its speed. Too little, and it runs out before the job is done."
+          },
+          "engineer": {
+            "id": "step.tanks.simple.why.engineer",
+            "text": "You need Δv margin ≥ 0, in m/s. The air-push limit is q_lim = 35 kPa·(SF/1.4)·(σ_y/500). Above 0.85·q_lim the walls are working hard."
+          }
+        },
+        "pass": {
+          "id": "step.tanks.simple.pass",
+          "text": "You have enough speed for this trip."
+        }
+      },
+      "engineer": {
+        "goal": {
+          "id": "step.tanks.engineer.goal",
+          "text": "Reach the orbit with Δv margin ≥ 0. Margin is leftover speed divided by the speed the mission needs."
+        },
+        "why": {
+          "kid": {
+            "id": "step.tanks.engineer.why.kid",
+            "text": "Empty tanks mean the trip stops short. Thick enough walls keep the rocket whole when the air pushes hardest."
+          },
+          "engineer": {
+            "id": "step.tanks.engineer.why.engineer",
+            "text": "Δv margin ≥ 0 means total Δv (m/s) covers the mission. Wall thickness t = SF·p_t·r/σ_y. q_lim = 35 kPa·(SF/1.4)·(σ_y/500). Amber when max-Q > 0.85·q_lim. Stages collide if v_rel < 0.5 + 0.02·q_kPa m/s within 2 s."
+          }
+        },
+        "pass": {
+          "id": "step.tanks.engineer.pass",
+          "text": "Δv margin ≥ 0. Total speed (m/s) covers the mission, and max-Q is within 0.85·q_lim."
+        }
+      }
+    },
+    "aero": {
+      "id": "aero",
+      "number": 4,
+      "enum": "Aero",
+      "simple": {
+        "goal": {
+          "id": "step.aero.simple.goal",
+          "text": "Keep the pointy end forward, and make sure the cargo fits."
+        },
+        "why": {
+          "kid": {
+            "id": "step.aero.simple.why.kid",
+            "text": "A rocket that is heavy at the wrong end flips over. The nose has to be roomy enough for the cargo."
+          },
+          "engineer": {
+            "id": "step.aero.simple.why.engineer",
+            "text": "The cargo fits when its volume ≤ π(0.45·D_f)²·0.8·L_f and its diameter + 0.2 m ≤ D_f. It tumbles if S < 0 and CAR < 1."
+          }
+        },
+        "pass": {
+          "id": "step.aero.simple.pass",
+          "text": "The cargo fits, and the rocket stays pointy-end up."
+        }
+      },
+      "engineer": {
+        "goal": {
+          "id": "step.aero.engineer.goal",
+          "text": "Fit the payload in the fairing, and keep S ≥ 0 with CAR ≥ 1 so it does not tumble."
+        },
+        "why": {
+          "kid": {
+            "id": "step.aero.engineer.why.kid",
+            "text": "Pointy-end up is a balance trick. The nose also has to swallow the cargo with room to spare."
+          },
+          "engineer": {
+            "id": "step.aero.engineer.why.engineer",
+            "text": "Fit: volume ≤ π(0.45·D_f)²·0.8·L_f and diameter + 0.2 m ≤ D_f. S = (x_cg − x_cp)/D. CAR = M_ctrl/M_aero at α = 4°. Tumble when S < 0 and CAR < 1 for 0.5 s, or α > 15° at q > 20 kPa."
+          }
+        },
+        "pass": {
+          "id": "step.aero.engineer.pass",
+          "text": "Fairing fit passes, and S and CAR stay off the tumble line. S = (x_cg − x_cp)/D."
+        }
+      }
+    },
+    "recovery": {
+      "id": "recovery",
+      "number": 5,
+      "enum": "Recovery",
+      "simple": {
+        "goal": {
+          "id": "step.recovery.simple.goal",
+          "text": "Throw it away, or bring the booster home."
+        },
+        "why": {
+          "kid": {
+            "id": "step.recovery.simple.why.kid",
+            "text": "Coming home uses fuel you saved on purpose. Legs keep it from tipping over at the end."
+          },
+          "engineer": {
+            "id": "step.recovery.simple.why.engineer",
+            "text": "A pad return needs about 2·v_h m/s of speed change. A barge needs about 0.3·v_h. Legs fold if the sink speed v_z is above v_leg."
+          }
+        },
+        "pass": {
+          "id": "step.recovery.simple.pass",
+          "text": "The landing fuel covers the trip home."
+        }
+      },
+      "engineer": {
+        "goal": {
+          "id": "step.recovery.engineer.goal",
+          "text": "Expend the booster, or land it. A required landing needs reserve ≥ Δv_land, in m/s."
+        },
+        "why": {
+          "kid": {
+            "id": "step.recovery.engineer.why.kid",
+            "text": "Saving a little fuel is what makes a landing possible. Without legs, it falls over at the end."
+          },
+          "engineer": {
+            "id": "step.recovery.engineer.why.engineer",
+            "text": "RTLS boostback Δv ≈ 2·v_h(MECO). Barge Δv ≈ 0.3·v_h(MECO). Δv_land ≈ v_term + g·t_burn·(1 − 1/TWR_land). Light legs take v_z ≤ 2 m/s; heavy legs ≤ 4 m/s."
+          }
+        },
+        "pass": {
+          "id": "step.recovery.engineer.pass",
+          "text": "Landing reserve (m/s) covers Δv_land. Pad ≈ 2·v_h, barge ≈ 0.3·v_h."
+        }
+      }
+    },
+    "look": {
+      "id": "look",
+      "number": 6,
+      "enum": "Look",
+      "simple": {
+        "goal": {
+          "id": "step.look.simple.goal",
+          "text": "Paint it and name it. Colors do not change the flight."
+        },
+        "why": {
+          "kid": {
+            "id": "step.look.simple.why.kid",
+            "text": "Paint is just for you. The rocket flies the same in any color."
+          },
+          "engineer": {
+            "id": "step.look.simple.why.engineer",
+            "text": "Paint, accent, and name are not in the mass or drag sums. Δv (m/s), TWR, and q_lim (kPa) stay put."
+          }
+        },
+        "pass": {
+          "id": "step.look.simple.pass",
+          "text": "Paint and a name. This does not change how it flies."
+        }
+      },
+      "engineer": {
+        "goal": {
+          "id": "step.look.engineer.goal",
+          "text": "Set paint, accent, and name. Livery does not change Δv (m/s), TWR, or q_lim (kPa)."
+        },
+        "why": {
+          "kid": {
+            "id": "step.look.engineer.why.kid",
+            "text": "A name and a color make it yours. They do not add weight or push."
+          },
+          "engineer": {
+            "id": "step.look.engineer.why.engineer",
+            "text": "No mass, aero, or propulsion term reads the livery. Δv (m/s), TWR = F/(m·g0), and q_lim (kPa) are unchanged."
+          }
+        },
+        "pass": {
+          "id": "step.look.engineer.pass",
+          "text": "Livery is cosmetic. Δv (m/s), TWR, and q_lim (kPa) do not move."
+        }
+      }
+    },
+    "review": {
+      "id": "review",
+      "number": 7,
+      "enum": "Review",
+      "simple": {
+        "goal": {
+          "id": "step.review.simple.goal",
+          "text": "Look at what might go wrong, then fly."
+        },
+        "why": {
+          "kid": {
+            "id": "step.review.simple.why.kid",
+            "text": "You see the risks before you launch. A surprise you were not told about is not part of this game."
+          },
+          "engineer": {
+            "id": "step.review.simple.why.engineer",
+            "text": "The risk list comes from a preview flight. Red means a limit is already crossed, such as q > q_lim (kPa)."
+          }
+        },
+        "pass": {
+          "id": "step.review.simple.pass",
+          "text": "No red risks. Ready to launch."
+        }
+      },
+      "engineer": {
+        "goal": {
+          "id": "step.review.engineer.goal",
+          "text": "Read every predicted risk, then launch. A red risk means a limit is already crossed, such as q > q_lim."
+        },
+        "why": {
+          "kid": {
+            "id": "step.review.engineer.why.kid",
+            "text": "The list is the flight being honest with you. If something is likely to break, it says so here."
+          },
+          "engineer": {
+            "id": "step.review.engineer.why.engineer",
+            "text": "Predict mode lists each failure kind with its margin. Triggers include q > q_lim, S < 0 and CAR < 1, and pc above pc_rated. Random kinds are seeded by the design hash and the mission seed. Gentle mode turns those random kinds off."
+          }
+        },
+        "pass": {
+          "id": "step.review.engineer.pass",
+          "text": "No red risk is on the list. q is within q_lim (kPa), and the other failure triggers are clear."
+        }
+      }
+    }
+  },
+  "checks": {
+    "payload-missing": {
+      "code": "payload-missing",
+      "steps": [
+        "mission",
+        "aero"
+      ],
+      "field": "payload.type",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.payload-missing.simple.pass",
+          "text": "A cargo is chosen."
+        },
+        "red": {
+          "id": "check.payload-missing.simple.red",
+          "text": "Pick a cargo first. The cargo decides the rocket."
+        },
+        "fix": {
+          "id": "check.payload-missing.simple.fix",
+          "text": "Choose what this rocket is carrying."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.payload-missing.engineer.pass",
+          "text": "payload.type is set, so mass (kg) and volume (m³) are known."
+        },
+        "red": {
+          "id": "check.payload-missing.engineer.red",
+          "text": "payload.type is empty, so mass (kg) and the Δv (m/s) budget are unknown."
+        },
+        "fix": {
+          "id": "check.payload-missing.engineer.fix",
+          "text": "Set payload.type. Mass (kg) and maxG come from that payload."
+        }
+      }
+    },
+    "orbit-missing": {
+      "code": "orbit-missing",
+      "steps": [
+        "mission"
+      ],
+      "field": "payload.orbit",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.orbit-missing.simple.pass",
+          "text": "The cargo has a place to go."
+        },
+        "red": {
+          "id": "check.orbit-missing.simple.red",
+          "text": "Pick where this cargo is going."
+        },
+        "fix": {
+          "id": "check.orbit-missing.simple.fix",
+          "text": "Choose the trip: how high, or which path around Earth."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.orbit-missing.engineer.pass",
+          "text": "payload.orbit is set. The required Δv is in m/s."
+        },
+        "red": {
+          "id": "check.orbit-missing.engineer.red",
+          "text": "payload.orbit is empty, so the required Δv (m/s) cannot be checked."
+        },
+        "fix": {
+          "id": "check.orbit-missing.engineer.fix",
+          "text": "Set payload.orbit. A hit is altitude within ±5%, or inclination within ±0.5°."
+        }
+      }
+    },
+    "math": {
+      "code": "math",
+      "steps": [
+        "engines",
+        "tanks",
+        "aero"
+      ],
+      "field": "stages",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.math.simple.pass",
+          "text": "The numbers for this rocket worked out."
+        },
+        "red": {
+          "id": "check.math.simple.red",
+          "text": "We couldn't work this rocket out. Try one smaller change, then check again."
+        },
+        "fix": {
+          "id": "check.math.simple.fix",
+          "text": "Undo the last odd change, or start again from a starter rocket."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.math.engineer.pass",
+          "text": "Liftoff TWR and Δv (m/s) both came back as real numbers."
+        },
+        "red": {
+          "id": "check.math.engineer.red",
+          "text": "Liftoff TWR or the Δv margin did not come back as a real number."
+        },
+        "fix": {
+          "id": "check.math.engineer.fix",
+          "text": "Check engine count, propellant mass (kg), and that every stage can be summed into TWR = F/(m·g0)."
+        }
+      }
+    },
+    "twr-low": {
+      "code": "twr-low",
+      "steps": [
+        "engines"
+      ],
+      "field": "engineCount",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.twr-low.simple.pass",
+          "text": "The shove is stronger than the weight. It can leave the pad."
+        },
+        "red": {
+          "id": "check.twr-low.simple.red",
+          "text": "Too heavy to lift off. Add engines on the bottom, or take fuel off."
+        },
+        "fix": {
+          "id": "check.twr-low.simple.fix",
+          "text": "Add engines on the first stage, or take some fuel off."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.twr-low.engineer.pass",
+          "text": "Liftoff TWR = F/(m·g0) ≥ 1.0, with g0 = 9.80665 m/s²."
+        },
+        "red": {
+          "id": "check.twr-low.engineer.red",
+          "text": "Liftoff TWR < 1.0. F < m·g0, so it cannot climb. g0 = 9.80665 m/s²."
+        },
+        "fix": {
+          "id": "check.twr-low.engineer.fix",
+          "text": "Raise first-stage thrust F, or cut liftoff mass m, until TWR > 1.0. Aim for ≥ 1.3."
+        }
+      }
+    },
+    "twr-marginal": {
+      "code": "twr-marginal",
+      "steps": [
+        "engines"
+      ],
+      "field": "engineCount",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.twr-marginal.simple.pass",
+          "text": "The shove is strong enough for a clean liftoff."
+        },
+        "amber": {
+          "id": "check.twr-marginal.simple.amber",
+          "text": "Slow off the pad. A bit more push helps."
+        },
+        "fix": {
+          "id": "check.twr-marginal.simple.fix",
+          "text": "Add an engine, or take a little fuel off, so it jumps off the pad."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.twr-marginal.engineer.pass",
+          "text": "Liftoff TWR ≥ 1.3. TWR = F/(m·g0), g0 = 9.80665 m/s²."
+        },
+        "amber": {
+          "id": "check.twr-marginal.engineer.amber",
+          "text": "Liftoff TWR is at least 1.0 and below 1.3. Gravity losses (m/s) climb when the rise is this slow."
+        },
+        "fix": {
+          "id": "check.twr-marginal.engineer.fix",
+          "text": "Add thrust or shed mass until TWR ≥ 1.3."
+        }
+      }
+    },
+    "zero-engines": {
+      "code": "zero-engines",
+      "steps": [
+        "engines"
+      ],
+      "field": "engineCount",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.zero-engines.simple.pass",
+          "text": "Every stage has an engine."
+        },
+        "red": {
+          "id": "check.zero-engines.simple.red",
+          "text": "A stage has no engines. Give it at least one."
+        },
+        "fix": {
+          "id": "check.zero-engines.simple.fix",
+          "text": "Put at least one engine on every stage that flies."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.zero-engines.engineer.pass",
+          "text": "engineCount ≥ 1 on every stage, so thrust F is defined and TWR = F/(m·g0) can be above 0."
+        },
+        "red": {
+          "id": "check.zero-engines.engineer.red",
+          "text": "engineCount < 1. Thrust F is 0, so TWR = F/(m·g0) is 0."
+        },
+        "fix": {
+          "id": "check.zero-engines.engineer.fix",
+          "text": "Set engineCount ≥ 1. TWR needs a real thrust F."
+        }
+      }
+    },
+    "engines-dont-fit": {
+      "code": "engines-dont-fit",
+      "steps": [
+        "engines"
+      ],
+      "field": "engineCount",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.engines-dont-fit.simple.pass",
+          "text": "The engines fit under the stage."
+        },
+        "red": {
+          "id": "check.engines-dont-fit.simple.red",
+          "text": "Too many engines for this width. Use fewer, or make the stage wider."
+        },
+        "fix": {
+          "id": "check.engines-dont-fit.simple.fix",
+          "text": "Use fewer engines, or make the bottom of the rocket wider."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.engines-dont-fit.engineer.pass",
+          "text": "The cluster fits the stage diameter. Exit diameter grows with √ε."
+        },
+        "red": {
+          "id": "check.engines-dont-fit.engineer.red",
+          "text": "The engine exits do not fit the stage diameter. Exit diameter grows with √ε."
+        },
+        "fix": {
+          "id": "check.engines-dont-fit.engineer.fix",
+          "text": "Lower engineCount, widen the stage (m), or pick a smaller ε so the exits pack."
+        }
+      }
+    },
+    "vac-engine-pad": {
+      "code": "vac-engine-pad",
+      "steps": [
+        "engines"
+      ],
+      "field": "engineCount",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.vac-engine-pad.simple.pass",
+          "text": "The bottom engines can push in the thick air."
+        },
+        "red": {
+          "id": "check.vac-engine-pad.simple.red",
+          "text": "This bottom engine only works up high. Use one that pushes at the pad."
+        },
+        "fix": {
+          "id": "check.vac-engine-pad.simple.fix",
+          "text": "Put a ground engine on the first stage."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.vac-engine-pad.engineer.pass",
+          "text": "The pad stage has sea-level thrust, so F_SL > 0. Isp_SL = Isp_vac − p_a·A_e/(ṁ·g0)."
+        },
+        "red": {
+          "id": "check.vac-engine-pad.engineer.red",
+          "text": "Sea-level thrust is 0. Isp_SL = Isp_vac − p_a·A_e/(ṁ·g0) has collapsed for this bell at the pad."
+        },
+        "fix": {
+          "id": "check.vac-engine-pad.engineer.fix",
+          "text": "Use an engine with F_SL > 0 on the liftoff stage. A vacuum ε belongs upstairs."
+        }
+      }
+    },
+    "cluster-count": {
+      "code": "cluster-count",
+      "steps": [
+        "engines"
+      ],
+      "field": "engineCount",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.cluster-count.simple.pass",
+          "text": "The engine layout matches how many engines you have."
+        },
+        "red": {
+          "id": "check.cluster-count.simple.red",
+          "text": "That engine layout needs a different number of engines."
+        },
+        "fix": {
+          "id": "check.cluster-count.simple.fix",
+          "text": "Change how many engines you have, or pick a layout that matches."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.cluster-count.engineer.pass",
+          "text": "engineCount matches the pattern, so the exits pack. Exit diameter grows with √ε."
+        },
+        "red": {
+          "id": "check.cluster-count.engineer.red",
+          "text": "The cluster pattern has a fixed engine count, and engineCount does not match, so the pack of exits (∝ √ε) is wrong."
+        },
+        "fix": {
+          "id": "check.cluster-count.engineer.fix",
+          "text": "Set engineCount to the pattern's count, or choose auto. Exit diameter grows with √ε."
+        }
+      }
+    },
+    "cluster-overhang": {
+      "code": "cluster-overhang",
+      "steps": [
+        "engines"
+      ],
+      "field": "engineCount",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.cluster-overhang.simple.pass",
+          "text": "The engines sit inside the width of the stage."
+        },
+        "amber": {
+          "id": "check.cluster-overhang.simple.amber",
+          "text": "The engines stick out past the edge. Make the stage a bit wider."
+        },
+        "fix": {
+          "id": "check.cluster-overhang.simple.fix",
+          "text": "Widen the stage, or use a tighter engine layout."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.cluster-overhang.engineer.pass",
+          "text": "Stage diameter covers the exits. Exit diameter grows with √ε."
+        },
+        "amber": {
+          "id": "check.cluster-overhang.engineer.amber",
+          "text": "Stage diameter is under the layout's minimum. Exit diameter grows with √ε, so a wide bell needs a wider stage."
+        },
+        "fix": {
+          "id": "check.cluster-overhang.engineer.fix",
+          "text": "Increase stage diameter (m), or reduce ε, until the body covers the exits."
+        }
+      }
+    },
+    "nozzle-unknown": {
+      "code": "nozzle-unknown",
+      "steps": [
+        "engines"
+      ],
+      "field": "nozzle",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.nozzle-unknown.simple.pass",
+          "text": "Each engine's bell is one this game knows."
+        },
+        "red": {
+          "id": "check.nozzle-unknown.simple.red",
+          "text": "That engine bell is not on the list. Pick another."
+        },
+        "fix": {
+          "id": "check.nozzle-unknown.simple.fix",
+          "text": "Choose a bell from the list for that engine."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.nozzle-unknown.engineer.pass",
+          "text": "The nozzle id is in the engine list, so ε and A_e are known."
+        },
+        "red": {
+          "id": "check.nozzle-unknown.engineer.red",
+          "text": "The nozzle id is missing from the engine list, so ε and Isp_SL cannot be computed."
+        },
+        "fix": {
+          "id": "check.nozzle-unknown.engineer.fix",
+          "text": "Pick a listed nozzle. Isp_SL depends on ε through A_e = ε·A_t."
+        }
+      }
+    },
+    "weak-upper": {
+      "code": "weak-upper",
+      "steps": [
+        "engines"
+      ],
+      "field": "engineCount",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.weak-upper.simple.pass",
+          "text": "The upper stages push hard enough to keep climbing."
+        },
+        "amber": {
+          "id": "check.weak-upper.simple.amber",
+          "text": "An upper stage pushes gently. A stronger engine helps it finish."
+        },
+        "fix": {
+          "id": "check.weak-upper.simple.fix",
+          "text": "Give the upper stage a stronger engine, or lighten what it carries."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.weak-upper.engineer.pass",
+          "text": "Upper-stage vacuum TWR is above the gentle-push line."
+        },
+        "amber": {
+          "id": "check.weak-upper.engineer.amber",
+          "text": "Upper-stage TWR_vac is low. TWR = F_vac/(m·g0), with g0 = 9.80665 m/s²."
+        },
+        "fix": {
+          "id": "check.weak-upper.engineer.fix",
+          "text": "Raise upper-stage thrust, or cut the mass above it, so TWR_vac climbs."
+        }
+      }
+    },
+    "bad-mixture": {
+      "code": "bad-mixture",
+      "steps": [
+        "engines",
+        "review"
+      ],
+      "field": "mixtureOffsetPct",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.bad-mixture.simple.pass",
+          "text": "The fuel mix is close to the normal recipe."
+        },
+        "amber": {
+          "id": "check.bad-mixture.simple.amber",
+          "text": "The fuel mix is too far off. Put it back near the normal mix."
+        },
+        "red": {
+          "id": "check.bad-mixture.simple.red",
+          "text": "The mix is so far off an engine may sputter and quit. Slide it back."
+        },
+        "fix": {
+          "id": "check.bad-mixture.simple.fix",
+          "text": "Move the mix back to the middle. A little off is fine, and a lot is not."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.bad-mixture.engineer.pass",
+          "text": "Mixture offset is inside ±6%. Isp falls 0.6% per 1% off nominal."
+        },
+        "amber": {
+          "id": "check.bad-mixture.engineer.amber",
+          "text": "Mixture offset is outside ±6%. That is the sputter line. Isp is already down 0.6% per 1%."
+        },
+        "red": {
+          "id": "check.bad-mixture.engineer.red",
+          "text": "bad-mixture can quench the burn once the offset passes ±6%. Isp penalty is −0.6% per 1% off nominal."
+        },
+        "fix": {
+          "id": "check.bad-mixture.engineer.fix",
+          "text": "Set the mixture offset back inside ±6% of the catalog mixture ratio."
+        }
+      }
+    },
+    "engine-overpressure": {
+      "code": "engine-overpressure",
+      "steps": [
+        "engines",
+        "review"
+      ],
+      "field": "engineParams.pc",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.engine-overpressure.simple.pass",
+          "text": "The engines are running inside their safe push."
+        },
+        "amber": {
+          "id": "check.engine-overpressure.simple.amber",
+          "text": "The burn is running hot. That can pop an engine."
+        },
+        "red": {
+          "id": "check.engine-overpressure.simple.red",
+          "text": "An engine is past its safe limit and can burst. Turn the pressure down."
+        },
+        "fix": {
+          "id": "check.engine-overpressure.simple.fix",
+          "text": "Lower how hard the engine burns until it is back in the safe range."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.engine-overpressure.engineer.pass",
+          "text": "pc ≤ pc_rated, so the overpressure hazard λ is 0."
+        },
+        "amber": {
+          "id": "check.engine-overpressure.engineer.amber",
+          "text": "pc > pc_rated. Hazard λ = 0.02·max(0, pc/pc_rated−1)² per second."
+        },
+        "red": {
+          "id": "check.engine-overpressure.engineer.red",
+          "text": "engine-overpressure when pc > 1.15·pc_rated. λ = 0.02·max(0, pc/pc_rated−1)² per second."
+        },
+        "fix": {
+          "id": "check.engine-overpressure.engineer.fix",
+          "text": "Lower pc toward pc_rated. Thrust F ∝ pc, so the hazard falls faster than the thrust."
+        }
+      }
+    },
+    "engine-out": {
+      "code": "engine-out",
+      "steps": [
+        "engines",
+        "review"
+      ],
+      "field": "engineCount",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.engine-out.simple.pass",
+          "text": "If one engine stops, the others can still lift you."
+        },
+        "amber": {
+          "id": "check.engine-out.simple.amber",
+          "text": "If one engine stops, you would sink. Add a spare."
+        },
+        "red": {
+          "id": "check.engine-out.simple.red",
+          "text": "One engine quitting would end the flight. More engines, and a backup set of controls, let you ride it out."
+        },
+        "fix": {
+          "id": "check.engine-out.simple.fix",
+          "text": "Add engines on that stage. A backup set of controls helps you survive one quitting."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.engine-out.engineer.pass",
+          "text": "Losing one engine leaves TWR_after > 1. N ≥ 7 with redundant avionics survives one out if TWR_after > 1.05."
+        },
+        "amber": {
+          "id": "check.engine-out.engineer.amber",
+          "text": "TWR with n−1 engines is under 1.0, so an engine-out cannot climb. g0 = 9.80665 m/s²."
+        },
+        "red": {
+          "id": "check.engine-out.engineer.red",
+          "text": "engine-out is survived only when N ≥ 7, avionics are redundant, and TWR_after > 1.05."
+        },
+        "fix": {
+          "id": "check.engine-out.engineer.fix",
+          "text": "Add engines until N ≥ 7 and TWR_after > 1.05, and set avionics to redundant."
+        }
+      }
+    },
+    "zero-propellant": {
+      "code": "zero-propellant",
+      "steps": [
+        "tanks"
+      ],
+      "field": "propMass",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.zero-propellant.simple.pass",
+          "text": "Every stage has fuel."
+        },
+        "red": {
+          "id": "check.zero-propellant.simple.red",
+          "text": "A stage has no fuel. Add some."
+        },
+        "fix": {
+          "id": "check.zero-propellant.simple.fix",
+          "text": "Load fuel on every stage that has to burn."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.zero-propellant.engineer.pass",
+          "text": "propMass > 0 on every stage, so Δv (m/s) can be computed."
+        },
+        "red": {
+          "id": "check.zero-propellant.engineer.red",
+          "text": "propMass is 0. That stage's Δv is 0 m/s."
+        },
+        "fix": {
+          "id": "check.zero-propellant.engineer.fix",
+          "text": "Set propMass > 0. Δv (m/s) needs propellant in the rocket equation."
+        }
+      }
+    },
+    "dv-margin": {
+      "code": "dv-margin",
+      "steps": [
+        "tanks"
+      ],
+      "field": "propMass",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.dv-margin.simple.pass",
+          "text": "You have enough speed for this trip."
+        },
+        "amber": {
+          "id": "check.dv-margin.simple.amber",
+          "text": "You will just make it. A little more fuel gives room to spare."
+        },
+        "red": {
+          "id": "check.dv-margin.simple.red",
+          "text": "Not enough speed for this trip. Add fuel, or lighten the cargo."
+        },
+        "fix": {
+          "id": "check.dv-margin.simple.fix",
+          "text": "Add fuel, drop a little cargo, or add a stage."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.dv-margin.engineer.pass",
+          "text": "Δv margin ≥ 0. Total Δv (m/s) covers the mission need."
+        },
+        "amber": {
+          "id": "check.dv-margin.engineer.amber",
+          "text": "Δv margin is thin but not negative. Speed is in m/s."
+        },
+        "red": {
+          "id": "check.dv-margin.engineer.red",
+          "text": "Δv margin < 0. The shortfall is in m/s against the mission's required Δv."
+        },
+        "fix": {
+          "id": "check.dv-margin.engineer.fix",
+          "text": "Add propellant, cut payload mass (kg), or add a stage until margin ≥ 0."
+        }
+      }
+    },
+    "maxq-high": {
+      "code": "maxq-high",
+      "steps": [
+        "tanks"
+      ],
+      "field": "safetyFactor",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.maxq-high.simple.pass",
+          "text": "The hardest air push stays inside what the walls can take."
+        },
+        "amber": {
+          "id": "check.maxq-high.simple.amber",
+          "text": "The air pushes hard on the tanks. A thicker wall, or less push low down, helps."
+        },
+        "fix": {
+          "id": "check.maxq-high.simple.fix",
+          "text": "Thicken the walls, or ease the climb while the air is still thick."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.maxq-high.engineer.pass",
+          "text": "max-Q ≤ 0.85·q_lim. q_lim = 35 kPa·(SF/1.4)·(σ_y/500)."
+        },
+        "amber": {
+          "id": "check.maxq-high.engineer.amber",
+          "text": "max-Q > 0.85·q_lim. q_lim = 35 kPa·(SF/1.4)·(σ_y/500)."
+        },
+        "fix": {
+          "id": "check.maxq-high.engineer.fix",
+          "text": "Raise SF, pick a higher σ_y, or lower maxQThrottle so q stays under q_lim."
+        }
+      }
+    },
+    "weak-upper-dv": {
+      "code": "weak-upper-dv",
+      "steps": [
+        "tanks"
+      ],
+      "field": "propMass",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.weak-upper-dv.simple.pass",
+          "text": "The top stage does its share of the work."
+        },
+        "amber": {
+          "id": "check.weak-upper-dv.simple.amber",
+          "text": "The top stage does little work. Give it more fuel."
+        },
+        "fix": {
+          "id": "check.weak-upper-dv.simple.fix",
+          "text": "Add fuel to the top stage so it can finish the trip."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.weak-upper-dv.engineer.pass",
+          "text": "The top stage's Δv is a fair share of total Δv (m/s)."
+        },
+        "amber": {
+          "id": "check.weak-upper-dv.engineer.amber",
+          "text": "Top-stage Δv is a small fraction of total Δv (m/s)."
+        },
+        "fix": {
+          "id": "check.weak-upper-dv.engineer.fix",
+          "text": "Move propellant mass onto the upper stage to raise its Δv (m/s)."
+        }
+      }
+    },
+    "cryo-composite": {
+      "code": "cryo-composite",
+      "steps": [
+        "tanks"
+      ],
+      "field": "material",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.cryo-composite.simple.pass",
+          "text": "The tanks can hold this cold fuel."
+        },
+        "amber": {
+          "id": "check.cryo-composite.simple.amber",
+          "text": "This fuel is far too cold for these tanks. Pick a metal tank."
+        },
+        "fix": {
+          "id": "check.cryo-composite.simple.fix",
+          "text": "Switch the cold fuel's tank to a material that can take the cold."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.cryo-composite.engineer.pass",
+          "text": "The tank material has cryoOK, or the propellant is not cryogenic."
+        },
+        "amber": {
+          "id": "check.cryo-composite.engineer.amber",
+          "text": "Cryogenic propellant in a material with cryoOK false. That is a hard fail at T+0."
+        },
+        "fix": {
+          "id": "check.cryo-composite.engineer.fix",
+          "text": "Change material to one with cryoOK true, or pick a storable propellant."
+        }
+      }
+    },
+    "schema": {
+      "code": "schema",
+      "steps": [
+        "tanks"
+      ],
+      "field": "stages",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.schema.simple.pass",
+          "text": "This rocket is put together in a way the game can fly."
+        },
+        "red": {
+          "id": "check.schema.simple.red",
+          "text": "Something in the build does not fit together. Start from a starter rocket and change one thing."
+        },
+        "fix": {
+          "id": "check.schema.simple.fix",
+          "text": "Go back to a starter rocket, then change one piece at a time."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.schema.engineer.pass",
+          "text": "The design matches the schema, so mass (kg) and Δv (m/s) can be summed."
+        },
+        "red": {
+          "id": "check.schema.engineer.red",
+          "text": "The design failed the schema, so TWR and Δv (m/s) cannot be formed."
+        },
+        "fix": {
+          "id": "check.schema.engineer.fix",
+          "text": "Fix the stage fields the schema rejected. Counts, diameters (m), and masses (kg) have to be real numbers."
+        }
+      }
+    },
+    "top-heavy": {
+      "code": "top-heavy",
+      "steps": [
+        "tanks"
+      ],
+      "field": "stages",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.top-heavy.simple.pass",
+          "text": "Each stage sits happily on the one below it."
+        },
+        "red": {
+          "id": "check.top-heavy.simple.red",
+          "text": "One stage is much wider than the one under it. Make it narrower."
+        },
+        "fix": {
+          "id": "check.top-heavy.simple.fix",
+          "text": "Narrow the upper stage, or widen the one below it."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.top-heavy.engineer.pass",
+          "text": "Upper diameter stays within 1.6 times the stage below (m), so Cd0 does not pick up a surprise shoulder."
+        },
+        "red": {
+          "id": "check.top-heavy.engineer.red",
+          "text": "An upper stage is wider than 1.6 times the stage below (m). That shoulder feeds Cd0."
+        },
+        "fix": {
+          "id": "check.top-heavy.engineer.fix",
+          "text": "Cut the upper diameter (m), or raise the lower one, until the ratio is at most 1.6 and Cd0 stays honest."
+        }
+      }
+    },
+    "interstage-shape": {
+      "code": "interstage-shape",
+      "steps": [
+        "tanks"
+      ],
+      "field": "stages",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.interstage-shape.simple.pass",
+          "text": "The joints between stages match their widths."
+        },
+        "amber": {
+          "id": "check.interstage-shape.simple.amber",
+          "text": "A joint between stages does not match their widths. That can make the rocket less steady."
+        },
+        "fix": {
+          "id": "check.interstage-shape.simple.fix",
+          "text": "Let the joint follow the widths. Wider at the bottom when the bottom stage is wider."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.interstage-shape.engineer.pass",
+          "text": "Interstage shape matches the diameter step. Drag includes ΣdragDeltaCd_interstage in Cd0."
+        },
+        "amber": {
+          "id": "check.interstage-shape.engineer.amber",
+          "text": "Interstage shape disagrees with the diameters (m). A shoulder, wider on top, pulls the nose off the wind. Cd0 includes ΣdragDeltaCd_interstage."
+        },
+        "fix": {
+          "id": "check.interstage-shape.engineer.fix",
+          "text": "Set the joint to match the two diameters (m). Cd0 includes ΣdragDeltaCd_interstage."
+        }
+      }
+    },
+    "prop-depletion": {
+      "code": "prop-depletion",
+      "steps": [
+        "tanks",
+        "review"
+      ],
+      "field": "propMass",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.prop-depletion.simple.pass",
+          "text": "The fuel lasts to the end of the job."
+        },
+        "amber": {
+          "id": "check.prop-depletion.simple.amber",
+          "text": "The fuel is tight. You might run out before the job is done."
+        },
+        "red": {
+          "id": "check.prop-depletion.simple.red",
+          "text": "A stage runs out of fuel before the trip is done. Load more, or add a stage."
+        },
+        "fix": {
+          "id": "check.prop-depletion.simple.fix",
+          "text": "Add fuel, or add a stage, so the burn lasts to the target."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.prop-depletion.engineer.pass",
+          "text": "No stage empties below the target. Δv margin ≥ 0, in m/s."
+        },
+        "amber": {
+          "id": "check.prop-depletion.engineer.amber",
+          "text": "Propellant is close to empty before the required Δv (m/s) is done."
+        },
+        "red": {
+          "id": "check.prop-depletion.engineer.red",
+          "text": "prop-depletion: a stage empties below the target, so delivered Δv (m/s) falls short."
+        },
+        "fix": {
+          "id": "check.prop-depletion.engineer.fix",
+          "text": "Add propellant mass (kg), or a stage, until Δv margin ≥ 0."
+        }
+      }
+    },
+    "structural-maxq": {
+      "code": "structural-maxq",
+      "steps": [
+        "tanks",
+        "aero",
+        "review"
+      ],
+      "field": "safetyFactor",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.structural-maxq.simple.pass",
+          "text": "The walls can take the hardest push from the air."
+        },
+        "amber": {
+          "id": "check.structural-maxq.simple.amber",
+          "text": "The air is pushing close to what the walls can take. Thicker walls, or a gentler climb, help."
+        },
+        "red": {
+          "id": "check.structural-maxq.simple.red",
+          "text": "The air would bend this rocket. Thicker walls, a tougher material, or a gentler climb fixes it."
+        },
+        "fix": {
+          "id": "check.structural-maxq.simple.fix",
+          "text": "Make the walls stronger, pick a tougher material, or ease off low in the climb."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.structural-maxq.engineer.pass",
+          "text": "q ≤ q_lim and MS = F_allow/F − 1 ≥ 0. q_lim = 35 kPa·(SF/1.4)·(σ_y/500)."
+        },
+        "amber": {
+          "id": "check.structural-maxq.engineer.amber",
+          "text": "max-Q is above 0.85·q_lim. q_lim = 35 kPa·(SF/1.4)·(σ_y/500). MS = F_allow/F − 1 is getting thin."
+        },
+        "red": {
+          "id": "check.structural-maxq.engineer.red",
+          "text": "structural-maxq when MS < 0 or q > q_lim. q_lim = 35 kPa·(SF/1.4)·(σ_y/500). F_allow = σ_y·2πr·t/SF + p_t·πr²."
+        },
+        "fix": {
+          "id": "check.structural-maxq.engineer.fix",
+          "text": "Raise SF, pick a higher σ_y, or lower maxQThrottle so q stays under q_lim."
+        }
+      }
+    },
+    "overg": {
+      "code": "overg",
+      "steps": [
+        "tanks",
+        "review"
+      ],
+      "field": "gLimit",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.overg.simple.pass",
+          "text": "The push stays gentle enough for the cargo and the rocket."
+        },
+        "amber": {
+          "id": "check.overg.simple.amber",
+          "text": "The climb is getting rough. Ease off before something breaks."
+        },
+        "red": {
+          "id": "check.overg.simple.red",
+          "text": "The shove would crush the cargo or break the rocket. Ease off on the way up."
+        },
+        "fix": {
+          "id": "check.overg.simple.fix",
+          "text": "Ease off during the hard part, or set a gentler limit on the shove."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.overg.engineer.pass",
+          "text": "Acceleration stays under min(payload maxG, 8 g)."
+        },
+        "amber": {
+          "id": "check.overg.engineer.amber",
+          "text": "Peak g is close to min(maxG, 8 g). Over-g fires above that."
+        },
+        "red": {
+          "id": "check.overg.engineer.red",
+          "text": "overg when a > min(maxG, 8 g). Above 8 g the vehicle breaks up."
+        },
+        "fix": {
+          "id": "check.overg.engineer.fix",
+          "text": "Lower gLimit so acceleration stays under maxG and under 8 g."
+        }
+      }
+    },
+    "cryo-material": {
+      "code": "cryo-material",
+      "steps": [
+        "engines",
+        "tanks",
+        "review"
+      ],
+      "field": "material",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.cryo-material.simple.pass",
+          "text": "The tanks can take this cold fuel."
+        },
+        "amber": {
+          "id": "check.cryo-material.simple.amber",
+          "text": "Cold fuel in the wrong tank is a bad match. Pick a tank that can take the cold."
+        },
+        "red": {
+          "id": "check.cryo-material.simple.red",
+          "text": "The tanks would crack on the pad. This fuel is far too cold for that material."
+        },
+        "fix": {
+          "id": "check.cryo-material.simple.fix",
+          "text": "Change the tank to a material that can take the cold."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.cryo-material.engineer.pass",
+          "text": "cryoOK is true for this propellant, so there is no T+0 material fail."
+        },
+        "amber": {
+          "id": "check.cryo-material.engineer.amber",
+          "text": "A cryogenic propellant is paired with a material near cryoOK false."
+        },
+        "red": {
+          "id": "check.cryo-material.engineer.red",
+          "text": "cryo-material is a hard fail at T+0 when cryogenic propellant sits in a material with cryoOK false."
+        },
+        "fix": {
+          "id": "check.cryo-material.engineer.fix",
+          "text": "Set the tank material to one with cryoOK true."
+        }
+      }
+    },
+    "separation-collision": {
+      "code": "separation-collision",
+      "steps": [
+        "tanks",
+        "review"
+      ],
+      "field": "stages",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.separation-collision.simple.pass",
+          "text": "The stages move apart cleanly."
+        },
+        "amber": {
+          "id": "check.separation-collision.simple.amber",
+          "text": "The stages might bump when they split. Give them a firmer push apart."
+        },
+        "red": {
+          "id": "check.separation-collision.simple.red",
+          "text": "The stages would bump and then flip. Push them apart harder."
+        },
+        "fix": {
+          "id": "check.separation-collision.simple.fix",
+          "text": "Use a stronger push apart when the stages split."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.separation-collision.engineer.pass",
+          "text": "v_rel stays above 0.5 + 0.02·q_kPa m/s in the 2 s after separation."
+        },
+        "amber": {
+          "id": "check.separation-collision.engineer.amber",
+          "text": "Separation speed is near the collision line, v_rel < 0.5 + 0.02·q_kPa m/s."
+        },
+        "red": {
+          "id": "check.separation-collision.engineer.red",
+          "text": "separation-collision when v_rel < 0.5 + 0.02·q_kPa (m/s) within 2 s. Hot staging without a vent also fails."
+        },
+        "fix": {
+          "id": "check.separation-collision.engineer.fix",
+          "text": "Raise sepImpulse so v_rel clears 0.5 + 0.02·q_kPa m/s. Hot staging needs a vented interstage."
+        }
+      }
+    },
+    "fairing-narrow": {
+      "code": "fairing-narrow",
+      "steps": [
+        "aero"
+      ],
+      "field": "fairing",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.fairing-narrow.simple.pass",
+          "text": "The nose is wide enough for the stage under it."
+        },
+        "red": {
+          "id": "check.fairing-narrow.simple.red",
+          "text": "The nose is much thinner than the stage under it. Make the nose wider."
+        },
+        "fix": {
+          "id": "check.fairing-narrow.simple.fix",
+          "text": "Widen the nose so it matches the stage."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.fairing-narrow.engineer.pass",
+          "text": "Fairing diameter is at least half the top-stage diameter, and payload diameter + 0.2 m ≤ D_f."
+        },
+        "red": {
+          "id": "check.fairing-narrow.engineer.red",
+          "text": "D_f is under half the top-stage diameter. The fit rule also needs payload diameter + 0.2 m ≤ D_f."
+        },
+        "fix": {
+          "id": "check.fairing-narrow.engineer.fix",
+          "text": "Raise D_f (m) until it covers the stage, and keep payload diameter + 0.2 m ≤ D_f."
+        }
+      }
+    },
+    "payload-doesnt-fit": {
+      "code": "payload-doesnt-fit",
+      "steps": [
+        "aero"
+      ],
+      "field": "fairing",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.payload-doesnt-fit.simple.pass",
+          "text": "The cargo fits in the nose."
+        },
+        "red": {
+          "id": "check.payload-doesnt-fit.simple.red",
+          "text": "The cargo doesn't fit in the nose. Make the nose longer or wider."
+        },
+        "fix": {
+          "id": "check.payload-doesnt-fit.simple.fix",
+          "text": "Make the nose longer or wider until the cargo fits."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.payload-doesnt-fit.engineer.pass",
+          "text": "Payload volume ≤ π(0.45·D_f)²·0.8·L_f and diameter + 0.2 m ≤ D_f."
+        },
+        "red": {
+          "id": "check.payload-doesnt-fit.engineer.red",
+          "text": "Fairing fit failed. Volume must be ≤ π(0.45·D_f)²·0.8·L_f, and diameter + 0.2 m ≤ D_f."
+        },
+        "fix": {
+          "id": "check.payload-doesnt-fit.engineer.fix",
+          "text": "Increase D_f or L_f until both fit checks pass."
+        }
+      }
+    },
+    "heavy-fairing": {
+      "code": "heavy-fairing",
+      "steps": [
+        "aero"
+      ],
+      "field": "fairing",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.heavy-fairing.simple.pass",
+          "text": "The nose is lighter than the cargo."
+        },
+        "amber": {
+          "id": "check.heavy-fairing.simple.amber",
+          "text": "The nose weighs more than the cargo. A shorter or lighter nose helps."
+        },
+        "fix": {
+          "id": "check.heavy-fairing.simple.fix",
+          "text": "Use a shorter nose, or a lighter one."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.heavy-fairing.engineer.pass",
+          "text": "Fairing mass (kg) is under payload mass (kg)."
+        },
+        "amber": {
+          "id": "check.heavy-fairing.engineer.amber",
+          "text": "Fairing mass exceeds payload mass. That mass still has to be lifted, so Δv (m/s) falls."
+        },
+        "fix": {
+          "id": "check.heavy-fairing.engineer.fix",
+          "text": "Shorten L_f, or pick a lighter fairing, so fairing mass (kg) drops."
+        }
+      }
+    },
+    "unstable": {
+      "code": "unstable",
+      "steps": [
+        "aero"
+      ],
+      "field": "fins",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.unstable.simple.pass",
+          "text": "The rocket wants to stay pointy-end up."
+        },
+        "amber": {
+          "id": "check.unstable.simple.amber",
+          "text": "This rocket is wobbly. Add fins, or put the heavy parts higher."
+        },
+        "red": {
+          "id": "check.unstable.simple.red",
+          "text": "Your rocket would flip. Add fins, or put the heavy parts higher."
+        },
+        "fix": {
+          "id": "check.unstable.simple.fix",
+          "text": "Add fins, or move weight toward the nose."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.unstable.engineer.pass",
+          "text": "Liftoff S = (x_cg − x_cp)/D stays pointy-end forward, or the pad stage is steered and CAR can cover it."
+        },
+        "amber": {
+          "id": "check.unstable.engineer.amber",
+          "text": "S = (x_cg − x_cp)/D is soft. A steered pad stage can still fly if CAR stays at least 1."
+        },
+        "red": {
+          "id": "check.unstable.engineer.red",
+          "text": "Unguided S < 0, or S < 0 and CAR < 1. CAR = M_ctrl/M_aero at α = 4°."
+        },
+        "fix": {
+          "id": "check.unstable.engineer.fix",
+          "text": "Add fin area so x_cp moves back, or move mass forward. S = (x_cg − x_cp)/D and CAR = M_ctrl/M_aero."
+        }
+      }
+    },
+    "overstable": {
+      "code": "overstable",
+      "steps": [
+        "aero"
+      ],
+      "field": "fins",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.overstable.simple.pass",
+          "text": "The fins are strong, and the rocket can still turn."
+        },
+        "amber": {
+          "id": "check.overstable.simple.amber",
+          "text": "Very steady, maybe too steady to turn well. Try smaller fins."
+        },
+        "fix": {
+          "id": "check.overstable.simple.fix",
+          "text": "Make the fins a little smaller so it can still turn."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.overstable.engineer.pass",
+          "text": "S = (x_cg − x_cp)/D is inside the useful band, so it can still turn at α = 4°."
+        },
+        "amber": {
+          "id": "check.overstable.engineer.amber",
+          "text": "S = (x_cg − x_cp)/D is past about 4 calibers, so it weathercocks. CAR = M_ctrl/M_aero at α = 4° gets harder to use."
+        },
+        "fix": {
+          "id": "check.overstable.engineer.fix",
+          "text": "Reduce fin area so x_cp moves forward and S = (x_cg − x_cp)/D drops. CAR stays M_ctrl/M_aero."
+        }
+      }
+    },
+    "tumble": {
+      "code": "tumble",
+      "steps": [
+        "aero",
+        "review"
+      ],
+      "field": "fins",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.tumble.simple.pass",
+          "text": "The rocket stays pointy-end up through the thick air."
+        },
+        "amber": {
+          "id": "check.tumble.simple.amber",
+          "text": "It is close to flipping. Bigger fins, or a gentler turn, keep the nose forward."
+        },
+        "red": {
+          "id": "check.tumble.simple.red",
+          "text": "Your rocket would flip in the thick air. Add fins, or put the heavy parts higher."
+        },
+        "fix": {
+          "id": "check.tumble.simple.fix",
+          "text": "Add fins, let the engines steer more, or move weight up."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.tumble.engineer.pass",
+          "text": "S ≥ 0 or CAR ≥ 1. S = (x_cg − x_cp)/D. CAR = M_ctrl/M_aero at α = 4°."
+        },
+        "amber": {
+          "id": "check.tumble.engineer.amber",
+          "text": "S and CAR are near the tumble line. Tumble when S < 0 and CAR < 1 for 0.5 s, or α > 15° at q > 20 kPa."
+        },
+        "red": {
+          "id": "check.tumble.engineer.red",
+          "text": "Tumble when S < 0 and CAR < 1 for 0.5 s, or α > 15° at q > 20 kPa."
+        },
+        "fix": {
+          "id": "check.tumble.engineer.fix",
+          "text": "Increase fin area or gimbal δ so CAR = M_ctrl/M_aero rises, and move mass forward so S ≥ 0."
+        }
+      }
+    },
+    "payload-g": {
+      "code": "payload-g",
+      "steps": [
+        "aero"
+      ],
+      "field": "gLimit",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.payload-g.simple.pass",
+          "text": "The ride is gentle enough for this cargo."
+        },
+        "amber": {
+          "id": "check.payload-g.simple.amber",
+          "text": "Too bumpy for this cargo. Ease the push on the way up."
+        },
+        "red": {
+          "id": "check.payload-g.simple.red",
+          "text": "This ride is too rough for people. Ease the push so it stays gentle."
+        },
+        "fix": {
+          "id": "check.payload-g.simple.fix",
+          "text": "Ease the climb, or set a gentler limit on how hard it can shove."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.payload-g.engineer.pass",
+          "text": "Peak acceleration stays under payload maxG."
+        },
+        "amber": {
+          "id": "check.payload-g.engineer.amber",
+          "text": "Peak a > payload maxG. Over-g is a > min(maxG, 8 g)."
+        },
+        "red": {
+          "id": "check.payload-g.engineer.red",
+          "text": "A crewed payload blocks when peak g exceeds maxG. The vehicle breaks up above 8 g."
+        },
+        "fix": {
+          "id": "check.payload-g.engineer.fix",
+          "text": "Lower gLimit so a stays under maxG, and under 8 g."
+        }
+      }
+    },
+    "thermal": {
+      "code": "thermal",
+      "steps": [
+        "aero",
+        "recovery",
+        "review"
+      ],
+      "field": "nose",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.thermal.simple.pass",
+          "text": "The skin stays cool enough for the material and the cargo."
+        },
+        "amber": {
+          "id": "check.thermal.simple.amber",
+          "text": "The outside is getting hot. A tougher nose, or a heat shield, helps."
+        },
+        "red": {
+          "id": "check.thermal.simple.red",
+          "text": "The skin would burn through, or the cargo would cook. Change the nose, or add a heat shield."
+        },
+        "fix": {
+          "id": "check.thermal.simple.fix",
+          "text": "Pick a nose that handles heat, or add a heat shield under a big group of engines."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.thermal.engineer.pass",
+          "text": "Nose temperature stays under maxTempK, and after jettison ½ρv³ stays under maxHeatFlux."
+        },
+        "amber": {
+          "id": "check.thermal.engineer.amber",
+          "text": "Nose T is nearing maxTempK, or a wide cluster is heating the base. After jettison, ½ρv³ must stay under maxHeatFlux."
+        },
+        "red": {
+          "id": "check.thermal.engineer.red",
+          "text": "thermal when the base-heating index > 1 (more than 9 engines and no heat shield) or nose T > maxTempK. Jettison also needs ½ρv³ < maxHeatFlux."
+        },
+        "fix": {
+          "id": "check.thermal.engineer.fix",
+          "text": "Add a base heat shield, or pick a nose with a higher maxTempK. Keep ½ρv³ under maxHeatFlux after jettison."
+        }
+      }
+    },
+    "leg-collapse": {
+      "code": "leg-collapse",
+      "steps": [
+        "recovery",
+        "review"
+      ],
+      "field": "legs",
+      "failure": true,
+      "gates": [
+        "pass",
+        "amber",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.leg-collapse.simple.pass",
+          "text": "The legs can take the landing."
+        },
+        "amber": {
+          "id": "check.leg-collapse.simple.amber",
+          "text": "The landing may be too hard for these legs. Save more fuel, or use stronger legs."
+        },
+        "red": {
+          "id": "check.leg-collapse.simple.red",
+          "text": "The legs would fold and the booster would tip over. Use stronger legs, or come down slower."
+        },
+        "fix": {
+          "id": "check.leg-collapse.simple.fix",
+          "text": "Use stronger legs, or save more fuel so the landing is softer."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.leg-collapse.engineer.pass",
+          "text": "Touchdown v_z ≤ v_leg. Light legs take 2 m/s. Heavy legs take 4 m/s."
+        },
+        "amber": {
+          "id": "check.leg-collapse.engineer.amber",
+          "text": "v_z is near v_leg (2 m/s light, 4 m/s heavy)."
+        },
+        "red": {
+          "id": "check.leg-collapse.engineer.red",
+          "text": "leg-collapse when v_z > v_leg. Light legs are 2 m/s. Heavy legs are 4 m/s, at +9% dry mass."
+        },
+        "fix": {
+          "id": "check.leg-collapse.engineer.fix",
+          "text": "Use heavy legs (v_leg = 4 m/s), or add landing reserve so v_z falls."
+        }
+      }
+    },
+    "landing-required": {
+      "code": "landing-required",
+      "steps": [
+        "recovery"
+      ],
+      "field": "recoveryMode",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.landing-required.simple.pass",
+          "text": "This flight is set to come home."
+        },
+        "red": {
+          "id": "check.landing-required.simple.red",
+          "text": "This mission needs the booster back. Pick a pad or a barge."
+        },
+        "fix": {
+          "id": "check.landing-required.simple.fix",
+          "text": "Choose a landing on the pad, or on a barge at sea."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.landing-required.engineer.pass",
+          "text": "Recovery mode is a pad return or a barge. A pad return needs about 2·v_h m/s."
+        },
+        "red": {
+          "id": "check.landing-required.engineer.red",
+          "text": "Mode is expendable, but the mission requires a landing. A pad return needs ≈ 2·v_h(MECO) m/s. A barge needs ≈ 0.3·v_h."
+        },
+        "fix": {
+          "id": "check.landing-required.engineer.fix",
+          "text": "Set recovery to the pad (≈ 2·v_h) or the barge (≈ 0.3·v_h)."
+        }
+      }
+    },
+    "landing-need-stale": {
+      "code": "landing-need-stale",
+      "steps": [
+        "recovery"
+      ],
+      "field": "landingReserve",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.landing-need-stale.simple.pass",
+          "text": "The landing-fuel check is ready."
+        },
+        "amber": {
+          "id": "check.landing-need-stale.simple.amber",
+          "text": "We don't know the landing fuel yet. You can go on, then check it again."
+        },
+        "fix": {
+          "id": "check.landing-need-stale.simple.fix",
+          "text": "Continue, then look again once the flight preview finishes."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.landing-need-stale.engineer.pass",
+          "text": "Boost-back Δv is cached from horizontal speed at engine cutoff, v_h (m/s)."
+        },
+        "amber": {
+          "id": "check.landing-need-stale.engineer.amber",
+          "text": "Landing need is unknown until the preview caches v_h. Pad ≈ 2·v_h, barge ≈ 0.3·v_h, in m/s."
+        },
+        "fix": {
+          "id": "check.landing-need-stale.engineer.fix",
+          "text": "Wait for the preview flight. Need is 2·v_h for the pad and 0.3·v_h for the barge."
+        }
+      }
+    },
+    "landing-reserve": {
+      "code": "landing-reserve",
+      "steps": [
+        "recovery"
+      ],
+      "field": "landingReserve",
+      "failure": false,
+      "gates": [
+        "pass",
+        "red"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.landing-reserve.simple.pass",
+          "text": "Enough fuel is saved for the landing."
+        },
+        "red": {
+          "id": "check.landing-reserve.simple.red",
+          "text": "Not enough fuel saved to land. Hold more back, or land closer."
+        },
+        "fix": {
+          "id": "check.landing-reserve.simple.fix",
+          "text": "Save more fuel for landing, or pick the barge so the trip home is shorter."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.landing-reserve.engineer.pass",
+          "text": "Landing reserve (m/s) ≥ need. Pad need ≈ 2·v_h. Barge need ≈ 0.3·v_h."
+        },
+        "red": {
+          "id": "check.landing-reserve.engineer.red",
+          "text": "Reserve < Δv_land. Δv_land ≈ v_term + g·t_burn·(1 − 1/TWR_land), plus the boost-back."
+        },
+        "fix": {
+          "id": "check.landing-reserve.engineer.fix",
+          "text": "Raise the landing reserve, or switch from the pad (≈ 2·v_h) to the barge (≈ 0.3·v_h)."
+        }
+      }
+    },
+    "landing-hardware": {
+      "code": "landing-hardware",
+      "steps": [
+        "recovery"
+      ],
+      "field": "legs",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.landing-hardware.simple.pass",
+          "text": "The booster has legs for the landing."
+        },
+        "amber": {
+          "id": "check.landing-hardware.simple.amber",
+          "text": "Fuel is saved for landing, but there are no legs. Add legs, or the booster falls over."
+        },
+        "fix": {
+          "id": "check.landing-hardware.simple.fix",
+          "text": "Add landing legs."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.landing-hardware.engineer.pass",
+          "text": "landing.legs is true. Legs add about 6% to first-stage dry mass."
+        },
+        "amber": {
+          "id": "check.landing-hardware.engineer.amber",
+          "text": "A landing is required and landing.legs is false. Without legs there is no v_leg for v_z to meet."
+        },
+        "fix": {
+          "id": "check.landing-hardware.engineer.fix",
+          "text": "Turn on legs. Light legs: v_leg = 2 m/s and +6% dry mass. Heavy: 4 m/s and +9%."
+        }
+      }
+    },
+    "rcs-for-landing": {
+      "code": "rcs-for-landing",
+      "steps": [
+        "recovery"
+      ],
+      "field": "legs",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.rcs-for-landing.simple.pass",
+          "text": "The booster can steer itself on the way down."
+        },
+        "amber": {
+          "id": "check.rcs-for-landing.simple.amber",
+          "text": "To land, the booster needs little steering jets."
+        },
+        "fix": {
+          "id": "check.rcs-for-landing.simple.fix",
+          "text": "Turn on the little steering jets for the way down."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.rcs-for-landing.engineer.pass",
+          "text": "Landing steering is on, so M_ctrl exists and CAR = M_ctrl/M_aero can be formed on the way down."
+        },
+        "amber": {
+          "id": "check.rcs-for-landing.engineer.amber",
+          "text": "Landing fuel is saved and the steering jets are off. CAR = M_ctrl/M_aero needs that moment in the descent."
+        },
+        "fix": {
+          "id": "check.rcs-for-landing.engineer.fix",
+          "text": "Turn on landing steering so M_ctrl feeds CAR = M_ctrl/M_aero when the bell can no longer point the booster."
+        }
+      }
+    },
+    "recovery-skip": {
+      "code": "recovery-skip",
+      "steps": [
+        "recovery"
+      ],
+      "field": "recoveryMode",
+      "failure": false,
+      "gates": [
+        "skip"
+      ],
+      "simple": {
+        "skip": {
+          "id": "check.recovery-skip.simple.skip",
+          "text": "This flight doesn't need a landing. You can skip bringing it home."
+        },
+        "fix": {
+          "id": "check.recovery-skip.simple.fix",
+          "text": "Skip is fine. Open this step only if you still want the booster back."
+        }
+      },
+      "engineer": {
+        "skip": {
+          "id": "check.recovery-skip.engineer.skip",
+          "text": "The mission does not require landing, so reserve ≥ Δv_land (m/s) is not a gate."
+        },
+        "fix": {
+          "id": "check.recovery-skip.engineer.fix",
+          "text": "Leave it expendable, or pick a landing if you want the ≈ 2·v_h or ≈ 0.3·v_h check."
+        }
+      }
+    },
+    "risks-stale": {
+      "code": "risks-stale",
+      "steps": [
+        "review"
+      ],
+      "field": "risks",
+      "failure": false,
+      "gates": [
+        "pass"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.risks-stale.simple.pass",
+          "text": "The risk check is still working. Nothing red is on the list yet."
+        },
+        "fix": {
+          "id": "check.risks-stale.simple.fix",
+          "text": "Give it a moment, then look again before you fly."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.risks-stale.engineer.pass",
+          "text": "The preview flight is not cached yet, so q (kPa) and peak g are not known. Nothing on the list is red."
+        },
+        "fix": {
+          "id": "check.risks-stale.engineer.fix",
+          "text": "Wait for the preview. The risk list needs that pass before q vs q_lim is real."
+        }
+      }
+    },
+    "red-risk": {
+      "code": "red-risk",
+      "steps": [
+        "review"
+      ],
+      "field": "stages",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.red-risk.simple.pass",
+          "text": "Every risk on the list has a name."
+        },
+        "amber": {
+          "id": "check.red-risk.simple.amber",
+          "text": "This rocket has a red risk. Look before you launch."
+        },
+        "fix": {
+          "id": "check.red-risk.simple.fix",
+          "text": "Open the risk and use its fix before you fly."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.red-risk.engineer.pass",
+          "text": "Every red row has a failure kind and a margin against its limit, such as q_lim."
+        },
+        "amber": {
+          "id": "check.red-risk.engineer.amber",
+          "text": "A red risk arrived without a kind name. Red means a limit is already crossed, such as q > q_lim."
+        },
+        "fix": {
+          "id": "check.red-risk.engineer.fix",
+          "text": "Open the row. Red means a trigger is already true, such as q > q_lim or S < 0 with CAR < 1."
+        }
+      }
+    },
+    "risk-bad-mixture": {
+      "sameAs": "bad-mixture"
+    },
+    "risk-cryo-material": {
+      "sameAs": "cryo-material"
+    },
+    "risk-engine-out": {
+      "sameAs": "engine-out"
+    },
+    "risk-engine-overpressure": {
+      "sameAs": "engine-overpressure"
+    },
+    "risk-leg-collapse": {
+      "sameAs": "leg-collapse"
+    },
+    "risk-overg": {
+      "sameAs": "overg"
+    },
+    "risk-prop-depletion": {
+      "sameAs": "prop-depletion"
+    },
+    "risk-separation-collision": {
+      "sameAs": "separation-collision"
+    },
+    "risk-structural-maxq": {
+      "sameAs": "structural-maxq"
+    },
+    "risk-thermal": {
+      "sameAs": "thermal"
+    },
+    "risk-tumble": {
+      "sameAs": "tumble"
+    }
+  }
+}
