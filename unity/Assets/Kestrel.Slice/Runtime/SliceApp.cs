@@ -31,7 +31,7 @@ namespace Kestrel.Slice
         HangarExplodedView explodedView; Material explodedMat;
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
-        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; GameObject rocketGO;
+        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; FlightJuice juice; GameObject rocketGO;
         BirdFlockView birds;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
@@ -239,6 +239,8 @@ namespace Kestrel.Slice
             worldRoot = new GameObject("World").transform;
             vehicleRoot = new GameObject("Vehicle").transform; vehicleRoot.SetParent(worldRoot, false);
             flight = gameObject.AddComponent<FlightDriver>(); flight.World = worldRoot; flight.Vehicle = vehicleRoot;
+            juice = gameObject.AddComponent<FlightJuice>();
+            juice.Arm(worldRoot, bodyMat);
             // Pier 7: scrub, road, coast and curved ocean. Sea level stays at GroundY so the chase-camera
             // clamp still looks down onto the shore. The site is pad-anchored (it does not slide with the rocket).
             var site = SiteView.Create(worldRoot, SiteGenerator.Pier7Seed, SiteView.LodForQuality(QualitySettings.GetQualityLevel()));
@@ -482,6 +484,7 @@ namespace Kestrel.Slice
             if (flightMat != null) Destroy(flightMat);
             flightMat = bodyMat != null ? new Material(bodyMat) : null;
             if (flightMat != null) { flightMat.color = HangarRocketView.Hex(design.liveryPrimary, Color.white); mr.sharedMaterial = flightMat; }
+            if (juice != null) juice.BindBody(flightMat);
             mr.forceRenderingOff = true;
             rocketView.Build(parts, rocketGO.transform, bodyMat);
             rocketView.ApplyLook(session?.Design, SliceData.Hangar);
@@ -911,6 +914,7 @@ namespace Kestrel.Slice
         {
             counting = false;
             if (skipCount != null) skipCount.AddToClassList("hidden");
+            if (juice != null) juice.Reset();
             flight.enabled = true;
             flight.Launch(design);
         }
@@ -919,6 +923,8 @@ namespace Kestrel.Slice
         {
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
             counting = false; sequence = null; flight.enabled = false; cam.ResetProjectionMatrix();
+            if (juice != null) juice.Reset();
+            cam.fieldOfView = FlightJuice.BaseFov;
             hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
             if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
             if (session != null) rocketView.SetSelected(session.Selected, true);
@@ -958,14 +964,26 @@ namespace Kestrel.Slice
             // Chase camera, in floating-origin space (vehicle stays near the origin).
             // Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
+            double qLim = maxQKpa.HasValue ? maxQKpa.Value * 1000.0 : 0;
+            double margin = requiredMps > 1 ? spareMps / requiredMps : 0;
+            bool reduced = hangarCam != null && hangarCam.ReduceMotion;
+            if (juice != null) juice.Present(flight, rocketHeight, qLim, margin, reduced, Time.deltaTime);
             var v = vehicleRoot.position; var up = vehicleRoot.up;
             camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude), 4f, Time.deltaTime);
+            // Lead is this frame only. Folding it into camOffset would be smoothed back in and grow about 15×.
             // Grow the far plane with altitude so the coast under the framed horizon is never clipped.
             cam.farClipPlane = SiteHorizon.ClipFor((float)flight.Altitude);
             // Sea level is the anchored site root. Do not slide it: the coast has to stay under the pad.
-            cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
+            float fov = juice != null ? juice.Fov : cam.fieldOfView;
+            cam.fieldOfView = fov;
+            Vector3 lead = juice != null ? juice.Lead : Vector3.zero;
+            cam.transform.position = PadGround.ClampAboveGround(v + camOffset + lead, ground.position.y);
             var cp = cam.transform.position;
-            cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, cam.fieldOfView, (float)flight.Altitude, cp.y - ground.position.y);
+            cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, fov, (float)flight.Altitude, cp.y - ground.position.y);
+            if (juice != null)
+                cam.transform.position = PadGround.ClampAboveGround(
+                    cam.transform.position + cam.transform.right * juice.Shake.x + cam.transform.up * juice.Shake.y,
+                    ground.position.y);
             flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
@@ -973,6 +991,11 @@ namespace Kestrel.Slice
             hVel.text = $"VEL {flight.Speed:N0} m/s";
             hMach.text = $"MACH {flight.Mach:F2}";
             hQ.text = $"Q {flight.DynPressure / 1000:F1} kPa";
+            if (juice != null)
+            {
+                hQ.EnableInClassList("q-hot", juice.Call == "MAX-Q");
+                hQ.EnableInClassList("q-crit", juice.Call == "AIRFRAME" || juice.Band == "critical" || juice.Band == "lost");
+            }
             hThr.text = $"THR {flight.ThrustFraction * 100:F0}%";
             hDr.text = $"DR {flight.Downrange / 1000:F1} km";
             RefreshWebcast(flight.SimTime, true);
@@ -1030,6 +1053,7 @@ namespace Kestrel.Slice
                 for (int i = 0; i < beats.Count; i++)
                     if (beats[i] != null && beats[i].Id == pinnedEvent) { pinned = beats[i]; break; }
             hCallout.text = pinned != null ? WebcastBoard.Callout(pinned, pulse, alt) : "Tap an event.";
+            if (pinned == null && juice != null && !string.IsNullOrEmpty(juice.Line)) hCallout.text = juice.Line;
         }
 
         void PinEvent(string id)

@@ -133,6 +133,22 @@ namespace Kestrel.Core.Physics
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
         public double LastP, LastQ, LastMach, LastThrust;
 
+        /// <summary>
+        /// Propellant left in the burning stage, 1 full to 0 empty. NaN while coasting or after cutoff:
+        /// there is no live tank measurement then, and a HUD must not invent one.
+        /// </summary>
+        public double PropellantFraction
+        {
+            get
+            {
+                if (!Thrusting || StageIdx < 0 || StageIdx >= st.Length || !(st[StageIdx].propMass > 0)) return double.NaN;
+                double frac = (Y[4] - StageEndMass()) / st[StageIdx].propMass;
+                if (double.IsNaN(frac) || frac < 0) return 0;
+                if (frac > 1) return 1;
+                return frac;
+            }
+        }
+
         public AscentSim(IList<SimStage> stages, SimOptions opts)
         {
             stagesIn = stages; o = opts; st = Headless.Normalize(stages);
