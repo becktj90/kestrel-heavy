@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Kestrel.Slice.Editor
 {
-    public static class BuildScript
+    public static partial class BuildScript
     {
         public static void BuildIOS()
         {

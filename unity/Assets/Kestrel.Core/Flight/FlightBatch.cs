@@ -30,7 +30,12 @@ namespace Kestrel.Core.Flight
         public static SimResult[] Simulate(IList<SimStage[]> stages, IList<SimOptions> opts)
         {
             var r = new SimResult[stages.Count];
+            #if UNITY_WEBGL && !UNITY_EDITOR
+            // WebGL has no worker threads: run sequentially.
+            if (false)
+#else
             if (stages.Count >= ParallelThreshold)
+#endif
                 Parallel.For(0, stages.Count, i => r[i] = Headless.Simulate(stages[i], opts[i]));
             else
                 for (int i = 0; i < stages.Count; i++) r[i] = Headless.Simulate(stages[i], opts[i]);
