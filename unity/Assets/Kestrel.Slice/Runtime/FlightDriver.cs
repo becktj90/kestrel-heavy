@@ -61,10 +61,29 @@ namespace Kestrel.Slice
         /// <summary>Register a world object at a fixed pad-local position (double precision).</summary>
         public void Anchor(Transform t, double x, double y, double z) { anchored.Add((t, x, y, z)); Place(t, x, y, z); }
 
-        public void Launch(Design d)
+        public AscentDirector Decisions { get; private set; }
+        GuidanceProfile guidance;
+        bool throttleHeld, savedMaxQSet, ascentLost;
+        double savedMaxQ;
+
+        public void Launch(Design d) => Launch(d, null);
+
+        public void Launch(Design d, AscentHook hook)
         {
             var c = SliceData.Catalog;
             var (stages, opts) = Stack.SimInputs(c, d, PhysicsDt);
+            Decisions = null;
+            throttleHeld = false;
+            ascentLost = false;
+            guidance = opts.guidance;
+            if (hook != null)
+            {
+                if (hook.Monitor != null) opts.monitor = hook.Monitor;
+                if (hook.Wind != null && !hook.Wind.Calm) opts.wind = hook.Wind;
+                if (hook.HasLatitude) opts.latitude = hook.Latitude;
+                guidance = opts.guidance;
+                Decisions = hook.Director;
+            }
             opts.tMax = 600;
             thrustByStage = new double[stages.Count];
             for (int i = 0; i < stages.Count; i++) thrustByStage[i] = stages[i].thrustVac;
@@ -96,8 +115,14 @@ namespace Kestrel.Slice
             int guard = 0;
             while (Sim.T < clock && !Sim.Done && guard++ < 64)
             {
+                ApplyAscent();
                 int before = Sim.Events.Count;
                 Sim.Tick();
+                if (Decisions != null && !Sim.Done)
+                {
+                    Decisions.Advance(AscentSample(), PhysicsDt);
+                    ApplyAscent();
+                }
                 if (!Meco)
                 {
                     for (int i = before; i < Sim.Events.Count; i++)
@@ -209,6 +234,76 @@ namespace Kestrel.Slice
                 prevX = Downrange; prevY = Altitude;
             }
             if (Plume != null) Plume.Apply(ThrustFraction, AmbientPressure, Speed);
+        }
+
+        void ApplyAscent()
+        {
+            if (Decisions == null || Sim == null) return;
+            var cmd = Decisions.Command;
+            double scale = cmd.ThrottleScale;
+            if (double.IsNaN(scale) || scale <= 0) scale = 1;
+            else if (scale > 1) scale = 1;
+            Sim.LiveThrottleScale = scale;
+            Sim.LivePitchOffsetRad = cmd.PitchOffsetRad;
+            if (guidance != null && cmd.SuppressDesignThrottle)
+            {
+                if (!throttleHeld)
+                {
+                    savedMaxQSet = guidance.maxQThrottleSet;
+                    savedMaxQ = guidance.maxQThrottle;
+                    throttleHeld = true;
+                }
+                guidance.maxQThrottleSet = false;
+            }
+            else if (throttleHeld && guidance != null)
+            {
+                guidance.maxQThrottleSet = savedMaxQSet;
+                guidance.maxQThrottle = savedMaxQ;
+                throttleHeld = false;
+            }
+            if (cmd.Lost && !ascentLost)
+            {
+                ascentLost = true;
+                Sim.BreakUp(new FailureEvent
+                {
+                    t = Sim.T,
+                    kind = cmd.LossKind,
+                    kid = cmd.LossKid,
+                    engineer = cmd.LossEngineer,
+                });
+            }
+        }
+
+        AscentSample AscentSample()
+        {
+            double x = Sim.Y[0], y = Sim.Y[1];
+            double r = Math.Sqrt(x * x + y * y);
+            double padAngle = Math.PI / 2 + omegaAir * Sim.T;
+            double down = Gravity.R_EARTH * (Math.Atan2(y, x) - padAngle);
+            double alt = r - Gravity.R_EARTH;
+            double vx = Sim.Y[2] + omegaAir * y, vy = Sim.Y[3] - omegaAir * x;
+            double speed = Math.Sqrt(vx * vx + vy * vy);
+            double mass = Sim.Y[4];
+            double prop = Sim.PropellantFraction;
+            if (double.IsNaN(prop)) prop = 1;
+            double g = mass > 1 && Sim.LastThrust > 0 ? Sim.LastThrust / mass / Atmosphere.G0 : 0;
+            return new AscentSample
+            {
+                T = Sim.T,
+                AltM = alt,
+                DownrangeM = down,
+                SpeedMps = speed,
+                QPa = Sim.LastQ,
+                G = g,
+                MassKg = mass,
+                ThrustN = Sim.LastThrust,
+                PropFraction = prop,
+                LossGravity = Sim.LossGravity,
+                LossDrag = Sim.LossDrag,
+                LossSteering = Sim.LossSteering,
+                StageIndex = Sim.StageIdx,
+                Thrusting = Sim.Thrusting,
+            };
         }
 
         void Place(Transform t, double x, double y, double z) => t.localPosition = new Vector3((float)(x - OriginX), (float)(y - OriginY), (float)z);

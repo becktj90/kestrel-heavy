@@ -32,7 +32,8 @@ namespace Kestrel.Slice
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; FlightJuice juice; GameObject rocketGO;
-        FlightChrome chrome; Design flyingDesign;
+        FlightChrome chrome;
+        AscentHud ascentHud; Design flyingDesign;
         BirdFlockView birds;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
@@ -326,6 +327,7 @@ namespace Kestrel.Slice
             var p = HudLayout.SafePadding(new Vector2(Screen.width, Screen.height), Screen.safeArea, size, dpr);
             hud.style.paddingLeft = p.x; hud.style.paddingTop = p.y; hud.style.paddingRight = p.z; hud.style.paddingBottom = p.w;
             chrome?.Layout(UnitsPerPoint());
+            ascentHud?.Layout(UnitsPerPoint());
         }
 
         /// <summary>Panel units per iOS point (panel scales with screen width, so this differs per device).</summary>
@@ -957,7 +959,17 @@ namespace Kestrel.Slice
             if (skipCount != null) skipCount.AddToClassList("hidden");
             if (juice != null) juice.Reset();
             flight.enabled = true;
-            flight.Launch(design);
+            bool engineer = EngineerEnabled
+                || PlayerPrefs.GetInt(DesignerV3Panel.EngineerPref, 0) != 0
+                || PlayerPrefs.GetInt(HangarPanel.EngineerPref, 0) != 0;
+            bool reduced = hangarCam != null && hangarCam.ReduceMotion;
+            AscentHook hook = null;
+            try { hook = AscentFlight.Prepare(SliceData.Catalog, design, session != null ? session.Design : null, engineer, reduced); }
+            catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
+            flight.Launch(design, hook);
+            if (ascentHud == null) ascentHud = new AscentHud();
+            ascentHud.Open(hud, UnitsPerPoint());
+            ascentHud.Present(flight);
         }
 
         void BackToDesign()
@@ -967,6 +979,7 @@ namespace Kestrel.Slice
             counting = false; sequence = null; flight.enabled = false; cam.ResetProjectionMatrix();
             if (juice != null) juice.Reset();
             cam.fieldOfView = FlightJuice.BaseFov;
+            ascentHud?.Close();
             hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
             if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
             if (session != null) rocketView.SetSelected(session.Selected, true);
@@ -1044,6 +1057,7 @@ namespace Kestrel.Slice
             hThr.text = $"THR {flight.ThrustFraction * 100:F0}%";
             hDr.text = $"DR {flight.Downrange / 1000:F1} km";
             RefreshWebcast(flight.SimTime, true);
+            ascentHud?.Present(flight);
             if (flight.Lost) { hMsg.text = "Vehicle lost"; again.RemoveFromClassList("hidden"); }
             else if (!flight.Running && !flight.Meco && flight.Sim.Done) { hMsg.text = "Flight ended before MECO"; again.RemoveFromClassList("hidden"); }
         }
