@@ -90,7 +90,8 @@ test('data/golden matches a fresh export (run node tools/export-golden.mjs)', ()
   // C# design-v2 goldens are not produced by the JS exporter. They are checked by dotnet.
   // designer-v3.json is a C# / WP-E hand golden (DesignerV3GoldenTests); not JS-exported.
   // campaign-viable.json is a C# / WP-G hand golden (CampaignTests); not JS-exported.
-  const csharpOnly = new Set(['design-v2.json', 'design-v2-literals.json', 'designer-v3.json', 'campaign-viable.json']);
+  // contracts-viable.json is a C# / G6 hand golden (ContractGenTests); not JS-exported.
+  const csharpOnly = new Set(['design-v2.json', 'design-v2-literals.json', 'designer-v3.json', 'campaign-viable.json', 'contracts-viable.json']);
   const committed = fs.readdirSync(path.join(root, 'data', 'golden')).filter((f) => f.endsWith('.json') && !csharpOnly.has(f)).sort();
   assert.deepStrictEqual(names, committed);
   for (const f of names) assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(tmp, f), 'utf8')), readJSON('data', 'golden', f), f);
