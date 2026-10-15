@@ -9,7 +9,18 @@ namespace Kestrel.Game.Audio
     [DisallowMultipleComponent]
     public sealed class MusicDirector : MonoBehaviour
     {
-        public static MusicDirector Instance { get; private set; }
+        static MusicDirector instance;
+
+        /// <summary>The live director. A destroyed reference is dropped before a caller can use it.</summary>
+        public static MusicDirector Instance
+        {
+            get
+            {
+                if (instance == null) instance = null;
+                return instance;
+            }
+            private set => instance = value;
+        }
 
         AudioSource[] bus;
         int hot;

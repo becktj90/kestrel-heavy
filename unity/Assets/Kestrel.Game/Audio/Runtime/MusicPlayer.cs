@@ -6,7 +6,18 @@ namespace Kestrel.Game.Audio
     [DisallowMultipleComponent]
     public sealed class MusicPlayer : MonoBehaviour
     {
-        public static MusicPlayer Instance { get; private set; }
+        static MusicPlayer instance;
+
+        /// <summary>The live player. A destroyed reference is dropped, so <c>Instance?.Play</c> does not touch it.</summary>
+        public static MusicPlayer Instance
+        {
+            get
+            {
+                if (instance == null) instance = null;
+                return instance;
+            }
+            private set => instance = value;
+        }
         MusicDirector director;
 
         public AudioClip Clip => director != null ? director.Clip : null;
@@ -39,7 +50,7 @@ namespace Kestrel.Game.Audio
 
         void Ensure()
         {
-            if (director != null) return;
+            if (this == null || director != null) return;
             Instance = this;
             director = GetComponent<MusicDirector>() ?? gameObject.AddComponent<MusicDirector>();
             director.EnsureBuses();
