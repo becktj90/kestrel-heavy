@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -43,20 +44,32 @@ namespace Kestrel.Game.Guide
                     Add(fallback);
                 }
                 fallback.text = Text;
-                fallback.style.fontSize = FontPx < GuidePacing.MinFontPt ? GuidePacing.MinFontPt : FontPx;
+                fallback.style.fontSize = Snap(FontPx);
                 fallback.style.display = DisplayStyle.Flex;
             }
             else if (fallback != null) fallback.style.display = DisplayStyle.None;
             float width = LayoutWidth > 0f ? LayoutWidth : 200f;
-            int lines = GlyphLayout.CountLines(Text, width, FontPx < 1f ? GuidePacing.MinFontPt : FontPx);
-            style.height = GlyphLayout.LineHeight(FontPx < 1f ? GuidePacing.MinFontPt : FontPx) * lines;
+            float font = Snap(FontPx);
+            int lines = GlyphLayout.CountLines(Text, width, font);
+            style.height = GlyphLayout.LineHeight(font) * lines;
+            style.flexShrink = 0;
+            if (Atlas != null) Atlas.filterMode = FilterMode.Point;
             MarkDirtyRepaint();
+        }
+
+        /// <summary>Whole texels. A fractional scale turns nearest-neighbour into uneven pixels.</summary>
+        public static float Snap(float fontPx)
+        {
+            if (fontPx < 7f) fontPx = 7f;
+            int texel = (int)Math.Round(fontPx / 7f);
+            if (texel < 1) texel = 1;
+            return texel * 7f;
         }
 
         void OnGenerate(MeshGenerationContext ctx)
         {
             if (ctx == null || UsingFallback || Atlas == null || Glyphs == null) return;
-            float font = FontPx < 1f ? GuidePacing.MinFontPt : FontPx;
+            float font = Snap(FontPx);
             float width = LayoutWidth > 0f ? LayoutWidth : contentRect.width;
             GlyphLayout.Layout(Text, width, font, Glyphs, Caret, quads);
             int glyphs = 0, carets = 0;

@@ -17,7 +17,9 @@ namespace Kestrel.Game.Guide
     /// because those are calls the player has to answer.</summary>
     public enum TipsMode { On, WarningsOnly, Off }
 
-    public enum GuidePlace { Designer, Ascent }
+    /// <summary>Designer and ascent may stack two speakers. Menu (Home, Mission Select, Briefing)
+    /// shows one Thrum box and keeps the rest queued until a tap.</summary>
+    public enum GuidePlace { Designer, Ascent, Menu }
 
     public enum GuideSpeaker { Thrum, MissionControl, Host, Cohost }
 
@@ -191,7 +193,12 @@ namespace Kestrel.Game.Guide
         public const float ShadowPt = 5f;
         public const float BorderPt = 3f;
         public const float PadPt = 6f;
+        public const float ColumnGapPt = 6f;
+        /// <summary>UI Toolkit line box is taller than the em size. Name and hint use this so the body is not pushed into them.</summary>
+        public const float LabelLineEm = 1.35f;
         public const int MaxBoxes = 2;
+        /// <summary>Home / Back key plus a gap. Menu boxes sit above this until a live button is measured.</summary>
+        public const float MenuFooterPt = 52f;
         public const float AscentHeaderPt = 48f;
 
         public static float Cps(SubtitleSpeed speed)
@@ -217,6 +224,21 @@ namespace Kestrel.Game.Guide
                 default: return MinFontPt;
             }
         }
+
+        /// <summary>Integer atlas scale. Normal is 1 so the 5×7 cell stays on whole pixels
+        /// (nearest-neighbour, no fractional texel). Large is 2, extra-large is 3.
+        /// At 1× an SE text column holds about 30 characters.</summary>
+        public static int PixelScale(float fontPt)
+        {
+            if (fontPt >= ExtraLargeFontPt - 0.1f) return 3;
+            if (fontPt >= LargeFontPt - 0.1f) return 2;
+            return 1;
+        }
+
+        /// <summary>Glyph height in points. A multiple of 7 so advance and line height are whole pixels.</summary>
+        public static float GlyphPt(float fontPt) => PixelScale(fontPt) * 7f;
+
+        public static float LabelLine(float fontPt) => fontPt * LabelLineEm;
 
         public static float HeightCap(bool compact, SubtitleSize size)
             => (compact ? CompactHeightPt : MaxHeightPt) * FontPt(size) / MinFontPt;
