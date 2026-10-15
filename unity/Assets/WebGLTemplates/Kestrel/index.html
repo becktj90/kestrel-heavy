@@ -58,6 +58,7 @@
       companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
       productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
       productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      autoSyncPersistentDataPath: true, // saves flush to IndexedDB on file change
       matchWebGLToCanvasSize: true,
       devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2)
     };
@@ -83,7 +84,6 @@
     document.body.appendChild(script);
     // Portrait-only: the stage is always portrait. Block pinch/scroll gestures that would move the page.
     document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
-    try { screen.orientation && screen.orientation.lock && screen.orientation.lock("portrait").catch(function () {}); } catch (e) {}
   </script>
 </body>
 </html>
