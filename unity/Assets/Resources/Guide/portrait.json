@@ -1,0 +1,38 @@
+{
+ "w": 16,
+ "h": 16,
+ "rows": [
+  "................",
+  "..ohhhhhhhhho...",
+  ".ohhHHHHhHHHho..",
+  ".ohhssssssssho..",
+  ".ohsewssswewho..",
+  ".ohsssssssssso..",
+  "..osSbbbbSso....",
+  "..ossmmmmmso....",
+  "..osssssssso....",
+  "...occccccco....",
+  "..orrrgrrrrrro..",
+  ".orrrrrrrrrrrro.",
+  ".orrRrrrrrrRrrro",
+  ".orrrrrrrrrrrro.",
+  "..orrrrrrrrrro..",
+  "....oooooooo...."
+ ],
+ "palette": {
+  ".": "#00000000",
+  "o": "#1B1F2AFF",
+  "h": "#F7F4EEFF",
+  "H": "#D5D0C6FF",
+  "s": "#F3C9A4FF",
+  "S": "#E0A878FF",
+  "e": "#1B1F2AFF",
+  "w": "#FFFFFFFF",
+  "b": "#E08A78FF",
+  "m": "#8A3A32FF",
+  "r": "#C23B32FF",
+  "R": "#8D2A24FF",
+  "c": "#F2EFE6FF",
+  "g": "#E8B15AFF"
+ }
+}

@@ -1,0 +1,14 @@
+{
+    "name": "Kestrel.Game.Guide.Core",
+    "rootNamespace": "Kestrel.Game.Guide",
+    "references": ["Kestrel.Core"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

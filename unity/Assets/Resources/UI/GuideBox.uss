@@ -1,0 +1,134 @@
+/* Thrum subtitle box. Square, ink, cream border, hard shadow. No glow and no soft filter.
+   Sizes in points are applied from GuideStackView; this sheet is the colour and the chrome. */
+
+.guide-stack {
+    position: absolute;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.guide-box {
+    position: relative;
+    overflow: visible;
+    margin-bottom: 6px;
+}
+
+.guide-shadow {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    right: -5px;
+    bottom: -5px;
+    background-color: #0a0c12;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.guide-panel {
+    background-color: #1b1f2a;
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: #faf0d7;
+    border-right-color: #faf0d7;
+    border-top-color: #faf0d7;
+    border-bottom-color: #faf0d7;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding: 6px;
+    flex-grow: 1;
+}
+
+.guide-row {
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.guide-portrait {
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: #e8b15a;
+    border-right-color: #e8b15a;
+    border-top-color: #e8b15a;
+    border-bottom-color: #e8b15a;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-right: 6px;
+}
+
+.guide-column {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.guide-name {
+    color: #e8b15a;
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.guide-body {
+    color: #faf0d7;
+    font-size: 15px;
+    white-space: normal;
+}
+
+.guide-fallback {
+    color: #faf0d7;
+    font-size: 15px;
+    white-space: normal;
+}
+
+.guide-foot {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.guide-index {
+    color: #faf0d7;
+    font-size: 15px;
+    margin-right: 8px;
+}
+
+.guide-hint {
+    color: #faf0d7;
+    font-size: 15px;
+}
+
+.guide-skip {
+    position: absolute;
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+    background-color: #2a3142;
+    color: #faf0d7;
+    font-size: 15px;
+    -unity-font-style: bold;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: #e8b15a;
+    border-right-color: #e8b15a;
+    border-top-color: #e8b15a;
+    border-bottom-color: #e8b15a;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding: 0;
+    margin: 0;
+}
