@@ -138,6 +138,13 @@ namespace Kestrel.Game.Shell
             return default;
         }
 
+        /// <summary>true = the 2D mix overlay (title card, LAUNCH bar, tiles) replaces the 3D title/launch/glass rows;
+        /// false = the original 3D controls. The 3D rocket, hangar and telemetry stay either way.</summary>
+        public const bool UseOverlay = true;
+
+        /// <summary>3D plates the overlay replaces.</summary>
+        public static bool ReplacedByOverlay(MenuAnchor a) => a.Clickable || a.Id == "title" || a.Id == "subtitle";
+
         public static bool ReducedMotion() =>
             PlayerPrefs.GetInt(ReduceMotionPref, 0) != 0 || PlayerPrefs.GetInt(ReduceFlashingPref, 0) != 0;
 

@@ -1,5 +1,6 @@
 // Home is the 3D hangar menu. Flight stays a placeholder until U3/U4 land. BuildConsole is the
 // flat console the EditMode tests still construct; the live Home path does not show it.
+using System;
 using Kestrel.Game.Layout;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -28,6 +29,7 @@ namespace Kestrel.Game.Shell
         }
 
         MainMenuController _menu;
+        VisualElement _overlay;
 
         /// <summary>Home is the 3D hangar (MainMenuController): KH-1 on the deck, telemetry and glass
         /// panels at different depths, launch bar closest. Words are glyph meshes on those panels.
@@ -40,8 +42,19 @@ namespace Kestrel.Game.Shell
             _view.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0f));
             shell.Safe.Add(_view);
             if (shell.Fill != null) shell.Fill.SpaceT = 0.85f;
-            // Spoken strings stay on UI Toolkit labels (the project's VoiceOver stand-in) but do not
-            // pick, so the raycasts hit the 3D panels instead of a flat overlay.
+            _menu = gameObject.AddComponent<MainMenuController>();
+            _menu.OverlayMode = MainMenuLayout.UseOverlay;
+            _menu.Attach(shell);
+            if (MainMenuLayout.UseOverlay)
+            {
+                // Mix overlay: 2D title card, LAUNCH bar and tiles are the controls (UI Toolkit picks them and
+                // supplies VoiceOver labels via tooltip). Both LAUNCH and HANGAR open the designer for now.
+                _view.pickingMode = PickingMode.Ignore;
+                Action toDesign = () => shell.Flow.Go(AppScreen.Design);
+                _overlay = MainMenuOverlay.Build(shell.Root, _view, toDesign, toDesign, MainMenuLayout.ReducedMotion());
+                return;
+            }
+            // Fallback (UseOverlay = false): the original 3D controls with hidden spoken labels.
             AddSpoken("home-launch", MainMenuLayout.LaunchLabel, MainMenuLayout.Find("launch").Spoken);
             foreach (var id in new[] { "hangar", "missions", "codex", "settings" })
             {
@@ -49,8 +62,6 @@ namespace Kestrel.Game.Shell
                 AddSpoken("home-" + id, a.Label, a.Spoken);
             }
             AddSpoken("kh1-readout", MainMenuLayout.Designation, MainMenuLayout.Find("kh1").Spoken);
-            _menu = gameObject.AddComponent<MainMenuController>();
-            _menu.Attach(shell);
         }
 
         void AddSpoken(string name, string label, string spoken)
@@ -97,6 +108,8 @@ namespace Kestrel.Game.Shell
         static VisualElement BuildConsole(AppShell shell) =>
             BuildConsole(() => shell.Flow.Go(AppScreen.Design), () => shell.Flow.Go(AppScreen.Design));
 
+        static VisualElement shellFullLayer() => AppShell.Instance?.Root?.Q("mm-full");
+
         void AddButton(AppShell shell, string text, AppScreen target, string a11y)
         {
             var b = new Button(() => shell.Flow.Go(target)) { text = text, tooltip = a11y };
@@ -107,6 +120,8 @@ namespace Kestrel.Game.Shell
         void OnDisable()
         {
             _view?.RemoveFromHierarchy();
+            _overlay?.RemoveFromHierarchy();
+            shellFullLayer()?.RemoveFromHierarchy();
             if (_menu != null) { Destroy(_menu); _menu = null; }
         }
     }

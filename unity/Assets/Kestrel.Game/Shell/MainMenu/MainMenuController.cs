@@ -38,6 +38,9 @@ namespace Kestrel.Game.Shell
         string _fuelS, _loxS, _massS, _thrustS, _windS, _statusS;
         MainMenuHotspot _hover;
 
+        /// <summary>Hide the 3D title/launch/glass plates (and their colliders) because the 2D overlay replaces them.</summary>
+        public bool OverlayMode;
+
         public void Attach(AppShell shell)
         {
             _shell = shell;
@@ -54,6 +57,9 @@ namespace Kestrel.Game.Shell
             BuildPlates();
             _aspect = AspectOfScreen();
             for (int i = 0; i < _plates.Count; i++) Place(_plates[i], _aspect);
+            if (OverlayMode)
+                for (int i = 0; i < _plates.Count; i++)
+                    if (MainMenuLayout.ReplacedByOverlay(_plates[i].Anchor)) _plates[i].Root.gameObject.SetActive(false);
             ApplyCamera(MainMenuLayout.ReducedMotion());
         }
 
