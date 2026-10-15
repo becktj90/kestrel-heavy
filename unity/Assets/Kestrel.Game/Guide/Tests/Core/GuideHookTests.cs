@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Designer.Stepper;
 using Kestrel.Core.Flight;
@@ -366,11 +367,11 @@ namespace Kestrel.Game.Guide.Tests
 
         static string Repo()
         {
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null)
+            string[] starts = { Directory.GetCurrentDirectory(), AppContext.BaseDirectory };
+            for (int i = 0; i < starts.Length; i++)
             {
-                if (File.Exists(Path.Combine(dir.FullName, "data", "guide.json"))) return dir.FullName;
-                dir = dir.Parent;
+                try { return Catalog.FindRepoRoot(starts[i]); }
+                catch (DirectoryNotFoundException) { }
             }
             throw new DirectoryNotFoundException("data/guide.json");
         }
