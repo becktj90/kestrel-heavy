@@ -523,12 +523,12 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             row.style.marginBottom = ui.U(4f);
             var backAction = StepperModel.Back(progress, report);
             var forward = StepperModel.Forward(progress, report);
-            var back = ui.Btn("<  Back", PressBack, "Previous step", minWidthPt: 96f);
+            var back = ui.Btn("<  Back", () => PressBack(), "Previous step", minWidthPt: 96f);
             back.name = "stepper-back";
             StyleNav(ui, back, false);
             back.SetEnabled(backAction.Allowed);
             if (!backAction.Allowed) back.style.opacity = 0.4f;
-            var next = ui.Btn(forward.Label, PressForward, ForwardTip(forward, check), minWidthPt: 140f);
+            var next = ui.Btn(forward.Label, () => PressForward(), ForwardTip(forward, check), minWidthPt: 140f);
             next.name = "stepper-forward";
             next.style.flexGrow = 1;
             StyleNav(ui, next, true);
