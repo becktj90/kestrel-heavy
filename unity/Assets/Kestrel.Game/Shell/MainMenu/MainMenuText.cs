@@ -112,6 +112,18 @@ namespace Kestrel.Game.Shell
         /// <summary>Font x grows to the right. On a camera-facing panel that is local −X, which is screen-right.</summary>
         public static float LocalX(float fontX, float fit) => -fontX * fit;
 
+        /// <summary>Which channel holds glyph coverage: 1 (red) only for formats with no alpha channel, else 0 (alpha).</summary>
+        public static float CoverageModeFor(TextureFormat f)
+        {
+            switch (f)
+            {
+                case TextureFormat.R8: case TextureFormat.R16: case TextureFormat.RFloat: case TextureFormat.RHalf:
+                case TextureFormat.RGB24: case TextureFormat.RGB565: case TextureFormat.RGB9e5Float: case TextureFormat.DXT1: case TextureFormat.ETC_RGB4: case TextureFormat.ETC2_RGB:
+                    return 1f;
+                default: return 0f;
+            }
+        }
+
         public static void Warmup()
         {
             var font = OsFont();
@@ -149,6 +161,7 @@ namespace Kestrel.Game.Shell
             {
                 mat.SetTexture("_BaseMap", tex);
                 mat.mainTexture = tex;
+                if (mat.HasProperty("_CoverageMode")) mat.SetFloat("_CoverageMode", CoverageModeFor(tex is Texture2D t2 ? t2.format : TextureFormat.Alpha8));
             }
             return tex != null;
         }

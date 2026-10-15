@@ -297,8 +297,14 @@ namespace Kestrel.Game.Tests
                 var a = MainMenuLayout.Find(id);
                 Assert.That(a.WidthFrac, Is.GreaterThanOrEqualTo(0.28f), id + " wide enough for 14-char lines at phone size");
                 var box = MainMenuLayout.RestBox(a);
-                Assert.That(box.X0, Is.GreaterThan(0.02f)); Assert.That(box.X1, Is.LessThan(0.98f));
+                Assert.That(box.X0, Is.GreaterThanOrEqualTo(0.06f), id + " keeps >=6% side margin (SE: ~19 px)"); Assert.That(box.X1, Is.LessThanOrEqualTo(0.94f));
             }
+            Assert.That(MainMenuText.CoverageModeFor(UnityEngine.TextureFormat.Alpha8), Is.EqualTo(0f));
+            Assert.That(MainMenuText.CoverageModeFor(UnityEngine.TextureFormat.RGBA32), Is.EqualTo(0f));
+            Assert.That(MainMenuText.CoverageModeFor(UnityEngine.TextureFormat.R8), Is.EqualTo(1f));
+            var fontSrc = System.IO.File.ReadAllText(System.IO.Path.Combine(UnityEngine.Application.dataPath, "Resources/Shaders/KH_Font.shader"));
+            Assert.That(fontSrc, Does.Contain("_CoverageMode"));
+            Assert.That(fontSrc, Does.Not.Contain("0.999h"), "no per-pixel alpha/rgb guess: it hollowed glyph bodies");
             // Every telemetry line is laid out at the same glyph size (as wide as the longest one).
             var verts = new System.Collections.Generic.List<UnityEngine.Vector3>(); var uvs = new System.Collections.Generic.List<UnityEngine.Vector2>(); var tris = new System.Collections.Generic.List<int>();
             var g = new System.Collections.Generic.List<MainMenuText.GlyphStamp>();
