@@ -1,4 +1,4 @@
-// EditMode checks for the mission list and the report / exit routes. No scene load.
+// EditMode checks for the report / exit routes. The campaign map is MissionSelectTests. No scene load.
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
 using Kestrel.Game.Shell;
@@ -34,37 +34,6 @@ namespace Kestrel.Game.Tests
             Assert.IsTrue(ShellAudio.ShellListenerOn(AppScreen.Home));
             Assert.IsTrue(ShellAudio.ShellListenerOn(AppScreen.Flight));
             Assert.IsFalse(ShellAudio.ShellListenerOn(AppScreen.Design));
-        }
-
-        [Test]
-        public void PlaceholderListsKh1ThroughKh10()
-        {
-            var campaign = Campaign.Load(Catalog.FindRepoRoot(System.IO.Directory.GetCurrentDirectory()));
-            var root = ScreenStub.BuildMissionList(campaign, _ => { }, () => { });
-            Assert.AreEqual(10, campaign.Missions.Count);
-            for (int i = 1; i <= 10; i++)
-            {
-                var b = root.Q<Button>("mission-m" + i);
-                Assert.IsNotNull(b, "m" + i);
-                StringAssert.StartsWith("KH-" + i, b.text);
-                Assert.IsNotEmpty(b.tooltip);
-                Assert.IsTrue(b.ClassListContains("kh-button"));
-                Assert.AreEqual(44f, b.style.minHeight.value.value);
-            }
-            var home = root.Q<Button>("missions-home");
-            Assert.IsNotNull(home);
-            Assert.AreEqual("Home", home.text);
-            Assert.IsNotEmpty(home.tooltip);
-            Assert.AreEqual(44f, home.style.minHeight.value.value);
-        }
-
-        [Test]
-        public void EmptyCampaignStillOffersHome()
-        {
-            var root = ScreenStub.BuildMissionList(null, _ => { }, () => { });
-            Assert.IsNotNull(root.Q<Label>("missions-empty"));
-            Assert.IsNull(root.Q<Button>("mission-m1"));
-            Assert.IsNotNull(root.Q<Button>("missions-home"));
         }
 
         [Test]

@@ -5,6 +5,7 @@ using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
+using Kestrel.Game.MissionSelect;
 using Kestrel.Game.Layout;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -29,7 +30,7 @@ namespace Kestrel.Game.Shell
             }
             if (Kind == AppScreen.Missions)
             {
-                _view = BuildMissionList(LoadCampaign(), id => shell.Flow.StartMission(id), () => shell.Flow.ExitToHome());
+                _view = MissionSelectScreen.Build(LoadCampaign(), id => shell.Flow.StartMission(id), () => shell.Flow.ExitToHome());
                 shell.Safe.Add(_view);
                 if (shell.Fill != null) shell.Fill.SpaceT = 0.35f;
                 return;
@@ -162,40 +163,6 @@ namespace Kestrel.Game.Shell
             if (asset != null && !string.IsNullOrWhiteSpace(asset.text))
                 return Campaign.FromJson(MiniJson.ParseObject(asset.text));
             return null;
-        }
-
-        /// <summary>KH-1..KH-10 from the campaign file. The campaign map replaces this list later. Every row starts that mission.</summary>
-        public static VisualElement BuildMissionList(Campaign campaign, Action<string> startMission, Action home)
-        {
-            var root = new VisualElement { name = "mission-list" };
-            root.AddToClassList("kh-screen");
-            root.style.justifyContent = Justify.FlexStart;
-            var title = new Label("Missions") { name = "missions-title" };
-            title.AddToClassList("kh-title");
-            root.Add(title);
-            var note = new Label("Ten flights. Pick one.") { name = "missions-note" };
-            note.AddToClassList("kh-caption");
-            root.Add(note);
-            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "mission-scroll" };
-            scroll.style.flexGrow = 1;
-            var board = MissionContext.CampaignBoard(campaign);
-            if (board.Count == 0)
-            {
-                var empty = new Label("The campaign file has no missions yet.") { name = "missions-empty" };
-                empty.AddToClassList("kh-caption");
-                scroll.Add(empty);
-            }
-            for (int i = 0; i < board.Count; i++)
-            {
-                var ctx = board[i];
-                string id = ctx.MissionId;
-                scroll.Add(RouteButton("mission-" + id, ctx.ListText(), ctx.Tooltip(), () => startMission?.Invoke(id)));
-            }
-            root.Add(scroll);
-            var homeKey = RouteButton("missions-home", "Home", "Back to the title screen.", home);
-            homeKey.style.flexShrink = 0;
-            root.Add(homeKey);
-            return root;
         }
 
         /// <summary>Flight scene stub. The live ascent stays in Design; these are the same leave routes.</summary>

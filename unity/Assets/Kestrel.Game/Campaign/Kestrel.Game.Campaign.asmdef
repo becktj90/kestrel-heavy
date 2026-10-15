@@ -1,0 +1,17 @@
+{
+    "name": "Kestrel.Game.Campaign",
+    "rootNamespace": "Kestrel.Game.MissionSelect",
+    "references": [
+        "Kestrel.Core",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
