@@ -28,6 +28,9 @@
     { "id": "decal_first_orbit_patch", "label": "decal.first_orbit_patch", "content": "patch", "earnRule": { "type": "orbits", "count": 1 } },
     { "id": "decal_comet_patch", "label": "decal.comet_patch", "content": "patch", "earnRule": { "type": "orbits", "count": 5 } },
     { "id": "decal_landing_tally", "label": "decal.landing_tally", "content": "marks", "earnRule": { "type": "landings", "count": 1 } },
-    { "id": "decal_moon_patch", "label": "decal.moon_patch", "content": "patch", "earnRule": { "type": "mission", "missionId": "KH-5" } }
+    { "id": "decal_moon_patch", "label": "decal.moon_patch", "content": "patch", "earnRule": { "type": "mission", "missionId": "KH-5" } },
+    { "id": "decal_thrums_toolbox", "label": "decal.thrums_toolbox", "content": "patch", "earnRule": { "type": "mission", "missionId": "KH-1" } },
+    { "id": "decal_tidy_pin", "label": "decal.tidy_pin", "content": "insignia", "earnRule": { "type": "mission", "missionId": "KH-3" } },
+    { "id": "decal_homecoming", "label": "decal.homecoming", "content": "marks", "earnRule": { "type": "mission", "missionId": "KH-6" } }
   ]
 }

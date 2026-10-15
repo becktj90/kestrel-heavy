@@ -55,6 +55,7 @@ namespace Kestrel.Slice
             Kestrel.Game.Audio.AudioDirector.Attach(flight);
             _ = GameCenterBridge.Impl.Authenticate();
             StartSession();
+            PostFlightSource.Bind(RestartFlight, ExitToHome);
         }
 
         /// <summary>Open the most recent save, else the Workhorse template, else the stock preset.</summary>
@@ -964,6 +965,7 @@ namespace Kestrel.Slice
                 || PlayerPrefs.GetInt(HangarPanel.EngineerPref, 0) != 0;
             bool reduced = hangarCam != null && hangarCam.ReduceMotion;
             AscentHook hook = null;
+            PostFlightSource.Arm(SliceData.Catalog, design, session != null ? session.Design : null, engineer);
             try { hook = AscentFlight.Prepare(SliceData.Catalog, design, session != null ? session.Design : null, engineer, reduced); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
             flight.Launch(design, hook);
