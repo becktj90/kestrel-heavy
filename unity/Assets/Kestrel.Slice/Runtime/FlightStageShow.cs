@@ -295,7 +295,7 @@ namespace Kestrel.Slice
             return index;
         }
 
-        Piece MakePiece(string role, int serial, int index, Vector3 offset, float midY, Mesh mesh, Material mat)
+        Piece MakePiece(string role, int serial, int index, Vector3 offset, float midY, Mesh mesh, UnityEngine.Material mat)
         {
             var pivot = new GameObject(role + "-" + index).transform;
             pivot.gameObject.layer = gameObject.layer;
@@ -313,7 +313,7 @@ namespace Kestrel.Slice
             return new Piece { Role = role, Serial = serial, Index = index, Pivot = pivot, Rest = rest };
         }
 
-        Half MakeHalf(Mesh mesh, Material mat, float mid, float sign)
+        Half MakeHalf(Mesh mesh, UnityEngine.Material mat, float mid, float sign)
         {
             var halfMesh = SplitHalf(mesh, sign > 0f);
             owned.Add(halfMesh);
@@ -685,7 +685,7 @@ namespace Kestrel.Slice
             return mesh;
         }
 
-        ParticleSystem MakeBurst(string name, Material mat, float life, float size)
+        ParticleSystem MakeBurst(string name, UnityEngine.Material mat, float life, float size)
         {
             var go = new GameObject(name);
             go.layer = gameObject.layer;
