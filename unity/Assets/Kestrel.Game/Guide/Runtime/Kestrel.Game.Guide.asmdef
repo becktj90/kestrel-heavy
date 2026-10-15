@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Game.Guide",
     "rootNamespace": "Kestrel.Game.Guide",
-    "references": ["Kestrel.Game.Guide.Core", "Kestrel.Game.Audio"],
+    "references": ["Kestrel.Game.Guide.Core", "Kestrel.Game.Audio", "Kestrel.Core"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

@@ -187,6 +187,7 @@ namespace Kestrel.Slice
             }
             if (nudgeRow != null) nudgeRow.style.display = director.Engineer ? DisplayStyle.Flex : DisplayStyle.None;
             if (nudgeDown != null) nudgeDown.text = "Nudge −1°";
+            GuideBinder.Prompts(flight);
             if (nudgeUp != null) nudgeUp.text = "Nudge +1°";
             if (caption != null)
                 caption.text = "Perfect window = green. Auto-assist does this for you in Simple.";

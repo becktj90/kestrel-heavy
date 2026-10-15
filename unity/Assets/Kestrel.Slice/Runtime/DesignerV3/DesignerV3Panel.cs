@@ -10,6 +10,7 @@ using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
+using Kestrel.Game.Guide;
 using Kestrel.Slice.DesignerV3.Stepper;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -252,6 +253,7 @@ namespace Kestrel.Slice.DesignerV3
             if (engineer == on) return;
             engineer = on;
             PlayerPrefs.SetInt(EngineerPref, on ? 1 : 0);
+            if (GuideSession.Engine != null) GuideSession.Engine.SetEngineer(on);
             if (!engineer && Array.IndexOf(DesignerV3Tabs.Simple, tab) < 0) tab = DesignerV3Tab.Engines;
             EngineerChanged?.Invoke(engineer);
             BuildTabs();

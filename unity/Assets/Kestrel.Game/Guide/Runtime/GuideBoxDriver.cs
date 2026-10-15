@@ -3,8 +3,8 @@ using UnityEngine.UIElements;
 
 namespace Kestrel.Game.Guide
 {
-    /// <summary>Hosts the subtitle stack on a UIDocument. G9 points this at the real guide engine.
-    /// Until then it keeps a MockGuideEngine so the view still runs.</summary>
+    /// <summary>Hosts the subtitle stack on a UIDocument and reads the live guide engine.
+    /// A mock is used only when the script cannot be loaded.</summary>
     [DisallowMultipleComponent]
     public sealed class GuideBoxDriver : MonoBehaviour
     {
@@ -19,7 +19,6 @@ namespace Kestrel.Game.Guide
         AudioSource blipSource;
         AudioClip blipClip;
         float blipUntil;
-        MockGuideEngine owned;
 
         public GuideStage Stage => stage;
         public NarrationSubtitleSink Subtitles { get; private set; }
@@ -37,10 +36,20 @@ namespace Kestrel.Game.Guide
         {
             if (stage == null)
             {
-                owned = new MockGuideEngine();
+                IGuideEngine engine = GuideSession.Engine;
+                if (engine == null)
+                {
+                    var live = GuideHost.TryLoad();
+                    if (live != null)
+                    {
+                        GuideSession.Bind(live);
+                        engine = live;
+                    }
+                }
+                if (engine == null) engine = new MockGuideEngine();
                 var manifest = Resources.Load<TextAsset>("Narration/manifest");
                 var clips = manifest != null ? NarrationSubtitles.Parse(manifest.text) : new NarrationSubtitles();
-                stage = new GuideStage(owned, clips) { Voice = new DeviceGuideVoice(), Place = Place };
+                stage = new GuideStage(engine, clips) { Voice = new DeviceGuideVoice(), Place = Place };
                 Subtitles = new NarrationSubtitleSink { Stage = stage };
                 var loaded = GuideArt.Load();
                 stage.Glyphs = loaded.Glyphs;
@@ -79,9 +88,11 @@ namespace Kestrel.Game.Guide
             if (blipUntil > 0f && Time.unscaledTime >= blipUntil && blipSource != null) blipSource.Stop();
             stage.Place = Place;
             stage.ReduceMotionOverride = PlayerPrefs.GetInt(GuideNative.ReduceMotionPref, 0) != 0 || GuideNative.ReduceMotion;
-            if (stage.Engine is MockGuideEngine mock) mock.Settings.Muted = Kestrel.Game.Audio.AudioPrefs.SfxMuted;
+            if (stage.Engine != null && stage.Engine.Settings != null)
+                stage.Engine.Settings.Muted = Kestrel.Game.Audio.AudioPrefs.SfxMuted;
             ApplyScreen();
             view.Tick(Time.unscaledDeltaTime);
+            GuideHost.Voice(this);
         }
 
         void OnBlip()

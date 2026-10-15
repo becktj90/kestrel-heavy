@@ -8,6 +8,8 @@
         "Kestrel.Game.Audio",
         "Kestrel.Core",
         "Kestrel.Game.Campaign",
+        "Kestrel.Game.Guide",
+        "Kestrel.Game.Guide.Core",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],

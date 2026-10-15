@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
+using Kestrel.Game.Guide;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -20,7 +21,9 @@ namespace Kestrel.Game.MissionSelect
 
         public static VisualElement Build(MissionContext ctx, Action build, Action back)
         {
-            var board = BriefingBoard.Compose(ctx, TryCard(ctx));
+            var card = TryCard(ctx);
+            var board = BriefingBoard.Compose(ctx, card);
+            GuideHooks.Briefing(GuideSession.Engine, ctx, card);
             var root = new VisualElement { name = RootName };
             root.AddToClassList("briefing");
             root.style.position = Position.Absolute;

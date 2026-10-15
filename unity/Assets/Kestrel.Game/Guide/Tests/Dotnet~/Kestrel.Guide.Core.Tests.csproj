@@ -1,4 +1,4 @@
-<!-- Engine-free subtitle-box tests. Unity EditMode runs the same cases via Kestrel.Game.Guide.Tests.
+<!-- Engine-free subtitle-box and guide-hook tests. Unity EditMode runs the same cases via Kestrel.Game.Guide.Tests.
      Run: dotnet test unity/Assets/Kestrel.Game/Guide/Tests/Dotnet~/Kestrel.Guide.Core.Tests.csproj -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -9,7 +9,9 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../../../Kestrel.Core/Json/MiniJson.cs" />
+    <ProjectReference Include="../../../../../dotnet/Kestrel.Core/Kestrel.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="../../Core/**/*.cs" />
     <Compile Include="../Core/**/*.cs" />
   </ItemGroup>
