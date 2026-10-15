@@ -6,6 +6,7 @@ using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
+using Kestrel.Game.Guide;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -74,6 +75,7 @@ namespace Kestrel.Game.MissionSelect
             for (int a = 0; a < map.Acts.Count; a++) scroll.Add(Act(map.Acts[a], startMission));
             if (map.ShowOpenContracts) scroll.Add(Contracts());
             root.Add(scroll);
+            GuideHooks.MissionSelect(GuideSession.Engine, map.Next != null ? map.Next.MissionId : null, map.ShowOpenContracts);
 
             var homeKey = new Button(home) { name = "missions-home", text = MissionMapCopy.Home, tooltip = MissionMapCopy.HomeTip };
             homeKey.AddToClassList("kh-button");

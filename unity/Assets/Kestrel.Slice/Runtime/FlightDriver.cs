@@ -70,6 +70,7 @@ namespace Kestrel.Slice
 
         public void Launch(Design d, AscentHook hook)
         {
+            GuideBinder.Listen(this);
             var c = SliceData.Catalog;
             var (stages, opts) = Stack.SimInputs(c, d, PhysicsDt);
             Decisions = null;

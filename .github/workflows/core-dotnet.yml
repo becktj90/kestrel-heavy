@@ -29,3 +29,5 @@ jobs:
       - run: dotnet test unity/Assets/Kestrel.Game/Vehicle/Tests/Dotnet~/Kestrel.Vehicle.Core.Tests.csproj --logger "console;verbosity=normal"
       - name: Shipping iOS build entry point (editor boundary fakes)
         run: dotnet test unity/dotnet/Kestrel.Build.Tests/Kestrel.Build.Tests.csproj --logger "console;verbosity=normal"
+      - name: Thrum guide hooks
+        run: dotnet test unity/Assets/Kestrel.Game/Guide/Tests/Dotnet~/Kestrel.Guide.Core.Tests.csproj --logger "console;verbosity=normal"

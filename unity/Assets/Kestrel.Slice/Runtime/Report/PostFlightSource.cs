@@ -49,10 +49,11 @@ namespace Kestrel.Slice
             long minor = MinorPerKc();
             var look = Look();
             bool live = flight != null && flight.Result != null;
-            if (!live)
-                return FlightDebrief.Compose(null, GameSession.Current, facts, pool, minor, look);
-            var store = TryStore(minor);
-            return FlightDebrief.Commit(store, GameSession.Current, facts, pool, minor, look);
+            var card = !live
+                ? FlightDebrief.Compose(null, GameSession.Current, facts, pool, minor, look)
+                : FlightDebrief.Commit(TryStore(minor), GameSession.Current, facts, pool, minor, look);
+            GuideBinder.Debrief(flight, card);
+            return card;
         }
 
         public static ReportActions Actions() => NextMission.Actions(Relaunch, LeaveHome);

@@ -135,6 +135,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             ApplyPendingFocus();
             foreach (var refresh in refreshers) refresh();
             wasMaxQStale = report?.Readout == null || report.Readout.maxQStale;
+            GuideBinder.Designer((int)Step, report, bridge.Engineer != null && bridge.Engineer());
         }
 
         public void RefreshLive()

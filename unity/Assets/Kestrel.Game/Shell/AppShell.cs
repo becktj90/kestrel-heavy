@@ -3,6 +3,7 @@
 // Nothing here is placed by hand in a scene; ShellSetup only adds this component.
 using Kestrel.Core.Flight;
 using Kestrel.Game.Audio;
+using Kestrel.Game.Guide;
 using Kestrel.Game.Layout;
 using Kestrel.Game.Quality;
 using UnityEngine;
@@ -64,6 +65,9 @@ namespace Kestrel.Game.Shell
             Root.Add(Safe);
             Portrait.FrameChanged += OnFrame;
             Root.RegisterCallback<GeometryChangedEvent>(_ => OnFrame(Portrait.Frame));
+            GuideHost.Open(doc, GuidePlace.Designer, false);
+            GuideHooks.Home(GuideSession.Engine);
+            GuideHost.Save(GuideSession.Engine);
 
             var listener = camGo.AddComponent<AudioListener>();
             var music = gameObject.AddComponent<Kestrel.Game.Audio.MusicPlayer>();

@@ -55,6 +55,8 @@ namespace Kestrel.Game.Guide
         public float MinHold;
         /// <summary>True when the beat came from the guide engine rather than a narration clip.</summary>
         public bool FromEngine = true;
+        /// <summary>Bundled clip under assets/narration/guide. Empty keeps the line text-only.</summary>
+        public string VoiceClip;
     }
 
     public static class GuideSpeakers

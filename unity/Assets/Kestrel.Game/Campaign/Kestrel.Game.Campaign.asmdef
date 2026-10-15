@@ -3,6 +3,7 @@
     "rootNamespace": "Kestrel.Game.MissionSelect",
     "references": [
         "Kestrel.Core",
+        "Kestrel.Game.Guide.Core",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],
