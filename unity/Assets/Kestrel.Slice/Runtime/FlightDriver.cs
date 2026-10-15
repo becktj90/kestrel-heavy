@@ -43,6 +43,9 @@ namespace Kestrel.Slice
         public double OriginX { get; private set; }   // floating origin in pad-local metres (double)
         public double OriginY { get; private set; }
         public int Rebases { get; private set; }
+        /// <summary>Kinematic pitch from the pad frame, degrees from horizontal. The drawn airframe may lag this.</summary>
+        public float AttitudeDeg { get; private set; } = 90f;
+        public bool HasAttitude { get; private set; }
 
         double clock; int mecoStage; double thrustRef = 1; double prevX, prevY;
         bool arcadeBreaks;
@@ -75,6 +78,7 @@ namespace Kestrel.Slice
             thrustRef = Math.Max(1, stages[0].thrustVac);
             omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
             clock = 0; Meco = false; Result = null; Running = true; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
+            AttitudeDeg = 90f; HasAttitude = false;
             seenEvents = 0; mecoSent = false;
             UpdateFrame();
             Sink?.OnEvent("flight.begin");
@@ -195,6 +199,8 @@ namespace Kestrel.Slice
                 if (dx * dx + dy * dy > 1e-6 && Altitude > 20)
                 {
                     float pitch = (float)(Math.Atan2(dy, dx) * 180 / Math.PI); // from horizontal
+                    AttitudeDeg = pitch;
+                    HasAttitude = true;
                     Vehicle.localRotation = Quaternion.Euler(0, 0, pitch - 90);
                 }
                 prevX = Downrange; prevY = Altitude;
