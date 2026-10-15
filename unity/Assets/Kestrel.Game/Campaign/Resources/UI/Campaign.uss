@@ -1,0 +1,160 @@
+/* Mission Select campaign map. Portrait column. Tokens live on the shell (:root in KH_Tokens.uss).
+   Touch targets stay at least 44 px. No motion, no glow. */
+
+.mission-map {
+    flex-grow: 1;
+    justify-content: flex-start;
+}
+
+.mission-map > .kh-title {
+    margin-bottom: var(--kh-space-2);
+}
+
+.mission-scroll {
+    flex-grow: 1;
+}
+
+.mission-act {
+    margin-bottom: var(--kh-space-3);
+}
+
+.mission-act-title {
+    font-size: var(--kh-font-caption);
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+    color: var(--kh-home-orange);
+    margin-top: var(--kh-space-2);
+    margin-bottom: var(--kh-space-1);
+    white-space: normal;
+    -unity-text-align: middle-left;
+}
+
+.kh-button.mission-row {
+    height: auto;
+    min-height: var(--kh-touch-min);
+    margin-top: var(--kh-space-1);
+    margin-bottom: var(--kh-space-1);
+    margin-left: 0;
+    margin-right: 0;
+    padding: var(--kh-space-2);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    background-color: var(--kh-home-navy);
+    color: var(--kh-home-cream);
+    border-width: 1px;
+    border-color: rgba(250, 240, 215, 0.35);
+    border-left-width: 4px;
+    border-left-color: var(--kh-home-orange);
+    white-space: normal;
+}
+
+.kh-button.mission-row--next {
+    border-width: 2px;
+    border-left-width: 4px;
+    border-color: var(--kh-home-orange);
+}
+
+.kh-button.mission-row--cleared {
+    border-left-color: var(--kh-home-lamp-on);
+}
+
+.kh-button.mission-row--locked {
+    background-color: rgba(30, 46, 72, 0.72);
+    border-left-color: rgba(250, 240, 215, 0.35);
+    color: var(--kh-home-cream);
+}
+
+.mission-map .mission-row--locked:disabled {
+    opacity: 1;
+}
+
+.mission-row-head {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    align-self: stretch;
+}
+
+.mission-row-name {
+    font-size: var(--kh-font-body);
+    -unity-font-style: bold;
+    color: var(--kh-home-cream);
+    white-space: normal;
+    flex-grow: 1;
+    flex-shrink: 1;
+    -unity-text-align: middle-left;
+}
+
+.mission-chip {
+    font-size: var(--kh-font-caption);
+    -unity-font-style: bold;
+    color: var(--kh-home-navy);
+    background-color: var(--kh-home-orange);
+    border-radius: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    margin-left: var(--kh-space-2);
+    flex-shrink: 0;
+}
+
+.mission-stars {
+    font-size: var(--kh-font-caption);
+    -unity-font-style: bold;
+    color: var(--kh-home-orange);
+    margin-left: var(--kh-space-2);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.mission-meta {
+    font-size: var(--kh-font-caption);
+    color: var(--kh-home-cream);
+    white-space: normal;
+    margin-top: 2px;
+    -unity-text-align: middle-left;
+}
+
+.mission-lock {
+    font-size: var(--kh-font-caption);
+    color: var(--kh-color-warn);
+    white-space: normal;
+    margin-top: 2px;
+    -unity-text-align: middle-left;
+}
+
+.kh-button.mission-home {
+    flex-shrink: 0;
+    margin-top: var(--kh-space-2);
+    min-height: var(--kh-touch-min);
+}
+
+.open-contracts {
+    min-height: var(--kh-touch-min);
+    margin-top: var(--kh-space-4);
+    margin-bottom: var(--kh-space-2);
+    padding: var(--kh-space-3);
+    border-width: 2px;
+    border-color: var(--kh-home-orange);
+    border-radius: 28px;
+    background-color: var(--kh-home-navy);
+}
+
+.open-contracts-title {
+    font-size: var(--kh-font-body);
+    -unity-font-style: bold;
+    color: var(--kh-home-orange);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.open-contracts-body {
+    font-size: var(--kh-font-caption);
+    color: var(--kh-home-cream);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-top: var(--kh-space-1);
+}
