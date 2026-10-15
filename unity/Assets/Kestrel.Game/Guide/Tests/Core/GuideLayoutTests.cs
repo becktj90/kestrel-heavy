@@ -122,15 +122,20 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
-        public void DriverSavesSeenWelcomeLinesAndClearsTheMissionList()
+        public void DriverSavesSeenLinesAndHidesThrumOnAscent()
         {
             string driver = File.ReadAllText(Find("unity/Assets/Kestrel.Game/Guide/Runtime/GuideBoxDriver.cs"));
             Assert.That(driver, Does.Contain("GuideHost.Save"));
             Assert.That(driver, Does.Contain("GuideSeenWatch"));
-            Assert.That(driver, Does.Contain("mission-scroll"));
-            Assert.That(driver, Does.Contain("briefing-scroll"));
+            Assert.That(driver, Does.Contain("GuidePopLayout"));
+            Assert.That(driver, Does.Not.Contain("mission-scroll"));
             string shell = File.ReadAllText(Find("unity/Assets/Kestrel.Game/Shell/AppShell.cs"));
             Assert.That(shell, Does.Contain("GuidePlace.Menu"));
+            string binder = File.ReadAllText(Find("unity/Assets/Kestrel.Slice/Runtime/Guide/GuideBinder.cs"));
+            Assert.That(binder, Does.Not.Contain("GuideHooks.Ascent"));
+            Assert.That(binder, Does.Not.Contain("FlightBus"));
+            Assert.That(binder, Does.Contain("GuidePlace.Menu"));
+            Assert.That(binder, Does.Contain("GuidePlace.Ascent"));
         }
 
         static void AssertQuadsInside(GlyphTable table, string text, GuideFrame frame, string where)

@@ -436,6 +436,57 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("safety", warn.Priority);
         }
 
+        [Test]
+        public void Clips_ManifestMapsCardAndBeatAndSkipsAscent()
+        {
+            string json = "{"
+                + "\"clips\":["
+                + "{\"id\":\"first.2.c1\",\"beat\":\"first.2\",\"file\":\"guide/first.2.c1.mp3\",\"text\":\"She says hello.\",\"spokenText\":\"She says hello.\",\"durationSec\":1.5},"
+                + "{\"id\":\"first.2.c2\",\"beat\":\"first.2\",\"file\":\"guide/first.2.c2.ogg\",\"text\":\"Nothing here costs real money.\",\"spokenText\":\"Nothing here costs real money.\",\"durationSec\":2},"
+                + "{\"id\":\"brief.wind.c1\",\"beat\":\"brief.wind\",\"file\":\"guide/brief.wind.c1.mp3\",\"text\":\"Wind {kt} knots from the {dir}.\",\"spokenText\":\"There is a breeze out there.\",\"durationSec\":3},"
+                + "{\"id\":\"\",\"beat\":\"nope\",\"file\":\"guide/x.mp3\"}"
+                + "]}";
+            var catalog = GuideClipCatalog.Parse(json);
+            Assert.AreEqual(3, catalog.Count);
+            Assert.IsTrue(catalog.TryCard("first.2.c1", out var first));
+            Assert.AreEqual("Narration/guide/first.2.c1", first.Resource);
+            Assert.AreEqual("first.2", first.Beat);
+            Assert.AreEqual(1.5f, first.Duration, 0.001f);
+            var both = catalog.Cards("first.2");
+            Assert.AreEqual(2, both.Count);
+            Assert.AreEqual("first.2.c2", both[1].Id);
+            Assert.AreEqual("Narration/guide/first.2.c2", both[1].Resource);
+            Assert.IsTrue(catalog.TryBeat("first.2", out var beat));
+            Assert.AreEqual("first.2.c1", beat.Id);
+            Assert.IsTrue(catalog.TryCard("brief.wind.c1", out var wind));
+            Assert.AreNotEqual(wind.Text, wind.Spoken);
+            Assert.That(wind.Spoken, Does.Not.Contain("{"));
+            Assert.IsFalse(catalog.TryCard("asc.liftoff", out _));
+            Assert.IsFalse(catalog.TryBeat("asc.auto", out _));
+            Assert.AreEqual(0, GuideClipCatalog.Parse("{").Count);
+            Assert.AreEqual(0, GuideClipCatalog.Parse("").Count);
+            Assert.AreEqual(0, GuideClipCatalog.Parse(null).Count);
+
+            string root = TempDir();
+            try
+            {
+                string dir = Path.Combine(root, "assets", "narration", "guide");
+                Directory.CreateDirectory(dir);
+                File.WriteAllText(Path.Combine(dir, "manifest.json"), json);
+                Assert.IsTrue(GuideVoice.ClipsPresent(root));
+                Assert.IsNull(GuideVoice.ClipFor(root, "first.2.c1"));
+                var loaded = GuideClipCatalog.Load(root);
+                Assert.IsTrue(loaded.TryCard("first.2.c1", out var onDisk));
+                Assert.IsFalse(File.Exists(onDisk.FullPath));
+                string clip = Path.Combine(dir, "first.2.c1.mp3");
+                File.WriteAllBytes(clip, new byte[] { 1 });
+                Assert.AreEqual(clip, GuideVoice.ClipFor(root, "first.2.c1"));
+                Assert.AreEqual(clip, GuideVoice.ClipFor(root, "first.2"));
+                Assert.IsNull(GuideVoice.ClipFor(root, "asc.pitch"));
+            }
+            finally { TryDelete(root); }
+        }
+
         static GuideBinder Fresh()
         {
             var state = GuideState.Fresh(false, false);

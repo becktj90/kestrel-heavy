@@ -31,6 +31,9 @@ namespace Kestrel.Game.Guide.Tests
             var engine = Engine(false);
             GuideHooks.Home(engine);
             Assert.AreEqual("first.1", engine.Pending[0].Id);
+            Assert.AreEqual("first.1.c1", engine.Pending[0].Cards[0].Id);
+            Assert.AreEqual("first.2.c1", engine.Pending[1].Cards[0].Id);
+            Assert.AreEqual("first.2.c2", engine.Pending[1].Cards[1].Id);
             Assert.AreEqual(5, engine.Pending.Count);
             engine.Complete("first.1");
             engine.Complete("first.2");

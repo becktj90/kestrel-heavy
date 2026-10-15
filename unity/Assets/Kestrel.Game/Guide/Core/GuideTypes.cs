@@ -17,8 +17,8 @@ namespace Kestrel.Game.Guide
     /// because those are calls the player has to answer.</summary>
     public enum TipsMode { On, WarningsOnly, Off }
 
-    /// <summary>Designer and ascent may stack two speakers. Menu (Home, Mission Select, Briefing)
-    /// shows one Thrum box and keeps the rest queued until a tap.</summary>
+    /// <summary>Designer and the post-flight report show Thrum. Menu is Home, Mission Select and Briefing.
+    /// Ascent hides her; anomaly calls stay on the flight HUD.</summary>
     public enum GuidePlace { Designer, Ascent, Menu }
 
     public enum GuideSpeaker { Thrum, MissionControl, Host, Cohost }
@@ -39,6 +39,8 @@ namespace Kestrel.Game.Guide
 
     public sealed class GuideCard
     {
+        /// <summary>Manifest id, such as first.2.c1. Empty until the script fills it.</summary>
+        public string Id = "";
         public string Kid = "";
         public string Eng;
     }
@@ -107,20 +109,44 @@ namespace Kestrel.Game.Guide
         }
     }
 
+    /// <summary>One shown line. Kid pages can speak. The engineer page is the same card with no clip.</summary>
+    public readonly struct GuideLinePage
+    {
+        public readonly string Text;
+        public readonly string CardId;
+        public readonly bool Speaks;
+
+        public GuideLinePage(string text, string cardId, bool speaks)
+        {
+            Text = text ?? "";
+            CardId = cardId ?? "";
+            Speaks = speaks;
+        }
+    }
+
     public static class GuidePages
     {
         public static string[] Of(GuideBeat beat, bool engineer)
         {
-            var list = new List<string>();
-            if (beat == null || beat.Cards == null) return Array.Empty<string>();
+            var pages = Pages(beat, engineer);
+            var list = new string[pages.Length];
+            for (int i = 0; i < pages.Length; i++) list[i] = pages[i].Text;
+            return list;
+        }
+
+        public static GuideLinePage[] Pages(GuideBeat beat, bool engineer)
+        {
+            var list = new List<GuideLinePage>();
+            if (beat == null || beat.Cards == null) return Array.Empty<GuideLinePage>();
             for (int i = 0; i < beat.Cards.Length; i++)
             {
                 var card = beat.Cards[i];
                 if (card == null) continue;
+                string id = !string.IsNullOrEmpty(card.Id) ? card.Id : (beat.Id ?? "") + ".c" + (i + 1).ToString(CultureInfo.InvariantCulture);
                 string kid = GuideTokens.Fill(card.Kid, beat.Tokens);
-                if (!string.IsNullOrEmpty(kid)) list.Add(kid);
+                if (!string.IsNullOrEmpty(kid)) list.Add(new GuideLinePage(kid, id, true));
                 if (engineer && !string.IsNullOrEmpty(card.Eng))
-                    list.Add(GuideTokens.Fill(card.Eng, beat.Tokens));
+                    list.Add(new GuideLinePage(GuideTokens.Fill(card.Eng, beat.Tokens), id, false));
             }
             return list.ToArray();
         }
