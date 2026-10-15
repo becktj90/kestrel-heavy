@@ -15,8 +15,14 @@ namespace Kestrel.Slice
 {
     public static class ChaseCamera
     {
+        // Lateral standoff, in vehicle heights. Was (0.8, 1.6), which filled a portrait frame with the
+        // tank wall once the HUD covered the nose and the tail. 2.5× that distance keeps the whole
+        // stack in the middle of the frame with sky around it. Follow still returns this offset unchanged.
+        public const float StandoffX = 2.0f;
+        public const float StandoffZ = 4.0f;
+
         /// <summary>Desired camera offset from the vehicle pivot for a rocket of height h with axis 'up'.</summary>
-        public static Vector3 DesiredOffset(Vector3 up, float h) => -up * h * 0.6f + new Vector3(h * 0.8f, 0, -h * 1.6f);
+        public static Vector3 DesiredOffset(Vector3 up, float h) => -up * h * 0.6f + new Vector3(h * StandoffX, 0, -h * StandoffZ);
 
         // ---- Early-ascent horizon hold (P0-1 follow-up) ---------------------------------------------------
         // Root cause of "frame is all sky by T+2.2 s (iPhone) / T+3.7 s (iPad)": the offset above puts the
@@ -39,7 +45,7 @@ namespace Kestrel.Slice
 
         /// <summary>Altitude-aware offset: level with the pivot while the hold is active.</summary>
         public static Vector3 DesiredOffset(Vector3 up, float h, float altitude) =>
-            -up * h * Mathf.Lerp(0.6f, 0.05f, HoldWeight(altitude)) + new Vector3(h * 0.8f, 0, -h * 1.6f);
+            -up * h * Mathf.Lerp(0.6f, 0.05f, HoldWeight(altitude)) + new Vector3(h * StandoffX, 0, -h * StandoffZ);
 
         /// <summary>Angle (rad) of the visible horizon below the local horizontal at a camera altitude.</summary>
         public static float HorizonDip(float camAltitude) =>
