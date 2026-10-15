@@ -432,6 +432,36 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
+        public void MenuShowsOneBoxAndTheNextWaitsForATap()
+        {
+            var engine = new MockGuideEngine();
+            engine.Settings.Speed = SubtitleSpeed.Instant;
+            engine.Offer(new GuideBeat { Id = "first.1", Speaker = GuideSpeaker.Thrum, Cards = new[] { new GuideCard { Kid = "One." } } });
+            engine.Offer(new GuideBeat { Id = "first.2", Speaker = GuideSpeaker.Thrum, Cards = new[] { new GuideCard { Kid = "Two." } } });
+            var stage = new GuideStage(engine) { Place = GuidePlace.Menu };
+            stage.Tick(0.05f);
+            Assert.AreEqual(1, stage.Count);
+            Assert.AreEqual("first.1", stage.Models()[0].Id);
+            stage.Tap(0);
+            Assert.AreEqual(1, stage.Count);
+            Assert.AreEqual("first.2", stage.Models()[0].Id);
+            Assert.AreEqual("1/1", stage.Models()[0].Index);
+            stage.Tap(0);
+            Assert.AreEqual(0, stage.Count);
+        }
+
+        [Test]
+        public void SeenWatchIgnoresTheLoadedBaseline()
+        {
+            var watch = new GuideSeenWatch();
+            Assert.IsFalse(watch.Consume(2, false));
+            Assert.IsFalse(watch.Consume(2, false));
+            Assert.IsTrue(watch.Consume(3, false));
+            Assert.IsTrue(watch.Consume(3, true));
+            Assert.IsFalse(watch.Consume(3, true));
+        }
+
+        [Test]
         public void FirstRunIsFiveCards()
         {
             var beat = MockGuideEngine.FirstRun();

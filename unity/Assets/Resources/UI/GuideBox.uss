@@ -42,6 +42,7 @@
     border-bottom-right-radius: 0;
     padding: 6px;
     flex-grow: 1;
+    overflow: hidden;
 }
 
 .guide-row {
@@ -62,12 +63,15 @@
     border-top-right-radius: 0;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    margin-right: 6px;
+    margin-right: 0;
 }
 
 .guide-column {
     flex-grow: 1;
+    flex-shrink: 1;
     flex-direction: column;
+    /* SKIP is 44px. The text and the n/N hint end before it. Runtime scales this. */
+    margin-right: 50px;
 }
 
 .guide-name {
@@ -82,6 +86,12 @@
     color: #faf0d7;
     font-size: 15px;
     white-space: normal;
+    overflow: hidden;
+}
+
+.guide-body-clip {
+    flex-shrink: 0;
+    overflow: hidden;
 }
 
 .guide-fallback {

@@ -1,5 +1,6 @@
-// What the box is showing. At most two speakers. A decision or a safety line drops idle chatter.
-// Designer lines wait for a tap. Ascent lines advance after the reading time, except critical ones.
+// What the box is showing. Ascent and the designer stack at most two speakers. Menu screens
+// show one box and leave the rest queued for a tap. A decision or a safety line drops idle chatter.
+// Designer and menu lines wait for a tap. Ascent lines advance after the reading time, except critical ones.
 using System;
 using System.Collections.Generic;
 
@@ -72,6 +73,8 @@ namespace Kestrel.Game.Guide
         bool Reduce => Settings.ReduceMotion || ReduceMotionOverride;
 
         public int Count => active.Count;
+
+        int BoxCap => Place == GuidePlace.Menu ? 1 : GuidePacing.MaxBoxes;
 
         public void BeginFlight()
         {
@@ -180,7 +183,7 @@ namespace Kestrel.Game.Guide
                 return;
             }
             if (Rank(beat) >= (int)GuidePriority.Decision) DropChatter();
-            if (active.Count < GuidePacing.MaxBoxes) { Start(beat); return; }
+            if (active.Count < BoxCap) { Start(beat); return; }
             int low = Lowest();
             if (Rank(beat) > Rank(active[low].Beat))
             {
@@ -225,7 +228,7 @@ namespace Kestrel.Game.Guide
 
         void FillParked()
         {
-            for (int i = 0; i < parked.Count && active.Count < GuidePacing.MaxBoxes; i++)
+            for (int i = 0; i < parked.Count && active.Count < BoxCap; i++)
             {
                 var beat = parked[i];
                 if (Showing(beat.Id) || !ShouldShow(beat) || ChatterBlocked(beat))
@@ -302,6 +305,7 @@ namespace Kestrel.Game.Guide
                 else Engine.Complete(slot.Beat.Id);
             }
             FillParked();
+            Pull();
         }
 
         void DropChatter()

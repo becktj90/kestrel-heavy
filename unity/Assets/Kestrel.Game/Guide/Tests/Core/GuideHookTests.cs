@@ -43,6 +43,38 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
+        public void WelcomeCardsDoNotReturnAfterTheyAreSaved()
+        {
+            var engine = Engine(false);
+            GuideHooks.Home(engine);
+            Assert.IsTrue(Has(engine, "first.1"));
+            engine.Complete("first.1");
+            string dir = Path.Combine(Path.GetTempPath(), "thrum-seen-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                engine.State.Save(dir);
+                var loaded = new LiveGuideEngine(json, GuideState.Load(dir, false, false), root);
+                GuideHooks.Home(loaded);
+                Assert.IsFalse(Has(loaded, "first.1"));
+                Assert.IsTrue(Has(loaded, "first.2"));
+                loaded.Complete("first.2");
+                loaded.Complete("first.3");
+                loaded.Complete("first.4");
+                loaded.Complete("first.5");
+                Assert.IsTrue(loaded.State.FirstRunDone);
+                loaded.State.Save(dir);
+                var done = new LiveGuideEngine(json, GuideState.Load(dir, false, false), root);
+                GuideHooks.Home(done);
+                Assert.AreEqual(0, done.Pending.Count);
+                Assert.IsTrue(done.State.FirstRunDone);
+            }
+            finally
+            {
+                if (Directory.Exists(dir)) Directory.Delete(dir, true);
+            }
+        }
+
+        [Test]
         public void MissionSelectAndBriefingUseTheScriptedMission()
         {
             var engine = Engine(true);

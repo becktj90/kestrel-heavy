@@ -19,6 +19,7 @@ namespace Kestrel.Game.Guide
         AudioSource blipSource;
         AudioClip blipClip;
         float blipUntil;
+        readonly GuideSeenWatch seenWatch = new GuideSeenWatch();
 
         public GuideStage Stage => stage;
         public NarrationSubtitleSink Subtitles { get; private set; }
@@ -92,6 +93,10 @@ namespace Kestrel.Game.Guide
                 stage.Engine.Settings.Muted = Kestrel.Game.Audio.AudioPrefs.SfxMuted;
             ApplyScreen();
             view.Tick(Time.unscaledDeltaTime);
+            var live = stage.Engine as LiveGuideEngine;
+            if (live != null && seenWatch.Consume(live.State.SeenLines.Count, live.State.FirstRunDone))
+                GuideHost.Save(live);
+            ApplyClearance();
             GuideHost.Voice(this);
         }
 
@@ -111,10 +116,54 @@ namespace Kestrel.Game.Guide
         {
             float dpr = Screen.dpi >= 10f ? Screen.dpi / 160f : 2f;
             var safe = Screen.safeArea;
-            view.Screen = GuideScreen.FromPixels(Screen.width, Screen.height, safe.x, safe.y, safe.width, safe.height, dpr, HeaderPoints, Compact);
+            var screen = GuideScreen.FromPixels(Screen.width, Screen.height, safe.x, safe.y, safe.width, safe.height, dpr, HeaderPoints, Compact);
             float widthPt = Screen.width / dpr;
             float panelW = overlay != null && overlay.resolvedStyle.width > 1f ? overlay.resolvedStyle.width : widthPt;
             view.PanelPerPoint = widthPt > 1f ? panelW / widthPt : 1f;
+            if (Place == GuidePlace.Menu)
+                screen = screen.WithFooter(MeasureFooter(view.PanelPerPoint));
+            view.Screen = screen;
+        }
+
+        float MeasureFooter(float panelPerPoint)
+        {
+            if (overlay == null || overlay.parent == null || panelPerPoint <= 0f) return GuidePacing.MenuFooterPt;
+            string[] names = { "briefing-build", "briefing-back", "missions-home", "home-launch" };
+            VisualElement anchor = null;
+            for (int i = 0; i < names.Length; i++)
+            {
+                var found = overlay.parent.Q(names[i]);
+                if (found == null || found.resolvedStyle.display == DisplayStyle.None) continue;
+                if (found.resolvedStyle.height < 1f) continue;
+                anchor = found;
+                break;
+            }
+            if (anchor == null) return GuidePacing.MenuFooterPt;
+            float bottom = overlay.worldBound.yMax;
+            float top = anchor.worldBound.yMin;
+            if (float.IsNaN(top) || float.IsNaN(bottom) || bottom <= 1f || top <= 1f || top >= bottom) return GuidePacing.MenuFooterPt;
+            // Distance down to the panel bottom. The key already sits inside the safe area, so this
+            // is the whole reserve; the layout does not add the safe inset a second time.
+            float pt = (bottom - top) / panelPerPoint;
+            return pt > GuidePacing.MenuFooterPt ? pt : GuidePacing.MenuFooterPt;
+        }
+
+        void ApplyClearance()
+        {
+            if (overlay == null || overlay.parent == null || view == null) return;
+            float px = Place == GuidePlace.Menu ? view.ClearancePx : 0f;
+            Pad("mission-scroll", px);
+            Pad("briefing-scroll", px);
+        }
+
+        void Pad(string name, float px)
+        {
+            var el = overlay.parent.Q(name);
+            if (el == null) return;
+            var style = el.style.marginBottom;
+            // A set length keeps keyword Undefined and stores the pixels on value.
+            float cur = style.keyword == StyleKeyword.Undefined ? style.value.value : -1f;
+            if (Mathf.Abs(cur - px) > 0.5f) el.style.marginBottom = px;
         }
 
     }

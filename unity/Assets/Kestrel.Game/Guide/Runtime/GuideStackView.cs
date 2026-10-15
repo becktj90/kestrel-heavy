@@ -3,9 +3,10 @@ using UnityEngine.UIElements;
 
 namespace Kestrel.Game.Guide
 {
-    /// <summary>The retro subtitle stack. Ink panel, cream border, hard shadow, up to two speakers.
-    /// Docks at the top of the safe area and stays out of the bottom thumb zone. Empty space does not pick,
-    /// so ascent buttons underneath still receive touches.</summary>
+    /// <summary>The retro subtitle stack. Ink panel, cream border, hard shadow.
+    /// Ascent docks under the header and stays out of the thumb zone. Menu screens dock one box
+    /// above the Home key and leave the mission list the space under it. Empty space does not pick,
+    /// so buttons underneath still receive touches.</summary>
     public sealed class GuideStackView
     {
         public static readonly Color Ink = new Color(0x1B / 255f, 0x1F / 255f, 0x2A / 255f, 1f);
@@ -20,6 +21,8 @@ namespace Kestrel.Game.Guide
         public GlyphTable Glyphs;
         public Texture2D Atlas;
         public Texture2D Portrait;
+        /// <summary>Panel pixels the menu scroll should give up so the box does not cover the cards. 0 off-menu.</summary>
+        public float ClearancePx { get; private set; }
 
         readonly VisualElement stack;
         string signature = "";
@@ -76,19 +79,22 @@ namespace Kestrel.Game.Guide
                 portrait[i] = models[i].Portrait;
                 measure[i] = models[i].Full;
             }
-            var frames = GuideLayout.Place(Screen, portrait, measure, font);
+            var frames = GuideLayout.Place(Screen, portrait, measure, font, Stage.Place);
+            int shown = models.Length < frames.Length ? models.Length : frames.Length;
             string next = "";
-            for (int i = 0; i < models.Length; i++) next += models[i].Id + "|";
+            for (int i = 0; i < shown; i++) next += models[i].Id + "|";
             next += Screen.Compact ? "c" : "f";
-            if (next != signature || stack.childCount != models.Length)
+            next += Stage.Place == GuidePlace.Menu ? "m" : "d";
+            if (next != signature || stack.childCount != shown)
             {
                 signature = next;
                 stack.Clear();
-                for (int i = 0; i < models.Length; i++) stack.Add(Build(models[i], i));
+                for (int i = 0; i < shown; i++) stack.Add(Build(models[i], i));
             }
-            if (frames.Length == 0)
+            if (shown == 0)
             {
                 stack.style.display = DisplayStyle.None;
+                ClearancePx = 0f;
                 return;
             }
             stack.style.display = DisplayStyle.Flex;
@@ -96,8 +102,16 @@ namespace Kestrel.Game.Guide
             stack.style.left = frames[0].X * scale;
             stack.style.top = frames[0].Y * scale;
             stack.style.width = frames[0].W * scale;
-            for (int i = 0; i < models.Length && i < stack.childCount && i < frames.Length; i++)
+            float band = 0f;
+            for (int i = 0; i < shown && i < stack.childCount; i++)
+            {
                 Fill(stack[i], models[i], frames[i], scale);
+                band += frames[i].H;
+            }
+            if (shown > 1) band += GuidePacing.StackGapPt * (shown - 1);
+            ClearancePx = Stage.Place == GuidePlace.Menu
+                ? (band + GuidePacing.ShadowPt + GuidePacing.StackGapPt) * scale
+                : 0f;
         }
 
         VisualElement Build(GuideBoxModel model, int index)
@@ -142,7 +156,13 @@ namespace Kestrel.Game.Guide
 
             var body = new BitmapTextElement { name = "guide-body" };
             body.AddToClassList("guide-body");
-            column.Add(body);
+            body.style.flexShrink = 0;
+            var clip = new ScrollView(ScrollViewMode.Vertical) { name = "guide-body-clip", pickingMode = PickingMode.Ignore };
+            clip.AddToClassList("guide-body-clip");
+            clip.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            clip.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            clip.Add(body);
+            column.Add(clip);
 
             var foot = new VisualElement { name = "guide-foot", pickingMode = PickingMode.Ignore };
             foot.AddToClassList("guide-foot");
@@ -197,6 +217,7 @@ namespace Kestrel.Game.Guide
             box.style.marginBottom = GuidePacing.StackGapPt * scale;
             box.style.position = Position.Relative;
             box.style.overflow = Overflow.Visible;
+            box.style.flexShrink = 0;
             PaintChrome(box, scale);
 
             var portrait = box.Q("guide-portrait");
@@ -207,6 +228,8 @@ namespace Kestrel.Game.Guide
                 portrait.style.width = frame.Portrait * scale;
                 portrait.style.height = frame.Portrait * scale;
                 portrait.style.minWidth = frame.Portrait * scale;
+                var columnGap = box.Q("guide-column");
+                if (columnGap != null) columnGap.style.marginLeft = (show ? GuidePacing.ColumnGapPt : 0f) * scale;
                 if (show && Portrait != null)
                 {
                     Portrait.filterMode = FilterMode.Point;
@@ -224,17 +247,45 @@ namespace Kestrel.Game.Guide
                 name.style.fontSize = font;
                 name.style.color = Amber;
                 name.style.unityFontStyleAndWeight = FontStyle.Bold;
+                // The name sits above SKIP. It may use that width. The body and the hint stay in the column.
+                bool nameBesidePortrait = model.Portrait && frame.Portrait > 0f && frame.H > frame.Skip + frame.Font * 2f;
+                name.style.marginRight = nameBesidePortrait ? -(frame.Skip + GuidePacing.ColumnGapPt) * scale : 0f;
+                name.style.overflow = nameBesidePortrait ? Overflow.Visible : Overflow.Hidden;
             }
 
             var body = box.Q<BitmapTextElement>("guide-body");
+            float glyphPt = frame.Glyph >= 7f ? frame.Glyph : GuidePacing.GlyphPt(frame.Font);
+            int texel = (int)Mathf.Floor(glyphPt * scale / 7f + 0.001f);
+            if (texel < 1) texel = 1;
             if (body != null)
             {
                 body.Glyphs = Glyphs;
                 body.Atlas = Atlas;
-                body.FontPx = font < GuidePacing.MinFontPt ? GuidePacing.MinFontPt : font;
-                body.LayoutWidth = frame.TextW * scale;
+                body.FontPx = texel * 7f;
+                float textPx = frame.TextW * scale;
+                if (frame.Scroll && textPx > 20f) textPx -= 12f * scale;
+                body.LayoutWidth = textPx;
+                body.style.width = textPx;
+                body.style.maxWidth = textPx;
                 body.SetLine(model.Shown, model.Caret);
-                if (Atlas != null) Atlas.filterMode = FilterMode.Point;
+                if (Atlas != null)
+                {
+                    Atlas.filterMode = FilterMode.Point;
+                    Atlas.anisoLevel = 0;
+                }
+            }
+            var clip = box.Q<ScrollView>("guide-body-clip");
+            if (clip != null)
+            {
+                float bodyPx = frame.Body * scale;
+                float linePx = texel * 8f;
+                if (bodyPx < linePx) bodyPx = linePx;
+                clip.style.height = bodyPx;
+                clip.style.maxHeight = bodyPx;
+                clip.style.flexGrow = 0;
+                clip.style.flexShrink = 0;
+                clip.verticalScrollerVisibility = frame.Scroll ? ScrollerVisibility.Auto : ScrollerVisibility.Hidden;
+                clip.pickingMode = frame.Scroll ? PickingMode.Position : PickingMode.Ignore;
             }
 
             var index = box.Q<Label>("guide-index");
@@ -295,6 +346,7 @@ namespace Kestrel.Game.Guide
             panel.style.paddingTop = pad;
             panel.style.paddingBottom = pad;
             panel.style.flexGrow = 1;
+            panel.style.overflow = Overflow.Hidden;
             var row = box.Q("guide-row");
             if (row != null)
             {
@@ -305,19 +357,33 @@ namespace Kestrel.Game.Guide
             if (column != null)
             {
                 column.style.flexGrow = 1;
+                column.style.flexShrink = 1;
                 column.style.flexDirection = FlexDirection.Column;
                 column.style.marginLeft = 6f * scale;
-                column.style.marginRight = (GuidePacing.SkipMinPt + 6f) * scale;
+                column.style.marginRight = (GuidePacing.SkipMinPt + GuidePacing.ColumnGapPt) * scale;
+                column.style.overflow = Overflow.Visible;
             }
             var foot = box.Q("guide-foot");
             if (foot != null)
             {
                 foot.style.flexDirection = FlexDirection.Row;
                 foot.style.alignItems = Align.Center;
+                foot.style.flexShrink = 0;
+                foot.style.marginTop = 4f * scale;
+            }
+            var nameLabel = box.Q("guide-name");
+            if (nameLabel != null)
+            {
+                nameLabel.style.flexShrink = 0;
+                nameLabel.style.overflow = Overflow.Hidden;
+                nameLabel.style.whiteSpace = WhiteSpace.NoWrap;
+                nameLabel.style.textOverflow = TextOverflow.Ellipsis;
             }
             var portrait = box.Q("guide-portrait");
             if (portrait != null)
             {
+                portrait.style.marginRight = 0;
+                portrait.style.marginLeft = 0;
                 portrait.style.borderLeftWidth = 2f * scale;
                 portrait.style.borderRightWidth = 2f * scale;
                 portrait.style.borderTopWidth = 2f * scale;

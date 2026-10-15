@@ -65,7 +65,7 @@ namespace Kestrel.Game.Shell
             Root.Add(Safe);
             Portrait.FrameChanged += OnFrame;
             Root.RegisterCallback<GeometryChangedEvent>(_ => OnFrame(Portrait.Frame));
-            GuideHost.Open(doc, GuidePlace.Designer, false);
+            GuideHost.Open(doc, GuidePlace.Menu, false);
             GuideHooks.Home(GuideSession.Engine);
             GuideHost.Save(GuideSession.Engine);
 
