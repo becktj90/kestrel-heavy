@@ -79,6 +79,10 @@ namespace Kestrel.Game.Shell
         public const string ReduceMotionPref = "kh.a11y.reduceMotion";
         public const string ReduceFlashingPref = "kh.a11y.reduceFlashing";
 
+        /// <summary>Whole-view lift (fraction of panel height, 0 = rest) set by MainMenuOverlay from where the controls really start.
+        /// MainMenuController applies it as a camera lens shift, so rocket, hangar and telemetry move together.</summary>
+        public static float HeroLift;
+
         public const float RocketDepth = 14.6f;
         public const float RocketBaseYFrac = -0.06f;
         public const float RocketNoseYFrac = 0.46f;
@@ -122,9 +126,9 @@ namespace Kestrel.Game.Shell
                 "HANGAR", "Hangar. Opens the rocket designer.", "wrench", MenuTextRole.Glass),
             new MenuAnchor("missions", 6.20f, 0.46f, -0.20f, 0.32f, 0.072f, true, false,
                 "MISSIONS", "Missions. Coming soon.", "planet", MenuTextRole.Glass),
-            new MenuAnchor("tel-l", 8.60f, -0.58f, 0.16f, 0.24f, 0.150f, false, false,
+            new MenuAnchor("tel-l", 8.60f, -0.60f, 0.16f, 0.30f, 0.150f, false, false,
                 "", "Fuel, oxidizer and mass.", null, MenuTextRole.Hud),
-            new MenuAnchor("tel-r", 8.60f, 0.58f, 0.16f, 0.24f, 0.150f, false, false,
+            new MenuAnchor("tel-r", 8.60f, 0.60f, 0.16f, 0.30f, 0.150f, false, false,
                 "", "Thrust, wind and status.", null, MenuTextRole.Hud),
             new MenuAnchor("kh1", 9.15f, 0f, 0.16f, 0.15f, 0.140f, false, false,
                 Designation, "KH-1 mission patch.", null, MenuTextRole.Dial),
@@ -266,7 +270,7 @@ namespace Kestrel.Game.Shell
                 case MenuTextRole.Subtitle: return S(40f, 6f, 0.04f, 0.22f, 0.35f);
                 case MenuTextRole.Launch: return S(64f, 4f, 0.05f, 0.28f, 0.50f);
                 case MenuTextRole.Glass: return S(52f, 4f, 0.04f, 0.16f, 0.32f);
-                case MenuTextRole.Hud: return S(44f, 2f, 0.05f, 0.30f, 0.45f);
+                case MenuTextRole.Hud: return S(44f, 2f, 0f, 0f, 0f);   // crisp: no outline, dilate or glow values
                 default: return S(72f, 8f, 0.06f, 0.40f, 0.60f);
             }
         }

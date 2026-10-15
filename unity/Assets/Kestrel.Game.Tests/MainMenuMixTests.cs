@@ -150,16 +150,6 @@ namespace Kestrel.Game.Tests
         }
     
         [Test]
-        public void ControlsStartBelowTheThreeDHeroOnEveryDevice()
-        {
-            foreach (var (w, h) in new[] { (375f, 667f), (440f, 956f), (1032f, 1376f) })
-            {
-                float need = MainMenuCopy.MinControlsHeight(MainMenuCopy.IsNarrow(w));
-                Assert.That(1f - need / h, Is.GreaterThanOrEqualTo(MainMenuCopy.HeroBottomFrac - 0.01f), w + "x" + h + ": controls would cover the rocket/telemetry");
-            }
-        }
-
-        [Test]
         public void NarrowClassAppliesBelow500AndTargetsStayLarge()
         {
             Assert.That(MainMenuCopy.IsNarrow(375f)); Assert.That(MainMenuCopy.IsNarrow(440f)); Assert.That(MainMenuCopy.IsNarrow(1032f), Is.False);
@@ -222,7 +212,7 @@ namespace Kestrel.Game.Tests
                     Assert.That(lines, Is.LessThanOrEqualTo(z.TileCaptionLines + 0.001f), d.name + " " + t.Id + " caption lines");
                 }
                 // Tile height is derived from the scaled type, and still a >= 44 target.
-                float need = 2f * MenuTypeScale.TileBorder + 2f * z.Pad + System.Math.Max(24f, z.TileName * 1.25f) + 4f + z.TileCaptionLines * z.TileCaption * 1.3f;
+                float need = 2f * MenuTypeScale.TileBorder + 2f * z.Pad + System.Math.Max(22f, z.TileName * MenuTypeScale.LineH) + 3f + z.TileCaptionLines * z.TileCaption * MenuTypeScale.LineH;
                 Assert.That(z.TileH, Is.GreaterThanOrEqualTo(need - 0.01f), d.name);
                 Assert.That(z.TileH, Is.GreaterThanOrEqualTo(MenuTypeScale.HitMin), d.name);
                 Assert.That(z.LaunchH, Is.GreaterThanOrEqualTo(MenuTypeScale.HitMin), d.name);
@@ -235,10 +225,83 @@ namespace Kestrel.Game.Tests
             foreach (var d in Devices)
             {
                 var z = MenuTypeScale.Compute(d.w, d.h, d.top, d.bottom);
-                Assert.That(1f - z.ControlsH / d.h, Is.GreaterThanOrEqualTo(MainMenuCopy.HeroBottomFrac), d.name + ": controls cover the rocket/telemetry");
-                float block = 40f + z.Title * 1.2f + z.Tagline * 1.3f;
-                Assert.That(block / d.h, Is.LessThanOrEqualTo(0.25f), d.name + ": title block reaches the rocket nose");
+                // The controls end at the bottom safe inset; they start ControlsH above it.
+                Assert.That(z.ControlsTop, Is.EqualTo(d.h - d.bottom - z.ControlsH).Within(0.01f), d.name);
+                // After the lens-shift lift, the rocket base (and so the telemetry panels above it) ends above the LAUNCH bar.
+                Assert.That(MenuTypeScale.HeroOverlapPx(z, d.h), Is.LessThanOrEqualTo(-MenuTypeScale.HeroGapPx + 0.5f), d.name + ": LAUNCH bar cuts the rocket base or telemetry");
+                // ...and the nose stays below the title block.
+                float noseY = (MenuTypeScale.HeroTopFrac - z.HeroLift) * d.h;
+                Assert.That(noseY, Is.GreaterThanOrEqualTo(z.TitleBottom + MenuTypeScale.HeroGapPx - 0.5f), d.name + ": title block reaches the rocket nose");
             }
+        }
+
+        [Test]
+        public void ControlsBlockIsCompactOnPhones()
+        {
+            foreach (var d in Devices.Where(x => x.w < 500f))
+            {
+                var z = MenuTypeScale.Compute(d.w, d.h, d.top, d.bottom);
+                Assert.That(z.ControlsH / (d.h - d.top - d.bottom), Is.LessThanOrEqualTo(0.42f), d.name + ": controls take too much of the usable height");
+                Assert.That(z.LaunchCaptionLines, Is.EqualTo(1), d.name + ": LAUNCH caption is one line");
+            }
+        }
+
+        [Test]
+        public void HeroLiftIsZeroWhenThereIsRoomAndCappedByTheTitle()
+        {
+            Assert.That(MenuTypeScale.HeroLift(844f, 190f, 700f), Is.EqualTo(0f));
+            float lift = MenuTypeScale.HeroLift(844f, 190f, 300f);            // controls far too high
+            Assert.That(lift * 844f, Is.EqualTo(MenuTypeScale.HeroTopFrac * 844f - MenuTypeScale.HeroGapPx - 190f).Within(0.01f), "capped so the nose clears the title");
+            float some = MenuTypeScale.HeroLift(844f, 190f, 0.53f * 844f);    // base touches the controls: lift the gap
+            Assert.That(some * 844f, Is.EqualTo(MenuTypeScale.HeroGapPx).Within(0.01f));
+            Assert.That(MenuTypeScale.HeroLift(0f, 0f, 0f), Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void TileNamesNeverEllipsizeAtAnySize()
+        {
+            // Names keep their scaled size only when it fits beside the SOON tag / lamp; otherwise they shrink, never below Min.
+            foreach (var d in Devices)
+            {
+                var z = MenuTypeScale.Compute(d.w, d.h, d.top, d.bottom);
+                foreach (var t in MainMenuCopy.Tiles)
+                {
+                    float n = MenuTypeScale.FitName(z, t.Label, !t.Live);
+                    Assert.That(n, Is.InRange(MenuTypeScale.TileName.Min, z.TileName + 0.001f), d.name + " " + t.Label);
+                    Assert.That(MenuTypeScale.NameFits(z, t.Label, !t.Live, n), d.name + " " + t.Label + " fits with " + MenuTypeScale.NameSlack + " px to spare");
+                    float spare = z.TileInner - (t.Live ? MenuTypeScale.LampSlot : MenuTypeScale.TextW(MainMenuCopy.SoonTag, z.Soon) + MenuTypeScale.TagPad) - MenuTypeScale.TextW(t.Label, n);
+                    Assert.That(spare, Is.GreaterThanOrEqualTo(MenuTypeScale.NameSlack - 0.01f), d.name + " " + t.Label);
+                }
+            }
+        }
+
+        [Test]
+        public void TelemetryIsCrispOnDarkPanelsWithWideEnoughText()
+        {
+            var hud = MainMenuLayout.Style(MenuTextRole.Hud);
+            Assert.That(hud.OutlineWidth, Is.EqualTo(0f)); Assert.That(hud.GlowOuter, Is.EqualTo(0f)); Assert.That(hud.GlowPower, Is.EqualTo(0f)); Assert.That(hud.FaceDilate, Is.EqualTo(0f));
+            Assert.That(MainMenuMaterials.InkFor(MenuTextRole.Hud, true), Is.EqualTo(MainMenuMaterials.HudInk));
+            Assert.That(MainMenuMaterials.HudInk.r + MainMenuMaterials.HudInk.g + MainMenuMaterials.HudInk.b, Is.EqualTo(3f), "pure white ink");
+            var panel = MainMenuMaterials.HudPanel;
+            Assert.That(panel.a, Is.EqualTo(1f), "opaque face, not emissive cyan glass");
+            Assert.That(panel.r + panel.g + panel.b, Is.LessThan(0.3f), "dark face for contrast");
+            // Accent palette is untouched (Trevor has not approved a recolour).
+            Assert.That(MainMenuMaterials.Cyan, Is.EqualTo(new UnityEngine.Color(0.25f, 0.95f, 1f, 1f)));
+            Assert.That(MainMenuText.PixelSize, Is.LessThanOrEqualTo(64), "atlas near on-screen size so small text does not shimmer");
+            foreach (var id in new[] { "tel-l", "tel-r" })
+            {
+                var a = MainMenuLayout.Find(id);
+                Assert.That(a.WidthFrac, Is.GreaterThanOrEqualTo(0.28f), id + " wide enough for 14-char lines at phone size");
+                var box = MainMenuLayout.RestBox(a);
+                Assert.That(box.X0, Is.GreaterThan(0.02f)); Assert.That(box.X1, Is.LessThan(0.98f));
+            }
+            // Every telemetry line is laid out at the same glyph size (as wide as the longest one).
+            var verts = new System.Collections.Generic.List<UnityEngine.Vector3>(); var uvs = new System.Collections.Generic.List<UnityEngine.Vector2>(); var tris = new System.Collections.Generic.List<int>();
+            var g = new System.Collections.Generic.List<MainMenuText.GlyphStamp>();
+            for (int i = 0; i < 4; i++) g.Add(new MainMenuText.GlyphStamp(0f, 10f, 0f, 14f, 12f, default, default, default, default));
+            Assert.That(MainMenuText.Layout(g, 1f, 1f, 0f, verts, uvs, tris, 96f), Is.True);
+            float shortW = verts.Max(v => v.x) - verts.Min(v => v.x);
+            Assert.That(shortW, Is.LessThan(0.6f), "a 4-glyph line must not stretch to the full width");
         }
 
         [Test]
@@ -279,6 +342,15 @@ namespace Kestrel.Game.Tests
             MainMenuOverlay.ApplyScale(root, z);
             Assert.That(root.Q<Label>("mm-kestrel").style.fontSize.value.value, Is.EqualTo(z.Title).Within(0.01f));
             Assert.That(root.Q<Button>("home-hangar").style.minHeight.value.value, Is.EqualTo(z.TileH).Within(0.01f));
+            Assert.That(root.Q<Button>("home-hangar").style.height.value.value, Is.EqualTo(z.TileH).Within(0.01f), "exact height, so the block is what the maths says");
+            Assert.That(root.Q<Button>("home-launch").style.height.value.value, Is.EqualTo(z.LaunchH).Within(0.01f));
+            foreach (var it in MainMenuCopy.Tiles)
+            {
+                var name = root.Q<Button>("home-" + it.Id).Q(className: "kh-mm-tile-name");
+                Assert.That(name.style.textOverflow.value, Is.EqualTo(TextOverflow.Clip), it.Id + ": no ellipsis");
+                Assert.That(name.style.flexShrink.value, Is.EqualTo(0f), it.Id);
+                Assert.That(name.style.fontSize.value.value, Is.EqualTo(MenuTypeScale.FitName(z, it.Label, !it.Live)).Within(0.01f), it.Id);
+            }
             Assert.That(root.Q<Button>("home-missions").Q(className: "kh-mm-soon").style.fontSize.value.value, Is.EqualTo(z.Soon).Within(0.01f));
         }
     }

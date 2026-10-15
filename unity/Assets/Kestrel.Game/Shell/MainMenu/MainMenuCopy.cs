@@ -44,10 +44,7 @@ namespace Kestrel.Game.Shell
         public const float NarrowBelow = 500f;
         public static bool IsNarrow(float panelWidth) => panelWidth > 0f && panelWidth < NarrowBelow;
 
-        /// <summary>Minimum height of LAUNCH + two tile rows + gaps + hint padding, matching the USS min-heights.
-        /// The 3D rocket and telemetry end near 53% of the height, so controls must start below that.</summary>
-        public static float MinControlsHeight(bool narrow) => (narrow ? 60f : 68f) + 8f + 2f * (narrow ? 76f : 88f) + 8f + 34f;
-        public const float HeroBottomFrac = 0.53f;
+        // The 3D hero (rocket and telemetry) ends near 53% of the height; MenuTypeScale.HeroLift moves it clear of the controls.
 
         /// <summary>Letterbox bar height as a share of panel height (reel bars, mockup = 150/2532).</summary>
         public const float BarFrac = 0.06f;

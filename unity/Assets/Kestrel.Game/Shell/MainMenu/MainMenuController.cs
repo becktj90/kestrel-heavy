@@ -124,12 +124,12 @@ namespace Kestrel.Game.Shell
             }
             if (_hudTrim != null)
             {
-                float h = reduce ? 0.85f : 0.65f + 0.35f * MainMenuLayout.Pulse(time + 0.4f, false);
+                // Steady, same cyan accent, no pulse and no bloom-level emission: the frame no longer glows into the text.
                 var c = MainMenuMaterials.Cyan;
-                c.a = 0.45f + 0.4f * h;
+                c.a = 0.85f;
                 _hudTrim.SetColor("_BaseColor", c);
                 _hudTrim.SetColor("_Color", c);
-                if (_hudTrim.HasProperty("_EmissionColor")) _hudTrim.SetColor("_EmissionColor", MainMenuMaterials.Cyan * (1.4f + 2.2f * h));
+                if (_hudTrim.HasProperty("_EmissionColor")) _hudTrim.SetColor("_EmissionColor", MainMenuMaterials.Cyan * 1.0f);
             }
             float title = MainMenuLayout.TitleGlow(time, reduce);
             for (int i = 0; i < _glowLabels.Count; i++) _glowLabels[i].SetGlow(title);
@@ -185,9 +185,12 @@ namespace Kestrel.Game.Shell
         {
             var t = AddMesh(parent, "Slab", _cube, null, Vector3.zero, Quaternion.identity, Vector3.one);
             var rend = t.GetComponent<MeshRenderer>();
+            // Telemetry sits on an opaque dark panel (no emissive cyan glass behind the text): high contrast on every phone.
             Material mat = a.Id == "launch"
                 ? MainMenuMaterials.Body(MainMenuMaterials.LaunchRed, 0.35f, 0.58f, new Color(0.35f, 0.01f, 0.03f))
-                : MainMenuMaterials.Glass(MainMenuMaterials.GlassTint, 0.45f);
+                : a.Role == MenuTextRole.Hud
+                    ? MainMenuMaterials.Body(MainMenuMaterials.HudPanel, 0f, 0.05f, Color.black)
+                    : MainMenuMaterials.Glass(MainMenuMaterials.GlassTint, 0.45f);
             rend.sharedMaterial = Own(mat);
             return t;
         }
@@ -253,7 +256,7 @@ namespace Kestrel.Game.Shell
             }
             else if (a.Id == "kh1")
             {
-                Glow(MakeLabel(plate, MainMenuLayout.Designation, MenuTextRole.Dial, true));
+                MakeLabel(plate, MainMenuLayout.Designation, MenuTextRole.Dial, true);   // steady: no brightness pulse
             }
             else if (a.Id == "launch")
             {
@@ -488,6 +491,15 @@ namespace Kestrel.Game.Shell
             _cam.clearFlags = CameraClearFlags.SolidColor;
             _cam.backgroundColor = MainMenuMaterials.Bay;
             _cam.transform.SetPositionAndRotation(pose.Eye, Quaternion.LookRotation(pose.Forward, Vector3.up));
+            // Lens shift: move the whole 3D view up by HeroLift of the panel height so it never sits under the controls.
+            _cam.ResetProjectionMatrix();
+            float lift = Mathf.Clamp(MainMenuLayout.HeroLift, 0f, 0.2f);
+            if (lift > 0f)
+            {
+                var m = _cam.projectionMatrix;
+                m[1, 2] = -2f * lift;    // NDC y shift up (view space looks down -Z)
+                _cam.projectionMatrix = m;
+            }
         }
 
         void Capture()
@@ -514,6 +526,7 @@ namespace Kestrel.Game.Shell
             _cam.clearFlags = _clear;
             _cam.backgroundColor = _bg;
             _cam.transform.SetPositionAndRotation(_pos, _rot);
+            _cam.ResetProjectionMatrix();
             _captured = false;
         }
 

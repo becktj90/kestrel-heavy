@@ -17,6 +17,8 @@ namespace Kestrel.Game.Shell
         public static readonly Color LaunchRed = new Color(0.72f, 0.04f, 0.09f, 1f);
         public static readonly Color Cream = new Color(0.96f, 0.94f, 0.88f, 1f);
         public static readonly Color GlassTint = new Color(0.62f, 0.82f, 0.92f, 0.32f);
+        public static readonly Color HudPanel = new Color(0.02f, 0.05f, 0.08f, 1f);   // opaque telemetry face
+        public static readonly Color HudInk = new Color(1f, 1f, 1f, 1f);
         public static readonly Color Bay = new Color(0.04f, 0.05f, 0.07f, 1f);
 
         public static Material Body(Color color, float metallic, float smoothness, Color emission)
@@ -88,7 +90,7 @@ namespace Kestrel.Game.Shell
             switch (role)
             {
                 case MenuTextRole.Launch: return Color.white;
-                case MenuTextRole.Hud: return new Color(0.93f, 0.98f, 1f, 1f);
+                case MenuTextRole.Hud: return HudInk;
                 case MenuTextRole.Subtitle: return new Color(0.78f, 0.86f, 0.92f, 1f);
                 case MenuTextRole.Dial: return Cyan;
                 case MenuTextRole.Glass:

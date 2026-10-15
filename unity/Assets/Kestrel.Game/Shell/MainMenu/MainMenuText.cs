@@ -75,7 +75,9 @@ namespace Kestrel.Game.Shell
 
     public static class MainMenuText
     {
-        public const int PixelSize = 96;
+        public const int PixelSize = 48;   // atlas size close to the on-screen size: 96 px minified 3x+ shimmered on phones
+        /// <summary>Longest telemetry line. HUD lines are laid out as if this wide so every line gets the same glyph size.</summary>
+        public const string HudWidest = "THRUST: 851 kN";
         public const float FaceClearance = 0.02f;
         public const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:./%+, \u00B7-";
 
@@ -167,12 +169,23 @@ namespace Kestrel.Game.Shell
                 }
             }
             float extra = MainMenuLayout.Style(role).CharacterSpacing * PixelSize * 0.01f;
-            return Layout(glyphs, worldW, worldH, extra, verts, uvs, tris);
+            float minPxW = 0f;
+            if (role == MenuTextRole.Hud && glyphs.Count > 0)
+            {
+                var font = OsFont();
+                if (font != null)
+                {
+                    font.RequestCharactersInTexture(HudWidest, PixelSize, FontStyle.Normal);
+                    for (int i = 0; i < HudWidest.Length; i++)
+                        if (font.GetCharacterInfo(HudWidest[i], out var info, PixelSize, FontStyle.Normal)) minPxW += Mathf.Max(0f, info.advance) + extra;
+                }
+            }
+            return Layout(glyphs, worldW, worldH, extra, verts, uvs, tris, minPxW);
         }
 
         /// <summary>Writes one quad per visible glyph, centered in the box. False when there is nothing to draw.</summary>
         public static bool Layout(IList<GlyphStamp> glyphs, float worldW, float worldH, float extraPx,
-            List<Vector3> verts, List<Vector2> uvs, List<int> tris)
+            List<Vector3> verts, List<Vector2> uvs, List<int> tris, float minPxW = 0f)
         {
             if (verts == null || uvs == null || tris == null) return false;
             verts.Clear();
@@ -192,6 +205,7 @@ namespace Kestrel.Game.Shell
                 minY = Mathf.Min(minY, g.MinY);
                 maxY = Mathf.Max(maxY, g.MaxY);
             }
+            pxW = Mathf.Max(pxW, minPxW);
             float pxH = maxY - minY;
             if (drawn == 0 || pxW < 1f || pxH < 0.5f) return false;
             float fit = Mathf.Min(worldW / pxW, worldH / pxH);

@@ -17,6 +17,7 @@ namespace Kestrel.Game.Shell
         /// <paramref name="full"/> holds the full-bleed bars and grain. Returns the root parented in <paramref name="safe"/>.</summary>
         public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action hangar, bool reduceMotion)
         {
+            MainMenuLayout.HeroLift = 0f;
             var root = new VisualElement { name = RootName, pickingMode = PickingMode.Ignore };
             root.AddToClassList("kh-mm");
             if (reduceMotion) root.AddToClassList("kh-mm-reduce");
@@ -73,9 +74,18 @@ namespace Kestrel.Game.Shell
                 root.EnableInClassList("kh-mm-narrow", MainMenuCopy.IsNarrow(w));
                 float topInset = Mathf.Max(0f, safe.worldBound.yMin - full.worldBound.yMin);
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
-                ApplyScale(root, MenuTypeScale.Compute(w, h, topInset, botInset));
+                var z = MenuTypeScale.Compute(w, h, topInset, botInset);
+                ApplyScale(root, z);
                 top.style.height = MainMenuCopy.BarHeight(h, topInset);
                 bottom.style.height = MainMenuCopy.BarHeight(h, botInset);
+                MainMenuLayout.HeroLift = MeasureLift(root, safe, full, z, h, topInset);
+            });
+            launchKey.RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                float h = full.resolvedStyle.height; if (h <= 0f) return;
+                float topInset = Mathf.Max(0f, safe.worldBound.yMin - full.worldBound.yMin);
+                float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
+                MainMenuLayout.HeroLift = MeasureLift(root, safe, full, MenuTypeScale.Compute(full.resolvedStyle.width, h, topInset, botInset), h, topInset);
             });
             PlayIntro(root, reduceMotion);
             return root;
@@ -134,21 +144,50 @@ namespace Kestrel.Game.Shell
             Font("kh-mm-tile-caption", z.TileCaption, 0f);
             Font("kh-mm-soon", z.Soon, .15f);
             Font("kh-mm-hint", z.Hint, .18f);
+            // Explicit heights (not min-height) so the block is exactly what MenuTypeScale computed; Unity cannot inflate it.
+            root.style.paddingTop = MenuTypeScale.TopPad; root.style.paddingBottom = z.HintBand;
             var launch = root.Q("home-launch");
             if (launch != null)
             {
-                launch.style.minHeight = z.LaunchH;
-                float padH = MenuTypeScale.Clamp(16f * z.Scale, 12f, 20f), padV = MenuTypeScale.Clamp(10f * z.Scale, 8f, 14f);
+                launch.style.height = z.LaunchH; launch.style.minHeight = z.LaunchH; launch.style.flexShrink = 0;
+                launch.style.marginTop = 0; launch.style.marginBottom = MenuTypeScale.Gap;
+                float padH = MenuTypeScale.Clamp(14f * z.Scale, 10f, 18f), padV = MenuTypeScale.Clamp(8f * z.Scale, 6f, 10f);
                 launch.style.paddingLeft = padH; launch.style.paddingRight = padH; launch.style.paddingTop = padV; launch.style.paddingBottom = padV;
             }
             foreach (var it in MainMenuCopy.Tiles)
             {
                 var b = root.Q("home-" + it.Id); if (b == null) continue;
-                b.style.minHeight = z.TileH;
+                b.style.height = z.TileH; b.style.minHeight = z.TileH; b.style.flexShrink = 0;
+                b.style.marginTop = 0; b.style.marginBottom = MenuTypeScale.Gap;
                 b.style.paddingLeft = z.Pad; b.style.paddingRight = z.Pad; b.style.paddingTop = z.Pad; b.style.paddingBottom = z.Pad;
+                var head = b.Q(className: "kh-mm-tile-head");
+                if (head != null) head.style.minHeight = Mathf.Max(22f, z.TileName * MenuTypeScale.LineH);
+                var cap = b.Q(className: "kh-mm-tile-caption");
+                if (cap != null) { cap.style.marginTop = 3f; cap.style.marginLeft = 0; cap.style.marginRight = 0; cap.style.paddingLeft = 0; cap.style.paddingRight = 0; }
                 var name = b.Q(className: "kh-mm-tile-name");
-                if (name != null) { float n = MenuTypeScale.FitName(z, it.Label, !it.Live); name.style.fontSize = n; name.style.letterSpacing = n * .03f; }
+                if (name != null)
+                {
+                    float n = MenuTypeScale.FitName(z, it.Label, !it.Live);
+                    name.style.fontSize = n; name.style.letterSpacing = n * .03f;
+                    // No Label chrome and no shrink: the width was budgeted from the font metrics (with NameSlack).
+                    name.style.marginLeft = 0; name.style.marginRight = 0; name.style.paddingLeft = 0; name.style.paddingRight = 0;
+                    name.style.flexShrink = 0; name.style.textOverflow = TextOverflow.Clip;
+                }
+                var soon = b.Q(className: "kh-mm-soon");
+                if (soon != null) { soon.style.marginLeft = 4f; soon.style.marginTop = 0; soon.style.marginBottom = 0; soon.style.paddingLeft = 4f; soon.style.paddingRight = 4f; soon.style.paddingTop = 0; soon.style.paddingBottom = 0; }
             }
+        }
+
+        /// <summary>The hero lift from where the title block and the LAUNCH bar really ended up (layout rects, no intro translate);
+        /// the estimate from MenuTypeScale is used until the first layout and as a floor.</summary>
+        static float MeasureLift(VisualElement root, VisualElement safe, VisualElement full, MenuTypeScale.Sizes z, float h, float topInset)
+        {
+            float controlsTop = z.ControlsTop, titleBottom = z.TitleBottom;
+            var launch = root.Q("home-launch"); var title = root.Q("mm-title");
+            float baseY = topInset + root.layout.y;
+            if (launch != null && launch.layout.height > 1f) controlsTop = Mathf.Min(controlsTop, baseY + launch.layout.yMin);
+            if (title != null && title.layout.height > 1f) titleBottom = Mathf.Max(titleBottom, baseY + title.layout.yMax);
+            return MenuTypeScale.HeroLift(h, titleBottom, controlsTop);
         }
 
         /// <summary>Intro per motion-spec.md: elements start hidden (kh-mm-anim) and get kh-mm-in on a staggered schedule.
