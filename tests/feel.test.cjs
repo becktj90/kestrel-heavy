@@ -61,7 +61,7 @@ test('camera lead, fov and shake match the flight rig', async () => {
 
 test('risk meter names Max-Q on the arcade sample and stays quiet early', async () => {
   const { computeTelemetry } = await import(path.join(__dirname, '..', 'web/js/telemetry.js'));
-  const { evaluateRisk, DISPLAY_Q_LIM_PA, flightCue, airframeBand } = await import(path.join(root, 'feedback.js'));
+  const { evaluateRisk, DISPLAY_Q_LIM_PA, flightCue, airframeBand, qMeterNow } = await import(path.join(root, 'feedback.js'));
   const sample = (tClock, altitudeKm, fuel) => computeTelemetry({
     status: 'ASCENT', tClock, altitudeKm, throttle: 0.9, fuel, angle: 2, velocity: 0, dt: 1 / 60,
   });
@@ -81,8 +81,13 @@ test('risk meter names Max-Q on the arcade sample and stays quiet early', async 
   assert.equal(hurt.band, 'critical');
   assert.equal(airframeBand(0), 'lost');
   assert.equal(flightCue('breakup', true).shake, 0);
+  assert.equal(flightCue('breakup', true).flash, 0);
   assert.equal(flightCue('breakup', true).hapticMs, 0);
   assert.equal(flightCue('hit', false).hard, true);
+  const coast = evaluateRisk({ health01: 1, throttle01: 0, fuel01: Number.NaN, qPa: 0, qLimPa: DISPLAY_Q_LIM_PA, dvMargin: 0.2 });
+  assert.equal(coast.call, 'NOMINAL');
+  assert.equal(qMeterNow(1.5), 100);
+  assert.equal(qMeterNow(0.5), 50);
 });
 
 test('spatial grid skips far bodies and debris from one seed stays apart', async () => {

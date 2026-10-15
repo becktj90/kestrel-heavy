@@ -119,10 +119,14 @@ namespace Kestrel.Core.Feel
 
             double qNorm = s.QLimitPa > 1 ? s.DynPressure / s.QLimitPa : 0;
             if (qNorm < 0) qNorm = 0;
-            FovScale = CameraRig.FovScale(s.Mach, qNorm, reduced ? 0 : Punch);
+            FovScale = reduced ? 1 : CameraRig.FovScale(s.Mach, qNorm, Punch);
 
-            Flash *= Math.Exp(-4 * dt);
-            if (Flash < 1e-3) Flash = 0;
+            if (reduced) Flash = 0;
+            else
+            {
+                Flash *= Math.Exp(-4 * dt);
+                if (Flash < 1e-3) Flash = 0;
+            }
 
             double health = s.Lost ? 0 : s.Health01;
             var risk = HudRisk.Evaluate(health, s.ThrustFraction, s.Fuel01, s.DynPressure, s.QLimitPa, s.DvMargin);

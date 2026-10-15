@@ -96,6 +96,7 @@ namespace Kestrel.Core.Tests
             Assert.That(hit.Hard, Is.True);
             var calm = FlightCues.For("breakup", true);
             Assert.AreEqual(0, calm.Shake, 0);
+            Assert.AreEqual(0, calm.Flash, 0);
             Assert.AreEqual(0, calm.HapticMs, 0);
             Assert.That(calm.Hard, Is.False);
             Assert.AreEqual("nominal", AirframeBand.Of(1));
@@ -117,6 +118,8 @@ namespace Kestrel.Core.Tests
             var ok = HudRisk.Evaluate(1, 1, 1, 1000, 100000, 0.1);
             Assert.AreEqual("NOMINAL", ok.Call);
             Assert.AreEqual("", ok.Line);
+            var unknown = HudRisk.Evaluate(1, 0, double.NaN, 0, 100000, 0.2);
+            Assert.AreEqual("NOMINAL", unknown.Call);
         }
 
         [Test]
@@ -261,6 +264,8 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(0, calm.Shake.Vx, 0);
             Assert.AreEqual(0, calm.HapticMs);
             Assert.AreEqual(0, calm.LeadX, 0);
+            Assert.AreEqual(0, calm.Flash, 0);
+            Assert.AreEqual(1, calm.FovScale, 0);
         }
     }
 }

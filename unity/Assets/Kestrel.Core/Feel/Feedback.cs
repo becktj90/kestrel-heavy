@@ -29,7 +29,7 @@ namespace Kestrel.Core.Feel
             if (reduced)
             {
                 shake = 0;
-                flash *= 0.25;
+                flash = 0;
                 haptic = 0;
                 punch *= 0.2;
                 hard = false;
@@ -97,7 +97,8 @@ namespace Kestrel.Core.Feel
             if (qLimPa > 1 && !double.IsNaN(qPa)) qRisk = qPa / qLimPa;
             if (qRisk < 0 || double.IsNaN(qRisk)) qRisk = 0;
             if (qRisk > 1.5) qRisk = 1.5;
-            double thr = Clamp01(throttle01), fuel = Clamp01(fuel01);
+            bool fuelKnown = !double.IsNaN(fuel01);
+            double thr = Clamp01(throttle01), fuel = fuelKnown ? Clamp01(fuel01) : 1;
             double energy = thr * fuel;
             double integ = AirframeBand.Integrity(qPa, qLimPa, health01);
             string band = AirframeBand.Of(integ);
@@ -105,7 +106,7 @@ namespace Kestrel.Core.Feel
             if (band == "critical" || band == "lost") { call = "AIRFRAME"; line = "AIRFRAME — load is high"; }
             else if (qRisk >= Hot) { call = "MAX-Q"; line = "MAX-Q — the air is heavy"; }
             else if (!double.IsNaN(dvMargin) && dvMargin < 0) { call = "SHORT"; line = "SHORT — light on speed for this trip"; }
-            else if (energy < 0.12 && fuel < 0.2) { call = "PROP"; line = "PROP — tanks are thin"; }
+            else if (fuelKnown && energy < 0.12 && fuel < 0.2) { call = "PROP"; line = "PROP — tanks are thin"; }
             else { call = "NOMINAL"; line = ""; }
             return new RiskReadout
             {

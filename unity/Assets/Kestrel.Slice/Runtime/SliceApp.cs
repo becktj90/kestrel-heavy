@@ -970,13 +970,14 @@ namespace Kestrel.Slice
             if (juice != null) juice.Present(flight, rocketHeight, qLim, margin, reduced, Time.deltaTime);
             var v = vehicleRoot.position; var up = vehicleRoot.up;
             camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude), 4f, Time.deltaTime);
-            if (juice != null) camOffset += juice.Lead;
+            // Lead is this frame only. Folding it into camOffset would be smoothed back in and grow about 15×.
             // Grow the far plane with altitude so the coast under the framed horizon is never clipped.
             cam.farClipPlane = SiteHorizon.ClipFor((float)flight.Altitude);
             // Sea level is the anchored site root. Do not slide it: the coast has to stay under the pad.
             float fov = juice != null ? juice.Fov : cam.fieldOfView;
             cam.fieldOfView = fov;
-            cam.transform.position = PadGround.ClampAboveGround(v + camOffset, ground.position.y);
+            Vector3 lead = juice != null ? juice.Lead : Vector3.zero;
+            cam.transform.position = PadGround.ClampAboveGround(v + camOffset + lead, ground.position.y);
             var cp = cam.transform.position;
             cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, fov, (float)flight.Altitude, cp.y - ground.position.y);
             if (juice != null)

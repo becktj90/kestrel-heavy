@@ -1,7 +1,7 @@
 /** Mission-control telemetry overlay — tabular, high contrast, aria-live banners. */
 
 import { climbArmedFromLabel, paintThumbSteer, peekTouchSteer, setSteerSensitivity, TOUCH_STEER_DEAD_PX } from './input.js';
-import { evaluateRisk } from './feel/feedback.js';
+import { evaluateRisk, qMeterNow } from './feel/feedback.js';
 
 function el(id) {
   return document.getElementById(id);
@@ -424,11 +424,12 @@ export function renderRisk(snapshot) {
   if (hide) return;
   const risk = evaluateRisk(snapshot.risk);
   node.dataset.band = risk.band;
-  node.setAttribute('aria-valuenow', String(Math.round(Math.max(0, Math.min(1.5, risk.qRisk)) * 100)));
+  const shown = qMeterNow(risk.qRisk);
+  node.setAttribute('aria-valuenow', String(shown));
   const label = el('ng-risk-label');
   if (label && label.textContent !== risk.call) label.textContent = risk.call;
   const fill = el('ng-q-fill');
-  if (fill) fill.style.width = `${Math.round(Math.max(0, Math.min(1, risk.qRisk)) * 100)}%`;
+  if (fill) fill.style.width = `${shown}%`;
 }
 
 export function setHangar(settings, catalog, combo, onEquip) {

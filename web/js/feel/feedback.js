@@ -4,6 +4,12 @@
 export const DISPLAY_Q_LIM_PA = 30000;
 export const HOT = 0.85;
 
+/** Meter announcement, 0–100. Live q may run past the limit; the meter must not. */
+export function qMeterNow(qRisk) {
+  const v = Number.isFinite(qRisk) ? qRisk : 0;
+  return Math.round(Math.max(0, Math.min(1, v)) * 100);
+}
+
 export function flightCue(name, reduced) {
   let shake = 0;
   let flash = 0;
@@ -22,7 +28,7 @@ export function flightCue(name, reduced) {
   }
   if (reduced) {
     shake = 0;
-    flash *= 0.25;
+    flash = 0;
     hapticMs = 0;
     punch *= 0.2;
     hard = false;
@@ -71,7 +77,9 @@ export function evaluateRisk({ health01 = 1, throttle01 = 0, fuel01 = 1, qPa = 0
   let qRisk = qLimPa > 1 && Number.isFinite(qPa) ? qPa / qLimPa : 0;
   if (!Number.isFinite(qRisk) || qRisk < 0) qRisk = 0;
   if (qRisk > 1.5) qRisk = 1.5;
-  const energy = clamp01(throttle01) * clamp01(fuel01);
+  const fuelKnown = Number.isFinite(fuel01);
+  const fuel = fuelKnown ? clamp01(fuel01) : 1;
+  const energy = clamp01(throttle01) * fuel;
   const integrity = integrityOf(qPa, qLimPa, health01);
   const band = airframeBand(integrity);
   let call = 'NOMINAL';
@@ -85,7 +93,7 @@ export function evaluateRisk({ health01 = 1, throttle01 = 0, fuel01 = 1, qPa = 0
   } else if (Number.isFinite(dvMargin) && dvMargin < 0) {
     call = 'SHORT';
     line = 'SHORT — light on speed for this trip';
-  } else if (energy < 0.12 && clamp01(fuel01) < 0.2) {
+  } else if (fuelKnown && energy < 0.12 && fuel < 0.2) {
     call = 'PROP';
     line = 'PROP — tanks are thin';
   }

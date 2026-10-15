@@ -67,7 +67,7 @@ namespace Kestrel.Slice
                 QLimitPa = qLimPa,
                 DvMargin = dvMargin,
                 Health01 = flight.Lost ? 0 : 1,
-                Fuel01 = flight.Meco ? 0.08 : 1,
+                Fuel01 = flight.Sim.PropellantFraction,
                 Stage = flight.Sim.StageIdx,
             };
             presenter.Step(sample, dt, reduced);
@@ -110,7 +110,8 @@ namespace Kestrel.Slice
                 glow.intensity = 0f;
                 glow.enabled = false;
             }
-            float inten = (float)(flight.ThrustFraction * 3.2 + presenter.Flash * 6.0);
+            float flash = reduced ? 0f : (float)presenter.Flash;
+            float inten = (float)flight.ThrustFraction * 3.2f + flash * 6f;
             if (reduced) inten *= 0.35f;
             if (!flight.Running && !flight.Lost) inten = 0f;
             glow.range = Mathf.Max(18f, vehicleHeight * 0.55f);
