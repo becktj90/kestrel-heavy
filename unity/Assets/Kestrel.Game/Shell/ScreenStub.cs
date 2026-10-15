@@ -49,6 +49,7 @@ namespace Kestrel.Game.Shell
                 AddSpoken("home-" + id, a.Label, a.Spoken);
             }
             AddSpoken("kh1-readout", MainMenuLayout.Designation, MainMenuLayout.Find("kh1").Spoken);
+            _view.Add(AudioBar.Build());
             _menu = gameObject.AddComponent<MainMenuController>();
             _menu.Attach(shell);
         }
