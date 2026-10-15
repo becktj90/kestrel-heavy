@@ -67,11 +67,7 @@ namespace Kestrel.Game.Audio
         {
             muted = on;
             PlayerPrefs.SetInt(MutePref, on ? 1 : 0);
-            if (on)
-            {
-                if (Held) ReleaseSources();
-                voices.StopAll();
-            }
+            if (on) voices.StopAll();
             ApplyEngine();
         }
 
