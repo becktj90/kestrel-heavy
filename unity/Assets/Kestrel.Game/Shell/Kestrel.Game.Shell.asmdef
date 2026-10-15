@@ -5,7 +5,9 @@
         "Kestrel.Game.Layout",
         "Kestrel.Game.Quality",
         "Kestrel.Game.QualityCore",
-        "Kestrel.Game.Audio"
+        "Kestrel.Game.Audio",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -48,7 +48,29 @@ namespace Kestrel.Game.Editor
             EnsurePortrait();
             var panel = EnsurePanelSettings();
             EnsureScenes(panel, regenerateScenes);
+            EnsureMenuTmpShader();
             AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>A Resources material holding the TextMeshPro SDF shader, so the player build does not
+        /// strip it. Shader.Find alone does not keep a shader.</summary>
+        public static void EnsureMenuTmpShader()
+        {
+            Shader shader = Shader.Find("TextMeshPro/Mobile/Distance Field");
+            if (shader == null) shader = Shader.Find("TextMeshPro/Distance Field");
+            if (shader == null) return;
+            const string path = "Assets/Resources/UI/KH_MenuTmp.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(shader) { name = "KH_MenuTmp" };
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            else if (mat.shader != shader)
+            {
+                mat.shader = shader;
+                EditorUtility.SetDirty(mat);
+            }
         }
 
         public static void EnsurePortrait()
