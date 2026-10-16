@@ -7,6 +7,7 @@ using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
+using Kestrel.Core.Physics;
 using Kestrel.Core.Save;
 using UnityEngine;
 
@@ -49,6 +50,10 @@ namespace Kestrel.Slice
 
         static Catalog Load()
         {
+            // Nose, fin and interstage tables. The device has these in Resources and no checkout.
+            // A missing file must not throw: liftoff still flies on the built-in nose coefficients.
+            try { AeroModel.Install(Optional("fairings"), Optional("interstages"), Optional("fins")); }
+            catch (System.Exception e) { Debug.LogWarning("[Aero] catalogs: " + e.Message); }
             // Designer ranges come from data/designer-limits.json when it is synced; otherwise the built-in fallback.
             var limits = Optional("designer-limits");
             if (limits != null)

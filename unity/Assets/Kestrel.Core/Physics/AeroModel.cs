@@ -206,23 +206,58 @@ namespace Kestrel.Core.Physics
             return FinCdPlate * area / sRef;
         }
 
+        /// <summary>Player catalogs (Resources) win. A checkout is the editor and test path.
+        /// Neither one missing may throw: a device has no repo, and liftoff still needs a heating factor.</summary>
+        public static void Install(string fairingsJson, string interstagesJson, string finsJson)
+        {
+            if (string.IsNullOrEmpty(fairingsJson) && string.IsNullOrEmpty(interstagesJson) && string.IsNullOrEmpty(finsJson))
+                return;
+            lock (Gate) { tables = AeroTables.FromJson(fairingsJson, interstagesJson, finsJson); }
+        }
+
+        /// <summary>Drop a cached read so the next lookup opens the files again.</summary>
+        public static void ClearTables()
+        {
+            lock (Gate) { tables = null; }
+        }
+
         static AeroTables Tables()
         {
             if (tables != null) return tables;
             lock (Gate)
             {
                 if (tables != null) return tables;
-                tables = AeroTables.Load(RepoRoot());
+                tables = LoadOrEmpty(RepoRoot());
             }
             return tables;
+        }
+
+        static AeroTables LoadOrEmpty(string root)
+        {
+            if (string.IsNullOrEmpty(root)) return new AeroTables();
+            try { return AeroTables.Load(root); }
+            catch (Exception) { return new AeroTables(); }
         }
 
         static string RepoRoot()
         {
             var env = Environment.GetEnvironmentVariable("KESTREL_REPO_ROOT");
             string start = !string.IsNullOrEmpty(env) ? env : Directory.GetCurrentDirectory();
-            try { return Catalog.FindRepoRoot(start); }
-            catch (DirectoryNotFoundException) { return Catalog.FindRepoRoot(AppContext.BaseDirectory); }
+            if (TryRoot(start, out var root)) return root;
+            if (TryRoot(AppContext.BaseDirectory, out root)) return root;
+            return null;
+        }
+
+        static bool TryRoot(string start, out string root)
+        {
+            root = null;
+            if (string.IsNullOrEmpty(start)) return false;
+            try
+            {
+                root = Catalog.FindRepoRoot(start);
+                return !string.IsNullOrEmpty(root);
+            }
+            catch (Exception) { return false; }
         }
 
         sealed class FinRow
@@ -240,21 +275,32 @@ namespace Kestrel.Core.Physics
 
             public static AeroTables Load(string root)
             {
-                var t = new AeroTables();
                 string Read(string name) => File.ReadAllText(Path.Combine(root, "data", name));
-                foreach (JsonObject o in MiniJson.ParseObject(Read("fairings.json")).Arr("fairings"))
+                return FromJson(Read("fairings.json"), Read("interstages.json"), Read("fins.json"));
+            }
+
+            public static AeroTables FromJson(string fairingsJson, string interstagesJson, string finsJson)
+            {
+                var t = new AeroTables();
+                var fairings = Rows(fairingsJson, "fairings");
+                for (int i = 0; i < fairings.Count; i++)
                 {
+                    if (!(fairings[i] is JsonObject o)) continue;
                     string shape = o.Str("shape");
                     if (string.IsNullOrEmpty(shape) || DesignMath.NoseShapes.ContainsKey(shape) || t.noseExtra.ContainsKey(shape)) continue;
                     t.noseExtra[shape] = o.Num("cd");
                 }
-                foreach (JsonObject o in MiniJson.ParseObject(Read("interstages.json")).Arr("interstages"))
+                var gaps = Rows(interstagesJson, "interstages");
+                for (int i = 0; i < gaps.Count; i++)
                 {
+                    if (!(gaps[i] is JsonObject o)) continue;
                     string shape = o.Str("shape");
                     if (!string.IsNullOrEmpty(shape) && !t.interstage.ContainsKey(shape)) t.interstage[shape] = o.Num("dragDeltaCd");
                 }
-                foreach (JsonObject o in MiniJson.ParseObject(Read("fins.json")).Arr("fins"))
+                var plans = Rows(finsJson, "fins");
+                for (int i = 0; i < plans.Count; i++)
                 {
+                    if (!(plans[i] is JsonObject o)) continue;
                     string plan = o.Str("planform");
                     if (string.IsNullOrEmpty(plan) || t.fins.ContainsKey(plan)) continue;
                     t.fins[plan] = new FinRow
@@ -267,6 +313,13 @@ namespace Kestrel.Core.Physics
                     };
                 }
                 return t;
+            }
+
+            static List<object> Rows(string json, string key)
+            {
+                if (string.IsNullOrEmpty(json)) return new List<object>();
+                var arr = MiniJson.ParseObject(json).Arr(key);
+                return arr ?? new List<object>();
             }
 
             public double Nose(string nose)
