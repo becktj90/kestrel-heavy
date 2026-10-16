@@ -21,6 +21,7 @@ namespace Kestrel.Game.Guide
         {
             try
             {
+                GuideClipPlayer.SetInFlight(place == GuidePlace.Ascent);
                 var engine = EnsureEngine();
                 if (engine == null || doc == null) return;
                 ApplyDepth(engine);
@@ -51,12 +52,15 @@ namespace Kestrel.Game.Guide
             string json = ReadScript();
             if (string.IsNullOrEmpty(json)) return null;
             string root = RepoRoot() ?? "";
-            bool clips = GuideVoice.ClipsPresent(root);
+            int found = GuideClipPlayer.Announce(root);
+            bool clips = found > 0;
             bool designs = HasDesigns();
             var state = GuideState.Load(SaveDir(), clips, designs);
             state.Settings.VoiceAvailable = clips;
-            if (!clips) state.Settings.VoiceOn = false;
-            return new LiveGuideEngine(json, state, root);
+            // Clips ship with voice on. Settings > Voice is the narration mute, not this flag.
+            // A save written when the clips were missing had voice off; that is not a choice.
+            state.Settings.VoiceOn = clips;
+            return new LiveGuideEngine(json, state, root, clips);
         }
 
         public static void ApplyDepth(LiveGuideEngine engine)
