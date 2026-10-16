@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Vehicle;
 using Kestrel.Game.Failure;
 using Kestrel.Vehicle;
 using UnityEngine;
@@ -41,7 +42,7 @@ namespace Kestrel.Slice
         Transform[] legBits = new Transform[4];
         Transform plume, deck, dustRoot;
         ParticleSystem dust;
-        Material hotMat, deckMat;
+        UnityEngine.Material hotMat, deckMat;
         Mesh cube;
         double accum, downAge;
         float units = 1f;
@@ -401,12 +402,12 @@ namespace Kestrel.Slice
             var mesh = Cube();
             var src = pivot.GetComponentInChildren<MeshRenderer>();
             hotMat = null;
-            if (src != null && src.sharedMaterial != null) hotMat = new Material(src.sharedMaterial);
+            if (src != null && src.sharedMaterial != null) hotMat = new UnityEngine.Material(src.sharedMaterial);
             else
             {
                 var shader = Shader.Find("Sprites/Default");
                 if (shader == null) shader = Shader.Find("Unlit/Color");
-                if (shader != null) hotMat = new Material(shader);
+                if (shader != null) hotMat = new UnityEngine.Material(shader);
             }
             if (hotMat != null) owned.Add(hotMat);
             if (hotMat != null)
@@ -456,12 +457,12 @@ namespace Kestrel.Slice
         void BuildDeck()
         {
             if (deck != null) return;
-            if (hotMat != null) deckMat = new Material(hotMat);
+            if (hotMat != null) deckMat = new UnityEngine.Material(hotMat);
             else
             {
                 var shader = Shader.Find("Sprites/Default");
                 if (shader == null) shader = Shader.Find("Unlit/Color");
-                if (shader != null) deckMat = new Material(shader);
+                if (shader != null) deckMat = new UnityEngine.Material(shader);
             }
             if (deckMat != null) owned.Add(deckMat);
             if (deckMat != null)
@@ -474,7 +475,7 @@ namespace Kestrel.Slice
             deck = go.transform;
         }
 
-        GameObject MakeBit(string label, Material mat)
+        GameObject MakeBit(string label, UnityEngine.Material mat)
         {
             var go = new GameObject(label);
             go.layer = gameObject.layer;
