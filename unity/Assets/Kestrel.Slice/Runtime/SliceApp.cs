@@ -31,7 +31,7 @@ namespace Kestrel.Slice
         HangarExplodedView explodedView; Material explodedMat;
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
-        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; FlightJuice juice; GameObject rocketGO;
+        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; GameObject rocketGO;
         FlightChrome chrome;
         AscentHud ascentHud; Design flyingDesign;
         BirdFlockView birds;
@@ -354,6 +354,7 @@ namespace Kestrel.Slice
             hud.style.paddingLeft = p.x; hud.style.paddingTop = p.y; hud.style.paddingRight = p.z; hud.style.paddingBottom = p.w;
             chrome?.Layout(UnitsPerPoint());
             ascentHud?.Layout(UnitsPerPoint());
+            staging?.Layout(UnitsPerPoint());
         }
 
         /// <summary>Panel units per iOS point (panel scales with screen width, so this differs per device).</summary>
@@ -567,6 +568,20 @@ namespace Kestrel.Slice
             ApplyDesignFraming();
             // One registration: failure visuals and the post-flight card.
             Kestrel.Game.Failure.FailureHost.Attach(rocketGO, flight, ui, r);
+            AttachStaging(r);
+        }
+
+        /// <summary>Staging picture for this rocket. A failed prepare leaves the combined mesh as the flight picture.</summary>
+        void AttachStaging(RocketMeshBuilder.Result built)
+        {
+            if (rocketGO == null) return;
+            staging = rocketGO.GetComponent<FlightStageShow>();
+            if (staging == null) staging = rocketGO.AddComponent<FlightStageShow>();
+            try { staging.Prepare(SliceData.Catalog, design, built, hud); }
+            catch (System.Exception e) { Debug.LogWarning("[Staging] " + e.Message); }
+            failureShow = rocketGO.GetComponent<FlightFailureShow>();
+            if (failureShow == null) failureShow = rocketGO.AddComponent<FlightFailureShow>();
+            failureShow.Prepare(hud);
         }
 
         /// <summary>R2's exploded view (HangarExplodedView), rebuilt with the rocket and painted in the livery's main colour.
@@ -997,6 +1012,10 @@ namespace Kestrel.Slice
             if (ascentHud == null) ascentHud = new AscentHud();
             ascentHud.Open(hud, UnitsPerPoint());
             ascentHud.Present(flight);
+            staging?.Arm(flight, reduced);
+            staging?.Layout(UnitsPerPoint());
+            failureShow?.Arm(flight, reduced);
+            failureShow?.Layout(UnitsPerPoint());
         }
 
         void BackToDesign()
@@ -1070,6 +1089,8 @@ namespace Kestrel.Slice
                     cam.transform.position + cam.transform.right * juice.Shake.x + cam.transform.up * juice.Shake.y,
                     ground.position.y);
             flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
+            staging?.Present();
+            failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
             hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
