@@ -43,6 +43,83 @@
       "apoKm": 100,
       "periKm": -6371,
       "incDeg": 0
+    },
+    "leo600": {
+      "id": "leo600",
+      "label": "LEO 600 km",
+      "apoKm": 600,
+      "periKm": 600,
+      "incDeg": 51.6
+    },
+    "kh-m1": {
+      "id": "kh-m1",
+      "label": "First Hop",
+      "apoKm": 10,
+      "periKm": -1,
+      "incDeg": 0
+    },
+    "kh-m2": {
+      "id": "kh-m2",
+      "label": "Edge of Space",
+      "apoKm": 100,
+      "periKm": -1,
+      "incDeg": 0
+    },
+    "kh-m3": {
+      "id": "kh-m3",
+      "label": "Tiny Orbit",
+      "apoKm": 200,
+      "periKm": 200,
+      "incDeg": 28.5
+    },
+    "kh-m4": {
+      "id": "kh-m4",
+      "label": "Weather Eye",
+      "apoKm": 500,
+      "periKm": 500,
+      "incDeg": 51.6
+    },
+    "kh-m5": {
+      "id": "kh-m5",
+      "label": "Heavy Lifter",
+      "apoKm": 400,
+      "periKm": 400,
+      "incDeg": 51.6
+    },
+    "kh-m6": {
+      "id": "kh-m6",
+      "label": "Come Back",
+      "apoKm": 200,
+      "periKm": 200,
+      "incDeg": 51.6
+    },
+    "kh-m7": {
+      "id": "kh-m7",
+      "label": "Haven at Sea",
+      "apoKm": 35786,
+      "periKm": 200,
+      "incDeg": 27
+    },
+    "kh-m8": {
+      "id": "kh-m8",
+      "label": "Crew Day",
+      "apoKm": 400,
+      "periKm": 400,
+      "incDeg": 51.6
+    },
+    "kh-m9": {
+      "id": "kh-m9",
+      "label": "Moon Shot",
+      "apoKm": 385644.1678,
+      "periKm": 200,
+      "incDeg": 28.5
+    },
+    "kh-m10": {
+      "id": "kh-m10",
+      "label": "Big Reuse",
+      "apoKm": 35786,
+      "periKm": 200,
+      "incDeg": 27
     }
   },
   "payloads": [

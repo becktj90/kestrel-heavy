@@ -162,8 +162,12 @@ namespace Kestrel.Core.Data
         {
             string R(params string[] p) => System.IO.File.ReadAllText(System.IO.Path.Combine(repoRoot, System.IO.Path.Combine(p)));
             Designer.DesignerLimits.Load(repoRoot);
-            return FromJson(R("data", "propellants.json"), R("data", "engines.json"), R("data", "materials.json"),
+            var cat = FromJson(R("data", "propellants.json"), R("data", "engines.json"), R("data", "materials.json"),
                 R("data", "payloads.json"), R("data", "presets.json"), R("web", "js", "economy-data", "constants.json"));
+            // Mission targets (kh-m1 and the rest) have to be on every catalog the designer opens,
+            // not only the one HomeAutoBuild.Choose happened to mutate.
+            Kestrel.Core.Flight.HomeAutoBuild.InstallMissionOrbits(cat, Kestrel.Core.Flight.Campaign.Load(repoRoot));
+            return cat;
         }
 
         /// <summary>Walk up from a directory until a folder containing data/golden is found.</summary>

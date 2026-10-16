@@ -225,6 +225,29 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void EveryMissionRocketHasNonNegativeMarginOnAFreshCatalog()
+        {
+            for (int i = 0; i < campaign.Missions.Count; i++)
+            {
+                var mission = campaign.Missions[i];
+                var builtOn = Catalog.LoadFromRepo(Golden.Root);
+                var choice = HomeAutoBuild.Choose(builtOn, hangar.templates, mission);
+                Assert.IsNotNull(choice, mission.Id);
+                Assert.IsNotNull(choice.Design, mission.Id);
+                Assert.GreaterOrEqual(choice.MarginMps, 0, mission.Id + " " + choice.TemplateId + " " + choice.ReachLine);
+                Assert.AreEqual(mission.OrbitId, choice.Design.Obj("payload").Str("orbit"), mission.Id);
+                Assert.AreEqual(mission.MassKg, choice.Design.Obj("payload").Num("mass"), mission.Id);
+
+                var fresh = Catalog.LoadFromRepo(Golden.Root);
+                var shape = Kestrel.Core.Designer.Validate.Shape(fresh, choice.Design);
+                Assert.IsFalse(shape.errors.Exists(e => e.Contains("payload.orbit")), mission.Id + " " + string.Join("; ", shape.errors));
+                var readout = Kestrel.Core.Designer.Readout.Quick(fresh, choice.Design);
+                Assert.GreaterOrEqual(readout.margin, 0, mission.Id);
+                Assert.Greater(readout.liftoffTWR, 1, mission.Id);
+            }
+        }
+
+        [Test]
         public void PlainHomeLaunchStillDoesNotInventAMission()
         {
             var launch = GameSession.Apply(RouteId.HomeLaunch);

@@ -40,6 +40,43 @@ namespace Kestrel.Core.Flight
 
         public static string OrbitId(string missionId) => "kh-" + (missionId ?? "");
 
+        /// <summary>Catalog key for this mission. Mission data wins; older builds stamped kh- plus the id.</summary>
+        public static string OrbitKey(CampaignMission mission)
+        {
+            if (mission == null) return "";
+            if (!string.IsNullOrEmpty(mission.OrbitId)) return mission.OrbitId;
+            return OrbitId(mission.Id);
+        }
+
+        /// <summary>
+        /// Put every campaign target on the catalog. A design opened later, on a catalog Choose never touched,
+        /// still resolves payload.orbit. Existing catalog rows are left as authored.
+        /// </summary>
+        public static void InstallMissionOrbits(Catalog catalog, Campaign campaign)
+        {
+            if (catalog == null || campaign == null) return;
+            for (int i = 0; i < campaign.Missions.Count; i++)
+            {
+                var mission = campaign.Missions[i];
+                if (mission == null) continue;
+                var built = ToOrbit(mission);
+                if (string.IsNullOrEmpty(built.id)) continue;
+                if (!catalog.Orbits.ContainsKey(built.id)) catalog.Orbits[built.id] = built;
+                string legacy = OrbitId(mission.Id);
+                if (!string.IsNullOrEmpty(legacy) && legacy != built.id && !catalog.Orbits.ContainsKey(legacy))
+                {
+                    catalog.Orbits[legacy] = new OrbitTarget
+                    {
+                        id = legacy,
+                        label = built.label,
+                        apoKm = built.apoKm,
+                        periKm = built.periKm,
+                        incDeg = built.incDeg,
+                    };
+                }
+            }
+        }
+
         /// <summary>
         /// Register the mission target on the catalog so Stack, Readout and the flight agree.
         /// Apogee uses a negative periapsis (Stack's suborbital flag). C3 becomes the matching ellipse.
@@ -55,7 +92,7 @@ namespace Kestrel.Core.Flight
 
         public static OrbitTarget ToOrbit(CampaignMission mission)
         {
-            string id = OrbitId(mission.Id);
+            string id = OrbitKey(mission);
             string kind = mission.TargetKind ?? "";
             if (kind == "apogee")
                 return new OrbitTarget { id = id, label = mission.Name ?? id, apoKm = mission.ApoKm, periKm = -1, incDeg = 0 };
@@ -100,7 +137,52 @@ namespace Kestrel.Core.Flight
                 if (choice == null) continue;
                 if (best == null || Better(choice, best)) best = choice;
             }
+            if (best != null && !best.ReachesOrbit && best.Design != null)
+                best = RepairShortfall(catalog, templates, mission) ?? best;
             return best;
+        }
+
+        /// <summary>
+        /// None of the starters reach. Try the same tank, stage and engine moves as Fix it,
+        /// and keep the lightest repair that finishes with margin at least zero.
+        /// </summary>
+        static AutoBuildChoice RepairShortfall(Catalog catalog, IReadOnlyList<StarterTemplate> templates, CampaignMission mission)
+        {
+            AutoBuildChoice repaired = null;
+            for (int i = 0; i < templates.Count; i++)
+            {
+                var t = templates[i];
+                if (t == null || t.design == null) continue;
+                JsonObject design;
+                try { design = HangarEditor.ForkTemplate(t); }
+                catch (Exception) { continue; }
+                ApplyMission(catalog, design, mission);
+                var fix = DvMarginFix.Solve(catalog, design);
+                if (fix == null || !fix.Solved || fix.Design == null) continue;
+                var choice = new AutoBuildChoice
+                {
+                    TemplateId = t.id,
+                    TemplateName = t.name,
+                    TemplateOrder = t.order,
+                    Design = fix.Design,
+                };
+                try
+                {
+                    var spec = new PayloadSpec { id = mission.PayloadId, volume = mission.VolumeM3, diameter = mission.DiameterM };
+                    var fit = PayloadFit.Check(Design.FromJson(fix.Design), spec);
+                    choice.FitsPayload = fit.fits;
+                    choice.FitScore = fit.volumeMargin + fit.diameterMargin;
+                }
+                catch (Exception)
+                {
+                    choice.FitsPayload = false;
+                    choice.FitScore = double.NegativeInfinity;
+                }
+                FillPerformance(catalog, choice);
+                if (!choice.ReachesOrbit) continue;
+                if (repaired == null || Better(choice, repaired)) repaired = choice;
+            }
+            return repaired;
         }
 
         public static string VehicleLine(string name, double liftoffKg, double thrustN, double deltaV)
@@ -142,6 +224,13 @@ namespace Kestrel.Core.Flight
                 choice.FitsPayload = false;
                 choice.FitScore = double.NegativeInfinity;
             }
+            FillPerformance(catalog, choice);
+            return choice;
+        }
+
+        static void FillPerformance(Catalog catalog, AutoBuildChoice choice)
+        {
+            var design = choice.Design;
             try
             {
                 var q = Readout.Quick(catalog, design);
@@ -151,6 +240,7 @@ namespace Kestrel.Core.Flight
                 choice.MarginMps = q.totalDeltaV - q.required;
                 choice.LiftoffTwr = q.liftoffTWR;
                 choice.ReachesOrbit = choice.MarginMps >= 0 && !double.IsNaN(choice.MarginMps);
+                choice.ThrustN = 0;
                 if (q.stages != null && q.stages.Count > 0)
                     choice.ThrustN = q.stages[0].twr * q.stages[0].m0 * Atmosphere.G0;
             }
@@ -166,14 +256,13 @@ namespace Kestrel.Core.Flight
                 choice.LaunchEnabled = report != null && report.ok && report.blocks.Count == 0;
             }
             catch (Exception) { choice.LaunchEnabled = false; }
-            choice.VehicleLine = VehicleLine(template.name, choice.LiftoffMassKg, choice.ThrustN, choice.DeltaV);
+            choice.VehicleLine = VehicleLine(choice.TemplateName, choice.LiftoffMassKg, choice.ThrustN, choice.DeltaV);
             choice.ReachLine = ReachLine(choice.MarginMps);
-            return choice;
         }
 
         public static void ApplyMission(Catalog catalog, JsonObject design, CampaignMission mission)
         {
-            string orbit = OrbitId(mission.Id);
+            string orbit = OrbitKey(mission);
             if (!string.IsNullOrEmpty(mission.PayloadId))
                 HangarEditor.SetPayloadType(catalog, design, mission.PayloadId);
             var payload = design.Obj("payload");

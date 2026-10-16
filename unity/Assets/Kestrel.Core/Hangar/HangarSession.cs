@@ -179,6 +179,26 @@ namespace Kestrel.Core.Hangar
             return changes ?? new List<string>();
         }
 
+        /// <summary>
+        /// Close a negative Δv margin in one undo step: propellant, tanks, a stage, or a higher-Isp engine.
+        /// A design that still cannot reach is left unchanged; <see cref="DvFixResult.Reason"/> says why.
+        /// </summary>
+        public DvFixResult FixDeltaV()
+        {
+            DvFixResult result = null;
+            Apply(d =>
+            {
+                result = DvMarginFix.Solve(catalog, d);
+                if (result == null || !result.Solved || !result.Changed || result.Design == null) return Edit.None;
+                d.Clear();
+                d.Order.Clear();
+                foreach (var k in result.Design.Order) d.Add(k, JsonMut.Clone(result.Design[k]));
+                HangarEditor.Normalize(d);
+                return new Edit("Fixed the speed shortfall");
+            });
+            return result ?? new DvFixResult { Solved = false, Reason = "The speed for this trip could not be worked out. Lighten the cargo, raise the budget, or pick a different mission." };
+        }
+
         public bool Dirty => cleanSnapshot == null || Snapshot(Design) != cleanSnapshot;
 
         /// <summary>Save into the library: a new slot when this design has none yet, else overwrite its slot.</summary>
