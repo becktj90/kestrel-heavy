@@ -28,6 +28,7 @@
     {
       "index": 1,
       "id": "m1",
+      "orbit": "kh-m1",
       "name": "First Hop",
       "payloadId": "kid-box",
       "massKg": 50,
@@ -51,6 +52,7 @@
     {
       "index": 2,
       "id": "m2",
+      "orbit": "kh-m2",
       "name": "Edge of Space",
       "payloadId": "kid-box",
       "massKg": 100,
@@ -75,6 +77,7 @@
     {
       "index": 3,
       "id": "m3",
+      "orbit": "kh-m3",
       "name": "Tiny Orbit",
       "payloadId": "cubesat",
       "massKg": 20,
@@ -98,6 +101,7 @@
     {
       "index": 4,
       "id": "m4",
+      "orbit": "kh-m4",
       "name": "Weather Eye",
       "payloadId": "leo-sat",
       "massKg": 2500,
@@ -122,6 +126,7 @@
     {
       "index": 5,
       "id": "m5",
+      "orbit": "kh-m5",
       "name": "Heavy Lifter",
       "payloadId": "leo-sat",
       "massKg": 12000,
@@ -146,6 +151,7 @@
     {
       "index": 6,
       "id": "m6",
+      "orbit": "kh-m6",
       "name": "Come Back",
       "payloadId": "leo-sat",
       "massKg": 8000,
@@ -170,6 +176,7 @@
     {
       "index": 7,
       "id": "m7",
+      "orbit": "kh-m7",
       "name": "Haven at Sea",
       "payloadId": "gto-comsat",
       "massKg": 5500,
@@ -194,6 +201,7 @@
     {
       "index": 8,
       "id": "m8",
+      "orbit": "kh-m8",
       "name": "Crew Day",
       "payloadId": "crew-capsule",
       "massKg": 12000,
@@ -224,6 +232,7 @@
     {
       "index": 9,
       "id": "m9",
+      "orbit": "kh-m9",
       "name": "Moon Shot",
       "payloadId": "lunar-probe",
       "massKg": 3000,
@@ -248,6 +257,7 @@
     {
       "index": 10,
       "id": "m10",
+      "orbit": "kh-m10",
       "name": "Big Reuse",
       "payloadId": "gto-comsat",
       "massKg": 7000,

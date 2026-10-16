@@ -55,6 +55,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         bool confirmStep;
         bool wasMaxQStale = true;
         string pendingFocus;
+        string fixNote;
 
         public VisualElement Root => root;
         public bool IsGuided => progress != null && progress.View == StepperView.Guided;
@@ -175,6 +176,11 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var action = StepperModel.Forward(progress, report);
             if (action.FixIt)
             {
+                var check = report[progress.Current];
+                if (check != null && check.Code == "dv-margin")
+                {
+                    if (TryFixDeltaV()) return false;
+                }
                 FocusField(action.FocusField);
                 return false;
             }
@@ -479,7 +485,10 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var card = ui.CardBox();
             card.name = "stepper-check";
             card.Add(ui.Section("Check before next"));
-            string main = CheckMain(check);
+            string note = null;
+            if (check.Code == "dv-margin" && check.Gate == StepGate.Red) note = fixNote;
+            else fixNote = null;
+            string main = !string.IsNullOrEmpty(note) ? note : CheckMain(check);
             string mark = check.Gate == StepGate.Red ? "✕" : check.Gate == StepGate.Amber ? "!" : check.Gate == StepGate.Skip ? "–" : "✓";
             var body = ui.Text(mark + "  " + main, HangarUi.BodyPt, StateColor(GateColor(check.Gate)), bold: true);
             body.name = "stepper-check-body";
@@ -529,7 +538,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             StyleNav(ui, back, false);
             back.SetEnabled(backAction.Allowed);
             if (!backAction.Allowed) back.style.opacity = 0.4f;
-            var next = ui.Btn(forward.Label, () => PressForward(), ForwardTip(forward, check), minWidthPt: 140f);
+            string tipNote = check.Code == "dv-margin" && check.Gate == StepGate.Red ? fixNote : null;
+            var next = ui.Btn(forward.Label, () => PressForward(), ForwardTip(forward, check, tipNote), minWidthPt: 140f);
             next.name = "stepper-forward";
             next.style.flexGrow = 1;
             StyleNav(ui, next, true);
@@ -724,8 +734,30 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             button.style.color = HangarUi.Ink;
         }
 
-        static string ForwardTip(StepperAction action, StepCheck check)
+        bool TryFixDeltaV()
         {
+            if (bridge.Session == null) return false;
+            fixNote = null;
+            DvFixResult result;
+            try { result = bridge.Session.FixDeltaV(); }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Stepper] " + e.Message);
+                fixNote = "The speed for this trip could not be worked out. Lighten the cargo, raise the budget, or pick a different mission.";
+                Sync();
+                return false;
+            }
+            if (result != null && result.Solved) return true;
+            fixNote = result != null && !string.IsNullOrEmpty(result.Reason)
+                ? result.Reason
+                : "This rocket still cannot make the trip. Lighten the cargo, raise the budget, or pick a different mission.";
+            Sync();
+            return false;
+        }
+
+        static string ForwardTip(StepperAction action, StepCheck check, string fixNote)
+        {
+            if (action.FixIt && !string.IsNullOrEmpty(fixNote)) return fixNote;
             if (action.FixIt) return "Focus the control that fixes this. " + (check.Kid ?? "");
             if (action.NeedsConfirm && action.Launches) return StepperLaunch.ConfirmTitle;
             if (action.NeedsConfirm) return "This step has a warning. Confirm to go on.";

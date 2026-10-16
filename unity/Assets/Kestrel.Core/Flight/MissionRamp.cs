@@ -119,6 +119,8 @@ namespace Kestrel.Core.Flight
     {
         public int Index;
         public string Id, Name, PayloadId;
+        /// <summary>Catalog orbit id. Home stamps this on payload.orbit. Legacy builds used kh- plus the mission id.</summary>
+        public string OrbitId;
         public double MassKg, VolumeM3, DiameterM;
         public string TargetKind;
         public double ApoKm, PeriKm, IncDeg, C3Km2PerS2;
@@ -198,6 +200,7 @@ namespace Kestrel.Core.Flight
                 Id = o.Str("id"),
                 Name = o.Str("name"),
                 PayloadId = o.Str("payloadId"),
+                OrbitId = o.Str("orbit"),
                 MassKg = o.Num("massKg"),
                 VolumeM3 = o.Num("volumeM3"),
                 DiameterM = o.Num("diameterM"),
@@ -238,6 +241,7 @@ namespace Kestrel.Core.Flight
             }
             var unlocks = o.Arr("unlocks");
             if (unlocks != null) foreach (var x in unlocks) if (x is string s) m.Unlocks.Add(s);
+            if (string.IsNullOrEmpty(m.OrbitId)) m.OrbitId = "kh-" + (m.Id ?? "");
             return m;
         }
     }

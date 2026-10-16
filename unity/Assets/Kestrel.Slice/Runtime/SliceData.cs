@@ -4,7 +4,9 @@
 // the single source of truth.
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
+using Kestrel.Core.Json;
 using Kestrel.Core.Save;
 using UnityEngine;
 
@@ -54,7 +56,14 @@ namespace Kestrel.Slice
                 try { DesignerLimits.Active = DesignerLimits.Parse(Kestrel.Core.Json.MiniJson.ParseObject(limits)); }
                 catch (System.FormatException e) { Debug.LogWarning("[Hangar] designer-limits.json unreadable, using defaults: " + e.Message); }
             }
-            return Catalog.FromJson(T("propellants"), T("engines"), T("materials"), T("payloads"), T("presets"), T("constants"));
+            var cat = Catalog.FromJson(T("propellants"), T("engines"), T("materials"), T("payloads"), T("presets"), T("constants"));
+            var campaign = Optional("campaign");
+            if (campaign != null)
+            {
+                try { HomeAutoBuild.InstallMissionOrbits(cat, Campaign.FromJson(MiniJson.ParseObject(campaign))); }
+                catch (System.Exception e) { Debug.LogWarning("[Hangar] campaign orbits: " + e.Message); }
+            }
+            return cat;
         }
 
         /// <summary>Templates, Look catalog and budgets. Null (with a warning) when the files were not synced;
