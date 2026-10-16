@@ -122,7 +122,7 @@ namespace Kestrel.Game.Guide
             }
             voice.Hold(paused);
             ApplyScreen();
-            if (!GuidePopLayout.Shows(Place))
+            if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place))
             {
                 if (voice.Sounding || voice.HasClip || voice.CardId.Length > 0) Silence();
                 else pop.Hide();

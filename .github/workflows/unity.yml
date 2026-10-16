@@ -48,6 +48,9 @@ jobs:
         run: |
           mkdir -p unity/Assets/Resources/KestrelData
           cp data/*.json web/js/economy-data/constants.json unity/Assets/Resources/KestrelData/
+      - name: Pack Thrum guide clips into the player
+        if: env.HAS_LICENSE == 'true'
+        run: bash tools/pack-guide-clips.sh
       - uses: game-ci/unity-test-runner@v4
         if: env.HAS_LICENSE == 'true'
         id: tests
@@ -104,6 +107,9 @@ jobs:
         run: |
           mkdir -p unity/Assets/Resources/KestrelData
           cp data/*.json web/js/economy-data/constants.json unity/Assets/Resources/KestrelData/
+      - name: Pack Thrum guide clips into the player
+        if: env.HAS_LICENSE == 'true'
+        run: bash tools/pack-guide-clips.sh
       - uses: game-ci/unity-builder@v4
         if: env.HAS_LICENSE == 'true'
         env:

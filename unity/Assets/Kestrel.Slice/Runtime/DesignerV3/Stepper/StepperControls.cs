@@ -11,6 +11,7 @@ using Kestrel.Core.Designer.Stepper;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
+using Kestrel.Core.Vehicle;
 using Kestrel.Slice;
 using Kestrel.Slice.DesignerV3;
 using UnityEngine.UIElements;
@@ -68,7 +69,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 case DesignerStep.Recovery:
                     RecoveryMode(host, bridge, refreshers);
                     Legs(host, bridge, refreshers);
-                    Reserve(host, bridge, refreshers);
+                    Reserve(host, bridge, refreshers, engineer);
                     break;
                 case DesignerStep.Look:
                     Look(host, bridge, refreshers);
@@ -459,14 +460,29 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             host.Add(row);
         }
 
-        static void Reserve(VisualElement host, DesignerStepperBridge bridge, List<Action> refreshers)
+        static void Reserve(VisualElement host, DesignerStepperBridge bridge, List<Action> refreshers, bool engineer)
         {
-            var row = bridge.Ui.Stepper("Landing reserve", ReserveText, () => "Fuel held back for the trip home",
+            var row = bridge.Ui.Stepper("Landing reserve", ReserveText, () => TradeHint(bridge, engineer),
                 (dir, key) => bridge.Apply(d => HangarEditor.SetLandingReserve(d, 0, ReserveFraction(Stage0(d)) + dir * 0.01), key),
                 bridge.EndGesture, "land.reserve", refreshers);
             NameValue(row, "landingReserve");
             host.Add(row);
             string ReserveText() => (ReserveFraction(Stage0(bridge.Design)) * 100).ToString("0", Inv) + "%";
+        }
+
+        static string TradeHint(DesignerStepperBridge bridge, bool engineer)
+        {
+            try
+            {
+                if (bridge == null || bridge.Catalog == null || bridge.Design == null) return "Fuel held back for the trip home";
+                var trade = RecoveryTradeoff.Measure(bridge.Catalog, Design.FromJson(bridge.Design));
+                string line = engineer ? trade.Engineer : trade.Kid;
+                return string.IsNullOrEmpty(line) ? "Fuel held back for the trip home" : line;
+            }
+            catch (Exception)
+            {
+                return "Fuel held back for the trip home";
+            }
         }
 
         static double ReserveFraction(JsonObject stage)
@@ -514,6 +530,11 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var caption = ui.Text("Pre-flight" + (string.IsNullOrEmpty(seed) ? "" : " · seed " + seed), HangarUi.SmallPt, HangarUi.Dim, bold: true);
             caption.name = "stepper-seed";
             host.Add(caption);
+            var trade = ui.Text(TradeHint(bridge, engineer), HangarUi.BodyPt, HangarUi.Dim);
+            trade.name = "recovery-tradeoff";
+            trade.style.whiteSpace = WhiteSpace.Normal;
+            host.Add(trade);
+            refreshers.Add(() => trade.text = TradeHint(bridge, engineer));
 
             QuickReadout readout = null;
             try { readout = Readout.Quick(bridge.Catalog, bridge.Design); }

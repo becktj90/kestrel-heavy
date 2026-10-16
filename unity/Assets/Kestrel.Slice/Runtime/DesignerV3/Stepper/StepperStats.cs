@@ -5,7 +5,9 @@ using System.Globalization;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Designer.Stepper;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
+using Kestrel.Core.Vehicle;
 using Kestrel.Slice;
 using Kestrel.Slice.DesignerV3;
 
@@ -100,6 +102,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                     return new StepStat("landingNeed", "Need", HangarFormat.Ms(r.landingNeed_mps.Value), CellState.Neutral);
                 case "recoveryMode":
                     return new StepStat("recoveryMode", "Landing", ModeLabel(StepperChecks.RecoveryMode(design, null)), CellState.Neutral);
+                case "payloadCost":
+                    return PayloadCost(catalog, design);
                 case "name":
                     string name = design?.Obj("livery")?.Str("name");
                     if (string.IsNullOrEmpty(name)) name = design?.Str("name");
@@ -129,6 +133,23 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 state = ratio > 1 ? CellState.Bad : ratio > StepperChecks.MaxQAmberFraction ? CellState.Warn : CellState.Good;
             }
             return new StepStat(key, "Max-Q", val + " kPa", state);
+        }
+
+        static StepStat PayloadCost(Catalog catalog, JsonObject design)
+        {
+            if (catalog == null || design == null) return Dash("payloadCost", "Cargo");
+            try
+            {
+                var parsed = Design.FromJson(design);
+                var trade = RecoveryTradeoff.Measure(catalog, parsed);
+                string val = trade.PayloadCostKg.ToString("0", Inv) + " kg";
+                var state = trade.PayloadCostKg > 1 ? CellState.Warn : CellState.Neutral;
+                return new StepStat("payloadCost", "Cargo", val, state, trade.Kid);
+            }
+            catch (System.Exception)
+            {
+                return Dash("payloadCost", "Cargo");
+            }
         }
 
         static StepStat Dash(string key, string label) => new StepStat(key, label, "—", CellState.Neutral);

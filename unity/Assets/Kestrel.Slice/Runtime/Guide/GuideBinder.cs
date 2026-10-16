@@ -78,6 +78,7 @@ namespace Kestrel.Slice
 
         static void Hide()
         {
+            GuideClipPlayer.SetInFlight(true);
             var doc = UnityEngine.Object.FindAnyObjectByType<UIDocument>();
             if (doc == null) return;
             var driver = doc.GetComponent<GuideBoxDriver>();

@@ -31,6 +31,15 @@ namespace Kestrel.Core.Guide
 
         public int Count => byCard.Count;
 
+        /// <summary>Every card, in manifest order.</summary>
+        public IEnumerable<GuideClip> Clips
+        {
+            get
+            {
+                foreach (var clip in byCard.Values) yield return clip;
+            }
+        }
+
         public static GuideClipCatalog Load(string repoRoot)
         {
             try

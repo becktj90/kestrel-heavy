@@ -31,7 +31,8 @@ namespace Kestrel.Slice
         HangarExplodedView explodedView; Material explodedMat;
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
-        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; GameObject rocketGO;
+        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; RecoveryShow recovery; GameObject rocketGO;
+        Kestrel.Vehicle.FinCluster landingFins; Kestrel.Vehicle.StrutCluster landingLegs;
         FlightChrome chrome;
         AscentHud ascentHud; Design flyingDesign;
         BirdFlockView birds;
@@ -582,6 +583,9 @@ namespace Kestrel.Slice
             failureShow = rocketGO.GetComponent<FlightFailureShow>();
             if (failureShow == null) failureShow = rocketGO.AddComponent<FlightFailureShow>();
             failureShow.Prepare(hud);
+            recovery = rocketGO.GetComponent<RecoveryShow>();
+            if (recovery == null) recovery = rocketGO.AddComponent<RecoveryShow>();
+            recovery.Bind(landingFins, landingLegs, hud);
         }
 
         /// <summary>R2's exploded view (HangarExplodedView), rebuilt with the rocket and painted in the livery's main colour.
@@ -798,6 +802,8 @@ namespace Kestrel.Slice
         /// <summary>Deployed legs and grid fins, only when the design asks for them. Stock Kestrel Heavy has both.</summary>
         void AddLanding(RocketMeshBuilder.Result r)
         {
+            landingLegs = null;
+            landingFins = null;
             if (design == null || (!design.legs && !design.gridFins)) return;
             float radius = 0f;
             if (r.tanks != null)
@@ -812,6 +818,7 @@ namespace Kestrel.Slice
                 cluster.ViewCamera = cam;
                 cluster.Gate = gate;
                 cluster.Init(legs, Kestrel.Kit.KitBudgets.Medium);
+                landingLegs = cluster;
             }
             if (design.gridFins)
             {
@@ -822,6 +829,7 @@ namespace Kestrel.Slice
                 cluster.ViewCamera = cam;
                 cluster.Gate = gate;
                 cluster.Init(fins, Kestrel.Kit.KitBudgets.Medium);
+                landingFins = cluster;
             }
         }
 
@@ -1016,6 +1024,8 @@ namespace Kestrel.Slice
             staging?.Layout(UnitsPerPoint());
             failureShow?.Arm(flight, reduced);
             failureShow?.Layout(UnitsPerPoint());
+            recovery?.Arm(flight, staging, SliceData.Catalog, design, engineer, reduced);
+            recovery?.Layout(UnitsPerPoint());
         }
 
         void BackToDesign()
@@ -1023,6 +1033,8 @@ namespace Kestrel.Slice
             SetFlightPaused(false);
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
             counting = false; sequence = null; flight.enabled = false; cam.ResetProjectionMatrix();
+            recovery?.Stop();
+            RecoveryLog.Clear();
             if (juice != null) juice.Reset();
             cam.fieldOfView = FlightJuice.BaseFov;
             ascentHud?.Close();
@@ -1090,6 +1102,8 @@ namespace Kestrel.Slice
                     ground.position.y);
             flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
+            recovery?.Present(Time.unscaledDeltaTime);
+            if (recovery != null && ground != null) recovery.Aim(cam, ground.position.y);
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";

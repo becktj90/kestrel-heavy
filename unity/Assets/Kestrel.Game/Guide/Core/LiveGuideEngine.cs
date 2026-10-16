@@ -20,6 +20,7 @@ namespace Kestrel.Game.Guide
         readonly CoreScript script;
         readonly CoreState state;
         readonly string repoRoot;
+        readonly bool clipsKnown;
         readonly List<GuideBeat> queued = new List<GuideBeat>();
         readonly HashSet<string> skippedSteps = new HashSet<string>();
         readonly HashSet<string> thisFlight = new HashSet<string>();
@@ -30,12 +31,19 @@ namespace Kestrel.Game.Guide
         int reportStamp;
 
         public LiveGuideEngine(string guideJson, CoreState state, string repoRoot)
+            : this(guideJson, state, repoRoot, null)
+        {
+        }
+
+        /// <param name="clipsOverride">Player layout (StreamingAssets or Resources). Null asks the repo folder.</param>
+        public LiveGuideEngine(string guideJson, CoreState state, string repoRoot, bool? clipsOverride)
         {
             if (string.IsNullOrEmpty(guideJson)) throw new ArgumentException("guide json missing", nameof(guideJson));
             script = CoreScript.Parse(guideJson);
             this.state = state ?? CoreState.Fresh(false, false);
             this.repoRoot = repoRoot ?? "";
-            bool clips = CoreVoice.ClipsPresent(this.repoRoot);
+            bool clips = clipsOverride ?? CoreVoice.ClipsPresent(this.repoRoot);
+            clipsKnown = clips;
             this.state.Settings.VoiceAvailable = clips;
             if (!clips) this.state.Settings.VoiceOn = false;
             PullSettings();
@@ -73,7 +81,7 @@ namespace Kestrel.Game.Guide
             settings.ReduceMotion = state.Settings.ReduceMotion;
             settings.SubtitlesOn = true;
             settings.ReadAloud = false;
-            bool clips = CoreVoice.ClipsPresent(repoRoot);
+            bool clips = clipsKnown || CoreVoice.ClipsPresent(repoRoot);
             state.Settings.VoiceAvailable = clips;
             if (!clips) state.Settings.VoiceOn = false;
         }

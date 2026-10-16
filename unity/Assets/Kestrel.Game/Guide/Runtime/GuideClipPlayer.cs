@@ -1,5 +1,6 @@
-// Plays one Thrum card the way mission control plays a take: Resources/Narration, voice bus,
-// duck while it sounds, pause with the flight, stop when Voice is off.
+// Plays one Thrum card the way mission control plays a take: voice bus, duck while it sounds,
+// pause with the flight, stop when Voice is off. Clips load from Resources, then StreamingAssets
+// (iOS file and WebGL URL), then the repo path the editor still has.
 using System;
 using System.Collections;
 using System.IO;
@@ -27,12 +28,17 @@ namespace Kestrel.Game.Guide
         bool sawAudio;
         bool ducked;
 
+        /// <summary>Ascent. Play stops and stays quiet until the ground calls again.</summary>
+        public static bool InFlight { get; private set; }
+
         public string CardId { get; private set; } = "";
         public string LastResource { get; private set; } = "";
         public bool Missing { get; private set; }
         public bool HasClip { get; private set; }
         public bool Sounding { get; private set; }
         public bool Held { get; private set; }
+
+        public static void SetInFlight(bool on) => InFlight = on;
 
         public void Bind(AudioDirector audio) => director = audio;
 
@@ -55,7 +61,7 @@ namespace Kestrel.Game.Guide
 
         public void Play(string cardId, bool allowed)
         {
-            if (!allowed || string.IsNullOrEmpty(cardId))
+            if (InFlight || !allowed || string.IsNullOrEmpty(cardId))
             {
                 Stop();
                 return;
@@ -87,11 +93,18 @@ namespace Kestrel.Game.Guide
                 StartClip(loaded, clip.Duration);
                 return;
             }
+            if (TryStreaming(GuideClipPack.FileName(clip), out string streamed))
+            {
+                loading = true;
+                if (fileLoad != null) StopCoroutine(fileLoad);
+                fileLoad = StartCoroutine(LoadFile(streamed, clip.FullPath, clip.Duration, mine));
+                return;
+            }
             if (!string.IsNullOrEmpty(clip.FullPath) && File.Exists(clip.FullPath))
             {
                 loading = true;
                 if (fileLoad != null) StopCoroutine(fileLoad);
-                fileLoad = StartCoroutine(LoadFile(clip.FullPath, clip.Duration, mine));
+                fileLoad = StartCoroutine(LoadFile(ToUrl(clip.FullPath), null, clip.Duration, mine));
                 return;
             }
             Missing = true;
@@ -100,7 +113,7 @@ namespace Kestrel.Game.Guide
 
         public void Replay()
         {
-            if (voice == null || voice.clip == null || Held) return;
+            if (InFlight || AudioPrefs.NarrationMuted || voice == null || voice.clip == null || Held) return;
             voice.time = 0f;
             voice.volume = MixerLevels.Bus(false, MixerLevels.Voice, 1f);
             if (Application.isPlaying) voice.Play();
@@ -127,7 +140,37 @@ namespace Kestrel.Game.Guide
             StopVoice();
         }
 
-        public static GuideClipCatalog ReadManifest(string repoRoot)
+        public static GuideClipCatalog ReadManifest(string repoRoot) => LoadCatalog(repoRoot);
+
+        /// <summary>One boot line. The number is files on disk, or the manifest count when the
+        /// platform cannot stat StreamingAssets (WebGL).</summary>
+        public static int Announce(string repoRoot)
+        {
+            var catalog = LoadCatalog(repoRoot);
+            int found = ClipsFound(catalog, repoRoot);
+            Debug.Log("[Kestrel] guide clips: " + found + " found");
+            return found;
+        }
+
+        /// <summary>Manifest cards the player can name. StreamingAssets when the files are on disk,
+        /// otherwise the repo folder, otherwise the manifest count (WebGL cannot stat its URL).</summary>
+        public static int ClipsFound(GuideClipCatalog catalog, string repoRoot)
+        {
+            int streamed = 0;
+            try
+            {
+                string root = Application.streamingAssetsPath;
+                if (!string.IsNullOrEmpty(root) && root.IndexOf("://", StringComparison.Ordinal) < 0)
+                    streamed = GuideClipPack.CountAudio(Path.Combine(root, "narration", "guide"));
+            }
+            catch (Exception) { streamed = 0; }
+            if (streamed > 0) return streamed;
+            int repo = GuideClipPack.CountAudio(Path.Combine(repoRoot ?? "", "assets", "narration", "guide"));
+            if (repo > 0) return repo;
+            return catalog != null ? catalog.Count : 0;
+        }
+
+        public static GuideClipCatalog LoadCatalog(string repoRoot)
         {
             var fromRepo = GuideClipCatalog.Load(repoRoot);
             if (fromRepo.Count > 0) return fromRepo;
@@ -172,21 +215,21 @@ namespace Kestrel.Game.Guide
             sawAudio = false;
             HasClip = true;
             Missing = false;
-            Sounding = !Held;
             voice.Stop();
             voice.clip = clip;
-            voice.volume = MixerLevels.Bus(false, MixerLevels.Voice, 1f);
-            if (Application.isPlaying && !Held) voice.Play();
-            else Sounding = false;
-            Duck(!Held);
+            voice.volume = MixerLevels.Bus(AudioPrefs.NarrationMuted, MixerLevels.Voice, 1f);
+            bool play = Application.isPlaying && !Held && !InFlight && !AudioPrefs.NarrationMuted;
+            Sounding = play;
+            if (play) voice.Play();
+            Duck(play);
         }
 
-        IEnumerator LoadFile(string path, float duration, int mine)
+        IEnumerator LoadFile(string url, string repoFallback, float duration, int mine)
         {
             AudioType type = AudioType.MPEG;
-            if (path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) type = AudioType.WAV;
-            else if (path.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase)) type = AudioType.OGGVORBIS;
-            using (var req = UnityWebRequestMultimedia.GetAudioClip("file://" + path, type))
+            if (url.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) type = AudioType.WAV;
+            else if (url.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase)) type = AudioType.OGGVORBIS;
+            using (var req = UnityWebRequestMultimedia.GetAudioClip(url, type))
             {
                 yield return req.SendWebRequest();
                 fileLoad = null;
@@ -194,6 +237,12 @@ namespace Kestrel.Game.Guide
                 if (mine != token) yield break;
                 if (req.result != UnityWebRequest.Result.Success)
                 {
+                    if (!string.IsNullOrEmpty(repoFallback) && File.Exists(repoFallback) && ToUrl(repoFallback) != url)
+                    {
+                        loading = true;
+                        fileLoad = StartCoroutine(LoadFile(ToUrl(repoFallback), null, duration, mine));
+                        yield break;
+                    }
                     Missing = true;
                     StopVoice();
                     yield break;
@@ -207,6 +256,33 @@ namespace Kestrel.Game.Guide
                 }
                 StartClip(clip, duration);
             }
+        }
+
+        static bool TryStreaming(string fileName, out string url)
+        {
+            url = null;
+            if (string.IsNullOrEmpty(fileName)) return false;
+            string root;
+            try { root = Application.streamingAssetsPath; }
+            catch (Exception) { return false; }
+            if (string.IsNullOrEmpty(root)) return false;
+            string slash = root.Replace('\\', '/').TrimEnd('/');
+            if (slash.IndexOf("://", StringComparison.Ordinal) >= 0)
+            {
+                url = slash + "/narration/guide/" + fileName;
+                return true;
+            }
+            string disk = Path.Combine(root, "narration", "guide", fileName);
+            if (!File.Exists(disk)) return false;
+            url = ToUrl(disk);
+            return true;
+        }
+
+        static string ToUrl(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            if (path.IndexOf("://", StringComparison.Ordinal) >= 0) return path;
+            return "file://" + path;
         }
 
         void StopVoice()

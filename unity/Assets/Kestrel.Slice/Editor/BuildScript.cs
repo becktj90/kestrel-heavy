@@ -23,10 +23,12 @@ namespace Kestrel.Slice.Editor
             }
             SliceBootstrap.EnsureAll();
             global::Kestrel.Game.Editor.ShellSetup.EnsureAll();
+            string[] scenes = BuildScenes();
+            PackGuideClips();
             Directory.CreateDirectory(path);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = BuildScenes(),
+                scenes = scenes,
                 locationPathName = path,
                 target = BuildTarget.iOS,
                 options = BuildOptions.None,
@@ -50,6 +52,26 @@ namespace Kestrel.Slice.Editor
             if (list[0] != "Assets/Scenes/Shell/Boot.unity")
                 throw new InvalidOperationException("Shipping iOS build must start with the Boot scene.");
             return list.ToArray();
+        }
+
+        /// <summary>Copy Thrum's mp3s into StreamingAssets and the manifest into Resources
+        /// before the player build snapshots Assets. A missing repo (the boundary-fake tests)
+        /// leaves the build alone. A missing clip fails the build.</summary>
+        public static void PackGuideClips()
+        {
+            try
+            {
+                string root = global::Kestrel.Core.Data.Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
+                int n = global::Kestrel.Core.Guide.GuideClipPack.Stage(root);
+                Debug.Log($"[Kestrel] guide clips staged: {n}");
+            }
+            catch (DirectoryNotFoundException e)
+            {
+                Debug.Log("[Kestrel] guide clips not staged: " + e.Message);
+            }
+#if UNITY_EDITOR
+            AssetDatabase.Refresh();
+#endif
         }
 
         static string Arg(string name)

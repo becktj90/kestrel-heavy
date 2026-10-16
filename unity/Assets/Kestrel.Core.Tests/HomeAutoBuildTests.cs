@@ -187,6 +187,28 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void LaunchOnMainOpensTheBriefingNotTheHangar()
+        {
+            string flow = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Game", "Shell", "SceneFlow.cs"));
+            int launch = flow.IndexOf("if (controlId == \"launch\")", System.StringComparison.Ordinal);
+            int design = flow.IndexOf("if (controlId == \"design\")", System.StringComparison.Ordinal);
+            Assert.Greater(launch, 0);
+            Assert.Greater(design, launch);
+            string branch = flow.Substring(launch, design - launch);
+            StringAssert.Contains("HomeLaunchRoute()", branch);
+            Assert.That(branch, Does.Not.Contain("HomeHangar"));
+            StringAssert.Contains("HomeRoutes.Launch", flow);
+            string stub = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Game", "Shell", "ScreenStub.cs"));
+            StringAssert.Contains("HomePressed(\"launch\")", stub);
+            string screen = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Game", "Campaign", "BriefingScreen.cs"));
+            StringAssert.Contains("To the pad", screen);
+            var route = HomeRoutes.Launch(campaign, 0, catalog, hangar.templates);
+            Assert.AreEqual(SessionScreens.Missions, route.Screen);
+            Assert.AreEqual(SessionScreens.Briefing, route.Overlay);
+            Assert.IsTrue(route.Session.AutoPad);
+        }
+
+        [Test]
         public void MissingCampaignFallsBackWithoutInventingARocket()
         {
             var launch = HomeRoutes.Launch(null, 0, catalog, hangar.templates);

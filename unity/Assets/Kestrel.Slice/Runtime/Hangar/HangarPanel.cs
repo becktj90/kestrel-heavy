@@ -662,6 +662,15 @@ namespace Kestrel.Slice
             return col;
         }
 
+        /// <summary>The Fix it button. One undoable edit, the change the warning already suggests.</summary>
+        public Edit FixAdvisory(Advisory advisory)
+        {
+            var edit = session.Apply(d => AdvisoryFix.Apply(C, d, advisory));
+            status = edit.changed ? edit.what : "Nothing to change.";
+            Rebuild();
+            return edit;
+        }
+
         VisualElement AdvisoryCard(Advisory a, string key)
         {
             var c = ui.CardBox();
@@ -675,6 +684,14 @@ namespace Kestrel.Slice
             bool open = engineer || expanded.Contains(key);
             if (!engineer) head.Add(ui.Btn(open ? "Less" : "More", () => { if (!expanded.Add(key)) expanded.Remove(key); Rebuild(); }, open ? "Hide the details" : "Show the engineer details"));
             head.Add(ui.Btn("Show", () => { session.Select(a.part); FocusRequested?.Invoke(a.part); Show(Tab.Part); }, "Go to the part"));
+            if (AdvisoryFix.CanFix(C, D, a))
+            {
+                var row = a;
+                var fix = ui.Btn("Fix it", () => FixAdvisory(row), "Apply the suggested change");
+                fix.name = "advisory-fix-" + a.code;
+                head.Add(fix);
+            }
+            head.style.flexWrap = Wrap.Wrap;
             c.Add(head);
             c.Add(ui.Text(a.kid, HangarUi.BodyPt));
             if (open && !string.IsNullOrEmpty(a.engineer) && a.engineer != a.kid) c.Add(ui.Text(a.engineer, HangarUi.SmallPt, HangarUi.Dim));
