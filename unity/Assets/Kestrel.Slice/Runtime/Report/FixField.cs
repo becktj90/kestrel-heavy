@@ -30,6 +30,10 @@ namespace Kestrel.Slice
                 case "prop-depletion": return new FixField(kind, "propellants", "propMass", "Propellant", "Propellant load");
                 case "separation-collision": return new FixField(kind, "stages", "sepImpulse", "Stages", "Separation push");
                 case "leg-collapse": return new FixField(kind, "recovery", "legs.kind", "Recovery", "Landing legs");
+                case "recovery-fuel": return new FixField(kind, "recovery", "landingReserve", "Recovery", "Landing reserve");
+                case "recovery-fast": return new FixField(kind, "recovery", "legs.kind", "Recovery", "Landing legs");
+                case "recovery-tilt": return new FixField(kind, "recovery", "landingReserve", "Recovery", "Landing reserve");
+                case "recovery-miss": return new FixField(kind, "recovery", "recoveryMode", "Recovery", "Where it comes down");
                 case "engine-out": return new FixField(kind, "engines", "engineCount", "Engines", "Engine count");
                 default: return new FixField(kind ?? "", "structure", "safetyFactor", "Structure", "Safety factor");
             }

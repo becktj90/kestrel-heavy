@@ -93,6 +93,7 @@ namespace Kestrel.Game.Failure
             if (result.failure == null)
             {
                 if (flight.Running) return;
+                if (RecoveryLog.Active) return;
                 reported = true;
                 reduce = Comfort.ReduceMotion;
                 StampLosses(result);
@@ -391,12 +392,16 @@ namespace Kestrel.Game.Failure
             float scale = dpr;
             if (ui.layout.width > 1f && wPt > 1f) scale = ui.layout.width / wPt;
             frame = Scale(frame, scale);
+            var shown = failure;
+            if (shown == null && RecoveryLog.Current != null && RecoveryLog.Current.Attempted && RecoveryLog.Current.Failure != null)
+                shown = RecoveryLog.Current.Failure;
             FlightDebrief debrief = null;
             try { debrief = PostFlightSource.Publish(flight, failure); }
             catch (System.Exception e) { Debug.LogWarning("[Kestrel] post-flight report: " + e.Message); }
             var actions = PostFlightSource.Actions();
-            if (actions != null) actions.Fix = () => FixField.Apply(ui, FixField.For(failure != null ? failure.kind : ""));
-            Card = ReportView.Build(failure, log, frame, reduce, () => FixField.Apply(ui, FixField.For(failure != null ? failure.kind : "")), debrief, actions);
+            string kind = shown != null ? shown.kind : "";
+            if (actions != null) actions.Fix = () => FixField.Apply(ui, FixField.For(kind));
+            Card = ReportView.Build(shown, log, frame, reduce, () => FixField.Apply(ui, FixField.For(kind)), debrief, actions);
             Card.userData = this;
             ui.Add(Card);
         }

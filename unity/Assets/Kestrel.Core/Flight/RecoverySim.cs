@@ -1,0 +1,339 @@
+// Fixed-step booster from separation to the surface. Gravity is inverse-square toward
+// Earth's centre. Drag and grid-fin lift use Atmosphere.At. Thrust comes only from the
+// landing reserve. The same inputs and the same stick always replay the same samples.
+using System;
+using Kestrel.Core.Physics;
+
+namespace Kestrel.Core.Flight
+{
+    public struct RecoveryBody
+    {
+        public double T, X, Y, Vx, Vy, Mass, Prop, Pitch, Fins, Legs, Throttle;
+        public RecoveryPhase Phase;
+        public bool FuelEmpty;
+        public double BargeArc;
+    }
+
+    public static class RecoverySim
+    {
+        public const double Dt = 0.05;
+        public const double NearDt = 0.0125;
+        public const double NearAlt = 2500;
+        public const double MaxTime = 520;
+        public const double PitchRate = 0.55;
+        public const double FinRate = 1.0 / 1.6;
+        public const double LegRate = 1.0 / 1.4;
+        public const double DeckRadiusM = 36;
+        public const double TiltLimitDeg = 8;
+
+        public static bool Offered(string mode) => mode == "barge" || mode == "rtls";
+
+        public static RecoveryBody Begin(in RecoveryCraft craft, double downrangeM, double altM, double vEast, double vUp)
+        {
+            RecoveryFrames.FromPad(downrangeM, altM, vEast, vUp, out double x, out double y, out double vx, out double vy);
+            var body = new RecoveryBody
+            {
+                X = x, Y = y, Vx = vx, Vy = vy,
+                Mass = craft.DryKg + Math.Max(0, craft.ReserveKg),
+                Prop = Math.Max(0, craft.ReserveKg),
+                Pitch = Math.PI / 2,
+                Phase = RecoveryPhase.Coast,
+            };
+            body.BargeArc = PlaceBarge(body, craft);
+            return body;
+        }
+
+        public static double PlaceBarge(RecoveryBody body, in RecoveryCraft craft)
+        {
+            if (craft.Mode == "rtls") return 0;
+            RecoveryFrames.Split(body.X, body.Y, body.Vx, body.Vy, out double east, out double radial);
+            double cut = RecoveryModel.BargeFactor * Math.Abs(east);
+            double eastAfter = east - Math.Sign(east) * cut;
+            Aim(body.X, body.Y, eastAfter, radial, out double vx, out double vy);
+            var slowed = body;
+            slowed.Vx = vx;
+            slowed.Vy = vy;
+            slowed.Fins = craft.GridFins ? 1 : 0;
+            return ImpactArc(slowed, craft);
+        }
+
+        public static RecoveryVerdict Fly(in RecoveryCraft craft, double downrangeM, double altM, double vEast, double vUp, in RecoveryStick stick)
+        {
+            var body = Begin(craft, downrangeM, altM, vEast, vUp);
+            return Fly(craft, body, stick);
+        }
+
+        public static RecoveryVerdict Fly(in RecoveryCraft craft, RecoveryBody body, in RecoveryStick stick)
+        {
+            var marks = new RecoveryMark[8];
+            int n = 0;
+            Remember(ref marks, ref n, body);
+            int guard = 0;
+            while (body.Phase != RecoveryPhase.Down && body.T < MaxTime && guard++ < 80000)
+            {
+                double alt = Altitude(body);
+                double dt = alt < NearAlt ? NearDt : Dt;
+                Step(ref body, craft, stick, dt);
+                if (n == 0 || marks[n - 1].Phase != body.Phase) Remember(ref marks, ref n, body);
+            }
+            if (body.Phase != RecoveryPhase.Down)
+            {
+                body.Phase = RecoveryPhase.Down;
+                Remember(ref marks, ref n, body);
+            }
+            var kept = new RecoveryMark[n];
+            for (int i = 0; i < n; i++) kept[i] = marks[i];
+            var sample = Sample(body, craft);
+            var verdict = RecoveryScore.Judge(sample, craft, kept);
+            verdict.Attempted = craft.Recoverable;
+            return verdict;
+        }
+
+        public static void Step(ref RecoveryBody body, in RecoveryCraft craft, in RecoveryStick stick, double dt)
+        {
+            if (!(dt > 0) || double.IsNaN(dt)) return;
+            if (body.Phase == RecoveryPhase.Down) return;
+            var cmd = RecoveryGuidance.Command(body, craft, stick);
+            double pitchErr = RecoveryFrames.Wrap(cmd.Pitch - body.Pitch);
+            double pitchStep = PitchRate * dt;
+            if (pitchErr > pitchStep) pitchErr = pitchStep;
+            else if (pitchErr < -pitchStep) pitchErr = -pitchStep;
+            body.Pitch = RecoveryFrames.Wrap(body.Pitch + pitchErr);
+            double throttle = cmd.Throttle;
+            if (double.IsNaN(throttle) || throttle < 0) throttle = 0;
+            if (throttle > 1) throttle = 1;
+            if (body.Prop <= 1e-8)
+            {
+                if (throttle > 0.05) body.FuelEmpty = true;
+                throttle = 0;
+            }
+            Advance(ref body, craft, body.Pitch, throttle, dt);
+            body.T += dt;
+            double finTarget = cmd.Fins ? 1 : 0;
+            body.Throttle = throttle;
+            body.Fins = Move(body.Fins, finTarget, FinRate * dt);
+            double legTarget = cmd.Legs ? 1 : 0;
+            body.Legs = Move(body.Legs, legTarget, LegRate * dt);
+            body.Phase = cmd.Phase;
+            if (Altitude(body) <= 0 && Radial(body) < 1.5)
+                body.Phase = RecoveryPhase.Down;
+        }
+
+        public static double ImpactArc(RecoveryBody body, in RecoveryCraft craft)
+        {
+            body.Prop = 0;
+            double elapsed = 0;
+            int guard = 0;
+            while (guard++ < 4000 && elapsed < 700)
+            {
+                double alt = Altitude(body);
+                if (alt <= 0) return Arc(body);
+                double dt = alt < 4000 ? 0.1 : 0.25;
+                Advance(ref body, craft, body.Pitch, 0, dt);
+                elapsed += dt;
+            }
+            return Arc(body);
+        }
+
+        public static RecoverySample Sample(in RecoveryBody body, in RecoveryCraft craft)
+        {
+            RecoveryFrames.Axes(body.X, body.Y, out _, out double alt, out double arc, out _, out _, out _, out _);
+            RecoveryFrames.Split(body.X, body.Y, body.Vx, body.Vy, out double east, out double radial);
+            double speed = Math.Sqrt(body.Vx * body.Vx + body.Vy * body.Vy);
+            double tilt = Math.Abs(RecoveryFrames.Wrap(body.Pitch - Math.PI / 2)) * 180.0 / Math.PI;
+            double sink = radial < 0 ? -radial : 0;
+            var atm = Atmosphere.At(alt > 0 ? alt : 0);
+            double q = 0.5 * atm.rho * speed * speed;
+            return new RecoverySample
+            {
+                T = body.T,
+                Alt = alt,
+                Speed = speed,
+                Mass = body.Mass,
+                Prop = body.Prop,
+                Pitch = body.Pitch,
+                Throttle = body.Throttle,
+                Q = q,
+                Sink = sink,
+                TiltDeg = tilt,
+                MissM = arc - body.BargeArc,
+                East = east,
+                Radial = radial,
+                Arc = arc,
+                Phase = body.Phase,
+                Fins = body.Fins,
+                Legs01 = body.Legs,
+                FuelEmpty = body.FuelEmpty || body.Prop <= 1e-6,
+            };
+        }
+
+        static void Advance(ref RecoveryBody body, in RecoveryCraft craft, double pitch, double throttle, double dt)
+        {
+            Deriv(body, craft, pitch, throttle, out double ax1, out double ay1, out double mdot1);
+            var mid = body;
+            mid.Vx = body.Vx + ax1 * dt * 0.5;
+            mid.Vy = body.Vy + ay1 * dt * 0.5;
+            mid.X = body.X + body.Vx * dt * 0.5;
+            mid.Y = body.Y + body.Vy * dt * 0.5;
+            double dm1 = mdot1 * dt * 0.5;
+            if (dm1 > mid.Prop) dm1 = mid.Prop;
+            if (dm1 < 0) dm1 = 0;
+            mid.Prop -= dm1;
+            mid.Mass -= dm1;
+            if (mid.Mass < craft.DryKg) mid.Mass = craft.DryKg;
+            Deriv(mid, craft, pitch, throttle, out double ax2, out double ay2, out double mdot2);
+            double vx0 = body.Vx, vy0 = body.Vy;
+            body.Vx += ax2 * dt;
+            body.Vy += ay2 * dt;
+            body.X += (vx0 + body.Vx) * 0.5 * dt;
+            body.Y += (vy0 + body.Vy) * 0.5 * dt;
+            double dm = mdot2 * dt;
+            if (dm > body.Prop) dm = body.Prop;
+            if (dm < 0) dm = 0;
+            body.Prop -= dm;
+            body.Mass -= dm;
+            if (body.Mass < craft.DryKg) body.Mass = craft.DryKg;
+            if (body.Prop < 1e-9) body.Prop = 0;
+        }
+
+        static void Deriv(in RecoveryBody body, in RecoveryCraft craft, double pitch, double throttle,
+            out double ax, out double ay, out double mdot)
+        {
+            RecoveryFrames.Axes(body.X, body.Y, out double r, out double alt, out _, out double eastX, out double eastY, out double upX, out double upY);
+            double g = Gravity.MU_EARTH / (r * r);
+            ax = -g * upX;
+            ay = -g * upY;
+            double mass = body.Mass > 1 ? body.Mass : 1;
+            double speed = Math.Sqrt(body.Vx * body.Vx + body.Vy * body.Vy);
+            double bx = Math.Cos(pitch) * eastX + Math.Sin(pitch) * upX;
+            double by = Math.Cos(pitch) * eastY + Math.Sin(pitch) * upY;
+            double thr = throttle;
+            if (thr < 0 || double.IsNaN(thr)) thr = 0;
+            if (thr > 1) thr = 1;
+            if (body.Prop <= 1e-8) thr = 0;
+            double z = alt > 0 ? alt : 0;
+            var atm = Atmosphere.At(z);
+            double sl = craft.ThrustSlN > 0 ? craft.ThrustSlN : craft.ThrustVacN;
+            double vac = craft.ThrustVacN > 0 ? craft.ThrustVacN : sl;
+            double pFrac = Atmosphere.P0 > 0 ? atm.p / Atmosphere.P0 : 0;
+            if (pFrac < 0) pFrac = 0;
+            if (pFrac > 1) pFrac = 1;
+            double thrust = (sl + (vac - sl) * (1 - pFrac)) * thr;
+            ax += thrust * bx / mass;
+            ay += thrust * by / mass;
+            mdot = thr > 0 && craft.IspSec > 1 ? thrust / (craft.IspSec * Atmosphere.G0) : 0;
+            if (!(speed > 1) || !(atm.rho > 0)) return;
+            double vhx = body.Vx / speed, vhy = body.Vy / speed;
+            double dot = bx * vhx + by * vhy;
+            if (dot > 1) dot = 1;
+            else if (dot < -1) dot = -1;
+            double alpha = Math.Acos(dot);
+            if (vhx * by - vhy * bx < 0) alpha = -alpha;
+            double aAbs = Math.Abs(alpha);
+            if (aAbs > 1.15) aAbs = 1.15;
+            double cd = (craft.Cd > 0.02 ? craft.Cd : 0.45) + 1.15 * aAbs * aAbs;
+            if (body.Fins > 0) cd += AeroModel.GridDeployedCd * body.Fins;
+            double area = Aero.RefArea(craft.DiameterM > 0.2 ? craft.DiameterM : 1);
+            double q = 0.5 * atm.rho * speed * speed;
+            double drag = q * cd * area / mass;
+            ax -= drag * vhx;
+            ay -= drag * vhy;
+            double cl = 1.2 * Math.Sin(alpha) * (0.25 + 0.75 * body.Fins);
+            if (cl > 0.85) cl = 0.85;
+            else if (cl < -0.85) cl = -0.85;
+            double lift = q * cl * area / mass;
+            ax += lift * (-vhy);
+            ay += lift * vhx;
+        }
+
+        public static double LandingReserveKg(in RecoveryCraft craft)
+        {
+            double dry = craft.DryKg > 1 ? craft.DryKg : 1;
+            double g = Atmosphere.G0;
+            double thrust = craft.ThrustVacN > 0 ? craft.ThrustVacN : craft.ThrustSlN;
+            double twr = thrust / (dry * g);
+            if (twr < 1.05) twr = 1.05;
+            double area = Aero.RefArea(craft.DiameterM > 0.2 ? craft.DiameterM : 1);
+            double cd = (craft.Cd > 0.02 ? craft.Cd : 0.45) + (craft.GridFins ? AeroModel.GridDeployedCd : 0);
+            double vTerm = Math.Sqrt(2 * dry * g / Math.Max(1e-3, 1.225 * cd * area));
+            // The entry burn and the fins are what kill the raw terminal speed.
+            // This floor is the hoverslam share the earlier burns are not allowed to spend.
+            if (vTerm > 85) vTerm = 85;
+            double dv = RecoveryModel.LandingDeltaV(vTerm, g, 4, twr);
+            if (double.IsNaN(dv) || double.IsInfinity(dv) || dv < 0) return 0;
+            if (!(craft.IspSec > 1)) return craft.ReserveKg;
+            double prop = dry * (Math.Exp(dv / (craft.IspSec * g)) - 1);
+            if (prop < 0) prop = 0;
+            double cap = craft.ReserveKg * 0.82;
+            if (cap < 0) cap = 0;
+            if (prop > cap) prop = cap;
+            return prop;
+        }
+
+        static void Aim(double x, double y, double east, double radial, out double vx, out double vy)
+        {
+            RecoveryFrames.Axes(x, y, out _, out _, out _, out double ex, out double ey, out double ux, out double uy);
+            vx = east * ex + radial * ux;
+            vy = east * ey + radial * uy;
+        }
+
+        static double Altitude(in RecoveryBody body)
+        {
+            RecoveryFrames.Axes(body.X, body.Y, out _, out double alt, out _, out _, out _, out _, out _);
+            return alt;
+        }
+
+        static double Arc(in RecoveryBody body)
+        {
+            RecoveryFrames.Axes(body.X, body.Y, out _, out _, out double arc, out _, out _, out _, out _);
+            return arc;
+        }
+
+        static double Radial(in RecoveryBody body)
+        {
+            RecoveryFrames.Split(body.X, body.Y, body.Vx, body.Vy, out _, out double radial);
+            return radial;
+        }
+
+        static double Move(double cur, double target, double step)
+        {
+            if (cur < target)
+            {
+                cur += step;
+                if (cur > target) cur = target;
+            }
+            else if (cur > target)
+            {
+                cur -= step;
+                if (cur < target) cur = target;
+            }
+            if (cur < 0) return 0;
+            if (cur > 1) return 1;
+            return cur;
+        }
+
+        static void Remember(ref RecoveryMark[] marks, ref int n, in RecoveryBody body)
+        {
+            if (n >= marks.Length)
+            {
+                var grown = new RecoveryMark[marks.Length * 2];
+                for (int i = 0; i < marks.Length; i++) grown[i] = marks[i];
+                marks = grown;
+            }
+            RecoveryFrames.Axes(body.X, body.Y, out _, out double alt, out double arc, out _, out _, out _, out _);
+            RecoveryFrames.Split(body.X, body.Y, body.Vx, body.Vy, out _, out double radial);
+            double speed = Math.Sqrt(body.Vx * body.Vx + body.Vy * body.Vy);
+            marks[n++] = new RecoveryMark
+            {
+                Phase = body.Phase,
+                T = body.T,
+                Alt = alt,
+                Speed = speed,
+                Sink = radial < 0 ? -radial : 0,
+                TiltDeg = Math.Abs(RecoveryFrames.Wrap(body.Pitch - Math.PI / 2)) * 180.0 / Math.PI,
+                MissM = arc - body.BargeArc,
+                Prop = body.Prop,
+            };
+        }
+    }
+}

@@ -61,11 +61,20 @@ namespace Kestrel.Slice
         static FlightFacts Facts(FlightDriver flight, FailureEvent failure)
         {
             var result = flight != null ? flight.Result : null;
-            var ev = failure ?? (result != null ? result.failure : null);
+            var ascentFail = failure ?? (result != null ? result.failure : null);
+            var rec = RecoveryLog.Current;
+            var ev = ascentFail;
+            string landingGrade = null;
+            if (ascentFail == null && rec != null && rec.Attempted)
+            {
+                if (!string.IsNullOrEmpty(rec.GradeName)) landingGrade = rec.GradeName;
+                if (rec.Failure != null) ev = rec.Failure;
+            }
             var mission = GameSession.Current;
             var facts = new FlightFacts
             {
                 Failure = ev,
+                LandingGrade = landingGrade,
                 Seed = mission != null ? mission.Seed : 0,
                 DesignId = design != null ? design.name : null,
                 RedundantAvionics = design != null && EventModel.Tier(design.avionicsTier) == "redundant",
@@ -82,12 +91,12 @@ namespace Kestrel.Slice
                 if (row != null)
                 {
                     facts.GoalKm = row.ApoKm;
-                    facts.LandingRequired = row.LandingRequired;
+                    facts.LandingRequired = row.LandingRequired || row.LandBoosters;
                     facts.GLimit = double.IsNaN(row.MaxG) ? 0 : row.MaxG;
                     facts.RequiredMps = row.RequiredDeltaV();
                     facts.Margin = facts.RequiredMps > 1 ? (result.idealDeltaV - facts.RequiredMps) / facts.RequiredMps : 0;
-                    bool intact = ev == null && result.outcome != "failure" && result.outcome != "crash";
-                    facts.Passed = FlightDebrief.GoalMet(row, intact, result.orbit.apoAlt, peri, result.maxG, null);
+                    bool intact = ascentFail == null && result.outcome != "failure" && result.outcome != "crash";
+                    facts.Passed = FlightDebrief.GoalMet(row, intact, result.orbit.apoAlt, peri, result.maxG, facts.LandingGrade);
                 }
             }
             if (flight != null && flight.Decisions != null)
