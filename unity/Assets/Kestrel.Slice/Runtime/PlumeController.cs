@@ -7,6 +7,7 @@
 // the white->orange gradient (old :188,:203), so there was no white core; width used sqrt(70 kPa / pa) clamped
 // >= 0.6 (old :219) so at sea level it was narrower than the nozzle; and there was no ground cloud at all.
 // Particle counts are capped by the active quality preset's particleBudget (data/quality.json).
+using Kestrel.Core.Flight;
 using UnityEngine;
 
 namespace Kestrel.Slice
@@ -19,6 +20,31 @@ namespace Kestrel.Slice
         public PlumeBudget Budget { get; private set; }
         /// <summary>Time source for the ignition clock (the batch-mode probe steps it manually).</summary>
         public System.Func<float> Clock = () => Time.time;
+        bool failureHeld;
+        float failureScale = 1f;
+        float failureSputterAge = -1f;
+        float failureHeat;
+
+        /// <summary>
+        /// Failure picture. The sim has already cut thrust, so this replaces the throttle
+        /// instead of multiplying a dead engine by the effect. sputterAge &gt;= 0 runs
+        /// <see cref="FlightFailure.SputterGate"/>; negative uses <paramref name="scale"/>.
+        /// </summary>
+        public void SetFailurePlume(float scale, float sputterAge, float heat)
+        {
+            failureHeld = true;
+            failureScale = scale < 0f ? 0f : scale;
+            failureSputterAge = sputterAge;
+            failureHeat = heat < 0f ? 0f : heat;
+        }
+
+        public void ClearFailurePlume()
+        {
+            failureHeld = false;
+            failureScale = 1f;
+            failureSputterAge = -1f;
+            failureHeat = 0f;
+        }
         ParticleSystem core, body, diamonds, cloud;
         Mesh mouthMesh;
         float heightAboveDeck, towerHeight = 80f, vehicleHeight = 70f, vehicleRadius = 4f, deckRadius = 15f;
@@ -343,11 +369,18 @@ namespace Kestrel.Slice
             // the rebuild here then cut every cap mid-liftoff. Keep the liftoff budget for the first seconds.
             if (lvl != builtLevel) Build(lvl);   // follows the governor (which holds the tier for 20 s after ignition)
             float tf = Mathf.Clamp((float)thrustFraction, 0, 1.2f);
+            bool forced = failureHeld;
+            if (forced)
+            {
+                tf = failureSputterAge >= 0f
+                    ? Mathf.Clamp01(FlightFailure.SputterGate(failureSputterAge))
+                    : Mathf.Clamp(failureScale, 0f, 1.2f);
+            }
             float pa = Mathf.Max(0f, (float)ambientP) / PlumeShape.P0;
             var s = PlumeShape.Compute(tf, pa, ExitDiameter, DesignPressure);
             var L = PlumeShape.ComputeLayout(tf, pa, ExitDiameter, vehicleRadius, vehicleHeight, deckRadius);
             float d = L.VisualD;
-            if (tf > 0.01f)
+            if (!forced && tf > 0.01f)
             {
                 if (ignitionTime < 0f)
                 {
@@ -357,7 +390,7 @@ namespace Kestrel.Slice
                     if (cloud != null && heightAboveDeck < towerHeight) cloud.Emit(Mathf.RoundToInt(cloud.main.maxParticles * PlumeShape.CloudIgnitionBurst));
                 }
             }
-            else ignitionTime = -1f;
+            else if (!forced) ignitionTime = -1f;
 
             // Core: small additive zone just below the nozzle. Emitter sits CoreEmitOffset below the exit plane
             // (local +Z points down the axis) so no sprite reaches above it. Alpha comes from the gradient only.
@@ -404,6 +437,14 @@ namespace Kestrel.Slice
 
             float since = ignitionTime < 0f ? 0f : Clock() - ignitionTime;
             if (cloud != null) Rate(cloud, PlumeShape.GroundCloud(tf, heightAboveDeck, towerHeight, since));
+            if (forced && body != null)
+            {
+                var glow = new Color(1f, 0.22f, 0.05f);
+                var c = Color.Lerp(PlumeShape.BodyHead, glow, Mathf.Clamp01(failureHeat));
+                if (failureSputterAge >= 0f && tf < 0.2f) c = Color.Lerp(c, new Color(0.22f, 0.16f, 0.1f), 0.7f);
+                var tint = body.main;
+                tint.startColor = c;
+            }
         }
 
         /// <summary>
