@@ -63,10 +63,27 @@ namespace Kestrel.Slice
         PlumeController plume;
         float fullDiameter = 1f, coreDiameter = 1f, upperDiameter = 1f, coreRadius = 1f;
         int boosterSerial = -1, coreSerial, builtMask = -1, bellMask = -1, flashedSerial = -2;
-        bool armed, hasFairing, hasBoosters, coreReleases, reduce;
+        bool armed, hasFairing, hasBoosters, coreReleases, reduce, recoveryOwns;
         double playT, jettisonM = 110000;
 
         public IFlightStagingNarration Narration => narration ?? silent;
+
+        /// <summary>The first stage can leave the stack. A single-stage rocket never does.</summary>
+        public bool CoreCanRelease => coreReleases;
+
+        public int CoreSerial => coreSerial;
+
+        /// <summary>Separated first-stage mesh. Recovery poses this instead of the kinematic tumble.</summary>
+        public Transform Booster
+        {
+            get
+            {
+                if (bySerialStage == null || bySerialStage.Length == 0 || bySerialStage[0] == null) return null;
+                return bySerialStage[0].Pivot;
+            }
+        }
+
+        public void SetRecoveryOwnsBooster(bool owns) => recoveryOwns = owns;
 
         /// <summary>Replace the sink. Null keeps the silent hook. This does not start Thrum.</summary>
         public void SetNarration(IFlightStagingNarration sink) => narration = sink;
@@ -203,6 +220,7 @@ namespace Kestrel.Slice
             flight = driver;
             reduce = reduceMotion;
             armed = flight != null;
+            recoveryOwns = false;
             playT = 0;
             builtMask = -1;
             bellMask = -1;
@@ -370,6 +388,15 @@ namespace Kestrel.Slice
                 var p = pieces[i];
                 if (p.Pivot == null) continue;
                 bool outNow = staging.Released(p.Serial, t);
+                if (recoveryOwns && p.Role == "stage" && p.Index == 0 && outNow)
+                {
+                    if (!p.Shown)
+                    {
+                        p.Shown = true;
+                        p.Pivot.gameObject.SetActive(true);
+                    }
+                    continue;
+                }
                 if (!outNow)
                 {
                     if (p.Shown)

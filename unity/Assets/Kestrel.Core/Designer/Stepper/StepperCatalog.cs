@@ -39,7 +39,7 @@ namespace Kestrel.Core.Designer.Stepper
                 new[] { "recoveryMode", "legs", "landingReserve" },
                 new string[0],
                 new[] { "leg-collapse", "thermal" },
-                new[] { "landingReserve", "landingNeed", "recoveryMode" }),
+                new[] { "landingReserve", "landingNeed", "recoveryMode", "payloadCost" }),
             Def(DesignerStep.Look, "Look", "Look",
                 "Make it yours (no physics)", "body",
                 new[] { "paint", "accent", "name" },

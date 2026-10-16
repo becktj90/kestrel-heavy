@@ -96,6 +96,10 @@ namespace Kestrel.Core.Flight
                 case "thermal": return "Overheating";
                 case "cryo-material": return "Cold tank crack";
                 case "leg-collapse": return "Legs folded";
+                case "recovery-fuel": return "Landing fuel ran out";
+                case "recovery-fast": return "Too fast to land";
+                case "recovery-tilt": return "Tilted touchdown";
+                case "recovery-miss": return "Missed Haven";
                 case "pass": return "She flew";
                 case "miss": return "Wrong place";
                 default: return "Flight ended";
@@ -113,6 +117,10 @@ namespace Kestrel.Core.Flight
                 case "tumble": return "tumble";
                 case "prop-depletion": return "out-of-fuel";
                 case "separation-collision": return "stage-collision";
+                case "recovery-fuel": return "out-of-fuel";
+                case "recovery-fast": return "too-fast";
+                case "recovery-tilt": return "tilted";
+                case "recovery-miss": return "missed-barge";
                 default: return kind ?? "";
             }
         }
@@ -150,7 +158,10 @@ namespace Kestrel.Core.Flight
             if (minorPerKc < 1) minorPerKc = 1;
             var ev = facts.Failure;
             bool free = mission == null || mission.IsFree || mission.Mode == MissionMode.Free;
-            bool passed = facts.Passed && ev == null;
+            // A booster miss explains itself. It fails the mission when landing was the job.
+            // An orbit that did not ask for the booster still counts.
+            bool recovery = ev != null && ev.kind != null && ev.kind.StartsWith("recovery-", System.StringComparison.Ordinal);
+            bool passed = facts.Passed && (ev == null || (recovery && !facts.LandingRequired));
             string kind = ev != null && !string.IsNullOrEmpty(ev.kind) ? ev.kind : (passed ? "pass" : "miss");
             string cause = ev != null ? ev.cause : "";
             var debrief = new FlightDebrief
@@ -288,6 +299,14 @@ namespace Kestrel.Core.Flight
                     return "Base heating at T+" + N0(ev.t) + " s. More than " + N0(ev.limit) + " engines.";
                 case "leg-collapse":
                     return "Falling at " + N1(ev.value) + " m/s. The legs take " + N1(ev.limit) + " m/s.";
+                case "recovery-fuel":
+                    return "Landing fuel gone. Sink " + N1(ev.value) + " m/s. The legs hold " + N1(ev.limit) + " m/s.";
+                case "recovery-fast":
+                    return "Touchdown " + N1(ev.value) + " m/s. The legs hold " + N1(ev.limit) + " m/s.";
+                case "recovery-tilt":
+                    return "Tilt " + N1(ev.value) + "°. The limit is " + N1(ev.limit) + "°.";
+                case "recovery-miss":
+                    return "Missed by " + N0(System.Math.Abs(ev.value)) + " m. The deck reaches " + N0(ev.limit) + " m.";
                 case "cryo-material":
                     return "The tank cracked on the pad. T+" + N0(ev.t) + " s.";
                 default:
