@@ -136,6 +136,8 @@ namespace Kestrel.Game.Guide.Tests
             Assert.That(binder, Does.Not.Contain("FlightBus"));
             Assert.That(binder, Does.Contain("GuidePlace.Menu"));
             Assert.That(binder, Does.Contain("GuidePlace.Ascent"));
+            Assert.That(binder, Does.Contain("SetInFlight(true)"));
+            Assert.That(driver, Does.Contain("GuideClipPlayer.InFlight"));
         }
 
         static void AssertQuadsInside(GlyphTable table, string text, GuideFrame frame, string where)

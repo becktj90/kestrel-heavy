@@ -14,6 +14,11 @@
 # generated at import/build time from ../data (see Kestrel/Sync Data menu)
 /Assets/Resources/KestrelData/
 /Assets/Resources/KestrelData.meta
+# Thrum clips copied at build time from ../../assets/narration/guide (GuideClipPack)
+/Assets/StreamingAssets/narration.meta
+/Assets/StreamingAssets/narration/
+/Assets/Kestrel.Game/Audio/Runtime/Resources/Narration/guide.meta
+/Assets/Kestrel.Game/Audio/Runtime/Resources/Narration/guide/
 # dotnet CLI outputs
 /dotnet/**/bin/
 /dotnet/**/obj/

@@ -336,6 +336,9 @@ jobs:
           mkdir -p unity/Assets/Resources/KestrelData
           cp data/*.json web/js/economy-data/constants.json unity/Assets/Resources/KestrelData/
 
+      - name: Pack Thrum guide clips into the player
+        run: bash tools/pack-guide-clips.sh
+
       - name: Export iOS Xcode project
         uses: game-ci/unity-builder@v4
         env:

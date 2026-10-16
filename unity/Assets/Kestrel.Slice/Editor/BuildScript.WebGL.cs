@@ -18,6 +18,7 @@ namespace Kestrel.Slice.Editor
             string path = Arg("-customBuildPath") ?? Environment.GetEnvironmentVariable("KH_BUILD_PATH") ?? "build/WebGL";
             SliceBootstrap.EnsureAll();
             global::Kestrel.Game.Editor.ShellSetup.EnsureAll();
+            PackGuideClips();
 
             PlayerSettings.WebGL.template = "PROJECT:Kestrel";
             switch ((Arg("-khWebCompression") ?? "Brotli").ToLowerInvariant())
