@@ -1,6 +1,7 @@
 // Home LAUNCH -> briefing -> To the pad -> designer launch -> flight.
 // The count used to reach T+0:00, clear itself, then drop the ascent if the first start threw.
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
@@ -138,6 +139,89 @@ namespace Kestrel.Core.Tests
 
             string ios = GuideClipPack.FileUrl("/var/mobile/Containers/Data/Application/x/a.mp3");
             StringAssert.StartsWith("file:///var/mobile/", ios);
+        }
+
+        [Test]
+        public void SkipStartsAscentAfterTheCountAlreadyReachedZero()
+        {
+            var handoff = new LiftoffHandoff();
+            var trace = new List<string>();
+            handoff.Transitioned += trace.Add;
+            handoff.Enter(OpenSequence(HomeDesign()));
+            Assert.AreEqual("counting", handoff.Phase);
+            Assert.IsTrue(trace.Exists(line => line.StartsWith("boot->counting", StringComparison.Ordinal)));
+            int guard = 0;
+            while (handoff.Counting && guard++ < 500)
+                handoff.Tick(LiftoffHandoff.MaxStep, () => false);
+            Assert.IsTrue(handoff.Sequence.Liftoff);
+            Assert.IsFalse(handoff.Ascending, "a false start leaves the rocket on the pad at T+0");
+            Assert.AreEqual("committed", handoff.Phase);
+            bool started = false;
+            handoff.Skip(() => { started = true; return true; });
+            Assert.IsTrue(started, "Skip count still calls the ascent after the clock has already hit zero");
+            Assert.IsTrue(handoff.Ascending);
+            Assert.AreEqual("ascending", handoff.Phase);
+        }
+
+        [Test]
+        public void LiftoffWithin15SecondsWhenAudioClipAndVoiceAreBlocked()
+        {
+            var design = HomeDesign();
+            var blockers = new LiftoffBlockers
+            {
+                AudioDeviceReady = false,
+                ClipLoadFinished = false,
+                VoiceGateOpen = false,
+                GuideLineHolding = true,
+            };
+            Assert.IsFalse(LiftoffHandoff.WaitsOn(blockers));
+            string away = Path.Combine(Path.GetTempPath(), "kh-norepo-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(away);
+            string prev = Environment.GetEnvironmentVariable("KESTREL_REPO_ROOT");
+            Environment.SetEnvironmentVariable("KESTREL_REPO_ROOT", away);
+            AeroModel.ClearTables();
+            var handoff = new LiftoffHandoff();
+            handoff.Enter(OpenSequence(design));
+            AscentSim sim = null;
+            try
+            {
+                Assert.DoesNotThrow(() => AeroModel.NoseHeatingFactor("ogive"));
+                double elapsed = 0;
+                while (!handoff.Ascending && elapsed < 15)
+                {
+                    double dt = LiftoffHandoff.FrameDt(0, 1.0 / 60.0);
+                    elapsed += dt;
+                    handoff.Tick(dt, () =>
+                    {
+                        if (LiftoffHandoff.WaitsOn(blockers)) return false;
+                        var (stages, opts) = Stack.SimInputs(catalog, design, 1.0 / 120.0);
+                        opts.tMax = 60;
+                        sim = new AscentSim(stages, opts);
+                        return sim != null;
+                    }, blockers);
+                }
+                Assert.IsTrue(handoff.Ascending,
+                    "phase=" + handoff.Phase
+                    + " t=" + (handoff.Sequence != null ? handoff.Sequence.Time : double.NaN)
+                    + " err=" + handoff.LastError);
+                Assert.Less(elapsed, 15, "liftoff inside 15 seconds with the scaled clock stopped");
+                Assert.IsNotNull(sim);
+                Assert.IsNull(handoff.LastError);
+
+                AeroModel.Install(
+                    File.ReadAllText(Path.Combine(Golden.Root, "data", "fairings.json")),
+                    File.ReadAllText(Path.Combine(Golden.Root, "data", "interstages.json")),
+                    File.ReadAllText(Path.Combine(Golden.Root, "data", "fins.json")));
+                Assert.AreEqual(0.33, AeroModel.NoseCd("biconic"), 1e-9, "player json still supplies a nose the built-in table does not have");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("KESTREL_REPO_ROOT", prev);
+                try { if (Directory.Exists(away)) Directory.Delete(away, true); }
+                catch (Exception) { }
+                AeroModel.ClearTables();
+                AeroModel.NoseHeatingFactor("ogive");
+            }
         }
 
         void Climb(Design design)

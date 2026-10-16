@@ -10,6 +10,7 @@ namespace UnityEngine.Networking
     {
         public enum Result { InProgress, Success, ConnectionError, ProtocolError, DataProcessingError }
         public Result result => Result.Success;
+        public int timeout { get; set; }
         public UnityWebRequestAsyncOperation SendWebRequest() => null;
         public void Dispose() { }
     }

@@ -51,6 +51,8 @@ namespace Kestrel.Slice
         {
             Application.targetFrameRate = 60;
             Screen.orientation = ScreenOrientation.Portrait;
+            Debug.Log("[Count] boot");
+            handoff.Transitioned += line => Debug.Log("[Count] " + line);
             bodyMat = Resources.Load<Material>("Materials/KH_Body");
             plumeMat = Resources.Load<Material>("Materials/KH_Plume");
             BuildScene();
@@ -1014,11 +1016,16 @@ namespace Kestrel.Slice
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             ascentErrorLogged = false;
-            if (skipCount != null) skipCount.EnableInClassList("hidden", !counting);
+            var gates = LiveBlockers();
+            Debug.Log("[Count] gates audio=" + gates.AudioDeviceReady
+                + " clip=" + gates.ClipLoadFinished
+                + " voice=" + gates.VoiceGateOpen
+                + " guideHold=" + gates.GuideLineHolding);
+            if (skipCount != null) skipCount.EnableInClassList("hidden", handoff.Ascending);
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
             if (renderer != null) renderer.ResetSequence();
-            if (!counting) handoff.Tick(0, TryAscend);
+            if (!counting) handoff.Tick(0, TryAscend, LiveBlockers());
             else if (sequence != null) RefreshWebcast(sequence.Time, false);
             NoteAscentError();
             chrome?.OnFlightStarted();
@@ -1039,12 +1046,12 @@ namespace Kestrel.Slice
 
         void SkipCount()
         {
-            if (handoff.Ascending || !counting) return;
-            handoff.Skip(TryAscend);
+            if (handoff.Ascending) return;
+            handoff.Skip(TryAscend, LiveBlockers());
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             NoteAscentError();
-            if (skipCount != null && !counting) skipCount.AddToClassList("hidden");
+            if (skipCount != null) skipCount.EnableInClassList("hidden", handoff.Ascending);
         }
 
         /// <summary>
@@ -1229,10 +1236,11 @@ namespace Kestrel.Slice
         void TickCount()
         {
             double dt = LiftoffHandoff.FrameDt(UnityEngine.Time.deltaTime, UnityEngine.Time.unscaledDeltaTime);
-            handoff.Tick(dt, TryAscend);
+            handoff.Tick(dt, TryAscend, LiveBlockers());
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             NoteAscentError();
+            if (skipCount != null) skipCount.EnableInClassList("hidden", handoff.Ascending);
             if (handoff.Ascending || sequence == null) return;
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
@@ -1240,6 +1248,29 @@ namespace Kestrel.Slice
             if (hT != null) hT.text = sequence.Clock;
             if (hStage != null) hStage.text = "COUNT";
             RefreshWebcast(sequence.Time, false);
+        }
+
+        /// <summary>Live device gates. The handoff reads them and does not wait.</summary>
+        LiftoffBlockers LiveBlockers()
+        {
+            var gates = new LiftoffBlockers
+            {
+                AudioDeviceReady = false,
+                ClipLoadFinished = false,
+                VoiceGateOpen = false,
+                GuideLineHolding = true,
+            };
+            try
+            {
+                gates.AudioDeviceReady = AudioSettings.outputSampleRate > 0;
+                var clip = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Guide.GuideClipPlayer>();
+                gates.ClipLoadFinished = clip == null || !clip.IsLoading;
+                gates.VoiceGateOpen = Kestrel.Core.Guide.GuideClipPack.AllowsVoice(true);
+                var box = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Guide.GuideBoxDriver>();
+                gates.GuideLineHolding = box != null && box.Stage != null && box.Stage.Count > 0;
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Count] gates: " + e.Message); }
+            return gates;
         }
 
         void RefreshWebcast(double time, bool flying)

@@ -37,6 +37,8 @@ namespace Kestrel.Game.Guide
         public bool HasClip { get; private set; }
         public bool Sounding { get; private set; }
         public bool Held { get; private set; }
+        /// <summary>A StreamingAssets load is still in flight. Liftoff does not wait on this.</summary>
+        public bool IsLoading => loading;
 
         public static void SetInFlight(bool on) => InFlight = on;
 
@@ -231,6 +233,8 @@ namespace Kestrel.Game.Guide
             else if (url.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase)) type = AudioType.OGGVORBIS;
             using (var req = UnityWebRequestMultimedia.GetAudioClip(url, type))
             {
+                // A file:// clip on iOS can sit in SendWebRequest and never finish. Eight seconds, then the line stays text.
+                req.timeout = 8;
                 yield return req.SendWebRequest();
                 fileLoad = null;
                 loading = false;
