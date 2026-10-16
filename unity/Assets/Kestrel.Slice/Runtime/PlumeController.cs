@@ -405,5 +405,29 @@ namespace Kestrel.Slice
             float since = ignitionTime < 0f ? 0f : Clock() - ignitionTime;
             if (cloud != null) Rate(cloud, PlumeShape.GroundCloud(tf, heightAboveDeck, towerHeight, since));
         }
+
+        /// <summary>
+        /// Staging colour on top of <see cref="Apply"/>. Heat shifts the body from the burn yellow to a
+        /// red afterglow. Flash pushes it white for an ignition. Both zero leaves Apply's colours.
+        /// </summary>
+        public void SetStagingTint(float heat, float flash)
+        {
+            heat = Mathf.Clamp01(heat);
+            flash = Mathf.Clamp01(flash);
+            if (heat <= 0f && flash <= 0f) return;
+            if (body != null)
+            {
+                var glow = new Color(1f, 0.22f, 0.05f);
+                var c = Color.Lerp(PlumeShape.BodyHead, glow, heat);
+                if (flash > 0f) c = Color.Lerp(c, Color.white, flash);
+                var m = body.main;
+                m.startColor = c;
+            }
+            if (core != null && flash > 0f)
+            {
+                var m = core.main;
+                m.startColor = Color.Lerp(Color.white, new Color(1f, 0.97f, 0.85f), flash);
+            }
+        }
     }
 }
