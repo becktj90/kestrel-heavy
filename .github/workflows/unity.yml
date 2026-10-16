@@ -62,6 +62,9 @@ jobs:
           unityVersion: ${{ env.UNITY_VERSION }}
           projectPath: ${{ env.PROJECT_PATH }}
           testMode: ${{ matrix.testMode }}
+          # "latest" asks api.github.com for game-ci/cli's newest tag. Several jobs do that
+          # at once and the shared runner IP gets HTTP 403 before any test starts.
+          cliVersion: v0.1.72
           # iOS module image: Assets/Editor/IconSetup.cs uses UnityEditor.iOS.
           customImage: unityci/editor:ubuntu-${{ env.UNITY_VERSION }}-ios-3
           githubToken: ${{ secrets.GITHUB_TOKEN }}
@@ -73,7 +76,10 @@ jobs:
         if: always() && env.HAS_LICENSE == 'true'
         with:
           name: test-results-${{ matrix.testMode }}
-          path: ${{ steps.tests.outputs.artifactsPath }}
+          # The runner only sets this output after it starts. A failure before that
+          # left the path empty and failed the upload with "path not supplied".
+          path: test-results-${{ matrix.testMode }}
+          if-no-files-found: warn
       # PlayMode = Kestrel.Capture.Tests: real scenes after 60 frames; fails on flat-colour images.
       - uses: actions/upload-artifact@v4
         if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'

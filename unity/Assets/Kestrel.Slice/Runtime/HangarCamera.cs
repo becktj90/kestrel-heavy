@@ -3,6 +3,7 @@
 // On iPad the projection shifts left by the 400 pt right-hand panel (DesignFraming.SideVisibleFraction).
 using System;
 using System.Collections.Generic;
+using Kestrel.Core.Flight;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -154,7 +155,17 @@ namespace Kestrel.Slice
         public static bool BlocksGesture(Vector2 screenPx, float screenW, float screenH, float dpi, float bottomVisibleFraction)
         {
             if (!(screenW > 0f) || !(screenH > 0f)) return false;
-            if (DesignFraming.HasSidePanel(screenW, screenH))
+            if (WebLayoutMode.UseWide(screenW, screenH))
+            {
+                Kestrel.Game.Shell.WebViewport.Css(out float cssW, out float cssH);
+                if (cssW < 8f || cssH < 8f) { cssW = screenW; cssH = screenH; }
+                var frame = WebDesignerLayout.Place(cssW, cssH, 0f, 0f, 0f, 0f);
+                float x = screenPx.x / screenW * cssW;
+                float y = (screenH - screenPx.y) / screenH * cssH;
+                if (Hits(frame.Parts, x, y) || Hits(frame.RightPanel, x, y) || Hits(frame.Exit, x, y) || Hits(frame.Home, x, y))
+                    return true;
+            }
+            else if (DesignFraming.HasSidePanel(screenW, screenH))
             {
                 float panelPx = DesignFraming.SidePanelPoints * DesignFraming.PixelsPerPoint(screenW, screenH, dpi);
                 if (screenPx.x >= screenW - panelPx) return true;
@@ -162,6 +173,9 @@ namespace Kestrel.Slice
             float f = DesignFraming.SafeVisible(bottomVisibleFraction);
             return f < 1f && screenPx.y <= screenH * (1f - f);
         }
+
+        static bool Hits(HudBox b, float x, float y) =>
+            b.Live && x >= b.X && x <= b.Right && y >= b.Y && y <= b.Bottom;
 
         /// <summary>A tap: short and still. Slop is in pixels at the caller's scale.</summary>
         public static bool IsTap(Vector2 down, Vector2 up, float seconds, float slopPx)
@@ -188,7 +202,8 @@ namespace Kestrel.Slice
             int w = cam.pixelWidth > 0 ? cam.pixelWidth : Screen.width;
             int h = cam.pixelHeight > 0 ? cam.pixelHeight : Screen.height;
             if (!DesignFraming.ValidViewport(w, h)) return;
-            float side = DesignFraming.SideVisibleFraction(w, h, Screen.dpi);
+            // Wide web frames the rocket in the middle; the side panels overlay the edges.
+            float side = WebLayoutMode.UseWide(w, h) ? 1f : DesignFraming.SideVisibleFraction(w, h, Screen.dpi);
             float fov = cam.fieldOfView > 1f ? cam.fieldOfView : 50f;
             float k = DesignFraming.FitDistanceScale(hasFit ? fit : null, height, (float)w / h, fov, bottomVisible, side);
             HangarOrbit.PoseAt(height, k, orbit.YawDeg, orbit.PitchDeg, orbit.Zoom, focusAim, out var pos, out var aim);

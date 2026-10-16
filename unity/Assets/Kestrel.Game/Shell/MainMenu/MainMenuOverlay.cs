@@ -82,6 +82,7 @@ namespace Kestrel.Game.Shell
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
                 var z = MenuTypeScale.Compute(w, h, topInset, botInset);
                 ApplyScale(root, z);
+                ApplyWebWide(root, WebLayoutMode.UseWide(Screen.width, Screen.height));
                 top.style.height = MainMenuCopy.BarHeight(h, topInset);
                 bottom.style.height = MainMenuCopy.BarHeight(h, botInset);
                 MainMenuLayout.HeroLift = MeasureLift(root, safe, full, z, h, topInset);
@@ -95,6 +96,92 @@ namespace Kestrel.Game.Shell
             });
             PlayIntro(root, full, reduceMotion);
             return root;
+        }
+
+        /// <summary>Landscape web: rocket stays in the centre, menu tiles sit in a column beside it.
+        /// Portrait and iOS leave the phone column from ApplyScale.</summary>
+        public static void ApplyWebWide(VisualElement root, bool wide)
+        {
+            if (root == null) return;
+            root.EnableInClassList("kh-mm-wide", wide);
+            if (!wide) { ClearWebWide(root); return; }
+            float rw = root.resolvedStyle.width;
+            float rh = root.resolvedStyle.height;
+            if (rw < 8f || rh < 8f) return;
+            WebViewport.Css(out float cssW, out float cssH);
+            if (cssW < 8f || cssH < 8f) { cssW = rw; cssH = rh; }
+            var f = WebHomeLayout.Place(cssW, cssH, 0f, 0f, 0f, 0f);
+            float ux = rw / cssW;
+            float uy = rh / cssH;
+            HudBox Sc(HudBox b) => new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
+            f.Title = Sc(f.Title); f.Stats = Sc(f.Stats); f.Launch = Sc(f.Launch); f.Design = Sc(f.Design);
+            f.Missions = Sc(f.Missions); f.Codex = Sc(f.Codex); f.Menu = Sc(f.Menu); f.Hint = Sc(f.Hint);
+            f.Rocket = Sc(f.Rocket);
+            if (!f.Wide) { ClearWebWide(root); return; }
+            root.style.paddingTop = 0;
+            root.style.paddingBottom = 0;
+            Pin(root.Q("mm-title"), f.Title);
+            Pin(root.Q("mm-stats"), f.Stats);
+            Pin(root.Q("home-launch"), f.Launch);
+            Pin(root.Q("home-design"), f.Design);
+            var grid = root.Q("mm-grid");
+            if (grid != null)
+            {
+                float top = f.Missions.Y;
+                float bottom = Mathf.Max(f.Missions.Bottom, f.Codex.Bottom);
+                Pin(grid, new HudBox { X = f.Menu.X, Y = top, W = f.Menu.W, H = Mathf.Max(1f, bottom - top) });
+                grid.style.flexDirection = FlexDirection.Column;
+                grid.style.flexWrap = Wrap.NoWrap;
+            }
+            foreach (var it in MainMenuCopy.Tiles)
+            {
+                var tile = root.Q("home-" + it.Id);
+                if (tile == null) continue;
+                tile.style.width = Length.Percent(100);
+                tile.style.position = Position.Relative;
+            }
+            Pin(root.Q("mm-hint"), f.Hint);
+        }
+
+        static void Pin(VisualElement e, HudBox b)
+        {
+            if (e == null || !b.Live) return;
+            e.style.position = Position.Absolute;
+            e.style.left = b.X;
+            e.style.top = b.Y;
+            e.style.width = b.W;
+            e.style.height = b.H;
+            e.style.right = StyleKeyword.Auto;
+            e.style.bottom = StyleKeyword.Auto;
+            e.style.marginTop = 0;
+            e.style.marginBottom = 0;
+        }
+
+        static void ClearWebWide(VisualElement root)
+        {
+            void Drop(VisualElement e)
+            {
+                if (e == null) return;
+                e.style.position = StyleKeyword.Null;
+                e.style.left = StyleKeyword.Null;
+                e.style.top = StyleKeyword.Null;
+                e.style.right = StyleKeyword.Null;
+                e.style.bottom = StyleKeyword.Null;
+                e.style.width = StyleKeyword.Null;
+            }
+            Drop(root.Q("mm-title"));
+            Drop(root.Q("mm-stats"));
+            Drop(root.Q("home-launch"));
+            Drop(root.Q("home-design"));
+            Drop(root.Q("mm-hint"));
+            var grid = root.Q("mm-grid");
+            Drop(grid);
+            if (grid != null)
+            {
+                grid.style.flexDirection = StyleKeyword.Null;
+                grid.style.flexWrap = StyleKeyword.Null;
+            }
+            foreach (var it in MainMenuCopy.Tiles) Drop(root.Q("home-" + it.Id));
         }
 
         /// <summary>Shows the real next mission on the LAUNCH bar when Career knows it. The static caption stays the fallback.</summary>

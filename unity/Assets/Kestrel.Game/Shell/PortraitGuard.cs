@@ -29,11 +29,15 @@ namespace Kestrel.Game.Shell
 
         void Awake()
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // The browser owns the window. Landscape is a layout mode; iOS stays portrait-only.
+#else
             Screen.autorotateToPortrait = true;
             Screen.autorotateToPortraitUpsideDown = false;
             Screen.autorotateToLandscapeLeft = false;
             Screen.autorotateToLandscapeRight = false;
             Screen.orientation = ScreenOrientation.Portrait;
+#endif
         }
 
         void Start() => Recompute(force: true);
@@ -46,8 +50,10 @@ namespace Kestrel.Game.Shell
             if (!force && safe == _safe && Screen.width == _w && Screen.height == _h) return;
             _safe = safe; _w = Screen.width; _h = Screen.height;
             Frame = PortraitLayout.Compute(_w, _h, new RectPx(safe.x, safe.y, safe.width, safe.height), Dpr, Spec.Portrait);
+#if !(UNITY_WEBGL && !UNITY_EDITOR)
             if (!PortraitLayout.IsPortrait(_w, _h))
                 Debug.LogWarning($"[Kestrel] non-portrait window {_w}x{_h}; still envelop-filling (no letterbox).");
+#endif
             FrameChanged?.Invoke(Frame);
         }
     }

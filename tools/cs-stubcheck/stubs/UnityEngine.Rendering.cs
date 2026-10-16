@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 namespace UnityEngine
 {
-    public enum TextureFormat { Alpha8 = 1, RGB24 = 3, RGBA32 = 4, ARGB32 = 5, RGBAHalf = 17, RGBAFloat = 20, R8 = 63, RHalf = 15, RFloat = 18, RGHalf = 16, BC7 = 25, ASTC_4x4 = 48, ETC2_RGBA8 = 47, R16 = 9, RG16 = 62, BGRA32 = 14 }
+    public enum TextureFormat { Alpha8 = 1, RGB24 = 3, RGBA32 = 4, ARGB32 = 5, RGBAHalf = 17, RGBAFloat = 20, R8 = 63, RHalf = 15, RFloat = 18, RGHalf = 16, BC7 = 25, ASTC_4x4 = 48, ETC2_RGBA8 = 47, R16 = 9, RG16 = 62, BGRA32 = 14, RGB565 = 7, RGB9e5Float = 22, DXT1 = 10, ETC_RGB4 = 34, ETC2_RGB = 45 }
     public enum TextureWrapMode { Repeat, Clamp, Mirror, MirrorOnce }
     public enum FilterMode { Point, Bilinear, Trilinear }
     public enum RenderTextureFormat { ARGB32, Depth, ARGBHalf, Shadowmap, RGB565, ARGB4444, ARGB1555, Default, ARGB2101010, DefaultHDR, ARGB64, ARGBFloat, RGFloat, RGHalf, RFloat, RHalf, R8 }

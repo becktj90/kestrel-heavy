@@ -353,6 +353,13 @@ namespace Kestrel.Slice
             float dpr = Screen.dpi > 0 ? Mathf.Max(1f, Mathf.Round(Screen.dpi / 160f)) : 3f;
             var p = HudLayout.SafePadding(new Vector2(Screen.width, Screen.height), Screen.safeArea, size, dpr);
             hud.style.paddingLeft = p.x; hud.style.paddingTop = p.y; hud.style.paddingRight = p.z; hud.style.paddingBottom = p.w;
+            // Portrait web keeps the phone HUD, but the page EXIT sits in the top-right CSS corner.
+            if (WebLayoutMode.ReserveExit && !WebLayoutMode.UseWide(Screen.width, Screen.height))
+            {
+                Kestrel.Game.Shell.WebViewport.Css(out float cssW, out _);
+                float ux = cssW > 1f && Screen.width > 1 ? ui.layout.width / cssW : UnitsPerPoint();
+                hud.style.paddingRight = p.z + (HomeCornerLayout.ExitW + HomeCornerLayout.Edge) * ux;
+            }
             chrome?.Layout(UnitsPerPoint());
             ascentHud?.Layout(UnitsPerPoint());
             staging?.Layout(UnitsPerPoint());
@@ -433,7 +440,39 @@ namespace Kestrel.Slice
                 designBody.style.flexGrow = 0;
                 if (designer != null) designer.Root.style.flexGrow = 0;
             }
+            ApplyWebDesignFrame();
         }
+
+        /// <summary>Landscape web only. Parts on the left, readouts on the right, rocket in the middle.</summary>
+        void ApplyWebDesignFrame()
+        {
+            if (ui == null) return;
+            if (!WebLayoutMode.UseWide(Screen.width, Screen.height) || ui.layout.width < 8f || ui.layout.height < 8f)
+            {
+                WebDesignChrome.Clear(ui);
+                return;
+            }
+            Kestrel.Game.Shell.WebViewport.Css(out float cssW, out float cssH);
+            if (cssW < 8f || cssH < 8f) { WebDesignChrome.Clear(ui); return; }
+            float perX = Screen.width > 1 ? Screen.width / cssW : 1f;
+            float perY = Screen.height > 1 ? Screen.height / cssH : 1f;
+            var safe = Screen.safeArea;
+            var frame = WebDesignerLayout.Place(cssW, cssH,
+                (Screen.height - safe.yMax) / perY, safe.yMin / perY, safe.xMin / perX, (Screen.width - safe.xMax) / perX);
+            float ux = ui.layout.width / cssW;
+            float uy = ui.layout.height / cssH;
+            frame.Parts = ScaleBox(frame.Parts, ux, uy);
+            frame.Readouts = ScaleBox(frame.Readouts, ux, uy);
+            frame.Launch = ScaleBox(frame.Launch, ux, uy);
+            frame.RightPanel = ScaleBox(frame.RightPanel, ux, uy);
+            frame.Rocket = ScaleBox(frame.Rocket, ux, uy);
+            frame.Home = ScaleBox(frame.Home, ux, uy);
+            frame.Exit = ScaleBox(frame.Exit, ux, uy);
+            WebDesignChrome.Apply(ui, frame);
+        }
+
+        static HudBox ScaleBox(HudBox b, float ux, float uy) =>
+            new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
 
         void SetDesignCollapsed(bool collapsed)
         {
