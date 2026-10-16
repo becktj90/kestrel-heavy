@@ -37,8 +37,10 @@ namespace Kestrel.Slice.Editor
             PlayerSettings.SetManagedStrippingLevel(NamedBuildTarget.WebGL, ManagedStrippingLevel.High);
             PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.WebGL, Il2CppCodeGeneration.OptimizeSize);
             PlayerSettings.stripEngineCode = true;
-            PlayerSettings.defaultWebScreenWidth = 540;
-            PlayerSettings.defaultWebScreenHeight = 1170;
+            // Fallback canvas before the template's CSS runs. The page fills the viewport (100dvh);
+            // it is not a 540×1170 phone column.
+            PlayerSettings.defaultWebScreenWidth = 1280;
+            PlayerSettings.defaultWebScreenHeight = 720;
             PlayerSettings.SetGraphicsAPIs(BuildTarget.WebGL, new[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 });
 
             Directory.CreateDirectory(path);

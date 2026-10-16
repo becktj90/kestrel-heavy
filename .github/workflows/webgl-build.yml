@@ -10,7 +10,9 @@ on:
     paths:
       - .github/workflows/webgl-build.yml
       - unity/Assets/WebGLTemplates/**
+      - unity/Assets/Plugins/WebGL/**
       - unity/Assets/Kestrel.Slice/Editor/BuildScript.cs
+      - unity/Assets/Kestrel.Slice/Editor/BuildScript.WebGL.cs
   workflow_dispatch:
     inputs:
       compression:

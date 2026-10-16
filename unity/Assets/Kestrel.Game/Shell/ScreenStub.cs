@@ -88,7 +88,45 @@ namespace Kestrel.Game.Shell
                 MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine());
                 // Music sits top-left. The gear sits clear of the web EXIT. Both follow the safe inset.
                 shell.Root.Add(audio);
-                void Place() => HomeChrome.Place(shell.Root.Q("home-settings"), audio, shell.Root.resolvedStyle.width, shell.Safe.resolvedStyle.paddingTop, Application.platform == RuntimePlatform.WebGLPlayer);
+                void Place()
+                {
+                    var gear = shell.Root.Q("home-settings");
+                    bool web = Application.platform == RuntimePlatform.WebGLPlayer;
+                    float width = shell.Root.resolvedStyle.width;
+                    float top = shell.Safe.resolvedStyle.paddingTop;
+                    if (!web)
+                    {
+                        HomeChrome.Place(gear, audio, width, top, false);
+                        return;
+                    }
+                    // The page FULL/EXIT is 88×44 CSS pixels. Panel units are not CSS pixels, so the
+                    // reserved corner is computed in CSS space and scaled onto the root.
+                    float height = shell.Root.resolvedStyle.height;
+                    WebViewport.Css(out float cssW, out float cssH);
+                    if (width < 8f || height < 8f || cssW < 8f || cssH < 8f)
+                    {
+                        HomeChrome.Place(gear, audio, width, top, true);
+                        return;
+                    }
+                    float perX = Screen.width > 1f ? Screen.width / cssW : 1f;
+                    float perY = Screen.height > 1f ? Screen.height / cssH : 1f;
+                    var safe = Screen.safeArea;
+                    var frame = WebHomeLayout.Place(cssW, cssH,
+                        (Screen.height - safe.yMax) / perY, safe.yMin / perY, safe.xMin / perX, (Screen.width - safe.xMax) / perX);
+                    float ux = width / cssW;
+                    float uy = height / cssH;
+                    if (gear != null)
+                    {
+                        gear.style.position = Position.Absolute;
+                        gear.style.left = frame.Gear.X * ux;
+                        gear.style.top = frame.Gear.Y * uy;
+                        gear.style.width = frame.Gear.W * ux;
+                        gear.style.height = frame.Gear.H * uy;
+                        gear.style.right = StyleKeyword.Auto;
+                    }
+                    AudioBar.Place(audio, frame.Audio.Y * uy, frame.Audio.X * ux);
+                    FitAudioRow(audio, frame.Audio.W * ux, frame.Audio.H * uy);
+                }
                 audio.RegisterCallback<GeometryChangedEvent>(_ => Place());
                 shell.Root.RegisterCallback<GeometryChangedEvent>(_ => Place());
                 _audio = audio;
@@ -102,6 +140,23 @@ namespace Kestrel.Game.Shell
                 AddSpoken("home-" + id, a.Label, a.Spoken);
             }
             AddSpoken("kh1-readout", MainMenuLayout.Designation, MainMenuLayout.Find("kh1").Spoken);
+        }
+
+        static void FitAudioRow(VisualElement bar, float width, float height)
+        {
+            if (bar == null || !(width > 1f) || !(height > 1f)) return;
+            bar.style.width = width;
+            bar.style.height = height;
+            float s = height / HomeCornerLayout.AudioH;
+            foreach (var child in bar.Children())
+            {
+                child.style.width = 64f * s;
+                child.style.maxWidth = 64f * s;
+                child.style.minWidth = AudioBar.TouchPt * s;
+                child.style.height = AudioBar.TouchPt * s;
+                child.style.minHeight = AudioBar.TouchPt * s;
+                child.style.fontSize = 13f * s;
+            }
         }
 
         void AddSpoken(string name, string label, string spoken)

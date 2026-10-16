@@ -13,6 +13,10 @@ namespace UnityEditor
     public enum ScriptingImplementation { Mono2x, IL2CPP }
     public enum iOSTargetDevice { iPhoneOnly, iPadOnly, iPhoneAndiPad }
     public enum IconKind { Any, Application, Settings, Notification, Spotlight, Store }
+    public enum WebGLCompressionFormat { Brotli, Gzip, Disabled }
+    public enum WebGLExceptionSupport { None, ExplicitlyThrownExceptionsOnly, FullWithStacktrace, FullWithoutStacktrace }
+    public enum ManagedStrippingLevel { Disabled, Minimal, Low, Medium, High }
+    public enum Il2CppCodeGeneration { OptimizeSpeed, OptimizeSize }
     public enum ImportAssetOptions { Default, ForceUpdate, ForceSynchronousImport }
     public struct BuildPlayerOptions { public string[] scenes; public string locationPathName; public BuildTarget target; public BuildTargetGroup targetGroup; public BuildOptions options; }
     public static class BuildPipeline { public static Build.Reporting.BuildReport BuildPlayer(BuildPlayerOptions o) => null; }
@@ -58,6 +62,24 @@ namespace UnityEditor
         public static void SetIcons(Build.NamedBuildTarget t, Texture2D[] icons, IconKind k) { }
         public static PlatformIcon[] GetPlatformIcons(Build.NamedBuildTarget t, PlatformIconKind k) => new PlatformIcon[0];
         public static void SetPlatformIcons(Build.NamedBuildTarget t, PlatformIconKind k, PlatformIcon[] icons) { }
+        public static bool stripEngineCode { get; set; }
+        public static int defaultWebScreenWidth { get; set; }
+        public static int defaultWebScreenHeight { get; set; }
+        public static void SetManagedStrippingLevel(Build.NamedBuildTarget t, ManagedStrippingLevel level) { }
+        public static void SetIl2CppCodeGeneration(Build.NamedBuildTarget t, Il2CppCodeGeneration generation) { }
+        public static void SetGraphicsAPIs(BuildTarget target, UnityEngine.Rendering.GraphicsDeviceType[] apis) { }
+        public static class WebGL
+        {
+            public static string template { get; set; }
+            public static WebGLCompressionFormat compressionFormat { get; set; }
+            public static bool decompressionFallback { get; set; }
+            public static WebGLExceptionSupport exceptionSupport { get; set; }
+            public static bool nameFilesAsHashes { get; set; }
+            public static bool dataCaching { get; set; }
+            public static bool threadsSupport { get; set; }
+            public static int initialMemorySize { get; set; }
+            public static int maximumMemorySize { get; set; }
+        }
         public static class iOS
         {
             public static string buildNumber { get; set; } public static string appleDeveloperTeamID { get; set; } public static bool appleEnableAutomaticSigning { get; set; }
@@ -67,7 +89,7 @@ namespace UnityEditor
 }
 namespace UnityEditor.Build
 {
-    public struct NamedBuildTarget { public static readonly NamedBuildTarget iOS = default; public static readonly NamedBuildTarget Standalone = default; public static NamedBuildTarget FromBuildTargetGroup(BuildTargetGroup g) => default; }
+    public struct NamedBuildTarget { public static readonly NamedBuildTarget iOS = default; public static readonly NamedBuildTarget Standalone = default; public static readonly NamedBuildTarget WebGL = default; public static NamedBuildTarget FromBuildTargetGroup(BuildTargetGroup g) => default; }
     public interface IOrderedCallback { int callbackOrder { get; } }
     public interface IPreprocessBuildWithReport : IOrderedCallback { void OnPreprocessBuild(Reporting.BuildReport report); }
     public interface IPostprocessBuildWithReport : IOrderedCallback { void OnPostprocessBuild(Reporting.BuildReport report); }

@@ -5,6 +5,7 @@
 using System;
 using System.Globalization;
 using Kestrel.Core.Flight;
+using Kestrel.Game.Shell;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -72,10 +73,13 @@ namespace Kestrel.Slice
             hud = null;
         }
 
+        bool widePinned;
+
         public void Layout(float unitsPerPoint)
         {
             upp = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
             if (root == null) return;
+            if (!WebLayoutMode.UseWide(Screen.width, Screen.height)) ClearWidePins();
             float gapPx = Px(FlightHudLayout.GapPt);
             float plotH = Px(FlightHudLayout.PlotPt);
             root.style.marginTop = gapPx;
@@ -165,6 +169,211 @@ namespace Kestrel.Slice
             if (assistRow != null) assistRow.style.marginTop = Px(FlightHudLayout.GapPt);
             if (nudgeRow != null) nudgeRow.style.marginTop = Px(FlightHudLayout.GapPt);
             PlaceDockSpacer();
+            if (WebLayoutMode.UseWide(Screen.width, Screen.height)) LayoutWide();
+        }
+
+        /// <summary>Landscape web: stat strip across the top, plot and stages in the side rails, dock under the rocket.</summary>
+        void LayoutWide()
+        {
+            float pw = hud != null ? hud.resolvedStyle.width : 0f;
+            float ph = hud != null ? hud.resolvedStyle.height : 0f;
+            if (pw < 8f || ph < 8f) return;
+            WebViewport.Css(out float cssW, out float cssH);
+            if (cssW < 8f || cssH < 8f) return;
+            float perX = Screen.width > 1 ? Screen.width / cssW : 1f;
+            float perY = Screen.height > 1 ? Screen.height / cssH : 1f;
+            var safe = Screen.safeArea;
+            float safeTop = (Screen.height - safe.yMax) / perY;
+            float safeBottom = safe.yMin / perY;
+            float safeLeft = safe.xMin / perX;
+            float safeRight = (Screen.width - safe.xMax) / perX;
+            bool prompt = shown != default;
+            bool notes = infoOpen;
+            var mode = prompt && notes ? FlightHudMode.PromptNotes
+                : prompt ? FlightHudMode.Prompt
+                : notes ? FlightHudMode.Notes
+                : FlightHudMode.Cruise;
+            var f = FlightHudLayout.PlaceWide(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight, mode);
+            float ux = pw / cssW;
+            float uy = ph / cssH;
+            HudBox Sc(HudBox b) => new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
+            bool InDock(HudBox b) => b.Live && b.Y >= f.Dock.Y - 1f && b.Bottom <= f.Dock.Bottom + 1.5f;
+
+            var band = hud.Q("hud-band");
+            var telemetry = Sc(f.Telemetry);
+            Pin(band, telemetry);
+            if (band != null)
+            {
+                band.pickingMode = PickingMode.Ignore;
+                band.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
+            }
+            var topRow = hud.Q(className: "hud-top");
+            if (topRow != null)
+            {
+                topRow.style.position = Position.Absolute;
+                topRow.style.left = 0; topRow.style.top = 0; topRow.style.right = 0; topRow.style.bottom = 0;
+            }
+            var clock = Sc(f.Clock);
+            var stage = Sc(f.Stage);
+            Pin(hud.Q("h-t"), new HudBox { X = clock.X - telemetry.X, Y = 0, W = clock.W, H = telemetry.H });
+            Pin(hud.Q("h-stage"), new HudBox { X = stage.X - telemetry.X, Y = (telemetry.H - stage.H) * 0.5f, W = stage.W, H = stage.H });
+
+            root.style.position = Position.Absolute;
+            root.style.left = 0; root.style.top = 0; root.style.right = 0; root.style.bottom = 0;
+            root.style.marginTop = 0;
+            if (cards != null)
+            {
+                cards.style.position = Position.Absolute;
+                cards.style.left = 0; cards.style.top = 0; cards.style.right = 0; cards.style.bottom = 0;
+                cards.style.height = StyleKeyword.Auto;
+            }
+            float cellX = f.Cells[0].X;
+            float cellR = f.Cells[f.Cells.Length - 1].Right;
+            var cellBox = Sc(new HudBox { X = cellX, Y = f.Telemetry.Y, W = cellR - cellX, H = f.Telemetry.H });
+            Pin(root.Q("ascent-telemetry"), cellBox);
+            Pin(plot, Sc(f.Plot));
+            Pin(stages, Sc(f.Stages));
+
+            var tools = hud.Q("flight-tools");
+            if (tools != null)
+            {
+                tools.style.position = Position.Absolute;
+                tools.style.left = 0; tools.style.top = 0; tools.style.right = 0; tools.style.bottom = 0;
+                tools.style.marginBottom = 0;
+            }
+            Pin(hud.Q("follow"), Sc(f.Follow));
+            Pin(hud.Q("pause"), Sc(f.Pause));
+            Pin(actions, Sc(f.Dock));
+            if (actions != null) actions.style.overflow = Overflow.Hidden;
+            if (dockSpacer != null) dockSpacer.style.height = 0;
+
+            FitDockRow(actions != null ? actions.Q("ascent-medal-row") : null, InDock(f.Medal) ? Sc(f.Medal).H : 0f);
+            PlaceRailOrDock(help, f.Help, InDock(f.Help), Sc(f.Help), actions);
+            PlaceRailOrDock(quote, f.Quote, InDock(f.Quote), Sc(f.Quote), actions);
+            PlaceRailOrDock(bar, f.Timer, InDock(f.Timer), Sc(f.Timer), actions);
+            FitDockRow(promptRow, InDock(f.Primary) ? Sc(f.Primary).H : 0f);
+            FitDockRow(assistRow, !prompt && InDock(f.Assist) ? Sc(f.Assist).H : 0f);
+            FitDockRow(nudgeRow, InDock(f.NudgeDown) ? Sc(f.NudgeDown).H : 0f);
+            widePinned = true;
+        }
+
+        void PlaceRailOrDock(VisualElement e, HudBox css, bool inDock, HudBox panel, VisualElement dock)
+        {
+            if (e == null) return;
+            if (!css.Live)
+            {
+                e.style.display = DisplayStyle.None;
+                return;
+            }
+            e.style.display = DisplayStyle.Flex;
+            if (inDock)
+            {
+                if (dock != null && e.parent != dock) dock.Add(e);
+                e.style.position = StyleKeyword.Null;
+                e.style.left = StyleKeyword.Null;
+                e.style.top = StyleKeyword.Null;
+                e.style.height = panel.H;
+                e.style.maxHeight = panel.H;
+                e.style.marginTop = 0;
+                return;
+            }
+            if (hud != null && e.parent != hud) hud.Add(e);
+            Pin(e, panel);
+        }
+
+        static void FitDockRow(VisualElement row, float height)
+        {
+            if (row == null) return;
+            if (height <= 0.5f)
+            {
+                row.style.display = DisplayStyle.None;
+                return;
+            }
+            row.style.display = DisplayStyle.Flex;
+            row.style.height = height;
+            row.style.minHeight = height;
+            row.style.maxHeight = height;
+            row.style.marginTop = 0;
+        }
+
+        void ClearWidePins()
+        {
+            if (!widePinned) return;
+            widePinned = false;
+            Unpin(hud != null ? hud.Q("hud-band") : null);
+            Unpin(hud != null ? hud.Q("h-t") : null);
+            Unpin(hud != null ? hud.Q("h-stage") : null);
+            var topRow = hud != null ? hud.Q(className: "hud-top") : null;
+            Unpin(topRow);
+            if (root != null)
+            {
+                Unpin(root);
+                root.style.marginTop = StyleKeyword.Null;
+                Unpin(root.Q("ascent-telemetry"));
+            }
+            Unpin(cards);
+            Unpin(plot);
+            Unpin(stages);
+            var tools = hud != null ? hud.Q("flight-tools") : null;
+            Unpin(tools);
+            if (tools != null) tools.style.marginBottom = StyleKeyword.Null;
+            Unpin(hud != null ? hud.Q("follow") : null);
+            Unpin(hud != null ? hud.Q("pause") : null);
+            Unpin(actions);
+            if (actions != null) actions.style.overflow = StyleKeyword.Null;
+            ReturnToDock(help);
+            ReturnToDock(quote);
+            ReturnToDock(bar);
+            ShowRow(actions != null ? actions.Q("ascent-medal-row") : null);
+            ShowRow(promptRow);
+            ShowRow(assistRow);
+            ShowRow(nudgeRow);
+        }
+
+        void ReturnToDock(VisualElement e)
+        {
+            if (e == null || actions == null) return;
+            if (e.parent != actions) actions.Add(e);
+            e.style.display = StyleKeyword.Null;
+            Unpin(e);
+            e.style.maxHeight = StyleKeyword.Null;
+        }
+
+        static void ShowRow(VisualElement row)
+        {
+            if (row == null) return;
+            row.style.display = StyleKeyword.Null;
+            row.style.height = StyleKeyword.Null;
+            row.style.minHeight = StyleKeyword.Null;
+            row.style.maxHeight = StyleKeyword.Null;
+        }
+
+        static void Pin(VisualElement e, HudBox b)
+        {
+            if (e == null || !b.Live) return;
+            e.style.position = Position.Absolute;
+            e.style.left = b.X;
+            e.style.top = b.Y;
+            e.style.width = b.W;
+            e.style.height = b.H;
+            e.style.right = StyleKeyword.Auto;
+            e.style.bottom = StyleKeyword.Auto;
+            e.style.marginTop = 0;
+            e.style.marginBottom = 0;
+            e.style.flexGrow = 0;
+        }
+
+        static void Unpin(VisualElement e)
+        {
+            if (e == null) return;
+            e.style.position = StyleKeyword.Null;
+            e.style.left = StyleKeyword.Null;
+            e.style.top = StyleKeyword.Null;
+            e.style.width = StyleKeyword.Null;
+            e.style.height = StyleKeyword.Null;
+            e.style.right = StyleKeyword.Null;
+            e.style.bottom = StyleKeyword.Null;
+            e.style.flexGrow = StyleKeyword.Null;
         }
 
         public void Present(FlightDriver driver)
