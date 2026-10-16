@@ -42,6 +42,8 @@ namespace Kestrel.Slice
         public int OrbitsCompleted; public bool EngineerEnabled;
         Label issueChip, launchReason; Button launchButton;
         LaunchSequence sequence; bool counting; string pinnedEvent, chipSig;
+        readonly LiftoffHandoff handoff = new LiftoffHandoff();
+        bool ascentErrorLogged;
         double requiredMps, spareMps; double? maxQKpa; string orbitLabel = "";
         VisualElement seqRow; Label hVerdict, hPulse, hCallout; Button skipCount;
 
@@ -945,6 +947,12 @@ namespace Kestrel.Slice
             EnterFlight();
         }
 
+        /// <summary>The flight HUD is up. The designer launch control is hidden behind it.</summary>
+        public bool FlightHudVisible => hud != null && !hud.ClassListContains("hidden");
+
+        /// <summary>Designer launch control. Home auto-build calls <see cref="Launch"/> itself.</summary>
+        public void PressLaunch() => Launch();
+
         /// <summary>Same design that left the pad. The launch gate already passed.</summary>
         void RestartFlight()
         {
@@ -1002,20 +1010,17 @@ namespace Kestrel.Slice
             spareMps = sheet != null ? sheet.totalDeltaV_mps - sheet.requiredDeltaV_mps : 0;
             maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
             orbitLabel = sheet != null ? sheet.orbitLabel : "";
-            sequence = OpenSequence();
-            if (sequence != null && !sequence.Liftoff)
-            {
-                // The full count is long. Open on the last few seconds, the part a webcast actually shows.
-                if (sequence.Time < -12) sequence.Step(-12 - sequence.Time);
-                counting = !sequence.Liftoff;
-            }
-            else counting = false;
+            handoff.Enter(OpenSequence());
+            sequence = handoff.Sequence;
+            counting = handoff.Counting;
+            ascentErrorLogged = false;
             if (skipCount != null) skipCount.EnableInClassList("hidden", !counting);
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
             if (renderer != null) renderer.ResetSequence();
-            if (!counting) BeginAscent();
-            else RefreshWebcast(sequence.Time, false);
+            if (!counting) handoff.Tick(0, TryAscend);
+            else if (sequence != null) RefreshWebcast(sequence.Time, false);
+            NoteAscentError();
             chrome?.OnFlightStarted();
         }
 
@@ -1034,43 +1039,83 @@ namespace Kestrel.Slice
 
         void SkipCount()
         {
-            if (!counting || sequence == null) return;
-            sequence.Step(1e6);
-            counting = false;
-            if (skipCount != null) skipCount.AddToClassList("hidden");
-            BeginAscent();
+            if (handoff.Ascending || !counting) return;
+            handoff.Skip(TryAscend);
+            sequence = handoff.Sequence;
+            counting = handoff.Counting;
+            NoteAscentError();
+            if (skipCount != null && !counting) skipCount.AddToClassList("hidden");
         }
 
-        void BeginAscent()
+        /// <summary>
+        /// Start the sim, then the HUD. False or a throw leaves the handoff short of ascent so the next frame tries again.
+        /// The old path cleared the count before <see cref="FlightDriver.Launch"/> and never came back, which froze T+0:00.
+        /// </summary>
+        bool TryAscend()
         {
-            counting = false;
-            if (skipCount != null) skipCount.AddToClassList("hidden");
-            if (juice != null) juice.Reset();
+            if (flight == null || design == null) return false;
             flight.enabled = true;
-            bool engineer = EngineerEnabled
-                || PlayerPrefs.GetInt(DesignerV3Panel.EngineerPref, 0) != 0
-                || PlayerPrefs.GetInt(HangarPanel.EngineerPref, 0) != 0;
-            bool reduced = hangarCam != null && hangarCam.ReduceMotion;
+            bool engineer = EngineerEnabled;
+            try
+            {
+                if (PlayerPrefs.GetInt(DesignerV3Panel.EngineerPref, 0) != 0) engineer = true;
+                if (PlayerPrefs.GetInt(HangarPanel.EngineerPref, 0) != 0) engineer = true;
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Ascent] engineer pref: " + e.Message); }
+            if (flight.Sim != null && flight.Running)
+            {
+                PresentAscent(engineer);
+                return flight.Sim != null;
+            }
+            bool reduced = false;
+            try { reduced = hangarCam != null && hangarCam.ReduceMotion; }
+            catch (System.Exception) { reduced = false; }
             AscentHook hook = null;
-            PostFlightSource.Arm(SliceData.Catalog, design, session != null ? session.Design : null, engineer);
-            try { hook = AscentFlight.Prepare(SliceData.Catalog, design, session != null ? session.Design : null, engineer, reduced); }
+            var doc = session != null ? session.Design : null;
+            try { PostFlightSource.Arm(SliceData.Catalog, design, doc, engineer); }
+            catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
+            try { hook = AscentFlight.Prepare(SliceData.Catalog, design, doc, engineer, reduced); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
             flight.Launch(design, hook);
-            if (ascentHud == null) ascentHud = new AscentHud();
-            ascentHud.Open(hud, UnitsPerPoint());
-            ascentHud.Present(flight);
-            staging?.Arm(flight, reduced);
-            staging?.Layout(UnitsPerPoint());
-            failureShow?.Arm(flight, reduced);
-            failureShow?.Layout(UnitsPerPoint());
-            recovery?.Arm(flight, staging, SliceData.Catalog, design, engineer, reduced);
-            recovery?.Layout(UnitsPerPoint());
+            if (flight.Sim == null) return false;
+            PresentAscent(engineer);
+            return flight.Sim != null;
+        }
+
+        void PresentAscent(bool engineer)
+        {
+            try
+            {
+                counting = false;
+                if (skipCount != null) skipCount.AddToClassList("hidden");
+                if (juice != null) juice.Reset();
+                if (ascentHud == null) ascentHud = new AscentHud();
+                ascentHud.Open(hud, UnitsPerPoint());
+                ascentHud.Present(flight);
+                bool reduced = hangarCam != null && hangarCam.ReduceMotion;
+                staging?.Arm(flight, reduced);
+                staging?.Layout(UnitsPerPoint());
+                failureShow?.Arm(flight, reduced);
+                failureShow?.Layout(UnitsPerPoint());
+                recovery?.Arm(flight, staging, SliceData.Catalog, design, engineer, reduced);
+                recovery?.Layout(UnitsPerPoint());
+            }
+            catch (System.Exception e) { Debug.LogException(e); }
+        }
+
+        void NoteAscentError()
+        {
+            if (ascentErrorLogged || handoff.LastError == null) return;
+            ascentErrorLogged = true;
+            Debug.LogException(handoff.LastError);
         }
 
         void BackToDesign()
         {
             SetFlightPaused(false);
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
+            handoff.Reset();
+            ascentErrorLogged = false;
             counting = false; sequence = null; flight.enabled = false; cam.ResetProjectionMatrix();
             recovery?.Stop();
             RecoveryLog.Clear();
@@ -1106,7 +1151,12 @@ namespace Kestrel.Slice
             }
             if (birds != null) birds.TrackFlight = hud != null && !hud.ClassListContains("hidden");
             if (chrome != null && chrome.Paused) return;
-            if (counting) { TickCount(); return; }
+            bool inFlight = hud != null && !hud.ClassListContains("hidden");
+            if (!handoff.Ascending && (counting || (inFlight && (sequence != null || handoff.StartAttempts > 0))))
+            {
+                TickCount();
+                if (!handoff.Ascending) return;
+            }
             if (flight != null && flight.Running && tower != null)
             {
                 var pad = tower.Find("Pad");
@@ -1114,6 +1164,9 @@ namespace Kestrel.Slice
                 if (renderer != null) renderer.AdvanceTo(flight.SimTime);
             }
             if (flight == null || flight.Sim == null || hud.ClassListContains("hidden")) return;
+            PaintAscentReadout();
+            try
+            {
             // Chase camera, in floating-origin space (vehicle stays near the origin).
             // Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
@@ -1139,41 +1192,54 @@ namespace Kestrel.Slice
                 cam.transform.position = PadGround.ClampAboveGround(
                     cam.transform.position + cam.transform.right * juice.Shake.x + cam.transform.up * juice.Shake.y,
                     ground.position.y);
-            flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
+            if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
             recovery?.Present(Time.unscaledDeltaTime);
             if (recovery != null && ground != null) recovery.Aim(cam, ground.position.y);
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
-            hT.text = $"T+ {flight.SimTime:F1}";
-            hStage.text = $"S{flight.Sim.StageIdx + 1}";
-            hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
-            hVel.text = $"VEL {flight.Speed:N0} m/s";
-            hMach.text = $"MACH {flight.Mach:F2}";
-            hQ.text = $"Q {flight.DynPressure / 1000:F1} kPa";
-            if (juice != null)
+            RefreshWebcast(flight.SimTime, true);
+            ascentHud?.Present(flight);
+            }
+            catch (System.Exception e) { Debug.LogException(e); }
+        }
+
+        void PaintAscentReadout()
+        {
+            if (hT != null) hT.text = $"T+ {flight.SimTime:F1}";
+            if (hStage != null) hStage.text = $"S{flight.Sim.StageIdx + 1}";
+            if (hAlt != null) hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
+            if (hVel != null) hVel.text = $"VEL {flight.Speed:N0} m/s";
+            if (hMach != null) hMach.text = $"MACH {flight.Mach:F2}";
+            if (hQ != null) hQ.text = $"Q {flight.DynPressure / 1000:F1} kPa";
+            if (juice != null && hQ != null)
             {
                 hQ.EnableInClassList("q-hot", juice.Call == "MAX-Q");
                 hQ.EnableInClassList("q-crit", juice.Call == "AIRFRAME" || juice.Band == "critical" || juice.Band == "lost");
             }
-            hThr.text = $"THR {flight.ThrustFraction * 100:F0}%";
-            hDr.text = $"DR {flight.Downrange / 1000:F1} km";
-            RefreshWebcast(flight.SimTime, true);
-            ascentHud?.Present(flight);
-            if (flight.Lost) { hMsg.text = "Vehicle lost"; again.RemoveFromClassList("hidden"); }
-            else if (!flight.Running && !flight.Meco && flight.Sim.Done) { hMsg.text = "Flight ended before MECO"; again.RemoveFromClassList("hidden"); }
+            if (hThr != null) hThr.text = $"THR {flight.ThrustFraction * 100:F0}%";
+            if (hDr != null) hDr.text = $"DR {flight.Downrange / 1000:F1} km";
+            if (flight.Lost) { if (hMsg != null) hMsg.text = "Vehicle lost"; again?.RemoveFromClassList("hidden"); }
+            else if (!flight.Running && !flight.Meco && flight.Sim.Done)
+            {
+                if (hMsg != null) hMsg.text = "Flight ended before MECO";
+                again?.RemoveFromClassList("hidden");
+            }
         }
 
         void TickCount()
         {
-            if (sequence == null) { counting = false; BeginAscent(); return; }
-            sequence.Step(UnityEngine.Time.deltaTime);
+            double dt = LiftoffHandoff.FrameDt(UnityEngine.Time.deltaTime, UnityEngine.Time.unscaledDeltaTime);
+            handoff.Tick(dt, TryAscend);
+            sequence = handoff.Sequence;
+            counting = handoff.Counting;
+            NoteAscentError();
+            if (handoff.Ascending || sequence == null) return;
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
             if (renderer != null) renderer.AdvanceTo(TimelineClock.RealSeconds(sequence.Time, sequence.Mode));
             if (hT != null) hT.text = sequence.Clock;
             if (hStage != null) hStage.text = "COUNT";
             RefreshWebcast(sequence.Time, false);
-            if (sequence.Liftoff) { counting = false; BeginAscent(); }
         }
 
         void RefreshWebcast(double time, bool flying)

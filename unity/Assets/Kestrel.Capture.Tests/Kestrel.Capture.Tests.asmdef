@@ -4,6 +4,7 @@
     "references": [
         "Kestrel.Kit",
         "Kestrel.Slice",
+        "Kestrel.Game.Shell",
         "Kestrel.Game.Audio",
         "UnityEngine.TestRunner",
         "Kestrel.Vehicle"

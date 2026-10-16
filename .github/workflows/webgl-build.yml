@@ -74,6 +74,9 @@ jobs:
           buildsPath: build
           buildName: WebGL
           versioning: None
+      - name: Fail if the WebGL player has no Thrum clips
+        if: success() && env.HAS_LICENSE == 'true'
+        run: bash tools/check-built-guide-clips.sh build
       - name: Report size
         if: env.HAS_LICENSE == 'true'
         run: |

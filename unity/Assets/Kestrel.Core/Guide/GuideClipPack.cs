@@ -68,6 +68,39 @@ namespace Kestrel.Core.Guide
         public static string ResourceManifestPath(string destRoot)
             => Path.Combine(destRoot ?? "", ResourceManifest.Replace('/', Path.DirectorySeparatorChar));
 
+        /// <summary>Menu, briefing, and the designer may speak. Ascent may not.</summary>
+        public static bool AllowsVoice(bool inFlight) => !inFlight;
+
+        /// <summary>file URL for a disk path. A path that is already a URL is unchanged.</summary>
+        public static string FileUrl(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            if (path.IndexOf("://", StringComparison.Ordinal) >= 0) return path;
+            return new Uri(path).AbsoluteUri;
+        }
+
+        /// <summary>
+        /// Where the built player reads one clip.
+        /// WebGL (and any root that is already a URL) cannot stat the file, so the URL is returned anyway.
+        /// iOS and the editor require the file on disk and get a file URL.
+        /// </summary>
+        public static bool TryStreamingUrl(string streamingRoot, string fileName, out string url)
+        {
+            url = null;
+            if (string.IsNullOrEmpty(streamingRoot) || string.IsNullOrEmpty(fileName)) return false;
+            string slash = streamingRoot.Replace('\\', '/').TrimEnd('/');
+            string rel = PlayerFolder + "/" + fileName;
+            if (slash.IndexOf("://", StringComparison.Ordinal) >= 0)
+            {
+                url = slash + "/" + rel;
+                return true;
+            }
+            string disk = Path.Combine(streamingRoot, PlayerFolder.Replace('/', Path.DirectorySeparatorChar), fileName);
+            if (!File.Exists(disk)) return false;
+            url = FileUrl(disk);
+            return !string.IsNullOrEmpty(url);
+        }
+
         public static string FileName(GuideClip clip)
         {
             if (clip == null || string.IsNullOrEmpty(clip.File)) return "";

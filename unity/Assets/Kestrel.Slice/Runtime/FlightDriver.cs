@@ -70,9 +70,20 @@ namespace Kestrel.Slice
 
         public void Launch(Design d, AscentHook hook)
         {
-            GuideBinder.Listen(this);
             var c = SliceData.Catalog;
-            var (stages, opts) = Stack.SimInputs(c, d, PhysicsDt);
+            List<SimStage> stages;
+            SimOptions opts;
+            try
+            {
+                (stages, opts) = Stack.SimInputs(c, d, PhysicsDt);
+            }
+            catch (Exception e)
+            {
+                string orbit = d != null ? d.payloadOrbit : null;
+                throw new InvalidOperationException("SimInputs failed for orbit " + (orbit ?? "?") + ": " + e.Message, e);
+            }
+            if (stages == null || stages.Count == 0)
+                throw new InvalidOperationException("Launch has no stages.");
             Decisions = null;
             throttleHeld = false;
             ascentLost = false;
@@ -87,32 +98,48 @@ namespace Kestrel.Slice
             }
             opts.tMax = 600;
             thrustByStage = new double[stages.Count];
-            for (int i = 0; i < stages.Count; i++) thrustByStage[i] = stages[i].thrustVac;
+            for (int i = 0; i < stages.Count; i++)
+            {
+                if (stages[i] == null) throw new InvalidOperationException("Launch stage " + i + " is missing.");
+                thrustByStage[i] = stages[i].thrustVac;
+            }
+            // The sim is live before any presentation. A throw in the guide, the plume, or the
+            // audio bus must not leave this flight without a clock.
             Sim = new AscentSim(stages, opts);
-            arcadeBreaks = PlayedBreakup.Arcade(d);
-            breakupQPa = FailureMonitor.StructuralQLimPa(c, d);
-            liftoffTwr = stages.Count > 0 && Sim.Y[4] > 1 ? stages[0].thrustSL / (Sim.Y[4] * Atmosphere.G0) : 0;
-            double ideal = Headless.StackDeltaV(stages, opts.payload).total;
-            double required = Stack.RequiredDeltaV(c, d != null ? d.payloadOrbit : null).required;
-            dvMargin = PlayedBreakup.Margin(ideal, required);
-            // MECO = burnout of the core first stage (serial entry whose role is core with index 0).
-            var serial = Stack.SerialStages(c, d).stages;
-            mecoStage = serial.FindIndex(s => s.role == "core" && s.index == 0) + 1;
-            thrustRef = Math.Max(1, stages[0].thrustVac);
-            omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
-            clock = 0; Meco = false; Result = null; Running = true; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
+            Running = true;
+            clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             AttitudeDeg = 90f; HasAttitude = false;
             seenEvents = 0; mecoSent = false;
-            UpdateFrame();
-            Sink?.OnEvent("flight.begin");
-            PumpEvents();
-            PublishAudio();
+            try
+            {
+                arcadeBreaks = PlayedBreakup.Arcade(d);
+                breakupQPa = FailureMonitor.StructuralQLimPa(c, d);
+                liftoffTwr = stages.Count > 0 && Sim.Y[4] > 1 ? stages[0].thrustSL / (Sim.Y[4] * Atmosphere.G0) : 0;
+                double ideal = Headless.StackDeltaV(stages, opts.payload).total;
+                double required = Stack.RequiredDeltaV(c, d != null ? d.payloadOrbit : null).required;
+                dvMargin = PlayedBreakup.Margin(ideal, required);
+                var serial = Stack.SerialStages(c, d).stages;
+                mecoStage = serial.FindIndex(s => s.role == "core" && s.index == 0) + 1;
+                thrustRef = Math.Max(1, stages[0].thrustVac);
+                omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
+                UpdateFrame();
+                Sink?.OnEvent("flight.begin");
+                PumpEvents();
+                PublishAudio();
+                GuideBinder.Listen(this);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         void Update()
         {
             if (Held || !Running || Sim == null) return;
-            clock += Math.Min(Time.deltaTime, 0.1); // clamp hitches; physics catches up at fixed dt
+            float frame = Time.deltaTime;
+            if (frame <= 0f && Time.unscaledDeltaTime > 0f) frame = Time.unscaledDeltaTime;
+            clock += Math.Min(frame, 0.1f); // clamp hitches; physics catches up at fixed dt
             int guard = 0;
             while (Sim.T < clock && !Sim.Done && guard++ < 64)
             {
