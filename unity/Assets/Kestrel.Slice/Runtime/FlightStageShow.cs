@@ -85,11 +85,11 @@ namespace Kestrel.Slice
             jettisonM = design.fairingJettisonAltitudeKm > 0 ? design.fairingJettisonAltitudeKm * 1000 : 110000;
             hasBoosters = design.StrapOnCount > 0;
 
-            List<SerialStage> serial;
-            try { serial = Stack.SerialStages(catalog, design).stages; }
+            List<SerialStage> phases;
+            try { phases = Stack.SerialStages(catalog, design).stages; }
             catch (System.Exception e) { Debug.LogWarning("[Staging] stack skipped: " + e.Message); return; }
-            var bodies = FlightStagingPlan.Bodies(serial, design.StrapOnCount);
-            nozzleY = new float[Mathf.Max(1, serial.Count)];
+            var bodies = FlightStagingPlan.Bodies(phases, design.StrapOnCount);
+            nozzleY = new float[Mathf.Max(1, phases != null ? phases.Count : 1)];
             boosterSerial = -1;
             coreSerial = 0;
             coreReleases = false;
