@@ -1,5 +1,5 @@
-// Draws the gull flock in pad space under the floating-origin world root.
-// One mesh, the same terrain shader as the coast, so it does not add a shader variant.
+// Draws the gull skein in pad space under the floating-origin world root.
+// One mesh, a sky-tint shader (not the terrain grain), so a bird stays a silhouette.
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -16,17 +16,20 @@ namespace Kestrel.Site
         FlightDriverSource flight;
         Mesh mesh;
         Material mat;
+        MeshRenderer renderer;
         Vector3[] verts;
         Vector3[] normals;
+        Color[] colors;
         readonly float[] xyz = new float[BirdFlock.VertexCount * 3];
         readonly float[] nrm = new float[BirdFlock.VertexCount * 3];
         readonly BirdPose[] poses = new BirdPose[BirdFlock.Count];
         Light sun;
+        Camera cam;
 
-        /// <summary>1 flaps. 0 holds the wings level for Reduce Motion.</summary>
+        /// <summary>1 flaps. 0 holds the glide for Reduce Motion.</summary>
         public float FlapScale = 1f;
 
-        /// <summary>While set, the flock rides the vehicle through the early climb. Otherwise it circles the pad.</summary>
+        /// <summary>While set, ignition and altitude come from the vehicle. Otherwise the skein cruises the pad.</summary>
         public bool TrackFlight;
 
         public interface FlightDriverSource
@@ -51,32 +54,33 @@ namespace Kestrel.Site
 
         void Build()
         {
-            var shader = Resources.Load<Shader>("Site/KH_Terrain");
-            if (shader == null) shader = Shader.Find("Kestrel/Terrain");
+            var shader = Resources.Load<Shader>("Site/KH_Bird");
+            if (shader == null) shader = Shader.Find("Kestrel/Bird");
             if (shader == null) return;
             mat = new Material(shader) { name = "Birds" };
             mesh = new Mesh { name = "Birds" };
             verts = new Vector3[BirdFlock.VertexCount];
             normals = new Vector3[BirdFlock.VertexCount];
-            var colors = new Color[BirdFlock.VertexCount];
-            var gull = new Color(Coastline.Gull[0], Coastline.Gull[1], Coastline.Gull[2], 1f);
-            var tip = new Color(0.72f, 0.75f, 0.80f, 1f);
+            colors = new Color[BirdFlock.VertexCount];
             for (int i = 0; i < BirdFlock.Count; i++)
             {
                 int v = i * BirdFlock.VertsPerBird;
                 for (int k = 0; k < BirdFlock.VertsPerBird; k++)
-                    colors[v + k] = (k % 4) >= 2 ? tip : gull;
+                {
+                    BirdFlock.VertexColor(k, out float r, out float g, out float b);
+                    colors[v + k] = new Color(r, g, b, 1f);
+                }
             }
-            var idx = new int[BirdFlock.Count * 24];
+            var idx = new int[BirdFlock.IndexCount];
             BirdFlock.Indices(idx);
             mesh.vertices = verts;
             mesh.normals = normals;
             mesh.colors = colors;
             mesh.triangles = idx;
-            mesh.bounds = new Bounds(Vector3.zero, new Vector3(4000f, 4000f, 4000f));
+            mesh.bounds = new Bounds(Vector3.zero, new Vector3(80f, 80f, 80f));
             var filter = gameObject.AddComponent<MeshFilter>();
             filter.sharedMesh = mesh;
-            var renderer = gameObject.AddComponent<MeshRenderer>();
+            renderer = gameObject.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = mat;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
@@ -86,7 +90,12 @@ namespace Kestrel.Site
 
         void LateUpdate()
         {
-            if (mesh == null) return;
+            if (mesh == null || renderer == null) return;
+            if (!BirdFlock.Enabled)
+            {
+                renderer.enabled = false;
+                return;
+            }
             float rx = 0f, ry = 0f, ox = 0f, oy = 0f;
             if (TrackFlight && flight != null)
             {
@@ -96,21 +105,47 @@ namespace Kestrel.Site
                 oy = (float)flight.OriginY;
             }
             BirdFlock.Evaluate(Time.time, rx, ry, FlapScale, poses);
+            float shown = 0f;
+            for (int i = 0; i < BirdFlock.Count; i++)
+                if (poses[i].Presence > shown) shown = poses[i].Presence;
+            renderer.enabled = shown > 0.02f;
+            if (!renderer.enabled) return;
+
             for (int i = 0; i < BirdFlock.Count; i++)
                 BirdFlock.WriteBird(poses[i], i * BirdFlock.VertsPerBird, xyz, nrm);
-            for (int i = 0; i < verts.Length; i++)
+            if (cam == null) cam = Camera.main;
+            for (int i = 0; i < BirdFlock.Count; i++)
             {
-                int o = i * 3;
-                verts[i] = new Vector3(xyz[o] - ox, xyz[o + 1] - oy, xyz[o + 2]);
-                normals[i] = new Vector3(nrm[o], nrm[o + 1], nrm[o + 2]);
+                var center = new Vector3(poses[i].X - ox, poses[i].Y - oy, poses[i].Z);
+                float appear = 1f;
+                if (poses[i].Presence >= 0.02f && cam != null)
+                {
+                    float dist = Vector3.Distance(cam.transform.position, transform.TransformPoint(center));
+                    appear = BirdFlock.AppearScale(dist);
+                }
+                int v = i * BirdFlock.VertsPerBird;
+                for (int k = 0; k < BirdFlock.VertsPerBird; k++)
+                {
+                    int o = (v + k) * 3;
+                    var p = new Vector3(xyz[o] - ox, xyz[o + 1] - oy, xyz[o + 2]);
+                    if (appear != 1f) p = center + (p - center) * appear;
+                    verts[v + k] = p;
+                    normals[v + k] = new Vector3(nrm[o], nrm[o + 1], nrm[o + 2]);
+                    var c = colors[v + k];
+                    c.a = poses[i].Presence;
+                    colors[v + k] = c;
+                }
             }
             mesh.vertices = verts;
             mesh.normals = normals;
-            mesh.bounds = new Bounds(new Vector3(rx - ox, ry * 0.5f - oy, 0f), new Vector3(800f, 800f, 800f));
+            mesh.colors = colors;
+            mesh.RecalculateBounds();
             if (sun == null || mat == null) return;
             mat.SetVector(SunDirId, -sun.transform.forward);
             mat.SetColor(SunColorId, sun.color * sun.intensity);
-            mat.SetColor(FogColorId, RenderSettings.fogColor);
+            var sky = RenderSettings.fogColor;
+            if (sky.maxColorComponent < 0.2f) sky = new Color(0.55f, 0.68f, 0.80f, 1f);
+            mat.SetColor(FogColorId, sky);
             mat.SetVector(FogRangeId, new Vector4(RenderSettings.fogStartDistance, RenderSettings.fogEndDistance, RenderSettings.fog ? 1f : 0f, 0f));
         }
 
