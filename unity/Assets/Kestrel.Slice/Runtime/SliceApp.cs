@@ -58,25 +58,39 @@ namespace Kestrel.Slice
             PostFlightSource.Bind(RestartFlight, ExitToHome);
         }
 
-        /// <summary>Open the most recent save, else the Workhorse template, else the stock preset.</summary>
+        /// <summary>Open a home handoff, else the most recent save, else the Workhorse template, else the stock preset.</summary>
         void StartSession()
         {
             var c = SliceData.Catalog;
             var h = SliceData.Hangar;
             library = SliceData.Library;
             JsonObject first = null; string id = null, name = null;
+            bool flyNow = false, handed = false;
             try
             {
-                var saves = library?.List();
-                if (saves != null && saves.Count > 0) { id = saves[0].id; first = library.Load(id); name = saves[0].name; }
+                if (PadHandoff.TryTake(out var pending, out flyNow) && pending != null)
+                {
+                    first = pending;
+                    handed = true;
+                    name = pending.Str("name");
+                }
             }
-            catch (System.Exception e) { Debug.LogWarning("[Hangar] could not read saves: " + e.Message); first = null; id = null; }
-            if (first == null)
+            catch (System.Exception e) { Debug.LogWarning("[Hangar] pad handoff: " + e.Message); first = null; handed = false; flyNow = false; }
+            if (!handed)
             {
-                id = null;
-                var t = h?.Template("workhorse") ?? (h != null && h.templates.Count > 0 ? h.templates[0] : null);
-                if (t != null) { first = HangarEditor.ForkTemplate(t); name = t.name; }
-                else first = DesignerValidation.ToJson(c.Preset("stock"));
+                try
+                {
+                    var saves = library?.List();
+                    if (saves != null && saves.Count > 0) { id = saves[0].id; first = library.Load(id); name = saves[0].name; }
+                }
+                catch (System.Exception e) { Debug.LogWarning("[Hangar] could not read saves: " + e.Message); first = null; id = null; }
+                if (first == null)
+                {
+                    id = null;
+                    var t = h?.Template("workhorse") ?? (h != null && h.templates.Count > 0 ? h.templates[0] : null);
+                    if (t != null) { first = HangarEditor.ForkTemplate(t); name = t.name; }
+                    else first = DesignerValidation.ToJson(c.Preset("stock"));
+                }
             }
             session = new HangarSession(c, h, first);
             if (id != null) session.Load(first, id, name);
@@ -87,6 +101,17 @@ namespace Kestrel.Slice
             design = Design.FromJson(session.Design);
             OnDesignChanged();
             TryBuildPanel();
+            if (!handed) return;
+            try
+            {
+                if (flyNow && session.LaunchEnabled) Launch();
+                else ShowDesigner(true);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[Hangar] pad handoff: " + e.Message);
+                ShowDesigner(true);
+            }
         }
 
         void TryBuildPanel()

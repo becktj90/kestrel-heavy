@@ -12,12 +12,12 @@ namespace Kestrel.Game.Tests
     {
         const string Uss = "Assets/Kestrel.Game/Shell/UI/KH_Tokens.uss";
 
-        static VisualElement Build(bool reduce, out int launched, out int hangar, out VisualElement full)
+        static VisualElement Build(bool reduce, out int launched, out int designed, out VisualElement full)
         {
-            int l = 0, h = 0;
+            int l = 0, d = 0;
             full = new VisualElement(); var safe = new VisualElement();
-            var root = MainMenuOverlay.Build(full, safe, () => l++, () => h++, reduce);
-            launched = l; hangar = h;
+            var root = MainMenuOverlay.Build(full, safe, () => l++, () => d++, () => { }, reduce);
+            launched = l; designed = d;
             return root;
         }
 
@@ -25,43 +25,51 @@ namespace Kestrel.Game.Tests
         public void CopyIsHonestAndHasNoFakeData()
         {
             var all = MainMenuCopy.Launch.Caption + MainMenuCopy.TapHint + string.Join(" ", MainMenuCopy.Tiles.Select(t => t.Caption + t.Label));
-            StringAssert.DoesNotContain("Next:", MainMenuCopy.LaunchCaption, "no start-mission route exists yet");
+            StringAssert.DoesNotContain("Next:", MainMenuCopy.LaunchCaption);
             StringAssert.DoesNotContain("NEW PARTS", all.ToUpperInvariant());
             Assert.That(Regex.IsMatch(all, @"T[\u2013\-]\d"), Is.False, "no countdown");
         }
 
         [Test]
-        public void OnlyHangarAndLaunchAreLive()
+        public void LaunchDesignAndMissionsAreLive()
         {
             Assert.That(MainMenuCopy.Launch.Live);
-            Assert.That(MainMenuCopy.Tiles.Where(t => t.Live).Select(t => t.Id), Is.EqualTo(new[] { "hangar" }));
-            Assert.That(MainMenuCopy.Tiles.Length, Is.EqualTo(4));
+            Assert.That(MainMenuCopy.Design.Live);
+            Assert.That(MainMenuCopy.Tiles.Where(t => t.Live).Select(t => t.Id), Is.EqualTo(new[] { "missions" }));
+            Assert.That(MainMenuCopy.Tiles.Length, Is.EqualTo(2));
+            Assert.That(MainMenuCopy.Tiles.Any(t => t.Id == "hangar"), Is.False);
         }
 
         [Test]
         public void OverlayBuildsControlsWithSpokenLabelsAndSoonTags()
         {
             var root = Build(false, out _, out _, out var full);
-            string[] ids = { "home-launch", "home-hangar", "home-missions", "home-codex", "home-settings" };
+            string[] ids = { "home-launch", "home-design", "home-missions", "home-codex" };
             foreach (var id in ids)
             {
                 var b = root.Q<Button>(id);
                 Assert.That(b, Is.Not.Null, id);
                 Assert.That(b.tooltip, Is.Not.Empty, id + " needs a spoken label");
             }
+            var gear = full.Q<Button>("home-settings");
+            Assert.That(gear, Is.Not.Null);
+            Assert.That(gear.tooltip, Is.Not.Empty);
             Assert.That(root.Q<Button>("home-launch").enabledSelf);
-            Assert.That(root.Q<Button>("home-hangar").enabledSelf);
-            foreach (var id in new[] { "missions", "codex", "settings" })
-            {
-                var b = root.Q<Button>("home-" + id);
-                Assert.That(b.enabledSelf, Is.False, id);
-                var tag = b.Q<Label>("soon");
-                Assert.That(tag, Is.Not.Null, id + " needs a SOON tag");
-                Assert.That(tag.parent.ClassListContains("kh-mm-tile-head"), id + ": SOON sits in the title row, not over the caption");
-                Assert.That(b.Q(className: "kh-mm-tile-caption").parent, Is.SameAs(b));
-            }
-            Assert.That(root.Query<Label>("soon").ToList().Count, Is.EqualTo(3));
-            Assert.That(root.Query<VisualElement>("lamp").ToList().Count, Is.EqualTo(2));
+            Assert.That(root.Q<Button>("home-design").enabledSelf);
+            Assert.That(root.Q<Button>("home-missions").enabledSelf);
+            Assert.That(root.Q("home-hangar"), Is.Null);
+            var codex = root.Q<Button>("home-codex");
+            Assert.That(codex.enabledSelf, Is.False);
+            var tag = codex.Q<Label>("soon");
+            Assert.That(tag, Is.Not.Null);
+            Assert.That(tag.parent.ClassListContains("kh-mm-tile-head"));
+            Assert.That(codex.Q(className: "kh-mm-tile-caption").parent, Is.SameAs(codex));
+            Assert.That(root.Query<Label>("soon").ToList().Count, Is.EqualTo(1));
+            Assert.That(root.Query<VisualElement>("lamp").ToList().Count, Is.EqualTo(3));
+            Assert.That(full.Q("home-settings-sheet").style.display.value, Is.EqualTo(DisplayStyle.None));
+            Assert.That(root.Q("mm-stats"), Is.Not.Null);
+            Assert.That(root.Q<Label>("mm-fuel").text, Is.EqualTo(MainMenuCopy.FuelStat));
+            Assert.That(root.Q<Label>("mm-thrust").text, Is.EqualTo(MainMenuCopy.ThrustStat));
             Assert.That(full.Q("mm-bar-top"), Is.Not.Null); Assert.That(full.Q("mm-bar-bottom"), Is.Not.Null);
             // Decorative elements must not steal taps from the 3D scene or the buttons.
             Assert.That(root.pickingMode, Is.EqualTo(PickingMode.Ignore));
@@ -85,16 +93,17 @@ namespace Kestrel.Game.Tests
         public void IntroOrderFollowsTheMotionSpec()
         {
             Assert.That(MainMenuCopy.IntroDelayMs("title"), Is.LessThan(MainMenuCopy.IntroDelayMs("launch")));
-            int prev = MainMenuCopy.IntroDelayMs("launch");
-            foreach (var t in MainMenuCopy.Tiles) { int d = MainMenuCopy.IntroDelayMs(t.Id); Assert.That(d - prev, Is.EqualTo(70)); prev = d; }
-            Assert.That(prev, Is.LessThan(1500));
+            string[] steps = { "launch", "design", "missions", "codex" };
+            for (int i = 1; i < steps.Length; i++)
+                Assert.That(MainMenuCopy.IntroDelayMs(steps[i]) - MainMenuCopy.IntroDelayMs(steps[i - 1]), Is.EqualTo(70));
+            Assert.That(MainMenuCopy.IntroDelayMs("codex"), Is.LessThan(1500));
         }
 
         [Test]
         public void HitTargetsAreAtLeast44px()
         {
             string uss = File.ReadAllText(Uss);
-            foreach (var sel in new[] { ".kh-mm-launch", ".kh-button.kh-mm-tile" })
+            foreach (var sel in new[] { ".kh-mm-launch", ".kh-mm-design", ".kh-mm-gear", ".kh-button.kh-mm-tile" })
             {
                 int i = uss.IndexOf(sel + " {"); Assert.That(i, Is.GreaterThanOrEqualTo(0), sel);
                 string rule = uss.Substring(i, uss.IndexOf('}', i) - i);
@@ -128,8 +137,8 @@ namespace Kestrel.Game.Tests
             foreach (var a in MainMenuLayout.Anchors())
             {
                 bool hidden = MainMenuLayout.ReplacedByOverlay(a);
-                if (a.Clickable || a.Id == "title" || a.Id == "subtitle") Assert.That(hidden, a.Id);
-                else Assert.That(hidden, Is.False, a.Id + " (3D telemetry/KH-1) must stay");
+                bool replaced = a.Clickable || a.Id == "title" || a.Id == "subtitle" || a.Id == "tel-l" || a.Id == "tel-r";
+                Assert.That(hidden, Is.EqualTo(replaced), a.Id);
             }
             Assert.That(MainMenuLayout.Anchors().Any(a => a.Id == "kh1" && !MainMenuLayout.ReplacedByOverlay(a)));
         }
@@ -154,7 +163,7 @@ namespace Kestrel.Game.Tests
         {
             Assert.That(MainMenuCopy.IsNarrow(375f)); Assert.That(MainMenuCopy.IsNarrow(440f)); Assert.That(MainMenuCopy.IsNarrow(1032f), Is.False);
             string uss = File.ReadAllText(Uss);
-            foreach (var m in Regex.Matches(uss, @"\.kh-mm-narrow \.(?:kh-mm-launch|kh-button\.kh-mm-tile) \{[^}]*min-height:\s*(\d+)px").Cast<Match>())
+            foreach (var m in Regex.Matches(uss, @"\.kh-mm-narrow \.(?:kh-mm-launch|kh-mm-design|kh-mm-gear|kh-button\.kh-mm-tile) \{[^}]*min-height:\s*(\d+)px").Cast<Match>())
                 Assert.That(int.Parse(m.Groups[1].Value), Is.GreaterThanOrEqualTo(44));
             StringAssert.DoesNotContain("height: 88px; height", uss);
         }
@@ -351,9 +360,12 @@ namespace Kestrel.Game.Tests
             var z = MenuTypeScale.Compute(390f, 844f, 47f, 34f);
             MainMenuOverlay.ApplyScale(root, z);
             Assert.That(root.Q<Label>("mm-kestrel").style.fontSize.value.value, Is.EqualTo(z.Title).Within(0.01f));
-            Assert.That(root.Q<Button>("home-hangar").style.minHeight.value.value, Is.EqualTo(z.TileH).Within(0.01f));
-            Assert.That(root.Q<Button>("home-hangar").style.height.value.value, Is.EqualTo(z.TileH).Within(0.01f), "exact height, so the block is what the maths says");
+            Assert.That(root.Q<Button>("home-missions").style.minHeight.value.value, Is.EqualTo(z.TileH).Within(0.01f));
+            Assert.That(root.Q<Button>("home-missions").style.height.value.value, Is.EqualTo(z.TileH).Within(0.01f), "exact height, so the block is what the maths says");
             Assert.That(root.Q<Button>("home-launch").style.height.value.value, Is.EqualTo(z.LaunchH).Within(0.01f));
+            Assert.That(root.Q<Button>("home-design").style.height.value.value, Is.EqualTo(z.DesignH).Within(0.01f));
+            Assert.That(root.Q("mm-stats").style.minHeight.value.value, Is.GreaterThanOrEqualTo(36f));
+            Assert.That(root.Q<Label>("mm-fuel").style.fontSize.value.value, Is.GreaterThanOrEqualTo(13f));
             foreach (var it in MainMenuCopy.Tiles)
             {
                 var name = root.Q<Button>("home-" + it.Id).Q(className: "kh-mm-tile-name");
@@ -361,7 +373,7 @@ namespace Kestrel.Game.Tests
                 Assert.That(name.style.flexShrink.value, Is.EqualTo(0f), it.Id);
                 Assert.That(name.style.fontSize.value.value, Is.EqualTo(MenuTypeScale.FitName(z, it.Label, !it.Live)).Within(0.01f), it.Id);
             }
-            Assert.That(root.Q<Button>("home-missions").Q(className: "kh-mm-soon").style.fontSize.value.value, Is.EqualTo(z.Soon).Within(0.01f));
+            Assert.That(root.Q<Button>("home-codex").Q(className: "kh-mm-soon").style.fontSize.value.value, Is.EqualTo(z.Soon).Within(0.01f));
         }
     }
 }

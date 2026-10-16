@@ -9,11 +9,14 @@ namespace Kestrel.Game.Shell
         public const string TitleTop = "KESTREL";
         public const string TitleBottom = "HEAVY";
 
-        /// <summary>LAUNCH opens the designer today (no start-mission route exists), so the caption says that
-        /// and not "Next: KH-1 · First Hop". Swap the caption when a real route lands.</summary>
-        public const string LaunchCaption = "Opens the pad. Build, then launch.";
+        /// <summary>Static caption. The live button may show the real next mission once Career is known.</summary>
+        public const string LaunchCaption = "Next flight, then the pad.";
+        public const string DesignLabel = "DESIGN FIRST";
+        public const string DesignCaption = "Your rocket, this mission.";
         public const string TapHint = "TAP A TILE OR LAUNCH TO BEGIN";
         public const string SoonTag = "SOON";
+        public const string FuelStat = "Fuel 92%";
+        public const string ThrustStat = "Thrust 850 kN";
 
         public struct Item
         {
@@ -22,15 +25,14 @@ namespace Kestrel.Game.Shell
             { Id = id; Label = label; Caption = caption; Spoken = spoken; Live = live; Glyph = glyph; }
         }
 
-        /// <summary>The four tiles (LAUNCH is the bar above them).</summary>
+        /// <summary>One row under LAUNCH and Design first. Settings is the corner gear, not a tile.</summary>
         public static readonly Item[] Tiles =
         {
-            new Item("hangar", "HANGAR", "Design and tune your rocket.", "Hangar. Opens the rocket designer.", true, "hangar"),
-            new Item("missions", "MISSIONS", "Pick any flight you've unlocked.", "Missions. Coming soon.", false, "planet"),
+            new Item("missions", "MISSIONS", "Pick any flight you've unlocked.", "Missions. Opens the mission list.", true, "planet"),
             new Item("codex", "CODEX", "Parts, places and flight notes.", "Codex. Coming soon.", false, "book"),
-            new Item("settings", "SETTINGS", "Sound, motion, accessibility.", "Settings. Coming soon.", false, "gear"),
         };
-        public static readonly Item Launch = new Item("launch", "LAUNCH", LaunchCaption, "Launch. Opens the rocket designer on the pad.", true, "launch");
+        public static readonly Item Launch = new Item("launch", "LAUNCH", LaunchCaption, "Launch. Next flight, then the pad.", true, "launch");
+        public static readonly Item Design = new Item("design", DesignLabel, DesignCaption, "Design first. Opens the designer with this mission.", true, "design");
 
         public const float TitleMax = 80f, TitleMin = 24f;
         /// <summary>Font size that fits <paramref name="avail"/> px, from the width measured at 100 px.</summary>
@@ -57,11 +59,12 @@ namespace Kestrel.Game.Shell
             {
                 case "bars": return 0;
                 case "title": return 250;
+                case "stats": return 700;
                 case "launch": return 750;
-                case "hangar": return 820;
+                case "design": return 820;
                 case "missions": return 890;
                 case "codex": return 960;
-                case "settings": return 1030;
+                case "gear": return 250;
                 default: return 0;
             }
         }

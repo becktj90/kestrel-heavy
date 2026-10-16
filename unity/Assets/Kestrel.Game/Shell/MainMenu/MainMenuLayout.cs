@@ -112,20 +112,18 @@ namespace Kestrel.Game.Shell
         {
             // Closest: the hero bar. Then the near glass row, the wordmark, the far glass row, then the HUD.
             // Left and right of a row sit a few tenths of a metre apart so a yaw shows parallax inside the row.
-            new MenuAnchor("launch", 3.15f, 0f, -0.74f, 0.82f, 0.100f, true, true,
-                LaunchLabel, "Launch. Opens the rocket designer on the pad.", null, MenuTextRole.Launch),
-            new MenuAnchor("codex", 4.30f, -0.46f, -0.46f, 0.34f, 0.080f, true, false,
+            new MenuAnchor("launch", 3.15f, 0f, -0.80f, 0.82f, 0.100f, true, true,
+                LaunchLabel, "Launch. Next flight, then the pad.", null, MenuTextRole.Launch),
+            new MenuAnchor("design", 3.85f, 0f, -0.60f, 0.82f, 0.072f, true, true,
+                "DESIGN FIRST", "Design first. Opens the designer with this mission.", null, MenuTextRole.Glass),
+            new MenuAnchor("missions", 4.55f, -0.46f, -0.42f, 0.36f, 0.072f, true, true,
+                "MISSIONS", "Missions. Opens the mission list.", "planet", MenuTextRole.Glass),
+            new MenuAnchor("codex", 4.90f, 0.46f, -0.42f, 0.36f, 0.072f, true, false,
                 "CODEX", "Codex. Coming soon.", "book", MenuTextRole.Glass),
-            new MenuAnchor("settings", 4.60f, 0.46f, -0.46f, 0.34f, 0.080f, true, false,
-                "SETTINGS", "Settings. Coming soon.", "gear", MenuTextRole.Glass),
             new MenuAnchor("subtitle", 5.15f, 0f, 0.58f, 0.70f, 0.030f, false, false,
                 Tagline, "Design, build, launch.", null, MenuTextRole.Subtitle),
             new MenuAnchor("title", 5.35f, 0f, 0.75f, 0.82f, 0.088f, false, false,
                 TitleTop, "Kestrel Heavy.", null, MenuTextRole.Title),
-            new MenuAnchor("hangar", 5.90f, -0.46f, -0.20f, 0.32f, 0.072f, true, true,
-                "HANGAR", "Hangar. Opens the rocket designer.", "wrench", MenuTextRole.Glass),
-            new MenuAnchor("missions", 6.20f, 0.46f, -0.20f, 0.32f, 0.072f, true, false,
-                "MISSIONS", "Missions. Coming soon.", "planet", MenuTextRole.Glass),
             new MenuAnchor("tel-l", 8.60f, -0.55f, 0.16f, 0.32f, 0.150f, false, false,
                 "", "Fuel, oxidizer and mass.", null, MenuTextRole.Hud),
             new MenuAnchor("tel-r", 8.60f, 0.55f, 0.16f, 0.32f, 0.150f, false, false,
@@ -142,12 +140,13 @@ namespace Kestrel.Game.Shell
             return default;
         }
 
-        /// <summary>true = the 2D mix overlay (title card, LAUNCH bar, tiles) replaces the 3D title/launch/glass rows;
-        /// false = the original 3D controls. The 3D rocket, hangar and telemetry stay either way.</summary>
+        /// <summary>true = the 2D mix overlay (title card, LAUNCH bar, tiles) replaces the 3D title/launch/glass rows
+        /// and the black telemetry slabs. The rocket and hangar stay.</summary>
         public const bool UseOverlay = true;
 
-        /// <summary>3D plates the overlay replaces.</summary>
-        public static bool ReplacedByOverlay(MenuAnchor a) => a.Clickable || a.Id == "title" || a.Id == "subtitle";
+        /// <summary>3D plates the overlay replaces, including the opaque fuel and thrust slabs.</summary>
+        public static bool ReplacedByOverlay(MenuAnchor a) =>
+            a.Clickable || a.Id == "title" || a.Id == "subtitle" || a.Id == "tel-l" || a.Id == "tel-r";
 
         /// <summary>All menu type sizes for a panel (see MenuTypeScale).</summary>
         public static MenuTypeScale.Sizes TypeScale(float w, float h, float topInset = 0f, float bottomInset = 0f) => MenuTypeScale.Compute(w, h, topInset, bottomInset);

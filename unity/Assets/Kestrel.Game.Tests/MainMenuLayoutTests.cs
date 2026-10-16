@@ -30,25 +30,26 @@ namespace Kestrel.Game.Tests
                 Assert.That(seen.Add(a.Depth), a.Id + " shares a depth with another control");
                 if (a.Id == "launch") launch = a.Depth;
             }
-            Assert.That(clicks, Is.EqualTo(5));
+            Assert.That(clicks, Is.EqualTo(4));
             foreach (var a in MainMenuLayout.Anchors())
                 if (a.Clickable) Assert.That(launch, Is.LessThanOrEqualTo(a.Depth), a.Id);
-            Assert.That(MainMenuLayout.Find("launch").Depth, Is.LessThan(MainMenuLayout.Find("codex").Depth));
-            Assert.That(MainMenuLayout.Find("codex").Depth, Is.LessThan(MainMenuLayout.Find("hangar").Depth));
-            Assert.That(MainMenuLayout.Find("title").Depth, Is.GreaterThan(MainMenuLayout.Find("settings").Depth));
-            Assert.That(MainMenuLayout.Find("title").Depth, Is.LessThan(MainMenuLayout.Find("hangar").Depth));
+            Assert.That(MainMenuLayout.Find("launch").Depth, Is.LessThan(MainMenuLayout.Find("design").Depth));
+            Assert.That(MainMenuLayout.Find("design").Depth, Is.LessThan(MainMenuLayout.Find("missions").Depth));
+            Assert.That(MainMenuLayout.Find("missions").Depth, Is.LessThan(MainMenuLayout.Find("codex").Depth));
+            Assert.That(MainMenuLayout.Find("codex").Depth, Is.LessThan(MainMenuLayout.Find("title").Depth));
+            Assert.That(MainMenuLayout.Find("hangar").Id, Is.Null);
             Assert.That(MainMenuLayout.Find("tel-l").Depth, Is.LessThan(MainMenuLayout.RocketDepth));
             Assert.That(MainMenuLayout.CrewDepth, Is.LessThan(MainMenuLayout.RocketDepth));
             Assert.That(MainMenuLayout.RocketDepth, Is.LessThan(MainMenuLayout.HangarWallDepth));
         }
 
         [Test]
-        public void OnlyLaunchAndHangarAreLive()
+        public void LaunchDesignAndMissionsAreLive()
         {
             foreach (var a in MainMenuLayout.Anchors())
             {
                 if (!a.Clickable) continue;
-                bool live = a.Id == "launch" || a.Id == "hangar";
+                bool live = a.Id == "launch" || a.Id == "design" || a.Id == "missions";
                 Assert.That(a.Live, Is.EqualTo(live), a.Id);
                 Assert.That(a.Spoken, Is.Not.Empty, a.Id);
                 Assert.That(a.Label, Is.Not.Empty, a.Id);

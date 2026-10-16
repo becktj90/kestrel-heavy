@@ -13,6 +13,7 @@ cap = lambda n: re.search(r'"(%s)"' % n, src)
 rows = [
  ("KESTREL", "FB", .04), ("HEAVY", "GB", .5), ("LAUNCH", "FB", .10),
  ("Opens the pad. Build, then launch.", "GM", 0),
+ ("Next flight, then the pad.", "GM", 0),
  ("HANGAR", "FBo", .03), ("MISSIONS", "FBo", .03), ("CODEX", "FBo", .03), ("SETTINGS", "FBo", .03),
  ("Design and tune your rocket.", "GM", 0), ("Pick any flight you've unlocked.", "GM", 0),
  ("Parts, places and flight notes.", "GM", 0), ("Sound, motion, accessibility.", "GM", 0),

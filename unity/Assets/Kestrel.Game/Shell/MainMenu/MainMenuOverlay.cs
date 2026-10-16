@@ -4,6 +4,7 @@
 // Motion follows motion-spec.md where cheap: staggered intro by class toggle + USS transition, :active press,
 // :focus ring. Reduce Motion: no intro, no transitions (root gets kh-mm-reduce).
 using System;
+using Kestrel.Core.Flight;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -15,7 +16,7 @@ namespace Kestrel.Game.Shell
 
         /// <summary>Builds the overlay. <paramref name="safe"/> holds the controls (safe-area inset);
         /// <paramref name="full"/> holds the full-bleed bars and grain. Returns the root parented in <paramref name="safe"/>.</summary>
-        public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action hangar, bool reduceMotion)
+        public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action design, Action missions, bool reduceMotion, string missionLine = null)
         {
             MainMenuLayout.HeroLift = 0f;
             var root = new VisualElement { name = RootName, pickingMode = PickingMode.Ignore };
@@ -51,13 +52,18 @@ namespace Kestrel.Game.Shell
 
             var spacer = new VisualElement { pickingMode = PickingMode.Ignore }; spacer.style.flexGrow = 1; root.Add(spacer);
 
-            // Controls: LAUNCH bar, then the 2x2 tiles.
-            var launchKey = LaunchBar(launch);
+            // Controls: tidy stats, the big LAUNCH, a smaller Design first, then Missions and Codex.
+            var stats = StatsStrip();
+            root.Add(stats);
+            var launchKey = LaunchBar(launch, missionLine);
             root.Add(launchKey);
+            var designKey = DesignBar(design);
+            root.Add(designKey);
             var grid = new VisualElement { name = "mm-grid", pickingMode = PickingMode.Ignore };
             grid.AddToClassList("kh-mm-grid");
-            foreach (var it in MainMenuCopy.Tiles) grid.Add(Tile(it, hangar));
+            foreach (var it in MainMenuCopy.Tiles) grid.Add(Tile(it, it.Id == "missions" ? missions : null));
             root.Add(grid);
+            Gear(full);
 
             var hint = new Label(MainMenuCopy.TapHint) { name = "mm-hint", pickingMode = PickingMode.Ignore };
             hint.AddToClassList("kh-mm-hint");
@@ -87,27 +93,102 @@ namespace Kestrel.Game.Shell
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
                 MainMenuLayout.HeroLift = MeasureLift(root, safe, full, MenuTypeScale.Compute(full.resolvedStyle.width, h, topInset, botInset), h, topInset);
             });
-            PlayIntro(root, reduceMotion);
+            PlayIntro(root, full, reduceMotion);
             return root;
         }
 
-        static Button LaunchBar(Action launch)
+        /// <summary>Shows the real next mission on the LAUNCH bar when Career knows it. The static caption stays the fallback.</summary>
+        public static void SetMissionLine(VisualElement root, string line)
+        {
+            if (root == null || string.IsNullOrEmpty(line)) return;
+            var cap = root.Q<Label>("mm-launch-caption");
+            if (cap != null) cap.text = line;
+        }
+
+        static VisualElement StatsStrip()
+        {
+            var row = new VisualElement { name = "mm-stats", pickingMode = PickingMode.Ignore };
+            row.AddToClassList("kh-mm-stats"); row.AddToClassList("kh-mm-anim");
+            row.Add(Stat("mm-fuel", MainMenuCopy.FuelStat));
+            row.Add(Stat("mm-thrust", MainMenuCopy.ThrustStat));
+            return row;
+        }
+
+        static Label Stat(string name, string text)
+        {
+            var line = new Label(text) { name = name, pickingMode = PickingMode.Ignore };
+            line.AddToClassList("kh-mm-stat");
+            return line;
+        }
+
+        static Button LaunchBar(Action launch, string missionLine)
         {
             var b = new Button(launch) { name = "home-launch", tooltip = MainMenuCopy.Launch.Spoken };
             b.AddToClassList("kh-button"); b.AddToClassList("kh-mm-launch"); b.AddToClassList("kh-mm-anim");
             var lamp = new VisualElement { name = "lamp", pickingMode = PickingMode.Ignore }; lamp.AddToClassList("kh-mm-lamp"); lamp.AddToClassList("kh-mm-lamp--on");
             var col = new VisualElement { pickingMode = PickingMode.Ignore }; col.AddToClassList("kh-mm-col");
             var label = new Label(MainMenuCopy.Launch.Label) { pickingMode = PickingMode.Ignore }; label.AddToClassList("kh-mm-launch-label");
-            var cap = new Label(MainMenuCopy.Launch.Caption) { pickingMode = PickingMode.Ignore }; cap.AddToClassList("kh-mm-launch-caption");
+            var cap = new Label(string.IsNullOrEmpty(missionLine) ? MainMenuCopy.Launch.Caption : missionLine) { name = "mm-launch-caption", pickingMode = PickingMode.Ignore };
+            cap.AddToClassList("kh-mm-launch-caption");
             col.Add(label); col.Add(cap);
             b.Add(lamp); b.Add(col);
             b.text = string.Empty;
             return b;
         }
 
-        static Button Tile(MainMenuCopy.Item it, Action hangar)
+        static Button DesignBar(Action design)
         {
-            var b = new Button(it.Live && it.Id == "hangar" ? hangar : null) { name = "home-" + it.Id, tooltip = it.Spoken };
+            var b = new Button(design) { name = "home-design", tooltip = MainMenuCopy.Design.Spoken };
+            b.AddToClassList("kh-button"); b.AddToClassList("kh-mm-design"); b.AddToClassList("kh-mm-anim");
+            var lamp = new VisualElement { name = "lamp", pickingMode = PickingMode.Ignore }; lamp.AddToClassList("kh-mm-lamp"); lamp.AddToClassList("kh-mm-lamp--on");
+            var col = new VisualElement { pickingMode = PickingMode.Ignore }; col.AddToClassList("kh-mm-col");
+            var label = new Label(MainMenuCopy.Design.Label) { pickingMode = PickingMode.Ignore }; label.AddToClassList("kh-mm-design-label");
+            var cap = new Label(MainMenuCopy.Design.Caption) { pickingMode = PickingMode.Ignore }; cap.AddToClassList("kh-mm-design-caption");
+            col.Add(label); col.Add(cap);
+            b.Add(lamp); b.Add(col);
+            b.text = string.Empty;
+            return b;
+        }
+
+        static void Gear(VisualElement full)
+        {
+            var sheet = new VisualElement { name = "home-settings-sheet" };
+            sheet.AddToClassList("kh-mm-sheet");
+            sheet.style.display = DisplayStyle.None;
+            var title = new Label("Settings") { pickingMode = PickingMode.Ignore };
+            title.AddToClassList("kh-mm-sheet-title");
+            var motion = new Button { name = "home-reduce-motion", text = "Reduce motion" };
+            motion.AddToClassList("kh-button");
+            motion.tooltip = "Reduce motion. Holds the menu still.";
+            motion.style.minHeight = 44;
+            motion.clicked += () =>
+            {
+                int cur = PlayerPrefs.GetInt(MainMenuLayout.ReduceMotionPref, 0);
+                PlayerPrefs.SetInt(MainMenuLayout.ReduceMotionPref, cur == 0 ? 1 : 0);
+                PlayerPrefs.Save();
+                motion.text = PlayerPrefs.GetInt(MainMenuLayout.ReduceMotionPref, 0) != 0 ? "Reduce motion on" : "Reduce motion";
+            };
+            var close = new Button { name = "home-settings-close", text = "Close" };
+            close.AddToClassList("kh-button");
+            close.tooltip = "Close settings.";
+            close.style.minHeight = 44;
+            close.clicked += () => sheet.style.display = DisplayStyle.None;
+            sheet.Add(title); sheet.Add(motion); sheet.Add(close);
+
+            var gear = new Button { name = "home-settings", text = "Set", tooltip = "Settings. Sound, motion, accessibility." };
+            gear.AddToClassList("kh-button"); gear.AddToClassList("kh-mm-gear"); gear.AddToClassList("kh-mm-anim");
+            gear.style.width = HomeCornerLayout.Gear;
+            gear.style.height = HomeCornerLayout.Gear;
+            gear.style.minWidth = HomeCornerLayout.Gear;
+            gear.style.minHeight = HomeCornerLayout.Gear;
+            gear.clicked += () => sheet.style.display = DisplayStyle.Flex;
+            full.Add(gear);
+            full.Add(sheet);
+        }
+
+        static Button Tile(MainMenuCopy.Item it, Action pressed)
+        {
+            var b = new Button(it.Live ? pressed : null) { name = "home-" + it.Id, tooltip = it.Spoken };
             b.AddToClassList("kh-button"); b.AddToClassList("kh-mm-tile"); b.AddToClassList("kh-mm-anim");
             if (it.Live) b.AddToClassList("kh-mm-tile--focus"); else b.AddToClassList("kh-mm-tile--soon");
             var head = new VisualElement { pickingMode = PickingMode.Ignore }; head.AddToClassList("kh-mm-tile-head");
@@ -146,6 +227,13 @@ namespace Kestrel.Game.Shell
             Font("kh-mm-hint", z.Hint, .18f);
             // Explicit heights (not min-height) so the block is exactly what MenuTypeScale computed; Unity cannot inflate it.
             root.style.paddingTop = MenuTypeScale.TopPad; root.style.paddingBottom = z.HintBand;
+            var stats = root.Q("mm-stats");
+            if (stats != null)
+            {
+                stats.style.height = z.StatsH; stats.style.minHeight = z.StatsH; stats.style.flexShrink = 0;
+                stats.style.marginBottom = MenuTypeScale.Gap;
+            }
+            root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = z.StatFont);
             var launch = root.Q("home-launch");
             if (launch != null)
             {
@@ -153,6 +241,12 @@ namespace Kestrel.Game.Shell
                 launch.style.marginTop = 0; launch.style.marginBottom = MenuTypeScale.Gap;
                 float padH = MenuTypeScale.Clamp(14f * z.Scale, 10f, 18f), padV = MenuTypeScale.Clamp(8f * z.Scale, 6f, 10f);
                 launch.style.paddingLeft = padH; launch.style.paddingRight = padH; launch.style.paddingTop = padV; launch.style.paddingBottom = padV;
+            }
+            var design = root.Q("home-design");
+            if (design != null)
+            {
+                design.style.height = z.DesignH; design.style.minHeight = z.DesignH; design.style.flexShrink = 0;
+                design.style.marginTop = 0; design.style.marginBottom = MenuTypeScale.Gap;
             }
             foreach (var it in MainMenuCopy.Tiles)
             {
@@ -183,16 +277,17 @@ namespace Kestrel.Game.Shell
         static float MeasureLift(VisualElement root, VisualElement safe, VisualElement full, MenuTypeScale.Sizes z, float h, float topInset)
         {
             float controlsTop = z.ControlsTop, titleBottom = z.TitleBottom;
-            var launch = root.Q("home-launch"); var title = root.Q("mm-title");
+            var stats = root.Q("mm-stats"); var launch = root.Q("home-launch"); var title = root.Q("mm-title");
             float baseY = topInset + root.layout.y;
-            if (launch != null && launch.layout.height > 1f) controlsTop = Mathf.Min(controlsTop, baseY + launch.layout.yMin);
+            var topControl = stats != null && stats.layout.height > 1f ? stats : launch;
+            if (topControl != null && topControl.layout.height > 1f) controlsTop = Mathf.Min(controlsTop, baseY + topControl.layout.yMin);
             if (title != null && title.layout.height > 1f) titleBottom = Mathf.Max(titleBottom, baseY + title.layout.yMax);
             return MenuTypeScale.HeroLift(h, titleBottom, controlsTop);
         }
 
         /// <summary>Intro per motion-spec.md: elements start hidden (kh-mm-anim) and get kh-mm-in on a staggered schedule.
         /// Reduce Motion: shown at once, transitions are zeroed by kh-mm-reduce.</summary>
-        public static void PlayIntro(VisualElement root, bool reduceMotion)
+        public static void PlayIntro(VisualElement root, VisualElement full, bool reduceMotion)
         {
             Action<VisualElement, string> show = (el, id) =>
             {
@@ -201,8 +296,11 @@ namespace Kestrel.Game.Shell
                 else el.schedule.Execute(() => el.AddToClassList("kh-mm-in")).StartingIn(MainMenuCopy.IntroDelayMs(id));
             };
             show(root.Q("mm-title"), "title");
+            show(root.Q("mm-stats"), "stats");
             show(root.Q("home-launch"), "launch");
+            show(root.Q("home-design"), "design");
             foreach (var it in MainMenuCopy.Tiles) show(root.Q("home-" + it.Id), it.Id);
+            if (full != null) show(full.Q("home-settings"), "gear");
         }
 
         /// <summary>Film-reel bar: dark band with sprocket holes. Painter2D, static.</summary>

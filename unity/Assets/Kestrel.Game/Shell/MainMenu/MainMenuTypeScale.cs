@@ -44,7 +44,7 @@ namespace Kestrel.Game.Shell
         public struct Sizes
         {
             public float Scale, Title, Tagline, LaunchLabel, LaunchCaption, TileName, TileCaption, Soon, Hint;
-            public float Pad, TileW, TileInner, TileH, LaunchH, LaunchCaptionW, ControlsH, HintBand, BottomReserve, TitleBottom, ControlsTop, HeroLift;
+            public float Pad, TileW, TileInner, TileH, LaunchH, DesignH, StatsH, StatFont, LaunchCaptionW, ControlsH, HintBand, BottomReserve, TitleBottom, ControlsTop, HeroLift;
             public int TileCaptionLines, LaunchCaptionLines;
         }
 
@@ -75,13 +75,16 @@ namespace Kestrel.Game.Shell
             z.LaunchCaptionLines = Lines(TextW(MainMenuCopy.LaunchCaption, z.LaunchCaption), z.LaunchCaptionW);
             float padV = Clamp(8f * s, 6f, 10f);
             z.LaunchH = Math.Max(HitMin, 2f * LaunchBorder + 2f * padV + z.LaunchLabel * LineH + z.LaunchCaptionLines * z.LaunchCaption * LineH);
+            z.DesignH = Math.Max(HitMin, Math.Min(z.LaunchH - 4f, 2f * 2f + 8f + z.LaunchLabel * 0.72f * LineH + z.LaunchCaption * LineH));
+            z.StatsH = Clamp(36f * s, 36f, 44f);
+            z.StatFont = Math.Max(13f, z.Hint + 2f);
             // The bottom film-reel bar is BarHeight(h, inset) tall from the screen edge and covers the hint. The tiles must end above it,
             // so the reserve is the whole bar (it already includes the bottom safe inset), not just the inset. The last tile row's own
             // Gap margin is the breathing room above the bar.
             float bottom = Math.Max(0f, bottomInset);
             z.BottomReserve = MainMenuCopy.BarHeight(h, bottom);
             z.HintBand = Math.Max(0f, z.BottomReserve - bottom);   // root padding-bottom (the root already sits above the safe inset)
-            z.ControlsH = z.LaunchH + Gap + 2f * z.TileH + 2f * Gap;
+            z.ControlsH = z.StatsH + Gap + z.LaunchH + Gap + z.DesignH + Gap + z.TileH + Gap;
             z.ControlsTop = h - z.BottomReserve - z.ControlsH;
             z.TitleBottom = Math.Max(0f, topInset) + TopPad + z.Title * 1.3f + z.Tagline * LineH;
             z.HeroLift = HeroLift(h, z.TitleBottom, z.ControlsTop);
