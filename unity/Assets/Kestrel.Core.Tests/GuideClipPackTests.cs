@@ -52,6 +52,53 @@ namespace Kestrel.Core.Tests
                 string yml = File.ReadAllText(Path.Combine(Golden.Root, ".github", "workflows", workflow));
                 StringAssert.Contains("tools/pack-guide-clips.sh", yml, workflow);
             }
+            foreach (var workflow in new[] { "unity.yml", "webgl-build.yml" })
+            {
+                string yml = File.ReadAllText(Path.Combine(Golden.Root, ".github", "workflows", workflow));
+                StringAssert.Contains("tools/check-built-guide-clips.sh", yml, workflow);
+            }
+        }
+
+        [Test]
+        public void BuildOutputCheckFailsWhenTheStreamingFolderIsEmpty()
+        {
+            string script = Path.Combine(Golden.Root, "tools", "check-built-guide-clips.sh");
+            Assert.IsTrue(File.Exists(script));
+            string root = Path.Combine(Path.GetTempPath(), "kh-built-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            try
+            {
+                Assert.AreNotEqual(0, RunCheck(script, root), "no narration/guide folder");
+                string guide = Path.Combine(root, "Data", "Raw", "narration", "guide");
+                Directory.CreateDirectory(guide);
+                Assert.AreNotEqual(0, RunCheck(script, root), "empty streaming clips folder");
+                File.WriteAllText(Path.Combine(guide, "manifest.json"), "{\"clips\":[{\"id\":\"a\"},{\"id\":\"b\"}]}");
+                File.WriteAllBytes(Path.Combine(guide, "a.mp3"), new byte[] { 9 });
+                Assert.AreNotEqual(0, RunCheck(script, root), "audio short of the manifest");
+                File.WriteAllBytes(Path.Combine(guide, "b.mp3"), new byte[] { 8 });
+                Assert.AreEqual(0, RunCheck(script, root));
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+
+        static int RunCheck(string script, string root)
+        {
+            var start = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "bash",
+                Arguments = "\"" + script + "\" \"" + root + "\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+            };
+            using (var process = System.Diagnostics.Process.Start(start))
+            {
+                process.WaitForExit();
+                return process.ExitCode;
+            }
         }
     }
 }

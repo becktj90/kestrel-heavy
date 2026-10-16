@@ -132,6 +132,9 @@ jobs:
           versioning: None
           allowDirtyBuild: true
           customParameters: -khBuildNumber ${{ github.run_number }}
+      - name: Fail if the iOS player has no Thrum clips
+        if: success() && env.HAS_LICENSE == 'true'
+        run: bash tools/check-built-guide-clips.sh build
       # Artifact only — does not touch the orphan xcode-export branch. Publish via
       # workflow "Xcode export" (workflow_dispatch) or tools/ios-export/export.sh.
       - uses: actions/upload-artifact@v4

@@ -3,7 +3,9 @@
     "rootNamespace": "Kestrel.Capture.Tests",
     "references": [
         "Kestrel.Kit",
+        "Kestrel.Core",
         "Kestrel.Slice",
+        "Kestrel.Game.Shell",
         "Kestrel.Game.Audio",
         "UnityEngine.TestRunner",
         "Kestrel.Vehicle"

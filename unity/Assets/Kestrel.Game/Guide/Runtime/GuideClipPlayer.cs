@@ -61,7 +61,7 @@ namespace Kestrel.Game.Guide
 
         public void Play(string cardId, bool allowed)
         {
-            if (InFlight || !allowed || string.IsNullOrEmpty(cardId))
+            if (!GuideClipPack.AllowsVoice(InFlight) || !allowed || string.IsNullOrEmpty(cardId))
             {
                 Stop();
                 return;
@@ -113,7 +113,7 @@ namespace Kestrel.Game.Guide
 
         public void Replay()
         {
-            if (InFlight || AudioPrefs.NarrationMuted || voice == null || voice.clip == null || Held) return;
+            if (!GuideClipPack.AllowsVoice(InFlight) || AudioPrefs.NarrationMuted || voice == null || voice.clip == null || Held) return;
             voice.time = 0f;
             voice.volume = MixerLevels.Bus(false, MixerLevels.Voice, 1f);
             if (Application.isPlaying) voice.Play();
@@ -218,7 +218,7 @@ namespace Kestrel.Game.Guide
             voice.Stop();
             voice.clip = clip;
             voice.volume = MixerLevels.Bus(AudioPrefs.NarrationMuted, MixerLevels.Voice, 1f);
-            bool play = Application.isPlaying && !Held && !InFlight && !AudioPrefs.NarrationMuted;
+            bool play = Application.isPlaying && !Held && GuideClipPack.AllowsVoice(InFlight) && !AudioPrefs.NarrationMuted;
             Sounding = play;
             if (play) voice.Play();
             Duck(play);
@@ -261,29 +261,13 @@ namespace Kestrel.Game.Guide
         static bool TryStreaming(string fileName, out string url)
         {
             url = null;
-            if (string.IsNullOrEmpty(fileName)) return false;
             string root;
             try { root = Application.streamingAssetsPath; }
             catch (Exception) { return false; }
-            if (string.IsNullOrEmpty(root)) return false;
-            string slash = root.Replace('\\', '/').TrimEnd('/');
-            if (slash.IndexOf("://", StringComparison.Ordinal) >= 0)
-            {
-                url = slash + "/narration/guide/" + fileName;
-                return true;
-            }
-            string disk = Path.Combine(root, "narration", "guide", fileName);
-            if (!File.Exists(disk)) return false;
-            url = ToUrl(disk);
-            return true;
+            return GuideClipPack.TryStreamingUrl(root, fileName, out url);
         }
 
-        static string ToUrl(string path)
-        {
-            if (string.IsNullOrEmpty(path)) return path;
-            if (path.IndexOf("://", StringComparison.Ordinal) >= 0) return path;
-            return "file://" + path;
-        }
+        static string ToUrl(string path) => GuideClipPack.FileUrl(path);
 
         void StopVoice()
         {
