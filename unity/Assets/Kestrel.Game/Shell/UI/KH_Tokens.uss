@@ -163,3 +163,14 @@
 .kh-mm-narrow .kh-mm-tile-caption { font-size: 12px; }
 .kh-mm-narrow .kh-mm-soon { font-size: 10px; letter-spacing: 1px; padding: 0 4px; }
 .kh-mm-narrow .kh-mm-heavy { font-size: 18px; letter-spacing: 9px; }
+.kh-mm-design { flex-direction: row; align-items: center; justify-content: flex-start; min-height: 44px; padding: 6px var(--kh-space-3); margin: 0 0 var(--kh-space-2) 0; background-color: rgba(20, 32, 52, 0.92); border-width: 2px; border-color: rgba(244, 234, 210, 0.85); border-radius: var(--kh-radius); }
+.kh-mm-design-label { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/Fraunces-Bold.ttf?fileID=12800000&guid=9ff7f267923c419eb9c234ff08737b2f&type=3"); font-size: 18px; letter-spacing: 1px; color: #f4ead2; -unity-text-align: middle-left; }
+.kh-mm-design-caption { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Medium.ttf?fileID=12800000&guid=da73225191314e37b12604307d854801&type=3"); font-size: 13px; color: #f4ead2; white-space: normal; -unity-text-align: middle-left; }
+.kh-mm-stats { flex-direction: row; align-items: center; justify-content: space-between; min-height: 36px; padding: 6px 10px; margin: 0 0 var(--kh-space-2) 0; background-color: rgba(16, 28, 48, 0.72); border-width: 1px; border-color: rgba(244, 234, 210, 0.55); border-radius: 8px; }
+.kh-mm-stat { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Medium.ttf?fileID=12800000&guid=da73225191314e37b12604307d854801&type=3"); font-size: 13px; color: #f4ead2; -unity-text-align: middle-left; }
+.kh-mm-gear { width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; background-color: rgba(16, 28, 48, 0.88); border-width: 1px; border-color: rgba(244, 234, 210, 0.7); border-radius: 8px; color: #f4ead2; font-size: 13px; -unity-text-align: middle-center; }
+.kh-mm-sheet { position: absolute; right: 8px; top: 56px; width: 220px; padding: 12px; background-color: rgba(16, 28, 48, 0.94); border-width: 1px; border-color: rgba(244, 234, 210, 0.55); border-radius: 8px; }
+.kh-mm-sheet-title { font-size: 16px; color: #f4ead2; margin-bottom: 8px; -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Bold.ttf?fileID=12800000&guid=8d76cbbc81224bc2a01f5e17341dae63&type=3"); }
+.kh-mm-narrow .kh-mm-design { min-height: 44px; }
+.kh-mm-narrow .kh-mm-gear { min-height: 44px; min-width: 44px; }
+.kh-mm-narrow .kh-mm-stat { font-size: 13px; }

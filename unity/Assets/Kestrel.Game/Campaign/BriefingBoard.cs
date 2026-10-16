@@ -23,7 +23,10 @@ namespace Kestrel.Game.MissionSelect
         public string Pad = "";
         public string Seed = "";
         public string Engineer = "";
+        public string Vehicle = "";
+        public string Reach = "";
         public bool CanBuild;
+        public bool AutoPad;
 
         /// <summary>
         /// Choosing a campaign flight stays on the mission map and opens this overlay.
@@ -69,7 +72,10 @@ namespace Kestrel.Game.MissionSelect
             board.Pad = PadOf(ctx, card);
             board.Seed = SeedOf(ctx, card);
             board.Engineer = First(ctx != null ? ctx.EngineerLine : null, card != null ? card.EngineerLine : null);
+            board.Vehicle = ctx != null && !string.IsNullOrEmpty(ctx.VehicleLine) ? ctx.VehicleLine : "";
+            board.Reach = ctx != null && !string.IsNullOrEmpty(ctx.ReachLine) ? ctx.ReachLine : "";
             board.CanBuild = ctx != null && !ctx.IsFree && !string.IsNullOrEmpty(ctx.MissionId);
+            board.AutoPad = ctx != null && ctx.AutoPad && board.CanBuild;
             return board;
         }
 

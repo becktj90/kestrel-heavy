@@ -19,12 +19,13 @@ namespace Kestrel.Game.Tests
             CollectionAssert.AreEqual(new[] { "Home", "Design", "Flight", "Missions" }, SceneFlow.SceneNames);
             Assert.IsTrue(SceneFlow.TryScreen(SessionScreens.Missions, out var screen));
             Assert.AreEqual(AppScreen.Missions, screen);
-            Assert.IsTrue(SceneFlow.TryHomeControl("launch", out var launch));
-            Assert.AreEqual(RouteId.HomeLaunch, launch);
+            Assert.IsTrue(SceneFlow.IsHomeControl("launch"));
+            Assert.IsTrue(SceneFlow.IsHomeControl("design"));
+            Assert.IsTrue(SceneFlow.IsHomeControl("missions"));
+            Assert.IsFalse(SceneFlow.IsHomeControl("codex"));
+            Assert.IsFalse(SceneFlow.TryHomeControl("launch", out _));
             Assert.IsTrue(SceneFlow.TryHomeControl("hangar", out var hangar));
             Assert.AreEqual(RouteId.HomeHangar, hangar);
-            Assert.IsFalse(SceneFlow.TryHomeControl("codex", out _));
-            Assert.IsFalse(SceneFlow.TryHomeControl("missions", out _));
         }
 
         [Test]

@@ -25,11 +25,13 @@ namespace Kestrel.Game.Shell
 
         public static bool TryHomeControl(string controlId, out RouteId route)
         {
-            if (controlId == "launch") { route = RouteId.HomeLaunch; return true; }
             if (controlId == "hangar") { route = RouteId.HomeHangar; return true; }
             route = default;
             return false;
         }
+
+        public static bool IsHomeControl(string controlId) =>
+            controlId == "launch" || controlId == "design" || controlId == "missions" || controlId == "hangar";
 
         public static bool TryScreen(string name, out AppScreen screen)
         {
@@ -41,10 +43,19 @@ namespace Kestrel.Game.Shell
             return false;
         }
 
-        /// <summary>LAUNCH opens the mission list. HANGAR opens the designer as a free build.</summary>
+        /// <summary>LAUNCH briefs the next mission and arms the pad. Design first opens the designer with that load.</summary>
         public void HomePressed(string controlId)
         {
-            if (Busy || !TryHomeControl(controlId, out var route)) return;
+            if (Busy) return;
+            if (controlId == "launch") { Present(HomeLaunchRoute()); return; }
+            if (controlId == "design") { Present(HomeDesignRoute()); return; }
+            if (controlId == "missions")
+            {
+                PadHandoff.Clear();
+                Go(AppScreen.Missions);
+                return;
+            }
+            if (!TryHomeControl(controlId, out var route)) return;
             MissionBriefing card = null;
             if (route == RouteId.HomeHangar) card = TryFreeBriefing();
             Present(GameSession.Apply(route, null, null, card));
@@ -54,6 +65,7 @@ namespace Kestrel.Game.Shell
         public void StartMission(string missionId)
         {
             if (Busy) return;
+            PadHandoff.Clear();
             var campaign = ScreenStub.LoadCampaign();
             MissionBriefing card = null;
             var mission = campaign != null ? campaign.ById(missionId) : null;
@@ -67,7 +79,17 @@ namespace Kestrel.Game.Shell
         }
 
         public void BuildFromBriefing() => Route(RouteId.BriefingBuild);
-        public void BackFromBriefing() => Route(RouteId.BriefingBack);
+        public void BackFromBriefing()
+        {
+            if (Busy) return;
+            if (PadHandoff.FromHome)
+            {
+                PadHandoff.Clear();
+                Route(RouteId.ExitHome);
+                return;
+            }
+            Route(RouteId.BriefingBack);
+        }
         public void BackFromDesigner() => Route(RouteId.DesignerBack);
         public void OpenReport() => Route(RouteId.OpenReport);
         public void ReportNext() => Route(RouteId.ReportNext, ScreenStub.LoadCampaign());
@@ -96,7 +118,11 @@ namespace Kestrel.Game.Shell
             }
             if (Current == screen && !Busy)
             {
-                if (screen == AppScreen.Home) GameSession.Clear();
+                if (screen == AppScreen.Home)
+                {
+                    GameSession.Clear();
+                    PadHandoff.Clear();
+                }
                 OverlayChanged?.Invoke(Overlay);
                 return;
             }
@@ -109,9 +135,36 @@ namespace Kestrel.Game.Shell
             if (to == AppScreen.Home)
             {
                 GameSession.Clear();
+                PadHandoff.Clear();
                 Overlay = SessionScreens.None;
             }
             StartCoroutine(Switch(to));
+        }
+
+        static RouteResult HomeLaunchRoute()
+        {
+            var campaign = ScreenStub.LoadCampaign();
+            int cleared = ScreenStub.ClearedCount();
+            return HomeRoutes.Launch(campaign, cleared, ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, TryMissionBriefing(campaign, cleared));
+        }
+
+        static RouteResult HomeDesignRoute()
+        {
+            var campaign = ScreenStub.LoadCampaign();
+            return HomeRoutes.DesignFirst(campaign, ScreenStub.ClearedCount(), ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates);
+        }
+
+        static MissionBriefing TryMissionBriefing(Campaign campaign, int cleared)
+        {
+            var mission = HomeRoutes.NextMission(campaign, cleared);
+            string root = ScreenStub.RepoRoot();
+            if (mission == null || root == null) return null;
+            try { return MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign)); }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message);
+                return null;
+            }
         }
 
         static MissionBriefing TryFreeBriefing()

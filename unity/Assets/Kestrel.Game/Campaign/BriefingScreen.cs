@@ -15,8 +15,10 @@ namespace Kestrel.Game.MissionSelect
         public const string RootName = "briefing-card";
         public const string SheetResource = "UI/Briefing";
         public const string BuildText = "Build it";
+        public const string PadText = "To the pad";
         public const string BackText = "Back";
         public const string BuildTip = "Build it. Opens the designer with this mission.";
+        public const string PadTip = "To the pad. A short rocket can still miss.";
         public const string BackTip = "Back to the mission list.";
 
         public static VisualElement Build(MissionContext ctx, Action build, Action back)
@@ -86,6 +88,8 @@ namespace Kestrel.Game.MissionSelect
                 if (board.Pad.Length > 0) scroll.Add(Line("briefing-pad", board.Pad, "briefing-body", shrink: false));
                 if (board.Seed.Length > 0) scroll.Add(Line("briefing-seed", board.Seed, "briefing-body", shrink: false));
             }
+            if (board.Vehicle.Length > 0) scroll.Add(Line("briefing-vehicle", board.Vehicle, "briefing-body", shrink: false));
+            if (board.Reach.Length > 0) scroll.Add(Line("briefing-reach", board.Reach, "briefing-body", shrink: false));
             if (board.Engineer.Length > 0)
             {
                 scroll.Add(Head("briefing-engineer-title", "Engineer"));
@@ -95,7 +99,7 @@ namespace Kestrel.Game.MissionSelect
 
             if (board.CanBuild)
             {
-                var go = new Button(build) { name = "briefing-build", text = BuildText, tooltip = BuildTip };
+                var go = new Button(build) { name = "briefing-build", text = board.AutoPad ? PadText : BuildText, tooltip = board.AutoPad ? PadTip : BuildTip };
                 StyleKey(go, "briefing-build");
                 column.Add(go);
             }

@@ -109,6 +109,12 @@ namespace Kestrel.Core.Flight
         public string Weather, Site, TimeOfDay;
         public bool Gentle;
         public MissionMode Mode;
+        /// <summary>Home auto-build numbers. Empty unless LAUNCH or Design first filled them.</summary>
+        public string VehicleLine;
+        /// <summary>Whether that rocket has the speed the mission asks for. A shortfall is still allowed to fly.</summary>
+        public string ReachLine;
+        /// <summary>True when the briefing should send this rocket straight to the pad.</summary>
+        public bool AutoPad;
 
         public bool IsFree => Mode == MissionMode.Free;
 

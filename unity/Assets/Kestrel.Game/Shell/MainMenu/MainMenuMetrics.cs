@@ -12,6 +12,7 @@ namespace Kestrel.Game.Shell
             { "HEAVY", 558.60f },
             { "LAUNCH", 497.55f },
             { "Opens the pad. Build, then launch.", 1662.50f },
+            { "Next flight, then the pad.", 1232.30f },
             { "HANGAR", 484.55f },
             { "MISSIONS", 545.25f },
             { "CODEX", 385.55f },

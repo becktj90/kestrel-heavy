@@ -1,3 +1,4 @@
+using Kestrel.Core.Flight;
 using Kestrel.Game.Audio;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -13,13 +14,22 @@ namespace Kestrel.Game.Shell
         {
             var row = new VisualElement { name = "audio-bar" };
             row.style.position = Position.Absolute;
-            row.style.top = 0;
-            row.style.right = 0;
             row.style.flexDirection = FlexDirection.Row;
-            row.Add(Toggle("audio-music", "Music", () => AudioPrefs.MusicMuted, AudioPrefs.SetMusicMuted));
-            row.Add(Toggle("audio-sfx", "Sound", () => AudioPrefs.SfxMuted, AudioPrefs.SetSfxMuted));
-            row.Add(Toggle("audio-narration", "Voice", () => AudioPrefs.NarrationMuted, AudioPrefs.SetNarrationMuted));
+            row.Add(Toggle("audio-music", "Music", () => AudioPrefs.MusicMuted, AudioPrefs.SetMusicMuted, true));
+            row.Add(Toggle("audio-sfx", "Sound", () => AudioPrefs.SfxMuted, AudioPrefs.SetSfxMuted, false));
+            row.Add(Toggle("audio-narration", "Voice", () => AudioPrefs.NarrationMuted, AudioPrefs.SetNarrationMuted, false));
+            Place(row, 0f, HomeCornerLayout.Edge);
             return row;
+        }
+
+        /// <summary>Top-left of the canvas, clear of the corner gear and of the web EXIT.</summary>
+        public static void Place(VisualElement bar, float top, float left)
+        {
+            if (bar == null) return;
+            bar.style.position = Position.Absolute;
+            bar.style.top = top;
+            bar.style.left = left;
+            bar.style.right = StyleKeyword.Auto;
         }
 
         /// <summary>True when the pointer is on the mix row, so the 3D menu does not also fire.</summary>
@@ -33,13 +43,15 @@ namespace Kestrel.Game.Shell
             return false;
         }
 
-        static Button Toggle(string name, string label, System.Func<bool> get, System.Action<bool> set)
+        static Button Toggle(string name, string label, System.Func<bool> get, System.Action<bool> set, bool first)
         {
             var b = new Button { name = name };
+            b.style.width = 64;
+            b.style.maxWidth = 64;
             b.style.minWidth = TouchPt;
             b.style.minHeight = TouchPt;
             b.style.height = TouchPt;
-            b.style.marginLeft = 4;
+            b.style.marginLeft = first ? 0 : 4;
             b.style.marginTop = 4;
             b.style.paddingLeft = 8;
             b.style.paddingRight = 8;

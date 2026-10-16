@@ -3,7 +3,9 @@
 using System;
 using System.IO;
 using Kestrel.Core.Data;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
 using Kestrel.Game.MissionSelect;
 using Kestrel.Game.Layout;
@@ -77,22 +79,24 @@ namespace Kestrel.Game.Shell
             _menu.Attach(shell);
             if (MainMenuLayout.UseOverlay)
             {
-                // Mix overlay: 2D title card, LAUNCH bar and tiles are the controls (UI Toolkit picks them and
-                // supplies VoiceOver labels via tooltip). LAUNCH opens the mission list. HANGAR is a free build.
+                // Mix overlay: LAUNCH flies the next mission. Design first opens the designer with that load.
                 _view.pickingMode = PickingMode.Ignore;
                 Action launch = () => shell.Flow.HomePressed("launch");
-                Action hangar = () => shell.Flow.HomePressed("hangar");
-                _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, hangar, MainMenuLayout.ReducedMotion());
-                // The reel-bar layer (mm-full) is added to the shell root above the safe area and would hide
-                // the #224 mix toggles, so they go on the root, last (topmost), and follow the safe inset.
+                Action design = () => shell.Flow.HomePressed("design");
+                Action missions = () => shell.Flow.HomePressed("missions");
+                _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, design, missions, MainMenuLayout.ReducedMotion());
+                MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine());
+                // Music sits top-left. The gear sits clear of the web EXIT. Both follow the safe inset.
                 shell.Root.Add(audio);
-                audio.RegisterCallback<GeometryChangedEvent>(_ => audio.style.top = shell.Safe.resolvedStyle.paddingTop);
+                void Place() => HomeChrome.Place(shell.Root.Q("home-settings"), audio, shell.Root.resolvedStyle.width, shell.Safe.resolvedStyle.paddingTop, Application.platform == RuntimePlatform.WebGLPlayer);
+                audio.RegisterCallback<GeometryChangedEvent>(_ => Place());
+                shell.Root.RegisterCallback<GeometryChangedEvent>(_ => Place());
                 _audio = audio;
                 return;
             }
             // Fallback (UseOverlay = false): the original 3D controls with hidden spoken labels.
             AddSpoken("home-launch", MainMenuLayout.LaunchLabel, MainMenuLayout.Find("launch").Spoken);
-            foreach (var id in new[] { "hangar", "missions", "codex", "settings" })
+            foreach (var id in new[] { "design", "missions", "codex" })
             {
                 var a = MainMenuLayout.Find(id);
                 AddSpoken("home-" + id, a.Label, a.Spoken);
@@ -163,6 +167,77 @@ namespace Kestrel.Game.Shell
             if (asset != null && !string.IsNullOrWhiteSpace(asset.text))
                 return Campaign.FromJson(MiniJson.ParseObject(asset.text));
             return null;
+        }
+
+        /// <summary>Catalog for the home auto-build. Repo first, then the synced Resources copy.</summary>
+        public static Catalog LoadCatalog()
+        {
+            string root = RepoRoot();
+            if (root != null && File.Exists(Path.Combine(root, "data", "propellants.json")))
+            {
+                try { return Catalog.LoadFromRepo(root); }
+                catch (Exception e) { Debug.LogWarning("[Kestrel] catalog unavailable: " + e.Message); }
+            }
+            try
+            {
+                string T(string n)
+                {
+                    var asset = Resources.Load<TextAsset>("KestrelData/" + n);
+                    return asset != null ? asset.text : null;
+                }
+                string limits = T("designer-limits");
+                if (!string.IsNullOrEmpty(limits))
+                    DesignerLimits.Active = DesignerLimits.Parse(MiniJson.ParseObject(limits));
+                string props = T("propellants"), eng = T("engines"), mat = T("materials"), pay = T("payloads"), pre = T("presets"), econ = T("constants");
+                if (props == null || eng == null || mat == null || pay == null || pre == null || econ == null) return null;
+                return Catalog.FromJson(props, eng, mat, pay, pre, econ);
+            }
+            catch (Exception e) { Debug.LogWarning("[Kestrel] catalog unavailable: " + e.Message); return null; }
+        }
+
+        public static HangarData LoadHangar()
+        {
+            string root = RepoRoot();
+            if (root != null && File.Exists(Path.Combine(root, "data", "designer-templates.json")))
+            {
+                try { return HangarData.LoadFromRepo(root); }
+                catch (Exception e) { Debug.LogWarning("[Kestrel] templates unavailable: " + e.Message); }
+            }
+            try
+            {
+                string T(string n)
+                {
+                    var asset = Resources.Load<TextAsset>("KestrelData/" + n);
+                    return asset != null ? asset.text : null;
+                }
+                return HangarData.FromJson(T("designer-templates"), T("designer-look"), T("designer-budget"), T("finishes"), T("liveries"));
+            }
+            catch (Exception e) { Debug.LogWarning("[Kestrel] templates unavailable: " + e.Message); return null; }
+        }
+
+        /// <summary>Highest mission passed, from the save folder. A missing folder is a fresh career.</summary>
+        public static int ClearedCount()
+        {
+            var campaign = LoadCampaign();
+            if (campaign == null) return 0;
+            try
+            {
+                string dir = Path.Combine(Application.persistentDataPath, "saves");
+                var snap = MissionProgress.ReadSave(campaign, dir, MissionMapCopy.MinorPerKcFallback);
+                return snap.Career == null || snap.Career.Cleared < 0 ? 0 : snap.Career.Cleared;
+            }
+            catch (Exception) { return 0; }
+        }
+
+        public static string NextMissionLine()
+        {
+            try
+            {
+                var mission = HomeRoutes.NextMission(LoadCampaign(), ClearedCount());
+                if (mission == null || string.IsNullOrEmpty(mission.Name)) return null;
+                return MissionContext.LabelFor(mission.Index) + " \u00B7 " + mission.Name;
+            }
+            catch (Exception) { return null; }
         }
 
         /// <summary>Flight scene stub. The live ascent stays in Design; these are the same leave routes.</summary>
