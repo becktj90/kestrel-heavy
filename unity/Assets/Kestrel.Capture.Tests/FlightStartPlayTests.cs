@@ -12,6 +12,14 @@ namespace Kestrel.Capture.Tests
 {
     public class FlightStartPlayTests
     {
+        [UnityTearDown]
+        public IEnumerator DropTheShell()
+        {
+            if (AppShell.Instance != null)
+                UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
+            yield return null;
+        }
+
         [UnityTest]
         [Timeout(180000)]
         public IEnumerator HomeLaunchReachesAltitude()

@@ -56,6 +56,14 @@ namespace Kestrel.Capture.Tests
 
         static IEnumerator Shot(string scene, string name, Vector3[] cam, bool cutaway = false)
         {
+            // HomeLaunch leaves the shell alive (DontDestroyOnLoad) on Design, with its listener off.
+            // A second Boot then destroys itself and the old listener stays disabled, so Home counts zero.
+            var shell = Kestrel.Game.Shell.AppShell.Instance;
+            if (shell != null)
+            {
+                UnityEngine.Object.Destroy(shell.gameObject);
+                yield return null;
+            }
             CaptureCamera.Clear();
             SceneManager.LoadScene(scene, LoadSceneMode.Single);
             if (cam != null) CaptureCamera.Override(cam[0], cam[1]);
