@@ -250,8 +250,10 @@ namespace Kestrel.Slice
             {
                 HideMoving();
                 if (chip != null) chip.style.display = DisplayStyle.None;
+                var failure = GetComponent<FlightFailureShow>();
                 var host = GetComponent<FailureHost>();
-                if (host == null || !host.Played) RestoreMesh();
+                bool pictured = (failure != null && failure.Showing) || (host != null && host.Played);
+                if (!pictured) RestoreMesh();
                 return;
             }
             double simT = flight.SimTime;

@@ -31,7 +31,7 @@ namespace Kestrel.Slice
         HangarExplodedView explodedView; Material explodedMat;
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
-        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; FlightJuice juice; FlightStageShow staging; GameObject rocketGO;
+        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; GameObject rocketGO;
         FlightChrome chrome;
         AscentHud ascentHud; Design flyingDesign;
         BirdFlockView birds;
@@ -554,6 +554,9 @@ namespace Kestrel.Slice
             if (staging == null) staging = rocketGO.AddComponent<FlightStageShow>();
             try { staging.Prepare(SliceData.Catalog, design, built, hud); }
             catch (System.Exception e) { Debug.LogWarning("[Staging] " + e.Message); }
+            failureShow = rocketGO.GetComponent<FlightFailureShow>();
+            if (failureShow == null) failureShow = rocketGO.AddComponent<FlightFailureShow>();
+            failureShow.Prepare(hud);
         }
 
         /// <summary>R2's exploded view (HangarExplodedView), rebuilt with the rocket and painted in the livery's main colour.
@@ -986,6 +989,8 @@ namespace Kestrel.Slice
             ascentHud.Present(flight);
             staging?.Arm(flight, reduced);
             staging?.Layout(UnitsPerPoint());
+            failureShow?.Arm(flight, reduced);
+            failureShow?.Layout(UnitsPerPoint());
         }
 
         void BackToDesign()
@@ -1060,6 +1065,7 @@ namespace Kestrel.Slice
                     ground.position.y);
             flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
+            failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
             hT.text = $"T+ {flight.SimTime:F1}";
             hStage.text = $"S{flight.Sim.StageIdx + 1}";
             hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
