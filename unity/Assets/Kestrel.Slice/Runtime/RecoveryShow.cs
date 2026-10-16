@@ -348,8 +348,8 @@ namespace Kestrel.Slice
             {
                 var shard = FailureFx.Shard(i, n, Mathf.Max(1.5f, plan.Gap), 0f, 0.35f);
                 var bit = MakeBit("Shard", hotMat != null ? hotMat : deckMat);
-                bit.position = staging.Booster.position + new Vector3(shard.X, shard.Y, shard.Z);
-                bit.localScale = Vector3.one * Mathf.Max(0.25f, shard.Scale);
+                bit.transform.position = staging.Booster.position + new Vector3(shard.X, shard.Y, shard.Z);
+                bit.transform.localScale = Vector3.one * Mathf.Max(0.25f, shard.Scale);
             }
         }
 
