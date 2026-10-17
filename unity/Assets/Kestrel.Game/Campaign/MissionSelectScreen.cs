@@ -7,6 +7,7 @@ using Kestrel.Core.Data;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
 using Kestrel.Game.Guide;
+using Kestrel.Game.Shell;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -77,6 +78,7 @@ namespace Kestrel.Game.MissionSelect
             root.Add(scroll);
             GuideHooks.MissionSelect(GuideSession.Engine, map.Next != null ? map.Next.MissionId : null, map.ShowOpenContracts);
 
+            root.Add(PatchesButton(root, campaign, career, records));
             var homeKey = new Button(home) { name = "missions-home", text = MissionMapCopy.Home, tooltip = MissionMapCopy.HomeTip };
             homeKey.AddToClassList("kh-button");
             homeKey.AddToClassList("mission-home");
@@ -150,7 +152,33 @@ namespace Kestrel.Game.MissionSelect
             if (entry.LockLine != null) text.Add(Line(entry.ElementName + "-lock", entry.LockLine, "mission-lock", grow: false));
             body.Add(text);
             row.Add(body);
+            AttachPatch(row, entry);
             return row;
+        }
+
+        static void AttachPatch(VisualElement row, MissionMapEntry entry)
+        {
+            var patch = MissionPatch.Render(entry.MissionId, 56f, ChromeFor(entry));
+            patch.name = entry.ElementName + "-patch";
+            patch.pickingMode = PickingMode.Ignore;
+            patch.style.width = 56;
+            patch.style.height = 56;
+            patch.style.flexShrink = 0;
+            patch.style.marginRight = 8;
+            var body = row.Q(entry.ElementName + "-body");
+            var head = row.Q(entry.ElementName + "-head");
+            if (entry.Access == MissionAccess.Locked)
+                patch.tooltip = entry.Title + ". Not flown yet.";
+            if (head != null) head.Insert(0, patch);
+            else if (body != null) body.Insert(0, patch);
+            else row.Insert(0, patch);
+        }
+
+        static PatchChrome ChromeFor(MissionMapEntry entry)
+        {
+            if (entry.Access == MissionAccess.Locked) return PatchChrome.Locked;
+            if (entry.Access == MissionAccess.Cleared && entry.MedalsText != null) return PatchChrome.Medal;
+            return PatchChrome.Open;
         }
 
         static Label Line(string name, string text, string cls, bool grow)
@@ -178,6 +206,37 @@ namespace Kestrel.Game.MissionSelect
             panel.Add(title);
             panel.Add(body);
             return panel;
+        }
+
+        static Button PatchesButton(VisualElement host, Campaign campaign, Career career, IReadOnlyDictionary<string, MissionRecord> records)
+        {
+            var key = new Button(() => ShowPatches(host, campaign, career, records))
+            {
+                name = "missions-patches",
+                text = "Patches",
+                tooltip = "Patch collection. Earned flights in full color.",
+            };
+            key.AddToClassList("kh-button");
+            key.AddToClassList("mission-home");
+            key.style.minHeight = 44;
+            key.style.flexShrink = 0;
+            return key;
+        }
+
+        public static void ShowPatches(VisualElement host, Campaign campaign, Career career, IReadOnlyDictionary<string, MissionRecord> records)
+        {
+            if (host == null) return;
+            var open = host.Q(PatchCollectionScreen.RootName);
+            if (open != null)
+            {
+                open.RemoveFromHierarchy();
+                return;
+            }
+            host.Add(PatchCollectionScreen.Build(campaign, career, records, () =>
+            {
+                var sheet = host.Q(PatchCollectionScreen.RootName);
+                if (sheet != null) sheet.RemoveFromHierarchy();
+            }));
         }
 
         static string ReadCampaignText()

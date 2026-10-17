@@ -2,6 +2,7 @@
 using System;
 namespace UnityEngine
 {
+    public enum ScaleMode { StretchToFill, ScaleAndCrop, ScaleToFit }
     public struct Vector2 { public float x, y; public Vector2(float x, float y) { this.x = x; this.y = y; }
         public static Vector2 zero => default; public static Vector2 one => new Vector2(1, 1); public static Vector2 up => new Vector2(0, 1); public static Vector2 right => new Vector2(1, 0);
         public float magnitude => 0; public float sqrMagnitude => 0; public Vector2 normalized => this; public float this[int i] { get => 0; set { } }

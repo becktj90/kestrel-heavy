@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Game.Editor",
     "rootNamespace": "Kestrel.Game.Editor",
-    "references": ["Kestrel.Game.Shell", "Kestrel.Game.Layout", "Kestrel.Game.Quality", "Kestrel.Game.QualityCore", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.Core.Runtime"],
+    "references": ["Kestrel.Core", "Kestrel.Game.Shell", "Kestrel.Game.Layout", "Kestrel.Game.Quality", "Kestrel.Game.QualityCore", "Unity.RenderPipelines.Universal.Runtime", "Unity.RenderPipelines.Core.Runtime"],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

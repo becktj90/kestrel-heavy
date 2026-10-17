@@ -7,6 +7,7 @@ using System.IO;
 using System.Text;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Physics;
 
 namespace Kestrel.Core.Cli
@@ -43,6 +44,8 @@ namespace Kestrel.Core.Cli
                     return Propagate(args, inv, out stdout);
                 case "readout-bench":
                     return ReadoutBenchCommand(out stdout);
+                case "patches":
+                    return Patches(args, out stdout);
                 case "predict":
                 case "mc":
                     stdout = "{\"command\":\"" + args[0] + "\",\"status\":\"not-implemented\"}";
@@ -73,6 +76,19 @@ namespace Kestrel.Core.Cli
                 + ",\"referenceBudgetMs\":" + ReadoutBench.ReferenceBudgetMs.ToString("R", inv)
                 + ",\"ok\":" + (r.ok ? "true" : "false") + "}";
             return r.ok ? 0 : 1;
+        }
+
+        static int Patches(string[] args, out string stdout)
+        {
+            string dir = args.Length >= 2 ? args[1] : Path.Combine("artifacts", "patches");
+            int size = 512;
+            if (args.Length >= 3 && !int.TryParse(args[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out size))
+            { stdout = Usage(); return 2; }
+            if (size < 32) size = 32;
+            if (size > 1024) size = 1024;
+            int n = MissionPatchArt.WriteAll(dir, size);
+            stdout = "{\"wrote\":" + n.ToString(CultureInfo.InvariantCulture) + ",\"dir\":\"" + dir.Replace("\\", "/") + "\",\"size\":" + size.ToString(CultureInfo.InvariantCulture) + "}";
+            return 0;
         }
 
         static int Propagate(string[] args, CultureInfo inv, out string stdout)
@@ -112,7 +128,7 @@ namespace Kestrel.Core.Cli
         static string Usage()
         {
             var sb = new StringBuilder();
-            sb.Append("kestrel atmo <zMetres> | era <year> <month> <day> <hoursUtc> | simulate | predict | mc | readout-bench | propagate <kepler|onrails|auto> <rx> <ry> <rz> <vx> <vy> <vz> <dt>");
+            sb.Append("kestrel atmo <zMetres> | era <year> <month> <day> <hoursUtc> | simulate | predict | mc | readout-bench | patches [dir] [size] | propagate <kepler|onrails|auto> <rx> <ry> <rz> <vx> <vy> <vz> <dt>");
             return sb.ToString();
         }
     }
