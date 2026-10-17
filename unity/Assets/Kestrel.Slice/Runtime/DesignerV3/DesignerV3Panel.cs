@@ -5,6 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Kestrel.Core;
+using Kestrel.Core.Codex;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
@@ -26,7 +28,8 @@ namespace Kestrel.Slice.DesignerV3
 
         readonly HangarSession session;
         readonly HangarUi ui;
-        readonly VisualElement root, strip, riskRow, tabs, content, confirmRow, tutorialBanner;
+        readonly VisualElement root, strip, riskRow, tabs, content, confirmRow, tutorialBanner, stepRail, deltaRow, budgetRow;
+        readonly Label goalLabel, repairLabel;
         readonly ScrollView scroll;
         readonly List<Action> refreshers = new List<Action>();
         readonly Dictionary<DesignerV3Tab, Button> tabButtons = new Dictionary<DesignerV3Tab, Button>();
@@ -35,6 +38,7 @@ namespace Kestrel.Slice.DesignerV3
         static DesignerV3Panel mounted;
 
         DesignerV3Tab tab = DesignerV3Tab.Engines;
+        string flowStep = "Engines";
         bool engineer;
         bool launchConfirmArmed;
         bool tutorialOn;
@@ -81,13 +85,50 @@ namespace Kestrel.Slice.DesignerV3
             tutorialBanner.name = "tutorial-banner";
             root.Add(tutorialBanner);
 
+            stepRail = ui.Row(2f);
+            stepRail.name = "step-rail";
+            stepRail.style.flexWrap = Wrap.Wrap;
+            stepRail.style.width = Length.Percent(100);
+            root.Add(stepRail);
+
+            goalLabel = ui.Text("", HangarUi.BodyPt, bold: true);
+            goalLabel.name = "step-goal";
+            goalLabel.style.whiteSpace = WhiteSpace.Normal;
+            goalLabel.style.marginLeft = 8;
+            goalLabel.style.marginRight = 8;
+            root.Add(goalLabel);
+
+            repairLabel = ui.Text("", HangarUi.SmallPt, HangarUi.Amber);
+            repairLabel.name = "repair-note";
+            repairLabel.style.whiteSpace = WhiteSpace.Normal;
+            repairLabel.style.marginLeft = 8;
+            repairLabel.style.marginRight = 8;
+            repairLabel.style.display = DisplayStyle.None;
+            root.Add(repairLabel);
+
             strip = ui.Row(0f);
             strip.name = "sticky-strip";
             strip.tooltip = "Live flight numbers.";
+            strip.style.width = Length.Percent(100);
+            strip.style.overflow = Overflow.Hidden;
+            strip.style.flexWrap = Wrap.NoWrap;
             root.Add(strip);
 
-            riskRow = ui.Row(2f);
+            deltaRow = ui.Row(0f);
+            deltaRow.name = "delta-row";
+            deltaRow.style.width = Length.Percent(100);
+            deltaRow.style.display = DisplayStyle.None;
+            root.Add(deltaRow);
+
+            budgetRow = ui.Column();
+            budgetRow.name = "dv-budget";
+            budgetRow.style.width = Length.Percent(100);
+            root.Add(budgetRow);
+
+            riskRow = ui.Column();
             riskRow.name = "risk-chips";
+            riskRow.style.width = Length.Percent(100);
+            riskRow.style.overflow = Overflow.Hidden;
             root.Add(riskRow);
 
             tabs = ui.Row(2f);
@@ -275,7 +316,12 @@ namespace Kestrel.Slice.DesignerV3
                     _ => DesignerV3Tab.Engines,
                 };
             }
-            if (tab == next) return;
+            flowStep = FlowName(next);
+            if (tab == next)
+            {
+                BuildFlow();
+                return;
+            }
             tab = next;
             launchConfirmArmed = false;
             TabChanged?.Invoke(tab);
@@ -358,7 +404,9 @@ namespace Kestrel.Slice.DesignerV3
         void RefreshChrome()
         {
             foreach (var kv in tabButtons) ui.SetChip(kv.Value, kv.Key == tab);
+            BuildFlow();
             BuildStrip();
+            BuildBudget();
             BuildRisks();
             BuildLaunchRow();
             foreach (var r in refreshers) r();
@@ -389,24 +437,64 @@ namespace Kestrel.Slice.DesignerV3
                 var cell = ui.Column();
                 cell.name = "strip-" + c.id;
                 cell.style.flexGrow = 1;
+                cell.style.flexShrink = 1;
                 cell.style.flexBasis = 0;
+                cell.style.minWidth = 0;
+                cell.style.overflow = Overflow.Hidden;
                 cell.style.alignItems = Align.Center;
-                cell.Add(ui.Text(c.label, HangarUi.SmallPt, HangarUi.Dim));
-                var v = ui.Text(c.value, engineer ? HangarUi.BodyPt : HangarUi.TitlePt, StateColor(c.state), bold: true);
+                var label = ui.Text(c.label, HangarUi.SmallPt, HangarUi.Dim);
+                label.style.whiteSpace = WhiteSpace.NoWrap;
+                label.style.overflow = Overflow.Hidden;
+                cell.Add(label);
+                var v = ui.Text(c.value, HangarUi.SmallPt, StateColor(c.state), bold: true);
                 v.name = "strip-value-" + c.id;
                 v.style.unityTextAlign = TextAnchor.MiddleCenter;
-                v.style.whiteSpace = WhiteSpace.NoWrap;
+                v.style.whiteSpace = WhiteSpace.Normal;
+                v.style.overflow = Overflow.Hidden;
+                v.style.width = Length.Percent(100);
                 cell.Add(v);
                 cell.tooltip = c.label + " " + c.value + (c.hint != null ? ", " + c.hint : "");
                 strip.Add(cell);
             }
-            if (!string.IsNullOrEmpty(lastDelta))
+            deltaRow.Clear();
+            if (string.IsNullOrEmpty(lastDelta))
             {
-                var chip = ui.Text(lastDelta, HangarUi.SmallPt, HangarUi.ChipOn, bold: true);
-                chip.name = "delta-chip";
-                chip.tooltip = "Change from the last edit.";
-                strip.Add(chip);
+                deltaRow.style.display = DisplayStyle.None;
+                return;
             }
+            deltaRow.style.display = DisplayStyle.Flex;
+            var chip = ui.Text(lastDelta, HangarUi.SmallPt, HangarUi.ChipOn, bold: true);
+            chip.name = "delta-chip";
+            chip.style.whiteSpace = WhiteSpace.Normal;
+            chip.style.flexGrow = 1;
+            chip.style.overflow = Overflow.Hidden;
+            chip.tooltip = "Change from the last edit.";
+            deltaRow.Add(chip);
+        }
+
+        void BuildBudget()
+        {
+            budgetRow.Clear();
+            var readout = Readout.Quick(C, D);
+            double have = readout.totalDeltaV;
+            double need = readout.required;
+            double span = Math.Max(have, Math.Max(need, 1));
+            var caption = ui.Text(DesignerCoach.BudgetLine(have, need), HangarUi.SmallPt);
+            caption.name = "dv-budget-label";
+            caption.style.whiteSpace = WhiteSpace.Normal;
+            budgetRow.Add(caption);
+            var track = new VisualElement { name = "dv-budget-track" };
+            track.style.height = 8;
+            track.style.width = Length.Percent(100);
+            track.style.backgroundColor = HangarUi.ChipOff;
+            track.style.overflow = Overflow.Hidden;
+            var fill = new VisualElement { name = "dv-budget-fill" };
+            float frac = (float)Math.Min(1, Math.Max(0, have / span));
+            fill.style.width = Length.Percent(frac * 100f);
+            fill.style.height = Length.Percent(100);
+            fill.style.backgroundColor = have + 1 >= need ? HangarUi.Green : HangarUi.Amber;
+            track.Add(fill);
+            budgetRow.Add(track);
         }
 
         void BuildRisks()
@@ -420,13 +508,29 @@ namespace Kestrel.Slice.DesignerV3
                 return;
             }
             riskRow.style.display = DisplayStyle.Flex;
+            riskRow.style.flexDirection = FlexDirection.Column;
             foreach (var risk in chips)
             {
                 var r = risk;
-                var b = ui.Btn(DesignerV3Risk.ChipLabel(r, engineer), () => JumpToRisk(r), DesignerV3Risk.ChipTooltip(r), minWidthPt: 64f);
-                b.name = "risk-" + (r.kind ?? "x");
-                b.style.backgroundColor = DesignerV3Risk.LevelState(r.level) == CellState.Bad ? HangarUi.Red : HangarUi.Amber;
-                riskRow.Add(b);
+                var card = ui.Column();
+                card.name = "risk-" + (r.kind ?? "x");
+                card.style.overflow = Overflow.Hidden;
+                card.style.marginBottom = 4;
+                card.style.width = Length.Percent(100);
+                var text = ui.Text(DesignerV3Risk.ChipLabel(r, engineer), HangarUi.SmallPt, Color.white);
+                text.style.whiteSpace = WhiteSpace.Normal;
+                text.style.overflow = Overflow.Hidden;
+                text.style.backgroundColor = DesignerV3Risk.LevelState(r.level) == CellState.Bad ? HangarUi.Red : HangarUi.Amber;
+                text.style.paddingLeft = 8;
+                text.style.paddingRight = 8;
+                text.style.paddingTop = 6;
+                text.style.paddingBottom = 6;
+                text.tooltip = DesignerV3Risk.ChipTooltip(r);
+                card.Add(text);
+                var fix = ui.Btn("Fix it", () => Repair(r), "Fix it. " + DesignerV3Risk.ChipTooltip(r), minWidthPt: 44f);
+                fix.name = "risk-fix-" + (r.kind ?? "x");
+                card.Add(fix);
+                riskRow.Add(card);
             }
         }
 
@@ -473,6 +577,8 @@ namespace Kestrel.Slice.DesignerV3
         void BuildPropellant()
         {
             content.Add(ui.Section(engineer ? "Mixture" : "Fuel mix"));
+            var mix = Readout.Quick(C, D);
+            Teach(DesignerCoach.WhyTanks(mix.totalDeltaV, mix.required), "prop");
             content.Add(ui.Stepper("Mixture offset", () => (Stage0()?.Num("mixtureOffsetPct") ?? 0).ToString("0.0", inv) + "%",
                 () => engineer ? "±10%. Beyond ±6% risks instability." : "Keep near zero for a clean burn",
                 (dir, key) => Do(d => DesignerV3Edits.SetMixtureOffset(d, 0, (StageNum(d, "mixtureOffsetPct") ?? 0) + dir), key),
@@ -484,6 +590,11 @@ namespace Kestrel.Slice.DesignerV3
         {
             var p = PartRef.Stage(0);
             content.Add(ui.Section(engineer ? "Stage 1 engines" : "Engines (the push)"));
+            var push = Readout.Quick(C, D);
+            double isp = 0, thrust = 0;
+            var engId = Stage0()?.Str("engine");
+            if (engId != null && C.EngineById.TryGetValue(engId, out var eng)) { isp = eng.ispVac; thrust = eng.thrustVac; }
+            Teach(DesignerCoach.WhyEngines(push.liftoffTWR, isp, thrust), "engines");
             var engines = new List<HangarUi.Choice>();
             foreach (var e in HangarEditor.EngineChoices(C, D, p))
                 engines.Add(new HangarUi.Choice(e.id, HangarFormat.EngineChip(e)));
@@ -513,6 +624,8 @@ namespace Kestrel.Slice.DesignerV3
         {
             var p = PartRef.Stage(0);
             content.Add(ui.Section(engineer ? "Stage 1 tank" : "Fuel tank"));
+            var fuel = Readout.Quick(C, D);
+            Teach(DesignerCoach.WhyTanks(fuel.totalDeltaV, fuel.required), "tanks");
             content.Add(ui.Stepper("Fuel load", () => HangarFormat.Tons(Stage0()?.Num("propMass") ?? 0),
                 () => engineer ? null : "More fuel goes further but weighs more",
                 (dir, key) => Do(d => HangarEditor.SetPropMass(d, p, HangarFormat.StepProp(HangarParts.Body(d, p)?.Num("propMass") ?? 0, dir)), key),
@@ -538,6 +651,8 @@ namespace Kestrel.Slice.DesignerV3
         void BuildStages()
         {
             content.Add(ui.Section("Stack"));
+            var stack = Readout.Quick(C, D);
+            Teach(DesignerCoach.WhyStages(D.Arr("stages")?.Count ?? 0, stack.totalDeltaV) + " " + DesignerCoach.WhyMaxQ(stack.maxQ_kPa, stack.qLim_kPa), "stages");
             int n = D.Arr("stages")?.Count ?? 0;
             content.Add(ui.Text(n + " core stage" + (n == 1 ? "" : "s"), HangarUi.BodyPt));
             if (n < DesignerLimits.Active.stagesMax)
@@ -564,6 +679,7 @@ namespace Kestrel.Slice.DesignerV3
         void BuildAero()
         {
             content.Add(ui.Section(engineer ? "Aerodynamics" : "Shape"));
+            Teach(DesignerCoach.WhyStability(Readout.Quick(C, D).stabilityCal), "stability");
             content.Add(ui.Switch("Fins", "Steady in the air", () => D.Obj("aero")?.Bool("fins") ?? false,
                 on => Do(d => HangarEditor.SetFins(d, on)), refreshers));
             if (D.Obj("aero")?.Bool("fins") == true)
@@ -582,6 +698,8 @@ namespace Kestrel.Slice.DesignerV3
         void BuildStructure()
         {
             content.Add(ui.Section(engineer ? "Structure" : "Strength"));
+            var wall = Readout.Quick(C, D);
+            Teach(DesignerCoach.WhyMaxQ(wall.maxQ_kPa, wall.qLim_kPa), "max-q");
             var mats = new List<HangarUi.Choice>();
             foreach (var m in C.Materials) mats.Add(new HangarUi.Choice(m.id, m.label));
             content.Add(ui.Chips("Material", mats, () => Stage0()?.Str("material"),
@@ -597,6 +715,8 @@ namespace Kestrel.Slice.DesignerV3
         void BuildGuidance()
         {
             content.Add(ui.Section("Guidance profile"));
+            var guide = Readout.Quick(C, D);
+            Teach(DesignerCoach.WhyGLimit(guide.gLimit) + " " + DesignerCoach.WhyMaxQ(guide.maxQ_kPa, guide.qLim_kPa), "max-q");
             content.Add(ui.Stepper("Pitch kick alt", () => (D.Obj("guidance")?.Num("pitchKickAlt") ?? 100).ToString("0", inv) + " m",
                 () => "Start of the gravity turn",
                 (dir, key) => Do(d => DesignerV3Edits.SetGuidance(d, "pitchKickAlt", (d.Obj("guidance")?.Num("pitchKickAlt") ?? 100) + dir * 50), key),
@@ -618,6 +738,8 @@ namespace Kestrel.Slice.DesignerV3
         void BuildRecovery()
         {
             content.Add(ui.Section(engineer ? "Recovery" : "Landing"));
+            var land = Readout.Quick(C, D);
+            Teach(DesignerCoach.WhyLanding(land.totalDeltaV, land.required), "landing");
             content.Add(ui.Switch("Landing legs", null, () => D.Obj("landing")?.Bool("legs") ?? false,
                 on => Do(d => HangarEditor.SetLegs(d, on)), refreshers));
             content.Add(ui.Switch("Grid fins", "Steer on the way down", () => D.Obj("landing")?.Bool("gridFins") ?? false,
@@ -645,6 +767,8 @@ namespace Kestrel.Slice.DesignerV3
         void BuildPayload()
         {
             content.Add(ui.Section(engineer ? "Payload" : "Cargo"));
+            var job = Readout.Quick(C, D);
+            Teach(DesignerCoach.WhyMission(job.orbitLabel, job.required), "orbit");
             var payloads = new List<HangarUi.Choice>();
             foreach (var pl in C.Payloads) payloads.Add(new HangarUi.Choice(pl.id, pl.label ?? pl.id));
             content.Add(ui.Chips("Type", payloads, () => D.Obj("payload")?.Str("type"),
@@ -661,6 +785,7 @@ namespace Kestrel.Slice.DesignerV3
         void BuildLook()
         {
             content.Add(ui.Section("Livery"));
+            Teach("Paint does not change Isp, thrust, TWR, or delta-v.", null);
             var primary = D.Obj("livery")?.Str("primary") ?? "#f2f2f2";
             var accent = D.Obj("livery")?.Str("accent") ?? "#1ec8ff";
             content.Add(ui.Text("Primary " + primary, HangarUi.SmallPt, HangarUi.Dim));
@@ -675,6 +800,158 @@ namespace Kestrel.Slice.DesignerV3
                 content.Add(nameField);
             }
         }
+
+        void BuildFlow()
+        {
+            stepRail.Clear();
+            foreach (var step in DesignerCoach.Flow)
+            {
+                var captured = step;
+                var b = ui.Btn(step, () => ShowStep(captured), DesignerCoach.Goal(step), minWidthPt: 44f);
+                b.name = "step-" + step.ToLowerInvariant();
+                b.style.flexShrink = 1;
+                b.style.minWidth = 44;
+                ui.SetChip(b, step == flowStep);
+                stepRail.Add(b);
+            }
+            goalLabel.text = DesignerCoach.Goal(flowStep);
+        }
+
+        void ShowStep(string step)
+        {
+            if (step == "Launch")
+            {
+                flowStep = "Launch";
+                BuildFlow();
+                return;
+            }
+            if (step == "Mission")
+            {
+                flowStep = "Mission";
+                if (tab != DesignerV3Tab.Payload)
+                {
+                    tab = DesignerV3Tab.Payload;
+                    launchConfirmArmed = false;
+                    TabChanged?.Invoke(tab);
+                    Rebuild();
+                }
+                else BuildFlow();
+                return;
+            }
+            Show(TabOf(step));
+        }
+
+        static DesignerV3Tab TabOf(string step)
+        {
+            switch (step)
+            {
+                case "Engines": return DesignerV3Tab.Engines;
+                case "Tanks": return DesignerV3Tab.Tanks;
+                case "Stages": return DesignerV3Tab.Stages;
+                case "Landing": return DesignerV3Tab.Recovery;
+                case "Look": return DesignerV3Tab.Look;
+                default: return DesignerV3Tab.Engines;
+            }
+        }
+
+        static string FlowName(DesignerV3Tab next)
+        {
+            switch (next)
+            {
+                case DesignerV3Tab.Payload: return "Mission";
+                case DesignerV3Tab.Engines: return "Engines";
+                case DesignerV3Tab.Tanks: return "Tanks";
+                case DesignerV3Tab.Stages: return "Stages";
+                case DesignerV3Tab.Recovery: return "Landing";
+                case DesignerV3Tab.Look: return "Look";
+                default: return "Engines";
+            }
+        }
+
+        public void ApplyReportedFix(string kind, string tabId)
+        {
+            var next = DesignerV3Tabs.FromRiskTab(tabId);
+            if (DesignerRepair.NeedsDeltaV(kind))
+            {
+                Show(next);
+                var result = session.FixDeltaV();
+                string note = result != null && result.Solved
+                    ? "Added propellant or a stage so the speed covers this trip."
+                    : PlayerText.ForPlayer(result != null ? result.Reason : "");
+                NoteRepair(note);
+                return;
+            }
+            Show(next);
+            Edit made = Edit.None;
+            Do(d =>
+            {
+                made = DesignerRepair.Apply(C, d, kind);
+                return made;
+            });
+            string said = made.changed
+                ? made.what + " is now " + made.to + "."
+                : (kind == "overg" || kind == "payload-g")
+                    ? "The g limit is already under the payload rating."
+                    : "That control is already at the safer setting.";
+            NoteRepair(said);
+        }
+
+        void Repair(FlightRisk risk)
+        {
+            if (risk == null) return;
+            JumpToRisk(risk);
+            ApplyReportedFix(risk.kind, risk.tab);
+        }
+
+        void NoteRepair(string note)
+        {
+            repairLabel.text = note ?? "";
+            repairLabel.style.display = string.IsNullOrEmpty(repairLabel.text) ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+
+        void Teach(string why, string concept)
+        {
+            var line = ui.Text(why ?? "", HangarUi.SmallPt, HangarUi.Dim);
+            line.name = "why-line";
+            line.style.whiteSpace = WhiteSpace.Normal;
+            content.Add(line);
+            string id = DesignerCoach.CodexId(concept);
+            if (string.IsNullOrEmpty(id)) return;
+            var more = ui.Btn("Learn more", () => ToggleCodex(id), "Codex note on " + id, minWidthPt: 44f);
+            more.name = "learn-" + id;
+            content.Add(more);
+        }
+
+        void ToggleCodex(string id)
+        {
+            var existing = content.Q("codex-open");
+            if (existing != null && (existing.userData as string) == id)
+            {
+                existing.RemoveFromHierarchy();
+                return;
+            }
+            if (existing != null) existing.RemoveFromHierarchy();
+            var note = ui.Text(DesignerCoach.CodexBlurb(LoadCodex(), id, engineer), HangarUi.SmallPt);
+            note.name = "codex-open";
+            note.userData = id;
+            note.style.whiteSpace = WhiteSpace.Normal;
+            content.Add(note);
+        }
+
+        CodexBook LoadCodex()
+        {
+            if (codex != null) return codex;
+            try
+            {
+                var asset = Resources.Load<TextAsset>("KestrelData/codex");
+                if (asset != null && !string.IsNullOrEmpty(asset.text))
+                    codex = CodexBook.Parse(asset.text);
+            }
+            catch (Exception e) { Debug.LogWarning("[DesignerV3] codex: " + e.Message); }
+            return codex;
+        }
+
+        CodexBook codex;
 
         void AttachDelta(string field, Action<JsonObject> preview)
         {

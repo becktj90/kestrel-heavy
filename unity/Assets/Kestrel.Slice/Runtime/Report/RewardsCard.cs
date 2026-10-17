@@ -1,6 +1,7 @@
 // Rewards card on the post-flight sheet. Cause, the flight's own numbers, stars, medals, Kc, then the exits.
 // Portrait column, scrolling, so an iPhone SE still reaches every button. No clock and no purchase.
 using System;
+using Kestrel.Core;
 using Kestrel.Core.Flight;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -72,7 +73,7 @@ namespace Kestrel.Slice
 
         public static Label Line(string name, string text, int size, FontStyle style, Color color)
         {
-            var label = new Label(text ?? "") { name = name };
+            var label = new Label(PlayerText.ForPlayer(text ?? "")) { name = name };
             label.style.whiteSpace = WhiteSpace.Normal;
             label.style.fontSize = size;
             label.style.unityFontStyleAndWeight = style;

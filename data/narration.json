@@ -23,7 +23,7 @@
       "when": "q",
       "design": "any",
       "kid": "She bent in the middle. The air pushed {q} kPa. The walls held {qlim} kPa.",
-      "eng": "structural-maxq: q {qPa} Pa > q_lim {qlimPa} Pa at T+{t} s."
+      "eng": "Air load {qPa} Pa, past the {qlimPa} Pa limit, at T+{t} s."
     },
     {
       "id": "narr.structural.q.2",
@@ -31,7 +31,7 @@
       "when": "q",
       "design": "any",
       "kid": "The stack folded at T+{t} s. {q} kPa of air, and the walls stop at {qlim} kPa.",
-      "eng": "q {qPa} Pa against q_lim {qlimPa} Pa. Safety factor or a lower max-Q throttle."
+      "eng": "Air load {qPa} Pa against a {qlimPa} Pa limit. Raise the safety factor or ease the max-Q throttle."
     },
     {
       "id": "narr.structural.margin.1",
@@ -39,7 +39,7 @@
       "when": "margin",
       "design": "any",
       "kid": "The stack was loaded past the tanks at T+{t} s. Margin {value}.",
-      "eng": "structural-maxq (margin): MS {value} at T+{t} s."
+      "eng": "Load margin {value} at T+{t} s."
     },
     {
       "id": "narr.structural.margin.2",
@@ -55,7 +55,7 @@
       "when": "any",
       "design": "any",
       "kid": "Engine failure. Chamber pressure was {n0} bar. It is rated {n0lim} bar.",
-      "eng": "engine-overpressure: pc {value} bar, rated {limit} bar, at T+{t} s."
+      "eng": "Chamber pressure {value} bar, rated {limit} bar, at T+{t} s."
     },
     {
       "id": "narr.engine.pc.2",
@@ -71,7 +71,7 @@
       "when": "any",
       "design": "any",
       "kid": "Engine failure. {n0} of {n0lim} engines quit at T+{t} s.",
-      "eng": "engine-out: {n0} dead of {n0lim} at T+{t} s. More engines raise the odds of staying up."
+      "eng": "{n0} engines quit out of {n0lim} at T+{t} s. More engines raise the odds of staying up."
     },
     {
       "id": "narr.engine.out.2",
@@ -103,7 +103,7 @@
       "when": "any",
       "design": "any",
       "kid": "Engine failure. The mix was off by {n1} percent at T+{t} s.",
-      "eng": "bad-mixture: offset {value} percent, band {limit} percent."
+      "eng": "Mixture offset {value} percent. The band is {limit} percent."
     },
     {
       "id": "narr.engine.mix.2",
@@ -119,7 +119,7 @@
       "when": "alpha",
       "design": "any",
       "kid": "Tumble. She was {n0} degrees sideways. The limit is {n0lim} degrees.",
-      "eng": "tumble (alpha): {value} deg at T+{t} s, limit {limit} deg."
+      "eng": "Side slip {value} degrees at T+{t} s. The limit is {limit} degrees."
     },
     {
       "id": "narr.tumble.alpha.2",
@@ -135,7 +135,7 @@
       "when": "stability",
       "design": "any",
       "kid": "Tumble. No fins to steer her. Stability was {value} cal.",
-      "eng": "tumble (stability): S {value} cal at T+{t} s."
+      "eng": "Stability {value} calibers at T+{t} s."
     },
     {
       "id": "narr.tumble.stability.2",
@@ -167,7 +167,7 @@
       "when": "any",
       "design": "any",
       "kid": "Stage collision. They parted at {value} m/s and needed {limit} m/s.",
-      "eng": "separation-collision: rel {value} m/s < {limit} m/s at T+{t} s."
+      "eng": "Separation {value} m/s, short of {limit} m/s, at T+{t} s."
     },
     {
       "id": "narr.sep.2",
@@ -182,16 +182,16 @@
       "kind": "overg",
       "when": "any",
       "design": "any",
-      "kid": "Too many g at T+{t} s. The push hit {g} g and the limit is {glim} g.",
-      "eng": "overg: {value} g > limit {limit} g."
+      "kid": "The payload felt {g} g at T+{t} s. It is rated {glim} g. Throttle down, or set a g limit under that.",
+      "eng": "Peak {value} g, past the {limit} g limit."
     },
     {
       "id": "narr.overg.2",
       "kind": "overg",
       "when": "any",
       "design": "any",
-      "kid": "The payload took {g} g. It was rated {glim} g.",
-      "eng": "peak {g} g against g_lim {glim} g at T+{t} s."
+      "kid": "The payload took {g} g. It is rated {glim} g.",
+      "eng": "The peak was {g} g at T+{t} s. The limit is {glim} g."
     },
     {
       "id": "narr.thermal.1",
@@ -199,7 +199,7 @@
       "when": "any",
       "design": "any",
       "kid": "She got too warm at T+{t} s. The skin reached {n0} K. It handles {n0lim} K.",
-      "eng": "thermal: {value} K > {limit} K at T+{t} s."
+      "eng": "Skin {value} K, past the {limit} K limit, at T+{t} s."
     },
     {
       "id": "narr.cryo.1",
@@ -215,7 +215,7 @@
       "when": "any",
       "design": "any",
       "kid": "The legs folded. She was falling at {n1} m/s. The legs take {limit} m/s.",
-      "eng": "leg-collapse: sink {value} m/s > v_leg {limit} m/s."
+      "eng": "Sink {value} m/s, past the {limit} m/s the legs can take."
     },
     {
       "id": "narr.pass.1",

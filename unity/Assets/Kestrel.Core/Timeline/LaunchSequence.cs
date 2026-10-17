@@ -5,6 +5,7 @@
 // No Unity types. Same input ⇒ same beat list.
 using System;
 using System.Collections.Generic;
+using Kestrel.Core;
 
 namespace Kestrel.Core.Timeline
 {
@@ -47,6 +48,16 @@ namespace Kestrel.Core.Timeline
         }
 
         /// <summary>Beats from the opening of the compressed count through the last planned callout.</summary>
+        static string BeatLabel(MissionEvent e)
+        {
+            string raw = e.shortLabel;
+            string human = e.strings != null ? e.strings.shortLabel : null;
+            if (!string.IsNullOrEmpty(human) && (string.IsNullOrEmpty(raw) || PlayerText.Leak(raw)))
+                return human;
+            if (!string.IsNullOrEmpty(raw) && !PlayerText.Leak(raw)) return raw;
+            return human ?? "";
+        }
+
         public static LaunchSequence Open(Timeline timeline)
         {
             if (timeline == null) throw new ArgumentNullException(nameof(timeline));
@@ -62,7 +73,7 @@ namespace Kestrel.Core.Timeline
                     beats.Add(new LaunchBeat
                     {
                         Id = e.id,
-                        Label = string.IsNullOrEmpty(e.shortLabel) ? e.id : e.shortLabel,
+                        Label = BeatLabel(e),
                         Banner = e.strings != null && !string.IsNullOrEmpty(e.strings.name) ? e.strings.name : e.name,
                         Phase = string.IsNullOrEmpty(e.phase) ? TimelinePhase.Terminal : e.phase,
                         Nominal = e.nominal,

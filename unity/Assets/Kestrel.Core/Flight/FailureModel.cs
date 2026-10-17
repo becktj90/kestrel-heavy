@@ -314,7 +314,10 @@ namespace Kestrel.Core.Flight
                 case FailureKind.StructuralMaxQ:
                     return "Your rocket bent in half at T+" + ts + " s. The air pushed " + N0(qPa / 1000.0) + " kPa, but your tanks could only take " + N0(hit.limit / 1000.0) + " kPa. Try a higher safety factor or a lower max-Q throttle.";
                 case FailureKind.OverG:
-                    return "Your rocket crushed its payload at T+" + ts + " s. The push hit " + N1(hit.value) + " g and the limit is " + N1(hit.limit) + " g. Throttle down or set a g limit.";
+                    string peak = N1(hit.value);
+                    string lim = N1(hit.limit);
+                    if (peak == lim) peak = hit.value.ToString("0.00", CultureInfo.InvariantCulture);
+                    return "The payload felt " + peak + " g at T+" + ts + " s. It is rated " + lim + " g. Throttle down, or set a g limit under " + lim + " g.";
                 case FailureKind.Tumble when hit.cause == 1:
                     return "Your rocket flipped at T+" + ts + " s. It was flying " + N0(hit.value) + "° sideways in thick air. Add fins or ease the turn.";
                 case FailureKind.Tumble:
@@ -345,19 +348,18 @@ namespace Kestrel.Core.Flight
         static string Engineer(FailureHit hit, double t, double qPa)
         {
             var inv = CultureInfo.InvariantCulture;
-            string k = FailureKind.Name(hit.kind);
             switch (hit.kind)
             {
                 case FailureKind.StructuralMaxQ when hit.cause == 0:
-                    return k + ": q " + qPa.ToString("0.0", inv) + " Pa > q_lim " + hit.limit.ToString("0.0", inv) + " Pa at T+" + t.ToString("0.00", inv) + " s.";
+                    return "Air load " + qPa.ToString("0.0", inv) + " Pa, past the " + hit.limit.ToString("0.0", inv) + " Pa limit, at T+" + t.ToString("0.00", inv) + " s.";
                 case FailureKind.StructuralMaxQ when hit.cause == 1:
-                    return k + ": MS " + hit.value.ToString("0.000", inv) + " < 0 at T+" + t.ToString("0.00", inv) + " s.";
+                    return "Load margin " + hit.value.ToString("0.000", inv) + " at T+" + t.ToString("0.00", inv) + " s. It is below zero.";
                 case FailureKind.OverG:
-                    return k + ": " + hit.value.ToString("0.00", inv) + " g > limit " + hit.limit.ToString("0.00", inv) + " g.";
+                    return "Peak " + hit.value.ToString("0.00", inv) + " g, past the " + hit.limit.ToString("0.00", inv) + " g limit.";
                 case FailureKind.Tumble:
-                    return k + " (" + Cause(hit) + "): S " + hit.value.ToString("0.000", inv) + " at T+" + t.ToString("0.00", inv) + " s.";
+                    return "Stability " + hit.value.ToString("0.000", inv) + " at T+" + t.ToString("0.00", inv) + " s.";
                 default:
-                    return k + " (" + Cause(hit) + "): value " + hit.value.ToString("0.000", inv) + " limit " + hit.limit.ToString("0.000", inv) + " at T+" + t.ToString("0.00", inv) + " s.";
+                    return "Reading " + hit.value.ToString("0.000", inv) + ", limit " + hit.limit.ToString("0.000", inv) + ", at T+" + t.ToString("0.00", inv) + " s.";
             }
         }
 
@@ -767,9 +769,9 @@ namespace Kestrel.Core.Flight
                     + " s. The air pushed " + Math.Round(qPeakPa / 1000.0).ToString(CultureInfo.InvariantCulture)
                     + " kPa, but your tanks could only take " + Math.Round(Event.limit / 1000.0).ToString(CultureInfo.InvariantCulture)
                     + " kPa. Try a higher safety factor or a lower max-Q throttle.";
-                Event.engineer = "structural-maxq: q " + qPeakPa.ToString("0.0", CultureInfo.InvariantCulture)
-                    + " Pa > q_lim " + Event.limit.ToString("0.0", CultureInfo.InvariantCulture)
-                    + " Pa at T+" + Event.t.ToString("0.00", CultureInfo.InvariantCulture) + " s.";
+                Event.engineer = "Air load " + qPeakPa.ToString("0.0", CultureInfo.InvariantCulture)
+                    + " Pa, past the " + Event.limit.ToString("0.0", CultureInfo.InvariantCulture)
+                    + " Pa limit, at T+" + Event.t.ToString("0.00", CultureInfo.InvariantCulture) + " s.";
             }
             Risks = BuildRisks();
         }

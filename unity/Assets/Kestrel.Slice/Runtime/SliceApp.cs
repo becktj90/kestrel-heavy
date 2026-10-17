@@ -41,7 +41,7 @@ namespace Kestrel.Slice
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
         public int OrbitsCompleted; public bool EngineerEnabled;
         Label issueChip, launchReason; Button launchButton;
-        LaunchSequence sequence; bool counting; string pinnedEvent, chipSig;
+        LaunchSequence sequence; bool counting;
         readonly LiftoffHandoff handoff = new LiftoffHandoff();
         bool ascentErrorLogged;
         double requiredMps, spareMps; double? maxQKpa; string orbitLabel = "";
@@ -134,6 +134,7 @@ namespace Kestrel.Slice
                 // #213 is on main. One registration: portrait designer beside the Hangar.
                 designer = DesignerV3Panel.Attach(session, ui, upp);
                 if (designer != null) designer.LaunchRequested += Launch;
+                FixField.OnApply += HandleReportedFix;
             }
             else
             {
@@ -387,6 +388,7 @@ namespace Kestrel.Slice
             float upp = UnitsPerPoint();
             designToggle.style.height = 56f * upp;
             designToggle.style.minHeight = 44f * upp;
+            designToggle.style.flexShrink = 0;
             designToggle.style.fontSize = 20f * upp;
             designToggle.style.paddingTop = 0; designToggle.style.paddingBottom = 0;
             designToggle.style.marginTop = 0; designToggle.style.marginBottom = 0;
@@ -1006,7 +1008,6 @@ namespace Kestrel.Slice
             camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
             hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
-            pinnedEvent = null; chipSig = null;
             var sheet = session.Sheet;
             requiredMps = sheet != null ? sheet.requiredDeltaV_mps : 0;
             spareMps = sheet != null ? sheet.totalDeltaV_mps - sheet.requiredDeltaV_mps : 0;
@@ -1115,6 +1116,15 @@ namespace Kestrel.Slice
             if (ascentErrorLogged || handoff.LastError == null) return;
             ascentErrorLogged = true;
             Debug.LogException(handoff.LastError);
+        }
+
+        void HandleReportedFix(FixField link)
+        {
+            if (link == null) return;
+            if (designPanel != null) designPanel.RemoveFromClassList("hidden");
+            if (homeButton != null) homeButton.RemoveFromClassList("hidden");
+            if (hud != null) hud.AddToClassList("hidden");
+            designer?.ApplyReportedFix(link.Kind, link.Tab);
         }
 
         void BackToDesign()
@@ -1284,41 +1294,15 @@ namespace Kestrel.Slice
                 : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
-            var beats = sequence != null ? sequence.Beats : null;
-            var chips = WebcastBoard.Window(beats, time);
-            var sig = new System.Text.StringBuilder();
-            foreach (var c in chips) sig.Append(c.Id).Append((int)c.State).Append(c.Id == pinnedEvent ? "*" : "");
-            if (sig.ToString() != chipSig && seqRow != null)
+            // Trevor: the raw event-id chips (tl.*.short) do not belong on the flight screen.
+            if (seqRow != null)
             {
-                chipSig = sig.ToString();
                 seqRow.Clear();
-                foreach (var c in chips)
-                {
-                    var chip = c;
-                    var b = new Button { text = chip.Label + "  " + chip.Clock };
-                    b.AddToClassList("webcast-chip");
-                    if (chip.State == ChipState.Now) b.AddToClassList("webcast-now");
-                    else if (chip.State == ChipState.Past) b.AddToClassList("webcast-past");
-                    if (chip.Id == pinnedEvent) b.AddToClassList("webcast-pin");
-                    b.clicked += () => PinEvent(chip.Id);
-                    seqRow.Add(b);
-                }
+                seqRow.style.display = DisplayStyle.None;
             }
             if (hCallout == null) return;
-            LaunchBeat pinned = null;
-            if (beats != null && !string.IsNullOrEmpty(pinnedEvent))
-                for (int i = 0; i < beats.Count; i++)
-                    if (beats[i] != null && beats[i].Id == pinnedEvent) { pinned = beats[i]; break; }
-            hCallout.text = pinned != null ? WebcastBoard.Callout(pinned, pulse, alt) : "Tap an event.";
-            if (pinned == null && juice != null && !string.IsNullOrEmpty(juice.Line)) hCallout.text = juice.Line;
-        }
-
-        void PinEvent(string id)
-        {
-            pinnedEvent = id;
-            chipSig = null;
-            double t = counting && sequence != null ? sequence.Time : flight != null ? flight.SimTime : 0;
-            RefreshWebcast(t, flight != null && flight.Sim != null);
+            hCallout.text = "Tap an event.";
+            if (juice != null && !string.IsNullOrEmpty(juice.Line)) hCallout.text = juice.Line;
         }
 
         async void OnMeco(FlightDriver f)

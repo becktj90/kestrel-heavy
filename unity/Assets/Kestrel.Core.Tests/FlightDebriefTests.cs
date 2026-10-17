@@ -120,11 +120,11 @@ namespace Kestrel.Core.Tests
                 Assert.IsTrue(card.WroteCareer);
                 Assert.IsTrue(card.EconomySettled);
                 Assert.AreEqual(3, card.Stars);
-                Assert.That(card.StarsLine, Is.EqualTo("Stars: 3."));
+                Assert.That(card.StarsLine, Is.EqualTo("3 stars."));
                 Assert.That(card.Medals, Does.Contain("gold"));
                 Assert.That(card.Medals, Does.Contain("timing-silver"));
-                Assert.That(card.MedalsLine, Does.Contain("Landing gold"));
-                Assert.That(card.MedalsLine, Does.Contain("Timing silver"));
+                Assert.That(card.MedalsLine, Does.Contain("Gold for the landing"));
+                Assert.That(card.MedalsLine, Does.Contain("Silver for timing"));
                 Assert.AreEqual(1000, card.RewardMinor);
                 Assert.AreEqual(400, card.CostMinor);
                 Assert.AreEqual(bank - 400 + 1000, card.BankMinor);
