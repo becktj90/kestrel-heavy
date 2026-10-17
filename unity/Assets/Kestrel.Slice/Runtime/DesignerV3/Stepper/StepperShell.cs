@@ -51,17 +51,42 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         string progressSnap = "\0";
         ScrollView scroll;
         float scrollMax = -1f;
+        float savedScroll;
+        bool holdScroll;
         bool moreOpen;
         bool confirmStep;
         bool wasMaxQStale = true;
-        string pendingFocus;
+        bool scrollFocus;
+        bool keepInstruction;
+        bool builtGuided;
+        DesignerStep builtStep;
+        bool builtEngineer;
+        bool builtMore;
+        bool builtConfirm;
+        string focusField;
+        string shownCode;
         string fixNote;
+        VisualElement focusEl;
+        Label checkBody;
+        Label checkExtra;
+        Button backButton;
+        Button forwardButton;
+        Button nextButton;
+        readonly List<Button> segmentButtons = new List<Button>();
 
         public VisualElement Root => root;
         public bool IsGuided => progress != null && progress.View == StepperView.Guided;
         public DesignerStep Step => progress != null ? progress.Current : DesignerStep.Mission;
         public StepGate Gate => report != null ? report[Step].Gate : StepGate.Pass;
         public bool MoreOpen => moreOpen;
+        public string FocusedField => focusField;
+
+        /// <summary>Vertical offset of the step scroller, in panel pixels. An edit must not change it.</summary>
+        public float ScrollOffset
+        {
+            get => scroll != null ? scroll.scrollOffset.y : savedScroll;
+            set => ApplyScrollOffset(value);
+        }
 
         public DesignerStepperShell(DesignerStepperBridge bridge)
         {
@@ -123,20 +148,63 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             root.style.display = guided ? DisplayStyle.Flex : DisplayStyle.None;
             if (!guided)
             {
+                builtGuided = false;
+                scroll = null;
                 EnsureGuidedButton();
                 return;
             }
+
+            var check = report[progress.Current];
+            bool confirmVisible = confirmStep && check.Gate == StepGate.Amber && progress.Current != DesignerStep.Review;
+            bool same = builtGuided && scroll != null && !settled
+                && builtStep == progress.Current
+                && builtEngineer == bridge.IsEngineer
+                && builtMore == moreOpen
+                && builtConfirm == confirmVisible;
+            if (same)
+            {
+                RefreshInPlace(check);
+                HideLegacy();
+                HighlightFocus(scrollFocus);
+                scrollFocus = false;
+                GuideBinder.Designer((int)Step, report, bridge.IsEngineer);
+                wasMaxQStale = report.Readout == null || report.Readout.maxQStale;
+                return;
+            }
+
+            float keep = scroll != null ? scroll.scrollOffset.y : savedScroll;
+            bool restore = builtGuided && !settled && builtStep == progress.Current;
             root.Clear();
             refreshers.Clear();
             statValues.Clear();
             statCache.Clear();
+            segmentButtons.Clear();
+            focusEl = null;
             scroll = null;
-            BuildGuided();
+            checkBody = null;
+            checkExtra = null;
+            backButton = null;
+            forwardButton = null;
+            nextButton = null;
+            BuildGuided(check, confirmVisible);
+            if (restore) ApplyScrollOffset(keep);
+            else ApplyScrollOffset(0f);
             HideLegacy();
-            ApplyPendingFocus();
+            HighlightFocus(scrollFocus);
+            scrollFocus = false;
             foreach (var refresh in refreshers) refresh();
-            wasMaxQStale = report?.Readout == null || report.Readout.maxQStale;
-            GuideBinder.Designer((int)Step, report, bridge.Engineer != null && bridge.Engineer());
+            wasMaxQStale = report.Readout == null || report.Readout.maxQStale;
+            GuideBinder.Designer((int)Step, report, bridge.IsEngineer);
+        }
+
+        void RefreshInPlace(StepCheck check)
+        {
+            ConsumeNote(check);
+            foreach (var refresh in refreshers) refresh();
+            PaintStats(StepperStats.Build(progress.Current, report.Readout, bridge.Design, bridge.Catalog));
+            UpdateCheck(check);
+            UpdateNav(check);
+            UpdateSegments();
         }
 
         public void RefreshLive()
@@ -174,16 +242,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         {
             if (!IsGuided || report == null) return false;
             var action = StepperModel.Forward(progress, report);
-            if (action.FixIt)
-            {
-                var check = report[progress.Current];
-                if (check != null && check.Code == "dv-margin")
-                {
-                    if (TryFixDeltaV()) return false;
-                }
-                FocusField(action.FocusField);
-                return false;
-            }
+            if (action.FixIt) return false;
             if (progress.Current == DesignerStep.Review)
             {
                 if (action.NeedsConfirm)
@@ -236,44 +295,110 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             Sync();
         }
 
+        /// <summary>Apply one undoable change that clears the current warning, or name the control and the amount.</summary>
+        public bool PressFix()
+        {
+            if (!IsGuided || report == null) return false;
+            var check = report[progress.Current];
+            if (!WantsFix(check)) return false;
+            string code = check.Code;
+            StepperFixResult result = null;
+            try
+            {
+                if (bridge.Apply != null)
+                    bridge.Apply(d =>
+                    {
+                        result = StepperFix.Apply(bridge.Catalog, d, check);
+                        return result != null ? result.Edit : Edit.None;
+                    }, null);
+                else
+                    result = StepperFix.Apply(bridge.Catalog, bridge.Design, check);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Stepper] " + e.Message);
+                result = new StepperFixResult
+                {
+                    Field = check.Field,
+                    Instruction = "No single change clears this warning. Adjust the highlighted control by 1 step.",
+                };
+            }
+            if (result == null) return false;
+            if (result.Cleared)
+            {
+                fixNote = null;
+                keepInstruction = false;
+                if (!result.Edit.changed) Sync();
+                return true;
+            }
+            fixNote = string.IsNullOrEmpty(result.Instruction)
+                ? "No single change clears this warning. Adjust the highlighted control by 1 step."
+                : result.Instruction;
+            keepInstruction = true;
+            shownCode = code;
+            Reveal(string.IsNullOrEmpty(result.Field) ? check.Field : result.Field);
+            return false;
+        }
+
         public void FocusField(string field)
         {
-            pendingFocus = field;
-            if (StepperControls.IsEngineerField(field)) moreOpen = true;
+            focusField = StepperControls.Canonical(field);
+            if (StepperControls.IsEngineerField(focusField)) moreOpen = true;
+            scrollFocus = true;
             Sync();
         }
 
-        void BuildGuided()
+        /// <summary>Remember which control the player is editing. Does not scroll.</summary>
+        public void NoteFocus(string field)
+        {
+            focusField = StepperControls.Canonical(field ?? "");
+            scrollFocus = false;
+            HighlightFocus(false);
+        }
+
+        void BuildGuided(StepCheck check, bool confirmVisible)
         {
             var ui = bridge.Ui;
             var def = StepperCatalog.Get(progress.Current);
-            var check = report[progress.Current];
+            bool engineer = bridge.IsEngineer;
+            ConsumeNote(check);
 
             root.tooltip = "Guided designer. " + StepperCatalog.Header(progress.Current) + ". " + def.Title + ".";
             root.Add(Header(ui, def));
             root.Add(Progress(ui));
+            if (!engineer) root.Add(CheckCard(ui, check));
 
             scroll = new ScrollView(ScrollViewMode.Vertical) { name = "stepper-scroll" };
             scroll.style.flexGrow = 1;
             scroll.style.flexShrink = 1;
             ApplyScrollMax();
-            scroll.Add(Rocket(ui, def));
-            scroll.Add(Goal(ui, def));
+            WatchScroll();
+            scroll.RegisterCallback<PointerDownEvent>(OnScrollPointer, TrickleDown.TrickleDown);
+            if (engineer)
+            {
+                scroll.Add(Rocket(ui, def));
+                scroll.Add(Goal(ui, def));
+            }
             var controls = ui.CardBox();
             controls.name = "stepper-controls";
             controls.Add(ui.Section(progress.Current == DesignerStep.Review ? "Risk check" : "Controls"));
-            StepperControls.Build(progress.Current, bridge.IsEngineer, moreOpen, ToggleMore, controls, bridge, refreshers, OnRisk);
+            StepperControls.Build(progress.Current, engineer, moreOpen, ToggleMore, controls, bridge, refreshers, OnRisk);
             scroll.Add(controls);
-            scroll.Add(Why(ui, def));
+            if (engineer) scroll.Add(Why(ui, def));
             scroll.Add(Stats(ui));
-            scroll.Add(CheckCard(ui, check));
+            if (engineer) scroll.Add(CheckCard(ui, check));
             root.Add(scroll);
 
-            if (confirmStep && check.Gate == StepGate.Amber && progress.Current != DesignerStep.Review)
-                root.Add(Confirm(ui));
+            if (confirmVisible) root.Add(Confirm(ui));
             if (progress.Current == DesignerStep.Review)
                 root.Add(AllPartsButton(ui, "stepper-all-parts-footer", "All parts"));
             root.Add(Nav(ui, check));
+
+            builtGuided = true;
+            builtStep = progress.Current;
+            builtEngineer = engineer;
+            builtMore = moreOpen;
+            builtConfirm = confirmVisible;
         }
 
         VisualElement Header(HangarUi ui, StepDef def)
@@ -325,30 +450,37 @@ namespace Kestrel.Slice.DesignerV3.Stepper
 
         VisualElement Progress(HangarUi ui)
         {
+            var scroller = new ScrollView(ScrollViewMode.Horizontal) { name = "stepper-progress-scroll" };
+            scroller.style.flexGrow = 0;
+            scroller.style.flexShrink = 0;
+            scroller.style.height = ui.U(StepperLayout.ProgressPt);
+            scroller.style.minHeight = ui.U(HangarUi.TargetPt);
+            scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroller.verticalScrollerVisibility = ScrollerVisibility.Hidden;
             var row = ui.Row(2f);
             row.name = "stepper-progress";
-            row.style.justifyContent = Justify.SpaceBetween;
+            row.style.flexWrap = Wrap.NoWrap;
+            row.style.flexGrow = 0;
+            row.style.flexShrink = 0;
+            row.style.alignSelf = Align.FlexStart;
             var marks = StepperModel.Marks(progress, report);
             for (int i = 0; i < StepperCatalog.Count; i++)
             {
                 var step = (DesignerStep)(i + 1);
-                var mark = marks[i];
                 var def = StepperCatalog.Get(step);
-                string name = step == DesignerStep.Review ? "Launch" : def.ShortName;
-                string glyph = Glyph(mark, def.Number);
-                var button = new Button(() => PressJump(step)) { text = glyph + "\n" + name };
+                var button = new Button(() => PressJump(step));
                 button.name = "stepper-seg-" + def.Number;
                 button.AddToClassList("stepper-seg");
-                button.AddToClassList(SegClass(mark));
-                button.tooltip = SegmentTip(def, mark);
-                button.style.flexGrow = 1;
-                button.style.flexBasis = 0;
-                button.style.minWidth = 0;
+                button.style.flexGrow = 0;
+                button.style.flexShrink = 0;
+                button.style.minWidth = ui.U(StepperLayout.SegmentMinPt);
                 button.style.height = ui.U(StepperLayout.ProgressPt);
                 button.style.minHeight = ui.U(HangarUi.TargetPt);
-                button.style.fontSize = ui.U(10f);
+                button.style.fontSize = ui.U(12f);
                 button.style.unityTextAlign = TextAnchor.MiddleCenter;
-                button.style.whiteSpace = WhiteSpace.Normal;
+                button.style.whiteSpace = WhiteSpace.NoWrap;
+                button.style.paddingLeft = ui.U(8f);
+                button.style.paddingRight = ui.U(8f);
                 button.style.marginLeft = ui.U(1f);
                 button.style.marginRight = ui.U(1f);
                 ui.Radius(button.style, 8f);
@@ -356,13 +488,38 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 button.style.borderRightWidth = ui.U(1.5f);
                 button.style.borderTopWidth = ui.U(1.5f);
                 button.style.borderBottomWidth = ui.U(1.5f);
-                PaintSegment(button, mark);
-                bool locked = mark == StepMark.Locked || mark == StepMark.Skipped;
-                button.SetEnabled(!locked && mark != StepMark.Current);
-                if (locked) button.style.opacity = 0.45f;
+                PaintSegmentButton(button, marks[i], def);
+                segmentButtons.Add(button);
                 row.Add(button);
             }
-            return row;
+            scroller.Add(row);
+            return scroller;
+        }
+
+        void PaintSegmentButton(Button button, StepMark mark, StepDef def)
+        {
+            string name = def.Step == DesignerStep.Review ? "Launch" : def.ShortName;
+            button.text = Glyph(mark, def.Number) + " " + name;
+            button.tooltip = SegmentTip(def, mark);
+            button.RemoveFromClassList("stepper-seg--current");
+            button.RemoveFromClassList("stepper-seg--done");
+            button.RemoveFromClassList("stepper-seg--warn");
+            button.RemoveFromClassList("stepper-seg--failed");
+            button.RemoveFromClassList("stepper-seg--skipped");
+            button.RemoveFromClassList("stepper-seg--open");
+            button.RemoveFromClassList("stepper-seg--locked");
+            button.AddToClassList(SegClass(mark));
+            PaintSegment(button, mark);
+            bool locked = mark == StepMark.Locked || mark == StepMark.Skipped;
+            button.SetEnabled(!locked && mark != StepMark.Current);
+            button.style.opacity = locked ? 0.45f : 1f;
+        }
+
+        void UpdateSegments()
+        {
+            var marks = StepperModel.Marks(progress, report);
+            for (int i = 0; i < segmentButtons.Count && i < marks.Length; i++)
+                PaintSegmentButton(segmentButtons[i], marks[i], StepperCatalog.Get((DesignerStep)(i + 1)));
         }
 
         VisualElement Rocket(HangarUi ui, StepDef def)
@@ -485,25 +642,30 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var card = ui.CardBox();
             card.name = "stepper-check";
             card.Add(ui.Section("Check before next"));
-            string note = null;
-            if (check.Code == "dv-margin" && check.Gate == StepGate.Red) note = fixNote;
-            else fixNote = null;
-            string main = !string.IsNullOrEmpty(note) ? note : CheckMain(check);
-            string mark = check.Gate == StepGate.Red ? "✕" : check.Gate == StepGate.Amber ? "!" : check.Gate == StepGate.Skip ? "–" : "✓";
-            var body = ui.Text(mark + "  " + main, HangarUi.BodyPt, StateColor(GateColor(check.Gate)), bold: true);
-            body.name = "stepper-check-body";
-            body.style.whiteSpace = WhiteSpace.Normal;
-            card.Add(body);
-            string extra = CheckExtra(check, main);
-            if (!string.IsNullOrEmpty(extra))
-            {
-                var line = ui.Text(extra, HangarUi.SmallPt, HangarUi.Dim);
-                line.name = "stepper-check-extra";
-                line.style.whiteSpace = WhiteSpace.Normal;
-                card.Add(line);
-            }
-            card.tooltip = "Check. " + main;
+            checkBody = ui.Text("", HangarUi.BodyPt, HangarUi.TextColor, bold: true);
+            checkBody.name = "stepper-check-body";
+            checkBody.style.whiteSpace = WhiteSpace.Normal;
+            card.Add(checkBody);
+            checkExtra = ui.Text("", HangarUi.SmallPt, HangarUi.Dim);
+            checkExtra.name = "stepper-check-extra";
+            checkExtra.style.whiteSpace = WhiteSpace.Normal;
+            checkExtra.style.marginTop = ui.U(4f);
+            card.Add(checkExtra);
+            UpdateCheck(check);
             return card;
+        }
+
+        void UpdateCheck(StepCheck check)
+        {
+            if (checkBody == null || check == null) return;
+            string main = Headline(check);
+            string extra = Detail(check, main);
+            string mark = check.Gate == StepGate.Red ? "✕" : check.Gate == StepGate.Amber ? "!" : check.Gate == StepGate.Skip ? "–" : "✓";
+            checkBody.text = mark + "  " + main;
+            checkBody.style.color = StateColor(GateColor(check.Gate));
+            checkExtra.text = extra ?? "";
+            checkExtra.style.display = string.IsNullOrEmpty(extra) ? DisplayStyle.None : DisplayStyle.Flex;
+            if (checkBody.parent != null) checkBody.parent.tooltip = "Check. " + main;
         }
 
         VisualElement Confirm(HangarUi ui)
@@ -531,22 +693,75 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             row.style.justifyContent = Justify.SpaceBetween;
             row.style.marginTop = ui.U(4f);
             row.style.marginBottom = ui.U(4f);
+            backButton = ui.Btn("<  Back", () => PressBack(), "Previous step", minWidthPt: 88f);
+            backButton.name = "stepper-back";
+            StyleNav(ui, backButton, false);
+            nextButton = ui.Btn("Next anyway", () => PressForward(), "Go on with the warning", minWidthPt: 120f);
+            nextButton.name = "stepper-next";
+            nextButton.style.flexGrow = 0;
+            nextButton.style.flexShrink = 0;
+            StyleNav(ui, nextButton, false);
+            forwardButton = ui.Btn("Next", () =>
+            {
+                if (report != null && WantsFix(report[progress.Current])) PressFix();
+                else PressForward();
+            }, "Next step", minWidthPt: 120f);
+            forwardButton.name = "stepper-forward";
+            forwardButton.style.flexGrow = 1;
+            StyleNav(ui, forwardButton, true);
+            row.Add(backButton);
+            row.Add(nextButton);
+            row.Add(forwardButton);
+            UpdateNav(check);
+            return row;
+        }
+
+        void UpdateNav(StepCheck check)
+        {
+            if (backButton == null || forwardButton == null || nextButton == null || check == null) return;
             var backAction = StepperModel.Back(progress, report);
             var forward = StepperModel.Forward(progress, report);
-            var back = ui.Btn("<  Back", () => PressBack(), "Previous step", minWidthPt: 96f);
-            back.name = "stepper-back";
-            StyleNav(ui, back, false);
-            back.SetEnabled(backAction.Allowed);
-            if (!backAction.Allowed) back.style.opacity = 0.4f;
-            string tipNote = check.Code == "dv-margin" && check.Gate == StepGate.Red ? fixNote : null;
-            var next = ui.Btn(forward.Label, () => PressForward(), ForwardTip(forward, check, tipNote), minWidthPt: 140f);
-            next.name = "stepper-forward";
-            next.style.flexGrow = 1;
-            StyleNav(ui, next, true);
-            PaintForward(next, forward, check);
-            row.Add(back);
-            row.Add(next);
-            return row;
+            backButton.SetEnabled(backAction.Allowed);
+            backButton.style.opacity = backAction.Allowed ? 1f : 0.4f;
+            bool fix = WantsFix(check);
+            bool review = progress.Current == DesignerStep.Review;
+            bool showNext = fix && ((check.Gate == StepGate.Amber && !review) || (review && (forward.NeedsConfirm || forward.Label == StepperLaunch.LaunchAnywayLabel)));
+            nextButton.text = review ? StepperLaunch.LaunchAnywayLabel : "Next anyway";
+            nextButton.tooltip = review ? StepperLaunch.ConfirmTitle : "Go on with the warning.";
+            nextButton.style.display = showNext ? DisplayStyle.Flex : DisplayStyle.None;
+            nextButton.RemoveFromClassList("stepper-forward--go");
+            nextButton.RemoveFromClassList("stepper-forward--fix");
+            nextButton.AddToClassList("stepper-forward--amber");
+            nextButton.style.backgroundColor = HangarUi.Amber;
+            nextButton.style.color = HangarUi.Ink;
+            nextButton.style.whiteSpace = WhiteSpace.NoWrap;
+
+            forwardButton.text = fix ? "Fix it" : forward.Label;
+            forwardButton.tooltip = fix
+                ? (string.IsNullOrEmpty(fixNote) ? "Apply one change that clears this warning. " + (check.Kid ?? "") : fixNote)
+                : ForwardTip(forward, check, null);
+            forwardButton.style.whiteSpace = WhiteSpace.NoWrap;
+            forwardButton.RemoveFromClassList("stepper-forward--go");
+            forwardButton.RemoveFromClassList("stepper-forward--amber");
+            forwardButton.RemoveFromClassList("stepper-forward--fix");
+            if (fix)
+            {
+                forwardButton.AddToClassList("stepper-forward--fix");
+                forwardButton.style.backgroundColor = HangarUi.Red;
+                forwardButton.style.color = HangarUi.TextColor;
+            }
+            else if (forward.NeedsConfirm || check.Gate == StepGate.Amber)
+            {
+                forwardButton.AddToClassList("stepper-forward--amber");
+                forwardButton.style.backgroundColor = HangarUi.Amber;
+                forwardButton.style.color = HangarUi.Ink;
+            }
+            else
+            {
+                forwardButton.AddToClassList("stepper-forward--go");
+                forwardButton.style.backgroundColor = HangarUi.ChipOn;
+                forwardButton.style.color = HangarUi.Ink;
+            }
         }
 
         VisualElement AllPartsButton(HangarUi ui, string name, string label)
@@ -567,8 +782,9 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             {
                 StepperModel.TryJump(progress, report, step.Value);
                 Persist();
-                pendingFocus = risk.field;
-                if (StepperControls.IsEngineerField(risk.field)) moreOpen = true;
+                focusField = StepperControls.Canonical(risk.field);
+                if (StepperControls.IsEngineerField(focusField)) moreOpen = true;
+                scrollFocus = true;
                 Sync();
                 return;
             }
@@ -578,27 +794,193 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             bridge.JumpRisk?.Invoke(risk);
         }
 
-        void ApplyPendingFocus()
+        void HighlightFocus(bool scrollTo)
         {
-            if (string.IsNullOrEmpty(pendingFocus)) return;
-            string field = pendingFocus;
-            pendingFocus = null;
-            var el = FindField(field);
-            if (el != null)
+            if (focusEl != null) focusEl.RemoveFromClassList("stepper-focus");
+            focusEl = FindField(focusField);
+            if (focusEl == null) return;
+            focusEl.AddToClassList("stepper-focus");
+            focusEl.style.borderLeftWidth = bridge.Ui.U(2f);
+            focusEl.style.borderRightWidth = bridge.Ui.U(2f);
+            focusEl.style.borderTopWidth = bridge.Ui.U(2f);
+            focusEl.style.borderBottomWidth = bridge.Ui.U(2f);
+            focusEl.style.borderLeftColor = HangarUi.ChipOn;
+            focusEl.style.borderRightColor = HangarUi.ChipOn;
+            focusEl.style.borderTopColor = HangarUi.ChipOn;
+            focusEl.style.borderBottomColor = HangarUi.ChipOn;
+            if (!scrollTo || scroll == null) return;
+            if (scroll.panel != null) scroll.ScrollTo(focusEl);
+            savedScroll = scroll.scrollOffset.y;
+            bridge.Focus?.Invoke(focusField);
+        }
+
+        void OnScrollPointer(PointerDownEvent e)
+        {
+            string field = FieldFrom(e.target as VisualElement, scroll);
+            if (!string.IsNullOrEmpty(field)) focusField = field;
+        }
+
+        static string FieldFrom(VisualElement ve, VisualElement stop)
+        {
+            while (ve != null && ve != stop)
             {
-                el.AddToClassList("stepper-focus");
-                el.style.borderLeftWidth = bridge.Ui.U(2f);
-                el.style.borderRightWidth = bridge.Ui.U(2f);
-                el.style.borderTopWidth = bridge.Ui.U(2f);
-                el.style.borderBottomWidth = bridge.Ui.U(2f);
-                el.style.borderLeftColor = HangarUi.ChipOn;
-                el.style.borderRightColor = HangarUi.ChipOn;
-                el.style.borderTopColor = HangarUi.ChipOn;
-                el.style.borderBottomColor = HangarUi.ChipOn;
+                string name = ve.name;
+                if (!string.IsNullOrEmpty(name) && name.StartsWith("field-", StringComparison.Ordinal))
+                {
+                    string field = name.Substring(6);
+                    if (field.EndsWith("-value", StringComparison.Ordinal)) field = field.Substring(0, field.Length - 6);
+                    return field;
+                }
+                ve = ve.parent;
             }
-            bridge.Focus?.Invoke(field);
-            if (el != null && scroll != null && scroll.panel != null)
-                scroll.ScrollTo(el);
+            return null;
+        }
+
+        void Reveal(string field)
+        {
+            string canon = StepperControls.Canonical(field);
+            if (StepperControls.IsEngineerField(canon)) moreOpen = true;
+            focusField = canon;
+            scrollFocus = true;
+            if (FindField(canon) == null)
+            {
+                var dest = StepForField(canon);
+                if (dest.HasValue && dest.Value != progress.Current && report != null
+                    && report[dest.Value].Gate != StepGate.Skip
+                    && StepperModel.CanJump(progress, report, dest.Value)
+                    && StepperModel.TryJump(progress, report, dest.Value))
+                {
+                    confirmStep = false;
+                    Persist();
+                }
+            }
+            Sync();
+        }
+
+        void ApplyScrollOffset(float y)
+        {
+            savedScroll = y;
+            if (scroll == null) return;
+            var bar = scroll.verticalScroller;
+            if (bar != null && bar.highValue < y) bar.highValue = y;
+            holdScroll = true;
+            scroll.scrollOffset = new Vector2(0f, y);
+            holdScroll = false;
+        }
+
+        void WatchScroll()
+        {
+            var bar = scroll != null ? scroll.verticalScroller : null;
+            if (bar == null) return;
+            bar.valueChanged += y =>
+            {
+                if (!holdScroll) savedScroll = y;
+            };
+        }
+
+        void ConsumeNote(StepCheck check)
+        {
+            if (!keepInstruction)
+            {
+                if (check == null || check.Gate == StepGate.Pass || (shownCode != null && check.Code != shownCode))
+                    fixNote = null;
+            }
+            shownCode = check != null ? check.Code : null;
+            keepInstruction = false;
+        }
+
+        static bool WantsFix(StepCheck check)
+        {
+            if (check == null || string.IsNullOrEmpty(check.Code)) return false;
+            return check.Gate == StepGate.Red || check.Gate == StepGate.Amber;
+        }
+
+        string Headline(StepCheck check)
+        {
+            if (!string.IsNullOrEmpty(fixNote)) return StepperPlain.Clean(fixNote);
+            if (!bridge.IsEngineer)
+            {
+                string kid = FileKid(check);
+                if (!string.IsNullOrEmpty(kid)) return kid;
+                string numbers = StepperPlain.Numbers(check);
+                if (!string.IsNullOrEmpty(numbers)) return numbers;
+                return check.Gate == StepGate.Pass ? "Ready." : "Check this step.";
+            }
+            string line = StepperPlain.Numbers(check);
+            if (!string.IsNullOrEmpty(line)) return line;
+            string eng = StepperPlain.Clean(check.Engineer);
+            if (!string.IsNullOrEmpty(eng)) return eng;
+            return FileKid(check);
+        }
+
+        string Detail(StepCheck check, string headline)
+        {
+            if (!string.IsNullOrEmpty(fixNote))
+            {
+                string kid = FileKid(check);
+                if (!string.IsNullOrEmpty(kid) && kid != headline) return kid;
+            }
+            if (!bridge.IsEngineer)
+            {
+                string numbers = StepperPlain.Numbers(check);
+                if (!string.IsNullOrEmpty(numbers) && numbers != headline) return numbers;
+                return "";
+            }
+            string kidLine = FileKid(check);
+            if (!string.IsNullOrEmpty(kidLine) && kidLine != headline) return kidLine;
+            return "";
+        }
+
+        static string FileKid(StepCheck check)
+        {
+            if (check != null && !string.IsNullOrEmpty(check.Code))
+            {
+                string over = StepperCopy.Current.FileText(StepperCopy.CheckKidId(check.Code));
+                if (!string.IsNullOrEmpty(over))
+                {
+                    string clean = StepperPlain.Clean(over);
+                    if (!string.IsNullOrEmpty(clean)) return clean;
+                }
+            }
+            return StepperPlain.Kid(check);
+        }
+
+        static DesignerStep? StepForField(string field)
+        {
+            switch (StepperControls.Canonical(field))
+            {
+                case "mission":
+                case "payload":
+                case "orbit":
+                    return DesignerStep.Mission;
+                case "propellant":
+                case "engineCount":
+                case "mixtureOffsetPct":
+                case "pc":
+                case "expansionRatio":
+                case "gimbal":
+                    return DesignerStep.Engines;
+                case "propMass":
+                case "stages":
+                case "safetyFactor":
+                case "pressure":
+                case "insulation":
+                case "material":
+                case "avionics":
+                    return DesignerStep.Tanks;
+                case "nose":
+                case "fins":
+                case "fairing":
+                case "maxQThrottle":
+                case "gLimit":
+                    return DesignerStep.Aero;
+                case "recoveryMode":
+                case "legs":
+                case "landingReserve":
+                    return DesignerStep.Recovery;
+                default:
+                    return null;
+            }
         }
 
         VisualElement FindField(string field)
@@ -688,7 +1070,13 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         void EnsureGuidedButton()
         {
             var list = bridge.HideWhenGuided;
-            VisualElement row = list != null && list.Length > 0 ? list[list.Length - 1] : null;
+            VisualElement row = null;
+            if (list != null)
+            {
+                for (int i = 0; i < list.Length; i++)
+                    if (list[i] != null && list[i].name == "designer-launch") { row = list[i]; break; }
+                if (row == null && list.Length > 0) row = list[list.Length - 1];
+            }
             if (row == null || row.Q("stepper-guided") != null) return;
             var button = bridge.Ui.Btn("Guided steps", EnterGuided, "Back to the seven steps. Same rocket.", minWidthPt: 120f);
             button.name = "stepper-guided";
@@ -706,83 +1094,18 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             button.style.height = ui.U(StepperLayout.NavButtonPt);
             button.style.minHeight = ui.U(StepperLayout.NavButtonPt);
             button.style.fontSize = ui.U(16f);
-            button.style.whiteSpace = WhiteSpace.Normal;
+            button.style.whiteSpace = WhiteSpace.NoWrap;
             if (primary) button.style.flexGrow = 1;
         }
 
-        static void PaintForward(Button button, StepperAction action, StepCheck check)
+        static string ForwardTip(StepperAction action, StepCheck check, string note)
         {
-            button.RemoveFromClassList("stepper-forward--go");
-            button.RemoveFromClassList("stepper-forward--amber");
-            button.RemoveFromClassList("stepper-forward--fix");
-            if (action.FixIt || check.Gate == StepGate.Red && action.Label == "Fix it")
-            {
-                button.AddToClassList("stepper-forward--fix");
-                button.style.backgroundColor = HangarUi.Red;
-                button.style.color = HangarUi.TextColor;
-                return;
-            }
-            if (action.NeedsConfirm || check.Gate == StepGate.Amber)
-            {
-                button.AddToClassList("stepper-forward--amber");
-                button.style.backgroundColor = HangarUi.Amber;
-                button.style.color = HangarUi.Ink;
-                return;
-            }
-            button.AddToClassList("stepper-forward--go");
-            button.style.backgroundColor = HangarUi.ChipOn;
-            button.style.color = HangarUi.Ink;
-        }
-
-        bool TryFixDeltaV()
-        {
-            if (bridge.Session == null) return false;
-            fixNote = null;
-            DvFixResult result;
-            try { result = bridge.Session.FixDeltaV(); }
-            catch (Exception e)
-            {
-                Debug.LogWarning("[Stepper] " + e.Message);
-                fixNote = "The speed for this trip could not be worked out. Lighten the cargo, raise the budget, or pick a different mission.";
-                Sync();
-                return false;
-            }
-            if (result != null && result.Solved) return true;
-            fixNote = result != null && !string.IsNullOrEmpty(result.Reason)
-                ? result.Reason
-                : "This rocket still cannot make the trip. Lighten the cargo, raise the budget, or pick a different mission.";
-            Sync();
-            return false;
-        }
-
-        static string ForwardTip(StepperAction action, StepCheck check, string fixNote)
-        {
-            if (action.FixIt && !string.IsNullOrEmpty(fixNote)) return fixNote;
-            if (action.FixIt) return "Focus the control that fixes this. " + (check.Kid ?? "");
+            if (action.FixIt && !string.IsNullOrEmpty(note)) return note;
+            if (action.FixIt) return "Apply one change that clears this warning. " + (check.Kid ?? "");
             if (action.NeedsConfirm && action.Launches) return StepperLaunch.ConfirmTitle;
             if (action.NeedsConfirm) return "This step has a warning. Confirm to go on.";
             if (action.Launches) return "Launch this design";
             return action.Label;
-        }
-
-        static string CheckMain(StepCheck check)
-        {
-            if (!string.IsNullOrEmpty(check.Code))
-            {
-                string over = StepperCopy.Current.FileText(StepperCopy.CheckEngineerId(check.Code));
-                if (string.IsNullOrEmpty(over)) over = StepperCopy.Current.FileText(StepperCopy.CheckKidId(check.Code));
-                if (!string.IsNullOrEmpty(over)) return over;
-            }
-            if (!string.IsNullOrEmpty(check.Engineer)) return check.Engineer;
-            if (!string.IsNullOrEmpty(check.Kid)) return check.Kid;
-            return check.Gate == StepGate.Pass ? "Ready." : "Check this step.";
-        }
-
-        static string CheckExtra(StepCheck check, string main)
-        {
-            if (!string.IsNullOrEmpty(check.Kid) && check.Kid != main) return check.Kid;
-            if (check.Stale) return "One number is still being worked out.";
-            return null;
         }
 
         static string Caption(StepDef def)

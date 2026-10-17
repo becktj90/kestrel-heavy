@@ -32,6 +32,7 @@ namespace Kestrel.Game.Tests
         {
             Assert.AreEqual(112f, StepperLayout.RocketBandPt);
             Assert.AreEqual(52f, StepperLayout.NavButtonPt);
+            Assert.GreaterOrEqual(StepperLayout.SegmentMinPt, 96f);
             Assert.GreaterOrEqual(StepperLayout.NavButtonPt, StepperLayout.MinTargetPt);
             Assert.AreEqual(StepperLayout.SeSideInsetPt, StepperLayout.SideInset(375f));
             Assert.AreEqual(StepperLayout.SideInsetPt, StepperLayout.SideInset(768f));
@@ -117,12 +118,15 @@ namespace Kestrel.Game.Tests
             StringAssert.Contains(".stepper-seg--done", text);
             StringAssert.Contains(".stepper-forward--amber", text);
             StringAssert.Contains(".stepper-forward--fix", text);
+            StringAssert.Contains("white-space: nowrap", text);
+            StringAssert.Contains("#stepper-next", text);
             StringAssert.Contains(".stepper-portrait", text);
         }
 
         [Test]
         public void LegacyDesign_StaysOnAllParts_UntilGuidedSteps()
         {
+            int prev = PlayerPrefs.GetInt(DesignerV3Panel.EngineerPref, 0);
             var session = new HangarSession(C, H, Template("workhorse"));
             var body = new VisualElement();
             var panel = new DesignerV3Panel(session, body, 2f);
@@ -136,21 +140,38 @@ namespace Kestrel.Game.Tests
                 Assert.AreEqual(DisplayStyle.None, panel.Stepper.Root.style.display.value);
                 Assert.AreEqual("STEP 1 OF 7", StepperCatalog.Header(DesignerStep.Mission));
 
+                panel.SetEngineer(false);
                 panel.Stepper.EnterGuided();
                 Assert.IsTrue(panel.Stepper.IsGuided);
                 Assert.AreEqual(DesignerStep.Mission, panel.Stepper.Step);
                 Assert.AreEqual("guided", session.Design.Obj(StepperProgress.Field).Str("view"));
                 Assert.AreEqual(DisplayStyle.None, body.Q("tab-bar").style.display.value);
+                Assert.AreEqual(DisplayStyle.None, body.Q("step-rail").style.display.value);
+                Assert.AreEqual(DisplayStyle.None, body.Q("step-goal").style.display.value);
+                Assert.AreEqual(DisplayStyle.None, body.Q("dv-budget").style.display.value);
                 Assert.AreEqual(DisplayStyle.Flex, panel.Stepper.Root.style.display.value);
                 Assert.AreEqual("STEP 1 OF 7", panel.Stepper.Root.Q<Label>("stepper-count").text);
+                Assert.IsNull(panel.Stepper.Root.Q("stepper-rocket"));
+                Assert.IsNull(panel.Stepper.Root.Q("stepper-why"));
+                Assert.IsNull(panel.Stepper.Root.Q("stepper-goal"));
+                var check = panel.Stepper.Root.Q("stepper-check");
+                var stepScroll = panel.Stepper.Root.Q("stepper-scroll");
+                Assert.IsNotNull(check);
+                Assert.Less(panel.Stepper.Root.IndexOf(check), panel.Stepper.Root.IndexOf(stepScroll));
+                var recovery = panel.Stepper.Root.Q<Button>("stepper-seg-5");
+                StringAssert.Contains("Recovery", recovery.text);
+                StringAssert.DoesNotContain("\n", recovery.text);
+                Assert.AreEqual(WhiteSpace.NoWrap, recovery.style.whiteSpace.value);
+                Assert.GreaterOrEqual(recovery.style.minWidth.value.value, StepperLayout.SegmentMinPt * 2f - 0.1f);
+                Assert.IsFalse(panel.Stepper.Root.Q<Button>("stepper-back").enabledSelf);
+                Assert.IsFalse(panel.Stepper.Root.Q<Button>("stepper-seg-7").enabledSelf);
+                Assert.AreEqual(104f, panel.Stepper.Root.Q<Button>("stepper-forward").style.minHeight.value.value, 0.1f);
+
+                panel.SetEngineer(true);
                 StringAssert.Contains("payload", panel.Stepper.Root.Q<Label>("stepper-goal-body").text.ToLowerInvariant());
                 Assert.IsFalse(string.IsNullOrEmpty(panel.Stepper.Root.Q<Label>("stepper-why-kid").text));
                 Assert.IsFalse(string.IsNullOrEmpty(panel.Stepper.Root.Q<Label>("stepper-why-engineer").text));
                 Assert.IsNotNull(panel.Stepper.Root.Q("stepper-rocket"));
-                Assert.IsNotNull(panel.Stepper.Root.Q("stepper-check"));
-                Assert.IsFalse(panel.Stepper.Root.Q<Button>("stepper-back").enabledSelf);
-                Assert.IsFalse(panel.Stepper.Root.Q<Button>("stepper-seg-7").enabledSelf);
-                Assert.AreEqual(104f, panel.Stepper.Root.Q<Button>("stepper-forward").style.minHeight.value.value, 0.1f);
                 Assert.AreEqual(224f, panel.Stepper.Root.Q("stepper-rocket").style.minHeight.value.value, 0.1f);
 
                 panel.Stepper.ApplySafeArea(47f, 34f, 0f, 0f);
@@ -162,19 +183,31 @@ namespace Kestrel.Game.Tests
                 Assert.AreEqual("all-parts", session.Design.Obj(StepperProgress.Field).Str("view"));
                 var tabs = body.Q("tab-bar").style.display;
                 Assert.IsTrue(tabs.keyword == StyleKeyword.Null || tabs.value != DisplayStyle.None);
+                var rail = body.Q("step-rail").style.display;
+                Assert.IsTrue(rail.keyword == StyleKeyword.Null || rail.value != DisplayStyle.None);
+                var goal = body.Q("step-goal").style.display;
+                Assert.IsTrue(goal.keyword == StyleKeyword.Null || goal.value != DisplayStyle.None);
+                var budget = body.Q("dv-budget").style.display;
+                Assert.IsTrue(budget.keyword == StyleKeyword.Null || budget.value != DisplayStyle.None);
                 Assert.IsNotNull(body.Q<Button>("stepper-guided"));
                 Assert.IsNotNull(body.Q("launch-btn"));
             }
-            finally { panel.Detach(); }
+            finally
+            {
+                panel.Detach();
+                PlayerPrefs.SetInt(DesignerV3Panel.EngineerPref, prev);
+            }
         }
 
         [Test]
         public void Guided_JumpOnlyVisitsOpenSteps_AndBothViewsEditOneDesign()
         {
+            int prev = PlayerPrefs.GetInt(DesignerV3Panel.EngineerPref, 0);
             var session = new HangarSession(C, H, Template("workhorse"));
             var panel = new DesignerV3Panel(session, new VisualElement(), 2f);
             try
             {
+                panel.SetEngineer(true);
                 panel.Stepper.EnterGuided();
                 Assert.AreEqual(StepGate.Pass, panel.Stepper.Gate);
                 Assert.IsFalse(panel.Stepper.PressJump(DesignerStep.Look));
@@ -199,7 +232,11 @@ namespace Kestrel.Game.Tests
                 Assert.AreEqual(8, (int)((session.Design.Arr("stages")[0] as JsonObject).Num("engineCount")));
                 Assert.IsNotNull(panel.Root.Q("tab-" + DesignerV3Tab.Engines));
             }
-            finally { panel.Detach(); }
+            finally
+            {
+                panel.Detach();
+                PlayerPrefs.SetInt(DesignerV3Panel.EngineerPref, prev);
+            }
         }
 
         [Test]
@@ -227,8 +264,12 @@ namespace Kestrel.Game.Tests
 
                 session.Apply(d => DesignerV3Edits.SetMixtureOffset(d, 0, 8));
                 Assert.AreEqual(StepGate.Amber, panel.Stepper.Gate);
-                Assert.AreEqual("Next anyway", panel.Stepper.Root.Q<Button>("stepper-forward").text);
-                Assert.IsTrue(panel.Stepper.Root.Q<Button>("stepper-forward").ClassListContains("stepper-forward--amber"));
+                Assert.AreEqual("Fix it", panel.Stepper.Root.Q<Button>("stepper-forward").text);
+                Assert.IsTrue(panel.Stepper.Root.Q<Button>("stepper-forward").ClassListContains("stepper-forward--fix"));
+                var anyway = panel.Stepper.Root.Q<Button>("stepper-next");
+                Assert.AreEqual("Next anyway", anyway.text);
+                Assert.AreEqual(DisplayStyle.Flex, anyway.style.display.value);
+                Assert.IsTrue(anyway.ClassListContains("stepper-forward--amber"));
                 panel.Stepper.PressForward();
                 Assert.AreEqual(DesignerStep.Engines, panel.Stepper.Step);
                 Assert.IsNotNull(panel.Stepper.Root.Q("stepper-confirm"));
@@ -240,16 +281,113 @@ namespace Kestrel.Game.Tests
                 Assert.AreEqual(StepGate.Red, panel.Stepper.Gate);
                 Assert.AreEqual("Fix it", panel.Stepper.Root.Q<Button>("stepper-forward").text);
                 Assert.IsTrue(panel.Stepper.Root.Q<Button>("stepper-forward").ClassListContains("stepper-forward--fix"));
-                string focused = null;
-                panel.FieldFocused += f => focused = f;
-                panel.Stepper.PressForward();
-                Assert.AreEqual("engineCount", focused);
-                Assert.IsTrue(panel.Stepper.Root.Q("field-engineCount").ClassListContains("stepper-focus"));
+                Assert.AreEqual(DisplayStyle.None, panel.Stepper.Root.Q("stepper-next").style.display.value);
+                int engines = (int)((session.Design.Arr("stages")[0] as JsonObject).Num("engineCount"));
+                Assert.IsTrue(panel.Stepper.PressFix());
                 Assert.AreEqual(DesignerStep.Engines, panel.Stepper.Step);
+                Assert.Greater((int)((session.Design.Arr("stages")[0] as JsonObject).Num("engineCount")), engines);
+                Assert.AreNotEqual("twr-low", StepperModel.Evaluate(C, session.Design)[DesignerStep.Engines].Code);
             }
             finally
             {
                 panel.Detach();
+                PlayerPrefs.SetInt(DesignerV3Panel.EngineerPref, prev);
+            }
+        }
+
+        [Test]
+        public void Guided_FuelEditKeepsStepScrollAndFocus()
+        {
+            int prev = PlayerPrefs.GetInt(DesignerV3Panel.EngineerPref, 0);
+            var session = new HangarSession(C, H, Template("workhorse"));
+            var panel = new DesignerV3Panel(session, new VisualElement(), 2f);
+            try
+            {
+                panel.SetEngineer(false);
+                panel.Stepper.EnterGuided();
+                Assert.IsTrue(panel.Stepper.PressForward());
+                if (panel.Stepper.Gate == StepGate.Amber) panel.Stepper.PressForward();
+                Assert.IsTrue(panel.Stepper.PressForward());
+                Assert.AreEqual(DesignerStep.Tanks, panel.Stepper.Step);
+
+                var scroll = panel.Stepper.Root.Q<ScrollView>("stepper-scroll");
+                var fuel = panel.Stepper.Root.Q("field-propMass");
+                Assert.IsNotNull(scroll);
+                Assert.IsNotNull(fuel);
+                if (scroll.verticalScroller != null) scroll.verticalScroller.highValue = 4000f;
+                panel.Stepper.NoteFocus("propMass");
+                panel.Stepper.ScrollOffset = 180f;
+                Assert.IsTrue(fuel.ClassListContains("stepper-focus"));
+
+                double mass = (session.Design.Arr("stages")[0] as JsonObject).Num("propMass");
+                session.Apply(d => HangarEditor.SetPropMass(d, PartRef.Stage(0), mass + 1000));
+
+                var scrollAfter = panel.Stepper.Root.Q<ScrollView>("stepper-scroll");
+                var fuelAfter = panel.Stepper.Root.Q("field-propMass");
+                Assert.AreSame(scroll, scrollAfter);
+                Assert.AreSame(fuel, fuelAfter);
+                Assert.AreEqual(DesignerStep.Tanks, panel.Stepper.Step);
+                Assert.AreEqual(180f, panel.Stepper.ScrollOffset, 0.01f);
+                Assert.AreEqual(180f, scrollAfter.scrollOffset.y, 0.01f);
+                Assert.IsTrue(fuelAfter.ClassListContains("stepper-focus"));
+                Assert.AreEqual("propMass", panel.Stepper.FocusedField);
+            }
+            finally
+            {
+                panel.Detach();
+                PlayerPrefs.SetInt(DesignerV3Panel.EngineerPref, prev);
+            }
+        }
+
+        [Test]
+        public void Guided_MaxQCheckIsPlainAndFixItStaysOnTheStep()
+        {
+            int prev = PlayerPrefs.GetInt(DesignerV3Panel.EngineerPref, 0);
+            DesignerLimits.Load(Root);
+            ReferenceAscent.Reset();
+            var session = new HangarSession(C, H, Template("workhorse"));
+            var panel = new DesignerV3Panel(session, new VisualElement(), 2f);
+            try
+            {
+                panel.SetEngineer(false);
+                panel.Stepper.EnterGuided();
+                Assert.IsTrue(panel.Stepper.PressForward());
+                if (panel.Stepper.Gate == StepGate.Amber) panel.Stepper.PressForward();
+                Assert.IsTrue(panel.Stepper.PressForward());
+                Assert.AreEqual(DesignerStep.Tanks, panel.Stepper.Step);
+
+                var readout = StepperModel.Evaluate(C, session.Design).Readout;
+                Assert.IsTrue(readout.qLim_kPa.HasValue);
+                ReferenceAscent.Store(ReferenceAscent.CanonicalKey(C, session.Design), readout.qLim_kPa.Value * 1000.0 * 1.05, 11000, 3);
+                panel.Stepper.Sync();
+                Assert.AreEqual("maxq-high", StepperModel.Evaluate(C, session.Design)[DesignerStep.Tanks].Code);
+                string body = panel.Stepper.Root.Q<Label>("stepper-check-body").text;
+                string extra = panel.Stepper.Root.Q<Label>("stepper-check-extra").text;
+                StringAssert.Contains("air", body.ToLowerInvariant());
+                StringAssert.DoesNotContain("q_lim", body);
+                StringAssert.DoesNotContain("q_lim", extra);
+                StringAssert.Contains("kPa", extra);
+                Assert.AreEqual("Fix it", panel.Stepper.Root.Q<Button>("stepper-forward").text);
+                Assert.AreEqual(DisplayStyle.Flex, panel.Stepper.Root.Q("stepper-next").style.display.value);
+
+                float scrollBefore = panel.Stepper.ScrollOffset;
+                bool cleared = panel.Stepper.PressFix();
+                Assert.AreEqual(DesignerStep.Tanks, panel.Stepper.Step);
+                if (cleared)
+                    Assert.AreNotEqual("maxq-high", StepperModel.Evaluate(C, session.Design)[DesignerStep.Tanks].Code);
+                else
+                {
+                    string note = panel.Stepper.Root.Q<Label>("stepper-check-body").text;
+                    Assert.That(note, Does.Match(@"\d"));
+                    StringAssert.DoesNotContain("q_lim", note);
+                    Assert.IsTrue(panel.Stepper.Root.Q("field-safetyFactor").ClassListContains("stepper-focus"));
+                }
+                Assert.AreEqual(scrollBefore, panel.Stepper.ScrollOffset, 0.01f);
+            }
+            finally
+            {
+                panel.Detach();
+                ReferenceAscent.Reset();
                 PlayerPrefs.SetInt(DesignerV3Panel.EngineerPref, prev);
             }
         }

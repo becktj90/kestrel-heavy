@@ -172,7 +172,7 @@ namespace Kestrel.Slice.DesignerV3
                 LaunchArmed = () => launchConfirmArmed,
                 SetLaunchArmed = v => launchConfirmArmed = v,
                 Tab = () => tab,
-                HideWhenGuided = new[] { tutorialBanner, strip, riskRow, tabs, scroll, confirmRow },
+                HideWhenGuided = new[] { tutorialBanner, strip, riskRow, tabs, scroll, confirmRow, stepRail, goalLabel, repairLabel, deltaRow, budgetRow },
                 Rebuild = () => Rebuild(),
             };
             stepper = new DesignerStepperShell(bridge);
