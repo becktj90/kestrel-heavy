@@ -39,7 +39,7 @@ namespace Kestrel.Core.Flight
         public const float CodexCaption = 1458.80f;        // "Parts, places and flight notes."
         public const float Fuel = 422.40f;
         public const float Thrust = 677.00f;
-        public const float Hint = 2035.60f;                // "TAP A TILE OR LAUNCH TO BEGIN"
+        public const float Hint = 3844.30f;                // Thrum's opening line, Space Grotesk Medium, no tracking
 
         public static float Width(float at100, float font) => at100 * font / 100f;
 
@@ -170,15 +170,18 @@ namespace Kestrel.Core.Flight
             float titleInner = Math.Max(1f, titleW - 8f);
             float titleFont = Fit(titleInner, HomeWideText.Kestrel, 72f, 16f);
             float tagFont = Fit(titleInner * 0.62f, HomeWideText.Heavy, 26f, 11f);
-            float titleH = TitleBlock(titleFont, tagFont);
+            // 14px under the top of the wordmark box for the teal eyebrow. The faces stay the measured block.
+            const float Brow = 14f;
+            float titleH = TitleBlock(titleFont, tagFont) + Brow;
             float maxTitle = Math.Max(48f, span * 0.30f);
             if (titleH > maxTitle)
-                titleH = FitTitleBlock(ref titleFont, ref tagFont, maxTitle);
+                titleH = FitTitleBlock(ref titleFont, ref tagFont, Math.Max(1f, maxTitle - Brow)) + Brow;
             float minRocket = Math.Min(100f, span * 0.28f);
             if (y0 + titleH + Gap + minRocket > y1)
             {
                 float cap = Math.Max(32f, y1 - y0 - Gap - minRocket);
-                titleH = FitTitleBlock(ref titleFont, ref tagFont, cap);
+                titleH = FitTitleBlock(ref titleFont, ref tagFont, Math.Max(1f, cap - Brow)) + Brow;
+                if (titleH > cap) titleH = cap;
             }
             f.Title = Rect(titleLeft, y0, titleW, titleH);
             float rocketY = f.Title.Bottom + Gap;

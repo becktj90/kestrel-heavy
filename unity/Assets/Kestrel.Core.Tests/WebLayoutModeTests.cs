@@ -126,6 +126,42 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void PortraitHomeFitsSeProMaxAndIpad()
+        {
+            var sizes = new[]
+            {
+                new Size("SE", 375f, 667f, 20f, 0f, 0f, 0f),
+                new Size("Pro Max", 440f, 956f, 62f, 34f, 0f, 0f),
+                new Size("iPad", 1032f, 1376f, 24f, 20f, 0f, 0f),
+            };
+            foreach (var d in sizes)
+            {
+                var home = WebHomeLayout.Place(d.W, d.H, d.Top, d.Bottom, d.Left, d.Right);
+                string where = d.Name;
+                Assert.That(home.Wide, Is.False, where);
+                Assert.That(home.Scroll, Is.False, where);
+                Assert.That(home.Launch.W, Is.GreaterThan(home.Menu.W * 0.9f), where + " launch");
+                Assert.That(home.Rocket.Bottom, Is.LessThanOrEqualTo(home.Menu.Y + 0.6f), where + " rocket");
+                Assert.That(home.Title.Bottom, Is.LessThanOrEqualTo(home.Rocket.Y + 0.6f), where + " title");
+                Assert.That(home.Launch.H, Is.GreaterThanOrEqualTo(44f), where);
+                Assert.That(home.Design.H, Is.GreaterThanOrEqualTo(44f), where);
+                Assert.That(home.Missions.H, Is.GreaterThanOrEqualTo(44f), where);
+                Assert.That(home.Codex.H, Is.GreaterThanOrEqualTo(44f), where);
+                Assert.That(home.Rocket.H, Is.GreaterThan(d.H * 0.18f), where + " hero");
+                NoOverlap(HomeBoxes(home), where + " home");
+                Inside(HomeBoxes(home), d, where + " home");
+                float titleInner = System.Math.Max(1f, home.Title.W - 8f);
+                Assert.That(HomeWideText.Width(HomeWideText.Kestrel, 24f), Is.LessThanOrEqualTo(titleInner), where + " KESTREL");
+                Assert.That(HomeWideText.Width(HomeWideText.Heavy, 11f), Is.LessThanOrEqualTo(titleInner * 0.7f), where + " HEAVY");
+                float launchInner = System.Math.Max(1f, home.Launch.W - WebHomeLayout.LaunchChrome);
+                Assert.That(HomeWideText.Width(HomeWideText.Launch, 13f), Is.LessThanOrEqualTo(launchInner), where + " LAUNCH");
+                Assert.That(HomeWideText.Lines(HomeWideText.LaunchCaption, 11f, launchInner), Is.LessThanOrEqualTo(2), where + " launch caption");
+                float hintInner = System.Math.Max(1f, home.Hint.W - 16f);
+                Assert.That(HomeWideText.Lines(HomeWideText.Hint, 11f, hintInner), Is.LessThanOrEqualTo(2), where + " Thrum");
+            }
+        }
+
+        [Test]
         public void PortraitWebStaysAPhoneColumn()
         {
             var home = WebHomeLayout.Place(390f, 844f, 47f, 34f, 0f, 0f);

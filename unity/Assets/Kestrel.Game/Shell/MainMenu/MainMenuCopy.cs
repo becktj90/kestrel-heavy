@@ -14,6 +14,11 @@ namespace Kestrel.Game.Shell
         public const string DesignLabel = "DESIGN FIRST";
         public const string DesignCaption = "Your rocket, this mission.";
         public const string TapHint = "TAP A TILE OR LAUNCH TO BEGIN";
+        /// <summary>Home strip. The campaign guide keeps this same opening kid line.</summary>
+        public const string ThrumLine = "Oh! A visitor. Mind the oil. I am Thrum. I keep this hangar, and I talk to wrenches.";
+        /// <summary>Advance of <see cref="ThrumLine"/> at 100px in Space Grotesk Medium, no tracking.</summary>
+        public const float ThrumWidth100 = 3844.30f;
+        public const string Eyebrow = "BECKIFY AEROSPACE  ·  EST. 1969";
         public const string SoonTag = "SOON";
         public const string FuelStat = "Fuel 92%";
         public const string ThrustStat = "Thrust 850 kN";
