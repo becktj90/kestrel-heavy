@@ -71,7 +71,7 @@ namespace Kestrel.Core.Tests
         public void EveryMission_HasAFictionalBriefing()
         {
             var campaign = Campaign.Load(Golden.Root);
-            Assert.AreEqual(10, campaign.Missions.Count);
+            Assert.AreEqual(20, campaign.Missions.Count);
             string blob = File.ReadAllText(Path.Combine(Golden.Root, "data", "campaign.json"))
                 + File.ReadAllText(Path.Combine(Golden.Root, "data", "sites.json"))
                 + File.ReadAllText(Path.Combine(Golden.Root, "data", "weather.json"));
@@ -80,7 +80,7 @@ namespace Kestrel.Core.Tests
                 Assert.IsFalse(Regex.IsMatch(lower, @"\b" + Regex.Escape(bad) + @"\b"), bad);
 
             var kinds = new System.Collections.Generic.HashSet<string>();
-            for (int i = 1; i <= 10; i++)
+            for (int i = 1; i <= 20; i++)
             {
                 var card = MissionBriefing.Load(Golden.Root, i, 3, 13);
                 Assert.AreEqual("KH-" + i, card.ContractCode);

@@ -1,6 +1,6 @@
 // Campaign map for Mission Select. Four acts, soft-linear locks from Career.Cleared,
 // part lines from Career.Unlocks, stars and medals only from the missions record.
-// Open Contracts stays off the board until KH-10 is cleared. No timers, no prices, no network.
+// Open Contracts stays off the board until KH-20 is cleared. No timers, no prices, no network.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -19,6 +19,8 @@ namespace Kestrel.Game.MissionSelect
     {
         public string Name;
         public string Kind;
+        public string Form;
+        public string Does;
     }
 
     public sealed class MissionMapEntry
@@ -32,6 +34,8 @@ namespace Kestrel.Game.MissionSelect
         public MissionAccess Access;
         public bool IsNext;
         public string PayloadLine;
+        public string DoesLine;
+        public string Form;
         public string OrbitLine;
         public string StarsText;
         public string MedalsText;
@@ -74,9 +78,9 @@ namespace Kestrel.Game.MissionSelect
         public const string Replay = "Replay.";
         public const string BoardClear = "The board is clear.";
         public const string ContractsTitle = "Open Contracts";
-        public const string ContractsBody = "KH-11 and up. Seeded on this device. No clock and no expiry. No contract is posted yet.";
-        /// <summary>KH-10 is mission index 10. Career.Cleared reaches 10 when that flight passes.</summary>
-        public const int ContractsAfterCleared = 10;
+        public const string ContractsBody = "KH-21 and up. Seeded on this device. No clock and no expiry. No contract is posted yet.";
+        /// <summary>KH-20 is mission index 20. Career.Cleared reaches 20 when that flight passes.</summary>
+        public const int ContractsAfterCleared = 20;
         public const long MinorPerKcFallback = 100000;
     }
 
@@ -85,17 +89,17 @@ namespace Kestrel.Game.MissionSelect
         public static readonly string[] Ids = { "act-1", "act-2", "act-3", "act-4" };
         public static readonly string[] Titles =
         {
-            "Act I · Up and Down",
-            "Act II · Orbit",
-            "Act III · Come Back",
-            "Act IV · Beyond",
+            "Act I · First Light",
+            "Act II · Regulars",
+            "Act III · Heavy",
+            "Act IV · Far Shore",
         };
 
         public static int IndexFor(int missionIndex)
         {
-            if (missionIndex <= 2) return 0;
-            if (missionIndex <= 5) return 1;
-            if (missionIndex <= 7) return 2;
+            if (missionIndex <= 5) return 0;
+            if (missionIndex <= 10) return 1;
+            if (missionIndex <= 15) return 2;
             return 3;
         }
     }
@@ -130,7 +134,13 @@ namespace Kestrel.Game.MissionSelect
                 if (id == null) continue;
                 var brief = row.Obj("briefing");
                 if (brief == null) continue;
-                map[id] = new PayloadLabel { Name = Clean(brief.Str("payloadName")), Kind = Clean(brief.Str("payloadKind")) };
+                map[id] = new PayloadLabel
+                {
+                    Name = Clean(brief.Str("payloadName")),
+                    Kind = Clean(brief.Str("payloadKind")),
+                    Form = Clean(brief.Str("form")),
+                    Does = Clean(brief.Str("whatItDoes")),
+                };
             }
             return map;
         }
@@ -140,7 +150,7 @@ namespace Kestrel.Game.MissionSelect
             if (mission == null) return "";
             string name = label != null ? Clean(label.Name) : null;
             string kind = label != null ? Clean(label.Kind) : null;
-            if (name == null) name = Clean(mission.PayloadId);
+            if (name == null) name = PayloadWord(mission.PayloadId);
             if (kind == name) kind = null;
             string mass = Kilograms(mission.MassKg);
             var parts = new List<string>();
@@ -207,8 +217,8 @@ namespace Kestrel.Game.MissionSelect
                 string id = unlocks[i];
                 if (string.IsNullOrEmpty(id)) continue;
                 bool has = owned != null && owned.Contains(id);
-                if (access == MissionAccess.Cleared) { if (has) ids.Add(id); }
-                else if (!has) ids.Add(id);
+                if (access == MissionAccess.Cleared) { if (has) ids.Add(UnlockWord(id)); }
+                else if (!has) ids.Add(UnlockWord(id));
             }
             if (ids.Count == 0) return null;
             string list = JoinIds(ids);
@@ -260,6 +270,69 @@ namespace Kestrel.Game.MissionSelect
         {
             if (string.IsNullOrEmpty(body) || Math.Abs(inc) < 1e-6) return body;
             return body + ", " + Number(inc) + "°";
+        }
+
+        public static string UnlockWord(string id)
+        {
+            switch (id)
+            {
+                case "fins": return "fins";
+                case "nose": return "nose";
+                case "stage-2": return "a second stage";
+                case "nozzle-expansion": return "a wider nozzle";
+                case "pc": return "chamber pressure";
+                case "throttle": return "throttle";
+                case "crossfeed": return "crossfeed";
+                case "legs": return "landing legs";
+                case "grid-fins": return "grid fins";
+                case "insulation": return "tank insulation";
+                case "redundant-avionics": return "a backup computer";
+                case "hydrolox-upper": return "a hydrogen upper";
+                default:
+                    if (string.IsNullOrEmpty(id)) return "";
+                    return id.Replace('-', ' ');
+            }
+        }
+
+        public static string PayloadWord(string id)
+        {
+            switch (id)
+            {
+                case "kid-box": return "Science box";
+                case "cubesat": return "Cubesat";
+                case "leo-sat": return "Satellite";
+                case "gto-comsat": return "Comsat";
+                case "crew-capsule": return "Crew capsule";
+                case "lunar-probe": return "Probe";
+                case "weather-sat": return "Weather sat";
+                case "space-telescope": return "Space telescope";
+                case "cargo-capsule": return "Cargo capsule";
+                case "cubesat-dispenser": return "Cubesat dispenser";
+                case "geo-relay": return "GEO relay";
+                case "lunar-lander": return "Lunar lander";
+                default: return "Payload";
+            }
+        }
+
+        public static string FormFor(string form, string payloadId)
+        {
+            if (PayloadForms.KnownForm(form)) return form;
+            switch (payloadId)
+            {
+                case "kid-box": return "box";
+                case "cubesat": return "cubesat";
+                case "leo-sat": return "bus";
+                case "gto-comsat": return "comms";
+                case "crew-capsule": return "crew";
+                case "lunar-probe": return "probe";
+                case "weather-sat": return "weather";
+                case "space-telescope": return "telescope";
+                case "cargo-capsule": return "cargo";
+                case "cubesat-dispenser": return "dispenser";
+                case "geo-relay": return "relay";
+                case "lunar-lander": return "lander";
+                default: return "box";
+            }
         }
 
         static string MedalWord(string medal)
@@ -370,6 +443,8 @@ namespace Kestrel.Game.MissionSelect
                 Access = access,
                 IsNext = access == MissionAccess.Open,
                 PayloadLine = MissionMapText.PayloadLine(mission, label),
+                DoesLine = label != null ? label.Does : null,
+                Form = MissionMapText.FormFor(label != null ? label.Form : null, mission.PayloadId),
                 OrbitLine = MissionMapText.OrbitLine(mission),
                 StarsText = stars,
                 MedalsText = medals,
@@ -378,7 +453,7 @@ namespace Kestrel.Game.MissionSelect
             };
             string gentle = mission.GentleDefault ? "Gentle on." : "Gentle off.";
             string action = access == MissionAccess.Locked ? entry.LockLine : access == MissionAccess.Cleared ? MissionMapCopy.Replay : MissionMapCopy.Fly;
-            entry.Tooltip = Sentences(entry.SpokenTitle, entry.PayloadLine, entry.OrbitLine, gentle, stars, medals, action);
+            entry.Tooltip = Sentences(entry.SpokenTitle, entry.PayloadLine, entry.DoesLine, entry.OrbitLine, gentle, stars, medals, action);
             return entry;
         }
 

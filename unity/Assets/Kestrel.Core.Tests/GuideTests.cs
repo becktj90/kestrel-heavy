@@ -13,7 +13,11 @@ namespace Kestrel.Core.Tests
     {
         static readonly string[] Ids = {
             "first.1", "first.2", "first.3", "first.4", "first.5",
-            "brief.kh1", "brief.kh3", "brief.kh6", "brief.kh8", "brief.kh9", "brief.contract", "brief.bonus", "brief.wind",
+            "brief.kh1", "brief.kh3", "brief.kh6", "brief.kh8", "brief.kh9",
+            "brief.kh2", "brief.kh4", "brief.kh5", "brief.kh7", "brief.kh10",
+            "brief.kh11", "brief.kh12", "brief.kh13", "brief.kh14", "brief.kh15",
+            "brief.kh16", "brief.kh17", "brief.kh18", "brief.kh19", "brief.kh20",
+            "brief.contract", "brief.bonus", "brief.wind",
             "step.1", "step.2", "step.2.pass", "step.2.fail.twr", "step.2.fail.mix",
             "step.3", "step.3.fail.dv", "step.3.warn.maxq",
             "step.4", "step.4.fail.fit", "step.4.fail.tumble",

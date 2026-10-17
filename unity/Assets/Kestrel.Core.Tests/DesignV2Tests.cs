@@ -32,7 +32,9 @@ namespace Kestrel.Core.Tests
             var names = Golden.Catalog.Payloads.Select(p => p.id + "=" + p.displayName).OrderBy(s => s).ToArray();
             CollectionAssert.AreEqual(new[]
             {
-                "crew-capsule=KH-4", "cubesat=KH-1", "gto-comsat=KH-3", "kid-box=KH-K", "leo-sat=KH-2", "lunar-probe=KH-5",
+                "cargo-capsule=Trunk", "crew-capsule=KH-4", "cubesat-dispenser=Cinder Rack", "cubesat=KH-1",
+                "geo-relay=Westline", "gto-comsat=KH-3", "kid-box=KH-K", "leo-sat=KH-2",
+                "lunar-lander=Lumen Down", "lunar-probe=KH-5", "space-telescope=Meridian", "weather-sat=Plover",
             }, names);
         }
 

@@ -166,8 +166,9 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("m3", HomeRoutes.NextMission(campaign, 2).Id);
             var route = HomeRoutes.Launch(campaign, 2, catalog, hangar.templates);
             Assert.AreEqual("m3", route.Session.MissionId);
-            Assert.AreEqual("m10", HomeRoutes.NextMission(campaign, 10).Id);
-            Assert.AreEqual("m10", HomeRoutes.NextMission(campaign, 40).Id);
+            Assert.AreEqual("m11", HomeRoutes.NextMission(campaign, 10).Id);
+            Assert.AreEqual("m20", HomeRoutes.NextMission(campaign, 20).Id);
+            Assert.AreEqual("m20", HomeRoutes.NextMission(campaign, 40).Id);
         }
 
         [Test]

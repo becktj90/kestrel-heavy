@@ -258,6 +258,12 @@ namespace Kestrel.Core.Tests
                 ["crew-capsule"] = (40, 3.6),
                 ["lunar-probe"] = (20, 2.2),
                 ["kid-box"] = (2, 1.1),
+                ["weather-sat"] = (8, 2),
+                ["space-telescope"] = (10, 2.4),
+                ["cargo-capsule"] = (35, 3.6),
+                ["cubesat-dispenser"] = (1.2, 1),
+                ["geo-relay"] = (50, 3.2),
+                ["lunar-lander"] = (18, 2.6),
             };
             var doc = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "payloads.json")));
             Assert.AreEqual(expected.Count, doc.Arr("payloads").Count);

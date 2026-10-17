@@ -74,11 +74,13 @@ namespace Kestrel.Core.Flight
                 case "maxG": return "max g " + Num(Max);
                 case "strapOns": return Allow ? "strap-on boosters allowed" : "no strap-on boosters";
                 case "landing":
-                    var land = "landing " + (Mode ?? "");
-                    if (!string.IsNullOrEmpty(Grade)) land += " " + Grade;
-                    if (!string.IsNullOrEmpty(Site)) land += " at " + Site;
-                    if (Boosters) land += ", boosters too";
-                    return land;
+                    string where;
+                    if (Mode == "rtls") where = "land back at the pad";
+                    else if (Mode == "barge") where = "land on " + (string.IsNullOrEmpty(Site) ? "the barge" : Site);
+                    else where = "landing";
+                    if (!string.IsNullOrEmpty(Grade)) where += ", grade " + Grade;
+                    if (Boosters) where += ", boosters too";
+                    return where;
                 case "reliability": return "reliability " + Num(Min);
                 case "noRedRisks": return "no red risks";
                 case "randomFailures": return "random failures on";
@@ -113,6 +115,7 @@ namespace Kestrel.Core.Flight
         public string VehicleLine;
         /// <summary>Whether that rocket has the speed the mission asks for. A shortfall is still allowed to fly.</summary>
         public string ReachLine;
+        public string Customer, Control, WhatItIs, WhatItDoes, Why, Form, CodexId, Band;
         /// <summary>True when the briefing should send this rocket straight to the pad.</summary>
         public bool AutoPad;
 
@@ -178,6 +181,14 @@ namespace Kestrel.Core.Flight
                 Seed = seed ?? DefaultSeed(campaign),
                 Gentle = mission.GentleDefault,
                 Mode = MissionMode.Campaign,
+                Customer = mission.Customer,
+                Control = mission.Control,
+                WhatItIs = mission.WhatItIs,
+                WhatItDoes = mission.WhatItDoes,
+                Why = mission.Why,
+                Form = mission.Form,
+                CodexId = mission.CodexId,
+                Band = mission.Band,
                 Target = new MissionTarget
                 {
                     Kind = mission.TargetKind,
