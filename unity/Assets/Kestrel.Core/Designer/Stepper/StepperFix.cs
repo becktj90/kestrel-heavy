@@ -151,8 +151,6 @@ namespace Kestrel.Core.Designer.Stepper
                 var edit = HangarEditor.SetEngineCount(clone, PartRef.Stage(0), n);
                 if (!edit.changed) continue;
                 if (!Cleared(catalog, clone, check)) continue;
-                var gate = StepperModel.Evaluate(catalog, clone)[DesignerStep.Engines];
-                if (gate.Gate != StepGate.Pass) continue;
                 found = n;
                 foundEdit = edit;
                 break;
@@ -317,7 +315,11 @@ namespace Kestrel.Core.Designer.Stepper
                 return now.Code != before.Code || now.Gate == StepGate.Pass;
             }
             if (before.Code == "twr-low" || before.Code == "twr-marginal" || before.Code == "zero-engines")
-                return now.Gate == StepGate.Pass && now.Code != "twr-low" && now.Code != "twr-marginal" && now.Code != "zero-engines";
+            {
+                if (now.Code == "twr-low" || now.Code == "twr-marginal" || now.Code == "zero-engines") return false;
+                var readout = report.Readout;
+                return readout != null && readout.liftoffTWR >= StepperChecks.PassTwr;
+            }
             if (before.Code == "dv-margin" || before.Code == "prop-depletion" || before.Code == "weak-upper-dv")
                 return now.Code != before.Code && (report.Readout == null || report.Readout.margin >= 0);
             if (before.Code == "payload-doesnt-fit" || before.Code == "fairing-narrow")

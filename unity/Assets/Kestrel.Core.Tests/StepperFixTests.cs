@@ -136,6 +136,20 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void Twr_FixClearsLiftoffEvenWhenTheMixtureIsOff()
+        {
+            var design = HangarFixtures.Template("workhorse");
+            HangarEditor.SetEngineCount(design, PartRef.Stage(0), 1);
+            JsonMut.Set((JsonObject)design.Arr("stages")[0], "mixtureOffsetPct", 8d);
+            var check = StepperModel.Evaluate(C, design)[DesignerStep.Engines];
+            Assert.AreEqual("twr-low", check.Code);
+            var result = StepperFix.Apply(C, design, check);
+            Assert.IsTrue(result.Cleared, result.Instruction);
+            Assert.AreNotEqual("twr-low", StepperModel.Evaluate(C, design)[DesignerStep.Engines].Code);
+            Assert.Greater((int)((JsonObject)design.Arr("stages")[0]).Num("engineCount"), 1);
+        }
+
+        [Test]
         public void TwrFixIsOneUndoAndRestoresTheFlag()
         {
             var session = new HangarSession(C, HangarFixtures.Data, HangarFixtures.Template("workhorse"));
