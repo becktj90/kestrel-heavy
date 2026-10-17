@@ -144,7 +144,7 @@ namespace Kestrel.Game.Tests
             Assert.That(card.Q<Label>("failure-numbers").text, Does.Contain("41 kPa"));
             Assert.That(card.Q<Label>("failure-kid").text, Is.EqualTo(ev.kid));
             Assert.That(card.Q<Label>("failure-engineer").text, Is.EqualTo(ev.engineer));
-            Assert.That(card.Q<Label>("report-stars").text, Does.Contain("Stars"));
+            Assert.That(card.Q<Label>("report-stars").text.ToLowerInvariant(), Does.Contain("star"));
             Assert.That(card.Q<Button>("report-retry").text, Is.EqualTo("One more launch"));
             Assert.That(card.Q<Button>("report-retry").tooltip, Does.Contain("same seed"));
             Assert.IsNotNull(card.Q<Button>("report-next"));

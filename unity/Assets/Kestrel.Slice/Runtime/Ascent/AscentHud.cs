@@ -680,7 +680,8 @@ namespace Kestrel.Slice
             stages.style.width = Length.Percent(FlightHudLayout.CardFraction * 100f);
             stages.style.height = Px(FlightHudLayout.PlotPt);
             stages.style.flexGrow = 0;
-            stages.style.flexShrink = 0;
+            stages.style.flexShrink = 1;
+            stages.style.minWidth = 0;
             stages.style.overflow = Overflow.Hidden;
             stages.style.marginTop = 0;
             stages.style.marginBottom = 0;
@@ -698,17 +699,26 @@ namespace Kestrel.Slice
             if (verdict != null)
             {
                 verdict.style.fontSize = Px(12f);
-                verdict.style.whiteSpace = WhiteSpace.NoWrap;
+                verdict.style.whiteSpace = WhiteSpace.Normal;
+                verdict.style.overflow = Overflow.Hidden;
+            }
+            var seq = stages.Q("h-seq");
+            if (seq != null)
+            {
+                seq.Clear();
+                seq.style.display = DisplayStyle.None;
             }
             stages.Query<Button>().ForEach(b =>
             {
-                b.style.fontSize = Px(11f);
-                b.style.marginTop = Px(2f);
-                b.style.marginRight = Px(2f);
-                b.style.paddingLeft = Px(4f);
-                b.style.paddingRight = Px(4f);
-                b.style.minHeight = Px(22f);
-                b.style.height = StyleKeyword.Auto;
+                if (b.name == "skip-count")
+                {
+                    b.style.fontSize = Px(11f);
+                    b.style.whiteSpace = WhiteSpace.Normal;
+                    b.style.overflow = Overflow.Hidden;
+                    b.style.minHeight = Px(22f);
+                    return;
+                }
+                b.style.display = DisplayStyle.None;
             });
             HideStageSentences();
         }

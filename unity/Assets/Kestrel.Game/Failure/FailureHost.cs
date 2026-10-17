@@ -400,8 +400,26 @@ namespace Kestrel.Game.Failure
             catch (System.Exception e) { Debug.LogWarning("[Kestrel] post-flight report: " + e.Message); }
             var actions = PostFlightSource.Actions();
             string kind = shown != null ? shown.kind : "";
-            if (actions != null) actions.Fix = () => FixField.Apply(ui, FixField.For(kind));
-            Card = ReportView.Build(shown, log, frame, reduce, () => FixField.Apply(ui, FixField.For(kind)), debrief, actions);
+            var design = ui.Q("design");
+            if (design != null) design.AddToClassList("hidden");
+            System.Action reveal = () =>
+            {
+                var sheet = ui.Q("design");
+                if (sheet != null) sheet.RemoveFromClassList("hidden");
+            };
+            if (actions != null)
+            {
+                var next = actions.Next;
+                var again = actions.Again;
+                var missions = actions.Missions;
+                var home = actions.Home;
+                actions.Next = () => { reveal(); if (next != null) next(); };
+                actions.Again = () => { reveal(); if (again != null) again(); };
+                actions.Missions = () => { reveal(); if (missions != null) missions(); };
+                actions.Home = () => { reveal(); if (home != null) home(); };
+                actions.Fix = () => { reveal(); FixField.Apply(ui, FixField.For(kind)); };
+            }
+            Card = ReportView.Build(shown, log, frame, reduce, () => { reveal(); FixField.Apply(ui, FixField.For(kind)); }, debrief, actions);
             Card.userData = this;
             ui.Add(Card);
         }

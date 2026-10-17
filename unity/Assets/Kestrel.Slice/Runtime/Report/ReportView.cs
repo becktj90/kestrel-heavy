@@ -1,6 +1,7 @@
 // Why-it-failed card (§3): icon, kid line, engineer line, Fix it, then the five plots.
 // Child order is the VoiceOver order. Tooltips are the project's VoiceOver stand-in.
 using System;
+using Kestrel.Core;
 using Kestrel.Core.Flight;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -32,10 +33,10 @@ namespace Kestrel.Slice
             string mode = failure != null ? failure.kind : "break";
             var icon = Icon(mode);
             Place(icon, frame.Icon);
-            icon.tooltip = "Failure. " + (failure != null ? failure.kind : "unknown") + ".";
+            icon.tooltip = "Failure. " + (failure != null ? FlightDebrief.TitleOf(failure.kind) : "unknown") + ".";
             root.Add(icon);
 
-            var kid = new Label(failure != null ? failure.kid : "") { name = "failure-kid" };
+            var kid = new Label(PlayerText.ForPlayer(failure != null ? failure.kid : "")) { name = "failure-kid" };
             Place(kid, frame.Kid);
             kid.style.color = Color.white;
             kid.style.whiteSpace = WhiteSpace.Normal;
@@ -43,7 +44,7 @@ namespace Kestrel.Slice
             kid.tooltip = kid.text;
             root.Add(kid);
 
-            var engineer = new Label(failure != null ? failure.engineer : "") { name = "failure-engineer" };
+            var engineer = new Label(PlayerText.ForPlayer(failure != null ? failure.engineer : "")) { name = "failure-engineer" };
             Place(engineer, frame.Engineer);
             engineer.style.color = new Color(0.75f, 0.82f, 0.9f);
             engineer.style.whiteSpace = WhiteSpace.Normal;

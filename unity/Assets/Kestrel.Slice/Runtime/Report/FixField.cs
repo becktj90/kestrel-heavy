@@ -8,6 +8,7 @@ namespace Kestrel.Slice
     {
         public readonly string Kind, Tab, Field, TabLabel, FieldLabel, Uri, VoiceOver;
         public static FixField Pending { get; private set; }
+        public static event System.Action<FixField> OnApply;
 
         FixField(string kind, string tab, string field, string tabLabel, string fieldLabel)
         {
@@ -52,6 +53,8 @@ namespace Kestrel.Slice
         {
             if (root == null || link == null) return;
             Pending = link;
+            var card = root.Q(ReportView.RootName);
+            if (card != null) card.RemoveFromHierarchy();
             var design = root.Q("design");
             if (design != null)
             {
@@ -62,10 +65,14 @@ namespace Kestrel.Slice
             var hud = root.Q("hud");
             if (hud != null) hud.AddToClassList("hidden");
             var el = root.Q(ControlId(link.Field)) ?? root.Q(link.Field);
-            if (el == null) return;
-            el.AddToClassList("fix-target");
-            el.tooltip = link.VoiceOver;
-            el.Focus();
+            if (el != null)
+            {
+                el.AddToClassList("fix-target");
+                el.tooltip = link.VoiceOver;
+                el.Focus();
+            }
+            var applied = OnApply;
+            if (applied != null) applied(link);
         }
     }
 }

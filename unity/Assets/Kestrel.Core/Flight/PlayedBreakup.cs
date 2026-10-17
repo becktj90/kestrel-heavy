@@ -48,8 +48,8 @@ namespace Kestrel.Core.Flight
                     "Your rocket bent in half at T+" + N0(s.T) + " s. The air pushed " + N0(s.QPa / 1000.0)
                         + " kPa, past what this structure can fly through (" + N0(qBreak / 1000.0)
                         + " kPa). Raise the safety factor or throttle back at max-Q.",
-                    "structural-maxq: q " + s.QPa.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)
-                        + " Pa > " + qBreak.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " Pa.");
+                    "Air load " + s.QPa.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)
+                        + " Pa, past the " + qBreak.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " Pa limit.");
             }
             double g = s.AccelMps2 / FailureModel.G0;
             if (g > GCap)
@@ -57,7 +57,7 @@ namespace Kestrel.Core.Flight
                 return Make(FailureKind.OverG, "overg", s.T, g, GCap,
                     "The push snapped the stack at T+" + N0(s.T) + " s. It hit " + N1(g) + " g, past " + N1(GCap)
                         + " g. Fewer engines, or more mass under them.",
-                    "overg: " + g.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + " g > " + GCap.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + " g.");
+                    "Peak " + g.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + " g, past the " + GCap.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + " g limit.");
             }
             return null;
         }

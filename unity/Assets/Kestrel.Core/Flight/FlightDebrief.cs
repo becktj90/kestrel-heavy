@@ -60,7 +60,7 @@ namespace Kestrel.Core.Flight
         public int Stars;
         public double Score;
         public readonly List<string> Medals = new List<string>();
-        public string StarsLine = "Stars: 0.";
+        public string StarsLine = "No stars this flight.";
         public string MedalsLine = "No medal this flight.";
         public string KcLine = "";
         public string CosmeticLine = "";
@@ -188,7 +188,11 @@ namespace Kestrel.Core.Flight
             double score = MissionScore.Points(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingGrade);
             debrief.Stars = stars;
             debrief.Score = score;
-            debrief.StarsLine = "Stars: " + stars.ToString(CultureInfo.InvariantCulture) + ".";
+            debrief.StarsLine = stars <= 0
+                ? "No stars this flight."
+                : stars == 1
+                    ? "1 star."
+                    : stars.ToString(CultureInfo.InvariantCulture) + " stars.";
             CollectMedals(facts, debrief);
             debrief.MedalsLine = MedalSentence(debrief.Medals);
 
@@ -292,7 +296,10 @@ namespace Kestrel.Core.Flight
                 case "separation-collision":
                     return "Parted at " + N2(ev.value) + " m/s. Needed " + N2(ev.limit) + " m/s.";
                 case "overg":
-                    return N1(ev.value) + " g. The limit is " + N1(ev.limit) + " g.";
+                    string peakG = N1(ev.value);
+                    string limG = N1(ev.limit);
+                    if (peakG == limG) peakG = ev.value.ToString("0.00", CultureInfo.InvariantCulture);
+                    return "The push reached " + peakG + " g, past the " + limG + " g limit.";
                 case "thermal" when ev.cause != "base-heating":
                     return N0(ev.value) + " K. The material handles " + N0(ev.limit) + " K.";
                 case "thermal":
@@ -389,12 +396,12 @@ namespace Kestrel.Core.Flight
             for (int i = 0; i < medals.Count; i++)
             {
                 string medal = medals[i];
-                if (medal == "gold") parts.Add("Landing gold.");
-                else if (medal == "silver") parts.Add("Landing silver.");
-                else if (medal == "bronze") parts.Add("Landing bronze.");
-                else if (medal == "timing-gold") parts.Add("Timing gold.");
-                else if (medal == "timing-silver") parts.Add("Timing silver.");
-                else if (medal == "timing-bronze") parts.Add("Timing bronze.");
+                if (medal == "gold") parts.Add("Gold for the landing.");
+                else if (medal == "silver") parts.Add("Silver for the landing.");
+                else if (medal == "bronze") parts.Add("Bronze for the landing.");
+                else if (medal == "timing-gold") parts.Add("Gold for timing.");
+                else if (medal == "timing-silver") parts.Add("Silver for timing.");
+                else if (medal == "timing-bronze") parts.Add("Bronze for timing.");
             }
             return parts.Count == 0 ? "No medal this flight." : string.Join(" ", parts);
         }

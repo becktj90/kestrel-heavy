@@ -26,6 +26,24 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void VerdictFitsTheStagesCard_RawEventIdsDoNot()
+        {
+            string[] verdicts = { "On track", "On the count", "Heating hard", "Speed is there", "Short on speed", "Climbing", "Vehicle lost", "Skip count" };
+            foreach (var d in FlightHudLayout.PortraitDevices())
+            {
+                var f = FlightHudLayout.Place(d, FlightHudMode.Cruise);
+                float inner = f.Stages.W - 8f;
+                foreach (var v in verdicts)
+                    Assert.That(FlightHudLayout.TextWidth(v, 12f), Is.LessThanOrEqualTo(inner + 0.5f), d.Name + " " + v);
+                if (d.Name == "SE")
+                {
+                    Assert.That(FlightHudLayout.TextWidth("tl.asc.maxq.short T+0:42", 11f), Is.GreaterThan(f.Stages.W), d.Name);
+                    Assert.That(FlightHudLayout.TextWidth("tl.ign.release.short", 11f), Is.GreaterThan(inner), d.Name);
+                }
+            }
+        }
+
+        [Test]
         public void PlotAndStagesAreSmallAndTranslucent()
         {
             Assert.That(FlightHudLayout.PlotPt, Is.LessThanOrEqualTo(80f));

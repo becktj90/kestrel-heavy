@@ -3,6 +3,7 @@
 // No Unity types. The same time and the same sheet always produce the same chips.
 using System;
 using System.Collections.Generic;
+using Kestrel.Core;
 using Kestrel.Core.Timeline;
 
 namespace Kestrel.Core.Flight
@@ -59,7 +60,7 @@ namespace Kestrel.Core.Flight
                 chips.Add(new WebcastChip
                 {
                     Id = b.Id,
-                    Label = string.IsNullOrEmpty(b.Label) ? b.Id : b.Label,
+                    Label = PlayerText.Leak(b.Label) ? "" : (b.Label ?? ""),
                     Clock = TimelineClock.Clock(b.Nominal),
                     State = i < cur ? ChipState.Past : i == cur ? ChipState.Now : ChipState.Next,
                     Index = i,
@@ -121,6 +122,7 @@ namespace Kestrel.Core.Flight
             if (beat == null) return pulse != null ? pulse.Detail : "";
             string id = beat.Id ?? "";
             string name = string.IsNullOrEmpty(beat.Banner) ? beat.Label : beat.Banner;
+            if (PlayerText.Leak(name)) name = "";
             string alt = $"{altitudeM / 1000:0.0} km";
             if (id.IndexOf("maxq", StringComparison.OrdinalIgnoreCase) >= 0 || id.IndexOf("max-q", StringComparison.OrdinalIgnoreCase) >= 0)
                 return name + ". Thickest air on the way up. " + (pulse != null ? pulse.Detail : "");
