@@ -32,7 +32,14 @@ namespace Kestrel.Game.Shell
             }
             if (Kind == AppScreen.Missions)
             {
-                _view = MissionSelectScreen.Build(LoadCampaign(), id => shell.Flow.StartMission(id), () => shell.Flow.ExitToHome());
+                _view = MissionBoardScreen.Build(
+                    LoadCampaign(),
+                    id => shell.Flow.LaunchChosen(id),
+                    id => shell.Flow.DesignChosen(id),
+                    () => shell.Flow.OpenSandbox(),
+                    () => shell.Flow.ExitToHome(),
+                    MainMenuLayout.ReducedMotion(),
+                    CanLaunch);
                 shell.Safe.Add(_view);
                 if (shell.Fill != null) shell.Fill.SpaceT = 0.35f;
                 return;
@@ -268,6 +275,20 @@ namespace Kestrel.Game.Shell
                 return HangarData.FromJson(T("designer-templates"), T("designer-look"), T("designer-budget"), T("finishes"), T("liveries"));
             }
             catch (Exception e) { Debug.LogWarning("[Kestrel] templates unavailable: " + e.Message); return null; }
+        }
+
+        /// <summary>True when a starter for this mission can leave the pad. Called on selection, not every frame.</summary>
+        public static bool CanLaunch(string missionId)
+        {
+            try
+            {
+                var campaign = LoadCampaign();
+                var mission = campaign != null ? campaign.ById(missionId) : null;
+                if (mission == null) return false;
+                var choice = HomeAutoBuild.Choose(LoadCatalog(), LoadHangar()?.templates, mission);
+                return choice != null && choice.LaunchEnabled && choice.Design != null;
+            }
+            catch (Exception) { return false; }
         }
 
         /// <summary>Highest mission passed, from the save folder. A missing folder is a fresh career.</summary>
