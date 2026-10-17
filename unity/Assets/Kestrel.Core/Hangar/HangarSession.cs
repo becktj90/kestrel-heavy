@@ -28,6 +28,8 @@ namespace Kestrel.Core.Hangar
 
         /// <summary>Raised after every document change: edit, undo, redo, load.</summary>
         public event Action Changed;
+        /// <summary>Raised when a reference ascent lands and the warning chip should be read again. The design is unchanged.</summary>
+        public event Action DerivedChanged;
         /// <summary>Raised when the selected part changes.</summary>
         public event Action<PartRef> SelectionChanged;
         /// <summary>Raised when the save slot, its name or the saved state changes without a document edit (save, rename).</summary>
@@ -136,6 +138,13 @@ namespace Kestrel.Core.Hangar
         }
 
         void Invalidate() { report = null; sheet = null; advisories = null; }
+
+        /// <summary>Drop the cached warnings and tell the chip to read them again. Does not record an undo.</summary>
+        public void RefreshDerived()
+        {
+            Invalidate();
+            DerivedChanged?.Invoke();
+        }
 
         public EngineeringReport Report => report ??= Validate.Engineering(catalog, Design);
 
