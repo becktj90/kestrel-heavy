@@ -101,6 +101,7 @@ namespace Kestrel.Slice
             if (id != null) session.Load(first, id, name);
             else if (name != null) session.Load(first, null, name);
             session.Changed += OnDesignChanged;
+            session.DerivedChanged += ApplyValidation;
             session.SelectionChanged += OnSelectionChanged;
             session.SaveStateChanged += UpdateHandle;
             design = Design.FromJson(session.Design);

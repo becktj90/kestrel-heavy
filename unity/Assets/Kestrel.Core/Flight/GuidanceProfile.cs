@@ -125,7 +125,8 @@ namespace Kestrel.Core.Flight
             double throttle = 1;
             if (maxQThrottleSet && s.q >= MaxQReferencePa * MaxQBucketFraction)
             {
-                double cap = maxQThrottle / 100.0;
+                // Designer saves a fraction (0.95) or a percent (95). Above 1.5 it is a percent.
+                double cap = maxQThrottle > 1.5 ? maxQThrottle / 100.0 : maxQThrottle;
                 if (cap < throttle) throttle = cap;
             }
             if (gLimitSet && gLimit > 0 && s.thrustN > 0 && s.mass > 0)

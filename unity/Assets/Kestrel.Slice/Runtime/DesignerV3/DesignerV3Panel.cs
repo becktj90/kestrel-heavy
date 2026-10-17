@@ -725,9 +725,9 @@ namespace Kestrel.Slice.DesignerV3
                 () => null,
                 (dir, key) => Do(d => DesignerV3Edits.SetGuidance(d, "pitchKickDeg", (d.Obj("guidance")?.Num("pitchKickDeg") ?? 2) + dir * 0.5), key),
                 End, "g.kick", refreshers));
-            content.Add(ui.Stepper("Max-Q throttle", () => ((D.Obj("guidance")?.Num("maxQThrottle") ?? 1) * 100).ToString("0", inv) + "%",
+            content.Add(ui.Stepper("Max-Q throttle", () => Kestrel.Core.Designer.Stepper.MaxQThrottle.Label(D),
                 () => "Throttle bucket through max-Q",
-                (dir, key) => Do(d => DesignerV3Edits.SetGuidance(d, "maxQThrottle", Math.Max(0.4, Math.Min(1, (d.Obj("guidance")?.Num("maxQThrottle") ?? 1) + dir * 0.05))), key),
+                (dir, key) => Do(d => Kestrel.Core.Designer.Stepper.MaxQThrottle.Nudge(d, dir), key),
                 End, "g.q", refreshers));
             content.Add(ui.Stepper("g limit", () => (D.Obj("guidance")?.Num("gLimit") ?? 4).ToString("0.0", inv) + " g",
                 () => "Autopilot caps sensed acceleration",
@@ -980,6 +980,7 @@ namespace Kestrel.Slice.DesignerV3
                 {
                     BuildStrip();
                     stepper?.RefreshLive();
+                    session.RefreshDerived();
                 }
             }
             catch (Exception e) { Debug.LogWarning("[DesignerV3] max-Q sim: " + e.Message); referenceJob = null; }
@@ -997,6 +998,7 @@ namespace Kestrel.Slice.DesignerV3
                     referenceJob.Step(50);
                 BuildStrip();
                 stepper?.RefreshLive();
+                session.RefreshDerived();
             }
             catch (Exception e) { Debug.LogWarning("[DesignerV3] max-Q sim: " + e.Message); }
         }

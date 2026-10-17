@@ -373,15 +373,16 @@ namespace Kestrel.Game.Tests
                 float scrollBefore = panel.Stepper.ScrollOffset;
                 bool cleared = panel.Stepper.PressFix();
                 Assert.AreEqual(DesignerStep.Tanks, panel.Stepper.Step);
+                string note = panel.Stepper.Root.Q<Label>("stepper-check-body").text;
+                StringAssert.DoesNotContain("q_lim", note);
+                StringAssert.DoesNotContain("Lower the Max-Q", note);
                 if (cleared)
-                    Assert.AreNotEqual("maxq-high", StepperModel.Evaluate(C, session.Design)[DesignerStep.Tanks].Code);
-                else
                 {
-                    string note = panel.Stepper.Root.Q<Label>("stepper-check-body").text;
-                    Assert.That(note, Does.Match(@"\d"));
-                    StringAssert.DoesNotContain("q_lim", note);
-                    Assert.IsTrue(panel.Stepper.Root.Q("field-safetyFactor").ClassListContains("stepper-focus"));
+                    Assert.AreNotEqual("maxq-high", StepperModel.Evaluate(C, session.Design)[DesignerStep.Tanks].Code);
+                    StringAssert.Contains("→", note);
                 }
+                else
+                    Assert.That(note, Does.Match(@"\d"));
                 Assert.AreEqual(scrollBefore, panel.Stepper.ScrollOffset, 0.01f);
             }
             finally

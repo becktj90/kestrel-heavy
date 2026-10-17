@@ -320,24 +320,15 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 result = new StepperFixResult
                 {
                     Field = check.Field,
-                    Instruction = "No single change clears this warning. Adjust the highlighted control by 1 step.",
+                    Instruction = "Fix it could not change this design.",
                 };
             }
             if (result == null) return false;
-            if (result.Cleared)
-            {
-                fixNote = null;
-                keepInstruction = false;
-                if (!result.Edit.changed) Sync();
-                return true;
-            }
-            fixNote = string.IsNullOrEmpty(result.Instruction)
-                ? "No single change clears this warning. Adjust the highlighted control by 1 step."
-                : result.Instruction;
-            keepInstruction = true;
+            fixNote = string.IsNullOrEmpty(result.Instruction) ? null : result.Instruction;
+            keepInstruction = !string.IsNullOrEmpty(fixNote);
             shownCode = code;
-            Reveal(string.IsNullOrEmpty(result.Field) ? check.Field : result.Field);
-            return false;
+            Sync();
+            return result.Cleared;
         }
 
         public void FocusField(string field)
@@ -915,11 +906,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
 
         string Detail(StepCheck check, string headline)
         {
-            if (!string.IsNullOrEmpty(fixNote))
-            {
-                string kid = FileKid(check);
-                if (!string.IsNullOrEmpty(kid) && kid != headline) return kid;
-            }
+            if (!string.IsNullOrEmpty(fixNote)) return "";
             if (!bridge.IsEngineer)
             {
                 string numbers = StepperPlain.Numbers(check);
