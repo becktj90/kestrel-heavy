@@ -18,7 +18,7 @@ namespace UnityEngine.UIElements
     public struct StyleFloat { public float value; public static implicit operator StyleFloat(float v) => default; public static implicit operator StyleFloat(StyleKeyword v) => default; }
     public struct StyleInt { public int value; public static implicit operator StyleInt(int v) => default; }
     public struct StyleColor { public Color value; public StyleColor(Color v) { value = v; } public static implicit operator StyleColor(Color v) => default; public static implicit operator StyleColor(StyleKeyword v) => default; }
-    public struct StyleEnum<T> where T : struct, IConvertible { public T value; public static implicit operator StyleEnum<T>(T v) => default; public static implicit operator StyleEnum<T>(StyleKeyword v) => default; }
+    public struct StyleEnum<T> where T : struct, IConvertible { public T value; public StyleKeyword keyword; public static implicit operator StyleEnum<T>(T v) => default; public static implicit operator StyleEnum<T>(StyleKeyword v) => default; }
     public struct StyleBackground { public StyleBackground(Texture2D v) { } public static implicit operator StyleBackground(Texture2D v) => default; }
     public enum Repeat { NoRepeat, Space, Round, Repeat }
     public struct BackgroundRepeat { public BackgroundRepeat(Repeat x, Repeat y) { } }
@@ -63,7 +63,8 @@ namespace UnityEngine.UIElements
     public class Image : VisualElement { public Texture image { get; set; } public Sprite sprite { get; set; } }
     public enum ScrollViewMode { Vertical, Horizontal, VerticalAndHorizontal }
     public enum ScrollerVisibility { Auto, AlwaysVisible, Hidden }
-    public class ScrollView : VisualElement { public ScrollView() { } public ScrollView(ScrollViewMode m) { } public ScrollViewMode mode { get; set; } public ScrollerVisibility horizontalScrollerVisibility { get; set; } public ScrollerVisibility verticalScrollerVisibility { get; set; } public Vector2 scrollOffset { get; set; } public void ScrollTo(VisualElement e) { } }
+    public class Scroller : VisualElement { public event Action<float> valueChanged; public float lowValue { get; set; } public float highValue { get; set; } public float value { get; set; } }
+    public class ScrollView : VisualElement { public ScrollView() { } public ScrollView(ScrollViewMode m) { } public ScrollViewMode mode { get; set; } public ScrollerVisibility horizontalScrollerVisibility { get; set; } public ScrollerVisibility verticalScrollerVisibility { get; set; } public Scroller verticalScroller { get; } = new Scroller(); public Scroller horizontalScroller { get; } = new Scroller(); public Vector2 scrollOffset { get; set; } public void ScrollTo(VisualElement e) { } }
     public interface INotifyValueChanged<T> { T value { get; set; } void SetValueWithoutNotify(T v); }
     public class BaseField<T> : VisualElement, INotifyValueChanged<T> { public T value { get; set; } public string label { get; set; } public void SetValueWithoutNotify(T v) { } }
     public static class INotifyValueChangedExtensions { public static bool RegisterValueChangedCallback<T>(this INotifyValueChanged<T> c, EventCallback<ChangeEvent<T>> cb) => true; public static bool UnregisterValueChangedCallback<T>(this INotifyValueChanged<T> c, EventCallback<ChangeEvent<T>> cb) => true; }

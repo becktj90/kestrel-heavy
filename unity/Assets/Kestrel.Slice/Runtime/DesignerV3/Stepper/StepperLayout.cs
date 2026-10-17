@@ -12,6 +12,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         public const float MinTargetPt = 44f;
         public const float HeaderPt = 64f;
         public const float ProgressPt = 48f;
+        /// <summary>One progress chip, wide enough for "Recovery" on a single line. The row scrolls sideways.</summary>
+        public const float SegmentMinPt = 96f;
         public const float NavPadPt = 12f;
         public const float MinInnerWidthPt = 300f;
         public const float MinScrollPt = 220f;
