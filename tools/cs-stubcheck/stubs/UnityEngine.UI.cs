@@ -31,7 +31,7 @@ namespace UnityEngine.UIElements
     public struct StyleFontDefinition { public StyleFontDefinition(FontDefinition d) { } public static implicit operator StyleFontDefinition(StyleKeyword k) => default; }
     public enum Wrap { NoWrap, Wrap, WrapReverse }
     public enum WhiteSpace { Normal, NoWrap }
-    public interface IResolvedStyle { float width { get; } float height { get; } float left { get; } float top { get; } float right { get; } float bottom { get; } float paddingTop { get; } float paddingRight { get; } float fontSize { get; } DisplayStyle display { get; } }
+    public interface IResolvedStyle { float width { get; } float height { get; } float left { get; } float top { get; } float right { get; } float bottom { get; } float paddingTop { get; } float paddingRight { get; } float paddingLeft { get; } float paddingBottom { get; } float fontSize { get; } DisplayStyle display { get; } }
     public class VisualElementStyleSheetSet { public void Add(StyleSheet s) { } public void Remove(StyleSheet s) { } public int count => 0; }
     public enum TrickleDown { NoTrickleDown, TrickleDown }
     public interface IEventHandler { } public class EventBase { public IEventHandler target { get; set; } public IEventHandler currentTarget { get; set; } public void StopPropagation() { } public void StopImmediatePropagation() { } public void PreventDefault() { } }
