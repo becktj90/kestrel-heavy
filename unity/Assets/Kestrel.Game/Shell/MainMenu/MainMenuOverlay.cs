@@ -98,8 +98,8 @@ namespace Kestrel.Game.Shell
             return root;
         }
 
-        /// <summary>Landscape web: rocket stays in the centre, menu tiles sit in a column beside it.
-        /// Portrait and iOS leave the phone column from ApplyScale.</summary>
+        /// <summary>Landscape web: the wordmark sits on the hero, and the action cards sit in a column
+        /// beside it, sized to the free space. Portrait and iOS leave the phone column from ApplyScale.</summary>
         public static void ApplyWebWide(VisualElement root, bool wide)
         {
             if (root == null) return;
@@ -110,37 +110,230 @@ namespace Kestrel.Game.Shell
             if (rw < 8f || rh < 8f) return;
             WebViewport.Css(out float cssW, out float cssH);
             if (cssW < 8f || cssH < 8f) { cssW = rw; cssH = rh; }
-            var f = WebHomeLayout.Place(cssW, cssH, 0f, 0f, 0f, 0f);
-            float ux = rw / cssW;
-            float uy = rh / cssH;
-            HudBox Sc(HudBox b) => new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
-            f.Title = Sc(f.Title); f.Stats = Sc(f.Stats); f.Launch = Sc(f.Launch); f.Design = Sc(f.Design);
-            f.Missions = Sc(f.Missions); f.Codex = Sc(f.Codex); f.Menu = Sc(f.Menu); f.Hint = Sc(f.Hint);
-            f.Rocket = Sc(f.Rocket);
-            if (!f.Wide) { ClearWebWide(root); return; }
+            CssSafe(cssW, cssH, out float safeTop, out float safeBottom, out float safeLeft, out float safeRight);
+            var frame = WebHomeLayout.Place(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight);
+            if (!frame.Wide || frame.Type == null) { ClearWebWide(root); return; }
+            // mm-root already fills the safe rect, so CSS boxes are shifted back to that origin.
+            float innerW = Mathf.Max(1f, cssW - safeLeft - safeRight);
+            float innerH = Mathf.Max(1f, cssH - safeTop - safeBottom);
+            float sx = rw / innerW;
+            float sy = rh / innerH;
+            float fs = Mathf.Min(sx, sy);
+            HudBox Sc(HudBox b) => new HudBox
+            {
+                X = (b.X - safeLeft) * sx,
+                Y = (b.Y - safeTop) * sy,
+                W = b.W * sx,
+                H = b.H * sy,
+            };
+            frame.Title = Sc(frame.Title); frame.Stats = Sc(frame.Stats);
+            frame.Launch = Sc(frame.Launch); frame.Design = Sc(frame.Design);
+            frame.Missions = Sc(frame.Missions); frame.Codex = Sc(frame.Codex);
+            frame.Menu = Sc(frame.Menu); frame.Hint = Sc(frame.Hint);
             root.style.paddingTop = 0;
             root.style.paddingBottom = 0;
-            Pin(root.Q("mm-title"), f.Title);
-            Pin(root.Q("mm-stats"), f.Stats);
-            Pin(root.Q("home-launch"), f.Launch);
-            Pin(root.Q("home-design"), f.Design);
+            root.style.paddingLeft = 0;
+            root.style.paddingRight = 0;
+            Reparent(root, "mm-title");
+            Reparent(root, "mm-stats");
+            Reparent(root, "home-launch");
+            Reparent(root, "home-design");
+            Reparent(root, "mm-grid");
+            Reparent(root, "mm-hint");
+            Pin(root.Q("mm-title"), frame.Title);
+            Pin(root.Q("mm-stats"), frame.Stats);
+            Clip(root.Q("mm-title"));
+            Clip(root.Q("mm-stats"));
+            var type = frame.Type;
+            Font(root.Q("mm-kestrel"), type.Title * fs, 0.04f);
+            Font(root.Q("mm-heavy"), type.Tagline * fs, 0.5f);
+            var kestrel = root.Q("mm-kestrel");
+            if (kestrel != null) { kestrel.style.whiteSpace = WhiteSpace.NoWrap; kestrel.style.overflow = Overflow.Hidden; }
+            var heavy = root.Q("mm-heavy");
+            if (heavy != null) { heavy.style.whiteSpace = WhiteSpace.NoWrap; heavy.style.overflow = Overflow.Hidden; }
+            root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = type.Stat * fs);
+
+            bool scroll = frame.Scroll;
+            var scroller = WideScroll(root, scroll);
+            VisualElement host = scroll ? scroller : root;
+            PlaceAction(root, host, "home-launch", frame.Launch, scroll, sx, sy);
+            PlaceAction(root, host, "home-design", frame.Design, scroll, sx, sy);
             var grid = root.Q("mm-grid");
             if (grid != null)
             {
-                float top = f.Missions.Y;
-                float bottom = Mathf.Max(f.Missions.Bottom, f.Codex.Bottom);
-                Pin(grid, new HudBox { X = f.Menu.X, Y = top, W = f.Menu.W, H = Mathf.Max(1f, bottom - top) });
+                if (scroll)
+                {
+                    if (grid.parent != scroller) scroller.Add(grid);
+                    grid.style.position = Position.Relative;
+                    grid.style.left = StyleKeyword.Auto;
+                    grid.style.top = StyleKeyword.Auto;
+                    grid.style.width = Length.Percent(100);
+                    grid.style.height = StyleKeyword.Auto;
+                    grid.style.marginTop = 0;
+                    grid.style.marginBottom = WebHomeLayout.Gap * sy;
+                }
+                else
+                {
+                    Reparent(root, "mm-grid");
+                    float top = frame.Missions.Y;
+                    float bottom = Mathf.Max(frame.Missions.Bottom, frame.Codex.Bottom);
+                    Pin(grid, new HudBox { X = frame.Menu.X, Y = top, W = frame.Menu.W, H = Mathf.Max(1f, bottom - top) });
+                }
                 grid.style.flexDirection = FlexDirection.Column;
                 grid.style.flexWrap = Wrap.NoWrap;
+                grid.style.overflow = Overflow.Hidden;
             }
+            float tileGap = scroll ? WebHomeLayout.Gap * sy : Mathf.Max(0f, frame.Codex.Y - frame.Missions.Bottom);
             foreach (var it in MainMenuCopy.Tiles)
             {
                 var tile = root.Q("home-" + it.Id);
                 if (tile == null) continue;
-                tile.style.width = Length.Percent(100);
+                float h = it.Id == "codex" ? frame.Codex.H : frame.Missions.H;
+                if (scroll) h = Mathf.Max(h, 44f * sy);
                 tile.style.position = Position.Relative;
+                tile.style.left = StyleKeyword.Auto;
+                tile.style.top = StyleKeyword.Auto;
+                tile.style.width = Length.Percent(100);
+                tile.style.height = h;
+                tile.style.minHeight = h;
+                tile.style.maxHeight = h;
+                tile.style.marginTop = 0;
+                tile.style.marginBottom = it.Id == "missions" ? tileGap : 0f;
+                tile.style.flexShrink = 0;
+                tile.style.overflow = Overflow.Hidden;
+                tile.style.paddingLeft = 10f * sx;
+                tile.style.paddingRight = 10f * sx;
+                tile.style.paddingTop = 10f * sy;
+                tile.style.paddingBottom = 10f * sy;
             }
-            Pin(root.Q("mm-hint"), f.Hint);
+            PlaceAction(root, host, "mm-hint", frame.Hint, scroll, sx, sy);
+            Font(root.Q(className: "kh-mm-launch-label"), type.Launch * fs, 0.10f);
+            Font(root.Q(className: "kh-mm-launch-caption"), type.LaunchCaption * fs, 0f);
+            Font(root.Q(className: "kh-mm-design-label"), type.Design * fs, 0.03f);
+            Font(root.Q(className: "kh-mm-design-caption"), type.DesignCaption * fs, 0f);
+            root.Query(className: "kh-mm-tile-name").ForEach(e =>
+            {
+                e.style.fontSize = type.TileName * fs;
+                e.style.letterSpacing = type.TileName * fs * 0.03f;
+                e.style.whiteSpace = WhiteSpace.NoWrap;
+                e.style.overflow = Overflow.Hidden;
+            });
+            root.Query(className: "kh-mm-tile-caption").ForEach(e =>
+            {
+                e.style.fontSize = type.TileCaption * fs;
+                e.style.whiteSpace = WhiteSpace.Normal;
+                e.style.overflow = Overflow.Hidden;
+            });
+            root.Query(className: "kh-mm-soon").ForEach(e =>
+            {
+                e.style.fontSize = type.Soon * fs;
+                e.style.letterSpacing = type.Soon * fs * 0.15f;
+            });
+            Font(root.Q("mm-hint"), type.Hint * fs, 0.18f);
+            var hint = root.Q("mm-hint");
+            if (hint != null) { hint.style.whiteSpace = WhiteSpace.Normal; hint.style.overflow = Overflow.Hidden; }
+            FitCardText(root.Q("home-launch"), true);
+            FitCardText(root.Q("home-design"), false);
+            if (scroll) Pin(scroller, frame.Menu);
+        }
+
+        static void CssSafe(float cssW, float cssH, out float top, out float bottom, out float left, out float right)
+        {
+            top = bottom = left = right = 0f;
+            if (Screen.width <= 1f || Screen.height <= 1f || cssW <= 1f || cssH <= 1f) return;
+            var safe = Screen.safeArea;
+            float perX = Screen.width / cssW;
+            float perY = Screen.height / cssH;
+            if (perX <= 0f || perY <= 0f) return;
+            top = Mathf.Max(0f, (Screen.height - safe.yMax) / perY);
+            bottom = Mathf.Max(0f, safe.yMin / perY);
+            left = Mathf.Max(0f, safe.xMin / perX);
+            right = Mathf.Max(0f, (Screen.width - safe.xMax) / perX);
+        }
+
+        static void PlaceAction(VisualElement root, VisualElement host, string name, HudBox box, bool scroll, float sx, float sy)
+        {
+            var e = root.Q(name);
+            if (e == null) return;
+            if (scroll)
+            {
+                if (e.parent != host) host.Add(e);
+                e.style.position = Position.Relative;
+                e.style.left = StyleKeyword.Auto;
+                e.style.top = StyleKeyword.Auto;
+                e.style.right = StyleKeyword.Auto;
+                e.style.bottom = StyleKeyword.Auto;
+                e.style.width = Length.Percent(100);
+                float h = name == "mm-hint" ? box.H : Mathf.Max(box.H, 44f * sy);
+                e.style.height = h;
+                e.style.minHeight = h;
+                e.style.maxHeight = h;
+                e.style.marginTop = 0;
+                e.style.marginBottom = WebHomeLayout.Gap * sy;
+                e.style.flexShrink = 0;
+            }
+            else
+            {
+                Reparent(root, name);
+                Pin(e, box);
+            }
+            e.style.overflow = Overflow.Hidden;
+            if (name == "home-launch" || name == "home-design")
+            {
+                float padX = 12f * sx;
+                float padY = (name == "home-launch" ? 8f : 6f) * sy;
+                e.style.paddingLeft = padX;
+                e.style.paddingRight = padX;
+                e.style.paddingTop = padY;
+                e.style.paddingBottom = padY;
+            }
+        }
+
+        static void FitCardText(VisualElement card, bool launch)
+        {
+            if (card == null) return;
+            card.style.overflow = Overflow.Hidden;
+            var label = card.Q(className: launch ? "kh-mm-launch-label" : "kh-mm-design-label");
+            var cap = card.Q(className: launch ? "kh-mm-launch-caption" : "kh-mm-design-caption");
+            if (label != null) { label.style.whiteSpace = WhiteSpace.NoWrap; label.style.overflow = Overflow.Hidden; }
+            if (cap != null) { cap.style.whiteSpace = WhiteSpace.Normal; cap.style.overflow = Overflow.Hidden; }
+        }
+
+        static void Font(VisualElement e, float size, float trackEm)
+        {
+            if (e == null) return;
+            e.style.fontSize = size;
+            e.style.letterSpacing = trackEm > 0f ? size * trackEm : 0f;
+        }
+
+        static void Clip(VisualElement e)
+        {
+            if (e != null) e.style.overflow = Overflow.Hidden;
+        }
+
+        static void Reparent(VisualElement root, string name)
+        {
+            var e = root.Q(name);
+            if (e != null && e.parent != root) root.Add(e);
+        }
+
+        static ScrollView WideScroll(VisualElement root, bool on)
+        {
+            var scroller = root.Q<ScrollView>("mm-wide-scroll");
+            if (!on)
+            {
+                if (scroller != null) scroller.RemoveFromHierarchy();
+                return null;
+            }
+            if (scroller == null)
+            {
+                scroller = new ScrollView(ScrollViewMode.Vertical) { name = "mm-wide-scroll" };
+                scroller.mode = ScrollViewMode.Vertical;
+                scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+                scroller.verticalScrollerVisibility = ScrollerVisibility.Auto;
+                root.Add(scroller);
+            }
+            return scroller;
         }
 
         static void Pin(VisualElement e, HudBox b)
@@ -151,10 +344,14 @@ namespace Kestrel.Game.Shell
             e.style.top = b.Y;
             e.style.width = b.W;
             e.style.height = b.H;
+            e.style.minHeight = b.H;
+            e.style.maxHeight = b.H;
             e.style.right = StyleKeyword.Auto;
             e.style.bottom = StyleKeyword.Auto;
             e.style.marginTop = 0;
             e.style.marginBottom = 0;
+            e.style.flexGrow = 0;
+            e.style.flexShrink = 0;
         }
 
         static void ClearWebWide(VisualElement root)
@@ -168,16 +365,48 @@ namespace Kestrel.Game.Shell
                 e.style.right = StyleKeyword.Null;
                 e.style.bottom = StyleKeyword.Null;
                 e.style.width = StyleKeyword.Null;
+                e.style.maxHeight = StyleKeyword.Null;
+                e.style.overflow = StyleKeyword.Null;
             }
-            Drop(root.Q("mm-title"));
+            Reparent(root, "mm-title");
+            Reparent(root, "mm-stats");
+            Reparent(root, "home-launch");
+            Reparent(root, "home-design");
+            Reparent(root, "mm-grid");
+            Reparent(root, "mm-hint");
+            var scroller = root.Q("mm-wide-scroll");
+            if (scroller != null) scroller.RemoveFromHierarchy();
+            var title = root.Q("mm-title");
+            Drop(title);
+            if (title != null)
+            {
+                title.style.height = StyleKeyword.Null;
+                title.style.minHeight = StyleKeyword.Null;
+            }
             Drop(root.Q("mm-stats"));
             Drop(root.Q("home-launch"));
-            Drop(root.Q("home-design"));
-            Drop(root.Q("mm-hint"));
+            var design = root.Q("home-design");
+            Drop(design);
+            if (design != null)
+            {
+                design.style.paddingTop = StyleKeyword.Null;
+                design.style.paddingBottom = StyleKeyword.Null;
+                design.style.paddingLeft = StyleKeyword.Null;
+                design.style.paddingRight = StyleKeyword.Null;
+            }
+            var hint = root.Q("mm-hint");
+            Drop(hint);
+            if (hint != null)
+            {
+                hint.style.height = StyleKeyword.Null;
+                hint.style.minHeight = StyleKeyword.Null;
+            }
             var grid = root.Q("mm-grid");
             Drop(grid);
             if (grid != null)
             {
+                grid.style.height = StyleKeyword.Null;
+                grid.style.minHeight = StyleKeyword.Null;
                 grid.style.flexDirection = StyleKeyword.Null;
                 grid.style.flexWrap = StyleKeyword.Null;
             }

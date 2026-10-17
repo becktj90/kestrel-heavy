@@ -174,3 +174,18 @@
 .kh-mm-narrow .kh-mm-design { min-height: 44px; }
 .kh-mm-narrow .kh-mm-gear { min-height: 44px; min-width: 44px; }
 .kh-mm-narrow .kh-mm-stat { font-size: 13px; }
+/* Landscape: the wordmark and the cards are pinned to layout boxes. Clip so a glyph cannot paint into the next card. */
+.kh-mm-wide .kh-mm-title-card,
+.kh-mm-wide .kh-mm-launch,
+.kh-mm-wide .kh-mm-design,
+.kh-mm-wide .kh-button.kh-mm-tile,
+.kh-mm-wide .kh-mm-stats,
+.kh-mm-wide .kh-mm-hint { overflow: hidden; }
+.kh-mm-wide .kh-mm-kestrel,
+.kh-mm-wide .kh-mm-heavy,
+.kh-mm-wide .kh-mm-launch-label,
+.kh-mm-wide .kh-mm-design-label,
+.kh-mm-wide .kh-mm-tile-name { white-space: nowrap; overflow: hidden; }
+.kh-mm-wide .kh-mm-launch-caption,
+.kh-mm-wide .kh-mm-design-caption,
+.kh-mm-wide .kh-mm-tile-caption { overflow: hidden; }
