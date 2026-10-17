@@ -109,7 +109,7 @@
         {
           "id": "first.5.c1",
           "kid": "First job: the First Hop. Straight up ten kilometres. Let's go!",
-          "eng": "KH-1 apogee is 10 km. The kid-box is 50 kg. Loss term is 1000 m/s."
+          "eng": "KH-1 apogee is 10 km. Pebble is 50 kg. The loss term is 1000 m/s."
         }
       ]
     },
@@ -128,8 +128,8 @@
         },
         {
           "id": "brief.kh1.c2",
-          "kid": "It is called kid-box. It is very brave.",
-          "eng": "kid-box mass is 50 kg. Volume is 0.2 m^3. Diameter is 0.6 m."
+          "kid": "It is called Pebble. It is very brave.",
+          "eng": "Pebble is 50 kg. Volume is 0.2 m^3. Diameter is 0.6 m."
         }
       ]
     },
@@ -195,6 +195,231 @@
           "id": "brief.kh9.c1",
           "kid": "Moon Shot! Cold fuel is sleepy fuel. It boils off while you coast. Pack extra.",
           "eng": "Coast is 3 h. Foam boil-off factor is 0.4. MLI factor is 0.15."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh2",
+      "trigger": "guide.brief",
+      "when": "m2",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh2.c1",
+          "kid": "One hundred kilometres. The edge of space. The box is heavier now.",
+          "eng": "Apogee is 100 km. Lantern is 100 kg. The loss term is 1000 m/s."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh4",
+      "trigger": "guide.brief",
+      "when": "m4",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh4.c1",
+          "kid": "Tern-3 watches the weather. Keep the ride under 6 g.",
+          "eng": "2,500 kg to 500 km at 51.6 degrees. The peak g cap is 6."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh5",
+      "trigger": "guide.brief",
+      "when": "m5",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh5.c1",
+          "kid": "Twelve tonnes this time. The strap-on boosters can fly.",
+          "eng": "12,000 kg to a 400 km circle. Inclination is 51.6 degrees."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh7",
+      "trigger": "guide.brief",
+      "when": "m7",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh7.c1",
+          "kid": "Harbor-1 rides a long ellipse. The booster aims for Haven.",
+          "eng": "5,500 kg. Perigee 200 km, apogee 35,786 km, at 27 degrees."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh10",
+      "trigger": "guide.brief",
+      "when": "m10",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh10.c1",
+          "kid": "Twin Harbor is the heavy comsat. Land the booster and the strap-ons.",
+          "eng": "7,000 kg on the transfer. The boosters come home too."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh11",
+      "trigger": "guide.brief",
+      "when": "m11",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh11.c1",
+          "kid": "Plover-1 watches the same towns at the same hour.",
+          "eng": "2,200 kg. Sun-sync 550 km at 97.6 degrees. About 8,676 m/s."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh12",
+      "trigger": "guide.brief",
+      "when": "m12",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh12.c1",
+          "kid": "Meridian is a telescope. A hard shove blurs the glass.",
+          "eng": "1,800 kg to 600 km. Peak g cap is 5. About 8,649 m/s."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh13",
+      "trigger": "guide.brief",
+      "when": "m13",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh13.c1",
+          "kid": "A rack of little satellites. The booster still has to find Haven.",
+          "eng": "480 kg to a 550 km sun-sync. The barge wants a good catch."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh14",
+      "trigger": "guide.brief",
+      "when": "m14",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh14.c1",
+          "kid": "Trunk-4 is a cargo capsule. Ten tonnes of supplies.",
+          "eng": "10,000 kg to a 400 km circle at 51.6 degrees."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh15",
+      "trigger": "guide.brief",
+      "when": "m15",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh15.c1",
+          "kid": "Westline-2 is a relay. It climbs the rest of the way.",
+          "eng": "6,200 kg. Ellipse 200 by 35,786 km. About 11,330 m/s."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh16",
+      "trigger": "guide.brief",
+      "when": "m16",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh16.c1",
+          "kid": "People ride Nest-2. Then the booster finds Haven.",
+          "eng": "12,000 kg. Peak g cap is 4.5. Reliability at least 0.98."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh17",
+      "trigger": "guide.brief",
+      "when": "m17",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh17.c1",
+          "kid": "Lumen Down lands on the Moon. The path leaves from 200 km.",
+          "eng": "4,000 kg. C3 is -2 km2/s2. The coast is 3 hours."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh18",
+      "trigger": "guide.brief",
+      "when": "m18",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh18.c1",
+          "kid": "Nightjar leaves Earth's hold. Pack extra for a long coast.",
+          "eng": "2,500 kg. C3 is -0.4 km2/s2. About 12,082 m/s."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh19",
+      "trigger": "guide.brief",
+      "when": "m19",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh19.c1",
+          "kid": "Keel-9 is heavier than the last reuse. Bring the boosters home.",
+          "eng": "7,500 kg on the transfer. Both boosters land at the pad."
+        }
+      ]
+    },
+    {
+      "id": "brief.kh20",
+      "trigger": "guide.brief",
+      "when": "m20",
+      "speaker": "thrum",
+      "priority": "chatter",
+      "once": true,
+      "cards": [
+        {
+          "id": "brief.kh20.c1",
+          "kid": "Far Hold is the last hand-built flight. Far, and a long coast.",
+          "eng": "3,200 kg. C3 is -0.25 km2/s2. The coast is 4 hours."
         }
       ]
     },
@@ -1060,7 +1285,7 @@
         {
           "id": "win.final.c1",
           "kid": "That's the whole board. You built every rung. I am only the keeper.",
-          "eng": "KH-10 is the last hand-built mission. Ten missions, in 4 acts."
+          "eng": "KH-20 is the last hand-built mission. Twenty missions, in 4 acts."
         }
       ]
     },

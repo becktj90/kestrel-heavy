@@ -1,16 +1,35 @@
 {
   "version": 1,
   "spec": "docs/DESIGNER_V3_SPEC.md §4",
-  "note": "Ten-mission designer campaign. Budgets and rewards are fictional Kc (kilocredits). 2 M in the spec is 2,000,000 Kc, the same M FormatKc prints. The spec table has no reward column, so each reward equals that mission's budget: a flight at the cap breaks even and a cheaper flight banks the difference. Haven wind assists stay in mission-ramp.json. No timers, no energy, no ads.",
+  "note": "Twenty-mission designer campaign. KH-1 through KH-10 keep the tuned targets the viable designs fly. KH-11 through KH-20 continue that arc, and a mission marked hard asks for more than those designs have shown. Budgets and rewards are fictional Kc (kilocredits). 2 M in the spec is 2,000,000 Kc, the same M FormatKc prints. The spec table has no reward column, so each reward equals that mission's budget: a flight at the cap breaks even and a cheaper flight banks the difference. Haven wind assists stay in mission-ramp.json. No timers, no energy, no ads.",
   "currency": "Kc",
   "minorPerKc": 100000,
   "startingBankKc": 2000000,
-  "starterUnlocks": ["core-stage", "engines", "tanks", "fairing"],
-  "darkPatterns": { "timers": false, "energy": false, "ads": false },
-  "seeds": [1, 2, 3, 4, 5],
+  "starterUnlocks": [
+    "core-stage",
+    "engines",
+    "tanks",
+    "fairing"
+  ],
+  "darkPatterns": {
+    "timers": false,
+    "energy": false,
+    "ads": false
+  },
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
   "flightPrefix": "KH",
   "viabilityGentle": false,
-  "reuse": { "refundFraction": 0.7, "refurbBase": 0.1, "refurbPerFlight": 0.05 },
+  "reuse": {
+    "refundFraction": 0.7,
+    "refurbBase": 0.1,
+    "refurbPerFlight": 0.05
+  },
   "score": {
     "pass": 1000,
     "marginPeak": 0.05,
@@ -22,7 +41,10 @@
     "starMarginMax": 0.1,
     "threeStarGFraction": 0.8
   },
-  "tolerances": { "altFrac": 0.05, "incDeg": 0.5 },
+  "tolerances": {
+    "altFrac": 0.05,
+    "incDeg": 0.5
+  },
   "planarInclination": "Headless flies an equatorial plane, so orbit inclination is the mission target, not an integrator output. Circular and apogee goals are checked on altitude. Ellipse and C3 goals may pass on altitude or on Δv reached.",
   "missions": [
     {
@@ -34,20 +56,38 @@
       "massKg": 50,
       "volumeM3": 0.2,
       "diameterM": 0.6,
-      "target": { "kind": "apogee", "apoKm": 10 },
+      "target": {
+        "kind": "apogee",
+        "apoKm": 10
+      },
       "requirements": [],
       "budgetKc": 2000000,
       "rewardKc": 2000000,
-      "unlocks": ["fins", "nose"],
+      "unlocks": [
+        "fins",
+        "nose"
+      ],
       "gentleDefault": true,
       "briefing": {
         "payloadName": "Pebble",
         "payloadKind": "Sounding box",
         "goal": "Toss a 50 kg box to a 10 km apogee.",
         "bonuses": [
-          { "id": "soft-ride", "label": "Keep peak g under 6", "maxG": 6 }
-        ]
-      }
+          {
+            "id": "soft-ride",
+            "label": "Keep peak g under 6",
+            "maxG": 6
+          }
+        ],
+        "customer": "Hangar Desk",
+        "control": "Pebble is 50 kg. Apogee is 10 km. The loss term is 1,000 m/s.",
+        "whatItIs": "A small science box for a first hop.",
+        "whatItDoes": "It rides to 10 km and comes back down.",
+        "why": "A first hop proves the pad. The budget is about 1,443 m/s.",
+        "form": "box",
+        "codex": "delta-v"
+      },
+      "band": "achievable"
     },
     {
       "index": 2,
@@ -58,21 +98,41 @@
       "massKg": 100,
       "volumeM3": 0.2,
       "diameterM": 0.6,
-      "target": { "kind": "apogee", "apoKm": 100 },
+      "target": {
+        "kind": "apogee",
+        "apoKm": 100
+      },
       "requirements": [],
       "budgetKc": 5000000,
       "rewardKc": 5000000,
-      "unlocks": ["stage-2"],
+      "unlocks": [
+        "stage-2"
+      ],
       "gentleDefault": true,
       "briefing": {
         "payloadName": "Lantern",
         "payloadKind": "Sounding box",
         "goal": "Carry a 100 kg box to a 100 km apogee.",
         "bonuses": [
-          { "id": "karman", "label": "Cross 100 km" },
-          { "id": "soft-ride", "label": "Keep peak g under 6", "maxG": 6 }
-        ]
-      }
+          {
+            "id": "karman",
+            "label": "Cross 100 km"
+          },
+          {
+            "id": "soft-ride",
+            "label": "Keep peak g under 6",
+            "maxG": 6
+          }
+        ],
+        "customer": "Cinderwharf School",
+        "control": "Lantern is 100 kg. Apogee is 100 km. About 2,400 m/s.",
+        "whatItIs": "A heavier science box for the edge of space.",
+        "whatItDoes": "It crosses 100 km, then falls home.",
+        "why": "The box reaches the edge of space. The budget is about 2,400 m/s.",
+        "form": "box",
+        "codex": "delta-v"
+      },
+      "band": "achievable"
     },
     {
       "index": 3,
@@ -83,20 +143,43 @@
       "massKg": 20,
       "volumeM3": 0.05,
       "diameterM": 0.4,
-      "target": { "kind": "circular", "apoKm": 200, "periKm": 200, "incDeg": 28.5 },
-      "requirements": [{ "id": "margin", "min": 0 }],
+      "target": {
+        "kind": "circular",
+        "apoKm": 200,
+        "periKm": 200,
+        "incDeg": 28.5
+      },
+      "requirements": [
+        {
+          "id": "margin",
+          "min": 0
+        }
+      ],
       "budgetKc": 15000000,
       "rewardKc": 15000000,
-      "unlocks": ["nozzle-expansion"],
+      "unlocks": [
+        "nozzle-expansion"
+      ],
       "gentleDefault": true,
       "briefing": {
         "payloadName": "Mote",
         "payloadKind": "Cubesat",
         "goal": "Park a 20 kg cubesat in a 200 km orbit.",
         "bonuses": [
-          { "id": "margin", "label": "Finish with speed to spare" }
-        ]
-      }
+          {
+            "id": "margin",
+            "label": "Finish with speed to spare"
+          }
+        ],
+        "customer": "Cinderwharf Rideshare",
+        "control": "Mote is 20 kg. A 200 km circle at 28.5 degrees. About 8,876 m/s.",
+        "whatItIs": "One small satellite on a first closed orbit.",
+        "whatItDoes": "It stays up instead of falling back to the pad.",
+        "why": "The first closed orbit. The budget is about 8,876 m/s.",
+        "form": "cubesat",
+        "codex": "orbits"
+      },
+      "band": "achievable"
     },
     {
       "index": 4,
@@ -106,22 +189,50 @@
       "payloadId": "leo-sat",
       "massKg": 2500,
       "volumeM3": 12,
-      "diameterM": 2.0,
-      "target": { "kind": "circular", "apoKm": 500, "periKm": 500, "incDeg": 51.6 },
-      "requirements": [{ "id": "maxG", "max": 6 }],
+      "diameterM": 2,
+      "target": {
+        "kind": "circular",
+        "apoKm": 500,
+        "periKm": 500,
+        "incDeg": 51.6
+      },
+      "requirements": [
+        {
+          "id": "maxG",
+          "max": 6
+        }
+      ],
       "budgetKc": 40000000,
       "rewardKc": 40000000,
-      "unlocks": ["pc", "throttle"],
+      "unlocks": [
+        "pc",
+        "throttle"
+      ],
       "gentleDefault": false,
       "briefing": {
         "payloadName": "Tern-3",
         "payloadKind": "Weather sat",
         "goal": "Put a 2,500 kg fictional weather sat in a 500 km, 51.6° orbit.",
         "bonuses": [
-          { "id": "land-booster", "label": "Land the booster" },
-          { "id": "peak-g", "label": "Keep peak g under 4", "maxG": 4 }
-        ]
-      }
+          {
+            "id": "land-booster",
+            "label": "Land the booster"
+          },
+          {
+            "id": "peak-g",
+            "label": "Keep peak g under 4",
+            "maxG": 4
+          }
+        ],
+        "customer": "Brineglass Weather Bureau",
+        "control": "Tern-3 is 2,500 kg. A 500 km circle at 51.6 degrees. Peak g stays at or under 6.",
+        "whatItIs": "A weather satellite for a steady watch.",
+        "whatItDoes": "It circles at 500 km and reports the sky.",
+        "why": "A weather sat needs a steady 500 km circle. About 8,704 m/s, and peak g stays at or under 6.",
+        "form": "weather",
+        "codex": "orbits"
+      },
+      "band": "achievable"
     },
     {
       "index": 5,
@@ -132,21 +243,47 @@
       "massKg": 12000,
       "volumeM3": 40,
       "diameterM": 3.2,
-      "target": { "kind": "circular", "apoKm": 400, "periKm": 400, "incDeg": 51.6 },
-      "requirements": [{ "id": "strapOns", "allow": true }],
+      "target": {
+        "kind": "circular",
+        "apoKm": 400,
+        "periKm": 400,
+        "incDeg": 51.6
+      },
+      "requirements": [
+        {
+          "id": "strapOns",
+          "allow": true
+        }
+      ],
       "budgetKc": 90000000,
       "rewardKc": 90000000,
-      "unlocks": ["crossfeed"],
+      "unlocks": [
+        "crossfeed"
+      ],
       "gentleDefault": false,
       "briefing": {
         "payloadName": "Bargeload",
         "payloadKind": "Cargo sat",
         "goal": "Lift 12,000 kg to a 400 km, 51.6° orbit.",
         "bonuses": [
-          { "id": "strap-ons", "label": "Fly with the strap-ons" },
-          { "id": "fuel", "label": "Save fuel on the way up" }
-        ]
-      }
+          {
+            "id": "strap-ons",
+            "label": "Fly with the strap-ons"
+          },
+          {
+            "id": "fuel",
+            "label": "Save fuel on the way up"
+          }
+        ],
+        "customer": "Saltwharf Freight",
+        "control": "Bargeload is 12,000 kg. A 400 km circle at 51.6 degrees. Strap-on boosters may fly.",
+        "whatItIs": "A heavy cargo satellite.",
+        "whatItDoes": "It lifts twelve tonnes into a 400 km circle.",
+        "why": "Twelve tonnes is the heavy low-orbit load. About 8,760 m/s.",
+        "form": "cargo",
+        "codex": "orbits"
+      },
+      "band": "achievable"
     },
     {
       "index": 6,
@@ -157,21 +294,47 @@
       "massKg": 8000,
       "volumeM3": 30,
       "diameterM": 2.9,
-      "target": { "kind": "circular", "apoKm": 200, "periKm": 200, "incDeg": 51.6 },
+      "target": {
+        "kind": "circular",
+        "apoKm": 200,
+        "periKm": 200,
+        "incDeg": 51.6
+      },
       "tune": "Spec table is 400 km. RTLS boostback is 2×MECO speed and the landing reserve is capped at 20% of stage-1 propellant, about 4000 m/s on these boosters. A gravity turn that inserts at 400 km shuts the booster down near 4500 m/s and needs about 9000 m/s to fly home. A booster slow enough to return, under about 1600 m/s, closes 200 km with this guidance model and does not reach 400 km. The contract altitude is 200 km for that reason. Payload mass, volume and fairing fit are unchanged.",
-      "requirements": [{ "id": "landing", "mode": "rtls", "grade": "good", "site": "pad" }],
+      "requirements": [
+        {
+          "id": "landing",
+          "mode": "rtls",
+          "grade": "good",
+          "site": "pad"
+        }
+      ],
       "budgetKc": 70000000,
       "rewardKc": 70000000,
-      "unlocks": ["legs", "grid-fins"],
+      "unlocks": [
+        "legs",
+        "grid-fins"
+      ],
       "gentleDefault": false,
       "briefing": {
         "payloadName": "Homebound",
         "payloadKind": "Cargo sat",
         "goal": "Put 8,000 kg in a 200 km orbit and bring the booster home.",
         "bonuses": [
-          { "id": "perfect-pad", "label": "Stick the pad landing" }
-        ]
-      }
+          {
+            "id": "perfect-pad",
+            "label": "Stick the pad landing"
+          }
+        ],
+        "customer": "Saltwharf Freight",
+        "control": "Homebound is 8,000 kg. A 200 km circle. Land the booster back at the pad.",
+        "whatItIs": "A cargo satellite on a return-to-pad flight.",
+        "whatItDoes": "It reaches a 200 km circle while the booster flies home.",
+        "why": "The booster flies home from a 200 km insert. A 400 km insert is too fast to return.",
+        "form": "cargo",
+        "codex": "booster-landing"
+      },
+      "band": "achievable"
     },
     {
       "index": 7,
@@ -182,21 +345,50 @@
       "massKg": 5500,
       "volumeM3": 60,
       "diameterM": 3.4,
-      "target": { "kind": "ellipse", "apoKm": 35786, "periKm": 200, "incDeg": 27 },
-      "requirements": [{ "id": "landing", "mode": "barge", "grade": "good", "site": "Haven" }],
+      "target": {
+        "kind": "ellipse",
+        "apoKm": 35786,
+        "periKm": 200,
+        "incDeg": 27
+      },
+      "requirements": [
+        {
+          "id": "landing",
+          "mode": "barge",
+          "grade": "good",
+          "site": "Haven"
+        }
+      ],
       "budgetKc": 110000000,
       "rewardKc": 110000000,
-      "unlocks": ["insulation"],
+      "unlocks": [
+        "insulation"
+      ],
       "gentleDefault": false,
       "briefing": {
         "payloadName": "Harbor-1",
         "payloadKind": "Comsat",
         "goal": "Send a 5,500 kg comsat to a transfer orbit and land on Haven.",
         "bonuses": [
-          { "id": "barge", "label": "Land the booster on Haven" },
-          { "id": "soft-ride", "label": "Keep peak g under 5", "maxG": 5 }
-        ]
-      }
+          {
+            "id": "barge",
+            "label": "Land the booster on Haven"
+          },
+          {
+            "id": "soft-ride",
+            "label": "Keep peak g under 5",
+            "maxG": 5
+          }
+        ],
+        "customer": "Westline Relay Office",
+        "control": "Harbor-1 is 5,500 kg. Ellipse 200 by 35,786 km at 27 degrees. Land on Haven. About 11,330 m/s.",
+        "whatItIs": "A communications satellite on a transfer.",
+        "whatItDoes": "It rides the long ellipse. The booster aims for Haven.",
+        "why": "The comsat rides the transfer. Haven catches the booster. About 11,330 m/s.",
+        "form": "comms",
+        "codex": "booster-landing"
+      },
+      "band": "achievable"
     },
     {
       "index": 8,
@@ -207,27 +399,59 @@
       "massKg": 12000,
       "volumeM3": 25,
       "diameterM": 3.5,
-      "target": { "kind": "circular", "apoKm": 400, "periKm": 400, "incDeg": 51.6 },
+      "target": {
+        "kind": "circular",
+        "apoKm": 400,
+        "periKm": 400,
+        "incDeg": 51.6
+      },
       "tune": "Spec table is g ≤ 4. The gravity turn that circularizes this capsule at 400 km holds about 4.2 g. Capping the throttle at 4.0 g misses the insertion. 4.5 g is the crew capsule's own catalog limit, and that is the contract cap.",
       "requirements": [
-        { "id": "maxG", "max": 4.5 },
-        { "id": "reliability", "min": 0.98 },
-        { "id": "noRedRisks" },
-        { "id": "randomFailures" }
+        {
+          "id": "maxG",
+          "max": 4.5
+        },
+        {
+          "id": "reliability",
+          "min": 0.98
+        },
+        {
+          "id": "noRedRisks"
+        },
+        {
+          "id": "randomFailures"
+        }
       ],
       "budgetKc": 160000000,
       "rewardKc": 160000000,
-      "unlocks": ["redundant-avionics"],
+      "unlocks": [
+        "redundant-avionics"
+      ],
       "gentleDefault": false,
       "briefing": {
         "payloadName": "Nest",
         "payloadKind": "Crew capsule",
         "goal": "Fly a 12,000 kg crew capsule to a 400 km orbit.",
         "bonuses": [
-          { "id": "peak-g", "label": "Keep peak g under 4", "maxG": 4 },
-          { "id": "quiet", "label": "Fly with no red risks" }
-        ]
-      }
+          {
+            "id": "peak-g",
+            "label": "Keep peak g under 4",
+            "maxG": 4
+          },
+          {
+            "id": "quiet",
+            "label": "Fly with no red risks"
+          }
+        ],
+        "customer": "Harbor Guild",
+        "control": "Nest is 12,000 kg. A 400 km circle. Peak g at most 4.5. Reliability at least 0.98.",
+        "whatItIs": "A crew capsule for a day in orbit.",
+        "whatItDoes": "It carries people to a 400 km circle and keeps the ride gentle.",
+        "why": "Crew ride a 400 km circle. The g cap is 4.5, the capsule's own limit.",
+        "form": "crew",
+        "codex": "orbits"
+      },
+      "band": "achievable"
     },
     {
       "index": 9,
@@ -238,21 +462,47 @@
       "massKg": 3000,
       "volumeM3": 15,
       "diameterM": 2.1,
-      "target": { "kind": "c3", "c3Km2PerS2": -2, "periKm": 200, "incDeg": 28.5 },
-      "requirements": [{ "id": "coastHours", "hours": 3 }],
+      "target": {
+        "kind": "c3",
+        "c3Km2PerS2": -2,
+        "periKm": 200,
+        "incDeg": 28.5
+      },
+      "requirements": [
+        {
+          "id": "coastHours",
+          "hours": 3
+        }
+      ],
       "budgetKc": 180000000,
       "rewardKc": 180000000,
-      "unlocks": ["hydrolox-upper"],
+      "unlocks": [
+        "hydrolox-upper"
+      ],
       "gentleDefault": false,
       "briefing": {
         "payloadName": "Lumen",
         "payloadKind": "Lunar probe",
         "goal": "Send a 3,000 kg probe on a path out toward the Moon.",
         "bonuses": [
-          { "id": "coast", "label": "Coast for three hours" },
-          { "id": "window", "label": "Leave on the planned path" }
-        ]
-      }
+          {
+            "id": "coast",
+            "label": "Coast for three hours"
+          },
+          {
+            "id": "window",
+            "label": "Leave on the planned path"
+          }
+        ],
+        "customer": "Farwater Survey",
+        "control": "Lumen is 3,000 kg. C3 is -2 km2/s2 from 200 km. Coast 3 hours. About 12,009 m/s.",
+        "whatItIs": "A probe on a path toward the Moon.",
+        "whatItDoes": "It leaves Earth and coasts for three hours.",
+        "why": "A path toward the Moon. C3 is -2 km2/s2. About 12,009 m/s.",
+        "form": "probe",
+        "codex": "orbits"
+      },
+      "band": "achievable"
     },
     {
       "index": 10,
@@ -263,8 +513,21 @@
       "massKg": 7000,
       "volumeM3": 70,
       "diameterM": 3.6,
-      "target": { "kind": "ellipse", "apoKm": 35786, "periKm": 200, "incDeg": 27 },
-      "requirements": [{ "id": "landing", "mode": "rtls", "grade": "good", "site": "pad", "boosters": true }],
+      "target": {
+        "kind": "ellipse",
+        "apoKm": 35786,
+        "periKm": 200,
+        "incDeg": 27
+      },
+      "requirements": [
+        {
+          "id": "landing",
+          "mode": "rtls",
+          "grade": "good",
+          "site": "pad",
+          "boosters": true
+        }
+      ],
       "budgetKc": 120000000,
       "rewardKc": 120000000,
       "unlocks": [],
@@ -274,8 +537,507 @@
         "payloadKind": "Comsat",
         "goal": "Send a 7,000 kg comsat to transfer orbit and land the boosters.",
         "bonuses": [
-          { "id": "boosters", "label": "Land the booster and the strap-ons" },
-          { "id": "fuel", "label": "Save fuel on the way up" }
+          {
+            "id": "boosters",
+            "label": "Land the booster and the strap-ons"
+          },
+          {
+            "id": "fuel",
+            "label": "Save fuel on the way up"
+          }
+        ],
+        "customer": "Westline Relay Office",
+        "control": "Twin Harbor is 7,000 kg. Ellipse 200 by 35,786 km. Land the booster and the strap-ons.",
+        "whatItIs": "A heavy communications satellite on a reuse flight.",
+        "whatItDoes": "It rides the transfer while the booster and the strap-ons come home.",
+        "why": "Reuse on the heavy transfer. 7,000 kg, and the boosters come home. About 11,330 m/s.",
+        "form": "comms",
+        "codex": "booster-landing"
+      },
+      "band": "achievable"
+    },
+    {
+      "index": 11,
+      "id": "m11",
+      "orbit": "kh-m11",
+      "name": "Dawn Ledger",
+      "payloadId": "weather-sat",
+      "massKg": 2200,
+      "volumeM3": 8,
+      "diameterM": 2,
+      "target": {
+        "kind": "circular",
+        "apoKm": 550,
+        "periKm": 550,
+        "incDeg": 97.6
+      },
+      "requirements": [],
+      "budgetKc": 80000000,
+      "rewardKc": 80000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "achievable",
+      "briefing": {
+        "payloadName": "Plover-1",
+        "payloadKind": "Weather sat",
+        "customer": "Brineglass Weather Bureau",
+        "goal": "Put a 2,200 kg weather sat in a 550 km sun-sync at 97.6 degrees.",
+        "control": "Plover-1 is 2,200 kg. Sun-sync 550 km at 97.6 degrees. About 8,676 m/s.",
+        "whatItIs": "A weather satellite that sees the same towns at the same hour.",
+        "whatItDoes": "It repeats one ground track so the bureau can compare each day.",
+        "why": "Same towns, same hour. 2,200 kg at 550 km. About 8,676 m/s.",
+        "form": "weather",
+        "codex": "orbits",
+        "bonuses": [
+          {
+            "id": "same-hour",
+            "label": "Hold the sun-sync hour"
+          }
+        ]
+      }
+    },
+    {
+      "index": 12,
+      "id": "m12",
+      "orbit": "kh-m12",
+      "name": "Glass Meridian",
+      "payloadId": "space-telescope",
+      "massKg": 1800,
+      "volumeM3": 10,
+      "diameterM": 2.4,
+      "target": {
+        "kind": "circular",
+        "apoKm": 600,
+        "periKm": 600,
+        "incDeg": 51.6
+      },
+      "requirements": [
+        {
+          "id": "maxG",
+          "max": 5
+        }
+      ],
+      "budgetKc": 100000000,
+      "rewardKc": 100000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "achievable",
+      "briefing": {
+        "payloadName": "Meridian",
+        "payloadKind": "Space telescope",
+        "customer": "Northglass Institute",
+        "goal": "Park a 1,800 kg telescope in a 600 km, 51.6 degree orbit.",
+        "control": "Meridian is 1,800 kg. A 600 km circle at 51.6 degrees. Peak g at most 5. About 8,649 m/s.",
+        "whatItIs": "A space telescope with a glass that hates a hard shove.",
+        "whatItDoes": "It watches the sky from a quiet 600 km circle.",
+        "why": "A quiet telescope at 600 km. Peak g at most 5. About 8,649 m/s.",
+        "form": "telescope",
+        "codex": "orbits",
+        "bonuses": [
+          {
+            "id": "soft-ride",
+            "label": "Keep peak g under 4",
+            "maxG": 4
+          }
+        ]
+      }
+    },
+    {
+      "index": 13,
+      "id": "m13",
+      "orbit": "kh-m13",
+      "name": "Flock Yard",
+      "payloadId": "cubesat-dispenser",
+      "massKg": 480,
+      "volumeM3": 1.2,
+      "diameterM": 1,
+      "target": {
+        "kind": "circular",
+        "apoKm": 550,
+        "periKm": 550,
+        "incDeg": 97.6
+      },
+      "requirements": [
+        {
+          "id": "landing",
+          "mode": "barge",
+          "grade": "good",
+          "site": "Haven"
+        }
+      ],
+      "budgetKc": 90000000,
+      "rewardKc": 90000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "achievable",
+      "briefing": {
+        "payloadName": "Cinder Rack",
+        "payloadKind": "Cubesat dispenser",
+        "customer": "Cinderwharf Rideshare",
+        "goal": "Deliver a 480 kg dispenser to a 550 km sun-sync and land on Haven.",
+        "control": "Cinder Rack is 480 kg. Sun-sync 550 km. Land the booster on Haven.",
+        "whatItIs": "A rack of little satellites.",
+        "whatItDoes": "It opens in orbit and lets the small ones go.",
+        "why": "A rack of small satellites, 480 kg, and the booster still finds Haven.",
+        "form": "dispenser",
+        "codex": "booster-landing",
+        "bonuses": [
+          {
+            "id": "barge",
+            "label": "Land the booster on Haven"
+          }
+        ]
+      }
+    },
+    {
+      "index": 14,
+      "id": "m14",
+      "orbit": "kh-m14",
+      "name": "Harbor Trunk",
+      "payloadId": "cargo-capsule",
+      "massKg": 10000,
+      "volumeM3": 35,
+      "diameterM": 3.6,
+      "target": {
+        "kind": "circular",
+        "apoKm": 400,
+        "periKm": 400,
+        "incDeg": 51.6
+      },
+      "requirements": [
+        {
+          "id": "margin",
+          "min": 0
+        },
+        {
+          "id": "strapOns",
+          "allow": true
+        }
+      ],
+      "budgetKc": 130000000,
+      "rewardKc": 130000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "achievable",
+      "briefing": {
+        "payloadName": "Trunk-4",
+        "payloadKind": "Cargo capsule",
+        "customer": "Saltwharf Freight",
+        "goal": "Lift a 10,000 kg cargo capsule to a 400 km, 51.6 degree orbit.",
+        "control": "Trunk-4 is 10,000 kg. A 400 km circle at 51.6 degrees. Finish with speed to spare.",
+        "whatItIs": "A cargo capsule packed with supplies.",
+        "whatItDoes": "It carries ten tonnes to a station orbit.",
+        "why": "Ten tonnes of supplies to a 400 km circle. About 8,760 m/s.",
+        "form": "cargo",
+        "codex": "orbits",
+        "bonuses": [
+          {
+            "id": "margin",
+            "label": "Finish with speed to spare"
+          },
+          {
+            "id": "strap-ons",
+            "label": "Fly with the strap-ons"
+          }
+        ]
+      }
+    },
+    {
+      "index": 15,
+      "id": "m15",
+      "orbit": "kh-m15",
+      "name": "Relay West",
+      "payloadId": "geo-relay",
+      "massKg": 6200,
+      "volumeM3": 50,
+      "diameterM": 3.2,
+      "target": {
+        "kind": "ellipse",
+        "apoKm": 35786,
+        "periKm": 200,
+        "incDeg": 27
+      },
+      "requirements": [
+        {
+          "id": "landing",
+          "mode": "barge",
+          "grade": "good",
+          "site": "Haven"
+        }
+      ],
+      "budgetKc": 140000000,
+      "rewardKc": 140000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "achievable",
+      "briefing": {
+        "payloadName": "Westline-2",
+        "payloadKind": "GEO relay",
+        "customer": "Westline Relay Office",
+        "goal": "Send a 6,200 kg relay onto a 200 by 35,786 km transfer and land on Haven.",
+        "control": "Westline-2 is 6,200 kg. Ellipse 200 by 35,786 km at 27 degrees. The relay climbs the rest. About 11,330 m/s.",
+        "whatItIs": "A relay that finishes its own climb.",
+        "whatItDoes": "It rides the transfer. The high circle is its own burn, not this rocket's.",
+        "why": "The ride is the transfer, not a circular high orbit. 6,200 kg. About 11,330 m/s.",
+        "form": "relay",
+        "codex": "booster-landing",
+        "bonuses": [
+          {
+            "id": "barge",
+            "label": "Land the booster on Haven"
+          }
+        ]
+      }
+    },
+    {
+      "index": 16,
+      "id": "m16",
+      "orbit": "kh-m16",
+      "name": "Second Watch",
+      "payloadId": "crew-capsule",
+      "massKg": 12000,
+      "volumeM3": 25,
+      "diameterM": 3.5,
+      "target": {
+        "kind": "circular",
+        "apoKm": 400,
+        "periKm": 400,
+        "incDeg": 51.6
+      },
+      "requirements": [
+        {
+          "id": "maxG",
+          "max": 4.5
+        },
+        {
+          "id": "reliability",
+          "min": 0.98
+        },
+        {
+          "id": "noRedRisks"
+        },
+        {
+          "id": "randomFailures"
+        },
+        {
+          "id": "landing",
+          "mode": "barge",
+          "grade": "good",
+          "site": "Haven"
+        }
+      ],
+      "budgetKc": 180000000,
+      "rewardKc": 180000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "hard",
+      "briefing": {
+        "payloadName": "Nest-2",
+        "payloadKind": "Crew capsule",
+        "customer": "Harbor Guild",
+        "goal": "Fly a 12,000 kg crew capsule to 400 km, then land the booster on Haven.",
+        "control": "Nest-2 is 12,000 kg. A 400 km circle. Peak g at most 4.5. Then land the booster on Haven.",
+        "whatItIs": "A second crew capsule, with the booster coming home to Haven.",
+        "whatItDoes": "It carries people up, then the booster finds the barge.",
+        "why": "People ride Nest-2, then the booster finds Haven. 12,000 kg and a 4.5 g cap. Crew plus a landing is past the flights already shown.",
+        "form": "crew",
+        "codex": "booster-landing",
+        "bonuses": [
+          {
+            "id": "quiet",
+            "label": "Fly with no red risks"
+          },
+          {
+            "id": "barge",
+            "label": "Land the booster on Haven"
+          }
+        ]
+      }
+    },
+    {
+      "index": 17,
+      "id": "m17",
+      "orbit": "kh-m17",
+      "name": "Lumen Down",
+      "payloadId": "lunar-lander",
+      "massKg": 4000,
+      "volumeM3": 18,
+      "diameterM": 2.6,
+      "target": {
+        "kind": "c3",
+        "c3Km2PerS2": -2,
+        "periKm": 200,
+        "incDeg": 28.5
+      },
+      "requirements": [
+        {
+          "id": "coastHours",
+          "hours": 3
+        }
+      ],
+      "budgetKc": 190000000,
+      "rewardKc": 190000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "hard",
+      "briefing": {
+        "payloadName": "Lumen Down",
+        "payloadKind": "Lunar lander",
+        "customer": "Farwater Survey",
+        "goal": "Send a 4,000 kg lander on a C3 -2 path from 200 km.",
+        "control": "Lumen Down is 4,000 kg. C3 is -2 km2/s2 from 200 km. Coast 3 hours. About 12,009 m/s.",
+        "whatItIs": "A lunar lander, heavier than the probe that flew this path.",
+        "whatItDoes": "It leaves from 200 km on a path that can reach the Moon.",
+        "why": "A lander on the lunar path. 4,000 kg is past the 3,000 kg path already flown. About 12,009 m/s.",
+        "form": "lander",
+        "codex": "orbits",
+        "bonuses": [
+          {
+            "id": "coast",
+            "label": "Coast for three hours"
+          }
+        ]
+      }
+    },
+    {
+      "index": 18,
+      "id": "m18",
+      "orbit": "kh-m18",
+      "name": "Nightjar",
+      "payloadId": "lunar-probe",
+      "massKg": 2500,
+      "volumeM3": 15,
+      "diameterM": 2.1,
+      "target": {
+        "kind": "c3",
+        "c3Km2PerS2": -0.4,
+        "periKm": 200,
+        "incDeg": 28.5
+      },
+      "requirements": [
+        {
+          "id": "coastHours",
+          "hours": 3
+        }
+      ],
+      "budgetKc": 200000000,
+      "rewardKc": 200000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "hard",
+      "briefing": {
+        "payloadName": "Nightjar",
+        "payloadKind": "Probe",
+        "customer": "Farwater Survey",
+        "goal": "Send a 2,500 kg probe on C3 -0.4 from 200 km.",
+        "control": "Nightjar is 2,500 kg. C3 is -0.4 km2/s2 from 200 km. About 12,082 m/s.",
+        "whatItIs": "A probe leaving on a faster path than the Moon Shot.",
+        "whatItDoes": "It climbs out of Earth's hold and coasts.",
+        "why": "Nightjar leaves on C3 -0.4 km2/s2. About 12,082 m/s, past the Moon Shot.",
+        "form": "probe",
+        "codex": "orbits",
+        "bonuses": [
+          {
+            "id": "window",
+            "label": "Leave on the planned path"
+          }
+        ]
+      }
+    },
+    {
+      "index": 19,
+      "id": "m19",
+      "orbit": "kh-m19",
+      "name": "Keel Reuse",
+      "payloadId": "gto-comsat",
+      "massKg": 7500,
+      "volumeM3": 70,
+      "diameterM": 3.6,
+      "target": {
+        "kind": "ellipse",
+        "apoKm": 35786,
+        "periKm": 200,
+        "incDeg": 27
+      },
+      "requirements": [
+        {
+          "id": "landing",
+          "mode": "rtls",
+          "grade": "good",
+          "site": "pad",
+          "boosters": true
+        }
+      ],
+      "budgetKc": 210000000,
+      "rewardKc": 210000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "hard",
+      "briefing": {
+        "payloadName": "Keel-9",
+        "payloadKind": "Comsat",
+        "customer": "Westline Relay Office",
+        "goal": "Send a 7,500 kg comsat to transfer and land both boosters at the pad.",
+        "control": "Keel-9 is 7,500 kg. Ellipse 200 by 35,786 km. Land both boosters at the pad.",
+        "whatItIs": "A heavier comsat on a pad-landing reuse flight.",
+        "whatItDoes": "It rides the transfer. The booster and the strap-ons return to the pad.",
+        "why": "7,500 kg on the transfer, and both boosters land at the pad. Heavier than the 7,000 kg reuse already flown. About 11,330 m/s.",
+        "form": "comms",
+        "codex": "booster-landing",
+        "bonuses": [
+          {
+            "id": "boosters",
+            "label": "Land the booster and the strap-ons"
+          }
+        ]
+      }
+    },
+    {
+      "index": 20,
+      "id": "m20",
+      "orbit": "kh-m20",
+      "name": "Far Hold",
+      "payloadId": "lunar-probe",
+      "massKg": 3200,
+      "volumeM3": 16,
+      "diameterM": 2.2,
+      "target": {
+        "kind": "c3",
+        "c3Km2PerS2": -0.25,
+        "periKm": 200,
+        "incDeg": 28.5
+      },
+      "requirements": [
+        {
+          "id": "coastHours",
+          "hours": 4
+        }
+      ],
+      "budgetKc": 240000000,
+      "rewardKc": 240000000,
+      "unlocks": [],
+      "gentleDefault": false,
+      "band": "hard",
+      "briefing": {
+        "payloadName": "Far Hold",
+        "payloadKind": "Probe",
+        "customer": "Farwater Survey",
+        "goal": "Send a 3,200 kg probe on C3 -0.25 and coast for 4 hours.",
+        "control": "Far Hold is 3,200 kg. C3 is -0.25 km2/s2 from 200 km. Coast 4 hours. About 12,089 m/s.",
+        "whatItIs": "The last hand-built probe, on the longest coast.",
+        "whatItDoes": "It leaves on a fast path and coasts for four hours.",
+        "why": "The last hand-built flight. C3 -0.25 km2/s2, 3,200 kg, and a 4 hour coast. About 12,089 m/s.",
+        "form": "probe",
+        "codex": "orbits",
+        "bonuses": [
+          {
+            "id": "coast",
+            "label": "Coast for four hours"
+          },
+          {
+            "id": "window",
+            "label": "Leave on the planned path"
+          }
         ]
       }
     }

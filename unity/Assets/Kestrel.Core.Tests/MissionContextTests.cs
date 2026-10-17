@@ -20,10 +20,10 @@ namespace Kestrel.Core.Tests
         public void Clear() => GameSession.Clear();
 
         [Test]
-        public void BoardIsKh1ThroughKh10FromTheCampaignFile()
+        public void BoardIsKh1ThroughKh20FromTheCampaignFile()
         {
             var board = MissionContext.CampaignBoard(campaign);
-            Assert.AreEqual(10, board.Count);
+            Assert.AreEqual(20, board.Count);
             for (int i = 0; i < board.Count; i++)
             {
                 Assert.AreEqual("m" + (i + 1), board[i].MissionId);
@@ -150,15 +150,15 @@ namespace Kestrel.Core.Tests
         [Test]
         public void LastMissionHasNoFurtherNextAndABadIdDoesNotDropTheCurrentOne()
         {
-            GameSession.Apply(RouteId.MissionChosen, campaign, "m10");
+            GameSession.Apply(RouteId.MissionChosen, campaign, "m20");
             var next = GameSession.Apply(RouteId.ReportNext, campaign);
-            Assert.AreEqual("m10", next.Session.MissionId);
+            Assert.AreEqual("m20", next.Session.MissionId);
             Assert.AreEqual(SessionScreens.Missions, next.Screen);
             var bad = GameSession.Apply(RouteId.MissionChosen, campaign, "nope");
-            Assert.AreEqual("m10", bad.Session.MissionId);
+            Assert.AreEqual("m20", bad.Session.MissionId);
             Assert.AreEqual(SessionScreens.Missions, bad.Screen);
             Assert.AreEqual(SessionScreens.Missions, GameSession.Apply(RouteId.ExitMissions).Screen);
-            Assert.AreEqual("m10", GameSession.Current.MissionId);
+            Assert.AreEqual("m20", GameSession.Current.MissionId);
         }
 
         [Test]

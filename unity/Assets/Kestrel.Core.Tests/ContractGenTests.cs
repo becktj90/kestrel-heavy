@@ -1,4 +1,4 @@
-// Open contracts after KH-10. The board is a seeded pick of viable cells. No timers, expiry, or purchases.
+// Open contracts after KH-20. The board is a seeded pick of viable cells. No timers, expiry, or purchases.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -73,7 +73,7 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(pool.Purchases);
             Assert.IsFalse(pool.Daily);
             Assert.AreEqual(3, pool.OfferCount);
-            Assert.AreEqual(11, pool.FirstNumber);
+            Assert.AreEqual(21, pool.FirstNumber);
             CollectionAssert.AreEqual(new ulong[] { 1, 2, 3, 4, 5 }, pool.Seeds);
             CollectionAssert.AreEqual(
                 new[] { "tern", "comsat", "lark", "flock", "finch", "pantry" },
@@ -142,8 +142,8 @@ namespace Kestrel.Core.Tests
                         Assert.AreEqual(ContractGen.WindScale(a[i].ProvenK), a[i].WindScale, 1e-9);
                         Assert.AreEqual(ContractGen.MassKg(a[i].Cell.Archetype.BaseMassKg, a[i].ProvenK), a[i].MassKg, 0);
                         Assert.AreEqual(ContractGen.ExtraRequirements(a[i].ProvenK), a[i].Requirements.Count);
-                        Assert.AreEqual("KH-" + (11 + (k < 0 ? 0 : k) + i), a[i].Label);
-                        Assert.AreEqual("kc" + (11 + (k < 0 ? 0 : k) + i), a[i].Id);
+                        Assert.AreEqual("KH-" + (21 + (k < 0 ? 0 : k) + i), a[i].Label);
+                        Assert.AreEqual("kc" + (21 + (k < 0 ? 0 : k) + i), a[i].Id);
                         Assert.IsTrue(a[i].Site.InclinationOpen(a[i].IncDeg), a[i].Site.Id + " " + a[i].IncDeg);
                         Assert.IsTrue(Direction(weather, a[i].Wind.Compass), a[i].Wind.Compass);
                         Assert.IsTrue(Time(weather, a[i].TimeId), a[i].TimeId);
@@ -165,8 +165,8 @@ namespace Kestrel.Core.Tests
             var negative = ContractGen.Offer(pool, sites, weather, "pilot", -3);
             Assert.AreEqual(first[0].CellId, negative[0].CellId);
             Assert.AreEqual(first[1].CellId, negative[1].CellId);
-            Assert.AreEqual("KH-11", negative[0].Label);
-            Assert.AreEqual("KH-11", first[0].Label);
+            Assert.AreEqual("KH-21", negative[0].Label);
+            Assert.AreEqual("KH-21", first[0].Label);
             Assert.AreEqual(0, first[0].Requirements.Count);
             var late = ContractGen.Offer(pool, sites, weather, "pilot", 9);
             bool sawReliability = false;

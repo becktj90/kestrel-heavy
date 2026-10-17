@@ -207,6 +207,7 @@ namespace Kestrel.Game.Tests
             var parts = new List<string>
             {
                 board.Title, board.Goal, board.Payload, board.Fit, board.Target, board.Gentle,
+                board.What, board.Does, board.Why, board.Customer, board.Control, board.Codex, board.CodexNote, board.BandNote,
                 board.Budget, board.Reward, board.Wind, board.Time, board.Pad, board.Seed, board.Engineer,
             };
             parts.AddRange(board.Requirements);

@@ -34,7 +34,13 @@ namespace Kestrel.Core.Data
 
     public sealed class OrbitTarget { public string id, label; public double apoKm, periKm, incDeg; }
 
-    public sealed class Payload { public string id, displayName, label, orbit; public double mass, volume, maxG, maxHeatFlux; public bool crewed, needsAbort; }
+    public sealed class Payload
+    {
+        public string id, displayName, label, orbit;
+        public string whatItIs, whatItDoes, why, form;
+        public double mass, volume, maxG, maxHeatFlux;
+        public bool crewed, needsAbort;
+    }
 
     /// <summary>All catalogs plus economy constants. Build with Catalog.FromJson(...) or Catalog.LoadFromRepo(root).</summary>
     public sealed class Catalog
@@ -125,6 +131,7 @@ namespace Kestrel.Core.Data
                 {
                     id = o.Str("id"), displayName = o.Str("displayName", o.Str("label")), label = o.Str("label"), orbit = o.Str("orbit"), mass = o.Num("mass"), volume = o.Num("volume"),
                     maxG = o.Num("maxG"), maxHeatFlux = o.Num("maxHeatFlux"), crewed = o.Bool("crewed"), needsAbort = o.Bool("needsAbort"),
+                    whatItIs = o.Str("whatItIs"), whatItDoes = o.Str("whatItDoes"), why = o.Str("why"), form = o.Str("form"),
                 };
                 c.Payloads.Add(p); c.PayloadById[p.id] = p;
             }

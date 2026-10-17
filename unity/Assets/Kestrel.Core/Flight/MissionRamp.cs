@@ -129,6 +129,7 @@ namespace Kestrel.Core.Flight
         public double CoastHours, MaxG = double.NaN, ReliabilityMin = double.NaN;
         public bool MarginNonNegative, StrapOnsAllowed, NoRedRisks, RandomFailures, LandBoosters;
         public string LandingMode, LandingGrade, LandingSite;
+        public string Customer, Control, WhatItIs, WhatItDoes, Why, Form, CodexId, Band;
         public readonly List<string> Unlocks = new List<string>();
 
         public bool HasInclination => TargetKind == "circular" || TargetKind == "ellipse" || TargetKind == "c3";
@@ -154,7 +155,7 @@ namespace Kestrel.Core.Flight
             => MissionScore.RequiredDeltaV(TargetKind, ApoKm, PeriKm, C3Km2PerS2, latitudeDeg);
     }
 
-    /// <summary>The 10-mission campaign. data/campaign.json. Haven assists stay on MissionRamp.</summary>
+    /// <summary>The campaign in data/campaign.json. Haven assists stay on MissionRamp.</summary>
     public sealed class Campaign
     {
         public int Version;
@@ -242,6 +243,18 @@ namespace Kestrel.Core.Flight
             var unlocks = o.Arr("unlocks");
             if (unlocks != null) foreach (var x in unlocks) if (x is string s) m.Unlocks.Add(s);
             if (string.IsNullOrEmpty(m.OrbitId)) m.OrbitId = "kh-" + (m.Id ?? "");
+            m.Band = o.Str("band");
+            var brief = o.Obj("briefing");
+            if (brief != null)
+            {
+                m.Customer = brief.Str("customer");
+                m.Control = brief.Str("control");
+                m.WhatItIs = brief.Str("whatItIs");
+                m.WhatItDoes = brief.Str("whatItDoes");
+                m.Why = brief.Str("why");
+                m.Form = brief.Str("form");
+                m.CodexId = brief.Str("codex");
+            }
             return m;
         }
     }

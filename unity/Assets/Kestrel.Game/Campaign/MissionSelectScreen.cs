@@ -1,4 +1,4 @@
-// Portrait Mission Select. The campaign map replaces the flat KH-1..KH-10 list.
+// Portrait Mission Select. The campaign map is KH-1 through KH-20.
 // Reads the local career save. Does not open a network socket and does not start a locked flight.
 using System;
 using System.Collections.Generic;
@@ -118,6 +118,19 @@ namespace Kestrel.Game.MissionSelect
             row.style.whiteSpace = WhiteSpace.Normal;
             if (!playable) row.SetEnabled(false);
 
+            var body = new VisualElement { name = entry.ElementName + "-body", pickingMode = PickingMode.Ignore };
+            body.style.flexDirection = FlexDirection.Row;
+            body.style.alignItems = Align.FlexStart;
+            body.style.alignSelf = Align.Stretch;
+            body.Add(PayloadArt.Element(entry.ElementName + "-art", entry.Form, 64));
+
+            var text = new VisualElement { name = entry.ElementName + "-copy", pickingMode = PickingMode.Ignore };
+            text.style.flexGrow = 1;
+            text.style.flexShrink = 1;
+            text.style.flexDirection = FlexDirection.Column;
+            text.style.alignItems = Align.Stretch;
+            text.style.marginLeft = 8;
+
             var head = new VisualElement { name = entry.ElementName + "-head", pickingMode = PickingMode.Ignore };
             head.AddToClassList("mission-row-head");
             head.style.flexDirection = FlexDirection.Row;
@@ -127,13 +140,16 @@ namespace Kestrel.Game.MissionSelect
             head.Add(Line(entry.ElementName + "-name", entry.Title, "mission-row-name", grow: true));
             if (entry.IsNext) head.Add(Line(entry.ElementName + "-next", MissionMapCopy.NextChip, "mission-chip", grow: false));
             if (entry.StarsText != null) head.Add(Line(entry.ElementName + "-stars", entry.StarsText, "mission-stars", grow: false));
-            row.Add(head);
+            text.Add(head);
 
-            if (!string.IsNullOrEmpty(entry.PayloadLine)) row.Add(Line(entry.ElementName + "-payload", entry.PayloadLine, "mission-meta", grow: false));
-            if (!string.IsNullOrEmpty(entry.OrbitLine)) row.Add(Line(entry.ElementName + "-orbit", entry.OrbitLine, "mission-meta", grow: false));
-            if (entry.MedalsText != null) row.Add(Line(entry.ElementName + "-medals", entry.MedalsText, "mission-meta", grow: false));
-            if (entry.PartsLine != null) row.Add(Line(entry.ElementName + "-parts", entry.PartsLine, "mission-meta", grow: false));
-            if (entry.LockLine != null) row.Add(Line(entry.ElementName + "-lock", entry.LockLine, "mission-lock", grow: false));
+            if (!string.IsNullOrEmpty(entry.PayloadLine)) text.Add(Line(entry.ElementName + "-payload", entry.PayloadLine, "mission-meta", grow: false));
+            if (!string.IsNullOrEmpty(entry.DoesLine)) text.Add(Line(entry.ElementName + "-does", entry.DoesLine, "mission-meta", grow: false));
+            if (!string.IsNullOrEmpty(entry.OrbitLine)) text.Add(Line(entry.ElementName + "-orbit", entry.OrbitLine, "mission-meta", grow: false));
+            if (entry.MedalsText != null) text.Add(Line(entry.ElementName + "-medals", entry.MedalsText, "mission-meta", grow: false));
+            if (entry.PartsLine != null) text.Add(Line(entry.ElementName + "-parts", entry.PartsLine, "mission-meta", grow: false));
+            if (entry.LockLine != null) text.Add(Line(entry.ElementName + "-lock", entry.LockLine, "mission-lock", grow: false));
+            body.Add(text);
+            row.Add(body);
             return row;
         }
 

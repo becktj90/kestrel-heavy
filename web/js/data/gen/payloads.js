@@ -120,6 +120,76 @@ export default {
       "apoKm": 35786,
       "periKm": 200,
       "incDeg": 27
+    },
+    "kh-m11": {
+      "id": "kh-m11",
+      "label": "Dawn Ledger",
+      "apoKm": 550,
+      "periKm": 550,
+      "incDeg": 97.6
+    },
+    "kh-m12": {
+      "id": "kh-m12",
+      "label": "Glass Meridian",
+      "apoKm": 600,
+      "periKm": 600,
+      "incDeg": 51.6
+    },
+    "kh-m13": {
+      "id": "kh-m13",
+      "label": "Flock Yard",
+      "apoKm": 550,
+      "periKm": 550,
+      "incDeg": 97.6
+    },
+    "kh-m14": {
+      "id": "kh-m14",
+      "label": "Harbor Trunk",
+      "apoKm": 400,
+      "periKm": 400,
+      "incDeg": 51.6
+    },
+    "kh-m15": {
+      "id": "kh-m15",
+      "label": "Relay West",
+      "apoKm": 35786,
+      "periKm": 200,
+      "incDeg": 27
+    },
+    "kh-m16": {
+      "id": "kh-m16",
+      "label": "Second Watch",
+      "apoKm": 400,
+      "periKm": 400,
+      "incDeg": 51.6
+    },
+    "kh-m17": {
+      "id": "kh-m17",
+      "label": "Lumen Down",
+      "apoKm": 385644.1678,
+      "periKm": 200,
+      "incDeg": 28.5
+    },
+    "kh-m18": {
+      "id": "kh-m18",
+      "label": "Nightjar",
+      "apoKm": 1980045.935,
+      "periKm": 200,
+      "incDeg": 28.5
+    },
+    "kh-m19": {
+      "id": "kh-m19",
+      "label": "Keel Reuse",
+      "apoKm": 35786,
+      "periKm": 200,
+      "incDeg": 27
+    },
+    "kh-m20": {
+      "id": "kh-m20",
+      "label": "Far Hold",
+      "apoKm": 3175847.2604,
+      "periKm": 200,
+      "incDeg": 28.5
     }
   },
   "payloads": [
@@ -132,7 +202,11 @@ export default {
       "diameter": 0.5,
       "maxG": 10,
       "maxHeatFlux": 1135,
-      "orbit": "leo400"
+      "orbit": "leo400",
+      "whatItIs": "A small satellite about the size of a shoebox.",
+      "whatItDoes": "It takes pictures and radios them home from a low orbit.",
+      "why": "The catalog copy is 50 kg toward a 400 km circle. That circle asks about 8,760 m/s.",
+      "form": "cubesat"
     },
     {
       "id": "leo-sat",
@@ -143,7 +217,11 @@ export default {
       "diameter": 2,
       "maxG": 6,
       "maxHeatFlux": 1135,
-      "orbit": "leo400"
+      "orbit": "leo400",
+      "whatItIs": "A low-orbit satellite with a camera and a radio.",
+      "whatItDoes": "It watches the ground or carries cargo once it is in a low circle.",
+      "why": "1,500 kg to a 400 km circle. The budget is about 8,760 m/s.",
+      "form": "bus"
     },
     {
       "id": "gto-comsat",
@@ -154,7 +232,11 @@ export default {
       "diameter": 3.4,
       "maxG": 6,
       "maxHeatFlux": 1135,
-      "orbit": "gto"
+      "orbit": "gto",
+      "whatItIs": "A communications satellite for a high transfer.",
+      "whatItDoes": "It rides the long ellipse, then climbs the rest of the way itself.",
+      "why": "5,500 kg. Perigee 200 km, apogee 35,786 km. About 11,330 m/s. The ride is the transfer, not a circular high orbit.",
+      "form": "comms"
     },
     {
       "id": "crew-capsule",
@@ -167,7 +249,11 @@ export default {
       "maxHeatFlux": 2000,
       "orbit": "leo400",
       "crewed": true,
-      "needsAbort": true
+      "needsAbort": true,
+      "whatItIs": "A capsule with room for a crew.",
+      "whatItDoes": "It carries people to a low orbit and keeps the ride under 4.5 g.",
+      "why": "12,000 kg to a 400 km circle. About 8,760 m/s. The g cap is the capsule's own limit.",
+      "form": "crew"
     },
     {
       "id": "lunar-probe",
@@ -178,7 +264,11 @@ export default {
       "diameter": 2.2,
       "maxG": 6,
       "maxHeatFlux": 1135,
-      "orbit": "tli"
+      "orbit": "tli",
+      "whatItIs": "A probe bound for the Moon.",
+      "whatItDoes": "It leaves on a path that can reach the Moon after a long coast.",
+      "why": "2,500 kg on the catalog trans-lunar ellipse. The flown Moon Shot is 3,000 kg at C3 -2, about 12,009 m/s.",
+      "form": "probe"
     },
     {
       "id": "kid-box",
@@ -189,7 +279,101 @@ export default {
       "diameter": 1.1,
       "maxG": 12,
       "maxHeatFlux": 3000,
-      "orbit": "leo200"
+      "orbit": "leo200",
+      "whatItIs": "A tough science box for hops and early flights.",
+      "whatItDoes": "It rides on top and comes home with the data.",
+      "why": "The catalog box is 300 kg. The first hop flies 50 kg to 10 km, about 1,443 m/s.",
+      "form": "box"
+    },
+    {
+      "id": "weather-sat",
+      "displayName": "Plover",
+      "label": "Weather sat",
+      "mass": 2200,
+      "volume": 8,
+      "diameter": 2,
+      "maxG": 6,
+      "maxHeatFlux": 1135,
+      "orbit": "sso",
+      "form": "weather",
+      "whatItIs": "A weather satellite that repeats the same ground track.",
+      "whatItDoes": "It photographs the same towns at the same hour, every day.",
+      "why": "2,200 kg to a 550 km sun-sync at 97.6 degrees. About 8,676 m/s."
+    },
+    {
+      "id": "space-telescope",
+      "displayName": "Meridian",
+      "label": "Space telescope",
+      "mass": 1800,
+      "volume": 10,
+      "diameter": 2.4,
+      "maxG": 5,
+      "maxHeatFlux": 1135,
+      "orbit": "leo600",
+      "form": "telescope",
+      "whatItIs": "A telescope that looks past the air.",
+      "whatItDoes": "It holds still in a higher low orbit so the glass stays sharp.",
+      "why": "1,800 kg to a 600 km circle. Peak load 5 g. About 8,649 m/s."
+    },
+    {
+      "id": "cargo-capsule",
+      "displayName": "Trunk",
+      "label": "Cargo capsule",
+      "mass": 10000,
+      "volume": 35,
+      "diameter": 3.6,
+      "maxG": 6,
+      "maxHeatFlux": 1135,
+      "orbit": "leo400",
+      "form": "cargo",
+      "whatItIs": "A capsule full of supplies.",
+      "whatItDoes": "It delivers tonnes of cargo to a low orbit.",
+      "why": "10,000 kg to a 400 km circle. About 8,760 m/s."
+    },
+    {
+      "id": "cubesat-dispenser",
+      "displayName": "Cinder Rack",
+      "label": "Cubesat dispenser",
+      "mass": 480,
+      "volume": 1.2,
+      "diameter": 1,
+      "maxG": 8,
+      "maxHeatFlux": 1135,
+      "orbit": "leo400",
+      "form": "dispenser",
+      "whatItIs": "A rack that lets go of many small satellites.",
+      "whatItDoes": "It opens in orbit and sends the little ones on their way.",
+      "why": "480 kg to a 400 km circle. About 8,760 m/s."
+    },
+    {
+      "id": "geo-relay",
+      "displayName": "Westline",
+      "label": "GEO relay",
+      "mass": 6200,
+      "volume": 50,
+      "diameter": 3.2,
+      "maxG": 6,
+      "maxHeatFlux": 1135,
+      "orbit": "gto",
+      "form": "relay",
+      "whatItIs": "A relay satellite aimed at a high orbit.",
+      "whatItDoes": "It rides the transfer, then finishes the climb to its station.",
+      "why": "6,200 kg. Ellipse 200 by 35,786 km. About 11,330 m/s. This rocket does not circularize the high orbit."
+    },
+    {
+      "id": "lunar-lander",
+      "displayName": "Lumen Down",
+      "label": "Lunar lander",
+      "mass": 4000,
+      "volume": 18,
+      "diameter": 2.6,
+      "maxG": 6,
+      "maxHeatFlux": 2000,
+      "orbit": "tli",
+      "form": "lander",
+      "whatItIs": "A lander built to set down on the Moon.",
+      "whatItDoes": "It leaves on a lunar path, then slows for the surface.",
+      "why": "4,000 kg. Heavier than the 3,000 kg probe already flown at C3 -2, about 12,009 m/s."
     }
   ]
 };

@@ -1,4 +1,4 @@
-// Open contracts after KH-10. A seeded board of three jobs, offline and deterministic.
+// Open contracts after KH-20. A seeded board of three jobs, offline and deterministic.
 // Difficulty follows k = contracts cleared. Only (payload, orbit, k) cells that FlightBatch
 // marked viable are offered. No timers, no expiry, no purchases. Kc pays for hardware in-game.
 using System;
@@ -97,7 +97,7 @@ namespace Kestrel.Core.Flight
     public static class ContractGen
     {
         public const int OfferCount = 3;
-        public const int FirstNumber = 11;
+        public const int FirstNumber = 21;
         public const double MassCapKg = 12000;
         public const double WindCap = 1.6;
         public const int MaxExtraRequirements = 3;

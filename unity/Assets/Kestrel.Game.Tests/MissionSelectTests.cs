@@ -1,4 +1,4 @@
-// Mission Select: four acts, career locks, earned stars and medals, payload and target, contracts after KH-10.
+// Mission Select: four acts, career locks, earned stars and medals, payload and target, contracts after KH-20.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -43,15 +43,15 @@ namespace Kestrel.Game.Tests
             CollectionAssert.AreEqual(new[] { "act-1", "act-2", "act-3", "act-4" }, Ids(map.Acts, a => a.Id));
             CollectionAssert.AreEqual(new[]
             {
-                "Act I · Up and Down",
-                "Act II · Orbit",
-                "Act III · Come Back",
-                "Act IV · Beyond",
+                "Act I · First Light",
+                "Act II · Regulars",
+                "Act III · Heavy",
+                "Act IV · Far Shore",
             }, Ids(map.Acts, a => a.Title));
-            CollectionAssert.AreEqual(new[] { "m1", "m2" }, MissionIds(map, "act-1"));
-            CollectionAssert.AreEqual(new[] { "m3", "m4", "m5" }, MissionIds(map, "act-2"));
-            CollectionAssert.AreEqual(new[] { "m6", "m7" }, MissionIds(map, "act-3"));
-            CollectionAssert.AreEqual(new[] { "m8", "m9", "m10" }, MissionIds(map, "act-4"));
+            CollectionAssert.AreEqual(new[] { "m1", "m2", "m3", "m4", "m5" }, MissionIds(map, "act-1"));
+            CollectionAssert.AreEqual(new[] { "m6", "m7", "m8", "m9", "m10" }, MissionIds(map, "act-2"));
+            CollectionAssert.AreEqual(new[] { "m11", "m12", "m13", "m14", "m15" }, MissionIds(map, "act-3"));
+            CollectionAssert.AreEqual(new[] { "m16", "m17", "m18", "m19", "m20" }, MissionIds(map, "act-4"));
 
             var expectOrbit = new Dictionary<string, string>
             {
@@ -65,6 +65,16 @@ namespace Kestrel.Game.Tests
                 { "m8", "Circular orbit 400 km, 51.6°" },
                 { "m9", "C3 -2 km2/s2, closest point 200 km, 28.5°" },
                 { "m10", "Ellipse 200 km by 35,786 km, 27°" },
+                { "m11", "Circular orbit 550 km, 97.6°" },
+                { "m12", "Circular orbit 600 km, 51.6°" },
+                { "m13", "Circular orbit 550 km, 97.6°" },
+                { "m14", "Circular orbit 400 km, 51.6°" },
+                { "m15", "Ellipse 200 km by 35,786 km, 27°" },
+                { "m16", "Circular orbit 400 km, 51.6°" },
+                { "m17", "C3 -2 km2/s2, closest point 200 km, 28.5°" },
+                { "m18", "C3 -0.4 km2/s2, closest point 200 km, 28.5°" },
+                { "m19", "Ellipse 200 km by 35,786 km, 27°" },
+                { "m20", "C3 -0.25 km2/s2, closest point 200 km, 28.5°" },
             };
             var expectPayload = new Dictionary<string, string>
             {
@@ -78,6 +88,16 @@ namespace Kestrel.Game.Tests
                 { "m8", "Nest · Crew capsule · 12,000 kg" },
                 { "m9", "Lumen · Lunar probe · 3,000 kg" },
                 { "m10", "Twin Harbor · Comsat · 7,000 kg" },
+                { "m11", "Plover-1 · Weather sat · 2,200 kg" },
+                { "m12", "Meridian · Space telescope · 1,800 kg" },
+                { "m13", "Cinder Rack · Cubesat dispenser · 480 kg" },
+                { "m14", "Trunk-4 · Cargo capsule · 10,000 kg" },
+                { "m15", "Westline-2 · GEO relay · 6,200 kg" },
+                { "m16", "Nest-2 · Crew capsule · 12,000 kg" },
+                { "m17", "Lumen Down · Lunar lander · 4,000 kg" },
+                { "m18", "Nightjar · Probe · 2,500 kg" },
+                { "m19", "Keel-9 · Comsat · 7,500 kg" },
+                { "m20", "Far Hold · Probe · 3,200 kg" },
             };
             for (int i = 0; i < map.Acts.Count; i++)
             {
@@ -102,8 +122,8 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual("mission-map", root.name);
             Assert.IsNull(root.Q("mission-list"));
             Assert.AreEqual("Next is KH-1 First Hop.", root.Q<Label>("missions-note").text);
-            Assert.AreEqual("Act I · Up and Down", root.Q<Label>("act-1-title").text);
-            Assert.AreEqual("Act IV · Beyond", root.Q<Label>("act-4-title").text);
+            Assert.AreEqual("Act I · First Light", root.Q<Label>("act-1-title").text);
+            Assert.AreEqual("Act IV · Far Shore", root.Q<Label>("act-4-title").text);
             Assert.IsNull(root.Q("open-contracts"));
             Assert.IsNull(root.Q<Button>("open-contracts"));
 
@@ -122,7 +142,7 @@ namespace Kestrel.Game.Tests
             StringAssert.Contains("Fly this one.", first.tooltip);
             Assert.AreEqual(44f, first.style.minHeight.value.value);
 
-            for (int i = 2; i <= 10; i++)
+            for (int i = 2; i <= 20; i++)
             {
                 var row = root.Q<Button>("mission-m" + i);
                 Assert.IsFalse(row.enabledSelf, "m" + i);
@@ -166,7 +186,7 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual("1 star", root.Q<Label>("mission-m1-stars").text);
             Assert.AreEqual("Bronze · Gold", root.Q<Label>("mission-m1-medals").text);
             Assert.AreEqual("Opened fins and nose.", root.Q<Label>("mission-m1-parts").text);
-            Assert.AreEqual("A pass opens stage-2.", root.Q<Label>("mission-m2-parts").text);
+            Assert.AreEqual("A pass opens a second stage.", root.Q<Label>("mission-m2-parts").text);
             StringAssert.Contains("Replay.", root.Q<Button>("mission-m1").tooltip);
             Assert.IsFalse(root.Q<Button>("mission-m3").enabledSelf);
             Assert.IsNull(root.Q("open-contracts"));
@@ -190,13 +210,13 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual(0, career.Cleared);
             var root = Screen(campaign, career, null);
             Assert.IsTrue(root.Q<Button>("mission-m1").enabledSelf);
-            for (int i = 2; i <= 10; i++) Assert.IsFalse(root.Q<Button>("mission-m" + i).enabledSelf, "m" + i);
+            for (int i = 2; i <= campaign.Missions.Count; i++) Assert.IsFalse(root.Q<Button>("mission-m" + i).enabledSelf, "m" + i);
             Assert.IsNull(root.Q("mission-m1-parts"));
             Assert.IsNull(root.Q("open-contracts"));
         }
 
         [Test]
-        public void OpenContractsStaysHiddenUntilKh10Clears()
+        public void OpenContractsStaysHiddenUntilKh20Clears()
         {
             var campaign = Load();
             var career = FreshCareer(campaign);
@@ -209,6 +229,18 @@ namespace Kestrel.Game.Tests
             Assert.IsNull(almost.Q("mission-m1-next"));
 
             career.Cleared = 10;
+            var mid = Screen(campaign, career, null);
+            Assert.IsNull(mid.Q("open-contracts"));
+            Assert.IsTrue(mid.Q<Button>("mission-m11").enabledSelf);
+            Assert.IsNotNull(mid.Q("mission-m11-next"));
+            Assert.IsNull(mid.Q("mission-m10-next"));
+
+            career.Cleared = 19;
+            var last = Screen(campaign, career, null);
+            Assert.IsNull(last.Q("open-contracts"));
+            Assert.IsNotNull(last.Q("mission-m20-next"));
+
+            career.Cleared = 20;
             var done = Screen(campaign, career, null);
             Assert.IsNotNull(done.Q("open-contracts"));
             Assert.IsNull(done.Q<Button>("open-contracts"));
@@ -217,13 +249,13 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual(MissionMapCopy.ContractsBody, done.Q("open-contracts").tooltip);
             Assert.AreEqual(44f, done.Q("open-contracts").style.minHeight.value.value);
             Assert.AreEqual("The board is clear.", done.Q<Label>("missions-note").text);
-            for (int i = 1; i <= 10; i++)
+            for (int i = 1; i <= 20; i++)
             {
                 Assert.IsTrue(done.Q<Button>("mission-m" + i).enabledSelf, "m" + i);
                 Assert.IsNull(done.Q("mission-m" + i + "-next"), "m" + i);
                 Assert.IsNull(done.Q("mission-m" + i + "-lock"), "m" + i);
             }
-            Assert.IsNull(done.Q("mission-m10-parts"));
+            Assert.IsNull(done.Q("mission-m20-parts"));
             AssertPlain(Visible(done));
         }
 
@@ -246,19 +278,19 @@ namespace Kestrel.Game.Tests
         {
             var campaign = Load();
             var root = MissionSelectScreen.Build(campaign, FreshCareer(campaign), null, null, _ => { }, () => { });
-            Assert.AreEqual("kid-box · 50 kg", root.Q<Label>("mission-m1-payload").text);
+            Assert.AreEqual("Science box · 50 kg", root.Q<Label>("mission-m1-payload").text);
             StringAssert.DoesNotContain("KH-K", root.Q<Label>("mission-m1-payload").text);
             StringAssert.DoesNotContain("300 kg", root.Q<Label>("mission-m1-payload").text);
         }
 
         [Test]
-        public void AMissionPastTheTen_StaysOnTheBoard_AndDoesNotOpenContracts()
+        public void AMissionPastTheTwenty_StaysOnTheBoard_AndDoesNotOpenContracts()
         {
             var campaign = Load();
             campaign.Missions.Add(new CampaignMission
             {
-                Index = 11,
-                Id = "m11",
+                Index = 21,
+                Id = "m21",
                 Name = "Side Path",
                 PayloadId = "kid-box",
                 MassKg = 10,
@@ -269,11 +301,11 @@ namespace Kestrel.Game.Tests
             career.Cleared = 9;
             var map = MissionMapBuilder.From(campaign, career, null, null);
             Assert.IsFalse(map.ShowOpenContracts);
-            CollectionAssert.Contains(MissionIds(map, "act-4"), "m11");
-            var side = Find(map, "m11");
+            CollectionAssert.Contains(MissionIds(map, "act-4"), "m21");
+            var side = Find(map, "m21");
             Assert.AreEqual(MissionAccess.Locked, side.Access);
             Assert.AreEqual("Apogee 5 km", side.OrbitLine);
-            Assert.AreEqual("kid-box · 10 kg", side.PayloadLine);
+            Assert.AreEqual("Science box · 10 kg", side.PayloadLine);
         }
 
         [Test]

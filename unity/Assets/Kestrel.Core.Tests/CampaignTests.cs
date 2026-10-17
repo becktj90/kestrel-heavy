@@ -77,7 +77,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void CampaignTable_MatchesSpecWithRecordedTunes()
         {
-            Assert.AreEqual(10, campaign.Missions.Count);
+            Assert.AreEqual(20, campaign.Missions.Count);
             Assert.IsFalse(campaign.Timers);
             Assert.IsFalse(campaign.Energy);
             Assert.IsFalse(campaign.Ads);
@@ -98,6 +98,21 @@ namespace Kestrel.Core.Tests
             Expect(8, "Crew Day", "crew-capsule", 12000, 25, "circular", 400, 400, 160e6, new[] { "redundant-avionics" }, false);
             Expect(9, "Moon Shot", "lunar-probe", 3000, 15, "c3", 0, 200, 180e6, new[] { "hydrolox-upper" }, false);
             Expect(10, "Big Reuse", "gto-comsat", 7000, 70, "ellipse", 35786, 200, 120e6, new string[0], false);
+            Expect(11, "Dawn Ledger", "weather-sat", 2200, 8, "circular", 550, 550, 80e6, new string[0], false);
+            Expect(12, "Glass Meridian", "space-telescope", 1800, 10, "circular", 600, 600, 100e6, new string[0], false);
+            Expect(13, "Flock Yard", "cubesat-dispenser", 480, 1.2, "circular", 550, 550, 90e6, new string[0], false);
+            Expect(14, "Harbor Trunk", "cargo-capsule", 10000, 35, "circular", 400, 400, 130e6, new string[0], false);
+            Expect(15, "Relay West", "geo-relay", 6200, 50, "ellipse", 35786, 200, 140e6, new string[0], false);
+            Expect(16, "Second Watch", "crew-capsule", 12000, 25, "circular", 400, 400, 180e6, new string[0], false);
+            Expect(17, "Lumen Down", "lunar-lander", 4000, 18, "c3", 0, 200, 190e6, new string[0], false);
+            Expect(18, "Nightjar", "lunar-probe", 2500, 15, "c3", 0, 200, 200e6, new string[0], false);
+            Expect(19, "Keel Reuse", "gto-comsat", 7500, 70, "ellipse", 35786, 200, 210e6, new string[0], false);
+            Expect(20, "Far Hold", "lunar-probe", 3200, 16, "c3", 0, 200, 240e6, new string[0], false);
+            Assert.AreEqual("achievable", campaign.Mission(10).Band);
+            Assert.AreEqual("hard", campaign.Mission(16).Band);
+            Assert.AreEqual("hard", campaign.Mission(20).Band);
+            Assert.AreEqual(4, campaign.Mission(20).CoastHours);
+            Assert.AreEqual(-0.25, campaign.Mission(20).C3Km2PerS2);
 
             var m3 = campaign.Mission(3);
             Assert.IsTrue(m3.MarginNonNegative);

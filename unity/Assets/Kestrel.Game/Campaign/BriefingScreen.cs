@@ -57,9 +57,19 @@ namespace Kestrel.Game.MissionSelect
             scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             scroll.style.flexGrow = 1;
             scroll.style.flexShrink = 1;
+            if (!string.IsNullOrEmpty(board.Form))
+                scroll.Add(PayloadArt.Element("briefing-art", board.Form, 128));
+            AddBlock(scroll, "what", "What it is", board.What);
+            AddBlock(scroll, "does", "What it does", board.Does);
+            AddBlock(scroll, "why", "Why it matters", board.Why);
+            if (board.BandNote.Length > 0)
+                scroll.Add(Line("briefing-band", board.BandNote, "briefing-body", shrink: false));
             AddBlock(scroll, "goal", null, board.Goal);
             AddBlock(scroll, "payload", "Payload", board.Payload, board.Fit);
+            AddBlock(scroll, "customer", "Customer", board.Customer);
+            AddBlock(scroll, "control", "Mission control", board.Control);
             AddBlock(scroll, "target", "Target", board.Target);
+            AddBlock(scroll, "codex", "Codex", board.Codex, board.CodexNote);
             if (board.Requirements.Count > 0)
             {
                 scroll.Add(Head("briefing-requirements-title", "Requirements"));
@@ -120,6 +130,7 @@ namespace Kestrel.Game.MissionSelect
                 if (string.IsNullOrEmpty(lines[i])) continue;
                 string name = lines.Length == 1 ? "briefing-" + id : "briefing-" + id + (i == 0 ? "" : "-fit");
                 if (id == "payload" && i == 1) name = "briefing-fit";
+                if (id == "codex" && i == 1) name = "briefing-codex-note";
                 if (id == "goal") name = "briefing-goal";
                 if (id == "target") name = "briefing-target";
                 if (id == "payload" && i == 0) name = "briefing-payload";

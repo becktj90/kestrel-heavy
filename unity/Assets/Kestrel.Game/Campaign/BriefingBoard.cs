@@ -2,6 +2,9 @@
 // No UnityEngine. The screen only prints these lines.
 using System;
 using System.Collections.Generic;
+using System.IO;
+using Kestrel.Core.Codex;
+using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
 
 namespace Kestrel.Game.MissionSelect
@@ -23,6 +26,15 @@ namespace Kestrel.Game.MissionSelect
         public string Pad = "";
         public string Seed = "";
         public string Engineer = "";
+        public string What = "";
+        public string Does = "";
+        public string Why = "";
+        public string Customer = "";
+        public string Control = "";
+        public string Codex = "";
+        public string CodexNote = "";
+        public string Form = "";
+        public string BandNote = "";
         public string Vehicle = "";
         public string Reach = "";
         public bool CanBuild;
@@ -72,6 +84,18 @@ namespace Kestrel.Game.MissionSelect
             board.Pad = PadOf(ctx, card);
             board.Seed = SeedOf(ctx, card);
             board.Engineer = First(ctx != null ? ctx.EngineerLine : null, card != null ? card.EngineerLine : null);
+            if (ctx != null)
+            {
+                board.What = ctx.WhatItIs ?? "";
+                board.Does = ctx.WhatItDoes ?? "";
+                board.Why = ctx.Why ?? "";
+                board.Customer = ctx.Customer ?? "";
+                board.Control = ctx.Control ?? "";
+                board.Form = ctx.Form ?? "";
+                board.BandNote = ctx.Band == "hard" ? "Harder than the flights already shown." : "";
+                board.Codex = CodexTitles.Line(ctx.CodexId);
+                board.CodexNote = CodexKid(ctx.CodexId);
+            }
             board.Vehicle = ctx != null && !string.IsNullOrEmpty(ctx.VehicleLine) ? ctx.VehicleLine : "";
             board.Reach = ctx != null && !string.IsNullOrEmpty(ctx.ReachLine) ? ctx.ReachLine : "";
             board.CanBuild = ctx != null && !ctx.IsFree && !string.IsNullOrEmpty(ctx.MissionId);
@@ -237,6 +261,17 @@ namespace Kestrel.Game.MissionSelect
             if (!string.IsNullOrEmpty(req.Grade)) where += ". Grade " + req.Grade;
             if (req.Boosters) where += ". Boosters too";
             return where;
+        }
+
+        static string CodexKid(string id)
+        {
+            if (CodexTitles.Title(id).Length == 0) return "";
+            try
+            {
+                var entry = CodexBook.Load(Catalog.FindRepoRoot(Directory.GetCurrentDirectory())).ById(id);
+                return entry == null ? "" : entry.Kid ?? "";
+            }
+            catch (Exception) { return ""; }
         }
 
         static string First(string a, string b)
