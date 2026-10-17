@@ -14,9 +14,11 @@ namespace Kestrel.Game.Shell
         public static void Apply(VisualElement root)
         {
             Set(root, "kh-mm-kestrel", "Fraunces-Black"); Set(root, "kh-mm-launch-label", "Fraunces-Black");
-            Set(root, "kh-mm-tile-name", "Fraunces-Bold");
-            Set(root, "kh-mm-heavy", "SpaceGrotesk-Bold"); Set(root, "kh-mm-soon", "SpaceGrotesk-Bold"); Set(root, "kh-mm-hint", "SpaceGrotesk-Bold");
+            Set(root, "kh-mm-tile-name", "Fraunces-Bold"); Set(root, "kh-mm-heavy", "Fraunces-Bold"); Set(root, "kh-mm-design-label", "Fraunces-Bold");
+            Set(root, "kh-mm-soon", "SpaceGrotesk-Bold"); Set(root, "kh-mm-thrum-name", "SpaceGrotesk-Bold");
+            Set(root, "kh-mm-hint", "SpaceGrotesk-Medium"); Set(root, "kh-mm-eyebrow", "SpaceGrotesk-Medium");
             Set(root, "kh-mm-launch-caption", "SpaceGrotesk-Medium"); Set(root, "kh-mm-tile-caption", "SpaceGrotesk-Medium");
+            Set(root, "kh-mm-design-caption", "SpaceGrotesk-Medium");
         }
 
         static void Set(VisualElement root, string cls, string font)

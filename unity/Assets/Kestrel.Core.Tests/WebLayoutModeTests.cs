@@ -73,6 +73,95 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void WideHomeTitleAndCardsFitAndDoNotOverlap()
+        {
+            // Desktop sizes Trevor opens, a phone on its side, and iPad landscape.
+            var sizes = new[]
+            {
+                new Size("1440x900", 1440f, 900f, 0f, 0f, 0f, 0f),
+                new Size("1920x1080", 1920f, 1080f, 0f, 0f, 0f, 0f),
+                new Size("1280x720", 1280f, 720f, 0f, 0f, 0f, 0f),
+                new Size("844x390", 844f, 390f, 0f, 0f, 0f, 0f),
+                new Size("844x390 notch", 844f, 390f, 0f, 21f, 47f, 47f),
+                new Size("iPad 11 landscape", 1194f, 834f, 24f, 20f, 0f, 0f),
+                new Size("iPad 13 landscape", 1366f, 1024f, 24f, 20f, 0f, 0f),
+                new Size("iPad classic landscape", 1024f, 768f, 20f, 0f, 0f, 0f),
+            };
+            foreach (var d in sizes)
+            {
+                var home = WebHomeLayout.Place(d.W, d.H, d.Top, d.Bottom, d.Left, d.Right);
+                string where = d.Name;
+                Assert.That(home.Wide, Is.True, where);
+                Assert.That(home.Scroll, Is.False, where + " column had to scroll");
+                AssertSideBySideHome(home, d, where);
+                NoOverlap(HomeBoxes(home), where + " home");
+                Inside(HomeBoxes(home), d, where + " home");
+                float reel = WebHomeLayout.Reel(d.H, d.Bottom);
+                Assert.That(home.Codex.Bottom, Is.LessThanOrEqualTo(d.H - reel + 0.6f), where + " codex under the film bar");
+                Assert.That(home.Hint.Bottom, Is.LessThanOrEqualTo(d.H - reel + 0.6f), where + " hint under the film bar");
+                Assert.That(home.Title.Bottom, Is.LessThanOrEqualTo(d.H - reel + 0.6f), where + " title under the film bar");
+                Assert.That(home.Title.Right, Is.LessThanOrEqualTo(home.Menu.X + 0.6f), where + " title enters the cards");
+                Assert.That(home.Launch.H, Is.GreaterThanOrEqualTo(36f), where);
+                Assert.That(home.Design.H, Is.GreaterThanOrEqualTo(36f), where);
+                Assert.That(home.Missions.H, Is.GreaterThanOrEqualTo(36f), where);
+                Assert.That(home.Codex.H, Is.GreaterThanOrEqualTo(36f), where);
+                Assert.That(WebHomeLayout.TextFitError(home), Is.Null, where);
+                Assert.That(home.Type.Title, Is.GreaterThanOrEqualTo(20f), where + " title");
+                Assert.That(home.Type.Launch, Is.GreaterThanOrEqualTo(13f), where + " launch");
+                Assert.That(home.Type.Design, Is.GreaterThanOrEqualTo(12f), where + " design");
+                Assert.That(home.Type.TileCaption, Is.GreaterThanOrEqualTo(10f), where + " caption");
+            }
+        }
+
+        [Test]
+        public void VeryShortLandscapeScrollsInsteadOfPushingCodexOff()
+        {
+            var home = WebHomeLayout.Place(900f, 260f, 0f, 0f, 0f, 0f);
+            Assert.That(home.Wide, Is.True);
+            Assert.That(home.Scroll, Is.True);
+            NoOverlap(HomeBoxes(home), "short");
+            Inside(HomeBoxes(home), new Size("short", 900f, 260f, 0f, 0f, 0f, 0f), "short");
+            Assert.That(home.Codex.Bottom, Is.LessThanOrEqualTo(home.Menu.Bottom + 0.6f));
+            Assert.That(home.Menu.Bottom, Is.LessThanOrEqualTo(260f - WebHomeLayout.Reel(260f, 0f) + 0.6f));
+        }
+
+        [Test]
+        public void PortraitHomeFitsSeProMaxAndIpad()
+        {
+            var sizes = new[]
+            {
+                new Size("SE", 375f, 667f, 20f, 0f, 0f, 0f),
+                new Size("Pro Max", 440f, 956f, 62f, 34f, 0f, 0f),
+                new Size("iPad", 1032f, 1376f, 24f, 20f, 0f, 0f),
+            };
+            foreach (var d in sizes)
+            {
+                var home = WebHomeLayout.Place(d.W, d.H, d.Top, d.Bottom, d.Left, d.Right);
+                string where = d.Name;
+                Assert.That(home.Wide, Is.False, where);
+                Assert.That(home.Scroll, Is.False, where);
+                Assert.That(home.Launch.W, Is.GreaterThan(home.Menu.W * 0.9f), where + " launch");
+                Assert.That(home.Rocket.Bottom, Is.LessThanOrEqualTo(home.Menu.Y + 0.6f), where + " rocket");
+                Assert.That(home.Title.Bottom, Is.LessThanOrEqualTo(home.Rocket.Y + 0.6f), where + " title");
+                Assert.That(home.Launch.H, Is.GreaterThanOrEqualTo(44f), where);
+                Assert.That(home.Design.H, Is.GreaterThanOrEqualTo(44f), where);
+                Assert.That(home.Missions.H, Is.GreaterThanOrEqualTo(44f), where);
+                Assert.That(home.Codex.H, Is.GreaterThanOrEqualTo(44f), where);
+                Assert.That(home.Rocket.H, Is.GreaterThan(d.H * 0.18f), where + " hero");
+                NoOverlap(HomeBoxes(home), where + " home");
+                Inside(HomeBoxes(home), d, where + " home");
+                float titleInner = System.Math.Max(1f, home.Title.W - 8f);
+                Assert.That(HomeWideText.Width(HomeWideText.Kestrel, 24f), Is.LessThanOrEqualTo(titleInner), where + " KESTREL");
+                Assert.That(HomeWideText.Width(HomeWideText.Heavy, 11f), Is.LessThanOrEqualTo(titleInner * 0.7f), where + " HEAVY");
+                float launchInner = System.Math.Max(1f, home.Launch.W - WebHomeLayout.LaunchChrome);
+                Assert.That(HomeWideText.Width(HomeWideText.Launch, 13f), Is.LessThanOrEqualTo(launchInner), where + " LAUNCH");
+                Assert.That(HomeWideText.Lines(HomeWideText.LaunchCaption, 11f, launchInner), Is.LessThanOrEqualTo(2), where + " launch caption");
+                float hintInner = System.Math.Max(1f, home.Hint.W - 16f);
+                Assert.That(HomeWideText.Lines(HomeWideText.Hint, 11f, hintInner), Is.LessThanOrEqualTo(2), where + " Thrum");
+            }
+        }
+
+        [Test]
         public void PortraitWebStaysAPhoneColumn()
         {
             var home = WebHomeLayout.Place(390f, 844f, 47f, 34f, 0f, 0f);

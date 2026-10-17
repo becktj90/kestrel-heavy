@@ -60,11 +60,10 @@ namespace Kestrel.Game.Tests
             Assert.That(root.Q("home-hangar"), Is.Null);
             var codex = root.Q<Button>("home-codex");
             Assert.That(codex.enabledSelf, Is.False);
-            var tag = codex.Q<Label>("soon");
-            Assert.That(tag, Is.Not.Null);
-            Assert.That(tag.parent.ClassListContains("kh-mm-tile-head"));
+            Assert.That(codex.Q<Label>("soon"), Is.Null, "Codex stays quiet until the feature is real");
+            Assert.That(codex.tooltip, Does.Contain("Coming soon"));
             Assert.That(codex.Q(className: "kh-mm-tile-caption").parent, Is.SameAs(codex));
-            Assert.That(root.Query<Label>("soon").ToList().Count, Is.EqualTo(1));
+            Assert.That(root.Query<Label>("soon").ToList().Count, Is.EqualTo(0));
             Assert.That(root.Query<VisualElement>("lamp").ToList().Count, Is.EqualTo(3));
             Assert.That(full.Q("home-settings-sheet").style.display.value, Is.EqualTo(DisplayStyle.None));
             Assert.That(root.Q("mm-stats"), Is.Not.Null);
@@ -74,7 +73,10 @@ namespace Kestrel.Game.Tests
             // Decorative elements must not steal taps from the 3D scene or the buttons.
             Assert.That(root.pickingMode, Is.EqualTo(PickingMode.Ignore));
             Assert.That(full.Q("mm-full").pickingMode, Is.EqualTo(PickingMode.Ignore));
-            Assert.That(root.Q<Label>("mm-hint").text, Is.EqualTo(MainMenuCopy.TapHint));
+            Assert.That(root.Q<Label>("mm-hint-line").text, Is.EqualTo(MainMenuCopy.ThrumLine));
+            Assert.That(root.Q("mm-hint"), Is.Not.Null);
+            Assert.That(full.Q("mm-dusk"), Is.Not.Null);
+            Assert.That(root.Q<Label>("mm-eyebrow").text, Is.EqualTo(MainMenuCopy.Eyebrow));
         }
 
         [Test]
@@ -211,7 +213,7 @@ namespace Kestrel.Game.Tests
                 Assert.That(MenuTypeScale.TextW("KESTREL", z.Title), Is.LessThanOrEqualTo(col), d.name + " title");
                 Assert.That(MenuTypeScale.TextW("HEAVY", z.Tagline), Is.LessThanOrEqualTo(col * 0.5f), d.name + " tagline leaves room for the rules");
                 Assert.That(MenuTypeScale.TextW("LAUNCH", z.LaunchLabel), Is.LessThanOrEqualTo(z.LaunchCaptionW), d.name + " launch label");
-                Assert.That(MenuTypeScale.TextW(MainMenuCopy.TapHint, z.Hint), Is.LessThanOrEqualTo(col), d.name + " hint on one line");
+                Assert.That(MainMenuCopy.ThrumWidth100 * z.Hint / 100f, Is.LessThanOrEqualTo(col * 2f), d.name + " Thrum within two lines");
                 foreach (var t in MainMenuCopy.Tiles)
                 {
                     float n = MenuTypeScale.FitName(z, t.Label, !t.Live);
@@ -373,7 +375,7 @@ namespace Kestrel.Game.Tests
                 Assert.That(name.style.flexShrink.value, Is.EqualTo(0f), it.Id);
                 Assert.That(name.style.fontSize.value.value, Is.EqualTo(MenuTypeScale.FitName(z, it.Label, !it.Live)).Within(0.01f), it.Id);
             }
-            Assert.That(root.Q<Button>("home-codex").Q(className: "kh-mm-soon").style.fontSize.value.value, Is.EqualTo(z.Soon).Within(0.01f));
+            Assert.That(root.Q<Button>("home-codex").Q<Label>("soon"), Is.Null, "Codex stays quiet until the feature is real");
         }
     }
 }

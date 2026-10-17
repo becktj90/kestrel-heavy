@@ -1,6 +1,6 @@
-// UI Toolkit layer for the retro-cinematic main menu ("mix", Trevor's pick). It sits over the live 3D hangar
-// scene (MainMenuController keeps the rocket, hangar and telemetry; the overlay replaces the 3D title, launch
-// bar and glass rows with 2D controls that match the mockup). Static classes + USS, no bitmaps.
+// UI Toolkit layer for the dusk Home screen. It sits over the live 3D hangar scene. The overlay paints the
+// sky, ridges and hero rocket, and replaces the 3D title, launch bar and glass rows. Glass is a baked
+// translucent fill (no realtime blur). Static classes + USS.
 // Motion follows motion-spec.md where cheap: staggered intro by class toggle + USS transition, :active press,
 // :focus ring. Reduce Motion: no intro, no transitions (root gets kh-mm-reduce).
 using System;
@@ -23,7 +23,8 @@ namespace Kestrel.Game.Shell
             root.AddToClassList("kh-mm");
             if (reduceMotion) root.AddToClassList("kh-mm-reduce");
 
-            // Full-bleed: grain + reel bars (decorative, never pick).
+            // Full-bleed dusk, then a light grain. Reel bars stay in the tree for the mix tests; USS hides them.
+            var dusk = new HomeDuskBackdrop();
             var grain = new VisualElement { name = "mm-grain", pickingMode = PickingMode.Ignore };
             grain.AddToClassList("kh-mm-full"); grain.AddToClassList("kh-home-grain");
             grain.style.backgroundImage = new StyleBackground(HomeBackdrop.GrainTexture());
@@ -33,21 +34,27 @@ namespace Kestrel.Game.Shell
             var bottom = new Reel { name = "mm-bar-bottom" }; bottom.AddToClassList("kh-mm-bar"); bottom.AddToClassList("kh-mm-bar-bottom");
             var layer = new VisualElement { name = "mm-full", pickingMode = PickingMode.Ignore };
             layer.AddToClassList("kh-mm-full");
-            layer.Add(grain); layer.Add(top); layer.Add(bottom);
+            layer.Add(dusk); layer.Add(grain); layer.Add(top); layer.Add(bottom);
             full.Add(layer);
 
-            // Title card.
+            // Title card: eyebrow, gold wordmark with a hard under-shadow, italic HEAVY between brass rules.
             var title = new VisualElement { name = "mm-title", pickingMode = PickingMode.Ignore };
             title.AddToClassList("kh-mm-title-card"); title.AddToClassList("kh-mm-anim");
+            var eye = new Label(MainMenuCopy.Eyebrow) { name = "mm-eyebrow", pickingMode = PickingMode.Ignore };
+            eye.AddToClassList("kh-mm-eyebrow");
+            var word = new VisualElement { pickingMode = PickingMode.Ignore }; word.AddToClassList("kh-mm-word");
+            var shadow = new Label(MainMenuCopy.TitleTop) { name = "mm-kestrel-shadow", pickingMode = PickingMode.Ignore };
+            shadow.AddToClassList("kh-mm-kestrel"); shadow.AddToClassList("kh-mm-kestrel-shadow");
             var kestrel = new Label(MainMenuCopy.TitleTop) { name = "mm-kestrel", pickingMode = PickingMode.Ignore };
             kestrel.AddToClassList("kh-mm-kestrel");
+            word.Add(shadow); word.Add(kestrel);
             var rule = new VisualElement { pickingMode = PickingMode.Ignore }; rule.AddToClassList("kh-mm-rule-row");
             var l = new VisualElement { pickingMode = PickingMode.Ignore }; l.AddToClassList("kh-mm-rule");
             var heavy = new Label(MainMenuCopy.TitleBottom) { name = "mm-heavy", pickingMode = PickingMode.Ignore };
             heavy.AddToClassList("kh-mm-heavy");
             var r = new VisualElement { pickingMode = PickingMode.Ignore }; r.AddToClassList("kh-mm-rule");
             rule.Add(l); rule.Add(heavy); rule.Add(r);
-            title.Add(kestrel); title.Add(rule);
+            title.Add(eye); title.Add(word); title.Add(rule);
             root.Add(title);
 
             var spacer = new VisualElement { pickingMode = PickingMode.Ignore }; spacer.style.flexGrow = 1; root.Add(spacer);
@@ -65,8 +72,7 @@ namespace Kestrel.Game.Shell
             root.Add(grid);
             Gear(full);
 
-            var hint = new Label(MainMenuCopy.TapHint) { name = "mm-hint", pickingMode = PickingMode.Ignore };
-            hint.AddToClassList("kh-mm-hint");
+            var hint = ThrumStrip();
             root.Add(hint);
             safe.Add(root);
             MainMenuFonts.Apply(root);
@@ -83,6 +89,7 @@ namespace Kestrel.Game.Shell
                 var z = MenuTypeScale.Compute(w, h, topInset, botInset);
                 ApplyScale(root, z);
                 ApplyWebWide(root, WebLayoutMode.UseWide(Screen.width, Screen.height));
+                PlaceHero(root, full, dusk);
                 top.style.height = MainMenuCopy.BarHeight(h, topInset);
                 bottom.style.height = MainMenuCopy.BarHeight(h, botInset);
                 MainMenuLayout.HeroLift = MeasureLift(root, safe, full, z, h, topInset);
@@ -98,8 +105,8 @@ namespace Kestrel.Game.Shell
             return root;
         }
 
-        /// <summary>Landscape web: rocket stays in the centre, menu tiles sit in a column beside it.
-        /// Portrait and iOS leave the phone column from ApplyScale.</summary>
+        /// <summary>Landscape web: the wordmark sits on the hero, and the action cards sit in a column
+        /// beside it, sized to the free space. Portrait and iOS leave the phone column from ApplyScale.</summary>
         public static void ApplyWebWide(VisualElement root, bool wide)
         {
             if (root == null) return;
@@ -110,37 +117,232 @@ namespace Kestrel.Game.Shell
             if (rw < 8f || rh < 8f) return;
             WebViewport.Css(out float cssW, out float cssH);
             if (cssW < 8f || cssH < 8f) { cssW = rw; cssH = rh; }
-            var f = WebHomeLayout.Place(cssW, cssH, 0f, 0f, 0f, 0f);
-            float ux = rw / cssW;
-            float uy = rh / cssH;
-            HudBox Sc(HudBox b) => new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
-            f.Title = Sc(f.Title); f.Stats = Sc(f.Stats); f.Launch = Sc(f.Launch); f.Design = Sc(f.Design);
-            f.Missions = Sc(f.Missions); f.Codex = Sc(f.Codex); f.Menu = Sc(f.Menu); f.Hint = Sc(f.Hint);
-            f.Rocket = Sc(f.Rocket);
-            if (!f.Wide) { ClearWebWide(root); return; }
+            CssSafe(cssW, cssH, out float safeTop, out float safeBottom, out float safeLeft, out float safeRight);
+            var frame = WebHomeLayout.Place(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight);
+            if (!frame.Wide || frame.Type == null) { ClearWebWide(root); return; }
+            // mm-root already fills the safe rect, so CSS boxes are shifted back to that origin.
+            float innerW = Mathf.Max(1f, cssW - safeLeft - safeRight);
+            float innerH = Mathf.Max(1f, cssH - safeTop - safeBottom);
+            float sx = rw / innerW;
+            float sy = rh / innerH;
+            float fs = Mathf.Min(sx, sy);
+            HudBox Sc(HudBox b) => new HudBox
+            {
+                X = (b.X - safeLeft) * sx,
+                Y = (b.Y - safeTop) * sy,
+                W = b.W * sx,
+                H = b.H * sy,
+            };
+            frame.Title = Sc(frame.Title); frame.Stats = Sc(frame.Stats);
+            frame.Launch = Sc(frame.Launch); frame.Design = Sc(frame.Design);
+            frame.Missions = Sc(frame.Missions); frame.Codex = Sc(frame.Codex);
+            frame.Menu = Sc(frame.Menu); frame.Hint = Sc(frame.Hint);
             root.style.paddingTop = 0;
             root.style.paddingBottom = 0;
-            Pin(root.Q("mm-title"), f.Title);
-            Pin(root.Q("mm-stats"), f.Stats);
-            Pin(root.Q("home-launch"), f.Launch);
-            Pin(root.Q("home-design"), f.Design);
+            root.style.paddingLeft = 0;
+            root.style.paddingRight = 0;
+            Reparent(root, "mm-title");
+            Reparent(root, "mm-stats");
+            Reparent(root, "home-launch");
+            Reparent(root, "home-design");
+            Reparent(root, "mm-grid");
+            Reparent(root, "mm-hint");
+            Pin(root.Q("mm-title"), frame.Title);
+            Pin(root.Q("mm-stats"), frame.Stats);
+            Clip(root.Q("mm-title"));
+            Clip(root.Q("mm-stats"));
+            var type = frame.Type;
+            Font(root.Q("mm-kestrel"), type.Title * fs, 0.02f);
+            Font(root.Q("mm-kestrel-shadow"), type.Title * fs, 0.02f);
+            Font(root.Q("mm-eyebrow"), Mathf.Clamp(type.Title * fs * 0.18f, 9f, 13f), 0.12f);
+            Font(root.Q("mm-heavy"), type.Tagline * fs, 0.42f);
+            var kestrel = root.Q("mm-kestrel");
+            if (kestrel != null) { kestrel.style.whiteSpace = WhiteSpace.NoWrap; kestrel.style.overflow = Overflow.Hidden; }
+            var heavy = root.Q("mm-heavy");
+            if (heavy != null) { heavy.style.whiteSpace = WhiteSpace.NoWrap; heavy.style.overflow = Overflow.Hidden; }
+            root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = type.Stat * fs);
+
+            bool scroll = frame.Scroll;
+            var scroller = WideScroll(root, scroll);
+            VisualElement host = scroll ? scroller : root;
+            PlaceAction(root, host, "home-launch", frame.Launch, scroll, sx, sy);
+            PlaceAction(root, host, "home-design", frame.Design, scroll, sx, sy);
             var grid = root.Q("mm-grid");
             if (grid != null)
             {
-                float top = f.Missions.Y;
-                float bottom = Mathf.Max(f.Missions.Bottom, f.Codex.Bottom);
-                Pin(grid, new HudBox { X = f.Menu.X, Y = top, W = f.Menu.W, H = Mathf.Max(1f, bottom - top) });
+                if (scroll)
+                {
+                    if (grid.parent != scroller) scroller.Add(grid);
+                    grid.style.position = Position.Relative;
+                    grid.style.left = StyleKeyword.Auto;
+                    grid.style.top = StyleKeyword.Auto;
+                    grid.style.width = Length.Percent(100);
+                    grid.style.height = StyleKeyword.Auto;
+                    grid.style.marginTop = 0;
+                    grid.style.marginBottom = WebHomeLayout.Gap * sy;
+                }
+                else
+                {
+                    Reparent(root, "mm-grid");
+                    float top = frame.Missions.Y;
+                    float bottom = Mathf.Max(frame.Missions.Bottom, frame.Codex.Bottom);
+                    Pin(grid, new HudBox { X = frame.Menu.X, Y = top, W = frame.Menu.W, H = Mathf.Max(1f, bottom - top) });
+                }
                 grid.style.flexDirection = FlexDirection.Column;
                 grid.style.flexWrap = Wrap.NoWrap;
+                grid.style.overflow = Overflow.Hidden;
             }
+            float tileGap = scroll ? WebHomeLayout.Gap * sy : Mathf.Max(0f, frame.Codex.Y - frame.Missions.Bottom);
             foreach (var it in MainMenuCopy.Tiles)
             {
                 var tile = root.Q("home-" + it.Id);
                 if (tile == null) continue;
-                tile.style.width = Length.Percent(100);
+                float h = it.Id == "codex" ? frame.Codex.H : frame.Missions.H;
+                if (scroll) h = Mathf.Max(h, 44f * sy);
                 tile.style.position = Position.Relative;
+                tile.style.left = StyleKeyword.Auto;
+                tile.style.top = StyleKeyword.Auto;
+                tile.style.width = Length.Percent(100);
+                tile.style.height = h;
+                tile.style.minHeight = h;
+                tile.style.maxHeight = h;
+                tile.style.marginTop = 0;
+                tile.style.marginBottom = it.Id == "missions" ? tileGap : 0f;
+                tile.style.flexShrink = 0;
+                tile.style.overflow = Overflow.Hidden;
+                tile.style.paddingLeft = 10f * sx;
+                tile.style.paddingRight = 10f * sx;
+                tile.style.paddingTop = 10f * sy;
+                tile.style.paddingBottom = 10f * sy;
             }
-            Pin(root.Q("mm-hint"), f.Hint);
+            PlaceAction(root, host, "mm-hint", frame.Hint, scroll, sx, sy);
+            Font(root.Q(className: "kh-mm-launch-label"), type.Launch * fs, 0.10f);
+            Font(root.Q(className: "kh-mm-launch-caption"), type.LaunchCaption * fs, 0f);
+            Font(root.Q(className: "kh-mm-design-label"), type.Design * fs, 0.03f);
+            Font(root.Q(className: "kh-mm-design-caption"), type.DesignCaption * fs, 0f);
+            root.Query(className: "kh-mm-tile-name").ForEach(e =>
+            {
+                e.style.fontSize = type.TileName * fs;
+                e.style.letterSpacing = type.TileName * fs * 0.03f;
+                e.style.whiteSpace = WhiteSpace.NoWrap;
+                e.style.overflow = Overflow.Hidden;
+            });
+            root.Query(className: "kh-mm-tile-caption").ForEach(e =>
+            {
+                e.style.fontSize = type.TileCaption * fs;
+                e.style.whiteSpace = WhiteSpace.Normal;
+                e.style.overflow = Overflow.Hidden;
+            });
+            root.Query(className: "kh-mm-soon").ForEach(e =>
+            {
+                e.style.fontSize = type.Soon * fs;
+                e.style.letterSpacing = type.Soon * fs * 0.15f;
+            });
+            Font(root.Q("mm-hint-line"), type.Hint * fs, 0f);
+            var hint = root.Q("mm-hint-line");
+            if (hint != null) { hint.style.whiteSpace = WhiteSpace.Normal; hint.style.overflow = Overflow.Hidden; }
+            FitCardText(root.Q("home-launch"), true);
+            FitCardText(root.Q("home-design"), false);
+            if (scroll) Pin(scroller, frame.Menu);
+        }
+
+        static void CssSafe(float cssW, float cssH, out float top, out float bottom, out float left, out float right)
+        {
+            top = bottom = left = right = 0f;
+            if (Screen.width <= 1f || Screen.height <= 1f || cssW <= 1f || cssH <= 1f) return;
+            var safe = Screen.safeArea;
+            float perX = Screen.width / cssW;
+            float perY = Screen.height / cssH;
+            if (perX <= 0f || perY <= 0f) return;
+            top = Mathf.Max(0f, (Screen.height - safe.yMax) / perY);
+            bottom = Mathf.Max(0f, safe.yMin / perY);
+            left = Mathf.Max(0f, safe.xMin / perX);
+            right = Mathf.Max(0f, (Screen.width - safe.xMax) / perX);
+        }
+
+        static void PlaceAction(VisualElement root, VisualElement host, string name, HudBox box, bool scroll, float sx, float sy)
+        {
+            var e = root.Q(name);
+            if (e == null) return;
+            if (scroll)
+            {
+                if (e.parent != host) host.Add(e);
+                e.style.position = Position.Relative;
+                e.style.left = StyleKeyword.Auto;
+                e.style.top = StyleKeyword.Auto;
+                e.style.right = StyleKeyword.Auto;
+                e.style.bottom = StyleKeyword.Auto;
+                e.style.width = Length.Percent(100);
+                float h = name == "mm-hint" ? box.H : Mathf.Max(box.H, 44f * sy);
+                e.style.height = h;
+                e.style.minHeight = h;
+                e.style.maxHeight = h;
+                e.style.marginTop = 0;
+                e.style.marginBottom = WebHomeLayout.Gap * sy;
+                e.style.flexShrink = 0;
+            }
+            else
+            {
+                Reparent(root, name);
+                Pin(e, box);
+            }
+            e.style.overflow = Overflow.Hidden;
+            if (name == "home-launch" || name == "home-design")
+            {
+                float padX = 12f * sx;
+                float padY = (name == "home-launch" ? 8f : 6f) * sy;
+                e.style.paddingLeft = padX;
+                e.style.paddingRight = padX;
+                e.style.paddingTop = padY;
+                e.style.paddingBottom = padY;
+            }
+        }
+
+        static void FitCardText(VisualElement card, bool launch)
+        {
+            if (card == null) return;
+            card.style.overflow = Overflow.Hidden;
+            var label = card.Q(className: launch ? "kh-mm-launch-label" : "kh-mm-design-label");
+            var cap = card.Q(className: launch ? "kh-mm-launch-caption" : "kh-mm-design-caption");
+            if (label != null) { label.style.whiteSpace = WhiteSpace.NoWrap; label.style.overflow = Overflow.Hidden; }
+            if (cap != null) { cap.style.whiteSpace = WhiteSpace.Normal; cap.style.overflow = Overflow.Hidden; }
+        }
+
+        static void Font(VisualElement e, float size, float trackEm)
+        {
+            if (e == null) return;
+            e.style.fontSize = size;
+            e.style.letterSpacing = trackEm > 0f ? size * trackEm : 0f;
+        }
+
+        static void Clip(VisualElement e)
+        {
+            if (e != null) e.style.overflow = Overflow.Hidden;
+        }
+
+        static void Reparent(VisualElement root, string name)
+        {
+            var e = root.Q(name);
+            if (e != null && e.parent != root) root.Add(e);
+        }
+
+        static ScrollView WideScroll(VisualElement root, bool on)
+        {
+            var scroller = root.Q<ScrollView>("mm-wide-scroll");
+            if (!on)
+            {
+                if (scroller != null) scroller.RemoveFromHierarchy();
+                return null;
+            }
+            if (scroller == null)
+            {
+                scroller = new ScrollView(ScrollViewMode.Vertical) { name = "mm-wide-scroll" };
+                scroller.mode = ScrollViewMode.Vertical;
+                scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+                scroller.verticalScrollerVisibility = ScrollerVisibility.Auto;
+                root.Add(scroller);
+            }
+            return scroller;
         }
 
         static void Pin(VisualElement e, HudBox b)
@@ -151,10 +353,14 @@ namespace Kestrel.Game.Shell
             e.style.top = b.Y;
             e.style.width = b.W;
             e.style.height = b.H;
+            e.style.minHeight = b.H;
+            e.style.maxHeight = b.H;
             e.style.right = StyleKeyword.Auto;
             e.style.bottom = StyleKeyword.Auto;
             e.style.marginTop = 0;
             e.style.marginBottom = 0;
+            e.style.flexGrow = 0;
+            e.style.flexShrink = 0;
         }
 
         static void ClearWebWide(VisualElement root)
@@ -168,16 +374,48 @@ namespace Kestrel.Game.Shell
                 e.style.right = StyleKeyword.Null;
                 e.style.bottom = StyleKeyword.Null;
                 e.style.width = StyleKeyword.Null;
+                e.style.maxHeight = StyleKeyword.Null;
+                e.style.overflow = StyleKeyword.Null;
             }
-            Drop(root.Q("mm-title"));
+            Reparent(root, "mm-title");
+            Reparent(root, "mm-stats");
+            Reparent(root, "home-launch");
+            Reparent(root, "home-design");
+            Reparent(root, "mm-grid");
+            Reparent(root, "mm-hint");
+            var scroller = root.Q("mm-wide-scroll");
+            if (scroller != null) scroller.RemoveFromHierarchy();
+            var title = root.Q("mm-title");
+            Drop(title);
+            if (title != null)
+            {
+                title.style.height = StyleKeyword.Null;
+                title.style.minHeight = StyleKeyword.Null;
+            }
             Drop(root.Q("mm-stats"));
             Drop(root.Q("home-launch"));
-            Drop(root.Q("home-design"));
-            Drop(root.Q("mm-hint"));
+            var design = root.Q("home-design");
+            Drop(design);
+            if (design != null)
+            {
+                design.style.paddingTop = StyleKeyword.Null;
+                design.style.paddingBottom = StyleKeyword.Null;
+                design.style.paddingLeft = StyleKeyword.Null;
+                design.style.paddingRight = StyleKeyword.Null;
+            }
+            var hint = root.Q("mm-hint");
+            Drop(hint);
+            if (hint != null)
+            {
+                hint.style.height = StyleKeyword.Null;
+                hint.style.minHeight = StyleKeyword.Null;
+            }
             var grid = root.Q("mm-grid");
             Drop(grid);
             if (grid != null)
             {
+                grid.style.height = StyleKeyword.Null;
+                grid.style.minHeight = StyleKeyword.Null;
                 grid.style.flexDirection = StyleKeyword.Null;
                 grid.style.flexWrap = StyleKeyword.Null;
             }
@@ -192,10 +430,73 @@ namespace Kestrel.Game.Shell
             if (cap != null) cap.text = line;
         }
 
+        /// <summary>Paints the hero rocket in the open pad between the title and the controls.</summary>
+        static void PlaceHero(VisualElement root, VisualElement full, HomeDuskBackdrop dusk)
+        {
+            if (root == null || full == null || dusk == null) return;
+            float w = full.resolvedStyle.width;
+            float h = full.resolvedStyle.height;
+            if (w < 8f || h < 8f) return;
+            float originY = full.worldBound.yMin;
+            float originX = full.worldBound.xMin;
+            var title = root.Q("mm-title");
+            var stats = root.Q("mm-stats");
+            var launch = root.Q("home-launch");
+            float top = h * 0.16f;
+            if (title != null && title.worldBound.height > 1f)
+                top = title.worldBound.yMax - originY + 4f;
+            bool wide = root.ClassListContains("kh-mm-wide");
+            float left = w * 0.22f;
+            float right = w * 0.78f;
+            float bottom = h * 0.72f;
+            if (wide)
+            {
+                if (stats != null && stats.worldBound.width > 1f)
+                    left = stats.worldBound.xMax - originX + 8f;
+                if (launch != null && launch.worldBound.width > 1f)
+                    right = launch.worldBound.xMin - originX - 8f;
+                bottom = h - MainMenuCopy.BarHeight(h, 0f);
+            }
+            else if (stats != null && stats.worldBound.height > 1f)
+            {
+                bottom = stats.worldBound.yMin - originY - 6f;
+                left = w * 0.18f;
+                right = w * 0.82f;
+            }
+            float width = right - left;
+            if (width < 24f || bottom - top < 24f) return;
+            dusk.SetHero(new Rect(left, top, width, bottom - top), root.ClassListContains("kh-mm-reduce"));
+        }
+
+        static VisualElement ThrumStrip()
+        {
+            var row = new VisualElement { name = "mm-hint", pickingMode = PickingMode.Ignore };
+            row.AddToClassList("kh-mm-thrum");
+            row.AddToClassList("kh-mm-glass");
+            row.AddToClassList("kh-mm-anim");
+            var face = new VisualElement { name = "mm-thrum-portrait", pickingMode = PickingMode.Ignore };
+            face.AddToClassList("kh-mm-thrum-portrait");
+            var tex = Resources.Load<Texture2D>("Guide/thrum");
+            if (tex != null)
+            {
+                tex.filterMode = FilterMode.Point;
+                face.style.backgroundImage = new StyleBackground(tex);
+            }
+            var col = new VisualElement { pickingMode = PickingMode.Ignore };
+            col.AddToClassList("kh-mm-col");
+            var who = new Label("Thrum") { name = "mm-thrum-name", pickingMode = PickingMode.Ignore };
+            who.AddToClassList("kh-mm-thrum-name");
+            var line = new Label(MainMenuCopy.ThrumLine) { name = "mm-hint-line", pickingMode = PickingMode.Ignore };
+            line.AddToClassList("kh-mm-hint");
+            col.Add(who); col.Add(line);
+            row.Add(face); row.Add(col);
+            return row;
+        }
+
         static VisualElement StatsStrip()
         {
             var row = new VisualElement { name = "mm-stats", pickingMode = PickingMode.Ignore };
-            row.AddToClassList("kh-mm-stats"); row.AddToClassList("kh-mm-anim");
+            row.AddToClassList("kh-mm-stats"); row.AddToClassList("kh-mm-glass"); row.AddToClassList("kh-mm-anim");
             row.Add(Stat("mm-fuel", MainMenuCopy.FuelStat));
             row.Add(Stat("mm-thrust", MainMenuCopy.ThrustStat));
             return row;
@@ -218,8 +519,12 @@ namespace Kestrel.Game.Shell
             var cap = new Label(string.IsNullOrEmpty(missionLine) ? MainMenuCopy.Launch.Caption : missionLine) { name = "mm-launch-caption", pickingMode = PickingMode.Ignore };
             cap.AddToClassList("kh-mm-launch-caption");
             col.Add(label); col.Add(cap);
-            b.Add(lamp); b.Add(col);
+            var icon = new HomeGlyph("rocket") { name = "mm-launch-icon" };
+            icon.AddToClassList("kh-mm-launch-icon");
+            icon.Ink = Color.white;
+            b.Add(lamp); b.Add(col); b.Add(icon);
             b.text = string.Empty;
+            b.style.backgroundImage = new StyleBackground(HomeDuskBackdrop.LaunchFill());
             return b;
         }
 
@@ -229,10 +534,12 @@ namespace Kestrel.Game.Shell
             b.AddToClassList("kh-button"); b.AddToClassList("kh-mm-design"); b.AddToClassList("kh-mm-anim");
             var lamp = new VisualElement { name = "lamp", pickingMode = PickingMode.Ignore }; lamp.AddToClassList("kh-mm-lamp"); lamp.AddToClassList("kh-mm-lamp--on");
             var col = new VisualElement { pickingMode = PickingMode.Ignore }; col.AddToClassList("kh-mm-col");
-            var label = new Label(MainMenuCopy.Design.Label) { pickingMode = PickingMode.Ignore }; label.AddToClassList("kh-mm-design-label");
-            var cap = new Label(MainMenuCopy.Design.Caption) { pickingMode = PickingMode.Ignore }; cap.AddToClassList("kh-mm-design-caption");
+            var label = new Label("Design") { pickingMode = PickingMode.Ignore }; label.AddToClassList("kh-mm-design-label");
+            var cap = new Label("Build your own rocket") { pickingMode = PickingMode.Ignore }; cap.AddToClassList("kh-mm-design-caption");
             col.Add(label); col.Add(cap);
-            b.Add(lamp); b.Add(col);
+            var icon = new HomeGlyph("blueprint") { name = "mm-design-icon" };
+            icon.style.width = 22; icon.style.height = 22; icon.style.marginLeft = 8;
+            b.Add(lamp); b.Add(col); b.Add(icon);
             b.text = string.Empty;
             return b;
         }
@@ -262,8 +569,11 @@ namespace Kestrel.Game.Shell
             close.clicked += () => sheet.style.display = DisplayStyle.None;
             sheet.Add(title); sheet.Add(motion); sheet.Add(close);
 
-            var gear = new Button { name = "home-settings", text = "Set", tooltip = "Settings. Sound, motion, accessibility." };
+            var gear = new Button { name = "home-settings", text = string.Empty, tooltip = "Settings. Sound, motion, accessibility." };
             gear.AddToClassList("kh-button"); gear.AddToClassList("kh-mm-gear"); gear.AddToClassList("kh-mm-anim");
+            var mark = new HomeGlyph("gear");
+            mark.style.width = 22; mark.style.height = 22;
+            gear.Add(mark);
             gear.style.width = HomeCornerLayout.Gear;
             gear.style.height = HomeCornerLayout.Gear;
             gear.style.minWidth = HomeCornerLayout.Gear;
@@ -279,16 +589,13 @@ namespace Kestrel.Game.Shell
             b.AddToClassList("kh-button"); b.AddToClassList("kh-mm-tile"); b.AddToClassList("kh-mm-anim");
             if (it.Live) b.AddToClassList("kh-mm-tile--focus"); else b.AddToClassList("kh-mm-tile--soon");
             var head = new VisualElement { pickingMode = PickingMode.Ignore }; head.AddToClassList("kh-mm-tile-head");
-            var name = new Label(it.Label) { pickingMode = PickingMode.Ignore }; name.AddToClassList("kh-mm-tile-name");
-            head.Add(name);
+            var icon = new HomeGlyph(it.Id == "codex" ? "book" : "orbit");
+            icon.style.width = 18; icon.style.height = 18; icon.style.marginRight = 6;
+            var name = new Label(it.Id == "codex" ? "Codex" : "Missions") { pickingMode = PickingMode.Ignore }; name.AddToClassList("kh-mm-tile-name");
+            head.Add(icon); head.Add(name);
             if (it.Live)
             {
                 var lamp = new VisualElement { name = "lamp", pickingMode = PickingMode.Ignore }; lamp.AddToClassList("kh-mm-lamp"); lamp.AddToClassList("kh-mm-lamp--on"); head.Add(lamp);
-            }
-            if (!it.Live)
-            {
-                // Own slot in the title row, so it can never overlap the caption below.
-                var tag = new Label(MainMenuCopy.SoonTag) { name = "soon", pickingMode = PickingMode.Ignore }; tag.AddToClassList("kh-mm-soon"); head.Add(tag);
             }
             var cap = new Label(it.Caption) { pickingMode = PickingMode.Ignore }; cap.AddToClassList("kh-mm-tile-caption");
             b.Add(head); b.Add(cap);
@@ -311,7 +618,7 @@ namespace Kestrel.Game.Shell
             Font("kh-mm-launch-caption", z.LaunchCaption, 0f);
             Font("kh-mm-tile-caption", z.TileCaption, 0f);
             Font("kh-mm-soon", z.Soon, .15f);
-            Font("kh-mm-hint", z.Hint, .18f);
+            Font("kh-mm-hint", z.Hint, 0f);
             // Explicit heights (not min-height) so the block is exactly what MenuTypeScale computed; Unity cannot inflate it.
             root.style.paddingTop = MenuTypeScale.TopPad; root.style.paddingBottom = z.HintBand;
             var stats = root.Q("mm-stats");
@@ -387,7 +694,22 @@ namespace Kestrel.Game.Shell
             show(root.Q("home-launch"), "launch");
             show(root.Q("home-design"), "design");
             foreach (var it in MainMenuCopy.Tiles) show(root.Q("home-" + it.Id), it.Id);
+            show(root.Q("mm-hint"), "codex");
             if (full != null) show(full.Q("home-settings"), "gear");
+            if (!reduceMotion) Breathe(root.Q("mm-launch-icon"));
+        }
+
+        /// <summary>LAUNCH glyph pulses on opacity over 2.4s. Transform-free, and skipped when motion is reduced.</summary>
+        static void Breathe(VisualElement icon)
+        {
+            if (icon == null) return;
+            float t0 = Time.realtimeSinceStartup;
+            icon.schedule.Execute(() =>
+            {
+                float phase = ((Time.realtimeSinceStartup - t0) % 2.4f) / 2.4f;
+                float s = 0.5f + 0.5f * Mathf.Sin(phase * Mathf.PI * 2f);
+                icon.style.opacity = 0.62f + 0.38f * s;
+            }).Every(48);
         }
 
         /// <summary>Film-reel bar: dark band with sprocket holes. Painter2D, static.</summary>
