@@ -48,8 +48,8 @@ namespace Kestrel.Core.Tests
         {
             Assert.That(FlightHudLayout.PlotPt, Is.LessThanOrEqualTo(80f));
             Assert.That(FlightHudLayout.PlotPt, Is.GreaterThan(48f));
-            Assert.That(FlightHudLayout.PlotAlpha, Is.InRange(0.16f, 0.42f));
             Assert.That(FlightHudLayout.StagesAlpha, Is.InRange(0.16f, 0.42f));
+            Assert.That(FlightHudLayout.TrajectoryAlpha, Is.InRange(0f, 0.18f));
             Assert.That(FlightHudLayout.CardFraction, Is.LessThan(0.40f));
         }
 
@@ -131,15 +131,16 @@ namespace Kestrel.Core.Tests
         {
             float nose = FlightHudLayout.StackTop * d.H;
             float tail = FlightHudLayout.StackBottom * d.H;
-            Assert.That(f.Plot.Bottom, Is.LessThan(nose - 6f), where + " plot covers the stack");
             Assert.That(f.Stages.Bottom, Is.LessThan(nose - 6f), where + " stages cover the stack");
             Assert.That(f.Telemetry.Bottom, Is.LessThan(nose), where);
             Assert.That(f.Dock.Y, Is.GreaterThan(tail + 4f), where + " dock covers the stack");
-            Assert.That(f.Plot.Right, Is.LessThanOrEqualTo(d.W * 0.35f + 0.6f), where + " plot crosses the rocket");
+            Assert.That(f.Plot.Y, Is.GreaterThanOrEqualTo(f.Telemetry.Bottom - 0.6f), where + " trajectory covers the strip");
+            Assert.That(f.Plot.Bottom, Is.LessThanOrEqualTo(f.Follow.Y + 0.6f), where + " trajectory covers follow");
+            Assert.That(f.Plot.H, Is.GreaterThan(160f), where + " trajectory runs up the screen");
+            Assert.That(f.Plot.Right, Is.LessThanOrEqualTo(d.W * 0.35f + 0.6f), where + " trajectory crosses the rocket");
             Assert.That(f.Stages.X, Is.GreaterThanOrEqualTo(d.W * 0.65f - 0.6f), where + " stages cross the rocket");
             Assert.That(f.Follow.Right, Is.LessThanOrEqualTo(d.W * 0.35f + 0.6f), where + " follow covers the rocket");
             Assert.That(f.Pause.X, Is.GreaterThanOrEqualTo(d.W * 0.65f - 0.6f), where + " pause covers the rocket");
-            Assert.That(f.Plot.H, Is.EqualTo(FlightHudLayout.PlotPt), where);
             Assert.That(f.Stages.H, Is.EqualTo(FlightHudLayout.PlotPt), where);
         }
 

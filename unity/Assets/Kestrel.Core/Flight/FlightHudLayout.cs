@@ -5,7 +5,8 @@
 // This places four bands that do not overlap on SE, Pro Max, and iPad portrait:
 //   top    — mission clock and the stage chip
 //   strip  — ALT, SPEED, Q, G, one row, text that fits the cell
-//   cards  — flight-path plot (left) and stages panel (right), short and translucent, center open
+//   cards  — stages panel on the right, short and translucent; the trajectory is a
+//            transparent line up the left edge, with the center left open
 //   dock   — medal timing, auto-assist, nudges; long notes behind the info control
 // The chase camera keeps the stack between StackTop and StackBottom of the screen, so the dock
 // and the cards stay off the vehicle. Pinch, orbit, and Follow are unchanged.
@@ -61,6 +62,8 @@ namespace Kestrel.Core.Flight
         public const float FollowWidthPt = 112f;
         public const float PauseWidthPt = 76f;
         public const float PlotAlpha = 0.32f;
+        public const float TrajectoryAlpha = 0.10f;
+        public const float RailMaxPt = 120f;
         public const float StagesAlpha = 0.32f;
         public const float DockAlpha = 0.90f;
         /// <summary>Chase framing keeps the stack inside this band of the portrait screen (top-left fractions).</summary>
@@ -130,7 +133,14 @@ namespace Kestrel.Core.Flight
 
             float cardsY = telY + TelemetryPt + GapPt;
             float cardW = contentW * CardFraction;
-            f.Plot = Box(left, cardsY, cardW, PlotPt);
+            float toolsY = dockTop - GapPt - ButtonPt;
+            float railTop = cardsY;
+            float railBot = toolsY - GapPt;
+            if (railBot < railTop + 96f) railBot = railTop + 96f;
+            float maxRight = width * 0.34f;
+            float railW = RailMaxPt;
+            if (left + railW > maxRight) railW = Math.Max(72f, maxRight - left);
+            f.Plot = Box(left, railTop, railW, railBot - railTop);
             f.Stages = Box(right - cardW, cardsY, cardW, PlotPt);
 
             f.Dock = Box(left, dockTop, contentW, dockH);
@@ -172,7 +182,6 @@ namespace Kestrel.Core.Flight
                 f.NudgeUp = Box(innerL + col + GapPt, y, col, ButtonPt);
             }
 
-            float toolsY = dockTop - GapPt - ButtonPt;
             float followW = FollowWidthPt;
             float centerL = width * 0.35f;
             if (left + followW > centerL - GapPt) followW = Math.Max(ButtonPt, centerL - GapPt - left);

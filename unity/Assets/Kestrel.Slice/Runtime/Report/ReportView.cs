@@ -11,8 +11,33 @@ namespace Kestrel.Slice
     public static class ReportView
     {
         public const string RootName = "post-flight";
+        public static readonly Color PanelInk = new Color(0.055f, 0.07f, 0.11f, 1f);
 
         static readonly string[] ChannelLabels = { "Altitude", "Speed", "Dynamic pressure", "g load", "Delta-v losses" };
+
+        /// <summary>Solid sheet behind every line, in front of the designer stats.</summary>
+        public static void Seal(VisualElement root)
+        {
+            if (root == null) return;
+            root.style.backgroundColor = PanelInk;
+            root.style.opacity = 1f;
+            var plate = root.Q("report-plate");
+            if (plate == null)
+            {
+                plate = new VisualElement { name = "report-plate", pickingMode = PickingMode.Ignore };
+                plate.style.position = Position.Absolute;
+                plate.style.left = 0;
+                plate.style.right = 0;
+                plate.style.top = 0;
+                plate.style.bottom = 0;
+                root.Insert(0, plate);
+            }
+            plate.style.backgroundColor = PanelInk;
+            root.RegisterCallback<AttachToPanelEvent>(_ =>
+            {
+                if (root.parent != null) root.BringToFront();
+            });
+        }
 
         public static VisualElement Build(FailureEvent failure, TelemetryLog log, ReportFrame frame, bool reduceMotion, Action onFix, FlightDebrief debrief = null, ReportActions actions = null)
         {
@@ -24,7 +49,7 @@ namespace Kestrel.Slice
             if (reduceMotion) root.AddToClassList("reduce-motion");
             root.tooltip = "Why it failed.";
             Place(root, frame.Card);
-            root.style.backgroundColor = new Color(0.07f, 0.09f, 0.14f, 0.94f);
+            Seal(root);
             root.style.borderTopLeftRadius = 16;
             root.style.borderTopRightRadius = 16;
             root.style.borderBottomLeftRadius = 16;

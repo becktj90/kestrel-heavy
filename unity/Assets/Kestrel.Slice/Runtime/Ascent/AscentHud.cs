@@ -1,6 +1,7 @@
 // Portrait ascent HUD. Clock and stage chip stay in the flight header. Under them: one telemetry
-// strip, then a short translucent flight-path plot and the stages panel with the rocket between
-// them. Auto-assist, nudges, and the medal line share a bottom dock. Long notes sit behind Info.
+// strip, then the stages panel on the right. The trajectory is a transparent line up the left
+// edge: milestones, a fill, and a marker that move with the flight. Auto-assist, nudges, and the
+// medal line share a bottom dock. Long notes sit behind Info.
 // Pause, pinch, orbit, and Follow are not touched. Guide copy is not touched.
 using System;
 using System.Globalization;
@@ -23,7 +24,9 @@ namespace Kestrel.Slice
         Label[] cellVal = new Label[CellCount];
         Button primary, alternate, skip, assist, nudgeDown, nudgeUp, info;
         VisualElement marker, green, bar;
-        AscentPlot plot;
+        TrajectoryRailView plot;
+        readonly TrajectoryWatch trajectory = new TrajectoryWatch();
+        int fedEvents;
         AscentCall shown;
         FlightDriver flight;
         float upp = 1f;
@@ -67,6 +70,10 @@ namespace Kestrel.Slice
             if (root != null && root.parent != null) root.RemoveFromHierarchy();
             if (actions != null && actions.parent != null) actions.RemoveFromHierarchy();
             if (dockSpacer != null && dockSpacer.parent != null) dockSpacer.RemoveFromHierarchy();
+            if (plot != null && plot.parent != null) plot.RemoveFromHierarchy();
+            plot = null;
+            trajectory.Reset();
+            fedEvents = 0;
             root = null;
             actions = null;
             dockSpacer = null;
@@ -103,8 +110,6 @@ namespace Kestrel.Slice
             if (cards != null) cards.style.height = plotH;
             if (plot != null)
             {
-                plot.style.height = plotH;
-                plot.style.width = Length.Percent(FlightHudLayout.CardFraction * 100f);
                 float r = Px(12f);
                 plot.style.borderTopLeftRadius = r;
                 plot.style.borderTopRightRadius = r;
@@ -170,6 +175,37 @@ namespace Kestrel.Slice
             if (nudgeRow != null) nudgeRow.style.marginTop = Px(FlightHudLayout.GapPt);
             PlaceDockSpacer();
             if (WebLayoutMode.UseWide(Screen.width, Screen.height)) LayoutWide();
+            else LayoutRail();
+        }
+
+        /// <summary>Portrait: the tested rail, inside the HUD's already-padded content box.</summary>
+        void LayoutRail()
+        {
+            if (plot == null || hud == null) return;
+            float padL = hud.resolvedStyle.paddingLeft;
+            float padT = hud.resolvedStyle.paddingTop;
+            float padR = hud.resolvedStyle.paddingRight;
+            float padB = hud.resolvedStyle.paddingBottom;
+            float w = hud.resolvedStyle.width - padL - padR;
+            float h = hud.resolvedStyle.height - padT - padB;
+            if (w < 8f || h < 8f || !(upp > 0f)) return;
+            bool prompt = shown != default;
+            bool notes = infoOpen;
+            var mode = prompt && notes ? FlightHudMode.PromptNotes
+                : prompt ? FlightHudMode.Prompt
+                : notes ? FlightHudMode.Notes
+                : FlightHudMode.Cruise;
+            var frame = FlightHudLayout.Place(w / upp, h / upp, 0f, 0f, 0f, 0f, mode);
+            if (plot.parent != hud) hud.Insert(0, plot);
+            Pin(plot, new HudBox
+            {
+                X = frame.Plot.X * upp,
+                Y = frame.Plot.Y * upp,
+                W = frame.Plot.W * upp,
+                H = frame.Plot.H * upp,
+            });
+            plot.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.TrajectoryAlpha);
+            plot.Apply(trajectory.At(flight != null ? flight.SimTime : 0, flight != null ? flight.Altitude : 0, flight != null ? flight.Speed : 0), upp);
         }
 
         /// <summary>Landscape web: stat strip across the top, plot and stages in the side rails, dock under the rocket.</summary>
@@ -411,12 +447,8 @@ namespace Kestrel.Slice
                 SetCell(2, "Q", (q / 1000.0).ToString("0", inv) + " kPa", new Color(0.94f, 0.63f, 0.12f));
                 SetCell(3, "G", g.ToString("0.0", inv), new Color(0.30f, 0.82f, 0.55f));
             }
-            if (plot != null)
-            {
-                plot.Track = director.Track;
-                plot.TargetAlt = director.Vehicle != null ? director.Vehicle.TargetAltM : 200000;
-                plot.MarkDirtyRepaint();
-            }
+            FeedTrajectory(director, alt, speed, q);
+            if (plot != null) plot.Apply(trajectory.At(flight.SimTime, alt, speed), upp);
             var score = director.Score();
             if (medal != null)
                 medal.text = score.Decided > 0 ? "Medal timing: " + score.Summary : "Flying the plan.";
@@ -603,18 +635,69 @@ namespace Kestrel.Slice
             cards = new VisualElement { name = "ascent-cards", pickingMode = PickingMode.Ignore };
             cards.style.flexDirection = FlexDirection.Row;
             cards.style.flexShrink = 0;
-            plot = new AscentPlot { name = "ascent-plot", pickingMode = PickingMode.Ignore };
-            plot.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.PlotAlpha);
-            plot.style.flexGrow = 0;
-            plot.style.flexShrink = 0;
-            plot.style.overflow = Overflow.Hidden;
+            plot = new TrajectoryRailView { name = "ascent-plot", pickingMode = PickingMode.Ignore };
+            plot.style.position = Position.Absolute;
+            plot.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.TrajectoryAlpha);
+            plot.style.overflow = Overflow.Visible;
             gap = new VisualElement { name = "ascent-gap", pickingMode = PickingMode.Ignore };
             gap.style.flexGrow = 1;
             AdoptStages();
-            cards.Add(plot);
             cards.Add(gap);
             cards.Add(stages);
             root.Add(cards);
+            if (hud != null) hud.Insert(0, plot);
+        }
+
+        void FeedTrajectory(AscentDirector director, double alt, double speed, double q)
+        {
+            var vehicle = director != null ? director.Vehicle : null;
+            if (vehicle != null)
+            {
+                trajectory.HasFairing = vehicle.HasFairing;
+                trajectory.Stages = vehicle.Stages > 0 ? vehicle.Stages : 1;
+                if (vehicle.JettisonAltM > 0) trajectory.FairingAltM = vehicle.JettisonAltM;
+            }
+            trajectory.Recovery = RecoveryLog.Active || (RecoveryLog.Current != null && RecoveryLog.Current.Attempted);
+            if (flight.Sim != null && flight.Sim.Events != null)
+            {
+                var evs = flight.Sim.Events;
+                if (fedEvents > evs.Count) fedEvents = 0;
+                while (fedEvents < evs.Count)
+                {
+                    var ev = evs[fedEvents++];
+                    if (ev == null) continue;
+                    trajectory.Seen(new TrajectoryEvent
+                    {
+                        T = ev.t,
+                        Type = ev.type,
+                        Stage = ev.stage ?? 0,
+                        AltM = ev.alt ?? alt,
+                        SpeedMps = ev.v ?? speed,
+                    });
+                }
+            }
+            trajectory.Sample(flight.SimTime, alt, speed, q);
+            var rec = RecoveryLog.Current;
+            if (rec != null && rec.Marks != null)
+            {
+                for (int i = 0; i < rec.Marks.Length; i++)
+                {
+                    var mark = rec.Marks[i];
+                    trajectory.RecoveryPhase(RecoveryWord(mark.Phase), mark.T, mark.Alt, mark.Speed);
+                }
+            }
+        }
+
+        static string RecoveryWord(RecoveryPhase phase)
+        {
+            switch (phase)
+            {
+                case RecoveryPhase.Boostback: return "boostback";
+                case RecoveryPhase.Entry: return "entry";
+                case RecoveryPhase.Landing:
+                case RecoveryPhase.Down: return "landing";
+                default: return "";
+            }
         }
 
         void AdoptStages()
@@ -925,91 +1008,131 @@ namespace Kestrel.Slice
 
         float Px(float pt) => AscentLayout.Px(pt, upp);
 
-        sealed class AscentPlot : VisualElement
+        sealed class TrajectoryRailView : VisualElement
         {
-            public AscentTrack Track;
-            public double TargetAlt = 200000;
+            TrajectoryPlan plan = new TrajectoryPlan();
+            float upp = 1f;
+            readonly VisualElement labels;
 
-            public AscentPlot()
+            public TrajectoryRailView()
             {
+                pickingMode = PickingMode.Ignore;
                 generateVisualContent += OnPaint;
+                RegisterCallback<GeometryChangedEvent>(_ => RefreshLabels());
+                labels = new VisualElement { name = "trajectory-labels", pickingMode = PickingMode.Ignore };
+                labels.style.position = Position.Absolute;
+                labels.style.left = 0;
+                labels.style.top = 0;
+                labels.style.right = 0;
+                labels.style.bottom = 0;
+                Add(labels);
+            }
+
+            public void Apply(TrajectoryPlan next, float unitsPerPoint)
+            {
+                plan = next ?? new TrajectoryPlan();
+                upp = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
+                RefreshLabels();
+                MarkDirtyRepaint();
+            }
+
+            void RefreshLabels()
+            {
+                var box = contentRect;
+                var marks = plan != null ? plan.Marks : null;
+                if (marks == null || box.width < 4f || box.height < 4f)
+                {
+                    labels.style.display = DisplayStyle.None;
+                    return;
+                }
+                labels.style.display = DisplayStyle.Flex;
+                var rail = new HudBox { X = 0, Y = 0, W = box.width / upp, H = box.height / upp };
+                var tags = TrajectoryWatch.Tags(rail, marks);
+                while (labels.childCount > tags.Length) labels.RemoveAt(labels.childCount - 1);
+                while (labels.childCount < tags.Length)
+                {
+                    var born = new Label { name = "trajectory-mark", pickingMode = PickingMode.Ignore };
+                    born.style.position = Position.Absolute;
+                    born.style.whiteSpace = WhiteSpace.Normal;
+                    born.style.overflow = Overflow.Hidden;
+                    labels.Add(born);
+                }
+                for (int i = 0; i < tags.Length; i++)
+                {
+                    var label = (Label)labels[i];
+                    var mark = i < marks.Length ? marks[i] : default;
+                    label.text = string.Join("\n", tags[i].Lines);
+                    label.tooltip = label.text;
+                    label.style.fontSize = tags[i].FontPt * upp;
+                    label.style.left = tags[i].Box.X * upp;
+                    label.style.top = tags[i].Box.Y * upp;
+                    label.style.width = tags[i].Box.W * upp;
+                    label.style.height = tags[i].Box.H * upp;
+                    label.style.unityFontStyleAndWeight = mark.Upcoming ? FontStyle.Bold : FontStyle.Normal;
+                    label.style.color = mark.Passed
+                        ? new Color(0.45f, 0.86f, 0.62f)
+                        : mark.Upcoming
+                            ? new Color(1f, 0.82f, 0.35f)
+                            : new Color(0.78f, 0.84f, 0.9f, 0.82f);
+                }
             }
 
             void OnPaint(MeshGenerationContext ctx)
             {
                 var box = contentRect;
-                if (box.width < 8 || box.height < 8) return;
-                float left = 6f, right = box.width - 6f, top = 6f, bottom = box.height - 6f;
-                if (bottom - top < 12f) return;
+                if (box.width < 8f || box.height < 8f || plan == null) return;
+                float x = 8f;
+                float top = 8f;
+                float bottom = box.height - 8f;
+                float span = bottom - top;
+                if (span < 12f) return;
                 var paint = ctx.painter2D;
-                paint.strokeColor = new Color(0.7f, 0.82f, 0.92f, 0.45f);
-                paint.lineWidth = 1f;
+                paint.strokeColor = new Color(1f, 1f, 1f, 0.28f);
+                paint.lineWidth = 2f;
                 paint.BeginPath();
-                paint.MoveTo(new Vector2(left, bottom));
-                paint.LineTo(new Vector2(right, bottom));
-                paint.LineTo(new Vector2(right, top));
+                paint.MoveTo(new Vector2(x, bottom));
+                paint.LineTo(new Vector2(x, top));
                 paint.Stroke();
-                double maxAlt = TargetAlt > 1000 ? TargetAlt : 200000;
-                double maxDown = AscentTrack.PlanDownrange(maxAlt, maxAlt);
-                if (Track != null)
+
+                float progress = plan.Progress;
+                if (progress < 0f) progress = 0f;
+                else if (progress > 1f) progress = 1f;
+                float yMark = bottom - progress * span;
+                paint.strokeColor = new Color(0.35f, 0.90f, 0.72f, 0.95f);
+                paint.lineWidth = 3f;
+                paint.BeginPath();
+                paint.MoveTo(new Vector2(x, bottom));
+                paint.LineTo(new Vector2(x, yMark));
+                paint.Stroke();
+
+                var marks = plan.Marks;
+                if (marks != null)
                 {
-                    for (int i = 0; i < Track.Count; i++)
+                    for (int i = 0; i < marks.Length; i++)
                     {
-                        var p = Track[i];
-                        if (p.AltM > maxAlt) maxAlt = p.AltM;
-                        if (p.DownM > maxDown) maxDown = p.DownM;
-                        double plan = AscentTrack.PlanDownrange(p.AltM, TargetAlt > 1000 ? TargetAlt : maxAlt);
-                        if (plan > maxDown) maxDown = plan;
+                        float y = bottom - marks[i].Along * span;
+                        float tick = marks[i].Upcoming ? 16f : 10f;
+                        paint.lineWidth = marks[i].Upcoming ? 3f : 2f;
+                        paint.strokeColor = marks[i].Passed
+                            ? new Color(0.45f, 0.86f, 0.62f, 0.95f)
+                            : marks[i].Upcoming
+                                ? new Color(1f, 0.82f, 0.35f, 1f)
+                                : new Color(1f, 1f, 1f, 0.38f);
+                        paint.BeginPath();
+                        paint.MoveTo(new Vector2(x - 1f, y));
+                        paint.LineTo(new Vector2(x + tick, y));
+                        paint.Stroke();
                     }
                 }
-                if (!(maxDown > 1)) maxDown = 1;
-                Vector2 Map(double a, double down)
-                {
-                    float x = left + (float)(down / maxDown) * (right - left);
-                    float y = bottom - (float)(a / maxAlt) * (bottom - top);
-                    return new Vector2(x, y);
-                }
-                paint.strokeColor = new Color(0.24f, 0.86f, 1f, 0.95f);
-                paint.lineWidth = 2f;
+
+                paint.fillColor = Color.white;
                 paint.BeginPath();
-                bool moved = false;
-                int steps = 24;
-                for (int i = 0; i <= steps; i++)
-                {
-                    double a = maxAlt * i / steps;
-                    var v = Map(a, AscentTrack.PlanDownrange(a, maxAlt));
-                    if (!moved) { paint.MoveTo(v); moved = true; }
-                    else paint.LineTo(v);
-                }
-                paint.Stroke();
-                if (Track == null || Track.Count < 2) return;
-                int hot = -1;
-                double hotQ = 0;
-                for (int i = 0; i < Track.Count; i++)
-                    if (Track[i].QPa > hotQ) { hotQ = Track[i].QPa; hot = i; }
-                if (hot >= 0 && hotQ >= GuidanceProfile.MaxQReferencePa * GuidanceProfile.MaxQBucketFraction)
-                {
-                    var c = Map(Track[hot].AltM, Track[hot].DownM);
-                    paint.fillColor = new Color(0.78f, 0.48f, 0.1f, 0.35f);
-                    paint.BeginPath();
-                    paint.MoveTo(new Vector2(c.x - 8f, c.y - 8f));
-                    paint.LineTo(new Vector2(c.x + 8f, c.y - 8f));
-                    paint.LineTo(new Vector2(c.x + 8f, c.y + 8f));
-                    paint.LineTo(new Vector2(c.x - 8f, c.y + 8f));
-                    paint.ClosePath();
-                    paint.Fill();
-                }
-                bool amber = Track.Nudged;
-                paint.strokeColor = amber ? new Color(0.94f, 0.63f, 0.13f, 0.95f) : new Color(0.24f, 0.86f, 1f, 0.35f);
-                paint.lineWidth = 2f;
-                for (int i = 1; i < Track.Count; i++)
-                {
-                    if (amber && (i % 2 == 0)) continue;
-                    paint.BeginPath();
-                    paint.MoveTo(Map(Track[i - 1].AltM, Track[i - 1].DownM));
-                    paint.LineTo(Map(Track[i].AltM, Track[i].DownM));
-                    paint.Stroke();
-                }
+                paint.MoveTo(new Vector2(x, yMark - 6f));
+                paint.LineTo(new Vector2(x + 6f, yMark));
+                paint.LineTo(new Vector2(x, yMark + 6f));
+                paint.LineTo(new Vector2(x - 6f, yMark));
+                paint.ClosePath();
+                paint.Fill();
             }
         }
     }
