@@ -87,7 +87,9 @@ namespace Kestrel.Game.Guide.Tests
 
             engine = Engine(true);
             GuideHooks.MissionSelect(engine, "m2", true);
-            Assert.AreEqual("brief.contract", Only(engine).Id);
+            Assert.AreEqual(2, engine.Pending.Count);
+            Assert.IsTrue(Has(engine, "brief.kh2"));
+            Assert.IsTrue(Has(engine, "brief.contract"));
 
             var card = new MissionBriefing { WindKt = 14 };
             card.Wind = new SeededWind(new[] { 0d }, new[] { 3d }, new[] { 0d }, 7, 270, 0, "W");

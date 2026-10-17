@@ -29,7 +29,9 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(45, lim.maxQWarnKPa);
             Assert.AreEqual(0.6, lim.interstageLengthFactor);
             Assert.AreEqual(0.02, lim.interstageDragCd);
-            var names = Golden.Catalog.Payloads.Select(p => p.id + "=" + p.displayName).OrderBy(s => s).ToArray();
+            // Ordinal: culture word-sort skips hyphens, so "cubesat=" precedes "cubesat-dispenser".
+            var names = Golden.Catalog.Payloads.Select(p => p.id + "=" + p.displayName)
+                .OrderBy(s => s, StringComparer.Ordinal).ToArray();
             CollectionAssert.AreEqual(new[]
             {
                 "cargo-capsule=Trunk", "crew-capsule=KH-4", "cubesat-dispenser=Cinder Rack", "cubesat=KH-1",
