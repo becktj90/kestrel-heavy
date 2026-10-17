@@ -29,6 +29,8 @@ namespace Kestrel.Game.Tests
             Assert.That(frame.Card.Bottom, Is.LessThanOrEqualTo(h - bottom + 0.01), name);
             Assert.That(frame.Fix.Bottom, Is.LessThanOrEqualTo(frame.Card.Bottom + 0.01), name);
             Assert.That(frame.VisualBottom - frame.VisualTop, Is.GreaterThanOrEqualTo(h * 0.28), name + " leaves the failure on screen");
+            Assert.That(ReportLayout.PanelAlpha, Is.EqualTo(1));
+            Assert.That(ReportLayout.CoversDesignerStats(frame, h), Is.True, name + " designer stats stay behind the card");
             Assert.That(frame.RevealSeconds, Is.EqualTo(ReportLayout.RevealSeconds));
             var still = ReportLayout.Solve(w, h, top, bottom, left, right, true);
             Assert.That(still.RevealSeconds, Is.EqualTo(0));
@@ -52,7 +54,9 @@ namespace Kestrel.Game.Tests
             Assert.That(card.Q<Label>("failure-engineer").text, Is.EqualTo(ev.engineer));
             var names = new System.Collections.Generic.List<string>();
             foreach (var child in card.Children()) names.Add(child.name);
-            Assert.That(names, Is.EqualTo(new[] { "failure-icon", "failure-kid", "failure-engineer", "failure-plots", "failure-fix" }));
+            Assert.That(names, Is.EqualTo(new[] { "report-plate", "failure-icon", "failure-kid", "failure-engineer", "failure-plots", "failure-fix" }));
+            Assert.That(card.style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(card.Q("report-plate").style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
             Assert.That(card.Q("failure-icon").childCount, Is.GreaterThanOrEqualTo(2));
             var fix = card.Q<Button>("failure-fix");
             Assert.That(fix.text, Is.EqualTo("Fix it"));
@@ -152,6 +156,9 @@ namespace Kestrel.Game.Tests
             Assert.IsNotNull(card.Q<Button>("report-home"));
             Assert.That(card.Q<Button>("failure-fix").style.minHeight.value.value, Is.GreaterThanOrEqualTo(44f));
             Assert.IsTrue(card.ClassListContains("portrait"));
+            Assert.That(card.style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(card.Q("report-plate"), Is.Not.Null);
+            Assert.That(card.Q("report-scroll").style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
         }
 
         static void Expect(string kind, string tab, string field)

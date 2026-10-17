@@ -22,13 +22,14 @@ namespace Kestrel.Slice
             root.AddToClassList("portrait");
             if (reduceMotion) root.AddToClassList("reduce-motion");
             ReportView.Place(root, frame.Card);
-            root.style.backgroundColor = new Color(0.07f, 0.09f, 0.14f, 0.96f);
             root.style.flexDirection = FlexDirection.Column;
             root.style.overflow = Overflow.Hidden;
+            ReportView.Seal(root);
 
             var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "report-scroll" };
             scroll.style.flexGrow = 1;
             scroll.style.height = Length.Percent(100);
+            scroll.style.backgroundColor = ReportView.PanelInk;
             root.Add(scroll);
 
             var debriefSafe = debrief ?? new FlightDebrief();
@@ -76,9 +77,12 @@ namespace Kestrel.Slice
             var label = new Label(PlayerText.ForPlayer(text ?? "")) { name = name };
             label.style.whiteSpace = WhiteSpace.Normal;
             label.style.fontSize = size;
+            label.style.minHeight = size + 8;
+            label.style.flexShrink = 0;
             label.style.unityFontStyleAndWeight = style;
             label.style.color = color;
-            label.style.marginBottom = 6;
+            label.style.marginTop = 2;
+            label.style.marginBottom = 8;
             label.style.marginLeft = 12;
             label.style.marginRight = 12;
             label.tooltip = label.text;

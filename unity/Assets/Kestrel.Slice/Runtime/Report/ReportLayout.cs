@@ -27,6 +27,10 @@ namespace Kestrel.Slice
         public const double SideMarginPt = 8;
         public const double CardMaxWidthPt = 560;
         public const double RevealSeconds = 0.35;
+        /// <summary>The card is a solid sheet. Designer stats must not show through it.</summary>
+        public const double PanelAlpha = 1;
+        /// <summary>Phone designer sheet top, as a fraction of the screen. The card starts at or above this.</summary>
+        public const double DesignerSheetTop = 0.35;
 
         public static ReportFrame Solve(double widthPt, double heightPt, double safeTop, double safeBottom, double safeLeft, double safeRight, bool reduceMotion)
         {
@@ -41,10 +45,18 @@ namespace Kestrel.Slice
             double contentBottom = heightPt - safeBottom;
             double contentH = Math.Max(MinTargetPt, contentBottom - contentTop);
             double cardW = Math.Min(contentW, CardMaxWidthPt);
-            double cardH = Math.Min(contentH * 0.58, 640);
-            if (contentTop + cardH > contentBottom) cardH = contentH;
+            // As tall as the failure-visible band allows, so the card covers the designer sheet
+            // (its top sits at 35% of the screen) instead of letting the stats row overlap it.
+            double tallTop = contentBottom - Math.Min(contentH * 0.58, 640);
+            double coverTop = contentTop + heightPt * 0.28;
+            double sheetTop = heightPt * DesignerSheetTop;
+            double cardY = coverTop;
+            if (cardY > sheetTop) cardY = sheetTop;
+            if (tallTop < cardY) cardY = tallTop;
+            if (cardY < contentTop) cardY = contentTop;
+            if (cardY > contentBottom - MinTargetPt) cardY = contentBottom - MinTargetPt;
+            double cardH = contentBottom - cardY;
             double cardX = safeLeft + SideMarginPt + (contentW - cardW) * 0.5;
-            double cardY = contentBottom - cardH;
             const double pad = 12;
             double icon = MinTargetPt;
             double x = cardX + pad;
@@ -76,6 +88,15 @@ namespace Kestrel.Slice
                 RevealSeconds = reduceMotion ? 0 : RevealSeconds,
                 Portrait = heightPt >= widthPt,
             };
+        }
+
+        /// <summary>The opaque card reaches the designer sheet, so the stats row cannot sit on top of it.</summary>
+        public static bool CoversDesignerStats(ReportFrame frame, double heightPt)
+        {
+            if (frame == null || !(heightPt > 0)) return false;
+            return frame.Card.Y <= heightPt * DesignerSheetTop + 0.6
+                && frame.Card.H > 1
+                && PanelAlpha >= 1;
         }
     }
 }
