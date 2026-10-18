@@ -1,9 +1,19 @@
-# Unity WebGL player for beckify.com. Manual dispatch (plus PRs that touch only the WebGL build files).
+# Unity WebGL player for beckify.com. Runs on every push to main that changes game content (docs-only pushes skip),
+# on manual dispatch, and on PRs that touch only the WebGL build files. The beckify.com sync tracks the newest run.
 # Official GameCI unity-builder (free; public repo). Uses the same UNITY_LICENSE secrets as Unity CI.
 # Output: artifact "webgl-build" (zip of build/WebGL: index.html, Build/, TemplateData). Does NOT deploy anywhere.
 name: WebGL build
 
 on:
+  # Keeps beckify.com/arcade/kestrel-heavy tracking latest main. Docs/markdown-only
+  # pushes don't change the WebGL player, so they skip. Superseded runs on main are cancelled (concurrency below).
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
   # Also runs on a PR that edits this workflow or the WebGL template/build script (lets the PR prove itself
   # before the file exists on main; workflow_dispatch needs the file on the default branch).
   pull_request:
@@ -86,5 +96,5 @@ jobs:
         with:
           name: webgl-build
           path: build/WebGL
-          retention-days: 14
+          retention-days: 90
           if-no-files-found: error
