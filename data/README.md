@@ -12,6 +12,7 @@
 | interstages.json | schemas/interstages.schema.json | web/js/data/interstages.js |
 | fins.json | schemas/fins.schema.json | web/js/data/fins.js |
 | liveries.json | loader in Kestrel.Livery (no JSON Schema file) | earned paint schemes |
+| time-of-day.json | loader in Kestrel.Core.Flight.LaunchTime (no JSON Schema file) | per-mission launch lighting (`docs/TIME_OF_DAY.md`) |
 | finishes.json | loader in Kestrel.Livery (no JSON Schema file) | per-part paint |
 | codex.json | schemas/codex.schema.json | CodexBook (Unity); web/js/data/gen/codex.js |
 | golden/*.json | see golden/README.md and docs/PHYSICS.md | ports (tolerances are per quantity for catalog-flight) |
