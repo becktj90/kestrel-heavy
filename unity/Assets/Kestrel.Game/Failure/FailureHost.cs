@@ -328,6 +328,7 @@ namespace Kestrel.Game.Failure
         {
             if (emitted || plan.Burst <= 0) return;
             emitted = true;
+            RaiseCinematic();
             var ps = Burst();
             if (ps == null) return;
             int n = plan.Burst;
@@ -353,6 +354,17 @@ namespace Kestrel.Game.Failure
                 emit.velocity = vel;
                 ps.Emit(emit, 1);
             }
+        }
+
+        // Layered explosion / fire / smoke lives in Environment/ExplosionFx; this is the only hook.
+        void RaiseCinematic()
+        {
+            bool engine = plan.Mode == FailureFx.BellMode || plan.Mode == FailureFx.SputterMode;
+            Vector3 p = transform.TransformPoint(engine ? BurstPoint(0f) : new Vector3(0f, plan.JointY, 0f));
+            if (engine)
+                Kestrel.Kit.CinematicEvents.EngineFailure(p.x, p.y, p.z, plan.EngineIndex, failure != null && failure.kind == "engine-overpressure", reduce);
+            else
+                Kestrel.Kit.CinematicEvents.Failure(p.x, p.y, p.z, 1f, Mathf.Max(0.4f, cue.Radius), reduce);
         }
 
         Vector3 BurstPoint(float ang)
