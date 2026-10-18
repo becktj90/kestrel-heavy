@@ -51,6 +51,12 @@ jobs:
       - name: Pack Thrum guide clips into the player
         if: env.HAS_LICENSE == 'true'
         run: bash tools/pack-guide-clips.sh
+      # A restored Library can carry a Bee graph from another job. Unity then
+      # aborts in a few milliseconds ("dag couldn't be loaded") and reports
+      # compiler errors before any test runs. The import cache stays; the graph is rebuilt.
+      - name: Drop a cached script graph that will not load
+        if: env.HAS_LICENSE == 'true'
+        run: rm -rf unity/Library/Bee
       - uses: game-ci/unity-test-runner@v4
         if: env.HAS_LICENSE == 'true'
         id: tests
