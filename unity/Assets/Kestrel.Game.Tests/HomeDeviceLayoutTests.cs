@@ -92,6 +92,73 @@ namespace Kestrel.Game.Tests
         }
 
         [Test]
+        public void ShortColumnReleasesCapsWhenTheViewportGrows()
+        {
+            // A short phone column pins max-height (and may clip the title). Growing into a
+            // reference portrait used to leave those caps in place, so LAUNCH stayed compressed
+            // and the wordmark stayed clipped. Same elements, no rebuild.
+            MainMenuOverlay.ForceWide = false;
+            using (var surface = DeviceSurface.Open(640f, 260f))
+            {
+                var shell = MountHome(surface.Stage, 0f, 0f);
+                surface.Pump(8);
+                var root = shell.Q(MainMenuOverlay.RootName);
+                var launch = root.Q<Button>("home-launch");
+                var title = root.Q("mm-title");
+                Assert.That(launch, Is.Not.Null);
+                Assert.That(title, Is.Not.Null);
+                Assert.That(ColumnCapped(root), Is.True,
+                    "short column did not contain " + CapDescribe(root));
+
+                surface.Resize(390f, 844f);
+                float w = shell.resolvedStyle.width;
+                float h = shell.resolvedStyle.height;
+                Assert.That(h, Is.GreaterThan(700f), "portrait column did not grow " + w + "x" + h);
+                var z = MenuTypeScale.Compute(w, h, 0f, 0f);
+                var word = root.Q<Label>("mm-kestrel");
+                Assert.That(float.IsNaN(launch.resolvedStyle.maxHeight) || launch.resolvedStyle.maxHeight >= z.LaunchH - 1f,
+                    "LAUNCH max-height " + launch.resolvedStyle.maxHeight + " after grow");
+                Assert.That(launch.resolvedStyle.height, Is.GreaterThan(MenuTypeScale.HitMin + 8f),
+                    "LAUNCH stayed at the short-column size");
+                Assert.That(title.style.height.keyword, Is.Not.EqualTo(StyleKeyword.Undefined), CapDescribe(root));
+                Assert.That(title.style.maxHeight.keyword, Is.Not.EqualTo(StyleKeyword.Undefined), CapDescribe(root));
+                Assert.That(word.resolvedStyle.fontSize, Is.EqualTo(z.Title).Within(1.5f),
+                    "title font stayed contained");
+                Inside(surface.Stage, launch, "grown LAUNCH");
+                Inside(surface.Stage, word, "grown title");
+                Receives(shell.panel, launch, "grown LAUNCH");
+            }
+        }
+
+        static bool ColumnCapped(VisualElement root)
+        {
+            if (InlineMax(root.Q("mm-stats")) || InlineMax(root.Q("home-launch")) || InlineMax(root.Q("home-design")))
+                return true;
+            if (InlineMax(root.Q("mm-title"))) return true;
+            var title = root.Q("mm-title");
+            if (title != null && title.style.height.keyword == StyleKeyword.Undefined) return true;
+            foreach (var it in MainMenuCopy.Tiles)
+                if (InlineMax(root.Q("home-" + it.Id))) return true;
+            return false;
+        }
+
+        static bool InlineMax(VisualElement el)
+        {
+            return el != null && el.style.maxHeight.keyword == StyleKeyword.Undefined;
+        }
+
+        static string CapDescribe(VisualElement root)
+        {
+            string One(string name)
+            {
+                var el = root.Q(name);
+                if (el == null) return name + " missing";
+                return name + " max " + el.style.maxHeight.keyword + " h " + el.resolvedStyle.height;
+            }
+            return One("home-launch") + "; " + One("mm-title") + "; " + One("mm-stats");
+        }
+
+        [Test]
         public void MissionBoardAndPatchesStayOnScreenWithoutTheCheckout()
         {
             foreach (var d in Devices)
@@ -368,6 +435,44 @@ namespace Kestrel.Game.Tests
                 if (!s.Sized(w, h))
                     Assert.Fail("panel did not take the device size " + w + "x" + h + " (" + s.How + ") " + s.Diagnostic());
                 return s;
+            }
+
+            public void Resize(float w, float h)
+            {
+                if (_window != null)
+                {
+                    _window.minSize = new Vector2(8f, 8f);
+                    _window.maxSize = new Vector2(w, h);
+                    _window.minSize = new Vector2(w, h);
+                    _window.position = new Rect(0f, 0f, w, h);
+                }
+                if (_rt != null)
+                {
+                    _rt.Release();
+                    UnityEngine.Object.DestroyImmediate(_rt);
+                    _rt = new RenderTexture(Mathf.Max(8, (int)w), Mathf.Max(8, (int)h), 0, RenderTextureFormat.ARGB32);
+                    _rt.Create();
+                    if (_settings != null) _settings.targetTexture = _rt;
+                    ApplySettings();
+                }
+                if (Stage != null)
+                {
+                    var tree = Stage.panel != null ? Stage.panel.visualTree : null;
+                    if (tree != null)
+                    {
+                        tree.style.width = w;
+                        tree.style.height = h;
+                    }
+                    var panelRoot = Stage.parent;
+                    if (panelRoot != null)
+                    {
+                        panelRoot.style.width = w;
+                        panelRoot.style.height = h;
+                    }
+                    Stage.style.width = w;
+                    Stage.style.height = h;
+                }
+                Pump(8);
             }
 
             public void Pump(int passes)

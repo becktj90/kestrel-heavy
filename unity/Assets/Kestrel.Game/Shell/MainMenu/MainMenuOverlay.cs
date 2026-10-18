@@ -111,8 +111,16 @@ namespace Kestrel.Game.Shell
                 bool wide = ForceWide.HasValue
                     ? ForceWide.Value && WebLayoutMode.IsLandscape(w, h)
                     : WebLayoutMode.UseWide(Screen.width, Screen.height);
+                bool wasWide = root.ClassListContains("kh-mm-wide");
                 ApplyWebWide(root, wide);
-                if (!root.ClassListContains("kh-mm-wide")) ContainColumn(root, z);
+                if (!wide && wasWide)
+                {
+                    // Wide frames pin their own max-heights. Drop them and measure the phone
+                    // column on the next geometry pass, once this layout has caught up.
+                    ClearContainment(root);
+                    ForgetColumnFit(root);
+                }
+                else if (!root.ClassListContains("kh-mm-wide")) ContainColumn(root, z);
                 PlaceHero(root, full, dusk);
                 top.style.height = MainMenuCopy.BarHeight(h, topInset);
                 bottom.style.height = MainMenuCopy.BarHeight(h, botInset);
@@ -210,9 +218,10 @@ namespace Kestrel.Game.Shell
 
             bool scroll = frame.Scroll;
             var scroller = WideScroll(root, scroll);
-            VisualElement host = scroll ? scroller : root;
-            PlaceAction(root, host, "home-launch", frame.Launch, scroll, sx, sy);
-            PlaceAction(root, host, "home-design", frame.Design, scroll, sx, sy);
+            // `host` above is the safe column (.kh-screen). This is where the wide actions go.
+            VisualElement slot = scroll ? scroller : root;
+            PlaceAction(root, slot, "home-launch", frame.Launch, scroll, sx, sy);
+            PlaceAction(root, slot, "home-design", frame.Design, scroll, sx, sy);
             var grid = root.Q("mm-grid");
             if (grid != null)
             {
@@ -261,7 +270,7 @@ namespace Kestrel.Game.Shell
                 tile.style.paddingTop = 10f * sy;
                 tile.style.paddingBottom = 10f * sy;
             }
-            PlaceAction(root, host, "mm-hint", frame.Hint, scroll, sx, sy);
+            PlaceAction(root, slot, "mm-hint", frame.Hint, scroll, sx, sy);
             Font(root.Q(className: "kh-mm-launch-label"), type.Launch * fs, 0.10f);
             Font(root.Q(className: "kh-mm-launch-caption"), type.LaunchCaption * fs, 0f);
             Font(root.Q(className: "kh-mm-design-label"), type.Design * fs, 0.03f);
@@ -493,10 +502,20 @@ namespace Kestrel.Game.Shell
             full.Add(layer);
         }
 
+        /// <summary>Natural title height and the column height it was measured in.
+        /// A later pass cannot read the natural height off <c>layout</c> once the title is pinned.</summary>
+        sealed class ColumnFit
+        {
+            public float Host;
+            public float TitleH;
+        }
+
         /// <summary>
         /// Phone column only. Portrait already fits, so this returns without touching styles.
         /// A short landscape column (SE 667×375) overflows once the spacer hits zero; shrink padding
         /// and the blocks, never below a 44pt hit target, and keep the Thrum strip's band.
+        /// Caps are cleared when the column grows or the natural stack fits again, so a rotation
+        /// back to portrait does not leave max-height and a clipped title behind.
         /// </summary>
         static void ContainColumn(VisualElement root, MenuTypeScale.Sizes z)
         {
@@ -506,11 +525,30 @@ namespace Kestrel.Game.Shell
             var title = root.Q("mm-title");
             if (title == null || title.layout.height < 1f) return;
 
+            var fit = root.userData as ColumnFit;
+            // The column height changed (landscape to portrait, or the reverse). The saved
+            // title belongs to the previous scale. Drop the caps and let the next pass
+            // measure the title ApplyScale just restored.
+            if (fit != null && Mathf.Abs(host - fit.Host) > 1f)
+            {
+                ClearContainment(root);
+                ForgetColumnFit(root);
+                return;
+            }
+
+            float titleH = fit != null && fit.TitleH > 1f ? fit.TitleH : title.layout.height;
             float padTop = MenuTypeScale.TopPad;
             float padBot = z.HintBand;
-            float need = padTop + padBot + title.layout.height + z.ControlsH;
-            if (need <= host + 1f) return;
+            float need = padTop + padBot + titleH + z.ControlsH;
+            if (need <= host + 1f)
+            {
+                ClearContainment(root);
+                ForgetColumnFit(root);
+                return;
+            }
 
+            // Recompute from the natural title. Clearing first drops a cap this pass no longer needs.
+            ClearContainment(root);
             float overflow = need - host;
             const float topFloor = 8f;
             const float botFloor = 32f;
@@ -560,7 +598,6 @@ namespace Kestrel.Game.Shell
             }
             if (overflow > 1f)
             {
-                float titleH = title.layout.height;
                 const float floor = 36f;
                 float cut = Mathf.Min(overflow, Mathf.Max(0f, titleH - floor));
                 if (cut > 0f)
@@ -582,6 +619,43 @@ namespace Kestrel.Game.Shell
                     if (eye != null) eye.style.fontSize = Mathf.Max(9f, size * 0.32f);
                 }
             }
+
+            var saved = root.userData as ColumnFit;
+            if (saved == null)
+            {
+                saved = new ColumnFit { TitleH = title.layout.height };
+                root.userData = saved;
+            }
+            saved.Host = host;
+        }
+
+        /// <summary>Removes the inline max-heights, the pinned title, and the clipped title fonts' box.
+        /// Control heights and fonts belong to <see cref="ApplyScale"/>, which runs before this.</summary>
+        static void ClearContainment(VisualElement root)
+        {
+            if (root == null) return;
+            void Free(VisualElement el)
+            {
+                if (el == null) return;
+                el.style.maxHeight = StyleKeyword.Null;
+                el.style.flexShrink = 0;
+            }
+            Free(root.Q("mm-stats"));
+            Free(root.Q("home-launch"));
+            Free(root.Q("home-design"));
+            foreach (var it in MainMenuCopy.Tiles) Free(root.Q("home-" + it.Id));
+            var title = root.Q("mm-title");
+            if (title == null) return;
+            title.style.height = StyleKeyword.Null;
+            title.style.minHeight = StyleKeyword.Null;
+            title.style.maxHeight = StyleKeyword.Null;
+            title.style.overflow = StyleKeyword.Null;
+            title.style.flexShrink = StyleKeyword.Null;
+        }
+
+        static void ForgetColumnFit(VisualElement root)
+        {
+            if (root != null && root.userData is ColumnFit) root.userData = null;
         }
 
         /// <summary>Shows the real next mission on the LAUNCH bar when Career knows it. The static caption stays the fallback.</summary>
