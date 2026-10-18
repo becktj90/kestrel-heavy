@@ -23,7 +23,8 @@ namespace Kestrel.Core.Physics
         public bool Done { get; private set; }
         public readonly List<SimEvent> Events = new List<SimEvent>();
         public readonly List<SimSample> Samples = new List<SimSample>();
-        double maxQ, maxQTime, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1;
+        double maxQ, maxQTime, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1, catchPitch;
+        bool turned;
         bool liftedOff; string outcome = "timeout";
 
         public static SimResult SimulatePlanar(IList<SimStage> stages, SimOptions opts = null)
@@ -101,13 +102,36 @@ namespace Kestrel.Core.Physics
                 thrustScale = o.monitor != null ? o.monitor.ThrustFactor : 1;
                 if (Headless.LegacyPitch(o.guidance))
                 {
+                    bool holdKick = HoldingMaxQPitch(alt, m, vr, vrel);
                     if (StageIdx == 0)
                     {
                         if (Mode == 0 && vrel >= o.kickSpeed) { Mode = 1; kickStart = T; PitchCmd = Math.PI / 2 - kickAngle; }
                         else if (Mode == 1)
                         {
                             double vgam = Math.Atan2(avx * ux + avy * uy + avz * uz, avx * tx + avy * ty + avz * tz);
-                            if (T - kickStart > 3 && vgam <= PitchCmd + 0.002) Mode = 2;
+                            if (turned && holdKick)
+                            {
+                                // Same latch as Headless: hold the caught angle for the whole
+                                // cap, and return to the gravity turn once the cap lets go.
+                                PitchCmd = catchPitch;
+                            }
+                            else if (turned)
+                                Mode = 2;
+                            else if (T - kickStart > 3 && vgam <= PitchCmd + 0.002)
+                            {
+                                catchPitch = vgam;
+                                turned = true;
+                                Mode = 2;
+                            }
+                        }
+                        else if (Mode == 2 && holdKick)
+                        {
+                            double vgam = Math.Atan2(avx * ux + avy * uy + avz * uz, avx * tx + avy * ty + avz * tz);
+                            if (vgam < catchPitch - 0.002)
+                            {
+                                PitchCmd = catchPitch;
+                                Mode = 1;
+                            }
                         }
                     }
                     else
@@ -232,6 +256,16 @@ namespace Kestrel.Core.Physics
             Mode = 4;
             int stage = StageIdx < st.Length ? StageIdx + 1 : st.Length;
             Events.Add(new SimEvent { t = T, type = "failure", stage = stage, alt = alt, v = speed });
+        }
+
+        bool HoldingMaxQPitch(double alt, double mass, double vr, double vrel)
+        {
+            if (StageIdx != 0 || o.guidance == null) return false;
+            double q = Dynamic(alt, vrel);
+            if (!o.guidance.HoldKickThroughMaxQ(q)) return false;
+            double r = alt + Gravity.R_EARTH;
+            var cmd = o.guidance.Command(Guide(alt, mass, vr, Gravity.MU_EARTH / (r * r), vrel));
+            return cmd.throttle < 1;
         }
 
         double Dynamic(double alt, double vrel)

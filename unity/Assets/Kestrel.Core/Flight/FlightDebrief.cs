@@ -9,6 +9,23 @@ using Kestrel.Core.Hangar;
 
 namespace Kestrel.Core.Flight
 {
+    /// <summary>
+    /// Optional gates that make the result card agree with <see cref="FlightBatch"/>.
+    /// NaN and the known-flags left false skip that gate, so older callers stay on altitude and g.
+    /// </summary>
+    public sealed class GoalCheck
+    {
+        public double IdealDv = double.NaN;
+        public double C3Km2PerS2 = double.NaN;
+        public double Reliability = double.NaN;
+        public double Margin = double.NaN;
+        public double BoilOffKg = double.NaN;
+        public bool RedKnown, RedRisk;
+        public string BoosterGrade;
+        public bool BoosterKnown;
+        public bool AirframeKnown, Gentle, PayloadMatch, FairingFits, UnderBudget;
+    }
+
     /// <summary>What the flight actually did. The report does not invent a second score.</summary>
     public sealed class FlightFacts
     {
@@ -127,22 +144,69 @@ namespace Kestrel.Core.Flight
 
         /// <summary>
         /// Intact and on the mission target. Landing and g limits use the mission row.
-        /// A breakup is not a pass. Budget is a star term, not this gate.
+        /// A breakup is not a pass. Budget is a star term, not this gate, unless <paramref name="extra"/>
+        /// carries the airframe flags the batch scorer uses.
         /// </summary>
         public static bool GoalMet(CampaignMission row, bool intact, double apoMeters, double periMeters, double maxG, string landingGrade)
+            => GoalMet(row, intact, apoMeters, periMeters, maxG, landingGrade, null);
+
+        /// <summary>
+        /// Same gates as <see cref="FlightBatch"/> once <paramref name="extra"/> is filled:
+        /// ellipse and C3 may pass on periapsis plus ideal Δv, C3 may pass on energy,
+        /// and reliability, red risks, margin, coast, and booster grade are mission gates.
+        /// A null extra keeps the altitude, g, and landing checks only.
+        /// </summary>
+        public static bool GoalMet(CampaignMission row, bool intact, double apoMeters, double periMeters, double maxG, string landingGrade, GoalCheck extra)
         {
             if (!intact || row == null) return false;
+            bool apo = MissionScore.AltitudeWithin(apoMeters, row.ApoKm * 1000);
+            bool peri = MissionScore.AltitudeWithin(periMeters, row.PeriKm * 1000);
+            bool dv = extra != null && !double.IsNaN(extra.IdealDv) && extra.IdealDv + 1e-6 >= row.RequiredDeltaV();
             bool hit = false;
-            if (row.TargetKind == "apogee")
-                hit = MissionScore.AltitudeWithin(apoMeters, row.ApoKm * 1000);
-            else if (row.TargetKind == "circular" || row.TargetKind == "ellipse" || row.TargetKind == "c3")
-                hit = MissionScore.AltitudeWithin(apoMeters, row.ApoKm * 1000)
-                    && (row.TargetKind == "c3" || MissionScore.AltitudeWithin(periMeters, row.PeriKm * 1000));
+            if (row.TargetKind == "apogee") hit = apo;
+            else if (row.TargetKind == "circular") hit = apo && peri;
+            else if (row.TargetKind == "ellipse") hit = (apo && peri) || (peri && dv);
+            else if (row.TargetKind == "c3")
+            {
+                bool energy = extra != null && !double.IsNaN(extra.C3Km2PerS2)
+                    && MissionScore.WithinFraction(extra.C3Km2PerS2, row.C3Km2PerS2, MissionScore.AltitudeFraction);
+                hit = energy || (peri && dv);
+            }
             if (!hit) return false;
             if (!double.IsNaN(row.MaxG) && maxG > row.MaxG) return false;
             if (row.LandingRequired && !MissionScore.IsGood(landingGrade)) return false;
-            if (row.LandBoosters && !MissionScore.IsGood(landingGrade)) return false;
+            string boosters = extra != null && extra.BoosterKnown ? extra.BoosterGrade : landingGrade;
+            if (row.LandBoosters && !MissionScore.IsGood(boosters)) return false;
+            if (extra == null) return true;
+            if (row.MarginNonNegative && !double.IsNaN(extra.Margin) && !(extra.Margin >= 0)) return false;
+            if (!double.IsNaN(row.ReliabilityMin) && !double.IsNaN(extra.Reliability) && !(extra.Reliability >= row.ReliabilityMin)) return false;
+            if (row.NoRedRisks && extra.RedKnown && extra.RedRisk) return false;
+            if (row.CoastHours > 0 && !double.IsNaN(extra.BoilOffKg) && !(extra.BoilOffKg >= 0)) return false;
+            if (extra.AirframeKnown && (extra.Gentle || !extra.PayloadMatch || !extra.FairingFits || !extra.UnderBudget)) return false;
             return true;
+        }
+
+        /// <summary>The batch row, in the shape <see cref="GoalMet"/> reads. Call after the flight fields are filled.</summary>
+        public static GoalCheck FromFlight(CampaignFlight flight)
+        {
+            if (flight == null) return new GoalCheck();
+            return new GoalCheck
+            {
+                IdealDv = flight.idealDv,
+                C3Km2PerS2 = flight.c3Km2PerS2,
+                Reliability = flight.reliability,
+                Margin = flight.margin,
+                BoilOffKg = flight.boilOffKg,
+                RedKnown = true,
+                RedRisk = flight.redRisk,
+                BoosterKnown = true,
+                BoosterGrade = flight.boosterGrade,
+                AirframeKnown = true,
+                Gentle = flight.gentle,
+                PayloadMatch = flight.payloadMatch,
+                FairingFits = flight.fairingFits,
+                UnderBudget = flight.underBudget,
+            };
         }
 
         public static FlightDebrief Compose(CareerStore store, MissionContext mission, FlightFacts facts, NarrationPool pool, long minorPerKc, HangarData look)

@@ -79,6 +79,15 @@ namespace Kestrel.Core.Flight
             samples[slot] = s;
         }
 
+        /// <summary>Drop samples and marks so a retry does not replay the previous flight.</summary>
+        public void Clear()
+        {
+            sampleWrite = 0;
+            sampleCount = 0;
+            markWrite = 0;
+            markCount = 0;
+        }
+
         public void Mark(double t, string kind, bool failure)
         {
             if (double.IsNaN(t)) return;

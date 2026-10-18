@@ -18,6 +18,8 @@ namespace Kestrel.Core.Flight
         public const double ProvenCoastH = 3;
         /// <summary>KH-8 holds a 400 km circle at 4.5 g. A lower cap on an orbit is unproven.</summary>
         public const double ProvenMinOrbitalG = 4.5;
+        /// <summary>KH-8 flew the crew capsule to 400 km. A higher crew circle steps past that.</summary>
+        public const double ProvenCrewApoKm = 400;
         public const double FairingMaxM = 5;
         public const double FairingClearanceM = 0.2;
 
@@ -49,6 +51,7 @@ namespace Kestrel.Core.Flight
             if (!double.IsNaN(mission.MaxG) && mission.MaxG > 0 && mission.MaxG < ProvenMinOrbitalG && kind != "apogee") hard = true;
             if (mission.LandingRequired && mission.TargetKind == "ellipse" && mission.LandingMode == "rtls" && mission.MassKg > ProvenGtoMassKg) hard = true;
             if (mission.LandingRequired && mission.PayloadId == "crew-capsule") hard = true;
+            if (mission.PayloadId == "crew-capsule" && kind == "circular" && mission.ApoKm > ProvenCrewApoKm + 1) hard = true;
             return hard ? "hard" : "achievable";
         }
     }

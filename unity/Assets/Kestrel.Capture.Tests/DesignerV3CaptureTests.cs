@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using Kestrel.Core.Flight;
 using Kestrel.Kit;
 using Kestrel.Slice;
 using Kestrel.Slice.DesignerV3;
@@ -66,6 +67,8 @@ namespace Kestrel.Capture.Tests
         [Timeout(900000)]
         public IEnumerator DesignerOnSeProMaxAndIpad()
         {
+            PadHandoff.Clear();
+            GameSession.Clear();
             foreach (var device in Devices)
             {
                 var shot = Shot(device.name, device.w, device.h);

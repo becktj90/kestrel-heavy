@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Hangar;
@@ -152,7 +153,73 @@ namespace Kestrel.Core.Flight
                 best.ReachLine = "Enough for this hop.";
                 if (best.LaunchEnabled) best.ReachesOrbit = true;
             }
+            else if (best != null && best.Design != null && mission.Id == "m2" && best.TemplateId == "hopper")
+            {
+                // Three small engines and a full tank break the 35 kPa wall around 6 km.
+                // One engine, a 1380 kg load, steel walls, SF 2.2 and a 75% max-Q cap
+                // coast inside ±5% of 100 km on every campaign seed (about 100 km).
+                // 1360–1400 kg all clear. 1410 kg lofts past the band. While the cap
+                // is actually biting, the path stays on the catch angle instead of
+                // ratcheting down with the sag. The template is not edited.
+                ArmHundredKm(best.Design);
+                FillPerformance(catalog, best);
+                best.ReachLine = "Enough for 100 km.";
+                if (best.LaunchEnabled) best.ReachesOrbit = true;
+            }
+            ApplyBoardStarter(catalog, best, mission);
             return best;
+        }
+
+        /// <summary>
+        /// KH-3 through KH-20. The file holds a rocket that is the verified winner or one strength step short of it.
+        /// The hopper, workhorse and moonshot documents are not edited.
+        /// </summary>
+        static void ApplyBoardStarter(Catalog catalog, AutoBuildChoice best, CampaignMission mission)
+        {
+            if (best == null || mission == null) return;
+            if (mission.Id == "m1" || mission.Id == "m2") return;
+            var design = BoardStarters.Design(mission.Id);
+            if (design == null) return;
+            best.Design = JsonMut.CloneObject(design);
+            ApplyMission(catalog, best.Design, mission);
+            try
+            {
+                var spec = new PayloadSpec { id = mission.PayloadId, volume = mission.VolumeM3, diameter = mission.DiameterM };
+                var fit = PayloadFit.Check(Design.FromJson(best.Design), spec);
+                best.FitsPayload = fit.fits;
+                best.FitScore = fit.volumeMargin + fit.diameterMargin;
+            }
+            catch (Exception)
+            {
+                best.FitsPayload = false;
+            }
+            FillPerformance(catalog, best);
+        }
+
+        public const double HundredKmSafetyFactor = 2.2;
+        public const double HundredKmPropKg = 1380;
+        public const double HundredKmMaxQPercent = 75;
+        public const double HundredKmGLimit = 6;
+        public const string HundredKmMaterial = "steel";
+
+        /// <summary>KH-2 only. The hopper template document is not modified.</summary>
+        public static void ArmHundredKm(JsonObject design)
+        {
+            if (design == null) return;
+            JsonMut.Set(design, "safetyFactor", HundredKmSafetyFactor);
+            var stages = design.Arr("stages");
+            if (stages == null || stages.Count == 0 || !(stages[0] is JsonObject stage)) return;
+            JsonMut.Set(stage, "engineCount", 1d);
+            JsonMut.Set(stage, "propMass", HundredKmPropKg);
+            JsonMut.Set(stage, "material", HundredKmMaterial);
+            JsonMut.Set(stage, "landingPropMass", 0d);
+            var cluster = stage.Obj("cluster") ?? new JsonObject();
+            JsonMut.Set(stage, "cluster", cluster);
+            JsonMut.Set(cluster, "pattern", "auto");
+            var guidance = design.Obj("guidance") ?? new JsonObject();
+            JsonMut.Set(design, "guidance", guidance);
+            JsonMut.Set(guidance, "maxQThrottle", HundredKmMaxQPercent);
+            JsonMut.Set(guidance, "gLimit", HundredKmGLimit);
         }
 
         public const double FirstHopSafetyFactor = 3;
@@ -359,6 +426,16 @@ namespace Kestrel.Core.Flight
             string n = kn >= 10 ? kn.ToString("0", CultureInfo.InvariantCulture) : kn.ToString("0.0", CultureInfo.InvariantCulture);
             return n + " kN";
         }
+
+        /// <summary>
+        /// Text of data/board-starters.json for a player build, which has no checkout.
+        /// The host points this at Resources/KestrelData/board-starters. A null or empty
+        /// return is a miss and is not cached, so a later install still loads.
+        /// </summary>
+        public static Func<string> BoardStarterPack;
+
+        /// <summary>The board rocket for this mission, from the checkout or <see cref="BoardStarterPack"/>.</summary>
+        public static JsonObject BoardStarter(string missionId) => BoardStarters.Design(missionId);
     }
 
     /// <summary>Design the pad should open. Consumed once so a later visit does not relaunch.</summary>
@@ -461,6 +538,78 @@ namespace Kestrel.Core.Flight
             PadHandoff.Arm(choice.Design, flyNow: false, fromHome: false);
             GameSession.Carry(ctx);
             return new RouteResult(SessionScreens.Design, SessionScreens.None, ctx);
+        }
+    }
+
+    /// <summary>Near-win rockets for the mission board. A player build reads the packaged JSON, not the repo root.</summary>
+    static class BoardStarters
+    {
+        static Dictionary<string, JsonObject> cache;
+        static string loadedFrom;
+
+        public static JsonObject Design(string missionId)
+        {
+            if (string.IsNullOrEmpty(missionId)) return null;
+            Ensure();
+            if (cache != null && cache.TryGetValue(missionId, out var found)) return found;
+            return null;
+        }
+
+        static void Ensure()
+        {
+            if (!TryRead(out string text, out string source))
+            {
+                // A miss is not sticky. The Resources text may be installed on the next call.
+                loadedFrom = null;
+                cache = null;
+                return;
+            }
+            if (loadedFrom == source && cache != null) return;
+            var next = new Dictionary<string, JsonObject>();
+            var file = MiniJson.ParseObject(text);
+            var rows = file != null ? file.Arr("missions") : null;
+            if (rows != null)
+            {
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    var row = rows[i] as JsonObject;
+                    if (row == null) continue;
+                    var designs = row.Arr("designs");
+                    if (designs == null || designs.Count == 0 || !(designs[0] is JsonObject design)) continue;
+                    string id = row.Str("id");
+                    if (!string.IsNullOrEmpty(id)) next[id] = design;
+                }
+            }
+            cache = next;
+            loadedFrom = source;
+        }
+
+        static bool TryRead(out string text, out string source)
+        {
+            text = null;
+            source = null;
+            string root = Catalog.RepoRootOrNull();
+            if (!string.IsNullOrEmpty(root))
+            {
+                string path = Path.Combine(root, "data", "board-starters.json");
+                if (File.Exists(path))
+                {
+                    try
+                    {
+                        text = File.ReadAllText(path);
+                        source = "file:" + path;
+                        return !string.IsNullOrEmpty(text);
+                    }
+                    catch (IOException) { text = null; }
+                    catch (UnauthorizedAccessException) { text = null; }
+                }
+            }
+            if (HomeAutoBuild.BoardStarterPack == null) return false;
+            try { text = HomeAutoBuild.BoardStarterPack(); }
+            catch (Exception) { text = null; }
+            if (string.IsNullOrEmpty(text)) return false;
+            source = "packaged";
+            return true;
         }
     }
 }

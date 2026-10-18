@@ -159,8 +159,8 @@
     "kh-m16": {
       "id": "kh-m16",
       "label": "Second Watch",
-      "apoKm": 400,
-      "periKm": 400,
+      "apoKm": 500,
+      "periKm": 500,
       "incDeg": 51.6
     },
     "kh-m17": {

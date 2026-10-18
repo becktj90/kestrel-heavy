@@ -103,7 +103,7 @@ namespace Kestrel.Core.Tests
             Expect(13, "Flock Yard", "cubesat-dispenser", 480, 1.2, "circular", 550, 550, 90e6, new string[0], false);
             Expect(14, "Harbor Trunk", "cargo-capsule", 10000, 35, "circular", 400, 400, 130e6, new string[0], false);
             Expect(15, "Relay West", "geo-relay", 6200, 50, "ellipse", 35786, 200, 140e6, new string[0], false);
-            Expect(16, "Second Watch", "crew-capsule", 12000, 25, "circular", 400, 400, 180e6, new string[0], false);
+            Expect(16, "Second Watch", "crew-capsule", 12000, 25, "circular", 500, 500, 180e6, new string[0], false);
             Expect(17, "Lumen Down", "lunar-lander", 4000, 18, "c3", 0, 200, 190e6, new string[0], false);
             Expect(18, "Nightjar", "lunar-probe", 2500, 15, "c3", 0, 200, 200e6, new string[0], false);
             Expect(19, "Keel Reuse", "gto-comsat", 7500, 70, "ellipse", 35786, 200, 210e6, new string[0], false);
@@ -137,14 +137,17 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("rtls", m10.LandingMode);
 
             var raw = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "campaign.json")));
-            string tune6 = null, tune8 = null;
+            string tune6 = null, tune8 = null, tune16 = null;
             foreach (JsonObject row in raw.Arr("missions"))
             {
                 if (row.Str("id") == "m6") tune6 = row.Str("tune");
                 if (row.Str("id") == "m8") tune8 = row.Str("tune");
+                if (row.Str("id") == "m16") tune16 = row.Str("tune");
             }
             StringAssert.Contains("200 km", tune6);
             StringAssert.Contains("4.5", tune8);
+            StringAssert.Contains("500 km", tune16);
+            Assert.IsFalse(campaign.Mission(16).LandingRequired);
 
             var ramp = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "mission-ramp.json")));
             Assert.AreEqual("data/campaign.json", ramp.Str("designerCampaign"));
