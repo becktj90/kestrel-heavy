@@ -234,7 +234,7 @@ namespace Kestrel.Game.Shell
             var wb = t.worldBound;
             for (var a = t.parent; a != null; a = a.parent)
             {
-                if (a.resolvedStyle == null || a.resolvedStyle.overflow != Overflow.Hidden) continue;
+                if (!Clips(a)) continue;
                 if (a is ScrollView) continue;
                 var ab = a.worldBound;
                 float visW = Math.Min(wb.xMax, ab.xMax) - Math.Max(wb.xMin, ab.xMin);
@@ -288,9 +288,19 @@ namespace Kestrel.Game.Shell
             for (var a = t.parent; a != null; a = a.parent)
             {
                 if (a is ScrollView sv && sv.mode != ScrollViewMode.Horizontal) return true;
-                if (a.resolvedStyle != null && a.resolvedStyle.overflow == Overflow.Hidden) return false;
+                if (Clips(a)) return false;
             }
             return false;
+        }
+
+        static bool Clips(VisualElement a)
+        {
+            if (a == null || a.style == null) return false;
+            var overflow = a.style.overflow;
+            if (overflow.keyword == StyleKeyword.Undefined || overflow.keyword == StyleKeyword.Null
+                || overflow.keyword == StyleKeyword.None || overflow.keyword == StyleKeyword.Initial)
+                return false;
+            return overflow.value == Overflow.Hidden;
         }
 
         static bool Spills(VisualElement t)
