@@ -186,7 +186,7 @@ namespace Kestrel.Core.Designer.Stepper
                 result.Instruction = string.IsNullOrEmpty(summary) ? "Nothing to change." : summary;
             else
                 result.Instruction = Explain(catalog, design, now, summary, tradeoff);
-            result.Edit = changed ? new Edit(string.IsNullOrEmpty(summary) ? "Updated the rocket" : summary) : Edit.None;
+            result.Edit = changed ? NotesEdit(notes, summary) : Edit.None;
             if (!changed) result.Cleared = false;
             return result;
         }
@@ -487,10 +487,15 @@ namespace Kestrel.Core.Designer.Stepper
 
         static Edit ApplyFairing(JsonObject design, double length, double diameter)
         {
+            var fair = design.Obj("fairing");
+            double oldL = fair?.Num("length") ?? length;
+            double oldD = fair?.Num("diameter") ?? diameter;
             var lengthEdit = HangarEditor.SetFairingLength(design, length);
             var widthEdit = HangarEditor.SetDiameter(design, PartRef.Fairing, diameter);
             if (!lengthEdit.changed && !widthEdit.changed) return Edit.None;
-            return new Edit("Fairing", null, null);
+            double newL = design.Obj("fairing")?.Num("length") ?? oldL;
+            double newD = design.Obj("fairing")?.Num("diameter") ?? oldD;
+            return new Edit("Fairing", N(oldL) + " m × " + N(oldD) + " m", N(newL) + " m × " + N(newD) + " m");
         }
 
         static Edit MorePush(Catalog catalog, JsonObject design, Picture now)
@@ -500,8 +505,42 @@ namespace Kestrel.Core.Designer.Stepper
                 liftoff = LiftoffEngines(design, now.Twr);
             Edit upper = now.Has("weak-upper") ? StrengthenUpper(catalog, design) : Edit.None;
             if (liftoff.changed && upper.changed)
-                return new Edit("Engines " + liftoff.from + " → " + liftoff.to + ". " + upper.what + " " + upper.from + " → " + upper.to);
+                return new Edit("Engines and upper stage", JoinNote(liftoff.from, upper.from), JoinNote(liftoff.to, upper.to));
             return upper.changed ? upper : liftoff;
+        }
+
+        static string JoinNote(string a, string b)
+        {
+            if (string.IsNullOrEmpty(a)) return b;
+            if (string.IsNullOrEmpty(b)) return a;
+            return a + ", " + b;
+        }
+
+        static Edit NotesEdit(List<Edit> notes, string summary)
+        {
+            var froms = new List<string>();
+            var tos = new List<string>();
+            string what = null;
+            int count = 0;
+            if (notes != null)
+            {
+                for (int i = 0; i < notes.Count; i++)
+                {
+                    var note = notes[i];
+                    if (!note.changed) continue;
+                    count++;
+                    if (what == null && !string.IsNullOrEmpty(note.what)) what = note.what;
+                    if (!string.IsNullOrEmpty(note.from)) froms.Add(note.from);
+                    if (!string.IsNullOrEmpty(note.to)) tos.Add(note.to);
+                }
+            }
+            if (count != 1) what = "Updated the rocket";
+            if (string.IsNullOrEmpty(what)) what = "Updated the rocket";
+            string from = froms.Count > 0 ? string.Join(", ", froms) : null;
+            string to = tos.Count > 0 ? string.Join(", ", tos) : null;
+            if (!string.IsNullOrEmpty(from) && !string.IsNullOrEmpty(to) && from != to)
+                return new Edit(what, from, to);
+            return new Edit(string.IsNullOrEmpty(summary) ? what : summary);
         }
 
         /// <summary>

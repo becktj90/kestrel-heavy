@@ -34,6 +34,7 @@ namespace Kestrel.Slice.DesignerV3
         readonly List<Action> refreshers = new List<Action>();
         readonly Dictionary<DesignerV3Tab, Button> tabButtons = new Dictionary<DesignerV3Tab, Button>();
         readonly CultureInfo inv = CultureInfo.InvariantCulture;
+        float heldScroll = -1f;
 
         static DesignerV3Panel mounted;
 
@@ -80,31 +81,11 @@ namespace Kestrel.Slice.DesignerV3
             root.name = RootName;
             root.Clear();
             root.AddToClassList("designer-v3");
-
-            tutorialBanner = ui.Column();
-            tutorialBanner.name = "tutorial-banner";
-            root.Add(tutorialBanner);
-
-            stepRail = ui.Row(2f);
-            stepRail.name = "step-rail";
-            stepRail.style.flexWrap = Wrap.Wrap;
-            stepRail.style.width = Length.Percent(100);
-            root.Add(stepRail);
-
-            goalLabel = ui.Text("", HangarUi.BodyPt, bold: true);
-            goalLabel.name = "step-goal";
-            goalLabel.style.whiteSpace = WhiteSpace.Normal;
-            goalLabel.style.marginLeft = 8;
-            goalLabel.style.marginRight = 8;
-            root.Add(goalLabel);
-
-            repairLabel = ui.Text("", HangarUi.SmallPt, HangarUi.Amber);
-            repairLabel.name = "repair-note";
-            repairLabel.style.whiteSpace = WhiteSpace.Normal;
-            repairLabel.style.marginLeft = 8;
-            repairLabel.style.marginRight = 8;
-            repairLabel.style.display = DisplayStyle.None;
-            root.Add(repairLabel);
+            root.style.flexDirection = FlexDirection.Column;
+            root.style.flexGrow = 1;
+            root.style.flexShrink = 1;
+            root.style.minHeight = 0;
+            root.style.overflow = Overflow.Hidden;
 
             strip = ui.Row(0f);
             strip.name = "sticky-strip";
@@ -112,33 +93,64 @@ namespace Kestrel.Slice.DesignerV3
             strip.style.width = Length.Percent(100);
             strip.style.overflow = Overflow.Hidden;
             strip.style.flexWrap = Wrap.NoWrap;
+            strip.style.flexShrink = 0;
             root.Add(strip);
 
             deltaRow = ui.Row(0f);
             deltaRow.name = "delta-row";
             deltaRow.style.width = Length.Percent(100);
             deltaRow.style.display = DisplayStyle.None;
+            deltaRow.style.flexShrink = 0;
             root.Add(deltaRow);
-
-            budgetRow = ui.Column();
-            budgetRow.name = "dv-budget";
-            budgetRow.style.width = Length.Percent(100);
-            root.Add(budgetRow);
-
-            riskRow = ui.Column();
-            riskRow.name = "risk-chips";
-            riskRow.style.width = Length.Percent(100);
-            riskRow.style.overflow = Overflow.Hidden;
-            root.Add(riskRow);
 
             tabs = ui.Row(2f);
             tabs.name = "tab-bar";
             tabs.style.flexWrap = Wrap.Wrap;
             tabs.style.width = Length.Percent(100);
+            tabs.style.flexShrink = 0;
             root.Add(tabs);
 
             scroll = new ScrollView(ScrollViewMode.Vertical) { name = "designer-scroll" };
             scroll.style.flexGrow = 1;
+            scroll.style.flexShrink = 1;
+            scroll.style.minHeight = 0;
+
+            tutorialBanner = ui.Column();
+            tutorialBanner.name = "tutorial-banner";
+            scroll.Add(tutorialBanner);
+
+            stepRail = ui.Row(2f);
+            stepRail.name = "step-rail";
+            stepRail.style.flexWrap = Wrap.Wrap;
+            stepRail.style.width = Length.Percent(100);
+            scroll.Add(stepRail);
+
+            goalLabel = ui.Text("", HangarUi.BodyPt, bold: true);
+            goalLabel.name = "step-goal";
+            goalLabel.style.whiteSpace = WhiteSpace.Normal;
+            goalLabel.style.marginLeft = 8;
+            goalLabel.style.marginRight = 8;
+            scroll.Add(goalLabel);
+
+            repairLabel = ui.Text("", HangarUi.SmallPt, HangarUi.Amber);
+            repairLabel.name = "repair-note";
+            repairLabel.style.whiteSpace = WhiteSpace.Normal;
+            repairLabel.style.marginLeft = 8;
+            repairLabel.style.marginRight = 8;
+            repairLabel.style.display = DisplayStyle.None;
+            scroll.Add(repairLabel);
+
+            budgetRow = ui.Column();
+            budgetRow.name = "dv-budget";
+            budgetRow.style.width = Length.Percent(100);
+            scroll.Add(budgetRow);
+
+            riskRow = ui.Column();
+            riskRow.name = "risk-chips";
+            riskRow.style.width = Length.Percent(100);
+            riskRow.style.overflow = Overflow.Hidden;
+            scroll.Add(riskRow);
+
             content = ui.Column();
             content.name = "tab-content";
             scroll.Add(content);
@@ -146,7 +158,9 @@ namespace Kestrel.Slice.DesignerV3
 
             confirmRow = ui.Row(2f);
             confirmRow.name = "designer-launch";
+            confirmRow.style.flexShrink = 0;
             root.Add(confirmRow);
+            root.RegisterCallback<GeometryChangedEvent>(_ => DesignerChrome.Contain(root));
 
             BuildTabs();
             session.Changed += OnChanged;
@@ -279,6 +293,7 @@ namespace Kestrel.Slice.DesignerV3
         {
             if (Mathf.Approximately(upp, ui.Upp)) return;
             ui.Upp = upp;
+            heldScroll = -1f;
             BuildTabs();
             Rebuild();
         }
@@ -297,6 +312,7 @@ namespace Kestrel.Slice.DesignerV3
             if (GuideSession.Engine != null) GuideSession.Engine.SetEngineer(on);
             if (!engineer && Array.IndexOf(DesignerV3Tabs.Simple, tab) < 0) tab = DesignerV3Tab.Engines;
             EngineerChanged?.Invoke(engineer);
+            heldScroll = -1f;
             BuildTabs();
             Rebuild();
         }
@@ -324,6 +340,7 @@ namespace Kestrel.Slice.DesignerV3
             }
             tab = next;
             launchConfirmArmed = false;
+            heldScroll = -1f;
             TabChanged?.Invoke(tab);
             Rebuild();
         }
@@ -340,6 +357,7 @@ namespace Kestrel.Slice.DesignerV3
         {
             tutorialOn = on;
             PlayerPrefs.SetInt(TutorialPref, on ? 1 : 0);
+            heldScroll = -1f;
             RebuildTutorial();
             Rebuild();
         }
@@ -348,6 +366,8 @@ namespace Kestrel.Slice.DesignerV3
         {
             launchConfirmArmed = false;
             if (tutorialOn) tutorialIndex = DesignerV3Tutorial.Advance(tutorialSteps, tutorialIndex);
+            float y = scroll != null ? scroll.scrollOffset.y : 0f;
+            heldScroll = float.IsNaN(y) || float.IsInfinity(y) || y < 0f ? 0f : y;
             Rebuild();
         }
 
@@ -382,6 +402,7 @@ namespace Kestrel.Slice.DesignerV3
 
         void Rebuild()
         {
+            float keep = heldScroll;
             refreshers.Clear();
             content.Clear();
             BuildTutorialBanner();
@@ -399,6 +420,21 @@ namespace Kestrel.Slice.DesignerV3
                 case DesignerV3Tab.Look: BuildLook(); break;
             }
             RefreshChrome();
+            if (scroll != null)
+            {
+                if (keep >= 0f) RestoreScroll(keep);
+                else scroll.scrollOffset = new Vector2(0f, 0f);
+            }
+            heldScroll = -1f;
+            DesignerChrome.Apply(root);
+        }
+
+        void RestoreScroll(float y)
+        {
+            if (scroll == null || y < 0f || float.IsNaN(y) || float.IsInfinity(y)) return;
+            var bar = scroll.verticalScroller;
+            if (bar != null && bar.highValue < y) bar.highValue = y;
+            scroll.scrollOffset = new Vector2(scroll.scrollOffset.x, y);
         }
 
         void RefreshChrome()
@@ -579,11 +615,23 @@ namespace Kestrel.Slice.DesignerV3
             content.Add(ui.Section(engineer ? "Mixture" : "Fuel mix"));
             var mix = Readout.Quick(C, D);
             Teach(DesignerCoach.WhyTanks(mix.totalDeltaV, mix.required), "prop");
-            content.Add(ui.Stepper("Mixture offset", () => (Stage0()?.Num("mixtureOffsetPct") ?? 0).ToString("0.0", inv) + "%",
+            var props = new List<HangarUi.Choice>();
+            foreach (var id in new[] { "kerolox", "methalox", "hydrolox" })
+            {
+                if (!C.PropellantById.TryGetValue(id, out var p)) continue;
+                props.Add(new HangarUi.Choice(id, p.label ?? id));
+            }
+            var prop = ui.Chips("Propellant", props, () => Stage0()?.Str("propellant"),
+                id => Do(d => HangarEditor.SetPropellant(C, d, PartRef.Stage(0), id)), refreshers);
+            prop.name = "field-propellant";
+            content.Add(prop);
+            var mixRow = ui.Stepper("Mixture offset", () => (Stage0()?.Num("mixtureOffsetPct") ?? 0).ToString("0.0", inv) + "%",
                 () => engineer ? "±10%. Beyond ±6% risks instability." : "Keep near zero for a clean burn",
-                (dir, key) => Do(d => DesignerV3Edits.SetMixtureOffset(d, 0, (StageNum(d, "mixtureOffsetPct") ?? 0) + dir), key),
-                End, "mix", refreshers));
-            AttachDelta("mixtureOffsetPct", d => DesignerV3Edits.SetMixtureOffset(d, 0, (StageNum(d, "mixtureOffsetPct") ?? 0) + 1));
+                (dir, key) => Do(d => DesignerKnobs.NudgeMixture(d, 0, dir), key),
+                End, "mix", refreshers);
+            mixRow.name = "field-mixtureOffsetPct";
+            content.Add(mixRow);
+            AttachDelta("mixtureOffsetPct", d => DesignerKnobs.NudgeMixture(d, 0, 1));
         }
 
         void BuildEngines()
@@ -598,25 +646,48 @@ namespace Kestrel.Slice.DesignerV3
             var engines = new List<HangarUi.Choice>();
             foreach (var e in HangarEditor.EngineChoices(C, D, p))
                 engines.Add(new HangarUi.Choice(e.id, HangarFormat.EngineChip(e)));
-            content.Add(ui.Chips("Engine", engines, () => Stage0()?.Str("engine"), id => Do(d => HangarEditor.SetEngine(C, d, p, id)), refreshers));
-            content.Add(ui.Stepper("Count", () => ((int)(Stage0()?.Num("engineCount") ?? 1)).ToString(inv),
+            var engineChips = ui.Chips("Engine", engines, () => Stage0()?.Str("engine"), id => Do(d => HangarEditor.SetEngine(C, d, p, id)), refreshers);
+            engineChips.name = "field-engine";
+            content.Add(engineChips);
+            var count = ui.Stepper("Count", () => ((int)(Stage0()?.Num("engineCount") ?? 1)).ToString(inv),
                 () => null,
                 (dir, key) => Do(d => HangarEditor.SetEngineCount(d, p, (int)(HangarParts.Body(d, p)?.Num("engineCount") ?? 1) + dir), key),
-                End, "eng.count", refreshers));
+                End, "eng.count", refreshers);
+            count.name = "field-engineCount";
+            content.Add(count);
+            var patterns = new List<HangarUi.Choice>();
+            foreach (var pl in DesignerLimits.Active.patterns)
+                patterns.Add(new HangarUi.Choice(pl.id, pl.id));
+            var cluster = ui.Chips("Cluster", patterns, () => Stage0()?.Obj("cluster")?.Str("pattern") ?? "auto",
+                id => Do(d => HangarEditor.SetClusterPattern(d, p, id)), refreshers);
+            cluster.name = "field-cluster";
+            content.Add(cluster);
             if (engineer)
             {
-                content.Add(ui.Stepper("Chamber pressure", () => DesignerV3Edits.ShownPc(C, D, 0).ToString("0", inv) + " bar",
+                var pc = ui.Stepper("Chamber pressure", () => DesignerV3Edits.ShownPc(C, D, 0).ToString("0", inv) + " bar",
                     () => "Higher pc: more thrust and Isp, overpressure risk",
-                    (dir, key) => Do(d => DesignerV3Edits.SetEnginePc(d, 0, DesignerV3Edits.ShownPc(C, d, 0) + dir * 5), key),
-                    End, "eng.pc", refreshers));
-                content.Add(ui.Stepper("Expansion ratio", () => DesignerV3Edits.ShownExpansion(C, D, 0).ToString("0", inv),
+                    (dir, key) => Do(d => DesignerKnobs.NudgePc(C, d, 0, dir), key),
+                    End, "eng.pc", refreshers);
+                pc.name = "field-pc";
+                content.Add(pc);
+                var eps = ui.Stepper("Expansion ratio", () => DesignerV3Edits.ShownExpansion(C, D, 0).ToString("0", inv),
                     () => "Bigger ε: better vacuum, worse pad",
-                    (dir, key) => Do(d => DesignerV3Edits.SetExpansionRatio(d, 0, DesignerV3Edits.ShownExpansion(C, d, 0) + dir * 2), key),
-                    End, "eng.eps", refreshers));
-                content.Add(ui.Stepper("Gimbal", () => DesignerV3Edits.ShownGimbal(C, D, 0).ToString("0.0", inv) + "°",
+                    (dir, key) => Do(d => DesignerKnobs.NudgeExpansion(C, d, 0, dir), key),
+                    End, "eng.eps", refreshers);
+                eps.name = "field-expansionRatio";
+                content.Add(eps);
+                var gimbal = ui.Stepper("Gimbal", () => DesignerV3Edits.ShownGimbal(C, D, 0).ToString("0.0", inv) + "°",
                     () => "Control authority vs mass",
-                    (dir, key) => Do(d => DesignerV3Edits.SetGimbal(d, 0, DesignerV3Edits.ShownGimbal(C, d, 0) + dir * 0.5), key),
-                    End, "eng.gimbal", refreshers));
+                    (dir, key) => Do(d => DesignerKnobs.NudgeGimbal(C, d, 0, dir), key),
+                    End, "eng.gimbal", refreshers);
+                gimbal.name = "field-gimbal";
+                content.Add(gimbal);
+                var throttle = ui.Stepper("Min throttle", () => (DesignerKnobs.ShownThrottle(C, D, 0) * 100).ToString("0", inv) + "%",
+                    () => "How far the engines can ease off",
+                    (dir, key) => Do(d => DesignerKnobs.NudgeThrottle(C, d, 0, dir), key),
+                    End, "eng.thr", refreshers);
+                throttle.name = "field-throttle";
+                content.Add(throttle);
             }
         }
 
@@ -626,16 +697,20 @@ namespace Kestrel.Slice.DesignerV3
             content.Add(ui.Section(engineer ? "Stage 1 tank" : "Fuel tank"));
             var fuel = Readout.Quick(C, D);
             Teach(DesignerCoach.WhyTanks(fuel.totalDeltaV, fuel.required), "tanks");
-            content.Add(ui.Stepper("Fuel load", () => HangarFormat.Tons(Stage0()?.Num("propMass") ?? 0),
+            var fuelRow = ui.Stepper("Fuel load", () => HangarFormat.Tons(Stage0()?.Num("propMass") ?? 0),
                 () => engineer ? null : "More fuel goes further but weighs more",
                 (dir, key) => Do(d => HangarEditor.SetPropMass(d, p, HangarFormat.StepProp(HangarParts.Body(d, p)?.Num("propMass") ?? 0, dir)), key),
-                End, "tank.prop", refreshers));
+                End, "tank.prop", refreshers);
+            fuelRow.name = "field-propMass";
+            content.Add(fuelRow);
             if (engineer)
             {
-                content.Add(ui.Stepper("Pressure", () => (Stage0()?.Obj("tank")?.Num("pressureBar") ?? 3).ToString("0.0", inv) + " bar",
+                var pressure = ui.Stepper("Pressure", () => DesignerKnobs.ShownPressure(D, 0).ToString("0.0", inv) + " bar",
                     () => "Hoop stress sets wall mass",
-                    (dir, key) => Do(d => DesignerV3Edits.SetTankPressure(d, 0, ((d.Arr("stages")?[0] as JsonObject)?.Obj("tank")?.Num("pressureBar") ?? 3) + dir * 0.5), key),
-                    End, "tank.p", refreshers));
+                    (dir, key) => Do(d => DesignerKnobs.NudgePressure(d, 0, dir), key),
+                    End, "tank.p", refreshers);
+                pressure.name = "field-pressure";
+                content.Add(pressure);
                 var ins = new List<HangarUi.Choice>
                 {
                     new HangarUi.Choice("none", "None"), new HangarUi.Choice("foam", "Foam"), new HangarUi.Choice("mli", "MLI"),
@@ -656,15 +731,25 @@ namespace Kestrel.Slice.DesignerV3
             int n = D.Arr("stages")?.Count ?? 0;
             content.Add(ui.Text(n + " core stage" + (n == 1 ? "" : "s"), HangarUi.BodyPt));
             if (n < DesignerLimits.Active.stagesMax)
-                content.Add(ui.Btn("+ Stage on top", () => Do(d => HangarEditor.AddStage(C, d, n)), "Add a stage"));
+            {
+                var add = ui.Btn("+ Stage on top", () => Do(d => HangarEditor.AddStage(C, d, n)), "Add a stage");
+                add.name = "field-addStage";
+                content.Add(add);
+            }
             if (n > DesignerLimits.Active.stagesMin)
-                content.Add(ui.Btn("Remove top stage", () => Do(d => HangarEditor.RemoveStage(d, n - 1)), "Remove uppermost stage"));
+            {
+                var remove = ui.Btn("Remove top stage", () => Do(d => HangarEditor.RemoveStage(d, n - 1)), "Remove uppermost stage");
+                remove.name = "field-removeStage";
+                content.Add(remove);
+            }
             var counts = new List<HangarUi.Choice>();
             foreach (var k in DesignerLimits.Active.strapOnCounts)
                 counts.Add(new HangarUi.Choice(k.ToString(inv), k == 0 ? "None" : k.ToString(inv)));
-            content.Add(ui.Chips(engineer ? "Strap-ons" : "Side boosters", counts,
+            var boosters = ui.Chips(engineer ? "Strap-ons" : "Side boosters", counts,
                 () => HangarParts.BoosterCount(D).ToString(inv),
-                id => Do(d => HangarEditor.SetBoosterCount(C, d, int.Parse(id, inv))), refreshers));
+                id => Do(d => HangarEditor.SetBoosterCount(C, d, int.Parse(id, inv))), refreshers);
+            boosters.name = "field-strapOns";
+            content.Add(boosters);
             if (engineer)
             {
                 var seps = new List<HangarUi.Choice>
@@ -680,19 +765,49 @@ namespace Kestrel.Slice.DesignerV3
         {
             content.Add(ui.Section(engineer ? "Aerodynamics" : "Shape"));
             Teach(DesignerCoach.WhyStability(Readout.Quick(C, D).stabilityCal), "stability");
-            content.Add(ui.Switch("Fins", "Steady in the air", () => D.Obj("aero")?.Bool("fins") ?? false,
-                on => Do(d => HangarEditor.SetFins(d, on)), refreshers));
+            var fins = ui.Switch("Fins", "Steady in the air", () => D.Obj("aero")?.Bool("fins") ?? false,
+                on => Do(d => HangarEditor.SetFins(d, on)), refreshers);
+            fins.name = "field-fins";
+            content.Add(fins);
             if (D.Obj("aero")?.Bool("fins") == true)
             {
-                content.Add(ui.Stepper("Fin count", () => ((int)(D.Obj("aero")?.Num("finCount", 4) ?? 4)).ToString(inv), null,
+                var finCount = ui.Stepper("Fin count", () => ((int)(D.Obj("aero")?.Num("finCount", 4) ?? 4)).ToString(inv), null,
                     (dir, key) => Do(d => HangarEditor.SetFinCount(d, (int)(d.Obj("aero")?.Num("finCount", 4) ?? 4) + dir), key),
-                    End, "fins.count", refreshers));
+                    End, "fins.count", refreshers);
+                finCount.name = "field-finCount";
+                content.Add(finCount);
+                var span = ui.Stepper("Fin size", () => (D.Obj("aero")?.Num("finSpanM", 1) ?? 1).ToString("0.0", inv) + " m",
+                    () => "Bigger fins hold the point up",
+                    (dir, key) => Do(d => HangarEditor.SetFinSpan(d, (d.Obj("aero")?.Num("finSpanM", 1) ?? 1) + dir * DesignerLimits.Active.finSpanStep), key),
+                    End, "fins.span", refreshers);
+                span.name = "field-finSpan";
+                content.Add(span);
             }
             var noses = new List<HangarUi.Choice>();
-            foreach (var id in new[] { "ogive", "conic", "blunt", "von-karman", "biconic", "hammerhead" })
+            foreach (var id in DesignerKnobs.Noses)
                 noses.Add(new HangarUi.Choice(id, HangarFormat.Cap(id)));
-            content.Add(ui.Chips("Nose", noses, () => D.Obj("aero")?.Str("nose") ?? "ogive",
-                id => Do(d => HangarEditor.SetNose(d, id)), refreshers));
+            var nose = ui.Chips("Nose", noses, () => D.Obj("aero")?.Str("nose") ?? "ogive",
+                id => Do(d => DesignerKnobs.SetNose(d, id)), refreshers);
+            nose.name = "field-nose";
+            content.Add(nose);
+            var fairLen = ui.Stepper("Fairing length", () => HangarFormat.Metres(D.Obj("fairing")?.Num("length") ?? 0),
+                () => "Room for the cargo",
+                (dir, key) => Do(d => HangarEditor.SetFairingLength(d, (d.Obj("fairing")?.Num("length") ?? 1) + dir * 0.5), key),
+                End, "fair.l", refreshers);
+            fairLen.name = "field-fairing";
+            content.Add(fairLen);
+            var fairDia = ui.Stepper("Fairing width", () => HangarFormat.Metres(D.Obj("fairing")?.Num("diameter") ?? 0),
+                () => "Wide enough for the cargo",
+                (dir, key) => Do(d => HangarEditor.SetDiameter(d, PartRef.Fairing, (d.Obj("fairing")?.Num("diameter") ?? 1) + dir * 0.1), key),
+                End, "fair.d", refreshers);
+            fairDia.name = "field-fairingDiameter";
+            content.Add(fairDia);
+            var maxQ = ui.Stepper("Max-Q throttle", () => Kestrel.Core.Designer.Stepper.MaxQThrottle.Label(D),
+                () => "Ease off while the air pushes hardest",
+                (dir, key) => Do(d => Kestrel.Core.Designer.Stepper.MaxQThrottle.Nudge(d, dir), key),
+                End, "g.q", refreshers);
+            maxQ.name = "field-maxQThrottle";
+            content.Add(maxQ);
         }
 
         void BuildStructure()
@@ -702,14 +817,20 @@ namespace Kestrel.Slice.DesignerV3
             Teach(DesignerCoach.WhyMaxQ(wall.maxQ_kPa, wall.qLim_kPa), "max-q");
             var mats = new List<HangarUi.Choice>();
             foreach (var m in C.Materials) mats.Add(new HangarUi.Choice(m.id, m.label));
-            content.Add(ui.Chips("Material", mats, () => Stage0()?.Str("material"),
-                id => Do(d => HangarEditor.SetMaterial(C, d, PartRef.Stage(0), id)), refreshers));
-            content.Add(ui.Stepper("Safety factor", () => D.Num("safetyFactor", 1.4).ToString("0.00", inv),
+            var material = ui.Chips("Material", mats, () => Stage0()?.Str("material"),
+                id => Do(d => HangarEditor.SetMaterial(C, d, PartRef.Stage(0), id)), refreshers);
+            material.name = "field-material";
+            content.Add(material);
+            var safety = ui.Stepper("Safety factor", () => D.Num("safetyFactor", 1.4).ToString("0.00", inv),
                 () => "Stronger structure weighs more",
                 (dir, key) => Do(d => HangarEditor.SetSafetyFactor(d, d.Num("safetyFactor", 1.4) + dir * DesignerLimits.Active.safetyStep), key),
-                End, "sf", refreshers));
-            content.Add(ui.Chips("Avionics", Ids(HangarEditor.AvionicsTiers), () => D.Obj("avionics")?.Str("tier"),
-                id => Do(d => HangarEditor.SetAvionics(d, id)), refreshers));
+                End, "sf", refreshers);
+            safety.name = "field-safetyFactor";
+            content.Add(safety);
+            var avionics = ui.Chips("Avionics", Ids(HangarEditor.AvionicsTiers), () => D.Obj("avionics")?.Str("tier"),
+                id => Do(d => HangarEditor.SetAvionics(d, id)), refreshers);
+            avionics.name = "field-avionics";
+            content.Add(avionics);
         }
 
         void BuildGuidance()
@@ -717,22 +838,30 @@ namespace Kestrel.Slice.DesignerV3
             content.Add(ui.Section("Guidance profile"));
             var guide = Readout.Quick(C, D);
             Teach(DesignerCoach.WhyGLimit(guide.gLimit) + " " + DesignerCoach.WhyMaxQ(guide.maxQ_kPa, guide.qLim_kPa), "max-q");
-            content.Add(ui.Stepper("Pitch kick alt", () => (D.Obj("guidance")?.Num("pitchKickAlt") ?? 100).ToString("0", inv) + " m",
+            var kickAlt = ui.Stepper("Pitch kick alt", () => DesignerKnobs.ShownGuidance(D, "pitchKickAlt").ToString("0", inv) + " m",
                 () => "Start of the gravity turn",
-                (dir, key) => Do(d => DesignerV3Edits.SetGuidance(d, "pitchKickAlt", (d.Obj("guidance")?.Num("pitchKickAlt") ?? 100) + dir * 50), key),
-                End, "g.alt", refreshers));
-            content.Add(ui.Stepper("Pitch kick", () => (D.Obj("guidance")?.Num("pitchKickDeg") ?? 2).ToString("0.0", inv) + "°",
+                (dir, key) => Do(d => DesignerKnobs.NudgeGuidance(d, "pitchKickAlt", dir), key),
+                End, "g.alt", refreshers);
+            kickAlt.name = "field-pitchKickAlt";
+            content.Add(kickAlt);
+            var kick = ui.Stepper("Pitch kick", () => DesignerKnobs.ShownGuidance(D, "pitchKickDeg").ToString("0.0", inv) + "°",
                 () => null,
-                (dir, key) => Do(d => DesignerV3Edits.SetGuidance(d, "pitchKickDeg", (d.Obj("guidance")?.Num("pitchKickDeg") ?? 2) + dir * 0.5), key),
-                End, "g.kick", refreshers));
-            content.Add(ui.Stepper("Max-Q throttle", () => Kestrel.Core.Designer.Stepper.MaxQThrottle.Label(D),
+                (dir, key) => Do(d => DesignerKnobs.NudgeGuidance(d, "pitchKickDeg", dir), key),
+                End, "g.kick", refreshers);
+            kick.name = "field-pitchKickDeg";
+            content.Add(kick);
+            var qThrottle = ui.Stepper("Max-Q throttle", () => Kestrel.Core.Designer.Stepper.MaxQThrottle.Label(D),
                 () => "Throttle bucket through max-Q",
-                (dir, key) => Do(d => Kestrel.Core.Designer.Stepper.MaxQThrottle.Nudge(d, dir), key),
-                End, "g.q", refreshers));
-            content.Add(ui.Stepper("g limit", () => (D.Obj("guidance")?.Num("gLimit") ?? 4).ToString("0.0", inv) + " g",
+                (dir, key) => Do(d => DesignerKnobs.NudgeGuidance(d, "maxQThrottle", dir), key),
+                End, "g.q", refreshers);
+            qThrottle.name = "field-maxQThrottle";
+            content.Add(qThrottle);
+            var gLimit = ui.Stepper("g limit", () => DesignerKnobs.ShownGuidance(D, "gLimit").ToString("0.0", inv) + " g",
                 () => "Autopilot caps sensed acceleration",
-                (dir, key) => Do(d => DesignerV3Edits.SetGuidance(d, "gLimit", (d.Obj("guidance")?.Num("gLimit") ?? 4) + dir * 0.5), key),
-                End, "g.g", refreshers));
+                (dir, key) => Do(d => DesignerKnobs.NudgeGuidance(d, "gLimit", dir), key),
+                End, "g.g", refreshers);
+            gLimit.name = "field-gLimit";
+            content.Add(gLimit);
         }
 
         void BuildRecovery()
@@ -740,8 +869,10 @@ namespace Kestrel.Slice.DesignerV3
             content.Add(ui.Section(engineer ? "Recovery" : "Landing"));
             var land = Readout.Quick(C, D);
             Teach(DesignerCoach.WhyLanding(land.totalDeltaV, land.required), "landing");
-            content.Add(ui.Switch("Landing legs", null, () => D.Obj("landing")?.Bool("legs") ?? false,
-                on => Do(d => HangarEditor.SetLegs(d, on)), refreshers));
+            var legsRow = ui.Switch("Landing legs", null, () => D.Obj("landing")?.Bool("legs") ?? false,
+                on => Do(d => HangarEditor.SetLegs(d, on)), refreshers);
+            legsRow.name = "field-legs";
+            content.Add(legsRow);
             content.Add(ui.Switch("Grid fins", "Steer on the way down", () => D.Obj("landing")?.Bool("gridFins") ?? false,
                 on => Do(d => HangarEditor.SetGridFins(d, on)), refreshers));
             var modes = new List<HangarUi.Choice>
@@ -750,9 +881,11 @@ namespace Kestrel.Slice.DesignerV3
                 new HangarUi.Choice("rtls", "Return to pad"),
                 new HangarUi.Choice("barge", "Haven barge"),
             };
-            content.Add(ui.Chips(engineer ? "Recovery mode" : "Where it lands", modes,
+            var recovery = ui.Chips(engineer ? "Recovery mode" : "Where it lands", modes,
                 () => D.Str("recoveryMode") ?? "expendable",
-                id => Do(d => DesignerV3Edits.SetRecoveryMode(d, id)), refreshers));
+                id => Do(d => DesignerV3Edits.SetRecoveryMode(d, id)), refreshers);
+            recovery.name = "field-recoveryMode";
+            content.Add(recovery);
             if (engineer)
             {
                 var legs = new List<HangarUi.Choice>
@@ -771,15 +904,21 @@ namespace Kestrel.Slice.DesignerV3
             Teach(DesignerCoach.WhyMission(job.orbitLabel, job.required), "orbit");
             var payloads = new List<HangarUi.Choice>();
             foreach (var pl in C.Payloads) payloads.Add(new HangarUi.Choice(pl.id, pl.label ?? pl.id));
-            content.Add(ui.Chips("Type", payloads, () => D.Obj("payload")?.Str("type"),
-                id => Do(d => HangarEditor.SetPayloadType(C, d, id)), refreshers));
+            var payloadType = ui.Chips("Type", payloads, () => D.Obj("payload")?.Str("type"),
+                id => Do(d => HangarEditor.SetPayloadType(C, d, id)), refreshers);
+            payloadType.name = "field-payload";
+            content.Add(payloadType);
             var orbits = new List<HangarUi.Choice>();
             foreach (var o in C.Orbits.Values) orbits.Add(new HangarUi.Choice(o.id, o.label ?? o.id));
-            content.Add(ui.Chips("Orbit", orbits, () => D.Obj("payload")?.Str("orbit"),
-                id => Do(d => HangarEditor.SetOrbit(C, d, id)), refreshers));
-            content.Add(ui.Stepper("Mass", () => HangarFormat.Kg(D.Obj("payload")?.Num("mass") ?? 0), null,
+            var orbitChips = ui.Chips("Orbit", orbits, () => D.Obj("payload")?.Str("orbit"),
+                id => Do(d => HangarEditor.SetOrbit(C, d, id)), refreshers);
+            orbitChips.name = "field-orbit";
+            content.Add(orbitChips);
+            var mass = ui.Stepper("Mass", () => HangarFormat.Kg(D.Obj("payload")?.Num("mass") ?? 0), null,
                 (dir, key) => Do(d => HangarEditor.SetPayloadMass(d, (d.Obj("payload")?.Num("mass") ?? 0) + dir * 100), key),
-                End, "pl.mass", refreshers));
+                End, "pl.mass", refreshers);
+            mass.name = "field-payloadMass";
+            content.Add(mass);
         }
 
         void BuildLook()
@@ -793,9 +932,13 @@ namespace Kestrel.Slice.DesignerV3
             content.Add(ui.Btn("Swap cyan accent", () => Do(d => HangarEditor.SetPaint(d, primary, "#1ec8ff")), "Set Beckify cyan accent"));
             if (engineer)
             {
-                var nameField = new TextField { value = D.Str("name") ?? "", maxLength = 32 };
+                string painted = D.Obj("livery")?.Str("name");
+                if (string.IsNullOrEmpty(painted)) painted = D.Str("name") ?? "";
+                var nameField = new TextField { value = painted, maxLength = HangarEditor.VehicleNameMax };
                 nameField.label = "Vehicle name";
+                nameField.name = "field-name";
                 nameField.isDelayed = true;
+                nameField.style.minHeight = ui.U(HangarUi.TargetPt);
                 nameField.RegisterValueChangedCallback(e => Do(d => HangarEditor.SetVehicleName(d, e.newValue)));
                 content.Add(nameField);
             }
@@ -883,17 +1026,31 @@ namespace Kestrel.Slice.DesignerV3
             }
             Show(next);
             Edit made = Edit.None;
+            string said = null;
             Do(d =>
             {
-                made = DesignerRepair.Apply(C, d, kind);
+                var check = new Kestrel.Core.Designer.Stepper.StepCheck
+                {
+                    Step = Kestrel.Core.Designer.Stepper.DesignerStep.Look,
+                    Code = string.IsNullOrEmpty(kind) ? "fix" : kind,
+                    Gate = Kestrel.Core.Designer.Stepper.StepGate.Amber,
+                };
+                var result = Kestrel.Core.Designer.Stepper.StepperFix.Apply(C, d, check);
+                made = result.Edit;
+                said = result.Instruction;
+                if (!made.changed) made = DesignerRepair.Apply(C, d, kind);
                 return made;
             });
-            string said = made.changed
-                ? made.what + " is now " + made.to + "."
-                : (kind == "overg" || kind == "payload-g")
-                    ? "The g limit is already under the payload rating."
-                    : "That control is already at the safer setting.";
-            NoteRepair(said);
+            string note;
+            if (made.changed && !string.IsNullOrEmpty(made.from) && !string.IsNullOrEmpty(made.to))
+                note = made.what + " " + made.from + " → " + made.to;
+            else if (!string.IsNullOrEmpty(said))
+                note = said;
+            else if (kind == "overg" || kind == "payload-g")
+                note = "The g limit is already under the payload rating.";
+            else
+                note = "That control is already at the safer setting.";
+            NoteRepair(note);
         }
 
         void Repair(FlightRisk risk)
