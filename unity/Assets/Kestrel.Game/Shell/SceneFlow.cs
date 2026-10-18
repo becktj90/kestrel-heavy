@@ -100,6 +100,72 @@ namespace Kestrel.Game.Shell
 
         public void ExitToMissions() => Route(RouteId.ExitMissions);
 
+        /// <summary>Fly from the board. A starter that can launch opens the briefing with the pad armed. Otherwise the designer.</summary>
+        public void LaunchChosen(string missionId)
+        {
+            if (Busy || string.IsNullOrEmpty(missionId)) return;
+            var campaign = ScreenStub.LoadCampaign();
+            var mission = campaign != null ? campaign.ById(missionId) : null;
+            if (mission == null || mission.Index > ScreenStub.ClearedCount() + 1) return;
+            var choice = HomeAutoBuild.Choose(ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, mission);
+            if (choice != null && choice.LaunchEnabled && choice.Design != null)
+            {
+                var ctx = MissionContext.FromMission(campaign, mission);
+                if (ctx != null)
+                {
+                    MissionBriefing card = null;
+                    string root = ScreenStub.RepoRoot();
+                    if (root != null)
+                    {
+                        try { card = MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign)); }
+                        catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
+                    }
+                    ctx.ApplyBriefing(card);
+                    ctx.VehicleLine = choice.VehicleLine;
+                    ctx.ReachLine = choice.ReachLine;
+                    ctx.AutoPad = true;
+                    PadHandoff.Arm(choice.Design, true, fromHome: false);
+                    GameSession.Carry(ctx);
+                    Present(new RouteResult(SessionScreens.Missions, SessionScreens.Briefing, ctx));
+                    return;
+                }
+            }
+            DesignChosen(missionId);
+        }
+
+        /// <summary>Open the designer with this mission's starter. No starter falls through to the briefing.</summary>
+        public void DesignChosen(string missionId)
+        {
+            if (Busy || string.IsNullOrEmpty(missionId)) return;
+            var campaign = ScreenStub.LoadCampaign();
+            var mission = campaign != null ? campaign.ById(missionId) : null;
+            if (mission == null || mission.Index > ScreenStub.ClearedCount() + 1) return;
+            var choice = HomeAutoBuild.Choose(ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, mission);
+            if (choice == null || choice.Design == null)
+            {
+                StartMission(missionId);
+                return;
+            }
+            var ctx = MissionContext.FromMission(campaign, mission);
+            if (ctx == null)
+            {
+                StartMission(missionId);
+                return;
+            }
+            ctx.VehicleLine = choice.VehicleLine;
+            ctx.ReachLine = choice.ReachLine;
+            ctx.AutoPad = false;
+            PadHandoff.Arm(choice.Design, false, fromHome: false);
+            GameSession.Carry(ctx);
+            Present(new RouteResult(SessionScreens.Design, SessionScreens.None, ctx));
+        }
+
+        /// <summary>Free build. The existing hangar route, not a new flight.</summary>
+        public void OpenSandbox()
+        {
+            if (!Busy) HomePressed("hangar");
+        }
+
         void Route(RouteId id, Campaign campaign = null)
         {
             if (Busy) return;

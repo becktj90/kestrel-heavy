@@ -1,0 +1,129 @@
+/* Mission board. Dusk sky is painted in code. This sheet is type, glass, and the thick Fly edge.
+   Tokens are the art-direction dusk set. No blur: the sheet is a baked translucent fill. */
+
+.mission-board {
+    flex-grow: 1;
+    background-color: #05081A;
+}
+
+.mission-kicker {
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    color: #46D9CC;
+    -unity-font-style: bold;
+}
+
+.mission-act-name {
+    font-size: 18px;
+    color: #F6EBD2;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.mission-art {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position-x: center;
+    background-position-y: center;
+}
+
+.mission-sheet {
+    background-color: rgba(13, 20, 40, 0.92);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.22);
+    border-radius: 18px;
+}
+
+.mission-fly {
+    background-color: #F2543D;
+    color: #FFF6E0;
+    border-bottom-width: 4px;
+    border-bottom-color: #9E2438;
+    border-top-width: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-radius: 12px;
+    font-size: 22px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.mission-fly:disabled {
+    opacity: 1;
+    background-color: #2A3348;
+    color: #8E9AB8;
+    border-bottom-color: #1A2030;
+}
+
+.mission-entry {
+    background-color: rgba(255, 255, 255, 0.08);
+    background-image: none;
+    color: #F6EBD2;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.22);
+    border-radius: 12px;
+    font-size: 13px;
+    -unity-text-align: middle-center;
+}
+
+.mission-entry--on {
+    border-color: #FFA23E;
+}
+
+.mission-node {
+    background-color: rgba(13, 20, 40, 0.72);
+    background-image: none;
+    border-width: 2px;
+    border-color: rgba(142, 154, 184, 0.7);
+    border-radius: 22px;
+    padding: 0;
+    margin: 0;
+}
+
+.mission-node--cleared {
+    border-color: #D2A24F;
+}
+
+.mission-node--open {
+    border-color: #FFA23E;
+}
+
+.mission-node--locked {
+    opacity: 0.55;
+}
+
+.mission-node--selected {
+    border-width: 3px;
+    border-color: #FFA23E;
+}
+
+.mission-home {
+    background-color: rgba(13, 20, 40, 0.92);
+    color: #F6EBD2;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.22);
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+.mission-fact {
+    font-size: 13px;
+    color: #F6EBD2;
+    white-space: normal;
+}
+
+.mission-brief {
+    font-size: 13px;
+    color: #F6EBD2;
+    white-space: normal;
+}
+
+.mission-progress-on {
+    background-color: #D2A24F;
+    border-radius: 2px;
+}
+
+.mission-progress-off {
+    background-color: rgba(142, 154, 184, 0.35);
+    border-radius: 2px;
+}
