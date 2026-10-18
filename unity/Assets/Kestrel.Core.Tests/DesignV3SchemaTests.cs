@@ -328,6 +328,10 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(PayloadFit.LengthFactor, v3.Obj("payloadFit").Num("lengthFactor"), 0);
             Assert.AreEqual(PayloadFit.DiameterClearanceM, v3.Obj("payloadFit").Num("diameterClearanceM"), 0);
             Assert.AreEqual(0.2, v3.Obj("landingReserveFraction").Num("max"), 0);
+            Assert.AreEqual(0, v3.Obj("guidance").Obj("pitchKickAltM").Num("min"), 0);
+            Assert.AreEqual(50000, v3.Obj("guidance").Obj("pitchKickAltM").Num("max"), 0);
+            Assert.AreEqual(0, parsed.pitchKickAltMin, 0);
+            Assert.AreEqual(50000, parsed.pitchKickAltMax, 0);
             CollectionAssert.AreEqual(new[] { "cold", "hot", "springs" }, Strings(v3.Arr("sepMode")));
             CollectionAssert.AreEqual(new[] { "expendable", "rtls", "barge" }, Strings(v3.Obj("recovery").Arr("modes")));
             CollectionAssert.AreEqual(new[] { 0d, 2d, 3d, 4d, 6d, 8d }, v3.Arr("strapOnCounts"));

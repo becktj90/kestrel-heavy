@@ -1,5 +1,4 @@
 // Optional v3 field edits for the portrait designer. Uses HangarSession.Apply; does not extend HangarEditor.
-using System.Globalization;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Hangar;
@@ -9,55 +8,32 @@ namespace Kestrel.Slice.DesignerV3
 {
     public static class DesignerV3Edits
     {
-        static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
-
         public static Edit SetMixtureOffset(JsonObject d, int stage, double pct)
-        {
-            var s = Stage(d, stage); if (s == null) return Edit.None;
-            string from = Shown(s, "mixtureOffsetPct");
-            JsonMut.Set(s, "mixtureOffsetPct", pct);
-            return new Edit("Mixture offset", from, pct.ToString("0.0", Inv) + "%");
-        }
+            => DesignerKnobs.SetMixtureOffset(d, stage, pct);
 
         public static Edit SetEnginePc(JsonObject d, int stage, double pc)
-        {
-            var eng = EngineParams(d, stage); if (eng == null) return Edit.None;
-            string from = Shown(eng, "pc");
-            JsonMut.Set(eng, "pc", pc);
-            return new Edit("Chamber pressure", from, pc.ToString("0", Inv) + " bar");
-        }
+            => DesignerKnobs.SetEnginePc(null, d, stage, pc);
+
+        public static Edit SetEnginePc(Catalog c, JsonObject d, int stage, double pc)
+            => DesignerKnobs.SetEnginePc(c, d, stage, pc);
 
         public static Edit SetExpansionRatio(JsonObject d, int stage, double eps)
-        {
-            var eng = EngineParams(d, stage); if (eng == null) return Edit.None;
-            string from = Shown(eng, "expansionRatio");
-            JsonMut.Set(eng, "expansionRatio", eps);
-            return new Edit("Expansion ratio", from, eps.ToString("0", Inv));
-        }
+            => DesignerKnobs.SetExpansionRatio(null, d, stage, eps);
+
+        public static Edit SetExpansionRatio(Catalog c, JsonObject d, int stage, double eps)
+            => DesignerKnobs.SetExpansionRatio(c, d, stage, eps);
 
         public static Edit SetGimbal(JsonObject d, int stage, double deg)
-        {
-            var eng = EngineParams(d, stage); if (eng == null) return Edit.None;
-            string from = Shown(eng, "gimbalDeg");
-            JsonMut.Set(eng, "gimbalDeg", deg);
-            return new Edit("Gimbal", from, deg.ToString("0.0", Inv) + "°");
-        }
+            => DesignerKnobs.SetGimbal(null, d, stage, deg);
+
+        public static Edit SetGimbal(Catalog c, JsonObject d, int stage, double deg)
+            => DesignerKnobs.SetGimbal(c, d, stage, deg);
 
         public static Edit SetThrottleMin(JsonObject d, int stage, double frac)
-        {
-            var eng = EngineParams(d, stage); if (eng == null) return Edit.None;
-            string from = Shown(eng, "throttleMin");
-            JsonMut.Set(eng, "throttleMin", frac);
-            return new Edit("Min throttle", from, (frac * 100).ToString("0", Inv) + "%");
-        }
+            => DesignerKnobs.SetThrottleMin(null, d, stage, frac);
 
         public static Edit SetTankPressure(JsonObject d, int stage, double bar)
-        {
-            var tank = Tank(d, stage); if (tank == null) return Edit.None;
-            string from = Shown(tank, "pressureBar");
-            JsonMut.Set(tank, "pressureBar", bar);
-            return new Edit("Tank pressure", from, bar.ToString("0.0", Inv) + " bar");
-        }
+            => DesignerKnobs.SetTankPressure(d, stage, bar);
 
         public static Edit SetInsulation(JsonObject d, int stage, string kind)
         {
@@ -84,19 +60,20 @@ namespace Kestrel.Slice.DesignerV3
         }
 
         public static Edit SetGuidance(JsonObject d, string key, double value)
-        {
-            var g = d.Obj("guidance");
-            if (g == null) { g = new JsonObject(); JsonMut.Set(d, "guidance", g); }
-            string from = Shown(g, key);
-            JsonMut.Set(g, key, value);
-            return new Edit("Guidance " + key, from, value.ToString("R", Inv));
-        }
+            => DesignerKnobs.SetGuidance(d, key, value);
 
         public static Edit SetRecoveryMode(JsonObject d, string mode)
         {
-            string from = d.Str("recoveryMode") ?? "expendable";
-            JsonMut.Set(d, "recoveryMode", mode ?? "expendable");
-            return new Edit("Recovery", from, mode ?? "expendable");
+            if (d == null) return Edit.None;
+            string next = string.IsNullOrEmpty(mode) ? "expendable" : mode;
+            string from = d.Str("recoveryMode");
+            if (string.IsNullOrEmpty(from)) from = d.Obj("recovery")?.Str("mode") ?? "expendable";
+            var rec = d.Obj("recovery");
+            if (from == next && d.Str("recoveryMode") == next && rec != null && rec.Str("mode") == next) return Edit.None;
+            JsonMut.Set(d, "recoveryMode", next);
+            if (rec == null) { rec = new JsonObject(); JsonMut.Set(d, "recovery", rec); }
+            JsonMut.Set(rec, "mode", next);
+            return new Edit("Recovery", from, next);
         }
 
         public static Edit SetLegsKind(JsonObject d, string kind)
@@ -111,62 +88,21 @@ namespace Kestrel.Slice.DesignerV3
 
         /// <summary>Chamber pressure the Engines tab shows: an edited engineParams.pc, otherwise the catalog engine.</summary>
         public static double ShownPc(Catalog c, JsonObject design, int stage)
-        {
-            var s = Stage(design, stage);
-            var over = s?.Obj("engineParams");
-            if (over != null && over.ContainsKey("pc")) return over.Num("pc");
-            var e = EngineOf(c, s);
-            return e != null && e.pc > 0 ? e.pc : 0;
-        }
+            => DesignerKnobs.ShownPc(c, design, stage);
 
         /// <summary>Expansion ratio: an edited override, otherwise the selected nozzle, otherwise the catalog bell.</summary>
         public static double ShownExpansion(Catalog c, JsonObject design, int stage)
-        {
-            var s = Stage(design, stage);
-            var over = s?.Obj("engineParams");
-            if (over != null && over.ContainsKey("expansionRatio")) return over.Num("expansionRatio");
-            var e = EngineOf(c, s);
-            if (e == null) return 0;
-            string nozzle = s.Str("nozzle");
-            if (!string.IsNullOrEmpty(nozzle) && nozzle != "default" && e.nozzles != null)
-                for (int i = 0; i < e.nozzles.Count; i++)
-                    if (e.nozzles[i].id == nozzle && e.nozzles[i].expansionRatio > 0)
-                        return e.nozzles[i].expansionRatio;
-            return e.expansionRatio;
-        }
+            => DesignerKnobs.ShownExpansion(c, design, stage);
 
         /// <summary>Gimbal degrees: an edited override, otherwise the catalog engine.</summary>
         public static double ShownGimbal(Catalog c, JsonObject design, int stage)
-        {
-            var s = Stage(design, stage);
-            var over = s?.Obj("engineParams");
-            if (over != null && over.ContainsKey("gimbalDeg")) return over.Num("gimbalDeg");
-            var e = EngineOf(c, s);
-            return e != null ? e.gimbal : 0;
-        }
-
-        static Engine EngineOf(Catalog c, JsonObject stage)
-        {
-            if (c == null || stage == null) return null;
-            string id = stage.Str("engine");
-            if (string.IsNullOrEmpty(id) || !c.EngineById.TryGetValue(id, out var e)) return null;
-            return e;
-        }
+            => DesignerKnobs.ShownGimbal(c, design, stage);
 
         static JsonObject Stage(JsonObject d, int i)
         {
             var stages = d?.Arr("stages");
             if (stages == null || i < 0 || i >= stages.Count) return null;
             return stages[i] as JsonObject;
-        }
-
-        /// <summary>v3 knobs live on engineParams so the catalog engine id string stays intact.</summary>
-        static JsonObject EngineParams(JsonObject d, int i)
-        {
-            var s = Stage(d, i); if (s == null) return null;
-            var eng = s.Obj("engineParams");
-            if (eng == null) { eng = new JsonObject(); JsonMut.Set(s, "engineParams", eng); }
-            return eng;
         }
 
         static JsonObject Tank(JsonObject d, int i)
@@ -176,7 +112,5 @@ namespace Kestrel.Slice.DesignerV3
             if (tank == null) { tank = new JsonObject(); JsonMut.Set(s, "tank", tank); }
             return tank;
         }
-
-        static string Shown(JsonObject o, string k) => JsonMut.Shown(o, k);
     }
 }

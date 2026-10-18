@@ -288,7 +288,7 @@ namespace Kestrel.Core.Designer
             if (f == null || !(Pos(f, "diameter")) || !(Pos(f, "length"))) errs.Add("fairing: diameter and length > 0");
             else if (f.Str("material") == null || !c.MaterialById.ContainsKey(f.Str("material"))) errs.Add($"fairing.material: unknown \"{JsonMut.Shown(f, "material")}\"");
             var aero = d.Obj("aero");
-            if (aero == null || !(aero.Str("nose") is string nose) || !Nose.ContainsKey(nose)) errs.Add("aero.nose: one of ogive, conic, blunt, von-karman");
+            if (aero == null || !(aero.Str("nose") is string nose) || !Nose.ContainsKey(nose)) errs.Add("aero.nose: one of ogive, conic, blunt, von-karman, biconic, hammerhead");
             var landing = d.Obj("landing");
             if (landing == null || !BoolKey(landing, "legs") || !BoolKey(landing, "gridFins") || !BoolKey(landing, "rcs")) errs.Add("landing: legs/gridFins/rcs booleans");
             var av = d.Obj("avionics");
@@ -300,7 +300,11 @@ namespace Kestrel.Core.Designer
             return (errs.Count == 0, errs);
         }
 
-        static readonly Dictionary<string, double> Nose = new Dictionary<string, double> { ["ogive"] = 0.30, ["conic"] = 0.36, ["blunt"] = 0.50, ["von-karman"] = 0.28 };
+        static readonly Dictionary<string, double> Nose = new Dictionary<string, double>
+        {
+            ["ogive"] = 0.30, ["conic"] = 0.36, ["blunt"] = 0.50, ["von-karman"] = 0.28,
+            ["biconic"] = 0.55, ["hammerhead"] = 0.40,
+        };
 
         static void CheckStage(Catalog c, JsonObject s, string where, List<string> errs, bool strap)
         {
