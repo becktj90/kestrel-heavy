@@ -417,9 +417,9 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         static void MaxQThrottle(VisualElement host, DesignerStepperBridge bridge, List<Action> refreshers)
         {
             var row = bridge.Ui.Stepper("Max-Q throttle",
-                () => MaxQThrottle.Label(bridge.Design),
+                () => Kestrel.Core.Designer.Stepper.MaxQThrottle.Label(bridge.Design),
                 () => "Ease off while the air pushes hardest",
-                (dir, key) => bridge.Apply(d => MaxQThrottle.Nudge(d, dir), key),
+                (dir, key) => bridge.Apply(d => Kestrel.Core.Designer.Stepper.MaxQThrottle.Nudge(d, dir), key),
                 bridge.EndGesture, "g.q", refreshers);
             NameValue(row, "maxQThrottle");
             host.Add(row);
