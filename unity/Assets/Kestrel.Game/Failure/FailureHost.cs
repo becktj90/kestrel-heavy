@@ -446,19 +446,23 @@ namespace Kestrel.Game.Failure
             var old = ui.Q(ReportView.RootName);
             if (old != null && old.userData == this) old.RemoveFromHierarchy();
             else if (old != null) old.RemoveFromHierarchy();
-            float dpr = Screen.dpi > 160f ? Mathf.Max(1f, Mathf.Round(Screen.dpi / 160f)) : 2f;
-            float wPt = Screen.width > 8 ? Screen.width / dpr : 375f;
-            float hPt = Screen.height > 8 ? Screen.height / dpr : 667f;
-            if (hPt < wPt) { float s = wPt; wPt = hPt; hPt = s; }
+            float ppp = DesignFraming.PixelsPerPoint(
+                Screen.width > 8 ? Screen.width : 750f,
+                Screen.height > 8 ? Screen.height : 1334f,
+                Screen.dpi);
+            float wPt = Screen.width > 8 ? Screen.width / ppp : 375f;
+            float hPt = Screen.height > 8 ? Screen.height / ppp : 667f;
             var safe = Screen.safeArea;
-            float top = Screen.height > 8 ? (Screen.height - safe.yMax) / dpr : 20f;
-            float bottom = Screen.height > 8 ? safe.yMin / dpr : 0f;
-            float left = Screen.width > 8 ? safe.xMin / dpr : 0f;
-            float right = Screen.width > 8 ? (Screen.width - safe.xMax) / dpr : 0f;
+            float top = Screen.height > 8 ? (Screen.height - safe.yMax) / ppp : 20f;
+            float bottom = Screen.height > 8 ? safe.yMin / ppp : 0f;
+            float left = Screen.width > 8 ? safe.xMin / ppp : 0f;
+            float right = Screen.width > 8 ? (Screen.width - safe.xMax) / ppp : 0f;
             var frame = ReportLayout.Solve(wPt, hPt, top, bottom, left, right, reduce);
-            float upp = 1f;
-            if (ui.layout.width > 1f && wPt > 1f) upp = ui.layout.width / wPt;
-            else if (dpr > 1f) upp = dpr;
+            float upp = ReportCardChrome.UnitsPerPoint(
+                Screen.width > 8 ? Screen.width : 750f,
+                Screen.height > 8 ? Screen.height : 1334f,
+                Screen.dpi,
+                ui.layout.width);
             var shown = failure;
             if (shown == null && RecoveryLog.Current != null && RecoveryLog.Current.Attempted && RecoveryLog.Current.Failure != null)
                 shown = RecoveryLog.Current.Failure;
@@ -502,7 +506,11 @@ namespace Kestrel.Game.Failure
                 relayout = _ =>
                 {
                     sheet.UnregisterCallback(relayout);
-                    float live = sheet.layout.width > 1f && wPt > 1f ? sheet.layout.width / wPt : upp;
+                    float live = ReportCardChrome.UnitsPerPoint(
+                        Screen.width > 8 ? Screen.width : 750f,
+                        Screen.height > 8 ? Screen.height : 1334f,
+                        Screen.dpi,
+                        sheet.layout.width);
                     ReportCardChrome.Dress(shownCard, live, top, bottom);
                     ReportCardChrome.Cover(shownCard);
                     ReportCardChrome.RetireFlight(sheet);

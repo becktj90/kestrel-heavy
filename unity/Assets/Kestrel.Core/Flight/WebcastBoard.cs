@@ -73,7 +73,7 @@ namespace Kestrel.Core.Flight
         /// How the flying design compares with the speed the mission asked for, and with its own max-Q readout.
         /// Before liftoff the verdict is the count, and the detail is the sheet's spare or shortfall.
         /// </summary>
-        public static DesignPulse Pulse(bool flying, double altitudeM, double speedMps, double requiredMps, double spareMps, double qPa, double? maxQKpa, string orbitLabel)
+        public static DesignPulse Pulse(bool flying, double altitudeM, double speedMps, double requiredMps, double spareMps, double qPa, double? maxQKpa, string orbitLabel, double goalAltM = 0)
         {
             double req = requiredMps > 1 ? requiredMps : 1;
             double frac = flying ? speedMps / req : 0;
@@ -91,9 +91,12 @@ namespace Kestrel.Core.Flight
                 return pulse;
             }
             bool heating = heat >= HeatWarn;
+            bool underHop = goalAltM > 0 && altitudeM <= goalAltM * 1.05;
+            bool pastHop = goalAltM > 0 && altitudeM > goalAltM * 1.08;
             if (heating) pulse.Verdict = "Heating hard";
             else if (frac >= 1) pulse.Verdict = "Speed is there";
-            else if (altitudeM < 10000) pulse.Verdict = "Climbing";
+            else if (underHop || altitudeM < 10000) pulse.Verdict = "Climbing";
+            else if (pastHop) pulse.Verdict = "Past the goal";
             else if (frac < 0.40) pulse.Verdict = "Short on speed";
             else pulse.Verdict = "On track";
             string q = maxQKpa.HasValue ? $" · Q {qPa / 1000:0} of {maxQKpa.Value:0} kPa" : $" · Q {qPa / 1000:0} kPa";
