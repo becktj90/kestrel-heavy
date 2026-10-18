@@ -79,6 +79,21 @@ namespace Kestrel.Core.Flight
         public static readonly string[] TelemetryLabels = { "ALT", "SPEED", "Q", "G" };
         public static readonly string[] ValueSamples = { "999.9 km", "0.00 km/s", "999 kPa", "00.0", "100%", "TWR", "PROP" };
 
+        /// <summary>
+        /// Clock face that fits "T+ 00.0" inside the band. The 56 px stylesheet size
+        /// spills out of the strip and covers the ALT cell.
+        /// </summary>
+        public static float ClockFontPt(float boxW, float boxH)
+        {
+            const string sample = "T+ 00.0";
+            float font = 28f;
+            float limit = boxH > 8f ? boxH - 4f : font;
+            if (font > limit) font = limit;
+            if (!(boxW > 8f)) return font > 13f ? font : 13f;
+            while (font > 13f && TextWidth(sample, font) > boxW - 2f) font -= 0.5f;
+            return font;
+        }
+
         public static float TextWidth(string text, float fontPt)
         {
             if (string.IsNullOrEmpty(text) || !(fontPt > 0f)) return 0f;
