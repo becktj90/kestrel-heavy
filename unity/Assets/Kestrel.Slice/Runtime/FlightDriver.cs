@@ -96,6 +96,9 @@ namespace Kestrel.Slice
                 guidance = opts.guidance;
                 Decisions = hook.Director;
             }
+            // Same aim as the campaign batch. The orbit target lofts a 10 km hop past the band.
+            var aimed = hook != null && hook.Mission != null ? hook.Mission : AscentFlight.CurrentMission();
+            if (MissionAim.Apply(opts, aimed)) guidance = opts.guidance;
             opts.tMax = 600;
             thrustByStage = new double[stages.Count];
             for (int i = 0; i < stages.Count; i++)

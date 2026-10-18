@@ -76,7 +76,8 @@ namespace Kestrel.Game.Shell
             float padV = Clamp(8f * s, 6f, 10f);
             z.LaunchH = Math.Max(HitMin, 2f * LaunchBorder + 2f * padV + z.LaunchLabel * LineH + z.LaunchCaptionLines * z.LaunchCaption * LineH);
             z.DesignH = Math.Max(HitMin, Math.Min(z.LaunchH - 4f, 2f * 2f + 8f + z.LaunchLabel * 0.72f * LineH + z.LaunchCaption * LineH));
-            z.StatsH = Clamp(36f * s, 36f, 44f);
+            // 44pt hit plus the glass border. Taller than this pushes the SE controls block over 42% of the usable height.
+            z.StatsH = 46f;
             z.StatFont = Math.Max(14f, z.Hint + 2f);
             // The bottom film-reel bar is BarHeight(h, inset) tall from the screen edge and covers the hint. The tiles must end above it,
             // so the reserve is the whole bar (it already includes the bottom safe inset), not just the inset. The last tile row's own

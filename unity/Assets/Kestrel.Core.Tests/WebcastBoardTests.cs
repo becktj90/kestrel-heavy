@@ -62,6 +62,11 @@ namespace Kestrel.Core.Tests
             var shortOn = WebcastBoard.Pulse(true, 40000, 2000, 7600, -300, 1000, 40, "LEO");
             Assert.AreEqual("Short on speed", shortOn.Verdict);
 
+            var hop = WebcastBoard.Pulse(true, 9000, 200, 1443, 0, 2000, 40, "10 km", 10000);
+            Assert.AreEqual("Climbing", hop.Verdict);
+            var past = WebcastBoard.Pulse(true, 22000, 400, 1443, 0, 500, 40, "10 km", 10000);
+            Assert.AreEqual("Past the goal", past.Verdict);
+
             var lost = WebcastBoard.Lost("structural-maxq", 12000);
             Assert.AreEqual("Vehicle lost", lost.Verdict);
             StringAssert.Contains("broke apart", lost.Detail);

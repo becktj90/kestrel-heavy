@@ -29,6 +29,20 @@ namespace Kestrel.Slice
         public static Font BodyFace() => Resources.Load<Font>("KHFonts/SpaceGrotesk-Medium");
         public static Font ButtonFace() => Resources.Load<Font>("KHFonts/SpaceGrotesk-Bold");
 
+        /// <summary>
+        /// Panel pixels per point from the screen width. Landscape used to divide that
+        /// width by the screen height, which grew the card until only the buttons fit.
+        /// </summary>
+        public static float UnitsPerPoint(float screenWidthPx, float screenHeightPx, float dpi, float panelWidthPx)
+        {
+            float width = screenWidthPx > 8f ? screenWidthPx : 750f;
+            float height = screenHeightPx > 8f ? screenHeightPx : 1334f;
+            float ppp = DesignFraming.PixelsPerPoint(width, height, dpi);
+            float wPt = screenWidthPx > 8f ? screenWidthPx / ppp : 375f;
+            if (panelWidthPx > 1f && wPt > 1f) return panelWidthPx / wPt;
+            return ppp > 1f ? ppp : 1f;
+        }
+
         public static void PaintButton(Button button, float tapPt, string role)
         {
             if (button == null) return;
@@ -73,6 +87,19 @@ namespace Kestrel.Slice
             if (card.parent != tree) tree.Add(card);
             RetireFlight(tree);
             if (card.panel != null) RetireFlight(card.panel.visualTree);
+            Dress(card, upp, safeTopPt, safeBottomPt);
+            EventCallback<GeometryChangedEvent> fit = null;
+            fit = _ =>
+            {
+                float known = card.layout.height;
+                if (known <= 1f && card.parent != null) known = card.parent.layout.height;
+                if (known <= 1f) return;
+                card.UnregisterCallback(fit);
+                Dress(card, upp, safeTopPt, safeBottomPt);
+                Cover(card);
+                card.BringToFront();
+            };
+            card.RegisterCallback(fit);
             card.BringToFront();
             card.pickingMode = PickingMode.Position;
             card.focusable = true;
@@ -100,6 +127,10 @@ namespace Kestrel.Slice
             var scroll = card.Q("report-scroll");
             var foot = card.Q("report-actions");
             float footH = ((HitPt + 8f) * 5f + Mathf.Max(12f, safeBottomPt) + 24f) * upp;
+            float room = card.layout.height;
+            if (room <= 1f && card.parent != null) room = card.parent.layout.height;
+            if (room <= 1f) room = card.resolvedStyle.height;
+            if (room > 1f && footH > room * 0.58f) footH = room * 0.58f;
             if (scroll != null)
             {
                 scroll.style.backgroundColor = Ink;
@@ -121,7 +152,10 @@ namespace Kestrel.Slice
                 foot.style.paddingTop = 8f * upp;
                 foot.style.paddingBottom = (Mathf.Max(12f, safeBottomPt) + 8f) * upp;
                 foot.style.backgroundColor = Ink;
+                foot.BringToFront();
             }
+            scroll?.BringToFront();
+            foot?.BringToFront();
             var title = TitleFace();
             var body = BodyFace();
             var titleDef = title != null ? new StyleFontDefinition(FontDefinition.FromFont(title)) : default;
@@ -209,6 +243,7 @@ namespace Kestrel.Slice
         public static void RetireFlight(VisualElement tree)
         {
             if (tree == null) return;
+            WebDesignChrome.Cover(tree);
             for (int i = 0; i < FlightChrome.Length; i++)
             {
                 var found = tree.Query(FlightChrome[i]).ToList();

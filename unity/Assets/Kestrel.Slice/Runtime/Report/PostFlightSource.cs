@@ -87,7 +87,7 @@ namespace Kestrel.Slice
                 facts.PeakG = result.maxG;
                 facts.ApoKm = result.orbit.apoAlt / 1000.0;
                 double peri = result.orbit.periAlt;
-                CampaignMission row = Row(mission);
+                CampaignMission row = Row(mission) ?? ApogeeFallback(mission);
                 if (row != null)
                 {
                     facts.GoalKm = row.ApoKm;
@@ -199,6 +199,22 @@ namespace Kestrel.Slice
             if (mission == null || mission.IsFree || string.IsNullOrEmpty(mission.MissionId)) return null;
             var campaign = ScreenStub.LoadCampaign();
             return campaign != null ? campaign.ById(mission.MissionId) : null;
+        }
+
+        /// <summary>
+        /// Campaign file missing: still grade an apogee hop from the session target.
+        /// Max-g stays off (NaN) because KH-1's 6 g line is a bonus, not a gate.
+        /// </summary>
+        static CampaignMission ApogeeFallback(MissionContext mission)
+        {
+            if (mission == null || mission.IsFree || mission.Target == null) return null;
+            if (mission.Target.Kind != "apogee" || mission.Target.ApoKm <= 0) return null;
+            return new CampaignMission
+            {
+                Id = mission.MissionId,
+                TargetKind = "apogee",
+                ApoKm = mission.Target.ApoKm,
+            };
         }
 
         static long MinorPerKc()

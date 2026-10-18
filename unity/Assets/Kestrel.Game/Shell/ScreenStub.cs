@@ -42,6 +42,7 @@ namespace Kestrel.Game.Shell
             }
             if (Kind == AppScreen.Missions)
             {
+                MissionBoardScreen.OpenPatches = () => ShowOverlay(shell, PatchCollectionScreen.RootName, back => PatchCollectionScreen.Build(LoadCampaign(), null, null, back));
                 _view = MissionBoardScreen.Build(
                     LoadCampaign(),
                     id => shell.Flow.LaunchChosen(id),
@@ -90,14 +91,18 @@ namespace Kestrel.Game.Shell
             FillHost(_view);
             shell.Safe.Add(_view);
             if (shell.Fill != null) shell.Fill.SpaceT = 0.85f;
-            // #224: music/sound/narration toggles live on Home in both the overlay and the 3D fallback.
-            var audio = AudioBar.Build();
-            if (!MainMenuLayout.UseOverlay) _view.Add(audio);
+            // The 3D fallback still uses the corner mix row. The overlay keeps those toggles in Settings
+            // so the top-left labels do not wrap over the tagline.
+            var audio = MainMenuLayout.UseOverlay ? null : AudioBar.Build();
+            if (audio != null) _view.Add(audio);
             _menu = gameObject.AddComponent<MainMenuController>();
             _menu.OverlayMode = MainMenuLayout.UseOverlay;
             _menu.Attach(shell);
             if (MainMenuLayout.UseOverlay)
             {
+                MainMenuOverlay.OpenCodex = () => ShowOverlay(shell, CodexScreen.RootName, back => CodexScreen.Build(back));
+                MainMenuOverlay.OpenPatches = () => ShowOverlay(shell, PatchCollectionScreen.RootName, back => PatchCollectionScreen.Build(LoadCampaign(), null, null, back));
+                MissionBoardScreen.OpenPatches = MainMenuOverlay.OpenPatches;
                 // Mix overlay: LAUNCH flies the next mission. Design first opens the designer with that load.
                 _view.pickingMode = PickingMode.Ignore;
                 Action launch = () => shell.Flow.HomePressed("launch");
@@ -106,50 +111,69 @@ namespace Kestrel.Game.Shell
                 _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, design, missions, MainMenuLayout.ReducedMotion());
                 try { MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine()); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] next mission line skipped: " + e.Message); }
-                // Music sits top-left. The gear sits clear of the web EXIT. Both follow the safe inset.
-                shell.Root.Add(audio);
+                try { MainMenuOverlay.SetRecord(_overlay, HomeRecordLine()); }
+                catch (Exception e) { Debug.LogWarning("[Kestrel] home record skipped: " + e.Message); }
+                float placedW = -1f, placedH = -1f, placedTop = -1f;
+                bool placed = false;
                 void Place()
                 {
                     var gear = shell.Root.Q("home-settings");
+                    if (gear == null) return;
                     bool web = Application.platform == RuntimePlatform.WebGLPlayer;
                     float width = shell.Root.resolvedStyle.width;
-                    float top = shell.Safe.resolvedStyle.paddingTop;
-                    if (!web)
-                    {
-                        HomeChrome.Place(gear, audio, width, top, false);
-                        return;
-                    }
-                    // The page FULL/EXIT is 88×44 CSS pixels. Panel units are not CSS pixels, so the
-                    // reserved corner is computed in CSS space and scaled onto the root.
                     float height = shell.Root.resolvedStyle.height;
-                    WebViewport.Css(out float cssW, out float cssH);
-                    if (width < 8f || height < 8f || cssW < 8f || cssH < 8f)
+                    float top = shell.Safe.resolvedStyle.paddingTop;
+                    float gx, gy, gw, gh;
+                    if (!web || width < 8f || height < 8f)
                     {
-                        HomeChrome.Place(gear, audio, width, top, true);
+                        HomeCornerLayout.Place(Mathf.Max(width, 1f), top, web, out _, out var gearBox, out var exit);
+                        gx = gearBox.X; gy = gearBox.Y; gw = gearBox.W; gh = gearBox.H;
+                        if (web && width < WebHomeLayout.NarrowGear && width > 8f)
+                        {
+                            gx = width - HomeCornerLayout.Edge - HomeCornerLayout.Gear;
+                            gy = exit.Bottom + HomeCornerLayout.Edge;
+                        }
+                    }
+                    else
+                    {
+                        WebViewport.Css(out float cssW, out float cssH);
+                        if (cssW < 8f || cssH < 8f)
+                        {
+                            HomeCornerLayout.Place(width, top, true, out _, out var gearBox, out var exit);
+                            gx = width < WebHomeLayout.NarrowGear
+                                ? width - HomeCornerLayout.Edge - HomeCornerLayout.Gear
+                                : gearBox.X;
+                            gy = width < WebHomeLayout.NarrowGear ? exit.Bottom + HomeCornerLayout.Edge : gearBox.Y;
+                            gw = gearBox.W; gh = gearBox.H;
+                        }
+                        else
+                        {
+                            float perX = Screen.width > 1f ? Screen.width / cssW : 1f;
+                            float perY = Screen.height > 1f ? Screen.height / cssH : 1f;
+                            var safe = Screen.safeArea;
+                            var frame = WebHomeLayout.Place(cssW, cssH,
+                                (Screen.height - safe.yMax) / perY, safe.yMin / perY, safe.xMin / perX, (Screen.width - safe.xMax) / perX);
+                            float ux = width / cssW;
+                            float uy = height / cssH;
+                            gx = frame.Gear.X * ux;
+                            gy = frame.Gear.Y * uy;
+                            gw = frame.Gear.W * ux;
+                            gh = frame.Gear.H * uy;
+                        }
+                    }
+                    if (placed && Mathf.Abs(gx - placedW) < 0.5f && Mathf.Abs(gy - placedH) < 0.5f && Mathf.Abs(top - placedTop) < 0.5f)
                         return;
-                    }
-                    float perX = Screen.width > 1f ? Screen.width / cssW : 1f;
-                    float perY = Screen.height > 1f ? Screen.height / cssH : 1f;
-                    var safe = Screen.safeArea;
-                    var frame = WebHomeLayout.Place(cssW, cssH,
-                        (Screen.height - safe.yMax) / perY, safe.yMin / perY, safe.xMin / perX, (Screen.width - safe.xMax) / perX);
-                    float ux = width / cssW;
-                    float uy = height / cssH;
-                    if (gear != null)
-                    {
-                        gear.style.position = Position.Absolute;
-                        gear.style.left = frame.Gear.X * ux;
-                        gear.style.top = frame.Gear.Y * uy;
-                        gear.style.width = frame.Gear.W * ux;
-                        gear.style.height = frame.Gear.H * uy;
-                        gear.style.right = StyleKeyword.Auto;
-                    }
-                    AudioBar.Place(audio, frame.Audio.Y * uy, frame.Audio.X * ux);
-                    FitAudioRow(audio, frame.Audio.W * ux, frame.Audio.H * uy);
+                    placed = true;
+                    placedW = gx; placedH = gy; placedTop = top;
+                    gear.style.position = Position.Absolute;
+                    gear.style.left = gx;
+                    gear.style.top = gy;
+                    gear.style.width = gw;
+                    gear.style.height = gh;
+                    gear.style.right = StyleKeyword.Auto;
                 }
-                audio.RegisterCallback<GeometryChangedEvent>(_ => Place());
                 shell.Root.RegisterCallback<GeometryChangedEvent>(_ => Place());
-                _audio = audio;
+                Place();
                 return;
             }
             // Fallback (UseOverlay = false): the original 3D controls with hidden spoken labels.
@@ -162,21 +186,18 @@ namespace Kestrel.Game.Shell
             AddSpoken("kh1-readout", MainMenuLayout.Designation, MainMenuLayout.Find("kh1").Spoken);
         }
 
-        static void FitAudioRow(VisualElement bar, float width, float height)
+        static void ShowOverlay(AppShell shell, string name, Func<Action, VisualElement> build)
         {
-            if (bar == null || !(width > 1f) || !(height > 1f)) return;
-            bar.style.width = width;
-            bar.style.height = height;
-            float s = height / HomeCornerLayout.AudioH;
-            foreach (var child in bar.Children())
+            if (shell == null || shell.Safe == null || build == null) return;
+            var existing = shell.Safe.Q(name);
+            if (existing != null)
             {
-                child.style.width = 64f * s;
-                child.style.maxWidth = 64f * s;
-                child.style.minWidth = AudioBar.TouchPt * s;
-                child.style.height = Mathf.Max(44f, AudioBar.TouchPt * s);
-                child.style.minHeight = Mathf.Max(44f, AudioBar.TouchPt * s);
-                child.style.fontSize = Mathf.Max(14f, 14f * s);
+                existing.BringToFront();
+                return;
             }
+            VisualElement view = null;
+            view = build(() => { if (view != null) view.RemoveFromHierarchy(); });
+            if (view != null) shell.Safe.Add(view);
         }
 
         void AddSpoken(string name, string label, string spoken)
@@ -315,6 +336,41 @@ namespace Kestrel.Game.Shell
                 return choice != null && choice.LaunchEnabled && choice.Design != null;
             }
             catch (Exception) { return false; }
+        }
+
+        /// <summary>Cleared flights, bank and patches for the home record. A missing save is a fresh career.</summary>
+        public static string HomeRecordLine()
+        {
+            var campaign = LoadCampaign();
+            long minor = MissionMapCopy.MinorPerKcFallback;
+            int cleared = 0;
+            long bank = 0;
+            if (campaign != null)
+            {
+                try
+                {
+                    string root = RepoRoot();
+                    if (!string.IsNullOrEmpty(root))
+                    {
+                        string path = Path.Combine(root, "data", "campaign.json");
+                        if (File.Exists(path)) minor = MissionMapText.MinorPerKc(File.ReadAllText(path));
+                    }
+                    else
+                    {
+                        var asset = Resources.Load<TextAsset>("KestrelData/campaign");
+                        if (asset != null) minor = MissionMapText.MinorPerKc(asset.text);
+                    }
+                    string dir = Path.Combine(Application.persistentDataPath, "saves");
+                    var snap = MissionProgress.ReadSave(campaign, dir, minor);
+                    if (snap.Career != null)
+                    {
+                        cleared = snap.Career.Cleared < 0 ? 0 : snap.Career.Cleared;
+                        bank = snap.Career.BankMinor < 0 ? 0 : snap.Career.BankMinor;
+                    }
+                }
+                catch (Exception) { cleared = 0; bank = 0; }
+            }
+            return HomeRecord.Line(cleared, bank, minor, cleared);
         }
 
         /// <summary>Highest mission passed, from the save folder. A missing folder is a fresh career.</summary>

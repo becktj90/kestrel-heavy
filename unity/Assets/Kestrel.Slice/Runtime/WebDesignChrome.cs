@@ -34,9 +34,36 @@ namespace Kestrel.Slice
             Pin(design, frame.Parts);
             Pin(host, frame.RightPanel);
             design.style.position = Position.Absolute;
-            host.style.display = DisplayStyle.Flex;
             host.style.flexDirection = FlexDirection.Column;
             applied = true;
+            // The host is a sibling of #design, so hiding the sheet does not hide it.
+            // Keep it off the flight, the countdown, and the result card.
+            if (FlightUp(ui))
+            {
+                Cover(ui);
+                return;
+            }
+            host.pickingMode = PickingMode.Position;
+            host.style.display = DisplayStyle.Flex;
+        }
+
+        /// <summary>Hide the landscape readout column without a sticky flag. Safe to call when the host was never built.</summary>
+        public static void Cover(VisualElement ui)
+        {
+            var host = ui != null ? ui.Q(HostName) : null;
+            if (host == null) return;
+            host.style.display = DisplayStyle.None;
+            host.pickingMode = PickingMode.Ignore;
+        }
+
+        static bool FlightUp(VisualElement ui)
+        {
+            if (ui == null) return false;
+            var design = ui.Q("design");
+            if (design != null && design.ClassListContains("hidden")) return true;
+            var hud = ui.Q("hud");
+            if (hud != null && !hud.ClassListContains("hidden")) return true;
+            return ui.Q(ReportView.RootName) != null;
         }
 
         public static void Clear(VisualElement ui)

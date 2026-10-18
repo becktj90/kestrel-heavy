@@ -82,7 +82,7 @@ namespace Kestrel.Capture.Tests
             Assert.That(flow.Busy, Is.False);
             var root = AppShell.Instance.Root;
             Assert.That(root, Is.Not.Null);
-            Assert.That(root.Q<Button>("home-codex").enabledSelf, Is.False);
+            Assert.That(root.Q<Button>("home-codex").enabledSelf, Is.True);
 
             Click(root.Q<Button>("home-settings"));
             yield return null;
