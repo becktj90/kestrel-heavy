@@ -359,6 +359,7 @@ namespace Kestrel.Game.Failure
         // Layered explosion / fire / smoke lives in Environment/ExplosionFx; this is the only hook.
         void RaiseCinematic()
         {
+            if (Kestrel.Kit.CinematicEvents.FlightSinkActive) return;   // CinematicFlightSink raises the same event from the sim hook
             bool engine = plan.Mode == FailureFx.BellMode || plan.Mode == FailureFx.SputterMode;
             Vector3 p = transform.TransformPoint(engine ? BurstPoint(0f) : new Vector3(0f, plan.JointY, 0f));
             if (engine)
