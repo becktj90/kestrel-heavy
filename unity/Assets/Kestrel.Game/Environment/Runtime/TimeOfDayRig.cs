@@ -6,6 +6,7 @@
 // LateUpdate (after SkyRig's own Refresh) pulls sun colour/intensity, ambient and fog toward the preset.
 // No per-frame allocations. Pad lights follow via the sun elevation SkyRig publishes (PadLights.ResolveNight).
 using System;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Sky;
 using Kestrel.Kit;
 using UnityEngine;
@@ -53,7 +54,13 @@ namespace Kestrel.Game.Environment
 
         /// <summary>Gameplay selection (e.g. from a mission). Ignored while a capture override is active.</summary>
         public static void Set(LaunchTimeOfDay tod, int seed = 1) { Selected = tod; _seed = seed; Current = TimeOfDayPresets.For(tod, seed); _version++; }
-        public static void SetMission(string missionId) { int s = TimeOfDayPresets.SeedFor(missionId); Set(TimeOfDayPresets.Pick(s), s); }
+        /// <summary>The launch pick: Core's LaunchTime.PickTimeOfDay(missionId, seed). If its weight table cannot be loaded on this runtime the sky falls back to Day.</summary>
+        public static void SetMission(string missionId, ulong seed)
+        {
+            LaunchTimeOfDay tod;
+            try { tod = LaunchTime.PickTimeOfDay(missionId, seed); } catch (Exception) { tod = LaunchTimeOfDay.Day; }
+            Set(tod, TimeOfDayPresets.VarietySeed(seed));
+        }
         /// <summary>Capture override. Wins over Set; also what -khTimeOfDay parses to.</summary>
         public static void Force(LaunchTimeOfDay tod, int seed = 1) { Forced = tod; _forcedSeed = seed; Current = TimeOfDayPresets.For(tod, seed); _version++; }
         /// <summary>Removes the capture override. R1's clock stays where it was forced; Set() again to move it.</summary>

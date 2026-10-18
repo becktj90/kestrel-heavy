@@ -1,12 +1,11 @@
-// Time of day per launch (engine-free). Gameplay picks a LaunchTimeOfDay (or derives one from a mission seed);
+// Time of day per launch (engine-free). Gameplay picks the Kestrel.Core.Flight.LaunchTimeOfDay with
+// LaunchTime.PickTimeOfDay(missionId, seed); this file only turns that value into a lighting preset.
 // Environment/TimeOfDayRig turns the preset into sun, ambient, fog tint and the R1 sky clock.
-// Named LaunchTimeOfDay because Kestrel.Core.Flight.TimeOfDay (mission briefing data) already exists.
 using System;
+using Kestrel.Core.Flight;
 
 namespace Kestrel.Kit
 {
-    public enum LaunchTimeOfDay { Day = 0, Sunset = 1, Night = 2 }
-
     public struct Rgb3
     {
         public float R, G, B;
@@ -93,21 +92,8 @@ namespace Kestrel.Kit
             return p;
         }
 
-        /// <summary>Weighted pick from a mission seed: 50 % day, 25 % sunset, 25 % night.</summary>
-        public static LaunchTimeOfDay Pick(int seed)
-        {
-            uint h = (uint)seed * 2654435761u ^ 0x9E3779B9u; h ^= h >> 15; h *= 2246822519u; h ^= h >> 13;
-            int k = (int)(h % 100u); return k < 50 ? LaunchTimeOfDay.Day : k < 75 ? LaunchTimeOfDay.Sunset : LaunchTimeOfDay.Night;
-        }
-
-        /// <summary>Stable seed from a mission id (FNV-1a), so a mission always gets the same sky.</summary>
-        public static int SeedFor(string missionId)
-        {
-            uint h = 2166136261u; if (missionId != null) foreach (var c in missionId) { h ^= c; h *= 16777619u; }
-            return (int)h;
-        }
-
-        public static TimeOfDayPreset ForMission(string missionId) { int s = SeedFor(missionId); return For(Pick(s), s); }
+        /// <summary>Folds the 64-bit flight seed into the int the preset's small variations use. Same seed, same sky.</summary>
+        public static int VarietySeed(ulong seed) => unchecked((int)(seed ^ (seed >> 32)));
 
         public static bool TryParse(string s, out LaunchTimeOfDay t)
         {
