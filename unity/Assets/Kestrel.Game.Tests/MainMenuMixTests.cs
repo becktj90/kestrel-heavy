@@ -350,8 +350,8 @@ namespace Kestrel.Game.Tests
         public void ScaleFormulaMatchesTheSpec()
         {
             Assert.That(MenuTypeScale.Scale(390f, 844f), Is.EqualTo(1f).Within(1e-5f));
-            Assert.That(MenuTypeScale.TileCaption.At(1f), Is.EqualTo(13f));
-            Assert.That(MenuTypeScale.TileCaption.At(0.1f), Is.EqualTo(11f), "floor");
+            Assert.That(MenuTypeScale.TileCaption.At(1f), Is.EqualTo(14f));
+            Assert.That(MenuTypeScale.TileCaption.At(0.1f), Is.EqualTo(14f), "floor");
             Assert.That(MenuTypeScale.TileCaption.At(9f), Is.EqualTo(18f), "cap = 18 per the type-scale table");
         }
 

@@ -71,8 +71,10 @@ namespace Kestrel.Game.MissionSelect
             var leave = new Button(back) { name = "patches-back", text = BackText, tooltip = BackTip };
             leave.AddToClassList("kh-button");
             leave.style.minHeight = 44;
+            leave.style.fontSize = 14;
             leave.style.flexShrink = 0;
             leave.style.whiteSpace = WhiteSpace.Normal;
+            leave.userData = back;
             root.Add(leave);
 
             root.RegisterCallback<GeometryChangedEvent>(_ => Reflow(root));
@@ -128,6 +130,7 @@ namespace Kestrel.Game.MissionSelect
             line.AddToClassList(bold ? "kh-subtitle" : "kh-caption");
             line.style.whiteSpace = WhiteSpace.Normal;
             line.style.unityTextAlign = TextAnchor.MiddleCenter;
+            line.style.fontSize = 14;
             line.style.marginTop = 2;
             return line;
         }

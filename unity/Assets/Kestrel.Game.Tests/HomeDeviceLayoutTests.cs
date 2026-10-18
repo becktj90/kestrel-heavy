@@ -41,6 +41,8 @@ namespace Kestrel.Game.Tests
             new Device("iPad", 1032f, 1376f, 24f, 20f, false),
             new Device("SE-landscape", 667f, 375f, 0f, 0f, false),
             new Device("web-landscape", 1280f, 720f, 0f, 0f, true),
+            new Device("web-1440", 1440f, 900f, 0f, 0f, true),
+            new Device("web-844", 844f, 390f, 0f, 0f, true),
         };
 
         string _prev;
@@ -188,6 +190,44 @@ namespace Kestrel.Game.Tests
                     var shell = MountPatches(surface.Stage, d.Top, d.Bottom);
                     surface.Pump(6);
                     AssertPatches(surface, shell, d.Name);
+                }
+            }
+        }
+
+        [Test]
+        public void WebLandscapeBoardPatchesAndSettingsStayInside()
+        {
+            foreach (var d in Devices)
+            {
+                if (!d.Wide) continue;
+                MainMenuOverlay.ForceWide = true;
+                using (var surface = DeviceSurface.Open(d.W, d.H))
+                {
+                    var shell = MountHome(surface.Stage, d.Top, d.Bottom);
+                    surface.Pump(8);
+                    Click(shell.Q<Button>("home-settings"));
+                    surface.Pump(4);
+                    var sheet = shell.Q("home-settings-sheet");
+                    var close = shell.Q<Button>("home-settings-close");
+                    Assert.That(sheet, Is.Not.Null, d.Name);
+                    Assert.That(sheet.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None), d.Name);
+                    Inside(surface.Stage, sheet, d.Name + " settings");
+                    Inside(surface.Stage, close, d.Name + " settings close");
+                    Assert.That(close.worldBound.height, Is.GreaterThanOrEqualTo(44f), d.Name);
+                    Assert.That(MenuBack.Try(shell), Is.True, d.Name);
+                    Assert.That(sheet.style.display.value, Is.EqualTo(DisplayStyle.None), d.Name);
+                }
+                using (var surface = DeviceSurface.Open(d.W, d.H))
+                {
+                    var shell = MountBoardWide(surface.Stage, d);
+                    surface.Pump(6);
+                    AssertBoard(surface, shell, d.Name + " wide");
+                }
+                using (var surface = DeviceSurface.Open(d.W, d.H))
+                {
+                    var shell = MountPatches(surface.Stage, d.Top, d.Bottom);
+                    surface.Pump(4);
+                    AssertPatches(surface, shell, d.Name + " wide");
                 }
             }
         }
@@ -365,6 +405,24 @@ namespace Kestrel.Game.Tests
             return shell;
         }
 
+        static VisualElement MountBoardWide(VisualElement stage, Device d)
+        {
+            var shell = Column(stage, d.Top, d.Bottom, out var host);
+            MissionBoardView board = null;
+            Assert.DoesNotThrow(() =>
+            {
+                board = MissionBoardScreen.Build(
+                    null, null, null, null,
+                    _ => { }, _ => { }, () => { }, () => { },
+                    true, _ => false,
+                    d.W, d.H, true);
+            });
+            Assert.That(board, Is.Not.Null);
+            ScreenStub.FillHost(board);
+            host.Add(board);
+            return shell;
+        }
+
         static VisualElement MountPatches(VisualElement stage, float top, float bottom)
         {
             var shell = Column(stage, top, bottom, out var host);
@@ -450,6 +508,32 @@ namespace Kestrel.Game.Tests
             Receives(shell.panel, design, d.Name + " Design first");
             Receives(shell.panel, missions, d.Name + " Missions");
             Receives(shell.panel, gear, d.Name + " gear");
+            if (!d.Wide && d.H >= d.W) AssertPortraitTypeAndHits(shell, d.Name);
+        }
+
+        static void AssertPortraitTypeAndHits(VisualElement shell, string name)
+        {
+            foreach (var label in shell.Query<Label>().ToList())
+            {
+                if (string.IsNullOrEmpty(label.text)) continue;
+                if (label.resolvedStyle.display == DisplayStyle.None) continue;
+                float size = label.resolvedStyle.fontSize;
+                if (float.IsNaN(size) || size <= 0f)
+                {
+                    if (label.style.fontSize.keyword != StyleKeyword.Undefined)
+                        size = label.style.fontSize.value.value;
+                }
+                if (float.IsNaN(size) || size <= 0f) continue;
+                Assert.That(size, Is.GreaterThanOrEqualTo(14f), name + " " + label.name + " “" + label.text + "”");
+            }
+            foreach (var button in shell.Query<Button>().ToList())
+            {
+                if (button.resolvedStyle.display == DisplayStyle.None) continue;
+                var b = button.worldBound;
+                if (b.width < 2f || b.height < 2f) continue;
+                Assert.That(b.width, Is.GreaterThanOrEqualTo(44f), name + " " + button.name + " width " + b);
+                Assert.That(b.height, Is.GreaterThanOrEqualTo(44f), name + " " + button.name + " height " + b);
+            }
         }
 
         static void AssertBoard(DeviceSurface surface, VisualElement shell, string name)

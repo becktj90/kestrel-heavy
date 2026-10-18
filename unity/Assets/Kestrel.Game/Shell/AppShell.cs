@@ -34,6 +34,8 @@ namespace Kestrel.Game.Shell
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Application.targetFrameRate = 60;
+            // The guide reads MenuPrefs in its constructor. Copy the disk values first.
+            AudioPrefs.Load();
 
             // Committed Boot.unity cannot reference the generated PanelSettings asset; load it by path.
             if (PanelSettings == null) PanelSettings = Resources.Load<PanelSettings>("UI/KH_ShellPanelSettings");
@@ -94,6 +96,12 @@ namespace Kestrel.Game.Shell
         }
 
         void Start() => Flow.Go(AppScreen.Home);
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+                MenuBack.Try(Root);
+        }
 
         /// <summary>Real game entry until Graphics Dev moves the Design panel into the shell: Slice.unity owns
         /// the pad, rocket, panel and flight. The shell (camera + UI) is torn down so Slice renders alone.</summary>

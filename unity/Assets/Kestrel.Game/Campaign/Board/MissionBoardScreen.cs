@@ -118,10 +118,13 @@ namespace Kestrel.Game.MissionSelect
             homeKey.AddToClassList("mission-home");
             BoardType.Set(homeKey, BoardType.GroteskBold);
             homeKey.style.unityTextAlign = TextAnchor.MiddleCenter;
+            homeKey.style.fontSize = 14f;
+            homeKey.userData = home;
             Add(homeKey);
 
             var kicker = new Label("CAMPAIGN") { name = "mission-kicker", pickingMode = PickingMode.Ignore };
             kicker.AddToClassList("mission-kicker");
+            kicker.style.fontSize = 14f;
             BoardType.Set(kicker, BoardType.GroteskBold);
             Add(kicker);
 
@@ -240,12 +243,22 @@ namespace Kestrel.Game.MissionSelect
             _contracts.AddToClassList("mission-entry");
             BoardType.Set(_contracts, BoardType.Grotesk);
             _contracts.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _contracts.style.fontSize = 14f;
             _body.Add(_contracts);
 
-            _sandboxButton = new Button(SelectSandbox) { name = "mission-sandbox", text = "Sandbox", tooltip = "A free build on this device. No mission and no score." };
+            _sandboxButton = new Button(() =>
+            {
+                if (MenuPrefs.SandboxUnlocked) SelectSandbox();
+            })
+            {
+                name = "mission-sandbox",
+                text = "Sandbox",
+            };
             _sandboxButton.AddToClassList("mission-entry");
             BoardType.Set(_sandboxButton, BoardType.Grotesk);
             _sandboxButton.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _sandboxButton.style.fontSize = 14f;
+            ApplySandboxLock();
             _body.Add(_sandboxButton);
 
             _primary = new Button(OnPrimary) { name = "mission-primary", text = "Locked" };
@@ -409,6 +422,16 @@ namespace Kestrel.Game.MissionSelect
             Kick(true);
         }
 
+        void ApplySandboxLock()
+        {
+            if (_sandboxButton == null) return;
+            bool on = MenuPrefs.SandboxUnlocked;
+            _sandboxButton.SetEnabled(on);
+            _sandboxButton.tooltip = on
+                ? "A free build on this device. No mission and no score."
+                : "Sandbox is off. Turn it on in Settings.";
+        }
+
         public void SelectSandbox()
         {
             _mode = MissionBoardMode.Sandbox;
@@ -561,15 +584,18 @@ namespace Kestrel.Game.MissionSelect
                 kicker.style.left = frame.Title.X;
                 kicker.style.top = frame.Title.Y;
                 kicker.style.width = frame.Title.W;
-                kicker.style.height = 12f;
+                kicker.style.height = 18f;
+                kicker.style.fontSize = 14f;
+                kicker.style.unityTextAlign = TextAnchor.MiddleLeft;
             }
             if (_act != null)
             {
                 _act.style.position = Position.Absolute;
                 _act.style.left = frame.Title.X;
-                _act.style.top = frame.Title.Y + 12f;
+                _act.style.top = frame.Title.Y + 18f;
                 _act.style.width = frame.Title.W;
-                _act.style.height = Math.Max(14f, frame.Title.H - 12f);
+                _act.style.height = Math.Max(18f, frame.Title.H - 18f);
+                _act.style.fontSize = 16f;
             }
             for (int i = 0; i < _segments.Length; i++)
                 Pin(_segments[i], MissionBoardLayout.Segment(frame.Progress, i, MissionBoardLayout.ActSlots));
@@ -704,6 +730,7 @@ namespace Kestrel.Game.MissionSelect
             var label = new Label { name = elementName, pickingMode = PickingMode.Ignore };
             label.AddToClassList(cls);
             label.style.whiteSpace = WhiteSpace.Normal;
+            label.style.fontSize = 14f;
             BoardType.Set(label, BoardType.Grotesk);
             return label;
         }

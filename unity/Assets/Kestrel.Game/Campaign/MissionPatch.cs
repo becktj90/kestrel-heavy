@@ -16,6 +16,9 @@ namespace Kestrel.Game.Shell
         PatchChrome _chrome = PatchChrome.Open;
         int _px = -1;
 
+        static readonly System.Collections.Generic.Dictionary<string, Texture2D> TexCache = new System.Collections.Generic.Dictionary<string, Texture2D>();
+        const int TexCacheCap = 96;
+
         public MissionPatch()
         {
             pickingMode = PickingMode.Ignore;
@@ -27,7 +30,6 @@ namespace Kestrel.Game.Shell
             Add(_image);
             RegisterCallback<GeometryChangedEvent>(OnGeo);
             RegisterCallback<DetachFromPanelEvent>(_ => Release());
-            Set("m1", 76f, PatchChrome.Open);
         }
 
         public static MissionPatch Render(string missionId, float size, PatchChrome chrome = PatchChrome.Open)
@@ -62,6 +64,14 @@ namespace Kestrel.Game.Shell
             int px = Mathf.Clamp(Mathf.RoundToInt(_size * ppp), 32, MissionPatchArt.UiTextureCap);
             if (!force && _tex != null && px == _px) return;
             _px = px;
+            string key = _id + "\n" + px.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\n" + ((int)_chrome).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            Release();
+            if (TexCache.TryGetValue(key, out var shared) && shared != null)
+            {
+                _tex = shared;
+                _image.image = shared;
+                return;
+            }
             byte[] bytes = MissionPatchArt.Rgba(_id, px, _chrome);
             var cols = new Color32[px * px];
             for (int y = 0; y < px; y++)
@@ -70,26 +80,26 @@ namespace Kestrel.Game.Shell
                 int s = (y * px + x) * 4;
                 cols[(px - 1 - y) * px + x] = new Color32(bytes[s], bytes[s + 1], bytes[s + 2], bytes[s + 3]);
             }
-            Release();
-            _tex = new Texture2D(px, px, TextureFormat.RGBA32, false)
+            var tex = new Texture2D(px, px, TextureFormat.RGBA32, false)
             {
                 filterMode = px >= 160 ? FilterMode.Bilinear : FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp,
                 hideFlags = HideFlags.HideAndDontSave,
                 name = "mission-patch",
             };
-            _tex.SetPixels32(cols);
-            _tex.Apply(false, true);
-            _image.image = _tex;
+            tex.SetPixels32(cols);
+            tex.Apply(false, true);
+            if (TexCache.Count >= TexCacheCap) TexCache.Clear();
+            TexCache[key] = tex;
+            _tex = tex;
+            _image.image = tex;
             _px = px;
         }
 
         void Release()
         {
-            if (_tex == null) return;
-            _image.image = null;
-            if (Application.isPlaying) Object.Destroy(_tex);
-            else Object.DestroyImmediate(_tex);
+            // Cached textures are shared across cells. Drop the image reference only.
+            if (_image != null) _image.image = null;
             _tex = null;
         }
     }

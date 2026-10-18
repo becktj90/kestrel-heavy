@@ -23,7 +23,7 @@ namespace Kestrel.Core.Flight
     {
         public const float Edge = 8f;
         public const float Gap = 8f;
-        public const float HeaderH = 56f;
+        public const float HeaderH = 64f;
         public const float ButtonH = 44f;
         public const float PrimaryH = 52f;
         public const float ThrumPt = 64f;
@@ -146,7 +146,8 @@ namespace Kestrel.Core.Flight
             float titleR = Math.Min(rightLimit, f.Thrum.X - Gap);
             if (titleR < titleX + 48f) titleR = Math.Min(rightLimit, titleX + 48f);
             float titleW = Math.Max(48f, titleR - titleX);
-            f.Title = Box(titleX, top + 2f, titleW, 30f);
+            // 16 pt kicker plus a 16 pt act name. Both stay at or above 14 pt.
+            f.Title = Box(titleX, top + 2f, titleW, 36f);
             f.Progress = Box(titleX, f.Title.Bottom + 4f, titleW, 8f);
             f.Header = Box(left, top, width, HeaderH);
         }
@@ -163,9 +164,19 @@ namespace Kestrel.Core.Flight
             f.Primary = Box(x, limit - PrimaryH, w, PrimaryH);
             float footTop = f.Primary.Y - Gap - ButtonH;
             float half = (w - Gap) * 0.5f;
-            if (half < 44f) half = Math.Max(36f, (w - Gap) * 0.5f);
-            f.Contracts = Box(x, footTop, half, ButtonH);
-            f.Sandbox = Box(x + half + Gap, footTop, Math.Max(36f, right - (x + half + Gap)), ButtonH);
+            if (half >= 44f)
+            {
+                f.Contracts = Box(x, footTop, half, ButtonH);
+                f.Sandbox = Box(x + half + Gap, footTop, Math.Max(44f, right - (x + half + Gap)), ButtonH);
+            }
+            else
+            {
+                // A side-by-side pair would be under 44 pt. Stack full-width keys instead.
+                f.Sandbox = Box(x, limit - ButtonH, w, ButtonH);
+                f.Contracts = Box(x, f.Sandbox.Y - Gap - ButtonH, w, ButtonH);
+                f.Primary = Box(x, f.Contracts.Y - Gap - PrimaryH, w, PrimaryH);
+                footTop = f.Primary.Y;
+            }
 
             float factsTop = footTop - Gap - FactsH;
             float heroBottom = factsTop - Gap;
