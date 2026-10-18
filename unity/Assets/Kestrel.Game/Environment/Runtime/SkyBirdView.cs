@@ -14,7 +14,7 @@ namespace Kestrel.Game.Environment
 
         Transform anchor, holder;
         Mesh mesh;
-        MeshRenderer renderer;
+        MeshRenderer draw;
         Material mat;
         Texture2D mark;
         readonly SkyBirdPose[] poses = new SkyBirdPose[SkyBirds.Count];
@@ -62,7 +62,7 @@ namespace Kestrel.Game.Environment
             {
                 if (holder != null) Destroy(holder.gameObject);
                 holder = null;
-                renderer = null;
+                draw = null;
                 anchor = null;
                 meshReady = false;
                 Shown = 0;
@@ -91,13 +91,13 @@ namespace Kestrel.Game.Environment
             mesh = new Mesh { name = "SkyBirds" };
             mesh.MarkDynamic();
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
-            renderer = go.AddComponent<MeshRenderer>();
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-            renderer.lightProbeUsage = LightProbeUsage.Off;
-            renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            draw = go.AddComponent<MeshRenderer>();
+            draw.shadowCastingMode = ShadowCastingMode.Off;
+            draw.receiveShadows = false;
+            draw.lightProbeUsage = LightProbeUsage.Off;
+            draw.reflectionProbeUsage = ReflectionProbeUsage.Off;
             if (mat == null) mat = MakeMaterial();
-            renderer.sharedMaterial = mat;
+            draw.sharedMaterial = mat;
             tris.Clear();
             for (int i = 0; i < SkyBirds.Count; i++)
             {
