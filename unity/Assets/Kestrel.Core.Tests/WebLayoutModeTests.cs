@@ -73,6 +73,24 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void NarrowPhoneLandscapeKeepsEveryHomeStringInsideItsCard()
+        {
+            // 335 is the narrow phone Trevor checks, on its side and as a short window.
+            var sizes = new[]
+            {
+                new Size("724x335", 724f, 335f, 0f, 0f, 0f, 0f),
+                new Size("844x390", 844f, 390f, 0f, 0f, 0f, 0f),
+                new Size("932x430", 932f, 430f, 0f, 0f, 0f, 0f),
+            };
+            foreach (var d in sizes)
+            {
+                var home = WebHomeLayout.Place(d.W, d.H, d.Top, d.Bottom, d.Left, d.Right);
+                Assert.That(home.Wide, Is.True, d.Name);
+                Assert.That(WebHomeLayout.TextFitError(home), Is.Null, d.Name);
+            }
+        }
+
+        [Test]
         public void WideHomeTitleAndCardsFitAndDoNotOverlap()
         {
             // Desktop sizes Trevor opens, a phone on its side, and iPad landscape.

@@ -261,14 +261,9 @@ namespace Kestrel.Core.Flight
                 launchH *= scale;
                 designH *= scale;
                 tileH *= scale;
-                // The boxes shrank. Keep the type inside them or the captions clip.
-                type.Launch *= scale;
-                type.LaunchCaption *= scale;
-                type.Design *= scale;
-                type.DesignCaption *= scale;
-                type.TileName *= scale;
-                type.TileCaption *= scale;
-                type.Soon *= scale;
+                // The boxes shrink so Codex stays on screen. Fixed padding means a uniform
+                // face scale can still leave "LAUNCH" and "DESIGN FIRST" taller than the card.
+                FitTypeToCards(type, launchH, designH, tileH, launchInner, designInner, tileInner);
             }
             else if (stack > 1f)
             {
@@ -385,6 +380,41 @@ namespace Kestrel.Core.Flight
             designH = Block(type.Design, type.DesignCaption, type.DesignCaptionLines, 6f, 2f);
             tileH = Block(type.TileName, type.TileCaption, type.TileCaptionLines, 10f, 3f);
             return launchH + designH + tileH * 2f;
+        }
+
+        static void FitTypeToCards(WebHomeType type, float launchH, float designH, float tileH,
+            float launchInner, float designInner, float tileInner)
+        {
+            for (int pass = 0; pass < 6; pass++)
+            {
+                float s = 1f;
+                s = Math.Min(s, FaceScale(Block(type.Launch, type.LaunchCaption, Math.Max(1, type.LaunchCaptionLines), 8f, 3f), launchH, 8f, 3f));
+                s = Math.Min(s, FaceScale(Block(type.Design, type.DesignCaption, Math.Max(1, type.DesignCaptionLines), 6f, 2f), designH, 6f, 2f));
+                s = Math.Min(s, FaceScale(Block(type.TileName, type.TileCaption, Math.Max(1, type.TileCaptionLines), 10f, 3f), tileH, 10f, 3f));
+                if (s > 0.985f) return;
+                type.Launch *= s;
+                type.LaunchCaption *= s;
+                type.Design *= s;
+                type.DesignCaption *= s;
+                type.TileName *= s;
+                type.TileCaption *= s;
+                type.Soon *= s;
+                type.LaunchCaptionLines = CappedLines(HomeWideText.LaunchCaption, type.LaunchCaption, launchInner);
+                type.DesignCaptionLines = CappedLines(HomeWideText.DesignCaption, type.DesignCaption, designInner);
+                float capAt = Math.Max(HomeWideText.MissionsCaption, HomeWideText.CodexCaption);
+                type.TileCaptionLines = CappedLines(capAt, type.TileCaption, tileInner);
+            }
+        }
+
+        static float FaceScale(float block, float card, float padY, float border)
+        {
+            if (block <= card + 0.4f) return 1f;
+            float chrome = 2f * border + 2f * padY + 2f;
+            float text = block - chrome;
+            float room = card - chrome;
+            if (text <= 1f) return 1f;
+            if (room <= 1f) return 0.62f;
+            return Math.Max(0.62f, room / text);
         }
 
         static int CappedLines(float at100, float font, float inner)

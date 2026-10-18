@@ -139,6 +139,8 @@ namespace Kestrel.Game.Shell
                 top.style.height = MainMenuCopy.BarHeight(h, topInset);
                 bottom.style.height = MainMenuCopy.BarHeight(h, botInset);
                 MainMenuLayout.HeroLift = MeasureLift(root, safe, full, z, h, topInset);
+                TextFit.Apply(root);
+                if (full != null) TextFit.Apply(full);
             });
             launchKey.RegisterCallback<GeometryChangedEvent>(_ =>
             {
@@ -222,7 +224,7 @@ namespace Kestrel.Game.Shell
             var type = frame.Type;
             Font(root.Q("mm-kestrel"), WidePt(type.Title * fs), 0.02f);
             Font(root.Q("mm-kestrel-shadow"), WidePt(type.Title * fs), 0.02f);
-            Font(root.Q("mm-eyebrow"), Mathf.Clamp(type.Title * fs * 0.18f, WideTypeFloor, 18f), 0.12f);
+            Font(root.Q("mm-eyebrow"), Mathf.Clamp(type.Title * fs * 0.18f, 10f, 18f), 0.12f);
             Font(root.Q("mm-heavy"), WidePt(type.Tagline * fs), 0.42f);
             var kestrel = root.Q("mm-kestrel");
             if (kestrel != null) { kestrel.style.whiteSpace = WhiteSpace.NoWrap; kestrel.style.overflow = Overflow.Hidden; }
@@ -379,18 +381,20 @@ namespace Kestrel.Game.Shell
             card.style.overflow = Overflow.Hidden;
             var label = card.Q(className: launch ? "kh-mm-launch-label" : "kh-mm-design-label");
             var cap = card.Q(className: launch ? "kh-mm-launch-caption" : "kh-mm-design-caption");
-            if (label != null) { label.style.whiteSpace = WhiteSpace.NoWrap; label.style.overflow = Overflow.Hidden; }
-            if (cap != null) { cap.style.whiteSpace = WhiteSpace.Normal; cap.style.overflow = Overflow.Hidden; }
+            if (label != null) { label.style.whiteSpace = WhiteSpace.Normal; label.style.textOverflow = TextOverflow.Clip; label.style.overflow = Overflow.Hidden; }
+            if (cap != null) { cap.style.whiteSpace = WhiteSpace.Normal; cap.style.textOverflow = TextOverflow.Clip; cap.style.overflow = Overflow.Hidden; }
         }
 
-        /// <summary>Wide web labels stay at least 14 pt. The column scrolls when that stack is taller than the screen.</summary>
-        const float WideTypeFloor = 14f;
-
-        static float WidePt(float size) => size < WideTypeFloor ? WideTypeFloor : size;
+        /// <summary>
+        /// Wide web type is already fitted to the card. A 14 pt floor here is what pushed
+        /// "DESIGN FIRST" and the captions out of a narrow landscape column.
+        /// </summary>
+        static float WidePt(float size) => size;
 
         static void Font(VisualElement e, float size, float trackEm)
         {
             if (e == null) return;
+            size = TextFit.Cap(e, size);
             e.style.fontSize = size;
             e.style.letterSpacing = trackEm > 0f ? size * trackEm : 0f;
         }
@@ -1199,7 +1203,12 @@ namespace Kestrel.Game.Shell
         {
             void Font(string cls, float size, float trackEm)
             {
-                root.Query(className: cls).ForEach(e => { e.style.fontSize = size; e.style.letterSpacing = size * trackEm; });
+                root.Query(className: cls).ForEach(e =>
+                {
+                    float use = TextFit.Cap(e, size);
+                    e.style.fontSize = use;
+                    e.style.letterSpacing = use * trackEm;
+                });
             }
             Font("kh-mm-kestrel", z.Title, .04f);
             Font("kh-mm-heavy", z.Tagline, .5f);
@@ -1209,8 +1218,20 @@ namespace Kestrel.Game.Shell
             Font("kh-mm-soon", z.Soon, .15f);
             Font("kh-mm-hint", z.Hint, 0f);
             Font("kh-mm-eyebrow", Mathf.Max(14f, z.Hint), .12f);
-            Font("kh-mm-design-label", Mathf.Max(14f, z.LaunchLabel * 0.72f), .03f);
+            Font("kh-mm-design-label", z.DesignLabel > 1f ? z.DesignLabel : Mathf.Max(14f, z.LaunchLabel * 0.72f), .03f);
             Font("kh-mm-design-caption", Mathf.Max(14f, z.LaunchCaption), 0f);
+            var designLabel = root.Q(className: "kh-mm-design-label");
+            if (designLabel != null)
+            {
+                designLabel.style.whiteSpace = WhiteSpace.Normal;
+                designLabel.style.textOverflow = TextOverflow.Clip;
+            }
+            var designCaption = root.Q(className: "kh-mm-design-caption");
+            if (designCaption != null)
+            {
+                designCaption.style.whiteSpace = WhiteSpace.Normal;
+                designCaption.style.textOverflow = TextOverflow.Clip;
+            }
             Font("kh-mm-thrum-name", Mathf.Max(14f, z.Hint), 0f);
             // Explicit heights (not min-height) so the block is exactly what MenuTypeScale computed; Unity cannot inflate it.
             // The title must not flex-shrink before ContainColumn measures it, or a short column reads height 0 and never caps.
@@ -1237,6 +1258,21 @@ namespace Kestrel.Game.Shell
             {
                 design.style.height = z.DesignH; design.style.minHeight = z.DesignH; design.style.flexShrink = 0;
                 design.style.marginTop = 0; design.style.marginBottom = MenuTypeScale.Gap;
+                design.style.paddingLeft = 12f; design.style.paddingRight = 12f;
+                design.style.paddingTop = 8f; design.style.paddingBottom = 8f;
+            }
+            var hintLine = root.Q("mm-hint-line");
+            if (hintLine != null)
+            {
+                hintLine.style.whiteSpace = WhiteSpace.Normal;
+                hintLine.style.textOverflow = TextOverflow.Clip;
+            }
+            var thrum = root.Q("mm-hint");
+            if (thrum != null)
+            {
+                thrum.style.maxHeight = 96f;
+                thrum.style.minHeight = 44f;
+                thrum.style.overflow = Overflow.Hidden;
             }
             foreach (var it in MainMenuCopy.Tiles)
             {

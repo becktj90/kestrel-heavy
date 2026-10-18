@@ -140,6 +140,7 @@ namespace Kestrel.Game.MissionSelect
             var kicker = new Label("CAMPAIGN") { name = "mission-kicker", pickingMode = PickingMode.Ignore };
             kicker.AddToClassList("mission-kicker");
             kicker.style.fontSize = 14f;
+            kicker.style.whiteSpace = WhiteSpace.Normal;
             BoardType.Set(kicker, BoardType.GroteskBold);
             Add(kicker);
 
@@ -681,8 +682,10 @@ namespace Kestrel.Game.MissionSelect
                 kicker.style.left = frame.Title.X;
                 kicker.style.top = frame.Title.Y;
                 kicker.style.width = frame.Title.W;
-                kicker.style.height = 16f;
-                kicker.style.fontSize = 14f;
+                kicker.style.height = StyleKeyword.Auto;
+                kicker.style.minHeight = 18f;
+                kicker.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(kicker, 14f);
+                kicker.style.whiteSpace = WhiteSpace.Normal;
                 kicker.style.unityTextAlign = TextAnchor.MiddleLeft;
             }
             if (_act != null)
@@ -692,7 +695,7 @@ namespace Kestrel.Game.MissionSelect
                 _act.style.top = frame.Title.Y + 16f;
                 _act.style.width = frame.Title.W;
                 _act.style.height = Math.Max(28f, frame.Title.H - 16f);
-                _act.style.fontSize = 16f;
+                _act.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(_act, 16f);
                 _act.style.whiteSpace = WhiteSpace.Normal;
             }
             if (_patches != null)
@@ -702,6 +705,8 @@ namespace Kestrel.Game.MissionSelect
                 _patches.style.height = 44f;
                 _patches.style.left = frame.Path.Right - 96f;
                 _patches.style.top = frame.Path.Y + 4f;
+                _patches.style.whiteSpace = WhiteSpace.Normal;
+                _patches.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(_patches, 13f);
             }
             for (int i = 0; i < _segments.Length; i++)
                 Pin(_segments[i], MissionBoardLayout.Segment(frame.Progress, i, MissionBoardLayout.ActSlots));
@@ -756,6 +761,7 @@ namespace Kestrel.Game.MissionSelect
             _primaryTop = frame.Primary.Y - frame.Card.Y;
             if (!_down) _primary.style.top = _primaryTop;
             ApplyMotion();
+            Kestrel.Game.Shell.TextFit.Apply(this);
         }
 
         /// <summary>

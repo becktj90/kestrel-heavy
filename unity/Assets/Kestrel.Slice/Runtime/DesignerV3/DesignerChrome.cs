@@ -1,6 +1,7 @@
 // Resources fonts and tap-target containment for the portrait designer.
 // Fonts come from Resources/KHFonts only. A dummy KESTREL_REPO_ROOT must not be walked for faces.
 using System;
+using Kestrel.Game.Shell;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -34,7 +35,11 @@ namespace Kestrel.Slice.DesignerV3
             if (float.IsNaN(width) || width < 8f) width = root.worldBound.width;
             if (float.IsNaN(width) || width < 8f) return;
             containing = true;
-            try { Cap(root, width); }
+            try
+            {
+                Cap(root, width);
+                TextFit.Apply(root);
+            }
             finally { containing = false; }
         }
 

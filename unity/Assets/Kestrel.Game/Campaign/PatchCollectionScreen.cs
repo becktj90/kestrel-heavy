@@ -77,7 +77,11 @@ namespace Kestrel.Game.MissionSelect
             leave.userData = back;
             root.Add(leave);
 
-            root.RegisterCallback<GeometryChangedEvent>(_ => Reflow(root));
+            root.RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                Reflow(root);
+                Kestrel.Game.Shell.TextFit.Apply(root);
+            });
             return root;
         }
 
@@ -131,6 +135,7 @@ namespace Kestrel.Game.MissionSelect
             line.style.whiteSpace = WhiteSpace.Normal;
             line.style.unityTextAlign = TextAnchor.MiddleCenter;
             line.style.fontSize = 14;
+            line.style.maxWidth = Length.Percent(100);
             line.style.marginTop = 2;
             return line;
         }

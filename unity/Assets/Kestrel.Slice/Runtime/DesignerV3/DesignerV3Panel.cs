@@ -478,8 +478,12 @@ namespace Kestrel.Slice.DesignerV3
             var step = tutorialSteps[Math.Min(tutorialIndex, tutorialSteps.Count - 1)];
             tutorialBanner.Add(ui.Text(engineer ? step.engineer : step.kid, HangarUi.BodyPt, bold: true));
             var row = ui.Row();
-            row.Add(ui.Btn("Show me", () => Show(step.tab), "Jump to the tutorial tab"));
-            if (!string.IsNullOrEmpty(step.field)) FieldFocused?.Invoke(step.field);
+            var show = step;
+            row.Add(ui.Btn("Show me", () =>
+            {
+                Show(show.tab);
+                if (!string.IsNullOrEmpty(show.field)) FieldFocused?.Invoke(show.field);
+            }, "Jump to the tutorial tab"));
             row.Add(ui.Btn("Skip tour", () => SetTutorial(false), "Hide the guided tour"));
             tutorialBanner.Add(row);
             tutorialBanner.tooltip = "Tutorial step " + (tutorialIndex + 1) + " of " + tutorialSteps.Count;
@@ -1048,15 +1052,14 @@ namespace Kestrel.Slice.DesignerV3
             }
             if (step == "Mission")
             {
-                flowStep = "Mission";
-                if (tab != DesignerV3Tab.Payload)
+                // Simple mode has no Cargo tab. Show() maps Payload onto Stages there, and the
+                // step chip stays on Mission so the rail does not look like it did nothing.
+                Show(DesignerV3Tab.Payload);
+                if (!engineer)
                 {
-                    tab = DesignerV3Tab.Payload;
-                    launchConfirmArmed = false;
-                    TabChanged?.Invoke(tab);
-                    Rebuild();
+                    flowStep = "Mission";
+                    BuildFlow();
                 }
-                else BuildFlow();
                 return;
             }
             Show(TabOf(step));
