@@ -162,6 +162,9 @@ namespace Kestrel.Core.Designer.Stepper
                     }
                     if (!now.Tumble && after.Tumble) continue;
                     if (Blowup(now, after)) continue;
+                    // A throttle cap now holds the kick for the whole max-Q bucket. Reject a
+                    // move that turns a clean flight into a breakup or an empty tank.
+                    if (BrokeTheFlight(catalog, work, trial)) continue;
 
                     bool drop = after.Score < now.Score;
                     double qDrop = now.MaxQ.HasValue && after.MaxQ.HasValue ? now.MaxQ.Value - after.MaxQ.Value : 0;
@@ -265,6 +268,10 @@ namespace Kestrel.Core.Designer.Stepper
 
             if (now.Air)
                 Add(4, true, true, false, true, EaseThrottle);
+
+            // Extra propellant sheds dynamic pressure and peak g without freezing the kick.
+            if (now.Air || now.Has("payload-g") || now.Has("overg") || now.Has("risk-overg"))
+                Add(5, true, true, false, false, d => Soften(catalog, d));
 
             if (now.Has("payload-doesnt-fit") || now.Has("fairing-narrow"))
                 Add(5, false, now.Measured, !now.Measured, false, d => GrowFairing(catalog, d));
@@ -738,6 +745,63 @@ namespace Kestrel.Core.Designer.Stepper
             catch (Exception) { return; }
             if (look.Twr >= StepperChecks.PassTwr && !look.Has("twr-low") && !look.Has("twr-marginal")) return;
             LiftoffEngines(design, look.Twr > 0.05 ? look.Twr : 0.2);
+        }
+
+        static bool BrokeTheFlight(Catalog catalog, JsonObject before, JsonObject after)
+            => !Failed(catalog, before) && Failed(catalog, after);
+
+        static bool Failed(Catalog catalog, JsonObject design)
+        {
+            if (catalog == null || design == null) return false;
+            if (!ReferenceAscent.TryGet(ReferenceAscent.CanonicalKey(catalog, design), out var flight) || !flight.hit || !flight.flown)
+                return false;
+            return flight.failure != null;
+        }
+
+        /// <summary>
+        /// Add propellant until the air load and the peak g calm down. A max-Q throttle
+        /// cap holds the kick for the whole bucket, so it is the wrong way to cool this rocket.
+        /// </summary>
+        static Edit Soften(Catalog catalog, JsonObject design)
+        {
+            var best = JsonMut.CloneObject(design);
+            bool any = false;
+            for (int i = 0; i < 10; i++)
+            {
+                Picture look;
+                try { look = Look(catalog, best); }
+                catch (Exception) { break; }
+                bool air = look.Air;
+                bool gee = look.Has("payload-g") || look.Has("overg") || look.Has("risk-overg");
+                if (!air && !gee) break;
+                var trial = JsonMut.CloneObject(best);
+                bool bumped = false;
+                if (air) bumped |= BumpStage(trial, 0, 1.08);
+                if (gee) bumped |= BumpStage(trial, -1, 1.12);
+                if (!bumped) break;
+                try { ReferenceAscent.Run(catalog, trial); }
+                catch (Exception) { break; }
+                if (Failed(catalog, trial)) break;
+                Replace(best, trial);
+                any = true;
+            }
+            if (!any) return Edit.None;
+            Replace(design, best);
+            return new Edit("Fuel", "light", "more");
+        }
+
+        static bool BumpStage(JsonObject design, int index, double scale)
+        {
+            var stages = design != null ? design.Arr("stages") : null;
+            if (stages == null || stages.Count == 0) return false;
+            if (index < 0) index = stages.Count - 1;
+            if (index >= stages.Count) return false;
+            var stage = stages[index] as JsonObject;
+            if (stage == null) return false;
+            double mass = stage.Num("propMass");
+            if (!(mass > 0)) return false;
+            var edit = HangarEditor.SetPropMass(design, PartRef.Stage(index), mass * scale);
+            return edit.changed;
         }
 
         static bool BumpProp(JsonObject design, double scale)

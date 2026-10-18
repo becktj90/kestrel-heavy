@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Kestrel.Core.Data;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
@@ -11,6 +12,7 @@ using Kestrel.Core.Physics;
 using Kestrel.Game.MissionSelect;
 using Kestrel.Slice;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -55,21 +57,26 @@ namespace Kestrel.Game.Tests
             var career = Career.Start(campaign, 100000);
             career.Cleared = 20;
             var launched = new List<string>();
-            var board = MissionBoardView.Create(
-                campaign, career,
-                new Dictionary<string, MissionRecord>(),
-                new Dictionary<string, PayloadLabel>(),
-                launched.Add, _ => { }, () => { }, () => { },
-                true, _ => true, 390f, 844f, false);
-            Assert.That(board, Is.Not.Null);
-            for (int i = 1; i <= 20; i++)
+            using (var surface = PanelHost.Open(390f, 844f))
             {
-                string id = "m" + i;
-                var node = board.Q<Button>("mission-node-" + id);
-                Assert.That(node, Is.Not.Null, id);
-                Click(node);
-                Click(board.Q<Button>("mission-primary"));
-                Assert.That(launched, Does.Contain(id), "board start " + id);
+                var board = MissionBoardView.Create(
+                    campaign, career,
+                    new Dictionary<string, MissionRecord>(),
+                    new Dictionary<string, PayloadLabel>(),
+                    launched.Add, _ => { }, () => { }, () => { },
+                    true, _ => true, 390f, 844f, false);
+                Assert.That(board, Is.Not.Null);
+                surface.Stage.Add(board);
+                surface.Pump(4);
+                for (int i = 1; i <= 20; i++)
+                {
+                    string id = "m" + i;
+                    var node = board.Q<Button>("mission-node-" + id);
+                    Assert.That(node, Is.Not.Null, id);
+                    Click(node);
+                    Click(board.Q<Button>("mission-primary"));
+                    Assert.That(launched, Does.Contain(id), "board start " + id);
+                }
             }
         }
 
@@ -77,8 +84,10 @@ namespace Kestrel.Game.Tests
         public void ResultCardButtonsWork_AndTheHudReturns()
         {
             Assert.That(Catalog.RepoRootOrNull(), Is.Null);
-            var stage = new VisualElement { name = "stage" };
-            var hud = new VisualElement { name = "hud" };
+            using (var surface = PanelHost.Open(390f, 844f))
+            {
+            var stage = surface.Stage;
+            var hud = new VisualElement { name = "hud", pickingMode = PickingMode.Ignore };
             hud.Add(new Label("T+ 12.0") { name = "h-t" });
             hud.Add(new Label("ALT 4.0 km") { name = "h-alt" });
             hud.Add(new Label("Q 40") { name = "h-q" });
@@ -89,7 +98,7 @@ namespace Kestrel.Game.Tests
             nudge.Add(new Button { name = "nudge-plus", text = "+" });
             hud.Add(nudge);
             stage.Add(hud);
-            stage.Add(new VisualElement { name = "guide-pop" });
+            stage.Add(new VisualElement { name = "guide-pop", pickingMode = PickingMode.Ignore });
 
             int home = 0, missions = 0, retry = 0, next = 0;
             var card = ReportView.Build(
@@ -129,7 +138,10 @@ namespace Kestrel.Game.Tests
             Assert.That(hud.ClassListContains("hidden"), Is.False);
             Assert.That(skip.enabledSelf, Is.True);
             Assert.That(skip.pickingMode, Is.EqualTo(PickingMode.Position));
+            Assert.That(stage.Q("guide-pop").pickingMode, Is.EqualTo(PickingMode.Ignore));
+            Assert.That(hud.pickingMode, Is.EqualTo(PickingMode.Ignore));
             Assert.That(stage.Q("ascent-nudge").style.display.keyword, Is.EqualTo(StyleKeyword.Null));
+            }
         }
 
         static string FindRepo()
@@ -152,5 +164,168 @@ namespace Kestrel.Game.Tests
                 button.SendEvent(ev);
             }
         }
+
+        /// <summary>
+        /// Same batch-mode panel as HomeDeviceLayoutTests. NavigationSubmitEvent is a no-op
+        /// until the button is attached to a sized panel.
+        /// </summary>
+        sealed class PanelHost : IDisposable
+        {
+            EditorWindow _window;
+            GameObject _go;
+            PanelSettings _settings;
+            RenderTexture _rt;
+            public VisualElement Stage { get; private set; }
+
+            public static PanelHost Open(float w, float h)
+            {
+                var host = new PanelHost();
+                host.TryWindow(w, h);
+                host.Pump(4);
+                if (!host.Sized(w, h))
+                {
+                    host.CloseWindow();
+                    host.TryDocument(w, h);
+                    host.Pump(6);
+                }
+                Assert.That(host.Stage, Is.Not.Null);
+                Assert.That(host.Stage.panel, Is.Not.Null, "button events need a panel");
+                Assert.That(host.Sized(w, h), Is.True, "panel did not take the device size");
+                return host;
+            }
+
+            public void Pump(int passes)
+            {
+                for (int i = 0; i < passes; i++)
+                {
+                    if (Stage != null && Stage.panel != null)
+                    {
+                        var tree = Stage.panel.visualTree;
+                        if (tree != null && Stage.resolvedStyle.width > 2f)
+                        {
+                            tree.style.width = Stage.resolvedStyle.width;
+                            tree.style.height = Stage.resolvedStyle.height;
+                        }
+                    }
+                    ApplySettings();
+                    UpdatePanels();
+                    if (_window != null) _window.Repaint();
+                    Validate(Stage != null ? Stage.panel : null);
+                }
+            }
+
+            bool Sized(float w, float h)
+            {
+                if (Stage == null || Stage.panel == null) return false;
+                var b = Stage.worldBound;
+                if (b.width < 8f || b.height < 8f) return false;
+                float sx = b.width / w, sy = b.height / h;
+                return sx >= 0.8f && sy >= 0.8f && sx <= 3.5f && sy <= 3.5f && Math.Abs(sx - sy) <= 0.15f;
+            }
+
+            void TryWindow(float w, float h)
+            {
+                try
+                {
+                    _window = ScriptableObject.CreateInstance<FlightLoopWindow>();
+                    _window.position = new Rect(0f, 0f, w, h);
+                    _window.minSize = new Vector2(w, h);
+                    _window.maxSize = new Vector2(w, h);
+                    _window.ShowUtility();
+                    var root = _window.rootVisualElement;
+                    if (root == null) return;
+                    Stage = MakeStage(root, w, h);
+                }
+                catch (Exception) { Stage = null; }
+            }
+
+            void TryDocument(float w, float h)
+            {
+                try
+                {
+                    _rt = new RenderTexture(Mathf.Max(8, (int)w), Mathf.Max(8, (int)h), 0, RenderTextureFormat.ARGB32);
+                    _rt.Create();
+                    _settings = ScriptableObject.CreateInstance<PanelSettings>();
+                    _settings.scaleMode = PanelScaleMode.ConstantPixelSize;
+                    _settings.scale = 1f;
+                    _settings.targetTexture = _rt;
+                    var theme = Resources.Load<PanelSettings>("UI/KH_ShellPanelSettings");
+                    if (theme != null && theme.themeStyleSheet != null) _settings.themeStyleSheet = theme.themeStyleSheet;
+                    _go = new GameObject("kh-flight-loop");
+                    _go.hideFlags = HideFlags.HideAndDontSave;
+                    var doc = _go.AddComponent<UIDocument>();
+                    doc.panelSettings = _settings;
+                    ApplySettings();
+                    var root = doc.rootVisualElement;
+                    if (root == null) return;
+                    Stage = MakeStage(root, w, h);
+                }
+                catch (Exception) { Stage = null; }
+            }
+
+            static VisualElement MakeStage(VisualElement panelRoot, float w, float h)
+            {
+                var tree = panelRoot.panel != null ? panelRoot.panel.visualTree : null;
+                if (tree != null)
+                {
+                    tree.style.width = w;
+                    tree.style.height = h;
+                }
+                panelRoot.style.width = w;
+                panelRoot.style.height = h;
+                var stage = new VisualElement { name = "stage", pickingMode = PickingMode.Ignore };
+                stage.style.position = Position.Absolute;
+                stage.style.left = 0f;
+                stage.style.top = 0f;
+                stage.style.width = w;
+                stage.style.height = h;
+                stage.style.overflow = Overflow.Hidden;
+                panelRoot.Add(stage);
+                return stage;
+            }
+
+            void ApplySettings()
+            {
+                if (_settings == null) return;
+                var m = typeof(PanelSettings).GetMethod("ApplyPanelSettings", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (m != null) m.Invoke(_settings, null);
+            }
+
+            static void UpdatePanels()
+            {
+                var t = typeof(VisualElement).Assembly.GetType("UnityEngine.UIElements.UIElementsRuntimeUtility");
+                var m = t != null ? t.GetMethod("UpdatePanels", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) : null;
+                if (m != null && m.GetParameters().Length == 0) m.Invoke(null, null);
+            }
+
+            static void Validate(IPanel panel)
+            {
+                if (panel == null) return;
+                var m = panel.GetType().GetMethod("ValidateLayout", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (m != null && m.GetParameters().Length == 0) m.Invoke(panel, null);
+            }
+
+            void CloseWindow()
+            {
+                if (_window == null) return;
+                _window.Close();
+                _window = null;
+                Stage = null;
+            }
+
+            public void Dispose()
+            {
+                CloseWindow();
+                if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
+                if (_settings != null) UnityEngine.Object.DestroyImmediate(_settings);
+                if (_rt != null)
+                {
+                    _rt.Release();
+                    UnityEngine.Object.DestroyImmediate(_rt);
+                }
+            }
+        }
+
+        sealed class FlightLoopWindow : EditorWindow { }
     }
 }

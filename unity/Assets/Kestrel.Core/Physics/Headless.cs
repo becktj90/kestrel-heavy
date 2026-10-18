@@ -239,14 +239,21 @@ namespace Kestrel.Core.Physics
                         else if (Mode == 1)
                         {
                             double vgam = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
-                            if (T - kickStart > 3 && vgam <= PitchCmd + 0.002)
+                            if (turned && holdKick)
+                            {
+                                // Stay on the angle caught when the path first sagged. Folding
+                                // catchPitch down to this tick's vgam releases the hold after
+                                // one step and the nose ratchets into the dive.
+                                PitchCmd = catchPitch;
+                            }
+                            else if (turned)
+                                Mode = 2;
+                            else if (T - kickStart > 3 && vgam <= PitchCmd + 0.002)
                             {
                                 catchPitch = vgam;
                                 turned = true;
                                 Mode = 2;
                             }
-                            else if (turned && !holdKick)
-                                Mode = 2;
                         }
                         else if (Mode == 2 && holdKick)
                         {

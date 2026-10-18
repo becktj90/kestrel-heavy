@@ -109,14 +109,20 @@ namespace Kestrel.Core.Physics
                         else if (Mode == 1)
                         {
                             double vgam = Math.Atan2(avx * ux + avy * uy + avz * uz, avx * tx + avy * ty + avz * tz);
-                            if (T - kickStart > 3 && vgam <= PitchCmd + 0.002)
+                            if (turned && holdKick)
+                            {
+                                // Same latch as Headless: hold the caught angle for the whole
+                                // cap, and return to the gravity turn once the cap lets go.
+                                PitchCmd = catchPitch;
+                            }
+                            else if (turned)
+                                Mode = 2;
+                            else if (T - kickStart > 3 && vgam <= PitchCmd + 0.002)
                             {
                                 catchPitch = vgam;
                                 turned = true;
                                 Mode = 2;
                             }
-                            else if (turned && !holdKick)
-                                Mode = 2;
                         }
                         else if (Mode == 2 && holdKick)
                         {

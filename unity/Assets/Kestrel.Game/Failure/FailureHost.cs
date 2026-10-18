@@ -24,6 +24,8 @@ namespace Kestrel.Game.Failure
         readonly TelemetryLog log = new TelemetryLog();
         bool played;
         bool reported;
+        SimResult closedResult;
+        Mesh intactMesh;
         float age;
         bool reduce;
         FailureEvent failure;
@@ -73,6 +75,56 @@ namespace Kestrel.Game.Failure
             Begin(ev);
         }
 
+        /// <summary>
+        /// A retry keeps this host. Drop the last report, the playback, the telemetry and the
+        /// broken mesh so the next result can open its own card. The result already on the
+        /// driver is remembered and ignored until Launch replaces it.
+        /// </summary>
+        public void ResetFlight()
+        {
+            // A pass never calls Begin, so baseRotation is still the default and the mesh is whole.
+            bool broke = played;
+            closedResult = flight != null ? flight.Result : closedResult;
+            played = false;
+            reported = false;
+            failure = null;
+            age = 0f;
+            emitted = false;
+            seenEvents = 0;
+            nextSample = -1;
+            prevT = 0;
+            prevV = 0;
+            lossG = 0;
+            lossD = 0;
+            lossS = 0;
+            log.Clear();
+            if (Card != null)
+            {
+                if (Card.parent != null) Card.RemoveFromHierarchy();
+                Card = null;
+            }
+            if (!broke) return;
+            var filter = GetComponent<MeshFilter>();
+            if (filter != null && intactMesh != null) filter.sharedMesh = intactMesh;
+            if (upper != null)
+            {
+                Destroy(upper.gameObject);
+                upper = null;
+            }
+            if (lowerMesh != null) { Destroy(lowerMesh); lowerMesh = null; }
+            if (upperMesh != null) { Destroy(upperMesh); upperMesh = null; }
+            HideBits();
+            if (marker != null) marker.gameObject.SetActive(false);
+            transform.localRotation = baseRotation;
+            if (burst != null) burst.Clear(true);
+            if (plume != null)
+            {
+                double ambient = flight != null ? flight.AmbientPressure : Atmosphere.P0;
+                double speed = flight != null ? flight.Speed : 0;
+                plume.Apply(1, ambient, speed);
+            }
+        }
+
         public void Seek(float seconds)
         {
             age = seconds < 0f ? 0f : seconds;
@@ -89,12 +141,13 @@ namespace Kestrel.Game.Failure
                 return;
             }
             var result = flight.Result;
-            if (result == null || reported) return;
+            if (result == null || reported || ReferenceEquals(result, closedResult)) return;
             if (result.failure == null)
             {
                 if (flight.Running) return;
                 if (RecoveryLog.Active) return;
                 reported = true;
+                closedResult = result;
                 reduce = Comfort.ReduceMotion;
                 StampLosses(result);
                 failure = null;
@@ -105,6 +158,7 @@ namespace Kestrel.Game.Failure
             StampLosses(result);
             Begin(result.failure);
             reported = true;
+            closedResult = result;
         }
 
         void Begin(FailureEvent ev)
@@ -185,6 +239,7 @@ namespace Kestrel.Game.Failure
             var filter = GetComponent<MeshFilter>();
             var renderer = GetComponent<MeshRenderer>();
             if (filter == null || filter.sharedMesh == null) return;
+            if (intactMesh == null) intactMesh = filter.sharedMesh;
             FailureCut.Halves(filter.sharedMesh, plan.JointY, out lowerMesh, out upperMesh);
             if (lowerMesh.vertexCount > 0) filter.sharedMesh = lowerMesh;
             if (upperMesh.vertexCount == 0) return;

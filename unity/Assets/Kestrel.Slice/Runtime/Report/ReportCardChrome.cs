@@ -259,9 +259,19 @@ namespace Kestrel.Slice
             }
         }
 
+        const string PickSaved = "kh-report-pick-saved";
+        const string PickIgnore = "kh-report-pick-ignore";
+
         static void Retire(VisualElement el)
         {
             if (el == null || InReport(el)) return;
+            if (!el.ClassListContains(PickSaved))
+            {
+                el.AddToClassList(PickSaved);
+                // guide-overlay, hud and ascent-hud are full-screen and Ignore.
+                // Remembering that here keeps a retry from turning them into the hit target.
+                if (el.pickingMode == PickingMode.Ignore) el.AddToClassList(PickIgnore);
+            }
             el.AddToClassList("hidden");
             el.style.display = DisplayStyle.None;
             el.SetEnabled(false);
@@ -274,7 +284,11 @@ namespace Kestrel.Slice
             el.RemoveFromClassList("hidden");
             el.style.display = StyleKeyword.Null;
             el.SetEnabled(true);
-            el.pickingMode = PickingMode.Position;
+            if (!el.ClassListContains(PickSaved)) return;
+            bool ignore = el.ClassListContains(PickIgnore);
+            el.RemoveFromClassList(PickIgnore);
+            el.RemoveFromClassList(PickSaved);
+            el.pickingMode = ignore ? PickingMode.Ignore : PickingMode.Position;
         }
 
         static void Clear(VisualElement tree, string name)

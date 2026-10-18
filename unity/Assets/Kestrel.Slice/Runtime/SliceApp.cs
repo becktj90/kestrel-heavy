@@ -991,6 +991,11 @@ namespace Kestrel.Slice
             // and the retry never left the pad. Dismiss it, and put the HUD back.
             ReportCardChrome.Dismiss(ui);
             ReportCardChrome.RestoreFlight(ui);
+            if (rocketGO != null)
+            {
+                var host = rocketGO.GetComponent<Kestrel.Game.Failure.FailureHost>();
+                if (host != null) host.ResetFlight();
+            }
             SetFlightPaused(false);
             Kestrel.Game.Audio.MusicPlayer.Instance?.Play(Kestrel.Game.Audio.MusicBed.Flight);
             submitted = false;

@@ -16,6 +16,16 @@ namespace Kestrel.Game.Shell
 {
     public sealed class ScreenStub : MonoBehaviour
     {
+        static ScreenStub()
+        {
+            // Player builds copy data/board-starters.json into Resources. There is no repo root.
+            HomeAutoBuild.BoardStarterPack = () =>
+            {
+                var asset = Resources.Load<TextAsset>("KestrelData/board-starters");
+                return asset != null ? asset.text : null;
+            };
+        }
+
         public AppScreen Kind;
         VisualElement _view;
 

@@ -156,12 +156,11 @@ namespace Kestrel.Core.Flight
             else if (best != null && best.Design != null && mission.Id == "m2" && best.TemplateId == "hopper")
             {
                 // Three small engines and a full tank break the 35 kPa wall around 6 km.
-                // One engine, a 4444 kg load, steel walls, SF 2.2 and a 75% max-Q cap
-                // coast inside ±5% of 100 km on every campaign seed (about 101 km).
-                // 4441–4444 kg all clear. 4445 kg draws an engine-out, and 4449 kg
-                // lofts past the band. While the cap is actually biting, a sagging
-                // path freezes at the catch angle instead of being chased. The
-                // template is not edited.
+                // One engine, a 1380 kg load, steel walls, SF 2.2 and a 75% max-Q cap
+                // coast inside ±5% of 100 km on every campaign seed (about 100 km).
+                // 1360–1400 kg all clear. 1410 kg lofts past the band. While the cap
+                // is actually biting, the path stays on the catch angle instead of
+                // ratcheting down with the sag. The template is not edited.
                 ArmHundredKm(best.Design);
                 FillPerformance(catalog, best);
                 best.ReachLine = "Enough for 100 km.";
@@ -198,7 +197,7 @@ namespace Kestrel.Core.Flight
         }
 
         public const double HundredKmSafetyFactor = 2.2;
-        public const double HundredKmPropKg = 4444;
+        public const double HundredKmPropKg = 1380;
         public const double HundredKmMaxQPercent = 75;
         public const double HundredKmGLimit = 6;
         public const string HundredKmMaterial = "steel";
@@ -427,6 +426,16 @@ namespace Kestrel.Core.Flight
             string n = kn >= 10 ? kn.ToString("0", CultureInfo.InvariantCulture) : kn.ToString("0.0", CultureInfo.InvariantCulture);
             return n + " kN";
         }
+
+        /// <summary>
+        /// Text of data/board-starters.json for a player build, which has no checkout.
+        /// The host points this at Resources/KestrelData/board-starters. A null or empty
+        /// return is a miss and is not cached, so a later install still loads.
+        /// </summary>
+        public static Func<string> BoardStarterPack;
+
+        /// <summary>The board rocket for this mission, from the checkout or <see cref="BoardStarterPack"/>.</summary>
+        public static JsonObject BoardStarter(string missionId) => BoardStarters.Design(missionId);
     }
 
     /// <summary>Design the pad should open. Consumed once so a later visit does not relaunch.</summary>
@@ -532,37 +541,75 @@ namespace Kestrel.Core.Flight
         }
     }
 
-    /// <summary>Near-win rockets for the mission board. Absent on a player build that has no checkout.</summary>
+    /// <summary>Near-win rockets for the mission board. A player build reads the packaged JSON, not the repo root.</summary>
     static class BoardStarters
     {
         static Dictionary<string, JsonObject> cache;
-        static bool loaded;
+        static string loadedFrom;
 
         public static JsonObject Design(string missionId)
         {
             if (string.IsNullOrEmpty(missionId)) return null;
-            if (!loaded)
+            Ensure();
+            if (cache != null && cache.TryGetValue(missionId, out var found)) return found;
+            return null;
+        }
+
+        static void Ensure()
+        {
+            if (!TryRead(out string text, out string source))
             {
-                loaded = true;
-                cache = new Dictionary<string, JsonObject>();
-                string root = Catalog.RepoRootOrNull();
-                if (root == null) return null;
-                string path = Path.Combine(root, "data", "board-starters.json");
-                if (!File.Exists(path)) return null;
-                var file = MiniJson.ParseObject(File.ReadAllText(path));
-                var rows = file.Arr("missions");
-                if (rows == null) return null;
+                // A miss is not sticky. The Resources text may be installed on the next call.
+                loadedFrom = null;
+                cache = null;
+                return;
+            }
+            if (loadedFrom == source && cache != null) return;
+            var next = new Dictionary<string, JsonObject>();
+            var file = MiniJson.ParseObject(text);
+            var rows = file != null ? file.Arr("missions") : null;
+            if (rows != null)
+            {
                 for (int i = 0; i < rows.Count; i++)
                 {
                     var row = rows[i] as JsonObject;
                     if (row == null) continue;
                     var designs = row.Arr("designs");
                     if (designs == null || designs.Count == 0 || !(designs[0] is JsonObject design)) continue;
-                    cache[row.Str("id")] = design;
+                    string id = row.Str("id");
+                    if (!string.IsNullOrEmpty(id)) next[id] = design;
                 }
             }
-            if (cache != null && cache.TryGetValue(missionId, out var found)) return found;
-            return null;
+            cache = next;
+            loadedFrom = source;
+        }
+
+        static bool TryRead(out string text, out string source)
+        {
+            text = null;
+            source = null;
+            string root = Catalog.RepoRootOrNull();
+            if (!string.IsNullOrEmpty(root))
+            {
+                string path = Path.Combine(root, "data", "board-starters.json");
+                if (File.Exists(path))
+                {
+                    try
+                    {
+                        text = File.ReadAllText(path);
+                        source = "file:" + path;
+                        return !string.IsNullOrEmpty(text);
+                    }
+                    catch (IOException) { text = null; }
+                    catch (UnauthorizedAccessException) { text = null; }
+                }
+            }
+            if (HomeAutoBuild.BoardStarterPack == null) return false;
+            try { text = HomeAutoBuild.BoardStarterPack(); }
+            catch (Exception) { text = null; }
+            if (string.IsNullOrEmpty(text)) return false;
+            source = "packaged";
+            return true;
         }
     }
 }

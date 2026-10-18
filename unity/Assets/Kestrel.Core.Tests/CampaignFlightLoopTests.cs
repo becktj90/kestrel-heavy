@@ -46,6 +46,31 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void BoardStarters_LoadFromThePackWhenTheCheckoutIsGone()
+        {
+            string prev = Environment.GetEnvironmentVariable("KESTREL_REPO_ROOT");
+            string away = Path.Combine(Path.GetTempPath(), "kh-nostarters-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(away);
+            string json = File.ReadAllText(Path.Combine(Golden.Root, "data", "board-starters.json"));
+            Environment.SetEnvironmentVariable("KESTREL_REPO_ROOT", away);
+            HomeAutoBuild.BoardStarterPack = () => json;
+            try
+            {
+                Assert.IsNull(Catalog.RepoRootOrNull());
+                var design = HomeAutoBuild.BoardStarter("m3");
+                Assert.IsNotNull(design);
+                Assert.AreEqual("h-n5-k8-24000-2500", design.Str("name"));
+                Assert.IsNull(HomeAutoBuild.BoardStarter("m1"), "KH-1 stays on the armed hopper");
+            }
+            finally
+            {
+                HomeAutoBuild.BoardStarterPack = null;
+                Environment.SetEnvironmentVariable("KESTREL_REPO_ROOT", prev);
+                if (Directory.Exists(away)) Directory.Delete(away, true);
+            }
+        }
+
+        [Test]
         public void EveryMission_StartsFromTheBoard_AndFliesTheStarter()
         {
             Assert.AreEqual(20, campaign.Missions.Count);

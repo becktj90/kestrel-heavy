@@ -2,6 +2,7 @@
 // The open mission (KH-1 on a fresh career) opens the briefing. The headless
 // CampaignFlightLoopTests fly the guided ascent for KH-1..KH-20.
 using System.Collections;
+using Kestrel.Core.Flight;
 using Kestrel.Game.Shell;
 using NUnit.Framework;
 using UnityEngine;
@@ -15,6 +16,10 @@ namespace Kestrel.Capture.Tests
         [UnityTearDown]
         public IEnumerator DropTheShell()
         {
+            // LaunchChosen arms the pad and leaves it there. The next PlayMode
+            // shot is the workhorse designer, and a leftover hopper replaces it.
+            PadHandoff.Clear();
+            GameSession.Clear();
             if (AppShell.Instance != null)
                 UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
             yield return null;
