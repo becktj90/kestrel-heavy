@@ -389,9 +389,9 @@ namespace Kestrel.Game.Failure
             float left = Screen.width > 8 ? safe.xMin / dpr : 0f;
             float right = Screen.width > 8 ? (Screen.width - safe.xMax) / dpr : 0f;
             var frame = ReportLayout.Solve(wPt, hPt, top, bottom, left, right, reduce);
-            float scale = dpr;
-            if (ui.layout.width > 1f && wPt > 1f) scale = ui.layout.width / wPt;
-            frame = Scale(frame, scale);
+            float upp = 1f;
+            if (ui.layout.width > 1f && wPt > 1f) upp = ui.layout.width / wPt;
+            else if (dpr > 1f) upp = dpr;
             var shown = failure;
             if (shown == null && RecoveryLog.Current != null && RecoveryLog.Current.Attempted && RecoveryLog.Current.Failure != null)
                 shown = RecoveryLog.Current.Failure;
@@ -421,22 +421,24 @@ namespace Kestrel.Game.Failure
             }
             Card = ReportView.Build(shown, log, frame, reduce, () => { reveal(); FixField.Apply(ui, FixField.For(kind)); }, debrief, actions);
             Card.userData = this;
-            ui.Add(Card);
+            ReportCardChrome.Present(ui, Card, upp, top, bottom);
+            if (ui.layout.width <= 1f)
+            {
+                var sheet = ui;
+                var shownCard = Card;
+                EventCallback<GeometryChangedEvent> relayout = null;
+                relayout = _ =>
+                {
+                    sheet.UnregisterCallback(relayout);
+                    float live = sheet.layout.width > 1f && wPt > 1f ? sheet.layout.width / wPt : upp;
+                    ReportCardChrome.Dress(shownCard, live, top, bottom);
+                    ReportCardChrome.Cover(shownCard);
+                    ReportCardChrome.RetireFlight(sheet);
+                    shownCard.BringToFront();
+                };
+                sheet.RegisterCallback(relayout);
+            }
         }
-
-        static ReportFrame Scale(ReportFrame frame, float scale)
-        {
-            if (scale <= 0f || Mathf.Abs(scale - 1f) < 0.01f) return frame;
-            frame.Card = Mul(frame.Card, scale);
-            frame.Icon = Mul(frame.Icon, scale);
-            frame.Kid = Mul(frame.Kid, scale);
-            frame.Engineer = Mul(frame.Engineer, scale);
-            frame.Fix = Mul(frame.Fix, scale);
-            frame.Plots = Mul(frame.Plots, scale);
-            return frame;
-        }
-
-        static ReportRect Mul(ReportRect r, float s) => new ReportRect(r.X * s, r.Y * s, r.W * s, r.H * s);
 
         void Sample()
         {

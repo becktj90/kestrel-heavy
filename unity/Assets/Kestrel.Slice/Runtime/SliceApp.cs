@@ -1150,6 +1150,7 @@ namespace Kestrel.Slice
         /// <summary>Hangar per-frame work: a rate-limited rocket rebuild while a stepper is held.</summary>
         void Update()
         {
+            if (ReportCardChrome.ConsumeKey(ui)) return;
             if (hud != null && !hud.ClassListContains("hidden")) { chrome?.TickInput(); return; }
             designer?.TickReference();
             if (rocketDirty && Time.unscaledTime - lastRocketBuild >= RebuildEverySeconds) BuildRocket();
@@ -1168,9 +1169,11 @@ namespace Kestrel.Slice
                 ApplyTankCutaway();
             }
             if (birds != null) birds.TrackFlight = hud != null && !hud.ClassListContains("hidden");
+            if (ui != null && ui.Q(ReportView.RootName) != null)
+                handoff.Finish();
             if (chrome != null && chrome.Paused) return;
             bool inFlight = hud != null && !hud.ClassListContains("hidden");
-            if (!handoff.Ascending && (counting || (inFlight && (sequence != null || handoff.StartAttempts > 0))))
+            if (!handoff.Closed && !handoff.Ascending && (counting || (inFlight && (sequence != null || handoff.StartAttempts > 0))))
             {
                 TickCount();
                 if (!handoff.Ascending) return;
@@ -1246,6 +1249,7 @@ namespace Kestrel.Slice
 
         void TickCount()
         {
+            if (handoff.Closed) return;
             double dt = LiftoffHandoff.FrameDt(UnityEngine.Time.deltaTime, UnityEngine.Time.unscaledDeltaTime);
             handoff.Tick(dt, TryAscend, LiveBlockers());
             sequence = handoff.Sequence;

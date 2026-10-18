@@ -28,6 +28,8 @@ namespace Kestrel.Core.Flight
         public LaunchSequence Sequence { get; private set; }
         public bool Counting { get; private set; }
         public bool Ascending { get; private set; }
+        /// <summary>The flight ended or the post-flight card is up. The count must not keep painting.</summary>
+        public bool Closed { get; private set; }
         public int StartAttempts { get; private set; }
         public Exception LastError { get; private set; }
         /// <summary>boot, counting, committed (T+0, sim not running), ascending.</summary>
@@ -42,6 +44,7 @@ namespace Kestrel.Core.Flight
             Sequence = null;
             Counting = false;
             Ascending = false;
+            Closed = false;
             StartAttempts = 0;
             LastError = null;
             releasedHold = false;
@@ -53,6 +56,7 @@ namespace Kestrel.Core.Flight
         {
             Sequence = sequence;
             Ascending = false;
+            Closed = false;
             StartAttempts = 0;
             LastError = null;
             releasedHold = false;
@@ -72,9 +76,20 @@ namespace Kestrel.Core.Flight
         /// A throw or a false return leaves the handoff short of ascent so the next frame tries again.
         /// <paramref name="blockers"/> is recorded by the caller and does not delay this tick.
         /// </summary>
+        /// <summary>The flight aborted or finished. Later ticks must not rewrite the countdown.</summary>
+        public void Finish()
+        {
+            if (Closed) return;
+            Counting = false;
+            Ascending = false;
+            Sequence = null;
+            Closed = true;
+            Move("done", "flight ended");
+        }
+
         public void Tick(double dt, Func<bool> startAscent, LiftoffBlockers blockers = null)
         {
-            if (Ascending) return;
+            if (Closed || Ascending) return;
             if (WaitsOn(blockers)) return;
             if (Counting)
             {

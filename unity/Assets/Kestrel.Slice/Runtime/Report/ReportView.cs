@@ -11,7 +11,7 @@ namespace Kestrel.Slice
     public static class ReportView
     {
         public const string RootName = "post-flight";
-        public static readonly Color PanelInk = new Color(0.055f, 0.07f, 0.11f, 1f);
+        public static readonly Color PanelInk = ReportCardChrome.Ink;
 
         static readonly string[] ChannelLabels = { "Altitude", "Speed", "Dynamic pressure", "g load", "Delta-v losses" };
 
@@ -73,7 +73,7 @@ namespace Kestrel.Slice
             Place(engineer, frame.Engineer);
             engineer.style.color = new Color(0.75f, 0.82f, 0.9f);
             engineer.style.whiteSpace = WhiteSpace.Normal;
-            engineer.style.fontSize = 13;
+            engineer.style.fontSize = 16;
             engineer.tooltip = engineer.text;
             root.Add(engineer);
 
@@ -82,12 +82,7 @@ namespace Kestrel.Slice
 
             var fix = new Button(() => onFix?.Invoke()) { name = "failure-fix", text = "Fix it" };
             Place(fix, frame.Fix);
-            fix.style.minHeight = (float)frame.Fix.H;
-            fix.style.minWidth = (float)ReportLayout.MinTargetPt;
-            fix.style.backgroundColor = new Color(0.18f, 0.45f, 0.86f);
-            fix.style.color = Color.white;
-            fix.style.fontSize = 17;
-            fix.style.unityFontStyleAndWeight = FontStyle.Bold;
+            ReportCardChrome.PaintButton(fix, (float)Math.Max(ReportCardChrome.HitPt, frame.Fix.H), "fix");
             fix.tooltip = link.VoiceOver;
             fix.userData = link.Uri;
             root.Add(fix);
@@ -172,7 +167,7 @@ namespace Kestrel.Slice
                 plot.style.overflow = Overflow.Hidden;
                 string label = i < ChannelLabels.Length ? ChannelLabels[i] : built[i].Channel;
                 var caption = new Label(label) { name = "plot-label" };
-                caption.style.fontSize = 9;
+                caption.style.fontSize = 14;
                 caption.style.color = new Color(0.8f, 0.86f, 0.92f);
                 caption.style.position = Position.Absolute;
                 caption.style.left = 2;

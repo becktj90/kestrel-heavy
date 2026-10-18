@@ -761,12 +761,14 @@ namespace Kestrel.Core.Flight
             if (easing) deg -= 0.5;
             if (deg > 4) deg = 4;
             else if (deg < -4) deg = -4;
-            bool maxQOpen = Find(AscentCall.MaxQ, Phase.Open) != null;
             Command = new AscentCommand
             {
                 ThrottleScale = scale,
                 PitchOffsetRad = deg * Math.PI / 180.0,
-                SuppressDesignThrottle = vehicle.MaxQSet || (maxQOpen && !AutoAssist),
+                // The design's own max-Q cap keeps flying until the call is actually taken.
+                // Clearing it just because the design has a cap left the first hop at full
+                // throttle through the structural limit.
+                SuppressDesignThrottle = maxQDown,
                 Lost = lost,
                 LossKind = lossKind,
                 LossKid = lossKid,

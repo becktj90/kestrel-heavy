@@ -1,7 +1,6 @@
 // The four report exits. One more launch keeps the seed ReportRoutes already holds.
 using System;
 using Kestrel.Core.Flight;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Kestrel.Slice
@@ -10,10 +9,10 @@ namespace Kestrel.Slice
     {
         public static void AddRoutes(VisualElement parent, ReportActions actions, float tap)
         {
-            parent.Add(Exit("report-next", ReportRoutes.NextLabel, ReportRoutes.NextTip, actions != null ? actions.Next : null, tap, new Color(0.16f, 0.42f, 0.38f)));
-            parent.Add(Exit("report-retry", ReportRoutes.AgainLabel, ReportRoutes.AgainTip, actions != null ? actions.Again : null, tap, new Color(0.22f, 0.36f, 0.62f)));
-            parent.Add(Exit("report-missions", ReportRoutes.MissionsLabel, ReportRoutes.MissionsTip, actions != null ? actions.Missions : null, tap, new Color(0.2f, 0.24f, 0.32f)));
-            parent.Add(Exit("report-home", ReportRoutes.HomeLabel, ReportRoutes.HomeTip, actions != null ? actions.Home : null, tap, new Color(0.2f, 0.24f, 0.32f)));
+            parent.Add(Exit("report-next", ReportRoutes.NextLabel, ReportRoutes.NextTip, actions != null ? actions.Next : null, tap, "next"));
+            parent.Add(Exit("report-retry", ReportRoutes.AgainLabel, ReportRoutes.AgainTip, actions != null ? actions.Again : null, tap, "retry"));
+            parent.Add(Exit("report-missions", ReportRoutes.MissionsLabel, ReportRoutes.MissionsTip, actions != null ? actions.Missions : null, tap, "missions"));
+            parent.Add(Exit("report-home", ReportRoutes.HomeLabel, ReportRoutes.HomeTip, actions != null ? actions.Home : null, tap, "home"));
         }
 
         /// <summary>
@@ -54,10 +53,10 @@ namespace Kestrel.Slice
             };
         }
 
-        static Button Exit(string name, string text, string tip, System.Action click, float tap, Color fill)
+        static Button Exit(string name, string text, string tip, System.Action click, float tap, string role)
         {
             var button = new Button(() => click?.Invoke()) { name = name, text = text, tooltip = tip };
-            RewardsCard.StyleButton(button, tap, fill);
+            ReportCardChrome.PaintButton(button, tap, role);
             return button;
         }
     }
