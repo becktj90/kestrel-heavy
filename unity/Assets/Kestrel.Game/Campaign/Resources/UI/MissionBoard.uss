@@ -20,6 +20,13 @@
     overflow: hidden;
 }
 
+.mission-art {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position-x: center;
+    background-position-y: center;
+}
+
 .mission-sheet {
     background-color: rgba(13, 20, 40, 0.92);
     border-width: 1px;

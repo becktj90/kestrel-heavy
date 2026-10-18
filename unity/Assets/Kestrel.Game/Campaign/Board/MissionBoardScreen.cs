@@ -36,6 +36,7 @@ namespace Kestrel.Game.MissionSelect
         Label _act, _name, _customer, _orbit, _brief, _facts;
         Button _primary, _contracts, _sandboxButton;
         MissionTrailElement _trail;
+        VisualElement _pendingScroll;
         Slot _selected;
         MissionBoardFacts _card;
         MissionBoardMode _mode = MissionBoardMode.Mission;
@@ -45,6 +46,7 @@ namespace Kestrel.Game.MissionSelect
         float _pulsePhase;
         float _primaryTop;
         bool _clock;
+        bool _scrollArmed;
         bool _down;
 
         MissionBoardView(bool reduce, float previewW, float previewH, bool? wide)
@@ -209,7 +211,7 @@ namespace Kestrel.Game.MissionSelect
             card.Add(_body);
 
             _art = new VisualElement { name = "mission-art", pickingMode = PickingMode.Ignore };
-            _art.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+            _art.AddToClassList("mission-art");
             _art.style.backgroundColor = new StyleColor(MissionBoardPalette.Deep);
             Round(_art, 12f);
             _body.Add(_art);
@@ -256,8 +258,16 @@ namespace Kestrel.Game.MissionSelect
             _primary.RegisterCallback<PointerCancelEvent>(_ => Nudge(false));
             _body.Add(_primary);
 
-            RegisterCallback<GeometryChangedEvent>(_ => ApplyFromRoot());
-            RegisterCallback<AttachToPanelEvent>(_ => ArmClock());
+            RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                ApplyFromRoot();
+                QueueScroll(null);
+            });
+            RegisterCallback<AttachToPanelEvent>(_ =>
+            {
+                ArmClock();
+                QueueScroll(_pendingScroll);
+            });
 
             if (_map.Next != null) SelectMission(_map.Next.MissionId, false);
             else if (_slots.Count > 0) SelectMission(_slots[0].Entry.MissionId, false);
@@ -382,7 +392,7 @@ namespace Kestrel.Game.MissionSelect
             ShowArt(slot.Entry.Form);
             PaintCard(_card);
             Kick(animate);
-            if (slot.Node != null) _path.ScrollTo(slot.Node);
+            QueueScroll(slot.Node);
         }
 
         public void SelectContracts()
@@ -614,6 +624,43 @@ namespace Kestrel.Game.MissionSelect
             _primaryTop = frame.Primary.Y - frame.Card.Y;
             if (!_down) _primary.style.top = _primaryTop;
             ApplyMotion();
+        }
+
+        /// <summary>
+        /// ScrollView.ScrollTo throws if the list is not on a panel yet. Build runs before
+        /// the shell parents this view, so the scroll waits until attach.
+        /// </summary>
+        void QueueScroll(VisualElement node)
+        {
+            if (node != null) _pendingScroll = node;
+            if (_pendingScroll == null || _path == null || panel == null || _scrollArmed) return;
+            var sched = schedule;
+            if (sched == null)
+            {
+                SafeScroll();
+                return;
+            }
+            _scrollArmed = true;
+            sched.Execute(() =>
+            {
+                _scrollArmed = false;
+                SafeScroll();
+            });
+        }
+
+        void SafeScroll()
+        {
+            var node = _pendingScroll;
+            if (node == null || _path == null || _path.panel == null) return;
+            try
+            {
+                _path.ScrollTo(node);
+                _pendingScroll = null;
+            }
+            catch (NullReferenceException)
+            {
+                // Unity's ScrollTo reads the panel before the scroller exists.
+            }
         }
 
         void ArmClock()
