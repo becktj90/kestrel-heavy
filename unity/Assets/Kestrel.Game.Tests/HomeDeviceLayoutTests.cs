@@ -116,8 +116,10 @@ namespace Kestrel.Game.Tests
                 Assert.That(h, Is.GreaterThan(700f), "portrait column did not grow " + w + "x" + h);
                 var z = MenuTypeScale.Compute(w, h, 0f, 0f);
                 var word = root.Q<Label>("mm-kestrel");
-                Assert.That(float.IsNaN(launch.resolvedStyle.maxHeight) || launch.resolvedStyle.maxHeight >= z.LaunchH - 1f,
-                    "LAUNCH max-height " + launch.resolvedStyle.maxHeight + " after grow");
+                var cap = launch.resolvedStyle.maxHeight;
+                float capPx = cap.keyword == StyleKeyword.Undefined ? cap.value : float.NaN;
+                Assert.That(float.IsNaN(capPx) || capPx >= z.LaunchH - 1f,
+                    "LAUNCH max-height " + cap.keyword + " " + cap.value + " after grow");
                 Assert.That(launch.resolvedStyle.height, Is.GreaterThan(MenuTypeScale.HitMin + 8f),
                     "LAUNCH stayed at the short-column size");
                 Assert.That(title.style.height.keyword, Is.Not.EqualTo(StyleKeyword.Undefined), CapDescribe(root));
