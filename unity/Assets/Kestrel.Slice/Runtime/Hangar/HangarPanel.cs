@@ -309,7 +309,12 @@ namespace Kestrel.Slice
             content.Add(ui.Section(engineer ? "Engines" : "Engines (the push)"));
             content.Add(ui.Chips("Engine type", engines, () => Body(p)?.Str("engine"), id => Do(d => HangarEditor.SetEngine(C, d, p, id)), refreshers));
             content.Add(ui.Stepper("How many engines", () => ((int)(Body(p)?.Num("engineCount") ?? 0)).ToString(CultureInfo.InvariantCulture),
-                () => EngineHint(p), (dir, key) => Do(d => HangarEditor.SetEngineCount(d, p, (int)(HangarParts.Body(d, p)?.Num("engineCount") ?? 1) + dir), key), End, k + ".engines", refreshers));
+                () => EngineHint(p), (dir, key) => Do(d => HangarEditor.SetEngineCount(d, p, (int)(HangarParts.Body(d, p)?.Num("engineCount") ?? 1) + dir), key), End, k + ".engines", refreshers, null,
+                dir =>
+                {
+                    int n = (int)(Body(p)?.Num("engineCount") ?? 1) + dir;
+                    return n >= DesignerLimits.Active.engineCountMin && n <= DesignerLimits.Active.engineCountMax;
+                }));
             var noz = HangarEditor.NozzleChoices(C, D, p);
             if (noz.Count > 1)
             {
@@ -338,7 +343,8 @@ namespace Kestrel.Slice
             }
             content.Add(ui.Chips("Fuel", props, () => Body(p)?.Str("propellant"), id => Do(d => HangarEditor.SetPropellant(C, d, p, id)), refreshers));
             content.Add(ui.Stepper("Fuel load", () => HangarFormat.Tons(Body(p)?.Num("propMass") ?? 0), () => engineer ? null : "More fuel goes further but weighs more",
-                (dir, key) => Do(d => HangarEditor.SetPropMass(d, p, HangarFormat.StepProp(HangarParts.Body(d, p)?.Num("propMass") ?? 0, dir)), key), End, k + ".prop", refreshers));
+                (dir, key) => Do(d => HangarEditor.SetPropMass(d, p, HangarFormat.StepProp(HangarParts.Body(d, p)?.Num("propMass") ?? 0, dir)), key), End, k + ".prop", refreshers, null,
+                dir => HangarFormat.PropCanStep(Body(p)?.Num("propMass") ?? 0, dir)));
             content.Add(ui.Stepper("Tank length", () => HangarFormat.Metres(HangarEditor.TankLength(C, Body(p))), () => "Longer tank, more fuel",
                 (dir, key) => Do(d => HangarEditor.SetTankLength(C, d, p, HangarEditor.TankLength(C, HangarParts.Body(d, p)) + dir * 0.5), key), End, k + ".len", refreshers));
             content.Add(ui.Stepper("Width", () => HangarFormat.Metres(Body(p)?.Num("diameter") ?? 0), () => "Wider fits more engines",

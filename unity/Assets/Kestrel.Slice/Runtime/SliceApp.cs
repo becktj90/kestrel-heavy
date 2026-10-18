@@ -413,15 +413,27 @@ namespace Kestrel.Slice
             issueChip.style.paddingTop = 6f * upp; issueChip.style.paddingBottom = 6f * upp;
             // Thumb row: 44 pt tools and a 52 pt Launch.
             var designerToggle = ui.Q<Button>(DesignerV3Panel.ToggleName);
+            bool narrowThumb = ui.layout.width <= 420f || WebLayoutMode.UseWide(Screen.width, Screen.height);
             foreach (var b in new[] { undoButton, redoButton, explodeButton, designerToggle })
             {
                 if (b == null) continue;
-                b.style.height = 52f * upp; b.style.minWidth = 56f * upp; b.style.fontSize = 15f * upp;
+                b.style.height = narrowThumb ? StyleKeyword.Auto : 52f * upp;
+                b.style.minHeight = 44f * upp;
+                b.style.minWidth = (narrowThumb ? 44f : 56f) * upp;
+                b.style.fontSize = (narrowThumb ? 13f : 15f) * upp;
+                b.style.flexShrink = 1;
+                b.style.whiteSpace = WhiteSpace.Normal;
+                b.style.overflow = Overflow.Visible;
                 b.style.marginRight = 6f * upp;
                 float r = 12f * upp;
                 b.style.borderTopLeftRadius = r; b.style.borderTopRightRadius = r; b.style.borderBottomLeftRadius = r; b.style.borderBottomRightRadius = r;
             }
-            launchButton.style.height = 52f * upp; launchButton.style.fontSize = 20f * upp;
+            launchButton.style.height = narrowThumb ? StyleKeyword.Auto : 52f * upp;
+            launchButton.style.minHeight = 44f * upp;
+            launchButton.style.fontSize = (narrowThumb ? 16f : 20f) * upp;
+            launchButton.style.flexShrink = 1;
+            launchButton.style.whiteSpace = WhiteSpace.Normal;
+            launchButton.style.overflow = Overflow.Visible;
             launchReason.style.fontSize = 14f * upp;
 
             bool side = HangarPanelLayout.SidePanel(Screen.width, Screen.height);
@@ -443,11 +455,24 @@ namespace Kestrel.Slice
                 designPanel.style.width = StyleKeyword.Null;
                 designPanel.style.top = StyleKeyword.Null;
                 designPanel.style.paddingBottom = designCollapsed ? bottom : Mathf.Max(8f * upp, bottom + 8f * upp);
+                float contentCap = DesignerV3Layout.ContentMaxPt(hPt, safeBottomPt, true) * upp;
+                float minPx = DesignerV3Layout.MinContentPt * upp;
+                if (contentCap < minPx) contentCap = -1f;
                 panel?.SetContentMax(HangarPanelLayout.ContentMaxPt(hPt, safeBottomPt) * upp);
-                designer?.SetContentMax(DesignerV3Layout.ContentMaxPt(hPt, safeBottomPt, true) * upp);
-                designBody.style.flexGrow = 0;
-                if (designer != null) designer.Root.style.flexGrow = 0;
+                designer?.SetContentMax(contentCap);
+                designBody.style.flexGrow = 1;
+                designBody.style.minHeight = 0;
+                if (designer != null)
+                {
+                    designer.Root.style.flexGrow = 1;
+                    designer.Root.style.flexShrink = 1;
+                    designer.Root.style.minHeight = minPx;
+                }
             }
+            var thumb = ui.Q("launch-row");
+            float thumbW = thumb != null && thumb.resolvedStyle.width > 8f ? thumb.resolvedStyle.width : designPanel.resolvedStyle.width;
+            if (thumbW < 8f) thumbW = ui.layout.width;
+            DesignerV3Layout.FitThumbRow(thumb, narrowThumb ? Mathf.Min(thumbW, 420f) : thumbW, upp);
             ApplyWebDesignFrame();
         }
 
@@ -515,17 +540,27 @@ namespace Kestrel.Slice
             if (session == null || issueChip == null) return;
             bool engineer = panel != null ? panel.Engineer : PlayerPrefs.GetInt(HangarPanel.EngineerPref, 0) != 0;
             var adv = session.Advisories;
-            int blocks = 0, warns = 0;
-            foreach (var a in adv) { if (a.severity == AdvisorySeverity.Block) blocks++; else if (a.severity == AdvisorySeverity.Warn) warns++; }
-            string chip = DesignerValidation.Chip(blocks, warns, engineer ? "engineer" : "standard");
+            System.Collections.Generic.IList<FlightRisk> risks = null;
+            try { risks = Readout.Quick(session.catalog, session.Design).risks; }
+            catch (System.Exception) { risks = null; }
+            var notices = DesignerNotices.Collect(adv, risks);
+            int blocks = 0;
+            foreach (var a in adv) if (a.severity == AdvisorySeverity.Block) blocks++;
+            string chip = DesignerNotices.Chip(notices);
             issueChip.text = chip;
             issueChip.EnableInClassList("hidden", chip.Length == 0 || designPanel.ClassListContains("hidden"));
             issueChip.EnableInClassList("warn-only", blocks == 0);
-            issueChip.tooltip = chip.Length == 0 ? "" : chip + ". " + adv[0].kid + " Tap to see them all.";
+            string first = notices.Count > 0 ? notices[0].text : "";
+            issueChip.tooltip = chip.Length == 0 ? "" : chip + ". " + first + " Tap to see them all.";
             bool ok = session.LaunchEnabled;
             launchButton.SetEnabled(ok);
             var firstBlock = adv.Find(a => a.severity == AdvisorySeverity.Block);
-            string reason = ok ? "" : "Fix first: " + (firstBlock != null ? (engineer ? firstBlock.engineer : firstBlock.kid) : DesignerValidation.KidFallback);
+            string reasonBody = firstBlock == null
+                ? DesignerValidation.KidFallback
+                : engineer
+                    ? ShownText.Screen(string.IsNullOrEmpty(firstBlock.engineer) ? firstBlock.kid : firstBlock.engineer)
+                    : ShownText.Plain(firstBlock.code, firstBlock.kid, firstBlock.engineer);
+            string reason = ok ? "" : "Fix first: " + reasonBody;
             launchReason.text = reason;
             launchReason.EnableInClassList("hidden", ok);
             launchButton.tooltip = ok ? "Roll out and launch the current design" : "Launch unavailable. " + reason;

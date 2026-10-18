@@ -34,6 +34,9 @@ namespace Kestrel.Game.Tests
             new Device("SE", 375f, 667f),
             new Device("ProMax", 440f, 956f),
             new Device("iPad", 1032f, 1376f),
+            new Device("Phone335", 335f, 700f),
+            new Device("WebLandscape", 1280f, 800f),
+            new Device("PartsColumn", 307f, 800f),
         };
 
         static Catalog catalog;
@@ -166,8 +169,10 @@ namespace Kestrel.Game.Tests
                 session.Apply(d => DesignerKnobs.NudgeMixture(d, 0, 1));
                 Assert.AreEqual(180f, scroll.scrollOffset.y, 1f);
                 panel.Show(DesignerV3Tab.Tanks);
-                Assert.AreEqual(0f, scroll.scrollOffset.y, 1f);
-                Assert.IsNotNull(panel.Root.Q("field-propMass"));
+                Assert.AreEqual(0f, scroll.scrollOffset.y, 1f, "a tab that has not been opened starts at the top");
+                panel.Show(DesignerV3Tab.Engines);
+                Assert.AreEqual(180f, scroll.scrollOffset.y, 1f, "returning to a tab restores its scroll");
+                Assert.IsNotNull(panel.Root.Q("field-engine"));
             }
             finally { panel.Detach(); }
         }
@@ -284,6 +289,102 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        [Test]
+        public void NarrowPortraitAndLandscape_KeepWordsGlyphsAndAContentArea()
+        {
+            var fonts = new[]
+            {
+                Resources.Load<Font>("KHFonts/Fraunces-Bold"),
+                Resources.Load<Font>("KHFonts/Fraunces-Black"),
+                Resources.Load<Font>("KHFonts/SpaceGrotesk-Medium"),
+                Resources.Load<Font>("KHFonts/SpaceGrotesk-Bold"),
+            };
+            foreach (var font in fonts) Assert.That(font, Is.Not.Null);
+            foreach (var sample in ShownText.Samples())
+                AssertDrawn(fonts, sample, "sample");
+
+            float[] widths = { 335f, 307f, 375f, 1280f };
+            float[] heights = { 700f, 800f, 667f, 800f };
+            for (int i = 0; i < widths.Length; i++)
+            {
+                using (var surface = DeviceSurface.Open(widths[i], heights[i]))
+                {
+                    var design = Template("workhorse");
+                    JsonMut.Set(design, "missionId", "m1");
+                    var session = new HangarSession(catalog, data, design);
+                    var panel = new DesignerV3Panel(session, new VisualElement(), 1f);
+                    try
+                    {
+                        panel.SetEngineer(true);
+                        panel.SetTutorial(true);
+                        panel.Show(DesignerV3Tab.Engines);
+                        var root = panel.Root;
+                        root.style.width = widths[i];
+                        root.style.height = heights[i];
+                        surface.Stage.Add(root);
+                        panel.SetContentMax(40f);
+                        surface.Pump(6);
+
+                        var scroll = root.Q<ScrollView>("designer-scroll");
+                        Assert.That(scroll, Is.Not.Null, widths[i].ToString());
+                        Assert.That(scroll.resolvedStyle.minHeight, Is.GreaterThanOrEqualTo(100f), widths[i] + " content");
+                        Assert.IsNull(root.Query<ScrollView>().ToList().Find(s => s.mode == ScrollViewMode.Horizontal), widths[i] + " horizontal scroller");
+
+                        var maxQ = root.Q<Label>("strip-label-q");
+                        Assert.That(maxQ, Is.Not.Null);
+                        Assert.AreEqual("Max-Q", maxQ.text);
+                        var cost = root.Q<Label>("strip-value-cost");
+                        Assert.That(cost, Is.Not.Null);
+                        Assert.That(cost.style.whiteSpace.value, Is.EqualTo(WhiteSpace.NoWrap));
+                        StringAssert.DoesNotContain(".00", cost.text);
+
+                        var dec = root.Q<Label>("stepper-dec");
+                        Assert.That(dec, Is.Not.Null, widths[i] + " minus");
+                        Assert.AreEqual("-", dec.text);
+                        Assert.IsNotNull(root.Q("stepper-inc"));
+
+                        panel.Stepper.EnterGuided();
+                        if (!panel.Stepper.PressJump(DesignerStep.Engines))
+                            panel.Stepper.PressForward();
+                        surface.Pump(4);
+                        Assert.IsNull(panel.Stepper.Root.Query<ScrollView>().ToList().Find(s => s.mode == ScrollViewMode.Horizontal), widths[i] + " stepper scroller");
+                        var guidedDec = panel.Stepper.Root.Q<Label>("stepper-dec");
+                        Assert.That(guidedDec, Is.Not.Null, widths[i] + " guided minus");
+                        Assert.AreEqual("-", guidedDec.text);
+
+                        var banner = root.Q("tutorial-banner");
+                        if (banner != null)
+                        {
+                            string tour = "";
+                            banner.Query<Label>().ForEach(label => tour += " " + label.text);
+                            StringAssert.DoesNotContain("Low Earth Orbit", tour);
+                        }
+
+                        root.Query<Label>().ForEach(label => { if (Shown(label)) AssertDrawn(fonts, label.text, widths[i] + " " + label.name); });
+                        root.Query<Button>().ForEach(button => { if (Shown(button)) AssertDrawn(fonts, button.text, widths[i] + " " + button.name); });
+                        panel.Stepper.Root.Query<Label>().ForEach(label => { if (Shown(label)) AssertDrawn(fonts, label.text, widths[i] + " stepper " + label.name); });
+                        panel.Stepper.Root.Query<Button>().ForEach(button => { if (Shown(button)) AssertDrawn(fonts, button.text, widths[i] + " stepper " + button.name); });
+                    }
+                    finally { panel.Detach(); }
+                }
+            }
+        }
+
+        static void AssertDrawn(Font[] fonts, string text, string where)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            Assert.IsTrue(ShownText.Covered(text), where + " " + text);
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (c == '\n' || c == '\r' || c == '\t') continue;
+                bool drawn = false;
+                for (int f = 0; f < fonts.Length; f++)
+                    if (fonts[f] != null && fonts[f].HasCharacter(c)) { drawn = true; break; }
+                Assert.IsTrue(drawn, where + " missing '" + c + "' in " + text);
+            }
+        }
+
         static void Expect(DesignerV3Panel panel, DesignerV3Tab tab, params string[] names)
         {
             Assert.DoesNotThrow(() => panel.Show(tab), tab.ToString());
@@ -352,7 +453,7 @@ namespace Kestrel.Game.Tests
             root.Query<VisualElement>().ForEach(el =>
             {
                 if (!Shown(el)) return;
-                bool hold = el is Label && (el is Label label && (label.text == "−" || label.text == "+"));
+                bool hold = el.name == "stepper-dec" || el.name == "stepper-inc";
                 bool button = el is Button;
                 bool field = el is TextField;
                 if (!hold && !button && !field) return;

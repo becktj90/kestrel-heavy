@@ -3,6 +3,7 @@
 // Every tap target is at least 44 pt. Steppers repeat while held and fold the repeats into one undo step.
 using System;
 using System.Collections.Generic;
+using Kestrel.Core.Designer;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -45,7 +46,7 @@ namespace Kestrel.Slice
 
         public Label Text(string text, float pt = BodyPt, Color? color = null, bool bold = false)
         {
-            var l = new Label(text);
+            var l = new Label(ShownText.Screen(text));
             l.style.fontSize = U(pt);
             l.style.color = color ?? TextColor;
             l.style.whiteSpace = WhiteSpace.Normal;
@@ -90,7 +91,7 @@ namespace Kestrel.Slice
         /// <summary>A 44 pt button. The tooltip doubles as the accessibility label (project convention).</summary>
         public Button Btn(string text, Action onClick, string tooltip = null, Color? bg = null, Color? fg = null, float minWidthPt = TargetPt)
         {
-            var b = new Button(onClick) { text = text };
+            var b = new Button(onClick) { text = ShownText.Screen(text) };
             b.tooltip = tooltip ?? text;
             b.style.minHeight = U(TargetPt); b.style.height = U(TargetPt);
             b.style.minWidth = U(minWidthPt);
@@ -125,7 +126,10 @@ namespace Kestrel.Slice
             var col = Column();
             col.style.marginTop = U(4f);
             if (!string.IsNullOrEmpty(label)) col.Add(Text(label, SmallPt, Dim));
-            var strip = new ScrollView(ScrollViewMode.Horizontal);
+            var strip = new VisualElement { name = "chip-row" };
+            strip.style.flexDirection = FlexDirection.Row;
+            strip.style.flexWrap = Wrap.Wrap;
+            strip.style.width = Length.Percent(100);
             strip.style.flexShrink = 0;
             var buttons = new List<(Button b, Choice c)>();
             foreach (var ch in choices)
@@ -133,6 +137,7 @@ namespace Kestrel.Slice
                 var c = ch;
                 Button b = null;
                 b = Btn(c.locked ? c.text + " (locked)" : c.text, () => { if (!c.locked) pick(c.id); }, c.tooltip ?? c.text);
+                b.style.flexShrink = 1;
                 buttons.Add((b, c));
                 strip.Add(b);
             }
@@ -151,32 +156,49 @@ namespace Kestrel.Slice
         /// "Label   value   [−] [+]" with a hint line. Holding a button repeats; all repeats share
         /// <paramref name="gestureKey"/> so they fold into one undo step, sealed on release by <paramref name="release"/>.
         /// </summary>
-        public VisualElement Stepper(string label, Func<string> value, Func<string> hint, Action<int, string> step, Action release, string gestureKey, List<Action> refreshers, string tooltip = null)
+        public VisualElement Stepper(string label, Func<string> value, Func<string> hint, Action<int, string> step, Action release, string gestureKey, List<Action> refreshers, string tooltip = null, Func<int, bool> allowed = null)
         {
             var row = Row(2f);
-            var left = Column(); left.style.flexGrow = 1; left.style.flexShrink = 1;
+            var left = Column(); left.style.flexGrow = 1; left.style.flexShrink = 1; left.style.minWidth = 0;
             var name = Text(label, BodyPt);
+            name.style.whiteSpace = WhiteSpace.Normal;
             var val = Text("", TitlePt, TextColor, bold: true);
+            val.style.whiteSpace = WhiteSpace.NoWrap;
             var h = Text("", SmallPt, Dim);
+            h.style.whiteSpace = WhiteSpace.Normal;
             left.Add(name); left.Add(val); left.Add(h);
             row.Add(left);
-            row.Add(Hold("−", -1, step, release, gestureKey, (tooltip ?? label) + ", less"));
-            row.Add(Hold("+", +1, step, release, gestureKey, (tooltip ?? label) + ", more"));
+            var dec = Hold("-", -1, step, release, gestureKey, (tooltip ?? label) + ", less", allowed);
+            dec.name = "stepper-dec";
+            var inc = Hold("+", +1, step, release, gestureKey, (tooltip ?? label) + ", more", allowed);
+            inc.name = "stepper-inc";
+            row.Add(dec);
+            row.Add(inc);
             void Refresh()
             {
-                val.text = value();
+                val.text = ShownText.Screen(value());
                 string ht = hint?.Invoke();
-                h.text = ht ?? "";
+                h.text = ShownText.Screen(ht ?? "");
                 h.style.display = string.IsNullOrEmpty(ht) ? DisplayStyle.None : DisplayStyle.Flex;
+                PaintBound(dec, -1, allowed);
+                PaintBound(inc, +1, allowed);
             }
             Refresh();
             refreshers?.Add(Refresh);
             return row;
         }
 
-        VisualElement Hold(string glyph, int dir, Action<int, string> step, Action release, string key, string tooltip)
+        static void PaintBound(VisualElement button, int dir, Func<int, bool> allowed)
         {
-            var b = new Label(glyph) { tooltip = tooltip };
+            bool ok = allowed == null || allowed(dir);
+            button.style.opacity = ok ? 1f : 0.35f;
+            button.SetEnabled(ok);
+        }
+
+        VisualElement Hold(string glyph, int dir, Action<int, string> step, Action release, string key, string tooltip, Func<int, bool> allowed)
+        {
+            var b = new Label(ShownText.Screen(glyph)) { tooltip = ShownText.Screen(tooltip) };
+            b.pickingMode = PickingMode.Position;
             b.style.width = U(TargetPt); b.style.height = U(TargetPt); b.style.minWidth = U(TargetPt);
             b.style.fontSize = U(24f);
             b.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -197,10 +219,11 @@ namespace Kestrel.Slice
             b.RegisterCallback<PointerDownEvent>(e =>
             {
                 if (down) return;
+                if (allowed != null && !allowed(dir)) return;
                 down = true;
                 b.style.backgroundColor = ChipOn;
                 step(dir, key);
-                repeat = b.schedule.Execute(() => { if (down) step(dir, key); }).StartingIn(RepeatDelayMs).Every(RepeatEveryMs);
+                repeat = b.schedule.Execute(() => { if (down && (allowed == null || allowed(dir))) step(dir, key); }).StartingIn(RepeatDelayMs).Every(RepeatEveryMs);
                 e.StopPropagation();
             });
             b.RegisterCallback<PointerUpEvent>(e => Stop());

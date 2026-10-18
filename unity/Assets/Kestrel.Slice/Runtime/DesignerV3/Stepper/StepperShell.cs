@@ -66,6 +66,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         string focusField;
         string shownCode;
         string fixNote;
+        string compareBefore;
+        string compareAfter;
         VisualElement focusEl;
         Label checkBody;
         Label checkExtra;
@@ -326,8 +328,13 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 };
             }
             if (result == null) return false;
-            fixNote = string.IsNullOrEmpty(result.Instruction) ? null : result.Instruction;
+            fixNote = string.IsNullOrEmpty(result.Instruction) ? null : ShownText.Screen(result.Instruction);
             keepInstruction = !string.IsNullOrEmpty(fixNote);
+            if (!string.IsNullOrEmpty(result.BeforeNumbers) || !string.IsNullOrEmpty(result.AfterNumbers))
+            {
+                compareBefore = result.BeforeNumbers;
+                compareAfter = result.AfterNumbers;
+            }
             shownCode = code;
             Sync();
             return result.Cleared;
@@ -359,6 +366,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             root.tooltip = "Guided designer. " + StepperCatalog.Header(progress.Current) + ". " + def.Title + ".";
             root.Add(Header(ui, def));
             root.Add(Progress(ui));
+            var compare = CompareBanner(ui);
+            if (compare != null) root.Add(compare);
             if (!engineer) root.Add(CheckCard(ui, check));
 
             scroll = new ScrollView(ScrollViewMode.Vertical) { name = "stepper-scroll" };
@@ -443,16 +452,16 @@ namespace Kestrel.Slice.DesignerV3.Stepper
 
         VisualElement Progress(HangarUi ui)
         {
-            var scroller = new ScrollView(ScrollViewMode.Horizontal) { name = "stepper-progress-scroll" };
+            var scroller = new VisualElement { name = "stepper-progress-scroll" };
             scroller.style.flexGrow = 0;
             scroller.style.flexShrink = 0;
-            scroller.style.height = ui.U(StepperLayout.ProgressPt);
             scroller.style.minHeight = ui.U(HangarUi.TargetPt);
-            scroller.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
-            scroller.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroller.style.width = Length.Percent(100);
+            scroller.style.overflow = Overflow.Visible;
             var row = ui.Row(2f);
             row.name = "stepper-progress";
-            row.style.flexWrap = Wrap.NoWrap;
+            row.style.flexWrap = Wrap.Wrap;
+            row.style.width = Length.Percent(100);
             row.style.flexGrow = 0;
             row.style.flexShrink = 0;
             row.style.alignSelf = Align.FlexStart;
@@ -464,9 +473,9 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 var button = new Button(() => PressJump(step));
                 button.name = "stepper-seg-" + def.Number;
                 button.AddToClassList("stepper-seg");
-                button.style.flexGrow = 0;
-                button.style.flexShrink = 0;
-                button.style.minWidth = ui.U(StepperLayout.SegmentMinPt);
+                button.style.flexGrow = 1;
+                button.style.flexShrink = 1;
+                button.style.minWidth = ui.U(64f);
                 button.style.height = ui.U(StepperLayout.ProgressPt);
                 button.style.minHeight = ui.U(HangarUi.TargetPt);
                 button.style.fontSize = ui.U(12f);
@@ -634,10 +643,13 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         {
             var card = ui.CardBox();
             card.name = "stepper-check";
+            card.style.overflow = Overflow.Visible;
+            card.style.width = Length.Percent(100);
             card.Add(ui.Section("Check before next"));
             checkBody = ui.Text("", HangarUi.BodyPt, HangarUi.TextColor, bold: true);
             checkBody.name = "stepper-check-body";
             checkBody.style.whiteSpace = WhiteSpace.Normal;
+            checkBody.style.overflow = Overflow.Visible;
             card.Add(checkBody);
             checkExtra = ui.Text("", HangarUi.SmallPt, HangarUi.Dim);
             checkExtra.name = "stepper-check-extra";
@@ -653,7 +665,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             if (checkBody == null || check == null) return;
             string main = Headline(check);
             string extra = Detail(check, main);
-            string mark = check.Gate == StepGate.Red ? "✕" : check.Gate == StepGate.Amber ? "!" : check.Gate == StepGate.Skip ? "–" : "✓";
+            string mark = check.Gate == StepGate.Red ? "x" : check.Gate == StepGate.Amber ? "!" : check.Gate == StepGate.Skip ? "-" : "OK";
             checkBody.text = mark + "  " + main;
             checkBody.style.color = StateColor(GateColor(check.Gate));
             checkExtra.text = extra ?? "";
@@ -874,11 +886,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
 
         void ConsumeNote(StepCheck check)
         {
-            if (!keepInstruction)
-            {
-                if (check == null || check.Gate == StepGate.Pass || (shownCode != null && check.Code != shownCode))
-                    fixNote = null;
-            }
+            if (!keepInstruction) fixNote = null;
             shownCode = check != null ? check.Code : null;
             keepInstruction = false;
         }
@@ -1076,7 +1084,57 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         void ApplyScrollMax()
         {
             if (scroll == null) return;
-            scroll.style.maxHeight = scrollMax > 0f ? scrollMax : StyleKeyword.Null;
+            float minPx = bridge.Ui.U(DesignerV3Layout.MinContentPt);
+            scroll.style.minHeight = minPx;
+            scroll.style.flexGrow = 1;
+            scroll.style.flexShrink = 1;
+            float cap = scrollMax;
+            if (cap > 0f && cap < minPx) cap = 0f;
+            scroll.style.maxHeight = cap > 0f ? cap : StyleKeyword.Null;
+        }
+
+        VisualElement CompareBanner(HangarUi ui)
+        {
+            if (string.IsNullOrEmpty(compareBefore) && string.IsNullOrEmpty(compareAfter) && string.IsNullOrEmpty(fixNote))
+                return null;
+            var card = ui.Column();
+            card.name = "stepper-compare";
+            card.style.width = Length.Percent(100);
+            card.style.overflow = Overflow.Visible;
+            card.style.backgroundColor = HangarUi.Card;
+            ui.Radius(card.style, 12f);
+            ui.Pad(card.style, 8f, 10f);
+            card.style.marginTop = ui.U(4f);
+            card.style.marginBottom = ui.U(4f);
+            var title = ui.Text("Before and after", HangarUi.BodyPt, HangarUi.TextColor, bold: true);
+            title.name = "stepper-compare-title";
+            title.style.whiteSpace = WhiteSpace.Normal;
+            card.Add(title);
+            if (!string.IsNullOrEmpty(compareBefore))
+            {
+                var before = ui.Text("Before: " + compareBefore, HangarUi.BodyPt, HangarUi.TextColor, bold: true);
+                before.name = "stepper-compare-before";
+                before.style.whiteSpace = WhiteSpace.Normal;
+                before.style.overflow = Overflow.Visible;
+                card.Add(before);
+            }
+            if (!string.IsNullOrEmpty(compareAfter))
+            {
+                var after = ui.Text("After: " + compareAfter, HangarUi.BodyPt, HangarUi.ChipOn, bold: true);
+                after.name = "stepper-compare-after";
+                after.style.whiteSpace = WhiteSpace.Normal;
+                after.style.overflow = Overflow.Visible;
+                card.Add(after);
+            }
+            if (!string.IsNullOrEmpty(fixNote))
+            {
+                var note = ui.Text(fixNote, HangarUi.BodyPt);
+                note.name = "stepper-compare-note";
+                note.style.whiteSpace = WhiteSpace.Normal;
+                note.style.overflow = Overflow.Visible;
+                card.Add(note);
+            }
+            return card;
         }
 
         static void StyleNav(HangarUi ui, Button button, bool primary)
@@ -1117,10 +1175,10 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         {
             switch (mark)
             {
-                case StepMark.Done: return "✓";
+                case StepMark.Done: return "OK";
                 case StepMark.Warn: return "!";
-                case StepMark.Failed: return "✕";
-                case StepMark.Skipped: return "–";
+                case StepMark.Failed: return "x";
+                case StepMark.Skipped: return "-";
                 default: return number.ToString(System.Globalization.CultureInfo.InvariantCulture);
             }
         }

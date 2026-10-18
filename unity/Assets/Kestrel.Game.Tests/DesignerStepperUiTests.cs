@@ -379,7 +379,7 @@ namespace Kestrel.Game.Tests
                 if (cleared)
                 {
                     Assert.AreNotEqual("maxq-high", StepperModel.Evaluate(C, session.Design)[DesignerStep.Tanks].Code);
-                    StringAssert.Contains("→", note);
+                    StringAssert.Contains(" to ", note);
                 }
                 else
                     Assert.That(note, Does.Match(@"\d"));
