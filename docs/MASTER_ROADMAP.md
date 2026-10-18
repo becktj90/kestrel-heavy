@@ -179,3 +179,7 @@ Parallel split (DECISIONS #45). Each owner edits only their paths; cross-path ch
 Also: Narrator Voice (scripts/clips) · Marketing (launch/store).
 
 Decision log: DECISIONS.md. Living context: PROJECT_STATE.md.
+
+## Oct 18 status
+- Done: campaign winnability pass, designer/menu/flight audits, Home and result card fixes.
+- Next: time of day (#271) then mission pick rules; pro mission badge art; further QA and performance passes; web build syncs from main automatically, so main must stay playable.
