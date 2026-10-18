@@ -94,26 +94,35 @@ namespace Kestrel.Game.Tests
         [Test]
         public void ShortColumnReleasesCapsWhenTheViewportGrows()
         {
-            // A short phone column pins max-height (and may clip the title). Growing into a
+            // A short phone column pins max-height (and may clip the title). Growing back to a
             // reference portrait used to leave those caps in place, so LAUNCH stayed compressed
             // and the wordmark stayed clipped. Same elements, no rebuild.
+            // The root is given an explicit height: in the editor panel the percent chain above
+            // it does not always resolve, and a content-sized root never overflows.
             MainMenuOverlay.ForceWide = false;
-            using (var surface = DeviceSurface.Open(640f, 260f))
+            using (var surface = DeviceSurface.Open(390f, 844f))
             {
                 var shell = MountHome(surface.Stage, 0f, 0f);
-                surface.Pump(8);
+                surface.Pump(6);
                 var root = shell.Q(MainMenuOverlay.RootName);
                 var launch = root.Q<Button>("home-launch");
                 var title = root.Q("mm-title");
                 Assert.That(launch, Is.Not.Null);
                 Assert.That(title, Is.Not.Null);
-                Assert.That(ColumnCapped(root), Is.True,
-                    "short column did not contain " + CapDescribe(root));
 
-                surface.Resize(390f, 844f);
+                root.style.bottom = StyleKeyword.Auto;
+                root.style.height = 220f;
+                surface.Pump(6);
+                Assert.That(ColumnCapped(root), Is.True,
+                    "short column did not contain " + CapDescribe(root) + " root " + root.layout.height);
+
+                root.style.height = StyleKeyword.Null;
+                root.style.bottom = 0f;
+                surface.Pump(8);
                 float w = shell.resolvedStyle.width;
                 float h = shell.resolvedStyle.height;
-                Assert.That(h, Is.GreaterThan(700f), "portrait column did not grow " + w + "x" + h);
+                Assert.That(h, Is.GreaterThan(700f), "portrait shell " + w + "x" + h);
+                Assert.That(root.layout.height, Is.GreaterThan(700f), "portrait column " + root.layout.height);
                 var z = MenuTypeScale.Compute(w, h, 0f, 0f);
                 var word = root.Q<Label>("mm-kestrel");
                 var cap = launch.resolvedStyle.maxHeight;
@@ -437,44 +446,6 @@ namespace Kestrel.Game.Tests
                 if (!s.Sized(w, h))
                     Assert.Fail("panel did not take the device size " + w + "x" + h + " (" + s.How + ") " + s.Diagnostic());
                 return s;
-            }
-
-            public void Resize(float w, float h)
-            {
-                if (_window != null)
-                {
-                    _window.minSize = new Vector2(8f, 8f);
-                    _window.maxSize = new Vector2(w, h);
-                    _window.minSize = new Vector2(w, h);
-                    _window.position = new Rect(0f, 0f, w, h);
-                }
-                if (_rt != null)
-                {
-                    _rt.Release();
-                    UnityEngine.Object.DestroyImmediate(_rt);
-                    _rt = new RenderTexture(Mathf.Max(8, (int)w), Mathf.Max(8, (int)h), 0, RenderTextureFormat.ARGB32);
-                    _rt.Create();
-                    if (_settings != null) _settings.targetTexture = _rt;
-                    ApplySettings();
-                }
-                if (Stage != null)
-                {
-                    var tree = Stage.panel != null ? Stage.panel.visualTree : null;
-                    if (tree != null)
-                    {
-                        tree.style.width = w;
-                        tree.style.height = h;
-                    }
-                    var panelRoot = Stage.parent;
-                    if (panelRoot != null)
-                    {
-                        panelRoot.style.width = w;
-                        panelRoot.style.height = h;
-                    }
-                    Stage.style.width = w;
-                    Stage.style.height = h;
-                }
-                Pump(8);
             }
 
             public void Pump(int passes)
