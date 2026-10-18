@@ -18,7 +18,7 @@ namespace UnityEngine.UIElements
     public struct StyleFloat { public float value; public StyleKeyword keyword; public static implicit operator StyleFloat(float v) => default; public static implicit operator StyleFloat(StyleKeyword v) => default; }
     public struct StyleInt { public int value; public static implicit operator StyleInt(int v) => default; }
     public struct StyleColor { public Color value; public StyleColor(Color v) { value = v; } public static implicit operator StyleColor(Color v) => default; public static implicit operator StyleColor(StyleKeyword v) => default; }
-    public struct StyleEnum<T> where T : struct, IConvertible { public T value; public StyleKeyword keyword; public static implicit operator StyleEnum<T>(T v) => default; public static implicit operator StyleEnum<T>(StyleKeyword v) => default; }
+    public struct StyleEnum<T> where T : struct, IConvertible { public T value; public StyleKeyword keyword; public static implicit operator StyleEnum<T>(T v) => default; public static implicit operator StyleEnum<T>(StyleKeyword v) => default; public static bool operator ==(StyleEnum<T> lhs, T rhs) => false; public static bool operator !=(StyleEnum<T> lhs, T rhs) => false; public static bool operator ==(StyleEnum<T> lhs, StyleEnum<T> rhs) => false; public static bool operator !=(StyleEnum<T> lhs, StyleEnum<T> rhs) => false; public override bool Equals(object o) => false; public override int GetHashCode() => 0; }
     public struct StyleBackground { public StyleBackground(Texture2D v) { } public StyleBackground(StyleKeyword k) { } public static implicit operator StyleBackground(Texture2D v) => default; }
     public enum Repeat { NoRepeat, Space, Round, Repeat }
     public struct BackgroundRepeat { public BackgroundRepeat(Repeat x, Repeat y) { } }
@@ -30,7 +30,7 @@ namespace UnityEngine.UIElements
     public struct StyleTranslate { public static implicit operator StyleTranslate(Translate t) => default; public static implicit operator StyleTranslate(StyleKeyword k) => default; }
     public enum TextOverflow { Clip, Ellipsis }
     public struct FontDefinition { public Font font; public static FontDefinition FromFont(Font f) => default; }
-    public struct StyleFontDefinition { public FontDefinition value; public StyleFontDefinition(FontDefinition d) { value = d; } public static implicit operator StyleFontDefinition(StyleKeyword k) => default; }
+    public struct StyleFontDefinition { public FontDefinition value; public StyleFontDefinition(FontDefinition d) { value = d; } public static implicit operator StyleFontDefinition(StyleKeyword k) => default; public static implicit operator StyleFontDefinition(FontDefinition d) => default; }
     public enum Wrap { NoWrap, Wrap, WrapReverse }
     public enum WhiteSpace { Normal, NoWrap }
     public interface IResolvedStyle { float width { get; } float height { get; } float left { get; } float top { get; } float right { get; } float bottom { get; } float paddingTop { get; } float paddingRight { get; } float paddingLeft { get; } float paddingBottom { get; } float fontSize { get; } float opacity { get; } DisplayStyle display { get; } StyleFloat maxHeight { get; } Color backgroundColor { get; } }
