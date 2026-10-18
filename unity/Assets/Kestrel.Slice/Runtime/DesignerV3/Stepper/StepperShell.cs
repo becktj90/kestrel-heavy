@@ -666,9 +666,9 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             string main = Headline(check);
             string extra = Detail(check, main);
             string mark = check.Gate == StepGate.Red ? "x" : check.Gate == StepGate.Amber ? "!" : check.Gate == StepGate.Skip ? "-" : "OK";
-            checkBody.text = mark + "  " + main;
+            checkBody.text = ShownText.Screen(mark + "  " + main);
             checkBody.style.color = StateColor(GateColor(check.Gate));
-            checkExtra.text = extra ?? "";
+            checkExtra.text = ShownText.Screen(extra ?? "");
             checkExtra.style.display = string.IsNullOrEmpty(extra) ? DisplayStyle.None : DisplayStyle.Flex;
             if (checkBody.parent != null) checkBody.parent.tooltip = "Check. " + main;
         }
@@ -996,7 +996,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             for (int i = 0; i < n; i++)
             {
                 if (statCache.Count > i && statCache[i].Key != cells[i].Key) continue;
-                statValues[i].text = cells[i].Value;
+                statValues[i].text = ShownText.Screen(cells[i].Value);
                 statValues[i].style.color = StateColor(cells[i].State);
             }
         }

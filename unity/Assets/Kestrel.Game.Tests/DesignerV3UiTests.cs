@@ -126,7 +126,7 @@ namespace Kestrel.Game.Tests
             var s = new HangarSession(C, H, Template("workhorse"));
             int before = (int)(HangarParts.Body(s.Design, PartRef.Stage(0))?.Num("engineCount") ?? 9);
             string chip = DesignerV3Delta.Chip(C, s.Design, d => { HangarEditor.SetEngineCount(d, PartRef.Stage(0), Mathf.Max(1, before - 2)); });
-            StringAssert.Contains("Δv", chip);
+            StringAssert.Contains("m/s dv", chip);
             Assert.AreEqual(before, (int)(HangarParts.Body(s.Design, PartRef.Stage(0))?.Num("engineCount") ?? 0), "clone only");
             Assert.AreEqual(300, DesignerV3Delta.DebounceMs);
         }
@@ -143,7 +143,6 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual(CellState.Bad, DesignerV3Risk.LevelState("red"));
         }
 
-        [Test]
         [Test]
         public void Tutorial_Kh1Hop_NamesTheHopNotLowEarthOrbit()
         {
