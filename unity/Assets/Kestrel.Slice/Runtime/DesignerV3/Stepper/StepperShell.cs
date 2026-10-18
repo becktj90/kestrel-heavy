@@ -195,6 +195,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             foreach (var refresh in refreshers) refresh();
             wasMaxQStale = report.Readout == null || report.Readout.maxQStale;
             GuideBinder.Designer((int)Step, report, bridge.IsEngineer);
+            // Rebuild() paints the panel, but a step change reconstructs this tree on its own.
+            DesignerChrome.Apply(root);
         }
 
         void RefreshInPlace(StepCheck check)
@@ -686,6 +688,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             row.style.marginBottom = ui.U(4f);
             backButton = ui.Btn("<  Back", () => PressBack(), "Previous step", minWidthPt: 88f);
             backButton.name = "stepper-back";
+            backButton.userData = (Action)(() => PressBack());
             StyleNav(ui, backButton, false);
             nextButton = ui.Btn("Next anyway", () => PressForward(), "Go on with the warning", minWidthPt: 120f);
             nextButton.name = "stepper-next";

@@ -5,6 +5,8 @@
 // :focus ring. Reduce Motion: no intro, no transitions (root gets kh-mm-reduce).
 using System;
 using Kestrel.Core.Flight;
+using Kestrel.Game.Audio;
+using Kestrel.Game.Guide;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -206,15 +208,15 @@ namespace Kestrel.Game.Shell
             Clip(root.Q("mm-title"));
             Clip(root.Q("mm-stats"));
             var type = frame.Type;
-            Font(root.Q("mm-kestrel"), type.Title * fs, 0.02f);
-            Font(root.Q("mm-kestrel-shadow"), type.Title * fs, 0.02f);
-            Font(root.Q("mm-eyebrow"), Mathf.Clamp(type.Title * fs * 0.18f, 9f, 13f), 0.12f);
-            Font(root.Q("mm-heavy"), type.Tagline * fs, 0.42f);
+            Font(root.Q("mm-kestrel"), WidePt(type.Title * fs), 0.02f);
+            Font(root.Q("mm-kestrel-shadow"), WidePt(type.Title * fs), 0.02f);
+            Font(root.Q("mm-eyebrow"), Mathf.Clamp(type.Title * fs * 0.18f, WideTypeFloor, 18f), 0.12f);
+            Font(root.Q("mm-heavy"), WidePt(type.Tagline * fs), 0.42f);
             var kestrel = root.Q("mm-kestrel");
             if (kestrel != null) { kestrel.style.whiteSpace = WhiteSpace.NoWrap; kestrel.style.overflow = Overflow.Hidden; }
             var heavy = root.Q("mm-heavy");
             if (heavy != null) { heavy.style.whiteSpace = WhiteSpace.NoWrap; heavy.style.overflow = Overflow.Hidden; }
-            root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = type.Stat * fs);
+            root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = WidePt(type.Stat * fs));
 
             bool scroll = frame.Scroll;
             var scroller = WideScroll(root, scroll);
@@ -271,29 +273,31 @@ namespace Kestrel.Game.Shell
                 tile.style.paddingBottom = 10f * sy;
             }
             PlaceAction(root, slot, "mm-hint", frame.Hint, scroll, sx, sy);
-            Font(root.Q(className: "kh-mm-launch-label"), type.Launch * fs, 0.10f);
-            Font(root.Q(className: "kh-mm-launch-caption"), type.LaunchCaption * fs, 0f);
-            Font(root.Q(className: "kh-mm-design-label"), type.Design * fs, 0.03f);
-            Font(root.Q(className: "kh-mm-design-caption"), type.DesignCaption * fs, 0f);
+            Font(root.Q(className: "kh-mm-launch-label"), WidePt(type.Launch * fs), 0.10f);
+            Font(root.Q(className: "kh-mm-launch-caption"), WidePt(type.LaunchCaption * fs), 0f);
+            Font(root.Q(className: "kh-mm-design-label"), WidePt(type.Design * fs), 0.03f);
+            Font(root.Q(className: "kh-mm-design-caption"), WidePt(type.DesignCaption * fs), 0f);
             root.Query(className: "kh-mm-tile-name").ForEach(e =>
             {
-                e.style.fontSize = type.TileName * fs;
-                e.style.letterSpacing = type.TileName * fs * 0.03f;
+                float name = WidePt(type.TileName * fs);
+                e.style.fontSize = name;
+                e.style.letterSpacing = name * 0.03f;
                 e.style.whiteSpace = WhiteSpace.NoWrap;
                 e.style.overflow = Overflow.Hidden;
             });
             root.Query(className: "kh-mm-tile-caption").ForEach(e =>
             {
-                e.style.fontSize = type.TileCaption * fs;
+                e.style.fontSize = WidePt(type.TileCaption * fs);
                 e.style.whiteSpace = WhiteSpace.Normal;
                 e.style.overflow = Overflow.Hidden;
             });
             root.Query(className: "kh-mm-soon").ForEach(e =>
             {
-                e.style.fontSize = type.Soon * fs;
-                e.style.letterSpacing = type.Soon * fs * 0.15f;
+                float soon = WidePt(type.Soon * fs);
+                e.style.fontSize = soon;
+                e.style.letterSpacing = soon * 0.15f;
             });
-            Font(root.Q("mm-hint-line"), type.Hint * fs, 0f);
+            Font(root.Q("mm-hint-line"), WidePt(type.Hint * fs), 0f);
             var hint = root.Q("mm-hint-line");
             if (hint != null) { hint.style.whiteSpace = WhiteSpace.Normal; hint.style.overflow = Overflow.Hidden; }
             FitCardText(root.Q("home-launch"), true);
@@ -362,6 +366,11 @@ namespace Kestrel.Game.Shell
             if (label != null) { label.style.whiteSpace = WhiteSpace.NoWrap; label.style.overflow = Overflow.Hidden; }
             if (cap != null) { cap.style.whiteSpace = WhiteSpace.Normal; cap.style.overflow = Overflow.Hidden; }
         }
+
+        /// <summary>Wide web labels stay at least 14 pt. The column scrolls when that stack is taller than the screen.</summary>
+        const float WideTypeFloor = 14f;
+
+        static float WidePt(float size) => size < WideTypeFloor ? WideTypeFloor : size;
 
         static void Font(VisualElement e, float size, float trackEm)
         {
@@ -801,25 +810,117 @@ namespace Kestrel.Game.Shell
             var sheet = new VisualElement { name = "home-settings-sheet" };
             sheet.AddToClassList("kh-mm-sheet");
             sheet.style.display = DisplayStyle.None;
-            var title = new Label("Settings") { pickingMode = PickingMode.Ignore };
+            sheet.style.flexDirection = FlexDirection.Column;
+            sheet.style.overflow = Overflow.Hidden;
+            var title = new Label("Settings") { name = "home-settings-title", pickingMode = PickingMode.Ignore };
             title.AddToClassList("kh-mm-sheet-title");
-            var motion = new Button { name = "home-reduce-motion", text = "Reduce motion" };
-            motion.AddToClassList("kh-button");
+            title.style.fontSize = 16;
+            title.style.flexShrink = 0;
+            SettingFont(title, "SpaceGrotesk-Bold");
+
+            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "home-settings-scroll" };
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.style.flexGrow = 1;
+            scroll.style.flexShrink = 1;
+
+            var music = SettingButton("home-setting-music", "Music");
+            var sound = SettingButton("home-setting-sound", "Sound");
+            var voice = SettingButton("home-setting-voice", "Voice");
+            var subtitles = SettingButton("home-setting-subtitles", "Subtitles");
+            var sandbox = SettingButton("home-setting-sandbox", "Sandbox");
+            var motion = SettingButton("home-reduce-motion", "Reduce motion");
             motion.tooltip = "Reduce motion. Holds the menu still.";
-            motion.style.minHeight = 44;
+
+            void PaintMix()
+            {
+                music.text = AudioPrefs.Caption("Music", AudioPrefs.MusicMuted);
+                sound.text = AudioPrefs.Caption("Sound", AudioPrefs.SfxMuted);
+                voice.text = AudioPrefs.Caption("Voice", AudioPrefs.NarrationMuted);
+                music.tooltip = "Music. " + music.text + ".";
+                sound.tooltip = "Sound. " + sound.text + ".";
+                voice.tooltip = "Voice. " + voice.text + ".";
+                AudioBar.Sync(full);
+            }
+            void PaintSubs()
+            {
+                bool on = AudioPrefs.SubtitlesOn;
+                subtitles.text = AudioPrefs.Caption("Subtitles", !on);
+                subtitles.tooltip = on ? "Subtitles are on." : "Subtitles are off.";
+            }
+            void PaintSandbox()
+            {
+                bool on = AudioPrefs.SandboxUnlocked;
+                sandbox.text = AudioPrefs.Caption("Sandbox", !on);
+                sandbox.tooltip = on ? "Sandbox is available on the mission board." : "Sandbox is off. The mission board keeps it locked.";
+            }
+            void PaintMotion()
+            {
+                bool on = PlayerPrefs.GetInt(MainMenuLayout.ReduceMotionPref, 0) != 0;
+                motion.text = on ? "Reduce motion on" : "Reduce motion";
+            }
+
+            music.clicked += () => { AudioPrefs.SetMusicMuted(!AudioPrefs.MusicMuted); PaintMix(); };
+            sound.clicked += () => { AudioPrefs.SetSfxMuted(!AudioPrefs.SfxMuted); PaintMix(); };
+            voice.clicked += () => { AudioPrefs.SetNarrationMuted(!AudioPrefs.NarrationMuted); PaintMix(); };
+            subtitles.clicked += () =>
+            {
+                AudioPrefs.SetSubtitlesOn(!AudioPrefs.SubtitlesOn);
+                PaintSubs();
+                GuideSession.Engine?.PullSettings();
+            };
+            sandbox.clicked += () => { AudioPrefs.SetSandboxUnlocked(!AudioPrefs.SandboxUnlocked); PaintSandbox(); };
             motion.clicked += () =>
             {
                 int cur = PlayerPrefs.GetInt(MainMenuLayout.ReduceMotionPref, 0);
                 PlayerPrefs.SetInt(MainMenuLayout.ReduceMotionPref, cur == 0 ? 1 : 0);
                 PlayerPrefs.Save();
-                motion.text = PlayerPrefs.GetInt(MainMenuLayout.ReduceMotionPref, 0) != 0 ? "Reduce motion on" : "Reduce motion";
+                PaintMotion();
             };
+            PaintMix();
+            PaintSubs();
+            PaintSandbox();
+            PaintMotion();
+
+            scroll.Add(music);
+            scroll.Add(sound);
+            scroll.Add(voice);
+            scroll.Add(subtitles);
+            scroll.Add(sandbox);
+            scroll.Add(motion);
+
             var close = new Button { name = "home-settings-close", text = "Close" };
             close.AddToClassList("kh-button");
             close.tooltip = "Close settings.";
             close.style.minHeight = 44;
+            close.style.fontSize = 14;
+            close.style.flexShrink = 0;
+            close.style.whiteSpace = WhiteSpace.Normal;
+            SettingFont(close, "SpaceGrotesk-Bold");
             close.clicked += () => sheet.style.display = DisplayStyle.None;
-            sheet.Add(title); sheet.Add(motion); sheet.Add(close);
+
+            sheet.Add(title);
+            sheet.Add(scroll);
+            sheet.Add(close);
+
+            void FitSheet()
+            {
+                if (full == null) return;
+                float hostW = full.resolvedStyle.width;
+                float hostH = full.resolvedStyle.height;
+                if (hostW < 8f) hostW = full.worldBound.width;
+                if (hostH < 8f) hostH = full.worldBound.height;
+                if (hostW < 8f || hostH < 8f) return;
+                float top = 52f;
+                float width = Mathf.Min(260f, Mathf.Max(160f, hostW - 16f));
+                float maxH = Mathf.Max(88f, hostH - top - 8f);
+                float left = Mathf.Max(8f, hostW - width - 8f);
+                sheet.style.position = Position.Absolute;
+                sheet.style.top = top;
+                sheet.style.left = left;
+                sheet.style.right = StyleKeyword.Auto;
+                sheet.style.width = width;
+                sheet.style.maxHeight = maxH;
+            }
 
             var gear = new Button { name = "home-settings", text = string.Empty, tooltip = "Settings. Sound, motion, accessibility." };
             gear.AddToClassList("kh-button"); gear.AddToClassList("kh-mm-gear"); gear.AddToClassList("kh-mm-anim");
@@ -830,9 +931,43 @@ namespace Kestrel.Game.Shell
             gear.style.height = HomeCornerLayout.Gear;
             gear.style.minWidth = HomeCornerLayout.Gear;
             gear.style.minHeight = HomeCornerLayout.Gear;
-            gear.clicked += () => sheet.style.display = DisplayStyle.Flex;
-            full.Add(gear);
-            full.Add(sheet);
+            gear.clicked += () =>
+            {
+                PaintMix();
+                PaintSubs();
+                PaintSandbox();
+                PaintMotion();
+                sheet.style.display = DisplayStyle.Flex;
+                FitSheet();
+            };
+            if (full != null)
+            {
+                full.RegisterCallback<GeometryChangedEvent>(_ => FitSheet());
+                full.Add(gear);
+                full.Add(sheet);
+            }
+        }
+
+        static Button SettingButton(string name, string label)
+        {
+            var b = new Button { name = name, text = label };
+            b.AddToClassList("kh-button");
+            b.style.minHeight = 44;
+            b.style.fontSize = 14;
+            b.style.whiteSpace = WhiteSpace.Normal;
+            b.style.unityTextAlign = TextAnchor.MiddleCenter;
+            b.style.marginTop = 0;
+            b.style.marginBottom = 4;
+            SettingFont(b, "SpaceGrotesk-Medium");
+            return b;
+        }
+
+        static void SettingFont(VisualElement el, string fontName)
+        {
+            if (el == null) return;
+            var font = Resources.Load<Font>(MainMenuFonts.Dir + fontName);
+            if (font == null) return;
+            el.style.unityFontDefinition = new StyleFontDefinition(FontDefinition.FromFont(font));
         }
 
         static Button Tile(MainMenuCopy.Item it, Action pressed)
@@ -871,6 +1006,10 @@ namespace Kestrel.Game.Shell
             Font("kh-mm-tile-caption", z.TileCaption, 0f);
             Font("kh-mm-soon", z.Soon, .15f);
             Font("kh-mm-hint", z.Hint, 0f);
+            Font("kh-mm-eyebrow", Mathf.Max(14f, z.Hint), .12f);
+            Font("kh-mm-design-label", Mathf.Max(14f, z.LaunchLabel * 0.72f), .03f);
+            Font("kh-mm-design-caption", Mathf.Max(14f, z.LaunchCaption), 0f);
+            Font("kh-mm-thrum-name", Mathf.Max(14f, z.Hint), 0f);
             // Explicit heights (not min-height) so the block is exactly what MenuTypeScale computed; Unity cannot inflate it.
             // The title must not flex-shrink before ContainColumn measures it, or a short column reads height 0 and never caps.
             root.style.paddingTop = MenuTypeScale.TopPad; root.style.paddingBottom = z.HintBand;

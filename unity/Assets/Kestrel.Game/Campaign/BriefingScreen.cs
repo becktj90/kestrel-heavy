@@ -117,6 +117,7 @@ namespace Kestrel.Game.MissionSelect
             }
             var leave = new Button(back) { name = "briefing-back", text = BackText, tooltip = BackTip };
             StyleKey(leave, "briefing-back");
+            leave.userData = back;
             column.Add(leave);
             return root;
         }
@@ -179,6 +180,7 @@ namespace Kestrel.Game.MissionSelect
             key.AddToClassList("kh-button");
             key.AddToClassList(cls);
             key.style.minHeight = 44;
+            key.style.fontSize = 14;
             key.style.flexShrink = 0;
             key.style.whiteSpace = WhiteSpace.Normal;
         }

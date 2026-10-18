@@ -165,6 +165,35 @@ namespace Kestrel.Core.Tests
             CollectionAssert.AreEqual(MissionPatchArt.Rgba(same.MissionId, 64), MissionPatchArt.Rgba("kc-pier-7", 64));
         }
 
+        [Test]
+        public void SecondPassRgbaReusesTheBitmap()
+        {
+            for (int i = 1; i <= 20; i++)
+            {
+                MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Open);
+                MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Medal);
+                MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Locked);
+            }
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            for (int pass = 0; pass < 2; pass++)
+            {
+                for (int i = 1; i <= 20; i++)
+                {
+                    var open = MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Open);
+                    Assert.AreSame(open, MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Open));
+                    var medal = MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Medal);
+                    Assert.AreSame(medal, MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Medal));
+                    var locked = MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Locked);
+                    Assert.AreSame(locked, MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Locked));
+                }
+            }
+            watch.Stop();
+            long alloc = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.That(watch.ElapsedMilliseconds, Is.LessThan(15), "cached patch pass " + watch.ElapsedMilliseconds + " ms");
+            Assert.That(alloc, Is.LessThan(64 * 1024), "cached patch allocations " + alloc);
+        }
+
         static void AssertClean(MissionPatchSpec spec)
         {
             foreach (var line in new[] { spec.Flight, spec.Name, spec.Motto, spec.Anatomy, spec.ActName, spec.ArcName })

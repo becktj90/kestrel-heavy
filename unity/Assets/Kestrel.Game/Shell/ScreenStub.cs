@@ -173,9 +173,9 @@ namespace Kestrel.Game.Shell
                 child.style.width = 64f * s;
                 child.style.maxWidth = 64f * s;
                 child.style.minWidth = AudioBar.TouchPt * s;
-                child.style.height = AudioBar.TouchPt * s;
-                child.style.minHeight = AudioBar.TouchPt * s;
-                child.style.fontSize = 13f * s;
+                child.style.height = Mathf.Max(44f, AudioBar.TouchPt * s);
+                child.style.minHeight = Mathf.Max(44f, AudioBar.TouchPt * s);
+                child.style.fontSize = Mathf.Max(14f, 14f * s);
             }
         }
 
@@ -194,7 +194,9 @@ namespace Kestrel.Game.Shell
             console.AddToClassList("kh-home-console");
             var top = new VisualElement();
             top.AddToClassList("kh-home-console-row");
-            var patch = new MissionPatch { name = "kh1-patch", tooltip = "KH-1 mission patch." };
+            var patch = MissionPatch.Render("m1", 76f);
+            patch.name = "kh1-patch";
+            patch.tooltip = "KH-1 mission patch.";
             patch.AddToClassList("kh-home-patch");
             top.Add(patch);
             var launchKey = new Button(launch) { name = "home-launch", text = "LAUNCH", tooltip = "Launch. Opens the rocket designer on the pad." };
@@ -227,6 +229,10 @@ namespace Kestrel.Game.Shell
 
         /// <summary>Repo root when data/campaign.json is on disk. Null in a player build that only has Resources.</summary>
         public static string RepoRoot() => Catalog.RepoRootOrNull();
+
+        /// <summary>Patch collection for a menu walk. A null career shows every flight locked except the first open one.</summary>
+        public static VisualElement BuildPatchCollection(Action back)
+            => PatchCollectionScreen.Build(null, null, null, back);
 
         /// <summary>The screen fills the safe column. Absolute menu children do not give the host a height on their own.</summary>
         public static void FillHost(VisualElement view)
@@ -428,7 +434,9 @@ namespace Kestrel.Game.Shell
             var b = new Button(click) { name = name, text = text, tooltip = tip };
             b.AddToClassList("kh-button");
             b.style.minHeight = 44;
+            b.style.fontSize = 14;
             b.style.flexShrink = 0;
+            b.userData = click;
             return b;
         }
 

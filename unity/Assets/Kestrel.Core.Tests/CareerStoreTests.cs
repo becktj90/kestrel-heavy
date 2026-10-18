@@ -354,6 +354,75 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void Schema0Envelope_MigratesAndKeepsTheOldBytes()
+        {
+            using (var fx = new Fixture())
+            {
+                var career = Obj(
+                    ("schema", 0d),
+                    ("kind", "career"),
+                    ("id", "career"),
+                    ("name", "career"),
+                    ("createdAt", 1d),
+                    ("updatedAt", 1d),
+                    ("data", Obj(("bankMinor", 4242d), ("cleared", 1d), ("unlocks", Arr("core-stage", "engines")))));
+                var missions = Obj(
+                    ("schema", 0d),
+                    ("kind", "missions"),
+                    ("id", "missions"),
+                    ("name", "missions"),
+                    ("createdAt", 1d),
+                    ("updatedAt", 1d),
+                    ("data", Obj(("m1", MissionRow(3, 90d, Arr("gold"), 2, 4, "design-a")))));
+                string careerBefore = JsonWriter.Stringify(career);
+                string missionsBefore = JsonWriter.Stringify(missions);
+                File.WriteAllText(fx.File(CareerStore.CareerKey), careerBefore);
+                File.WriteAllText(fx.File(CareerStore.MissionsKey), missionsBefore);
+
+                var store = fx.Load();
+                Assert.IsTrue(store.MigratedFromProgress);
+                Assert.AreEqual(4242L, store.Career.BankMinor);
+                Assert.AreEqual(1, store.Career.Cleared);
+                Assert.IsTrue(store.Career.HasUnlock("core-stage"));
+                var row = store.Mission("m1");
+                Assert.IsNotNull(row);
+                Assert.AreEqual(3, row.BestStars);
+                CollectionAssert.Contains(row.BestMedals, "gold");
+
+                Assert.AreEqual(careerBefore, File.ReadAllText(fx.File(CareerStore.CareerKey) + ".bak"));
+                Assert.AreEqual(missionsBefore, File.ReadAllText(fx.File(CareerStore.MissionsKey) + ".bak"));
+                var rewritten = MiniJson.ParseObject(File.ReadAllText(fx.File(CareerStore.CareerKey)));
+                Assert.AreEqual(1d, rewritten.Num("schema"));
+                Assert.AreEqual("career", rewritten.Str("kind"));
+                Assert.AreEqual(4242d, rewritten.Obj("data").Num("bankMinor"));
+                Assert.AreEqual(1d, MiniJson.ParseObject(File.ReadAllText(fx.File(CareerStore.MissionsKey))).Num("schema"));
+            }
+        }
+
+        [Test]
+        public void BareCareerBlob_MigratesWithoutGuessingANewerSchema()
+        {
+            using (var fx = new Fixture())
+            {
+                string bare = JsonWriter.Stringify(Obj(("bankMinor", 8800d), ("cleared", 1d)));
+                File.WriteAllText(fx.File(CareerStore.CareerKey), bare);
+                var store = fx.Load();
+                Assert.IsTrue(store.MigratedFromProgress);
+                Assert.AreEqual(8800L, store.Career.BankMinor);
+                Assert.AreEqual(1, store.Career.Cleared);
+                Assert.IsTrue(store.Career.HasUnlock("core-stage"));
+                Assert.IsTrue(store.Career.HasUnlock("fins"));
+                Assert.IsTrue(store.Career.HasUnlock("nose"));
+                Assert.IsFalse(store.Career.HasUnlock("stage-2"));
+                Assert.AreEqual(bare, File.ReadAllText(fx.File(CareerStore.CareerKey) + ".bak"));
+                var rewritten = MiniJson.ParseObject(File.ReadAllText(fx.File(CareerStore.CareerKey)));
+                Assert.AreEqual(1d, rewritten.Num("schema"));
+                Assert.AreEqual("career", rewritten.Str("kind"));
+                Assert.AreEqual(8800d, rewritten.Obj("data").Num("bankMinor"));
+            }
+        }
+
+        [Test]
         public void SameClock_WritesTheSameBytes()
         {
             string once = RunSequence();

@@ -24,16 +24,16 @@ namespace Kestrel.Game.Shell
             public Spec(float b, float mn, float mx) { Base = b; Min = mn; Max = mx; }
             public float At(float s, float k = 1f) => Math.Max(Min, Math.Min(Max, k * s * Base));
         }
-        // base is the size on a 390x844 phone. Captions never go below 11.
+        // base is the size on a 390x844 phone. Captions never go below 14.
         public static readonly Spec Title = new Spec(76f, 28f, 84f);
-        public static readonly Spec Tagline = new Spec(20f, 13f, 30f);
+        public static readonly Spec Tagline = new Spec(20f, 14f, 30f);
         public static readonly Spec LaunchLabel = new Spec(26f, 20f, 38f);
-        public static readonly Spec LaunchCaption = new Spec(14f, 11f, 20f);
-        public static readonly Spec TileName = new Spec(19f, 13f, 26f);
-        public static readonly Spec TileCaption = new Spec(13f, 11f, 18f);
-        public static readonly Spec Soon = new Spec(11f, 10f, 13f);
-        public static readonly Spec Hint = new Spec(11f, 10f, 14f);
-        public const float CaptionFloor = 11f;
+        public static readonly Spec LaunchCaption = new Spec(14f, 14f, 20f);
+        public static readonly Spec TileName = new Spec(19f, 14f, 26f);
+        public static readonly Spec TileCaption = new Spec(13f, 14f, 18f);
+        public static readonly Spec Soon = new Spec(14f, 14f, 16f);
+        public static readonly Spec Hint = new Spec(14f, 14f, 18f);
+        public const float CaptionFloor = 14f;
 
         public static float Scale(float w, float h, float topInset = 0f, float bottomInset = 0f)
         {
@@ -77,7 +77,7 @@ namespace Kestrel.Game.Shell
             z.LaunchH = Math.Max(HitMin, 2f * LaunchBorder + 2f * padV + z.LaunchLabel * LineH + z.LaunchCaptionLines * z.LaunchCaption * LineH);
             z.DesignH = Math.Max(HitMin, Math.Min(z.LaunchH - 4f, 2f * 2f + 8f + z.LaunchLabel * 0.72f * LineH + z.LaunchCaption * LineH));
             z.StatsH = Clamp(36f * s, 36f, 44f);
-            z.StatFont = Math.Max(13f, z.Hint + 2f);
+            z.StatFont = Math.Max(14f, z.Hint + 2f);
             // The bottom film-reel bar is BarHeight(h, inset) tall from the screen edge and covers the hint. The tiles must end above it,
             // so the reserve is the whole bar (it already includes the bottom safe inset), not just the inset. The last tile row's own
             // Gap margin is the breathing room above the bar.

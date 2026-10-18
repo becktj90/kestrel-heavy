@@ -79,7 +79,7 @@ namespace Kestrel.Game.Guide
             settings.Size = MapSize(state.Settings.Size);
             settings.Tips = MapTips(state.Settings.Tips);
             settings.ReduceMotion = state.Settings.ReduceMotion;
-            settings.SubtitlesOn = true;
+            settings.SubtitlesOn = Kestrel.Core.Flight.MenuPrefs.SubtitlesOn;
             settings.ReadAloud = false;
             bool clips = clipsKnown || CoreVoice.ClipsPresent(repoRoot);
             state.Settings.VoiceAvailable = clips;

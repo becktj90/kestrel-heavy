@@ -124,7 +124,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         {
             try
             {
-                string root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
+                string root = Catalog.RepoRootOrNull();
+                if (string.IsNullOrEmpty(root)) return null;
                 string path = Path.Combine(root, "data", FileName);
                 if (File.Exists(path)) return File.ReadAllText(path);
             }

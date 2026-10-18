@@ -30,6 +30,8 @@ namespace Kestrel.Core.Designer
         public int finCountMin = 3, finCountMax = 8;
         public double finSpanMin = 0.2, finSpanMax = 6, finSpanStep = 0.1;
         public double landingReserveMin = 0, landingReserveMax = 0.3;
+        /// <summary>v3 guidance.pitchKickAltM. A campaign kick at 12000 m is inside this range.</summary>
+        public double pitchKickAltMin = 0, pitchKickAltMax = 50000;
         public double minTwr = 1, goodTwr = 1.25, minMargin = 0.05, pack = 1.1;
         public double topHeavyRatio = 1.6, fairingNarrowRatio = 0.5;
         public double weakUpperTwrVac = 0.5, weakUpperDvFraction = 0.2, heavyFairingKg = 500;
@@ -136,6 +138,12 @@ namespace Kestrel.Core.Designer
                 }
             }
             else SeedPatterns(l);
+            var kick = o.Obj("v3")?.Obj("guidance")?.Obj("pitchKickAltM");
+            if (kick != null)
+            {
+                l.pitchKickAltMin = kick.Num("min", 0);
+                l.pitchKickAltMax = kick.Num("max", 50000);
+            }
             return l;
         }
     }

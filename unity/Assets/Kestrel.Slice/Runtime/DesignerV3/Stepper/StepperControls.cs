@@ -36,12 +36,14 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 case DesignerStep.Engines:
                     Propellant(host, bridge, refreshers);
                     EngineRow(host, bridge, refreshers);
+                    Cluster(host, bridge, refreshers);
                     Mixture(host, bridge, refreshers);
-                    if (engineer) More(host, ui, moreOpen, toggleMore, "Chamber pressure, expansion, and gimbal", box =>
+                    if (engineer) More(host, ui, moreOpen, toggleMore, "Chamber pressure, expansion, gimbal, and throttle", box =>
                     {
                         PressurePc(box, bridge, refreshers);
                         Expansion(box, bridge, refreshers);
                         Gimbal(box, bridge, refreshers);
+                        Throttle(box, bridge, refreshers);
                     });
                     break;
                 case DesignerStep.Tanks:
@@ -60,9 +62,9 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                     Nose(host, bridge, refreshers);
                     Fins(host, bridge, refreshers);
                     Fairing(host, bridge, refreshers);
-                    if (engineer) More(host, ui, moreOpen, toggleMore, "Max-Q throttle and g limit", box =>
+                    MaxQThrottle(host, bridge, refreshers);
+                    if (engineer) More(host, ui, moreOpen, toggleMore, "g limit", box =>
                     {
-                        MaxQThrottle(box, bridge, refreshers);
                         GLimit(box, bridge, refreshers);
                     });
                     break;
@@ -87,11 +89,11 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 case "pc":
                 case "expansionRatio":
                 case "gimbal":
+                case "throttle":
                 case "pressure":
                 case "insulation":
                 case "material":
                 case "avionics":
-                case "maxQThrottle":
                 case "gLimit":
                     return true;
                 default:
@@ -195,14 +197,11 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var stage = Stage0(bridge.Design);
             string current = stage?.Str("propellant");
             var choices = new List<HangarUi.Choice>();
-            foreach (var id in new[] { "kerolox", "methalox", "hydrolox" })
+            foreach (var id in HangarEditor.PropellantChoices(bridge.Catalog, current))
             {
-                if (!bridge.Catalog.PropellantById.TryGetValue(id, out var p)) continue;
-                choices.Add(new HangarUi.Choice(id, Family(id, p.label), p.label));
+                bridge.Catalog.PropellantById.TryGetValue(id, out var p);
+                choices.Add(new HangarUi.Choice(id, Family(id, p?.label), p?.label));
             }
-            if (!string.IsNullOrEmpty(current) && choices.TrueForAll(c => c.id != current)
-                && bridge.Catalog.PropellantById.TryGetValue(current, out var extra))
-                choices.Add(new HangarUi.Choice(current, extra.label ?? current, extra.label));
             var chips = bridge.Ui.Chips("Propellant", choices, () => Stage0(bridge.Design)?.Str("propellant"),
                 id => bridge.Apply(d => HangarEditor.SetPropellant(bridge.Catalog, d, PartRef.Stage(0), id), null), refreshers);
             chips.name = "field-propellant";
@@ -246,12 +245,23 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             return HangarFormat.EngineChip(engine) + " × " + count.ToString(Inv);
         }
 
+        static void Cluster(VisualElement host, DesignerStepperBridge bridge, List<Action> refreshers)
+        {
+            var choices = new List<HangarUi.Choice>();
+            foreach (var pl in DesignerLimits.Active.patterns)
+                choices.Add(new HangarUi.Choice(pl.id, pl.id));
+            var chips = bridge.Ui.Chips("Cluster", choices, () => Stage0(bridge.Design)?.Obj("cluster")?.Str("pattern") ?? "auto",
+                id => bridge.Apply(d => HangarEditor.SetClusterPattern(d, PartRef.Stage(0), id), null), refreshers);
+            chips.name = "field-cluster";
+            host.Add(chips);
+        }
+
         static void Mixture(VisualElement host, DesignerStepperBridge bridge, List<Action> refreshers)
         {
             var row = bridge.Ui.Stepper("Mixture offset",
                 () => Signed(Stage0(bridge.Design)?.Num("mixtureOffsetPct") ?? 0, "0.0") + " %",
                 () => "Keep this near zero for an even burn",
-                (dir, key) => bridge.Apply(d => DesignerV3Edits.SetMixtureOffset(d, 0, (Stage0(d)?.Num("mixtureOffsetPct") ?? 0) + dir), key),
+                (dir, key) => bridge.Apply(d => DesignerKnobs.NudgeMixture(d, 0, dir), key),
                 bridge.EndGesture, "mix", refreshers);
             NameValue(row, "mixtureOffsetPct");
             host.Add(row);
@@ -262,7 +272,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var row = bridge.Ui.Stepper("Chamber pressure",
                 () => DesignerV3Edits.ShownPc(bridge.Catalog, bridge.Design, 0).ToString("0", Inv) + " bar",
                 () => "Higher pressure: more push, and a chance of popping an engine",
-                (dir, key) => bridge.Apply(d => DesignerV3Edits.SetEnginePc(d, 0, DesignerV3Edits.ShownPc(bridge.Catalog, d, 0) + dir * 5), key),
+                (dir, key) => bridge.Apply(d => DesignerKnobs.NudgePc(bridge.Catalog, d, 0, dir), key),
                 bridge.EndGesture, "eng.pc", refreshers);
             NameValue(row, "pc");
             host.Add(row);
@@ -273,7 +283,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var row = bridge.Ui.Stepper("Expansion ratio",
                 () => DesignerV3Edits.ShownExpansion(bridge.Catalog, bridge.Design, 0).ToString("0", Inv),
                 () => "Bigger nozzle: better in space, worse on the pad",
-                (dir, key) => bridge.Apply(d => DesignerV3Edits.SetExpansionRatio(d, 0, DesignerV3Edits.ShownExpansion(bridge.Catalog, d, 0) + dir * 2), key),
+                (dir, key) => bridge.Apply(d => DesignerKnobs.NudgeExpansion(bridge.Catalog, d, 0, dir), key),
                 bridge.EndGesture, "eng.eps", refreshers);
             NameValue(row, "expansionRatio");
             host.Add(row);
@@ -284,9 +294,20 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var row = bridge.Ui.Stepper("Gimbal",
                 () => DesignerV3Edits.ShownGimbal(bridge.Catalog, bridge.Design, 0).ToString("0.0", Inv) + "°",
                 () => "How far the engines can steer",
-                (dir, key) => bridge.Apply(d => DesignerV3Edits.SetGimbal(d, 0, DesignerV3Edits.ShownGimbal(bridge.Catalog, d, 0) + dir * 0.5), key),
+                (dir, key) => bridge.Apply(d => DesignerKnobs.NudgeGimbal(bridge.Catalog, d, 0, dir), key),
                 bridge.EndGesture, "eng.gimbal", refreshers);
             NameValue(row, "gimbal");
+            host.Add(row);
+        }
+
+        static void Throttle(VisualElement host, DesignerStepperBridge bridge, List<Action> refreshers)
+        {
+            var row = bridge.Ui.Stepper("Min throttle",
+                () => (DesignerKnobs.ShownThrottle(bridge.Catalog, bridge.Design, 0) * 100).ToString("0", Inv) + "%",
+                () => "How far the engines can ease off",
+                (dir, key) => bridge.Apply(d => DesignerKnobs.NudgeThrottle(bridge.Catalog, d, 0, dir), key),
+                bridge.EndGesture, "eng.thr", refreshers);
+            NameValue(row, "throttle");
             host.Add(row);
         }
 
@@ -335,7 +356,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var row = bridge.Ui.Stepper("Pressure",
                 () => (Stage0(bridge.Design)?.Obj("tank")?.Num("pressureBar") ?? 3).ToString("0.0", Inv) + " bar",
                 () => "Higher pressure needs a thicker wall",
-                (dir, key) => bridge.Apply(d => DesignerV3Edits.SetTankPressure(d, 0, ((Stage0(d)?.Obj("tank")?.Num("pressureBar") ?? 3) + dir * 0.5)), key),
+                (dir, key) => bridge.Apply(d => DesignerKnobs.NudgePressure(d, 0, dir), key),
                 bridge.EndGesture, "tank.p", refreshers);
             NameValue(row, "pressure");
             host.Add(row);
@@ -376,9 +397,9 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         static void Nose(VisualElement host, DesignerStepperBridge bridge, List<Action> refreshers)
         {
             var choices = new List<HangarUi.Choice>();
-            foreach (var id in HangarEditor.Noses) choices.Add(new HangarUi.Choice(id, HangarFormat.Cap(id)));
+            foreach (var id in DesignerKnobs.Noses) choices.Add(new HangarUi.Choice(id, HangarFormat.Cap(id)));
             var chips = bridge.Ui.Chips("Nose", choices, () => bridge.Design.Obj("aero")?.Str("nose") ?? "ogive",
-                id => bridge.Apply(d => HangarEditor.SetNose(d, id), null), refreshers);
+                id => bridge.Apply(d => DesignerKnobs.SetNose(d, id), null), refreshers);
             chips.name = "field-nose";
             host.Add(chips);
         }
@@ -396,6 +417,12 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                     bridge.EndGesture, "fins.count", refreshers);
                 count.name = "field-finCount";
                 box.Add(count);
+                var span = bridge.Ui.Stepper("Fin size", () => (bridge.Design.Obj("aero")?.Num("finSpanM", 1) ?? 1).ToString("0.0", Inv) + " m",
+                    () => "Bigger fins hold the point up",
+                    (dir, key) => bridge.Apply(d => HangarEditor.SetFinSpan(d, (d.Obj("aero")?.Num("finSpanM", 1) ?? 1) + dir * DesignerLimits.Active.finSpanStep), key),
+                    bridge.EndGesture, "fins.span", refreshers);
+                span.name = "field-finSpan";
+                box.Add(span);
             }
             host.Add(box);
         }
@@ -407,6 +434,13 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 bridge.EndGesture, "fair.l", refreshers, "Fairing length");
             NameValue(row, "fairing");
             host.Add(row);
+            var width = bridge.Ui.Stepper("Fairing width",
+                () => HangarFormat.Metres(bridge.Design.Obj("fairing")?.Num("diameter") ?? 0),
+                () => "Wide enough for the cargo",
+                (dir, key) => bridge.Apply(d => HangarEditor.SetDiameter(d, PartRef.Fairing, (d.Obj("fairing")?.Num("diameter") ?? 1) + dir * 0.1), key),
+                bridge.EndGesture, "fair.d", refreshers);
+            NameValue(width, "fairingDiameter");
+            host.Add(width);
             string FairingText()
             {
                 var f = bridge.Design.Obj("fairing");
@@ -430,7 +464,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var row = bridge.Ui.Stepper("g limit",
                 () => (bridge.Design.Obj("guidance")?.Num("gLimit") ?? 4).ToString("0.0", Inv) + " g",
                 () => "The autopilot holds the push under this",
-                (dir, key) => bridge.Apply(d => DesignerV3Edits.SetGuidance(d, "gLimit", (d.Obj("guidance")?.Num("gLimit") ?? 4) + dir * 0.5), key),
+                (dir, key) => bridge.Apply(d => DesignerKnobs.NudgeGuidance(d, "gLimit", dir), key),
                 bridge.EndGesture, "g.g", refreshers);
             NameValue(row, "gLimit");
             host.Add(row);
@@ -637,11 +671,22 @@ namespace Kestrel.Slice.DesignerV3.Stepper
 
         public static Campaign SharedCampaign() => CampaignBook();
 
+        /// <summary>Drop the cached campaign so a later test with a real checkout can load it.</summary>
+        public static void ResetShared()
+        {
+            campaign = null;
+            campaignTried = false;
+        }
+
         static Campaign CampaignBook()
         {
             if (campaignTried) return campaign;
             campaignTried = true;
-            try { campaign = Campaign.Load(Catalog.FindRepoRoot(System.IO.Directory.GetCurrentDirectory())); }
+            try
+            {
+                string root = Catalog.RepoRootOrNull();
+                if (!string.IsNullOrEmpty(root)) campaign = Campaign.Load(root);
+            }
             catch (Exception) { campaign = null; }
             if (campaign != null) return campaign;
             try

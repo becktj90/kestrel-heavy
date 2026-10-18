@@ -325,6 +325,7 @@ namespace Kestrel.Slice
             }, TrickleDown.TrickleDown);
             homeButton = ui.Q<Button>("home");
             homeButton.clicked += GoHome;
+            homeButton.userData = (System.Action)GoHome;
             homeButton.tooltip = "Home. Back to the title screen.";
             hT = ui.Q<Label>("h-t"); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
             hMach = ui.Q<Label>("h-mach"); hQ = ui.Q<Label>("h-q"); hThr = ui.Q<Label>("h-thr"); hDr = ui.Q<Label>("h-dr"); hMsg = ui.Q<Label>("h-msg");
@@ -1160,7 +1161,9 @@ namespace Kestrel.Slice
         /// <summary>Hangar per-frame work: a rate-limited rocket rebuild while a stepper is held.</summary>
         void Update()
         {
-            if (ReportCardChrome.ConsumeKey(ui)) return;
+            bool claimed = Kestrel.Game.Shell.MenuBack.Claimed;
+            Kestrel.Game.Shell.MenuBack.Claimed = false;
+            if (!claimed && ReportCardChrome.ConsumeKey(ui)) return;
             if (hud != null && !hud.ClassListContains("hidden")) { chrome?.TickInput(); return; }
             designer?.TickReference();
             if (rocketDirty && Time.unscaledTime - lastRocketBuild >= RebuildEverySeconds) BuildRocket();
