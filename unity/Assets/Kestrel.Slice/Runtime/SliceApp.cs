@@ -477,6 +477,8 @@ namespace Kestrel.Slice
             if (thumbW < 8f) thumbW = ui.layout.width;
             DesignerV3Layout.FitThumbRow(thumb, narrowThumb ? Mathf.Min(thumbW, 420f) : thumbW, upp);
             ApplyWebDesignFrame();
+            // A geometry pass rebuilds the web readout column. If the flight HUD is up, hide it again.
+            if (hud != null && !hud.ClassListContains("hidden")) FlightEntry.Show(ui);
         }
 
         /// <summary>Landscape web only. Parts on the left, readouts on the right, rocket in the middle.</summary>
@@ -1087,8 +1089,9 @@ namespace Kestrel.Slice
             ShowFlightPicture(false);
             camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
-            hud.RemoveFromClassList("hidden"); hud.BringToFront();
-            WebDesignChrome.Cover(ui);
+            hud.RemoveFromClassList("hidden");
+            // Inline display:none beats the .hidden class, and the web readout column is a sibling of #design.
+            FlightEntry.Show(ui);
             cam.ResetProjectionMatrix(); hMsg.text = "";
             var sheet = session.Sheet;
             requiredMps = sheet != null ? sheet.requiredDeltaV_mps : 0;
@@ -1240,6 +1243,7 @@ namespace Kestrel.Slice
             if (juice != null) juice.Reset();
             if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
             ascentHud?.Close();
+            FlightEntry.Release(ui);
             if (hud != null) hud.AddToClassList("hidden");
             if (designPanel != null) designPanel.RemoveFromClassList("hidden");
             if (homeButton != null) homeButton.RemoveFromClassList("hidden");
@@ -1247,6 +1251,7 @@ namespace Kestrel.Slice
             var grid = hud != null ? hud.Q("hud-grid") : null;
             if (grid != null) grid.style.display = StyleKeyword.Null;
             ShowFlightPicture(false);
+            if (designer != null) designer.SetOpen(designer.Open);
             if (hangarCam != null) hangarCam.enabled = true;
             if (session != null && rocketView != null) rocketView.SetSelected(session.Selected, true);
             BuildRocket();
@@ -1341,7 +1346,11 @@ namespace Kestrel.Slice
 
         void PaintAscentReadout()
         {
-            if (hT != null) hT.text = $"T+ {flight.SimTime:F1}";
+            if (hT != null)
+            {
+                hT.text = $"T+ {flight.SimTime:F1}";
+                DressClock(hT);
+            }
             if (hStage != null) hStage.text = $"S{flight.Sim.StageIdx + 1}";
             if (hAlt != null) hAlt.text = $"ALT {flight.Altitude / 1000:F1} km";
             if (hVel != null) hVel.text = $"VEL {flight.Speed:N0} m/s";
@@ -1375,7 +1384,11 @@ namespace Kestrel.Slice
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
             if (renderer != null) renderer.AdvanceTo(TimelineClock.RealSeconds(sequence.Time, sequence.Mode));
-            if (hT != null) hT.text = sequence.Clock;
+            if (hT != null)
+            {
+                hT.text = sequence.Clock;
+                DressClock(hT);
+            }
             if (hStage != null) hStage.text = "COUNT";
             HideCountGrid();
             RefreshWebcast(sequence.Time, false);
@@ -1421,6 +1434,15 @@ namespace Kestrel.Slice
                 : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
+            var cast = hVerdict.parent;
+            if (cast != null) cast.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
+            bool alarm = pulse.Verdict != null && pulse.Verdict.IndexOf("lost", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            FlightDusk.Banner(hVerdict, UnitsPerPoint(), alarm);
+            if (hPulse != null)
+            {
+                hPulse.style.display = string.IsNullOrEmpty(hPulse.text) ? DisplayStyle.None : DisplayStyle.Flex;
+                FlightDusk.Sentence(hPulse, UnitsPerPoint());
+            }
             // Trevor: the raw event-id chips (tl.*.short) do not belong on the flight screen.
             if (seqRow != null)
             {
@@ -1438,6 +1460,27 @@ namespace Kestrel.Slice
                     line = sequence.Banner;
             }
             hCallout.text = line;
+            if (string.IsNullOrEmpty(hCallout.text)) hCallout.style.display = DisplayStyle.None;
+            else
+            {
+                hCallout.style.display = DisplayStyle.Flex;
+                FlightDusk.Callout(hCallout, UnitsPerPoint(), alarm);
+            }
+        }
+
+        void DressClock(Label clock)
+        {
+            if (clock == null) return;
+            float upp = UnitsPerPoint();
+            float w = clock.resolvedStyle.width;
+            float h = clock.resolvedStyle.height;
+            if (float.IsNaN(w) || w < 8f)
+            {
+                float panel = ui != null ? ui.layout.width : 0f;
+                w = panel > 8f ? panel * 0.55f : 160f * upp;
+            }
+            if (float.IsNaN(h) || h < 8f) h = FlightHudLayout.HeaderPt * upp;
+            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFontPt(w / upp, h / upp));
         }
 
         async void OnMeco(FlightDriver f)
