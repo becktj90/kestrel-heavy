@@ -33,8 +33,10 @@ namespace Kestrel.Game.MissionSelect
         MissionMap _map;
         ScrollView _path;
         VisualElement _content, _body, _copy, _art, _pulse;
-        Label _act, _name, _customer, _orbit, _brief, _facts;
-        Button _primary, _contracts, _sandboxButton;
+        Label _act, _name, _customer, _orbit, _brief, _facts, _noteWhat, _noteDoes;
+        Button _primary, _contracts, _sandboxButton, _patches;
+        VisualElement _note;
+        string _payloadWhat = "", _payloadDoes = "";
         MissionTrailElement _trail;
         VisualElement _pendingScroll;
         Slot _selected;
@@ -122,6 +124,19 @@ namespace Kestrel.Game.MissionSelect
             homeKey.userData = home;
             Add(homeKey);
 
+            _patches = new Button(() => { if (MissionBoardScreen.OpenPatches != null) MissionBoardScreen.OpenPatches(); })
+            {
+                name = "mission-patches",
+                text = "Patches",
+                tooltip = "Patches. The flights you have cleared.",
+            };
+            _patches.AddToClassList("mission-home");
+            BoardType.Set(_patches, BoardType.GroteskBold);
+            _patches.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _patches.style.fontSize = 13f;
+            _patches.style.whiteSpace = WhiteSpace.NoWrap;
+            Add(_patches);
+
             var kicker = new Label("CAMPAIGN") { name = "mission-kicker", pickingMode = PickingMode.Ignore };
             kicker.AddToClassList("mission-kicker");
             kicker.style.fontSize = 14f;
@@ -131,8 +146,8 @@ namespace Kestrel.Game.MissionSelect
             _act = new Label("Missions") { name = "mission-act", pickingMode = PickingMode.Ignore };
             _act.AddToClassList("mission-act-name");
             BoardType.Set(_act, BoardType.FrauncesBold);
-            _act.style.fontSize = 18f;
-            _act.style.whiteSpace = WhiteSpace.NoWrap;
+            _act.style.fontSize = 16f;
+            _act.style.whiteSpace = WhiteSpace.Normal;
             _act.style.overflow = Overflow.Hidden;
             Add(_act);
 
@@ -213,7 +228,14 @@ namespace Kestrel.Game.MissionSelect
             _body.style.top = 0f;
             card.Add(_body);
 
-            _art = new VisualElement { name = "mission-art", pickingMode = PickingMode.Ignore };
+            var artButton = new Button(TogglePayloadNote) { name = "mission-art", text = string.Empty, tooltip = "Payload. What it is and what it does." };
+            artButton.style.paddingLeft = 0f;
+            artButton.style.paddingRight = 0f;
+            artButton.style.paddingTop = 0f;
+            artButton.style.paddingBottom = 0f;
+            artButton.style.marginTop = 0f;
+            artButton.style.marginBottom = 0f;
+            _art = artButton;
             _art.AddToClassList("mission-art");
             _art.style.backgroundColor = new StyleColor(MissionBoardPalette.Deep);
             Round(_art, 12f);
@@ -233,11 +255,39 @@ namespace Kestrel.Game.MissionSelect
             _orbit = Line("mission-orbit", "mission-fact");
             _brief = Line("mission-brief", "mission-brief");
             _facts = Line("mission-facts", "mission-fact");
+            _name.style.flexShrink = 0;
+            _brief.style.flexShrink = 0;
+            _customer.style.flexShrink = 1;
+            _orbit.style.flexShrink = 1;
+            _facts.style.overflow = Overflow.Hidden;
             _copy.Add(_name);
+            _copy.Add(_brief);
             _copy.Add(_customer);
             _copy.Add(_orbit);
-            _copy.Add(_brief);
             _body.Add(_facts);
+
+            _note = new VisualElement { name = "mission-payload-note" };
+            _note.style.display = DisplayStyle.None;
+            _note.style.position = Position.Absolute;
+            _note.style.left = 8f;
+            _note.style.right = 8f;
+            _note.style.top = 8f;
+            _note.style.paddingLeft = 10f;
+            _note.style.paddingRight = 10f;
+            _note.style.paddingTop = 10f;
+            _note.style.paddingBottom = 10f;
+            _note.style.backgroundColor = new StyleColor(new Color(0.06f, 0.09f, 0.16f, 0.96f));
+            _note.style.flexDirection = FlexDirection.Column;
+            _noteWhat = Line("mission-payload-what", "mission-brief");
+            _noteDoes = Line("mission-payload-does", "mission-brief");
+            var noteClose = new Button(() => _note.style.display = DisplayStyle.None) { name = "mission-payload-close", text = "Close" };
+            noteClose.style.minHeight = 44f;
+            noteClose.style.fontSize = 14f;
+            noteClose.style.marginTop = 6f;
+            _note.Add(_noteWhat);
+            _note.Add(_noteDoes);
+            _note.Add(noteClose);
+            card.Add(_note);
 
             _contracts = new Button(SelectContracts) { name = "mission-contracts", text = "Contracts", tooltip = MissionMapCopy.ContractsBody };
             _contracts.AddToClassList("mission-entry");
@@ -345,6 +395,23 @@ namespace Kestrel.Game.MissionSelect
             int art = (int)(d - 8f);
             if (art < 32) art = 32;
             node.Add(PayloadArt.Element("mission-node-art-" + id, entry.Form, art));
+            var code = new Label(MissionContext.LabelFor(entry.Index))
+            {
+                name = "mission-node-code-" + id,
+                pickingMode = PickingMode.Ignore,
+            };
+            code.style.position = Position.Absolute;
+            code.style.left = 0f;
+            code.style.right = 0f;
+            code.style.bottom = 1f;
+            code.style.height = 14f;
+            code.style.fontSize = 10f;
+            code.style.unityTextAlign = TextAnchor.MiddleCenter;
+            code.style.whiteSpace = WhiteSpace.NoWrap;
+            code.style.color = new StyleColor(Color.white);
+            code.style.backgroundColor = new StyleColor(new Color(0.04f, 0.06f, 0.1f, 0.72f));
+            BoardType.Set(code, BoardType.GroteskBold);
+            node.Add(code);
             wrap.Add(node);
             slot.Node = node;
 
@@ -402,6 +469,9 @@ namespace Kestrel.Game.MissionSelect
             double score = slot.Record == null ? 0 : slot.Record.BestScore;
             int attempts = slot.Record == null ? 0 : slot.Record.Attempts;
             _card = MissionBoardFacts.Of(slot.Mission, AccessOf(slot.Entry.Access), stars, medals, score, attempts, can);
+            _payloadWhat = First(slot.Mission != null ? slot.Mission.WhatItIs : null, slot.Entry.PayloadLine);
+            _payloadDoes = First(slot.Mission != null ? slot.Mission.WhatItDoes : null, slot.Entry.DoesLine);
+            HidePayloadNote();
             ShowArt(slot.Entry.Form);
             PaintCard(_card);
             Kick(animate);
@@ -417,6 +487,9 @@ namespace Kestrel.Game.MissionSelect
             _contracts.EnableInClassList("mission-entry--on", true);
             _sandboxButton.EnableInClassList("mission-entry--on", false);
             _card = MissionBoardFacts.Contracts(_map != null && _map.ShowOpenContracts, MissionMapCopy.ContractsBody, MissionMapCopy.ContractsAfterCleared);
+            _payloadWhat = _card.Briefing;
+            _payloadDoes = _card.Orbit;
+            HidePayloadNote();
             ShowArt("box");
             PaintCard(_card);
             Kick(true);
@@ -441,6 +514,9 @@ namespace Kestrel.Game.MissionSelect
             _contracts.EnableInClassList("mission-entry--on", false);
             _sandboxButton.EnableInClassList("mission-entry--on", true);
             _card = MissionBoardFacts.Sandbox();
+            _payloadWhat = _card.Briefing;
+            _payloadDoes = "";
+            HidePayloadNote();
             ShowArt("box");
             PaintCard(_card);
             Kick(true);
@@ -538,12 +614,15 @@ namespace Kestrel.Game.MissionSelect
             if (!down)
             {
                 _down = false;
+                _primary.EnableInClassList("mission-fly--down", false);
                 _primary.style.top = _primaryTop;
                 return;
             }
             if (_reduce || !_primary.enabledSelf) return;
             _down = true;
-            _primary.style.top = _primaryTop + 4f;
+            // Moving the button on pointer-down slides it out from under the finger, so the
+            // first tap never fires clicked. The press is a class, not a new top.
+            _primary.EnableInClassList("mission-fly--down", true);
         }
 
         void ApplyFromRoot()
@@ -588,7 +667,8 @@ namespace Kestrel.Game.MissionSelect
 
         void Apply(float width, float height, bool wide)
         {
-            var frame = MissionBoardLayout.Place(width, height, 0f, 0f, 0f, 0f, wide);
+            WebLayoutMode.ExitInset(WebLayoutMode.WantExitReserve, out float safeTop, out float safeRight);
+            var frame = MissionBoardLayout.Place(width, height, safeTop, 0f, 0f, safeRight, wide);
             userData = frame;
             EnableInClassList("mission-board--wide", wide);
 
@@ -601,7 +681,7 @@ namespace Kestrel.Game.MissionSelect
                 kicker.style.left = frame.Title.X;
                 kicker.style.top = frame.Title.Y;
                 kicker.style.width = frame.Title.W;
-                kicker.style.height = 18f;
+                kicker.style.height = 16f;
                 kicker.style.fontSize = 14f;
                 kicker.style.unityTextAlign = TextAnchor.MiddleLeft;
             }
@@ -609,10 +689,19 @@ namespace Kestrel.Game.MissionSelect
             {
                 _act.style.position = Position.Absolute;
                 _act.style.left = frame.Title.X;
-                _act.style.top = frame.Title.Y + 18f;
+                _act.style.top = frame.Title.Y + 16f;
                 _act.style.width = frame.Title.W;
-                _act.style.height = Math.Max(18f, frame.Title.H - 18f);
+                _act.style.height = Math.Max(28f, frame.Title.H - 16f);
                 _act.style.fontSize = 16f;
+                _act.style.whiteSpace = WhiteSpace.Normal;
+            }
+            if (_patches != null)
+            {
+                _patches.style.position = Position.Absolute;
+                _patches.style.width = 92f;
+                _patches.style.height = 44f;
+                _patches.style.left = frame.Path.Right - 96f;
+                _patches.style.top = frame.Path.Y + 4f;
             }
             for (int i = 0; i < _segments.Length; i++)
                 Pin(_segments[i], MissionBoardLayout.Segment(frame.Progress, i, MissionBoardLayout.ActSlots));
@@ -735,6 +824,33 @@ namespace Kestrel.Game.MissionSelect
             _pulse.style.opacity = 0.25f + 0.75f * tri;
         }
 
+        void TogglePayloadNote()
+        {
+            if (_note == null) return;
+            if (_note.style.display.value != DisplayStyle.None)
+            {
+                HidePayloadNote();
+                return;
+            }
+            string what = string.IsNullOrEmpty(_payloadWhat) ? "The payload rides this flight." : _payloadWhat;
+            string does = _payloadDoes ?? "";
+            SetLine(_noteWhat, what);
+            SetLine(_noteDoes, does);
+            _note.style.display = DisplayStyle.Flex;
+            _note.BringToFront();
+        }
+
+        void HidePayloadNote()
+        {
+            if (_note != null) _note.style.display = DisplayStyle.None;
+        }
+
+        static string First(string a, string b)
+        {
+            if (!string.IsNullOrWhiteSpace(a)) return a.Trim();
+            return string.IsNullOrWhiteSpace(b) ? "" : b.Trim();
+        }
+
         static MissionBoardAccess AccessOf(MissionAccess access)
         {
             if (access == MissionAccess.Locked) return MissionBoardAccess.Locked;
@@ -801,6 +917,9 @@ namespace Kestrel.Game.MissionSelect
     public static class MissionBoardScreen
     {
         public const string SheetResource = "UI/MissionBoard";
+
+        /// <summary>Home wires this to the patch collection. The board button does nothing until it is set.</summary>
+        public static Action OpenPatches;
 
         public static MissionBoardView Build(
             Campaign campaign,

@@ -33,6 +33,7 @@ namespace Kestrel.Game.Shell
             if (Instance != null) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            EscapeBridge.Ensure();
             Application.targetFrameRate = 60;
             // The guide reads MenuPrefs in its constructor. Copy the disk values first.
             AudioPrefs.Load();
@@ -100,8 +101,14 @@ namespace Kestrel.Game.Shell
         void Update()
         {
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            HandleEscape();
+        }
+
+        /// <summary>Keyboard Escape and the web page key bridge. Menus go back one screen. Flight is <see cref="MenuBack.FlightEscape"/>.</summary>
+        public void HandleEscape()
+        {
             MenuBack.Claimed = false;
-            if (MenuBack.Try(Root)) return;
+            if (Root != null && MenuBack.Try(Root)) return;
             // Design hides this root and draws on its own UIDocument. Escape still has to reach that back control.
             var docs = UnityEngine.Object.FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
             for (int i = 0; i < docs.Length; i++)
@@ -110,7 +117,11 @@ namespace Kestrel.Game.Shell
                 if (tree == null || ReferenceEquals(tree, Root)) continue;
                 if (MenuBack.Try(tree)) return;
             }
+            if (!MenuBack.Claimed && MenuBack.FlightEscape != null) MenuBack.FlightEscape();
         }
+
+        /// <summary>SendMessage target from the web template. The shell object is named AppShell too.</summary>
+        public void OnEscape() => HandleEscape();
 
         /// <summary>Real game entry until Graphics Dev moves the Design panel into the shell: Slice.unity owns
         /// the pad, rocket, panel and flight. The shell (camera + UI) is torn down so Slice renders alone.</summary>
@@ -128,6 +139,34 @@ namespace Kestrel.Game.Shell
         {
             if (f.Content.W <= 0) return;
             SafeAreaRoot.Apply(Safe, f);
+        }
+    }
+
+    /// <summary>
+    /// Outlives the shell. EnterSlice destroys AppShell, and the web canvas still sends Escape here.
+    /// Menus use the shell. During flight this only calls <see cref="MenuBack.FlightEscape"/>.
+    /// </summary>
+    public sealed class EscapeBridge : MonoBehaviour
+    {
+        public const string ObjectName = "KestrelEscape";
+
+        public static void Ensure()
+        {
+            if (GameObject.Find(ObjectName) != null) return;
+            var go = new GameObject(ObjectName);
+            DontDestroyOnLoad(go);
+            go.AddComponent<EscapeBridge>();
+        }
+
+        public void OnEscape()
+        {
+            if (AppShell.Instance != null)
+            {
+                AppShell.Instance.HandleEscape();
+                return;
+            }
+            var hook = MenuBack.FlightEscape;
+            if (hook != null) hook();
         }
     }
 }

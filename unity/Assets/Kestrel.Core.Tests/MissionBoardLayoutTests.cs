@@ -151,7 +151,8 @@ namespace Kestrel.Core.Tests
                 var launch = MissionBoardFacts.Of(mission, MissionBoardAccess.Open, 0, null, 0, 0, true);
                 var cleared = MissionBoardFacts.Of(mission, MissionBoardAccess.Cleared, 2, new[] { "gold", "bronze" }, 12400, 3, true);
 
-                Assert.That(locked.Primary, Is.EqualTo("Locked"), mission.Id);
+                Assert.That(locked.Primary, Is.EqualTo(mission.Index <= 1 ? "Locked" : "Clear KH-" + (mission.Index - 1) + " to unlock"), mission.Id);
+                Assert.That(locked.Briefing, Does.Not.EqualTo(""), mission.Id);
                 Assert.That(locked.CanGo, Is.False, mission.Id);
                 Assert.That(open.Primary, Is.EqualTo("Design first"), mission.Id);
                 Assert.That(launch.Primary, Is.EqualTo("Fly KH-" + mission.Index), mission.Id);
@@ -211,10 +212,13 @@ namespace Kestrel.Core.Tests
             Assert.That(frame.Art.H, Is.EqualTo(frame.Art.W).Within(0.6f), where + " square portrait");
             Assert.That(frame.Art.Right, Is.LessThanOrEqualTo(frame.Name.X + 0.6f), where + " portrait covers the name");
             Assert.That(frame.Progress.H, Is.GreaterThanOrEqualTo(6f), where + " act bar");
-            Assert.That(frame.Progress.Right, Is.LessThanOrEqualTo(frame.Thrum.X + 0.6f), where + " bar covers Thrum");
             Assert.That(frame.Thrum.W, Is.EqualTo(MissionBoardLayout.ThrumPt).Within(0.1f), where);
-            Assert.That(frame.Title.Right, Is.LessThanOrEqualTo(frame.Thrum.X + 0.6f), where + " title covers Thrum");
-            Assert.That(frame.Home.Right, Is.LessThanOrEqualTo(frame.Thrum.X + 0.6f), where + " home covers Thrum");
+            if (SharesY(frame.Progress, frame.Thrum))
+                Assert.That(frame.Progress.Right, Is.LessThanOrEqualTo(frame.Thrum.X + 0.6f), where + " bar covers Thrum");
+            if (SharesY(frame.Title, frame.Thrum))
+                Assert.That(frame.Title.Right, Is.LessThanOrEqualTo(frame.Thrum.X + 0.6f), where + " title covers Thrum");
+            if (SharesY(frame.Home, frame.Thrum))
+                Assert.That(frame.Home.Right, Is.LessThanOrEqualTo(frame.Thrum.X + 0.6f), where + " home covers Thrum");
             Assert.That(frame.Primary.Y, Is.GreaterThanOrEqualTo(frame.Thrum.Bottom - 0.6f), where + " primary covers Thrum");
 
             var boxes = Blocks(frame);
@@ -257,6 +261,8 @@ namespace Kestrel.Core.Tests
 
         static bool Contains(string a, string b, string parent, string child) =>
             (a == parent && b == child) || (b == parent && a == child);
+
+        static bool SharesY(HudBox a, HudBox b) => a.Bottom > b.Y + 0.6f && b.Bottom > a.Y + 0.6f;
 
         static void NoOverlap(List<(string name, HudBox box)> boxes, string where)
         {
