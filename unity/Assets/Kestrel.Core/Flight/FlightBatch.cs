@@ -192,10 +192,9 @@ namespace Kestrel.Core.Flight
                     flight.boosterGrade = GradeLanding(catalog, design, sim, mission.LandingMode, true);
 
                 bool intact = sim.failure == null && sim.outcome != "failure" && sim.outcome != "crash";
-                bool hit = TargetReached(mission, flight, out var criterion);
+                TargetReached(mission, flight, out var criterion);
                 flight.criterion = criterion;
-                bool req = Requirements(mission, flight);
-                flight.passed = intact && hit && req && flight.payloadMatch && flight.fairingFits && flight.underBudget && !flight.gentle;
+                flight.passed = FlightDebrief.GoalMet(mission, intact, flight.apoKm * 1000.0, flight.periKm * 1000.0, flight.maxG, flight.landingGrade, FlightDebrief.FromFlight(flight));
 
                 double gLimit = GLimit(catalog, design, mission);
                 bool landingRequired = mission.LandingRequired;
@@ -262,18 +261,6 @@ namespace Kestrel.Core.Flight
             return false;
         }
 
-        static bool Requirements(CampaignMission mission, CampaignFlight flight)
-        {
-            if (mission.MarginNonNegative && !(flight.margin >= 0)) return false;
-            if (!double.IsNaN(mission.MaxG) && !(flight.maxG <= mission.MaxG)) return false;
-            if (!double.IsNaN(mission.ReliabilityMin) && !(flight.reliability >= mission.ReliabilityMin)) return false;
-            if (mission.NoRedRisks && flight.redRisk) return false;
-            if (mission.CoastHours > 0 && !(flight.boilOffKg >= 0)) return false;
-            if (mission.LandingRequired && !MissionScore.IsGood(flight.landingGrade)) return false;
-            if (mission.LandBoosters && !MissionScore.IsGood(flight.boosterGrade)) return false;
-            return true;
-        }
-
         static double GLimit(Catalog catalog, Design design, CampaignMission mission)
         {
             double g = 8;
@@ -288,6 +275,10 @@ namespace Kestrel.Core.Flight
         /// The ascent integrator does not fly the return; RecoveryModel supplies the need.
         /// Margin uses the Haven perfect (0.45) and good (0.20) bands on 1 − need/available.
         /// </summary>
+        /// <summary>Predicted catch. The ascent does not fly the return; the live card uses this when no recovery was flown.</summary>
+        public static string PredictLandingGrade(Catalog catalog, Design design, SimResult sim, string mode, bool boosters)
+            => GradeLanding(catalog, design, sim, mode, boosters);
+
         static string GradeLanding(Catalog catalog, Design design, SimResult sim, string mode, bool boosters)
         {
             if (mode != "rtls" && mode != "barge") return null;

@@ -33,6 +33,16 @@ namespace Kestrel.Slice
             }
         }
 
+        static SliceData()
+        {
+            // Same Resources copy the shell installs. A standalone Slice scene has no ScreenStub.
+            HomeAutoBuild.BoardStarterPack = () =>
+            {
+                var asset = Resources.Load<TextAsset>("KestrelData/board-starters");
+                return asset != null ? asset.text : null;
+            };
+        }
+
         public static Catalog Catalog => catalog ??= Load();
 
         static string T(string n)

@@ -98,6 +98,10 @@ namespace Kestrel.Core.Flight
             if (!turnShapeSet)
             {
                 if (s.flightPathRad > kicked + CatchRad) return kicked;
+                // A biting max-Q cap must not chase a path that is just starting to fall.
+                // Snapping all the way back to the kick lofts a rocket that has already turned.
+                if (throttle < 1 && HoldKickThroughMaxQ(s.q) && s.flightPathRad > kicked - 0.15)
+                    return kicked;
                 return s.flightPathRad;
             }
             return Turn(s.alt, kicked);
@@ -118,6 +122,18 @@ namespace Kestrel.Core.Flight
             double expo = 1 + 2 * (1 - shape);
             double t = Math.Pow(u, expo);
             return kicked * (1 - t) + TurnEndPitchRad * t;
+        }
+
+        /// <summary>
+        /// True when the max-Q cap is below full throttle and q is inside the bucket.
+        /// Callers hold the kick pitch for that stretch. A 100% cap does not hold.
+        /// A g-limit cap does not hold: the gravity turn still has to happen.
+        /// </summary>
+        public bool HoldKickThroughMaxQ(double q)
+        {
+            if (!maxQThrottleSet || q < MaxQReferencePa * MaxQBucketFraction) return false;
+            double cap = maxQThrottle > 1.5 ? maxQThrottle / 100.0 : maxQThrottle;
+            return cap < 1;
         }
 
         double ThrottleOf(GuidanceState s)

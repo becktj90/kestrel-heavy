@@ -68,6 +68,51 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void MaxQPitchHold_StaysOnTheCaughtAngleWhileTheCapBites()
+        {
+            var mission = campaign.Mission(2);
+            var design = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, mission).Design);
+            var input = Stack.SimInputs(catalog, design, 0.2, 0.2);
+            var sim = new AscentSim(input.stages, input.opts);
+            while (sim.Tick()) { }
+            bool sawTurn = false;
+            bool holding = false;
+            double held = 0;
+            int heldSamples = 0;
+            int longest = 0;
+            bool released = false;
+            foreach (var s in sim.Samples)
+            {
+                if (s.stage > 1)
+                {
+                    if (holding) released = true;
+                    break;
+                }
+                if (s.mode == 2 || s.mode == 3 || s.mode == 4)
+                {
+                    if (holding) released = true;
+                    if (s.mode == 2) sawTurn = true;
+                    holding = false;
+                    if (heldSamples > longest) longest = heldSamples;
+                }
+                if (!sawTurn || s.mode != 1) continue;
+                if (!holding)
+                {
+                    holding = true;
+                    held = s.pitch;
+                    heldSamples = 1;
+                    continue;
+                }
+                heldSamples++;
+                Assert.That(s.pitch, Is.EqualTo(held).Within(1e-6),
+                    "t " + s.t.ToString("0.0") + " q " + (s.q / 1000).ToString("0.0"));
+            }
+            if (heldSamples > longest) longest = heldSamples;
+            Assert.That(longest, Is.GreaterThan(3), "the cap holds the caught pitch for more than one step");
+            Assert.IsTrue(released, "the hold ends when the cap lets go");
+        }
+
+        [Test]
         public void DesignThrottleStaysOnUntilTheMaxQCallIsTaken()
         {
             var mission = campaign.Mission(1);

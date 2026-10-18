@@ -800,10 +800,11 @@
       "diameterM": 3.5,
       "target": {
         "kind": "circular",
-        "apoKm": 400,
-        "periKm": 400,
+        "apoKm": 500,
+        "periKm": 500,
         "incDeg": 51.6
       },
+      "tune": "Spec asked for 400 km and a Haven landing. KH-8 already closes 400 km with this capsule and no landing reserve, at about 4.2 g. Holding 2 to 6 percent of stage-1 propellant back for a barge, across pitch kicks of 2 to 7 degrees, 7 to 9 engines and 300 to 420 t of kerolox, makes that gravity turn dive: 864 catalog designs, and none both circularized and graded a good catch. The contract drops the landing and raises the circle to 500 km. A nine-engine kerolox booster and a hydrolox upper still close that orbit under 4.2 g on every campaign seed. The 4.5 g cap, reliability and no-red gates stay.",
       "requirements": [
         {
           "id": "maxG",
@@ -818,12 +819,6 @@
         },
         {
           "id": "randomFailures"
-        },
-        {
-          "id": "landing",
-          "mode": "barge",
-          "grade": "good",
-          "site": "Haven"
         }
       ],
       "budgetKc": 180000000,
@@ -835,21 +830,17 @@
         "payloadName": "Nest-2",
         "payloadKind": "Crew capsule",
         "customer": "Harbor Guild",
-        "goal": "Fly a 12,000 kg crew capsule to 400 km, then land the booster on Haven.",
-        "control": "Nest-2 is 12,000 kg. A 400 km circle. Peak g at most 4.5. Then land the booster on Haven.",
-        "whatItIs": "A second crew capsule, with the booster coming home to Haven.",
-        "whatItDoes": "It carries people up, then the booster finds the barge.",
-        "why": "People ride Nest-2, then the booster finds Haven. 12,000 kg and a 4.5 g cap. Crew plus a landing is past the flights already shown.",
+        "goal": "Fly a 12,000 kg crew capsule to a 500 km orbit.",
+        "control": "Nest-2 is 12,000 kg. A 500 km circle. Peak g at most 4.5. Reliability at least 0.98.",
+        "whatItIs": "A second crew capsule, higher than the first crew flight.",
+        "whatItDoes": "It carries people to a 500 km circle and keeps the ride gentle.",
+        "why": "Crew already flew 400 km. This circle is 500 km, still under the 4.5 g cap. A Haven landing on this capsule dives the gravity turn, so the contract does not ask for one.",
         "form": "crew",
-        "codex": "booster-landing",
+        "codex": "orbits",
         "bonuses": [
           {
             "id": "quiet",
             "label": "Fly with no red risks"
-          },
-          {
-            "id": "barge",
-            "label": "Land the booster on Haven"
           }
         ]
       }

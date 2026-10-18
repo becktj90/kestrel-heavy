@@ -128,7 +128,8 @@ namespace Kestrel.Core.Physics
         public readonly List<SimEvent> Events = new List<SimEvent>();
         public readonly List<SimSample> Samples = new List<SimSample>();
         public int StageCount => st.Length;
-        double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1;
+        double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1, catchPitch;
+        bool turned;
         bool liftedOff, sawKarman; double karmanT; string outcome = "timeout";
         FailureEvent playedBreak;
 
@@ -231,13 +232,41 @@ namespace Kestrel.Core.Physics
                 thrustScale = o.monitor != null ? o.monitor.ThrustFactor : 1;
                 if (Headless.LegacyPitch(o.guidance))
                 {
+                    bool holdKick = HoldingMaxQPitch(alt, m, vr, vrel);
                     if (StageIdx == 0)
                     {
                         if (Mode == 0 && vrel >= o.kickSpeed) { Mode = 1; kickStart = T; PitchCmd = Math.PI / 2 - kickAngle; }
                         else if (Mode == 1)
                         {
                             double vgam = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
-                            if (T - kickStart > 3 && vgam <= PitchCmd + 0.002) Mode = 2;
+                            if (turned && holdKick)
+                            {
+                                // Stay on the angle caught when the path first sagged. Folding
+                                // catchPitch down to this tick's vgam releases the hold after
+                                // one step and the nose ratchets into the dive.
+                                PitchCmd = catchPitch;
+                            }
+                            else if (turned)
+                                Mode = 2;
+                            else if (T - kickStart > 3 && vgam <= PitchCmd + 0.002)
+                            {
+                                catchPitch = vgam;
+                                turned = true;
+                                Mode = 2;
+                            }
+                        }
+                        else if (Mode == 2 && holdKick)
+                        {
+                            // Follow the turn unless the path sags under the angle we caught.
+                            // A cut thrust that keeps chasing that sag dives and q rises.
+                            // PitchCmd stays on the kick until that freeze, so an uncapped
+                            // flight still records the golden kick angle.
+                            double vgam = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
+                            if (vgam < catchPitch - 0.002)
+                            {
+                                PitchCmd = catchPitch;
+                                Mode = 1;
+                            }
                         }
                     }
                     else
@@ -403,6 +432,20 @@ namespace Kestrel.Core.Physics
             Mode = 4;
             int stage = StageIdx < st.Length ? StageIdx + 1 : st.Length;
             Events.Add(new SimEvent { t = T, type = "failure", stage = stage, alt = alt, v = speed });
+        }
+
+        /// <summary>
+        /// Hold the kick while a max-Q cap is actually cutting thrust. The gravity turn
+        /// resumes when q leaves the bucket or the engine cannot throttle any lower.
+        /// </summary>
+        bool HoldingMaxQPitch(double alt, double mass, double vr, double vrel)
+        {
+            if (StageIdx != 0 || o.guidance == null) return false;
+            double q = Dynamic(alt, vrel);
+            if (!o.guidance.HoldKickThroughMaxQ(q)) return false;
+            double r = alt + Gravity.R_EARTH;
+            var cmd = o.guidance.Command(Guide(alt, mass, vr, Gravity.MU_EARTH / (r * r), vrel));
+            return cmd.throttle < 1;
         }
 
         double Dynamic(double alt, double vrel)

@@ -168,14 +168,50 @@ namespace Kestrel.Slice
             card.style.marginBottom = 0;
         }
 
+        static readonly string[] FlightChrome = { "hud", "ascent-hud", "ascent-nudge", "skip-count", "guide-overlay", "guide-pop", "guide-box" };
+        static readonly string[] Readouts = { "h-t", "h-stage", "h-alt", "h-vel", "h-mach", "h-q", "h-thr", "h-dr", "h-msg", "h-verdict", "h-pulse", "h-callout" };
+
+        /// <summary>Take the result card out of the tree so a retry can count down again.</summary>
+        public static void Dismiss(VisualElement tree)
+        {
+            if (tree == null) return;
+            var cards = tree.Query(ReportView.RootName).ToList();
+            for (int i = cards.Count - 1; i >= 0; i--)
+                cards[i]?.RemoveFromHierarchy();
+        }
+
+        /// <summary>
+        /// Undo <see cref="RetireFlight"/> on the flight chrome and blank the readouts.
+        /// EnterFlight used to only drop the hidden class, so display:none and a disabled HUD
+        /// survived into the next count.
+        /// </summary>
+        public static void RestoreFlight(VisualElement tree)
+        {
+            if (tree == null) return;
+            for (int i = 0; i < FlightChrome.Length; i++)
+            {
+                var found = tree.Query(FlightChrome[i]).ToList();
+                for (int n = 0; n < found.Count; n++) Restore(found[n]);
+            }
+            var buttons = tree.Query<Button>().ToList();
+            for (int i = 0; i < buttons.Count; i++)
+            {
+                var button = buttons[i];
+                if (button == null || InReport(button)) continue;
+                string name = button.name ?? "";
+                if (name == "skip-count" || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
+                    Restore(button);
+            }
+            for (int i = 0; i < Readouts.Length; i++) Clear(tree, Readouts[i]);
+        }
+
         /// <summary>Hide the live flight chrome and clear a countdown that outlived the flight.</summary>
         public static void RetireFlight(VisualElement tree)
         {
             if (tree == null) return;
-            string[] names = { "hud", "ascent-hud", "ascent-nudge", "skip-count", "guide-overlay", "guide-pop", "guide-box" };
-            for (int i = 0; i < names.Length; i++)
+            for (int i = 0; i < FlightChrome.Length; i++)
             {
-                var found = tree.Query(names[i]).ToList();
+                var found = tree.Query(FlightChrome[i]).ToList();
                 for (int n = 0; n < found.Count; n++) Retire(found[n]);
             }
             var buttons = tree.Query<Button>().ToList();
@@ -187,8 +223,7 @@ namespace Kestrel.Slice
                 if (name == "skip-count" || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
                     Retire(button);
             }
-            Clear(tree, "h-t");
-            Clear(tree, "h-verdict");
+            for (int i = 0; i < Readouts.Length; i++) Clear(tree, Readouts[i]);
         }
 
         public static bool ConsumeKey(VisualElement tree)
@@ -224,13 +259,36 @@ namespace Kestrel.Slice
             }
         }
 
+        const string PickSaved = "kh-report-pick-saved";
+        const string PickIgnore = "kh-report-pick-ignore";
+
         static void Retire(VisualElement el)
         {
             if (el == null || InReport(el)) return;
+            if (!el.ClassListContains(PickSaved))
+            {
+                el.AddToClassList(PickSaved);
+                // guide-overlay, hud and ascent-hud are full-screen and Ignore.
+                // Remembering that here keeps a retry from turning them into the hit target.
+                if (el.pickingMode == PickingMode.Ignore) el.AddToClassList(PickIgnore);
+            }
             el.AddToClassList("hidden");
             el.style.display = DisplayStyle.None;
             el.SetEnabled(false);
             el.pickingMode = PickingMode.Ignore;
+        }
+
+        static void Restore(VisualElement el)
+        {
+            if (el == null || InReport(el)) return;
+            el.RemoveFromClassList("hidden");
+            el.style.display = StyleKeyword.Null;
+            el.SetEnabled(true);
+            if (!el.ClassListContains(PickSaved)) return;
+            bool ignore = el.ClassListContains(PickIgnore);
+            el.RemoveFromClassList(PickIgnore);
+            el.RemoveFromClassList(PickSaved);
+            el.pickingMode = ignore ? PickingMode.Ignore : PickingMode.Position;
         }
 
         static void Clear(VisualElement tree, string name)
