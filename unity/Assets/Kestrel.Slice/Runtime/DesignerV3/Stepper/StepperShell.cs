@@ -195,6 +195,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             foreach (var refresh in refreshers) refresh();
             wasMaxQStale = report.Readout == null || report.Readout.maxQStale;
             GuideBinder.Designer((int)Step, report, bridge.IsEngineer);
+            // Rebuild() paints the panel, but a step change reconstructs this tree on its own.
+            DesignerChrome.Apply(root);
         }
 
         void RefreshInPlace(StepCheck check)

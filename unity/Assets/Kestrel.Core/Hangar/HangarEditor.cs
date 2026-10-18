@@ -125,6 +125,7 @@ namespace Kestrel.Core.Hangar
             if (s.Str("propellant") != e.propellant) Set(s, "propellant", e.propellant);
             if (!EnginePoint.NozzleKnown(e, s.Str("nozzle"))) Set(s, "nozzle", "default");
             Remove(s, "tune"); // tuning belongs to the old engine (web picker does the same)
+            ReconcileEngineParams(s, e);
             if (p.kind == PartKind.Boosters) FixBoosterKind(c, s);
             return new Edit($"{HangarParts.Short(p)} engine", EngineLabel(c, old), EngineLabel(c, e.id));
         }
@@ -182,6 +183,28 @@ namespace Kestrel.Core.Hangar
             return o;
         }
 
+        /// <summary>
+        /// Fuels the designer picker can offer: every catalog propellant that has an engine,
+        /// plus <paramref name="current"/> when the open design uses a fuel outside that list.
+        /// </summary>
+        public static List<string> PropellantChoices(Catalog c, string current)
+        {
+            var ids = new List<string>();
+            if (c != null)
+            {
+                foreach (var p in c.Propellants)
+                {
+                    if (p == null || string.IsNullOrEmpty(p.id)) continue;
+                    bool burns = false;
+                    foreach (var e in c.Engines)
+                        if (e != null && e.propellant == p.id) { burns = true; break; }
+                    if (burns && !ids.Contains(p.id)) ids.Add(p.id);
+                }
+            }
+            if (!string.IsNullOrEmpty(current) && !ids.Contains(current)) ids.Add(current);
+            return ids;
+        }
+
         /// <summary>Engines that burn this part's propellant (the picker list).</summary>
         public static List<Engine> EngineChoices(Catalog c, JsonObject d, PartRef p)
         {
@@ -227,6 +250,7 @@ namespace Kestrel.Core.Hangar
                 Set(s, "engine", e.id);
                 Remove(s, "tune");
                 if (!EnginePoint.NozzleKnown(e, s.Str("nozzle"))) Set(s, "nozzle", "default");
+                ReconcileEngineParams(s, e);
             }
             if (p.kind == PartKind.Boosters) FixBoosterKind(c, s);
             return new Edit($"{HangarParts.Short(p)} fuel", Label(c.PropellantById, old), Label(c.PropellantById, propellantId));
@@ -721,6 +745,34 @@ namespace Kestrel.Core.Hangar
         {
             double cap = Math.Floor(s.Num("propMass") * Lim.landingReserveMax);
             if (s.Num("landingPropMass") > cap) Set(s, "landingPropMass", cap);
+        }
+
+        /// <summary>
+        /// Pull chamber pressure, expansion, and gimbal back inside the new engine's envelope.
+        /// A value that still fits is left alone, so a legal override is not thrown away.
+        /// </summary>
+        static void ReconcileEngineParams(JsonObject s, Engine e)
+        {
+            var over = s?.Obj("engineParams");
+            if (over == null || e == null) return;
+            var env = EngineModel.EnvelopeFor(e);
+            double pcLo = env.pcMin > 0 ? env.pcMin : 0;
+            double pcHi = env.pcRated > 0 ? env.pcRated * EngineModel.PcOverRated : 0;
+            if (pcHi > pcLo) ClampStored(over, "pc", pcLo, pcHi);
+            double epsLo = env.epsMin > 0 ? env.epsMin : 8;
+            double epsHi = env.epsMax > 0 ? env.epsMax : 120;
+            if (epsHi < epsLo) epsHi = epsLo;
+            ClampStored(over, "expansionRatio", epsLo, epsHi);
+            ClampStored(over, "gimbalDeg", 0, e.gimbal > 0 ? e.gimbal : 0);
+        }
+
+        static void ClampStored(JsonObject over, string key, double lo, double hi)
+        {
+            if (over == null || !over.ContainsKey(key)) return;
+            double v = over.Num(key);
+            if (double.IsNaN(v) || double.IsInfinity(v)) return;
+            double next = v < lo ? lo : v > hi ? hi : v;
+            if (next != v) Set(over, key, next);
         }
 
         static void FixBoosterKind(Catalog c, JsonObject so)

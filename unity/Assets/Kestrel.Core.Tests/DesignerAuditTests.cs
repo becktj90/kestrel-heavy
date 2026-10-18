@@ -107,6 +107,71 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void PitchKickAlt_KeepsALegalCampaignAltitude()
+        {
+            Assert.AreEqual(50000, DesignerLimits.Active.pitchKickAltMax, 0);
+            Assert.AreEqual(DesignerLimits.Active.pitchKickAltMax, DesignerKnobs.PitchAltMax, 0);
+            var design = HangarFixtures.Template("workhorse");
+            Assert.IsTrue(DesignerKnobs.SetGuidance(design, "pitchKickAlt", 12000).changed);
+            Assert.AreEqual(12000, design.Obj("guidance").Num("pitchKickAlt"), 1e-6);
+            Assert.IsTrue(DesignerKnobs.NudgeGuidance(design, "pitchKickAlt", 1).changed);
+            Assert.AreEqual(12050, design.Obj("guidance").Num("pitchKickAlt"), 1e-6);
+            DesignerKnobs.SetGuidance(design, "pitchKickAlt", 12000);
+            Assert.IsTrue(DesignerKnobs.NudgeGuidance(design, "pitchKickAlt", -1).changed);
+            Assert.AreEqual(11950, design.Obj("guidance").Num("pitchKickAlt"), 1e-6);
+            DesignerKnobs.SetGuidance(design, "pitchKickAlt", 90000);
+            Assert.AreEqual(DesignerKnobs.PitchAltMax, design.Obj("guidance").Num("pitchKickAlt"), 1e-6);
+        }
+
+        [Test]
+        public void EngineChange_ReclampsOverrides_AndNudgeUsesTheResolvedPressure()
+        {
+            var design = HangarFixtures.Template("workhorse");
+            var stage = PartRef.Stage(0);
+            HangarEditor.SetEngine(C, design, stage, "gg-kerolox");
+            double ggMax = DesignerKnobs.PcMax(C, design, 0);
+            Assert.IsTrue(DesignerKnobs.SetEnginePc(C, design, 0, ggMax).changed);
+            Assert.AreEqual(ggMax, Stage0(design).Obj("engineParams").Num("pc"), 1e-4);
+            DesignerKnobs.SetExpansionRatio(C, design, 0, 40);
+            Assert.AreEqual(40, Stage0(design).Obj("engineParams").Num("expansionRatio"), 1e-6);
+
+            HangarEditor.SetEngine(C, design, stage, "pf-kerolox");
+            double pfMax = DesignerKnobs.PcMax(C, design, 0);
+            Assert.Less(pfMax, 20);
+            Assert.AreEqual(pfMax, Stage0(design).Obj("engineParams").Num("pc"), 1e-4);
+            Assert.AreEqual(40, Stage0(design).Obj("engineParams").Num("expansionRatio"), 1e-6, "an expansion that still fits stays");
+            Assert.AreEqual(pfMax, DesignerKnobs.ShownPc(C, design, 0), 1e-4);
+            Assert.IsFalse(DesignerKnobs.NudgePc(C, design, 0, 1).changed);
+            Assert.AreEqual(pfMax, DesignerKnobs.ShownPc(C, design, 0), 1e-4);
+
+            var stale = HangarFixtures.Template("workhorse");
+            var body = Stage0(stale);
+            JsonMut.Set(body, "engine", "pf-kerolox");
+            JsonMut.Set(body, "propellant", "kerolox");
+            var parms = new JsonObject();
+            JsonMut.Set(parms, "pc", 112d);
+            JsonMut.Set(body, "engineParams", parms);
+            double resolved = DesignerKnobs.PcMax(C, stale, 0);
+            Assert.AreEqual(resolved, DesignerKnobs.ShownPc(C, stale, 0), 1e-4);
+            Assert.Less(DesignerKnobs.ShownPc(C, stale, 0), 20);
+            Assert.IsFalse(DesignerKnobs.NudgePc(C, stale, 0, 1).changed);
+            Assert.AreEqual(112, body.Obj("engineParams").Num("pc"), 1e-6);
+            Assert.AreEqual(resolved, DesignerKnobs.ShownPc(C, stale, 0), 1e-4);
+        }
+
+        [Test]
+        public void PropellantChoices_IncludeEveryFuelWithAnEngine()
+        {
+            var ids = HangarEditor.PropellantChoices(C, null);
+            foreach (var id in new[] { "kerolox", "methalox", "hydrolox", "udmh-nto", "mmh-nto", "solid-apcp", "hybrid" })
+                Assert.IsTrue(ids.Contains(id), id);
+            var kept = HangarEditor.PropellantChoices(C, "stored-fuel");
+            Assert.IsTrue(kept.Contains("stored-fuel"));
+            Assert.IsTrue(kept.Contains("udmh-nto"));
+            Assert.AreEqual(ids.Count + 1, kept.Count);
+        }
+
+        [Test]
         public void EveryStepper_StopsAtMinAndMax()
         {
             var lim = DesignerLimits.Active;
@@ -184,7 +249,9 @@ namespace Kestrel.Core.Tests
 
             Pump(design, 1, () => DesignerKnobs.NudgeGuidance(design, "gLimit", 1), () => DesignerKnobs.ShownGuidance(design, "gLimit"), DesignerKnobs.GLimitMax);
             Pump(design, -1, () => DesignerKnobs.NudgeGuidance(design, "gLimit", -1), () => DesignerKnobs.ShownGuidance(design, "gLimit"), DesignerKnobs.GLimitMin);
+            DesignerKnobs.SetGuidance(design, "pitchKickAlt", DesignerKnobs.PitchAltMax - DesignerKnobs.PitchAltStep * 2);
             Pump(design, 1, () => DesignerKnobs.NudgeGuidance(design, "pitchKickAlt", 1), () => DesignerKnobs.ShownGuidance(design, "pitchKickAlt"), DesignerKnobs.PitchAltMax);
+            DesignerKnobs.SetGuidance(design, "pitchKickAlt", DesignerKnobs.PitchAltMin + DesignerKnobs.PitchAltStep * 2);
             Pump(design, -1, () => DesignerKnobs.NudgeGuidance(design, "pitchKickAlt", -1), () => DesignerKnobs.ShownGuidance(design, "pitchKickAlt"), DesignerKnobs.PitchAltMin);
             Pump(design, 1, () => DesignerKnobs.NudgeGuidance(design, "pitchKickDeg", 1), () => DesignerKnobs.ShownGuidance(design, "pitchKickDeg"), DesignerKnobs.PitchDegMax);
             Pump(design, -1, () => DesignerKnobs.NudgeGuidance(design, "pitchKickDeg", -1), () => DesignerKnobs.ShownGuidance(design, "pitchKickDeg"), DesignerKnobs.PitchDegMin);

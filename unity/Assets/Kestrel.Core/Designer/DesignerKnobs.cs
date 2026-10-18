@@ -25,8 +25,9 @@ namespace Kestrel.Core.Designer
         public const double GimbalStep = 0.5;
         public const double PcStep = 5;
         public const double EpsStep = 2;
-        public const double PitchAltMin = 0;
-        public const double PitchAltMax = 5000;
+        /// <summary>data/designer-limits.json v3.guidance.pitchKickAltM. 12000 m stays 12000 m.</summary>
+        public static double PitchAltMin => DesignerLimits.Active.pitchKickAltMin;
+        public static double PitchAltMax => DesignerLimits.Active.pitchKickAltMax;
         public const double PitchAltStep = 50;
         public const double PitchAltDefault = 100;
         public const double PitchDegMin = 0;
@@ -100,9 +101,27 @@ namespace Kestrel.Core.Designer
         {
             var s = Stage(design, stage);
             var over = s?.Obj("engineParams");
-            if (over != null && over.ContainsKey("pc") && Finite(over.Num("pc"))) return over.Num("pc");
-            var e = EngineOf(c, s);
-            return e != null && e.pc > 0 ? e.pc : 0;
+            double raw;
+            if (over != null && over.ContainsKey("pc") && Finite(over.Num("pc"))) raw = over.Num("pc");
+            else
+            {
+                var catalog = EngineOf(c, s);
+                raw = catalog != null && catalog.pc > 0 ? catalog.pc : 0;
+            }
+            // The Engines tab and the nudge both start here. Physics already clamps, so the
+            // number on screen is the pressure the selected engine can actually run.
+            return ResolvedPc(c, s, raw);
+        }
+
+        static double ResolvedPc(Catalog c, JsonObject stage, double raw)
+        {
+            var e = EngineOf(c, stage);
+            if (e == null) return Finite(raw) ? Clamp(raw, 0, 500) : 0;
+            var env = EngineModel.EnvelopeFor(e);
+            double lo = env.pcMin > 0 ? env.pcMin : 0;
+            double hi = env.pcRated > 0 ? env.pcRated * EngineModel.PcOverRated : 0;
+            if (!(hi > lo) || !Finite(raw)) return Finite(raw) ? raw : 0;
+            return Clamp(raw, lo, hi);
         }
 
         public static double PcMin(Catalog c, JsonObject design, int stage)
@@ -142,16 +161,24 @@ namespace Kestrel.Core.Designer
         {
             var s = Stage(design, stage);
             var over = s?.Obj("engineParams");
+            double raw;
             if (over != null && over.ContainsKey("expansionRatio") && Finite(over.Num("expansionRatio")))
-                return over.Num("expansionRatio");
-            var e = EngineOf(c, s);
-            if (e == null) return 0;
-            string nozzle = s.Str("nozzle");
-            if (!string.IsNullOrEmpty(nozzle) && nozzle != "default" && e.nozzles != null)
-                for (int i = 0; i < e.nozzles.Count; i++)
-                    if (e.nozzles[i].id == nozzle && e.nozzles[i].expansionRatio > 0)
-                        return e.nozzles[i].expansionRatio;
-            return e.expansionRatio;
+                raw = over.Num("expansionRatio");
+            else
+            {
+                var e = EngineOf(c, s);
+                raw = 0;
+                if (e != null)
+                {
+                    raw = e.expansionRatio;
+                    string nozzle = s.Str("nozzle");
+                    if (!string.IsNullOrEmpty(nozzle) && nozzle != "default" && e.nozzles != null)
+                        for (int i = 0; i < e.nozzles.Count; i++)
+                            if (e.nozzles[i].id == nozzle && e.nozzles[i].expansionRatio > 0)
+                                raw = e.nozzles[i].expansionRatio;
+                }
+            }
+            return ClampEps(c, design, stage, raw);
         }
 
         public static Edit SetGimbal(Catalog c, JsonObject d, int stage, double deg)
@@ -178,9 +205,14 @@ namespace Kestrel.Core.Designer
         {
             var s = Stage(design, stage);
             var over = s?.Obj("engineParams");
-            if (over != null && over.ContainsKey("gimbalDeg") && Finite(over.Num("gimbalDeg"))) return over.Num("gimbalDeg");
-            var e = EngineOf(c, s);
-            return e != null ? e.gimbal : 0;
+            double raw;
+            if (over != null && over.ContainsKey("gimbalDeg") && Finite(over.Num("gimbalDeg"))) raw = over.Num("gimbalDeg");
+            else
+            {
+                var catalog = EngineOf(c, s);
+                raw = catalog != null ? catalog.gimbal : 0;
+            }
+            return ClampGimbal(c, design, stage, raw);
         }
 
         public static Edit SetThrottleMin(Catalog c, JsonObject d, int stage, double frac)

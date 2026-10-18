@@ -616,10 +616,12 @@ namespace Kestrel.Slice.DesignerV3
             var mix = Readout.Quick(C, D);
             Teach(DesignerCoach.WhyTanks(mix.totalDeltaV, mix.required), "prop");
             var props = new List<HangarUi.Choice>();
-            foreach (var id in new[] { "kerolox", "methalox", "hydrolox" })
+            string currentFuel = Stage0()?.Str("propellant");
+            foreach (var id in HangarEditor.PropellantChoices(C, currentFuel))
             {
-                if (!C.PropellantById.TryGetValue(id, out var p)) continue;
-                props.Add(new HangarUi.Choice(id, p.label ?? id));
+                string label = id;
+                if (C.PropellantById.TryGetValue(id, out var p) && !string.IsNullOrEmpty(p.label)) label = p.label;
+                props.Add(new HangarUi.Choice(id, label, label));
             }
             var prop = ui.Chips("Propellant", props, () => Stage0()?.Str("propellant"),
                 id => Do(d => HangarEditor.SetPropellant(C, d, PartRef.Stage(0), id)), refreshers);

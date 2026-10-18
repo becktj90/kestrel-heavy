@@ -197,14 +197,11 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var stage = Stage0(bridge.Design);
             string current = stage?.Str("propellant");
             var choices = new List<HangarUi.Choice>();
-            foreach (var id in new[] { "kerolox", "methalox", "hydrolox" })
+            foreach (var id in HangarEditor.PropellantChoices(bridge.Catalog, current))
             {
-                if (!bridge.Catalog.PropellantById.TryGetValue(id, out var p)) continue;
-                choices.Add(new HangarUi.Choice(id, Family(id, p.label), p.label));
+                bridge.Catalog.PropellantById.TryGetValue(id, out var p);
+                choices.Add(new HangarUi.Choice(id, Family(id, p?.label), p?.label));
             }
-            if (!string.IsNullOrEmpty(current) && choices.TrueForAll(c => c.id != current)
-                && bridge.Catalog.PropellantById.TryGetValue(current, out var extra))
-                choices.Add(new HangarUi.Choice(current, extra.label ?? current, extra.label));
             var chips = bridge.Ui.Chips("Propellant", choices, () => Stage0(bridge.Design)?.Str("propellant"),
                 id => bridge.Apply(d => HangarEditor.SetPropellant(bridge.Catalog, d, PartRef.Stage(0), id), null), refreshers);
             chips.name = "field-propellant";
