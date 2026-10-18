@@ -9,10 +9,10 @@ namespace Kestrel.Pad
     {
         /// <summary>Builds (or rebuilds) the pad under root. Returns the renderer. Arms are connected to the
         /// given or default attach points with vehicle frame == pad frame (vehicle on the pad centre line).</summary>
-        public static PadRenderer Build(Transform root, int seed, PadArchetype type, PadFit fit, IReadOnlyList<AttachPoint> attach = null)
+        public static PadRenderer Build(Transform root, int seed, PadArchetype type, PadFit fit, IReadOnlyList<AttachPoint> attach = null, FarmPlan propellant = null)
         {
             var pts = attach ?? PadGenerator.DefaultAttachPoints(fit, type);
-            var layout = PadGenerator.Generate(seed, type, fit, pts);
+            var layout = PadGenerator.Generate(seed, type, fit, pts, propellant);
             var r = root.GetComponent<PadRenderer>(); if (r == null) r = root.gameObject.AddComponent<PadRenderer>();
             r.Build(layout);
             var detail = root.GetComponent<PadDetailRenderer>(); if (detail == null) detail = root.gameObject.AddComponent<PadDetailRenderer>();
@@ -25,6 +25,8 @@ namespace Kestrel.Pad
             // PadLights.ForceNight forces full night for shots.
             var lights = PadLights.Attach(r, r.Quality);
             lights.Night = PadLights.ResolveNight();
+            r.FarmKey = layout.Propellant == null ? 0 : layout.Propellant.Key;
+            PadVfxLink.Publish(layout, root);
             return r;
         }
     }
