@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Kit.Core",
     "rootNamespace": "Kestrel.Kit",
-    "references": [],
+    "references": ["Kestrel.Core"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

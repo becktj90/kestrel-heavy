@@ -31,6 +31,9 @@ Kit lighting (sun elevation, fog, stars, `-khTimeOfDay`, `TimeOfDayRig`) consume
 
 ## Graphics Dev
 
-PR #271 is on main. It left `Kestrel.Kit.LaunchTimeOfDay` and `TimeOfDayPresets.ForMission(id)` in Kit. `ForMission` hashes the id alone and then uses a flat 50/25/25, so a mission never changes sky. `PickTimeOfDay` replaces that call.
+Done. `Kestrel.Kit.LaunchTimeOfDay`, `TimeOfDayPresets.Pick`, `SeedFor` and `ForMission` are deleted. Kit uses `Kestrel.Core.Flight.LaunchTimeOfDay`.
+`Kestrel.Kit.Core` now references `Kestrel.Core` (one way: Core still references nothing). `Kestrel.Kit.Tests` references it too.
 
-Kestrel.Core cannot reference Kit. The Core asmdef has no references, the dotnet project compiles only `Assets/Kestrel.Core`, and Kit is the game layer that should reference Core. The enum in this change is the one to keep. Delete the Kit copy and use `Kestrel.Core.Flight.LaunchTimeOfDay`. The numeric values already match (Day 0, Sunset 1, Night 2).
+- `TimeOfDayRig.SetMission(missionId, seed)` calls `LaunchTime.PickTimeOfDay(missionId, seed)` and then `TimeOfDayPresets.For(tod, VarietySeed(seed))`.
+  `PickTimeOfDay` reads `data/time-of-day.json` from a repo checkout. If that table cannot be loaded on the running device, `SetMission` falls back to Day. Gameplay owns shipping the table with the player build.
+- `-khTimeOfDay=night|sunset|day [-khTodSeed=N]` is unchanged. It still wins over the table through `TimeOfDayRig.Force`.

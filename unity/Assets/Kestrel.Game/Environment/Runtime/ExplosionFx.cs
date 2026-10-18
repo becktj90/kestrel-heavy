@@ -74,6 +74,7 @@ namespace Kestrel.Game.Environment
 
         void Handle(CinematicEvent e)
         {
+            if (e.Kind > CinematicKind.EngineFailure) return;   // separation / debris events belong to DebrisFx
             int q = CurrentQuality();
             if (builtQuality != q) Build(q);
             var tod = TimeOfDayRig.Current;
