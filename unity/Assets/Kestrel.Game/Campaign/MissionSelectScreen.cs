@@ -243,9 +243,12 @@ namespace Kestrel.Game.MissionSelect
         {
             try
             {
-                string root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
-                string path = Path.Combine(root, "data", "campaign.json");
-                if (File.Exists(path)) return File.ReadAllText(path);
+                string root = Catalog.RepoRootOrNull();
+                if (!string.IsNullOrEmpty(root))
+                {
+                    string path = Path.Combine(root, "data", "campaign.json");
+                    if (File.Exists(path)) return File.ReadAllText(path);
+                }
             }
             catch (Exception) { }
             var asset = Resources.Load<TextAsset>("KestrelData/campaign");

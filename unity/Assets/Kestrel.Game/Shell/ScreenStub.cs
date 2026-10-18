@@ -40,6 +40,7 @@ namespace Kestrel.Game.Shell
                     () => shell.Flow.ExitToHome(),
                     MainMenuLayout.ReducedMotion(),
                     CanLaunch);
+                FillHost(_view);
                 shell.Safe.Add(_view);
                 if (shell.Fill != null) shell.Fill.SpaceT = 0.35f;
                 return;
@@ -76,6 +77,7 @@ namespace Kestrel.Game.Shell
             _view.AddToClassList("kh-home");
             _view.pickingMode = PickingMode.Ignore;
             _view.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0f));
+            FillHost(_view);
             shell.Safe.Add(_view);
             if (shell.Fill != null) shell.Fill.SpaceT = 0.85f;
             // #224: music/sound/narration toggles live on Home in both the overlay and the 3D fallback.
@@ -92,7 +94,8 @@ namespace Kestrel.Game.Shell
                 Action design = () => shell.Flow.HomePressed("design");
                 Action missions = () => shell.Flow.HomePressed("missions");
                 _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, design, missions, MainMenuLayout.ReducedMotion());
-                MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine());
+                try { MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine()); }
+                catch (Exception e) { Debug.LogWarning("[Kestrel] next mission line skipped: " + e.Message); }
                 // Music sits top-left. The gear sits clear of the web EXIT. Both follow the safe inset.
                 shell.Root.Add(audio);
                 void Place()
@@ -213,10 +216,17 @@ namespace Kestrel.Game.Shell
         static VisualElement shellFullLayer() => AppShell.Instance?.Root?.Q("mm-full");
 
         /// <summary>Repo root when data/campaign.json is on disk. Null in a player build that only has Resources.</summary>
-        public static string RepoRoot()
+        public static string RepoRoot() => Catalog.RepoRootOrNull();
+
+        /// <summary>The screen fills the safe column. Absolute menu children do not give the host a height on their own.</summary>
+        public static void FillHost(VisualElement view)
         {
-            try { return Catalog.FindRepoRoot(Directory.GetCurrentDirectory()); }
-            catch (Exception) { return null; }
+            if (view == null) return;
+            view.style.flexGrow = 1;
+            view.style.flexShrink = 1;
+            view.style.width = Length.Percent(100);
+            view.style.height = Length.Percent(100);
+            view.style.position = Position.Relative;
         }
 
         /// <summary>data/campaign.json, then the synced Resources copy the player build carries.</summary>
@@ -414,10 +424,13 @@ namespace Kestrel.Game.Shell
 
         void OnDisable()
         {
+            var root = AppShell.Instance != null ? AppShell.Instance.Root : null;
             _view?.RemoveFromHierarchy();
             _overlay?.RemoveFromHierarchy();
             _audio?.RemoveFromHierarchy();
             shellFullLayer()?.RemoveFromHierarchy();
+            root?.Q("home-settings")?.RemoveFromHierarchy();
+            root?.Q("home-settings-sheet")?.RemoveFromHierarchy();
             if (_menu != null) { Destroy(_menu); _menu = null; }
         }
     }
