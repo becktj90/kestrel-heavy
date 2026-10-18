@@ -1,4 +1,5 @@
 using Kestrel.Core.Sky;
+using Kestrel.Core.Flight;
 using Kestrel.Kit;
 using NUnit.Framework;
 
