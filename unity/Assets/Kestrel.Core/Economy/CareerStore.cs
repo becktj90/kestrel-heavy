@@ -135,55 +135,88 @@ namespace Kestrel.Core.Economy
 
         void Read()
         {
-            var careerSlot = ReadSlot(CareerKey, "career", out var careerData);
-            var missionSlot = ReadSlot(MissionsKey, "missions", out var missionData);
+            var careerSlot = ReadSlot(CareerKey, "career", out var careerData, out int careerSchema);
+            var missionSlot = ReadSlot(MissionsKey, "missions", out var missionData, out int missionSchema);
             JsonObject profile = null;
             if (careerSlot == Slot.Missing || missionSlot == Slot.Missing)
                 profile = ProfileOf(store.GetProgress());
 
             bool writeCareer = false, writeMissions = false;
-            if (careerSlot == Slot.Ok) ApplyCareer(careerData, false);
+            if (careerSlot == Slot.Ok)
+            {
+                // A pre-schema career file is rewritten. When it lists no unlocks, rebuild the
+                // parts those cleared missions awarded, the same way a progress profile does.
+                bool migrateSchema = careerSchema < NativeStore.Schema;
+                ApplyCareer(careerData, migrateSchema);
+                if (migrateSchema) writeCareer = true;
+            }
             else if (careerSlot == Slot.Missing && profile != null)
             {
                 ApplyCareer(profile, true);
                 writeCareer = true;
             }
 
-            if (missionSlot == Slot.Ok) ReadMissionMap(missionData);
+            if (missionSlot == Slot.Ok)
+            {
+                ReadMissionMap(missionData);
+                if (missionSchema < NativeStore.Schema) writeMissions = true;
+            }
             else if (missionSlot == Slot.Missing && profile != null && profile.Obj("missions") != null)
             {
                 ReadMissionMap(profile.Obj("missions"));
                 writeMissions = true;
             }
 
+            // Keep the pre-schema file once, then rewrite the current envelope.
+            if (writeCareer && careerSlot == Slot.Ok && careerSchema < NativeStore.Schema) store.KeepBackup(CareerKey);
+            if (writeMissions && missionSlot == Slot.Ok && missionSchema < NativeStore.Schema) store.KeepBackup(MissionsKey);
             if (writeCareer) store.PutRecord(CareerKey, "career", WriteCareer());
             if (writeMissions) store.PutRecord(MissionsKey, "missions", WriteMissions());
             MigratedFromProgress = writeCareer || writeMissions;
         }
 
-        Slot ReadSlot(string key, string kind, out JsonObject data)
+        Slot ReadSlot(string key, string kind, out JsonObject data, out int schema)
         {
             data = null;
+            schema = NativeStore.Schema;
             bool bytes = store.HasBytes(key);
             store.BackupCorruptMain(key);
             var env = store.Read(key);
             if (env == null) return bytes ? Slot.Corrupt : Slot.Missing;
-            if (!ValidEnvelope(env, kind))
+            if (!TryEnvelope(env, kind, out schema, out data))
             {
                 store.KeepBackup(key);
                 return Slot.Corrupt;
             }
-            data = env.Obj("data") ?? new JsonObject();
             return Slot.Ok;
         }
 
-        static bool ValidEnvelope(JsonObject env, string kind)
+        /// <summary>
+        /// Schema 1 is current. Schema 0, or a career blob with no envelope, is the older file and is rewritten.
+        /// A newer schema is left untouched and treated as corrupt so a future format is not guessed.
+        /// </summary>
+        static bool TryEnvelope(JsonObject env, string kind, out int schema, out JsonObject data)
         {
-            if (env.Str("kind") != kind) return false;
-            if (!TryInt(env.ContainsKey("schema") ? env["schema"] : null, out int schema)) return false;
-            if (schema != NativeStore.Schema) return false;
-            if (env.ContainsKey("data") && env["data"] != null && !(env["data"] is JsonObject)) return false;
-            return true;
+            schema = 0;
+            data = null;
+            if (env.ContainsKey("schema") && env["schema"] != null)
+            {
+                if (!TryInt(env["schema"], out schema)) return false;
+            }
+            if (schema < 0 || schema > NativeStore.Schema) return false;
+            string fileKind = env.Str("kind");
+            if (fileKind == kind)
+            {
+                if (env.ContainsKey("data") && env["data"] != null && !(env["data"] is JsonObject)) return false;
+                data = env.Obj("data") ?? new JsonObject();
+                return true;
+            }
+            if (kind == "career" && string.IsNullOrEmpty(fileKind) && schema == 0 && HasCareerKeys(env))
+            {
+                data = env;
+                return true;
+            }
+            return false;
         }
 
         void ApplyCareer(JsonObject data, bool fillUnlocksFromCleared)

@@ -49,6 +49,7 @@ namespace Kestrel.Game.Guide
 
         public static LiveGuideEngine TryLoad()
         {
+            Kestrel.Game.Audio.AudioPrefs.Load();
             string json = ReadScript();
             if (string.IsNullOrEmpty(json)) return null;
             string root = RepoRoot() ?? "";

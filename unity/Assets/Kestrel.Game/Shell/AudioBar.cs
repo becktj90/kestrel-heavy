@@ -22,6 +22,22 @@ namespace Kestrel.Game.Shell
             return row;
         }
 
+        /// <summary>Rewrite the mix labels from the saved prefs. Settings uses the same three buses.</summary>
+        public static void Sync(VisualElement root)
+        {
+            if (root == null) return;
+            Paint(root.Q<Button>("audio-music"), "Music", AudioPrefs.MusicMuted);
+            Paint(root.Q<Button>("audio-sfx"), "Sound", AudioPrefs.SfxMuted);
+            Paint(root.Q<Button>("audio-narration"), "Voice", AudioPrefs.NarrationMuted);
+        }
+
+        static void Paint(Button b, string label, bool off)
+        {
+            if (b == null) return;
+            b.text = AudioPrefs.Caption(label, off);
+            b.tooltip = label + (off ? " is muted." : " is on.") + " Tap to toggle.";
+        }
+
         /// <summary>Top-left of the canvas, clear of the corner gear and of the web EXIT.</summary>
         public static void Place(VisualElement bar, float top, float left)
         {
@@ -53,9 +69,13 @@ namespace Kestrel.Game.Shell
             b.style.height = TouchPt;
             b.style.marginLeft = first ? 0 : 4;
             b.style.marginTop = 4;
-            b.style.paddingLeft = 8;
-            b.style.paddingRight = 8;
-            b.style.fontSize = 13;
+            b.style.paddingLeft = 4;
+            b.style.paddingRight = 4;
+            b.style.paddingTop = 2;
+            b.style.paddingBottom = 2;
+            b.style.fontSize = 14;
+            b.style.whiteSpace = WhiteSpace.Normal;
+            b.style.unityTextAlign = TextAnchor.MiddleCenter;
             b.style.color = Color.white;
             b.style.unityFontStyleAndWeight = FontStyle.Bold;
             b.style.backgroundColor = new Color(0.05f, 0.08f, 0.14f, 0.86f);
@@ -63,12 +83,7 @@ namespace Kestrel.Game.Shell
             b.style.borderRightWidth = 0;
             b.style.borderBottomWidth = 0;
             b.style.borderLeftWidth = 0;
-            void Refresh()
-            {
-                bool off = get();
-                b.text = AudioPrefs.Caption(label, off);
-                b.tooltip = label + (off ? " is muted." : " is on.") + " Tap to toggle.";
-            }
+            void Refresh() => Paint(b, label, get());
             b.clicked += () => { set(!get()); Refresh(); };
             Refresh();
             return b;
