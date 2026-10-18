@@ -198,7 +198,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Readout_DeltaChip_AndStageFields_DoNotMoveDeltaV()
         {
-            Assert.AreEqual("+42 m/s Δv · −0.03 TWR", Readout.DeltaChip(42, -0.03));
+            Assert.AreEqual("+42 m/s dv · -0.03 TWR", Readout.DeltaChip(42, -0.03));
             var cat = Golden.Catalog;
             var design = (JsonObject)cat.Preset("scout").ToJson();
             var quick = Readout.Quick(cat, design);

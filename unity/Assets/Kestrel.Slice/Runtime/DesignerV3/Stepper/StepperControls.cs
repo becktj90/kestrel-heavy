@@ -213,7 +213,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var p = PartRef.Stage(0);
             var row = bridge.Ui.Stepper("Engine", () => EngineLabel(bridge), () => "Minus and plus change how many. Tap the name for another engine.",
                 (dir, key) => bridge.Apply(d => HangarEditor.SetEngineCount(d, p, (int)(HangarParts.Body(d, p)?.Num("engineCount") ?? 1) + dir), key),
-                bridge.EndGesture, "eng.count", refreshers, "Stage 1 engines");
+                bridge.EndGesture, "eng.count", refreshers, "Stage 1 engines",
+                dir => CountCanStep(bridge, dir));
             row.name = "field-engineCount";
             var labels = row.Query<Label>().ToList();
             if (labels.Count > 1)
@@ -317,7 +318,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var row = bridge.Ui.Stepper("Fuel load", () => HangarFormat.Tons(Stage0(bridge.Design)?.Num("propMass") ?? 0),
                 () => "More fuel goes farther but weighs more",
                 (dir, key) => bridge.Apply(d => HangarEditor.SetPropMass(d, p, HangarFormat.StepProp(HangarParts.Body(d, p)?.Num("propMass") ?? 0, dir)), key),
-                bridge.EndGesture, "tank.prop", refreshers);
+                bridge.EndGesture, "tank.prop", refreshers, null,
+                dir => HangarFormat.PropCanStep(Stage0(bridge.Design)?.Num("propMass") ?? 0, dir));
             NameValue(row, "propMass");
             host.Add(row);
         }
@@ -327,9 +329,33 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var row = bridge.Ui.Stepper("Stages", () => (bridge.Design.Arr("stages")?.Count ?? 0).ToString(Inv),
                 () => "Each stage drops empty weight on the way up",
                 (dir, key) => bridge.Apply(d => StepStages(bridge.Catalog, d, dir), key),
-                bridge.EndGesture, "stages.count", refreshers);
+                bridge.EndGesture, "stages.count", refreshers, null,
+                dir => StageCanStep(bridge, dir));
             NameValue(row, "stages");
             host.Add(row);
+        }
+
+        static bool CountCanStep(DesignerStepperBridge bridge, int dir)
+        {
+            int n = (int)(Stage0(bridge.Design)?.Num("engineCount") ?? 1);
+            int next = n + dir;
+            var lim = DesignerLimits.Active;
+            return next >= lim.engineCountMin && next <= lim.engineCountMax;
+        }
+
+        static bool StageCanStep(DesignerStepperBridge bridge, int dir)
+        {
+            int n = bridge.Design.Arr("stages")?.Count ?? 0;
+            var lim = DesignerLimits.Active;
+            if (dir < 0) return n > lim.stagesMin;
+            return n < lim.stagesMax;
+        }
+
+        static bool SafetyCanStep(DesignerStepperBridge bridge, int dir)
+        {
+            var lim = DesignerLimits.Active;
+            double v = bridge.Design.Num("safetyFactor", 1.4) + dir * lim.safetyStep;
+            return v >= lim.safetyMin - 1e-6 && v <= lim.safetyMax + 1e-6;
         }
 
         static Edit StepStages(Catalog catalog, JsonObject d, int dir)
@@ -346,7 +372,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 () => bridge.Design.Num("safetyFactor", 1.4).ToString("0.00", Inv),
                 () => "Stronger walls bend less and weigh more",
                 (dir, key) => bridge.Apply(d => HangarEditor.SetSafetyFactor(d, d.Num("safetyFactor", 1.4) + dir * DesignerLimits.Active.safetyStep), key),
-                bridge.EndGesture, "sf", refreshers);
+                bridge.EndGesture, "sf", refreshers, null,
+                dir => SafetyCanStep(bridge, dir));
             NameValue(row, "safetyFactor");
             host.Add(row);
         }
@@ -568,7 +595,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             trade.name = "recovery-tradeoff";
             trade.style.whiteSpace = WhiteSpace.Normal;
             host.Add(trade);
-            refreshers.Add(() => trade.text = TradeHint(bridge, engineer));
+            refreshers.Add(() => trade.text = ShownText.Screen(TradeHint(bridge, engineer)));
 
             QuickReadout readout = null;
             try { readout = Readout.Quick(bridge.Catalog, bridge.Design); }

@@ -216,11 +216,11 @@ namespace Kestrel.Game.Tests
                 Assert.IsTrue(panel.Stepper.PressForward());
                 Assert.AreEqual(DesignerStep.Engines, panel.Stepper.Step);
                 StringAssert.Contains("push", panel.Stepper.Root.Q<Label>("stepper-why-kid").text.ToLowerInvariant());
-                StringAssert.Contains("× 7", panel.Stepper.Root.Q<Label>("field-engineCount-value").text);
+                StringAssert.Contains("x 7", panel.Stepper.Root.Q<Label>("field-engineCount-value").text);
 
                 session.Apply(d => HangarEditor.SetEngineCount(d, PartRef.Stage(0), 8));
                 Assert.AreEqual(DesignerStep.Engines, panel.Stepper.Step);
-                StringAssert.Contains("× 8", panel.Stepper.Root.Q<Label>("field-engineCount-value").text);
+                StringAssert.Contains("x 8", panel.Stepper.Root.Q<Label>("field-engineCount-value").text);
                 Assert.AreEqual(8, (int)((session.Design.Arr("stages")[0] as JsonObject).Num("engineCount")));
 
                 Assert.IsTrue(panel.Stepper.PressJump(DesignerStep.Mission));
@@ -379,7 +379,7 @@ namespace Kestrel.Game.Tests
                 if (cleared)
                 {
                     Assert.AreNotEqual("maxq-high", StepperModel.Evaluate(C, session.Design)[DesignerStep.Tanks].Code);
-                    StringAssert.Contains("→", note);
+                    StringAssert.Contains(" to ", note);
                 }
                 else
                     Assert.That(note, Does.Match(@"\d"));
