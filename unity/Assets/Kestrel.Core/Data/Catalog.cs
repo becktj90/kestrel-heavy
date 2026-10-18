@@ -188,5 +188,22 @@ namespace Kestrel.Core.Data
             }
             throw new System.IO.DirectoryNotFoundException("repo root with data/golden not found above " + start);
         }
+
+        /// <summary>
+        /// Checkout that holds data/golden, or null on a player build. A set KESTREL_REPO_ROOT is accepted
+        /// only when that directory itself is a checkout: a device (or a test simulating one) must not walk
+        /// up from a dummy path and find the CI checkout. An unset variable still walks from the cwd.
+        /// </summary>
+        public static string RepoRootOrNull()
+        {
+            var env = System.Environment.GetEnvironmentVariable("KESTREL_REPO_ROOT");
+            if (!string.IsNullOrEmpty(env))
+            {
+                if (System.IO.Directory.Exists(System.IO.Path.Combine(env, "data", "golden"))) return env;
+                return null;
+            }
+            try { return FindRepoRoot(System.IO.Directory.GetCurrentDirectory()); }
+            catch (System.Exception) { return null; }
+        }
     }
 }
