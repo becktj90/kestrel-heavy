@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Kestrel.Core.Data;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
 
@@ -33,15 +34,33 @@ namespace Kestrel.Slice
         /// <summary>Propellant step: 1 t under 100 t, 10 t under 1000 t, 50 t above (DESIGNER_SPEC §1).</summary>
         public static double PropStepKg(double kg) => kg < 100000 ? 1000 : kg < 1000000 ? 10000 : 50000;
 
-        /// <summary>Next propellant load for a stepper press, snapped to the step grid.</summary>
+        /// <summary>Next propellant load. Minus always moves down until the catalog minimum. Under 1 t the step is 100 kg.</summary>
         public static double StepProp(double kg, int dir)
         {
-            double step = PropStepKg(dir < 0 ? Math.Max(0, kg - 1) : kg);
+            double floor = DesignerLimits.Active.propMassMin;
+            double cap = DesignerLimits.Active.propMassMax;
+            if (double.IsNaN(floor) || floor < 0) floor = 1;
+            if (double.IsNaN(cap) || cap < floor) cap = 4000000;
+            if (double.IsNaN(kg)) kg = floor;
+            if (dir < 0 && kg <= floor + 0.5) return floor;
+            if (dir > 0 && kg >= cap - 0.5) return cap;
+            double basis = dir < 0 ? Math.Max(floor, kg - 1) : kg;
+            double step = basis < 1000 ? 100 : PropStepKg(basis);
+            if (!(step > 0)) step = 100;
             double snapped = Math.Round(kg / step) * step;
             double next = snapped + dir * step;
             if (dir > 0 && snapped > kg) next = snapped;
             if (dir < 0 && snapped < kg) next = snapped;
-            return Math.Max(step, next);
+            if (dir < 0 && next >= kg - 0.5) next = kg - step;
+            if (next < floor) next = floor;
+            if (next > cap) next = cap;
+            return next;
+        }
+
+        public static bool PropCanStep(double kg, int dir)
+        {
+            if (double.IsNaN(kg)) return dir > 0;
+            return Math.Abs(StepProp(kg, dir) - kg) >= 0.5;
         }
 
         /// <summary>
@@ -64,7 +83,7 @@ namespace Kestrel.Slice
             var push = s.liftoffTwr <= 1 ? CellState.Bad : s.liftoffTwr < 1.25 ? CellState.Warn : CellState.Good;
             o.Add(engineer
                 ? new ReadoutCell("TWR", Ratio(s.liftoffTwr), push, Kn(s.liftoffThrust_N))
-                : new ReadoutCell("Push", Ratio(s.liftoffTwr) + "×", push, s.liftoffTwr > 1 ? "× its weight" : "too heavy"));
+                : new ReadoutCell("Push", Ratio(Math.Max(0, s.liftoffTwr)) + "x", push, s.liftoffTwr > 1 ? "x its weight" : "too heavy"));
             var cost = s.overBudget ? CellState.Bad : s.nearBudget ? CellState.Warn : CellState.Good;
             o.Add(new ReadoutCell("Cost", Kc(s.cost_Kc), cost, s.budget_Kc > 0 ? "budget " + Kc(s.budget_Kc) : null));
             if (engineer)

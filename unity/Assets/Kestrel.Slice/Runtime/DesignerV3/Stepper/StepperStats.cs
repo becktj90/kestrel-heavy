@@ -42,9 +42,10 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             {
                 case "liftoffTWR":
                     if (r == null || double.IsNaN(r.liftoffTWR)) return Dash("liftoffTWR", "TWR");
-                    var twr = r.liftoffTWR >= StepperChecks.PassTwr ? CellState.Good
-                        : r.liftoffTWR >= StepperChecks.BlockTwr ? CellState.Warn : CellState.Bad;
-                    return new StepStat("liftoffTWR", "TWR", r.liftoffTWR.ToString("0.00", Inv), twr, "Liftoff thrust over weight");
+                    double shown = Readout.ShownTwr(r.liftoffTWR);
+                    var twr = shown >= StepperChecks.PassTwr ? CellState.Good
+                        : shown >= StepperChecks.BlockTwr ? CellState.Warn : CellState.Bad;
+                    return new StepStat("liftoffTWR", "TWR", shown.ToString("0.00", Inv), twr, "Liftoff thrust over weight");
                 case "engineCount":
                     return new StepStat("engineCount", "Engines", ((int)(Stage0(design)?.Num("engineCount") ?? 0)).ToString(Inv), CellState.Neutral);
                 case "mixtureOffsetPct":
@@ -59,11 +60,12 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                     return new StepStat("orbit", "Orbit", string.IsNullOrEmpty(orbit) ? "—" : orbit, CellState.Neutral);
                 case "cost":
                     if (r == null) return Dash("cost", "Cost");
-                    string cost = DesignerV3Strip.CompactMoney(r.cost);
+                    string cost = DesignerV3Strip.StripMoney(r.cost);
                     var costState = CellState.Neutral;
                     if (r.budget.HasValue && r.budget.Value > 0)
                     {
-                        cost += " / " + DesignerV3Strip.CompactMoney(r.budget.Value);
+                        string both = cost + " / " + DesignerV3Strip.StripMoney(r.budget.Value);
+                        cost = both.Length > 16 ? cost : both;
                         costState = r.cost <= r.budget.Value ? CellState.Good : CellState.Bad;
                     }
                     return new StepStat("cost", "Cost", cost, costState);

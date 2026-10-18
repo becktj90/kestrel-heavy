@@ -277,7 +277,7 @@ namespace Kestrel.Core.Designer
                 int? index = risk.stage >= 0 ? (int?)risk.stage : null;
                 warnings.Add(Issue("risk-" + risk.kind, string.IsNullOrEmpty(risk.tab) ? "stages" : risk.tab,
                     string.IsNullOrEmpty(risk.engineer) ? risk.kind : risk.engineer,
-                    string.IsNullOrEmpty(risk.kid) ? risk.kind : risk.kid,
+                    ShownText.Plain(risk.kind, risk.kid, risk.engineer),
                     index, risk.field));
             }
         }
