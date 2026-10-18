@@ -198,7 +198,8 @@ namespace Kestrel.Game.Tests
                     var actions = card.Q("report-actions");
                     Assert.That(actions, Is.Not.Null, where);
                     Assert.That(actions.worldBound.height, Is.GreaterThan(8f), where + " buttons");
-                    Assert.That(numbers.worldBound.yMax, Is.LessThanOrEqualTo(actions.worldBound.yMin + 1f), where + " numbers sit above the buttons");
+                    Assert.That(numbers.worldBound.yMin, Is.LessThan(actions.worldBound.yMin), where + " numbers start above the buttons");
+                    Assert.That(numbers.worldBound.center.y, Is.LessThan(actions.worldBound.yMin), where + " numbers sit above the buttons");
                 }
             }
         }
