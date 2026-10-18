@@ -5,6 +5,7 @@ using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
 using Kestrel.Game.Guide;
+using Kestrel.Game.Shell;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -52,6 +53,7 @@ namespace Kestrel.Game.MissionSelect
             root.Add(column);
 
             column.Add(Line("briefing-title", board.Title, "briefing-title", shrink: true));
+            AddPatch(column, ctx);
 
             var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "briefing-scroll" };
             scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
@@ -117,6 +119,22 @@ namespace Kestrel.Game.MissionSelect
             StyleKey(leave, "briefing-back");
             column.Add(leave);
             return root;
+        }
+
+        static void AddPatch(VisualElement column, MissionContext ctx)
+        {
+            if (ctx == null || string.IsNullOrEmpty(ctx.MissionId)) return;
+            var spec = MissionPatchArt.Resolve(ctx.MissionId);
+            var patch = MissionPatch.Render(ctx.MissionId, 148f, PatchChrome.Open);
+            patch.name = "briefing-patch";
+            patch.style.width = 148;
+            patch.style.height = 148;
+            patch.style.alignSelf = Align.Center;
+            patch.style.flexShrink = 0;
+            patch.style.marginBottom = 6;
+            column.Add(patch);
+            column.Add(Line("briefing-motto", spec.Motto, "briefing-body", shrink: true));
+            column.Add(Line("briefing-anatomy", spec.Anatomy, "briefing-note", shrink: false));
         }
 
         static void AddBlock(VisualElement parent, string id, string heading, params string[] lines)

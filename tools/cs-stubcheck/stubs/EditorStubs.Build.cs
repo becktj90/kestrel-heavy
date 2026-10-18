@@ -23,7 +23,7 @@ namespace UnityEditor
     public class EditorBuildSettingsScene { public EditorBuildSettingsScene(string path, bool enabled) { this.path = path; this.enabled = enabled; } public string path; public bool enabled; }
     public static class EditorBuildSettings { public static EditorBuildSettingsScene[] scenes { get; set; } }
     public static class EditorApplication { public delegate void CallbackFunction(); public static CallbackFunction delayCall; public static CallbackFunction update; public static void Exit(int code) { } public static bool isPlaying => false; public static bool isCompiling => false; }
-    public static class EditorUtility { public static void SetDirty(UnityEngine.Object o) { } public static bool DisplayDialog(string t, string m, string ok, string cancel = "") => true; }
+    public static class EditorUtility { public static void SetDirty(UnityEngine.Object o) { } public static bool DisplayDialog(string t, string m, string ok, string cancel = "") => true; public static string OpenFolderPanel(string title, string folder, string name) => ""; }
     public static class EditorPrefs { public static int GetInt(string k, int d = 0) => d; public static void SetInt(string k, int v) { } public static bool GetBool(string k, bool d = false) => d; public static void SetBool(string k, bool v) { } public static string GetString(string k, string d = "") => d; public static void SetString(string k, string v) { } }
     public static class AssetDatabase
     {

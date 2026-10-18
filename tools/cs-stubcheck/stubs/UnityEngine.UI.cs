@@ -50,7 +50,7 @@ namespace UnityEngine.UIElements
     public class PointerUpEvent : EventBase<PointerUpEvent> { public Vector3 position => default; public Vector3 localPosition => default; public int pointerId => 0; }
     public class ChangeEvent<T> : EventBase<ChangeEvent<T>> { public T newValue => default; public T previousValue => default; }
     public delegate void EventCallback<in TEventType>(TEventType evt);
-    public interface IPanel { VisualElement visualTree { get; } VisualElement Pick(Vector2 p); }
+    public interface IPanel { VisualElement visualTree { get; } VisualElement Pick(Vector2 p); float scaledPixelsPerPoint { get; } }
     public struct UQueryBuilder<T> where T : VisualElement { public List<T> ToList() => new List<T>(); public T First() => null; public void ForEach(System.Action<T> f) { } }
     public class VisualElement : IEventHandler { public enum MeasureMode { Undefined, Exactly, AtMost } public VisualElement() { } public string tooltip { get; set; } public string name { get; set; } public IStyle style => null; public IResolvedStyle resolvedStyle => null; public Rect layout => default; public Rect worldBound => default; public Rect contentRect => default; public Vector2 MeasureTextSize(string textToMeasure, float width, MeasureMode widthMode, float height, MeasureMode heightMode) => default; public VisualElement parent => null; public IPanel panel => null; public int childCount => 0; public VisualElement this[int i] => null; public VisualElementStyleSheetSet styleSheets => null; public PickingMode pickingMode { get; set; } public bool visible { get; set; } public bool enabledSelf => true; public object userData { get; set; } public VisualElement contentContainer => this;
         public Action<MeshGenerationContext> generateVisualContent { get; set; }
@@ -62,7 +62,7 @@ namespace UnityEngine.UIElements
     public class TextElement : VisualElement { public string text { get; set; } }
     public class Label : TextElement { public Label() { } public Label(string t) { } }
     public class Button : TextElement { public Button() { } public Button(Action a) { } public event Action clicked; }
-    public class Image : VisualElement { public Texture image { get; set; } public Sprite sprite { get; set; } }
+    public class Image : VisualElement { public Texture image { get; set; } public Sprite sprite { get; set; } public UnityEngine.ScaleMode scaleMode { get; set; } }
     public enum ScrollViewMode { Vertical, Horizontal, VerticalAndHorizontal }
     public enum ScrollerVisibility { Auto, AlwaysVisible, Hidden }
     public class Scroller : VisualElement { public event Action<float> valueChanged; public float lowValue { get; set; } public float highValue { get; set; } public float value { get; set; } }
