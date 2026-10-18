@@ -36,7 +36,9 @@ namespace Kestrel.Core.Flight
     public struct FairingPose
     {
         public bool Separated;
-        public double Age, YawDeg, OutM, DropM;
+        /// <summary>The halves have tumbled out of the shot and should be despawned.</summary>
+        public bool Gone;
+        public double Age, YawDeg, OutM, DropM, SpinDeg;
     }
 
     public struct PlumeRead
@@ -117,8 +119,10 @@ namespace Kestrel.Core.Flight
     {
         public const double CollapseSec = 0.60;
         public const double AfterglowSec = 0.45;
-        public const double SepDelaySec = 0.60;
-        public const double IgniteDelaySec = 1.15;
+        /// <summary>MECO to separation. A medium kerolox booster coasts about 3 s before the stages push apart.</summary>
+        public const double SepDelaySec = 3.0;
+        /// <summary>MECO to upper-stage ignition. The public anchor is about 11 s (MECO ~2:25, SES-1 ~2:36).</summary>
+        public const double IgniteDelaySec = 11.0;
         public const double SpoolSec = 0.45;
         public const double CalloutSec = 1.20;
         /// <summary>How long a frozen sim still has curves to finish. The view may play this tail; events are not chosen by it.</summary>
@@ -126,12 +130,17 @@ namespace Kestrel.Core.Flight
         public const float CalloutPt = 22f;
         public const double SepPushMps = 7.0;
         public const double SepRadialMps = 4.5;
-        public const double FallAccel = 1.6;
+        public const double FallAccel = 4.5;
         public const double TumbleDeg = 28.0;
         public const double FairingSec = 2.2;
         public const double FairingPeelDeg = 68.0;
         public const double FairingOutM = 5.5;
         public const double FairingDropM = 3.2;
+        /// <summary>After the peel, the halves tumble and fall, then despawn.</summary>
+        public const double FairingTumbleDeg = 42.0;
+        public const double FairingLife = 9.5;
+        /// <summary>A recoverable booster pitches engines-down over this many seconds, then falls.</summary>
+        public const double FlipSec = 4.0;
         public const double QArmPa = 8000;
         public const double QDrop = 0.98;
 
@@ -148,6 +157,8 @@ namespace Kestrel.Core.Flight
         readonly List<StagingCue> cues = new List<StagingCue>();
         int seen, cueRead, boosterCount = 1;
         bool hasFairing, qPassed, reduced;
+        /// <summary>Stage 1 has landing legs and a propellant reserve, so it flips and descends instead of tumbling away.</summary>
+        public bool RecoverBooster;
         double fairingAltM = 110000, fairingT = -1, qPeak;
 
         public int CueCount => cues.Count;
@@ -253,7 +264,7 @@ namespace Kestrel.Core.Flight
                 break;
             }
             if (eventT < 0 || t < eventT + SepDelaySec) return default;
-            return Integrate(role, index, boosterCount, t - (eventT + SepDelaySec), reduced);
+            return Integrate(role, index, boosterCount, t - (eventT + SepDelaySec), reduced, RecoverBooster);
         }
 
         public FairingPose FairingAt(double t)
@@ -261,16 +272,24 @@ namespace Kestrel.Core.Flight
             if (fairingT < 0 || t < fairingT) return default;
             double age = t - fairingT;
             double u = age / FairingSec;
+            if (age >= FairingLife)
+            {
+                return new FairingPose { Separated = true, Gone = true, Age = age };
+            }
             if (u < 0) u = 0;
             if (u > 1) u = 1;
             double s = u * u * (3 - 2 * u);
+            double tumble = age > FairingSec ? age - FairingSec : 0;
+            double spin = reduced ? 0 : FairingTumbleDeg * tumble;
             return new FairingPose
             {
                 Separated = true,
+                Gone = false,
                 Age = age,
-                YawDeg = reduced ? 0 : FairingPeelDeg * s,
-                OutM = FairingOutM * s,
-                DropM = FairingDropM * s,
+                YawDeg = (reduced ? 0 : FairingPeelDeg * s) + spin,
+                OutM = FairingOutM * s + tumble * 1.6,
+                DropM = FairingDropM * s + 0.5 * FallAccel * tumble * tumble,
+                SpinDeg = spin,
             };
         }
 
@@ -346,11 +365,13 @@ namespace Kestrel.Core.Flight
             return (title ?? "") + "  T+" + t.ToString("0.0", inv) + "  " + alt + "  " + spd;
         }
 
-        static SepPose Integrate(string role, int index, int count, double age, bool reduced)
+        static SepPose Integrate(string role, int index, int count, double age, bool reduced, bool recoverBooster)
         {
             if (age < 0) age = 0;
             if (count < 1) count = 1;
             bool booster = role == "booster";
+            if (!booster && index == 0 && recoverBooster)
+                return FlipAndFall(age, reduced);
             double ang = index * 2 * Math.PI / count;
             double radial = booster ? SepRadialMps : 1.6;
             double x = Math.Cos(ang) * radial * age;
@@ -370,6 +391,27 @@ namespace Kestrel.Core.Flight
                 pose.Roll = (booster ? 22.0 : 14.0) * age;
             }
             return pose;
+        }
+
+        /// <summary>Engines pitch toward the ground, then the stage falls. No wild tumble.</summary>
+        static SepPose FlipAndFall(double age, bool reduced)
+        {
+            if (age < 0) age = 0;
+            double u = age / FlipSec;
+            if (u < 0) u = 0;
+            if (u > 1) u = 1;
+            double s = u * u * (3 - 2 * u);
+            return new SepPose
+            {
+                Released = true,
+                Age = age,
+                X = 1.2 * age,
+                Y = -3.2 * age - 0.5 * 7.5 * age * age,
+                Z = 0.15 * age,
+                Pitch = reduced ? 0 : 180.0 * s,
+                Yaw = reduced ? 0 : 6.0 * s,
+                Roll = 0,
+            };
         }
 
         void Ingest(SimEvent e, double alt, double speed)
