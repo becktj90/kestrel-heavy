@@ -23,6 +23,12 @@ namespace Kestrel.Game.Shell
         /// </summary>
         public static bool? ForceWide;
 
+        /// <summary>Home record opens the patch collection. Null shows a short note instead.</summary>
+        public static Action OpenPatches;
+
+        /// <summary>Codex tile opens the reader. Null shows "Coming soon."</summary>
+        public static Action OpenCodex;
+
         /// <summary>Builds the overlay. <paramref name="safe"/> holds the controls (safe-area inset);
         /// <paramref name="full"/> holds the full-bleed bars and grain. Returns the root parented in <paramref name="safe"/>.</summary>
         public static VisualElement Build(VisualElement full, VisualElement safe, Action launch, Action design, Action missions, bool reduceMotion, string missionLine = null)
@@ -82,7 +88,7 @@ namespace Kestrel.Game.Shell
             var spacer = new VisualElement { pickingMode = PickingMode.Ignore }; spacer.style.flexGrow = 1; root.Add(spacer);
 
             // Controls: tidy stats, the big LAUNCH, a smaller Design first, then Missions and Codex.
-            var stats = StatsStrip();
+            var stats = StatsStrip(full);
             root.Add(stats);
             var launchKey = LaunchBar(launch, missionLine);
             root.Add(launchKey);
@@ -90,11 +96,17 @@ namespace Kestrel.Game.Shell
             root.Add(designKey);
             var grid = new VisualElement { name = "mm-grid", pickingMode = PickingMode.Ignore };
             grid.AddToClassList("kh-mm-grid");
-            foreach (var it in MainMenuCopy.Tiles) grid.Add(Tile(it, it.Id == "missions" ? missions : null));
+            foreach (var it in MainMenuCopy.Tiles)
+            {
+                Action act = null;
+                if (it.Id == "missions") act = missions;
+                else if (it.Id == "codex") act = () => OpenCodexOrSoon(full);
+                grid.Add(Tile(it, act));
+            }
             root.Add(grid);
             Gear(full);
 
-            var hint = ThrumStrip();
+            var hint = ThrumStrip(full);
             root.Add(hint);
             safe.Add(root);
             MainMenuFonts.Apply(root);
@@ -216,7 +228,9 @@ namespace Kestrel.Game.Shell
             if (kestrel != null) { kestrel.style.whiteSpace = WhiteSpace.NoWrap; kestrel.style.overflow = Overflow.Hidden; }
             var heavy = root.Q("mm-heavy");
             if (heavy != null) { heavy.style.whiteSpace = WhiteSpace.NoWrap; heavy.style.overflow = Overflow.Hidden; }
-            root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = WidePt(type.Stat * fs));
+            root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = type.Stat * fs);
+            var record = root.Q("mm-record");
+            if (record != null) record.style.fontSize = Mathf.Max(11f, type.Stat * fs);
 
             bool scroll = frame.Scroll;
             var scroller = WideScroll(root, scroll);
@@ -273,13 +287,15 @@ namespace Kestrel.Game.Shell
                 tile.style.paddingBottom = 10f * sy;
             }
             PlaceAction(root, slot, "mm-hint", frame.Hint, scroll, sx, sy);
-            Font(root.Q(className: "kh-mm-launch-label"), WidePt(type.Launch * fs), 0.10f);
-            Font(root.Q(className: "kh-mm-launch-caption"), WidePt(type.LaunchCaption * fs), 0f);
-            Font(root.Q(className: "kh-mm-design-label"), WidePt(type.Design * fs), 0.03f);
-            Font(root.Q(className: "kh-mm-design-caption"), WidePt(type.DesignCaption * fs), 0f);
+            // Layout already sized these to the box. A 14px floor here is what clipped
+            // "Next flight…" and "Thrust 850 kN" on a landscape web window.
+            Font(root.Q(className: "kh-mm-launch-label"), type.Launch * fs, 0.10f);
+            Font(root.Q(className: "kh-mm-launch-caption"), type.LaunchCaption * fs, 0f);
+            Font(root.Q(className: "kh-mm-design-label"), type.Design * fs, 0.03f);
+            Font(root.Q(className: "kh-mm-design-caption"), type.DesignCaption * fs, 0f);
             root.Query(className: "kh-mm-tile-name").ForEach(e =>
             {
-                float name = WidePt(type.TileName * fs);
+                float name = type.TileName * fs;
                 e.style.fontSize = name;
                 e.style.letterSpacing = name * 0.03f;
                 e.style.whiteSpace = WhiteSpace.NoWrap;
@@ -287,17 +303,17 @@ namespace Kestrel.Game.Shell
             });
             root.Query(className: "kh-mm-tile-caption").ForEach(e =>
             {
-                e.style.fontSize = WidePt(type.TileCaption * fs);
+                e.style.fontSize = type.TileCaption * fs;
                 e.style.whiteSpace = WhiteSpace.Normal;
                 e.style.overflow = Overflow.Hidden;
             });
             root.Query(className: "kh-mm-soon").ForEach(e =>
             {
-                float soon = WidePt(type.Soon * fs);
+                float soon = type.Soon * fs;
                 e.style.fontSize = soon;
                 e.style.letterSpacing = soon * 0.15f;
             });
-            Font(root.Q("mm-hint-line"), WidePt(type.Hint * fs), 0f);
+            Font(root.Q("mm-hint-line"), type.Hint * fs, 0f);
             var hint = root.Q("mm-hint-line");
             if (hint != null) { hint.style.whiteSpace = WhiteSpace.Normal; hint.style.overflow = Overflow.Hidden; }
             FitCardText(root.Q("home-launch"), true);
@@ -729,12 +745,17 @@ namespace Kestrel.Game.Shell
             dusk.SetHero(new Rect(left, top, width, bottom - top), root.ClassListContains("kh-mm-reduce"));
         }
 
-        static VisualElement ThrumStrip()
+        static VisualElement ThrumStrip(VisualElement full)
         {
-            var row = new VisualElement { name = "mm-hint", pickingMode = PickingMode.Ignore };
+            var row = new Button { name = "mm-hint", text = string.Empty, tooltip = MainMenuCopy.ThrumLine };
             row.AddToClassList("kh-mm-thrum");
             row.AddToClassList("kh-mm-glass");
             row.AddToClassList("kh-mm-anim");
+            row.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
+            row.style.borderTopWidth = 0f;
+            row.style.borderRightWidth = 0f;
+            row.style.borderBottomWidth = 0f;
+            row.style.borderLeftWidth = 0f;
             var face = new VisualElement { name = "mm-thrum-portrait", pickingMode = PickingMode.Ignore };
             face.AddToClassList("kh-mm-thrum-portrait");
             var tex = Resources.Load<Texture2D>("Guide/thrum");
@@ -749,18 +770,79 @@ namespace Kestrel.Game.Shell
             who.AddToClassList("kh-mm-thrum-name");
             var line = new Label(MainMenuCopy.ThrumLine) { name = "mm-hint-line", pickingMode = PickingMode.Ignore };
             line.AddToClassList("kh-mm-hint");
+            line.style.whiteSpace = WhiteSpace.Normal;
             col.Add(who); col.Add(line);
             row.Add(face); row.Add(col);
+            row.clicked += () => ShowNote(full, "home-thrum-note", "Thrum", MainMenuCopy.ThrumLine);
             return row;
         }
 
-        static VisualElement StatsStrip()
+        static VisualElement StatsStrip(VisualElement full)
         {
             var row = new VisualElement { name = "mm-stats", pickingMode = PickingMode.Ignore };
             row.AddToClassList("kh-mm-stats"); row.AddToClassList("kh-mm-glass"); row.AddToClassList("kh-mm-anim");
-            row.Add(Stat("mm-fuel", MainMenuCopy.FuelStat));
-            row.Add(Stat("mm-thrust", MainMenuCopy.ThrustStat));
+            row.style.flexDirection = FlexDirection.Column;
+            row.style.justifyContent = Justify.Center;
+            // The USS padding would shrink the hit target inside the 46px box. Inset the words instead.
+            row.style.paddingTop = 0f;
+            row.style.paddingBottom = 0f;
+            row.style.paddingLeft = 0f;
+            row.style.paddingRight = 0f;
+            var text = new VisualElement { pickingMode = PickingMode.Ignore };
+            text.style.flexDirection = FlexDirection.Column;
+            text.style.justifyContent = Justify.Center;
+            text.style.flexGrow = 1;
+            text.style.paddingTop = 2f;
+            text.style.paddingBottom = 2f;
+            text.style.paddingLeft = 10f;
+            text.style.paddingRight = 10f;
+            var pills = new VisualElement { pickingMode = PickingMode.Ignore };
+            pills.style.flexDirection = FlexDirection.Row;
+            pills.style.flexShrink = 0;
+            pills.Add(Stat("mm-fuel", MainMenuCopy.FuelStat));
+            pills.Add(Stat("mm-thrust", MainMenuCopy.ThrustStat));
+            text.Add(pills);
+            var line = new Label(HomeRecord.Line(0, 0, 1, 0)) { name = "mm-record", pickingMode = PickingMode.Ignore };
+            line.AddToClassList("kh-mm-stat");
+            line.style.whiteSpace = WhiteSpace.Normal;
+            line.style.flexShrink = 0;
+            text.Add(line);
+            row.Add(text);
+            // Covers the whole stats box, so the hit stays 44pt on the phone column (the box is 46).
+            var hit = new Button { name = "home-patches", text = string.Empty, tooltip = "Patches. Flights you have cleared." };
+            hit.style.position = Position.Absolute;
+            hit.style.left = 0f;
+            hit.style.right = 0f;
+            hit.style.top = 0f;
+            hit.style.bottom = 0f;
+            hit.style.marginTop = 0f;
+            hit.style.marginBottom = 0f;
+            hit.style.marginLeft = 0f;
+            hit.style.marginRight = 0f;
+            hit.style.paddingTop = 0f;
+            hit.style.paddingBottom = 0f;
+            hit.style.paddingLeft = 0f;
+            hit.style.paddingRight = 0f;
+            hit.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
+            hit.style.borderTopWidth = 0f;
+            hit.style.borderRightWidth = 0f;
+            hit.style.borderBottomWidth = 0f;
+            hit.style.borderLeftWidth = 0f;
+            hit.clicked += () =>
+            {
+                if (OpenPatches != null) OpenPatches();
+                else ShowNote(full, "home-patches-note", "Patches", "Your patches are on this device once a flight is cleared.");
+            };
+            row.Add(hit);
             return row;
+        }
+
+        /// <summary>Rewrite the home record after the save is read. A missing save stays at zero.</summary>
+        public static void SetRecord(VisualElement root, string line)
+        {
+            var label = root != null ? root.Q<Label>("mm-record") : null;
+            if (label == null || string.IsNullOrEmpty(line)) return;
+            label.text = line;
         }
 
         static Label Stat(string name, string text)
@@ -818,10 +900,12 @@ namespace Kestrel.Game.Shell
             title.style.flexShrink = 0;
             SettingFont(title, "SpaceGrotesk-Bold");
 
-            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "home-settings-scroll" };
-            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
-            scroll.style.flexGrow = 1;
-            scroll.style.flexShrink = 1;
+            var list = new ScrollView(ScrollViewMode.Vertical) { name = "home-settings-list" };
+            list.style.flexDirection = FlexDirection.Column;
+            list.style.flexGrow = 1f;
+            list.style.flexShrink = 1f;
+            list.style.minHeight = 0f;
+            list.style.alignItems = Align.Stretch;
 
             var music = SettingButton("home-setting-music", "Music");
             var sound = SettingButton("home-setting-sound", "Sound");
@@ -833,30 +917,28 @@ namespace Kestrel.Game.Shell
 
             void PaintMix()
             {
-                music.text = AudioPrefs.Caption("Music", AudioPrefs.MusicMuted);
-                sound.text = AudioPrefs.Caption("Sound", AudioPrefs.SfxMuted);
-                voice.text = AudioPrefs.Caption("Voice", AudioPrefs.NarrationMuted);
-                music.tooltip = "Music. " + music.text + ".";
-                sound.tooltip = "Sound. " + sound.text + ".";
-                voice.tooltip = "Voice. " + voice.text + ".";
+                PaintToggle(music, "Music", AudioPrefs.MusicMuted);
+                PaintToggle(sound, "Sound", AudioPrefs.SfxMuted);
+                PaintToggle(voice, "Voice", AudioPrefs.NarrationMuted);
                 AudioBar.Sync(full);
             }
             void PaintSubs()
             {
                 bool on = AudioPrefs.SubtitlesOn;
-                subtitles.text = AudioPrefs.Caption("Subtitles", !on);
+                PaintCaption(subtitles, AudioPrefs.Caption("Subtitles", !on), on);
                 subtitles.tooltip = on ? "Subtitles are on." : "Subtitles are off.";
             }
             void PaintSandbox()
             {
                 bool on = AudioPrefs.SandboxUnlocked;
-                sandbox.text = AudioPrefs.Caption("Sandbox", !on);
+                PaintCaption(sandbox, AudioPrefs.Caption("Sandbox", !on), on);
                 sandbox.tooltip = on ? "Sandbox is available on the mission board." : "Sandbox is off. The mission board keeps it locked.";
             }
             void PaintMotion()
             {
                 bool on = PlayerPrefs.GetInt(MainMenuLayout.ReduceMotionPref, 0) != 0;
-                motion.text = on ? "Reduce motion on" : "Reduce motion";
+                PaintCaption(motion, on ? "Reduce motion on" : "Reduce motion", on);
+                motion.tooltip = on ? "Reduce motion is on." : "Reduce motion is off.";
             }
 
             music.clicked += () => { AudioPrefs.SetMusicMuted(!AudioPrefs.MusicMuted); PaintMix(); };
@@ -881,45 +963,77 @@ namespace Kestrel.Game.Shell
             PaintSandbox();
             PaintMotion();
 
-            scroll.Add(music);
-            scroll.Add(sound);
-            scroll.Add(voice);
-            scroll.Add(subtitles);
-            scroll.Add(sandbox);
-            scroll.Add(motion);
+            list.Add(music);
+            list.Add(sound);
+            list.Add(voice);
+            list.Add(subtitles);
+            list.Add(sandbox);
+            list.Add(motion);
 
             var close = new Button { name = "home-settings-close", text = "Close" };
             close.AddToClassList("kh-button");
             close.tooltip = "Close settings.";
             close.style.minHeight = 44;
+            close.style.height = 44;
             close.style.fontSize = 14;
             close.style.flexShrink = 0;
             close.style.whiteSpace = WhiteSpace.Normal;
+            close.style.position = Position.Absolute;
+            close.style.left = 8;
+            close.style.right = 8;
+            close.style.bottom = 8;
             SettingFont(close, "SpaceGrotesk-Bold");
             close.clicked += () => sheet.style.display = DisplayStyle.None;
 
             sheet.Add(title);
-            sheet.Add(scroll);
+            sheet.Add(list);
             sheet.Add(close);
 
+            float fitW = -1f, fitH = -1f;
             void FitSheet()
             {
-                if (full == null) return;
+                if (full == null || sheet.style.display.value == DisplayStyle.None) return;
                 float hostW = full.resolvedStyle.width;
                 float hostH = full.resolvedStyle.height;
                 if (hostW < 8f) hostW = full.worldBound.width;
                 if (hostH < 8f) hostH = full.worldBound.height;
                 if (hostW < 8f || hostH < 8f) return;
-                float top = 52f;
-                float width = Mathf.Min(260f, Mathf.Max(160f, hostW - 16f));
-                float maxH = Mathf.Max(88f, hostH - top - 8f);
-                float left = Mathf.Max(8f, hostW - width - 8f);
+                if (Mathf.Abs(hostW - fitW) < 0.5f && Mathf.Abs(hostH - fitH) < 0.5f) return;
+                fitW = hostW;
+                fitH = hostH;
+                // Under the gear when the rows fit; otherwise the top of the screen, so a 390-tall
+                // landscape still keeps Close inside the window. The list scrolls; Close stays pinned.
+                const float edge = 8f;
+                const float chrome = 16f + 24f + 44f;
+                int rows = 0;
+                list.Query<Button>().ForEach(b =>
+                {
+                    if (b.name != null && b.name.StartsWith("home-")) rows++;
+                });
+                float content = chrome + rows * 46f;
+                float roomBelowGear = hostH - 52f - edge;
+                float top = content <= roomBelowGear ? 52f : edge;
+                float maxH = Mathf.Max(120f, hostH - top - edge);
+                float height = Mathf.Min(content, maxH);
+                float width = Mathf.Min(320f, Mathf.Max(200f, hostW - 16f));
+                float left = Mathf.Max(edge, hostW - width - edge);
                 sheet.style.position = Position.Absolute;
                 sheet.style.top = top;
                 sheet.style.left = left;
                 sheet.style.right = StyleKeyword.Auto;
                 sheet.style.width = width;
-                sheet.style.maxHeight = maxH;
+                sheet.style.height = height;
+                sheet.style.maxHeight = height;
+                sheet.style.paddingBottom = 60f;
+                float listH = Mathf.Max(46f, height - chrome);
+                list.style.height = listH;
+                list.style.maxHeight = listH;
+                list.style.minHeight = 0f;
+                float inner = Mathf.Max(120f, width - 24f);
+                list.Query<Button>().ForEach(b =>
+                {
+                    if (b.name != null && b.name.StartsWith("home-")) b.style.width = inner;
+                });
             }
 
             var gear = new Button { name = "home-settings", text = string.Empty, tooltip = "Settings. Sound, motion, accessibility." };
@@ -938,14 +1052,33 @@ namespace Kestrel.Game.Shell
                 PaintSandbox();
                 PaintMotion();
                 sheet.style.display = DisplayStyle.Flex;
+                fitW = -1f;
                 FitSheet();
+                sheet.BringToFront();
             };
             if (full != null)
             {
-                full.RegisterCallback<GeometryChangedEvent>(_ => FitSheet());
                 full.Add(gear);
                 full.Add(sheet);
             }
+        }
+
+        static void PaintToggle(Button b, string label, bool muted)
+        {
+            PaintCaption(b, AudioPrefs.Caption(label, muted), !muted);
+            b.tooltip = label + ". " + b.text + ".";
+        }
+
+        static void PaintCaption(Button b, string caption, bool on)
+        {
+            if (b == null) return;
+            b.text = caption;
+            var state = b.Q<Label>(b.name + "-state");
+            if (state != null) state.text = on ? "On" : "Off";
+            b.style.backgroundColor = on
+                ? new Color(0.15f, 0.40f, 0.32f, 1f)
+                : new Color(0.10f, 0.14f, 0.22f, 1f);
+            b.style.color = new Color(0.96f, 0.93f, 0.86f, 1f);
         }
 
         static Button SettingButton(string name, string label)
@@ -953,11 +1086,30 @@ namespace Kestrel.Game.Shell
             var b = new Button { name = name, text = label };
             b.AddToClassList("kh-button");
             b.style.minHeight = 44;
+            b.style.height = StyleKeyword.Auto;
             b.style.fontSize = 14;
-            b.style.whiteSpace = WhiteSpace.Normal;
-            b.style.unityTextAlign = TextAnchor.MiddleCenter;
+            b.style.whiteSpace = WhiteSpace.NoWrap;
+            b.style.overflow = Overflow.Visible;
+            b.style.unityTextAlign = TextAnchor.MiddleLeft;
+            b.style.alignSelf = Align.Stretch;
+            b.style.flexShrink = 0;
             b.style.marginTop = 0;
-            b.style.marginBottom = 4;
+            b.style.marginBottom = 2;
+            b.style.paddingLeft = 10;
+            b.style.paddingRight = 56;
+            var state = new Label("On") { name = name + "-state", pickingMode = PickingMode.Ignore };
+            state.style.position = Position.Absolute;
+            state.style.right = 8;
+            state.style.top = 8;
+            state.style.width = 40;
+            state.style.height = 28;
+            state.style.fontSize = 14;
+            state.style.whiteSpace = WhiteSpace.NoWrap;
+            state.style.unityTextAlign = TextAnchor.MiddleCenter;
+            state.style.color = Color.white;
+            state.style.backgroundColor = new Color(0.04f, 0.06f, 0.10f, 0.55f);
+            SettingFont(state, "SpaceGrotesk-Bold");
+            b.Add(state);
             SettingFont(b, "SpaceGrotesk-Medium");
             return b;
         }
@@ -970,11 +1122,61 @@ namespace Kestrel.Game.Shell
             el.style.unityFontDefinition = new StyleFontDefinition(FontDefinition.FromFont(font));
         }
 
+        static void OpenCodexOrSoon(VisualElement full)
+        {
+            if (OpenCodex != null) OpenCodex();
+            else ShowNote(full, "home-codex-soon", "Codex", "Coming soon.");
+        }
+
+        static void ShowNote(VisualElement host, string name, string title, string body)
+        {
+            if (host == null) return;
+            var note = host.Q(name);
+            if (note != null)
+            {
+                bool open = note.style.display.value != DisplayStyle.None;
+                note.style.display = open ? DisplayStyle.None : DisplayStyle.Flex;
+                if (!open) note.BringToFront();
+                return;
+            }
+            note = new VisualElement { name = name };
+            note.style.position = Position.Absolute;
+            note.style.left = 12;
+            note.style.right = 12;
+            note.style.top = 64;
+            note.style.paddingLeft = 12;
+            note.style.paddingRight = 12;
+            note.style.paddingTop = 12;
+            note.style.paddingBottom = 12;
+            note.style.backgroundColor = new Color(0.06f, 0.09f, 0.16f, 0.96f);
+            note.style.flexDirection = FlexDirection.Column;
+            var head = new Label(title) { pickingMode = PickingMode.Ignore };
+            head.style.fontSize = 16;
+            head.style.color = new Color(0.96f, 0.93f, 0.86f, 1f);
+            head.style.whiteSpace = WhiteSpace.Normal;
+            var copy = new Label(body) { name = name + "-body", pickingMode = PickingMode.Ignore };
+            copy.style.fontSize = 14;
+            copy.style.color = new Color(0.96f, 0.93f, 0.86f, 1f);
+            copy.style.whiteSpace = WhiteSpace.Normal;
+            copy.style.marginTop = 6;
+            var close = new Button { name = name + "-close", text = "Close" };
+            close.style.minHeight = 44;
+            close.style.fontSize = 14;
+            close.style.marginTop = 8;
+            close.clicked += () => note.style.display = DisplayStyle.None;
+            note.Add(head);
+            note.Add(copy);
+            note.Add(close);
+            host.Add(note);
+            note.BringToFront();
+        }
+
         static Button Tile(MainMenuCopy.Item it, Action pressed)
         {
-            var b = new Button(it.Live ? pressed : null) { name = "home-" + it.Id, tooltip = it.Spoken };
+            bool open = it.Live || pressed != null;
+            var b = new Button(open ? pressed : null) { name = "home-" + it.Id, tooltip = it.Spoken };
             b.AddToClassList("kh-button"); b.AddToClassList("kh-mm-tile"); b.AddToClassList("kh-mm-anim");
-            if (it.Live) b.AddToClassList("kh-mm-tile--focus"); else b.AddToClassList("kh-mm-tile--soon");
+            if (open) b.AddToClassList("kh-mm-tile--focus"); else b.AddToClassList("kh-mm-tile--soon");
             var head = new VisualElement { pickingMode = PickingMode.Ignore }; head.AddToClassList("kh-mm-tile-head");
             var icon = new HomeGlyph(it.Id == "codex" ? "book" : "orbit");
             icon.style.width = 18; icon.style.height = 18; icon.style.marginRight = 6;
@@ -987,7 +1189,7 @@ namespace Kestrel.Game.Shell
             var cap = new Label(it.Caption) { pickingMode = PickingMode.Ignore }; cap.AddToClassList("kh-mm-tile-caption");
             b.Add(head); b.Add(cap);
             b.text = string.Empty;
-            b.SetEnabled(it.Live);
+            b.SetEnabled(open);
             return b;
         }
 

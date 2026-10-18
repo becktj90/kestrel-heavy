@@ -68,14 +68,15 @@ namespace Kestrel.Core.Flight
             card.Difficulty = Label("Difficulty", DifficultyWord(mission.Band));
             card.Best = BestLine(stars, medals, score, attempts);
             card.Medal = BestMedal(medals);
-            card.Briefing = OneSentence(mission.Control);
+            string goal = PlayerGoal(mission.Goal);
+            card.Briefing = goal.Length > 0 ? goal : OneSentence(mission.Control);
             card.Form = PayloadForms.KnownForm(mission.Form) ? mission.Form : "box";
             if (access == MissionBoardAccess.Locked)
             {
                 card.Lock = mission.Index <= 1
                     ? "Opens at the start of the board."
-                    : "Opens after " + MissionContext.LabelFor(mission.Index - 1) + ".";
-                card.Primary = "Locked";
+                    : "Clear " + MissionContext.LabelFor(mission.Index - 1) + " to unlock";
+                card.Primary = mission.Index <= 1 ? "Locked" : card.Lock;
                 card.PrimaryTip = card.Lock;
                 card.CanGo = false;
             }
@@ -121,14 +122,14 @@ namespace Kestrel.Core.Flight
             {
                 Title = "Open Contracts",
                 Customer = "Customer · the board",
-                Orbit = open ? "Seeded on this device." : lockLine,
+                Orbit = open ? "Seeded on this device." : "Posted with the job.",
                 Mass = "Mass · posted with the job",
                 Difficulty = "Difficulty · posted with the job",
                 Best = "Best · not scored yet",
                 Briefing = copy.Length > 0 ? copy : "No contract is posted yet.",
                 Primary = "Not posted",
                 PrimaryTip = open ? "No contract is posted yet." : lockLine,
-                Lock = open ? "" : lockLine,
+                Lock = "",
                 Node = "Contracts",
                 CanGo = false,
                 Access = open ? MissionBoardAccess.Open : MissionBoardAccess.Locked,
@@ -248,6 +249,14 @@ namespace Kestrel.Core.Flight
         {
             if (string.IsNullOrEmpty(value)) return "";
             return caption + " · " + value;
+        }
+
+        static string PlayerGoal(string goal)
+        {
+            string line = OneSentence(goal);
+            if (line.Length == 0) return "";
+            // The form id is data. The card says what the player is flying.
+            return line.Replace("cubesat", "satellite").Replace("Cubesat", "Satellite");
         }
 
         static string OneSentence(string text)

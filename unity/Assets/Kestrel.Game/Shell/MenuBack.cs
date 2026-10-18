@@ -13,6 +13,12 @@ namespace Kestrel.Game.Shell
         /// <summary>Set when <see cref="Try"/> handles Escape, so a later Update the same frame does not handle it again.</summary>
         public static bool Claimed;
 
+        /// <summary>
+        /// Flight pause lives with the flight HUD. The shell is gone once Slice loads, so the web
+        /// Escape bridge calls this when no menu is up. The flight agent sets it. This does not draw pause UI.
+        /// </summary>
+        public static Action FlightEscape;
+
         static readonly string[] Leaves =
         {
             "briefing-back",
@@ -29,6 +35,10 @@ namespace Kestrel.Game.Shell
         public static bool Try(VisualElement root)
         {
             if (root == null) return false;
+            if (CloseIfOpen(root, "home-thrum-note")) return true;
+            if (CloseIfOpen(root, "home-codex-soon")) return true;
+            if (CloseIfOpen(root, "home-patches-note")) return true;
+            if (CloseIfOpen(root, "mission-payload-note")) return true;
             var sheet = root.Q("home-settings-sheet");
             if (SheetOpen(sheet))
             {
@@ -54,6 +64,15 @@ namespace Kestrel.Game.Shell
             return false;
         }
 
+        static bool CloseIfOpen(VisualElement root, string name)
+        {
+            var note = root.Q(name);
+            if (!SheetOpen(note)) return false;
+            note.style.display = DisplayStyle.None;
+            Claimed = true;
+            return true;
+        }
+
         static bool SheetOpen(VisualElement sheet) => sheet != null && !Hidden(sheet);
 
         /// <summary>
@@ -66,11 +85,14 @@ namespace Kestrel.Game.Shell
             for (var node = el; node != null; node = node.parent)
             {
                 var inline = node.style.display;
-                if (inline.keyword != StyleKeyword.Undefined && inline.keyword != StyleKeyword.Null && inline.keyword != StyleKeyword.Auto)
-                {
-                    if (inline.value == DisplayStyle.None) return true;
-                    continue;
-                }
+                // Assigning DisplayStyle.None keeps keyword Undefined, and .value is None only
+                // for that assignment. An unset style's value is Flex, so a back button built
+                // off a panel (resolved style stays None until layout) still counts as shown.
+                if (inline.value == DisplayStyle.None) return true;
+                bool keywordSet = inline.keyword != StyleKeyword.Undefined
+                    && inline.keyword != StyleKeyword.Null
+                    && inline.keyword != StyleKeyword.Auto;
+                if (keywordSet) continue;
                 if (node.panel != null && node.resolvedStyle.display == DisplayStyle.None) return true;
             }
             return false;

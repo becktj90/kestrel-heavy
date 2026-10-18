@@ -64,7 +64,7 @@ namespace Kestrel.Game.Tests
             Assert.IsFalse(board.ClassListContains("mission-board--wide"));
 
             board.SelectMission("m2", true);
-            Assert.AreEqual("Locked", board.Q<Button>("mission-primary").text);
+            Assert.AreEqual("Clear KH-1 to unlock", board.Q<Button>("mission-primary").text);
             Assert.That(board.Q("mission-sheet-body").style.top.value.value, Is.EqualTo(MissionBoardMotion.SlidePt).Within(0.1f));
 
             board.SelectMission("m6", false);

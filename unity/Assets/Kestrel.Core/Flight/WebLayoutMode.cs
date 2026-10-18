@@ -36,5 +36,17 @@ namespace Kestrel.Core.Flight
 #endif
             }
         }
+
+        /// <summary>EditMode seam. Null follows <see cref="ReserveExit"/>. Tests set true to reserve the page FULL button.</summary>
+        public static bool? ForceReserveExit;
+
+        public static bool WantExitReserve => ForceReserveExit ?? ReserveExit;
+
+        /// <summary>Top inset so a full-width header starts under the page FULL button. The button is only the top-right corner.</summary>
+        public static void ExitInset(bool reserve, out float top, out float right)
+        {
+            top = reserve ? HomeCornerLayout.ExitH + 4f : 0f;
+            right = 0f;
+        }
     }
 }
