@@ -44,13 +44,14 @@ namespace Kestrel.Slice
         LaunchSequence sequence; bool counting;
         readonly LiftoffHandoff handoff = new LiftoffHandoff();
         bool ascentErrorLogged;
-        double requiredMps, spareMps; double? maxQKpa; string orbitLabel = "";
+        double requiredMps, spareMps, hopGoalM; double? maxQKpa; string orbitLabel = "";
         VisualElement seqRow; Label hVerdict, hPulse, hCallout; Button skipCount;
 
         void Awake()
         {
             Application.targetFrameRate = 60;
-            Screen.orientation = ScreenOrientation.Portrait;
+            if (!WebLayoutMode.IsLandscape(Screen.width, Screen.height))
+                Screen.orientation = ScreenOrientation.Portrait;
             Debug.Log("[Count] boot");
             handoff.Transitioned += line => Debug.Log("[Count] " + line);
             bodyMat = Resources.Load<Material>("Materials/KH_Body");
@@ -672,7 +673,7 @@ namespace Kestrel.Slice
         /// BackToDesign rebuilds the rocket, which puts the parts back.</summary>
         void ShowFlightMesh(bool on)
         {
-            rocketView.SetVisible(!on);
+            if (rocketView != null) rocketView.SetVisible(!on);
             var mr = rocketGO != null ? rocketGO.GetComponent<MeshRenderer>() : null;
             if (mr != null) mr.forceRenderingOff = !on;
         }
@@ -1019,10 +1020,15 @@ namespace Kestrel.Slice
             ShowFlightMesh(true);
             camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
-            hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
+            hud.RemoveFromClassList("hidden"); hud.BringToFront();
+            WebDesignChrome.Cover(ui);
+            cam.ResetProjectionMatrix(); hMsg.text = "";
             var sheet = session.Sheet;
             requiredMps = sheet != null ? sheet.requiredDeltaV_mps : 0;
             spareMps = sheet != null ? sheet.totalDeltaV_mps - sheet.requiredDeltaV_mps : 0;
+            var hop = AscentFlight.CurrentMission();
+            hopGoalM = hop != null && hop.TargetKind == "apogee" ? hop.ApoKm * 1000.0 : 0;
+            if (hopGoalM > 0) requiredMps = hop.RequiredDeltaV();
             maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
             orbitLabel = sheet != null ? sheet.orbitLabel : "";
             handoff.Enter(OpenSequence());
@@ -1038,6 +1044,7 @@ namespace Kestrel.Slice
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
             if (renderer != null) renderer.ResetSequence();
+            if (counting) HideCountGrid();
             if (!counting) handoff.Tick(0, TryAscend, LiveBlockers());
             else if (sequence != null) RefreshWebcast(sequence.Time, false);
             NoteAscentError();
@@ -1133,30 +1140,51 @@ namespace Kestrel.Slice
         void HandleReportedFix(FixField link)
         {
             if (link == null) return;
-            if (designPanel != null) designPanel.RemoveFromClassList("hidden");
-            if (homeButton != null) homeButton.RemoveFromClassList("hidden");
-            if (hud != null) hud.AddToClassList("hidden");
+            ReturnToPad();
+            ShowDesigner(true);
             designer?.ApplyReportedFix(link.Kind, link.Tab);
+            if (rocketDirty) BuildRocket();
+            if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
+            ApplyWebDesignFrame();
         }
 
         void BackToDesign()
+        {
+            ReturnToPad();
+            ApplyValidation();
+        }
+
+        /// <summary>
+        /// Leave the chase camera and put the rocket back on the pad.
+        /// Fix it used to unhide the sheet while the camera was still looking at empty sky.
+        /// </summary>
+        void ReturnToPad()
         {
             ReportCardChrome.Dismiss(ui);
             SetFlightPaused(false);
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
             handoff.Reset();
             ascentErrorLogged = false;
-            counting = false; sequence = null; flight.enabled = false; cam.ResetProjectionMatrix();
+            counting = false; sequence = null;
+            if (flight != null) flight.enabled = false;
+            if (cam != null) cam.ResetProjectionMatrix();
             recovery?.Stop();
             RecoveryLog.Clear();
             if (juice != null) juice.Reset();
-            cam.fieldOfView = FlightJuice.BaseFov;
+            if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
             ascentHud?.Close();
-            hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
-            if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
-            if (session != null) rocketView.SetSelected(session.Selected, true);
+            if (hud != null) hud.AddToClassList("hidden");
+            if (designPanel != null) designPanel.RemoveFromClassList("hidden");
+            if (homeButton != null) homeButton.RemoveFromClassList("hidden");
+            if (again != null) again.AddToClassList("hidden");
+            var grid = hud != null ? hud.Q("hud-grid") : null;
+            if (grid != null) grid.style.display = StyleKeyword.Null;
+            ShowFlightMesh(false);
+            if (hangarCam != null) hangarCam.enabled = true;
+            if (session != null && rocketView != null) rocketView.SetSelected(session.Selected, true);
             BuildRocket();
-            ApplyValidation();
+            if (hangarCam != null) hangarCam.Reframe();
+            ApplyWebDesignFrame();
         }
 
         /// <summary>Hangar per-frame work: a rate-limited rocket rebuild while a stepper is held.</summary>
@@ -1277,7 +1305,14 @@ namespace Kestrel.Slice
             if (renderer != null) renderer.AdvanceTo(TimelineClock.RealSeconds(sequence.Time, sequence.Mode));
             if (hT != null) hT.text = sequence.Clock;
             if (hStage != null) hStage.text = "COUNT";
+            HideCountGrid();
             RefreshWebcast(sequence.Time, false);
+        }
+
+        void HideCountGrid()
+        {
+            var grid = hud != null ? hud.Q("hud-grid") : null;
+            if (grid != null) grid.style.display = DisplayStyle.None;
         }
 
         /// <summary>Live device gates. The handoff reads them and does not wait.</summary>
@@ -1311,7 +1346,7 @@ namespace Kestrel.Slice
             double q = flying && flight != null ? flight.DynPressure : 0;
             var pulse = flying && flight != null && flight.Lost
                 ? WebcastBoard.Lost(flight.Result.failure.kind, alt)
-                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel);
+                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
             // Trevor: the raw event-id chips (tl.*.short) do not belong on the flight screen.
@@ -1321,8 +1356,16 @@ namespace Kestrel.Slice
                 seqRow.style.display = DisplayStyle.None;
             }
             if (hCallout == null) return;
-            hCallout.text = "Tap an event.";
-            if (juice != null && !string.IsNullOrEmpty(juice.Line)) hCallout.text = juice.Line;
+            string line = "";
+            if (juice != null && !string.IsNullOrEmpty(juice.Line)) line = juice.Line;
+            else if (!flying && sequence != null)
+            {
+                if (!string.IsNullOrEmpty(sequence.Label) && !Kestrel.Core.PlayerText.Leak(sequence.Label))
+                    line = sequence.Label;
+                else if (!string.IsNullOrEmpty(sequence.Banner) && !Kestrel.Core.PlayerText.Leak(sequence.Banner))
+                    line = sequence.Banner;
+            }
+            hCallout.text = line;
         }
 
         async void OnMeco(FlightDriver f)

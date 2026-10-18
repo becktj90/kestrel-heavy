@@ -113,6 +113,39 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void PadAimMatchesTheBatch_AndFrameBatchDoesNotChangeApogee()
+        {
+            var mission = campaign.Mission(1);
+            var design = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, mission).Design);
+            var sheet = Stack.SimInputs(catalog, design, 1.0 / 120.0, 0);
+            Assert.That(sheet.opts.targetAlt, Is.GreaterThan(mission.GuidanceAltM * 5),
+                "the design orbit aims at the goal, not the hop's depletion floor");
+            Assert.That(sheet.opts.guidance, Is.Not.Null);
+            Assert.That(sheet.opts.guidance.targetAlt, Is.EqualTo(sheet.opts.targetAlt).Within(0.01));
+
+            var orbit = new CampaignMission { TargetKind = "circular", ApoKm = 200, PeriKm = 200 };
+            var kept = new SimOptions { targetAlt = 200000, guidance = GuidanceProfile.Builtin(180000) };
+            Assert.IsFalse(MissionAim.Apply(kept, orbit));
+            Assert.AreEqual(200000, kept.targetAlt, 0.01);
+            Assert.AreEqual(180000, kept.guidance.targetAlt, 0.01);
+
+            var lofted = Fly(catalog, design, mission, false);
+            Assert.IsFalse(MissionScore.AltitudeWithin(lofted.orbit.apoAlt, mission.ApoKm * 1000),
+                "orbit aim apo " + (lofted.orbit.apoAlt / 1000).ToString("0.00") + " km");
+            Assert.That(lofted.orbit.apoAlt, Is.GreaterThan(12000),
+                "playtest climbed past 22 km; orbit aim apo " + (lofted.orbit.apoAlt / 1000).ToString("0.00"));
+
+            double one = ApoBatched(catalog, design, mission, 1);
+            double slow = ApoBatched(catalog, design, mission, 12);
+            Assert.That(slow, Is.EqualTo(one).Within(0.05),
+                "12 ticks per slow frame apo " + (slow / 1000).ToString("0.000") + " vs " + (one / 1000).ToString("0.000"));
+            Assert.IsTrue(MissionScore.AltitudeWithin(one, mission.ApoKm * 1000),
+                "aimed apo " + (one / 1000).ToString("0.00") + " km");
+            Assert.IsTrue(FlightDebrief.GoalMet(mission, true, one, 0, 4, null),
+                "aimed apo " + (one / 1000).ToString("0.00"));
+        }
+
+        [Test]
         public void DesignThrottleStaysOnUntilTheMaxQCallIsTaken()
         {
             var mission = campaign.Mission(1);
@@ -126,12 +159,38 @@ namespace Kestrel.Core.Tests
         }
 
         static SimResult Fly(Catalog catalog, Design design, CampaignMission mission)
+            => Fly(catalog, design, mission, true);
+
+        /// <summary>
+        /// <paramref name="aim"/> applies the campaign depletion floor. Without it the pad
+        /// keeps the design orbit's target, which is the bug the first hop used to fly.
+        /// </summary>
+        static SimResult Fly(Catalog catalog, Design design, CampaignMission mission, bool aim)
         {
             var input = Stack.SimInputs(catalog, design, 1.0 / 120.0, 0);
-            input.opts.targetAlt = mission.GuidanceAltM;
-            if (input.opts.guidance != null) input.opts.guidance.targetAlt = mission.GuidanceAltM;
-            input.opts.monitor = FailureMonitor.Create(catalog, design, mission.GuidanceAltM, 1, 1);
+            if (aim) MissionAim.Apply(input.opts, mission);
+            input.opts.monitor = FailureMonitor.Create(catalog, design, aim ? mission.GuidanceAltM : input.opts.targetAlt, 1, 1);
             return Headless.Simulate(input.stages, input.opts);
+        }
+
+        /// <summary>Same fixed 1/120 step, delivered one tick at a time or a slow-frame batch of <paramref name="batch"/>.</summary>
+        static double ApoBatched(Catalog catalog, Design design, CampaignMission mission, int batch)
+        {
+            var input = Stack.SimInputs(catalog, design, 1.0 / 120.0, 0);
+            MissionAim.Apply(input.opts, mission);
+            input.opts.monitor = FailureMonitor.Create(catalog, design, mission.GuidanceAltM, 1, 1);
+            input.opts.tMax = 400;
+            var sim = new AscentSim(input.stages, input.opts);
+            int guard = 0;
+            while (!sim.Done && guard < 80000)
+            {
+                for (int i = 0; i < batch && !sim.Done; i++)
+                {
+                    sim.Tick();
+                    guard++;
+                }
+            }
+            return sim.Finish().orbit.apoAlt;
         }
 
         static SimResult FlyGuided(Catalog catalog, Design design, CampaignMission mission, double qLim)

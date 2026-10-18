@@ -10,6 +10,7 @@ using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Physics;
 using Kestrel.Game.MissionSelect;
+using Kestrel.Game.Shell;
 using Kestrel.Slice;
 using NUnit.Framework;
 using UnityEditor;
@@ -142,6 +143,161 @@ namespace Kestrel.Game.Tests
             Assert.That(hud.pickingMode, Is.EqualTo(PickingMode.Ignore));
             Assert.That(stage.Q("ascent-nudge").style.display.keyword, Is.EqualTo(StyleKeyword.Null));
             }
+        }
+
+        [Test]
+        public void ResultStoryStaysAboveTheButtons_OnPhoneAndWeb()
+        {
+            Assert.That(Catalog.RepoRootOrNull(), Is.Null);
+            Assert.That(Resources.Load<Font>("KHFonts/Fraunces-Bold"), Is.Not.Null);
+            Assert.That(Resources.Load<Font>("KHFonts/SpaceGrotesk-Medium"), Is.Not.Null);
+            Assert.That(ReportCardChrome.UnitsPerPoint(1280f, 800f, 96f, 1280f), Is.EqualTo(2f).Within(0.01f));
+            Assert.That(1280f / (800f / 2f), Is.EqualTo(3.2f).Within(0.01f), "the swapped landscape scale this guards");
+            var sizes = new[]
+            {
+                new[] { 335f, 700f, 96f },
+                new[] { 375f, 667f, 326f },
+                new[] { 440f, 956f, 458f },
+                new[] { 1032f, 1376f, 264f },
+                new[] { 1280f, 800f, 96f },
+            };
+            for (int i = 0; i < sizes.Length; i++)
+            {
+                float w = sizes[i][0], h = sizes[i][1], dpi = sizes[i][2];
+                float upp = ReportCardChrome.UnitsPerPoint(w, h, dpi, w);
+                using (var surface = PanelHost.Open(w, h))
+                {
+                    var debrief = new FlightDebrief
+                    {
+                        CauseTitle = "Short of the mark",
+                        Numbers = "Reached 22 km. The goal was 10 km.",
+                        StarsLine = "No stars this flight.",
+                        MedalsLine = "Timing Bronze",
+                        Kid = "It climbed past the hop.",
+                        Engineer = "Apogee 22 km. The band was 10 km.",
+                    };
+                    var card = ReportView.Build(
+                        null,
+                        new TelemetryLog(),
+                        ReportLayout.Solve(w, h, 20f, 0f, 0f, 0f, true),
+                        true,
+                        null,
+                        debrief,
+                        new ReportActions());
+                    surface.Stage.Add(card);
+                    ReportCardChrome.Present(surface.Stage, card, upp, 20f, 0f);
+                    surface.Pump(6);
+                    string where = w.ToString("0") + "x" + h.ToString("0");
+                    AssertStory(card, "failure-cause", where);
+                    AssertStory(card, "failure-numbers", where);
+                    AssertStory(card, "report-stars", where);
+                    var numbers = card.Q<Label>("failure-numbers");
+                    StringAssert.Contains("22", numbers.text);
+                    StringAssert.Contains("10", numbers.text);
+                    StringAssert.Contains("km", numbers.text);
+                    var actions = card.Q("report-actions");
+                    Assert.That(actions, Is.Not.Null, where);
+                    Assert.That(actions.worldBound.height, Is.GreaterThan(8f), where + " buttons");
+                    Assert.That(numbers.worldBound.yMax, Is.LessThanOrEqualTo(actions.worldBound.yMin + 1f), where + " numbers sit above the buttons");
+                }
+            }
+        }
+
+        [Test]
+        public void LandscapeReadoutsLeaveTheFlightAndTheResultCard()
+        {
+            Assert.That(Catalog.RepoRootOrNull(), Is.Null);
+            using (var surface = PanelHost.Open(1280f, 800f))
+            {
+                var ui = new VisualElement { name = "root" };
+                ui.style.width = 1280f;
+                ui.style.height = 800f;
+                var design = new VisualElement { name = "design" };
+                design.Add(new VisualElement { name = "sticky-strip" });
+                design.Add(new Label("Reading 0.000, limit 0.000, at T+0.00 s.") { name = "risk-chips" });
+                design.Add(new VisualElement { name = "launch-row" });
+                design.Add(new Label { name = "launch-reason" });
+                design.Add(new VisualElement { name = "designer-launch" });
+                var hud = new VisualElement { name = "hud" };
+                hud.AddToClassList("hidden");
+                ui.Add(design);
+                ui.Add(hud);
+                surface.Stage.Add(ui);
+                var frame = WebDesignerLayout.Place(1280f, 800f, 0f, 0f, 0f, 0f);
+                Assert.IsTrue(frame.Wide);
+                try
+                {
+                    WebDesignChrome.Apply(ui, frame);
+                    var host = ui.Q("web-readouts");
+                    Assert.That(host, Is.Not.Null);
+                    Assert.That(host.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+
+                    design.AddToClassList("hidden");
+                    WebDesignChrome.Apply(ui, frame);
+                    Assert.That(host.style.display.value, Is.EqualTo(DisplayStyle.None));
+
+                    design.RemoveFromClassList("hidden");
+                    hud.RemoveFromClassList("hidden");
+                    WebDesignChrome.Apply(ui, frame);
+                    Assert.That(host.style.display.value, Is.EqualTo(DisplayStyle.None));
+
+                    hud.AddToClassList("hidden");
+                    ui.Add(new VisualElement { name = ReportView.RootName });
+                    WebDesignChrome.Apply(ui, frame);
+                    Assert.That(host.style.display.value, Is.EqualTo(DisplayStyle.None));
+                }
+                finally
+                {
+                    WebDesignChrome.Clear(ui);
+                }
+            }
+        }
+
+        [Test]
+        public void EmptyCheckoutStillAimsAnApogeeHop()
+        {
+            Assert.That(Catalog.RepoRootOrNull(), Is.Null);
+            GameSession.Clear();
+            try
+            {
+                GameSession.Carry(new MissionContext
+                {
+                    MissionId = "m-missing",
+                    Mode = MissionMode.Campaign,
+                    Target = new MissionTarget { Kind = "apogee", ApoKm = 10 },
+                });
+                var missing = AscentFlight.CurrentMission();
+                Assert.That(missing, Is.Not.Null);
+                Assert.IsTrue(MissionAim.IsApogeeHop(missing));
+                Assert.AreEqual(1000, missing.GuidanceAltM, 0.01);
+
+                var campaign = ScreenStub.LoadCampaign();
+                var row = campaign != null ? campaign.ById("m1") : null;
+                if (row != null)
+                {
+                    GameSession.Carry(MissionContext.FromMission(campaign, row));
+                    var hop = AscentFlight.CurrentMission();
+                    Assert.AreEqual("m1", hop.Id);
+                    Assert.AreEqual("apogee", hop.TargetKind);
+                    Assert.AreEqual(1000, hop.GuidanceAltM, 0.01);
+                }
+                var opts = new SimOptions { targetAlt = 200000, guidance = GuidanceProfile.Builtin(200000) };
+                Assert.IsTrue(MissionAim.Apply(opts, missing));
+                Assert.AreEqual(1000, opts.targetAlt, 0.01);
+                Assert.AreEqual(1000, opts.guidance.targetAlt, 0.01);
+            }
+            finally
+            {
+                GameSession.Clear();
+            }
+        }
+
+        static void AssertStory(VisualElement card, string name, string where)
+        {
+            var label = card.Q<Label>(name);
+            Assert.That(label, Is.Not.Null, where + " " + name);
+            Assert.That(string.IsNullOrEmpty(label.text), Is.False, where + " " + name);
+            Assert.That(label.worldBound.height, Is.GreaterThan(8f), where + " " + name);
         }
 
         static string FindRepo()
