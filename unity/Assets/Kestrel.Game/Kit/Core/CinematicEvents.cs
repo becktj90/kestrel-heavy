@@ -21,7 +21,7 @@ namespace Kestrel.Kit
         public bool Reduce;               // reduce-motion / reduce-flashing at the moment of the event
     }
 
-    public static class CinematicEvents
+    public static partial class CinematicEvents
     {
         public static event Action<CinematicEvent> Raised;
         /// <summary>Total events raised since start; tests and debug overlays read it.</summary>

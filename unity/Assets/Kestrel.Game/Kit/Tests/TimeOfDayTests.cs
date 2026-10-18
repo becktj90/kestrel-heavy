@@ -1,4 +1,5 @@
 using System.Linq;
+using Kestrel.Core.Flight;
 using NUnit.Framework;
 
 namespace Kestrel.Kit.Tests
@@ -68,18 +69,16 @@ namespace Kestrel.Kit.Tests
         }
 
         [Test]
-        public void SelectionIsDeterministicPerMission()
+        public void PresetForAPickedValueIsDeterministicPerSeed()
         {
-            foreach (var id in new[] { "KH-1", "KH-7", "KH-20", "starter", "" })
-            {
-                var a = TimeOfDayPresets.ForMission(id); var b = TimeOfDayPresets.ForMission(id);
-                Assert.That(a.Tod, Is.EqualTo(b.Tod)); Assert.That(a.SunElevationDeg, Is.EqualTo(b.SunElevationDeg)); Assert.That(a.StarDensity, Is.EqualTo(b.StarDensity));
-            }
-            Assert.That(TimeOfDayPresets.SeedFor("KH-7"), Is.EqualTo(TimeOfDayPresets.SeedFor("KH-7")));
-            Assert.That(TimeOfDayPresets.SeedFor("KH-7"), Is.Not.EqualTo(TimeOfDayPresets.SeedFor("KH-8")));
-            var picks = Enumerable.Range(1, 400).Select(s => TimeOfDayPresets.Pick(s)).ToList();
-            foreach (var t in All) Assert.That(picks.Count(x => x == t), Is.GreaterThan(40), t.ToString());
-            Assert.That(picks.Count(x => x == LaunchTimeOfDay.Day), Is.GreaterThan(picks.Count(x => x == LaunchTimeOfDay.Night)));
+            foreach (var t in All)
+                foreach (ulong seed in new ulong[] { 0, 1, 42, 999983, ulong.MaxValue })
+                {
+                    var a = TimeOfDayPresets.For(t, TimeOfDayPresets.VarietySeed(seed)); var b = TimeOfDayPresets.For(t, TimeOfDayPresets.VarietySeed(seed));
+                    Assert.That(a.Tod, Is.EqualTo(t)); Assert.That(a.SunElevationDeg, Is.EqualTo(b.SunElevationDeg)); Assert.That(a.StarDensity, Is.EqualTo(b.StarDensity));
+                }
+            Assert.That(TimeOfDayPresets.VarietySeed(7UL), Is.EqualTo(TimeOfDayPresets.VarietySeed(7UL)));
+            Assert.That(TimeOfDayPresets.VarietySeed(7UL), Is.Not.EqualTo(TimeOfDayPresets.VarietySeed(8UL)));
         }
 
         [Test]
