@@ -29,6 +29,11 @@ namespace Kestrel.Core.Physics
         public Flight.FailureMonitor monitor;
         /// <summary>Null is calm air. Drag, q and alpha stay on the nominal path.</summary>
         public Flight.SeededWind wind;
+        /// <summary>
+        /// Fairing jettison altitude in metres. 0 emits nothing, so existing event lists stay put.
+        /// A positive value records one "fairing" event after max-Q, once altitude has reached it.
+        /// </summary>
+        public double fairingJettisonAltM;
     }
 
     public sealed class SimEvent
@@ -86,9 +91,10 @@ namespace Kestrel.Core.Physics
             return (per, total);
         }
 
-        public static SimResult Simulate(IList<SimStage> stages, SimOptions opts = null)
+        public static SimResult Simulate(IList<SimStage> stages, SimOptions opts = null, Flight.IFlightSimSink sink = null)
         {
             var sim = new AscentSim(stages, opts ?? new SimOptions());
+            sim.Sink = sink;
             while (sim.Tick()) { }
             return sim.Finish();
         }
@@ -128,10 +134,13 @@ namespace Kestrel.Core.Physics
         public readonly List<SimEvent> Events = new List<SimEvent>();
         public readonly List<SimSample> Samples = new List<SimSample>();
         public int StageCount => st.Length;
+        /// <summary>Peak q is confirmed once it falls below this fraction of the running maximum. The hook reports that maximum.</summary>
+        public const double MaxQConfirm = 0.98;
         double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1, catchPitch;
         bool turned;
-        bool liftedOff, sawKarman; double karmanT; string outcome = "timeout";
+        bool liftedOff, sawKarman, maxQPassed, fairingSent, ignitionHooked; double karmanT; string outcome = "timeout";
         FailureEvent playedBreak;
+        FlightVec pad;
 
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
         public double LastP, LastQ, LastMach, LastThrust;
@@ -146,6 +155,8 @@ namespace Kestrel.Core.Physics
         /// </summary>
         public double LiveThrottleScale = 1;
         public double LivePitchOffsetRad;
+        /// <summary>Observer. Null leaves the step alone. The sim does not read the sink.</summary>
+        public Flight.IFlightSimSink Sink { get; set; }
 
         /// <summary>
         /// Propellant left in the burning stage, 1 full to 0 empty. NaN while coasting or after cutoff:
@@ -172,6 +183,7 @@ namespace Kestrel.Core.Physics
             for (int i = st.Length - 1; i >= 0; i--) upperMass[i] = upperMass[i + 1] + st[i].propMass + st[i].dryMass;
             vSite = o.rotate ? Earth.SiteRotationSpeed(o.latitude) : 0;
             Y[0] = 0; Y[1] = Gravity.R_EARTH; Y[2] = -vSite; Y[3] = 0; Y[4] = upperMass[0];
+            pad = new FlightVec(Y[0], Y[1]);
             omegaAir = o.rotate ? vSite / Gravity.R_EARTH : 0;
             deriv = Deriv;
             Events.Add(new SimEvent { t = 0, type = "ignition", stage = 1 });
@@ -216,6 +228,7 @@ namespace Kestrel.Core.Physics
         public bool Tick()
         {
             if (Done) return false;
+            EnsureIgnition();
             if (!(T < o.tMax)) { Done = true; return false; }
             double x = Y[0], yy = Y[1], vx = Y[2], vy = Y[3], m = Y[4];
             double r = JsMath.Hypot(x, yy), alt = r - Gravity.R_EARTH;
@@ -334,6 +347,11 @@ namespace Kestrel.Core.Physics
                     Y[4] = upperMass[StageIdx];
                     Events.Add(new SimEvent { t = T, type = "separation", stage = StageIdx, alt = alt });
                     Events.Add(new SimEvent { t = T, type = "ignition", stage = StageIdx + 1, alt = alt });
+                    if (Sink != null)
+                    {
+                        Sink.OnStageSeparation(StageIdx, Pos(), Vel());
+                        Sink.OnIgnition(StageIdx + 1, T);
+                    }
                     return true;
                 }
                 double flow = st[StageIdx].mdot;
@@ -347,6 +365,11 @@ namespace Kestrel.Core.Physics
             double q = 0.5 * rho * vrel * vrel;
             // Observational, like KarmanTime: recording the altitude does not change the step.
             if (q > maxQ) { maxQ = q; maxQTime = T; maxQAlt = alt; }
+            else if (!maxQPassed && maxQ > 0 && q < maxQ * MaxQConfirm)
+            {
+                maxQPassed = true;
+                Sink?.OnMaxQ(maxQ, maxQTime);
+            }
             double gl = Gravity.MU_EARTH / (r * r);
             double v = JsMath.Hypot(vx, vy);
             LastP = p; LastQ = q; LastMach = vrel / sound; LastThrust = 0;
@@ -377,18 +400,33 @@ namespace Kestrel.Core.Physics
             T += dt;
 
             double r1 = JsMath.Hypot(Y[0], Y[1]), alt1 = r1 - Gravity.R_EARTH;
-            if (!liftedOff && alt1 > 1) { liftedOff = true; Events.Add(new SimEvent { t = T, type = "liftoff" }); }
+            if (!liftedOff && alt1 > 1)
+            {
+                liftedOff = true;
+                Events.Add(new SimEvent { t = T, type = "liftoff" });
+                Sink?.OnLiftoff(T, pad);
+            }
             if (!sawKarman && alt1 >= UpperAtmosphere.KarmanM) { sawKarman = true; karmanT = T; }
+            if (!fairingSent && o.fairingJettisonAltM > 0 && maxQPassed && alt1 >= o.fairingJettisonAltM)
+            {
+                fairingSent = true;
+                double spd = JsMath.Hypot(Y[2], Y[3]);
+                Events.Add(new SimEvent { t = T, type = "fairing", alt = alt1, v = spd });
+                Sink?.OnFairingSeparation(T, Pos(), Vel());
+            }
             if (alt1 < 0)
             {
                 if (!liftedOff && Thrusting) { Y[0] = 0; Y[1] = Gravity.R_EARTH; Y[2] = -vSite; Y[3] = 0; return true; }
+                double sink = r1 > 0 ? -(Y[2] * Y[0] + Y[3] * Y[1]) / r1 : 0;
                 if (o.monitor != null && outcome != "failure")
                 {
-                    double sink = r1 > 0 ? -(Y[2] * Y[0] + Y[3] * Y[1]) / r1 : 0;
                     if (o.monitor.OnImpact(T, sink)) Fail(0, sink);
                 }
                 if (outcome != "failure") outcome = "crash";
-                Events.Add(new SimEvent { t = T, type = "impact" }); Done = true; return false;
+                Events.Add(new SimEvent { t = T, type = "impact" });
+                double impactSpeed = sink > 0 ? sink : JsMath.Hypot(Y[2], Y[3]);
+                Sink?.OnImpact(impactSpeed, Pos());
+                Done = true; return false;
             }
             if (Thrusting && Mode == 3 && o.cutoff)
             {
@@ -410,6 +448,7 @@ namespace Kestrel.Core.Physics
         /// </summary>
         public void BreakUp(FailureEvent ev)
         {
+            EnsureIgnition();
             if (ev != null)
             {
                 playedBreak = ev;
@@ -432,7 +471,25 @@ namespace Kestrel.Core.Physics
             Mode = 4;
             int stage = StageIdx < st.Length ? StageIdx + 1 : st.Length;
             Events.Add(new SimEvent { t = T, type = "failure", stage = stage, alt = alt, v = speed });
+            if (Sink == null) return;
+            var ev = o.monitor != null ? o.monitor.Event : null;
+            if (ev == null) ev = playedBreak;
+            string kind = ev != null && ev.kind != null ? ev.kind : "failure";
+            string cause = ev != null && ev.cause != null ? ev.cause : "";
+            int engine = ev != null ? ev.engineIndex : -1;
+            Sink.OnFailure(kind, cause, engine, Pos(), Vel(), T);
+            if (FlightEngineMode.IsEngine(kind)) Sink.OnEngineFailure(engine, FlightEngineMode.Of(kind));
         }
+
+        void EnsureIgnition()
+        {
+            if (ignitionHooked) return;
+            ignitionHooked = true;
+            Sink?.OnIgnition(1, 0);
+        }
+
+        FlightVec Pos() => new FlightVec(Y[0], Y[1]);
+        FlightVec Vel() => new FlightVec(Y[2], Y[3]);
 
         /// <summary>
         /// Hold the kick while a max-Q cap is actually cutting thrust. The gravity turn
@@ -515,6 +572,12 @@ namespace Kestrel.Core.Physics
 
         public SimResult Finish()
         {
+            EnsureIgnition();
+            if (!maxQPassed && maxQ > 0)
+            {
+                maxQPassed = true;
+                Sink?.OnMaxQ(maxQ, maxQTime);
+            }
             var orb = Orbit.Planar(Y[0], Y[1], Y[2], Y[3]);
             if (outcome == "timeout" && !Thrusting) outcome = orb.periAlt > 120e3 ? "orbit" : "suborbital";
             if (outcome == "orbit") Events.Add(new SimEvent { t = T, type = "orbit", apoAlt = orb.apoAlt, periAlt = orb.periAlt });

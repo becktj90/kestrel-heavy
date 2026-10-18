@@ -57,35 +57,49 @@ namespace Kestrel.Core.Flight
             return ImpactArc(slowed, craft);
         }
 
-        public static RecoveryVerdict Fly(in RecoveryCraft craft, double downrangeM, double altM, double vEast, double vUp, in RecoveryStick stick)
+        public static RecoveryVerdict Fly(in RecoveryCraft craft, double downrangeM, double altM, double vEast, double vUp, in RecoveryStick stick, IFlightSimSink sink = null)
         {
             var body = Begin(craft, downrangeM, altM, vEast, vUp);
-            return Fly(craft, body, stick);
+            return Fly(craft, body, stick, sink);
         }
 
-        public static RecoveryVerdict Fly(in RecoveryCraft craft, RecoveryBody body, in RecoveryStick stick)
+        public static RecoveryVerdict Fly(in RecoveryCraft craft, RecoveryBody body, in RecoveryStick stick, IFlightSimSink sink = null)
         {
             var marks = new RecoveryMark[8];
             int n = 0;
             Remember(ref marks, ref n, body);
+            if (sink != null) sink.OnRecoveryPhase(body.Phase, body.T);
             int guard = 0;
             while (body.Phase != RecoveryPhase.Down && body.T < MaxTime && guard++ < 80000)
             {
                 double alt = Altitude(body);
                 double dt = alt < NearAlt ? NearDt : Dt;
+                var prev = body.Phase;
                 Step(ref body, craft, stick, dt);
                 if (n == 0 || marks[n - 1].Phase != body.Phase) Remember(ref marks, ref n, body);
+                if (sink != null && body.Phase != prev) sink.OnRecoveryPhase(body.Phase, body.T);
             }
             if (body.Phase != RecoveryPhase.Down)
             {
                 body.Phase = RecoveryPhase.Down;
                 Remember(ref marks, ref n, body);
+                if (sink != null) sink.OnRecoveryPhase(body.Phase, body.T);
             }
             var kept = new RecoveryMark[n];
             for (int i = 0; i < n; i++) kept[i] = marks[i];
             var sample = Sample(body, craft);
             var verdict = RecoveryScore.Judge(sample, craft, kept);
             verdict.Attempted = craft.Recoverable;
+            if (sink != null && sample.Phase == RecoveryPhase.Down)
+            {
+                sink.OnTouchdown(sample.Sink, sample.TiltDeg, FlightSurfaces.Choose(sample.MissM, DeckRadiusM, craft.Mode));
+                string boom = RecoveryViews.Boom(verdict.Cause, sample.Sink, craft.VLeg);
+                if (!string.IsNullOrEmpty(boom))
+                {
+                    double energy = 0.5 * sample.Mass * sample.Speed * sample.Speed;
+                    sink.OnCrash(boom, new FlightVec(body.X, body.Y), new FlightVec(body.Vx, body.Vy), energy);
+                }
+            }
             return verdict;
         }
 

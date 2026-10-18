@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Kit.Tests",
     "rootNamespace": "Kestrel.Kit.Tests",
-    "references": ["Kestrel.Kit", "Kestrel.Kit.Core", "Kestrel.Kit.Contracts", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+    "references": ["Kestrel.Core", "Kestrel.Kit", "Kestrel.Kit.Core", "Kestrel.Kit.Contracts", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
