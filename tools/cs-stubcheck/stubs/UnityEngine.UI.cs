@@ -15,11 +15,11 @@ namespace UnityEngine.UIElements
     public enum StyleKeyword { Undefined, Null, Auto, None, Initial }
     public struct Length { public Length(float v) { value = v; unit = default; } public Length(float v, LengthUnit u) { value = v; unit = u; } public float value; public LengthUnit unit; public static Length Percent(float v) => default; public static implicit operator Length(float v) => default; }
     public struct StyleLength { public StyleLength(float v) { value = default; keyword = default; } public StyleLength(Length v) { value = v; keyword = default; } public StyleLength(StyleKeyword k) { value = default; keyword = k; } public Length value; public StyleKeyword keyword; public static implicit operator StyleLength(float v) => default; public static implicit operator StyleLength(Length v) => default; public static implicit operator StyleLength(StyleKeyword v) => default; }
-    public struct StyleFloat { public float value; public static implicit operator StyleFloat(float v) => default; public static implicit operator StyleFloat(StyleKeyword v) => default; }
+    public struct StyleFloat { public float value; public StyleKeyword keyword; public static implicit operator StyleFloat(float v) => default; public static implicit operator StyleFloat(StyleKeyword v) => default; }
     public struct StyleInt { public int value; public static implicit operator StyleInt(int v) => default; }
     public struct StyleColor { public Color value; public StyleColor(Color v) { value = v; } public static implicit operator StyleColor(Color v) => default; public static implicit operator StyleColor(StyleKeyword v) => default; }
     public struct StyleEnum<T> where T : struct, IConvertible { public T value; public StyleKeyword keyword; public static implicit operator StyleEnum<T>(T v) => default; public static implicit operator StyleEnum<T>(StyleKeyword v) => default; }
-    public struct StyleBackground { public StyleBackground(Texture2D v) { } public static implicit operator StyleBackground(Texture2D v) => default; }
+    public struct StyleBackground { public StyleBackground(Texture2D v) { } public StyleBackground(StyleKeyword k) { } public static implicit operator StyleBackground(Texture2D v) => default; }
     public enum Repeat { NoRepeat, Space, Round, Repeat }
     public struct BackgroundRepeat { public BackgroundRepeat(Repeat x, Repeat y) { } }
     public struct StyleBackgroundRepeat { public static implicit operator StyleBackgroundRepeat(BackgroundRepeat v) => default; }
@@ -29,12 +29,12 @@ namespace UnityEngine.UIElements
     public struct Translate { public Translate(float x, float y) { } public Translate(Length x, float y) { } }
     public struct StyleTranslate { public static implicit operator StyleTranslate(Translate t) => default; public static implicit operator StyleTranslate(StyleKeyword k) => default; }
     public enum TextOverflow { Clip, Ellipsis }
-    public struct FontDefinition { public static FontDefinition FromFont(Font f) => default; }
-    public struct StyleFontDefinition { public StyleFontDefinition(FontDefinition d) { } public static implicit operator StyleFontDefinition(StyleKeyword k) => default; }
+    public struct FontDefinition { public Font font; public static FontDefinition FromFont(Font f) => default; }
+    public struct StyleFontDefinition { public FontDefinition value; public StyleFontDefinition(FontDefinition d) { value = d; } public static implicit operator StyleFontDefinition(StyleKeyword k) => default; }
     public enum Wrap { NoWrap, Wrap, WrapReverse }
     public enum WhiteSpace { Normal, NoWrap }
-    public interface IResolvedStyle { float width { get; } float height { get; } float left { get; } float top { get; } float right { get; } float bottom { get; } float paddingTop { get; } float paddingRight { get; } float paddingLeft { get; } float paddingBottom { get; } float fontSize { get; } DisplayStyle display { get; } }
-    public class VisualElementStyleSheetSet { public void Add(StyleSheet s) { } public void Remove(StyleSheet s) { } public int count => 0; }
+    public interface IResolvedStyle { float width { get; } float height { get; } float left { get; } float top { get; } float right { get; } float bottom { get; } float paddingTop { get; } float paddingRight { get; } float paddingLeft { get; } float paddingBottom { get; } float fontSize { get; } float opacity { get; } DisplayStyle display { get; } StyleFloat maxHeight { get; } Color backgroundColor { get; } }
+    public class VisualElementStyleSheetSet { public void Add(StyleSheet s) { } public void Remove(StyleSheet s) { } public bool Contains(StyleSheet s) => false; public int count => 0; }
     public enum TrickleDown { NoTrickleDown, TrickleDown }
     public interface IEventHandler { } public class EventBase { public IEventHandler target { get; set; } public IEventHandler currentTarget { get; set; } public void StopPropagation() { } public void StopImmediatePropagation() { } public void PreventDefault() { } }
     public class EventBase<T> : EventBase where T : EventBase<T>, new() { }
@@ -42,6 +42,7 @@ namespace UnityEngine.UIElements
     public class AttachToPanelEvent : EventBase<AttachToPanelEvent> { }
     public class DetachFromPanelEvent : EventBase<DetachFromPanelEvent> { }
     public class ClickEvent : EventBase<ClickEvent> { }
+    public class NavigationSubmitEvent : EventBase<NavigationSubmitEvent>, IDisposable { public static NavigationSubmitEvent GetPooled() => new NavigationSubmitEvent(); public void Dispose() { } }
     public class PointerDownEvent : EventBase<PointerDownEvent> { public Vector3 position => default; public Vector3 localPosition => default; public int pointerId => 0; }
     public class PointerMoveEvent : EventBase<PointerMoveEvent> { public Vector3 position => default; public Vector3 localPosition => default; public int pointerId => 0; public Vector3 deltaPosition => default; }
     public class PointerLeaveEvent : EventBase<PointerLeaveEvent> { public Vector3 position => default; public int pointerId => 0; }
@@ -52,7 +53,7 @@ namespace UnityEngine.UIElements
     public delegate void EventCallback<in TEventType>(TEventType evt);
     public interface IPanel { VisualElement visualTree { get; } VisualElement Pick(Vector2 p); float scaledPixelsPerPoint { get; } }
     public struct UQueryBuilder<T> where T : VisualElement { public List<T> ToList() => new List<T>(); public T First() => null; public void ForEach(System.Action<T> f) { } }
-    public class VisualElement : IEventHandler { public enum MeasureMode { Undefined, Exactly, AtMost } public VisualElement() { } public string tooltip { get; set; } public string name { get; set; } public IStyle style => null; public IResolvedStyle resolvedStyle => null; public Rect layout => default; public Rect worldBound => default; public Rect contentRect => default; public Vector2 MeasureTextSize(string textToMeasure, float width, MeasureMode widthMode, float height, MeasureMode heightMode) => default; public VisualElement parent => null; public IPanel panel => null; public int childCount => 0; public VisualElement this[int i] => null; public VisualElementStyleSheetSet styleSheets => null; public PickingMode pickingMode { get; set; } public bool visible { get; set; } public bool enabledSelf => true; public object userData { get; set; } public VisualElement contentContainer => this;
+    public class VisualElement : IEventHandler { public enum MeasureMode { Undefined, Exactly, AtMost } public VisualElement() { } public string tooltip { get; set; } public string name { get; set; } public IStyle style => null; public IResolvedStyle resolvedStyle => null; public Rect layout => default; public Rect worldBound => default; public Rect contentRect => default; public Vector2 MeasureTextSize(string textToMeasure, float width, MeasureMode widthMode, float height, MeasureMode heightMode) => default; public VisualElement parent => null; public IPanel panel => null; public int childCount => 0; public VisualElement this[int i] => null; public VisualElementStyleSheetSet styleSheets => null; public PickingMode pickingMode { get; set; } public bool visible { get; set; } public bool focusable { get; set; } public bool enabledSelf => true; public bool enabledInHierarchy => true; public object userData { get; set; } public VisualElement contentContainer => this; public void SendEvent(EventBase e) { }
         public Action<MeshGenerationContext> generateVisualContent { get; set; }
         public void Add(VisualElement c) { } public void Insert(int i, VisualElement c) { } public int IndexOf(VisualElement c) => -1; public void Remove(VisualElement c) { } public void RemoveAt(int i) { } public void Clear() { } public void RemoveFromHierarchy() { } public void BringToFront() { } public void SendToBack() { } public IEnumerable<VisualElement> Children() => null; public T Q<T>(string name = null, string className = null) where T : VisualElement => null; public VisualElement Q(string name = null, string className = null) => null; public UQueryBuilder<T> Query<T>(string name = null, string className = null) where T : VisualElement => default; public UQueryBuilder<VisualElement> Query(string name = null, string className = null) => default;
         public void AddToClassList(string c) { } public void RemoveFromClassList(string c) { } public void EnableInClassList(string c, bool e) { } public bool ClassListContains(string c) => false; public void MarkDirtyRepaint() { } public void SetEnabled(bool e) { } public void Focus() { }

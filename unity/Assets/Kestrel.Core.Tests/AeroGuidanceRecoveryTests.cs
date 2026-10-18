@@ -57,6 +57,34 @@ namespace Kestrel.Core.Tests
             double caught = Math.PI / 2 - kick;
             var turn = law.Command(new GuidanceState { vrel = 80, flightPathRad = caught });
             Assert.AreEqual(caught, turn.pitchRad, 0, "once the flight path catches the kick, thrust follows it");
+
+            var capped = GuidanceProfile.From(new Design
+            {
+                guidance = new GuidanceSpec { maxQThrottleSet = true, maxQThrottle = 60 }
+            }, 100000);
+            double bucket = GuidanceProfile.MaxQReferencePa * GuidanceProfile.MaxQBucketFraction;
+            double kicked = Math.PI / 2 - kick;
+            var sag = new GuidanceState
+            {
+                alt = 8000, vrel = 400, flightPathRad = kicked - 0.05, q = bucket + 1000,
+                mass = 10000, thrustN = 200000, throttleMin = 0.4, stageIndex = 0,
+            };
+            var held = capped.Command(sag);
+            Assert.Less(held.throttle, 1);
+            Assert.AreEqual(kicked, held.pitchRad, 1e-9, "a small sag during the cap is held at the kick");
+            var turned = sag;
+            turned.flightPathRad = 0.4;
+            Assert.AreEqual(0.4, capped.Command(turned).pitchRad, 1e-9, "a finished turn is not yanked back up");
+            var clear = sag;
+            clear.q = bucket - 1;
+            var follow = capped.Command(clear);
+            Assert.AreEqual(1, follow.throttle, 0);
+            Assert.AreEqual(kicked - 0.05, follow.pitchRad, 1e-9, "below the bucket the path is followed again");
+            var locked = sag;
+            locked.throttleMin = 1;
+            var full = capped.Command(locked);
+            Assert.AreEqual(1, full.throttle, 0);
+            Assert.AreEqual(kicked - 0.05, full.pitchRad, 1e-9, "an engine that cannot throttle does not hold the nose");
         }
 
         [Test]

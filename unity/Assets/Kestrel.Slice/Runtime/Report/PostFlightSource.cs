@@ -96,7 +96,15 @@ namespace Kestrel.Slice
                     facts.RequiredMps = row.RequiredDeltaV();
                     facts.Margin = facts.RequiredMps > 1 ? (result.idealDeltaV - facts.RequiredMps) / facts.RequiredMps : 0;
                     bool intact = ascentFail == null && result.outcome != "failure" && result.outcome != "crash";
-                    facts.Passed = FlightDebrief.GoalMet(row, intact, result.orbit.apoAlt, peri, result.maxG, facts.LandingGrade);
+                    var extra = Check(row, result, facts);
+                    if (string.IsNullOrEmpty(facts.LandingGrade) && (row.LandingRequired || row.LandBoosters))
+                        facts.LandingGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, false);
+                    if (row.LandBoosters)
+                    {
+                        extra.BoosterKnown = true;
+                        extra.BoosterGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, true);
+                    }
+                    facts.Passed = FlightDebrief.GoalMet(row, intact, result.orbit.apoAlt, peri, result.maxG, facts.LandingGrade, extra);
                 }
             }
             if (flight != null && flight.Decisions != null)
@@ -106,6 +114,49 @@ namespace Kestrel.Slice
             }
             Quote(facts);
             return facts;
+        }
+
+        static GoalCheck Check(CampaignMission row, SimResult result, FlightFacts facts)
+        {
+            var extra = new GoalCheck
+            {
+                IdealDv = result.idealDeltaV,
+                C3Km2PerS2 = MissionScore.C3(result.orbit.energy) / 1e6,
+                Margin = facts.Margin,
+            };
+            if (result.risks != null)
+            {
+                extra.RedKnown = true;
+                for (int i = 0; i < result.risks.Count; i++)
+                {
+                    if (result.risks[i].level == "red") extra.RedRisk = true;
+                }
+            }
+            if (catalog == null || design == null) return extra;
+            try
+            {
+                extra.Reliability = Reliability.Of(catalog, design).reliability;
+                extra.Gentle = FailureMonitor.GentleTier(design);
+                extra.PayloadMatch = design.payloadType == row.PayloadId && design.payloadMass == row.MassKg;
+                var fit = PayloadFit.Check(design, new PayloadSpec { id = row.PayloadId, volume = row.VolumeM3, diameter = row.DiameterM });
+                extra.FairingFits = fit.fits;
+                var price = CostModel.PriceDesign(catalog, design);
+                long per = CostModel.MinorPerKc(catalog);
+                long budget = Career.KcToMinor(row.BudgetKc, per > 0 ? per : 1);
+                extra.UnderBudget = price.recurring <= budget;
+                extra.AirframeKnown = true;
+                if (row.CoastHours > 0 && design.stages != null && design.stages.Count > 0)
+                {
+                    var upper = design.stages[design.stages.Count - 1];
+                    double before = upper.propMass;
+                    extra.BoilOffKg = before - TankModel.RemainingPropKg(catalog, upper, row.CoastHours);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Kestrel] post-flight gates: " + e.Message);
+            }
+            return extra;
         }
 
         static void Quote(FlightFacts facts)

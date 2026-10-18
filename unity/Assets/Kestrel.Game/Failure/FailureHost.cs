@@ -413,11 +413,16 @@ namespace Kestrel.Game.Failure
                 var again = actions.Again;
                 var missions = actions.Missions;
                 var home = actions.Home;
-                actions.Next = () => { reveal(); if (next != null) next(); };
-                actions.Again = () => { reveal(); if (again != null) again(); };
-                actions.Missions = () => { reveal(); if (missions != null) missions(); };
-                actions.Home = () => { reveal(); if (home != null) home(); };
-                actions.Fix = () => { reveal(); FixField.Apply(ui, FixField.For(kind)); };
+                System.Action leave = () =>
+                {
+                    ReportCardChrome.Dismiss(ui);
+                    reveal();
+                };
+                actions.Next = () => { leave(); if (next != null) next(); };
+                actions.Again = () => { leave(); if (again != null) again(); };
+                actions.Missions = () => { leave(); if (missions != null) missions(); };
+                actions.Home = () => { leave(); if (home != null) home(); };
+                actions.Fix = () => { leave(); FixField.Apply(ui, FixField.For(kind)); };
             }
             Card = ReportView.Build(shown, log, frame, reduce, () => { reveal(); FixField.Apply(ui, FixField.For(kind)); }, debrief, actions);
             Card.userData = this;
