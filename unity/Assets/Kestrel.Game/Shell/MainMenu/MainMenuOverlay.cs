@@ -35,7 +35,12 @@ namespace Kestrel.Game.Shell
             root.style.top = 0;
             root.style.bottom = 0;
             root.style.flexDirection = FlexDirection.Column;
-            if (reduceMotion) root.AddToClassList("kh-mm-reduce");
+            if (reduceMotion)
+            {
+                root.AddToClassList("kh-mm-reduce");
+                // The gear lives on the shell, outside mm-root, so the zero-duration rule has to see the class there too.
+                if (full != null) full.AddToClassList("kh-mm-reduce");
+            }
 
             // Full-bleed dusk, then a light grain. Reel bars stay in the tree for the mix tests; USS hides them.
             var dusk = new HomeDuskBackdrop();
