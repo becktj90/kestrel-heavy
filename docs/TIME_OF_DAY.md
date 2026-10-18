@@ -29,8 +29,8 @@ The briefing displays the enum name (`Day`, `Sunset`, or `Night`). Narrator line
 
 Kit lighting (sun elevation, fog, stars, `-khTimeOfDay`, `TimeOfDayRig`) consumes the enum. It does not choose it. Call `PickTimeOfDay`, then the Kit preset for that value. A command-line override still wins over the table when Kit parses one.
 
-## Graphics Dev (PR #271)
+## Graphics Dev
 
-`Kestrel.Kit.LaunchTimeOfDay` and `TimeOfDayPresets.ForMission(id)` are the placeholder. `ForMission` hashes the id alone and then uses a flat 50/25/25, so a mission never changes sky. `PickTimeOfDay` replaces that call.
+PR #271 is on main. It left `Kestrel.Kit.LaunchTimeOfDay` and `TimeOfDayPresets.ForMission(id)` in Kit. `ForMission` hashes the id alone and then uses a flat 50/25/25, so a mission never changes sky. `PickTimeOfDay` replaces that call.
 
-Kestrel.Core cannot reference Kit. The Core asmdef has no references, the dotnet project compiles only `Assets/Kestrel.Core`, and Kit is the game layer that should reference Core. The enum in this change is the one to keep. Delete the Kit copy and use `Kestrel.Core.Flight.LaunchTimeOfDay`. The numeric values already match.
+Kestrel.Core cannot reference Kit. The Core asmdef has no references, the dotnet project compiles only `Assets/Kestrel.Core`, and Kit is the game layer that should reference Core. The enum in this change is the one to keep. Delete the Kit copy and use `Kestrel.Core.Flight.LaunchTimeOfDay`. The numeric values already match (Day 0, Sunset 1, Night 2).
