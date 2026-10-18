@@ -129,11 +129,12 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(200000, kept.targetAlt, 0.01);
             Assert.AreEqual(180000, kept.guidance.targetAlt, 0.01);
 
+            // The orbit altitude is the goal, not the depletion floor. The monitor then
+            // calls the hop out of fuel and the flight does not pass.
             var lofted = Fly(catalog, design, mission, false);
-            Assert.IsFalse(MissionScore.AltitudeWithin(lofted.orbit.apoAlt, mission.ApoKm * 1000),
-                "orbit aim apo " + (lofted.orbit.apoAlt / 1000).ToString("0.00") + " km");
-            Assert.That(lofted.orbit.apoAlt, Is.GreaterThan(12000),
-                "playtest climbed past 22 km; orbit aim apo " + (lofted.orbit.apoAlt / 1000).ToString("0.00"));
+            Assert.AreEqual("prop-depletion", lofted.failure != null ? lofted.failure.kind : "",
+                "apo " + (lofted.orbit.apoAlt / 1000).ToString("0.00"));
+            Assert.IsFalse(MissionScore.AltitudeWithin(lofted.orbit.apoAlt, mission.ApoKm * 1000));
 
             double one = ApoBatched(catalog, design, mission, 1);
             double slow = ApoBatched(catalog, design, mission, 12);
