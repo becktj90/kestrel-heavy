@@ -27,12 +27,14 @@ namespace Kestrel.Slice
             public Vector3 Rest;
             public float SepY;
             public bool Shown;
+            public int Debris;   // DebrisFx rigid-body handle once separated, else 0
         }
 
         sealed class Half
         {
             public Transform Pivot;
             public float Mid, Sign;
+            public int Debris;
         }
 
         struct KeptMount
@@ -61,6 +63,8 @@ namespace Kestrel.Slice
         Half leftHalf, rightHalf;
         ParticleSystem puff, flashPs;
         PlumeController plume;
+        float fairingLen = 12f, fairingRadius = 2f;
+        bool fairingRaised;
         float fullDiameter = 1f, coreDiameter = 1f, upperDiameter = 1f, coreRadius = 1f;
         int boosterSerial = -1, coreSerial, builtMask = -1, bellMask = -1, flashedSerial = -2;
         bool armed, hasFairing, hasBoosters, coreReleases, reduce, recoveryOwns;
@@ -183,6 +187,8 @@ namespace Kestrel.Slice
                 else if (p.Part.kind == PartKind.Fairing && hasFairing)
                 {
                     float mid = (p.Y0 + p.Y1) * 0.5f;
+                    fairingLen = Mathf.Max(1f, p.Y1 - p.Y0);
+                    fairingRadius = Mathf.Max(0.3f, (float)design.fairingDiameter * 0.5f);
                     leftHalf = MakeHalf(p.Mesh, mat, mid, -1f);
                     rightHalf = MakeHalf(p.Mesh, mat, mid, 1f);
                 }
@@ -225,11 +231,16 @@ namespace Kestrel.Slice
             builtMask = -1;
             bellMask = -1;
             flashedSerial = -2;
+            fairingRaised = false;
+            CinematicEvents.DebrisClear();
+            if (leftHalf != null) leftHalf.Debris = 0;
+            if (rightHalf != null) rightHalf.Debris = 0;
             staging.Reset(hasFairing, jettisonM, hasBoosters ? BoosterCount() : 0, reduceMotion);
             RestoreMesh();
             for (int i = 0; i < pieces.Count; i++)
             {
                 pieces[i].Shown = false;
+                pieces[i].Debris = 0;
                 if (pieces[i].Pivot != null)
                 {
                     pieces[i].Pivot.gameObject.SetActive(false);
@@ -412,7 +423,9 @@ namespace Kestrel.Slice
                     p.Shown = true;
                     p.Pivot.gameObject.SetActive(true);
                     Burst(puff, new Vector3(p.Rest.x, p.SepY, p.Rest.z), new Color(1f, 0.55f, 0.16f, 0.9f), 14, 9f, -2.5f);
+                    RaiseStageSeparation(p);
                 }
+                if (DebrisDrives(p.Debris)) continue;   // DebrisFx poses this pivot from the separation impulse
                 p.Pivot.localPosition = p.Rest + new Vector3((float)pose.X, (float)pose.Y, (float)pose.Z);
                 p.Pivot.localRotation = Quaternion.Euler((float)pose.Pitch, (float)pose.Yaw, (float)pose.Roll);
             }
@@ -428,8 +441,45 @@ namespace Kestrel.Slice
                 if (rightHalf != null && rightHalf.Pivot.gameObject.activeSelf) rightHalf.Pivot.gameObject.SetActive(false);
                 return;
             }
-            PlaceHalf(leftHalf, pose);
-            PlaceHalf(rightHalf, pose);
+            if (!fairingRaised) RaiseFairingSeparation();
+            if (!DebrisDrives(leftHalf.Debris)) PlaceHalf(leftHalf, pose);
+            if (!DebrisDrives(rightHalf.Debris)) PlaceHalf(rightHalf, pose);
+        }
+
+        // Physical separation (Kit.CinematicEvents -> Environment/DebrisFx). Mass is an estimate from skin area; the
+        // impulse is a 2.5 m/s stage push and a 2 m/s fairing push. Gameplay can replace these with real numbers later.
+        static bool DebrisDrives(int handle)
+        {
+            if (handle == 0) return false;
+            var fx = Kestrel.Game.Environment.DebrisFx.Instance;
+            return fx != null && fx.IsDriving(handle);
+        }
+
+        void RaiseStageSeparation(Piece p)
+        {
+            if (p.Role != "stage" || p.Pivot == null) return;
+            float len = Mathf.Max(1f, 2f * (p.SepY - p.Rest.y));
+            float rad = Mathf.Max(0.3f, Diameter(p.Serial) * 0.5f);
+            float mass = 25f * 2f * Mathf.PI * rad * len;
+            var at = p.Pivot.localPosition;
+            CinematicEvents.StageSeparation(at.x, at.y, at.z, 0f, 0f, 0f, p.Index, mass, len, rad, mass * 2.5f, 0.12f * len, 4f, reduce, p.Serial);
+            p.Debris = CinematicEvents.LastDebrisHandle;
+            var fx = Kestrel.Game.Environment.DebrisFx.Instance;
+            if (fx != null && p.Debris != 0) fx.Attach(p.Debris, p.Pivot);
+        }
+
+        void RaiseFairingSeparation()
+        {
+            fairingRaised = true;
+            if (leftHalf == null || rightHalf == null) return;
+            float mass = 12f * Mathf.PI * fairingRadius * fairingLen;
+            CinematicEvents.FairingSeparation(0f, leftHalf.Mid, 0f, 0f, 0f, 0f, mass, fairingLen, fairingRadius, mass * 2f, 0.5f, 4f, reduce);
+            leftHalf.Debris = CinematicEvents.LastDebrisHandle;
+            rightHalf.Debris = CinematicEvents.LastDebrisHandleB;
+            var fx = Kestrel.Game.Environment.DebrisFx.Instance;
+            if (fx == null) return;
+            if (leftHalf.Debris != 0) fx.Attach(leftHalf.Debris, leftHalf.Pivot);
+            if (rightHalf.Debris != 0) fx.Attach(rightHalf.Debris, rightHalf.Pivot);
         }
 
         static void PlaceHalf(Half half, FairingPose pose)
