@@ -76,6 +76,57 @@ namespace Kestrel.Game.Tests
         }
 
         [Test]
+        public void ResumeBarFitsAt335WidePortraitAndLandscape()
+        {
+            var grotesk = Resources.Load<Font>("KHFonts/SpaceGrotesk-Medium");
+            Assert.That(grotesk, Is.Not.Null, "SpaceGrotesk-Medium from Resources");
+            float[] heights = { 700f, 200f };
+            for (int i = 0; i < heights.Length; i++)
+            {
+                float height = heights[i];
+                using (var surface = DeviceSurface.Open(335f, height))
+                {
+                    var bar = HomeResumeBar.Build(9999, true, () => { });
+                    bar.style.position = Position.Relative;
+                    bar.style.left = 0;
+                    bar.style.right = StyleKeyword.Auto;
+                    bar.style.top = 8;
+                    bar.style.width = 335;
+                    bar.style.height = 48;
+                    surface.Stage.Add(bar);
+                    surface.Pump(4);
+                    HomeResumeBar.Fit(bar);
+                    surface.Pump(3);
+                    var chip = bar.Q<Label>(HomeResumeBar.ChipName);
+                    var button = bar.Q<Button>(HomeResumeBar.ContinueName);
+                    Assert.That(chip, Is.Not.Null, height + " chip");
+                    Assert.That(button, Is.Not.Null, height + " CONTINUE");
+                    Assert.That(chip.text, Is.EqualTo("9999 credits"));
+                    Assert.That(button.text, Is.EqualTo("CONTINUE"));
+                    Assert.That(chip.resolvedStyle.fontSize, Is.GreaterThanOrEqualTo(14f), height + " chip size");
+                    Assert.That(button.resolvedStyle.fontSize, Is.GreaterThanOrEqualTo(14f), height + " button size");
+                    Assert.That(chip.style.unityFontDefinition.value.font, Is.SameAs(grotesk), height + " chip font");
+                    var chipText = chip.MeasureTextSize(chip.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+                    var buttonText = button.MeasureTextSize(button.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+                    Assert.That(chipText.x, Is.LessThanOrEqualTo(chip.resolvedStyle.width + 0.5f), height + " chip text");
+                    Assert.That(buttonText.x, Is.LessThanOrEqualTo(button.resolvedStyle.width + 0.5f), height + " button text");
+                    var stage = surface.Stage.worldBound;
+                    Inside(chip.worldBound, stage, height + " chip bounds");
+                    Inside(button.worldBound, stage, height + " button bounds");
+                }
+            }
+        }
+
+        static void Inside(Rect inner, Rect outer, string what)
+        {
+            Assert.That(inner.width, Is.GreaterThan(1f), what);
+            Assert.That(inner.xMin, Is.GreaterThanOrEqualTo(outer.xMin - 1f), what);
+            Assert.That(inner.yMin, Is.GreaterThanOrEqualTo(outer.yMin - 1f), what);
+            Assert.That(inner.xMax, Is.LessThanOrEqualTo(outer.xMax + 1f), what);
+            Assert.That(inner.yMax, Is.LessThanOrEqualTo(outer.yMax + 1f), what);
+        }
+
+        [Test]
         public void HomeChromeIsOnScreenAboveTheDuskPlate()
         {
             var black = Resources.Load<Font>("KHFonts/Fraunces-Black");

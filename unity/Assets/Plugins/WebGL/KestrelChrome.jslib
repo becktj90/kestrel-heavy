@@ -8,5 +8,8 @@ mergeInto(LibraryManager.library, {
     var stage = document.getElementById("stage");
     var h = stage && stage.clientHeight ? stage.clientHeight : (window.innerHeight || 0);
     return h | 0;
+  },
+  KhSyncFs: function () {
+    if (typeof FS !== "undefined" && FS.syncfs) FS.syncfs(false, function () {});
   }
 });

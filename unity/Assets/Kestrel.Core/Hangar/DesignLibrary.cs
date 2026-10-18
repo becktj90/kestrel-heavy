@@ -104,6 +104,79 @@ namespace Kestrel.Core.Hangar
 
         public bool Delete(string id) => !string.IsNullOrEmpty(id) && store.DeleteDesign(id);
 
+        /// <summary>True when a mid-design autosave exists. A draft is not one of the 8 slots.</summary>
+        public bool HasDraft()
+        {
+            var data = DraftData();
+            return data != null && data.Obj("design") != null;
+        }
+
+        /// <summary>The autosaved rocket, migrated, or null. <paramref name="missionId"/> is the mission that was open, if any.</summary>
+        public JsonObject LoadDraft(out string missionId, out string name)
+        {
+            missionId = null;
+            name = null;
+            var data = DraftData();
+            var design = data != null ? data.Obj("design") : null;
+            if (design == null) return null;
+            var copy = JsonMut.CloneObject(design);
+            name = data.Str("name");
+            if (string.IsNullOrEmpty(name)) name = copy.Str("name") ?? DefaultName;
+            JsonMut.Set(copy, "name", name);
+            missionId = data.Str("missionId");
+            if (string.IsNullOrEmpty(missionId)) missionId = null;
+            return copy;
+        }
+
+        /// <summary>Write the open rocket outside the 8 slots and remember it on the progress record.</summary>
+        public void SaveDraft(JsonObject design, string name, string missionId)
+        {
+            if (design == null) return;
+            string nm = CleanName(name ?? design.Str("name"));
+            var copy = JsonMut.CloneObject(design);
+            JsonMut.Set(copy, "name", nm);
+            var data = new JsonObject();
+            data.Add("design", copy);
+            data.Add("name", nm);
+            data.Add("missionId", missionId ?? "");
+            store.PutRecord(NativeStore.DraftKey, "draft", data);
+            NoteDraft(nm, missionId);
+        }
+
+        /// <summary>Autosave whenever the session changes, including the rocket that is already open.</summary>
+        public void WatchDraft(HangarSession session, Func<string> missionId)
+        {
+            if (session == null) return;
+            void Keep()
+            {
+                if (session.Loading || session.Design == null) return;
+                string mid = null;
+                try { if (missionId != null) mid = missionId(); }
+                catch (Exception) { mid = null; }
+                try { SaveDraft(session.Design, session.SavedName ?? session.Design.Str("name"), mid); }
+                catch (SaveException) { }
+            }
+            session.Changed += Keep;
+            Keep();
+        }
+
+        JsonObject DraftData()
+        {
+            var env = store.Read(NativeStore.DraftKey);
+            if (env == null || env.Str("kind") != "draft") return null;
+            return env.Obj("data");
+        }
+
+        void NoteDraft(string name, string missionId)
+        {
+            var prev = store.GetProgress();
+            var next = prev != null ? JsonMut.CloneObject(prev) : new JsonObject();
+            JsonMut.Set(next, "hasDraft", true);
+            JsonMut.Set(next, "draftName", name ?? "");
+            if (!string.IsNullOrEmpty(missionId)) JsonMut.Set(next, "lastMissionId", missionId);
+            store.PutProgress(next);
+        }
+
         /// <summary>"Hopper", then "Hopper 2", "Hopper 3" … so new slots never share a name.</summary>
         public string UniqueName(string baseName)
         {
