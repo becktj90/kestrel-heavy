@@ -1018,10 +1018,10 @@ namespace Kestrel.Slice.DesignerV3
             {
                 Show(next);
                 var result = session.FixDeltaV();
-                string note = result != null && result.Solved
+                string dvNote = result != null && result.Solved
                     ? "Added propellant or a stage so the speed covers this trip."
                     : PlayerText.ForPlayer(result != null ? result.Reason : "");
-                NoteRepair(note);
+                NoteRepair(dvNote);
                 return;
             }
             Show(next);
