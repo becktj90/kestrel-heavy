@@ -1,12 +1,15 @@
 // KH-1..KH-20 from the mission board. The board fork is what Home flies.
 // KH-1 and KH-2 are armed in HomeAutoBuild and win on every campaign seed.
-// KH-3..KH-20 keep the template. They are not given a fake pass: the starter
-// breaks up, falls short, or draws an engine-out. m1..m10 each have a separate
-// catalog-legal design in data/golden/campaign-viable.json that does win.
+// KH-3..KH-20 start from data/board-starters.json. Some already win. Some win
+// after Auto Fix it. Some win after setting the safety factor back. The KH-3
+// starter still misses, so a failed flight does not clear the campaign.
+// data/golden/campaign-winners.json holds one passing rocket for every mission.
 using System;
 using System.Collections.Generic;
 using System.IO;
 using Kestrel.Core.Data;
+using Kestrel.Core.Designer;
+using Kestrel.Core.Designer.Stepper;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
@@ -81,9 +84,9 @@ namespace Kestrel.Core.Tests
                             + " apo " + seeded.apoKm.ToString("0.00"));
                     }
                 }
-                else
+                else if (index == 3)
                 {
-                    Assert.IsFalse(flight.passed, mission.Id + " starter is not a win");
+                    Assert.IsFalse(flight.passed, "KH-3 starter still misses, so a failed flight does not clear the campaign");
                 }
                 lines.Add("KH-" + index + " " + choice.TemplateId
                     + (flight.passed ? " pass" : " fail " + (flight.failure ?? "short"))
@@ -147,6 +150,92 @@ namespace Kestrel.Core.Tests
             finally
             {
                 if (Directory.Exists(dir)) Directory.Delete(dir, true);
+            }
+        }
+
+        [Test]
+        public void CampaignWinners_FlyPassOnEverySeed()
+        {
+            var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "golden", "campaign-winners.json")));
+            int seen = 0;
+            foreach (JsonObject row in file.Arr("missions"))
+            {
+                var mission = campaign.ById(row.Str("id"));
+                Assert.IsNotNull(mission, row.Str("id"));
+                var design = Design.FromJson((JsonObject)row.Arr("designs")[0]);
+                Assert.AreEqual(mission.PayloadId, design.payloadType, mission.Id);
+                Assert.AreEqual(mission.MassKg, design.payloadMass, mission.Id);
+                Assert.AreEqual("campaign", design.tier, mission.Id);
+                foreach (var seed in campaign.Seeds)
+                {
+                    var flight = FlightBatch.Fly(catalog, mission, design, seed);
+                    Assert.IsTrue(flight.passed, mission.Id + " seed " + seed + " " + (flight.failure ?? "miss")
+                        + " apo " + flight.apoKm.ToString("0.0") + " peri " + flight.periKm.ToString("0.0"));
+                }
+                seen++;
+            }
+            Assert.AreEqual(20, seen);
+        }
+
+        [Test]
+        public void BoardStarter_FixItOrOneStrengthEdit_WinsEveryMission()
+        {
+            var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "board-starters.json")));
+            int seen = 0;
+            foreach (JsonObject row in file.Arr("missions"))
+            {
+                var mission = campaign.ById(row.Str("id"));
+                Assert.IsNotNull(mission, row.Str("id"));
+                var choice = HomeAutoBuild.Choose(catalog, hangar.templates, mission);
+                Assert.IsNotNull(choice, mission.Id);
+                var design = Design.FromJson(choice.Design);
+                Assert.AreEqual(mission.MassKg, design.payloadMass, mission.Id);
+                string mode = row.Str("mode");
+                if (mode == "fly")
+                {
+                    AssertSeeds(mission, design);
+                }
+                else if (mode == "fix")
+                {
+                    var raw = FlightBatch.Fly(catalog, mission, design, campaign.Seeds[0]);
+                    Assert.IsFalse(raw.passed, mission.Id + " starter is the near miss");
+                    var json = JsonMut.CloneObject(choice.Design);
+                    Readout.Reference(catalog, json);
+                    var report = StepperModel.Evaluate(catalog, json);
+                    StepCheck check = null;
+                    for (int i = 0; i < report.Checks.Length; i++)
+                    {
+                        if (report.Checks[i] != null && !string.IsNullOrEmpty(report.Checks[i].Code))
+                        {
+                            check = report.Checks[i];
+                            break;
+                        }
+                    }
+                    Assert.IsNotNull(check, mission.Id + " has a warning for Fix it");
+                    StepperFix.Apply(catalog, json, check);
+                    AssertSeeds(mission, Design.FromJson(json));
+                }
+                else if (mode == "strength")
+                {
+                    var raw = FlightBatch.Fly(catalog, mission, design, campaign.Seeds[0]);
+                    Assert.IsFalse(raw.passed, mission.Id + " starter is the near miss");
+                    design.safetyFactor = row.Num("restoreSafetyFactor");
+                    AssertSeeds(mission, design);
+                }
+                else Assert.Fail(mission.Id + " mode " + mode);
+                seen++;
+            }
+            Assert.AreEqual(18, seen, "KH-3 through KH-20");
+        }
+
+        void AssertSeeds(CampaignMission mission, Design design)
+        {
+            foreach (var seed in campaign.Seeds)
+            {
+                var flight = FlightBatch.Fly(catalog, mission, design, seed);
+                Assert.IsTrue(flight.passed, mission.Id + " seed " + seed + " " + (flight.failure ?? "miss")
+                    + " apo " + flight.apoKm.ToString("0.0") + " peri " + flight.periKm.ToString("0.0")
+                    + " q " + flight.qPeakKPa.ToString("0.0"));
             }
         }
 

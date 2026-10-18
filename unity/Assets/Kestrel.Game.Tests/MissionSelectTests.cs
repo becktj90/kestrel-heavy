@@ -70,7 +70,7 @@ namespace Kestrel.Game.Tests
                 { "m13", "Circular orbit 550 km, 97.6°" },
                 { "m14", "Circular orbit 400 km, 51.6°" },
                 { "m15", "Ellipse 200 km by 35,786 km, 27°" },
-                { "m16", "Circular orbit 400 km, 51.6°" },
+                { "m16", "Circular orbit 500 km, 51.6°" },
                 { "m17", "C3 -2 km2/s2, closest point 200 km, 28.5°" },
                 { "m18", "C3 -0.4 km2/s2, closest point 200 km, 28.5°" },
                 { "m19", "Ellipse 200 km by 35,786 km, 27°" },

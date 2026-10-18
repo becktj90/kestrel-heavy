@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Hangar;
@@ -166,7 +167,34 @@ namespace Kestrel.Core.Flight
                 best.ReachLine = "Enough for 100 km.";
                 if (best.LaunchEnabled) best.ReachesOrbit = true;
             }
+            ApplyBoardStarter(catalog, best, mission);
             return best;
+        }
+
+        /// <summary>
+        /// KH-3 through KH-20. The file holds a rocket that is the verified winner or one strength step short of it.
+        /// The hopper, workhorse and moonshot documents are not edited.
+        /// </summary>
+        static void ApplyBoardStarter(Catalog catalog, AutoBuildChoice best, CampaignMission mission)
+        {
+            if (best == null || mission == null) return;
+            if (mission.Id == "m1" || mission.Id == "m2") return;
+            var design = BoardStarters.Design(mission.Id);
+            if (design == null) return;
+            best.Design = JsonMut.CloneObject(design);
+            ApplyMission(catalog, best.Design, mission);
+            try
+            {
+                var spec = new PayloadSpec { id = mission.PayloadId, volume = mission.VolumeM3, diameter = mission.DiameterM };
+                var fit = PayloadFit.Check(Design.FromJson(best.Design), spec);
+                best.FitsPayload = fit.fits;
+                best.FitScore = fit.volumeMargin + fit.diameterMargin;
+            }
+            catch (Exception)
+            {
+                best.FitsPayload = false;
+            }
+            FillPerformance(catalog, best);
         }
 
         public const double HundredKmSafetyFactor = 2.2;
@@ -501,6 +529,40 @@ namespace Kestrel.Core.Flight
             PadHandoff.Arm(choice.Design, flyNow: false, fromHome: false);
             GameSession.Carry(ctx);
             return new RouteResult(SessionScreens.Design, SessionScreens.None, ctx);
+        }
+    }
+
+    /// <summary>Near-win rockets for the mission board. Absent on a player build that has no checkout.</summary>
+    static class BoardStarters
+    {
+        static Dictionary<string, JsonObject> cache;
+        static bool loaded;
+
+        public static JsonObject Design(string missionId)
+        {
+            if (string.IsNullOrEmpty(missionId)) return null;
+            if (!loaded)
+            {
+                loaded = true;
+                cache = new Dictionary<string, JsonObject>();
+                string root = Catalog.RepoRootOrNull();
+                if (root == null) return null;
+                string path = Path.Combine(root, "data", "board-starters.json");
+                if (!File.Exists(path)) return null;
+                var file = MiniJson.ParseObject(File.ReadAllText(path));
+                var rows = file.Arr("missions");
+                if (rows == null) return null;
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    var row = rows[i] as JsonObject;
+                    if (row == null) continue;
+                    var designs = row.Arr("designs");
+                    if (designs == null || designs.Count == 0 || !(designs[0] is JsonObject design)) continue;
+                    cache[row.Str("id")] = design;
+                }
+            }
+            if (cache != null && cache.TryGetValue(missionId, out var found)) return found;
+            return null;
         }
     }
 }
