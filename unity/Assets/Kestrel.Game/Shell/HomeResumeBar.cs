@@ -62,14 +62,7 @@ namespace Kestrel.Game.Shell
             var old = root.Q(BarName);
             if (old != null) old.RemoveFromHierarchy();
             var bar = Build(credits, showContinue, onContinue);
-            var launch = root.Q("home-launch");
-            if (launch != null && launch.parent != null)
-            {
-                int at = launch.parent.IndexOf(launch);
-                if (at >= 0) launch.parent.Insert(at, bar);
-                else root.Add(bar);
-            }
-            else root.Add(bar);
+            root.Add(bar);
             void Place(GeometryChangedEvent _)
             {
                 PlaceBar(root, bar);
@@ -112,19 +105,29 @@ namespace Kestrel.Game.Shell
 
         static void PlaceBar(VisualElement root, VisualElement bar)
         {
-            var launch = root.Q("home-launch");
             bar.style.position = Position.Absolute;
-            bar.style.left = 8;
-            bar.style.right = 8;
             bar.style.bottom = StyleKeyword.Auto;
             bar.style.height = 48;
-            float top = 8f;
-            if (launch != null && launch.layout.height > 1f)
+            bar.style.right = StyleKeyword.Auto;
+            var launch = root.Q("home-launch");
+            var parent = bar.parent ?? root;
+            if (launch == null || launch.worldBound.height < 1f || parent.worldBound.width < 1f)
             {
-                top = launch.layout.y - 52f;
-                if (top < 0f) top = 0f;
+                bar.style.left = 8;
+                bar.style.right = 8;
+                bar.style.top = 8;
+                return;
             }
-            if (root.ClassListContains("kh-mm-wide") && top < 0f) top = 0f;
+            float top = launch.worldBound.yMin - parent.worldBound.yMin - 52f;
+            if (top < 0f) top = 0f;
+            float left = launch.worldBound.xMin - parent.worldBound.xMin;
+            if (left < 0f) left = 0f;
+            float width = launch.worldBound.width;
+            float room = parent.worldBound.width - left;
+            if (width > room) width = room;
+            if (width < 8f) width = room > 8f ? room : 8f;
+            bar.style.left = left;
+            bar.style.width = width;
             bar.style.top = top;
         }
 
