@@ -10,7 +10,7 @@ using Kestrel.Kit.Contracts;
 
 namespace Kestrel.Pad
 {
-    public enum LightKind { Flood, Pole, Aviation, DeckStrip }
+    public enum LightKind { Flood, Pole, Aviation, DeckStrip, Spot, Window }
 
     public struct LightSpec
     {
@@ -31,7 +31,9 @@ namespace Kestrel.Pad
     public static class PadLighting
     {
         /// <summary>Target illuminance of tower floods / poles at their throw distance (URP units; daylight sun ≈ 1–2).</summary>
-        public const float FloodIllum = 4.5f, PoleIllum = 1.6f;
+        public const float FloodIllum = 4.5f, PoleIllum = 1.6f, SpotIllum = 6f;
+        /// <summary>Spotlight ring bearings (deg, 0 = tower): flank the tower, back side, away from plume exits and the design camera.</summary>
+        public static readonly float[] SpotSlots = { 50f, 310f, 130f, 165f, 150f, 325f };
         /// <summary>Near-pole exclusion around the design camera bearing (deg each side).</summary>
         public const float CameraKeepOutDeg = 40f;
         public static readonly Vec3 Sodium = new Vec3(1.00f, 0.78f, 0.52f), Led = new Vec3(0.92f, 0.95f, 1.00f), AvRed = new Vec3(1f, 0.08f, 0.04f);
@@ -75,6 +77,28 @@ namespace Kestrel.Pad
                     o.Add(new LightSpec { Id = $"strip.tower.l{l:00}", Kind = LightKind.DeckStrip, Position = new Vec3(0, (l + 1) * tp.LevelHeight + 0.15f, tp.NearFaceZ - 0.2f), Aim = new Vec3(0, 0, -1), Color = Led, Intensity = 1.2f, Halo = 0f });
             }
 
+            // Ground-mounted spotlights around the deck, aimed up at the vehicle (night: the beams light the rocket).
+            // Bearings flank the tower and the back, clear of the plume exits (90/270 ±25°) and the design camera.
+            {
+                int n = L.Archetype == PadArchetype.TowerStrongback ? 6 : 4; float rs = L.DeckRadius + 4f;
+                float aimY = hv * 0.55f;
+                for (int i = 0; i < n; i++)
+                {
+                    float b = SpotSlots[i] + rng.Range(-5f, 5f); double br = b * Math.PI / 180.0;
+                    var p = new Vec3(rs * (float)Math.Sin(br), 0.8f, rs * (float)Math.Cos(br));
+                    var aimPt = new Vec3(0, aimY, 0); float d = Dist(p, aimPt);
+                    o.Add(new LightSpec { Id = $"spot.{i:00}", Kind = LightKind.Spot, Position = p, Aim = Dir(p, aimPt), Color = Led, Intensity = 7f, Throw = d, Illum = SpotIllum,
+                        Range = d * 1.6f, SpotAngle = 26f, InnerSpotAngle = 11f, Halo = 3.2f });
+                }
+            }
+            // Emissive windows on the crew-access arm room (generic lit cabin glass).
+            if (tp != null && tp.CrewLevel >= 0 && tp.CrewArmReach > 0.5f)
+            {
+                float wy = (tp.CrewLevel + 1) * tp.LevelHeight + 1.3f, wz = tp.NearFaceZ - tp.CrewArmReach + 0.2f;
+                for (int w = -1; w <= 1; w++)
+                    o.Add(new LightSpec { Id = $"win.crew.{w + 1}", Kind = LightKind.Window, Position = new Vec3(tp.CrewArmX + w * 0.5f, wy, wz), Aim = new Vec3(0, 0, -1), Color = new Vec3(1f, 0.82f, 0.55f), Intensity = 2.5f });
+            }
+
             // Pole rings: ring 2 at 0.5–1.5 H_v (apron), ring 3 sparse. Skip the plume keep-out (exit bearings ±90° from tower ±25°).
             for (int ring = 0; ring < 2; ring++)
             {
@@ -96,21 +120,26 @@ namespace Kestrel.Pad
                 }
             }
 
-            // Realtime budget: brightest floods first (stable by id), then poles.
-            int budget = KitBudgets.PadRealtimeLights(quality), shadows = KitBudgets.PadShadowedLights(quality);
-            var order = new List<int>(); for (int i = 0; i < o.Count; i++) if (o[i].Kind == LightKind.Flood || o[i].Kind == LightKind.Pole) order.Add(i);
-            order.Sort((a, b) => { int k = o[a].Kind.CompareTo(o[b].Kind); if (k != 0) return k; int c = o[b].Position.Y.CompareTo(o[a].Position.Y); return c != 0 ? c : string.CompareOrdinal(o[a].Id, o[b].Id); });
-            // Balance: never put more realtime floods on one side of the vehicle than the other (+1); fill leftovers after.
-            int left = 0, right = 0;
-            for (int pass = 0; pass < 2; pass++)
-                foreach (var i in order)
-                {
-                    if (budget <= 0) break; var s = o[i]; if (s.Realtime) continue;
-                    bool isLeft = s.Position.X < 0;
-                    if (pass == 0 && s.Kind == LightKind.Flood && (isLeft ? left > right : right > left)) continue;
-                    if (s.Kind == LightKind.Flood) { if (isLeft) left++; else right++; }
-                    s.Realtime = true; s.Shadows = shadows-- > 0; o[i] = s; budget--;
-                }
+            // Realtime budget (fixtures only; the plume light is reserved separately): spots first (they light the rocket),
+            // then tower floods, then poles. Each kind is balanced left/right of the vehicle.
+            int budget = Math.Max(0, KitBudgets.PadRealtimeLights(quality) - KitBudgets.PadPlumeLights(quality)), shadows = KitBudgets.PadShadowedLights(quality);
+            var kinds = new[] { LightKind.Spot, LightKind.Flood, LightKind.Pole };
+            for (int ki = 0; ki < kinds.Length && budget > 0; ki++)
+            {
+                var kind = kinds[ki]; int quota = kind == LightKind.Spot ? (budget + 1) / 2 : budget;
+                var order = new List<int>(); for (int i = 0; i < o.Count; i++) if (o[i].Kind == kind) order.Add(i);
+                order.Sort((a, b) => { int c = o[b].Position.Y.CompareTo(o[a].Position.Y); return c != 0 ? c : string.CompareOrdinal(o[a].Id, o[b].Id); });
+                int left = 0, right = 0;
+                for (int pass = 0; pass < 2; pass++)
+                    foreach (var i in order)
+                    {
+                        if (budget <= 0 || quota <= 0) break; var s = o[i]; if (s.Realtime) continue;
+                        bool isLeft = s.Position.X < 0;
+                        if (pass == 0 && kind != LightKind.Pole && (isLeft ? left > right : right > left)) continue;
+                        if (isLeft) left++; else right++;
+                        s.Realtime = true; s.Shadows = shadows-- > 0; o[i] = s; budget--; quota--;
+                    }
+            }
             return o;
         }
 
@@ -124,7 +153,7 @@ namespace Kestrel.Pad
         public static float RealtimeIntensity(LightSpec s, float night) => night * s.Illum * Math.Max(1f, s.Throw * s.Throw);
 
         /// <summary>Fake volumetric cones per tier: Low none, Medium floods, High floods + poles.</summary>
-        public static bool HasCone(LightKind k, int quality) => quality >= 2 ? (k == LightKind.Flood || k == LightKind.Pole) : quality == 1 && k == LightKind.Flood;
+        public static bool HasCone(LightKind k, int quality) => quality >= 2 ? (k == LightKind.Flood || k == LightKind.Pole || k == LightKind.Spot) : quality == 1 && (k == LightKind.Flood || k == LightKind.Spot);
 
         static Vec3 Dir(Vec3 a, Vec3 b)
         {

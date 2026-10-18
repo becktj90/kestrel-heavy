@@ -18,7 +18,9 @@ namespace Kestrel.Kit
         /// <summary>Visible pad triangles per frame.</summary>
         public static int PadTriangles(int q) => Pick(q, 150_000, 300_000, 500_000);
         /// <summary>Realtime (per-pixel) lights the pad may add on top of the sun. Everything else is emissive-only.</summary>
-        public static int PadRealtimeLights(int q) => Pick(q, 0, 2, 4);
+        public static int PadRealtimeLights(int q) => Pick(q, 0, 2, 5);
+        /// <summary>Part of PadRealtimeLights reserved for the throttle-driven plume point light (High only); fixtures get the rest.</summary>
+        public static int PadPlumeLights(int q) => Pick(q, 0, 0, 1);
         /// <summary>Of those, how many may cast shadows.</summary>
         public static int PadShadowedLights(int q) => Pick(q, 0, 0, 1);
         /// <summary>Max instances per RenderMeshInstanced batch (Unity caps at 1023 for the matrix path).</summary>
