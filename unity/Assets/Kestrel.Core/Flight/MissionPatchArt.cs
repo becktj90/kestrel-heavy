@@ -1,6 +1,6 @@
-// Original circular mission patches for KH-1..KH-20, plus a deterministic patch for
-// any contract or free-flight id. Embroidery is drawn in MissionPatchRaster.
-// Player-facing lines never carry a raw mission id.
+// KH-1..KH-20 draw the baked PNGs in Resources/MissionBadges when those files are present.
+// A contract or a free flight, and a campaign id whose PNG is missing, still use the
+// procedural embroidery in MissionPatchRaster. Player-facing lines never carry a raw mission id.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -111,6 +111,7 @@ namespace Kestrel.Core.Flight
     {
         public const int CampaignCount = 20;
         public const int UiTextureCap = 384;
+        public const int BakedEdge = 512;
 
         static readonly MissionPatchSpec[] Table = BuildTable();
 
@@ -171,7 +172,18 @@ namespace Kestrel.Core.Flight
 
         public static PatchLayout Layout(MissionPatchSpec spec, int size, PatchChrome chrome = PatchChrome.Open)
         {
-            var plan = PatchPlan.Build(spec ?? Resolve("free"), size);
+            spec = spec ?? Resolve("free");
+            if (spec.Index >= 1 && spec.Index <= CampaignCount && HasBakedPng(spec.Index))
+                return FromPlan(PatchPlan.BakedFrame(size), chrome);
+            return ProceduralLayout(spec, size, chrome);
+        }
+
+        /// <summary>Circular emblem plan used when no baked PNG is available.</summary>
+        public static PatchLayout ProceduralLayout(MissionPatchSpec spec, int size, PatchChrome chrome = PatchChrome.Open)
+            => FromPlan(PatchPlan.Build(spec ?? Resolve("free"), size), chrome);
+
+        static PatchLayout FromPlan(PatchDrawPlan plan, PatchChrome chrome)
+        {
             return new PatchLayout
             {
                 Size = plan.Size,
@@ -187,6 +199,16 @@ namespace Kestrel.Core.Flight
             };
         }
 
+        public static bool HasBakedPng(int index) => MissionPatchBaked.Has(index);
+
+        public static byte[] ReadBakedPng(int index) => MissionPatchBaked.Read(index);
+
+        public static string BakedResource(int index, PatchChrome chrome) => MissionPatchBaked.ResourcePath(index, chrome);
+
+        /// <summary>Scale a top-down RGBA buffer and apply medal or locked chrome. Open is the baked art unchanged.</summary>
+        public static byte[] Present(byte[] rgba, int width, int height, int size, PatchChrome chrome)
+            => MissionPatchBaked.Present(rgba, width, height, size, chrome);
+
         static readonly System.Collections.Generic.Dictionary<string, byte[]> RgbaCache = new System.Collections.Generic.Dictionary<string, byte[]>();
         const int RgbaCacheCap = 96;
 
@@ -200,10 +222,26 @@ namespace Kestrel.Core.Flight
             if (size > 1024) size = 1024;
             string key = (spec.MissionId ?? spec.Flight ?? "free") + "\n" + size.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\n" + ((int)chrome).ToString(System.Globalization.CultureInfo.InvariantCulture);
             if (RgbaCache.TryGetValue(key, out var cached) && cached != null) return cached;
-            var drawn = MissionPatchRaster.Draw(spec, size, chrome);
+            byte[] drawn = null;
+            if (spec.Index >= 1 && spec.Index <= CampaignCount)
+                drawn = MissionPatchBaked.Rgba(spec.Index, size, chrome);
+            if (drawn == null) drawn = MissionPatchRaster.Draw(spec, size, chrome);
             if (RgbaCache.Count >= RgbaCacheCap) RgbaCache.Clear();
             RgbaCache[key] = drawn;
             return drawn;
+        }
+
+        public static void ClearCache()
+        {
+            RgbaCache.Clear();
+            MissionPatchBaked.Clear();
+        }
+
+        public static byte[] ProceduralRgba(string missionId, int size, PatchChrome chrome = PatchChrome.Open)
+        {
+            if (size < 16) size = 16;
+            if (size > 1024) size = 1024;
+            return MissionPatchRaster.Draw(Resolve(missionId), size, chrome);
         }
 
         public static byte[] Png(string missionId, int size, PatchChrome chrome = PatchChrome.Open)
@@ -219,13 +257,13 @@ namespace Kestrel.Core.Flight
             for (int i = 0; i < Table.Length; i++)
             {
                 var spec = Table[i];
-                File.WriteAllBytes(Path.Combine(directory, "kh-" + spec.Index.ToString(CultureInfo.InvariantCulture) + ".png"), Png(spec.MissionId, size, PatchChrome.Open));
+                File.WriteAllBytes(Path.Combine(directory, "kh-" + spec.Index.ToString(CultureInfo.InvariantCulture) + ".png"), EncodePng(size, MissionPatchRaster.Draw(spec, size, PatchChrome.Open)));
                 n++;
             }
-            File.WriteAllBytes(Path.Combine(directory, "kh-7-medal.png"), Png("m7", size, PatchChrome.Medal));
-            File.WriteAllBytes(Path.Combine(directory, "kh-5-locked.png"), Png("m5", size, PatchChrome.Locked));
-            File.WriteAllBytes(Path.Combine(directory, "contract.png"), Png("kc-pier-7", size, PatchChrome.Open));
-            File.WriteAllBytes(Path.Combine(directory, "free.png"), Png("free", size, PatchChrome.Open));
+            File.WriteAllBytes(Path.Combine(directory, "kh-7-medal.png"), EncodePng(size, MissionPatchRaster.Draw(Resolve("m7"), size, PatchChrome.Medal)));
+            File.WriteAllBytes(Path.Combine(directory, "kh-5-locked.png"), EncodePng(size, MissionPatchRaster.Draw(Resolve("m5"), size, PatchChrome.Locked)));
+            File.WriteAllBytes(Path.Combine(directory, "contract.png"), EncodePng(size, MissionPatchRaster.Draw(Resolve("kc-pier-7"), size, PatchChrome.Open)));
+            File.WriteAllBytes(Path.Combine(directory, "free.png"), EncodePng(size, MissionPatchRaster.Draw(Resolve("free"), size, PatchChrome.Open)));
             return n + 4;
         }
 
@@ -512,6 +550,99 @@ namespace Kestrel.Core.Flight
 
             PlaceStars(plan);
             return plan;
+        }
+
+        /// <summary>
+        /// A baked campaign badge is not a circular disc laid out from <see cref="PatchMarks"/>.
+        /// Star and arc-letter fields stay clear so callers do not treat the old recipe as the picture.
+        /// </summary>
+        public static PatchDrawPlan BakedFrame(int size)
+        {
+            if (size < 16) size = 16;
+            if (size > 1024) size = 1024;
+            float c = (size - 1) * 0.5f;
+            return new PatchDrawPlan
+            {
+                Size = size,
+                Cx = c,
+                Cy = c,
+                NameOnArc = false,
+                FlightFits = false,
+                EmblemInside = false,
+                StarsInside = false,
+                StarsSeparated = false,
+                StarCount = 0,
+                ArcFontCovers = false,
+            };
+        }
+
+        internal static void PaintGoldBorder(byte[] rgba, int size) => PaintEdge(rgba, size, 232, 186, 74);
+
+        internal static void PaintLocked(byte[] rgba, int size)
+        {
+            for (int i = 0; i < rgba.Length; i += 4)
+            {
+                if (rgba[i + 3] == 0) continue;
+                float lum = rgba[i] * 0.30f + rgba[i + 1] * 0.56f + rgba[i + 2] * 0.14f;
+                byte v = (byte)Math.Min(255f, lum * 0.62f);
+                rgba[i] = v;
+                rgba[i + 1] = v;
+                rgba[i + 2] = v;
+            }
+            PaintEdge(rgba, size, 214, 218, 224);
+        }
+
+        static void PaintEdge(byte[] rgba, int size, byte cr, byte cg, byte cb)
+        {
+            int rad = EdgeRadius(size);
+            int rad2 = rad * rad;
+            int n = size * size;
+            var solid = new byte[n];
+            var mark = new byte[n];
+            for (int i = 0; i < n; i++)
+                solid[i] = rgba[i * 4 + 3] >= 24 ? (byte)1 : (byte)0;
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                int p = y * size + x;
+                if (solid[p] == 0) continue;
+                int y0 = y - rad, y1 = y + rad, x0 = x - rad, x1 = x + rad;
+                bool edge = y0 < 0 || x0 < 0 || y1 >= size || x1 >= size;
+                if (y0 < 0) y0 = 0;
+                if (x0 < 0) x0 = 0;
+                if (y1 >= size) y1 = size - 1;
+                if (x1 >= size) x1 = size - 1;
+                for (int yy = y0; yy <= y1 && !edge; yy++)
+                {
+                    int dy = yy - y;
+                    int row = yy * size;
+                    for (int xx = x0; xx <= x1; xx++)
+                    {
+                        int dx = xx - x;
+                        if (dx * dx + dy * dy > rad2) continue;
+                        if (solid[row + xx] == 0) { edge = true; break; }
+                    }
+                }
+                if (edge) mark[p] = 1;
+            }
+            for (int p = 0; p < n; p++)
+            {
+                if (mark[p] == 0) continue;
+                int i = p * 4;
+                rgba[i] = cr;
+                rgba[i + 1] = cg;
+                rgba[i + 2] = cb;
+            }
+        }
+
+        static int EdgeRadius(int size)
+        {
+            float rim = size * 0.5f * 0.175f;
+            if (rim < 8f) rim = 8f;
+            int rad = (int)Math.Round(Math.Max(2.4, rim * 0.28));
+            if (rad < 2) rad = 2;
+            if (rad > size / 5) rad = Math.Max(2, size / 5);
+            return rad;
         }
 
         static int FitArcScale(string text, float rim, float textR, out float spanDeg)
