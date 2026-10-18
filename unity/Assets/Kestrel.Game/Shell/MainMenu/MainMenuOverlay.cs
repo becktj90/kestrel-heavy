@@ -523,7 +523,16 @@ namespace Kestrel.Game.Shell
             float host = root.layout.height;
             if (host < 8f) return;
             var title = root.Q("mm-title");
-            if (title == null || title.layout.height < 1f) return;
+            if (title == null) return;
+            // A title at 0 while LAUNCH has a height has already been flex-crushed, not "not laid out".
+            // Skipping here left the short column uncapped. Use the type-scale block until a real height exists.
+            bool titleLaidOut = title.layout.height >= 1f;
+            if (!titleLaidOut)
+            {
+                var launchProbe = root.Q("home-launch");
+                if (launchProbe == null || launchProbe.layout.height < 1f) return;
+            }
+            float naturalTitle = titleLaidOut ? title.layout.height : TitleBlock(z);
 
             var fit = root.userData as ColumnFit;
             // The column height changed (landscape to portrait, or the reverse). The saved
@@ -536,7 +545,7 @@ namespace Kestrel.Game.Shell
                 return;
             }
 
-            float titleH = fit != null && fit.TitleH > 1f ? fit.TitleH : title.layout.height;
+            float titleH = fit != null && fit.TitleH > 1f ? fit.TitleH : naturalTitle;
             float padTop = MenuTypeScale.TopPad;
             float padBot = z.HintBand;
             float need = padTop + padBot + titleH + z.ControlsH;
@@ -623,10 +632,17 @@ namespace Kestrel.Game.Shell
             var saved = root.userData as ColumnFit;
             if (saved == null)
             {
-                saved = new ColumnFit { TitleH = title.layout.height };
+                saved = new ColumnFit { TitleH = naturalTitle };
                 root.userData = saved;
             }
             saved.Host = host;
+        }
+
+        /// <summary>Eyebrow, wordmark and tagline when the title's layout height is not the content size.</summary>
+        static float TitleBlock(MenuTypeScale.Sizes z)
+        {
+            float eye = Mathf.Max(11f, z.Title * 0.22f);
+            return eye * MenuTypeScale.LineH + z.Title * 1.3f + z.Tagline * MenuTypeScale.LineH;
         }
 
         /// <summary>Removes the inline max-heights, the pinned title, and the clipped title fonts' box.
@@ -856,7 +872,10 @@ namespace Kestrel.Game.Shell
             Font("kh-mm-soon", z.Soon, .15f);
             Font("kh-mm-hint", z.Hint, 0f);
             // Explicit heights (not min-height) so the block is exactly what MenuTypeScale computed; Unity cannot inflate it.
+            // The title must not flex-shrink before ContainColumn measures it, or a short column reads height 0 and never caps.
             root.style.paddingTop = MenuTypeScale.TopPad; root.style.paddingBottom = z.HintBand;
+            var title = root.Q("mm-title");
+            if (title != null) title.style.flexShrink = 0;
             var stats = root.Q("mm-stats");
             if (stats != null)
             {
