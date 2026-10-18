@@ -1,3 +1,4 @@
+using Kestrel.Core.Flight;
 using Kestrel.Kit;
 using NUnit.Framework;
 using UnityEngine;
