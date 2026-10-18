@@ -113,7 +113,19 @@ namespace Kestrel.Game.Tests
         public void EveryGuidedStep_ShowsItsOptions()
         {
             var session = new HangarSession(catalog, data, Template("workhorse"));
-            session.Apply(d => HangarEditor.SetFins(d, true));
+            session.Apply(d =>
+            {
+                HangarEditor.SetFins(d, true);
+                var mission = d.Obj("mission");
+                if (mission == null)
+                {
+                    mission = new JsonObject();
+                    JsonMut.Set(d, "mission", mission);
+                }
+                JsonMut.Set(mission, "requiresLanding", true);
+                HangarEditor.SetLegs(d, true);
+                return DesignerV3Edits.SetRecoveryMode(d, "rtls");
+            });
             var panel = new DesignerV3Panel(session, new VisualElement(), 1f);
             try
             {
@@ -124,7 +136,8 @@ namespace Kestrel.Game.Tests
                 {
                     seen.Add(panel.Stepper.Step);
                     AssertStep(panel, panel.Stepper.Step);
-                    if (panel.Stepper.PressForward()) continue;
+                    // An amber step arms confirm on the first press and moves on the second.
+                    if (panel.Stepper.PressForward() || panel.Stepper.PressForward()) continue;
                     var next = panel.Stepper.Root.Q<Button>("stepper-next");
                     if (next != null && next.style.display != DisplayStyle.None)
                         Click(next);
@@ -170,39 +183,44 @@ namespace Kestrel.Game.Tests
             sheet.Add(body);
             sheet.Add(launchRow);
             host.Add(sheet);
-            var panel = DesignerV3Panel.Attach(session, host, 1f);
-            Assert.IsNotNull(panel);
-            try
+            using (var surface = DeviceSurface.Open(375f, 667f))
             {
-                var toggle = host.Q<Button>(DesignerV3Panel.ToggleName);
-                Assert.IsNotNull(toggle);
-                Click(toggle);
-                Assert.IsTrue(panel.Open);
-                Assert.AreEqual("Hangar", toggle.text);
-                Assert.AreEqual(DisplayStyle.None, body.style.display.value);
+                surface.Stage.Add(host);
+                surface.Pump(3);
+                var panel = DesignerV3Panel.Attach(session, host, 1f);
+                Assert.IsNotNull(panel);
+                try
+                {
+                    var toggle = host.Q<Button>(DesignerV3Panel.ToggleName);
+                    Assert.IsNotNull(toggle);
+                    Click(toggle);
+                    Assert.IsTrue(panel.Open, "toggle click opens the designer");
+                    Assert.AreEqual("Hangar", toggle.text);
+                    Assert.AreEqual(DisplayStyle.None, body.style.display.value);
 
-                bool launched = false;
-                panel.LaunchRequested += () => launched = true;
-                var launch = panel.Root.Q<Button>("launch-btn");
-                Assert.IsNotNull(launch);
-                Click(launch);
-                if (!launched) Click(launch);
-                Assert.IsTrue(launched);
+                    bool launched = false;
+                    panel.LaunchRequested += () => launched = true;
+                    var launch = panel.Root.Q<Button>("launch-btn");
+                    Assert.IsNotNull(launch);
+                    Click(launch);
+                    if (!launched) Click(launch);
+                    Assert.IsTrue(launched);
 
-                panel.Stepper.EnterGuided();
-                Assert.AreEqual(DesignerStep.Mission, panel.Stepper.Step);
-                Assert.IsFalse(panel.Stepper.PressBack());
-                Assert.IsFalse(panel.Stepper.Root.Q<Button>("stepper-back").enabledSelf);
-                Assert.IsTrue(panel.Stepper.PressForward() || panel.Stepper.PressJump(DesignerStep.Engines));
-                Assert.AreEqual(DesignerStep.Engines, panel.Stepper.Step);
-                Assert.IsTrue(panel.Stepper.PressBack());
-                Assert.AreEqual(DesignerStep.Mission, panel.Stepper.Step);
+                    panel.Stepper.EnterGuided();
+                    Assert.AreEqual(DesignerStep.Mission, panel.Stepper.Step);
+                    Assert.IsFalse(panel.Stepper.PressBack());
+                    Assert.IsFalse(panel.Stepper.Root.Q<Button>("stepper-back").enabledSelf);
+                    Assert.IsTrue(panel.Stepper.PressForward() || panel.Stepper.PressJump(DesignerStep.Engines));
+                    Assert.AreEqual(DesignerStep.Engines, panel.Stepper.Step);
+                    Assert.IsTrue(panel.Stepper.PressBack());
+                    Assert.AreEqual(DesignerStep.Mission, panel.Stepper.Step);
 
-                Click(toggle);
-                Assert.IsFalse(panel.Open);
-                Assert.AreEqual("Designer", toggle.text);
+                    Click(toggle);
+                    Assert.IsFalse(panel.Open);
+                    Assert.AreEqual("Designer", toggle.text);
+                }
+                finally { panel.Detach(); }
             }
-            finally { panel.Detach(); }
         }
 
         [Test]
