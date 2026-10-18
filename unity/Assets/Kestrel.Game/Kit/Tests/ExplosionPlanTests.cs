@@ -1,3 +1,4 @@
+using Kestrel.Core.Flight;
 using NUnit.Framework;
 
 namespace Kestrel.Kit.Tests
