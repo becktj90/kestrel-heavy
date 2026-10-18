@@ -28,7 +28,7 @@ namespace Kestrel.Kit
         public int Seed;                  // deterministic variation
     }
 
-    public static class CinematicEvents
+    public static partial class CinematicEvents
     {
         public static event Action<CinematicEvent> Raised;
         /// <summary>Total events raised since start; tests and debug overlays read it.</summary>

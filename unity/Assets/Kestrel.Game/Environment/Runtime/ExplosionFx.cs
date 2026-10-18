@@ -18,7 +18,6 @@ namespace Kestrel.Game.Environment
 
         readonly ParticleSystem[] systems = new ParticleSystem[ExplosionBudgets.LayerCount];
         readonly Material[] mats = new Material[ExplosionBudgets.LayerCount];
-        FlashLimiter limiter;
         FlashEnvelope envelope;
         Light flashLight;
         float lightPeak, lightRise, lightDecay;
@@ -49,6 +48,7 @@ namespace Kestrel.Game.Environment
         /// <summary>Called from OnEnable; public so EditMode tests, where lifecycle callbacks do not run, can drive it.</summary>
         public void Subscribe()
         {
+            FlashGovernor.Reset();
             Instance = this;
             if (handler == null) handler = Handle;
             CinematicEvents.Raised -= handler;
@@ -80,7 +80,7 @@ namespace Kestrel.Game.Environment
             var tod = TimeOfDayRig.Current;
             float night = tod != null ? tod.NightFactor : 0f;
             bool wantFlash = !e.Reduce && (e.Kind != CinematicKind.EngineFailure || e.Overpressure);
-            float grant = wantFlash ? limiter.Grant(Time.unscaledTime, 1f, ExplosionBudgets.FlashAmplitudeCap(night)) : 0f;
+            float grant = wantFlash ? FlashGovernor.Grant(Time.unscaledTime, 1f, ExplosionBudgets.FlashAmplitudeCap(night)) : 0f;
             var plan = ExplosionPlan.Build(e, q, tod, e.Reduce, grant);
             var at = new Vector3(e.X, e.Y, e.Z);
             var inherit = new Vector3(e.VelX, e.VelY, e.VelZ) * 0.25f;
@@ -253,7 +253,7 @@ namespace Kestrel.Game.Environment
             }
         }
 
-        static Material MakeMaterial(bool alphaBlend)
+        internal static Material MakeMaterial(bool alphaBlend)
         {
             var shader = Shader.Find(ParticleShader);
             if (shader == null) shader = Shader.Find("Sprites/Default");
@@ -286,7 +286,7 @@ namespace Kestrel.Game.Environment
         }
 
         /// <summary>64x64 gaussian blob, built once. Procedural, no asset.</summary>
-        static Texture2D SoftTexture()
+        internal static Texture2D SoftTexture()
         {
             if (softTexture != null) return softTexture;
             const int n = 64;
