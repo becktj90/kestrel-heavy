@@ -1140,7 +1140,7 @@ namespace Kestrel.Slice.DesignerV3
 
         void NoteRepair(string note)
         {
-            repairLabel.text = note ?? "";
+            repairLabel.text = ShownText.Screen(note ?? "");
             repairLabel.style.display = string.IsNullOrEmpty(repairLabel.text) ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
@@ -1196,8 +1196,8 @@ namespace Kestrel.Slice.DesignerV3
             refreshers.Add(() =>
             {
                 if (Time.realtimeSinceStartupAsDouble < debounceUntil && !string.IsNullOrEmpty(lastDelta))
-                { chip.text = lastDelta; return; }
-                chip.text = DesignerV3Delta.Chip(C, D, preview);
+                { chip.text = ShownText.Screen(lastDelta); return; }
+                chip.text = ShownText.Screen(DesignerV3Delta.Chip(C, D, preview));
             });
         }
 

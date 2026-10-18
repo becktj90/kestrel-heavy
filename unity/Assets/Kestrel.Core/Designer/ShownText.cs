@@ -73,8 +73,68 @@ namespace Kestrel.Core.Designer
                     case '\u00B0':
                         sb.Append(" deg");
                         break;
+                    case '\u00B2':
+                        sb.Append("^2");
+                        break;
+                    case '\u00B3':
+                        sb.Append("^3");
+                        break;
+                    case '\u00BD':
+                        sb.Append("1/2");
+                        break;
+                    case '\u00E1':
+                        sb.Append('a');
+                        break;
+                    case '\u03BB':
+                        sb.Append("lambda");
+                        break;
+                    case '\u03C0':
+                        sb.Append("pi");
+                        break;
+                    case '\u03B1':
+                        sb.Append("alpha");
+                        break;
+                    case '\u03B5':
+                        sb.Append("epsilon");
+                        break;
+                    case '\u03C1':
+                        sb.Append("rho");
+                        break;
+                    case '\u03C3':
+                        sb.Append("sigma");
+                        break;
+                    case '\u03A3':
+                        sb.Append("sum");
+                        break;
+                    case '\u1E41':
+                        sb.Append("mdot");
+                        break;
+                    case '\u2248':
+                    case '\u221D':
+                        sb.Append('~');
+                        break;
+                    case '\u2026':
+                        sb.Append("...");
+                        break;
+                    case '\u221A':
+                        sb.Append("sqrt");
+                        break;
+                    case '\u203A':
+                        sb.Append('>');
+                        break;
+                    case '\u25B2':
+                        sb.Append('^');
+                        break;
+                    case '\u25BC':
+                        sb.Append('v');
+                        break;
+                    case '\u2605':
+                        sb.Append('*');
+                        break;
+                    case '\u2699':
+                        break;
                     default:
-                        sb.Append(c);
+                        if (Covered(c)) sb.Append(c);
                         break;
                 }
             }

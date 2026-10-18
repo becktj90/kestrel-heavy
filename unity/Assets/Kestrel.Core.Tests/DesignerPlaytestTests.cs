@@ -88,6 +88,9 @@ namespace Kestrel.Core.Tests
                 Assert.IsTrue(ShownText.Covered(sample), sample);
             Assert.IsTrue(ShownText.Covered(ShownText.Screen("Δv −4.00 × ✓ → ≤ ≥ ± °")));
             Assert.AreEqual("dv -4.00 x OK  to  <= >= +/-  deg", ShownText.Screen("Δv −4.00 × ✓ → ≤ ≥ ± °"));
+            string engines = ShownText.Screen("TWR = F/(m·g0), g0 = 9.80665 m/s². Pass at ≥ 1.3. λ = 0.02·max(0, pc/pc_rated−1)². ±6%. π α σ ≈ ½ …");
+            Assert.IsTrue(ShownText.Covered(engines), engines);
+            Assert.AreEqual("TWR = F/(m·g0), g0 = 9.80665 m/s^2. Pass at >= 1.3. lambda = 0.02·max(0, pc/pc_rated-1)^2. +/-6%. pi alpha sigma ~ 1/2 ...", engines);
         }
     }
 }

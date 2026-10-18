@@ -595,7 +595,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             trade.name = "recovery-tradeoff";
             trade.style.whiteSpace = WhiteSpace.Normal;
             host.Add(trade);
-            refreshers.Add(() => trade.text = TradeHint(bridge, engineer));
+            refreshers.Add(() => trade.text = ShownText.Screen(TradeHint(bridge, engineer)));
 
             QuickReadout readout = null;
             try { readout = Readout.Quick(bridge.Catalog, bridge.Design); }
