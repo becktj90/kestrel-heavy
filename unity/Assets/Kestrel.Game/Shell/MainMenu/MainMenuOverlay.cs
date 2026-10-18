@@ -782,35 +782,58 @@ namespace Kestrel.Game.Shell
             var row = new VisualElement { name = "mm-stats", pickingMode = PickingMode.Ignore };
             row.AddToClassList("kh-mm-stats"); row.AddToClassList("kh-mm-glass"); row.AddToClassList("kh-mm-anim");
             row.style.flexDirection = FlexDirection.Column;
+            row.style.justifyContent = Justify.Center;
+            // The USS padding would shrink the hit target inside the 46px box. Inset the words instead.
+            row.style.paddingTop = 0f;
+            row.style.paddingBottom = 0f;
+            row.style.paddingLeft = 0f;
+            row.style.paddingRight = 0f;
+            var text = new VisualElement { pickingMode = PickingMode.Ignore };
+            text.style.flexDirection = FlexDirection.Column;
+            text.style.justifyContent = Justify.Center;
+            text.style.flexGrow = 1;
+            text.style.paddingTop = 2f;
+            text.style.paddingBottom = 2f;
+            text.style.paddingLeft = 10f;
+            text.style.paddingRight = 10f;
             var pills = new VisualElement { pickingMode = PickingMode.Ignore };
             pills.style.flexDirection = FlexDirection.Row;
             pills.style.flexShrink = 0;
             pills.Add(Stat("mm-fuel", MainMenuCopy.FuelStat));
             pills.Add(Stat("mm-thrust", MainMenuCopy.ThrustStat));
-            row.Add(pills);
-            var record = new Button { name = "home-patches", text = string.Empty, tooltip = "Patches. Flights you have cleared." };
-            record.style.flexDirection = FlexDirection.Row;
-            record.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
-            record.style.borderTopWidth = 0f;
-            record.style.borderRightWidth = 0f;
-            record.style.borderBottomWidth = 0f;
-            record.style.borderLeftWidth = 0f;
-            record.style.minHeight = 28f;
-            record.style.paddingLeft = 0f;
-            record.style.paddingRight = 0f;
-            record.style.marginTop = 2f;
-            record.style.marginBottom = 0f;
+            text.Add(pills);
             var line = new Label(HomeRecord.Line(0, 0, 1, 0)) { name = "mm-record", pickingMode = PickingMode.Ignore };
             line.AddToClassList("kh-mm-stat");
             line.style.whiteSpace = WhiteSpace.Normal;
-            line.style.flexGrow = 1;
-            record.Add(line);
-            record.clicked += () =>
+            line.style.flexShrink = 0;
+            text.Add(line);
+            row.Add(text);
+            // Covers the whole stats box, so the hit stays 44pt on the phone column (the box is 46).
+            var hit = new Button { name = "home-patches", text = string.Empty, tooltip = "Patches. Flights you have cleared." };
+            hit.style.position = Position.Absolute;
+            hit.style.left = 0f;
+            hit.style.right = 0f;
+            hit.style.top = 0f;
+            hit.style.bottom = 0f;
+            hit.style.marginTop = 0f;
+            hit.style.marginBottom = 0f;
+            hit.style.marginLeft = 0f;
+            hit.style.marginRight = 0f;
+            hit.style.paddingTop = 0f;
+            hit.style.paddingBottom = 0f;
+            hit.style.paddingLeft = 0f;
+            hit.style.paddingRight = 0f;
+            hit.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
+            hit.style.borderTopWidth = 0f;
+            hit.style.borderRightWidth = 0f;
+            hit.style.borderBottomWidth = 0f;
+            hit.style.borderLeftWidth = 0f;
+            hit.clicked += () =>
             {
                 if (OpenPatches != null) OpenPatches();
                 else ShowNote(full, "home-patches-note", "Patches", "Your patches are on this device once a flight is cleared.");
             };
-            row.Add(record);
+            row.Add(hit);
             return row;
         }
 
@@ -877,9 +900,11 @@ namespace Kestrel.Game.Shell
             title.style.flexShrink = 0;
             SettingFont(title, "SpaceGrotesk-Bold");
 
-            var list = new VisualElement { name = "home-settings-list" };
+            var list = new ScrollView(ScrollViewMode.Vertical) { name = "home-settings-list" };
             list.style.flexDirection = FlexDirection.Column;
-            list.style.flexShrink = 0;
+            list.style.flexGrow = 1f;
+            list.style.flexShrink = 1f;
+            list.style.minHeight = 0f;
             list.style.alignItems = Align.Stretch;
 
             var music = SettingButton("home-setting-music", "Music");
@@ -949,9 +974,14 @@ namespace Kestrel.Game.Shell
             close.AddToClassList("kh-button");
             close.tooltip = "Close settings.";
             close.style.minHeight = 44;
+            close.style.height = 44;
             close.style.fontSize = 14;
             close.style.flexShrink = 0;
             close.style.whiteSpace = WhiteSpace.Normal;
+            close.style.position = Position.Absolute;
+            close.style.left = 8;
+            close.style.right = 8;
+            close.style.bottom = 8;
             SettingFont(close, "SpaceGrotesk-Bold");
             close.clicked += () => sheet.style.display = DisplayStyle.None;
 
@@ -971,18 +1001,39 @@ namespace Kestrel.Game.Shell
                 if (Mathf.Abs(hostW - fitW) < 0.5f && Mathf.Abs(hostH - fitH) < 0.5f) return;
                 fitW = hostW;
                 fitH = hostH;
-                float top = 52f;
+                // Under the gear when the rows fit; otherwise the top of the screen, so a 390-tall
+                // landscape still keeps Close inside the window. The list scrolls; Close stays pinned.
+                const float edge = 8f;
+                const float chrome = 16f + 24f + 44f;
+                int rows = 0;
+                list.Query<Button>().ForEach(b =>
+                {
+                    if (b.name != null && b.name.StartsWith("home-")) rows++;
+                });
+                float content = chrome + rows * 46f;
+                float roomBelowGear = hostH - 52f - edge;
+                float top = content <= roomBelowGear ? 52f : edge;
+                float maxH = Mathf.Max(120f, hostH - top - edge);
+                float height = Mathf.Min(content, maxH);
                 float width = Mathf.Min(320f, Mathf.Max(200f, hostW - 16f));
-                float maxH = Mathf.Max(120f, hostH - top - 8f);
-                float left = Mathf.Max(8f, hostW - width - 8f);
+                float left = Mathf.Max(edge, hostW - width - edge);
                 sheet.style.position = Position.Absolute;
                 sheet.style.top = top;
                 sheet.style.left = left;
                 sheet.style.right = StyleKeyword.Auto;
                 sheet.style.width = width;
-                sheet.style.maxHeight = maxH;
+                sheet.style.height = height;
+                sheet.style.maxHeight = height;
+                sheet.style.paddingBottom = 60f;
+                float listH = Mathf.Max(46f, height - chrome);
+                list.style.height = listH;
+                list.style.maxHeight = listH;
+                list.style.minHeight = 0f;
                 float inner = Mathf.Max(120f, width - 24f);
-                list.Query<Button>().ForEach(b => b.style.width = inner);
+                list.Query<Button>().ForEach(b =>
+                {
+                    if (b.name != null && b.name.StartsWith("home-")) b.style.width = inner;
+                });
             }
 
             var gear = new Button { name = "home-settings", text = string.Empty, tooltip = "Settings. Sound, motion, accessibility." };
@@ -1043,7 +1094,7 @@ namespace Kestrel.Game.Shell
             b.style.alignSelf = Align.Stretch;
             b.style.flexShrink = 0;
             b.style.marginTop = 0;
-            b.style.marginBottom = 4;
+            b.style.marginBottom = 2;
             b.style.paddingLeft = 10;
             b.style.paddingRight = 56;
             var state = new Label("On") { name = name + "-state", pickingMode = PickingMode.Ignore };

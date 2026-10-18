@@ -85,11 +85,14 @@ namespace Kestrel.Game.Shell
             for (var node = el; node != null; node = node.parent)
             {
                 var inline = node.style.display;
-                if (inline.keyword != StyleKeyword.Undefined && inline.keyword != StyleKeyword.Null && inline.keyword != StyleKeyword.Auto)
-                {
-                    if (inline.value == DisplayStyle.None) return true;
-                    continue;
-                }
+                // Assigning DisplayStyle.None keeps keyword Undefined, and .value is None only
+                // for that assignment. An unset style's value is Flex, so a back button built
+                // off a panel (resolved style stays None until layout) still counts as shown.
+                if (inline.value == DisplayStyle.None) return true;
+                bool keywordSet = inline.keyword != StyleKeyword.Undefined
+                    && inline.keyword != StyleKeyword.Null
+                    && inline.keyword != StyleKeyword.Auto;
+                if (keywordSet) continue;
                 if (node.panel != null && node.resolvedStyle.display == DisplayStyle.None) return true;
             }
             return false;
