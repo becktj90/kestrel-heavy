@@ -152,7 +152,47 @@ namespace Kestrel.Core.Flight
                 best.ReachLine = "Enough for this hop.";
                 if (best.LaunchEnabled) best.ReachesOrbit = true;
             }
+            else if (best != null && best.Design != null && mission.Id == "m2" && best.TemplateId == "hopper")
+            {
+                // Three small engines and a full tank break the 35 kPa wall around 6 km.
+                // One engine, a 4444 kg load, steel walls, SF 2.2 and a 75% max-Q cap
+                // coast inside ±5% of 100 km on every campaign seed (about 101 km).
+                // 4441–4444 kg all clear. 4445 kg draws an engine-out, and 4449 kg
+                // lofts past the band. While the cap is actually biting, a sagging
+                // path freezes at the catch angle instead of being chased. The
+                // template is not edited.
+                ArmHundredKm(best.Design);
+                FillPerformance(catalog, best);
+                best.ReachLine = "Enough for 100 km.";
+                if (best.LaunchEnabled) best.ReachesOrbit = true;
+            }
             return best;
+        }
+
+        public const double HundredKmSafetyFactor = 2.2;
+        public const double HundredKmPropKg = 4444;
+        public const double HundredKmMaxQPercent = 75;
+        public const double HundredKmGLimit = 6;
+        public const string HundredKmMaterial = "steel";
+
+        /// <summary>KH-2 only. The hopper template document is not modified.</summary>
+        public static void ArmHundredKm(JsonObject design)
+        {
+            if (design == null) return;
+            JsonMut.Set(design, "safetyFactor", HundredKmSafetyFactor);
+            var stages = design.Arr("stages");
+            if (stages == null || stages.Count == 0 || !(stages[0] is JsonObject stage)) return;
+            JsonMut.Set(stage, "engineCount", 1d);
+            JsonMut.Set(stage, "propMass", HundredKmPropKg);
+            JsonMut.Set(stage, "material", HundredKmMaterial);
+            JsonMut.Set(stage, "landingPropMass", 0d);
+            var cluster = stage.Obj("cluster") ?? new JsonObject();
+            JsonMut.Set(stage, "cluster", cluster);
+            JsonMut.Set(cluster, "pattern", "auto");
+            var guidance = design.Obj("guidance") ?? new JsonObject();
+            JsonMut.Set(design, "guidance", guidance);
+            JsonMut.Set(guidance, "maxQThrottle", HundredKmMaxQPercent);
+            JsonMut.Set(guidance, "gLimit", HundredKmGLimit);
         }
 
         public const double FirstHopSafetyFactor = 3;

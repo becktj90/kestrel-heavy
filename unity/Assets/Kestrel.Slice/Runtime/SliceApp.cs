@@ -987,6 +987,10 @@ namespace Kestrel.Slice
         void EnterFlight()
         {
             if (session == null || design == null) return;
+            // The result card used to stay in the tree. LateUpdate then called handoff.Finish
+            // and the retry never left the pad. Dismiss it, and put the HUD back.
+            ReportCardChrome.Dismiss(ui);
+            ReportCardChrome.RestoreFlight(ui);
             SetFlightPaused(false);
             Kestrel.Game.Audio.MusicPlayer.Instance?.Play(Kestrel.Game.Audio.MusicBed.Flight);
             submitted = false;
@@ -1130,6 +1134,7 @@ namespace Kestrel.Slice
 
         void BackToDesign()
         {
+            ReportCardChrome.Dismiss(ui);
             SetFlightPaused(false);
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
             handoff.Reset();

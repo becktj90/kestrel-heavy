@@ -53,4 +53,8 @@ namespace UnityEngine.TestTools
 {
     [System.AttributeUsage(System.AttributeTargets.Method)]
     public sealed class UnityTestAttribute : System.Attribute { }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public sealed class UnitySetUpAttribute : System.Attribute { }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public sealed class UnityTearDownAttribute : System.Attribute { }
 }
