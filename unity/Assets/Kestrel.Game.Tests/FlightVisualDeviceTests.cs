@@ -2,7 +2,6 @@
 // The flight body has to stay opaque, and the camera captions have to fit a 335 pt portrait.
 using System;
 using System.IO;
-using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
 using Kestrel.Slice;
 using NUnit.Framework;
@@ -35,10 +34,10 @@ namespace Kestrel.Game.Tests
         [Test]
         public void ResourcesBodyAndFontsStayAvailableAndOpaque()
         {
-            Assert.That(Catalog.RepoRootOrNull(), Is.Null, "a dummy KESTREL_REPO_ROOT must not walk to the checkout");
+            Assert.That(Kestrel.Core.Data.Catalog.RepoRootOrNull(), Is.Null, "a dummy KESTREL_REPO_ROOT must not walk to the checkout");
             var font = Resources.Load<Font>("KHFonts/SpaceGrotesk-Medium");
             Assert.That(font, Is.Not.Null, "Space Grotesk from Resources");
-            var body = Resources.Load<Material>("Materials/KH_Body");
+            var body = Resources.Load<UnityEngine.Material>("Materials/KH_Body");
             Assert.That(body, Is.Not.Null, "KH_Body from Resources");
             var copy = new Material(body);
             try
@@ -59,7 +58,7 @@ namespace Kestrel.Game.Tests
         [Test]
         public void CameraCaptionsFit335AndThePlumeScaleDefaultsToKerolox()
         {
-            Assert.That(Catalog.RepoRootOrNull(), Is.Null);
+            Assert.That(Kestrel.Core.Data.Catalog.RepoRootOrNull(), Is.Null);
             Assert.IsTrue(FlightView.FitsWidth(335f));
             for (int i = 0; i < FlightView.Cycle.Length; i++)
             {
