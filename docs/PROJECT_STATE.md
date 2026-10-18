@@ -35,6 +35,7 @@ _Last updated: 2026-10-14 (main is through #216; always merge when green; WP-H i
 
 ## Oct 18 update
 - Campaign: KH-1..KH-20 each have a verified winning rocket (data/golden/campaign-winners.json) and board starters (data/board-starters.json). KH-16 is now a 500 km circle (no Haven landing; none feasible in the catalog).
+- Haven recoveries are flown, not only predicted. Assisted KH-6, KH-7, KH-10, KH-15, and KH-19 reach the deck at good or better. An idle stick misses. KH-13 stays a lofted miss. Tranquil Touch is a proposal in `docs/MOON_LANDING_MISSION.md` and is not in the campaign.
 - Home dusk screen fixed (plate behind controls), result card restyled and HUD hidden on result, designer and menu audits merged (#264-#270), builds 153-155.
 - Time of day (in review, #271): Day/Sunset/Night presets, night pad spotlights, plume-lit pad. Mission pick rules come from Gameplay Dev.
 - Badge art: per-mission patches shipped; pro badge redesign pending Art and Trevor's style OK.
