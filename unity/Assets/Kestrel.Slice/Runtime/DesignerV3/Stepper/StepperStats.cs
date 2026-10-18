@@ -60,11 +60,11 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                     return new StepStat("orbit", "Orbit", string.IsNullOrEmpty(orbit) ? "—" : orbit, CellState.Neutral);
                 case "cost":
                     if (r == null) return Dash("cost", "Cost");
-                    string cost = DesignerV3Strip.StripMoney(r.cost);
+                    string cost = DesignerV3Strip.CompactMoney(r.cost);
                     var costState = CellState.Neutral;
                     if (r.budget.HasValue && r.budget.Value > 0)
                     {
-                        string both = cost + " / " + DesignerV3Strip.StripMoney(r.budget.Value);
+                        string both = cost + " / " + DesignerV3Strip.CompactMoney(r.budget.Value);
                         cost = both.Length > 16 ? cost : both;
                         costState = r.cost <= r.budget.Value ? CellState.Good : CellState.Bad;
                     }

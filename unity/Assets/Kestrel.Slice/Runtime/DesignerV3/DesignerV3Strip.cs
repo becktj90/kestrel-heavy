@@ -61,12 +61,12 @@ namespace Kestrel.Slice.DesignerV3
             }
             list.Add(new StripCell("q", "Max-Q", qVal, qState));
 
-            string costVal = StripMoney(r.cost);
+            string costVal = CompactMoney(r.cost);
             string costHint = r.cost.ToString("N0", Inv);
             CellState costState = CellState.Neutral;
             if (r.budget.HasValue && r.budget.Value > 0)
             {
-                string both = costVal + " / " + StripMoney(r.budget.Value);
+                string both = costVal + " / " + CompactMoney(r.budget.Value);
                 costVal = both.Length > 16 ? costVal : both;
                 costHint += " / " + r.budget.Value.ToString("N0", Inv);
                 costState = r.cost <= r.budget.Value ? CellState.Good : CellState.Bad;

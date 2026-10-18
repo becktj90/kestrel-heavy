@@ -475,7 +475,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 button.AddToClassList("stepper-seg");
                 button.style.flexGrow = 1;
                 button.style.flexShrink = 1;
-                button.style.minWidth = ui.U(64f);
+                button.style.minWidth = ui.U(StepperLayout.SegmentMinPt);
                 button.style.height = ui.U(StepperLayout.ProgressPt);
                 button.style.minHeight = ui.U(HangarUi.TargetPt);
                 button.style.fontSize = ui.U(12f);

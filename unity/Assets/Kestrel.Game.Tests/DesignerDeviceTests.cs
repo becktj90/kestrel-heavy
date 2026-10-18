@@ -327,7 +327,7 @@ namespace Kestrel.Game.Tests
 
                         var scroll = root.Q<ScrollView>("designer-scroll");
                         Assert.That(scroll, Is.Not.Null, widths[i].ToString());
-                        Assert.That(scroll.resolvedStyle.minHeight, Is.GreaterThanOrEqualTo(100f), widths[i] + " content");
+                        Assert.That(scroll.style.minHeight.value.value, Is.GreaterThanOrEqualTo(100f), widths[i] + " content");
                         Assert.IsNull(root.Query<ScrollView>().ToList().Find(s => s.mode == ScrollViewMode.Horizontal), widths[i] + " horizontal scroller");
 
                         var maxQ = root.Q<Label>("strip-label-q");
