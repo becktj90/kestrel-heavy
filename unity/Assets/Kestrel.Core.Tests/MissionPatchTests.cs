@@ -1,7 +1,8 @@
-// Mission patches: one emblem recipe per KH flight, clean player text, and a layout that
-// keeps the rim lettering and the stars inside the disc on phone and tablet sizes.
+// Mission patches: one emblem recipe per KH flight, clean player text, and a procedural
+// layout that still fits a disc. Campaign pixels come from the baked PNGs.
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
 using NUnit.Framework;
@@ -107,18 +108,28 @@ namespace Kestrel.Core.Tests
                 var open = MissionPatchArt.Layout(spec, size, PatchChrome.Open);
                 var medal = MissionPatchArt.Layout(spec, size, PatchChrome.Medal);
                 var locked = MissionPatchArt.Layout(spec, size, PatchChrome.Locked);
-                Assert.IsTrue(open.ArcFontCovers, spec.Flight + " font");
-                Assert.IsTrue(open.FlightFits, spec.Flight + " at " + size);
-                Assert.IsTrue(open.EmblemInside, spec.Flight);
-                Assert.AreEqual(spec.Stars, open.StarCount);
-                Assert.IsTrue(open.StarsInside, spec.Flight + " stars " + size);
-                Assert.IsTrue(open.StarsSeparated, spec.Flight + " gap " + size);
                 Assert.IsFalse(open.GoldRing);
                 Assert.IsFalse(open.GreyOutline);
                 Assert.IsTrue(medal.GoldRing);
                 Assert.IsTrue(locked.GreyOutline);
-                if (size >= 96) Assert.IsTrue(open.NameOnArc, spec.Flight + " " + spec.ArcName + " at " + size);
+                var drawn = MissionPatchArt.ProceduralLayout(spec, size, PatchChrome.Open);
+                Assert.IsTrue(drawn.ArcFontCovers, spec.Flight + " font");
+                Assert.IsTrue(drawn.FlightFits, spec.Flight + " at " + size);
+                Assert.IsTrue(drawn.EmblemInside, spec.Flight);
+                Assert.AreEqual(spec.Stars, drawn.StarCount);
+                Assert.IsTrue(drawn.StarsInside, spec.Flight + " stars " + size);
+                Assert.IsTrue(drawn.StarsSeparated, spec.Flight + " gap " + size);
+                if (size >= 96) Assert.IsTrue(drawn.NameOnArc, spec.Flight + " " + spec.ArcName + " at " + size);
+                if (MissionPatchArt.HasBakedPng(spec.Index))
+                {
+                    Assert.AreEqual(0, open.StarCount, spec.Flight);
+                    Assert.IsFalse(open.NameOnArc, spec.Flight);
+                    Assert.IsFalse(open.EmblemInside, spec.Flight);
+                }
             }
+            var job = MissionPatchArt.Layout(MissionPatchArt.Resolve("kc-pier-7"), 128, PatchChrome.Open);
+            Assert.IsTrue(job.EmblemInside, "contract");
+            Assert.IsTrue(job.FlightFits, "contract");
         }
 
         [Test]
@@ -131,43 +142,96 @@ namespace Kestrel.Core.Tests
             Assert.GreaterOrEqual(PatchGrid.PatchSize(375f), 96f);
             Assert.GreaterOrEqual(PatchGrid.PatchSize(500f), 96f);
             Assert.LessOrEqual(PatchGrid.PatchSize(2064f), 148f);
-            var narrow = MissionPatchArt.Layout(MissionPatchArt.ForIndex(12), (int)PatchGrid.PatchSize(308f));
+            int phone = (int)PatchGrid.PatchSize(308f);
+            var shown = MissionPatchArt.Layout(MissionPatchArt.ForIndex(12), phone);
+            var narrow = MissionPatchArt.ProceduralLayout(MissionPatchArt.ForIndex(12), phone);
             Assert.IsTrue(narrow.NameOnArc, "Glass Meridian on Pro Max");
             Assert.IsTrue(narrow.FlightFits);
+            if (MissionPatchArt.HasBakedPng(12)) Assert.IsFalse(shown.NameOnArc);
         }
 
         [Test]
-        public void PixelsAreRoundDistinctAndStable()
+        public void BakedPixelsAreDistinctAndChrome()
         {
+            MissionPatchArt.ClearCache();
+            Assert.IsTrue(MissionPatchArt.HasBakedPng(1), "kh-1.png");
             var hashes = new HashSet<ulong>();
             for (int i = 1; i <= 20; i++)
             {
+                var native = MissionPatchArt.ReadBakedPng(i);
+                Assert.IsNotNull(native, "kh-" + i);
+                Assert.AreEqual(MissionPatchArt.BakedEdge * MissionPatchArt.BakedEdge * 4, native.Length, "kh-" + i);
+                int fullMid = (256 * 512 + 256) * 4;
+                Assert.Greater(native[fullMid + 3], 200, "kh-" + i + " center");
+                var full = MissionPatchArt.Rgba("m" + i, MissionPatchArt.BakedEdge, PatchChrome.Open);
+                CollectionAssert.AreEqual(native, full, "kh-" + i);
                 var a = MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Open);
                 var b = MissionPatchArt.Rgba("KH-" + i, 96, PatchChrome.Open);
                 CollectionAssert.AreEqual(a, b);
                 Assert.AreEqual(96 * 96 * 4, a.Length);
-                Assert.AreEqual(0, a[3], "corner");
+                Assert.Greater(Opaque(a), 96 * 96 / 5, "kh-" + i);
                 int mid = (48 * 96 + 48) * 4;
                 Assert.Greater(a[mid + 3], 200, "center");
                 Assert.IsTrue(hashes.Add(MissionPatchArt.PixelHash(a)), "KH-" + i);
+                Assert.AreNotEqual(MissionPatchArt.PixelHash(a), MissionPatchArt.PixelHash(MissionPatchArt.ProceduralRgba("m" + i, 96)));
             }
+            var kh1 = MissionPatchArt.Rgba("m1", MissionPatchArt.BakedEdge, PatchChrome.Open);
+            int c = (256 * 512 + 256) * 4;
+            Assert.AreEqual(243, kh1[c], "kh-1 red");
+            Assert.AreEqual(183, kh1[c + 1], "kh-1 green");
+            Assert.AreEqual(113, kh1[c + 2], "kh-1 blue");
             var open = MissionPatchArt.Rgba("m7", 96, PatchChrome.Open);
             var medal = MissionPatchArt.Rgba("m7", 96, PatchChrome.Medal);
             var locked = MissionPatchArt.Rgba("m7", 96, PatchChrome.Locked);
             Assert.Greater(Gold(medal), Gold(open));
             Assert.Less(Chroma(locked), Chroma(open) * 0.45f);
+            var painted = MissionPatchArt.Rgba("m1", 96, PatchChrome.Medal);
+            Assert.Greater(Gold(painted), Gold(MissionPatchArt.Rgba("m1", 96, PatchChrome.Open)));
             var png = MissionPatchArt.Png("m1", 64);
             Assert.AreEqual(137, png[0]);
             Assert.AreEqual(80, png[1]);
             Assert.AreEqual(78, png[2]);
             Assert.AreEqual(71, png[3]);
+            var job = MissionPatchArt.Rgba("kc-pier-7", 96);
+            var free = MissionPatchArt.Rgba("free", 96);
+            Assert.AreEqual(0, job[3], "contract corner");
+            Assert.AreEqual(0, free[3], "free corner");
+            Assert.Greater(job[(48 * 96 + 48) * 4 + 3], 200);
             var same = MissionPatchArt.Resolve("kc-pier-7");
             CollectionAssert.AreEqual(MissionPatchArt.Rgba(same.MissionId, 64), MissionPatchArt.Rgba("kc-pier-7", 64));
         }
 
         [Test]
+        public void MissingBakedPngUsesTheProceduralDisc()
+        {
+            MissionPatchArt.ClearCache();
+            string prev = Environment.GetEnvironmentVariable("KESTREL_REPO_ROOT");
+            string away = Path.Combine(Path.GetTempPath(), "kh-nobadge-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(away);
+            try
+            {
+                Environment.SetEnvironmentVariable("KESTREL_REPO_ROOT", away);
+                MissionPatchArt.ClearCache();
+                Assert.IsFalse(MissionPatchArt.HasBakedPng(1));
+                var a = MissionPatchArt.Rgba("m1", 96, PatchChrome.Open);
+                Assert.AreEqual(0, a[3], "corner");
+                Assert.Greater(a[(48 * 96 + 48) * 4 + 3], 200, "center");
+                var layout = MissionPatchArt.Layout(MissionPatchArt.ForIndex(1), 128, PatchChrome.Open);
+                Assert.IsTrue(layout.EmblemInside);
+                Assert.IsTrue(layout.FlightFits);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("KESTREL_REPO_ROOT", prev);
+                MissionPatchArt.ClearCache();
+                try { Directory.Delete(away, true); } catch (Exception) { }
+            }
+        }
+
+        [Test]
         public void SecondPassRgbaReusesTheBitmap()
         {
+            MissionPatchArt.ClearCache();
             for (int i = 1; i <= 20; i++)
             {
                 MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Open);
@@ -206,6 +270,14 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(string.IsNullOrWhiteSpace(spec.Motto));
             Assert.IsFalse(string.IsNullOrWhiteSpace(spec.Anatomy));
             Assert.Less(spec.Anatomy.Length, 110);
+        }
+
+        static int Opaque(byte[] rgba)
+        {
+            int n = 0;
+            for (int i = 3; i < rgba.Length; i += 4)
+                if (rgba[i] > 16) n++;
+            return n;
         }
 
         static int Gold(byte[] rgba)
