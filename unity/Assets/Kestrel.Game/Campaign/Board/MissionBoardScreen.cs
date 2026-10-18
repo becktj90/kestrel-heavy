@@ -118,10 +118,13 @@ namespace Kestrel.Game.MissionSelect
             homeKey.AddToClassList("mission-home");
             BoardType.Set(homeKey, BoardType.GroteskBold);
             homeKey.style.unityTextAlign = TextAnchor.MiddleCenter;
+            homeKey.style.fontSize = 14f;
+            homeKey.userData = home;
             Add(homeKey);
 
             var kicker = new Label("CAMPAIGN") { name = "mission-kicker", pickingMode = PickingMode.Ignore };
             kicker.AddToClassList("mission-kicker");
+            kicker.style.fontSize = 14f;
             BoardType.Set(kicker, BoardType.GroteskBold);
             Add(kicker);
 
@@ -240,12 +243,22 @@ namespace Kestrel.Game.MissionSelect
             _contracts.AddToClassList("mission-entry");
             BoardType.Set(_contracts, BoardType.Grotesk);
             _contracts.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _contracts.style.fontSize = 14f;
             _body.Add(_contracts);
 
-            _sandboxButton = new Button(SelectSandbox) { name = "mission-sandbox", text = "Sandbox", tooltip = "A free build on this device. No mission and no score." };
+            _sandboxButton = new Button(() =>
+            {
+                if (MenuPrefs.SandboxUnlocked) SelectSandbox();
+            })
+            {
+                name = "mission-sandbox",
+                text = "Sandbox",
+            };
             _sandboxButton.AddToClassList("mission-entry");
             BoardType.Set(_sandboxButton, BoardType.Grotesk);
             _sandboxButton.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _sandboxButton.style.fontSize = 14f;
+            ApplySandboxLock();
             _body.Add(_sandboxButton);
 
             _primary = new Button(OnPrimary) { name = "mission-primary", text = "Locked" };
@@ -409,6 +422,16 @@ namespace Kestrel.Game.MissionSelect
             Kick(true);
         }
 
+        void ApplySandboxLock()
+        {
+            if (_sandboxButton == null) return;
+            bool on = MenuPrefs.SandboxUnlocked;
+            _sandboxButton.SetEnabled(on);
+            _sandboxButton.tooltip = on
+                ? "A free build on this device. No mission and no score."
+                : "Sandbox is off. Turn it on in Settings.";
+        }
+
         public void SelectSandbox()
         {
             _mode = MissionBoardMode.Sandbox;
@@ -525,25 +548,42 @@ namespace Kestrel.Game.MissionSelect
 
         void ApplyFromRoot()
         {
+            float rw = resolvedStyle != null ? resolvedStyle.width : 0f;
+            float rh = resolvedStyle != null ? resolvedStyle.height : 0f;
+            bool laidOut = rw > 2f && rh > 2f;
             float w;
             float h;
             bool wide;
-            if (_previewW > 1f && _previewH > 1f)
+            if (_previewW > 1f && _previewH > 1f && !laidOut)
             {
                 w = _previewW;
                 h = _previewH;
                 wide = _wideOverride ?? WebLayoutMode.UseWide(w, h, true);
             }
-            else
+            else if (laidOut)
             {
-                w = resolvedStyle != null ? resolvedStyle.width : 0f;
-                h = resolvedStyle != null ? resolvedStyle.height : 0f;
-                if (w < 2f || h < 2f) return;
-                // The view sits inside the shell safe area, so the frame insets stay 0.
-                // UseWide() is false outside the WebGL player, which keeps iOS in the phone column.
-                wide = _wideOverride ?? WebLayoutMode.UseWide(Screen.width, Screen.height);
+                // The phone column is narrower than the device preview. Lay the sheet out in the
+                // box this view actually has, or the primary sits past the viewport.
+                w = rw;
+                h = rh;
+                if (_wideOverride.HasValue) wide = _wideOverride.Value;
+                else if (_previewW > 1f) wide = WebLayoutMode.UseWide(_previewW, _previewH, true);
+                else wide = WebLayoutMode.UseWide(Screen.width, Screen.height);
             }
+            else return;
+            if (wide) ReleaseColumnCap();
             Apply(w, h, wide);
+        }
+
+        /// <summary>.kh-screen caps the host at 600. A wide board needs the safe width, same as Home.</summary>
+        void ReleaseColumnCap()
+        {
+            var host = parent;
+            if (host == null || host.ClassListContains("kh-wide-open")) return;
+            if (!host.ClassListContains("kh-screen") && !host.ClassListContains("kh-home")) return;
+            host.AddToClassList("kh-wide-open");
+            host.style.maxWidth = Length.Percent(100);
+            host.style.alignSelf = Align.Stretch;
         }
 
         void Apply(float width, float height, bool wide)
@@ -561,15 +601,18 @@ namespace Kestrel.Game.MissionSelect
                 kicker.style.left = frame.Title.X;
                 kicker.style.top = frame.Title.Y;
                 kicker.style.width = frame.Title.W;
-                kicker.style.height = 12f;
+                kicker.style.height = 18f;
+                kicker.style.fontSize = 14f;
+                kicker.style.unityTextAlign = TextAnchor.MiddleLeft;
             }
             if (_act != null)
             {
                 _act.style.position = Position.Absolute;
                 _act.style.left = frame.Title.X;
-                _act.style.top = frame.Title.Y + 12f;
+                _act.style.top = frame.Title.Y + 18f;
                 _act.style.width = frame.Title.W;
-                _act.style.height = Math.Max(14f, frame.Title.H - 12f);
+                _act.style.height = Math.Max(18f, frame.Title.H - 18f);
+                _act.style.fontSize = 16f;
             }
             for (int i = 0; i < _segments.Length; i++)
                 Pin(_segments[i], MissionBoardLayout.Segment(frame.Progress, i, MissionBoardLayout.ActSlots));
@@ -704,6 +747,7 @@ namespace Kestrel.Game.MissionSelect
             var label = new Label { name = elementName, pickingMode = PickingMode.Ignore };
             label.AddToClassList(cls);
             label.style.whiteSpace = WhiteSpace.Normal;
+            label.style.fontSize = 14f;
             BoardType.Set(label, BoardType.Grotesk);
             return label;
         }

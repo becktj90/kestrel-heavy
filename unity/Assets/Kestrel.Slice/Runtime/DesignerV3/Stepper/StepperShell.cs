@@ -686,6 +686,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             row.style.marginBottom = ui.U(4f);
             backButton = ui.Btn("<  Back", () => PressBack(), "Previous step", minWidthPt: 88f);
             backButton.name = "stepper-back";
+            backButton.userData = (Action)(() => PressBack());
             StyleNav(ui, backButton, false);
             nextButton = ui.Btn("Next anyway", () => PressForward(), "Go on with the warning", minWidthPt: 120f);
             nextButton.name = "stepper-next";

@@ -7,7 +7,7 @@
 }
 
 .mission-kicker {
-    font-size: 11px;
+    font-size: 14px;
     letter-spacing: 1.6px;
     color: #46D9CC;
     -unity-font-style: bold;
@@ -62,7 +62,7 @@
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.22);
     border-radius: 12px;
-    font-size: 13px;
+    font-size: 14px;
     -unity-text-align: middle-center;
 }
 
@@ -107,13 +107,13 @@
 }
 
 .mission-fact {
-    font-size: 13px;
+    font-size: 14px;
     color: #F6EBD2;
     white-space: normal;
 }
 
 .mission-brief {
-    font-size: 13px;
+    font-size: 14px;
     color: #F6EBD2;
     white-space: normal;
 }

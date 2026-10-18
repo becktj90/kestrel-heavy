@@ -187,11 +187,24 @@ namespace Kestrel.Core.Flight
             };
         }
 
+        static readonly System.Collections.Generic.Dictionary<string, byte[]> RgbaCache = new System.Collections.Generic.Dictionary<string, byte[]>();
+        const int RgbaCacheCap = 96;
+
         public static byte[] Rgba(string missionId, int size, PatchChrome chrome = PatchChrome.Open)
-            => MissionPatchRaster.Draw(Resolve(missionId), size, chrome);
+            => Rgba(Resolve(missionId), size, chrome);
 
         public static byte[] Rgba(MissionPatchSpec spec, int size, PatchChrome chrome = PatchChrome.Open)
-            => MissionPatchRaster.Draw(spec ?? Resolve("free"), size, chrome);
+        {
+            spec = spec ?? Resolve("free");
+            if (size < 16) size = 16;
+            if (size > 1024) size = 1024;
+            string key = (spec.MissionId ?? spec.Flight ?? "free") + "\n" + size.ToString(System.Globalization.CultureInfo.InvariantCulture) + "\n" + ((int)chrome).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (RgbaCache.TryGetValue(key, out var cached) && cached != null) return cached;
+            var drawn = MissionPatchRaster.Draw(spec, size, chrome);
+            if (RgbaCache.Count >= RgbaCacheCap) RgbaCache.Clear();
+            RgbaCache[key] = drawn;
+            return drawn;
+        }
 
         public static byte[] Png(string missionId, int size, PatchChrome chrome = PatchChrome.Open)
             => EncodePng(size < 16 ? 16 : size > 1024 ? 1024 : size, Rgba(missionId, size, chrome));

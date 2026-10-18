@@ -82,7 +82,9 @@ namespace Kestrel.Game.MissionSelect
             var homeKey = new Button(home) { name = "missions-home", text = MissionMapCopy.Home, tooltip = MissionMapCopy.HomeTip };
             homeKey.AddToClassList("kh-button");
             homeKey.AddToClassList("mission-home");
+            homeKey.userData = home;
             homeKey.style.minHeight = 44;
+            homeKey.style.fontSize = 14;
             homeKey.style.flexShrink = 0;
             root.Add(homeKey);
             return root;

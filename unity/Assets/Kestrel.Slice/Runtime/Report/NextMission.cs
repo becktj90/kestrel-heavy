@@ -56,6 +56,7 @@ namespace Kestrel.Slice
         static Button Exit(string name, string text, string tip, System.Action click, float tap, string role)
         {
             var button = new Button(() => click?.Invoke()) { name = name, text = text, tooltip = tip };
+            button.userData = click;
             ReportCardChrome.PaintButton(button, tap, role);
             return button;
         }
