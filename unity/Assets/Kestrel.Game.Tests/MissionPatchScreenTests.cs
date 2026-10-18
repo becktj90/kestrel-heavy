@@ -60,7 +60,9 @@ namespace Kestrel.Game.Tests
             records["m7"] = row;
             Assert.AreEqual(PatchChrome.Medal, PatchCollectionScreen.ChromeFor(7, 7, records["m7"]));
             Assert.AreEqual(PatchChrome.Open, PatchCollectionScreen.ChromeFor(7, 7, new MissionRecord()));
-            Assert.AreEqual(PatchChrome.Locked, PatchCollectionScreen.ChromeFor(8, 7, null));
+            // Seven clears leave KH-8 next, so it stays open. KH-9 is still locked.
+            Assert.AreEqual(PatchChrome.Open, PatchCollectionScreen.ChromeFor(8, 7, null));
+            Assert.AreEqual(PatchChrome.Locked, PatchCollectionScreen.ChromeFor(9, 7, null));
             Assert.AreEqual(PatchChrome.Open, PatchCollectionScreen.ChromeFor(1, 0, null));
         }
     }
