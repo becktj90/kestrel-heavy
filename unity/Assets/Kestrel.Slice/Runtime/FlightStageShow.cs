@@ -67,8 +67,9 @@ namespace Kestrel.Slice
         bool fairingRaised;
         float fullDiameter = 1f, coreDiameter = 1f, upperDiameter = 1f, coreRadius = 1f;
         int boosterSerial = -1, coreSerial, builtMask = -1, bellMask = -1, flashedSerial = -2;
-        bool armed, hasFairing, hasBoosters, coreReleases, reduce, recoveryOwns;
+        bool armed, hasFairing, hasBoosters, coreReleases, reduce, recoveryOwns, canLand;
         double playT, jettisonM = 110000;
+        string[] fuelBySerial;
 
         public IFlightStagingNarration Narration => narration ?? silent;
 
@@ -97,6 +98,8 @@ namespace Kestrel.Slice
             ClearGeometry();
             hud = flightHud;
             narration = silent;
+            canLand = false;
+            fuelBySerial = null;
             if (catalog == null || design == null || built == null || design.stages == null || design.stages.Count == 0) return;
             bodyFilter = GetComponent<MeshFilter>();
             original = bodyFilter != null ? bodyFilter.sharedMesh : null;
@@ -105,6 +108,8 @@ namespace Kestrel.Slice
             hasFairing = design.fairingLength > 0.2 && design.fairingDiameter > 0.1;
             jettisonM = design.fairingJettisonAltitudeKm > 0 ? design.fairingJettisonAltitudeKm * 1000 : 110000;
             hasBoosters = design.StrapOnCount > 0;
+            canLand = CanRecover(design);
+            fuelBySerial = null;
 
             List<SerialStage> phases;
             try { phases = Stack.SerialStages(catalog, design).stages; }
@@ -122,6 +127,7 @@ namespace Kestrel.Slice
                 coreReleases = bodies[i].Releases;
                 break;
             }
+            RememberFuel(design, bodies);
 
             List<RocketMeshBuilder.PartMesh> parts;
             try { parts = RocketMeshBuilder.BuildParts(catalog, design); }
@@ -236,6 +242,7 @@ namespace Kestrel.Slice
             if (leftHalf != null) leftHalf.Debris = 0;
             if (rightHalf != null) rightHalf.Debris = 0;
             staging.Reset(hasFairing, jettisonM, hasBoosters ? BoosterCount() : 0, reduceMotion);
+            staging.RecoverBooster = canLand;
             RestoreMesh();
             for (int i = 0; i < pieces.Count; i++)
             {
@@ -434,6 +441,12 @@ namespace Kestrel.Slice
         void ApplyFairing(double t)
         {
             var pose = staging.FairingAt(t);
+            if (pose.Gone)
+            {
+                if (leftHalf != null) leftHalf.Pivot.gameObject.SetActive(false);
+                if (rightHalf != null) rightHalf.Pivot.gameObject.SetActive(false);
+                return;
+            }
             bool on = pose.Separated && leftHalf != null && rightHalf != null;
             if (!on)
             {
@@ -488,8 +501,9 @@ namespace Kestrel.Slice
             if (!half.Pivot.gameObject.activeSelf) half.Pivot.gameObject.SetActive(true);
             float yaw = half.Sign * (float)pose.YawDeg;
             float outM = half.Sign * (float)pose.OutM;
+            float spin = (float)pose.SpinDeg;
             half.Pivot.localPosition = new Vector3(outM, half.Mid - (float)pose.DropM, 0f);
-            half.Pivot.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            half.Pivot.localRotation = Quaternion.Euler(spin * 0.65f, yaw, half.Sign * spin * 0.35f);
         }
 
         void ApplyPlume(PlumeRead read)
@@ -502,6 +516,7 @@ namespace Kestrel.Slice
             lp.y = y;
             plume.transform.localPosition = lp;
             plume.ExitDiameter = Diameter(serial);
+            ApplyFuel(serial);
             plume.Apply(read.Scale, flight.AmbientPressure, flight.Speed);
             if (read.Heat > 0.001 || read.Flash > 0.001)
                 plume.SetStagingTint((float)read.Heat, (float)read.Flash);
@@ -510,6 +525,38 @@ namespace Kestrel.Slice
                 flashedSerial = serial;
                 Burst(flashPs, new Vector3(0f, y, 0f), new Color(1f, 0.96f, 0.82f, 1f), 18, 14f, -6f);
             }
+        }
+
+        static bool CanRecover(Design design)
+        {
+            if (design == null || !design.legs || design.stages == null || design.stages.Count == 0) return false;
+            var first = design.stages[0];
+            if (first != null && first.landingPropMass > 1) return true;
+            return design.landingReserveSet && design.landingReserveFraction > 0;
+        }
+
+        void RememberFuel(Design design, List<StagingBody> bodies)
+        {
+            if (design == null || bodies == null) return;
+            int n = 1;
+            for (int i = 0; i < bodies.Count; i++)
+                if (bodies[i].Serial + 1 > n) n = bodies[i].Serial + 1;
+            fuelBySerial = new string[n];
+            for (int i = 0; i < bodies.Count; i++)
+            {
+                var b = bodies[i];
+                if (b.Serial < 0 || b.Serial >= fuelBySerial.Length) continue;
+                if (b.Role == "booster")
+                    fuelBySerial[b.Serial] = design.strapOns != null ? design.strapOns.propellant : "kerolox";
+                else if (b.Index >= 0 && design.stages != null && b.Index < design.stages.Count)
+                    fuelBySerial[b.Serial] = design.stages[b.Index].propellant;
+            }
+        }
+
+        void ApplyFuel(int serial)
+        {
+            if (plume == null || fuelBySerial == null || serial < 0 || serial >= fuelBySerial.Length) return;
+            plume.SetFuel(PropellantFlight.Flame(fuelBySerial[serial]));
         }
 
         float Diameter(int serial)
