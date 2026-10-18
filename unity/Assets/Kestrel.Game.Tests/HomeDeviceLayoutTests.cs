@@ -9,8 +9,10 @@ using System;
 using System.IO;
 using System.Reflection;
 using Kestrel.Core.Data;
+using Kestrel.Core.Flight;
 using Kestrel.Game.MissionSelect;
 using Kestrel.Game.Shell;
+using Kestrel.Slice;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -187,6 +189,154 @@ namespace Kestrel.Game.Tests
                     surface.Pump(6);
                     AssertPatches(surface, shell, d.Name);
                 }
+            }
+        }
+
+        [Test]
+        public void ResultCardReplacesTheFlightHudFromResourcesFonts()
+        {
+            var title = Resources.Load<Font>("KHFonts/Fraunces-Bold");
+            var body = Resources.Load<Font>("KHFonts/SpaceGrotesk-Medium");
+            var heavy = Resources.Load<Font>("KHFonts/SpaceGrotesk-Bold");
+            Assert.That(title, Is.Not.Null, "Fraunces-Bold from Resources");
+            Assert.That(body, Is.Not.Null, "SpaceGrotesk-Medium from Resources");
+            Assert.That(heavy, Is.Not.Null, "SpaceGrotesk-Bold from Resources");
+            Assert.That(Resources.Load<StyleSheet>("UI/ReportCard"), Is.Not.Null, "ReportCard.uss from Resources");
+
+            foreach (var d in Devices)
+            {
+                if (d.Name != "SE" && d.Name != "ProMax" && d.Name != "iPad") continue;
+                using (var surface = DeviceSurface.Open(d.W, d.H))
+                {
+                    int home = 0, missions = 0, fix = 0, next = 0, again = 0;
+                    var stage = surface.Stage;
+                    var hud = SampleFlightHud(stage);
+                    var frame = ReportLayout.Solve(d.W, d.H, d.Top, d.Bottom, 0, 0, true);
+                    var card = ReportView.Build(SampleFailure(), SampleLog(), frame, true, null, SampleDebrief(), new ReportActions
+                    {
+                        Home = () => home++,
+                        Missions = () => missions++,
+                        Fix = () => fix++,
+                        Next = () => next++,
+                        Again = () => again++,
+                    });
+                    ReportCardChrome.Present(stage, card, 1f, d.Top, d.Bottom);
+                    surface.Pump(8);
+                    float sx = stage.worldBound.width / d.W;
+                    Assert.That(sx, Is.GreaterThan(0.5f), d.Name);
+
+                    Assert.That(hud.resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name + " HUD");
+                    Assert.That(hud.pickingMode, Is.EqualTo(PickingMode.Ignore), d.Name + " HUD picks");
+                    Assert.That(PaintsAbove(card, hud), Is.True, d.Name + " card above HUD");
+                    Assert.That(card.worldBound.width, Is.GreaterThan(stage.worldBound.width * 0.95f), d.Name + " card width");
+                    Assert.That(card.worldBound.height, Is.GreaterThan(stage.worldBound.height * 0.95f), d.Name + " card height");
+                    Assert.That(stage.Q<Label>("h-t").text, Is.EqualTo(""), d.Name + " count");
+                    Assert.That(stage.Q<Label>("h-verdict").text, Is.EqualTo(""), d.Name + " verdict");
+                    Assert.That(stage.Q("skip-count").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
+                    Assert.That(stage.Q("ascent-nudge").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
+                    Assert.That(stage.Q("guide-pop").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
+                    Assert.That(stage.Q("guide-pop").pickingMode, Is.EqualTo(PickingMode.Ignore), d.Name);
+
+                    var cause = card.Q<Label>("failure-cause");
+                    var kid = card.Q<Label>("failure-kid");
+                    var engineer = card.Q<Label>("failure-engineer");
+                    Assert.That(cause.style.unityFontDefinition.value.font, Is.SameAs(title), d.Name);
+                    Assert.That(kid.style.unityFontDefinition.value.font, Is.SameAs(body), d.Name);
+                    Assert.That(engineer.style.unityFontDefinition.value.font, Is.SameAs(body), d.Name);
+                    Assert.That(cause.resolvedStyle.fontSize / sx, Is.GreaterThanOrEqualTo(14f), d.Name + " title " + cause.resolvedStyle.fontSize);
+                    Assert.That(kid.resolvedStyle.fontSize / sx, Is.GreaterThanOrEqualTo(14f), d.Name);
+                    Assert.That(engineer.resolvedStyle.fontSize / sx, Is.GreaterThanOrEqualTo(14f), d.Name);
+                    Assert.That(card.Q<Label>("plot-label").resolvedStyle.fontSize / sx, Is.GreaterThanOrEqualTo(14f), d.Name + " plot");
+                    Assert.That(card.resolvedStyle.backgroundColor.a, Is.EqualTo(1f).Within(0.001f), d.Name);
+
+                    foreach (var id in new[] { "failure-fix", "report-next", "report-retry", "report-missions", "report-home" })
+                    {
+                        var button = card.Q<Button>(id);
+                        Assert.That(button, Is.Not.Null, d.Name + " " + id);
+                        Assert.That(button.worldBound.height / sx, Is.GreaterThanOrEqualTo(44f), d.Name + " " + id + " " + button.worldBound);
+                        Assert.That(button.resolvedStyle.fontSize / sx, Is.GreaterThanOrEqualTo(14f), d.Name + " " + id);
+                        Assert.That(button.style.unityFontDefinition.value.font, Is.SameAs(heavy), d.Name + " " + id);
+                        Inside(stage, button, d.Name + " " + id);
+                        Receives(stage.panel, button, d.Name + " " + id);
+                    }
+
+                    Click(card.Q<Button>("failure-fix"));
+                    Click(card.Q<Button>("report-next"));
+                    Click(card.Q<Button>("report-retry"));
+                    Click(card.Q<Button>("report-missions"));
+                    Click(card.Q<Button>("report-home"));
+                    Assert.That(fix, Is.EqualTo(1), d.Name);
+                    Assert.That(next, Is.EqualTo(1), d.Name);
+                    Assert.That(again, Is.EqualTo(1), d.Name);
+                    Assert.That(missions, Is.EqualTo(1), d.Name);
+                    Assert.That(home, Is.EqualTo(1), d.Name);
+                    ReportCardChrome.InvokeEscape(stage);
+                    Assert.That(home, Is.EqualTo(2), d.Name + " back");
+                }
+            }
+        }
+
+        static VisualElement SampleFlightHud(VisualElement stage)
+        {
+            var hud = new VisualElement { name = "hud", pickingMode = PickingMode.Position };
+            hud.style.position = Position.Absolute;
+            hud.style.left = 0f;
+            hud.style.top = 0f;
+            hud.style.right = 0f;
+            hud.style.bottom = 0f;
+            hud.Add(new Label("T-0:07") { name = "h-t" });
+            hud.Add(new Label("On the count") { name = "h-verdict" });
+            var skip = new Button { name = "skip-count", text = "Skip count" };
+            skip.style.position = Position.Absolute;
+            skip.style.top = 40f;
+            skip.style.left = 16f;
+            skip.style.width = 120f;
+            skip.style.height = 44f;
+            hud.Add(skip);
+            var nudge = new VisualElement { name = "ascent-nudge", pickingMode = PickingMode.Position };
+            nudge.style.position = Position.Absolute;
+            nudge.style.bottom = 24f;
+            nudge.style.left = 16f;
+            nudge.style.right = 16f;
+            nudge.style.height = 48f;
+            nudge.Add(new Button { name = "nudge-minus", text = "Nudge −1°" });
+            nudge.Add(new Button { name = "nudge-plus", text = "Nudge +1°" });
+            hud.Add(nudge);
+            stage.Add(hud);
+            var pop = new VisualElement { name = "guide-pop", pickingMode = PickingMode.Position };
+            pop.style.position = Position.Absolute;
+            pop.style.left = 12f;
+            pop.style.bottom = 80f;
+            pop.style.width = 72f;
+            pop.style.height = 96f;
+            stage.Add(pop);
+            return hud;
+        }
+
+        static FailureEvent SampleFailure()
+            => new FailureEvent { kind = "structural-maxq", t = 26, kid = "The air pushed too hard.", engineer = "Dynamic pressure crossed the wall." };
+
+        static TelemetryLog SampleLog()
+        {
+            var log = new TelemetryLog();
+            log.Push(0, 0, 0, 0, 1, 1000, 0, 0, 0);
+            log.Push(26, 8000, 400, 35000, 3, 700, 20, 8, 4);
+            log.Mark(26, "structural-maxq", true);
+            return log;
+        }
+
+        static FlightDebrief SampleDebrief()
+        {
+            var facts = new FlightFacts { Failure = SampleFailure(), Passed = false, Seed = 1 };
+            return FlightDebrief.Compose(null, MissionContext.Free(), facts, NarrationPool.Empty, 100000, null);
+        }
+
+        static void Click(Button button)
+        {
+            using (var ev = NavigationSubmitEvent.GetPooled())
+            {
+                ev.target = button;
+                button.SendEvent(ev);
             }
         }
 

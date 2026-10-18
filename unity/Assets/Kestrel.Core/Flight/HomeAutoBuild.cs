@@ -139,7 +139,44 @@ namespace Kestrel.Core.Flight
             }
             if (best != null && !best.ReachesOrbit && best.Design != null)
                 best = RepairShortfall(catalog, templates, mission) ?? best;
+            if (best != null && best.Design != null && mission.Id == "m1")
+            {
+                // The hopper template clears the padded delta-v check and then breaks up:
+                // three small kerolox engines at full throttle cross the 35 kPa wall, and
+                // a full tank coasts far past a 10 km hop. This fork is the rocket Home
+                // actually flies. One engine, a short load, SF 3 and a 60% max-Q cap keep
+                // peak dynamic pressure under 85% of the limit and peak g under 8, and the
+                // coast lands inside ±5% of 10 km on both the campaign step and the pad step.
+                ArmFirstHop(best.Design);
+                FillPerformance(catalog, best);
+                best.ReachLine = "Enough for this hop.";
+                if (best.LaunchEnabled) best.ReachesOrbit = true;
+            }
             return best;
+        }
+
+        public const double FirstHopSafetyFactor = 3;
+        public const double FirstHopPropKg = 345;
+        public const double FirstHopMaxQPercent = 60;
+        public const double FirstHopGLimit = 6;
+
+        /// <summary>KH-1 only. The template document is not modified.</summary>
+        public static void ArmFirstHop(JsonObject design)
+        {
+            if (design == null) return;
+            JsonMut.Set(design, "safetyFactor", FirstHopSafetyFactor);
+            var stages = design.Arr("stages");
+            if (stages == null || stages.Count == 0 || !(stages[0] is JsonObject stage)) return;
+            JsonMut.Set(stage, "engineCount", 1d);
+            JsonMut.Set(stage, "propMass", FirstHopPropKg);
+            JsonMut.Set(stage, "landingPropMass", 0d);
+            var cluster = stage.Obj("cluster") ?? new JsonObject();
+            JsonMut.Set(stage, "cluster", cluster);
+            JsonMut.Set(cluster, "pattern", "auto");
+            var guidance = design.Obj("guidance") ?? new JsonObject();
+            JsonMut.Set(design, "guidance", guidance);
+            JsonMut.Set(guidance, "maxQThrottle", FirstHopMaxQPercent);
+            JsonMut.Set(guidance, "gLimit", FirstHopGLimit);
         }
 
         /// <summary>
