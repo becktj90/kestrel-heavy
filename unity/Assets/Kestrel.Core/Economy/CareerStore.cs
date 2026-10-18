@@ -144,8 +144,11 @@ namespace Kestrel.Core.Economy
             bool writeCareer = false, writeMissions = false;
             if (careerSlot == Slot.Ok)
             {
-                ApplyCareer(careerData, false);
-                if (careerSchema < NativeStore.Schema) writeCareer = true;
+                // A pre-schema career file is rewritten. When it lists no unlocks, rebuild the
+                // parts those cleared missions awarded, the same way a progress profile does.
+                bool migrateSchema = careerSchema < NativeStore.Schema;
+                ApplyCareer(careerData, migrateSchema);
+                if (migrateSchema) writeCareer = true;
             }
             else if (careerSlot == Slot.Missing && profile != null)
             {

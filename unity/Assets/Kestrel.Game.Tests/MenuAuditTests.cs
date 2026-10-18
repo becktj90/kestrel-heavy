@@ -404,8 +404,16 @@ namespace Kestrel.Game.Tests
         void WalkBuildCost(Campaign campaign, IReadOnlyDictionary<string, PayloadLabel> labels)
         {
             var career = Career.Start(campaign, 100);
+            // GC.GetAllocatedBytesForCurrentThread stays at 0 in the player used by EditMode,
+            // so the cache is measured by textures created. A warm cache from another fixture
+            // would make the first build free; drop it first.
+            MissionPatch.DiscardTextureCache();
+            MissionPatch.ResetTextureStats();
             var firstPatches = TimeOf(() => PatchCollectionScreen.Build(campaign, career, null, () => { }));
+            int firstTex = MissionPatch.TexturesCreated;
+            MissionPatch.ResetTextureStats();
             var secondPatches = TimeOf(() => PatchCollectionScreen.Build(campaign, career, null, () => { }));
+            int secondTex = MissionPatch.TexturesCreated;
             var home = TimeOf(() =>
             {
                 var full = new VisualElement();
@@ -421,8 +429,9 @@ namespace Kestrel.Game.Tests
             Assert.That(codex.Ms, Is.LessThan(FirstBuildMs), "codex build " + codex);
             Assert.That(firstPatches.Ms, Is.LessThan(FirstBuildMs), "patches first build " + firstPatches);
             Assert.That(secondPatches.Ms, Is.LessThan(SecondBuildMs), "patches second build " + secondPatches);
-            Assert.That(secondPatches.Alloc, Is.LessThan(firstPatches.Alloc),
-                "patch texture cache did not shrink allocations. first " + firstPatches + " second " + secondPatches);
+            Assert.That(firstTex, Is.GreaterThan(0), "first patch build created no textures");
+            Assert.That(secondTex, Is.LessThan(firstTex),
+                "patch texture cache did not shrink allocations. first " + firstTex + " textures, second " + secondTex);
         }
 
         readonly struct Sample

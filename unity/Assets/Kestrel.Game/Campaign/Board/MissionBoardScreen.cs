@@ -548,25 +548,42 @@ namespace Kestrel.Game.MissionSelect
 
         void ApplyFromRoot()
         {
+            float rw = resolvedStyle != null ? resolvedStyle.width : 0f;
+            float rh = resolvedStyle != null ? resolvedStyle.height : 0f;
+            bool laidOut = rw > 2f && rh > 2f;
             float w;
             float h;
             bool wide;
-            if (_previewW > 1f && _previewH > 1f)
+            if (_previewW > 1f && _previewH > 1f && !laidOut)
             {
                 w = _previewW;
                 h = _previewH;
                 wide = _wideOverride ?? WebLayoutMode.UseWide(w, h, true);
             }
-            else
+            else if (laidOut)
             {
-                w = resolvedStyle != null ? resolvedStyle.width : 0f;
-                h = resolvedStyle != null ? resolvedStyle.height : 0f;
-                if (w < 2f || h < 2f) return;
-                // The view sits inside the shell safe area, so the frame insets stay 0.
-                // UseWide() is false outside the WebGL player, which keeps iOS in the phone column.
-                wide = _wideOverride ?? WebLayoutMode.UseWide(Screen.width, Screen.height);
+                // The phone column is narrower than the device preview. Lay the sheet out in the
+                // box this view actually has, or the primary sits past the viewport.
+                w = rw;
+                h = rh;
+                if (_wideOverride.HasValue) wide = _wideOverride.Value;
+                else if (_previewW > 1f) wide = WebLayoutMode.UseWide(_previewW, _previewH, true);
+                else wide = WebLayoutMode.UseWide(Screen.width, Screen.height);
             }
+            else return;
+            if (wide) ReleaseColumnCap();
             Apply(w, h, wide);
+        }
+
+        /// <summary>.kh-screen caps the host at 600. A wide board needs the safe width, same as Home.</summary>
+        void ReleaseColumnCap()
+        {
+            var host = parent;
+            if (host == null || host.ClassListContains("kh-wide-open")) return;
+            if (!host.ClassListContains("kh-screen") && !host.ClassListContains("kh-home")) return;
+            host.AddToClassList("kh-wide-open");
+            host.style.maxWidth = Length.Percent(100);
+            host.style.alignSelf = Align.Stretch;
         }
 
         void Apply(float width, float height, bool wide)

@@ -410,6 +410,10 @@ namespace Kestrel.Core.Tests
                 Assert.IsTrue(store.MigratedFromProgress);
                 Assert.AreEqual(8800L, store.Career.BankMinor);
                 Assert.AreEqual(1, store.Career.Cleared);
+                Assert.IsTrue(store.Career.HasUnlock("core-stage"));
+                Assert.IsTrue(store.Career.HasUnlock("fins"));
+                Assert.IsTrue(store.Career.HasUnlock("nose"));
+                Assert.IsFalse(store.Career.HasUnlock("stage-2"));
                 Assert.AreEqual(bare, File.ReadAllText(fx.File(CareerStore.CareerKey) + ".bak"));
                 var rewritten = MiniJson.ParseObject(File.ReadAllText(fx.File(CareerStore.CareerKey)));
                 Assert.AreEqual(1d, rewritten.Num("schema"));

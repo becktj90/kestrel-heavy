@@ -99,8 +99,17 @@ namespace Kestrel.Game.Shell
 
         void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
-                MenuBack.Try(Root);
+            if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            MenuBack.Claimed = false;
+            if (MenuBack.Try(Root)) return;
+            // Design hides this root and draws on its own UIDocument. Escape still has to reach that back control.
+            var docs = UnityEngine.Object.FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
+            for (int i = 0; i < docs.Length; i++)
+            {
+                var tree = docs[i] != null ? docs[i].rootVisualElement : null;
+                if (tree == null || ReferenceEquals(tree, Root)) continue;
+                if (MenuBack.Try(tree)) return;
+            }
         }
 
         /// <summary>Real game entry until Graphics Dev moves the Design panel into the shell: Slice.unity owns

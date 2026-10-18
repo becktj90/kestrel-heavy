@@ -208,15 +208,15 @@ namespace Kestrel.Game.Shell
             Clip(root.Q("mm-title"));
             Clip(root.Q("mm-stats"));
             var type = frame.Type;
-            Font(root.Q("mm-kestrel"), type.Title * fs, 0.02f);
-            Font(root.Q("mm-kestrel-shadow"), type.Title * fs, 0.02f);
-            Font(root.Q("mm-eyebrow"), Mathf.Clamp(type.Title * fs * 0.18f, 14f, 18f), 0.12f);
-            Font(root.Q("mm-heavy"), type.Tagline * fs, 0.42f);
+            Font(root.Q("mm-kestrel"), WidePt(type.Title * fs), 0.02f);
+            Font(root.Q("mm-kestrel-shadow"), WidePt(type.Title * fs), 0.02f);
+            Font(root.Q("mm-eyebrow"), Mathf.Clamp(type.Title * fs * 0.18f, WideTypeFloor, 18f), 0.12f);
+            Font(root.Q("mm-heavy"), WidePt(type.Tagline * fs), 0.42f);
             var kestrel = root.Q("mm-kestrel");
             if (kestrel != null) { kestrel.style.whiteSpace = WhiteSpace.NoWrap; kestrel.style.overflow = Overflow.Hidden; }
             var heavy = root.Q("mm-heavy");
             if (heavy != null) { heavy.style.whiteSpace = WhiteSpace.NoWrap; heavy.style.overflow = Overflow.Hidden; }
-            root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = type.Stat * fs);
+            root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = WidePt(type.Stat * fs));
 
             bool scroll = frame.Scroll;
             var scroller = WideScroll(root, scroll);
@@ -273,29 +273,31 @@ namespace Kestrel.Game.Shell
                 tile.style.paddingBottom = 10f * sy;
             }
             PlaceAction(root, slot, "mm-hint", frame.Hint, scroll, sx, sy);
-            Font(root.Q(className: "kh-mm-launch-label"), type.Launch * fs, 0.10f);
-            Font(root.Q(className: "kh-mm-launch-caption"), type.LaunchCaption * fs, 0f);
-            Font(root.Q(className: "kh-mm-design-label"), type.Design * fs, 0.03f);
-            Font(root.Q(className: "kh-mm-design-caption"), type.DesignCaption * fs, 0f);
+            Font(root.Q(className: "kh-mm-launch-label"), WidePt(type.Launch * fs), 0.10f);
+            Font(root.Q(className: "kh-mm-launch-caption"), WidePt(type.LaunchCaption * fs), 0f);
+            Font(root.Q(className: "kh-mm-design-label"), WidePt(type.Design * fs), 0.03f);
+            Font(root.Q(className: "kh-mm-design-caption"), WidePt(type.DesignCaption * fs), 0f);
             root.Query(className: "kh-mm-tile-name").ForEach(e =>
             {
-                e.style.fontSize = type.TileName * fs;
-                e.style.letterSpacing = type.TileName * fs * 0.03f;
+                float name = WidePt(type.TileName * fs);
+                e.style.fontSize = name;
+                e.style.letterSpacing = name * 0.03f;
                 e.style.whiteSpace = WhiteSpace.NoWrap;
                 e.style.overflow = Overflow.Hidden;
             });
             root.Query(className: "kh-mm-tile-caption").ForEach(e =>
             {
-                e.style.fontSize = type.TileCaption * fs;
+                e.style.fontSize = WidePt(type.TileCaption * fs);
                 e.style.whiteSpace = WhiteSpace.Normal;
                 e.style.overflow = Overflow.Hidden;
             });
             root.Query(className: "kh-mm-soon").ForEach(e =>
             {
-                e.style.fontSize = type.Soon * fs;
-                e.style.letterSpacing = type.Soon * fs * 0.15f;
+                float soon = WidePt(type.Soon * fs);
+                e.style.fontSize = soon;
+                e.style.letterSpacing = soon * 0.15f;
             });
-            Font(root.Q("mm-hint-line"), type.Hint * fs, 0f);
+            Font(root.Q("mm-hint-line"), WidePt(type.Hint * fs), 0f);
             var hint = root.Q("mm-hint-line");
             if (hint != null) { hint.style.whiteSpace = WhiteSpace.Normal; hint.style.overflow = Overflow.Hidden; }
             FitCardText(root.Q("home-launch"), true);
@@ -364,6 +366,11 @@ namespace Kestrel.Game.Shell
             if (label != null) { label.style.whiteSpace = WhiteSpace.NoWrap; label.style.overflow = Overflow.Hidden; }
             if (cap != null) { cap.style.whiteSpace = WhiteSpace.Normal; cap.style.overflow = Overflow.Hidden; }
         }
+
+        /// <summary>Wide web labels stay at least 14 pt. The column scrolls when that stack is taller than the screen.</summary>
+        const float WideTypeFloor = 14f;
+
+        static float WidePt(float size) => size < WideTypeFloor ? WideTypeFloor : size;
 
         static void Font(VisualElement e, float size, float trackEm)
         {

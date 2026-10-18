@@ -19,6 +19,26 @@ namespace Kestrel.Game.Shell
         static readonly System.Collections.Generic.Dictionary<string, Texture2D> TexCache = new System.Collections.Generic.Dictionary<string, Texture2D>();
         const int TexCacheCap = 96;
 
+        /// <summary>Textures allocated since the last <see cref="ResetTextureStats"/>. The second collection build should stay at zero.</summary>
+        public static int TexturesCreated { get; private set; }
+
+        public static void ResetTextureStats() => TexturesCreated = 0;
+
+        /// <summary>Drop cached discs. Edit Mode destroys them now so the next build measures a cold cache.</summary>
+        public static void DiscardTextureCache()
+        {
+            foreach (var kv in TexCache)
+                DestroyTex(kv.Value);
+            TexCache.Clear();
+        }
+
+        static void DestroyTex(Texture2D tex)
+        {
+            if (tex == null) return;
+            if (Application.isPlaying) UnityEngine.Object.Destroy(tex);
+            else UnityEngine.Object.DestroyImmediate(tex);
+        }
+
         public MissionPatch()
         {
             pickingMode = PickingMode.Ignore;
@@ -89,6 +109,7 @@ namespace Kestrel.Game.Shell
             };
             tex.SetPixels32(cols);
             tex.Apply(false, true);
+            TexturesCreated++;
             if (TexCache.Count >= TexCacheCap) TexCache.Clear();
             TexCache[key] = tex;
             _tex = tex;
