@@ -24,6 +24,9 @@ namespace Kestrel.Pad
         readonly Dictionary<LightKind, Material> _mats = new Dictionary<LightKind, Material>();
         readonly List<int> _blinkers = new List<int>();
         PadGlow _glow; public PadGlow Glow => _glow;
+        public PlumeSplash Plume { get; private set; }
+        /// <summary>Real throttle (0..1) and height above the deck (m). The flight loop calls this every frame.</summary>
+        public void SetPlume(float throttle, float heightAboveDeck) { if (Plume != null) Plume.SetState(throttle, heightAboveDeck); }
         InstanceBatch _poles; Mesh _box, _poleMesh; Matrix4x4 _builtFor; float _lastNight = -1f; bool _blinkOn = true;
         static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor"), BaseColor = Shader.PropertyToID("_BaseColor");
 
@@ -109,6 +112,8 @@ namespace Kestrel.Pad
                 if (s.Realtime) Realtime.Add(MakeLight(s));
             }
             _glow = new PadGlow(Plan, BuiltQuality);
+            Plume = new PlumeSplash(transform, BuiltQuality, layout.DeckRadius);
+            if (Plume.Light != null) Realtime.Add(Plume.Light);
             _builtFor = default; _lastNight = -1f; Refresh();
         }
 
@@ -119,7 +124,7 @@ namespace Kestrel.Pad
         public static Matrix4x4 FixtureMatrix(LightSpec s)
         {
             var p = new Vector3(s.Position.X, s.Position.Y, s.Position.Z); var aim = new Vector3(s.Aim.X, s.Aim.Y, s.Aim.Z);
-            Vector3 size = s.Kind switch { LightKind.Flood => new Vector3(1.2f, 0.8f, 0.3f), LightKind.Pole => new Vector3(1.6f, 0.5f, 0.4f), LightKind.Aviation => new Vector3(0.35f, 0.35f, 0.35f), _ => new Vector3(6f, 0.08f, 0.08f) };
+            Vector3 size = s.Kind switch { LightKind.Flood => new Vector3(1.2f, 0.8f, 0.3f), LightKind.Pole => new Vector3(1.6f, 0.5f, 0.4f), LightKind.Aviation => new Vector3(0.35f, 0.35f, 0.35f), LightKind.Spot => new Vector3(0.9f, 0.6f, 0.9f), LightKind.Window => new Vector3(0.45f, 0.6f, 0.05f), _ => new Vector3(6f, 0.08f, 0.08f) };
             var rot = aim.sqrMagnitude > 1e-6f && s.Kind != LightKind.Aviation && s.Kind != LightKind.DeckStrip ? Quaternion.LookRotation(aim) : Quaternion.identity;
             // KitMesh.Beam is a unit +Y beam from the origin: centre it, then scale.
             return Matrix4x4.TRS(p, rot, Vector3.one) * Matrix4x4.TRS(new Vector3(0, -size.y * 0.5f, 0), Quaternion.identity, size);
@@ -165,7 +170,7 @@ namespace Kestrel.Pad
             _lastNight = Night; _blinkOn = on;
             foreach (var kv in _mats)
             {
-                float k = kv.Key switch { LightKind.Flood => 6f, LightKind.Pole => 4f, LightKind.Aviation => (on ? 8f : 0.3f), _ => 1.2f };
+                float k = kv.Key switch { LightKind.Flood => 6f, LightKind.Pole => 4f, LightKind.Aviation => (on ? 8f : 0.3f), LightKind.Spot => 7f, LightKind.Window => 2.5f, _ => 1.2f };
                 float day = kv.Key == LightKind.Aviation ? 0.6f : 0.05f;
                 kv.Value.SetColor(EmissionColor, _matColor[kv.Key] * (k * Mathf.Lerp(day, 1f, Night)));
             }
@@ -178,6 +183,7 @@ namespace Kestrel.Pad
             if (Plan == null) return;
             if (FollowSun) Night = ResolveNight();
             Refresh(); ApplyNight(Time.timeAsDouble);
+            Plume?.Update(transform.localToWorldMatrix, Night, gameObject.layer);
             var cam = ViewCamera != null ? ViewCamera : Camera.main; if (cam == null) return;
             int q = BuiltQuality; Ledger.Reset(); var p = cam.transform.position;
             foreach (var b in _fix.Values) b.Draw(p, q, Ledger);
@@ -192,7 +198,7 @@ namespace Kestrel.Pad
             foreach (var m in _mats.Values) if (m != null) DestroyImmediate(m);
             _mats.Clear();
             if (_box != null) DestroyImmediate(_box); if (_poleMesh != null) DestroyImmediate(_poleMesh);
-            _glow?.Dispose(); _glow = null;
+            _glow?.Dispose(); _glow = null; Plume?.Dispose(); Plume = null;
             _box = _poleMesh = null; _poles = null; Plan = null; BuiltQuality = -1;
         }
 

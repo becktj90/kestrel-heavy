@@ -38,6 +38,8 @@ namespace Kestrel.Pad
             _cones = BuildCones(plan, quality, out int cc); ConeCount = cc; ConeTriangles = cc * ConeSides * 2;
         }
 
+        public static Material MakeAdditive(string name, Texture2D tex) => Additive(name, tex);
+
         static Material Additive(string name, Texture2D tex)
         {
             var sh = Shader.Find(ShaderName); if (sh == null) sh = Shader.Find("Sprites/Default");

@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Game.Environment",
     "rootNamespace": "Kestrel.Game.Environment",
-    "references": ["Kestrel.Core", "Kestrel.Game.Shell"],
+    "references": ["Kestrel.Core", "Kestrel.Game.Shell", "Kestrel.Kit.Core"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

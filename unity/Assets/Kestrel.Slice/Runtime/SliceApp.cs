@@ -31,7 +31,7 @@ namespace Kestrel.Slice
         HangarExplodedView explodedView; Material explodedMat;
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
-        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; RecoveryShow recovery; GameObject rocketGO;
+        Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; Kestrel.Pad.PadLights padLights; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; RecoveryShow recovery; GameObject rocketGO;
         Kestrel.Vehicle.FinCluster landingFins; Kestrel.Vehicle.StrutCluster landingLegs;
         FlightChrome chrome;
         AscentHud ascentHud; Design flyingDesign;
@@ -586,6 +586,7 @@ namespace Kestrel.Slice
             vehicleRoot.localPosition = Vector3.zero; vehicleRoot.localRotation = Quaternion.identity;
             float rr = r.mesh.bounds.extents.x;
             var padR = PadTower.Apply(tower, r.height, rr, PadTower.DefaultArchetype(rr), PadTower.DefaultSeed, plates.Count > 0 ? plates : null, rocketGO.transform);
+            padLights = padR != null ? padR.GetComponent<Kestrel.Pad.PadLights>() : null;   // plume splash/light (time of day)
             float deckR = PadGround.DeckRadius(padR != null ? padR.Layout : null); // deck under every tower leg
             deck.localScale = new Vector3(2 * deckR, deck.localScale.y, 2 * deckR);
             framePoints = DesignFraming.SubjectPoints(r.height, rr, deckR,
@@ -1165,6 +1166,7 @@ namespace Kestrel.Slice
 
         void LateUpdate()
         {
+            if (padLights != null && flight != null) padLights.SetPlume((float)flight.ThrustFraction, (float)flight.Altitude);
             if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
             if (explodedView != null && hangarCam != null && hangarCam.enabled)
             {
