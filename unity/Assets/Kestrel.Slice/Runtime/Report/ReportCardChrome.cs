@@ -87,7 +87,19 @@ namespace Kestrel.Slice
             if (card.parent != tree) tree.Add(card);
             RetireFlight(tree);
             if (card.panel != null) RetireFlight(card.panel.visualTree);
-            if (tree.layout.height > 1f) Dress(card, upp, safeTopPt, safeBottomPt);
+            Dress(card, upp, safeTopPt, safeBottomPt);
+            EventCallback<GeometryChangedEvent> fit = null;
+            fit = _ =>
+            {
+                float known = card.layout.height;
+                if (known <= 1f && card.parent != null) known = card.parent.layout.height;
+                if (known <= 1f) return;
+                card.UnregisterCallback(fit);
+                Dress(card, upp, safeTopPt, safeBottomPt);
+                Cover(card);
+                card.BringToFront();
+            };
+            card.RegisterCallback(fit);
             card.BringToFront();
             card.pickingMode = PickingMode.Position;
             card.focusable = true;
@@ -117,6 +129,7 @@ namespace Kestrel.Slice
             float footH = ((HitPt + 8f) * 5f + Mathf.Max(12f, safeBottomPt) + 24f) * upp;
             float room = card.layout.height;
             if (room <= 1f && card.parent != null) room = card.parent.layout.height;
+            if (room <= 1f) room = card.resolvedStyle.height;
             if (room > 1f && footH > room * 0.58f) footH = room * 0.58f;
             if (scroll != null)
             {
