@@ -22,6 +22,8 @@ namespace Kestrel.Core.Save
             "kh.hangar.engineer",
             "kh.designer.v3.engineer",
             "kh.designer.v3.tutorial",
+            "kh.settings.tier",
+            "kh.settings.fullDesigner",
             "kh.quality.chosen",
             "kh.quality.batterySaver",
         };
