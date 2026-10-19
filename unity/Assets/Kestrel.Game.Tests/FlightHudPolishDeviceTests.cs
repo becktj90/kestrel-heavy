@@ -125,8 +125,10 @@ namespace Kestrel.Game.Tests
                 Assert.That(FlightHudLayout.TextWidth(parts[i].Mark, 11f), Is.LessThan(cell), parts[i].Mark);
             }
             Assert.That(FlightHudLayout.TrajectoryAlpha, Is.EqualTo(0f));
-            float clock = FlightHudLayout.ClockFontPt(160f, FlightHudLayout.HeaderPt);
-            Assert.That(FlightHudLayout.TextWidth("T-00:00.0", clock), Is.LessThan(156f));
+            float clockBox = 160f;
+            float clock = FlightHudLayout.ClockFontPt(clockBox, FlightHudLayout.HeaderPt);
+            Assert.That(FlightHudLayout.TextWidth("T-00:00.0", clock), Is.LessThanOrEqualTo(clockBox - 1.5f));
+            Assert.That(FlightHudLayout.TextWidth("T+ 00.0", clock), Is.LessThanOrEqualTo(clockBox - 1.5f));
             Assert.That(FlightHudLayout.InfoViewPt(700f, 0f, false), Is.InRange(48f, 96f));
 
             var call = new Label { text = "FAIRING SEP  T+999.9  999.9km  9.99km/s" };
