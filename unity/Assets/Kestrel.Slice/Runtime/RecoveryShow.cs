@@ -336,7 +336,8 @@ namespace Kestrel.Slice
         {
             if (staging == null || staging.Booster == null) return;
             var bp = staging.Booster.position;
-            Kestrel.Kit.CinematicEvents.Crash(bp.x, bp.y, bp.z, Mathf.Clamp01((float)(sample.Sink / Math.Max(0.1, craft.VLeg * 4.0))), (float)Math.Max(0.4, craft.DiameterM * 0.5), true, reduce);
+            if (!Kestrel.Kit.CinematicEvents.FlightSinkActive)   // a bound CinematicFlightSink raises the crash from OnCrash
+                Kestrel.Kit.CinematicEvents.Crash(bp.x, bp.y, bp.z, Mathf.Clamp01((float)(sample.Sink / Math.Max(0.1, craft.VLeg * 4.0))), (float)Math.Max(0.4, craft.DiameterM * 0.5), true, reduce);
             if (reduce) return;
             var cue = new FailureCue
             {
