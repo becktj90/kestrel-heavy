@@ -89,7 +89,8 @@ public sealed class UiDeviceSurface : IDisposable
                 if (root == null) return;
                 Stage = MakeStage(root, w, h);
             }
-            catch (Exception) { }
+            // Never LogError or throw here: batchmode / -nographics has no window, and an error log fails every later test.
+            catch (Exception e) { Debug.LogWarning("[UiDeviceSurface] no editor window (" + e.GetType().Name + "); trying a UIDocument"); }
         }
 
         void TryDocument(float w, float h)
@@ -112,7 +113,7 @@ public sealed class UiDeviceSurface : IDisposable
                 if (root == null) return;
                 Stage = MakeStage(root, w, h);
             }
-            catch (Exception) { }
+            catch (Exception e) { Debug.LogWarning("[UiDeviceSurface] no UIDocument stage (" + e.GetType().Name + ")"); }
         }
 
         static VisualElement MakeStage(VisualElement panelRoot, float w, float h)
@@ -141,7 +142,7 @@ public sealed class UiDeviceSurface : IDisposable
         void CloseWindow()
         {
             if (window == null) return;
-            window.Close();
+            try { window.Close(); } catch (Exception e) { Debug.LogWarning("[UiDeviceSurface] window close: " + e.GetType().Name); }
             window = null;
             Stage = null;
         }
