@@ -1,0 +1,11 @@
+{
+  "note": "Locked credits outcomes. Prices live in data/credits.json. The Hopper quote stays 0 so the starter cannot be priced out.",
+  "cases": [
+    { "name": "hopper-free", "quote": 0 },
+    { "name": "legs", "quote": 24 },
+    { "name": "extra-stage", "quote": 40 },
+    { "name": "kh1-one-medal", "earn": 28 },
+    { "name": "kh1-repeat", "earn": 12 },
+    { "name": "gift-does-not-pay", "balance": 0 }
+  ]
+}

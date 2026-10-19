@@ -38,6 +38,13 @@ namespace Kestrel.Core.Economy
         public bool LoanUsed;
         /// <summary>True when this load copied a profile out of progress into the new keys.</summary>
         public bool MigratedFromProgress { get; private set; }
+        /// <summary>Fictional credits, when the host attached one. A fresh load never writes it.</summary>
+        public CreditsWallet Wallet { get; private set; }
+        /// <summary>
+        /// Optional wallet for a store. EditMode tests leave this null so a career load writes nothing extra.
+        /// The host sets it only while the player is running.
+        /// </summary>
+        public static Func<NativeStore, CreditsWallet> WalletSource;
 
         readonly NativeStore store;
         readonly Campaign campaign;
@@ -60,7 +67,22 @@ namespace Kestrel.Core.Economy
             if (campaign == null) throw new ArgumentNullException(nameof(campaign));
             var career = new CareerStore(store, campaign, minorPerKc);
             career.Read();
+            if (WalletSource != null) career.Wallet = WalletSource(store);
             return career;
+        }
+
+        /// <summary>
+        /// Remember the mission the player just flew, on the progress record only.
+        /// Career and missions files are not touched. A progress file that already has
+        /// designer fields keeps them.
+        /// </summary>
+        public void NoteMission(string missionId)
+        {
+            if (!ValidMissionId(missionId)) return;
+            var prev = store.GetProgress();
+            var next = prev != null ? JsonMut.CloneObject(prev) : new JsonObject();
+            JsonMut.Set(next, "lastMissionId", missionId);
+            store.PutProgress(next);
         }
 
         public MissionRecord Mission(string missionId)

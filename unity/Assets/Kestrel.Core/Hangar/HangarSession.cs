@@ -34,6 +34,12 @@ namespace Kestrel.Core.Hangar
         public event Action<PartRef> SelectionChanged;
         /// <summary>Raised when the save slot, its name or the saved state changes without a document edit (save, rename).</summary>
         public event Action SaveStateChanged;
+        /// <summary>
+        /// Gate for a document that would cost more credits than the player holds.
+        /// Arguments are the design before and the design after. False leaves the session where it was.
+        /// Null allows every edit. The constructor load runs before this is set.
+        /// </summary>
+        public Func<JsonObject, JsonObject, bool> Afford;
 
         string cleanSnapshot;
         EngineeringReport report;
@@ -55,6 +61,7 @@ namespace Kestrel.Core.Hangar
         {
             var d = DesignMigration.Migrate(design);
             HangarEditor.Normalize(d);
+            if (Afford != null && Design != null && !Afford(Design, d)) return;
             Loading = true;
             try
             {
@@ -86,6 +93,12 @@ namespace Kestrel.Core.Hangar
             try { after = Snapshot(Design); }
             catch { Design = MiniJson.ParseObject(before); Invalidate(); throw; }
             if (after == before) return Edit.None;
+            if (Afford != null && !Afford(MiniJson.ParseObject(before), MiniJson.ParseObject(after)))
+            {
+                Design = MiniJson.ParseObject(before);
+                Invalidate();
+                return Edit.None;
+            }
             history.Record(before, after, e.what, e.from, e.to, coalesceKey);
             Invalidate();
             KeepSelection();
@@ -97,6 +110,9 @@ namespace Kestrel.Core.Hangar
 
         public EditStep Undo()
         {
+            var peek = history.NextUndo;
+            if (peek == null) return null;
+            if (!Allows(peek.before)) return null;
             string json = history.Undo(out var step);
             if (json == null) return null;
             Restore(json);
@@ -105,10 +121,22 @@ namespace Kestrel.Core.Hangar
 
         public EditStep Redo()
         {
+            var peek = history.NextRedo;
+            if (peek == null) return null;
+            if (!Allows(peek.after)) return null;
             string json = history.Redo(out var step);
             if (json == null) return null;
             Restore(json);
             return step;
+        }
+
+        bool Allows(string json)
+        {
+            if (Afford == null || json == null) return true;
+            JsonObject proposed;
+            try { proposed = MiniJson.ParseObject(json); }
+            catch (FormatException) { return true; }
+            return Afford(Design, proposed);
         }
 
         void Restore(string json)

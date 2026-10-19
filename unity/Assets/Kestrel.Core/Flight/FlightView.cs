@@ -1,5 +1,6 @@
 // One saved camera. Auto is the altitude-aware chase. The other four are fixed frames.
 // The button cycles them mid-flight. The value lives in the save record kh.save.v1.settings.
+using Kestrel.Core.Designer;
 using Kestrel.Core.Json;
 
 namespace Kestrel.Core.Flight
@@ -79,6 +80,17 @@ namespace Kestrel.Core.Flight
         {
             if (data == null) return FlightViewMode.Auto;
             return Parse(data.Str("camera"));
+        }
+
+        /// <summary>
+        /// Write the camera onto a settings record without dropping the other fields.
+        /// The prefs mirror shares <see cref="RecordKey"/>.
+        /// </summary>
+        public static JsonObject Merge(JsonObject existing, FlightViewMode mode)
+        {
+            var next = existing != null ? JsonMut.CloneObject(existing) : new JsonObject();
+            JsonMut.Set(next, "camera", Name(mode).ToLowerInvariant());
+            return next;
         }
 
         /// <summary>Vehicle height in metres. Auto defers to the chase camera.</summary>

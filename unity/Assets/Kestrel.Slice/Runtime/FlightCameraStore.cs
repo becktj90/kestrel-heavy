@@ -64,7 +64,8 @@ namespace Kestrel.Slice
                 string dir = SaveDir();
                 if (string.IsNullOrEmpty(dir)) return;
                 Directory.CreateDirectory(dir);
-                Open(dir).PutRecord(FlightView.RecordKey, "settings", FlightView.Data(mode));
+                var store = Open(dir);
+                store.PutRecord(FlightView.RecordKey, "settings", FlightView.Merge(store.GetRecord(FlightView.RecordKey), mode));
             }
             catch (Exception) { }
         }

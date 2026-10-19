@@ -14,6 +14,7 @@ using Kestrel.Core.Physics;
 using Kestrel.Core.Timeline;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Environment;
+using Kestrel.Game.Shell;
 using Kestrel.Kit.Contracts;
 using Kestrel.Site;
 using Kestrel.Slice.DesignerV3;
@@ -94,7 +95,7 @@ namespace Kestrel.Slice
                 if (first == null)
                 {
                     id = null;
-                    var t = h?.Template("workhorse") ?? (h != null && h.templates.Count > 0 ? h.templates[0] : null);
+                    var t = h?.Template("hopper") ?? h?.Template("workhorse") ?? (h != null && h.templates.Count > 0 ? h.templates[0] : null);
                     if (t != null) { first = HangarEditor.ForkTemplate(t); name = t.name; }
                     else first = DesignerValidation.ToJson(c.Preset("stock"));
                 }
@@ -108,6 +109,8 @@ namespace Kestrel.Slice
             session.SaveStateChanged += UpdateHandle;
             design = Design.FromJson(session.Design);
             OnDesignChanged();
+            try { SaveHooks.Bind(session, library); }
+            catch (System.Exception e) { Debug.LogWarning("[Hangar] save resume: " + e.Message); }
             TryBuildPanel();
             if (!handed) return;
             try

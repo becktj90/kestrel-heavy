@@ -89,6 +89,10 @@ namespace Kestrel.Core.Flight
         public bool WroteCareer;
         public long RewardMinor, CostMinor, RefundMinor, DeltaMinor, BankMinor;
         public double RewardKc, CostKc, RefundKc, DeltaKc, BankKc;
+        /// <summary>Credits this flight paid. Zero on a miss, a free build, or when no wallet is attached.</summary>
+        public long CreditsEarned;
+        /// <summary>Credits on hand after this flight. Zero when no wallet is attached.</summary>
+        public long CreditsBalance;
         public ulong Seed;
         public string MissionId;
         public readonly List<string> Unlocks = new List<string>();
@@ -304,6 +308,15 @@ namespace Kestrel.Core.Flight
 
             if (write && store != null && !free)
                 GrantLooks(look, store.Career, label, passed, debrief.Cosmetics);
+
+            if (write && store != null && store.Wallet != null && campaign && row != null && passed)
+            {
+                debrief.CreditsEarned = store.Wallet.Award(debrief.MissionId, row.Index, true, debrief.Medals);
+                debrief.CreditsBalance = store.Wallet.Balance;
+                store.NoteMission(debrief.MissionId);
+            }
+            else if (store != null && store.Wallet != null)
+                debrief.CreditsBalance = store.Wallet.Balance;
 
             if (write && store != null && !free && !string.IsNullOrEmpty(debrief.MissionId))
             {
