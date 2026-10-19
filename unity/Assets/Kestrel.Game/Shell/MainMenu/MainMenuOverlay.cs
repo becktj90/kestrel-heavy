@@ -622,8 +622,10 @@ namespace Kestrel.Game.Shell
                 return;
             }
 
-            // Recompute from the natural title. Clearing first drops a cap this pass no longer needs.
+            // Recompute from the natural title. Clearing first drops a cap this pass no longer needs,
+            // and the wordmark goes back to the design face unless the title cut below shrinks it again.
             ClearContainment(root);
+            RestoreTitleType(root, title, z);
             float overflow = need - host;
             const float topFloor = 8f;
             const float botFloor = 32f;
@@ -1254,23 +1256,28 @@ namespace Kestrel.Game.Shell
         /// so they win over the USS defaults (which stay as the pre-layout fallback).</summary>
         public static void ApplyScale(VisualElement root, MenuTypeScale.Sizes z)
         {
-            void Font(string cls, float size, float trackEm)
+            // The wordmark block (eyebrow, KESTREL, HEAVY) is owned by ContainColumn: it writes the design face
+            // when the column fits and the cut face when it does not. A sealed TextFit face here would survive a
+            // grow, because the label's own box follows that small face and nothing else re-fires the fit.
+            void Font(string cls, float size, float trackEm, bool sealed_ = true)
             {
                 root.Query(className: cls).ForEach(e =>
                 {
-                    float use = TextFit.Cap(e, size);
+                    float use = sealed_ ? TextFit.Cap(e, size) : size;
                     e.style.fontSize = use;
                     e.style.letterSpacing = use * trackEm;
                 });
             }
-            Font("kh-mm-kestrel", z.Title, .04f);
-            Font("kh-mm-heavy", z.Tagline, .5f);
+            bool column = !root.ClassListContains("kh-mm-wide");   // the wide frame fits its own wordmark (ApplyWebWide)
+            if (column) TextFit.Release(root.Q("mm-title"));
+            Font("kh-mm-kestrel", z.Title, .04f, !column);
+            Font("kh-mm-heavy", z.Tagline, .5f, !column);
             Font("kh-mm-launch-label", z.LaunchLabel, .10f);
             Font("kh-mm-launch-caption", z.LaunchCaption, 0f);
             Font("kh-mm-tile-caption", z.TileCaption, 0f);
             Font("kh-mm-soon", z.Soon, .15f);
             Font("kh-mm-hint", z.Hint, 0f);
-            Font("kh-mm-eyebrow", Mathf.Max(14f, z.Hint), .12f);
+            Font("kh-mm-eyebrow", Mathf.Max(14f, z.Hint), .12f, !column);
             Font("kh-mm-design-label", z.DesignLabel > 1f ? z.DesignLabel : Mathf.Max(14f, z.LaunchLabel * 0.72f), .03f);
             Font("kh-mm-design-caption", Mathf.Max(14f, z.LaunchCaption), 0f);
             var designLabel = root.Q(className: "kh-mm-design-label");

@@ -31,6 +31,8 @@ namespace Kestrel.Core.Flight
         public const float MinPath = 120f;
         public const float NameH = 26f;
         public const float FactsH = 40f;
+        /// <summary>Two fact lines at the 10 pt text-fit floor. Below this the card shows one line.</summary>
+        public const float FactsTwoLineH = 28f;
         public const float BriefH = 36f;
         public const float ArtMin = 56f;
         public const float Pad = 10f;
@@ -195,9 +197,11 @@ namespace Kestrel.Core.Flight
             {
                 factsTop = y + minHero;
                 factsH = stackTop - Gap - factsTop;
-                if (factsH < 20f)
+                if (factsH < FactsTwoLineH)
                 {
-                    factsH = Math.Min(FactsH, Math.Max(20f, stackTop - Gap - y - 56f));
+                    // The facts are two lines. A short card gives them two lines before the hero,
+                    // which keeps a 36 pt art tile; 20 pt clipped the second line at every face.
+                    factsH = Math.Min(FactsH, Math.Max(FactsTwoLineH, stackTop - Gap - y - 36f - Gap));
                     factsTop = stackTop - Gap - factsH;
                     if (factsTop < y) { factsTop = y; factsH = Math.Max(1f, stackTop - Gap - factsTop); }
                 }

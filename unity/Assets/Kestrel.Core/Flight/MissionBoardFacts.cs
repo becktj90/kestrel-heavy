@@ -174,7 +174,7 @@ namespace Kestrel.Core.Flight
             if (!flown) return "Best · no flight yet";
             var parts = new List<string>();
             if (score > 0 && !double.IsNaN(score) && !double.IsInfinity(score))
-                parts.Add(Number(score));
+                parts.Add(Whole(score));
             if (stars == 1) parts.Add("1 star");
             else if (stars > 1) parts.Add(stars.ToString(CultureInfo.InvariantCulture) + " stars");
             else parts.Add("no stars");
@@ -289,19 +289,28 @@ namespace Kestrel.Core.Flight
         public static string Speed(double mps)
         {
             if (double.IsNaN(mps) || double.IsInfinity(mps) || mps <= 0) return "";
-            return Number(mps) + " m/s";
+            return Whole(mps) + " m/s";
         }
 
         public static string Kilograms(double kg)
         {
             if (double.IsNaN(kg) || double.IsInfinity(kg) || kg <= 0) return "";
-            return Number(kg) + " kg";
+            return (kg >= 10 ? Whole(kg) : Number(kg)) + " kg";
         }
 
         static string Kilometers(double km)
         {
             if (double.IsNaN(km) || double.IsInfinity(km)) return "";
             return Number(km) + " km";
+        }
+
+        /// <summary>Rounded to the unit with a thousands separator, culture-invariant: 1442.87 reads "1,443".</summary>
+        public static string Whole(double n)
+        {
+            if (double.IsNaN(n) || double.IsInfinity(n)) return "";
+            double r = Math.Round(n, MidpointRounding.AwayFromZero);
+            if (Math.Abs(r) >= 1e15) return n.ToString("0", CultureInfo.InvariantCulture);
+            return ((long)r).ToString("N0", CultureInfo.InvariantCulture);
         }
 
         public static string Number(double n)

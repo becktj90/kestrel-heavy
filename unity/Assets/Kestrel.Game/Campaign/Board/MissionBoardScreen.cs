@@ -567,10 +567,23 @@ namespace Kestrel.Game.MissionSelect
             SetLine(_customer, card.Customer);
             SetLine(_orbit, card.Orbit);
             SetLine(_brief, card.Briefing);
-            SetLine(_facts, FactsText(card));
+            _factsTop = Join(card.Need, card.Mass);
+            _factsFull = FactsText(card);
+            SetLine(_facts, FactsShown());
             _primary.text = string.IsNullOrEmpty(card.Primary) ? "Locked" : card.Primary;
             _primary.tooltip = string.IsNullOrEmpty(card.PrimaryTip) ? _primary.text : card.PrimaryTip;
             _primary.SetEnabled(card.CanGo);
+        }
+
+        string _factsTop = "", _factsFull = "";
+        bool _factsOneLine;
+
+        /// <summary>Both fact lines, or only "Need · Mass" when the card is too short for two. The tooltip keeps the rest.</summary>
+        string FactsShown()
+        {
+            if (_facts != null) _facts.tooltip = _factsOneLine && _factsFull != _factsTop ? _factsFull : "";
+            if (_factsOneLine && !string.IsNullOrEmpty(_factsTop)) return _factsTop;
+            return _factsFull;
         }
 
         static string FactsText(MissionBoardFacts card)
@@ -755,6 +768,12 @@ namespace Kestrel.Game.MissionSelect
                 _copy.style.height = Math.Max(16f, bottom - top);
             }
             PinInside(_facts, frame.Facts, frame.Card);
+            bool oneLine = frame.Facts.H < MissionBoardLayout.FactsTwoLineH - 0.5f;
+            if (oneLine != _factsOneLine)
+            {
+                _factsOneLine = oneLine;
+                if (_facts != null && !string.IsNullOrEmpty(_factsFull)) SetLine(_facts, FactsShown());
+            }
             PinInside(_contracts, frame.Contracts, frame.Card);
             PinInside(_sandboxButton, frame.Sandbox, frame.Card);
             PinInside(_primary, frame.Primary, frame.Card);
