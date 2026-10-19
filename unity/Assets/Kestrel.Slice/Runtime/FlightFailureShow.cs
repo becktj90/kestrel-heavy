@@ -60,15 +60,9 @@ namespace Kestrel.Slice
             float u = units;
             float top = FlightStaging.CalloutTopInsideHud() * u;
             chip.style.top = top;
-            chip.style.height = 40f * u;
-            chip.style.fontSize = FlightHudLayout.LabelFontPt * u;
             chip.style.left = FlightHudLayout.SideMarginPt * u;
             chip.style.right = FlightHudLayout.SideMarginPt * u;
-            float r = 8f * u;
-            chip.style.borderTopLeftRadius = r;
-            chip.style.borderTopRightRadius = r;
-            chip.style.borderBottomLeftRadius = r;
-            chip.style.borderBottomRightRadius = r;
+            FlightDusk.Callout(chip, u, true);
         }
 
         public void Present(bool reduceMotion)
@@ -231,6 +225,7 @@ namespace Kestrel.Slice
             chip.text = cue.Callout;
             chip.tooltip = cue.CauseId;
             chip.style.display = DisplayStyle.Flex;
+            FlightDusk.Callout(chip, units, true);
             chip.BringToFront();
         }
 

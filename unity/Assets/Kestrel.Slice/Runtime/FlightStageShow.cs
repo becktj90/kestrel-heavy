@@ -53,6 +53,7 @@ namespace Kestrel.Slice
         FlightDriver flight;
         VisualElement hud;
         Label chip;
+        float units = 1f;
         Transform root;
         MeshFilter bodyFilter;
         Mesh original;
@@ -265,18 +266,13 @@ namespace Kestrel.Slice
         public void Layout(float unitsPerPoint)
         {
             if (chip == null) return;
-            float u = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
+            units = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
+            float u = units;
             float top = FlightStaging.CalloutTopInsideHud() * u;
             chip.style.top = top;
-            chip.style.height = FlightStaging.CalloutPt * u;
-            chip.style.fontSize = FlightHudLayout.LabelFontPt * u;
             chip.style.left = FlightHudLayout.SideMarginPt * u;
             chip.style.right = FlightHudLayout.SideMarginPt * u;
-            float r = 8f * u;
-            chip.style.borderTopLeftRadius = r;
-            chip.style.borderTopRightRadius = r;
-            chip.style.borderBottomLeftRadius = r;
-            chip.style.borderBottomRightRadius = r;
+            FlightDusk.Callout(chip, u, false);
         }
 
         public void Present()
@@ -599,6 +595,7 @@ namespace Kestrel.Slice
             }
             chip.text = call.Line;
             chip.style.display = DisplayStyle.Flex;
+            FlightDusk.Callout(chip, units, false);
             chip.BringToFront();
         }
 

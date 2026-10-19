@@ -41,3 +41,4 @@ _Last updated: 2026-10-14 (main is through #216; always merge when green; WP-H i
 - Badge art: per-mission patches shipped; pro badge redesign pending Art and Trevor's style OK.
 - Pad art: propellant farm and deluge follow the vehicle, ignition spray/steam/blast/diamonds stay inside `PadVfxBudgets`, terrain and pad steel use procedural grain, ambient M-mark gulls circle the pad and the sky.
 - Flight picture: painted parts stay solid in flight (the combined lathe shows only for a failure cut). Staging coasts about 3 s to separation and 11 s to ignition, fairing halves tumble off, fuel sets the flame and scales a mismatched bell, and one saved camera cycles Auto, Chase, Above, Below and Pad.
+- Flight HUD polish (in review): notes scroll above the dock, a five-mark health strip sits under the clock, countdown and callouts use the dusk type, and designer Launch hides the sheet and the web readout column.
