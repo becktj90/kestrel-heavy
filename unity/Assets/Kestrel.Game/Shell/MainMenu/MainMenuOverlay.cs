@@ -751,7 +751,8 @@ namespace Kestrel.Game.Shell
                 + " title " + (title != null ? title.layout.height.ToString("0.#") + (title.style.height.keyword == StyleKeyword.Undefined ? " pinned" : "") : "-")
                 + " root " + root.layout.height.ToString("0.#")
                 + (root.ClassListContains("kh-mm-wide") ? " wide" : "")
-                + (root.userData is ColumnFit fit ? " fit@" + fit.Host.ToString("0.#") : "");
+                + (root.userData is ColumnFit fit ? " fit@" + fit.Host.ToString("0.#") : "")
+                + " | " + TextFit.HoldInfo(word);
             if (TitleTraced.TryGetValue(word, out var last) && last == where + state) return;
             TitleTraced.Remove(word);
             TitleTraced.Add(word, where + state);

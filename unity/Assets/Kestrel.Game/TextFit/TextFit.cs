@@ -25,12 +25,20 @@ namespace Kestrel.Game.Shell
 
         static readonly ConditionalWeakTable<VisualElement, Seal> Seals = new ConditionalWeakTable<VisualElement, Seal>();
 
-        /// <summary>The face each label had when TextFit last looked at it, and the Apply in which it was seen to grow.</summary>
+        /// <summary>The face each label had when TextFit last looked at it, and a held grow: the face it grew to
+        /// and the content height it had then. The hold lasts until layout moves that box (or <see cref="HoldApplies"/>).</summary>
         sealed class Seen
         {
             public float Face;
-            public int GrewIn = -1;
+            public float HeldFace;      // > 0 while a grow is held
+            public float HeldFrom;      // contentRect height when the grow was seen
+            public int HeldApplies;     // Apply calls the hold has survived without the box moving
+            public int LastApply = -1;
         }
+
+        /// <summary>A box that has not moved through this many Apply calls after its face grew is not following its text
+        /// (a fixed or crushed parent), so the normal height fit resumes.</summary>
+        const int HoldApplies = 6;
 
         static readonly ConditionalWeakTable<VisualElement, Seen> Faces = new ConditionalWeakTable<VisualElement, Seen>();
         static int _apply;
@@ -129,10 +137,9 @@ namespace Kestrel.Game.Shell
             float w, h;
             Box(t, out w, out h);
             if (w < 8f || h < 4f) return false;
-            // Before any early exit, so the face history sees every pass.
-            bool grew = GrewSinceLayout(t, h);
-
             var one = Measure(t, text, 0f);
+            // Before any early exit, so the face history sees every pass.
+            bool grew = HoldGrow(t, h, one.y);
             var wrapped = Measure(t, text, w);
             // Trailing letter-spacing is in the measure and not always in the layout width.
             float slack = Slack + Tracking(t);
@@ -223,7 +230,7 @@ namespace Kestrel.Game.Shell
             // h / lineHeight = 12.05 pt, whatever face the caller wrote (#291 ShortColumnReleasesCaps).
             if (grew && (stillTall || spill))
             {
-                TraceFit(t, "grew-unlaid, no shrink", Face(t), Face(t), w, h);
+                TraceFit(t, "grow held, no shrink", Face(t), Face(t), w, h);
                 stillTall = false;
                 spill = false;
             }
@@ -248,23 +255,69 @@ namespace Kestrel.Game.Shell
             return changed;
         }
 
-        /// <summary>True when the label's face grew since TextFit last saw it, in this Apply, and its box
-        /// is its own content box (no pixel height, no clipping ancestor cutting it below that).</summary>
-        static bool GrewSinceLayout(TextElement t, float h)
+        /// <summary>
+        /// Sticky grow hold. When a label's face grows (a caller wrote a larger size), its box is still the content box
+        /// of the old face until UI Toolkit lays it out again, and measuring the new face against it shrinks the label
+        /// straight back to boxHeight / lineHeight. The hold starts when the face is seen to grow and the label's height
+        /// is its own (no pixel height on it, no clipping ancestor cutting its box). It is held across every Apply
+        /// (the root and the full-host Apply of one callback, and later callbacks) until one of:
+        /// the content height moves off the height it had at the grow (layout ran), the content box is tall enough for
+        /// one line of the face, a smaller face is written, or <see cref="HoldApplies"/> Apply calls pass with the box unmoved.
+        /// </summary>
+        static bool HoldGrow(TextElement t, float h, float oneLineH)
         {
             float face = Face(t);
+            float own = OwnHeight(t);
             if (!Faces.TryGetValue(t, out var seen))
             {
-                Faces.Add(t, new Seen { Face = face });
+                Faces.Add(t, new Seen { Face = face, LastApply = _apply });
                 return false;
             }
-            if (face > seen.Face + 0.5f) seen.GrewIn = _apply;
+            bool newApply = seen.LastApply != _apply;
+            seen.LastApply = _apply;
+            if (face > seen.Face + 0.5f && !HeightLocked(t) && !(own > h + 0.5f))
+            {
+                seen.HeldFace = face;
+                seen.HeldFrom = own;
+                seen.HeldApplies = 0;
+            }
             seen.Face = face;
-            if (seen.GrewIn != _apply) return false;
-            if (HeightLocked(t)) return false;
+            if (!(seen.HeldFace > 0f)) return false;
+
+            string release = null;
+            if (face < seen.HeldFace - 0.5f) release = "smaller face written";
+            else if (HeightLocked(t)) release = "pixel height";
+            else if (Math.Abs(own - seen.HeldFrom) > 0.5f) release = "box moved " + seen.HeldFrom.ToString("0.#") + " -> " + own.ToString("0.#");
+            else if (own + Slack >= oneLineH) release = "box tall enough";
+            else if (own > h + 0.5f) release = "clip cuts the box";
+            else
+            {
+                if (newApply) seen.HeldApplies++;
+                if (seen.HeldApplies > HoldApplies) release = "box never moved";
+            }
+            if (release != null)
+            {
+                TraceFit(t, "grow hold released (" + release + ")", face, face, 0f, h);
+                seen.HeldFace = 0f;
+                return false;
+            }
+            return true;
+        }
+
+        static float OwnHeight(VisualElement t)
+        {
             float own = t.contentRect.height;
             if (float.IsNaN(own) || own < 1f) own = t.layout.height;
-            return !(own > h + 0.5f);
+            return own;
+        }
+
+        /// <summary>Hold state for traces: "held 2 from 15 content 15", or "-".</summary>
+        public static string HoldInfo(VisualElement t)
+        {
+            if (t == null) return "-";
+            string content = " content " + OwnHeight(t).ToString("0.#");
+            if (!Faces.TryGetValue(t, out var seen) || !(seen.HeldFace > 0f)) return "no hold" + content;
+            return "held " + seen.HeldApplies + " at " + seen.HeldFace.ToString("0.###") + " from " + seen.HeldFrom.ToString("0.#") + content;
         }
 
         /// <summary>Names whose face writes are logged in the editor and development builds when
@@ -280,7 +333,7 @@ namespace Kestrel.Game.Shell
             Debug.Log("[kh-textfit] " + t.name + " " + why + " " + from.ToString("0.###") + " -> " + to.ToString("0.###")
                 + " box " + w.ToString("0.#") + "x" + h.ToString("0.#")
                 + " layout " + t.layout.height.ToString("0.#") + " resolved " + t.resolvedStyle.fontSize.ToString("0.###")
-                + " apply " + _apply);
+                + " apply " + _apply + " " + HoldInfo(t));
         }
 
         static void ReleaseIfRoomy(TextElement t, float w, float h)
