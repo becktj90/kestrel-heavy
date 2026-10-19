@@ -63,7 +63,7 @@ Columns: parameter · range / step · what it changes in the model · kid defaul
 | Fairing | shape | ogive, conic, blunt, von-karman (Validate L263, Cd 0.30/0.36/0.50/0.28) | drag | ogive | simple |
 | Fairing | jettison altitude | 80-150 km step 5 (existing, default 110) | mass after jettison | 110 | engineer |
 | Payload | type | 6 ids in `data/payloads.json`, shown with fictional KH-n names (KH-1 cubesat, KH-2 survey sat, KH-3 relay comsat, KH-4 crew pod, KH-5 moon probe, KH-K kid box) | mass, volume | KH-K | simple |
-| Payload | mass | 50 kg-100 t, step by order | Δv, volume scale (`PayloadVolume` L29) | catalog mass | standard |
+| Payload | mass | 10 kg-100 t, step by order | Δv, volume scale (`PayloadVolume` L29) | catalog mass | standard |
 | Payload | orbit | leo200, leo400, sso, gto, tli, suborbital | required Δv | leo200 | simple (as "Where to?") |
 | Landing | legs | bool (exists) | mass, landing check | off | simple ("Land it?" toggles legs+fins+reserve) |
 | Landing | grid fins | bool (exists) | mass, landing | off | standard |
@@ -414,7 +414,7 @@ Source: `/workspace/ux-142-answers.md` (Gameplay, main @ `db80a48`). These super
 4. **Interstage:** `stage.interstage: {{ shape }}` on the upper stage; mass derived (areal density × frustum lateral area) unless `interstageMass` is set (Engineer override). One name per geometry: `flare` is base-wider (`CNα > 0`, stabilizing, CP moves aft); `shoulder` is upper-wider (`CNα < 0`, destabilizing). One length for mass, drag and CP: `0.6 ×` the larger of the two diameters, the length `RocketMeshBuilder` already draws (`1.2 ×` the larger radius). A flat `+0.02` Cd on a flare or a shoulder is the labelled drag (a flare would sit near `0.02–0.05`, a shoulder near `0.005–0.01`). CP uses the Barrowman conical term. The hangar marker clamps to the nose when the raw CP is ahead of it; `stabilityCal` keeps the raw CP. A v1 save with no `interstageMass` migrates to an explicit `0`.
 5. **Payload names:** `displayName` (KH-1…KH-5, KH-K) in `data/payloads.json`; UI strings only hold localised descriptions keyed by id.
 6. **Design v2** with a v1→v2 `DesignMigration` step (auto / straight / default nozzle). A stored `interstageMass`, including 0, stays. A missing key is written as `0` so C# and JS agree and the derived frustum does not appear on that save. Goldens `design-migration.json`, `designer-readout.json`, extended `designer-validate.json`. Existing goldens must not change. Epsilons **[Physics]**: masses and `deltaVSL_mps` rel 1e-12; CG/CP abs 1e-9 m vs external literals; `stabilityCal` abs 1e-9; max-Q rel 1e-9 C# vs JS plus a 25-40 kPa sanity band.
-7. **Limits:** every range, step, enum and threshold lives in `data/designer-limits.json`, read by UI and `Validate` (moves the `designer` block out of params.json except `designer.layers`). Not enforced by Core today, becoming `Shape` checks: fairing length 1-40 m, payload mass 50 kg-100 t, landing reserve 0-30 %.
+7. **Limits:** every range, step, enum and threshold lives in `data/designer-limits.json`, read by UI and `Validate` (moves the `designer` block out of params.json except `designer.layers`). Not enforced by Core today, becoming `Shape` checks: fairing length 1-40 m, payload mass 10 kg-100 t, landing reserve 0-30 %.
 8. **12 new codes:** §11.4. Core bug noted: `weak-upper` `index` is the serial readout index, not `designIndex`; Gameplay fixes it in G1 (until then UX rings the stage list, not a specific part, for `weak-upper`).
 
 ## 13. Art answers and camera notes
