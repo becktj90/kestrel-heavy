@@ -18,6 +18,8 @@ namespace Kestrel.Game.Environment.Tests
 
         [SetUp] public void SetUp()
         {
+            // NUnit reuses one fixture instance for every test, so the capture lists must be emptied here.
+            blasts.Clear(); flashes.Clear(); beats.Clear(); rings.Clear();
             CinematicEvents.ResetSinkState();
             sink = new CinematicFlightSink { Anchor = () => new Vector3(1, 2, 3), Reduce = () => false };
             hb = e => blasts.Add(e); hf = e => flashes.Add(e); hc = e => beats.Add(e); hs = e => rings.Add(e);
