@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "note": "Phase 1 Starter feature flags (docs/plans/PHASED_DESIGNER_PLAN.md). false hides the feature; the code stays. Settings can override a flag. Read by Kestrel.Core.Features.FeatureFlags.",
+  "tier": "starter",
+  "flags": {
+    "designer.stepper": false,
+    "designer.free": false,
+    "designer.modeTabs": false,
+    "designer.hangar": false,
+    "designer.templates": false,
+    "designer.fixPill": false,
+    "designer.warningsList": false,
+    "designer.makeItFly": false,
+    "designer.payloadStepper": false,
+    "designer.v3Knobs": false,
+    "designer.look": false,
+    "designer.recoveryControls": false,
+    "designer.undoRedo": false,
+    "home.designFirst": false,
+    "home.codexTile": false,
+    "home.thrum": false,
+    "home.creditsChip": false,
+    "home.statsCard": false
+  }
+}
