@@ -525,9 +525,7 @@ namespace Kestrel.Slice
                     callout.style.position = Position.Absolute;
                     callout.style.unityTextAlign = TextAnchor.MiddleCenter;
                     callout.style.unityFontStyleAndWeight = FontStyle.Bold;
-                    callout.style.whiteSpace = WhiteSpace.NoWrap;
-                    callout.style.color = new Color(0.55f, 0.9f, 1f);
-                    callout.style.backgroundColor = new Color(0.03f, 0.055f, 0.09f, 0.82f);
+                    callout.style.whiteSpace = WhiteSpace.Normal;
                     callout.style.display = DisplayStyle.None;
                     host.Add(callout);
                 }
@@ -576,19 +574,18 @@ namespace Kestrel.Slice
 
         void PlaceChrome()
         {
-            float u = units;
+            float u = units > 0.5f ? units : 1f;
             float top = (FlightStaging.CalloutTopInsideHud() + FlightStaging.CalloutPt + 6f) * u;
             if (callout != null)
             {
-                callout.style.top = top;
-                callout.style.height = FlightStaging.CalloutPt * u;
-                callout.style.fontSize = FlightHudLayout.LabelFontPt * u;
                 callout.style.left = FlightHudLayout.SideMarginPt * u;
                 callout.style.right = FlightHudLayout.SideMarginPt * u;
+                FlightDusk.Callout(callout, u, false);
+                callout.style.top = top;
             }
             if (numbers != null)
             {
-                numbers.style.top = top + (FlightStaging.CalloutPt + 4f) * u;
+                numbers.style.top = top + (FlightStaging.CalloutPt * 2f + 4f) * u;
                 numbers.style.left = FlightHudLayout.SideMarginPt * u;
                 numbers.style.right = FlightHudLayout.SideMarginPt * u;
                 numbers.style.fontSize = 11f * u;
