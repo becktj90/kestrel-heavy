@@ -1,6 +1,7 @@
 // Device stand-in: KESTREL_REPO_ROOT is an empty directory, and the card fonts
 // come from Resources. The board still starts every KH mission, and the HUD
 // comes back after the result card.
+using Kestrel.Core.Ui;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -88,12 +89,12 @@ namespace Kestrel.Game.Tests
             using (var surface = PanelHost.Open(390f, 844f))
             {
             var stage = surface.Stage;
-            var hud = new VisualElement { name = "hud", pickingMode = PickingMode.Ignore };
+            var hud = new VisualElement { name = UiIds.ScreenFlight, pickingMode = PickingMode.Ignore };
             hud.Add(new Label("T+ 12.0") { name = "h-t" });
             hud.Add(new Label("ALT 4.0 km") { name = "h-alt" });
             hud.Add(new Label("Q 40") { name = "h-q" });
             hud.Add(new Label("On the count") { name = "h-verdict" });
-            var skip = new Button { name = "skip-count", text = "Skip count" };
+            var skip = new Button { name = UiIds.FlightSkipCount, text = "Skip count" };
             hud.Add(skip);
             var nudge = new VisualElement { name = "ascent-nudge" };
             nudge.Add(new Button { name = "nudge-plus", text = "+" });
@@ -219,7 +220,7 @@ namespace Kestrel.Game.Tests
                 design.Add(new VisualElement { name = "launch-row" });
                 design.Add(new Label { name = "launch-reason" });
                 design.Add(new VisualElement { name = "designer-launch" });
-                var hud = new VisualElement { name = "hud" };
+                var hud = new VisualElement { name = UiIds.ScreenFlight };
                 hud.AddToClassList("hidden");
                 ui.Add(design);
                 ui.Add(hud);

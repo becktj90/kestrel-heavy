@@ -1,9 +1,11 @@
 // In-flight camera picker with real UI Toolkit rects (DeviceSurface, as WebDesignerOverlapDeviceTests).
-// 335x720 portrait and landscape web at 1280x720, 1366x768 and 1920x1080 (a 1280x720 panel after
+// 335x720 portrait and landscape web at 1280x720, 1280x800, 1366x768 and 1920x1080 (a 1280x720 panel after
 // WebPanelScale, laid out from the CSS viewport the way AscentHud reads it). The "Cam: Auto" button is a
 // 44 pt target that covers no tools, band, health or dock element; the open picker has five hit-testable
 // chips with no text overflow; a chip applies and saves the view; C (CycleWithToast) cycles with a toast;
-// and the choice survives a new Bind.
+// and the choice survives a new Bind. Each size is also captured as a real PNG, picker closed and open
+// (UiCapture -> CaptureOut/ui, CI artifact "ui-captures").
+using Kestrel.Core.Ui;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -24,7 +26,7 @@ namespace Kestrel.Game.Tests
         static IEnumerable<Size> Sizes()
         {
             yield return new Size { Name = "335x720 portrait", CssW = 335f, CssH = 720f, PanelW = 335f, PanelH = 720f };
-            foreach (var (w, h) in new[] { (1280, 720), (1366, 768), (1920, 1080) })
+            foreach (var (w, h) in new[] { (1280, 720), (1280, 800), (1366, 768), (1920, 1080) })
             {
                 WebLandscapeType.PanelReference(true, out float rw, out float rh, out float m);
                 float s = WebLandscapeType.PanelScale(w, h, rw, rh, m);
@@ -55,7 +57,7 @@ namespace Kestrel.Game.Tests
             using (var surface = DeviceSurface.Open(size.PanelW, size.PanelH))
             {
                 var (hud, chrome, ascent) = Flight(surface, size, FlightViewMode.Auto);
-                var cam = hud.Q<Button>("flight-camera");
+                var cam = hud.Q<Button>(UiIds.FlightCamera);
                 Assert.That(cam, Is.Not.Null, size.Name);
                 Assert.That(cam.text, Is.EqualTo("Cam: Auto"), size.Name);
                 Assert.That(cam.resolvedStyle.display, Is.EqualTo(DisplayStyle.Flex), size.Name);
@@ -70,6 +72,14 @@ namespace Kestrel.Game.Tests
                     Assert.That(Overlaps(r, other.worldBound), Is.False, size.Name + " Cam covers " + other.name + " " + other.worldBound + " vs " + r);
                 }
                 Assert.That(TextFit.Problems(cam), Is.Empty, size.Name + " caption fits");
+                // Nav-harness names on the real elements.
+                Assert.That(hud.name, Is.EqualTo(UiIds.ScreenFlight), size.Name);
+                Assert.That(hud.Q(UiIds.ScreenPause), Is.Not.Null, size.Name);
+                foreach (var id in UiIds.FlightControls)
+                {
+                    if (id == UiIds.FlightExit || id == UiIds.FlightSkipCount) continue;   // Slice.uxml, not built here
+                    Assert.That(hud.Q<Button>(id), Is.Not.Null, size.Name + " has " + id);
+                }
                 ascent.Close();
             }
         }
@@ -82,7 +92,7 @@ namespace Kestrel.Game.Tests
             {
                 var (hud, chrome, ascent) = Flight(surface, size, FlightViewMode.Auto);
                 Assert.That(chrome.PickerOpen, Is.False, size.Name + " closed by default");
-                Click(hud.Q<Button>("flight-camera"));
+                Click(hud.Q<Button>(UiIds.FlightCamera));
                 surface.Pump(4);
                 Assert.That(chrome.PickerOpen, Is.True, size.Name + " tap opens the picker");
                 Assert.That(chrome.Paused, Is.False, size.Name + " flight is not paused");
@@ -102,7 +112,7 @@ namespace Kestrel.Game.Tests
                 Assert.That(amber.r, Is.GreaterThan(0.9f), size.Name + " current chip is amber");
                 foreach (var other in HudElements(hud))
                 {
-                    if (!Shown(other) || other.name == "flight-camera") continue;
+                    if (!Shown(other) || other.name == UiIds.FlightCamera) continue;
                     Assert.That(Overlaps(picker.worldBound, other.worldBound), Is.False, size.Name + " picker covers " + other.name);
                 }
 
@@ -111,7 +121,7 @@ namespace Kestrel.Game.Tests
                 Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Above), size.Name);
                 Assert.That(chrome.PickerOpen, Is.False, size.Name + " choosing closes");
                 Assert.That(FlightCameraStore.Load(), Is.EqualTo(FlightViewMode.Above), size.Name + " saved");
-                Assert.That(hud.Q<Button>("flight-camera").text, Is.EqualTo("Cam: Above"), size.Name);
+                Assert.That(hud.Q<Button>(UiIds.FlightCamera).text, Is.EqualTo("Cam: Above"), size.Name);
 
                 chrome.OpenPicker();
                 chrome.ClosePicker();
@@ -146,10 +156,67 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        [Test]
+        public void FollowVisiblyChangesTheFraming()
+        {
+            // Live build (F5): Follow was a silent recenter. Now an orbit moves the camera off the chase and
+            // Follow brings it back; from the fixed Pad view Follow returns to the Auto chase with a toast;
+            // and while already following the button reads "Following".
+            var chase = new Vector3(-6f, 3f, -14f);
+            var rig = FlightCameraRig.Begin(FlightCameraRig.Following(), new Vector2(400f, 300f));
+            rig = FlightCameraRig.Drag(rig, new Vector2(520f, 260f));
+            Assert.That(rig.Follow, Is.False);
+            Assert.That(Vector3.Distance(FlightCameraRig.Orbit(chase, rig), chase), Is.GreaterThan(1f), "an orbit moves the camera");
+            rig = FlightCameraRig.Recenter(rig);
+            Assert.That(FlightCameraRig.Orbit(chase, rig), Is.EqualTo(chase), "Follow hands the view back");
+
+            var size = new Size { Name = "1280x800", CssW = 1280f, CssH = 800f, PanelW = 1280f, PanelH = 800f, Wide = true };
+            using (var surface = DeviceSurface.Open(size.PanelW, size.PanelH))
+            {
+                var (hud, chrome, ascent) = Flight(surface, size, FlightViewMode.Pad);
+                var follow = hud.Q<Button>(UiIds.FlightFollow);
+                Assert.That(follow, Is.Not.Null);
+                Assert.That(chrome.Following, Is.False, "Pad is a fixed ground camera");
+                Assert.That(follow.text, Is.EqualTo(FlightView.FollowLabel));
+                chrome.FollowRocket();
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Auto), "Follow leaves Pad for the chase");
+                Assert.That(chrome.ToastText, Is.EqualTo("Camera: Auto"));
+                Assert.That(chrome.Following, Is.True);
+                Assert.That(follow.text, Is.EqualTo(FlightView.FollowingLabel));
+                Assert.That(FlightCameraStore.Load(), Is.EqualTo(FlightViewMode.Auto), "the change is saved like a picker choice");
+                chrome.Choose(FlightViewMode.Chase);
+                chrome.FollowRocket();
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Chase), "a chasing view is kept");
+                Assert.That(follow.text, Is.EqualTo(FlightView.FollowingLabel));
+                ascent.Close();
+            }
+        }
+
+        [Test]
+        public void CapturesEverySizeWithThePickerClosedAndOpen()
+        {
+            foreach (var size in Sizes())
+            using (var surface = DeviceSurface.OpenOffscreen(size.PanelW, size.PanelH, 2f))
+            {
+                // Dusk sky behind the HUD so the PNG reads like the flight, not a black void.
+                surface.Stage.style.backgroundColor = new Color(0.16f, 0.24f, 0.38f, 1f);
+                var (hud, chrome, ascent) = Flight(surface, size, FlightViewMode.Auto);
+                string slug = "flight-picker-" + size.Name.Replace(" ", "-");
+                surface.Pump(4);
+                var closed = UiCapture.Save(surface.Texture, slug + "-closed");
+                chrome.OpenPicker();
+                surface.Pump(6);
+                Assert.That(chrome.PickerOpen, Is.True, size.Name);
+                var open = UiCapture.Save(surface.Texture, slug + "-open");
+                Assert.That(System.IO.File.Exists(closed) && System.IO.File.Exists(open), Is.True, size.Name);
+                ascent.Close();
+            }
+        }
+
         (VisualElement hud, FlightChrome chrome, AscentHud ascent) Flight(DeviceSurface surface, Size size, FlightViewMode initial)
         {
             surface.Stage.Clear();
-            var hud = new VisualElement { name = "hud" };
+            var hud = new VisualElement { name = UiIds.ScreenFlight };
             hud.style.position = Position.Absolute;
             hud.style.left = 0; hud.style.top = 0;
             hud.style.width = size.PanelW;
@@ -191,7 +258,7 @@ namespace Kestrel.Game.Tests
 
         static IEnumerable<VisualElement> HudElements(VisualElement hud)
         {
-            var named = new[] { "follow", "pause", "h-t", "h-stage", "ascent-health", "ascent-telemetry", "ascent-actions", "ascent-plot", "ascent-stages" };
+            var named = new[] { UiIds.FlightFollow, UiIds.FlightPause, "h-t", "h-stage", "ascent-health", "ascent-telemetry", "ascent-actions", "ascent-plot", "ascent-stages" };
             foreach (var n in named)
             {
                 var e = hud.Q(n);
@@ -233,6 +300,19 @@ namespace Kestrel.Game.Tests
             PanelSettings settings;
             RenderTexture texture;
             public VisualElement Stage { get; private set; }
+            /// <summary>The offscreen target (OpenOffscreen only), for UiCapture.</summary>
+            public RenderTexture Texture => texture;
+
+            /// <summary>An offscreen UIDocument drawing into a RenderTexture at scale x the panel size.</summary>
+            public static DeviceSurface OpenOffscreen(float w, float h, float scale)
+            {
+                var surface = new DeviceSurface();
+                surface.TryDocument(w, h, scale);
+                surface.Pump(6);
+                if (!surface.Sized(w, h))
+                    Assert.Fail("offscreen panel did not take the device size " + w + "x" + h);
+                return surface;
+            }
 
             public static DeviceSurface Open(float w, float h)
             {
@@ -306,15 +386,18 @@ namespace Kestrel.Game.Tests
                 catch (Exception) { }
             }
 
-            void TryDocument(float w, float h)
+            void TryDocument(float w, float h, float scale = 1f)
             {
                 try
                 {
-                    texture = new RenderTexture(Mathf.Max(8, (int)w), Mathf.Max(8, (int)h), 0, RenderTextureFormat.ARGB32);
+                    texture = new RenderTexture(Mathf.Max(8, (int)(w * scale)), Mathf.Max(8, (int)(h * scale)), 0, RenderTextureFormat.ARGB32);
                     texture.Create();
                     settings = ScriptableObject.CreateInstance<PanelSettings>();
                     settings.scaleMode = PanelScaleMode.ConstantPixelSize;
-                    settings.scale = 1f;
+                    settings.scale = scale;
+                    // The runtime theme gives the panel its default font, so the capture shows the words.
+                    var theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>("Assets/UI Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss");
+                    if (theme != null) settings.themeStyleSheet = theme;
                     settings.targetTexture = texture;
                     go = new GameObject("kh-camera-picker-surface");
                     go.hideFlags = HideFlags.HideAndDontSave;

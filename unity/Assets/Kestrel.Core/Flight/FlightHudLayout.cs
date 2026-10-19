@@ -310,6 +310,16 @@ namespace Kestrel.Core.Flight
         static HudBox Box(float x, float y, float w, float h) => new HudBox { X = x, Y = y, W = w, H = h };
 
         /// <summary>
+        /// The landscape dock mode for the live state. The dock height depends on it, so a change re-pins
+        /// the HUD (a prompt opening mid-flight must lift Follow, the camera button and Pause with the dock).
+        /// </summary>
+        public static FlightHudMode WideMode(bool prompt, bool notes) =>
+            prompt && notes ? FlightHudMode.PromptNotes
+            : prompt ? FlightHudMode.Prompt
+            : notes ? FlightHudMode.Notes
+            : FlightHudMode.Cruise;
+
+        /// <summary>
         /// Landscape web HUD. The stat strip runs across the top, the plot and the stages panel
         /// sit in side rails, and the rocket column between them stays clear down to a short dock.
         /// Portrait <see cref="Place(float, float, float, float, float, float, FlightHudMode)"/> is unchanged.

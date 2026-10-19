@@ -69,6 +69,30 @@ namespace Kestrel.Core.Flight
         /// <summary>The C-key toast.</summary>
         public static string Toast(FlightViewMode mode) => "Camera: " + Name(mode);
 
+        /// <summary>Follow button label while the camera is chasing the rocket.</summary>
+        public const string FollowingLabel = "Following";
+        /// <summary>Follow button label when tapping it would change the framing.</summary>
+        public const string FollowLabel = "Follow rocket";
+
+        /// <summary>Every view but Pad rides with the rocket. Pad is the fixed ground camera.</summary>
+        public static bool Chases(FlightViewMode mode) => mode != FlightViewMode.Pad;
+
+        /// <summary>The camera follows the rocket: no manual orbit, and a view that rides with it.</summary>
+        public static bool Following(bool noOrbit, FlightViewMode mode) => noOrbit && Chases(mode);
+
+        /// <summary>
+        /// The view Follow lands on. Follow clears the manual orbit and, from the fixed Pad view, goes back
+        /// to Auto (the chase). From any chasing view it keeps the player's choice.
+        /// </summary>
+        public static FlightViewMode FollowView(FlightViewMode mode) => Chases(mode) ? mode : FlightViewMode.Auto;
+
+        /// <summary>"Following" when tapping would change nothing, "Follow rocket" when it would.</summary>
+        public static string FollowCaption(bool following) => following ? FollowingLabel : FollowLabel;
+
+        public static string FollowTip(bool following) => following
+            ? "The camera is following the rocket. Drag to look around; tap Follow to come back."
+            : "Follow the rocket: the camera glides back behind it.";
+
         public static string Tip(FlightViewMode mode) => "Camera: " + Name(mode) + ". Tap to pick a view. C cycles on a keyboard.";
 
         public static FlightViewMode Parse(string name)

@@ -1,6 +1,7 @@
 // Device stand-in: KESTREL_REPO_ROOT is an empty directory, and the flight fonts
 // come from Resources. Launch must hide the designer sheet and the web readout
 // column, and the notes sheet must scroll above the dock at 335 px.
+using Kestrel.Core.Ui;
 using System;
 using System.IO;
 using System.Reflection;
@@ -60,7 +61,7 @@ namespace Kestrel.Game.Tests
             home.style.display = DisplayStyle.Flex;
             var chip = new Label { name = "issue-chip", text = "2 checks" };
             chip.AddToClassList("hidden");
-            var hud = new VisualElement { name = "hud" };
+            var hud = new VisualElement { name = UiIds.ScreenFlight };
             hud.AddToClassList("hidden");
             hud.style.width = 335;
             hud.style.height = 700;
@@ -95,7 +96,7 @@ namespace Kestrel.Game.Tests
             Assert.That(help.verticalScrollerVisibility, Is.EqualTo(ScrollerVisibility.Auto));
             Assert.That(hud.Q("ascent-health"), Is.Not.Null);
             for (int i = 0; i < VehicleHealth.Count; i++)
-                Assert.That(hud.Q<Button>("health-" + i), Is.Not.Null, "health-" + i);
+                Assert.That(hud.Q<Button>(UiIds.FlightHealth(i)), Is.Not.Null, UiIds.FlightHealth(i));
             Assert.That(cast.style.backgroundColor.value.a, Is.EqualTo(0f).Within(0.001f));
             var verdict = hud.Q<Label>("h-verdict");
             Assert.That(verdict.style.unityFontDefinition.value.font, Is.SameAs(title));
@@ -156,7 +157,7 @@ namespace Kestrel.Game.Tests
         [Test]
         public void LandscapePinsTheCameraButtonBesidePause()
         {
-            var hud = new VisualElement { name = "hud" };
+            var hud = new VisualElement { name = UiIds.ScreenFlight };
             hud.style.width = 1280;
             hud.style.height = 720;
             var band = new VisualElement { name = "hud-band" };
@@ -174,8 +175,8 @@ namespace Kestrel.Game.Tests
                 AscentHud.ForceCssH = 720f;
                 ascent.Open(hud, 1f);
                 ascent.LayoutWideAt(1280f, 720f, 0f, 0f, 0f, 0f);
-                var cam = hud.Q("flight-camera");
-                var pause = hud.Q("pause");
+                var cam = hud.Q(UiIds.FlightCamera);
+                var pause = hud.Q(UiIds.FlightPause);
                 Assert.That(cam, Is.Not.Null);
                 Assert.That(cam.style.position.value, Is.EqualTo(Position.Absolute), "landscape pins the camera button");
                 float x = cam.style.left.value.value, y = cam.style.top.value.value;

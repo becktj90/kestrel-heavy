@@ -6,6 +6,7 @@
 using System;
 using System.Globalization;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Ui;
 using Kestrel.Game.Shell;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -55,7 +56,7 @@ namespace Kestrel.Slice
             if (band != null) hud.Insert(hud.IndexOf(band) + 1, root);
             else hud.Insert(0, root);
             dockSpacer = new VisualElement { name = "ascent-dock-spacer", pickingMode = PickingMode.Ignore };
-            var pause = hud.Q("pause-menu");
+            var pause = hud.Q(UiIds.ScreenPause);
             if (pause != null) hud.Insert(hud.IndexOf(pause), actions);
             else hud.Add(actions);
             if (pause != null) hud.Insert(hud.IndexOf(pause), dockSpacer);
@@ -91,6 +92,10 @@ namespace Kestrel.Slice
         }
 
         bool widePinned;
+        /// <summary>The dock mode the landscape pins were laid for; null when not pinned.</summary>
+        FlightHudMode? wideMode;
+        /// <summary>The dock mode the landscape pins were last laid for (tests).</summary>
+        public FlightHudMode? WideMode => wideMode;
 
         /// <summary>
         /// Device tests only: lay out as landscape web at this CSS viewport (zero insets) or as portrait,
@@ -206,7 +211,7 @@ namespace Kestrel.Slice
             if (UseWideNow()) LayoutWide();
             else LayoutRail();
             PlaceInfoSheet();
-            hud.Q("pause-menu")?.BringToFront();
+            hud.Q(UiIds.ScreenPause)?.BringToFront();
         }
 
         /// <summary>Portrait: the tested rail, inside the HUD's already-padded content box.</summary>
@@ -354,11 +359,7 @@ namespace Kestrel.Slice
             if (!(ph >= 8f) && hud != null && hud.style.height.keyword == StyleKeyword.Undefined) ph = hud.style.height.value.value;
             if (!(pw >= 8f) || !(ph >= 8f) || root == null) return;
             bool prompt = shown != default;
-            bool notes = infoOpen;
-            var mode = prompt && notes ? FlightHudMode.PromptNotes
-                : prompt ? FlightHudMode.Prompt
-                : notes ? FlightHudMode.Notes
-                : FlightHudMode.Cruise;
+            var mode = FlightHudLayout.WideMode(prompt, infoOpen);
             var f = FlightHudLayout.PlaceWide(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight, mode);
             float ux = pw / cssW;
             float uy = ph / cssH;
@@ -410,9 +411,9 @@ namespace Kestrel.Slice
                 tools.style.left = 0; tools.style.top = 0; tools.style.right = 0; tools.style.bottom = 0;
                 tools.style.marginBottom = 0;
             }
-            Pin(hud.Q("follow"), Sc(f.Follow));
-            Pin(hud.Q("flight-camera"), Sc(f.Camera));
-            Pin(hud.Q("pause"), Sc(f.Pause));
+            Pin(hud.Q(UiIds.FlightFollow), Sc(f.Follow));
+            Pin(hud.Q(UiIds.FlightCamera), Sc(f.Camera));
+            Pin(hud.Q(UiIds.FlightPause), Sc(f.Pause));
             // flight-tools is a full-HUD box that ignores picking; keep it (and the picker) above the
             // later-inserted ascent root so taps reach the buttons.
             tools?.BringToFront();
@@ -451,6 +452,7 @@ namespace Kestrel.Slice
             else if (nudgeRow != null)
                 nudgeRow.style.display = DisplayStyle.None;
             widePinned = true;
+            wideMode = mode;
         }
 
         void PlaceRailOrDock(VisualElement e, HudBox css, bool inDock, HudBox panel, VisualElement dock)
@@ -496,6 +498,7 @@ namespace Kestrel.Slice
         {
             if (!widePinned) return;
             widePinned = false;
+            wideMode = null;
             Unpin(hud != null ? hud.Q("hud-band") : null);
             Unpin(hud != null ? hud.Q("h-t") : null);
             Unpin(hud != null ? hud.Q("h-stage") : null);
@@ -520,9 +523,9 @@ namespace Kestrel.Slice
             if (tools != null && webcast != null && tools.parent == hud && webcast.parent == hud
                 && hud.IndexOf(tools) > hud.IndexOf(webcast))
                 hud.Insert(hud.IndexOf(webcast), tools);
-            Unpin(hud != null ? hud.Q("follow") : null);
-            Unpin(hud != null ? hud.Q("flight-camera") : null);
-            Unpin(hud != null ? hud.Q("pause") : null);
+            Unpin(hud != null ? hud.Q(UiIds.FlightFollow) : null);
+            Unpin(hud != null ? hud.Q(UiIds.FlightCamera) : null);
+            Unpin(hud != null ? hud.Q(UiIds.FlightPause) : null);
             Unpin(actions);
             if (actions != null) actions.style.overflow = StyleKeyword.Null;
             ReturnToDock(help);
@@ -703,6 +706,10 @@ namespace Kestrel.Slice
             StyleStages();
             PlaceDockSpacer();
             PlaceInfoSheet();
+            // A call opening or closing changes the landscape dock height. Re-pin on the change so the taller
+            // prompt dock never sits over Follow, the camera button or Pause (1280x800 live build).
+            if (widePinned && UseWideNow() && FlightHudLayout.WideMode(shown != default, infoOpen) != wideMode)
+                LayoutWide();
         }
 
         void PlaceAssist(bool prompt)
@@ -722,6 +729,8 @@ namespace Kestrel.Slice
         void PlaceDockSpacer()
         {
             if (dockSpacer == null || hud == null) return;
+            // Landscape pins the dock; a flow spacer there would push the rows out of their seats.
+            if (widePinned) { dockSpacer.style.height = 0; return; }
             bool prompt = shown != default;
             // Notes float above the dock. The spacer only reserves the buttons.
             float pt = FlightHudLayout.DockHeight(false, prompt);
@@ -753,7 +762,7 @@ namespace Kestrel.Slice
             for (int i = 0; i < VehicleHealth.Count; i++)
             {
                 int index = i;
-                var b = new Button(() => OnHealth(index)) { name = "health-" + i, text = calm[i].Mark };
+                var b = new Button(() => OnHealth(index)) { name = UiIds.FlightHealth(i), text = calm[i].Mark };
                 b.tooltip = calm[i].Name + ". " + calm[i].Detail;
                 b.style.flexGrow = 1;
                 b.style.flexShrink = 1;
@@ -1183,7 +1192,7 @@ namespace Kestrel.Slice
             medal.style.flexGrow = 1;
             medal.style.flexShrink = 1;
             medal.style.unityFontStyleAndWeight = FontStyle.Bold;
-            info = Action("ascent-info", () => OnInfo());
+            info = Action(UiIds.FlightInfo, () => OnInfo());
             info.text = "i";
             info.tooltip = "Flight notes. Timing, the path colours, and the extra readouts.";
             medalRow.Add(medal);
@@ -1225,10 +1234,10 @@ namespace Kestrel.Slice
             marker.style.backgroundColor = Color.white;
             bar.Add(green);
             bar.Add(marker);
-            primary = Action("ascent-primary", () => Press(true));
+            primary = Action(UiIds.FlightPrimary, () => Press(true));
             primary.style.backgroundColor = new Color(0.23f, 0.83f, 0.96f);
             primary.style.color = new Color(0.03f, 0.08f, 0.12f);
-            alternate = Action("ascent-alternate", () => Press(false));
+            alternate = Action(UiIds.FlightAlternate, () => Press(false));
             alternate.style.backgroundColor = new Color(0.08f, 0.1f, 0.14f, 0.2f);
             alternate.style.color = new Color(0.95f, 0.35f, 0.42f);
             alternate.style.borderTopWidth = 2;
@@ -1239,10 +1248,10 @@ namespace Kestrel.Slice
             alternate.style.borderRightColor = new Color(0.89f, 0.23f, 0.29f);
             alternate.style.borderBottomColor = new Color(0.89f, 0.23f, 0.29f);
             alternate.style.borderLeftColor = new Color(0.89f, 0.23f, 0.29f);
-            skip = Action("ascent-skip", OnSkip);
+            skip = Action(UiIds.FlightSkip, OnSkip);
             skip.text = "Skip";
             skip.tooltip = "Skip. The autopilot takes the planned action. This is not a fail.";
-            assist = Action("ascent-assist", OnAssist);
+            assist = Action(UiIds.FlightAssist, OnAssist);
             assist.text = "Auto-assist";
             promptRow = new VisualElement { name = "ascent-prompt-row" };
             promptRow.style.flexDirection = FlexDirection.Row;
@@ -1256,8 +1265,8 @@ namespace Kestrel.Slice
             assistRow.Add(assist);
             nudgeRow = new VisualElement { name = "ascent-nudge" };
             nudgeRow.style.flexDirection = FlexDirection.Row;
-            nudgeDown = Action("ascent-nudge-down", () => Nudge(-AscentDecisions.NudgeStepDeg));
-            nudgeUp = Action("ascent-nudge-up", () => Nudge(AscentDecisions.NudgeStepDeg));
+            nudgeDown = Action(UiIds.FlightNudgeDown, () => Nudge(-AscentDecisions.NudgeStepDeg));
+            nudgeUp = Action(UiIds.FlightNudgeUp, () => Nudge(AscentDecisions.NudgeStepDeg));
             nudgeDown.style.flexGrow = 1;
             nudgeUp.style.flexGrow = 1;
             alternate.style.flexGrow = 1;
@@ -1316,7 +1325,7 @@ namespace Kestrel.Slice
             {
                 PlaceDockSpacer();
                 PlaceInfoSheet();
-                if (hud != null) hud.Q("pause-menu")?.BringToFront();
+                if (hud != null) hud.Q(UiIds.ScreenPause)?.BringToFront();
             }
         }
 

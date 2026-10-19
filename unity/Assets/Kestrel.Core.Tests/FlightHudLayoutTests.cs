@@ -141,8 +141,58 @@ namespace Kestrel.Core.Tests
         /// <summary>Landscape web, as the CSS viewport AscentHud reads and as the 1280x720 panel WebPanelScale makes of it.</summary>
         static readonly float[][] CameraWide =
         {
-            new[] { 1280f, 720f }, new[] { 1366f, 768f }, new[] { 1920f, 1080f },
+            new[] { 1280f, 720f }, new[] { 1280f, 800f }, new[] { 1366f, 768f }, new[] { 1920f, 1080f },
         };
+
+        [Test]
+        public void WideModeFollowsThePromptAndNotes()
+        {
+            Assert.That(FlightHudLayout.WideMode(false, false), Is.EqualTo(FlightHudMode.Cruise));
+            Assert.That(FlightHudLayout.WideMode(true, false), Is.EqualTo(FlightHudMode.Prompt));
+            Assert.That(FlightHudLayout.WideMode(false, true), Is.EqualTo(FlightHudMode.Notes));
+            Assert.That(FlightHudLayout.WideMode(true, true), Is.EqualTo(FlightHudMode.PromptNotes));
+        }
+
+        /// <summary>
+        /// 1280x800 live build: the tools row was laid for the cruise dock and a prompt then grew the dock under
+        /// Follow and Pause. The prompt dock does reach the cruise row, so AscentHud re-pins on every mode change;
+        /// each mode's own frame keeps Follow, the camera, Pause and the clock clear of its dock.
+        /// </summary>
+        [Test]
+        public void EveryDockModeLiftsTheToolsRowAt1280x800()
+        {
+            {
+                const float w = 1280f, h = 800f;
+                var cruise = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, FlightHudMode.Cruise);
+                var prompt = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, FlightHudMode.Prompt);
+                Assert.That(cruise.Follow.Overlaps(prompt.Dock) || cruise.Pause.Overlaps(prompt.Dock), Is.True,
+                    "a stale cruise row would sit under the prompt dock (the live bug), so the mode change must re-pin");
+                foreach (var mode in Modes)
+                {
+                    var f = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, mode);
+                    string where = "1280x800 " + mode;
+                    foreach (var b in new[] { f.Follow, f.Camera, f.Pause })
+                    {
+                        Assert.That(b.Overlaps(f.Dock), Is.False, where + " tools row clears the dock");
+                        Assert.That(b.Overlaps(f.Clock), Is.False, where + " tools row clears T+");
+                        Assert.That(b.Bottom, Is.LessThanOrEqualTo(f.Dock.Y + 0.01f), where + " tools row sits above the dock");
+                    }
+                    Assert.That(f.Camera.Overlaps(f.Clock), Is.False, where + " T+ is not under the camera button");
+                    Assert.That(f.Camera.X, Is.GreaterThan(f.Clock.Right), where + " camera is on the far side from T+");
+                    foreach (var row in new[] { f.Primary, f.Skip, f.Assist, f.Alternate, f.NudgeDown, f.NudgeUp, f.Timer, f.Quote, f.Help })
+                        if (row.Live)
+                            foreach (var b in new[] { f.Follow, f.Camera, f.Pause })
+                                Assert.That(b.Overlaps(row), Is.False, where + " prompt rows do not cover the tools row");
+                }
+            }
+        }
+
+        [Test]
+        public void FollowCaptionsFitTheFollowButton()
+        {
+            foreach (var cap in new[] { FlightView.FollowLabel, FlightView.FollowingLabel })
+                Assert.That(FlightView.LabelWidth(cap, 13f), Is.LessThanOrEqualTo(FlightHudLayout.FollowWidthPt - 4f), cap + " (FitTool pads 2 pt a side)");
+        }
 
         [Test]
         public void CameraAndPickerClearTheHud_Portrait()

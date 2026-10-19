@@ -104,5 +104,25 @@ namespace Kestrel.Core.Tests
                 try { Directory.Delete(dir, true); } catch (Exception) { }
             }
         }
+
+        [Test]
+        public void FollowVisiblyChangesTheFramingOrSaysItIsAlreadyFollowing()
+        {
+            // Pad is the fixed ground camera: Follow leaves it for the Auto chase.
+            Assert.That(FlightView.Chases(FlightViewMode.Pad), Is.False);
+            Assert.That(FlightView.FollowView(FlightViewMode.Pad), Is.EqualTo(FlightViewMode.Auto));
+            Assert.That(FlightView.Following(true, FlightViewMode.Pad), Is.False, "Pad does not follow");
+            Assert.That(FlightView.FollowCaption(FlightView.Following(true, FlightViewMode.Pad)), Is.EqualTo("Follow rocket"));
+            foreach (var mode in FlightView.Cycle)
+            {
+                if (mode == FlightViewMode.Pad) continue;
+                Assert.That(FlightView.FollowView(mode), Is.EqualTo(mode), mode + " keeps the player's choice");
+                Assert.That(FlightView.Following(true, mode), Is.True, mode.ToString());
+                Assert.That(FlightView.Following(false, mode), Is.False, mode + " orbited away");
+                Assert.That(FlightView.FollowCaption(true), Is.EqualTo("Following"), "a no-op tap reads as a state");
+                Assert.That(FlightView.FollowCaption(false), Is.EqualTo("Follow rocket"));
+            }
+            Assert.That(FlightView.FollowTip(true), Is.Not.EqualTo(FlightView.FollowTip(false)));
+        }
     }
 }

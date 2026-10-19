@@ -3,6 +3,7 @@
 // The "Cam: Auto" button opens a five-chip picker (Auto / Above / Below / Chase / Pad). A chip applies,
 // saves and closes; a tap outside or Esc closes with no change. C on a keyboard cycles with a 1 s toast.
 // None of it pauses the flight. AscentHud places the picker and the toast (FlightHudLayout.CameraPicker).
+using Kestrel.Core.Ui;
 using System;
 using Kestrel.Core.Flight;
 using UnityEngine;
@@ -14,9 +15,9 @@ namespace Kestrel.Slice
     public sealed class FlightChrome : MonoBehaviour
     {
         public const float TouchPt = 44f;
-        public const string PickerName = "flight-camera-picker";
-        public const string ToastName = "flight-camera-toast";
-        public static string ChipName(FlightViewMode mode) => "camera-chip-" + FlightView.Name(mode).ToLowerInvariant();
+        public const string PickerName = UiIds.FlightCameraPicker;
+        public const string ToastName = UiIds.FlightCameraToast;
+        public static string ChipName(FlightViewMode mode) => UiIds.FlightCameraChip(mode);
 
         static readonly Color Amber = new Color(1f, 0.69f, 0f, 0.92f);
         static readonly Color Ink = new Color(0.08f, 0.08f, 0.1f);
@@ -56,11 +57,11 @@ namespace Kestrel.Slice
             tools.style.marginBottom = 8;
             tools.style.flexShrink = 0;
 
-            follow = Tool("follow", "Follow rocket", "Follow the rocket. Recenters the camera.");
-            follow.clicked += () => { rig = FlightCameraRig.Recenter(rig); RefreshFollow(); };
-            cameraBtn = Tool("flight-camera", FlightView.Caption(viewMode), FlightView.Tip(viewMode));
+            follow = Tool(UiIds.FlightFollow, FlightView.FollowLabel, FlightView.FollowTip(false));
+            follow.clicked += FollowRocket;
+            cameraBtn = Tool(UiIds.FlightCamera, FlightView.Caption(viewMode), FlightView.Tip(viewMode));
             cameraBtn.clicked += TogglePicker;
-            pause = Tool("pause", "Pause", "Pause. Freezes the flight.");
+            pause = Tool(UiIds.FlightPause, "Pause", "Pause. Freezes the flight.");
             pause.clicked += () => setPaused?.Invoke(true);
             tools.Add(follow);
             tools.Add(cameraBtn);
@@ -72,7 +73,7 @@ namespace Kestrel.Slice
 
             BuildPicker();
 
-            menu = new VisualElement { name = "pause-menu" };
+            menu = new VisualElement { name = UiIds.ScreenPause };
             menu.AddToClassList("hidden");
             menu.style.position = Position.Absolute;
             menu.style.left = 0;
@@ -88,12 +89,12 @@ namespace Kestrel.Slice
             title.style.marginBottom = 12;
             title.pickingMode = PickingMode.Ignore;
             menu.Add(title);
-            menu.Add(MenuButton("resume", "Resume", "Resume the flight.", () => setPaused?.Invoke(false)));
-            menu.Add(MenuButton("restart", "Restart", "Restart. Flies the same design again.", () => restart?.Invoke()));
-            menu.Add(MenuButton("exit-home", "Exit to Home", "Exit to Home.", () => exitHome?.Invoke()));
-            music = MenuButton("pause-music", "Music on", "Music. Tap to mute or unmute.", ToggleMusic);
-            sfx = MenuButton("pause-sfx", "Sound on", "Sound effects. Tap to mute or unmute.", ToggleSfx);
-            narration = MenuButton("pause-narration", "Narration on", "Narration. Tap to mute or unmute.", ToggleNarration);
+            menu.Add(MenuButton(UiIds.PauseResume, "Resume", "Resume the flight.", () => setPaused?.Invoke(false)));
+            menu.Add(MenuButton(UiIds.PauseRestart, "Restart", "Restart. Flies the same design again.", () => restart?.Invoke()));
+            menu.Add(MenuButton(UiIds.PauseExitHome, "Exit to Home", "Exit to Home.", () => exitHome?.Invoke()));
+            music = MenuButton(UiIds.PauseMusic, "Music on", "Music. Tap to mute or unmute.", ToggleMusic);
+            sfx = MenuButton(UiIds.PauseSfx, "Sound on", "Sound effects. Tap to mute or unmute.", ToggleSfx);
+            narration = MenuButton(UiIds.PauseNarration, "Narration on", "Narration. Tap to mute or unmute.", ToggleNarration);
             menu.Add(music);
             menu.Add(sfx);
             menu.Add(narration);
@@ -278,6 +279,7 @@ namespace Kestrel.Slice
         {
             viewMode = mode;
             RefreshCamera();
+            RefreshFollow();
             ClosePicker();
             viewChanged?.Invoke(viewMode);
         }
@@ -490,7 +492,7 @@ namespace Kestrel.Slice
                 t.style.bottom = StyleKeyword.Auto;
                 t.BringToFront();
             }
-            flightHud.Q("pause-menu")?.BringToFront();
+            flightHud.Q(UiIds.ScreenPause)?.BringToFront();
         }
 
         void RefreshCamera()
@@ -509,17 +511,36 @@ namespace Kestrel.Slice
             RefreshChips();
         }
 
+        /// <summary>The camera is chasing the rocket (no orbit, not the fixed Pad view).</summary>
+        public bool Following => FlightView.Following(rig.Follow, viewMode);
+
+        /// <summary>
+        /// Follow: clear the manual orbit (the camera glides back, see SliceApp) and, from the fixed Pad view,
+        /// return to Auto with the usual toast. While already following it changes nothing, and says so.
+        /// </summary>
+        public void FollowRocket()
+        {
+            if (Paused) return;
+            rig = FlightCameraRig.Recenter(rig);
+            var next = FlightView.FollowView(viewMode);
+            if (next != viewMode)
+            {
+                Choose(next);
+                ShowToast(FlightView.Toast(next));
+            }
+            RefreshFollow();
+        }
+
         void RefreshFollow()
         {
             if (follow == null) return;
-            follow.text = "Follow rocket";
-            follow.tooltip = rig.Follow
-                ? "Camera is following the rocket. Tap to recenter."
-                : "Follow the rocket. Recenters the camera.";
-            follow.style.backgroundColor = rig.Follow
+            bool on = Following;
+            follow.text = FlightView.FollowCaption(on);
+            follow.tooltip = FlightView.FollowTip(on);
+            follow.style.backgroundColor = on
                 ? new Color(1f, 1f, 1f, 0.12f)
                 : new Color(1f, 0.69f, 0f, 0.92f);
-            follow.style.color = rig.Follow ? Color.white : new Color(0.08f, 0.08f, 0.1f);
+            follow.style.color = on ? Color.white : new Color(0.08f, 0.08f, 0.1f);
         }
 
         static Button Tool(string name, string text, string tip)
