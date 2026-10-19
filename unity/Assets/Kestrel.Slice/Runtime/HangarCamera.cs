@@ -20,6 +20,7 @@ namespace Kestrel.Slice
         readonly List<Vector3> fit = new List<Vector3>(64);
         bool hasFit;
         float height = 70f;
+        float fitScale = -1f;
         float bottomVisible = 1f;
         bool reduceSet, reduceForced;
         bool dragging, pinching, havePinchMid;
@@ -205,7 +206,19 @@ namespace Kestrel.Slice
             // Wide web frames the rocket in the middle; the side panels overlay the edges.
             float side = WebLayoutMode.UseWide(w, h) ? 1f : DesignFraming.SideVisibleFraction(w, h, Screen.dpi);
             float fov = cam.fieldOfView > 1f ? cam.fieldOfView : 50f;
-            float k = DesignFraming.FitDistanceScale(hasFit ? fit : null, height, (float)w / h, fov, bottomVisible, side);
+            float target = DesignFraming.FitDistanceScale(hasFit ? fit : null, height, (float)w / h, fov, bottomVisible, side);
+            if (float.IsNaN(target) || float.IsInfinity(target) || !(target > 0f)) return;
+            bool snap = fitScale < 0f || ReduceMotion || target > fitScale * 1.75f || target < fitScale * 0.55f;
+            if (snap) fitScale = target;
+            else
+            {
+                float dt = Time.unscaledDeltaTime;
+                if (float.IsNaN(dt) || dt < 0f) dt = 0f;
+                if (dt > 0.05f) dt = 0.05f;
+                float step = Mathf.Max(0.002f, Mathf.Abs(target - fitScale) * Mathf.Clamp01(dt * 3f));
+                fitScale = Mathf.MoveTowards(fitScale, target, step);
+            }
+            float k = fitScale;
             HangarOrbit.PoseAt(height, k, orbit.YawDeg, orbit.PitchDeg, orbit.Zoom, focusAim, out var pos, out var aim);
             if (!DesignFraming.IsFinite(pos) || (pos - aim).sqrMagnitude < 1e-4f) return;
             transform.SetPositionAndRotation(pos, Quaternion.LookRotation(aim - pos));

@@ -206,6 +206,88 @@ namespace Kestrel.Slice
             });
             plot.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.TrajectoryAlpha);
             plot.Apply(trajectory.At(flight != null ? flight.SimTime : 0, flight != null ? flight.Altitude : 0, flight != null ? flight.Speed : 0), upp);
+            var dock = ScaleBox(frame.Dock);
+            Pin(actions, dock);
+            if (actions != null) actions.style.overflow = Overflow.Hidden;
+            FitClock(hud.Q<Label>("h-t"), frame.Clock.W * upp, frame.Clock.H * upp);
+            Seat(actions != null ? actions.Q("ascent-medal-row") : null, ScaleBox(Union(frame.Medal, frame.Info)), dock);
+            Seat(help, ScaleBox(frame.Help), dock);
+            Seat(quote, ScaleBox(frame.Quote), dock);
+            Seat(bar, ScaleBox(frame.Timer), dock);
+            if (prompt)
+            {
+                Seat(promptRow, ScaleBox(Union(frame.Primary, frame.Skip, frame.Assist)), dock);
+                if (assistRow != null) assistRow.style.display = DisplayStyle.None;
+            }
+            else
+            {
+                if (promptRow != null) promptRow.style.display = DisplayStyle.None;
+                Seat(assistRow, ScaleBox(frame.Assist), dock);
+            }
+            Seat(nudgeRow, ScaleBox(Union(frame.Alternate, frame.NudgeDown, frame.NudgeUp)), dock);
+        }
+
+        HudBox ScaleBox(HudBox b) => new HudBox { X = b.X * upp, Y = b.Y * upp, W = b.W * upp, H = b.H * upp };
+
+        static void FitClock(Label clock, float boxW, float boxH)
+        {
+            if (clock == null) return;
+            clock.style.fontSize = FlightHudLayout.ClockFontPt(boxW, boxH);
+            clock.style.overflow = Overflow.Hidden;
+            clock.style.whiteSpace = WhiteSpace.NoWrap;
+        }
+
+        void Seat(VisualElement row, HudBox box, HudBox dock)
+        {
+            if (row == null) return;
+            if (actions == null || !box.Live || !dock.Live)
+            {
+                row.style.display = DisplayStyle.None;
+                return;
+            }
+            float top = box.Y - dock.Y;
+            float left = box.X - dock.X;
+            float h = box.H;
+            float w = box.W;
+            if (top < 0f) { h += top; top = 0f; }
+            if (left < 0f) { w += left; left = 0f; }
+            if (top + h > dock.H) h = dock.H - top;
+            if (left + w > dock.W) w = dock.W - left;
+            if (h < 8f || w < 8f)
+            {
+                row.style.display = DisplayStyle.None;
+                return;
+            }
+            if (row.parent != actions) actions.Add(row);
+            row.style.display = DisplayStyle.Flex;
+            row.style.position = Position.Absolute;
+            row.style.left = left;
+            row.style.top = top;
+            row.style.width = w;
+            row.style.height = h;
+            row.style.marginTop = 0;
+            row.style.marginBottom = 0;
+            row.style.marginLeft = 0;
+            row.style.maxHeight = h;
+            row.style.minHeight = 0;
+        }
+
+        static HudBox Union(params HudBox[] boxes)
+        {
+            float x = float.MaxValue, y = float.MaxValue, right = 0f, bottom = 0f;
+            bool any = false;
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                var box = boxes[i];
+                if (!box.Live) continue;
+                any = true;
+                if (box.X < x) x = box.X;
+                if (box.Y < y) y = box.Y;
+                if (box.Right > right) right = box.Right;
+                if (box.Bottom > bottom) bottom = box.Bottom;
+            }
+            if (!any) return default;
+            return new HudBox { X = x, Y = y, W = right - x, H = bottom - y };
         }
 
         /// <summary>Landscape web: stat strip across the top, plot and stages in the side rails, dock under the rocket.</summary>
@@ -252,6 +334,7 @@ namespace Kestrel.Slice
             var clock = Sc(f.Clock);
             var stage = Sc(f.Stage);
             Pin(hud.Q("h-t"), new HudBox { X = clock.X - telemetry.X, Y = 0, W = clock.W, H = telemetry.H });
+            FitClock(hud.Q<Label>("h-t"), clock.W, telemetry.H);
             Pin(hud.Q("h-stage"), new HudBox { X = stage.X - telemetry.X, Y = (telemetry.H - stage.H) * 0.5f, W = stage.W, H = stage.H });
 
             root.style.position = Position.Absolute;
@@ -283,13 +366,33 @@ namespace Kestrel.Slice
             if (actions != null) actions.style.overflow = Overflow.Hidden;
             if (dockSpacer != null) dockSpacer.style.height = 0;
 
-            FitDockRow(actions != null ? actions.Q("ascent-medal-row") : null, InDock(f.Medal) ? Sc(f.Medal).H : 0f);
+            var dock = Sc(f.Dock);
+            Seat(actions != null ? actions.Q("ascent-medal-row") : null, Sc(Union(f.Medal, f.Info)), dock);
             PlaceRailOrDock(help, f.Help, InDock(f.Help), Sc(f.Help), actions);
             PlaceRailOrDock(quote, f.Quote, InDock(f.Quote), Sc(f.Quote), actions);
+            if (quote != null && f.Quote.Live)
+                quote.style.whiteSpace = WhiteSpace.Normal;
             PlaceRailOrDock(bar, f.Timer, InDock(f.Timer), Sc(f.Timer), actions);
-            FitDockRow(promptRow, InDock(f.Primary) ? Sc(f.Primary).H : 0f);
-            FitDockRow(assistRow, !prompt && InDock(f.Assist) ? Sc(f.Assist).H : 0f);
-            FitDockRow(nudgeRow, InDock(f.NudgeDown) ? Sc(f.NudgeDown).H : 0f);
+            if (prompt)
+            {
+                Seat(promptRow, Sc(Union(f.Primary, f.Skip, f.Assist)), dock);
+                if (assistRow != null) assistRow.style.display = DisplayStyle.None;
+            }
+            else
+            {
+                if (promptRow != null) promptRow.style.display = DisplayStyle.None;
+                Seat(assistRow, Sc(f.Assist), dock);
+            }
+            var nudges = Union(f.Alternate, f.NudgeDown, f.NudgeUp);
+            if (InDock(f.NudgeDown) || InDock(f.NudgeUp))
+                Seat(nudgeRow, Sc(nudges), dock);
+            else if (nudges.Live)
+            {
+                if (hud != null && nudgeRow != null && nudgeRow.parent != hud) hud.Add(nudgeRow);
+                Pin(nudgeRow, Sc(nudges));
+            }
+            else if (nudgeRow != null)
+                nudgeRow.style.display = DisplayStyle.None;
             widePinned = true;
         }
 
@@ -379,7 +482,7 @@ namespace Kestrel.Slice
         {
             if (row == null) return;
             row.style.display = StyleKeyword.Null;
-            row.style.height = StyleKeyword.Null;
+            Unpin(row);
             row.style.minHeight = StyleKeyword.Null;
             row.style.maxHeight = StyleKeyword.Null;
         }
@@ -853,7 +956,7 @@ namespace Kestrel.Slice
             help.Add(extra);
             quote = new Label { name = "ascent-quote", pickingMode = PickingMode.Ignore };
             quote.style.color = Color.white;
-            quote.style.whiteSpace = WhiteSpace.NoWrap;
+            quote.style.whiteSpace = WhiteSpace.Normal;
             quote.style.overflow = Overflow.Hidden;
             quote.style.unityFontStyleAndWeight = FontStyle.Bold;
             bar = new VisualElement { name = "ascent-timer", pickingMode = PickingMode.Ignore };
@@ -1087,8 +1190,14 @@ namespace Kestrel.Slice
                 float span = bottom - top;
                 if (span < 12f) return;
                 var paint = ctx.painter2D;
-                paint.strokeColor = new Color(1f, 1f, 1f, 0.28f);
-                paint.lineWidth = 2f;
+                paint.strokeColor = new Color(0.02f, 0.04f, 0.08f, 0.92f);
+                paint.lineWidth = 8f;
+                paint.BeginPath();
+                paint.MoveTo(new Vector2(x, bottom));
+                paint.LineTo(new Vector2(x, top));
+                paint.Stroke();
+                paint.strokeColor = new Color(0.93f, 0.97f, 1f, 0.94f);
+                paint.lineWidth = 3.5f;
                 paint.BeginPath();
                 paint.MoveTo(new Vector2(x, bottom));
                 paint.LineTo(new Vector2(x, top));

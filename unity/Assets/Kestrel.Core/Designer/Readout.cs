@@ -124,13 +124,13 @@ namespace Kestrel.Core.Designer
                 double? dvSl = null;
                 if (i == 0) dvSl = RocketEq.DeltaV(s.ispSL, m0, m0 - s.propMass);
                 double mEnd = m0 - s.propMass;
-                double mdot = s.ispVac > 0 ? s.thrustVac / (G0 * s.ispVac) : 0;
+                double mdot = s.ispVac > 0 && s.thrustVac > 0 ? s.thrustVac / (G0 * s.ispVac) : 0;
                 stages.Add(new StageReadout
                 {
                     label = s.label, role = s.role, designIndex = s.index, m0 = m0,
-                    twr = thrust / (m0 * G0), twrVac = s.thrustVac / (m0 * G0), deltaV = dv.perStage[i],
+                    twr = NonNegativeTwr(thrust, m0), twrVac = NonNegativeTwr(s.thrustVac, m0), deltaV = dv.perStage[i],
                     dryMass_kg = s.dryMass, propMass_kg = s.propMass, deltaVSL_mps = dvSl,
-                    twrEnd = mEnd > 0 ? thrust / (mEnd * G0) : 0,
+                    twrEnd = NonNegativeTwr(thrust, mEnd),
                     burnTime_s = mdot > 0 ? s.propMass / mdot : 0,
                     massRatio = mEnd > 0 ? m0 / mEnd : 0,
                     boilOff_kg = BoilOff(c, d, s),
@@ -144,7 +144,7 @@ namespace Kestrel.Core.Designer
             var readout = new QuickReadout
             {
                 mass = mass, stages = stages,
-                liftoffTWR = stages.Count > 0 ? stages[0].twr : 0,
+                liftoffTWR = stages.Count > 0 ? ShownTwr(stages[0].twr) : 0,
                 liftoffMass = stages.Count > 0 ? stages[0].m0 : mass.liftoffMass,
                 totalDeltaV = dv.total, required = req.required, targetAlt = req.targetAlt,
                 margin = (dv.total - req.required) / req.required,
@@ -179,12 +179,32 @@ namespace Kestrel.Core.Designer
             return readout;
         }
 
-        /// <summary>Spec example: "+42 m/s Δv · −0.03 TWR". The minus is U+2212.</summary>
+        /// <summary>Thrust over weight. Zero when the inputs cannot make a positive finite ratio.</summary>
+        public static double NonNegativeTwr(double thrust, double mass)
+        {
+            const double G0 = 9.80665;
+            if (!(thrust > 0) || !(mass > 0)) return 0;
+            if (double.IsNaN(thrust) || double.IsInfinity(thrust) || double.IsNaN(mass) || double.IsInfinity(mass)) return 0;
+            double twr = thrust / (mass * G0);
+            return ShownTwr(twr);
+        }
+
+        /// <summary>A TWR shown on the strip. Never negative and never NaN.</summary>
+        public static double ShownTwr(double twr)
+        {
+            if (double.IsNaN(twr) || double.IsInfinity(twr) || twr < 0) return 0;
+            return twr;
+        }
+
+        /// <summary>"+42 m/s dv · -0.03 TWR". ASCII hyphen and "dv" so both designer fonts can draw it. A zero change is blank.</summary>
         public static string DeltaChip(double deltaVMps, double deltaTwr)
         {
+            if (double.IsNaN(deltaVMps) || double.IsInfinity(deltaVMps)) deltaVMps = 0;
+            if (double.IsNaN(deltaTwr) || double.IsInfinity(deltaTwr)) deltaTwr = 0;
+            if (Math.Abs(Math.Round(deltaVMps)) < 0.5 && Math.Abs(deltaTwr) < 0.005) return "";
             var inv = CultureInfo.InvariantCulture;
-            string Sign(double x) => x < 0 ? "−" : "+";
-            return Sign(deltaVMps) + Math.Abs(Math.Round(deltaVMps)).ToString(inv) + " m/s Δv · "
+            string Sign(double x) => x < 0 ? "-" : "+";
+            return Sign(deltaVMps) + Math.Abs(Math.Round(deltaVMps)).ToString(inv) + " m/s dv · "
                 + Sign(deltaTwr) + Math.Abs(deltaTwr).ToString("0.00", inv) + " TWR";
         }
 

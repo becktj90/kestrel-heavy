@@ -24,6 +24,37 @@ namespace Kestrel.Slice
         float failureScale = 1f;
         float failureSputterAge = -1f;
         float failureHeat;
+        bool fuelOn;
+        FuelFamily fuelFamily;
+        Color fuelCore, fuelMid, fuelTail, fuelHead;
+        float fuelLength = 1f, fuelWidth = 1f, fuelAlpha = 1f;
+
+        /// <summary>Kerolox stays on the shipped gradient. Every other family repaints and rescales the plume.</summary>
+        bool FuelCustom => fuelOn && fuelFamily != FuelFamily.Kerolox;
+
+        /// <summary>Flame colour and shape for the propellant now burning. Kerolox matches the default plume.</summary>
+        public void SetFuel(PropellantFlame flame)
+        {
+            bool was = FuelCustom;
+            fuelOn = true;
+            fuelFamily = flame.Family;
+            fuelCore = FuelRgb(flame.CoreR, flame.CoreG, flame.CoreB);
+            fuelMid = FuelRgb(flame.MidR, flame.MidG, flame.MidB);
+            fuelTail = FuelRgb(flame.TailR, flame.TailG, flame.TailB);
+            fuelHead = FuelRgb(flame.HeadR, flame.HeadG, flame.HeadB);
+            if (flame.Soot > 0)
+                fuelTail = Color.Lerp(fuelTail, new Color(0.1f, 0.08f, 0.07f), Mathf.Clamp01((float)flame.Soot) * 0.5f);
+            fuelLength = flame.LengthScale > 0 ? (float)flame.LengthScale : 1f;
+            fuelWidth = flame.WidthScale > 0 ? (float)flame.WidthScale : 1f;
+            fuelAlpha = flame.AlphaScale > 0 ? (float)flame.AlphaScale : 1f;
+            if (was != FuelCustom)
+            {
+                bodyFadeIn = -1f;
+                coreFadeIn = -1f;
+            }
+        }
+
+        static Color FuelRgb(double r, double g, double b) => new Color((float)r, (float)g, (float)b, 1f);
 
         /// <summary>
         /// Failure picture. The sim has already cut thrust, so this replaces the throttle
@@ -377,8 +408,18 @@ namespace Kestrel.Slice
                     : Mathf.Clamp(failureScale, 0f, 1.2f);
             }
             float pa = Mathf.Max(0f, (float)ambientP) / PlumeShape.P0;
-            var s = PlumeShape.Compute(tf, pa, ExitDiameter, DesignPressure);
-            var L = PlumeShape.ComputeLayout(tf, pa, ExitDiameter, vehicleRadius, vehicleHeight, deckRadius);
+            PlumeShapeOut s;
+            PlumeShape.Layout L;
+            if (FuelCustom)
+            {
+                s = PlumeShape.Compute(tf, pa, ExitDiameter, DesignPressure, fuelLength, fuelWidth);
+                L = PlumeShape.ComputeLayout(tf, pa, ExitDiameter, vehicleRadius, vehicleHeight, deckRadius, fuelLength, fuelWidth);
+            }
+            else
+            {
+                s = PlumeShape.Compute(tf, pa, ExitDiameter, DesignPressure);
+                L = PlumeShape.ComputeLayout(tf, pa, ExitDiameter, vehicleRadius, vehicleHeight, deckRadius);
+            }
             float d = L.VisualD;
             if (!forced && tf > 0.01f)
             {
@@ -399,10 +440,15 @@ namespace Kestrel.Slice
             float cfi = PlumeShape.CoreFadeIn(L);   // #130-v9: flat-born, exact clear point
             if (Mathf.Abs(cfi - coreFadeIn) > 0.005f)
             {
-                coreFadeIn = cfi; var g = new Gradient();
-                g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(PlumeShape.Core, 0.35f), new GradientColorKey(PlumeShape.Mid, 1) },
-                          FadeKeys(cfi, PlumeShape.CoreAlphaMax, (0.3f, 0.75f)));
-                var col = core.colorOverLifetime; col.enabled = true; col.color = g;
+                coreFadeIn = cfi;
+                if (FuelCustom) PaintCoreGradient(cfi);
+                else
+                {
+                    var g = new Gradient();
+                    g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(PlumeShape.Core, 0.35f), new GradientColorKey(PlumeShape.Mid, 1) },
+                              FadeKeys(cfi, PlumeShape.CoreAlphaMax, (0.3f, 0.75f)));
+                    var col = core.colorOverLifetime; col.enabled = true; col.color = g;
+                }
             }
             var cm = core.main; cm.startLifetime = PlumeShape.CoreLife; cm.startSpeed = L.CoreLength / PlumeShape.CoreLife; cm.startSize = L.CoreSize;
             cm.gravityModifier = 0f; cm.simulationSpace = ParticleSystemSimulationSpace.Local;
@@ -418,7 +464,12 @@ namespace Kestrel.Slice
             // below the plane): identical silhouette, but particles exist above the deck and can deflect off it.
             body.transform.localPosition = Vector3.zero;
             float fadeIn = PlumeShape.BodyFadeIn(L);
-            if (Mathf.Abs(fadeIn - bodyFadeIn) > 0.005f) { bodyFadeIn = fadeIn; BodyGradient(body, fadeIn, PlumeShape.BodyFadeRamp(L)); }
+            if (Mathf.Abs(fadeIn - bodyFadeIn) > 0.005f)
+            {
+                bodyFadeIn = fadeIn;
+                if (FuelCustom) PaintBodyGradient(fadeIn, PlumeShape.BodyFadeRamp(L));
+                else BodyGradient(body, fadeIn, PlumeShape.BodyFadeRamp(L));
+            }
             EnsureFlat(L);
             var bm = body.main; bm.startLifetime = life; bm.startSpeed = L.Length / life;
             bm.startSize = new ParticleSystem.MinMaxCurve(L.BodyMin, L.BodyMax);
@@ -440,7 +491,8 @@ namespace Kestrel.Slice
             if (forced && body != null)
             {
                 var glow = new Color(1f, 0.22f, 0.05f);
-                var c = Color.Lerp(PlumeShape.BodyHead, glow, Mathf.Clamp01(failureHeat));
+                var head = FuelCustom ? fuelHead : PlumeShape.BodyHead;
+                var c = Color.Lerp(head, glow, Mathf.Clamp01(failureHeat));
                 if (failureSputterAge >= 0f && tf < 0.2f) c = Color.Lerp(c, new Color(0.22f, 0.16f, 0.1f), 0.7f);
                 var tint = body.main;
                 tint.startColor = c;
@@ -459,7 +511,8 @@ namespace Kestrel.Slice
             if (body != null)
             {
                 var glow = new Color(1f, 0.22f, 0.05f);
-                var c = Color.Lerp(PlumeShape.BodyHead, glow, heat);
+                var head = FuelCustom ? fuelHead : PlumeShape.BodyHead;
+                var c = Color.Lerp(head, glow, heat);
                 if (flash > 0f) c = Color.Lerp(c, Color.white, flash);
                 var m = body.main;
                 m.startColor = c;
@@ -469,6 +522,24 @@ namespace Kestrel.Slice
                 var m = core.main;
                 m.startColor = Color.Lerp(Color.white, new Color(1f, 0.97f, 0.85f), flash);
             }
+        }
+
+        void PaintCoreGradient(float fadeIn)
+        {
+            float a = Mathf.Clamp(fuelAlpha, 0.05f, 1f);
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(fuelCore, 0f), new GradientColorKey(Color.Lerp(fuelCore, fuelMid, 0.35f), 0.35f), new GradientColorKey(fuelMid, 1f) },
+                      FadeKeys(fadeIn, PlumeShape.CoreAlphaMax * a, (0.3f * a, 0.75f)));
+            var col = core.colorOverLifetime; col.enabled = true; col.color = g;
+        }
+
+        void PaintBodyGradient(float fadeIn, float ramp)
+        {
+            float a = Mathf.Clamp(fuelAlpha, 0.05f, 1f);
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(fuelHead, 0f), new GradientColorKey(fuelMid, 0.3f), new GradientColorKey(fuelTail, 1f) },
+                      FadeKeys(fadeIn, ramp, 0.9f * a, (PlumeShape.BodyMidAlpha * a, PlumeShape.BodyMidAt), (PlumeShape.BodyTailAlpha * a, PlumeShape.BodyTailAt)));
+            var col = body.colorOverLifetime; col.enabled = true; col.color = g;
         }
     }
 }

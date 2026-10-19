@@ -8,6 +8,7 @@ using Kestrel.Core.Designer.Stepper;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
 using Kestrel.Core.Vehicle;
+using Kestrel.Game.Shell;
 using UnityEngine;
 
 namespace Kestrel.Slice
@@ -19,6 +20,8 @@ namespace Kestrel.Slice
         public SeededWind Wind;
         public bool HasLatitude;
         public double Latitude;
+        /// <summary>Campaign hop this launch is flying. Null for a free build.</summary>
+        public CampaignMission Mission;
     }
 
     public static class AscentFlight
@@ -29,7 +32,9 @@ namespace Kestrel.Slice
             ulong seed = ReadSeed(json);
             bool gentle = FailureMonitor.GentleTier(design);
             bool auto = StepperProgress.Read(json).AutoAssistOn(engineer ? DesignerDepth.Engineer : DesignerDepth.Simple);
+            var mission = CurrentMission();
             double target = 200000;
+            if (MissionAim.IsApogeeHop(mission)) target = mission.GuidanceAltM;
             double qLim = 0;
             FailureMonitor monitor = null;
             MissionBriefing card = null;
@@ -38,12 +43,16 @@ namespace Kestrel.Slice
                 if (catalog != null && design != null)
                 {
                     target = Stack.RequiredDeltaV(catalog, design.payloadOrbit).targetAlt;
+                    // The orbit aim is the goal altitude. An apogee hop depletes at the
+                    // campaign floor, or the short load keeps burning and coasts past the band.
+                    if (MissionAim.IsApogeeHop(mission)) target = mission.GuidanceAltM;
                     qLim = FailureMonitor.StructuralQLimPa(catalog, design);
                     if (FailureMonitor.Engages(design))
                         monitor = FailureMonitor.Create(catalog, design, target, hash, seed);
                 }
             }
             catch (Exception e) { Debug.LogWarning("[Ascent] design check skipped: " + e.Message); }
+            if (MissionAim.IsApogeeHop(mission)) target = mission.GuidanceAltM;
             try
             {
                 string root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
@@ -61,6 +70,7 @@ namespace Kestrel.Slice
                 Director = director,
                 Monitor = monitor,
                 Wind = card != null ? card.Wind : null,
+                Mission = mission,
             };
             if (card != null && card.Site != null)
             {
@@ -68,6 +78,24 @@ namespace Kestrel.Slice
                 hook.Latitude = card.Site.LatitudeDeg;
             }
             return hook;
+        }
+
+        /// <summary>
+        /// The mission on the pad. Resources campaign when the player build has no checkout.
+        /// An apogee session with no row still carries the target so the hop can be graded.
+        /// </summary>
+        public static CampaignMission CurrentMission()
+        {
+            var ctx = GameSession.Current;
+            if (ctx == null || ctx.IsFree || string.IsNullOrEmpty(ctx.MissionId)) return null;
+            Campaign campaign = null;
+            try { campaign = ScreenStub.LoadCampaign(); }
+            catch (Exception) { campaign = null; }
+            var row = campaign != null ? campaign.ById(ctx.MissionId) : null;
+            if (row != null) return row;
+            if (ctx.Target != null && ctx.Target.Kind == "apogee" && ctx.Target.ApoKm > 0)
+                return new CampaignMission { Id = ctx.MissionId, TargetKind = "apogee", ApoKm = ctx.Target.ApoKm };
+            return null;
         }
 
         public static ulong ReadSeed(JsonObject json)

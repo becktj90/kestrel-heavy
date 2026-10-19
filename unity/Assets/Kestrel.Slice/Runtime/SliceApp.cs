@@ -34,6 +34,7 @@ namespace Kestrel.Slice
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; Kestrel.Pad.PadLights padLights; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; RecoveryShow recovery; GameObject rocketGO;
         Kestrel.Vehicle.FinCluster landingFins; Kestrel.Vehicle.StrutCluster landingLegs;
         FlightChrome chrome;
+        FlightViewMode flightView = FlightViewMode.Auto;
         AscentHud ascentHud; Design flyingDesign;
         BirdFlockView birds;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
@@ -44,13 +45,14 @@ namespace Kestrel.Slice
         LaunchSequence sequence; bool counting;
         readonly LiftoffHandoff handoff = new LiftoffHandoff();
         bool ascentErrorLogged;
-        double requiredMps, spareMps; double? maxQKpa; string orbitLabel = "";
+        double requiredMps, spareMps, hopGoalM; double? maxQKpa; string orbitLabel = "";
         VisualElement seqRow; Label hVerdict, hPulse, hCallout; Button skipCount;
 
         void Awake()
         {
             Application.targetFrameRate = 60;
-            Screen.orientation = ScreenOrientation.Portrait;
+            if (!WebLayoutMode.IsLandscape(Screen.width, Screen.height))
+                Screen.orientation = ScreenOrientation.Portrait;
             Debug.Log("[Count] boot");
             handoff.Transitioned += line => Debug.Log("[Count] " + line);
             bodyMat = Resources.Load<Material>("Materials/KH_Body");
@@ -344,7 +346,8 @@ namespace Kestrel.Slice
             issueChip.RegisterCallback<ClickEvent>(_ => { panel?.Show(HangarPanel.Tab.Data); if (designCollapsed) SetDesignCollapsed(false); });
             again.clicked += BackToDesign;
             chrome = gameObject.AddComponent<FlightChrome>();
-            chrome.Bind(hud, SetFlightPaused, RestartFlight, ExitToHome);
+            flightView = FlightCameraStore.Load();
+            chrome.Bind(hud, SetFlightPaused, RestartFlight, ExitToHome, OnFlightView, flightView);
             chrome.Layout(UnitsPerPoint());
             // Accessibility labels (VoiceOver wiring via UnityEngine.Accessibility is a listed gap; see RESULTS.md)
             launchButton.tooltip = "Roll out and launch the current design";
@@ -413,15 +416,27 @@ namespace Kestrel.Slice
             issueChip.style.paddingTop = 6f * upp; issueChip.style.paddingBottom = 6f * upp;
             // Thumb row: 44 pt tools and a 52 pt Launch.
             var designerToggle = ui.Q<Button>(DesignerV3Panel.ToggleName);
+            bool narrowThumb = ui.layout.width <= 420f || WebLayoutMode.UseWide(Screen.width, Screen.height);
             foreach (var b in new[] { undoButton, redoButton, explodeButton, designerToggle })
             {
                 if (b == null) continue;
-                b.style.height = 52f * upp; b.style.minWidth = 56f * upp; b.style.fontSize = 15f * upp;
+                b.style.height = narrowThumb ? StyleKeyword.Auto : 52f * upp;
+                b.style.minHeight = 44f * upp;
+                b.style.minWidth = (narrowThumb ? 44f : 56f) * upp;
+                b.style.fontSize = (narrowThumb ? 13f : 15f) * upp;
+                b.style.flexShrink = 1;
+                b.style.whiteSpace = WhiteSpace.Normal;
+                b.style.overflow = Overflow.Visible;
                 b.style.marginRight = 6f * upp;
                 float r = 12f * upp;
                 b.style.borderTopLeftRadius = r; b.style.borderTopRightRadius = r; b.style.borderBottomLeftRadius = r; b.style.borderBottomRightRadius = r;
             }
-            launchButton.style.height = 52f * upp; launchButton.style.fontSize = 20f * upp;
+            launchButton.style.height = narrowThumb ? StyleKeyword.Auto : 52f * upp;
+            launchButton.style.minHeight = 44f * upp;
+            launchButton.style.fontSize = (narrowThumb ? 16f : 20f) * upp;
+            launchButton.style.flexShrink = 1;
+            launchButton.style.whiteSpace = WhiteSpace.Normal;
+            launchButton.style.overflow = Overflow.Visible;
             launchReason.style.fontSize = 14f * upp;
 
             bool side = HangarPanelLayout.SidePanel(Screen.width, Screen.height);
@@ -443,11 +458,24 @@ namespace Kestrel.Slice
                 designPanel.style.width = StyleKeyword.Null;
                 designPanel.style.top = StyleKeyword.Null;
                 designPanel.style.paddingBottom = designCollapsed ? bottom : Mathf.Max(8f * upp, bottom + 8f * upp);
+                float contentCap = DesignerV3Layout.ContentMaxPt(hPt, safeBottomPt, true) * upp;
+                float minPx = DesignerV3Layout.MinContentPt * upp;
+                if (contentCap < minPx) contentCap = -1f;
                 panel?.SetContentMax(HangarPanelLayout.ContentMaxPt(hPt, safeBottomPt) * upp);
-                designer?.SetContentMax(DesignerV3Layout.ContentMaxPt(hPt, safeBottomPt, true) * upp);
-                designBody.style.flexGrow = 0;
-                if (designer != null) designer.Root.style.flexGrow = 0;
+                designer?.SetContentMax(contentCap);
+                designBody.style.flexGrow = 1;
+                designBody.style.minHeight = 0;
+                if (designer != null)
+                {
+                    designer.Root.style.flexGrow = 1;
+                    designer.Root.style.flexShrink = 1;
+                    designer.Root.style.minHeight = minPx;
+                }
             }
+            var thumb = ui.Q("launch-row");
+            float thumbW = thumb != null && thumb.resolvedStyle.width > 8f ? thumb.resolvedStyle.width : designPanel.resolvedStyle.width;
+            if (thumbW < 8f) thumbW = ui.layout.width;
+            DesignerV3Layout.FitThumbRow(thumb, narrowThumb ? Mathf.Min(thumbW, 420f) : thumbW, upp);
             ApplyWebDesignFrame();
         }
 
@@ -515,17 +543,27 @@ namespace Kestrel.Slice
             if (session == null || issueChip == null) return;
             bool engineer = panel != null ? panel.Engineer : PlayerPrefs.GetInt(HangarPanel.EngineerPref, 0) != 0;
             var adv = session.Advisories;
-            int blocks = 0, warns = 0;
-            foreach (var a in adv) { if (a.severity == AdvisorySeverity.Block) blocks++; else if (a.severity == AdvisorySeverity.Warn) warns++; }
-            string chip = DesignerValidation.Chip(blocks, warns, engineer ? "engineer" : "standard");
+            System.Collections.Generic.IList<FlightRisk> risks = null;
+            try { risks = Readout.Quick(session.catalog, session.Design).risks; }
+            catch (System.Exception) { risks = null; }
+            var notices = DesignerNotices.Collect(adv, risks);
+            int blocks = 0;
+            foreach (var a in adv) if (a.severity == AdvisorySeverity.Block) blocks++;
+            string chip = DesignerNotices.Chip(notices);
             issueChip.text = chip;
             issueChip.EnableInClassList("hidden", chip.Length == 0 || designPanel.ClassListContains("hidden"));
             issueChip.EnableInClassList("warn-only", blocks == 0);
-            issueChip.tooltip = chip.Length == 0 ? "" : chip + ". " + adv[0].kid + " Tap to see them all.";
+            string first = notices.Count > 0 ? notices[0].text : "";
+            issueChip.tooltip = chip.Length == 0 ? "" : chip + ". " + first + " Tap to see them all.";
             bool ok = session.LaunchEnabled;
             launchButton.SetEnabled(ok);
             var firstBlock = adv.Find(a => a.severity == AdvisorySeverity.Block);
-            string reason = ok ? "" : "Fix first: " + (firstBlock != null ? (engineer ? firstBlock.engineer : firstBlock.kid) : DesignerValidation.KidFallback);
+            string reasonBody = firstBlock == null
+                ? DesignerValidation.KidFallback
+                : engineer
+                    ? ShownText.Screen(string.IsNullOrEmpty(firstBlock.engineer) ? firstBlock.kid : firstBlock.engineer)
+                    : ShownText.Plain(firstBlock.code, firstBlock.kid, firstBlock.engineer);
+            string reason = ok ? "" : "Fix first: " + reasonBody;
             launchReason.text = reason;
             launchReason.EnableInClassList("hidden", ok);
             launchButton.tooltip = ok ? "Roll out and launch the current design" : "Launch unavailable. " + reason;
@@ -565,7 +603,11 @@ namespace Kestrel.Slice
             var mr = rocketGO.AddComponent<MeshRenderer>();
             if (flightMat != null) Destroy(flightMat);
             flightMat = bodyMat != null ? new Material(bodyMat) : null;
-            if (flightMat != null) { flightMat.color = HangarRocketView.Hex(design.liveryPrimary, Color.white); mr.sharedMaterial = flightMat; }
+            if (flightMat != null)
+            {
+                FlightSolidBody.Apply(flightMat, HangarRocketView.Hex(design.liveryPrimary, Color.white));
+                mr.sharedMaterial = flightMat;
+            }
             if (juice != null) juice.BindBody(flightMat);
             mr.forceRenderingOff = true;
             rocketView.Build(parts, rocketGO.transform, bodyMat);
@@ -580,6 +622,11 @@ namespace Kestrel.Slice
             AddLivery(r);
             AddFairing(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
+            if (design.stages != null && design.stages.Count > 0)
+            {
+                string fuelId = design.strapOns != null && design.StrapOnCount > 0 ? design.strapOns.propellant : design.stages[0].propellant;
+                flight.Plume.SetFuel(PropellantFlight.Flame(fuelId));
+            }
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
@@ -668,13 +715,34 @@ namespace Kestrel.Slice
             SetAssembledDrawn(!on);
         }
 
-        /// <summary>Flight draws the combined mesh (FailureHost can split it); the Hangar draws the parts.
-        /// BackToDesign rebuilds the rocket, which puts the parts back.</summary>
-        void ShowFlightMesh(bool on)
+        /// <summary>
+        /// The painted parts and tank shells are the solid body in the Hangar and in flight.
+        /// The combined lathe stays hidden until a failure cut needs it (FailureHost splits that mesh).
+        /// </summary>
+        void ShowFlightPicture() => ShowFlightPicture(failureShow != null && failureShow.Showing);
+
+        void ShowFlightPicture(bool cut)
         {
-            rocketView.SetVisible(!on);
+            if (rocketView != null) rocketView.SetVisible(!cut);
             var mr = rocketGO != null ? rocketGO.GetComponent<MeshRenderer>() : null;
-            if (mr != null) mr.forceRenderingOff = !on;
+            if (mr != null) mr.forceRenderingOff = !cut;
+        }
+
+        void OnFlightView(FlightViewMode mode)
+        {
+            flightView = mode;
+            FlightCameraStore.Save(mode);
+        }
+
+        /// <summary>Auto keeps the altitude chase. Pad is an offset from the anchored ground, so a floating-origin rebase does not leave it behind.</summary>
+        Vector3 DesiredFlightOffset(Vector3 up, Vector3 vehiclePos)
+        {
+            var frame = FlightView.Of(flightView, rocketHeight);
+            if (frame.UseChase)
+                return ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude);
+            Vector3 local = up * (float)frame.Y + new Vector3((float)frame.X, 0f, (float)frame.Z);
+            if (frame.OnVehicle || ground == null) return local;
+            return ground.position + local - vehiclePos;
         }
 
         void SetAssembledDrawn(bool drawn)
@@ -1016,13 +1084,18 @@ namespace Kestrel.Slice
             if (explodeButton != null) explodeButton.text = "Parts";
             rocketView.SetSelected(session.Selected, false);
             rocketView.SetIssues(null);
-            ShowFlightMesh(true);
+            ShowFlightPicture(false);
             camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
-            hud.RemoveFromClassList("hidden"); cam.ResetProjectionMatrix(); hMsg.text = "";
+            hud.RemoveFromClassList("hidden"); hud.BringToFront();
+            WebDesignChrome.Cover(ui);
+            cam.ResetProjectionMatrix(); hMsg.text = "";
             var sheet = session.Sheet;
             requiredMps = sheet != null ? sheet.requiredDeltaV_mps : 0;
             spareMps = sheet != null ? sheet.totalDeltaV_mps - sheet.requiredDeltaV_mps : 0;
+            var hop = AscentFlight.CurrentMission();
+            hopGoalM = hop != null && hop.TargetKind == "apogee" ? hop.ApoKm * 1000.0 : 0;
+            if (hopGoalM > 0) requiredMps = hop.RequiredDeltaV();
             maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
             orbitLabel = sheet != null ? sheet.orbitLabel : "";
             handoff.Enter(OpenSequence());
@@ -1038,6 +1111,7 @@ namespace Kestrel.Slice
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
             if (renderer != null) renderer.ResetSequence();
+            if (counting) HideCountGrid();
             if (!counting) handoff.Tick(0, TryAscend, LiveBlockers());
             else if (sequence != null) RefreshWebcast(sequence.Time, false);
             NoteAscentError();
@@ -1133,30 +1207,51 @@ namespace Kestrel.Slice
         void HandleReportedFix(FixField link)
         {
             if (link == null) return;
-            if (designPanel != null) designPanel.RemoveFromClassList("hidden");
-            if (homeButton != null) homeButton.RemoveFromClassList("hidden");
-            if (hud != null) hud.AddToClassList("hidden");
+            ReturnToPad();
+            ShowDesigner(true);
             designer?.ApplyReportedFix(link.Kind, link.Tab);
+            if (rocketDirty) BuildRocket();
+            if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
+            ApplyWebDesignFrame();
         }
 
         void BackToDesign()
+        {
+            ReturnToPad();
+            ApplyValidation();
+        }
+
+        /// <summary>
+        /// Leave the chase camera and put the rocket back on the pad.
+        /// Fix it used to unhide the sheet while the camera was still looking at empty sky.
+        /// </summary>
+        void ReturnToPad()
         {
             ReportCardChrome.Dismiss(ui);
             SetFlightPaused(false);
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
             handoff.Reset();
             ascentErrorLogged = false;
-            counting = false; sequence = null; flight.enabled = false; cam.ResetProjectionMatrix();
+            counting = false; sequence = null;
+            if (flight != null) flight.enabled = false;
+            if (cam != null) cam.ResetProjectionMatrix();
             recovery?.Stop();
             RecoveryLog.Clear();
             if (juice != null) juice.Reset();
-            cam.fieldOfView = FlightJuice.BaseFov;
+            if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
             ascentHud?.Close();
-            hud.AddToClassList("hidden"); designPanel.RemoveFromClassList("hidden"); homeButton.RemoveFromClassList("hidden"); again.AddToClassList("hidden");
-            if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
-            if (session != null) rocketView.SetSelected(session.Selected, true);
+            if (hud != null) hud.AddToClassList("hidden");
+            if (designPanel != null) designPanel.RemoveFromClassList("hidden");
+            if (homeButton != null) homeButton.RemoveFromClassList("hidden");
+            if (again != null) again.AddToClassList("hidden");
+            var grid = hud != null ? hud.Q("hud-grid") : null;
+            if (grid != null) grid.style.display = StyleKeyword.Null;
+            ShowFlightPicture(false);
+            if (hangarCam != null) hangarCam.enabled = true;
+            if (session != null && rocketView != null) rocketView.SetSelected(session.Selected, true);
             BuildRocket();
-            ApplyValidation();
+            if (hangarCam != null) hangarCam.Reframe();
+            ApplyWebDesignFrame();
         }
 
         /// <summary>Hangar per-frame work: a rate-limited rocket rebuild while a stepper is held.</summary>
@@ -1211,7 +1306,7 @@ namespace Kestrel.Slice
             bool reduced = hangarCam != null && hangarCam.ReduceMotion;
             if (juice != null) juice.Present(flight, rocketHeight, qLim, margin, reduced, Time.deltaTime);
             var v = vehicleRoot.position; var up = vehicleRoot.up;
-            camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude), 4f, Time.deltaTime);
+            camOffset = ChaseCamera.StepOffset(camOffset, DesiredFlightOffset(up, v), 4f, Time.deltaTime);
             // Manual orbit/zoom rides on the chase offset. Follow leaves the chase pose unchanged.
             // Lead is this frame only. Folding it into camOffset would be smoothed back in and grow about 15×.
             var framed = chrome != null ? chrome.Frame(camOffset) : camOffset;
@@ -1223,7 +1318,11 @@ namespace Kestrel.Slice
             Vector3 lead = juice != null ? juice.Lead : Vector3.zero;
             cam.transform.position = PadGround.ClampAboveGround(v + framed + lead, ground.position.y);
             var cp = cam.transform.position;
-            cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, fov, (float)flight.Altitude, cp.y - ground.position.y);
+            Vector3 look = v + up * rocketHeight * 0.5f;
+            if (flightView == FlightViewMode.Auto)
+                cam.transform.rotation = ChaseCamera.Aim(cp, look, fov, (float)flight.Altitude, cp.y - ground.position.y);
+            else
+                cam.transform.LookAt(look, Vector3.up);
             if (juice != null)
                 cam.transform.position = PadGround.ClampAboveGround(
                     cam.transform.position + cam.transform.right * juice.Shake.x + cam.transform.up * juice.Shake.y,
@@ -1233,6 +1332,7 @@ namespace Kestrel.Slice
             recovery?.Present(Time.unscaledDeltaTime);
             if (recovery != null && ground != null) recovery.Aim(cam, ground.position.y);
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
+            ShowFlightPicture();
             RefreshWebcast(flight.SimTime, true);
             ascentHud?.Present(flight);
             }
@@ -1277,7 +1377,14 @@ namespace Kestrel.Slice
             if (renderer != null) renderer.AdvanceTo(TimelineClock.RealSeconds(sequence.Time, sequence.Mode));
             if (hT != null) hT.text = sequence.Clock;
             if (hStage != null) hStage.text = "COUNT";
+            HideCountGrid();
             RefreshWebcast(sequence.Time, false);
+        }
+
+        void HideCountGrid()
+        {
+            var grid = hud != null ? hud.Q("hud-grid") : null;
+            if (grid != null) grid.style.display = DisplayStyle.None;
         }
 
         /// <summary>Live device gates. The handoff reads them and does not wait.</summary>
@@ -1311,7 +1418,7 @@ namespace Kestrel.Slice
             double q = flying && flight != null ? flight.DynPressure : 0;
             var pulse = flying && flight != null && flight.Lost
                 ? WebcastBoard.Lost(flight.Result.failure.kind, alt)
-                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel);
+                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
             // Trevor: the raw event-id chips (tl.*.short) do not belong on the flight screen.
@@ -1321,8 +1428,16 @@ namespace Kestrel.Slice
                 seqRow.style.display = DisplayStyle.None;
             }
             if (hCallout == null) return;
-            hCallout.text = "Tap an event.";
-            if (juice != null && !string.IsNullOrEmpty(juice.Line)) hCallout.text = juice.Line;
+            string line = "";
+            if (juice != null && !string.IsNullOrEmpty(juice.Line)) line = juice.Line;
+            else if (!flying && sequence != null)
+            {
+                if (!string.IsNullOrEmpty(sequence.Label) && !Kestrel.Core.PlayerText.Leak(sequence.Label))
+                    line = sequence.Label;
+                else if (!string.IsNullOrEmpty(sequence.Banner) && !Kestrel.Core.PlayerText.Leak(sequence.Banner))
+                    line = sequence.Banner;
+            }
+            hCallout.text = line;
         }
 
         async void OnMeco(FlightDriver f)

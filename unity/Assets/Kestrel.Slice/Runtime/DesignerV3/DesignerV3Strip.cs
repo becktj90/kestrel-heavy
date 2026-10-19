@@ -42,8 +42,9 @@ namespace Kestrel.Slice.DesignerV3
             list.Add(new StripCell("dv", engineer ? "Δv" : "Speed", dvVal, dvState,
                 "Margin " + marginPct.ToString("0.0", Inv) + "% vs " + (r.orbitLabel ?? "target")));
 
-            CellState twrState = r.liftoffTWR >= 1.2 ? CellState.Good : r.liftoffTWR >= 1.05 ? CellState.Warn : CellState.Bad;
-            list.Add(new StripCell("twr", engineer ? "TWR" : "Push", r.liftoffTWR.ToString("0.00", Inv), twrState));
+            double twr = Readout.ShownTwr(r.liftoffTWR);
+            CellState twrState = twr >= 1.2 ? CellState.Good : twr >= 1.05 ? CellState.Warn : CellState.Bad;
+            list.Add(new StripCell("twr", engineer ? "TWR" : "Push", twr.ToString("0.00", Inv), twrState));
 
             string qVal;
             CellState qState = CellState.Neutral;
@@ -65,7 +66,8 @@ namespace Kestrel.Slice.DesignerV3
             CellState costState = CellState.Neutral;
             if (r.budget.HasValue && r.budget.Value > 0)
             {
-                costVal += " / " + CompactMoney(r.budget.Value);
+                string both = costVal + " / " + CompactMoney(r.budget.Value);
+                costVal = both.Length > 16 ? costVal : both;
                 costHint += " / " + r.budget.Value.ToString("N0", Inv);
                 costState = r.cost <= r.budget.Value ? CellState.Good : CellState.Bad;
             }
@@ -82,6 +84,19 @@ namespace Kestrel.Slice.DesignerV3
             if (a >= 1e9) body = (v / 1e9).ToString("0.00", Inv) + "B";
             else if (a >= 1e6) body = (v / 1e6).ToString("0.00", Inv) + "M";
             else if (a >= 1e3) body = (v / 1e3).ToString("0.00", Inv) + "k";
+            else body = v.ToString("N0", Inv);
+            return "$" + body;
+        }
+
+        /// <summary>One token, no cents, so a narrow cell does not wrap "$516.30M" into "$516.3" and "0M".</summary>
+        public static string StripMoney(long amount)
+        {
+            double v = amount;
+            double a = Math.Abs(v);
+            string body;
+            if (a >= 1e9) body = (v / 1e9).ToString("0", Inv) + "B";
+            else if (a >= 1e6) body = (v / 1e6).ToString("0", Inv) + "M";
+            else if (a >= 1e3) body = (v / 1e3).ToString("0", Inv) + "k";
             else body = v.ToString("N0", Inv);
             return "$" + body;
         }

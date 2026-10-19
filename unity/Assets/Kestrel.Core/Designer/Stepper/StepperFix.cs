@@ -19,6 +19,8 @@ namespace Kestrel.Core.Designer.Stepper
         public string Instruction;
         public string Field;
         public bool Cleared;
+        public string BeforeNumbers;
+        public string AfterNumbers;
     }
 
     /// <summary>Max-Q throttle as a percent. Saves may store 95 or the older 0.95 fraction.</summary>
@@ -85,6 +87,7 @@ namespace Kestrel.Core.Designer.Stepper
             public readonly HashSet<string> Codes = new HashSet<string>();
             readonly HashSet<string> Blocks = new HashSet<string>();
 
+            public int Items => Codes.Count;
             public bool Has(string code) => code != null && Codes.Contains(code);
             public bool Air => Has("maxq-high") || Has("structural-maxq") || Has("risk-structural-maxq");
             public bool Tumble => Has("tumble") || Has("risk-tumble");
@@ -126,9 +129,11 @@ namespace Kestrel.Core.Designer.Stepper
 
             var work = JsonMut.CloneObject(design);
             var now = Look(catalog, work);
+            result.BeforeNumbers = NumberLine(catalog, work, now);
             if (now.Score <= 0)
             {
                 result.Cleared = true;
+                result.AfterNumbers = result.BeforeNumbers;
                 result.Instruction = "Nothing to change.";
                 return result;
             }
@@ -188,9 +193,11 @@ namespace Kestrel.Core.Designer.Stepper
             if (now.Score <= 0)
                 result.Instruction = string.IsNullOrEmpty(summary) ? "Nothing to change." : summary;
             else
-                result.Instruction = Explain(catalog, design, now, summary, tradeoff);
+                result.Instruction = Explain(catalog, changed ? design : work, now, summary, tradeoff);
             result.Edit = changed ? NotesEdit(notes, summary) : Edit.None;
             if (!changed) result.Cleared = false;
+            result.AfterNumbers = NumberLine(catalog, changed ? design : work, now);
+            if (!changed && now.Score <= 0) result.Instruction = "Nothing to change.";
             return result;
         }
 
@@ -283,6 +290,7 @@ namespace Kestrel.Core.Designer.Stepper
                 || (!double.IsNaN(now.Margin) && now.Margin < DesignerLimits.Active.minMargin))
                 Add(6, false, now.Measured, false, false, d => MoreFuel(catalog, d, now));
 
+            Add(7, false, true, false, false, d => Bundle(catalog, d, now));
             Add(9, false, now.Measured, false, false, d => Fallback(catalog, d, now));
             return list;
         }
@@ -880,6 +888,64 @@ namespace Kestrel.Core.Designer.Stepper
             return Edit.None;
         }
 
+        /// <summary>
+        /// One trial that applies every remaining fix: fins, strength, Max-Q throttle, fairing, engines, and fuel.
+        /// Settle resims the trial, so a copied air load cannot keep a stale warning.
+        /// </summary>
+        static Edit Bundle(Catalog catalog, JsonObject design, Picture now)
+        {
+            var notes = new List<Edit>();
+            void Take(Edit edit)
+            {
+                if (edit.changed) notes.Add(edit);
+            }
+
+            if (now.Has("bad-mixture")) Take(ZeroMixture(design));
+            if (now.Has("unstable") || now.Has("tumble") || now.Has("risk-tumble"))
+                Take(Steady(catalog, design, false));
+            if (now.Has("overstable")) Take(Steady(catalog, design, true));
+            if (now.Air)
+            {
+                Take(RaiseStrength(design, now.MaxQ ?? 0, now.QLim));
+                for (int i = 0; i < 8; i++)
+                {
+                    var eased = EaseThrottle(design);
+                    if (!eased.changed) break;
+                    Take(eased);
+                }
+            }
+            if (now.Has("payload-doesnt-fit") || now.Has("fairing-narrow"))
+                Take(GrowFairing(catalog, design));
+            if (now.Has("twr-low") || now.Has("twr-marginal") || now.Has("zero-engines") || now.Has("weak-upper") || now.Has("engine-out"))
+                Take(MorePush(catalog, design, now));
+            if (now.Has("dv-margin") || now.Has("prop-depletion") || now.Has("weak-upper-dv") || now.Has("risk-prop-depletion")
+                || (!double.IsNaN(now.Margin) && now.Margin < DesignerLimits.Active.minMargin))
+                Take(MoreFuel(catalog, design, now));
+            if (now.Has("payload-g") || now.Has("overg") || now.Has("risk-overg"))
+                Take(LowerG(catalog, design));
+            if (notes.Count == 0) return Edit.None;
+            return NotesEdit(notes, Summarize(notes));
+        }
+
+        static string NumberLine(Catalog catalog, JsonObject design, Picture picture)
+        {
+            double dv = 0, twr = 0;
+            try
+            {
+                var readout = Readout.Quick(catalog, design);
+                if (readout != null)
+                {
+                    dv = readout.totalDeltaV;
+                    twr = Readout.ShownTwr(readout.liftoffTWR);
+                }
+            }
+            catch (Exception) { }
+            if (double.IsNaN(dv) || double.IsInfinity(dv)) dv = 0;
+            int n = picture != null ? picture.Items : 0;
+            string line = Math.Round(dv).ToString("0", Inv) + " m/s dv, push " + twr.ToString("0.00", Inv) + ", " + n.ToString(Inv) + " to fix";
+            return ShownText.Screen(line);
+        }
+
         static string Summarize(List<Edit> notes)
         {
             var order = new List<string>();
@@ -903,7 +969,7 @@ namespace Kestrel.Core.Designer.Stepper
                 string label = order[i];
                 string a = from[label];
                 to.TryGetValue(label, out string b);
-                if (!string.IsNullOrEmpty(a) && !string.IsNullOrEmpty(b)) parts.Add(label + " " + a + " → " + b);
+                if (!string.IsNullOrEmpty(a) && !string.IsNullOrEmpty(b)) parts.Add(label + " " + a + " to " + b);
                 else parts.Add(label);
             }
             return string.Join(". ", parts) + ".";
@@ -1055,8 +1121,9 @@ namespace Kestrel.Core.Designer.Stepper
         public static string Kid(StepCheck check)
         {
             if (check == null) return "";
-            string kid = Clean(check.Kid);
-            if (!string.IsNullOrEmpty(kid)) return kid;
+            if (check.Gate == StepGate.Pass && string.IsNullOrEmpty(check.Code)) return "Ready.";
+            string plain = ShownText.Plain(check.Code, check.Kid, check.Engineer);
+            if (!string.IsNullOrEmpty(plain)) return ShownText.Screen(plain);
             return check.Gate == StepGate.Pass ? "Ready." : "Check this step.";
         }
 

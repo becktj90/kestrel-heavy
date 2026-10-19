@@ -50,6 +50,13 @@ namespace Kestrel.Game.MissionSelect
             column.style.width = Length.Percent(100);
             column.style.maxWidth = 600;
             column.style.alignSelf = Align.Center;
+            if (WebLayoutMode.WantExitReserve)
+            {
+                // The page FULL button sits on the canvas corner, outside the safe rect.
+                WebLayoutMode.ExitInset(true, out float exitTop, out _);
+                column.style.paddingTop = exitTop + 12f;
+                column.style.paddingRight = 16f;
+            }
             root.Add(column);
 
             column.Add(Line("briefing-title", board.Title, "briefing-title", shrink: true));

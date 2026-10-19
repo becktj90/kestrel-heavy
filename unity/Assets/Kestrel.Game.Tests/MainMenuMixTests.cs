@@ -59,7 +59,7 @@ namespace Kestrel.Game.Tests
             Assert.That(root.Q<Button>("home-missions").enabledSelf);
             Assert.That(root.Q("home-hangar"), Is.Null);
             var codex = root.Q<Button>("home-codex");
-            Assert.That(codex.enabledSelf, Is.False);
+            Assert.That(codex.enabledSelf, Is.True);
             Assert.That(codex.Q<Label>("soon"), Is.Null, "Codex stays quiet until the feature is real");
             Assert.That(codex.tooltip, Does.Contain("Coming soon"));
             Assert.That(codex.Q(className: "kh-mm-tile-caption").parent, Is.SameAs(codex));

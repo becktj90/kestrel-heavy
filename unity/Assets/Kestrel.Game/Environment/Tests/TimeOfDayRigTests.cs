@@ -1,4 +1,5 @@
 using Kestrel.Core.Sky;
+using Kestrel.Core.Flight;
 using Kestrel.Kit;
 using NUnit.Framework;
 
@@ -26,8 +27,8 @@ namespace Kestrel.Game.Environment.Tests
         {
             try
             {
-                TimeOfDayRig.SetMission("KH-7"); var a = TimeOfDayRig.Current.Tod; var sa = TimeOfDayRig.Current.SunElevationDeg;
-                TimeOfDayRig.SetMission("KH-7"); Assert.That(TimeOfDayRig.Current.Tod, Is.EqualTo(a)); Assert.That(TimeOfDayRig.Current.SunElevationDeg, Is.EqualTo(sa));
+                TimeOfDayRig.SetMission("KH-7", 42UL); var a = TimeOfDayRig.Current.Tod; var sa = TimeOfDayRig.Current.SunElevationDeg;
+                TimeOfDayRig.SetMission("KH-7", 42UL); Assert.That(TimeOfDayRig.Current.Tod, Is.EqualTo(a)); Assert.That(TimeOfDayRig.Current.SunElevationDeg, Is.EqualTo(sa));
                 TimeOfDayRig.Force(LaunchTimeOfDay.Night, 2); Assert.That(TimeOfDayRig.Current.Tod, Is.EqualTo(LaunchTimeOfDay.Night));
                 TimeOfDayRig.ClearForce(); Assert.That(TimeOfDayRig.Current.Tod, Is.EqualTo(a));
             }

@@ -143,12 +143,19 @@ namespace Kestrel.Core.Flight
             float homeW = Math.Min(HomeW, Math.Max(44f, width * 0.28f));
             f.Home = Box(left, top + (HeaderH - ButtonH) * 0.5f, homeW, ButtonH);
             float titleX = f.Home.Right + Gap;
-            float titleR = Math.Min(rightLimit, f.Thrum.X - Gap);
+            bool beside = f.Thrum.Y < top + HeaderH && f.Thrum.X < rightLimit;
+            float titleR = beside ? Math.Min(rightLimit, f.Thrum.X - Gap) : rightLimit;
+            if (beside && titleR - titleX < 120f)
+            {
+                // The act name needs the row. Drop the guide slot under the header.
+                f.Thrum = Box(f.Thrum.X, top + HeaderH + 4f, f.Thrum.W, f.Thrum.H);
+                titleR = rightLimit;
+            }
             if (titleR < titleX + 48f) titleR = Math.Min(rightLimit, titleX + 48f);
             float titleW = Math.Max(48f, titleR - titleX);
-            // 16 pt kicker plus a 16 pt act name. Both stay at or above 14 pt.
-            f.Title = Box(titleX, top + 2f, titleW, 36f);
-            f.Progress = Box(titleX, f.Title.Bottom + 4f, titleW, 8f);
+            // Kicker plus two lines for the act name ("Act I · First Light" was clipping on one line).
+            f.Title = Box(titleX, top + 2f, titleW, 48f);
+            f.Progress = Box(titleX, f.Title.Bottom + 2f, titleW, 8f);
             f.Header = Box(left, top, width, HeaderH);
         }
 
@@ -178,30 +185,51 @@ namespace Kestrel.Core.Flight
                 footTop = f.Primary.Y;
             }
 
-            float factsTop = footTop - Gap - FactsH;
+            // Buttons own the bottom. Facts sit above them and never grow into that row,
+            // even when the portrait is short. The hero (art, name, goal) takes what is left.
+            float stackTop = Math.Min(f.Primary.Y, Math.Min(f.Contracts.Y, f.Sandbox.Y));
+            float factsH = FactsH;
+            float factsTop = stackTop - Gap - factsH;
+            const float minHero = 72f;
+            if (factsTop < y + minHero)
+            {
+                factsTop = y + minHero;
+                factsH = stackTop - Gap - factsTop;
+                if (factsH < 20f)
+                {
+                    factsH = Math.Min(FactsH, Math.Max(20f, stackTop - Gap - y - 56f));
+                    factsTop = stackTop - Gap - factsH;
+                    if (factsTop < y) { factsTop = y; factsH = Math.Max(1f, stackTop - Gap - factsTop); }
+                }
+            }
+            if (factsTop + factsH > stackTop - Gap + 0.01f)
+                factsH = Math.Max(1f, stackTop - Gap - factsTop);
+            f.Facts = Box(x, factsTop, w, factsH);
+
             float heroBottom = factsTop - Gap;
-            float heroH = Math.Max(48f, heroBottom - y);
-            float art = Math.Min(104f, Math.Min(heroH - 2f, w * 0.38f));
-            if (art < ArtMin) art = Math.Min(ArtMin, Math.Max(40f, heroH - 2f));
-            if (art > w - 80f) art = Math.Max(40f, w * 0.34f);
+            float heroH = Math.Max(1f, heroBottom - y);
+            float art = Math.Min(104f, Math.Min(heroH, w * 0.38f));
+            if (art < ArtMin) art = Math.Min(ArtMin, Math.Max(36f, heroH));
+            if (art > w - 80f) art = Math.Max(36f, w * 0.34f);
+            if (art > heroH) art = heroH;
             f.Art = Box(x, y, art, art);
 
             float tx = f.Art.Right + Gap;
             float tw = Math.Max(40f, right - tx);
-            float nameH = Math.Min(NameH, Math.Max(18f, art * 0.42f));
+            float nameH = Math.Min(NameH, Math.Max(18f, Math.Min(art * 0.42f, heroH * 0.45f)));
+            if (y + nameH > heroBottom) nameH = Math.Max(1f, heroBottom - y);
             f.Name = Box(tx, y, tw, nameH);
             float briefTop = f.Name.Bottom + 4f;
-            float briefRoom = f.Art.Bottom - briefTop;
-            if (briefRoom < 16f)
+            float briefRoom = heroBottom - briefTop;
+            if (briefRoom < 16f && f.Art.Bottom + 4f < heroBottom)
             {
                 briefTop = f.Art.Bottom + 4f;
-                briefRoom = Math.Max(16f, heroBottom - briefTop);
+                briefRoom = heroBottom - briefTop;
             }
-            f.Brief = Box(tx, briefTop, tw, Math.Min(BriefH, Math.Max(16f, briefRoom)));
-            float under = Math.Max(f.Art.Bottom, f.Brief.Bottom) + 4f;
-            if (under > factsTop) factsTop = under;
-            float factsH = Math.Max(14f, Math.Min(FactsH, footTop - Gap - factsTop));
-            f.Facts = Box(x, factsTop, w, factsH);
+            if (briefTop < y) briefTop = y;
+            float briefH = Math.Min(Math.Max(BriefH, 32f), Math.Max(1f, heroBottom - briefTop));
+            if (briefTop + briefH > heroBottom) briefH = Math.Max(1f, heroBottom - briefTop);
+            f.Brief = Box(tx, briefTop, tw, briefH);
         }
 
         static float Clamp0(float v) => v > 0f ? v : 0f;

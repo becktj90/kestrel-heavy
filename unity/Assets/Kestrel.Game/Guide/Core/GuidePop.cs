@@ -53,8 +53,16 @@ namespace Kestrel.Game.Guide
         public static float CaptionWidth(GuideScreen screen, float size)
         {
             float room = screen.Width - screen.SafeLeft - screen.SafeRight - 2f * MarginPt;
+            if (room < 0f) room = 0f;
             float cap = room < CaptionMaxPt ? room : CaptionMaxPt;
+            // 335 pt is the narrow portrait and the narrow landscape. The caption
+            // stays in the right half so it does not cover the title or the HUD.
+            float half = screen.Width * 0.5f;
+            float corner = screen.Width - screen.SafeRight - MarginPt - half;
+            if (corner < size) corner = size;
+            if (cap > corner) cap = corner;
             if (cap < size) cap = size;
+            if (room >= size && cap > room) cap = room;
             return cap;
         }
 
