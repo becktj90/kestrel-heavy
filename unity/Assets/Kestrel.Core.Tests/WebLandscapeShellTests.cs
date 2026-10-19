@@ -75,11 +75,16 @@ namespace Kestrel.Core.Tests
                 float band = System.Math.Min(pw, WebLandscapeType.BandMax);
                 Assert.That(f.Rocket.W, Is.GreaterThanOrEqualTo(band * WebLandscapeType.RocketMinFraction), at);
                 foreach (var col in new[] { f.Parts, f.RightPanel })
-                {
                     Assert.That(col.W, Is.LessThanOrEqualTo(WebLandscapeType.SideCap), at);
-                    if (pw >= WebLandscapeType.Tight)
-                        Assert.That(col.W, Is.InRange(WebLandscapeType.SideMin, WebLandscapeType.SideMax), at);
+                if (pw >= WebLandscapeType.Tight)
+                {
+                    // The stepper column is the wide one; the readouts only hold gauges and Launch.
+                    Assert.That(f.Parts.W, Is.InRange(WebLandscapeType.PartsMin, WebLandscapeType.SideCap), at);
+                    Assert.That(f.RightPanel.W, Is.InRange(WebLandscapeType.SideMin, WebLandscapeType.ReadoutMax), at);
+                    Assert.That(f.Parts.W, Is.GreaterThanOrEqualTo(f.RightPanel.W), at);
                 }
+                Assert.That(f.Issue.Y, Is.GreaterThanOrEqualTo(f.Home.Bottom), at + " pill under Home");
+                Assert.That(f.Issue.Bottom, Is.LessThanOrEqualTo(f.Parts.Y), at + " pill above the panel");
                 Assert.That(f.Launch.H, Is.GreaterThanOrEqualTo(44f), at);
                 InBand(pw, at, f.Parts, f.Rocket, f.RightPanel, f.Launch);
             }

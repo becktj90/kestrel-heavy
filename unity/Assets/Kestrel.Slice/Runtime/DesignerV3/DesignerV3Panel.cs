@@ -61,6 +61,10 @@ namespace Kestrel.Slice.DesignerV3
         public event Action LaunchRequested;
         public event Action<FlightRisk> RiskJump;
         public event Action<string> FieldFocused;
+        /// <summary>Open, collapsed, or Guided vs All parts changed. SliceApp hides its own launch reason while the
+        /// free designer's launch row shows it, so it re-checks on every switch, not only on the next edit.</summary>
+        public event Action ViewChanged;
+        int shownView = -1;
 
         public bool Engineer => engineer;
         public bool Open { get; private set; }
@@ -163,6 +167,9 @@ namespace Kestrel.Slice.DesignerV3
             confirmRow = ui.Row(2f);
             confirmRow.name = "designer-launch";
             confirmRow.style.flexShrink = 0;
+            // Whole buttons wrap to the next row; the reason line takes a full row. In the 278 pt
+            // readout column the reason was squeezed to one character per line.
+            confirmRow.style.flexWrap = Wrap.Wrap;
             root.Add(confirmRow);
             root.RegisterCallback<GeometryChangedEvent>(_ => DesignerChrome.Contain(root));
 
@@ -194,6 +201,7 @@ namespace Kestrel.Slice.DesignerV3
                 Tab = () => tab,
                 HideWhenGuided = new[] { tutorialBanner, strip, riskRow, tabs, scroll, confirmRow, stepRail, goalLabel, repairLabel, deltaRow, budgetRow },
                 Rebuild = () => Rebuild(),
+                Column = () => webColumn,
             };
             stepper = new DesignerStepperShell(bridge);
             root.Add(stepper.Root);
@@ -293,6 +301,7 @@ namespace Kestrel.Slice.DesignerV3
                 var launch = toggle.parent != null ? toggle.parent.Q<Button>("launch") : null;
                 if (launch != null) launch.style.display = Open ? DisplayStyle.None : StyleKeyword.Null;
             }
+            NotifyView();
         }
 
         public void SetScale(float upp)
@@ -316,6 +325,18 @@ namespace Kestrel.Slice.DesignerV3
         }
 
         public bool Landscape => landscape;
+
+        Vector2 webColumn;
+
+        /// <summary>The stepper root in points inside the landscape web parts column (zero off the web column).
+        /// The guided stepper sizes its tiles and decides where the check card goes from this.</summary>
+        public void SetWebColumn(float widthPt, float heightPt)
+        {
+            var next = widthPt > 1f && heightPt > 1f ? new Vector2(widthPt, heightPt) : Vector2.zero;
+            if ((next - webColumn).sqrMagnitude < 1f) return;
+            webColumn = next;
+            stepper?.Sync();
+        }
 
         void SetMore(bool open)
         {
@@ -487,6 +508,18 @@ namespace Kestrel.Slice.DesignerV3
             }
             heldScroll = -1f;
             DesignerChrome.Apply(root);
+            NotifyView();
+        }
+
+        /// <summary>The free designer (its own launch row) is on screen.</summary>
+        public bool ShowsLaunchRow => Open && !sheetCollapsed && stepper != null && !stepper.IsGuided;
+
+        void NotifyView()
+        {
+            int view = (Open ? 1 : 0) | (sheetCollapsed ? 2 : 0) | (stepper != null && stepper.IsGuided ? 4 : 0);
+            if (view == shownView) return;
+            shownView = view;
+            ViewChanged?.Invoke();
         }
 
         void RestoreScroll(float y)
@@ -703,8 +736,14 @@ namespace Kestrel.Slice.DesignerV3
             var why = ui.Text(text, HangarUi.SmallPt);
             why.name = "launch-gate-reason";
             why.style.whiteSpace = WhiteSpace.Normal;
-            why.style.flexShrink = 1;
+            // Its own full row above the buttons, so it wraps by words in a narrow column.
+            why.style.flexBasis = Length.Percent(100);
+            why.style.width = Length.Percent(100);
+            why.style.flexShrink = 0;
             why.style.flexGrow = 1;
+            // 100% plus the theme's 3 px label margins ran 6 px past the row's right edge.
+            why.style.marginLeft = 0f;
+            why.style.marginRight = 0f;
             return why;
         }
 
@@ -718,14 +757,14 @@ namespace Kestrel.Slice.DesignerV3
                 var off = ui.Btn("Launch", () => { }, "Launch unavailable. " + gate.Line, minWidthPt: 120f);
                 off.name = "launch-btn";
                 off.SetEnabled(false);
-                confirmRow.Add(off);
                 confirmRow.Add(GateLine(gate.Line));
+                confirmRow.Add(Word(off));
                 if (!string.IsNullOrEmpty(gate.tab))
                 {
                     var target = DesignerV3Tabs.FromRiskTab(gate.tab);
                     var fix = ui.Btn("Fix it", () => Show(target), "Open " + DesignerV3Tabs.Label(target, engineer, landscape), minWidthPt: 72f);
                     fix.name = "launch-gate-fix";
-                    confirmRow.Add(fix);
+                    confirmRow.Add(Word(fix));
                 }
                 return;
             }
@@ -741,8 +780,8 @@ namespace Kestrel.Slice.DesignerV3
                     if (ready && !DesignerV3Strip.HasRedRisk(Readout.Quick(C, D))) LaunchRequested?.Invoke();
                 }, "Checking the test flight first", minWidthPt: 120f);
                 check.name = "launch-btn";
-                confirmRow.Add(check);
                 confirmRow.Add(GateLine(LaunchGate.Checking));
+                confirmRow.Add(Word(check));
                 return;
             }
             var readout = Readout.Quick(C, D);
@@ -760,7 +799,15 @@ namespace Kestrel.Slice.DesignerV3
             }, red ? DesignerV3Risk.ConfirmTitle : "Launch this design", minWidthPt: 120f);
             b.name = "launch-btn";
             if (red && !launchConfirmArmed) b.style.backgroundColor = HangarUi.Amber;
-            confirmRow.Add(b);
+            confirmRow.Add(Word(b));
+        }
+
+        /// <summary>A launch-row button keeps its words on one line and wraps as a whole.</summary>
+        static Button Word(Button b)
+        {
+            b.style.flexShrink = 0;
+            b.style.whiteSpace = WhiteSpace.NoWrap;
+            return b;
         }
 
         static Color StateColor(CellState s) =>

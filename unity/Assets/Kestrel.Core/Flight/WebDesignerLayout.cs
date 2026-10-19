@@ -8,6 +8,8 @@ namespace Kestrel.Core.Flight
     {
         public bool Wide;
         public HudBox Rocket, Parts, Readouts, Launch, Exit, Home, RightPanel;
+        /// <summary>The "N things to fix" pill: its own band under Home, never on the panel or its title.</summary>
+        public HudBox Issue;
     }
 
     public static class WebDesignerLayout
@@ -17,6 +19,11 @@ namespace Kestrel.Core.Flight
         public const float LaunchH = 52f;
         public const float HomeW = 88f;
         public const float HomeH = 44f;
+        /// <summary>Home sits 8 pt in from the safe corner (HomeButtonMetrics.InsetPt).</summary>
+        public const float HomeInset = 8f;
+        /// <summary>Pill band: 32 pt minimum target for a 15 pt label.</summary>
+        public const float IssueH = 32f;
+        public const float IssueMaxW = 260f;
 
         public static WebDesignerFrame Place(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight)
         {
@@ -28,7 +35,8 @@ namespace Kestrel.Core.Flight
             float exitW = HomeCornerLayout.ExitW;
             float exitH = HomeCornerLayout.ExitH;
             f.Exit = Rect(width - safeRight - Edge - exitW, safeTop, exitW, exitH);
-            f.Home = Rect(safeLeft + Edge, safeTop, HomeW, HomeH);
+            f.Home = Rect(safeLeft + Edge, safeTop + HomeInset, HomeW, HomeH);
+            f.Issue = Rect(safeLeft + Edge, f.Home.Bottom + HomeInset, IssueMaxW, IssueH);
 
             float left = safeLeft + Edge;
             float right = width - safeRight - Edge;
@@ -39,17 +47,19 @@ namespace Kestrel.Core.Flight
                 return f;
             }
 
-            float top = Math.Max(f.Exit.Bottom, f.Home.Bottom + 36f) + Gap;
-            // Three panes in a centred band at most 1280 wide (LANDSCAPE_WEB_BRIEF §3): parts left,
-            // rocket centre (at least 22% of the band), readouts and Launch right. Side columns
-            // 200-360, never past the 400 pt side panel (DECISIONS #62).
+            float top = Math.Max(f.Exit.Bottom, f.Issue.Bottom) + Gap;
+            // Three panes in a centred band at most 1280 wide (LANDSCAPE_WEB_BRIEF §3): the guided
+            // stepper / parts column left (300-400), rocket centre (at least 22% of the band), readouts
+            // and Launch right (200-300). Nothing is past the 400 pt side panel (DECISIONS #62).
             WebLandscapeType.Band(left, right, out float bandLeft, out float bandRight);
             float span = bandRight - bandLeft;
-            float col = WebLandscapeType.SideColumn(span);
+            float col = WebLandscapeType.PartsColumn(span);
+            float side = WebLandscapeType.ReadoutColumn(span);
 
             float colH = Math.Max(80f, bottom - top);
             f.Parts = Rect(bandLeft, top, col, colH);
-            float rightX = bandRight - col;
+            float rightX = bandRight - side;
+            col = side;
             f.Launch = Rect(rightX + Edge, top + colH - Edge - LaunchH, col - 2f * Edge, LaunchH);
             f.Readouts = Rect(rightX, top, col, Math.Max(44f, f.Launch.Y - Gap - top));
             f.RightPanel = Rect(rightX, top, col, colH);
