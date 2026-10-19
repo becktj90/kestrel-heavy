@@ -244,6 +244,11 @@ namespace Kestrel.Game.Tests
 
         static void WalkGuided(DeviceSurface surface, HangarSession session, string where)
         {
+            session.Apply(d =>
+            {
+                StepperProgress.FreshGuided().Write(d);
+                return new Edit("guided");
+            });
             var host = new VisualElement { name = "designer-host" };
             host.style.position = Position.Absolute;
             host.style.left = 0f;

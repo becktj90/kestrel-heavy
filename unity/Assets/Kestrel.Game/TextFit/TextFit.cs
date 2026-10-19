@@ -35,13 +35,6 @@ namespace Kestrel.Game.Shell
             if (w < 8f) return size;
             if (Math.Abs(w - seal.Width) > 6f) return size;
             if (h > seal.Height + 6f) return size;
-            // The label's own box follows the face. A taller ancestor is room the seal did not have.
-            for (var a = element.parent; a != null && a.parent != null; a = a.parent)
-            {
-                float ph = a.layout.height;
-                if (float.IsNaN(ph) || ph < 1f) continue;
-                if (ph > seal.Height + 24f && ph > h + 24f) return size;
-            }
             return size < seal.Size ? size : seal.Size;
         }
 
@@ -145,12 +138,8 @@ namespace Kestrel.Game.Shell
             }
 
             bool changed = false;
-            if (t.resolvedStyle != null && t.resolvedStyle.whiteSpace == WhiteSpace.NoWrap)
-            {
-                t.style.whiteSpace = WhiteSpace.Normal;
-                changed = true;
-            }
-            else if (t.style.whiteSpace.value != WhiteSpace.Normal)
+            bool nowrap = t.resolvedStyle != null && t.resolvedStyle.whiteSpace == WhiteSpace.NoWrap;
+            if (!nowrap && t.style.whiteSpace.value != WhiteSpace.Normal)
             {
                 t.style.whiteSpace = WhiteSpace.Normal;
                 changed = true;
@@ -162,7 +151,13 @@ namespace Kestrel.Game.Shell
             }
 
             float parentW = ParentContentWidth(t);
-            if (parentW > 8f && (t.worldBound.width > parentW + slack || one.x > w + slack))
+            bool fitsParent = parentW > 8f && one.x <= parentW + slack;
+            if (fitsParent && PixelLength(t.style.maxWidth) > 0.5f && PixelLength(t.style.maxWidth) < parentW - 1f)
+            {
+                t.style.maxWidth = StyleKeyword.Null;
+                changed = true;
+            }
+            else if (!fitsParent && parentW > 8f && (t.worldBound.width > parentW + slack || one.x > w + slack))
             {
                 var max = t.style.maxWidth;
                 if (max.keyword == StyleKeyword.Undefined || max.value.value > parentW + 0.5f)
@@ -190,9 +185,21 @@ namespace Kestrel.Game.Shell
                 else stillTall = false;
             }
 
-            // A pixel height written this pass has not laid out yet. Shrinking now would
-            // lock a small face into a box that is about to get taller.
-            if ((stillWide || stillTall || spill) && !AwaitingGrow(t))
+            // A line that already fits the parent should grow the box, not collapse to the floor
+            // while the layout is still the previous face.
+            if (!stillWide && fitsParent && CanGrow(t) && one.y > h + Slack)
+            {
+                float line = one.y + 2f;
+                if (t.style.minHeight.value.value < line - 0.5f)
+                {
+                    t.style.minHeight = line;
+                    changed = true;
+                }
+                stillTall = false;
+            }
+
+            // A pixel height or a larger face written this pass has not laid out yet.
+            if ((stillWide || stillTall || spill) && !AwaitingGrow(t) && !FacePending(t))
             {
                 float font = Face(t);
                 float limit = stillWide ? w / Math.Max(1f, wrapped.x) : h / Math.Max(1f, wrapped.y);
@@ -332,6 +339,14 @@ namespace Kestrel.Game.Shell
             float max = PixelLength(e.style.maxHeight);
             if (max > 0.5f && max <= laid + 4f) return false;
             return true;
+        }
+
+        static bool FacePending(TextElement t)
+        {
+            float resolved = t.resolvedStyle != null ? t.resolvedStyle.fontSize : 0f;
+            if (float.IsNaN(resolved) || resolved < 0.5f) return false;
+            float set = PixelLength(t.style.fontSize);
+            return set > resolved + 0.5f;
         }
 
         static float Tracking(VisualElement t)
