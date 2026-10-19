@@ -84,6 +84,6 @@
       "maxQThrottlePct": { "min": 0, "max": 100 },
       "gLimit": { "min": 1, "max": 12 }
     },
-    "payloadFit": { "radiusFactor": 0.45, "lengthFactor": 0.8, "diameterClearanceM": 0.2 }
+    "payloadFit": { "radiusFactor": 0.45, "lengthFactor": 0.8, "diameterFactor": 0.9 }
   }
 }

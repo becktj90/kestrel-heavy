@@ -11,7 +11,7 @@
   "catalog-flight": 136,
   "d0-replay": 22,
   "designer-readout": 4,
-  "designer-validate": 117,
+  "designer-validate": 119,
   "landing-grade": 13,
   "mission-ramp": 39,
   "params": 4,
@@ -20,5 +20,5 @@
   "save-store": 3,
   "steer": 262
  },
- "total": 785
+ "total": 787
 }

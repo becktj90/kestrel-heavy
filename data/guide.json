@@ -624,7 +624,7 @@
         {
           "id": "step.4.fail.fit.c1",
           "kid": "The payload does not fit its coat. Pick a wider fairing or a smaller payload.",
-          "eng": "Need diameter plus 0.2 m inside the fairing. Volume uses 0.45 and 0.8."
+          "eng": "Cargo diameter must be at most 0.9 of the fairing. Volume uses 0.45 and 0.8."
         }
       ]
     },
