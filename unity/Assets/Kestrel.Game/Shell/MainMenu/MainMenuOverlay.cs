@@ -1201,6 +1201,7 @@ namespace Kestrel.Game.Shell
             var subtitles = SettingButton("home-setting-subtitles", "Subtitles");
             var sandbox = SettingButton("home-setting-sandbox", "Sandbox");
             var motion = SettingButton("home-reduce-motion", "Reduce motion");
+            var fullDesigner = SettingButton(FullDesignerId, "Show full designer");
             motion.tooltip = "Reduce motion. Holds the menu still.";
 
             void PaintMix()
@@ -1221,6 +1222,12 @@ namespace Kestrel.Game.Shell
                 bool on = AudioPrefs.SandboxUnlocked;
                 PaintCaption(sandbox, AudioPrefs.Caption("Sandbox", !on), on);
                 sandbox.tooltip = on ? "Sandbox is available on the mission board." : "Sandbox is off. The mission board keeps it locked.";
+            }
+            void PaintFullDesigner()
+            {
+                bool on = Kestrel.Core.Features.ExperienceSettings.ShowFullDesigner(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
+                PaintCaption(fullDesigner, "Show full designer", on);
+                fullDesigner.tooltip = "Show full designer. " + FullDesignerNote + (on ? " On." : " Off.");
             }
             void PaintMotion()
             {
@@ -1246,8 +1253,17 @@ namespace Kestrel.Game.Shell
                 PlayerPrefs.Save();
                 PaintMotion();
             };
+            fullDesigner.clicked += () =>
+            {
+                bool next = !Kestrel.Core.Features.ExperienceSettings.ShowFullDesigner(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
+                Kestrel.Core.Features.ExperienceSettings.SetShowFullDesigner(next, PlayerPrefs.SetInt);
+                PlayerPrefs.Save();
+                Kestrel.Core.Features.FeatureFlags.Active.ShowFullDesigner = next;
+                PaintFullDesigner();
+            };
             PaintMix();
             PaintSubs();
+            PaintFullDesigner();
             PaintSandbox();
             PaintMotion();
 
@@ -1269,30 +1285,13 @@ namespace Kestrel.Game.Shell
                 codex.clicked += () => { sheet.style.display = DisplayStyle.None; OpenCodexOrSoon(full); };
                 list.Add(codex);
             }
-            // STARTER_COPY.md: "Show full designer", default off, instant and reversible, no confirm.
-            var fullDesigner = SettingButton(FullDesignerId, "Show full designer");
+            // STARTER_COPY.md Settings toggle: "Show full designer", default off, instant and reversible, no confirm.
             var fullNote = new Label(FullDesignerNote) { name = "home-setting-full-designer-note", pickingMode = PickingMode.Ignore };
             fullNote.style.fontSize = 14;
             fullNote.style.whiteSpace = WhiteSpace.Normal;
             fullNote.style.marginLeft = 10; fullNote.style.marginRight = 10; fullNote.style.marginBottom = 6;
             fullNote.style.color = new Color(0.86f, 0.84f, 0.78f, 1f);
             SettingFont(fullNote, "SpaceGrotesk-Medium");
-            void PaintFull()
-            {
-                bool on = FeatureFlags.Active != null && FeatureFlags.Active.ShowFullDesigner;
-                PaintCaption(fullDesigner, "Show full designer", on);
-                fullDesigner.tooltip = "Show full designer. " + FullDesignerNote + (on ? " On." : " Off.");
-            }
-            fullDesigner.clicked += () =>
-            {
-                var f = FeatureFlags.Active;
-                if (f == null) return;
-                f.ShowFullDesigner = !f.ShowFullDesigner;
-                PlayerPrefs.SetInt(FeatureKeys.ShowFullDesignerPref, f.ShowFullDesigner ? 1 : 0);
-                PlayerPrefs.Save();
-                PaintFull();
-            };
-            PaintFull();
             list.Add(fullDesigner);
             list.Add(fullNote);
 
@@ -1382,7 +1381,7 @@ namespace Kestrel.Game.Shell
                 PaintSubs();
                 PaintSandbox();
                 PaintMotion();
-                PaintFull();
+                PaintFullDesigner();
                 ApplySettingsFeatures(full);
                 sheet.style.display = DisplayStyle.Flex;
                 fitW = -1f;

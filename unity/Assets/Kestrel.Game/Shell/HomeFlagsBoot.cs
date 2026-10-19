@@ -1,6 +1,7 @@
 // Loads data/features.json into FeatureFlags.Active once, before Home reads its home.* flags (feat(home-simple)).
-// The checkout file in the editor, the synced Resources/KestrelData/features TextAsset in a player. No file: the
-// FeatureFlags built-ins stay. feat(flags) PR 3 may own this boot later; it only has to set FeatureFlags.Active.
+// The checkout file in the editor, the Resources/KestrelData/features TextAsset in a player (SliceBootstrap.SyncData
+// copies it on every build). No file: the FeatureFlags built-ins stay. #299 (feat(flags)) has no loader; if a later
+// PR adds one at boot, this becomes a no-op once that sets HomeFlagsBoot.Loaded or FeatureFlags.Active first.
 using System;
 using System.IO;
 using Kestrel.Core.Features;
@@ -33,7 +34,7 @@ namespace Kestrel.Game.Shell
                 }
                 if (json == null) return;
                 var flags = FeatureFlags.Parse(json);
-                flags.ShowFullDesigner = PlayerPrefs.GetInt(FeatureKeys.ShowFullDesignerPref, 0) != 0;
+                flags.ApplyPrefs(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));   // tier + Show full designer
                 FeatureFlags.Active = flags;
             }
             catch (Exception e) { Debug.LogWarning("[Kestrel] features.json skipped: " + e.Message); }
