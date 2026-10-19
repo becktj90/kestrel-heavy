@@ -11,6 +11,8 @@ namespace Kestrel.Slice
     public sealed class ReportActions
     {
         public Action Next, Again, Missions, Home, Fix;
+        /// <summary>Back to the designer on the pad (same mission and seed). Routing only; the report layout owns the button.</summary>
+        public Action Designer;
     }
 
     public static class RewardsCard

@@ -19,7 +19,7 @@ namespace Kestrel.Slice
         /// Shell routes when the app shell is up. Otherwise the session still moves, and relaunch/home
         /// are the flight screen's own callbacks. The seed is not replaced.
         /// </summary>
-        public static ReportActions Actions(Action relaunch, Action home)
+        public static ReportActions Actions(Action relaunch, Action home, Action designer = null)
         {
             var shell = Kestrel.Game.Shell.AppShell.Instance;
             var flow = shell != null ? shell.Flow : null;
@@ -49,6 +49,16 @@ namespace Kestrel.Slice
                     if (flow != null) flow.ExitToHome();
                     else if (home != null) home();
                     else ReportRoutes.Home();
+                },
+                // Same mission and seed, back on the pad: the route first, then the host's pad (no relaunch).
+                Designer = designer == null ? (Action)null : () =>
+                {
+                    ulong seed = ReportRoutes.SeedOf(GameSession.Current);
+                    if (flow != null) flow.ReportDesigner();
+                    else ReportRoutes.Again();
+                    if (GameSession.Current != null && GameSession.Current.Seed != seed)
+                        GameSession.Current.Seed = seed;
+                    designer();
                 },
             };
         }

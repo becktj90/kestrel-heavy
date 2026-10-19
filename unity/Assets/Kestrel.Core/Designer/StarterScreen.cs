@@ -43,65 +43,116 @@ namespace Kestrel.Core.Designer
         public const string FuelHint = "More fuel goes farther but weighs more.";
         public const string BoostersHint = "Side boosters add push at liftoff.";
         public const string HydrogenHint = "Top stage uses hydrogen on this mission.";
-        public const string OneStageHint = "This hop needs only 1 stage.";
         public const string BoostersLockedHint = "This mission flies 2 boosters that land.";
         public const string ResetText = "Reset", ResetHint = "Back to the mission's rocket.";
         public const string BackText = "◀ Back", BackHint = "Back to the briefing. Your rocket stays.";
         public const string LaunchText = "LAUNCH";
         public const string ReadyWord = "Ready.";
-        public const string ReadyBadge = "✓ Ready.";
-        /// <summary>No flown result for this combination: Launch is off (B-10, never say ready without one).</summary>
-        public const string Checking = "Checking this rocket…";
+        public const string ReadyBadge = "✓ Ready.", TightBadge = "! Tight.", ShortBadge = "✗ Short.", HeavyBadge = "✗ Too heavy.", BlockedBadge = "✗ Can't build.";
 
         public const int LabelMax = 14, HintMax = 44, ReadinessMax = 40;
+        /// <summary>Below this margin the line says "fuel almost gone"; below this liftoff push it says "slow off the pad"
+        /// (Validate.GOOD_TWR). Information only: Launch stays on.</summary>
+        public const double TightMargin = 0.10;
 
         public static string OptionText(StarterEngine e) => e == StarterEngine.Methane ? Methane : Kerosene;
         public static string BoosterText(int n) => n <= 0 ? NoBoosters : n.ToString(CultureInfo.InvariantCulture);
 
-        /// <summary>Hydrogen upper stage is automatic from KH-9 on (plan). Only told when there is an upper stage.</summary>
-        public static bool HydrogenAuto(StarterRocket r) => r != null && r.Mission != null && r.Mission.Index >= 9 && r.Stages > 1;
-        public static bool StagesLocked(StarterRocket r) => r != null && r.StageOptions.Count <= 1;
+        /// <summary>The upper stage burns hydrogen. Told when the built rocket has one.</summary>
+        public static bool HydrogenAuto(StarterRocket r) => r != null && r.HydrogenUpper;
 
         /// <summary>The one hint line: the last control the player touched, with its state hint when one applies.
-        /// On open (no knob yet) a state hint is shown first, so a locked control explains itself.</summary>
+        /// On open (no control yet) a state hint is shown first, so a locked control explains itself.</summary>
         public static string Hint(StarterRocket r, StarterKnob last)
         {
             if (r == null) return EngineHint;
             switch (last)
             {
-                case StarterKnob.Engine: return HydrogenAuto(r) ? HydrogenHint : EngineHint;
-                case StarterKnob.Stages: return StagesLocked(r) ? OneStageHint : HydrogenAuto(r) ? HydrogenHint : StagesHint;
+                case StarterKnob.Engine: return EngineHint;
+                case StarterKnob.Stages: return HydrogenAuto(r) ? HydrogenHint : StagesHint;
                 case StarterKnob.FuelNotch: return FuelHint;
                 case StarterKnob.Boosters: return r.BoostersLocked ? BoostersLockedHint : BoostersHint;
             }
             if (r.BoostersVisible && r.BoostersLocked) return BoostersLockedHint;
-            if (StagesLocked(r)) return OneStageHint;
             if (HydrogenAuto(r)) return HydrogenHint;
             return EngineHint;
         }
 
-        /// <summary>The readiness line split for the screen: the green "✓ Ready." badge and the rest in body colour.
-        /// No flown result (or the host gate is blocked) gives no badge, <see cref="Checking"/> and Launch off.</summary>
-        public static bool Readiness(StarterRocket r, bool hostBlocked, out string badge, out string rest)
+        /// <summary>
+        /// The readiness line from the existing readout (Validate.Engineering + Readout.Quick) on the rocket the
+        /// controls built: a short badge and the rest in body colour. Plain information. Returns false (Launch off)
+        /// only on a hard schema block, with its one plain reason. No numbers: no line, Launch stays on.
+        /// </summary>
+        public static bool Readiness(StarterRocket r, out string badge, out string rest)
         {
-            badge = ""; rest = Checking;
-            if (r == null || !r.CanLaunch || hostBlocked) return false;
-            string line = r.ReadinessLine;
-            if (string.IsNullOrWhiteSpace(line)) return false;
-            line = line.Trim();
-            if (line.StartsWith(ReadyWord, StringComparison.Ordinal))
+            badge = ""; rest = "";
+            if (r == null) return false;
+            var c = r.Check();
+            if (c.Blocked) { badge = c.BlockCode == "twr-low" ? HeavyBadge : BlockedBadge; rest = c.BlockReason ?? ""; return false; }
+            if (!c.HasNumbers) return true;
+            var m = r.Mission;
+            string target = TargetText(m);
+            bool hop = m != null && m.TargetKind == "apogee";
+            if (hop) return HopLine(r, c, out badge, out rest);
+            if (c.LiftoffTwr < Validate.MIN_TWR)
             {
-                badge = ReadyBadge;
-                rest = line.Substring(ReadyWord.Length).Trim();
+                badge = HeavyBadge;
+                bool more = r.BoostersVisible && !r.BoostersLocked && r.Boosters < 4;
+                rest = more ? "Can't lift off. Try less fuel or boosters." : "Can't lift off. Try less fuel.";
+                return true;
             }
-            else rest = line;
+            if (c.Margin < 0)
+            {
+                badge = ShortBadge;
+                int pct = Math.Max(1, (int)Math.Round(-c.Margin * 100));
+                rest = "About " + pct.ToString(CultureInfo.InvariantCulture) + "% short of " + target + ". Try more fuel or a stage.";
+                return true;
+            }
+            if (c.Margin < TightMargin)
+            {
+                badge = TightBadge;
+                rest = hop ? "Just enough fuel for the hop." : "Reaches " + target + ", fuel almost gone.";
+                return true;
+            }
+            if (c.LiftoffTwr < Validate.GOOD_TWR)
+            {
+                badge = TightBadge;
+                rest = "Slow off the pad, but reaches " + target + ".";
+                return true;
+            }
+            badge = ReadyBadge;
+            if (hop) rest = "Hops to " + target + " and back.";
+            else if (m != null && m.TargetKind == "c3") rest = "Leaves Earth with fuel to spare.";
+            else if (r.Boosters > 0 && !r.BoostersLocked) rest = "Boosters help it reach " + target + ".";
+            else rest = "Reaches " + target + " with fuel to spare.";
             return true;
+        }
+
+        /// <summary>Hops (KH-1, KH-2) compare with the mission's flown rocket, not the readout's orbital margin:
+        /// that margin reads "short" on rockets that fly the hop (M-10), so it never reaches this line.</summary>
+        public const double HopSame = 0.02;
+
+        static bool HopLine(StarterRocket r, StarterCheck c, out string badge, out string rest)
+        {
+            var b = r.BaseCheck();
+            double rel = b != null && b.HasNumbers && b.DeltaV > 0 ? c.DeltaV / b.DeltaV - 1 : 0;
+            if (rel > HopSame) { badge = TightBadge; rest = "More push than the rocket that flew this hop. It may overshoot."; }
+            else if (rel < -HopSame) { badge = TightBadge; rest = "Less push than the rocket that flew this hop. It may fall short."; }
+            else { badge = ReadyBadge; rest = "Hops to " + TargetText(r.Mission) + " and back."; }
+            return true;
+        }
+
+        static string TargetText(CampaignMission m)
+        {
+            if (m == null) return "the target";
+            if (m.TargetKind == "c3") return "escape speed";
+            return Km(m.ApoKm);
         }
 
         /// <summary>VoiceOver text for the readiness line: "km" read as kilometres.</summary>
         public static string Spoken(string badge, string rest)
         {
-            string b = string.IsNullOrEmpty(badge) ? "" : ReadyWord + " ";
+            string b = string.IsNullOrEmpty(badge) ? "" : badge.TrimStart('✓', '!', '✗', ' ') + " ";
             return (b + (rest ?? "")).Replace(" km", " kilometres").Trim();
         }
 
@@ -150,7 +201,7 @@ namespace Kestrel.Core.Designer
             return true;
         }
 
-        /// <summary>Restore this mission's last combination (snapped to a passing one). False when none was saved.</summary>
+        /// <summary>Restore this mission's last setting (clamped). False when none was saved.</summary>
         public static bool Restore(NativeStore store, StarterRocket r)
         {
             if (store == null || r == null || string.IsNullOrEmpty(r.MissionId)) return false;

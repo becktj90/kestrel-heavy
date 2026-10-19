@@ -1,7 +1,7 @@
 // Starter screen layout model (Phase 1 PR 5): rect-overlap, safe area, 44 pt targets and text fit at
 // 335x667, 390x844 and 430x932 portrait, iPad portrait 820x1180, and landscape web 1280x720, 1366x768
 // and 1920x1080 (each a 1280x720 panel after WebPanelScale). Boosters hidden, shown and locked, the
-// "Checking" state and a long readiness line. Set KH_STARTER_RECTS_DIR to dump the frames as JSON.
+// blocked and short readiness lines, and a long readiness line. Set KH_STARTER_RECTS_DIR to dump the frames as JSON.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -38,16 +38,26 @@ namespace Kestrel.Core.Tests
             }
         }
 
-        StarterTable table;
-
-        [SetUp]
-        public void Load() => table = StarterTable.LoadPlaceholder(Golden.Root);
-
-        StarterLayoutInput Input(Size s, string missionId, string readiness = null, bool checking = false)
+        /// <summary>The real rocket for the mission at a control setting ("kerosene-3-f4-b0"), or its default.</summary>
+        public static StarterRocket Rocket(string missionId, string key = null)
         {
-            var r = new StarterRocket(table, missionId);
-            StarterScreen.Readiness(r, checking, out var badge, out var rest);
+            var r = StarterFixture.Rocket(missionId);
+            if (key != null)
+            {
+                var p = key.Split('-');
+                StarterRocket.TryEngine(p[0], out var e);
+                r.Engine = e; r.Stages = int.Parse(p[1]); r.FuelNotch = int.Parse(p[2].Substring(1)); r.Boosters = int.Parse(p[3].Substring(1));
+                Assert.AreEqual(key, r.Choice.Key, missionId + " setting");
+            }
+            return r;
+        }
+
+        StarterLayoutInput Input(Size s, string missionId, string readiness = null, string key = null, bool noBadge = false)
+        {
+            var r = Rocket(missionId, key);
+            StarterScreen.Readiness(r, out var badge, out var rest);
             if (readiness != null) rest = readiness;
+            if (noBadge) badge = "";
             return new StarterLayoutInput
             {
                 Width = s.W, Height = s.H, SafeTop = s.Top, SafeBottom = s.Bottom,
@@ -57,14 +67,15 @@ namespace Kestrel.Core.Tests
             };
         }
 
-        static IEnumerable<(string name, string mission, string readiness, bool checking)> Cases()
+        public static IEnumerable<(string name, string mission, string readiness, string key)> Cases()
         {
-            yield return ("KH-1 boosters hidden", "m1", null, false);
-            yield return ("KH-5 boosters shown", "m5", null, false);
-            yield return ("KH-10 boosters locked", "m10", null, false);
-            yield return ("KH-12 long title", "m12", null, false);
-            yield return ("KH-19 long readiness", "m19", LongReadiness, false);
-            yield return ("KH-7 checking", "m7", null, true);
+            yield return ("KH-1 boosters hidden", "m1", null, null);
+            yield return ("KH-5 boosters shown", "m5", null, null);
+            yield return ("KH-10 boosters locked", "m10", null, null);
+            yield return ("KH-12 long title", "m12", null, null);
+            yield return ("KH-19 long readiness", "m19", LongReadiness, null);
+            yield return ("KH-7 short", "m7", null, "kerosene-3-f0-b0");
+            yield return ("KH-6 too heavy", "m6", null, "methane-3-f4-b0");
         }
 
         [Test]
@@ -74,7 +85,7 @@ namespace Kestrel.Core.Tests
             foreach (var s in Sizes())
                 foreach (var c in Cases())
                 {
-                    var input = Input(s, c.mission, c.readiness, c.checking);
+                    var input = Input(s, c.mission, c.readiness, c.key);
                     var f = StarterLayout.Place(input);
                     foreach (var p in StarterLayout.Problems(f, input)) fails.Add(s + " " + c.name + ": " + p);
                     Dump(s, c.name, input, f);
@@ -90,7 +101,7 @@ namespace Kestrel.Core.Tests
                 if (s.Wide) continue;
                 foreach (var c in Cases())
                 {
-                    var f = StarterLayout.Place(Input(s, c.mission, c.readiness, c.checking));
+                    var f = StarterLayout.Place(Input(s, c.mission, c.readiness, c.key));
                     string where = s + " " + c.name;
                     Assert.IsFalse(f.Wide, where);
                     // SE-height screens tighten the sheet (Compact) and keep at least 16% for the rocket; taller phones 24%.
@@ -116,7 +127,7 @@ namespace Kestrel.Core.Tests
                 if (!s.Wide) continue;
                 foreach (var c in Cases())
                 {
-                    var input = Input(s, c.mission, c.readiness, c.checking);
+                    var input = Input(s, c.mission, c.readiness, c.key);
                     var f = StarterLayout.Place(input);
                     string where = s + " " + c.name;
                     Assert.IsTrue(f.Wide, where);
@@ -149,9 +160,9 @@ namespace Kestrel.Core.Tests
             Assert.LessOrEqual(longer.ReadinessLines, StarterLayout.ReadinessMaxLines);
             Assert.GreaterOrEqual(longer.ReadinessPt, StarterLayout.ReadinessMinPt);
             Assert.Greater(longer.Readiness.H, plain.Readiness.H, "the long line takes more rows");
-            var checking = StarterLayout.Place(Input(s, "m3", null, true));
-            Assert.IsFalse(checking.Badge.Live, "no green word without a result");
-            Assert.AreEqual(checking.Sheet.X + checking.SheetPadPt, checking.Readiness.X, 0.01f);
+            var bare = StarterLayout.Place(Input(s, "m3", null, null, noBadge: true));
+            Assert.IsFalse(bare.Badge.Live, "no badge box without a badge");
+            Assert.AreEqual(bare.Sheet.X + bare.SheetPadPt, bare.Readiness.X, 0.01f);
         }
 
         [Test]

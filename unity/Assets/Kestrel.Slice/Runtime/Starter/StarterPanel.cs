@@ -1,5 +1,5 @@
 // Phase 1 "Starter" designer screen (PR 5). Mission header, a clear window onto the procedural rocket on
-// the pad (SliceApp's HangarRocketView draws it behind this panel), the four knobs, one hint line, one
+// the pad (SliceApp's HangarRocketView draws it behind this panel), the four controls, one hint line, one
 // readiness line and an always-visible Launch, with Back top-left and Reset top-right. Every element is
 // pinned to a Kestrel.Core.Designer.StarterLayout box, so the Core size tests and the EditMode device test
 // check the same rectangles. No animation: state changes are instant (photosensitivity-safe).
@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Ui;
 using Kestrel.Game.Shell;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -15,7 +16,7 @@ namespace Kestrel.Slice
 {
     public sealed class StarterPanel
     {
-        public const string RootName = "starter";
+        public const string RootName = UiIds.ScreenStarter;
 
         static readonly Color SheetBg = new Color(8f / 255f, 12f / 255f, 20f / 255f, 0.88f);
         static readonly Color CornerBg = new Color(8f / 255f, 12f / 255f, 20f / 255f, 0.80f);
@@ -25,6 +26,8 @@ namespace Kestrel.Slice
         static readonly Color AccentInk = new Color(20f / 255f, 20f / 255f, 30f / 255f);
         static readonly Color OptionBg = new Color(1f, 1f, 1f, 0.10f);
         static readonly Color ReadyGreen = new Color(126f / 255f, 224f / 255f, 138f / 255f);
+        static readonly Color TightAmber = new Color(1f, 196f / 255f, 92f / 255f);
+        static readonly Color ShortRed = new Color(1f, 128f / 255f, 128f / 255f);
         static readonly Color LaunchRed = new Color(200f / 255f, 16f / 255f, 46f / 255f);
         static readonly Color LaunchOff = new Color(90f / 255f, 90f / 255f, 100f / 255f);
 
@@ -37,9 +40,6 @@ namespace Kestrel.Slice
 
         public event Action LaunchRequested;
         public event Action BackRequested;
-
-        /// <summary>Host's launch gate refuses this design (LaunchGateState.Blocked): show "Checking…" and keep Launch off.</summary>
-        public Func<bool> HostBlocked;
 
         public StarterRocket Rocket { get; }
         public VisualElement Root { get; }
@@ -64,24 +64,24 @@ namespace Kestrel.Slice
             Root.style.position = Position.Absolute;
             Root.style.left = 0f; Root.style.top = 0f; Root.style.right = 0f; Root.style.bottom = 0f;
 
-            rocketBox = new VisualElement { name = "starter-rocket", pickingMode = PickingMode.Ignore };
+            rocketBox = new VisualElement { name = UiIds.StarterRocket, pickingMode = PickingMode.Ignore };
             rocketBox.tooltip = "Your rocket on the pad.";
             Root.Add(rocketBox);
 
             header = new VisualElement { name = "starter-header", pickingMode = PickingMode.Ignore };
-            title = Text("starter-title", 20f, Ink, true, true);
-            subtitle = Text("starter-subtitle", 14f, Muted, false, true);
+            title = Text(UiIds.StarterTitle, 20f, Ink, true, true);
+            subtitle = Text(UiIds.StarterSubtitle, 14f, Muted, false, true);
             header.Add(title);
             header.Add(subtitle);
 
-            sheet = new VisualElement { name = "starter-sheet" };
+            sheet = new VisualElement { name = UiIds.StarterSheet };
             sheet.style.backgroundColor = SheetBg;
             Root.Add(sheet);
 
-            engine = MakeRow("engine", StarterScreen.EngineLabel, StarterRocket.EngineOrder.Count, k => Pick(StarterKnob.Engine, () => Rocket.Engine = StarterRocket.EngineOrder[k]));
-            stages = MakeRow("stages", StarterScreen.StagesLabel, StarterRocket.StageValues.Count, k => Pick(StarterKnob.Stages, () => Rocket.Stages = StarterRocket.StageValues[k]));
-            fuel = MakeRow("fuel", StarterScreen.FuelLabel, StarterRocket.FuelNotches, k => Pick(StarterKnob.FuelNotch, () => Rocket.FuelNotch = k));
-            boosters = MakeRow("boosters", StarterScreen.BoostersLabel, StarterRocket.BoosterValues.Count, k => Pick(StarterKnob.Boosters, () => Rocket.Boosters = StarterRocket.BoosterValues[k]));
+            engine = MakeRow(UiIds.StarterEngine, "engine", StarterScreen.EngineLabel, StarterRocket.EngineOrder.Count, k => UiIds.StarterEngineOption(StarterRocket.EngineOrder[k]), k => Pick(StarterKnob.Engine, () => Rocket.Engine = StarterRocket.EngineOrder[k]));
+            stages = MakeRow(UiIds.StarterStages, "stages", StarterScreen.StagesLabel, StarterRocket.StageValues.Count, k => UiIds.StarterStagesOption(StarterRocket.StageValues[k]), k => Pick(StarterKnob.Stages, () => Rocket.Stages = StarterRocket.StageValues[k]));
+            fuel = MakeRow(UiIds.StarterFuel, "fuel", StarterScreen.FuelLabel, StarterRocket.FuelNotches, k => UiIds.StarterFuelNotch(k + 1), k => Pick(StarterKnob.FuelNotch, () => Rocket.FuelNotch = k));
+            boosters = MakeRow(UiIds.StarterBoosters, "boosters", StarterScreen.BoostersLabel, StarterRocket.BoosterValues.Count, k => UiIds.StarterBoostersOption(StarterRocket.BoosterValues[k]), k => Pick(StarterKnob.Boosters, () => Rocket.Boosters = StarterRocket.BoosterValues[k]));
             for (int i = 0; i < StarterRocket.EngineOrder.Count; i++) engine.Options[i].text = StarterScreen.OptionText(StarterRocket.EngineOrder[i]);
             for (int i = 0; i < StarterRocket.StageValues.Count; i++) stages.Options[i].text = StarterRocket.StageValues[i].ToString(System.Globalization.CultureInfo.InvariantCulture);
             for (int i = 0; i < StarterRocket.BoosterValues.Count; i++) boosters.Options[i].text = StarterScreen.BoosterText(StarterRocket.BoosterValues[i]);
@@ -91,33 +91,33 @@ namespace Kestrel.Slice
             boosters.Label.tooltip = StarterScreen.BoostersHint;
             for (int i = 0; i < StarterRocket.FuelNotches; i++)
             {
-                var dot = new VisualElement { name = "starter-fuel-dot-" + i, pickingMode = PickingMode.Ignore };
+                var dot = new VisualElement { name = "starter-fuel-dot-" + (i + 1), pickingMode = PickingMode.Ignore };
                 dot.style.position = Position.Absolute;
                 fuelDots[i] = dot;
                 fuel.Options[i].Add(dot);
             }
-            fuelLess = Text("starter-fuel-less", 13f, Muted, false, false);
+            fuelLess = Text("starter-label-less", 13f, Muted, false, false);
             fuelLess.text = StarterScreen.FuelLess;
-            fuelMore = Text("starter-fuel-more", 13f, Muted, false, false);
+            fuelMore = Text("starter-label-more", 13f, Muted, false, false);
             fuelMore.text = StarterScreen.FuelMore;
             fuelMore.style.unityTextAlign = TextAnchor.MiddleRight;
             fuel.Box.Add(fuelLess);
             fuel.Box.Add(fuelMore);
 
-            hint = Text("starter-hint", 13f, Muted, false, true);
-            badge = Text("starter-badge", 16f, ReadyGreen, true, false);
-            readiness = Text("starter-readiness", 16f, Ink, false, true);
+            hint = Text(UiIds.StarterHint, 13f, Muted, false, true);
+            badge = Text(UiIds.StarterBadge, 16f, ReadyGreen, true, false);
+            readiness = Text(UiIds.StarterReadiness, 16f, Ink, false, true);
             sheet.Add(hint);
             sheet.Add(badge);
             sheet.Add(readiness);
 
-            launch = new Button(() => { if (LaunchReady) LaunchRequested?.Invoke(); }) { name = "starter-launch", text = StarterScreen.LaunchText };
+            launch = new Button(() => { if (LaunchReady) LaunchRequested?.Invoke(); }) { name = UiIds.StarterLaunch, text = StarterScreen.LaunchText };
             Style(launch, LaunchRed, Color.white, true);
             sheet.Add(launch);
 
-            back = new Button(() => BackRequested?.Invoke()) { name = "starter-back", text = StarterScreen.BackText, tooltip = StarterScreen.BackHint };
+            back = new Button(() => BackRequested?.Invoke()) { name = UiIds.StarterBack, text = StarterScreen.BackText, tooltip = StarterScreen.BackHint };
             Style(back, CornerBg, Color.white, true);
-            reset = new Button(() => { LastKnob = StarterKnob.None; Rocket.Reset(); Refresh(); }) { name = "starter-reset", text = StarterScreen.ResetText, tooltip = StarterScreen.ResetHint };
+            reset = new Button(() => { LastKnob = StarterKnob.None; Rocket.Reset(); Refresh(); }) { name = UiIds.StarterReset, text = StarterScreen.ResetText, tooltip = StarterScreen.ResetHint };
             Style(reset, CornerBg, Color.white, true);
             Root.Add(back);
             Root.Add(reset);
@@ -164,7 +164,6 @@ namespace Kestrel.Slice
         {
             var r = Rocket;
             Select(engine, k => r.Engine == StarterRocket.EngineOrder[k], k => r.IsEngineAllowed(StarterRocket.EngineOrder[k]));
-            bool stagesLocked = StarterScreen.StagesLocked(r);
             Select(stages, k => r.Stages == StarterRocket.StageValues[k], k => r.IsStagesAllowed(StarterRocket.StageValues[k]));
             Select(fuel, k => r.FuelNotch == k, k => r.IsFuelNotchAllowed(k));
             for (int k = 0; k < fuel.Options.Length; k++)
@@ -179,22 +178,20 @@ namespace Kestrel.Slice
             boosters.Box.EnableInClassList("starter-locked", r.BoostersLocked);
             boosters.Label.style.color = r.BoostersLocked ? Muted : Ink;
             boosters.Label.tooltip = r.BoostersLocked ? StarterScreen.BoostersLockedHint : StarterScreen.BoostersHint;
-            stages.Label.tooltip = stagesLocked ? StarterScreen.OneStageHint : StarterScreen.StagesHint;
-            stages.Label.style.color = stagesLocked ? Muted : Ink;
 
             title.text = StarterScreen.Title(r.Mission);
             subtitle.text = StarterScreen.Subtitle(r.Mission);
             hint.text = StarterScreen.Hint(r, LastKnob);
-            bool blocked = false;
-            try { blocked = HostBlocked != null && HostBlocked(); }
-            catch (Exception) { blocked = true; }
-            LaunchReady = StarterScreen.Readiness(r, blocked, out var b, out var rest);
+            // The existing readout as plain information. Launch is off only on a hard Validate block, whose one
+            // plain reason is the line; a rocket that looks short still launches (and may explode).
+            LaunchReady = StarterScreen.Readiness(r, out var b, out var rest);
             badge.text = b;
+            badge.style.color = b == StarterScreen.ReadyBadge ? ReadyGreen : b == StarterScreen.TightBadge ? TightAmber : ShortRed;
             readiness.text = rest;
             readiness.tooltip = StarterScreen.Spoken(b, rest);
             launch.SetEnabled(LaunchReady);
             launch.style.backgroundColor = LaunchReady ? LaunchRed : LaunchOff;
-            launch.tooltip = LaunchReady ? "Launch this rocket." : StarterScreen.Checking;
+            launch.tooltip = LaunchReady ? "Launch this rocket." : rest;
             Relayout();
         }
 
@@ -204,7 +201,7 @@ namespace Kestrel.Slice
         {
             LastKnob = knob;
             set();
-            Refresh(); // a snap back to the same combination raises no Changed, but the hint still follows the tap
+            Refresh(); // an unchanged value raises no Changed, but the hint still follows the tap
         }
 
         void Relayout()
@@ -292,9 +289,9 @@ namespace Kestrel.Slice
             b.style.paddingLeft = StarterLayout.ButtonPadX * upp; b.style.paddingRight = StarterLayout.ButtonPadX * upp;
         }
 
-        Row MakeRow(string key, string label, int n, Action<int> pick)
+        Row MakeRow(string rowName, string key, string label, int n, Func<int, string> optionName, Action<int> pick)
         {
-            var row = new Row { Box = new VisualElement { name = "starter-row-" + key, pickingMode = PickingMode.Ignore } };
+            var row = new Row { Box = new VisualElement { name = rowName, pickingMode = PickingMode.Ignore } };
             row.Label = Text("starter-label-" + key, 16f, Ink, true, false);
             row.Label.text = label;
             row.Label.style.unityTextAlign = TextAnchor.MiddleLeft;
@@ -303,7 +300,7 @@ namespace Kestrel.Slice
             for (int k = 0; k < n; k++)
             {
                 int at = k;
-                var b = new Button(() => pick(at)) { name = "starter-" + key + "-" + k };
+                var b = new Button(() => pick(at)) { name = optionName(k) };
                 Style(b, OptionBg, Ink, true);
                 row.Options[k] = b;
                 row.Box.Add(b);
@@ -318,7 +315,7 @@ namespace Kestrel.Slice
             {
                 var b = row.Options[k];
                 bool on = selected(k), ok = allowed(k);
-                // A choice that can't fly is not offered: greyed and not tappable (it never warns).
+                // A value the mission does not offer (KH-10/KH-19's landing pair) is greyed and not tappable.
                 b.SetEnabled(ok);
                 b.EnableInClassList("starter-on", on);
                 b.style.backgroundColor = on ? Accent : OptionBg;

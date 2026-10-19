@@ -1,8 +1,10 @@
-// Starter screen (Phase 1 PR 5) with real UI Toolkit rects, like WebDesignerOverlapDeviceTests:
-// 335x667, 390x844 and 430x932 portrait, iPad portrait 820x1180, and landscape web 1280x720, 1366x768
-// and 1920x1080 (each a 1280x720 panel after WebPanelScale). Boosters hidden (KH-3), shown (KH-5) and
-// locked (KH-10), a long readiness line and the "Checking" state. No sibling rects intersect, every label
-// fits its box (TextFit.Problems), whole words never split, and every tappable control is 44 pt.
+// Starter screen (Phase 1 PR 5): the REAL UI Toolkit tree (StarterPanel over the real catalog, the campaign and
+// each mission's campaign winner) at 335x667, 390x844 and 430x932 portrait, iPad portrait 820x1180, and landscape
+// web 1280x720, 1366x768 and 1920x1080 (each the panel WebPanelScale gives). Per size and case: every label's
+// MeasureTextSize fits its content rect, every element sits inside its parent, no siblings overlap, nothing is
+// off-screen or outside the safe area, 44 pt targets, exactly one primary (Launch) bottom-right on web / at the
+// bottom on portrait, ◀ Back top-left. One PNG per size (DeviceCapture → $KH_CAP_OUT or unity/CaptureOut).
+// The click-through goes by UiIds names only, and the pad design follows every control.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +12,7 @@ using System.Reflection;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Ui;
 using Kestrel.Game.Shell;
 using Kestrel.Slice;
 using NUnit.Framework;
@@ -21,150 +24,237 @@ namespace Kestrel.Game.Tests
 {
     public class StarterDesignerDeviceTests
     {
-        const string LongReadiness = "Ready. Lands on Haven on its last fuel, and both boosters fly home with little to spare.";
+        const string LongReadiness = "Lands on Haven on its last fuel, and both boosters fly home with little to spare.";
 
         struct Device { public string Name; public float W, H, Top, Bottom; public bool Wide; }
 
         static IEnumerable<Device> Devices()
         {
-            yield return new Device { Name = "335x667", W = 335, H = 667 };
+            yield return new Device { Name = "335x667", W = 335, H = 667, Top = 20 };
             yield return new Device { Name = "390x844", W = 390, H = 844, Top = 47, Bottom = 34 };
             yield return new Device { Name = "430x932", W = 430, H = 932, Top = 59, Bottom = 34 };
-            yield return new Device { Name = "iPad 820x1180", W = 820, H = 1180, Top = 24, Bottom = 20 };
+            yield return new Device { Name = "ipad-820x1180", W = 820, H = 1180, Top = 24, Bottom = 20 };
             foreach (var (w, h) in new[] { (1280, 720), (1366, 768), (1920, 1080) })
             {
                 WebLandscapeType.PanelReference(true, out float rw, out float rh, out float m);
                 float s = WebLandscapeType.PanelScale(w, h, rw, rh, m);
-                yield return new Device { Name = "web " + w + "x" + h, W = Mathf.Round(w / s), H = Mathf.Round(h / s), Wide = true };
+                yield return new Device { Name = "web-" + w + "x" + h, W = Mathf.Round(w / s), H = Mathf.Round(h / s), Wide = true };
             }
         }
 
-        static StarterTable table;
+        static Catalog catalog;
+        static Campaign campaign;
 
         [OneTimeSetUp]
-        public void LoadTable()
+        public void LoadBases()
         {
             string root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
-            table = StarterTable.LoadPlaceholder(root);
+            catalog = Catalog.LoadFromRepo(root);
+            campaign = Campaign.Load(root);
+            StarterBases.Active = StarterBases.Parse(File.ReadAllText(Path.Combine(root, "data", "golden", "campaign-winners.json")));
+            StarterBasesBoot.Loaded = true;
         }
 
-        [Test]
-        public void EveryDeviceAndMission_NoOverlap_TextFits_44ptTargets()
+        static StarterRocket Rocket(string id, string key = null)
         {
-            foreach (var d in Devices())
-                foreach (var (mission, label, blocked) in new[] { ("m3", "KH-3 boosters hidden", false), ("m5", "KH-5 boosters shown", false), ("m10", "KH-10 boosters locked", false), ("m7", "KH-7 checking", true) })
-                    Check(d, new StarterRocket(table, mission), label, blocked, null);
+            var r = new StarterRocket(catalog, campaign.ById(id), StarterBases.For(id));
+            if (key != null)
+            {
+                var p = key.Split('-');
+                StarterRocket.TryEngine(p[0], out var e);
+                r.Engine = e; r.Stages = int.Parse(p[1]); r.FuelNotch = int.Parse(p[2].Substring(1)); r.Boosters = int.Parse(p[3].Substring(1));
+                Assert.AreEqual(key, r.Choice.Key, id + " setting");
+            }
+            return r;
         }
 
-        [Test]
-        public void LongReadinessLine_WrapsInsideTheSheet()
+        static IEnumerable<(string Label, Func<StarterRocket> Make, string Readiness)> Cases()
         {
-            foreach (var d in Devices())
-                Check(d, new StarterRocket(table, "m19"), "KH-19 long readiness", false, LongReadiness);
+            yield return ("kh3-boosters-hidden", () => Rocket("m3"), null);
+            yield return ("kh5-boosters-shown", () => Rocket("m5"), null);
+            yield return ("kh10-boosters-locked", () => Rocket("m10"), null);
+            yield return ("kh7-short", () => Rocket("m7", "kerosene-3-f0-b0"), null);
+            yield return ("kh6-too-heavy", () => Rocket("m6", "methane-3-f4-b0"), null);
+            yield return ("kh19-long-readiness", () => Rocket("m19"), LongReadiness);
         }
 
         [Test]
-        public void KnobsRebuildTheScreen_AndLockedBoostersStayPut()
+        public void EveryDevice_RealTree_TextFits_NoOverlap_InsideSafeArea_Captured()
+        {
+            var shots = new List<string>();
+            foreach (var d in Devices())
+                foreach (var c in Cases())
+                {
+                    string path = Check(d, c.Make(), c.Label, c.Readiness, capture: c.Label == "kh5-boosters-shown");
+                    if (path != null) shots.Add(path);
+                }
+            Assert.AreEqual(7, shots.Count, "one PNG per size");
+            foreach (var p in shots)
+            {
+                Assert.That(File.Exists(p), p);
+                Assert.Greater(new FileInfo(p).Length, 200, p + " is a real image");
+                TestContext.WriteLine("capture " + p);
+            }
+        }
+
+        [Test]
+        public void ClickThroughByName_ControlsBuildThePadRocket()
         {
             using (var surface = DeviceSurface.Open(390, 844))
             {
-                var r = new StarterRocket(table, "m5");
+                var r = Rocket("m5");
                 var panel = new StarterPanel(r, surface.Stage);
                 try
                 {
                     panel.Layout(390, 844, 47, 34, 0, 0, 1f, false, false);
                     surface.Pump(3);
-                    Click(panel.Root.Q<Button>("starter-boosters-2"));
-                    Assert.AreEqual(4, r.Boosters, "KH-5 offers 0/2/4");
-                    Assert.IsTrue(panel.Root.Q<Button>("starter-boosters-2").ClassListContains("starter-on"));
-                    Assert.AreEqual(StarterScreen.BoostersHint, panel.Root.Q<Label>("starter-hint").text);
-                    Click(panel.Root.Q<Button>("starter-fuel-4"));
+                    Assert.AreEqual(UiIds.ScreenStarter, panel.Root.name);
+                    foreach (var id in UiIds.StarterControls)
+                        Assert.That(panel.Root.Q(id), Is.Not.Null, "every UiIds.StarterControls name exists: " + id);
+                    Assert.AreEqual(1, panel.Root.Query<Button>(UiIds.StarterLaunch).ToList().Count, "one Launch");
+
+                    string before = Kestrel.Core.Hangar.HangarSession.Snapshot(r.BuildDesign());
+                    Click(panel.Root.Q<Button>(UiIds.StarterBoostersOption(2)));
+                    Assert.AreEqual(2, r.Boosters);
+                    Assert.IsTrue(panel.Root.Q<Button>(UiIds.StarterBoostersOption(2)).ClassListContains("starter-on"));
+                    Assert.AreEqual(StarterScreen.BoostersHint, panel.Root.Q<Label>(UiIds.StarterHint).text);
+                    Click(panel.Root.Q<Button>(UiIds.StarterFuelNotch(5)));
                     Assert.AreEqual(4, r.FuelNotch);
-                    Click(panel.Root.Q<Button>("starter-reset"));
+                    Click(panel.Root.Q<Button>(UiIds.StarterEngineOption(StarterEngine.Methane)));
+                    Assert.AreEqual(StarterEngine.Methane, r.Engine);
+                    Click(panel.Root.Q<Button>(UiIds.StarterStagesOption(1)));
+                    Assert.AreEqual(1, r.Stages);
+                    Assert.AreNotEqual(before, Kestrel.Core.Hangar.HangarSession.Snapshot(r.BuildDesign()), "the controls change the built design");
+                    Click(panel.Root.Q<Button>(UiIds.StarterReset));
                     Assert.AreEqual(r.Default, r.Choice);
+                    Assert.AreEqual(before, Kestrel.Core.Hangar.HangarSession.Snapshot(r.BuildDesign()), "Reset is the campaign winner again");
                     Assert.IsTrue(panel.LaunchReady);
-                    Assert.IsTrue(panel.Root.Q<Button>("starter-launch").enabledSelf);
+                    Assert.IsTrue(panel.Root.Q<Button>(UiIds.StarterLaunch).enabledSelf);
+
+                    int launched = 0, back = 0;
+                    panel.LaunchRequested += () => launched++;
+                    panel.BackRequested += () => back++;
+                    Click(panel.Root.Q<Button>(UiIds.StarterLaunch));
+                    Click(panel.Root.Q<Button>(UiIds.StarterBack));
+                    Assert.AreEqual(1, launched); Assert.AreEqual(1, back);
+
+                    // A short rocket still launches; only a hard Validate block greys Launch, with its one plain reason.
+                    Click(panel.Root.Q<Button>(UiIds.StarterStagesOption(1)));
+                    Click(panel.Root.Q<Button>(UiIds.StarterFuelNotch(1)));
+                    Assert.AreEqual(!r.Check().Blocked, panel.Root.Q<Button>(UiIds.StarterLaunch).enabledSelf);
                 }
                 finally { panel.Detach(); }
 
-                var locked = new StarterRocket(table, "m10");
-                var lp = new StarterPanel(locked, surface.Stage);
+                var locked = new StarterPanel(Rocket("m10"), surface.Stage);
                 try
                 {
-                    lp.Layout(390, 844, 47, 34, 0, 0, 1f, false, false);
-                    Assert.AreEqual(StarterScreen.BoostersLockedHint, lp.Root.Q<Label>("starter-hint").text);
-                    Assert.IsFalse(lp.Root.Q<Button>("starter-boosters-0").enabledSelf, "not offered, greyed");
-                    Assert.IsTrue(lp.Root.Q<Button>("starter-boosters-1").ClassListContains("starter-on"), "the landing pair");
-                    Assert.IsTrue(lp.Root.Q("starter-row-boosters").ClassListContains("starter-locked"));
-                    var kh3 = new StarterPanel(new StarterRocket(table, "m3"), surface.Stage);
-                    kh3.Layout(390, 844, 47, 34, 0, 0, 1f, false, false);
-                    Assert.AreEqual(DisplayStyle.None, kh3.Root.Q("starter-row-boosters").style.display.value, "KH-3: the whole row is hidden");
-                    kh3.Detach();
+                    locked.Layout(390, 844, 47, 34, 0, 0, 1f, false, false);
+                    Assert.AreEqual(StarterScreen.BoostersLockedHint, locked.Root.Q<Label>(UiIds.StarterHint).text);
+                    Assert.IsFalse(locked.Root.Q<Button>(UiIds.StarterBoostersOption(0)).enabledSelf, "not offered, greyed");
+                    Assert.IsTrue(locked.Root.Q<Button>(UiIds.StarterBoostersOption(locked.Rocket.Default.Boosters)).ClassListContains("starter-on"), "the landing pair");
+                    Assert.IsTrue(locked.Root.Q(UiIds.StarterBoosters).ClassListContains("starter-locked"));
                 }
-                finally { lp.Detach(); }
+                finally { locked.Detach(); }
+
+                var kh3 = new StarterPanel(Rocket("m3"), surface.Stage);
+                try
+                {
+                    kh3.Layout(390, 844, 47, 34, 0, 0, 1f, false, false);
+                    Assert.AreEqual(DisplayStyle.None, kh3.Root.Q(UiIds.StarterBoosters).style.display.value, "KH-3: the whole row is hidden");
+                }
+                finally { kh3.Detach(); }
             }
         }
 
-        void Check(Device d, StarterRocket rocket, string label, bool blocked, string readiness)
+        string Check(Device d, StarterRocket rocket, string label, string readiness, bool capture)
         {
             using (var surface = DeviceSurface.Open(d.W, d.H))
             {
                 var panel = new StarterPanel(rocket, surface.Stage);
                 try
                 {
-                    panel.HostBlocked = () => blocked;
                     panel.Refresh();
-                    if (readiness != null)
-                    {
-                        // The copy comes from flown results (PR 4); force a long one through the same split.
-                        panel.Root.Q<Label>("starter-readiness").text = readiness.Substring(StarterScreen.ReadyWord.Length).Trim();
-                    }
+                    if (readiness != null) panel.Root.Q<Label>(UiIds.StarterReadiness).text = readiness;
                     panel.Layout(d.W, d.H, d.Top, d.Bottom, 0, 0, 1f, d.Wide, d.Wide);
                     surface.Pump(3);
                     Settle(surface, panel.Root);
                     string where = d.Name + " " + label;
+                    var stage = surface.Stage.worldBound;
+                    var safe = new Rect(stage.xMin, stage.yMin + d.Top, stage.width, stage.height - d.Top - d.Bottom);
+
                     Assert.That(StarterLayout.Problems(panel.Frame, panel.Input), Is.Empty, where + " model");
                     NoSiblingOverlap(panel.Root, where);
+                    InsideParents(panel.Root, where);
                     Assert.That(TextFit.Problems(panel.Root), Is.Empty, where);
                     foreach (var t in panel.Root.Query<TextElement>().ToList())
-                        if (t.resolvedStyle.display != DisplayStyle.None && t.panel != null) AssertWords(t, where + " " + t.name);
+                    {
+                        if (!Shown(t)) continue;
+                        TextFitsContent(t, where + " " + t.name);
+                        // The rocket window may run under the status bar; nothing readable or tappable does.
+                        Inside(t.worldBound, safe, where + " " + t.name + " inside the safe area");
+                    }
+                    var primaries = 0;
                     foreach (var b in panel.Root.Query<Button>().ToList())
                     {
-                        if (b.resolvedStyle.display == DisplayStyle.None) continue;
+                        if (!Shown(b)) continue;
+                        if (b.ClassListContains("starter-primary") || b.name == UiIds.StarterLaunch) primaries++;
                         Assert.GreaterOrEqual(b.worldBound.width, 44f - 0.5f, where + " " + b.name + " width");
                         Assert.GreaterOrEqual(b.worldBound.height, 44f - 0.5f, where + " " + b.name + " height");
-                        Assert.That(surface.Stage.worldBound.Contains(b.worldBound.center), Is.True, where + " " + b.name + " on screen");
+                        Inside(b.worldBound, safe, where + " " + b.name + " on screen, inside the safe area");
                     }
-                    var launch = panel.Root.Q<Button>("starter-launch");
+                    Assert.AreEqual(1, primaries, where + " exactly one primary button");
+
+                    var launch = panel.Root.Q<Button>(UiIds.StarterLaunch);
                     Assert.AreEqual(DisplayStyle.Flex, launch.resolvedStyle.display, where + " Launch always visible");
-                    Assert.AreEqual(!blocked, launch.enabledSelf, where + " Launch follows CanLaunch and the gate");
-                    var badge = panel.Root.Q<Label>("starter-badge");
-                    if (blocked)
+                    bool blocked = rocket.Check().Blocked;
+                    Assert.AreEqual(!blocked, launch.enabledSelf, where + " Launch is off only on a hard block");
+                    if (label == "kh7-short") Assert.IsTrue(launch.enabledSelf, where + " a short rocket still launches");
+                    if (label == "kh6-too-heavy")
                     {
-                        Assert.AreEqual(StarterScreen.Checking, panel.Root.Q<Label>("starter-readiness").text, where);
-                        Assert.AreEqual(DisplayStyle.None, badge.resolvedStyle.display, where + " no green word without a result");
+                        Assert.IsTrue(blocked, where);
+                        Assert.AreEqual(StarterScreen.HeavyBadge, panel.Root.Q<Label>(UiIds.StarterBadge).text, where);
                     }
-                    var rocketBox = panel.Root.Q("starter-rocket").worldBound;
-                    var sheet = panel.Root.Q("starter-sheet").worldBound;
+                    var rocketBox = panel.Root.Q(UiIds.StarterRocket).worldBound;
+                    var sheet = panel.Root.Q(UiIds.StarterSheet).worldBound;
                     Assert.That(rocketBox.Overlaps(Shrink(sheet)), Is.False, where + " the rocket window is clear of the sheet");
                     if (d.Wide)
                     {
-                        Assert.Greater(launch.worldBound.xMin, d.W * 0.5f, where + " Launch bottom-right");
+                        Assert.Greater(launch.worldBound.xMin, stage.xMin + stage.width * 0.5f, where + " Launch bottom-right");
+                        Assert.Greater(launch.worldBound.yMin, stage.yMin + stage.height * 0.5f, where + " Launch bottom-right");
                         Assert.LessOrEqual(sheet.width, WebLandscapeType.SideCap + 0.5f, where);
                     }
-                    var back = panel.Root.Q<Button>("starter-back").worldBound;
-                    Assert.Less(back.xMin, d.W * 0.25f, where + " Back top-left");
-                    Assert.Less(back.yMin, d.H * 0.15f, where + " Back top-left");
+                    else Assert.Greater(launch.worldBound.yMin, stage.yMin + stage.height * 0.6f, where + " Launch at the bottom");
+                    var back = panel.Root.Q<Button>(UiIds.StarterBack).worldBound;
+                    Assert.Less(back.xMin, stage.xMin + stage.width * 0.25f, where + " Back top-left");
+                    Assert.Less(back.yMin, stage.yMin + stage.height * 0.15f, where + " Back top-left");
+
+                    if (!capture) return null;
+                    string path = DeviceCapture.Save("starter-" + d.Name, surface.Stage, surface.Texture, surface.Window, out var kind);
+                    TestContext.WriteLine(where + " capture (" + kind + "): " + path);
+                    return path;
                 }
                 finally { panel.Detach(); }
             }
+        }
+
+        static bool Shown(VisualElement e)
+        {
+            for (var p = e; p != null; p = p.parent)
+                if (p.resolvedStyle.display == DisplayStyle.None) return false;
+            return e.panel != null && e.worldBound.width > 0.5f && e.worldBound.height > 0.5f;
+        }
+
+        static void Inside(Rect r, Rect outer, string where)
+        {
+            Assert.That(r.xMin >= outer.xMin - 0.5f && r.yMin >= outer.yMin - 0.5f && r.xMax <= outer.xMax + 0.5f && r.yMax <= outer.yMax + 0.5f,
+                Is.True, where + " " + r + " outside " + outer);
         }
 
         static void NoSiblingOverlap(VisualElement root, string where)
         {
             var kids = new List<VisualElement>();
             foreach (var c in root.Children())
-                if (c.resolvedStyle.display != DisplayStyle.None && c.worldBound.width > 0.5f && c.worldBound.height > 0.5f) kids.Add(c);
+                if (Shown(c)) kids.Add(c);
             for (int i = 0; i < kids.Count; i++)
             {
                 for (int j = i + 1; j < kids.Count; j++)
@@ -174,28 +264,39 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        /// <summary>Every shown element inside its parent (the screen root is the stage-sized layer).</summary>
+        static void InsideParents(VisualElement e, string where)
+        {
+            foreach (var c in e.Children())
+            {
+                if (!Shown(c)) continue;
+                if (e.name != UiIds.ScreenStarter) Inside(c.worldBound, e.worldBound, where + " " + c.name + " inside " + e.name);
+                InsideParents(c, where);
+            }
+        }
+
         static Rect Shrink(Rect r) => new Rect(r.x + 0.5f, r.y + 0.5f, Mathf.Max(0f, r.width - 1f), Mathf.Max(0f, r.height - 1f));
 
-        static void AssertWords(TextElement e, string where)
+        /// <summary>MeasureTextSize against the content rect: the one-line need for no-wrap labels, else the longest
+        /// word and the wrapped height.</summary>
+        static void TextFitsContent(TextElement e, string where)
         {
             if (e == null || string.IsNullOrEmpty(e.text)) return;
             float w = e.contentRect.width;
             if (float.IsNaN(w) || w < 1f) w = e.layout.width;
             float h = e.contentRect.height;
             if (float.IsNaN(h) || h < 1f) h = e.layout.height;
-            if (w < 1f) return;
+            Assert.Greater(w, 1f, where + " has no room for its text");
             var one = e.MeasureTextSize(e.text, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined);
             if (e.resolvedStyle.whiteSpace == WhiteSpace.NoWrap)
             {
                 Assert.That(one.x, Is.LessThanOrEqualTo(w + TextFit.Slack), where + " need " + one.x.ToString("0") + " box " + w.ToString("0"));
+                Assert.That(one.y, Is.LessThanOrEqualTo(h + TextFit.Slack), where + " line " + one.y.ToString("0") + " box " + h.ToString("0"));
                 return;
             }
             float longest = 0f;
             foreach (var word in e.text.Split(' '))
-            {
-                if (word.Length == 0) continue;
-                longest = Mathf.Max(longest, e.MeasureTextSize(word, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined).x);
-            }
+                if (word.Length > 0) longest = Mathf.Max(longest, e.MeasureTextSize(word, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined).x);
             Assert.That(longest, Is.LessThanOrEqualTo(w + TextFit.Slack), where + " a word is wider than its box");
             var need = e.MeasureTextSize(e.text, w, VisualElement.MeasureMode.AtMost, 0f, VisualElement.MeasureMode.Undefined);
             Assert.That(need.y, Is.LessThanOrEqualTo(h + TextFit.Slack), where + " tall need " + need.y.ToString("0") + " box " + h.ToString("0"));
@@ -219,7 +320,7 @@ namespace Kestrel.Game.Tests
             }
         }
 
-        /// <summary>Same device surface as WebDesignerOverlapDeviceTests: an editor window, else a UIDocument on a render texture.</summary>
+        /// <summary>Same device surface as WebDesignerOverlapDeviceTests, document first so the capture can read it.</summary>
         sealed class DeviceSurface : IDisposable
         {
             EditorWindow window;
@@ -227,17 +328,20 @@ namespace Kestrel.Game.Tests
             PanelSettings settings;
             RenderTexture texture;
             public VisualElement Stage { get; private set; }
+            public RenderTexture Texture => texture;
+            public EditorWindow Window => window;
 
+            /// <summary>The UIDocument on a render texture first (it can be read back as a PNG), else an editor window.</summary>
             public static DeviceSurface Open(float w, float h)
             {
                 var surface = new DeviceSurface();
-                surface.TryWindow(w, h);
-                surface.Pump(4);
+                surface.TryDocument(w, h);
+                surface.Pump(6);
                 if (!surface.Sized(w, h))
                 {
-                    surface.CloseWindow();
-                    surface.TryDocument(w, h);
-                    surface.Pump(6);
+                    surface.CloseDocument();
+                    surface.TryWindow(w, h);
+                    surface.Pump(4);
                 }
                 if (!surface.Sized(w, h)) Assert.Fail("panel did not take the device size " + w + "x" + h);
                 return surface;
@@ -343,12 +447,18 @@ namespace Kestrel.Game.Tests
                 Stage = null;
             }
 
-            public void Dispose()
+            void CloseDocument()
             {
-                CloseWindow();
                 if (go != null) UnityEngine.Object.DestroyImmediate(go);
                 if (settings != null) UnityEngine.Object.DestroyImmediate(settings);
                 if (texture != null) { texture.Release(); UnityEngine.Object.DestroyImmediate(texture); }
+                go = null; settings = null; texture = null; Stage = null;
+            }
+
+            public void Dispose()
+            {
+                CloseWindow();
+                CloseDocument();
             }
         }
 

@@ -19,15 +19,18 @@ namespace Kestrel.Slice
     {
         public static Action Relaunch { get; private set; }
         public static Action LeaveHome { get; private set; }
+        /// <summary>Back on the pad with the designer (the Starter screen under the default flags).</summary>
+        public static Action BackToDesigner { get; private set; }
 
         static Catalog catalog;
         static Design design;
         static bool engineer;
 
-        public static void Bind(Action relaunch, Action home)
+        public static void Bind(Action relaunch, Action home, Action designer = null)
         {
             Relaunch = relaunch;
             LeaveHome = home;
+            BackToDesigner = designer;
         }
 
         public static void Arm(Catalog cat, Design flying, JsonObject doc, bool engineerDepth)
@@ -56,7 +59,7 @@ namespace Kestrel.Slice
             return card;
         }
 
-        public static ReportActions Actions() => NextMission.Actions(Relaunch, LeaveHome);
+        public static ReportActions Actions() => NextMission.Actions(Relaunch, LeaveHome, BackToDesigner);
 
         static FlightFacts Facts(FlightDriver flight, FailureEvent failure)
         {

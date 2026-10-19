@@ -66,7 +66,7 @@ namespace Kestrel.Slice
             Kestrel.Game.Audio.AudioDirector.Attach(flight);
             _ = GameCenterBridge.Impl.Authenticate();
             StartSession();
-            PostFlightSource.Bind(RestartFlight, ExitToHome);
+            PostFlightSource.Bind(RestartFlight, ExitToHome, BackToDesign);
         }
 
         /// <summary>Open a home handoff, else the most recent save, else the Workhorse template, else the stock preset.</summary>
@@ -117,11 +117,15 @@ namespace Kestrel.Slice
             TryBuildPanel();
             // #300's features.json boot load (idempotent): a Design scene opened before Home still reads the file.
             HomeFlagsBoot.Load();
+            StarterBasesBoot.Load();
             SetupStarter();
             WatchFlags();
             if (!handed) return;
             try
             {
+                // Starter path: briefing → designer → flight. "To the pad" opens the Starter screen (one tap to Launch)
+                // instead of flying straight off the handoff.
+                if (starterMode) return;
                 if (flyNow && session.LaunchEnabled) Launch();
                 else ShowDesigner(true);
             }
@@ -1073,26 +1077,27 @@ namespace Kestrel.Slice
 
         // ---- Phase 1 Starter screen (PR 5) ----
 
-        /// <summary>Mount the Starter screen for the mission on the pad. No mission (sandbox / free build) or no
-        /// starter table keeps the existing designer, unchanged, whatever the flags say.</summary>
+        /// <summary>Mount the Starter screen for the mission on the pad. Its base rocket is the mission's campaign
+        /// winner (StarterBasesBoot), else the design on the pad. No mission (sandbox / free build) keeps the
+        /// existing designer, unchanged, whatever the flags say.</summary>
         void SetupStarter()
         {
             if (starter != null || session == null || ui == null) return;
             var ctx = GameSession.Current;
             string mid = ctx != null && !ctx.IsFree ? ctx.MissionId : null;
             if (string.IsNullOrEmpty(mid)) return;
-            var table = StarterBoot.EnsureTable();
-            if (table == null || !table.Has(mid)) return;
+            var mission = Kestrel.Game.Shell.ScreenStub.LoadCampaign()?.ById(mid);
+            var baseDesign = StarterBases.For(mid) ?? (session.Design != null ? JsonMut.CloneObject(session.Design) : null);
+            if (mission == null || baseDesign == null) return;
             try
             {
-                starterRocket = new StarterRocket(table, mid);
+                starterRocket = new StarterRocket(session.catalog, mission, baseDesign);
                 try { StarterScreen.Restore(CreditsPlay.Store, starterRocket); }
                 catch (System.Exception e) { Debug.LogWarning("[Starter] restore: " + e.Message); }
                 starterEntryDesign = session.Design != null ? JsonMut.CloneObject(session.Design) : null;
                 var hudEl = ui.Q("hud");
                 var parent = hudEl != null && hudEl.parent != null ? hudEl.parent : ui;
                 starter = new StarterPanel(starterRocket, parent, hudEl != null ? parent.IndexOf(hudEl) : -1);
-                starter.HostBlocked = () => session != null && LaunchGateNow().state == LaunchGateState.Blocked;
                 starter.LaunchRequested += StarterLaunch;
                 starter.BackRequested += StarterBack;
                 starterRocket.Changed += OnStarterChanged;
@@ -1161,14 +1166,14 @@ namespace Kestrel.Slice
             root.schedule.Execute(() => TextFit.Apply(root));
         }
 
-        /// <summary>The rocket on the pad follows the knobs (BuildDesign: the same JSON the hangar and PadHandoff use).</summary>
+        /// <summary>The rocket on the pad follows the controls: BuildDesign replays them onto the base with the
+        /// HangarEditor ops, and the session loads that JSON, so the pad, Launch and the flight read the same design.</summary>
         void LoadStarterDesign()
         {
             if (starterRocket == null || session == null) return;
             JsonObject d = null;
             try { d = starterRocket.BuildDesign(); }
             catch (System.Exception e) { Debug.LogWarning("[Starter] design: " + e.Message); }
-            // A player build without the winners file has no base design for KH-1/KH-2: keep the pad's design.
             if (d == null && starterEntryDesign != null) d = JsonMut.CloneObject(starterEntryDesign);
             if (d == null) return;
             nextIsLoad = true;
@@ -1188,13 +1193,15 @@ namespace Kestrel.Slice
             catch (System.Exception e) { Debug.LogWarning("[Starter] save: " + e.Message); }
         }
 
-        /// <summary>Starter Launch: the current combination through the existing gate and launch path.</summary>
+        /// <summary>Starter Launch: exactly the rocket the controls built, through the existing Launch path. Only a hard
+        /// Validate block (session.LaunchEnabled) stops it; the reference-ascent check never holds it, and a rocket
+        /// the readout calls short still flies (and may explode).</summary>
         void StarterLaunch()
         {
             if (starterRocket == null) return;
             LoadStarterDesign();
             SaveStarter();
-            if (!LaunchGateNow(settle: true).Ready) { starter?.Refresh(); return; }
+            if (!session.LaunchEnabled) { starter?.Refresh(); return; }
             Launch();
         }
 

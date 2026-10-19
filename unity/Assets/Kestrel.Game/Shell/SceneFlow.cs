@@ -96,6 +96,11 @@ namespace Kestrel.Game.Shell
         public void ReportNext() => Route(RouteId.ReportNext, ScreenStub.LoadCampaign());
         public void ReportRetry() => Route(RouteId.ReportRetry);
 
+        /// <summary>Report "Back to designer": the same mission and seed, on the Design screen with no overlay
+        /// (the ReportRetry route without the relaunch). The flight and report live in the Design scene, so the
+        /// host then puts the rocket back on the pad (SliceApp → the Starter screen under the default flags).</summary>
+        public void ReportDesigner() => Route(RouteId.ReportRetry);
+
         /// <summary>Same exit the in-flight pause menu reaches via Go(Home): title screen, session cleared.</summary>
         public void ExitToHome() => Route(RouteId.ExitHome);
 

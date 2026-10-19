@@ -1,5 +1,5 @@
 // Starter screen (Phase 1 PR 5): the flag gate, Kestrel UX copy (STARTER_COPY.md), the readiness split
-// and the save. Expected values come from the plan, the copy doc and data/campaign.json.
+// and the save. Expected values come from the plan, the copy doc, data/campaign.json and the real readout.
 using System;
 using System.IO;
 using Kestrel.Core.Designer;
@@ -11,10 +11,7 @@ namespace Kestrel.Core.Tests
 {
     public class StarterScreenTests
     {
-        StarterTable table;
-
-        [SetUp]
-        public void Load() => table = StarterTable.LoadPlaceholder(Golden.Root);
+        static StarterRocket R(string id) => StarterFixture.Rocket(id);
 
         [Test]
         public void DefaultFlags_OpenStarter_AndTheFullDesignerToggleRestoresTheExistingOne()
@@ -57,13 +54,12 @@ namespace Kestrel.Core.Tests
             foreach (var l in new[] { StarterScreen.EngineLabel, StarterScreen.StagesLabel, StarterScreen.FuelLabel, StarterScreen.BoostersLabel })
                 Assert.LessOrEqual(l.Length, StarterScreen.LabelMax, l);
             foreach (var h in new[] { StarterScreen.EngineHint, StarterScreen.StagesHint, StarterScreen.FuelHint, StarterScreen.BoostersHint,
-                         StarterScreen.HydrogenHint, StarterScreen.OneStageHint, StarterScreen.BoostersLockedHint, StarterScreen.ResetHint })
+                         StarterScreen.HydrogenHint, StarterScreen.BoostersLockedHint, StarterScreen.ResetHint })
             {
                 Assert.LessOrEqual(h.Length, StarterScreen.HintMax, h);
                 Assert.IsFalse(h.Contains("!"), h);
                 foreach (var banned in new[] { "easy", "just", "Just", "Easy" }) Assert.IsFalse(h.Contains(banned), h);
             }
-            Assert.AreEqual("Checking this rocket…", StarterScreen.Checking);
             Assert.AreEqual("None", StarterScreen.BoosterText(0));
             Assert.AreEqual("Methane", StarterScreen.OptionText(StarterEngine.Methane));
             Assert.AreEqual("Fuel, 3 of 5", StarterScreen.FuelSpoken(2));
@@ -72,17 +68,17 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Header_ComesFromMissionData()
         {
-            var m1 = new StarterRocket(table, "m1").Mission;
+            var m1 = R("m1").Mission;
             Assert.AreEqual("KH-1 · First Hop", StarterScreen.Title(m1));
             StringAssert.StartsWith("Hop to ", StarterScreen.Subtitle(m1));
             StringAssert.EndsWith(" km and back", StarterScreen.Subtitle(m1));
-            var m6 = new StarterRocket(table, "m6").Mission;
+            var m6 = R("m6").Mission;
             Assert.IsTrue(StarterScreen.Subtitle(m6).EndsWith("land at the pad", StringComparison.Ordinal), "KH-6 lands back at the pad");
-            var m7 = new StarterRocket(table, "m7").Mission;
+            var m7 = R("m7").Mission;
             Assert.IsTrue(StarterScreen.Subtitle(m7).EndsWith("land on Haven", StringComparison.Ordinal), "KH-7 lands on the Haven barge");
             for (int i = 1; i <= 20; i++)
             {
-                var m = new StarterRocket(table, "m" + i).Mission;
+                var m = R("m" + i).Mission;
                 Assert.LessOrEqual(m.Name.Length, 16, "KH-" + i + " name (UX: 16 or fewer)");
                 Assert.IsNotEmpty(StarterScreen.Subtitle(m), "KH-" + i);
             }
@@ -91,42 +87,84 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Hint_StateHintsReplaceTheNormalOne()
         {
-            var kh1 = new StarterRocket(table, "m1");
-            Assert.AreEqual(StarterScreen.OneStageHint, StarterScreen.Hint(kh1, StarterKnob.None), "KH-1 opens on its locked stages");
-            Assert.AreEqual(StarterScreen.OneStageHint, StarterScreen.Hint(kh1, StarterKnob.Stages));
-            Assert.AreEqual(StarterScreen.EngineHint, StarterScreen.Hint(kh1, StarterKnob.Engine));
+            var kh1 = R("m1");
+            Assert.AreEqual(StarterScreen.EngineHint, StarterScreen.Hint(kh1, StarterKnob.None), "KH-1: one kerosene stage, no state hint");
+            Assert.AreEqual(StarterScreen.StagesHint, StarterScreen.Hint(kh1, StarterKnob.Stages));
             Assert.AreEqual(StarterScreen.FuelHint, StarterScreen.Hint(kh1, StarterKnob.FuelNotch));
 
-            var kh10 = new StarterRocket(table, "m10");
+            var kh10 = R("m10");
             Assert.AreEqual(StarterScreen.BoostersLockedHint, StarterScreen.Hint(kh10, StarterKnob.None));
             Assert.AreEqual(StarterScreen.BoostersLockedHint, StarterScreen.Hint(kh10, StarterKnob.Boosters));
 
-            var kh5 = new StarterRocket(table, "m5");
+            var kh5 = R("m5");
             Assert.AreEqual(StarterScreen.BoostersHint, StarterScreen.Hint(kh5, StarterKnob.Boosters));
+            Assert.IsTrue(StarterScreen.HydrogenAuto(kh5), "KH-5's winner has a hydrogen top stage");
+            Assert.AreEqual(StarterScreen.HydrogenHint, StarterScreen.Hint(kh5, StarterKnob.Stages));
+            kh5.Stages = 1;
+            Assert.IsFalse(StarterScreen.HydrogenAuto(kh5), "one stage: no hydrogen upper");
             Assert.AreEqual(StarterScreen.StagesHint, StarterScreen.Hint(kh5, StarterKnob.Stages));
-
-            var kh9 = new StarterRocket(table, "m9");
-            Assert.IsTrue(StarterScreen.HydrogenAuto(kh9), "KH-9 on: the top stage burns hydrogen");
-            Assert.AreEqual(StarterScreen.HydrogenHint, StarterScreen.Hint(kh9, StarterKnob.Engine));
-            Assert.IsFalse(StarterScreen.HydrogenAuto(new StarterRocket(table, "m4")));
         }
 
         [Test]
-        public void Readiness_SplitsTheGreenWord_AndNeverSaysReadyWithoutAResult()
+        public void Readiness_IsTheRealReadout_PlainInformation_NeverABlockerBeyondHardBlocks()
         {
-            var r = new StarterRocket(table, "m3");
-            Assert.IsTrue(StarterScreen.Readiness(r, false, out var badge, out var rest));
+            // The KH-3 winner: the readout has margin to spare, so the green word and the target.
+            var r = R("m3");
+            Assert.IsTrue(StarterScreen.Readiness(r, out var badge, out var rest));
             Assert.AreEqual(StarterScreen.ReadyBadge, badge);
-            Assert.IsFalse(rest.StartsWith("Ready", StringComparison.Ordinal), rest);
-            Assert.IsNotEmpty(rest);
-            StringAssert.Contains("kilometres", StarterScreen.Spoken(badge, rest));
-            StringAssert.StartsWith("Ready. ", StarterScreen.Spoken(badge, rest));
+            Assert.AreEqual("Reaches 200 km with fuel to spare.", rest);
+            Assert.AreEqual("Ready. Reaches 200 kilometres with fuel to spare.", StarterScreen.Spoken(badge, rest));
+            Assert.Greater(r.Check().Margin, StarterScreen.TightMargin);
 
-            Assert.IsFalse(StarterScreen.Readiness(r, true, out badge, out rest), "the host gate is blocked");
-            Assert.AreEqual("", badge);
-            Assert.AreEqual(StarterScreen.Checking, rest);
-            Assert.IsFalse(StarterScreen.Readiness(null, false, out badge, out rest));
-            Assert.AreEqual(StarterScreen.Checking, rest);
+            // KH-7 with one notch less fuel and three stages: short on the readout, and Launch stays on.
+            var shortOne = StarterLayoutTests.Rocket("m7", "kerosene-3-f0-b0");
+            Assert.IsTrue(StarterScreen.Readiness(shortOne, out badge, out rest), "short is information, not a block");
+            Assert.AreEqual(StarterScreen.ShortBadge, badge);
+            StringAssert.StartsWith("About ", rest);
+            StringAssert.Contains("% short of 35,786 km", rest);
+            Assert.IsTrue(shortOne.CanLaunch, "a rocket that falls short still launches");
+            Assert.Less(shortOne.Check().Margin, 0);
+
+            // KH-6 methane, three stages, full fuel: Validate's hard twr-low block. The one plain reason, Launch off.
+            var heavy = StarterLayoutTests.Rocket("m6", "methane-3-f4-b0");
+            Assert.IsFalse(StarterScreen.Readiness(heavy, out badge, out rest));
+            Assert.IsFalse(heavy.CanLaunch);
+            Assert.AreEqual("twr-low", heavy.Check().BlockCode);
+            Assert.AreEqual(StarterScreen.HeavyBadge, badge);
+            Assert.AreEqual("Too heavy to leave the pad. Try less fuel.", rest);
+
+            // KH-1/KH-2 hops never show the readout's orbital "short" (M-10): the winner reads Ready, and
+            // other settings compare with the rocket that flew the hop.
+            foreach (var id in new[] { "m1", "m2" })
+            {
+                var hop = R(id);
+                Assert.IsTrue(StarterScreen.Readiness(hop, out badge, out rest), id);
+                Assert.AreEqual(StarterScreen.ReadyBadge, badge, id);
+                StringAssert.StartsWith("Hops to ", rest);
+                hop.FuelNotch = 0;
+                StarterScreen.Readiness(hop, out badge, out rest);
+                Assert.AreNotEqual(StarterScreen.ShortBadge, badge, id);
+                StringAssert.Contains("may fall short", rest);
+                hop.FuelNotch = 4;
+                StarterScreen.Readiness(hop, out badge, out rest);
+                StringAssert.Contains("may overshoot", rest);
+            }
+            Assert.IsFalse(StarterScreen.Readiness(null, out badge, out rest));
+        }
+
+        [Test]
+        public void EveryMissionWinner_ReadsAsTheReadoutSays_AndCanLaunch()
+        {
+            // With B-04 (#303) every campaign winner builds, so the default Starter rocket always launches.
+            foreach (var m in StarterFixture.Campaign.Missions)
+            {
+                var r = R(m.Id);
+                Assert.IsTrue(r.CanLaunch, m.Id + ": " + r.Check().BlockReason);
+                Assert.IsTrue(StarterScreen.Readiness(r, out var badge, out var rest), m.Id);
+                Assert.IsNotEmpty(badge, m.Id);
+                Assert.IsNotEmpty(rest, m.Id);
+                Assert.AreNotEqual(StarterScreen.ShortBadge, badge, m.Id + " the winner is never shown short");
+            }
         }
 
         [Test]
@@ -136,18 +174,20 @@ namespace Kestrel.Core.Tests
             try
             {
                 var store = new NativeStore(dir, () => 1000, () => 0.5);
-                var r = new StarterRocket(table, "m5");
+                var r = R("m5");
                 Assert.IsFalse(StarterScreen.Restore(store, r), "nothing saved yet");
+                r.Engine = StarterEngine.Methane;
                 r.Boosters = 4;
                 r.FuelNotch = 3;
                 Assert.IsTrue(StarterScreen.Save(store, r));
-                var back = new StarterRocket(table, "m5");
+                var back = R("m5");
                 int changes = 0;
                 back.Changed += _ => changes++;
                 Assert.IsTrue(StarterScreen.Restore(store, back));
                 Assert.AreEqual(r.Choice, back.Choice);
+                Assert.AreEqual(Kestrel.Core.Hangar.HangarSession.Snapshot(r.BuildDesign()), Kestrel.Core.Hangar.HangarSession.Snapshot(back.BuildDesign()), "the restored setting builds the same rocket");
                 Assert.AreEqual(1, changes);
-                Assert.IsFalse(StarterScreen.Restore(store, new StarterRocket(table, "m6")), "per-mission key");
+                Assert.IsFalse(StarterScreen.Restore(store, R("m6")), "per-mission key");
                 Assert.IsFalse(StarterScreen.Save(null, r));
             }
             finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
