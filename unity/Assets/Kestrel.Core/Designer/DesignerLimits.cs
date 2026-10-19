@@ -25,7 +25,7 @@ namespace Kestrel.Core.Designer
         public double tuneLimitPct = 15;
         public double fairingLengthMin = 1, fairingLengthMax = 40;
         public double jettisonMinKm = 80, jettisonMaxKm = 150;
-        public double payloadMassMin = 50, payloadMassMax = 100000;
+        public double payloadMassMin = 10, payloadMassMax = 100000;
         public double propMassMin = 1, propMassMax = 4000000;
         public int finCountMin = 3, finCountMax = 8;
         public double finSpanMin = 0.2, finSpanMax = 6, finSpanStep = 0.1;
@@ -95,7 +95,7 @@ namespace Kestrel.Core.Designer
             var tu = o.Obj("tunePct"); if (tu != null) l.tuneLimitPct = tu.Num("limit", 15);
             var fl = o.Obj("fairingLengthM"); if (fl != null) { l.fairingLengthMin = fl.Num("min", 1); l.fairingLengthMax = fl.Num("max", 40); }
             var je = o.Obj("jettisonAltitudeKm"); if (je != null) { l.jettisonMinKm = je.Num("min", 80); l.jettisonMaxKm = je.Num("max", 150); }
-            var pm = o.Obj("payloadMassKg"); if (pm != null) { l.payloadMassMin = pm.Num("min", 50); l.payloadMassMax = pm.Num("max", 100000); }
+            var pm = o.Obj("payloadMassKg"); if (pm != null) { l.payloadMassMin = pm.Num("min", 10); l.payloadMassMax = pm.Num("max", 100000); }
             var pr = o.Obj("propMassKg"); if (pr != null) { l.propMassMin = pr.Num("min", 1); l.propMassMax = pr.Num("max", 4000000); }
             var fi = o.Obj("fins");
             if (fi != null)
