@@ -1,6 +1,6 @@
 // Launch time of day. Literals below were computed outside this assembly:
 // FNV-1a 64, offset 14695981039346656037, prime 1099511628211,
-// UTF-16 code units of the id, then the seed as 8 little-endian bytes.
+// UTF-8 bytes of the id, then the seed as 8 little-endian bytes.
 // slot = hash % (day+sunset+night), buckets Day, Sunset, Night in that order.
 // A fixed row skips the hash. Unknown ids use default 60/25/15.
 using System;
