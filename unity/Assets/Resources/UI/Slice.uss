@@ -72,3 +72,13 @@
 .kh-web-wide .webcast-skip { font-size: 15px; }
 .kh-web-wide .issue-chip { font-size: 14px; padding: 4px 10px; }
 .kh-web-wide .launch-reason { font-size: 14px; }
+/* Phase 1 Starter screen (StarterPanel, PR 5): the existing designer sheet, its pill, its Home and the web
+   readout column are hidden while the pad shows Starter. Flags (FeatureFlags) pick the mode in SliceApp. */
+.starter-mode #design { display: none; }
+.starter-mode #issue-chip { display: none; }
+.starter-mode #home { display: none; }
+.starter-mode #web-readouts { display: none; }
+/* Existing designer with only some designer.* flags on: the pill and Undo/Redo follow their own flags. */
+.no-fix-pill #issue-chip { display: none; }
+.no-undo #undo { display: none; }
+.no-undo #redo { display: none; }

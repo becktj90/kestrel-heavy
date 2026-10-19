@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Economy;
+using Kestrel.Core.Features;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
@@ -48,6 +49,8 @@ namespace Kestrel.Slice
         bool ascentErrorLogged;
         double requiredMps, spareMps, hopGoalM; double? maxQKpa; string orbitLabel = "";
         VisualElement seqRow; Label hVerdict, hPulse, hCallout; Button skipCount;
+        // Phase 1 Starter screen (PR 5): shown instead of the existing designer while every designer.* flag is off.
+        StarterPanel starter; StarterRocket starterRocket; JsonObject starterEntryDesign; bool starterMode; FeatureFlags flagsSeen;
 
         void Awake()
         {
@@ -112,6 +115,10 @@ namespace Kestrel.Slice
             try { SaveHooks.Bind(session, library); }
             catch (System.Exception e) { Debug.LogWarning("[Hangar] save resume: " + e.Message); }
             TryBuildPanel();
+            // #300's features.json boot load (idempotent): a Design scene opened before Home still reads the file.
+            HomeFlagsBoot.Load();
+            SetupStarter();
+            WatchFlags();
             if (!handed) return;
             try
             {
@@ -512,6 +519,7 @@ namespace Kestrel.Slice
             float thumbW = thumb != null && thumb.resolvedStyle.width > 8f ? thumb.resolvedStyle.width : designPanel.resolvedStyle.width;
             if (thumbW < 8f) thumbW = ui.layout.width;
             DesignerV3Layout.FitThumbRow(thumb, narrowThumb ? Mathf.Min(thumbW, 420f) : thumbW, upp);
+            LayoutStarter();
             ApplyWebDesignFrame();
             // A geometry pass rebuilds the web readout column. If the flight HUD is up, hide it again.
             if (hud != null && !hud.ClassListContains("hidden")) FlightEntry.Show(ui);
@@ -521,7 +529,7 @@ namespace Kestrel.Slice
         void ApplyWebDesignFrame()
         {
             if (ui == null) return;
-            if (!WebLayoutMode.UseWide(Screen.width, Screen.height) || ui.layout.width < 8f || ui.layout.height < 8f)
+            if (starterMode || !WebLayoutMode.UseWide(Screen.width, Screen.height) || ui.layout.width < 8f || ui.layout.height < 8f)
             {
                 WebDesignChrome.Clear(ui);
                 designer?.SetWebColumn(0f, 0f);
@@ -587,6 +595,15 @@ namespace Kestrel.Slice
         /// On iPad the panel is on the side, so the whole height is free and HangarCamera shifts left instead.</summary>
         void ApplyDesignFraming()
         {
+            if (starterMode && starter != null && cam != null && ui.layout.height > 0)
+            {
+                // Starter: the rocket window sits above the sheet (portrait) or left of the side panel (landscape web).
+                float top = starter.SheetTopPanel;
+                float sf = starter.Frame == null || starter.Frame.Wide || float.IsNaN(top) ? 1f : DesignFraming.VisibleFraction(ui.layout.height, top);
+                if (hangarCam != null && hangarCam.enabled) hangarCam.SetBottomVisible(sf);
+                else FrameCamera(frameHeight, sf);
+                return;
+            }
             if (cam == null || ui.layout.height <= 0 || designPanel.ClassListContains("hidden")) return;
             bool side = HangarPanelLayout.SidePanel(Screen.width, Screen.height);
             float f = side ? 1f : DesignFraming.VisibleFraction(ui.layout.height, designPanel.worldBound.yMin - ui.worldBound.yMin);
@@ -642,6 +659,7 @@ namespace Kestrel.Slice
                 redoButton.tooltip = session.history.CanRedo ? "Redo " + session.history.NextRedo.Spoken : "Nothing to redo";
             }
             rocketView.SetIssues(adv);
+            if (starterMode) starter?.Refresh();
         }
 
         /// <summary>
@@ -1053,6 +1071,143 @@ namespace Kestrel.Slice
             cluster.Init(poses, Kestrel.Kit.KitBudgets.Medium);
         }
 
+        // ---- Phase 1 Starter screen (PR 5) ----
+
+        /// <summary>Mount the Starter screen for the mission on the pad. No mission (sandbox / free build) or no
+        /// starter table keeps the existing designer, unchanged, whatever the flags say.</summary>
+        void SetupStarter()
+        {
+            if (starter != null || session == null || ui == null) return;
+            var ctx = GameSession.Current;
+            string mid = ctx != null && !ctx.IsFree ? ctx.MissionId : null;
+            if (string.IsNullOrEmpty(mid)) return;
+            var table = StarterBoot.EnsureTable();
+            if (table == null || !table.Has(mid)) return;
+            try
+            {
+                starterRocket = new StarterRocket(table, mid);
+                try { StarterScreen.Restore(CreditsPlay.Store, starterRocket); }
+                catch (System.Exception e) { Debug.LogWarning("[Starter] restore: " + e.Message); }
+                starterEntryDesign = session.Design != null ? JsonMut.CloneObject(session.Design) : null;
+                var hudEl = ui.Q("hud");
+                var parent = hudEl != null && hudEl.parent != null ? hudEl.parent : ui;
+                starter = new StarterPanel(starterRocket, parent, hudEl != null ? parent.IndexOf(hudEl) : -1);
+                starter.HostBlocked = () => session != null && LaunchGateNow().state == LaunchGateState.Blocked;
+                starter.LaunchRequested += StarterLaunch;
+                starter.BackRequested += StarterBack;
+                starterRocket.Changed += OnStarterChanged;
+                starter.SetVisible(false);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[Starter] " + e.Message);
+                starter?.Detach();
+                starter = null; starterRocket = null;
+            }
+        }
+
+        /// <summary>Re-read the flags (never cached): Starter, or the existing designer with its own flags.</summary>
+        void ApplyStarterMode()
+        {
+            if (ui == null) return;
+            var flags = FeatureFlags.Active;
+            bool want = starter != null && StarterScreen.UseStarter(flags);
+            if (want && !starterMode) LoadStarterDesign();
+            starterMode = want;
+            ui.EnableInClassList("starter-mode", starterMode);
+            // The existing designer opened by its flags shows its pill and Undo/Redo only when their flags are on.
+            bool byFlags = flags != null && !StarterScreen.UseStarter(flags);
+            ui.EnableInClassList("no-fix-pill", byFlags && !flags.IsOn(FeatureKeys.DesignerFixPill));
+            ui.EnableInClassList("no-undo", byFlags && !flags.IsOn(FeatureKeys.DesignerUndoRedo));
+            if (starter != null)
+            {
+                starter.SetVisible(starterMode && !FlightHudVisible);
+                if (starterMode) { starter.Refresh(); LayoutStarter(); }
+            }
+            ApplyWebDesignFrame();
+            ApplyDesignFraming();
+        }
+
+        void WatchFlags()
+        {
+            var now = FeatureFlags.Active;
+            if (ReferenceEquals(now, flagsSeen)) return;
+            if (flagsSeen != null) flagsSeen.Changed -= OnFlagsChanged;
+            flagsSeen = now;
+            if (now != null) now.Changed += OnFlagsChanged;
+            ApplyStarterMode();
+        }
+
+        void OnFlagsChanged(FeatureFlags _) => ApplyStarterMode();
+
+        void OnDisable()
+        {
+            if (flagsSeen != null) flagsSeen.Changed -= OnFlagsChanged;
+            flagsSeen = null;
+            if (starterRocket != null) starterRocket.Changed -= OnStarterChanged;
+        }
+
+        /// <summary>Points for the Starter layout: the panel size and Screen.safeArea, like the design sheet.</summary>
+        void LayoutStarter()
+        {
+            if (starter == null || ui == null || ui.layout.width < 8f || ui.layout.height < 8f) return;
+            float upp = UnitsPerPoint();
+            float sx = ui.layout.width / Mathf.Max(1, Screen.width), sy = ui.layout.height / Mathf.Max(1, Screen.height);
+            var safe = Screen.safeArea;
+            starter.Layout(ui.layout.width / upp, ui.layout.height / upp,
+                (Screen.height - safe.yMax) * sy / upp, safe.yMin * sy / upp, safe.xMin * sx / upp, (Screen.width - safe.xMax) * sx / upp,
+                upp, Kestrel.Game.Shell.WebPanelScale.Wide, WebLayoutMode.WantExitReserve);
+            var root = starter.Root;
+            root.schedule.Execute(() => TextFit.Apply(root));
+        }
+
+        /// <summary>The rocket on the pad follows the knobs (BuildDesign: the same JSON the hangar and PadHandoff use).</summary>
+        void LoadStarterDesign()
+        {
+            if (starterRocket == null || session == null) return;
+            JsonObject d = null;
+            try { d = starterRocket.BuildDesign(); }
+            catch (System.Exception e) { Debug.LogWarning("[Starter] design: " + e.Message); }
+            // A player build without the winners file has no base design for KH-1/KH-2: keep the pad's design.
+            if (d == null && starterEntryDesign != null) d = JsonMut.CloneObject(starterEntryDesign);
+            if (d == null) return;
+            nextIsLoad = true;
+            session.Load(d, null, d.Str("name") ?? StarterScreen.Title(starterRocket.Mission));
+        }
+
+        void OnStarterChanged(StarterRocket _)
+        {
+            LoadStarterDesign();
+            SaveStarter();
+            starter?.Refresh();
+        }
+
+        void SaveStarter()
+        {
+            try { StarterScreen.Save(CreditsPlay.Store, starterRocket); }
+            catch (System.Exception e) { Debug.LogWarning("[Starter] save: " + e.Message); }
+        }
+
+        /// <summary>Starter Launch: the current combination through the existing gate and launch path.</summary>
+        void StarterLaunch()
+        {
+            if (starterRocket == null) return;
+            LoadStarterDesign();
+            SaveStarter();
+            if (!LaunchGateNow(settle: true).Ready) { starter?.Refresh(); return; }
+            Launch();
+        }
+
+        /// <summary>◀ Back: the briefing (SceneFlow DesignerBack), like the designer's own Back.</summary>
+        void StarterBack()
+        {
+            SaveStarter();
+            if (flight != null) flight.enabled = false;
+            var shell = Kestrel.Game.Shell.AppShell.Instance;
+            if (shell != null && shell.Flow != null) { shell.Flow.BackFromDesigner(); return; }
+            GoHome();
+        }
+
         /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every
         /// object SliceApp built (camera, sun, world, UI); ShellDesignHost restores the shell camera and UI.
         /// Opened standalone (Slice.unity), load build index 0 (Boot), which rebuilds the shell and enters Home.</summary>
@@ -1175,6 +1330,7 @@ namespace Kestrel.Slice
             ShowFlightPicture(false);
             camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
+            starter?.SetVisible(false);
             hud.RemoveFromClassList("hidden");
             // Inline display:none beats the .hidden class, and the web readout column is a sibling of #design.
             FlightEntry.Show(ui);
@@ -1295,6 +1451,8 @@ namespace Kestrel.Slice
         void HandleReportedFix(FixField link)
         {
             if (link == null) return;
+            // Starter has no tabs to jump to: back on the pad, the four knobs are the fix.
+            if (starterMode) { ReturnToPad(); return; }
             ReturnToPad();
             ShowDesigner(true);
             designer?.ApplyReportedFix(link.Kind, link.Tab);
@@ -1341,13 +1499,14 @@ namespace Kestrel.Slice
             if (session != null && rocketView != null) rocketView.SetSelected(session.Selected, true);
             BuildRocket();
             if (hangarCam != null) hangarCam.Reframe();
-            ApplyWebDesignFrame();
+            ApplyStarterMode();
         }
 
         /// <summary>Hangar per-frame work: a rate-limited rocket rebuild while a stepper is held.</summary>
         void Update()
         {
             TickWebScale();
+            WatchFlags();
             bool claimed = Kestrel.Game.Shell.MenuBack.Claimed;
             Kestrel.Game.Shell.MenuBack.Claimed = false;
             if (!claimed && ReportCardChrome.ConsumeKey(ui)) return;
