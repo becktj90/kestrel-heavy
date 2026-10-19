@@ -42,6 +42,9 @@ export async function register({ put, PRESETS }) {
     ['engines-dont-fit', () => { const d = clone(byId.scout); d.stages[0].engineCount = 30; return d; }],
     ['top-heavy', () => { const d = clone(byId.scout); d.stages[1].diameter = 6; return d; }],
     ['payload-doesnt-fit', () => { const d = clone(byId.kid); d.payload = { type: 'crew-capsule', mass: 12000, orbit: 'leo400' }; d.fairing.length = 1; return d; }],
+    // B-04 diameter envelope: cargo diameter ≤ 0.9·D. The 3.6 m crew capsule fits a 4.00 m fairing, not 3.99 m.
+    ['payload-diameter-edge', () => { const d = clone(byId.kid); d.payload = { type: 'crew-capsule', mass: 12000, orbit: 'leo400' }; d.fairing.diameter = 4; d.fairing.length = 20; return d; }],
+    ['payload-too-wide', () => { const d = clone(byId.kid); d.payload = { type: 'crew-capsule', mass: 12000, orbit: 'leo400' }; d.fairing.diameter = 3.99; d.fairing.length = 20; return d; }],
     ['twr-marginal', () => { const d = clone(byId.scout); d.stages[0].engineCount = 5; return d; }],
     ['weak-upper', () => { const d = clone(byId['tpl-medium-kerolox']); d.stages[1].engine = 'exp-hydrolox'; d.stages[1].propellant = 'hydrolox'; return d; }],
     ['dv-margin', () => { const d = clone(byId.scout); d.payload.mass = 3000; return d; }],

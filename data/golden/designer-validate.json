@@ -6,7 +6,7 @@
   "relReliability": 1e-12,
   "note": "messages and makeItFly changes exact; readout closed-form; cost exact integer minor units"
  },
- "count": 117,
+ "count": 119,
  "cases": [
   {
    "kind": "validate",
@@ -2048,7 +2048,7 @@
      {
       "code": "payload-doesnt-fit",
       "tab": "payload",
-      "msg": "The Crew capsule needs about 40.0 m³; this fairing holds 4.2 m³. Try a longer or wider fairing."
+      "msg": "The Crew capsule needs about 40.0 m³; this fairing holds 4.6 m³. Try a longer or wider fairing."
      }
     ],
     "warnings": [
@@ -2084,6 +2084,244 @@
        "twr": 0.8642980960580728,
        "twrVac": 0.8642980960580728,
        "deltaV": 2829.5003968935134
+      }
+     ]
+    }
+   }
+  },
+  {
+   "kind": "validate",
+   "name": "payload-diameter-edge",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "blunt",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.6,
+    "livery": {
+     "primary": "#4fc3f7",
+     "accent": "#ff4081",
+     "name": "KID CRUISER"
+    },
+    "id": "kid",
+    "name": "Kid Cruiser",
+    "tier": "kid",
+    "stages": [
+     {
+      "interstageMass": 800,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Big Booster",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 5,
+      "propMass": 140000,
+      "diameter": 3
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Space Stage",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 12000,
+      "diameter": 3
+     }
+    ],
+    "payload": {
+     "type": "crew-capsule",
+     "mass": 12000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 4,
+     "length": 20,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   },
+   "out": {
+    "ok": true,
+    "blocks": [],
+    "warnings": [
+     {
+      "code": "dv-margin",
+      "tab": "propellants",
+      "msg": "About 1673 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+     }
+    ],
+    "readout": {
+     "liftoffTWR": 2.4037206120219454,
+     "totalDeltaV": 7087.118888942314,
+     "margin": -0.1909514774236005,
+     "required": 8759.8193324345,
+     "targetAlt": 400000,
+     "liftoffMass": 179234.68219576983,
+     "cost": 1518543614,
+     "reliability": 0.9834896208689856,
+     "orbitLabel": "LEO 400 km",
+     "fairingMass": 2990.796206217483,
+     "payloadMass": 12000,
+     "stages": [
+      {
+       "label": "Big Booster",
+       "role": "core",
+       "twr": 2.4037206120219454,
+       "twrVac": 2.656893552223073,
+       "deltaV": 4633.161193804005
+      },
+      {
+       "label": "Space Stage",
+       "role": "core",
+       "twr": 0.7780129683137466,
+       "twrVac": 0.7780129683137466,
+       "deltaV": 2453.957695138309
+      }
+     ]
+    }
+   }
+  },
+  {
+   "kind": "validate",
+   "name": "payload-too-wide",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "blunt",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.6,
+    "livery": {
+     "primary": "#4fc3f7",
+     "accent": "#ff4081",
+     "name": "KID CRUISER"
+    },
+    "id": "kid",
+    "name": "Kid Cruiser",
+    "tier": "kid",
+    "stages": [
+     {
+      "interstageMass": 800,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Big Booster",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 5,
+      "propMass": 140000,
+      "diameter": 3
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Space Stage",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 12000,
+      "diameter": 3
+     }
+    ],
+    "payload": {
+     "type": "crew-capsule",
+     "mass": 12000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 3.99,
+     "length": 20,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    }
+   },
+   "out": {
+    "ok": false,
+    "blocks": [
+     {
+      "code": "payload-doesnt-fit",
+      "tab": "payload",
+      "msg": "The Crew capsule is 3.6 m wide; it needs a fairing at least 4.00 m wide. Try a wider fairing."
+     }
+    ],
+    "warnings": [
+     {
+      "code": "dv-margin",
+      "tab": "propellants",
+      "msg": "About 1671 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+     }
+    ],
+    "readout": {
+     "liftoffTWR": 2.403820890303903,
+     "totalDeltaV": 7088.4160975530995,
+     "margin": -0.1908033911947005,
+     "required": 8759.8193324345,
+     "targetAlt": 400000,
+     "liftoffMass": 179227.2052052543,
+     "cost": 1517848066,
+     "reliability": 0.9834896208689856,
+     "orbitLabel": "LEO 400 km",
+     "fairingMass": 2983.3192157019394,
+     "payloadMass": 12000,
+     "stages": [
+      {
+       "label": "Big Booster",
+       "role": "core",
+       "twr": 2.403820890303903,
+       "twrVac": 2.6570043923595805,
+       "deltaV": 4633.615233877195
+      },
+      {
+       "label": "Space Stage",
+       "role": "core",
+       "twr": 0.778214763650604,
+       "twrVac": 0.778214763650604,
+       "deltaV": 2454.800863675904
       }
      ]
     }
@@ -8948,7 +9186,7 @@
      },
      "fairing": {
       "diameter": 1.6,
-      "length": 3,
+      "length": 2.9,
       "material": "composite",
       "jettisonAltitudeKm": 100
      },
