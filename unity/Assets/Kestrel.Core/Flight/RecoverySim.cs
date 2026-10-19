@@ -65,6 +65,7 @@ namespace Kestrel.Core.Flight
 
         public static RecoveryVerdict Fly(in RecoveryCraft craft, RecoveryBody body, in RecoveryStick stick, IFlightSimSink sink = null)
         {
+            sink = GuardedFlightSink.Wrap(sink);
             var marks = new RecoveryMark[8];
             int n = 0;
             Remember(ref marks, ref n, body);

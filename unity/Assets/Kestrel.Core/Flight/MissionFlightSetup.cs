@@ -2,6 +2,9 @@
 // FlightDriver and FlightBatch both build their SimOptions and flown vehicle here, so the
 // run length, cutoff and aim, coast boil-off, strap-on landing fuel and pad/wind cannot drift.
 // Only the step size and the failure monitor stay with the caller.
+// The fairing jettison gate comes from the design here too, so the live sim records the
+// "fairing" event and IFlightSimSink.OnFairingSeparation fires in the game. That event is
+// observational: it does not change mass or the step, so outcomes stay identical.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
@@ -38,6 +41,20 @@ namespace Kestrel.Core.Flight
         public const double LiveDt = 1.0 / 120;
         /// <summary>The campaign batch step.</summary>
         public const double BatchDt = 0.2;
+        /// <summary>Jettison altitude used when a design with a fairing has none set (designer-limits default).</summary>
+        public const double DefaultFairingJettisonAltM = 110000;
+
+        /// <summary>
+        /// The design's fairing jettison altitude in metres, for <see cref="Physics.SimOptions.fairingJettisonAltM"/>.
+        /// 0 when the design has no fairing (the same test the flight show uses), so no fairing event is recorded.
+        /// A missing or non-positive altitude uses 110 km.
+        /// </summary>
+        public static double FairingJettisonAltM(Design design)
+        {
+            if (design == null || !(design.fairingLength > 0.2) || !(design.fairingDiameter > 0.1)) return 0;
+            double km = design.fairingJettisonAltitudeKm;
+            return km > 0 && !double.IsInfinity(km) ? km * 1000 : DefaultFairingJettisonAltM;
+        }
 
         /// <summary>
         /// Sim inputs for <paramref name="design"/> flying <paramref name="mission"/>.
@@ -66,6 +83,7 @@ namespace Kestrel.Core.Flight
             var built = Stack.SimInputs(catalog, flown, dt, sampleEvery);
             var opts = built.opts;
             if (!(opts.tMax >= MinTMax)) opts.tMax = MinTMax;
+            opts.fairingJettisonAltM = FairingJettisonAltM(flown);
             double target = opts.targetAlt;
             if (mission != null)
             {
