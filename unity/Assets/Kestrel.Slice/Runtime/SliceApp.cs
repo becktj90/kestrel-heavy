@@ -140,7 +140,12 @@ namespace Kestrel.Slice
                 // #213 is on main. One registration: portrait designer beside the Hangar.
                 designer = DesignerV3Panel.Attach(session, ui, upp);
                 designer?.SetLandscape(webWide);
-                if (designer != null) designer.LaunchRequested += Launch;
+                if (designer != null)
+                {
+                    designer.LaunchRequested += Launch;
+                    // Designer / Hangar and Guided / All parts switches re-decide which launch reason shows.
+                    designer.ViewChanged += ApplyValidation;
+                }
                 FixField.OnApply += HandleReportedFix;
             }
             else
@@ -625,7 +630,7 @@ namespace Kestrel.Slice
             launchReason.text = reason;
             // The free designer's launch row already shows this reason with its Fix it. Showing it here
             // too printed the out-of-fuel warning twice on the first designer view.
-            bool designerSaysIt = designer != null && designer.Open && designer.Stepper != null && !designer.Stepper.IsGuided;
+            bool designerSaysIt = designer != null && designer.ShowsLaunchRow;
             launchReason.EnableInClassList("hidden", ok || designerSaysIt);
             launchButton.tooltip = ok ? "Roll out and launch the current design"
                 : gate.state == LaunchGateState.Checking ? LaunchGate.Checking : "Launch unavailable. " + reason;

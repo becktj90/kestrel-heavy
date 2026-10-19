@@ -161,14 +161,21 @@ namespace Kestrel.Game.Tests
                     {
                         panel.SetEngineer(false);
                         panel.SetLandscape(true);
+                        // WarningDesign saves a fresh guided progress, so the panel opens in Guided view with
+                        // the launch row hidden (0 x 0). Measure the free designer this test is about.
+                        panel.Stepper.ShowAllParts();
                         surface.Pump(3);
                         Settle(surface, panel.Root);
+                        Assert.That(panel.Stepper.IsGuided, Is.False, col.Name + " free designer");
                         var row = panel.Root.Q("designer-launch");
                         Assert.That(row, Is.Not.Null, col.Name);
+                        Assert.That(row.resolvedStyle.display, Is.EqualTo(DisplayStyle.Flex), col.Name + " launch row shown");
+                        Assert.That(row.worldBound.width, Is.GreaterThan(100f), col.Name + " launch row laid out " + row.worldBound);
                         NoSiblingOverlap(row, col.Name + " launch row");
                         var reason = row.Q<Label>("launch-gate-reason");
                         if (reason != null && !string.IsNullOrEmpty(reason.text))
                         {
+                            Assert.That(reason.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None), col.Name + " reason shown");
                             Assert.That(reason.worldBound.width, Is.GreaterThan(row.worldBound.width * 0.8f), col.Name + " the reason has its own row");
                             AssertWords(reason, col.Name + " reason");
                         }
@@ -215,7 +222,7 @@ namespace Kestrel.Game.Tests
         [Test]
         public void HomeCreditsClearTheTitleStatsAndLaunch()
         {
-            foreach (var (name, w, h, landscape) in new[] { ("390 portrait", 390f, 844f, false), ("335 portrait", 335f, 720f, false), ("1366x768", 1280f, 720f, true) })
+            foreach (var (name, w, h, landscape) in new[] { ("390 portrait", 390f, 844f, false), ("335 portrait", 335f, 720f, false), ("375x667 SE portrait", 375f, 667f, false), ("1366x768", 1280f, 720f, true) })
             {
                 MainMenuOverlay.ForceWide = landscape;
                 using (var surface = DeviceSurface.Open(w, h))
@@ -228,7 +235,7 @@ namespace Kestrel.Game.Tests
                     surface.Pump(4);
                     var bar = overlay.Q(HomeResumeBar.BarName);
                     Assert.That(bar, Is.Not.Null, name);
-                    foreach (var id in new[] { "mm-kestrel", "mm-heavy", "mm-stats", "home-launch", "home-design" })
+                    foreach (var id in new[] { "mm-eyebrow", "mm-kestrel", "mm-heavy", "mm-stats", "home-launch", "home-design" })
                     {
                         var e = shell.Q(id);
                         if (e == null || e.resolvedStyle.display == DisplayStyle.None || e.worldBound.width < 1f) continue;

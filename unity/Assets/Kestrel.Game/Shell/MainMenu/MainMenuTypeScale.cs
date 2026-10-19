@@ -16,6 +16,10 @@ namespace Kestrel.Game.Shell
         public const float NameSlack = 10f;      // spare px beside a tile name: Label chrome and glyph overhang, so names never ellipsize
         public const float LineH = 1.4f;         // line box height / font size used for every wrapped or stacked line
         public const float TopPad = 40f;         // .kh-mm padding-top (below the top bar)
+        /// <summary>Phone column with the credits bar (HomeResumeBar, 44 pt at the top-left): the title starts
+        /// under it, never under 40. The eyebrow drew on the bar's last 4 pt at 335 and 390 portrait.</summary>
+        public const float CreditsBand = 44f + 4f;
+        public static float TopPadFor(bool creditsBar) => creditsBar ? Math.Max(TopPad, CreditsBand) : TopPad;
         public const float HitMin = 44f;
 
         public readonly struct Spec

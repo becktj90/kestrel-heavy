@@ -380,8 +380,12 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             bool checkInScroll = !engineer && columnFrame != null && columnFrame.CheckInScroll;
             root.Add(Keep(Header(ui, def)));
             root.Add(Keep(Progress(ui)));
+            // Before/after from Fix it. The column solver does not budget for it, so in a known column it is
+            // the first thing in the scroller (it scrolls away) instead of another sticky block that pushed
+            // the nav out of the 1280x720 column. The phone sheet keeps it pinned above the check.
             var compare = CompareBanner(ui);
-            if (compare != null) root.Add(Keep(compare));
+            bool compareInScroll = compare != null && columnFrame != null;
+            if (compare != null && !compareInScroll) root.Add(Keep(compare));
             if (!engineer && !checkInScroll) root.Add(Keep(CheckCard(ui, check)));
 
             scroll = new ScrollView(ScrollViewMode.Vertical) { name = "stepper-scroll" };
@@ -390,6 +394,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             ApplyScrollMax();
             WatchScroll();
             scroll.RegisterCallback<PointerDownEvent>(OnScrollPointer, TrickleDown.TrickleDown);
+            if (compareInScroll) scroll.Add(Keep(compare));
             if (checkInScroll) scroll.Add(Keep(CheckCard(ui, check)));
             if (engineer)
             {
@@ -1160,10 +1165,11 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         {
             if (scroll == null) return;
             float minPx = bridge.Ui.U(DesignerV3Layout.MinContentPt);
-            // In a known column the scroller gets what the sticky blocks leave (at least one 44 pt target),
-            // not a fixed 120 pt that pushed the nav off the bottom.
+            // In a known column the scroller gets exactly what the solver's sticky blocks leave, capped at the
+            // usual 120 pt. Never raised: on a short panel (3440x1440 is about 1484x621 after WebPanelScale) the
+            // confirm card leaves under 44 pt, and lifting that back to 44 pushed the nav out of the column.
             if (columnFrame != null)
-                minPx = bridge.Ui.U(Mathf.Max(HangarUi.TargetPt, Mathf.Min(DesignerV3Layout.MinContentPt, columnFrame.ScrollH)));
+                minPx = bridge.Ui.U(Mathf.Clamp(columnFrame.ScrollH, 0f, DesignerV3Layout.MinContentPt));
             scroll.style.minHeight = minPx;
             scroll.style.flexGrow = 1;
             scroll.style.flexShrink = 1;

@@ -92,6 +92,35 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void ShortUltrawidePanelsKeepTheStackInsideTheColumn()
+        {
+            // 3440x1440 (and 2560x1080) scale to a short, wide panel (~1484x621). With the confirm card up the
+            // scroller can drop under one 44 pt row. StepperShell honours that height rather than raising it,
+            // so every sticky block, the scroller included, must still end inside the column.
+            foreach (var (w, h) in new[] { (3440, 1440), (2560, 1080), (1280, 720) })
+            {
+                WebLandscapeType.PanelReference(true, out float rw, out float rh, out float m);
+                float s = WebLandscapeType.PanelScale(w, h, rw, rh, m);
+                var frame = WebDesignerLayout.Place(w / s, h / s, 0, 0, 0, 0);
+                float cw = frame.Parts.W - 2f * PanelPad, ch = frame.Parts.H - Handle - PanelBottom;
+                foreach (var step in Steps)
+                    foreach (bool confirm in new[] { false, true })
+                    {
+                        var f = StepperColumnLayout.Solve(cw, ch, step.title, step.check.Length, step.extra.Length, confirm, nextAnyway: true);
+                        string at = $"{w}x{h} ({cw:0}x{ch:0}) {step.title}" + (confirm ? " +confirm" : "");
+                        var stack = new List<(string, HudBox)> { ("count", f.Count), ("title", f.Title), ("tabs", f.Tabs), ("tiles", f.Tiles), ("scroll", f.Scroll), ("nav", f.Nav) };
+                        if (!f.CheckInScroll) stack.Add(("check", f.Check));
+                        if (confirm) stack.Add(("confirm", f.Confirm));
+                        NoOverlap(stack, at);
+                        foreach (var (n, b) in stack) Inside(b, cw, ch, at + " " + n);
+                        Assert.That(f.Scroll.H, Is.GreaterThanOrEqualTo(0f), at + " scroll");
+                        // Sum of the sticky stack equals the column: nothing to push the nav out.
+                        Assert.That(f.Nav.Bottom, Is.LessThanOrEqualTo(ch + 0.5f), at + " nav in the column");
+                    }
+            }
+        }
+
+        [Test]
         public void TheWideColumnHoldsTheHeaderTabsAndNavOnOneRowEach()
         {
             foreach (var col in Columns())

@@ -588,6 +588,10 @@ namespace Kestrel.Game.Shell
         /// Caps are cleared when the column grows or the natural stack fits again, so a rotation
         /// back to portrait does not leave max-height and a clipped title behind.
         /// </summary>
+        /// <summary>HomeResumeBar sits in this column's top band (portrait and iOS; the wide home has its own top bar).</summary>
+        static bool HasCreditsBar(VisualElement root) =>
+            root != null && !root.ClassListContains("kh-mm-wide") && root.Q(HomeResumeBar.BarName) != null;
+
         static void ContainColumn(VisualElement root, MenuTypeScale.Sizes z)
         {
             if (root == null || root.ClassListContains("kh-mm-wide")) return;
@@ -621,7 +625,8 @@ namespace Kestrel.Game.Shell
             }
 
             float titleH = fit != null && fit.TitleH > 1f ? fit.TitleH : naturalTitle;
-            float padTop = MenuTypeScale.TopPad;
+            bool credits = HasCreditsBar(root);
+            float padTop = MenuTypeScale.TopPadFor(credits);
             float padBot = z.HintBand;
             // The Thrum strip sits under the tiles and is not part of ControlsH. Leaving it out
             // let a wrapped caption grow over the Missions tile on a short landscape column.
@@ -641,7 +646,8 @@ namespace Kestrel.Game.Shell
             ClearContainment(root);
             RestoreTitleType(root, title, z);
             float overflow = need - host;
-            const float topFloor = 8f;
+            // The credits bar owns the top band; a short column cuts the blocks, not that band.
+            float topFloor = credits ? MenuTypeScale.CreditsBand : 8f;
             const float botFloor = 32f;
             float eatTop = Mathf.Min(overflow, Mathf.Max(0f, padTop - topFloor));
             padTop -= eatTop;
@@ -1338,7 +1344,7 @@ namespace Kestrel.Game.Shell
             Font("kh-mm-thrum-name", Mathf.Max(14f, z.Hint), 0f);
             // Explicit heights (not min-height) so the block is exactly what MenuTypeScale computed; Unity cannot inflate it.
             // The title must not flex-shrink before ContainColumn measures it, or a short column reads height 0 and never caps.
-            root.style.paddingTop = MenuTypeScale.TopPad; root.style.paddingBottom = z.HintBand;
+            root.style.paddingTop = MenuTypeScale.TopPadFor(column && HasCreditsBar(root)); root.style.paddingBottom = z.HintBand;
             var title = root.Q("mm-title");
             if (title != null) title.style.flexShrink = 0;
             var stats = root.Q("mm-stats");

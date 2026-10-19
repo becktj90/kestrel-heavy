@@ -61,6 +61,10 @@ namespace Kestrel.Slice.DesignerV3
         public event Action LaunchRequested;
         public event Action<FlightRisk> RiskJump;
         public event Action<string> FieldFocused;
+        /// <summary>Open, collapsed, or Guided vs All parts changed. SliceApp hides its own launch reason while the
+        /// free designer's launch row shows it, so it re-checks on every switch, not only on the next edit.</summary>
+        public event Action ViewChanged;
+        int shownView = -1;
 
         public bool Engineer => engineer;
         public bool Open { get; private set; }
@@ -297,6 +301,7 @@ namespace Kestrel.Slice.DesignerV3
                 var launch = toggle.parent != null ? toggle.parent.Q<Button>("launch") : null;
                 if (launch != null) launch.style.display = Open ? DisplayStyle.None : StyleKeyword.Null;
             }
+            NotifyView();
         }
 
         public void SetScale(float upp)
@@ -503,6 +508,18 @@ namespace Kestrel.Slice.DesignerV3
             }
             heldScroll = -1f;
             DesignerChrome.Apply(root);
+            NotifyView();
+        }
+
+        /// <summary>The free designer (its own launch row) is on screen.</summary>
+        public bool ShowsLaunchRow => Open && !sheetCollapsed && stepper != null && !stepper.IsGuided;
+
+        void NotifyView()
+        {
+            int view = (Open ? 1 : 0) | (sheetCollapsed ? 2 : 0) | (stepper != null && stepper.IsGuided ? 4 : 0);
+            if (view == shownView) return;
+            shownView = view;
+            ViewChanged?.Invoke();
         }
 
         void RestoreScroll(float y)
@@ -724,6 +741,9 @@ namespace Kestrel.Slice.DesignerV3
             why.style.width = Length.Percent(100);
             why.style.flexShrink = 0;
             why.style.flexGrow = 1;
+            // 100% plus the theme's 3 px label margins ran 6 px past the row's right edge.
+            why.style.marginLeft = 0f;
+            why.style.marginRight = 0f;
             return why;
         }
 
