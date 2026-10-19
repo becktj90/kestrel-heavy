@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using Kestrel.Core.Data;
+using Kestrel.Core.Features;
 using Kestrel.Core.Guide;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,11 +12,12 @@ namespace Kestrel.Game.Guide
 {
     public static class GuideHost
     {
-        public const string DesignerDepthPref = "kh.designer.v3.engineer";
-        public const string HangarDepthPref = "kh.hangar.engineer";
+        public const string DesignerDepthPref = ExperienceSettings.LegacyDesignerEngineerPref;
+        public const string HangarDepthPref = ExperienceSettings.LegacyHangarEngineerPref;
 
+        /// <summary>Engineer depth follows the single designer tier (either old engineer pref still turns it on).</summary>
         public static bool EngineerDepth()
-            => PlayerPrefs.GetInt(DesignerDepthPref, 0) != 0 || PlayerPrefs.GetInt(HangarDepthPref, 0) != 0;
+            => ExperienceSettings.IsEngineer(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
 
         public static void Open(UIDocument doc, GuidePlace place, bool compact)
         {

@@ -1,9 +1,7 @@
-// Phase 1 "Starter" feature flags (docs/plans/PHASED_DESIGNER_PLAN.md, PR 3). data/features.json holds
-// the defaults; Settings can override any flag. A hidden feature keeps its code.
-//
-// API STUB: the shape is final. Nothing reads these flags yet, so there is no visible change.
-// PR 3 wires the screens, the Settings "Show full designer" toggle and the tier migration from
-// Experience layers, kh.designer.v3.engineer, kh.hangar.engineer and SliceApp.EngineerEnabled.
+// Phase 1 feature flags (docs/plans/PHASED_DESIGNER_PLAN.md, PR 3). data/features.json holds the
+// defaults; Settings can override any flag. A hidden feature keeps its code.
+// Every flag defaults ON, so this PR changes nothing on screen. The Starter screen and the simple
+// Home (PRs 5/6) flip the starter defaults and read the flags. The tier lives in ExperienceSettings.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -45,9 +43,9 @@ namespace Kestrel.Core.Features
         };
 
         /// <summary>Settings pref for the "Show full designer" toggle (off by default).</summary>
-        public const string ShowFullDesignerPref = "kh.settings.fullDesigner";
+        public const string ShowFullDesignerPref = ExperienceSettings.ShowFullDesignerPref;
         /// <summary>Settings pref for the tier: 0 starter, 1 builder, 2 engineer.</summary>
-        public const string TierPref = "kh.settings.tier";
+        public const string TierPref = ExperienceSettings.TierPref;
     }
 
     public sealed class FeatureFlags
@@ -63,10 +61,17 @@ namespace Kestrel.Core.Features
         /// <summary>Raised after an override, the tier or the full-designer toggle changes.</summary>
         public event Action<FeatureFlags> Changed;
 
-        /// <summary>Built-in defaults: every listed flag off, tier Starter. Matches data/features.json.</summary>
+        /// <summary>Built-in defaults: every listed flag on, tier Starter. Matches data/features.json.</summary>
         public FeatureFlags()
         {
-            foreach (var k in FeatureKeys.All) defaults[k] = false;
+            foreach (var k in FeatureKeys.All) defaults[k] = true;
+        }
+
+        /// <summary>Copy the player's Settings (tier and Show full designer) from prefs. Read-only on the prefs.</summary>
+        public void ApplyPrefs(Func<string, bool> has, Func<string, int> read)
+        {
+            Tier = ExperienceSettings.Tier(has, read);
+            ShowFullDesigner = ExperienceSettings.ShowFullDesigner(has, read);
         }
 
         public static FeatureFlags Load(string repoRoot) => Parse(File.ReadAllText(Path.Combine(repoRoot, "data", "features.json")));
@@ -96,7 +101,7 @@ namespace Kestrel.Core.Features
             set { if (showFullDesigner == value) return; showFullDesigner = value; Changed?.Invoke(this); }
         }
 
-        /// <summary>Unknown keys read off.</summary>
+        /// <summary>Unknown keys read off. A key missing from the file keeps its built-in default (on).</summary>
         public bool IsOn(string key)
         {
             if (key == null) return false;
@@ -122,17 +127,7 @@ namespace Kestrel.Core.Features
             if (key != null && overrides.Remove(key)) Changed?.Invoke(this);
         }
 
-        public static string TierId(ExperienceTier t) => t == ExperienceTier.Engineer ? "engineer" : t == ExperienceTier.Builder ? "builder" : "starter";
-
-        public static bool TryTier(string id, out ExperienceTier t)
-        {
-            switch (id)
-            {
-                case "starter": t = ExperienceTier.Starter; return true;
-                case "builder": t = ExperienceTier.Builder; return true;
-                case "engineer": t = ExperienceTier.Engineer; return true;
-                default: t = ExperienceTier.Starter; return false;
-            }
-        }
+        public static string TierId(ExperienceTier t) => ExperienceSettings.TierId(t);
+        public static bool TryTier(string id, out ExperienceTier t) => ExperienceSettings.TryTier(id, out t);
     }
 }

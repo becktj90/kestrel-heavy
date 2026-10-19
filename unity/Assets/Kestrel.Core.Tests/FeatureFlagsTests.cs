@@ -1,4 +1,4 @@
-// FeatureFlags API stub (Phase 1 PR 3 shape). The key list and defaults come from the plan.
+// Phase 1 PR 3 feature flags. The key list comes from the plan; every default is on (no visible change).
 using System.Collections.Generic;
 using System.IO;
 using Kestrel.Core.Features;
@@ -10,7 +10,7 @@ namespace Kestrel.Core.Tests
     public class FeatureFlagsTests
     {
         [Test]
-        public void DataFile_ListsExactlyThePlanKeys_AllOff_TierStarter()
+        public void DataFile_ListsExactlyThePlanKeys_AllOn_TierStarter()
         {
             var o = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "features.json")));
             CollectionAssert.AreEquivalent(FeatureKeys.All, o.Obj("flags").Order);
@@ -20,7 +20,7 @@ namespace Kestrel.Core.Tests
             var builtIn = new FeatureFlags();
             foreach (var k in FeatureKeys.All)
             {
-                Assert.IsFalse(f.IsOn(k), k);
+                Assert.IsTrue(f.IsOn(k), k + " stays on until PRs 5/6");
                 Assert.AreEqual(f.Default(k), builtIn.Default(k), k + " built-in default matches the file");
             }
             Assert.IsFalse(f.IsOn("designer.nope"));
@@ -29,7 +29,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void OverridesAndFullDesigner_RaiseChanged()
         {
-            var f = FeatureFlags.Parse("{\"tier\":\"builder\",\"flags\":{\"home.thrum\":true}}");
+            var f = FeatureFlags.Parse("{\"tier\":\"builder\",\"flags\":{\"home.thrum\":true,\"designer.stepper\":false,\"home.codexTile\":false}}");
             Assert.AreEqual(ExperienceTier.Builder, f.Tier);
             Assert.IsTrue(f.IsOn(FeatureKeys.HomeThrum));
             int changes = 0;

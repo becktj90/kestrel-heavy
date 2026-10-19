@@ -1241,8 +1241,7 @@ namespace Kestrel.Slice
             bool engineer = EngineerEnabled;
             try
             {
-                if (PlayerPrefs.GetInt(DesignerV3Panel.EngineerPref, 0) != 0) engineer = true;
-                if (PlayerPrefs.GetInt(HangarPanel.EngineerPref, 0) != 0) engineer = true;
+                if (Kestrel.Core.Features.ExperienceSettings.IsEngineer(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0))) engineer = true;
             }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] engineer pref: " + e.Message); }
             if (flight.Sim != null && flight.Running)

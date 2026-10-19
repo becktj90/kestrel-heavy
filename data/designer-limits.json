@@ -10,7 +10,7 @@
   "fairingLengthM": { "min": 1, "max": 40, "step": 0.1 },
   "fairingDiameterM": { "minExclusive": 0 },
   "jettisonAltitudeKm": { "min": 80, "max": 150, "default": 110 },
-  "payloadMassKg": { "min": 50, "max": 100000 },
+  "payloadMassKg": { "min": 10, "max": 100000 },
   "propMassKg": { "min": 1, "max": 4000000 },
   "fins": { "countMin": 3, "countMax": 8, "spanMinM": 0.2, "spanMaxM": 6, "spanStepM": 0.1 },
   "landingReserveFraction": { "min": 0, "max": 0.3 },
