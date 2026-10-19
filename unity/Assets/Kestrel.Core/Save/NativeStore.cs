@@ -167,6 +167,13 @@ namespace Kestrel.Core.Save
             return env;
         }
 
+        /// <summary>Data payload of a record from <see cref="PutRecord"/>. Null when the key is absent.</summary>
+        public JsonObject GetRecord(string key)
+        {
+            var e = Read(key);
+            return e != null ? e.Obj("data") : null;
+        }
+
         /// <summary>True when the main file or its interrupted temp file exists.</summary>
         public bool HasBytes(string key)
         {

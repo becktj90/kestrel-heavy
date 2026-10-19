@@ -188,6 +188,7 @@ namespace Kestrel.Slice
             if (shells == null || shells.Length == 0) return;
             shellBlock ??= new MaterialPropertyBlock();
             shellBlock.Clear();
+            c.a = 1f;
             shellBlock.SetColor(BaseColorId, c);
             shellBlock.SetFloat(MetallicId, p.metallic);
             shellBlock.SetFloat(SmoothnessId, p.smoothness);
@@ -201,8 +202,8 @@ namespace Kestrel.Slice
         static void Set(Material m, Color c, float metallic, float smoothness)
         {
             if (m == null) return;
-            m.color = c;
-            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
+            c.a = 1f;
+            FlightSolidBody.Apply(m, c);
             if (m.HasProperty("_Metallic")) m.SetFloat("_Metallic", metallic);
             if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", smoothness);
         }

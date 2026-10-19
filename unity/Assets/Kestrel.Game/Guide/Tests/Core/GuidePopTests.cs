@@ -34,6 +34,22 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
+        public void NarrowPortraitAndLandscapeLeaveTheLeftHalfClear()
+        {
+            var portrait = new GuideScreen(335f, 720f, 47f, 34f, 0f, 0f, 0f, false);
+            var landscape = new GuideScreen(335f, 210f, 0f, 0f, 47f, 47f, 0f, true);
+            foreach (var screen in new[] { portrait, landscape })
+            {
+                var rest = GuidePopLayout.Place(screen, 1f, true, true);
+                Assert.GreaterOrEqual(rest.X, screen.SafeLeft, "inside the left safe edge");
+                Assert.LessOrEqual(rest.X + rest.Block, screen.Width - screen.SafeRight + 0.05f, "inside the right safe edge");
+                Assert.GreaterOrEqual(rest.X, screen.Width * 0.5f - 0.05f, "left half stays free at 335");
+                Assert.AreEqual(64f, rest.Size);
+                Assert.GreaterOrEqual(rest.Y, screen.SafeTop);
+            }
+        }
+
+        [Test]
         public void CaptionIsOneLineAndOnlyWhenVoiceWillNotPlay()
         {
             Assert.IsFalse(GuideCaption.Visible(true, false, false));

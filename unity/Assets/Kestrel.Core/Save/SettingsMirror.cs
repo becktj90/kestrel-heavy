@@ -2,6 +2,7 @@
 // when the tab closes; this record is the copy that comes back with the other save files.
 using System;
 using System.Collections.Generic;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Json;
 
 namespace Kestrel.Core.Save
@@ -41,7 +42,18 @@ namespace Kestrel.Core.Save
         public static void Save(NativeStore store, Func<string, bool> has, Func<string, int> read)
         {
             if (store == null) return;
-            store.PutRecord(NativeStore.SettingsKey, "settings", Capture(has, read));
+            var env = store.Read(NativeStore.SettingsKey);
+            var prev = env != null && env.Str("kind") == "settings" ? env.Obj("data") : null;
+            var data = prev != null ? JsonMut.CloneObject(prev) : new JsonObject();
+            for (int i = 0; i < Keys.Length; i++)
+            {
+                string key = Keys[i];
+                if (!data.ContainsKey(key)) continue;
+                data.Remove(key);
+                data.Order.Remove(key);
+            }
+            foreach (var kv in Capture(has, read)) JsonMut.Set(data, kv.Key, kv.Value);
+            store.PutRecord(NativeStore.SettingsKey, "settings", data);
         }
 
         /// <summary>Fill keys the live prefs do not have yet. A key that already exists is left alone.</summary>

@@ -89,6 +89,14 @@ namespace Kestrel.Core.Tests
                 Assert.AreEqual(1, live["kh.audio.muted"], "a key the player already has is left alone");
                 Assert.AreEqual(1, live["kh.settings.sandbox"]);
                 Assert.IsFalse(live.ContainsKey("kh.quality.chosen"));
+
+                store.PutRecord(FlightView.RecordKey, "settings", FlightView.Data(FlightViewMode.Pad));
+                SettingsMirror.Save(store, captured.ContainsKey, key => captured[key]);
+                Assert.AreEqual(FlightViewMode.Pad, FlightView.FromData(store.GetRecord(FlightView.RecordKey)));
+                var kept = FlightView.Merge(store.GetRecord(FlightView.RecordKey), FlightViewMode.Chase);
+                store.PutRecord(FlightView.RecordKey, "settings", kept);
+                Assert.AreEqual(FlightViewMode.Chase, FlightView.FromData(store.GetRecord(FlightView.RecordKey)));
+                Assert.AreEqual(1d, store.GetRecord(FlightView.RecordKey).Num("kh.settings.sandbox"));
             }
             finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
         }
