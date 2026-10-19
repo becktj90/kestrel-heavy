@@ -785,7 +785,12 @@ namespace Kestrel.Core.Flight
             double sMin = double.IsPositiveInfinity(scratch.minStability) ? 0 : scratch.minStability;
             double carMin = double.IsPositiveInfinity(scratch.minCar) ? 1 : scratch.minCar;
             bool tumble = EventKind(FailureKind.Tumble) || (sMin < 0 && carMin < 1);
-            Add(list, FailureKind.Tumble, tumble ? -1 : Math.Min(sMin, carMin - 1), sMin, 0, "aero", "fins", tumble);
+            // F1 / NAV-01: negative static stability with control authority to spare (CAR >= 1) is held by the
+            // gimbal; Evaluate only tumbles when stability < 0 and CAR < 1 hold together. That is a caution
+            // (amber), not a certain failure. The old margin min(sMin, carMin - 1) went red on stability alone,
+            // so golden winners that fly 5/5 read "flipped at T+0 s" and Launch was disabled.
+            double tumbleMargin = tumble ? -1 : sMin < 0 ? Math.Min(0.1, carMin - 1) : Math.Min(sMin, carMin - 1);
+            Add(list, FailureKind.Tumble, tumbleMargin, sMin, 0, "aero", "fins", tumble);
             bool op = false;
             double pc = 0, rated = 1;
             for (int i = 0; i < stages; i++)

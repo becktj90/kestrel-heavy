@@ -3,6 +3,8 @@
 // trip at its apogee (100 km), so the predict run called burnout at 20 km "out of fuel", and the risk row
 // printed that at T+0. The pad flight aims at the 1 km hop floor (MissionAim). Also: only a validation block
 // disables Launch now; a predicted failure asks once and flies. And KH-2's trip is a hop, not LEO 200 km.
+using System.Collections.Generic;
+using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
@@ -157,6 +159,71 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(MissionAim.IsHopTrip("m2", 100000, suborbital: false), "the old rule only knew <= 80 km");
             Assert.That(MissionAim.IsHopTrip("m1", 10000, false));
             Assert.IsFalse(MissionAim.IsHopTrip("m3", 200000, false));
+        }
+
+        // NAV-01 / NAV-02 mirror (test/nav-flow-harness). A risk row is deterministic red only when the predict run
+        // can actually fail that way. Negative static stability with CAR >= 1 is held by the gimbal and flew 5/5 in
+        // FlightBatch, but read "flipped at T+0 s" and disabled Launch. The payload-fit blocks some of these rockets
+        // still show on main are B-04 (#303) and are left out here.
+        static bool FitBlock(LaunchGateResult g) => g.code == "payload-doesnt-fit" || g.code == "schema";
+
+        LaunchGateResult GateAfterReference(JsonObject json, out Kestrel.Core.Physics.SimResult sim)
+        {
+            ReferenceAscent.Reset();
+            sim = ReferenceAscent.Simulate(catalog, json);
+            ReferenceAscent.Store(ReferenceAscent.CanonicalKey(catalog, json), sim);
+            return LaunchGate.Evaluate(Validate.Engineering(catalog, json), Readout.Quick(catalog, json));
+        }
+
+        [Test]
+        public void GoldenWinnersHaveNoCertainFailureTheyDoNotHave()
+        {
+            var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "golden", "campaign-winners.json")));
+            var bad = new List<string>();
+            foreach (JsonObject row in file.Arr("missions"))
+            {
+                var json = JsonMut.CloneObject((JsonObject)row.Arr("designs")[0]);
+                var gate = GateAfterReference(json, out var sim);
+                var red = LaunchGate.DeterministicRed(sim.risks);
+                if (sim.failure == null && red != null) bad.Add(row.Str("id") + " " + red.kind);
+                if (!gate.Ready && !FitBlock(gate) && gate.code != "dv-margin") bad.Add(row.Str("id") + " gate " + gate.code);
+            }
+            Assert.That(bad, Is.Empty, string.Join(" | ", bad));
+        }
+
+        [Test]
+        public void DesignFirstRocketsAreReadyUnlessThePredictRunReallyFails()
+        {
+            var bad = new List<string>();
+            for (int cleared = 0; cleared < 20; cleared++)
+            {
+                PadHandoff.Clear();
+                GameSession.Clear();
+                var r = HomeRoutes.DesignFirst(campaign, cleared, catalog, hangar.templates);
+                Assert.That(PadHandoff.TryTake(out var json, out _), "m" + (cleared + 1));
+                var gate = GateAfterReference(json, out var sim);
+                if (gate.Ready || FitBlock(gate)) continue;
+                // KH-11 / KH-13 board starters are one strength step short by design (board-starters.json "strength").
+                // Their row names the real time, and Launch still flies after one confirm.
+                if (sim.failure != null && gate.code == sim.failure.kind && gate.CanLaunch)
+                {
+                    StringAssert.DoesNotContain("T+0 s", gate.Line, r.Session.MissionId);
+                    continue;
+                }
+                bad.Add(r.Session.MissionId + " " + gate.code + ": " + gate.Line);
+            }
+            Assert.That(bad, Is.Empty, string.Join(" | ", bad));
+        }
+
+        [Test]
+        public void UnstableButControlledIsAmberNotRed()
+        {
+            var json = JsonMut.CloneObject((JsonObject)MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "golden", "campaign-winners.json"))).Arr("missions").Find(m => ((JsonObject)m).Str("id") == "m3") is JsonObject row ? (JsonObject)row.Arr("designs")[0] : null);
+            GateAfterReference(json, out var sim);
+            Assert.That(sim.minStability, Is.LessThan(0), "the KH-3 winner is statically unstable for part of the climb");
+            Assert.That(sim.minCar, Is.GreaterThanOrEqualTo(1), "and the gimbal holds it");
+            var row3 = sim.risks.Find(x => x.kind == "tumble");
+            Assert.That(row3.level, Is.EqualTo("amber"));
         }
     }
 }
