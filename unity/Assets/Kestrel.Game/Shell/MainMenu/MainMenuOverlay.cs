@@ -96,6 +96,7 @@ namespace Kestrel.Game.Shell
             root.Add(designKey);
             var grid = new VisualElement { name = "mm-grid", pickingMode = PickingMode.Ignore };
             grid.AddToClassList("kh-mm-grid");
+            grid.style.flexShrink = 0;
             foreach (var it in MainMenuCopy.Tiles)
             {
                 Action act = null;
@@ -539,6 +540,33 @@ namespace Kestrel.Game.Shell
             public float TitleH;
         }
 
+        /// <summary>Height of the Thrum strip for a two-to-four line caption at the hint face.
+        /// The portrait and the button padding eat width the column total does not.</summary>
+        static float ThrumBlock(VisualElement root, MenuTypeScale.Sizes z)
+        {
+            float col = root.resolvedStyle.width;
+            if (float.IsNaN(col) || col < 8f) col = root.layout.width;
+            float inner = Mathf.Max(48f, col - 24f - 20f - 30f);
+            float size = Mathf.Max(14f, z.Hint);
+            float textW = MainMenuCopy.ThrumWidth100 * size / 100f;
+            int lines = (int)Mathf.Ceil(textW * 1.08f / inner);
+            if (lines < 1) lines = 1;
+            if (lines > 4) lines = 4;
+            float name = Mathf.Max(14f, z.Hint) * MenuTypeScale.LineH;
+            return 8f + name + lines * size * MenuTypeScale.LineH + 6f;
+        }
+
+        static void PinThrum(VisualElement root, float h)
+        {
+            var hint = root != null ? root.Q("mm-hint") : null;
+            if (hint == null || h < 8f) return;
+            hint.style.height = h;
+            hint.style.minHeight = h;
+            hint.style.maxHeight = h;
+            hint.style.flexShrink = 0;
+            hint.style.overflow = Overflow.Hidden;
+        }
+
         /// <summary>
         /// Phone column only. Portrait already fits, so this returns without touching styles.
         /// A short landscape column (SE 667×375) overflows once the spacer hits zero; shrink padding
@@ -577,11 +605,15 @@ namespace Kestrel.Game.Shell
             float titleH = fit != null && fit.TitleH > 1f ? fit.TitleH : naturalTitle;
             float padTop = MenuTypeScale.TopPad;
             float padBot = z.HintBand;
-            float need = padTop + padBot + titleH + z.ControlsH;
+            // The Thrum strip sits under the tiles and is not part of ControlsH. Leaving it out
+            // let a wrapped caption grow over the Missions tile on a short landscape column.
+            float hint = root.Q("mm-hint") != null ? ThrumBlock(root, z) : 0f;
+            float need = padTop + padBot + titleH + z.ControlsH + hint;
             if (need <= host + 1f)
             {
                 ClearContainment(root);
                 ForgetColumnFit(root);
+                PinThrum(root, hint);
                 return;
             }
 
@@ -613,6 +645,7 @@ namespace Kestrel.Game.Shell
             }
 
             float stats = z.StatsH, launch = z.LaunchH, design = z.DesignH, tile = z.TileH;
+            Cut(root.Q("mm-hint"), ref hint, MenuTypeScale.HitMin);
             Cut(root.Q("mm-stats"), ref stats, 28f);
             Cut(root.Q("home-design"), ref design, MenuTypeScale.HitMin);
             Cut(root.Q("home-launch"), ref launch, MenuTypeScale.HitMin);
@@ -658,6 +691,7 @@ namespace Kestrel.Game.Shell
                 }
             }
 
+            PinThrum(root, hint);
             var saved = root.userData as ColumnFit;
             if (saved == null)
             {

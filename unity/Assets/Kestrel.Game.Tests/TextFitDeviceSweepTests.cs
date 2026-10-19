@@ -111,7 +111,7 @@ namespace Kestrel.Game.Tests
                 {
                     var home = MountHome(surface.Stage);
                     surface.Pump(8);
-                    TextFit.Apply(home);
+                    Settle(surface, home);
                     AssertFits(home, frame.Name + " home");
                     var design = home.Q<Button>("home-design");
                     var designLabel = design != null ? design.Q<Label>(className: "kh-mm-design-label") : null;
@@ -121,7 +121,7 @@ namespace Kestrel.Game.Tests
 
                     Click(home.Q<Button>("home-settings"));
                     surface.Pump(4);
-                    TextFit.Apply(home);
+                    Settle(surface, home);
                     var sheet = home.Q("home-settings-sheet");
                     Assert.That(sheet, Is.Not.Null, frame.Name);
                     Assert.That(sheet.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None), frame.Name + " settings");
@@ -130,25 +130,25 @@ namespace Kestrel.Game.Tests
                     surface.Stage.Clear();
                     var board = MountBoard(surface.Stage, frame);
                     surface.Pump(6);
-                    TextFit.Apply(board);
+                    Settle(surface, board);
                     AssertFits(board, frame.Name + " missions");
 
                     surface.Stage.Clear();
                     var patches = MountInColumn(surface.Stage, PatchCollectionScreen.Build(null, null, null, () => { }));
                     surface.Pump(4);
-                    TextFit.Apply(patches);
+                    Settle(surface, patches);
                     AssertFits(patches, frame.Name + " patches");
 
                     surface.Stage.Clear();
                     var codex = MountInColumn(surface.Stage, CodexScreen.Build(() => { }));
                     surface.Pump(4);
-                    TextFit.Apply(codex);
+                    Settle(surface, codex);
                     AssertFits(codex, frame.Name + " codex");
 
                     surface.Stage.Clear();
                     var briefing = MountInColumn(surface.Stage, BriefingScreen.Build(SampleMission(), () => { }, () => { }));
                     surface.Pump(4);
-                    TextFit.Apply(briefing);
+                    Settle(surface, briefing);
                     AssertFits(briefing, frame.Name + " briefing");
 
                     surface.Stage.Clear();
@@ -162,7 +162,7 @@ namespace Kestrel.Game.Tests
                         new ReportActions());
                     surface.Stage.Add(card);
                     surface.Pump(4);
-                    TextFit.Apply(card);
+                    Settle(surface, card);
                     AssertFits(card, frame.Name + " result");
 
                     surface.Stage.Clear();
@@ -170,7 +170,7 @@ namespace Kestrel.Game.Tests
                     try
                     {
                         surface.Pump(4);
-                        TextFit.Apply(pause.Hud);
+                        Settle(surface, pause.Hud);
                         AssertFits(pause.Hud.Q("pause-menu"), frame.Name + " pause");
                     }
                     finally { pause.Dispose(); }
@@ -201,7 +201,7 @@ namespace Kestrel.Game.Tests
                         {
                             panel.Show(tab);
                             surface.Pump(3);
-                            TextFit.Apply(panel.Root);
+                            Settle(surface, panel.Root);
                             AssertFits(panel.Root, frame.Name + " " + tab);
                         }
                         panel.SetEngineer(false);
@@ -209,7 +209,7 @@ namespace Kestrel.Game.Tests
                         {
                             panel.Show(tab);
                             surface.Pump(2);
-                            TextFit.Apply(panel.Root);
+                            Settle(surface, panel.Root);
                             AssertFits(panel.Root, frame.Name + " simple " + tab);
                         }
                     }
@@ -243,7 +243,7 @@ namespace Kestrel.Game.Tests
                 {
                     seen.Add(panel.Stepper.Step);
                     surface.Pump(2);
-                    TextFit.Apply(panel.Root);
+                    Settle(surface, panel.Root);
                     AssertFits(panel.Root, where + " step " + panel.Stepper.Step);
                     if (panel.Stepper.PressForward() || panel.Stepper.PressForward()) continue;
                     var next = panel.Stepper.Root.Q<Button>("stepper-next");
@@ -254,6 +254,14 @@ namespace Kestrel.Game.Tests
                 Assert.That(seen.Count, Is.EqualTo(StepperCatalog.Count), where + " " + string.Join(",", seen));
             }
             finally { panel.Detach(); }
+        }
+
+        static void Settle(DeviceSurface surface, VisualElement root)
+        {
+            TextFit.Apply(root);
+            surface.Pump(3);
+            TextFit.Apply(root);
+            surface.Pump(2);
         }
 
         static void AssertFits(VisualElement root, string where)

@@ -155,25 +155,24 @@ namespace Kestrel.Game.Shell
             wrapped = Measure(t, text, Math.Max(8f, parentW > 8f ? Math.Min(w, parentW) : w));
             bool stillWide = wrapped.x > w + Slack;
             bool stillTall = wrapped.y > h + Slack && !HeightScrolls(t);
-            if (stillTall && !HeightLocked(t))
+            if (stillTall && CanGrow(t))
             {
                 float need = wrapped.y + 2f;
-                if (t.style.minHeight.keyword == StyleKeyword.Undefined || t.style.minHeight.value.value < need - 0.5f)
+                bool asked = t.style.minHeight.value.value >= need - 0.5f;
+                if (!asked)
                 {
                     t.style.minHeight = need;
                     changed = true;
                 }
-                if (t.parent != null && t.parent.style.minHeight.keyword != StyleKeyword.Undefined
-                    && t.parent.style.minHeight.value.value < need - 0.5f
-                    && !HeightLocked(t.parent))
-                {
-                    t.parent.style.minHeight = need;
-                    changed = true;
-                }
-                stillTall = false;
+                // The box is still the old height. A stylesheet height, or a pass that already
+                // asked for more room, means growing will not uncover the glyphs.
+                if (asked && h + 4f < need) stillTall = true;
+                else stillTall = false;
             }
 
-            if (stillWide || stillTall || spill)
+            // A pixel height written this pass has not laid out yet. Shrinking now would
+            // lock a small face into a box that is about to get taller.
+            if ((stillWide || stillTall || spill) && !AwaitingGrow(t))
             {
                 float font = Face(t);
                 float limit = stillWide ? w / Math.Max(1f, wrapped.x) : h / Math.Max(1f, wrapped.y);
@@ -274,15 +273,55 @@ namespace Kestrel.Game.Shell
         static bool HeightLocked(VisualElement t)
         {
             if (t == null) return false;
-            var h = t.style.height;
-            if (h.keyword == StyleKeyword.Auto || h.keyword == StyleKeyword.Null || h.keyword == StyleKeyword.None)
+            return HasLength(t.style.height) || HasLength(t.style.maxHeight);
+        }
+
+        /// <summary>An inline pixel length. Undefined with a positive value is how a pixel assignment is stored.
+        /// A percent height fills its parent and is not a cap on the text.</summary>
+        static bool HasLength(StyleLength length)
+        {
+            if (length.keyword == StyleKeyword.Auto || length.keyword == StyleKeyword.Null || length.keyword == StyleKeyword.None)
                 return false;
-            if (h.keyword == StyleKeyword.Undefined) return false;
-            var max = t.style.maxHeight;
-            if (max.keyword != StyleKeyword.Undefined && max.keyword != StyleKeyword.Null && max.keyword != StyleKeyword.Auto
-                && max.keyword != StyleKeyword.None && max.value.value > 0f)
-                return true;
-            return h.value.value > 0f;
+            if (length.value.unit == LengthUnit.Percent) return false;
+            return length.value.value > 0.5f;
+        }
+
+        static bool CanGrow(VisualElement t)
+        {
+            if (BlocksGrow(t)) return false;
+            for (var a = t.parent; a != null; a = a.parent)
+            {
+                if (a is ScrollView sv && sv.mode != ScrollViewMode.Horizontal) return true;
+                if (BlocksGrow(a)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>A locked height that is already on screen. A taller pixel height that has not laid out yet does not block.</summary>
+        static bool BlocksGrow(VisualElement e) => HeightLocked(e) && !PendingGrow(e);
+
+        static bool PendingGrow(VisualElement e)
+        {
+            if (e == null) return false;
+            float laid = e.layout.height;
+            if (float.IsNaN(laid) || laid < 1f) return false;
+            float want = Math.Max(PixelLength(e.style.height), PixelLength(e.style.minHeight));
+            return want > laid + 4f;
+        }
+
+        static bool AwaitingGrow(VisualElement t)
+        {
+            for (var a = t; a != null; a = a.parent)
+                if (PendingGrow(a)) return true;
+            return false;
+        }
+
+        static float PixelLength(StyleLength length)
+        {
+            if (length.keyword == StyleKeyword.Auto || length.keyword == StyleKeyword.Null || length.keyword == StyleKeyword.None)
+                return 0f;
+            if (length.value.unit == LengthUnit.Percent) return 0f;
+            return length.value.value > 0.5f ? length.value.value : 0f;
         }
 
         static bool HeightScrolls(TextElement t)
