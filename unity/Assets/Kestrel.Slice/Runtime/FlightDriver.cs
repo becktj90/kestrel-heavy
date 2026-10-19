@@ -18,7 +18,7 @@ namespace Kestrel.Slice
 {
     public sealed class FlightDriver : MonoBehaviour, IFlightAudioBus
     {
-        public const double PhysicsDt = 1.0 / 120;
+        public const double PhysicsDt = MissionFlightSetup.LiveDt;
         public const float RebaseDistance = 2000f;
 
         public Transform World;        // pad, ground, scenery: children are placed in local (double) coords minus origin
@@ -97,11 +97,18 @@ namespace Kestrel.Slice
         public void Launch(Design d, AscentHook hook)
         {
             var c = SliceData.Catalog;
+            // The campaign hop on the pad (null for a free build) and the briefing's pad and wind.
+            var aimed = hook != null && hook.Mission != null ? hook.Mission : AscentFlight.CurrentMission();
+            var site = hook != null ? new MissionFlightSite { HasLatitude = hook.HasLatitude, LatitudeDeg = hook.Latitude, Wind = hook.Wind } : null;
             List<SimStage> stages;
             SimOptions opts;
             try
             {
-                (stages, opts) = Stack.SimInputs(c, d, PhysicsDt);
+                // Same setup as FlightBatch (B-01, B-03): tMax from Stack.SimInputs (>= 2500 s), aim and
+                // cutoff, coast boil-off and strap-on landing fuel. Only the step and the monitor differ.
+                var setup = MissionFlightSetup.Build(c, aimed, d, PhysicsDt, site);
+                stages = setup.Stages;
+                opts = setup.Options;
             }
             catch (Exception e)
             {
@@ -117,15 +124,8 @@ namespace Kestrel.Slice
             if (hook != null)
             {
                 if (hook.Monitor != null) opts.monitor = hook.Monitor;
-                if (hook.Wind != null && !hook.Wind.Calm) opts.wind = hook.Wind;
-                if (hook.HasLatitude) opts.latitude = hook.Latitude;
-                guidance = opts.guidance;
                 Decisions = hook.Director;
             }
-            // Same aim as the campaign batch. The orbit target lofts a 10 km hop past the band.
-            var aimed = hook != null && hook.Mission != null ? hook.Mission : AscentFlight.CurrentMission();
-            if (MissionAim.Apply(opts, aimed)) guidance = opts.guidance;
-            opts.tMax = 600;
             thrustByStage = new double[stages.Count];
             for (int i = 0; i < stages.Count; i++)
             {

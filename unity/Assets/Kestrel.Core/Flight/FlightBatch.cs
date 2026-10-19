@@ -114,56 +114,16 @@ namespace Kestrel.Core.Flight
                 flight.reliability = Reliability.Of(catalog, design).reliability;
                 flight.requiredDv = mission.RequiredDeltaV();
 
-                var flown = design.Clone();
-                if (mission.CoastHours > 0)
-                {
-                    var upper = flown.stages[flown.stages.Count - 1];
-                    double before = upper.propMass;
-                    upper.propMass = TankModel.RemainingPropKg(catalog, upper, mission.CoastHours);
-                    flight.boilOffKg = before - upper.propMass;
-                }
-                // Core stages already hold landing prop out of the burn. Strap-ons do not, so keep it here.
-                if (mission.LandBoosters && flown.strapOns != null && flown.strapOns.landingPropMass > 0)
-                {
-                    double keep = Math.Min(flown.strapOns.landingPropMass, flown.strapOns.propMass);
-                    flown.strapOns.propMass -= keep;
-                }
-
-                var built = Stack.SimInputs(catalog, flown, 0.2, 0);
-                double target = mission.GuidanceAltM;
-                if (!(target > 0)) target = built.opts.targetAlt;
-                built.opts.targetAlt = target;
-                if (built.opts.guidance != null) built.opts.guidance.targetAlt = target;
-                // The integrator cuts off when periapsis is merely near the target, which freezes lofted ellipses.
-                // Circular, GTO and C3 contracts burn the loaded upper propellant out. The depletion check uses a
-                // lower floor so a burnout just under the aim point is not a false "out of fuel". The pass check
-                // still requires the flown apoapsis and periapsis. Upper-stage pitch reads the guidance target,
-                // which stays on the real aim point when a profile is set.
-                if (mission.TargetKind == "circular" || mission.TargetKind == "ellipse" || mission.TargetKind == "c3")
-                {
-                    // Legacy pitch reads SimOptions.targetAlt, so it keeps burning the loaded
-                    // upper propellant (cutoff off) toward the real aim. A custom pitch keeps
-                    // the aim on the guidance profile. Headless then cuts off when periapsis is
-                    // within 10 km of min(targetAlt, altitude). A huge SimOptions target makes
-                    // that "periapsis has caught the vehicle": a near-circular insertion, not a
-                    // frozen lofted ellipse. Running out of propellant before then is depletion.
-                    bool custom = built.opts.guidance != null && !Headless.LegacyPitch(built.opts.guidance);
-                    if (custom)
-                    {
-                        built.opts.cutoff = true;
-                        built.opts.targetAlt = 1e12;
-                        built.opts.guidance.targetAlt = target;
-                    }
-                    else
-                    {
-                        built.opts.cutoff = false;
-                        built.opts.targetAlt = target;
-                    }
-                }
+                // Same setup as the live pad flight (MissionFlightSetup): run length, aim and cutoff,
+                // coast boil-off and strap-on landing fuel. The batch flies the reference pad in calm air.
+                var setup = MissionFlightSetup.Build(catalog, mission, design, MissionFlightSetup.BatchDt);
+                var flown = setup.Flown;
+                double target = setup.TargetAltM;
+                flight.boilOffKg = setup.BoilOffKg;
                 var monitor = FailureMonitor.Create(catalog, flown, target, DesignHash(design), seed);
                 monitor.Gentle = false;
-                built.opts.monitor = monitor;
-                var sim = Headless.Simulate(built.stages, built.opts);
+                setup.Options.monitor = monitor;
+                var sim = Headless.Simulate(setup.Stages, setup.Options);
 
                 flight.outcome = sim.outcome;
                 flight.failure = sim.failure != null ? sim.failure.kind : null;
