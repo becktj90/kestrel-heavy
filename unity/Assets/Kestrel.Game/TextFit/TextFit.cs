@@ -25,6 +25,16 @@ namespace Kestrel.Game.Shell
 
         static readonly ConditionalWeakTable<VisualElement, Seal> Seals = new ConditionalWeakTable<VisualElement, Seal>();
 
+        /// <summary>The face each label had when TextFit last looked at it, and the Apply in which it was seen to grow.</summary>
+        sealed class Seen
+        {
+            public float Face;
+            public int GrewIn = -1;
+        }
+
+        static readonly ConditionalWeakTable<VisualElement, Seen> Faces = new ConditionalWeakTable<VisualElement, Seen>();
+        static int _apply;
+
         /// <summary>The fitted face when this element was sealed for the same box. Otherwise <paramref name="size"/>.</summary>
         public static float Cap(VisualElement element, float size)
         {
@@ -52,6 +62,7 @@ namespace Kestrel.Game.Shell
         public static void Apply(VisualElement root)
         {
             if (root == null) return;
+            _apply++;
             var list = new List<TextElement>(64);
             Collect(root, list);
             for (int pass = 0; pass < Passes; pass++)
@@ -118,6 +129,8 @@ namespace Kestrel.Game.Shell
             float w, h;
             Box(t, out w, out h);
             if (w < 8f || h < 4f) return false;
+            // Before any early exit, so the face history sees every pass.
+            bool grew = GrewSinceLayout(t, h);
 
             var one = Measure(t, text, 0f);
             var wrapped = Measure(t, text, w);
@@ -203,6 +216,18 @@ namespace Kestrel.Game.Shell
                 stillTall = false;
             }
 
+            // A larger face written since the last layout is measured against the box of the old face. A label
+            // whose height follows its own text (no pixel height, no clip cutting it) will grow on the next
+            // layout, so its height is not a reason to shrink. Without this, a wordmark restored from 12 pt to
+            // 70 pt in the same geometry callback was measured against its 12 pt box and cut straight back to
+            // h / lineHeight = 12.05 pt, whatever face the caller wrote (#291 ShortColumnReleasesCaps).
+            if (grew && (stillTall || spill))
+            {
+                TraceFit(t, "grew-unlaid, no shrink", Face(t), Face(t), w, h);
+                stillTall = false;
+                spill = false;
+            }
+
             // A pixel height or a larger face written this pass has not laid out yet.
             if ((stillWide || stillTall || spill) && !AwaitingGrow(t) && !FacePending(t))
             {
@@ -213,12 +238,49 @@ namespace Kestrel.Game.Shell
                 if (next > font - 0.4f) next = Math.Max(Floor, font - 1f);
                 if (next < font - 0.3f)
                 {
+                    TraceFit(t, stillWide ? "shrink wide" : stillTall ? "shrink tall" : "shrink spill", font, next, w, h);
                     t.style.fontSize = next;
                     Remember(t, next, w, h);
+                    if (Faces.TryGetValue(t, out var seen)) seen.Face = next;
                     changed = true;
                 }
             }
             return changed;
+        }
+
+        /// <summary>True when the label's face grew since TextFit last saw it, in this Apply, and its box
+        /// is its own content box (no pixel height, no clipping ancestor cutting it below that).</summary>
+        static bool GrewSinceLayout(TextElement t, float h)
+        {
+            float face = Face(t);
+            if (!Faces.TryGetValue(t, out var seen))
+            {
+                Faces.Add(t, new Seen { Face = face });
+                return false;
+            }
+            if (face > seen.Face + 0.5f) seen.GrewIn = _apply;
+            seen.Face = face;
+            if (seen.GrewIn != _apply) return false;
+            if (HeightLocked(t)) return false;
+            float own = t.contentRect.height;
+            if (float.IsNaN(own) || own < 1f) own = t.layout.height;
+            return !(own > h + 0.5f);
+        }
+
+        /// <summary>Names whose face writes are logged in the editor and development builds when
+        /// <see cref="TraceOn"/> holds. CI (batch mode) logs the Home wordmark so a failing run shows who wrote it.</summary>
+        public static readonly HashSet<string> TraceNames = new HashSet<string> { "mm-kestrel" };
+        public static bool Trace;
+        public static bool TraceOn => Trace || Application.isBatchMode;
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        static void TraceFit(TextElement t, string why, float from, float to, float w, float h)
+        {
+            if (t == null || string.IsNullOrEmpty(t.name) || !TraceNames.Contains(t.name) || !TraceOn) return;
+            Debug.Log("[kh-textfit] " + t.name + " " + why + " " + from.ToString("0.###") + " -> " + to.ToString("0.###")
+                + " box " + w.ToString("0.#") + "x" + h.ToString("0.#")
+                + " layout " + t.layout.height.ToString("0.#") + " resolved " + t.resolvedStyle.fontSize.ToString("0.###")
+                + " apply " + _apply);
         }
 
         static void ReleaseIfRoomy(TextElement t, float w, float h)

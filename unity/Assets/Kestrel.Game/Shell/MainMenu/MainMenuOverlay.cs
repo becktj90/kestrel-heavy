@@ -122,7 +122,9 @@ namespace Kestrel.Game.Shell
                 float topInset = Mathf.Max(0f, safe.worldBound.yMin - full.worldBound.yMin);
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
                 var z = MenuTypeScale.Compute(w, h, topInset, botInset);
+                TraceTitle("geometry in", root);
                 ApplyScale(root, z);
+                TraceTitle("after ApplyScale", root);
                 bool wide = ForceWide.HasValue
                     ? ForceWide.Value && WebLayoutMode.IsLandscape(w, h)
                     : WebLayoutMode.UseWide(Screen.width, Screen.height);
@@ -136,12 +138,14 @@ namespace Kestrel.Game.Shell
                     ForgetColumnFit(root);
                 }
                 else if (!root.ClassListContains("kh-mm-wide")) ContainColumn(root, z);
+                TraceTitle("after ContainColumn", root);
                 PlaceHero(root, full, dusk);
                 top.style.height = MainMenuCopy.BarHeight(h, topInset);
                 bottom.style.height = MainMenuCopy.BarHeight(h, botInset);
                 MainMenuLayout.HeroLift = MeasureLift(root, safe, full, z, h, topInset);
                 TextFit.Apply(root);
                 if (full != null) TextFit.Apply(full);
+                TraceTitle("after TextFit", root);
             });
             launchKey.RegisterCallback<GeometryChangedEvent>(_ =>
             {
@@ -316,8 +320,10 @@ namespace Kestrel.Game.Shell
                 e.style.fontSize = soon;
                 e.style.letterSpacing = soon * 0.15f;
             });
-            Font(root.Q("mm-hint-line"), type.Hint * fs, 0f);
-            var hint = root.Q("mm-hint-line");
+            var hint = root.Q<Label>("mm-hint-line");
+            // The row is sized for this text (WebHomeLayout.FitHint). Tap opens the whole line.
+            if (hint != null) hint.text = type.HintShort ? MainMenuCopy.ThrumShort : MainMenuCopy.ThrumLine;
+            Font(hint, type.Hint * fs, 0f);
             if (hint != null) { hint.style.whiteSpace = WhiteSpace.Normal; hint.style.overflow = Overflow.Hidden; }
             FitCardText(root.Q("home-launch"), true);
             FitCardText(root.Q("home-design"), false);
@@ -495,6 +501,8 @@ namespace Kestrel.Game.Shell
                 hint.style.height = StyleKeyword.Null;
                 hint.style.minHeight = StyleKeyword.Null;
             }
+            var hintLine = root.Q<Label>("mm-hint-line");
+            if (hintLine != null) hintLine.text = MainMenuCopy.ThrumLine;
             var grid = root.Q("mm-grid");
             Drop(grid);
             if (grid != null)
@@ -693,6 +701,7 @@ namespace Kestrel.Game.Shell
                     var eye = root.Q("mm-eyebrow");
                     if (kestrel != null) kestrel.style.fontSize = size;
                     if (shadow != null) shadow.style.fontSize = size;
+                    TraceTitle("title cut " + next.ToString("0.#") + "px", root);
                     if (heavy != null) heavy.style.fontSize = Mathf.Max(11f, size * 0.45f);
                     if (eye != null) eye.style.fontSize = Mathf.Max(9f, size * 0.32f);
                 }
@@ -720,6 +729,33 @@ namespace Kestrel.Game.Shell
             if (shadow != null) shadow.style.fontSize = z.Title;
             if (heavy != null) heavy.style.fontSize = z.Tagline;
             if (eye != null) eye.style.fontSize = Mathf.Max(14f, z.Hint);
+            TraceTitle("RestoreTitleType", root);
+        }
+
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, string> TitleTraced =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, string>();
+
+        /// <summary>Logs the wordmark's written and resolved face with the column state, editor and development only,
+        /// and only in batch mode (CI) or with <see cref="TextFit.Trace"/> set. Repeats of the same state are skipped.</summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        static void TraceTitle(string where, VisualElement root)
+        {
+            if (root == null || !TextFit.TraceOn) return;
+            var word = root.Q<Label>("mm-kestrel");
+            if (word == null) return;
+            var title = root.Q("mm-title");
+            var set = word.style.fontSize;
+            string state = "set " + (set.keyword == StyleKeyword.Undefined ? set.value.value.ToString("0.###") : set.keyword.ToString())
+                + " resolved " + word.resolvedStyle.fontSize.ToString("0.###")
+                + " word " + word.layout.width.ToString("0.#") + "x" + word.layout.height.ToString("0.#")
+                + " title " + (title != null ? title.layout.height.ToString("0.#") + (title.style.height.keyword == StyleKeyword.Undefined ? " pinned" : "") : "-")
+                + " root " + root.layout.height.ToString("0.#")
+                + (root.ClassListContains("kh-mm-wide") ? " wide" : "")
+                + (root.userData is ColumnFit fit ? " fit@" + fit.Host.ToString("0.#") : "");
+            if (TitleTraced.TryGetValue(word, out var last) && last == where + state) return;
+            TitleTraced.Remove(word);
+            TitleTraced.Add(word, where + state);
+            Debug.Log("[kh-title] " + where + ": " + state);
         }
 
         /// <summary>Eyebrow, wordmark and tagline when the title's layout height is not the content size.</summary>

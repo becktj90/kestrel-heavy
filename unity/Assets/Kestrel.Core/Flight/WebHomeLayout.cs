@@ -11,6 +11,9 @@ namespace Kestrel.Core.Flight
         public float Title, Tagline, Launch, LaunchCaption, Design, DesignCaption;
         public float TileName, TileCaption, Soon, Stat, Hint;
         public int LaunchCaptionLines, DesignCaptionLines, TileCaptionLines, HintLines;
+        /// <summary>The full Thrum line needs more than two lines in this row, so the row shows the short
+        /// teaser (<see cref="HomeWideText.HintShort"/>). Tapping the row still opens the whole line.</summary>
+        public bool HintShort;
     }
 
     public sealed class WebHomeFrame
@@ -40,6 +43,7 @@ namespace Kestrel.Core.Flight
         public const float Fuel = 422.40f;
         public const float Thrust = 677.00f;
         public const float Hint = 3844.30f;                // Thrum's opening line, Space Grotesk Medium, no tracking
+        public const float HintShort = 1802.40f;           // "Oh! A visitor. Mind the oil. I am Thrum."
 
         public static float Width(float at100, float font) => at100 * font / 100f;
 
@@ -66,6 +70,16 @@ namespace Kestrel.Core.Flight
         public const float DesignChrome = 2f * 2f + 12f * 2f + 16f + 12f + Slack;
         public const float TileChrome = 3f * 2f + 10f * 2f + Slack;
         public const float LampSlot = 16f;
+        /// <summary>The Thrum row around its line: 10px side padding, the 22px portrait and its 8px margin,
+        /// and the text column's 12px margin (KH_Tokens .kh-mm-thrum*). The old 16px left the label 60px
+        /// narrower than the layout assumed, so a "two-line" hint wrapped to three in a one-line box.</summary>
+        public const float HintChromeX = 10f * 2f + 22f + 8f + 12f + Slack;
+        /// <summary>The row's 4px top and bottom padding, plus a pixel each side for glyph overhang.</summary>
+        public const float HintChromeY = 4f * 2f + 2f;
+        /// <summary>Space Grotesk ascent plus descent is 1.276 em, more than <see cref="Line"/>.</summary>
+        public const float HintLine = 1.3f;
+        /// <summary>Word wrap leaves the end of each line short. Lines past the first count at this fill.</summary>
+        public const float WrapFill = 0.88f;
         public const float SoonPad = 18f;
         /// <summary>Below this width the gear stacks under the page FULL button so they cannot share pixels.</summary>
         public const float NarrowGear = 520f;
@@ -206,7 +220,7 @@ namespace Kestrel.Core.Flight
             float launchInner = Math.Max(1f, menuW - LaunchChrome);
             float designInner = Math.Max(1f, menuW - DesignChrome);
             float tileInner = Math.Max(1f, menuW - TileChrome);
-            float hintInner = Math.Max(1f, menuW - 16f);
+            float hintInner = Math.Max(1f, menuW - HintChromeX);
             type.Launch = Fit(launchInner, HomeWideText.Launch, 32f, 13f);
             type.LaunchCaption = FitCaption(launchInner, HomeWideText.LaunchCaption, 16f, 10f, out type.LaunchCaptionLines);
             type.Design = Fit(designInner, HomeWideText.Design, 24f, 12f);
@@ -219,7 +233,12 @@ namespace Kestrel.Core.Flight
             type.TileName = Math.Min(missionsName, codexName);
             float capAt = Math.Max(HomeWideText.MissionsCaption, HomeWideText.CodexCaption);
             type.TileCaption = FitCaption(tileInner, capAt, 15f, 10f, out type.TileCaptionLines);
-            type.Hint = FitCaption(hintInner, HomeWideText.Hint, 13f, 9f, out type.HintLines);
+            type.Hint = FitHint(hintInner, HomeWideText.Hint, out type.HintLines);
+            if (type.HintLines > 2)
+            {
+                type.HintShort = true;
+                type.Hint = FitHint(hintInner, HomeWideText.HintShort, out type.HintLines);
+            }
             float statInner = Math.Max(1f, statsW - 16f);
             type.Stat = Fit(Math.Max(1f, statInner - Gap), HomeWideText.Fuel + HomeWideText.Thrust, 15f, 8f);
             float statNeed = type.Stat * Line + 22f;
@@ -234,7 +253,7 @@ namespace Kestrel.Core.Flight
             float launchNat = type.Launch, launchCapNat = type.LaunchCaption;
             float designNat = type.Design, designCapNat = type.DesignCaption;
             float tileNat = type.TileName, tileCapNat = type.TileCaption;
-            float hintH = Math.Max(16f, type.HintLines * type.Hint * Line + 4f);
+            float hintH = Math.Max(16f, HintBlock(type));
             float gaps = Gap * 4f;
             float body = span - hintH - gaps;
             // Largest type that still fits the column. Floors match the readable sizes the
@@ -279,7 +298,7 @@ namespace Kestrel.Core.Flight
             float hintY = y1 - hintH;
             if (hintY < y) hintY = y;
             if (hintY + hintH > y1) hintH = Math.Max(1f, y1 - hintY);
-            float hintNeed = type.HintLines * type.Hint * Line + 4f;
+            float hintNeed = HintBlock(type);
             if (hintH + 0.6f < hintNeed && hintNeed > 0f) type.Hint *= hintH / hintNeed;
             f.Hint = Rect(menuX, hintY, menuW, hintH);
             f.Menu = Rect(menuX, y0, menuW, Math.Max(1f, y1 - y0));
@@ -318,10 +337,10 @@ namespace Kestrel.Core.Flight
             if (stats > statInner + 0.6f) return "fuel and thrust wider than the stats card";
             if (t.Stat * Line > f.Stats.H + 0.6f) return "stats text taller than the card";
 
-            float hintInner = Math.Max(1f, f.Hint.W - 16f);
+            float hintInner = Math.Max(1f, f.Hint.W - HintChromeX);
             if (t.HintLines > 2) return "hint wraps past two lines";
-            if (HomeWideText.Lines(HomeWideText.Hint, t.Hint, hintInner) > t.HintLines) return "hint wider than its row";
-            if (t.HintLines * t.Hint * Line + 4f > f.Hint.H + 0.6f) return "hint taller than its row";
+            if (WrapLines(t.HintShort ? HomeWideText.HintShort : HomeWideText.Hint, t.Hint, hintInner) > t.HintLines) return "hint wider than its row";
+            if (HintBlock(t) > f.Hint.H + 0.6f) return "hint taller than its row";
             return null;
         }
 
@@ -438,6 +457,32 @@ namespace Kestrel.Core.Flight
             font = Fit(inner * 2f, at100, max, min);
             lines = Math.Min(2, Math.Max(1, HomeWideText.Lines(at100, font, inner)));
             return font;
+        }
+
+        /// <summary>Row height for the Thrum line at its face and line count, padding included.</summary>
+        public static float HintBlock(WebHomeType t) => t == null ? 0f : Math.Max(1, t.HintLines) * t.Hint * HintLine + HintChromeY;
+
+        /// <summary>Lines a wrapped string takes. One line is exact; past that each line is only <see cref="WrapFill"/> full.</summary>
+        public static int WrapLines(float at100, float font, float inner)
+        {
+            if (!(inner > 1f) || !(font > 0f)) return 99;
+            if (HomeWideText.Width(at100, font) <= inner + 0.05f) return 1;
+            return HomeWideText.Lines(at100, font, inner * WrapFill);
+        }
+
+        /// <summary>One line when it fits at 9pt or more, else the largest face (11pt at most) that wraps to two. Lines can come back above two
+        /// when even 9pt is too wide; the caller then switches to the short line.</summary>
+        static float FitHint(float inner, float at100, out int lines)
+        {
+            float one = Fit(inner, at100, 13f, 9f);
+            int oneLines = WrapLines(at100, one, inner);
+            // One line wins whenever it fits at the 9pt floor: a short landscape column (844x390 with a notch)
+            // has no height to spare for a second line.
+            if (oneLines <= 1) { lines = 1; return one; }
+            // Two lines stop at 11pt so the row does not take the cards' height.
+            float two = Fit(inner * 2f * WrapFill, at100, 11f, 9f);
+            lines = WrapLines(at100, two, inner);
+            return two;
         }
 
         static float Block(float label, float caption, int captionLines, float padY, float border) =>
