@@ -15,6 +15,28 @@ export function payloadVolume(d) {
   return pl.volume * Math.min(1.5, (m / pl.mass) ** (2 / 3));
 }
 
+// Fairing fit (§2.9), the same rule as Kestrel.Core.Vehicle.PayloadFit (B-04):
+//   usable = π(0.45·D)²·0.8·L, and cargo diameter ≤ 0.9·D (the same 0.45·D usable radius).
+// 0.9 is an approximate game number; real fairings offer about 0.85–0.885 of their outer diameter.
+// 0.8 is optimistic: L is the whole fairing length, nose included, so it overstates the real volume
+// for conic and ogive noses (geometric fractions are about 0.73 conic, 0.78 otherwise, 0.90 blunt). It
+// stays 0.8 until the follow-up issue "Payload volume packing retune: nose-inclusive L".
+export const FIT_RADIUS = 0.45;
+export const FIT_LENGTH = 0.8;
+export const FIT_DIAMETER = 2 * FIT_RADIUS;
+export function usableVolume(D, L) { const r = FIT_RADIUS * D; return Math.PI * r * r * FIT_LENGTH * L; }
+export function requiredLength(volume, D) { const r = FIT_RADIUS * D; return volume / (Math.PI * r * r * FIT_LENGTH); }
+export function requiredDiameter(cargoDiameter) { return cargoDiameter / FIT_DIAMETER; }
+/** Fit of a design against its catalog payload; null without a known payload or fairing. */
+export function payloadFit(d) {
+  const pl = PAYLOAD_BY_ID[d.payload?.type];
+  if (!pl || !d.fairing) return null;
+  const volume = payloadVolume(d), diameter = pl.diameter || 0;
+  const usable = usableVolume(d.fairing.diameter, d.fairing.length);
+  const volumeMargin = usable - volume, diameterMargin = FIT_DIAMETER * d.fairing.diameter - diameter;
+  return { fits: volumeMargin >= 0 && diameterMargin >= 0, usable, volume, diameter, volumeMargin, diameterMargin };
+}
+
 const fmt = (n, d = 2) => Number(n).toFixed(d);
 const clone = (d) => JSON.parse(JSON.stringify(d));
 
@@ -34,9 +56,10 @@ function geometryIssues(d) {
   const top = d.stages[d.stages.length - 1];
   if (d.fairing && top && d.fairing.diameter < top.diameter * 0.5) out.push({ code: 'fairing-narrow', tab: 'payload', msg: 'The fairing is narrower than half the top stage. Try a fairing at least as wide as the stage.' });
   const pl = PAYLOAD_BY_ID[d.payload?.type];
-  if (pl && d.fairing) {
-    const vol = Math.PI * (d.fairing.diameter / 2) ** 2 * d.fairing.length * 0.6;
-    if (vol < payloadVolume(d)) out.push({ code: 'payload-doesnt-fit', tab: 'payload', msg: `The ${pl.label} needs about ${fmt(payloadVolume(d), 1)} m³; this fairing holds ${fmt(vol, 1)} m³. Try a longer or wider fairing.` });
+  const fit = payloadFit(d);
+  if (pl && fit) {
+    if (fit.volumeMargin < 0) out.push({ code: 'payload-doesnt-fit', tab: 'payload', msg: `The ${pl.label} needs about ${fmt(fit.volume, 1)} m³; this fairing holds ${fmt(fit.usable, 1)} m³. Try a longer or wider fairing.` });
+    else if (fit.diameterMargin < 0) out.push({ code: 'payload-doesnt-fit', tab: 'payload', msg: `The ${pl.label} is ${fmt(fit.diameter, 1)} m wide; it needs a fairing at least ${fmt(Math.ceil(requiredDiameter(fit.diameter) * 100) / 100, 2)} m wide. Try a wider fairing.` });
   }
   return out;
 }
@@ -107,8 +130,9 @@ export function makeItFly(input) {
   if (d.fairing.diameter < top.diameter) { d.fairing.diameter = top.diameter; say('Widened the fairing to match the top stage'); }
   const pl = PAYLOAD_BY_ID[d.payload?.type];
   if (pl) {
-    const vol = () => Math.PI * (d.fairing.diameter / 2) ** 2 * d.fairing.length * 0.6;
-    if (vol() < payloadVolume(d)) { d.fairing.length = Math.ceil(payloadVolume(d) / (Math.PI * (d.fairing.diameter / 2) ** 2 * 0.6) * 10) / 10 + 0.5; say('Stretched the fairing so the payload fits'); }
+    const needD = requiredDiameter(pl.diameter || 0);
+    if (d.fairing.diameter < needD) { d.fairing.diameter = Math.ceil(needD * 10) / 10; say('Widened the fairing so the payload fits'); }
+    if (!payloadFit(d).fits) { d.fairing.length = Math.ceil(requiredLength(payloadVolume(d), d.fairing.diameter) * 10) / 10 + 0.5; say('Stretched the fairing so the payload fits'); }
   }
   if (d.stages.some((s) => s.landingPropMass > 0) && !(d.landing.legs && d.landing.gridFins)) { d.landing.legs = true; d.landing.gridFins = true; say('Added landing legs and grid fins'); }
 

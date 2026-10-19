@@ -38,7 +38,7 @@ namespace Kestrel.Core.Data
     {
         public string id, displayName, label, orbit;
         public string whatItIs, whatItDoes, why, form;
-        public double mass, volume, maxG, maxHeatFlux;
+        public double mass, volume, diameter, maxG, maxHeatFlux;
         public bool crewed, needsAbort;
     }
 
@@ -54,6 +54,8 @@ namespace Kestrel.Core.Data
         public readonly Dictionary<string, Material> MaterialById = new Dictionary<string, Material>();
         public readonly Dictionary<string, Payload> PayloadById = new Dictionary<string, Payload>();
         public readonly Dictionary<string, OrbitTarget> Orbits = new Dictionary<string, OrbitTarget>();
+        /// <summary>Mission cargo (campaign.json volumeM3/diameterM) by mission id. A design with that missionId is fitted against it.</summary>
+        public readonly Dictionary<string, Vehicle.PayloadSpec> MissionPayloads = new Dictionary<string, Vehicle.PayloadSpec>();
         public readonly List<Vehicle.Design> Presets = new List<Vehicle.Design>();
         public JsonObject Econ;
         /// <summary>propellants.engines.materials.payloads version numbers. Part of the max-Q cache key.</summary>
@@ -129,7 +131,7 @@ namespace Kestrel.Core.Data
             {
                 var p = new Payload
                 {
-                    id = o.Str("id"), displayName = o.Str("displayName", o.Str("label")), label = o.Str("label"), orbit = o.Str("orbit"), mass = o.Num("mass"), volume = o.Num("volume"),
+                    id = o.Str("id"), displayName = o.Str("displayName", o.Str("label")), label = o.Str("label"), orbit = o.Str("orbit"), mass = o.Num("mass"), volume = o.Num("volume"), diameter = o.Num("diameter"),
                     maxG = o.Num("maxG"), maxHeatFlux = o.Num("maxHeatFlux"), crewed = o.Bool("crewed"), needsAbort = o.Bool("needsAbort"),
                     whatItIs = o.Str("whatItIs"), whatItDoes = o.Str("whatItDoes"), why = o.Str("why"), form = o.Str("form"),
                 };

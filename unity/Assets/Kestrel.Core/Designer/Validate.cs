@@ -30,13 +30,8 @@ namespace Kestrel.Core.Designer
         /// <summary>Warn above this powered-flight max-Q. Never a block. Unguided solids are exempt.</summary>
         public const double MaxQWarnKPa = 45;
 
-        public static double PayloadVolume(Catalog c, JsonObject d)
-        {
-            var plj = d?.Obj("payload");
-            if (plj == null || plj.Str("type") == null || !c.PayloadById.TryGetValue(plj.Str("type"), out var pl)) return 0;
-            double m = plj.Num("mass") > 0 ? plj.Num("mass") : pl.mass;
-            return pl.volume * Math.Min(1.5, Math.Pow(m / pl.mass, 2.0 / 3.0));
-        }
+        /// <summary>Cargo volume the fairing must hold (<see cref="PayloadFit.SpecFor(Catalog, JsonObject)"/>); 0 without a payload.</summary>
+        public static double PayloadVolume(Catalog c, JsonObject d) => PayloadFit.SpecFor(c, d)?.volume ?? 0;
 
         public static EngineeringReport Engineering(Catalog c, JsonObject design)
         {
@@ -150,13 +145,18 @@ namespace Kestrel.Core.Designer
             var top = (JsonObject)stages[stages.Count - 1];
             var fairing = d.Obj("fairing");
             if (fairing.Num("diameter") < top.Num("diameter")) { JsonMut.Set(fairing, "diameter", top.Num("diameter")); Say("Widened the fairing to match the top stage"); }
-            if (d.Obj("payload")?.Str("type") is string pt && c.PayloadById.ContainsKey(pt))
+            var spec = PayloadFit.SpecFor(c, d);
+            if (spec != null)
             {
-                double Fd() => Math.PI * Math.Pow(fairing.Num("diameter") / 2, 2) * fairing.Num("length") * 0.6;
-                double pv = PayloadVolume(c, d);
-                if (Fd() < pv)
+                double needD = PayloadFit.RequiredDiameter(spec);
+                if (fairing.Num("diameter") < needD)
                 {
-                    JsonMut.Set(fairing, "length", Math.Ceiling(pv / (Math.PI * Math.Pow(fairing.Num("diameter") / 2, 2) * 0.6) * 10) / 10 + 0.5);
+                    JsonMut.Set(fairing, "diameter", Math.Ceiling(needD * 10) / 10);
+                    Say("Widened the fairing so the payload fits");
+                }
+                if (!PayloadFit.Check(fairing.Num("diameter"), fairing.Num("length"), spec).fits)
+                {
+                    JsonMut.Set(fairing, "length", Math.Ceiling(PayloadFit.RequiredLength(spec, fairing.Num("diameter")) * 10) / 10 + 0.5);
                     Say("Stretched the fairing so the payload fits");
                 }
             }
@@ -363,12 +363,14 @@ namespace Kestrel.Core.Designer
             var fairing = d.Obj("fairing");
             if (fairing != null && top != null && fairing.Num("diameter") < top.Num("diameter") * Lim.fairingNarrowRatio)
                 outp.Add(Iss("fairing-narrow", "payload", "The fairing is narrower than half the top stage. Try a fairing at least as wide as the stage."));
-            var plj = d.Obj("payload");
-            if (plj != null && fairing != null && plj.Str("type") != null && c.PayloadById.TryGetValue(plj.Str("type"), out var pl))
+            var spec = PayloadFit.SpecFor(c, d);
+            if (spec != null && fairing != null)
             {
-                double vol = Math.PI * Math.Pow(fairing.Num("diameter") / 2, 2) * fairing.Num("length") * 0.6;
-                double pv = PayloadVolume(c, d);
-                if (vol < pv) outp.Add(Iss("payload-doesnt-fit", "payload", $"The {pl.label} needs about {Fmt(pv, 1)} m\u00b3; this fairing holds {Fmt(vol, 1)} m\u00b3. Try a longer or wider fairing."));
+                var plj = d.Obj("payload");
+                string label = plj?.Str("type") is string pt && c.PayloadById.TryGetValue(pt, out var pl) ? pl.label : "cargo";
+                var fit = PayloadFit.Check(fairing.Num("diameter"), fairing.Num("length"), spec);
+                if (fit.volumeMargin < 0) outp.Add(Iss("payload-doesnt-fit", "payload", $"The {label} needs about {Fmt(spec.volume, 1)} m\u00b3; this fairing holds {Fmt(fit.usableVolume, 1)} m\u00b3. Try a longer or wider fairing."));
+                else if (fit.diameterMargin < 0) outp.Add(Iss("payload-doesnt-fit", "payload", $"The {label} is {Fmt(spec.diameter, 1)} m wide; it needs a fairing at least {Fmt(Math.Ceiling(PayloadFit.RequiredDiameter(spec) * 100) / 100, 2)} m wide. Try a wider fairing."));
             }
             return outp;
         }

@@ -17,7 +17,7 @@ Every file is `{ generatedBy, tolerance, count, cases[] }`. `index.json` lists t
 | catalog-flight.json | 136 | every engine and every preset: ascent, staging, drag/max-Q, orbit determination | per quantity in docs/PHYSICS.md (absolute and relative). Harness: `tests/golden-harness.test.cjs` |
 | d0-replay.json | 22 | D0 seeds, portrait viewport, input clock, FNV-1a, medal grade | exact; Matter is not re-simulated |
 | designer-readout.json | 4 | readout v2 hand literals (cone, ogive+fins), a medium-kerolox max-Q band, and orbital templates that must still launch | mass and Δv rel 1e-12; CG/CP/stability abs 1e-9; max-Q is a band (docs/PHYSICS.md) |
-| designer-validate.json | 117 | validateEngineering, quick readout, Make it fly, experience layers, Number.toFixed | messages exact; readout rel 1e-9; cost exact |
+| designer-validate.json | 119 | validateEngineering, quick readout, Make it fly, experience layers, Number.toFixed | messages exact; readout rel 1e-9; cost exact |
 | landing-grade.json | 13 | Haven touchdown margins and Perfect/Good/Hard/Salvage | margins rel 1e-9; grade exact |
 | mission-ramp.json | 39 | per-mission wind, landing fuel, swell, stars, unlock | stars and unlock exact; drift rel 1e-9 |
 | params.json | 4 | params registry, sensor fidelity, weather-hold policy | rel 1e-9 |
