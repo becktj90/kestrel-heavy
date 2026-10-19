@@ -75,6 +75,9 @@ namespace Kestrel.Slice
 
             menu = new VisualElement { name = UiIds.ScreenPause };
             menu.AddToClassList("hidden");
+            // Hidden inline too, not only through the USS .hidden rule: a closed menu must never take a tap
+            // meant for the camera picker (it is brought to the front above it).
+            menu.style.display = DisplayStyle.None;
             menu.style.position = Position.Absolute;
             menu.style.left = 0;
             menu.style.right = 0;
@@ -140,7 +143,11 @@ namespace Kestrel.Slice
         {
             Paused = paused;
             if (paused) { tracking = false; pinching = false; ClosePicker(); HideToast(); }
-            if (menu != null) menu.EnableInClassList("hidden", !paused);
+            if (menu != null)
+            {
+                menu.EnableInClassList("hidden", !paused);
+                menu.style.display = paused ? DisplayStyle.Flex : DisplayStyle.None;
+            }
             RefreshAudio();
         }
 

@@ -411,9 +411,9 @@ namespace Kestrel.Slice
                 tools.style.left = 0; tools.style.top = 0; tools.style.right = 0; tools.style.bottom = 0;
                 tools.style.marginBottom = 0;
             }
-            Pin(hud.Q(UiIds.FlightFollow), Sc(f.Follow));
-            Pin(hud.Q(UiIds.FlightCamera), Sc(f.Camera));
-            Pin(hud.Q(UiIds.FlightPause), Sc(f.Pause));
+            PinTool(hud.Q(UiIds.FlightFollow), Sc(f.Follow));
+            PinTool(hud.Q(UiIds.FlightCamera), Sc(f.Camera));
+            PinTool(hud.Q(UiIds.FlightPause), Sc(f.Pause));
             // flight-tools is a full-HUD box that ignores picking; keep it (and the picker) above the
             // later-inserted ascent root so taps reach the buttons.
             tools?.BringToFront();
@@ -523,9 +523,9 @@ namespace Kestrel.Slice
             if (tools != null && webcast != null && tools.parent == hud && webcast.parent == hud
                 && hud.IndexOf(tools) > hud.IndexOf(webcast))
                 hud.Insert(hud.IndexOf(webcast), tools);
-            Unpin(hud != null ? hud.Q(UiIds.FlightFollow) : null);
-            Unpin(hud != null ? hud.Q(UiIds.FlightCamera) : null);
-            Unpin(hud != null ? hud.Q(UiIds.FlightPause) : null);
+            UnpinTool(hud != null ? hud.Q(UiIds.FlightFollow) : null);
+            UnpinTool(hud != null ? hud.Q(UiIds.FlightCamera) : null);
+            UnpinTool(hud != null ? hud.Q(UiIds.FlightPause) : null);
             Unpin(actions);
             if (actions != null) actions.style.overflow = StyleKeyword.Null;
             ReturnToDock(help);
@@ -555,6 +555,23 @@ namespace Kestrel.Slice
             row.style.maxHeight = StyleKeyword.Null;
         }
 
+        /// <summary>
+        /// Pin a tools-row button to its exact box. FlightChrome sizes these with min-width in its own units;
+        /// on a scaled web panel (1280x800 CSS) that min-width outgrew the pinned box and Cam ran into Pause.
+        /// </summary>
+        static void PinTool(VisualElement e, HudBox b)
+        {
+            Pin(e, b);
+            if (e == null || !b.Live) return;
+            e.style.minWidth = b.W;
+            e.style.maxWidth = b.W;
+            e.style.minHeight = b.H;
+            e.style.maxHeight = b.H;
+            e.style.marginLeft = 0;
+            e.style.marginRight = 0;
+            e.style.flexShrink = 0;
+        }
+
         static void Pin(VisualElement e, HudBox b)
         {
             if (e == null || !b.Live) return;
@@ -568,6 +585,20 @@ namespace Kestrel.Slice
             e.style.marginTop = 0;
             e.style.marginBottom = 0;
             e.style.flexGrow = 0;
+        }
+
+        /// <summary>Undo PinTool; FlightChrome.Layout restores its own min-width on the next portrait pass.</summary>
+        void UnpinTool(VisualElement e)
+        {
+            Unpin(e);
+            if (e == null) return;
+            e.style.minWidth = StyleKeyword.Null;
+            e.style.maxWidth = StyleKeyword.Null;
+            e.style.minHeight = StyleKeyword.Null;
+            e.style.maxHeight = StyleKeyword.Null;
+            e.style.marginLeft = StyleKeyword.Null;
+            e.style.marginRight = StyleKeyword.Null;
+            e.style.flexShrink = StyleKeyword.Null;
         }
 
         static void Unpin(VisualElement e)

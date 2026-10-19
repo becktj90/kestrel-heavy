@@ -208,7 +208,9 @@ namespace Kestrel.Game.Tests
                 surface.Pump(6);
                 Assert.That(chrome.PickerOpen, Is.True, size.Name);
                 var open = UiCapture.Save(surface.Texture, slug + "-open");
-                Assert.That(System.IO.File.Exists(closed) && System.IO.File.Exists(open), Is.True, size.Name);
+                // No real pixels (e.g. -nographics) degrades to a LogWarning and null; a written path must exist.
+                if (closed != null) Assert.That(System.IO.File.Exists(closed), Is.True, size.Name + " closed");
+                if (open != null) Assert.That(System.IO.File.Exists(open), Is.True, size.Name + " open");
                 ascent.Close();
             }
         }
