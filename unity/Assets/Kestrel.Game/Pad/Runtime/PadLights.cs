@@ -26,7 +26,11 @@ namespace Kestrel.Pad
         PadGlow _glow; public PadGlow Glow => _glow;
         public PlumeSplash Plume { get; private set; }
         /// <summary>Real throttle (0..1) and height above the deck (m). The flight loop calls this every frame.</summary>
-        public void SetPlume(float throttle, float heightAboveDeck) { if (Plume != null) Plume.SetState(throttle, heightAboveDeck); }
+        public void SetPlume(float throttle, float heightAboveDeck)
+        {
+            if (Plume != null) Plume.SetState(throttle, heightAboveDeck);
+            PadVfxLink.SetFlight(throttle, heightAboveDeck);
+        }
         InstanceBatch _poles; Mesh _box, _poleMesh; Matrix4x4 _builtFor; float _lastNight = -1f; bool _blinkOn = true;
         static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor"), BaseColor = Shader.PropertyToID("_BaseColor");
 

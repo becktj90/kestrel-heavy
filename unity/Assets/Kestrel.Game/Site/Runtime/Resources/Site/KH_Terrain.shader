@@ -8,6 +8,10 @@ Shader "Kestrel/Terrain"
         _Ambient ("Ambient", Color) = (0.38, 0.44, 0.50, 1)
         _FogColor ("Fog", Color) = (0.75, 0.86, 0.94, 1)
         _FogRange ("start end on", Vector) = (5000, 150000, 0, 0)
+        _Grass ("Grass", 2D) = "white" {}
+        _Sand ("Sand", 2D) = "white" {}
+        _Concrete ("Concrete", 2D) = "white" {}
+        _DetailOn ("Detail", Float) = 0
     }
     SubShader
     {
@@ -26,12 +30,23 @@ Shader "Kestrel/Terrain"
             #pragma fragment frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+            TEXTURE2D(_Grass);
+            SAMPLER(sampler_Grass);
+            TEXTURE2D(_Sand);
+            SAMPLER(sampler_Sand);
+            TEXTURE2D(_Concrete);
+            SAMPLER(sampler_Concrete);
+
             CBUFFER_START(UnityPerMaterial)
                 float4 _SunDir;
                 float4 _SunColor;
                 float4 _Ambient;
                 float4 _FogColor;
                 float4 _FogRange;
+                float4 _Grass_ST;
+                float4 _Sand_ST;
+                float4 _Concrete_ST;
+                float _DetailOn;
             CBUFFER_END
 
             struct Attributes
@@ -70,6 +85,20 @@ Shader "Kestrel/Terrain"
                 float grain = frac(sin(dot(xz, float2(12.9898, 78.233))) * 43758.5453);
                 float blot = frac(sin(dot(floor(xz * 0.08), float2(19.19, 47.77))) * 12543.2);
                 col *= lerp(0.90, 1.08, grain) * lerp(0.94, 1.05, blot);
+                // Procedural tiles multiply the vertex colour. Off (the default) leaves the coast unchanged.
+                if (_DetailOn > 0.5)
+                {
+                    float2 uv = xz * 0.06;
+                    float gDom = input.color.g - max(input.color.r, input.color.b);
+                    float warm = input.color.r - input.color.b;
+                    float wGrass = saturate(gDom * 8.0);
+                    float wSand = saturate((warm - 0.08) * 6.0) * (1.0 - wGrass);
+                    float wConc = (1.0 - wGrass) * (1.0 - wSand);
+                    half3 detail = SAMPLE_TEXTURE2D(_Grass, sampler_Grass, uv).rgb * wGrass
+                        + SAMPLE_TEXTURE2D(_Sand, sampler_Sand, uv * 1.3).rgb * wSand
+                        + SAMPLE_TEXTURE2D(_Concrete, sampler_Concrete, uv * 0.45).rgb * wConc;
+                    col *= detail;
+                }
                 // Per-pixel fog. Same ramp as SiteFog.Weight. One variant: multi_compile_fog is stripped
                 // from player builds (no scene has fog at build time) and the coast then fails to draw
                 // once SkyRig turns fog on.

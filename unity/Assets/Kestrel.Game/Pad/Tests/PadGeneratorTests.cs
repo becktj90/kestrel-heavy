@@ -126,7 +126,7 @@ namespace Kestrel.Pad.Tests
             Assert.That(g.Parent("tower.l03").Id, Is.EqualTo("tower"));
             // pad + tower, plus the D3 deck/trench subtree and the free-standing lightning masts (both hang off pad).
             int aside = 0;
-            foreach (var id in new[] { "pad.deck", "pad.trench" })
+            foreach (var id in new[] { "pad.deck", "pad.trench", "pad.deluge", "pad.farm" })
                 if (g.Contains(id)) aside += 1 + g.Descendants(id).Count();
             int masts = g.Query(ElementCategory.Structure, "lightning-mast").Count;
             Assert.That(masts, Is.GreaterThan(0));

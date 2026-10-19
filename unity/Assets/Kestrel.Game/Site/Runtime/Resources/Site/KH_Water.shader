@@ -15,6 +15,8 @@ Shader "Kestrel/Water"
         _GlintColor ("Glint", Color) = (1.0, 0.96, 0.86, 1)
         _FogColor ("Fog", Color) = (0.75, 0.86, 0.94, 1)
         _FogRange ("start end on", Vector) = (5000, 150000, 0, 0)
+        _Ripple ("Ripple", 2D) = "white" {}
+        _DetailOn ("Detail", Float) = 0
     }
     SubShader
     {
@@ -33,6 +35,9 @@ Shader "Kestrel/Water"
             #pragma fragment frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+            TEXTURE2D(_Ripple);
+            SAMPLER(sampler_Ripple);
+
             CBUFFER_START(UnityPerMaterial)
                 float4 _SunDir;
                 float4 _SunColor;
@@ -44,6 +49,8 @@ Shader "Kestrel/Water"
                 float4 _GlintColor;
                 float4 _FogColor;
                 float4 _FogRange;
+                float4 _Ripple_ST;
+                float _DetailOn;
             CBUFFER_END
 
             struct Attributes
@@ -105,6 +112,11 @@ Shader "Kestrel/Water"
                 float shore = saturate(input.color.a);
                 float foam = smoothstep(0.55, 0.95, shore);
                 half3 col = input.color.rgb;
+                if (_DetailOn > 0.5)
+                {
+                    float2 uv = input.stableXZ * 0.04 + float2(t * 0.02, t * 0.012);
+                    col *= SAMPLE_TEXTURE2D(_Ripple, sampler_Ripple, uv).rgb;
+                }
                 col = lerp(col, _FoamColor.rgb, foam * 0.55);
                 col += _GlintColor.rgb * spec * _SunColor.rgb;
                 // Same ramp as SiteFog.Weight / KH_Terrain. One variant so device fog cannot strip the pass.
