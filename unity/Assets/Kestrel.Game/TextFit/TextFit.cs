@@ -35,7 +35,24 @@ namespace Kestrel.Game.Shell
             if (w < 8f) return size;
             if (Math.Abs(w - seal.Width) > 6f) return size;
             if (h > seal.Height + 6f) return size;
+            // The label's own box follows the face. A taller ancestor is room the seal did not have.
+            for (var a = element.parent; a != null && a.parent != null; a = a.parent)
+            {
+                float ph = a.layout.height;
+                if (float.IsNaN(ph) || ph < 1f) continue;
+                if (ph > seal.Height + 24f && ph > h + 24f) return size;
+            }
             return size < seal.Size ? size : seal.Size;
+        }
+
+        /// <summary>Drop fitted faces under <paramref name="root"/> so the next layout can use the design size.</summary>
+        public static void Release(VisualElement root)
+        {
+            if (root == null) return;
+            if (root is TextElement self) Seals.Remove(self);
+            var found = root.Query<TextElement>().ToList();
+            if (found == null) return;
+            for (int i = 0; i < found.Count; i++) Seals.Remove(found[i]);
         }
 
         /// <summary>Fit every text element under <paramref name="root"/>. Idempotent when the strings already fit.</summary>
@@ -71,7 +88,8 @@ namespace Kestrel.Game.Shell
                 Box(t, out w, out h);
                 if (w < 8f || h < 4f) continue;
                 var need = Measure(t, text, w);
-                bool widthOver = need.x > w + Slack;
+                float slack = Slack + Tracking(t);
+                bool widthOver = need.x > w + slack;
                 bool heightOver = need.y > h + Slack && !HeightScrolls(t);
                 // A border box that sticks out of a visible parent is not cut-off text.
                 // Only a clipping parent can hide the glyphs.
@@ -110,10 +128,12 @@ namespace Kestrel.Game.Shell
 
             var one = Measure(t, text, 0f);
             var wrapped = Measure(t, text, w);
-            bool widthOk = wrapped.x <= w + Slack && (one.x <= w + Slack || wrapped.y <= h + Slack || !HeightLocked(t));
+            // Trailing letter-spacing is in the measure and not always in the layout width.
+            float slack = Slack + Tracking(t);
+            bool widthOk = wrapped.x <= w + slack && (one.x <= w + slack || wrapped.y <= h + Slack || !HeightLocked(t));
             bool heightOk = wrapped.y <= h + Slack || HeightScrolls(t);
-            bool spill = !(one.x <= w + Slack && one.y <= h + Slack) && Spills(t);
-            if (one.x <= w + Slack && one.y <= h + Slack && !spill)
+            bool spill = !(one.x <= w + slack && one.y <= h + Slack) && Spills(t);
+            if (one.x <= w + slack && one.y <= h + Slack && !spill)
             {
                 ReleaseIfRoomy(t, w, h);
                 return false;
@@ -142,7 +162,7 @@ namespace Kestrel.Game.Shell
             }
 
             float parentW = ParentContentWidth(t);
-            if (parentW > 8f && (t.worldBound.width > parentW + Slack || one.x > w + Slack))
+            if (parentW > 8f && (t.worldBound.width > parentW + slack || one.x > w + slack))
             {
                 var max = t.style.maxWidth;
                 if (max.keyword == StyleKeyword.Undefined || max.value.value > parentW + 0.5f)
@@ -153,7 +173,7 @@ namespace Kestrel.Game.Shell
             }
 
             wrapped = Measure(t, text, Math.Max(8f, parentW > 8f ? Math.Min(w, parentW) : w));
-            bool stillWide = wrapped.x > w + Slack;
+            bool stillWide = wrapped.x > w + slack;
             bool stillTall = wrapped.y > h + Slack && !HeightScrolls(t);
             if (stillTall && CanGrow(t))
             {
@@ -305,8 +325,24 @@ namespace Kestrel.Game.Shell
             if (e == null) return false;
             float laid = e.layout.height;
             if (float.IsNaN(laid) || laid < 1f) return false;
-            float want = Math.Max(PixelLength(e.style.height), PixelLength(e.style.minHeight));
-            return want > laid + 4f;
+            // Only an explicit pixel height that has not been applied yet. A min-height request
+            // the layout ignored must not block the shrink that uncovers the glyphs.
+            float h = PixelLength(e.style.height);
+            if (h <= laid + 4f) return false;
+            float max = PixelLength(e.style.maxHeight);
+            if (max > 0.5f && max <= laid + 4f) return false;
+            return true;
+        }
+
+        static float Tracking(VisualElement t)
+        {
+            if (t == null || t.style == null) return 0f;
+            var ls = t.style.letterSpacing;
+            if (ls.keyword == StyleKeyword.Auto || ls.keyword == StyleKeyword.Null || ls.keyword == StyleKeyword.None
+                || ls.keyword == StyleKeyword.Initial)
+                return 0f;
+            float v = ls.value.value;
+            return v > 0.5f ? v : 0f;
         }
 
         static bool AwaitingGrow(VisualElement t)

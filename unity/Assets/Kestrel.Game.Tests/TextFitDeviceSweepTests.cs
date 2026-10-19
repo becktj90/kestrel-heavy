@@ -217,10 +217,29 @@ namespace Kestrel.Game.Tests
                 }
             }
 
+            ArmRecovery(session);
             using (var surface = DeviceSurface.Open(335f, 720f))
                 WalkGuided(surface, session, "335 portrait");
             using (var surface = DeviceSurface.Open(844f, 390f))
                 WalkGuided(surface, session, "390 landscape");
+        }
+
+        static void ArmRecovery(HangarSession session)
+        {
+            // Recovery is off the guided path until the design has to land. Same setup as the device stepper test.
+            session.Apply(d =>
+            {
+                HangarEditor.SetFins(d, true);
+                var mission = d.Obj("mission");
+                if (mission == null)
+                {
+                    mission = new JsonObject();
+                    JsonMut.Set(d, "mission", mission);
+                }
+                JsonMut.Set(mission, "requiresLanding", true);
+                HangarEditor.SetLegs(d, true);
+                return DesignerV3Edits.SetRecoveryMode(d, "rtls");
+            });
         }
 
         static void WalkGuided(DeviceSurface surface, HangarSession session, string where)

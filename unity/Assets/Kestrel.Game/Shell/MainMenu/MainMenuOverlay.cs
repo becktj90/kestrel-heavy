@@ -614,6 +614,17 @@ namespace Kestrel.Game.Shell
                 ClearContainment(root);
                 ForgetColumnFit(root);
                 PinThrum(root, hint);
+                // A short pass sealed a small face. The column fits again, so put the type scale back
+                // before the fit pass below this callback decides whether it still has to shrink.
+                TextFit.Release(title);
+                var word = root.Q("mm-kestrel");
+                var shadow = root.Q("mm-kestrel-shadow");
+                var heavy = root.Q("mm-heavy");
+                var eye = root.Q("mm-eyebrow");
+                if (word != null) word.style.fontSize = z.Title;
+                if (shadow != null) shadow.style.fontSize = z.Title;
+                if (heavy != null) heavy.style.fontSize = z.Tagline;
+                if (eye != null) eye.style.fontSize = Mathf.Max(14f, z.Hint);
                 return;
             }
 
