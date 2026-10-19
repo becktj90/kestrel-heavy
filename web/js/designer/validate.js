@@ -20,7 +20,7 @@ export function payloadVolume(d) {
 // 0.9 is an approximate game number; real fairings offer about 0.85–0.885 of their outer diameter.
 // 0.8 is optimistic: L is the whole fairing length, nose included, so it overstates the real volume
 // for conic and ogive noses (geometric fractions are about 0.73 conic, 0.78 otherwise, 0.90 blunt). It
-// stays 0.8 until the follow-up issue "Payload volume packing retune: nose-inclusive L".
+// stays 0.8 until the follow-up issue #302 "Payload volume packing retune: nose-inclusive L" (https://github.com/becktj90/kestrel-heavy/issues/302).
 export const FIT_RADIUS = 0.45;
 export const FIT_LENGTH = 0.8;
 export const FIT_DIAMETER = 2 * FIT_RADIUS;

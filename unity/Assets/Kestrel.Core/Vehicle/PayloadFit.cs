@@ -7,7 +7,7 @@
 // L_f is the whole fairing length, nose included (the nose takes 0.25–0.45 of it, docs/PHYSICS.md).
 // 0.8 is optimistic: because L_f includes the nose, it overstates the real volume for conic and ogive
 // noses (geometric fractions are about 0.73 conic, 0.78 otherwise, 0.90 blunt). It stays 0.8 until the
-// follow-up issue "Payload volume packing retune: nose-inclusive L" (after Phase 1, before Phase 2 Builder).
+// follow-up issue #302 "Payload volume packing retune: nose-inclusive L" (https://github.com/becktj90/kestrel-heavy/issues/302) (after Phase 1, before Phase 2 Builder).
 // A negative margin is how far the payload overruns that limit.
 // The cargo comes from SpecFor: the mission's cargo (campaign.json volumeM3/diameterM) when the
 // design carries a missionId, otherwise the catalog payload (payloads.json volume and diameter).
