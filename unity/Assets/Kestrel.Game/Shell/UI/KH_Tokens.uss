@@ -201,3 +201,7 @@
 .kh-mm-wide .kh-mm-launch-caption,
 .kh-mm-wide .kh-mm-design-caption,
 .kh-mm-wide .kh-mm-tile-caption { overflow: hidden; }
+/* CONTINUE on Home (HomeResumeBar.Dusk): dark glass like DESIGN FIRST, never the grey runtime button. */
+.kh-button.kh-mm-continue:hover { background-color: rgba(20, 28, 52, 0.94); }
+.kh-button.kh-mm-continue:active { background-color: rgba(20, 28, 52, 0.94); scale: 0.97 0.97; }
+.kh-button.kh-mm-continue:focus { border-color: var(--kh-home-cream); }

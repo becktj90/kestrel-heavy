@@ -31,7 +31,8 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(ExperienceSettings.ShowFullDesigner(p.Has, p.Get), "Show full designer is off by default");
             var flags = FeatureFlags.Load(Golden.Root);
             flags.ApplyPrefs(p.Has, p.Get);
-            foreach (var k in FeatureKeys.All) Assert.IsTrue(flags.IsOn(k), k);
+            // PR 6 (home-simple): a fresh save gets the Starter Home (home.* off); every designer.* stays on.
+            foreach (var k in FeatureKeys.All) Assert.AreEqual(!k.StartsWith("home."), flags.IsOn(k), k);
             Assert.IsEmpty(p.Map, "reading never writes");
         }
 

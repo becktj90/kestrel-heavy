@@ -4,7 +4,9 @@
 // Motion follows motion-spec.md where cheap: staggered intro by class toggle + USS transition, :active press,
 // :focus ring. Reduce Motion: no intro, no transitions (root gets kh-mm-reduce).
 using System;
+using Kestrel.Core.Features;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Save;
 using Kestrel.Game.Audio;
 using Kestrel.Game.Guide;
 using UnityEngine;
@@ -90,7 +92,15 @@ namespace Kestrel.Game.Shell
             // Controls: tidy stats, the big LAUNCH, a smaller Design first, then Missions and Codex.
             var stats = StatsStrip(full);
             root.Add(stats);
-            var launchKey = LaunchBar(launch, missionLine);
+            // ONE primary CTA (feat(home-simple)): LAUNCH, or CONTINUE once HomeResumeBar hands it the save.
+            Button launchKey = null;
+            launchKey = LaunchBar(() =>
+            {
+                var cont = launchKey != null ? (launchKey.userData as CtaState)?.Continue : null;
+                if (cont != null) cont();
+                else launch?.Invoke();
+            }, missionLine);
+            launchKey.userData = new CtaState { MissionLine = missionLine };
             root.Add(launchKey);
             var designKey = DesignBar(design);
             root.Add(designKey);
@@ -109,7 +119,17 @@ namespace Kestrel.Game.Shell
 
             var hint = ThrumStrip(full);
             root.Add(hint);
+            ApplyFeatures(root);
             safe.Add(root);
+            // Arcade (or Settings) can flip a home.* flag while Home is up: re-apply visibility, and the display
+            // change re-runs the geometry pass below, which re-lays the column for the new set.
+            var flags = FeatureFlags.Active;
+            Action<FeatureFlags> flagsChanged = _ => { ApplyFeatures(root); ApplySettingsFeatures(full); };
+            if (flags != null)
+            {
+                flags.Changed += flagsChanged;
+                root.RegisterCallback<DetachFromPanelEvent>(_ => flags.Changed -= flagsChanged);
+            }
             MainMenuFonts.Apply(root);
 
             // Bars follow the safe insets so the hint always sits inside the bottom bar.
@@ -121,7 +141,10 @@ namespace Kestrel.Game.Shell
                 root.EnableInClassList("kh-mm-narrow", MainMenuCopy.IsNarrow(w));
                 float topInset = Mathf.Max(0f, safe.worldBound.yMin - full.worldBound.yMin);
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
-                var z = MenuTypeScale.Compute(w, h, topInset, botInset);
+                ApplyFeatures(root);
+                var z = MenuTypeScale.Compute(w, h, topInset, botInset, SideInset(full, root), RecordText(root), MissionLineOf(root),
+                    HomeFeatures.Current(), CtaIsContinue(root));
+                WriteCta(root, z.CtaLabel, z.CtaCaption);
                 TraceTitle("geometry in", root);
                 ApplyScale(root, z);
                 TraceTitle("after ApplyScale", root);
@@ -147,15 +170,146 @@ namespace Kestrel.Game.Shell
                 if (full != null) TextFit.Apply(full);
                 TraceTitle("after TextFit", root);
             });
+            // The Thrum corner pop rests under the gear and the wordmark while Home is up (phone column only).
+            GuideBoxDriver.ClearTopPanel = () => PopClearTop(root, full);
+            root.RegisterCallback<DetachFromPanelEvent>(_ => GuideBoxDriver.ClearTopPanel = null);
             launchKey.RegisterCallback<GeometryChangedEvent>(_ =>
             {
                 float h = full.resolvedStyle.height; if (h <= 0f) return;
                 float topInset = Mathf.Max(0f, safe.worldBound.yMin - full.worldBound.yMin);
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
-                MainMenuLayout.HeroLift = MeasureLift(root, safe, full, MenuTypeScale.Compute(full.resolvedStyle.width, h, topInset, botInset), h, topInset);
+                MainMenuLayout.HeroLift = MeasureLift(root, safe, full, MenuTypeScale.Compute(full.resolvedStyle.width, h, topInset, botInset, 0f, null, MissionLineOf(root), HomeFeatures.Current(), CtaIsContinue(root)), h, topInset);
             });
             PlayIntro(root, full, reduceMotion);
             return root;
+        }
+
+        /// <summary>Panel width outside the safe column, so the column type is sized for the root it lands in.</summary>
+        static float SideInset(VisualElement full, VisualElement root)
+        {
+            if (full == null || root == null) return 0f;
+            float fw = full.resolvedStyle.width, rw = root.resolvedStyle.width;
+            if (float.IsNaN(fw) || float.IsNaN(rw) || fw < 8f || rw < 8f) return 0f;
+            return Mathf.Max(0f, fw - rw);
+        }
+
+        /// <summary>The whole record line (SetRecord keeps it in userData; the label may show the short form).</summary>
+        static string RecordText(VisualElement root)
+        {
+            var label = root != null ? root.Q<Label>("mm-record") : null;
+            if (label == null) return null;
+            return label.userData as string ?? label.text;
+        }
+
+        // ---- Starter Home (feat(home-simple)) ------------------------------------------------------
+
+        /// <summary>Home elements each home.* flag hides (Kestrel.Core.Features.HomeFeatures). Starter: all hidden.</summary>
+        public const string DesignId = "home-design", CodexId = "home-codex", ThrumId = "mm-hint", StatsId = "mm-stats";
+        public const string CtaContinueClass = "kh-mm-cta-continue";
+
+        sealed class CtaState
+        {
+            public Action Continue;
+            public string MissionLine;
+        }
+
+        /// <summary>Shows or hides the flagged extras. Display none, so a hidden block takes no column height and
+        /// draws nothing; the element stays in the tree for the Settings toggle feat(flags) will add.</summary>
+        public static void ApplyFeatures(VisualElement root)
+        {
+            if (root == null) return;
+            var show = HomeFeatures.Current();
+            Show(root.Q(DesignId), show.DesignFirst);
+            Show(root.Q(CodexId), show.Codex);
+            Show(root.Q(ThrumId), show.Thrum);
+            Show(root.Q(StatsId), show.Stats);
+            Show(root.Q(HomeResumeBar.BarName), show.Credits);
+        }
+
+        static void Show(VisualElement e, bool on)
+        {
+            if (e == null) return;
+            e.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        /// <summary>CONTINUE on the one CTA (null puts LAUNCH back). False when <paramref name="root"/> holds no Home
+        /// LAUNCH key, so the caller keeps its own button.</summary>
+        public static bool UseContinue(VisualElement root, Action onContinue)
+        {
+            var mm = root == null ? null : root.name == RootName ? root : root.Q(RootName);
+            var key = mm != null ? mm.Q<Button>("home-launch") : null;
+            if (key == null) return false;
+            var state = key.userData as CtaState ?? new CtaState();
+            key.userData = state;
+            state.Continue = onContinue;
+            key.EnableInClassList(CtaContinueClass, onContinue != null);
+            WriteCtaShort(mm);
+            return true;
+        }
+
+        /// <summary>True when the CTA reads CONTINUE.</summary>
+        public static bool CtaIsContinue(VisualElement root)
+        {
+            var key = root != null ? root.Q<Button>("home-launch") : null;
+            return key != null && (key.userData as CtaState)?.Continue != null;
+        }
+
+        /// <summary>The next mission line ("KH-3 · Tiny Orbit") the CTA speaks for; null before Career knows it.</summary>
+        static string MissionLineOf(VisualElement root)
+        {
+            var key = root != null ? root.Q<Button>("home-launch") : null;
+            return key != null ? (key.userData as CtaState)?.MissionLine : null;
+        }
+
+        /// <summary>The words before a layout pass has measured the column: the short form, which fits everywhere.</summary>
+        static void WriteCtaShort(VisualElement root)
+        {
+            HomePhoneLayout.Cta(CtaIsContinue(root), MissionLineOf(root), _ => false, out var label, out var caption);
+            WriteCta(root, label, caption);
+        }
+
+        /// <summary>STARTER_COPY.md CTA: the label, and the sub-line (hidden when empty).</summary>
+        static void WriteCta(VisualElement root, string label, string caption)
+        {
+            var key = root != null ? root.Q<Button>("home-launch") : null;
+            if (key == null || string.IsNullOrEmpty(label)) return;
+            var l = key.Q<Label>("mm-launch-label");
+            var c = key.Q<Label>("mm-launch-caption");
+            if (l != null && l.text != label) l.text = label;
+            if (c != null)
+            {
+                string text = caption ?? "";
+                if (c.text != text) c.text = text;
+                c.style.display = text.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+            string spoken = CtaIsContinue(root)
+                ? ResumeOffer.ContinueSpoken
+                : (label + (string.IsNullOrEmpty(caption) ? "" : " " + caption) + ".").Replace(" \u00B7 ", ", ");
+            key.tooltip = spoken;
+        }
+
+        /// <summary>MISSIONS sub-line (STARTER_COPY.md): "{done} of {total} flown". A zero total keeps the caption.</summary>
+        public static void SetMissionsFlown(VisualElement root, int done, int total)
+        {
+            string line = HomePhoneLayout.Flown(done, total);
+            var tile = root != null ? root.Q("home-missions") : null;
+            var cap = tile != null ? tile.Q<Label>(className: "kh-mm-tile-caption") : null;
+            if (cap != null && !string.IsNullOrEmpty(line)) cap.text = line;
+        }
+
+        /// <summary>Lowest edge the guide corner pop must clear on Home, in panel units from the panel top: the gear and
+        /// the wordmark block. 0 on the wide frame (it keeps the old corner) or before layout.</summary>
+        public static float PopClearTop(VisualElement root, VisualElement full)
+        {
+            if (root == null || root.panel == null || root.ClassListContains("kh-mm-wide")) return 0f;
+            if (root.resolvedStyle.display == DisplayStyle.None) return 0f;
+            float origin = full != null ? full.worldBound.yMin : 0f;
+            float clear = 0f;
+            var title = root.Q("mm-title");
+            if (title != null && title.worldBound.height > 1f) clear = Mathf.Max(clear, title.worldBound.yMax - origin);
+            var gear = full != null ? full.Q("home-settings") : null;
+            if (gear != null && gear.worldBound.height > 1f) clear = Mathf.Max(clear, gear.worldBound.yMax - origin);
+            return float.IsNaN(clear) ? 0f : clear;
         }
 
         /// <summary>Landscape web: the wordmark sits on the hero, and the action cards sit in a column
@@ -174,6 +328,7 @@ namespace Kestrel.Game.Shell
             }
             root.EnableInClassList("kh-mm-wide", wide);
             if (!wide) { ClearWebWide(root); return; }
+            ResetPhoneBlocks(root);
             float rw = root.resolvedStyle.width;
             float rh = root.resolvedStyle.height;
             if (rw < 8f || rh < 8f) return;
@@ -197,7 +352,8 @@ namespace Kestrel.Game.Shell
                 cssW *= ux; safeLeft *= ux; safeRight *= ux;
                 cssH *= uy; safeTop *= uy; safeBottom *= uy;
             }
-            var frame = WebHomeLayout.Place(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight);
+            var frame = WebHomeLayout.Place(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight, HomeFeatures.Current(), CtaIsContinue(root), MissionLineOf(root));
+            WriteCta(root, frame.CtaLabel, frame.CtaCaption);
             // The host was just released from the 600px cap, so this pass can still be the phone
             // column. Keep the wide class and place on the next geometry.
             if (!frame.Wide || frame.Type == null) return;
@@ -590,11 +746,28 @@ namespace Kestrel.Game.Shell
         /// </summary>
         /// <summary>HomeResumeBar sits in this column's top band (portrait and iOS; the wide home has its own top bar).</summary>
         static bool HasCreditsBar(VisualElement root) =>
-            root != null && !root.ClassListContains("kh-mm-wide") && root.Q(HomeResumeBar.BarName) != null;
+            root != null && !root.ClassListContains("kh-mm-wide") && root.Q(HomeResumeBar.BarName) is VisualElement bar
+            && bar.resolvedStyle.display != DisplayStyle.None && bar.style.display.value != DisplayStyle.None;
+
+        /// <summary>Phone column pieces ClearWebWide resets every pass (it runs after ApplyScale): the tile share and
+        /// the Thrum words (whole line, or the short teaser when the whole one would need a third line).</summary>
+        static void ColumnText(VisualElement root, MenuTypeScale.Sizes z)
+        {
+            bool pair = z.Show.Codex;
+            foreach (var it in MainMenuCopy.Tiles)
+            {
+                var tile = root.Q("home-" + it.Id);
+                // Starter: MISSIONS alone takes the whole row.
+                if (tile != null) tile.style.width = Length.Percent(pair ? HomePhoneLayout.TileShare * 100f : 100f);
+            }
+            var words = root.Q<Label>("mm-hint-line");
+            if (words != null && !string.IsNullOrEmpty(z.ThrumText) && words.text != z.ThrumText) words.text = z.ThrumText;
+        }
 
         static void ContainColumn(VisualElement root, MenuTypeScale.Sizes z)
         {
             if (root == null || root.ClassListContains("kh-mm-wide")) return;
+            ColumnText(root, z);
             float host = root.layout.height;
             if (host < 8f) return;
             var title = root.Q("mm-title");
@@ -630,7 +803,7 @@ namespace Kestrel.Game.Shell
             float padBot = z.HintBand;
             // The Thrum strip sits under the tiles and is not part of ControlsH. Leaving it out
             // let a wrapped caption grow over the Missions tile on a short landscape column.
-            float hint = root.Q("mm-hint") != null ? ThrumBlock(root, z) : 0f;
+            float hint = root.Q("mm-hint") != null && z.Show.Thrum ? (z.ThrumH > 1f ? z.ThrumH : ThrumBlock(root, z)) : 0f;
             float need = padTop + padBot + titleH + z.ControlsH + hint;
             if (need <= host + 1f)
             {
@@ -646,8 +819,8 @@ namespace Kestrel.Game.Shell
             ClearContainment(root);
             RestoreTitleType(root, title, z);
             float overflow = need - host;
-            // The credits bar owns the top band; a short column cuts the blocks, not that band.
-            float topFloor = credits ? MenuTypeScale.CreditsBand : 8f;
+            // The credits chip and the gear own the top band; a short column cuts the blocks, not that band.
+            float topFloor = MenuTypeScale.CreditsBand;
             const float botFloor = 32f;
             float eatTop = Mathf.Min(overflow, Mathf.Max(0f, padTop - topFloor));
             padTop -= eatTop;
@@ -660,7 +833,7 @@ namespace Kestrel.Game.Shell
 
             void Cut(VisualElement el, ref float box, float floor)
             {
-                if (overflow <= 1f || el == null) return;
+                if (overflow <= 1f || el == null || el.resolvedStyle.display == DisplayStyle.None) return;
                 float cut = Mathf.Min(overflow, Mathf.Max(0f, box - floor));
                 if (cut <= 0f) return;
                 box -= cut;
@@ -811,8 +984,12 @@ namespace Kestrel.Game.Shell
         public static void SetMissionLine(VisualElement root, string line)
         {
             if (root == null || string.IsNullOrEmpty(line)) return;
-            var cap = root.Q<Label>("mm-launch-caption");
-            if (cap != null) cap.text = line;
+            var key = root.Q<Button>("home-launch");
+            if (key == null) return;
+            var state = key.userData as CtaState ?? new CtaState();
+            key.userData = state;
+            state.MissionLine = line;
+            WriteCtaShort(root);
         }
 
         /// <summary>Paints the hero rocket in the open pad between the title and the controls.</summary>
@@ -842,9 +1019,10 @@ namespace Kestrel.Game.Shell
                     right = launch.worldBound.xMin - originX - 8f;
                 bottom = h - MainMenuCopy.BarHeight(h, 0f);
             }
-            else if (stats != null && stats.worldBound.height > 1f)
+            else if ((stats != null && stats.worldBound.height > 1f) || (launch != null && launch.worldBound.height > 1f))
             {
-                bottom = stats.worldBound.yMin - originY - 6f;
+                var top_ = stats != null && stats.worldBound.height > 1f ? stats : launch;
+                bottom = top_.worldBound.yMin - originY - 6f;
                 left = w * 0.18f;
                 right = w * 0.82f;
             }
@@ -900,8 +1078,8 @@ namespace Kestrel.Game.Shell
             text.style.flexDirection = FlexDirection.Column;
             text.style.justifyContent = Justify.Center;
             text.style.flexGrow = 1;
-            text.style.paddingTop = 2f;
-            text.style.paddingBottom = 2f;
+            text.style.paddingTop = HomePhoneLayout.StatsPadY;
+            text.style.paddingBottom = HomePhoneLayout.StatsPadY;
             text.style.paddingLeft = 10f;
             text.style.paddingRight = 10f;
             var pills = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -950,7 +1128,9 @@ namespace Kestrel.Game.Shell
         {
             var label = root != null ? root.Q<Label>("mm-record") : null;
             if (label == null || string.IsNullOrEmpty(line)) return;
+            label.userData = line;
             label.text = line;
+            label.tooltip = line;
         }
 
         static Label Stat(string name, string text)
@@ -966,7 +1146,7 @@ namespace Kestrel.Game.Shell
             b.AddToClassList("kh-button"); b.AddToClassList("kh-mm-launch"); b.AddToClassList("kh-mm-anim");
             var lamp = new VisualElement { name = "lamp", pickingMode = PickingMode.Ignore }; lamp.AddToClassList("kh-mm-lamp"); lamp.AddToClassList("kh-mm-lamp--on");
             var col = new VisualElement { pickingMode = PickingMode.Ignore }; col.AddToClassList("kh-mm-col");
-            var label = new Label(MainMenuCopy.Launch.Label) { pickingMode = PickingMode.Ignore }; label.AddToClassList("kh-mm-launch-label");
+            var label = new Label(MainMenuCopy.Launch.Label) { name = "mm-launch-label", pickingMode = PickingMode.Ignore }; label.AddToClassList("kh-mm-launch-label");
             var cap = new Label(string.IsNullOrEmpty(missionLine) ? MainMenuCopy.Launch.Caption : missionLine) { name = "mm-launch-caption", pickingMode = PickingMode.Ignore };
             cap.AddToClassList("kh-mm-launch-caption");
             col.Add(label); col.Add(cap);
@@ -1021,6 +1201,7 @@ namespace Kestrel.Game.Shell
             var subtitles = SettingButton("home-setting-subtitles", "Subtitles");
             var sandbox = SettingButton("home-setting-sandbox", "Sandbox");
             var motion = SettingButton("home-reduce-motion", "Reduce motion");
+            var fullDesigner = SettingButton(FullDesignerId, "Show full designer");
             motion.tooltip = "Reduce motion. Holds the menu still.";
 
             void PaintMix()
@@ -1041,6 +1222,12 @@ namespace Kestrel.Game.Shell
                 bool on = AudioPrefs.SandboxUnlocked;
                 PaintCaption(sandbox, AudioPrefs.Caption("Sandbox", !on), on);
                 sandbox.tooltip = on ? "Sandbox is available on the mission board." : "Sandbox is off. The mission board keeps it locked.";
+            }
+            void PaintFullDesigner()
+            {
+                bool on = Kestrel.Core.Features.ExperienceSettings.ShowFullDesigner(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
+                PaintCaption(fullDesigner, "Show full designer", on);
+                fullDesigner.tooltip = "Show full designer. " + FullDesignerNote + (on ? " On." : " Off.");
             }
             void PaintMotion()
             {
@@ -1066,8 +1253,17 @@ namespace Kestrel.Game.Shell
                 PlayerPrefs.Save();
                 PaintMotion();
             };
+            fullDesigner.clicked += () =>
+            {
+                bool next = !Kestrel.Core.Features.ExperienceSettings.ShowFullDesigner(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
+                Kestrel.Core.Features.ExperienceSettings.SetShowFullDesigner(next, PlayerPrefs.SetInt);
+                PlayerPrefs.Save();
+                Kestrel.Core.Features.FeatureFlags.Active.ShowFullDesigner = next;
+                PaintFullDesigner();
+            };
             PaintMix();
             PaintSubs();
+            PaintFullDesigner();
             PaintSandbox();
             PaintMotion();
 
@@ -1077,6 +1273,27 @@ namespace Kestrel.Game.Shell
             list.Add(subtitles);
             list.Add(sandbox);
             list.Add(motion);
+            {
+                // Starter Home: Codex leaves the tiles and lives here (PHASED_DESIGNER_PLAN, Phase 1) while home.codexTile is off.
+                var codex = SettingButton("home-setting-codex", "Codex");
+                codex.tooltip = "Codex. Parts, places and flight notes.";
+                var state = codex.Q(codex.name + "-state");
+                if (state != null) state.style.display = DisplayStyle.None;
+                codex.style.paddingRight = 10;
+                codex.style.backgroundColor = new Color(0.10f, 0.14f, 0.22f, 1f);
+                codex.style.color = new Color(0.96f, 0.93f, 0.86f, 1f);
+                codex.clicked += () => { sheet.style.display = DisplayStyle.None; OpenCodexOrSoon(full); };
+                list.Add(codex);
+            }
+            // STARTER_COPY.md Settings toggle: "Show full designer", default off, instant and reversible, no confirm.
+            var fullNote = new Label(FullDesignerNote) { name = "home-setting-full-designer-note", pickingMode = PickingMode.Ignore };
+            fullNote.style.fontSize = 14;
+            fullNote.style.whiteSpace = WhiteSpace.Normal;
+            fullNote.style.marginLeft = 10; fullNote.style.marginRight = 10; fullNote.style.marginBottom = 6;
+            fullNote.style.color = new Color(0.86f, 0.84f, 0.78f, 1f);
+            SettingFont(fullNote, "SpaceGrotesk-Medium");
+            list.Add(fullDesigner);
+            list.Add(fullNote);
 
             var close = new Button { name = "home-settings-close", text = "Close" };
             close.AddToClassList("kh-button");
@@ -1119,8 +1336,13 @@ namespace Kestrel.Game.Shell
                     if (b.name != null && b.name.StartsWith("home-")) rows++;
                 });
                 float content = chrome + rows * 46f;
-                float roomBelowGear = hostH - 52f - edge;
-                float top = content <= roomBelowGear ? 52f : edge;
+                // Under the gear, wherever the gear sits (iOS puts it at the safe top now, not the panel top).
+                var gearEl = full.Q("home-settings");
+                float below = 52f;
+                if (gearEl != null && gearEl.layout.height > 1f && !float.IsNaN(gearEl.layout.yMax))
+                    below = Mathf.Max(52f, gearEl.layout.yMax + edge);
+                float roomBelowGear = hostH - below - edge;
+                float top = content <= roomBelowGear ? below : edge;
                 float maxH = Mathf.Max(120f, hostH - top - edge);
                 float height = Mathf.Min(content, maxH);
                 float width = Mathf.Min(320f, Mathf.Max(200f, hostW - 16f));
@@ -1159,16 +1381,30 @@ namespace Kestrel.Game.Shell
                 PaintSubs();
                 PaintSandbox();
                 PaintMotion();
+                PaintFullDesigner();
+                ApplySettingsFeatures(full);
                 sheet.style.display = DisplayStyle.Flex;
                 fitW = -1f;
                 FitSheet();
                 sheet.BringToFront();
             };
+            gear.tooltip = "Settings";
             if (full != null)
             {
                 full.Add(gear);
                 full.Add(sheet);
+                ApplySettingsFeatures(full);
             }
+        }
+
+        public const string FullDesignerId = "home-setting-full-designer";
+        public const string FullDesignerNote = "Every part and number. For older kids and engineers.";
+
+        /// <summary>The Settings Codex row stands in for the Codex tile: shown only while home.codexTile is off.</summary>
+        static void ApplySettingsFeatures(VisualElement full)
+        {
+            var codex = full != null ? full.Q("home-setting-codex") : null;
+            if (codex != null) codex.style.display = HomeFeatures.On(HomeFeatures.CodexTile) ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         static void PaintToggle(Button b, string label, bool muted)
@@ -1368,7 +1604,7 @@ namespace Kestrel.Game.Shell
                 design.style.height = z.DesignH; design.style.minHeight = z.DesignH; design.style.flexShrink = 0;
                 design.style.marginTop = 0; design.style.marginBottom = MenuTypeScale.Gap;
                 design.style.paddingLeft = 12f; design.style.paddingRight = 12f;
-                design.style.paddingTop = 8f; design.style.paddingBottom = 8f;
+                design.style.paddingTop = HomePhoneLayout.DesignPadY; design.style.paddingBottom = HomePhoneLayout.DesignPadY;
             }
             var hintLine = root.Q("mm-hint-line");
             if (hintLine != null)
@@ -1386,10 +1622,13 @@ namespace Kestrel.Game.Shell
                 if (head != null) head.style.minHeight = Mathf.Max(22f, z.TileName * MenuTypeScale.LineH);
                 var cap = b.Q(className: "kh-mm-tile-caption");
                 if (cap != null) { cap.style.marginTop = 3f; cap.style.marginLeft = 0; cap.style.marginRight = 0; cap.style.paddingLeft = 0; cap.style.paddingRight = 0; }
+                if (head != null) head.style.justifyContent = Justify.FlexStart;
                 var name = b.Q(className: "kh-mm-tile-name");
                 if (name != null)
                 {
-                    float n = MenuTypeScale.FitName(z, it.Label, !it.Live);
+                    // The drawn name ("Missions") beside its glyph and lamp, not "MISSIONS" alone: the name sat on the lamp.
+                    float n = Mathf.Min(MenuTypeScale.FitName(z, it.Label, !it.Live), MenuTypeScale.FitShownName(z, ((Label)name).text, it.Live));
+                    name.style.flexGrow = 1;
                     name.style.fontSize = n; name.style.letterSpacing = n * .03f;
                     // No Label chrome and no shrink: the width was budgeted from the font metrics (with NameSlack).
                     name.style.marginLeft = 0; name.style.marginRight = 0; name.style.paddingLeft = 0; name.style.paddingRight = 0;
@@ -1397,6 +1636,87 @@ namespace Kestrel.Game.Shell
                 }
                 var soon = b.Q(className: "kh-mm-soon");
                 if (soon != null) { soon.style.marginLeft = 4f; soon.style.marginTop = 0; soon.style.marginBottom = 0; soon.style.paddingLeft = 4f; soon.style.paddingRight = 4f; soon.style.paddingTop = 0; soon.style.paddingBottom = 0; }
+            }
+            if (column) ApplyPhoneBlocks(root, z);
+        }
+
+        /// <summary>Undo <see cref="ApplyPhoneBlocks"/> when the frame turns wide, so the landscape row keeps its own look.</summary>
+        static void ResetPhoneBlocks(VisualElement root)
+        {
+            var record = root.Q<Label>("mm-record");
+            if (record != null && record.userData is string full) record.text = full;
+            if (record != null) record.style.whiteSpace = WhiteSpace.Normal;
+            var strip = root.Q("mm-hint");
+            if (strip == null) return;
+            strip.style.paddingLeft = StyleKeyword.Null; strip.style.paddingRight = StyleKeyword.Null;
+            strip.style.paddingTop = StyleKeyword.Null; strip.style.paddingBottom = StyleKeyword.Null;
+            strip.style.alignItems = StyleKeyword.Null;
+            strip.style.justifyContent = StyleKeyword.Null;
+            var face = strip.Q("mm-thrum-portrait");
+            if (face != null) face.style.marginTop = StyleKeyword.Null;
+            foreach (var id in new[] { "mm-thrum-name", "mm-hint-line" })
+            {
+                var l = strip.Q<Label>(id);
+                if (l != null) l.style.unityTextAlign = StyleKeyword.Null;
+            }
+        }
+
+        /// <summary>Phone column: the stats card holds its two lines, and Thrum's strip reads left to right with the name
+        /// over the words (a Button centres its children's text by default, so "Thrum" floated mid-strip).</summary>
+        static void ApplyPhoneBlocks(VisualElement root, MenuTypeScale.Sizes z)
+        {
+            float grid = z.Column > 1f ? z.Column : z.TileW / HomePhoneLayout.TileShare;
+            var stats = root.Q("mm-stats");
+            if (stats != null)
+            {
+                stats.style.overflow = Overflow.Hidden;
+                var record = root.Q<Label>("mm-record");
+                if (record != null)
+                {
+                    string full = record.userData as string ?? record.text;
+                    float inner = grid - 2f * HomePhoneLayout.StatsBorder - 2f * HomePhoneLayout.StatsPadX;
+                    record.text = HomeTypeMetrics.Fits(HomeFace.GroteskMedium, full, z.StatFont, inner) ? full : HomeRecord.Short(full);
+                    record.style.whiteSpace = WhiteSpace.NoWrap;
+                    record.style.overflow = Overflow.Hidden;
+                }
+                stats.Query(className: "kh-mm-stat").ForEach(e =>
+                {
+                    e.style.marginLeft = 0; e.style.marginRight = 0; e.style.marginTop = 0; e.style.marginBottom = 0;
+                    e.style.paddingLeft = 0; e.style.paddingRight = 0; e.style.paddingTop = 0; e.style.paddingBottom = 0;
+                    e.style.flexShrink = 0;
+                    e.style.unityTextAlign = TextAnchor.MiddleLeft;
+                });
+                var fuel = root.Q("mm-fuel");
+                if (fuel != null) fuel.style.marginRight = z.StatFont * 0.5f;
+            }
+            var strip = root.Q("mm-hint");
+            if (strip != null)
+            {
+                strip.style.marginLeft = 0; strip.style.marginRight = 0; strip.style.marginTop = 0; strip.style.marginBottom = 0;
+                strip.style.paddingLeft = HomePhoneLayout.ThrumPadX; strip.style.paddingRight = HomePhoneLayout.ThrumPadX;
+                strip.style.paddingTop = HomePhoneLayout.ThrumPadY; strip.style.paddingBottom = HomePhoneLayout.ThrumPadY;
+                strip.style.flexDirection = FlexDirection.Row;
+                strip.style.alignItems = Align.FlexStart;
+                strip.style.justifyContent = Justify.FlexStart;
+                var face = strip.Q("mm-thrum-portrait");
+                if (face != null) face.style.marginTop = 4f;
+                var col = face != null ? face.parent?.Q(className: "kh-mm-col") : null;
+                if (col == null) col = strip.Q(className: "kh-mm-col");
+                if (col != null)
+                {
+                    col.style.flexGrow = 1; col.style.flexShrink = 1;
+                    col.style.alignItems = Align.Stretch;
+                    col.style.justifyContent = Justify.FlexStart;
+                }
+                foreach (var id in new[] { "mm-thrum-name", "mm-hint-line" })
+                {
+                    var l = strip.Q<Label>(id);
+                    if (l == null) continue;
+                    l.style.unityTextAlign = TextAnchor.UpperLeft;
+                    l.style.alignSelf = Align.Stretch;
+                    l.style.marginLeft = 0; l.style.marginRight = 0; l.style.paddingLeft = 0; l.style.paddingRight = 0;
+                    l.style.paddingTop = 0; l.style.paddingBottom = 0; l.style.marginTop = 0; l.style.marginBottom = 0;
+                }
             }
         }
 
