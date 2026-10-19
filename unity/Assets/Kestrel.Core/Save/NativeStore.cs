@@ -25,6 +25,14 @@ namespace Kestrel.Core.Save
         public const string CareerKey = Prefix + "career";
         /// <summary>Per-mission bests. Schema stays <see cref="Schema"/>.</summary>
         public const string MissionsKey = Prefix + "missions";
+        /// <summary>Mid-design autosave. Not a design slot: the key does not use <see cref="DesignPrefix"/>.</summary>
+        public const string DraftKey = Prefix + "draft";
+        /// <summary>Fictional credits wallet. Separate from the career Kc bank.</summary>
+        public const string CreditsKey = Prefix + "credits";
+        /// <summary>File copy of the PlayerPrefs toggles.</summary>
+        public const string SettingsKey = Prefix + "settings";
+        /// <summary>Raised after a record lands on disk. Listeners that throw are ignored.</summary>
+        public static event Action Wrote;
         public const int MaxKeyLength = 200;
         public const int MaxValueBytes = 1_000_000;
 
@@ -259,6 +267,8 @@ namespace Kestrel.Core.Save
             }
             catch (SaveException) { TryDelete(tmp); throw; }
             catch (Exception e) { TryDelete(tmp); throw new SaveException("write", e.Message); }
+            try { Wrote?.Invoke(); }
+            catch (Exception) { }
         }
 
         public JsonObject Read(string key)

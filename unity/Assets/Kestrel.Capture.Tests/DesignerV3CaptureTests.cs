@@ -115,7 +115,8 @@ namespace Kestrel.Capture.Tests
                 var toggle = doc.rootVisualElement.Q<Button>(DesignerV3Panel.ToggleName);
                 Assert.IsNotNull(toggle, name);
                 Assert.AreEqual("Hangar", toggle.text, name);
-                Assert.IsTrue(HasLabel(designer, "Chamber pressure", "97 bar"), name + " chamber pressure");
+                // A fresh hangar opens the Hopper. Its small kerolox engine is rated 60 bar.
+                Assert.IsTrue(HasLabel(designer, "Chamber pressure", "60 bar"), name + " chamber pressure");
                 Assert.IsTrue(HasLabel(designer, "Expansion ratio", "16"), name + " expansion ratio");
                 var qText = designer.Q<Label>("strip-value-q")?.text ?? "";
                 StringAssert.Contains("kPa", qText, name + " max-Q");
