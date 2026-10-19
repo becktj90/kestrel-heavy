@@ -6,6 +6,7 @@
 // Units are panel units. The iOS shell panel is a 375x667 reference matched to height (KH_ShellPanelSettings),
 // so a 390x844 or 430x932 iPhone is a ~308x667 panel, not 390 wide. Device() does that mapping.
 using System;
+using Kestrel.Core.Features;
 
 namespace Kestrel.Core.Flight
 {
@@ -31,6 +32,9 @@ namespace Kestrel.Core.Flight
         public float Hero, StatFont, ThrumH;
         public int RecordLines, DesignCaptionLines, TileCaptionLines, ThrumLines, LaunchCaptionLines;
         public string Record;
+        /// <summary>The primary CTA (STARTER_COPY.md §c): label and sub-line ("" for none).</summary>
+        public string Cta, CtaCaption;
+        public HomeShow Show;
         /// <summary>The words the strip shows (whole line or the short teaser).</summary>
         public string ThrumShown;
     }
@@ -50,7 +54,7 @@ namespace Kestrel.Core.Flight
         public const float GuideMarginPt = 8f;
 
         // Chrome, from KH_Tokens.uss and the inline styles MainMenuOverlay.ApplyScale writes.
-        public const float StatsBorder = 1f, StatsPadX = 10f, StatsPadY = 1f;
+        public const float StatsBorder = 1f, StatsPadX = 10f, StatsPadY = 0f;   // the 1.4 line box carries the air; 1 left the full SE at 42.2%
         public const float LaunchBorderV = 1f + 8f;   // .kh-mm-launch border-top 1, border-bottom 8 (the old maths used 6)
         public const float LaunchChromeX = 16f + 12f + 36f + 6f;   // lamp + margin, column margin, 28 icon + 8, slack
         public const float DesignBorder = 1f, DesignPadX = 12f, DesignPadY = 5f;
@@ -124,7 +128,7 @@ namespace Kestrel.Core.Flight
             return 12f;
         }
 
-        public static float StatsH(float statFont) => Math.Max(46f, 2f * StatsBorder + 2f * StatsPadY + 2f * statFont * LineH);
+        public static float StatsH(float statFont) => Math.Max(44f, 2f * StatsBorder + 2f * StatsPadY + 2f * statFont * LineH);
 
         public static float LaunchPadV(float s) => Clamp(8f * s, 6f, 10f);
         public static float LaunchPadH(float s) => Clamp(14f * s, 10f, 18f);
@@ -188,8 +192,72 @@ namespace Kestrel.Core.Flight
         /// content rect; the guide pop rests under the title, right-aligned, clear of the gear.</summary>
         public const string ThrumShort = "Oh! A visitor. Mind the oil. I am Thrum.";
 
+        /// <summary>The pre-Starter Home: every extra shown, LAUNCH as the CTA (credits as given).</summary>
         public static HomePhoneFrame Solve(HomePhoneScreen s, bool credits, string record, string launchCaption, string thrum, bool web = false)
         {
+            var show = HomeShow.Full;
+            show.Credits = credits;
+            return Solve(s, show, false, record, launchCaption, thrum, web);
+        }
+
+        public const string Launch = "LAUNCH", Continue = "CONTINUE";
+        /// <summary>Sub-line fallbacks when Career has no mission line (STARTER_COPY.md wants KH-n · Name).</summary>
+        public const string LaunchCaption = "Next flight, then the pad.";
+        public const string ContinueCaption = "Back to your last rocket.";
+        public const string MissionsCaption = "Pick any flight you've unlocked.";
+        public const string CodexCaption = "Parts, places and flight notes.";
+        /// <summary>STARTER_COPY.md "18–20 px labels": a CTA label that needs less than this falls back to the short form.</summary>
+        public const float CtaMinLabel = 20f;
+
+        /// <summary>MISSIONS sub-line, STARTER_COPY.md: "{done} of {total} flown". Null when the total is unknown.</summary>
+        public static string Flown(int done, int total) =>
+            total <= 0 ? null : Math.Max(0, Math.Min(done, total)) + " of " + total + " flown";
+
+        /// <summary>The one primary CTA, STARTER_COPY.md §c. With a save: CONTINUE over "KH-n · Name". Without:
+        /// "LAUNCH KH-n · Name" on one line when <paramref name="fits"/> says so, else "LAUNCH KH-n" over the name.</summary>
+        public static void Cta(bool save, string missionLine, Func<string, bool> fits, out string label, out string caption)
+        {
+            string line = string.IsNullOrEmpty(missionLine) ? null : missionLine.Trim();
+            if (save)
+            {
+                label = Continue;
+                caption = line ?? ContinueCaption;
+                return;
+            }
+            if (line == null) { label = Launch; caption = LaunchCaption; return; }
+            string full = Launch + " " + line;
+            if (fits == null || fits(full)) { label = full; caption = ""; return; }
+            int dot = line.IndexOf('\u00B7');
+            if (dot > 0)
+            {
+                label = Launch + " " + line.Substring(0, dot).Trim();
+                caption = line.Substring(dot + 1).Trim();
+                return;
+            }
+            label = Launch;
+            caption = line;
+        }
+
+        public static float CtaInner(HomePhoneType t, float col) => col - 2f * LaunchPadH(t.Scale) - LaunchChromeX;
+
+        /// <summary>True when <paramref name="label"/> sits on one line at <see cref="CtaMinLabel"/> or more.</summary>
+        public static bool CtaFits(HomePhoneType t, float col, string label) =>
+            HomeTypeMetrics.Fits(HomeFace.FrauncesBlack, label, Math.Min(CtaMinLabel, t.LaunchLabel), CtaInner(t, col), 0.10f);
+
+        /// <summary>The CTA label at <paramref name="want"/>, down to 14, so the label fits beside its icon.</summary>
+        public static float CtaLabel(HomePhoneType t, float col, string label, float want) =>
+            HomeTypeMetrics.FitOneLine(HomeFace.FrauncesBlack, label, want, 14f, CtaInner(t, col), 0.10f);
+
+        /// <summary>Caption lines under the CTA: 0 when the label carries the whole mission line.</summary>
+        public static int CtaCaptionLines(HomePhoneType t, float col, string caption) =>
+            string.IsNullOrEmpty(caption) ? 0 : LaunchCaptionLines(t, col, caption);
+
+        /// <summary>Starter Home (feat(home-simple)): ONE CTA (CONTINUE when <paramref name="save"/>, else LAUNCH with the
+        /// "KH-n · Name" caption), MISSIONS full width, the gear. Extras come back per <paramref name="show"/>. A hidden
+        /// block has an empty rect and takes no column height.</summary>
+        public static HomePhoneFrame Solve(HomePhoneScreen s, HomeShow show, bool save, string record, string missionLine, string thrum, bool web = false)
+        {
+            bool credits = show.Credits;   // the bar is the chip only: CONTINUE lives on the CTA
             var f = new HomePhoneFrame();
             float rootX = s.Left, rootY = s.Top, rootW = s.SafeW, rootH = s.SafeH;
             float col = rootW - 2f * SideMargin;
@@ -197,25 +265,34 @@ namespace Kestrel.Core.Flight
             f.Type = t;
             f.Safe = new HomeRect(rootX, rootY, rootW, rootH);
             var bar = HomeCornerLayout.Credits(rootW, 0f, web);
-            f.Bar = new HomeRect(rootX + bar.X, rootY + bar.Y, bar.W, bar.H);
+            f.Bar = credits ? new HomeRect(rootX + bar.X, rootY + bar.Y, bar.W, bar.H) : default;
             HomeCornerLayout.Place(s.W, s.Top, web, out _, out var gear, out _);
             f.Gear = gear;
 
-            float padTop = credits ? Math.Max(TopPad, CreditsBand) : TopPad;
+            // The gear owns the top-right of the same 44 pt band, so the title starts under it with or without the chip
+            // (Starter Home has no chip; a 40 px pad put the eyebrow's right end under the gear).
+            float padTop = Math.Max(TopPad, CreditsBand);
             float x = rootX + SideMargin;
             float eye = Math.Max(14f, t.Hint) * LineH;
             f.Eyebrow = new HomeRect(x, rootY + padTop, col, eye);
             f.Title = new HomeRect(x, rootY + padTop, col, TitleH(t));
 
+            f.Show = show;
+            Cta(save, missionLine, l => CtaFits(t, col, l), out f.Cta, out f.CtaCaption);
+            t.LaunchLabel = CtaLabel(t, col, f.Cta, t.LaunchLabel);
+            f.Type = t;
             f.StatFont = StatFont(t, col, record, out var shown);
             f.Record = shown;
             f.RecordLines = HomeTypeMetrics.Lines(HomeFace.GroteskMedium, shown, f.StatFont, col - 2f * StatsBorder - 2f * StatsPadX);
             float statsH = StatsH(f.StatFont);
-            f.LaunchCaptionLines = LaunchCaptionLines(t, col, launchCaption ?? "Next flight, then the pad.");
+            f.LaunchCaptionLines = CtaCaptionLines(t, col, f.CtaCaption);
             float launchH = LaunchH(t, f.LaunchCaptionLines);
             f.DesignCaptionLines = DesignCaptionLines(t, col, "Your rocket, this mission.");
             float designH = DesignH(t, f.DesignCaptionLines);
-            f.TileCaptionLines = Math.Max(TileCaptionLines(t, col, "Pick any flight you've unlocked."), TileCaptionLines(t, col, "Parts, places and flight notes."));
+            float tw = show.Codex ? TileW(col) : col;
+            f.TileCaptionLines = show.Codex
+                ? Math.Max(TileCaptionLines(t, col, MissionsCaption), TileCaptionLines(t, col, CodexCaption))
+                : Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, MissionsCaption, t.TileCaption, tw - 2f * TileBorder - 2f * t.Pad));
             float tileH = TileH(t, f.TileCaptionLines);
             f.ThrumShown = ThrumText(t, col, thrum ?? "", ThrumShort);
             f.ThrumLines = ThrumLines(t, col, f.ThrumShown);
@@ -223,15 +300,14 @@ namespace Kestrel.Core.Flight
 
             float hintBand = Math.Max(0f, BarHeight(s.H, s.Bottom) - s.Bottom);
             float y = rootY + rootH - hintBand;
-            y -= f.ThrumH; f.Thrum = new HomeRect(x, y, col, f.ThrumH);
-            y -= Gap + tileH;
-            float tw = TileW(col);
+            if (show.Thrum) { y -= f.ThrumH; f.Thrum = new HomeRect(x, y, col, f.ThrumH); y -= Gap; }
+            y -= tileH;
             f.Missions = new HomeRect(x, y, tw, tileH);
-            f.Codex = new HomeRect(x + col - tw, y, tw, tileH);
-            y -= Gap + designH; f.Design = new HomeRect(x, y, col, designH);
+            if (show.Codex) f.Codex = new HomeRect(x + col - tw, y, tw, tileH);
+            if (show.DesignFirst) { y -= Gap + designH; f.Design = new HomeRect(x, y, col, designH); }
             y -= Gap + launchH; f.Launch = new HomeRect(x, y, col, launchH);
-            y -= Gap + statsH; f.Stats = new HomeRect(x, y, col, statsH);
-            f.Hero = f.Stats.Y - f.Title.Bottom;
+            if (show.Stats) { y -= Gap + statsH; f.Stats = new HomeRect(x, y, col, statsH); }
+            f.Hero = (show.Stats ? f.Stats.Y : f.Launch.Y) - f.Title.Bottom;
 
             float pop = GuidePopPt * s.PerPoint;
             float popX = s.W - s.Right - GuideMarginPt * s.PerPoint - pop;

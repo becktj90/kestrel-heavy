@@ -2,6 +2,7 @@
 //   size = clamp(min, k * s * base, max),  s = min(width / 390, usableHeight / 844),  usableHeight = height - top - bottom safe insets
 // Metrics (MainMenuMetrics) are the real advance widths of the shipped subset fonts, so "fits" is checked, not guessed.
 using System;
+using Kestrel.Core.Features;
 using Kestrel.Core.Flight;
 
 namespace Kestrel.Game.Shell
@@ -20,7 +21,9 @@ namespace Kestrel.Game.Shell
         /// <summary>Phone column with the credits bar (HomeResumeBar, 44 pt at the top-left): the title starts
         /// under it, never under 40. The eyebrow drew on the bar's last 4 pt at 335 and 390 portrait.</summary>
         public const float CreditsBand = 44f + 4f;
-        public static float TopPadFor(bool creditsBar) => creditsBar ? Math.Max(TopPad, CreditsBand) : TopPad;
+        /// <summary>The gear sits in the same band on the right, so the column always starts under it (Starter Home
+        /// has no chip, and 40 put the eyebrow under the gear's last 4 pt).</summary>
+        public static float TopPadFor(bool creditsBar) => Math.Max(TopPad, CreditsBand);
         public const float HitMin = 44f;
 
         public readonly struct Spec
@@ -57,6 +60,10 @@ namespace Kestrel.Game.Shell
             public string ThrumText;
             /// <summary>The record text the stats card shows (the short form when the long one would wrap).</summary>
             public string Record;
+            /// <summary>Which home.* extras this pass lays out (hidden ones take no height).</summary>
+            public HomeShow Show;
+            /// <summary>The primary CTA words: label and sub-line ("" when the label carries the mission line).</summary>
+            public string CtaLabel, CtaCaption;
         }
 
         public static float TextW(string s, float size) => MainMenuMetrics.W(s) * size / 100f;
@@ -66,32 +73,42 @@ namespace Kestrel.Game.Shell
         /// so the column maths uses the width the root really has. <paramref name="record"/> is the stats record line,
         /// <paramref name="launchCaption"/> the live LAUNCH caption (null: the static one). Block heights come from
         /// <see cref="HomePhoneLayout"/> (word-wrapped at the real inner widths), never below the old estimates.</summary>
-        public static Sizes Compute(float w, float h, float topInset = 0f, float bottomInset = 0f, float side = 0f, string record = null, string launchCaption = null)
+        public static Sizes Compute(float w, float h, float topInset = 0f, float bottomInset = 0f, float side = 0f, string record = null, string launchCaption = null,
+            HomeShow? show = null, bool save = false)
         {
+            var sh = show ?? HomeFeatures.Current();
             float colW = Math.Max(1f, w - Math.Max(0f, side));
             float grid = colW - 2f * SideMargin;
             var t = HomePhoneLayout.Type(colW, h, topInset, bottomInset, grid);
-            var z = new Sizes { Scale = t.Scale };
+            // One primary CTA (STARTER_COPY.md): launchCaption is the mission line ("KH-3 · Tiny Orbit").
+            HomePhoneLayout.Cta(save, launchCaption, l => HomePhoneLayout.CtaFits(t, grid, l), out var ctaLabel, out var ctaCaption);
+            t.LaunchLabel = HomePhoneLayout.CtaLabel(t, grid, ctaLabel, t.LaunchLabel);
+            var z = new Sizes { Scale = t.Scale, Show = sh, CtaLabel = ctaLabel, CtaCaption = ctaCaption };
             float s = z.Scale;
             z.Title = t.Title; z.Tagline = t.Tagline; z.LaunchLabel = t.LaunchLabel; z.LaunchCaption = t.LaunchCaption;
             z.TileName = t.TileName; z.TileCaption = t.TileCaption; z.Soon = t.Soon; z.Hint = t.Hint;
             z.Pad = t.Pad;
             z.Column = grid;
-            z.TileW = HomePhoneLayout.TileW(grid);
+            // Starter Home: MISSIONS alone spans the row.
+            z.TileW = sh.Codex ? HomePhoneLayout.TileW(grid) : grid;
             z.TileInner = z.TileW - 2f * TileBorder - 2f * z.Pad;
             int worstLines = 1;
             // Word-wrapped at the real inner width (the old 8% estimate said 2 lines where TextCore wrapped 3, and
             // the third sat on the tile's bottom edge).
             foreach (var it in MainMenuCopy.Tiles)
-                worstLines = Math.Max(worstLines, HomePhoneLayout.TileCaptionLines(t, grid, it.Caption));
+            {
+                if (!sh.Codex && it.Id != "missions") continue;
+                worstLines = Math.Max(worstLines, sh.Codex
+                    ? HomePhoneLayout.TileCaptionLines(t, grid, it.Caption)
+                    : Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, it.Caption, t.TileCaption, grid - 2f * HomePhoneLayout.TileBorder - 2f * t.Pad)));
+            }
             z.TileCaptionLines = worstLines;
             float head = Math.Max(22f, z.TileName * LineH);
             z.TileH = Math.Max(HomePhoneLayout.TileH(t, worstLines), Math.Max(HitMin, 2f * TileBorder + 2f * z.Pad + head + 3f + worstLines * z.TileCaption * LineH));
             float padH = HomePhoneLayout.LaunchPadH(s);
             z.LaunchCaptionW = grid - 2f * LaunchBorder - 2f * padH - LampSlot - 12f;
-            string cap = string.IsNullOrEmpty(launchCaption) ? MainMenuCopy.LaunchCaption : launchCaption;
-            z.LaunchCaptionLines = Math.Max(Lines(TextW(MainMenuCopy.LaunchCaption, z.LaunchCaption), z.LaunchCaptionW),
-                HomePhoneLayout.LaunchCaptionLines(t, grid, cap));
+            z.LaunchCaptionLines = string.IsNullOrEmpty(ctaCaption) ? 0 : Math.Max(Lines(TextW(MainMenuCopy.LaunchCaption, z.LaunchCaption), z.LaunchCaptionW),
+                HomePhoneLayout.LaunchCaptionLines(t, grid, ctaCaption));
             z.LaunchH = HomePhoneLayout.LaunchH(t, z.LaunchCaptionLines);
             // DESIGN FIRST: the face shrinks to the inner width, and the button grows with the caption's
             // word-wrapped lines. The old 42% cap cut this height under its own caption ("Your rocket, this
@@ -109,9 +126,9 @@ namespace Kestrel.Game.Shell
             float bottom = Math.Max(0f, bottomInset);
             z.BottomReserve = MainMenuCopy.BarHeight(h, bottom);
             z.HintBand = Math.Max(0f, z.BottomReserve - bottom);   // root padding-bottom (the root already sits above the safe inset)
-            z.ControlsH = z.StatsH + Gap + z.LaunchH + Gap + z.DesignH + Gap + z.TileH + Gap;
+            z.ControlsH = (sh.Stats ? z.StatsH + Gap : 0f) + z.LaunchH + Gap + (sh.DesignFirst ? z.DesignH + Gap : 0f) + z.TileH + Gap;
             z.ControlsTop = h - z.BottomReserve - z.ControlsH;
-            z.TitleBottom = Math.Max(0f, topInset) + TopPad + z.Title * 1.3f + z.Tagline * LineH;
+            z.TitleBottom = Math.Max(0f, topInset) + TopPadFor(true) + z.Title * 1.3f + z.Tagline * LineH;
             z.HeroLift = HeroLift(h, z.TitleBottom, z.ControlsTop);
             return z;
         }

@@ -1,57 +1,54 @@
-// Home flags for the Phase 1 "Starter" Home (kh-plan PHASED_DESIGNER_PLAN.md, PR 6 feat(home-simple)).
-// Starter Home is one primary CTA (CONTINUE with a save, else LAUNCH KH-n · Name), MISSIONS and the Settings gear.
-// Design first, the Codex tile, Thrum, the credits chip and the stats card stay in the code behind these flags.
-//
-// feat(flags) (FeatureFlags + data/features.json, Gameplay Dev) has not landed. Until it does, Source is null and
-// every home.* flag reads its Starter default (off). When it lands, set
-//     HomeFeatures.Source = name => FeatureFlags.On(name);
-// and nothing else changes: the names below are the plan's names.
-using System;
-
+// Starter Home (PHASED_DESIGNER_PLAN.md PR 6, feat(home-simple)): one primary CTA (CONTINUE with a save, else
+// LAUNCH KH-n · Name), MISSIONS and the Settings gear. Design first, the Codex tile, Thrum, the credits chip and
+// the stats card keep their code behind the home.* flags of FeatureFlags (feat(flags)). This is only a typed view
+// of those five flags: the defaults live in data/features.json and FeatureFlags, never here.
 namespace Kestrel.Core.Features
 {
     public static class HomeFeatures
     {
-        public const string DesignFirst = "home.designFirst";
-        public const string CodexTile = "home.codexTile";
-        public const string Thrum = "home.thrum";
-        public const string CreditsChip = "home.creditsChip";
-        public const string StatsCard = "home.statsCard";
+        public const string DesignFirst = FeatureKeys.HomeDesignFirst;
+        public const string CodexTile = FeatureKeys.HomeCodexTile;
+        public const string Thrum = FeatureKeys.HomeThrum;
+        public const string CreditsChip = FeatureKeys.HomeCreditsChip;
+        public const string StatsCard = FeatureKeys.HomeStatsCard;
 
         public static readonly string[] Names = { DesignFirst, CodexTile, Thrum, CreditsChip, StatsCard };
 
-        /// <summary>Override seam (feat(flags), Settings, tests). Null, or a null answer, keeps the Starter default.</summary>
-        public static Func<string, bool?> Source;
+        public static bool On(string key) => FeatureFlags.Active != null && FeatureFlags.Active.IsOn(key);
 
-        /// <summary>Starter defaults: every home.* extra is hidden.</summary>
-        public static bool Default(string name) => false;
+        public static HomeShow Current() => Read(FeatureFlags.Active);
 
-        public static bool On(string name)
+        public static HomeShow Read(FeatureFlags flags)
         {
-            bool? v = null;
-            if (Source != null)
+            if (flags == null) return default;
+            return new HomeShow
             {
-                try { v = Source(name); }
-                catch (Exception) { v = null; }
-            }
-            return v ?? Default(name);
+                DesignFirst = flags.IsOn(DesignFirst),
+                Codex = flags.IsOn(CodexTile),
+                Thrum = flags.IsOn(Thrum),
+                Credits = flags.IsOn(CreditsChip),
+                Stats = flags.IsOn(StatsCard),
+            };
         }
 
-        public static HomeShow Current() => new HomeShow
+        /// <summary>A FeatureFlags with the home.* flags set to <paramref name="show"/> (tests and previews).</summary>
+        public static FeatureFlags With(HomeShow show)
         {
-            DesignFirst = On(DesignFirst),
-            Codex = On(CodexTile),
-            Thrum = On(Thrum),
-            Credits = On(CreditsChip),
-            Stats = On(StatsCard),
-        };
+            var f = new FeatureFlags();
+            f.SetOverride(DesignFirst, show.DesignFirst);
+            f.SetOverride(CodexTile, show.Codex);
+            f.SetOverride(Thrum, show.Thrum);
+            f.SetOverride(CreditsChip, show.Credits);
+            f.SetOverride(StatsCard, show.Stats);
+            return f;
+        }
     }
 
-    /// <summary>Which Home extras are on. <see cref="Starter"/> is the default; <see cref="Full"/> is the old Home.</summary>
+    /// <summary>Which Home extras are on. <see cref="Full"/> is the pre-Starter Home; <see cref="None"/> hides all five.</summary>
     public struct HomeShow
     {
         public bool DesignFirst, Codex, Thrum, Credits, Stats;
-        public static HomeShow Starter => default;
+        public static HomeShow None => default;
         public static HomeShow Full => new HomeShow { DesignFirst = true, Codex = true, Thrum = true, Credits = true, Stats = true };
         public override string ToString() =>
             (DesignFirst ? "D" : "-") + (Codex ? "C" : "-") + (Thrum ? "T" : "-") + (Credits ? "$" : "-") + (Stats ? "S" : "-");

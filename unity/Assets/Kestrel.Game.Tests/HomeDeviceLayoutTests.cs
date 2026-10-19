@@ -536,7 +536,8 @@ namespace Kestrel.Game.Tests
             Assert.That(sky, Is.Not.Null, d.Name + " dusk");
             Assert.That(plate, Is.Not.Null, d.Name);
             Assert.That(title.text, Is.EqualTo(MainMenuCopy.TitleTop), d.Name);
-            Assert.That(launch.Q<Label>(className: "kh-mm-launch-label").text, Is.EqualTo(MainMenuCopy.Launch.Label), d.Name);
+            // One primary CTA (STARTER_COPY.md): "LAUNCH KH-n · Name", "LAUNCH KH-n", or CONTINUE with a save.
+            Assert.That(launch.Q<Label>(className: "kh-mm-launch-label").text, Does.StartWith(MainMenuCopy.Launch.Label).Or.EqualTo("CONTINUE"), d.Name);
             Assert.That(design.Q<Label>(className: "kh-mm-design-label").text, Is.EqualTo(MainMenuCopy.Design.Label), d.Name);
             Assert.That(missions.Q<Label>(className: "kh-mm-tile-name").text, Does.Contain("Mission").IgnoreCase, d.Name);
             Assert.That(title.style.unityFontDefinition.value.font, Is.SameAs(black), d.Name + " title font is the Resources face");

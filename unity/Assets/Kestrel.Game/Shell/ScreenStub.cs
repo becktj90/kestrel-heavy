@@ -108,9 +108,16 @@ namespace Kestrel.Game.Shell
                 Action launch = () => shell.Flow.HomePressed("launch");
                 Action design = () => shell.Flow.HomePressed("design");
                 Action missions = () => shell.Flow.HomePressed("missions");
+                HomeFlagsBoot.Load();
                 _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, design, missions, MainMenuLayout.ReducedMotion());
                 try { MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine()); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] next mission line skipped: " + e.Message); }
+                try
+                {
+                    var campaign = LoadCampaign();
+                    if (campaign != null) MainMenuOverlay.SetMissionsFlown(_overlay, ClearedCount(), campaign.Missions.Count);
+                }
+                catch (Exception e) { Debug.LogWarning("[Kestrel] missions flown skipped: " + e.Message); }
                 try { MainMenuOverlay.SetRecord(_overlay, HomeRecordLine()); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] home record skipped: " + e.Message); }
                 try

@@ -23,6 +23,10 @@ namespace Kestrel.Core.Flight
         public bool Scroll;
         public WebHomeType Type;
         public HudBox Rocket, Menu, Title, Stats, Launch, Design, Missions, Codex, Gear, Exit, Audio, Hint;
+        /// <summary>The CTA word's width at 100 px (LAUNCH, or CONTINUE with a save).</summary>
+        public float LaunchAt100 = HomeWideText.Launch;
+        /// <summary>The primary CTA words (Starter Home); null on the legacy Place.</summary>
+        public string CtaLabel, CtaCaption;
     }
 
     /// <summary>Advances at 100px, including the tracking the wide layout applies.
@@ -32,6 +36,7 @@ namespace Kestrel.Core.Flight
         public const float Kestrel = 517.85f;
         public const float Heavy = 558.60f;
         public const float Launch = 497.55f;
+        public const float Continue = 626.50f;            // "CONTINUE", Fraunces Black, 0.1 em tracking
         public const float LaunchCaption = 1232.30f;       // "Next flight, then the pad."
         public const float Design = 777.65f;               // "DESIGN FIRST", Fraunces Bold, 0.03em
         public const float DesignCaption = 1223.70f;       // "Your rocket, this mission."
@@ -88,8 +93,63 @@ namespace Kestrel.Core.Flight
             Math.Max(height * ReelFrac, Math.Max(0f, safeInset) + ReelMin);
 
         public static WebHomeFrame Place(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight)
+            => Place(width, height, safeTop, safeBottom, safeLeft, safeRight, HomeWideText.Launch);
+
+        /// <summary>Starter Home (feat(home-simple)): the frame for <paramref name="show"/> with the one primary CTA of
+        /// STARTER_COPY.md: CONTINUE over the mission line with a save, else "LAUNCH KH-n · Name", or "LAUNCH KH-n" over
+        /// the name when the long label would drop under 18 px. Hidden blocks get empty rects and the column closes up.</summary>
+        public static WebHomeFrame Place(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight,
+            Kestrel.Core.Features.HomeShow show, bool save, string missionLine = null)
         {
-            var f = new WebHomeFrame { Wide = WebLayoutMode.IsLandscape(width, height) };
+            HomePhoneLayout.Cta(save, missionLine, null, out var label, out var caption);
+            var f = Place(width, height, safeTop, safeBottom, safeLeft, safeRight, CtaAt100(label));
+            if (!save && caption.Length == 0 && f.Wide && f.Type != null && f.Type.Launch < WideCtaMin)
+            {
+                HomePhoneLayout.Cta(false, missionLine, _ => false, out label, out caption);
+                f = Place(width, height, safeTop, safeBottom, safeLeft, safeRight, CtaAt100(label));
+            }
+            f.CtaLabel = label;
+            f.CtaCaption = caption;
+            Simplify(f, show);
+            return f;
+        }
+
+        public const float WideCtaMin = 18f;
+
+        /// <summary>The CTA label's width at 100 px (Fraunces Black, 0.1 em), the unit HomeWideText uses.</summary>
+        public static float CtaAt100(string label) =>
+            label == "LAUNCH" ? HomeWideText.Launch : HomeTypeMetrics.Width(HomeFace.FrauncesBlack, label ?? "", 100f, 0.10f);
+
+        /// <summary>Drops the hidden Home extras from a frame. Wide: the menu column restacks from the top
+        /// (CTA, Design first, MISSIONS, Codex), and MISSIONS takes the room Design first and Codex gave up.
+        /// Portrait web: hidden boxes go empty in place, so nothing moves under the hero.</summary>
+        public static void Simplify(WebHomeFrame f, Kestrel.Core.Features.HomeShow show)
+        {
+            if (!show.Stats) f.Stats = default;
+            if (!show.Thrum) f.Hint = default;
+            if (!f.Wide)
+            {
+                if (!show.DesignFirst) f.Design = default;
+                if (!show.Codex)
+                {
+                    f.Missions = new HudBox { X = f.Missions.X, Y = f.Missions.Y, W = f.Menu.W, H = f.Missions.H };
+                    f.Codex = default;
+                }
+                return;
+            }
+            float y = f.Launch.Bottom + Gap;
+            float tileH = f.Missions.H;
+            if (show.DesignFirst) y = f.Design.Bottom + Gap;
+            else f.Design = default;
+            if (!show.Codex) f.Codex = default;
+            f.Missions = new HudBox { X = f.Missions.X, Y = y, W = f.Missions.W, H = tileH };
+            if (show.Codex)
+                f.Codex = new HudBox { X = f.Codex.X, Y = f.Missions.Bottom + Gap, W = f.Codex.W, H = f.Codex.H };
+        }
+
+        public static WebHomeFrame Place(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight, float launchAt100)
+        {
+            var f = new WebHomeFrame { Wide = WebLayoutMode.IsLandscape(width, height), LaunchAt100 = launchAt100 };
             safeTop = Math.Max(0f, safeTop);
             safeBottom = Math.Max(0f, safeBottom);
             safeLeft = Math.Max(0f, safeLeft);
@@ -122,7 +182,7 @@ namespace Kestrel.Core.Flight
             float contentBottom = height - Reel(height, safeBottom);
             // Content band: at most 1280 wide and centred. The corners stay on the screen edge.
             WebLandscapeType.Band(left, right, out float bandLeft, out float bandRight);
-            PlaceWide(f, width, bandLeft, bandRight, contentTop, contentBottom);
+            PlaceWide(f, width, bandLeft, bandRight, contentTop, contentBottom, launchAt100);
             return f;
         }
 
@@ -148,7 +208,7 @@ namespace Kestrel.Core.Flight
             f.Rocket = Rect(innerL, rocketY, innerW, Math.Max(1f, f.Menu.Y - Gap - rocketY));
         }
 
-        static void PlaceWide(WebHomeFrame f, float width, float left, float right, float topBar, float bottom)
+        static void PlaceWide(WebHomeFrame f, float width, float left, float right, float topBar, float bottom, float launchAt100)
         {
             float cx = (left + right) * 0.5f;
             // Column widths scale with the viewport up to the 1280 band (the safe insets stay inside it).
@@ -226,7 +286,7 @@ namespace Kestrel.Core.Flight
             float designInner = Math.Max(1f, menuW - DesignChrome);
             float tileInner = Math.Max(1f, menuW - TileChrome);
             float hintInner = Math.Max(1f, menuW - HintChromeX);
-            type.Launch = Fit(launchInner, HomeWideText.Launch, 32f, 13f);
+            type.Launch = Fit(launchInner, launchAt100, 32f, 13f);
             type.LaunchCaption = FitCaption(launchInner, HomeWideText.LaunchCaption, 16f, 10f, out type.LaunchCaptionLines);
             type.Design = Fit(designInner, HomeWideText.Design, 24f, 12f);
             type.DesignCaption = FitCaption(designInner, HomeWideText.DesignCaption, 15f, 10f, out type.DesignCaptionLines);
@@ -336,28 +396,33 @@ namespace Kestrel.Core.Flight
             if (HomeWideText.Width(HomeWideText.Heavy, t.Tagline) > titleInner * 0.7f + 0.6f) return "HEAVY wider than the rule row";
             if (t.Title * 1.05f + 6f + t.Tagline * Line > f.Title.H + 0.6f) return "title block taller than its box";
 
-            string card = CardFit(f.Launch, t.Launch, HomeWideText.Launch, t.LaunchCaption, HomeWideText.LaunchCaption, t.LaunchCaptionLines, LaunchChrome, 8f, 5f, "launch");
+            string card = CardFit(f.Launch, t.Launch, f.LaunchAt100, t.LaunchCaption, HomeWideText.LaunchCaption, t.LaunchCaptionLines, LaunchChrome, 8f, 5f, "launch");
             if (card != null) return card;
-            card = CardFit(f.Design, t.Design, HomeWideText.Design, t.DesignCaption, HomeWideText.DesignCaption, t.DesignCaptionLines, DesignChrome, 6f, 2f, "design");
+            card = !f.Design.Live ? null : CardFit(f.Design, t.Design, HomeWideText.Design, t.DesignCaption, HomeWideText.DesignCaption, t.DesignCaptionLines, DesignChrome, 6f, 2f, "design");
             if (card != null) return card;
 
             float tileInner = Math.Max(1f, f.Missions.W - TileChrome);
             float soonW = HomeWideText.Width(HomeWideText.Soon, t.Soon) + SoonPad;
             float nameInner = Math.Max(1f, tileInner - Math.Max(LampSlot, soonW) - 8f);
             if (HomeWideText.Width(HomeWideText.Missions, t.TileName) > nameInner + 0.6f) return "MISSIONS wider than the tile";
-            if (HomeWideText.Width(HomeWideText.Codex, t.TileName) > Math.Max(1f, tileInner - soonW - 8f) + 0.6f) return "CODEX wider than the tile";
+            bool codex = f.Codex.Live;
+            if (codex && HomeWideText.Width(HomeWideText.Codex, t.TileName) > Math.Max(1f, tileInner - soonW - 8f) + 0.6f) return "CODEX wider than the tile";
             if (t.TileCaptionLines > 2) return "tile caption wraps past two lines";
             if (HomeWideText.Lines(HomeWideText.MissionsCaption, t.TileCaption, tileInner) > t.TileCaptionLines) return "missions caption does not fit";
-            if (HomeWideText.Lines(HomeWideText.CodexCaption, t.TileCaption, tileInner) > t.TileCaptionLines) return "codex caption does not fit";
+            if (codex && HomeWideText.Lines(HomeWideText.CodexCaption, t.TileCaption, tileInner) > t.TileCaptionLines) return "codex caption does not fit";
             float tileBlock = Block(t.TileName, t.TileCaption, t.TileCaptionLines, 10f, 3f);
             if (tileBlock > f.Missions.H + 0.6f) return "missions text taller than the card";
-            if (tileBlock > f.Codex.H + 0.6f) return "codex text taller than the card";
+            if (codex && tileBlock > f.Codex.H + 0.6f) return "codex text taller than the card";
 
-            float statInner = Math.Max(1f, f.Stats.W - 16f);
-            float stats = HomeWideText.Width(HomeWideText.Fuel, t.Stat) + Gap + HomeWideText.Width(HomeWideText.Thrust, t.Stat);
-            if (stats > statInner + 0.6f) return "fuel and thrust wider than the stats card";
-            if (t.Stat * Line > f.Stats.H + 0.6f) return "stats text taller than the card";
+            if (f.Stats.Live)
+            {
+                float statInner = Math.Max(1f, f.Stats.W - 16f);
+                float stats = HomeWideText.Width(HomeWideText.Fuel, t.Stat) + Gap + HomeWideText.Width(HomeWideText.Thrust, t.Stat);
+                if (stats > statInner + 0.6f) return "fuel and thrust wider than the stats card";
+                if (t.Stat * Line > f.Stats.H + 0.6f) return "stats text taller than the card";
+            }
 
+            if (!f.Hint.Live) return null;
             float hintInner = Math.Max(1f, f.Hint.W - HintChromeX);
             if (t.HintLines > 2) return "hint wraps past two lines";
             if (WrapLines(t.HintShort ? HomeWideText.HintShort : HomeWideText.Hint, t.Hint, hintInner) > t.HintLines) return "hint wider than its row";

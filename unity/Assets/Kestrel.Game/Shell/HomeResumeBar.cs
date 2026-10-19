@@ -1,5 +1,6 @@
-// Credits chip and CONTINUE on Home. The chip is always there. CONTINUE appears only when
-// a draft, a saved rocket, or a cleared mission exists. Text shrinks until it fits 335 px.
+// Credits chip and CONTINUE on Home. CONTINUE appears only when a draft, a saved rocket, or a cleared mission
+// exists; on Home it is the LAUNCH key itself (one primary CTA), and the chip shows only with home.creditsChip.
+// Text shrinks until it fits 335 px.
 using System;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
@@ -56,8 +57,13 @@ namespace Kestrel.Game.Shell
             if (root == null) return;
             var old = root.Q(BarName);
             if (old != null) old.RemoveFromHierarchy();
-            var bar = Build(credits, showContinue, onContinue);
+            // Starter Home (feat(home-simple)): CONTINUE is the one primary CTA, so it rides Home's LAUNCH key and the
+            // bar keeps only the credits chip, which home.creditsChip hides by default. Off Home the bar is unchanged.
+            bool onCta = MainMenuOverlay.UseContinue(root, showContinue ? onContinue : null);
+            var bar = Build(credits, showContinue && !onCta, onContinue);
             root.Add(bar);
+            // home.creditsChip shows or hides the chip, now and whenever FeatureFlags.Changed fires.
+            if (onCta) MainMenuOverlay.ApplyFeatures(root);
             void Place(GeometryChangedEvent _)
             {
                 PlaceBar(root, bar);
