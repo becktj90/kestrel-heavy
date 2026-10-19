@@ -155,7 +155,7 @@ namespace Kestrel.Core.Designer.Stepper
             {
                 Set(check, StepGate.Red, "payload-doesnt-fit", "fairing", "payload",
                     "The cargo doesn't fit in the nose. Make the nose longer or wider.",
-                    "Fairing fit failed: volume ≤ π(0.45·D_f)²·0.8·L_f and diameter + 0.2 m ≤ D_f.");
+                    "Fairing fit failed: volume ≤ π(0.45·D_f)²·0.8·L_f and diameter ≤ 0.9·D_f.");
             }
             else if (readout.fairingFits == null)
             {

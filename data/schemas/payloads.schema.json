@@ -17,7 +17,7 @@
         "label": { "type": "string" },
         "mass": { "type": "number", "exclusiveMinimum": 0 },
         "volume": { "type": "number", "exclusiveMinimum": 0, "description": "m³" },
-        "diameter": { "type": "number", "exclusiveMinimum": 0, "description": "m, largest cross-section. Fit needs diameter + 0.2 m ≤ fairing diameter (§2.9)." },
+        "diameter": { "type": "number", "exclusiveMinimum": 0, "description": "m, largest cross-section. Fit needs diameter ≤ 0.9 × fairing diameter (§2.9)." },
         "maxG": { "type": "number", "exclusiveMinimum": 0 }, "maxHeatFlux": { "type": "number", "exclusiveMinimum": 0 },
         "orbit": { "type": "string", "description": "key of orbits" },
         "whatItIs": { "type": "string", "minLength": 8 },

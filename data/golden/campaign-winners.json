@@ -1243,7 +1243,7 @@
             "orbit": "kh-m14"
           },
           "fairing": {
-            "diameter": 3.9,
+            "diameter": 4,
             "length": 4.8,
             "material": "titanium",
             "jettisonAltitudeKm": 110

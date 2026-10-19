@@ -103,7 +103,7 @@ namespace Kestrel.Core.Flight
             {
                 flight.gentle = FailureMonitor.GentleTier(design);
                 flight.payloadMatch = design.payloadType == mission.PayloadId && design.payloadMass == mission.MassKg;
-                var fit = PayloadFit.Check(design, new PayloadSpec { id = mission.PayloadId, volume = mission.VolumeM3, diameter = mission.DiameterM });
+                var fit = PayloadFit.Check(design, PayloadFit.MissionSpec(mission));
                 flight.fairingFits = fit.fits;
                 var price = CostModel.PriceDesign(catalog, design);
                 long perKc = CostModel.MinorPerKc(catalog);

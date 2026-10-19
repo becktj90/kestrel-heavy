@@ -220,15 +220,15 @@ namespace Kestrel.Core.Tests
             double usable = Math.PI * Math.Pow(0.45 * diameter, 2) * 0.8 * length;
             var design = Design.FromJson(Minimal(diameter, length));
 
-            var exact = PayloadFit.Check(design, new PayloadSpec { id = "edge", volume = usable, diameter = diameter - 0.2 });
+            var exact = PayloadFit.Check(design, new PayloadSpec { id = "edge", volume = usable, diameter = 0.9 * diameter });
             Assert.AreEqual(usable, exact.usableVolume, 0);
             Assert.AreEqual(0, exact.volumeMargin, 1e-9);
             Assert.AreEqual(0, exact.diameterMargin, 1e-12);
-            Assert.IsTrue(exact.fits, "volume ≤ usable and diameter + 0.2 m ≤ D_f, including equality");
+            Assert.IsTrue(exact.fits, "volume ≤ usable and diameter ≤ 0.9·D_f, including equality");
 
             var spare = PayloadFit.Check(design, new PayloadSpec { volume = 100, diameter = 4 });
             Assert.AreEqual(usable - 100, spare.volumeMargin, 1e-9);
-            Assert.AreEqual(5 - 4 - 0.2, spare.diameterMargin, 0);
+            Assert.AreEqual(0.9 * 5 - 4, spare.diameterMargin, 0);
             Assert.IsTrue(spare.fits);
 
             var fat = PayloadFit.Check(design, new PayloadSpec { volume = usable + 0.01, diameter = 1 });
@@ -237,7 +237,7 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(fat.fits);
 
             var wide = PayloadFit.Check(design, new PayloadSpec { volume = 1, diameter = 4.81 });
-            Assert.AreEqual(5 - 4.81 - 0.2, wide.diameterMargin, 1e-12);
+            Assert.AreEqual(0.9 * 5 - 4.81, wide.diameterMargin, 1e-12);
             Assert.Less(wide.diameterMargin, 0);
             Assert.IsFalse(wide.fits);
 
@@ -280,7 +280,7 @@ namespace Kestrel.Core.Tests
             var fit = PayloadFit.Check(stock, leo);
             Assert.IsTrue(fit.fits, "leo-sat in the stock fairing");
             Assert.Greater(fit.volumeMargin, 0);
-            Assert.AreEqual(stock.fairingDiameter - leo.diameter - PayloadFit.DiameterClearanceM, fit.diameterMargin, 0);
+            Assert.AreEqual(PayloadFit.DiameterFactor * stock.fairingDiameter - leo.diameter, fit.diameterMargin, 0);
 
             var scout = Design.FromJson(Preset("scout"));
             var cube = PayloadSpec.FromJson(FindPayload(doc, "cubesat"));
@@ -326,7 +326,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(0.15, v3.Obj("tank").Obj("insulationBoiloff").Num("mli"), 0);
             Assert.AreEqual(PayloadFit.RadiusFactor, v3.Obj("payloadFit").Num("radiusFactor"), 0);
             Assert.AreEqual(PayloadFit.LengthFactor, v3.Obj("payloadFit").Num("lengthFactor"), 0);
-            Assert.AreEqual(PayloadFit.DiameterClearanceM, v3.Obj("payloadFit").Num("diameterClearanceM"), 0);
+            Assert.AreEqual(PayloadFit.DiameterFactor, v3.Obj("payloadFit").Num("diameterFactor"), 1e-15);
             Assert.AreEqual(0.2, v3.Obj("landingReserveFraction").Num("max"), 0);
             Assert.AreEqual(0, v3.Obj("guidance").Obj("pitchKickAltM").Num("min"), 0);
             Assert.AreEqual(50000, v3.Obj("guidance").Obj("pitchKickAltM").Num("max"), 0);
