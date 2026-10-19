@@ -29,6 +29,7 @@ namespace Kestrel.Core.Designer
             public double qPa, altM, maxG;
             public bool flown;
             public double lossGravity, lossDrag, lossSteering, minStability, minCar, burnoutSpeed;
+            public double apoAltM;
             public FailureEvent failure;
             public List<FlightRisk> risks;
         }
@@ -39,6 +40,8 @@ namespace Kestrel.Core.Designer
             public bool hit, flown;
             public double qPa, altM, maxG;
             public double lossGravity, lossDrag, lossSteering, minStability, minCar, burnoutSpeed;
+            /// <summary>Kepler apogee at cutoff (what FlightBatch scores an apogee trip on). NaN when not flown.</summary>
+            public double apoAltM;
             public FailureEvent failure;
             public List<FlightRisk> risks;
         }
@@ -110,6 +113,7 @@ namespace Kestrel.Core.Designer
                     key = key, qPa = sim.maxQ, altM = sim.maxQAlt, maxG = sim.maxG, flown = true,
                     lossGravity = sim.lossGravity, lossDrag = sim.lossDrag, lossSteering = sim.lossSteering,
                     minStability = sim.minStability, minCar = sim.minCar, burnoutSpeed = burnout,
+                    apoAltM = sim.orbit.apoAlt,
                     failure = sim.failure, risks = sim.risks,
                 };
         }
@@ -125,6 +129,7 @@ namespace Kestrel.Core.Designer
                         hit = true, flown = e.flown, qPa = e.qPa, altM = e.altM, maxG = e.maxG,
                         lossGravity = e.lossGravity, lossDrag = e.lossDrag, lossSteering = e.lossSteering,
                         minStability = e.minStability, minCar = e.minCar, burnoutSpeed = e.burnoutSpeed,
+                        apoAltM = e.flown ? e.apoAltM : double.NaN,
                         failure = e.failure, risks = e.risks,
                     };
                     return true;

@@ -55,7 +55,7 @@ namespace Kestrel.Core.Designer
             var r = readout ?? report.readout;
             if (r == null) return new LaunchGateResult { state = LaunchGateState.Checking };
             if (r.fairingFits == false) return Blocked(NoFit, "payload-doesnt-fit", "payload");
-            if (r.margin < 0) return Blocked(TooSlow, "dv-margin", "tanks");
+            if (r.margin < 0 && !r.ReachesApogee) return Blocked(TooSlow, "dv-margin", "tanks");
             var red = DeterministicRed(r.risks);
             if (red != null) return Blocked(Plain(red.kid, red.engineer, WillFail), red.kind, red.tab);
             if (r.predictedFailure != null)

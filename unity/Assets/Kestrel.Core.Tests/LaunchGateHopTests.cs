@@ -186,7 +186,7 @@ namespace Kestrel.Core.Tests
                 var gate = GateAfterReference(json, out var sim);
                 var red = LaunchGate.DeterministicRed(sim.risks);
                 if (sim.failure == null && red != null) bad.Add(row.Str("id") + " " + red.kind);
-                if (!gate.Ready && !FitBlock(gate) && gate.code != "dv-margin") bad.Add(row.Str("id") + " gate " + gate.code);
+                if (!gate.Ready && !FitBlock(gate)) bad.Add(row.Str("id") + " gate " + gate.code);
             }
             Assert.That(bad, Is.Empty, string.Join(" | ", bad));
         }
@@ -224,6 +224,20 @@ namespace Kestrel.Core.Tests
             Assert.That(sim.minCar, Is.GreaterThanOrEqualTo(1), "and the gimbal holds it");
             var row3 = sim.risks.Find(x => x.kind == "tumble");
             Assert.That(row3.level, Is.EqualTo("amber"));
+        }
+
+        [Test]
+        public void AHopThatReachesItsApogeeIsNotTooSlow()
+        {
+            var ok = new EngineeringReport { ok = true };
+            var reached = new QuickReadout { margin = -0.29, fairingFits = true, maxQStale = false, suborbital = true, targetAlt = 10000, predictedApo_m = 9800 };
+            Assert.That(LaunchGate.Evaluate(ok, reached).Ready, "the flown ascent reaches the -5% band");
+            var shy = new QuickReadout { margin = -0.29, fairingFits = true, maxQStale = false, suborbital = true, targetAlt = 10000, predictedApo_m = 9000 };
+            Assert.That(LaunchGate.Evaluate(ok, shy).code, Is.EqualTo("dv-margin"));
+            var orbit = new QuickReadout { margin = -0.1, fairingFits = true, maxQStale = false, suborbital = false, targetAlt = 200000, predictedApo_m = 400000 };
+            Assert.That(LaunchGate.Evaluate(ok, orbit).code, Is.EqualTo("dv-margin"), "an orbit needs the speed, not just the height");
+            var stale = new QuickReadout { margin = -0.29, fairingFits = true, maxQStale = true, suborbital = true, targetAlt = 10000 };
+            Assert.That(LaunchGate.Evaluate(ok, stale).code, Is.EqualTo("dv-margin"), "no flown ascent, no exemption");
         }
     }
 }
