@@ -59,17 +59,21 @@ namespace Kestrel.Core.Vehicle
             if (so != null && so.count > 0)
             {
                 var m = Mass.StrapOnMasses(c, d); var e = Point(c, so);
-                o.Add(new StackEntry { thrustSL = e.thrustSL * so.engineCount * so.count, thrustVac = e.thrustVac * so.engineCount * so.count, ispSL = e.ispSL, ispVac = e.ispVac, propMass = m.prop, dryMass = m.dry, diameter = diameter, Cd = Cd, role = "strapons", parallel = true, crossfeed = so.crossfeed, count = so.count, throttleMin = ThrottleMin(e) });
+                var strap = new StackEntry { thrustSL = e.thrustSL * so.engineCount * so.count, thrustVac = e.thrustVac * so.engineCount * so.count, ispSL = e.ispSL, ispVac = e.ispVac, propMass = m.prop, dryMass = m.dry, diameter = diameter, Cd = Cd, role = "strapons", parallel = true, crossfeed = so.crossfeed, count = so.count, throttleMin = ThrottleMin(e) };
+                ApplyLoadedPropellant(c, strap, so);
+                o.Add(strap);
             }
             for (int i = 0; i < d.stages.Count; i++)
             {
                 var s = d.stages[i]; var m = masses[i]; var e = Point(c, s); int n = s.engineCount;
-                o.Add(new StackEntry
+                var core = new StackEntry
                 {
                     thrustSL = e.thrustSL * n, thrustVac = e.thrustVac * n, ispSL = e.ispSL, ispVac = e.ispVac, propMass = m.usableProp, dryMass = m.dry,
                     diameter = i == 0 ? diameter : Math.Max(s.diameter, d.fairingDiameter), Cd = Cd, role = "core", index = i, reserveMass = m.landingProp,
                     throttle = e.throttle != null ? (double[])e.throttle.Clone() : null, restart = e.restart, throttleMin = ThrottleMin(e),
-                });
+                };
+                ApplyLoadedPropellant(c, core, s);
+                o.Add(core);
             }
             var last = o[o.Count - 1];
             last.isLast = true; last.payloadMass = d.payloadMass; last.fairingMass = Mass.FairingMass(d);
@@ -104,6 +108,24 @@ namespace Kestrel.Core.Vehicle
         }
 
         static double ThrottleMin(EnginePoint e) => e.throttle != null && e.throttle.Length > 0 ? e.throttle[0] : 0;
+
+        /// <summary>
+        /// Matched fuel keeps the catalog bell (goldens stay put). A different load keeps the
+        /// engine's mass flow and scales thrust and Isp by the loaded propellant's vacuum Isp.
+        /// </summary>
+        static void ApplyLoadedPropellant(Catalog c, StackEntry entry, StagePart part)
+        {
+            if (c == null || entry == null || part == null) return;
+            if (!c.PropellantById.TryGetValue(part.propellant ?? "", out var loaded)) return;
+            Propellant native = null;
+            if (c.EngineById.TryGetValue(part.engine ?? "", out var eng))
+                c.PropellantById.TryGetValue(eng.propellant ?? "", out native);
+            var bell = PropellantFlight.Scale(loaded, native, entry.thrustSL, entry.thrustVac, entry.ispSL, entry.ispVac);
+            entry.thrustSL = bell.ThrustSL;
+            entry.thrustVac = bell.ThrustVac;
+            entry.ispSL = bell.IspSL;
+            entry.ispVac = bell.IspVac;
+        }
 
         static void ApplyTune(StackEntry e, Tune t)
         {

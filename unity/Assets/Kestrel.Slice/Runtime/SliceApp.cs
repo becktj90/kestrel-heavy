@@ -34,6 +34,7 @@ namespace Kestrel.Slice
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; Kestrel.Pad.PadLights padLights; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; RecoveryShow recovery; GameObject rocketGO;
         Kestrel.Vehicle.FinCluster landingFins; Kestrel.Vehicle.StrutCluster landingLegs;
         FlightChrome chrome;
+        FlightViewMode flightView = FlightViewMode.Auto;
         AscentHud ascentHud; Design flyingDesign;
         BirdFlockView birds;
         VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
@@ -345,7 +346,8 @@ namespace Kestrel.Slice
             issueChip.RegisterCallback<ClickEvent>(_ => { panel?.Show(HangarPanel.Tab.Data); if (designCollapsed) SetDesignCollapsed(false); });
             again.clicked += BackToDesign;
             chrome = gameObject.AddComponent<FlightChrome>();
-            chrome.Bind(hud, SetFlightPaused, RestartFlight, ExitToHome);
+            flightView = FlightCameraStore.Load();
+            chrome.Bind(hud, SetFlightPaused, RestartFlight, ExitToHome, OnFlightView, flightView);
             chrome.Layout(UnitsPerPoint());
             // Accessibility labels (VoiceOver wiring via UnityEngine.Accessibility is a listed gap; see RESULTS.md)
             launchButton.tooltip = "Roll out and launch the current design";
@@ -601,7 +603,11 @@ namespace Kestrel.Slice
             var mr = rocketGO.AddComponent<MeshRenderer>();
             if (flightMat != null) Destroy(flightMat);
             flightMat = bodyMat != null ? new Material(bodyMat) : null;
-            if (flightMat != null) { flightMat.color = HangarRocketView.Hex(design.liveryPrimary, Color.white); mr.sharedMaterial = flightMat; }
+            if (flightMat != null)
+            {
+                FlightSolidBody.Apply(flightMat, HangarRocketView.Hex(design.liveryPrimary, Color.white));
+                mr.sharedMaterial = flightMat;
+            }
             if (juice != null) juice.BindBody(flightMat);
             mr.forceRenderingOff = true;
             rocketView.Build(parts, rocketGO.transform, bodyMat);
@@ -616,6 +622,11 @@ namespace Kestrel.Slice
             AddLivery(r);
             AddFairing(r);
             flight.Plume = PlumeController.Create(rocketGO.transform, Vector3.zero, PlumeCluster.Footprint(PlumeCluster.LiftoffEngineCount(design), r.exitDiameter, r.nozzleExits), plumeMat);
+            if (design.stages != null && design.stages.Count > 0)
+            {
+                string fuelId = design.strapOns != null && design.StrapOnCount > 0 ? design.strapOns.propellant : design.stages[0].propellant;
+                flight.Plume.SetFuel(PropellantFlight.Flame(fuelId));
+            }
             flight.Plume.SetDeck(deckTop);
             flight.Plume.Configure(r.height, r.mesh.bounds.extents.x);
             flight.Plume.Apply(0, Atmosphere.P0, 0);
@@ -704,13 +715,34 @@ namespace Kestrel.Slice
             SetAssembledDrawn(!on);
         }
 
-        /// <summary>Flight draws the combined mesh (FailureHost can split it); the Hangar draws the parts.
-        /// BackToDesign rebuilds the rocket, which puts the parts back.</summary>
-        void ShowFlightMesh(bool on)
+        /// <summary>
+        /// The painted parts and tank shells are the solid body in the Hangar and in flight.
+        /// The combined lathe stays hidden until a failure cut needs it (FailureHost splits that mesh).
+        /// </summary>
+        void ShowFlightPicture() => ShowFlightPicture(failureShow != null && failureShow.Showing);
+
+        void ShowFlightPicture(bool cut)
         {
-            if (rocketView != null) rocketView.SetVisible(!on);
+            if (rocketView != null) rocketView.SetVisible(!cut);
             var mr = rocketGO != null ? rocketGO.GetComponent<MeshRenderer>() : null;
-            if (mr != null) mr.forceRenderingOff = !on;
+            if (mr != null) mr.forceRenderingOff = !cut;
+        }
+
+        void OnFlightView(FlightViewMode mode)
+        {
+            flightView = mode;
+            FlightCameraStore.Save(mode);
+        }
+
+        /// <summary>Auto keeps the altitude chase. Pad is an offset from the anchored ground, so a floating-origin rebase does not leave it behind.</summary>
+        Vector3 DesiredFlightOffset(Vector3 up, Vector3 vehiclePos)
+        {
+            var frame = FlightView.Of(flightView, rocketHeight);
+            if (frame.UseChase)
+                return ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude);
+            Vector3 local = up * (float)frame.Y + new Vector3((float)frame.X, 0f, (float)frame.Z);
+            if (frame.OnVehicle || ground == null) return local;
+            return ground.position + local - vehiclePos;
         }
 
         void SetAssembledDrawn(bool drawn)
@@ -1052,7 +1084,7 @@ namespace Kestrel.Slice
             if (explodeButton != null) explodeButton.text = "Parts";
             rocketView.SetSelected(session.Selected, false);
             rocketView.SetIssues(null);
-            ShowFlightMesh(true);
+            ShowFlightPicture(false);
             camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
             hud.RemoveFromClassList("hidden"); hud.BringToFront();
@@ -1214,7 +1246,7 @@ namespace Kestrel.Slice
             if (again != null) again.AddToClassList("hidden");
             var grid = hud != null ? hud.Q("hud-grid") : null;
             if (grid != null) grid.style.display = StyleKeyword.Null;
-            ShowFlightMesh(false);
+            ShowFlightPicture(false);
             if (hangarCam != null) hangarCam.enabled = true;
             if (session != null && rocketView != null) rocketView.SetSelected(session.Selected, true);
             BuildRocket();
@@ -1274,7 +1306,7 @@ namespace Kestrel.Slice
             bool reduced = hangarCam != null && hangarCam.ReduceMotion;
             if (juice != null) juice.Present(flight, rocketHeight, qLim, margin, reduced, Time.deltaTime);
             var v = vehicleRoot.position; var up = vehicleRoot.up;
-            camOffset = ChaseCamera.StepOffset(camOffset, ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude), 4f, Time.deltaTime);
+            camOffset = ChaseCamera.StepOffset(camOffset, DesiredFlightOffset(up, v), 4f, Time.deltaTime);
             // Manual orbit/zoom rides on the chase offset. Follow leaves the chase pose unchanged.
             // Lead is this frame only. Folding it into camOffset would be smoothed back in and grow about 15×.
             var framed = chrome != null ? chrome.Frame(camOffset) : camOffset;
@@ -1286,7 +1318,11 @@ namespace Kestrel.Slice
             Vector3 lead = juice != null ? juice.Lead : Vector3.zero;
             cam.transform.position = PadGround.ClampAboveGround(v + framed + lead, ground.position.y);
             var cp = cam.transform.position;
-            cam.transform.rotation = ChaseCamera.Aim(cp, v + up * rocketHeight * 0.5f, fov, (float)flight.Altitude, cp.y - ground.position.y);
+            Vector3 look = v + up * rocketHeight * 0.5f;
+            if (flightView == FlightViewMode.Auto)
+                cam.transform.rotation = ChaseCamera.Aim(cp, look, fov, (float)flight.Altitude, cp.y - ground.position.y);
+            else
+                cam.transform.LookAt(look, Vector3.up);
             if (juice != null)
                 cam.transform.position = PadGround.ClampAboveGround(
                     cam.transform.position + cam.transform.right * juice.Shake.x + cam.transform.up * juice.Shake.y,
@@ -1296,6 +1332,7 @@ namespace Kestrel.Slice
             recovery?.Present(Time.unscaledDeltaTime);
             if (recovery != null && ground != null) recovery.Aim(cam, ground.position.y);
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
+            ShowFlightPicture();
             RefreshWebcast(flight.SimTime, true);
             ascentHud?.Present(flight);
             }
