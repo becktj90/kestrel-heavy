@@ -279,9 +279,9 @@ namespace Kestrel.Core.Designer
 
         static void Fairing(Design d, Catalog c, QuickReadout readout)
         {
-            if (d.payloadType == null || !c.PayloadById.TryGetValue(d.payloadType, out var pl)) return;
-            // Catalog payloads do not carry a diameter yet. The volume check still runs; diameter margin uses 0.
-            var fit = PayloadFit.Check(d, new PayloadSpec { id = pl.id, volume = pl.volume, diameter = 0 });
+            var spec = PayloadFit.SpecFor(c, d);
+            if (spec == null) return;
+            var fit = PayloadFit.Check(d, spec);
             readout.fairingFits = fit.fits;
             readout.fairingVolumeMargin_m3 = fit.volumeMargin;
             readout.fairingDiameterMargin_m = fit.diameterMargin;
