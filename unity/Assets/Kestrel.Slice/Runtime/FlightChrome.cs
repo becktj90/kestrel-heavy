@@ -84,6 +84,7 @@ namespace Kestrel.Slice
             RefreshFollow();
             RefreshCamera();
             RefreshAudio();
+            hud.RegisterCallback<GeometryChangedEvent>(_ => hud.schedule.Execute(() => Kestrel.Game.Shell.TextFit.Apply(menu)));
         }
 
         public void Layout(float unitsPerPoint)
@@ -100,15 +101,20 @@ namespace Kestrel.Slice
             FitTool(pause, upp);
             if (menu == null) return;
             var title = menu.Q<Label>("pause-title");
-            if (title != null) title.style.fontSize = 22f * upp;
+            if (title != null) title.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(title, 22f * upp);
             menu.Query<Button>().ForEach(b =>
             {
                 b.style.minHeight = h;
-                b.style.height = h;
-                b.style.minWidth = 220f * upp;
-                b.style.fontSize = 17f * upp;
+                b.style.minWidth = h;
+                b.style.whiteSpace = WhiteSpace.Normal;
+                b.style.textOverflow = TextOverflow.Clip;
+                float fitted = Kestrel.Game.Shell.TextFit.Cap(b, 17f * upp);
+                b.style.fontSize = fitted;
                 b.style.marginTop = 8f * upp;
+                b.style.height = StyleKeyword.Auto;
+                b.style.maxWidth = Length.Percent(100);
             });
+            Kestrel.Game.Shell.TextFit.Apply(menu);
         }
 
         public void Show(bool paused)

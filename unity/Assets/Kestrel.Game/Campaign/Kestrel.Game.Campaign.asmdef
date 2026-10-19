@@ -4,6 +4,7 @@
     "references": [
         "Kestrel.Core",
         "Kestrel.Game.Guide.Core",
+        "Kestrel.Game.TextFit",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],

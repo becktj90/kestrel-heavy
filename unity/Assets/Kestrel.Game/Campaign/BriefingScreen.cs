@@ -126,6 +126,7 @@ namespace Kestrel.Game.MissionSelect
             StyleKey(leave, "briefing-back");
             leave.userData = back;
             column.Add(leave);
+            root.RegisterCallback<GeometryChangedEvent>(_ => Kestrel.Game.Shell.TextFit.Apply(root));
             return root;
         }
 

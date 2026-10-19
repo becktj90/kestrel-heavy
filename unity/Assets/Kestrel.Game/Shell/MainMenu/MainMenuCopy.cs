@@ -18,6 +18,10 @@ namespace Kestrel.Game.Shell
         public const string ThrumLine = "Oh! A visitor. Mind the oil. I am Thrum. I keep this hangar, and I talk to wrenches.";
         /// <summary>Advance of <see cref="ThrumLine"/> at 100px in Space Grotesk Medium, no tracking.</summary>
         public const float ThrumWidth100 = 3844.30f;
+        /// <summary>The landscape row's teaser when the whole line needs more than two lines there
+        /// (WebHomeType.HintShort). The row's tooltip and tap note still carry <see cref="ThrumLine"/>.
+        /// Its advance is HomeWideText.HintShort.</summary>
+        public const string ThrumShort = "Oh! A visitor. Mind the oil. I am Thrum.";
         public const string Eyebrow = "BECKIFY AEROSPACE  ·  EST. 1969";
         public const string SoonTag = "SOON";
         public const string FuelStat = "Fuel 92%";

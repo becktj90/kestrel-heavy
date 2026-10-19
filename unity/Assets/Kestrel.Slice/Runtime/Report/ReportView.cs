@@ -83,9 +83,12 @@ namespace Kestrel.Slice
             var fix = new Button(() => onFix?.Invoke()) { name = "failure-fix", text = "Fix it" };
             Place(fix, frame.Fix);
             ReportCardChrome.PaintButton(fix, (float)Math.Max(ReportCardChrome.HitPt, frame.Fix.H), "fix");
+            fix.style.whiteSpace = WhiteSpace.Normal;
             fix.tooltip = link.VoiceOver;
             fix.userData = link.Uri;
             root.Add(fix);
+            Kestrel.Game.Shell.TextFit.Apply(root);
+            root.RegisterCallback<GeometryChangedEvent>(_ => Kestrel.Game.Shell.TextFit.Apply(root));
             return root;
         }
 

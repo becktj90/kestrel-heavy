@@ -75,6 +75,8 @@ namespace Kestrel.Slice
             root.Add(foot);
             ReportCardChrome.Escape = actions != null ? actions.Home : null;
             root.tooltip = debriefSafe.CauseTitle + ". " + debriefSafe.Numbers;
+            Kestrel.Game.Shell.TextFit.Apply(root);
+            root.RegisterCallback<GeometryChangedEvent>(_ => Kestrel.Game.Shell.TextFit.Apply(root));
             return root;
         }
 

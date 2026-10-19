@@ -191,6 +191,8 @@
 .kh-mm-wide .kh-mm-stats,
 .kh-mm-wide .kh-mm-hint,
 .kh-mm-wide .kh-mm-thrum { overflow: hidden; }
+/* The landscape row holds one text line (WebHomeLayout.HintBlock). The portrait and "I am Thrum." name him there. */
+.kh-mm-wide .kh-mm-thrum-name { display: none; }
 .kh-mm-wide .kh-mm-kestrel,
 .kh-mm-wide .kh-mm-heavy,
 .kh-mm-wide .kh-mm-launch-label,

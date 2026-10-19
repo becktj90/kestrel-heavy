@@ -96,6 +96,7 @@ namespace Kestrel.Game.Shell
             root.Add(designKey);
             var grid = new VisualElement { name = "mm-grid", pickingMode = PickingMode.Ignore };
             grid.AddToClassList("kh-mm-grid");
+            grid.style.flexShrink = 0;
             foreach (var it in MainMenuCopy.Tiles)
             {
                 Action act = null;
@@ -121,7 +122,9 @@ namespace Kestrel.Game.Shell
                 float topInset = Mathf.Max(0f, safe.worldBound.yMin - full.worldBound.yMin);
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
                 var z = MenuTypeScale.Compute(w, h, topInset, botInset);
+                TraceTitle("geometry in", root);
                 ApplyScale(root, z);
+                TraceTitle("after ApplyScale", root);
                 bool wide = ForceWide.HasValue
                     ? ForceWide.Value && WebLayoutMode.IsLandscape(w, h)
                     : WebLayoutMode.UseWide(Screen.width, Screen.height);
@@ -135,10 +138,14 @@ namespace Kestrel.Game.Shell
                     ForgetColumnFit(root);
                 }
                 else if (!root.ClassListContains("kh-mm-wide")) ContainColumn(root, z);
+                TraceTitle("after ContainColumn", root);
                 PlaceHero(root, full, dusk);
                 top.style.height = MainMenuCopy.BarHeight(h, topInset);
                 bottom.style.height = MainMenuCopy.BarHeight(h, botInset);
                 MainMenuLayout.HeroLift = MeasureLift(root, safe, full, z, h, topInset);
+                TextFit.Apply(root);
+                if (full != null) TextFit.Apply(full);
+                TraceTitle("after TextFit", root);
             });
             launchKey.RegisterCallback<GeometryChangedEvent>(_ =>
             {
@@ -222,7 +229,7 @@ namespace Kestrel.Game.Shell
             var type = frame.Type;
             Font(root.Q("mm-kestrel"), WidePt(type.Title * fs), 0.02f);
             Font(root.Q("mm-kestrel-shadow"), WidePt(type.Title * fs), 0.02f);
-            Font(root.Q("mm-eyebrow"), Mathf.Clamp(type.Title * fs * 0.18f, WideTypeFloor, 18f), 0.12f);
+            Font(root.Q("mm-eyebrow"), Mathf.Clamp(type.Title * fs * 0.18f, 10f, 18f), 0.12f);
             Font(root.Q("mm-heavy"), WidePt(type.Tagline * fs), 0.42f);
             var kestrel = root.Q("mm-kestrel");
             if (kestrel != null) { kestrel.style.whiteSpace = WhiteSpace.NoWrap; kestrel.style.overflow = Overflow.Hidden; }
@@ -313,8 +320,10 @@ namespace Kestrel.Game.Shell
                 e.style.fontSize = soon;
                 e.style.letterSpacing = soon * 0.15f;
             });
-            Font(root.Q("mm-hint-line"), type.Hint * fs, 0f);
-            var hint = root.Q("mm-hint-line");
+            var hint = root.Q<Label>("mm-hint-line");
+            // The row is sized for this text (WebHomeLayout.FitHint). Tap opens the whole line.
+            if (hint != null) hint.text = type.HintShort ? MainMenuCopy.ThrumShort : MainMenuCopy.ThrumLine;
+            Font(hint, type.Hint * fs, 0f);
             if (hint != null) { hint.style.whiteSpace = WhiteSpace.Normal; hint.style.overflow = Overflow.Hidden; }
             FitCardText(root.Q("home-launch"), true);
             FitCardText(root.Q("home-design"), false);
@@ -379,18 +388,20 @@ namespace Kestrel.Game.Shell
             card.style.overflow = Overflow.Hidden;
             var label = card.Q(className: launch ? "kh-mm-launch-label" : "kh-mm-design-label");
             var cap = card.Q(className: launch ? "kh-mm-launch-caption" : "kh-mm-design-caption");
-            if (label != null) { label.style.whiteSpace = WhiteSpace.NoWrap; label.style.overflow = Overflow.Hidden; }
-            if (cap != null) { cap.style.whiteSpace = WhiteSpace.Normal; cap.style.overflow = Overflow.Hidden; }
+            if (label != null) { label.style.whiteSpace = WhiteSpace.Normal; label.style.textOverflow = TextOverflow.Clip; label.style.overflow = Overflow.Hidden; }
+            if (cap != null) { cap.style.whiteSpace = WhiteSpace.Normal; cap.style.textOverflow = TextOverflow.Clip; cap.style.overflow = Overflow.Hidden; }
         }
 
-        /// <summary>Wide web labels stay at least 14 pt. The column scrolls when that stack is taller than the screen.</summary>
-        const float WideTypeFloor = 14f;
-
-        static float WidePt(float size) => size < WideTypeFloor ? WideTypeFloor : size;
+        /// <summary>
+        /// Wide web type is already fitted to the card. A 14 pt floor here is what pushed
+        /// "DESIGN FIRST" and the captions out of a narrow landscape column.
+        /// </summary>
+        static float WidePt(float size) => size;
 
         static void Font(VisualElement e, float size, float trackEm)
         {
             if (e == null) return;
+            size = TextFit.Cap(e, size);
             e.style.fontSize = size;
             e.style.letterSpacing = trackEm > 0f ? size * trackEm : 0f;
         }
@@ -490,6 +501,8 @@ namespace Kestrel.Game.Shell
                 hint.style.height = StyleKeyword.Null;
                 hint.style.minHeight = StyleKeyword.Null;
             }
+            var hintLine = root.Q<Label>("mm-hint-line");
+            if (hintLine != null) hintLine.text = MainMenuCopy.ThrumLine;
             var grid = root.Q("mm-grid");
             Drop(grid);
             if (grid != null)
@@ -535,6 +548,33 @@ namespace Kestrel.Game.Shell
             public float TitleH;
         }
 
+        /// <summary>Height of the Thrum strip for a two-to-four line caption at the hint face.
+        /// The portrait and the button padding eat width the column total does not.</summary>
+        static float ThrumBlock(VisualElement root, MenuTypeScale.Sizes z)
+        {
+            float col = root.resolvedStyle.width;
+            if (float.IsNaN(col) || col < 8f) col = root.layout.width;
+            float inner = Mathf.Max(48f, col - 24f - 20f - 30f);
+            float size = Mathf.Max(14f, z.Hint);
+            float textW = MainMenuCopy.ThrumWidth100 * size / 100f;
+            int lines = (int)Mathf.Ceil(textW * 1.08f / inner);
+            if (lines < 1) lines = 1;
+            if (lines > 4) lines = 4;
+            float name = Mathf.Max(14f, z.Hint) * MenuTypeScale.LineH;
+            return 8f + name + lines * size * MenuTypeScale.LineH + 6f;
+        }
+
+        static void PinThrum(VisualElement root, float h)
+        {
+            var hint = root != null ? root.Q("mm-hint") : null;
+            if (hint == null || h < 8f) return;
+            hint.style.height = h;
+            hint.style.minHeight = h;
+            hint.style.maxHeight = h;
+            hint.style.flexShrink = 0;
+            hint.style.overflow = Overflow.Hidden;
+        }
+
         /// <summary>
         /// Phone column only. Portrait already fits, so this returns without touching styles.
         /// A short landscape column (SE 667×375) overflows once the spacer hits zero; shrink padding
@@ -567,22 +607,33 @@ namespace Kestrel.Game.Shell
             {
                 ClearContainment(root);
                 ForgetColumnFit(root);
+                // Nothing re-fires a geometry event once the caps are gone, so the face a short pass
+                // sealed would stay small. Put the design type back now; the next pass re-cuts it if
+                // the new column is still short.
+                RestoreTitleType(root, title, z);
                 return;
             }
 
             float titleH = fit != null && fit.TitleH > 1f ? fit.TitleH : naturalTitle;
             float padTop = MenuTypeScale.TopPad;
             float padBot = z.HintBand;
-            float need = padTop + padBot + titleH + z.ControlsH;
+            // The Thrum strip sits under the tiles and is not part of ControlsH. Leaving it out
+            // let a wrapped caption grow over the Missions tile on a short landscape column.
+            float hint = root.Q("mm-hint") != null ? ThrumBlock(root, z) : 0f;
+            float need = padTop + padBot + titleH + z.ControlsH + hint;
             if (need <= host + 1f)
             {
                 ClearContainment(root);
                 ForgetColumnFit(root);
+                PinThrum(root, hint);
+                RestoreTitleType(root, title, z);
                 return;
             }
 
-            // Recompute from the natural title. Clearing first drops a cap this pass no longer needs.
+            // Recompute from the natural title. Clearing first drops a cap this pass no longer needs,
+            // and the wordmark goes back to the design face unless the title cut below shrinks it again.
             ClearContainment(root);
+            RestoreTitleType(root, title, z);
             float overflow = need - host;
             const float topFloor = 8f;
             const float botFloor = 32f;
@@ -609,6 +660,7 @@ namespace Kestrel.Game.Shell
             }
 
             float stats = z.StatsH, launch = z.LaunchH, design = z.DesignH, tile = z.TileH;
+            Cut(root.Q("mm-hint"), ref hint, MenuTypeScale.HitMin);
             Cut(root.Q("mm-stats"), ref stats, 28f);
             Cut(root.Q("home-design"), ref design, MenuTypeScale.HitMin);
             Cut(root.Q("home-launch"), ref launch, MenuTypeScale.HitMin);
@@ -649,11 +701,13 @@ namespace Kestrel.Game.Shell
                     var eye = root.Q("mm-eyebrow");
                     if (kestrel != null) kestrel.style.fontSize = size;
                     if (shadow != null) shadow.style.fontSize = size;
+                    TraceTitle("title cut " + next.ToString("0.#") + "px", root);
                     if (heavy != null) heavy.style.fontSize = Mathf.Max(11f, size * 0.45f);
                     if (eye != null) eye.style.fontSize = Mathf.Max(9f, size * 0.32f);
                 }
             }
 
+            PinThrum(root, hint);
             var saved = root.userData as ColumnFit;
             if (saved == null)
             {
@@ -661,6 +715,48 @@ namespace Kestrel.Game.Shell
                 root.userData = saved;
             }
             saved.Host = host;
+        }
+
+        /// <summary>Drops the fitted faces under the title and writes the design type scale back.</summary>
+        static void RestoreTitleType(VisualElement root, VisualElement title, MenuTypeScale.Sizes z)
+        {
+            TextFit.Release(title);
+            var word = root.Q("mm-kestrel");
+            var shadow = root.Q("mm-kestrel-shadow");
+            var heavy = root.Q("mm-heavy");
+            var eye = root.Q("mm-eyebrow");
+            if (word != null) word.style.fontSize = z.Title;
+            if (shadow != null) shadow.style.fontSize = z.Title;
+            if (heavy != null) heavy.style.fontSize = z.Tagline;
+            if (eye != null) eye.style.fontSize = Mathf.Max(14f, z.Hint);
+            TraceTitle("RestoreTitleType", root);
+        }
+
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, string> TitleTraced =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<VisualElement, string>();
+
+        /// <summary>Logs the wordmark's written and resolved face with the column state, editor and development only,
+        /// and only in batch mode (CI) or with <see cref="TextFit.Trace"/> set. Repeats of the same state are skipped.</summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        static void TraceTitle(string where, VisualElement root)
+        {
+            if (root == null || !TextFit.TraceOn) return;
+            var word = root.Q<Label>("mm-kestrel");
+            if (word == null) return;
+            var title = root.Q("mm-title");
+            var set = word.style.fontSize;
+            string state = "set " + (set.keyword == StyleKeyword.Undefined ? set.value.value.ToString("0.###") : set.keyword.ToString())
+                + " resolved " + word.resolvedStyle.fontSize.ToString("0.###")
+                + " word " + word.layout.width.ToString("0.#") + "x" + word.layout.height.ToString("0.#")
+                + " title " + (title != null ? title.layout.height.ToString("0.#") + (title.style.height.keyword == StyleKeyword.Undefined ? " pinned" : "") : "-")
+                + " root " + root.layout.height.ToString("0.#")
+                + (root.ClassListContains("kh-mm-wide") ? " wide" : "")
+                + (root.userData is ColumnFit fit ? " fit@" + fit.Host.ToString("0.#") : "")
+                + " | " + TextFit.HoldInfo(word);
+            if (TitleTraced.TryGetValue(word, out var last) && last == where + state) return;
+            TitleTraced.Remove(word);
+            TitleTraced.Add(word, where + state);
+            Debug.Log("[kh-title] " + where + ": " + state);
         }
 
         /// <summary>Eyebrow, wordmark and tagline when the title's layout height is not the content size.</summary>
@@ -1197,20 +1293,42 @@ namespace Kestrel.Game.Shell
         /// so they win over the USS defaults (which stay as the pre-layout fallback).</summary>
         public static void ApplyScale(VisualElement root, MenuTypeScale.Sizes z)
         {
-            void Font(string cls, float size, float trackEm)
+            // The wordmark block (eyebrow, KESTREL, HEAVY) is owned by ContainColumn: it writes the design face
+            // when the column fits and the cut face when it does not. A sealed TextFit face here would survive a
+            // grow, because the label's own box follows that small face and nothing else re-fires the fit.
+            void Font(string cls, float size, float trackEm, bool sealed_ = true)
             {
-                root.Query(className: cls).ForEach(e => { e.style.fontSize = size; e.style.letterSpacing = size * trackEm; });
+                root.Query(className: cls).ForEach(e =>
+                {
+                    float use = sealed_ ? TextFit.Cap(e, size) : size;
+                    e.style.fontSize = use;
+                    e.style.letterSpacing = use * trackEm;
+                });
             }
-            Font("kh-mm-kestrel", z.Title, .04f);
-            Font("kh-mm-heavy", z.Tagline, .5f);
+            bool column = !root.ClassListContains("kh-mm-wide");   // the wide frame fits its own wordmark (ApplyWebWide)
+            if (column) TextFit.Release(root.Q("mm-title"));
+            Font("kh-mm-kestrel", z.Title, .04f, !column);
+            Font("kh-mm-heavy", z.Tagline, .5f, !column);
             Font("kh-mm-launch-label", z.LaunchLabel, .10f);
             Font("kh-mm-launch-caption", z.LaunchCaption, 0f);
             Font("kh-mm-tile-caption", z.TileCaption, 0f);
             Font("kh-mm-soon", z.Soon, .15f);
             Font("kh-mm-hint", z.Hint, 0f);
-            Font("kh-mm-eyebrow", Mathf.Max(14f, z.Hint), .12f);
-            Font("kh-mm-design-label", Mathf.Max(14f, z.LaunchLabel * 0.72f), .03f);
+            Font("kh-mm-eyebrow", Mathf.Max(14f, z.Hint), .12f, !column);
+            Font("kh-mm-design-label", z.DesignLabel > 1f ? z.DesignLabel : Mathf.Max(14f, z.LaunchLabel * 0.72f), .03f);
             Font("kh-mm-design-caption", Mathf.Max(14f, z.LaunchCaption), 0f);
+            var designLabel = root.Q(className: "kh-mm-design-label");
+            if (designLabel != null)
+            {
+                designLabel.style.whiteSpace = WhiteSpace.Normal;
+                designLabel.style.textOverflow = TextOverflow.Clip;
+            }
+            var designCaption = root.Q(className: "kh-mm-design-caption");
+            if (designCaption != null)
+            {
+                designCaption.style.whiteSpace = WhiteSpace.Normal;
+                designCaption.style.textOverflow = TextOverflow.Clip;
+            }
             Font("kh-mm-thrum-name", Mathf.Max(14f, z.Hint), 0f);
             // Explicit heights (not min-height) so the block is exactly what MenuTypeScale computed; Unity cannot inflate it.
             // The title must not flex-shrink before ContainColumn measures it, or a short column reads height 0 and never caps.
@@ -1237,6 +1355,14 @@ namespace Kestrel.Game.Shell
             {
                 design.style.height = z.DesignH; design.style.minHeight = z.DesignH; design.style.flexShrink = 0;
                 design.style.marginTop = 0; design.style.marginBottom = MenuTypeScale.Gap;
+                design.style.paddingLeft = 12f; design.style.paddingRight = 12f;
+                design.style.paddingTop = 8f; design.style.paddingBottom = 8f;
+            }
+            var hintLine = root.Q("mm-hint-line");
+            if (hintLine != null)
+            {
+                hintLine.style.whiteSpace = WhiteSpace.Normal;
+                hintLine.style.textOverflow = TextOverflow.Clip;
             }
             foreach (var it in MainMenuCopy.Tiles)
             {

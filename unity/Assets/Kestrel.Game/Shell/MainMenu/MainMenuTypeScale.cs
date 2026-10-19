@@ -44,8 +44,8 @@ namespace Kestrel.Game.Shell
         public struct Sizes
         {
             public float Scale, Title, Tagline, LaunchLabel, LaunchCaption, TileName, TileCaption, Soon, Hint;
-            public float Pad, TileW, TileInner, TileH, LaunchH, DesignH, StatsH, StatFont, LaunchCaptionW, ControlsH, HintBand, BottomReserve, TitleBottom, ControlsTop, HeroLift;
-            public int TileCaptionLines, LaunchCaptionLines;
+            public float Pad, TileW, TileInner, TileH, LaunchH, DesignH, DesignLabel, StatsH, StatFont, LaunchCaptionW, ControlsH, HintBand, BottomReserve, TitleBottom, ControlsTop, HeroLift;
+            public int TileCaptionLines, LaunchCaptionLines, DesignCaptionLines;
         }
 
         public static float TextW(string s, float size) => MainMenuMetrics.W(s) * size / 100f;
@@ -75,9 +75,27 @@ namespace Kestrel.Game.Shell
             z.LaunchCaptionLines = Lines(TextW(MainMenuCopy.LaunchCaption, z.LaunchCaption), z.LaunchCaptionW);
             float padV = Clamp(8f * s, 6f, 10f);
             z.LaunchH = Math.Max(HitMin, 2f * LaunchBorder + 2f * padV + z.LaunchLabel * LineH + z.LaunchCaptionLines * z.LaunchCaption * LineH);
-            z.DesignH = Math.Max(HitMin, Math.Min(z.LaunchH - 4f, 2f * 2f + 8f + z.LaunchLabel * 0.72f * LineH + z.LaunchCaption * LineH));
+            // DESIGN FIRST and its caption share the button with the lamp and the blueprint glyph.
+            // The face shrinks to that inner width, and the button grows with the caption's lines,
+            // so the words are not clipped by the old one-line height.
+            const float DesignAt100 = 777.65f;
+            const float DesignCaptionAt100 = 1223.70f;
+            float designInner = Math.Max(1f, grid - 2f * 1f - 24f - 16f - 30f - 8f);
+            float designWant = Math.Max(14f, z.LaunchLabel * 0.72f);
+            z.DesignLabel = Math.Max(14f, Math.Min(designWant, 100f * designInner / DesignAt100));
+            float designCap = Math.Max(14f, z.LaunchCaption);
+            z.DesignCaptionLines = Lines(DesignCaptionAt100 * designCap / 100f, designInner);
+            if (z.DesignCaptionLines > 3) z.DesignCaptionLines = 3;
+            z.DesignH = Math.Max(HitMin, 2f * 2f + 16f + z.DesignLabel * LineH + z.DesignCaptionLines * designCap * LineH + 2f);
             // 44pt hit plus the glass border. Taller than this pushes the SE controls block over 42% of the usable height.
             z.StatsH = 46f;
+            if (w < 500f)
+            {
+                float usable = Math.Max(1f, h - Math.Max(0f, topInset) - Math.Max(0f, bottomInset));
+                float others = z.StatsH + z.LaunchH + z.TileH + 4f * Gap;
+                float room = 0.42f * usable - others;
+                if (room < z.DesignH) z.DesignH = Math.Max(HitMin, room);
+            }
             z.StatFont = Math.Max(14f, z.Hint + 2f);
             // The bottom film-reel bar is BarHeight(h, inset) tall from the screen edge and covers the hint. The tiles must end above it,
             // so the reserve is the whole bar (it already includes the bottom safe inset), not just the inset. The last tile row's own
