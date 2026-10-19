@@ -403,6 +403,13 @@ namespace Kestrel.Slice
         {
             if (Kestrel.Game.Shell.WebPanelScale.Wide) return 1f;
             float wPt = Screen.width / DesignFraming.PixelsPerPoint(Screen.width, Screen.height, Screen.dpi);
+            // Portrait web: a CSS px is the point. Screen.width is device px and Screen.dpi is a desktop
+            // value, so at devicePixelRatio 1 the iOS fallback (2x/3x) halved the points and doubled the type.
+            if (Application.platform == RuntimePlatform.WebGLPlayer)
+            {
+                Kestrel.Game.Shell.WebViewport.Css(out float cssW, out _);
+                if (cssW > 1f) wPt = cssW;
+            }
             return ui != null && ui.layout.width > 0 && wPt > 0 ? ui.layout.width / wPt : 3f;
         }
 
@@ -512,6 +519,7 @@ namespace Kestrel.Slice
             if (!WebLayoutMode.UseWide(Screen.width, Screen.height) || ui.layout.width < 8f || ui.layout.height < 8f)
             {
                 WebDesignChrome.Clear(ui);
+                designer?.SetWebColumn(0f, 0f);
                 return;
             }
             // Lay out in panel units: the landscape panel is the 1280x720 reference (WebPanelScale), so the
@@ -524,6 +532,37 @@ namespace Kestrel.Slice
             var frame = WebDesignerLayout.Place(pw, ph,
                 (Screen.height - safe.yMax) / perY, safe.yMin / perY, safe.xMin / perX, (Screen.width - safe.xMax) / perX);
             WebDesignChrome.Apply(ui, frame);
+            ApplyWebDesignChrome(frame);
+        }
+
+        /// <summary>Web overlap audit, landscape: the pill in its own band under Home, the panel title
+        /// wrapping inside the panel, thumb-row words on one line, and the stepper told its column.</summary>
+        void ApplyWebDesignChrome(WebDesignerFrame frame)
+        {
+            if (frame == null || !frame.Wide) return;
+            if (issueChip != null)
+            {
+                issueChip.style.left = frame.Issue.X;
+                issueChip.style.top = frame.Issue.Y;
+                issueChip.style.maxWidth = frame.Issue.W;
+                issueChip.style.minHeight = frame.Issue.H;
+                issueChip.style.whiteSpace = WhiteSpace.NoWrap;
+            }
+            // "▼ Hopper •": a long mission name wraps inside the panel instead of running under the pill.
+            designToggle.style.height = StyleKeyword.Auto;
+            designToggle.style.minHeight = WebDesignerLayout.HomeH;
+            designToggle.style.whiteSpace = WhiteSpace.Normal;
+            foreach (var b in new[] { undoButton, redoButton, explodeButton, ui.Q<Button>(DesignerV3Panel.ToggleName) })
+            {
+                if (b == null) continue;
+                // "Parts" wrapped to "Part / s": whole words, and the row wraps whole buttons instead.
+                b.style.flexShrink = 0;
+                b.style.whiteSpace = WhiteSpace.NoWrap;
+            }
+            float padX = Mathf.Max(12f, designPanel.resolvedStyle.paddingLeft) + Mathf.Max(12f, designPanel.resolvedStyle.paddingRight);
+            float toggleH = designToggle.resolvedStyle.height > 1f ? designToggle.resolvedStyle.height : 56f;
+            float padY = Mathf.Max(8f, designPanel.resolvedStyle.paddingBottom) + Mathf.Max(0f, designPanel.resolvedStyle.paddingTop);
+            designer?.SetWebColumn(frame.Parts.W - padX, frame.Parts.H - toggleH - padY);
         }
 
         void SetDesignCollapsed(bool collapsed)
@@ -584,7 +623,10 @@ namespace Kestrel.Slice
                     : ShownText.Plain(firstBlock.code, firstBlock.kid, firstBlock.engineer);
             string reason = ok ? "" : firstBlock != null ? "Fix first: " + reasonBody : gate.Line;
             launchReason.text = reason;
-            launchReason.EnableInClassList("hidden", ok);
+            // The free designer's launch row already shows this reason with its Fix it. Showing it here
+            // too printed the out-of-fuel warning twice on the first designer view.
+            bool designerSaysIt = designer != null && designer.Open && designer.Stepper != null && !designer.Stepper.IsGuided;
+            launchReason.EnableInClassList("hidden", ok || designerSaysIt);
             launchButton.tooltip = ok ? "Roll out and launch the current design"
                 : gate.state == LaunchGateState.Checking ? LaunchGate.Checking : "Launch unavailable. " + reason;
             if (undoButton != null)

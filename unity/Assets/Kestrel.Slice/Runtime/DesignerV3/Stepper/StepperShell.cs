@@ -31,6 +31,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         public Func<DesignerV3Tab> Tab;
         public VisualElement[] HideWhenGuided;
         public Action Rebuild;
+        /// <summary>Stepper root size in points when the host knows it (the landscape web parts column). Zero otherwise.</summary>
+        public Func<Vector2> Column;
 
         public Catalog Catalog => Session.catalog;
         public JsonObject Design => Session.Design;
@@ -63,6 +65,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         bool builtEngineer;
         bool builtMore;
         bool builtConfirm;
+        Vector2 builtColumn;
+        StepperColumnFrame columnFrame;
         string focusField;
         string shownCode;
         string fixNote;
@@ -162,7 +166,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 && builtStep == progress.Current
                 && builtEngineer == bridge.IsEngineer
                 && builtMore == moreOpen
-                && builtConfirm == confirmVisible;
+                && builtConfirm == confirmVisible
+                && builtColumn == ColumnSize();
             if (same)
             {
                 RefreshInPlace(check);
@@ -364,11 +369,20 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             ConsumeNote(check);
 
             root.tooltip = "Guided designer. " + StepperCatalog.Header(progress.Current) + ". " + def.Title + ".";
-            root.Add(Header(ui, def));
-            root.Add(Progress(ui));
+            // Web overlap audit: every block above and below the scroller keeps its real height
+            // (flex-shrink 0). Only the scroller gives way. In a known column (landscape web) the Core
+            // frame decides tiles per row and whether the check card scrolls with the controls.
+            var size = ColumnSize();
+            string head = Headline(check) ?? "";
+            columnFrame = size.x > 1f && size.y > 1f
+                ? StepperColumnLayout.Solve(size.x, size.y, def.Title, head.Length + 3, (Detail(check, head) ?? "").Length, confirmVisible, true)
+                : null;
+            bool checkInScroll = !engineer && columnFrame != null && columnFrame.CheckInScroll;
+            root.Add(Keep(Header(ui, def)));
+            root.Add(Keep(Progress(ui)));
             var compare = CompareBanner(ui);
-            if (compare != null) root.Add(compare);
-            if (!engineer) root.Add(CheckCard(ui, check));
+            if (compare != null) root.Add(Keep(compare));
+            if (!engineer && !checkInScroll) root.Add(Keep(CheckCard(ui, check)));
 
             scroll = new ScrollView(ScrollViewMode.Vertical) { name = "stepper-scroll" };
             scroll.style.flexGrow = 1;
@@ -376,6 +390,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             ApplyScrollMax();
             WatchScroll();
             scroll.RegisterCallback<PointerDownEvent>(OnScrollPointer, TrickleDown.TrickleDown);
+            if (checkInScroll) scroll.Add(Keep(CheckCard(ui, check)));
             if (engineer)
             {
                 scroll.Add(Rocket(ui, def));
@@ -391,42 +406,75 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             if (engineer) scroll.Add(CheckCard(ui, check));
             root.Add(scroll);
 
-            if (confirmVisible) root.Add(Confirm(ui));
+            if (confirmVisible) root.Add(Keep(Confirm(ui)));
             if (progress.Current == DesignerStep.Review)
-                root.Add(AllPartsButton(ui, "stepper-all-parts-footer", "All parts"));
-            root.Add(Nav(ui, check));
+                root.Add(Keep(AllPartsButton(ui, "stepper-all-parts-footer", "All parts")));
+            root.Add(Keep(Nav(ui, check)));
 
             builtGuided = true;
             builtStep = progress.Current;
             builtEngineer = engineer;
             builtMore = moreOpen;
             builtConfirm = confirmVisible;
+            builtColumn = size;
+        }
+
+        Vector2 ColumnSize()
+        {
+            var size = bridge.Column != null ? bridge.Column() : Vector2.zero;
+            return new Vector2(Mathf.Round(size.x), Mathf.Round(size.y));
+        }
+
+        /// <summary>A sticky block keeps its laid-out height instead of being squeezed under its text.</summary>
+        static VisualElement Keep(VisualElement e)
+        {
+            if (e == null) return null;
+            e.style.flexShrink = 0;
+            e.style.flexGrow = 0;
+            return e;
+        }
+
+        /// <summary>A button that keeps its word on one line: it wraps to the next row as a whole.</summary>
+        static Button Word(Button b)
+        {
+            b.style.flexShrink = 0;
+            b.style.whiteSpace = WhiteSpace.NoWrap;
+            return b;
         }
 
         VisualElement Header(HangarUi ui, StepDef def)
         {
+            // Three rows, each its own height: "STEP 3 OF 7", the wrapped title, then the Simple |
+            // Engineer toggle and All parts. They used to share two rows, so a two-line title drew
+            // over the tabs and "Engineer" / "All parts" stacked inside one button.
             var box = ui.Column();
             box.name = "stepper-header";
-            var top = ui.Row(0f);
-            top.style.justifyContent = Justify.SpaceBetween;
+            box.style.flexShrink = 0;
             var count = ui.Text(StepperCatalog.Header(def.Step), HangarUi.SmallPt, HangarUi.Dim, bold: true);
             count.name = "stepper-count";
-            top.Add(count);
-            top.Add(DepthToggle(ui));
-            box.Add(top);
+            count.style.whiteSpace = WhiteSpace.NoWrap;
+            count.style.flexShrink = 0;
+            box.Add(count);
 
-            var titleRow = ui.Row(0f);
-            titleRow.style.justifyContent = Justify.SpaceBetween;
             var title = ui.Text(def.Title, HangarUi.TitlePt + 4f, HangarUi.TextColor, bold: true);
             title.name = "stepper-title";
-            title.style.flexShrink = 1;
-            titleRow.Add(title);
-            var all = ui.Btn("All parts", ShowAllParts, "Open every part at once. Same rocket.", minWidthPt: 72f);
+            title.style.whiteSpace = WhiteSpace.Normal;
+            title.style.flexShrink = 0;
+            title.style.marginTop = ui.U(2f);
+            box.Add(title);
+
+            var tabs = ui.Row(4f);
+            tabs.name = "stepper-tabs";
+            tabs.style.flexWrap = Wrap.Wrap;
+            tabs.style.justifyContent = Justify.SpaceBetween;
+            tabs.style.flexShrink = 0;
+            tabs.Add(DepthToggle(ui));
+            var all = Word(ui.Btn("All parts", ShowAllParts, "Open every part at once. Same rocket.", minWidthPt: 72f));
             all.name = "stepper-all-parts";
             all.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
             all.style.color = HangarUi.Dim;
-            titleRow.Add(all);
-            box.Add(titleRow);
+            tabs.Add(all);
+            box.Add(tabs);
             return box;
         }
 
@@ -439,9 +487,10 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             ui.Radius(row.style, 16f);
             row.style.paddingLeft = ui.U(2f);
             row.style.paddingRight = ui.U(2f);
-            var simple = ui.Btn("Simple", () => bridge.SetEngineer?.Invoke(false), "Fewer controls. Same steps.", minWidthPt: 64f);
+            row.style.flexShrink = 0;
+            var simple = Word(ui.Btn("Simple", () => bridge.SetEngineer?.Invoke(false), "Fewer controls. Same steps.", minWidthPt: 64f));
             simple.name = "stepper-simple";
-            var eng = ui.Btn("Engineer", () => bridge.SetEngineer?.Invoke(true), "More controls and units. Same steps.", minWidthPt: 72f);
+            var eng = Word(ui.Btn("Engineer", () => bridge.SetEngineer?.Invoke(true), "More controls and units. Same steps.", minWidthPt: 72f));
             eng.name = "stepper-engineer";
             ui.SetChip(simple, !engineer);
             ui.SetChip(eng, engineer);
@@ -456,6 +505,9 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             scroller.style.flexGrow = 0;
             scroller.style.flexShrink = 0;
             scroller.style.minHeight = ui.U(HangarUi.TargetPt);
+            // Height follows the wrapped rows (Stepper.uss used to pin 48 px, so rows two to four drew
+            // over the check card).
+            scroller.style.height = StyleKeyword.Auto;
             scroller.style.width = Length.Percent(100);
             scroller.style.overflow = Overflow.Visible;
             var row = ui.Row(2f);
@@ -474,15 +526,18 @@ namespace Kestrel.Slice.DesignerV3.Stepper
                 button.name = "stepper-seg-" + def.Number;
                 button.AddToClassList("stepper-seg");
                 button.style.flexGrow = 1;
-                button.style.flexShrink = 1;
-                button.style.minWidth = ui.U(StepperLayout.SegmentMinPt);
-                button.style.height = ui.U(StepperLayout.ProgressPt);
+                button.style.flexShrink = 0;
+                // StepperColumnLayout: 13 pt labels (tile minimum), wide enough for "OK Recovery".
+                float tileW = StepperText.Width(StepperText.Segment, StepperColumnLayout.TilePtMin)
+                    + 2f * StepperColumnLayout.TilePadPt + StepperColumnLayout.TileBorder;
+                button.style.minWidth = ui.U(tileW);
+                button.style.height = ui.U(StepperColumnLayout.TileHPt);
                 button.style.minHeight = ui.U(HangarUi.TargetPt);
-                button.style.fontSize = ui.U(12f);
+                button.style.fontSize = ui.U(StepperColumnLayout.TilePtMin);
                 button.style.unityTextAlign = TextAnchor.MiddleCenter;
                 button.style.whiteSpace = WhiteSpace.NoWrap;
-                button.style.paddingLeft = ui.U(8f);
-                button.style.paddingRight = ui.U(8f);
+                button.style.paddingLeft = ui.U(StepperColumnLayout.TilePadPt);
+                button.style.paddingRight = ui.U(StepperColumnLayout.TilePadPt);
                 button.style.marginLeft = ui.U(1f);
                 button.style.marginRight = ui.U(1f);
                 ui.Radius(button.style, 8f);
@@ -645,6 +700,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             card.name = "stepper-check";
             card.style.overflow = Overflow.Visible;
             card.style.width = Length.Percent(100);
+            card.style.flexShrink = 0;
             card.Add(ui.Section("Check before next"));
             checkBody = ui.Text("", HangarUi.BodyPt, HangarUi.TextColor, bold: true);
             checkBody.name = "stepper-check-body";
@@ -654,6 +710,8 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             checkExtra = ui.Text("", HangarUi.SmallPt, HangarUi.Dim);
             checkExtra.name = "stepper-check-extra";
             checkExtra.style.whiteSpace = WhiteSpace.Normal;
+            checkExtra.style.flexShrink = 0;
+            checkBody.style.flexShrink = 0;
             checkExtra.style.marginTop = ui.U(4f);
             card.Add(checkExtra);
             UpdateCheck(check);
@@ -677,12 +735,21 @@ namespace Kestrel.Slice.DesignerV3.Stepper
         {
             var card = ui.CardBox();
             card.name = "stepper-confirm";
-            card.Add(ui.Text("This step still has a warning. Go on anyway?", HangarUi.BodyPt, HangarUi.TextColor, bold: true));
+            card.style.flexShrink = 0;
+            var ask = ui.Text("This step still has a warning. Go on anyway?", HangarUi.BodyPt, HangarUi.TextColor, bold: true);
+            ask.name = "stepper-confirm-text";
+            ask.style.whiteSpace = WhiteSpace.Normal;
+            ask.style.flexShrink = 0;
+            card.Add(ask);
             var row = ui.Row();
+            row.style.flexWrap = Wrap.Wrap;
+            row.style.flexShrink = 0;
             var stay = ui.Btn("Stay", () => { confirmStep = false; Sync(); }, "Stay on this step", minWidthPt: 72f);
             stay.name = "stepper-stay";
+            Word(stay);
             var go = ui.Btn("Go on", () => { confirmStep = true; PressForward(); }, "Open the next step with the warning", minWidthPt: 72f);
             go.name = "stepper-go";
+            Word(go);
             go.style.backgroundColor = HangarUi.Amber;
             go.style.color = HangarUi.Ink;
             row.Add(stay);
@@ -696,10 +763,15 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             var row = ui.Row(4f);
             row.name = "stepper-nav";
             row.style.justifyContent = Justify.SpaceBetween;
+            // Back, Next anyway and Fix it wrap as whole buttons. In a 300 pt column the row was 351 pt
+            // wide, so Fix it was cut to "Fi".
+            row.style.flexWrap = Wrap.Wrap;
+            row.style.flexShrink = 0;
             row.style.marginTop = ui.U(4f);
             row.style.marginBottom = ui.U(4f);
             backButton = ui.Btn("<  Back", () => PressBack(), "Previous step", minWidthPt: 88f);
             backButton.name = "stepper-back";
+            Word(backButton);
             backButton.userData = (Action)(() => PressBack());
             StyleNav(ui, backButton, false);
             nextButton = ui.Btn("Next anyway", () => PressForward(), "Go on with the warning", minWidthPt: 120f);
@@ -714,6 +786,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             }, "Next step", minWidthPt: 120f);
             forwardButton.name = "stepper-forward";
             forwardButton.style.flexGrow = 1;
+            Word(forwardButton);
             StyleNav(ui, forwardButton, true);
             row.Add(backButton);
             row.Add(nextButton);
@@ -1078,13 +1151,19 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             if (row == null || row.Q("stepper-guided") != null) return;
             var button = bridge.Ui.Btn("Guided steps", EnterGuided, "Back to the seven steps. Same rocket.", minWidthPt: 120f);
             button.name = "stepper-guided";
-            row.Insert(0, button);
+            Word(button);
+            // After Launch and the reason: the reason row stays first and the buttons wrap whole.
+            row.Add(button);
         }
 
         void ApplyScrollMax()
         {
             if (scroll == null) return;
             float minPx = bridge.Ui.U(DesignerV3Layout.MinContentPt);
+            // In a known column the scroller gets what the sticky blocks leave (at least one 44 pt target),
+            // not a fixed 120 pt that pushed the nav off the bottom.
+            if (columnFrame != null)
+                minPx = bridge.Ui.U(Mathf.Max(HangarUi.TargetPt, Mathf.Min(DesignerV3Layout.MinContentPt, columnFrame.ScrollH)));
             scroll.style.minHeight = minPx;
             scroll.style.flexGrow = 1;
             scroll.style.flexShrink = 1;

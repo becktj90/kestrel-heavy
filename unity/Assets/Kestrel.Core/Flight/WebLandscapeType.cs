@@ -76,6 +76,27 @@ namespace Kestrel.Core.Flight
             return Math.Min(fitted, cap);
         }
 
+        /// <summary>The guided stepper / parts column. The stepper header, its seven step tiles (four per row)
+        /// and the Back / Next anyway / Fix it nav need about 360 pt inside the panel padding, so this column
+        /// is 31% of the band, 300-400. At 300 the step title, tabs and nav collided (web overlap audit).</summary>
+        public const float PartsMin = 300f, PartsTightMin = 260f;
+
+        /// <summary>The readout column only holds the gauges, the thumb row and Launch: 22% of the band, 200-300.</summary>
+        public const float ReadoutMax = 300f;
+
+        public static float PartsColumn(float band)
+        {
+            float lo = band < Tight ? PartsTightMin : PartsMin;
+            float w = Math.Max(lo, Math.Min(SideCap, band * 0.31f));
+            return Math.Min(w, Math.Max(120f, band - ReadoutColumn(band) - band * RocketMinFraction - 24f));
+        }
+
+        public static float ReadoutColumn(float band)
+        {
+            float lo = band < Tight ? 160f : SideMin;
+            return Math.Max(lo, Math.Min(ReadoutMax, band * 0.22f));
+        }
+
         /// <summary>Side column width for a band: 24% of it, 200-360 (narrower when tight), never past 400.</summary>
         public static float SideColumn(float band)
         {

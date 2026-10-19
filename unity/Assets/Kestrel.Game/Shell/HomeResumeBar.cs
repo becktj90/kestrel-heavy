@@ -2,6 +2,7 @@
 // a draft, a saved rocket, or a cleared mission exists. Text shrinks until it fits 335 px.
 using System;
 using Kestrel.Core.Economy;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Save;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -55,7 +56,7 @@ namespace Kestrel.Game.Shell
             return bar;
         }
 
-        /// <summary>Insert the bar just before LAUNCH and pin it above that button. A wide frame clamps the top at 0.</summary>
+        /// <summary>Add the bar and pin it in the top-left corner band, clear of the title, stats, gear and EXIT.</summary>
         public static void Mount(VisualElement root, long credits, bool showContinue, Action onContinue)
         {
             if (root == null) return;
@@ -105,30 +106,19 @@ namespace Kestrel.Game.Shell
 
         static void PlaceBar(VisualElement root, VisualElement bar)
         {
+            // The free top-left band (HomeCornerLayout.Credits), never on the title, the stats or LAUNCH.
             bar.style.position = Position.Absolute;
             bar.style.bottom = StyleKeyword.Auto;
-            bar.style.height = 48;
             bar.style.right = StyleKeyword.Auto;
-            var launch = root.Q("home-launch");
             var parent = bar.parent ?? root;
-            if (launch == null || launch.worldBound.height < 1f || parent.worldBound.width < 1f)
-            {
-                bar.style.left = 8;
-                bar.style.right = 8;
-                bar.style.top = 8;
-                return;
-            }
-            float top = launch.worldBound.yMin - parent.worldBound.yMin - 52f;
-            if (top < 0f) top = 0f;
-            float left = launch.worldBound.xMin - parent.worldBound.xMin;
-            if (left < 0f) left = 0f;
-            float width = launch.worldBound.width;
-            float room = parent.worldBound.width - left;
-            if (width > room) width = room;
-            if (width < 8f) width = room > 8f ? room : 8f;
-            bar.style.left = left;
-            bar.style.width = width;
-            bar.style.top = top;
+            float width = parent.worldBound.width;
+            if (float.IsNaN(width) || width < 1f) width = parent.layout.width;
+            var box = HomeCornerLayout.Credits(width > 1f ? width : 375f, 0f, true);
+            bar.style.left = box.X;
+            bar.style.top = box.Y;
+            bar.style.width = box.W;
+            bar.style.height = box.H;
+            bar.style.minHeight = box.H;
         }
 
         static float Measure(TextElement el, int size)

@@ -163,6 +163,9 @@ namespace Kestrel.Slice.DesignerV3
             confirmRow = ui.Row(2f);
             confirmRow.name = "designer-launch";
             confirmRow.style.flexShrink = 0;
+            // Whole buttons wrap to the next row; the reason line takes a full row. In the 278 pt
+            // readout column the reason was squeezed to one character per line.
+            confirmRow.style.flexWrap = Wrap.Wrap;
             root.Add(confirmRow);
             root.RegisterCallback<GeometryChangedEvent>(_ => DesignerChrome.Contain(root));
 
@@ -194,6 +197,7 @@ namespace Kestrel.Slice.DesignerV3
                 Tab = () => tab,
                 HideWhenGuided = new[] { tutorialBanner, strip, riskRow, tabs, scroll, confirmRow, stepRail, goalLabel, repairLabel, deltaRow, budgetRow },
                 Rebuild = () => Rebuild(),
+                Column = () => webColumn,
             };
             stepper = new DesignerStepperShell(bridge);
             root.Add(stepper.Root);
@@ -316,6 +320,18 @@ namespace Kestrel.Slice.DesignerV3
         }
 
         public bool Landscape => landscape;
+
+        Vector2 webColumn;
+
+        /// <summary>The stepper root in points inside the landscape web parts column (zero off the web column).
+        /// The guided stepper sizes its tiles and decides where the check card goes from this.</summary>
+        public void SetWebColumn(float widthPt, float heightPt)
+        {
+            var next = widthPt > 1f && heightPt > 1f ? new Vector2(widthPt, heightPt) : Vector2.zero;
+            if ((next - webColumn).sqrMagnitude < 1f) return;
+            webColumn = next;
+            stepper?.Sync();
+        }
 
         void SetMore(bool open)
         {
@@ -703,7 +719,10 @@ namespace Kestrel.Slice.DesignerV3
             var why = ui.Text(text, HangarUi.SmallPt);
             why.name = "launch-gate-reason";
             why.style.whiteSpace = WhiteSpace.Normal;
-            why.style.flexShrink = 1;
+            // Its own full row above the buttons, so it wraps by words in a narrow column.
+            why.style.flexBasis = Length.Percent(100);
+            why.style.width = Length.Percent(100);
+            why.style.flexShrink = 0;
             why.style.flexGrow = 1;
             return why;
         }
@@ -718,14 +737,14 @@ namespace Kestrel.Slice.DesignerV3
                 var off = ui.Btn("Launch", () => { }, "Launch unavailable. " + gate.Line, minWidthPt: 120f);
                 off.name = "launch-btn";
                 off.SetEnabled(false);
-                confirmRow.Add(off);
                 confirmRow.Add(GateLine(gate.Line));
+                confirmRow.Add(Word(off));
                 if (!string.IsNullOrEmpty(gate.tab))
                 {
                     var target = DesignerV3Tabs.FromRiskTab(gate.tab);
                     var fix = ui.Btn("Fix it", () => Show(target), "Open " + DesignerV3Tabs.Label(target, engineer, landscape), minWidthPt: 72f);
                     fix.name = "launch-gate-fix";
-                    confirmRow.Add(fix);
+                    confirmRow.Add(Word(fix));
                 }
                 return;
             }
@@ -741,8 +760,8 @@ namespace Kestrel.Slice.DesignerV3
                     if (ready && !DesignerV3Strip.HasRedRisk(Readout.Quick(C, D))) LaunchRequested?.Invoke();
                 }, "Checking the test flight first", minWidthPt: 120f);
                 check.name = "launch-btn";
-                confirmRow.Add(check);
                 confirmRow.Add(GateLine(LaunchGate.Checking));
+                confirmRow.Add(Word(check));
                 return;
             }
             var readout = Readout.Quick(C, D);
@@ -760,7 +779,15 @@ namespace Kestrel.Slice.DesignerV3
             }, red ? DesignerV3Risk.ConfirmTitle : "Launch this design", minWidthPt: 120f);
             b.name = "launch-btn";
             if (red && !launchConfirmArmed) b.style.backgroundColor = HangarUi.Amber;
-            confirmRow.Add(b);
+            confirmRow.Add(Word(b));
+        }
+
+        /// <summary>A launch-row button keeps its words on one line and wraps as a whole.</summary>
+        static Button Word(Button b)
+        {
+            b.style.flexShrink = 0;
+            b.style.whiteSpace = WhiteSpace.NoWrap;
+            return b;
         }
 
         static Color StateColor(CellState s) =>

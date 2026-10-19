@@ -29,16 +29,16 @@
     padding-right: 2px;
 }
 
+/* Height follows the wrapped tile rows; a fixed 48px let rows two to four draw over the check card. */
 #stepper-progress-scroll {
     flex-grow: 0;
     flex-shrink: 0;
     min-height: 44px;
-    height: 48px;
 }
 
 #stepper-progress {
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     flex-grow: 0;
     flex-shrink: 0;
     align-items: center;
