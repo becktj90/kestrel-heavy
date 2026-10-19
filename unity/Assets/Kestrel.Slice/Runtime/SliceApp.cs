@@ -619,7 +619,8 @@ namespace Kestrel.Slice
             var gate = LaunchGateNow();
             bool ok = gate.Ready;
             // "Checking…" keeps the button live: a press finishes the check (LaunchFromButton), never flies blind.
-            launchButton.SetEnabled(gate.state != LaunchGateState.Blocked);
+            // F1: only a hard (validation) block disables it. A predicted failure may launch and fail.
+            launchButton.SetEnabled(gate.CanLaunch);
             var firstBlock = adv.Find(a => a.severity == AdvisorySeverity.Block);
             string reasonBody = firstBlock == null
                 ? DesignerValidation.KidFallback
@@ -633,7 +634,8 @@ namespace Kestrel.Slice
             bool designerSaysIt = designer != null && designer.ShowsLaunchRow;
             launchReason.EnableInClassList("hidden", ok || designerSaysIt);
             launchButton.tooltip = ok ? "Roll out and launch the current design"
-                : gate.state == LaunchGateState.Checking ? LaunchGate.Checking : "Launch unavailable. " + reason;
+                : gate.state == LaunchGateState.Checking ? LaunchGate.Checking
+                : gate.CanLaunch ? "Launch anyway. " + reason : "Launch unavailable. " + reason;
             if (undoButton != null)
             {
                 undoButton.SetEnabled(session.history.CanUndo);
@@ -1106,7 +1108,7 @@ namespace Kestrel.Slice
         /// <summary>The on-screen Launch button: never flies a design the gate refuses.</summary>
         void LaunchFromButton()
         {
-            if (!LaunchGateNow(settle: true).Ready) { ApplyValidation(); return; }
+            if (!LaunchGateNow(settle: true).CanLaunch) { ApplyValidation(); return; }
             Launch();
         }
 

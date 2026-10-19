@@ -147,12 +147,22 @@ namespace Kestrel.Core.Designer
 
         public static SimResult Simulate(Catalog c, JsonObject design)
         {
+            var input = Inputs(c, design);
+            return Fly(input.stages, input.opts);
+        }
+
+        /// <summary>
+        /// Predict inputs: Stack.SimInputs with the pad flight's aim (an apogee trip is judged against the
+        /// 1 km depletion floor, not its apogee) and Predict on, so the cached peak is the real max-Q.
+        /// A live launch leaves Predict false and breaks up.
+        /// </summary>
+        public static (List<SimStage> stages, SimOptions opts) Inputs(Catalog c, JsonObject design)
+        {
             var d = Design.FromJson(design);
             var input = Stack.SimInputs(c, d);
-            // Predict keeps flying after the first hit so the cached peak is the real max-Q.
-            // A live launch leaves Predict false and breaks up.
+            MissionAim.ApplyToDesignOrbit(input.opts, c, d.payloadOrbit);
             if (input.opts.monitor != null) input.opts.monitor.Predict = true;
-            return Fly(input.stages, input.opts);
+            return input;
         }
 
         /// <summary>The reference ascent is a full powered flight. Same steps as <see cref="Headless.Simulate"/>.</summary>
@@ -215,9 +225,7 @@ namespace Kestrel.Core.Designer
         public ReferenceJob(Catalog c, JsonObject design)
         {
             key = ReferenceAscent.CanonicalKey(c, design);
-            var d = Design.FromJson(design);
-            var input = Stack.SimInputs(c, d);
-            if (input.opts.monitor != null) input.opts.monitor.Predict = true;
+            var input = ReferenceAscent.Inputs(c, design);
             sim = new AscentSim(input.stages, input.opts);
         }
 

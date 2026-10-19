@@ -3,6 +3,7 @@
 // cached ascent, the payload fits and the speed reaches the target. A stale ascent cache is
 // "Checking…", never ready. Experience.Present still drops warnings in Simple; this gate is what
 // decides the Ready line and the Launch button, so a red predicted failure can no longer read as ready.
+// F1: only a validation block (hard) disables Launch. A predicted failure is a soft block that asks once.
 using System.Collections.Generic;
 using Kestrel.Core.Flight;
 
@@ -18,7 +19,18 @@ namespace Kestrel.Core.Designer
         /// <summary>Designer tab id the fix lives on ("tanks", "payload", ...). Null when ready or checking.</summary>
         public string tab;
         public string code;
+        /// <summary>
+        /// A validation block: the design cannot be built (schema or a Block advisory). Only a hard block
+        /// disables Launch. A predicted failure, a speed shortfall or a cargo that does not fit is a soft
+        /// block: the reason shows and Launch asks once ("Launch anyway"), because a bad rocket is allowed
+        /// to fly and fail (Trevor, 2026-10-19; F1).
+        /// </summary>
+        public bool hard;
         public bool Ready => state == LaunchGateState.Ready;
+        /// <summary>False only for a hard block. Checking still launches: the press settles the check first.</summary>
+        public bool CanLaunch => state != LaunchGateState.Blocked || !hard;
+        /// <summary>A soft block flies only after the player confirms once.</summary>
+        public bool NeedsConfirm => state == LaunchGateState.Blocked && !hard;
         /// <summary>The line the designer shows: the reason, "Checking…", or <see cref="Experience.Ready"/>.</summary>
         public string Line => state == LaunchGateState.Ready ? Experience.Ready : state == LaunchGateState.Checking ? LaunchGate.Checking : reason;
     }
@@ -34,11 +46,11 @@ namespace Kestrel.Core.Designer
         public static LaunchGateResult Evaluate(EngineeringReport report, QuickReadout readout)
         {
             if (report == null || !report.ok)
-                return Blocked(First(report), "schema", "stages");
+                return Hard(Blocked(First(report), "schema", "stages"));
             if (report.blocks != null && report.blocks.Count > 0)
             {
                 var b = report.blocks[0];
-                return Blocked(Plain(b.kid, b.msg), b.code, b.tab);
+                return Hard(Blocked(Plain(b.kid, b.msg), b.code, b.tab));
             }
             var r = readout ?? report.readout;
             if (r == null) return new LaunchGateResult { state = LaunchGateState.Checking };
@@ -77,6 +89,8 @@ namespace Kestrel.Core.Designer
             if (!string.IsNullOrWhiteSpace(msg)) return msg.Trim();
             return fallback;
         }
+
+        static LaunchGateResult Hard(LaunchGateResult r) { r.hard = true; return r; }
 
         static LaunchGateResult Blocked(string reason, string code, string tab) =>
             new LaunchGateResult { state = LaunchGateState.Blocked, reason = reason ?? Fallback, code = code, tab = tab };
