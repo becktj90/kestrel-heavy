@@ -84,7 +84,9 @@ namespace Kestrel.Game.Environment
         bool ShouldApply(Camera c)
         {
             if (c == null || c != Target || c.cameraType != CameraType.Game) return false;
-            if (CaptureCamera.Active) return false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (CaptureCamera.Active) return false;   // CaptureCamera only exists in the Editor and development players
+#endif
             if (State.Trauma <= 0f && State.FovDeg <= 0f) return false;
             return !ReduceMotion();
         }
