@@ -1,0 +1,102 @@
+﻿#include "pch-c.h"
+
+
+#include "codegen/il2cpp-codegen-metadata.h"
+
+
+
+
+
+extern void GovernorConfig__ctor_m32BC1A5C1D95AB0C92BCE05FBC08B599F30EFD3F (void);
+extern void QualityGovernor_get_IgnoreFrameTimes_m854E10F70A93C4FB15F31EC81027A20A133610DD (void);
+extern void QualityGovernor_set_IgnoreFrameTimes_m6BC857F3A7F49452A4AEE3D88E9FB86E5A21F366 (void);
+extern void QualityGovernor_get_HoldRemaining_m86F31DBA1951A97BB99F821390AF5640E899914A (void);
+extern void QualityGovernor_HoldFor_m4D6EE1F7D270A6F5089FDA662F92BFEE972B077D (void);
+extern void QualityGovernor_get_Level_m123A996AAFC80D579B2A249537EE63F3569E8E78 (void);
+extern void QualityGovernor_set_Level_mDF6CB5DB875E25978AE849ADDB860CE52C3705D3 (void);
+extern void QualityGovernor_get_Floor_mB9404C20F9F108D8AD2B33C635FB0E3C9688DF3F (void);
+extern void QualityGovernor_get_Ceiling_m84DC49317C08889E6F2836D5BAA38A71A40EDDDA (void);
+extern void QualityGovernor_set_Ceiling_m0B51FB479C3BEC384F5AD8EBEADD5E48C1DAEC3F (void);
+extern void QualityGovernor_add_Changed_m0D5392468EC400799F32EAB5B136327C58053FF3 (void);
+extern void QualityGovernor_remove_Changed_m2676552449C3220354CBF879B2728E30448819C4 (void);
+extern void QualityGovernor__ctor_m5A1225ECE5E6C4AD4C7A4BD1E3CB409ECA0E398C (void);
+extern void QualityGovernor_SetChosen_m3B02BD62C90C473055BAC232B22BD597DB9FEF07 (void);
+extern void QualityGovernor_Reset_m87DB06AC066C2CB18F7EC602BB12E5B1B6DA41BB (void);
+extern void QualityGovernor_get_P95Ms_mA0485367C257A6DE7AD14BD5AF79709F0DC95A63 (void);
+extern void QualityGovernor_Tick_m16913859C4BCADBE59894FECF350AB31887C232F (void);
+extern void QualityGovernor_Move_mF077DCCAC82B4504AE1DEE63A16021B1AB201A38 (void);
+extern void QualityHold_add_Requested_mD3FD8A1A5021687FDBF4EC5D5FB9A23457CC458D (void);
+extern void QualityHold_remove_Requested_m4F59127184BC2DF1A1783621C84B65AF03872E44 (void);
+extern void QualityHold_AtIgnition_mFA7FFE5F7379240E5D91B6D3D3EABD4DA42E8BE9 (void);
+extern void QualityMath_RenderScale_m128439B44BB878C8005E635722557122D9591731 (void);
+static Il2CppMethodPointer s_methodPointers[22] = 
+{
+	GovernorConfig__ctor_m32BC1A5C1D95AB0C92BCE05FBC08B599F30EFD3F,
+	QualityGovernor_get_IgnoreFrameTimes_m854E10F70A93C4FB15F31EC81027A20A133610DD,
+	QualityGovernor_set_IgnoreFrameTimes_m6BC857F3A7F49452A4AEE3D88E9FB86E5A21F366,
+	QualityGovernor_get_HoldRemaining_m86F31DBA1951A97BB99F821390AF5640E899914A,
+	QualityGovernor_HoldFor_m4D6EE1F7D270A6F5089FDA662F92BFEE972B077D,
+	QualityGovernor_get_Level_m123A996AAFC80D579B2A249537EE63F3569E8E78,
+	QualityGovernor_set_Level_mDF6CB5DB875E25978AE849ADDB860CE52C3705D3,
+	QualityGovernor_get_Floor_mB9404C20F9F108D8AD2B33C635FB0E3C9688DF3F,
+	QualityGovernor_get_Ceiling_m84DC49317C08889E6F2836D5BAA38A71A40EDDDA,
+	QualityGovernor_set_Ceiling_m0B51FB479C3BEC384F5AD8EBEADD5E48C1DAEC3F,
+	QualityGovernor_add_Changed_m0D5392468EC400799F32EAB5B136327C58053FF3,
+	QualityGovernor_remove_Changed_m2676552449C3220354CBF879B2728E30448819C4,
+	QualityGovernor__ctor_m5A1225ECE5E6C4AD4C7A4BD1E3CB409ECA0E398C,
+	QualityGovernor_SetChosen_m3B02BD62C90C473055BAC232B22BD597DB9FEF07,
+	QualityGovernor_Reset_m87DB06AC066C2CB18F7EC602BB12E5B1B6DA41BB,
+	QualityGovernor_get_P95Ms_mA0485367C257A6DE7AD14BD5AF79709F0DC95A63,
+	QualityGovernor_Tick_m16913859C4BCADBE59894FECF350AB31887C232F,
+	QualityGovernor_Move_mF077DCCAC82B4504AE1DEE63A16021B1AB201A38,
+	QualityHold_add_Requested_mD3FD8A1A5021687FDBF4EC5D5FB9A23457CC458D,
+	QualityHold_remove_Requested_m4F59127184BC2DF1A1783621C84B65AF03872E44,
+	QualityHold_AtIgnition_mFA7FFE5F7379240E5D91B6D3D3EABD4DA42E8BE9,
+	QualityMath_RenderScale_m128439B44BB878C8005E635722557122D9591731,
+};
+static const int32_t s_InvokerIndices[22] = 
+{
+	12601,
+	12220,
+	9626,
+	12255,
+	9666,
+	12337,
+	9744,
+	12337,
+	12337,
+	9744,
+	9796,
+	9796,
+	2266,
+	9744,
+	12601,
+	12255,
+	6831,
+	9744,
+	19518,
+	19518,
+	19996,
+	16936,
+};
+IL2CPP_EXTERN_C const Il2CppCodeGenModule g_Kestrel_Game_QualityCore_CodeGenModule;
+const Il2CppCodeGenModule g_Kestrel_Game_QualityCore_CodeGenModule = 
+{
+	"Kestrel.Game.QualityCore.dll",
+	22,
+	s_methodPointers,
+	0,
+	NULL,
+	s_InvokerIndices,
+	0,
+	NULL,
+	0,
+	NULL,
+	0,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+};
