@@ -154,7 +154,7 @@ namespace Kestrel.Core.Tests
             foreach (var b in boxes)
             {
                 if (!b.box.Live || b.name == "dock" || b.name == "follow" || b.name == "pause") continue;
-                if (b.name == "clock" || b.name == "stage" || b.name == "plot" || b.name == "stages" || b.name.StartsWith("cell")) continue;
+                if (b.name == "clock" || b.name == "stage" || b.name == "health" || b.name == "plot" || b.name == "stages" || b.name.StartsWith("cell")) continue;
                 Assert.That(b.box.Y, Is.GreaterThanOrEqualTo(f.Dock.Y - 0.6f), where + " " + b.name + " left the dock");
                 Assert.That(b.box.Bottom, Is.LessThanOrEqualTo(f.Dock.Bottom + 0.6f), where + " " + b.name);
             }
@@ -172,6 +172,8 @@ namespace Kestrel.Core.Tests
             Assert.That(f.Stages.Bottom, Is.LessThan(nose - 6f), where + " stages cover the stack");
             Assert.That(f.Telemetry.Bottom, Is.LessThan(nose), where);
             Assert.That(f.Dock.Y, Is.GreaterThan(tail + 4f), where + " dock covers the stack");
+            Assert.That(f.Health.Y, Is.GreaterThanOrEqualTo(f.Clock.Bottom - 0.6f), where + " health covers the clock");
+            Assert.That(f.Telemetry.Y, Is.GreaterThanOrEqualTo(f.Health.Bottom - 0.6f), where + " strip covers health");
             Assert.That(f.Plot.Y, Is.GreaterThanOrEqualTo(f.Telemetry.Bottom - 0.6f), where + " trajectory covers the strip");
             Assert.That(f.Plot.Bottom, Is.LessThanOrEqualTo(f.Follow.Y + 0.6f), where + " trajectory covers follow");
             Assert.That(f.Plot.H, Is.GreaterThan(160f), where + " trajectory runs up the screen");
@@ -206,7 +208,7 @@ namespace Kestrel.Core.Tests
         {
             var list = new List<(string, HudBox)>
             {
-                ("clock", f.Clock), ("stage", f.Stage), ("plot", f.Plot), ("stages", f.Stages),
+                ("clock", f.Clock), ("stage", f.Stage), ("health", f.Health), ("plot", f.Plot), ("stages", f.Stages),
                 ("dock", f.Dock), ("info", f.Info), ("medal", f.Medal), ("help", f.Help),
                 ("quote", f.Quote), ("timer", f.Timer), ("assist", f.Assist), ("primary", f.Primary),
                 ("skip", f.Skip), ("alternate", f.Alternate), ("nudge-down", f.NudgeDown), ("nudge-up", f.NudgeUp),

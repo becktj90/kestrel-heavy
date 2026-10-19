@@ -20,6 +20,8 @@ namespace Kestrel.Pad
         public readonly List<UmbilicalVisual> Umbilicals = new List<UmbilicalVisual>();
         /// <summary>Fingerprint of the vehicle attach points this pad was built for. 0 = generator defaults.</summary>
         public int AttachStamp;
+        /// <summary>FarmPlan.Key of the propellant this pad was built for. 0 = none.</summary>
+        public int FarmKey;
         public readonly BudgetLedger Ledger = new BudgetLedger();
         /// <summary>-1 = follow QualitySettings (clamped to Low/Medium/High).</summary>
         public int QualityOverride = -1;

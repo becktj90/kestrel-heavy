@@ -97,6 +97,23 @@ def main():
         changed += [os.path.join(a.repo, l) for l in sh(["git", "-C", a.repo, "ls-files", "--others", "--exclude-standard", "unity/Assets"])[1].split() if l.endswith(".cs")]
         targets = sorted({n for n in A for f in changed if os.path.abspath(f) in map(os.path.abspath, A[n]["files"])} - SKIP)
     build_stubs(work); built = {}; failed = False
+    builtp = {}
+    def buildp(n):
+        """Release player compile: dependencies are the PLAYER dlls too, so a type that only exists under
+        UNITY_EDITOR / DEVELOPMENT_BUILD in one assembly is missing for its dependents, as on a device."""
+        nonlocal failed
+        if n in builtp: return builtp[n]
+        if n not in A: return None
+        files = A[n]["files"]
+        if not files: builtp[n] = None; return None
+        refs = [r for r in (buildp(x) for x in A[n]["refs"]) if r]
+        base = ["UNITY_5_3_OR_NEWER", "UNITY_2021_1_OR_NEWER", "UNITY_6000_0_OR_NEWER"]
+        code, msg = csc(os.path.join(work, n + ".player.dll"), files, refs + ([os.path.join(work, "UnityEngine.dll")] if A[n]["engine"] else []), base)
+        if code:
+            print(f"[FAIL] {n} (player build, no UNITY_EDITOR / DEVELOPMENT_BUILD)"); failed = True
+            for l in [l for l in msg.splitlines() if ": error " in l]: print("   ", l.replace(assets + os.sep, ""))
+            builtp[n] = None; return None
+        builtp[n] = os.path.join(work, n + ".player.dll"); return builtp[n]
     def build(n):
         nonlocal failed
         if n in built: return built[n]
@@ -108,12 +125,7 @@ def main():
         is_test = any(d == "UNITY_INCLUDE_TESTS" for d in A[n]["defines"]) or n.endswith("Tests") or "Editor" in n
         # Editor compile (what the Unity Editor and EditMode tests see): every assembly gets UNITY_EDITOR.
         defs = ["UNITY_EDITOR"] + (["UNITY_INCLUDE_TESTS"] if is_test else []) + base
-        if not is_test:   # player compile too (iOS/web build): catches unguarded UnityEditor use in runtime code
-            code, msg = csc(os.path.join(work, n + ".player.dll"), files, refs + ([os.path.join(work, "UnityEngine.dll")] if A[n]["engine"] else []), base)
-            perrs = [l for l in msg.splitlines() if ": error " in l]
-            if code:
-                print(f"[FAIL] {n} (player build, no UNITY_EDITOR)"); failed = True
-                for l in perrs: print("   ", l.replace(assets + os.sep, ""))
+        if not is_test: buildp(n)   # player compile too (iOS/web release build): catches unguarded UnityEditor and dev-only (DEVELOPMENT_BUILD) use
         lib = [os.path.join(work, "UnityEngine.dll")] if A[n]["engine"] else []
         lib += [os.path.join(work, "UnityEditor.dll"), os.path.join(work, "nunit.framework.dll")]
         out = os.path.join(work, n + ".dll")

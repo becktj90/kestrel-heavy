@@ -328,7 +328,9 @@ namespace Kestrel.Core.Flight
         /// <summary>Screen-y of the callout inside the padded HUD, just under the plot and stages cards.</summary>
         public static float CalloutTopInsideHud()
         {
-            return FlightHudLayout.TelemetryPt + FlightHudLayout.GapPt + FlightHudLayout.PlotPt + FlightHudLayout.GapPt;
+            return FlightHudLayout.HealthPt + FlightHudLayout.GapPt
+                + FlightHudLayout.TelemetryPt + FlightHudLayout.GapPt
+                + FlightHudLayout.PlotPt + FlightHudLayout.GapPt;
         }
 
         public static string Title(StagingKind kind)

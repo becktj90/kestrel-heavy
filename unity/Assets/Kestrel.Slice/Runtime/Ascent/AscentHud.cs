@@ -16,13 +16,18 @@ namespace Kestrel.Slice
     {
         const int CellCount = 4;
 
-        VisualElement hud, root, cards, gap, actions, nudgeRow, promptRow, assistRow, help, dockSpacer;
+        VisualElement hud, root, cards, gap, actions, nudgeRow, promptRow, assistRow, dockSpacer;
+        ScrollView help;
         VisualElement stages, webcastHome;
         int webcastHomeIndex = -1;
         Label medal, quote, detail, caption, bonus, extra;
         Label[] cellKey = new Label[CellCount];
         Label[] cellVal = new Label[CellCount];
         Button primary, alternate, skip, assist, nudgeDown, nudgeUp, info;
+        VisualElement health;
+        Label healthDetail;
+        Button[] healthButtons;
+        int healthOpen = -1;
         VisualElement marker, green, bar;
         TrajectoryRailView plot;
         readonly TrajectoryWatch trajectory = new TrajectoryWatch();
@@ -42,6 +47,7 @@ namespace Kestrel.Slice
             if (grid != null) grid.style.display = DisplayStyle.None;
             root = new VisualElement { name = "ascent-hud", pickingMode = PickingMode.Ignore };
             root.style.flexShrink = 0;
+            BuildHealth();
             BuildStrip();
             BuildCards();
             BuildActions();
@@ -63,6 +69,8 @@ namespace Kestrel.Slice
         public void Close()
         {
             infoOpen = false;
+            healthOpen = -1;
+            if (help != null && help.parent != null) help.RemoveFromHierarchy();
             if (hud != null) hud.EnableInClassList("hud-info", false);
             RestoreStages();
             var grid = hud != null ? hud.Q("hud-grid") : null;
@@ -161,10 +169,20 @@ namespace Kestrel.Slice
                 bar.style.height = Px(FlightHudLayout.TimerPt);
                 bar.style.marginTop = Px(FlightHudLayout.GapPt);
             }
-            if (help != null)
+            if (health != null)
             {
-                help.style.maxHeight = Px(FlightHudLayout.HelpPt);
-                help.style.marginTop = Px(FlightHudLayout.GapPt);
+                health.style.marginBottom = Px(FlightHudLayout.GapPt);
+                for (int i = 0; healthButtons != null && i < healthButtons.Length; i++)
+                {
+                    var b = healthButtons[i];
+                    if (b == null) continue;
+                    float hh = Px(FlightHudLayout.HealthPt);
+                    b.style.height = hh;
+                    b.style.minHeight = hh;
+                    b.style.fontSize = Px(11f);
+                    FlightDusk.Face(b, FlightDusk.BodyFace());
+                }
+                if (healthDetail != null) FlightDusk.Sentence(healthDetail, upp);
             }
             if (detail != null) detail.style.fontSize = Px(12f);
             if (caption != null) caption.style.fontSize = Px(12f);
@@ -176,6 +194,8 @@ namespace Kestrel.Slice
             PlaceDockSpacer();
             if (WebLayoutMode.UseWide(Screen.width, Screen.height)) LayoutWide();
             else LayoutRail();
+            PlaceInfoSheet();
+            hud.Q("pause-menu")?.BringToFront();
         }
 
         /// <summary>Portrait: the tested rail, inside the HUD's already-padded content box.</summary>
@@ -209,9 +229,8 @@ namespace Kestrel.Slice
             var dock = ScaleBox(frame.Dock);
             Pin(actions, dock);
             if (actions != null) actions.style.overflow = Overflow.Hidden;
-            FitClock(hud.Q<Label>("h-t"), frame.Clock.W * upp, frame.Clock.H * upp);
+            DressClock(frame.Clock.W, frame.Clock.H);
             Seat(actions != null ? actions.Q("ascent-medal-row") : null, ScaleBox(Union(frame.Medal, frame.Info)), dock);
-            Seat(help, ScaleBox(frame.Help), dock);
             Seat(quote, ScaleBox(frame.Quote), dock);
             Seat(bar, ScaleBox(frame.Timer), dock);
             if (prompt)
@@ -228,14 +247,6 @@ namespace Kestrel.Slice
         }
 
         HudBox ScaleBox(HudBox b) => new HudBox { X = b.X * upp, Y = b.Y * upp, W = b.W * upp, H = b.H * upp };
-
-        static void FitClock(Label clock, float boxW, float boxH)
-        {
-            if (clock == null) return;
-            clock.style.fontSize = FlightHudLayout.ClockFontPt(boxW, boxH);
-            clock.style.overflow = Overflow.Hidden;
-            clock.style.whiteSpace = WhiteSpace.NoWrap;
-        }
 
         void Seat(VisualElement row, HudBox box, HudBox dock)
         {
@@ -334,7 +345,6 @@ namespace Kestrel.Slice
             var clock = Sc(f.Clock);
             var stage = Sc(f.Stage);
             Pin(hud.Q("h-t"), new HudBox { X = clock.X - telemetry.X, Y = 0, W = clock.W, H = telemetry.H });
-            FitClock(hud.Q<Label>("h-t"), clock.W, telemetry.H);
             Pin(hud.Q("h-stage"), new HudBox { X = stage.X - telemetry.X, Y = (telemetry.H - stage.H) * 0.5f, W = stage.W, H = stage.H });
 
             root.style.position = Position.Absolute;
@@ -350,8 +360,11 @@ namespace Kestrel.Slice
             float cellR = f.Cells[f.Cells.Length - 1].Right;
             var cellBox = Sc(new HudBox { X = cellX, Y = f.Telemetry.Y, W = cellR - cellX, H = f.Telemetry.H });
             Pin(root.Q("ascent-telemetry"), cellBox);
+            Pin(health, Sc(f.Health));
+            if (health != null) health.style.overflow = Overflow.Visible;
             Pin(plot, Sc(f.Plot));
             Pin(stages, Sc(f.Stages));
+            DressClock(f.Clock.W, f.Clock.H);
 
             var tools = hud.Q("flight-tools");
             if (tools != null)
@@ -451,6 +464,8 @@ namespace Kestrel.Slice
                 Unpin(root.Q("ascent-telemetry"));
             }
             Unpin(cards);
+            Unpin(health);
+            if (health != null && root != null && health.parent != root) root.Insert(0, health);
             Unpin(plot);
             Unpin(stages);
             var tools = hud != null ? hud.Q("flight-tools") : null;
@@ -634,8 +649,10 @@ namespace Kestrel.Slice
                     : new Color(0.1f, 0.14f, 0.2f, 0.72f);
                 info.style.color = infoOpen ? new Color(0.08f, 0.08f, 0.1f) : Color.white;
             }
+            PaintHealth(score);
             StyleStages();
             PlaceDockSpacer();
+            PlaceInfoSheet();
         }
 
         void PlaceAssist(bool prompt)
@@ -656,9 +673,187 @@ namespace Kestrel.Slice
         {
             if (dockSpacer == null || hud == null) return;
             bool prompt = shown != default;
-            float pt = FlightHudLayout.DockHeight(infoOpen, prompt);
+            // Notes float above the dock. The spacer only reserves the buttons.
+            float pt = FlightHudLayout.DockHeight(false, prompt);
             if (!nudgeRowOpen) pt -= FlightHudLayout.ButtonPt + FlightHudLayout.GapPt;
             dockSpacer.style.height = Px(pt);
+        }
+
+        void DressClock(float boxW, float boxH)
+        {
+            var clock = hud != null ? hud.Q<Label>("h-t") : null;
+            if (clock == null) return;
+            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFontPt(boxW, boxH));
+        }
+
+        void BuildHealth()
+        {
+            health = new VisualElement { name = "ascent-health", pickingMode = PickingMode.Ignore };
+            health.style.flexDirection = FlexDirection.Column;
+            health.style.flexShrink = 0;
+            health.style.overflow = Overflow.Visible;
+            health.style.marginBottom = Px(FlightHudLayout.GapPt);
+            var row = new VisualElement { name = "ascent-health-row" };
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Stretch;
+            row.style.flexShrink = 0;
+            row.style.height = Px(FlightHudLayout.HealthPt);
+            healthButtons = new Button[VehicleHealth.Count];
+            var calm = VehicleHealth.Read(new VehicleHealthInput { Fuel01 = 1, QLimitPa = 1, GLimit = 1 });
+            for (int i = 0; i < VehicleHealth.Count; i++)
+            {
+                int index = i;
+                var b = new Button(() => OnHealth(index)) { name = "health-" + i, text = calm[i].Mark };
+                b.tooltip = calm[i].Name + ". " + calm[i].Detail;
+                b.style.flexGrow = 1;
+                b.style.flexShrink = 1;
+                b.style.minWidth = 0;
+                b.style.marginRight = i < VehicleHealth.Count - 1 ? Px(FlightHudLayout.GapPt) : 0;
+                b.style.marginLeft = 0;
+                b.style.marginTop = 0;
+                b.style.marginBottom = 0;
+                b.style.paddingLeft = 2;
+                b.style.paddingRight = 2;
+                b.style.paddingTop = 0;
+                b.style.paddingBottom = 0;
+                b.style.unityTextAlign = TextAnchor.MiddleCenter;
+                b.style.whiteSpace = WhiteSpace.NoWrap;
+                b.style.overflow = Overflow.Hidden;
+                b.style.borderTopWidth = 0;
+                b.style.borderRightWidth = 0;
+                b.style.borderLeftWidth = 0;
+                b.style.borderBottomWidth = 2;
+                b.style.backgroundColor = FlightDusk.Ink;
+                b.style.color = FlightDusk.Tone(calm[i].Tone);
+                b.style.borderBottomColor = FlightDusk.Tone(calm[i].Tone);
+                FlightDusk.Face(b, FlightDusk.BodyFace());
+                healthButtons[i] = b;
+                row.Add(b);
+            }
+            healthDetail = new Label { name = "ascent-health-detail", pickingMode = PickingMode.Ignore };
+            healthDetail.style.position = Position.Absolute;
+            healthDetail.style.left = 0;
+            healthDetail.style.right = 0;
+            healthDetail.style.top = Px(FlightHudLayout.HealthPt);
+            healthDetail.style.display = DisplayStyle.None;
+            healthDetail.style.whiteSpace = WhiteSpace.Normal;
+            health.Add(row);
+            health.Add(healthDetail);
+            root.Add(health);
+        }
+
+        void PaintHealth(AscentFlightScore score)
+        {
+            if (healthButtons == null || flight == null || flight.Decisions == null) return;
+            var director = flight.Decisions;
+            var vehicle = director.Vehicle;
+            double fuel = director.LiveProp;
+            if (double.IsNaN(fuel) && flight.Sim != null) fuel = flight.Sim.PropellantFraction;
+            string kind = "";
+            if (flight.Lost && flight.Result != null && flight.Result.failure != null)
+                kind = flight.Result.failure.kind ?? "";
+            double alt = director.LiveAlt > 0 ? director.LiveAlt : flight.Altitude;
+            bool fairingOff = vehicle != null && vehicle.HasFairing && alt >= vehicle.JettisonAltM;
+            bool engineOut = false;
+            var prompts = director.OpenPrompts();
+            if (prompts != null)
+                for (int i = 0; i < prompts.Length; i++)
+                    if (prompts[i].Call == AscentCall.EngineOut) engineOut = true;
+            var parts = VehicleHealth.Read(new VehicleHealthInput
+            {
+                QPa = director.LiveQ > 0 ? director.LiveQ : flight.DynPressure,
+                QLimitPa = vehicle != null ? vehicle.QLimPa : 0,
+                Fuel01 = fuel,
+                GLoad = director.LiveG,
+                GLimit = vehicle != null ? vehicle.GLimit : 0,
+                Thrust01 = flight.ThrustFraction,
+                ExpectThrust = flight.Sim != null && flight.Sim.Thrusting,
+                EngineOut = engineOut,
+                Lost = flight.Lost,
+                LossKind = kind,
+                HasFairing = vehicle != null && vehicle.HasFairing,
+                FairingOff = fairingOff,
+                PayloadHot = score != null && score.PayloadDamaged,
+            });
+            for (int i = 0; i < healthButtons.Length && i < parts.Length; i++)
+            {
+                var b = healthButtons[i];
+                if (b == null) continue;
+                b.text = parts[i].Mark;
+                b.tooltip = parts[i].Name + ". " + parts[i].Detail;
+                var tone = FlightDusk.Tone(parts[i].Tone);
+                b.style.color = tone;
+                b.style.borderBottomColor = tone;
+                b.style.backgroundColor = healthOpen == i ? FlightDusk.AlarmInk : FlightDusk.Ink;
+            }
+            if (healthDetail == null) return;
+            if (healthOpen >= 0 && healthOpen < parts.Length)
+            {
+                healthDetail.text = parts[healthOpen].Name + ". " + parts[healthOpen].Detail;
+                healthDetail.style.display = DisplayStyle.Flex;
+                FlightDusk.Sentence(healthDetail, upp);
+                healthDetail.style.backgroundColor = FlightDusk.Ink;
+                healthDetail.style.paddingLeft = 6f * upp;
+                healthDetail.style.paddingRight = 6f * upp;
+                healthDetail.style.paddingTop = 2f * upp;
+                healthDetail.style.paddingBottom = 2f * upp;
+            }
+            else healthDetail.style.display = DisplayStyle.None;
+        }
+
+        void OnHealth(int index)
+        {
+            healthOpen = healthOpen == index ? -1 : index;
+            if (flight != null) Present(flight);
+            else if (healthDetail != null)
+                healthDetail.style.display = healthOpen >= 0 ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        /// <summary>
+        /// Flight notes sit in a scroll view above the button dock, not inside it.
+        /// The dock's overflow clips anything drawn above its own box.
+        /// </summary>
+        void PlaceInfoSheet()
+        {
+            if (help == null || hud == null) return;
+            if (!infoOpen)
+            {
+                help.style.display = DisplayStyle.None;
+                return;
+            }
+            if (help.parent != hud) hud.Add(help);
+            help.style.display = DisplayStyle.Flex;
+            help.style.position = Position.Absolute;
+            float padL = hud.resolvedStyle.paddingLeft;
+            float padR = hud.resolvedStyle.paddingRight;
+            if (float.IsNaN(padL)) padL = 0;
+            if (float.IsNaN(padR)) padR = 0;
+            help.style.left = padL;
+            help.style.right = padR;
+            help.style.top = StyleKeyword.Auto;
+            help.style.width = StyleKeyword.Auto;
+            bool prompt = shown != default;
+            float dock = actions != null ? actions.resolvedStyle.height : float.NaN;
+            if (float.IsNaN(dock) || dock < 8f)
+            {
+                float pt = FlightHudLayout.DockHeight(false, prompt);
+                if (!nudgeRowOpen) pt -= FlightHudLayout.ButtonPt + FlightHudLayout.GapPt;
+                if (pt < FlightHudLayout.ButtonPt) pt = FlightHudLayout.ButtonPt;
+                dock = Px(pt);
+            }
+            help.style.bottom = dock + Px(FlightHudLayout.GapPt);
+            float panelH = hud.resolvedStyle.height;
+            if (float.IsNaN(panelH) || panelH < 8f) panelH = 700f * upp;
+            float sheet = FlightHudLayout.InfoViewPt(panelH / upp, 0f, prompt);
+            help.style.height = Px(sheet);
+            help.style.maxHeight = Px(sheet);
+            help.style.minHeight = Px(48f);
+            FlightDusk.Frame(help, upp, false);
+            FlightDusk.Sentence(detail, upp);
+            FlightDusk.Sentence(caption, upp);
+            FlightDusk.Sentence(bonus, upp);
+            FlightDusk.Sentence(extra, upp);
+            help.BringToFront();
         }
 
         string ExtraLine(AscentDirector director)
@@ -862,7 +1057,7 @@ namespace Kestrel.Slice
         void StyleStages()
         {
             if (stages == null) return;
-            stages.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.StagesAlpha);
+            stages.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
             stages.style.width = Length.Percent(FlightHudLayout.CardFraction * 100f);
             stages.style.height = Px(FlightHudLayout.PlotPt);
             stages.style.flexGrow = 0;
@@ -884,9 +1079,9 @@ namespace Kestrel.Slice
             var verdict = stages.Q<Label>("h-verdict");
             if (verdict != null)
             {
-                verdict.style.fontSize = Px(12f);
-                verdict.style.whiteSpace = WhiteSpace.Normal;
-                verdict.style.overflow = Overflow.Hidden;
+                bool alarm = verdict.text != null && verdict.text.IndexOf("lost", StringComparison.OrdinalIgnoreCase) >= 0;
+                FlightDusk.Banner(verdict, upp, alarm);
+                verdict.style.display = string.IsNullOrEmpty(verdict.text) ? DisplayStyle.None : DisplayStyle.Flex;
             }
             var seq = stages.Q("h-seq");
             if (seq != null)
@@ -943,9 +1138,11 @@ namespace Kestrel.Slice
             info.tooltip = "Flight notes. Timing, the path colours, and the extra readouts.";
             medalRow.Add(medal);
             medalRow.Add(info);
-            help = new VisualElement { name = "ascent-help", pickingMode = PickingMode.Ignore };
+            help = new ScrollView(ScrollViewMode.Vertical) { name = "ascent-help" };
+            help.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            help.verticalScrollerVisibility = ScrollerVisibility.Auto;
             help.AddToClassList("flight-help");
-            help.style.overflow = Overflow.Hidden;
+            help.style.display = DisplayStyle.None;
             detail = Note("ascent-detail", new Color(0.78f, 0.84f, 0.9f));
             caption = Note("ascent-caption", new Color(0.65f, 0.75f, 0.82f));
             bonus = Note("ascent-bonus", new Color(0.65f, 0.78f, 0.72f));
@@ -1064,7 +1261,13 @@ namespace Kestrel.Slice
         {
             infoOpen = !infoOpen;
             if (hud != null) hud.EnableInClassList("hud-info", infoOpen);
-            Present(flight);
+            if (flight != null) Present(flight);
+            else
+            {
+                PlaceDockSpacer();
+                PlaceInfoSheet();
+                if (hud != null) hud.Q("pause-menu")?.BringToFront();
+            }
         }
 
         void Nudge(double delta)

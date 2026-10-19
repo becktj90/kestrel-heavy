@@ -38,7 +38,7 @@ namespace Kestrel.Core.Flight
 
     public sealed class FlightHudFrame
     {
-        public HudBox Clock, Stage, Telemetry, Plot, Stages, Dock, Info, Medal, Help, Quote, Timer;
+        public HudBox Clock, Stage, Health, Telemetry, Plot, Stages, Dock, Info, Medal, Help, Quote, Timer;
         public HudBox Assist, Primary, Skip, Alternate, NudgeDown, NudgeUp, Follow, Pause, Exit;
         public HudBox[] Cells = new HudBox[4];
         public FlightHudMode Mode;
@@ -50,6 +50,7 @@ namespace Kestrel.Core.Flight
         public const float GapPt = 4f;
         public const float PadPt = 4f;
         public const float HeaderPt = 36f;
+        public const float HealthPt = 28f;
         public const float TelemetryPt = 36f;
         public const float PlotPt = 72f;
         public const float CardFraction = 0.32f;
@@ -62,7 +63,8 @@ namespace Kestrel.Core.Flight
         public const float FollowWidthPt = 112f;
         public const float PauseWidthPt = 76f;
         public const float PlotAlpha = 0.32f;
-        public const float TrajectoryAlpha = 0.10f;
+        /// <summary>The trajectory is a line. A filled slab behind it read as a grey panel.</summary>
+        public const float TrajectoryAlpha = 0f;
         public const float RailMaxPt = 120f;
         public const float StagesAlpha = 0.32f;
         public const float DockAlpha = 0.90f;
@@ -80,18 +82,36 @@ namespace Kestrel.Core.Flight
         public static readonly string[] ValueSamples = { "999.9 km", "0.00 km/s", "999 kPa", "00.0", "100%", "TWR", "PROP" };
 
         /// <summary>
-        /// Clock face that fits "T+ 00.0" inside the band. The 56 px stylesheet size
-        /// spills out of the strip and covers the ALT cell.
+        /// Clock face that fits "T+ 00.0" and "T-00:00.0" inside the band. The 56 px
+        /// stylesheet size spills out of the strip and covers the ALT cell.
         /// </summary>
         public static float ClockFontPt(float boxW, float boxH)
         {
-            const string sample = "T+ 00.0";
             float font = 28f;
             float limit = boxH > 8f ? boxH - 4f : font;
             if (font > limit) font = limit;
             if (!(boxW > 8f)) return font > 13f ? font : 13f;
-            while (font > 13f && TextWidth(sample, font) > boxW - 2f) font -= 0.5f;
+            while (font > 13f && (
+                TextWidth("T+ 00.0", font) > boxW - 2f ||
+                TextWidth("T-00:00.0", font) > boxW - 2f))
+                font -= 0.5f;
             return font;
+        }
+
+        /// <summary>
+        /// Height of the flight-notes sheet that sits above the button dock.
+        /// It stays under the rocket band and scrolls when the copy is longer.
+        /// </summary>
+        public static float InfoViewPt(float screenH, float safeBottom, bool prompt)
+        {
+            if (!(screenH > 1f)) return HelpPt;
+            float buttons = DockHeight(false, prompt);
+            float dockTop = screenH - Math.Max(0f, safeBottom) - buttons;
+            float ceiling = screenH * StackBottom + 8f;
+            float room = dockTop - ceiling - GapPt;
+            if (room < 48f) room = 48f;
+            if (room > 96f) room = 96f;
+            return room;
         }
 
         public static float TextWidth(string text, float fontPt)
@@ -138,8 +158,10 @@ namespace Kestrel.Core.Flight
             var f = new FlightHudFrame { Mode = mode };
             f.Clock = Box(left, safeTop, Math.Max(44f, contentW - StageChipPt - GapPt), HeaderPt);
             f.Stage = Box(right - StageChipPt, safeTop + (HeaderPt - StageChipPt) * 0.5f, StageChipPt, StageChipPt);
+            float healthY = safeTop + HeaderPt + GapPt;
+            f.Health = Box(left, healthY, contentW, HealthPt);
 
-            float telY = safeTop + HeaderPt + GapPt;
+            float telY = healthY + HealthPt + GapPt;
             f.Telemetry = Box(left, telY, contentW, TelemetryPt);
             float cellW = (contentW - CellGapPt * (TelemetryCount - 1)) / TelemetryCount;
             f.Cells = new HudBox[TelemetryCount];
@@ -299,9 +321,11 @@ namespace Kestrel.Core.Flight
             float leftExtra = (helpInRail ? HelpPt + GapPt : 0f) + (quoteInRail ? QuotePt + GapPt : 0f);
 
             float followY = railBot - toolsH;
-            float plotH = followY - GapPt - leftExtra - railTop;
+            f.Health = Box(left, railTop, railW, HealthPt);
+            float plotY = f.Health.Bottom + GapPt;
+            float plotH = followY - GapPt - leftExtra - plotY;
             if (plotH < 48f) plotH = 48f;
-            f.Plot = Box(left, railTop, railW, plotH);
+            f.Plot = Box(left, plotY, railW, plotH);
             float yL = f.Plot.Bottom + GapPt;
             if (helpInRail)
             {
