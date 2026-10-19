@@ -139,6 +139,7 @@ namespace Kestrel.Slice
                 panel.EngineerChanged += _ => ApplyValidation();
                 // #213 is on main. One registration: portrait designer beside the Hangar.
                 designer = DesignerV3Panel.Attach(session, ui, upp);
+                designer?.SetLandscape(webWide);
                 if (designer != null) designer.LaunchRequested += Launch;
                 FixField.OnApply += HandleReportedFix;
             }
@@ -314,6 +315,9 @@ namespace Kestrel.Slice
         {
             var doc = gameObject.AddComponent<UIDocument>();
             doc.panelSettings = PanelSettings != null ? PanelSettings : Resources.Load<PanelSettings>("UI/KH_PanelSettings");
+            // Landscape web: 1280x720 matched halfway, not the 1179-wide phone reference (WebPanelScale).
+            panelScale.Tick(doc.panelSettings);
+            slicePanel = doc.panelSettings;
             doc.visualTreeAsset = Resources.Load<VisualTreeAsset>("UI/Slice");
             ui = doc.rootVisualElement;
             designPanel = ui.Q("design"); hud = ui.Q("hud");
@@ -339,7 +343,7 @@ namespace Kestrel.Slice
             if (skipCount != null) skipCount.clicked += SkipCount;
             again = ui.Q<Button>("again");
             launchButton = ui.Q<Button>("launch");
-            launchButton.clicked += Launch;
+            launchButton.clicked += LaunchFromButton;
             undoButton = ui.Q<Button>("undo"); redoButton = ui.Q<Button>("redo"); explodeButton = ui.Q<Button>("explode");
             undoButton.clicked += () => { nextIsUndo = true; var st = session?.Undo(); nextIsUndo = false; if (st != null) undoButton.tooltip = "Undid: " + st.Spoken; };
             redoButton.clicked += () => { nextIsRedo = true; var st = session?.Redo(); nextIsRedo = false; if (st != null) redoButton.tooltip = "Redid: " + st.Spoken; };
@@ -378,9 +382,26 @@ namespace Kestrel.Slice
             staging?.Layout(UnitsPerPoint());
         }
 
-        /// <summary>Panel units per iOS point (panel scales with screen width, so this differs per device).</summary>
+        readonly Kestrel.Game.Shell.WebPanelScale.Watch panelScale = new Kestrel.Game.Shell.WebPanelScale.Watch();
+        PanelSettings slicePanel;
+        bool webWide;
+
+        /// <summary>Landscape web: re-applies the panel reference on a resize and toggles .kh-web-wide (Slice.uss caps).</summary>
+        void TickWebScale()
+        {
+            panelScale.Tick(slicePanel);
+            bool wide = Kestrel.Game.Shell.WebPanelScale.Wide;
+            if (ui == null || wide == webWide) return;
+            webWide = wide;
+            ui.EnableInClassList("kh-web-wide", wide);
+            designer?.SetLandscape(wide);
+        }
+
+        /// <summary>Panel units per iOS point (panel scales with screen width, so this differs per device).
+        /// Landscape web: the 1280x720 panel's units are the points the type caps are written in.</summary>
         float UnitsPerPoint()
         {
+            if (Kestrel.Game.Shell.WebPanelScale.Wide) return 1f;
             float wPt = Screen.width / DesignFraming.PixelsPerPoint(Screen.width, Screen.height, Screen.dpi);
             return ui != null && ui.layout.width > 0 && wPt > 0 ? ui.layout.width / wPt : 3f;
         }
@@ -493,27 +514,17 @@ namespace Kestrel.Slice
                 WebDesignChrome.Clear(ui);
                 return;
             }
-            Kestrel.Game.Shell.WebViewport.Css(out float cssW, out float cssH);
-            if (cssW < 8f || cssH < 8f) { WebDesignChrome.Clear(ui); return; }
-            float perX = Screen.width > 1 ? Screen.width / cssW : 1f;
-            float perY = Screen.height > 1 ? Screen.height / cssH : 1f;
+            // Lay out in panel units: the landscape panel is the 1280x720 reference (WebPanelScale), so the
+            // 1280 band and the 200-360 side columns are panel points, the same units as the type caps.
+            float pw = ui.layout.width, ph = ui.layout.height;
+            if (Screen.width < 2 || Screen.height < 2) { WebDesignChrome.Clear(ui); return; }
+            float perX = Screen.width / pw;
+            float perY = Screen.height / ph;
             var safe = Screen.safeArea;
-            var frame = WebDesignerLayout.Place(cssW, cssH,
+            var frame = WebDesignerLayout.Place(pw, ph,
                 (Screen.height - safe.yMax) / perY, safe.yMin / perY, safe.xMin / perX, (Screen.width - safe.xMax) / perX);
-            float ux = ui.layout.width / cssW;
-            float uy = ui.layout.height / cssH;
-            frame.Parts = ScaleBox(frame.Parts, ux, uy);
-            frame.Readouts = ScaleBox(frame.Readouts, ux, uy);
-            frame.Launch = ScaleBox(frame.Launch, ux, uy);
-            frame.RightPanel = ScaleBox(frame.RightPanel, ux, uy);
-            frame.Rocket = ScaleBox(frame.Rocket, ux, uy);
-            frame.Home = ScaleBox(frame.Home, ux, uy);
-            frame.Exit = ScaleBox(frame.Exit, ux, uy);
             WebDesignChrome.Apply(ui, frame);
         }
-
-        static HudBox ScaleBox(HudBox b, float ux, float uy) =>
-            new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
 
         void SetDesignCollapsed(bool collapsed)
         {
@@ -560,18 +571,22 @@ namespace Kestrel.Slice
             issueChip.EnableInClassList("warn-only", blocks == 0);
             string first = notices.Count > 0 ? notices[0].text : "";
             issueChip.tooltip = chip.Length == 0 ? "" : chip + ". " + first + " Tap to see them all.";
-            bool ok = session.LaunchEnabled;
-            launchButton.SetEnabled(ok);
+            // B-10: the designer's gate (blocks, deterministic red, fit, speed; stale ascent is "Checking…").
+            var gate = LaunchGateNow();
+            bool ok = gate.Ready;
+            // "Checking…" keeps the button live: a press finishes the check (LaunchFromButton), never flies blind.
+            launchButton.SetEnabled(gate.state != LaunchGateState.Blocked);
             var firstBlock = adv.Find(a => a.severity == AdvisorySeverity.Block);
             string reasonBody = firstBlock == null
                 ? DesignerValidation.KidFallback
                 : engineer
                     ? ShownText.Screen(string.IsNullOrEmpty(firstBlock.engineer) ? firstBlock.kid : firstBlock.engineer)
                     : ShownText.Plain(firstBlock.code, firstBlock.kid, firstBlock.engineer);
-            string reason = ok ? "" : "Fix first: " + reasonBody;
+            string reason = ok ? "" : firstBlock != null ? "Fix first: " + reasonBody : gate.Line;
             launchReason.text = reason;
             launchReason.EnableInClassList("hidden", ok);
-            launchButton.tooltip = ok ? "Roll out and launch the current design" : "Launch unavailable. " + reason;
+            launchButton.tooltip = ok ? "Roll out and launch the current design"
+                : gate.state == LaunchGateState.Checking ? LaunchGate.Checking : "Launch unavailable. " + reason;
             if (undoButton != null)
             {
                 undoButton.SetEnabled(session.history.CanUndo);
@@ -1027,6 +1042,27 @@ namespace Kestrel.Slice
             EnterFlight();
         }
 
+        /// <summary>B-10 gate for the Launch controls. With the designer mounted it is the full gate, and its
+        /// reference ascent resolves "Checking…". Without it nothing fills the ascent cache, so only a Blocked
+        /// result refuses (otherwise Launch would wait on a check that never runs).</summary>
+        LaunchGateResult LaunchGateNow(bool settle = false)
+        {
+            if (session == null) return new LaunchGateResult { state = LaunchGateState.Blocked, reason = LaunchGate.Fallback };
+            if (designer != null) return designer.Gate(settle);
+            QuickReadout quick = null;
+            try { quick = Readout.Quick(session.catalog, session.Design); } catch (System.Exception) { quick = null; }
+            var gate = LaunchGate.Evaluate(session.Report, quick);
+            if (gate.state == LaunchGateState.Checking && session.LaunchEnabled) gate = new LaunchGateResult { state = LaunchGateState.Ready };
+            return gate;
+        }
+
+        /// <summary>The on-screen Launch button: never flies a design the gate refuses.</summary>
+        void LaunchFromButton()
+        {
+            if (!LaunchGateNow(settle: true).Ready) { ApplyValidation(); return; }
+            Launch();
+        }
+
         /// <summary>The flight HUD is up. The designer launch control is hidden behind it.</summary>
         public bool FlightHudVisible => hud != null && !hud.ClassListContains("hidden");
 
@@ -1265,6 +1301,7 @@ namespace Kestrel.Slice
         /// <summary>Hangar per-frame work: a rate-limited rocket rebuild while a stepper is held.</summary>
         void Update()
         {
+            TickWebScale();
             bool claimed = Kestrel.Game.Shell.MenuBack.Claimed;
             Kestrel.Game.Shell.MenuBack.Claimed = false;
             if (!claimed && ReportCardChrome.ConsumeKey(ui)) return;

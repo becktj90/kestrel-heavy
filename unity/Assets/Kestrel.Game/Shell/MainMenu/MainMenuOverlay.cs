@@ -183,6 +183,12 @@ namespace Kestrel.Game.Shell
                 WebViewport.Css(out cssW, out cssH);
                 if (cssW < 8f || cssH < 8f) { cssW = rw; cssH = rh; }
                 CssSafe(cssW, cssH, out safeTop, out safeBottom, out safeLeft, out safeRight);
+                // Lay out in panel units, not CSS px. The landscape panel is a 1280x720 reference
+                // (WebPanelScale), and WebHomeLayout's caps are panel points (LANDSCAPE_WEB_BRIEF §1).
+                float ux = rw / Mathf.Max(1f, cssW - safeLeft - safeRight);
+                float uy = rh / Mathf.Max(1f, cssH - safeTop - safeBottom);
+                cssW *= ux; safeLeft *= ux; safeRight *= ux;
+                cssH *= uy; safeTop *= uy; safeBottom *= uy;
             }
             var frame = WebHomeLayout.Place(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight);
             // The host was just released from the 600px cap, so this pass can still be the phone

@@ -106,7 +106,9 @@ namespace Kestrel.Core.Flight
             // bar and stop above the bottom bar, even when the safe inset is smaller than the bar.
             float contentTop = Math.Max(topBar, Reel(height, safeTop));
             float contentBottom = height - Reel(height, safeBottom);
-            PlaceWide(f, width, left, right, contentTop, contentBottom);
+            // Content band: at most 1280 wide and centred. The corners stay on the screen edge.
+            WebLandscapeType.Band(left, right, out float bandLeft, out float bandRight);
+            PlaceWide(f, width, bandLeft, bandRight, contentTop, contentBottom);
             return f;
         }
 
@@ -134,10 +136,11 @@ namespace Kestrel.Core.Flight
 
         static void PlaceWide(WebHomeFrame f, float width, float left, float right, float topBar, float bottom)
         {
-            float cx = width * 0.5f;
-            float rocketW = Clamp(width * 0.30f, 180f, 560f);
-            float menuW = Clamp(width * 0.28f, 220f, 420f);
-            float statsW = Clamp(width * 0.20f, 150f, 300f);
+            float cx = (left + right) * 0.5f;
+            float band = right - left;
+            float rocketW = Clamp(band * 0.30f, 180f, 560f);
+            float menuW = Clamp(band * 0.28f, 220f, 420f);
+            float statsW = Clamp(band * 0.20f, 150f, 300f);
             float avail = right - left;
             float need = statsW + rocketW + menuW + Edge * 4f;
             if (need > avail)
@@ -175,7 +178,8 @@ namespace Kestrel.Core.Flight
             if (titleRight < titleLeft + 48f) titleRight = titleLeft + 48f;
             float titleW = titleRight - titleLeft;
             float titleInner = Math.Max(1f, titleW - 8f);
-            float titleFont = Fit(titleInner, HomeWideText.Kestrel, 72f, 16f);
+            // Wordmark cap: 48 pt and 12% of the height (LANDSCAPE_WEB_BRIEF §1).
+            float titleFont = WebLandscapeType.Wordmark(Fit(titleInner, HomeWideText.Kestrel, 72f, 16f), bottom - topBar);
             float tagFont = Fit(titleInner * 0.62f, HomeWideText.Heavy, 26f, 11f);
             // 14px under the top of the wordmark box for the teal eyebrow. The faces stay the measured block.
             const float Brow = 14f;
@@ -230,6 +234,8 @@ namespace Kestrel.Core.Flight
                 if (yStats + h > y1) yStats = Math.Max(statsTop, y1 - h);
                 f.Stats = Rect(f.Stats.X, yStats, f.Stats.W, h);
             }
+
+            CapWideType(type);
 
             float launchNat = type.Launch, launchCapNat = type.LaunchCaption;
             float designNat = type.Design, designCapNat = type.DesignCaption;
@@ -289,6 +295,20 @@ namespace Kestrel.Core.Flight
             f.Hint = Rect(menuX, hintY, menuW, hintH);
             f.Menu = Rect(menuX, y0, menuW, Math.Max(1f, y1 - y0));
             f.Type = type;
+        }
+
+        /// <summary>Hard caps after the fit: CTA 22, tile labels 18, body and captions 16.</summary>
+        static void CapWideType(WebHomeType t)
+        {
+            t.Launch = WebLandscapeType.Cta(t.Launch);
+            t.Design = WebLandscapeType.Tile(t.Design);
+            t.TileName = WebLandscapeType.Tile(t.TileName);
+            t.LaunchCaption = WebLandscapeType.Body(t.LaunchCaption);
+            t.DesignCaption = WebLandscapeType.Body(t.DesignCaption);
+            t.TileCaption = WebLandscapeType.Body(t.TileCaption);
+            t.Soon = WebLandscapeType.Body(t.Soon);
+            t.Stat = WebLandscapeType.Body(t.Stat);
+            t.Hint = WebLandscapeType.Body(t.Hint);
         }
 
         /// <summary>Null when every wide-home string fits its box. Portrait frames are not checked.</summary>

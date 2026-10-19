@@ -52,6 +52,28 @@ namespace Kestrel.Slice.DesignerV3
 
         public static DesignerV3Tab[] Visible(bool engineer) => engineer ? All : Simple;
 
+        /// <summary>Landscape web Simple (LANDSCAPE_WEB_BRIEF §3): engines, fuel, payload, look. Everything else is behind More….</summary>
+        public static readonly DesignerV3Tab[] LandscapeSimple =
+        {
+            DesignerV3Tab.Engines, DesignerV3Tab.Tanks, DesignerV3Tab.Payload, DesignerV3Tab.Look,
+        };
+
+        public const string MoreLabel = "More…";
+
+        /// <summary>Tabs on the bar. Landscape Simple shows four until More… opens; then the rest of Simple joins them.</summary>
+        public static DesignerV3Tab[] Visible(bool engineer, bool landscape, bool more)
+        {
+            if (engineer || !landscape) return Visible(engineer);
+            if (!more) return LandscapeSimple;
+            var list = new System.Collections.Generic.List<DesignerV3Tab>(LandscapeSimple);
+            foreach (var t in Simple) if (!list.Contains(t)) list.Add(t);
+            return list.ToArray();
+        }
+
+        /// <summary>Landscape Simple calls the tanks "Fuel", the word the brief and the fix reasons use.</summary>
+        public static string Label(DesignerV3Tab tab, bool engineer, bool landscape) =>
+            landscape && !engineer && tab == DesignerV3Tab.Tanks ? "Fuel" : Label(tab, engineer);
+
         public static bool TryParse(string id, out DesignerV3Tab tab)
         {
             if (Enum.TryParse(id, true, out tab)) return true;

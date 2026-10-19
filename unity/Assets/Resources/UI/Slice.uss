@@ -52,3 +52,23 @@
 .design.side { position: absolute; right: 0; top: 0; bottom: 0; border-top-right-radius: 0; border-bottom-left-radius: 18px; }
 .design.side.collapsed { bottom: auto; }
 .design.collapsed .launch-row { display: none; }
+
+/* Landscape web (LANDSCAPE_WEB_BRIEF §1): the panel is a 1280x720 reference there, so these phone
+   sizes (about 3 units per pt) would be billboards. HUD chips 12-18, body 12-16, CTA 16-22. */
+.kh-web-wide .design-toggle { font-size: 16px; }
+.kh-web-wide .title { font-size: 22px; margin-bottom: 6px; }
+.kh-web-wide .row { font-size: 14px; margin-top: 4px; margin-bottom: 4px; }
+.kh-web-wide .row Label { font-size: 14px; min-width: 120px; }
+.kh-web-wide .readout Label { font-size: 14px; }
+.kh-web-wide .readout .big { font-size: 22px; }
+.kh-web-wide .launch { height: 52px; font-size: 20px; }
+.kh-web-wide .hud-big { font-size: 18px; }
+.kh-web-wide .hud-chip { font-size: 14px; padding: 3px 8px; }
+.kh-web-wide .hud-cell { font-size: 14px; }
+.kh-web-wide .hud-msg { font-size: 18px; }
+.kh-web-wide .webcast-verdict { font-size: 16px; }
+.kh-web-wide .webcast-pulse { font-size: 13px; }
+.kh-web-wide .webcast-chip { font-size: 13px; padding: 3px 6px; }
+.kh-web-wide .webcast-skip { font-size: 15px; }
+.kh-web-wide .issue-chip { font-size: 14px; padding: 4px 10px; }
+.kh-web-wide .launch-reason { font-size: 14px; }

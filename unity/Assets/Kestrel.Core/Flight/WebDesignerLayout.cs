@@ -1,5 +1,5 @@
-// Designer composition. Portrait keeps a bottom sheet. Landscape puts the parts list on the left
-// of the rocket and the readouts (with Launch) on the right.
+// Designer composition. Portrait keeps a bottom sheet. Landscape is three panes in a centred band:
+// the parts list left of the rocket, the readouts (with Launch) on the right.
 using System;
 
 namespace Kestrel.Core.Flight
@@ -40,15 +40,16 @@ namespace Kestrel.Core.Flight
             }
 
             float top = Math.Max(f.Exit.Bottom, f.Home.Bottom + 36f) + Gap;
-            float col = Clamp(width * 0.24f, 200f, 400f);
-            float span = right - left;
-            float center = span - 2f * col - 2f * Gap;
-            if (center < width * 0.22f)
-                col = Math.Max(150f, (span - width * 0.22f - 2f * Gap) * 0.5f);
+            // Three panes in a centred band at most 1280 wide (LANDSCAPE_WEB_BRIEF §3): parts left,
+            // rocket centre (at least 22% of the band), readouts and Launch right. Side columns
+            // 200-360, never past the 400 pt side panel (DECISIONS #62).
+            WebLandscapeType.Band(left, right, out float bandLeft, out float bandRight);
+            float span = bandRight - bandLeft;
+            float col = WebLandscapeType.SideColumn(span);
 
             float colH = Math.Max(80f, bottom - top);
-            f.Parts = Rect(left, top, col, colH);
-            float rightX = right - col;
+            f.Parts = Rect(bandLeft, top, col, colH);
+            float rightX = bandRight - col;
             f.Launch = Rect(rightX + Edge, top + colH - Edge - LaunchH, col - 2f * Edge, LaunchH);
             f.Readouts = Rect(rightX, top, col, Math.Max(44f, f.Launch.Y - Gap - top));
             f.RightPanel = Rect(rightX, top, col, colH);

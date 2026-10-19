@@ -42,6 +42,8 @@ namespace Kestrel.Slice.DesignerV3
         DesignerV3Tab tab = DesignerV3Tab.Engines;
         string flowStep = "Engines";
         bool engineer;
+        /// <summary>Landscape web (LANDSCAPE_WEB_BRIEF §3): four Simple tabs, More… for the rest, three gauges, one launch reason.</summary>
+        bool landscape, more;
         bool launchConfirmArmed;
         bool tutorialOn;
         bool sheetCollapsed;
@@ -183,7 +185,9 @@ namespace Kestrel.Slice.DesignerV3
                 Apply = (op, key) => Do(op, key),
                 EndGesture = End,
                 Focus = f => FieldFocused?.Invoke(f),
-                Launch = () => LaunchRequested?.Invoke(),
+                // B-10: the guided Review step launches only through the gate. Seeded fair-odds reds pass the gate
+                // and keep their Launch anyway confirm.
+                Launch = () => { if (Gate(settle: true).Ready) LaunchRequested?.Invoke(); },
                 JumpRisk = JumpToRisk,
                 LaunchArmed = () => launchConfirmArmed,
                 SetLaunchArmed = v => launchConfirmArmed = v,
@@ -300,6 +304,27 @@ namespace Kestrel.Slice.DesignerV3
             Rebuild();
         }
 
+        /// <summary>SliceApp flips this with the landscape web shell. Portrait keeps the phone designer.</summary>
+        public void SetLandscape(bool on)
+        {
+            if (landscape == on) return;
+            landscape = on;
+            more = false;
+            if (!engineer && Array.IndexOf(DesignerV3Tabs.Visible(false, landscape, true), tab) < 0) tab = DesignerV3Tab.Engines;
+            BuildTabs();
+            Rebuild();
+        }
+
+        public bool Landscape => landscape;
+
+        void SetMore(bool open)
+        {
+            if (more == open) return;
+            more = open;
+            BuildTabs();
+            RefreshChrome();
+        }
+
         public void SetContentMax(float units)
         {
             float minPx = ui.U(DesignerV3Layout.MinContentPt);
@@ -327,7 +352,12 @@ namespace Kestrel.Slice.DesignerV3
 
         public void Show(DesignerV3Tab next)
         {
-            if (!engineer && Array.IndexOf(DesignerV3Tabs.Simple, next) < 0)
+            if (!engineer && landscape && Array.IndexOf(DesignerV3Tabs.Visible(false, true, true), next) >= 0)
+            {
+                // Landscape Simple keeps Payload; Stages and Landing open More… so the jump lands on a visible tab.
+                if (Array.IndexOf(DesignerV3Tabs.LandscapeSimple, next) < 0 && !more) { more = true; BuildTabs(); }
+            }
+            else if (!engineer && Array.IndexOf(DesignerV3Tabs.Simple, next) < 0)
             {
                 // Kid layer: map engineer-only tabs onto the closest Simple tab.
                 next = next switch
@@ -407,13 +437,22 @@ namespace Kestrel.Slice.DesignerV3
         {
             tabs.Clear();
             tabButtons.Clear();
-            foreach (var t in DesignerV3Tabs.Visible(engineer))
+            foreach (var t in DesignerV3Tabs.Visible(engineer, landscape, more))
             {
                 var captured = t;
-                var b = ui.Btn(DesignerV3Tabs.Label(t, engineer), () => Show(captured), DesignerV3Tabs.VoiceOver(t), minWidthPt: 56f);
+                var b = ui.Btn(DesignerV3Tabs.Label(t, engineer, landscape), () => Show(captured), DesignerV3Tabs.VoiceOver(t), minWidthPt: 56f);
                 b.name = "tab-" + t;
                 tabButtons[t] = b;
                 tabs.Add(b);
+            }
+            if (landscape && !engineer)
+            {
+                // One disclosure: the other Simple tabs and the Engineer switch live behind More….
+                var disclose = ui.Btn(more ? "Less" : DesignerV3Tabs.MoreLabel, () => SetMore(!more),
+                    more ? "Hide the extra tabs" : "Show more tabs and the Engineer view", minWidthPt: 56f);
+                disclose.name = "tab-more";
+                tabs.Add(disclose);
+                if (!more) return;
             }
             var mode = ui.Btn(engineer ? "Engineer" : "Simple", () => SetEngineer(!engineer),
                 engineer ? "Switch to Simple view" : "Switch to Engineer view", minWidthPt: 72f);
@@ -489,14 +528,15 @@ namespace Kestrel.Slice.DesignerV3
         {
             strip.Clear();
             var readout = Readout.Quick(C, D);
-            foreach (var c in DesignerV3Strip.Cells(readout, engineer))
+            bool gauges = landscape && !engineer;
+            foreach (var c in gauges ? DesignerV3Strip.Gauges(readout) : DesignerV3Strip.Cells(readout, engineer))
             {
                 var cell = ui.Column();
                 cell.name = "strip-" + c.id;
                 cell.style.flexGrow = 1;
                 cell.style.flexShrink = 1;
-                cell.style.flexBasis = new StyleLength(new Length(46, LengthUnit.Percent));
-                cell.style.minWidth = new StyleLength(new Length(40, LengthUnit.Percent));
+                cell.style.flexBasis = new StyleLength(new Length(gauges ? 30 : 46, LengthUnit.Percent));
+                cell.style.minWidth = new StyleLength(new Length(gauges ? 28 : 40, LengthUnit.Percent));
                 cell.style.overflow = Overflow.Visible;
                 cell.style.alignItems = Align.Center;
                 var label = ui.Text(c.label, HangarUi.SmallPt, HangarUi.Dim);
@@ -579,6 +619,12 @@ namespace Kestrel.Slice.DesignerV3
         void BuildRisks()
         {
             riskRow.Clear();
+            if (landscape && !engineer)
+            {
+                // Landscape Simple: no warning list. The launch row carries the one reason and its fix.
+                riskRow.style.display = DisplayStyle.None;
+                return;
+            }
             var readout = Readout.Quick(C, D);
             var notices = DesignerNotices.Collect(session.Advisories, readout.risks);
             if (notices.Count == 0)
@@ -640,9 +686,61 @@ namespace Kestrel.Slice.DesignerV3
             }
         }
 
+        /// <summary>B-10: the launch gate on the live readout. <paramref name="settle"/> finishes a stale reference
+        /// ascent first, so an explicit press is never refused for "Checking…".</summary>
+        public LaunchGateResult Gate(bool settle = false)
+        {
+            if (settle && Readout.Quick(C, D).maxQStale) FinishReference();
+            return LaunchGate.Evaluate(session.Report, Readout.Quick(C, D));
+        }
+
+        Label GateLine(string text)
+        {
+            var why = ui.Text(text, HangarUi.SmallPt);
+            why.name = "launch-gate-reason";
+            why.style.whiteSpace = WhiteSpace.Normal;
+            why.style.flexShrink = 1;
+            why.style.flexGrow = 1;
+            return why;
+        }
+
         void BuildLaunchRow()
         {
             confirmRow.Clear();
+            var gate = Gate();
+            if (gate.state == LaunchGateState.Blocked)
+            {
+                // One plain reason and the tab that fixes it (LANDSCAPE_WEB_BRIEF B-10). Never "Ready".
+                var off = ui.Btn("Launch", () => { }, "Launch unavailable. " + gate.Line, minWidthPt: 120f);
+                off.name = "launch-btn";
+                off.SetEnabled(false);
+                confirmRow.Add(off);
+                confirmRow.Add(GateLine(gate.Line));
+                if (!string.IsNullOrEmpty(gate.tab))
+                {
+                    var target = DesignerV3Tabs.FromRiskTab(gate.tab);
+                    var fix = ui.Btn("Fix it", () => Show(target), "Open " + DesignerV3Tabs.Label(target, engineer, landscape), minWidthPt: 72f);
+                    fix.name = "launch-gate-fix";
+                    confirmRow.Add(fix);
+                }
+                return;
+            }
+            if (gate.state == LaunchGateState.Checking)
+            {
+                // The reference ascent is still running. The line says so; a press finishes the check first
+                // and launches only if the gate then passes.
+                var check = ui.Btn("Launch", () =>
+                {
+                    bool ready = Gate(settle: true).Ready;
+                    BuildLaunchRow();
+                    // Seeded fair-odds reds still show their Launch anyway confirm on the rebuilt row.
+                    if (ready && !DesignerV3Strip.HasRedRisk(Readout.Quick(C, D))) LaunchRequested?.Invoke();
+                }, "Checking the test flight first", minWidthPt: 120f);
+                check.name = "launch-btn";
+                confirmRow.Add(check);
+                confirmRow.Add(GateLine(LaunchGate.Checking));
+                return;
+            }
             var readout = Readout.Quick(C, D);
             bool red = DesignerV3Strip.HasRedRisk(readout);
             string label = DesignerV3Risk.LaunchButtonLabel(red, launchConfirmArmed);
@@ -1214,6 +1312,7 @@ namespace Kestrel.Slice.DesignerV3
                 if (referenceJob.Step(ReferenceAscent.FrameBudgetMs))
                 {
                     BuildStrip();
+                    BuildLaunchRow();
                     stepper?.RefreshLive();
                     session.RefreshDerived();
                 }
