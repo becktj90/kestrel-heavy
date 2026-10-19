@@ -47,6 +47,7 @@ namespace Kestrel.Game.Shell
         public void HomePressed(string controlId)
         {
             if (Busy) return;
+            if (controlId == "continue") { Present(ResumeActions.Open()); return; }
             if (controlId == "launch") { Present(HomeLaunchRoute()); return; }
             if (controlId == "design") { Present(HomeDesignRoute()); return; }
             if (controlId == "missions")

@@ -44,8 +44,8 @@
 .launch:disabled { background-color: rgb(90, 90, 100); color: rgb(210, 210, 220); }
 .launch-reason { font-size: 26px; color: rgb(255, 200, 200); white-space: normal; margin-top: 8px; }
 /* Hangar (G3). Sizes in points are set from code (HangarUi); these are colours and flow only. */
-.launch-row { flex-direction: row; align-items: center; }
-.launch-row .launch { flex-grow: 1; }
+.launch-row { flex-direction: row; flex-wrap: wrap; align-items: center; overflow: visible; }
+.launch-row .launch { flex-grow: 1; flex-shrink: 1; min-width: 88px; white-space: normal; }
 .tool { color: white; background-color: rgba(255, 255, 255, 0.10); border-width: 0; -unity-font-style: bold; }
 .tool:disabled { color: rgb(120, 125, 140); }
 .issue-chip { position: absolute; }

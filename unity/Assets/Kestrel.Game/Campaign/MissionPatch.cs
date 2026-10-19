@@ -1,6 +1,6 @@
-// Reusable mission patch. MissionPatch.Render(missionId, size) draws the embroidered disc
-// for a campaign flight, a contract, or a free flight. The texture is point-sampled when
-// small and bilinear when it is large enough that the pixel font stays on whole texels.
+// Reusable mission patch. MissionPatch.Render(missionId, size) draws a baked KH badge when
+// Resources has one, and the procedural embroidery for a contract, a free flight, or a
+// missing file. The texture is point-sampled when small and bilinear when it is large.
 using Kestrel.Core.Flight;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -77,6 +77,44 @@ namespace Kestrel.Game.Shell
             Rebuild(force: false);
         }
 
+        static byte[] FromResources(string missionId, int px, PatchChrome chrome)
+        {
+            var spec = MissionPatchArt.Resolve(missionId);
+            if (spec.Index < 1 || spec.Index > MissionPatchArt.CampaignCount) return null;
+            Texture2D tex = null;
+            bool treated = false;
+            if (chrome != PatchChrome.Open)
+            {
+                tex = Resources.Load<Texture2D>(MissionPatchArt.BakedResource(spec.Index, chrome));
+                treated = tex != null;
+            }
+            if (tex == null)
+                tex = Resources.Load<Texture2D>(MissionPatchArt.BakedResource(spec.Index, PatchChrome.Open));
+            if (tex == null || tex.width < 1 || tex.height < 1 || !tex.isReadable) return null;
+            Color32[] pix;
+            try { pix = tex.GetPixels32(); }
+            catch (System.Exception) { return null; }
+            if (pix == null || pix.Length < tex.width * tex.height) return null;
+            int w = tex.width;
+            int h = tex.height;
+            var rgba = new byte[w * h * 4];
+            for (int y = 0; y < h; y++)
+            {
+                int src = (h - 1 - y) * w;
+                int dst = y * w * 4;
+                for (int x = 0; x < w; x++)
+                {
+                    var c = pix[src + x];
+                    rgba[dst] = c.r;
+                    rgba[dst + 1] = c.g;
+                    rgba[dst + 2] = c.b;
+                    rgba[dst + 3] = c.a;
+                    dst += 4;
+                }
+            }
+            return MissionPatchArt.Present(rgba, w, h, px, treated ? PatchChrome.Open : chrome);
+        }
+
         void Rebuild(bool force)
         {
             float ppp = 1f;
@@ -92,7 +130,7 @@ namespace Kestrel.Game.Shell
                 _image.image = shared;
                 return;
             }
-            byte[] bytes = MissionPatchArt.Rgba(_id, px, _chrome);
+            byte[] bytes = FromResources(_id, px, _chrome) ?? MissionPatchArt.Rgba(_id, px, _chrome);
             var cols = new Color32[px * px];
             for (int y = 0; y < px; y++)
             for (int x = 0; x < px; x++)

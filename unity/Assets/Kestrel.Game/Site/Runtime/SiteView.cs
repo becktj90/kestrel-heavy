@@ -1,5 +1,6 @@
 // Builds the Pier 7 site under the floating-origin world root. Sea level is this transform's origin
 // (Slice anchors it at PadGround.GroundY). Land and water are one mesh each.
+using Kestrel.Kit;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -70,8 +71,51 @@ namespace Kestrel.Site
             _site = SiteGenerator.Generate(seed);
             _land = Make("Site/KH_Terrain", "Kestrel/Terrain");
             _water = Make("Site/KH_Water", "Kestrel/Water");
+            BindSurfaces();
             AddMesh("Terrain", _site.Land(lod), _land);
             AddMesh("Water", _site.Water(lod), _water);
+        }
+
+        static readonly System.Collections.Generic.Dictionary<SurfaceKind, Texture2D> Surfaces = new System.Collections.Generic.Dictionary<SurfaceKind, Texture2D>();
+
+        void BindSurfaces()
+        {
+            if (_land != null)
+            {
+                _land.SetTexture("_Grass", Surface(SurfaceKind.Grass));
+                _land.SetTexture("_Sand", Surface(SurfaceKind.Sand));
+                _land.SetTexture("_Concrete", Surface(SurfaceKind.Concrete));
+                _land.SetFloat("_DetailOn", 1f);
+            }
+            if (_water != null)
+            {
+                _water.SetTexture("_Ripple", Surface(SurfaceKind.Water));
+                _water.SetFloat("_DetailOn", 1f);
+            }
+        }
+
+        static Texture2D Surface(SurfaceKind kind)
+        {
+            if (Surfaces.TryGetValue(kind, out var t) && t != null) return t;
+            var raw = new byte[SurfaceGrain.Bytes];
+            SurfaceGrain.Fill(kind, raw);
+            t = new Texture2D(SurfaceGrain.Size, SurfaceGrain.Size, TextureFormat.RGBA32, true)
+            {
+                name = "Site_" + kind,
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            var px = new Color32[SurfaceGrain.Size * SurfaceGrain.Size];
+            for (int i = 0; i < px.Length; i++)
+            {
+                int o = i * 4;
+                px[i] = new Color32(raw[o], raw[o + 1], raw[o + 2], raw[o + 3]);
+            }
+            t.SetPixels32(px);
+            t.Apply(true, true);
+            Surfaces[kind] = t;
+            return t;
         }
 
         void AddMesh(string name, SiteMesh src, Material mat)

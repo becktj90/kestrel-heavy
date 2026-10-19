@@ -1,6 +1,7 @@
 // In-flight pause and the one-thumb camera controls. The chase camera stays the follow pose;
 // drag and pinch only orbit that offset, and a tap or the Follow button hands it back.
 using System;
+using Kestrel.Core.Flight;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -12,20 +13,25 @@ namespace Kestrel.Slice
         public const float TouchPt = 44f;
 
         VisualElement hud, menu, tools;
-        Button pause, follow, music, sfx, narration;
+        Button pause, follow, cameraBtn, music, sfx, narration;
         FlightRig rig = FlightCameraRig.Following();
         Action<bool> setPaused;
+        Action<FlightViewMode> viewChanged;
+        FlightViewMode viewMode;
         bool tracking, blockGesture, pinching;
-        float pinchDist;
+        float pinchDist, lastUpp = 1f;
 
         public bool Paused { get; private set; }
         public bool Follow => rig.Follow;
         public FlightRig Rig => rig;
+        public FlightViewMode View => viewMode;
 
-        public void Bind(VisualElement flightHud, Action<bool> onPause, Action restart, Action exitHome)
+        public void Bind(VisualElement flightHud, Action<bool> onPause, Action restart, Action exitHome, Action<FlightViewMode> onView = null, FlightViewMode initial = FlightViewMode.Auto)
         {
             hud = flightHud;
             setPaused = onPause;
+            viewChanged = onView;
+            viewMode = initial;
             if (hud == null) return;
             hud.pickingMode = PickingMode.Ignore;
 
@@ -37,9 +43,12 @@ namespace Kestrel.Slice
 
             follow = Tool("follow", "Follow rocket", "Follow the rocket. Recenters the camera.");
             follow.clicked += () => { rig = FlightCameraRig.Recenter(rig); RefreshFollow(); };
+            cameraBtn = Tool("flight-camera", FlightView.Name(viewMode), "Camera. Cycles Auto, Chase, Above, Below and Pad.");
+            cameraBtn.clicked += CycleCamera;
             pause = Tool("pause", "Pause", "Pause. Freezes the flight.");
             pause.clicked += () => setPaused?.Invoke(true);
             tools.Add(follow);
+            tools.Add(cameraBtn);
             tools.Add(pause);
 
             var webcast = hud.Q("webcast");
@@ -73,16 +82,22 @@ namespace Kestrel.Slice
             menu.Add(narration);
             hud.Add(menu);
             RefreshFollow();
+            RefreshCamera();
             RefreshAudio();
         }
 
         public void Layout(float unitsPerPoint)
         {
             float upp = unitsPerPoint >= 0.5f ? unitsPerPoint : 1f;
+            lastUpp = upp;
             float h = TouchPt * upp;
-            StyleTool(follow, upp, h, Kestrel.Core.Flight.FlightHudLayout.FollowWidthPt);
-            StyleTool(pause, upp, h, Kestrel.Core.Flight.FlightHudLayout.PauseWidthPt);
+            StyleTool(follow, upp, h, FlightHudLayout.FollowWidthPt);
+            StyleTool(cameraBtn, upp, h, FlightView.ButtonWidth(viewMode));
+            StyleTool(pause, upp, h, FlightHudLayout.PauseWidthPt);
             if (follow != null) follow.style.fontSize = 13f * upp;
+            FitTool(follow, upp);
+            FitTool(cameraBtn, upp, FlightView.ButtonFontPt);
+            FitTool(pause, upp);
             if (menu == null) return;
             var title = menu.Q<Label>("pause-title");
             if (title != null) title.style.fontSize = 22f * upp;
@@ -111,6 +126,7 @@ namespace Kestrel.Slice
             pinching = false;
             Show(false);
             RefreshFollow();
+            RefreshCamera();
         }
 
         public Vector3 Frame(Vector3 chaseOffset) => FlightCameraRig.Orbit(chaseOffset, rig);
@@ -201,6 +217,26 @@ namespace Kestrel.Slice
             button.text = Kestrel.Game.Audio.AudioPrefs.Caption(name, muted);
         }
 
+        void CycleCamera()
+        {
+            viewMode = FlightView.Next(viewMode);
+            RefreshCamera();
+            viewChanged?.Invoke(viewMode);
+        }
+
+        void RefreshCamera()
+        {
+            if (cameraBtn == null) return;
+            string name = FlightView.Name(viewMode);
+            cameraBtn.text = name;
+            cameraBtn.tooltip = "Camera: " + name + ". Tap for the next view.";
+            float upp = lastUpp > 0.5f ? lastUpp : 1f;
+            float w = FlightView.ButtonWidth(viewMode) * upp;
+            cameraBtn.style.minWidth = w;
+            cameraBtn.style.width = w;
+            FitTool(cameraBtn, upp, FlightView.ButtonFontPt);
+        }
+
         void RefreshFollow()
         {
             if (follow == null) return;
@@ -227,12 +263,27 @@ namespace Kestrel.Slice
             return b;
         }
 
+        static void FitTool(Button b, float upp, float fontPt = 13f)
+        {
+            if (b == null) return;
+            b.style.fontSize = fontPt * upp;
+            b.style.whiteSpace = WhiteSpace.NoWrap;
+            b.style.overflow = Overflow.Visible;
+            b.style.unityTextAlign = TextAnchor.MiddleCenter;
+            b.style.paddingLeft = 2f * upp;
+            b.style.paddingRight = 2f * upp;
+            b.style.paddingTop = 0f;
+            b.style.paddingBottom = 0f;
+            b.style.flexShrink = 0f;
+        }
+
         static void StyleTool(Button b, float upp, float height, float widthPt)
         {
             if (b == null) return;
             b.style.minHeight = height;
             b.style.height = height;
             b.style.minWidth = widthPt * upp;
+            b.style.width = widthPt * upp;
             b.style.fontSize = 16f * upp;
             float r = 12f * upp;
             b.style.borderTopLeftRadius = r;

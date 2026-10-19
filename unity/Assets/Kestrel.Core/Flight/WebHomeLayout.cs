@@ -67,6 +67,8 @@ namespace Kestrel.Core.Flight
         public const float TileChrome = 3f * 2f + 10f * 2f + Slack;
         public const float LampSlot = 16f;
         public const float SoonPad = 18f;
+        /// <summary>Below this width the gear stacks under the page FULL button so they cannot share pixels.</summary>
+        public const float NarrowGear = 520f;
 
         public static float Reel(float height, float safeInset) =>
             Math.Max(height * ReelFrac, Math.Max(0f, safeInset) + ReelMin);
@@ -79,11 +81,16 @@ namespace Kestrel.Core.Flight
             safeLeft = Math.Max(0f, safeLeft);
             safeRight = Math.Max(0f, safeRight);
             // Same corner contract as HomeCornerLayout (reserveExit), shifted inside the safe area
-            // so a landscape notch does not push EXIT off the screen.
+            // so a landscape notch does not push EXIT off the screen. A narrow portrait stacks the
+            // gear under FULL: a side-by-side pair overlaps the gear on a ~335px phone.
             float exitX = width - safeRight - HomeCornerLayout.Edge - HomeCornerLayout.ExitW;
             float gearX = exitX - HomeCornerLayout.Edge - HomeCornerLayout.Gear;
             f.Exit = Rect(exitX, safeTop, HomeCornerLayout.ExitW, HomeCornerLayout.ExitH);
-            f.Gear = Rect(gearX, safeTop, HomeCornerLayout.Gear, HomeCornerLayout.Gear);
+            bool stackGear = !f.Wide && width < NarrowGear;
+            f.Gear = stackGear
+                ? Rect(width - safeRight - HomeCornerLayout.Edge - HomeCornerLayout.Gear,
+                    f.Exit.Bottom + HomeCornerLayout.Edge, HomeCornerLayout.Gear, HomeCornerLayout.Gear)
+                : Rect(gearX, safeTop, HomeCornerLayout.Gear, HomeCornerLayout.Gear);
             f.Audio = Rect(safeLeft + HomeCornerLayout.Edge, safeTop, HomeCornerLayout.AudioW, HomeCornerLayout.AudioH);
 
             float topBar = Math.Max(f.Audio.Bottom, Math.Max(f.Gear.Bottom, f.Exit.Bottom));
@@ -107,7 +114,7 @@ namespace Kestrel.Core.Flight
         {
             float innerL = left + Edge;
             float innerW = Math.Max(1f, right - left - 2f * Edge);
-            float tileH = 76f, launchH = 64f, designH = 48f, statsH = 36f, hintH = 18f;
+            float tileH = 76f, launchH = 64f, designH = 48f, statsH = 58f, hintH = 36f;
             float stack = statsH + Gap + launchH + Gap + designH + Gap + tileH + Gap + hintH;
             float y = bottom - Edge - stack;
             f.Stats = Rect(innerL, y, innerW, statsH); y += statsH + Gap;
@@ -215,6 +222,14 @@ namespace Kestrel.Core.Flight
             type.Hint = FitCaption(hintInner, HomeWideText.Hint, 13f, 9f, out type.HintLines);
             float statInner = Math.Max(1f, statsW - 16f);
             type.Stat = Fit(Math.Max(1f, statInner - Gap), HomeWideText.Fuel + HomeWideText.Thrust, 15f, 8f);
+            float statNeed = type.Stat * Line + 22f;
+            if (f.Stats.H + 0.6f < statNeed)
+            {
+                float h = Math.Min(statNeed, Math.Max(f.Stats.H, y1 - f.Stats.Y));
+                float yStats = f.Stats.Y;
+                if (yStats + h > y1) yStats = Math.Max(statsTop, y1 - h);
+                f.Stats = Rect(f.Stats.X, yStats, f.Stats.W, h);
+            }
 
             float launchNat = type.Launch, launchCapNat = type.LaunchCaption;
             float designNat = type.Design, designCapNat = type.DesignCaption;
@@ -246,6 +261,14 @@ namespace Kestrel.Core.Flight
                 launchH *= scale;
                 designH *= scale;
                 tileH *= scale;
+                // The boxes shrank. Keep the type inside them or the captions clip.
+                type.Launch *= scale;
+                type.LaunchCaption *= scale;
+                type.Design *= scale;
+                type.DesignCaption *= scale;
+                type.TileName *= scale;
+                type.TileCaption *= scale;
+                type.Soon *= scale;
             }
             else if (stack > 1f)
             {
@@ -261,6 +284,8 @@ namespace Kestrel.Core.Flight
             float hintY = y1 - hintH;
             if (hintY < y) hintY = y;
             if (hintY + hintH > y1) hintH = Math.Max(1f, y1 - hintY);
+            float hintNeed = type.HintLines * type.Hint * Line + 4f;
+            if (hintH + 0.6f < hintNeed && hintNeed > 0f) type.Hint *= hintH / hintNeed;
             f.Hint = Rect(menuX, hintY, menuW, hintH);
             f.Menu = Rect(menuX, y0, menuW, Math.Max(1f, y1 - y0));
             f.Type = type;
@@ -276,7 +301,7 @@ namespace Kestrel.Core.Flight
             if (HomeWideText.Width(HomeWideText.Heavy, t.Tagline) > titleInner * 0.7f + 0.6f) return "HEAVY wider than the rule row";
             if (t.Title * 1.05f + 6f + t.Tagline * Line > f.Title.H + 0.6f) return "title block taller than its box";
 
-            string card = CardFit(f.Launch, t.Launch, HomeWideText.Launch, t.LaunchCaption, HomeWideText.LaunchCaption, t.LaunchCaptionLines, LaunchChrome, 8f, 3f, "launch");
+            string card = CardFit(f.Launch, t.Launch, HomeWideText.Launch, t.LaunchCaption, HomeWideText.LaunchCaption, t.LaunchCaptionLines, LaunchChrome, 8f, 5f, "launch");
             if (card != null) return card;
             card = CardFit(f.Design, t.Design, HomeWideText.Design, t.DesignCaption, HomeWideText.DesignCaption, t.DesignCaptionLines, DesignChrome, 6f, 2f, "design");
             if (card != null) return card;
@@ -355,7 +380,8 @@ namespace Kestrel.Core.Flight
             type.TileCaption = LerpFloor(10f, tileCapNat, fit);
             float capAt = Math.Max(HomeWideText.MissionsCaption, HomeWideText.CodexCaption);
             type.TileCaptionLines = CappedLines(capAt, type.TileCaption, tileInner);
-            launchH = Block(type.Launch, type.LaunchCaption, type.LaunchCaptionLines, 8f, 3f);
+            // Launch USS is a 1px top rule plus an 8px bottom lip. 2*5 covers that height.
+            launchH = Block(type.Launch, type.LaunchCaption, type.LaunchCaptionLines, 8f, 5f);
             designH = Block(type.Design, type.DesignCaption, type.DesignCaptionLines, 6f, 2f);
             tileH = Block(type.TileName, type.TileCaption, type.TileCaptionLines, 10f, 3f);
             return launchH + designH + tileH * 2f;

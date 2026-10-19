@@ -114,8 +114,12 @@ namespace Kestrel.Game.Tests
             Assert.That(missions, Is.EqualTo(1));
 
             var codex = root.Q<Button>("home-codex");
-            Assert.That(codex.enabledSelf, Is.False);
+            Assert.That(codex.enabledSelf, Is.True);
             Assert.That(codex.tooltip, Does.Contain("Coming soon"));
+            Press(codex);
+            Assert.That(full.Q("home-codex-soon"), Is.Not.Null);
+            Assert.That(MenuBack.Try(full), Is.True);
+            Assert.That(full.Q("home-codex-soon").style.display.value, Is.EqualTo(DisplayStyle.None));
 
             var gear = full.Q<Button>("home-settings");
             Assert.That(gear.style.minHeight.value.value, Is.GreaterThanOrEqualTo(44f));
@@ -225,7 +229,7 @@ namespace Kestrel.Game.Tests
                 if (access == MissionAccess.Locked)
                 {
                     Assert.That(node.parent.ClassListContains("mission-node--locked"), Is.True, id);
-                    Assert.That(board.Q<Button>("mission-primary").text, Is.EqualTo("Locked"), id);
+                    Assert.That(board.Q<Button>("mission-primary").text, Is.EqualTo("Clear KH-" + (i - 1).ToString(System.Globalization.CultureInfo.InvariantCulture) + " to unlock"), id);
                 }
                 else if (access == MissionAccess.Open)
                 {

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Kestrel.Core.Data;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
 using Kestrel.Core.Save;
@@ -101,7 +102,9 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual(301000 + 9000, HangarFormat.StepProp(300500, +1), 1e-6, "snaps up to the 10 t grid");
             Assert.AreEqual(300000, HangarFormat.StepProp(300500, -1), 1e-6, "snaps down to the grid");
             Assert.AreEqual(99000, HangarFormat.StepProp(100000, -1), 1e-6, "crossing down into the 1 t band");
-            Assert.AreEqual(1000, HangarFormat.StepProp(1000, -1), 1e-6, "never below one step");
+            Assert.AreEqual(900, HangarFormat.StepProp(1000, -1), 1e-6, "100 kg steps under 1 t");
+            Assert.Less(HangarFormat.StepProp(345, -1), 345);
+            Assert.AreEqual(DesignerLimits.Active.propMassMin, HangarFormat.StepProp(DesignerLimits.Active.propMassMin, -1), 1e-6, "sticks at the minimum");
         }
 
         [Test]

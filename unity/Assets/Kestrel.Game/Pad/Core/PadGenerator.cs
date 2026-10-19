@@ -47,6 +47,10 @@ namespace Kestrel.Pad
         public readonly List<ServiceLink> Links = new List<ServiceLink>();
         public ElementGraph Graph = new ElementGraph();
         public float DeckRadius;
+        /// <summary>Propellant families this pad was built for. Empty means no cryo farm.</summary>
+        public FarmPlan Propellant;
+        /// <summary>Water tower and trench nozzles. Active is false on a solid rail.</summary>
+        public DelugeSpec Deluge;
         /// <summary>Flame trench, deflector and deck surface (D3). Null only on layouts built before Register.</summary>
         public TrenchSpec Trench;
         /// <summary>Named tower attach frames (null for Rail). See TowerAnchors and docs/UMBILICAL_CONTRACT.md.</summary>
@@ -73,17 +77,17 @@ namespace Kestrel.Pad
 
     public static class PadGenerator
     {
-        public const int Version = 4;   // D4 umbilicals/links on top of D3 trench (invalidates caches/goldens)
+        public const int Version = 5;   // propellant farm + deluge on top of D4 (invalidates caches)
 
         /// <summary>Same rule as Kestrel.Core.Timeline.Pad.For: tower for stages >= 3 m across, strongback for liquid + tower.</summary>
         public static PadArchetype ArchetypeFor(string corePadId, bool strongback) =>
             corePadId == "pad.rail" ? PadArchetype.Rail : strongback ? PadArchetype.TowerStrongback : PadArchetype.Tower;
 
         /// <param name="attach">Vehicle attach points (vehicle frame). Swing arms are made for SwingArmRetract points; null = generic defaults.</param>
-        public static PadLayout Generate(int seed, PadArchetype type, PadFit fit, IReadOnlyList<AttachPoint> attach = null)
+        public static PadLayout Generate(int seed, PadArchetype type, PadFit fit, IReadOnlyList<AttachPoint> attach = null, FarmPlan propellant = null)
         {
             var rng = new PadRng(seed);
-            var L = new PadLayout { Seed = seed, Archetype = type, Fit = fit };
+            var L = new PadLayout { Seed = seed, Archetype = type, Fit = fit, Propellant = propellant ?? new FarmPlan() };
             L.DeckRadius = Math.Max(12f, fit.VehicleRadius * 4f) * rng.Range(1.0f, 1.3f);
             var site = L.Graph.Add(TowerLayout.SiteId, ElementCategory.Site, null, "pad", $"archetype:{type}");
             site.Center = new Vec3(0, 0, 0); site.Size = new Vec3(L.DeckRadius * 2, 1, L.DeckRadius * 2); site.DisplayName = "Launch pad";
@@ -91,7 +95,7 @@ namespace Kestrel.Pad
             L.Trench = TrenchGrammar.Sample(seed, type, fit, L.DeckRadius);
             TrenchGrammar.Register(L);
 
-            if (type == PadArchetype.Rail) { BuildRail(L, ref rng); UmbilicalRig.Attach(L, attach, UmbilicalRig.Identity); return L; }
+            if (type == PadArchetype.Rail) { BuildRail(L, ref rng); UmbilicalRig.Attach(L, attach, UmbilicalRig.Identity); return Finish(L); }
 
             var tp = new TowerParams
             {
@@ -139,8 +143,18 @@ namespace Kestrel.Pad
             if (type == PadArchetype.TowerStrongback) BuildStrongback(L, ref rng);
             BuildMasts(L, ref rng);
             UmbilicalRig.Attach(L, pts, UmbilicalRig.Identity);
+            return Finish(L);
+        }
+
+        static PadLayout Finish(PadLayout L)
+        {
+            DelugeRig.Apply(L);
+            PropellantFarm.Apply(L);
             return L;
         }
+
+        internal static void AddMember(PadLayout L, string parent, string id, MemberKind k, Vec3 a, Vec3 b, MaterialRole mat, params string[] tags) =>
+            AddM(L, parent, id, k, a, b, mat, tags);
 
         /// <summary>Pad-local bearings (deg, 0 = tower +Z, clockwise toward +X) for lightning masts: flanking the tower
         /// and behind it, clear of the plume exits (90/270 ±25°, §6) and of the default design camera, which looks from

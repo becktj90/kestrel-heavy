@@ -356,7 +356,9 @@ namespace Kestrel.Core.Tests
                     left.Append(" | ").Append(advisory.severity).Append(" ").Append(advisory.code);
                 Assert.AreEqual(0, blocks, left.ToString());
                 Assert.AreEqual(0, warns, left.ToString());
-                Assert.That(result.Instruction, Does.Contain("→"));
+                Assert.That(result.Instruction, Does.Contain(" to "));
+                Assert.That(result.BeforeNumbers, Is.Not.Null.And.Not.Empty);
+                Assert.That(result.AfterNumbers, Is.Not.Null.And.Not.Empty);
             }
             else
             {

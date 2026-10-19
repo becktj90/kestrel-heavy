@@ -1,6 +1,7 @@
 // Red-risk launch confirm (§3 / §6): red risks show "Launch anyway"; tapping a chip jumps to its field.
 using System.Collections.Generic;
 using Kestrel.Core;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
 using Kestrel.Slice;
 
@@ -30,9 +31,12 @@ namespace Kestrel.Slice.DesignerV3
         public static string ChipLabel(FlightRisk risk, bool engineer)
         {
             if (risk == null) return "";
-            string body = engineer && !string.IsNullOrEmpty(risk.engineer) ? risk.engineer : risk.kid;
-            if (string.IsNullOrEmpty(body)) body = risk.kid ?? "";
-            return PlayerText.ForPlayer(body);
+            string plain = ShownText.Plain(risk.kind, risk.kid, risk.engineer);
+            if (!engineer) return ShownText.Screen(plain);
+            string detail = ShownText.Screen(risk.engineer ?? "");
+            if (string.IsNullOrEmpty(detail) || detail == plain || ShownText.Jargon(risk.engineer))
+                return ShownText.Screen(plain);
+            return ShownText.Screen(plain + " " + detail);
         }
 
         public static string ChipTooltip(FlightRisk risk)

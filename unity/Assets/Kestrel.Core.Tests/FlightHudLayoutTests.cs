@@ -54,6 +54,44 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void ClockFitsItsBand_AndPromptButtonsStayOnScreen()
+        {
+            var phones = new[]
+            {
+                new FlightHudLayout.Device("narrow", 335f, 700f, 20f, 0f, 0f, 0f),
+                new FlightHudLayout.Device("SE", 375f, 667f, 20f, 0f, 0f, 0f),
+                new FlightHudLayout.Device("Pro Max", 440f, 956f, 62f, 34f, 0f, 0f),
+                new FlightHudLayout.Device("iPad", 1032f, 1376f, 24f, 20f, 0f, 0f),
+            };
+            foreach (var d in phones)
+            {
+                var f = FlightHudLayout.Place(d, FlightHudMode.Prompt);
+                AssertClock(f, d.Name);
+                Assert.That(f.Primary.Bottom, Is.LessThanOrEqualTo(d.H - d.SafeBottom + 0.6f), d.Name + " throttle");
+                Assert.That(f.NudgeDown.Bottom, Is.LessThanOrEqualTo(d.H - d.SafeBottom + 0.6f), d.Name + " nudge");
+                Assert.That(f.NudgeUp.Bottom, Is.LessThanOrEqualTo(d.H - d.SafeBottom + 0.6f), d.Name + " nudge");
+                Assert.That(f.NudgeDown.H, Is.GreaterThanOrEqualTo(44f), d.Name);
+                Assert.That(f.Clock.Overlaps(f.Cells[0]), Is.False, d.Name + " clock/ALT");
+            }
+
+            var wide = FlightHudLayout.PlaceWide(1280f, 800f, 0f, 0f, 0f, 0f, FlightHudMode.Prompt);
+            AssertClock(wide, "1280x800");
+            Assert.That(wide.Clock.Overlaps(wide.Cells[0]), Is.False, "web clock/ALT");
+            Assert.That(wide.Primary.Bottom, Is.LessThanOrEqualTo(wide.Dock.Bottom + 0.6f), "web throttle inside dock");
+            Assert.That(wide.NudgeDown.Live, Is.True, "web nudge");
+            Assert.That(wide.NudgeUp.Bottom, Is.LessThanOrEqualTo(800f + 0.6f), "web nudge on screen");
+            Assert.That(wide.Plot.H, Is.GreaterThan(48f), "trajectory rail");
+        }
+
+        static void AssertClock(FlightHudFrame f, string where)
+        {
+            float font = FlightHudLayout.ClockFontPt(f.Clock.W, f.Clock.H);
+            Assert.That(font, Is.LessThanOrEqualTo(f.Clock.H - 3f), where + " clock face");
+            Assert.That(FlightHudLayout.TextWidth("T+ 00.0", font), Is.LessThanOrEqualTo(f.Clock.W - 1.5f), where);
+            Assert.That(FlightHudLayout.TextWidth("T+ 11.2", font), Is.LessThanOrEqualTo(f.Clock.W - 1.5f), where);
+        }
+
+        [Test]
         public void BandsDoNotOverlapOnSeProMaxOrIpad()
         {
             foreach (var d in FlightHudLayout.PortraitDevices())
@@ -116,7 +154,7 @@ namespace Kestrel.Core.Tests
             foreach (var b in boxes)
             {
                 if (!b.box.Live || b.name == "dock" || b.name == "follow" || b.name == "pause") continue;
-                if (b.name == "clock" || b.name == "stage" || b.name == "plot" || b.name == "stages" || b.name.StartsWith("cell")) continue;
+                if (b.name == "clock" || b.name == "stage" || b.name == "health" || b.name == "plot" || b.name == "stages" || b.name.StartsWith("cell")) continue;
                 Assert.That(b.box.Y, Is.GreaterThanOrEqualTo(f.Dock.Y - 0.6f), where + " " + b.name + " left the dock");
                 Assert.That(b.box.Bottom, Is.LessThanOrEqualTo(f.Dock.Bottom + 0.6f), where + " " + b.name);
             }
@@ -134,6 +172,8 @@ namespace Kestrel.Core.Tests
             Assert.That(f.Stages.Bottom, Is.LessThan(nose - 6f), where + " stages cover the stack");
             Assert.That(f.Telemetry.Bottom, Is.LessThan(nose), where);
             Assert.That(f.Dock.Y, Is.GreaterThan(tail + 4f), where + " dock covers the stack");
+            Assert.That(f.Health.Y, Is.GreaterThanOrEqualTo(f.Clock.Bottom - 0.6f), where + " health covers the clock");
+            Assert.That(f.Telemetry.Y, Is.GreaterThanOrEqualTo(f.Health.Bottom - 0.6f), where + " strip covers health");
             Assert.That(f.Plot.Y, Is.GreaterThanOrEqualTo(f.Telemetry.Bottom - 0.6f), where + " trajectory covers the strip");
             Assert.That(f.Plot.Bottom, Is.LessThanOrEqualTo(f.Follow.Y + 0.6f), where + " trajectory covers follow");
             Assert.That(f.Plot.H, Is.GreaterThan(160f), where + " trajectory runs up the screen");
@@ -168,7 +208,7 @@ namespace Kestrel.Core.Tests
         {
             var list = new List<(string, HudBox)>
             {
-                ("clock", f.Clock), ("stage", f.Stage), ("plot", f.Plot), ("stages", f.Stages),
+                ("clock", f.Clock), ("stage", f.Stage), ("health", f.Health), ("plot", f.Plot), ("stages", f.Stages),
                 ("dock", f.Dock), ("info", f.Info), ("medal", f.Medal), ("help", f.Help),
                 ("quote", f.Quote), ("timer", f.Timer), ("assist", f.Assist), ("primary", f.Primary),
                 ("skip", f.Skip), ("alternate", f.Alternate), ("nudge-down", f.NudgeDown), ("nudge-up", f.NudgeUp),

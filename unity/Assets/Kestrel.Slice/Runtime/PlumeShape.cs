@@ -42,13 +42,15 @@ namespace Kestrel.Slice
         /// <param name="throttle">s, normalised throttle 0..1</param>
         /// <param name="paRatio">ambient pressure / P0</param>
         /// <param name="d">exit diameter of the (cluster) plume, m</param>
-        public static PlumeShapeOut Compute(float throttle, float paRatio, float d, float pd = DefaultPd)
+        public static PlumeShapeOut Compute(float throttle, float paRatio, float d, float pd = DefaultPd, float lengthScale = 1f, float widthScale = 1f)
         {
             float s = Mathf.Clamp01(throttle);
             float pa = Mathf.Max(0f, paRatio);
             float x = pd / Mathf.Max(pa, 1e-4f);
             float length = d * (6 + 10 * s) * (1 + 0.6f * Smoothstep(0.2f, 0f, pa));
             float width = d * Mathf.Clamp(Mathf.Sqrt(x), 0.7f, 6f);
+            if (lengthScale > 0f) length *= lengthScale;
+            if (widthScale > 0f) width *= widthScale;
             float coreAlpha = 0.95f * (0.55f + 0.45f * s) * (1 - 0.6f * Smoothstep(0.3f, 0.0005f, pa));
             int diamonds = x < 1.25f && pa > 0.05f ? Mathf.RoundToInt(3 + 4 * s) : 0;
             return new PlumeShapeOut(length, width, coreAlpha, x, diamonds);
@@ -242,11 +244,11 @@ namespace Kestrel.Slice
         /// <param name="vehicleRadius">widest vehicle radius incl. boosters (m)</param>
         /// <param name="vehicleHeight">vehicle height (m)</param>
         /// <param name="deckRadius">pad deck radius (m)</param>
-        public static Layout ComputeLayout(float throttle, float paRatio, float clusterD, float vehicleRadius, float vehicleHeight, float deckRadius)
+        public static Layout ComputeLayout(float throttle, float paRatio, float clusterD, float vehicleRadius, float vehicleHeight, float deckRadius, float lengthScale = 1f, float widthScale = 1f)
         {
             float d = Mathf.Max(0.5f, clusterD);
             float tf = Mathf.Clamp01(throttle);
-            var s = Compute(tf, paRatio, d);
+            var s = Compute(tf, paRatio, d, DefaultPd, lengthScale, widthScale);
             var L = new Layout { VisualD = d };
             L.Length = Mathf.Max(s.Length, 0.6f * vehicleHeight * (0.4f + 0.6f * tf));
             // Short body (lead's call after #130): the spec length (~15 D, ~190 m on the heavy) spread the same

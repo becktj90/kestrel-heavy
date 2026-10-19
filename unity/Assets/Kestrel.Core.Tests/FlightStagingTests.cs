@@ -297,6 +297,96 @@ namespace Kestrel.Core.Tests
             }
         }
 
+        [Test]
+        public void CoastLastsThroughSeparationBeforeTheUpperStageLights()
+        {
+            Assert.That(FlightStaging.SepDelaySec, Is.GreaterThanOrEqualTo(2.5));
+            Assert.That(FlightStaging.IgniteDelaySec - FlightStaging.SepDelaySec, Is.GreaterThanOrEqualTo(6));
+            var events = Cluster(80, 42000, 1860, 1);
+            var staging = Play(events, false, 0);
+            Sample(staging, events, 81, 42000, 1860, 8000, 1);
+            Assert.IsFalse(staging.Released(0, 81), "one second after MECO the stage is still attached");
+            Assert.IsFalse(staging.Pose("stage", 0, 0, 81).Released);
+            double coast = 80 + FlightStaging.CollapseSec + FlightStaging.AfterglowSec + 0.2;
+            Sample(staging, events, coast, 42500, 1870, 4000, 1);
+            Assert.AreEqual(0, staging.Plume(coast, 1).Scale, 1e-9);
+            Assert.IsFalse(staging.Plume(coast, 1).Lit);
+            double beforeIgn = 80 + FlightStaging.IgniteDelaySec - 0.05;
+            Sample(staging, events, beforeIgn, 44000, 1900, 2000, 1);
+            Assert.AreEqual(0, staging.Plume(beforeIgn, 1).Scale, 1e-9);
+            Assert.IsTrue(staging.Released(0, 80 + FlightStaging.SepDelaySec));
+        }
+
+        [Test]
+        public void FairingHalvesTumbleThenDespawn()
+        {
+            var staging = new FlightStaging();
+            staging.Reset(true, 110000, 0, false);
+            var none = new List<SimEvent>();
+            staging.Advance(none, 10, 120000, 1000, 5000, 1);
+            staging.Advance(none, 20, 130000, 1500, 20000, 1);
+            staging.Advance(none, 40, 150000, 2200, 1500, 1);
+            double t0 = 40;
+            var peeled = staging.FairingAt(t0 + FlightStaging.FairingSec);
+            Assert.AreEqual(FlightStaging.FairingPeelDeg, peeled.YawDeg, 1e-6);
+            Assert.AreEqual(0, peeled.SpinDeg, 1e-9);
+            Assert.IsFalse(peeled.Gone);
+            var tumble = staging.FairingAt(t0 + FlightStaging.FairingSec + 2);
+            Assert.That(tumble.SpinDeg, Is.GreaterThan(40));
+            Assert.That(tumble.YawDeg, Is.GreaterThan(FlightStaging.FairingPeelDeg));
+            Assert.That(tumble.DropM, Is.GreaterThan(FlightStaging.FairingDropM));
+            Assert.That(tumble.OutM, Is.GreaterThan(FlightStaging.FairingOutM));
+            Assert.IsFalse(tumble.Gone);
+            var gone = staging.FairingAt(t0 + FlightStaging.FairingLife);
+            Assert.IsTrue(gone.Gone);
+            Assert.IsTrue(gone.Separated);
+        }
+
+        [Test]
+        public void RecoverableBoosterFlipsAndFallsWithoutATumble()
+        {
+            var events = Cluster(80, 42000, 1860, 1);
+            var staging = Play(events, false, 0);
+            staging.RecoverBooster = true;
+            double earlyT = 80 + FlightStaging.SepDelaySec + 1;
+            Sample(staging, events, earlyT, 43000, 1900, 2000, 0);
+            var early = staging.Pose("stage", 0, 0, earlyT);
+            Assert.IsTrue(early.Released);
+            Assert.AreEqual(0, early.Roll, 1e-9);
+            Assert.That(early.Pitch, Is.GreaterThan(0));
+            Assert.That(early.Pitch, Is.LessThan(180));
+            double landed = 80 + FlightStaging.SepDelaySec + FlightStaging.FlipSec;
+            Sample(staging, events, landed, 20000, 400, 100, 0);
+            var down = staging.Pose("stage", 0, 0, landed);
+            Assert.AreEqual(180, down.Pitch, 1e-6);
+            Assert.AreEqual(0, down.Roll, 1e-9);
+            Assert.That(down.Y, Is.LessThan(early.Y));
+
+            var boosters = Play(events, false, 2);
+            boosters.RecoverBooster = true;
+            Sample(boosters, events, earlyT, 43000, 1900, 2000, 0);
+            var side = boosters.Pose("booster", 0, 0, earlyT);
+            Assert.That(side.Pitch, Is.GreaterThan(10), "strap-on boosters still tumble away");
+            Assert.That(System.Math.Abs(side.Roll), Is.GreaterThan(1));
+        }
+
+        [Test]
+        public void ReducedMotionRecoveryDoesNotSpin()
+        {
+            var events = Cluster(10, 1000, 300, 1);
+            var staging = new FlightStaging();
+            staging.RecoverBooster = true;
+            staging.Reset(false, 0, 0, true);
+            double t = 10 + FlightStaging.SepDelaySec + 2;
+            Sample(staging, events, t, 1000, 300, 100, 0);
+            var pose = staging.Pose("stage", 0, 0, t);
+            Assert.IsTrue(pose.Released);
+            Assert.AreEqual(0, pose.Pitch, 1e-9);
+            Assert.AreEqual(0, pose.Yaw, 1e-9);
+            Assert.AreEqual(0, pose.Roll, 1e-9);
+            Assert.That(pose.Y, Is.LessThan(0));
+        }
+
         static List<SimEvent> Cluster(double t, double alt, double speed, int spentStage)
         {
             return new List<SimEvent>

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "note": "Launch lighting for the shipped KH-1..KH-20 flights. Weights are relative integer chances (Day, then Sunset, then Night). fixed pins the value for every seed. An id with no row uses default. The campaign average is 50% Day, 25% Sunset, 25% Night. Unknown flights stay mostly Day.",
+  "default": { "day": 60, "sunset": 25, "night": 15 },
+  "missions": {
+    "KH-1": { "fixed": "Day", "note": "First hop. Daylight welcome. Pinned." },
+    "KH-2": { "day": 80, "sunset": 15, "night": 5, "note": "Edge of space. School day, a little sunset." },
+    "KH-3": { "day": 15, "sunset": 10, "night": 75, "note": "First orbit. Night, so the pad spotlights are on." },
+    "KH-4": { "day": 15, "sunset": 15, "night": 70, "note": "Weather eye. Still a night launch." },
+    "KH-5": { "day": 20, "sunset": 15, "night": 65, "note": "Heavy lifter. Night through the early flights." },
+    "KH-6": { "day": 82, "sunset": 13, "night": 5, "note": "Come back. Daylight recovery." },
+    "KH-7": { "day": 45, "sunset": 53, "night": 2, "note": "GTO comsat. Sunset window." },
+    "KH-8": { "day": 88, "sunset": 8, "night": 4, "note": "Crew Day. Daylight." },
+    "KH-9": { "day": 30, "sunset": 30, "night": 40, "note": "Moon shot. Leans night." },
+    "KH-10": { "day": 45, "sunset": 53, "night": 2, "note": "GTO reuse. Sunset window." },
+    "KH-11": { "day": 75, "sunset": 23, "night": 2, "note": "Dawn ledger. Mostly day, with a sunset share." },
+    "KH-12": { "day": 25, "sunset": 35, "night": 40, "note": "Telescope. Night." },
+    "KH-13": { "day": 82, "sunset": 13, "night": 5, "note": "Cubesat flock. Routine day." },
+    "KH-14": { "day": 82, "sunset": 13, "night": 5, "note": "Cargo trunk. Routine day." },
+    "KH-15": { "day": 29, "sunset": 28, "night": 43, "note": "GEO relay. Night." },
+    "KH-16": { "day": 32, "sunset": 25, "night": 43, "note": "Second watch. Night shift." },
+    "KH-17": { "day": 45, "sunset": 53, "night": 2, "note": "Lunar lander. Sunset." },
+    "KH-18": { "day": 35, "sunset": 20, "night": 45, "note": "Nightjar. Night." },
+    "KH-19": { "day": 45, "sunset": 53, "night": 2, "note": "GTO reuse. Sunset window." },
+    "KH-20": { "day": 30, "sunset": 25, "night": 45, "note": "Far hold. Late flight, night." }
+  }
+}

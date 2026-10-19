@@ -122,11 +122,11 @@ namespace Kestrel.Game.Tests
         [Test]
         public void DeltaChip_MatchesReadoutFormula()
         {
-            Assert.AreEqual("+42 m/s Δv · −0.03 TWR", Readout.DeltaChip(42, -0.03));
+            Assert.AreEqual("+42 m/s dv · -0.03 TWR", Readout.DeltaChip(42, -0.03));
             var s = new HangarSession(C, H, Template("workhorse"));
             int before = (int)(HangarParts.Body(s.Design, PartRef.Stage(0))?.Num("engineCount") ?? 9);
             string chip = DesignerV3Delta.Chip(C, s.Design, d => { HangarEditor.SetEngineCount(d, PartRef.Stage(0), Mathf.Max(1, before - 2)); });
-            StringAssert.Contains("Δv", chip);
+            StringAssert.Contains("m/s dv", chip);
             Assert.AreEqual(before, (int)(HangarParts.Body(s.Design, PartRef.Stage(0))?.Num("engineCount") ?? 0), "clone only");
             Assert.AreEqual(300, DesignerV3Delta.DebounceMs);
         }
@@ -141,6 +141,21 @@ namespace Kestrel.Game.Tests
             Assert.IsFalse(DesignerV3Risk.CanLaunch(true, false));
             Assert.IsTrue(DesignerV3Risk.CanLaunch(true, true));
             Assert.AreEqual(CellState.Bad, DesignerV3Risk.LevelState("red"));
+        }
+
+        [Test]
+        public void Tutorial_Kh1Hop_NamesTheHopNotLowEarthOrbit()
+        {
+            var steps = DesignerV3Tutorial.ForDesign("m1", 10000, () => "leo-200", () => 1.4, () => 0.2, () => true, () => true);
+            var payload = steps.Find(s => s.id == "payload");
+            Assert.IsNotNull(payload);
+            Assert.AreEqual("Set the trip to a 10 km hop.", payload.kid);
+            StringAssert.DoesNotContain("Low Earth Orbit", payload.kid);
+            StringAssert.DoesNotContain("200 km", payload.kid);
+            Assert.IsFalse(payload.done(), "leo-200 is not the hop target");
+            Assert.IsTrue(DesignerV3Tutorial.ForDesign("m1", 10000, () => "kh-m1", () => 1.4, () => 0.2, () => true, () => true).Find(s => s.id == "payload").done());
+            var leo = DesignerV3Tutorial.ForDesign(null, 200000, () => "gto", () => 0.8, () => -0.1, () => false, () => true);
+            Assert.AreEqual("Set the trip to Low Earth Orbit at 200 km.", leo.Find(s => s.id == "payload").kid);
         }
 
         [Test]

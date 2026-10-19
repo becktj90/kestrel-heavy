@@ -30,7 +30,7 @@
 </head>
 <body>
   <div id="stage">
-    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <canvas id="unity-canvas" tabindex="0"></canvas>
     <div id="overlay">
       <h1>KESTREL HEAVY</h1>
       <div id="bar"><div id="fill"></div></div>
@@ -145,6 +145,14 @@
         if (typeof data.immersive === "boolean") setFsLabel(data.immersive || isFullscreen());
       }
     });
+    canvas.addEventListener("pointerdown", function () { canvas.focus(); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape" && e.keyCode !== 27) return;
+      var unity = window.kestrelUnity;
+      if (!unity || typeof unity.SendMessage !== "function") return;
+      if (e.cancelable) e.preventDefault();
+      try { unity.SendMessage("KestrelEscape", "OnEscape", ""); } catch (err) {}
+    }, true);
     fs.onclick = function () {
       // Hosted on beckify, fullscreen lives on the parent, so the iframe's
       // fullscreenElement stays null. The label is the source of truth.

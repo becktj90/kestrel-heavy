@@ -127,6 +127,7 @@
 .kh-mm-kestrel { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/Fraunces-Black.ttf?fileID=12800000&guid=c170e4aa0170491ca90007e515c3db3e&type=3"); font-size: 64px; color: #f0ce8a; -unity-text-align: middle-center; white-space: nowrap; align-self: stretch; -unity-text-outline-width: 0; }
 .kh-mm-word { position: relative; align-self: stretch; }
 .kh-mm-kestrel-shadow { position: absolute; left: 0; right: 0; top: 3px; color: #5c3318; }
+.kh-mm-wide .kh-mm-kestrel-shadow { display: none; }
 .kh-mm-eyebrow { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Medium.ttf?fileID=12800000&guid=da73225191314e37b12604307d854801&type=3"); font-size: 14px; letter-spacing: 1.2px; color: #46d9cc; -unity-text-align: middle-center; white-space: nowrap; margin-bottom: 2px; }
 .kh-mm-rule-row { flex-direction: row; align-items: center; justify-content: center; margin-top: -2px; }
 .kh-mm-rule { flex-grow: 1; height: 1px; background-color: #d2a24f; margin: 0 var(--kh-space-3); }
@@ -157,10 +158,9 @@
 .kh-mm-lamp { width: 12px; height: 12px; min-width: 12px; border-radius: 6px; border-width: 2px; border-color: #14120f; margin-left: var(--kh-space-1); flex-shrink: 0; }
 .kh-mm-lamp--on { background-color: var(--kh-home-lamp-on); }
 .kh-mm .kh-home-grain { opacity: 0.10; }
-.kh-mm-hint { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Medium.ttf?fileID=12800000&guid=da73225191314e37b12604307d854801&type=3"); font-size: 14px; color: #f6ebd2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -unity-text-align: middle-left; }
-.kh-mm-wide .kh-mm-hint { white-space: normal; }
+.kh-mm-hint { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Medium.ttf?fileID=12800000&guid=da73225191314e37b12604307d854801&type=3"); font-size: 14px; color: #f6ebd2; white-space: normal; overflow: hidden; -unity-text-align: middle-left; }
 .kh-mm-glass { background-color: rgba(8, 12, 28, 0.88); border-width: 1px; border-color: rgba(255, 255, 255, 0.22); border-radius: 18px; }
-.kh-mm-thrum { position: absolute; left: 12px; right: 12px; bottom: 2px; flex-direction: row; align-items: center; padding: 4px 10px; max-height: 44px; overflow: hidden; }
+.kh-mm-thrum { position: relative; flex-direction: row; align-items: center; padding: 4px 10px; min-height: 44px; overflow: hidden; }
 .kh-mm-thrum-portrait { width: 22px; height: 22px; min-width: 22px; border-radius: 11px; margin-right: 8px; background-color: #d2a24f; }
 .kh-mm-thrum-name { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Bold.ttf?fileID=12800000&guid=8d76cbbc81224bc2a01f5e17341dae63&type=3"); font-size: 14px; color: #f6ebd2; }
 /* Narrow phones (panel < 500 px): smaller type and padding so nothing clips; tiles stay >= 44 px. */

@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "currency": "credits",
+  "label": "credits",
+  "note": "Fictional credits. Never purchasable, never timed, never taken away on a miss. The free starter is the Hopper template: its quote is 0, so a new hangar can always fly. Removing a part you paid for refunds the full price. Liveries stay earned (DECISIONS #65) and are not sold. The designer strip still shows the engineering Kc quote.",
+  "starting": 0,
+  "freeStarter": "hopper",
+  "firstClear": 10,
+  "medal": 6,
+  "missionClear": [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50],
+  "unknownEngine": 22,
+  "unknownMaterial": 8,
+  "parts": {
+    "extraStage": 40,
+    "strapOn": 28,
+    "legs": 24,
+    "gridFins": 24,
+    "rcs": 16,
+    "fins": 0,
+    "fairing": 0
+  },
+  "avionics": {
+    "basic": 0,
+    "standard": 0,
+    "redundant": 36
+  },
+  "engines": {
+    "gg-kerolox-small": 0,
+    "gg-kerolox-small-vac": 8,
+    "srm-small": 6,
+    "hybrid-small": 8,
+    "exp-hydrolox-small": 8,
+    "gg-methalox-small": 14,
+    "srm-mid": 16,
+    "pf-kerolox": 12,
+    "pf-hypergolic": 12,
+    "pf-udmh": 12,
+    "gg-kerolox": 22,
+    "gg-kerolox-vac": 24,
+    "hybrid-mid": 18,
+    "srm-large": 20,
+    "sc-kerolox": 32,
+    "sc-methalox": 32,
+    "gg-hydrolox": 28,
+    "gg-kerolox-heavy": 36,
+    "sc-hydrolox": 44,
+    "sc-kerolox-vac": 40,
+    "sc-methalox-vac": 40,
+    "ff-methalox": 44,
+    "ff-methalox-vac": 48,
+    "exp-hydrolox": 30
+  },
+  "materials": {
+    "al-li": 0,
+    "steel": 4,
+    "al-cu": 6,
+    "composite": 8,
+    "glass-phenolic": 10,
+    "titanium": 14
+  },
+  "hangar": {
+    "liveries": {},
+    "finishes": {
+      "soot_weathered": 6,
+      "brushed_stainless": 8,
+      "matte_black_ablative": 8,
+      "heat_tint_copper": 8,
+      "anodized_blue": 6,
+      "cryo_frost": 6
+    },
+    "decals": {
+      "decal_first_orbit_patch": 6,
+      "decal_comet_patch": 8
+    }
+  },
+  "darkPatterns": {
+    "timers": false,
+    "energy": false,
+    "ads": false
+  }
+}
