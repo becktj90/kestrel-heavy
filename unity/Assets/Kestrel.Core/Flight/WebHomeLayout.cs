@@ -151,7 +151,8 @@ namespace Kestrel.Core.Flight
         static void PlaceWide(WebHomeFrame f, float width, float left, float right, float topBar, float bottom)
         {
             float cx = (left + right) * 0.5f;
-            float band = right - left;
+            // Column widths scale with the viewport up to the 1280 band (the safe insets stay inside it).
+            float band = Math.Min(width, WebLandscapeType.BandMax);
             float rocketW = Clamp(band * 0.30f, 180f, 560f);
             float menuW = Clamp(band * 0.28f, 220f, 420f);
             float statsW = Clamp(band * 0.20f, 150f, 300f);
