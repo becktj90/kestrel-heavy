@@ -27,3 +27,7 @@ Every file is `{ generatedBy, tolerance, count, cases[] }`. `index.json` lists t
 | steer.json | 262 | expo thumb-steer curve, sensitivity clamp, compact full-scale | rel 1e-9 |
 
 Rows follow `index.json` order (the order `tools/export-golden.mjs` writes them). `tests/golden-readme.test.cjs` fails if a file is missing, listed twice, out of order, or has the wrong case count — merge conflicts here used to silently drop rows. Regenerate data with `npm run gen:golden`; `catalog-flight.json` bands are read from `docs/PHYSICS.md` by `tests/golden-harness.test.cjs`.
+
+## C# hand goldens: id notes
+
+`contracts-viable.json`: `comsat-gto-k0-t6-p300-m76-u26` carries **95 t on stage 2**, not the 76 t its id says (B-04: 4.0 m fairing, stage 2 +19,000 kg). The id is kept because cells and offers key on it.

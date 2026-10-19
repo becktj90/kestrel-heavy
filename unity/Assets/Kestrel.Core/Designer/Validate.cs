@@ -151,7 +151,7 @@ namespace Kestrel.Core.Designer
                 double needD = PayloadFit.RequiredDiameter(spec);
                 if (fairing.Num("diameter") < needD)
                 {
-                    JsonMut.Set(fairing, "diameter", Math.Ceiling(needD * 10) / 10);
+                    JsonMut.Set(fairing, "diameter", Math.Ceiling((needD - PayloadFit.DiameterToleranceM) * 10) / 10);
                     Say("Widened the fairing so the payload fits");
                 }
                 if (!PayloadFit.Check(fairing.Num("diameter"), fairing.Num("length"), spec).fits)
@@ -370,7 +370,7 @@ namespace Kestrel.Core.Designer
                 string label = plj?.Str("type") is string pt && c.PayloadById.TryGetValue(pt, out var pl) ? pl.label : "cargo";
                 var fit = PayloadFit.Check(fairing.Num("diameter"), fairing.Num("length"), spec);
                 if (fit.volumeMargin < 0) outp.Add(Iss("payload-doesnt-fit", "payload", $"The {label} needs about {Fmt(spec.volume, 1)} m\u00b3; this fairing holds {Fmt(fit.usableVolume, 1)} m\u00b3. Try a longer or wider fairing."));
-                else if (fit.diameterMargin < 0) outp.Add(Iss("payload-doesnt-fit", "payload", $"The {label} is {Fmt(spec.diameter, 1)} m wide; it needs a fairing at least {Fmt(Math.Ceiling(PayloadFit.RequiredDiameter(spec) * 100) / 100, 2)} m wide. Try a wider fairing."));
+                else if (fit.diameterMargin < -PayloadFit.DiameterToleranceM) outp.Add(Iss("payload-doesnt-fit", "payload", $"The {label} is {Fmt(spec.diameter, 1)} m wide; it needs a fairing at least {Fmt(Math.Ceiling((PayloadFit.RequiredDiameter(spec) - PayloadFit.DiameterToleranceM) * 100) / 100, 2)} m wide. Try a wider fairing."));
             }
             return outp;
         }

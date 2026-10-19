@@ -24,6 +24,8 @@ export function payloadVolume(d) {
 export const FIT_RADIUS = 0.45;
 export const FIT_LENGTH = 0.8;
 export const FIT_DIAMETER = 2 * FIT_RADIUS;
+/** Diameter check tolerance (m): cargo exactly at 0.9·D fits on every platform. Same as PayloadFit.DiameterToleranceM. */
+export const FIT_DIAMETER_TOL = 1e-9;
 export function usableVolume(D, L) { const r = FIT_RADIUS * D; return Math.PI * r * r * FIT_LENGTH * L; }
 export function requiredLength(volume, D) { const r = FIT_RADIUS * D; return volume / (Math.PI * r * r * FIT_LENGTH); }
 export function requiredDiameter(cargoDiameter) { return cargoDiameter / FIT_DIAMETER; }
@@ -34,7 +36,7 @@ export function payloadFit(d) {
   const volume = payloadVolume(d), diameter = pl.diameter || 0;
   const usable = usableVolume(d.fairing.diameter, d.fairing.length);
   const volumeMargin = usable - volume, diameterMargin = FIT_DIAMETER * d.fairing.diameter - diameter;
-  return { fits: volumeMargin >= 0 && diameterMargin >= 0, usable, volume, diameter, volumeMargin, diameterMargin };
+  return { fits: volumeMargin >= 0 && diameterMargin >= -FIT_DIAMETER_TOL, usable, volume, diameter, volumeMargin, diameterMargin };
 }
 
 const fmt = (n, d = 2) => Number(n).toFixed(d);
@@ -59,7 +61,7 @@ function geometryIssues(d) {
   const fit = payloadFit(d);
   if (pl && fit) {
     if (fit.volumeMargin < 0) out.push({ code: 'payload-doesnt-fit', tab: 'payload', msg: `The ${pl.label} needs about ${fmt(fit.volume, 1)} m³; this fairing holds ${fmt(fit.usable, 1)} m³. Try a longer or wider fairing.` });
-    else if (fit.diameterMargin < 0) out.push({ code: 'payload-doesnt-fit', tab: 'payload', msg: `The ${pl.label} is ${fmt(fit.diameter, 1)} m wide; it needs a fairing at least ${fmt(Math.ceil(requiredDiameter(fit.diameter) * 100) / 100, 2)} m wide. Try a wider fairing.` });
+    else if (fit.diameterMargin < -FIT_DIAMETER_TOL) out.push({ code: 'payload-doesnt-fit', tab: 'payload', msg: `The ${pl.label} is ${fmt(fit.diameter, 1)} m wide; it needs a fairing at least ${fmt(Math.ceil((requiredDiameter(fit.diameter) - FIT_DIAMETER_TOL) * 100) / 100, 2)} m wide. Try a wider fairing.` });
   }
   return out;
 }
@@ -131,7 +133,7 @@ export function makeItFly(input) {
   const pl = PAYLOAD_BY_ID[d.payload?.type];
   if (pl) {
     const needD = requiredDiameter(pl.diameter || 0);
-    if (d.fairing.diameter < needD) { d.fairing.diameter = Math.ceil(needD * 10) / 10; say('Widened the fairing so the payload fits'); }
+    if (d.fairing.diameter < needD) { d.fairing.diameter = Math.ceil((needD - FIT_DIAMETER_TOL) * 10) / 10; say('Widened the fairing so the payload fits'); }
     if (!payloadFit(d).fits) { d.fairing.length = Math.ceil(requiredLength(payloadVolume(d), d.fairing.diameter) * 10) / 10 + 0.5; say('Stretched the fairing so the payload fits'); }
   }
   if (d.stages.some((s) => s.landingPropMass > 0) && !(d.landing.legs && d.landing.gridFins)) { d.landing.legs = true; d.landing.gridFins = true; say('Added landing legs and grid fins'); }

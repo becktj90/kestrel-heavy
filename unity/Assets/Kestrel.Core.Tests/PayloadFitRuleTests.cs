@@ -144,18 +144,24 @@ namespace Kestrel.Core.Tests
             AssertAgree(d, m, false, "1 cm too narrow");
         }
 
-        [TestCase(2.70, true)]
-        [TestCase(2.71, false)]
-        public void DiameterEnvelope_IsNineTenthsOfTheFairing(double cargoDiameter, bool fits)
+        // Physics review: D = 3 m holds a 2.70 m cargo, not a 2.71 m one; D = 4 m holds 3.6 m, not 3.61 m.
+        // Cargo exactly at 0.9·D fits through DiameterToleranceM, not through float luck, and a cargo
+        // 1 µm over the limit (1000× the tolerance) still does not.
+        [TestCase(3.0, 2.70, true)]
+        [TestCase(3.0, 2.70 + 5e-10, true)]
+        [TestCase(3.0, 2.70 + 1e-6, false)]
+        [TestCase(3.0, 2.71, false)]
+        [TestCase(4.0, 3.60, true)]
+        [TestCase(4.0, 3.61, false)]
+        public void DiameterEnvelope_IsNineTenthsOfTheFairing(double fairingDiameter, double cargoDiameter, bool fits)
         {
-            // Physics review: D = 3 m holds a 2.70 m cargo, not a 2.71 m one.
             var spec = new PayloadSpec { id = "edge", volume = 1, diameter = cargoDiameter };
-            var fit = PayloadFit.Check(3.0, 20, spec);
+            var fit = PayloadFit.Check(fairingDiameter, 20, spec);
             Assert.AreEqual(fits, fit.fits);
-            Assert.AreEqual(0.9 * 3.0 - cargoDiameter, fit.diameterMargin, 1e-12);
+            Assert.AreEqual(0.9 * fairingDiameter - cargoDiameter, fit.diameterMargin, 1e-12);
             // The designer surfaces follow the same rule for a mission carrying that cargo.
             var d = Stamped(Path.Combine("data", "golden", "campaign-winners.json"), "m4");
-            SetFairing(d, 3.0, 20);
+            SetFairing(d, fairingDiameter, 20);
             catalog.MissionPayloads["m4"] = spec;
             Assert.AreEqual(fits, !Validate.Engineering(catalog, d).blocks.Exists(b => b.code == "payload-doesnt-fit"), "Validate");
             var quick = Readout.Quick(catalog, d);

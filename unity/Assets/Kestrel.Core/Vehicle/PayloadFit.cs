@@ -46,6 +46,11 @@ namespace Kestrel.Core.Vehicle
         public const double LengthFactor = 0.8;
         /// <summary>Usable inner diameter as a fraction of the fairing diameter (2 × <see cref="RadiusFactor"/>).</summary>
         public const double DiameterFactor = 2 * RadiusFactor;
+        /// <summary>
+        /// The diameter check allows 1e-9 m (a nanometre) of float noise, so cargo exactly at 0.9 · D_f
+        /// (2.70 m in 3 m, 3.6 m in 4 m) fits on every platform instead of hanging on the last ulp.
+        /// </summary>
+        public const double DiameterToleranceM = 1e-9;
 
         public static double UsableVolume(double fairingDiameterM, double fairingLengthM)
         {
@@ -67,7 +72,7 @@ namespace Kestrel.Core.Vehicle
             double diameterMargin = DiameterFactor * fairingDiameterM - payload.diameter;
             return new PayloadFitResult
             {
-                fits = volumeMargin >= 0 && diameterMargin >= 0,
+                fits = volumeMargin >= 0 && diameterMargin >= -DiameterToleranceM,
                 usableVolume = usable,
                 volumeMargin = volumeMargin,
                 diameterMargin = diameterMargin,
