@@ -682,7 +682,7 @@ namespace Kestrel.Game.MissionSelect
                 kicker.style.left = frame.Title.X;
                 kicker.style.top = frame.Title.Y;
                 kicker.style.width = frame.Title.W;
-                kicker.style.height = StyleKeyword.Auto;
+                kicker.style.height = 18f;
                 kicker.style.minHeight = 18f;
                 kicker.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(kicker, 14f);
                 kicker.style.whiteSpace = WhiteSpace.Normal;

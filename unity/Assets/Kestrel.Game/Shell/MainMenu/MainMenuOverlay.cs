@@ -1267,13 +1267,6 @@ namespace Kestrel.Game.Shell
                 hintLine.style.whiteSpace = WhiteSpace.Normal;
                 hintLine.style.textOverflow = TextOverflow.Clip;
             }
-            var thrum = root.Q("mm-hint");
-            if (thrum != null)
-            {
-                thrum.style.maxHeight = 96f;
-                thrum.style.minHeight = 44f;
-                thrum.style.overflow = Overflow.Hidden;
-            }
             foreach (var it in MainMenuCopy.Tiles)
             {
                 var b = root.Q("home-" + it.Id); if (b == null) continue;

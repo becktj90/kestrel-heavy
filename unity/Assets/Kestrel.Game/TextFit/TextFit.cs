@@ -73,8 +73,10 @@ namespace Kestrel.Game.Shell
                 var need = Measure(t, text, w);
                 bool widthOver = need.x > w + Slack;
                 bool heightOver = need.y > h + Slack && !HeightScrolls(t);
-                bool spill = Spills(t);
-                if (!widthOver && !heightOver && !spill) continue;
+                // A border box that sticks out of a visible parent is not cut-off text.
+                // Only a clipping parent can hide the glyphs.
+                bool spill = (widthOver || heightOver) && Spills(t);
+                if (!widthOver && !heightOver) continue;
                 string name = string.IsNullOrEmpty(t.name) ? t.GetType().Name : t.name;
                 string sample = text.Length > 42 ? text.Substring(0, 42) : text;
                 problems.Add(name + " \"" + sample + "\" need " + need.x.ToString("0") + "x" + need.y.ToString("0")
@@ -110,7 +112,7 @@ namespace Kestrel.Game.Shell
             var wrapped = Measure(t, text, w);
             bool widthOk = wrapped.x <= w + Slack && (one.x <= w + Slack || wrapped.y <= h + Slack || !HeightLocked(t));
             bool heightOk = wrapped.y <= h + Slack || HeightScrolls(t);
-            bool spill = Spills(t);
+            bool spill = !(one.x <= w + Slack && one.y <= h + Slack) && Spills(t);
             if (one.x <= w + Slack && one.y <= h + Slack && !spill)
             {
                 ReleaseIfRoomy(t, w, h);
