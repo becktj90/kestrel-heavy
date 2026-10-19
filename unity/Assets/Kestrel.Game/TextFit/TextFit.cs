@@ -126,7 +126,12 @@ namespace Kestrel.Game.Shell
             bool widthOk = wrapped.x <= w + slack && (one.x <= w + slack || wrapped.y <= h + Slack || !HeightLocked(t));
             bool heightOk = wrapped.y <= h + Slack || HeightScrolls(t);
             bool spill = !(one.x <= w + slack && one.y <= h + Slack) && Spills(t);
-            if (one.x <= w + slack && one.y <= h + Slack && !spill)
+            // A string that is within Slack of the box on one line still wraps when the layout gives it
+            // the box width, and the second line is what the clip hides. Problems() measures wrapped, so
+            // the early "it fits" exit must too, or a 129 pt string in a 128 pt, one-line box is never fitted.
+            bool nowrapFace = t.resolvedStyle != null && t.resolvedStyle.whiteSpace == WhiteSpace.NoWrap;
+            bool wrapsTall = !nowrapFace && wrapped.y > h + Slack && !HeightScrolls(t);
+            if (one.x <= w + slack && one.y <= h + Slack && !spill && !wrapsTall)
             {
                 ReleaseIfRoomy(t, w, h);
                 return false;
