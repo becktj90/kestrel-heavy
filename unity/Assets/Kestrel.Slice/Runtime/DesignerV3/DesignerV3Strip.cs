@@ -22,6 +22,17 @@ namespace Kestrel.Slice.DesignerV3
     {
         static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
+        /// <summary>Landscape Simple: three gauges, liftoff push, speed % and cost. Max-Q stays in Engineer.</summary>
+        public static List<StripCell> Gauges(QuickReadout r)
+        {
+            var all = Cells(r, false);
+            var list = new List<StripCell>(3);
+            foreach (var id in new[] { "twr", "dv", "cost" })
+                foreach (var c in all)
+                    if (c.id == id) { list.Add(c); break; }
+            return list;
+        }
+
         public static List<StripCell> Cells(QuickReadout r, bool engineer)
         {
             var list = new List<StripCell>(6);

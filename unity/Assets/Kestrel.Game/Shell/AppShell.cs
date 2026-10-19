@@ -40,6 +40,8 @@ namespace Kestrel.Game.Shell
 
             // Committed Boot.unity cannot reference the generated PanelSettings asset; load it by path.
             if (PanelSettings == null) PanelSettings = Resources.Load<PanelSettings>("UI/KH_ShellPanelSettings");
+            // Landscape web: 1280x720 matched halfway instead of the phone reference (WebPanelScale).
+            panelScale.Tick(PanelSettings);
             Spec = VisualSpecData.Load();
             Quality = gameObject.AddComponent<QualityService>();
 
@@ -102,8 +104,11 @@ namespace Kestrel.Game.Shell
 
         void Start() => Flow.Go(AppScreen.Home);
 
+        readonly WebPanelScale.Watch panelScale = new WebPanelScale.Watch();
+
         void Update()
         {
+            panelScale.Tick(PanelSettings);
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
             HandleEscape();
         }
