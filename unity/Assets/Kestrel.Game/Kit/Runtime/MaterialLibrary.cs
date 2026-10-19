@@ -36,8 +36,10 @@ namespace Kestrel.Kit
         };
 
         static readonly Dictionary<MaterialRole, Material> Cache = new Dictionary<MaterialRole, Material>();
+        static readonly Dictionary<SurfaceKind, Texture2D> GrainCache = new Dictionary<SurfaceKind, Texture2D>();
         static Texture2D _stripe;
         static Shader _lit;
+        static long _grainBytes;
 
         /// <summary>
         /// Touch the Resources materials that pin URP/Lit variants into the player.
@@ -82,8 +84,53 @@ namespace Kestrel.Kit
             m.SetFloat("_Metallic", s.Metallic);
             m.SetFloat("_Smoothness", s.Smoothness);
             if (s.Striped) { m.SetTexture("_BaseMap", StripeTexture()); m.SetTextureScale("_BaseMap", new Vector2(4, 1)); }
+            else if (TryGrain(role, out var kind))
+            {
+                m.SetTexture("_BaseMap", GrainTexture(kind));
+                m.SetTextureScale("_BaseMap", new Vector2(3f, 1f));
+            }
             Cache[role] = m;
             return m;
+        }
+
+        /// <summary>Roles that pick up a near-white procedural grain. Stripes keep their own map.</summary>
+        static bool TryGrain(MaterialRole role, out SurfaceKind kind)
+        {
+            switch (role)
+            {
+                case MaterialRole.Concrete:
+                case MaterialRole.Refractory:
+                    kind = SurfaceKind.Concrete; return true;
+                case MaterialRole.Galvanized:
+                case MaterialRole.PaintedSteel:
+                    kind = SurfaceKind.Steel; return true;
+                default:
+                    kind = default; return false;
+            }
+        }
+
+        public static Texture2D GrainTexture(SurfaceKind kind)
+        {
+            if (GrainCache.TryGetValue(kind, out var t) && t != null) return t;
+            var raw = new byte[SurfaceGrain.Bytes];
+            SurfaceGrain.Fill(kind, raw);
+            t = new Texture2D(SurfaceGrain.Size, SurfaceGrain.Size, TextureFormat.RGBA32, true)
+            {
+                name = "Kit_" + kind,
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Bilinear
+            };
+            var px = new Color32[SurfaceGrain.Size * SurfaceGrain.Size];
+            for (int i = 0; i < px.Length; i++)
+            {
+                int o = i * 4;
+                px[i] = new Color32(raw[o], raw[o + 1], raw[o + 2], raw[o + 3]);
+            }
+            t.SetPixels32(px);
+            t.Apply(true, true);
+            GrainCache[kind] = t;
+            _grainBytes += (long)(SurfaceGrain.Bytes * 1.34f);
+            return t;
         }
 
         /// <summary>Black/yellow 45-degree hazard stripes, generated once (64x8 RGBA32 + mips, about 2.7 KB).</summary>
@@ -100,7 +147,7 @@ namespace Kestrel.Kit
         }
 
         /// <summary>Bytes of generated textures the library holds (counts toward the 8 MB environment budget).</summary>
-        public static long GeneratedTextureBytes => _stripe == null ? 0 : (long)(64 * 8 * 4 * 1.34f);
+        public static long GeneratedTextureBytes => (_stripe == null ? 0 : (long)(64 * 8 * 4 * 1.34f)) + _grainBytes;
 
         public static void ClearCache() { foreach (var m in Cache.Values) if (m != null) Object.DestroyImmediate(m); Cache.Clear(); }
     }

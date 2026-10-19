@@ -4,6 +4,7 @@
 // The generated pad's +Z axis (umbilical contract: "+Z toward the pad tower") is yawed to point at the Fit position,
 // behind the vehicle and away from the chase camera.
 using System.Collections.Generic;
+using Kestrel.Core.Vehicle;
 using Kestrel.Kit.Contracts;
 using Kestrel.Pad;
 using UnityEngine;
@@ -38,7 +39,7 @@ namespace Kestrel.Slice
         /// Same (h, r, archetype, seed, attach stamp) is a no-op. <paramref name="attach"/> is vehicle-frame;
         /// it is rotated into pad space because the pad root is yawed so +Z points at the tower.
         /// <paramref name="vehicleMesh"/> supplies the real skin radius so arms stop at the shell.</summary>
-        public static PadRenderer Apply(Transform root, float h, float r, PadArchetype type, int seed, IReadOnlyList<AttachPoint> attach = null, Transform vehicleMesh = null)
+        public static PadRenderer Apply(Transform root, float h, float r, PadArchetype type, int seed, IReadOnlyList<AttachPoint> attach = null, Transform vehicleMesh = null, FarmPlan propellant = null)
         {
             var pad = root.Find("Pad"); if (pad == null) { pad = new GameObject("Pad").transform; pad.SetParent(root, false); }
             var (x, z, _) = Fit(h, r);
@@ -47,16 +48,29 @@ namespace Kestrel.Slice
             var existing = pad.GetComponent<PadRenderer>();
             var L = existing != null ? existing.Layout : null;
             int stamp = UmbilicalRig.Stamp(attach);
+            int farmKey = propellant == null ? 0 : propellant.Key;
             var mf = vehicleMesh != null ? vehicleMesh.GetComponent<MeshFilter>() : null;   // arms end at the real skin (#135)
             long meshKey = VehicleSkin.MeshKey(mf != null ? mf.sharedMesh : null);
-            if (L != null && L.Seed == seed && L.Archetype == type && existing.AttachStamp == stamp
+            if (L != null && L.Seed == seed && L.Archetype == type && existing.AttachStamp == stamp && existing.FarmKey == farmKey
                 && Mathf.Approximately(L.Fit.VehicleHeight, h) && Mathf.Approximately(L.Fit.VehicleRadius, r) && existing.SourceMeshKey == meshKey) return existing;
             var fit = new PadFit(h, r, Clearance);
             if (mf != null) fit.SkinRadiusAt = VehicleSkin.FromMesh(mf.sharedMesh, pad.worldToLocalMatrix * vehicleMesh.localToWorldMatrix);
             var padPts = attach == null ? null : UmbilicalRig.IntoPadFrame(attach, ContractMath.Yaw(-yaw));
-            var built = PadBuilder.Build(pad, seed, type, fit, padPts);
-            built.AttachStamp = stamp; built.SourceMeshKey = meshKey;
+            var built = PadBuilder.Build(pad, seed, type, fit, padPts, propellant);
+            built.AttachStamp = stamp; built.SourceMeshKey = meshKey; built.FarmKey = farmKey;
             return built;
+        }
+
+        /// <summary>Propellant families on the core stages and the strap-on set. Empty when the design has none.</summary>
+        public static FarmPlan FarmFor(Design design)
+        {
+            if (design == null) return new FarmPlan();
+            var ids = new List<string>(8);
+            if (design.stages != null)
+                foreach (var s in design.stages)
+                    if (s != null && !string.IsNullOrEmpty(s.propellant)) ids.Add(s.propellant);
+            if (design.strapOns != null && !string.IsNullOrEmpty(design.strapOns.propellant)) ids.Add(design.strapOns.propellant);
+            return FarmPlan.FromIds(ids);
         }
     }
 }
