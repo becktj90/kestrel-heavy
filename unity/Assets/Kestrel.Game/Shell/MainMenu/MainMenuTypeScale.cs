@@ -2,6 +2,7 @@
 //   size = clamp(min, k * s * base, max),  s = min(width / 390, usableHeight / 844),  usableHeight = height - top - bottom safe insets
 // Metrics (MainMenuMetrics) are the real advance widths of the shipped subset fonts, so "fits" is checked, not guessed.
 using System;
+using Kestrel.Core.Flight;
 
 namespace Kestrel.Game.Shell
 {
@@ -49,61 +50,62 @@ namespace Kestrel.Game.Shell
         {
             public float Scale, Title, Tagline, LaunchLabel, LaunchCaption, TileName, TileCaption, Soon, Hint;
             public float Pad, TileW, TileInner, TileH, LaunchH, DesignH, DesignLabel, StatsH, StatFont, LaunchCaptionW, ControlsH, HintBand, BottomReserve, TitleBottom, ControlsTop, HeroLift;
-            public int TileCaptionLines, LaunchCaptionLines, DesignCaptionLines;
+            public int TileCaptionLines, LaunchCaptionLines, DesignCaptionLines, ThrumLines;
+            public float ThrumH;
+            /// <summary>Inner column width (root minus its 12 px sides).</summary>
+            public float Column;
+            public string ThrumText;
+            /// <summary>The record text the stats card shows (the short form when the long one would wrap).</summary>
+            public string Record;
         }
 
         public static float TextW(string s, float size) => MainMenuMetrics.W(s) * size / 100f;
         static int Lines(float textW, float avail) => Math.Max(1, (int)Math.Ceiling(textW * 1.08f / Math.Max(1f, avail)));   // 8% word-wrap slack
 
-        public static Sizes Compute(float w, float h, float topInset = 0f, float bottomInset = 0f)
+        /// <summary><paramref name="side"/> is the panel width outside the safe column (content-rect left plus right),
+        /// so the column maths uses the width the root really has. <paramref name="record"/> is the stats record line,
+        /// <paramref name="launchCaption"/> the live LAUNCH caption (null: the static one). Block heights come from
+        /// <see cref="HomePhoneLayout"/> (word-wrapped at the real inner widths), never below the old estimates.</summary>
+        public static Sizes Compute(float w, float h, float topInset = 0f, float bottomInset = 0f, float side = 0f, string record = null, string launchCaption = null)
         {
-            var z = new Sizes { Scale = Scale(w, h, topInset, bottomInset) };
+            float colW = Math.Max(1f, w - Math.Max(0f, side));
+            float grid = colW - 2f * SideMargin;
+            var t = HomePhoneLayout.Type(colW, h, topInset, bottomInset, grid);
+            var z = new Sizes { Scale = t.Scale };
             float s = z.Scale;
-            z.Title = Title.At(s); z.Tagline = Tagline.At(s); z.LaunchLabel = LaunchLabel.At(s); z.LaunchCaption = LaunchCaption.At(s);
-            z.TileName = TileName.At(s); z.TileCaption = TileCaption.At(s); z.Soon = Soon.At(s); z.Hint = Hint.At(s);
-            // The title also has to fit the column on one line.
-            float col = w - 2f * SideMargin - 4f;
-            z.Title = Math.Max(Title.Min, Math.Min(z.Title, 100f * col / MainMenuMetrics.W("KESTREL")));
-            z.Pad = Clamp(8f * s, 6f, 12f);
-            float grid = w - 2f * SideMargin;
-            z.TileW = grid * 0.485f;
+            z.Title = t.Title; z.Tagline = t.Tagline; z.LaunchLabel = t.LaunchLabel; z.LaunchCaption = t.LaunchCaption;
+            z.TileName = t.TileName; z.TileCaption = t.TileCaption; z.Soon = t.Soon; z.Hint = t.Hint;
+            z.Pad = t.Pad;
+            z.Column = grid;
+            z.TileW = HomePhoneLayout.TileW(grid);
             z.TileInner = z.TileW - 2f * TileBorder - 2f * z.Pad;
             int worstLines = 1;
-            foreach (var t in MainMenuCopy.Tiles)
-                worstLines = Math.Max(worstLines, Lines(TextW(t.Caption, z.TileCaption), z.TileInner));
+            // Word-wrapped at the real inner width (the old 8% estimate said 2 lines where TextCore wrapped 3, and
+            // the third sat on the tile's bottom edge).
+            foreach (var it in MainMenuCopy.Tiles)
+                worstLines = Math.Max(worstLines, HomePhoneLayout.TileCaptionLines(t, grid, it.Caption));
             z.TileCaptionLines = worstLines;
             float head = Math.Max(22f, z.TileName * LineH);
-            z.TileH = Math.Max(HitMin, 2f * TileBorder + 2f * z.Pad + head + 3f + worstLines * z.TileCaption * LineH);
-            float padH = Clamp(14f * s, 10f, 18f);
+            z.TileH = Math.Max(HomePhoneLayout.TileH(t, worstLines), Math.Max(HitMin, 2f * TileBorder + 2f * z.Pad + head + 3f + worstLines * z.TileCaption * LineH));
+            float padH = HomePhoneLayout.LaunchPadH(s);
             z.LaunchCaptionW = grid - 2f * LaunchBorder - 2f * padH - LampSlot - 12f;
-            z.LaunchCaptionLines = Lines(TextW(MainMenuCopy.LaunchCaption, z.LaunchCaption), z.LaunchCaptionW);
-            float padV = Clamp(8f * s, 6f, 10f);
-            z.LaunchH = Math.Max(HitMin, 2f * LaunchBorder + 2f * padV + z.LaunchLabel * LineH + z.LaunchCaptionLines * z.LaunchCaption * LineH);
-            // DESIGN FIRST and its caption share the button with the lamp and the blueprint glyph.
-            // The face shrinks to that inner width, and the button grows with the caption's lines,
-            // so the words are not clipped by the old one-line height.
-            const float DesignAt100 = 777.65f;
-            const float DesignCaptionAt100 = 1223.70f;
-            float designInner = Math.Max(1f, grid - 2f * 1f - 24f - 16f - 30f - 8f);
-            float designWant = Math.Max(14f, z.LaunchLabel * 0.72f);
-            z.DesignLabel = Math.Max(14f, Math.Min(designWant, 100f * designInner / DesignAt100));
-            float designCap = Math.Max(14f, z.LaunchCaption);
-            z.DesignCaptionLines = Lines(DesignCaptionAt100 * designCap / 100f, designInner);
-            if (z.DesignCaptionLines > 3) z.DesignCaptionLines = 3;
-            z.DesignH = Math.Max(HitMin, 2f * 2f + 16f + z.DesignLabel * LineH + z.DesignCaptionLines * designCap * LineH + 2f);
-            // 44pt hit plus the glass border. Taller than this pushes the SE controls block over 42% of the usable height.
-            z.StatsH = 46f;
-            if (w < 500f)
-            {
-                float usable = Math.Max(1f, h - Math.Max(0f, topInset) - Math.Max(0f, bottomInset));
-                float others = z.StatsH + z.LaunchH + z.TileH + 4f * Gap;
-                float room = 0.42f * usable - others;
-                if (room < z.DesignH) z.DesignH = Math.Max(HitMin, room);
-            }
-            z.StatFont = Math.Max(14f, z.Hint + 2f);
-            // The bottom film-reel bar is BarHeight(h, inset) tall from the screen edge and covers the hint. The tiles must end above it,
-            // so the reserve is the whole bar (it already includes the bottom safe inset), not just the inset. The last tile row's own
-            // Gap margin is the breathing room above the bar.
+            string cap = string.IsNullOrEmpty(launchCaption) ? MainMenuCopy.LaunchCaption : launchCaption;
+            z.LaunchCaptionLines = Math.Max(Lines(TextW(MainMenuCopy.LaunchCaption, z.LaunchCaption), z.LaunchCaptionW),
+                HomePhoneLayout.LaunchCaptionLines(t, grid, cap));
+            z.LaunchH = HomePhoneLayout.LaunchH(t, z.LaunchCaptionLines);
+            // DESIGN FIRST: the face shrinks to the inner width, and the button grows with the caption's
+            // word-wrapped lines. The old 42% cap cut this height under its own caption ("Your rocket, this
+            // mission" clipped on TestFlight), so there is no cap any more; the hero gap pays instead.
+            z.DesignLabel = t.DesignLabel;
+            z.DesignCaptionLines = HomePhoneLayout.DesignCaptionLines(t, grid, MainMenuCopy.DesignCaption);
+            z.DesignH = HomePhoneLayout.DesignH(t, z.DesignCaptionLines);
+            // Two lines exactly: the pills and the record, at the largest face that keeps each on one line.
+            z.StatFont = HomePhoneLayout.StatFont(t, grid, string.IsNullOrEmpty(record) ? SampleRecord : record, out var shown);
+            z.Record = shown;
+            z.StatsH = HomePhoneLayout.StatsH(z.StatFont);
+            z.ThrumText = HomePhoneLayout.ThrumText(t, grid, MainMenuCopy.ThrumLine, MainMenuCopy.ThrumShort);
+            z.ThrumLines = HomePhoneLayout.ThrumLines(t, grid, z.ThrumText);
+            z.ThrumH = HomePhoneLayout.ThrumH(t, z.ThrumLines);
             float bottom = Math.Max(0f, bottomInset);
             z.BottomReserve = MainMenuCopy.BarHeight(h, bottom);
             z.HintBand = Math.Max(0f, z.BottomReserve - bottom);   // root padding-bottom (the root already sits above the safe inset)
@@ -113,6 +115,9 @@ namespace Kestrel.Game.Shell
             z.HeroLift = HeroLift(h, z.TitleBottom, z.ControlsTop);
             return z;
         }
+
+        /// <summary>Record used for sizing before the save is read: a long career, so the card never grows later.</summary>
+        public const string SampleRecord = "20 flights cleared · 888.88M Kc · 20 patches";
 
         /// <summary>Tile name size: the scaled size, shrunk (never below its Min) until it fits beside the lamp or SOON tag.</summary>
         public static float FitName(Sizes z, string name, bool soon)
@@ -126,6 +131,14 @@ namespace Kestrel.Game.Shell
         {
             float trailing = soon ? TextW(MainMenuCopy.SoonTag, z.Soon) + TagPad : LampSlot;
             return TextW(name, size) <= z.TileInner - trailing - NameSlack + 0.01f;
+        }
+
+        /// <summary>Size for the tile name as it is drawn ("Missions", mixed case) beside the 18 px glyph and, on a live
+        /// tile, the lamp. <see cref="FitName"/> left the glyph out, so "Missions" ran into its lamp on a 308-wide phone panel.</summary>
+        public static float FitShownName(Sizes z, string shown, bool live)
+        {
+            float avail = z.TileInner - HomePhoneLayout.TileIcon - (live ? HomePhoneLayout.TileLamp : 0f) - HomePhoneLayout.NameSlack;
+            return HomeTypeMetrics.FitOneLine(HomeFace.FrauncesBold, shown, z.TileName, 12f, avail, 0.03f);
         }
 
         // 3D hero (rocket + telemetry) in fractions of panel height measured from the top, at the rest camera.

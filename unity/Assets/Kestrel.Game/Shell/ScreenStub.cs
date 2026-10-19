@@ -128,6 +128,10 @@ namespace Kestrel.Game.Shell
                     float width = shell.Root.resolvedStyle.width;
                     float height = shell.Root.resolvedStyle.height;
                     float top = shell.Safe.resolvedStyle.paddingTop;
+                    // SafeAreaRoot insets Safe with top/left/right/bottom, not padding, so paddingTop is 0 and the
+                    // gear drew in the status bar above the credits band (TestFlight). Use where Safe really starts.
+                    float safeTop = shell.Safe.worldBound.yMin - shell.Root.worldBound.yMin;
+                    if (!web && !float.IsNaN(safeTop) && safeTop > top) top = safeTop;
                     float gx, gy, gw, gh;
                     if (!web || width < 8f || height < 8f)
                     {

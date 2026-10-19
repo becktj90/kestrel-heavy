@@ -121,7 +121,7 @@ namespace Kestrel.Game.Shell
                 root.EnableInClassList("kh-mm-narrow", MainMenuCopy.IsNarrow(w));
                 float topInset = Mathf.Max(0f, safe.worldBound.yMin - full.worldBound.yMin);
                 float botInset = Mathf.Max(0f, full.worldBound.yMax - safe.worldBound.yMax);
-                var z = MenuTypeScale.Compute(w, h, topInset, botInset);
+                var z = MenuTypeScale.Compute(w, h, topInset, botInset, SideInset(full, root), RecordText(root), LaunchCaptionText(root));
                 TraceTitle("geometry in", root);
                 ApplyScale(root, z);
                 TraceTitle("after ApplyScale", root);
@@ -147,6 +147,9 @@ namespace Kestrel.Game.Shell
                 if (full != null) TextFit.Apply(full);
                 TraceTitle("after TextFit", root);
             });
+            // The Thrum corner pop rests under the gear and the wordmark while Home is up (phone column only).
+            GuideBoxDriver.ClearTopPanel = () => PopClearTop(root, full);
+            root.RegisterCallback<DetachFromPanelEvent>(_ => GuideBoxDriver.ClearTopPanel = null);
             launchKey.RegisterCallback<GeometryChangedEvent>(_ =>
             {
                 float h = full.resolvedStyle.height; if (h <= 0f) return;
@@ -156,6 +159,44 @@ namespace Kestrel.Game.Shell
             });
             PlayIntro(root, full, reduceMotion);
             return root;
+        }
+
+        /// <summary>Panel width outside the safe column, so the column type is sized for the root it lands in.</summary>
+        static float SideInset(VisualElement full, VisualElement root)
+        {
+            if (full == null || root == null) return 0f;
+            float fw = full.resolvedStyle.width, rw = root.resolvedStyle.width;
+            if (float.IsNaN(fw) || float.IsNaN(rw) || fw < 8f || rw < 8f) return 0f;
+            return Mathf.Max(0f, fw - rw);
+        }
+
+        /// <summary>The whole record line (SetRecord keeps it in userData; the label may show the short form).</summary>
+        static string RecordText(VisualElement root)
+        {
+            var label = root != null ? root.Q<Label>("mm-record") : null;
+            if (label == null) return null;
+            return label.userData as string ?? label.text;
+        }
+
+        static string LaunchCaptionText(VisualElement root)
+        {
+            var cap = root != null ? root.Q<Label>("mm-launch-caption") : null;
+            return cap != null ? cap.text : null;
+        }
+
+        /// <summary>Lowest edge the guide corner pop must clear on Home, in panel units from the panel top: the gear and
+        /// the wordmark block. 0 on the wide frame (it keeps the old corner) or before layout.</summary>
+        public static float PopClearTop(VisualElement root, VisualElement full)
+        {
+            if (root == null || root.panel == null || root.ClassListContains("kh-mm-wide")) return 0f;
+            if (root.resolvedStyle.display == DisplayStyle.None) return 0f;
+            float origin = full != null ? full.worldBound.yMin : 0f;
+            float clear = 0f;
+            var title = root.Q("mm-title");
+            if (title != null && title.worldBound.height > 1f) clear = Mathf.Max(clear, title.worldBound.yMax - origin);
+            var gear = full != null ? full.Q("home-settings") : null;
+            if (gear != null && gear.worldBound.height > 1f) clear = Mathf.Max(clear, gear.worldBound.yMax - origin);
+            return float.IsNaN(clear) ? 0f : clear;
         }
 
         /// <summary>Landscape web: the wordmark sits on the hero, and the action cards sit in a column
@@ -174,6 +215,7 @@ namespace Kestrel.Game.Shell
             }
             root.EnableInClassList("kh-mm-wide", wide);
             if (!wide) { ClearWebWide(root); return; }
+            ResetPhoneBlocks(root);
             float rw = root.resolvedStyle.width;
             float rh = root.resolvedStyle.height;
             if (rw < 8f || rh < 8f) return;
@@ -592,9 +634,23 @@ namespace Kestrel.Game.Shell
         static bool HasCreditsBar(VisualElement root) =>
             root != null && !root.ClassListContains("kh-mm-wide") && root.Q(HomeResumeBar.BarName) != null;
 
+        /// <summary>Phone column pieces ClearWebWide resets every pass (it runs after ApplyScale): the tile share and
+        /// the Thrum words (whole line, or the short teaser when the whole one would need a third line).</summary>
+        static void ColumnText(VisualElement root, MenuTypeScale.Sizes z)
+        {
+            foreach (var it in MainMenuCopy.Tiles)
+            {
+                var tile = root.Q("home-" + it.Id);
+                if (tile != null) tile.style.width = Length.Percent(HomePhoneLayout.TileShare * 100f);
+            }
+            var words = root.Q<Label>("mm-hint-line");
+            if (words != null && !string.IsNullOrEmpty(z.ThrumText) && words.text != z.ThrumText) words.text = z.ThrumText;
+        }
+
         static void ContainColumn(VisualElement root, MenuTypeScale.Sizes z)
         {
             if (root == null || root.ClassListContains("kh-mm-wide")) return;
+            ColumnText(root, z);
             float host = root.layout.height;
             if (host < 8f) return;
             var title = root.Q("mm-title");
@@ -630,7 +686,7 @@ namespace Kestrel.Game.Shell
             float padBot = z.HintBand;
             // The Thrum strip sits under the tiles and is not part of ControlsH. Leaving it out
             // let a wrapped caption grow over the Missions tile on a short landscape column.
-            float hint = root.Q("mm-hint") != null ? ThrumBlock(root, z) : 0f;
+            float hint = root.Q("mm-hint") != null ? (z.ThrumH > 1f ? z.ThrumH : ThrumBlock(root, z)) : 0f;
             float need = padTop + padBot + titleH + z.ControlsH + hint;
             if (need <= host + 1f)
             {
@@ -900,8 +956,8 @@ namespace Kestrel.Game.Shell
             text.style.flexDirection = FlexDirection.Column;
             text.style.justifyContent = Justify.Center;
             text.style.flexGrow = 1;
-            text.style.paddingTop = 2f;
-            text.style.paddingBottom = 2f;
+            text.style.paddingTop = HomePhoneLayout.StatsPadY;
+            text.style.paddingBottom = HomePhoneLayout.StatsPadY;
             text.style.paddingLeft = 10f;
             text.style.paddingRight = 10f;
             var pills = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -950,7 +1006,9 @@ namespace Kestrel.Game.Shell
         {
             var label = root != null ? root.Q<Label>("mm-record") : null;
             if (label == null || string.IsNullOrEmpty(line)) return;
+            label.userData = line;
             label.text = line;
+            label.tooltip = line;
         }
 
         static Label Stat(string name, string text)
@@ -1119,8 +1177,13 @@ namespace Kestrel.Game.Shell
                     if (b.name != null && b.name.StartsWith("home-")) rows++;
                 });
                 float content = chrome + rows * 46f;
-                float roomBelowGear = hostH - 52f - edge;
-                float top = content <= roomBelowGear ? 52f : edge;
+                // Under the gear, wherever the gear sits (iOS puts it at the safe top now, not the panel top).
+                var gearEl = full.Q("home-settings");
+                float below = 52f;
+                if (gearEl != null && gearEl.layout.height > 1f && !float.IsNaN(gearEl.layout.yMax))
+                    below = Mathf.Max(52f, gearEl.layout.yMax + edge);
+                float roomBelowGear = hostH - below - edge;
+                float top = content <= roomBelowGear ? below : edge;
                 float maxH = Mathf.Max(120f, hostH - top - edge);
                 float height = Mathf.Min(content, maxH);
                 float width = Mathf.Min(320f, Mathf.Max(200f, hostW - 16f));
@@ -1368,7 +1431,7 @@ namespace Kestrel.Game.Shell
                 design.style.height = z.DesignH; design.style.minHeight = z.DesignH; design.style.flexShrink = 0;
                 design.style.marginTop = 0; design.style.marginBottom = MenuTypeScale.Gap;
                 design.style.paddingLeft = 12f; design.style.paddingRight = 12f;
-                design.style.paddingTop = 8f; design.style.paddingBottom = 8f;
+                design.style.paddingTop = HomePhoneLayout.DesignPadY; design.style.paddingBottom = HomePhoneLayout.DesignPadY;
             }
             var hintLine = root.Q("mm-hint-line");
             if (hintLine != null)
@@ -1386,10 +1449,13 @@ namespace Kestrel.Game.Shell
                 if (head != null) head.style.minHeight = Mathf.Max(22f, z.TileName * MenuTypeScale.LineH);
                 var cap = b.Q(className: "kh-mm-tile-caption");
                 if (cap != null) { cap.style.marginTop = 3f; cap.style.marginLeft = 0; cap.style.marginRight = 0; cap.style.paddingLeft = 0; cap.style.paddingRight = 0; }
+                if (head != null) head.style.justifyContent = Justify.FlexStart;
                 var name = b.Q(className: "kh-mm-tile-name");
                 if (name != null)
                 {
-                    float n = MenuTypeScale.FitName(z, it.Label, !it.Live);
+                    // The drawn name ("Missions") beside its glyph and lamp, not "MISSIONS" alone: the name sat on the lamp.
+                    float n = Mathf.Min(MenuTypeScale.FitName(z, it.Label, !it.Live), MenuTypeScale.FitShownName(z, ((Label)name).text, it.Live));
+                    name.style.flexGrow = 1;
                     name.style.fontSize = n; name.style.letterSpacing = n * .03f;
                     // No Label chrome and no shrink: the width was budgeted from the font metrics (with NameSlack).
                     name.style.marginLeft = 0; name.style.marginRight = 0; name.style.paddingLeft = 0; name.style.paddingRight = 0;
@@ -1397,6 +1463,87 @@ namespace Kestrel.Game.Shell
                 }
                 var soon = b.Q(className: "kh-mm-soon");
                 if (soon != null) { soon.style.marginLeft = 4f; soon.style.marginTop = 0; soon.style.marginBottom = 0; soon.style.paddingLeft = 4f; soon.style.paddingRight = 4f; soon.style.paddingTop = 0; soon.style.paddingBottom = 0; }
+            }
+            if (column) ApplyPhoneBlocks(root, z);
+        }
+
+        /// <summary>Undo <see cref="ApplyPhoneBlocks"/> when the frame turns wide, so the landscape row keeps its own look.</summary>
+        static void ResetPhoneBlocks(VisualElement root)
+        {
+            var record = root.Q<Label>("mm-record");
+            if (record != null && record.userData is string full) record.text = full;
+            if (record != null) record.style.whiteSpace = WhiteSpace.Normal;
+            var strip = root.Q("mm-hint");
+            if (strip == null) return;
+            strip.style.paddingLeft = StyleKeyword.Null; strip.style.paddingRight = StyleKeyword.Null;
+            strip.style.paddingTop = StyleKeyword.Null; strip.style.paddingBottom = StyleKeyword.Null;
+            strip.style.alignItems = StyleKeyword.Null;
+            strip.style.justifyContent = StyleKeyword.Null;
+            var face = strip.Q("mm-thrum-portrait");
+            if (face != null) face.style.marginTop = StyleKeyword.Null;
+            foreach (var id in new[] { "mm-thrum-name", "mm-hint-line" })
+            {
+                var l = strip.Q<Label>(id);
+                if (l != null) l.style.unityTextAlign = StyleKeyword.Null;
+            }
+        }
+
+        /// <summary>Phone column: the stats card holds its two lines, and Thrum's strip reads left to right with the name
+        /// over the words (a Button centres its children's text by default, so "Thrum" floated mid-strip).</summary>
+        static void ApplyPhoneBlocks(VisualElement root, MenuTypeScale.Sizes z)
+        {
+            float grid = z.Column > 1f ? z.Column : z.TileW / HomePhoneLayout.TileShare;
+            var stats = root.Q("mm-stats");
+            if (stats != null)
+            {
+                stats.style.overflow = Overflow.Hidden;
+                var record = root.Q<Label>("mm-record");
+                if (record != null)
+                {
+                    string full = record.userData as string ?? record.text;
+                    float inner = grid - 2f * HomePhoneLayout.StatsBorder - 2f * HomePhoneLayout.StatsPadX;
+                    record.text = HomeTypeMetrics.Fits(HomeFace.GroteskMedium, full, z.StatFont, inner) ? full : HomeRecord.Short(full);
+                    record.style.whiteSpace = WhiteSpace.NoWrap;
+                    record.style.overflow = Overflow.Hidden;
+                }
+                stats.Query(className: "kh-mm-stat").ForEach(e =>
+                {
+                    e.style.marginLeft = 0; e.style.marginRight = 0; e.style.marginTop = 0; e.style.marginBottom = 0;
+                    e.style.paddingLeft = 0; e.style.paddingRight = 0; e.style.paddingTop = 0; e.style.paddingBottom = 0;
+                    e.style.flexShrink = 0;
+                    e.style.unityTextAlign = TextAnchor.MiddleLeft;
+                });
+                var fuel = root.Q("mm-fuel");
+                if (fuel != null) fuel.style.marginRight = z.StatFont * 0.5f;
+            }
+            var strip = root.Q("mm-hint");
+            if (strip != null)
+            {
+                strip.style.marginLeft = 0; strip.style.marginRight = 0; strip.style.marginTop = 0; strip.style.marginBottom = 0;
+                strip.style.paddingLeft = HomePhoneLayout.ThrumPadX; strip.style.paddingRight = HomePhoneLayout.ThrumPadX;
+                strip.style.paddingTop = HomePhoneLayout.ThrumPadY; strip.style.paddingBottom = HomePhoneLayout.ThrumPadY;
+                strip.style.flexDirection = FlexDirection.Row;
+                strip.style.alignItems = Align.FlexStart;
+                strip.style.justifyContent = Justify.FlexStart;
+                var face = strip.Q("mm-thrum-portrait");
+                if (face != null) face.style.marginTop = 4f;
+                var col = face != null ? face.parent?.Q(className: "kh-mm-col") : null;
+                if (col == null) col = strip.Q(className: "kh-mm-col");
+                if (col != null)
+                {
+                    col.style.flexGrow = 1; col.style.flexShrink = 1;
+                    col.style.alignItems = Align.Stretch;
+                    col.style.justifyContent = Justify.FlexStart;
+                }
+                foreach (var id in new[] { "mm-thrum-name", "mm-hint-line" })
+                {
+                    var l = strip.Q<Label>(id);
+                    if (l == null) continue;
+                    l.style.unityTextAlign = TextAnchor.UpperLeft;
+                    l.style.alignSelf = Align.Stretch;
+                    l.style.marginLeft = 0; l.style.marginRight = 0; l.style.paddingLeft = 0; l.style.paddingRight = 0;
+                    l.style.paddingTop = 0; l.style.paddingBottom = 0; l.style.marginTop = 0; l.style.marginBottom = 0;
+                }
             }
         }
 
