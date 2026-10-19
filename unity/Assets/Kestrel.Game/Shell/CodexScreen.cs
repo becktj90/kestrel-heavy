@@ -82,6 +82,7 @@ namespace Kestrel.Game.Shell
             leave.userData = back;
             Face(leave, "SpaceGrotesk-Bold");
             root.Add(leave);
+            root.RegisterCallback<GeometryChangedEvent>(_ => TextFit.Apply(root));
             return root;
         }
 

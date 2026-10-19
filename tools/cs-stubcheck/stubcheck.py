@@ -20,8 +20,8 @@ import argparse, glob, json, os, re, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOTS = ["Kestrel.Game/Pad", "Kestrel.Game/Kit", "Kestrel.Game/Environment", "Kestrel.Slice/Runtime",
-         "Kestrel.Game.Tests", "Kestrel.Game/Vehicle", "Kestrel.Game/Shell", "Kestrel.Game/Quality",
-         "Kestrel.Game/Layout", "Kestrel.Core"]
+         "Kestrel.Game.Tests", "Kestrel.Game/Vehicle", "Kestrel.Game/Shell", "Kestrel.Game/TextFit",
+         "Kestrel.Game/Quality", "Kestrel.Game/Layout", "Kestrel.Core"]
 SKIP = {"Kestrel.Slice.GameCenter", "Kestrel.Core.Burst"}   # third-party / Burst-only
 STUB_ASM = {"UnityEngine.TestRunner": None, "UnityEditor.TestRunner": None,
             "Unity.RenderPipelines.Universal.Runtime": None, "Unity.RenderPipelines.Core.Runtime": None}
