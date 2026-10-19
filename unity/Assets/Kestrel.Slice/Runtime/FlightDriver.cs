@@ -66,6 +66,32 @@ namespace Kestrel.Slice
         bool throttleHeld, savedMaxQSet, ascentLost;
         double savedMaxQ;
 
+        /// <summary>Cinematic hooks for the live sim (explosions, debris, shockwave, camera, staging flash). Observer only.</summary>
+        public Kestrel.Game.Environment.CinematicFlightSink CinematicSink { get; private set; }
+
+        void BindCinematicSink()
+        {
+            if (CinematicSink == null)
+            {
+                CinematicSink = new Kestrel.Game.Environment.CinematicFlightSink();
+                CinematicSink.Anchor = VehicleScenePosition;
+            }
+            CinematicSink.Attach();
+            Sim.Sink = CinematicSink;
+        }
+
+        UnityEngine.Vector3 VehicleScenePosition() => Vehicle != null ? Vehicle.position : UnityEngine.Vector3.zero;
+
+        void OnDisable()
+        {
+            if (CinematicSink != null) CinematicSink.Detach();
+        }
+
+        void OnDestroy()
+        {
+            if (CinematicSink != null) CinematicSink.Detach();
+        }
+
         public void Launch(Design d) => Launch(d, null);
 
         public void Launch(Design d, AscentHook hook)
@@ -109,6 +135,7 @@ namespace Kestrel.Slice
             // The sim is live before any presentation. A throw in the guide, the plume, or the
             // audio bus must not leave this flight without a clock.
             Sim = new AscentSim(stages, opts);
+            BindCinematicSink();
             Running = true;
             clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             AttitudeDeg = 90f; HasAttitude = false;
@@ -142,7 +169,8 @@ namespace Kestrel.Slice
             if (Held || !Running || Sim == null) return;
             float frame = Time.deltaTime;
             if (frame <= 0f && Time.unscaledDeltaTime > 0f) frame = Time.unscaledDeltaTime;
-            clock += Math.Min(frame, 0.1f); // clamp hitches; physics catches up at fixed dt
+            // Slow-mo scales only how much wall-clock feeds the clock (Core PresentationTimeScale); Sim.Tick and PhysicsDt are untouched.
+            clock += new Kestrel.Core.Flight.PresentationTimeScale(Kestrel.Kit.CinematicEvents.PresentationScale).ToSimSeconds(Math.Min(frame, 0.1f)); // clamp hitches; physics catches up at fixed dt
             int guard = 0;
             while (Sim.T < clock && !Sim.Done && guard++ < 64)
             {
