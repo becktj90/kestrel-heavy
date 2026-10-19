@@ -1,5 +1,8 @@
 // In-flight pause and the one-thumb camera controls. The chase camera stays the follow pose;
 // drag and pinch only orbit that offset, and a tap or the Follow button hands it back.
+// The "Cam: Auto" button opens a five-chip picker (Auto / Above / Below / Chase / Pad). A chip applies,
+// saves and closes; a tap outside or Esc closes with no change. C on a keyboard cycles with a 1 s toast.
+// None of it pauses the flight. AscentHud places the picker and the toast (FlightHudLayout.CameraPicker).
 using System;
 using Kestrel.Core.Flight;
 using UnityEngine;
@@ -11,8 +14,18 @@ namespace Kestrel.Slice
     public sealed class FlightChrome : MonoBehaviour
     {
         public const float TouchPt = 44f;
+        public const string PickerName = "flight-camera-picker";
+        public const string ToastName = "flight-camera-toast";
+        public static string ChipName(FlightViewMode mode) => "camera-chip-" + FlightView.Name(mode).ToLowerInvariant();
 
-        VisualElement hud, menu, tools;
+        static readonly Color Amber = new Color(1f, 0.69f, 0f, 0.92f);
+        static readonly Color Ink = new Color(0.08f, 0.08f, 0.1f);
+        static readonly Color Panel = new Color(0.03f, 0.05f, 0.1f, 0.9f);
+
+        VisualElement hud, menu, tools, picker;
+        Label toast;
+        string viewNote;
+        float toastLeft;
         Button pause, follow, cameraBtn, music, sfx, narration;
         FlightRig rig = FlightCameraRig.Following();
         Action<bool> setPaused;
@@ -25,6 +38,8 @@ namespace Kestrel.Slice
         public bool Follow => rig.Follow;
         public FlightRig Rig => rig;
         public FlightViewMode View => viewMode;
+        public bool PickerOpen => picker != null && picker.style.display.value == DisplayStyle.Flex;
+        public string ToastText => toast != null && toast.style.display.value == DisplayStyle.Flex ? toast.text : null;
 
         public void Bind(VisualElement flightHud, Action<bool> onPause, Action restart, Action exitHome, Action<FlightViewMode> onView = null, FlightViewMode initial = FlightViewMode.Auto)
         {
@@ -43,8 +58,8 @@ namespace Kestrel.Slice
 
             follow = Tool("follow", "Follow rocket", "Follow the rocket. Recenters the camera.");
             follow.clicked += () => { rig = FlightCameraRig.Recenter(rig); RefreshFollow(); };
-            cameraBtn = Tool("flight-camera", FlightView.Name(viewMode), "Camera. Cycles Auto, Chase, Above, Below and Pad.");
-            cameraBtn.clicked += CycleCamera;
+            cameraBtn = Tool("flight-camera", FlightView.Caption(viewMode), FlightView.Tip(viewMode));
+            cameraBtn.clicked += TogglePicker;
             pause = Tool("pause", "Pause", "Pause. Freezes the flight.");
             pause.clicked += () => setPaused?.Invoke(true);
             tools.Add(follow);
@@ -54,6 +69,8 @@ namespace Kestrel.Slice
             var webcast = hud.Q("webcast");
             if (webcast != null) hud.Insert(hud.IndexOf(webcast), tools);
             else hud.Add(tools);
+
+            BuildPicker();
 
             menu = new VisualElement { name = "pause-menu" };
             menu.AddToClassList("hidden");
@@ -93,12 +110,13 @@ namespace Kestrel.Slice
             lastUpp = upp;
             float h = TouchPt * upp;
             StyleTool(follow, upp, h, FlightHudLayout.FollowWidthPt);
-            StyleTool(cameraBtn, upp, h, FlightView.ButtonWidth(viewMode));
+            StyleTool(cameraBtn, upp, h, FlightView.WidestButton());
             StyleTool(pause, upp, h, FlightHudLayout.PauseWidthPt);
             if (follow != null) follow.style.fontSize = 13f * upp;
             FitTool(follow, upp);
             FitTool(cameraBtn, upp, FlightView.ButtonFontPt);
             FitTool(pause, upp);
+            StylePicker(upp);
             if (menu == null) return;
             var title = menu.Q<Label>("pause-title");
             if (title != null) title.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(title, 22f * upp);
@@ -120,7 +138,7 @@ namespace Kestrel.Slice
         public void Show(bool paused)
         {
             Paused = paused;
-            if (paused) { tracking = false; pinching = false; }
+            if (paused) { tracking = false; pinching = false; ClosePicker(); HideToast(); }
             if (menu != null) menu.EnableInClassList("hidden", !paused);
             RefreshAudio();
         }
@@ -140,6 +158,9 @@ namespace Kestrel.Slice
         public void TickInput()
         {
             if (Paused || hud == null || hud.ClassListContains("hidden")) return;
+            TickToast(Time.unscaledDeltaTime);
+            if (PickerOpen && Input.GetKeyDown(KeyCode.Escape)) ClosePicker();
+            else if (Input.GetKeyDown(KeyCode.C)) CycleWithToast();
             if (Input.touchCount >= 2)
             {
                 tracking = false;
@@ -158,6 +179,14 @@ namespace Kestrel.Slice
 
         void Pointer(Vector2 pos, bool began, bool ended)
         {
+            if (began && PickerOpen && !OverPickerOrButton(pos))
+            {
+                // A tap outside closes the picker with no change, and does not start an orbit drag.
+                ClosePicker();
+                blockGesture = true;
+                tracking = false;
+                return;
+            }
             if (began)
             {
                 blockGesture = OverControl(pos);
@@ -193,6 +222,15 @@ namespace Kestrel.Slice
             return false;
         }
 
+        bool OverPickerOrButton(Vector2 screen)
+        {
+            if (hud.panel == null) return false;
+            var hit = hud.panel.Pick(RuntimePanelUtils.ScreenToPanel(hud.panel, screen));
+            for (var ve = hit; ve != null; ve = ve.parent)
+                if (ve == picker || ve == cameraBtn) return true;
+            return false;
+        }
+
         void ToggleMusic()
         {
             Kestrel.Game.Audio.AudioPrefs.SetMusicMuted(!Kestrel.Game.Audio.AudioPrefs.MusicMuted);
@@ -223,24 +261,252 @@ namespace Kestrel.Slice
             button.text = Kestrel.Game.Audio.AudioPrefs.Caption(name, muted);
         }
 
-        void CycleCamera()
+        /// <summary>The old tap behaviour, kept for C and for callers that want the next view.</summary>
+        public void CycleCamera() => Choose(FlightView.Next(viewMode));
+
+        /// <summary>C on a keyboard: next view, no picker, a 1 s toast.</summary>
+        public void CycleWithToast()
         {
-            viewMode = FlightView.Next(viewMode);
+            if (Paused) return;
+            ClosePicker();
+            Choose(FlightView.Next(viewMode));
+            ShowToast(FlightView.Toast(viewMode));
+        }
+
+        /// <summary>Apply, save (through the bound callback) and close the picker.</summary>
+        public void Choose(FlightViewMode mode)
+        {
+            viewMode = mode;
             RefreshCamera();
+            ClosePicker();
             viewChanged?.Invoke(viewMode);
+        }
+
+        public void TogglePicker()
+        {
+            if (PickerOpen) ClosePicker();
+            else OpenPicker();
+        }
+
+        public void OpenPicker()
+        {
+            if (picker == null || Paused) return;
+            HideToast();
+            RefreshChips();
+            picker.style.display = DisplayStyle.Flex;
+            picker.BringToFront();
+            menu?.BringToFront();
+            Kestrel.Game.Shell.TextFit.Apply(picker);
+        }
+
+        public void ClosePicker()
+        {
+            if (picker != null) picker.style.display = DisplayStyle.None;
+            RefreshNote();
+        }
+
+        /// <summary>Pad at long range: a short note in the toast slot while the picker is shut.</summary>
+        public void SetViewNote(string note)
+        {
+            if (note == viewNote) return;
+            viewNote = note;
+            RefreshNote();
+        }
+
+        void ShowToast(string text)
+        {
+            if (toast == null) return;
+            toast.text = text;
+            toast.style.display = DisplayStyle.Flex;
+            toast.style.opacity = 1f;
+            toastLeft = FlightView.ToastSec;
+        }
+
+        void HideToast()
+        {
+            toastLeft = 0f;
+            RefreshNote();
+        }
+
+        /// <summary>Unscaled seconds. No blink: the toast stays steady, then gives way to the note or nothing.</summary>
+        public void TickToast(float dt)
+        {
+            if (toastLeft <= 0f) return;
+            toastLeft -= dt;
+            if (toastLeft <= 0f) HideToast();
+        }
+
+        void RefreshNote()
+        {
+            if (toast == null || toastLeft > 0f) return;
+            bool show = !string.IsNullOrEmpty(viewNote) && !PickerOpen;
+            toast.text = show ? viewNote : "";
+            toast.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            toast.style.opacity = 0.85f;
+        }
+
+        void BuildPicker()
+        {
+            picker = new VisualElement { name = PickerName };
+            picker.style.position = Position.Absolute;
+            picker.style.display = DisplayStyle.None;
+            picker.style.backgroundColor = Panel;
+            picker.style.flexDirection = FlexDirection.Row;
+            picker.style.flexWrap = Wrap.Wrap;
+            // Until AscentHud seats it: above the tools row, centred.
+            picker.style.left = Length.Percent(20);
+            picker.style.right = Length.Percent(20);
+            picker.style.bottom = 200;
+            for (int i = 0; i < FlightView.Picker.Length; i++)
+            {
+                var mode = FlightView.Picker[i];
+                var chip = new Button(() => Choose(mode))
+                {
+                    name = ChipName(mode),
+                    text = FlightView.Name(mode),
+                    tooltip = "Camera: " + FlightView.Name(mode) + ".",
+                };
+                chip.AddToClassList("flight-camera-chip");
+                chip.style.unityFontStyleAndWeight = FontStyle.Bold;
+                chip.style.borderTopWidth = 0;
+                chip.style.borderRightWidth = 0;
+                chip.style.borderBottomWidth = 0;
+                chip.style.borderLeftWidth = 0;
+                picker.Add(chip);
+            }
+            hud.Add(picker);
+
+            toast = new Label { name = ToastName, text = "" };
+            toast.pickingMode = PickingMode.Ignore;
+            toast.style.position = Position.Absolute;
+            toast.style.display = DisplayStyle.None;
+            toast.style.color = Color.white;
+            toast.style.backgroundColor = Panel;
+            toast.style.unityFontStyleAndWeight = FontStyle.Bold;
+            toast.style.unityTextAlign = TextAnchor.MiddleCenter;
+            toast.style.whiteSpace = WhiteSpace.Normal;
+            toast.style.left = Length.Percent(20);
+            toast.style.right = Length.Percent(20);
+            toast.style.bottom = 200;
+            hud.Add(toast);
+            RefreshChips();
+        }
+
+        void StylePicker(float upp)
+        {
+            if (picker == null) return;
+            float r = 12f * upp;
+            picker.style.borderTopLeftRadius = r;
+            picker.style.borderTopRightRadius = r;
+            picker.style.borderBottomLeftRadius = r;
+            picker.style.borderBottomRightRadius = r;
+            picker.style.paddingLeft = FlightHudLayout.PadPt * upp;
+            picker.style.paddingRight = FlightHudLayout.PadPt * upp;
+            picker.style.paddingTop = FlightHudLayout.PadPt * upp;
+            picker.style.paddingBottom = FlightHudLayout.PadPt * upp;
+            picker.Query<Button>(className: "flight-camera-chip").ForEach(chip =>
+            {
+                chip.style.minHeight = TouchPt * upp;
+                chip.style.height = TouchPt * upp;
+                chip.style.minWidth = FlightView.WidestChip() * upp;
+                chip.style.marginLeft = 0;
+                chip.style.marginTop = 0;
+                chip.style.marginRight = FlightHudLayout.GapPt * upp;
+                chip.style.marginBottom = FlightHudLayout.GapPt * upp;
+                chip.style.borderTopLeftRadius = r;
+                chip.style.borderTopRightRadius = r;
+                chip.style.borderBottomLeftRadius = r;
+                chip.style.borderBottomRightRadius = r;
+                FitTool(chip, upp, FlightView.ChipFontPt);
+            });
+            if (toast != null)
+            {
+                toast.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(toast, FlightView.ChipFontPt * upp);
+                toast.style.borderTopLeftRadius = r;
+                toast.style.borderTopRightRadius = r;
+                toast.style.borderBottomLeftRadius = r;
+                toast.style.borderBottomRightRadius = r;
+            }
+        }
+
+        void RefreshChips()
+        {
+            if (picker == null) return;
+            for (int i = 0; i < FlightView.Picker.Length; i++)
+            {
+                var mode = FlightView.Picker[i];
+                var chip = picker.Q<Button>(ChipName(mode));
+                if (chip == null) continue;
+                bool on = mode == viewMode;
+                chip.style.backgroundColor = on ? Amber : new Color(1f, 1f, 1f, 0.12f);
+                chip.style.color = on ? Ink : Color.white;
+                chip.tooltip = "Camera: " + FlightView.Name(mode) + (on ? " (current)." : ".");
+            }
+        }
+
+        /// <summary>
+        /// Seat the picker, its chips and the toast at panel-unit boxes from <see cref="FlightHudLayout"/>.
+        /// AscentHud calls this for portrait and landscape; the boxes are relative to the HUD.
+        /// </summary>
+        public static void SeatPicker(VisualElement flightHud, HudBox pickerBox, HudBox[] chipBoxes)
+        {
+            if (flightHud == null || !pickerBox.Live) return;
+            var p = flightHud.Q(PickerName);
+            if (p != null)
+            {
+                p.style.left = pickerBox.X;
+                p.style.top = pickerBox.Y;
+                p.style.width = pickerBox.W;
+                p.style.height = pickerBox.H;
+                p.style.right = StyleKeyword.Auto;
+                p.style.bottom = StyleKeyword.Auto;
+                p.style.paddingLeft = 0; p.style.paddingRight = 0; p.style.paddingTop = 0; p.style.paddingBottom = 0;
+                for (int i = 0; i < FlightView.Picker.Length && chipBoxes != null && i < chipBoxes.Length; i++)
+                {
+                    var chip = p.Q<Button>(ChipName(FlightView.Picker[i]));
+                    var b = chipBoxes[i];
+                    if (chip == null || !b.Live) continue;
+                    chip.style.position = Position.Absolute;
+                    chip.style.left = b.X - pickerBox.X;
+                    chip.style.top = b.Y - pickerBox.Y;
+                    chip.style.width = b.W;
+                    chip.style.minWidth = b.W;
+                    chip.style.height = b.H;
+                    chip.style.minHeight = b.H;
+                    chip.style.marginLeft = 0; chip.style.marginRight = 0; chip.style.marginTop = 0; chip.style.marginBottom = 0;
+                }
+                p.BringToFront();
+            }
+            var t = flightHud.Q(ToastName);
+            if (t != null)
+            {
+                // The toast takes the bottom row of the picker's box: clear of the HUD by the same tests.
+                float h = chipBoxes != null && chipBoxes.Length > 0 && chipBoxes[0].Live ? chipBoxes[0].H : pickerBox.H;
+                t.style.left = pickerBox.X;
+                t.style.top = pickerBox.Bottom - h;
+                t.style.width = pickerBox.W;
+                t.style.height = h;
+                t.style.right = StyleKeyword.Auto;
+                t.style.bottom = StyleKeyword.Auto;
+                t.BringToFront();
+            }
+            flightHud.Q("pause-menu")?.BringToFront();
         }
 
         void RefreshCamera()
         {
             if (cameraBtn == null) return;
-            string name = FlightView.Name(viewMode);
-            cameraBtn.text = name;
-            cameraBtn.tooltip = "Camera: " + name + ". Tap for the next view.";
+            cameraBtn.text = FlightView.Caption(viewMode);
+            cameraBtn.tooltip = FlightView.Tip(viewMode);
             float upp = lastUpp > 0.5f ? lastUpp : 1f;
-            float w = FlightView.ButtonWidth(viewMode) * upp;
-            cameraBtn.style.minWidth = w;
-            cameraBtn.style.width = w;
+            float w = FlightView.WidestButton() * upp;
+            if (cameraBtn.style.position.value != Position.Absolute)
+            {
+                cameraBtn.style.minWidth = w;
+                cameraBtn.style.width = w;
+            }
             FitTool(cameraBtn, upp, FlightView.ButtonFontPt);
+            RefreshChips();
         }
 
         void RefreshFollow()

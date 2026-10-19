@@ -40,6 +40,8 @@ namespace Kestrel.Core.Flight
     {
         public HudBox Clock, Stage, Health, Telemetry, Plot, Stages, Dock, Info, Medal, Help, Quote, Timer;
         public HudBox Assist, Primary, Skip, Alternate, NudgeDown, NudgeUp, Follow, Pause, Exit;
+        /// <summary>The "Cam: Auto" button, and where its five-chip picker opens (it is closed by default).</summary>
+        public HudBox Camera, CameraPicker;
         public HudBox[] Cells = new HudBox[4];
         public FlightHudMode Mode;
     }
@@ -227,7 +229,67 @@ namespace Kestrel.Core.Flight
             float centerR = width * 0.65f;
             if (pauseX < centerR + GapPt) pauseX = centerR + GapPt;
             f.Pause = Box(pauseX, toolsY, PauseWidthPt, ButtonPt);
+
+            // Camera sits centred in the gap between Follow and Pause, the way the flex row lays it out.
+            float camW = FlightView.WidestButton();
+            float gapL = f.Follow.Right + GapPt;
+            float gapR = f.Pause.X - GapPt;
+            if (camW > gapR - gapL) camW = Math.Max(ButtonPt, gapR - gapL);
+            f.Camera = Box((gapL + gapR - camW) * 0.5f, toolsY, camW, ButtonPt);
+
+            // The picker opens above the tools row, right of the trajectory rail and under the stages card.
+            float pickL = Math.Max(f.Plot.Right, left) + GapPt;
+            float pickTop = Math.Max(f.Stages.Bottom, f.Telemetry.Bottom) + GapPt;
+            var size = PickerSize(right - pickL, toolsY - GapPt - pickTop);
+            float px = f.Camera.X + f.Camera.W * 0.5f - size.W * 0.5f;
+            if (px + size.W > right) px = right - size.W;
+            if (px < pickL) px = pickL;
+            float py = toolsY - GapPt - size.H;
+            if (py < pickTop) py = pickTop;
+            f.CameraPicker = Box(px, py, size.W, size.H);
             return f;
+        }
+
+        /// <summary>
+        /// Picker footprint for the room it has: as many chip columns as fit (one row of five on a wide
+        /// screen, three by two at 335 pt), every chip a 44 pt target.
+        /// </summary>
+        public static HudBox PickerSize(float roomW, float roomH)
+        {
+            int n = FlightView.Picker.Length;
+            float chip = FlightView.WidestChip();
+            int cols = (int)Math.Floor((roomW - 2f * PadPt + GapPt) / (chip + GapPt));
+            if (cols > n) cols = n;
+            if (cols < 1) cols = 1;
+            int rows = (n + cols - 1) / cols;
+            // Too short for that many rows: go wider if the width allows it (never narrower than one chip).
+            while (rows > 1 && rows * ButtonPt + (rows - 1) * GapPt + 2f * PadPt > roomH && cols < n)
+            {
+                cols++;
+                rows = (n + cols - 1) / cols;
+            }
+            float w = cols * chip + (cols - 1) * GapPt + 2f * PadPt;
+            float h = rows * ButtonPt + (rows - 1) * GapPt + 2f * PadPt;
+            return new HudBox { W = w, H = h };
+        }
+
+        /// <summary>Chip boxes inside an open picker, in <see cref="FlightView.Picker"/> order, row by row.</summary>
+        public static HudBox[] PickerChips(HudBox picker)
+        {
+            int n = FlightView.Picker.Length;
+            var chips = new HudBox[n];
+            if (!picker.Live) return chips;
+            float chip = FlightView.WidestChip();
+            int cols = (int)Math.Floor((picker.W - 2f * PadPt + GapPt) / (chip + GapPt) + 0.01f);
+            if (cols > n) cols = n;
+            if (cols < 1) cols = 1;
+            float cw = (picker.W - 2f * PadPt - (cols - 1) * GapPt) / cols;
+            for (int i = 0; i < n; i++)
+            {
+                int c = i % cols, r = i / cols;
+                chips[i] = Box(picker.X + PadPt + c * (cw + GapPt), picker.Y + PadPt + r * (ButtonPt + GapPt), cw, ButtonPt);
+            }
+            return chips;
         }
 
         public static float DockHeight(bool notes, bool prompt)
@@ -340,7 +402,10 @@ namespace Kestrel.Core.Flight
             f.Follow = Box(left, yL, railW, toolsH);
 
             bool nudgesInRail = prompt && !Contains(f.Dock, f.NudgeDown);
-            float rightExtra = nudgesInRail ? ButtonPt + GapPt : 0f;
+            // Camera shares the Pause row when the rail is wide enough; a narrow rail stacks it above Pause.
+            float camW = FlightView.WidestButton();
+            bool camBeside = railW >= camW + GapPt + PauseWidthPt;
+            float rightExtra = (nudgesInRail ? ButtonPt + GapPt : 0f) + (camBeside ? 0f : toolsH + GapPt);
             float stagesH = followY - GapPt - rightExtra - railTop;
             if (stagesH < 48f) stagesH = 48f;
             f.Stages = Box(right - railW, railTop, railW, stagesH);
@@ -353,7 +418,27 @@ namespace Kestrel.Core.Flight
                 f.NudgeUp = Box(f.Stages.X + 2f * (col + GapPt), yR, col, ButtonPt);
                 yR += ButtonPt + GapPt;
             }
-            f.Pause = Box(right - railW, yR, railW, toolsH);
+            if (camBeside)
+            {
+                f.Camera = Box(right - railW, yR, camW, toolsH);
+                f.Pause = Box(f.Camera.Right + GapPt, yR, right - f.Camera.Right - GapPt, toolsH);
+            }
+            else
+            {
+                f.Camera = Box(right - railW, yR, railW, toolsH);
+                f.Pause = Box(right - railW, yR + toolsH + GapPt, railW, toolsH);
+            }
+
+            // The picker opens toward the centre: left of the button, inside the rocket column, above the dock.
+            var open = RocketColumn(f);
+            var size = PickerSize(open.W, open.H);
+            float px = f.Camera.X - GapPt - size.W;
+            if (px + size.W > open.Right) px = open.Right - size.W;
+            if (px < open.X) px = open.X;
+            float py = f.Camera.Bottom - size.H;
+            if (py + size.H > open.Bottom) py = open.Bottom - size.H;
+            if (py < open.Y) py = open.Y;
+            f.CameraPicker = Box(px, py, Math.Min(size.W, open.W), Math.Min(size.H, open.H));
             return f;
         }
 

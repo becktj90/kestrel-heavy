@@ -68,6 +68,8 @@ namespace Kestrel.Slice
 
         public void Close()
         {
+            // Hand the tools row (Follow, Cam, Pause) back to the flex flow before the HUD goes.
+            ClearWidePins();
             infoOpen = false;
             healthOpen = -1;
             if (help != null && help.parent != null) help.RemoveFromHierarchy();
@@ -90,11 +92,20 @@ namespace Kestrel.Slice
 
         bool widePinned;
 
+        /// <summary>
+        /// Device tests only: lay out as landscape web at this CSS viewport (zero insets) or as portrait,
+        /// instead of reading Screen and the browser. Null leaves the live checks.
+        /// </summary>
+        public static bool? ForceWide;
+        public static float ForceCssW, ForceCssH;
+
+        static bool UseWideNow() => ForceWide ?? WebLayoutMode.UseWide(Screen.width, Screen.height);
+
         public void Layout(float unitsPerPoint)
         {
             upp = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
             if (root == null) return;
-            if (!WebLayoutMode.UseWide(Screen.width, Screen.height)) ClearWidePins();
+            if (!UseWideNow()) ClearWidePins();
             float gapPx = Px(FlightHudLayout.GapPt);
             float plotH = Px(FlightHudLayout.PlotPt);
             root.style.marginTop = gapPx;
@@ -192,7 +203,7 @@ namespace Kestrel.Slice
             if (assistRow != null) assistRow.style.marginTop = Px(FlightHudLayout.GapPt);
             if (nudgeRow != null) nudgeRow.style.marginTop = Px(FlightHudLayout.GapPt);
             PlaceDockSpacer();
-            if (WebLayoutMode.UseWide(Screen.width, Screen.height)) LayoutWide();
+            if (UseWideNow()) LayoutWide();
             else LayoutRail();
             PlaceInfoSheet();
             hud.Q("pause-menu")?.BringToFront();
@@ -244,6 +255,15 @@ namespace Kestrel.Slice
                 Seat(assistRow, ScaleBox(frame.Assist), dock);
             }
             Seat(nudgeRow, ScaleBox(Union(frame.Alternate, frame.NudgeDown, frame.NudgeUp)), dock);
+            // The camera button stays in the flex tools row; its picker opens above that row.
+            FlightChrome.SeatPicker(hud, ScaleBox(frame.CameraPicker), ScaleAll(FlightHudLayout.PickerChips(frame.CameraPicker), ScaleBox));
+        }
+
+        static HudBox[] ScaleAll(HudBox[] boxes, Func<HudBox, HudBox> scale)
+        {
+            var o = new HudBox[boxes.Length];
+            for (int i = 0; i < boxes.Length; i++) o[i] = scale(boxes[i]);
+            return o;
         }
 
         HudBox ScaleBox(HudBox b) => new HudBox { X = b.X * upp, Y = b.Y * upp, W = b.W * upp, H = b.H * upp };
@@ -304,9 +324,11 @@ namespace Kestrel.Slice
         /// <summary>Landscape web: stat strip across the top, plot and stages in the side rails, dock under the rocket.</summary>
         void LayoutWide()
         {
-            float pw = hud != null ? hud.resolvedStyle.width : 0f;
-            float ph = hud != null ? hud.resolvedStyle.height : 0f;
-            if (pw < 8f || ph < 8f) return;
+            if (ForceWide == true && ForceCssW > 8f && ForceCssH > 8f)
+            {
+                LayoutWideAt(ForceCssW, ForceCssH, 0f, 0f, 0f, 0f);
+                return;
+            }
             WebViewport.Css(out float cssW, out float cssH);
             if (cssW < 8f || cssH < 8f) return;
             float perX = Screen.width > 1 ? Screen.width / cssW : 1f;
@@ -316,6 +338,21 @@ namespace Kestrel.Slice
             float safeBottom = safe.yMin / perY;
             float safeLeft = safe.xMin / perX;
             float safeRight = (Screen.width - safe.xMax) / perX;
+            LayoutWideAt(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight);
+        }
+
+        /// <summary>
+        /// Landscape pins for a CSS viewport. Public so the device tests can drive it at 1280x720,
+        /// 1366x768 and 1920x1080 without a real browser window.
+        /// </summary>
+        public void LayoutWideAt(float cssW, float cssH, float safeTop, float safeBottom, float safeLeft, float safeRight)
+        {
+            float pw = hud != null ? hud.resolvedStyle.width : 0f;
+            float ph = hud != null ? hud.resolvedStyle.height : 0f;
+            // Before the first layout pass (or off-panel in a test) the inline size is the panel size.
+            if (!(pw >= 8f) && hud != null && hud.style.width.keyword == StyleKeyword.Undefined) pw = hud.style.width.value.value;
+            if (!(ph >= 8f) && hud != null && hud.style.height.keyword == StyleKeyword.Undefined) ph = hud.style.height.value.value;
+            if (!(pw >= 8f) || !(ph >= 8f) || root == null) return;
             bool prompt = shown != default;
             bool notes = infoOpen;
             var mode = prompt && notes ? FlightHudMode.PromptNotes
@@ -374,7 +411,14 @@ namespace Kestrel.Slice
                 tools.style.marginBottom = 0;
             }
             Pin(hud.Q("follow"), Sc(f.Follow));
+            Pin(hud.Q("flight-camera"), Sc(f.Camera));
             Pin(hud.Q("pause"), Sc(f.Pause));
+            // flight-tools is a full-HUD box that ignores picking; keep it (and the picker) above the
+            // later-inserted ascent root so taps reach the buttons.
+            tools?.BringToFront();
+            var chips = FlightHudLayout.PickerChips(f.CameraPicker);
+            for (int i = 0; i < chips.Length; i++) chips[i] = Sc(chips[i]);
+            FlightChrome.SeatPicker(hud, Sc(f.CameraPicker), chips);
             Pin(actions, Sc(f.Dock));
             if (actions != null) actions.style.overflow = Overflow.Hidden;
             if (dockSpacer != null) dockSpacer.style.height = 0;
@@ -471,7 +515,13 @@ namespace Kestrel.Slice
             var tools = hud != null ? hud.Q("flight-tools") : null;
             Unpin(tools);
             if (tools != null) tools.style.marginBottom = StyleKeyword.Null;
+            // Landscape brought the row to the front; portrait needs it back above the webcast block.
+            var webcast = hud != null ? hud.Q("webcast") : null;
+            if (tools != null && webcast != null && tools.parent == hud && webcast.parent == hud
+                && hud.IndexOf(tools) > hud.IndexOf(webcast))
+                hud.Insert(hud.IndexOf(webcast), tools);
             Unpin(hud != null ? hud.Q("follow") : null);
+            Unpin(hud != null ? hud.Q("flight-camera") : null);
             Unpin(hud != null ? hud.Q("pause") : null);
             Unpin(actions);
             if (actions != null) actions.style.overflow = StyleKeyword.Null;

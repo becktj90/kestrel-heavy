@@ -153,6 +153,50 @@ namespace Kestrel.Game.Tests
             Assert.That(hud.style.display.value, Is.EqualTo(DisplayStyle.Flex));
         }
 
+        [Test]
+        public void LandscapePinsTheCameraButtonBesidePause()
+        {
+            var hud = new VisualElement { name = "hud" };
+            hud.style.width = 1280;
+            hud.style.height = 720;
+            var band = new VisualElement { name = "hud-band" };
+            band.Add(new Label { name = "h-t", text = "T+ 12.4" });
+            hud.Add(band);
+            hud.Add(new VisualElement { name = "webcast" });
+            var go = new GameObject("kh-polish-camera") { hideFlags = HideFlags.HideAndDontSave };
+            var ascent = new AscentHud();
+            try
+            {
+                var chrome = go.AddComponent<FlightChrome>();
+                chrome.Bind(hud, _ => { }, () => { }, () => { }, null, FlightViewMode.Auto);
+                AscentHud.ForceWide = true;
+                AscentHud.ForceCssW = 1280f;
+                AscentHud.ForceCssH = 720f;
+                ascent.Open(hud, 1f);
+                ascent.LayoutWideAt(1280f, 720f, 0f, 0f, 0f, 0f);
+                var cam = hud.Q("flight-camera");
+                var pause = hud.Q("pause");
+                Assert.That(cam, Is.Not.Null);
+                Assert.That(cam.style.position.value, Is.EqualTo(Position.Absolute), "landscape pins the camera button");
+                float x = cam.style.left.value.value, y = cam.style.top.value.value;
+                Assert.That(x > 1f || y > 1f, Is.True, "not left at the HUD origin over the T+ clock");
+                var f = FlightHudLayout.PlaceWide(1280f, 720f, 0f, 0f, 0f, 0f, FlightHudMode.Cruise);
+                Assert.That(x, Is.EqualTo(f.Camera.X).Within(0.5f));
+                Assert.That(y, Is.EqualTo(f.Camera.Y).Within(0.5f));
+                Assert.That(pause.style.top.value.value, Is.EqualTo(y).Within(0.5f), "same row as Pause");
+                Assert.That(hud.Q(FlightChrome.PickerName), Is.Not.Null);
+
+                ascent.Close();
+                Assert.That(cam.style.position.keyword, Is.EqualTo(StyleKeyword.Null), "Close unpins it");
+            }
+            finally
+            {
+                AscentHud.ForceWide = null;
+                AscentHud.ForceCssW = AscentHud.ForceCssH = 0f;
+                UnityEngine.Object.DestroyImmediate(go);
+            }
+        }
+
         static string LongestWord(string text)
         {
             string best = "";

@@ -125,6 +125,149 @@ namespace Kestrel.Core.Tests
             }
         }
 
+        // ---- Camera button and picker (CAMERA-PICKER brief) -------------------------------------------
+
+        /// <summary>Portrait: 335 narrow, 390 and 430 iPhones, iPad. Full screen with insets, and the inset-free content box AscentHud lays out.</summary>
+        static readonly FlightHudLayout.Device[] CameraPortraits =
+        {
+            new FlightHudLayout.Device("335x720", 335f, 720f, 20f, 0f, 0f, 0f),
+            new FlightHudLayout.Device("335x667", 335f, 667f, 0f, 0f, 0f, 0f),
+            new FlightHudLayout.Device("390x844", 390f, 844f, 47f, 34f, 0f, 0f),
+            new FlightHudLayout.Device("430x932", 430f, 932f, 59f, 34f, 0f, 0f),
+            new FlightHudLayout.Device("iPad 1032x1376", 1032f, 1376f, 24f, 20f, 0f, 0f),
+            new FlightHudLayout.Device("iPad 820x1180", 820f, 1180f, 24f, 20f, 0f, 0f),
+        };
+
+        /// <summary>Landscape web, as the CSS viewport AscentHud reads and as the 1280x720 panel WebPanelScale makes of it.</summary>
+        static readonly float[][] CameraWide =
+        {
+            new[] { 1280f, 720f }, new[] { 1366f, 768f }, new[] { 1920f, 1080f },
+        };
+
+        [Test]
+        public void CameraAndPickerClearTheHud_Portrait()
+        {
+            foreach (var d in CameraPortraits)
+            foreach (var mode in Modes)
+            {
+                var f = FlightHudLayout.Place(d, mode);
+                string where = d.Name + " " + mode;
+                AssertCamera(f, d.W, d.H, d.SafeTop, d.SafeBottom, d.SafeLeft, d.SafeRight, where);
+                Assert.That(f.Camera.Y, Is.EqualTo(f.Follow.Y).Within(0.01f), where + " camera rides the tools row");
+                Assert.That(f.Camera.X, Is.GreaterThan(f.Follow.Right), where + " between Follow and Pause");
+                Assert.That(f.Camera.Right, Is.LessThan(f.Pause.X), where);
+                Assert.That(f.CameraPicker.Bottom, Is.LessThanOrEqualTo(f.Camera.Y + 0.5f), where + " picker opens above the row");
+            }
+        }
+
+        [Test]
+        public void CameraAndPickerClearTheHud_LandscapeWeb()
+        {
+            foreach (var size in CameraWide)
+            foreach (var scaled in new[] { false, true })
+            foreach (var mode in Modes)
+            {
+                float w = scaled ? 1280f : size[0];
+                float h = scaled ? 1280f * size[1] / size[0] : size[1];
+                var f = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, mode);
+                string where = size[0] + "x" + size[1] + (scaled ? " panel " + w + "x" + h : " css") + " " + mode;
+                AssertCamera(f, w, h, 0f, 0f, 0f, 0f, where);
+                Assert.That(f.Camera.X > 1f || f.Camera.Y > 1f, Is.True, where + " camera is placed, not at (0,0)");
+                Assert.That(f.Camera.Y, Is.EqualTo(f.Pause.Y).Within(0.01f), where + " beside Pause on the tools row");
+                Assert.That(f.Camera.Y, Is.EqualTo(f.Follow.Y).Within(0.01f), where);
+                var col = FlightHudLayout.RocketColumn(f);
+                Assert.That(f.CameraPicker.X, Is.GreaterThanOrEqualTo(col.X - 0.5f), where + " picker opens toward the centre");
+                Assert.That(f.CameraPicker.Right, Is.LessThanOrEqualTo(f.Camera.X + 0.5f), where);
+                Assert.That(f.CameraPicker.H, Is.LessThanOrEqualTo(FlightHudLayout.ButtonPt + 2f * FlightHudLayout.PadPt + 0.5f), where + " one row of five on a wide screen");
+            }
+        }
+
+        [Test]
+        public void NarrowLandscapeRailStacksTheCameraAbovePause()
+        {
+            // 960x540: a rail too narrow for Cam and Pause side by side.
+            var f = FlightHudLayout.PlaceWide(700f, 420f, 0f, 0f, 0f, 0f, FlightHudMode.Cruise);
+            AssertCamera(f, 700f, 420f, 0f, 0f, 0f, 0f, "700x420");
+        }
+
+        [Test]
+        public void ButtonAndChipCaptionsFit()
+        {
+            Assert.IsTrue(FlightView.FitsWidth(335f));
+            foreach (var mode in FlightView.Cycle)
+            {
+                string cap = FlightView.Caption(mode);
+                Assert.That(cap, Does.StartWith("Cam: "), mode.ToString());
+                Assert.That(FlightView.LabelWidth(cap, FlightView.ButtonFontPt), Is.LessThanOrEqualTo(FlightView.WidestButton() - 8f), cap);
+                Assert.That(FlightView.LabelWidth(FlightView.Name(mode), FlightView.ChipFontPt), Is.LessThanOrEqualTo(FlightView.WidestChip() - 8f), mode.ToString());
+                Assert.That(FlightView.Name(mode).Contains(" "), Is.False, "chips are one word, nothing to wrap mid-word");
+            }
+            Assert.That(FlightView.Picker, Is.EquivalentTo(FlightView.Cycle));
+            Assert.That(FlightView.Picker[0], Is.EqualTo(FlightViewMode.Auto));
+            foreach (var d in CameraPortraits)
+            {
+                var f = FlightHudLayout.Place(d, FlightHudMode.Cruise);
+                Assert.That(f.Camera.W, Is.GreaterThanOrEqualTo(FlightView.WidestButton() - 0.01f), d.Name + " caption room");
+            }
+        }
+
+        static void AssertCamera(FlightHudFrame f, float w, float h, float st, float sb, float sl, float sr, string where)
+        {
+            Assert.That(f.Camera.Live, Is.True, where + " camera");
+            Assert.That(f.Camera.W, Is.GreaterThanOrEqualTo(44f), where + " camera target");
+            Assert.That(f.Camera.H, Is.GreaterThanOrEqualTo(44f), where + " camera target");
+            Assert.That(f.CameraPicker.Live, Is.True, where + " picker");
+            var chips = FlightHudLayout.PickerChips(f.CameraPicker);
+            Assert.That(chips.Length, Is.EqualTo(5), where);
+            for (int i = 0; i < chips.Length; i++)
+            {
+                Assert.That(chips[i].W, Is.GreaterThanOrEqualTo(FlightView.WidestChip() - 0.01f), where + " chip " + i);
+                Assert.That(chips[i].H, Is.GreaterThanOrEqualTo(44f), where + " chip " + i);
+                Assert.That(chips[i].X, Is.GreaterThanOrEqualTo(f.CameraPicker.X - 0.01f), where + " chip " + i + " inside");
+                Assert.That(chips[i].Right, Is.LessThanOrEqualTo(f.CameraPicker.Right + 0.01f), where + " chip " + i + " inside");
+                Assert.That(chips[i].Bottom, Is.LessThanOrEqualTo(f.CameraPicker.Bottom + 0.01f), where + " chip " + i + " inside");
+                for (int j = 0; j < i; j++)
+                    Assert.That(chips[i].Overlaps(chips[j]), Is.False, where + " chips " + j + "/" + i);
+            }
+            foreach (var mine in new[] { ("Camera", f.Camera), ("CameraPicker", f.CameraPicker) })
+            {
+                var b = mine.Item2;
+                Assert.That(b.X, Is.GreaterThanOrEqualTo(sl - 0.5f), where + " " + mine.Item1 + " left");
+                Assert.That(b.Right, Is.LessThanOrEqualTo(w - sr + 0.5f), where + " " + mine.Item1 + " right");
+                Assert.That(b.Y, Is.GreaterThanOrEqualTo(st - 0.5f), where + " " + mine.Item1 + " top");
+                Assert.That(b.Bottom, Is.LessThanOrEqualTo(h - sb + 0.5f), where + " " + mine.Item1 + " bottom");
+                foreach (var other in HudOthers(f))
+                    Assert.That(b.Overlaps(other.Item2), Is.False, where + " " + mine.Item1 + " covers " + other.Item1);
+            }
+            Assert.That(f.Camera.Overlaps(f.CameraPicker), Is.False, where + " picker beside its button");
+        }
+
+        static IEnumerable<(string, HudBox)> HudOthers(FlightHudFrame f)
+        {
+            yield return ("Clock", f.Clock);
+            yield return ("Stage", f.Stage);
+            yield return ("Telemetry", f.Telemetry);
+            for (int i = 0; i < f.Cells.Length; i++) yield return ("Cell" + i, f.Cells[i]);
+            yield return ("Health", f.Health);
+            yield return ("Plot", f.Plot);
+            yield return ("Stages", f.Stages);
+            yield return ("Dock", f.Dock);
+            yield return ("Info", f.Info);
+            yield return ("Medal", f.Medal);
+            yield return ("Help", f.Help);
+            yield return ("Quote", f.Quote);
+            yield return ("Timer", f.Timer);
+            yield return ("Follow", f.Follow);
+            yield return ("Pause", f.Pause);
+            yield return ("Primary", f.Primary);
+            yield return ("Skip", f.Skip);
+            yield return ("Assist", f.Assist);
+            yield return ("Alternate", f.Alternate);
+            yield return ("NudgeDown", f.NudgeDown);
+            yield return ("NudgeUp", f.NudgeUp);
+            yield return ("Exit", f.Exit);
+        }
+
         static void AssertInside(FlightHudFrame f, FlightHudLayout.Device d, string where)
         {
             float minX = d.SafeLeft + FlightHudLayout.SideMarginPt - 0.6f;

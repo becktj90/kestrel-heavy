@@ -1,5 +1,6 @@
 // One saved camera. Auto is the altitude-aware chase. The other four are fixed frames.
-// The button cycles them mid-flight. The value lives in the save record kh.save.v1.settings.
+// The button reads "Cam: <mode>" and opens a five-chip picker; C on web cycles without it.
+// The value lives in the save record kh.save.v1.settings. Poses: FlightViewPose.
 using Kestrel.Core.Designer;
 using Kestrel.Core.Json;
 
@@ -32,6 +33,19 @@ namespace Kestrel.Core.Flight
         public const float ButtonPadPt = 16f;
         public const float MinButtonPt = 52f;
 
+        public const string CaptionPrefix = "Cam: ";
+        public const float ChipFontPt = 13f;
+        public const float ChipPadPt = 16f;
+        public const float MinChipPt = 56f;
+        /// <summary>Seconds the C-key toast stays up.</summary>
+        public const float ToastSec = 1f;
+
+        /// <summary>Picker chips, in the brief's reading order. C and the old tap cycle use <see cref="Cycle"/>.</summary>
+        public static readonly FlightViewMode[] Picker =
+        {
+            FlightViewMode.Auto, FlightViewMode.Above, FlightViewMode.Below, FlightViewMode.Chase, FlightViewMode.Pad,
+        };
+
         public static readonly FlightViewMode[] Cycle =
         {
             FlightViewMode.Auto, FlightViewMode.Chase, FlightViewMode.Above, FlightViewMode.Below, FlightViewMode.Pad,
@@ -48,6 +62,14 @@ namespace Kestrel.Core.Flight
                 default: return "Auto";
             }
         }
+
+        /// <summary>The button caption. "Auto" alone did not read as a camera control.</summary>
+        public static string Caption(FlightViewMode mode) => CaptionPrefix + Name(mode);
+
+        /// <summary>The C-key toast.</summary>
+        public static string Toast(FlightViewMode mode) => "Camera: " + Name(mode);
+
+        public static string Tip(FlightViewMode mode) => "Camera: " + Name(mode) + ". Tap to pick a view. C cycles on a keyboard.";
 
         public static FlightViewMode Parse(string name)
         {
@@ -121,13 +143,14 @@ namespace Kestrel.Core.Flight
         /// <summary>The control is at least as wide as the caption, and the row fits a 335 pt portrait or landscape.</summary>
         public static float ButtonWidth(FlightViewMode mode)
         {
-            float text = LabelWidth(Name(mode), ButtonFontPt);
+            float text = LabelWidth(Caption(mode), ButtonFontPt);
             float w = text + ButtonPadPt;
             if (w < MinButtonPt) w = MinButtonPt;
             return w;
         }
 
-        public static bool FitsWidth(float screenWidthPt)
+        /// <summary>The widest caption, so the button does not change size as the mode changes.</summary>
+        public static float WidestButton()
         {
             float widest = MinButtonPt;
             for (int i = 0; i < Cycle.Length; i++)
@@ -135,6 +158,29 @@ namespace Kestrel.Core.Flight
                 float w = ButtonWidth(Cycle[i]);
                 if (w > widest) widest = w;
             }
+            return widest;
+        }
+
+        public static float ChipWidth(FlightViewMode mode)
+        {
+            float w = LabelWidth(Name(mode), ChipFontPt) + ChipPadPt;
+            return w < MinChipPt ? MinChipPt : w;
+        }
+
+        public static float WidestChip()
+        {
+            float widest = MinChipPt;
+            for (int i = 0; i < Picker.Length; i++)
+            {
+                float w = ChipWidth(Picker[i]);
+                if (w > widest) widest = w;
+            }
+            return widest;
+        }
+
+        public static bool FitsWidth(float screenWidthPt)
+        {
+            float widest = WidestButton();
             float row = FlightHudLayout.SideMarginPt * 2f + FlightHudLayout.FollowWidthPt + FlightHudLayout.GapPt
                 + widest + FlightHudLayout.GapPt + FlightHudLayout.PauseWidthPt;
             return row <= screenWidthPt + 0.5f && widest + ButtonPadPt <= screenWidthPt - FlightHudLayout.SideMarginPt * 2f;
