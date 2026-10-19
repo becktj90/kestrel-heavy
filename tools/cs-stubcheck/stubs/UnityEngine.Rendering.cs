@@ -122,7 +122,7 @@ namespace UnityEngine.Rendering
     public enum ShadowCastingMode { Off, On, TwoSided, ShadowsOnly }
     public enum LightProbeUsage { Off, BlendProbes, UseProxyVolume, CustomProvided }
     public struct ScriptableRenderContext { }
-    public static class RenderPipelineManager { public static event System.Action<ScriptableRenderContext, UnityEngine.Camera> beginCameraRendering; static void Touch() { beginCameraRendering?.Invoke(default, null); } }
+    public static class RenderPipelineManager { public static event System.Action<ScriptableRenderContext, UnityEngine.Camera> beginCameraRendering; public static event System.Action<ScriptableRenderContext, UnityEngine.Camera> endCameraRendering; static void Touch() { beginCameraRendering?.Invoke(default, null); endCameraRendering?.Invoke(default, null); } }
     public enum ReflectionProbeUsage { Off, BlendProbes, BlendProbesAndSkybox, Simple }
     public enum IndexFormat { UInt16, UInt32 }
     public enum BlendMode { Zero, One, DstColor, SrcColor, OneMinusDstColor, SrcAlpha, OneMinusSrcColor, DstAlpha, OneMinusDstAlpha, SrcAlphaSaturate, OneMinusSrcAlpha }
