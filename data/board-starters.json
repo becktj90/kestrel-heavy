@@ -890,9 +890,9 @@
     },
     {
       "id": "m12",
-      "mode": "fix",
+      "mode": "fly",
       "restoreSafetyFactor": 1.7,
-      "edit": "Auto Fix it. Upper engines 2 → 3, with the max-Q throttle at 95%. With six first-stage engines the upper stage pushes at only 0.48 g, and the orbit comes out 856 × 344 km instead of the 600 km circle on every seed.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -966,7 +966,7 @@
             "rcs": false
           },
           "guidance": {
-            "pitchKickDeg": 6,
+            "pitchKickDeg": 4.5,
             "gLimit": 5
           },
           "heatShield": true,

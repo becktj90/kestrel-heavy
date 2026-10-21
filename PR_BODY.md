@@ -55,12 +55,12 @@ A clean cutoff with |γ| ≥ 0.5°, the high point above the band and the low po
 
 | Code | Advice | Flown on |
 |---|---|---|
-| `fpa-steep` (climbing) | "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or use a smaller pitch kick at launch (for example 6° → 4° in Guidance)." | m12: Fix it's edit 5/5, kick 6° → 4° 5/5 |
+| `fpa-steep` (climbing) | "Your rocket flew too steep. Use a smaller pitch kick at launch (for example 6° → 4.5° in Guidance)." | m12's 6° build: kick 4.5° 5/5 batch, live calm and live seed-1 wind |
 | `fpa-steep-suborbital` (climbing, fell back) | "Your rocket flew too steep and fell back down. Give stage N much more fuel (it can take double or more), so it burns long enough to level out." | KH-6 fixtures: ×2 (4/5 plus a seeded engine-out), ×3.06 (5/5) |
-| `fpa-flat` (diving) | "Your rocket flew too flat. Add fuel to stage N, about 2% at a time (up to 10%), until the orbit rounds off." | m3 (1.06) and m4 (1.02) |
+| `fpa-flat` (diving) | "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance)." | m3 8° → 8.5° and m4 6° → 6.5°, 5/5 each (the fuel step, 1.06 and 1.02, also lands them) |
 
-- Fix it's m12 edit is a multi-move: +1 upper engine, max-Q throttle 95%, fins and diameter. One more engine alone still misses (903 × 297 km). So the advice names the throttle too, and the board text now says it.
-- A bigger initial pitch kick (7° or 8°) makes m12 worse; a smaller one (6° → 4°) lands it. So the steep advice names a smaller pitch kick at launch.
+- Physics (2:32 PM, on #324's 32,000 kg KH-12 top stage): both flight-path-angle levers are the pitch kick, replacing "+1 upper engine". At 32,000 kg the KH-12 upper stage pushes at 0.584 g, over the 0.5 g weak-upper rule (0.476 g at 40,000 kg), so weak-upper drops, Fix it no longer adds an engine, and both Fix it's edit (fins, 95%) and the old engine advice tip KH-12 into a dive and miss 5/5.
+- KH-12's board row is now a fly row at a 4.5° kick (was a Fix it row). From the 6° build: 4° misses calm, 5° misses the live pad in seed-1 wind, and extra fuel alone (+4% to +21%) never lands. Full old → new list: KH12_OLD_NEW.md (for Physics review).
 - m6 (γ +0.10°) keeps the fuel advice and its test. `MoreTopStageFuel…("m12")` was replaced by the two KH12 tests.
 
 ## Arcade board rows
@@ -162,7 +162,7 @@ New since 4cc2859: `LivePadKh3Tests` (2), the Heron batch-vs-live test now flies
 main has moved since (#324, #327, #328): a rebase is needed for a clean merge; the only textual conflict is MissReasonTests.cs.
 
 ## Decisions
-1. **Flight-path-angle advice:** done (above). The steep advice names the kick lever literally: a smaller initial pitch kick at launch (6° → 4° lands m12).
+1. **Flight-path-angle advice:** done (above). The steep advice names the kick lever literally: a smaller initial pitch kick at launch (6° → 4.5° lands m12).
 2. **Fix it strength budget:** held at 8 steps. KH-16 gets the redesign note (strength 1.5).
 3. **Engine-out contracts:** pantry-leo400-k3 is tracked for **#326**. For #326: S2 at exactly ×1.10 (38.5 t, not rounded to the tonne) passes 5/5.
 

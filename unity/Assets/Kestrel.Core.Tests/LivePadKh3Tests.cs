@@ -144,4 +144,60 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(0.0, run.Director.NudgeDeg, 1e-12, run.Text);
         }
     }
+
+    /// <summary>The same live pad loop as <see cref="LivePadKh3Tests"/> for any design: seed 1, auto-assist on (Simple depth),
+    /// FlightDriver's 1/60 s frames at LiveDt with played checks. <paramref name="wind"/> false flies calm air on the
+    /// reference pad (the batch's conditions); true flies the seed-1 briefing wind and pad.</summary>
+    internal static class LivePadLoop
+    {
+        public static SimResult Fly(Catalog catalog, CampaignMission mission, Design design, bool wind)
+        {
+            ulong hash = FlightBatch.DesignHash(design);
+            const ulong seed = 1;
+            var card = MissionBriefing.Load(Golden.Root, mission.Index, hash, seed);
+            var weather = wind ? card?.Wind : null;
+            double target = Stack.RequiredDeltaV(catalog, design.payloadOrbit).targetAlt;
+            if (MissionAim.IsApogeeHop(mission)) target = mission.GuidanceAltM;
+            double qLim = FailureMonitor.StructuralQLimPa(catalog, design);
+            var monitor = FailureMonitor.Engages(design) ? FailureMonitor.Create(catalog, design, target, hash, seed) : null;
+            var director = MissionFlightSetup.Director(catalog, design, monitor?.Events, weather, qLim, FailureMonitor.GentleTier(design),
+                target, hash, seed, MissionFlightSetup.DefaultAutoAssist, false, false, wind ? card?.Bonuses : null);
+            var site = new MissionFlightSite { Wind = weather };
+            if (wind && card != null && card.Site != null) { site.HasLatitude = true; site.LatitudeDeg = card.Site.LatitudeDeg; }
+            var setup = MissionFlightSetup.Build(catalog, mission, design, MissionFlightSetup.LiveDt, site);
+            var opts = setup.Options;
+            if (monitor != null) opts.monitor = monitor;
+            var sim = new AscentSim(setup.Stages, opts);
+            var directed = new DirectedFlight(sim, director, opts);
+            var checks = new PlayedChecks(catalog, design, setup.Stages, opts, sim);
+            double clock = 0;
+            int frames = 0;
+            bool stop = false;
+            while (!sim.Done && !stop && frames++ < 400000)
+            {
+                clock += 1.0 / 60.0;
+                int guard = 0;
+                while (sim.T < clock && !sim.Done && guard++ < 64)
+                {
+                    int before = sim.Events.Count;
+                    directed.Step();
+                    checks.NoteEvents(sim, before);
+                    if (checks.StopForBreakup(sim)) { stop = true; break; }
+                }
+            }
+            Assert.IsTrue(sim.Done, "the live flight ends");
+            return directed.Finish();
+        }
+
+        /// <summary>True when an intact live flight lands the mission's band (MissionScore.TargetMet).</summary>
+        public static bool InBand(CampaignMission m, SimResult r)
+        {
+            if (r.failure != null) return false;
+            return MissionScore.TargetMet(m.TargetKind, m.ApoKm, m.PeriKm, m.C3Km2PerS2, MissionScore.FlownApoAltM(r), r.orbit.periAlt,
+                MissionScore.C3(r.orbit.energy) / 1e6, false, out _);
+        }
+
+        public static string Text(SimResult r) => r.outcome + " " + (MissionScore.FlownApoAltM(r) / 1000).ToString("0.0") + " x "
+            + (r.orbit.periAlt / 1000).ToString("0.0") + " km" + (r.failure != null ? " " + r.failure.kind : "");
+    }
 }

@@ -49,9 +49,13 @@ namespace Kestrel.Core.Flight
 
         /// <summary>#313: |γ| at a clean cutoff past this, with the high point over the band and the low point under it, is a flight-path-angle miss.</summary>
         public const double FlightPathAngleOffDeg = 0.5;
-        /// <summary>#313: the steep advice. MissReasonTests flies both levers on the m12 starter: Fix it's own edit (one more upper
-        /// engine with the max-Q throttle at 95%) and a pitch kick 2° smaller. One more engine alone still misses.</summary>
-        public const string SteepAdvice = "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or use a smaller pitch kick at launch (for example 6° → 4° in Guidance).";
+        /// <summary>#313 (Physics): the steep advice's lever is a smaller pitch kick. MissReasonTests flies it on KH-12's 6° build:
+        /// 4.5° lands every seed and the live pad (calm and seed-1 wind); 4° and 5° miss. One more upper engine is not the lever:
+        /// at 32,000 kg it tips KH-12 into a dive (753 x 447 km).</summary>
+        public const string SteepAdvice = "Your rocket flew too steep. Use a smaller pitch kick at launch (for example 6° → 4.5° in Guidance).";
+        /// <summary>#313 (Physics): the flat advice's lever is a larger pitch kick. MissReasonTests flies it on the KH-3 (8° → 8.5°)
+        /// and KH-4 (6° → 6.5°) starters.</summary>
+        public const string FlatAdvice = "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).";
 
         static bool FlightPathAngleOff(double gammaDeg) => !double.IsNaN(gammaDeg) && Math.Abs(gammaDeg) >= FlightPathAngleOffDeg;
 
@@ -166,7 +170,7 @@ namespace Kestrel.Core.Flight
                             return Miss("fpa-steep-suborbital", reason, "Your rocket flew too steep and fell back down. Give " + top + " much more fuel (it can take double or more), so it burns long enough to level out.");
                         return steep
                             ? Miss("fpa-steep", reason, SteepAdvice)
-                            : Miss("fpa-flat", reason, "Your rocket flew too flat. Add fuel to " + top + ", about 2% at a time (up to 10%), until the orbit rounds off.");
+                            : Miss("fpa-flat", reason, FlatAdvice);
                     }
                     if (f.ApoM > apoGoal && !apoOk)
                     {

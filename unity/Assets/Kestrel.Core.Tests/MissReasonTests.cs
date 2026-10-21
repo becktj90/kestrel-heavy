@@ -2,8 +2,8 @@
 // KH-3, 4, 6, 8, 12 and 16 stay design puzzles (#313: KH-5 and KH-14 now pass): each real miss (FlightBatch, seed 1)
 // is pinned to its exact text, and the advice is checked by flying it. One reason shows, in fix order (orbit, fuel,
 // structure, reliability, setup), and the reason counts any other gate that missed with "(+N more issue)" (#324).
-// #313: KH-3 and KH-4 cut off diving (too flat: the fuel step lands them); KH-12 cuts off climbing (too steep: Fix it's
-// engine + max-Q throttle edit, or a smaller kick, lands it).
+// #313 (Physics): KH-3 and KH-4 cut off diving (too flat: a larger pitch kick lands them, and so does the fuel step);
+// KH-12's 6° build cuts off climbing (too steep: a smaller pitch kick lands it; its board starter flies 4.5°).
 using System;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
@@ -48,22 +48,20 @@ namespace Kestrel.Core.Tests
         // #313 (closed-loop director, energy cutoff): the starters' misses are new numbers. KH-3, 4, 6 and 12 now cut off at
         // the target energy at a bad flight-path angle, so both the high and the low point are out of the band and the
         // reason names both. KH-8 now flies in the band and misses on reliability. KH-5 and KH-14 now pass (board rows
-        // "fly"), so they moved to PassingStarterHasNoReason.
+        // "fly"), so they moved to PassingStarterHasNoReason. KH-12's board starter is now a fly row at a 4.5° kick (Physics,
+        // #313 on #324's 32,000 kg top stage); its 6° build keeps the exact steep text in KH12_SixDegreeBuild_MissSaysWhyAndWhatToChange.
         [TestCase("m3", "fpa-flat",
             "Missed the 200 km circle: the orbit flew 72.3 km × 328 km, and the high point needs 190 km to 210 km. The low point, 72.3 km, needs 190 km to 210 km. The engines cut off while it was already diving, 1.1° down.",
-            "Your rocket flew too flat. Add fuel to stage 2, about 2% at a time (up to 10%), until the orbit rounds off.")]
+            "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).")]
         [TestCase("m4", "fpa-flat",
             "Missed the 500 km circle: the orbit flew 382 km × 618 km, and the high point needs 475 km to 525 km. The low point, 382 km, needs 475 km to 525 km. The engines cut off while it was already diving, 1.0° down.",
-            "Your rocket flew too flat. Add fuel to stage 2, about 2% at a time (up to 10%), until the orbit rounds off.")]
+            "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).")]
         [TestCase("m6", "apo-high",
             "Missed the 200 km circle: the orbit flew 188 km × 212 km, and the high point needs 190 km to 210 km. That is about 4 m/s too fast at the low point. The low point, 188 km, needs 190 km to 210 km.",
             "Add fuel to stage 3, about 2% at a time (up to 10%), until the high point comes down into the band.")]
         [TestCase("m8", "reliability",
             "Reliability was 95.1%; this mission needs 98%.",
             "Raise the safety factor to 1.5 or more for the reliability bonus, or pick redundant avionics.")]
-        [TestCase("m12", "fpa-steep",
-            "Missed the 600 km circle: the orbit flew 343 km × 857 km, and the high point needs 570 km to 630 km. The low point, 343 km, needs 570 km to 630 km. The engines cut off while it was still climbing, 1.9° up.",
-            "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or use a smaller pitch kick at launch (for example 6° → 4° in Guidance).")]
         [TestCase("m16", "reliability",
             "Reliability was 97.9%; this mission needs 98%.",
             "Raise the safety factor to 1.5 or more for the reliability bonus, or pick redundant avionics.")]
@@ -85,6 +83,7 @@ namespace Kestrel.Core.Tests
         [TestCase("m5")]
         [TestCase("m7")]
         [TestCase("m11")]
+        [TestCase("m12")]
         [TestCase("m13")]
         [TestCase("m14")]
         [TestCase("m15")]
@@ -112,8 +111,8 @@ namespace Kestrel.Core.Tests
         /// <summary>The overshoot advice works: some +2% step up to +10% on the top stage brings the high point into the band.</summary>
         // #313 real values: KH-3 1.02 → 1.06 (202 x 198 km), KH-4 1.04 → 1.02 (502 x 498 km), KH-14 1.04 → 1.02 (the
         // starter already passes). KH-5 and KH-8 stay at 1.02 (KH-5 passes already; KH-8 misses on reliability, not
-        // altitude). KH-3 and KH-4 now get the too-flat advice, which is this same fuel step. KH-12 (too steep, 857 x 343 km)
-        // does not come in with fuel (1.10 still flies 866 x 334), so it gets the steep advice instead (below).
+        // altitude). KH-3 and KH-4 get the too-flat advice (a larger pitch kick, FlatAdvice_LargerKickLandsKh3AndKh4); this fuel
+        // step also lands them. KH-12's 6° build (too steep) never comes in with fuel (KH12_KickWindow_...), so it gets the steep advice.
         [TestCase("m3", 1.06)]
         [TestCase("m4", 1.02)]
         [TestCase("m5", 1.02)]
@@ -136,36 +135,88 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(first, found, 1e-9, id + ": first top-stage step that lands the circle");
         }
 
-        /// <summary>
-        /// KH-12's starter misses high on every seed, and a wide band of top-stage fuel lands the 600 km circle:
-        /// every whole step from +4% to +21% passes on seeds 1 to 5 (data/board-starters.json, 32,000 kg top stage).
-        /// Below that it is not a window: +1% lands, +2% tops out at 630 km, and +3% misses on seed 5.
-        /// </summary>
+        /// <summary>KH-12 under #313 on #324's 32,000 kg top stage (Physics): the pitch kick is the lever, fuel is not. From the
+        /// 6° build: 4.5° (the board starter) lands every batch seed and the live pad, calm and in seed-1 wind; 4° misses
+        /// calm on every seed (cuts off diving, 740 x 460 km); 5° lands calm but misses the live pad in seed-1 wind
+        /// (831 x 369 km, the wind-shear ease tips it steep); extra top-stage fuel alone, +4% to +21%, never lands a seed.</summary>
         [Test]
-        public void KhTwelveLandsOnAWideFuelWindow()
+        public void KH12_KickWindow_FourPointFiveLands_FourAndFiveMiss_FuelAloneNever()
         {
             var m = Mission("m12");
+            var board = Starter(m);
+            Assert.AreEqual(4.5, board.guidance.pitchKickDeg, 1e-9, "board starter kick");
+            AssertEverySeed(m, board, "kick 4.5°");
+            var calm = LivePadLoop.Fly(catalog, m, board, false);
+            var windy = LivePadLoop.Fly(catalog, m, board, true);
+            Assert.IsTrue(LivePadLoop.InBand(m, calm), "4.5° live calm " + LivePadLoop.Text(calm));
+            Assert.IsTrue(LivePadLoop.InBand(m, windy), "4.5° live seed-1 wind " + LivePadLoop.Text(windy));
+
+            var four = SixDegree(m);
+            four.guidance.pitchKickDeg = 4;
             foreach (ulong seed in campaign.Seeds)
             {
-                var d = Starter(m);
-                var flight = FlightBatch.Fly(catalog, m, d, seed);
-                var x = MissReason.Explain(m, MissReason.FromFlight(flight, d.stages.Count));
-                Assert.IsNull(flight.failure, "starter seed " + seed + " flies intact");
-                Assert.IsFalse(flight.passed, "starter seed " + seed + " keeps its real miss");
-                Assert.AreEqual("fpa-steep", x?.Code, "starter seed " + seed);
+                var f = FlightBatch.Fly(catalog, m, four, seed);
+                Assert.IsNull(f.failure, "4° seed " + seed);
+                Assert.IsFalse(f.passed, "4° seed " + seed + " " + f.apoKm.ToString("0.0") + " x " + f.periKm.ToString("0.0"));
             }
-            var bad = new System.Collections.Generic.List<string>();
+            Assert.IsFalse(LivePadLoop.InBand(m, LivePadLoop.Fly(catalog, m, four, false)), "4° live calm misses");
+
+            var five = SixDegree(m);
+            five.guidance.pitchKickDeg = 5;
+            var fiveWind = LivePadLoop.Fly(catalog, m, five, true);
+            Assert.IsNull(fiveWind.failure);
+            Assert.IsFalse(LivePadLoop.InBand(m, fiveWind), "5° live seed-1 wind misses: " + LivePadLoop.Text(fiveWind));
+
+            var landed = new System.Collections.Generic.List<string>();
             for (int pct = 4; pct <= 21; pct++)
             {
                 foreach (ulong seed in campaign.Seeds)
                 {
-                    var d = Starter(m);
+                    var d = SixDegree(m);
                     d.stages[d.stages.Count - 1].propMass *= 1 + pct / 100.0;
                     var flight = FlightBatch.Fly(catalog, m, d, seed);
-                    if (!flight.passed) bad.Add("+" + pct + "% seed " + seed + " " + (flight.failure ?? (flight.periKm.ToString("0") + "x" + flight.apoKm.ToString("0"))));
+                    if (flight.passed) landed.Add("+" + pct + "% seed " + seed + " " + flight.periKm.ToString("0") + "x" + flight.apoKm.ToString("0"));
                 }
             }
-            Assert.That(bad, Is.Empty, string.Join(" | ", bad));
+            Assert.That(landed, Is.Empty, "fuel alone never lands KH-12: " + string.Join(" | ", landed));
+        }
+
+        /// <summary>KH-12's starter at the template's 6° kick: the board starter with only the kick put back.</summary>
+        Design SixDegree(CampaignMission m)
+        {
+            var d = Starter(m);
+            d.guidance.pitchKickDeg = 6;
+            return d;
+        }
+
+        /// <summary>The 6° build's batch miss (seed 1), pinned to its exact text: too steep, and the advice is the smaller kick.</summary>
+        [Test]
+        public void KH12_SixDegreeBuild_MissSaysWhyAndWhatToChange()
+        {
+            var m = Mission("m12");
+            var x = Fly(m, SixDegree(m), out var flight);
+            Assert.IsNull(flight.failure);
+            Assert.IsFalse(flight.passed);
+            Assert.AreEqual("fpa-steep", x.Code);
+            Assert.AreEqual("Missed the 600 km circle: the orbit flew 364 km × 836 km, and the high point needs 570 km to 630 km. The low point, 364 km, needs 570 km to 630 km. The engines cut off while it was still climbing, 1.9° up.", x.Reason);
+            Assert.AreEqual("Your rocket flew too steep. Use a smaller pitch kick at launch (for example 6° → 4.5° in Guidance).", x.Advice);
+            Assert.AreEqual(MissReason.SteepAdvice, x.Advice);
+            Assert.AreEqual(x.Reason + " " + x.Advice, x.Line);
+        }
+
+        /// <summary>The flat advice works: a larger pitch kick lands the KH-3 (8° → 8.5°) and KH-4 (6° → 6.5°) starters on every seed.</summary>
+        [TestCase("m3", 8.0, 8.5)]
+        [TestCase("m4", 6.0, 6.5)]
+        public void FlatAdvice_LargerKickLandsKh3AndKh4(string id, double from, double to)
+        {
+            var m = Mission(id);
+            var d = Starter(m);
+            var x = Fly(m, d, out _);
+            Assert.AreEqual("fpa-flat", x.Code);
+            Assert.AreEqual(MissReason.FlatAdvice, x.Advice);
+            Assert.AreEqual(from, d.guidance.pitchKickDeg, 1e-9);
+            d.guidance.pitchKickDeg = to;
+            AssertEverySeed(m, d, id + " kick " + to + "°");
         }
 
         /// <summary>KH-8 under #313 (closed-loop director, energy cutoff): the starter's orbit is inside the 400 km band on every
@@ -269,54 +320,81 @@ namespace Kestrel.Core.Tests
             }
         }
 
-        /// <summary>#313: KH-12 gets the steep advice, and its first lever is Fix it's own edit for KH-12 (board row "fix"):
-        /// one more upper engine with the max-Q throttle at 95%. Following it lands the circle on all five seeds.</summary>
+        /// <summary>#313 (Physics): KH-12's 6° build gets the steep advice, and its lever is the smaller pitch kick; following
+        /// it (4.5°) lands every seed. One more upper engine is no longer advised: on #324's 32,000 kg top stage the upper stage
+        /// pushes at 0.584 g, over the 0.5 g weak-upper rule (it was 0.476 g at 40,000 kg), so weak-upper drops and Fix it
+        /// no longer adds an engine. Fix it's edit (fins 1.10 → 3.10 m, max-Q throttle 95%) and the old engine advice by
+        /// hand both tip it into a dive and miss every seed.</summary>
         [Test]
-        public void KH12_SteepAdvice_IsFixItsEdit_AndFollowingItPassesEverySeed()
+        public void KH12_SteepAdvice_IsTheSmallerKick_AndFollowingItPassesEverySeed()
         {
             var m = Mission("m12");
-            var choice = HomeAutoBuild.Choose(catalog, hangar.templates, m);
-            var start = Design.FromJson(choice.Design);
+            var start = SixDegree(m);
             var x = Fly(m, start, out var raw);
             Assert.AreEqual("fpa-steep", x.Code);
             Assert.AreEqual(MissReason.SteepAdvice, x.Advice);
             Assert.Greater(raw.cutoffGammaDeg, MissReason.FlightPathAngleOffDeg);
 
-            // Fix it, exactly as the board runs it.
-            var json = JsonMut.CloneObject(choice.Design);
-            Readout.Reference(catalog, json);
-            var report = StepperModel.Evaluate(catalog, json);
+            var kick = SixDegree(m);
+            kick.guidance.pitchKickDeg = 4.5;
+            AssertEverySeed(m, kick, "the advice: kick 6° → 4.5°");
+
+            // weak-upper: 0.584 g on 32,000 kg (no warning), 0.476 g on 40,000 kg (warning). Rule: 0.5 g.
+            var json = JsonMut.CloneObject(HomeAutoBuild.Choose(catalog, hangar.templates, m).Design);
+            JsonMut.Set(json.Obj("guidance"), "pitchKickDeg", 6.0);
+            var quick = Readout.Quick(catalog, json);
+            Assert.AreEqual(0.584, quick.stages[quick.stages.Count - 1].twrVac, 0.0005);
+            CollectionAssert.DoesNotContain(Validate.Engineering(catalog, json).warnings.ConvertAll(w => w.code), "weak-upper");
+            var heavy = JsonMut.CloneObject(json);
+            JsonMut.Set((JsonObject)heavy.Arr("stages")[1], "propMass", 40000.0);
+            var heavyQuick = Readout.Quick(catalog, heavy);
+            Assert.AreEqual(0.476, heavyQuick.stages[heavyQuick.stages.Count - 1].twrVac, 0.0005);
+            CollectionAssert.Contains(Validate.Engineering(catalog, heavy).warnings.ConvertAll(w => w.code), "weak-upper");
+
+            // Fix it, exactly as the board runs it, on the 6° build: no engine, and it misses.
+            var fix = JsonMut.CloneObject(json);
+            Readout.Reference(catalog, fix);
+            var report = StepperModel.Evaluate(catalog, fix);
             StepCheck check = null;
             foreach (var c in report.Checks) if (c != null && !string.IsNullOrEmpty(c.Code)) { check = c; break; }
             Assert.IsNotNull(check);
-            StepperFix.Apply(catalog, json, check);
-            var fixedByFixIt = Design.FromJson(json);
+            StepperFix.Apply(catalog, fix, check);
+            var fixedByFixIt = Design.FromJson(fix);
             int top = start.stages.Count - 1;
-            Assert.AreEqual(start.stages[top].engineCount + 1, fixedByFixIt.stages[top].engineCount, "Fix it adds one upper engine");
+            Assert.AreEqual(start.stages[top].engineCount, fixedByFixIt.stages[top].engineCount, "Fix it adds no upper engine (weak-upper dropped)");
             Assert.IsTrue(fixedByFixIt.guidance.maxQThrottleSet);
             Assert.AreEqual(95, fixedByFixIt.guidance.maxQThrottle, 1e-9, "Fix it sets the max-Q throttle to 95%");
-            AssertEverySeed(m, fixedByFixIt, "Fix it's edit");
+            AssertEverySeedMisses(m, fixedByFixIt, "Fix it's edit");
 
-            // The advice by hand on the starter: one more upper engine, max-Q throttle 95%.
-            var byHand = Starter(m);
+            var byHand = SixDegree(m);
             byHand.stages[top].engineCount += 1;
             byHand.guidance.maxQThrottleSet = true;
             byHand.guidance.maxQThrottle = 95;
-            AssertEverySeed(m, byHand, "one more upper engine at 95% max-Q");
+            AssertEverySeedMisses(m, byHand, "the old advice: one more upper engine at 95% max-Q");
         }
 
-        /// <summary>#313: the advice's other lever, a smaller pitch kick (6° to 4°), also lands KH-12 on every seed. The advice
-        /// names the throttle because one more engine alone still flies too steep (903 x 297 km), and 5° is still too steep.</summary>
+        void AssertEverySeedMisses(CampaignMission m, Design d, string what)
+        {
+            foreach (var seed in campaign.Seeds)
+            {
+                var f = FlightBatch.Fly(catalog, m, d, seed);
+                Assert.IsNull(f.failure, what + " seed " + seed);
+                Assert.IsFalse(f.passed, what + " seed " + seed + " " + f.apoKm.ToString("0.0") + " x " + f.periKm.ToString("0.0"));
+            }
+        }
+
+        /// <summary>#313 (Physics): the advice's lever, a smaller pitch kick (6° to 4.5°), lands KH-12 on every seed. One more
+        /// upper engine alone still flies too steep (867 x 333 km).</summary>
         [Test]
         public void KH12_SmallerPitchKickAlsoLands_AndOneEngineAloneIsNotEnough()
         {
             var m = Mission("m12");
-            var kick = Starter(m);
+            var kick = SixDegree(m);
             Assert.AreEqual(6, kick.guidance.pitchKickDeg, 1e-9);
-            kick.guidance.pitchKickDeg = 4;
-            AssertEverySeed(m, kick, "pitch kick 4°");
+            kick.guidance.pitchKickDeg = 4.5;
+            AssertEverySeed(m, kick, "pitch kick 4.5°");
 
-            var engineOnly = Starter(m);
+            var engineOnly = SixDegree(m);
             engineOnly.stages[engineOnly.stages.Count - 1].engineCount += 1;
             var x = Fly(m, engineOnly, out var f);
             Assert.IsFalse(f.passed);
@@ -332,7 +410,7 @@ namespace Kestrel.Core.Tests
             var diving = Flown(857, 343); diving.CutoffGammaDeg = -1.1;
             var flat = MissReason.Explain(row, diving);
             Assert.AreEqual("fpa-flat", flat.Code);
-            Assert.AreEqual("Your rocket flew too flat. Add fuel to stage 2, about 2% at a time (up to 10%), until the orbit rounds off.", flat.Advice);
+            Assert.AreEqual("Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).", flat.Advice);
             StringAssert.EndsWith("The engines cut off while it was already diving, 1.1° down.", flat.Reason);
             var level = Flown(857, 343); level.CutoffGammaDeg = 0.1;
             Assert.AreEqual("apo-high", MissReason.Explain(row, level).Code, "near level: a plain overshoot");
