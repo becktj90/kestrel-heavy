@@ -24,12 +24,29 @@ namespace Kestrel.Core.Physics
         public double kickSpeed = 60, kickAngleDeg = 4, sampleEvery = 0;
         public bool vacuum = false, rotate = true, cutoff = true;
         /// <summary>
-        /// Locate the target-energy cutoff inside the step (#313): when a step crosses the cutoff condition, re-integrate
-        /// that step from its start with a shorter, root-found length and cut off there, so the cutoff does not snap to the
-        /// next step boundary. Burnout already lands exactly (the step is shortened to the remaining propellant).
-        /// False keeps the JS simulate() parity path. MissionFlightSetup turns it on for every mission flight, batch and live.
+        /// Energy cutoff (#313, Kestrel Physics): the engines cut off when the specific orbital energy
+        /// v²/2 − μ/r reaches <see cref="cutoffEnergy"/>, located inside the step by bisection, so a 0.2 s
+        /// batch step and the 1/120 s live step cut off at the same state. Replaces the perigee-based cutoff.
+        /// False keeps the JS simulate() parity path (perigee within 10 km of the target), which no Kestrel
+        /// flight uses: MissionFlightSetup turns this on for the batch, the designer, the timeline and the pad.
         /// </summary>
-        public bool locateCutoff;
+        public bool energyCutoff;
+        /// <summary>
+        /// Target specific orbital energy, J/kg: −μ/(2a), a = R + (h_apo + h_peri)/2; C3/2 for a C3 target.
+        /// NaN never cuts off (an apogee hop burns out). Only read when <see cref="energyCutoff"/> is set.
+        /// </summary>
+        public double cutoffEnergy = double.NaN;
+        /// <summary>
+        /// #313: when a designer profile's first-stage turn follows the flight path, steer along the air-relative
+        /// velocity inside every integrator substep (as the built-in gravity turn, mode 2, already does) instead of
+        /// holding the step-start angle for the whole step. Holding it lofted a 0.2 s batch step kilometres above the
+        /// 1/120 s pad. False keeps the JS simulate() parity path.
+        /// </summary>
+        public bool continuousTurn;
+
+        /// <summary>Specific orbital energy, J/kg, of an orbit with this apoapsis and periapsis altitude (metres).</summary>
+        public static double EnergyFor(double apoAltM, double periAltM)
+            => -Gravity.MU_EARTH / (2 * (Gravity.R_EARTH + 0.5 * (apoAltM + periAltM)));
         /// <summary>Null keeps the built-in kick. A profile adds its pitch program and throttle caps.</summary>
         public Flight.GuidanceProfile guidance;
         /// <summary>Null leaves the flight on the v2 path: no failure checks, identical steps.</summary>
@@ -149,11 +166,13 @@ namespace Kestrel.Core.Physics
         public int StageCount => st.Length;
         /// <summary>Peak q is confirmed once it falls below this fraction of the running maximum. The hook reports that maximum.</summary>
         public const double MaxQConfirm = 0.98;
-        /// <summary>Bisection steps for a located cutoff. 40 halvings of a 0.2 s step is below 1e-12 s. Fixed, so deterministic.</summary>
+        /// <summary>Bisection steps for the located energy cutoff. 40 halvings of a 0.2 s step is below 1e-12 s. Fixed, so deterministic.</summary>
         public const int CutoffBisections = 40;
         readonly double[] stepStart = new double[5];
         double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1, catchPitch;
-        bool turned;
+        bool turned, followVelocity, pegContinuous;
+        double pegTarget, pegThrottle = 1;
+        double kickPrevT = -1, kickPrevVrel, kickPrevAlt;
         bool liftedOff, sawKarman, maxQPassed, fairingSent, ignitionHooked; double karmanT; string outcome = "timeout";
         FailureEvent playedBreak;
         FlightVec pad;
@@ -231,8 +250,21 @@ namespace Kestrel.Core.Physics
                 mdot = S.mdot;
                 if (thrustScale != 1) { F *= thrustScale; mdot *= thrustScale; }
                 double dx, dyy;
-                if (Mode == 2 && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
-                else { double c = Math.Cos(PitchCmd), sn = Math.Sin(PitchCmd); dx = c * tx + sn * ux; dyy = c * ty + sn * uy; }
+                if ((Mode == 2 || followVelocity) && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
+                else
+                {
+                    double pitch = PitchCmd;
+                    if (pegContinuous && Mode == 3)
+                    {
+                        // #313: the closed-loop insertion law evaluated at this substage's state, not held from the
+                        // step start (same law, PegLitePitch, as the per-step command).
+                        double vr = vx * ux + vy * uy, vt = vx * tx + vy * ty;
+                        double gr = Gravity.MU_EARTH / r2 - vt * vt / r;
+                        double unscaled = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, p);
+                        pitch = Flight.GuidanceProfile.PegLitePitch(alt, pegTarget, vr, gr, m > 0 ? unscaled * pegThrottle / m : 0);
+                    }
+                    double c = Math.Cos(pitch), sn = Math.Sin(pitch); dx = c * tx + sn * ux; dyy = c * ty + sn * uy;
+                }
                 ax += F * dx / m; ay += F * dyy / m;
             }
             dy[0] = vx; dy[1] = vy; dy[2] = ax; dy[3] = ay; dy[4] = -mdot;
@@ -259,6 +291,7 @@ namespace Kestrel.Core.Physics
             if (Thrusting)
             {
                 thrustScale = o.monitor != null ? o.monitor.ThrustFactor : 1;
+                followVelocity = false; pegContinuous = false;
                 if (Headless.LegacyPitch(o.guidance))
                 {
                     bool holdKick = HoldingMaxQPitch(alt, m, vr, vrel);
@@ -308,6 +341,7 @@ namespace Kestrel.Core.Physics
                         double aT = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, o.vacuum ? 0 : atmG.p) / m;
                         double sinP = Math.Max(-0.6, Math.Min(0.95, (g + 0.03 * (vrCmd - vr)) / aT));
                         PitchCmd = Math.Asin(sinP);
+                        pegContinuous = o.continuousTurn; pegTarget = o.targetAlt; pegThrottle = 1;
                     }
                     if (o.guidance != null && (o.guidance.maxQThrottleSet || o.guidance.gLimitSet))
                     {
@@ -320,6 +354,8 @@ namespace Kestrel.Core.Physics
                     double flight = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
                     var cmd = o.guidance.Command(Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel, flight));
                     PitchCmd = cmd.pitchRad;
+                    followVelocity = o.continuousTurn && StageIdx == 0 && cmd.pitchRad == flight;
+                    if (StageIdx > 0 && o.continuousTurn) { pegContinuous = true; pegTarget = o.guidance.targetAlt; pegThrottle = cmd.throttle; }
                     if (StageIdx > 0) Mode = 3;
                     else if (Mode == 2) Mode = 1;
                     if (cmd.throttle != 1) thrustScale *= cmd.throttle;
@@ -338,6 +374,7 @@ namespace Kestrel.Core.Physics
                     if (dp > lim) dp = lim;
                     else if (dp < -lim) dp = -lim;
                     PitchCmd += dp;
+                    followVelocity = false; pegContinuous = false;
                 }
             }
 
@@ -373,7 +410,9 @@ namespace Kestrel.Core.Physics
                 double flow = st[StageIdx].mdot;
                 if (thrustScale != 1) flow *= thrustScale;
                 dt = Math.Min(o.dt, flow > 0 ? remain / flow : o.dt);
+                if (o.continuousTurn && StageIdx == 0) dt = LandOnKick(dt, alt, vr, vrel);
             }
+            kickPrevT = T; kickPrevVrel = vrel; kickPrevAlt = alt;
 
             // ---- diagnostics ----
             double p = 0, rho = 0, sound = 340;
@@ -400,7 +439,7 @@ namespace Kestrel.Core.Physics
                 LastThrust = F;
                 double aT = F / m; dvExp += aT * dt;
                 double dx, dyy;
-                if (Mode == 2 && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
+                if ((Mode == 2 || followVelocity) && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
                 else { double c = Math.Cos(PitchCmd), sn = Math.Sin(PitchCmd); dx = c * tx + sn * ux; dyy = c * ty + sn * uy; }
                 double cos = v > 1 ? (dx * vx + dyy * vy) / v : 0;
                 double Dm = rho > 0 ? 0.5 * rho * vrel * vrel * Aero.CdMach(vrel / sound, S.cd) * S.area / m : 0;
@@ -413,14 +452,15 @@ namespace Kestrel.Core.Physics
                 nextSample += o.sampleEvery;
             }
 
-            bool locate = o.locateCutoff && o.cutoff && Thrusting && Mode == 3;
+            bool locate = o.energyCutoff && o.cutoff && Thrusting && !double.IsNaN(o.cutoffEnergy);
             if (locate) Array.Copy(Y, stepStart, 5);
             double t0 = T;
             rk.Step(deriv, T, Y, dt);
             T += dt;
-            if (locate && CutoffMargin(Y) >= 0)
+            bool energyCut = locate && EnergyMargin(Y) >= 0;
+            if (energyCut)
             {
-                // The cutoff condition crossed inside this step. Bisect on the step length (fixed count, deterministic):
+                // The target energy was reached inside this step. Bisect on the step length (fixed count, deterministic):
                 // lo stays before the crossing, hi at or past it. The flight cuts off at hi.
                 double lo = 0, hi = dt;
                 var trial = new double[5];
@@ -429,7 +469,7 @@ namespace Kestrel.Core.Physics
                     double mid = 0.5 * (lo + hi);
                     Array.Copy(stepStart, trial, 5);
                     rk.Step(deriv, t0, trial, mid);
-                    if (CutoffMargin(trial) >= 0) hi = mid; else lo = mid;
+                    if (EnergyMargin(trial) >= 0) hi = mid; else lo = mid;
                 }
                 Array.Copy(stepStart, Y, 5);
                 rk.Step(deriv, t0, Y, hi);
@@ -471,8 +511,14 @@ namespace Kestrel.Core.Physics
                 Sink?.OnImpact(impactSpeed, Pos());
                 Done = true; return false;
             }
-            if (Thrusting && Mode == 3 && o.cutoff)
+            if (energyCut)
             {
+                Thrusting = false; Mode = 4;
+                Events.Add(new SimEvent { t = T, type = "cutoff", stage = StageIdx + 1, alt = alt1 });
+            }
+            else if (Thrusting && Mode == 3 && o.cutoff && !o.energyCutoff)
+            {
+                // JS simulate() parity only (energyCutoff off): perigee within 10 km of min(target, altitude).
                 var orb = Orbit.Planar(Y[0], Y[1], Y[2], Y[3]);
                 if (orb.periAlt >= Math.Min(o.targetAlt, alt1) - 10e3 && orb.e < 1)
                 {
@@ -485,13 +531,46 @@ namespace Kestrel.Core.Physics
             return true;
         }
 
-        /// <summary>The target-energy cutoff test below as a signed margin: at or above 0 cuts off (bound orbits only).</summary>
-        double CutoffMargin(double[] y)
+        /// <summary>
+        /// #313: end the step where the pitch kick arms (air speed reaching the kick speed, or altitude reaching the kick
+        /// altitude), so the kick starts at the same state whatever the step. The crossing time is extrapolated from the
+        /// last step's rate; a gravity turn is sensitive to its kick, and a kick up to one 0.2 s step late lofted the
+        /// batch kilometres above the pad.
+        /// </summary>
+        double LandOnKick(double dt, double alt, double vr, double vrel)
         {
-            var orb = Orbit.Planar(y[0], y[1], y[2], y[3]);
-            if (!(orb.e < 1)) return -1;
-            double alt = JsMath.Hypot(y[0], y[1]) - Gravity.R_EARTH;
-            return orb.periAlt - (Math.Min(o.targetAlt, alt) - 10e3);
+            var g = o.guidance;
+            bool legacy = Headless.LegacyPitch(g);
+            double now, target, rate;
+            if (legacy)
+            {
+                if (Mode != 0) return dt;
+                now = vrel; target = o.kickSpeed;
+                rate = kickPrevT >= 0 && T > kickPrevT ? (vrel - kickPrevVrel) / (T - kickPrevT) : 0;
+            }
+            else if (g.useAltitudeKick)
+            {
+                now = alt; target = g.pitchKickAlt; rate = vr;
+            }
+            else
+            {
+                now = vrel; target = g.kickSpeed;
+                rate = kickPrevT >= 0 && T > kickPrevT ? (vrel - kickPrevVrel) / (T - kickPrevT) : 0;
+            }
+            if (!(now < target) || !(rate > 0)) return dt;
+            double need = (target - now) / rate;
+            // Aim a hair past the crossing so the next step starts armed; never shorter than a microsecond.
+            need = need * (1 + 1e-9) + 1e-9;
+            if (need < 1e-6) need = 1e-6;
+            return need < dt ? need : dt;
+        }
+
+        /// <summary>Specific orbital energy minus the cutoff target, J/kg: at or above 0 cuts off.</summary>
+        double EnergyMargin(double[] y)
+        {
+            double r = Math.Sqrt(y[0] * y[0] + y[1] * y[1]);
+            double v2 = y[2] * y[2] + y[3] * y[3];
+            return 0.5 * v2 - Gravity.MU_EARTH / r - o.cutoffEnergy;
         }
 
         /// <summary>

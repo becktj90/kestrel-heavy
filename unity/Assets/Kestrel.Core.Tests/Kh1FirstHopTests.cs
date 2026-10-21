@@ -157,7 +157,8 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(vehicle.MaxQSet);
             var director = AscentDirector.Start(vehicle, null, null, true, false, true);
             director.Advance(new AscentSample { T = 1, QPa = 1000, Thrusting = true, MassKg = 2000, ThrustN = 80000, PropFraction = 1 }, 0.05);
-            Assert.IsFalse(director.Command.SuppressDesignThrottle, "the design cap is the guided path until the call is accepted");
+            Assert.AreEqual(0, director.Command.EngageMaxQCap, 1e-12, "the design cap is the guided path; the director never replaces it");
+            Assert.AreEqual(1, director.Command.ThrottleScale, 1e-12);
         }
 
         static SimResult Fly(Catalog catalog, Design design, CampaignMission mission)
@@ -212,8 +213,6 @@ namespace Kestrel.Core.Tests
                 double scale = cmd.ThrottleScale;
                 if (double.IsNaN(scale) || scale <= 0) scale = 1;
                 else if (scale > 1) scale = 1;
-                if (input.opts.guidance != null && cmd.SuppressDesignThrottle)
-                    input.opts.guidance.maxQThrottleSet = false;
                 sim.LiveThrottleScale = scale;
                 sim.Tick();
                 if (monitor.Event != null)

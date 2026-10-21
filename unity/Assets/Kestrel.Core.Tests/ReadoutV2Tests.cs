@@ -246,8 +246,9 @@ namespace Kestrel.Core.Tests
             var cat = Golden.Catalog;
             foreach (var design in ReadoutBench.LoadDesigns(Golden.Root))
             {
-                var input = Stack.SimInputs(cat, Design.FromJson(design));
-                var full = Headless.Simulate(input.stages, input.opts);
+                // #313: the designer reads the shared directed flight (the predict schedule's events included), the
+                // same flight the batch and the pad fly; not a parity Stack.SimInputs run.
+                var full = ReferenceAscent.Flight(cat, Design.FromJson(design)).Run();
                 ReferenceAscent.Reset();
                 var got = Readout.Reference(cat, design);
                 string name = design.Str("id") ?? design.Str("name");
@@ -345,8 +346,12 @@ namespace Kestrel.Core.Tests
                 Assert.IsNotNull(eng.warnings.Find(w => w.code == "maxq-high"), id + " warns");
                 Assert.IsNull(eng.blocks.Find(b => b.code == "maxq-high"), id + " does not block");
             }
-            if (System.Math.Abs(Readout.Reference(cat, Preset("stock")).maxQ_kPa.Value - 73.01) > 0.05)
+            // The bare stock vehicle peaks at the documented 73 kPa. The designer readout flies the predict schedule,
+            // whose stage-1 fuel imbalance throttles that stage to 97% until separation (#313 ruling 3): 70.7 kPa.
+            var stockIn = ReferenceAscent.Inputs(cat, Preset("stock"));
+            if (System.Math.Abs(Headless.Simulate(stockIn.stages, stockIn.opts).maxQ / 1000 - 73.01) > 0.05)
                 Assert.Fail("stock max-Q left the documented 73 kPa");
+            Assert.AreEqual(70.71, Readout.Reference(cat, Preset("stock")).maxQ_kPa.Value, 0.05, "stock readout under the predicted fuel imbalance");
             if (System.Math.Abs(Readout.Reference(cat, Preset("kid")).maxQ_kPa.Value - 90.07) > 0.05)
                 Assert.Fail("kid max-Q left the documented 90 kPa");
 

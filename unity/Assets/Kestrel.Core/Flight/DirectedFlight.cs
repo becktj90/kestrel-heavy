@@ -1,7 +1,7 @@
 // One directed ascent (#313): the AscentSim stepped together with the AscentDirector, the way the
 // live pad flies it. FlightDriver, FlightBatch, the designer practice flight (ReferenceAscent) and
-// LaunchPredictor all step through this class, so prediction and play fly one throttle model:
-// the max-Q bucket, the design throttle hold, the gravity-turn nudge, staging and the engine-out call.
+// LaunchPredictor all step through this class, so prediction and play fly one throttle model. The max-Q
+// throttle is always the design's own guidance law (GuidanceProfile), never a second director bucket.
 // Deterministic: no clock, no randomness beyond the seeded schedule the caller passes in.
 using System;
 using Kestrel.Core.Physics;
@@ -10,11 +10,10 @@ namespace Kestrel.Core.Flight
 {
     public sealed class DirectedFlight
     {
-        readonly GuidanceProfile guidance;
+        readonly SimOptions opts;
         readonly double dt;
         readonly double omegaAir;
-        bool throttleHeld, savedMaxQSet, ascentLost;
-        double savedMaxQ;
+        bool ascentLost, maxQEngaged;
 
         public AscentSim Sim { get; }
         /// <summary>Null flies the bare sim (no calls, no throttle commands).</summary>
@@ -24,7 +23,7 @@ namespace Kestrel.Core.Flight
         {
             Sim = sim ?? throw new ArgumentNullException(nameof(sim));
             Director = director;
-            guidance = opts != null ? opts.guidance : null;
+            this.opts = opts;
             dt = opts != null && opts.dt > 0 ? opts.dt : MissionFlightSetup.BatchDt;
             omegaAir = opts != null && opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
         }
@@ -73,21 +72,14 @@ namespace Kestrel.Core.Flight
             else if (scale > 1) scale = 1;
             Sim.LiveThrottleScale = scale;
             Sim.LivePitchOffsetRad = cmd.PitchOffsetRad;
-            if (guidance != null && cmd.SuppressDesignThrottle)
+            if (cmd.EngageMaxQCap > 0 && !maxQEngaged && opts != null)
             {
-                if (!throttleHeld)
-                {
-                    savedMaxQSet = guidance.maxQThrottleSet;
-                    savedMaxQ = guidance.maxQThrottle;
-                    throttleHeld = true;
-                }
-                guidance.maxQThrottleSet = false;
-            }
-            else if (throttleHeld && guidance != null)
-            {
-                guidance.maxQThrottleSet = savedMaxQSet;
-                guidance.maxQThrottle = savedMaxQ;
-                throttleHeld = false;
+                // A taken max-Q call on a design without a max-Q throttle: run the design's own guidance law
+                // (same trigger, depth and duration as a designed cap) at the offered cap.
+                maxQEngaged = true;
+                if (opts.guidance == null) opts.guidance = GuidanceProfile.Builtin(opts.targetAlt);
+                opts.guidance.maxQThrottleSet = true;
+                opts.guidance.maxQThrottle = cmd.EngageMaxQCap * 100;
             }
             if (cmd.Lost && !ascentLost)
             {

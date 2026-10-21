@@ -1,8 +1,8 @@
 // #313: one flight model for prediction and play. The batch, the designer practice flight, the launch timeline and
-// the live pad all step the same AscentDirector through DirectedFlight (MissionFlightSetup.Director/Fly). The default
-// player (auto-assist on, Simple depth) flies the design's own settings: the autopilot takes the max-Q throttle-down
-// only at a design max-Q throttle and never takes the open-loop nose-down nudge. The target-energy cutoff is located
-// inside the step, so the 0.2 s batch and the 1/120 s pad cut off at the same state.
+// the live pad all step the same AscentDirector through DirectedFlight (MissionFlightSetup.Director/Fly). Kestrel
+// Physics' rulings: the design's built-in max-Q throttle (GuidanceProfile) is the only max-Q law, so the bare sim, the
+// batch, the designer and the pad are identical; the engines cut off at the target's specific orbital energy, located
+// inside the step; the fuel-imbalance penalty throttles only the imbalanced stage, until it separates or shuts down.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -141,12 +141,15 @@ namespace Kestrel.Core.Tests
             var m1 = campaign.Mission(1);
             var m2 = campaign.Mission(2);
             var starter = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, m1).Design);
-            Assert.AreEqual(464, starter.stages[0].propMass, 1e-9);
+            Assert.AreEqual(515, starter.stages[0].propMass, 1e-9);
             foreach (var seed in campaign.Seeds)
             {
                 var f = FlightBatch.Fly(catalog, m1, starter, seed);
                 Assert.IsTrue(f.passed, "KH-1 starter seed " + seed);
                 Assert.That(f.apoKm, Is.GreaterThanOrEqualTo(9.7), "KH-1 starter seed " + seed);
+                var b = FlightBatch.Fly(catalog, m1, Viable("m1", "m1b-705"), seed);
+                Assert.IsTrue(b.passed, "m1b seed " + seed);
+                Assert.That(b.apoKm, Is.GreaterThanOrEqualTo(9.7), "m1b seed " + seed);
                 foreach (var id in new[] { "m2b-2600", "m2f-1600" })
                 {
                     var g = FlightBatch.Fly(catalog, m2, Viable("m2", id), seed);
@@ -186,26 +189,25 @@ namespace Kestrel.Core.Tests
         [Test]
         public void BatchAndLivePad_Agree_OrbitsOnApoapsisPeriapsisAndSemiMajorAxis()
         {
+            // Every orbital winner and board starter, seed 1: the 0.2 s batch against the 1/120 s pad.
             int orbits = 0;
             var misses = new List<string>();
-            foreach (var (m, d) in Winners())
+            var flights = new List<(CampaignMission, Design, string)>();
+            foreach (var (m, d) in Winners()) if (!MissionAim.IsApogeeHop(m)) flights.Add((m, d, "winner"));
+            foreach (var (m, d, mode) in Starters()) if (!MissionAim.IsApogeeHop(m)) flights.Add((m, d, "starter(" + mode + ")"));
+            foreach (var (m, d, label) in flights)
             {
-                if (MissionAim.IsApogeeHop(m)) continue;
-                var setup = MissionFlightSetup.Build(catalog, m, d, MissionFlightSetup.BatchDt);
-                var monitor = FailureMonitor.Create(catalog, setup.Flown, setup.TargetAltM, FlightBatch.DesignHash(d), campaign.Seeds[0]);
-                monitor.Gentle = false;
-                setup.Options.monitor = monitor;
-                var batch = MissionFlightSetup.Fly(setup, MissionFlightSetup.Director(catalog, setup, d, FlightBatch.DesignHash(d), campaign.Seeds[0]));
+                var batch = Live(m, d, campaign.Seeds[0], MissionFlightSetup.BatchDt);
                 var live = Live(m, d, campaign.Seeds[0]);
-                Assert.AreEqual(batch.outcome, live.outcome, m.Id);
+                Assert.AreEqual(batch.outcome, live.outcome, label + " " + m.Id);
                 double apo = Math.Abs(batch.orbit.apoAlt - live.orbit.apoAlt) / live.orbit.apoAlt;
                 double peri = Math.Abs(batch.orbit.periAlt - live.orbit.periAlt);
                 double sma = Math.Abs(batch.orbit.a - live.orbit.a) / live.orbit.a;
                 if (apo > MissionFlightSetup.OrbitApoTolerance || peri > MissionFlightSetup.OrbitPeriToleranceM || sma > MissionFlightSetup.OrbitSmaTolerance)
-                    misses.Add(m.Id + " apo " + (apo * 100).ToString("0.000") + "% peri " + peri.ToString("0") + " m sma " + (sma * 100).ToString("0.0000") + "%");
+                    misses.Add(label + " " + m.Id + " apo " + (apo * 100).ToString("0.000") + "% peri " + peri.ToString("0") + " m sma " + (sma * 100).ToString("0.0000") + "%");
                 orbits++;
             }
-            Assert.AreEqual(18, orbits);
+            Assert.AreEqual(36, orbits);
             Assert.IsEmpty(misses, string.Join("\n", misses));
         }
 
@@ -246,8 +248,9 @@ namespace Kestrel.Core.Tests
             var setup = new MissionFlightInputs { Stages = input.stages, Options = input.opts, TargetAltM = m.GuidanceAltM };
             var hand = MissionFlightSetup.Fly(setup, MissionFlightSetup.Director(catalog, setup, design, ReferenceAscent.PredictHash, ReferenceAscent.PredictSeed));
             Assert.AreEqual(MissionScore.FlownApoAltM(hand), MissionScore.FlownApoAltM(designer));
+            // Physics ruling 4: the director calls the design's own max-Q law, so the bare sim flies the same peak.
             var bare = Headless.Simulate(ReferenceAscent.Inputs(catalog, json).stages, ReferenceAscent.Inputs(catalog, json).opts);
-            Assert.AreNotEqual(MissionScore.FlownApoAltM(bare), MissionScore.FlownApoAltM(designer), "the designer flies the director, not the bare sim");
+            Assert.AreEqual(MissionScore.FlownApoAltM(bare), MissionScore.FlownApoAltM(designer), "the default player flies the design's own max-Q law");
             var timeline = LaunchPredictor.Predict(catalog, design);
             Assert.AreEqual(Math.Floor(MissionScore.FlownApoAltM(designer) / 100) / 10, timeline.ApoKm, 1e-9);
             var batch = FlightBatch.Fly(catalog, m, design, campaign.Seeds[0]);
@@ -255,24 +258,74 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void TheCutoffIsLocatedInsideTheStep_AndOffKeepsTheParityPath()
+        public void TheEnginesCutOffAtTheTargetEnergy_LocatedInsideTheStep()
         {
+            // Physics ruling 1 and 2: ε = −μ/(2a), a = R + (h_apo + h_peri)/2, located by bisection; no perigee test.
             var m = campaign.Mission(6);
             Design d = null;
             foreach (var (wm, wd) in Winners()) if (wm.Id == m.Id) d = wd;
-            var located = MissionFlightSetup.Build(catalog, m, d, MissionFlightSetup.BatchDt);
-            Assert.IsTrue(located.Options.locateCutoff);
-            Assert.IsTrue(located.Options.cutoff);
-            var on = MissionFlightSetup.Fly(located, null);
-            var snapped = MissionFlightSetup.Build(catalog, m, d, MissionFlightSetup.BatchDt);
-            snapped.Options.locateCutoff = false;
-            var off = MissionFlightSetup.Fly(snapped, null);
-            double tOn = CutoffT(on), tOff = CutoffT(off);
-            Assert.That(tOn, Is.LessThan(tOff), "a located cutoff comes before the snapped step boundary");
-            Assert.That(tOff - tOn, Is.LessThan(MissionFlightSetup.BatchDt + 1e-9));
-            // Cutting off earlier inside the step leaves less energy, so periapsis is lower than the snapped one.
-            Assert.That(on.orbit.periAlt, Is.LessThan(off.orbit.periAlt));
-            Assert.IsFalse(new SimOptions().locateCutoff, "raw SimOptions keep the JS simulate() parity path");
+            double target = SimOptions.EnergyFor(m.ApoKm * 1000, m.PeriKm * 1000);
+            Assert.AreEqual(target, MissionFlightSetup.TargetEnergy(m), 0);
+            foreach (var dt in new[] { MissionFlightSetup.BatchDt, MissionFlightSetup.LiveDt })
+            {
+                var setup = MissionFlightSetup.Build(catalog, m, d, dt);
+                Assert.IsTrue(setup.Options.energyCutoff);
+                Assert.AreEqual(target, setup.Options.cutoffEnergy, 0);
+                var r = MissionFlightSetup.Fly(setup, null);
+                Assert.AreEqual("orbit", r.outcome);
+                CutoffT(r);
+                Assert.AreEqual(target, r.orbit.energy, Math.Abs(target) * 1e-9, "dt " + dt);
+                Assert.AreEqual(Gravity.R_EARTH + 0.5 * (m.ApoKm + m.PeriKm) * 1000, r.orbit.a, 1.0, "dt " + dt);
+            }
+            // Ellipse: the mean of apoapsis and periapsis. C3: half the C3. Apogee hops never cut off on energy.
+            var gto = campaign.Mission(7);
+            Assert.AreEqual(SimOptions.EnergyFor(gto.ApoKm * 1000, gto.PeriKm * 1000), MissionFlightSetup.TargetEnergy(gto), 0);
+            var c3 = campaign.Mission(9);
+            Assert.AreEqual(0.5 * c3.C3Km2PerS2 * 1e6, MissionFlightSetup.TargetEnergy(c3), 0);
+            Assert.IsTrue(double.IsNaN(MissionFlightSetup.TargetEnergy(campaign.Mission(1))));
+            Assert.IsFalse(new SimOptions().energyCutoff, "raw SimOptions keep the JS simulate() parity path");
+        }
+
+        [Test]
+        public void TheDesignMaxQThrottle_IsTheOnlyMaxQLaw_ForEveryHop()
+        {
+            // Physics ruling 4: bare sim, batch and live fly the same peak for the hop starters and winners.
+            for (int i = 1; i <= 2; i++)
+            {
+                var m = campaign.Mission(i);
+                var d = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, m).Design);
+                foreach (var seed in campaign.Seeds)
+                {
+                    var setup = MissionFlightSetup.Build(catalog, m, d, MissionFlightSetup.BatchDt);
+                    setup.Options.monitor = FailureMonitor.Create(catalog, setup.Flown, setup.TargetAltM, FlightBatch.DesignHash(d), seed);
+                    setup.Options.monitor.Gentle = false;
+                    var bare = Headless.Simulate(setup.Stages, setup.Options);
+                    var batch = FlightBatch.Fly(catalog, m, d, seed);
+                    Assert.AreEqual(MissionScore.FlownApoAltM(bare) / 1000.0, batch.apoKm, 1e-12, m.Id + " seed " + seed);
+                }
+            }
+        }
+
+        [Test]
+        public void TheFuelImbalancePenalty_ThrottlesOnlyItsStage_UntilItSeparates()
+        {
+            // Physics ruling 3. A stage-0 imbalance resolved without crossfeed: 0.97 on stage 0, nothing on stage 1.
+            var vehicle = new AscentVehicle { Stages = 2, FuelEvent = true, QLimPa = 35000, ThrottleMin = 0.4 };
+            var director = AscentDirector.Start(vehicle, null, null, true, false, false);
+            var s = new AscentSample { T = 20, AltM = 5000, SpeedMps = 300, QPa = 1000, Thrusting = true, PropFraction = 0.8, StageIndex = 0 };
+            for (int i = 0; i < 80 && !director.IsDone(AscentCall.FuelBalance); i++)
+            {
+                s.T += 0.5;
+                director.Advance(s, 0.5);
+            }
+            Assert.IsTrue(director.IsDone(AscentCall.FuelBalance));
+            Assert.AreEqual(AscentDecisions.FuelPenalty, director.Command.ThrottleScale, 1e-12, "the imbalanced stage");
+            s.StageIndex = 1; s.PropFraction = 1; s.T += 0.5;
+            director.Advance(s, 0.5);
+            Assert.AreEqual(1, director.Command.ThrottleScale, 1e-12, "the next stage burns at full throttle");
+            s.StageIndex = 0; s.Thrusting = false; s.T += 0.5;
+            director.Advance(s, 0.5);
+            Assert.AreEqual(1, director.Command.ThrottleScale, 1e-12, "shut down");
         }
 
         static double CutoffT(SimResult r)

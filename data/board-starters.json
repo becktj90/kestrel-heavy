@@ -9,8 +9,8 @@
       "designs": [
         {
           "version": 3,
-          "id": "h-n5-k8-24000-2500",
-          "name": "h-n5-k8-24000-2500",
+          "id": "h-n5-k8-23500-2500",
+          "name": "h-n5-k8-23500-2500",
           "tier": "campaign",
           "stages": [
             {
@@ -18,7 +18,7 @@
               "propellant": "methalox",
               "engine": "gg-methalox-small",
               "engineCount": 5,
-              "propMass": 24000,
+              "propMass": 23500,
               "diameter": 1.6,
               "material": "titanium",
               "separationMass": 40,
@@ -966,7 +966,7 @@
             "rcs": false
           },
           "guidance": {
-            "pitchKickDeg": 8,
+            "pitchKickDeg": 6,
             "gLimit": 5
           },
           "heatShield": true,

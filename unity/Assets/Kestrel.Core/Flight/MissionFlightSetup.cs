@@ -105,6 +105,32 @@ namespace Kestrel.Core.Flight
         public static SimResult Fly(MissionFlightInputs setup, AscentDirector director) => Start(setup, director).Run();
 
         /// <summary>
+        /// The specific orbital energy a mission cuts off at, J/kg (#313): −μ/(2a) with a = R + (h_apo + h_peri)/2 for a
+        /// circular or elliptical target, and C3/2 for a C3 target. NaN for an apogee hop, which burns out.
+        /// </summary>
+        public static double TargetEnergy(CampaignMission mission)
+        {
+            if (mission == null) return double.NaN;
+            switch (mission.TargetKind)
+            {
+                case "circular":
+                case "ellipse":
+                    return SimOptions.EnergyFor(mission.ApoKm * 1000, mission.PeriKm * 1000);
+                case "c3":
+                    return 0.5 * mission.C3Km2PerS2 * 1e6;
+                default:
+                    return double.NaN;
+            }
+        }
+
+        static OrbitTarget FreeBuildOrbit(Catalog catalog, string orbitId)
+        {
+            if (catalog.Orbits == null) return null;
+            if (orbitId != null && catalog.Orbits.TryGetValue(orbitId, out var o) && o != null) return o;
+            return catalog.Orbits.TryGetValue("leo400", out var leo) ? leo : null;
+        }
+
+        /// <summary>
         /// Sim inputs for <paramref name="design"/> flying <paramref name="mission"/>.
         /// A null mission is a free build: the design's own orbit, nothing held out. An apogee orbit aims at the
         /// hop floor (<see cref="MissionAim.ApplyToDesignOrbit"/>).
@@ -132,8 +158,12 @@ namespace Kestrel.Core.Flight
             var built = Stack.SimInputs(catalog, flown, dt, sampleEvery);
             var opts = built.opts;
             if (!(opts.tMax >= MinTMax)) opts.tMax = MinTMax;
-            // #313: cut off inside the step, so the batch step and the live step cut off at the same state.
-            opts.locateCutoff = true;
+            // #313 (Kestrel Physics): every Kestrel flight cuts off at the target's specific orbital energy, located
+            // inside the step, so the batch step and the live step cut off at the same state. No perigee test, no offset.
+            opts.energyCutoff = true;
+            opts.cutoff = true;
+            opts.cutoffEnergy = double.NaN;
+            opts.continuousTurn = true;
             double target = opts.targetAlt;
             if (mission != null)
             {
@@ -141,38 +171,20 @@ namespace Kestrel.Core.Flight
                 if (aim > 0) target = aim;
                 opts.targetAlt = target;
                 if (opts.guidance != null) opts.guidance.targetAlt = target;
-                // The integrator cuts off when periapsis is merely near the target, which freezes lofted ellipses.
-                // Circular, GTO and C3 contracts burn the loaded upper propellant out. The depletion check uses a
-                // lower floor so a burnout just under the aim point is not a false "out of fuel". The pass check
-                // still requires the flown apoapsis and periapsis. Upper-stage pitch reads the guidance target,
-                // which stays on the real aim point when a profile is set.
-                if (mission.TargetKind == "circular" || mission.TargetKind == "ellipse" || mission.TargetKind == "c3")
-                {
-                    // Legacy pitch reads SimOptions.targetAlt, so it keeps burning the loaded
-                    // upper propellant (cutoff off) toward the real aim. A custom pitch keeps
-                    // the aim on the guidance profile. Headless then cuts off when periapsis is
-                    // within 10 km of min(targetAlt, altitude). A huge SimOptions target makes
-                    // that "periapsis has caught the vehicle": a near-circular insertion, not a
-                    // frozen lofted ellipse. Running out of propellant before then is depletion.
-                    bool custom = opts.guidance != null && !Headless.LegacyPitch(opts.guidance);
-                    if (custom)
-                    {
-                        opts.cutoff = true;
-                        opts.targetAlt = 1e12;
-                        opts.guidance.targetAlt = target;
-                    }
-                    else
-                    {
-                        opts.cutoff = false;
-                        opts.targetAlt = target;
-                    }
-                }
+                opts.cutoffEnergy = TargetEnergy(mission);
             }
             else if (MissionAim.ApplyToDesignOrbit(opts, catalog, design.payloadOrbit))
             {
                 // A free build with an apogee trip ("suborbital") is a hop: judge depletion at the hop floor, as a
                 // campaign hop does, not at the apogee (F1). The designer's predict run and the live pad agree.
                 target = opts.targetAlt;
+            }
+            else
+            {
+                // A free build aims at its own catalog orbit, circular or elliptical (Stack's leo400 default when unset).
+                var orbit = FreeBuildOrbit(catalog, design.payloadOrbit);
+                if (orbit != null && orbit.periKm >= 0)
+                    opts.cutoffEnergy = SimOptions.EnergyFor(orbit.apoKm * 1000, orbit.periKm * 1000);
             }
             if (site != null)
             {
