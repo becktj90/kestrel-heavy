@@ -82,7 +82,7 @@ namespace Kestrel.Game.Tests
                 Assert.That(b.text, Is.Not.Empty);
                 Assert.That(b.tooltip, Is.Not.Empty, b.name + " needs a spoken label");
             }
-            Assert.That(c.Q<Button>("home-launch").enabledSelf, Is.True);
+            Assert.That(c.Q<Button>("home-primary").enabledSelf, Is.True);
             Assert.That(c.Q<Button>("home-hangar").enabledSelf, Is.True);
             foreach (var id in new[] { "missions", "codex", "settings" })
             {

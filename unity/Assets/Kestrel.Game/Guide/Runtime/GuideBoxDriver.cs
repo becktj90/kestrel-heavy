@@ -15,6 +15,20 @@ namespace Kestrel.Game.Guide
         public float HeaderPoints;
         public GuidePlace Place = GuidePlace.Designer;
 
+        /// <summary>Home sets this to the bottom of its top band and wordmark (panel units from the panel top) while it is
+        /// on screen, so the corner pop rests under them instead of on the gear. Null or 0 keeps the plain corner.</summary>
+        public static System.Func<float> ClearTopPanel;
+
+        /// <summary>Home sets this while it is up: true keeps the corner pop off the menu (Starter Home, home.thrum off).</summary>
+        public static System.Func<bool> HideOnMenu;
+
+        bool Hidden()
+        {
+            if (Place != GuidePlace.Menu || HideOnMenu == null) return false;
+            try { return HideOnMenu(); }
+            catch (System.Exception) { return false; }
+        }
+
         GuideStage stage;
         GuidePopView pop;
         GuideClipPlayer voice;
@@ -122,7 +136,7 @@ namespace Kestrel.Game.Guide
             }
             voice.Hold(paused);
             ApplyScreen();
-            if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place))
+            if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place) || Hidden())
             {
                 if (voice.Sounding || voice.HasClip || voice.CardId.Length > 0) Silence();
                 else pop.Hide();
@@ -171,7 +185,14 @@ namespace Kestrel.Game.Guide
             float glyph = GuideCaption.Glyph(settings.Size);
             bool reduce = stage.ReduceMotionOverride || settings.ReduceMotion;
             float slide = GuidePopLayout.SlideSeconds > 0f ? (Time.unscaledTime - shownAt) / GuidePopLayout.SlideSeconds : 1f;
-            var frame = GuidePopLayout.Place(screen, slide, reduce, caption);
+            float clear = 0f;
+            if (Place == GuidePlace.Menu && ClearTopPanel != null && panelPerPoint > 0f)
+            {
+                try { clear = ClearTopPanel() / panelPerPoint; }
+                catch (System.Exception) { clear = 0f; }
+                if (float.IsNaN(clear) || clear < 0f) clear = 0f;
+            }
+            var frame = GuidePopLayout.Place(screen, slide, reduce, caption, clear);
             string line = GuideCaption.Line(caption ? model.Shown : model.Full, frame.CaptionW, glyph);
             pop.Show(frame, panelPerPoint, caption, line, glyph);
         }

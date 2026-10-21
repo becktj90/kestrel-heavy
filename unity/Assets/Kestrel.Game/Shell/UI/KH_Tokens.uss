@@ -123,6 +123,7 @@
 .kh-mm-anim { opacity: 0; translate: 0 16px; transition-property: opacity, translate; transition-duration: 0.28s; transition-timing-function: ease-out-cubic; }
 .kh-mm-anim.kh-mm-in { opacity: 1; translate: 0 0; }
 .kh-mm-reduce .kh-mm-anim { transition-duration: 0s; }
+.kh-mm-instant .kh-mm-anim { transition-duration: 0s; }
 .kh-mm-title-card { align-items: stretch; margin-top: 0; }
 .kh-mm-kestrel { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/Fraunces-Black.ttf?fileID=12800000&guid=c170e4aa0170491ca90007e515c3db3e&type=3"); font-size: 64px; color: #f0ce8a; -unity-text-align: middle-center; white-space: nowrap; align-self: stretch; -unity-text-outline-width: 0; }
 .kh-mm-word { position: relative; align-self: stretch; }
@@ -132,11 +133,13 @@
 .kh-mm-rule-row { flex-direction: row; align-items: center; justify-content: center; margin-top: -2px; }
 .kh-mm-rule { flex-grow: 1; height: 1px; background-color: #d2a24f; margin: 0 var(--kh-space-3); }
 .kh-mm-heavy { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/Fraunces-Bold.ttf?fileID=12800000&guid=9ff7f267923c419eb9c234ff08737b2f&type=3"); -unity-font-style: italic; font-size: 18px; letter-spacing: 8px; color: #f0ce8a; -unity-text-align: middle-center; }
-.kh-mm-launch { flex-direction: row; align-items: center; justify-content: flex-start; min-height: 68px; padding: 8px 14px 10px 16px; margin: 0 0 var(--kh-space-2) 0; background-color: #e4483c; border-width: 0; border-bottom-width: 8px; border-bottom-color: #9a2438; border-top-width: 1px; border-top-color: rgba(255, 255, 255, 0.35); border-radius: 18px; }
+.kh-mm-launch { flex-direction: row; align-items: center; justify-content: flex-start; min-height: 68px; padding: 8px 14px 10px 16px; margin: 0 0 var(--kh-space-2) 0; background-color: #e4483c; border-width: 0; border-top-width: 1px; border-top-color: rgba(255, 255, 255, 0.35); border-radius: 18px; }
 .kh-mm-launch-icon { width: 28px; height: 28px; min-width: 28px; margin-left: 8px; flex-shrink: 0; }
 .kh-mm-launch:hover { background-color: #ff6a45; }
-.kh-mm-launch:active { background-color: #c42e4e; translate: 0 4px; border-bottom-width: 4px; }
-.kh-mm-launch:focus { border-color: var(--kh-home-orange); }
+.kh-mm-launch:active { background-color: #c42e4e; translate: 0 3px; }
+/* The lip (home-primary-lip) is a child inside the rounded button; overflow: hidden keeps it in the button's corners. */
+.kh-mm-launch { overflow: hidden; }
+.kh-mm-launch:focus { border-top-color: var(--kh-home-orange); }
 .kh-mm-col { flex-grow: 1; flex-direction: column; margin-left: var(--kh-space-3); }
 .kh-mm-launch-label { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/Fraunces-Black.ttf?fileID=12800000&guid=c170e4aa0170491ca90007e515c3db3e&type=3"); font-size: 30px; letter-spacing: 3px; color: #ffffff; -unity-text-align: middle-left; }
 .kh-mm-launch-caption { -unity-font: url("project://database/Assets/Art/Fonts/Resources/KHFonts/SpaceGrotesk-Medium.ttf?fileID=12800000&guid=da73225191314e37b12604307d854801&type=3"); font-size: 14px; color: #ffe2d6; white-space: normal; -unity-text-align: middle-left; }
@@ -201,3 +204,7 @@
 .kh-mm-wide .kh-mm-launch-caption,
 .kh-mm-wide .kh-mm-design-caption,
 .kh-mm-wide .kh-mm-tile-caption { overflow: hidden; }
+/* CONTINUE on Home (HomeResumeBar.Dusk): dark glass like DESIGN FIRST, never the grey runtime button. */
+.kh-button.kh-mm-continue:hover { background-color: rgba(20, 28, 52, 0.94); }
+.kh-button.kh-mm-continue:active { background-color: rgba(20, 28, 52, 0.94); scale: 0.97 0.97; }
+.kh-button.kh-mm-continue:focus { border-color: var(--kh-home-cream); }

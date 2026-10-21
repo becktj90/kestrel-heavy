@@ -716,7 +716,9 @@ namespace Kestrel.Game.MissionSelect
                 _patches.style.position = Position.Absolute;
                 _patches.style.width = 92f;
                 _patches.style.height = 44f;
-                _patches.style.left = frame.Path.Right - 96f;
+                // L5 (live web): the path's vertical scrollbar sits on its right edge and covered Patches. Keep the
+                // button left of the bar and paint it over the path.
+                _patches.style.left = frame.Path.Right - 96f - PathScrollbarW;
                 _patches.style.top = frame.Path.Y + 4f;
                 _patches.style.whiteSpace = WhiteSpace.Normal;
                 _patches.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(_patches, 13f);
@@ -725,6 +727,7 @@ namespace Kestrel.Game.MissionSelect
                 Pin(_segments[i], MissionBoardLayout.Segment(frame.Progress, i, MissionBoardLayout.ActSlots));
 
             Pin(_path, frame.Path);
+            _patches?.BringToFront();
             var card = this.Q("mission-card");
             Pin(card, frame.Card);
 
@@ -899,6 +902,9 @@ namespace Kestrel.Game.MissionSelect
             label.text = text ?? "";
             label.style.display = string.IsNullOrEmpty(label.text) ? DisplayStyle.None : DisplayStyle.Flex;
         }
+
+        /// <summary>Room for the path ScrollView's vertical bar (Unity's runtime theme draws it about 13 px wide).</summary>
+        public const float PathScrollbarW = 16f;
 
         static void Pin(VisualElement el, HudBox box)
         {
