@@ -71,7 +71,11 @@ namespace Kestrel.Core.Flight
         // Chrome subtracted from a card before text is measured. Slack covers the USS border
         // (panel px) being a hair wider than the scaled layout px, plus glyph overhang.
         public const float Slack = 6f;
-        public const float LaunchChrome = 3f * 2f + 12f * 2f + 16f + 12f + Slack;
+        /// <summary>The CTA card around its label: border, 12 px sides, lamp + margin, the column's 12 px margin, and the
+        /// 28 px rocket glyph with its 8 px margin (.kh-mm-launch-icon). The glyph was missing, so the label was fitted
+        /// 36 px wider than its box and "LAUNCH KH-3 · Tiny Orbit" wrapped to two lines in a one-line card.</summary>
+        public const float LaunchIcon = 28f + 8f;
+        public const float LaunchChrome = 3f * 2f + 12f * 2f + 16f + 12f + LaunchIcon + Slack;
         public const float DesignChrome = 2f * 2f + 12f * 2f + 16f + 12f + Slack;
         public const float TileChrome = 3f * 2f + 10f * 2f + Slack;
         public const float LampSlot = 16f;
@@ -286,7 +290,10 @@ namespace Kestrel.Core.Flight
             float designInner = Math.Max(1f, menuW - DesignChrome);
             float tileInner = Math.Max(1f, menuW - TileChrome);
             float hintInner = Math.Max(1f, menuW - HintChromeX);
-            type.Launch = Fit(launchInner, launchAt100, 32f, 13f);
+            // The CTA label is one line. Fit filled launchInner to the advance-table pixel, so TextCore's kerning and
+            // overhang wrapped "LAUNCH KH-3 · Tiny Orbit" to a second line in a one-line box (GameCI, 1920x1080: need
+            // 47 box 36). Fit against the width with HomeTypeMetrics.Margin, the same share every other one-line fit uses.
+            type.Launch = Fit(launchInner / HomeTypeMetrics.Margin, launchAt100, 32f, 13f);
             type.LaunchCaption = FitCaption(launchInner, HomeWideText.LaunchCaption, 16f, 10f, out type.LaunchCaptionLines);
             type.Design = Fit(designInner, HomeWideText.Design, 24f, 12f);
             type.DesignCaption = FitCaption(designInner, HomeWideText.DesignCaption, 15f, 10f, out type.DesignCaptionLines);

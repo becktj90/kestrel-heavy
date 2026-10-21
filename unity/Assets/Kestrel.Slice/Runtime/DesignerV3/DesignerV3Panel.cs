@@ -194,7 +194,8 @@ namespace Kestrel.Slice.DesignerV3
                 Focus = f => FieldFocused?.Invoke(f),
                 // B-10: the guided Review step launches only through the gate. Seeded fair-odds reds pass the gate
                 // and keep their Launch anyway confirm.
-                Launch = () => { if (Gate(settle: true).Ready) LaunchRequested?.Invoke(); },
+                // F1: a soft block (predicted failure) also flies; the stepper's Review step already asked.
+                Launch = () => { if (Gate(settle: true).CanLaunch) LaunchRequested?.Invoke(); },
                 JumpRisk = JumpToRisk,
                 LaunchArmed = () => launchConfirmArmed,
                 SetLaunchArmed = v => launchConfirmArmed = v,
@@ -450,7 +451,9 @@ namespace Kestrel.Slice.DesignerV3
                 () => session.Sheet != null ? Readout.Quick(C, D).liftoffTWR : 0,
                 () => Readout.Quick(C, D).margin,
                 () => D.Obj("aero")?.Bool("fins") ?? false,
-                () => { var r = Readout.Quick(C, D); return !r.fairingFits.HasValue || r.fairingFits.Value; });
+                () => { var r = Readout.Quick(C, D); return !r.fairingFits.HasValue || r.fairingFits.Value; },
+                // F1: KH-2's 100 km apogee is a hop, not "Low Earth Orbit at 200 km".
+                Kestrel.Core.Flight.MissionAim.IsSuborbital(C, D.Obj("payload")?.Str("orbit")));
             tutorialIndex = DesignerV3Tutorial.Advance(tutorialSteps, 0);
         }
 
@@ -754,9 +757,23 @@ namespace Kestrel.Slice.DesignerV3
             if (gate.state == LaunchGateState.Blocked)
             {
                 // One plain reason and the tab that fixes it (LANDSCAPE_WEB_BRIEF B-10). Never "Ready".
-                var off = ui.Btn("Launch", () => { }, "Launch unavailable. " + gate.Line, minWidthPt: 120f);
+                // F1: only a hard (validation) block disables Launch. A predicted failure asks once, then flies.
+                Button off;
+                if (gate.CanLaunch)
+                {
+                    off = ui.Btn(DesignerV3Risk.LaunchButtonLabel(true, launchConfirmArmed), () =>
+                    {
+                        if (DesignerV3Risk.NeedsConfirm(true, launchConfirmArmed)) { launchConfirmArmed = true; BuildLaunchRow(); return; }
+                        LaunchRequested?.Invoke();
+                    }, DesignerV3Risk.ConfirmTitle + ". " + gate.Line, minWidthPt: 120f);
+                    if (!launchConfirmArmed) off.style.backgroundColor = HangarUi.Amber;
+                }
+                else
+                {
+                    off = ui.Btn("Launch", () => { }, "Launch unavailable. " + gate.Line, minWidthPt: 120f);
+                    off.SetEnabled(false);
+                }
                 off.name = "launch-btn";
-                off.SetEnabled(false);
                 confirmRow.Add(GateLine(gate.Line));
                 confirmRow.Add(Word(off));
                 if (!string.IsNullOrEmpty(gate.tab))
@@ -774,7 +791,8 @@ namespace Kestrel.Slice.DesignerV3
                 // and launches only if the gate then passes.
                 var check = ui.Btn("Launch", () =>
                 {
-                    bool ready = Gate(settle: true).Ready;
+                    var settled = Gate(settle: true);
+                    bool ready = settled.Ready;
                     BuildLaunchRow();
                     // Seeded fair-odds reds still show their Launch anyway confirm on the rebuilt row.
                     if (ready && !DesignerV3Strip.HasRedRisk(Readout.Quick(C, D))) LaunchRequested?.Invoke();
