@@ -1,9 +1,12 @@
 // F4: why an intact flight missed the mission, in one plain sentence plus what to change, with the flight's
-// own numbers. Pure: the same gates as FlightDebrief.GoalMet, in the same order, so the report never
-// explains a miss the score did not count. A failure event explains itself, and a pass has no reason.
+// own numbers. Pure: the same gates as FlightDebrief.GoalMet, so the report never explains a miss the
+// score did not count. One reason shows, picked in fix order (orbit, fuel, structure, reliability, setup),
+// and "(+N more issues)" counts the other gates that missed. A failure event explains itself, and a pass
+// has no reason.
 // The circle advice comes from flying the board starters: a top stage that overshoots the high point
 // with the low point on target rounds the orbit off with 2 to 10% more upper fuel (MissReasonTests).
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Kestrel.Core.Physics;
 
@@ -27,6 +30,10 @@ namespace Kestrel.Core.Flight
         public string Code = "";
         public string Reason = "";
         public string Advice = "";
+        /// <summary>How many other gates also missed. The reason ends with "(+N more issues)" when this is above 0.</summary>
+        public int More;
+        /// <summary>The other gates that missed, in fix order.</summary>
+        public readonly List<string> Others = new List<string>();
         public string Line => string.IsNullOrEmpty(Advice) ? Reason : Reason + " " + Advice;
     }
 
@@ -60,41 +67,59 @@ namespace Kestrel.Core.Flight
             var extra = f.Extra;
             string top = "stage " + Math.Max(1, f.Stages).ToString(Inv);
 
-            var target = Target(row, f, top);
-            if (target != null) return target;
+            // Every gate that missed, in fix order: orbit, then fuel, then structure, then reliability, then the
+            // flight's setup. The report shows the first one and counts the rest, so a fix never hides behind
+            // a later gate (KH-8 says orbit first and reliability only once the fuel fix lands it).
+            var misses = new List<MissExplanation>();
+            void Add(MissExplanation x) { if (x != null) misses.Add(x); }
 
-            if (!double.IsNaN(row.MaxG) && f.MaxG > row.MaxG)
-                return Miss("g", "Peak load was " + G(f.MaxG) + "; this cargo is rated for " + G(row.MaxG) + ".",
-                    "Lower the g limit in Guidance, or throttle the top stage down.");
+            // Orbit.
+            Add(Target(row, f, top));
+            // Fuel.
+            if (extra != null && row.MarginNonNegative && !double.IsNaN(extra.Margin) && !(extra.Margin >= 0))
+                Add(Miss("margin", "The speed budget was " + Pct(extra.Margin) + " short; this mission needs it covered.",
+                    "Add fuel or a stage until the budget reads 0% or better."));
+            if (extra != null && row.CoastHours > 0 && !double.IsNaN(extra.BoilOffKg) && !(extra.BoilOffKg >= 0))
+                Add(Miss("boil-off", "The top stage could not hold its fuel through the " + Num(row.CoastHours, "0.#") + " h coast.",
+                    "Pick a tank that keeps fuel cold longer (Tanks tab)."));
             if (row.LandingRequired && !MissionScore.IsGood(f.LandingGrade))
-                return Miss("landing", "The landing graded " + Grade(f.LandingGrade) + "; this mission needs a good landing.",
-                    "Keep more landing fuel in the booster (Landing tab).");
+                Add(Miss("landing", "The landing graded " + Grade(f.LandingGrade) + "; this mission needs a good landing.",
+                    "Keep more landing fuel in the booster (Landing tab)."));
             string boosters = extra != null && extra.BoosterKnown ? extra.BoosterGrade : f.LandingGrade;
             if (row.LandBoosters && !MissionScore.IsGood(boosters))
-                return Miss("boosters", "The side boosters landed " + Grade(boosters) + "; this mission needs them back in good shape.",
-                    "Keep more landing fuel in the boosters (Landing tab).");
-            if (extra == null) return Miss("goal", "The flight did not meet this mission's goal.", "");
-            if (row.MarginNonNegative && !double.IsNaN(extra.Margin) && !(extra.Margin >= 0))
-                return Miss("margin", "The speed budget was " + Pct(extra.Margin) + " short; this mission needs it covered.",
-                    "Add fuel or a stage until the budget reads 0% or better.");
-            if (!double.IsNaN(row.ReliabilityMin) && !double.IsNaN(extra.Reliability) && !(extra.Reliability >= row.ReliabilityMin))
-                return Miss("reliability", "Reliability was " + Pct(extra.Reliability, row.ReliabilityMin) + "; this mission needs " + Pct(row.ReliabilityMin) + ".",
-                    "Raise the safety factor to " + Num(SafetyBonusAt, "0.0#") + " or more for the reliability bonus, or pick redundant avionics.");
-            if (row.NoRedRisks && extra.RedKnown && extra.RedRisk)
-                return Miss("red-risk", "A red risk was showing at launch; this mission only counts a flight with none.",
-                    "Clear every red risk in the designer before you launch.");
-            if (row.CoastHours > 0 && !double.IsNaN(extra.BoilOffKg) && !(extra.BoilOffKg >= 0))
-                return Miss("boil-off", "The top stage could not hold its fuel through the " + Num(row.CoastHours, "0.#") + " h coast.",
-                    "Pick a tank that keeps fuel cold longer (Tanks tab).");
-            if (extra.AirframeKnown)
+                Add(Miss("boosters", "The side boosters landed " + Grade(boosters) + "; this mission needs them back in good shape.",
+                    "Keep more landing fuel in the boosters (Landing tab)."));
+            // Structure.
+            if (!double.IsNaN(row.MaxG) && f.MaxG > row.MaxG)
+                Add(Miss("g", "Peak load was " + G(f.MaxG) + "; this cargo is rated for " + G(row.MaxG) + ".",
+                    "Lower the g limit in Guidance, or throttle the top stage down."));
+            if (extra != null && row.NoRedRisks && extra.RedKnown && extra.RedRisk)
+                Add(Miss("red-risk", "A red risk was showing at launch; this mission only counts a flight with none.",
+                    "Clear every red risk in the designer before you launch."));
+            // Reliability.
+            if (extra != null && !double.IsNaN(row.ReliabilityMin) && !double.IsNaN(extra.Reliability) && !(extra.Reliability >= row.ReliabilityMin))
+                Add(Miss("reliability", "Reliability was " + Pct(extra.Reliability, row.ReliabilityMin) + "; this mission needs " + Pct(row.ReliabilityMin) + ".",
+                    "Raise the safety factor to " + Num(SafetyBonusAt, "0.0#") + " or more for the reliability bonus, or pick redundant avionics."));
+            // Setup.
+            if (extra != null && extra.AirframeKnown)
             {
-                if (extra.Gentle) return Miss("gentle", "Gentle physics was on, so this flight does not count for the mission.", "Turn gentle physics off and fly again.");
-                if (!extra.PayloadMatch) return Miss("payload", "The rocket carried a different payload from the one this mission asks for.", "Load the mission's payload (Mission tab).");
-                if (!extra.FairingFits) return Miss("fairing", "The cargo did not fit inside the nose cone.", "Pick a wider or longer fairing (Mission tab).");
-                if (!extra.UnderBudget) return Miss("budget", "The rocket cost more than this mission's " + Num(row.BudgetKc, "#,0") + " Kc budget.", "Use cheaper parts or a smaller rocket.");
+                if (extra.Gentle) Add(Miss("gentle", "Gentle physics was on, so this flight does not count for the mission.", "Turn gentle physics off and fly again."));
+                if (!extra.PayloadMatch) Add(Miss("payload", "The rocket carried a different payload from the one this mission asks for.", "Load the mission's payload (Mission tab)."));
+                if (!extra.FairingFits) Add(Miss("fairing", "The cargo did not fit inside the nose cone.", "Pick a wider or longer fairing (Mission tab)."));
+                if (!extra.UnderBudget) Add(Miss("budget", "The rocket cost more than this mission's " + Num(row.BudgetKc, "#,0") + " Kc budget.", "Use cheaper parts or a smaller rocket."));
             }
-            return Miss("goal", "The flight did not meet this mission's goal.", "");
+
+            if (misses.Count == 0) return Miss("goal", "The flight did not meet this mission's goal.", "");
+            var first = misses[0];
+            first.More = misses.Count - 1;
+            for (int i = 1; i < misses.Count; i++) first.Others.Add(misses[i].Code);
+            if (first.More > 0) first.Reason += " " + MoreNote(first.More);
+            return first;
         }
+
+        /// <summary>"(+1 more issue)" or "(+N more issues)".</summary>
+        public static string MoreNote(int more)
+            => more <= 0 ? "" : "(+" + more.ToString(Inv) + (more == 1 ? " more issue)" : " more issues)");
 
         static MissExplanation Target(CampaignMission row, MissInput f, string top)
         {

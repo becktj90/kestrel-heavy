@@ -166,22 +166,22 @@ namespace Kestrel.Game.MissionSelect
             if (mission == null || string.IsNullOrEmpty(mission.TargetKind)) return "";
             string kind = mission.TargetKind;
             if (kind.Equals("apogee", StringComparison.OrdinalIgnoreCase))
-                return WithInc("Apogee " + Kilometers(mission.ApoKm), mission.IncDeg);
+                return "Apogee " + Kilometers(mission.ApoKm);
             if (kind.Equals("circular", StringComparison.OrdinalIgnoreCase))
             {
                 bool split = mission.PeriKm > 0 && mission.ApoKm > 0 && Math.Abs(mission.ApoKm - mission.PeriKm) > 0.05;
                 string body = split
                     ? "Circular orbit, apogee " + Kilometers(mission.ApoKm) + ", perigee " + Kilometers(mission.PeriKm)
                     : "Circular orbit " + Kilometers(mission.ApoKm > 0 ? mission.ApoKm : mission.PeriKm);
-                return WithInc(body, mission.IncDeg);
+                return body;
             }
             if (kind.Equals("ellipse", StringComparison.OrdinalIgnoreCase))
-                return WithInc("Ellipse " + Kilometers(mission.PeriKm) + " by " + Kilometers(mission.ApoKm), mission.IncDeg);
+                return "Ellipse " + Kilometers(mission.PeriKm) + " by " + Kilometers(mission.ApoKm);
             if (kind.Equals("c3", StringComparison.OrdinalIgnoreCase))
             {
                 string body = "C3 " + Number(mission.C3Km2PerS2) + " km2/s2";
                 if (mission.PeriKm > 0) body += ", closest point " + Kilometers(mission.PeriKm);
-                return WithInc(body, mission.IncDeg);
+                return body;
             }
             return kind;
         }
@@ -264,12 +264,6 @@ namespace Kestrel.Game.MissionSelect
             if (Math.Abs(n - rounded) < 1e-6 && Math.Abs(rounded) < 1e15)
                 return ((long)rounded).ToString("N0", CultureInfo.InvariantCulture);
             return n.ToString("0.##", CultureInfo.InvariantCulture);
-        }
-
-        static string WithInc(string body, double inc)
-        {
-            if (string.IsNullOrEmpty(body) || Math.Abs(inc) < 1e-6) return body;
-            return body + ", " + Number(inc) + "°";
         }
 
         public static string UnlockWord(string id)
