@@ -55,6 +55,10 @@ namespace Kestrel.Pad
         public TrenchSpec Trench;
         /// <summary>Named tower attach frames (null for Rail). See TowerAnchors and docs/UMBILICAL_CONTRACT.md.</summary>
         public TowerAnchors Anchors;
+        /// <summary>Rail pads: the launch-rail beam (pad space, base to top). Umbilicals on a pad without tower anchors
+        /// hang from this beam (UmbilicalRig.RailAnchor), never from a point in mid-air.</summary>
+        public bool HasRail;
+        public Vec3 RailBase, RailTop;
 
         /// <summary>Stable fingerprint for golden tests and the generation cache key.</summary>
         public ulong Hash()
@@ -77,7 +81,9 @@ namespace Kestrel.Pad
 
     public static class PadGenerator
     {
-        public const int Version = 5;   // propellant farm + deluge on top of D4 (invalidates caches)
+        public const int Version = 6;   // rail leans away from the vehicle; rail-pad umbilicals hang from the rail (invalidates caches)
+        /// <summary>Rail beam centre line to the vehicle skin (m). The I-beam is 0.5 m deep, so its face stays 0.35 m off the skin.</summary>
+        public const float RailSkinGap = 0.6f;
 
         /// <summary>Same rule as Kestrel.Core.Timeline.Pad.For: tower for stages >= 3 m across, strongback for liquid + tower.</summary>
         public static PadArchetype ArchetypeFor(string corePadId, bool strongback) =>
@@ -220,18 +226,22 @@ namespace Kestrel.Pad
         static void BuildRail(PadLayout L, ref PadRng rng)
         {
             // Inclined launch rail on a short A-frame, offset on +Z (same side a tower would be).
+            // The rail leans AWAY from the vehicle (+Z). It used to lean toward it: at 2-6 deg over 1.1-1.3 h the beam
+            // crossed the skin about two thirds up and stood out of the nose (TestFlight 202, Below: "a white beam
+            // clips the nose").
             float len = Math.Max(8f, L.Fit.VehicleHeight * rng.Range(1.1f, 1.3f));
             float tilt = rng.Range(2f, 6f) * (float)Math.PI / 180f;
-            float z0 = L.Fit.VehicleRadius + 0.6f;
+            float z0 = L.Fit.VehicleRadius + RailSkinGap;
             var rail = L.Graph.Add("rail", ElementCategory.Structure, TowerLayout.SiteId, "steel", "launch-rail");
-            rail.Center = new Vec3(0, len * 0.5f, z0); rail.Size = new Vec3(2, len, 2); rail.DisplayName = "Launch rail";
-            var top = new Vec3(0, len * (float)Math.Cos(tilt), z0 - len * (float)Math.Sin(tilt));
+            rail.Center = new Vec3(0, len * 0.5f, z0 + len * 0.5f * (float)Math.Sin(tilt)); rail.Size = new Vec3(2, len, 2); rail.DisplayName = "Launch rail";
+            var top = new Vec3(0, len * (float)Math.Cos(tilt), z0 + len * (float)Math.Sin(tilt));
             AddM(L, "rail", "rail.beam", MemberKind.Column, new Vec3(0, 0, z0), top, MaterialRole.PaintedSteel, "rail");
+            L.HasRail = true; L.RailBase = new Vec3(0, 0, z0); L.RailTop = top;
             int legs = rng.Range(2, 4);
             for (int i = 0; i < legs; i++)
             {
                 float y = len * (i + 1) / (legs + 1);
-                AddM(L, "rail", $"rail.leg.{i}", MemberKind.Brace, new Vec3(0, 0, z0 + y * 0.6f), new Vec3(0, y, z0 - y * (float)Math.Tan(tilt)), MaterialRole.SafetyYellowSteel, "brace");
+                AddM(L, "rail", $"rail.leg.{i}", MemberKind.Brace, new Vec3(0, 0, z0 + y * 0.6f), new Vec3(0, y, z0 + y * (float)Math.Tan(tilt)), MaterialRole.SafetyYellowSteel, "brace");
             }
         }
 

@@ -5,9 +5,13 @@
 // What changed against the #288 offsets (FlightView.Of):
 //  - Height is the CURRENT stack: after a stage drops, Above/Below/Chase/Auto frame the upper stage
 //    (its base and length) instead of the full launch stack, which left it small and far away.
-//  - Below on the pad held the camera under the deck, where the ground clamp pressed it flat into the
-//    plume and the trench. Until the stack is about one height up it now rises to at least 0.15 h above
-//    the deck and slides to the side of the trench and plume axis, then blends back to the low view.
+//  - Below on the pad (TestFlight 202, #332): the #304 hold sat 0.15 h ABOVE the deck at 0.9 h, i.e. a
+//    level side view that did not look up, and in world axes, so on the yawed pad it could land by the
+//    tower legs or a light pole. It is now a worm's-eye view: just under the deck top (below the rocket's
+//    base), outside the deck rim, on the pad side opposite the tower (pad frame, PadYawDeg) and clear of the
+//    trench line, at the range where base to top spans BelowSpan of the view, pitched up to the middle of
+//    that span. The ground floor drops to LowClearance for this hold only. Once the stack is about a
+//    height up it blends back to the low view.
 //  - Pad stays anchored to the ground but tracks with a clamped narrower field of view as range grows,
 //    and reports Far (with a short note) once the rocket would be a few pixels.
 // Smooth everywhere: no step in position, look-at or FOV as altitude or stage height changes.
@@ -55,6 +59,11 @@ namespace Kestrel.Core.Flight
         public double TrenchBearingDeg;
         /// <summary>The juice FOV this frame (vertical, degrees).</summary>
         public double BaseFovDeg;
+        /// <summary>Pad root yaw in world (degrees, Unity Euler y): pad +Z (the tower) points along world
+        /// (sin yaw, 0, cos yaw). PadTower.Apply sets it; the trench bearing is in the same pad frame.</summary>
+        public double PadYawDeg;
+        /// <summary>Deck plinth radius (m, PadGround.DeckRadius). The Below hold stands outside it. 0: no deck.</summary>
+        public double DeckRadius;
     }
 
     public struct FlightPose
@@ -69,6 +78,9 @@ namespace Kestrel.Core.Flight
         /// <summary>Pad view at long range: the rocket is a few pixels even zoomed in.</summary>
         public bool Far;
         public string Note;
+        /// <summary>Camera floor above GroundY for this pose (m): MinClearance, or LowClearance in the Below
+        /// pad hold. SliceApp passes it to PadGround.ClampAboveGround so the runtime agrees.</summary>
+        public double Clearance;
     }
 
     public static class FlightViewPose
@@ -76,10 +88,21 @@ namespace Kestrel.Core.Flight
         // Mirrors ChaseCamera (Slice): StandoffX/Z and the horizon hold window. ChaseCamera reads these.
         public const double StandoffX = 2.0, StandoffZ = 4.0;
         public const double HoldFullAlt = 13000, HoldEndAlt = 20000;
-        /// <summary>Below hold on the pad: camera at least this many heights above the deck.</summary>
-        public const double BelowDeckLift = 0.15;
-        /// <summary>Below hold: horizontal standoff from the plume axis, in heights, square to the trench.</summary>
-        public const double BelowSide = 0.9;
+        /// <summary>Default camera floor above the ground anchor (PadGround.MinCameraClearance).</summary>
+        public const double MinClearance = 3;
+        /// <summary>Below pad hold floor above the ground anchor (m). The apron sits under GroundY, so the
+        /// camera's near plane (0.5 m) never reaches it.</summary>
+        public const double LowClearance = 0.6;
+        /// <summary>Below hold: camera this far under the deck top / rocket base (m), so it looks up.</summary>
+        public const double BelowUnderDeck = 0.15;
+        /// <summary>Below hold: base to top of the stack spans this share of the vertical FOV.</summary>
+        public const double BelowSpan = 0.86;
+        /// <summary>Below hold: at least this far outside the deck rim (m), so the plinth wall is past the near plane.</summary>
+        public const double BelowDeckGap = 4;
+        /// <summary>Below hold bearings in the pad frame (deg, 0 = tower): opposite the tower, so the tower and
+        /// rail stand behind the rocket. The first that is BelowTrenchClearDeg off the trench line wins.</summary>
+        public static readonly double[] BelowBearingsDeg = { 205, 155, 180, 230, 130 };
+        public const double BelowTrenchClearDeg = 40;
         /// <summary>Below hold is full until here, then blends out over one more stack height.</summary>
         public const double BelowHoldAlt = 30;
         /// <summary>Pad view: aim for the rocket to fill this share of the view height while zooming.</summary>
@@ -115,7 +138,7 @@ namespace Kestrel.Core.Flight
             var stackBase = p.Vehicle + up * keptBase;
             var look = stackBase + up * (h * 0.5);
             double baseFov = p.BaseFovDeg > 1 ? p.BaseFovDeg : 50;
-            var pose = new FlightPose { LookAt = look, Fov = baseFov, Height = h };
+            var pose = new FlightPose { LookAt = look, Fov = baseFov, Height = h, Clearance = MinClearance };
 
             PoseVec cam;
             switch (p.Mode)
@@ -134,8 +157,13 @@ namespace Kestrel.Core.Flight
                     break;
                 }
                 case FlightViewMode.Below:
-                    cam = Below(p, up, stackBase, h);
+                {
+                    double w = BelowHoldWeight(p.Altitude, h);
+                    cam = Below(p, up, stackBase, h, baseFov, w, out var holdLook);
+                    pose.LookAt = look * (1 - w) + holdLook * w;
+                    pose.Clearance = MinClearance + (LowClearance - MinClearance) * w;
                     break;
+                }
                 case FlightViewMode.Chase:
                 case FlightViewMode.Above:
                 {
@@ -148,28 +176,83 @@ namespace Kestrel.Core.Flight
                     break;
             }
             // Same floor the runtime applies (PadGround.MinCameraClearance).
-            if (cam.Y < p.GroundY + 3) cam.Y = p.GroundY + 3;
+            if (cam.Y < p.GroundY + pose.Clearance) cam.Y = p.GroundY + pose.Clearance;
             pose.Position = cam;
             pose.Offset = cam - p.Vehicle;
             return pose;
         }
 
-        static PoseVec Below(FlightPoseInput p, PoseVec up, PoseVec stackBase, double h)
+        /// <summary>1 on the pad, 0 once the stack is about a height clear, smooth in between.</summary>
+        public static double BelowHoldWeight(double altitude, double h)
+        {
+            double t = Clamp01((altitude - BelowHoldAlt) / Math.Max(30, h));
+            return 1 - t * t * (3 - 2 * t);
+        }
+
+        /// <summary>Pad-frame bearing (deg) of the Below hold: opposite the tower and off the trench line.</summary>
+        public static double BelowBearingDeg(double trenchBearingDeg)
+        {
+            double b = double.IsNaN(trenchBearingDeg) ? 90 : trenchBearingDeg;
+            double best = BelowBearingsDeg[0], bestSep = -1;
+            foreach (var c in BelowBearingsDeg)
+            {
+                double sep = LineSeparation(c, b);
+                if (sep >= BelowTrenchClearDeg) return c;
+                if (sep > bestSep) { bestSep = sep; best = c; }
+            }
+            return best;
+        }
+
+        /// <summary>Angle (0..90 deg) between a bearing and a line through the pad (both exits of the trench).</summary>
+        public static double LineSeparation(double bearingDeg, double lineDeg)
+        {
+            double d = Math.Abs(((bearingDeg - lineDeg) % 180 + 180) % 180);
+            return Math.Min(d, 180 - d);
+        }
+
+        /// <summary>Range at which a stack from dy0 to dy1 above the camera spans <paramref name="spanRad"/>.</summary>
+        static double RangeForSpan(double dy0, double dy1, double spanRad, double h)
+        {
+            double lo = 0.5, hi = Math.Max(10, 40 * h);
+            for (int i = 0; i < 60; i++)
+            {
+                double mid = 0.5 * (lo + hi);
+                double a = Math.Atan2(dy1, mid) - Math.Atan2(dy0, mid);
+                if (a > spanRad) lo = mid; else hi = mid;
+            }
+            return hi;
+        }
+
+        /// <summary>
+        /// The low view off the pad. #288 put it along the vehicle axis (−0.82 h up the axis), so once the rocket
+        /// pitched over it sat behind the engines at the rocket's own height: a side or tail view labelled "Below"
+        /// (TestFlight t432). It now also drops under the rocket in world terms as the axis tips, by the same
+        /// −0.82 h, so it always looks up at the belly. Unchanged while the stack is vertical.
+        /// </summary>
+        public static PoseVec BelowLow(PoseVec stackBase, PoseVec up, double h)
         {
             var o = FlightView.Of(FlightViewMode.Below, h);
-            var low = stackBase + up * o.Y + new PoseVec(o.X, 0, o.Z);
-            // Square to the trench axis, on the side away from the tower (+Z).
-            double b = double.IsNaN(p.TrenchBearingDeg) ? 90 : p.TrenchBearingDeg;
-            double rad = b * Math.PI / 180;
-            var side = new PoseVec(Math.Cos(rad), 0, -Math.Sin(rad));
-            if (side.Z > 0) side = side * -1;
-            // A little toward +X so the view is not dead on the tower axis.
-            side = (side + new PoseVec(0.35, 0, 0)).Unit;
-            double deckY = (p.HasDeck ? p.DeckY : p.GroundY) + BelowDeckLift * h;
-            var hold = new PoseVec(stackBase.X, Math.Max(deckY, low.Y), stackBase.Z) + side * (BelowSide * h);
-            // 1 on the pad, 0 once the stack is about a height clear, smooth in between.
-            double t = Clamp01((p.Altitude - BelowHoldAlt) / Math.Max(30, h));
-            double w = 1 - t * t * (3 - 2 * t);
+            double tip = 1 - Clamp01(up.Y);
+            return stackBase + up * o.Y + new PoseVec(o.X, 0, o.Z) + PoseVec.Up * (o.Y * tip);
+        }
+
+        static PoseVec Below(FlightPoseInput p, PoseVec up, PoseVec stackBase, double h, double fovDeg, double w, out PoseVec holdLook)
+        {
+            var low = BelowLow(stackBase, up, h);
+            // Worm's-eye hold: under the deck top (the rocket's base), outside the rim, opposite the tower.
+            // Sized for the stack standing on the pad, so the camera holds still while the rocket rises off it.
+            double deckY = p.HasDeck ? p.DeckY : p.GroundY;
+            double camY = Math.Max(p.GroundY + LowClearance, deckY - BelowUnderDeck);
+            double rise = Math.Max(0, stackBase.Y - deckY);
+            double dy0 = deckY - camY, dy1 = deckY + h - camY;
+            double span = BelowSpan * fovDeg * Math.PI / 180;
+            double range = Math.Max(RangeForSpan(dy0, dy1, span, h), Math.Max(0, p.DeckRadius) + BelowDeckGap);
+            double world = (BelowBearingDeg(p.TrenchBearingDeg) + p.PadYawDeg) * Math.PI / 180;
+            var dir = new PoseVec(Math.Sin(world), 0, Math.Cos(world));
+            var hold = new PoseVec(stackBase.X, camY, stackBase.Z) + dir * range;
+            // Aim at the middle of the base-to-top span: pitched up, the base just above the bottom edge.
+            double pitch = 0.5 * (Math.Atan2(dy0, range) + Math.Atan2(dy1, range));
+            holdLook = new PoseVec(stackBase.X, camY + range * Math.Tan(pitch) + rise, stackBase.Z);
             return low * (1 - w) + hold * w;
         }
 

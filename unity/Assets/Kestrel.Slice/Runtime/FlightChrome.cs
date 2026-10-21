@@ -110,6 +110,8 @@ namespace Kestrel.Slice
             RefreshCamera();
             RefreshAudio();
             hud.RegisterCallback<GeometryChangedEvent>(_ => hud.schedule.Execute(() => Kestrel.Game.Shell.TextFit.Apply(menu)));
+            // The padded content width is only known after layout (and changes with the safe pads): refit the row.
+            hud.RegisterCallback<GeometryChangedEvent>(_ => { if (follow != null && !Pinned(follow)) StyleTools(hud, follow, cameraBtn, pause, lastUpp); });
         }
 
         public void Layout(float unitsPerPoint)
@@ -117,7 +119,7 @@ namespace Kestrel.Slice
             float upp = unitsPerPoint >= 0.5f ? unitsPerPoint : 1f;
             lastUpp = upp;
             float h = TouchPt * upp;
-            StyleTools(follow, cameraBtn, pause, upp);
+            StyleTools(hud, follow, cameraBtn, pause, upp);
             StylePicker(upp);
             if (menu == null) return;
             var title = menu.Q<Label>("pause-title");
@@ -180,7 +182,15 @@ namespace Kestrel.Slice
             card.style.borderBottomLeftRadius = r; card.style.borderBottomRightRadius = r;
             var buttons = card.Query<Button>().ToList();
             float panelH = hud != null ? hud.resolvedStyle.height : 0f;
+            // #332: the card is centred on the panel, so its room is the panel less the deeper side pad on both
+            // sides (it was the unpadded panel width, which let a wide card run under a notch or a 24 px pad).
             float panelW = hud != null ? hud.resolvedStyle.width : 0f;
+            if (hud != null && panelW > 8f)
+            {
+                float pl = hud.resolvedStyle.paddingLeft, pr = hud.resolvedStyle.paddingRight;
+                float side = Mathf.Max(float.IsNaN(pl) ? 0f : pl, float.IsNaN(pr) ? 0f : pr);
+                panelW = Mathf.Floor(panelW - 2f * Mathf.Ceil(side - 0.001f) + 0.001f);
+            }
             float row = (TouchPt + 8f) * upp;
             float oneCol = (22f * 1.4f + 12f) * upp + buttons.Count * row + 12f * upp + pad;
             bool two = panelH > 8f && oneCol > panelH - 16f * upp && panelW > 2f * PauseCardWidthPt * upp * 0.8f;
@@ -357,6 +367,7 @@ namespace Kestrel.Slice
         public void Choose(FlightViewMode mode)
         {
             viewMode = mode;
+            if (FlightView.Chases(mode)) lastChase = mode;
             RefreshCamera();
             RefreshFollow();
             ClosePicker();
@@ -587,16 +598,9 @@ namespace Kestrel.Slice
         void RefreshCamera()
         {
             if (cameraBtn == null) return;
-            cameraBtn.text = FlightView.Caption(viewMode);
+            // The slot (and the caption set) comes from StyleTools' padded-row fit, not a fixed widest width.
+            SetToolCaption(cameraBtn, FlightView.Caption(viewMode));
             cameraBtn.tooltip = FlightView.Tip(viewMode);
-            float upp = lastUpp > 0.5f ? lastUpp : 1f;
-            float w = FlightView.WidestButton() * upp;
-            if (!Pinned(cameraBtn))
-            {
-                cameraBtn.style.minWidth = w;
-                cameraBtn.style.width = w;
-            }
-            FitTool(cameraBtn, upp, FlightView.ButtonFontPt);
             RefreshChips();
         }
 
@@ -610,8 +614,17 @@ namespace Kestrel.Slice
         public void FollowRocket()
         {
             if (Paused) return;
+            // A toggle (#332): following, a tap lets go to the ground camera; otherwise it recentres and chases again.
+            bool was = Following;
+            if (!was && !rig.Follow && FlightView.Chases(viewMode))
+            {
+                // Orbited off a chasing view: Follow recentres it, and that is the visible change.
+                rig = FlightCameraRig.Recenter(rig);
+                RefreshFollow();
+                return;
+            }
             rig = FlightCameraRig.Recenter(rig);
-            var next = FlightView.FollowView(viewMode);
+            var next = FlightView.FollowToggle(viewMode, was, lastChase);
             if (next != viewMode)
             {
                 Choose(next);
@@ -620,16 +633,28 @@ namespace Kestrel.Slice
             RefreshFollow();
         }
 
+        /// <summary>The last view that rides with the rocket, for Follow to come back to from Pad.</summary>
+        FlightViewMode lastChase = FlightViewMode.Auto;
+
         void RefreshFollow()
         {
             if (follow == null) return;
             bool on = Following;
-            follow.text = FlightView.FollowCaption(on);
+            SetToolCaption(follow, FlightView.FollowCaption(on));
             follow.tooltip = FlightView.FollowTip(on);
-            follow.style.backgroundColor = on
-                ? new Color(1f, 1f, 1f, 0.12f)
-                : new Color(1f, 0.69f, 0f, 0.92f);
-            follow.style.color = on ? Color.white : new Color(0.08f, 0.08f, 0.1f);
+            // #332: Following was white at 12% under white text (about 1.1:1 on a pale sky). Now the dusk ink plate,
+            // cream text and a teal edge (a state); Follow rocket stays solid amber with dark text (an action).
+            // Kestrel.Core.Tests CountdownStackTests checks both at 4.5:1 or better over every backdrop.
+            var plate = on ? CountdownStack.FollowingPlate : CountdownStack.FollowPlate;
+            var ink = on ? CountdownStack.FollowingText : CountdownStack.FollowText;
+            follow.style.backgroundColor = new Color(plate.R, plate.G, plate.B, plate.A);
+            follow.style.color = new Color(ink.R, ink.G, ink.B, ink.A);
+            float edge = on ? Mathf.Max(1f, Mathf.Round(CountdownStack.FollowEdgePt * (lastUpp > 0.5f ? lastUpp : 1f))) : 0f;
+            var teal = new Color(CountdownStack.FollowingEdge.R, CountdownStack.FollowingEdge.G, CountdownStack.FollowingEdge.B, 1f);
+            follow.style.borderTopWidth = edge; follow.style.borderBottomWidth = edge;
+            follow.style.borderLeftWidth = edge; follow.style.borderRightWidth = edge;
+            follow.style.borderTopColor = teal; follow.style.borderBottomColor = teal;
+            follow.style.borderLeftColor = teal; follow.style.borderRightColor = teal;
         }
 
         static Button Tool(string name, string text, string tip)
@@ -667,20 +692,91 @@ namespace Kestrel.Slice
         {
             if (flightHud == null) return;
             float upp = unitsPerPoint >= 0.5f ? unitsPerPoint : 1f;
-            StyleTools(flightHud.Q<Button>(UiIds.FlightFollow), flightHud.Q<Button>(UiIds.FlightCamera), flightHud.Q<Button>(UiIds.FlightPause), upp);
+            StyleTools(flightHud, flightHud.Q<Button>(UiIds.FlightFollow), flightHud.Q<Button>(UiIds.FlightCamera), flightHud.Q<Button>(UiIds.FlightPause), upp);
         }
 
-        static void StyleTools(Button follow, Button cameraBtn, Button pause, float upp)
+        /// <summary>The control row uses the short caption set (FlightHudLayout.ToolSlots could not fit the full one).</summary>
+        public const string ShortToolsClass = "kh-tools-short";
+
+        /// <summary>
+        /// The HUD's padded content box in whole panel pixels, rounded inward (left up, right down). Returns the
+        /// whole-pixel width and <paramref name="leftPx"/> its left edge; <paramref name="inL"/> / <paramref name="inR"/> are what the row adds on each side of
+        /// the padding edge to land on those pixels. NaN before the first layout pass.
+        /// </summary>
+        static float PaddedRowPx(VisualElement flightHud, out float inL, out float inR, out float leftPx)
+        {
+            inL = 0f; inR = 0f; leftPx = 0f;
+            if (flightHud == null) return float.NaN;
+            float w = flightHud.resolvedStyle.width;
+            if (float.IsNaN(w) || w < 8f) return float.NaN;
+            float pl = flightHud.resolvedStyle.paddingLeft, pr = flightHud.resolvedStyle.paddingRight;
+            if (float.IsNaN(pl)) pl = 0f;
+            if (float.IsNaN(pr)) pr = 0f;
+            float l = Mathf.Ceil(pl - 0.001f), r = Mathf.Floor(w - pr + 0.001f);
+            inL = Mathf.Max(0f, l - pl);
+            leftPx = l;
+            inR = Mathf.Max(0f, (w - pr) - r);
+            return Mathf.Max(0f, r - l);
+        }
+
+        static void StyleTools(VisualElement flightHud, Button follow, Button cameraBtn, Button pause, float upp)
         {
             float h = TouchPt * upp;
-            StyleTool(follow, upp, h, FlightHudLayout.FollowWidthPt);
-            StyleTool(cameraBtn, upp, h, FlightView.WidestButton());
-            StyleTool(pause, upp, h, FlightHudLayout.PauseWidthPt);
-            if (follow != null) follow.style.fontSize = 13f * upp;
-            FitTool(follow, upp);
-            FitTool(cameraBtn, upp, FlightView.ButtonFontPt);
-            FitTool(pause, upp);
+            var tools = follow != null ? follow.parent : null;
+            var fit = new FlightHudLayout.ToolRowFit
+            {
+                FollowW = FlightHudLayout.FollowWidthPt, CameraW = FlightView.WidestButton(), PauseW = FlightHudLayout.PauseWidthPt,
+                FontPt = FlightHudLayout.ToolFontPt,
+            };
+            if (follow != null && !Pinned(follow) && tools != null && !Pinned(tools))
+            {
+                // #332 (335x720, 24 px pads): the row was three fixed slots (112 + widest Cam + 76 pt, no shrink)
+                // plus Unity's 3 px button margins, and never looked at the safe pads, so Pause ran 13 px past the
+                // padded content edge. Now the row sits in the HUD's padded content box rounded inward to whole
+                // pixels, less the side margins, and FlightHudLayout.ToolSlots sizes the slots from that width.
+                float side = Mathf.Round(FlightHudLayout.SideMarginPt * upp);
+                float rowPx = PaddedRowPx(flightHud, out float inL, out float inR, out float leftPx);
+                tools.style.marginLeft = inL + side;
+                tools.style.marginRight = inR + side;
+                if (!float.IsNaN(rowPx))
+                {
+                    // Points in the content box, as FlightHudLayout.Place lays the portrait frame out.
+                    float pl = flightHud.resolvedStyle.paddingLeft, pr = flightHud.resolvedStyle.paddingRight;
+                    if (float.IsNaN(pl)) pl = 0f;
+                    if (float.IsNaN(pr)) pr = 0f;
+                    float panelPt = (flightHud.resolvedStyle.width - pl - pr) / upp;
+                    float leftPt = (leftPx - pl + side) / upp;
+                    fit = FlightHudLayout.ToolSlots(panelPt, leftPt, leftPt + Mathf.Max(0f, rowPx - 2f * side) / upp);
+                }
+            }
+            StyleTool(follow, upp, h, fit.FollowW);
+            StyleTool(cameraBtn, upp, h, fit.CameraW);
+            StyleTool(pause, upp, h, fit.PauseW);
+            ShortCaptions(follow, fit.Short);
+            ShortCaptions(cameraBtn, fit.Short);
+            FitTool(follow, upp, fit.FontPt);
+            FitTool(cameraBtn, upp, fit.FontPt);
+            FitTool(pause, upp, fit.FontPt);
         }
+
+        /// <summary>Show the full caption (kept in userData by SetToolCaption) or its short form.</summary>
+        static void ShortCaptions(Button b, bool shortL)
+        {
+            if (b == null) return;
+            b.EnableInClassList(ShortToolsClass, shortL);
+            string full = b.userData as string ?? b.text;
+            b.userData = full;
+            b.text = FlightView.ShortToolCaption(full, shortL);
+        }
+
+        static void SetToolCaption(Button b, string full)
+        {
+            if (b == null) return;
+            b.userData = full;
+            b.text = FlightView.ShortToolCaption(full, ShortTools(b));
+        }
+
+        static bool ShortTools(Button b) => b != null && b.ClassListContains(ShortToolsClass);
 
         /// <summary>Landscape AscentHud pins the tools to exact panel boxes; their size is not ours to change then.</summary>
         static bool Pinned(VisualElement e) =>
@@ -695,8 +791,12 @@ namespace Kestrel.Slice
                 // cannot push a point-sized min-width past the scaled box into its neighbour (1280x800 Cam/Pause).
                 b.style.minHeight = height;
                 b.style.height = height;
-                b.style.minWidth = widthPt * upp;
-                b.style.width = widthPt * upp;
+                // Whole panel pixels, rounded down: the three floors never sum past the row.
+                float w = Mathf.Floor(widthPt * upp + 0.001f);
+                b.style.minWidth = w;
+                b.style.width = w;
+                b.style.marginLeft = 0;
+                b.style.marginRight = 0;
             }
             b.style.fontSize = 16f * upp;
             float r = 12f * upp;

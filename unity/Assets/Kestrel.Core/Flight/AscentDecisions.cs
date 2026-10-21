@@ -145,6 +145,8 @@ namespace Kestrel.Core.Flight
         public double AltitudeTargetM, SpeedTargetMps, BonusMaxG;
         public bool BonusAltitude, BonusSpeed, BonusFuel, BonusClean, BonusPeakG;
         public int StrapOns;
+        /// <summary>The design's planned booster recovery ("rtls", "barge", "expendable"); null when unknown.</summary>
+        public string RecoveryMode;
         public string FlightCode = "KH-1";
     }
 
@@ -286,6 +288,7 @@ namespace Kestrel.Core.Flight
             int cores = design != null && design.stages != null ? design.stages.Count : 0;
             int straps = design != null ? design.StrapOnCount : 0;
             v.StrapOns = straps;
+            v.RecoveryMode = design != null ? design.recoveryMode : null;
             v.Stages = (cores > 0 ? cores : 1) + (straps > 0 ? 1 : 0);
             v.CanStage = v.Stages > 1;
             v.Crossfeed = straps >= 2 && design.strapOns != null && design.strapOns.crossfeed;
@@ -411,6 +414,10 @@ namespace Kestrel.Core.Flight
             public AscentGrade Grade;
             public bool Accept, Touched;
         }
+
+        /// <summary>When the fairing call resolved (sim s, m, m/s); NaN until then. The trajectory rail lights Fairing
+        /// from it (#332): the flown AscentSim emits no "fairing" event (SimOptions.fairingJettisonAltM is unset).</summary>
+        public double FairingT = double.NaN, FairingAltM = double.NaN, FairingSpeedMps = double.NaN;
 
         readonly AscentVehicle vehicle;
         readonly EventSchedule schedule;
@@ -712,6 +719,7 @@ namespace Kestrel.Core.Flight
                         schedule.SetSep(c.Stage + 1, 1);
                     break;
                 case AscentCall.Fairing:
+                    FairingT = s.T; FairingAltM = s.AltM; FairingSpeedMps = s.SpeedMps;
                     fairingFlux = AscentDecisions.HeatFlux(s.AltM, s.SpeedMps);
                     if (vehicle.MaxHeatFlux > 0 && fairingFlux >= vehicle.MaxHeatFlux) payloadDamaged = true;
                     break;
