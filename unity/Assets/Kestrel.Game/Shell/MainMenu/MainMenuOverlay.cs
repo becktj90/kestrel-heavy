@@ -1821,12 +1821,27 @@ namespace Kestrel.Game.Shell
             var design = root.Q("home-design");
             if (design != null)
             {
+                // The label gets a ceil'd line box (TextCore measures 18 for a 14.4 px face, the layout gave 17) and
+                // the caption sits HomePhoneLayout.DesignGap below it; DesignH budgets both. Side padding/margins go
+                // too, so the caption has the width DesignChromeX assumed and stays on the lines it was budgeted.
                 foreach (var cls in new[] { "kh-mm-design-label", "kh-mm-design-caption" })
                 {
                     var l = design.Q(className: cls);
-                    Zero(l, 0f);
+                    bool label = cls == "kh-mm-design-label";
                     if (l == null) continue;
-                    if (phone) l.style.marginTop = 0f; else l.style.marginTop = StyleKeyword.Null;
+                    Zero(l, label ? Mathf.Ceil(Face(l) * CardTextLine) : 0f);
+                    if (phone)
+                    {
+                        l.style.marginTop = label ? 0f : HomePhoneLayout.DesignGap;
+                        l.style.marginLeft = 0f; l.style.marginRight = 0f;
+                        l.style.paddingLeft = 0f; l.style.paddingRight = 0f;
+                    }
+                    else
+                    {
+                        l.style.marginTop = StyleKeyword.Null;
+                        l.style.marginLeft = StyleKeyword.Null; l.style.marginRight = StyleKeyword.Null;
+                        l.style.paddingLeft = StyleKeyword.Null; l.style.paddingRight = StyleKeyword.Null;
+                    }
                 }
             }
         }
