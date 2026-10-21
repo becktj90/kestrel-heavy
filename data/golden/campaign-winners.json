@@ -6,8 +6,8 @@
       "designs": [
         {
           "version": 3,
-          "id": "m1a-360",
-          "name": "m1a-360",
+          "id": "m1a-520",
+          "name": "m1a-520",
           "tier": "campaign",
           "stages": [
             {
@@ -15,7 +15,7 @@
               "propellant": "kerolox",
               "engine": "pf-kerolox",
               "engineCount": 1,
-              "propMass": 360,
+              "propMass": 520,
               "diameter": 0.8,
               "material": "steel",
               "separationMass": 40,

@@ -287,6 +287,21 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             return true;
         }
 
+        /// <summary>F3: a step chip. The current Review chip ("Launch") presses Launch; the others open their step.</summary>
+        public bool PressSegment(DesignerStep step)
+        {
+            if (!IsGuided || report == null) return false;
+            switch (StepperModel.Tap(progress, report, step))
+            {
+                case SegmentTap.Launch: return PressForward();
+                case SegmentTap.Open: return PressJump(step);
+                default: return false;
+            }
+        }
+
+        static string LaunchTip(StepperReport report)
+            => report != null && report.NeedsLaunchConfirm ? StepperLaunch.ConfirmTitle : "Launch this design.";
+
         public bool PressJump(DesignerStep target)
         {
             if (!IsGuided || report == null) return false;
@@ -527,7 +542,7 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             {
                 var step = (DesignerStep)(i + 1);
                 var def = StepperCatalog.Get(step);
-                var button = new Button(() => PressJump(step));
+                var button = new Button(() => PressSegment(step));
                 button.name = "stepper-seg-" + def.Number;
                 button.AddToClassList("stepper-seg");
                 button.style.flexGrow = 1;
@@ -573,7 +588,10 @@ namespace Kestrel.Slice.DesignerV3.Stepper
             button.AddToClassList(SegClass(mark));
             PaintSegment(button, mark);
             bool locked = mark == StepMark.Locked || mark == StepMark.Skipped;
-            button.SetEnabled(!locked && mark != StepMark.Current);
+            // F3: the current Review chip reads "Launch" and launches; it used to be disabled as "current".
+            var tap = StepperModel.Tap(progress, report, def.Step);
+            if (tap == SegmentTap.Launch) button.tooltip = LaunchTip(report);
+            button.SetEnabled(!locked && tap != SegmentTap.None);
             button.style.opacity = locked ? 0.45f : 1f;
         }
 

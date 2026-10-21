@@ -172,6 +172,26 @@ namespace Kestrel.Core.Designer.Stepper
             return false;
         }
 
+        /// <summary>
+        /// F3: what a step chip does when tapped. On the Review step its chip reads "Launch", so it launches through
+        /// <see cref="Forward"/>: the same confirm and label as the Launch button, and the designer's launch gate behind
+        /// the bridge. Any other chip opens its step when <see cref="CanJump"/> allows it. The current non-Review step,
+        /// a skipped step, a locked step and the all-parts view do nothing.
+        /// </summary>
+        public static SegmentTap Tap(StepperProgress progress, StepperReport report, DesignerStep step)
+        {
+            if (progress == null || report == null || progress.View != StepperView.Guided) return SegmentTap.None;
+            if (!StepperCatalog.TryStep((int)step, out _)) return SegmentTap.None;
+            if (report[step].Gate == StepGate.Skip) return SegmentTap.None;
+            if (step == progress.Current)
+            {
+                if (step != DesignerStep.Review) return SegmentTap.None;
+                var action = Forward(progress, report);
+                return action.Launches || action.NeedsConfirm ? SegmentTap.Launch : SegmentTap.None;
+            }
+            return CanJump(progress, report, step) ? SegmentTap.Open : SegmentTap.None;
+        }
+
         public static bool TryJump(StepperProgress progress, StepperReport report, DesignerStep target)
         {
             if (!CanJump(progress, report, target)) return false;

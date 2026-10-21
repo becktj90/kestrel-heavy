@@ -86,6 +86,13 @@ jobs:
           # left the path empty and failed the upload with "path not supplied".
           path: test-results-${{ matrix.testMode }}
           if-no-files-found: warn
+      # EditMode device tests write real UI Toolkit panel PNGs (UiCapture) to unity/CaptureOut/ui.
+      - uses: actions/upload-artifact@v4
+        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'EditMode'
+        with:
+          name: ui-captures
+          path: unity/CaptureOut/ui/*.png
+          if-no-files-found: warn
       # PlayMode = Kestrel.Capture.Tests: real scenes after 60 frames; fails on flat-colour images.
       - uses: actions/upload-artifact@v4
         if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'

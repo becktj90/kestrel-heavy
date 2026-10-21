@@ -113,7 +113,7 @@ namespace Kestrel.Core.Designer
                     key = key, qPa = sim.maxQ, altM = sim.maxQAlt, maxG = sim.maxG, flown = true,
                     lossGravity = sim.lossGravity, lossDrag = sim.lossDrag, lossSteering = sim.lossSteering,
                     minStability = sim.minStability, minCar = sim.minCar, burnoutSpeed = burnout,
-                    apoAltM = sim.orbit.apoAlt,
+                    apoAltM = MissionScore.FlownApoAltM(sim),
                     failure = sim.failure, risks = sim.risks,
                 };
         }

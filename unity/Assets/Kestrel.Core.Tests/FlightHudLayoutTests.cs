@@ -1,5 +1,6 @@
 // Portrait flight HUD: SE, Pro Max, and iPad. Nothing overlaps, the plot and the stages panel
 // stay translucent and above the stack, and the dock stays below it.
+using System;
 using System.Collections.Generic;
 using Kestrel.Core.Flight;
 using NUnit.Framework;
@@ -123,6 +124,525 @@ namespace Kestrel.Core.Tests
                 if (mode == FlightHudMode.PromptNotes)
                     Assert.That(f.Quote.Live, Is.False, where + " the call sits in the notes");
             }
+        }
+
+        // ---- Camera button and picker (CAMERA-PICKER brief) -------------------------------------------
+
+        /// <summary>Portrait: 335 narrow, 390 and 430 iPhones, iPad. Full screen with insets, and the inset-free content box AscentHud lays out.</summary>
+        static readonly FlightHudLayout.Device[] CameraPortraits =
+        {
+            new FlightHudLayout.Device("335x720", 335f, 720f, 20f, 0f, 0f, 0f),
+            new FlightHudLayout.Device("335x667", 335f, 667f, 0f, 0f, 0f, 0f),
+            new FlightHudLayout.Device("390x844", 390f, 844f, 47f, 34f, 0f, 0f),
+            new FlightHudLayout.Device("430x932", 430f, 932f, 59f, 34f, 0f, 0f),
+            new FlightHudLayout.Device("iPad 1032x1376", 1032f, 1376f, 24f, 20f, 0f, 0f),
+            new FlightHudLayout.Device("iPad 820x1180", 820f, 1180f, 24f, 20f, 0f, 0f),
+        };
+
+        /// <summary>Landscape web, as the CSS viewport AscentHud reads and as the 1280x720 panel WebPanelScale makes of it.</summary>
+        static readonly float[][] CameraWide =
+        {
+            new[] { 1280f, 720f }, new[] { 1280f, 800f }, new[] { 1366f, 768f }, new[] { 1920f, 1080f },
+        };
+
+        [Test]
+        public void WideModeFollowsThePromptAndNotes()
+        {
+            Assert.That(FlightHudLayout.WideMode(false, false), Is.EqualTo(FlightHudMode.Cruise));
+            Assert.That(FlightHudLayout.WideMode(true, false), Is.EqualTo(FlightHudMode.Prompt));
+            Assert.That(FlightHudLayout.WideMode(false, true), Is.EqualTo(FlightHudMode.Notes));
+            Assert.That(FlightHudLayout.WideMode(true, true), Is.EqualTo(FlightHudMode.PromptNotes));
+        }
+
+        /// <summary>
+        /// 1280x800 live build: the tools row was laid for the cruise dock and a prompt then grew the dock under
+        /// Follow and Pause. The prompt dock does reach the cruise row, so AscentHud re-pins on every mode change;
+        /// each mode's own frame keeps Follow, the camera, Pause and the clock clear of its dock.
+        /// </summary>
+        [Test]
+        public void EveryDockModeLiftsTheToolsRowAt1280x800()
+        {
+            {
+                const float w = 1280f, h = 800f;
+                var cruise = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, FlightHudMode.Cruise);
+                var prompt = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, FlightHudMode.Prompt);
+                Assert.That(cruise.Follow.Overlaps(prompt.Dock) || cruise.Pause.Overlaps(prompt.Dock), Is.True,
+                    "a stale cruise row would sit under the prompt dock (the live bug), so the mode change must re-pin");
+                foreach (var mode in Modes)
+                {
+                    var f = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, mode);
+                    string where = "1280x800 " + mode;
+                    foreach (var b in new[] { f.Follow, f.Camera, f.Pause })
+                    {
+                        Assert.That(b.Overlaps(f.Dock), Is.False, where + " tools row clears the dock");
+                        Assert.That(b.Overlaps(f.Clock), Is.False, where + " tools row clears T+");
+                        Assert.That(b.Bottom, Is.LessThanOrEqualTo(f.Dock.Y + 0.01f), where + " tools row sits above the dock");
+                    }
+                    Assert.That(f.Camera.Overlaps(f.Clock), Is.False, where + " T+ is not under the camera button");
+                    Assert.That(f.Camera.X, Is.GreaterThan(f.Clock.Right), where + " camera is on the far side from T+");
+                    foreach (var row in new[] { f.Primary, f.Skip, f.Assist, f.Alternate, f.NudgeDown, f.NudgeUp, f.Timer, f.Quote, f.Help })
+                        if (row.Live)
+                            foreach (var b in new[] { f.Follow, f.Camera, f.Pause })
+                                Assert.That(b.Overlaps(row), Is.False, where + " prompt rows do not cover the tools row");
+                }
+            }
+        }
+
+        [Test]
+        public void FollowCaptionsFitTheFollowButton()
+        {
+            foreach (var cap in new[] { FlightView.FollowLabel, FlightView.FollowingLabel })
+                Assert.That(FlightView.LabelWidth(cap, 13f), Is.LessThanOrEqualTo(FlightHudLayout.FollowWidthPt - 4f), cap + " (FitTool pads 2 pt a side)");
+        }
+
+        [Test]
+        public void CameraAndPickerClearTheHud_Portrait()
+        {
+            foreach (var d in CameraPortraits)
+            foreach (var mode in Modes)
+            {
+                var f = FlightHudLayout.Place(d, mode);
+                string where = d.Name + " " + mode;
+                AssertCamera(f, d.W, d.H, d.SafeTop, d.SafeBottom, d.SafeLeft, d.SafeRight, where);
+                Assert.That(f.Camera.Y, Is.EqualTo(f.Follow.Y).Within(0.01f), where + " camera rides the tools row");
+                Assert.That(f.Camera.X, Is.GreaterThan(f.Follow.Right), where + " between Follow and Pause");
+                Assert.That(f.Camera.Right, Is.LessThan(f.Pause.X), where);
+                Assert.That(f.CameraPicker.Bottom, Is.LessThanOrEqualTo(f.Camera.Y + 0.5f), where + " picker opens above the row");
+            }
+        }
+
+        [Test]
+        public void CameraAndPickerClearTheHud_LandscapeWeb()
+        {
+            foreach (var size in CameraWide)
+            foreach (var scaled in new[] { false, true })
+            foreach (var mode in Modes)
+            {
+                float w = scaled ? 1280f : size[0];
+                float h = scaled ? 1280f * size[1] / size[0] : size[1];
+                var f = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, mode);
+                string where = size[0] + "x" + size[1] + (scaled ? " panel " + w + "x" + h : " css") + " " + mode;
+                AssertCamera(f, w, h, 0f, 0f, 0f, 0f, where);
+                Assert.That(f.Camera.X > 1f || f.Camera.Y > 1f, Is.True, where + " camera is placed, not at (0,0)");
+                Assert.That(f.Camera.Y, Is.EqualTo(f.Pause.Y).Within(0.01f), where + " beside Pause on the tools row");
+                Assert.That(f.Camera.Y, Is.EqualTo(f.Follow.Y).Within(0.01f), where);
+                var col = FlightHudLayout.RocketColumn(f);
+                Assert.That(f.CameraPicker.X, Is.GreaterThanOrEqualTo(col.X - 0.5f), where + " picker opens toward the centre");
+                Assert.That(f.CameraPicker.Right, Is.LessThanOrEqualTo(f.Camera.X + 0.5f), where);
+                Assert.That(f.CameraPicker.H, Is.LessThanOrEqualTo(FlightHudLayout.ButtonPt + 2f * FlightHudLayout.PadPt + 0.5f), where + " one row of five on a wide screen");
+            }
+        }
+
+        [Test]
+        public void NarrowLandscapeRailStacksTheCameraAbovePause()
+        {
+            // 960x540: a rail too narrow for Cam and Pause side by side.
+            var f = FlightHudLayout.PlaceWide(700f, 420f, 0f, 0f, 0f, 0f, FlightHudMode.Cruise);
+            AssertCamera(f, 700f, 420f, 0f, 0f, 0f, 0f, "700x420");
+        }
+
+        /// <summary>
+        /// CI 2026-10-19, 1280x800: Cam (946..1042) ran 1 px into Pause (1041). Follow, Cam and Pause keep a real
+        /// GapPt between them at every landscape CSS width and in every mode, and still do after the CSS boxes
+        /// are scaled to the panel (WebLandscapeType.PanelScale, as the device tests make the panel) and each
+        /// edge is snapped to the pixel grid the way UI Toolkit rounds layout: no rounding seam closes the gap.
+        /// </summary>
+        [Test]
+        public void ToolsRowKeepsARealGapAtEveryLandscapeWidth()
+        {
+            WebLandscapeType.PanelReference(true, out float rw, out float rh, out float m);
+            var heights = new[] { 540f, 600f, 720f, 768f, 800f, 900f, 1080f, 1200f, 1440f };
+            var modes = new[] { FlightHudMode.Cruise, FlightHudMode.Prompt, FlightHudMode.Notes, FlightHudMode.PromptNotes };
+            int checkedRows = 0;
+            for (int w = 960; w <= 2560; w++)
+            {
+                foreach (float h in heights)
+                {
+                    if (!(w > h)) continue;
+                    float s = WebLandscapeType.PanelScale(w, h, rw, rh, m);
+                    float ux = (float)Math.Round(w / s) / w, uy = (float)Math.Round(h / s) / h;
+                    foreach (var mode in modes)
+                    {
+                        var f = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, mode);
+                        string where = w + "x" + h + " " + mode;
+                        AssertToolGap(f.Follow, f.Camera, ux, uy, where + " Follow/Cam");
+                        AssertToolGap(f.Camera, f.Pause, ux, uy, where + " Cam/Pause");
+                        AssertToolGap(f.Follow, f.Pause, ux, uy, where + " Follow/Pause");
+                        checkedRows++;
+                    }
+                }
+            }
+            Assert.That(checkedRows, Is.GreaterThan(10000));
+        }
+
+        [Test]
+        public void ToolsRowKeepsARealGapAtEveryPortraitWidth()
+        {
+            var heights = new[] { 568f, 640f, 667f, 720f, 812f, 844f, 896f, 932f };
+            for (int w = 320; w <= 440; w++)
+                foreach (float h in heights)
+                {
+                    var f = FlightHudLayout.Place(w, h, 0f, 0f, 0f, 0f, FlightHudMode.Cruise);
+                    string where = w + "x" + h;
+                    AssertToolGap(f.Follow, f.Camera, 1f, 1f, where + " Follow/Cam");
+                    AssertToolGap(f.Camera, f.Pause, 1f, 1f, where + " Cam/Pause");
+                    Assert.That(f.Camera.W, Is.GreaterThanOrEqualTo(FlightView.WidestButton() - 0.01f), where + " caption room");
+                }
+        }
+
+        /// <summary>Two tools on one row (or stacked) are at least GapPt apart in points, and at least 1 whole pixel apart after scaling and edge snapping.</summary>
+        static void AssertToolGap(HudBox a, HudBox b, float ux, float uy, string where)
+        {
+            Assert.That(a.Live && b.Live, Is.True, where + " placed");
+            bool sameRow = a.Y < b.Bottom && b.Y < a.Bottom;
+            var (lo, hi) = sameRow ? (a.X <= b.X ? (a, b) : (b, a)) : (a.Y <= b.Y ? (a, b) : (b, a));
+            float gapPt = sameRow ? hi.X - lo.Right : hi.Y - lo.Bottom;
+            Assert.That(gapPt, Is.GreaterThanOrEqualTo(FlightHudLayout.GapPt - 0.01f), where + " gap in points");
+            var pl = FlightHudLayout.ToPanel(lo, ux, uy);
+            var ph = FlightHudLayout.ToPanel(hi, ux, uy);
+            float loEdge = (float)Math.Round(sameRow ? pl.Right : pl.Bottom, MidpointRounding.AwayFromZero);
+            float hiEdge = (float)Math.Round(sameRow ? ph.X : ph.Y, MidpointRounding.AwayFromZero);
+            Assert.That(hiEdge - loEdge, Is.GreaterThanOrEqualTo(1f), where + " gap on the pixel grid (" + loEdge + " vs " + hiEdge + ")");
+        }
+
+        [Test]
+        public void ButtonAndChipCaptionsFit()
+        {
+            Assert.IsTrue(FlightView.FitsWidth(335f));
+            foreach (var mode in FlightView.Cycle)
+            {
+                string cap = FlightView.Caption(mode);
+                Assert.That(cap, Does.StartWith("Cam: "), mode.ToString());
+                Assert.That(FlightView.LabelWidth(cap, FlightView.ButtonFontPt), Is.LessThanOrEqualTo(FlightView.WidestButton() - 8f), cap);
+                Assert.That(FlightView.LabelWidth(FlightView.Name(mode), FlightView.ChipFontPt), Is.LessThanOrEqualTo(FlightView.WidestChip() - 8f), mode.ToString());
+                Assert.That(FlightView.Name(mode).Contains(" "), Is.False, "chips are one word, nothing to wrap mid-word");
+            }
+            Assert.That(FlightView.Picker, Is.EquivalentTo(FlightView.Cycle));
+            Assert.That(FlightView.Picker[0], Is.EqualTo(FlightViewMode.Auto));
+            foreach (var d in CameraPortraits)
+            {
+                var f = FlightHudLayout.Place(d, FlightHudMode.Cruise);
+                Assert.That(f.Camera.W, Is.GreaterThanOrEqualTo(FlightView.WidestButton() - 0.01f), d.Name + " caption room");
+            }
+        }
+
+        // Exhaustive picker sweeps run under dotnet only (unity/dotnet/Kestrel.Core.Tests.csproj defines
+        // KH_DOTNET_TESTS; the Unity asmdef does not). Unity's EditMode runner is ~15x slower and has a 180 s
+        // per-test timeout, so it runs a sampled grid: every size the device tests use, the edge row shifts,
+        // every inset and every scale. Both paths share one loop with no per-case NUnit asserts or string
+        // formatting: failures go into a list asserted once at the end.
+#if KH_DOTNET_TESTS
+        static readonly bool ExhaustivePickerSweep = true;
+#else
+        static readonly bool ExhaustivePickerSweep = false;
+#endif
+
+        /// <summary>Portrait sizes the device tests and fixtures use (FlightCameraPickerDeviceTests, CameraPortraits, PortraitDevices).</summary>
+        static readonly int[][] PickerPortraitSamples =
+        {
+            new[] { 320, 568 }, new[] { 335, 720 }, new[] { 375, 667 }, new[] { 390, 844 },
+            new[] { 393, 852 }, new[] { 402, 874 }, new[] { 414, 896 }, new[] { 430, 932 }, new[] { 440, 956 },
+        };
+
+        /// <summary>Landscape CSS sizes the device tests use, plus the narrow and wide ends.</summary>
+        static readonly int[][] PickerLandscapeSamples =
+        {
+            new[] { 960, 540 }, new[] { 1280, 720 }, new[] { 1280, 800 }, new[] { 1366, 768 },
+            new[] { 1440, 900 }, new[] { 1920, 1080 }, new[] { 2560, 1440 },
+        };
+
+        static readonly string[] OtherNames =
+        {
+            "Clock", "Stage", "Telemetry", "Cell0", "Cell1", "Cell2", "Cell3", "Health", "Plot", "Stages", "Dock", "Info",
+            "Medal", "Help", "Quote", "Timer", "Follow", "Pause", "Primary", "Skip", "Assist", "Alternate", "NudgeDown",
+            "NudgeUp", "Exit", "Camera",
+        };
+
+        static void FillOthers(FlightHudFrame f, HudBox[] o)
+        {
+            o[0] = f.Clock; o[1] = f.Stage; o[2] = f.Telemetry;
+            for (int i = 0; i < 4; i++) o[3 + i] = i < f.Cells.Length ? f.Cells[i] : default;
+            o[7] = f.Health; o[8] = f.Plot; o[9] = f.Stages; o[10] = f.Dock; o[11] = f.Info; o[12] = f.Medal;
+            o[13] = f.Help; o[14] = f.Quote; o[15] = f.Timer; o[16] = f.Follow; o[17] = f.Pause; o[18] = f.Primary;
+            o[19] = f.Skip; o[20] = f.Assist; o[21] = f.Alternate; o[22] = f.NudgeDown; o[23] = f.NudgeUp; o[24] = f.Exit;
+            o[25] = f.Camera;
+        }
+
+        const int MaxReported = 40;
+
+        static void Fail(List<string> fails, ref int count, string what)
+        {
+            count++;
+            if (fails.Count < MaxReported) fails.Add(what);
+        }
+
+        static void AssertNoFailures(List<string> fails, int failCount, int cases, string sweep)
+        {
+            Assert.That(cases, Is.GreaterThan(0), sweep + " ran");
+            if (failCount > 0)
+                Assert.Fail(sweep + ": " + failCount + " failure(s) in " + cases + " cases:\n  " + string.Join("\n  ", fails));
+        }
+
+        static readonly float[] PortraitShiftsAll = { -6f, -4f, -1.5f, -1f, 0f, 1f, 4f };
+        static readonly float[] PortraitShiftsEdge = { -6f, 0f, 4f };
+        static readonly float[] PanelScales = { 1f, 308f / 375f, 1.25f };
+        // Home-button phones (568/667 tall) have a 20 pt status bar; notch insets only from 812 pt up.
+        static readonly float[][] FlatInsets = { new[] { 0f, 0f, 0f, 0f }, new[] { 20f, 0f, 0f, 0f } };
+        static readonly float[][] NotchedInsets = { new[] { 0f, 0f, 0f, 0f }, new[] { 20f, 0f, 0f, 0f }, new[] { 47f, 34f, 0f, 0f }, new[] { 62f, 34f, 0f, 0f } };
+
+        /// <summary>
+        /// One portrait size: every inset, every mode, every row shift. Returns the cases checked. The flex row
+        /// lands a few points off the frame's row (tools margin vs GapPt, button margins), so the row is shifted.
+        /// </summary>
+        static int PortraitPickerCases(int w, int h, float[] shifts, HudBox[] others, List<string> fails, ref int failCount)
+        {
+            int cases = 0;
+            float chipW = FlightView.WidestChip() - 0.01f;
+            float gap = FlightHudLayout.GapPt - 0.01f;
+            var insets = h >= 812 ? NotchedInsets : FlatInsets;
+            foreach (var inset in insets)
+            foreach (var mode in Modes)
+            {
+                var f = FlightHudLayout.Place(w, h, inset[0], inset[1], inset[2], inset[3], mode);
+                // The frame's own picker: a real gap above the frame row.
+                if (!f.CameraPicker.Live || f.CameraPicker.Bottom > f.Pause.Y - gap)
+                    Fail(fails, ref failCount, w + "x" + h + " inset " + inset[0] + "/" + inset[1] + " " + mode + " frame picker " + Show(f.CameraPicker) + " vs Pause " + Show(f.Pause));
+                FillOthers(f, others);
+                var room = FlightHudLayout.PickerRoom(f);
+                var row0 = FlightHudLayout.ToolsRow(f);
+                float ceiling = f.Telemetry.Bottom + FlightHudLayout.GapPt;
+                foreach (float dy in shifts)
+                {
+                    cases++;
+                    var row = row0;
+                    row.Y += dy;
+                    var pause = Shift(f.Pause, dy);
+                    var cam = Shift(f.Camera, dy);
+                    var follow = Shift(f.Follow, dy);
+                    var p = FlightHudLayout.PickerOverRow(room, row, cam.X + cam.W * 0.5f, ceiling);
+                    string bad = null;
+                    if (!p.Live) bad = "picker not placed";
+                    else
+                    {
+                        bad = ToolClear(p, pause, gap, "Pause") ?? ToolClear(p, cam, gap, "Camera") ?? ToolClear(p, follow, gap, "Follow");
+                        for (int i = 0; bad == null && i < others.Length; i++)
+                        {
+                            // Pause, Follow and Camera are checked against the shifted (real) row above.
+                            if (i == 16 || i == 17 || i == 25) continue;
+                            if (p.Overlaps(others[i])) bad = "covers " + OtherNames[i] + " " + Show(others[i]);
+                        }
+                        if (bad == null && (p.X < inset[2] - 0.01f || p.Right > w - inset[3] + 0.01f || p.Y < inset[0] - 0.01f || p.Bottom > h - inset[1] + 0.01f))
+                            bad = "leaves the safe area";
+                        if (bad == null)
+                        {
+                            var chips = FlightHudLayout.PickerChips(p);
+                            if (chips.Length != 5) bad = chips.Length + " chips";
+                            for (int i = 0; bad == null && i < chips.Length; i++)
+                                if (chips[i].W < chipW || chips[i].H < 44f - 0.01f || chips[i].Bottom > p.Bottom + 0.01f) bad = "chip " + i + " " + Show(chips[i]);
+                        }
+                        // Panel px (FlightHudLayout.ToPanel): still clear of Pause after scaling.
+                        for (int i = 0; bad == null && i < PanelScales.Length; i++)
+                        {
+                            float u = PanelScales[i];
+                            if (FlightHudLayout.ToPanel(p, u, u).Overlaps(FlightHudLayout.ToPanel(pause, u, u))) bad = "covers Pause in panel x" + u;
+                        }
+                    }
+                    if (bad != null)
+                        Fail(fails, ref failCount, w + "x" + h + " inset " + inset[0] + "/" + inset[1] + " " + mode + " row " + dy + ": " + bad + " picker " + Show(p));
+                }
+            }
+            return cases;
+        }
+
+        static string ToolClear(HudBox p, HudBox tool, float gap, string name)
+        {
+            if (p.Overlaps(tool)) return "covers " + name + " " + Show(tool);
+            bool sameColumn = p.X < tool.Right && p.Right > tool.X;
+            if (!sameColumn) return null;
+            float g = p.Bottom <= tool.Y ? tool.Y - p.Bottom : p.Y - tool.Bottom;
+            return g < gap ? "gap " + g + " to " + name : null;
+        }
+
+        /// <summary>One landscape CSS size (and the same aspect on the 1280-wide device-test panel): every inset and mode.</summary>
+        static int LandscapePickerCases(float w, float h, HudBox[] others, List<string> fails, ref int failCount)
+        {
+            int cases = 0;
+            if (!(w > h)) return 0;
+            var insets = new[] { new[] { 0f, 0f, 0f, 0f }, new[] { 0f, 21f, 47f, 47f } };
+            foreach (var inset in insets)
+            foreach (var mode in Modes)
+            {
+                cases++;
+                var f = FlightHudLayout.PlaceWide(w, h, inset[0], inset[1], inset[2], inset[3], mode);
+                var p = f.CameraPicker;
+                string bad = null;
+                if (!p.Live) bad = "picker not placed";
+                else
+                {
+                    FillOthers(f, others);
+                    for (int i = 0; bad == null && i < others.Length; i++)
+                        if (p.Overlaps(others[i])) bad = "covers " + OtherNames[i] + " " + Show(others[i]);
+                    if (bad == null && (p.X < inset[2] - 0.01f || p.Right > w - inset[3] + 0.01f || p.Y < inset[0] - 0.01f || p.Bottom > h - inset[1] + 0.01f))
+                        bad = "leaves the safe area";
+                    float u = 1280f / w;
+                    if (bad == null && FlightHudLayout.ToPanel(p, u, u).Overlaps(FlightHudLayout.ToPanel(f.Pause, u, u)))
+                        bad = "covers Pause on the 1280 panel";
+                }
+                if (bad != null)
+                    Fail(fails, ref failCount, w + "x" + h + " inset " + inset[2] + " " + mode + ": " + bad + " picker " + Show(p));
+            }
+            return cases;
+        }
+
+        /// <summary>
+        /// CI 2026-10-21 (#304), 335x720 portrait: the open picker covered flight-pause. The frame put its bottom
+        /// one GapPt above the frame's tools row, but portrait keeps Follow / Cam / Pause in the flex flow and the
+        /// real row sat ~1 px higher. The picker seated against the real row (PickerOverRow, as
+        /// AscentHud.SeatRailPicker does) clears Pause, Cam and Follow by a whole GapPt, covers no other HUD box,
+        /// stays in the safe area, and keeps five 44 pt chips, also in panel px. dotnet: 320-440 x 568-956
+        /// (every width, heights in 4 pt steps) and seven row shifts. Unity: the device sizes, shifts -6 / 0 / +4.
+        /// </summary>
+        [Test]
+        public void OpenPickerNeverCoversPause_PortraitSweep()
+        {
+            var fails = new List<string>();
+            var others = new HudBox[OtherNames.Length];
+            int failCount = 0, cases = 0;
+            if (ExhaustivePickerSweep)
+            {
+                for (int w = 320; w <= 440; w++)
+                for (int h = 568; h <= 956; h += 4)
+                    cases += PortraitPickerCases(w, h, PortraitShiftsAll, others, fails, ref failCount);
+                Assert.That(cases, Is.GreaterThan(100000), "the exhaustive sweep ran");
+            }
+            else
+            {
+                foreach (var s in PickerPortraitSamples)
+                    cases += PortraitPickerCases(s[0], s[1], PortraitShiftsEdge, others, fails, ref failCount);
+            }
+            TestContext.WriteLine("portrait picker sweep: " + cases + " cases" + (ExhaustivePickerSweep ? " (exhaustive)" : " (sampled)"));
+            AssertNoFailures(fails, failCount, cases, "portrait picker sweep");
+        }
+
+        /// <summary>
+        /// Landscape web: the open picker sits in the rocket column, left of Cam, and never covers Pause, Cam,
+        /// Follow or any other HUD box, and stays in the safe area, in every dock mode, with and without insets.
+        /// dotnet: every 4th CSS width from 960 to 2560 at ten heights. Unity: the device-test sizes and ends.
+        /// </summary>
+        [Test]
+        public void OpenPickerNeverCoversPause_LandscapeSweep()
+        {
+            var fails = new List<string>();
+            var others = new HudBox[OtherNames.Length];
+            int failCount = 0, cases = 0;
+            if (ExhaustivePickerSweep)
+            {
+                var heights = new[] { 540f, 600f, 720f, 759f, 768f, 800f, 900f, 1080f, 1200f, 1440f };
+                for (int w = 960; w <= 2560; w += 4)
+                foreach (float h in heights)
+                    cases += LandscapePickerCases(w, h, others, fails, ref failCount);
+                Assert.That(cases, Is.GreaterThan(10000), "the exhaustive sweep ran");
+            }
+            else
+            {
+                foreach (var s in PickerLandscapeSamples)
+                {
+                    cases += LandscapePickerCases(s[0], s[1], others, fails, ref failCount);
+                    // The device tests' panel: 1280 wide at the same aspect.
+                    cases += LandscapePickerCases(1280f, 1280f * s[1] / s[0], others, fails, ref failCount);
+                }
+            }
+            TestContext.WriteLine("landscape picker sweep: " + cases + " cases" + (ExhaustivePickerSweep ? " (exhaustive)" : " (sampled)"));
+            AssertNoFailures(fails, failCount, cases, "landscape picker sweep");
+        }
+
+        /// <summary>The sampled grid (what Unity runs) also passes under dotnet, so the two paths cannot drift.</summary>
+        [Test]
+        public void OpenPickerSampledGridPasses()
+        {
+            var fails = new List<string>();
+            var others = new HudBox[OtherNames.Length];
+            int failCount = 0, cases = 0;
+            foreach (var s in PickerPortraitSamples)
+                cases += PortraitPickerCases(s[0], s[1], PortraitShiftsEdge, others, fails, ref failCount);
+            foreach (var s in PickerLandscapeSamples)
+            {
+                cases += LandscapePickerCases(s[0], s[1], others, fails, ref failCount);
+                cases += LandscapePickerCases(1280f, 1280f * s[1] / s[0], others, fails, ref failCount);
+            }
+            AssertNoFailures(fails, failCount, cases, "sampled picker grid");
+        }
+
+        [Test]
+        public void PickerOverRowOpensBelowWhenTheRoomAboveIsShort()
+        {
+            var room = new HudBox { X = 0f, Y = 0f, W = 320f, H = 300f };
+            var row = new HudBox { X = 0f, Y = 40f, W = 320f, H = 44f };
+            var p = FlightHudLayout.PickerOverRow(room, row, 160f);
+            Assert.That(p.Y, Is.GreaterThanOrEqualTo(row.Bottom + FlightHudLayout.GapPt - 0.01f), "below the row");
+            Assert.That(p.Overlaps(row), Is.False);
+            Assert.That(p.Bottom, Is.LessThanOrEqualTo(room.Bottom + 0.01f));
+        }
+
+        static HudBox Shift(HudBox b, float dy) => new HudBox { X = b.X, Y = b.Y + dy, W = b.W, H = b.H };
+
+        static string Show(HudBox b) => "(" + b.X.ToString("0.#") + "," + b.Y.ToString("0.#") + " " + b.W.ToString("0.#") + "x" + b.H.ToString("0.#") + ")";
+
+        static void AssertCamera(FlightHudFrame f, float w, float h, float st, float sb, float sl, float sr, string where)
+        {
+            Assert.That(f.Camera.Live, Is.True, where + " camera");
+            Assert.That(f.Camera.W, Is.GreaterThanOrEqualTo(44f), where + " camera target");
+            Assert.That(f.Camera.H, Is.GreaterThanOrEqualTo(44f), where + " camera target");
+            Assert.That(f.CameraPicker.Live, Is.True, where + " picker");
+            var chips = FlightHudLayout.PickerChips(f.CameraPicker);
+            Assert.That(chips.Length, Is.EqualTo(5), where);
+            for (int i = 0; i < chips.Length; i++)
+            {
+                Assert.That(chips[i].W, Is.GreaterThanOrEqualTo(FlightView.WidestChip() - 0.01f), where + " chip " + i);
+                Assert.That(chips[i].H, Is.GreaterThanOrEqualTo(44f), where + " chip " + i);
+                Assert.That(chips[i].X, Is.GreaterThanOrEqualTo(f.CameraPicker.X - 0.01f), where + " chip " + i + " inside");
+                Assert.That(chips[i].Right, Is.LessThanOrEqualTo(f.CameraPicker.Right + 0.01f), where + " chip " + i + " inside");
+                Assert.That(chips[i].Bottom, Is.LessThanOrEqualTo(f.CameraPicker.Bottom + 0.01f), where + " chip " + i + " inside");
+                for (int j = 0; j < i; j++)
+                    Assert.That(chips[i].Overlaps(chips[j]), Is.False, where + " chips " + j + "/" + i);
+            }
+            foreach (var mine in new[] { ("Camera", f.Camera), ("CameraPicker", f.CameraPicker) })
+            {
+                var b = mine.Item2;
+                Assert.That(b.X, Is.GreaterThanOrEqualTo(sl - 0.5f), where + " " + mine.Item1 + " left");
+                Assert.That(b.Right, Is.LessThanOrEqualTo(w - sr + 0.5f), where + " " + mine.Item1 + " right");
+                Assert.That(b.Y, Is.GreaterThanOrEqualTo(st - 0.5f), where + " " + mine.Item1 + " top");
+                Assert.That(b.Bottom, Is.LessThanOrEqualTo(h - sb + 0.5f), where + " " + mine.Item1 + " bottom");
+                foreach (var other in HudOthers(f))
+                    Assert.That(b.Overlaps(other.Item2), Is.False, where + " " + mine.Item1 + " covers " + other.Item1);
+            }
+            Assert.That(f.Camera.Overlaps(f.CameraPicker), Is.False, where + " picker beside its button");
+        }
+
+        static IEnumerable<(string, HudBox)> HudOthers(FlightHudFrame f)
+        {
+            yield return ("Clock", f.Clock);
+            yield return ("Stage", f.Stage);
+            yield return ("Telemetry", f.Telemetry);
+            for (int i = 0; i < f.Cells.Length; i++) yield return ("Cell" + i, f.Cells[i]);
+            yield return ("Health", f.Health);
+            yield return ("Plot", f.Plot);
+            yield return ("Stages", f.Stages);
+            yield return ("Dock", f.Dock);
+            yield return ("Info", f.Info);
+            yield return ("Medal", f.Medal);
+            yield return ("Help", f.Help);
+            yield return ("Quote", f.Quote);
+            yield return ("Timer", f.Timer);
+            yield return ("Follow", f.Follow);
+            yield return ("Pause", f.Pause);
+            yield return ("Primary", f.Primary);
+            yield return ("Skip", f.Skip);
+            yield return ("Assist", f.Assist);
+            yield return ("Alternate", f.Alternate);
+            yield return ("NudgeDown", f.NudgeDown);
+            yield return ("NudgeUp", f.NudgeUp);
+            yield return ("Exit", f.Exit);
         }
 
         static void AssertInside(FlightHudFrame f, FlightHudLayout.Device d, string where)

@@ -37,11 +37,7 @@ namespace Kestrel.Slice
         public const float EarthRadius = 6371000f;
 
         /// <summary>1 while the horizon hold is fully active, 0 once blended out (smoothstep).</summary>
-        public static float HoldWeight(float altitude)
-        {
-            float t = Mathf.Clamp01((altitude - HoldFullAlt) / (HoldEndAlt - HoldFullAlt));
-            return 1f - t * t * (3f - 2f * t);
-        }
+        public static float HoldWeight(float altitude) => (float)Kestrel.Core.Flight.FlightViewPose.HoldWeight(altitude);
 
         /// <summary>Altitude-aware offset: level with the pivot while the hold is active.</summary>
         public static Vector3 DesiredOffset(Vector3 up, float h, float altitude) =>
