@@ -26,7 +26,7 @@ namespace Kestrel.Slice.Editor
         public const string ShipVersion = "2.0.0";
         public const string TeamId = "9TR6R5LV8M";
         public const string ScenePath = "Assets/Scenes/Slice.unity";
-        static readonly string[] DataFiles = { "propellants", "engines", "materials", "payloads", "presets", "designer-limits", "designer-templates", "designer-look", "designer-budget", "finishes", "liveries", "designer-feel", "board-starters", "credits" };
+        static readonly string[] DataFiles = { "propellants", "engines", "materials", "payloads", "presets", "designer-limits", "designer-templates", "designer-look", "designer-budget", "finishes", "liveries", "designer-feel", "board-starters", "credits", "features" };
 
         static SliceBootstrap()
         {

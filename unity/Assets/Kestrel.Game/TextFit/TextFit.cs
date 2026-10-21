@@ -78,7 +78,33 @@ namespace Kestrel.Game.Shell
                 bool changed = false;
                 for (int i = 0; i < list.Count; i++)
                     if (Fit(list[i])) changed = true;
-                if (!changed) return;
+                if (!changed) break;
+            }
+            MirrorShadows(list);
+        }
+
+        /// <summary>A "-shadow" label is never fitted itself, so it takes the face of the label it shadows (same name
+        /// without "-shadow", same parent). Home's real capture drew the brown KESTREL shadow at the design size behind
+        /// a fitted gold wordmark, spilling past the title and under the guide pop.</summary>
+        static void MirrorShadows(List<TextElement> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                var shadow = list[i];
+                if (!Shadow(shadow) || shadow.parent == null) continue;
+                string baseName = shadow.name.Substring(0, shadow.name.Length - "-shadow".Length);
+                TextElement face = null;
+                foreach (var sibling in shadow.parent.Children())
+                    if (sibling is TextElement t && t.name == baseName) { face = t; break; }
+                if (face == null) continue;
+                var size = face.style.fontSize;
+                if (size.keyword == StyleKeyword.Undefined && !shadow.style.fontSize.Equals(size)) shadow.style.fontSize = size;
+                var track = face.style.letterSpacing;
+                if (track.keyword == StyleKeyword.Undefined && !shadow.style.letterSpacing.Equals(track)) shadow.style.letterSpacing = track;
+                var max = face.style.maxWidth;
+                if (!shadow.style.maxWidth.Equals(max)) shadow.style.maxWidth = max;
+                var ws = face.style.whiteSpace;
+                if (!shadow.style.whiteSpace.Equals(ws)) shadow.style.whiteSpace = ws;
             }
         }
 

@@ -3,6 +3,7 @@
 using System;
 using Kestrel.Core;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Ui;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,12 +11,8 @@ namespace Kestrel.Slice
 {
     public static class ReportView
     {
-        /// <summary>
-        /// The report root: the nav harness screen id "screen-report" (was "post-flight"; that USS class stays on it).
-        /// A literal on purpose: UiIds.ScreenReport is declared by #300's UiIds.cs, and a second declaration in
-        /// UiIds.Report.cs would not compile once #300 lands. Switch to UiIds.ScreenReport after #300 merges.
-        /// </summary>
-        public const string RootName = "screen-report";
+        /// <summary>The report root: the nav harness screen id UiIds.ScreenReport (was "post-flight"; that USS class stays on it).</summary>
+        public const string RootName = UiIds.ScreenReport;
         public static readonly Color PanelInk = ReportCardChrome.Ink;
 
         static readonly string[] ChannelLabels = { "Altitude", "Speed", "Dynamic pressure", "g load", "Delta-v losses" };

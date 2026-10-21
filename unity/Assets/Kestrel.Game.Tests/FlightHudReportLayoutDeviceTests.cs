@@ -262,7 +262,7 @@ namespace Kestrel.Game.Tests
                     Designer = () => designer++,
                 });
                 string at = size.Name + " report";
-                Assert.That(card.name, Is.EqualTo("screen-report"), at);
+                Assert.That(card.name, Is.EqualTo(UiIds.ScreenReport), at);
                 Assert.That(card.ClassListContains("post-flight"), Is.True, at + " keeps the USS class");
                 var stage = surface.Stage.worldBound;
                 float unit = stage.width / size.PanelW;

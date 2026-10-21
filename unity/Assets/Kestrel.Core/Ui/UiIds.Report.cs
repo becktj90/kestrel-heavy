@@ -1,8 +1,7 @@
 // Nav-harness ids for the post-flight report. Same convention as UiIds.Flight.cs: controls are
 // <screen>-<control>[-<option>], kebab-case, set as the UI Toolkit element name.
 // Not repeated here (one declaration per constant across the UiIds partials):
-// - the screen root "screen-report" is UiIds.ScreenReport in UiIds.cs (#300). Until #300 lands, ReportView.RootName
-//   carries the same literal;
+// - the screen root "screen-report" is UiIds.ScreenReport in UiIds.cs (#300); ReportView.RootName uses it;
 // - the engine-out prompt buttons are UiIds.FlightPrimary / FlightAlternate and the pause menu is UiIds.Pause*
 //   (UiIds.Flight.cs).
 namespace Kestrel.Core.Ui
