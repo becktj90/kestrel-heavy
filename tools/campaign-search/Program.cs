@@ -813,7 +813,7 @@ namespace CampaignSearch
                 Row("m9", "fly", 0),
                 Row("m10", "fly", 0),
                 Row("m11", "fly", 1.85),
-                Row("m12", "strength", 1.55),
+                Row("m12", "strength", 1.55, 32000),
                 Row("m13", "fly", 1.6),
                 Row("m14", "strength", 1.35),
                 Row("m15", "fly", 0),
@@ -832,6 +832,7 @@ namespace CampaignSearch
                 var winner = winners[row.Id];
                 var starter = winner.Clone();
                 if (row.Sf > 0) starter.safetyFactor = row.Sf;
+                if (row.TopPropKg > 0) starter.stages[starter.stages.Count - 1].propMass = row.TopPropKg;
                 bool raw = FlightBatch.Fly(Catalog, mission, starter, Campaign.Seeds[0]).passed;
                 string edit;
                 if (row.Mode == "fix")
@@ -897,9 +898,14 @@ namespace CampaignSearch
             public string Id;
             public string Mode;
             public double Sf;
+            /// <summary>Top-stage propellant for the starter, kg. 0 keeps the winner's load.</summary>
+            public double TopPropKg;
         }
 
-        static StarterRow Row(string id, string mode, double sf) => new StarterRow { Id = id, Mode = mode, Sf = sf };
+        // KH-12's top stage is 32,000 kg, not the winner's 40,000 kg: the starter still misses high on every seed,
+        // and every whole step from +4% to +21% top-stage fuel lands the 600 km circle on seeds 1 to 5
+        // (MissReasonTests.KhTwelveLandsOnAWideFuelWindow). At 40,000 kg only +9% and +10% landed.
+        static StarterRow Row(string id, string mode, double sf, double topPropKg = 0) => new StarterRow { Id = id, Mode = mode, Sf = sf, TopPropKg = topPropKg };
 
         static bool TryFix(CampaignMission mission, Design starter, out Design fixedDesign, out string note)
         {
