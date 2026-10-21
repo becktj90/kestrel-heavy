@@ -269,7 +269,21 @@ namespace Kestrel.Slice
 
         void Pointer(Vector2 pos, bool began, bool ended)
         {
-            if (began && PickerOpen && !OverPickerOrButton(pos))
+            // pos is a legacy Input position (bottom-left origin); hit tests need the panel point (PanelInput).
+            var at = began && hud != null && hud.panel != null ? Kestrel.Game.Shell.PanelInput.ToPanel(hud.panel, pos) : Vector2.zero;
+            PointerAt(at, pos, began, ended);
+        }
+
+        /// <summary>
+        /// One pointer sample: <paramref name="panelPoint"/> is where it lands on the HUD's panel (used on the down
+        /// sample for hit tests), <paramref name="screen"/> the raw position the orbit measures drags in. The device
+        /// tests drive taps through here with real panel points, the way TickInput does.
+        /// </summary>
+        public void PointerAt(Vector2 panelPoint, Vector2 screen, bool began, bool ended)
+        {
+            if (Paused || hud == null) return;
+            var pos = screen;
+            if (began && PickerOpen && !OverPickerOrButton(panelPoint))
             {
                 // A tap outside closes the picker with no change, and does not start an orbit drag.
                 ClosePicker();
@@ -279,7 +293,7 @@ namespace Kestrel.Slice
             }
             if (began)
             {
-                blockGesture = OverControl(pos);
+                blockGesture = OverControl(panelPoint);
                 tracking = !blockGesture;
                 if (tracking) rig = FlightCameraRig.Begin(rig, pos);
             }
@@ -303,19 +317,19 @@ namespace Kestrel.Slice
             RefreshFollow();
         }
 
-        bool OverControl(Vector2 screen)
+        bool OverControl(Vector2 panelPoint)
         {
             if (hud.panel == null) return false;
-            var hit = hud.panel.Pick(RuntimePanelUtils.ScreenToPanel(hud.panel, screen));
+            var hit = hud.panel.Pick(panelPoint);
             for (var ve = hit; ve != null; ve = ve.parent)
                 if (ve is Button) return true;
             return false;
         }
 
-        bool OverPickerOrButton(Vector2 screen)
+        bool OverPickerOrButton(Vector2 panelPoint)
         {
             if (hud.panel == null) return false;
-            var hit = hud.panel.Pick(RuntimePanelUtils.ScreenToPanel(hud.panel, screen));
+            var hit = hud.panel.Pick(panelPoint);
             for (var ve = hit; ve != null; ve = ve.parent)
                 if (ve == picker || ve == cameraBtn) return true;
             return false;
@@ -383,9 +397,11 @@ namespace Kestrel.Slice
         public void OpenPicker()
         {
             if (picker == null || Paused) return;
-            HideToast();
             RefreshChips();
+            // Shown first, then the toast slot refreshed: RefreshNote hides the Pad range note only while the
+            // picker is open, and the note sits on the picker's bottom row (it covered the chips there).
             picker.style.display = DisplayStyle.Flex;
+            HideToast();
             Restack(hud);
             Kestrel.Game.Shell.TextFit.Apply(picker);
         }
@@ -605,7 +621,7 @@ namespace Kestrel.Slice
         }
 
         /// <summary>The camera is chasing the rocket (no orbit, not the fixed Pad view).</summary>
-        public bool Following => FlightView.Following(rig.Follow, viewMode);
+        public bool Following => FlightView.Following(!FlightCameraRig.Orbited(rig), viewMode);
 
         /// <summary>
         /// Follow: clear the manual orbit (the camera glides back, see SliceApp) and, from the fixed Pad view,
@@ -616,7 +632,7 @@ namespace Kestrel.Slice
             if (Paused) return;
             // A toggle (#332): following, a tap lets go to the ground camera; otherwise it recentres and chases again.
             bool was = Following;
-            if (!was && !rig.Follow && FlightView.Chases(viewMode))
+            if (!was && FlightCameraRig.Orbited(rig) && FlightView.Chases(viewMode))
             {
                 // Orbited off a chasing view: Follow recentres it, and that is the visible change.
                 rig = FlightCameraRig.Recenter(rig);

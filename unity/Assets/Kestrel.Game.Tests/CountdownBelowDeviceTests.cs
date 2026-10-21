@@ -9,6 +9,7 @@
 //   - every umbilical's pad end is on structure (UmbilicalRig.StructureGap <= 0.6 m, PadGenerator.RailSkinGap);
 //   - the pad renderer and the umbilical visuals are enabled and drew for the Below camera (PadRenderer.Ledger,
 //     LodPolicy cull distance), and each anchor and its structure member are inside the Below camera's frustum.
+// and #348's Below framing on the Unity camera (Framing) and no black sky wedge in the render (BlackSky).
 // PNGs: countdown-below-<size>.png (rail pad) via UiCapture -> CaptureOut/ui, CI artifact "ui-captures".
 using System;
 using System.Collections.Generic;
@@ -74,6 +75,9 @@ namespace Kestrel.Game.Tests
                 var tower = Scene(48f, 1.6f, PadArchetype.Tower, size, problems);
                 Umbilicals(rail, size.Name + " rail", problems);
                 Umbilicals(tower, size.Name + " tower", problems);
+                Framing(rail, size.Name + " rail", problems);
+                Framing(tower, size.Name + " tower", problems);
+                BlackSky(rail, size.Name + " rail", problems);
                 using (var surface = DeviceSurface.OpenOffscreen(size.PanelW, size.PanelH, 2f))
                 {
                     surface.Stage.style.backgroundColor = new Color(0.62f, 0.74f, 0.88f, 1f);
@@ -83,6 +87,9 @@ namespace Kestrel.Game.Tests
                     var png = UiCapture.Save(surface.Texture, "countdown-below-" + size.Name);
                     if (png != null) Assert.That(System.IO.File.Exists(png), Is.True, size.Name + " capture written");
                     SpareRow(hud, cast, pulse, fit, size.Name, problems);
+                    var tag = hud.Q<Label>("h-stage");
+                    if (Shown(tag) && tag.parent != null && !Inside(tag.worldBound, tag.parent.worldBound))
+                        problems.Add(size.Name + ": the COUNT tag " + tag.worldBound + " leaves its row " + tag.parent.worldBound);
                 }
             }
             Assert.That(problems, Is.Empty, string.Join("\n", problems));
@@ -190,7 +197,8 @@ namespace Kestrel.Game.Tests
 
         sealed class PadScene
         {
-            public PadRenderer Pad; public Camera Cam; public RenderTexture Rt; public float Height;
+            public PadRenderer Pad; public Camera Cam; public RenderTexture Rt; public float Height, Radius;
+            public PoseObstacle[] Obstacles;
         }
 
         /// <summary>A generated pad (PadTower.Apply, as SliceApp.BuildRocket), a stand-in vehicle and the deck
@@ -241,12 +249,15 @@ namespace Kestrel.Game.Tests
                 BaseFovDeg = FlightJuice.BaseFov,
                 PadYawDeg = pad != null ? pad.transform.eulerAngles.y : 0f,
                 DeckRadius = deckR,
+                Radius = r, Aspect = cam.aspect,
+                Obstacles = pad != null ? SliceApp.PadSightObstacles(pad.Layout, pad.transform.localToWorldMatrix) : null,
             });
             cam.fieldOfView = (float)pose.Fov;
             cam.transform.position = PadGround.ClampAboveGround(U(pose.Position), PadGround.GroundY, (float)pose.Clearance);
             cam.transform.LookAt(U(pose.LookAt), Vector3.up);
 
-            var scene = new PadScene { Pad = pad, Cam = cam, Height = h };
+            var scene = new PadScene { Pad = pad, Cam = cam, Height = h, Radius = r,
+                Obstacles = pad != null ? SliceApp.PadSightObstacles(pad.Layout, pad.transform.localToWorldMatrix) : null };
             if (pad == null || pad.Layout == null) { problems.Add(size.Name + " " + type + ": PadTower.Apply built no pad"); return scene; }
             pad.ViewCamera = cam;
             // EditMode has no player loop: run the renderer's frame (matrices, umbilical sync, cull + draw, Ledger).
@@ -264,6 +275,80 @@ namespace Kestrel.Game.Tests
                 else Debug.LogWarning("countdown-below: the pipeline takes no render request; the capture has the sky only");
             }
             return scene;
+        }
+
+        /// <summary>#348's Below spec on the Unity camera itself: standing on the deck (0.6-1.5 m over its top), pitched
+        /// up >= 15 deg, the whole stack inside the viewport with >= 3% margin and >= 35% of its height, no near-plane
+        /// clip into pad structure, and >= 80% of the stack in clear sight past it.</summary>
+        static void Framing(PadScene s, string name, List<string> problems)
+        {
+            var cam = s.Cam;
+            if (cam == null) return;
+            var p = cam.transform.position;
+            if (p.y < BelowFraming.EyeMin - 0.01f || p.y > BelowFraming.EyeMax + 0.01f)
+                problems.Add(name + ": Below camera " + p.y.ToString("0.00") + " m over the deck top (want " + BelowFraming.EyeMin + "-" + BelowFraming.EyeMax + ")");
+            float pitch = Mathf.Asin(Mathf.Clamp(cam.transform.forward.y, -1f, 1f)) * Mathf.Rad2Deg;
+            if (pitch < 15f) problems.Add(name + ": Below pitch " + pitch.ToString("0.0") + " deg (want >= 15)");
+            float x0 = 1f, x1 = 0f, y0 = 1f, y1 = 0f;
+            for (int i = 0; i <= 8; i++)
+            for (int k = 0; k < 24; k++)
+            {
+                float a = k * Mathf.PI * 2f / 24f;
+                var w = new Vector3(Mathf.Cos(a) * s.Radius, s.Height * i / 8f, Mathf.Sin(a) * s.Radius);
+                var v = cam.WorldToViewportPoint(w);
+                if (v.z <= cam.nearClipPlane) { problems.Add(name + ": stack point " + w + " is behind the near plane"); return; }
+                x0 = Mathf.Min(x0, v.x); x1 = Mathf.Max(x1, v.x); y0 = Mathf.Min(y0, v.y); y1 = Mathf.Max(y1, v.y);
+            }
+            if (x0 < 0.03f || x1 > 0.97f || y0 < 0.03f || y1 > 0.97f)
+                problems.Add(name + ": stack spans viewport x " + x0.ToString("0.000") + "-" + x1.ToString("0.000") + " y " + y0.ToString("0.000") + "-" + y1.ToString("0.000") + " (3% margin)");
+            if (y1 - y0 < 0.35f) problems.Add(name + ": stack fills " + (y1 - y0).ToString("0.00") + " of the height (want >= 0.35)");
+            var eye = new PoseVec(p.x, p.y, p.z);
+            double reach = BelowFraming.NearReach(cam.fieldOfView, cam.aspect);
+            if (s.Obstacles != null && BelowFraming.Clearance(eye, s.Obstacles) <= reach)
+                problems.Add(name + ": pad structure is inside near-plane reach of the Below camera");
+            double seen = s.Obstacles != null ? BelowFraming.Visibility(eye, new PoseVec(0, 0, 0), s.Height, s.Radius, s.Obstacles, out string blocker) : 1;
+            if (seen < 0.8) problems.Add(name + ": only " + seen.ToString("0.00") + " of the stack is in clear sight");
+        }
+
+        /// <summary>The black wedge (#348): pure-black pixels in the top 40% of the Below render, on rays that miss the
+        /// stack and every pad member (open sky; light poles are skipped too, they are thin and lit). KH_Sky now falls back to the perspective-correct ray instead of discarding.</summary>
+        void BlackSky(PadScene s, string name, List<string> problems)
+        {
+            if (s.Rt == null) return;
+            var prev = RenderTexture.active;
+            var tex = new Texture2D(s.Rt.width, s.Rt.height, TextureFormat.RGBA32, false);
+            made.Add(tex);
+            RenderTexture.active = s.Rt;
+            tex.ReadPixels(new Rect(0, 0, s.Rt.width, s.Rt.height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            var px = tex.GetPixels32();
+            int w = s.Rt.width, h = s.Rt.height, black = 0, total = 0, lit = 0;
+            var cam = s.Cam;
+            var eye = cam.transform.position;
+            var e = new PoseVec(eye.x, eye.y, eye.z);
+            // Sampled every 6 px; a ray that passes the stack or any pad member is not sky, so only open-sky rays count.
+            for (int y = (int)(h * 0.6f); y < h; y += 6)
+            for (int x = 0; x < w; x += 6)
+            {
+                var c = px[y * w + x];
+                if (c.r >= 4 || c.g >= 4 || c.b >= 4) lit++;
+                var ray = cam.ViewportPointToRay(new Vector3((x + 0.5f) / w, (y + 0.5f) / h, 0f));
+                var far = eye + ray.direction * 4000f;
+                var f = new PoseVec(far.x, far.y, far.z);
+                if (BelowFraming.SegmentSegment(e, f, new PoseVec(0, 0, 0), new PoseVec(0, s.Height, 0)) < s.Radius + 0.5) continue;
+                bool hit = false;
+                if (s.Obstacles != null)
+                    foreach (var o in s.Obstacles)
+                        if (BelowFraming.SegmentSegment(e, f, o.A, o.B) < o.Radius + 0.5) { hit = true; break; }
+                if (hit) continue;
+                total++;
+                if (c.r < 4 && c.g < 4 && c.b < 4) black++;
+            }
+            // A pipeline that drew nothing leaves the whole target black; that is the "sky only" warning, not a wedge.
+            if (lit == 0) return;
+            float frac = total > 0 ? black / (float)total : 0f;
+            if (frac > 0.005f) problems.Add(name + ": " + (frac * 100f).ToString("0.0") + "% of the top 40% of the Below render is pure black (sky hole)");
         }
 
         static void Umbilicals(PadScene s, string name, List<string> problems)

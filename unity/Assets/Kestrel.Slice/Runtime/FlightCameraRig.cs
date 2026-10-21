@@ -24,6 +24,19 @@ namespace Kestrel.Slice
         public const float SlopPx = 14f;
         public const float YawPerPx = 0.18f;
         public const float PitchPerPx = 0.14f;
+        /// <summary>Smallest orbit that reads on screen (deg of yaw or pitch, or zoom off 1 by this much). Below it
+        /// the camera is still following: a drag just past the slop no longer leaves "Follow rocket" up with a
+        /// Follow tap that changes nothing visible (#348, t463 T+16).</summary>
+        public const float VisibleDeg = 6f;
+        public const float VisibleZoom = 0.08f;
+
+        /// <summary>The manual orbit moves the view visibly off the chase.</summary>
+        public static bool Orbited(FlightRig rig)
+        {
+            if (rig.Follow) return false;
+            float zoom = rig.Zoom > 0f ? rig.Zoom : 1f;
+            return Mathf.Abs(rig.Yaw) >= VisibleDeg || Mathf.Abs(rig.Pitch) >= VisibleDeg || Mathf.Abs(zoom - 1f) >= VisibleZoom;
+        }
 
         public static FlightRig Following() => new FlightRig { Follow = true, Zoom = 1f };
 
@@ -53,7 +66,8 @@ namespace Kestrel.Slice
             rig = Drag(rig, pos);
             bool tap = !rig.Moved;
             rig.Active = false;
-            return tap ? Recenter(rig) : rig;
+            // A tap, or a drag too small to read, hands the view back (SliceApp eases the orbit out, no cut).
+            return tap || !Orbited(rig) ? Recenter(rig) : rig;
         }
 
         public static FlightRig Pinch(FlightRig rig, float scale)

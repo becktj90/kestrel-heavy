@@ -744,7 +744,7 @@ namespace Kestrel.Slice
             }
             flight.Plume.AttachGroundCloud(tower, deckR, PadTower.Fit(r.height, rr).height);
             PadDetailLink.Apply(flight.Plume, tower, ground, deck, padR != null ? padR.Layout : null);
-            rocketHeight = r.height; frameHeight = r.height;
+            rocketHeight = r.height; frameHeight = r.height; rocketRadius = rr; padSight = null;
             if (hangarCam != null)
             {
                 hangarCam.SetVehicle(frameHeight, framePoints);
@@ -868,7 +868,7 @@ namespace Kestrel.Slice
             float fov = juiceFov * (viewZoom > 0f ? viewZoom : 1f);
             cam.fieldOfView = fov;
             Vector3 lead = fx != null ? fx.Lead : Vector3.zero;
-            // The floor comes with the pose: 3 m, or the Below pad hold's low floor (it looks up from under the deck top).
+            // The floor comes with the pose: 3 m, or the Below pad hold's low floor (it stands on the deck, 0.6-1.5 m over its top, BelowFraming).
             float clearance = (float)pose.Clearance;
             cam.transform.position = PadGround.ClampAboveGround(v + framed + lead, ground.position.y, clearance);
             var cp = cam.transform.position;
@@ -915,7 +915,43 @@ namespace Kestrel.Slice
                 // The trench bearing and the Below hold's side are in the pad frame (+Z at the tower).
                 PadYawDeg = padRenderer != null ? padRenderer.transform.eulerAngles.y : 0f,
                 DeckRadius = deck != null ? deck.localScale.x * 0.5f : 0f,
+                // The Below hold (BelowFraming): stack width, the screen's shape and the pad structure it must clear.
+                Radius = rocketRadius,
+                Aspect = cam != null ? cam.aspect : 0f,
+                Obstacles = flightView == FlightViewMode.Below ? PadSight(padRenderer) : null,
             });
+        }
+
+        float rocketRadius;
+        PoseObstacle[] padSight;
+        Matrix4x4 padSightFor;
+        Kestrel.Pad.PadLayout padSightLayout;
+
+        /// <summary>Pad members as world-space capsules (PadSightlines), rebuilt only when the pad or its world
+        /// placement changes (floating-origin rebase), so the Below hold is a fixed point on the pad.</summary>
+        PoseObstacle[] PadSight(Kestrel.Pad.PadRenderer pad)
+        {
+            if (pad == null || pad.Layout == null) return null;
+            var m = pad.transform.localToWorldMatrix;
+            if (padSight != null && padSightLayout == pad.Layout && m == padSightFor) return padSight;
+            padSight = PadSightObstacles(pad.Layout, m); padSightFor = m; padSightLayout = pad.Layout;
+            return padSight;
+        }
+
+        /// <summary>A pad layout's members and link masts as world capsules for the Below hold (CountdownBelowDeviceTests
+        /// feeds its camera through this too).</summary>
+        public static PoseObstacle[] PadSightObstacles(Kestrel.Pad.PadLayout layout, Matrix4x4 padToWorld)
+        {
+            if (layout == null) return null;
+            var caps = Kestrel.Pad.PadSightlines.Capsules(layout);
+            var list = new PoseObstacle[caps.Count];
+            for (int i = 0; i < caps.Count; i++)
+            {
+                var c = caps[i];
+                list[i] = new PoseObstacle(V(padToWorld.MultiplyPoint3x4(new Vector3(c.A.X, c.A.Y, c.A.Z))),
+                    V(padToWorld.MultiplyPoint3x4(new Vector3(c.B.X, c.B.Y, c.B.Z))), c.Radius, c.Id);
+            }
+            return list;
         }
 
         Kestrel.Pad.PadRenderer trenchPad;
@@ -1379,6 +1415,10 @@ namespace Kestrel.Slice
         public FlightViewMode ViewForCapture => flightView;
         public Camera CameraForCapture => cam;
         public Transform VehicleForCapture => vehicleRoot;
+        /// <summary>The stack the flight camera frames (height along the vehicle's up from its root, widest radius).</summary>
+        public float VehicleHeightForCapture => rocketHeight;
+        public float VehicleRadiusForCapture => rocketRadius;
+        public float DeckTopForCapture => deckTop != null ? deckTop.position.y : (ground != null ? ground.position.y : 0f);
         public Kestrel.Pad.PadRenderer PadForCapture => trenchPad;
         public VisualElement UiForCapture => ui;
         public double FlightClockForCapture => flight != null && flight.Sim != null ? flight.Sim.T : double.NaN;

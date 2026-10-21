@@ -45,8 +45,8 @@ namespace Kestrel.Slice
         /// <summary>Keep the camera above the ground plane (world y of the ground = groundWorldY).</summary>
         public static Vector3 ClampAboveGround(Vector3 cam, float groundWorldY) => ClampAboveGround(cam, groundWorldY, MinCameraClearance);
 
-        /// <summary>Same with the pose's own floor (FlightPose.Clearance): the Below pad hold sits LowClearance
-        /// over the ground anchor, under the deck top, still above the apron (Coastline.Relief keeps it under GroundY).</summary>
+        /// <summary>Same with the pose's own floor (FlightPose.Clearance): the Below pad hold may go as low as LowClearance
+        /// over the ground anchor (it stands on the deck, or past the plinth on the apron; Coastline.Relief keeps that under GroundY).</summary>
         public static Vector3 ClampAboveGround(Vector3 cam, float groundWorldY, float clearance)
         {
             float c = Mathf.Max(LowCameraClearance, clearance);
