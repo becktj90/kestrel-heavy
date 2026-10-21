@@ -50,15 +50,12 @@ namespace Kestrel.Core.Tests
         // reason names both. KH-8 now flies in the band and misses on reliability. KH-5 and KH-14 now pass (board rows
         // "fly"), so they moved to PassingStarterHasNoReason. KH-12's board starter is now a fly row at a 4.5° kick (Physics,
         // #313 on #324's 32,000 kg top stage); its 6° build keeps the exact steep text in KH12_SixDegreeBuild_MissSaysWhyAndWhatToChange.
-        [TestCase("m3", "fpa-flat",
-            "Missed the 200 km circle: the orbit flew 72.3 km × 328 km, and the high point needs 190 km to 210 km. The low point, 72.3 km, needs 190 km to 210 km. The engines cut off while it was already diving, 1.1° down.",
-            "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).")]
+        // Calm-air retune: KH-6's board design is now strength 1.65 and passes (PassingStarterHasNoReason); its 1.35 build
+        // keeps the exact apo-high text in KH6_RawBuild_MissSaysWhyAndWhatToChange. KH-3's board design is now an 8.65° kick
+        // (Physics, option b) and passes; its 8° build keeps the exact too-flat text in KH3_RawBuild_MissSaysWhyAndWhatToChange.
         [TestCase("m4", "fpa-flat",
             "Missed the 500 km circle: the orbit flew 382 km × 618 km, and the high point needs 475 km to 525 km. The low point, 382 km, needs 475 km to 525 km. The engines cut off while it was already diving, 1.0° down.",
             "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).")]
-        [TestCase("m6", "apo-high",
-            "Missed the 200 km circle: the orbit flew 188 km × 212 km, and the high point needs 190 km to 210 km. That is about 4 m/s too fast at the low point. The low point, 188 km, needs 190 km to 210 km.",
-            "Add fuel to stage 3, about 2% at a time (up to 10%), until the high point comes down into the band.")]
         [TestCase("m8", "reliability",
             "Reliability was 95.1%; this mission needs 98%.",
             "Raise the safety factor to 1.5 or more for the reliability bonus, or pick redundant avionics.")]
@@ -80,7 +77,9 @@ namespace Kestrel.Core.Tests
 
         [TestCase("m1")]
         [TestCase("m2")]
+        [TestCase("m3")]
         [TestCase("m5")]
+        [TestCase("m6")]
         [TestCase("m7")]
         [TestCase("m11")]
         [TestCase("m12")]
@@ -93,6 +92,75 @@ namespace Kestrel.Core.Tests
             var x = Fly(m, Starter(m), out var flight);
             Assert.IsTrue(flight.passed, id + " passes");
             Assert.IsNull(x);
+        }
+
+        /// <summary>KH-6's auto-built rocket before the calm-air retune (strength 1.35) still misses high and says so; the board
+        /// starter is now strength 1.65 and passes (PassingStarterHasNoReason).</summary>
+        [Test]
+        public void KH6_RawBuild_MissSaysWhyAndWhatToChange()
+        {
+            var m = Mission("m6");
+            var x = Fly(m, Kh6RawBuild(m), out var flight);
+            Assert.IsNull(flight.failure, "m6 flies intact");
+            Assert.IsFalse(flight.passed, "m6 raw build misses");
+            Assert.IsNotNull(x, "m6 raw build has a reason");
+            Assert.AreEqual("apo-high", x.Code);
+            Assert.AreEqual("Missed the 200 km circle: the orbit flew 188 km × 212 km, and the high point needs 190 km to 210 km. That is about 4 m/s too fast at the low point. The low point, 188 km, needs 190 km to 210 km.", x.Reason);
+            Assert.AreEqual("Add fuel to stage 3, about 2% at a time (up to 10%), until the high point comes down into the band.", x.Advice);
+            Assert.AreEqual(x.Reason + " " + x.Advice, x.Line);
+        }
+
+        Design Kh6RawBuild(CampaignMission m)
+        {
+            var d = Starter(m);
+            d.safetyFactor = 1.35;
+            return d;
+        }
+
+        /// <summary>KH-3's auto-built rocket before the calm-air retune (8° kick, strength 1.45) still misses too flat and says
+        /// so; the board starter is now an 8.65° kick and passes (PassingStarterHasNoReason, KH3_BoardKick_LandsEverySeedAndTheLivePadInCalmAir).</summary>
+        [Test]
+        public void KH3_RawBuild_MissSaysWhyAndWhatToChange()
+        {
+            var m = Mission("m3");
+            var x = Fly(m, Kh3RawBuild(m), out var flight);
+            Assert.IsNull(flight.failure, "m3 flies intact");
+            Assert.IsFalse(flight.passed, "m3 raw build misses");
+            Assert.IsNotNull(x, "m3 raw build has a reason");
+            Assert.AreEqual("fpa-flat", x.Code);
+            Assert.AreEqual("Missed the 200 km circle: the orbit flew 72.3 km × 328 km, and the high point needs 190 km to 210 km. The low point, 72.3 km, needs 190 km to 210 km. The engines cut off while it was already diving, 1.1° down.", x.Reason);
+            Assert.AreEqual("Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).", x.Advice);
+            Assert.AreEqual(x.Reason + " " + x.Advice, x.Line);
+        }
+
+        /// <summary>Calm-air retune (Physics, option b): KH-3's board starter flies an 8.65° kick at strength 1.45, the centre
+        /// of the calm-robust 8.5°–8.8° window. It lands every batch seed and the live pad in calm air. Live seed-1 wind is
+        /// not asserted here: the kick's neighbours flip in and out of the band there (#338, #341).</summary>
+        [Test]
+        public void KH3_BoardKick_LandsEverySeedAndTheLivePadInCalmAir()
+        {
+            var m = Mission("m3");
+            var board = Starter(m);
+            Assert.AreEqual(8.65, board.guidance.pitchKickDeg, 1e-9, "board starter kick");
+            Assert.AreEqual(1.45, board.safetyFactor, 1e-9, "board starter strength");
+            AssertEverySeed(m, board, "kick 8.65°");
+            var calm = LivePadLoop.Fly(catalog, m, board, false);
+            Assert.IsTrue(LivePadLoop.InBand(m, calm), "8.65° live calm " + LivePadLoop.Text(calm));
+            foreach (double k in new[] { 8.5, 8.8 })
+            {
+                var d = Starter(m);
+                d.guidance.pitchKickDeg = k;
+                AssertEverySeed(m, d, "calm window edge kick " + k + "°");
+                var edge = LivePadLoop.Fly(catalog, m, d, false);
+                Assert.IsTrue(LivePadLoop.InBand(m, edge), k + "° live calm " + LivePadLoop.Text(edge));
+            }
+        }
+
+        Design Kh3RawBuild(CampaignMission m)
+        {
+            var d = Starter(m);
+            d.guidance.pitchKickDeg = 8;
+            return d;
         }
 
         /// <summary>A failure event explains itself: a batch row with a failure kind gets no miss reason.</summary>
@@ -109,6 +177,7 @@ namespace Kestrel.Core.Tests
         }
 
         /// <summary>The overshoot advice works: some +2% step up to +10% on the top stage brings the high point into the band.</summary>
+        // KH-3 and KH-6 fly their pre-retune builds (8° kick; strength 1.35), the ones that miss.
         // #313 real values: KH-3 1.02 → 1.06 (202 x 198 km), KH-4 1.04 → 1.02 (502 x 498 km), KH-14 1.04 → 1.02 (the
         // starter already passes). KH-5 and KH-8 stay at 1.02 (KH-5 passes already; KH-8 misses on reliability, not
         // altitude). KH-3 and KH-4 get the too-flat advice (a larger pitch kick, FlatAdvice_LargerKickLandsKh3AndKh4); this fuel
@@ -126,7 +195,7 @@ namespace Kestrel.Core.Tests
             for (int step = 1; step <= 5 && double.IsNaN(found); step++)
             {
                 double k = 1 + 0.02 * step;
-                var d = Starter(m);
+                var d = id == "m6" ? Kh6RawBuild(m) : id == "m3" ? Kh3RawBuild(m) : Starter(m); // the raw builds that miss
                 d.stages[d.stages.Count - 1].propMass *= k;
                 var x = Fly(m, d, out var flight);
                 if (flight.failure == null && (x == null || (x.Code != "apo-high" && x.Code != "peri-low" && x.Code != "orbit-low" && x.Code != "fpa-steep" && x.Code != "fpa-steep-suborbital" && x.Code != "fpa-flat")))
@@ -204,14 +273,15 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(x.Reason + " " + x.Advice, x.Line);
         }
 
-        /// <summary>The flat advice works: a larger pitch kick lands the KH-3 (8° → 8.5°) and KH-4 (6° → 6.5°) starters on every seed.</summary>
+        /// <summary>The flat advice works: a larger pitch kick lands the KH-3 (8° → 8.5°, its pre-retune 8° build) and KH-4 (6° → 6.5°) starters on every seed.</summary>
         [TestCase("m3", 8.0, 8.5)]
         [TestCase("m4", 6.0, 6.5)]
         public void FlatAdvice_LargerKickLandsKh3AndKh4(string id, double from, double to)
         {
             var m = Mission(id);
-            var d = Starter(m);
+            var d = id == "m3" ? Kh3RawBuild(m) : Starter(m);
             var x = Fly(m, d, out _);
+            Assert.IsNotNull(x, id + " misses");
             Assert.AreEqual("fpa-flat", x.Code);
             Assert.AreEqual(MissReason.FlatAdvice, x.Advice);
             Assert.AreEqual(from, d.guidance.pitchKickDeg, 1e-9);
