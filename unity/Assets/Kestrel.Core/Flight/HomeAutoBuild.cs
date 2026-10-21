@@ -165,9 +165,9 @@ namespace Kestrel.Core.Flight
             else if (best != null && best.Design != null && mission.Id == "m2" && best.TemplateId == "hopper")
             {
                 // Three small engines and a full tank break the 35 kPa wall around 6 km.
-                // One engine, a 1405 kg load, steel walls, SF 2.2 and a 75% max-Q cap fly a
-                // drag-aware peak of 97.6 km in the batch and 100.5 km director-guided on the pad
-                // (band 95–105 km). 1380 kg read 100.4 km Kepler but flew 91.4 km. While the cap
+                // One engine, a 1428 kg load, steel walls, SF 2.2, a 75% max-Q cap and its own 9 g limit (#316)
+                // fly a drag-aware peak of 100.3 km in the batch (band 95–105 km). With the old 6 g limit,
+                // 1405 kg flew 97.6 km; at 9 g, 1405 kg flew 94.3 km. 1380 kg read 100.4 km Kepler but flew 91.4 km. While the cap
                 // is actually biting, the path stays on the catch angle instead of
                 // ratcheting down with the sag. The template is not edited.
                 ArmHundredKm(best.Design);
@@ -206,9 +206,9 @@ namespace Kestrel.Core.Flight
         }
 
         public const double HundredKmSafetyFactor = 2.2;
-        public const double HundredKmPropKg = 1405;
+        public const double HundredKmPropKg = 1428;
         public const double HundredKmMaxQPercent = 75;
-        public const double HundredKmGLimit = 6;
+        public const double HundredKmGLimit = 9;
         public const string HundredKmMaterial = "steel";
 
         /// <summary>KH-2 only. The hopper template document is not modified.</summary>
