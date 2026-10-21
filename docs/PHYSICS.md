@@ -53,7 +53,7 @@ Those fixture choices are inputs. The numbers in `out` come from `simulate`, `dr
 ## Gaps
 
 - Vacuum bells (`gg-kerolox-vac`, `gg-kerolox-small-vac`, `ff-methalox-vac`, `exp-hydrolox`, `pf-udmh`) have integrated max-Q and drag loss of 0. The reference ascent turns the atmosphere off for them. Their drag coverage is the closed-form Mach-peak evaluation, including nozzle area.
-- `tpl-sounding-solid` is a single stage. Its staging vector has burnout and no separation.
+- `tpl-sounding-hybrid` is a single stage. Its staging vector has burnout and no separation.
 - Mach-peak dynamic pressure on the ISA grid is highest at 0 m for every vehicle, because density falls faster than the speed of sound rises. `gridAltitudeM` is therefore 0. Engines are distinguished by area (stage diameter and nozzle diameter), not by a different winning altitude.
 - `gg-kerolox-small-vac` and `pf-hypergolic` share a 1 m nozzle, so their nozzle Mach-peak drag matches. The sea-level engine still has a non-zero trajectory max-Q; the vacuum engine does not.
 - `simulate()` has no J2, no throttle, no ullage, and no parallel-burn integration beyond the `serialStages()` combined phase. This file does not add those.

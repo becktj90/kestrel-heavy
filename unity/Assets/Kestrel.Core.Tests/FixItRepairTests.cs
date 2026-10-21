@@ -8,6 +8,7 @@ using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
+using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 using NUnit.Framework;
 
@@ -78,7 +79,6 @@ namespace Kestrel.Core.Tests
         }
 
         [TestCase(14)]
-        [TestCase(16)]
         public void FixIt_WeakAirframe_RepairsUntilEveryGateSeedFlies_GustsIncluded(int index)
         {
             // The starter with the walls cut to strength 1.0 breaks up at max-Q on every seed. The stepper's repair alone
@@ -108,6 +108,57 @@ namespace Kestrel.Core.Tests
             foreach (var f in Fly(index, less)) Assert.IsNull(f.failure, "KH-" + index + " one step under " + sf + ", seed " + f.seed);
             HangarEditor.SetSafetyFactor(less, sf - 2 * step);
             Assert.That(Fly(index, less).Exists(f => f.failure != null), "KH-" + index + " two steps under " + sf + " is the knife-edge");
+        }
+
+        [Test]
+        public void FixIt_WeakAirframe16_RepairIsTheMinimalStrengthForTheBreakupQ()
+        {
+            // #314 (Physics): KH-16's starter with the walls cut to strength 1.0. The repair keeps its strength step, the
+            // stepper's: raise strength until the max-Q the designer read sits under the amber line (85% of q_lim). That
+            // q is now read at the breakup moment, not taken from the whole run after the stack is already coming apart,
+            // so the step is asserted minimal instead of pinned to a value: the repaired strength flies every gate seed
+            // with no failure, and one strength step less no longer clears the line for that same breakup q.
+            // Plainly: SF 1.20 is minimal against the stepper's 0.85 q_lim line (44.02 kPa needs 1.177, rounded up to the
+            // 0.05 grid). It is not the physical knife-edge: FlightBatch alone already flies all 5 seeds at SF 1.10
+            // (1.05 breaks up). The 0.85 line is the designer's margin on top of that.
+            const int index = 16;
+            var json = Starter(index);
+            JsonMut.Set(json, "safetyFactor", 1.0);
+            var before = Gate(json);
+            Assert.That(before.state, Is.EqualTo(LaunchGateState.Blocked));
+            Assert.That(before.code, Is.EqualTo("structural-maxq"), before.Line);
+            Assert.That(Fly(index, json).TrueForAll(f => f.failure == "structural-maxq"), "the weak rocket really breaks up");
+
+            // The q the repair reads: the designer's reference, frozen at the breakup. It sits at the weak walls' q_lim,
+            // far under the uncut full flight's peak.
+            var weak = Design.FromJson(json);
+            double qLimWeak = FailureMonitor.StructuralQLimPa(catalog, weak);
+            var reference = Readout.Reference(catalog, json);
+            Assert.IsFalse(reference.maxQStale);
+            double qBreak = reference.maxQ_kPa.Value * 1000;
+            Assert.That(qBreak, Is.GreaterThanOrEqualTo(qLimWeak), "the reference breaks up at q_lim");
+            Assert.That(qBreak, Is.LessThan(qLimWeak * 1.02), "q is read at the breakup moment");
+            var setup = MissionFlightSetup.Build(catalog, campaign.Mission(index), weak, MissionFlightSetup.BatchDt);
+            Assert.That(Headless.Simulate(setup.Stages, setup.Options).maxQ, Is.GreaterThan(qBreak * 2), "the uncut run's peak is not the breakup q");
+
+            var outcome = DesignerRepair.Fix(catalog, json, before.code, campaign.Mission(index));
+            Assert.That(outcome.Changed, outcome.Note);
+            Assert.That(outcome.FullyFixed, outcome.Note);
+            Assert.That(outcome.Note, Does.Not.Contain("could not"), outcome.Note);
+            double sf = json.Num("safetyFactor");
+            Assert.That(sf, Is.GreaterThan(1.0), outcome.Note);
+            foreach (var f in Fly(index, json)) Assert.IsNull(f.failure, "KH-" + index + " seed " + f.seed + " / " + outcome.Note);
+            Assert.That(Gate(json).Ready);
+
+            // Minimal: the repaired strength clears the amber line for the breakup q; one step less does not.
+            double step = DesignerLimits.Active.safetyStep;
+            double amber = Kestrel.Core.Designer.Stepper.StepperChecks.MaxQAmberFraction;
+            Assert.That(qBreak, Is.LessThanOrEqualTo(amber * FailureMonitor.StructuralQLimPa(catalog, Design.FromJson(json)) + 1e-6),
+                "KH-16 at strength " + sf + " clears the line");
+            var less = JsonMut.CloneObject(json);
+            HangarEditor.SetSafetyFactor(less, sf - step);
+            Assert.That(qBreak, Is.GreaterThan(amber * FailureMonitor.StructuralQLimPa(catalog, Design.FromJson(less))),
+                "KH-16 one step under " + sf + " does not clear the line, so the repair step is minimal");
         }
 
         [Test]

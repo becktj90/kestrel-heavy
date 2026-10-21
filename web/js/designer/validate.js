@@ -4,7 +4,7 @@ import { ENGINES, ENGINE_BY_ID } from '../data/engines.js';
 import { PAYLOAD_BY_ID } from '../data/payloads.js';
 import { validateDesign } from '../vehicle/design.js';
 import { quickReadout } from './readout.js';
-import { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK } from './limits.js';
+import { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK, LANDING_RESERVE_MAX } from './limits.js';
 export { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK } from './limits.js';
 
 /** Payload volume scaled from its archetype by mass^(2/3) (a lighter build of the same kind is smaller). */
@@ -118,6 +118,9 @@ export function makeItFly(input) {
     if (!(s.engineCount >= 1)) { s.engineCount = 1; say(`Gave ${s.name || 'stage'} an engine`); }
     s.engineCount = Math.min(40, Math.round(s.engineCount));
     if (!(s.propMass > 0)) { s.propMass = upper ? 10000 : 50000; say(`Loaded propellant into ${s.name || 'stage'}`); }
+    // A reserve as big as the whole load leaves no usable propellant, and adding propellant cannot catch up on a
+    // low-thrust stage. Trim it to the most the designer allows.
+    if (s.landingPropMass > 0 && s.landingPropMass >= s.propMass) { s.landingPropMass = Math.round(s.propMass * LANDING_RESERVE_MAX); say(`Trimmed the ${s.name || 'stage'} landing reserve to fit its propellant`); }
     const en = ENGINE_BY_ID[s.engine];
     const need = Math.sqrt(s.engineCount * en.diameter ** 2 / PACK) + 0.05;
     if (s.diameter < need) { s.diameter = Math.min(15, Math.ceil(need * 10) / 10); say(`Widened ${s.name || 'stage'} so the engines fit`); }
@@ -161,6 +164,10 @@ export function makeItFly(input) {
       const up = d.stages[d.stages.length - 1];
       if (d.stages.length > 1 && r.stages[r.stages.length - 1].twrVac > 0.7 && iter % 2 === 0) { up.propMass *= 1.15; say('Added upper-stage propellant'); continue; }
       if (r.liftoffTWR > 1.45) { s0.propMass *= 1.1; say('Added first-stage propellant'); continue; }
+      // A low-thrust first stage (small hybrids) runs out of liftoff thrust before it has the propellant: one more
+      // engine lets the next step add propellant again, instead of shrinking the cargo to nothing.
+      const e0 = ENGINE_BY_ID[s0.engine];
+      if (d.stages.length === 1 && s0.engineCount < Math.min(40, Math.floor(PACK * s0.diameter ** 2 / e0.diameter ** 2))) { s0.engineCount++; say('Added first-stage engines so it can carry more propellant'); continue; }
       if (d.payload.mass > 50) { d.payload.mass = Math.max(50, Math.round(d.payload.mass * 0.85)); say('Lightened the payload'); continue; }
     }
     if (v.ok && r.margin >= MIN_MARGIN) break;

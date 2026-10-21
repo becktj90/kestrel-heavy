@@ -153,25 +153,24 @@ namespace Kestrel.Core.Designer
         public static SimResult Simulate(Catalog c, JsonObject design)
         {
             var input = Inputs(c, design);
-            return Fly(input.stages, input.opts);
+            return PlayedChecks.Fly(c, Design.FromJson(design), input.stages, input.opts);
         }
 
         /// <summary>
-        /// Predict inputs: the same <see cref="MissionFlightSetup"/> the live pad flight and FlightBatch fly (F1), with
-        /// Predict on so the cached peak is the real max-Q. A design whose missionId (or kh- orbit) is a campaign
+        /// Predict inputs: the same <see cref="MissionFlightSetup"/> the live pad flight and FlightBatch fly (F1). The
+        /// monitor is the live one (Predict off) and the flight runs under <see cref="PlayedChecks"/>, so the designer
+        /// stops where play breaks up (#314). A design whose missionId (or kh- orbit) is a campaign
         /// mission gets that mission's aim, cutoff, run length, coast boil-off and held-out landing fuel. Before F1 the
         /// designer built its own Stack.SimInputs and aimed an apogee hop at its apogee, so a 100 km hop was called
         /// "out of fuel" at its normal burnout. A free build keeps the design's own orbit (an apogee target is
-        /// judged against the 1 km hop floor, in MissionFlightSetup for the pad too). A live launch leaves Predict false and breaks up.
+        /// judged against the 1 km hop floor, in MissionFlightSetup for the pad too).
         /// </summary>
         public static (List<SimStage> stages, SimOptions opts) Inputs(Catalog c, JsonObject design)
         {
             var d = Design.FromJson(design);
             var mission = MissionFor(c, d);
             var setup = MissionFlightSetup.Build(c, mission, d, MissionFlightSetup.BatchDt);
-            var opts = setup.Options;
-            if (opts.monitor != null) opts.monitor.Predict = true;
-            return (setup.Stages, opts);
+            return (setup.Stages, setup.Options);
         }
 
         /// <summary>The campaign mission a design flies: its missionId, else its catalog orbit key. Null for a free build.</summary>
@@ -237,6 +236,7 @@ namespace Kestrel.Core.Designer
     {
         readonly string key;
         readonly AscentSim sim;
+        readonly PlayedChecks checks;
         bool done;
         public bool Done => done;
 
@@ -245,6 +245,7 @@ namespace Kestrel.Core.Designer
             key = ReferenceAscent.CanonicalKey(c, design);
             var input = ReferenceAscent.Inputs(c, design);
             sim = new AscentSim(input.stages, input.opts);
+            checks = new PlayedChecks(c, Design.FromJson(design), input.stages, input.opts, sim);
         }
 
         /// <summary>Run ticks until the ascent ends or <paramref name="budgetMs"/> of wall time has elapsed. At least one tick runs when work remains, so a 0 budget still advances.</summary>
@@ -254,7 +255,7 @@ namespace Kestrel.Core.Designer
             var sw = System.Diagnostics.Stopwatch.StartNew();
             while (true)
             {
-                if (!sim.Tick())
+                if (!checks.Tick(sim))
                 {
                     var r = sim.Finish();
                     ReferenceAscent.Store(key, r);

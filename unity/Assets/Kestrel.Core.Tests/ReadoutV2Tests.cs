@@ -350,10 +350,28 @@ namespace Kestrel.Core.Tests
             if (System.Math.Abs(Readout.Reference(cat, Preset("kid")).maxQ_kPa.Value - 90.07) > 0.05)
                 Assert.Fail("kid max-Q left the documented 90 kPa");
 
-            var solid = Template("tpl-sounding-solid");
-            var q = Readout.Reference(cat, solid);
-            Assert.Greater(q.maxQ_kPa.Value, 600, "sounding rocket is the solid outlier, about 660 kPa");
+            // #314: the shipped sounding template is two small hybrids on a long, low-thrust burn. It peaks at
+            // 36.2 kPa, under the warning line, so there is nothing to warn about.
+            var sounding = Template("tpl-sounding-hybrid");
+            var q = Readout.Reference(cat, sounding);
+            Assert.AreEqual(36.21, q.maxQ_kPa.Value, 0.05, "hybrid sounding rocket max-Q");
+            Assert.Less(q.maxQ_kPa.Value, Validate.MaxQWarnKPa);
+            var soundingReport = Validate.Engineering(cat, sounding);
+            Assert.IsTrue(soundingReport.ok);
+            Assert.IsNull(soundingReport.warnings.Find(w => w.code == "maxq-high"));
+            Assert.IsNull(soundingReport.blocks.Find(b => b.code == "maxq-high"));
+
+            // The unguided-solid exemption stays covered by the solid fixture. Under the played checks that solid breaks
+            // up over 20 g at T+0.6 s, so its own prediction never reaches max-Q; its uncut full flight peaks near 660 kPa.
+            // Note that full-flight peak as its reference: far over the warning line, and still no maxq-high issue.
+            var solid = Golden.FixtureJson(Golden.SolidSoundingFixture);
+            var solidInput = Stack.SimInputs(cat, Design.FromJson(solid));
+            var solidFull = Headless.Simulate(solidInput.stages, solidInput.opts);
+            Assert.AreEqual(659.79, solidFull.maxQ / 1000.0, 0.05, "the solid outlier, about 660 kPa uncut");
+            ReferenceAscent.Reset();
+            ReferenceAscent.Store(ReferenceAscent.CanonicalKey(cat, solid), solidFull);
             var solidReport = Validate.Engineering(cat, solid);
+            ReferenceAscent.Reset();
             Assert.IsTrue(solidReport.ok);
             Assert.IsNull(solidReport.warnings.Find(w => w.code == "maxq-high"), "unguided solid is exempt");
             Assert.IsNull(solidReport.blocks.Find(b => b.code == "maxq-high"));
