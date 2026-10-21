@@ -12,7 +12,7 @@
     "featureFlag": "designer.guidanceComputer",
     "unlockAfterMission": 10,
     "about": "A small computer that flies your upper stages. It keeps checking where the rocket is and how fast it's going, then steers so the engine cuts off at the target height, flying level. Basic guidance only chases the height, so the orbit can come out lopsided. Stage 1 is still yours to fly.",
-    "realWorld": "Real upper stages have steered this way since the 1960s Moon rockets. Their sensors are never perfect, so a real rocket reaches orbit a few km off its target, sometimes up to about 15 km. Engineers call that spread dispersion. The game's computer has no sensor or navigation error to fight, so whenever it has the propellant it lands almost exactly on target.",
+    "realWorld": "Real upper stages have steered this way since the 1960s Moon rockets. Their sensors are never perfect, so a real rocket reaches orbit a few km off its target. Engineers call that spread dispersion. The game's computer has no sensor or navigation error to fight, so whenever it has the propellant it lands almost exactly on target.",
     "sources": ["GuidanceComputer", "AscentSim.ClosedLoopPitch", "GuidanceProfile.PegLitePitch", "MissReason.UpperOutReason"],
     "inControlNote": "Guidance computer is flying the upper stage",
     "nudgeHeldNote": "Guidance computer is flying the upper stage, so it kept its pitch, not your nudge."
