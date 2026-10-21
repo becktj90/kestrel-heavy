@@ -1,6 +1,8 @@
 // F4: the report says why an intact, Ready starter missed, with its own numbers, and what to change.
-// KH-3, 4, 5, 6, 8, 12, 14 and 16 stay unchanged as design puzzles: each real miss (FlightBatch, seed 1)
-// is pinned to its exact text, and the advice is checked by flying it.
+// KH-3, 4, 5, 6, 8, 12, 14 and 16 stay design puzzles: each real miss (FlightBatch, seed 1) is pinned to
+// its exact text, and the advice is checked by flying it. One reason shows, in fix order (orbit, fuel,
+// structure, reliability, setup), and the reason counts any other gate that missed: KH-8 reads
+// "(+1 more issue)" until its fuel fix lands the circle, then the reason is reliability.
 using System;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
@@ -52,10 +54,10 @@ namespace Kestrel.Core.Tests
             "Missed the 200 km circle: the orbit flew 193 km × 216 km, and the high point needs 190 km to 210 km. That is about 5 m/s too fast at the low point.",
             "Add fuel to stage 3, about 2% at a time (up to 10%), until the high point comes down into the band.")]
         [TestCase("m8", "apo-high",
-            "Missed the 400 km circle: the orbit flew 393 km × 1,728 km, and the high point needs 380 km to 420 km. That is about 335 m/s too fast at the low point.",
+            "Missed the 400 km circle: the orbit flew 393 km × 1,728 km, and the high point needs 380 km to 420 km. That is about 335 m/s too fast at the low point. (+1 more issue)",
             "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
         [TestCase("m12", "apo-high",
-            "Missed the 600 km circle: the orbit flew 592 km × 649 km, and the high point needs 570 km to 630 km. That is about 13 m/s too fast at the low point.",
+            "Missed the 600 km circle: the orbit flew 590 km × 780 km, and the high point needs 570 km to 630 km. That is about 48 m/s too fast at the low point.",
             "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
         [TestCase("m14", "apo-high",
             "Missed the 400 km circle: the orbit flew 391 km × 1,059 km, and the high point needs 380 km to 420 km. That is about 176 m/s too fast at the low point.",
@@ -109,7 +111,7 @@ namespace Kestrel.Core.Tests
         [TestCase("m5", 1.02)]
         [TestCase("m6", 1.02)]
         [TestCase("m8", 1.02)]
-        [TestCase("m12", 1.10)]
+        [TestCase("m12", 1.04)]
         [TestCase("m14", 1.04)]
         public void MoreTopStageFuelBringsTheHighPointIn(string id, double first)
         {
@@ -125,6 +127,118 @@ namespace Kestrel.Core.Tests
                     found = k;
             }
             Assert.AreEqual(first, found, 1e-9, id + ": first top-stage step that lands the circle");
+        }
+
+        /// <summary>
+        /// KH-12's starter misses high on every seed, and a wide band of top-stage fuel lands the 600 km circle:
+        /// every whole step from +4% to +21% passes on seeds 1 to 5 (data/board-starters.json, 32,000 kg top stage).
+        /// Below that it is not a window: +1% lands, +2% tops out at 630 km, and +3% misses on seed 5.
+        /// </summary>
+        [Test]
+        public void KhTwelveLandsOnAWideFuelWindow()
+        {
+            var m = Mission("m12");
+            foreach (ulong seed in campaign.Seeds)
+            {
+                var d = Starter(m);
+                var flight = FlightBatch.Fly(catalog, m, d, seed);
+                var x = MissReason.Explain(m, MissReason.FromFlight(flight, d.stages.Count));
+                Assert.IsNull(flight.failure, "starter seed " + seed + " flies intact");
+                Assert.IsFalse(flight.passed, "starter seed " + seed + " keeps its real miss");
+                Assert.AreEqual("apo-high", x?.Code, "starter seed " + seed);
+            }
+            var bad = new System.Collections.Generic.List<string>();
+            for (int pct = 4; pct <= 21; pct++)
+            {
+                foreach (ulong seed in campaign.Seeds)
+                {
+                    var d = Starter(m);
+                    d.stages[d.stages.Count - 1].propMass *= 1 + pct / 100.0;
+                    var flight = FlightBatch.Fly(catalog, m, d, seed);
+                    if (!flight.passed) bad.Add("+" + pct + "% seed " + seed + " " + (flight.failure ?? (flight.periKm.ToString("0") + "x" + flight.apoKm.ToString("0"))));
+                }
+            }
+            Assert.That(bad, Is.Empty, string.Join(" | ", bad));
+        }
+
+        /// <summary>KH-8 misses two gates. The report names the orbit first and counts reliability; after the fuel fix, reliability is the reason.</summary>
+        [Test]
+        public void KhEightSaysOrbitFirstThenReliabilityAfterTheFuelFix()
+        {
+            var m = Mission("m8");
+            var x = Fly(m, Starter(m), out var flight);
+            Assert.IsNull(flight.failure);
+            Assert.AreEqual("apo-high", x.Code);
+            Assert.AreEqual(1, x.More);
+            CollectionAssert.AreEqual(new[] { "reliability" }, x.Others);
+            StringAssert.EndsWith(". (+1 more issue)", x.Reason);
+
+            var d = Starter(m);
+            d.stages[d.stages.Count - 1].propMass *= 1.02;
+            var after = Fly(m, d, out var fixedFlight);
+            Assert.IsNull(fixedFlight.failure);
+            Assert.AreEqual("reliability", after.Code, "after the fuel fix: " + after.Line);
+            Assert.AreEqual(0, after.More);
+            Assert.AreEqual("Reliability was 95.1%; this mission needs 98%.", after.Reason);
+        }
+
+        /// <summary>Fix order: orbit, fuel, structure, reliability, setup. The first gate is the reason; the rest are counted.</summary>
+        [Test]
+        public void ReasonsComeInFixOrderAndTheRestAreCounted()
+        {
+            var row = Row("circular", 400, 400);
+            row.MaxG = 4;
+            row.ReliabilityMin = 0.98;
+            row.MarginNonNegative = true;
+            var extra = new GoalCheck { Reliability = 0.95, Margin = -0.02 };
+
+            var all = MissReason.Explain(row, new MissInput { ApoM = 250e3, PeriM = 120e3, MaxG = 5, Stages = 2, Extra = extra });
+            Assert.AreEqual("orbit-low", all.Code);
+            Assert.AreEqual(3, all.More);
+            CollectionAssert.AreEqual(new[] { "margin", "g", "reliability" }, all.Others);
+            StringAssert.EndsWith(" (+3 more issues)", all.Reason);
+
+            var onOrbit = MissReason.Explain(row, new MissInput { ApoM = 400e3, PeriM = 400e3, MaxG = 5, Stages = 2, Extra = new GoalCheck { Reliability = 0.95, Margin = 0.01 } });
+            Assert.AreEqual("g", onOrbit.Code, "structure before reliability");
+            Assert.AreEqual("Peak load was 5.0 g; this cargo is rated for 4.0 g. (+1 more issue)", onOrbit.Reason);
+
+            var one = MissReason.Explain(row, new MissInput { ApoM = 400e3, PeriM = 400e3, MaxG = 3, Stages = 2, Extra = new GoalCheck { Reliability = 0.95, Margin = 0.01 } });
+            Assert.AreEqual("reliability", one.Code);
+            Assert.AreEqual(0, one.More);
+            Assert.AreEqual("Reliability was 95%; this mission needs 98%.", one.Reason);
+        }
+
+        [Test]
+        public void MoreNoteSaysIssueOrIssues()
+        {
+            Assert.AreEqual("", MissReason.MoreNote(0));
+            Assert.AreEqual("(+1 more issue)", MissReason.MoreNote(1));
+            Assert.AreEqual("(+2 more issues)", MissReason.MoreNote(2));
+        }
+
+        /// <summary>Inclination is not scored in Phase 1: a starter that passes flies the reference pad's equatorial plane, nowhere near its stated target inclination.</summary>
+        [TestCase("m11")]
+        [TestCase("m13")]
+        public void InclinationIsNotScored(string id)
+        {
+            var m = Mission(id);
+            var flight = FlightBatch.Fly(catalog, m, Starter(m), 1);
+            Assert.IsTrue(flight.passed, id);
+            Assert.That(Math.Abs(flight.incDeg - m.IncDeg), Is.GreaterThan(MissionScore.InclinationDeg), id + " flew " + flight.incDeg + " deg");
+        }
+
+        /// <summary>Because inclination is not scored, no campaign briefing, report goal or board target line states one.</summary>
+        [Test]
+        public void NoMissionTextStatesAnInclination()
+        {
+            var deg = new System.Text.RegularExpressions.Regex(@"\d\s*(°|degree)");
+            var bad = new System.Collections.Generic.List<string>();
+            foreach (var m in campaign.Missions)
+            {
+                foreach (var text in new[] { m.Goal, m.Control, m.Why, m.WhatItIs, m.WhatItDoes, MissionBoardFacts.OrbitLine(m) })
+                    if (!string.IsNullOrEmpty(text) && deg.IsMatch(text)) bad.Add(m.Id + ": " + text);
+            }
+            Assert.That(bad, Is.Empty, string.Join(" | ", bad));
         }
 
         [TestCase("m8")]

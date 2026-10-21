@@ -172,7 +172,7 @@
           }
         ],
         "customer": "Cinderwharf Rideshare",
-        "control": "Mote is 20 kg. A 200 km circle at 28.5 degrees. About 8,876 m/s.",
+        "control": "Mote is 20 kg. A 200 km circle. About 8,876 m/s.",
         "whatItIs": "One small satellite on a first closed orbit.",
         "whatItDoes": "It stays up instead of falling back to the pad.",
         "why": "The first closed orbit. The budget is about 8,876 m/s.",
@@ -212,7 +212,7 @@
       "briefing": {
         "payloadName": "Tern-3",
         "payloadKind": "Weather sat",
-        "goal": "Put a 2,500 kg fictional weather sat in a 500 km, 51.6° orbit.",
+        "goal": "Put a 2,500 kg fictional weather sat in a 500 km circular orbit.",
         "bonuses": [
           {
             "id": "land-booster",
@@ -225,7 +225,7 @@
           }
         ],
         "customer": "Brineglass Weather Bureau",
-        "control": "Tern-3 is 2,500 kg. A 500 km circle at 51.6 degrees. Peak g stays at or under 6.",
+        "control": "Tern-3 is 2,500 kg. A 500 km circle. Peak g stays at or under 6.",
         "whatItIs": "A weather satellite for a steady watch.",
         "whatItDoes": "It circles at 500 km and reports the sky.",
         "why": "A weather sat needs a steady 500 km circle. About 8,704 m/s, and peak g stays at or under 6.",
@@ -264,7 +264,7 @@
       "briefing": {
         "payloadName": "Bargeload",
         "payloadKind": "Cargo sat",
-        "goal": "Lift 12,000 kg to a 400 km, 51.6° orbit.",
+        "goal": "Lift 12,000 kg to a 400 km circular orbit.",
         "bonuses": [
           {
             "id": "strap-ons",
@@ -276,7 +276,7 @@
           }
         ],
         "customer": "Saltwharf Freight",
-        "control": "Bargeload is 12,000 kg. A 400 km circle at 51.6 degrees. Strap-on boosters may fly.",
+        "control": "Bargeload is 12,000 kg. A 400 km circle. Strap-on boosters may fly.",
         "whatItIs": "A heavy cargo satellite.",
         "whatItDoes": "It lifts twelve tonnes into a 400 km circle.",
         "why": "Twelve tonnes is the heavy low-orbit load. About 8,760 m/s.",
@@ -381,7 +381,7 @@
           }
         ],
         "customer": "Westline Relay Office",
-        "control": "Harbor-1 is 5,500 kg. Ellipse 200 by 35,786 km at 27 degrees. Land on Haven. About 11,330 m/s.",
+        "control": "Harbor-1 is 5,500 kg. Ellipse 200 by 35,786 km. Land on Haven. About 11,330 m/s.",
         "whatItIs": "A communications satellite on a transfer.",
         "whatItDoes": "It rides the long ellipse. The booster aims for Haven.",
         "why": "The comsat rides the transfer. Haven catches the booster. About 11,330 m/s.",
@@ -581,8 +581,8 @@
         "payloadName": "Plover-1",
         "payloadKind": "Weather sat",
         "customer": "Brineglass Weather Bureau",
-        "goal": "Put a 2,200 kg weather sat in a 550 km sun-sync at 97.6 degrees.",
-        "control": "Plover-1 is 2,200 kg. Sun-sync 550 km at 97.6 degrees. About 8,676 m/s.",
+        "goal": "Put a 2,200 kg weather sat in a 550 km sun-sync.",
+        "control": "Plover-1 is 2,200 kg. Sun-sync 550 km. About 8,676 m/s.",
         "whatItIs": "A weather satellite that sees the same towns at the same hour.",
         "whatItDoes": "It repeats one ground track so the bureau can compare each day.",
         "why": "Same towns, same hour. 2,200 kg at 550 km. About 8,676 m/s.",
@@ -626,8 +626,8 @@
         "payloadName": "Meridian",
         "payloadKind": "Space telescope",
         "customer": "Northglass Institute",
-        "goal": "Park a 1,800 kg telescope in a 600 km, 51.6 degree orbit.",
-        "control": "Meridian is 1,800 kg. A 600 km circle at 51.6 degrees. Peak g at most 5. About 8,649 m/s.",
+        "goal": "Park a 1,800 kg telescope in a 600 km circular orbit.",
+        "control": "Meridian is 1,800 kg. A 600 km circle. Peak g at most 5. About 8,649 m/s.",
         "whatItIs": "A space telescope with a glass that hates a hard shove.",
         "whatItDoes": "It watches the sky from a quiet 600 km circle.",
         "why": "A quiet telescope at 600 km. Peak g at most 5. About 8,649 m/s.",
@@ -723,8 +723,8 @@
         "payloadName": "Trunk-4",
         "payloadKind": "Cargo capsule",
         "customer": "Saltwharf Freight",
-        "goal": "Lift a 10,000 kg cargo capsule to a 400 km, 51.6 degree orbit.",
-        "control": "Trunk-4 is 10,000 kg. A 400 km circle at 51.6 degrees. Finish with speed to spare.",
+        "goal": "Lift a 10,000 kg cargo capsule to a 400 km circular orbit.",
+        "control": "Trunk-4 is 10,000 kg. A 400 km circle. Finish with speed to spare.",
         "whatItIs": "A cargo capsule packed with supplies.",
         "whatItDoes": "It carries ten tonnes to a station orbit.",
         "why": "Ten tonnes of supplies to a 400 km circle. About 8,760 m/s.",
@@ -775,7 +775,7 @@
         "payloadKind": "GEO relay",
         "customer": "Westline Relay Office",
         "goal": "Send a 6,200 kg relay onto a 200 by 35,786 km transfer and land on Haven.",
-        "control": "Westline-2 is 6,200 kg. Ellipse 200 by 35,786 km at 27 degrees. The relay climbs the rest. About 11,330 m/s.",
+        "control": "Westline-2 is 6,200 kg. Ellipse 200 by 35,786 km. The relay climbs the rest. About 11,330 m/s.",
         "whatItIs": "A relay that finishes its own climb.",
         "whatItDoes": "It rides the transfer. The high circle is its own burn, not this rocket's.",
         "why": "The ride is the transfer, not a circular high orbit. 6,200 kg. About 11,330 m/s.",
