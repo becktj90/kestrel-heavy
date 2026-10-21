@@ -152,7 +152,7 @@ namespace Kestrel.Core.Tests
                 var x = MissReason.Explain(m, MissReason.FromFlight(flight, d.stages.Count));
                 Assert.IsNull(flight.failure, "starter seed " + seed + " flies intact");
                 Assert.IsFalse(flight.passed, "starter seed " + seed + " keeps its real miss");
-                Assert.AreEqual("apo-high", x?.Code, "starter seed " + seed);
+                Assert.AreEqual("fpa-steep", x?.Code, "starter seed " + seed);
             }
             var bad = new System.Collections.Generic.List<string>();
             for (int pct = 4; pct <= 21; pct++)
@@ -168,23 +168,35 @@ namespace Kestrel.Core.Tests
             Assert.That(bad, Is.Empty, string.Join(" | ", bad));
         }
 
-        /// <summary>KH-8 misses two gates. The report names the orbit first and counts reliability; after the fuel fix, reliability is the reason.</summary>
+        /// <summary>KH-8 under #313 (closed-loop director, energy cutoff): the starter's orbit is inside the 400 km band on every
+        /// seed, so reliability (95.1% vs 98%) is the only reason, with no other gate counted. The old pre-fuel-fix state (an
+        /// apo-high miss plus reliability) no longer exists, so the fix-order rule is held by ReasonsComeInFixOrderAndTheRestAreCounted;
+        /// the +2% fuel step that used to clear the orbit keeps the same single reason.</summary>
         [Test]
-        public void KhEightSaysOrbitFirstThenReliabilityAfterTheFuelFix()
+        public void KhEightOrbitIsInTheBand_ReliabilityIsTheOnlyReason()
         {
             var m = Mission("m8");
-            var x = Fly(m, Starter(m), out var flight);
-            Assert.IsNull(flight.failure);
-            Assert.AreEqual("apo-high", x.Code);
-            Assert.AreEqual(1, x.More);
-            CollectionAssert.AreEqual(new[] { "reliability" }, x.Others);
-            StringAssert.EndsWith(". (+1 more issue)", x.Reason);
+            foreach (var seed in campaign.Seeds)
+            {
+                var d = Starter(m);
+                var flight = FlightBatch.Fly(catalog, m, d, seed);
+                var x = MissReason.Explain(m, MissReason.FromFlight(flight, d.stages.Count));
+                Assert.IsNull(flight.failure, "seed " + seed);
+                Assert.IsTrue(flight.reached, "seed " + seed + " orbit in the band: " + flight.apoKm.ToString("0.0") + " x " + flight.periKm.ToString("0.0"));
+                Assert.That(flight.apoKm, Is.InRange(m.ApoKm * 0.95, m.ApoKm * 1.05), "seed " + seed + " high point");
+                Assert.That(flight.periKm, Is.InRange(m.PeriKm * 0.95, m.PeriKm * 1.05), "seed " + seed + " low point");
+                Assert.IsFalse(flight.passed, "seed " + seed + " still misses on reliability");
+                Assert.AreEqual("reliability", x.Code, "seed " + seed + ": " + x.Line);
+                Assert.AreEqual(0, x.More, "seed " + seed + ": reliability is the only reason");
+                CollectionAssert.IsEmpty(x.Others, "seed " + seed);
+                Assert.AreEqual("Reliability was 95.1%; this mission needs 98%.", x.Reason, "seed " + seed);
+            }
 
-            var d = Starter(m);
-            d.stages[d.stages.Count - 1].propMass *= 1.02;
-            var after = Fly(m, d, out var fixedFlight);
-            Assert.IsNull(fixedFlight.failure);
-            Assert.AreEqual("reliability", after.Code, "after the fuel fix: " + after.Line);
+            var fuel = Starter(m);
+            fuel.stages[fuel.stages.Count - 1].propMass *= 1.02;
+            var after = Fly(m, fuel, out var fuelFlight);
+            Assert.IsNull(fuelFlight.failure);
+            Assert.AreEqual("reliability", after.Code, "after +2% fuel: " + after.Line);
             Assert.AreEqual(0, after.More);
             Assert.AreEqual("Reliability was 95.1%; this mission needs 98%.", after.Reason);
         }
