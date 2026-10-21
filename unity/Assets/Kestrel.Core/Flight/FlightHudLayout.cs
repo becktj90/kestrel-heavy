@@ -147,29 +147,87 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>
+        /// Unity's TextCore advance runs about 15% over <see cref="FontAdvance"/> (measured on #300 and on #322's SE banner:
+        /// "Climbing through max-Q on the pitch progra…" needed 89 x 74 px at 15 px in a 96 x 53 box). Every width this
+        /// class budgets for a label goes through <see cref="BudgetWidth"/>.
+        /// </summary>
+        public const float MeasureFactor = 1.15f;
+
+        public static float BudgetWidth(string text, float fontPt) => TextWidth(text, fontPt) * MeasureFactor;
+
+        /// <summary>
         /// One line of prompt quote for a box <paramref name="boxW"/> points wide (the 18 pt quote row holds one line;
         /// L2 printed two on top of each other). The face steps down from <paramref name="fontPt"/> to
         /// <paramref name="minPt"/>; a quote still too long is cut after the last whole word that fits, with an ellipsis.
         /// The full quote stays in the tooltip and the flight notes.
         /// </summary>
         public static QuoteFit QuoteLine(string text, float boxW, float fontPt, float minPt)
+            => WrapFit(text, boxW, float.PositiveInfinity, 1, fontPt, minPt);
+
+        /// <summary>
+        /// Face (stepping 0.5 from <paramref name="fontPt"/> to <paramref name="minPt"/>) at which <paramref name="text"/>
+        /// word-wraps into at most <paramref name="maxLines"/> lines of <see cref="LineHeight"/> inside a box
+        /// <paramref name="boxW"/> x <paramref name="boxH"/> (any one unit: points or pixels), widths budgeted with
+        /// <see cref="MeasureFactor"/>. Still too long at the floor: cut after the last whole word that fits, plus "…".
+        /// </summary>
+        public static QuoteFit WrapFit(string text, float boxW, float boxH, int maxLines, float fontPt, float minPt)
         {
             var fit = new QuoteFit { Text = text ?? "", FontPt = fontPt };
-            if (string.IsNullOrEmpty(text) || !(boxW > 1f)) return fit;
+            if (string.IsNullOrEmpty(text) || !(boxW > 1f) || maxLines < 1) return fit;
             float room = boxW - 2f;
-            float font = fontPt;
-            while (font > minPt && TextWidth(text, font) > room) font -= 0.5f;
-            if (font < minPt) font = minPt;
-            fit.FontPt = font;
-            if (TextWidth(text, font) <= room) return fit;
-            int max = (int)Math.Floor(room / (font * FontAdvance)) - 1;
-            if (max < 1) max = 1;
-            string cut = text.Length > max ? text.Substring(0, max) : text;
-            int space = cut.LastIndexOf(' ');
-            if (space > max / 2) cut = cut.Substring(0, space);
-            fit.Text = cut.TrimEnd(' ', ',', '.', ';', ':') + "…";
+            for (float font = fontPt; font >= minPt - 0.001f; font -= 0.5f)
+            {
+                fit.FontPt = font;
+                if (Fits(text, room, boxH, maxLines, font)) return fit;
+            }
+            float floor = minPt;
+            fit.FontPt = floor;
+            var words = text.Split(' ');
+            for (int n = words.Length - 1; n >= 1; n--)
+            {
+                string cut = string.Join(" ", words, 0, n).TrimEnd(' ', ',', '.', ';', ':', '·') + "…";
+                if (Fits(cut, room, boxH, maxLines, floor)) { fit.Text = cut; fit.Cut = true; return fit; }
+            }
+            // One word wider than the box: cut by characters.
+            string first = words[0];
+            for (int n = first.Length - 1; n >= 1; n--)
+            {
+                string cut = first.Substring(0, n) + "…";
+                if (Fits(cut, room, boxH, maxLines, floor)) { fit.Text = cut; fit.Cut = true; return fit; }
+            }
+            fit.Text = "…";
             fit.Cut = true;
             return fit;
+        }
+
+        /// <summary>Greedy word wrap with budgeted widths: the line count, or int.MaxValue if one word is wider than the room.</summary>
+        public static int WrapLines(string text, float room, float fontPt)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+            int lines = 0;
+            foreach (var para in text.Split('\n'))
+            {
+                lines++;
+                float line = 0f;
+                float space = BudgetWidth(" ", fontPt);
+                foreach (var w in para.Split(' '))
+                {
+                    if (w.Length == 0) continue;
+                    float ww = BudgetWidth(w, fontPt);
+                    if (ww > room) return int.MaxValue;
+                    if (line <= 0f) line = ww;
+                    else if (line + space + ww <= room) line += space + ww;
+                    else { lines++; line = ww; }
+                }
+            }
+            return lines;
+        }
+
+        static bool Fits(string text, float room, float boxH, int maxLines, float font)
+        {
+            int lines = WrapLines(text, room, font);
+            if (lines > maxLines) return false;
+            return lines * font * LineHeight <= boxH + 0.01f;
         }
 
         public static float TextWidth(string text, float fontPt)

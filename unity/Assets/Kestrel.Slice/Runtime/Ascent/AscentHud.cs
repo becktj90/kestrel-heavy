@@ -197,7 +197,7 @@ namespace Kestrel.Slice
                 {
                     var b = healthButtons[i];
                     if (b == null) continue;
-                    float hh = Px(FlightHudLayout.HealthPt);
+                    float hh = Mathf.Round(Px(FlightHudLayout.HealthPt));
                     b.style.height = hh;
                     b.style.minHeight = hh;
                     b.style.fontSize = Px(11f);
@@ -266,7 +266,7 @@ namespace Kestrel.Slice
             if (sw > 8f && !float.IsNaN(sw))
             {
                 float cellW = (sw - 2f * Px(FlightHudLayout.CellPadPt) - (CellCount - 1) * Px(FlightHudLayout.CellGapPt)) / CellCount;
-                float wide = FlightHudLayout.TextWidth(FlightHudLayout.WidestValue, val);
+                float wide = FlightHudLayout.BudgetWidth(FlightHudLayout.WidestValue, val);
                 if (wide > cellW - Px(2f) && wide > 0f) k = Math.Min(k, (cellW - Px(2f)) / wide);
             }
             for (int i = 0; i < CellCount; i++)
@@ -286,6 +286,9 @@ namespace Kestrel.Slice
             if (float.IsNaN(w) || w < 8f) return;
             var fit = FlightHudLayout.QuoteLine(full, w / upp, FlightHudLayout.QuoteFontPt, FlightHudLayout.QuoteMinFontPt);
             quote.style.whiteSpace = WhiteSpace.NoWrap;
+            // Budgeted exactly (FlightHudLayout.MeasureFactor): no theme margin or padding on the line.
+            quote.style.marginLeft = 0; quote.style.marginRight = 0; quote.style.marginTop = 0; quote.style.marginBottom = 0;
+            quote.style.paddingLeft = 0; quote.style.paddingRight = 0; quote.style.paddingTop = 0; quote.style.paddingBottom = 0;
             quote.style.fontSize = Px(fit.FontPt);
             quote.text = fit.Text;
             quote.tooltip = full;
@@ -1168,10 +1171,13 @@ namespace Kestrel.Slice
         void SizeHealthRow(VisualElement row)
         {
             if (row == null) return;
-            row.style.height = Px(FlightHudLayout.HitPt);
-            row.style.minHeight = Px(FlightHudLayout.HitPt);
-            row.style.marginTop = -Px(FlightHudLayout.HealthSlopPt);
-            row.style.marginBottom = -Px(FlightHudLayout.HealthSlopPt);
+            // Whole pixels, so the band and the 28 pt tabs centre without a half-pixel seam.
+            float slop = Mathf.Round(Px(FlightHudLayout.HealthSlopPt));
+            float band = Mathf.Round(Px(FlightHudLayout.HealthPt)) + 2f * slop;
+            row.style.height = band;
+            row.style.minHeight = band;
+            row.style.marginTop = -slop;
+            row.style.marginBottom = -slop;
         }
 
         /// <summary>The tab whose column holds <paramref name="x"/> (row-local), else the nearest one; -1 with no tabs.</summary>
@@ -1475,16 +1481,14 @@ namespace Kestrel.Slice
             var verdict = stages.Q<Label>("h-verdict");
             if (verdict != null)
             {
-                bool alarm = verdict.text != null && verdict.text.IndexOf("lost", StringComparison.OrdinalIgnoreCase) >= 0;
-                FlightDusk.Banner(verdict, upp, alarm);
-                // L1: "Climbing" ran off the right edge; the banner never outgrows the stages card.
-                verdict.style.maxWidth = Length.Percent(100);
-                verdict.style.flexShrink = 1;
+                string said = FlightDusk.BannerText(verdict);
+                bool alarm = said != null && said.IndexOf("lost", StringComparison.OrdinalIgnoreCase) >= 0;
+                // L1: "Climbing" ran off the right edge; the banner never outgrows the stages card. Banner fits the
+                // face and the line count to the card (FlightDusk.FitBanner); the clip is only a backstop.
+                verdict.style.flexShrink = 0;
                 verdict.style.overflow = Overflow.Hidden;
                 verdict.style.textOverflow = TextOverflow.Clip;
-                verdict.style.marginLeft = 0;
-                verdict.style.marginRight = 0;
-                verdict.style.fontSize = TextFit.Cap(verdict, 15f * upp);
+                FlightDusk.Banner(verdict, upp, alarm);
                 verdict.style.display = string.IsNullOrEmpty(verdict.text) ? DisplayStyle.None : DisplayStyle.Flex;
             }
             var seq = stages.Q("h-seq");

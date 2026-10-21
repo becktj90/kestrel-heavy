@@ -120,6 +120,109 @@ namespace Kestrel.Core.Tests
             Assert.That(667f - foot + 8f + last.Y + ReportFit.HitPt, Is.LessThanOrEqualTo(667f - 12f + 0.01f), "last exit clears the bottom pad");
         }
 
+        // ---- #322 CI: Unity's TextCore runs ~15% wider than the FontAdvance table ------------------------------
+
+        const string LongVerdict = "Climbing through max-Q on the pitch program, booster burning hot";
+
+        static readonly (string name, float w, float h, float top, float bottom)[] Portrait =
+        {
+            ("375x667 SE", 375f, 667f, 20f, 0f), ("335x720", 335f, 720f, 20f, 0f), ("390x844", 390f, 844f, 47f, 34f),
+            ("430x932", 430f, 932f, 59f, 34f), ("820x1180", 820f, 1180f, 24f, 20f), ("1024x1366", 1024f, 1366f, 24f, 20f),
+        };
+
+        [Test]
+        public void StageBannerFitsTwoLinesOfItsCardAtEveryPortraitSize()
+        {
+            // SE in GameCI: "Climbing through max-Q on the pitch progra" needed 89 x 74 px in a 96 x 53 box (4 lines at 15 px).
+            foreach (var d in Portrait)
+            {
+                var f = FlightHudLayout.Place(d.w, d.h, d.top, d.bottom, 0f, 0f, FlightHudMode.Cruise);
+                float w = f.Stages.W - 8f - 16f; // stages padding, then the banner's own padding
+                var fit = FlightHudLayout.WrapFit(LongVerdict, w, float.PositiveInfinity, 2, 15f, 11f);
+                int lines = FlightHudLayout.WrapLines(fit.Text, w - 2f, fit.FontPt);
+                Assert.That(lines, Is.LessThanOrEqualTo(2), d.name + " " + fit.Text);
+                Assert.That(fit.FontPt, Is.GreaterThanOrEqualTo(11f), d.name);
+                float content = lines * fit.FontPt * FlightHudLayout.LineHeight;
+                Assert.That(content, Is.LessThanOrEqualTo(53f), d.name + " content height (SE box was 53 px)");
+                Assert.That(content + 11f, Is.LessThanOrEqualTo(f.Stages.H), d.name + " banner inside the stages card");
+                foreach (var line in Lines(fit.Text, w - 2f, fit.FontPt))
+                    Assert.That(FlightHudLayout.BudgetWidth(line, fit.FontPt), Is.LessThanOrEqualTo(w - 2f + 0.01f), d.name + " '" + line + "'");
+            }
+            // The worked SE case at the CI box: 2 lines, cut at a word.
+            var se = FlightHudLayout.WrapFit(LongVerdict, 96f, float.PositiveInfinity, 2, 15f, 11f);
+            Assert.That(se.Cut, Is.True);
+            Assert.That(se.Text, Does.StartWith("Climbing").And.EndWith("…"));
+        }
+
+        [Test]
+        public void StripReadingsAndTheEngineOutQuoteFitWithTheMeasureFactor()
+        {
+            foreach (var d in Portrait)
+            foreach (var mode in new[] { FlightHudMode.Cruise, FlightHudMode.Prompt })
+            {
+                var f = FlightHudLayout.Place(d.w, d.h, d.top, d.bottom, 0f, 0f, mode);
+                // AscentHud.FitCells: the widest reading at the value face, scaled down to its cell (never up).
+                float cellW = (f.Telemetry.W - 2f * FlightHudLayout.CellPadPt - 3f * FlightHudLayout.CellGapPt) / 4f;
+                float wide = FlightHudLayout.BudgetWidth(FlightHudLayout.WidestValue, FlightHudLayout.ValueFontPt);
+                float k = wide > cellW - 2f ? (cellW - 2f) / wide : 1f;
+                Assert.That(FlightHudLayout.BudgetWidth(FlightHudLayout.WidestValue, FlightHudLayout.ValueFontPt * k), Is.LessThanOrEqualTo(cellW - 2f + 0.01f), d.name);
+                Assert.That(FlightHudLayout.ValueFontPt * k, Is.GreaterThanOrEqualTo(9f), d.name + " strip value face stays readable");
+                float twoLines = (FlightHudLayout.LabelFontPt + FlightHudLayout.ValueFontPt) * k * FlightHudLayout.LineHeight;
+                Assert.That(twoLines, Is.LessThanOrEqualTo(FlightHudLayout.TelemetryPt - 2f + 0.01f), d.name + " key + value lines");
+                if (mode != FlightHudMode.Prompt) continue;
+                var q = FlightHudLayout.QuoteLine("Engine 1 pressure drop. Shut it down?", f.Quote.W, FlightHudLayout.QuoteFontPt, FlightHudLayout.QuoteMinFontPt);
+                Assert.That(FlightHudLayout.BudgetWidth(q.Text, q.FontPt), Is.LessThanOrEqualTo(f.Quote.W - 2f + 0.01f), d.name + " quote");
+                Assert.That(q.FontPt * FlightHudLayout.LineHeight, Is.LessThanOrEqualTo(FlightHudLayout.QuotePt + 0.01f), d.name + " quote row");
+            }
+        }
+
+        [Test]
+        public void ReportExitLabelsFitTheirCellsWithoutCutting()
+        {
+            var labels = new[] { "Fix it", ReportRoutes.NextLabel, ReportRoutes.AgainLabel, "Back to designer", ReportRoutes.MissionsLabel, ReportRoutes.HomeLabel };
+            foreach (var (w, h) in Sizes)
+            foreach (int n in new[] { 5, 6 })
+            {
+                float upp = ReportFit.Units(1f, w, h);
+                float cw = ReportFit.ContentWidth(w / upp);
+                for (int i = 0; i < n; i++)
+                {
+                    var cell = ReportFit.GridCell(cw, n, i);
+                    foreach (var text in labels)
+                    {
+                        var fit = FlightHudLayout.WrapFit(text, cell.W - 12f, ReportFit.HitPt - 4f, 2, 17f, 14f);
+                        Assert.That(fit.Cut, Is.False, w + "x" + h + " n=" + n + " #" + i + " '" + text + "' in " + cell.W);
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void HangarTabsFitDesignsAtTheTenPointFloor()
+        {
+            // HangarPanel.BuildTabs: five equal columns, 1 pt side margins, 2 pt side padding, 2 px allowance.
+            foreach (float w in new[] { 300f, 335f, 375f, 390f, 430f, 820f })
+            {
+                float tab = (w - 5f * 2f) / 5f;
+                float room = tab - 4f - 2f;
+                float face = System.Math.Min(16f, 16f * room / FlightHudLayout.BudgetWidth("Designs", 16f));
+                Assert.That(face, Is.GreaterThanOrEqualTo(10f), w + " Designs face " + face);
+                Assert.That(tab, Is.GreaterThanOrEqualTo(44f), w + " tab target");
+            }
+        }
+
+        static IEnumerable<string> Lines(string text, float room, float font)
+        {
+            string line = "";
+            foreach (var word in text.Split(' '))
+            {
+                string next = line.Length == 0 ? word : line + " " + word;
+                if (line.Length > 0 && FlightHudLayout.BudgetWidth(next, font) > room) { yield return line; line = word; }
+                else line = next;
+            }
+            if (line.Length > 0) yield return line;
+        }
+
         [Test]
         public void QuoteLineStepsDownThenCutsAtAWord()
         {
@@ -129,12 +232,12 @@ namespace Kestrel.Core.Tests
             Assert.That(fit.FontPt, Is.EqualTo(FlightHudLayout.QuoteFontPt));
             var tight = FlightHudLayout.QuoteLine(q, 260f, FlightHudLayout.QuoteFontPt, FlightHudLayout.QuoteMinFontPt);
             Assert.That(tight.FontPt, Is.LessThan(FlightHudLayout.QuoteFontPt));
-            Assert.That(FlightHudLayout.TextWidth(tight.Text, tight.FontPt), Is.LessThanOrEqualTo(258f));
+            Assert.That(FlightHudLayout.BudgetWidth(tight.Text, tight.FontPt), Is.LessThanOrEqualTo(258f));
             var cut = FlightHudLayout.QuoteLine(q, 120f, FlightHudLayout.QuoteFontPt, FlightHudLayout.QuoteMinFontPt);
             Assert.That(cut.Cut, Is.True);
             Assert.That(cut.FontPt, Is.EqualTo(FlightHudLayout.QuoteMinFontPt));
             Assert.That(cut.Text, Does.EndWith("…"));
-            Assert.That(FlightHudLayout.TextWidth(cut.Text, cut.FontPt), Is.LessThanOrEqualTo(118f));
+            Assert.That(FlightHudLayout.BudgetWidth(cut.Text, cut.FontPt), Is.LessThanOrEqualTo(118f));
         }
     }
 }

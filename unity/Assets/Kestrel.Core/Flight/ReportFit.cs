@@ -107,7 +107,12 @@ namespace Kestrel.Core.Flight
             float w = Math.Max(8f, widthPt);
             int lines = 0;
             foreach (var para in text.Split('\n'))
-                lines += Math.Max(1, (int)Math.Ceiling(FlightHudLayout.TextWidth(para, fontPt) / w));
+            {
+                // Word wrap with Unity-sized widths (FlightHudLayout.MeasureFactor); a word wider than the column breaks by character.
+                int wrapped = FlightHudLayout.WrapLines(para, w, fontPt);
+                if (wrapped == int.MaxValue) wrapped = (int)Math.Ceiling(FlightHudLayout.BudgetWidth(para, fontPt) / w) + 1;
+                lines += Math.Max(1, wrapped);
+            }
             return lines * fontPt * LineBox + LineTopPt + LineBottomPt;
         }
 

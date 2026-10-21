@@ -137,7 +137,10 @@ namespace Kestrel.Slice
                 b.style.minWidth = ui.U(HangarUi.TargetPt);
                 b.style.whiteSpace = WhiteSpace.NoWrap;
                 b.style.overflow = Overflow.Hidden;
-                b.style.paddingLeft = ui.U(4f); b.style.paddingRight = ui.U(4f);
+                // Budgeted exactly: 2 pt side padding, 1 pt side margins, no vertical padding (theme defaults zeroed).
+                b.style.paddingLeft = ui.U(2f); b.style.paddingRight = ui.U(2f);
+                b.style.paddingTop = 0; b.style.paddingBottom = 0;
+                b.style.marginLeft = ui.U(1f); b.style.marginRight = ui.U(1f);
                 tabButtons[t] = b;
                 tabs.Add(b);
             }
@@ -168,10 +171,12 @@ namespace Kestrel.Slice
             foreach (var b in tabButtons.Values)
             {
                 // Less padding and a small allowance for the button border.
-                float w = b.resolvedStyle.width - b.resolvedStyle.paddingLeft - b.resolvedStyle.paddingRight - 4f;
+                float w = b.resolvedStyle.width - b.resolvedStyle.paddingLeft - b.resolvedStyle.paddingRight - 2f;
                 if (!(w > 4f) || string.IsNullOrEmpty(b.text)) continue;
                 var size = b.MeasureTextSize(b.text, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined);
                 float atFace = b.resolvedStyle.fontSize > 0f ? size.x * tabFacePx / b.resolvedStyle.fontSize : size.x;
+                // Never budget less than the table width with Unity's ~15% TextCore excess (FlightHudLayout.MeasureFactor).
+                atFace = Mathf.Max(atFace, Kestrel.Core.Flight.FlightHudLayout.BudgetWidth(b.text, tabFacePx));
                 if (atFace > w && atFace > 0f) face = Mathf.Min(face, tabFacePx * w / atFace);
             }
             // Floor: 10 pt (in panel units), the same smallest face TextFit steps down to.

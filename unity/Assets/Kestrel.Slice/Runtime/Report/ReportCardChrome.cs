@@ -150,7 +150,7 @@ namespace Kestrel.Slice
                     if (child is Button eb && eb.style.display != DisplayStyle.None) exits.Add(eb);
             int rows = ReportFit.FootRows(contentW, exits.Count);
             float footPt = foot != null ? ReportFit.FootPt(rows, safeBottomPt) : 0f;
-            float footH = footPt * upp;
+            float footH = Mathf.Ceil(footPt * upp);
             float topPt = Mathf.Max(8f, safeTopPt);
             if (scroll != null)
             {
@@ -256,8 +256,10 @@ namespace Kestrel.Slice
             {
                 if (button == null) return;
                 PaintButton(button, HitPt, Role(button.name));
-                button.style.minHeight = ReportFit.HitPt * upp;
-                button.style.height = ReportFit.HitPt * upp;
+                button.style.minHeight = Mathf.Round(ReportFit.HitPt * upp);
+                button.style.height = Mathf.Round(ReportFit.HitPt * upp);
+                button.style.paddingTop = 0;
+                button.style.paddingBottom = 0;
                 button.style.fontSize = ButtonPt * upp;
                 button.style.borderBottomWidth = 4f * upp;
                 button.style.whiteSpace = WhiteSpace.Normal;
@@ -276,25 +278,24 @@ namespace Kestrel.Slice
                 // Absolute cells in the footer's content box: no flex-wrap rounding can push a cell to a new row.
                 var cell = ReportFit.GridCell(contentW, exits.Count, index);
                 button.style.position = Position.Absolute;
-                button.style.left = (side + cell.X) * upp;
-                button.style.top = (8f + cell.Y) * upp;
+                // Whole pixels: rounded edges, widths floored so neighbours never share a pixel column.
+                button.style.left = Mathf.Round((side + cell.X) * upp);
+                button.style.top = Mathf.Round((8f + cell.Y) * upp);
                 button.style.flexGrow = 0;
                 button.style.flexShrink = 0;
                 button.style.flexBasis = StyleKeyword.Auto;
                 button.style.minWidth = 0;
                 button.style.maxWidth = StyleKeyword.None;
-                button.style.width = cell.W * upp;
+                button.style.width = Mathf.Floor(cell.W * upp);
                 button.style.marginLeft = 0;
                 button.style.marginTop = 0;
                 button.style.marginRight = 0;
                 button.style.marginBottom = 0;
                 // A label too long for one line at 17 pt ("Back to designer" in a 2-column phone grid) steps
-                // down to the 14 pt floor and wraps to two lines inside the 48 pt target.
-                float fitPt = ButtonPt;
-                float need = FlightHudLayout.TextWidth(button.text ?? "", fitPt);
-                float room = cell.W - 12f;
-                if (need > room && need > 0f) fitPt = Mathf.Max(14f, fitPt * room / need);
-                button.style.fontSize = Mathf.Min(ButtonPt, fitPt) * upp;
+                // down to the 14 pt floor and wraps to at most two lines inside the 48 pt target (44 pt above the
+                // 4 pt edge, no vertical padding), widths budgeted at FlightHudLayout.MeasureFactor.
+                var fitB = FlightHudLayout.WrapFit(button.text ?? "", cell.W - 12f, ReportFit.HitPt - 4f, 2, ButtonPt, 14f);
+                button.style.fontSize = Mathf.Min(ButtonPt, fitB.FontPt) * upp;
             });
         }
 
