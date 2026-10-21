@@ -77,6 +77,46 @@ namespace Kestrel.Core.Tests
             foreach (var f in Fly(index, json)) Assert.That(f.failure, Is.Not.EqualTo("structural-maxq"), "seed " + f.seed + " / " + outcome.Note);
         }
 
+        [TestCase(14)]
+        [TestCase(16)]
+        public void FixIt_WeakAirframe_RepairsUntilEveryGateSeedFlies_GustsIncluded(int index)
+        {
+            // The starter with the walls cut to strength 1.0 breaks up at max-Q on every seed. The stepper's repair alone
+            // read Ready but still broke up on one gusty seed (KH-14 seed 3, KH-16 seed 5). Fixed has to mean fixed:
+            // FlightBatch seeds 1-5, the gate's seeds, all fly with no failure.
+            var json = Starter(index);
+            JsonMut.Set(json, "safetyFactor", 1.0);
+            var before = Gate(json);
+            Assert.That(before.state, Is.EqualTo(LaunchGateState.Blocked));
+            Assert.That(before.code, Is.EqualTo("structural-maxq"), before.Line);
+            Assert.That(Fly(index, json).TrueForAll(f => f.failure == "structural-maxq"), "the weak rocket really breaks up");
+
+            var outcome = DesignerRepair.Fix(catalog, json, before.code, campaign.Mission(index));
+            Assert.That(outcome.Changed, outcome.Note);
+            Assert.That(json.Num("safetyFactor"), Is.GreaterThan(1.0), outcome.Note);
+            foreach (var f in Fly(index, json)) Assert.IsNull(f.failure, "KH-" + index + " seed " + f.seed + " / " + outcome.Note);
+            Assert.That(outcome.FullyFixed, outcome.Note);
+            Assert.That(outcome.Note, Does.Not.Contain("could not"), outcome.Note);
+            var after = Gate(json);
+            Assert.That(after.Ready, after.Line);
+        }
+
+        [Test]
+        public void FixIt_ThatCannotFixTheFlight_SaysSo_NeverClaimsSuccess()
+        {
+            // KH-6's rocket with half the upper-stage load, asked to fix a structural kind. Strength cannot stop it
+            // running dry, so after its steps Fix it says it could not fully fix the rocket instead of a success note.
+            var json = Starter(6);
+            TopStageProp(json, 0.5);
+            var outcome = DesignerRepair.Fix(catalog, json, "structural-maxq", campaign.Mission(6));
+            var flights = Fly(6, json);
+            int failed = flights.FindAll(f => f.failure != null).Count;
+            Assert.That(failed, Is.GreaterThan(0), "this rocket still fails a gate seed");
+            Assert.IsFalse(outcome.FullyFixed);
+            Assert.That(outcome.Note, Is.EqualTo(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                DesignerRepair.NotFullyFixed, failed, DesignerRepair.GateSeeds)));
+        }
+
         [Test]
         public void ReportFixIt_RanOutOfFuel_AddsFuelUntilTheFlightReachesOrbit()
         {

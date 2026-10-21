@@ -1269,7 +1269,9 @@ namespace Kestrel.Slice.DesignerV3
             // F2: one Core repair for the report, the gate and the risk rows (DesignerRepair.Fix).
             Show(DesignerV3Tabs.FromRiskTab(DesignerRepair.FixTab(kind, tabId)));
             RepairOutcome outcome = null;
-            Do(d => (outcome = DesignerRepair.Fix(C, d, kind)).Edit);
+            // The mission on the pad (the one FlightDriver flies), so Fix it repairs until the gate seeds 1-5 fly clean.
+            var mission = AscentFlight.CurrentMission();
+            Do(d => (outcome = DesignerRepair.Fix(C, d, kind, mission)).Edit);
             string note = outcome != null ? outcome.Note : "";
             NoteRepair(outcome != null && outcome.DeltaV ? PlayerText.ForPlayer(note) : note);
         }

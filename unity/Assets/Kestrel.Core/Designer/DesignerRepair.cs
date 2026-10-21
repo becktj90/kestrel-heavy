@@ -2,6 +2,7 @@
 // The number that changes is the one the failure named. Speed shortfalls go through DvMarginFix.
 using System;
 using Kestrel.Core.Data;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Json;
 
@@ -14,6 +15,8 @@ namespace Kestrel.Core.Designer
 
         public const string DeltaVAdded = "Added propellant or a stage so the speed covers this trip.";
         public const string DeltaVAlready = "This rocket already has the speed for this trip. Check the other warnings.";
+        /// <summary>F2: Fix it ran out of steps and the rocket still fails a test flight. It never claims a full fix then.</summary>
+        public const string NotFullyFixed = "Fix it could not fully fix this rocket. It still fails {0} of {1} test flights. Lighten the cargo or change the rocket.";
 
         /// <summary>
         /// F2: the kind the report's Fix it repairs. A flight with no failure event still owes a fix:
@@ -62,8 +65,13 @@ namespace Kestrel.Core.Designer
         /// in place and says what changed. A speed or fuel kind goes through <see cref="DvMarginFix"/>; anything
         /// else tries the stepper's search (<see cref="Stepper.StepperFix"/>, which may take several moves, e.g.
         /// strength and max-Q throttle together), then the single control the failure named.
+        /// With <paramref name="mission"/> (the live mission, the same one FlightDriver flies), "fixed" means fixed: the
+        /// repaired rocket must fly FlightBatch seeds 1–5 (<see cref="GateSeeds"/>, the golden gate's seeds, gusts included)
+        /// with no failure. Fix it keeps adding strength, one step at a time and at most <see cref="StrengthSteps"/> steps,
+        /// while a seed still breaks up; a fuel kind keeps adding margin while a seed runs dry. If that is not enough the
+        /// note says so (<see cref="NotFullyFixed"/>). Without a mission (a free build) only the designer's checks apply.
         /// </summary>
-        public static RepairOutcome Fix(Catalog catalog, JsonObject design, string kind)
+        public static RepairOutcome Fix(Catalog catalog, JsonObject design, string kind, CampaignMission mission = null)
         {
             var outcome = new RepairOutcome { Kind = kind ?? "" };
             if (design == null) return outcome;
@@ -75,7 +83,8 @@ namespace Kestrel.Core.Designer
                 // The budget can say "enough" while the flown test ascent still runs dry (or a hop tops out short).
                 // That is the report's "ran out of fuel", and Fix it used to change nothing for it. Ask the solver
                 // for a bigger margin until the flight is not short, a few steps at most.
-                for (int step = 0; step < FlightSteps && dv != null && dv.Solved && FlightShort(catalog, design); step++)
+                for (int step = 0; step < FlightSteps && dv != null && dv.Solved
+                     && (FlightShort(catalog, design) || FirstFailure(catalog, mission, design) == "prop-depletion"); step++)
                 {
                     double margin = double.IsNaN(dv.Margin) ? 0 : dv.Margin;
                     var more = DvMarginFix.Solve(catalog, design, Math.Max(0, margin) + FlightMarginStep);
@@ -83,8 +92,15 @@ namespace Kestrel.Core.Designer
                     dv = more;
                     changed |= Take(design, dv);
                 }
+                // A seed that still breaks up on the way (a gust at max-Q) gets the same strength steps as below.
+                var strength = mission != null ? Strengthen(catalog, mission, design) : Edit.None;
+                bool fuel = changed;
+                changed |= strength.changed;
                 if (changed) outcome.Edit = new Edit("Fixed the speed shortfall");
-                if (dv == null)
+                if (Unfixed(catalog, mission, design, outcome)) return outcome;
+                if (strength.changed && !fuel)
+                    outcome.Note = strength.what + " " + strength.from + " → " + strength.to;
+                else if (dv == null)
                     outcome.Note = "The speed for this trip could not be worked out. Lighten the cargo, raise the budget, or pick a different mission.";
                 else if (changed)
                     outcome.Note = DeltaVAdded;
@@ -92,6 +108,7 @@ namespace Kestrel.Core.Designer
                     outcome.Note = DeltaVNote(dv);
                 return outcome;
             }
+            var start = mission != null ? JsonMut.CloneObject(design) : null;
             var check = new Stepper.StepCheck
             {
                 Step = Stepper.DesignerStep.Look,
@@ -111,7 +128,105 @@ namespace Kestrel.Core.Designer
                 outcome.Note = "The g limit is already under the payload rating.";
             else
                 outcome.Note = "That control is already at the safer setting.";
+            if (mission == null || FirstFailure(catalog, mission, design) == null)
+            {
+                outcome.FullyFixed = mission != null;
+                return outcome;
+            }
+            // The designer's checks read Ready but a gate seed still fails (a gust at max-Q). First add strength to the
+            // repaired rocket; if that cannot pass all seeds, add strength to the rocket as it was before Fix it (the
+            // stepper's other moves, more fuel or engines, can be what the gust catches). Same steps, same seeds.
+            var stronger = JsonMut.CloneObject(design);
+            var added = Strengthen(catalog, mission, stronger);
+            if (added.changed && FirstFailure(catalog, mission, stronger) == null)
+            {
+                Replace(design, stronger);
+                outcome.Edit = made.changed ? made : added;
+                outcome.Note = (outcome.Note + " " + added.what + " " + added.from + " → " + added.to).Trim();
+                outcome.FullyFixed = true;
+                return outcome;
+            }
+            var plain = JsonMut.CloneObject(start);
+            var only = Strengthen(catalog, mission, plain);
+            if (only.changed && FirstFailure(catalog, mission, plain) == null)
+            {
+                Replace(design, plain);
+                outcome.Edit = only;
+                outcome.Note = only.what + " " + only.from + " → " + only.to;
+                outcome.FullyFixed = true;
+                return outcome;
+            }
+            Unfixed(catalog, mission, design, outcome);
             return outcome;
+        }
+
+        /// <summary>FlightBatch seeds the gate flies (the golden gate's 1–5, gusts included).</summary>
+        public const ulong GateSeeds = 5;
+        /// <summary>Strength steps Fix it may add while a gate seed still breaks up (DesignerLimits.safetyStep each).</summary>
+        public const int StrengthSteps = 8;
+
+        /// <summary>
+        /// The first failure kind on FlightBatch seeds 1–<see cref="GateSeeds"/> (the same flight the gate and the goldens
+        /// fly), or null when every seed flies clean. Null as well without a mission: there is no gate flight to judge.
+        /// </summary>
+        public static string FirstFailure(Catalog catalog, CampaignMission mission, JsonObject design)
+        {
+            if (catalog == null || mission == null || design == null) return null;
+            var d = Vehicle.Design.FromJson(design);
+            for (ulong seed = 1; seed <= GateSeeds; seed++)
+            {
+                var f = FlightBatch.Fly(catalog, mission, d, seed);
+                if (f.failure != null) return f.failure;
+            }
+            return null;
+        }
+
+        static int FailedSeeds(Catalog catalog, CampaignMission mission, JsonObject design)
+        {
+            var d = Vehicle.Design.FromJson(design);
+            int n = 0;
+            for (ulong seed = 1; seed <= GateSeeds; seed++)
+                if (FlightBatch.Fly(catalog, mission, d, seed).failure != null) n++;
+            return n;
+        }
+
+        static bool StrengthHelps(string failure) => failure == "structural-maxq" || failure == "maxq-high";
+
+        /// <summary>
+        /// Adds strength one step at a time (at most <see cref="StrengthSteps"/>) while a gate seed breaks up at max-Q.
+        /// Stops at once when the seeds pass, when the failure is not one strength fixes, or at the strength maximum.
+        /// The edit spans the first step's "from" to the last step's "to".
+        /// </summary>
+        static Edit Strengthen(Catalog catalog, CampaignMission mission, JsonObject design)
+        {
+            string from = null, to = null;
+            for (int step = 0; step < StrengthSteps; step++)
+            {
+                if (!StrengthHelps(FirstFailure(catalog, mission, design))) break;
+                var e = RaiseSafety(design);
+                if (!e.changed) break;
+                if (from == null) from = e.from;
+                to = e.to;
+            }
+            return from == null ? Edit.None : new Edit("Strength", from, to);
+        }
+
+        /// <summary>Sets the honest note when a gate seed still fails after every step. True when it did.</summary>
+        static bool Unfixed(Catalog catalog, CampaignMission mission, JsonObject design, RepairOutcome outcome)
+        {
+            if (mission == null) return false;
+            int failed = FailedSeeds(catalog, mission, design);
+            outcome.FullyFixed = failed == 0;
+            if (failed == 0) return false;
+            outcome.Note = string.Format(System.Globalization.CultureInfo.InvariantCulture, NotFullyFixed, failed, GateSeeds);
+            return true;
+        }
+
+        static void Replace(JsonObject design, JsonObject from)
+        {
+            design.Clear();
+            design.Order.Clear();
+            foreach (var k in from.Order) design.Add(k, JsonMut.Clone(from[k]));
         }
 
         /// <summary>Extra Δv margin asked for per step when the flown ascent is still short.</summary>
@@ -207,6 +322,8 @@ namespace Kestrel.Core.Designer
         public string Note = "";
         /// <summary>The speed path ran (<see cref="DvMarginFix"/>); its note is player text that still goes through PlayerText.</summary>
         public bool DeltaV;
+        /// <summary>F2: a mission was given and the repaired rocket flies every gate seed with no failure.</summary>
+        public bool FullyFixed;
         public bool Changed => Edit.changed;
     }
 }
