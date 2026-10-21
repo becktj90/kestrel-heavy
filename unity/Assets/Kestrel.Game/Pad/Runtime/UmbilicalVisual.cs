@@ -36,7 +36,7 @@ namespace Kestrel.Pad
         public void Init(ServiceLink link, SwingArm arm, Mesh beam)
         {
             Link = link; Arm = arm;
-            // #333: hoses, masts and plates cull with the tower they hang from (PadRenderer's members are Large). At Small
+            // #332: hoses, masts and plates cull with the tower they hang from (PadRenderer's members are Large). At Small
             // the hoses went at 200-500 m while the rail stayed, and at Medium the mast before the hoses' anchor.
             _mast = new InstanceBatch(beam, MaterialLibrary.Get(MaterialRole.SafetyYellowSteel), PadCull);
             _plates = new InstanceBatch(PlateMesh(), MaterialLibrary.Get(MaterialRole.Galvanized), PadCull);

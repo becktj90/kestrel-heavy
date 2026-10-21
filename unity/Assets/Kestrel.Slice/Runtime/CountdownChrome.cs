@@ -1,4 +1,4 @@
-// The countdown's bottom stack and COUNT tag, dressed inline while the count runs (TestFlight 202, #333).
+// The countdown's bottom stack and COUNT tag, dressed inline while the count runs (TestFlight 202, #332).
 // Layout and colours come from Kestrel.Core.Flight.CountdownStack (pure, tested in Kestrel.Core.Tests): one Ink
 // card with a sun edge holding the title, the spare line and one row with the status pill and Skip count.
 // Before: "On the count" banner, a loose cream spare line on the sky, a "Deluge" banner that read as a button and

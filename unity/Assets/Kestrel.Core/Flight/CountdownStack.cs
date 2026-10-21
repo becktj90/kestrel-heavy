@@ -1,4 +1,4 @@
-// The countdown's bottom stack as one card (TestFlight 202, #333). Before: the verdict banner ("On the count"),
+// The countdown's bottom stack as one card (TestFlight 202, #332). Before: the verdict banner ("On the count"),
 // the delta-v spare line floating on the sky in 13 pt cream (unreadable over a pale sky), the pad sequence line
 // ("Deluge") dressed as a second banner so it read as a button, and a 22 pt "Skip count" bar: four blocks.
 // Now: one Ink card holding the title, the spare line in cream on the card, and one row with the status pill

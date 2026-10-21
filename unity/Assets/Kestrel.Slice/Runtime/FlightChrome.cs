@@ -611,7 +611,7 @@ namespace Kestrel.Slice
         public void FollowRocket()
         {
             if (Paused) return;
-            // A toggle (#333): following, a tap lets go to the ground camera; otherwise it recentres and chases again.
+            // A toggle (#332): following, a tap lets go to the ground camera; otherwise it recentres and chases again.
             bool was = Following;
             if (!was && !rig.Follow && FlightView.Chases(viewMode))
             {
@@ -639,7 +639,7 @@ namespace Kestrel.Slice
             bool on = Following;
             follow.text = FlightView.FollowCaption(on);
             follow.tooltip = FlightView.FollowTip(on);
-            // #333: Following was white at 12% under white text (about 1.1:1 on a pale sky). Now the dusk ink plate,
+            // #332: Following was white at 12% under white text (about 1.1:1 on a pale sky). Now the dusk ink plate,
             // cream text and a teal edge (a state); Follow rocket stays solid amber with dark text (an action).
             // Kestrel.Core.Tests CountdownStackTests checks both at 4.5:1 or better over every backdrop.
             var plate = on ? CountdownStack.FollowingPlate : CountdownStack.FollowPlate;

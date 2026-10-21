@@ -1,4 +1,4 @@
-// The flight notes (the "i" sheet). TestFlight t432 (#333): the notes ran two long sentences each and were cut
+// The flight notes (the "i" sheet). TestFlight t432 (#332): the notes ran two long sentences each and were cut
 // mid-line in a box over the Follow / Cam / Pause row. Short lines now; the sheet has a fixed height and scrolls.
 namespace Kestrel.Core.Flight
 {

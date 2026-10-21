@@ -1,4 +1,4 @@
-// The left progress rail through a real ascent (TestFlight t432, #333): at T+116 (S1, 33 km) and T+192 (S2, 57 km)
+// The left progress rail through a real ascent (TestFlight t432, #332): at T+116 (S1, 33 km) and T+192 (S2, 57 km)
 // the marker sat parked between two stops and Fairing never lit. The rail is fed exactly as AscentHud.FeedTrajectory
 // feeds it: the sim's events, then Sample() every frame, then At().
 using System;

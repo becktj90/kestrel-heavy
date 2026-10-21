@@ -1,4 +1,4 @@
-// The countdown's bottom stack and COUNT tag (TestFlight 202, #333): one card, a readable spare line, a status that
+// The countdown's bottom stack and COUNT tag (TestFlight 202, #332): one card, a readable spare line, a status that
 // is not a button, a 44 pt Skip count, a Follow chip that reads in both states, a tag that fits its own box.
 using Kestrel.Core.Flight;
 using NUnit.Framework;
@@ -88,7 +88,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void FollowTogglesAndComesBackToThePlayersView()
         {
-            // #333: "tapping Follow does nothing". Following, a tap lets go to the ground camera; the next tap chases again.
+            // #332: "tapping Follow does nothing". Following, a tap lets go to the ground camera; the next tap chases again.
             Assert.That(FlightView.FollowToggle(FlightViewMode.Chase, true, FlightViewMode.Chase), Is.EqualTo(FlightViewMode.Pad));
             Assert.That(FlightView.FollowToggle(FlightViewMode.Pad, false, FlightViewMode.Chase), Is.EqualTo(FlightViewMode.Chase));
             Assert.That(FlightView.FollowToggle(FlightViewMode.Pad, false, FlightViewMode.Pad), Is.EqualTo(FlightViewMode.Auto));

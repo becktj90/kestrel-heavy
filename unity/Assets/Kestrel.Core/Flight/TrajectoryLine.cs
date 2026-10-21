@@ -443,7 +443,7 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>
-        /// Share of the way to the next stop. #333 (t432, T+116 and T+192): it was the nominal-gap fraction clamped at
+        /// Share of the way to the next stop. #332 (t432, T+116 and T+192): it was the nominal-gap fraction clamped at
         /// 0.82, so a stage that burned longer than the table's gap parked the marker for minutes. Now linear to 0.6,
         /// then easing toward 0.95 without ever stopping: the marker always creeps up and never reaches an unlit stop.
         /// </summary>

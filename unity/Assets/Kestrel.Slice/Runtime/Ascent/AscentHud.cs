@@ -353,7 +353,7 @@ namespace Kestrel.Slice
             railMode = mode;
             railNudges = nudgeRowOpen;
             if (plot.parent != hud) hud.Insert(0, plot);
-            // #333 (TestFlight t432): the frame is in the HUD's content box, but absolute offsets start at its padding
+            // #332 (TestFlight t432): the frame is in the HUD's content box, but absolute offsets start at its padding
             // edge. Pinned without the padding, the rail and the dock sat padTop higher than the flex rows: on a
             // 62 pt notch the dock covered Follow / Cam / Pause (and took their taps) and SECO hid under the strip.
             // CI's 24 px minimum padding hid it. Pins now add the padding, like SeatRailPicker.
@@ -1168,7 +1168,7 @@ namespace Kestrel.Slice
                 healthButtons[i] = b;
                 row.Add(b);
             }
-            // #333 (t432): the detail was pinned 28 pt down inside the health row, i.e. right on the ALT / SPEED / Q / G
+            // #332 (t432): the detail was pinned 28 pt down inside the health row, i.e. right on the ALT / SPEED / Q / G
             // strip, and cut. It is now a popover under the strip (over the cards, never the readouts), added last to
             // the ascent root so it draws above them, full text, dismissed by the same tab or any tap outside it.
             healthDetail = new Label { name = HealthDetailName, pickingMode = PickingMode.Position };
@@ -1404,7 +1404,7 @@ namespace Kestrel.Slice
             }
             // Portrait: Follow / Cam / Pause sit right above the dock, so the sheet floats above them, never over them.
             float tools = widePinned ? 0f : Px(FlightHudLayout.ButtonPt + FlightHudLayout.GapPt);
-            // `bottom` is from the HUD's padding edge; the dock and the tools row sit inside the bottom padding (#333:
+            // `bottom` is from the HUD's padding edge; the dock and the tools row sit inside the bottom padding (#332:
             // without it the sheet covered Follow / Cam / Pause by the home-indicator inset).
             float padB = widePinned ? 0f : hud.resolvedStyle.paddingBottom;
             if (float.IsNaN(padB)) padB = 0f;
@@ -1431,7 +1431,7 @@ namespace Kestrel.Slice
                 float room = (panelH - bottom) / upp - (panelH / upp * FlightHudLayout.StackBottom + 8f);
                 sheet = Mathf.Clamp(Mathf.Min(sheet, room), 48f, 96f);
             }
-            // Fixed height, and it scrolls: the notes never grow over the rows under them (#333).
+            // Fixed height, and it scrolls: the notes never grow over the rows under them (#332).
             help.style.height = Mathf.Round(Px(sheet));
             help.style.maxHeight = Mathf.Round(Px(sheet));
             help.style.minHeight = Mathf.Round(Px(48f));

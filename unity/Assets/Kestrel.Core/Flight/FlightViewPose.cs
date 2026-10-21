@@ -5,7 +5,7 @@
 // What changed against the #288 offsets (FlightView.Of):
 //  - Height is the CURRENT stack: after a stage drops, Above/Below/Chase/Auto frame the upper stage
 //    (its base and length) instead of the full launch stack, which left it small and far away.
-//  - Below on the pad (TestFlight 202, #333): the #304 hold sat 0.15 h ABOVE the deck at 0.9 h, i.e. a
+//  - Below on the pad (TestFlight 202, #332): the #304 hold sat 0.15 h ABOVE the deck at 0.9 h, i.e. a
 //    level side view that did not look up, and in world axes, so on the yawed pad it could land by the
 //    tower legs or a light pole. It is now a worm's-eye view: just under the deck top (below the rocket's
 //    base), outside the deck rim, on the pad side opposite the tower (pad frame, PadYawDeg) and clear of the

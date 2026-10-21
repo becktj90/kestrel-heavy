@@ -240,7 +240,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void EveryModeIsItsOwnViewMidFlightAndBelowLooksUpAtTheBelly()
         {
-            // TestFlight t432 (#333): "Cam: Below is really a side or front view", and switching seemed to do nothing.
+            // TestFlight t432 (#332): "Cam: Below is really a side or front view", and switching seemed to do nothing.
             foreach (var m in Flight())
             {
                 if (m.Altitude < 500) continue;

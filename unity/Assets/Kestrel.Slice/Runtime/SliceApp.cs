@@ -1844,7 +1844,7 @@ namespace Kestrel.Slice
             }
         }
 
-        /// <summary>The count: one card (title, the spare line on the card, status pill + Skip count). #333.</summary>
+        /// <summary>The count: one card (title, the spare line on the card, status pill + Skip count). #332.</summary>
         void RefreshCountCard()
         {
             if (seqRow != null) { seqRow.Clear(); seqRow.style.display = DisplayStyle.None; }

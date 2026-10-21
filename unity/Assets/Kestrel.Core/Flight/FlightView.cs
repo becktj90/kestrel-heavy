@@ -87,7 +87,7 @@ namespace Kestrel.Core.Flight
         public static FlightViewMode FollowView(FlightViewMode mode) => Chases(mode) ? mode : FlightViewMode.Auto;
 
         /// <summary>
-        /// The Follow button toggles (#333, Trevor: "tapping Follow does nothing"). While following, a tap lets go:
+        /// The Follow button toggles (#332, Trevor: "tapping Follow does nothing"). While following, a tap lets go:
         /// the camera stays on the ground (Pad). Not following, a tap goes back to the last chasing view the
         /// player had (or Auto), and the orbit is cleared.
         /// </summary>

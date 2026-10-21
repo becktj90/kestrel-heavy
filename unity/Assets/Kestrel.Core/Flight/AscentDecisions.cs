@@ -412,7 +412,7 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>When the fairing call resolved (sim s, m, m/s); NaN until then. The trajectory rail lights Fairing
-        /// from it (#333): the flown AscentSim emits no "fairing" event (SimOptions.fairingJettisonAltM is unset).</summary>
+        /// from it (#332): the flown AscentSim emits no "fairing" event (SimOptions.fairingJettisonAltM is unset).</summary>
         public double FairingT = double.NaN, FairingAltM = double.NaN, FairingSpeedMps = double.NaN;
 
         readonly AscentVehicle vehicle;
