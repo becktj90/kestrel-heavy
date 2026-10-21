@@ -336,29 +336,45 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(PadHandoff.FlyOnPad, "nothing relaunches");
         }
 
+        /// <summary>NAV-05 (fixed): the no-debrief report card (PostFlightSource.Publish threw) keeps Retry, Missions and Home
+        /// in the same report-actions footer as the debrief card, and Escape goes Home, so Fix it is not the only way out.</summary>
         [Test]
-        public void KnownBug_NAV05_ReportWithoutDebrief_HasOnlyFixIt()
+        public void NAV05_ReportWithoutDebrief_KeepsEveryExit()
         {
-            KnownBug("NAV-05", "a report card built without a debrief still has Retry, Missions and Home", () =>
-            {
-                string view = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "Report", "ReportView.cs");
-                int start = view.IndexOf("return RewardsCard.Build(", StringComparison.Ordinal);
-                int end = view.IndexOf("public static VisualElement Icon(", StringComparison.Ordinal);
-                string fallback = view.Substring(start, end - start);
-                return fallback.Contains("AddRoutes") ? null : "ReportView.Build without a debrief (PostFlightSource.Publish threw) adds only failure-fix and sets no Escape";
-            });
+            string view = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "Report", "ReportView.cs");
+            int start = view.IndexOf("return RewardsCard.Build(", StringComparison.Ordinal);
+            int end = view.IndexOf("public static VisualElement Icon(", StringComparison.Ordinal);
+            Assert.That(start, Is.GreaterThanOrEqualTo(0), "debrief branch");
+            Assert.That(end, Is.GreaterThan(start), "Icon follows Build");
+            string fallback = view.Substring(start, end - start);
+            StringAssert.Contains("NextMission.AddRoutes(foot, actions, tap);", fallback);
+            StringAssert.Contains("ReportCardChrome.Escape = actions != null ? actions.Home : null;", fallback);
+            StringAssert.Contains("name = UiIds.ReportFoot", fallback);
+            StringAssert.Contains("foot.Add(fix);", fallback);
+            StringAssert.DoesNotContain("root.Add(fix);", fallback);
+            string routes = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "Report", "NextMission.cs");
+            foreach (var id in new[] { "\"report-retry\"", "\"report-missions\"", "\"report-home\"" })
+                StringAssert.Contains(id, routes);
         }
 
+        /// <summary>NAV-07 (fixed): Home LAUNCH arms the starter from Home; Back on that first briefing still goes Home.
+        /// Once the designer takes the rocket, Back on the reopened briefing returns to Missions.</summary>
         [Test]
-        public void KnownBug_NAV07_FromHome_SurvivesTheDesigner_BriefingBackSkipsMissions()
+        public void NAV07_FromHome_EndsWhenTheDesignerTakesTheRocket_BriefingBackGoesToMissions()
         {
-            KnownBug("NAV-07", "once the designer takes the rocket, Back on the reopened briefing returns to Missions", () =>
-            {
-                HomeRoutes.Launch(campaign, 0, catalog, hangar.templates);
-                PadHandoff.TryTake(out _, out _); // the designer takes it (SliceApp StartSession)
-                GameSession.Apply(RouteId.DesignerBack); // Missions + briefing
-                return PadHandoff.FromHome ? "PadHandoff.FromHome is still true, so SceneFlow.BackFromBriefing routes ExitHome (Home), not Missions" : null;
-            });
+            HomeRoutes.Launch(campaign, 0, catalog, hangar.templates);
+            Assert.IsTrue(PadHandoff.FromHome, "the first briefing came from Home, so its Back is Home");
+            Assert.IsTrue(PadHandoff.TryTake(out _, out _), "the designer takes it (SliceApp StartSession)");
+            Assert.IsFalse(PadHandoff.FromHome, "PadHandoff.FromHome is cleared once the designer has the rocket");
+            var back = GameSession.Apply(RouteId.DesignerBack); // Missions + briefing
+            Assert.AreEqual(SessionScreens.Missions, back.Screen, Where(back));
+            Assert.AreEqual(SessionScreens.Briefing, back.Overlay, Where(back));
+            string flow = Src("unity", "Assets", "Kestrel.Game", "Shell", "SceneFlow.cs");
+            StringAssert.Contains("if (PadHandoff.FromHome)", flow);
+            StringAssert.Contains("Route(RouteId.BriefingBack);", flow);
+            var missions = GameSession.Apply(RouteId.BriefingBack);
+            Assert.AreEqual(SessionScreens.Missions, missions.Screen, Where(missions));
+            Assert.AreEqual(SessionScreens.None, missions.Overlay, Where(missions));
         }
 
         [Test]
