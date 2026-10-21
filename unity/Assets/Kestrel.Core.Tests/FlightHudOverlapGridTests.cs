@@ -108,9 +108,9 @@ namespace Kestrel.Core.Tests
         /// <summary>
         /// #332 CI (job 119437176077), 1280x800 web (panel 1214x759), notes open: ascent-plot (8,80 264x435) ran into
         /// ascent-help (0,467 1214x96). The grid had no landscape rail case, and the HUD did not do what the model said:
-        /// PlaceWide puts the notes in the dock or the left rail under the plot, but AscentHud.PlaceInfoSheet then re-pinned
-        /// them as the portrait sheet, full width over the dock, and the landscape rail was never refitted. Now the HUD keeps
-        /// PlaceWide's box and seats the rail with SeatRail, the call made here, over every visible stack element, as
+        /// PlaceWide put the notes in the dock or the left rail under the plot, but AscentHud.PlaceInfoSheet then re-pinned
+        /// them as the portrait sheet, full width over the dock, and the landscape rail was never refitted. Now PlaceWide always puts them in the left rail and the HUD keeps
+        /// that box and seats the rail with SeatRail, the call made here, over every visible stack element, as
         /// AscentHud.LayoutWideAt lays out the frame (face points = panel px / upp, the dock row from DockRowPx).
         /// </summary>
         [Test]

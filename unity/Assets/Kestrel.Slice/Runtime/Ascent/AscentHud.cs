@@ -814,7 +814,7 @@ namespace Kestrel.Slice
                 nudgeRow.style.display = DisplayStyle.None;
             widePinned = true;
             wideMode = mode;
-            // The notes sheet is PlaceWide's box (in the dock or the left rail), dressed but not moved; then the rail.
+            // The notes sheet is PlaceWide's box (the left rail, under the plot), dressed but not moved; then the rail.
             PlaceInfoSheet();
             WatchStack();
         }
@@ -1486,7 +1486,7 @@ namespace Kestrel.Slice
             }
             if (widePinned)
             {
-                // Landscape: LayoutWideAt placed the sheet where PlaceWide put it (in the dock or the left rail, or
+                // Landscape: LayoutWideAt placed the sheet where PlaceWide put it (the left rail under the plot, or
                 // hidden when there is no room). #332 CI 1280x800: this used to re-pin it as the portrait sheet, full
                 // width over the dock, on top of the rail, Cam and Pause, where neither the frame nor the rail knew it.
                 DressInfoSheet(help.style.height.keyword == StyleKeyword.Undefined ? help.style.height.value.value : Px(FlightHudLayout.HelpPt));
@@ -2014,7 +2014,7 @@ namespace Kestrel.Slice
             else
             {
                 PlaceDockSpacer();
-                // Landscape: the notes change PlaceWide's mode (the dock grows, the sheet gets its box): re-pin.
+                // Landscape: the notes change PlaceWide's mode (the sheet gets its rail box, the plot shortens): re-pin.
                 if (widePinned && UseWideNow()) LayoutWide();
                 PlaceInfoSheet();
                 FlightChrome.Restack(hud);
