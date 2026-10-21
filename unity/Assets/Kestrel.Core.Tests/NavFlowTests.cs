@@ -336,17 +336,25 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(PadHandoff.FlyOnPad, "nothing relaunches");
         }
 
+        /// <summary>NAV-05 (fixed): the no-debrief report card (PostFlightSource.Publish threw) keeps Retry, Missions and Home
+        /// in the same report-actions footer as the debrief card, and Escape goes Home, so Fix it is not the only way out.</summary>
         [Test]
-        public void KnownBug_NAV05_ReportWithoutDebrief_HasOnlyFixIt()
+        public void NAV05_ReportWithoutDebrief_KeepsEveryExit()
         {
-            KnownBug("NAV-05", "a report card built without a debrief still has Retry, Missions and Home", () =>
-            {
-                string view = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "Report", "ReportView.cs");
-                int start = view.IndexOf("return RewardsCard.Build(", StringComparison.Ordinal);
-                int end = view.IndexOf("public static VisualElement Icon(", StringComparison.Ordinal);
-                string fallback = view.Substring(start, end - start);
-                return fallback.Contains("AddRoutes") ? null : "ReportView.Build without a debrief (PostFlightSource.Publish threw) adds only failure-fix and sets no Escape";
-            });
+            string view = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "Report", "ReportView.cs");
+            int start = view.IndexOf("return RewardsCard.Build(", StringComparison.Ordinal);
+            int end = view.IndexOf("public static VisualElement Icon(", StringComparison.Ordinal);
+            Assert.That(start, Is.GreaterThanOrEqualTo(0), "debrief branch");
+            Assert.That(end, Is.GreaterThan(start), "Icon follows Build");
+            string fallback = view.Substring(start, end - start);
+            StringAssert.Contains("NextMission.AddRoutes(foot, actions, tap);", fallback);
+            StringAssert.Contains("ReportCardChrome.Escape = actions != null ? actions.Home : null;", fallback);
+            StringAssert.Contains("name = UiIds.ReportFoot", fallback);
+            StringAssert.Contains("foot.Add(fix);", fallback);
+            StringAssert.DoesNotContain("root.Add(fix);", fallback);
+            string routes = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "Report", "NextMission.cs");
+            foreach (var id in new[] { "\"report-retry\"", "\"report-missions\"", "\"report-home\"" })
+                StringAssert.Contains(id, routes);
         }
 
         /// <summary>NAV-07 (fixed): Home LAUNCH arms the starter from Home; Back on that first briefing still goes Home.
