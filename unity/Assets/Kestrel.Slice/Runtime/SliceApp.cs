@@ -68,7 +68,10 @@ namespace Kestrel.Slice
             Kestrel.Game.Audio.AudioDirector.Attach(flight);
             _ = GameCenterBridge.Impl.Authenticate();
             StartSession();
-            PostFlightSource.Bind(RestartFlight, ExitToHome, BackToDesign);
+            // Report "Back to designer" (#311's ReportActions.Designer / report-designer): BackToDesign puts the rocket
+            // on the pad and ReturnToPad's ApplyStarterMode shows the Starter screen in Phase 1, where .starter-mode
+            // hides #design so ShowDesigner(true) only arms the sheet; with Starter off it opens the full designer.
+            PostFlightSource.Bind(RestartFlight, ExitToHome, () => { BackToDesign(); ShowDesigner(true); });
         }
 
         /// <summary>Open a home handoff, else the most recent save, else the Workhorse template, else the stock preset.</summary>

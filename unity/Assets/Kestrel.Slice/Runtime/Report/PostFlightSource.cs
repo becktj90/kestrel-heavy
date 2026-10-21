@@ -19,8 +19,8 @@ namespace Kestrel.Slice
     {
         public static Action Relaunch { get; private set; }
         public static Action LeaveHome { get; private set; }
-        /// <summary>Back on the pad with the designer (the Starter screen under the default flags).</summary>
-        public static Action BackToDesigner { get; private set; }
+        /// <summary>NAV-04 / F4: the flight screen's own "reopen the designer" callback.</summary>
+        public static Action OpenDesigner { get; private set; }
 
         static Catalog catalog;
         static Design design;
@@ -30,7 +30,7 @@ namespace Kestrel.Slice
         {
             Relaunch = relaunch;
             LeaveHome = home;
-            BackToDesigner = designer;
+            OpenDesigner = designer;
         }
 
         public static void Arm(Catalog cat, Design flying, JsonObject doc, bool engineerDepth)
@@ -59,7 +59,7 @@ namespace Kestrel.Slice
             return card;
         }
 
-        public static ReportActions Actions() => NextMission.Actions(Relaunch, LeaveHome, BackToDesigner);
+        public static ReportActions Actions() => NextMission.Actions(Relaunch, LeaveHome, OpenDesigner);
 
         static FlightFacts Facts(FlightDriver flight, FailureEvent failure)
         {
@@ -109,6 +109,13 @@ namespace Kestrel.Slice
                         extra.BoosterGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, true);
                     }
                     facts.Passed = FlightDebrief.GoalMet(row, intact, apo, peri, result.maxG, facts.LandingGrade, extra);
+                    // F4: an intact miss says why and what to change, from the same gates.
+                    facts.Miss = MissReason.Explain(row, new MissInput
+                    {
+                        Intact = intact, ApoM = apo, PeriM = peri, MaxG = result.maxG,
+                        LandingGrade = facts.LandingGrade, Extra = extra,
+                        Stages = design != null && design.stages != null ? design.stages.Count : 1,
+                    });
                 }
             }
             if (flight != null && flight.Decisions != null)

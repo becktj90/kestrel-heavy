@@ -51,6 +51,8 @@ namespace Kestrel.Core.Flight
         public double ApoKm;
         public double GoalKm;
         public double RequiredMps;
+        /// <summary>F4: why an intact flight missed (<see cref="MissReason.Explain"/>). Null on a pass or a failure event.</summary>
+        public MissExplanation Miss;
 
         public string DesignTag
         {
@@ -71,6 +73,9 @@ namespace Kestrel.Core.Flight
         public string Numbers = "";
         public string Kid = "";
         public string Engineer = "";
+        /// <summary>F4: <see cref="MissExplanation.Code"/> and advice when an intact flight missed. Empty otherwise.</summary>
+        public string MissCode = "";
+        public string MissAdvice = "";
         public string NarratorId = "";
         public string NarratorKid = "";
         public string NarratorEng = "";
@@ -247,7 +252,16 @@ namespace Kestrel.Core.Flight
             if (pool.Title(kind) != "Flight ended") debrief.CauseTitle = pool.Title(kind);
             if (!string.IsNullOrEmpty(pool.Family(kind))) debrief.CauseFamily = pool.Family(kind);
 
-            debrief.Numbers = NumberLine(ev, facts, passed);
+            // F4: an intact miss says why, with the flight's numbers, and what to change. The pool's
+            // "Reached {apo} km" lines would contradict an orbit that overshot or a gate past the target.
+            var miss = !passed && ev == null ? facts.Miss : null;
+            debrief.Numbers = miss != null ? miss.Reason : NumberLine(ev, facts, passed);
+            if (miss != null)
+            {
+                debrief.Engineer = miss.Advice;
+                debrief.MissCode = miss.Code;
+                debrief.MissAdvice = miss.Advice;
+            }
             bool perfectLanding = MissionScore.IsPerfect(facts.LandingGrade);
             double costKc = facts.CostKc;
             if (costKc == 0 && facts.CostMinor > 0) costKc = facts.CostMinor / (double)minorPerKc;
@@ -266,7 +280,12 @@ namespace Kestrel.Core.Flight
 
             string narrKind = kind;
             var line = pool.Pick(narrKind, cause, facts.DesignTag, debrief.Seed);
-            if (line != null)
+            if (miss != null)
+            {
+                debrief.NarratorKid = "";
+                debrief.NarratorEng = "";
+            }
+            else if (line != null)
             {
                 debrief.NarratorId = line.Id;
                 debrief.NarratorKid = Fill(line.Kid, ev, facts, debrief);

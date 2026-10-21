@@ -1,4 +1,5 @@
-// The four report exits. One more launch keeps the seed ReportRoutes already holds.
+// The report exits. One more launch keeps the seed ReportRoutes already holds.
+// Back to designer (NAV-04 / F4) reopens the rocket that flew with the same mission.
 using System;
 using Kestrel.Core.Flight;
 using UnityEngine.UIElements;
@@ -7,12 +8,33 @@ namespace Kestrel.Slice
 {
     public static class NextMission
     {
+        /// <summary>UiIds name of the Back to designer exit.</summary>
+        public const string DesignerId = "report-designer";
+
         public static void AddRoutes(VisualElement parent, ReportActions actions, float tap)
         {
             parent.Add(Exit("report-next", ReportRoutes.NextLabel, ReportRoutes.NextTip, actions != null ? actions.Next : null, tap, "next"));
             parent.Add(Exit("report-retry", ReportRoutes.AgainLabel, ReportRoutes.AgainTip, actions != null ? actions.Again : null, tap, "retry"));
-            parent.Add(Exit("report-missions", ReportRoutes.MissionsLabel, ReportRoutes.MissionsTip, actions != null ? actions.Missions : null, tap, "missions"));
-            parent.Add(Exit("report-home", ReportRoutes.HomeLabel, ReportRoutes.HomeTip, actions != null ? actions.Home : null, tap, "home"));
+            parent.Add(Exit(DesignerId, ReportRoutes.DesignerLabel, ReportRoutes.DesignerTip, actions != null ? actions.Designer : null, tap, "designer"));
+            // Missions and Home share one row, so six exits still fit the five-row footer that
+            // ReportCardChrome sizes. On an iPhone SE (375x667) a sixth full-width row pushed Home off the screen.
+            var row = new VisualElement { name = ExitRowId, pickingMode = PickingMode.Ignore };
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.flexShrink = 0;
+            row.Add(Half(Exit("report-missions", ReportRoutes.MissionsLabel, ReportRoutes.MissionsTip, actions != null ? actions.Missions : null, tap, "missions")));
+            row.Add(Half(Exit("report-home", ReportRoutes.HomeLabel, ReportRoutes.HomeTip, actions != null ? actions.Home : null, tap, "home")));
+            parent.Add(row);
+        }
+
+        /// <summary>The footer row that holds Missions and Home side by side.</summary>
+        public const string ExitRowId = "report-exit-row";
+
+        static Button Half(Button button)
+        {
+            button.style.flexGrow = 1;
+            button.style.flexBasis = 0;
+            button.style.minWidth = 0;
+            return button;
         }
 
         /// <summary>
@@ -39,6 +61,15 @@ namespace Kestrel.Slice
                         GameSession.Current.Seed = seed;
                     relaunch?.Invoke();
                 },
+                Designer = () =>
+                {
+                    ulong seed = ReportRoutes.SeedOf(GameSession.Current);
+                    if (flow != null) flow.ReportRetry();
+                    else ReportRoutes.BackToDesigner();
+                    if (GameSession.Current != null && GameSession.Current.Seed != seed)
+                        GameSession.Current.Seed = seed;
+                    designer?.Invoke();
+                },
                 Missions = () =>
                 {
                     if (flow != null) flow.ExitToMissions();
@@ -49,16 +80,6 @@ namespace Kestrel.Slice
                     if (flow != null) flow.ExitToHome();
                     else if (home != null) home();
                     else ReportRoutes.Home();
-                },
-                // Same mission and seed, back on the pad: the route first, then the host's pad (no relaunch).
-                Designer = designer == null ? (Action)null : () =>
-                {
-                    ulong seed = ReportRoutes.SeedOf(GameSession.Current);
-                    if (flow != null) flow.ReportDesigner();
-                    else ReportRoutes.Again();
-                    if (GameSession.Current != null && GameSession.Current.Seed != seed)
-                        GameSession.Current.Seed = seed;
-                    designer();
                 },
             };
         }

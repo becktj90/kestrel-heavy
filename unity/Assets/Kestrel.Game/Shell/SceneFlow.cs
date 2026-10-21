@@ -96,17 +96,12 @@ namespace Kestrel.Game.Shell
         public void ReportNext() => Route(RouteId.ReportNext, ScreenStub.LoadCampaign());
         public void ReportRetry() => Route(RouteId.ReportRetry);
 
-        /// <summary>Report "Back to designer": the same mission and seed, on the Design screen with no overlay
-        /// (the ReportRetry route without the relaunch). The flight and report live in the Design scene, so the
-        /// host then puts the rocket back on the pad (SliceApp → the Starter screen under the default flags).</summary>
-        public void ReportDesigner() => Route(RouteId.ReportRetry);
-
         /// <summary>Same exit the in-flight pause menu reaches via Go(Home): title screen, session cleared.</summary>
         public void ExitToHome() => Route(RouteId.ExitHome);
 
         public void ExitToMissions() => Route(RouteId.ExitMissions);
 
-        /// <summary>Fly from the board. A starter that can launch opens the briefing with the pad armed. Otherwise the designer.</summary>
+        /// <summary>Fly from the board. A starter that can launch opens the briefing, then the designer with it loaded. Otherwise the designer.</summary>
         public void LaunchChosen(string missionId)
         {
             if (Busy || string.IsNullOrEmpty(missionId)) return;
@@ -129,8 +124,9 @@ namespace Kestrel.Game.Shell
                     ctx.ApplyBriefing(card);
                     ctx.VehicleLine = choice.VehicleLine;
                     ctx.ReachLine = choice.ReachLine;
-                    ctx.AutoPad = true;
-                    PadHandoff.Arm(choice.Design, true, fromHome: false);
+                    // NAV-03 / F4: briefing, then the designer with this starter. Launch is the designer's.
+                    ctx.AutoPad = false;
+                    PadHandoff.Arm(choice.Design, false, fromHome: false);
                     GameSession.Carry(ctx);
                     Present(new RouteResult(SessionScreens.Missions, SessionScreens.Briefing, ctx));
                     return;
