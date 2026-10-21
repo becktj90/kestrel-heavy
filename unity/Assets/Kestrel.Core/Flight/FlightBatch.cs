@@ -25,6 +25,11 @@ namespace Kestrel.Core.Flight
         public double departDv = double.NaN, departReqDv = double.NaN, departTW = double.NaN;
         /// <summary>#313: flight-path angle at a clean cutoff, degrees (NaN on burnout or failure).</summary>
         public double cutoffGammaDeg = double.NaN;
+        /// <summary>#341: the design carried the closed-loop guidance computer; it flew the upper stage (guidanceInControl);
+        /// a live nudge was held; the top stage burned dry before the cutoff energy (upperOut); and the state the part was
+        /// handed at its first upper-stage step (altitude, flight-path angle, thrust over net gravity). All false or NaN without the part.</summary>
+        public bool guidanceComputer, guidanceInControl, nudgeHeldByGuidance, upperOut;
+        public double handoffAltKm = double.NaN, handoffGammaDeg = double.NaN, handoffLiftRatio = double.NaN;
         public long costMinor;
         public readonly List<string> redKinds = new List<string>();
     }
@@ -149,6 +154,13 @@ namespace Kestrel.Core.Flight
                 }
                 flight.c3Km2PerS2 = MissionScore.C3(sim.orbit.energy) / 1e6;
                 flight.cutoffGammaDeg = sim.cutoffGammaDeg;
+                flight.guidanceComputer = design.guidanceComputer;
+                flight.guidanceInControl = sim.guidanceInControl;
+                flight.nudgeHeldByGuidance = sim.nudgeHeldByGuidance;
+                flight.upperOut = sim.upperRanDry;
+                flight.handoffAltKm = sim.guidanceHandoffAltM / 1000.0;
+                flight.handoffGammaDeg = sim.guidanceHandoffGammaDeg;
+                flight.handoffLiftRatio = sim.guidanceHandoffLiftRatio;
                 flight.qPeakKPa = sim.maxQ / 1000.0;
                 flight.margin = flight.requiredDv > 0 ? (flight.idealDv - flight.requiredDv) / flight.requiredDv : 0;
                 if (sim.risks != null)

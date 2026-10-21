@@ -17,7 +17,8 @@
     "gridFins": 24,
     "rcs": 16,
     "fins": 0,
-    "fairing": 0
+    "fairing": 0,
+    "guidanceComputer": 30
   },
   "avionics": {
     "basic": 0,

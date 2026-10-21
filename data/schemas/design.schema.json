@@ -80,7 +80,7 @@
     "avionics": {
       "type": "object",
       "additionalProperties": false,
-      "properties": { "tier": { "enum": ["basic", "standard", "redundant"] } }
+      "properties": { "tier": { "enum": ["basic", "standard", "redundant"] }, "guidanceComputer": { "type": "boolean", "description": "#341: optional closed-loop guidance computer (data/guidance.json). Absent is basic guidance." } }
     },
     "safetyFactor": { "type": "number", "exclusiveMinimum": 0 },
     "livery": {

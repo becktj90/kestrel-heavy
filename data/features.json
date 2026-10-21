@@ -16,6 +16,7 @@
     "designer.look": false,
     "designer.recoveryControls": false,
     "designer.undoRedo": false,
+    "designer.guidanceComputer": false,
     "home.designFirst": false,
     "home.codexTile": false,
     "home.thrum": false,

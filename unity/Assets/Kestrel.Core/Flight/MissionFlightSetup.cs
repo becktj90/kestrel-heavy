@@ -175,6 +175,8 @@ namespace Kestrel.Core.Flight
                 opts.targetAlt = target;
                 if (opts.guidance != null) opts.guidance.targetAlt = target;
                 opts.cutoffEnergy = TargetEnergy(mission);
+                // #341: the guidance computer aims at the circular target or the parking orbit (GuidanceAltM): γ = 0 at that radius.
+                if (opts.closedLoopInsertion) opts.closedLoopAimAlt = target;
             }
             else if (MissionAim.ApplyToDesignOrbit(opts, catalog, design.payloadOrbit))
             {
@@ -187,7 +189,11 @@ namespace Kestrel.Core.Flight
                 // A free build aims at its own catalog orbit, circular or elliptical (Stack's leo400 default when unset).
                 var orbit = FreeBuildOrbit(catalog, design.payloadOrbit);
                 if (orbit != null && orbit.periKm >= 0)
+                {
                     opts.cutoffEnergy = SimOptions.EnergyFor(orbit.apoKm * 1000, orbit.periKm * 1000);
+                    // #341 (Physics ruling 2): an elliptical target is entered at its perigee radius with γ = 0.
+                    if (opts.closedLoopInsertion) opts.closedLoopAimAlt = orbit.periKm * 1000;
+                }
             }
             opts.fairingJettisonAltM = FairingJettisonAltM(design);
             if (site != null)

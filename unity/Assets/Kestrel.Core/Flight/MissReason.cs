@@ -26,11 +26,19 @@ namespace Kestrel.Core.Flight
         public int Stages = 1;
         /// <summary>#313: flight-path angle at a clean engine cutoff, degrees (+ climbing, − diving); NaN on a burnout or failure.</summary>
         public double CutoffGammaDeg = double.NaN;
+        /// <summary>#341: the closed-loop guidance computer was fitted. Without it every field below is ignored and the
+        /// explanation is exactly the basic one.</summary>
+        public bool GuidanceComputer;
+        /// <summary>#341: the top stage burned dry before the cutoff energy while the guidance computer flew it.</summary>
+        public bool UpperOut;
+        /// <summary>#341: the state stage 1 handed the guidance computer: altitude (m), flight-path angle (deg), and thrust
+        /// acceleration over net gravity (g − vt²/r). NaN when unknown.</summary>
+        public double HandoffAltM = double.NaN, HandoffGammaDeg = double.NaN, HandoffLiftRatio = double.NaN;
     }
 
     public sealed class MissExplanation
     {
-        /// <summary>Which gate missed: altitude-low, altitude-high, fpa-steep, fpa-steep-suborbital, fpa-flat, apo-high, peri-low, orbit-low, speed, g, landing, boosters, margin, reliability, red-risk, boil-off, gentle, payload, fairing, budget.</summary>
+        /// <summary>Which gate missed: upper-out, upper-out-flat-handoff (#341, guidance computer only), altitude-low, altitude-high, fpa-steep, fpa-steep-suborbital, fpa-flat, apo-high, peri-low, orbit-low, speed, g, landing, boosters, margin, reliability, red-risk, boil-off, gentle, payload, fairing, budget.</summary>
         public string Code = "";
         public string Reason = "";
         public string Advice = "";
@@ -73,12 +81,26 @@ namespace Kestrel.Core.Flight
                 Extra = FlightDebrief.FromFlight(flight),
                 Stages = Math.Max(1, stages),
                 CutoffGammaDeg = flight.cutoffGammaDeg,
+                GuidanceComputer = flight.guidanceComputer,
+                UpperOut = flight.guidanceComputer && flight.upperOut,
+                HandoffAltM = flight.handoffAltKm * 1000,
+                HandoffGammaDeg = flight.handoffGammaDeg,
+                HandoffLiftRatio = flight.handoffLiftRatio,
             };
         }
 
         /// <summary>Null when there is nothing to explain: no mission, a failure event, or the goal was met.</summary>
         public static MissExplanation Explain(CampaignMission row, MissInput f)
         {
+            // #341: with the guidance computer fitted, a top stage that burned dry is explained by its cause, including the
+            // prop-depletion failure the monitor files for it. Without the part this branch never runs.
+            if (row != null && f != null && f.GuidanceComputer && f.UpperOut
+                && (string.IsNullOrEmpty(f.FailureKind) || f.FailureKind == "prop-depletion"))
+            {
+                bool met = string.IsNullOrEmpty(f.FailureKind) && f.Intact
+                    && FlightDebrief.GoalMet(row, true, f.ApoM, f.PeriM, f.MaxG, f.LandingGrade, f.Extra);
+                if (!met) return UpperOutReason(f, "stage " + Math.Max(1, f.Stages).ToString(Inv));
+            }
             if (row == null || f == null || !f.Intact || !string.IsNullOrEmpty(f.FailureKind)) return null;
             if (FlightDebrief.GoalMet(row, true, f.ApoM, f.PeriM, f.MaxG, f.LandingGrade, f.Extra)) return null;
             var extra = f.Extra;
@@ -155,7 +177,8 @@ namespace Kestrel.Core.Flight
                 case "circular":
                     if (apoOk && periOk) return null;
                     string orbit = Km(f.PeriM) + " × " + Km(f.ApoM);
-                    if (f.ApoM > apoGoal && !apoOk && !periOk && f.PeriM < periGoal && FlightPathAngleOff(f.CutoffGammaDeg))
+                    // #341: the guidance computer zeroes γ at its cutoff, so a clean cutoff never gets the kick advice with it fitted.
+                    if (!f.GuidanceComputer && f.ApoM > apoGoal && !apoOk && !periOk && f.PeriM < periGoal && FlightPathAngleOff(f.CutoffGammaDeg))
                     {
                         // #313: the engines cut off cleanly with the orbit's energy, but tilted, so the high point is
                         // far above the goal and the low point below it. More fuel does not round it off when climbing.
@@ -211,6 +234,29 @@ namespace Kestrel.Core.Flight
                 }
             }
             return null;
+        }
+
+        /// <summary>#341: below this thrust over net gravity at the hand-off, together with a hand-off under
+        /// <see cref="HandoffSteepDeg"/>, the upper stage was left too low and flat: holding the pitch limit to climb burns its fuel.</summary>
+        public const double HandoffLiftWeak = 1.0;
+        /// <summary>#341: KH-16 (220 kN on 52.6 t) lands every seed with a hand-off at 10° or more up and runs dry at 7.9° and below.</summary>
+        public const double HandoffSteepDeg = 9.0;
+        /// <summary>#341 (Physics ruling 6): "upper stage ran out of propellant", with its cause. Only for a flight with the guidance
+        /// computer fitted. KH-16 at a 10.5° kick is the reference: stage 1 hands over at 71 km, 5.9° up, the 220 kN top stage
+        /// has 0.73 of its net weight in thrust, and the computer spends the burn at its pitch limit climbing, so fuel is not the lever.</summary>
+        public static MissExplanation UpperOutReason(MissInput f, string top)
+        {
+            string head = "The top stage ran out of propellant before reaching orbit speed.";
+            bool flatHandoff = !double.IsNaN(f.HandoffLiftRatio) && f.HandoffLiftRatio < HandoffLiftWeak
+                && !double.IsNaN(f.HandoffGammaDeg) && f.HandoffGammaDeg < HandoffSteepDeg;
+            if (flatHandoff)
+                return Miss("upper-out-flat-handoff",
+                    head + " Stage 1 handed over at " + Km(f.HandoffAltM) + ", only " + Num(f.HandoffGammaDeg, "0.0") + "° up, where "
+                    + top + "'s thrust is " + Num(f.HandoffLiftRatio * 100, "0") + "% of its weight, so the guidance computer had to point it upward"
+                    + " to climb and spent the fuel there instead of on speed.",
+                    "Let stage 1 climb higher before it hands over: use a smaller pitch kick at launch, or give " + top + " a stronger engine. More fuel in "
+                    + top + " is not the fix.");
+            return Miss("upper-out", head, "Add fuel to " + top + ", or another stage.");
         }
 
         static double PeriSpeed(double periM, double apoM)
