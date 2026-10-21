@@ -151,9 +151,12 @@ namespace Kestrel.Core.Flight
                 // The hopper template clears the padded delta-v check and then breaks up:
                 // three small kerolox engines at full throttle cross the 35 kPa wall, and
                 // a full tank coasts far past a 10 km hop. This fork is the rocket Home
-                // actually flies. One engine, a short load, SF 3 and a 60% max-Q cap keep
-                // peak dynamic pressure under 85% of the limit and peak g under 8, and the
-                // coast lands inside ±5% of 10 km on both the campaign step and the pad step.
+                // actually flies. One engine, a 515 kg load, SF 3 and a 60% max-Q cap keep
+                // peak dynamic pressure under 85% of the limit and peak g under 8. Scored on the
+                // drag-aware flown peak (MissionScore.FlownApoAltM), the batch and the pad step
+                // reach 9.79 km and the director-guided pad flight 10.26 km: both inside
+                // 9.5–10.5 km with the pair centred on 10 km. 345 kg read 9.7 km on the vacuum
+                // Kepler apoapsis at burnout but flew to 6.6 km.
                 ArmFirstHop(best.Design);
                 FillPerformance(catalog, best);
                 best.ReachLine = "Enough for this hop.";
@@ -162,9 +165,9 @@ namespace Kestrel.Core.Flight
             else if (best != null && best.Design != null && mission.Id == "m2" && best.TemplateId == "hopper")
             {
                 // Three small engines and a full tank break the 35 kPa wall around 6 km.
-                // One engine, a 1380 kg load, steel walls, SF 2.2 and a 75% max-Q cap
-                // coast inside ±5% of 100 km on every campaign seed (about 100 km).
-                // 1360–1400 kg all clear. 1410 kg lofts past the band. While the cap
+                // One engine, a 1405 kg load, steel walls, SF 2.2 and a 75% max-Q cap fly a
+                // drag-aware peak of 97.6 km in the batch and 100.5 km director-guided on the pad
+                // (band 95–105 km). 1380 kg read 100.4 km Kepler but flew 91.4 km. While the cap
                 // is actually biting, the path stays on the catch angle instead of
                 // ratcheting down with the sag. The template is not edited.
                 ArmHundredKm(best.Design);
@@ -203,7 +206,7 @@ namespace Kestrel.Core.Flight
         }
 
         public const double HundredKmSafetyFactor = 2.2;
-        public const double HundredKmPropKg = 1380;
+        public const double HundredKmPropKg = 1405;
         public const double HundredKmMaxQPercent = 75;
         public const double HundredKmGLimit = 6;
         public const string HundredKmMaterial = "steel";
@@ -229,7 +232,7 @@ namespace Kestrel.Core.Flight
         }
 
         public const double FirstHopSafetyFactor = 3;
-        public const double FirstHopPropKg = 345;
+        public const double FirstHopPropKg = 515;
         public const double FirstHopMaxQPercent = 60;
         public const double FirstHopGLimit = 6;
 
