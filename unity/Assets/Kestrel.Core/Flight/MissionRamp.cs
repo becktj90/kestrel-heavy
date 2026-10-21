@@ -145,7 +145,7 @@ namespace Kestrel.Core.Flight
         {
             get
             {
-                if (TargetKind == "apogee") return 1000;
+                if (TargetKind == "apogee") return MissionAim.HopDepletionFloorM;
                 if (TargetKind == "circular") return ApoKm * 1000;
                 return PeriKm * 1000;
             }

@@ -55,12 +55,10 @@ namespace Kestrel.Slice.DesignerV3
             };
         }
 
-        /// <summary>A hop is KH-1 or any target at or under 80 km. Anything else keeps the 200 km LEO tour.</summary>
-        public static bool IsHop(string missionId, double targetAltM)
-        {
-            if (missionId == "m1") return true;
-            return targetAltM > 0 && targetAltM <= 80000;
-        }
+        /// <summary>A hop is KH-1, any apogee (suborbital) trip such as KH-2's 100 km, or any target at or under 80 km.
+        /// Anything else keeps the 200 km LEO tour. Core owns the rule (<see cref="Kestrel.Core.Flight.MissionAim.IsHopTrip"/>).</summary>
+        public static bool IsHop(string missionId, double targetAltM, bool suborbital = false)
+            => Kestrel.Core.Flight.MissionAim.IsHopTrip(missionId, targetAltM, suborbital);
 
         public static string HopLabel(double targetAltM)
         {
@@ -71,9 +69,9 @@ namespace Kestrel.Slice.DesignerV3
         }
 
         /// <summary>Same six beats as <see cref="Leo200"/>, with copy and a done-check that follow the mission.</summary>
-        public static List<TutorialStep> ForDesign(string missionId, double targetAltM, Func<string> orbitId, Func<double> liftoffTwr, Func<double> margin, Func<bool> hasFins, Func<bool> fairingOk)
+        public static List<TutorialStep> ForDesign(string missionId, double targetAltM, Func<string> orbitId, Func<double> liftoffTwr, Func<double> margin, Func<bool> hasFins, Func<bool> fairingOk, bool suborbital = false)
         {
-            if (!IsHop(missionId, targetAltM))
+            if (!IsHop(missionId, targetAltM, suborbital))
                 return Leo200(orbitId, liftoffTwr, margin, hasFins, fairingOk);
             string hop = HopLabel(targetAltM);
             string missionOrbit = string.IsNullOrEmpty(missionId) ? null : "kh-" + missionId;

@@ -56,6 +56,11 @@ namespace Kestrel.Core.Data
         public readonly Dictionary<string, OrbitTarget> Orbits = new Dictionary<string, OrbitTarget>();
         /// <summary>Mission cargo (campaign.json volumeM3/diameterM) by mission id. A design with that missionId is fitted against it.</summary>
         public readonly Dictionary<string, Vehicle.PayloadSpec> MissionPayloads = new Dictionary<string, Vehicle.PayloadSpec>();
+        /// <summary>
+        /// Campaign missions by mission id and by catalog orbit key (HomeAutoBuild.InstallMissionOrbits). The designer's
+        /// reference ascent finds a design's mission here so it flies the same MissionFlightSetup as the pad and FlightBatch (F1).
+        /// </summary>
+        public readonly Dictionary<string, Flight.CampaignMission> CampaignMissions = new Dictionary<string, Flight.CampaignMission>();
         public readonly List<Vehicle.Design> Presets = new List<Vehicle.Design>();
         public JsonObject Econ;
         /// <summary>propellants.engines.materials.payloads version numbers. Part of the max-Q cache key.</summary>

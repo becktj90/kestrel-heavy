@@ -289,40 +289,6 @@ namespace Kestrel.Core.Tests
         // ---------------------------------------------------------------- known bugs on main
 
         [Test]
-        public void KnownBug_NAV01_DesignFirstRocket_LaunchGateBlocks()
-        {
-            KnownBug("NAV-01 / F1", "the Design first rocket for every mission is Ready after the designer's reference ascent", () =>
-            {
-                var bad = new List<string>();
-                for (int cleared = 0; cleared < 20; cleared++)
-                {
-                    var r = HomeRoutes.DesignFirst(campaign, cleared, catalog, hangar.templates);
-                    if (!PadHandoff.TryTake(out var json, out _)) { bad.Add("m" + (cleared + 1) + " no rocket"); continue; }
-                    var gate = DesignerGate(json);
-                    if (!gate.Ready) bad.Add(r.Session.MissionId + " " + gate.state + " " + gate.code + ": " + gate.Line.Split('.')[0]);
-                }
-                return bad.Count == 0 ? null : bad.Count + "/20 blocked. " + string.Join(" | ", bad);
-            });
-        }
-
-        [Test]
-        public void KnownBug_NAV02_GoldenWinners_DesignerGateDisagreesWithFlightBatch()
-        {
-            KnownBug("NAV-02 / F1", "every campaign winner (5/5 in FlightBatch) is Ready in the designer", () =>
-            {
-                var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "golden", "campaign-winners.json")));
-                var bad = new List<string>();
-                foreach (JsonObject row in file.Arr("missions"))
-                {
-                    var json = JsonMut.CloneObject((JsonObject)row.Arr("designs")[0]);
-                    var gate = DesignerGate(json);
-                    if (!gate.Ready) bad.Add(row.Str("id") + " " + gate.code);
-                }
-                return bad.Count == 0 ? null : "blocked: " + string.Join(", ", bad);
-            });
-        }
-
-        [Test]
         public void KnownBug_NAV03_HomeLaunch_SkipsTheDesigner()
         {
             KnownBug("NAV-03 / F4", "Home LAUNCH → briefing → designer, Launch from the designer", () =>
@@ -388,14 +354,6 @@ namespace Kestrel.Core.Tests
         }
 
         // ---------------------------------------------------------------- helpers
-
-        /// <summary>DesignerV3Panel.Gate(settle: true): the reference ascent, then LaunchGate on the engineering report and quick readout.</summary>
-        LaunchGateResult DesignerGate(JsonObject json)
-        {
-            try { ReferenceAscent.Run(catalog, json); }
-            catch (Exception e) { return new LaunchGateResult { state = LaunchGateState.Blocked, code = "reference-threw", reason = e.Message }; }
-            return LaunchGate.Evaluate(Validate.Engineering(catalog, json), Readout.Quick(catalog, json));
-        }
 
         Design Stamped(string missionId)
         {

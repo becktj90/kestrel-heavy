@@ -1,6 +1,6 @@
 // Cached Headless reference ascent for designer max-Q.
 // Quick() never runs this. A miss leaves maxQStale true.
-// Cost: Stack.SimInputs → the same RK4 step as Headless (dt 0.2 s, default steering, no sample buffer).
+// Cost: MissionFlightSetup (Stack.SimInputs plus the mission's aim) → the same RK4 step as Headless (dt 0.2 s, default steering, no sample buffer).
 // The run goes to thrust cutoff. There is no early stop: a climb-only seal drops a descent peak,
 // and a vacuum-periapsis bound both false-stopped the sounding rocket and ran slower than the full ascent.
 // The integrator returns when thrust ends, so this is not an unpowered re-entry.
@@ -29,6 +29,7 @@ namespace Kestrel.Core.Designer
             public double qPa, altM, maxG;
             public bool flown;
             public double lossGravity, lossDrag, lossSteering, minStability, minCar, burnoutSpeed;
+            public double apoAltM;
             public FailureEvent failure;
             public List<FlightRisk> risks;
         }
@@ -39,6 +40,8 @@ namespace Kestrel.Core.Designer
             public bool hit, flown;
             public double qPa, altM, maxG;
             public double lossGravity, lossDrag, lossSteering, minStability, minCar, burnoutSpeed;
+            /// <summary>Kepler apogee at cutoff (what FlightBatch scores an apogee trip on). NaN when not flown.</summary>
+            public double apoAltM;
             public FailureEvent failure;
             public List<FlightRisk> risks;
         }
@@ -110,6 +113,7 @@ namespace Kestrel.Core.Designer
                     key = key, qPa = sim.maxQ, altM = sim.maxQAlt, maxG = sim.maxG, flown = true,
                     lossGravity = sim.lossGravity, lossDrag = sim.lossDrag, lossSteering = sim.lossSteering,
                     minStability = sim.minStability, minCar = sim.minCar, burnoutSpeed = burnout,
+                    apoAltM = sim.orbit.apoAlt,
                     failure = sim.failure, risks = sim.risks,
                 };
         }
@@ -125,6 +129,7 @@ namespace Kestrel.Core.Designer
                         hit = true, flown = e.flown, qPa = e.qPa, altM = e.altM, maxG = e.maxG,
                         lossGravity = e.lossGravity, lossDrag = e.lossDrag, lossSteering = e.lossSteering,
                         minStability = e.minStability, minCar = e.minCar, burnoutSpeed = e.burnoutSpeed,
+                        apoAltM = e.flown ? e.apoAltM : double.NaN,
                         failure = e.failure, risks = e.risks,
                     };
                     return true;
@@ -147,12 +152,35 @@ namespace Kestrel.Core.Designer
 
         public static SimResult Simulate(Catalog c, JsonObject design)
         {
-            var d = Design.FromJson(design);
-            var input = Stack.SimInputs(c, d);
-            // Predict keeps flying after the first hit so the cached peak is the real max-Q.
-            // A live launch leaves Predict false and breaks up.
-            if (input.opts.monitor != null) input.opts.monitor.Predict = true;
+            var input = Inputs(c, design);
             return Fly(input.stages, input.opts);
+        }
+
+        /// <summary>
+        /// Predict inputs: the same <see cref="MissionFlightSetup"/> the live pad flight and FlightBatch fly (F1), with
+        /// Predict on so the cached peak is the real max-Q. A design whose missionId (or kh- orbit) is a campaign
+        /// mission gets that mission's aim, cutoff, run length, coast boil-off and held-out landing fuel. Before F1 the
+        /// designer built its own Stack.SimInputs and aimed an apogee hop at its apogee, so a 100 km hop was called
+        /// "out of fuel" at its normal burnout. A free build keeps the design's own orbit (an apogee target is
+        /// judged against the 1 km hop floor, in MissionFlightSetup for the pad too). A live launch leaves Predict false and breaks up.
+        /// </summary>
+        public static (List<SimStage> stages, SimOptions opts) Inputs(Catalog c, JsonObject design)
+        {
+            var d = Design.FromJson(design);
+            var mission = MissionFor(c, d);
+            var setup = MissionFlightSetup.Build(c, mission, d, MissionFlightSetup.BatchDt);
+            var opts = setup.Options;
+            if (opts.monitor != null) opts.monitor.Predict = true;
+            return (setup.Stages, opts);
+        }
+
+        /// <summary>The campaign mission a design flies: its missionId, else its catalog orbit key. Null for a free build.</summary>
+        public static CampaignMission MissionFor(Catalog c, Design d)
+        {
+            if (c == null || d == null) return null;
+            if (!string.IsNullOrEmpty(d.missionId) && c.CampaignMissions.TryGetValue(d.missionId, out var byId)) return byId;
+            if (!string.IsNullOrEmpty(d.payloadOrbit) && c.CampaignMissions.TryGetValue(d.payloadOrbit, out var byOrbit)) return byOrbit;
+            return null;
         }
 
         /// <summary>The reference ascent is a full powered flight. Same steps as <see cref="Headless.Simulate"/>.</summary>
@@ -215,9 +243,7 @@ namespace Kestrel.Core.Designer
         public ReferenceJob(Catalog c, JsonObject design)
         {
             key = ReferenceAscent.CanonicalKey(c, design);
-            var d = Design.FromJson(design);
-            var input = Stack.SimInputs(c, d);
-            if (input.opts.monitor != null) input.opts.monitor.Predict = true;
+            var input = ReferenceAscent.Inputs(c, design);
             sim = new AscentSim(input.stages, input.opts);
         }
 

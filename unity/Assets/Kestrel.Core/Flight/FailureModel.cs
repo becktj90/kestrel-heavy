@@ -814,6 +814,15 @@ namespace Kestrel.Core.Flight
             Add(list, FailureKind.LegCollapse, EventKind(FailureKind.LegCollapse) ? -1 : (legs ? 0.2 : 1), vLeg, vLeg, "recovery", "legs.kind", EventKind(FailureKind.LegCollapse));
             bool fatalOut = EventKind(FailureKind.EngineOut);
             Add(list, FailureKind.EngineOut, fatalOut ? -1 : 0.5, scratch.enginesOut, 0, "engines", "engineCount", fatalOut);
+            // The row for the failure that actually happened says when it happened. Risk() explains a row at
+            // T+0, so a burnout at T+58 s read "ran out of fuel at T+0 s" (F1).
+            if (Event != null)
+                for (int i = 0; i < list.Count; i++)
+                    if (list[i].kind == Event.kind && list[i].level == "red")
+                    {
+                        if (!string.IsNullOrEmpty(Event.kid)) list[i].kid = Event.kid;
+                        if (!string.IsNullOrEmpty(Event.engineer)) list[i].engineer = Event.engineer;
+                    }
             EventModel.Disclose(list, schedule, Gentle || gentle);
             return list;
         }

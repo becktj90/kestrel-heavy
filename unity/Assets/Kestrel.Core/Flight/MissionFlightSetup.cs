@@ -41,7 +41,8 @@ namespace Kestrel.Core.Flight
 
         /// <summary>
         /// Sim inputs for <paramref name="design"/> flying <paramref name="mission"/>.
-        /// A null mission is a free build: the design's own orbit, nothing held out.
+        /// A null mission is a free build: the design's own orbit, nothing held out. An apogee orbit aims at the
+        /// hop floor (<see cref="MissionAim.ApplyToDesignOrbit"/>).
         /// </summary>
         public static MissionFlightInputs Build(Catalog catalog, CampaignMission mission, Design design, double dt, MissionFlightSite site = null, double sampleEvery = 0)
         {
@@ -99,6 +100,12 @@ namespace Kestrel.Core.Flight
                         opts.targetAlt = target;
                     }
                 }
+            }
+            else if (MissionAim.ApplyToDesignOrbit(opts, catalog, design.payloadOrbit))
+            {
+                // A free build with an apogee trip ("suborbital") is a hop: judge depletion at the hop floor, as a
+                // campaign hop does, not at the apogee (F1). The designer's predict run and the live pad agree.
+                target = opts.targetAlt;
             }
             if (site != null)
             {
