@@ -18,7 +18,7 @@
     },
     "sso": {
       "id": "sso",
-      "label": "Sun-sync 550 km",
+      "label": "Circle 550 km",
       "apoKm": 550,
       "periKm": 550,
       "incDeg": 97.6
@@ -296,9 +296,9 @@
       "maxHeatFlux": 1135,
       "orbit": "sso",
       "form": "weather",
-      "whatItIs": "A weather satellite that repeats the same ground track.",
-      "whatItDoes": "It photographs the same towns at the same hour, every day.",
-      "why": "2,200 kg to a 550 km sun-sync at 97.6 degrees. About 8,676 m/s."
+      "whatItIs": "A weather satellite on a steady 550 km circle.",
+      "whatItDoes": "It watches the weather from a steady 550 km circle.",
+      "why": "2,200 kg to a 550 km circle. About 8,676 m/s. Real Earth-watching satellites often fly sun-synchronous orbits."
     },
     {
       "id": "space-telescope",
