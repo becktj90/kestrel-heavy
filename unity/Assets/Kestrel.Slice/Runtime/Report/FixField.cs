@@ -1,5 +1,6 @@
 // "Fix it" deep link (§3). The tab and field match FailureMonitor.BuildRisks so the
 // card and the pre-launch risk list point at the same designer control.
+using Kestrel.Core.Ui;
 using UnityEngine.UIElements;
 
 namespace Kestrel.Slice
@@ -66,7 +67,7 @@ namespace Kestrel.Slice
                 design.AddToClassList("fix-target");
                 design.tooltip = link.VoiceOver;
             }
-            var hud = root.Q("hud");
+            var hud = root.Q(UiIds.ScreenFlight);
             if (hud != null) hud.AddToClassList("hidden");
             var el = root.Q(ControlId(link.Field)) ?? root.Q(link.Field);
             if (el != null)

@@ -3,6 +3,7 @@
 // HangarRocketView draws the rocket per part (paint, selection, exploded view) and HangarCamera orbits and focuses.
 // Everything is created from code at runtime; the scene only needs one GameObject with this
 // component (the editor bootstrap generates Assets/Scenes/Slice.unity).
+using Kestrel.Core.Ui;
 using System.Collections.Generic;
 using System.Linq;
 using Kestrel.Core.Designer;
@@ -326,7 +327,7 @@ namespace Kestrel.Slice
             slicePanel = doc.panelSettings;
             doc.visualTreeAsset = Resources.Load<VisualTreeAsset>("UI/Slice");
             ui = doc.rootVisualElement;
-            designPanel = ui.Q("design"); hud = ui.Q("hud");
+            designPanel = ui.Q("design"); hud = ui.Q(UiIds.ScreenFlight);
             designBody = ui.Q("design-body"); designToggle = ui.Q<Button>("design-toggle");
             ui.RegisterCallback<GeometryChangedEvent>(_ => { ApplyHudSafeArea(); ApplyDesignPanelMetrics(); ApplyDesignFraming(); });
             designPanel.RegisterCallback<GeometryChangedEvent>(_ => ApplyDesignFraming());
@@ -345,9 +346,9 @@ namespace Kestrel.Slice
             hT = ui.Q<Label>("h-t"); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
             hMach = ui.Q<Label>("h-mach"); hQ = ui.Q<Label>("h-q"); hThr = ui.Q<Label>("h-thr"); hDr = ui.Q<Label>("h-dr"); hMsg = ui.Q<Label>("h-msg");
             hVerdict = ui.Q<Label>("h-verdict"); hPulse = ui.Q<Label>("h-pulse"); hCallout = ui.Q<Label>("h-callout");
-            seqRow = ui.Q("h-seq"); skipCount = ui.Q<Button>("skip-count");
+            seqRow = ui.Q("h-seq"); skipCount = ui.Q<Button>(UiIds.FlightSkipCount);
             if (skipCount != null) skipCount.clicked += SkipCount;
-            again = ui.Q<Button>("again");
+            again = ui.Q<Button>(UiIds.FlightExit);
             launchButton = ui.Q<Button>("launch");
             launchButton.clicked += LaunchFromButton;
             undoButton = ui.Q<Button>("undo"); redoButton = ui.Q<Button>("redo"); explodeButton = ui.Q<Button>("explode");
@@ -805,16 +806,91 @@ namespace Kestrel.Slice
             FlightCameraStore.Save(mode);
         }
 
-        /// <summary>Auto keeps the altitude chase. Pad is an offset from the anchored ground, so a floating-origin rebase does not leave it behind.</summary>
-        Vector3 DesiredFlightOffset(Vector3 up, Vector3 vehiclePos)
+        /// <summary>Orbit easing rate (per second). Fast enough to track a drag, never a cut.</summary>
+        const float OrbitRate = 12f;
+        Vector3 orbitDelta; bool framedPrimed;
+
+        /// <summary>
+        /// One camera step for the saved view: pose, smoothing, orbit and aim. The ascent passes the juice;
+        /// the countdown passes none (no shake, no lead) and altitude 0.
+        /// </summary>
+        void StepFlightCamera(float juiceFov, double altitude, FlightJuice fx = null)
         {
-            var frame = FlightView.Of(flightView, rocketHeight);
-            if (frame.UseChase)
-                return ChaseCamera.DesiredOffset(up, rocketHeight, (float)flight.Altitude);
-            Vector3 local = up * (float)frame.Y + new Vector3((float)frame.X, 0f, (float)frame.Z);
-            if (frame.OnVehicle || ground == null) return local;
-            return ground.position + local - vehiclePos;
+            if (cam == null || vehicleRoot == null || ground == null) return;
+            var v = vehicleRoot.position; var up = vehicleRoot.up;
+            var pose = DesiredFlightPose(up, v, juiceFov);
+            // One smoothing rate for the offset, the look point and the FOV: a view switch, a staging event or
+            // the Pad zoom glides over about a second. No cuts, no FOV pops (photosensitivity, 60 fps).
+            camOffset = ChaseCamera.StepOffset(camOffset, U(pose.Offset), FlightViewPose.SmoothRate, Time.deltaTime);
+            lookOffset = lookPrimed
+                ? ChaseCamera.StepOffset(lookOffset, U(pose.LookAt) - v, FlightViewPose.SmoothRate, Time.deltaTime)
+                : U(pose.LookAt) - v;
+            lookPrimed = true;
+            // Smooth only the Pad zoom factor; the juice FOV punch stays as tuned.
+            viewZoom = (float)FlightViewPose.StepFov(viewZoom, pose.Fov / Mathf.Max(1f, juiceFov), FlightViewPose.SmoothRate, Time.deltaTime);
+            chrome?.SetViewNote(pose.Note);
+            // Manual orbit/zoom rides on the chase offset. Follow leaves the chase pose unchanged.
+            // Lead is this frame only. Folding it into camOffset would be smoothed back in and grow about 15×.
+            // The orbit eases too (fast, so a drag still tracks the finger): Follow glides back to the view.
+            // Only the orbit's delta eases, so the view's own smoothing (and the Pad anchor) is unchanged.
+            var orbitNow = (chrome != null ? chrome.Frame(camOffset) : camOffset) - camOffset;
+            orbitDelta = framedPrimed ? ChaseCamera.StepOffset(orbitDelta, orbitNow, OrbitRate, Time.deltaTime) : orbitNow;
+            framedPrimed = true;
+            var framed = camOffset + orbitDelta;
+            // Grow the far plane with altitude so the coast under the framed horizon is never clipped.
+            cam.farClipPlane = SiteHorizon.ClipFor((float)altitude);
+            // Sea level is the anchored site root. Do not slide it: the coast has to stay under the pad.
+            float fov = juiceFov * (viewZoom > 0f ? viewZoom : 1f);
+            cam.fieldOfView = fov;
+            Vector3 lead = fx != null ? fx.Lead : Vector3.zero;
+            cam.transform.position = PadGround.ClampAboveGround(v + framed + lead, ground.position.y);
+            var cp = cam.transform.position;
+            Vector3 look = v + lookOffset;
+            if (flightView == FlightViewMode.Auto)
+                cam.transform.rotation = ChaseCamera.Aim(cp, look, fov, (float)altitude, cp.y - ground.position.y);
+            else
+                cam.transform.LookAt(look, Vector3.up);
+            if (fx != null)
+                cam.transform.position = PadGround.ClampAboveGround(
+                    cam.transform.position + cam.transform.right * fx.Shake.x + cam.transform.up * fx.Shake.y,
+                    ground.position.y);
         }
+
+        /// <summary>
+        /// The pure pose for the saved view (FlightViewPose): the stack still attached after staging, the Below
+        /// pad hold clear of the deck and trench, and the Pad view's clamped zoom. Pad is anchored to the ground,
+        /// so a floating-origin rebase does not leave it behind.
+        /// </summary>
+        FlightPose DesiredFlightPose(Vector3 up, Vector3 vehiclePos, float baseFov)
+        {
+            if (trenchPad == null && tower != null)
+            {
+                var t = tower.Find("Pad");
+                if (t != null) trenchPad = t.GetComponent<Kestrel.Pad.PadRenderer>();
+            }
+            var padRenderer = trenchPad;
+            var trench = padRenderer != null && padRenderer.Layout != null ? padRenderer.Layout.Trench : null;
+            var g = ground != null ? ground.position : Vector3.zero;
+            return FlightViewPose.Pose(new FlightPoseInput
+            {
+                Mode = flightView,
+                Vehicle = V(vehiclePos),
+                Up = V(up),
+                Height = rocketHeight,
+                KeptBase = staging != null ? staging.KeptBase : 0f,
+                Altitude = flight != null ? flight.Altitude : 0,
+                GroundY = g.y,
+                DeckY = deckTop != null ? deckTop.position.y : g.y,
+                HasDeck = deckTop != null,
+                Pad = V(g),
+                TrenchBearingDeg = trench != null ? trench.BearingDeg : double.NaN,
+                BaseFovDeg = baseFov,
+            });
+        }
+
+        Kestrel.Pad.PadRenderer trenchPad;
+        static PoseVec V(Vector3 v) => new PoseVec(v.x, v.y, v.z);
+        static Vector3 U(PoseVec v) => new Vector3((float)v.X, (float)v.Y, (float)v.Z);
 
         void SetAssembledDrawn(bool drawn)
         {
@@ -858,7 +934,7 @@ namespace Kestrel.Slice
             return false;
         }
 
-        float rocketHeight = 70, frameHeight = 70; Vector3 camOffset;
+        float rocketHeight = 70, frameHeight = 70; Vector3 camOffset, lookOffset; bool lookPrimed; float viewZoom;
 
         /// <summary>Tower top above the pad (levels + open cap) from the generated layout. The pad steel is drawn
         /// instanced, so there are no Renderers to measure; the layout is the source of truth.</summary>
@@ -1180,6 +1256,7 @@ namespace Kestrel.Slice
             rocketView.SetIssues(null);
             ShowFlightPicture(false);
             camOffset = cam.transform.position - (vehicleRoot != null ? vehicleRoot.position : Vector3.zero);
+            lookPrimed = false; viewZoom = 0f; framedPrimed = false;
             designPanel.AddToClassList("hidden"); homeButton.AddToClassList("hidden"); issueChip.AddToClassList("hidden");
             hud.RemoveFromClassList("hidden");
             // Inline display:none beats the .hidden class, and the web readout column is a sibling of #design.
@@ -1383,7 +1460,14 @@ namespace Kestrel.Slice
             if (!handoff.Closed && !handoff.Ascending && (counting || (inFlight && (sequence != null || handoff.StartAttempts > 0))))
             {
                 TickCount();
-                if (!handoff.Ascending) return;
+                if (!handoff.Ascending)
+                {
+                    // The count is live camera time too: the saved view, the picker, drag and Follow all
+                    // act on the pad before T-0 (the live build left the camera frozen, so Follow did nothing).
+                    try { StepFlightCamera(FlightJuice.BaseFov, 0.0); }
+                    catch (System.Exception e) { Debug.LogException(e); }
+                    return;
+                }
             }
             if (flight != null && flight.Running && tower != null)
             {
@@ -1402,28 +1486,7 @@ namespace Kestrel.Slice
             double margin = requiredMps > 1 ? spareMps / requiredMps : 0;
             bool reduced = hangarCam != null && hangarCam.ReduceMotion;
             if (juice != null) juice.Present(flight, rocketHeight, qLim, margin, reduced, Time.deltaTime);
-            var v = vehicleRoot.position; var up = vehicleRoot.up;
-            camOffset = ChaseCamera.StepOffset(camOffset, DesiredFlightOffset(up, v), 4f, Time.deltaTime);
-            // Manual orbit/zoom rides on the chase offset. Follow leaves the chase pose unchanged.
-            // Lead is this frame only. Folding it into camOffset would be smoothed back in and grow about 15×.
-            var framed = chrome != null ? chrome.Frame(camOffset) : camOffset;
-            // Grow the far plane with altitude so the coast under the framed horizon is never clipped.
-            cam.farClipPlane = SiteHorizon.ClipFor((float)flight.Altitude);
-            // Sea level is the anchored site root. Do not slide it: the coast has to stay under the pad.
-            float fov = juice != null ? juice.Fov : cam.fieldOfView;
-            cam.fieldOfView = fov;
-            Vector3 lead = juice != null ? juice.Lead : Vector3.zero;
-            cam.transform.position = PadGround.ClampAboveGround(v + framed + lead, ground.position.y);
-            var cp = cam.transform.position;
-            Vector3 look = v + up * rocketHeight * 0.5f;
-            if (flightView == FlightViewMode.Auto)
-                cam.transform.rotation = ChaseCamera.Aim(cp, look, fov, (float)flight.Altitude, cp.y - ground.position.y);
-            else
-                cam.transform.LookAt(look, Vector3.up);
-            if (juice != null)
-                cam.transform.position = PadGround.ClampAboveGround(
-                    cam.transform.position + cam.transform.right * juice.Shake.x + cam.transform.up * juice.Shake.y,
-                    ground.position.y);
+            StepFlightCamera(juice != null ? juice.Fov : FlightJuice.BaseFov, flight.Altitude, juice);
             if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
             recovery?.Present(Time.unscaledDeltaTime);

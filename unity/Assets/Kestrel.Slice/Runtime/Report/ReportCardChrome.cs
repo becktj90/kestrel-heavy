@@ -1,6 +1,7 @@
 // Dusk post-flight sheet. Fonts come from Resources (USS font urls fall back to the
 // default sans on device), sizes are in points times the panel's units-per-point,
 // and the sheet replaces the flight HUD instead of sitting on top of a live count.
+using Kestrel.Core.Ui;
 using System;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -202,7 +203,7 @@ namespace Kestrel.Slice
             card.style.marginBottom = 0;
         }
 
-        static readonly string[] FlightChrome = { "hud", "ascent-hud", "ascent-nudge", "skip-count", "guide-overlay", "guide-pop", "guide-box" };
+        static readonly string[] FlightChrome = { UiIds.ScreenFlight, "ascent-hud", "ascent-nudge", UiIds.FlightSkipCount, "guide-overlay", "guide-pop", "guide-box" };
         static readonly string[] Readouts = { "h-t", "h-stage", "h-alt", "h-vel", "h-mach", "h-q", "h-thr", "h-dr", "h-msg", "h-verdict", "h-pulse", "h-callout" };
 
         /// <summary>Take the result card out of the tree so a retry can count down again.</summary>
@@ -233,7 +234,7 @@ namespace Kestrel.Slice
                 var button = buttons[i];
                 if (button == null || InReport(button)) continue;
                 string name = button.name ?? "";
-                if (name == "skip-count" || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (name == UiIds.FlightSkipCount || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
                     Restore(button);
             }
             for (int i = 0; i < Readouts.Length; i++) Clear(tree, Readouts[i]);
@@ -255,7 +256,7 @@ namespace Kestrel.Slice
                 var button = buttons[i];
                 if (button == null || InReport(button)) continue;
                 string name = button.name ?? "";
-                if (name == "skip-count" || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (name == UiIds.FlightSkipCount || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
                     Retire(button);
             }
             for (int i = 0; i < Readouts.Length; i++) Clear(tree, Readouts[i]);

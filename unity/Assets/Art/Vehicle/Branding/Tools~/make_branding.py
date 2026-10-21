@@ -39,7 +39,9 @@ PALETTE = ["#E8ECEF", "#1E3A5F", "#14161A", "#F2C21A", "#C83C32", "#D27A3A", "#2
            "#5A5E66", "#9EA3A8", "#7A5AA0", "#B58A5A", "#3A6EA5", "#8FBF4A", "#E07AA0", "#F5E6C8"]
 
 def svg(d):
-    body = f'<path d="{d}" fill="currentColor" fill-rule="evenodd"/>' if d else ""
+    # Explicit white, not currentColor: Unity's SVG importer logs "currentColor is not supported as a fill
+    # value" for every file. White is a neutral mask; the palette colour is applied at runtime.
+    body = f'<path d="{d}" fill="#FFFFFF" fill-rule="evenodd"/>' if d else ""
     return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">{body}</svg>\n'
 
 def main():
@@ -54,7 +56,7 @@ def main():
         items = list(GLYPHS.items()) + list(FRAMES.items())
         for i, (k, d) in enumerate(items):
             x, y = (i % W) * cell, (i // W) * cell
-            png = cairosvg.svg2png(bytestring=svg(d).replace("currentColor", "#E8ECEF").encode(), output_width=110, output_height=110)
+            png = cairosvg.svg2png(bytestring=svg(d).replace("#FFFFFF", "#E8ECEF").encode(), output_width=110, output_height=110)
             im.paste(Image.open(io.BytesIO(png)).convert("RGBA"), (x + 20, y + 8), Image.open(io.BytesIO(png)).convert("RGBA"))
             dr.text((x + 6, y + 126), k, fill=(80, 220, 240))
         for i, c in enumerate(PALETTE):
