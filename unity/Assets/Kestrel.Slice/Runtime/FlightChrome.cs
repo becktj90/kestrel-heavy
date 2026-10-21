@@ -75,9 +75,11 @@ namespace Kestrel.Slice
 
             menu = new VisualElement { name = UiIds.ScreenPause };
             menu.AddToClassList("hidden");
-            // Hidden inline too, not only through the USS .hidden rule: a closed menu must never take a tap
-            // meant for the camera picker (it is brought to the front above it).
+            // Hidden inline too, not only through the USS .hidden rule (a device test panel has no Slice.uss):
+            // a closed menu is display:none and ignores picking, so it never takes a tap meant for the camera
+            // picker. It stays the top layer so an OPEN menu covers the picker (and Show(true) closes it).
             menu.style.display = DisplayStyle.None;
+            menu.pickingMode = PickingMode.Ignore;
             menu.style.position = Position.Absolute;
             menu.style.left = 0;
             menu.style.right = 0;
@@ -113,13 +115,7 @@ namespace Kestrel.Slice
             float upp = unitsPerPoint >= 0.5f ? unitsPerPoint : 1f;
             lastUpp = upp;
             float h = TouchPt * upp;
-            StyleTool(follow, upp, h, FlightHudLayout.FollowWidthPt);
-            StyleTool(cameraBtn, upp, h, FlightView.WidestButton());
-            StyleTool(pause, upp, h, FlightHudLayout.PauseWidthPt);
-            if (follow != null) follow.style.fontSize = 13f * upp;
-            FitTool(follow, upp);
-            FitTool(cameraBtn, upp, FlightView.ButtonFontPt);
-            FitTool(pause, upp);
+            StyleTools(follow, cameraBtn, pause, upp);
             StylePicker(upp);
             if (menu == null) return;
             var title = menu.Q<Label>("pause-title");
@@ -147,6 +143,9 @@ namespace Kestrel.Slice
             {
                 menu.EnableInClassList("hidden", !paused);
                 menu.style.display = paused ? DisplayStyle.Flex : DisplayStyle.None;
+                // Open: the full-screen menu is the top layer and takes every tap. Closed: never pickable.
+                menu.pickingMode = paused ? PickingMode.Position : PickingMode.Ignore;
+                if (paused) menu.BringToFront();
             }
             RefreshAudio();
         }
@@ -303,8 +302,7 @@ namespace Kestrel.Slice
             HideToast();
             RefreshChips();
             picker.style.display = DisplayStyle.Flex;
-            picker.BringToFront();
-            menu?.BringToFront();
+            Restack(hud);
             Kestrel.Game.Shell.TextFit.Apply(picker);
         }
 
@@ -484,7 +482,6 @@ namespace Kestrel.Slice
                     chip.style.minHeight = b.H;
                     chip.style.marginLeft = 0; chip.style.marginRight = 0; chip.style.marginTop = 0; chip.style.marginBottom = 0;
                 }
-                p.BringToFront();
             }
             var t = flightHud.Q(ToastName);
             if (t != null)
@@ -497,8 +494,20 @@ namespace Kestrel.Slice
                 t.style.height = h;
                 t.style.right = StyleKeyword.Auto;
                 t.style.bottom = StyleKeyword.Auto;
-                t.BringToFront();
             }
+            Restack(flightHud);
+        }
+
+        /// <summary>
+        /// Layer order at the end of the HUD: everything else, then the picker, the toast (never pickable), and
+        /// the pause menu last. The picker is above the HUD and the tools row; an open pause menu covers it.
+        /// AscentHud calls this after any pass that adds or brings HUD pieces to the front.
+        /// </summary>
+        public static void Restack(VisualElement flightHud)
+        {
+            if (flightHud == null) return;
+            flightHud.Q(PickerName)?.BringToFront();
+            flightHud.Q(ToastName)?.BringToFront();
             flightHud.Q(UiIds.ScreenPause)?.BringToFront();
         }
 
@@ -509,7 +518,7 @@ namespace Kestrel.Slice
             cameraBtn.tooltip = FlightView.Tip(viewMode);
             float upp = lastUpp > 0.5f ? lastUpp : 1f;
             float w = FlightView.WidestButton() * upp;
-            if (cameraBtn.style.position.value != Position.Absolute)
+            if (!Pinned(cameraBtn))
             {
                 cameraBtn.style.minWidth = w;
                 cameraBtn.style.width = w;
@@ -577,13 +586,45 @@ namespace Kestrel.Slice
             b.style.flexShrink = 0f;
         }
 
+        /// <summary>
+        /// Size and dress the Follow / Cam / Pause row for the flex (portrait) layout. AscentHud calls this
+        /// after it unpins the landscape boxes, so the row gets its own sizes back.
+        /// </summary>
+        public static void StyleTools(VisualElement flightHud, float unitsPerPoint)
+        {
+            if (flightHud == null) return;
+            float upp = unitsPerPoint >= 0.5f ? unitsPerPoint : 1f;
+            StyleTools(flightHud.Q<Button>(UiIds.FlightFollow), flightHud.Q<Button>(UiIds.FlightCamera), flightHud.Q<Button>(UiIds.FlightPause), upp);
+        }
+
+        static void StyleTools(Button follow, Button cameraBtn, Button pause, float upp)
+        {
+            float h = TouchPt * upp;
+            StyleTool(follow, upp, h, FlightHudLayout.FollowWidthPt);
+            StyleTool(cameraBtn, upp, h, FlightView.WidestButton());
+            StyleTool(pause, upp, h, FlightHudLayout.PauseWidthPt);
+            if (follow != null) follow.style.fontSize = 13f * upp;
+            FitTool(follow, upp);
+            FitTool(cameraBtn, upp, FlightView.ButtonFontPt);
+            FitTool(pause, upp);
+        }
+
+        /// <summary>Landscape AscentHud pins the tools to exact panel boxes; their size is not ours to change then.</summary>
+        static bool Pinned(VisualElement e) =>
+            e.style.position.keyword == StyleKeyword.Undefined && e.style.position.value == Position.Absolute;
+
         static void StyleTool(Button b, float upp, float height, float widthPt)
         {
             if (b == null) return;
-            b.style.minHeight = height;
-            b.style.height = height;
-            b.style.minWidth = widthPt * upp;
-            b.style.width = widthPt * upp;
+            if (!Pinned(b))
+            {
+                // Unpinned (flex row): our own size. A pinned button keeps AscentHud's box, so a later Layout
+                // cannot push a point-sized min-width past the scaled box into its neighbour (1280x800 Cam/Pause).
+                b.style.minHeight = height;
+                b.style.height = height;
+                b.style.minWidth = widthPt * upp;
+                b.style.width = widthPt * upp;
+            }
             b.style.fontSize = 16f * upp;
             float r = 12f * upp;
             b.style.borderTopLeftRadius = r;

@@ -72,6 +72,18 @@ namespace Kestrel.Game.Tests
                     Assert.That(Overlaps(r, other.worldBound), Is.False, size.Name + " Cam covers " + other.name + " " + other.worldBound + " vs " + r);
                 }
                 Assert.That(TextFit.Problems(cam), Is.Empty, size.Name + " caption fits");
+                // A real gap, not just "no overlap within 0.5": at least one whole unit between Cam and each
+                // neighbour on its row (1280x800 had Cam 946..1042 against Pause at 1041).
+                foreach (var id in new[] { UiIds.FlightFollow, UiIds.FlightPause })
+                {
+                    var n = hud.Q(id);
+                    if (n == null || !Shown(n)) continue;
+                    var o = n.worldBound;
+                    bool sameRow = o.yMin < r.yMax - 0.5f && r.yMin < o.yMax - 0.5f;
+                    if (!sameRow) continue;
+                    float gap = o.xMin >= r.xMin ? o.xMin - r.xMax : r.xMin - o.xMax;
+                    Assert.That(gap, Is.GreaterThanOrEqualTo(1f), size.Name + " gap Cam/" + id + " " + r + " vs " + o);
+                }
                 // Nav-harness names on the real elements.
                 Assert.That(hud.name, Is.EqualTo(UiIds.ScreenFlight), size.Name);
                 Assert.That(hud.Q(UiIds.ScreenPause), Is.Not.Null, size.Name);
@@ -99,6 +111,11 @@ namespace Kestrel.Game.Tests
                 var picker = hud.Q(FlightChrome.PickerName);
                 var chips = picker.Query<Button>(className: "flight-camera-chip").ToList();
                 Assert.That(chips.Count, Is.EqualTo(5), size.Name);
+                // The closed pause menu is out of the way: not displayed and not pickable.
+                var pauseMenu = hud.Q(UiIds.ScreenPause);
+                Assert.That(pauseMenu, Is.Not.Null, size.Name);
+                Assert.That(pauseMenu.resolvedStyle.display, Is.EqualTo(DisplayStyle.None), size.Name + " closed pause menu is display:none");
+                Assert.That(pauseMenu.pickingMode, Is.EqualTo(PickingMode.Ignore), size.Name + " closed pause menu ignores picking");
                 foreach (var chip in chips)
                 {
                     var b = chip.worldBound;
@@ -126,6 +143,26 @@ namespace Kestrel.Game.Tests
                 chrome.OpenPicker();
                 chrome.ClosePicker();
                 Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Above), size.Name + " closing changes nothing");
+
+                // An OPEN pause menu sits above the picker and closes it; the picker cannot open under it.
+                chrome.OpenPicker();
+                surface.Pump(2);
+                Assert.That(chrome.PickerOpen, Is.True, size.Name + " reopened");
+                chrome.Show(true);
+                surface.Pump(4);
+                Assert.That(chrome.PickerOpen, Is.False, size.Name + " pausing closes the picker");
+                Assert.That(pauseMenu.resolvedStyle.display, Is.EqualTo(DisplayStyle.Flex), size.Name + " pause menu shown");
+                var resume = hud.Q<Button>(UiIds.PauseResume);
+                Assert.That(resume, Is.Not.Null, size.Name);
+                Assert.That(OnElement(hud.panel.Pick(resume.worldBound.center), resume), Is.True, size.Name + " Resume is on top");
+                Assert.That(OnElement(hud.panel.Pick(hud.Q(UiIds.FlightCamera).worldBound.center), pauseMenu), Is.True, size.Name + " the open menu covers the tools row");
+                chrome.OpenPicker();
+                Assert.That(chrome.PickerOpen, Is.False, size.Name + " no picker while paused");
+                chrome.Show(false);
+                surface.Pump(4);
+                Assert.That(pauseMenu.pickingMode, Is.EqualTo(PickingMode.Ignore), size.Name + " closed again");
+                var camAgain = hud.Q<Button>(UiIds.FlightCamera);
+                Assert.That(OnElement(hud.panel.Pick(camAgain.worldBound.center), camAgain), Is.True, size.Name + " Cam takes taps after Resume");
                 ascent.Close();
             }
         }
@@ -272,6 +309,12 @@ namespace Kestrel.Game.Tests
             var dock = hud.Q("ascent-actions");
             if (dock != null)
                 foreach (var b in dock.Query<Button>().ToList()) yield return b;
+        }
+
+        static bool OnElement(VisualElement hit, VisualElement target)
+        {
+            for (var ve = hit; ve != null; ve = ve.parent) if (ve == target) return true;
+            return false;
         }
 
         static bool Shown(VisualElement e)

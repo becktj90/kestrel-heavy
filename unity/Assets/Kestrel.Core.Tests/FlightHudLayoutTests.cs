@@ -1,5 +1,6 @@
 // Portrait flight HUD: SE, Pro Max, and iPad. Nothing overlaps, the plot and the stages panel
 // stay translucent and above the stack, and the dock stays below it.
+using System;
 using System.Collections.Generic;
 using Kestrel.Core.Flight;
 using NUnit.Framework;
@@ -238,6 +239,70 @@ namespace Kestrel.Core.Tests
             // 960x540: a rail too narrow for Cam and Pause side by side.
             var f = FlightHudLayout.PlaceWide(700f, 420f, 0f, 0f, 0f, 0f, FlightHudMode.Cruise);
             AssertCamera(f, 700f, 420f, 0f, 0f, 0f, 0f, "700x420");
+        }
+
+        /// <summary>
+        /// CI 2026-10-19, 1280x800: Cam (946..1042) ran 1 px into Pause (1041). Follow, Cam and Pause keep a real
+        /// GapPt between them at every landscape CSS width and in every mode, and still do after the CSS boxes
+        /// are scaled to the panel (WebLandscapeType.PanelScale, as the device tests make the panel) and each
+        /// edge is snapped to the pixel grid the way UI Toolkit rounds layout: no rounding seam closes the gap.
+        /// </summary>
+        [Test]
+        public void ToolsRowKeepsARealGapAtEveryLandscapeWidth()
+        {
+            WebLandscapeType.PanelReference(true, out float rw, out float rh, out float m);
+            var heights = new[] { 540f, 600f, 720f, 768f, 800f, 900f, 1080f, 1200f, 1440f };
+            var modes = new[] { FlightHudMode.Cruise, FlightHudMode.Prompt, FlightHudMode.Notes, FlightHudMode.PromptNotes };
+            int checkedRows = 0;
+            for (int w = 960; w <= 2560; w++)
+            {
+                foreach (float h in heights)
+                {
+                    if (!(w > h)) continue;
+                    float s = WebLandscapeType.PanelScale(w, h, rw, rh, m);
+                    float ux = (float)Math.Round(w / s) / w, uy = (float)Math.Round(h / s) / h;
+                    foreach (var mode in modes)
+                    {
+                        var f = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, mode);
+                        string where = w + "x" + h + " " + mode;
+                        AssertToolGap(f.Follow, f.Camera, ux, uy, where + " Follow/Cam");
+                        AssertToolGap(f.Camera, f.Pause, ux, uy, where + " Cam/Pause");
+                        AssertToolGap(f.Follow, f.Pause, ux, uy, where + " Follow/Pause");
+                        checkedRows++;
+                    }
+                }
+            }
+            Assert.That(checkedRows, Is.GreaterThan(10000));
+        }
+
+        [Test]
+        public void ToolsRowKeepsARealGapAtEveryPortraitWidth()
+        {
+            var heights = new[] { 568f, 640f, 667f, 720f, 812f, 844f, 896f, 932f };
+            for (int w = 320; w <= 440; w++)
+                foreach (float h in heights)
+                {
+                    var f = FlightHudLayout.Place(w, h, 0f, 0f, 0f, 0f, FlightHudMode.Cruise);
+                    string where = w + "x" + h;
+                    AssertToolGap(f.Follow, f.Camera, 1f, 1f, where + " Follow/Cam");
+                    AssertToolGap(f.Camera, f.Pause, 1f, 1f, where + " Cam/Pause");
+                    Assert.That(f.Camera.W, Is.GreaterThanOrEqualTo(FlightView.WidestButton() - 0.01f), where + " caption room");
+                }
+        }
+
+        /// <summary>Two tools on one row (or stacked) are at least GapPt apart in points, and at least 1 whole pixel apart after scaling and edge snapping.</summary>
+        static void AssertToolGap(HudBox a, HudBox b, float ux, float uy, string where)
+        {
+            Assert.That(a.Live && b.Live, Is.True, where + " placed");
+            bool sameRow = a.Y < b.Bottom && b.Y < a.Bottom;
+            var (lo, hi) = sameRow ? (a.X <= b.X ? (a, b) : (b, a)) : (a.Y <= b.Y ? (a, b) : (b, a));
+            float gapPt = sameRow ? hi.X - lo.Right : hi.Y - lo.Bottom;
+            Assert.That(gapPt, Is.GreaterThanOrEqualTo(FlightHudLayout.GapPt - 0.01f), where + " gap in points");
+            var pl = FlightHudLayout.ToPanel(lo, ux, uy);
+            var ph = FlightHudLayout.ToPanel(hi, ux, uy);
+            float loEdge = (float)Math.Round(sameRow ? pl.Right : pl.Bottom, MidpointRounding.AwayFromZero);
+            float hiEdge = (float)Math.Round(sameRow ? ph.X : ph.Y, MidpointRounding.AwayFromZero);
+            Assert.That(hiEdge - loEdge, Is.GreaterThanOrEqualTo(1f), where + " gap on the pixel grid (" + loEdge + " vs " + hiEdge + ")");
         }
 
         [Test]

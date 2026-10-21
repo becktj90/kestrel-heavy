@@ -211,7 +211,9 @@ namespace Kestrel.Slice
             if (UseWideNow()) LayoutWide();
             else LayoutRail();
             PlaceInfoSheet();
-            hud.Q(UiIds.ScreenPause)?.BringToFront();
+            // Picker above the HUD (rail pieces and the info sheet are re-added or brought forward above),
+            // pause menu above the picker.
+            FlightChrome.Restack(hud);
         }
 
         /// <summary>Portrait: the tested rail, inside the HUD's already-padded content box.</summary>
@@ -363,7 +365,7 @@ namespace Kestrel.Slice
             var f = FlightHudLayout.PlaceWide(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight, mode);
             float ux = pw / cssW;
             float uy = ph / cssH;
-            HudBox Sc(HudBox b) => new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
+            HudBox Sc(HudBox b) => FlightHudLayout.ToPanel(b, ux, uy);
             bool InDock(HudBox b) => b.Live && b.Y >= f.Dock.Y - 1f && b.Bottom <= f.Dock.Bottom + 1.5f;
 
             var band = hud.Q("hud-band");
@@ -526,6 +528,8 @@ namespace Kestrel.Slice
             UnpinTool(hud != null ? hud.Q(UiIds.FlightFollow) : null);
             UnpinTool(hud != null ? hud.Q(UiIds.FlightCamera) : null);
             UnpinTool(hud != null ? hud.Q(UiIds.FlightPause) : null);
+            // Give the flex row its own sizes back (FlightChrome.Layout only runs at Bind).
+            FlightChrome.StyleTools(hud, upp);
             Unpin(actions);
             if (actions != null) actions.style.overflow = StyleKeyword.Null;
             ReturnToDock(help);
@@ -556,8 +560,10 @@ namespace Kestrel.Slice
         }
 
         /// <summary>
-        /// Pin a tools-row button to its exact box. FlightChrome sizes these with min-width in its own units;
-        /// on a scaled web panel (1280x800 CSS) that min-width outgrew the pinned box and Cam ran into Pause.
+        /// Pin a tools-row button to its exact box. FlightChrome sized these with a min-width in points
+        /// (WidestButton x upp); on a scaled web panel (1280x800 CSS is a 1214x759 panel, 0.948 units per CSS
+        /// point) that min-width beat the pinned width by ~5 units, ate the 3.8-unit GapPt and Cam ran 1 px into
+        /// Pause. min = max = the box, and FlightChrome.StyleTool leaves a pinned button's size alone.
         /// </summary>
         static void PinTool(VisualElement e, HudBox b)
         {
@@ -587,7 +593,7 @@ namespace Kestrel.Slice
             e.style.flexGrow = 0;
         }
 
-        /// <summary>Undo PinTool; FlightChrome.Layout restores its own min-width on the next portrait pass.</summary>
+        /// <summary>Undo PinTool; ClearWidePins then calls FlightChrome.StyleTools for the flex row's own sizes.</summary>
         void UnpinTool(VisualElement e)
         {
             Unpin(e);
@@ -1356,7 +1362,7 @@ namespace Kestrel.Slice
             {
                 PlaceDockSpacer();
                 PlaceInfoSheet();
-                if (hud != null) hud.Q(UiIds.ScreenPause)?.BringToFront();
+                FlightChrome.Restack(hud);
             }
         }
 

@@ -48,6 +48,14 @@ namespace Kestrel.Core.Flight
 
     public static class FlightHudLayout
     {
+        /// <summary>
+        /// A CSS-point box in panel units (AscentHud.LayoutWideAt: ux = panel width / CSS width). The tools row
+        /// is laid out GapPt apart in points; the pinned buttons must take exactly these boxes (min = max width),
+        /// or a point-sized min-width outgrows a scaled box and eats the gap.
+        /// </summary>
+        public static HudBox ToPanel(HudBox b, float ux, float uy) =>
+            new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
+
         public const float SideMarginPt = 8f;
         public const float GapPt = 4f;
         public const float PadPt = 4f;
