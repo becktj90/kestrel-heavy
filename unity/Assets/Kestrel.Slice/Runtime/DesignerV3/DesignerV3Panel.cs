@@ -417,7 +417,7 @@ namespace Kestrel.Slice.DesignerV3
         public void JumpToRisk(FlightRisk risk)
         {
             if (risk == null) return;
-            Show(DesignerV3Tabs.FromRiskTab(risk.tab));
+            Show(DesignerV3Tabs.FromRiskTab(DesignerRepair.FixTab(risk.kind, risk.tab, risk.field)));
             if (!string.IsNullOrEmpty(risk.field)) FieldFocused?.Invoke(risk.field);
             RiskJump?.Invoke(risk);
         }
@@ -776,10 +776,19 @@ namespace Kestrel.Slice.DesignerV3
                 off.name = "launch-btn";
                 confirmRow.Add(GateLine(gate.Line));
                 confirmRow.Add(Word(off));
-                if (!string.IsNullOrEmpty(gate.tab))
+                // F2: Fix it repairs a predicted failure, speed or fit shortfall (the report's repair). A validation
+                // block only opens its tab. It used to only switch tabs, and "propellants" opened Structure.
+                bool repair = DesignerRepair.GateRepairs(session.Report, gate);
+                if (!string.IsNullOrEmpty(gate.tab) || repair)
                 {
-                    var target = DesignerV3Tabs.FromRiskTab(gate.tab);
-                    var fix = ui.Btn("Fix it", () => Show(target), "Open " + DesignerV3Tabs.Label(target, engineer, landscape), minWidthPt: 72f);
+                    var target = DesignerV3Tabs.FromRiskTab(DesignerRepair.FixTab(gate.code, gate.tab));
+                    var gateCode = gate.code;
+                    var gateTab = gate.tab;
+                    var fix = ui.Btn("Fix it", () =>
+                    {
+                        if (repair) ApplyReportedFix(gateCode, gateTab);
+                        else Show(target);
+                    }, "Open " + DesignerV3Tabs.Label(target, engineer, landscape), minWidthPt: 72f);
                     fix.name = "launch-gate-fix";
                     confirmRow.Add(Word(fix));
                 }
@@ -1257,44 +1266,14 @@ namespace Kestrel.Slice.DesignerV3
 
         public void ApplyReportedFix(string kind, string tabId)
         {
-            var next = DesignerV3Tabs.FromRiskTab(tabId);
-            if (DesignerRepair.NeedsDeltaV(kind))
-            {
-                Show(next);
-                var result = session.FixDeltaV();
-                string dvNote = result != null && result.Solved
-                    ? "Added propellant or a stage so the speed covers this trip."
-                    : PlayerText.ForPlayer(result != null ? result.Reason : "");
-                NoteRepair(dvNote);
-                return;
-            }
-            Show(next);
-            Edit made = Edit.None;
-            string said = null;
-            Do(d =>
-            {
-                var check = new Kestrel.Core.Designer.Stepper.StepCheck
-                {
-                    Step = Kestrel.Core.Designer.Stepper.DesignerStep.Look,
-                    Code = string.IsNullOrEmpty(kind) ? "fix" : kind,
-                    Gate = Kestrel.Core.Designer.Stepper.StepGate.Amber,
-                };
-                var result = Kestrel.Core.Designer.Stepper.StepperFix.Apply(C, d, check);
-                made = result.Edit;
-                said = result.Instruction;
-                if (!made.changed) made = DesignerRepair.Apply(C, d, kind);
-                return made;
-            });
-            string note;
-            if (made.changed && !string.IsNullOrEmpty(made.from) && !string.IsNullOrEmpty(made.to))
-                note = made.what + " " + made.from + " → " + made.to;
-            else if (!string.IsNullOrEmpty(said))
-                note = said;
-            else if (kind == "overg" || kind == "payload-g")
-                note = "The g limit is already under the payload rating.";
-            else
-                note = "That control is already at the safer setting.";
-            NoteRepair(note);
+            // F2: one Core repair for the report, the gate and the risk rows (DesignerRepair.Fix).
+            Show(DesignerV3Tabs.FromRiskTab(DesignerRepair.FixTab(kind, tabId)));
+            RepairOutcome outcome = null;
+            // The mission on the pad (the one FlightDriver flies), so Fix it repairs until the gate seeds 1-5 fly clean.
+            var mission = AscentFlight.CurrentMission();
+            Do(d => (outcome = DesignerRepair.Fix(C, d, kind, mission)).Edit);
+            string note = outcome != null ? outcome.Note : "";
+            NoteRepair(outcome != null && outcome.DeltaV ? PlayerText.ForPlayer(note) : note);
         }
 
         void Repair(FlightRisk risk)
