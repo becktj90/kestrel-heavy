@@ -239,7 +239,7 @@ namespace Kestrel.Core.Tests
                 Assert.IsFalse(flight.passed, "seed " + seed + " still misses on reliability");
                 Assert.AreEqual("reliability", x.Code, "seed " + seed + ": " + x.Line);
                 Assert.AreEqual(0, x.More, "seed " + seed + ": reliability is the only reason");
-                CollectionAssert.IsEmpty(x.Others, "seed " + seed);
+                Assert.AreEqual(0, x.Others.Count, "seed " + seed + ": no other gate");
                 Assert.AreEqual("Reliability was 95.1%; this mission needs 98%.", x.Reason, "seed " + seed);
             }
 
