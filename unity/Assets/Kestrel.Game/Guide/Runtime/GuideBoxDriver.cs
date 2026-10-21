@@ -19,6 +19,16 @@ namespace Kestrel.Game.Guide
         /// on screen, so the corner pop rests under them instead of on the gear. Null or 0 keeps the plain corner.</summary>
         public static System.Func<float> ClearTopPanel;
 
+        /// <summary>Home sets this while it is up: true keeps the corner pop off the menu (Starter Home, home.thrum off).</summary>
+        public static System.Func<bool> HideOnMenu;
+
+        bool Hidden()
+        {
+            if (Place != GuidePlace.Menu || HideOnMenu == null) return false;
+            try { return HideOnMenu(); }
+            catch (System.Exception) { return false; }
+        }
+
         GuideStage stage;
         GuidePopView pop;
         GuideClipPlayer voice;
@@ -126,7 +136,7 @@ namespace Kestrel.Game.Guide
             }
             voice.Hold(paused);
             ApplyScreen();
-            if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place))
+            if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place) || Hidden())
             {
                 if (voice.Sounding || voice.HasClip || voice.CardId.Length > 0) Silence();
                 else pop.Hide();

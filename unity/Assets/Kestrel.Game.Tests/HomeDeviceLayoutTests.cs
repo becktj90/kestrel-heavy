@@ -160,7 +160,7 @@ namespace Kestrel.Game.Tests
                 var shell = MountHome(surface.Stage, 0f, 0f);
                 surface.Pump(6);
                 var root = shell.Q(MainMenuOverlay.RootName);
-                var launch = root.Q<Button>("home-launch");
+                var launch = root.Q<Button>("home-primary");
                 var title = root.Q("mm-title");
                 Assert.That(launch, Is.Not.Null);
                 Assert.That(title, Is.Not.Null);
@@ -198,7 +198,7 @@ namespace Kestrel.Game.Tests
 
         static bool ColumnCapped(VisualElement root)
         {
-            if (InlineMax(root.Q("mm-stats")) || InlineMax(root.Q("home-launch")) || InlineMax(root.Q("home-design")))
+            if (InlineMax(root.Q("mm-stats")) || InlineMax(root.Q("home-primary")) || InlineMax(root.Q("home-design")))
                 return true;
             if (InlineMax(root.Q("mm-title"))) return true;
             var title = root.Q("mm-title");
@@ -221,7 +221,7 @@ namespace Kestrel.Game.Tests
                 if (el == null) return name + " missing";
                 return name + " max " + el.style.maxHeight.keyword + " h " + el.resolvedStyle.height;
             }
-            return One("home-launch") + "; " + One("mm-title") + "; " + One("mm-stats");
+            return One("home-primary") + "; " + One("mm-title") + "; " + One("mm-stats");
         }
 
         [Test]
@@ -258,8 +258,8 @@ namespace Kestrel.Game.Tests
                     surface.Pump(8);
                     Click(shell.Q<Button>("home-settings"));
                     surface.Pump(4);
-                    var sheet = shell.Q("home-settings-sheet");
-                    var close = shell.Q<Button>("home-settings-close");
+                    var sheet = shell.Q("screen-settings");
+                    var close = shell.Q<Button>("settings-close");
                     Assert.That(sheet, Is.Not.Null, d.Name);
                     Assert.That(sheet.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None), d.Name);
                     Inside(surface.Stage, sheet, d.Name + " settings");
@@ -521,11 +521,11 @@ namespace Kestrel.Game.Tests
             var root = shell.Q(MainMenuOverlay.RootName);
             Assert.That(root, Is.Not.Null, d.Name);
             var title = root.Q<Label>("mm-kestrel");
-            var launch = root.Q<Button>("home-launch");
+            var launch = root.Q<Button>("home-primary");
             var design = root.Q<Button>("home-design");
             var missions = root.Q<Button>("home-missions");
             var stats = root.Q("mm-stats");
-            var thrum = root.Q("mm-hint");
+            var thrum = root.Q("home-thrum");
             var sky = shell.Q("mm-dusk");
             var plate = shell.Q("mm-full");
             var gear = shell.Q<Button>("home-settings");

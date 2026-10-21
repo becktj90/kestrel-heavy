@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using Kestrel.Core.Features;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Ui;
+using Kestrel.UiChecks;
 using Kestrel.Game.Shell;
 using NUnit.Framework;
 using UnityEditor;
@@ -59,6 +61,7 @@ namespace Kestrel.Game.Tests
         static void UseFlags(HomeShow show) => FeatureFlags.Active = HomeFeatures.With(show);
 
         FeatureFlags savedFlags;
+        bool savedIntro;
 
         [SetUp]
         public void Column()
@@ -66,6 +69,7 @@ namespace Kestrel.Game.Tests
             MainMenuOverlay.ForceWide = false;
             savedFlags = FeatureFlags.Active;
             HomeFlagsBoot.Loaded = true;
+            savedIntro = MainMenuOverlay.IntroPlayed;
         }
 
         [TearDown]
@@ -73,6 +77,7 @@ namespace Kestrel.Game.Tests
         {
             MainMenuOverlay.ForceWide = null;
             FeatureFlags.Active = savedFlags;
+            MainMenuOverlay.IntroPlayed = savedIntro;
         }
 
         [Test]
@@ -80,18 +85,18 @@ namespace Kestrel.Game.Tests
         {
             UseFlags(HomeShow.None);
             var s = new HomePhoneScreen { W = 390f, H = 844f, Top = 47f, Bottom = 34f, Left = 8f, Right = 8f, PerPoint = 1f };
-            using (var surface = DeviceSurface.Open(s.W, s.H))
+            using (var surface = UiDeviceSurface.Open(s.W, s.H))
             {
                 var shell = Shell(surface.Stage, s, out _, out var host);
                 var overlay = Home(shell, host, false);
                 surface.Pump(6);
-                Assert.That(overlay.Q("mm-hint").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), "Thrum off");
+                Assert.That(overlay.Q("home-thrum").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), "Thrum off");
                 FeatureFlags.Active.SetOverride(FeatureKeys.HomeThrum, true);
                 FeatureFlags.Active.SetOverride(FeatureKeys.HomeCodexTile, true);
                 surface.Pump(6);
-                Assert.That(overlay.Q("mm-hint").resolvedStyle.display, Is.EqualTo(DisplayStyle.Flex), "Thrum back on Changed");
+                Assert.That(overlay.Q("home-thrum").resolvedStyle.display, Is.EqualTo(DisplayStyle.Flex), "Thrum back on Changed");
                 Assert.That(overlay.Q("home-codex").resolvedStyle.display, Is.EqualTo(DisplayStyle.Flex), "Codex back on Changed");
-                Assert.That(shell.Q("home-setting-codex").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), "Settings Codex row goes with the tile");
+                Assert.That(shell.Q("settings-codex").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), "Settings Codex row goes with the tile");
                 var blocks = Visible(overlay, shell, "after Changed");
                 NoOverlaps(blocks, "after Changed");
             }
@@ -114,17 +119,19 @@ namespace Kestrel.Game.Tests
         {
             foreach (var mode in Modes)
                 foreach (bool save in new[] { false, true })
-                    foreach (var (w, h) in new[] { (1280f, 720f), (1366f, 768f), (1920f, 1080f) })
+                    foreach (var (w, h) in WideSizes)
                     {
                         UseFlags(mode.Show);
                         MainMenuOverlay.ForceWide = true;
                         string n = w + "x" + h + " " + mode.Name + (save ? " save" : " no save");
                         var s = new HomePhoneScreen { W = w, H = h, PerPoint = 1f };
-                        using (var surface = DeviceSurface.Open(w, h))
+                        using (var surface = UiDeviceSurface.Open(w, h))
                         {
                             var shell = Shell(surface.Stage, s, out var safe, out var host);
                             var overlay = Home(shell, host, save);
                             surface.Pump(8);
+                            PlaceWideGear(shell, w, h);
+                            surface.Pump(3);
                             TextFit.Apply(shell);
                             surface.Pump(4);
                             Assert.That(overlay.ClassListContains("kh-mm-wide"), n + " wide frame");
@@ -156,7 +163,7 @@ namespace Kestrel.Game.Tests
             int primary = 0;
             overlay.Query(className: "kh-mm-launch").ForEach(_ => primary++);
             Assert.That(primary, Is.EqualTo(1), n + " one primary CTA");
-            var key = overlay.Q<Button>("home-launch");
+            var key = overlay.Q<Button>("home-primary");
             var label = key.Q<Label>("mm-launch-label");
             var cap = key.Q<Label>("mm-launch-caption");
             // STARTER_COPY.md: CONTINUE over "KH-3 · Tiny Orbit"; else "LAUNCH KH-3 · Tiny Orbit", or "LAUNCH KH-3" over the name.
@@ -212,7 +219,7 @@ namespace Kestrel.Game.Tests
             var gear = shell.Q("home-settings");
             Assert.That(gear, Is.Not.Null, n);
             blocks.Add(("gear", gear));
-            foreach (var id in new[] { "mm-title", "mm-stats", "home-launch", "home-design", "home-missions", "home-codex", "mm-hint" })
+            foreach (var id in new[] { "mm-title", "mm-stats", "home-primary", "home-design", "home-missions", "home-codex", "home-thrum" })
             {
                 var e = overlay.Q(id);
                 Assert.That(e, Is.Not.Null, n + " " + id);
@@ -234,7 +241,7 @@ namespace Kestrel.Game.Tests
         static void Portrait(Size size, HomeShow show, bool save, string n)
         {
             var s = size.Screen;
-            using (var surface = DeviceSurface.Open(s.W, s.H))
+            using (var surface = UiDeviceSurface.Open(s.W, s.H))
             {
                 var shell = Shell(surface.Stage, s, out var safe, out var host);
                 var overlay = Home(shell, host, save);
@@ -299,7 +306,7 @@ namespace Kestrel.Game.Tests
                         AssertWords(e, n + " " + cls);
                     }
 
-                // 5. Tiles: glyph, name and lamp side by side; the caption off the bottom edge. Starter: MISSIONS spans the row.
+                // 5. Tiles: name, glyph and lamp side by side; the caption off the bottom edge. Starter: MISSIONS spans the row.
                 foreach (var it in MainMenuCopy.Tiles)
                 {
                     var tile = overlay.Q("home-" + it.Id);
@@ -312,8 +319,9 @@ namespace Kestrel.Game.Tests
                     for (int a = 0; a < parts.Count; a++)
                         for (int b = a + 1; b < parts.Count; b++)
                             Assert.That(Overlap(parts[a].worldBound, parts[b].worldBound), Is.False, n + " " + it.Id + " head: " + parts[a].name + "/" + parts[b].GetType().Name);
-                    if (parts.Count > 0) Assert.That(Math.Abs(parts[0].worldBound.xMin - head.worldBound.xMin), Is.LessThanOrEqualTo(2f * k), n + " " + it.Id + " glyph at the start");
-                    Assert.That(name.worldBound.xMin - parts[0].worldBound.xMax, Is.LessThanOrEqualTo(12f * k), n + " " + it.Id + " name next to its glyph");
+                    // The name leads (flush with the caption under it); the glyph trails it, then the lamp.
+                    Assert.That(Math.Abs(name.worldBound.xMin - head.worldBound.xMin), Is.LessThanOrEqualTo(2f * k), n + " " + it.Id + " name at the start");
+                    Assert.That(Math.Abs(cap.worldBound.xMin - name.worldBound.xMin), Is.LessThanOrEqualTo(1.5f * k), n + " " + it.Id + " caption under the name");
                     AssertWords(name, n + " " + it.Id + " name");
                     AssertWords(cap, n + " " + it.Id + " caption");
                     Inside(cap.worldBound, tile.worldBound, n + " " + it.Id + " caption");
@@ -322,14 +330,14 @@ namespace Kestrel.Game.Tests
                 if (!show.Codex)
                 {
                     var missions = overlay.Q("home-missions");
-                    var launch = overlay.Q("home-launch");
+                    var launch = overlay.Q("home-primary");
                     Assert.That(missions.worldBound.width, Is.GreaterThanOrEqualTo(launch.worldBound.width - 2f * k), n + " MISSIONS spans the row");
                 }
 
                 // 6. Thrum: the name over his words (left-aligned), and the shown words fit the strip.
                 if (show.Thrum)
                 {
-                    var strip = overlay.Q("mm-hint");
+                    var strip = overlay.Q("home-thrum");
                     var who = strip.Q<Label>("mm-thrum-name");
                     var line = strip.Q<Label>("mm-hint-line");
                     Inside(line.worldBound, strip.worldBound, n + " Thrum line");
@@ -349,9 +357,211 @@ namespace Kestrel.Game.Tests
                 Assert.That(clear + shell.worldBound.yMin, Is.GreaterThanOrEqualTo(gear.worldBound.yMax - 0.5f), n + " pop under the gear");
                 Assert.That(clear + shell.worldBound.yMin, Is.GreaterThanOrEqualTo(overlay.Q("mm-title").worldBound.yMax - 0.5f), n + " pop under the title");
                 float pop = (HomePhoneLayout.GuidePopPt + HomePhoneLayout.GuideMarginPt) * s.PerPoint * k;
-                var first = show.Stats ? stats : overlay.Q("home-launch");
+                var first = show.Stats ? stats : overlay.Q("home-primary");
                 Assert.That(shell.worldBound.yMin + clear + pop, Is.LessThanOrEqualTo(first.worldBound.yMin + 0.5f), n + " pop above the first control");
             }
+        }
+
+        // ---- real tree: every label's text, every overlap, the screen and the safe area -------------------------
+
+        /// <summary>Landscape web viewports (1280x800 from Arcade's live play-through).</summary>
+        static readonly (float, float)[] WideSizes = { (1280f, 720f), (1280f, 800f), (1366f, 768f), (1920f, 1080f) };
+
+        /// <summary>The panel a landscape web viewport really lays out in: WebPanelScale's 1280x720 reference, matched halfway.</summary>
+        static HomePhoneScreen WebPanel(float w, float h)
+        {
+            WebLandscapeType.PanelReference(true, out float rw, out float rh, out float m);
+            float k = WebLandscapeType.PanelScale(w, h, rw, rh, m);
+            return new HomePhoneScreen { W = Mathf.Round(w / k), H = Mathf.Round(h / k), PerPoint = 1f };
+        }
+
+        static readonly (string Name, HomeShow Show, bool Save)[] TreeModes =
+        {
+            ("starter save", HomeShow.None, true), ("starter no save", HomeShow.None, false), ("full save", HomeShow.Full, true),
+        };
+
+        /// <summary>
+        /// The whole Home tree (the real MainMenuOverlay with KH_Tokens.uss and the runtime theme, in a panel at each device
+        /// size, after layout and TextFit) goes through UiTreeChecks: every visible label's measured text inside its own
+        /// content rect and its parent's box, no two visible leaves on each other, nothing off the screen or outside the safe
+        /// area. Then the Settings sheet the gear opens, the same way. All sizes and modes are collected before the assert,
+        /// so one CI run lists every fault.
+        /// </summary>
+        [Test]
+        public void RealTreeEveryLabelFitsNothingOverlapsNothingLeaves()
+        {
+            var problems = new List<string>();
+            foreach (var mode in TreeModes)
+            {
+                foreach (var size in Sizes())
+                    problems.AddRange(RealTree(size.Screen, false, mode.Show, mode.Save, size.Name + " " + mode.Name));
+                foreach (var (w, h) in WideSizes)
+                    problems.AddRange(RealTree(WebPanel(w, h), true, mode.Show, mode.Save, "web " + w + "x" + h + " " + mode.Name));
+            }
+            Assert.That(problems, Is.Empty, UiTreeChecks.Report(problems));
+        }
+
+        static List<string> RealTree(HomePhoneScreen s, bool wide, HomeShow show, bool save, string n)
+        {
+            var problems = new List<string>();
+            UseFlags(show);
+            MainMenuOverlay.ForceWide = wide;
+            using (var surface = UiDeviceSurface.Open(s.W, s.H))
+            {
+                var shell = Shell(surface.Stage, s, out var safe, out var host);
+                var overlay = Home(shell, host, save);
+                if (wide) PlaceWideGear(shell, s.W, s.H); else PlaceGear(shell, s);
+                surface.Pump(8);
+                TextFit.Apply(shell);
+                surface.Pump(4);
+                if (wide) PlaceWideGear(shell, s.W, s.H); else PlaceGear(shell, s);
+                surface.Pump(3);
+                var screen = surface.Stage.worldBound;
+                problems.AddRange(UiTreeChecks.Problems(shell, screen, safe.worldBound, n));
+                if (overlay.Q(UiIds.HomePrimary) == null) problems.Add(n + ": no " + UiIds.HomePrimary);
+
+                // Settings: open it from the gear, check the sheet alone (it sits over a dimmed Home), then Close.
+                var gear = shell.Q<Button>(UiIds.HomeSettings);
+                Click(gear);
+                surface.Pump(6);
+                var sheet = shell.Q(UiIds.ScreenSettings);
+                if (sheet == null || sheet.resolvedStyle.display == DisplayStyle.None) problems.Add(n + ": the gear did not open " + UiIds.ScreenSettings);
+                else
+                {
+                    TextFit.Apply(sheet);
+                    surface.Pump(3);
+                    problems.AddRange(UiTreeChecks.Problems(sheet, screen, safe.worldBound, n + " settings", e => true));
+                    var close = sheet.Q<Button>(UiIds.SettingsClose);
+                    if (close == null || !UiTreeChecks.Visible(close)) problems.Add(n + ": settings has no visible " + UiIds.SettingsClose);
+                    var list = sheet.Q<ScrollView>("settings-list");
+                    if (list != null && list.horizontalScroller != null && UiTreeChecks.Visible(list.horizontalScroller))
+                        problems.Add(n + ": settings shows a horizontal scrollbar");
+                    Click(close);
+                    surface.Pump(4);
+                    if (sheet.resolvedStyle.display != DisplayStyle.None) problems.Add(n + ": " + UiIds.SettingsClose + " did not close the sheet");
+                    var scrim = shell.Q(MainMenuOverlay.SettingsScrimName);
+                    if (scrim != null && scrim.resolvedStyle.display != DisplayStyle.None) problems.Add(n + ": the settings scrim stayed up");
+                }
+            }
+            return problems;
+        }
+
+        static void Click(Button b)
+        {
+            if (b == null) return;
+            using (var e = NavigationSubmitEvent.GetPooled())
+            {
+                e.target = b;
+                b.SendEvent(e);
+            }
+        }
+
+        /// <summary>Nav harness contract: every Home and Settings id in UiIds names one element of the real tree.</summary>
+        [Test]
+        public void EveryHomeAndSettingsUiIdIsInTheTree()
+        {
+            UseFlags(HomeShow.Full);
+            var s = new HomePhoneScreen { W = 390f, H = 844f, Top = 47f, Bottom = 34f, Left = 8f, Right = 8f, PerPoint = 1f };
+            using (var surface = UiDeviceSurface.Open(s.W, s.H))
+            {
+                var shell = Shell(surface.Stage, s, out _, out var host);
+                Home(shell, host, true);
+                surface.Pump(6);
+                foreach (var id in new[] { UiIds.ScreenHome, UiIds.ScreenSettings })
+                    Assert.That(shell.Q(id), Is.Not.Null, id);
+                foreach (var id in UiIds.HomeControls)
+                    Assert.That(shell.Q<Button>(id), Is.Not.Null, id);
+                foreach (var id in UiIds.SettingsControls)
+                    Assert.That(shell.Q<Button>(id), Is.Not.Null, id);
+                Assert.That(shell.Q<Button>(MainMenuOverlay.LipName), Is.Null, "the lip is paint, not a control");
+                var lip = shell.Q(MainMenuOverlay.LipName);
+                var key = shell.Q(UiIds.HomePrimary);
+                Assert.That(lip, Is.Not.Null, "LAUNCH/CONTINUE lip");
+                Assert.That(lip.parent, Is.SameAs(key), "the lip lives inside the button");
+                Assert.That(key.resolvedStyle.borderBottomWidth, Is.LessThanOrEqualTo(1.01f), "no 8 px bottom border sticking out");
+                var lb = lip.worldBound; var kb = key.worldBound;
+                Assert.That(lb.xMin >= kb.xMin - 0.5f && lb.xMax <= kb.xMax + 0.5f && lb.yMax <= kb.yMax + 0.5f && lb.yMin >= kb.yMin - 0.5f,
+                    "lip " + lb + " inside the button " + kb);
+                // The guide pop is not part of Home and nothing reads like a placeholder.
+                shell.Query<Label>().ForEach(l => Assert.That(l.text ?? "", Does.Not.Contain("placeholder").IgnoreCase.And.Not.EqualTo("pop"), l.name));
+            }
+        }
+
+        /// <summary>Tile captions start under the tile name (same left edge), not under the glyph.</summary>
+        [Test]
+        public void TileNameAndCaptionShareTheirLeftEdge()
+        {
+            foreach (var mode in Modes)
+                foreach (var size in Sizes())
+                {
+                    UseFlags(mode.Show);
+                    var s = size.Screen;
+                    using (var surface = UiDeviceSurface.Open(s.W, s.H))
+                    {
+                        var shell = Shell(surface.Stage, s, out _, out var host);
+                        var overlay = Home(shell, host, false);
+                        surface.Pump(8);
+                        TextFit.Apply(shell);
+                        surface.Pump(3);
+                        foreach (var it in MainMenuCopy.Tiles)
+                        {
+                            var tile = overlay.Q("home-" + it.Id);
+                            if (tile.resolvedStyle.display == DisplayStyle.None) continue;
+                            var name = tile.Q<Label>(className: "kh-mm-tile-name");
+                            var cap = tile.Q<Label>(className: "kh-mm-tile-caption");
+                            float a = UiTreeChecks.TextRect(name).xMin, b = UiTreeChecks.TextRect(cap).xMin;
+                            Assert.That(Math.Abs(a - b), Is.LessThanOrEqualTo(1.5f), size.Name + " " + mode.Name + " " + it.Id + " name x " + a + " caption x " + b);
+                        }
+                    }
+                }
+        }
+
+        /// <summary>Starter Home (home.thrum off) keeps Thrum's corner pop off Home; full Home lets it show.</summary>
+        [Test]
+        public void GuidePopStaysOffStarterHome()
+        {
+            var s = new HomePhoneScreen { W = 390f, H = 844f, Top = 47f, Bottom = 34f, Left = 8f, Right = 8f, PerPoint = 1f };
+            foreach (var mode in Modes)
+            {
+                UseFlags(mode.Show);
+                using (var surface = UiDeviceSurface.Open(s.W, s.H))
+                {
+                    var shell = Shell(surface.Stage, s, out _, out var host);
+                    Home(shell, host, false);
+                    surface.Pump(4);
+                    Assert.That(Kestrel.Game.Guide.GuideBoxDriver.HideOnMenu, Is.Not.Null, mode.Name);
+                    Assert.That(Kestrel.Game.Guide.GuideBoxDriver.HideOnMenu(), Is.EqualTo(!mode.Show.Thrum), mode.Name);
+                }
+            }
+        }
+
+        /// <summary>F8: coming back to Home (not the first Home of the session) shows every control on the first frame.</summary>
+        [Test]
+        public void ReturningHomeIsWholeOnItsFirstFrame()
+        {
+            UseFlags(HomeShow.None);
+            MainMenuOverlay.IntroPlayed = true;
+            var s = new HomePhoneScreen { W = 390f, H = 844f, Top = 47f, Bottom = 34f, Left = 8f, Right = 8f, PerPoint = 1f };
+            using (var surface = UiDeviceSurface.Open(s.W, s.H))
+            {
+                var shell = Shell(surface.Stage, s, out _, out var host);
+                var overlay = MainMenuOverlay.Build(shell, host, () => { }, () => { }, () => { }, false);
+                Assert.That(overlay.ClassListContains(MainMenuOverlay.InstantClass), "no intro on a return");
+                foreach (var id in new[] { "mm-title", UiIds.HomePrimary, UiIds.HomeMissions })
+                    Assert.That(overlay.Q(id).ClassListContains("kh-mm-in"), id + " shown at once");
+                Assert.That(shell.Q(UiIds.HomeSettings).ClassListContains("kh-mm-in"), "gear shown at once");
+            }
+        }
+
+        /// <summary>Wide web: the gear where ScreenStub puts it on WebGL (WebHomeLayout's frame, CSS = panel here).</summary>
+        static void PlaceWideGear(VisualElement shell, float w, float h)
+        {
+            var gear = shell.Q(UiIds.HomeSettings);
+            if (gear == null) return;
+            var frame = WebHomeLayout.Place(w, h, 0f, 0f, 0f, 0f);
+            gear.style.position = Position.Absolute;
+            gear.style.left = frame.Gear.X; gear.style.top = frame.Gear.Y; gear.style.width = frame.Gear.W; gear.style.height = frame.Gear.H;
+            gear.style.right = StyleKeyword.Auto;
         }
 
         // ---- helpers ------------------------------------------------------------------------------
@@ -425,149 +635,5 @@ namespace Kestrel.Game.Tests
             Assert.That(need.y, Is.LessThanOrEqualTo(h + TextFit.Slack), where + " tall need " + need.y.ToString("0") + " box " + h.ToString("0"));
         }
 
-        sealed class DeviceSurface : IDisposable
-        {
-            EditorWindow window;
-            GameObject go;
-            PanelSettings settings;
-            RenderTexture texture;
-            public VisualElement Stage { get; private set; }
-
-            public static DeviceSurface Open(float w, float h)
-            {
-                var surface = new DeviceSurface();
-                surface.TryWindow(w, h);
-                surface.Pump(4);
-                if (!surface.Sized(w, h))
-                {
-                    surface.CloseWindow();
-                    surface.TryDocument(w, h);
-                    surface.Pump(6);
-                }
-                if (!surface.Sized(w, h))
-                    Assert.Fail("panel did not take the device size " + w + "x" + h);
-                return surface;
-            }
-
-            public void Pump(int passes)
-            {
-                for (int i = 0; i < passes; i++)
-                {
-                    if (Stage != null && Stage.panel != null)
-                    {
-                        var tree = Stage.panel.visualTree;
-                        if (tree != null && Stage.resolvedStyle.width > 2f)
-                        {
-                            tree.style.width = Stage.resolvedStyle.width;
-                            tree.style.height = Stage.resolvedStyle.height;
-                        }
-                    }
-                    if (settings != null)
-                    {
-                        var apply = typeof(PanelSettings).GetMethod("ApplyPanelSettings", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                        if (apply != null) apply.Invoke(settings, null);
-                    }
-                    var utility = typeof(VisualElement).Assembly.GetType("UnityEngine.UIElements.UIElementsRuntimeUtility");
-                    var update = utility != null ? utility.GetMethod("UpdatePanels", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) : null;
-                    if (update != null && update.GetParameters().Length == 0) update.Invoke(null, null);
-                    if (window != null) window.Repaint();
-                    var panel = Stage != null ? Stage.panel : null;
-                    if (panel != null)
-                    {
-                        var validate = panel.GetType().GetMethod("ValidateLayout", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                        if (validate != null && validate.GetParameters().Length == 0) validate.Invoke(panel, null);
-                    }
-                }
-            }
-
-            bool Sized(float w, float h)
-            {
-                if (Stage == null || Stage.panel == null) return false;
-                var bound = Stage.worldBound;
-                if (bound.width < 8f || bound.height < 8f) return false;
-                float sx = bound.width / w, sy = bound.height / h;
-                return sx >= 0.8f && sy >= 0.8f && sx <= 3.5f && sy <= 3.5f && Math.Abs(sx - sy) <= 0.15f;
-            }
-
-            void TryWindow(float w, float h)
-            {
-                try
-                {
-                    window = ScriptableObject.CreateInstance<IosHomeDeviceWindow>();
-                    window.position = new Rect(0f, 0f, w, h);
-                    window.minSize = new Vector2(w, h);
-                    window.maxSize = new Vector2(w, h);
-                    window.ShowUtility();
-                    var root = window.rootVisualElement;
-                    if (root == null) return;
-                    Stage = MakeStage(root, w, h);
-                }
-                catch (Exception) { }
-            }
-
-            void TryDocument(float w, float h)
-            {
-                try
-                {
-                    texture = new RenderTexture(Mathf.Max(8, (int)w), Mathf.Max(8, (int)h), 0, RenderTextureFormat.ARGB32);
-                    texture.Create();
-                    settings = ScriptableObject.CreateInstance<PanelSettings>();
-                    settings.scaleMode = PanelScaleMode.ConstantPixelSize;
-                    settings.scale = 1f;
-                    settings.targetTexture = texture;
-                    go = new GameObject("kh-ios-home-device");
-                    go.hideFlags = HideFlags.HideAndDontSave;
-                    var doc = go.AddComponent<UIDocument>();
-                    doc.panelSettings = settings;
-                    var root = doc.rootVisualElement;
-                    if (root == null) return;
-                    Stage = MakeStage(root, w, h);
-                }
-                catch (Exception) { }
-            }
-
-            static VisualElement MakeStage(VisualElement panelRoot, float w, float h)
-            {
-                var tree = panelRoot.panel != null ? panelRoot.panel.visualTree : null;
-                if (tree != null)
-                {
-                    tree.style.width = w;
-                    tree.style.height = h;
-                }
-                panelRoot.style.width = w;
-                panelRoot.style.height = h;
-                var stage = new VisualElement { name = "stage", pickingMode = PickingMode.Ignore };
-                stage.style.position = Position.Absolute;
-                stage.style.left = 0f;
-                stage.style.top = 0f;
-                stage.style.width = w;
-                stage.style.height = h;
-                stage.style.overflow = Overflow.Hidden;
-                panelRoot.Add(stage);
-                return stage;
-            }
-
-            void CloseWindow()
-            {
-                if (window == null) return;
-                window.Close();
-                window = null;
-                Stage = null;
-            }
-
-            public void Dispose()
-            {
-                CloseWindow();
-                if (go != null) UnityEngine.Object.DestroyImmediate(go);
-                if (settings != null) UnityEngine.Object.DestroyImmediate(settings);
-                if (texture != null)
-                {
-                    texture.Release();
-                    UnityEngine.Object.DestroyImmediate(texture);
-                }
-            }
-        }
-
-        sealed class IosHomeDeviceWindow : EditorWindow { }
     }
 }

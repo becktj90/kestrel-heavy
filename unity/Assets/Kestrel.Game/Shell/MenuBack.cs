@@ -39,10 +39,12 @@ namespace Kestrel.Game.Shell
             if (CloseIfOpen(root, "home-codex-soon")) return true;
             if (CloseIfOpen(root, "home-patches-note")) return true;
             if (CloseIfOpen(root, "mission-payload-note")) return true;
-            var sheet = root.Q("home-settings-sheet");
+            var sheet = root.Q("screen-settings");
             if (SheetOpen(sheet))
             {
                 sheet.style.display = DisplayStyle.None;
+                var scrim = root.Q(MainMenuOverlay.SettingsScrimName);
+                if (scrim != null) scrim.style.display = DisplayStyle.None;
                 Claimed = true;
                 return true;
             }

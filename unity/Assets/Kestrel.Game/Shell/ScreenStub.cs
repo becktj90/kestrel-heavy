@@ -193,7 +193,7 @@ namespace Kestrel.Game.Shell
                 return;
             }
             // Fallback (UseOverlay = false): the original 3D controls with hidden spoken labels.
-            AddSpoken("home-launch", MainMenuLayout.LaunchLabel, MainMenuLayout.Find("launch").Spoken);
+            AddSpoken("home-primary", MainMenuLayout.LaunchLabel, MainMenuLayout.Find("launch").Spoken);
             foreach (var id in new[] { "design", "missions", "codex" })
             {
                 var a = MainMenuLayout.Find(id);
@@ -236,7 +236,7 @@ namespace Kestrel.Game.Shell
             patch.tooltip = "KH-1 mission patch.";
             patch.AddToClassList("kh-home-patch");
             top.Add(patch);
-            var launchKey = new Button(launch) { name = "home-launch", text = "LAUNCH", tooltip = "Launch. Opens the rocket designer on the pad." };
+            var launchKey = new Button(launch) { name = "home-primary", text = "LAUNCH", tooltip = "Launch. Opens the rocket designer on the pad." };
             launchKey.AddToClassList("kh-button");
             launchKey.AddToClassList("kh-home-launch");
             top.Add(launchKey);
@@ -520,7 +520,8 @@ namespace Kestrel.Game.Shell
             _audio?.RemoveFromHierarchy();
             shellFullLayer()?.RemoveFromHierarchy();
             root?.Q("home-settings")?.RemoveFromHierarchy();
-            root?.Q("home-settings-sheet")?.RemoveFromHierarchy();
+            root?.Q("screen-settings")?.RemoveFromHierarchy();
+            root?.Q(MainMenuOverlay.SettingsScrimName)?.RemoveFromHierarchy();
             if (_menu != null) { Destroy(_menu); _menu = null; }
         }
     }
