@@ -471,7 +471,8 @@ namespace Kestrel.Game.Failure
             try { debrief = PostFlightSource.Publish(flight, failure); }
             catch (System.Exception e) { Debug.LogWarning("[Kestrel] post-flight report: " + e.Message); }
             var actions = PostFlightSource.Actions();
-            string kind = shown != null ? shown.kind : "";
+            // F2: a miss with no failure event still repairs the speed. "" opened Structure and changed nothing.
+            string kind = Kestrel.Core.Designer.DesignerRepair.ReportKind(shown != null ? shown.kind : null, debrief != null ? debrief.Kind : null);
             var design = ui.Q("design");
             if (design != null) design.AddToClassList("hidden");
             System.Action reveal = () =>

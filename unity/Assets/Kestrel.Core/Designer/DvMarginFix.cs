@@ -30,11 +30,13 @@ namespace Kestrel.Core.Designer
     {
         static DesignerLimits Lim => DesignerLimits.Active;
 
-        public static DvFixResult Solve(Catalog catalog, JsonObject design)
+        /// <param name="minMargin">The Δv margin to reach. 0 (the default) is "covers the budget". F2's Fix it asks for
+        /// more when the flown test ascent still runs dry or falls short of a hop's apogee with the budget covered.</param>
+        public static DvFixResult Solve(Catalog catalog, JsonObject design, double minMargin = 0)
         {
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
             if (design == null) throw new ArgumentNullException(nameof(design));
-            var work = new Worker(catalog, design);
+            var work = new Worker(catalog, design, minMargin);
             return work.Run();
         }
 
@@ -47,9 +49,11 @@ namespace Kestrel.Core.Designer
             readonly string orbitId;
             readonly List<string> changes = new List<string>();
             bool hitBudget, hitMass;
+            readonly double minMargin;
 
-            public Worker(Catalog catalog, JsonObject design)
+            public Worker(Catalog catalog, JsonObject design, double minMargin = 0)
             {
+                this.minMargin = minMargin > 0 ? minMargin : 0;
                 this.catalog = catalog;
                 original = design;
                 d = JsonMut.CloneObject(design);
@@ -323,7 +327,7 @@ namespace Kestrel.Core.Designer
                 }
             }
 
-            bool Reached(Metrics m) => m.Ok && m.Twr > Lim.minTwr && m.Margin >= 0 && !double.IsNaN(m.Margin) && !double.IsInfinity(m.Margin);
+            bool Reached(Metrics m) => m.Ok && m.Twr > Lim.minTwr && m.Margin >= minMargin && !double.IsNaN(m.Margin) && !double.IsInfinity(m.Margin);
 
             bool Afford(Metrics m) => double.IsPositiveInfinity(budget) || (!(m.CostKc > budget + 0.5));
 
