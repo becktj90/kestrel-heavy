@@ -39,6 +39,12 @@ namespace Kestrel.Game.Guide
         }
 
         public static GuidePopFrame Place(GuideScreen screen, float slideT, bool reduceMotion, bool caption)
+            => Place(screen, slideT, reduceMotion, caption, 0f);
+
+        /// <summary><paramref name="clearTop"/> (points from the panel top) is the lowest edge the corner must clear,
+        /// 0 for none. Home passes the bottom of its gear and wordmark: the pop drew over the settings gear and the
+        /// "L" of KESTREL in the top-right corner (TestFlight, iPhone portrait).</summary>
+        public static GuidePopFrame Place(GuideScreen screen, float slideT, bool reduceMotion, bool caption, float clearTop)
         {
             float size = DisplayPt;
             float captionW = CaptionWidth(screen, size);
@@ -47,6 +53,7 @@ namespace Kestrel.Game.Guide
             float travel = block + MarginPt + screen.SafeRight;
             float x = restX + (1f - Slide(slideT, reduceMotion)) * travel;
             float y = screen.SafeTop + MarginPt;
+            if (clearTop > 0f && clearTop + MarginPt > y) y = clearTop + MarginPt;
             return new GuidePopFrame(x, y, size, block, captionW);
         }
 

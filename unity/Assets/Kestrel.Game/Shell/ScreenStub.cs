@@ -108,9 +108,16 @@ namespace Kestrel.Game.Shell
                 Action launch = () => shell.Flow.HomePressed("launch");
                 Action design = () => shell.Flow.HomePressed("design");
                 Action missions = () => shell.Flow.HomePressed("missions");
+                HomeFlagsBoot.Load();
                 _overlay = MainMenuOverlay.Build(shell.Root, _view, launch, design, missions, MainMenuLayout.ReducedMotion());
                 try { MainMenuOverlay.SetMissionLine(_overlay, NextMissionLine()); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] next mission line skipped: " + e.Message); }
+                try
+                {
+                    var campaign = LoadCampaign();
+                    if (campaign != null) MainMenuOverlay.SetMissionsFlown(_overlay, ClearedCount(), campaign.Missions.Count);
+                }
+                catch (Exception e) { Debug.LogWarning("[Kestrel] missions flown skipped: " + e.Message); }
                 try { MainMenuOverlay.SetRecord(_overlay, HomeRecordLine()); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] home record skipped: " + e.Message); }
                 try
@@ -128,6 +135,10 @@ namespace Kestrel.Game.Shell
                     float width = shell.Root.resolvedStyle.width;
                     float height = shell.Root.resolvedStyle.height;
                     float top = shell.Safe.resolvedStyle.paddingTop;
+                    // SafeAreaRoot insets Safe with top/left/right/bottom, not padding, so paddingTop is 0 and the
+                    // gear drew in the status bar above the credits band (TestFlight). Use where Safe really starts.
+                    float safeTop = shell.Safe.worldBound.yMin - shell.Root.worldBound.yMin;
+                    if (!web && !float.IsNaN(safeTop) && safeTop > top) top = safeTop;
                     float gx, gy, gw, gh;
                     if (!web || width < 8f || height < 8f)
                     {
@@ -182,7 +193,7 @@ namespace Kestrel.Game.Shell
                 return;
             }
             // Fallback (UseOverlay = false): the original 3D controls with hidden spoken labels.
-            AddSpoken("home-launch", MainMenuLayout.LaunchLabel, MainMenuLayout.Find("launch").Spoken);
+            AddSpoken("home-primary", MainMenuLayout.LaunchLabel, MainMenuLayout.Find("launch").Spoken);
             foreach (var id in new[] { "design", "missions", "codex" })
             {
                 var a = MainMenuLayout.Find(id);
@@ -225,7 +236,7 @@ namespace Kestrel.Game.Shell
             patch.tooltip = "KH-1 mission patch.";
             patch.AddToClassList("kh-home-patch");
             top.Add(patch);
-            var launchKey = new Button(launch) { name = "home-launch", text = "LAUNCH", tooltip = "Launch. Opens the rocket designer on the pad." };
+            var launchKey = new Button(launch) { name = "home-primary", text = "LAUNCH", tooltip = "Launch. Opens the rocket designer on the pad." };
             launchKey.AddToClassList("kh-button");
             launchKey.AddToClassList("kh-home-launch");
             top.Add(launchKey);
@@ -509,7 +520,8 @@ namespace Kestrel.Game.Shell
             _audio?.RemoveFromHierarchy();
             shellFullLayer()?.RemoveFromHierarchy();
             root?.Q("home-settings")?.RemoveFromHierarchy();
-            root?.Q("home-settings-sheet")?.RemoveFromHierarchy();
+            root?.Q("screen-settings")?.RemoveFromHierarchy();
+            root?.Q(MainMenuOverlay.SettingsScrimName)?.RemoveFromHierarchy();
             if (_menu != null) { Destroy(_menu); _menu = null; }
         }
     }
