@@ -9,7 +9,7 @@ namespace Kestrel.Slice
     public static class NextMission
     {
         /// <summary>UiIds name of the Back to designer exit.</summary>
-        public const string DesignerId = "report-back-to-designer";
+        public const string DesignerId = "report-designer";
 
         public static void AddRoutes(VisualElement parent, ReportActions actions, float tap)
         {

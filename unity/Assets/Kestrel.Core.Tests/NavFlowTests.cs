@@ -309,7 +309,7 @@ namespace Kestrel.Core.Tests
             Assert.That(chosen, Does.Not.Contain("PadHandoff.Arm(choice.Design, true"), "Fly KH-n: same as LAUNCH");
         }
 
-        /// <summary>NAV-04 / F4, fixed: the report offers Retry and Back to designer (UiIds report-back-to-designer).</summary>
+        /// <summary>NAV-04 / F4, fixed: the report offers Retry and Back to designer (UiIds report-designer).</summary>
         [Test]
         public void NAV04_Report_HasBackToDesigner()
         {
@@ -320,7 +320,7 @@ namespace Kestrel.Core.Tests
             StringAssert.Contains("\"report-retry\"", body);
             StringAssert.Contains("Exit(DesignerId, ReportRoutes.DesignerLabel", body);
             StringAssert.Contains("actions.Designer", body);
-            StringAssert.Contains("public const string DesignerId = \"report-back-to-designer\";", routes);
+            StringAssert.Contains("public const string DesignerId = \"report-designer\";", routes);
             string slice = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "SliceApp.cs");
             StringAssert.Contains("PostFlightSource.Bind(RestartFlight, ExitToHome, () => { BackToDesign(); ShowDesigner(true); });", slice);
             string host = Src("unity", "Assets", "Kestrel.Game", "Failure", "FailureHost.cs");
