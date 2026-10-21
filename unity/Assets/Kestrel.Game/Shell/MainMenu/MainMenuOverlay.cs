@@ -552,6 +552,17 @@ namespace Kestrel.Game.Shell
                 Pin(e, box);
             }
             e.style.overflow = Overflow.Hidden;
+            if (name == "home-primary")
+            {
+                // Whole pixels, so the absolute 6 px lip (bottom 0) is never rounded past the button (see LaunchH).
+                var set = e.style.height;
+                if (set.keyword == StyleKeyword.Undefined && set.value.value > 0f)
+                {
+                    float whole = Mathf.Ceil(set.value.value - 0.001f);
+                    e.style.height = whole;
+                    e.style.minHeight = whole; e.style.maxHeight = whole;
+                }
+            }
             if (name == "home-primary" || name == "home-design")
             {
                 float padX = 12f * sx;
@@ -859,10 +870,12 @@ namespace Kestrel.Game.Shell
             root.style.paddingTop = padTop;
             root.style.paddingBottom = Mathf.Max(botFloor, padBot);
 
-            void Cut(VisualElement el, ref float box, float floor)
+            void Cut(VisualElement el, ref float box, float floor, bool whole = false)
             {
                 if (overflow <= 1f || el == null || el.resolvedStyle.display == DisplayStyle.None) return;
                 float cut = Mathf.Min(overflow, Mathf.Max(0f, box - floor));
+                // LAUNCH stays a whole number of pixels so its absolute lip cannot round below it (LaunchH).
+                if (whole) cut = box - Mathf.Max(Mathf.Ceil(floor), Mathf.Floor(box - cut));
                 if (cut <= 0f) return;
                 box -= cut;
                 overflow -= cut;
@@ -877,7 +890,7 @@ namespace Kestrel.Game.Shell
             // The stats card is the home-patches hit target: never under 44 (SE full Home cut it to 42).
             Cut(root.Q("mm-stats"), ref stats, MenuTypeScale.HitMin);
             Cut(root.Q("home-design"), ref design, MenuTypeScale.HitMin);
-            Cut(root.Q("home-primary"), ref launch, MenuTypeScale.HitMin);
+            Cut(root.Q("home-primary"), ref launch, MenuTypeScale.HitMin, true);
             if (overflow > 1f)
             {
                 float cut = Mathf.Min(overflow, Mathf.Max(0f, tile - MenuTypeScale.HitMin));

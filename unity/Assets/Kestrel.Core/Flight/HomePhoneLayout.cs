@@ -55,7 +55,9 @@ namespace Kestrel.Core.Flight
 
         // Chrome, from KH_Tokens.uss and the inline styles MainMenuOverlay.ApplyScale writes.
         public const float StatsBorder = 1f, StatsPadX = 10f, StatsPadY = 0f;   // the 1.4 line box carries the air; 1 left the full SE at 42.2%
-        public const float LaunchBorderV = 1f + 8f;   // .kh-mm-launch border-top 1, border-bottom 8 (the old maths used 6)
+        // .kh-mm-launch border-top 1 + the 6 px lip. The lip is absolute (bottom 0) inside the button and the button reserves it
+        // as padding-bottom (padV + LipH), so it is chrome, not stack. The 8 px bottom border this used to count is gone.
+        public const float LaunchBorderV = 1f + 6f;
         public const float LaunchChromeX = 16f + 12f + 36f + 6f;   // lamp + margin, column margin, 28 icon + 8, slack
         // DesignPadY 3 (was 5) pays for DesignGap: the SE controls stay what they were before the gap (ControlsH <= 42%
         // of the usable height, hero clear of LAUNCH), and the card still holds its 1.4 line boxes.
@@ -142,8 +144,11 @@ namespace Kestrel.Core.Flight
         public static int LaunchCaptionLines(HomePhoneType t, float col, string caption)
             => Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, caption, t.LaunchCaption, col - 2f * LaunchPadH(t.Scale) - LaunchChromeX));
 
+        /// <summary>Whole pixels: the lip (MainMenuOverlay.Lip) is absolute, bottom 0, 6 px tall, and Yoga rounds its
+        /// top (height - 6) on its own. A fractional height rounded the lip to 545 under a button ending at 544
+        /// (GameCI, 390x844 points). With a whole height the lip's top is exact and it ends on the button's edge.</summary>
         public static float LaunchH(HomePhoneType t, int captionLines)
-            => Math.Max(HitMin, LaunchBorderV + 2f * LaunchPadV(t.Scale) + t.LaunchLabel * LineH + captionLines * t.LaunchCaption * LineH);
+            => (float)Math.Ceiling(Math.Max(HitMin, LaunchBorderV + 2f * LaunchPadV(t.Scale) + t.LaunchLabel * LineH + captionLines * t.LaunchCaption * LineH) - 0.001f);
 
         /// <summary>TextCore wraps "Your rocket, this mission." (171 px on the advance table at 14 px) to two lines in a
         /// 189 px caption box (GameCI, 390x844 shell, full home), so the table under-reads this string by more than 10%.
