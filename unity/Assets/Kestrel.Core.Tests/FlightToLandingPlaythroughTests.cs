@@ -204,6 +204,40 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void Kh7Starter_LiveFlight_EmitsOneFairingEvent_AtTheDesignReleaseHeight()
+        {
+            // Graphics (#332): the flown sim emits a real "fairing" event. The live setup takes the release height
+            // from the design (fairing.jettisonAltitudeKm), the number the staging show and the director use.
+            var run = Play(7);
+            double expected = run.Design.fairingJettisonAltitudeKm * 1000;
+            Assert.Greater(expected, 0);
+            Assert.AreEqual(expected, run.FairingOptM, "MissionFlightSetup passes the design's release height");
+            Assert.IsNotNull(run.Result);
+            var fairings = run.Result.events.FindAll(e => e.type == "fairing");
+            Assert.AreEqual(1, fairings.Count, "exactly one fairing event");
+            var f = fairings[0];
+            Assert.That(f.alt.Value, Is.GreaterThanOrEqualTo(expected), "not before the release height");
+            Assert.That(f.alt.Value - expected, Is.LessThan(f.v.Value * MissionFlightSetup.LiveDt + 1), "on the first step past it");
+            Assert.Greater(run.Result.maxQTime, 0);
+            Assert.Greater(f.t, run.Result.maxQTime, "after max-Q");
+            Assert.IsTrue(Array.Exists(run.Rail.Marks, m => m.Stop == TrajectoryStop.Fairing && m.Passed), "the rail's Fairing tick is lit");
+            Assert.IsTrue(run.Landing.Touched, "the stage and recovery chain still runs to touchdown");
+            TestContext.WriteLine("fairing T+" + f.t.ToString("0.00") + " alt " + f.alt.Value.ToString("0") + " m (release " + expected + " m)");
+        }
+
+        [Test]
+        public void FairingReleaseHeight_ComesFromTheDesign_AndABareStackEmitsNone()
+        {
+            var bare = new Design { fairingDiameter = 0, fairingLength = 0, fairingJettisonAltitudeKm = 110 };
+            Assert.AreEqual(0, MissionFlightSetup.FairingJettisonAltM(bare), "no fairing, no event");
+            var low = new Design { fairingDiameter = 3, fairingLength = 8, fairingJettisonAltitudeKm = 95 };
+            Assert.AreEqual(95000, MissionFlightSetup.FairingJettisonAltM(low));
+            var unset = new Design { fairingDiameter = 3, fairingLength = 8, fairingJettisonAltitudeKm = 0 };
+            Assert.AreEqual(MissionFlightSetup.DefaultFairingJettisonAltM, MissionFlightSetup.FairingJettisonAltM(unset));
+            Assert.AreEqual(110000, MissionFlightSetup.DefaultFairingJettisonAltM, "Design.cs default jettisonAltitudeKm = 110");
+        }
+
+        [Test]
         public void ReportPicksAscentFirst_ThenAGradedLanding_NeverAnExpendableLoss()
         {
             var ascent = new FailureEvent { kind = "overg" };
@@ -222,6 +256,8 @@ namespace Kestrel.Core.Tests
         sealed class Run
         {
             public BoosterLanding Landing;
+            public Design Design;
+            public double FairingOptM;
             public double SeparatedAt = -1, AscentEndT, TouchdownT;
             public RecoveryCallout LostCall;
             public bool RailRecoveryBeforeTouchdown, RailBurnBeforeTouchdown;
@@ -295,7 +331,7 @@ namespace Kestrel.Core.Tests
             double omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
 
             // SliceApp.PresentAscent: RecoveryShow.Arm
-            var run = new Run { Mission = "KH-" + index };
+            var run = new Run { Mission = "KH-" + index, Design = design, FairingOptM = opts.fairingJettisonAltM };
             run.Landing = BoosterLanding.Arm(catalog, design);
 
             // AscentHud.FeedTrajectory

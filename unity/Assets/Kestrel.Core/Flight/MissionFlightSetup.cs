@@ -1,6 +1,7 @@
 // One mission flight setup for the live pad flight and the campaign batch (B-01, B-03).
 // FlightDriver and FlightBatch both build their SimOptions and flown vehicle here, so the
-// run length, cutoff and aim, coast boil-off, strap-on landing fuel and pad/wind cannot drift.
+// run length, cutoff and aim, coast boil-off, strap-on landing fuel, pad/wind and the fairing
+// release event cannot drift.
 // Only the step size and the failure monitor stay with the caller.
 // #313: every flight also flies the same AscentDirector (Director + Fly → DirectedFlight), so the
 // batch, the designer practice flight, the launch timeline and the live pad share one throttle model.
@@ -188,12 +189,29 @@ namespace Kestrel.Core.Flight
                 if (orbit != null && orbit.periKm >= 0)
                     opts.cutoffEnergy = SimOptions.EnergyFor(orbit.apoKm * 1000, orbit.periKm * 1000);
             }
+            opts.fairingJettisonAltM = FairingJettisonAltM(design);
             if (site != null)
             {
                 if (site.Wind != null && !site.Wind.Calm) opts.wind = site.Wind;
                 if (site.HasLatitude) opts.latitude = site.LatitudeDeg;
             }
             return new MissionFlightInputs { Stages = built.stages, Options = opts, Flown = flown, TargetAltM = target, BoilOffKg = boilOff };
+        }
+
+        /// <summary>Default release height when a design keeps none (Design.cs fairing.jettisonAltitudeKm default).</summary>
+        public const double DefaultFairingJettisonAltM = 110000;
+
+        /// <summary>
+        /// The flown sim's fairing release height: the design's fairing.jettisonAltitudeKm, the same number the
+        /// staging show (FlightStageShow), the director (AscentVehicle.JettisonAltM) and the timeline use. 0 for a
+        /// design with no fairing, using the staging show's rule, so a bare stack never emits a "fairing" event.
+        /// The event is a marker only: the fairing's mass rides with the payload for the whole burn (Stack), as
+        /// in every sim test that sets this option.
+        /// </summary>
+        public static double FairingJettisonAltM(Design design)
+        {
+            if (design == null || !(design.fairingLength > 0.2 && design.fairingDiameter > 0.1)) return 0;
+            return design.fairingJettisonAltitudeKm > 0 ? design.fairingJettisonAltitudeKm * 1000 : DefaultFairingJettisonAltM;
         }
     }
 }
