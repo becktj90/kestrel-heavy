@@ -34,7 +34,7 @@ Info: the Flight scene stub is unreachable because no route returns `SessionScre
 |---|---|---|
 | F1 Launch disabled, fuel at T+0 | NAV-01, NAV-02 — **fixed by #309** | Was 8/20 starters and 7/20 golden winners; now 20/20 Ready. KH-11/KH-13 starters got the one strength step Fix it applied |
 | F2 Fix it does nothing | NAV-04, NAV-05; Play crash test asserts `failure-fix` exists | Behaviour of the button is not asserted (it is being fixed) |
-| F3 stepper Launch chip | not covered | The stepper isn't on the Unity routes driven here |
+| F3 stepper Launch chip | Core `StepperLaunchChipTests` (fixed on fix/F3-stepper-launch) | The current Review chip ("Launch") was disabled as "current"; it now launches through the same Forward action as the Launch button |
 | F4 LAUNCH skips the designer, no Back to designer/Retry | NAV-03, NAV-04 (both fixed on fix/F4-report-back-to-designer); Core Retry route is green | `ReportRoutes.Again` keeps mission+seed (green); `ReportRoutes.BackToDesigner` does the same without relaunching |
 | F5 Follow rocket | not covered | Camera, not navigation |
 | F6 Skip count disabled | not covered | |
