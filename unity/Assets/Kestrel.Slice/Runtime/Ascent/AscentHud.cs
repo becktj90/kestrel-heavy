@@ -367,7 +367,7 @@ namespace Kestrel.Slice
             });
             SeatPlot();
             plot.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.TrajectoryAlpha);
-            plot.Apply(trajectory.At(flight != null ? flight.SimTime : 0, flight != null ? flight.Altitude : 0, flight != null ? flight.Speed : 0), upp);
+            plot.Apply(trajectory.At(RecoveryLog.RailClock(flight != null ? flight.SimTime : 0), flight != null ? flight.Altitude : 0, flight != null ? flight.Speed : 0), upp);
             var dock = ScaleBox(frame.Dock);
             Pin(actions, Offset(dock));
             if (actions != null) actions.style.overflow = Overflow.Hidden;
@@ -955,7 +955,7 @@ namespace Kestrel.Slice
                 SetCell(3, "G", g.ToString("0.0", inv), new Color(0.30f, 0.82f, 0.55f));
             }
             FeedTrajectory(director, alt, speed, q);
-            if (plot != null) plot.Apply(trajectory.At(flight.SimTime, alt, speed), upp);
+            if (plot != null) plot.Apply(trajectory.At(RecoveryLog.RailClock(flight.SimTime), alt, speed), upp);
             var score = director.Score();
             if (medal != null)
                 medal.text = score.Decided > 0 ? "Medal timing: " + score.Summary : "Flying the plan.";
@@ -1619,12 +1619,14 @@ namespace Kestrel.Slice
                 trajectory.Seen(new TrajectoryEvent { T = director.FairingT, Type = "fairing", AltM = director.FairingAltM, SpeedMps = director.FairingSpeedMps });
             if (flight.Sim != null) trajectory.Burn(flight.Sim.StageIdx + 1, flight.Sim.PropellantFraction);
             trajectory.Sample(flight.SimTime, alt, speed, q);
-            var rec = RecoveryLog.Current;
-            if (rec != null && rec.Marks != null)
+            // Live marks while the booster flies, on the flight clock (RecoveryLog.FlightMarks). Current alone
+            // exists only at touchdown, and its times count from separation.
+            var recMarks = RecoveryLog.FlightMarks;
+            if (recMarks != null)
             {
-                for (int i = 0; i < rec.Marks.Length; i++)
+                for (int i = 0; i < recMarks.Length; i++)
                 {
-                    var mark = rec.Marks[i];
+                    var mark = recMarks[i];
                     trajectory.RecoveryPhase(RecoveryWord(mark.Phase), mark.T, mark.Alt, mark.Speed);
                 }
             }
