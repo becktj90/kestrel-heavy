@@ -3,9 +3,9 @@
   "missions": [
     {
       "id": "m3",
-      "mode": "strength",
+      "mode": "fly",
       "restoreSafetyFactor": 1.9,
-      "edit": "Set strength to 1.9. Fix it also changes the fairing or the engines, and that misses.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -70,7 +70,7 @@
             "rcs": false
           },
           "guidance": {
-            "pitchKickDeg": 8,
+            "pitchKickDeg": 8.65,
             "gLimit": 7.2
           },
           "heatShield": true,

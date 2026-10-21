@@ -50,13 +50,14 @@ namespace Kestrel.Core.Tests
             public string Text;
         }
 
-        LiveRun Play(int index, double safetyFactor)
+        LiveRun Play(int index, double safetyFactor, double pitchKickDeg = double.NaN)
         {
             const double frame = 1.0 / 60.0;
             var mission = campaign.Mission(index);
             var choice = HomeAutoBuild.Choose(catalog, hangar.templates, mission);
             var design = Design.FromJson(choice.Design);
             if (!double.IsNaN(safetyFactor)) design.safetyFactor = safetyFactor;
+            if (!double.IsNaN(pitchKickDeg)) design.guidance.pitchKickDeg = pitchKickDeg;
             ulong hash = FlightBatch.DesignHash(design);
             const ulong seed = 1; // AscentFlight.ReadSeed on a design with no seed
             var card = MissionBriefing.Load(Golden.Root, index, hash, seed);
@@ -113,8 +114,9 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Kh3Starter_DefaultSettings_LiveLoop_SeparatesAndReachesOrbit()
         {
-            // The starter as the home auto-build hands it over, no edits. Seed 1: 201.8 x 198.2 km, separation at T+156.1,
-            // max-Q 44.2 kPa: inside the +/-5% band of KH-3's 200 km circle.
+            // The starter as the home auto-build hands it over, no edits (calm-air retune: an 8.65° kick, strength 1.45).
+            // Seed 1 in the briefing wind: 203.3 x 196.7 km, separation at T+156.1: inside the +/-5% band of KH-3's 200 km
+            // circle. (The pre-retune 8° build flew 201.8 x 198.2 km here.)
             var mission = campaign.Mission(3);
             var run = Play(3, double.NaN);
             TestContext.WriteLine(run.Text);
@@ -129,12 +131,13 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void Kh3Starter_WithItsStrengthRestore_LiveLoop_SeparatesAndReachesOrbit()
+        public void Kh3EightDegreeBuild_WithItsStrengthRestore_LiveLoop_SeparatesAndReachesOrbit()
         {
-            // The board's one-tap strength restore (1.9), the flight that bent at T+166 on main. Seed 1: 223.1 x 176.9 km,
-            // separation at T+155.2, max-Q 44.3 kPa. It reaches orbit with no breakup; the heavier walls put it outside
-            // the +/-5% band of the 200 km circle (reported on #313; the restore value is Arcade's board data).
-            var run = Play(3, Restored("m3"));
+            // The pre-retune 8° build with the board's old one-tap strength restore (1.9), the flight that bent at T+166 on
+            // main before #313. Seed 1: 223.1 x 176.9 km, separation at T+155.2, max-Q 44.3 kPa. It reaches orbit with no
+            // breakup; the heavier walls put it outside the +/-5% band of the 200 km circle (reported on #313). KH-3's board
+            // row is now "fly" (8.65° kick), so this pins the old t432 rocket.
+            var run = Play(3, Restored("m3"), 8.0);
             TestContext.WriteLine(run.Text);
             Assert.IsNull(run.Result.failure, run.Text);
             Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates / " + run.Text);
