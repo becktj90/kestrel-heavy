@@ -61,9 +61,8 @@ namespace Kestrel.Slice
         public void Anchor(Transform t, double x, double y, double z) { anchored.Add((t, x, y, z)); Place(t, x, y, z); }
 
         public AscentDirector Decisions { get; private set; }
-        GuidanceProfile guidance;
-        bool throttleHeld, savedMaxQSet, ascentLost;
-        double savedMaxQ;
+        /// <summary>The sim stepped with its director, the same Core stepper the batch, designer and timeline fly (#313).</summary>
+        DirectedFlight directed;
 
         /// <summary>Cinematic hooks for the live sim (explosions, debris, shockwave, camera, staging flash). Observer only.</summary>
         public Kestrel.Game.Environment.CinematicFlightSink CinematicSink { get; private set; }
@@ -117,9 +116,6 @@ namespace Kestrel.Slice
             if (stages == null || stages.Count == 0)
                 throw new InvalidOperationException("Launch has no stages.");
             Decisions = null;
-            throttleHeld = false;
-            ascentLost = false;
-            guidance = opts.guidance;
             if (hook != null)
             {
                 if (hook.Monitor != null) opts.monitor = hook.Monitor;
@@ -134,6 +130,7 @@ namespace Kestrel.Slice
             // The sim is live before any presentation. A throw in the guide, the plume, or the
             // audio bus must not leave this flight without a clock.
             Sim = new AscentSim(stages, opts);
+            directed = new DirectedFlight(Sim, Decisions, opts);
             BindCinematicSink();
             Running = true;
             clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
@@ -167,21 +164,15 @@ namespace Kestrel.Slice
             int guard = 0;
             while (Sim.T < clock && !Sim.Done && guard++ < 64)
             {
-                ApplyAscent();
                 int before = Sim.Events.Count;
-                Sim.Tick();
-                if (Decisions != null && !Sim.Done)
-                {
-                    Decisions.Advance(AscentSample(), PhysicsDt);
-                    ApplyAscent();
-                }
+                directed.Step();
                 if (checks != null && checks.NoteEvents(Sim, before)) Meco = true;
                 if (checks != null && checks.StopForBreakup(Sim)) break;
             }
             if (Sim.Done)
             {
                 Running = false;
-                if (Result == null) Result = Sim.Finish();
+                if (Result == null) Result = directed != null ? directed.Finish() : Sim.Finish();
             }
             PumpEvents();
             if (Meco && !mecoSent && !Lost) { mecoSent = true; Sink?.OnEvent("meco"); }
@@ -241,76 +232,6 @@ namespace Kestrel.Slice
                 prevX = Downrange; prevY = Altitude;
             }
             if (Plume != null) Plume.Apply(ThrustFraction, AmbientPressure, Speed);
-        }
-
-        void ApplyAscent()
-        {
-            if (Decisions == null || Sim == null) return;
-            var cmd = Decisions.Command;
-            double scale = cmd.ThrottleScale;
-            if (double.IsNaN(scale) || scale <= 0) scale = 1;
-            else if (scale > 1) scale = 1;
-            Sim.LiveThrottleScale = scale;
-            Sim.LivePitchOffsetRad = cmd.PitchOffsetRad;
-            if (guidance != null && cmd.SuppressDesignThrottle)
-            {
-                if (!throttleHeld)
-                {
-                    savedMaxQSet = guidance.maxQThrottleSet;
-                    savedMaxQ = guidance.maxQThrottle;
-                    throttleHeld = true;
-                }
-                guidance.maxQThrottleSet = false;
-            }
-            else if (throttleHeld && guidance != null)
-            {
-                guidance.maxQThrottleSet = savedMaxQSet;
-                guidance.maxQThrottle = savedMaxQ;
-                throttleHeld = false;
-            }
-            if (cmd.Lost && !ascentLost)
-            {
-                ascentLost = true;
-                Sim.BreakUp(new FailureEvent
-                {
-                    t = Sim.T,
-                    kind = cmd.LossKind,
-                    kid = cmd.LossKid,
-                    engineer = cmd.LossEngineer,
-                });
-            }
-        }
-
-        AscentSample AscentSample()
-        {
-            double x = Sim.Y[0], y = Sim.Y[1];
-            double r = Math.Sqrt(x * x + y * y);
-            double padAngle = Math.PI / 2 + omegaAir * Sim.T;
-            double down = Gravity.R_EARTH * (Math.Atan2(y, x) - padAngle);
-            double alt = r - Gravity.R_EARTH;
-            double vx = Sim.Y[2] + omegaAir * y, vy = Sim.Y[3] - omegaAir * x;
-            double speed = Math.Sqrt(vx * vx + vy * vy);
-            double mass = Sim.Y[4];
-            double prop = Sim.PropellantFraction;
-            if (double.IsNaN(prop)) prop = 1;
-            double g = mass > 1 && Sim.LastThrust > 0 ? Sim.LastThrust / mass / Atmosphere.G0 : 0;
-            return new AscentSample
-            {
-                T = Sim.T,
-                AltM = alt,
-                DownrangeM = down,
-                SpeedMps = speed,
-                QPa = Sim.LastQ,
-                G = g,
-                MassKg = mass,
-                ThrustN = Sim.LastThrust,
-                PropFraction = prop,
-                LossGravity = Sim.LossGravity,
-                LossDrag = Sim.LossDrag,
-                LossSteering = Sim.LossSteering,
-                StageIndex = Sim.StageIdx,
-                Thrusting = Sim.Thrusting,
-            };
         }
 
         void Place(Transform t, double x, double y, double z) => t.localPosition = new Vector3((float)(x - OriginX), (float)(y - OriginY), (float)z);

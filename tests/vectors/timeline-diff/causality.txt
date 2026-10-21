@@ -3,8 +3,7 @@ after=tpl-hydrogen-upper
 seed=1
 added:
 removed:
-stg.seco.s2.2 | − SECO-2 s2 | t=2073.593 | The edited vehicle no longer produces this event.
+stg.seco.s2.2 | − SECO-2 s2 | t=2144.949 | The edited vehicle no longer produces this event.
 shifted:
 problems:
 causality | dep.payload | dep.payload: precondition stg.seco.s2.2 is missing
-failed-prediction | tpl-hydrogen-upper | The sim does not reach the target. Perigee 190.7 km, apogee 271.1 km, target 200.0 km. Ideal Δv still shows 1350 m/s of margin; the flight does not. The ascent sim still raises an orbit flag; the target is the perigee.

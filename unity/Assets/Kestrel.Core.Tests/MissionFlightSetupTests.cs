@@ -135,12 +135,12 @@ namespace Kestrel.Core.Tests
         public void Setup_HoldsOutCoastBoilOffAndStrapOnLandingFuel()
         {
             var winners = Winners();
-            // KH-10 lands the strap-ons: 14,000 kg loaded, 2,800 kg kept for landing (campaign-winners.json).
+            // KH-10 lands the strap-ons: 22,400 kg loaded, 4,480 kg kept for landing (campaign-winners.json, regrown for the #313 departure check).
             var (m10, d10) = winners.Find(w => w.mission.Id == "m10");
             Assert.IsTrue(m10.LandBoosters);
             var s10 = MissionFlightSetup.Build(catalog, m10, d10, MissionFlightSetup.LiveDt);
-            Assert.AreEqual(14000, d10.strapOns.propMass, "the design is not changed");
-            Assert.AreEqual(14000 - 2800, s10.Flown.strapOns.propMass, 1e-9);
+            Assert.AreEqual(22400, d10.strapOns.propMass, "the design is not changed");
+            Assert.AreEqual(22400 - 4480, s10.Flown.strapOns.propMass, 1e-9);
             // KH-9 coasts 3 h (campaign.json). The upper stage loses that boil-off before launch.
             var (m9, d9) = winners.Find(w => w.mission.Id == "m9");
             Assert.AreEqual(3, m9.CoastHours);
@@ -150,7 +150,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(d9.stages[top].propMass - s9.BoilOffKg, s9.Flown.stages[top].propMass, 1e-9);
             // A free build holds nothing out.
             var free = MissionFlightSetup.Build(catalog, null, d10, MissionFlightSetup.LiveDt);
-            Assert.AreEqual(14000, free.Flown.strapOns.propMass);
+            Assert.AreEqual(22400, free.Flown.strapOns.propMass);
             Assert.AreEqual(0, free.BoilOffKg);
         }
 

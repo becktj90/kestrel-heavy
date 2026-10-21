@@ -31,6 +31,8 @@ namespace Kestrel.Core.Tests
         public static JsonObject FixtureJson(string file) => MiniJson.ParseObject(System.IO.File.ReadAllText(Path.Combine(Root, "tests", "fixtures", "designs", file)));
         public static Kestrel.Core.Vehicle.Design Fixture(string file) => Kestrel.Core.Vehicle.Design.FromJson(FixtureJson(file));
 
+        /// <summary>A named design fixture from tests/fixtures/designs (test-only rockets, not shipped presets).</summary>
+        public static JsonObject FixtureDesign(string name) => MiniJson.ParseObject(System.IO.File.ReadAllText(Path.Combine(Root, "tests", "fixtures", "designs", name + ".json")));
         public static JsonObject File(string name) => MiniJson.ParseObject(System.IO.File.ReadAllText(Path.Combine(Root, "data", "golden", name + ".json")));
         public static IEnumerable<JsonObject> Cases(string name) { foreach (JsonObject c in File(name).Arr("cases")) yield return c; }
 

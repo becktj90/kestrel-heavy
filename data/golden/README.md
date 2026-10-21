@@ -30,4 +30,4 @@ Rows follow `index.json` order (the order `tools/export-golden.mjs` writes them)
 
 ## C# hand goldens: id notes
 
-`contracts-viable.json`: `comsat-gto-k0-t6-p300-m76-u26` carries **95 t on stage 2**, not the 76 t its id says (B-04: 4.0 m fairing, stage 2 +19,000 kg). The id is kept because cells and offers key on it.
+`contracts-viable.json`: `comsat-gto-k0-t15-p570-m190-u39` was `comsat-gto-k0-t6-p300-m76-u26`, whose id understated stage 2 (95 t, B-04). #313 regrew it for the departure Δv check and renamed it from its real stage masses. Cells and offers key on the cell id, not the design id.

@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "strapOns": {
+    "count": 0,
+    "kind": "solid",
+    "propellant": "solid-apcp",
+    "engine": "srm-small",
+    "engineCount": 1,
+    "propMass": 0,
+    "diameter": 1.6,
+    "material": "steel",
+    "crossfeed": false
+  },
+  "aero": {
+    "nose": "ogive",
+    "fins": true
+  },
+  "landing": {
+    "legs": false,
+    "gridFins": false,
+    "rcs": false
+  },
+  "avionics": {
+    "tier": "standard"
+  },
+  "safetyFactor": 1.4,
+  "livery": {
+    "primary": "#222222",
+    "accent": "#ffb000",
+    "name": "SCOUT"
+  },
+  "id": "fixture-weak-scout",
+  "name": "fixture-weak-scout",
+  "tier": "small",
+  "stages": [
+    {
+      "interstageMass": 200,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 1",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 9,
+      "propMass": 35000,
+      "diameter": 1.8
+    },
+    {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "composite",
+      "name": "Stage 2",
+      "propellant": "methalox",
+      "engine": "gg-methalox-small",
+      "engineCount": 1,
+      "propMass": 6000,
+      "diameter": 1.8
+    }
+  ],
+  "payload": {
+    "type": "cubesat",
+    "mass": 150,
+    "orbit": "leo400"
+  },
+  "fairing": {
+    "diameter": 1.8,
+    "length": 2.5,
+    "material": "composite",
+    "jettisonAltitudeKm": 100
+  }
+}
