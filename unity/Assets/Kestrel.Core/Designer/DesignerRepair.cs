@@ -92,6 +92,9 @@ namespace Kestrel.Core.Designer
                     dv = more;
                     changed |= Take(design, dv);
                 }
+                // #316: the added fuel can carry a rocket whose own g limit sits above the monitor's g cap (the KH-2
+                // starter's 9 g against 8 g) past that cap near burnout. Then it breaks up over-g, so bring the g limit under the cap.
+                if (changed && OverG(catalog, mission, design)) changed |= LowerGLimit(catalog, design).changed;
                 // A seed that still breaks up on the way (a gust at max-Q) gets the same strength steps as below.
                 var strength = mission != null ? Strengthen(catalog, mission, design) : Edit.None;
                 bool fuel = changed;
@@ -190,6 +193,16 @@ namespace Kestrel.Core.Designer
             for (ulong seed = 1; seed <= GateSeeds; seed++)
                 if (FlightBatch.Fly(catalog, mission, d, seed).failure != null) n++;
             return n;
+        }
+
+        /// <summary>#316: true when the repaired rocket breaks up over-g: on a gate seed with a mission, else in the designer's test ascent.</summary>
+        static bool OverG(Catalog catalog, CampaignMission mission, JsonObject design)
+        {
+            if (mission != null) return FirstFailure(catalog, mission, design) == "overg";
+            Physics.SimResult sim;
+            try { sim = ReferenceAscent.Simulate(catalog, design); }
+            catch (Exception) { return false; }
+            return sim != null && sim.failure != null && sim.failure.kind == "overg";
         }
 
         static bool StrengthHelps(string failure) => failure == "structural-maxq" || failure == "maxq-high";
