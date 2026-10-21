@@ -40,7 +40,7 @@ apoKm=467.1
 periKm=434.7
 targetKm=400.0
 dvMarginMs=3063
-timeline=ignition,liftoff,burnout,separation,ignition,cutoff,orbit
+timeline=ignition,liftoff,fairing,burnout,separation,ignition,cutoff,orbit
 text=The sim reaches the target. Perigee 434.7 km, apogee 467.1 km, target 400.0 km. Ideal Δv margin 3063 m/s.
 ---
 vehicle=scout
@@ -55,7 +55,7 @@ apoKm=467.1
 periKm=434.7
 targetKm=400.0
 dvMarginMs=3063
-timeline=ignition,liftoff,burnout,separation,ignition,cutoff,orbit
+timeline=ignition,liftoff,fairing,burnout,separation,ignition,cutoff,orbit
 text=Pass. Perigee 434.7 km.
 ---
 vehicle=kid
@@ -70,7 +70,7 @@ apoKm=1539.2
 periKm=-6300.0
 targetKm=200.0
 dvMarginMs=4759
-timeline=ignition,liftoff,burnout,separation,ignition,failure
+timeline=ignition,liftoff,fairing,burnout,separation,ignition,failure
 text=The sim does not reach the target. Perigee -6300.0 km, apogee 1539.2 km, target 200.0 km. Ideal Δv still shows 4759 m/s of margin; the flight does not.
 ---
 vehicle=kid
@@ -85,7 +85,7 @@ apoKm=1539.2
 periKm=-6300.0
 targetKm=200.0
 dvMarginMs=4759
-timeline=ignition,liftoff,burnout,separation,ignition,failure
+timeline=ignition,liftoff,fairing,burnout,separation,ignition,failure
 text=Fail. Perigee -6300.0 km.
 ---
 vehicle=super-heavy
@@ -100,7 +100,7 @@ apoKm=4072.2
 periKm=318.8
 targetKm=400.0
 dvMarginMs=2447
-timeline=ignition,liftoff,burnout,separation,ignition,burnout,orbit
+timeline=ignition,liftoff,burnout,separation,ignition,fairing,burnout,orbit
 text=The sim does not reach the target. Perigee 318.8 km, apogee 4072.2 km, target 400.0 km. Ideal Δv still shows 2447 m/s of margin; the flight does not. The ascent sim still raises an orbit flag; the target is the perigee.
 ---
 vehicle=super-heavy
@@ -115,6 +115,6 @@ apoKm=4072.2
 periKm=318.8
 targetKm=400.0
 dvMarginMs=2447
-timeline=ignition,liftoff,burnout,separation,ignition,burnout,orbit
+timeline=ignition,liftoff,burnout,separation,ignition,fairing,burnout,orbit
 text=Fail. Perigee 318.8 km.
 ---
