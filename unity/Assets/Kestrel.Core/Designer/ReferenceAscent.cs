@@ -150,11 +150,29 @@ namespace Kestrel.Core.Designer
             return Readout.Quick(c, design);
         }
 
-        public static SimResult Simulate(Catalog c, JsonObject design)
+        public static SimResult Simulate(Catalog c, JsonObject design) => Flight(c, Design.FromJson(design)).Run();
+
+        /// <summary>
+        /// The designer practice flight (#313): <see cref="Inputs"/> flown under the live pad's director, so the
+        /// Ready check, the timeline and the pad share one throttle model. The predict monitor's seeded schedule
+        /// (design hash 1, seed 1) drives the director, as it drives the monitor.
+        /// </summary>
+        public static DirectedFlight Flight(Catalog c, Design d)
         {
-            var input = Inputs(c, design);
-            return PlayedChecks.Fly(c, Design.FromJson(design), input.stages, input.opts);
+            var setup = Setup(c, d);
+            var director = MissionFlightSetup.Director(c, setup, d, PredictHash, PredictSeed);
+            var flight = MissionFlightSetup.Start(setup, director);
+            // #314 + #313: the designer stops where play breaks up (PlayedChecks), under the pad's director.
+            flight.Checks = new PlayedChecks(c, d, setup.Stages, setup.Options, flight.Sim);
+            return flight;
         }
+
+        /// <summary>The predict monitor's hash and seed (<see cref="Stack.SimInputs"/> builds it with the defaults).</summary>
+        public const ulong PredictHash = 1, PredictSeed = 1;
+
+        /// <summary>#314: the live monitor (Predict off), so the designer breaks up where play does.</summary>
+        static MissionFlightInputs Setup(Catalog c, Design d)
+            => MissionFlightSetup.Build(c, MissionFor(c, d), d, MissionFlightSetup.BatchDt);
 
         /// <summary>
         /// Predict inputs: the same <see cref="MissionFlightSetup"/> the live pad flight and FlightBatch fly (F1). The
@@ -167,9 +185,7 @@ namespace Kestrel.Core.Designer
         /// </summary>
         public static (List<SimStage> stages, SimOptions opts) Inputs(Catalog c, JsonObject design)
         {
-            var d = Design.FromJson(design);
-            var mission = MissionFor(c, d);
-            var setup = MissionFlightSetup.Build(c, mission, d, MissionFlightSetup.BatchDt);
+            var setup = Setup(c, Design.FromJson(design));
             return (setup.Stages, setup.Options);
         }
 
@@ -235,17 +251,14 @@ namespace Kestrel.Core.Designer
     public sealed class ReferenceJob
     {
         readonly string key;
-        readonly AscentSim sim;
-        readonly PlayedChecks checks;
+        readonly DirectedFlight sim;
         bool done;
         public bool Done => done;
 
         public ReferenceJob(Catalog c, JsonObject design)
         {
             key = ReferenceAscent.CanonicalKey(c, design);
-            var input = ReferenceAscent.Inputs(c, design);
-            sim = new AscentSim(input.stages, input.opts);
-            checks = new PlayedChecks(c, Design.FromJson(design), input.stages, input.opts, sim);
+            sim = ReferenceAscent.Flight(c, Design.FromJson(design));
         }
 
         /// <summary>Run ticks until the ascent ends or <paramref name="budgetMs"/> of wall time has elapsed. At least one tick runs when work remains, so a 0 budget still advances.</summary>
@@ -255,9 +268,9 @@ namespace Kestrel.Core.Designer
             var sw = System.Diagnostics.Stopwatch.StartNew();
             while (true)
             {
-                if (!checks.Tick(sim))
+                if (!sim.Step())
                 {
-                    var r = sim.Finish();
+                    var r = sim.Sim.Finish();
                     ReferenceAscent.Store(key, r);
                     done = true;
                     return true;

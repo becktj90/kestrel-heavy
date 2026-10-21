@@ -151,12 +151,14 @@ namespace Kestrel.Core.Flight
                 // The hopper template clears the padded delta-v check and then breaks up:
                 // three small kerolox engines at full throttle cross the 35 kPa wall, and
                 // a full tank coasts far past a 10 km hop. This fork is the rocket Home
-                // actually flies. One engine, a 515 kg load, SF 3 and a 60% max-Q cap keep
+                // actually flies. One engine, a 464 kg load, SF 3 and a 60% max-Q cap keep
                 // peak dynamic pressure under 85% of the limit and peak g under 8. Scored on the
-                // drag-aware flown peak (MissionScore.FlownApoAltM), the batch and the pad step
-                // reach 9.79 km and the director-guided pad flight 10.26 km: both inside
-                // 9.5–10.5 km with the pair centred on 10 km. 345 kg read 9.7 km on the vacuum
-                // Kepler apoapsis at burnout but flew to 6.6 km.
+                // drag-aware flown peak (MissionScore.FlownApoAltM) through the shared director
+                // (#313: the default player takes the design's own 60% max-Q cap), the batch
+                // reaches 10.03 km and the live pad 10.05 km on every seed, inside 9.5–10.5 km and
+                // above Physics' 9.7 km headroom floor. 515 kg was tuned on the bare batch and flew
+                // 11.4 km under the director. 345 kg read 9.7 km on the vacuum Kepler apoapsis at
+                // burnout but flew to 6.6 km.
                 ArmFirstHop(best.Design);
                 FillPerformance(catalog, best);
                 best.ReachLine = "Enough for this hop.";
@@ -232,7 +234,7 @@ namespace Kestrel.Core.Flight
         }
 
         public const double FirstHopSafetyFactor = 3;
-        public const double FirstHopPropKg = 515;
+        public const double FirstHopPropKg = 464;
         public const double FirstHopMaxQPercent = 60;
         public const double FirstHopGLimit = 6;
 

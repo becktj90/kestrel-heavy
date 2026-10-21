@@ -2,9 +2,12 @@
 // FlightDriver and FlightBatch both build their SimOptions and flown vehicle here, so the
 // run length, cutoff and aim, coast boil-off, strap-on landing fuel and pad/wind cannot drift.
 // Only the step size and the failure monitor stay with the caller.
+// #313: every flight also flies the same AscentDirector (Director + Fly → DirectedFlight), so the
+// batch, the designer practice flight, the launch timeline and the live pad share one throttle model.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
+using Kestrel.Core.Designer.Stepper;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 
@@ -39,6 +42,68 @@ namespace Kestrel.Core.Flight
         /// <summary>The campaign batch step.</summary>
         public const double BatchDt = 0.2;
 
+        // Batch (BatchDt) vs live pad (LiveDt) agreement under the shared director (#313), set by Physics.
+        /// <summary>Apogee hops: relative difference of the drag-aware flown peak.</summary>
+        public const double HopPeakTolerance = 0.005;
+        /// <summary>Orbits: relative difference of the apoapsis altitude.</summary>
+        public const double OrbitApoTolerance = 0.005;
+        /// <summary>Orbits: absolute difference of the periapsis altitude, metres.</summary>
+        public const double OrbitPeriToleranceM = 1000;
+        /// <summary>Orbits: relative difference of the semi-major axis.</summary>
+        public const double OrbitSmaTolerance = 0.001;
+
+        /// <summary>
+        /// The ascent director a flight of <paramref name="design"/> flies (#313). The live pad builds it with the
+        /// player's own settings (AscentFlight.Prepare). Prediction flies the default player: auto-assist on, which
+        /// is the Simple-depth default (<see cref="StepperProgress.AutoAssistOn"/>), so every call is taken in its
+        /// green window. <paramref name="schedule"/> is the failure monitor's seeded event schedule (null when the
+        /// monitor does not engage). <paramref name="wind"/> null or calm is calm air.
+        /// </summary>
+        public static AscentDirector Director(Catalog catalog, Design design, EventSchedule schedule, SeededWind wind, double targetAltM,
+            ulong designHash, ulong missionSeed, bool autoAssist = DefaultAutoAssist, bool engineer = false, bool reduceMotion = false,
+            IList<BonusGoal> bonuses = null)
+        {
+            double qLim = 0;
+            bool gentle = false;
+            if (catalog != null && design != null)
+            {
+                qLim = FailureMonitor.StructuralQLimPa(catalog, design);
+                gentle = FailureMonitor.GentleTier(design);
+            }
+            return Director(catalog, design, schedule, wind, qLim, gentle, targetAltM, designHash, missionSeed, autoAssist, engineer, reduceMotion, bonuses);
+        }
+
+        /// <summary>As above with the structural q limit and gentle tier already read (the live pad reads them under its own guard).</summary>
+        public static AscentDirector Director(Catalog catalog, Design design, EventSchedule schedule, SeededWind wind, double qLimPa, bool gentle,
+            double targetAltM, ulong designHash, ulong missionSeed, bool autoAssist, bool engineer, bool reduceMotion, IList<BonusGoal> bonuses)
+        {
+            var vehicle = AscentDecisions.FromDesign(design, catalog, schedule, wind, qLimPa, targetAltM, gentle, bonuses, designHash, missionSeed);
+            return AscentDirector.Start(vehicle, schedule, wind, autoAssist, engineer, reduceMotion);
+        }
+
+        /// <summary>The prediction player: auto-assist on, the Simple-depth default.</summary>
+        public const bool DefaultAutoAssist = true;
+
+        /// <summary>The director for a built <paramref name="setup"/>: its monitor's schedule, its aim and its wind.</summary>
+        public static AscentDirector Director(Catalog catalog, MissionFlightInputs setup, Design design, ulong designHash, ulong missionSeed)
+        {
+            if (setup == null) throw new ArgumentNullException(nameof(setup));
+            var opts = setup.Options;
+            var schedule = opts != null && opts.monitor != null ? opts.monitor.Events : null;
+            var wind = opts != null ? opts.wind : null;
+            return Director(catalog, design, schedule, wind, setup.TargetAltM, designHash, missionSeed);
+        }
+
+        /// <summary>A directed flight of <paramref name="setup"/>, not yet stepped.</summary>
+        public static DirectedFlight Start(MissionFlightInputs setup, AscentDirector director)
+        {
+            if (setup == null) throw new ArgumentNullException(nameof(setup));
+            return new DirectedFlight(new AscentSim(setup.Stages, setup.Options), director, setup.Options);
+        }
+
+        /// <summary>Fly <paramref name="setup"/> to the end under <paramref name="director"/>.</summary>
+        public static SimResult Fly(MissionFlightInputs setup, AscentDirector director) => Start(setup, director).Run();
+
         /// <summary>
         /// Sim inputs for <paramref name="design"/> flying <paramref name="mission"/>.
         /// A null mission is a free build: the design's own orbit, nothing held out. An apogee orbit aims at the
@@ -67,6 +132,8 @@ namespace Kestrel.Core.Flight
             var built = Stack.SimInputs(catalog, flown, dt, sampleEvery);
             var opts = built.opts;
             if (!(opts.tMax >= MinTMax)) opts.tMax = MinTMax;
+            // #313: cut off inside the step, so the batch step and the live step cut off at the same state.
+            opts.locateCutoff = true;
             double target = opts.targetAlt;
             if (mission != null)
             {

@@ -56,8 +56,8 @@ namespace Kestrel.Core.Flight
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
             if (vehicle == null) throw new ArgumentNullException(nameof(vehicle));
             mode = string.Equals(mode, "kid", StringComparison.OrdinalIgnoreCase) ? "kid" : "standard";
-            var input = Inputs(catalog, vehicle);
-            var sim = PlayedChecks.Fly(catalog, vehicle, input.stages, input.opts);
+            // The designer practice flight under the live pad's director (#313).
+            var sim = Designer.ReferenceAscent.Flight(catalog, vehicle).Run();
             var req = Stack.RequiredDeltaV(catalog, vehicle.payloadOrbit);
             bool suborbital = req.orbit != null && req.orbit.periKm < 0;
             // The sim raises "orbit" inside a 10 km cutoff band. The prediction uses the

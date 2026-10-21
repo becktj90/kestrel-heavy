@@ -675,6 +675,11 @@ namespace Kestrel.Core.Flight
 
         bool AutopilotAccept(Call c, in AscentSample s)
         {
+            // #313 option (b): the default player flies the design's own settings. The autopilot takes the max-Q
+            // throttle-down only when the design set a max-Q throttle (and then at that value, OfferedThrottle), and
+            // never takes the open-loop nose-down nudge. A player tap (Choose) still does either.
+            if (c.Kind == AscentCall.MaxQ) return vehicle.MaxQSet;
+            if (c.Kind == AscentCall.Pitch) return false;
             if (c.Kind != AscentCall.EngineOut) return true;
             if (AscentDecisions.ToleratesEngineOut(vehicle.Engines, vehicle.Redundant, s.ThrustN, s.MassKg)) return true;
             return vehicle.HotChamber;

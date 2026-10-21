@@ -19,11 +19,12 @@ namespace Kestrel.Core.Tests
         [Test]
         public void AutoAssist_ThrottlesInTheGreen_AndManualSkipIsLateNotAFail()
         {
-            var vehicle = new AscentVehicle { QLimPa = 35000, SafetyFactor = 1.4, ThrottleMin = 0.4, FlightCode = "KH-14" };
+            // #313 (b): the autopilot throttles down only to the design's own max-Q setting.
+            var vehicle = new AscentVehicle { QLimPa = 35000, SafetyFactor = 1.4, ThrottleMin = 0.4, FlightCode = "KH-14", MaxQSet = true, MaxQRaw = 60 };
             var assisted = AscentDirector.Start(vehicle, null, null, true, false, false);
             assisted.Advance(MaxQSample(), 0.05);
             Assert.AreEqual(AscentGrade.Perfect, assisted.GradeOf(AscentCall.MaxQ));
-            Assert.AreEqual(0.70, assisted.Command.ThrottleScale, 1e-9);
+            Assert.AreEqual(0.60, assisted.Command.ThrottleScale, 1e-9);
             Assert.IsFalse(assisted.Command.Lost);
             Assert.AreEqual(AscentMedal.Silver, assisted.Score().Medal, "auto-assist perfect timing without a tap is silver");
 
@@ -32,9 +33,48 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(manual.IsOpen(AscentCall.MaxQ));
             Assert.IsTrue(manual.Skip(AscentCall.MaxQ));
             Assert.AreEqual(AscentGrade.Late, manual.GradeOf(AscentCall.MaxQ));
-            Assert.AreEqual(0.70, manual.Command.ThrottleScale, 1e-9, "skip still takes the autopilot throttle");
+            Assert.AreEqual(0.60, manual.Command.ThrottleScale, 1e-9, "skip still takes the autopilot throttle");
             Assert.IsFalse(manual.Command.Lost);
             Assert.AreEqual(AscentMedal.Bronze, manual.Score().Medal);
+        }
+
+        [Test]
+        public void Autopilot_KeepsTheDesignSettings_ButAPlayerTapStillTakesEitherCall()
+        {
+            // #313 (b). No design max-Q throttle: auto-assist grades the call but leaves the throttle alone.
+            var plain = new AscentVehicle { QLimPa = 35000, ThrottleMin = 0.4 };
+            var assisted = AscentDirector.Start(plain, null, null, true, false, false);
+            assisted.Advance(MaxQSample(), 0.05);
+            Assert.AreEqual(AscentGrade.Perfect, assisted.GradeOf(AscentCall.MaxQ));
+            Assert.AreEqual(1, assisted.Command.ThrottleScale, 1e-12);
+            Assert.IsFalse(assisted.Command.SuppressDesignThrottle);
+
+            var skipped = AscentDirector.Start(plain, null, null, false, false, false);
+            skipped.Advance(MaxQSample(), 0.05);
+            Assert.IsTrue(skipped.Skip(AscentCall.MaxQ));
+            Assert.AreEqual(1, skipped.Command.ThrottleScale, 1e-12, "the autopilot does not invent a bucket");
+
+            // A player tap still throttles to the offered 70% default.
+            var tapped = AscentDirector.Start(plain, null, null, false, false, false);
+            tapped.Advance(MaxQSample(), 0.05);
+            Assert.IsTrue(tapped.Choose(AscentCall.MaxQ, true));
+            Assert.AreEqual(AscentDecisions.DefaultBucket, tapped.Command.ThrottleScale, 1e-12);
+
+            // Pitch: the autopilot never takes the open-loop nose-down nudge; a tap still does.
+            var sample = new AscentSample { T = 5, AltM = 4000, SpeedMps = 120, QPa = 1000, Thrusting = true, PropFraction = 1 };
+            var auto = AscentDirector.Start(new AscentVehicle { Stages = 1 }, null, null, true, false, false);
+            var tap = AscentDirector.Start(new AscentVehicle { Stages = 1 }, null, null, false, false, false);
+            tap.Advance(sample, 0.5);
+            Assert.IsTrue(tap.Choose(AscentCall.Pitch, true));
+            for (int i = 0; i < 40; i++)
+            {
+                sample.T += 0.5;
+                auto.Advance(sample, 0.5);
+            }
+            Assert.IsTrue(auto.IsDone(AscentCall.Pitch));
+            Assert.AreEqual(0, auto.NudgeDeg, 1e-12);
+            Assert.AreEqual(0, auto.Command.PitchOffsetRad, 1e-12);
+            Assert.AreEqual(-AscentDecisions.NudgeStepDeg, tap.NudgeDeg, 1e-12);
         }
 
         [Test]

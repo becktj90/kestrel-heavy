@@ -123,7 +123,10 @@ namespace Kestrel.Core.Flight
                 var monitor = FailureMonitor.Create(catalog, flown, target, DesignHash(design), seed);
                 monitor.Gentle = false;
                 setup.Options.monitor = monitor;
-                var sim = Headless.Simulate(setup.Stages, setup.Options);
+                // The live pad's director (#313): the batch flies the same max-Q call, throttle hold, pitch nudge and
+                // staging the default player gets on the pad, not the bare sim.
+                var director = MissionFlightSetup.Director(catalog, setup, design, DesignHash(design), seed);
+                var sim = MissionFlightSetup.Fly(setup, director);
 
                 flight.outcome = sim.outcome;
                 flight.failure = sim.failure != null ? sim.failure.kind : null;

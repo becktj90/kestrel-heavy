@@ -23,6 +23,13 @@ namespace Kestrel.Core.Physics
         public double payload = 0, targetAlt = 200e3, latitude = 28.5, dt = 0.05, tMax = 3000;
         public double kickSpeed = 60, kickAngleDeg = 4, sampleEvery = 0;
         public bool vacuum = false, rotate = true, cutoff = true;
+        /// <summary>
+        /// Locate the target-energy cutoff inside the step (#313): when a step crosses the cutoff condition, re-integrate
+        /// that step from its start with a shorter, root-found length and cut off there, so the cutoff does not snap to the
+        /// next step boundary. Burnout already lands exactly (the step is shortened to the remaining propellant).
+        /// False keeps the JS simulate() parity path. MissionFlightSetup turns it on for every mission flight, batch and live.
+        /// </summary>
+        public bool locateCutoff;
         /// <summary>Null keeps the built-in kick. A profile adds its pitch program and throttle caps.</summary>
         public Flight.GuidanceProfile guidance;
         /// <summary>Null leaves the flight on the v2 path: no failure checks, identical steps.</summary>
@@ -142,6 +149,9 @@ namespace Kestrel.Core.Physics
         public int StageCount => st.Length;
         /// <summary>Peak q is confirmed once it falls below this fraction of the running maximum. The hook reports that maximum.</summary>
         public const double MaxQConfirm = 0.98;
+        /// <summary>Bisection steps for a located cutoff. 40 halvings of a 0.2 s step is below 1e-12 s. Fixed, so deterministic.</summary>
+        public const int CutoffBisections = 40;
+        readonly double[] stepStart = new double[5];
         double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1, catchPitch;
         bool turned;
         bool liftedOff, sawKarman, maxQPassed, fairingSent, ignitionHooked; double karmanT; string outcome = "timeout";
@@ -378,6 +388,7 @@ namespace Kestrel.Core.Physics
             }
             double gl = Gravity.MU_EARTH / (r * r);
             double v = JsMath.Hypot(vx, vy);
+            double lossG0 = lossG, lossD0 = lossD, lossS0 = lossS, dvExp0 = dvExp;
             LastP = p; LastQ = q; LastMach = vrel / sound; LastThrust = 0;
             if (o.monitor != null && Watch(alt, q, m, vrel, p, rho, sound, avx, avy, ux, uy, tx, ty, dt))
                 Fail(alt, v);
@@ -402,8 +413,34 @@ namespace Kestrel.Core.Physics
                 nextSample += o.sampleEvery;
             }
 
+            bool locate = o.locateCutoff && o.cutoff && Thrusting && Mode == 3;
+            if (locate) Array.Copy(Y, stepStart, 5);
+            double t0 = T;
             rk.Step(deriv, T, Y, dt);
             T += dt;
+            if (locate && CutoffMargin(Y) >= 0)
+            {
+                // The cutoff condition crossed inside this step. Bisect on the step length (fixed count, deterministic):
+                // lo stays before the crossing, hi at or past it. The flight cuts off at hi.
+                double lo = 0, hi = dt;
+                var trial = new double[5];
+                for (int it = 0; it < CutoffBisections; it++)
+                {
+                    double mid = 0.5 * (lo + hi);
+                    Array.Copy(stepStart, trial, 5);
+                    rk.Step(deriv, t0, trial, mid);
+                    if (CutoffMargin(trial) >= 0) hi = mid; else lo = mid;
+                }
+                Array.Copy(stepStart, Y, 5);
+                rk.Step(deriv, t0, Y, hi);
+                T = t0 + hi;
+                // The loss and Δv tallies are linear in the step: keep only the part flown.
+                double f = dt > 0 ? hi / dt : 1;
+                lossG = lossG0 + (lossG - lossG0) * f;
+                lossD = lossD0 + (lossD - lossD0) * f;
+                lossS = lossS0 + (lossS - lossS0) * f;
+                dvExp = dvExp0 + (dvExp - dvExp0) * f;
+            }
 
             double r1 = JsMath.Hypot(Y[0], Y[1]), alt1 = r1 - Gravity.R_EARTH;
             if (!liftedOff && alt1 > 1)
@@ -446,6 +483,15 @@ namespace Kestrel.Core.Physics
             // Debris after a real failure coasts until impact or tMax. A clean cutoff still ends the run.
             if (!Thrusting && outcome != "failure") { Done = true; return false; }
             return true;
+        }
+
+        /// <summary>The target-energy cutoff test below as a signed margin: at or above 0 cuts off (bound orbits only).</summary>
+        double CutoffMargin(double[] y)
+        {
+            var orb = Orbit.Planar(y[0], y[1], y[2], y[3]);
+            if (!(orb.e < 1)) return -1;
+            double alt = JsMath.Hypot(y[0], y[1]) - Gravity.R_EARTH;
+            return orb.periAlt - (Math.Min(o.targetAlt, alt) - 10e3);
         }
 
         /// <summary>
