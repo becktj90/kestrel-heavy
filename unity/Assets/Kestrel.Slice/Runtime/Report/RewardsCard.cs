@@ -1,5 +1,5 @@
 // Rewards card on the post-flight sheet. Cause, the flight's own numbers, stars, medals, Kc, then the exits.
-// Portrait column, scrolling, so an iPhone SE still reaches every button. No clock and no purchase.
+// Body over an exits grid, sized by ReportCardChrome.Dress / ReportFit to fit with no scrolling. No clock and no purchase.
 using System;
 using Kestrel.Core;
 using Kestrel.Core.Flight;

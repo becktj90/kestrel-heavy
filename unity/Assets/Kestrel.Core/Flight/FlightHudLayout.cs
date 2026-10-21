@@ -61,6 +61,13 @@ namespace Kestrel.Core.Flight
         public const float PadPt = 4f;
         public const float HeaderPt = 36f;
         public const float HealthPt = 28f;
+        /// <summary>
+        /// The Eng/Tnk/Hull tabs are buttons: a 28 pt row drawn, a 44 pt hit target (the row grows its taps
+        /// <see cref="HealthSlopPt"/> above and below into the non-interactive clock gap and strip). A 44 pt drawn row
+        /// pushes the stages card into #304's portrait picker on 320-wide phones and the staging callout past the SE gap.
+        /// </summary>
+        public const float HitPt = 44f;
+        public const float HealthSlopPt = (HitPt - HealthPt) * 0.5f;
         public const float TelemetryPt = 36f;
         public const float PlotPt = 72f;
         public const float CardFraction = 0.32f;
@@ -87,6 +94,14 @@ namespace Kestrel.Core.Flight
         public const float CellGapPt = 4f;
         public const float CellPadPt = 4f;
         public const int TelemetryCount = 4;
+
+        /// <summary>Line box per point of face, for the strip's two-line cells.</summary>
+        public const float LineHeight = 1.3f;
+        /// <summary>The prompt quote face and the smallest face it steps down to before the line is cut.</summary>
+        public const float QuoteFontPt = 13f;
+        public const float QuoteMinFontPt = 10f;
+        /// <summary>The widest strip reading the cells are sized for (a 10 km/s+ speed; "1234.5 km" is shorter).</summary>
+        public const string WidestValue = "12.34 km/s";
 
         public static readonly string[] TelemetryLabels = { "ALT", "SPEED", "Q", "G" };
         public static readonly string[] ValueSamples = { "999.9 km", "0.00 km/s", "999 kPa", "00.0", "100%", "TWR", "PROP" };
@@ -122,6 +137,39 @@ namespace Kestrel.Core.Flight
             if (room < 48f) room = 48f;
             if (room > 96f) room = 96f;
             return room;
+        }
+
+        public struct QuoteFit
+        {
+            public string Text;
+            public float FontPt;
+            public bool Cut;
+        }
+
+        /// <summary>
+        /// One line of prompt quote for a box <paramref name="boxW"/> points wide (the 18 pt quote row holds one line;
+        /// L2 printed two on top of each other). The face steps down from <paramref name="fontPt"/> to
+        /// <paramref name="minPt"/>; a quote still too long is cut after the last whole word that fits, with an ellipsis.
+        /// The full quote stays in the tooltip and the flight notes.
+        /// </summary>
+        public static QuoteFit QuoteLine(string text, float boxW, float fontPt, float minPt)
+        {
+            var fit = new QuoteFit { Text = text ?? "", FontPt = fontPt };
+            if (string.IsNullOrEmpty(text) || !(boxW > 1f)) return fit;
+            float room = boxW - 2f;
+            float font = fontPt;
+            while (font > minPt && TextWidth(text, font) > room) font -= 0.5f;
+            if (font < minPt) font = minPt;
+            fit.FontPt = font;
+            if (TextWidth(text, font) <= room) return fit;
+            int max = (int)Math.Floor(room / (font * FontAdvance)) - 1;
+            if (max < 1) max = 1;
+            string cut = text.Length > max ? text.Substring(0, max) : text;
+            int space = cut.LastIndexOf(' ');
+            if (space > max / 2) cut = cut.Substring(0, space);
+            fit.Text = cut.TrimEnd(' ', ',', '.', ';', ':') + "…";
+            fit.Cut = true;
+            return fit;
         }
 
         public static float TextWidth(string text, float fontPt)

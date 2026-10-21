@@ -129,10 +129,55 @@ namespace Kestrel.Slice
                 var tt = t;
                 var b = ui.Btn(t.ToString(), () => Show(tt), t + " tab", minWidthPt: 56f);
                 b.style.flexGrow = 1;
+                // L8: flex-basis auto sized the five tabs by their text, so "Designs" (the longest) was the one
+                // clipped. Equal columns, then one face for the row that fits the longest label (FitTabs).
+                b.style.flexBasis = 0;
+                b.style.flexShrink = 1;
+                // Equal columns may shrink below the 56 pt chip width, never below a 44 pt target.
+                b.style.minWidth = ui.U(HangarUi.TargetPt);
+                b.style.whiteSpace = WhiteSpace.NoWrap;
+                b.style.overflow = Overflow.Hidden;
                 b.style.paddingLeft = ui.U(4f); b.style.paddingRight = ui.U(4f);
                 tabButtons[t] = b;
                 tabs.Add(b);
             }
+            if (!tabsFitHooked)
+            {
+                tabsFitHooked = true;
+                tabs.RegisterCallback<GeometryChangedEvent>(_ => FitTabs());
+            }
+        }
+
+        bool tabsFitHooked;
+        float tabFacePx;
+
+        /// <summary>One font size for the tab row so every label fits its equal column (floor 10 px).</summary>
+        void FitTabs()
+        {
+            if (tabs == null || tabButtons.Count == 0) return;
+            if (!(tabFacePx > 0f))
+            {
+                foreach (var b in tabButtons.Values)
+                {
+                    float f = b.resolvedStyle.fontSize;
+                    if (f > tabFacePx) tabFacePx = f;
+                }
+                if (!(tabFacePx > 0f)) return;
+            }
+            float face = tabFacePx;
+            foreach (var b in tabButtons.Values)
+            {
+                // Less padding and a small allowance for the button border.
+                float w = b.resolvedStyle.width - b.resolvedStyle.paddingLeft - b.resolvedStyle.paddingRight - 4f;
+                if (!(w > 4f) || string.IsNullOrEmpty(b.text)) continue;
+                var size = b.MeasureTextSize(b.text, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined);
+                float atFace = b.resolvedStyle.fontSize > 0f ? size.x * tabFacePx / b.resolvedStyle.fontSize : size.x;
+                if (atFace > w && atFace > 0f) face = Mathf.Min(face, tabFacePx * w / atFace);
+            }
+            // Floor: 10 pt (in panel units), the same smallest face TextFit steps down to.
+            face = Mathf.Max(ui.U(10f), Mathf.Floor(face * 2f) / 2f);
+            foreach (var b in tabButtons.Values)
+                if (Mathf.Abs(b.resolvedStyle.fontSize - face) > 0.25f) b.style.fontSize = face;
         }
 
         string StructureKey()

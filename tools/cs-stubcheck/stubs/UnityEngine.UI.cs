@@ -33,7 +33,7 @@ namespace UnityEngine.UIElements
     public struct StyleFontDefinition { public FontDefinition value; public StyleFontDefinition(FontDefinition d) { value = d; } public static implicit operator StyleFontDefinition(StyleKeyword k) => default; public static implicit operator StyleFontDefinition(FontDefinition d) => default; }
     public enum Wrap { NoWrap, Wrap, WrapReverse }
     public enum WhiteSpace { Normal, NoWrap }
-public interface IResolvedStyle { float width { get; } float height { get; } float left { get; } float top { get; } float right { get; } float bottom { get; } float paddingTop { get; } float paddingRight { get; } float paddingLeft { get; } float paddingBottom { get; } float fontSize { get; } float opacity { get; } DisplayStyle display { get; } StyleFloat maxHeight { get; } float minHeight { get; } Color backgroundColor { get; } Overflow overflow { get; } WhiteSpace whiteSpace { get; } TextOverflow textOverflow { get; } }
+public interface IResolvedStyle { float width { get; } float height { get; } float left { get; } float top { get; } float right { get; } float bottom { get; } float paddingTop { get; } float paddingRight { get; } float paddingLeft { get; } float paddingBottom { get; } float fontSize { get; } float opacity { get; } DisplayStyle display { get; } StyleFloat maxHeight { get; } float minHeight { get; } Color backgroundColor { get; } Overflow overflow { get; } WhiteSpace whiteSpace { get; } TextOverflow textOverflow { get; } Visibility visibility { get; } }
     public class VisualElementStyleSheetSet { public void Add(StyleSheet s) { } public void Remove(StyleSheet s) { } public bool Contains(StyleSheet s) => false; public int count => 0; }
     public enum TrickleDown { NoTrickleDown, TrickleDown }
     public interface IEventHandler { } public class EventBase { public IEventHandler target { get; set; } public IEventHandler currentTarget { get; set; } public void StopPropagation() { } public void StopImmediatePropagation() { } public void PreventDefault() { } }
@@ -41,7 +41,7 @@ public interface IResolvedStyle { float width { get; } float height { get; } flo
     public class GeometryChangedEvent : EventBase<GeometryChangedEvent> { public Rect oldRect => default; public Rect newRect => default; }
     public class AttachToPanelEvent : EventBase<AttachToPanelEvent> { }
     public class DetachFromPanelEvent : EventBase<DetachFromPanelEvent> { }
-    public class ClickEvent : EventBase<ClickEvent> { }
+    public class ClickEvent : EventBase<ClickEvent> { public Vector3 position => default; public Vector3 localPosition => default; public int pointerId => 0; }
     public class NavigationSubmitEvent : EventBase<NavigationSubmitEvent>, IDisposable { public static NavigationSubmitEvent GetPooled() => new NavigationSubmitEvent(); public void Dispose() { } }
     public class PointerDownEvent : EventBase<PointerDownEvent> { public Vector3 position => default; public Vector3 localPosition => default; public int pointerId => 0; }
     public class PointerMoveEvent : EventBase<PointerMoveEvent> { public Vector3 position => default; public Vector3 localPosition => default; public int pointerId => 0; public Vector3 deltaPosition => default; }
@@ -67,7 +67,7 @@ public interface IResolvedStyle { float width { get; } float height { get; } flo
     public enum ScrollViewMode { Vertical, Horizontal, VerticalAndHorizontal }
     public enum ScrollerVisibility { Auto, AlwaysVisible, Hidden }
     public class Scroller : VisualElement { public event Action<float> valueChanged; public float lowValue { get; set; } public float highValue { get; set; } public float value { get; set; } }
-    public class ScrollView : VisualElement { public ScrollView() { } public ScrollView(ScrollViewMode m) { } public ScrollViewMode mode { get; set; } public ScrollerVisibility horizontalScrollerVisibility { get; set; } public ScrollerVisibility verticalScrollerVisibility { get; set; } public Scroller verticalScroller { get; } = new Scroller(); public Scroller horizontalScroller { get; } = new Scroller(); public Vector2 scrollOffset { get; set; } public void ScrollTo(VisualElement e) { } }
+    public class ScrollView : VisualElement { public ScrollView() { } public ScrollView(ScrollViewMode m) { } public ScrollViewMode mode { get; set; } public ScrollerVisibility horizontalScrollerVisibility { get; set; } public ScrollerVisibility verticalScrollerVisibility { get; set; } public Scroller verticalScroller { get; } = new Scroller(); public Scroller horizontalScroller { get; } = new Scroller(); public Vector2 scrollOffset { get; set; } public VisualElement contentViewport { get; } = new VisualElement(); public void ScrollTo(VisualElement e) { } }
     public interface INotifyValueChanged<T> { T value { get; set; } void SetValueWithoutNotify(T v); }
     public class BaseField<T> : VisualElement, INotifyValueChanged<T> { public T value { get; set; } public string label { get; set; } public void SetValueWithoutNotify(T v) { } }
     public static class INotifyValueChangedExtensions { public static bool RegisterValueChangedCallback<T>(this INotifyValueChanged<T> c, EventCallback<ChangeEvent<T>> cb) => true; public static bool UnregisterValueChangedCallback<T>(this INotifyValueChanged<T> c, EventCallback<ChangeEvent<T>> cb) => true; }

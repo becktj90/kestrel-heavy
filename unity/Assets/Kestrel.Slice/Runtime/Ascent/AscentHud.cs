@@ -4,6 +4,7 @@
 // medal line share a bottom dock. Long notes sit behind Info.
 // Pause, pinch, orbit, and Follow are not touched. Guide copy is not touched.
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Ui;
@@ -191,6 +192,7 @@ namespace Kestrel.Slice
             if (health != null)
             {
                 health.style.marginBottom = Px(FlightHudLayout.GapPt);
+                SizeHealthRow(health.Q(HealthRowName));
                 for (int i = 0; healthButtons != null && i < healthButtons.Length; i++)
                 {
                     var b = healthButtons[i];
@@ -214,9 +216,89 @@ namespace Kestrel.Slice
             if (UseWideNow()) LayoutWide();
             else LayoutRail();
             PlaceInfoSheet();
+            FitText();
             // Picker above the HUD (rail pieces and the info sheet are re-added or brought forward above),
-            // pause menu above the picker.
+            // pause menu above the picker (L3: nothing the HUD adds may draw over the open pause menu).
             FlightChrome.Restack(hud);
+        }
+
+        /// <summary>The portrait dock mode LayoutRail last seated the rows for; null before the first rail layout.</summary>
+        FlightHudMode? railMode;
+        /// <summary>The prompt text the dock buttons were last fitted for (refit only when it changes).</summary>
+        string fittedFor;
+
+        FlightHudMode LiveMode() => FlightHudLayout.WideMode(shown != default, infoOpen);
+
+        /// <summary>
+        /// L1/L2 (1280x800 live build): the strip keys rose above the HUD top, the engine-out quote printed over the
+        /// medal line and SHUT DOWN ran under Skip. Every dock row is seated in its own box, the strip labels carry no
+        /// default margins, and the text in the strip, the health tabs, the stages banner and the dock buttons is
+        /// fitted to its own box.
+        /// </summary>
+        void FitText()
+        {
+            FitCells();
+            FitQuote();
+            var strip = root != null ? root.Q("ascent-telemetry") : null;
+            if (strip != null) TextFit.Apply(strip);
+            if (health != null) TextFit.Apply(health);
+            if (stages != null) TextFit.Apply(stages);
+            if (actions != null) TextFit.Apply(actions);
+            if (nudgeRow != null && actions != null && nudgeRow.parent != actions) TextFit.Apply(nudgeRow);
+        }
+
+        /// <summary>The key and value lines of each strip cell together fit the strip height (L1: "ALT" sat above the top edge).</summary>
+        void FitCells()
+        {
+            var strip = root != null ? root.Q("ascent-telemetry") : null;
+            if (strip == null) return;
+            float h = strip.style.height.keyword == StyleKeyword.Undefined ? strip.style.height.value.value : 0f;
+            if (!(h > 4f)) h = strip.resolvedStyle.height;
+            if (float.IsNaN(h) || h < 4f) return;
+            float key = Px(FlightHudLayout.LabelFontPt);
+            float val = Px(FlightHudLayout.ValueFontPt);
+            float need = (key + val) * FlightHudLayout.LineHeight;
+            float room = h - Px(2f);
+            float k = need > room && need > 0f ? room / need : 1f;
+            // Width: the widest reading (FlightHudLayout.ValueSamples, "1234.5 km" class) fits its cell on one line.
+            float sw = strip.style.width.keyword == StyleKeyword.Undefined ? strip.style.width.value.value : 0f;
+            if (!(sw > 8f)) sw = strip.resolvedStyle.width;
+            if (sw > 8f && !float.IsNaN(sw))
+            {
+                float cellW = (sw - 2f * Px(FlightHudLayout.CellPadPt) - (CellCount - 1) * Px(FlightHudLayout.CellGapPt)) / CellCount;
+                float wide = FlightHudLayout.TextWidth(FlightHudLayout.WidestValue, val);
+                if (wide > cellW - Px(2f) && wide > 0f) k = Math.Min(k, (cellW - Px(2f)) / wide);
+            }
+            for (int i = 0; i < CellCount; i++)
+            {
+                if (cellKey[i] != null) cellKey[i].style.fontSize = key * k;
+                if (cellVal[i] != null) cellVal[i].style.fontSize = val * k;
+            }
+        }
+
+        /// <summary>The prompt quote is one line in an 18 pt row: the face steps down to 10 pt, then the line is cut at a word.</summary>
+        void FitQuote()
+        {
+            if (quote == null || string.IsNullOrEmpty(quote.text)) return;
+            string full = quote.userData as string ?? quote.text;
+            float w = quote.style.width.keyword == StyleKeyword.Undefined ? quote.style.width.value.value : 0f;
+            if (!(w > 8f)) w = quote.resolvedStyle.width;
+            if (float.IsNaN(w) || w < 8f) return;
+            var fit = FlightHudLayout.QuoteLine(full, w / upp, FlightHudLayout.QuoteFontPt, FlightHudLayout.QuoteMinFontPt);
+            quote.style.whiteSpace = WhiteSpace.NoWrap;
+            quote.style.fontSize = Px(fit.FontPt);
+            quote.text = fit.Text;
+            quote.tooltip = full;
+        }
+
+        /// <summary>
+        /// L3: nothing the HUD adds or re-parents may draw over the pause menu. Cheap per-frame guard: only when the
+        /// menu is no longer the last child does it re-run #304's restack (picker, toast, then the pause menu on top).
+        /// </summary>
+        void KeepPauseOnTop()
+        {
+            var menu = hud != null ? hud.Q(UiIds.ScreenPause) : null;
+            if (menu != null && menu.parent == hud && hud.IndexOf(menu) != hud.childCount - 1) FlightChrome.Restack(hud);
         }
 
         /// <summary>Portrait: the tested rail, inside the HUD's already-padded content box.</summary>
@@ -237,6 +319,7 @@ namespace Kestrel.Slice
                 : notes ? FlightHudMode.Notes
                 : FlightHudMode.Cruise;
             var frame = FlightHudLayout.Place(w / upp, h / upp, 0f, 0f, 0f, 0f, mode);
+            railMode = mode;
             if (plot.parent != hud) hud.Insert(0, plot);
             Pin(plot, new HudBox
             {
@@ -535,11 +618,11 @@ namespace Kestrel.Slice
 
             var dock = Sc(f.Dock);
             Seat(actions != null ? actions.Q("ascent-medal-row") : null, Sc(Union(f.Medal, f.Info)), dock);
-            PlaceRailOrDock(help, f.Help, InDock(f.Help), Sc(f.Help), actions);
-            PlaceRailOrDock(quote, f.Quote, InDock(f.Quote), Sc(f.Quote), actions);
+            PlaceRailOrDock(help, f.Help, InDock(f.Help), Sc(f.Help), actions, dock);
+            PlaceRailOrDock(quote, f.Quote, InDock(f.Quote), Sc(f.Quote), actions, dock);
             if (quote != null && f.Quote.Live)
                 quote.style.whiteSpace = WhiteSpace.Normal;
-            PlaceRailOrDock(bar, f.Timer, InDock(f.Timer), Sc(f.Timer), actions);
+            PlaceRailOrDock(bar, f.Timer, InDock(f.Timer), Sc(f.Timer), actions, dock);
             if (prompt)
             {
                 Seat(promptRow, Sc(Union(f.Primary, f.Skip, f.Assist)), dock);
@@ -564,7 +647,7 @@ namespace Kestrel.Slice
             wideMode = mode;
         }
 
-        void PlaceRailOrDock(VisualElement e, HudBox css, bool inDock, HudBox panel, VisualElement dock)
+        void PlaceRailOrDock(VisualElement e, HudBox css, bool inDock, HudBox panel, VisualElement dock, HudBox dockBox)
         {
             if (e == null) return;
             if (!css.Live)
@@ -575,13 +658,9 @@ namespace Kestrel.Slice
             e.style.display = DisplayStyle.Flex;
             if (inDock)
             {
+                // L2: in the flex flow this row went to the top of the dock, over the medal line.
                 if (dock != null && e.parent != dock) dock.Add(e);
-                e.style.position = StyleKeyword.Null;
-                e.style.left = StyleKeyword.Null;
-                e.style.top = StyleKeyword.Null;
-                e.style.height = panel.H;
-                e.style.maxHeight = panel.H;
-                e.style.marginTop = 0;
+                Seat(e, panel, dockBox);
                 return;
             }
             if (hud != null && e.parent != hud) hud.Add(e);
@@ -787,7 +866,12 @@ namespace Kestrel.Slice
                 shown = p.Call;
                 if (quote != null)
                 {
-                    quote.text = p.Quote;
+                    if (!string.Equals(quote.userData as string, p.Quote))
+                    {
+                        quote.userData = p.Quote;
+                        quote.text = p.Quote;
+                        FitQuote();
+                    }
                     quote.style.display = infoOpen ? DisplayStyle.None : DisplayStyle.Flex;
                 }
                 if (bar != null) bar.style.display = DisplayStyle.Flex;
@@ -854,6 +938,67 @@ namespace Kestrel.Slice
             // prompt dock never sits over Follow, the camera button or Pause (1280x800 live build).
             if (widePinned && UseWideNow() && FlightHudLayout.WideMode(shown != default, infoOpen) != wideMode)
                 LayoutWide();
+            // Portrait has the same problem: the rows were seated for the cruise dock when a call opened.
+            else if (!widePinned && railMode.HasValue && LiveMode() != railMode) Layout(upp);
+            string key = shown + "|" + (quote != null ? quote.userData as string : "") + "|" + (primary != null ? primary.text : "") + "|" + (alternate != null ? alternate.text : "");
+            if (key != fittedFor)
+            {
+                fittedFor = key;
+                FitText();
+            }
+            KeepPauseOnTop();
+        }
+
+        /// <summary>
+        /// Device tests and PNG captures: the strip readings, the stages banner and an optional call (the engine-out
+        /// prompt) without a running flight. Same rows, same seating and fitting as <see cref="Present"/>.
+        /// </summary>
+        public void Preview(string altText, string speedText, string verdict, AscentPrompt? call)
+        {
+            if (root == null) return;
+            root.style.display = DisplayStyle.Flex;
+            if (actions != null) actions.style.display = DisplayStyle.Flex;
+            var ink = new Color(0.85f, 0.92f, 0.96f);
+            bool prompt = call.HasValue;
+            SetCell(0, "ALT", altText, ink);
+            SetCell(1, "SPEED", speedText, ink);
+            SetCell(2, prompt ? "TWR" : "Q", prompt ? "0.94" : "999 kPa", new Color(0.94f, 0.63f, 0.12f));
+            SetCell(3, prompt ? "PROP" : "G", prompt ? "100%" : "12.4", new Color(0.30f, 0.82f, 0.55f));
+            var v = stages != null ? stages.Q<Label>("h-verdict") : null;
+            if (v != null) v.text = verdict ?? "";
+            if (medal != null) medal.text = "Medal timing: Silver · 1 perfect · 0 good · 0 late";
+            if (assist != null) assist.text = "Auto-assist on";
+            if (prompt)
+            {
+                var p = call.Value;
+                shown = p.Call;
+                if (quote != null) { quote.userData = p.Quote; quote.text = p.Quote; quote.style.display = DisplayStyle.Flex; }
+                if (bar != null) bar.style.display = DisplayStyle.Flex;
+                if (primary != null) { primary.text = p.Primary; primary.style.display = DisplayStyle.Flex; }
+                if (alternate != null) { alternate.text = p.Alternate ?? ""; alternate.style.display = p.ShowAlternate ? DisplayStyle.Flex : DisplayStyle.None; }
+                if (skip != null) skip.style.display = DisplayStyle.Flex;
+                if (nudgeDown != null) nudgeDown.style.display = DisplayStyle.None;
+                if (nudgeUp != null) nudgeUp.style.display = DisplayStyle.None;
+                nudgeRowOpen = p.ShowAlternate;
+            }
+            else
+            {
+                shown = default;
+                if (quote != null) { quote.userData = null; quote.style.display = DisplayStyle.None; }
+                if (bar != null) bar.style.display = DisplayStyle.None;
+                if (primary != null) primary.style.display = DisplayStyle.None;
+                if (alternate != null) alternate.style.display = DisplayStyle.None;
+                if (skip != null) skip.style.display = DisplayStyle.None;
+                nudgeRowOpen = false;
+            }
+            PlaceAssist(prompt);
+            if (promptRow != null) promptRow.style.display = prompt ? DisplayStyle.Flex : DisplayStyle.None;
+            if (assistRow != null) assistRow.style.display = prompt ? DisplayStyle.None : DisplayStyle.Flex;
+            if (nudgeRow != null) nudgeRow.style.display = nudgeRowOpen ? DisplayStyle.Flex : DisplayStyle.None;
+            StyleStages();
+            PlaceDockSpacer();
+            Layout(upp);
+            fittedFor = null;
         }
 
         void PlaceAssist(bool prompt)
@@ -896,11 +1041,20 @@ namespace Kestrel.Slice
             health.style.flexShrink = 0;
             health.style.overflow = Overflow.Visible;
             health.style.marginBottom = Px(FlightHudLayout.GapPt);
-            var row = new VisualElement { name = "ascent-health-row" };
+            var row = new VisualElement { name = HealthRowName, pickingMode = PickingMode.Position };
             row.style.flexDirection = FlexDirection.Row;
-            row.style.alignItems = Align.Stretch;
+            row.style.alignItems = Align.Center;
             row.style.flexShrink = 0;
-            row.style.height = Px(FlightHudLayout.HealthPt);
+            SizeHealthRow(row);
+            // The tabs draw 28 pt; the row is the 44 pt hit band. A tap in the band above or below a tab opens that tab.
+            row.RegisterCallback<ClickEvent>(e =>
+            {
+                if (e.target != row || healthButtons == null) return;
+                var cols = new Rect[healthButtons.Length];
+                for (int k = 0; k < healthButtons.Length; k++) cols[k] = healthButtons[k] != null ? healthButtons[k].layout : default;
+                int hit = HealthTabAt(e.localPosition.x, cols);
+                if (hit >= 0) OnHealth(hit);
+            });
             healthButtons = new Button[VehicleHealth.Count];
             var calm = VehicleHealth.Read(new VehicleHealthInput { Fuel01 = 1, QLimitPa = 1, GLimit = 1 });
             for (int i = 0; i < VehicleHealth.Count; i++)
@@ -910,6 +1064,7 @@ namespace Kestrel.Slice
                 b.tooltip = calm[i].Name + ". " + calm[i].Detail;
                 b.style.flexGrow = 1;
                 b.style.flexShrink = 1;
+                b.style.flexBasis = 0;
                 b.style.minWidth = 0;
                 b.style.marginRight = i < VehicleHealth.Count - 1 ? Px(FlightHudLayout.GapPt) : 0;
                 b.style.marginLeft = 0;
@@ -1004,6 +1159,38 @@ namespace Kestrel.Slice
             else healthDetail.style.display = DisplayStyle.None;
         }
 
+        public const string HealthRowName = "ascent-health-row";
+
+        /// <summary>
+        /// L1 tab row: 44 pt tall (FlightHudLayout.HitPt) with negative margins, so the flow still gives it the 28 pt
+        /// FlightHudLayout.HealthPt (the stages card, #304's picker and the staging callout do not move).
+        /// </summary>
+        void SizeHealthRow(VisualElement row)
+        {
+            if (row == null) return;
+            row.style.height = Px(FlightHudLayout.HitPt);
+            row.style.minHeight = Px(FlightHudLayout.HitPt);
+            row.style.marginTop = -Px(FlightHudLayout.HealthSlopPt);
+            row.style.marginBottom = -Px(FlightHudLayout.HealthSlopPt);
+        }
+
+        /// <summary>The tab whose column holds <paramref name="x"/> (row-local), else the nearest one; -1 with no tabs.</summary>
+        public static int HealthTabAt(float x, IList<Rect> columns)
+        {
+            if (columns == null || columns.Count == 0 || float.IsNaN(x)) return -1;
+            int best = -1;
+            float bestD = float.MaxValue;
+            for (int i = 0; i < columns.Count; i++)
+            {
+                var c = columns[i];
+                if (!(c.width > 0f)) continue;
+                if (x >= c.xMin && x <= c.xMax) return i;
+                float d = x < c.xMin ? c.xMin - x : x - c.xMax;
+                if (d < bestD) { bestD = d; best = i; }
+            }
+            return best;
+        }
+
         void OnHealth(int index)
         {
             healthOpen = healthOpen == index ? -1 : index;
@@ -1057,6 +1244,7 @@ namespace Kestrel.Slice
             FlightDusk.Sentence(bonus, upp);
             FlightDusk.Sentence(extra, upp);
             help.BringToFront();
+            KeepPauseOnTop();
         }
 
         string ExtraLine(AscentDirector director)
@@ -1111,6 +1299,9 @@ namespace Kestrel.Slice
                 cell.style.flexGrow = 1;
                 cell.style.flexShrink = 1;
                 cell.style.alignItems = Align.Center;
+                cell.style.justifyContent = Justify.Center;
+                cell.style.flexBasis = 0;
+                cell.style.minWidth = 0;
                 cell.style.overflow = Overflow.Hidden;
                 if (i < CellCount - 1) cell.style.marginRight = Px(FlightHudLayout.CellGapPt);
                 var key = new Label { name = "ascent-cell-" + i + "-k", pickingMode = PickingMode.Ignore };
@@ -1118,10 +1309,12 @@ namespace Kestrel.Slice
                 key.style.whiteSpace = WhiteSpace.NoWrap;
                 key.style.color = new Color(0.65f, 0.75f, 0.82f);
                 key.style.unityFontStyleAndWeight = FontStyle.Bold;
+                NoBox(key);
                 var val = new Label { name = "ascent-cell-" + i + "-v", pickingMode = PickingMode.Ignore };
                 val.style.unityTextAlign = TextAnchor.MiddleCenter;
                 val.style.whiteSpace = WhiteSpace.NoWrap;
                 val.style.unityFontStyleAndWeight = FontStyle.Bold;
+                NoBox(val);
                 cell.Add(key);
                 cell.Add(val);
                 cellKey[i] = key;
@@ -1284,6 +1477,14 @@ namespace Kestrel.Slice
             {
                 bool alarm = verdict.text != null && verdict.text.IndexOf("lost", StringComparison.OrdinalIgnoreCase) >= 0;
                 FlightDusk.Banner(verdict, upp, alarm);
+                // L1: "Climbing" ran off the right edge; the banner never outgrows the stages card.
+                verdict.style.maxWidth = Length.Percent(100);
+                verdict.style.flexShrink = 1;
+                verdict.style.overflow = Overflow.Hidden;
+                verdict.style.textOverflow = TextOverflow.Clip;
+                verdict.style.marginLeft = 0;
+                verdict.style.marginRight = 0;
+                verdict.style.fontSize = TextFit.Cap(verdict, 15f * upp);
                 verdict.style.display = string.IsNullOrEmpty(verdict.text) ? DisplayStyle.None : DisplayStyle.Flex;
             }
             var seq = stages.Q("h-seq");
@@ -1430,6 +1631,15 @@ namespace Kestrel.Slice
             actions.Add(nudgeRow);
         }
 
+        /// <summary>No default label margin or padding: the strip is 36 pt for two lines.</summary>
+        static void NoBox(VisualElement e)
+        {
+            e.style.marginTop = 0; e.style.marginBottom = 0; e.style.marginLeft = 0; e.style.marginRight = 0;
+            e.style.paddingTop = 0; e.style.paddingBottom = 0; e.style.paddingLeft = 0; e.style.paddingRight = 0;
+            e.style.maxWidth = Length.Percent(100);
+            e.style.overflow = Overflow.Hidden;
+        }
+
         static Label Note(string name, Color color)
         {
             var label = new Label { name = name, pickingMode = PickingMode.Ignore };
@@ -1500,6 +1710,9 @@ namespace Kestrel.Slice
             b.style.borderBottomRightRadius = r;
             b.style.unityFontStyleAndWeight = FontStyle.Bold;
             b.style.flexShrink = 1;
+            // L2: with an auto basis "SHUT DOWN ENGINE 1 (will not hold)" took its text width and ran under Skip.
+            b.style.flexBasis = 0;
+            b.style.minWidth = 0;
         }
 
         static Button Action(string name, Action click)
