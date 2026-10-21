@@ -11,6 +11,7 @@ namespace NUnit.Framework
     [AttributeUsage(AttributeTargets.All, AllowMultiple = true)] public class RangeAttribute : Attribute { public RangeAttribute(int a, int b) { } public RangeAttribute(int a, int b, int s) { } }
     [AttributeUsage(AttributeTargets.All)] public class TestFixtureAttribute : Attribute { public TestFixtureAttribute(params object[] a) { } }
     [AttributeUsage(AttributeTargets.All)] public class SetUpAttribute : Attribute { }
+    [AttributeUsage(AttributeTargets.All)] public class SetUpFixtureAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.All)] public class TearDownAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.All)] public class OneTimeSetUpAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.All)] public class OneTimeTearDownAttribute : Attribute { }

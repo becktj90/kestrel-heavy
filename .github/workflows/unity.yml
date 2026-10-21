@@ -100,6 +100,20 @@ jobs:
           name: screenshots
           path: unity/CaptureOut/*.png
           if-no-files-found: warn
+      # PlayMode HomeCaptureTests: real Home at every device size and Home mode (Starter CONTINUE/LAUNCH, full Home).
+      - uses: actions/upload-artifact@v4
+        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'
+        with:
+          name: home-captures
+          path: unity/CaptureOut/home/*.png
+          if-no-files-found: warn
+      # EditMode device tests (StarterDesignerDeviceTests): one PNG per device size.
+      - uses: actions/upload-artifact@v4
+        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'EditMode'
+        with:
+          name: device-captures
+          path: unity/CaptureOut/starter/*.png
+          if-no-files-found: warn
 
 
   ios-compile:

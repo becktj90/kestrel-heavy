@@ -83,7 +83,7 @@ namespace Kestrel.Game.Tests
             Assert.That(root.Q<Label>("mm-record").text, Does.Contain("flights cleared").And.Contain("Kc").And.Contain("patch"));
             Assert.That(root.Q<Button>("home-patches"), Is.Not.Null);
 
-            var thrum = root.Q<Button>("mm-hint");
+            var thrum = root.Q<Button>("home-thrum");
             Assert.That(thrum, Is.Not.Null);
             Press(thrum);
             Assert.That(full.Q("home-thrum-note"), Is.Not.Null);
@@ -95,7 +95,7 @@ namespace Kestrel.Game.Tests
             Assert.That(MenuBack.Try(full), Is.True);
 
             Press(full.Q<Button>("home-settings"));
-            foreach (var name in new[] { "home-setting-music", "home-setting-sound", "home-setting-voice", "home-setting-subtitles", "home-setting-sandbox" })
+            foreach (var name in new[] { "settings-music", "settings-sound", "settings-voice", "settings-subtitles", "settings-sandbox" })
             {
                 var key = full.Q<Button>(name);
                 Assert.That(key.style.whiteSpace.value, Is.EqualTo(WhiteSpace.NoWrap), name);
@@ -103,25 +103,25 @@ namespace Kestrel.Game.Tests
                 Press(key);
                 Assert.That(key.Q<Label>(name + "-state").text, Is.EqualTo("Off"), name + " off");
             }
-            var motion = full.Q<Button>("home-reduce-motion");
+            var motion = full.Q<Button>("settings-reduce-motion");
             Assert.That(motion.style.whiteSpace.value, Is.EqualTo(WhiteSpace.NoWrap));
-            Assert.That(motion.Q<Label>("home-reduce-motion-state").text, Is.EqualTo("Off"));
+            Assert.That(motion.Q<Label>("settings-reduce-motion-state").text, Is.EqualTo("Off"));
             Press(motion);
-            Assert.That(motion.Q<Label>("home-reduce-motion-state").text, Is.EqualTo("On"));
-            Assert.That(full.Q<Button>("home-setting-music").text, Is.EqualTo("Music off"));
-            Assert.That(full.Q<Button>("home-setting-sound").text, Is.EqualTo("Sound off"));
-            Assert.That(full.Q<Button>("home-setting-voice").text, Is.EqualTo("Voice off"));
-            Assert.That(full.Q<Button>("home-setting-subtitles").text, Is.EqualTo("Subtitles off"));
-            Assert.That(full.Q<Button>("home-setting-sandbox").text, Is.EqualTo("Sandbox off"));
+            Assert.That(motion.Q<Label>("settings-reduce-motion-state").text, Is.EqualTo("On"));
+            Assert.That(full.Q<Button>("settings-music").text, Is.EqualTo("Music off"));
+            Assert.That(full.Q<Button>("settings-sound").text, Is.EqualTo("Sound off"));
+            Assert.That(full.Q<Button>("settings-voice").text, Is.EqualTo("Voice off"));
+            Assert.That(full.Q<Button>("settings-subtitles").text, Is.EqualTo("Subtitles off"));
+            Assert.That(full.Q<Button>("settings-sandbox").text, Is.EqualTo("Sandbox off"));
             Assert.That(motion.text, Is.EqualTo("Reduce motion on"));
 
             var again = new VisualElement { name = "full-2" };
             var safe2 = new VisualElement { name = "safe-2" };
             MainMenuOverlay.Build(again, safe2, () => { }, () => { }, () => { }, true);
-            Assert.That(again.Q<Button>("home-setting-music").text, Is.EqualTo("Music off"), "music persists");
-            Assert.That(again.Q<Label>("home-setting-music-state").text, Is.EqualTo("Off"));
-            Assert.That(again.Q<Button>("home-setting-subtitles").text, Is.EqualTo("Subtitles off"));
-            Assert.That(again.Q<Button>("home-reduce-motion").text, Is.EqualTo("Reduce motion on"));
+            Assert.That(again.Q<Button>("settings-music").text, Is.EqualTo("Music off"), "music persists");
+            Assert.That(again.Q<Label>("settings-music-state").text, Is.EqualTo("Off"));
+            Assert.That(again.Q<Button>("settings-subtitles").text, Is.EqualTo("Subtitles off"));
+            Assert.That(again.Q<Button>("settings-reduce-motion").text, Is.EqualTo("Reduce motion on"));
             Assert.That(MenuBack.Try(full), Is.True);
 
             string repo = Catalog.FindRepoRoot(Directory.GetCurrentDirectory());

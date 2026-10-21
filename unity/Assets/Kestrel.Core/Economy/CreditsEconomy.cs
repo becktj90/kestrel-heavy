@@ -255,15 +255,16 @@ namespace Kestrel.Core.Economy
             Gifted = quote;
         }
 
-        /// <summary>Move the paid quote onto the rocket that is open. A gap the balance cannot cover is gifted, not deleted.</summary>
+        /// <summary>
+        /// The designer opened on this rocket. Opening is not a purchase (docs/ECONOMY.md, Spend): the balance
+        /// never moves. The same quote keeps what the player paid. Any other rocket was handed over (a save,
+        /// a mission starter, a stock rocket), so it becomes the gifted baseline and stripping it pays nothing.
+        /// </summary>
         public void CatchUp(long quote)
         {
             if (quote < 0) quote = 0;
-            if (TryApply(quote)) return;
-            long gap = quote - PaidQuote;
-            if (gap <= 0) return;
-            Gifted += gap;
-            PaidQuote = quote;
+            if (quote == PaidQuote) return;
+            GiftBaseline(quote);
             Save();
         }
 
