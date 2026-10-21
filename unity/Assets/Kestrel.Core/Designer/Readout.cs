@@ -94,6 +94,16 @@ namespace Kestrel.Core.Designer
         public List<FlightRisk> risks;
         /// <summary>First predicted failure from the cached ascent. Null when the predict run stayed intact, or while stale.</summary>
         public FailureEvent predictedFailure;
+        /// <summary>The trip is an apogee target (KH-1, KH-2, "suborbital").</summary>
+        public bool suborbital;
+        /// <summary>Kepler apogee of the cached ascent at cutoff. Null while stale.</summary>
+        public double? predictedApo_m;
+        /// <summary>
+        /// F1 / NAV-02: an apogee trip whose flown reference ascent reaches the band (FlightBatch's -5%) has the speed,
+        /// whatever the padded Δv budget says. The KH-1 winner flies 5/5 at a -29% budget margin, because the budget
+        /// carries a flat 1,000 m/s loss term a 10 km hop never spends.
+        /// </summary>
+        public bool ReachesApogee => suborbital && predictedApo_m.HasValue && targetAlt > 0 && predictedApo_m.Value >= 0.95 * targetAlt;
     }
 
     public static class Readout
@@ -157,6 +167,7 @@ namespace Kestrel.Core.Designer
                 landingNeed_mps = d.recoveryMode == null || d.recoveryMode == "expendable" ? (double?)0 : null,
             };
             Fairing(d, c, readout);
+            readout.suborbital = MissionAim.IsSuborbital(c, d.payloadOrbit);
             if (ReferenceAscent.TryGet(ReferenceAscent.CanonicalKey(c, design), out var flight) && flight.hit)
             {
                 readout.maxQ_kPa = flight.qPa / 1000.0;
@@ -172,6 +183,7 @@ namespace Kestrel.Core.Designer
                     if (!double.IsNaN(flight.minCar) && !double.IsPositiveInfinity(flight.minCar)) readout.minCar = flight.minCar;
                     readout.risks = flight.risks;
                     readout.predictedFailure = flight.failure;
+                    if (!double.IsNaN(flight.apoAltM)) readout.predictedApo_m = flight.apoAltM;
                     if (d.recoveryMode != null && d.recoveryMode != "expendable" && !double.IsNaN(flight.burnoutSpeed))
                         readout.landingNeed_mps = RecoveryModel.BoostbackDeltaV(d.recoveryMode, flight.burnoutSpeed);
                 }
