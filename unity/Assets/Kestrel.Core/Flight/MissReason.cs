@@ -51,7 +51,7 @@ namespace Kestrel.Core.Flight
         public const double FlightPathAngleOffDeg = 0.5;
         /// <summary>#313: the steep advice. MissReasonTests flies both levers on the m12 starter: Fix it's own edit (one more upper
         /// engine with the max-Q throttle at 95%) and a pitch kick 2° smaller. One more engine alone still misses.</summary>
-        public const string SteepAdvice = "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or tip it over less at launch (a smaller pitch kick in Guidance).";
+        public const string SteepAdvice = "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or use a smaller pitch kick at launch (for example 6° → 4° in Guidance).";
 
         static bool FlightPathAngleOff(double gammaDeg) => !double.IsNaN(gammaDeg) && Math.Abs(gammaDeg) >= FlightPathAngleOffDeg;
 

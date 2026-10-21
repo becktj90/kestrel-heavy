@@ -11,7 +11,7 @@ A circular miss counts as a flight-path-angle miss when all of these hold: the c
 
 | Code | When | Advice |
 |---|---|---|
-| `fpa-steep` | γ > 0, low point above ground | "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or tip it over less at launch (a smaller pitch kick in Guidance)." |
+| `fpa-steep` | γ > 0, low point above ground | "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or use a smaller pitch kick at launch (for example 6° → 4° in Guidance)." |
 | `fpa-steep-suborbital` | γ > 0, low point below ground | "Your rocket flew too steep and fell back down. Give stage N much more fuel (it can take double or more), so it burns long enough to level out." |
 | `fpa-flat` | γ < 0 | "Your rocket flew too flat. Add fuel to stage N, about 2% at a time (up to 10%), until the orbit rounds off." |
 
@@ -37,7 +37,7 @@ The reason sentence keeps the band text and adds "The engines cut off while it w
 | pitch kick 6° → **4°** | **602.4 × 597.6, pass 5/5** |
 | pitch kick 7° or 8° | 898 × 302 or 943 × 257 (worse) |
 
-The fins and diameter changes do nothing. So the advice names the engine *and* the throttle, and a smaller kick: "turn over sooner" (a bigger kick) makes it worse. The board row's text now reads "Upper engines 2 → 3, with the max-Q throttle at 95%."
+The fins and diameter changes do nothing. So the advice names the engine *and* the throttle, and a smaller initial pitch kick at launch (a bigger one makes it worse). The board row's text now reads "Upper engines 2 → 3, with the max-Q throttle at 95%."
 
 **New tests:**
 - `KH12_SteepAdvice_IsFixItsEdit_AndFollowingItPassesEverySeed`: runs the board's Fix it, asserts +1 upper engine and 95% max-Q, and checks 5/5. The same edit by hand on the starter is also 5/5.

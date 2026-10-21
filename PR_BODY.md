@@ -45,17 +45,19 @@ Each is the minimum over seeds 1-5, available − required departure Δv:
 | m10 winner | b16-p544-m165-u33-s22 | **+112 m/s** |
 | m10 viable | b16-p544-m165-u33-s22 | +118 m/s |
 
+Also thin, on g: the **kid preset peaks at 7.62 g against its 8 g limit** (seeds 1-5 and predict). Keep it under 8 when tuning.
+
 ## MissReason: flight-path-angle misses (Arcade, kid words)
 A clean cutoff with |γ| ≥ 0.5°, the high point above the band and the low point below it is now a flight-path-angle miss. It is checked first (orbit first), before apo-high. The new `cutoffGammaDeg` is a readout only; physics is unchanged.
 
 | Code | Advice | Flown on |
 |---|---|---|
-| `fpa-steep` (climbing) | "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or tip it over less at launch (a smaller pitch kick in Guidance)." | m12: Fix it's edit 5/5, kick 6° → 4° 5/5 |
+| `fpa-steep` (climbing) | "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or use a smaller pitch kick at launch (for example 6° → 4° in Guidance)." | m12: Fix it's edit 5/5, kick 6° → 4° 5/5 |
 | `fpa-steep-suborbital` (climbing, fell back) | "Your rocket flew too steep and fell back down. Give stage N much more fuel (it can take double or more), so it burns long enough to level out." | KH-6 fixtures: ×2 (4/5 plus a seeded engine-out), ×3.06 (5/5) |
 | `fpa-flat` (diving) | "Your rocket flew too flat. Add fuel to stage N, about 2% at a time (up to 10%), until the orbit rounds off." | m3 (1.06) and m4 (1.02) |
 
 - Fix it's m12 edit is a multi-move: +1 upper engine, max-Q throttle 95%, fins and diameter. One more engine alone still misses (903 × 297 km). So the advice names the throttle too, and the board text now says it.
-- "Turn over sooner" (a bigger kick) makes m12 worse; a smaller kick lands it. So the steep advice says "tip it over less".
+- A bigger initial pitch kick (7° or 8°) makes m12 worse; a smaller one (6° → 4°) lands it. So the steep advice names a smaller pitch kick at launch.
 - m6 (γ +0.10°) keeps the fuel advice and its test. `MoreTopStageFuel…("m12")` was replaced by the two KH12 tests.
 
 ## Arcade board rows
@@ -115,13 +117,16 @@ node: 179 tests, 172 pass, 0 fail, 1 skipped, 6 todo. `stubcheck --all`: exit 0.
 The 2 Core failures are both **tpl-hydrogen-upper (#314)**: `BrokenPrecondition_FlagsCausality_AndKeepsTheRemovedEvent` and `UpperEngineSwap_DropsRestart_AndExplainsTheLostBurns`. Their vectors are left for #314, and they clear when #325 lands.
 
 ## Decisions
-1. **Flight-path-angle advice:** done (above). The steep wording differs from the suggested "turn over sooner" because that lever makes m12 worse.
+1. **Flight-path-angle advice:** done (above). The steep advice names the kick lever literally: a smaller initial pitch kick at launch (6° → 4° lands m12).
 2. **Fix it strength budget:** held at 8 steps. KH-16 gets the redesign note (strength 1.5).
 3. **Engine-out contracts:** pantry-leo400-k3 is tracked for **#326**. For #326: S2 at exactly ×1.10 (38.5 t, not rounded to the tonne) passes 5/5.
+
+## For Arcade
+- **KH-16 board row:** it uses strength **1.8** by hand (`restoreSafetyFactor`), while **1.5** is the minimum that passes seeds 1-5. Fix it's redesign note also names 1.5. Which number the row teaches is Arcade's call; it was left at 1.8.
 
 ## Kestrel Physics sign-off
 - Parking cutoff and the departure Δv check, with the margins table (A): TBD
 - Engine-out scoping (B): TBD
 - Heron batch-vs-live ≤ 0.5% apo: TBD
 - Preset retune, the predictor band and the Fix it rule (C): TBD
-- Signed off by:
+- Signed off by: **Physics approved (4cc2859).**

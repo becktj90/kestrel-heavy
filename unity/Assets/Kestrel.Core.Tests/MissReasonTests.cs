@@ -63,7 +63,7 @@ namespace Kestrel.Core.Tests
             "Raise the safety factor to 1.5 or more for the reliability bonus, or pick redundant avionics.")]
         [TestCase("m12", "fpa-steep",
             "Missed the 600 km circle: the orbit flew 343 km × 857 km, and the high point needs 570 km to 630 km. The low point, 343 km, needs 570 km to 630 km. The engines cut off while it was still climbing, 1.9° up.",
-            "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or tip it over less at launch (a smaller pitch kick in Guidance).")]
+            "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or use a smaller pitch kick at launch (for example 6° → 4° in Guidance).")]
         [TestCase("m16", "reliability",
             "Reliability was 97.9%; this mission needs 98%.",
             "Raise the safety factor to 1.5 or more for the reliability bonus, or pick redundant avionics.")]
