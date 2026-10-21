@@ -1,7 +1,7 @@
 {
     "name": "Kestrel.Game.Tests",
     "rootNamespace": "Kestrel.Game.Tests",
-    "references": ["Kestrel.Game.Layout", "Kestrel.Game.QualityCore", "Kestrel.Slice", "Kestrel.Slice.Editor", "Kestrel.Game.Shell", "Kestrel.Game.TextFit", "Kestrel.Game.Campaign", "Kestrel.Game.Audio", "Kestrel.Core", "Kestrel.Pad.Core", "Kestrel.Kit.Contracts", "Kestrel.Vehicle", "UnityEngine.TestRunner", "UnityEditor.TestRunner", "Kestrel.UiChecks", "Kestrel.Game.Guide"],
+    "references": ["Kestrel.Game.Layout", "Kestrel.Game.QualityCore", "Kestrel.Slice", "Kestrel.Slice.Editor", "Kestrel.Game.Shell", "Kestrel.Game.TextFit", "Kestrel.Game.Campaign", "Kestrel.Game.Audio", "Kestrel.Core", "Kestrel.Pad.Core", "Kestrel.Pad", "Kestrel.Kit.Core", "Kestrel.Kit.Contracts", "Kestrel.Vehicle", "Kestrel.Vehicle.Core", "UnityEngine.TestRunner", "UnityEditor.TestRunner", "Kestrel.UiChecks", "Kestrel.Game.Guide"],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

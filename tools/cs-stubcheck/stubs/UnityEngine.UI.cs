@@ -19,7 +19,8 @@ namespace UnityEngine.UIElements
     public struct StyleInt { public int value; public static implicit operator StyleInt(int v) => default; }
     public struct StyleColor { public Color value; public StyleColor(Color v) { value = v; } public static implicit operator StyleColor(Color v) => default; public static implicit operator StyleColor(StyleKeyword v) => default; }
     public struct StyleEnum<T> where T : struct, IConvertible { public T value; public StyleKeyword keyword; public static implicit operator StyleEnum<T>(T v) => default; public static implicit operator StyleEnum<T>(StyleKeyword v) => default; public static bool operator ==(StyleEnum<T> lhs, T rhs) => false; public static bool operator !=(StyleEnum<T> lhs, T rhs) => false; public static bool operator ==(StyleEnum<T> lhs, StyleEnum<T> rhs) => false; public static bool operator !=(StyleEnum<T> lhs, StyleEnum<T> rhs) => false; public override bool Equals(object o) => false; public override int GetHashCode() => 0; }
-    public struct StyleBackground { public StyleBackground(Texture2D v) { } public StyleBackground(StyleKeyword k) { } public static implicit operator StyleBackground(Texture2D v) => default; }
+    public struct Background { public static Background FromRenderTexture(RenderTexture t) => default; public static Background FromTexture2D(Texture2D t) => default; }
+    public struct StyleBackground { public StyleBackground(Texture2D v) { } public StyleBackground(Background v) { } public StyleBackground(StyleKeyword k) { } public static implicit operator StyleBackground(Texture2D v) => default; }
     public enum Repeat { NoRepeat, Space, Round, Repeat }
     public struct BackgroundRepeat { public BackgroundRepeat(Repeat x, Repeat y) { } }
     public struct StyleBackgroundRepeat { public static implicit operator StyleBackgroundRepeat(BackgroundRepeat v) => default; }
