@@ -17,7 +17,10 @@ namespace Kestrel.Game.Shell
         static readonly Dictionary<PanelSettings, Saved> Original = new Dictionary<PanelSettings, Saved>();
 
         /// <summary>The runtime gate: WebGL player and a landscape viewport.</summary>
-        public static bool Wide => WebLayoutMode.UseWide(Screen.width, Screen.height);
+        public static bool Wide => ForceWide ?? WebLayoutMode.UseWide(Screen.width, Screen.height);
+
+        /// <summary>PlayMode capture seam: true takes the landscape web panel in the editor (Home captures at web sizes).</summary>
+        public static bool? ForceWide;
 
         /// <summary>Switch <paramref name="ps"/> to the landscape reference, or back to the asset's own. Returns true on a change.</summary>
         public static bool Apply(PanelSettings ps, bool wide)

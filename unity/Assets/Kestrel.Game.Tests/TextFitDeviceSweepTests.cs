@@ -123,7 +123,7 @@ namespace Kestrel.Game.Tests
                     Click(home.Q<Button>("home-settings"));
                     surface.Pump(4);
                     Settle(surface, home);
-                    var sheet = home.Q("home-settings-sheet");
+                    var sheet = home.Q("screen-settings");
                     Assert.That(sheet, Is.Not.Null, frame.Name);
                     Assert.That(sheet.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None), frame.Name + " settings");
                     AssertFits(sheet, frame.Name + " settings");

@@ -235,7 +235,7 @@ namespace Kestrel.Game.Tests
                     surface.Pump(4);
                     var bar = overlay.Q(HomeResumeBar.BarName);
                     Assert.That(bar, Is.Not.Null, name);
-                    foreach (var id in new[] { "mm-eyebrow", "mm-kestrel", "mm-heavy", "mm-stats", "home-launch", "home-design" })
+                    foreach (var id in new[] { "mm-eyebrow", "mm-kestrel", "mm-heavy", "mm-stats", "home-primary", "home-design" })
                     {
                         var e = shell.Q(id);
                         if (e == null || e.resolvedStyle.display == DisplayStyle.None || e.worldBound.width < 1f) continue;

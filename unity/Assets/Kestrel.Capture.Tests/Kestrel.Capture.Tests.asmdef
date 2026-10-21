@@ -9,6 +9,8 @@
         "Kestrel.Game.Audio",
         "UnityEngine.TestRunner",
         "Kestrel.Vehicle",
+        "Kestrel.UiChecks",
+        "Kestrel.Game.TextFit",
         "Kestrel.Vehicle.Core",
         "Kestrel.Kit.Core"
     ],

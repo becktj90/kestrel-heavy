@@ -1,5 +1,6 @@
-// Credits chip and CONTINUE on Home. The chip is always there. CONTINUE appears only when
-// a draft, a saved rocket, or a cleared mission exists. Text shrinks until it fits 335 px.
+// Credits chip and CONTINUE on Home. CONTINUE appears only when a draft, a saved rocket, or a cleared mission
+// exists; on Home it is the LAUNCH key itself (one primary CTA), and the chip shows only with home.creditsChip.
+// Text shrinks until it fits 335 px.
 using System;
 using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
@@ -42,13 +43,7 @@ namespace Kestrel.Game.Shell
             {
                 var button = new Button(onContinue) { name = ContinueName, text = ResumeOffer.ContinueLabel };
                 button.tooltip = ResumeOffer.ContinueSpoken;
-                Face(button, face, 18);
-                button.style.minHeight = 44;
-                button.style.paddingLeft = 12;
-                button.style.paddingRight = 12;
-                button.style.whiteSpace = WhiteSpace.NoWrap;
-                button.style.overflow = Overflow.Hidden;
-                button.style.unityTextAlign = TextAnchor.MiddleCenter;
+                Dusk(button);
                 bar.Add(button);
             }
 
@@ -62,8 +57,13 @@ namespace Kestrel.Game.Shell
             if (root == null) return;
             var old = root.Q(BarName);
             if (old != null) old.RemoveFromHierarchy();
-            var bar = Build(credits, showContinue, onContinue);
+            // Starter Home (feat(home-simple)): CONTINUE is the one primary CTA, so it rides Home's LAUNCH key and the
+            // bar keeps only the credits chip, which home.creditsChip hides by default. Off Home the bar is unchanged.
+            bool onCta = MainMenuOverlay.UseContinue(root, showContinue ? onContinue : null);
+            var bar = Build(credits, showContinue && !onCta, onContinue);
             root.Add(bar);
+            // home.creditsChip shows or hides the chip, now and whenever FeatureFlags.Changed fires.
+            if (onCta) MainMenuOverlay.ApplyFeatures(root);
             void Place(GeometryChangedEvent _)
             {
                 PlaceBar(root, bar);
@@ -87,7 +87,7 @@ namespace Kestrel.Game.Shell
             {
                 chosen = size;
                 float need = Measure(chip, size) + Measure(button, size);
-                if (button != null) need += 28f;
+                if (button != null) need += 24f + 2f + 8f + 2f;   // padding, border, the 8 px gap, slack
                 if (need <= width) break;
             }
             if (chip != null)
@@ -113,12 +113,44 @@ namespace Kestrel.Game.Shell
             var parent = bar.parent ?? root;
             float width = parent.worldBound.width;
             if (float.IsNaN(width) || width < 1f) width = parent.layout.width;
-            var box = HomeCornerLayout.Credits(width > 1f ? width : 375f, 0f, true);
+            // Only the web page has an EXIT beside the gear. Reserving it on iOS left a 131 px bar on a 308-wide
+            // phone panel, and the chip and CONTINUE shrank to 11 px.
+            bool web = Application.platform == RuntimePlatform.WebGLPlayer;
+            var box = HomeCornerLayout.Credits(width > 1f ? width : 375f, 0f, web);
             bar.style.left = box.X;
             bar.style.top = box.Y;
             bar.style.width = box.W;
             bar.style.height = box.H;
             bar.style.minHeight = box.H;
+        }
+
+        public const string ContinueClass = "kh-mm-continue";
+
+        /// <summary>CONTINUE in the Home look: the dark glass of DESIGN FIRST, cream Fraunces, a 44 pt pill. Inline, so the
+        /// runtime theme's grey system button never shows (TestFlight drew a grey default button over the eyebrow).</summary>
+        public static void Dusk(Button button)
+        {
+            if (button == null) return;
+            button.AddToClassList("kh-button");
+            button.AddToClassList(ContinueClass);
+            var serif = Resources.Load<Font>("KHFonts/Fraunces-Bold");
+            Face(button, serif != null ? serif : Resources.Load<Font>("KHFonts/SpaceGrotesk-Medium"), 18);
+            button.style.minHeight = 44;
+            button.style.height = 44;
+            button.style.marginTop = 0; button.style.marginBottom = 0; button.style.marginLeft = 8; button.style.marginRight = 0;
+            button.style.paddingLeft = 12; button.style.paddingRight = 12; button.style.paddingTop = 0; button.style.paddingBottom = 0;
+            button.style.flexShrink = 0;
+            button.style.whiteSpace = WhiteSpace.NoWrap;
+            button.style.overflow = Overflow.Hidden;
+            button.style.unityTextAlign = TextAnchor.MiddleCenter;
+            button.style.color = new Color(0.957f, 0.918f, 0.824f, 1f);
+            button.style.backgroundColor = new Color(8f / 255f, 12f / 255f, 28f / 255f, 0.88f);
+            var edge = new Color(0.957f, 0.918f, 0.824f, 0.55f);
+            button.style.borderTopColor = edge; button.style.borderBottomColor = edge; button.style.borderLeftColor = edge; button.style.borderRightColor = edge;
+            button.style.borderTopWidth = 1; button.style.borderBottomWidth = 1; button.style.borderLeftWidth = 1; button.style.borderRightWidth = 1;
+            button.style.borderTopLeftRadius = 22; button.style.borderTopRightRadius = 22; button.style.borderBottomLeftRadius = 22; button.style.borderBottomRightRadius = 22;
+            button.style.letterSpacing = 0.5f;
+            button.style.unityFontStyleAndWeight = FontStyle.Normal;
         }
 
         static float Measure(TextElement el, int size)
