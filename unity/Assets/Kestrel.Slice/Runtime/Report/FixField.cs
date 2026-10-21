@@ -29,6 +29,10 @@ namespace Kestrel.Slice
                 case "thermal": return new FixField(kind, "aero", "nose", "Aero", "Nose");
                 case "cryo-material": return new FixField(kind, "tanks", "material", "Tanks", "Tank material");
                 case "prop-depletion": return new FixField(kind, "propellants", "propMass", "Propellant", "Propellant load");
+                // F2: a miss with no failure event (DesignerRepair.ReportKind) is a speed shortfall. Same link as
+                // prop-depletion (FailureMonitor and validation file both under "propellants"). The designer still
+                // opens Tanks, where propMass lives: DesignerRepair.FixTab maps it in ApplyReportedFix.
+                case "dv-margin": return new FixField(kind, "propellants", "propMass", "Propellant", "Propellant load");
                 case "separation-collision": return new FixField(kind, "stages", "sepImpulse", "Stages", "Separation push");
                 case "leg-collapse": return new FixField(kind, "recovery", "legs.kind", "Recovery", "Landing legs");
                 case "recovery-fuel": return new FixField(kind, "recovery", "landingReserve", "Recovery", "Landing reserve");
