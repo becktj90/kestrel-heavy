@@ -448,6 +448,7 @@ namespace Kestrel.Game.Shell
                 }
                 grid.style.flexDirection = FlexDirection.Column;
                 grid.style.flexWrap = Wrap.NoWrap;
+                grid.style.justifyContent = StyleKeyword.Null;
                 grid.style.overflow = Overflow.Hidden;
             }
             float tileGap = scroll ? WebHomeLayout.Gap * sy : Mathf.Max(0f, frame.Codex.Y - frame.Missions.Bottom);
@@ -461,6 +462,7 @@ namespace Kestrel.Game.Shell
                 tile.style.left = StyleKeyword.Auto;
                 tile.style.top = StyleKeyword.Auto;
                 tile.style.width = Length.Percent(100);
+                tile.style.marginLeft = 0f;
                 tile.style.height = h;
                 tile.style.minHeight = h;
                 tile.style.maxHeight = h;
@@ -565,8 +567,8 @@ namespace Kestrel.Game.Shell
             }
             if (name == "home-primary" || name == "home-design")
             {
-                float padX = 12f * sx;
-                float padY = (name == "home-primary" ? 8f : 6f) * sy;
+                float padX = Mathf.Round(12f * sx);
+                float padY = Mathf.Round((name == "home-primary" ? 8f : 6f) * sy);
                 e.style.paddingLeft = padX;
                 e.style.paddingRight = padX;
                 e.style.paddingTop = padY;
@@ -793,11 +795,19 @@ namespace Kestrel.Game.Shell
         static void ColumnText(VisualElement root, MenuTypeScale.Sizes z)
         {
             bool pair = z.Show.Codex;
+            // Whole-pixel tiles (z.TileW is floored): the lamp ends flush with the tile head and Codex with the grid
+            // row, so a fractional width let Yoga round either 1 px past its parent. Codex sits a whole-pixel gutter
+            // after MISSIONS instead of being pushed to the row's fractional right edge.
+            var grid = root.Q("mm-grid");
+            if (grid != null) grid.style.justifyContent = Justify.FlexStart;
+            float gutter = pair ? Mathf.Max(0f, Mathf.Floor(z.Column - 2f * z.TileW) - 1f) : 0f;   // 1 px spare: never wraps
             foreach (var it in MainMenuCopy.Tiles)
             {
                 var tile = root.Q("home-" + it.Id);
                 // Starter: MISSIONS alone takes the whole row.
-                if (tile != null) tile.style.width = Length.Percent(pair ? HomePhoneLayout.TileShare * 100f : 100f);
+                if (tile == null) continue;
+                tile.style.width = z.TileW;
+                tile.style.marginLeft = it.Id == "codex" ? gutter : 0f;
             }
             var words = root.Q<Label>("mm-hint-line");
             if (words != null && !string.IsNullOrEmpty(z.ThrumText) && words.text != z.ThrumText) words.text = z.ThrumText;
@@ -1271,6 +1281,9 @@ namespace Kestrel.Game.Shell
             list.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             list.verticalScrollerVisibility = ScrollerVisibility.Auto;
             list.contentContainer.style.width = Length.Percent(100);
+            // 1 px under the last row: rows wrap to fractional heights, and the last one ending flush with the content
+            // box rounded 1 px past it.
+            list.contentContainer.style.paddingBottom = 1f;
 
             var music = SettingButton(UiIds.SettingsMusic, "Music");
             var sound = SettingButton(UiIds.SettingsSound, "Sound");
@@ -1736,7 +1749,7 @@ namespace Kestrel.Game.Shell
             {
                 launch.style.height = z.LaunchH; launch.style.minHeight = z.LaunchH; launch.style.flexShrink = 0;
                 launch.style.marginTop = 0; launch.style.marginBottom = MenuTypeScale.Gap;
-                float padH = MenuTypeScale.Clamp(14f * z.Scale, 10f, 18f), padV = MenuTypeScale.Clamp(8f * z.Scale, 6f, 10f);
+                float padH = HomePhoneLayout.LaunchPadH(z.Scale), padV = HomePhoneLayout.LaunchPadV(z.Scale);
                 launch.style.paddingLeft = padH; launch.style.paddingRight = padH; launch.style.paddingTop = padV; launch.style.paddingBottom = padV + LipH;
             }
             var design = root.Q("home-design");
@@ -1831,6 +1844,18 @@ namespace Kestrel.Game.Shell
                 // The caption keeps its 3 px top margin (ApplyScale); only the padding and bottom margin go.
                 Zero(b.Q(className: "kh-mm-tile-caption"), 0f);
             }
+            // LAUNCH/CONTINUE: the theme's Label padding and margins made the label + caption column 64 px in a 48 px
+            // content box (GameCI, 390x844 shell, starter no save: label top 474 over a button at 475). Same as the
+            // other cards: no vertical Label chrome, whole-pixel line boxes. LaunchH budgets 1.4 em per line.
+            var key = root.Q("home-primary");
+            if (key != null)
+                foreach (var cls in new[] { "kh-mm-launch-label", "kh-mm-launch-caption" })
+                {
+                    var l = key.Q(className: cls);
+                    if (l == null) continue;
+                    Zero(l, Mathf.Ceil(Face(l) * CardTextLine));
+                    if (phone) l.style.marginTop = 0f; else l.style.marginTop = StyleKeyword.Null;
+                }
             var design = root.Q("home-design");
             if (design != null)
             {
@@ -1876,7 +1901,7 @@ namespace Kestrel.Game.Shell
             foreach (var id in new[] { "mm-thrum-name", "mm-hint-line" })
             {
                 var l = strip.Q<Label>(id);
-                if (l != null) l.style.unityTextAlign = StyleKeyword.Null;
+                if (l != null) { l.style.unityTextAlign = StyleKeyword.Null; l.style.minHeight = StyleKeyword.Null; }
             }
         }
 
@@ -1966,6 +1991,11 @@ namespace Kestrel.Game.Shell
                     l.style.alignSelf = Align.Stretch;
                     l.style.marginLeft = 0; l.style.marginRight = 0; l.style.paddingLeft = 0; l.style.paddingRight = 0;
                     l.style.paddingTop = 0; l.style.paddingBottom = 0; l.style.marginTop = 0; l.style.marginBottom = 0;
+                    // Whole-pixel line boxes: the hint line starts where the name ends, and a fractional name height
+                    // put that start on a half pixel that Yoga rounded 1 px past the column's bottom.
+                    float fs = l.style.fontSize.keyword == StyleKeyword.Undefined && l.style.fontSize.value.value > 0f ? l.style.fontSize.value.value : Mathf.Max(14f, z.Hint);
+                    int lines = id == "mm-hint-line" ? Mathf.Max(1, z.ThrumLines) : 1;
+                    l.style.minHeight = Mathf.Ceil(lines * fs * CardTextLine);
                 }
             }
         }

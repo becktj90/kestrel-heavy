@@ -105,7 +105,7 @@ namespace Kestrel.Core.Flight
             t.Soon = At(s, 14f, 14f, 16f);
             t.Hint = At(s, 14f, 14f, 18f);
             t.Title = Math.Max(28f, Math.Min(t.Title, 100f * (col - 4f) / HomeWideText.Kestrel));
-            t.Pad = Clamp(8f * s, 6f, 12f);
+            t.Pad = (float)Math.Round(Clamp(8f * s, 6f, 12f));   // whole pixels: Yoga rounds every inset on its own
             t.DesignCaption = Math.Max(14f, t.LaunchCaption);
             float want = Math.Max(14f, t.LaunchLabel * 0.72f);
             t.DesignLabel = Math.Max(14f, Math.Min(want, 100f * (col - DesignChromeX) / (HomeWideText.Design * HomeTypeMetrics.Margin)));
@@ -138,8 +138,9 @@ namespace Kestrel.Core.Flight
 
         public static float StatsH(float statFont) => Math.Max(44f, 2f * StatsBorder + 2f * StatsPadY + 2f * statFont * LineH);
 
-        public static float LaunchPadV(float s) => Clamp(8f * s, 6f, 10f);
-        public static float LaunchPadH(float s) => Clamp(14f * s, 10f, 18f);
+        // Whole pixels (MainMenuOverlay writes these): a fractional inset let Yoga round the CTA column 1 px past its box.
+        public static float LaunchPadV(float s) => (float)Math.Round(Clamp(8f * s, 6f, 10f));
+        public static float LaunchPadH(float s) => (float)Math.Round(Clamp(14f * s, 10f, 18f));
 
         public static int LaunchCaptionLines(HomePhoneType t, float col, string caption)
             => Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, caption, t.LaunchCaption, col - 2f * LaunchPadH(t.Scale) - LaunchChromeX));

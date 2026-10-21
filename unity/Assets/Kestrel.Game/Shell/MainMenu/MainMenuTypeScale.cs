@@ -90,7 +90,7 @@ namespace Kestrel.Game.Shell
             z.Pad = t.Pad;
             z.Column = grid;
             // Starter Home: MISSIONS alone spans the row.
-            z.TileW = sh.Codex ? HomePhoneLayout.TileW(grid) : grid;
+            z.TileW = (float)Math.Floor(sh.Codex ? HomePhoneLayout.TileW(grid) : grid);   // whole pixels (MainMenuOverlay.ColumnText)
             z.TileInner = z.TileW - 2f * TileBorder - 2f * z.Pad;
             int worstLines = 1;
             // Word-wrapped at the real inner width (the old 8% estimate said 2 lines where TextCore wrapped 3, and
