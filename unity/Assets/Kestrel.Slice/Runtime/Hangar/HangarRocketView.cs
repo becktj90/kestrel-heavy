@@ -30,6 +30,8 @@ namespace Kestrel.Slice
 
         readonly List<Piece> pieces = new List<Piece>();
         readonly Dictionary<PartRef, AdvisorySeverity> issues = new Dictionary<PartRef, AdvisorySeverity>();
+        readonly HashSet<PartRef> hidden = new HashSet<PartRef>();
+        bool payloadShown;
         Transform parent;
         PartRef selected = PartRef.Stage(0);
         bool hasSelection;
@@ -48,6 +50,7 @@ namespace Kestrel.Slice
         public void Build(List<RocketMeshBuilder.PartMesh> parts, Transform parentTransform, Material template)
         {
             Clear();
+            ClearHidden();
             parent = parentTransform;
             foreach (var p in parts)
             {
@@ -215,16 +218,55 @@ namespace Kestrel.Slice
                 if (p.root == null) continue;
                 if (p.mesh.Instances != null)
                     for (int k = 0; k < p.copies.Count && k < p.mesh.Instances.Length; k++) p.copies[k].localPosition = p.mesh.Instances[k];
-                // The payload sits inside the fairing; it is only seen in R2's exploded view.
-                p.root.gameObject.SetActive(p.mesh.Part.kind != PartKind.Payload);
+                // The payload sits inside the fairing; it is only seen in R2's exploded view (or in flight after the
+                // fairing separates, see SetPayloadShown).
+                p.root.gameObject.SetActive(Drawn(p.mesh.Part));
             }
         }
 
-        /// <summary>Show or hide every part (the payload stays hidden; it lives inside the fairing).</summary>
+        /// <summary>Show or hide every part. Parts hidden with SetPartHidden stay hidden, and the payload is drawn only
+        /// after SetPayloadShown(true) (it lives inside the fairing until the fairing separates).</summary>
         public void SetVisible(bool on)
         {
             foreach (var p in pieces)
-                if (p.root != null) p.root.gameObject.SetActive(on && p.mesh.Part.kind != PartKind.Payload);
+                if (p.root != null) p.root.gameObject.SetActive(on && Drawn(p.mesh.Part));
+        }
+
+        /// <summary>
+        /// Flight staging: a part that has left the stack (a released stage, the booster set, the separated fairing)
+        /// is drawn by FlightStageShow's moving piece instead, so the painted part must not draw too. SetVisible and
+        /// the per-frame flight picture respect this until ClearHidden (Arm/Reset) or the next Build.
+        /// </summary>
+        public void SetPartHidden(PartRef part, bool hide)
+        {
+            if (hide) hidden.Add(part); else hidden.Remove(part);
+            // Hiding takes effect now; showing waits for the next SetVisible, which knows whether the stack is drawn.
+            if (hide && TryGet(part, out var p) && p.root != null) p.root.gameObject.SetActive(false);
+        }
+
+        public bool IsPartHidden(PartRef part) => hidden.Contains(part);
+
+        /// <summary>Draw the payload with the stack (after fairing separation). False puts it back inside the fairing.</summary>
+        public void SetPayloadShown(bool show)
+        {
+            if (payloadShown == show) return;
+            payloadShown = show;
+            if (!show && TryGet(PartRef.Payload, out var p) && p.root != null) p.root.gameObject.SetActive(false);
+        }
+
+        public bool PayloadShown => payloadShown;
+
+        /// <summary>Back to the assembled stack: nothing hidden, payload enclosed.</summary>
+        public void ClearHidden()
+        {
+            hidden.Clear();
+            payloadShown = false;
+        }
+
+        bool Drawn(PartRef part)
+        {
+            if (hidden.Contains(part)) return false;
+            return part.kind != PartKind.Payload || payloadShown;
         }
 
         /// <summary>Axis of each visible part on screen, for tap picking.</summary>

@@ -10,7 +10,9 @@
         "UnityEngine.TestRunner",
         "Kestrel.Vehicle",
         "Kestrel.UiChecks",
-        "Kestrel.Game.TextFit"
+        "Kestrel.Game.TextFit",
+        "Kestrel.Vehicle.Core",
+        "Kestrel.Kit.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
