@@ -29,4 +29,4 @@ stg.fairing | Fairing | before=125 | after=127 | delta=+2 | Fairing shifts +2 s.
 dep.payload | Deploy | before=2247.128 | after=390.709 | delta=-1856.419 | Deploy shifts -1856.419 s. Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+6:30.709). The ascent sim stops at burnout and does not fly the coast.
 problems:
 lost-restart | s2 | s2 lost restart: exp-hydrolox had restart true and 15 restarts; sc-kerolox has restart false and 0 restarts. Removed stg.seco.s2.1, stg.seco.s2.2, stg.ses.s2.1, stg.ses.s2.2.
-failed-prediction | tpl-hydrogen-upper | The sim does not reach the target. Perigee -3230.2 km, apogee 903.8 km, target 200.0 km. Short by 1266 m/s Δv.
+failed-prediction | tpl-hydrogen-upper | The sim does not reach the target. Perigee -5958.2 km, apogee 1243.6 km, target 200.0 km. Short by 1266 m/s Δv.

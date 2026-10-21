@@ -228,8 +228,8 @@ namespace Kestrel.Core.Flight
                 limit = hit.limit,
                 cause = Cause(hit),
             };
-            double qShow = hit.kind == FailureKind.StructuralMaxQ && hit.cause == 0 && qPeakPa > hit.value ? qPeakPa : hit.value;
-            if (hit.kind == FailureKind.StructuralMaxQ && hit.cause == 0) ev.value = qShow;
+            // #314: the load AT the breakup, not a later or larger peak. qPeakPa is kept for callers and ignored.
+            double qShow = hit.value;
             ev.kid = Kid(hit, t, qShow);
             ev.engineer = Engineer(hit, t, qShow);
             ev.fixHint = Fix(hit.kind);
@@ -394,6 +394,10 @@ namespace Kestrel.Core.Flight
         public bool Gentle;
         public FailureEvent Event;
         public List<FlightRisk> Risks;
+        // #314: q and axial g at the latest step flown while the vehicle was whole. Frozen once Event is set, so a
+        // breakup reports the load at that moment and not the debris' fall.
+        double qNow, gNow;
+        bool sawStep;
 
         FailureMonitor(Info[] infos, Knot[] knots, double qLimPa, double limitG, double maxTempK, double heatFactor, double vLeg, bool legs, bool gentle, ulong hash, ulong seed, EventSchedule schedule)
         {
@@ -705,6 +709,12 @@ namespace Kestrel.Core.Flight
                 thrustN = info.thrustN,
                 massKg = step.mass,
             };
+            if (Event == null && !step.emptyLast)
+            {
+                qNow = step.qPa;
+                gNow = step.accel / FailureModel.G0;
+                sawStep = true;
+            }
             var hit = FailureModel.Evaluate(sample, ref scratch);
             if (!hit.on) return false;
             if (Event == null) Event = FailureModel.Explain(hit, step.t, scratch.qPeak);
@@ -760,28 +770,25 @@ namespace Kestrel.Core.Flight
             return hit.on && !Predict;
         }
 
+        /// <summary>
+        /// Close the flight and build the risk rows. <paramref name="qPeakPa"/> is the sim's peak over the whole run,
+        /// fall included; since #314 it no longer rewrites a structural breakup, which keeps the load at that moment.
+        /// </summary>
         public void Finish(double qPeakPa)
         {
-            if (Event != null && Event.kind == "structural-maxq" && Event.cause == "q" && qPeakPa > Event.value)
-            {
-                Event.value = qPeakPa;
-                Event.kid = "Your rocket bent in half at T+" + Math.Round(Event.t).ToString(CultureInfo.InvariantCulture)
-                    + " s. The air pushed " + Math.Round(qPeakPa / 1000.0).ToString(CultureInfo.InvariantCulture)
-                    + " kPa, but your tanks could only take " + Math.Round(Event.limit / 1000.0).ToString(CultureInfo.InvariantCulture)
-                    + " kPa. Try a higher safety factor or a lower max-Q throttle.";
-                Event.engineer = "Air load " + qPeakPa.ToString("0.0", CultureInfo.InvariantCulture)
-                    + " Pa, past the " + Event.limit.ToString("0.0", CultureInfo.InvariantCulture)
-                    + " Pa limit, at T+" + Event.t.ToString("0.00", CultureInfo.InvariantCulture) + " s.";
-            }
             Risks = BuildRisks();
         }
 
         public List<FlightRisk> BuildRisks()
         {
             var list = new List<FlightRisk>(11);
-            Add(list, FailureKind.StructuralMaxQ, qLimPa <= 0 ? 1 : (qLimPa - scratch.qPeak) / qLimPa, scratch.qPeak, qLimPa, "structure", "safetyFactor", EventKind(FailureKind.StructuralMaxQ));
+            // A breakup reads q and g at that moment (#314); a whole flight reads its peaks.
+            bool broke = Event != null && sawStep;
+            double q = broke ? (Event.kind == FailureKind.Name(FailureKind.StructuralMaxQ) && Event.cause == "q" ? Event.value : qNow) : scratch.qPeak;
+            double g = broke ? (Event.kind == FailureKind.Name(FailureKind.OverG) ? Event.value : gNow) : scratch.gPeak;
+            Add(list, FailureKind.StructuralMaxQ, qLimPa <= 0 ? 1 : (qLimPa - q) / qLimPa, q, qLimPa, "structure", "safetyFactor", EventKind(FailureKind.StructuralMaxQ));
             double gLim = limitG > 0 ? limitG : 8;
-            Add(list, FailureKind.OverG, (gLim - scratch.gPeak) / gLim, scratch.gPeak, gLim, "guidance", "gLimit", EventKind(FailureKind.OverG));
+            Add(list, FailureKind.OverG, (gLim - g) / gLim, g, gLim, "guidance", "gLimit", EventKind(FailureKind.OverG));
             double sMin = double.IsPositiveInfinity(scratch.minStability) ? 0 : scratch.minStability;
             double carMin = double.IsPositiveInfinity(scratch.minCar) ? 1 : scratch.minCar;
             bool tumble = EventKind(FailureKind.Tumble) || (sMin < 0 && carMin < 1);

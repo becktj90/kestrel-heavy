@@ -16,4 +16,4 @@ stg.seco.s2.1 | SECO-1 s2 | before=318.852 | after=10.866 | delta=-307.986 | SEC
 dep.payload | Deploy | before=348.852 | after=19.317 | delta=-329.535 | Deploy shifts -329.535 s. Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+0:19.317). The ascent sim stops at burnout and does not fly the coast.
 disp.deorbit | Deorbit | before=408.852 | after=79.317 | delta=-329.535 | Deorbit shifts -329.535 s. Deorbit because gg-methalox-small still has a restart after the mission burns (1 used, 3 restarts on the engine). The ascent sim does not fly this burn.
 problems:
-failed-prediction | scout | The edit loses the target. The sim does not reach the target. Perigee -6348.6 km, apogee 5.7 km, target 400.0 km. Short by 6149 m/s Δv.
+failed-prediction | scout | The edit loses the target. The sim does not reach the target. Perigee -6369.7 km, apogee 0.1 km, target 400.0 km. Short by 6149 m/s Δv.

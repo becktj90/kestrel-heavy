@@ -50,9 +50,8 @@ namespace Kestrel.Slice
         public float AttitudeDeg { get; private set; } = 90f;
         public bool HasAttitude { get; private set; }
 
-        double clock; int mecoStage; double thrustRef = 1; double prevX, prevY;
-        bool arcadeBreaks;
-        double breakupQPa, liftoffTwr, dvMargin;
+        double clock; double thrustRef = 1; double prevX, prevY;
+        PlayedChecks checks;
         double[] thrustByStage = System.Array.Empty<double>();
         int seenEvents; bool mecoSent;
         readonly List<(Transform t, double x, double y, double z)> anchored = new List<(Transform, double, double, double)>();
@@ -142,14 +141,8 @@ namespace Kestrel.Slice
             seenEvents = 0; mecoSent = false;
             try
             {
-                arcadeBreaks = PlayedBreakup.Arcade(d);
-                breakupQPa = FailureMonitor.StructuralQLimPa(c, d);
-                liftoffTwr = stages.Count > 0 && Sim.Y[4] > 1 ? stages[0].thrustSL / (Sim.Y[4] * Atmosphere.G0) : 0;
-                double ideal = Headless.StackDeltaV(stages, opts.payload).total;
-                double required = Stack.RequiredDeltaV(c, d != null ? d.payloadOrbit : null).required;
-                dvMargin = PlayedBreakup.Margin(ideal, required);
-                var serial = Stack.SerialStages(c, d).stages;
-                mecoStage = serial.FindIndex(s => s.role == "core" && s.index == 0) + 1;
+                // The designer and the launch predictor fly these same checks (#314).
+                checks = new PlayedChecks(c, d, stages, opts, Sim);
                 thrustRef = Math.Max(1, stages[0].thrustVac);
                 omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
                 UpdateFrame();
@@ -182,15 +175,8 @@ namespace Kestrel.Slice
                     Decisions.Advance(AscentSample(), PhysicsDt);
                     ApplyAscent();
                 }
-                if (!Meco)
-                {
-                    for (int i = before; i < Sim.Events.Count; i++)
-                    {
-                        var ev = Sim.Events[i];
-                        if (ev.type == "burnout" && ev.stage == mecoStage) Meco = true;
-                    }
-                }
-                if (StopForBreakup()) break;
+                if (checks != null && checks.NoteEvents(Sim, before)) Meco = true;
+                if (checks != null && checks.StopForBreakup(Sim)) break;
             }
             if (Sim.Done)
             {
@@ -202,44 +188,6 @@ namespace Kestrel.Slice
             UpdateFrame();
             PublishAudio();
             if (Meco && !Lost) OnMeco?.Invoke(this);
-        }
-
-        /// <summary>True when this step ends the played flight in a breakup. The result is published once the sim is done.</summary>
-        bool StopForBreakup()
-        {
-            if (HasEvent("failure")) { Sim.BreakUp(null); return true; }
-            FailureEvent ev = null;
-            double alt = LiveAlt();
-            if (HasEvent("impact")) ev = PlayedBreakup.Impact(Sim.T);
-            else if (Meco && dvMargin < 0) ev = PlayedBreakup.Short(Sim.T, dvMargin);
-            else if (arcadeBreaks)
-            {
-                double mass = Sim.Y[4];
-                double accel = mass > 1 ? Sim.LastThrust / mass : 0;
-                var sample = new PlayedBreakup.Sample
-                {
-                    T = Sim.T, AltM = alt, QPa = Sim.LastQ, AccelMps2 = accel,
-                    QLimPa = breakupQPa, LiftoffTwr = liftoffTwr, Thrusting = Sim.Thrusting,
-                };
-                ev = PlayedBreakup.At(sample);
-            }
-            if (ev == null) return false;
-            Sim.BreakUp(ev);
-            return true;
-        }
-
-        double LiveAlt()
-        {
-            double x = Sim.Y[0], y = Sim.Y[1];
-            return Math.Sqrt(x * x + y * y) - Gravity.R_EARTH;
-        }
-
-        bool HasEvent(string type)
-        {
-            var ev = Sim.Events;
-            for (int i = ev.Count - 1; i >= 0; i--)
-                if (ev[i].type == type) return true;
-            return false;
         }
 
         void PumpEvents()

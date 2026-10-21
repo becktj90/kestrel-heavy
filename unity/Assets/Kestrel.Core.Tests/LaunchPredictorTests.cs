@@ -23,7 +23,8 @@ namespace Kestrel.Core.Tests
                 var p = LaunchPredictor.Predict(cat, d, "standard", 1);
                 var again = LaunchPredictor.Predict(cat, d, "standard", 99);
                 var input = LaunchPredictor.Inputs(cat, d);
-                var sim = Headless.Simulate(input.stages, input.opts);
+                // #314: the prediction is the played flight (PlayedChecks), not the uncut sim.
+                var sim = PlayedChecks.Fly(cat, d, input.stages, input.opts);
                 var req = Stack.RequiredDeltaV(cat, d.payloadOrbit);
                 bool sub = req.orbit != null && req.orbit.periKm < 0;
                 double apo = MissionScore.FlownApoAltM(sim);

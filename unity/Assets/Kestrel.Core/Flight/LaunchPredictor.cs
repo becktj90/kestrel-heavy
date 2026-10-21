@@ -1,4 +1,4 @@
-// Pre-launch success prediction. One headless sim, then the truth of that sim.
+// Pre-launch success prediction. One flight under the played checks (PlayedChecks, #314), then the truth of that flight.
 // The ascent event list is the timeline. There is no noise model, so a second seed
 // repeats the same flight and the probability is 0 or 1. KID reads the pass/fail meter.
 using System;
@@ -57,7 +57,7 @@ namespace Kestrel.Core.Flight
             if (vehicle == null) throw new ArgumentNullException(nameof(vehicle));
             mode = string.Equals(mode, "kid", StringComparison.OrdinalIgnoreCase) ? "kid" : "standard";
             var input = Inputs(catalog, vehicle);
-            var sim = Headless.Simulate(input.stages, input.opts);
+            var sim = PlayedChecks.Fly(catalog, vehicle, input.stages, input.opts);
             var req = Stack.RequiredDeltaV(catalog, vehicle.payloadOrbit);
             bool suborbital = req.orbit != null && req.orbit.periKm < 0;
             // The sim raises "orbit" inside a 10 km cutoff band. The prediction uses the
@@ -112,7 +112,6 @@ namespace Kestrel.Core.Flight
         public static (System.Collections.Generic.List<SimStage> stages, SimOptions opts) Inputs(Catalog catalog, Design vehicle)
         {
             var setup = MissionFlightSetup.Build(catalog, Designer.ReferenceAscent.MissionFor(catalog, vehicle), vehicle, MissionFlightSetup.BatchDt);
-            if (setup.Options.monitor != null) setup.Options.monitor.Predict = true;
             return (setup.Stages, setup.Options);
         }
 

@@ -7,4 +7,4 @@ stg.seco.s2.2 | − SECO-2 s2 | t=2217.128 | The edited vehicle no longer produc
 shifted:
 problems:
 causality | dep.payload | dep.payload: precondition stg.seco.s2.2 is missing
-failed-prediction | tpl-hydrogen-upper | The sim does not reach the target. Perigee 195.6 km, apogee 930.3 km, target 200.0 km. Ideal Δv still shows 1310 m/s of margin; the flight does not. The ascent sim still raises an orbit flag; the target is the perigee.
+failed-prediction | tpl-hydrogen-upper | The sim does not reach the target. Perigee -5966.3 km, apogee 1339.6 km, target 200.0 km. Ideal Δv still shows 1310 m/s of margin; the flight does not.

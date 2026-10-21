@@ -14,3 +14,4 @@ dep.payload | Deploy | before=2247.128 | after=2218.128 | delta=-29 | Deploy shi
 disp.deorbit | Deorbit | before=2307.128 | after=2278.128 | delta=-29 | Deorbit shifts -29 s. Deorbit because exp-hydrolox still has a restart after the mission burns (2 used, 15 restarts on the engine). The ascent sim does not fly this burn.
 problems:
 missing-hardware | fairing | The edit drops fairing, referenced by stg.fairing. Fairing separation is absent because the vehicle has no fairing.
+failed-prediction | tpl-hydrogen-upper | The sim does not reach the target. Perigee -5963.8 km, apogee 1435.2 km, target 200.0 km. Ideal Δv still shows 2393 m/s of margin; the flight does not.

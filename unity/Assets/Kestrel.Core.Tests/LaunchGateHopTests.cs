@@ -122,7 +122,8 @@ namespace Kestrel.Core.Tests
                 Assert.That(reference.stages.Count, Is.EqualTo(pad.Stages.Count), at + " stages");
                 for (int i = 0; i < pad.Stages.Count; i++)
                     Assert.That(reference.stages[i].propMass, Is.EqualTo(pad.Stages[i].propMass), at + " stage " + i + " prop");
-                Assert.That(reference.opts.monitor?.Predict ?? true, at + " predict");
+                // #314 option 2: the designer flies the live monitor (Predict off), so it stops where play breaks up.
+                Assert.That(reference.opts.monitor?.Predict ?? false, Is.False, at + " predict is the live monitor");
             }
         }
 
