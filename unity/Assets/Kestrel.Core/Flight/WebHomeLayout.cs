@@ -76,7 +76,9 @@ namespace Kestrel.Core.Flight
         /// 36 px wider than its box and "LAUNCH KH-3 · Tiny Orbit" wrapped to two lines in a one-line card.</summary>
         public const float LaunchIcon = 28f + 8f;
         public const float LaunchChrome = 3f * 2f + 12f * 2f + 16f + 12f + LaunchIcon + Slack;
-        public const float DesignChrome = 2f * 2f + 12f * 2f + 16f + 12f + Slack;
+        /// <summary>The 22 px pencil glyph and its 8 px margin beside "DESIGN FIRST" (was missing, like LaunchIcon).</summary>
+        public const float DesignIcon = 22f + 8f;
+        public const float DesignChrome = 2f * 2f + 12f * 2f + 16f + 12f + DesignIcon + Slack;
         public const float TileChrome = 3f * 2f + 10f * 2f + Slack;
         public const float LampSlot = 16f;
         /// <summary>The Thrum row around its line: 10px side padding, the 22px portrait and its 8px margin,

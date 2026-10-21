@@ -58,6 +58,10 @@ namespace Kestrel.Core.Flight
         public const float LaunchBorderV = 1f + 8f;   // .kh-mm-launch border-top 1, border-bottom 8 (the old maths used 6)
         public const float LaunchChromeX = 16f + 12f + 36f + 6f;   // lamp + margin, column margin, 28 icon + 8, slack
         public const float DesignBorder = 1f, DesignPadX = 12f, DesignPadY = 5f;
+        /// <summary>Space between "DESIGN FIRST" and its caption (margin-top on .kh-mm-design-caption, phone column).
+        /// Without it the label's ceil'd line box met the caption with 0 px between them, and TextCore's measured
+        /// 18 px rect ran 1 px into the caption (GameCI, 390x844 / 430x932 full save).</summary>
+        public const float DesignGap = 3f;
         public const float DesignChromeX = 2f * DesignBorder + 2f * DesignPadX + 16f + 12f + 30f + 6f;
         public const float TileBorder = 1f, TileIcon = 18f + 6f, TileLamp = 12f + 4f, TileAir = 2f, NameSlack = 4f;
         public const float ThrumPadX = 10f, ThrumPadY = 4f, ThrumPortrait = 22f + 8f, ThrumColMargin = 12f;
@@ -143,7 +147,7 @@ namespace Kestrel.Core.Flight
             => Math.Min(3, Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, caption, t.DesignCaption, col - DesignChromeX)));
 
         public static float DesignH(HomePhoneType t, int captionLines)
-            => Math.Max(HitMin, 2f * DesignBorder + 2f * DesignPadY + t.DesignLabel * LineH + captionLines * t.DesignCaption * LineH);
+            => Math.Max(HitMin, 2f * DesignBorder + 2f * DesignPadY + t.DesignLabel * LineH + DesignGap + captionLines * t.DesignCaption * LineH);
 
         /// <summary>Two tiles across with a 2% gutter. 48.5% put "you've unlocked." one px past a 308-wide phone tile.</summary>
         public const float TileShare = 0.49f;
