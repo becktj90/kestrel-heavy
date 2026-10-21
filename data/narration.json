@@ -133,7 +133,7 @@
       "id": "narr.tumble.stability.1",
       "kind": "tumble",
       "when": "stability",
-      "design": "any",
+      "design": "finless",
       "kid": "Tumble. No fins to steer her. Stability was {value} cal.",
       "eng": "Stability {value} calibers at T+{t} s."
     },
@@ -144,6 +144,14 @@
       "design": "any",
       "kid": "The heavy end was the wrong way. Stability {value} cal at T+{t} s.",
       "eng": "S {value} cal and CAR under 1 for the hold time."
+    },
+    {
+      "id": "narr.tumble.stability.3",
+      "kind": "tumble",
+      "when": "stability",
+      "design": "any",
+      "kid": "Tumble. She would not keep her nose into the wind. Stability {value} cal.",
+      "eng": "Stability {value} calibers at T+{t} s, under 0 for the hold time."
     },
     {
       "id": "narr.fuel.1",
