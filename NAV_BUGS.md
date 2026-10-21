@@ -37,7 +37,7 @@ Info: the Flight scene stub is unreachable because no route returns `SessionScre
 | F3 stepper Launch chip | Core `StepperLaunchChipTests` (fixed on fix/F3-stepper-launch) | The current Review chip ("Launch") was disabled as "current"; it now launches through the same Forward action as the Launch button |
 | F4 LAUNCH skips the designer, no Back to designer/Retry | NAV-03, NAV-04 (both fixed on fix/F4-report-back-to-designer); Core Retry route is green | `ReportRoutes.Again` keeps mission+seed (green); `ReportRoutes.BackToDesigner` does the same without relaunching |
 | F5 Follow rocket | not covered | Camera, not navigation |
-| F6 Skip count disabled | not covered | |
+| F6 Skip count disabled | Core `SkipCountLooksLiveTests` (fixed on fix/F6-countdown-skip) | The button worked (a tap logs `counting->committed skip`) but `.webcast-skip` was white on a 16% white wash, 2.5:1 over the pad sky, so it read as disabled. It now uses the dark fill of the other live flight controls |
 | F7 credits change without purchase | not covered | |
 | F8 Home blank ~3 s after briefing Back | Play waits on `flow.Busy`; it doesn't time the blank | |
 | F9 stray CONTINUE | NAV-10 is related (CONTINUE offered with no draft) | Layout part not covered |
