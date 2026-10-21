@@ -1,4 +1,227 @@
-# GOLDEN_DIFF: #313 shared throttle director, with Kestrel Physics rulings 1-4
+# GOLDEN_DIFF: #313 shared throttle director, Physics rulings A/B/C and Arcade board rows
+
+Local only (not pushed). This section is for this commit. Everything below "Earlier: Physics rulings 1-4" is the 961edad diff and is unchanged.
+Runs: FlightBatch 0.2 s and the pad at 1/120 s, seeds 1-5. Baselines are **old** = origin/main before #313 (old2), **961edad** = the last commit, and **Physics A on old data** = this code with the 961edad goldens (e6). **new** = this commit (e7, contracts5).
+
+## What changed
+
+- **Physics A (i): parking cutoff and an honest departure check.** Ellipse and C3 targets now cut off at the circular parking orbit at the aim perigee, a = R + aim (`MissionFlightSetup.TargetEnergy`). Free builds are unchanged. A flight passes when the parking perigee is in band and **available ≥ required**:
+  - available = Σ Isp·g0·ln(m_now/m_dry) on the propellant left after boil-off (`SimResult.departureDv`, staged in order);
+  - required = the impulsive burn from parking × (1 + loss). GTO is 2455 m/s, so 2491 required. TLI (C3 −2) is 3133 m/s, so 3180 required;
+  - loss is 1.5% at T/W ≥ 0.5. Below that it is 1.5%·(0.5/TW)², capped at 10%. With no thrust or no T/W it is 10% (`MissionScore.DepartureLoss`).
+  
+  The criterion string is `departure`. FlightBatch, FlightDebrief.GoalMet and the post-flight report share `FlightDebrief.DepartureMet`.
+- **Physics B:** a stage-1 engine-out throttles only stage 1 (8/9). Stage 2 is untouched. A test is added.
+- **Physics C:** finch-leo400-k3 and pantry-leo400-k3 stay real misses (below). The scout/kid preset retune is **not committed**: see "Decisions needed".
+- **Arcade:** board rows m5 and m14 become `fly`. m12 gets a new near-miss starter (below). `BoardStarter_FixItOrOneStrengthEdit` is unchanged and strict.
+- **Heron batch-vs-live acceptance (Physics):** a new test, `BatchAndLivePad_Agree_OnTheHeronTemplate_FreeBuild` (below).
+
+## Δv margins (min over seeds 1-5; avail / need are the seed with the smallest margin)
+
+"Old" is the 961edad design flown under Physics A. Every ellipse and C3 design was a real miss under the honest check, so every one was re-searched (option iii): S1 engines ×1-2.5 and prop ×1-1.9, S2 +0-2 engines and prop ×1-2.5, S3 +0-3 engines and prop ×1-2, kick 6°, turnShape 0.5/0.8.
+
+A candidate was accepted only if it met all of these:
+- seed 1 margin ≥ 60 m/s;
+- parking perigee 192-208 km;
+- all 5 seeds pass with margin ≥ 40 m/s;
+- the 1/120 s live pad on seed 1 passes;
+- it adds no new validation block.
+
+The cheapest accepted design per row is shown. Ids are renamed from the real stage masses, except kh*-win, which keep their id.
+
+| Row | Mission | Old design | Old avail / need (min margin), m/s | New design | New avail / need, m/s | New min margin (5 seeds) | T/W at cutoff | Parking perigee min, km | Seeds |
+|---|---|---|---|---|---|---:|---:|---:|---:|
+| winner | m7 | n5-p260-m80-u28 | 800 / 2491 (-1691) | n12-p416-m160-u42 | 2787 / 2491 | **+296** | 1.40 | 193.7 | 5/5 |
+| viable | m7 | n5-p260-m80-u28 | 803 / 2491 (-1688) | n12-p416-m160-u42 | 2789 / 2491 | **+298** | 1.40 | 193.7 | 5/5 |
+| viable | m7 | n7-p260-m80-u28 | 1185 / 2491 (-1306) | n10-p338-m200-u56 | 2637 / 2491 | **+146** | 1.66 | 197.8 | 5/5 |
+| viable | m7 | n9-p260-m80-u28 | 1240 / 2491 (-1251) | n14-p416-m200-u42 | 2599 / 2491 | **+108** | 1.44 | 196.5 | 5/5 |
+| winner | m9 | n4-p260-m100-u28 | 3265 / 3180 (+85) | n6-p260-m100-u42 | 3611 / 3180 | **+431** | 1.61 | 196.7 | 5/5 |
+| viable | m9 | n4-p260-m100-u28 | 1885 / 3180 (-1295) | n6-p260-m100-u42 | 3611 / 3180 | **+431** | 1.61 | 196.7 | 5/5 |
+| viable | m9 | n6-p260-m100-u28 | 3265 / 3180 (+85) | n9-p260-m100-u28 | 3512 / 3180 | **+332** | 2.50 | 195.5 | 5/5 |
+| viable | m9 | n8-p260-m100-u28 | 3428 / 3180 (+248) | n8-p494-m100-u28 | 4462 / 3180 | **+1282** | 1.57 | 193.7 | 5/5 |
+| winner | m10 | b9-p340-m83-u33-s14 | 83 / 2491 (-2408) | b16-p544-m165-u33-s22 | 2603 / 2491 | **+112** | 1.36 | 196.4 | 5/5 |
+| viable | m10 | b8-p340-m82-u33-s14 | 2 / 2491 (-2489) | b16-p544-m165-u33-s22 | 2609 / 2491 | **+118** | 1.36 | 196.1 | 5/5 |
+| viable | m10 | b9-p340-m83-u33-s14 | 92 / 2491 (-2399) | b22-p646-m208-u50-s27 | 2797 / 2491 | **+306** | 1.15 | 198.5 | 5/5 |
+| viable | m10 | b10-p340-m83-u33-s14 | 145 / 2491 (-2346) | b20-p646-m208-u50-s27 | 2803 / 2491 | **+312** | 1.14 | 197.4 | 5/5 |
+| winner | m15 | kh15-win | 887 / 2491 (-1604) | kh15-win | 2878 / 2491 | **+387** | 1.26 | 193.8 | 5/5 |
+| winner | m17 | kh17-win | 2718 / 3180 (-462) | kh17-win | 4043 / 3180 | **+863** | 1.32 | 195.5 | 5/5 |
+| winner | m18 | kh18-win | 3507 / 3254 (+253) | kh18-win | 3875 / 3254 | **+621** | 1.94 | 193.7 | 5/5 |
+| winner | m19 | kh19-win | 210 / 2491 (-2281) | kh19-win | 2720 / 2491 | **+229** | 1.13 | 194.5 | 5/5 |
+| winner | m20 | kh20-win | 3342 / 3261 (+81) | kh20-win | 3365 / 3261 | **+104** | 2.17 | 199.3 | 5/5 |
+
+| Contract cell | Old design | Old seed-1 avail / need | New design | New seed-1 avail / need | New min margin (5 seeds) | Viable |
+|---|---|---|---|---|---:|---|
+| comsat-gto-k0 | t6-p300-m76-u26 | 449 / 2491 | t15-p570-m190-u39 | 2974 / 2491 | **+483** | True |
+| comsat-gto-k0 | n5-p260-m80-u28 | 803 / 2491 | n12-p494-m80-u28 | 2580 / 2491 | **+88** | True |
+| comsat-gto-k0 | n7-p260-m80-u28 | 1185 / 2491 | n14-p338-m160-u42 | 2647 / 2491 | **+155** | True |
+| comsat-gto-k3 | n6-p260-m100-u28 | 764 / 2491 | n12-p416-m100-u28 | 2582 / 2491 | **+90** | True |
+| comsat-gto-k3 | n6-p260-m100-u28-t0 | 989 / 2491 | n14-p416-m100-u28-t0 | 2624 / 2491 | **+133** | True |
+| comsat-gto-k3 | n6-p260-m100-u28-t1 | 907 / 2491 | n12-p379-m150-u42-t1 | 2882 / 2491 | **+390** | True |
+| comsat-gto-k6 | n8-p260-m100-u28 | 468 / 2491 | n12-p416-m150-u42 | 2585 / 2491 | **+94** | True |
+| comsat-gto-k6 | n8-p260-m100-u28-t0 | 549 / 2491 | n9-p416-m200-u42-t0 | 2691 / 2491 | **+199** | True |
+| comsat-gto-k6 | n8-p260-m100-u28-t1 | 740 / 2491 | n12-p553-m100-u28-t1 | 2671 / 2491 | **+179** | True |
+| lark-gto-k0 | t9-p320-m64-u26 | 2457 / 2491 | t9-p320-m96-u26 | 2647 / 2491 | **+156** | True |
+| lark-gto-k0 | n5-p260-m80-u28 | 1965 / 2491 | n10-p260-m80-u28 | 2623 / 2491 | **+132** | True |
+| lark-gto-k0 | n7-p260-m80-u28 | 2283 / 2491 | n10-p416-m80-u28 | 3175 / 2491 | **+684** | True |
+| lark-gto-k3 | t6-p300-m76-u26 | 1887 / 2491 | t9-p300-m152-u39 | 2873 / 2491 | **+382** | True |
+| lark-gto-k3 | t7-p300-m70-u26 | 1940 / 2491 | t10-p390-m105-u39 | 2780 / 2491 | **+289** | True |
+| lark-gto-k3 | t9-p320-m64-u26 | 2006 / 2491 | t9-p320-m128-u39 | 2711 / 2491 | **+220** | True |
+| lark-gto-k6 | t7-p300-m70-u26 | 1522 / 2491 | t10-p480-m105-u39 | 2645 / 2491 | **+153** | True |
+| lark-gto-k6 | t9-p320-m64-u26 | 1595 / 2491 | t14-p512-m128-u39 | 3246 / 2491 | **+755** | True |
+| lark-gto-k6 | n5-p260-m80-u28 | 1107 / 2491 | n12-p494-m80-u28 | 2849 / 2491 | **+358** | True |
+| lark-tli-k0 | t9-p320-m64-u26 | 2461 / 3180 | t9-p416-m160-u39 | 3517 / 3180 | **+337** | True |
+| lark-tli-k0 | n5-p260-m80-u28 | 1973 / 3180 | n8-p416-m120-u42 | 3394 / 3180 | **+214** | True |
+| lark-tli-k0 | n7-p260-m80-u28 | 2288 / 3180 | n10-p338-m200-u42 | 3317 / 3180 | **+137** | True |
+| lark-tli-k3 | t6-p300-m76-u26 | 1891 / 3180 | t12-p480-m152-u39 | 3689 / 3180 | **+509** | True |
+| lark-tli-k3 | t7-p300-m70-u26 | 1944 / 3180 | t10-p480-m140-u39 | 3313 / 3180 | **+133** | True |
+| lark-tli-k3 | t9-p320-m64-u26 | 2008 / 3180 | t14-p416-m128-u39 | 3313 / 3180 | **+133** | True |
+| lark-tli-k6 | n4-p260-m100-u28 | 871 / 3180 | n8-p494-m100-u28 | 3661 / 3180 | **+481** | True |
+| lark-tli-k6 | n6-p260-m100-u28 | 2317 / 3180 | n9-p494-m100-u28 | 4051 / 3180 | **+871** | True |
+| lark-tli-k6 | n8-p260-m100-u28 | 2547 / 3180 | n8-p338-m200-u42 | 3351 / 3180 | **+171** | True |
+
+**No design was found for:** none. Every row has a design. The first pass found nothing for m10, m19, comsat-gto-k6 and lark-tli-k6; that was a scratch-tool schema false positive on strap-on `crossfeed`. A rerun with the fix found designs for all of them.
+
+**m10 note:** the cheapest m10 winner from the b9 base (b22-p646-m208-u50-s27) passes the batch but fails `HavenLandingGoldenTests.Assisted_Lands…`: the core lands at 524 m/s, 6 km off the deck. I used the b8-based b16-p544-m165-u33-s22 for the winner, found and board rows. It passes Haven and is cheaper (43,013 vs 49,995). The b22 and b20 designs stay as m10 viables, which Haven does not fly.
+
+## Golden file changes (old → new)
+
+The full original rows are in the scratch log `physA_log.json`.
+
+| File | Row | Design (old → new) | Change |
+|---|---|---|---|
+| campaign-winners.json | m7 | n5-p260-m80-u28 → **n12-p416-m160-u42** | S1 engines 5→12, prop 260→416 t, landing 31.2→49.92 t; S2 engines 1→2, prop 80→160 t, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-winners.json | m9 | n4-p260-m100-u28 → **n6-p260-m100-u42** | S2 engines 1→2, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-winners.json | m10 | b9-p340-m83-u33-s14 → **b16-p544-m165-u33-s22** | S1 engines 9→16, prop 340→544 t, landing 68→108.8 t; S2 engines 1→2, prop 83→165 t, ⌀ 3.6→4.5 m; straps prop 14→22.4 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-winners.json | m15 | kh15-win → **kh15-win** | S1 engines 7→10, prop 260→416 t, landing 31.2→49.92 t; S2 engines 1→3, prop 80→200 t, ⌀ 3.6→5.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-winners.json | m17 | kh17-win → **kh17-win** | S1 engines 6→9, prop 260→338 t; S2 engines 1→2, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-winners.json | m18 | kh18-win → **kh18-win** | S1 prop 250→325 t; kick 4→6°, turnShape 0.2→0.8 |
+| campaign-winners.json | m19 | kh19-win → **kh19-win** | S1 engines 10→15, prop 374→711 t, landing 68→129.272 t; S2 engines 1→3, prop 83→208 t, ⌀ 3.6→5.5 m; S3 prop 33→50 t; straps prop 14→26.6 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-winners.json | m20 | kh20-win → **kh20-win** | S1 engines 7→10, prop 260→338 t; S3 engines 3→4, prop 28→42 t, ⌀ 3.6→4.1 m; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-viable.json | m7 | n5-p260-m80-u28 → **n12-p416-m160-u42** | S1 engines 5→12, prop 260→416 t, landing 31.2→49.92 t; S2 engines 1→2, prop 80→160 t, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-viable.json | m7 | n7-p260-m80-u28 → **n10-p338-m200-u56** | S1 engines 7→10, prop 260→338 t, landing 31.2→40.56 t; S2 engines 1→3, prop 80→200 t, ⌀ 3.6→5.5 m; S3 engines 3→4, prop 28→56 t, ⌀ 3.6→4.1 m; kick 4→6°, turnShape 0.2→0.8 |
+| campaign-viable.json | m7 | n9-p260-m80-u28 → **n14-p416-m200-u42** | S1 engines 9→14, prop 260→416 t, landing 31.2→49.92 t; S2 engines 1→2, prop 80→200 t, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-viable.json | m9 | n4-p260-m100-u28 → **n6-p260-m100-u42** | S1 engines 4→6; S2 engines 1→2, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-viable.json | m9 | n6-p260-m100-u28 → **n9-p260-m100-u28** | S1 engines 6→9; S3 engines 3→4, ⌀ 3.6→4.1 m; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-viable.json | m9 | n8-p260-m100-u28 → **n8-p494-m100-u28** | S1 prop 260→494 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-viable.json | m10 | b8-p340-m82-u33-s14 → **b16-p544-m165-u33-s22** | S1 engines 8→16, prop 340→544 t, landing 68→108.8 t; S2 engines 1→2, prop 82.4→165 t, ⌀ 3.6→4.5 m; straps prop 14→22.4 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-viable.json | m10 | b9-p340-m83-u33-s14 → **b22-p646-m208-u50-s27** | S1 engines 9→22, prop 340→646 t, landing 68→129.2 t, ⌀ 3.6→4.2 m; S2 engines 1→3, prop 83→208 t, ⌀ 3.6→5.5 m; S3 prop 33→50 t; straps prop 14→26.6 t; kick 4→6°, turnShape 0.2→0.5 |
+| campaign-viable.json | m10 | b10-p340-m83-u33-s14 → **b20-p646-m208-u50-s27** | S1 engines 10→20, prop 340→646 t, landing 68→129.2 t, ⌀ 3.6→4.0 m; S2 engines 1→3, prop 83→208 t, ⌀ 3.6→5.5 m; S3 prop 33→50 t; straps prop 14→26.6 t; kick 4→6°, turnShape 0.2→0.5 |
+| found.json | m7 | n5-p260-m80-u28 → **n12-p416-m160-u42** | S1 engines 5→12, prop 260→416 t, landing 31.2→49.92 t; S2 engines 1→2, prop 80→160 t, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| found.json | m9 | n4-p260-m100-u28 → **n6-p260-m100-u42** | S1 engines 4→6; S2 engines 1→2, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| found.json | m10 | b9-p340-m83-u33-s14 → **b16-p544-m165-u33-s22** | S1 engines 9→16, prop 340→544 t, landing 68→108.8 t; S2 engines 1→2, prop 83→165 t, ⌀ 3.6→4.5 m; straps prop 14→22.4 t; kick 4→6°, turnShape 0.2→0.5 |
+| found.json | m15 | kh15-win → **kh15-win** | S1 engines 7→10, prop 260→416 t, landing 31.2→49.92 t; S2 engines 1→3, prop 80→200 t, ⌀ 3.6→5.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| found.json | m17 | kh17-win → **kh17-win** | S1 engines 4→8; S2 engines 1→2, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.8 |
+| found.json | m18 | kh18-win → **kh18-win** | S1 engines 4→6, prop 260→338 t; kick 4→6°, turnShape 0.2→0.8 |
+| found.json | m19 | kh19-win → **kh19-win** | S1 engines 10→15, prop 374→711 t, landing 68→129.272 t; S2 engines 1→3, prop 83→208 t, ⌀ 3.6→5.5 m; S3 prop 33→50 t; straps prop 14→26.6 t; kick 4→6°, turnShape 0.2→0.5 |
+| found.json | m20 | kh20-win → **kh20-win** | S1 engines 4→6; S2 engines 1→2, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| board-starters.json | m7 | n5-p260-m80-u28 → **n12-p416-m160-u42** | S1 engines 5→12, prop 260→416 t, landing 31.2→49.92 t; S2 engines 1→2, prop 80→160 t, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| board-starters.json | m9 | n4-p260-m100-u28 → **n6-p260-m100-u42** | S2 engines 1→2, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| board-starters.json | m10 | b9-p340-m83-u33-s14 → **b16-p544-m165-u33-s22** | S1 engines 9→16, prop 340→544 t, landing 68→108.8 t; S2 engines 1→2, prop 83→165 t, ⌀ 3.6→4.5 m; straps prop 14→22.4 t; kick 4→6°, turnShape 0.2→0.5 |
+| board-starters.json | m15 | kh15-win → **kh15-win** | S1 engines 7→10, prop 260→416 t, landing 31.2→49.92 t; S2 engines 1→3, prop 80→200 t, ⌀ 3.6→5.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| board-starters.json | m17 | kh17-win → **kh17-win** | S1 engines 6→9, prop 260→338 t; S2 engines 1→2, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| board-starters.json | m18 | kh18-win → **kh18-win** | S1 prop 250→325 t; kick 4→6°, turnShape 0.2→0.8 |
+| board-starters.json | m19 | kh19-win → **kh19-win** | S1 engines 10→15, prop 374→711 t, landing 68→129.272 t; S2 engines 1→3, prop 83→208 t, ⌀ 3.6→5.5 m; S3 prop 33→50 t; straps prop 14→26.6 t; kick 4→6°, turnShape 0.2→0.5 |
+| board-starters.json | m20 | kh20-win → **kh20-win** | S1 engines 7→10, prop 260→338 t; S3 engines 3→4, prop 28→42 t, ⌀ 3.6→4.1 m; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | comsat-gto-k0 | comsat-gto-k0-t6-p300-m76-u26 → **comsat-gto-k0-t15-p570-m190-u39** | S1 engines 6→15, prop 300→570 t, landing 60→114 t; S2 engines 1→2, prop 95→190 t, ⌀ 3.6→4.5 m; S3 engines 3→4, prop 26→39 t, ⌀ 3.6→4.1 m; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | comsat-gto-k0 | comsat-gto-k0-n5-p260-m80-u28 → **comsat-gto-k0-n12-p494-m80-u28** | S1 engines 5→12, prop 260→494 t, landing 31.2→59.28 t; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | comsat-gto-k0 | comsat-gto-k0-n7-p260-m80-u28 → **comsat-gto-k0-n14-p338-m160-u42** | S1 engines 7→14, prop 260→338 t, landing 31.2→40.56 t; S2 engines 1→2, prop 80→160 t, ⌀ 3.6→4.5 m; S3 engines 3→4, prop 28→42 t, ⌀ 3.6→4.1 m; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | lark-tli-k0 | lark-tli-k0-t9-p320-m64-u26 → **lark-tli-k0-t9-p416-m160-u39** | S1 prop 320→416 t, landing 64→83.2 t; S2 engines 1→2, prop 64→160 t, ⌀ 3.6→4.5 m; S3 prop 26→39 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | lark-tli-k0 | lark-tli-k0-n5-p260-m80-u28 → **lark-tli-k0-n8-p416-m120-u42** | S1 engines 5→8, prop 260→416 t, landing 31.2→49.92 t; S2 engines 1→2, prop 80→120 t, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | lark-tli-k0 | lark-tli-k0-n7-p260-m80-u28 → **lark-tli-k0-n10-p338-m200-u42** | S1 engines 7→10, prop 260→338 t, landing 31.2→40.56 t; S2 engines 1→2, prop 80→200 t, ⌀ 3.6→4.5 m; S3 engines 3→4, prop 28→42 t, ⌀ 3.6→4.1 m; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | lark-gto-k0 | lark-gto-k0-t9-p320-m64-u26 → **lark-gto-k0-t9-p320-m96-u26** | S2 prop 64→96 t; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | lark-gto-k0 | lark-gto-k0-n5-p260-m80-u28 → **lark-gto-k0-n10-p260-m80-u28** | S1 engines 5→10; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | lark-gto-k0 | lark-gto-k0-n7-p260-m80-u28 → **lark-gto-k0-n10-p416-m80-u28** | S1 engines 7→10, prop 260→416 t, landing 31.2→49.92 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | comsat-gto-k3 | comsat-gto-k3-n6-p260-m100-u28 → **comsat-gto-k3-n12-p416-m100-u28** | S1 engines 6→12, prop 260→416 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | comsat-gto-k3 | comsat-gto-k3-n6-p260-m100-u28-t0 → **comsat-gto-k3-n14-p416-m100-u28-t0** | S1 engines 7→14, prop 260→416 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | comsat-gto-k3 | comsat-gto-k3-n6-p260-m100-u28-t1 → **comsat-gto-k3-n12-p379-m150-u42-t1** | S1 engines 6→12, prop 291.2→379 t; S2 engines 1→2, prop 100→150 t, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | lark-gto-k3 | lark-gto-k3-t6-p300-m76-u26 → **lark-gto-k3-t9-p300-m152-u39** | S1 engines 6→9; S2 engines 1→2, prop 76→152 t, ⌀ 3.6→4.5 m; S3 prop 26→39 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | lark-gto-k3 | lark-gto-k3-t7-p300-m70-u26 → **lark-gto-k3-t10-p390-m105-u39** | S1 engines 7→10, prop 300→390 t, landing 60→78 t; S2 engines 1→2, prop 70→105 t, ⌀ 3.6→4.5 m; S3 prop 26→39 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | lark-gto-k3 | lark-gto-k3-t9-p320-m64-u26 → **lark-gto-k3-t9-p320-m128-u39** | S2 engines 1→2, prop 64→128 t, ⌀ 3.6→4.5 m; S3 prop 26→39 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | lark-tli-k3 | lark-tli-k3-t6-p300-m76-u26 → **lark-tli-k3-t12-p480-m152-u39** | S1 engines 6→12, prop 300→480 t, landing 60→96 t; S2 engines 1→2, prop 76→152 t, ⌀ 3.6→4.5 m; S3 prop 26→39 t; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | lark-tli-k3 | lark-tli-k3-t7-p300-m70-u26 → **lark-tli-k3-t10-p480-m140-u39** | S1 engines 7→10, prop 300→480 t, landing 60→96 t; S2 engines 1→2, prop 70→140 t, ⌀ 3.6→4.5 m; S3 prop 26→39 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | lark-tli-k3 | lark-tli-k3-t9-p320-m64-u26 → **lark-tli-k3-t14-p416-m128-u39** | S1 engines 9→14, prop 320→416 t, landing 64→83.2 t; S2 engines 1→2, prop 64→128 t, ⌀ 3.6→4.5 m; S3 prop 26→39 t; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | comsat-gto-k6 | comsat-gto-k6-n8-p260-m100-u28 → **comsat-gto-k6-n12-p416-m150-u42** | S1 engines 8→12, prop 260→416 t; S2 engines 1→2, prop 100→150 t, ⌀ 3.6→4.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | comsat-gto-k6 | comsat-gto-k6-n8-p260-m100-u28-t0 → **comsat-gto-k6-n9-p416-m200-u42-t0** | S1 prop 260→416 t; S2 engines 1→3, prop 100→200 t, ⌀ 3.6→5.5 m; S3 prop 28→42 t; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | comsat-gto-k6 | comsat-gto-k6-n8-p260-m100-u28-t1 → **comsat-gto-k6-n12-p553-m100-u28-t1** | S1 engines 8→12, prop 291.2→553 t; S3 engines 3→4, ⌀ 3.6→4.1 m; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | lark-tli-k6 | lark-tli-k6-n4-p260-m100-u28 → **lark-tli-k6-n8-p494-m100-u28** | S1 engines 4→8, prop 260→494 t; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | lark-tli-k6 | lark-tli-k6-n6-p260-m100-u28 → **lark-tli-k6-n9-p494-m100-u28** | S1 engines 6→9, prop 260→494 t; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | lark-tli-k6 | lark-tli-k6-n8-p260-m100-u28 → **lark-tli-k6-n8-p338-m200-u42** | S1 prop 260→338 t; S2 engines 1→2, prop 100→200 t, ⌀ 3.6→4.5 m; S3 engines 3→4, prop 28→42 t, ⌀ 3.6→4.1 m; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | lark-gto-k6 | lark-gto-k6-t7-p300-m70-u26 → **lark-gto-k6-t10-p480-m105-u39** | S1 engines 7→10, prop 300→480 t, landing 60→96 t; S2 engines 1→2, prop 70→105 t, ⌀ 3.6→4.5 m; S3 prop 26→39 t; kick 4→6°, turnShape 0.2→0.5 |
+| contracts-viable.json | lark-gto-k6 | lark-gto-k6-t9-p320-m64-u26 → **lark-gto-k6-t14-p512-m128-u39** | S1 engines 9→14, prop 320→512 t, landing 64→102.4 t; S2 engines 1→2, prop 64→128 t, ⌀ 3.6→4.5 m; S3 prop 26→39 t; kick 4→6°, turnShape 0.2→0.8 |
+| contracts-viable.json | lark-gto-k6 | lark-gto-k6-n5-p260-m80-u28 → **lark-gto-k6-n12-p494-m80-u28** | S1 engines 5→12, prop 260→494 t, landing 31.2→59.28 t; kick 4→6°, turnShape 0.2→0.8 |
+
+- `data/board-starters.json`:
+  - **m5** `fix` → `fly`: "Fly this rocket. It already clears every seed." The raw starter passes 5/5.
+  - **m14** `strength` → `fly`: same text. The raw SF 1.35 passes 5/5.
+  - **m12** `strength` → `fix`, with a new near-miss. The board design is kh12-win with stage-1 engines 7 → 6 (SF stays 1.55). Edit text: "Auto Fix it. Upper engines 2 → 3. With six first-stage engines the upper stage pushes at only 0.48 g, and the orbit comes out 856 × 344 km instead of the 600 km circle on every seed."
+    - Before: an honest miss on all 5 seeds, 856.5 × 343.5 km, criterion altitude, **no failure**. That matters because NAV01 and DesignFirstRocketsAreReady require our own starters never to break.
+    - One Fix it (check weak-upper) passes 5/5 at 606.0 × 594.0 km. The Fix-it diff: S2 engines 2→3, S2 ⌀ 3.2→3.5 m, fin span 1.1→3.1 m, maxQThrottle 95, nozzle and interstage defaults.
+    - Arcade's suggested SF 1.3 starter was dropped. It broke up at max-Q on every seed, which fails NAV01 ("our own starters always fly"), and SF 1.35-2.2 all pass raw. So no strength-only near-miss exists for m12.
+- `data/golden/README.md`: the comsat-gto-k0-t6 id note now points at its regrown id.
+
+## Verdict flips
+
+- **vs origin/main (old2): 11 of 530, all fail → pass.** The m5 starter (5 seeds), the m14 starter (5) and found m18 seed 2 (an old engine-out).
+- vs 961edad (e5): 111 flips (106 fail → pass, 5 pass → fail). The 5 are the new m12 near-miss starter, which is intended.
+- vs Physics A on old data (e6): 210 flips (205 fail → pass, 5 pass → fail, the same m12 starter).
+
+Every winner, viable, found design, board starter (after its edit) and contract design passes on all 5 seeds, except the two contract misses below.
+
+## Remaining misses
+
+- **Contracts, kept failing (Physics C), flagged to Arcade for contract viability:**
+  - pantry-leo400-k3-c8-360-k7-u35, seed 3: 637.7 × 162.3 km, γ 0.002° at cutoff;
+  - finch-leo400-k3-c9-420-k7-u38, seed 2: 657.8 × 142.2 km, γ 0.003°.
+  
+  A seeded stage-1 engine-out leaves the upper stage low, and no kick fixes it. Both keep `EveryCell_AndEveryOffer_IsViable` red.
+- **Pre-existing k6 fairing blocks (not new, not changed):** the k6 contract cells carry payload-doesnt-fit. lark-tli-k6 needs 30 m³ in 19.8. comsat-gto-k6 needs 82.1 in 75.6. The search only rejected new block codes.
+
+## Heron (tpl-hydrogen-upper) batch vs live
+
+#314 has **not** landed on main: origin/main is 079d19b, and Heron still has 9 stage-1 engines. The template file is not edited. The test checks both the 9-engine template and #314's 7-engine Heron in memory. It uses a free build, seed 1, the shared director with the in-step energy cutoff, and no failure monitor.
+
+| Heron | Batch 0.2 s apo × peri, km | Live 1/120 s apo × peri, km | Apo Δ | Peri Δ | Result |
+|---|---|---|---:|---:|---|
+| 7 engines (#314) | 35786.099 × 199.901 | 35786.095 × 199.905 | 0.00001% | 4 m | PASS ≤ 0.5% |
+| 9 engines (main) | 6982.202 × 879.603 | 6979.026 × 879.659 | 0.045% | 56 m | PASS ≤ 0.5% |
+
+The 271 vs 230 km Physics measured is the 7-engine Heron on the **JS-parity** `Stack.SimInputs` path. That path keeps the perigee cutoff on the step and measures 271.162 × 190.774 batch vs 230.117 × 190.081 live. Kestrel flights no longer use it, and it is left for JS parity.
+
+With the failure monitor on, both Herons break up at max-Q (9 engines at T+34.5 s, 7 engines at T+66.6 s), so the live pad never reaches orbit. That is #314's to fix.
+
+## Test expectations changed (none loosened)
+
+- `SharedDirectorTests.TheEnginesCutOffAtTheTargetEnergy…`: the ellipse and C3 target energy is now EnergyFor(aim perigee, aim perigee). It was the ellipse mean / C3/2. The old expectation was superseded by Physics A.
+- `MissionFlightSetupTests.Setup_HoldsOutCoastBoilOffAndStrapOnLandingFuel`: the KH-10 strap prop is 14,000 → 22,400 kg and the landing hold 2,800 → 4,480 kg (free build 14,000 → 22,400). These values are pinned from the regrown m10 winner.
+- New tests:
+  - `DepartureCheckTests`: the parking cutoff for m7, m9, m10 and m17 (circular m8 unchanged); GTO 2455 ± 15 and TLI 3133 ± 15 m/s; the loss law; the pass/fail edge (exact need passes, need − 1 fails, peri out of band fails, empty check fails); the old ideal-stack Δv no longer passes.
+  - `SharedDirectorTests`: AStageOneEngineOut_ThrottlesOnlyStageOne_NotTheUpperStage and BatchAndLivePad_Agree_OnTheHeronTemplate_FreeBuild.
+
+## Fix-it investigation (4 tests): not fixture knife-edges, needs a product decision
+
+None of the four is a fixture value that moved with real performance. All four are DesignerRepair behaviour under the new physics. No fixture or assertion was changed.
+
+- **FixIt_WeakAirframe…(14) and (16)** ("two steps under 1.4 / 1.3 is the knife-edge"): Fix it adds a 95% max-Q throttle. Under ruling 4 HoldKickThroughMaxQ then lofts the rocket, so the flight misses without a failure, and `FullyFixed` counts a miss as fixed. The knife-edge (still failing two steps under) disappears.
+- **FixIt_ThatCannotFixTheFlight_SaysSo…** ("still fails a gate seed", 0) and **ReportFixIt_RanOutOfFuel…** (expected prop-depletion, got none): the KH-6 fixture premise moved. The rocket now reaches the target energy at a bad flight-path angle and does not run dry. Depletion appears only when propellant is cut to about 16-19%.
+- **Decision:** either DesignerRepair counts a miss as unfixed (a product change), or closed-loop upper-stage guidance lands first (FOLLOWUP_CLOSED_LOOP.md). I stopped there.
+
+## Decisions needed
+
+1. **Scout/kid preset retune: blocked by existing invariants, not committed.** The tuned values are below, and the patch is saved on the box.
+   - kid: guidance pitchKickAlt 34000, pitchKickDeg 2, turnShape 0.2, maxQThrottle 40, gLimit 5, and stage-1 throttleMin 0.3. Predict and seeds 1-5 all give 203.0 × 197.0 km, **peak g 5.71** (limit 8) and **max q 18.0 kPa** (limit 40), with no failure. The 32.6 g breakup is gone. Before: predict 656.7 × −256.8 km, g 18.87, q 90.1 kPa; seeds broke at max-Q at T+16.1 s (67 kPa).
+   - scout: guidance pitchKickAlt 1000, pitchKickDeg 8, maxQThrottle 40, gLimit 6. Predict gives 408.4 × 391.5 km, g 6.13 (limit 10), q 22.0 kPa (limit 49). Before: 443.1 × 356.8 km, g 11.29, q 53.7 kPa. Its predict monitor and every seed still report cryo-material at T+0 (composite tanks with methalox). That is a pre-existing material issue, and the material was not changed.
+   - Committing it turns 6 passing tests red, and fixing them would mean changing their premises:
+     - GV7_NoV3Fields_DoNotEngage (presets must carry no V3 guidance);
+     - StabilityBand…MaxQHighDoesNotBlock (kid is the > 45 kPa max-Q fixture);
+     - FlightSimSink.FailureEngineAndImpactFireOnce and PlayedBreakup.AVersion3BreakupStopsThePlayedFlight (the weak scout must break up);
+     - Ids_Keys_AndSession_MatchJs (save key count vs JS);
+     - GoldenTimelines.
+   - In addition, with the exact energy cutoff a circular orbit always has perigee ≤ target. LaunchPredictor's strict `peri ≥ target` test therefore cannot pass for any preset, so "reaches target on predict" is unreachable as written. Proposal: predict success = the same ±5% apo/peri band as FlightBatch. Not implemented.
+2. **Fix it:** see above.
+3. **Contract viability for finch/pantry leo400-k3:** for Arcade.
+
+
+# Earlier: Physics rulings 1-4 (961edad)
 
 Branch `fix/shared-throttle-director`, local only (not pushed). Baseline "old" is `origin/main` before #313 (old2 run); "new" is this commit.
 Batch is FlightBatch at 0.2 s. Live is the pad setup at 1/120 s with the batch monitor and the shared director. γ is the flight-path angle at engine cutoff (or at the last thrusting state on a burnout or failure).

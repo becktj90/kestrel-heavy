@@ -128,6 +128,8 @@ namespace Kestrel.Slice
             var extra = new GoalCheck
             {
                 IdealDv = result.idealDeltaV,
+                DepartureDv = result.departureDv,
+                DepartureTW = result.departureTW,
                 C3Km2PerS2 = MissionScore.C3(result.orbit.energy) / 1e6,
                 Margin = facts.Margin,
             };

@@ -83,6 +83,14 @@ namespace Kestrel.Core.Physics
         /// <see cref="Flight.MissionScore.FlownApoAltM"/>, not the vacuum Kepler apoapsis at cutoff.
         /// </summary>
         public double coastApexAlt = double.NaN;
+        /// <summary>
+        /// #313 Physics A: vacuum Δv left in the stack at the end of the run, m/s: Isp·g0·ln(m_now/m_dry_after_burn) on the
+        /// propellant actually left in the current stage (a mission's coast boil-off is already out of the upper tank),
+        /// plus any later stages, staged in order.
+        /// </summary>
+        public double departureDv;
+        /// <summary>Vacuum thrust over weight (g0) of the first stage with propellant left, at the end of the run. NaN if none.</summary>
+        public double departureTW = double.NaN;
         /// <summary>First integrator step with geometric altitude &gt;= 100 km. Observational: it does not change the step or the event list.</summary>
         public double? KarmanTime;
     }
@@ -271,6 +279,19 @@ namespace Kestrel.Core.Physics
         }
 
         double StageEndMass() => upperMass[StageIdx] - st[StageIdx].propMass;
+
+        void DepartureBudget(out double dv, out double tw)
+        {
+            dv = 0; tw = double.NaN;
+            for (int i = StageIdx; i < st.Length; i++)
+            {
+                double m0 = i == StageIdx ? Y[4] : upperMass[i];
+                double prop = i == StageIdx ? Y[4] - (upperMass[i] - st[i].propMass) : st[i].propMass;
+                if (!(prop > 1e-6) || !(m0 > prop)) continue;
+                dv += st[i].ispVac * Atmosphere.G0 * Math.Log(m0 / (m0 - prop));
+                if (double.IsNaN(tw)) tw = st[i].thrustVac / (m0 * Atmosphere.G0);
+            }
+        }
 
         /// <summary>Run one loop iteration. Returns false when the run has ended (call Finish()).</summary>
         public bool Tick()
@@ -746,6 +767,7 @@ namespace Kestrel.Core.Physics
                 KarmanTime = sawKarman ? (double?)karmanT : null,
             };
             if (orb.periAlt < 0) result.coastApexAlt = CoastApexAlt();
+            DepartureBudget(out result.departureDv, out result.departureTW);
             if (o.monitor != null)
             {
                 o.monitor.Finish(maxQ);

@@ -119,6 +119,56 @@ namespace Kestrel.Core.Flight
             return v - Earth.SiteRotationSpeed(latitudeDeg) + OrbitalLossMps;
         }
 
+        /// <summary>#313 Physics A: finite-burn loss on the departure burn when the departing stage's T/W is at least this.</summary>
+        public const double DepartureLossFraction = 0.015;
+        /// <summary>T/W (vacuum thrust over weight at departure) at and above which the loss is <see cref="DepartureLossFraction"/>.</summary>
+        public const double DepartureLossTw = 0.5;
+        /// <summary>Cap on the departure loss for a very low T/W stage.</summary>
+        public const double DepartureLossMax = 0.10;
+
+        /// <summary>
+        /// #313 Physics A: the impulsive departure burn from a circular parking orbit at <paramref name="parkAltM"/>,
+        /// m/s. Ellipse: the target ellipse's perigee speed there minus circular speed. C3: the hyperbolic (or
+        /// bound-C3) speed there, √(C3 + 2μ/r), minus circular speed. About 2.46 km/s from 200 km to GTO and about
+        /// 3.1 km/s to TLI (C3 −2). NaN for other kinds.
+        /// </summary>
+        public static double DepartureImpulsiveMps(string kind, double apoKm, double c3Km2PerS2, double parkAltM)
+        {
+            double r = Gravity.R_EARTH + parkAltM;
+            if (!(r > Gravity.R_EARTH * 0.5)) return double.NaN;
+            double vc = Math.Sqrt(Gravity.MU_EARTH / r);
+            double v;
+            if (kind == "ellipse")
+            {
+                double ra = Gravity.R_EARTH + apoKm * 1000;
+                if (!(ra >= r)) return 0;
+                v = Math.Sqrt(Gravity.MU_EARTH * (2 / r - 2 / (r + ra)));
+            }
+            else if (kind == "c3")
+            {
+                double sq = c3Km2PerS2 * 1e6 + 2 * Gravity.MU_EARTH / r;
+                v = sq > 0 ? Math.Sqrt(sq) : 0;
+            }
+            else return double.NaN;
+            return Math.Max(0, v - vc);
+        }
+
+        /// <summary>
+        /// Finite-burn loss fraction on the departure burn. 1.5% at T/W ≥ 0.5. Below that the loss grows with the burn
+        /// arc, as (0.5 / T/W)² × 1.5%, capped at 10% (T/W 0.25 → 6%; T/W ≤ 0.19 → 10%). No thrust → the cap.
+        /// </summary>
+        public static double DepartureLoss(double tw)
+        {
+            if (!(tw > 0)) return DepartureLossMax;
+            if (tw >= DepartureLossTw) return DepartureLossFraction;
+            double f = DepartureLossFraction * (DepartureLossTw / tw) * (DepartureLossTw / tw);
+            return f > DepartureLossMax ? DepartureLossMax : f;
+        }
+
+        /// <summary>Required departure Δv with the finite-burn loss, m/s (<see cref="DepartureImpulsiveMps"/>).</summary>
+        public static double DepartureRequiredMps(string kind, double apoKm, double c3Km2PerS2, double parkAltM, double tw)
+            => DepartureImpulsiveMps(kind, apoKm, c3Km2PerS2, parkAltM) * (1 + DepartureLoss(tw));
+
         /// <summary>Specific energy × 2, m²/s². Negative is bound.</summary>
         public static double C3(double specificEnergy) => 2 * specificEnergy;
     }

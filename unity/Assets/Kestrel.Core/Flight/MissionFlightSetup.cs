@@ -105,8 +105,10 @@ namespace Kestrel.Core.Flight
         public static SimResult Fly(MissionFlightInputs setup, AscentDirector director) => Start(setup, director).Run();
 
         /// <summary>
-        /// The specific orbital energy a mission cuts off at, J/kg (#313): −μ/(2a) with a = R + (h_apo + h_peri)/2 for a
-        /// circular or elliptical target, and C3/2 for a C3 target. NaN for an apogee hop, which burns out.
+        /// The specific orbital energy a mission's ascent cuts off at, J/kg (#313): −μ/(2a). A circular target uses
+        /// a = R + (h_apo + h_peri)/2. An ellipse or C3 target (Physics A) climbs to the circular parking orbit at its aim
+        /// perigee, a = R + aim; the departure burn is judged from there (<see cref="MissionScore.DepartureRequiredMps"/>).
+        /// NaN for an apogee hop, which burns out.
         /// </summary>
         public static double TargetEnergy(CampaignMission mission)
         {
@@ -114,10 +116,10 @@ namespace Kestrel.Core.Flight
             switch (mission.TargetKind)
             {
                 case "circular":
-                case "ellipse":
                     return SimOptions.EnergyFor(mission.ApoKm * 1000, mission.PeriKm * 1000);
+                case "ellipse":
                 case "c3":
-                    return 0.5 * mission.C3Km2PerS2 * 1e6;
+                    return SimOptions.EnergyFor(mission.GuidanceAltM, mission.GuidanceAltM);
                 default:
                     return double.NaN;
             }

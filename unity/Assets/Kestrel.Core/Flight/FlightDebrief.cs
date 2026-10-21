@@ -16,6 +16,8 @@ namespace Kestrel.Core.Flight
     public sealed class GoalCheck
     {
         public double IdealDv = double.NaN;
+        /// <summary>#313 Physics A: Δv left at the parking orbit and the departing stage's T/W (SimResult.departureDv/TW).</summary>
+        public double DepartureDv = double.NaN, DepartureTW = double.NaN;
         public double C3Km2PerS2 = double.NaN;
         public double Reliability = double.NaN;
         public double Margin = double.NaN;
@@ -161,7 +163,8 @@ namespace Kestrel.Core.Flight
 
         /// <summary>
         /// Same gates as <see cref="FlightBatch"/> once <paramref name="extra"/> is filled:
-        /// ellipse and C3 may pass on periapsis plus ideal Δv, C3 may pass on energy,
+        /// ellipse and C3 may pass on the parking periapsis plus the departure Δv actually left there (#313 Physics A,
+        /// <see cref="DepartureMet"/>), C3 may pass on energy,
         /// and reliability, red risks, margin, coast, and booster grade are mission gates.
         /// A null extra keeps the altitude, g, and landing checks only.
         /// </summary>
@@ -170,7 +173,7 @@ namespace Kestrel.Core.Flight
             if (!intact || row == null) return false;
             bool apo = MissionScore.AltitudeWithin(apoMeters, row.ApoKm * 1000);
             bool peri = MissionScore.AltitudeWithin(periMeters, row.PeriKm * 1000);
-            bool dv = extra != null && !double.IsNaN(extra.IdealDv) && extra.IdealDv + 1e-6 >= row.RequiredDeltaV();
+            bool dv = DepartureMet(row, extra);
             bool hit = false;
             if (row.TargetKind == "apogee") hit = apo;
             else if (row.TargetKind == "circular") hit = apo && peri;
@@ -195,6 +198,17 @@ namespace Kestrel.Core.Flight
             return true;
         }
 
+        /// <summary>
+        /// #313 Physics A: an ellipse or C3 target passes on its parking perigee only if the Δv actually left there covers
+        /// the impulsive departure burn plus the finite-burn loss (<see cref="MissionScore.DepartureRequiredMps"/>).
+        /// </summary>
+        public static bool DepartureMet(CampaignMission row, GoalCheck extra)
+        {
+            if (row == null || extra == null || !row.DepartsFromParking || double.IsNaN(extra.DepartureDv)) return false;
+            double need = MissionScore.DepartureRequiredMps(row.TargetKind, row.ApoKm, row.C3Km2PerS2, row.GuidanceAltM, extra.DepartureTW);
+            return !double.IsNaN(need) && extra.DepartureDv + 1e-6 >= need;
+        }
+
         /// <summary>The batch row, in the shape <see cref="GoalMet"/> reads. Call after the flight fields are filled.</summary>
         public static GoalCheck FromFlight(CampaignFlight flight)
         {
@@ -202,6 +216,8 @@ namespace Kestrel.Core.Flight
             return new GoalCheck
             {
                 IdealDv = flight.idealDv,
+                DepartureDv = flight.departDv,
+                DepartureTW = flight.departTW,
                 C3Km2PerS2 = flight.c3Km2PerS2,
                 Reliability = flight.reliability,
                 Margin = flight.margin,

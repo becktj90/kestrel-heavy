@@ -212,6 +212,39 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void BatchAndLivePad_Agree_OnTheHeronTemplate_FreeBuild()
+        {
+            // #313 Physics acceptance: Heron (tpl-hydrogen-upper) as a free build, seed 1, on the shared director with the
+            // energy cutoff located inside the step: the 0.2 s batch against the 1/120 s pad, within the orbit tolerances.
+            // The 271 km vs 230 km gap Physics saw is the 7-engine Heron on the JS-parity Stack.SimInputs path (perigee
+            // cutoff on the step), which Kestrel flights no longer use. Both the 9-engine template on main and #314's
+            // 7-engine Heron are checked (the file is not edited here). No failure monitor: with it, both break up at
+            // max-Q (T+34.5 s / T+66.6 s), which #314 owns.
+            string path = Path.Combine(Golden.Root, "web", "js", "data", "templates", "hydrogen-upper.json");
+            var json = MiniJson.ParseObject(File.ReadAllText(path));
+            foreach (int engines in new[] { 9, 7 })
+            {
+                var heron = Design.FromJson(json);
+                heron.stages[0].engineCount = engines;
+                SimResult Fly(double dt)
+                {
+                    var setup = MissionFlightSetup.Build(catalog, null, heron, dt);
+                    return MissionFlightSetup.Fly(setup, MissionFlightSetup.Director(catalog, setup, heron, FlightBatch.DesignHash(heron), campaign.Seeds[0]));
+                }
+                var batch = Fly(MissionFlightSetup.BatchDt);
+                var live = Fly(MissionFlightSetup.LiveDt);
+                string text = "Heron n" + engines + " batch " + (batch.orbit.apoAlt / 1000).ToString("0.000") + " x " + (batch.orbit.periAlt / 1000).ToString("0.000")
+                    + " km, live " + (live.orbit.apoAlt / 1000).ToString("0.000") + " x " + (live.orbit.periAlt / 1000).ToString("0.000") + " km";
+                TestContext.WriteLine(text);
+                Assert.AreEqual("orbit", batch.outcome, text);
+                Assert.AreEqual("orbit", live.outcome, text);
+                Assert.That(Math.Abs(batch.orbit.apoAlt - live.orbit.apoAlt) / live.orbit.apoAlt, Is.LessThanOrEqualTo(MissionFlightSetup.OrbitApoTolerance), text);
+                Assert.That(Math.Abs(batch.orbit.periAlt - live.orbit.periAlt), Is.LessThanOrEqualTo(MissionFlightSetup.OrbitPeriToleranceM), text);
+                Assert.That(Math.Abs(batch.orbit.a - live.orbit.a) / live.orbit.a, Is.LessThanOrEqualTo(MissionFlightSetup.OrbitSmaTolerance), text);
+            }
+        }
+
+        [Test]
         public void SharedDirector_IsDeterministic()
         {
             foreach (var id in new[] { 1, 2, 6 })
@@ -277,11 +310,12 @@ namespace Kestrel.Core.Tests
                 Assert.AreEqual(target, r.orbit.energy, Math.Abs(target) * 1e-9, "dt " + dt);
                 Assert.AreEqual(Gravity.R_EARTH + 0.5 * (m.ApoKm + m.PeriKm) * 1000, r.orbit.a, 1.0, "dt " + dt);
             }
-            // Ellipse: the mean of apoapsis and periapsis. C3: half the C3. Apogee hops never cut off on energy.
+            // Physics A: ellipse and C3 climb to the circular parking orbit at the aim perigee (a = R + aim) and are judged
+            // on the departure burn from there. Apogee hops never cut off on energy.
             var gto = campaign.Mission(7);
-            Assert.AreEqual(SimOptions.EnergyFor(gto.ApoKm * 1000, gto.PeriKm * 1000), MissionFlightSetup.TargetEnergy(gto), 0);
+            Assert.AreEqual(SimOptions.EnergyFor(gto.PeriKm * 1000, gto.PeriKm * 1000), MissionFlightSetup.TargetEnergy(gto), 0);
             var c3 = campaign.Mission(9);
-            Assert.AreEqual(0.5 * c3.C3Km2PerS2 * 1e6, MissionFlightSetup.TargetEnergy(c3), 0);
+            Assert.AreEqual(SimOptions.EnergyFor(c3.PeriKm * 1000, c3.PeriKm * 1000), MissionFlightSetup.TargetEnergy(c3), 0);
             Assert.IsTrue(double.IsNaN(MissionFlightSetup.TargetEnergy(campaign.Mission(1))));
             Assert.IsFalse(new SimOptions().energyCutoff, "raw SimOptions keep the JS simulate() parity path");
         }
@@ -326,6 +360,27 @@ namespace Kestrel.Core.Tests
             s.StageIndex = 0; s.Thrusting = false; s.T += 0.5;
             director.Advance(s, 0.5);
             Assert.AreEqual(1, director.Command.ThrottleScale, 1e-12, "shut down");
+        }
+
+        [Test]
+        public void AStageOneEngineOut_ThrottlesOnlyStageOne_NotTheUpperStage()
+        {
+            // #313 Physics B: a stage-1 engine-out costs stage 1's thrust (8/9) and nothing on stage 2.
+            var vehicle = new AscentVehicle
+            {
+                Stages = 2, CanStage = true, HasAnomaly = true, AnomalyStage = 0, AnomalyEngine = 3, Engines = 9,
+                Redundant = true, ThrottleMin = 0.4, QLimPa = 80000,
+            };
+            var director = AscentDirector.Start(vehicle, null, null, false, true, false);
+            var s = new AscentSample { T = 20, AltM = 8000, SpeedMps = 300, QPa = 4000, StageIndex = 0, Thrusting = true, PropFraction = 0.8, MassKg = 500000, ThrustN = 1.2e7 };
+            director.Advance(s, 0.05);
+            Assert.IsTrue(director.IsOpen(AscentCall.EngineOut));
+            director.Choose(AscentCall.EngineOut, true);
+            Assert.IsFalse(director.Command.Lost);
+            Assert.AreEqual(8.0 / 9.0, director.Command.ThrottleScale, 1e-9, "stage 1 flies on 8 of 9");
+            s.T = 150; s.AltM = 60000; s.SpeedMps = 1800; s.QPa = 2000; s.StageIndex = 1; s.PropFraction = 1; s.MassKg = 80000; s.ThrustN = 1e6;
+            director.Advance(s, 0.05);
+            Assert.AreEqual(1, director.Command.ThrottleScale, 1e-12, "stage 2's engines are untouched");
         }
 
         static double CutoffT(SimResult r)

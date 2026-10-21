@@ -19,6 +19,8 @@ namespace Kestrel.Core.Flight
         public bool passed, gentle, fairingFits, payloadMatch, underBudget, redRisk;
         public int stars;
         public double score, margin, costKc, budgetKc, apoKm, periKm, incDeg, maxG, idealDv, requiredDv, c3Km2PerS2, reliability, boilOffKg, qPeakKPa, burnoutMps, burnoutAltKm;
+        /// <summary>#313 Physics A: departure Δv left in the parking orbit, the burn it needs (with finite-burn loss), and the departing stage's T/W. NaN unless the mission departs from parking.</summary>
+        public double departDv = double.NaN, departReqDv = double.NaN, departTW = double.NaN;
         public long costMinor;
         public readonly List<string> redKinds = new List<string>();
     }
@@ -135,6 +137,12 @@ namespace Kestrel.Core.Flight
                 flight.incDeg = sim.orbit.i * 180.0 / Math.PI;
                 flight.maxG = sim.maxG;
                 flight.idealDv = sim.idealDeltaV;
+                if (mission.DepartsFromParking)
+                {
+                    flight.departDv = sim.departureDv;
+                    flight.departTW = sim.departureTW;
+                    flight.departReqDv = MissionScore.DepartureRequiredMps(mission.TargetKind, mission.ApoKm, mission.C3Km2PerS2, mission.GuidanceAltM, sim.departureTW);
+                }
                 flight.c3Km2PerS2 = MissionScore.C3(sim.orbit.energy) / 1e6;
                 flight.qPeakKPa = sim.maxQ / 1000.0;
                 flight.margin = flight.requiredDv > 0 ? (flight.idealDv - flight.requiredDv) / flight.requiredDv : 0;
@@ -194,7 +202,8 @@ namespace Kestrel.Core.Flight
             double periM = flight.periKm * 1000;
             bool apo = MissionScore.AltitudeWithin(apoM, mission.ApoKm * 1000);
             bool peri = MissionScore.AltitudeWithin(periM, mission.PeriKm * 1000);
-            bool dv = flight.idealDv + 1e-6 >= flight.requiredDv;
+            // #313 Physics A: the honest departure check, the Δv actually left in the parking orbit against the burn.
+            bool dv = !double.IsNaN(flight.departDv) && !double.IsNaN(flight.departReqDv) && flight.departDv + 1e-6 >= flight.departReqDv;
             if (mission.TargetKind == "apogee")
             {
                 criterion = "altitude";
@@ -208,7 +217,7 @@ namespace Kestrel.Core.Flight
             if (mission.TargetKind == "ellipse")
             {
                 if (apo && peri) { criterion = "elements"; return true; }
-                if (peri && dv) { criterion = "delta-v"; return true; }
+                if (peri && dv) { criterion = "departure"; return true; }
                 return false;
             }
             if (mission.TargetKind == "c3")
@@ -218,7 +227,7 @@ namespace Kestrel.Core.Flight
                     criterion = "c3";
                     return true;
                 }
-                if (peri && dv) { criterion = "delta-v"; return true; }
+                if (peri && dv) { criterion = "departure"; return true; }
                 return false;
             }
             return false;
