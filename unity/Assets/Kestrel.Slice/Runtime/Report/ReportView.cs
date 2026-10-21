@@ -82,13 +82,26 @@ namespace Kestrel.Slice
             var plots = Plots(log, frame.Plots);
             root.Add(plots);
 
-            var fix = new Button(() => onFix?.Invoke()) { name = "failure-fix", text = "Fix it" };
-            Place(fix, frame.Fix);
-            ReportCardChrome.PaintButton(fix, (float)Math.Max(ReportCardChrome.HitPt, frame.Fix.H), "fix");
+            // NAV-05: no debrief (PostFlightSource.Publish threw) still gets every exit, not only Fix it.
+            // Same footer as RewardsCard, so ReportCardChrome.Dress lays the exits out the same way.
+            float tap = (float)Math.Max(ReportCardChrome.HitPt, frame.Fix.H);
+            var foot = new VisualElement { name = UiIds.ReportFoot, pickingMode = PickingMode.Position };
+            foot.style.flexShrink = 0;
+            foot.style.backgroundColor = PanelInk;
+            var fix = new Button(() =>
+            {
+                if (actions != null && actions.Fix != null) actions.Fix();
+                else onFix?.Invoke();
+            })
+            { name = UiIds.ReportFix, text = "Fix it" };
+            ReportCardChrome.PaintButton(fix, tap, "fix");
             fix.style.whiteSpace = WhiteSpace.Normal;
             fix.tooltip = link.VoiceOver;
             fix.userData = link.Uri;
-            root.Add(fix);
+            foot.Add(fix);
+            NextMission.AddRoutes(foot, actions, tap);
+            root.Add(foot);
+            ReportCardChrome.Escape = actions != null ? actions.Home : null;
             Kestrel.Game.Shell.TextFit.Apply(root);
             root.RegisterCallback<GeometryChangedEvent>(_ => Kestrel.Game.Shell.TextFit.Apply(root));
             return root;

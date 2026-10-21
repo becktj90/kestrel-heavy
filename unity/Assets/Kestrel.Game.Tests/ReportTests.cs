@@ -55,7 +55,10 @@ namespace Kestrel.Game.Tests
             Assert.That(card.Q<Label>("failure-engineer").text, Is.EqualTo(ev.engineer));
             var names = new System.Collections.Generic.List<string>();
             foreach (var child in card.Children()) names.Add(child.name);
-            Assert.That(names, Is.EqualTo(new[] { "report-plate", "failure-icon", "failure-kid", "failure-engineer", "failure-plots", "failure-fix" }));
+            Assert.That(names, Is.EqualTo(new[] { "report-plate", "failure-icon", "failure-kid", "failure-engineer", "failure-plots", "report-actions" }));
+            // NAV-05: with no debrief the card still has every exit, not only Fix it.
+            foreach (var id in Kestrel.Core.Ui.UiIds.ReportExits)
+                Assert.That(card.Q("report-actions").Q<Button>(id), Is.Not.Null, id);
             Assert.That(card.style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
             Assert.That(card.Q("report-plate").style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
             Assert.That(card.Q("failure-icon").childCount, Is.GreaterThanOrEqualTo(2));
