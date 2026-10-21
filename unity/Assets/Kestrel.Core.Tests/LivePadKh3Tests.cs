@@ -50,13 +50,14 @@ namespace Kestrel.Core.Tests
             public string Text;
         }
 
-        LiveRun Play(int index, double safetyFactor)
+        LiveRun Play(int index, double safetyFactor, double pitchKickDeg = double.NaN)
         {
             const double frame = 1.0 / 60.0;
             var mission = campaign.Mission(index);
             var choice = HomeAutoBuild.Choose(catalog, hangar.templates, mission);
             var design = Design.FromJson(choice.Design);
             if (!double.IsNaN(safetyFactor)) design.safetyFactor = safetyFactor;
+            if (!double.IsNaN(pitchKickDeg)) design.guidance.pitchKickDeg = pitchKickDeg;
             ulong hash = FlightBatch.DesignHash(design);
             const ulong seed = 1; // AscentFlight.ReadSeed on a design with no seed
             var card = MissionBriefing.Load(Golden.Root, index, hash, seed);
@@ -113,8 +114,9 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Kh3Starter_DefaultSettings_LiveLoop_SeparatesAndReachesOrbit()
         {
-            // The starter as the home auto-build hands it over, no edits. Seed 1: 201.8 x 198.2 km, separation at T+156.1,
-            // max-Q 44.2 kPa: inside the +/-5% band of KH-3's 200 km circle.
+            // The starter as the home auto-build hands it over, no edits (calm-air retune: an 8.65° kick, strength 1.45).
+            // Seed 1 in the briefing wind: 203.3 x 196.7 km, separation at T+156.1: inside the +/-5% band of KH-3's 200 km
+            // circle. (The pre-retune 8° build flew 201.8 x 198.2 km here.)
             var mission = campaign.Mission(3);
             var run = Play(3, double.NaN);
             TestContext.WriteLine(run.Text);
@@ -129,12 +131,13 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void Kh3Starter_WithItsStrengthRestore_LiveLoop_SeparatesAndReachesOrbit()
+        public void Kh3EightDegreeBuild_WithItsStrengthRestore_LiveLoop_SeparatesAndReachesOrbit()
         {
-            // The board's one-tap strength restore (1.9), the flight that bent at T+166 on main. Seed 1: 223.1 x 176.9 km,
-            // separation at T+155.2, max-Q 44.3 kPa. It reaches orbit with no breakup; the heavier walls put it outside
-            // the +/-5% band of the 200 km circle (reported on #313; the restore value is Arcade's board data).
-            var run = Play(3, Restored("m3"));
+            // The pre-retune 8° build with the board's old one-tap strength restore (1.9), the flight that bent at T+166 on
+            // main before #313. Seed 1: 223.1 x 176.9 km, separation at T+155.2, max-Q 44.3 kPa. It reaches orbit with no
+            // breakup; the heavier walls put it outside the +/-5% band of the 200 km circle (reported on #313). KH-3's board
+            // row is now "fly" (8.65° kick), so this pins the old t432 rocket.
+            var run = Play(3, Restored("m3"), 8.0);
             TestContext.WriteLine(run.Text);
             Assert.IsNull(run.Result.failure, run.Text);
             Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates / " + run.Text);
@@ -195,6 +198,51 @@ namespace Kestrel.Core.Tests
             if (r.failure != null) return false;
             return MissionScore.TargetMet(m.TargetKind, m.ApoKm, m.PeriKm, m.C3Km2PerS2, MissionScore.FlownApoAltM(r), r.orbit.periAlt,
                 MissionScore.C3(r.orbit.energy) / 1e6, false, out _);
+        }
+
+        /// <summary>
+        /// The live report card's verdict on an intact or failed live flight: the same gates as PostFlightSource (Slice)
+        /// builds for FlightDebrief.GoalMet. The parking-orbit departure Δv, C3, margin, red risks, reliability, airframe
+        /// (gentle, payload, fairing, budget), coast boil-off and the predicted landing grades.
+        /// </summary>
+        public static bool Passes(Catalog catalog, CampaignMission row, Design design, SimResult result)
+        {
+            bool intact = result.failure == null && result.outcome != "failure" && result.outcome != "crash";
+            double required = row.RequiredDeltaV();
+            var extra = new GoalCheck
+            {
+                IdealDv = result.idealDeltaV,
+                DepartureDv = result.departureDv,
+                DepartureTW = result.departureTW,
+                C3Km2PerS2 = MissionScore.C3(result.orbit.energy) / 1e6,
+                Margin = required > 1 ? (result.idealDeltaV - required) / required : 0,
+            };
+            if (result.risks != null)
+            {
+                extra.RedKnown = true;
+                for (int i = 0; i < result.risks.Count; i++)
+                    if (result.risks[i].level == "red") extra.RedRisk = true;
+            }
+            extra.Reliability = Kestrel.Core.Economy.Reliability.Of(catalog, design).reliability;
+            extra.Gentle = FailureMonitor.GentleTier(design);
+            extra.PayloadMatch = design.payloadType == row.PayloadId && design.payloadMass == row.MassKg;
+            extra.FairingFits = PayloadFit.Check(design, new PayloadSpec { id = row.PayloadId, volume = row.VolumeM3, diameter = row.DiameterM }).fits;
+            var price = Kestrel.Core.Economy.CostModel.PriceDesign(catalog, design);
+            long per = Kestrel.Core.Economy.CostModel.MinorPerKc(catalog);
+            extra.UnderBudget = price.recurring <= Kestrel.Core.Economy.Career.KcToMinor(row.BudgetKc, per > 0 ? per : 1);
+            extra.AirframeKnown = true;
+            if (row.CoastHours > 0 && design.stages != null && design.stages.Count > 0)
+            {
+                var upper = design.stages[design.stages.Count - 1];
+                extra.BoilOffKg = upper.propMass - TankModel.RemainingPropKg(catalog, upper, row.CoastHours);
+            }
+            string grade = row.LandingRequired || row.LandBoosters ? FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, false) : null;
+            if (row.LandBoosters)
+            {
+                extra.BoosterKnown = true;
+                extra.BoosterGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, true);
+            }
+            return FlightDebrief.GoalMet(row, intact, MissionScore.FlownApoAltM(result), result.orbit.periAlt, result.maxG, grade, extra);
         }
 
         public static string Text(SimResult r) => r.outcome + " " + (MissionScore.FlownApoAltM(r) / 1000).ToString("0.0") + " x "
