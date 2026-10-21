@@ -66,13 +66,9 @@ namespace Kestrel.Slice
             var result = flight != null ? flight.Result : null;
             var ascentFail = failure ?? (result != null ? result.failure : null);
             var rec = RecoveryLog.Current;
-            var ev = ascentFail;
-            string landingGrade = null;
-            if (ascentFail == null && rec != null && rec.Attempted)
-            {
-                if (!string.IsNullOrEmpty(rec.GradeName)) landingGrade = rec.GradeName;
-                if (rec.Failure != null) ev = rec.Failure;
-            }
+            // An expendable first stage's loss (BoosterLanding) is not this flight's failure or its landing grade.
+            var ev = BoosterLanding.ReportFailure(ascentFail, rec);
+            string landingGrade = BoosterLanding.ReportGrade(ascentFail, rec);
             var mission = GameSession.Current;
             var facts = new FlightFacts
             {

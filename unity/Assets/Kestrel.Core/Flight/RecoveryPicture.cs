@@ -129,10 +129,76 @@ namespace Kestrel.Core.Flight
         public static RecoveryVerdict Current { get; private set; }
         public static bool Active { get; private set; }
 
+        static RecoveryMark[] live = Array.Empty<RecoveryMark>();
+
+        /// <summary>
+        /// Phase marks the trajectory rail quotes: the published verdict's, or the ones the booster
+        /// has flown so far. Before this the rail read only the verdict, which exists at touchdown,
+        /// so Boostback, Entry and Haven never lit while the booster was in the air.
+        /// </summary>
+        public static RecoveryMark[] Marks => Current != null && Current.Marks != null ? Current.Marks : live;
+
+        /// <summary>Flight clock at separation. Recovery marks and samples count from 0 there.</summary>
+        public static double SeparatedAt { get; private set; } = double.NaN;
+        /// <summary>Recovery clock of the last presented booster step.</summary>
+        public static double LiveT { get; private set; }
+
+        /// <summary>
+        /// <see cref="Marks"/> on the flight clock. The rail compares mark times with the flight clock; the raw
+        /// marks count from separation, so a Haven tick at recovery T+263 s waited for flight T+263 s.
+        /// </summary>
+        public static RecoveryMark[] FlightMarks
+        {
+            get
+            {
+                var raw = Marks;
+                if (raw == null || raw.Length == 0 || double.IsNaN(SeparatedAt)) return raw ?? Array.Empty<RecoveryMark>();
+                var shifted = new RecoveryMark[raw.Length];
+                for (int i = 0; i < raw.Length; i++)
+                {
+                    shifted[i] = raw[i];
+                    shifted[i].T = raw[i].T + SeparatedAt;
+                }
+                return shifted;
+            }
+        }
+
+        /// <summary>
+        /// The rail's "now": the flight clock, carried on by the booster's clock once the ascent sim has stopped
+        /// (orbit or a cutoff end the sim minutes before the booster is down).
+        /// </summary>
+        public static double RailClock(double flightT)
+        {
+            if (double.IsNaN(SeparatedAt)) return flightT;
+            double booster = SeparatedAt + LiveT;
+            return booster > flightT ? booster : flightT;
+        }
+
+        /// <summary>The booster let go at flight time <paramref name="flightT"/>.</summary>
+        public static void Separate(double flightT)
+        {
+            SeparatedAt = flightT;
+            LiveT = 0;
+        }
+
+        public static void Tick(double recoveryT) => LiveT = recoveryT;
+
         public static void ArmFlight()
         {
             Current = null;
             Active = false;
+            live = Array.Empty<RecoveryMark>();
+            SeparatedAt = double.NaN;
+            LiveT = 0;
+        }
+
+        /// <summary>The marks flown so far. The array is copied.</summary>
+        public static void Track(RecoveryMark[] marks)
+        {
+            if (marks == null) { live = Array.Empty<RecoveryMark>(); return; }
+            var copy = new RecoveryMark[marks.Length];
+            Array.Copy(marks, copy, marks.Length);
+            live = copy;
         }
 
         public static void Engage() => Active = true;
@@ -149,6 +215,9 @@ namespace Kestrel.Core.Flight
         {
             Current = null;
             Active = false;
+            live = Array.Empty<RecoveryMark>();
+            SeparatedAt = double.NaN;
+            LiveT = 0;
         }
     }
 }
