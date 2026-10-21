@@ -569,8 +569,17 @@ namespace Kestrel.Game.Shell
             card.style.overflow = Overflow.Hidden;
             var label = card.Q(className: launch ? "kh-mm-launch-label" : "kh-mm-design-label");
             var cap = card.Q(className: launch ? "kh-mm-launch-caption" : "kh-mm-design-caption");
-            if (label != null) { label.style.whiteSpace = WhiteSpace.Normal; label.style.textOverflow = TextOverflow.Clip; label.style.overflow = Overflow.Hidden; }
+            // The wide CTA label is fitted to one line (WebHomeLayout.Place), so it never wraps into a one-line box; a
+            // string TextCore still finds too wide is shrunk by TextFit instead of growing a second line under the clip.
+            if (label != null) { label.style.whiteSpace = launch ? WhiteSpace.NoWrap : WhiteSpace.Normal; label.style.textOverflow = TextOverflow.Clip; label.style.overflow = Overflow.Hidden; }
             if (cap != null) { cap.style.whiteSpace = WhiteSpace.Normal; cap.style.textOverflow = TextOverflow.Clip; cap.style.overflow = Overflow.Hidden; }
+            // WebHomeLayout's card heights are border + pad + lines x 1.25 em: no room for the theme's vertical Label
+            // padding and margin, which made the CTA column taller than its card once the sub-line came back.
+            foreach (var l in new[] { label, cap })
+            {
+                if (l == null) continue;
+                l.style.paddingTop = 0f; l.style.paddingBottom = 0f; l.style.marginTop = 0f; l.style.marginBottom = 0f;
+            }
         }
 
         /// <summary>
@@ -1115,14 +1124,17 @@ namespace Kestrel.Game.Shell
             line.style.flexShrink = 0;
             text.Add(line);
             row.Add(text);
-            // Covers the whole stats box, so the hit stays 44pt on the phone column (the box is 46).
+            // Covers the whole stats box, border included. Absolute offsets are measured from the padding box (inside
+            // the 1 px border), so 0/0/0/0 made the hit 2 px shorter than the card: 42 on a 44 SE card (GameCI,
+            // HomeChromeIsOnScreenAboveTheDuskPlate). -StatsBorder puts it on the border box, so the hit is the card's
+            // height in panel px at every panel scale, and the card never goes under HitMin (ContainColumn's floor).
             var hit = new Button { name = UiIds.HomePatches, text = string.Empty, tooltip = "Patches. Flights you have cleared." };
             hit.AddToClassList(HitOverlayClass);
             hit.style.position = Position.Absolute;
-            hit.style.left = 0f;
-            hit.style.right = 0f;
-            hit.style.top = 0f;
-            hit.style.bottom = 0f;
+            hit.style.left = -HomePhoneLayout.StatsBorder;
+            hit.style.right = -HomePhoneLayout.StatsBorder;
+            hit.style.top = -HomePhoneLayout.StatsBorder;
+            hit.style.bottom = -HomePhoneLayout.StatsBorder;
             hit.style.marginTop = 0f;
             hit.style.marginBottom = 0f;
             hit.style.marginLeft = 0f;
@@ -1355,10 +1367,16 @@ namespace Kestrel.Game.Shell
             close.style.fontSize = 14;
             close.style.flexShrink = 0;
             close.style.whiteSpace = WhiteSpace.Normal;
-            close.style.position = Position.Absolute;
-            close.style.left = 8;
-            close.style.right = 8;
-            close.style.bottom = 8;
+            // In the sheet's column under the list, not pinned over it: pinned to the sheet's bottom, Close sat on the
+            // list's last rows whenever the row estimate came up short (GameCI RealTree: settings-full-designer-note on
+            // settings-close at every size, 36 reports). In flow, the list ends where Close starts and scrolls inside
+            // its own viewport, so nothing in it can draw on Close.
+            close.style.position = Position.Relative;
+            close.style.marginTop = SheetCloseGap;
+            close.style.marginBottom = 0;
+            close.style.marginLeft = 0;
+            close.style.marginRight = 0;
+            close.style.alignSelf = Align.Stretch;
             SettingFont(close, "SpaceGrotesk-Bold");
             close.clicked += () => { sheet.style.display = DisplayStyle.None; var sc = sheet.parent?.Q(SettingsScrimName); if (sc != null) sc.style.display = DisplayStyle.None; };
 
@@ -1380,7 +1398,23 @@ namespace Kestrel.Game.Shell
             scrim.RegisterCallback<ClickEvent>(_ => HideSheet());
             sheet.RegisterCallback<GeometryChangedEvent>(_ => scrim.style.display = sheet.style.display.value);
 
-            float fitW = -1f, fitH = -1f;
+            float fitW = -1f, fitH = -1f, measuredExtra = 0f;
+            // After layout: when the rows came out taller than the estimate (wrapped note, theme Label chrome), grow the
+            // sheet by the difference so the list does not scroll while the screen has room. Bounded, so it settles.
+            void MeasureRows()
+            {
+                if (sheet.style.display.value == DisplayStyle.None) return;
+                float rows = list.contentContainer.layout.height;
+                float view = list.layout.height;
+                if (float.IsNaN(rows) || float.IsNaN(view) || view < 1f) return;
+                float short_ = rows - view;
+                if (short_ <= 0.5f || measuredExtra > 400f) return;
+                measuredExtra += Mathf.Ceil(short_);
+                fitW = -1f;
+                FitSheet();
+            }
+            list.contentContainer.RegisterCallback<GeometryChangedEvent>(_ => MeasureRows());
+            list.RegisterCallback<GeometryChangedEvent>(_ => MeasureRows());
             void FitSheet()
             {
                 if (full == null || sheet.style.display.value == DisplayStyle.None) return;
@@ -1395,8 +1429,9 @@ namespace Kestrel.Game.Shell
                 // Under the gear when the rows fit; otherwise the top of the screen, so a 390-tall
                 // landscape still keeps Close inside the window. The list scrolls; Close stays pinned.
                 const float edge = 8f;
-                // Sheet padding (12 top) + the title line and its margin + the pinned Close band (paddingBottom 60).
-                const float chrome = 12f + 24f + 8f + 60f;
+                // Sheet border and padding (1 + 12 top, 1 + SheetPadBottom), the title line and its margin, and Close
+                // in flow under the list (its gap and 44 px).
+                const float chrome = 1f + 12f + 24f + 8f + SheetCloseGap + 44f + SheetPadBottom + 1f;
                 float width = Mathf.Min(320f, Mathf.Max(200f, hostW - 16f));
                 float rowsH = 0f;
                 foreach (var child in list.contentContainer.Children())
@@ -1412,7 +1447,7 @@ namespace Kestrel.Game.Shell
                         rowsH += h + 6f + 2f;
                     }
                 }
-                float content = chrome + rowsH;
+                float content = chrome + rowsH + measuredExtra;
                 // Under the gear, wherever the gear sits (iOS puts it at the safe top now, not the panel top).
                 var gearEl = full.Q("home-settings");
                 float below = 52f;
@@ -1432,11 +1467,14 @@ namespace Kestrel.Game.Shell
                 sheet.style.width = width;
                 sheet.style.height = height;
                 sheet.style.maxHeight = height;
-                sheet.style.paddingBottom = 60f;
-                float listH = Mathf.Max(46f, height - chrome);
-                list.style.height = listH;
-                list.style.maxHeight = listH;
+                sheet.style.paddingBottom = SheetPadBottom;
+                // The list takes what the title and Close leave (flex), never a fixed guess that could run under Close.
+                list.style.height = StyleKeyword.Null;
+                list.style.maxHeight = StyleKeyword.Null;
                 list.style.minHeight = 0f;
+                list.style.flexBasis = 0f;
+                list.style.flexGrow = 1f;
+                list.style.flexShrink = 1f;
                 list.Query<Button>().ForEach(b =>
                 {
                     if (b.name != null && b.name.StartsWith("settings-")) { b.style.width = StyleKeyword.Auto; b.style.alignSelf = Align.Stretch; }
@@ -1465,6 +1503,7 @@ namespace Kestrel.Game.Shell
                 sheet.style.display = DisplayStyle.Flex;
                 scrim.style.display = DisplayStyle.Flex;
                 fitW = -1f;
+                measuredExtra = 0f;
                 FitSheet();
                 scrim.BringToFront();
                 sheet.BringToFront();
@@ -1481,6 +1520,9 @@ namespace Kestrel.Game.Shell
 
         public const string FullDesignerId = UiIds.SettingsFullDesigner;
         public const string SettingsScrimName = "settings-scrim";
+        /// <summary>Settings sheet: the gap above Close and the sheet's bottom padding under it.</summary>
+        public const float SheetCloseGap = 8f, SheetPadBottom = 8f;
+
         public const string FullDesignerNote = "Every part and number. For older kids and engineers.";
 
         /// <summary>The Settings Codex row stands in for the Codex tile: shown only while home.codexTile is off.</summary>
@@ -1727,8 +1769,71 @@ namespace Kestrel.Game.Shell
         }
 
         /// <summary>Undo <see cref="ApplyPhoneBlocks"/> when the frame turns wide, so the landscape row keeps its own look.</summary>
+        /// <summary>Line box a Home card label is guaranteed in the phone column: TextCore's glyph block is 1.22 em
+        /// (Fraunces) to 1.28 em (Space Grotesk), so 1.3 holds one line and stays under the 1.4 MenuTypeScale budgets.</summary>
+        public const float CardTextLine = 1.3f;
+
+        /// <summary>Phone column: the tile names and captions and the DESIGN FIRST label and caption carry no vertical
+        /// Label chrome, so the card heights HomePhoneLayout budgets (border + pad + n x 1.4 em lines) are what the
+        /// labels really take. The runtime theme's Label padding and margin were not in those budgets: DESIGN FIRST's
+        /// column ran ~18 px past its 51 px card (the label's top 3 px above it, SE), and a tile name was squeezed to an
+        /// 8 px content box that TextFit then shrank to its 10 px floor (GameCI RealTree, 15 reports). A tile name
+        /// also gets a one-line min height, so a tight tile can never crush it below its own glyphs.
+        /// <paramref name="phone"/> false puts the stylesheet back (the wide frame sizes these cards itself).</summary>
+        static void CardLabelChrome(VisualElement root, bool phone)
+        {
+            void Zero(VisualElement e, float minH)
+            {
+                if (e == null) return;
+                if (phone)
+                {
+                    e.style.paddingTop = 0f; e.style.paddingBottom = 0f;
+                    e.style.marginBottom = 0f;
+                    if (minH > 0f) e.style.minHeight = minH;
+                }
+                else
+                {
+                    e.style.paddingTop = StyleKeyword.Null; e.style.paddingBottom = StyleKeyword.Null;
+                    e.style.marginBottom = StyleKeyword.Null;
+                    if (minH > 0f) e.style.minHeight = StyleKeyword.Null;
+                }
+            }
+            float Face(VisualElement e)
+            {
+                var set = e.style.fontSize;
+                if (set.keyword == StyleKeyword.Undefined && set.value.value > 0f) return set.value.value;
+                float r = e.resolvedStyle.fontSize;
+                return float.IsNaN(r) ? 0f : r;
+            }
+            foreach (var it in MainMenuCopy.Tiles)
+            {
+                var b = root.Q("home-" + it.Id);
+                if (b == null) continue;
+                var name = b.Q(className: "kh-mm-tile-name");
+                if (name != null)
+                {
+                    Zero(name, Mathf.Ceil(Face(name) * CardTextLine));
+                    if (phone) name.style.marginTop = 0f; else name.style.marginTop = StyleKeyword.Null;
+                }
+                // The caption keeps its 3 px top margin (ApplyScale); only the padding and bottom margin go.
+                Zero(b.Q(className: "kh-mm-tile-caption"), 0f);
+            }
+            var design = root.Q("home-design");
+            if (design != null)
+            {
+                foreach (var cls in new[] { "kh-mm-design-label", "kh-mm-design-caption" })
+                {
+                    var l = design.Q(className: cls);
+                    Zero(l, 0f);
+                    if (l == null) continue;
+                    if (phone) l.style.marginTop = 0f; else l.style.marginTop = StyleKeyword.Null;
+                }
+            }
+        }
+
         static void ResetPhoneBlocks(VisualElement root)
         {
+            CardLabelChrome(root, false);
             var record = root.Q<Label>("mm-record");
             if (record != null && record.userData is string full) record.text = full;
             if (record != null) record.style.whiteSpace = WhiteSpace.Normal;
@@ -1752,6 +1857,7 @@ namespace Kestrel.Game.Shell
         static void ApplyPhoneBlocks(VisualElement root, MenuTypeScale.Sizes z)
         {
             float grid = z.Column > 1f ? z.Column : z.TileW / HomePhoneLayout.TileShare;
+            CardLabelChrome(root, true);
             var stats = root.Q("mm-stats");
             if (stats != null)
             {
