@@ -22,6 +22,15 @@ namespace Kestrel.Core.Tests
             return !string.IsNullOrEmpty(env) ? env : (Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "..", "data")) ? Directory.GetCurrentDirectory() : AppContext.BaseDirectory);
         }
 
+        /// <summary>
+        /// #314: the old one-solid-motor sounding template, kept as a named test fixture so the solid code paths
+        /// (burnout without MECO, no strongback, unguided max-Q exemption) stay covered. Not shipped: the shipped
+        /// sounding template is tpl-sounding-hybrid. This solid breaks up over 20 g at T+0.6 s under the played checks.
+        /// </summary>
+        public const string SolidSoundingFixture = "sounding-solid.json";
+        public static JsonObject FixtureJson(string file) => MiniJson.ParseObject(System.IO.File.ReadAllText(Path.Combine(Root, "tests", "fixtures", "designs", file)));
+        public static Kestrel.Core.Vehicle.Design Fixture(string file) => Kestrel.Core.Vehicle.Design.FromJson(FixtureJson(file));
+
         public static JsonObject File(string name) => MiniJson.ParseObject(System.IO.File.ReadAllText(Path.Combine(Root, "data", "golden", name + ".json")));
         public static IEnumerable<JsonObject> Cases(string name) { foreach (JsonObject c in File(name).Arr("cases")) yield return c; }
 

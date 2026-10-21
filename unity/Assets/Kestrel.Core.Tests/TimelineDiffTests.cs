@@ -15,9 +15,9 @@ namespace Kestrel.Core.Tests
         public void UnchangedDesign_HasAnEmptyDiff()
         {
             var cat = Golden.Catalog;
-            // A design whose prediction reaches its target (the scout preset), so an unchanged copy has no problems at all. The sounding-solid fixture
-            // used to be this design, but it only reached 100 km on the vacuum Kepler apoapsis (113.8 km); its
-            // drag-aware flown peak is 18.3 km, so its prediction now fails on its own (see the test below).
+            // A design whose prediction reaches its target (the scout preset), so an unchanged copy has no problems at all. The old
+            // sounding-solid template used to be this design, but it only reached 100 km on the vacuum Kepler apoapsis (113.8 km).
+            // It is now the solid test fixture, whose prediction fails on its own (see the test below).
             var d = Preset("scout");
             var again = d.Clone();
             var diff = TimelineDiff.Compare(cat, d, again, 1);
@@ -34,7 +34,8 @@ namespace Kestrel.Core.Tests
         public void UnchangedFailingDesign_HasNoEventDiff_AndOnlyItsOwnFailedPrediction()
         {
             var cat = Golden.Catalog;
-            var d = LoadTemplate("sounding-solid.json");
+            // #314: the solid sounding fixture. The prediction flies the played checks, so it breaks up over 20 g at T+0.6 s.
+            var d = Golden.Fixture(Golden.SolidSoundingFixture);
             var diff = TimelineDiff.Compare(cat, d, d.Clone(), 1);
             Assert.AreEqual(diff.Canonical(), TimelineDiff.Compare(cat, d, d.Clone(), 1).Canonical());
             Assert.AreEqual(0, diff.added.Count);
@@ -43,7 +44,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(1, diff.problems.Count, diff.Canonical());
             Assert.AreEqual(TimelineDiff.FailedPrediction, diff.problems[0].kind);
             StringAssert.DoesNotStartWith("The edit loses the target.", diff.problems[0].explainWhy, "nothing was edited");
-            StringAssert.Contains("Apogee 18.3 km, target 100.0 km", diff.problems[0].explainWhy);
+            StringAssert.Contains("Apogee 0.6 km, target 100.0 km", diff.problems[0].explainWhy);
         }
 
         [Test]

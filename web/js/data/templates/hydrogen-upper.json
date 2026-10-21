@@ -36,7 +36,7 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "gg-kerolox",
-      "engineCount": 9,
+      "engineCount": 7,
       "propMass": 400000,
       "diameter": 3.7
     },
@@ -113,21 +113,21 @@
       "cost": "pending: E1 cost model not landed"
     },
     "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
     ],
     "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
     }
   }
 }

@@ -57,8 +57,7 @@ namespace Kestrel.Core.Tests
             foreach (var e in tl.events) if (e.id == "asc.karman") seen++;
             Assert.AreEqual(1, seen);
 
-            var solid = Design.FromJson(Kestrel.Core.Json.MiniJson.ParseObject(
-                File.ReadAllText(Path.Combine(Golden.Root, "web", "js", "data", "templates", "sounding-solid.json"))));
+            var solid = Golden.Fixture(Golden.SolidSoundingFixture);
             var solidTl = TimelineGenerator.Generate(cat, solid, Pad.For(cat, solid), new Mission { mode = "standard" }, 1);
             Assert.IsTrue(solidTl.checks.ok, string.Join(" | ", solidTl.checks.errors));
             bool present = false;

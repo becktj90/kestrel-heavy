@@ -155,7 +155,11 @@ namespace Kestrel.Core.Tests
             double fairing = StructureModel.FairingQLimPa(Golden.Catalog, design);
             Assert.AreNotEqual(stage.qLimPa, fairing, "the fairing uses its own material");
 
-            var sim = Kestrel.Core.Designer.ReferenceAscent.Simulate(Golden.Catalog, raw);
+            // The unthrottled peak of the uncut physics. Since #314 the played flight breaks up first (base heating at
+            // T+7.2 s), so the designer's reference stops before max-Q; this case is about the structure model.
+            var input = Kestrel.Core.Designer.ReferenceAscent.Inputs(Golden.Catalog, raw);
+            if (input.opts.monitor != null) input.opts.monitor.Predict = true;
+            var sim = Kestrel.Core.Physics.Headless.Simulate(input.stages, input.opts);
             Assert.IsTrue(StructureModel.ExceedsQLim(sim.maxQ, stage.qLimPa),
                 "q " + sim.maxQ.ToString("R") + " Pa vs q_lim " + stage.qLimPa.ToString("R") + " Pa");
             Assert.AreEqual("structural-maxq", StructureModel.MaxQFailureKind);
