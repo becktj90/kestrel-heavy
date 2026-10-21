@@ -67,7 +67,8 @@ namespace Kestrel.Core.Designer
         /// strength and max-Q throttle together), then the single control the failure named.
         /// With <paramref name="mission"/> (the live mission, the same one FlightDriver flies), "fixed" means fixed: the
         /// repaired rocket must fly FlightBatch seeds 1–5 (<see cref="GateSeeds"/>, the golden gate's seeds, gusts included)
-        /// with no failure. Fix it keeps adding strength, one step at a time and at most <see cref="StrengthSteps"/> steps,
+        /// and pass the mission (#313: a clean miss is unfixed, so a 95% max-Q throttle that lofts the orbit out of the
+        /// band is never FullyFixed). Fix it keeps adding strength, one step at a time and at most <see cref="StrengthSteps"/> steps,
         /// while a seed still breaks up; a fuel kind keeps adding margin while a seed runs dry. If that is not enough the
         /// note says so (<see cref="NotFullyFixed"/>). Without a mission (a free build) only the designer's checks apply.
         /// </summary>
@@ -84,7 +85,7 @@ namespace Kestrel.Core.Designer
                 // That is the report's "ran out of fuel", and Fix it used to change nothing for it. Ask the solver
                 // for a bigger margin until the flight is not short, a few steps at most.
                 for (int step = 0; step < FlightSteps && dv != null && dv.Solved
-                     && (FlightShort(catalog, design) || FirstFailure(catalog, mission, design) == "prop-depletion"); step++)
+                     && (FlightShort(catalog, design) || FirstFailureEvent(catalog, mission, design) == "prop-depletion"); step++)
                 {
                     double margin = double.IsNaN(dv.Margin) ? 0 : dv.Margin;
                     var more = DvMarginFix.Solve(catalog, design, Math.Max(0, margin) + FlightMarginStep);
@@ -171,10 +172,54 @@ namespace Kestrel.Core.Designer
         public const int MarginSteps = 1;
 
         /// <summary>
-        /// The first failure kind on FlightBatch seeds 1–<see cref="GateSeeds"/> (the same flight the gate and the goldens
-        /// fly), or null when every seed flies clean. Null as well without a mission: there is no gate flight to judge.
+        /// #313 (Physics): the miss kind of an intact flight that cut off at the target energy (its mean altitude, so its
+        /// semi-major axis, in the target band) at a bad flight-path angle, so apoapsis or periapsis lands outside the band
+        /// (a periapsis below the ground reads suborbital). Strength and fuel do
+        /// not move it; the pitch program does.
+        /// </summary>
+        public const string FlightPathAngleMiss = "fpa-miss";
+        /// <summary>#313: the miss kind of an intact flight that missed the target any other way (short, lofted, or C3).</summary>
+        public const string TargetMiss = "miss";
+        /// <summary>#313: an intact flight that reached the target but failed another mission gate (reliability, budget, landing...).</summary>
+        public const string GateMiss = "gate-miss";
+
+        /// <summary>
+        /// Why a gate flight does not count as a pass: its failure kind, else <see cref="FlightPathAngleMiss"/> or
+        /// <see cref="TargetMiss"/> for a clean miss, <see cref="GateMiss"/> for a target reached with a mission gate failed, else (passed) null. #313: a repair counts only when the mission
+        /// passes, so a clean miss is unfixed.
+        /// </summary>
+        public static string MissKind(CampaignMission mission, CampaignFlight f)
+        {
+            if (f == null) return TargetMiss;
+            if (f.failure != null) return f.failure;
+            if (f.passed) return null;
+            if (f.reached) return GateMiss;
+            if (mission != null && (mission.TargetKind == "circular" || mission.TargetKind == "ellipse")
+                && MissionScore.AltitudeWithin((f.apoKm + f.periKm) * 500.0, (mission.ApoKm + mission.PeriKm) * 500.0)
+                && !(MissionScore.AltitudeWithin(f.apoKm * 1000, mission.ApoKm * 1000) && MissionScore.AltitudeWithin(f.periKm * 1000, mission.PeriKm * 1000)))
+                return FlightPathAngleMiss;
+            return TargetMiss;
+        }
+
+        /// <summary>
+        /// The first reason a FlightBatch seed 1–<see cref="GateSeeds"/> (the same flight the gate and the goldens fly) does
+        /// not pass the mission (<see cref="MissKind"/>), or null when every seed passes. Null as well without a mission:
+        /// there is no gate flight to judge.
         /// </summary>
         public static string FirstFailure(Catalog catalog, CampaignMission mission, JsonObject design)
+        {
+            if (catalog == null || mission == null || design == null) return null;
+            var d = Vehicle.Design.FromJson(design);
+            for (ulong seed = 1; seed <= GateSeeds; seed++)
+            {
+                string why = MissKind(mission, FlightBatch.Fly(catalog, mission, d, seed));
+                if (why != null) return why;
+            }
+            return null;
+        }
+
+        /// <summary>The first failure event kind on seeds 1–<see cref="GateSeeds"/> (a clean miss is not one), or null.</summary>
+        static string FirstFailureEvent(Catalog catalog, CampaignMission mission, JsonObject design)
         {
             if (catalog == null || mission == null || design == null) return null;
             var d = Vehicle.Design.FromJson(design);
@@ -186,12 +231,13 @@ namespace Kestrel.Core.Designer
             return null;
         }
 
-        static int FailedSeeds(Catalog catalog, CampaignMission mission, JsonObject design)
+        /// <summary>Gate seeds that do not pass the mission: a failure or a clean miss (#313).</summary>
+        public static int FailedSeeds(Catalog catalog, CampaignMission mission, JsonObject design)
         {
             var d = Vehicle.Design.FromJson(design);
             int n = 0;
             for (ulong seed = 1; seed <= GateSeeds; seed++)
-                if (FlightBatch.Fly(catalog, mission, d, seed).failure != null) n++;
+                if (MissKind(mission, FlightBatch.Fly(catalog, mission, d, seed)) != null) n++;
             return n;
         }
 
@@ -207,8 +253,11 @@ namespace Kestrel.Core.Designer
 
         static bool StrengthHelps(string failure) => failure == "structural-maxq" || failure == "maxq-high";
 
+        static bool IsCleanMiss(string why) => why == FlightPathAngleMiss || why == TargetMiss || why == GateMiss;
+
         /// <summary>
-        /// Adds strength one step at a time (at most <see cref="StrengthSteps"/>) while a gate seed breaks up at max-Q.
+        /// Adds strength one step at a time (at most <see cref="StrengthSteps"/>) while a gate seed breaks up at max-Q, and
+        /// (#313) while a seed still misses cleanly after a strength step stopped the breakup.
         /// Stops at once when the seeds pass, when the failure is not one strength fixes, or at the strength maximum.
         /// After the first passing step it adds one more step of margin (<see cref="MarginSteps"/>) if seeds 1-5 still pass.
         /// The edit spans the first step's "from" to the last step's "to".
@@ -218,7 +267,10 @@ namespace Kestrel.Core.Designer
             string from = null, to = null;
             for (int step = 0; step < StrengthSteps; step++)
             {
-                if (!StrengthHelps(FirstFailure(catalog, mission, design))) break;
+                // #313: once strength has stopped the breakup, a clean miss (the heavier walls move the cutoff) is not a
+                // pass, so keep stepping while seeds still miss, inside the same step budget.
+                string why = FirstFailure(catalog, mission, design);
+                if (why == null || !(StrengthHelps(why) || (from != null && IsCleanMiss(why)))) break;
                 var e = RaiseSafety(design);
                 if (!e.changed) break;
                 if (from == null) from = e.from;

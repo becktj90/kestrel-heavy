@@ -78,12 +78,27 @@ namespace Kestrel.Core.Tests
             foreach (var f in Fly(index, json)) Assert.That(f.failure, Is.Not.EqualTo("structural-maxq"), "seed " + f.seed + " / " + outcome.Note);
         }
 
-        [TestCase(14)]
-        public void FixIt_WeakAirframe_RepairsUntilEveryGateSeedFlies_GustsIncluded(int index)
+        static string Seeds(CampaignMission mission, List<CampaignFlight> flights)
         {
-            // The starter with the walls cut to strength 1.0 breaks up at max-Q on every seed. The stepper's repair alone
-            // read Ready but still broke up on one gusty seed (KH-14 seed 3, KH-16 seed 5). Fixed has to mean fixed:
-            // FlightBatch seeds 1-5, the gate's seeds, all fly with no failure, with one strength step of margin.
+            var sb = new System.Text.StringBuilder();
+            foreach (var f in flights)
+                sb.Append(" [seed ").Append(f.seed).Append(' ').Append(f.outcome).Append(' ')
+                  .Append(f.apoKm.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)).Append(" x ")
+                  .Append(f.periKm.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)).Append(" km ")
+                  .Append(DesignerRepair.MissKind(mission, f) ?? "pass").Append(']');
+            return sb.ToString();
+        }
+
+        [Test]
+        public void FixIt_WeakAirframe_RepairsUntilEveryGateSeedFlies_GustsIncluded()
+        {
+            // KH-14's starter with the walls cut to strength 1.0 breaks up at max-Q on every seed. Fixed has to mean
+            // fixed (#313): FlightBatch seeds 1-5, the gate's seeds, all pass the mission (no failure and no clean miss),
+            // with one strength step of margin. Real values: the stepper's 95% max-Q throttle lofts into a miss, so Fix it
+            // takes its next lever, strength on the rocket as it was: Strength 1 → 1.3, 416.2 x 383.8 km on seeds 1-5;
+            // 1.25 still passes (409.6 x 390.4 km), 1.20 misses on flight-path angle (516.6 x 283.4 km), 1.15 breaks up.
+            const int index = 14;
+            var mission = campaign.Mission(index);
             var json = Starter(index);
             JsonMut.Set(json, "safetyFactor", 1.0);
             var before = Gate(json);
@@ -91,23 +106,92 @@ namespace Kestrel.Core.Tests
             Assert.That(before.code, Is.EqualTo("structural-maxq"), before.Line);
             Assert.That(Fly(index, json).TrueForAll(f => f.failure == "structural-maxq"), "the weak rocket really breaks up");
 
-            var outcome = DesignerRepair.Fix(catalog, json, before.code, campaign.Mission(index));
+            var outcome = DesignerRepair.Fix(catalog, json, before.code, mission);
             Assert.That(outcome.Changed, outcome.Note);
             Assert.That(json.Num("safetyFactor"), Is.GreaterThan(1.0), outcome.Note);
-            foreach (var f in Fly(index, json)) Assert.IsNull(f.failure, "KH-" + index + " seed " + f.seed + " / " + outcome.Note);
+            var flights = Fly(index, json);
+            foreach (var f in flights)
+            {
+                Assert.IsNull(f.failure, "KH-" + index + " seed " + f.seed + " / " + outcome.Note);
+                Assert.That(f.passed, "KH-" + index + " seed " + f.seed + " passes the mission, not just flies clean / " + outcome.Note + " full=" + outcome.FullyFixed + " sf=" + json.Num("safetyFactor") + " q=" + json.Obj("guidance")?.Num("maxQThrottle") + Seeds(mission, flights));
+            }
             Assert.That(outcome.FullyFixed, outcome.Note);
             Assert.That(outcome.Note, Does.Not.Contain("could not"), outcome.Note);
             var after = Gate(json);
             Assert.That(after.Ready, after.Line);
-            // Arcade: one step of margin past the first strength that flies seeds 1-5. One step less still flies all 5
+            // Arcade: one step of margin past the first strength that passes seeds 1-5. One step less still passes all 5
             // (so the last step is margin); two steps less breaks up on a seed (so it is exactly one step).
             double step = DesignerLimits.Active.safetyStep;
             double sf = json.Num("safetyFactor");
             var less = JsonMut.CloneObject(json);
             HangarEditor.SetSafetyFactor(less, sf - step);
-            foreach (var f in Fly(index, less)) Assert.IsNull(f.failure, "KH-" + index + " one step under " + sf + ", seed " + f.seed);
+            foreach (var f in Fly(index, less)) Assert.That(f.passed, "KH-" + index + " one step under " + sf + ", seed " + f.seed);
             HangarEditor.SetSafetyFactor(less, sf - 2 * step);
-            Assert.That(Fly(index, less).Exists(f => f.failure != null), "KH-" + index + " two steps under " + sf + " is the knife-edge");
+            // #313: a clean miss is a failed seed (1.20: flight-path-angle miss 516.6 x 283.4 km).
+            Assert.That(Fly(index, less).Exists(f => !f.passed), "KH-" + index + " two steps under " + sf + " is the knife-edge");
+        }
+
+        [Test]
+        public void FixIt_WeakAirframe_ThatOnlyFliesIntoAMiss_IsNotFixed()
+        {
+            // KH-16's starter at strength 1.0 breaks up at max-Q on every seed. Before #313 Fix it flew it clean into a
+            // miss and called that fixed. A clean miss is unfixed: within StrengthSteps (1.0 → 1.4) the strength sweep only
+            // trades the breakup for misses (1.10-1.25: flight-path-angle miss, 635.9 x 364.1 km at 1.20; 1.30-1.45: the
+            // 500 km target is reached but reliability is under the 0.98 gate), so Fix it says it could not fix the rocket.
+            // The first strength that passes seeds 1-5 is 1.50 (500.6 x 499.4 km), two steps past the budget.
+            const int index = 16;
+            var mission = campaign.Mission(index);
+            var json = Starter(index);
+            JsonMut.Set(json, "safetyFactor", 1.0);
+            var before = Gate(json);
+            Assert.That(before.code, Is.EqualTo("structural-maxq"), before.Line);
+            Assert.That(Fly(index, json).TrueForAll(f => f.failure == "structural-maxq"), "the weak rocket really breaks up");
+
+            var outcome = DesignerRepair.Fix(catalog, json, before.code, mission);
+            var flights = Fly(index, json);
+            int failed = flights.FindAll(f => !f.passed).Count;
+            Assert.That(failed, Is.EqualTo(5), Seeds(mission, flights));
+            Assert.IsFalse(outcome.FullyFixed, outcome.Note);
+            Assert.That(outcome.Note, Is.EqualTo(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                DesignerRepair.NotFullyFixed, failed, DesignerRepair.GateSeeds)));
+
+            var start = Starter(index);
+            double step = DesignerLimits.Active.safetyStep;
+            HangarEditor.SetSafetyFactor(start, 1.0 + DesignerRepair.StrengthSteps * step);
+            var top = Fly(index, start);
+            Assert.That(top.TrueForAll(f => f.failure == null && f.reached && !f.passed), "the last strength in budget reaches the target but fails a gate /" + Seeds(mission, top));
+            Assert.That(top.TrueForAll(f => DesignerRepair.MissKind(mission, f) == DesignerRepair.GateMiss), Seeds(mission, top));
+            HangarEditor.SetSafetyFactor(start, 1.2);
+            var low = Fly(index, start);
+            Assert.That(low.TrueForAll(f => DesignerRepair.MissKind(mission, f) == DesignerRepair.FlightPathAngleMiss), Seeds(mission, low));
+            HangarEditor.SetSafetyFactor(start, 1.5);
+            Assert.That(Fly(index, start).TrueForAll(f => f.passed), "1.50 passes seeds 1-5");
+        }
+
+        [Test]
+        public void FixIt_WhenTheMaxQThrottleLoftsIntoAMiss_NeverClaimsFixed()
+        {
+            // #313: KH-14's starter at strength 1.0 with a 95% max-Q throttle no longer breaks up; it lofts (876.0 x
+            // -2079.2 km against 400 km) on every seed, and strength does not bring it down (794.8 x -2728.9 km at 1.4).
+            // Flying clean is not passing: Fix it reports it could not fix the rocket.
+            const int index = 14;
+            var mission = campaign.Mission(index);
+            var json = Starter(index);
+            JsonMut.Set(json, "safetyFactor", 1.0);
+            var guidance = json.Obj("guidance");
+            if (guidance == null) { guidance = new JsonObject(); JsonMut.Set(json, "guidance", guidance); }
+            JsonMut.Set(guidance, "maxQThrottle", 95.0);
+            var raw = Fly(index, json);
+            Assert.That(raw.TrueForAll(f => f.failure == null && DesignerRepair.MissKind(mission, f) == DesignerRepair.TargetMiss), Seeds(mission, raw));
+
+            var outcome = DesignerRepair.Fix(catalog, json, "structural-maxq", mission);
+            var flights = Fly(index, json);
+            int failed = flights.FindAll(f => !f.passed).Count;
+            Assert.That(failed, Is.EqualTo(5), Seeds(mission, flights));
+            Assert.That(flights.TrueForAll(f => f.failure == null), "it flies clean / " + Seeds(mission, flights));
+            Assert.IsFalse(outcome.FullyFixed, outcome.Note);
+            Assert.That(outcome.Note, Is.EqualTo(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                DesignerRepair.NotFullyFixed, failed, DesignerRepair.GateSeeds)));
         }
 
         [Test]
@@ -164,35 +248,56 @@ namespace Kestrel.Core.Tests
         [Test]
         public void FixIt_ThatCannotFixTheFlight_SaysSo_NeverClaimsSuccess()
         {
-            // KH-6's rocket with half the upper-stage load, asked to fix a structural kind. Strength cannot stop it
-            // running dry, so after its steps Fix it says it could not fully fix the rocket instead of a success note.
+            // KH-6's rocket with half the upper-stage load, asked to fix a structural kind. #313: it no longer runs dry; it
+            // cuts off at the target energy at a bad flight-path angle (412.4 x -12.4 km against 200 km; seed 2 loses an
+            // engine). Strength cannot fix that, so after its steps Fix it says it could not fully fix the rocket.
+            var mission = campaign.Mission(6);
             var json = Starter(6);
             TopStageProp(json, 0.5);
-            var outcome = DesignerRepair.Fix(catalog, json, "structural-maxq", campaign.Mission(6));
+            var raw = Fly(6, json);
+            Assert.That(raw.FindAll(f => DesignerRepair.MissKind(mission, f) == DesignerRepair.FlightPathAngleMiss).Count, Is.EqualTo(4), Seeds(mission, raw));
+            var outcome = DesignerRepair.Fix(catalog, json, "structural-maxq", mission);
             var flights = Fly(6, json);
-            int failed = flights.FindAll(f => f.failure != null).Count;
-            Assert.That(failed, Is.GreaterThan(0), "this rocket still fails a gate seed");
+            int failed = flights.FindAll(f => DesignerRepair.MissKind(mission, f) != null).Count;
+            Assert.That(failed, Is.EqualTo(5), "this rocket still fails every gate seed /" + Seeds(mission, flights));
+            foreach (var f in flights)
+                Assert.That(DesignerRepair.MissKind(mission, f), Is.EqualTo(DesignerRepair.FlightPathAngleMiss), "seed " + f.seed + Seeds(mission, flights));
             Assert.IsFalse(outcome.FullyFixed);
             Assert.That(outcome.Note, Is.EqualTo(string.Format(System.Globalization.CultureInfo.InvariantCulture,
                 DesignerRepair.NotFullyFixed, failed, DesignerRepair.GateSeeds)));
         }
 
         [Test]
-        public void ReportFixIt_RanOutOfFuel_AddsFuelUntilTheFlightReachesOrbit()
+        public void ReportFixIt_RanOutOfFuel_AddsFuelUntilItNoLongerRunsDry_ThenSaysTheMissRemains()
         {
-            // KH-6's rocket with half the upper-stage load. The Δv budget still says it has the speed
-            // (DvMarginFix alone changes nothing), but the flight runs dry.
+            // #313: KH-6's rocket at half the upper-stage load no longer runs dry (it misses on flight-path angle). It runs
+            // dry at 16% of the load, on every seed. The report's Fix it adds propellant until the test ascent is not short
+            // and no seed runs dry. Under the new rule the mission still has to pass: KH-6's starter then cuts off at the
+            // target energy at a bad flight-path angle (413.9 x -13.9 km against 200 km), so Fix it reports not fixed.
+            var mission = campaign.Mission(6);
             var json = Starter(6);
-            TopStageProp(json, 0.5);
-            Assert.That(Fly(6, json)[0].failure, Is.EqualTo("prop-depletion"));
-            Assert.IsFalse(DvMarginFix.Solve(catalog, json).Changed, "the budget alone sees nothing to add");
+            TopStageProp(json, 0.16);
+            var raw = Fly(6, json);
+            Assert.That(raw.TrueForAll(f => f.failure == "prop-depletion"), Seeds(mission, raw));
             Assert.That(DesignerRepair.FlightShort(catalog, json), "the designer's test ascent runs dry");
 
-            var outcome = DesignerRepair.Fix(catalog, json, DesignerRepair.ReportKind("prop-depletion", "prop-depletion"));
+            var plain = JsonMut.CloneObject(json);
+            var fuel = DesignerRepair.Fix(catalog, plain, DesignerRepair.ReportKind("prop-depletion", "prop-depletion"));
+            Assert.That(fuel.Changed, fuel.Note);
+            Assert.That(fuel.Note, Is.EqualTo(DesignerRepair.DeltaVAdded));
+            Assert.IsFalse(DesignerRepair.FlightShort(catalog, plain));
+            Assert.IsFalse(fuel.FullyFixed, "no mission, no full-fix claim");
+            var fueled = Fly(6, plain);
+            foreach (var f in fueled) Assert.That(f.failure, Is.Not.EqualTo("prop-depletion"), "seed " + f.seed);
+
+            var outcome = DesignerRepair.Fix(catalog, json, DesignerRepair.ReportKind("prop-depletion", "prop-depletion"), mission);
             Assert.That(outcome.Changed, outcome.Note);
-            Assert.That(outcome.Note, Is.EqualTo(DesignerRepair.DeltaVAdded));
-            Assert.IsFalse(DesignerRepair.FlightShort(catalog, json));
-            foreach (var f in Fly(6, json)) Assert.IsNull(f.failure, "seed " + f.seed);
+            var flights = Fly(6, json);
+            foreach (var f in flights)
+                Assert.That(DesignerRepair.MissKind(mission, f), Is.EqualTo(DesignerRepair.FlightPathAngleMiss), "seed " + f.seed + Seeds(mission, flights));
+            Assert.IsFalse(outcome.FullyFixed, outcome.Note);
+            Assert.That(outcome.Note, Is.EqualTo(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                DesignerRepair.NotFullyFixed, 5, DesignerRepair.GateSeeds)));
         }
 
         [Test]

@@ -83,6 +83,39 @@ namespace Kestrel.Core.Flight
         public static bool AltitudeWithin(double flownM, double targetM)
             => WithinFraction(flownM, targetM, AltitudeFraction);
 
+        /// <summary>
+        /// The one target acceptance rule (#313): the batch (<see cref="FlightBatch"/>), the live debrief
+        /// (<see cref="FlightDebrief.GoalMet(CampaignMission, bool, double, double, double, string, GoalCheck)"/>) and the
+        /// launch predictor all call this. Apogee: the flown peak in the ±5% band. Circular: apoapsis and periapsis in band.
+        /// Ellipse: both elements in band, or the parking periapsis in band with the departure burn covered. C3: energy
+        /// within 5%, or the parking periapsis in band with the departure burn covered.
+        /// </summary>
+        public static bool TargetMet(string kind, double apoTargetKm, double periTargetKm, double c3Target,
+            double apoM, double periM, double c3, bool departureCovered, out string criterion)
+        {
+            criterion = null;
+            bool apo = AltitudeWithin(apoM, apoTargetKm * 1000);
+            bool peri = AltitudeWithin(periM, periTargetKm * 1000);
+            switch (kind)
+            {
+                case "apogee": criterion = "altitude"; return apo;
+                case "circular": criterion = "altitude"; return apo && peri;
+                case "ellipse":
+                    if (apo && peri) { criterion = "elements"; return true; }
+                    if (peri && departureCovered) { criterion = "departure"; return true; }
+                    return false;
+                case "c3":
+                    if (WithinFraction(c3, c3Target, AltitudeFraction)) { criterion = "c3"; return true; }
+                    if (peri && departureCovered) { criterion = "departure"; return true; }
+                    return false;
+            }
+            return false;
+        }
+
+        /// <summary>The target kind of a free-build catalog orbit: a hop, a circle, or an ellipse.</summary>
+        public static string FreeOrbitKind(double apoKm, double periKm)
+            => periKm < 0 ? "apogee" : Math.Abs(apoKm - periKm) < 1e-9 ? "circular" : "ellipse";
+
         public static bool InclinationWithin(double flownDeg, double targetDeg)
             => WithinFraction(flownDeg, targetDeg, InclinationDeg / Math.Max(Math.Abs(targetDeg), 1e-9))
                || Math.Abs(flownDeg - targetDeg) <= InclinationDeg;

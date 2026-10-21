@@ -17,6 +17,8 @@ namespace Kestrel.Core.Flight
         public string missionId, designId, outcome, failure, landingGrade, boosterGrade, criterion;
         public ulong seed;
         public bool passed, gentle, fairingFits, payloadMatch, underBudget, redRisk;
+        /// <summary>#313: the target acceptance (MissionScore.TargetMet) alone, before the mission gates.</summary>
+        public bool reached;
         public int stars;
         public double score, margin, costKc, budgetKc, apoKm, periKm, incDeg, maxG, idealDv, requiredDv, c3Km2PerS2, reliability, boilOffKg, qPeakKPa, burnoutMps, burnoutAltKm;
         /// <summary>#313 Physics A: departure Δv left in the parking orbit, the burn it needs (with finite-burn loss), and the departing stage's T/W. NaN unless the mission departs from parking.</summary>
@@ -163,7 +165,7 @@ namespace Kestrel.Core.Flight
                     flight.boosterGrade = GradeLanding(catalog, design, sim, mission.LandingMode, true);
 
                 bool intact = sim.failure == null && sim.outcome != "failure" && sim.outcome != "crash";
-                TargetReached(mission, flight, out var criterion);
+                flight.reached = TargetReached(mission, flight, out var criterion);
                 flight.criterion = criterion;
                 flight.passed = FlightDebrief.GoalMet(mission, intact, flight.apoKm * 1000.0, flight.periKm * 1000.0, flight.maxG, flight.landingGrade, FlightDebrief.FromFlight(flight));
 
@@ -197,40 +199,10 @@ namespace Kestrel.Core.Flight
 
         static bool TargetReached(CampaignMission mission, CampaignFlight flight, out string criterion)
         {
-            criterion = null;
-            double apoM = flight.apoKm * 1000;
-            double periM = flight.periKm * 1000;
-            bool apo = MissionScore.AltitudeWithin(apoM, mission.ApoKm * 1000);
-            bool peri = MissionScore.AltitudeWithin(periM, mission.PeriKm * 1000);
             // #313 Physics A: the honest departure check, the Δv actually left in the parking orbit against the burn.
             bool dv = !double.IsNaN(flight.departDv) && !double.IsNaN(flight.departReqDv) && flight.departDv + 1e-6 >= flight.departReqDv;
-            if (mission.TargetKind == "apogee")
-            {
-                criterion = "altitude";
-                return apo;
-            }
-            if (mission.TargetKind == "circular")
-            {
-                criterion = "altitude";
-                return apo && peri;
-            }
-            if (mission.TargetKind == "ellipse")
-            {
-                if (apo && peri) { criterion = "elements"; return true; }
-                if (peri && dv) { criterion = "departure"; return true; }
-                return false;
-            }
-            if (mission.TargetKind == "c3")
-            {
-                if (MissionScore.WithinFraction(flight.c3Km2PerS2, mission.C3Km2PerS2, MissionScore.AltitudeFraction))
-                {
-                    criterion = "c3";
-                    return true;
-                }
-                if (peri && dv) { criterion = "departure"; return true; }
-                return false;
-            }
-            return false;
+            return MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2,
+                flight.apoKm * 1000, flight.periKm * 1000, flight.c3Km2PerS2, dv, out criterion);
         }
 
         static double GLimit(Catalog catalog, Design design, CampaignMission mission)

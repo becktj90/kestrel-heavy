@@ -342,7 +342,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -354,7 +354,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -373,23 +373,29 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
     "stageMasses": [
      {
       "name": "Stage 1",
-      "dry": 2487.6638410409128,
+      "dry": 2994.527276463784,
       "prop": 35000,
-      "wet": 37487.663841040914,
+      "wet": 37994.527276463785,
       "usableProp": 35000,
       "landingProp": 0
      },
      {
       "name": "Stage 2",
-      "dry": 523.8852298927279,
+      "dry": 610.7761045366486,
       "prop": 6000,
-      "wet": 6523.885229892728,
+      "wet": 6610.776104536649,
       "usableProp": 6000,
       "landingProp": 0
      }
@@ -408,17 +414,17 @@
      "stages": [
       {
        "name": "Stage 1",
-       "dry": 2487.6638410409128,
+       "dry": 2994.527276463784,
        "prop": 35000,
-       "wet": 37487.663841040914,
+       "wet": 37994.527276463785,
        "usableProp": 35000,
        "landingProp": 0
       },
       {
        "name": "Stage 2",
-       "dry": 523.8852298927279,
+       "dry": 610.7761045366486,
        "prop": 6000,
-       "wet": 6523.885229892728,
+       "wet": 6610.776104536649,
        "usableProp": 6000,
        "landingProp": 0
       }
@@ -435,20 +441,20 @@
      },
      "payload": 150,
      "fairing": 168.2322865997334,
-     "liftoffMass": 44329.78135753337,
-     "dryMass": 3011.549070933641,
+     "liftoffMass": 44923.53566760017,
+     "dryMass": 3605.3033810004326,
      "ratios": [
       {
-       "m0": 44329.78135753337,
-       "mf": 9329.781357533371,
-       "massRatio": 4.7514276764630825,
-       "propFraction": 0.7895369417167704
+       "m0": 44923.53566760017,
+       "mf": 9923.535667600168,
+       "massRatio": 4.526968730940646,
+       "propFraction": 0.7791016330275794
       },
       {
-       "m0": 6842.117516492461,
-       "mf": 842.1175164924607,
-       "massRatio": 8.124896326810601,
-       "propFraction": 0.8769215064689266
+       "m0": 6929.008391136382,
+       "mf": 929.0083911363818,
+       "massRatio": 7.458499252800806,
+       "propFraction": 0.8659247703719376
       }
      ]
     },
@@ -462,7 +468,7 @@
       "ispSL": 300,
       "ispVac": 330,
       "propMass": 35000,
-      "dryMass": 2487.6638410409128,
+      "dryMass": 2994.527276463784,
       "diameter": 1.8,
       "Cd": 0.33999999999999997,
       "role": "core",
@@ -480,7 +486,7 @@
       "ispSL": 300,
       "ispVac": 330,
       "propMass": 6000,
-      "dryMass": 523.8852298927279,
+      "dryMass": 610.7761045366486,
       "diameter": 1.8,
       "Cd": 0.33999999999999997,
       "role": "core",
@@ -497,10 +503,10 @@
      }
     ],
     "idealDeltaV": {
-     "total": 11823.042128881467,
+     "total": 11389.484873192032,
      "perStage": [
-      5043.4315788151,
-      6779.610550066367
+      4886.82379324541,
+      6502.661079946621
      ]
     },
     "tanks": [
@@ -525,7 +531,7 @@
        "ispVac": 330,
        "ispSL": 300,
        "propMass": 35000,
-       "dryMass": 2487.6638410409128,
+       "dryMass": 2994.527276463784,
        "role": "core",
        "index": 0,
        "label": "Stage 1"
@@ -538,7 +544,7 @@
        "ispVac": 330,
        "ispSL": 300,
        "propMass": 6000,
-       "dryMass": 523.8852298927279,
+       "dryMass": 610.7761045366486,
        "role": "core",
        "index": 1,
        "label": "Stage 2"
@@ -560,10 +566,10 @@
     },
     "stackDeltaV": {
      "perStage": [
-      5043.4315788151,
-      6779.610550066367
+      4886.82379324541,
+      6502.661079946621
      ],
-     "total": 11823.042128881467
+     "total": 11389.484873192032
     }
    }
   },
@@ -614,7 +620,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -639,6 +648,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {

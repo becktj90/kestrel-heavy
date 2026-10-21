@@ -171,20 +171,9 @@ namespace Kestrel.Core.Flight
         public static bool GoalMet(CampaignMission row, bool intact, double apoMeters, double periMeters, double maxG, string landingGrade, GoalCheck extra)
         {
             if (!intact || row == null) return false;
-            bool apo = MissionScore.AltitudeWithin(apoMeters, row.ApoKm * 1000);
-            bool peri = MissionScore.AltitudeWithin(periMeters, row.PeriKm * 1000);
             bool dv = DepartureMet(row, extra);
-            bool hit = false;
-            if (row.TargetKind == "apogee") hit = apo;
-            else if (row.TargetKind == "circular") hit = apo && peri;
-            else if (row.TargetKind == "ellipse") hit = (apo && peri) || (peri && dv);
-            else if (row.TargetKind == "c3")
-            {
-                bool energy = extra != null && !double.IsNaN(extra.C3Km2PerS2)
-                    && MissionScore.WithinFraction(extra.C3Km2PerS2, row.C3Km2PerS2, MissionScore.AltitudeFraction);
-                hit = energy || (peri && dv);
-            }
-            if (!hit) return false;
+            double c3 = extra != null ? extra.C3Km2PerS2 : double.NaN;
+            if (!MissionScore.TargetMet(row.TargetKind, row.ApoKm, row.PeriKm, row.C3Km2PerS2, apoMeters, periMeters, c3, dv, out _)) return false;
             if (!double.IsNaN(row.MaxG) && maxG > row.MaxG) return false;
             if (row.LandingRequired && !MissionScore.IsGood(landingGrade)) return false;
             string boosters = extra != null && extra.BoosterKnown ? extra.BoosterGrade : landingGrade;

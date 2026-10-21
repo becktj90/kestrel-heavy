@@ -3,17 +3,17 @@ after=scout
 seed=1
 added:
 removed:
-asc.karman | − Karman | t=111 | The Karman line is absent because the sim, including a ballistic coast after burnout, never reaches 100 km geometric altitude.
-stg.fairing | − Fairing | t=111 | Fairing separation is absent because the sim state never reaches 100 km, the jettison altitude.
-orb.insert | − Orbit | t=318.852 | Orbit insertion is absent because the sim outcome is suborbital, not orbit.
+asc.karman | − Karman | t=135 | The Karman line is absent because the sim, including a ballistic coast after burnout, never reaches 100 km geometric altitude.
+stg.fairing | − Fairing | t=135 | Fairing separation is absent because the sim state never reaches 100 km, the jettison altitude.
+orb.insert | − Orbit | t=361.909 | Orbit insertion is absent because the sim outcome is suborbital, not orbit.
 shifted:
-asc.maxq | Max-Q | before=43 | after=4.394 | delta=-38.606 | Max-Q shifts -38.606 s. Max-Q is the sim peak dynamic pressure (504093 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:04.394.
-asc.throttle | Throttle | before=43 | after=4.394 | delta=-38.606 | Throttle shifts -38.606 s. Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q.
-asc.meco | MECO | before=124.852 | after=4.394 | delta=-120.458 | MECO shifts -120.458 s. Main engine cutoff at sim T+0:04.394. A medium kerolox public anchor is about T+2:25; this time is the sim burnout.
-stg.sep.1 | SEP s1 | before=124.852 | after=4.394 | delta=-120.458 | SEP s1 shifts -120.458 s. Stage 1 separates at sim T+0:04.394, the same instant the sim records separation. The timeline orders it with the cutoff.
-stg.ses.s2.1 | SES-1 s2 | before=124.852 | after=4.394 | delta=-120.458 | SES-1 s2 shifts -120.458 s. SES-1 because Small gas-generator methalox (gg-methalox-small) is restartable (3 restarts) and this is its first start, at sim T+0:04.394. A public anchor for a medium kerolox upper start is about T+2:36; this time is the sim ignition.
-stg.seco.s2.1 | SECO-1 s2 | before=318.852 | after=10.866 | delta=-307.986 | SECO-1 s2 shifts -307.986 s. SECO-1 because gg-methalox-small is restartable and the ascent burn ends at sim T+0:10.866.
-dep.payload | Deploy | before=348.852 | after=19.317 | delta=-329.535 | Deploy shifts -329.535 s. Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+0:19.317). The ascent sim stops at burnout and does not fly the coast.
-disp.deorbit | Deorbit | before=408.852 | after=79.317 | delta=-329.535 | Deorbit shifts -329.535 s. Deorbit because gg-methalox-small still has a restart after the mission burns (1 used, 3 restarts on the engine). The ascent sim does not fly this burn.
+asc.maxq | Max-Q | before=44 | after=7.989 | delta=-36.011 | Max-Q shifts -36.011 s. Max-Q is the sim peak dynamic pressure (319472 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:07.989.
+asc.throttle | Throttle | before=44 | after=7.989 | delta=-36.011 | Throttle shifts -36.011 s. Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q.
+asc.meco | MECO | before=153.322 | after=7.989 | delta=-145.333 | MECO shifts -145.333 s. Main engine cutoff at sim T+0:07.989. A medium kerolox public anchor is about T+2:25; this time is the sim burnout.
+stg.sep.1 | SEP s1 | before=153.322 | after=7.989 | delta=-145.333 | SEP s1 shifts -145.333 s. Stage 1 separates at sim T+0:07.989, the same instant the sim records separation. The timeline orders it with the cutoff.
+stg.ses.s2.1 | SES-1 s2 | before=153.322 | after=7.989 | delta=-145.333 | SES-1 s2 shifts -145.333 s. SES-1 because Small gas-generator methalox (gg-methalox-small) is restartable (3 restarts) and this is its first start, at sim T+0:07.989. A public anchor for a medium kerolox upper start is about T+2:36; this time is the sim ignition.
+stg.seco.s2.1 | SECO-1 s2 | before=360.909 | after=18.777 | delta=-342.132 | SECO-1 s2 shifts -342.132 s. SECO-1 because gg-methalox-small is restartable and the ascent burn ends at sim T+0:18.777.
+dep.payload | Deploy | before=391.909 | after=24.881 | delta=-367.028 | Deploy shifts -367.028 s. Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+0:24.881). The ascent sim stops at burnout and does not fly the coast.
+disp.deorbit | Deorbit | before=451.909 | after=84.881 | delta=-367.028 | Deorbit shifts -367.028 s. Deorbit because gg-methalox-small still has a restart after the mission burns (1 used, 3 restarts on the engine). The ascent sim does not fly this burn.
 problems:
 failed-prediction | scout | The edit loses the target. The sim does not reach the target. Perigee -6369.7 km, apogee 0.1 km, target 400.0 km. Short by 6149 m/s Δv.

@@ -261,7 +261,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -273,7 +273,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -292,13 +292,19 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
-    "recurring": 906949027,
+    "recurring": 796263665,
     "dev": 717174506,
-    "total": 1624123533,
-    "perKg": 6046327,
+    "total": 1513438171,
+    "perKg": 5308424,
     "lines": [
      {
       "cat": "engines",
@@ -309,7 +315,7 @@
      {
       "cat": "structure",
       "label": "Stage 1: tanks & structure",
-      "amount": 143727461,
+      "amount": 51546182,
       "group": "stage0"
      },
      {
@@ -327,7 +333,7 @@
      {
       "cat": "structure",
       "label": "Stage 2: tanks & structure",
-      "amount": 29070194,
+      "amount": 10566111,
       "group": "stage1"
      },
      {
@@ -393,7 +399,7 @@
     ],
     "byCategory": {
      "engines": 137458078,
-     "structure": 198447499,
+     "structure": 87762137,
      "propellant": 1043450,
      "avionics": 250000000,
      "recovery": 0,
@@ -449,7 +455,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -474,6 +483,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -2455,7 +2471,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2467,7 +2483,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2486,6 +2502,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "companyState": {
@@ -2498,10 +2520,10 @@
     ]
    },
    "out": {
-    "recurring": 906949027,
+    "recurring": 796263665,
     "dev": 567174506,
-    "total": 1474123533,
-    "perKg": 6046327,
+    "total": 1363438171,
+    "perKg": 5308424,
     "lines": [
      {
       "cat": "engines",
@@ -2512,7 +2534,7 @@
      {
       "cat": "structure",
       "label": "Stage 1: tanks & structure",
-      "amount": 143727461,
+      "amount": 51546182,
       "group": "stage0"
      },
      {
@@ -2530,7 +2552,7 @@
      {
       "cat": "structure",
       "label": "Stage 2: tanks & structure",
-      "amount": 29070194,
+      "amount": 10566111,
       "group": "stage1"
      },
      {
@@ -2591,7 +2613,7 @@
     ],
     "byCategory": {
      "engines": 137458078,
-     "structure": 198447499,
+     "structure": 87762137,
      "propellant": 1043450,
      "avionics": 250000000,
      "recovery": 0,
@@ -2647,7 +2669,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -2672,6 +2697,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "companyState": {
@@ -4559,7 +4591,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4571,7 +4603,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4590,6 +4622,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -4658,7 +4696,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -4683,6 +4724,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {

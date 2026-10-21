@@ -71,16 +71,43 @@ namespace Kestrel.Core.Tests
         [Test]
         public void GV7_NoV3Fields_DoNotEngage_AndMonitorStaysNull()
         {
+            // #313 (Physics-approved): presets may carry pitch and throttle settings (guidance, stage engineParams).
+            // A bench design with those fields engages the monitor and flies its guidance; a design without any V3
+            // field still does not engage, and its monitor and guidance stay null.
             var cat = Golden.Catalog;
+            var guided = new List<string>();
+            int plain = 0;
             foreach (var design in ReadoutBench.LoadDesigns(Golden.Root))
             {
                 var d = Design.FromJson(design);
                 string name = design.Str("id") ?? design.Str("name");
-                Assert.IsFalse(FailureMonitor.Engages(d), name);
                 var input = Stack.SimInputs(cat, d);
+                if (HasPitchSettings(design))
+                {
+                    guided.Add(name);
+                    Assert.IsTrue(FailureMonitor.Engages(d), name);
+                    Assert.IsNotNull(input.opts.monitor, name);
+                    Assert.IsNotNull(input.opts.guidance, name);
+                    Assert.AreEqual(design.Obj("guidance").Num("pitchKickDeg"), d.guidance.pitchKickDeg, 0, name + " flies its own pitch kick");
+                    continue;
+                }
+                plain++;
+                Assert.IsFalse(FailureMonitor.Engages(d), name);
                 Assert.IsNull(input.opts.monitor, name);
                 Assert.IsNull(input.opts.guidance, name);
             }
+            CollectionAssert.AreEquivalent(new[] { "scout", "kid" }, guided, "only the retuned presets carry pitch settings");
+            Assert.Greater(plain, 0, "designs with no V3 field are still on the bench");
+        }
+
+        static readonly HashSet<string> PitchKeys = new HashSet<string> { "pitchKickAlt", "pitchKickDeg", "turnShape", "maxQThrottle", "gLimit" };
+
+        static bool HasPitchSettings(JsonObject design)
+        {
+            var g = design.Obj("guidance");
+            if (g == null) return false;
+            foreach (var key in g.Keys) Assert.IsTrue(PitchKeys.Contains(key), design.Str("id") + " guidance." + key + " is not a pitch or throttle setting");
+            return true;
         }
 
         [Test]

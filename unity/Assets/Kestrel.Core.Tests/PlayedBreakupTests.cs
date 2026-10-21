@@ -80,7 +80,7 @@ namespace Kestrel.Core.Tests
         public void AVersion3BreakupStopsThePlayedFlight()
         {
             var cat = Golden.Catalog;
-            var d = cat.Preset("scout").Clone();
+            var d = Design.FromJson(Golden.FixtureDesign("weak-scout"));
             d.version = 3;
             d.tier = "kid";
             d.safetyFactor = 1.1;

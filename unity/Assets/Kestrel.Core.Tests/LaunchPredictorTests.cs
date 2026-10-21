@@ -26,9 +26,9 @@ namespace Kestrel.Core.Tests
                 // #314: the prediction is the played flight (PlayedChecks), not the uncut sim.
                 var sim = PlayedChecks.Fly(cat, d, input.stages, input.opts);
                 var req = Stack.RequiredDeltaV(cat, d.payloadOrbit);
-                bool sub = req.orbit != null && req.orbit.periKm < 0;
                 double apo = MissionScore.FlownApoAltM(sim);
-                bool success = sub ? apo >= 0.95 * req.targetAlt : sim.orbit.periAlt >= req.targetAlt;
+                // #313: the batch's acceptance rule (MissionScore.TargetMet) on the bare sim's flown orbit.
+                bool success = LaunchPredictor.Accepts(cat, d, req, sim, apo);
 
                 Assert.AreEqual(sim.outcome, p.Outcome, id);
                 Assert.AreEqual(Join(sim), p.Timeline, id);

@@ -336,9 +336,9 @@ namespace Kestrel.Core.Tests
             Assert.IsNull(liquid.warnings.Find(w => w.code == "overstable"), "the 1-2 cal band and overstable do not apply to a finless steered rocket");
 
             ReferenceAscent.Reset();
-            foreach (var id in new[] { "stock", "kid" })
+            foreach (var id in new[] { "stock", "fixture-maxq-high-kid" })
             {
-                var design = Preset(id);
+                var design = id == "stock" ? Preset(id) : JsonMut.CloneObject(Golden.FixtureDesign("maxq-high-kid"));
                 var report = Readout.Reference(cat, design);
                 Assert.Greater(report.maxQ_kPa.Value, Validate.MaxQWarnKPa, id);
                 var eng = Validate.Engineering(cat, design);
@@ -352,8 +352,8 @@ namespace Kestrel.Core.Tests
             if (System.Math.Abs(Headless.Simulate(stockIn.stages, stockIn.opts).maxQ / 1000 - 73.01) > 0.05)
                 Assert.Fail("stock max-Q left the documented 73 kPa");
             Assert.AreEqual(70.71, Readout.Reference(cat, Preset("stock")).maxQ_kPa.Value, 0.05, "stock readout under the predicted fuel imbalance");
-            if (System.Math.Abs(Readout.Reference(cat, Preset("kid")).maxQ_kPa.Value - 90.07) > 0.05)
-                Assert.Fail("kid max-Q left the documented 90 kPa");
+            if (System.Math.Abs(Readout.Reference(cat, Golden.FixtureDesign("maxq-high-kid")).maxQ_kPa.Value - 90.07) > 0.05)
+                Assert.Fail("the maxq-high kid fixture left the documented 90 kPa");
 
             // #314: the shipped sounding template is two small hybrids on a long, low-thrust burn. It peaks at
             // 36.2 kPa, under the warning line, so there is nothing to warn about.
