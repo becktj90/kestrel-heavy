@@ -200,6 +200,14 @@ namespace Kestrel.Core.Designer
                     var up = (JsonObject)stages[stages.Count - 1];
                     if (stages.Count > 1 && r.stages[r.stages.Count - 1].twrVac > 0.7 && iter % 2 == 0) { JsonMut.Set(up, "propMass", up.Num("propMass") * 1.15); Say("Added upper-stage propellant"); continue; }
                     if (r.liftoffTWR > 1.45) { JsonMut.Set(s0, "propMass", s0.Num("propMass") * 1.1); Say("Added first-stage propellant"); continue; }
+                    // A low-thrust first stage (small hybrids) runs out of liftoff thrust before it has the propellant: one more
+                    // engine lets the next step add propellant again, instead of shrinking the cargo to nothing.
+                    if (stages.Count == 1)
+                    {
+                        var ep0 = EnginePoint.Of(c.EngineById[s0.Str("engine")], s0.Str("nozzle"));
+                        double fit0 = Math.Floor(Lim.pack * s0.Num("diameter") * s0.Num("diameter") / (ep0.diameter * ep0.diameter));
+                        if (s0.Num("engineCount") < Math.Min(Lim.engineCountMax, fit0)) { JsonMut.Set(s0, "engineCount", s0.Num("engineCount") + 1); Say("Added first-stage engines so it can carry more propellant"); continue; }
+                    }
                     var payload = d.Obj("payload");
                     if (payload.Num("mass") > Lim.payloadMassMin) { JsonMut.Set(payload, "mass", Math.Max(Lim.payloadMassMin, JsMath.Round(payload.Num("mass") * 0.85))); Say("Lightened the payload"); continue; }
                 }
@@ -222,6 +230,13 @@ namespace Kestrel.Core.Designer
             if (!(s.Num("engineCount") >= 1)) { JsonMut.Set(s, "engineCount", 1d); say($"Gave {NameOrStage(s)} an engine"); }
             JsonMut.Set(s, "engineCount", Math.Min(Lim.engineCountMax, JsMath.Round(s.Num("engineCount"))));
             if (!(s.Num("propMass") > 0)) { JsonMut.Set(s, "propMass", upper ? 10000d : 50000d); say($"Loaded propellant into {NameOrStage(s)}"); }
+            // A reserve as big as the whole load leaves no usable propellant, and adding propellant cannot catch up on a
+            // low-thrust stage. Trim it to the most the designer allows.
+            if (s.Num("landingPropMass") > 0 && s.Num("landingPropMass") >= s.Num("propMass"))
+            {
+                JsonMut.Set(s, "landingPropMass", (double)JsMath.Round(s.Num("propMass") * Lim.landingReserveMax));
+                say($"Trimmed the {NameOrStage(s)} landing reserve to fit its propellant");
+            }
             var en = EnginePoint.Of(c.EngineById[s.Str("engine")], s.Str("nozzle"));
             double need = Math.Sqrt(s.Num("engineCount") * en.diameter * en.diameter / Lim.pack) + 0.05;
             if (s.Num("diameter") < need) { JsonMut.Set(s, "diameter", Math.Min(Lim.diameterMax, Math.Ceiling(need * 10) / 10)); say($"Widened {NameOrStage(s)} so the engines fit"); }

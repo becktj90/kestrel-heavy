@@ -3,15 +3,17 @@ after=tpl-hydrogen-upper
 seed=1
 added:
 removed:
-stg.fairing | − Fairing | t=125 | Fairing separation is absent because the vehicle has no fairing.
+stg.fairing | − Fairing | t=203.593 | Fairing separation is absent because the vehicle has no fairing.
 shifted:
-asc.karman | Karman | before=121 | after=120 | delta=-1 | Karman shifts -1 s. The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:00, on an integrator step.
-orb.insert | Orbit | before=717.128 | after=688.128 | delta=-29 | Orbit shifts -29 s. Orbit insertion from the sim outcome at the end of the ascent burn. A later transfer burn, when the mission has one, is planned after this and is not what the ascent sim flew.
-stg.seco.s2.1 | SECO-1 s2 | before=717.128 | after=688.128 | delta=-29 | SECO-1 s2 shifts -29 s. SECO-1 because exp-hydrolox is restartable and the ascent burn ends at sim T+11:28.128.
-stg.ses.s2.2 | SES-2 s2 | before=1917.128 | after=1888.128 | delta=-29 | SES-2 s2 shifts -29 s. SES-2 because exp-hydrolox is restartable (15 restarts) and GTO needs a transfer burn after SECO-1. The ascent sim flies one continuous upper burn, so this restart is planned, not a second sim ignition.
-stg.seco.s2.2 | SECO-2 s2 | before=2217.128 | after=2188.128 | delta=-29 | SECO-2 s2 shifts -29 s. SECO-2 closes the planned transfer burn. It is not taken from the ascent sim, which has already ended the first upper burn.
-dep.payload | Deploy | before=2247.128 | after=2218.128 | delta=-29 | Deploy shifts -29 s. Payload deploys after the transfer burn (SECO-2), 30 s later. The ascent sim does not fly that second burn.
-disp.deorbit | Deorbit | before=2307.128 | after=2278.128 | delta=-29 | Deorbit shifts -29 s. Deorbit because exp-hydrolox still has a restart after the mission burns (2 used, 15 restarts on the engine). The ascent sim does not fly this burn.
+asc.maxq | Max-Q | before=69 | after=68 | delta=-1 | Max-Q shifts -1 s. Max-Q is the sim peak dynamic pressure (35466 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+1:08.
+asc.throttle | Throttle | before=69 | after=68 | delta=-1 | Throttle shifts -1 s. Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q.
+asc.karman | Karman | before=193.593 | after=181 | delta=-12.593 | Karman shifts -12.593 s. The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+3:01, on an integrator step.
+orb.insert | Orbit | before=573.593 | after=574.593 | delta=+1 | Orbit shifts +1 s. Orbit insertion from the sim outcome at the end of the ascent burn. A later transfer burn, when the mission has one, is planned after this and is not what the ascent sim flew.
+stg.seco.s2.1 | SECO-1 s2 | before=573.593 | after=574.593 | delta=+1 | SECO-1 s2 shifts +1 s. SECO-1 because exp-hydrolox is restartable and the ascent burn ends at sim T+9:34.593.
+stg.ses.s2.2 | SES-2 s2 | before=1773.593 | after=1774.593 | delta=+1 | SES-2 s2 shifts +1 s. SES-2 because exp-hydrolox is restartable (15 restarts) and GTO needs a transfer burn after SECO-1. The ascent sim flies one continuous upper burn, so this restart is planned, not a second sim ignition.
+stg.seco.s2.2 | SECO-2 s2 | before=2073.593 | after=2074.593 | delta=+1 | SECO-2 s2 shifts +1 s. SECO-2 closes the planned transfer burn. It is not taken from the ascent sim, which has already ended the first upper burn.
+dep.payload | Deploy | before=2103.593 | after=2104.593 | delta=+1 | Deploy shifts +1 s. Payload deploys after the transfer burn (SECO-2), 30 s later. The ascent sim does not fly that second burn.
+disp.deorbit | Deorbit | before=2163.593 | after=2164.593 | delta=+1 | Deorbit shifts +1 s. Deorbit because exp-hydrolox still has a restart after the mission burns (2 used, 15 restarts on the engine). The ascent sim does not fly this burn.
 problems:
 missing-hardware | fairing | The edit drops fairing, referenced by stg.fairing. Fairing separation is absent because the vehicle has no fairing.
-failed-prediction | tpl-hydrogen-upper | The sim does not reach the target. Perigee -5963.8 km, apogee 1435.2 km, target 200.0 km. Ideal Δv still shows 2393 m/s of margin; the flight does not.
+failed-prediction | tpl-hydrogen-upper | The sim does not reach the target. Perigee 193.5 km, apogee 209.3 km, target 200.0 km. Ideal Δv still shows 2434 m/s of margin; the flight does not. The ascent sim still raises an orbit flag; the target is the perigee.

@@ -11,7 +11,7 @@ namespace Kestrel.Core.Tests
 {
     public class LaunchPredictorTests
     {
-        static readonly string[] Ids = { "tpl-sounding-solid", "scout", "kid", "super-heavy" };
+        static readonly string[] Ids = { "tpl-sounding-hybrid", "scout", "kid", "super-heavy" };
 
         [Test]
         public void Prediction_IsTheSim_AndTheTimeline()

@@ -444,7 +444,7 @@ namespace Kestrel.Core.Tests
 
         static JsonObject FinlessSounding(string engine)
         {
-            var design = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "web", "js", "data", "templates", "sounding-solid.json")));
+            var design = Golden.FixtureJson(Golden.SolidSoundingFixture);
             JsonMut.Set(design.Obj("aero"), "fins", false);
             JsonMut.Set((JsonObject)design.Arr("stages")[0], "engine", engine);
             return design;
