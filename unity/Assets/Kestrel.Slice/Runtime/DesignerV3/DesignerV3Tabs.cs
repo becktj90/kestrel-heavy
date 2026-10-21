@@ -87,7 +87,7 @@ namespace Kestrel.Slice.DesignerV3
             if (string.IsNullOrEmpty(riskTab)) return DesignerV3Tab.Structure;
             switch (riskTab.ToLowerInvariant())
             {
-                case "propellant": case "fuel": return DesignerV3Tab.Propellant;
+                case "propellant": case "propellants": case "fuel": return DesignerV3Tab.Propellant;
                 case "engines": case "engine": return DesignerV3Tab.Engines;
                 case "tanks": case "tank": return DesignerV3Tab.Tanks;
                 case "stages": case "stage": return DesignerV3Tab.Stages;
