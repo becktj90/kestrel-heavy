@@ -430,7 +430,6 @@ namespace Kestrel.Core.Flight
         int engineStage = -1;
         double fuelScale = 1;
         int fuelStage = -1;
-        double windUntil = -1;
         bool maxQDown, lost, payloadDamaged, playerFlew;
         double peakAlt, peakSpeed, peakG, fairingFlux;
         string lossKind, lossKid, lossEngineer;
@@ -614,8 +613,9 @@ namespace Kestrel.Core.Flight
         {
             if (vehicle.HasAnomaly && !vehicle.Gentle)
                 calls.Add(new Call { Kind = AscentCall.EngineOut, Stage = vehicle.AnomalyStage < 0 ? 0 : vehicle.AnomalyStage });
-            if (!vehicle.CalmWind)
-                calls.Add(new Call { Kind = AscentCall.WindShear });
+            // #338 (Physics, variant B): no wind-shear call. Its 12 s ease (85% throttle, -0.5° pitch) switched on only in
+            // wind and moved the high point about 9%, flipping neighbouring designs in and out of the band. The wind still
+            // flies through drag, q and alpha (and the structural q·alpha check, FailureMonitor).
             calls.Add(new Call { Kind = AscentCall.MaxQ });
             if (vehicle.FuelEvent)
                 calls.Add(new Call { Kind = AscentCall.FuelBalance });
@@ -727,8 +727,7 @@ namespace Kestrel.Core.Flight
                     ApplyEngine(accept, s);
                     break;
                 case AscentCall.WindShear:
-                    if (accept) windUntil = s.T + 12;
-                    break;
+                    break; // #338: never built (BuildCalls), and no ease when taken.
                 case AscentCall.FuelBalance:
                     // #313 (Kestrel Physics): the penalty throttles only the stage with the imbalance, and ends when
                     // that stage separates or shuts down.
@@ -778,14 +777,11 @@ namespace Kestrel.Core.Flight
             double engage = maxQDown && !vehicle.MaxQSet
                 ? AscentDecisions.OfferedThrottle(false, vehicle.MaxQRaw, vehicle.ThrottleMin) : 0;
             double scale = 1;
-            bool easing = windUntil >= 0 && s.T <= windUntil;
-            if (easing) scale = Math.Min(scale, Math.Max(vehicle.ThrottleMin, 0.85));
             if (engineStage >= 0 && s.Thrusting && s.StageIndex == engineStage) scale *= engineScale;
             if (fuelStage >= 0 && s.Thrusting && s.StageIndex == fuelStage) scale *= fuelScale;
             if (scale < vehicle.ThrottleMin) scale = vehicle.ThrottleMin;
             if (scale > 1) scale = 1;
             double deg = NudgeDeg;
-            if (easing) deg -= 0.5;
             if (deg > 4) deg = 4;
             else if (deg < -4) deg = -4;
             Command = new AscentCommand

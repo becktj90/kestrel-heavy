@@ -10,7 +10,8 @@
 // attempt, report) and KH-7 the planned Haven landing. KH-3 (Trevor's Tiny Orbit on t432) bent before
 // MECO in the live loop before #313 (the director's auto-accepted pitch nudge and max-Q bucket), so its
 // restored-strength test only pins "never a frozen screen". KH-3's board starter is now an 8.65° kick
-// (calm-air retune); the 8° build it replaced (the t432 rocket) keeps its pinned live numbers.
+// (calm-air retune); the 8° build it replaced (the t432 rocket) keeps its pinned live numbers. Since #338 (no
+// wind-shear ease) the 8° build misses in the seed-1 wind as it does in calm air.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
@@ -112,26 +113,23 @@ namespace Kestrel.Core.Tests
                 Assert.IsNotNull(run.AscentFailure, "no separation means the ascent ended first");
         }
 
-        // 8°: the pre-retune raw build (t432). 8.65°: the board starter after the calm-air retune (Physics, option b), seed-1
-        // briefing wind: 203.3 x 196.7 km, separation T+156.1.
-        [TestCase(8.0, 201.8, 198.2)]
-        [TestCase(8.65, 203.3, 196.7)]
-        public void Kh3RawStarter_SeparatesAndReachesOrbit_ThenTheExpendableBoosterLandsBeforeTheReport(double kickDeg, double apoKm, double periKm)
+        [Test]
+        public void Kh3BoardStarter_SeparatesAndReachesOrbit_ThenTheExpendableBoosterLandsBeforeTheReport()
         {
-            // #313 flipped this (was Kh3RawStarter_BreaksUpBeforeMeco_ReportDoesNotWaitForABooster): on main the live
-            // director auto-accepted a held -1 deg nudge and flew a default 0.70 max-Q bucket, and the raw KH-3 starter
-            // broke up before MECO. Under the shared director it separates (T+156.1, seed 1) and reaches orbit inside
-            // the 200 km band (201.8 x 198.2 km); its expendable booster then flies its landing attempt to the surface
-            // and the report waits for it, then composes with the ascent's pass.
-            var run = Play(3, double.NaN, kickDeg);
+            // #313 flipped this (was Kh3RawStarter_BreaksUpBeforeMeco_ReportDoesNotWaitForABooster). The board starter
+            // (8.65° kick, strength 1.45, #343) in the seed-1 briefing wind with no wind-shear ease (#338): no breakup,
+            // separation at T+154.3, orbit 200.4 x 199.6 km inside the 200 km band (203.3 x 196.7 km while the ease still
+            // flew). Its expendable booster flies its landing attempt to the surface and the report waits for it, then
+            // composes with the ascent's pass.
+            var run = Play(3);
             TestContext.WriteLine(run.Log());
             Assert.IsNull(run.AscentFailure, "no breakup: " + run.Log());
             Assert.AreEqual("orbit", run.Result.outcome, run.Log());
-            Assert.AreEqual(apoKm, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
-            Assert.AreEqual(periKm, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(200.4, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(199.6, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
             Assert.AreEqual(BoosterFate.Expendable, run.Landing.Fate);
             Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates");
-            Assert.AreEqual(156.1, run.SeparatedAt, 0.5, run.Log());
+            Assert.AreEqual(154.3, run.SeparatedAt, 0.5, run.Log());
             Assert.IsTrue(run.Landing.Started, "the released booster starts its landing attempt");
             Assert.IsTrue(run.Landing.Touched, "and reaches the surface");
             Assert.IsTrue(run.LostCall.Visible, "announced lost, with the reason");
@@ -146,6 +144,38 @@ namespace Kestrel.Core.Tests
             Assert.IsNotNull(run.Card);
             Assert.IsNull(run.Facts.Failure, "an expendable booster's loss is not the flight's failure");
             Assert.IsTrue(run.Facts.Passed, "the ascent lands the 200 km circle");
+        }
+
+        [Test]
+        public void Kh3EightDegreeBuild_SeparatesAndMissesSuborbital_ThenTheExpendableBoosterLandsBeforeTheReport()
+        {
+            // The pre-retune 8° build (t432). While the wind-shear ease flew it reached 201.8 x 198.2 km in the seed-1 wind,
+            // carried by the ease; in calm air it misses too flat (MissReasonTests, 72.3 km × 328 km). With no ease (#338)
+            // the seed-1 wind flight misses the same way: separation at T+154.3, no breakup, suborbital 308.0 x 92.0 km.
+            // Its expendable booster still flies its landing attempt and the report waits for it, then shows the miss.
+            var run = Play(3, double.NaN, 8.0);
+            TestContext.WriteLine(run.Log());
+            Assert.IsNull(run.AscentFailure, "no breakup: " + run.Log());
+            Assert.AreEqual("suborbital", run.Result.outcome, run.Log());
+            Assert.AreEqual(308.0, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(92.0, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(BoosterFate.Expendable, run.Landing.Fate);
+            Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates");
+            Assert.AreEqual(154.3, run.SeparatedAt, 0.5, run.Log());
+            Assert.IsTrue(run.Landing.Started, "the released booster starts its landing attempt");
+            Assert.IsTrue(run.Landing.Touched, "and reaches the surface");
+            Assert.IsTrue(run.LostCall.Visible, "announced lost, with the reason");
+            StringAssert.StartsWith(BoosterLanding.LostTitle, run.LostCall.Line);
+            var verdict = RecoveryLog.Current;
+            Assert.IsNotNull(verdict);
+            Assert.IsTrue(verdict.Attempted);
+            Assert.IsTrue(verdict.Expendable);
+            Assert.IsFalse(RecoveryLog.Active, "the report no longer waits once it touched down");
+            Assert.IsNull(BoosterLanding.ReportGrade(null, verdict));
+            Assert.IsNull(BoosterLanding.ReportFailure(null, verdict));
+            Assert.IsNotNull(run.Card);
+            Assert.IsNull(run.Facts.Failure, "an expendable booster's loss is not the flight's failure");
+            Assert.IsFalse(run.Facts.Passed, "the ascent misses the 200 km circle");
         }
 
         [Test]

@@ -97,6 +97,37 @@ namespace Kestrel.Core.Flight
         public double value, limit;
     }
 
+    /// <summary>
+    /// #338 (Physics): a warning-only structural-margin note. The flight's q·alpha bending passed
+    /// <see cref="FailureMonitor.BendWarnFraction"/> of what the walls could still take sideways at that moment
+    /// (the allowable load left after thrust and drag, FailureMonitor.Consider). It never changes the throttle,
+    /// the pitch or the outcome; a breakup is still the margin-of-safety check (ms &lt; 0).
+    /// </summary>
+    public sealed class StructuralWarning
+    {
+        public double t, fraction, qPa, alphaDeg;
+        public int stage;
+        public string kid, engineer;
+
+        /// <summary>q·alpha in kPa·deg.</summary>
+        public double QAlphaKPaDeg => qPa / 1000.0 * alphaDeg;
+
+        public static StructuralWarning Make(double t, double fraction, double qPa, double alphaRad, int stage)
+        {
+            var inv = CultureInfo.InvariantCulture;
+            double deg = alphaRad * 180.0 / Math.PI;
+            int pct = (int)Math.Floor(fraction * 100.0);
+            var w = new StructuralWarning { t = t, fraction = fraction, qPa = qPa, alphaDeg = deg, stage = stage };
+            w.kid = "Close call at T+" + t.ToString("0", inv) + " s: the wind pushed sideways on your rocket and used "
+                + pct.ToString(inv) + "% of the bend your tanks can take. It held. A higher safety factor gives more room.";
+            w.engineer = "q·alpha " + w.QAlphaKPaDeg.ToString("0.0", inv) + " kPa·deg (q " + (qPa / 1000.0).ToString("0.0", inv)
+                + " kPa, alpha " + deg.ToString("0.00", inv) + "°) at T+" + t.ToString("0.00", inv) + " s, stage " + stage.ToString(inv)
+                + ": " + pct.ToString(inv) + "% of the bending allowance left after axial load. Warning at "
+                + (FailureMonitor.BendWarnFraction * 100).ToString("0", inv) + "%, breakup at 100%.";
+            return w;
+        }
+    }
+
     public sealed class FlightRisk
     {
         public string kind, level, tab, field, kid, engineer;
@@ -394,6 +425,12 @@ namespace Kestrel.Core.Flight
         public bool Gentle;
         public FailureEvent Event;
         public List<FlightRisk> Risks;
+        /// <summary>#338 (Physics): warn, never act, once q·alpha bending passes this share of the walls' sideways allowance.</summary>
+        public const double BendWarnFraction = 0.8;
+        /// <summary>Peak share of the sideways (q·alpha) allowance used while whole and thrusting. 0 in calm air with no alpha.</summary>
+        public double PeakBendFraction { get; private set; }
+        /// <summary>The first moment the share reached <see cref="BendWarnFraction"/>; null when it never did. Warning only.</summary>
+        public StructuralWarning BendWarning { get; private set; }
         // #314: q and axial g at the latest step flown while the vehicle was whole. Frozen once Event is set, so a
         // breakup reports the load at that moment and not the debris' fall.
         double qNow, gNow;
@@ -655,8 +692,18 @@ namespace Kestrel.Core.Flight
             {
                 double bend = step.qPa * step.area * cn * step.alphaRad * Math.Abs(cp - cg);
                 double feq = info.radius > 0 ? Math.Abs(2 * bend / info.radius) : 0;
-                double load = step.mass * step.accel + step.qPa * step.area * step.cd + feq;
+                double axial = step.mass * step.accel + step.qPa * step.area * step.cd;
+                double load = axial + feq;
                 if (load > 0) ms = info.fAllow / load - 1;
+                // #338: the q·alpha share of what is left after axial load (1 is ms = 0). Read only; no control change.
+                if (Event == null && step.thrusting && feq > 0)
+                {
+                    double left = info.fAllow - axial;
+                    double frac = left > 0 ? feq / left : double.PositiveInfinity;
+                    if (frac > PeakBendFraction) PeakBendFraction = frac;
+                    if (BendWarning == null && frac >= BendWarnFraction && frac < 1)
+                        BendWarning = StructuralWarning.Make(step.t, frac, step.qPa, step.alphaRad, idx + 1);
+                }
             }
             double tAtm = step.alt < 11000 ? 288.15 - 0.0065 * Math.Max(0, step.alt) : 216.65;
             double nose = tAtm + heatFactor * (step.qPa / 1000.0) * 2.0;

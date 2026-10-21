@@ -354,6 +354,8 @@ namespace Kestrel.Core.Physics
                 result.minStability = o.monitor.MinStability;
                 result.minCar = o.monitor.MinCar;
                 result.qLimPa = o.monitor.QLimPa;
+                result.peakBendFraction = o.monitor.PeakBendFraction;
+                result.bendWarning = o.monitor.BendWarning;
             }
             return result;
         }
