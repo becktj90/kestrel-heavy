@@ -57,7 +57,9 @@ namespace Kestrel.Core.Flight
         public const float StatsBorder = 1f, StatsPadX = 10f, StatsPadY = 0f;   // the 1.4 line box carries the air; 1 left the full SE at 42.2%
         public const float LaunchBorderV = 1f + 8f;   // .kh-mm-launch border-top 1, border-bottom 8 (the old maths used 6)
         public const float LaunchChromeX = 16f + 12f + 36f + 6f;   // lamp + margin, column margin, 28 icon + 8, slack
-        public const float DesignBorder = 1f, DesignPadX = 12f, DesignPadY = 5f;
+        // DesignPadY 3 (was 5) pays for DesignGap: the SE controls stay what they were before the gap (ControlsH <= 42%
+        // of the usable height, hero clear of LAUNCH), and the card still holds its 1.4 line boxes.
+        public const float DesignBorder = 1f, DesignPadX = 12f, DesignPadY = 3f;
         /// <summary>Space between "DESIGN FIRST" and its caption (margin-top on .kh-mm-design-caption, phone column).
         /// Without it the label's ceil'd line box met the caption with 0 px between them, and TextCore's measured
         /// 18 px rect ran 1 px into the caption (GameCI, 390x844 / 430x932 full save).</summary>
@@ -143,11 +145,29 @@ namespace Kestrel.Core.Flight
         public static float LaunchH(HomePhoneType t, int captionLines)
             => Math.Max(HitMin, LaunchBorderV + 2f * LaunchPadV(t.Scale) + t.LaunchLabel * LineH + captionLines * t.LaunchCaption * LineH);
 
+        /// <summary>TextCore wraps "Your rocket, this mission." (171 px on the advance table at 14 px) to two lines in a
+        /// 189 px caption box (GameCI, 390x844 shell, full home), so the table under-reads this string by more than 10%.
+        /// The caption's lines are counted at the box width over this factor: two lines at 390/430 shell, one on SE.</summary>
+        public const float DesignWrap = 1.15f;
+
         public static int DesignCaptionLines(HomePhoneType t, float col, string caption)
-            => Math.Min(3, Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, caption, t.DesignCaption, col - DesignChromeX)));
+            => Math.Min(3, Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, caption, t.DesignCaption, (col - DesignChromeX) / DesignWrap)));
 
         public static float DesignH(HomePhoneType t, int captionLines)
-            => Math.Max(HitMin, 2f * DesignBorder + 2f * DesignPadY + t.DesignLabel * LineH + DesignGap + captionLines * t.DesignCaption * LineH);
+        {
+            // The real boxes: the label's min-height is ceil(face x 1.3) (MainMenuOverlay.CardLabelChrome), then the gap,
+            // then the caption lines at 1.25 em (TextCore set 2 lines of 14 px Space Grotesk in 34 px, 1.21 em). Never under the
+            // old one-line 1.4 budget. Budgeting every line at 1.4 made the two-line card 4 px taller than its text and
+            // pushed the 393x852 stats card under the guide pop.
+            float real = (float)Math.Ceiling(t.DesignLabel * DesignTextLine) + DesignGap + captionLines * t.DesignCaption * DesignCaptionLine;
+            float floor = t.DesignLabel * LineH + t.DesignCaption * LineH;
+            return Math.Max(HitMin, 2f * DesignBorder + 2f * DesignPadY + Math.Max(real, floor));
+        }
+
+        /// <summary>Line box of the DESIGN FIRST label (its min-height, same as MainMenuOverlay.CardTextLine).</summary>
+        public const float DesignTextLine = 1.3f;
+        /// <summary>Caption line pitch: 34 px for two 14 px lines on GameCI (1.21 em), plus a little.</summary>
+        public const float DesignCaptionLine = 1.25f;
 
         /// <summary>Two tiles across with a 2% gutter. 48.5% put "you've unlocked." one px past a 308-wide phone tile.</summary>
         public const float TileShare = 0.49f;

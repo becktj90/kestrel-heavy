@@ -1869,10 +1869,40 @@ namespace Kestrel.Game.Shell
 
         /// <summary>Phone column: the stats card holds its two lines, and Thrum's strip reads left to right with the name
         /// over the words (a Button centres its children's text by default, so "Thrum" floated mid-strip).</summary>
+        /// <summary>Backstop for the DESIGN FIRST budget (DesignCaptionLines): if TextCore still wraps the caption to more
+        /// lines than MenuTypeScale counted, the card takes its measured content height instead of letting the caption
+        /// fall out of the bottom (GameCI, 390x844 shell, no save: caption bottom 448 in a 447 card). A card that
+        /// ContainColumn has cut (max-height set) keeps the cut.</summary>
+        static void DesignGrowsToItsText(VisualElement root)
+        {
+            var design = root.Q("home-design");
+            var col = design?.Q(className: "kh-mm-col");
+            if (col == null || design.ClassListContains("kh-mm-design--grows")) return;
+            design.AddToClassList("kh-mm-design--grows");
+            void Grow()
+            {
+                if (design.panel == null || design.resolvedStyle.display == DisplayStyle.None) return;
+                var host = design.parent;
+                while (host != null && !host.ClassListContains("kh-mm-wide")) host = host.parent;
+                if (host != null) return;
+                var cut = design.style.maxHeight;
+                if (cut.keyword == StyleKeyword.Undefined && cut.value.value > 0f) return;
+                var r = design.resolvedStyle;
+                float need = Mathf.Ceil(col.layout.height + r.borderTopWidth + r.borderBottomWidth + r.paddingTop + r.paddingBottom);
+                if (need <= r.height + 0.5f) return;
+                design.style.height = need;
+                design.style.minHeight = need;
+            }
+            // Both: ApplyScale can write the budget back onto the card while the column's own size stays put.
+            col.RegisterCallback<GeometryChangedEvent>(_ => Grow());
+            design.RegisterCallback<GeometryChangedEvent>(_ => Grow());
+        }
+
         static void ApplyPhoneBlocks(VisualElement root, MenuTypeScale.Sizes z)
         {
             float grid = z.Column > 1f ? z.Column : z.TileW / HomePhoneLayout.TileShare;
             CardLabelChrome(root, true);
+            DesignGrowsToItsText(root);
             var stats = root.Q("mm-stats");
             if (stats != null)
             {
