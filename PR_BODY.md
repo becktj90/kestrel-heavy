@@ -150,7 +150,7 @@ node: 179 tests, 172 pass, 0 fail. `stubcheck --all`: exit 0. Unity EditMode and
 3. **Engine-out contracts:** pantry-leo400-k3 is tracked for **#326**. For #326: S2 at exactly ×1.10 (38.5 t, not rounded to the tonne) passes 5/5.
 
 ## For Arcade
-- **KH-3 strength restore:** the board's 1.9 restore passes the batch (calm, 205.2 × 194.8 km on seeds 1–5) but flies the live pad in seed-1 wind to 223.1 × 176.9 km, outside ±5% of 200 km. This isn't a parity gap: in calm air live is 205.198 × 194.802, and the batch path in the same wind is 224.109 × 176.871 (0.44%). The difference is the auto-accepted wind-shear ease (#338). The starter as built lands 201.8 × 198.2 live. Which strength the row teaches is Arcade's call.
+- **KH-3 strength restore:** the board's 1.9 restore passes the batch (calm, 205.2 × 194.8 km on seeds 1–5) but flies the live pad in seed-1 wind to 223.1 × 176.9 km, outside ±5% of 200 km. This isn't a parity gap: in calm air live is 205.198 × 194.802, and the batch path in the same wind is 224.109 × 175.891 (0.44% from live). The difference is the auto-accepted wind-shear ease (#338). The starter as built lands 201.8 × 198.2 live. Which strength the row teaches is Arcade's call.
 - **KH-16 board row:** it uses strength **1.8** by hand (`restoreSafetyFactor`), while **1.5** is the minimum that passes seeds 1-5. Fix it's redesign note also names 1.5. Which number the row teaches is Arcade's call; it was left at 1.8.
 
 ## Follow-ups
