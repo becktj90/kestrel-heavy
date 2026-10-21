@@ -1,6 +1,6 @@
-# #314 golden diff (local, needs Physics' final look before push)
+# #314 golden diff (Physics approved (9619132))
 
-Branch `fix/314-one-flight-model`, on main de6a871. Commit 1 is c3ffef9 (was e01f2e9) (option 2: the prediction flies the live checks; q and g at the breakup moment). Commit 2 applies Physics' rulings (1)–(3). Nothing is pushed.
+Branch `fix/314-one-flight-model`, rebased on main 079d19b (#301). Commit 1 is 7b879e2 (option 2: the prediction flies the live checks; q and g at the breakup moment). Commit 2 is a39f16d, Physics' rulings (1)–(3), approved by Physics as 9619132 before the rebase. Commit 3 is cb40c84, the KH-16 comment.
 
 Seeds 1–5 are the campaign seeds. "Batch" is dt 0.2 s and "live" is dt 1/120 s. Both run `MissionFlightSetup` + `FailureMonitor` (when it engages) + `PlayedChecks`. Both templates are arcade (v1) designs, so the seeds don't change them: all 5 seeds give the same numbers.
 
@@ -81,4 +81,4 @@ Golden effect: only the template's own designer-validate cases changed. No other
 - `docs/PHYSICS.md`: the single-stage staging note names tpl-sounding-hybrid.
 
 ## Tests (local)
-Core 823 passed / 12 skipped / 0 failed (835; main de6a871 added 17 tests). Site 28, Pad.Core 84, Vehicle.Core 41, Build 13, Guide.Core 41, all green. node: 179 tests, 0 fail. stubcheck `--all` ok. templates `--check` ok. No test loosened. The 4 that failed at e01f2e9 now pass on real values.
+Core 845 passed / 12 skipped / 0 failed (857 on main 079d19b). Site 28, Pad.Core 84, Vehicle.Core 41, Build 13, Guide.Core 41, all green. node: 179 tests, 172 pass, 1 skipped, 6 todo, 0 fail. stubcheck `--all` ok. templates `--check` ok. No test loosened. The 4 that failed at e01f2e9 now pass on real values.
