@@ -56,7 +56,7 @@ namespace Kestrel.Core.Designer
             if (r == null) return new LaunchGateResult { state = LaunchGateState.Checking };
             if (r.fairingFits == false) return Blocked(NoFit, "payload-doesnt-fit", "payload");
             if (r.margin < 0 && !r.ReachesApogee) return Blocked(TooSlow, "dv-margin", "tanks");
-            var red = DeterministicRed(r.risks);
+            var red = DeterministicRed(r.risks, r);
             if (red != null) return Blocked(Plain(red.kid, red.engineer, WillFail), red.kind, red.tab);
             if (r.predictedFailure != null)
                 return Blocked(Plain(r.predictedFailure.kid, r.predictedFailure.fixHint, WillFail), r.predictedFailure.kind, null);
@@ -65,16 +65,30 @@ namespace Kestrel.Core.Designer
         }
 
         /// <summary>A red row that is not one of the seeded fair events (odds &lt; 0) happens on every flight.</summary>
-        public static FlightRisk DeterministicRed(IList<FlightRisk> risks)
+        public static FlightRisk DeterministicRed(IList<FlightRisk> risks) => DeterministicRed(risks, null);
+
+        /// <summary>
+        /// As above, minus a red tumble row the flown ascent shows cannot happen (F1 / NAV-01, NAV-02).
+        /// FailureModel tumbles only when stability &lt; 0 and CAR &lt; 1 hold together; the row goes red on
+        /// negative stability alone. With CAR &gt;= 1 for the whole climb and no tumble event, the gimbal held it,
+        /// so it is not a certain failure. The row itself (and the stepper's Aero warning) is unchanged.
+        /// </summary>
+        public static FlightRisk DeterministicRed(IList<FlightRisk> risks, QuickReadout flown)
         {
             if (risks == null) return null;
             for (int i = 0; i < risks.Count; i++)
             {
                 var risk = risks[i];
-                if (risk != null && risk.level == "red" && risk.odds < 0) return risk;
+                if (risk == null || risk.level != "red" || !(risk.odds < 0)) continue;
+                if (risk.kind == "tumble" && HeldByControl(flown)) continue;
+                return risk;
             }
             return null;
         }
+
+        static bool HeldByControl(QuickReadout r) =>
+            r != null && !r.maxQStale && r.minCar.HasValue && r.minCar.Value >= 1
+            && (r.predictedFailure == null || r.predictedFailure.kind != "tumble");
 
         static string First(EngineeringReport report)
         {

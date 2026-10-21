@@ -1,6 +1,6 @@
 // Cached Headless reference ascent for designer max-Q.
 // Quick() never runs this. A miss leaves maxQStale true.
-// Cost: Stack.SimInputs → the same RK4 step as Headless (dt 0.2 s, default steering, no sample buffer).
+// Cost: MissionFlightSetup (Stack.SimInputs plus the mission's aim) → the same RK4 step as Headless (dt 0.2 s, default steering, no sample buffer).
 // The run goes to thrust cutoff. There is no early stop: a climb-only seal drops a descent peak,
 // and a vacuum-periapsis bound both false-stopped the sounding rocket and ran slower than the full ascent.
 // The integrator returns when thrust ends, so this is not an unpowered re-entry.
@@ -157,17 +157,30 @@ namespace Kestrel.Core.Designer
         }
 
         /// <summary>
-        /// Predict inputs: Stack.SimInputs with the pad flight's aim (an apogee trip is judged against the
-        /// 1 km depletion floor, not its apogee) and Predict on, so the cached peak is the real max-Q.
-        /// A live launch leaves Predict false and breaks up.
+        /// Predict inputs: the same <see cref="MissionFlightSetup"/> the live pad flight and FlightBatch fly (F1), with
+        /// Predict on so the cached peak is the real max-Q. A design whose missionId (or kh- orbit) is a campaign
+        /// mission gets that mission's aim, cutoff, run length, coast boil-off and held-out landing fuel. Before F1 the
+        /// designer built its own Stack.SimInputs and aimed an apogee hop at its apogee, so a 100 km hop was called
+        /// "out of fuel" at its normal burnout. A free build keeps the design's own orbit (an apogee target is
+        /// judged against the 1 km hop floor, in MissionFlightSetup for the pad too). A live launch leaves Predict false and breaks up.
         /// </summary>
         public static (List<SimStage> stages, SimOptions opts) Inputs(Catalog c, JsonObject design)
         {
             var d = Design.FromJson(design);
-            var input = Stack.SimInputs(c, d);
-            MissionAim.ApplyToDesignOrbit(input.opts, c, d.payloadOrbit);
-            if (input.opts.monitor != null) input.opts.monitor.Predict = true;
-            return input;
+            var mission = MissionFor(c, d);
+            var setup = MissionFlightSetup.Build(c, mission, d, MissionFlightSetup.BatchDt);
+            var opts = setup.Options;
+            if (opts.monitor != null) opts.monitor.Predict = true;
+            return (setup.Stages, opts);
+        }
+
+        /// <summary>The campaign mission a design flies: its missionId, else its catalog orbit key. Null for a free build.</summary>
+        public static CampaignMission MissionFor(Catalog c, Design d)
+        {
+            if (c == null || d == null) return null;
+            if (!string.IsNullOrEmpty(d.missionId) && c.CampaignMissions.TryGetValue(d.missionId, out var byId)) return byId;
+            if (!string.IsNullOrEmpty(d.payloadOrbit) && c.CampaignMissions.TryGetValue(d.payloadOrbit, out var byOrbit)) return byOrbit;
+            return null;
         }
 
         /// <summary>The reference ascent is a full powered flight. Same steps as <see cref="Headless.Simulate"/>.</summary>

@@ -83,8 +83,65 @@ namespace Kestrel.Core.Tests
             var mission = campaign.Mission(3);
             var design = HomeAutoBuild.Choose(catalog, hangar.templates, mission).Design;
             var reference = ReferenceAscent.Inputs(catalog, design);
-            Assert.That(reference.opts.targetAlt, Is.EqualTo(200000), "KH-3 is a 200 km circle");
+            var pad = MissionFlightSetup.Build(catalog, mission, Design.FromJson(design), MissionFlightSetup.BatchDt);
+            Assert.That(pad.TargetAltM, Is.EqualTo(200000), "KH-3 is a 200 km circle");
+            Assert.That(reference.opts.targetAlt, Is.EqualTo(pad.Options.targetAlt));
+            Assert.That(reference.opts.guidance?.targetAlt, Is.EqualTo(pad.Options.guidance?.targetAlt));
             Assert.IsFalse(MissionAim.IsSuborbital(catalog, design.Obj("payload").Str("orbit")));
+        }
+
+        /// <summary>
+        /// F1 root cause: the designer's predict run built its own Stack.SimInputs instead of the mission setup the
+        /// pad and FlightBatch fly. Every campaign mission's DESIGN FIRST rocket and golden winner now gets exactly
+        /// the MissionFlightSetup inputs (aim, cutoff, run length, boil-off, held-out landing fuel), Predict aside.
+        /// </summary>
+        [Test]
+        public void ReferenceAscentFliesTheMissionFlightSetup()
+        {
+            var winners = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "golden", "campaign-winners.json")));
+            var designs = new List<(CampaignMission, JsonObject)>();
+            foreach (var m in campaign.Missions)
+            {
+                var choice = HomeAutoBuild.Choose(catalog, hangar.templates, m);
+                if (choice?.Design != null) designs.Add((m, choice.Design));
+            }
+            foreach (JsonObject row in winners.Arr("missions"))
+                designs.Add((campaign.ById(row.Str("id")), (JsonObject)row.Arr("designs")[0]));
+            Assert.That(designs.Count, Is.GreaterThanOrEqualTo(40));
+            foreach (var (mission, json) in designs)
+            {
+                string at = mission.Id + " " + json.Str("name");
+                Assert.That(ReferenceAscent.MissionFor(catalog, Design.FromJson(json))?.Id, Is.EqualTo(mission.Id), at);
+                var reference = ReferenceAscent.Inputs(catalog, json);
+                var pad = MissionFlightSetup.Build(catalog, mission, Design.FromJson(json), MissionFlightSetup.BatchDt);
+                Assert.That(reference.opts.targetAlt, Is.EqualTo(pad.Options.targetAlt), at + " targetAlt");
+                Assert.That(reference.opts.guidance?.targetAlt, Is.EqualTo(pad.Options.guidance?.targetAlt), at + " guidance");
+                Assert.That(reference.opts.cutoff, Is.EqualTo(pad.Options.cutoff), at + " cutoff");
+                Assert.That(reference.opts.tMax, Is.EqualTo(pad.Options.tMax), at + " tMax");
+                Assert.That(reference.opts.dt, Is.EqualTo(pad.Options.dt), at + " dt");
+                Assert.That(reference.stages.Count, Is.EqualTo(pad.Stages.Count), at + " stages");
+                for (int i = 0; i < pad.Stages.Count; i++)
+                    Assert.That(reference.stages[i].propMass, Is.EqualTo(pad.Stages[i].propMass), at + " stage " + i + " prop");
+                Assert.That(reference.opts.monitor?.Predict ?? true, at + " predict");
+            }
+        }
+
+        [Test]
+        public void AFreeBuildHopAimsAtTheHopFloorOnThePadToo()
+        {
+            var design = HomeAutoBuild.Choose(catalog, hangar.templates, campaign.Mission(2)).Design;
+            var free = JsonMut.CloneObject(design);
+            JsonMut.Set(free, "missionId", null);
+            JsonMut.Set(free.Obj("payload"), "orbit", "suborbital");
+            var d = Design.FromJson(free);
+            Assert.IsNull(ReferenceAscent.MissionFor(catalog, d), "a free build has no mission");
+            var pad = MissionFlightSetup.Build(catalog, null, d, MissionFlightSetup.LiveDt);
+            Assert.That(pad.Options.targetAlt, Is.EqualTo(MissionAim.HopDepletionFloorM), "the live free-build hop is judged at the floor");
+            Assert.That(pad.TargetAltM, Is.EqualTo(MissionAim.HopDepletionFloorM));
+            Assert.That(ReferenceAscent.Inputs(catalog, free).opts.targetAlt, Is.EqualTo(pad.Options.targetAlt));
+            var orbit = JsonMut.CloneObject(free);
+            JsonMut.Set(orbit.Obj("payload"), "orbit", "leo200");
+            Assert.That(MissionFlightSetup.Build(catalog, null, Design.FromJson(orbit), MissionFlightSetup.LiveDt).Options.targetAlt, Is.EqualTo(200000), "a free orbit build is unchanged");
         }
 
         [Test]
@@ -184,7 +241,7 @@ namespace Kestrel.Core.Tests
             {
                 var json = JsonMut.CloneObject((JsonObject)row.Arr("designs")[0]);
                 var gate = GateAfterReference(json, out var sim);
-                var red = LaunchGate.DeterministicRed(sim.risks);
+                var red = LaunchGate.DeterministicRed(sim.risks, Readout.Quick(catalog, json));
                 if (sim.failure == null && red != null) bad.Add(row.Str("id") + " " + red.kind);
                 if (!gate.Ready && !FitBlock(gate)) bad.Add(row.Str("id") + " gate " + gate.code);
             }
@@ -216,14 +273,21 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void UnstableButControlledIsAmberNotRed()
+        public void UnstableButControlledIsNotACertainFailure()
         {
             var json = JsonMut.CloneObject((JsonObject)MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "golden", "campaign-winners.json"))).Arr("missions").Find(m => ((JsonObject)m).Str("id") == "m3") is JsonObject row ? (JsonObject)row.Arr("designs")[0] : null);
-            GateAfterReference(json, out var sim);
+            var gate = GateAfterReference(json, out var sim);
             Assert.That(sim.minStability, Is.LessThan(0), "the KH-3 winner is statically unstable for part of the climb");
             Assert.That(sim.minCar, Is.GreaterThanOrEqualTo(1), "and the gimbal holds it");
-            var row3 = sim.risks.Find(x => x.kind == "tumble");
-            Assert.That(row3.level, Is.EqualTo("amber"));
+            Assert.IsNull(sim.failure);
+            Assert.That(gate.Ready, gate.Line);
+            // A real lack of control authority is still red.
+            var weak = new QuickReadout { margin = 0.2, fairingFits = true, maxQStale = false, minCar = 0.6, minStability = -1,
+                risks = new List<FlightRisk> { new FlightRisk { kind = "tumble", level = "red", kid = "It flips." } } };
+            Assert.That(LaunchGate.Evaluate(new EngineeringReport { ok = true }, weak).code, Is.EqualTo("tumble"));
+            var stale = new QuickReadout { margin = 0.2, fairingFits = true, maxQStale = true, minCar = 3,
+                risks = new List<FlightRisk> { new FlightRisk { kind = "tumble", level = "red", kid = "It flips." } } };
+            Assert.That(LaunchGate.DeterministicRed(stale.risks, stale), Is.Not.Null, "no flown ascent, no exemption");
         }
 
         [Test]
