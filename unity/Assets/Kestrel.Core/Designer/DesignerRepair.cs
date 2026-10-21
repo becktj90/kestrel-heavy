@@ -17,6 +17,11 @@ namespace Kestrel.Core.Designer
         public const string DeltaVAlready = "This rocket already has the speed for this trip. Check the other warnings.";
         /// <summary>F2: Fix it ran out of steps and the rocket still fails a test flight. It never claims a full fix then.</summary>
         public const string NotFullyFixed = "Fix it could not fully fix this rocket. It still fails {0} of {1} test flights. Lighten the cargo or change the rocket.";
+        /// <summary>#313 (Arcade): strength was the lever, but the first strength that passes every gate seed is past the
+        /// <see cref="StrengthSteps"/> budget. Fix it does not make that change; the note names it. {2} = that strength, {3} = where Fix it stopped.</summary>
+        public const string NeedsRedesign = "Fix it can't fix this rocket: it still fails {0} of {1} test flights. It needs a redesign with a stronger airframe: strength {2}. Fix it only goes up to {3}.";
+        /// <summary>Strength steps past the budget Fix it looks (and does not apply) to name the redesign.</summary>
+        public const int RedesignLookSteps = 8;
 
         /// <summary>
         /// F2: the kind the report's Fix it repairs. A flight with no failure event still owes a fix:
@@ -160,8 +165,33 @@ namespace Kestrel.Core.Designer
                 outcome.FullyFixed = true;
                 return outcome;
             }
-            Unfixed(catalog, mission, design, outcome);
+            if (Unfixed(catalog, mission, design, outcome) && only.changed)
+            {
+                string needs = StrengthPastBudget(catalog, mission, plain);
+                if (needs != null)
+                    outcome.Note = string.Format(System.Globalization.CultureInfo.InvariantCulture, NeedsRedesign,
+                        FailedSeeds(catalog, mission, design), GateSeeds, needs, only.to);
+            }
             return outcome;
+        }
+
+        /// <summary>
+        /// #313 (Arcade): after the strength budget, the first strength (same steps, same seeds, same rule) that passes every
+        /// gate seed, looked at on a copy and never applied, or null when none within <see cref="RedesignLookSteps"/> does.
+        /// </summary>
+        static string StrengthPastBudget(Catalog catalog, CampaignMission mission, JsonObject strengthened)
+        {
+            var look = JsonMut.CloneObject(strengthened);
+            for (int step = 0; step < RedesignLookSteps; step++)
+            {
+                string why = FirstFailure(catalog, mission, look);
+                if (why == null) return null;
+                if (!(StrengthHelps(why) || IsCleanMiss(why))) return null;
+                var e = RaiseSafety(look);
+                if (!e.changed) return null;
+                if (FirstFailure(catalog, mission, look) == null) return e.to;
+            }
+            return null;
         }
 
         /// <summary>FlightBatch seeds the gate flies (the golden gate's 1–5, gusts included).</summary>

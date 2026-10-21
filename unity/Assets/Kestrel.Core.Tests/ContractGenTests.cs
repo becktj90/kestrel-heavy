@@ -175,6 +175,61 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(sawReliability);
         }
 
+        /// <summary>
+        /// #313 (Arcade): pantry-leo400-k3 is held back for #326 (engine-out balance), the only tracked cell. Its c8-360-k7-u35
+        /// design still misses on seed 3 after the seeded engine-out (637.7 x 162.3 km against 400 km); the best variant
+        /// found, S2 propellant +10% (cost 24708), passes 4 of 5 (seed 3 flies 652.6 x 147.4). When #326 makes it fly,
+        /// this fails: move the cell back to "cells".
+        /// </summary>
+        [Test, Timeout(120000)]
+        public void TrackedCells_AreExactlyPantryLeo400K3_ForIssue326_AndStillMiss()
+        {
+            Assert.AreEqual(1, pool.Tracked.Count, "tracked cells");
+            var t = pool.Tracked[0];
+            Assert.AreEqual("pantry-leo400-k3", t.Id);
+            Assert.AreEqual(326, t.Issue);
+            Assert.AreEqual("pantry-leo400-k3-c8-360-k7-u35", t.FailingDesign);
+            Assert.AreEqual(3UL, t.Seed);
+            Assert.AreEqual(637.7, t.ApoKm, 1e-9);
+            Assert.AreEqual(162.3, t.PeriKm, 1e-9);
+            Assert.AreEqual("S2 propellant +10%", t.BestVariant.Str("change"));
+            Assert.AreEqual(24708, t.BestVariant.Num("cost"), 1e-9);
+            Assert.AreEqual(4, t.BestVariant.Num("passes"), 1e-9);
+            Assert.AreEqual(5, t.BestVariant.Num("of"), 1e-9);
+            foreach (var cell in pool.Cells) Assert.AreNotEqual(t.Id, cell.Id, "a tracked cell is not viable");
+            Assert.IsFalse(pool.Rejected.Contains(t.Id));
+
+            var mission = ContractGen.ToMission(t.Cell);
+            Design failing = null;
+            foreach (var d in t.Cell.Designs) if (d.id == t.FailingDesign) failing = d;
+            Assert.IsNotNull(failing);
+            var flight = FlightBatch.Fly(catalog, mission, failing, t.Seed);
+            Assert.IsFalse(flight.passed, "still misses on seed " + t.Seed);
+            Assert.IsNull(flight.failure);
+            Assert.AreEqual(t.ApoKm, flight.apoKm, 0.05);
+            Assert.AreEqual(t.PeriKm, flight.periKm, 0.05);
+
+            var variant = failing.Clone();
+            // The search's +10% step, rounded to the tonne as it was searched: 35 t → 38 t.
+            Assert.AreEqual(35000, variant.stages[1].propMass, 1e-9);
+            variant.stages[1].propMass = Math.Round(variant.stages[1].propMass * 1.10 / 1000) * 1000;
+            Assert.AreEqual(t.BestVariant.Num("propMassKg"), variant.stages[1].propMass, 1e-9);
+            int passes = 0;
+            foreach (var seed in pool.Seeds)
+            {
+                var f = FlightBatch.Fly(catalog, mission, variant, seed);
+                if (f.passed) passes++;
+                else
+                {
+                    Assert.AreEqual(t.BestVariant.Num("seed"), seed, 1e-9);
+                    Assert.AreEqual(t.BestVariant.Num("apoKm"), f.apoKm, 0.05);
+                    Assert.AreEqual(t.BestVariant.Num("periKm"), f.periKm, 0.05);
+                }
+            }
+            Assert.AreEqual(4, passes);
+            Assert.AreEqual(t.BestVariant.Num("cost"), FlightBatch.Fly(catalog, mission, variant, 1).costKc, 0.5);
+        }
+
         [Test, Timeout(300000)]
         public void EveryCell_AndEveryOffer_IsViable()
         {

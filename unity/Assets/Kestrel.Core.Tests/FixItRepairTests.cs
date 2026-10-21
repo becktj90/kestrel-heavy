@@ -138,7 +138,9 @@ namespace Kestrel.Core.Tests
             // miss and called that fixed. A clean miss is unfixed: within StrengthSteps (1.0 → 1.4) the strength sweep only
             // trades the breakup for misses (1.10-1.25: flight-path-angle miss, 635.9 x 364.1 km at 1.20; 1.30-1.45: the
             // 500 km target is reached but reliability is under the 0.98 gate), so Fix it says it could not fix the rocket.
-            // The first strength that passes seeds 1-5 is 1.50 (500.6 x 499.4 km), two steps past the budget.
+            // The first strength that passes seeds 1-5 is 1.50 (500.6 x 499.4 km), two steps past the budget. #313 (Arcade):
+            // the budget stays at 8 steps, and the note says plainly that Fix it can't fix it and names the redesign (1.5).
+            // Fix it does not apply that strength. The board's KH-16 row is "strength" (set 1.8 by hand), not Fix it.
             const int index = 16;
             var mission = campaign.Mission(index);
             var json = Starter(index);
@@ -152,8 +154,9 @@ namespace Kestrel.Core.Tests
             int failed = flights.FindAll(f => !f.passed).Count;
             Assert.That(failed, Is.EqualTo(5), Seeds(mission, flights));
             Assert.IsFalse(outcome.FullyFixed, outcome.Note);
-            Assert.That(outcome.Note, Is.EqualTo(string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                DesignerRepair.NotFullyFixed, failed, DesignerRepair.GateSeeds)));
+            Assert.That(outcome.Note, Is.EqualTo("Fix it can't fix this rocket: it still fails 5 of 5 test flights. It needs a redesign with a stronger airframe: strength 1.5. Fix it only goes up to 1.4."));
+            Assert.That(json.Num("safetyFactor"), Is.LessThanOrEqualTo(1.0 + DesignerRepair.StrengthSteps * DesignerLimits.Active.safetyStep + 1e-9), "Fix it never applies the redesign strength");
+            Assert.AreEqual(8, DesignerRepair.StrengthSteps, "Arcade: the strength budget holds at 8 steps");
 
             var start = Starter(index);
             double step = DesignerLimits.Active.safetyStep;
@@ -263,8 +266,18 @@ namespace Kestrel.Core.Tests
             foreach (var f in flights)
                 Assert.That(DesignerRepair.MissKind(mission, f), Is.EqualTo(DesignerRepair.FlightPathAngleMiss), "seed " + f.seed + Seeds(mission, flights));
             Assert.IsFalse(outcome.FullyFixed);
-            Assert.That(outcome.Note, Is.EqualTo(string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                DesignerRepair.NotFullyFixed, failed, DesignerRepair.GateSeeds)));
+            Assert.That(outcome.Note, Is.EqualTo("Fix it could not fully fix this rocket. It still fails 5 of 5 test flights. Lighten the cargo or change the rocket."));
+            // #313: the report text for the repaired rocket, pinned. It cuts off climbing and falls back (412.0 x -12.0 km).
+            var x = MissReason.Explain(mission, MissReason.FromFlight(flights[0], json.Arr("stages").Count));
+            Assert.AreEqual("fpa-steep-suborbital", x.Code);
+            Assert.AreEqual("Missed the 200 km circle: the orbit flew -12 km × 412 km, and the high point needs 190 km to 210 km. The low point, -12 km, needs 190 km to 210 km. The engines cut off while it was still climbing, 1.8° up. Your rocket flew too steep and fell back down. Give stage 3 much more fuel (it can take double or more), so it burns long enough to level out.", x.Line);
+            // Following it: double the top-stage fuel and seeds 1, 3, 4, 5 land the circle (seed 2 is its seeded engine-out).
+            // The steep levers do not move this one: one more upper engine with 95% max-Q is still 412.8 x -12.8 km.
+            var doubled = JsonMut.CloneObject(json);
+            TopStageProp(doubled, 2.0);
+            foreach (var f in Fly(6, doubled))
+                if (f.seed == 2) Assert.That(f.failure, Is.EqualTo("engine-out"), Seeds(mission, Fly(6, doubled)));
+                else Assert.That(f.passed, "seed " + f.seed + Seeds(mission, Fly(6, doubled)));
         }
 
         [Test]
@@ -296,8 +309,14 @@ namespace Kestrel.Core.Tests
             foreach (var f in flights)
                 Assert.That(DesignerRepair.MissKind(mission, f), Is.EqualTo(DesignerRepair.FlightPathAngleMiss), "seed " + f.seed + Seeds(mission, flights));
             Assert.IsFalse(outcome.FullyFixed, outcome.Note);
-            Assert.That(outcome.Note, Is.EqualTo(string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                DesignerRepair.NotFullyFixed, 5, DesignerRepair.GateSeeds)));
+            Assert.That(outcome.Note, Is.EqualTo("Fix it could not fully fix this rocket. It still fails 5 of 5 test flights. Lighten the cargo or change the rocket."));
+            // #313: the report text after Fix it, pinned (413.9 x -13.9 km), and following it: about 3x the fuel lands all 5.
+            var x = MissReason.Explain(mission, MissReason.FromFlight(flights[0], json.Arr("stages").Count));
+            Assert.AreEqual("fpa-steep-suborbital", x.Code);
+            Assert.AreEqual("Missed the 200 km circle: the orbit flew -13.9 km × 414 km, and the high point needs 190 km to 210 km. The low point, -13.9 km, needs 190 km to 210 km. The engines cut off while it was still climbing, 1.8° up. Your rocket flew too steep and fell back down. Give stage 3 much more fuel (it can take double or more), so it burns long enough to level out.", x.Line);
+            var more = JsonMut.CloneObject(json);
+            TopStageProp(more, 3.06);
+            foreach (var f in Fly(6, more)) Assert.That(f.passed, "seed " + f.seed + Seeds(mission, Fly(6, more)));
         }
 
         [Test]

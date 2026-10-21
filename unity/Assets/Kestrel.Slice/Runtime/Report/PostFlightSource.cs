@@ -111,6 +111,7 @@ namespace Kestrel.Slice
                         Intact = intact, ApoM = apo, PeriM = peri, MaxG = result.maxG,
                         LandingGrade = facts.LandingGrade, Extra = extra,
                         Stages = design != null && design.stages != null ? design.stages.Count : 1,
+                        CutoffGammaDeg = result.cutoffGammaDeg,
                     });
                 }
             }

@@ -172,7 +172,7 @@ namespace Kestrel.Slice
             if (Sim.Done)
             {
                 Running = false;
-                if (Result == null) Result = Sim.Finish();
+                if (Result == null) Result = directed != null ? directed.Finish() : Sim.Finish();
             }
             PumpEvents();
             if (Meco && !mecoSent && !Lost) { mecoSent = true; Sink?.OnEvent("meco"); }

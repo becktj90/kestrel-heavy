@@ -2,10 +2,15 @@
 // KH-3, 4, 6, 8, 12 and 16 stay design puzzles (#313: KH-5 and KH-14 now pass): each real miss (FlightBatch, seed 1)
 // is pinned to its exact text, and the advice is checked by flying it. One reason shows, in fix order (orbit, fuel,
 // structure, reliability, setup), and the reason counts any other gate that missed with "(+N more issue)" (#324).
+// #313: KH-3 and KH-4 cut off diving (too flat: the fuel step lands them); KH-12 cuts off climbing (too steep: Fix it's
+// engine + max-Q throttle edit, or a smaller kick, lands it).
 using System;
 using Kestrel.Core.Data;
+using Kestrel.Core.Designer;
+using Kestrel.Core.Designer.Stepper;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Hangar;
+using Kestrel.Core.Json;
 using Kestrel.Core.Vehicle;
 using NUnit.Framework;
 
@@ -44,21 +49,21 @@ namespace Kestrel.Core.Tests
         // the target energy at a bad flight-path angle, so both the high and the low point are out of the band and the
         // reason names both. KH-8 now flies in the band and misses on reliability. KH-5 and KH-14 now pass (board rows
         // "fly"), so they moved to PassingStarterHasNoReason.
-        [TestCase("m3", "apo-high",
-            "Missed the 200 km circle: the orbit flew 72.3 km × 328 km, and the high point needs 190 km to 210 km. That is about 38 m/s too fast at the low point. The low point, 72.3 km, needs 190 km to 210 km.",
-            "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
-        [TestCase("m4", "apo-high",
-            "Missed the 500 km circle: the orbit flew 382 km × 618 km, and the high point needs 475 km to 525 km. That is about 32 m/s too fast at the low point. The low point, 382 km, needs 475 km to 525 km.",
-            "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
+        [TestCase("m3", "fpa-flat",
+            "Missed the 200 km circle: the orbit flew 72.3 km × 328 km, and the high point needs 190 km to 210 km. The low point, 72.3 km, needs 190 km to 210 km. The engines cut off while it was already diving, 1.1° down.",
+            "Your rocket flew too flat. Add fuel to stage 2, about 2% at a time (up to 10%), until the orbit rounds off.")]
+        [TestCase("m4", "fpa-flat",
+            "Missed the 500 km circle: the orbit flew 382 km × 618 km, and the high point needs 475 km to 525 km. The low point, 382 km, needs 475 km to 525 km. The engines cut off while it was already diving, 1.0° down.",
+            "Your rocket flew too flat. Add fuel to stage 2, about 2% at a time (up to 10%), until the orbit rounds off.")]
         [TestCase("m6", "apo-high",
             "Missed the 200 km circle: the orbit flew 188 km × 212 km, and the high point needs 190 km to 210 km. That is about 4 m/s too fast at the low point. The low point, 188 km, needs 190 km to 210 km.",
             "Add fuel to stage 3, about 2% at a time (up to 10%), until the high point comes down into the band.")]
         [TestCase("m8", "reliability",
             "Reliability was 95.1%; this mission needs 98%.",
             "Raise the safety factor to 1.5 or more for the reliability bonus, or pick redundant avionics.")]
-        [TestCase("m12", "apo-high",
-            "Missed the 600 km circle: the orbit flew 343 km × 857 km, and the high point needs 570 km to 630 km. That is about 69 m/s too fast at the low point. The low point, 343 km, needs 570 km to 630 km.",
-            "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
+        [TestCase("m12", "fpa-steep",
+            "Missed the 600 km circle: the orbit flew 343 km × 857 km, and the high point needs 570 km to 630 km. The low point, 343 km, needs 570 km to 630 km. The engines cut off while it was still climbing, 1.9° up.",
+            "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or tip it over less at launch (a smaller pitch kick in Guidance).")]
         [TestCase("m16", "reliability",
             "Reliability was 97.9%; this mission needs 98%.",
             "Raise the safety factor to 1.5 or more for the reliability bonus, or pick redundant avionics.")]
@@ -107,13 +112,13 @@ namespace Kestrel.Core.Tests
         /// <summary>The overshoot advice works: some +2% step up to +10% on the top stage brings the high point into the band.</summary>
         // #313 real values: KH-3 1.02 → 1.06 (202 x 198 km), KH-4 1.04 → 1.02 (502 x 498 km), KH-14 1.04 → 1.02 (the
         // starter already passes). KH-5 and KH-8 stay at 1.02 (KH-5 passes already; KH-8 misses on reliability, not
-        // altitude). KH-12 (a flight-path-angle miss, 857 x 343 km) does not come in with fuel: 1.10 still flies 866 x 334.
+        // altitude). KH-3 and KH-4 now get the too-flat advice, which is this same fuel step. KH-12 (too steep, 857 x 343 km)
+        // does not come in with fuel (1.10 still flies 866 x 334), so it gets the steep advice instead (below).
         [TestCase("m3", 1.06)]
         [TestCase("m4", 1.02)]
         [TestCase("m5", 1.02)]
         [TestCase("m6", 1.02)]
         [TestCase("m8", 1.02)]
-        [TestCase("m12", 1.10)]
         [TestCase("m14", 1.02)]
         public void MoreTopStageFuelBringsTheHighPointIn(string id, double first)
         {
@@ -125,7 +130,7 @@ namespace Kestrel.Core.Tests
                 var d = Starter(m);
                 d.stages[d.stages.Count - 1].propMass *= k;
                 var x = Fly(m, d, out var flight);
-                if (flight.failure == null && (x == null || (x.Code != "apo-high" && x.Code != "peri-low" && x.Code != "orbit-low")))
+                if (flight.failure == null && (x == null || (x.Code != "apo-high" && x.Code != "peri-low" && x.Code != "orbit-low" && x.Code != "fpa-steep" && x.Code != "fpa-steep-suborbital" && x.Code != "fpa-flat")))
                     found = k;
             }
             Assert.AreEqual(first, found, 1e-9, id + ": first top-stage step that lands the circle");
@@ -241,6 +246,90 @@ namespace Kestrel.Core.Tests
                     if (!string.IsNullOrEmpty(text) && deg.IsMatch(text)) bad.Add(m.Id + ": " + text);
             }
             Assert.That(bad, Is.Empty, string.Join(" | ", bad));
+        void AssertEverySeed(CampaignMission m, Design d, string what)
+        {
+            foreach (var seed in campaign.Seeds)
+            {
+                var f = FlightBatch.Fly(catalog, m, d, seed);
+                Assert.IsTrue(f.passed, what + " seed " + seed + " " + (f.failure ?? "miss") + " " + f.apoKm.ToString("0.0") + " x " + f.periKm.ToString("0.0"));
+            }
+        }
+
+        /// <summary>#313: KH-12 gets the steep advice, and its first lever is Fix it's own edit for KH-12 (board row "fix"):
+        /// one more upper engine with the max-Q throttle at 95%. Following it lands the circle on all five seeds.</summary>
+        [Test]
+        public void KH12_SteepAdvice_IsFixItsEdit_AndFollowingItPassesEverySeed()
+        {
+            var m = Mission("m12");
+            var choice = HomeAutoBuild.Choose(catalog, hangar.templates, m);
+            var start = Design.FromJson(choice.Design);
+            var x = Fly(m, start, out var raw);
+            Assert.AreEqual("fpa-steep", x.Code);
+            Assert.AreEqual(MissReason.SteepAdvice, x.Advice);
+            Assert.Greater(raw.cutoffGammaDeg, MissReason.FlightPathAngleOffDeg);
+
+            // Fix it, exactly as the board runs it.
+            var json = JsonMut.CloneObject(choice.Design);
+            Readout.Reference(catalog, json);
+            var report = StepperModel.Evaluate(catalog, json);
+            StepCheck check = null;
+            foreach (var c in report.Checks) if (c != null && !string.IsNullOrEmpty(c.Code)) { check = c; break; }
+            Assert.IsNotNull(check);
+            StepperFix.Apply(catalog, json, check);
+            var fixedByFixIt = Design.FromJson(json);
+            int top = start.stages.Count - 1;
+            Assert.AreEqual(start.stages[top].engineCount + 1, fixedByFixIt.stages[top].engineCount, "Fix it adds one upper engine");
+            Assert.IsTrue(fixedByFixIt.guidance.maxQThrottleSet);
+            Assert.AreEqual(95, fixedByFixIt.guidance.maxQThrottle, 1e-9, "Fix it sets the max-Q throttle to 95%");
+            AssertEverySeed(m, fixedByFixIt, "Fix it's edit");
+
+            // The advice by hand on the starter: one more upper engine, max-Q throttle 95%.
+            var byHand = Starter(m);
+            byHand.stages[top].engineCount += 1;
+            byHand.guidance.maxQThrottleSet = true;
+            byHand.guidance.maxQThrottle = 95;
+            AssertEverySeed(m, byHand, "one more upper engine at 95% max-Q");
+        }
+
+        /// <summary>#313: the advice's other lever, a smaller pitch kick (6° to 4°), also lands KH-12 on every seed. The advice
+        /// names the throttle because one more engine alone still flies too steep (903 x 297 km), and 5° is still too steep.</summary>
+        [Test]
+        public void KH12_SmallerPitchKickAlsoLands_AndOneEngineAloneIsNotEnough()
+        {
+            var m = Mission("m12");
+            var kick = Starter(m);
+            Assert.AreEqual(6, kick.guidance.pitchKickDeg, 1e-9);
+            kick.guidance.pitchKickDeg = 4;
+            AssertEverySeed(m, kick, "pitch kick 4°");
+
+            var engineOnly = Starter(m);
+            engineOnly.stages[engineOnly.stages.Count - 1].engineCount += 1;
+            var x = Fly(m, engineOnly, out var f);
+            Assert.IsFalse(f.passed);
+            Assert.AreEqual("fpa-steep", x.Code, x.Line);
+        }
+
+        [Test]
+        public void FlightPathAngleMiss_NeedsACleanTiltedCutoff()
+        {
+            var row = Row("circular", 600, 600);
+            var climbing = Flown(857, 343); climbing.CutoffGammaDeg = 1.9;
+            Assert.AreEqual("fpa-steep", MissReason.Explain(row, climbing).Code);
+            var diving = Flown(857, 343); diving.CutoffGammaDeg = -1.1;
+            var flat = MissReason.Explain(row, diving);
+            Assert.AreEqual("fpa-flat", flat.Code);
+            Assert.AreEqual("Your rocket flew too flat. Add fuel to stage 2, about 2% at a time (up to 10%), until the orbit rounds off.", flat.Advice);
+            StringAssert.EndsWith("The engines cut off while it was already diving, 1.1° down.", flat.Reason);
+            var level = Flown(857, 343); level.CutoffGammaDeg = 0.1;
+            Assert.AreEqual("apo-high", MissReason.Explain(row, level).Code, "near level: a plain overshoot");
+            var burnout = Flown(857, 343);
+            Assert.AreEqual("apo-high", MissReason.Explain(row, burnout).Code, "no clean cutoff (NaN): a plain overshoot");
+            var fell = Flown(412, -12); fell.CutoffGammaDeg = 1.8;
+            var back = MissReason.Explain(Row("circular", 200, 200), fell);
+            Assert.AreEqual("fpa-steep-suborbital", back.Code);
+            Assert.AreEqual("Your rocket flew too steep and fell back down. Give stage 2 much more fuel (it can take double or more), so it burns long enough to level out.", back.Advice);
+            var lowOk = Flown(857, 600); lowOk.CutoffGammaDeg = 1.9;
+            Assert.AreEqual("apo-high", MissReason.Explain(row, lowOk).Code, "the low point is on target");
         }
 
         [TestCase("m8")]
@@ -337,7 +426,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("miss", card.Kind);
             Assert.AreEqual(x.Reason, card.Numbers);
             Assert.AreEqual(x.Advice, card.Engineer);
-            Assert.AreEqual("apo-high", card.MissCode);
+            Assert.AreEqual("fpa-flat", card.MissCode);
             Assert.AreEqual(x.Advice, card.MissAdvice);
             Assert.AreEqual("", card.NarratorKid);
             Assert.AreEqual("", card.NarratorEng);

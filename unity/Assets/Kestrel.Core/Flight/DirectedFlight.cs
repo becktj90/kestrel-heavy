@@ -36,8 +36,14 @@ namespace Kestrel.Core.Flight
         {
             if (Sim.Done) return false;
             Apply();
+            bool was = Sim.Thrusting;
             int events = Sim.Events.Count;
             Sim.Tick();
+            if (was && !Sim.Thrusting && double.IsNaN(CutoffGammaDeg))
+            {
+                for (int i = events; i < Sim.Events.Count; i++)
+                    if (Sim.Events[i].type == "cutoff") { CutoffGammaDeg = Gamma(Sim.Y); break; }
+            }
             if (Director != null && !Sim.Done)
             {
                 Director.Advance(Sample(), dt);
@@ -59,7 +65,26 @@ namespace Kestrel.Core.Flight
         public SimResult Run()
         {
             while (Step()) { }
-            return Sim.Finish();
+            return Finish();
+        }
+
+        /// <summary>The sim's result plus what only the stepper sees (<see cref="SimResult.cutoffGammaDeg"/>).</summary>
+        public SimResult Finish()
+        {
+            var r = Sim.Finish();
+            if (r != null) r.cutoffGammaDeg = CutoffGammaDeg;
+            return r;
+        }
+
+        /// <summary>#313: flight-path angle at the clean cutoff, degrees (NaN until one happens). See <see cref="SimResult.cutoffGammaDeg"/>.</summary>
+        public double CutoffGammaDeg { get; private set; } = double.NaN;
+
+        static double Gamma(double[] y)
+        {
+            double r = Math.Sqrt(y[0] * y[0] + y[1] * y[1]);
+            if (!(r > 0)) return double.NaN;
+            double vr = (y[0] * y[2] + y[1] * y[3]) / r, vt = (y[0] * y[3] - y[1] * y[2]) / r;
+            return Math.Atan2(vr, Math.Abs(vt)) * 180 / Math.PI;
         }
 
         /// <summary>Hands the director's throttle, pitch and loss command to the sim.</summary>

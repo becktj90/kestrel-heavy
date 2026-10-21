@@ -84,6 +84,11 @@ namespace Kestrel.Core.Physics
         /// </summary>
         public double coastApexAlt = double.NaN;
         /// <summary>
+        /// #313: flight-path angle at a clean engine cutoff (the target-energy "cutoff" event), degrees; positive is
+        /// still climbing, negative is diving. NaN on a burnout, a failure, or a run not flown through DirectedFlight.
+        /// </summary>
+        public double cutoffGammaDeg = double.NaN;
+        /// <summary>
         /// #313 Physics A: vacuum Δv left in the stack at the end of the run, m/s: Isp·g0·ln(m_now/m_dry_after_burn) on the
         /// propellant actually left in the current stage (a mission's coast boil-off is already out of the upper tank),
         /// plus any later stages, staged in order.

@@ -23,6 +23,8 @@ namespace Kestrel.Core.Flight
         public double score, margin, costKc, budgetKc, apoKm, periKm, incDeg, maxG, idealDv, requiredDv, c3Km2PerS2, reliability, boilOffKg, qPeakKPa, burnoutMps, burnoutAltKm;
         /// <summary>#313 Physics A: departure Δv left in the parking orbit, the burn it needs (with finite-burn loss), and the departing stage's T/W. NaN unless the mission departs from parking.</summary>
         public double departDv = double.NaN, departReqDv = double.NaN, departTW = double.NaN;
+        /// <summary>#313: flight-path angle at a clean cutoff, degrees (NaN on burnout or failure).</summary>
+        public double cutoffGammaDeg = double.NaN;
         public long costMinor;
         public readonly List<string> redKinds = new List<string>();
     }
@@ -146,6 +148,7 @@ namespace Kestrel.Core.Flight
                     flight.departReqDv = MissionScore.DepartureRequiredMps(mission.TargetKind, mission.ApoKm, mission.C3Km2PerS2, mission.GuidanceAltM, sim.departureTW);
                 }
                 flight.c3Km2PerS2 = MissionScore.C3(sim.orbit.energy) / 1e6;
+                flight.cutoffGammaDeg = sim.cutoffGammaDeg;
                 flight.qPeakKPa = sim.maxQ / 1000.0;
                 flight.margin = flight.requiredDv > 0 ? (flight.idealDv - flight.requiredDv) / flight.requiredDv : 0;
                 if (sim.risks != null)

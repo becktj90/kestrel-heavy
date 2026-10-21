@@ -270,7 +270,7 @@ namespace Kestrel.Core.Designer
             {
                 if (!sim.Step())
                 {
-                    var r = sim.Sim.Finish();
+                    var r = sim.Finish();
                     ReferenceAscent.Store(key, r);
                     done = true;
                     return true;

@@ -22,9 +22,14 @@ A stage-1 engine-out throttles only stage 1. New test: `AStageOneEngineOut_Throt
   - The old kid and scout are now named fixtures: tests/fixtures/designs/maxq-high-kid.json (90.07 kPa) and weak-scout.json. GV7 follows the new rule, "presets may carry pitch settings". No assertion was loosened.
 - **One acceptance rule:** `MissionScore.TargetMet`. FlightBatch, FlightDebrief and LaunchPredictor all call it. The new `PredictorBatchVerdictTests` checks that predictor and batch agree on all 6 templates and 4 presets.
 - **Fix it:** a repair counts only if the mission passes on all 5 seeds. Clean misses are named `fpa-miss`, `miss` or `gate-miss`. A 95% max-Q throttle that lofts into a miss is never FullyFixed; Fix it falls back to strength on the original rocket.
-  - KH-14 is fixed at strength 1.3. KH-16 now honestly reports "not fixed": its first passing strength is 1.5, past the 8-step budget.
-  - KH-6 is asserted as an `fpa-miss` by name.
-- **Contracts:** finch-leo400-k3 is now **c10-462-k7-u38 (cost 27495, +1260)** and viable on 5/5. pantry-leo400-k3 has no design within 2 cost steps and stays failing. ISSUE_ENGINEOUT_CONTRACTS.md is drafted for the engine-out balance PR (not filed).
+  - KH-14 is fixed at strength 1.3.
+  - KH-16: the budget holds at 8 steps (Arcade). Fix it looks further on a copy, never applies it, and says plainly: "Fix it can't fix this rocket: it still fails 5 of 5 test flights. It needs a redesign with a stronger airframe: strength 1.5. Fix it only goes up to 1.4." The board's KH-16 row is `strength` (1.8 by hand), so nothing relies on Fix it for KH-16.
+  - KH-6 is asserted as an `fpa-miss` by name. Both can't-fix fixtures have their note and report text pinned, and their advice is flown.
+- **Contracts:** finch-leo400-k3 is now **c10-462-k7-u38 (cost 27495, +1260)** and viable on 5/5.
+  - pantry-leo400-k3 is out of the viable set and in a new `tracked` list for **#326** (engine-out balance). It is not dealt.
+  - Recorded: c8-360-k7-u35 misses on seed 3 at 637.7 × 162.3 km. The best variant, S2 propellant +10% (cost 24708), passes 4/5.
+  - `TrackedCells_AreExactlyPantryLeo400K3_ForIssue326_AndStillMiss` pins that one row. `EveryCell_AndEveryOffer_IsViable` stays strict for the other 20 cells.
+  - The engine-out write-up was filed as #326 and removed from the branch.
 - FOLLOWUP_CLOSED_LOOP.md is drafted. No ticket was opened.
 
 ## Thin Δv margins: do not let future tuning push these negative
@@ -40,11 +45,24 @@ Each is the minimum over seeds 1-5, available − required departure Δv:
 | m10 winner | b16-p544-m165-u33-s22 | **+112 m/s** |
 | m10 viable | b16-p544-m165-u33-s22 | +118 m/s |
 
+## MissReason: flight-path-angle misses (Arcade, kid words)
+A clean cutoff with |γ| ≥ 0.5°, the high point above the band and the low point below it is now a flight-path-angle miss. It is checked first (orbit first), before apo-high. The new `cutoffGammaDeg` is a readout only; physics is unchanged.
+
+| Code | Advice | Flown on |
+|---|---|---|
+| `fpa-steep` (climbing) | "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or tip it over less at launch (a smaller pitch kick in Guidance)." | m12: Fix it's edit 5/5, kick 6° → 4° 5/5 |
+| `fpa-steep-suborbital` (climbing, fell back) | "Your rocket flew too steep and fell back down. Give stage N much more fuel (it can take double or more), so it burns long enough to level out." | KH-6 fixtures: ×2 (4/5 plus a seeded engine-out), ×3.06 (5/5) |
+| `fpa-flat` (diving) | "Your rocket flew too flat. Add fuel to stage N, about 2% at a time (up to 10%), until the orbit rounds off." | m3 (1.06) and m4 (1.02) |
+
+- Fix it's m12 edit is a multi-move: +1 upper engine, max-Q throttle 95%, fins and diameter. One more engine alone still misses (903 × 297 km). So the advice names the throttle too, and the board text now says it.
+- "Turn over sooner" (a bigger kick) makes m12 worse; a smaller kick lands it. So the steep advice says "tip it over less".
+- m6 (γ +0.10°) keeps the fuel advice and its test. `MoreTopStageFuel…("m12")` was replaced by the two KH12 tests.
+
 ## Arcade board rows
 - m5 `fix` → `fly` and m14 `strength` → `fly`: the raw starters pass 5/5.
 - m12 `strength` → `fix` with a new near-miss: kh12-win with stage-1 engines 7 → 6.
   - Raw it is an honest miss on all 5 seeds at 856.5 × 343.5 km, with no failure.
-  - One Fix it (weak-upper: S2 engines 2 → 3) passes 5/5 at 606 × 594 km.
+  - One Fix it (weak-upper: S2 engines 2 → 3 with the max-Q throttle at 95%) passes 5/5 at 606 × 594 km.
 - The suggested SF 1.3 starter breaks up at max-Q, which violates NAV01, and no strength-only near-miss exists for m12 (SF 1.35-2.2 all pass).
 - `BoardStarter_FixItOrOneStrengthEdit` stays strict and passes.
 
@@ -78,11 +96,13 @@ Each is the minimum over seeds 1-5, available − required departure Δv:
   - the Heron batch-vs-live test;
   - `PredictorBatchVerdictTests`;
   - `FixIt_WeakAirframe_ThatOnlyFliesIntoAMiss_IsNotFixed`;
-  - `FixIt_WhenTheMaxQThrottleLoftsIntoAMiss_NeverClaimsFixed`.
+  - `FixIt_WhenTheMaxQThrottleLoftsIntoAMiss_NeverClaimsFixed`;
+  - `KH12_SteepAdvice_IsFixItsEdit_AndFollowingItPassesEverySeed`, `KH12_SmallerPitchKickAlsoLands_AndOneEngineAloneIsNotEnough` and `FlightPathAngleMiss_NeedsACleanTiltedCutoff`;
+  - `TrackedCells_AreExactlyPantryLeo400K3_ForIssue326_AndStillMiss`.
 
 | Suite | Passed | Skipped | Failed |
 |---|---:|---:|---:|
-| Core | 880 | 12 | **4** |
+| Core | 885 | 12 | **2** |
 | Site | 28 | 0 | 0 |
 | Pad.Core | 84 | 0 | 0 |
 | Vehicle.Core | 41 | 0 | 0 |
@@ -92,15 +112,12 @@ Each is the minimum over seeds 1-5, available − required departure Δv:
 
 node: 179 tests, 172 pass, 0 fail, 1 skipped, 6 todo. `stubcheck --all`: exit 0. Unity EditMode and PlayMode were not run here (GameCI only).
 
-The 4 Core failures:
-- **pantry-leo400-k3:** `EveryCell_AndEveryOffer_IsViable`. It is left failing and visible, per Arcade.
-- **tpl-hydrogen-upper (#314):** `BrokenPrecondition…` and `UpperEngineSwap…`. Their vectors are left for #314.
-- **`MissReasonTests.MoreTopStageFuelBringsTheHighPointIn("m12")`:** from #311 on main. The m12 board starter (#313's 6-engine near-miss) is an fpa miss (857 × 343 km). MissReason's "add top-stage fuel" advice does not bring it in: 1.10 still flies 866 × 334. Needs a decision.
+The 2 Core failures are both **tpl-hydrogen-upper (#314)**: `BrokenPrecondition_FlagsCausality_AndKeepsTheRemovedEvent` and `UpperEngineSwap_DropsRestart_AndExplainsTheLostBurns`. Their vectors are left for #314, and they clear when #325 lands.
 
-## Decisions needed
-1. **MissReason advice for a flight-path-angle miss:** either MissReason recognises the miss (energy on target, bad γ) and gives pitch or upper-engine advice, or m12's board starter changes. This is player-facing copy, so I left it.
-2. **Fix it strength budget:** KH-16 at strength 1.0 needs 1.5 (10 steps) and StrengthSteps is 8, so Fix it reports not fixed. Keep the budget or raise it.
-3. **Engine-out contracts (pantry):** see ISSUE_ENGINEOUT_CONTRACTS.md.
+## Decisions
+1. **Flight-path-angle advice:** done (above). The steep wording differs from the suggested "turn over sooner" because that lever makes m12 worse.
+2. **Fix it strength budget:** held at 8 steps. KH-16 gets the redesign note (strength 1.5).
+3. **Engine-out contracts:** pantry-leo400-k3 is tracked for **#326**. For #326: S2 at exactly ×1.10 (38.5 t, not rounded to the tonne) passes 5/5.
 
 ## Kestrel Physics sign-off
 - Parking cutoff and the departure Δv check, with the margins table (A): TBD

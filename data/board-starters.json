@@ -892,7 +892,7 @@
       "id": "m12",
       "mode": "fix",
       "restoreSafetyFactor": 1.7,
-      "edit": "Auto Fix it. Upper engines 2 → 3. With six first-stage engines the upper stage pushes at only 0.48 g, and the orbit comes out 856 × 344 km instead of the 600 km circle on every seed.",
+      "edit": "Auto Fix it. Upper engines 2 → 3, with the max-Q throttle at 95%. With six first-stage engines the upper stage pushes at only 0.48 g, and the orbit comes out 856 × 344 km instead of the 600 km circle on every seed.",
       "designs": [
         {
           "version": 3,
