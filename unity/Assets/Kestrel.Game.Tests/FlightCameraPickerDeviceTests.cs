@@ -12,6 +12,7 @@ using System.Reflection;
 using Kestrel.Core.Flight;
 using Kestrel.Game.Shell;
 using Kestrel.Slice;
+using Kestrel.UiChecks;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -222,8 +223,14 @@ namespace Kestrel.Game.Tests
                 Assert.That(follow.text, Is.EqualTo(FlightView.FollowingLabel));
                 Assert.That(FlightCameraStore.Load(), Is.EqualTo(FlightViewMode.Auto), "the change is saved like a picker choice");
                 chrome.Choose(FlightViewMode.Chase);
+                Assert.That(follow.text, Is.EqualTo(FlightView.FollowingLabel));
+                // #332: Follow toggles. Following, a tap lets go to the ground camera; the next tap chases again.
                 chrome.FollowRocket();
-                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Chase), "a chasing view is kept");
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Pad), "following: a tap lets go");
+                Assert.That(chrome.Following, Is.False);
+                Assert.That(follow.text, Is.EqualTo(FlightView.FollowLabel));
+                chrome.FollowRocket();
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Chase), "back to the chasing view the player had");
                 Assert.That(follow.text, Is.EqualTo(FlightView.FollowingLabel));
                 ascent.Close();
             }
@@ -253,6 +260,10 @@ namespace Kestrel.Game.Tests
         }
 
         (VisualElement hud, FlightChrome chrome, AscentHud ascent) Flight(DeviceSurface surface, Size size, FlightViewMode initial)
+            => Flight(surface, size, initial, 0f, 0f, 0f);
+
+        /// <summary>The flight HUD with the device's safe-area padding on the HUD (HudLayout pads it on device).</summary>
+        (VisualElement hud, FlightChrome chrome, AscentHud ascent) Flight(DeviceSurface surface, Size size, FlightViewMode initial, float padTop, float padBottom, float padSide)
         {
             surface.Stage.Clear();
             var hud = new VisualElement { name = UiIds.ScreenFlight };
@@ -261,6 +272,8 @@ namespace Kestrel.Game.Tests
             hud.style.width = size.PanelW;
             hud.style.height = size.PanelH;
             hud.style.flexDirection = FlexDirection.Column;
+            hud.style.paddingTop = padTop; hud.style.paddingBottom = padBottom;
+            hud.style.paddingLeft = padSide; hud.style.paddingRight = padSide;
             var band = new VisualElement { name = "hud-band" };
             var top = new VisualElement();
             top.AddToClassList("hud-top");
@@ -293,6 +306,230 @@ namespace Kestrel.Game.Tests
             ascent.Layout(1f);
             surface.Pump(6);
             return (hud, chrome, ascent);
+        }
+
+        // ---- #332: TestFlight t432 (402 x 874 pt, 62 pt notch, 34 pt home bar) ---------------------------------
+
+        struct Padded { public Size Size; public float Top, Bottom, Side; }
+
+        static IEnumerable<Padded> PaddedSizes()
+        {
+            yield return new Padded { Size = new Size { Name = "335x720 (24 px pads)", CssW = 335f, CssH = 720f, PanelW = 335f, PanelH = 720f }, Top = 24f, Bottom = 24f, Side = 24f };
+            yield return new Padded { Size = new Size { Name = "402x874 t432", CssW = 402f, CssH = 874f, PanelW = 402f, PanelH = 874f }, Top = 62f, Bottom = 34f, Side = 24f };
+            yield return new Padded { Size = new Size { Name = "440x956 Pro Max", CssW = 440f, CssH = 956f, PanelW = 440f, PanelH = 956f }, Top = 62f, Bottom = 34f, Side = 24f };
+            foreach (var x in Sizes())
+                if (x.Wide && x.CssW == 1280f && x.CssH == 800f) yield return new Padded { Size = x, Top = 0f, Bottom = 0f, Side = 0f };
+        }
+
+        static readonly string[] DockStack = { "ascent-health", "ascent-telemetry", "ascent-plot", "ascent-help", UiIds.FlightFollow, UiIds.FlightCamera, UiIds.FlightPause, "ascent-actions" };
+
+        static void OpenNotes(AscentHud ascent, DeviceSurface surface, bool open)
+        {
+            var f = typeof(AscentHud).GetField("infoOpen", BindingFlags.Instance | BindingFlags.NonPublic);
+            if ((bool)f.GetValue(ascent) == open) return;
+            typeof(AscentHud).GetMethod("OnInfo", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(ascent, null);
+            surface.Pump(4);
+            ascent.Layout(1f);
+            surface.Pump(6);
+            ascent.Layout(1f);
+            surface.Pump(6);
+        }
+
+        [Test]
+        public void DockStackNeverOverlapsWithTheSafeAreaPadding()
+        {
+            // t432 T+17.5: the dock (Flying the plan / i, Auto-assist, Nudge -1/+1) drew over Follow / Cam: Below / Pause
+            // and took their taps; T+116 / T+192 the notes covered the chip row. Pins ignored the HUD's padding.
+            foreach (var p in PaddedSizes())
+            foreach (var notes in new[] { false, true })
+            using (var surface = DeviceSurface.Open(p.Size.PanelW, p.Size.PanelH))
+            {
+                string where = p.Size.Name + (notes ? " notes open" : " cruise");
+                var (hud, chrome, ascent) = Flight(surface, p.Size, FlightViewMode.Below, p.Top, p.Bottom, p.Side);
+                OpenNotes(ascent, surface, notes);
+                var shown = new List<VisualElement>();
+                foreach (var id in DockStack)
+                {
+                    var e = hud.Q(id);
+                    if (e != null && Shown(e)) shown.Add(e);
+                }
+                Assert.That(shown.Exists(e => e.name == "ascent-actions"), Is.True, where + " dock shown");
+                if (notes && !p.Size.Wide) Assert.That(shown.Exists(e => e.name == "ascent-help"), Is.True, where + " notes shown");
+                for (int i = 0; i < shown.Count; i++)
+                for (int j = i + 1; j < shown.Count; j++)
+                    Assert.That(Overlaps(shown[i].worldBound, shown[j].worldBound), Is.False,
+                        where + ": " + shown[i].name + " " + shown[i].worldBound + " overlaps " + shown[j].name + " " + shown[j].worldBound);
+                // Everything inside the HUD's padded content box (the safe area), and every dock row inside the dock.
+                var hb = hud.worldBound;
+                var content = new Rect(hb.x + p.Side - 0.5f, hb.y + p.Top - 0.5f, hb.width - 2f * p.Side + 1f, hb.height - p.Top - p.Bottom + 1f);
+                foreach (var e in shown)
+                    Assert.That(content.Contains(e.worldBound.min) && content.Contains(e.worldBound.max), Is.True, where + " " + e.name + " " + e.worldBound + " outside the safe area " + content);
+                var dock = hud.Q("ascent-actions");
+                foreach (var b in dock.Query<Button>().ToList())
+                {
+                    if (!Shown(b)) continue;
+                    var r = b.worldBound; var d = dock.worldBound;
+                    Assert.That(r.xMin >= d.xMin - 0.5f && r.xMax <= d.xMax + 0.5f && r.yMin >= d.yMin - 0.5f && r.yMax <= d.yMax + 0.5f, Is.True, where + " " + b.name + " inside the dock");
+                }
+                var help = hud.Q<ScrollView>("ascent-help");
+                if (help != null && Shown(help))
+                {
+                    Assert.That(help.resolvedStyle.maxHeight.value, Is.LessThanOrEqualTo(96.5f), where + " the notes have a fixed max height");
+                    Assert.That(help.verticalScrollerVisibility, Is.Not.EqualTo(ScrollerVisibility.Hidden), where + " and scroll");
+                    Assert.That(help.pickingMode, Is.EqualTo(PickingMode.Position), where + " the scroll takes drags");
+                }
+                // The tools row takes its own taps: nothing above it in the picking order.
+                foreach (var id in new[] { UiIds.FlightFollow, UiIds.FlightCamera, UiIds.FlightPause })
+                {
+                    var b = hud.Q<Button>(id);
+                    Assert.That(OnElement(hud.panel.Pick(b.worldBound.center), b), Is.True, where + " " + id + " receives the tap (got " + hud.panel.Pick(b.worldBound.center)?.name + ")");
+                }
+                Assert.That(UiTreeChecks.Overlaps(hud.Q("ascent-actions")), Is.Empty, where + " dock rows");
+                ascent.Close();
+            }
+        }
+
+        static readonly string[] RailStack = { UiIds.FlightFollow, UiIds.FlightCamera, UiIds.FlightPause, "ascent-help", "ascent-quote", "ascent-timer", "ascent-nudge", "ascent-actions" };
+
+        /// <summary>The rail's bottom against every shown stack element in its columns: one GapPt (whole px) above each.</summary>
+        static void AssertRailClear(VisualElement hud, string where)
+        {
+            var plot = hud.Q("ascent-plot");
+            Assert.That(plot, Is.Not.Null, where);
+            if (!Shown(plot)) return;   // stepped aside (too short to read); hidden, it covers nothing
+            var r = plot.worldBound;
+            float gap = Mathf.Round(FlightHudLayout.GapPt);
+            foreach (var id in RailStack)
+            {
+                var e = hud.Q(id);
+                if (e == null || !Shown(e)) continue;
+                var b = e.worldBound;
+                Assert.That(Overlaps(r, b), Is.False, where + ": ascent-plot " + r + " overlaps " + id + " " + b);
+                bool sameColumns = b.xMin < r.xMax - 0.5f && b.xMax > r.xMin + 0.5f;
+                if (sameColumns && b.yMax > r.yMin + 0.5f)
+                    Assert.That(r.yMax, Is.LessThanOrEqualTo(b.yMin - gap + 0.5f), where + ": rail " + r + " not one gap above " + id + " " + b);
+            }
+        }
+
+        [Test]
+        public void TheRailRefitsWhenTheNotesOpenAndCloseInPortraitAndLandscape()
+        {
+            // #332 CI job 119437176077 (1280x800, panel 1214x759): with the notes open the rail (bottom 515) ran into the
+            // notes (top 467). Landscape re-pinned the notes as the portrait sheet and never refitted the rail. Drive the
+            // real HUD through open, close and open again at every padded portrait size and every landscape web panel.
+            foreach (var p in PaddedSizes())
+            using (var surface = DeviceSurface.Open(p.Size.PanelW, p.Size.PanelH))
+            {
+                var (hud, chrome, ascent) = Flight(surface, p.Size, FlightViewMode.Auto, p.Top, p.Bottom, p.Side);
+                AssertRailClear(hud, p.Size.Name + " closed");
+                bool shownClosed = Shown(hud.Q("ascent-plot"));
+                float closedBottom = hud.Q("ascent-plot").worldBound.yMax;
+                OpenNotes(ascent, surface, true);
+                AssertRailClear(hud, p.Size.Name + " notes open");
+                OpenNotes(ascent, surface, false);
+                AssertRailClear(hud, p.Size.Name + " notes closed again");
+                var plot = hud.Q("ascent-plot");
+                if (shownClosed)
+                    Assert.That(plot.worldBound.yMax, Is.EqualTo(closedBottom).Within(0.5f), p.Size.Name + " the rail grows back when the notes close");
+                OpenNotes(ascent, surface, true);
+                AssertRailClear(hud, p.Size.Name + " notes reopened");
+                ascent.Close();
+            }
+        }
+
+        [Test]
+        public void EveryCameraTapChangesTheViewTheLabelAndThePose()
+        {
+            // t432: "tapping Cam or Follow does nothing mid-flight". Mid-flight input like FlightViewPoseTests (10 km, pitch 60).
+            var size = new Size { Name = "402x874 t432", CssW = 402f, CssH = 874f, PanelW = 402f, PanelH = 874f };
+            using (var surface = DeviceSurface.Open(size.PanelW, size.PanelH))
+            {
+                var (hud, chrome, ascent) = Flight(surface, size, FlightViewMode.Auto, 62f, 34f, 24f);
+                OpenNotes(ascent, surface, true);   // the notes are open: they must not swallow the taps either
+                double rad = 60.0 * Mathf.Deg2Rad;
+                FlightPose Pose(FlightViewMode m) => FlightViewPose.Pose(new FlightPoseInput
+                {
+                    Mode = m, Vehicle = new PoseVec(4000, 10000, 0), Up = new PoseVec(Math.Cos(rad), Math.Sin(rad), 0), Height = 70,
+                    Altitude = 10000, GroundY = 0, Pad = new PoseVec(0, 0, 0), TrenchBearingDeg = 90, BaseFovDeg = 50,
+                });
+                var prev = Pose(chrome.View);
+                foreach (var mode in new[] { FlightViewMode.Above, FlightViewMode.Below, FlightViewMode.Chase, FlightViewMode.Pad, FlightViewMode.Auto })
+                {
+                    var cam = hud.Q<Button>(UiIds.FlightCamera);
+                    Assert.That(OnElement(hud.panel.Pick(cam.worldBound.center), cam), Is.True, mode + " Cam is on top");
+                    Click(cam);
+                    surface.Pump(4);
+                    Assert.That(chrome.PickerOpen, Is.True, mode + " picker opens");
+                    var chip = hud.Q(FlightChrome.PickerName).Q<Button>(FlightChrome.ChipName(mode));
+                    Assert.That(OnElement(hud.panel.Pick(chip.worldBound.center), chip), Is.True, mode + " chip takes the tap");
+                    Click(chip);
+                    surface.Pump(2);
+                    Assert.That(chrome.View, Is.EqualTo(mode));
+                    Assert.That(cam.text, Is.EqualTo(FlightView.Caption(mode)));
+                    var now = Pose(mode);
+                    double moved = (now.Position - prev.Position).Length;
+                    Assert.That(moved, Is.GreaterThan(10.0), mode + " the camera actually moves (" + moved.ToString("0") + " m)");
+                    prev = now;
+                }
+                var follow = hud.Q<Button>(UiIds.FlightFollow);
+                Assert.That(OnElement(hud.panel.Pick(follow.worldBound.center), follow), Is.True, "Follow is on top");
+                Assert.That(chrome.Following, Is.True);
+                Click(follow);
+                surface.Pump(2);
+                Assert.That(chrome.Following, Is.False, "Follow toggles off");
+                Assert.That(follow.text, Is.EqualTo(FlightView.FollowLabel));
+                Click(follow);
+                surface.Pump(2);
+                Assert.That(chrome.Following, Is.True, "and back on");
+                Assert.That(follow.text, Is.EqualTo(FlightView.FollowingLabel));
+                ascent.Close();
+            }
+        }
+
+        [Test]
+        public void HealthDetailIsAPopoverThatNeverCoversTheReadouts()
+        {
+            // t432: tapping Eng or Hull drew "Engines... Engines are li" over ALT / SPEED / Q / G, cut.
+            foreach (var p in PaddedSizes())
+            using (var surface = DeviceSurface.Open(p.Size.PanelW, p.Size.PanelH))
+            {
+                var (hud, chrome, ascent) = Flight(surface, p.Size, FlightViewMode.Auto, p.Top, p.Bottom, p.Side);
+                for (int i = 0; i < VehicleHealth.Count; i++)
+                {
+                    string where = p.Size.Name + " tab " + i;
+                    var tab = hud.Q<Button>(UiIds.FlightHealth(i));
+                    Click(tab);
+                    surface.Pump(4);
+                    var detail = hud.Q<Label>(AscentHud.HealthDetailName);
+                    Assert.That(detail, Is.Not.Null);
+                    Assert.That(Shown(detail), Is.True, where + " opens");
+                    Assert.That(ascent.HealthOpen, Is.EqualTo(i));
+                    // Open is a ring, not a colour: the calm (green) tab keeps its health plate and label colour.
+                    var look = HealthChip.Look(VehicleHealthTone.Green, true);
+                    var bg = tab.resolvedStyle.backgroundColor;
+                    Assert.That(Mathf.Abs(bg.r - look.Plate.R) + Mathf.Abs(bg.g - look.Plate.G) + Mathf.Abs(bg.b - look.Plate.B), Is.LessThan(0.02f), where + " open keeps the green plate, got " + bg);
+                    Assert.That(tab.style.borderTopColor.value.r, Is.EqualTo(HealthChip.OpenRing.R).Within(0.02f), where + " open shows the ring");
+                    float openW = tab.contentRect.width;
+                    foreach (var id in new[] { "ascent-telemetry", "ascent-health" })
+                        Assert.That(Overlaps(detail.worldBound, hud.Q(id).worldBound), Is.False, where + " covers " + id);
+                    Assert.That(UiTreeChecks.TextBounds(detail), Is.Empty, where + " fully readable");
+                    Assert.That(TextFit.Problems(detail), Is.Empty, where + " no cut text");
+                    // Dismiss: the same tab again.
+                    Click(tab);
+                    surface.Pump(2);
+                    Assert.That(Shown(detail), Is.False, where + " tap again closes");
+                    Assert.That(tab.style.borderTopColor.value.r, Is.EqualTo(HealthChip.GreenPlate.R).Within(0.02f), where + " closed hides the ring");
+                    Assert.That(tab.contentRect.width, Is.EqualTo(openW).Within(0.01f), where + " opening never moves the label");
+                    // Or a tap outside it.
+                    Click(tab);
+                    surface.Pump(2);
+                    Assert.That(ascent.TapAt(hud.Q("ascent-telemetry")), Is.True, where + " a tap on the readouts dismisses");
+                    surface.Pump(2);
+                    Assert.That(Shown(detail), Is.False, where + " tap outside closes");
+                    Assert.That(ascent.HealthOpen, Is.EqualTo(-1));
+                }
+                ascent.Close();
+            }
         }
 
         static IEnumerable<VisualElement> HudElements(VisualElement hud)

@@ -15,6 +15,9 @@ namespace Kestrel.Pad
         public const float ConeAlpha = 0.10f, FlareAlpha = 0.9f;
 
         readonly List<LightSpec> _halo = new List<LightSpec>();
+        readonly List<int> _planIndex = new List<int>();
+        /// <summary>Plan indices not drawn this frame (PadLights: poles too close to the camera). Null = none.</summary>
+        public bool[] HiddenPlan;
         readonly Mesh _flares, _cones; readonly Material _flareMat, _coneMat; readonly Texture2D _tex;
         readonly Vector3[] _fv; readonly Color[] _fc; readonly List<int> _blinkIdx = new List<int>();
         public int FlareCount => _halo.Count;
@@ -23,7 +26,13 @@ namespace Kestrel.Pad
 
         public PadGlow(IReadOnlyList<LightSpec> plan, int quality)
         {
-            foreach (var s in plan) if (s.Halo > 0) { if (s.BlinkHz > 0) _blinkIdx.Add(_halo.Count); _halo.Add(s); }
+            for (int k = 0; k < plan.Count; k++)
+            {
+                var s = plan[k];
+                if (s.Halo <= 0) continue;
+                if (s.BlinkHz > 0) _blinkIdx.Add(_halo.Count);
+                _halo.Add(s); _planIndex.Add(k);
+            }
             _tex = RadialTexture(64);
             _flareMat = Additive("Pad_Flare", _tex); _coneMat = Additive("Pad_Cone", null);
             _flares = new Mesh { name = "Pad_Flares" }; _flares.MarkDynamic();
@@ -104,6 +113,8 @@ namespace Kestrel.Pad
                 // keep a minimum on-screen size far away so distant lamps still read as glows, not single pixels
                 float d = Vector3.Distance(p, camPos), size = Mathf.Max(s.Halo, d * 0.012f) * 0.5f;
                 float a = FlareAlpha * night * (s.BlinkHz > 0 ? PadLighting.Blink(s.BlinkHz, t) : 1f);
+                int k = _planIndex[i];
+                if (HiddenPlan != null && k < HiddenPlan.Length && HiddenPlan[k]) a = 0f;
                 var col = new Color(s.Color.X, s.Color.Y, s.Color.Z, a);
                 Vector3 rr = right * size, uu = up * size; int v = i * 4;
                 _fv[v] = p - rr - uu; _fv[v + 1] = p + rr - uu; _fv[v + 2] = p + rr + uu; _fv[v + 3] = p - rr + uu;

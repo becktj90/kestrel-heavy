@@ -12,7 +12,10 @@
         "Kestrel.UiChecks",
         "Kestrel.Game.TextFit",
         "Kestrel.Vehicle.Core",
-        "Kestrel.Kit.Core"
+        "Kestrel.Kit.Core",
+        "Kestrel.Pad",
+        "Kestrel.Pad.Core",
+        "Kestrel.Kit.Contracts"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

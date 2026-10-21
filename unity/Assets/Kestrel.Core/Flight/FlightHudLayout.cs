@@ -11,6 +11,7 @@
 // The chase camera keeps the stack between StackTop and StackBottom of the screen, so the dock
 // and the cards stay off the vehicle. Pinch, orbit, and Follow are unchanged.
 using System;
+using System.Collections.Generic;
 
 namespace Kestrel.Core.Flight
 {
@@ -482,17 +483,13 @@ namespace Kestrel.Core.Flight
                 }
             }
 
-            float followW = FollowWidthPt;
-            float centerL = width * 0.35f;
-            if (left + followW > centerL - GapPt) followW = Math.Max(ButtonPt, centerL - GapPt - left);
-            f.Follow = Box(left, toolsY, followW, ButtonPt);
-            float pauseX = right - PauseWidthPt;
-            float centerR = width * 0.65f;
-            if (pauseX < centerR + GapPt) pauseX = centerR + GapPt;
-            f.Pause = Box(pauseX, toolsY, PauseWidthPt, ButtonPt);
+            // The slots FlightChrome gives the flex row for this width (ToolSlots), Follow left, Pause right.
+            var slots = ToolSlots(width, left, right);
+            f.Follow = Box(left, toolsY, slots.FollowW, ButtonPt);
+            f.Pause = Box(right - slots.PauseW, toolsY, slots.PauseW, ButtonPt);
 
             // Camera sits centred in the gap between Follow and Pause, the way the flex row lays it out.
-            float camW = FlightView.WidestButton();
+            float camW = slots.CameraW;
             float gapL = f.Follow.Right + GapPt;
             float gapR = f.Pause.X - GapPt;
             if (camW > gapR - gapL) camW = Math.Max(ButtonPt, gapR - gapL);
@@ -516,6 +513,169 @@ namespace Kestrel.Core.Flight
             float y = Math.Max(f.Stages.Bottom, f.Telemetry.Bottom) + GapPt;
             float b = f.Dock.Live ? f.Dock.Y - GapPt : Math.Max(f.Follow.Bottom, f.Pause.Bottom);
             return Box(x, y, Math.Max(1f, right - x), Math.Max(1f, b - y));
+        }
+
+        /// <summary>
+        /// Portrait: the pinned trajectory rail against the dock stack as it is really laid out. The rail is pinned from
+        /// the frame, but Follow / Cam / Pause and the notes sheet ride the flex flow (the tools row's 8 px margin and
+        /// the buttons' own margins put it about GapPt + 1 px above the frame's row): CI 335x720 had the rail's bottom
+        /// at 496 and Follow's top at 495. The rail ends one <paramref name="gap"/> above <paramref name="ceilingY"/>
+        /// (the highest measured top below it) in whole pixels: top ceiled, bottom and right floored, never grown.
+        /// All values are panel pixels.
+        /// </summary>
+        public static HudBox PlotAbove(HudBox plot, float ceilingY, float gap)
+        {
+            float x = (float)Math.Round(plot.X);
+            float y = (float)Math.Ceiling(plot.Y);
+            float r = (float)Math.Floor(plot.Right);
+            float b = (float)Math.Floor(plot.Bottom);
+            if (!float.IsNaN(ceilingY) && !float.IsInfinity(ceilingY))
+                b = Math.Min(b, (float)Math.Floor(ceilingY - gap));
+            return Box(x, y, Math.Max(1f, r - x), Math.Max(1f, b - y));
+        }
+
+        /// <summary>
+        /// The rail (trajectory plot) seated over what is really under it, portrait and landscape alike. AscentHud.SeatPlot
+        /// passes the measured boxes of every visible dock-stack element (Follow / Cam / Pause, the notes sheet, the
+        /// call quote and timer, the nudge row, the dock); FlightHudOverlapGridTests passes the frame's boxes through
+        /// the same call. The ceiling is the highest top among the boxes that reach below the rail's top and share
+        /// columns with it (landscape: Cam / Pause in the right rail do not cut the left rail), and the rail ends one
+        /// <paramref name="gap"/> above it in whole pixels (<see cref="PlotAbove"/>). Units are the caller's (panel px).
+        /// #332 CI 1280x800 notes open: the landscape rail was pinned from PlaceWide only and never refitted, so it ran
+        /// 48 px into the notes sheet.
+        /// </summary>
+        public static HudBox SeatRail(HudBox plot, IEnumerable<HudBox> below, float gap)
+        {
+            float ceiling = float.NaN;
+            if (below != null)
+                foreach (var b in below)
+                {
+                    if (!(b.W >= 0.5f) || !(b.H >= 0.5f) || float.IsNaN(b.Y) || float.IsNaN(b.X)) continue;
+                    // Only what reaches below the rail's top: a box wholly above it (the health tabs) does not cut it, but
+                    // a notes sheet whose top is above it does (the rail then has no room and steps aside, RailShows).
+                    if (b.Bottom <= plot.Y + 0.5f) continue;
+                    if (b.X >= plot.Right - 0.5f || b.Right <= plot.X + 0.5f) continue; // another column
+                    ceiling = float.IsNaN(ceiling) ? b.Y : Math.Min(ceiling, b.Y);
+                }
+            return PlotAbove(plot, ceiling, gap);
+        }
+
+        /// <summary>
+        /// Portrait flight-notes sheet height (points) when its bottom sits <paramref name="bottomPt"/> above the HUD's
+        /// bottom edge: <see cref="InfoViewPt"/>, kept under the rocket band where there is room, 48 to 96 pt. The one
+        /// formula AscentHud.PlaceInfoSheet sizes the sheet with and FlightHudOverlapGridTests models it with.
+        /// </summary>
+        public static float NotesSheetPt(float panelHPt, float bottomPt, bool prompt)
+        {
+            float sheet = InfoViewPt(panelHPt, 0f, prompt);
+            float room = panelHPt - bottomPt - (panelHPt * StackBottom + 8f);
+            return Math.Max(48f, Math.Min(96f, Math.Min(sheet, room)));
+        }
+
+        /// <summary>The shortest rail worth drawing (points). Shorter (a 568 pt screen under a notch with the notes and a
+        /// banner row open), it steps aside for the notes sheet instead of squeezing under or into it.</summary>
+        public const float RailMinPt = 48f;
+
+        /// <summary>The fitted rail (<see cref="PlotAbove"/>, panel px) is tall enough to show at <paramref name="upp"/> px per point.</summary>
+        public static bool RailShows(HudBox fit, float upp) => fit.H >= RailMinPt * (upp > 0f ? upp : 1f) - 0.01f;
+
+        public const float PopoverMinPt = 160f, PopoverMaxPt = 320f;
+
+        /// <summary>
+        /// Where the open health detail goes (its height is its text's): never on the health tabs or the stat strip.
+        /// Portrait stacks the tabs over the strip at full width, so it opens one gap under both. Landscape puts the
+        /// tabs in the left rail under the strip (CI 1280x800: "one gap under the strip" landed on the tabs), so it
+        /// opens beside the tabs, under the strip, at most <paramref name="maxW"/> wide; under both when there is no
+        /// room beside. Units are the caller's (panel px with px gap and widths); whole pixels: x and y ceiled, right floored.
+        /// </summary>
+        public static HudBox HealthPopover(HudBox health, HudBox telemetry, float gap, float minW, float maxW)
+        {
+            float under = Math.Max(health.Bottom, telemetry.Bottom) + gap;
+            bool stacked = health.W >= telemetry.W - 1f;
+            if (!stacked)
+            {
+                float x = (float)Math.Ceiling(health.Right + gap);
+                float room = (float)Math.Floor(telemetry.Right) - x;
+                if (room >= minW)
+                {
+                    float y = (float)Math.Ceiling(Math.Max(health.Y, telemetry.Bottom + gap));
+                    return Box(x, y, (float)Math.Floor(Math.Min(room, maxW)), 0f);
+                }
+            }
+            float ux = (float)Math.Ceiling(Math.Min(health.X, telemetry.X));
+            float ur = (float)Math.Floor(Math.Max(health.Right, telemetry.Right));
+            return Box(ux, (float)Math.Ceiling(under), Math.Max(1f, ur - ux), 0f);
+        }
+
+        /// <summary>Follow / Cam / Pause slot widths (points) and their caption face, for one row width.</summary>
+        public struct ToolRowFit
+        {
+            public float FollowW, CameraW, PauseW, FontPt;
+            /// <summary>The captions are the short set (<see cref="FlightView.ShortToolCaption"/>): the long set did not fit.</summary>
+            public bool Short;
+            public float Total => FollowW + CameraW + PauseW;
+        }
+
+        public const float ToolMinPt = 44f, ToolFontPt = 13f, ToolMinFontPt = 11f;
+        /// <summary>Caption room inside a slot (UI Toolkit is border-box): FlightChrome's 2 pt side paddings and the
+        /// Following plate's 2 pt teal edge (CountdownStack.FollowEdgePt), both sides.</summary>
+        public const float ToolTextPadPt = 2f * 2f + 2f * CountdownStack.FollowEdgePt;
+        public const string PauseCaption = "Pause";
+
+        static float ToolNeed(string[] labels, float fontPt)
+        {
+            float w = ToolMinPt;
+            foreach (var l in labels) w = Math.Max(w, BudgetWidth(l, fontPt) + ToolTextPadPt);
+            // Whole points, so a slot floored to whole pixels still holds its caption.
+            return (float)Math.Ceiling(w - 1e-3f);
+        }
+
+        /// <summary>
+        /// The control row on a <paramref name="panelW"/>-point-wide portrait HUD whose row runs from
+        /// <paramref name="left"/> to <paramref name="right"/> (the padded content box, rounded inward, less the side
+        /// margins). Was: fixed #304 slots (Follow 112, Cam widest caption, Pause 76) whatever the width, so on
+        /// 335x720 with 24 px safe pads Pause ended at 324 against a 311 content edge. Now, in order: the #304 slots
+        /// with every caption fitting by BudgetWidth at the largest face from 13 down to 11 pt, Follow kept left of
+        /// and Pause right of the rocket (0.35 / 0.65 of the width, from 360 pt up); then the full captions without
+        /// the rocket rule (narrow or deeply padded rows); then the short captions ("Follow", "Below"), last;
+        /// never a slot under 44 pt, never past the row.
+        /// </summary>
+        public static ToolRowFit ToolSlots(float panelW, float left, float right)
+        {
+            float followCap = panelW * 0.35f - GapPt - left;
+            float pauseCap = right - (panelW * 0.65f + GapPt);
+            return ToolSlotsCapped(right - left, followCap, pauseCap);
+        }
+
+        /// <summary><see cref="ToolSlots(float,float,float)"/> for a bare row width and optional slot caps.</summary>
+        public static ToolRowFit ToolSlotsCapped(float rowW, float followCap = float.MaxValue, float pauseCap = float.MaxValue)
+        {
+            float avail = rowW - 2f * GapPt;
+            for (int pass = 0; pass < 4; pass++)
+            {
+                // Full captions first (with, then without the rocket rule), the short set only when neither fits.
+                bool shortL = pass >= 2;
+                bool capped = (pass & 1) == 0;
+                float fCap = capped ? followCap : float.MaxValue, pCap = capped ? pauseCap : float.MaxValue;
+                var follow = new[] { FlightView.ShortToolCaption(FlightView.FollowLabel, shortL), FlightView.ShortToolCaption(FlightView.FollowingLabel, shortL) };
+                var cams = new string[FlightView.Cycle.Length];
+                for (int i = 0; i < cams.Length; i++) cams[i] = FlightView.ShortToolCaption(FlightView.Caption(FlightView.Cycle[i]), shortL);
+                var pause = new[] { PauseCaption };
+                for (float f = ToolFontPt; f >= ToolMinFontPt - 1e-3f; f -= 0.5f)
+                {
+                    float fw = ToolNeed(follow, f), cw = ToolNeed(cams, f), pw = ToolNeed(pause, f);
+                    if (fw > fCap + 1e-3f || pw > pCap + 1e-3f || fw + cw + pw > avail + 1e-3f) continue;
+                    float pf = Math.Max(fw, Math.Min(FollowWidthPt, fCap));
+                    float pc = Math.Max(cw, FlightView.WidestButton());
+                    float pp = Math.Max(pw, Math.Min(PauseWidthPt, pCap));
+                    float deficit = (pf - fw) + (pc - cw) + (pp - pw);
+                    float k = deficit > 0f ? Math.Min(1f, (avail - fw - cw - pw) / deficit) : 0f;
+                    return new ToolRowFit { FollowW = fw + k * (pf - fw), CameraW = cw + k * (pc - cw), PauseW = pw + k * (pp - pw), FontPt = f, Short = shortL };
+                }
+            }
+            // A row under about 190 pt: three 44 pt slots at the smallest face with the short captions.
+            float each = Math.Max(ToolMinPt, avail / 3f);
+            return new ToolRowFit { FollowW = each, CameraW = each, PauseW = each, FontPt = ToolMinFontPt, Short = true };
         }
 
         /// <summary>The Follow / Cam / Pause row as one box.</summary>
@@ -693,7 +853,9 @@ namespace Kestrel.Core.Flight
             // Keep the dock below the chase-camera stack (62% of the screen) so the rocket stays visible.
             float stackFloor = height * StackBottom;
             float maxDock = height - safeBottom - stackFloor - GapPt;
-            float wantDock = DockHeight(notes, prompt, rowPt);
+            // The notes never go in the landscape dock (#332 CI 1280x800): a sheet inside the dock sat on the dock's own
+            // box, and the dock grew under the rail when they opened. They take the left rail's slot under the plot.
+            float wantDock = DockHeight(false, prompt, rowPt);
             float oneRow = PadPt + rowPt + PadPt;
             float dockH = wantDock;
             if (dockH > maxDock) dockH = Math.Max(oneRow, maxDock);
@@ -725,10 +887,10 @@ namespace Kestrel.Core.Flight
                 f.Cells[i] = Box(cellsL + i * (cellW + CellGapPt), stripY, Math.Max(1f, cellW), stripH);
 
             f.Dock = Box(left, dockTop, innerW, dockH);
-            PackDock(f, notes, prompt, quote, rowPt);
+            PackDock(f, false, prompt, quote, rowPt);
 
             float toolsH = ButtonPt;
-            bool helpInRail = notes && !Contains(f.Dock, f.Help);
+            bool helpInRail = notes;
             bool quoteInRail = quote && !Contains(f.Dock, f.Quote);
             float leftExtra = (helpInRail ? HelpPt + GapPt : 0f) + (quoteInRail ? QuotePt + GapPt : 0f);
 

@@ -30,11 +30,16 @@ namespace Kestrel.Pad
         float _retractRealtime, _discRealtime, _builtKey = float.NaN;
         Matrix4x4 _builtFor;
 
+        /// <summary>The cull class of everything an umbilical draws: the tower members' own (PadRenderer).</summary>
+        public const DetailSize PadCull = DetailSize.Large;
+
         public void Init(ServiceLink link, SwingArm arm, Mesh beam)
         {
             Link = link; Arm = arm;
-            _mast = new InstanceBatch(beam, MaterialLibrary.Get(MaterialRole.SafetyYellowSteel), DetailSize.Medium);
-            _plates = new InstanceBatch(PlateMesh(), MaterialLibrary.Get(MaterialRole.Galvanized), DetailSize.Small);
+            // #332: hoses, masts and plates cull with the tower they hang from (PadRenderer's members are Large). At Small
+            // the hoses went at 200-500 m while the rail stayed, and at Medium the mast before the hoses' anchor.
+            _mast = new InstanceBatch(beam, MaterialLibrary.Get(MaterialRole.SafetyYellowSteel), PadCull);
+            _plates = new InstanceBatch(PlateMesh(), MaterialLibrary.Get(MaterialRole.Galvanized), PadCull);
             State = UmbilicalState.Detached;
         }
 
@@ -114,7 +119,7 @@ namespace Kestrel.Pad
                     for (int i = 0; i < path.Length; i++) path[i] = pts[i].ToUnity();
                     var mesh = KitMesh.Tube(path, s.Radius, 4, "UmbilicalHose");
                     _hoses.Add(mesh);
-                    var batch = new InstanceBatch(mesh, MaterialLibrary.Get(s.Material), DetailSize.Small);
+                    var batch = new InstanceBatch(mesh, MaterialLibrary.Get(s.Material), PadCull);
                     batch.Add(world); _hoseBatches.Add(batch);
                 }
             }
