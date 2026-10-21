@@ -389,6 +389,54 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        static readonly string[] RailStack = { UiIds.FlightFollow, UiIds.FlightCamera, UiIds.FlightPause, "ascent-help", "ascent-quote", "ascent-timer", "ascent-nudge", "ascent-actions" };
+
+        /// <summary>The rail's bottom against every shown stack element in its columns: one GapPt (whole px) above each.</summary>
+        static void AssertRailClear(VisualElement hud, string where)
+        {
+            var plot = hud.Q("ascent-plot");
+            Assert.That(plot, Is.Not.Null, where);
+            if (!Shown(plot)) return;   // stepped aside (too short to read); hidden, it covers nothing
+            var r = plot.worldBound;
+            float gap = Mathf.Round(FlightHudLayout.GapPt);
+            foreach (var id in RailStack)
+            {
+                var e = hud.Q(id);
+                if (e == null || !Shown(e)) continue;
+                var b = e.worldBound;
+                Assert.That(Overlaps(r, b), Is.False, where + ": ascent-plot " + r + " overlaps " + id + " " + b);
+                bool sameColumns = b.xMin < r.xMax - 0.5f && b.xMax > r.xMin + 0.5f;
+                if (sameColumns && b.yMax > r.yMin + 0.5f)
+                    Assert.That(r.yMax, Is.LessThanOrEqualTo(b.yMin - gap + 0.5f), where + ": rail " + r + " not one gap above " + id + " " + b);
+            }
+        }
+
+        [Test]
+        public void TheRailRefitsWhenTheNotesOpenAndCloseInPortraitAndLandscape()
+        {
+            // #332 CI job 119437176077 (1280x800, panel 1214x759): with the notes open the rail (bottom 515) ran into the
+            // notes (top 467). Landscape re-pinned the notes as the portrait sheet and never refitted the rail. Drive the
+            // real HUD through open, close and open again at every padded portrait size and every landscape web panel.
+            foreach (var p in PaddedSizes())
+            using (var surface = DeviceSurface.Open(p.Size.PanelW, p.Size.PanelH))
+            {
+                var (hud, chrome, ascent) = Flight(surface, p.Size, FlightViewMode.Auto, p.Top, p.Bottom, p.Side);
+                AssertRailClear(hud, p.Size.Name + " closed");
+                bool shownClosed = Shown(hud.Q("ascent-plot"));
+                float closedBottom = hud.Q("ascent-plot").worldBound.yMax;
+                OpenNotes(ascent, surface, true);
+                AssertRailClear(hud, p.Size.Name + " notes open");
+                OpenNotes(ascent, surface, false);
+                AssertRailClear(hud, p.Size.Name + " notes closed again");
+                var plot = hud.Q("ascent-plot");
+                if (shownClosed)
+                    Assert.That(plot.worldBound.yMax, Is.EqualTo(closedBottom).Within(0.5f), p.Size.Name + " the rail grows back when the notes close");
+                OpenNotes(ascent, surface, true);
+                AssertRailClear(hud, p.Size.Name + " notes reopened");
+                ascent.Close();
+            }
+        }
+
         [Test]
         public void EveryCameraTapChangesTheViewTheLabelAndThePose()
         {

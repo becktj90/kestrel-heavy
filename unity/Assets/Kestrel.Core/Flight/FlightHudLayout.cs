@@ -11,6 +11,7 @@
 // The chase camera keeps the stack between StackTop and StackBottom of the screen, so the dock
 // and the cards stay off the vehicle. Pinch, orbit, and Follow are unchanged.
 using System;
+using System.Collections.Generic;
 
 namespace Kestrel.Core.Flight
 {
@@ -533,6 +534,44 @@ namespace Kestrel.Core.Flight
             return Box(x, y, Math.Max(1f, r - x), Math.Max(1f, b - y));
         }
 
+        /// <summary>
+        /// The rail (trajectory plot) seated over what is really under it, portrait and landscape alike. AscentHud.SeatPlot
+        /// passes the measured boxes of every visible dock-stack element (Follow / Cam / Pause, the notes sheet, the
+        /// call quote and timer, the nudge row, the dock); FlightHudOverlapGridTests passes the frame's boxes through
+        /// the same call. The ceiling is the highest top among the boxes that reach below the rail's top and share
+        /// columns with it (landscape: Cam / Pause in the right rail do not cut the left rail), and the rail ends one
+        /// <paramref name="gap"/> above it in whole pixels (<see cref="PlotAbove"/>). Units are the caller's (panel px).
+        /// #332 CI 1280x800 notes open: the landscape rail was pinned from PlaceWide only and never refitted, so it ran
+        /// 48 px into the notes sheet.
+        /// </summary>
+        public static HudBox SeatRail(HudBox plot, IEnumerable<HudBox> below, float gap)
+        {
+            float ceiling = float.NaN;
+            if (below != null)
+                foreach (var b in below)
+                {
+                    if (!(b.W >= 0.5f) || !(b.H >= 0.5f) || float.IsNaN(b.Y) || float.IsNaN(b.X)) continue;
+                    // Only what reaches below the rail's top: a box wholly above it (the health tabs) does not cut it, but
+                    // a notes sheet whose top is above it does (the rail then has no room and steps aside, RailShows).
+                    if (b.Bottom <= plot.Y + 0.5f) continue;
+                    if (b.X >= plot.Right - 0.5f || b.Right <= plot.X + 0.5f) continue; // another column
+                    ceiling = float.IsNaN(ceiling) ? b.Y : Math.Min(ceiling, b.Y);
+                }
+            return PlotAbove(plot, ceiling, gap);
+        }
+
+        /// <summary>
+        /// Portrait flight-notes sheet height (points) when its bottom sits <paramref name="bottomPt"/> above the HUD's
+        /// bottom edge: <see cref="InfoViewPt"/>, kept under the rocket band where there is room, 48 to 96 pt. The one
+        /// formula AscentHud.PlaceInfoSheet sizes the sheet with and FlightHudOverlapGridTests models it with.
+        /// </summary>
+        public static float NotesSheetPt(float panelHPt, float bottomPt, bool prompt)
+        {
+            float sheet = InfoViewPt(panelHPt, 0f, prompt);
+            float room = panelHPt - bottomPt - (panelHPt * StackBottom + 8f);
+            return Math.Max(48f, Math.Min(96f, Math.Min(sheet, room)));
+        }
+
         /// <summary>The shortest rail worth drawing (points). Shorter (a 568 pt screen under a notch with the notes and a
         /// banner row open), it steps aside for the notes sheet instead of squeezing under or into it.</summary>
         public const float RailMinPt = 48f;
@@ -814,7 +853,9 @@ namespace Kestrel.Core.Flight
             // Keep the dock below the chase-camera stack (62% of the screen) so the rocket stays visible.
             float stackFloor = height * StackBottom;
             float maxDock = height - safeBottom - stackFloor - GapPt;
-            float wantDock = DockHeight(notes, prompt, rowPt);
+            // The notes never go in the landscape dock (#332 CI 1280x800): a sheet inside the dock sat on the dock's own
+            // box, and the dock grew under the rail when they opened. They take the left rail's slot under the plot.
+            float wantDock = DockHeight(false, prompt, rowPt);
             float oneRow = PadPt + rowPt + PadPt;
             float dockH = wantDock;
             if (dockH > maxDock) dockH = Math.Max(oneRow, maxDock);
@@ -846,10 +887,10 @@ namespace Kestrel.Core.Flight
                 f.Cells[i] = Box(cellsL + i * (cellW + CellGapPt), stripY, Math.Max(1f, cellW), stripH);
 
             f.Dock = Box(left, dockTop, innerW, dockH);
-            PackDock(f, notes, prompt, quote, rowPt);
+            PackDock(f, false, prompt, quote, rowPt);
 
             float toolsH = ButtonPt;
-            bool helpInRail = notes && !Contains(f.Dock, f.Help);
+            bool helpInRail = notes;
             bool quoteInRail = quote && !Contains(f.Dock, f.Quote);
             float leftExtra = (helpInRail ? HelpPt + GapPt : 0f) + (quoteInRail ? QuotePt + GapPt : 0f);
 

@@ -68,6 +68,7 @@ namespace Kestrel.Slice
             var tools = hud.Q("flight-tools");
             if (tools != null) tools.pickingMode = PickingMode.Ignore;
             WatchTools();
+            WatchStack();
             Layout(upp);
         }
 
@@ -76,6 +77,7 @@ namespace Kestrel.Slice
             // Hand the tools row (Follow, Cam, Pause) back to the flex flow before the HUD goes.
             ClearWidePins();
             UnwatchTools();
+            UnwatchStack();
             hud?.UnregisterCallback<PointerDownEvent>(OnHudPointerDown);
             railFrame = null;
             infoOpen = false;
@@ -220,6 +222,7 @@ namespace Kestrel.Slice
             if (UseWideNow()) LayoutWide();
             else LayoutRail();
             PlaceInfoSheet();
+            WatchStack();
             FitText();
             // Picker above the HUD (rail pieces and the info sheet are re-added or brought forward above),
             // pause menu above the picker (L3: nothing the HUD adds may draw over the open pause menu).
@@ -417,40 +420,88 @@ namespace Kestrel.Slice
 
         void OnToolsMoved(GeometryChangedEvent _)
         {
-            if (!widePinned && !UseWideNow()) { SeatPlot(); SeatRailPicker(); }
+            SeatPlot();
+            if (!widePinned && !UseWideNow()) SeatRailPicker();
         }
 
         /// <summary>The frame's rail box (panel px, padding-edge relative), before it is fitted to the measured stack.</summary>
         HudBox plotPinned;
 
         /// <summary>
-        /// Portrait: pin the rail from the frame, ending one gap above the highest measured top of the dock stack under
-        /// it (Follow / Cam / Pause, the notes sheet, the dock) in whole pixels (FlightHudLayout.PlotAbove). CI 335x720
-        /// (24 px pads): the frame's rail ended at 496, the flex tools row started at 495.
+        /// Pin the rail from the frame (portrait: Place, landscape: PlaceWide), ending one gap above the highest measured
+        /// top of every visible dock-stack element under it, in whole pixels (FlightHudLayout.SeatRail, the call the
+        /// overlap grid models). CI 335x720 (24 px pads): the frame's rail ended at 496, the flex tools row started at
+        /// 495. CI 1280x800 notes open: landscape never refitted, and the rail (bottom 515) ran into the notes (467).
+        /// Runs on every layout, on notes open / close, and whenever a stack element moves (WatchStack).
         /// </summary>
         void SeatPlot()
         {
-            // Landscape pins the rail from PlaceWide (LayoutWideAt); this is the portrait seat only.
-            if (plot == null || hud == null || !plotPinned.Live || widePinned) return;
-            float ceiling = float.NaN;
+            if (plot == null || hud == null || !plotPinned.Live) return;
+            var below = new List<HudBox>();
             var hb = hud.worldBound;
-            if (!float.IsNaN(hb.yMin))
-            {
-                float plotTop = plotPinned.Y;
-                foreach (var e in new[] { hud.Q(UiIds.FlightFollow), hud.Q(UiIds.FlightCamera), hud.Q(UiIds.FlightPause), (VisualElement)help, actions })
+            if (!float.IsNaN(hb.yMin) && !float.IsNaN(hb.xMin))
+                foreach (var e in StackElements())
                 {
-                    if (e == null || e.panel == null || e.resolvedStyle.display == DisplayStyle.None) continue;
+                    if (e == null || e.panel == null || !Visible(e)) continue;
                     var wb = e.worldBound;
-                    if (float.IsNaN(wb.yMin) || wb.height < 0.5f || wb.width < 0.5f) continue;
-                    float top = wb.yMin - hb.yMin;
-                    if (top <= plotTop) continue;   // only what sits under the rail's top
-                    ceiling = float.IsNaN(ceiling) ? top : Mathf.Min(ceiling, top);
+                    if (float.IsNaN(wb.yMin) || float.IsNaN(wb.xMin)) continue;
+                    below.Add(new HudBox { X = wb.xMin - hb.xMin, Y = wb.yMin - hb.yMin, W = wb.width, H = wb.height });
                 }
-            }
-            var fit = FlightHudLayout.PlotAbove(plotPinned, ceiling, Mathf.Round(Px(FlightHudLayout.GapPt)));
+            var fit = FlightHudLayout.SeatRail(plotPinned, below, Mathf.Round(Px(FlightHudLayout.GapPt)));
             Pin(plot, fit);
             // Too short to read (tiny screen, notes and banner open): the rail steps aside until the stack shrinks.
             plot.style.display = FlightHudLayout.RailShows(fit, upp) ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        /// <summary>Everything the rail may sit over: the tools, the notes, the call rows, the nudges and the dock.</summary>
+        IEnumerable<VisualElement> StackElements()
+        {
+            if (hud == null) yield break;
+            yield return hud.Q(UiIds.FlightFollow);
+            yield return hud.Q(UiIds.FlightCamera);
+            yield return hud.Q(UiIds.FlightPause);
+            yield return help;
+            yield return quote;
+            yield return bar;
+            yield return nudgeRow;
+            yield return actions;
+        }
+
+        /// <summary>Shown on screen: displayed itself and every ancestor up to the HUD.</summary>
+        bool Visible(VisualElement e)
+        {
+            for (var v = e; v != null; v = v.parent)
+            {
+                // The inline display first: a sheet just closed is still resolved as shown until the next pass.
+                if (v.style.display.keyword == StyleKeyword.Undefined && v.style.display.value == DisplayStyle.None) return false;
+                if (v.resolvedStyle.display == DisplayStyle.None) return false;
+                if (v == hud) return true;
+            }
+            return true;
+        }
+
+        readonly List<VisualElement> watchedStack = new List<VisualElement>();
+
+        /// <summary>Refit the rail whenever any stack element moves or resizes (notes open, a call, the nudge row).</summary>
+        void WatchStack()
+        {
+            foreach (var e in StackElements())
+            {
+                if (e == null || watchedStack.Contains(e)) continue;
+                watchedStack.Add(e);
+                e.RegisterCallback<GeometryChangedEvent>(OnStackMoved);
+            }
+        }
+
+        void UnwatchStack()
+        {
+            foreach (var e in watchedStack) e?.UnregisterCallback<GeometryChangedEvent>(OnStackMoved);
+            watchedStack.Clear();
+        }
+
+        void OnStackMoved(GeometryChangedEvent _)
+        {
+            SeatPlot();
         }
 
         /// <summary>
@@ -705,7 +756,10 @@ namespace Kestrel.Slice
             Pin(root.Q("ascent-telemetry"), cellBox);
             Pin(health, Sc(f.Health));
             if (health != null) health.style.overflow = Overflow.Visible;
-            Pin(plot, Sc(f.Plot));
+            // The rail's frame box; SeatPlot fits it over the stack as laid out (after the pins below, and again
+            // whenever a stack element moves).
+            plotPinned = Sc(f.Plot);
+            Pin(plot, plotPinned);
             Pin(stages, Sc(f.Stages));
             DressClock(f.Clock.W, f.Telemetry.H);
 
@@ -760,6 +814,9 @@ namespace Kestrel.Slice
                 nudgeRow.style.display = DisplayStyle.None;
             widePinned = true;
             wideMode = mode;
+            // The notes sheet is PlaceWide's box (in the dock or the left rail), dressed but not moved; then the rail.
+            PlaceInfoSheet();
+            WatchStack();
         }
 
         void PlaceRailOrDock(VisualElement e, HudBox css, bool inDock, HudBox panel, VisualElement dock, HudBox dockBox)
@@ -1424,7 +1481,16 @@ namespace Kestrel.Slice
             if (!infoOpen)
             {
                 help.style.display = DisplayStyle.None;
-                if (!widePinned) SeatPlot();
+                SeatPlot();
+                return;
+            }
+            if (widePinned)
+            {
+                // Landscape: LayoutWideAt placed the sheet where PlaceWide put it (in the dock or the left rail, or
+                // hidden when there is no room). #332 CI 1280x800: this used to re-pin it as the portrait sheet, full
+                // width over the dock, on top of the rail, Cam and Pause, where neither the frame nor the rail knew it.
+                DressInfoSheet(help.style.height.keyword == StyleKeyword.Undefined ? help.style.height.value.value : Px(FlightHudLayout.HelpPt));
+                SeatPlot();
                 return;
             }
             if (help.parent != hud) hud.Add(help);
@@ -1468,17 +1534,20 @@ namespace Kestrel.Slice
             help.style.bottom = bottom;
             float panelH = hud.resolvedStyle.height;
             if (float.IsNaN(panelH) || panelH < 8f) panelH = 700f * upp;
-            float sheet = FlightHudLayout.InfoViewPt(panelH / upp, 0f, prompt);
-            if (!widePinned)
-            {
-                // Still under the rocket band where there is room (InfoViewPt's ceiling), never under 48 pt.
-                float room = (panelH - bottom) / upp - (panelH / upp * FlightHudLayout.StackBottom + 8f);
-                sheet = Mathf.Clamp(Mathf.Min(sheet, room), 48f, 96f);
-            }
-            // Fixed height, and it scrolls: the notes never grow over the rows under them (#332).
-            help.style.height = Mathf.Round(Px(sheet));
-            help.style.maxHeight = Mathf.Round(Px(sheet));
+            // Still under the rocket band where there is room, 48 to 96 pt (the grid models the same call).
+            float sheet = FlightHudLayout.NotesSheetPt(panelH / upp, bottom / upp, prompt);
+            DressInfoSheet(Mathf.Round(Px(sheet)));
             help.style.minHeight = Mathf.Round(Px(48f));
+            SeatPlot();
+        }
+
+        /// <summary>Fixed height, and it scrolls: the notes never grow over the rows under them (#332).</summary>
+        void DressInfoSheet(float heightPx)
+        {
+            if (help == null) return;
+            help.style.height = heightPx;
+            help.style.maxHeight = heightPx;
+            help.style.minHeight = heightPx;
             help.style.overflow = Overflow.Hidden;
             help.mode = ScrollViewMode.Vertical;
             help.verticalScrollerVisibility = ScrollerVisibility.Auto;
@@ -1809,7 +1878,7 @@ namespace Kestrel.Slice
             medalRow.Add(info);
             help = new ScrollView(ScrollViewMode.Vertical) { name = "ascent-help" };
             // The rail ends above the notes sheet as it is really laid out (SeatPlot), so it follows the sheet's moves.
-            help.RegisterCallback<GeometryChangedEvent>(_ => { if (!widePinned) SeatPlot(); });
+            help.RegisterCallback<GeometryChangedEvent>(_ => SeatPlot());
             help.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             help.verticalScrollerVisibility = ScrollerVisibility.Auto;
             help.AddToClassList("flight-help");
@@ -1945,6 +2014,8 @@ namespace Kestrel.Slice
             else
             {
                 PlaceDockSpacer();
+                // Landscape: the notes change PlaceWide's mode (the dock grows, the sheet gets its box): re-pin.
+                if (widePinned && UseWideNow()) LayoutWide();
                 PlaceInfoSheet();
                 FlightChrome.Restack(hud);
             }

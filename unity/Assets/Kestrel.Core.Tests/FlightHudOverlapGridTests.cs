@@ -29,6 +29,7 @@ namespace Kestrel.Core.Tests
         public void PortraitRailEndsAboveTheMeasuredDockStackEverywhere()
         {
             int cases = 0, hidden = 0;
+            var covered = new HashSet<(bool, bool, bool)>();
             var fails = new List<string>();
             foreach (float w in Widths)
             foreach (float h in Heights)
@@ -54,11 +55,17 @@ namespace Kestrel.Core.Tests
                     {
                         cases++;
                         var flexRow = row; flexRow.Y -= lift;
-                        // The notes sheet floats one gap above the real row, up to 96 pt tall (AscentHud.PlaceInfoSheet).
+                        // The notes sheet floats one gap above the real row (AscentHud.PlaceInfoSheet), sized by the
+                        // same NotesSheetPt the HUD calls; the grid seats it at its 96 pt ceiling, the tallest it gets.
+                        float sheetBottomPx = (float)Math.Round(h * upp - (flexRow.Y - gap));
+                        float sheetPt = FlightHudLayout.NotesSheetPt(h, sheetBottomPx / upp, mode == FlightHudMode.PromptNotes);
+                        if (notes && (sheetPt > 96f + 1e-3f || sheetPt < 48f - 1e-3f)) fails.Add(w + "x" + h + " " + mode + ": notes sheet " + sheetPt + " pt outside 48..96");
                         var help = notes ? new HudBox { X = dock.X, Y = flexRow.Y - gap - 96f * upp, W = dock.W, H = 96f * upp } : default;
                         float ceiling = Math.Min(flexRow.Y, dock.Y);
                         if (help.Live) ceiling = Math.Min(ceiling, help.Y);
-                        var fit = FlightHudLayout.PlotAbove(plot, ceiling, gap);
+                        covered.Add((notes, banner, nudges));
+                        // The rail is seated by the call AscentHud.SeatPlot makes, over the stack it measures.
+                        var fit = FlightHudLayout.SeatRail(plot, new[] { flexRow, dock, help }, gap);
                         // Too short to read, the rail is hidden (AscentHud.SeatPlot); hidden, it overlaps nothing.
                         if (!FlightHudLayout.RailShows(fit, upp)) { hidden++; if (!notes) fails.Add(w + "x" + h + " " + mode + " @" + upp + ": rail hidden without the notes"); continue; }
                         string at = w + "x" + h + " pads " + top + "/" + bottom + "/" + side + " " + mode + (banner ? " banner" : "") + (nudges ? "" : " no-nudges") + " @" + upp + "x lift " + lift;
@@ -73,8 +80,93 @@ namespace Kestrel.Core.Tests
                 }
             }
             Assert.That(cases, Is.GreaterThan(10000));
+            // Every portrait case ran with the notes open and closed, the banner row on and off, and the nudge row in and out.
+            foreach (bool n in new[] { false, true }) foreach (bool b in new[] { false, true }) foreach (bool u in new[] { false, true })
+                Assert.That(covered.Contains((n, b, u)), Is.True, "notes " + n + " banner " + b + " nudges " + u);
             TestContext.WriteLine(cases + " cases, rail stepped aside for the notes in " + hidden);
             Assert.That(hidden, Is.LessThan(cases / 50), "the rail stays up almost everywhere");
+            Assert.That(fails, Is.Empty, fails.Count + " of " + cases + ":\n" + string.Join("\n", fails.GetRange(0, Math.Min(40, fails.Count))));
+        }
+
+        /// <summary>Landscape web panels: every CSS size, as the scaled panel it gets, and the panel 1:1.</summary>
+        static List<float[]> WidePanels()
+        {
+            // { css w, css h, panel w, panel h }
+            var wide = new List<float[]>();
+            foreach (var s in new[] { new[] { 960f, 540f }, new[] { 1024f, 768f }, new[] { 1280f, 720f }, new[] { 1280f, 800f }, new[] { 1366f, 768f }, new[] { 1440f, 900f }, new[] { 1920f, 1080f }, new[] { 2560f, 1440f } })
+            {
+                WebLandscapeType.PanelReference(true, out float rw, out float rh, out float m);
+                float k = WebLandscapeType.PanelScale(s[0], s[1], rw, rh, m);
+                wide.Add(new[] { s[0], s[1], (float)Math.Round(s[0] / k), (float)Math.Round(s[1] / k) });
+                wide.Add(new[] { s[0], s[1], s[0], s[1] });
+                // The device tests' panel at 1 unit per point (FlightCameraPickerDeviceTests: 1280x800 is 1214x759 at 1x).
+                wide.Add(new[] { (float)Math.Round(s[0] / k), (float)Math.Round(s[1] / k), (float)Math.Round(s[0] / k), (float)Math.Round(s[1] / k) });
+            }
+            return wide;
+        }
+
+        /// <summary>
+        /// #332 CI (job 119437176077), 1280x800 web (panel 1214x759), notes open: ascent-plot (8,80 264x435) ran into
+        /// ascent-help (0,467 1214x96). The grid had no landscape rail case, and the HUD did not do what the model said:
+        /// PlaceWide puts the notes in the dock or the left rail under the plot, but AscentHud.PlaceInfoSheet then re-pinned
+        /// them as the portrait sheet, full width over the dock, and the landscape rail was never refitted. Now the HUD keeps
+        /// PlaceWide's box and seats the rail with SeatRail, the call made here, over every visible stack element, as
+        /// AscentHud.LayoutWideAt lays out the frame (face points = panel px / upp, the dock row from DockRowPx).
+        /// </summary>
+        [Test]
+        public void LandscapeRailEndsAboveEveryVisibleStackElementWithNotesOpenOrClosed()
+        {
+            var fails = new List<string>();
+            int cases = 0, open = 0;
+            foreach (var p in WidePanels())
+            foreach (var mode in Modes)
+            {
+                cases++;
+                bool notes = mode == FlightHudMode.Notes || mode == FlightHudMode.PromptNotes;
+                bool prompt = mode == FlightHudMode.Prompt || mode == FlightHudMode.PromptNotes;
+                if (notes) open++;
+                float upp = p[2] / p[0];
+                float rowPx = (float)Math.Ceiling(Math.Max(FlightHudLayout.ButtonPt, FlightHudLayout.InfoPt) * upp - 0.01f);
+                var f = FlightHudLayout.PlaceWide(p[2] / upp, p[3] / upp, 0f, 0f, 0f, 0f, FlightHudLayout.WideMode(prompt, notes), rowPx / upp, FlightHudLayout.ClockMinWidth());
+                HudBox Sc(HudBox b) => FlightHudLayout.ToPanel(b, upp, upp);
+                string at = p[0] + "x" + p[1] + " (panel " + p[2] + "x" + p[3] + ") " + mode;
+                if (notes && !f.Help.Live) fails.Add(at + ": no notes box");
+                var stack = new List<(string, HudBox)>
+                {
+                    ("follow", Sc(f.Follow)), ("camera", Sc(f.Camera)), ("pause", Sc(f.Pause)), ("dock", Sc(f.Dock)),
+                    ("notes", Sc(f.Help)), ("quote", Sc(f.Quote)), ("timer", Sc(f.Timer)),
+                    ("alternate", Sc(f.Alternate)), ("nudge-", Sc(f.NudgeDown)), ("nudge+", Sc(f.NudgeUp)),
+                };
+                var boxes = new List<HudBox>();
+                foreach (var (_, b) in stack) if (b.Live) boxes.Add(b);
+                float gap = (float)Math.Round(FlightHudLayout.GapPt * upp);
+                var plot = Sc(f.Plot);
+                var fit = FlightHudLayout.SeatRail(plot, boxes, gap);
+                if (!FlightHudLayout.RailShows(fit, upp)) { fails.Add(at + ": rail hidden " + Fmt(fit)); continue; }
+                if (!Whole(fit.X) || !Whole(fit.Y) || !Whole(fit.W) || !Whole(fit.H)) fails.Add(at + ": not whole pixels " + Fmt(fit));
+                if (fit.Y < plot.Y - 1e-3f || fit.Bottom > plot.Bottom + 1e-3f) fails.Add(at + ": rail grew " + Fmt(fit) + " from " + Fmt(plot));
+                // Independent of SeatRail: one gap above every visible element in the rail's columns.
+                foreach (var (name, b) in stack)
+                {
+                    if (!b.Live) continue;
+                    bool sameColumns = b.X < fit.Right - 0.5f && b.Right > fit.X + 0.5f;
+                    if (sameColumns && b.Y > plot.Y && fit.Bottom > b.Y - gap + 1e-3f)
+                        fails.Add(at + ": rail bottom " + fit.Bottom + " not one gap above " + name + " " + Fmt(b));
+                    if (Hit(fit, b)) fails.Add(at + ": rail " + Fmt(fit) + " overlaps " + name + " " + Fmt(b));
+                }
+                // The notes box itself (the box the HUD now keeps) covers no control and stays on the panel.
+                var help = Sc(f.Help);
+                if (help.Live)
+                {
+                    foreach (var (name, b) in stack)
+                        if (name != "notes" && name != "dock" && b.Live && Hit(help, b)) fails.Add(at + ": notes " + Fmt(help) + " overlap " + name + " " + Fmt(b));
+                    foreach (var (name, b) in new[] { ("health", Sc(f.Health)), ("telemetry", Sc(f.Telemetry)), ("stages", Sc(f.Stages)) })
+                        if (b.Live && Hit(help, b)) fails.Add(at + ": notes overlap " + name);
+                    if (help.X < -0.5f || help.Right > p[2] + 0.5f || help.Bottom > p[3] + 0.5f) fails.Add(at + ": notes off the panel " + Fmt(help));
+                    if (help.H > 96.5f * upp) fails.Add(at + ": notes taller than the 96 pt sheet");
+                }
+            }
+            Assert.That(open, Is.EqualTo(cases / 2), "every landscape panel ran with the notes open and closed");
             Assert.That(fails, Is.Empty, fails.Count + " of " + cases + ":\n" + string.Join("\n", fails.GetRange(0, Math.Min(40, fails.Count))));
         }
 
