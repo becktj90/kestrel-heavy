@@ -1,4 +1,5 @@
-// The four report exits. One more launch keeps the seed ReportRoutes already holds.
+// The report exits. One more launch keeps the seed ReportRoutes already holds.
+// Back to designer (NAV-04 / F4) reopens the rocket that flew with the same mission.
 using System;
 using Kestrel.Core.Flight;
 using UnityEngine.UIElements;
@@ -7,10 +8,14 @@ namespace Kestrel.Slice
 {
     public static class NextMission
     {
+        /// <summary>UiIds name of the Back to designer exit.</summary>
+        public const string DesignerId = "report-back-to-designer";
+
         public static void AddRoutes(VisualElement parent, ReportActions actions, float tap)
         {
             parent.Add(Exit("report-next", ReportRoutes.NextLabel, ReportRoutes.NextTip, actions != null ? actions.Next : null, tap, "next"));
             parent.Add(Exit("report-retry", ReportRoutes.AgainLabel, ReportRoutes.AgainTip, actions != null ? actions.Again : null, tap, "retry"));
+            parent.Add(Exit(DesignerId, ReportRoutes.DesignerLabel, ReportRoutes.DesignerTip, actions != null ? actions.Designer : null, tap, "designer"));
             parent.Add(Exit("report-missions", ReportRoutes.MissionsLabel, ReportRoutes.MissionsTip, actions != null ? actions.Missions : null, tap, "missions"));
             parent.Add(Exit("report-home", ReportRoutes.HomeLabel, ReportRoutes.HomeTip, actions != null ? actions.Home : null, tap, "home"));
         }
@@ -19,7 +24,7 @@ namespace Kestrel.Slice
         /// Shell routes when the app shell is up. Otherwise the session still moves, and relaunch/home
         /// are the flight screen's own callbacks. The seed is not replaced.
         /// </summary>
-        public static ReportActions Actions(Action relaunch, Action home)
+        public static ReportActions Actions(Action relaunch, Action home, Action designer = null)
         {
             var shell = Kestrel.Game.Shell.AppShell.Instance;
             var flow = shell != null ? shell.Flow : null;
@@ -38,6 +43,15 @@ namespace Kestrel.Slice
                     if (GameSession.Current != null && GameSession.Current.Seed != seed)
                         GameSession.Current.Seed = seed;
                     relaunch?.Invoke();
+                },
+                Designer = () =>
+                {
+                    ulong seed = ReportRoutes.SeedOf(GameSession.Current);
+                    if (flow != null) flow.ReportRetry();
+                    else ReportRoutes.BackToDesigner();
+                    if (GameSession.Current != null && GameSession.Current.Seed != seed)
+                        GameSession.Current.Seed = seed;
+                    designer?.Invoke();
                 },
                 Missions = () =>
                 {

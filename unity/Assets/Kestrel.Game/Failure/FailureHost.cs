@@ -485,6 +485,7 @@ namespace Kestrel.Game.Failure
                 var again = actions.Again;
                 var missions = actions.Missions;
                 var home = actions.Home;
+                var designer = actions.Designer;
                 System.Action leave = () =>
                 {
                     ReportCardChrome.Dismiss(ui);
@@ -494,6 +495,7 @@ namespace Kestrel.Game.Failure
                 actions.Again = () => { leave(); if (again != null) again(); };
                 actions.Missions = () => { leave(); if (missions != null) missions(); };
                 actions.Home = () => { leave(); if (home != null) home(); };
+                actions.Designer = () => { leave(); if (designer != null) designer(); };
                 actions.Fix = () => { leave(); FixField.Apply(ui, FixField.For(kind)); };
             }
             Card = ReportView.Build(shown, log, frame, reduce, () => { reveal(); FixField.Apply(ui, FixField.For(kind)); }, debrief, actions);

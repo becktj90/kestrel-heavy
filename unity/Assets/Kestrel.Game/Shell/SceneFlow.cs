@@ -101,7 +101,7 @@ namespace Kestrel.Game.Shell
 
         public void ExitToMissions() => Route(RouteId.ExitMissions);
 
-        /// <summary>Fly from the board. A starter that can launch opens the briefing with the pad armed. Otherwise the designer.</summary>
+        /// <summary>Fly from the board. A starter that can launch opens the briefing, then the designer with it loaded. Otherwise the designer.</summary>
         public void LaunchChosen(string missionId)
         {
             if (Busy || string.IsNullOrEmpty(missionId)) return;
@@ -124,8 +124,9 @@ namespace Kestrel.Game.Shell
                     ctx.ApplyBriefing(card);
                     ctx.VehicleLine = choice.VehicleLine;
                     ctx.ReachLine = choice.ReachLine;
-                    ctx.AutoPad = true;
-                    PadHandoff.Arm(choice.Design, true, fromHome: false);
+                    // NAV-03 / F4: briefing, then the designer with this starter. Launch is the designer's.
+                    ctx.AutoPad = false;
+                    PadHandoff.Arm(choice.Design, false, fromHome: false);
                     GameSession.Carry(ctx);
                     Present(new RouteResult(SessionScreens.Missions, SessionScreens.Briefing, ctx));
                     return;
