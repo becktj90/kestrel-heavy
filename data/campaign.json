@@ -581,17 +581,17 @@
         "payloadName": "Plover-1",
         "payloadKind": "Weather sat",
         "customer": "Brineglass Weather Bureau",
-        "goal": "Put a 2,200 kg weather sat in a 550 km sun-sync.",
-        "control": "Plover-1 is 2,200 kg. Sun-sync 550 km. About 8,676 m/s.",
-        "whatItIs": "A weather satellite that sees the same towns at the same hour.",
-        "whatItDoes": "It repeats one ground track so the bureau can compare each day.",
-        "why": "Same towns, same hour. 2,200 kg at 550 km. About 8,676 m/s.",
+        "goal": "Put a 2,200 kg weather sat in a 550 km circular orbit.",
+        "control": "Plover-1 is 2,200 kg. Circle at 550 km. About 8,676 m/s.",
+        "whatItIs": "A weather satellite for the Brineglass bureau.",
+        "whatItDoes": "It watches the weather from a steady 550 km circle.",
+        "why": "A steady circle for the weather. 2,200 kg at 550 km. About 8,676 m/s.",
         "form": "weather",
         "codex": "orbits",
         "bonuses": [
           {
             "id": "same-hour",
-            "label": "Hold the sun-sync hour"
+            "label": "Keep the 550 km circle round"
           }
         ]
       }
@@ -674,8 +674,8 @@
         "payloadName": "Cinder Rack",
         "payloadKind": "Cubesat dispenser",
         "customer": "Cinderwharf Rideshare",
-        "goal": "Deliver a 480 kg dispenser to a 550 km sun-sync and land on Haven.",
-        "control": "Cinder Rack is 480 kg. Sun-sync 550 km. Land the booster on Haven.",
+        "goal": "Deliver a 480 kg dispenser to a 550 km circular orbit and land on Haven.",
+        "control": "Cinder Rack is 480 kg. Circle at 550 km. Land the booster on Haven.",
         "whatItIs": "A rack of little satellites.",
         "whatItDoes": "It opens in orbit and lets the small ones go.",
         "why": "A rack of small satellites, 480 kg, and the booster still finds Haven.",

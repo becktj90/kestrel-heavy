@@ -227,11 +227,11 @@ namespace Kestrel.Core.Tests
             Assert.That(Math.Abs(flight.incDeg - m.IncDeg), Is.GreaterThan(MissionScore.InclinationDeg), id + " flew " + flight.incDeg + " deg");
         }
 
-        /// <summary>Because inclination is not scored, no campaign briefing, report goal or board target line states one.</summary>
+        /// <summary>Because inclination is not scored, no campaign briefing, report goal or board target line states one, or promises anything that depends on the orbital plane (sun-sync, same hour, ground track).</summary>
         [Test]
         public void NoMissionTextStatesAnInclination()
         {
-            var deg = new System.Text.RegularExpressions.Regex(@"\d\s*(°|degree)");
+            var deg = new System.Text.RegularExpressions.Regex(@"\d\s*(°|degree)|sun-?sync|same hour|ground track", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             var bad = new System.Collections.Generic.List<string>();
             foreach (var m in campaign.Missions)
             {
