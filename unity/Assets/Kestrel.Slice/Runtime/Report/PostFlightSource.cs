@@ -19,15 +19,18 @@ namespace Kestrel.Slice
     {
         public static Action Relaunch { get; private set; }
         public static Action LeaveHome { get; private set; }
+        /// <summary>NAV-04 / F4: the flight screen's own "reopen the designer" callback.</summary>
+        public static Action OpenDesigner { get; private set; }
 
         static Catalog catalog;
         static Design design;
         static bool engineer;
 
-        public static void Bind(Action relaunch, Action home)
+        public static void Bind(Action relaunch, Action home, Action designer = null)
         {
             Relaunch = relaunch;
             LeaveHome = home;
+            OpenDesigner = designer;
         }
 
         public static void Arm(Catalog cat, Design flying, JsonObject doc, bool engineerDepth)
@@ -56,7 +59,7 @@ namespace Kestrel.Slice
             return card;
         }
 
-        public static ReportActions Actions() => NextMission.Actions(Relaunch, LeaveHome);
+        public static ReportActions Actions() => NextMission.Actions(Relaunch, LeaveHome, OpenDesigner);
 
         static FlightFacts Facts(FlightDriver flight, FailureEvent failure)
         {
@@ -106,6 +109,13 @@ namespace Kestrel.Slice
                         extra.BoosterGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, true);
                     }
                     facts.Passed = FlightDebrief.GoalMet(row, intact, apo, peri, result.maxG, facts.LandingGrade, extra);
+                    // F4: an intact miss says why and what to change, from the same gates.
+                    facts.Miss = MissReason.Explain(row, new MissInput
+                    {
+                        Intact = intact, ApoM = apo, PeriM = peri, MaxG = result.maxG,
+                        LandingGrade = facts.LandingGrade, Extra = extra,
+                        Stages = design != null && design.stages != null ? design.stages.Count : 1,
+                    });
                 }
             }
             if (flight != null && flight.Decisions != null)

@@ -65,7 +65,7 @@ namespace Kestrel.Slice
             Kestrel.Game.Audio.AudioDirector.Attach(flight);
             _ = GameCenterBridge.Impl.Authenticate();
             StartSession();
-            PostFlightSource.Bind(RestartFlight, ExitToHome);
+            PostFlightSource.Bind(RestartFlight, ExitToHome, () => { BackToDesign(); ShowDesigner(true); });
         }
 
         /// <summary>Open a home handoff, else the most recent save, else the Workhorse template, else the stock preset.</summary>

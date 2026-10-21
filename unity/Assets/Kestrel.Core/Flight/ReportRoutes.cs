@@ -1,4 +1,4 @@
-// Report exits. Next mission, one more launch, Missions, and Home.
+// Report exits. Next mission, one more launch, Back to designer, Missions, and Home.
 // One more launch keeps the mission and the seed. Nothing here rolls a new seed,
 // starts a clock, or clears a best.
 namespace Kestrel.Core.Flight
@@ -9,11 +9,13 @@ namespace Kestrel.Core.Flight
         public const string AgainLabel = "One more launch";
         public const string MissionsLabel = "Missions";
         public const string HomeLabel = "Home";
+        public const string DesignerLabel = "Back to designer";
 
         public const string NextTip = "Next mission. Opens the list.";
         public const string AgainTip = "One more launch. Same mission, same seed.";
         public const string MissionsTip = "Back to the mission list.";
         public const string HomeTip = "Exit to Home.";
+        public const string DesignerTip = "Back to the designer. Same rocket, same mission.";
 
         public static ulong SeedOf(MissionContext mission) => mission != null ? mission.Seed : 0;
 
@@ -31,6 +33,13 @@ namespace Kestrel.Core.Flight
                 route.Session.MissionId = id;
             return route;
         }
+
+        /// <summary>
+        /// NAV-04 / F4: back to the designer with the rocket that just flew. Same screen route as
+        /// <see cref="Again"/>: the designer, mission and seed kept. The flight screen does not relaunch;
+        /// Launch is the player's.
+        /// </summary>
+        public static RouteResult BackToDesigner() => Again();
 
         public static RouteResult Missions() => GameSession.Apply(RouteId.ReportMissions);
 

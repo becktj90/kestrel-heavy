@@ -147,13 +147,13 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(SessionScreens.Briefing, route.Overlay);
             Assert.AreEqual("m1", route.Session.MissionId);
             Assert.AreEqual("KH-1", route.Session.Label);
-            Assert.IsTrue(route.Session.AutoPad);
+            Assert.IsFalse(route.Session.AutoPad, "NAV-03: the briefing opens the designer");
             Assert.IsFalse(string.IsNullOrEmpty(route.Session.VehicleLine));
             Assert.IsFalse(string.IsNullOrEmpty(route.Session.ReachLine));
             Assert.IsTrue(PadHandoff.FromHome);
-            Assert.IsTrue(PadHandoff.FlyOnPad);
+            Assert.IsFalse(PadHandoff.FlyOnPad, "NAV-03: armed with the starter, not to fly");
             Assert.IsTrue(PadHandoff.TryTake(out var design, out bool fly));
-            Assert.IsTrue(fly);
+            Assert.IsFalse(fly, "NAV-03: Launch from the designer");
             Assert.AreEqual("m1", design["missionId"]);
             Assert.IsFalse(PadHandoff.TryTake(out _, out _), "the handoff is consumed once");
             Assert.AreSame(route.Session, GameSession.Current);
@@ -206,7 +206,7 @@ namespace Kestrel.Core.Tests
             var route = HomeRoutes.Launch(campaign, 0, catalog, hangar.templates);
             Assert.AreEqual(SessionScreens.Missions, route.Screen);
             Assert.AreEqual(SessionScreens.Briefing, route.Overlay);
-            Assert.IsTrue(route.Session.AutoPad);
+            Assert.IsFalse(route.Session.AutoPad, "NAV-03: Build it, then the designer");
         }
 
         [Test]
