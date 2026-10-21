@@ -1126,7 +1126,15 @@ namespace Kestrel.Slice
         /// Device tests and PNG captures: the strip readings, the stages banner and an optional call (the engine-out
         /// prompt) without a running flight. Same rows, same seating and fitting as <see cref="Present"/>.
         /// </summary>
-        public void Preview(string altText, string speedText, string verdict, AscentPrompt? call)
+        public void Preview(string altText, string speedText, string verdict, AscentPrompt? call) =>
+            Preview(altText, speedText, verdict, call, false, null);
+
+        /// <summary>
+        /// <see cref="Preview(string,string,string,AscentPrompt?)"/> with the cruise dock as Present draws it before any
+        /// call is decided: <paramref name="medalLine"/> on the medal line (Present: "Flying the plan.") and, with
+        /// <paramref name="engineerNudges"/>, the Nudge -1 / +1 row (Present shows it for director.Engineer).
+        /// </summary>
+        public void Preview(string altText, string speedText, string verdict, AscentPrompt? call, bool engineerNudges, string medalLine)
         {
             if (root == null) return;
             root.style.display = DisplayStyle.Flex;
@@ -1139,7 +1147,7 @@ namespace Kestrel.Slice
             SetCell(3, prompt ? "PROP" : "G", prompt ? "100%" : "12.4", new Color(0.30f, 0.82f, 0.55f));
             var v = stages != null ? stages.Q<Label>("h-verdict") : null;
             if (v != null) v.text = verdict ?? "";
-            if (medal != null) medal.text = "Medal timing: Silver · 1 perfect · 0 good · 0 late";
+            if (medal != null) medal.text = medalLine ?? "Medal timing: Silver · 1 perfect · 0 good · 0 late";
             if (assist != null) assist.text = "Auto-assist on";
             if (prompt)
             {
@@ -1162,7 +1170,10 @@ namespace Kestrel.Slice
                 if (primary != null) primary.style.display = DisplayStyle.None;
                 if (alternate != null) alternate.style.display = DisplayStyle.None;
                 if (skip != null) skip.style.display = DisplayStyle.None;
-                nudgeRowOpen = false;
+                // Present: showNudgeRow = director.Engineer || showAlternate, the nudges themselves for Engineer.
+                nudgeRowOpen = engineerNudges;
+                if (nudgeDown != null) { nudgeDown.text = "Nudge −1°"; nudgeDown.style.display = engineerNudges ? DisplayStyle.Flex : DisplayStyle.None; }
+                if (nudgeUp != null) { nudgeUp.text = "Nudge +1°"; nudgeUp.style.display = engineerNudges ? DisplayStyle.Flex : DisplayStyle.None; }
             }
             PlaceAssist(prompt);
             if (promptRow != null) promptRow.style.display = prompt ? DisplayStyle.Flex : DisplayStyle.None;

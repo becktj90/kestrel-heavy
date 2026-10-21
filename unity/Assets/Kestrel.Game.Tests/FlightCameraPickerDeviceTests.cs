@@ -437,6 +437,112 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        // ---- TestFlight 204 T+24 Simple "Climbing": the dock (Flying the plan. / i, Auto-assist, Nudge -1/+1) drawn over
+        // Cam: Below and Pause, Cam untappable. 204 is main 9e22257c, before #332. The same state, drawn by the real
+        // FlightChrome / AscentHud on main, at the shot's size and its neighbours, the 24 px pad cases and web.
+
+        struct DockCase { public Size Size; public float Top, Bottom, Side; public string Pads; }
+
+        static IEnumerable<DockCase> DockCases()
+        {
+            var portrait = new[] { (471f, 1024f, "471x1024 shot"), (430f, 932f, "430x932"), (440f, 956f, "440x956"), (335f, 720f, "335x720") };
+            foreach (var (w, h, name) in portrait)
+            {
+                var size = new Size { Name = name, CssW = w, CssH = h, PanelW = w, PanelH = h };
+                yield return new DockCase { Size = size, Pads = "no pads" };
+                yield return new DockCase { Size = size, Top = 24f, Bottom = 24f, Side = 24f, Pads = "24 px pads" };
+                yield return new DockCase { Size = size, Top = 62f, Bottom = 34f, Side = 0f, Pads = "notch 62/34" };
+            }
+            WebLandscapeType.PanelReference(true, out float rw, out float rh, out float m);
+            float k = WebLandscapeType.PanelScale(1280f, 800f, rw, rh, m);
+            yield return new DockCase { Size = new Size { Name = "1280x800 web", CssW = 1280f, CssH = 800f, PanelW = Mathf.Round(1280f / k), PanelH = Mathf.Round(800f / k), Wide = true }, Pads = "no pads" };
+        }
+
+        /// <summary>The 204 dock state: "Flying the plan." on the medal line with i, Auto-assist, and (Engineer) the nudges.</summary>
+        static void ShowClimbingDock(AscentHud ascent, FlightChrome chrome, DeviceSurface surface, bool nudges)
+        {
+            ascent.Preview("4.2 km", "329 m/s", "Climbing", null, nudges, "Flying the plan.");
+            surface.Pump(6);
+            chrome.Layout(1f);
+            ascent.Layout(1f);
+            surface.Pump(6);
+        }
+
+        static bool Intersects(Rect a, Rect b) => a.xMin < b.xMax && a.xMax > b.xMin && a.yMin < b.yMax && a.yMax > b.yMin;
+
+        [Test]
+        public void ClimbingDockNeverCoversCamOrPauseInTheRealDraw()
+        {
+            foreach (var c in DockCases())
+            foreach (bool nudges in new[] { true, false })
+            using (var surface = DeviceSurface.Open(c.Size.PanelW, c.Size.PanelH))
+            {
+                string where = c.Size.Name + " " + c.Pads + (nudges ? " nudges" : " simple");
+                var (hud, chrome, ascent) = Flight(surface, c.Size, FlightViewMode.Below, c.Top, c.Bottom, c.Side);
+                ShowClimbingDock(ascent, chrome, surface, nudges);
+                var dock = hud.Q("ascent-actions");
+                var medal = hud.Q<Label>("ascent-medal");
+                Assert.That(Shown(dock), Is.True, where + " dock shown");
+                Assert.That(medal != null && Shown(medal) && medal.text == "Flying the plan.", Is.True, where + " the notes line");
+                Assert.That(Shown(hud.Q(UiIds.FlightInfo)), Is.True, where + " i");
+                Assert.That(Shown(hud.Q(UiIds.FlightAssist)), Is.True, where + " Auto-assist");
+                Assert.That(Shown(hud.Q(UiIds.FlightNudgeDown)) && Shown(hud.Q(UiIds.FlightNudgeUp)), Is.EqualTo(nudges), where + " nudge row");
+                Assert.That(Shown(hud.Q(UiIds.FlightCamera)) && hud.Q<Button>(UiIds.FlightCamera).text == "Cam: Below", Is.True, where + " Cam: Below");
+
+                // Every dock / info element: the dock, everything shown inside it, and the notes sheet wherever it sits.
+                var dockParts = new List<VisualElement> { dock };
+                dock.Query<VisualElement>().ForEach(e => { if (e != dock && Shown(e)) dockParts.Add(e); });
+                var help = hud.Q("ascent-help");
+                if (help != null && Shown(help) && !dockParts.Contains(help)) dockParts.Add(help);
+                foreach (var id in new[] { UiIds.FlightCamera, UiIds.FlightPause })
+                {
+                    var b = hud.Q<Button>(id);
+                    var r = b.worldBound;
+                    foreach (var e in dockParts)
+                        Assert.That(Intersects(r, e.worldBound), Is.False, where + ": " + id + " " + r + " under " + e.name + " " + e.worldBound);
+                    // The tap lands on the button at its centre and at the four corners, 3 px in.
+                    const float inset = 3f;
+                    var probes = new[]
+                    {
+                        r.center, new Vector2(r.xMin + inset, r.yMin + inset), new Vector2(r.xMax - inset, r.yMin + inset),
+                        new Vector2(r.xMin + inset, r.yMax - inset), new Vector2(r.xMax - inset, r.yMax - inset),
+                    };
+                    foreach (var pt in probes)
+                    {
+                        var hit = hud.panel.Pick(pt);
+                        Assert.That(OnElement(hit, b), Is.True, where + ": " + id + " at " + pt + " picks " + (hit != null ? hit.name : "nothing"));
+                    }
+                }
+
+                // The dock as laid out is exactly DockHeight() (the medal / notes line, Auto-assist, nudges), in whole px.
+                float rowPt = c.Size.Wide ? Mathf.Ceil(Mathf.Max(FlightHudLayout.ButtonPt, FlightHudLayout.InfoPt) - 0.01f) : FlightHudLayout.ButtonPt;
+                float want = Mathf.Round(FlightHudLayout.DockHeight(false, false, rowPt, c.Size.Wide || nudges));
+                var d = dock.worldBound;
+                Assert.That(d.height, Is.EqualTo(want), where + " dock height " + d.height + " vs DockHeight " + want);
+                Assert.That(Mathf.Abs(d.yMin - Mathf.Round(d.yMin)) < 0.01f && Mathf.Abs(d.height - Mathf.Round(d.height)) < 0.01f, Is.True, where + " dock on whole pixels " + d);
+                ascent.Close();
+            }
+        }
+
+        [Test]
+        public void CapturesTheClimbingDockState()
+        {
+            foreach (var c in DockCases())
+            foreach (bool nudges in new[] { true, false })
+            using (var surface = DeviceSurface.OpenOffscreen(c.Size.PanelW, c.Size.PanelH, 2f))
+            {
+                surface.Stage.style.backgroundColor = new Color(0.16f, 0.24f, 0.38f, 1f);
+                var (hud, chrome, ascent) = Flight(surface, c.Size, FlightViewMode.Below, c.Top, c.Bottom, c.Side);
+                ShowClimbingDock(ascent, chrome, surface, nudges);
+                surface.Pump(4);
+                string slug = "climbing-dock-" + c.Size.Name.Replace(" ", "-") + "-" + c.Pads.Replace(" ", "-").Replace("/", "-") + (nudges ? "-nudges" : "-simple");
+                var path = UiCapture.Save(surface.Texture, slug);
+                // No real pixels (-nographics) degrades to a LogWarning and null; a written path must exist.
+                if (path != null) Assert.That(System.IO.File.Exists(path), Is.True, slug);
+                ascent.Close();
+            }
+        }
+
         [Test]
         public void EveryCameraTapChangesTheViewTheLabelAndThePose()
         {
