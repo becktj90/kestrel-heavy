@@ -64,6 +64,7 @@ namespace Kestrel.Slice
             pause?.BringToFront();
             var tools = hud.Q("flight-tools");
             if (tools != null) tools.pickingMode = PickingMode.Ignore;
+            WatchTools();
             Layout(upp);
         }
 
@@ -71,6 +72,8 @@ namespace Kestrel.Slice
         {
             // Hand the tools row (Follow, Cam, Pause) back to the flex flow before the HUD goes.
             ClearWidePins();
+            UnwatchTools();
+            railFrame = null;
             infoOpen = false;
             healthOpen = -1;
             if (help != null && help.parent != null) help.RemoveFromHierarchy();
@@ -262,8 +265,112 @@ namespace Kestrel.Slice
                 Seat(assistRow, ScaleBox(frame.Assist), dock);
             }
             Seat(nudgeRow, ScaleBox(Union(frame.Alternate, frame.NudgeDown, frame.NudgeUp)), dock);
-            // The camera button stays in the flex tools row; its picker opens above that row.
-            FlightChrome.SeatPicker(hud, ScaleBox(frame.CameraPicker), ScaleAll(FlightHudLayout.PickerChips(frame.CameraPicker), ScaleBox));
+            // The camera button stays in the flex tools row; its picker opens above that row as it is really
+            // laid out (SeatRailPicker), and again whenever that row moves.
+            railFrame = frame;
+            SeatRailPicker();
+        }
+
+        /// <summary>The last portrait frame, for re-seating the picker when the flex tools row moves.</summary>
+        FlightHudFrame railFrame;
+        VisualElement watchedTools;
+
+        void WatchTools()
+        {
+            var tools = hud != null ? hud.Q("flight-tools") : null;
+            if (tools == watchedTools) return;
+            UnwatchTools();
+            watchedTools = tools;
+            watchedTools?.RegisterCallback<GeometryChangedEvent>(OnToolsMoved);
+        }
+
+        void UnwatchTools()
+        {
+            watchedTools?.UnregisterCallback<GeometryChangedEvent>(OnToolsMoved);
+            watchedTools = null;
+        }
+
+        void OnToolsMoved(GeometryChangedEvent _)
+        {
+            if (!widePinned && !UseWideNow()) SeatRailPicker();
+        }
+
+        /// <summary>
+        /// Portrait picker. Follow / Cam / Pause stay in the HUD's flex flow (tools margin, the dock spacer and
+        /// the buttons' own margins), so the real row is not exactly the frame's row: CI 335x720 had the picker's
+        /// bottom (frame row - GapPt) 1 px inside Pause. Seat it from the measured row instead, one GapPt clear
+        /// (FlightHudLayout.PickerOverRow), in the room the frame leaves; fall back to the frame row before the
+        /// first layout pass. Frame boxes are in the HUD's content box; absolute offsets start at its padding edge.
+        /// </summary>
+        void SeatRailPicker()
+        {
+            if (hud == null || railFrame == null || widePinned || !(upp > 0f)) return;
+            // Before the first layout pass the frame is NaN (resolvedStyle): nothing to seat yet.
+            if (!FlightHudLayout.PickerRoom(railFrame).Live || !FlightHudLayout.ToolsRow(railFrame).Live) return;
+            float padL = hud.resolvedStyle.paddingLeft;
+            float padT = hud.resolvedStyle.paddingTop;
+            if (float.IsNaN(padL)) padL = 0f;
+            if (float.IsNaN(padT)) padT = 0f;
+            float ox = padL / upp, oy = padT / upp;
+            var room = FlightHudLayout.PickerRoom(railFrame);
+            room.X += ox;
+            room.Y += oy;
+            var row = FlightHudLayout.ToolsRow(railFrame);
+            row.X += ox;
+            row.Y += oy;
+            var cam = railFrame.Camera;
+            float anchor = cam.X + cam.W * 0.5f + ox;
+            if (MeasuredPt(hud.Q(UiIds.FlightFollow), hud.Q(UiIds.FlightCamera), hud.Q(UiIds.FlightPause), out var real))
+                row = real;
+            if (MeasuredPt(hud.Q(UiIds.FlightCamera), null, null, out var realCam))
+                anchor = realCam.X + realCam.W * 0.5f;
+            // The stat strip, health row and stages card ride the flex flow too; the trajectory rail is pinned.
+            if (MeasuredPt(hud.Q("ascent-stages"), hud.Q("ascent-telemetry"), hud.Q("ascent-health"), out var realTop)
+                && realTop.Bottom + FlightHudLayout.GapPt > room.Y)
+            {
+                float bottom = room.Bottom;
+                room.Y = realTop.Bottom + FlightHudLayout.GapPt;
+                room.H = Math.Max(1f, bottom - room.Y);
+            }
+            if (MeasuredPt(plot, null, null, out var realPlot) && realPlot.Right + FlightHudLayout.GapPt > room.X)
+            {
+                float right = room.Right;
+                room.X = realPlot.Right + FlightHudLayout.GapPt;
+                room.W = Math.Max(1f, right - room.X);
+            }
+            // Never past the real dock top either (the dock is pinned from the frame, without the padding offset).
+            if (MeasuredPt(actions, null, null, out var realDock) && realDock.Y - FlightHudLayout.GapPt < room.Bottom)
+                room.H = Math.Max(1f, realDock.Y - FlightHudLayout.GapPt - room.Y);
+            var box = FlightHudLayout.PickerOverRow(room, row, anchor, railFrame.Telemetry.Bottom + FlightHudLayout.GapPt + oy);
+            var chips = FlightHudLayout.PickerChips(box);
+            for (int i = 0; i < chips.Length; i++) chips[i] = FlightHudLayout.ToPanel(chips[i], upp, upp);
+            FlightChrome.SeatPicker(hud, FlightHudLayout.ToPanel(box, upp, upp), chips);
+        }
+
+        /// <summary>Union of the shown elements' laid-out rects, HUD-relative, in points. False before layout.</summary>
+        bool MeasuredPt(VisualElement a, VisualElement b, VisualElement c, out HudBox box)
+        {
+            box = default;
+            if (hud == null) return false;
+            var origin = hud.worldBound;
+            if (float.IsNaN(origin.x) || float.IsNaN(origin.y)) return false;
+            float x = float.MaxValue, y = float.MaxValue, r = float.MinValue, bt = float.MinValue;
+            bool any = false;
+            foreach (var e in new[] { a, b, c })
+            {
+                if (e == null || e.panel == null || e.resolvedStyle.display == DisplayStyle.None) continue;
+                var wb = e.worldBound;
+                if (float.IsNaN(wb.x) || float.IsNaN(wb.y) || float.IsNaN(wb.width) || float.IsNaN(wb.height)) continue;
+                if (wb.width < 0.5f || wb.height < 0.5f) continue;
+                any = true;
+                x = Math.Min(x, wb.xMin - origin.x);
+                y = Math.Min(y, wb.yMin - origin.y);
+                r = Math.Max(r, wb.xMax - origin.x);
+                bt = Math.Max(bt, wb.yMax - origin.y);
+            }
+            if (!any) return false;
+            box = new HudBox { X = x / upp, Y = y / upp, W = (r - x) / upp, H = (bt - y) / upp };
+            return true;
         }
 
         static HudBox[] ScaleAll(HudBox[] boxes, Func<HudBox, HudBox> scale)

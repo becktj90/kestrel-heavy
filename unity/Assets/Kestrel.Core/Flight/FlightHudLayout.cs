@@ -246,17 +246,86 @@ namespace Kestrel.Core.Flight
             f.Camera = Box((gapL + gapR - camW) * 0.5f, toolsY, camW, ButtonPt);
 
             // The picker opens above the tools row, right of the trajectory rail and under the stages card.
-            float pickL = Math.Max(f.Plot.Right, left) + GapPt;
-            float pickTop = Math.Max(f.Stages.Bottom, f.Telemetry.Bottom) + GapPt;
-            var size = PickerSize(right - pickL, toolsY - GapPt - pickTop);
-            float px = f.Camera.X + f.Camera.W * 0.5f - size.W * 0.5f;
-            if (px + size.W > right) px = right - size.W;
-            if (px < pickL) px = pickL;
-            float py = toolsY - GapPt - size.H;
-            if (py < pickTop) py = pickTop;
-            f.CameraPicker = Box(px, py, size.W, size.H);
+            f.CameraPicker = PickerOverRow(PickerRoom(f), ToolsRow(f), f.Camera.X + f.Camera.W * 0.5f, f.Telemetry.Bottom + GapPt);
             return f;
         }
+
+        /// <summary>
+        /// Portrait: where the open picker may go. Right of the trajectory rail, under the stages card and the
+        /// stat strip, inside the side margins, down to just above the dock. The tools row splits it in two.
+        /// </summary>
+        public static HudBox PickerRoom(FlightHudFrame f)
+        {
+            // The stat strip spans the side margins (safe area + SideMarginPt) on both edges.
+            float left = f.Telemetry.X;
+            float right = f.Telemetry.Right;
+            float x = Math.Max(f.Plot.Right, left) + GapPt;
+            float y = Math.Max(f.Stages.Bottom, f.Telemetry.Bottom) + GapPt;
+            float b = f.Dock.Live ? f.Dock.Y - GapPt : Math.Max(f.Follow.Bottom, f.Pause.Bottom);
+            return Box(x, y, Math.Max(1f, right - x), Math.Max(1f, b - y));
+        }
+
+        /// <summary>The Follow / Cam / Pause row as one box.</summary>
+        public static HudBox ToolsRow(FlightHudFrame f)
+        {
+            float x = float.MaxValue, y = float.MaxValue, r = float.MinValue, b = float.MinValue;
+            bool any = false;
+            foreach (var t in new[] { f.Follow, f.Camera, f.Pause })
+            {
+                if (!t.Live) continue;
+                any = true;
+                x = Math.Min(x, t.X); y = Math.Min(y, t.Y);
+                r = Math.Max(r, t.Right); b = Math.Max(b, t.Bottom);
+            }
+            return any ? Box(x, y, r - x, b - y) : default;
+        }
+
+        /// <summary>
+        /// The open picker against the tools row as it is really laid out (portrait keeps that row in the flex
+        /// flow, so it can sit a few points off the frame's row: CI 335x720 had the picker 1 px into Pause).
+        /// Opens one GapPt above the row, centred on the camera button and inside the room; if the room above
+        /// is too short it opens one GapPt below the row; it never shares a row's height band with the buttons
+        /// while either side has room. Units are points (the chip sizes are), so a panel-px row goes through
+        /// ToPanel's inverse first and the result through <see cref="ToPanel"/>.
+        /// </summary>
+        public static HudBox PickerOverRow(HudBox room, HudBox row, float anchorX, float ceiling = float.NaN)
+        {
+            if (!room.Live) return default;
+            if (!row.Live) row = Box(room.X, room.Bottom, room.W, 0f);
+            float aboveTop = room.Y;
+            float aboveBot = Math.Min(room.Bottom, row.Y - GapPt);
+            float belowTop = Math.Max(room.Y, row.Bottom + GapPt);
+            float belowBot = room.Bottom;
+            float aboveH = aboveBot - aboveTop;
+            float belowH = belowBot - belowTop;
+
+            var up = FitWidth(PickerSize(room.W, aboveH), room.W);
+            var down = FitWidth(PickerSize(room.W, belowH), room.W);
+            bool upFits = up.H <= aboveH + 0.01f;
+            bool downFits = down.H <= belowH + 0.01f;
+            bool openUp = upFits || !downFits;
+            var size = openUp ? up : down;
+            float w = size.W, h = size.H;
+            float px = anchorX - w * 0.5f;
+            if (px + w > room.Right) px = room.Right - w;
+            if (px < room.X) px = room.X;
+            float py;
+            if (!openUp) py = belowTop;
+            else if (upFits) py = aboveBot - h;
+            else
+            {
+                // No side has the room: keep the row clear (a covered Pause cannot be tapped) and let the
+                // picker rise over the translucent cards, never past the ceiling (the stat strip) or the room.
+                py = aboveBot - h;
+                float top = float.IsNaN(ceiling) ? aboveTop : Math.Min(aboveTop, ceiling);
+                if (py < top) py = top;
+            }
+            return Box(px, py, w, h);
+        }
+
+        /// <summary>A picker footprint that went wider than the room for a short room: back to as many columns as fit.</summary>
+        static HudBox FitWidth(HudBox size, float roomW) =>
+            size.W <= roomW + 0.01f ? size : PickerSize(roomW, float.MaxValue);
 
         /// <summary>
         /// Picker footprint for the room it has: as many chip columns as fit (one row of five on a wide
