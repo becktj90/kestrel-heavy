@@ -62,6 +62,33 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void PartCard_AboutRealWorldAndSources_LoadAndAreNotEmpty()
+        {
+            // Codex owns the wording, so only presence is pinned here, plus Physics' dispersion point (a few km).
+            var l = GuidanceComputer.Load(Golden.Root);
+            Assert.That(l.About, Is.Not.Null.And.Not.Empty.And.Not.EqualTo(l.Part), "closedLoop.about: the part-card description");
+            Assert.That(l.About.Trim(), Is.EqualTo(l.About));
+            Assert.That(l.RealWorld, Is.Not.Null.And.Not.Empty, "closedLoop.realWorld: the dispersion note");
+            StringAssert.Contains("km", l.RealWorld, "the real-world note gives the dispersion in km");
+            Assert.That(l.Sources, Is.Not.Null.And.Not.Empty, "closedLoop.sources");
+            foreach (var src in l.Sources) Assert.That(src, Is.Not.Null.And.Not.Empty.And.Not.Contains(" "), "a code name");
+            CollectionAssert.Contains(l.Sources, "GuidanceComputer");
+            CollectionAssert.AllItemsAreUnique(l.Sources);
+        }
+
+        [Test]
+        public void PartCard_MissingKeys_ParseAsEmpty()
+        {
+            var l = GuidanceComputer.Parse("{\"basic\":{\"label\":\"b\"},\"closedLoop\":{\"label\":\"p\",\"sources\":[\"A\",3,\"B\"]}}");
+            Assert.AreEqual("", l.About);
+            Assert.AreEqual("", l.RealWorld);
+            CollectionAssert.AreEqual(new[] { "A", "B" }, l.Sources, "non-string entries are skipped");
+            var none = GuidanceComputer.Parse("{\"basic\":{},\"closedLoop\":{}}");
+            Assert.IsNotNull(none.Sources);
+            Assert.IsEmpty(none.Sources);
+        }
+
+        [Test]
         public void OptIn_FlagOffInStarter_LaterUnlock_NeverOnTheStarterScreen()
         {
             var flags = FeatureFlags.Load(Golden.Root);

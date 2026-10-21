@@ -55,6 +55,10 @@ test('guidance computer data: label, mass, price, flag and unlock', async () => 
   assert.strictEqual(readJSON('data', 'credits.json').parts.guidanceComputer, g.closedLoop.credits);
   assert.strictEqual(readJSON('data', 'features.json').flags[g.closedLoop.featureFlag], false, 'off in the Starter designer');
   assert.ok(g.closedLoop.unlockAfterMission >= 8, 'a later campaign unlock');
+  // Part-card copy (Codex owns the wording; C# GuidanceComputer.Labels.About/RealWorld/Sources).
+  assert.ok(typeof g.closedLoop.about === 'string' && g.closedLoop.about.trim().length > 0, 'closedLoop.about');
+  assert.ok(typeof g.closedLoop.realWorld === 'string' && /km/.test(g.closedLoop.realWorld), 'closedLoop.realWorld gives dispersion in km');
+  assert.ok(Array.isArray(g.closedLoop.sources) && g.closedLoop.sources.length > 0 && g.closedLoop.sources.every((s) => typeof s === 'string' && s.length > 0));
   const { GUIDANCE_COMPUTER_MASS, stageMasses } = await import(path.join(root, 'web', 'js', 'vehicle', 'mass.js'));
   assert.strictEqual(GUIDANCE_COMPUTER_MASS, g.closedLoop.massKg);
   const { PRESETS } = await import(path.join(root, 'web', 'js', 'data', 'presets.js'));

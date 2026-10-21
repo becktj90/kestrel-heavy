@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "#341 (Kestrel Physics and Arcade rulings, DESIGN_341.md). Guidance labels and the optional closed-loop guidance computer part. Labels are data, not UI code; Codex owns the guide copy and may reword them here. closedLoop.about (part description) and closedLoop.realWorld (dispersion note) are Codex copy that no code reads yet; sources lists the code they describe, and the real-world references are in the Codex follow-up PR body. The mass and credit price are pinned by GuidanceComputerTests to Mass.GUIDANCE_COMPUTER_MASS and credits.json parts.guidanceComputer.",
+  "note": "#341 (Kestrel Physics and Arcade rulings, DESIGN_341.md). Guidance labels and the optional closed-loop guidance computer part. Labels are data, not UI code; Codex owns the guide copy and may reword them here. closedLoop.about (part description) and closedLoop.realWorld (dispersion note) are Codex copy for the designer part card (GuidanceComputer.Labels.About / RealWorld); sources (Labels.Sources) lists the code they describe, and the real-world references are in the Codex follow-up PR body. The mass and credit price are pinned by GuidanceComputerTests to Mass.GUIDANCE_COMPUTER_MASS and credits.json parts.guidanceComputer.",
   "basic": {
     "label": "Basic guidance: chases the right height, can't plan the engine cutoff"
   },

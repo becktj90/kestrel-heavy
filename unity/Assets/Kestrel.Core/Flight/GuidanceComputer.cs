@@ -47,6 +47,12 @@ namespace Kestrel.Core.Flight
             public string InControl = "";
             /// <summary>Shown when a live pitch nudge was held on the upper stage (SimResult.nudgeHeldByGuidance).</summary>
             public string NudgeHeld = "";
+            /// <summary>Part-card description for the designer (data/guidance.json closedLoop.about; Codex copy).</summary>
+            public string About = "";
+            /// <summary>Part-card real-world note: real insertion has a few km of dispersion (closedLoop.realWorld; Physics' note, Codex copy).</summary>
+            public string RealWorld = "";
+            /// <summary>The code the copy describes (closedLoop.sources), for provenance; not player-facing text.</summary>
+            public string[] Sources = Array.Empty<string>();
             public double MassKg;
             public long Credits;
             public string FeatureFlag = "", Id = "";
@@ -67,12 +73,23 @@ namespace Kestrel.Core.Flight
                 Part = cl.Str("label", ""),
                 InControl = cl.Str("inControlNote", ""),
                 NudgeHeld = cl.Str("nudgeHeldNote", ""),
+                About = cl.Str("about", ""),
+                RealWorld = cl.Str("realWorld", ""),
+                Sources = Strings(cl.Arr("sources")),
                 MassKg = cl.Num("massKg"),
                 Credits = (long)Math.Round(cl.Num("credits")),
                 FeatureFlag = cl.Str("featureFlag", ""),
                 Id = cl.Str("id", ""),
                 UnlockAfterMission = (int)Math.Round(cl.Num("unlockAfterMission")),
             };
+        }
+
+        static string[] Strings(System.Collections.Generic.List<object> a)
+        {
+            if (a == null) return Array.Empty<string>();
+            var list = new System.Collections.Generic.List<string>(a.Count);
+            foreach (var v in a) if (v is string str) list.Add(str);
+            return list.ToArray();
         }
 
         /// <summary>The guidance line a report shows for a flight: the in-control note when the part flew the upper stage,
