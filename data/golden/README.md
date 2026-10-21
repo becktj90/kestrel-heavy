@@ -17,7 +17,7 @@ Every file is `{ generatedBy, tolerance, count, cases[] }`. `index.json` lists t
 | catalog-flight.json | 136 | every engine and every preset: ascent, staging, drag/max-Q, orbit determination | per quantity in docs/PHYSICS.md (absolute and relative). Harness: `tests/golden-harness.test.cjs` |
 | d0-replay.json | 22 | D0 seeds, portrait viewport, input clock, FNV-1a, medal grade | exact; Matter is not re-simulated |
 | designer-readout.json | 4 | readout v2 hand literals (cone, ogive+fins), a medium-kerolox max-Q band, and orbital templates that must still launch | mass and Δv rel 1e-12; CG/CP/stability abs 1e-9; max-Q is a band (docs/PHYSICS.md) |
-| designer-validate.json | 117 | validateEngineering, quick readout, Make it fly, experience layers, Number.toFixed | messages exact; readout rel 1e-9; cost exact |
+| designer-validate.json | 119 | validateEngineering, quick readout, Make it fly, experience layers, Number.toFixed | messages exact; readout rel 1e-9; cost exact |
 | landing-grade.json | 13 | Haven touchdown margins and Perfect/Good/Hard/Salvage | margins rel 1e-9; grade exact |
 | mission-ramp.json | 39 | per-mission wind, landing fuel, swell, stars, unlock | stars and unlock exact; drift rel 1e-9 |
 | params.json | 4 | params registry, sensor fidelity, weather-hold policy | rel 1e-9 |
@@ -27,3 +27,7 @@ Every file is `{ generatedBy, tolerance, count, cases[] }`. `index.json` lists t
 | steer.json | 262 | expo thumb-steer curve, sensitivity clamp, compact full-scale | rel 1e-9 |
 
 Rows follow `index.json` order (the order `tools/export-golden.mjs` writes them). `tests/golden-readme.test.cjs` fails if a file is missing, listed twice, out of order, or has the wrong case count — merge conflicts here used to silently drop rows. Regenerate data with `npm run gen:golden`; `catalog-flight.json` bands are read from `docs/PHYSICS.md` by `tests/golden-harness.test.cjs`.
+
+## C# hand goldens: id notes
+
+`contracts-viable.json`: `comsat-gto-k0-t6-p300-m76-u26` carries **95 t on stage 2**, not the 76 t its id says (B-04: 4.0 m fairing, stage 2 +19,000 kg). The id is kept because cells and offers key on it.

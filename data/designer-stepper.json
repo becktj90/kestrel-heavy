@@ -159,7 +159,7 @@
           },
           "engineer": {
             "id": "step.aero.simple.why.engineer",
-            "text": "The cargo fits when its volume ≤ π(0.45·D_f)²·0.8·L_f and its diameter + 0.2 m ≤ D_f. It tumbles if S < 0 and CAR < 1."
+            "text": "The cargo fits when its volume ≤ π(0.45·D_f)²·0.8·L_f and its diameter ≤ 0.9·D_f. It tumbles if S < 0 and CAR < 1."
           }
         },
         "pass": {
@@ -179,7 +179,7 @@
           },
           "engineer": {
             "id": "step.aero.engineer.why.engineer",
-            "text": "Fit: volume ≤ π(0.45·D_f)²·0.8·L_f and diameter + 0.2 m ≤ D_f. S = (x_cg − x_cp)/D. CAR = M_ctrl/M_aero at α = 4°. Tumble when S < 0 and CAR < 1 for 0.5 s, or α > 15° at q > 20 kPa."
+            "text": "Fit: volume ≤ π(0.45·D_f)²·0.8·L_f and diameter ≤ 0.9·D_f. S = (x_cg − x_cp)/D. CAR = M_ctrl/M_aero at α = 4°. Tumble when S < 0 and CAR < 1 for 0.5 s, or α > 15° at q > 20 kPa."
           }
         },
         "pass": {
@@ -1567,15 +1567,15 @@
       "engineer": {
         "pass": {
           "id": "check.fairing-narrow.engineer.pass",
-          "text": "Fairing diameter is at least half the top-stage diameter, and payload diameter + 0.2 m ≤ D_f."
+          "text": "Fairing diameter is at least half the top-stage diameter, and payload diameter ≤ 0.9·D_f."
         },
         "red": {
           "id": "check.fairing-narrow.engineer.red",
-          "text": "D_f is under half the top-stage diameter. The fit rule also needs payload diameter + 0.2 m ≤ D_f."
+          "text": "D_f is under half the top-stage diameter. The fit rule also needs payload diameter ≤ 0.9·D_f."
         },
         "fix": {
           "id": "check.fairing-narrow.engineer.fix",
-          "text": "Raise D_f (m) until it covers the stage, and keep payload diameter + 0.2 m ≤ D_f."
+          "text": "Raise D_f (m) until it covers the stage, and keep payload diameter ≤ 0.9·D_f."
         }
       }
     },
@@ -1607,11 +1607,11 @@
       "engineer": {
         "pass": {
           "id": "check.payload-doesnt-fit.engineer.pass",
-          "text": "Payload volume ≤ π(0.45·D_f)²·0.8·L_f and diameter + 0.2 m ≤ D_f."
+          "text": "Payload volume ≤ π(0.45·D_f)²·0.8·L_f and diameter ≤ 0.9·D_f."
         },
         "red": {
           "id": "check.payload-doesnt-fit.engineer.red",
-          "text": "Fairing fit failed. Volume must be ≤ π(0.45·D_f)²·0.8·L_f, and diameter + 0.2 m ≤ D_f."
+          "text": "Fairing fit failed. Volume must be ≤ π(0.45·D_f)²·0.8·L_f, and diameter ≤ 0.9·D_f."
         },
         "fix": {
           "id": "check.payload-doesnt-fit.engineer.fix",

@@ -60,6 +60,8 @@ namespace Kestrel.Core.Flight
             {
                 var mission = campaign.Missions[i];
                 if (mission == null) continue;
+                if (!string.IsNullOrEmpty(mission.Id) && !catalog.MissionPayloads.ContainsKey(mission.Id))
+                    catalog.MissionPayloads[mission.Id] = PayloadFit.MissionSpec(mission);
                 var built = ToOrbit(mission);
                 if (string.IsNullOrEmpty(built.id)) continue;
                 if (!catalog.Orbits.ContainsKey(built.id)) catalog.Orbits[built.id] = built;
