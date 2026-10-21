@@ -161,6 +161,148 @@ namespace Kestrel.Core.Tests
             }
         }
 
+        /// <summary>The web panel a CSS viewport gets (WebLandscapeType: ScaleWithScreenSize at the landscape reference).</summary>
+        static void DevicePanel(float cssW, float cssH, out float pw, out float ph)
+        {
+            WebLandscapeType.PanelReference(true, out float rw, out float rh, out float m);
+            float s = WebLandscapeType.PanelScale(cssW, cssH, rw, rh, m);
+            pw = (float)Math.Round(cssW / s);
+            ph = (float)Math.Round(cssH / s);
+        }
+
+        static readonly int[][] LandscapeDeviceSizes =
+        {
+            new[] { 960, 540 }, new[] { 1280, 720 }, new[] { 1280, 800 }, new[] { 1366, 768 }, new[] { 1440, 900 },
+            new[] { 1920, 1080 }, new[] { 2560, 1440 },
+        };
+
+        /// <summary>
+        /// #322 CI 1920x1080: h-t "T+ 1:12.4" needed 64 x 26 px in a 64 x 22 box: the frame was laid out in CSS points on
+        /// a 0.667 panel while the faces are panel pixels. On the panel each size really gets, the clock holds every
+        /// reading at its fitted face (widths budgeted with MeasureFactor), the engine-out quote is one line without a
+        /// cut at 10 pt or more, and the dock rows are 44 pt.
+        /// </summary>
+        [Test]
+        public void LandscapeClockQuoteAndRowsFitOnEveryDevicePanel()
+        {
+            foreach (var s in LandscapeDeviceSizes)
+            foreach (var mode in Modes)
+            {
+                DevicePanel(s[0], s[1], out float pw, out float ph);
+                var f = FlightHudLayout.PlaceWide(pw, ph, 0f, 0f, 0f, 0f, mode);
+                string at = s[0] + "x" + s[1] + " (panel " + pw + "x" + ph + ") " + mode;
+                float face = FlightHudLayout.ClockFit(f.Clock.W, f.Telemetry.H);
+                Assert.That(FlightHudLayout.ClockFits(f.Clock.W, f.Telemetry.H, face), Is.True, at + " clock " + face);
+                Assert.That(f.Clock.W, Is.GreaterThanOrEqualTo(FlightHudLayout.ClockMinWidth() - 0.01f), at + " clock box");
+                Assert.That(f.Clock.Overlaps(f.Cells[0]), Is.False, at + " clock/ALT");
+                if (f.Quote.Live)
+                {
+                    var q = FlightHudLayout.QuoteLine("Engine 1 pressure drop. Shut it down?", f.Quote.W, FlightHudLayout.QuoteFontPt, FlightHudLayout.QuoteMinFontPt);
+                    Assert.That(q.Cut, Is.False, at + " quote whole");
+                    Assert.That(q.FontPt * FlightHudLayout.LineHeight, Is.LessThanOrEqualTo(f.Quote.H + 0.01f), at + " quote one line in its row");
+                }
+                foreach (var b in new[] { f.Medal, f.Info, f.Assist, f.Primary, f.Follow, f.Pause, f.Camera })
+                    if (b.Live) Assert.That(b.H, Is.GreaterThanOrEqualTo(FlightHudLayout.ButtonPt - 0.01f), at + " 44 pt row");
+                // Whole panel pixels: no two live regions or dock buttons touch after rounding.
+                var all = new List<(string, HudBox)>
+                {
+                    ("clock", f.Clock), ("stage", f.Stage), ("health", f.Health), ("plot", f.Plot), ("stages", f.Stages),
+                    ("follow", f.Follow), ("camera", f.Camera), ("pause", f.Pause), ("picker", f.CameraPicker),
+                    ("info", f.Info), ("medal", f.Medal), ("help", f.Help), ("quote", f.Quote), ("timer", f.Timer),
+                    ("assist", f.Assist), ("primary", f.Primary), ("skip", f.Skip), ("alternate", f.Alternate),
+                    ("nudge-down", f.NudgeDown), ("nudge-up", f.NudgeUp),
+                };
+                for (int i = 0; i < f.Cells.Length; i++) all.Add(("cell" + i, f.Cells[i]));
+                HudBox Px(HudBox x) => new HudBox { X = (float)Math.Round(x.X), Y = (float)Math.Round(x.Y), W = (float)Math.Round(x.W), H = (float)Math.Round(x.H) };
+                for (int i = 0; i < all.Count; i++)
+                for (int j = i + 1; j < all.Count; j++)
+                    if (all[i].Item2.Live && all[j].Item2.Live)
+                        Assert.That(Px(all[i].Item2).Overlaps(Px(all[j].Item2)), Is.False, at + ": " + all[i].Item1 + " " + Show(all[i].Item2) + " over " + all[j].Item1 + " " + Show(all[j].Item2));
+            }
+        }
+
+        /// <summary>
+        /// #322 CI SE cruise: ascent-actions (8,519 359x148) ran over flight-follow (3,514). AscentHud's flow spacer
+        /// reserves FlightHudLayout.DockHeight for the open rows; the frame's dock is exactly that tall, so the tools
+        /// row sits a whole GapPt above it. Every portrait size, every mode, the banner in its card and as the 64-char
+        /// banner row, the nudge row open and closed; then the whole frame in whole pixels at every panel scale.
+        /// </summary>
+        [Test]
+        public void PortraitDockToolsAndBannerNeverOverlapInWholePixels()
+        {
+            var fails = new List<string>();
+            int failCount = 0, cases = 0;
+            var widths = new List<int>();
+            for (int w = 320; w <= 440; w += ExhaustivePickerSweep ? 1 : 15) widths.Add(w);
+            widths.Add(820); widths.Add(1024); widths.Add(1032);
+            foreach (int w in widths)
+            for (int h = w > 700 ? 1180 : 568; h <= (w > 700 ? 1376 : 956); h += ExhaustivePickerSweep ? 4 : 64)
+            foreach (var inset in (h >= 812 ? NotchedInsets : FlatInsets))
+            foreach (var mode in Modes)
+            foreach (bool nudges in NudgeRows)
+            {
+                float bannerRow = FlightHudLayout.BannerRowPt(FlightHudLayout.BannerReserve, w);
+                foreach (float banner in bannerRow > 0f ? new[] { 0f, bannerRow } : new[] { 0f })
+                {
+                    cases++;
+                    var f = FlightHudLayout.Place(w, h, inset[0], inset[1], inset[2], inset[3], mode, banner, nudges);
+                    bool notes = mode == FlightHudMode.Notes || mode == FlightHudMode.PromptNotes;
+                    bool prompt = mode == FlightHudMode.Prompt || mode == FlightHudMode.PromptNotes;
+                    string at = w + "x" + h + " inset " + inset[0] + "/" + inset[1] + " " + mode + " banner " + banner + " nudges " + nudges;
+                    float spacer = FlightHudLayout.DockHeight(notes, prompt, FlightHudLayout.ButtonPt, nudges);
+                    if (Math.Abs(f.Dock.H - spacer) > 0.01f) Fail(fails, ref failCount, at + ": dock " + f.Dock.H + " vs spacer " + spacer);
+                    var tools = FlightHudLayout.ToolsRow(f);
+                    if (tools.Bottom > f.Dock.Y - FlightHudLayout.GapPt + 0.01f) Fail(fails, ref failCount, at + ": tools " + Show(tools) + " into dock " + Show(f.Dock));
+                    var named = new List<(string, HudBox)>
+                    {
+                        ("clock", f.Clock), ("stage", f.Stage), ("health", f.Health), ("telemetry", f.Telemetry), ("plot", f.Plot),
+                        ("stages", f.Stages), ("dock", f.Dock), ("follow", f.Follow), ("camera", f.Camera), ("pause", f.Pause),
+                        ("picker", f.CameraPicker),
+                    };
+                    var dockKids = new List<(string, HudBox)>
+                    {
+                        ("info", f.Info), ("medal", f.Medal), ("help", f.Help), ("quote", f.Quote), ("timer", f.Timer),
+                        ("assist", f.Assist), ("primary", f.Primary), ("skip", f.Skip), ("alternate", f.Alternate),
+                        ("nudge-down", f.NudgeDown), ("nudge-up", f.NudgeUp),
+                    };
+                    if (!nudges && (f.NudgeDown.Live || f.NudgeUp.Live || f.Alternate.Live)) Fail(fails, ref failCount, at + ": closed nudge row still placed");
+                    foreach (var (n, b) in dockKids)
+                        if (b.Live && (b.Y < f.Dock.Y - 0.01f || b.Bottom > f.Dock.Bottom + 0.01f)) Fail(fails, ref failCount, at + ": " + n + " leaves the dock");
+                    foreach (float u in WholePixelScales)
+                    {
+                        // Whole pixels, the way AscentHud seats rows (Mathf.Round of top and height).
+                        HudBox Px(HudBox b) => new HudBox { X = (float)Math.Round(b.X * u), Y = (float)Math.Round(b.Y * u), W = (float)Math.Round(b.W * u), H = (float)Math.Round(b.H * u) };
+                        for (int i = 0; i < named.Count; i++)
+                        for (int j = i + 1; j < named.Count; j++)
+                        {
+                            var a = named[i]; var b = named[j];
+                            if (!a.Item2.Live || !b.Item2.Live) continue;
+                            // The stages card is translucent and the trajectory rail line art: the picker may not cover
+                            // them either (#304's sweep), so every pair is checked.
+                            if (Px(a.Item2).Overlaps(Px(b.Item2))) Fail(fails, ref failCount, at + " x" + u + ": " + a.Item1 + " " + Show(a.Item2) + " over " + b.Item1 + " " + Show(b.Item2));
+                        }
+                        foreach (var c in f.Cells)
+                            foreach (var (n, b) in named)
+                                if (n != "telemetry" && b.Live && Px(c).Overlaps(Px(b))) Fail(fails, ref failCount, at + " x" + u + ": cell over " + n);
+                        for (int i = 0; i < dockKids.Count; i++)
+                        for (int j = i + 1; j < dockKids.Count; j++)
+                        {
+                            var a = dockKids[i]; var b = dockKids[j];
+                            if (!a.Item2.Live || !b.Item2.Live) continue;
+                            if (Px(a.Item2).Overlaps(Px(b.Item2))) Fail(fails, ref failCount, at + " x" + u + ": " + a.Item1 + " over " + b.Item1);
+                        }
+                    }
+                    if (!FlightHudLayout.BannerFitsRow(banner > 0f ? FlightHudLayout.BannerReserve : FlightHudLayout.BannerReserve, f) && banner > 0f)
+                        Fail(fails, ref failCount, at + ": the 64-char banner does not fit its row");
+                }
+            }
+            TestContext.WriteLine("portrait dock/tools/banner sweep: " + cases + " frames");
+            AssertNoFailures(fails, failCount, cases, "portrait dock/tools/banner sweep");
+        }
+
+        /// <summary>Panel scales the portrait HUD runs at (1x web, 2x / 3x phones, the 308/375 SE capture, 1.25 iPad web).</summary>
+        static readonly float[] WholePixelScales = { 1f, 2f, 3f, 308f / 375f, 1.25f };
+
         // ---- Camera button and picker (CAMERA-PICKER brief) -------------------------------------------
 
         /// <summary>Portrait: 335 narrow, 390 and 430 iPhones, iPad. Full screen with insets, and the inset-free content box AscentHud lays out.</summary>
@@ -418,6 +560,9 @@ namespace Kestrel.Core.Tests
                 Assert.Fail(sweep + ": " + failCount + " failure(s) in " + cases + " cases:\n  " + string.Join("\n  ", fails));
         }
 
+        /// <summary>The dock's last row open (Engineer, a call with an alternate) and closed (Simple cruise).</summary>
+        static readonly bool[] NudgeRows = { true, false };
+
         static readonly float[] PortraitShiftsAll = { -6f, -4f, -1.5f, -1f, 0f, 1f, 4f };
         static readonly float[] PortraitShiftsEdge = { -6f, 0f, 4f };
         static readonly float[] PanelScales = { 1f, 308f / 375f, 1.25f };
@@ -441,8 +586,9 @@ namespace Kestrel.Core.Tests
             foreach (var inset in insets)
             foreach (var mode in Modes)
             foreach (float banner in rows)
+            foreach (bool nudges in NudgeRows)
             {
-                var f = FlightHudLayout.Place(w, h, inset[0], inset[1], inset[2], inset[3], mode, banner);
+                var f = FlightHudLayout.Place(w, h, inset[0], inset[1], inset[2], inset[3], mode, banner, nudges);
                 // The frame's own picker: a real gap above the frame row.
                 if (!f.CameraPicker.Live || f.CameraPicker.Bottom > f.Pause.Y - gap)
                     Fail(fails, ref failCount, w + "x" + h + " inset " + inset[0] + "/" + inset[1] + " " + mode + " banner " + banner + " frame picker " + Show(f.CameraPicker) + " vs Pause " + Show(f.Pause));
@@ -597,6 +743,12 @@ namespace Kestrel.Core.Tests
                     // The device tests' panel: 1280 wide at the same aspect.
                     cases += LandscapePickerCases(1280f, 1280f * s[1] / s[0], others, fails, ref failCount);
                 }
+            }
+            // AscentHud lays landscape out on the scaled web panel in face points (#322): every device panel.
+            foreach (var s in PickerLandscapeSamples)
+            {
+                DevicePanel(s[0], s[1], out float pw, out float ph);
+                cases += LandscapePickerCases(pw, ph, others, fails, ref failCount);
             }
             TestContext.WriteLine("landscape picker sweep: " + cases + " cases" + (ExhaustivePickerSweep ? " (exhaustive)" : " (sampled)"));
             AssertNoFailures(fails, failCount, cases, "landscape picker sweep");

@@ -116,6 +116,44 @@ namespace Kestrel.Core.Flight
         /// Clock face that fits "T+ 00.0" and "T-00:00.0" inside the band. The 56 px
         /// stylesheet size spills out of the strip and covers the ALT cell.
         /// </summary>
+        /// <summary>The widest clock readings: the countdown and a four-digit mission time (SliceApp: "T+ {t:F1}").</summary>
+        public static readonly string[] ClockSamples = { "T-00:00.0", "T+ 1234.5", "T+ 1:12.4" };
+        /// <summary>FlightDusk.Clock's frame: 8 pt padding each side, no top or bottom padding, a 2 pt bottom edge.</summary>
+        public const float ClockPadXPt = 16f;
+        public const float ClockEdgePt = 2f;
+        public const float ClockMinFontPt = 13f;
+
+        /// <summary>
+        /// #322 CI 1920x1080: h-t "T+ 1:12.4" needed 64 x 26 in a 64 x 22 box (28 px face in a 24 px pin). Clock face
+        /// for a box <paramref name="boxW"/> x <paramref name="boxH"/> (the label's border box, one unit): the largest face
+        /// from 28 down to 13 whose widest reading, budgeted with <see cref="MeasureFactor"/>, fits inside the frame's
+        /// padding and whose line fits above the edge. At the 13 pt floor the box must be at least
+        /// <see cref="ClockMinWidth"/> wide (PlaceWide widens it).
+        /// </summary>
+        public static float ClockFit(float boxW, float boxH)
+        {
+            float font = 28f;
+            for (; font > ClockMinFontPt; font -= 0.5f)
+                if (ClockFits(boxW, boxH, font)) return font;
+            return ClockMinFontPt;
+        }
+
+        public static bool ClockFits(float boxW, float boxH, float font)
+        {
+            if (font * LineHeight > boxH - ClockEdgePt + 0.01f) return false;
+            foreach (var t in ClockSamples)
+                if (BudgetWidth(t, font) > boxW - ClockPadXPt - 2f + 0.01f) return false;
+            return true;
+        }
+
+        /// <summary>The narrowest clock box (border box) that holds every reading at the 13 pt floor.</summary>
+        public static float ClockMinWidth()
+        {
+            float w = 0f;
+            foreach (var t in ClockSamples) w = Math.Max(w, BudgetWidth(t, ClockMinFontPt));
+            return (float)Math.Ceiling(w + ClockPadXPt + 2f);
+        }
+
         public static float ClockFontPt(float boxW, float boxH)
         {
             float font = 28f;
@@ -341,12 +379,16 @@ namespace Kestrel.Core.Flight
             new Device("iPad", 1032f, 1376f, 24f, 20f, 0f, 0f),
         };
 
-        public static FlightHudFrame Place(Device d, FlightHudMode mode, float bannerRowPt = 0f) =>
-            Place(d.W, d.H, d.SafeTop, d.SafeBottom, d.SafeLeft, d.SafeRight, mode, bannerRowPt);
+        public static FlightHudFrame Place(Device d, FlightHudMode mode, float bannerRowPt = 0f, bool nudges = true) =>
+            Place(d.W, d.H, d.SafeTop, d.SafeBottom, d.SafeLeft, d.SafeRight, mode, bannerRowPt, nudges);
 
         /// <param name="bannerRowPt">0: the stage banner sits in the stages card. Above 0 (<see cref="BannerRowPt"/>):
         /// the stages card is a full-width row that tall under the stat strip, and the trajectory rail starts under it.</param>
-        public static FlightHudFrame Place(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight, FlightHudMode mode, float bannerRowPt = 0f)
+        /// <param name="nudges">False when the dock's last row (Alternate / nudges) is closed (Simple cruise, a call
+        /// without an alternate): the dock is one row shorter and the tools row sits lower. AscentHud's flow spacer
+        /// reserves exactly this dock (#322 CI SE cruise: the spacer had dropped the row the frame still pinned, and the
+        /// dock at y 519 ran over Follow at y 514).</param>
+        public static FlightHudFrame Place(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight, FlightHudMode mode, float bannerRowPt = 0f, bool nudges = true)
         {
             float left = safeLeft + SideMarginPt;
             float right = width - safeRight - SideMarginPt;
@@ -356,7 +398,7 @@ namespace Kestrel.Core.Flight
             bool prompt = mode == FlightHudMode.Prompt || mode == FlightHudMode.PromptNotes;
             bool quote = prompt && !notes;
 
-            float dockH = DockHeight(notes, prompt);
+            float dockH = DockHeight(notes, prompt, ButtonPt, nudges);
             float dockTop = height - safeBottom - dockH;
 
             var f = new FlightHudFrame { Mode = mode };
@@ -421,17 +463,23 @@ namespace Kestrel.Core.Flight
                 f.Skip = Box(innerL + col3 + GapPt, y, col3, ButtonPt);
                 f.Assist = Box(innerL + 2f * (col3 + GapPt), y, col3, ButtonPt);
                 y = Next(y, ButtonPt);
-                f.Alternate = Box(innerL, y, col3, ButtonPt);
-                f.NudgeDown = Box(innerL + col3 + GapPt, y, col3, ButtonPt);
-                f.NudgeUp = Box(innerL + 2f * (col3 + GapPt), y, col3, ButtonPt);
+                if (nudges)
+                {
+                    f.Alternate = Box(innerL, y, col3, ButtonPt);
+                    f.NudgeDown = Box(innerL + col3 + GapPt, y, col3, ButtonPt);
+                    f.NudgeUp = Box(innerL + 2f * (col3 + GapPt), y, col3, ButtonPt);
+                }
             }
             else
             {
                 f.Assist = Box(innerL, y, innerW, ButtonPt);
                 y = Next(y, ButtonPt);
-                float col = (innerW - GapPt) * 0.5f;
-                f.NudgeDown = Box(innerL, y, col, ButtonPt);
-                f.NudgeUp = Box(innerL + col + GapPt, y, col, ButtonPt);
+                if (nudges)
+                {
+                    float col = (innerW - GapPt) * 0.5f;
+                    f.NudgeDown = Box(innerL, y, col, ButtonPt);
+                    f.NudgeUp = Box(innerL + col + GapPt, y, col, ButtonPt);
+                }
             }
 
             float followW = FollowWidthPt;
@@ -577,7 +625,7 @@ namespace Kestrel.Core.Flight
         public static float DockHeight(bool notes, bool prompt) => DockHeight(notes, prompt, ButtonPt);
 
         /// <summary>Dock height with button rows <paramref name="rowPt"/> tall (landscape: whole panel pixels, never under 44 pt).</summary>
-        public static float DockHeight(bool notes, bool prompt, float rowPt)
+        public static float DockHeight(bool notes, bool prompt, float rowPt, bool nudges = true)
         {
             bool quote = prompt && !notes;
             float h = PadPt + rowPt;
@@ -585,7 +633,7 @@ namespace Kestrel.Core.Flight
             if (quote) h += GapPt + QuotePt;
             if (prompt) h += GapPt + TimerPt;
             h += GapPt + rowPt;
-            h += GapPt + rowPt;
+            if (nudges) h += GapPt + rowPt;
             h += PadPt;
             return h;
         }
@@ -607,14 +655,17 @@ namespace Kestrel.Core.Flight
         /// <summary>
         /// Landscape web HUD. The stat strip runs across the top, the plot and the stages panel
         /// sit in side rails, and the rocket column between them stays clear down to a short dock.
-        /// Portrait <see cref="Place(float, float, float, float, float, float, FlightHudMode)"/> is unchanged.
+        /// Portrait <see cref="Place(float, float, float, float, float, float, FlightHudMode, float, bool)"/> is unchanged.
         /// </summary>
         /// <param name="rowPt">Height of the dock's button rows (medal + info, prompt or assist, nudges) in these units.
         /// AscentHud passes 44 pt as whole panel pixels (1280x800 CSS is a 0.948 panel: 44 px buttons need 46.4 CSS pt);
         /// never under <see cref="ButtonPt"/>.</param>
-        public static FlightHudFrame PlaceWide(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight, FlightHudMode mode, float rowPt = ButtonPt)
+        /// <param name="clockMinW">The clock's narrowest box in these units (AscentHud: <see cref="ClockMinWidth"/> in panel
+        /// pixels at the HUD's face scale, over the panel scale); 0 for <see cref="ClockMinWidth"/> itself.</param>
+        public static FlightHudFrame PlaceWide(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight, FlightHudMode mode, float rowPt = ButtonPt, float clockMinW = 0f)
         {
             if (!(rowPt >= ButtonPt)) rowPt = ButtonPt;
+            if (!(clockMinW > 0f)) clockMinW = ClockMinWidth();
             if (!(width > height))
                 return Place(width, height, safeTop, safeBottom, safeLeft, safeRight, mode);
 
@@ -663,7 +714,7 @@ namespace Kestrel.Core.Flight
 
             var f = new FlightHudFrame { Mode = mode, Exit = exit };
             f.Telemetry = Box(left, stripY, stripW, stripH);
-            float clockW = Math.Min(120f, Math.Max(64f, stripW * 0.12f));
+            float clockW = Math.Max(clockMinW, Math.Min(120f, Math.Max(64f, stripW * 0.12f)));
             f.Clock = Box(left, stripY, clockW, stripH);
             f.Stage = Box(stripRight - StageChipPt, stripY + (stripH - StageChipPt) * 0.5f, StageChipPt, StageChipPt);
             float cellsL = f.Clock.Right + GapPt;

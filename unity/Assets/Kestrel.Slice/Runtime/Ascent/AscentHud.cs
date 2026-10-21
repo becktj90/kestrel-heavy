@@ -230,6 +230,8 @@ namespace Kestrel.Slice
         /// the full-width banner row the card becomes (FlightHudLayout.BannerRowPt). Never in landscape.
         /// </summary>
         float bannerRowPt;
+        /// <summary>Whether the dock's last row (Alternate / nudges) was open when LayoutRail last seated the rows.</summary>
+        bool railNudges = true;
 
         /// <summary>The banner row height the current banner text needs at the HUD's content width (0: the card holds it).</summary>
         float RailBannerPt()
@@ -344,8 +346,9 @@ namespace Kestrel.Slice
                 : prompt ? FlightHudMode.Prompt
                 : notes ? FlightHudMode.Notes
                 : FlightHudMode.Cruise;
-            var frame = FlightHudLayout.Place(w / upp, h / upp, 0f, 0f, 0f, 0f, mode, bannerRowPt);
+            var frame = FlightHudLayout.Place(w / upp, h / upp, 0f, 0f, 0f, 0f, mode, bannerRowPt, nudgeRowOpen);
             railMode = mode;
+            railNudges = nudgeRowOpen;
             if (plot.parent != hud) hud.Insert(0, plot);
             Pin(plot, new HudBox
             {
@@ -608,12 +611,17 @@ namespace Kestrel.Slice
             if (!(pw >= 8f) || !(ph >= 8f) || root == null) return;
             bool prompt = shown != default;
             var mode = FlightHudLayout.WideMode(prompt, infoOpen);
-            float ux = pw / cssW;
-            float uy = ph / cssH;
-            // L2 (1280x800, a 0.948 panel): the dock rows were 44 CSS pt = 41.7 px, the 44 px info button stuck out of
-            // the medal row. Rows are the 44 pt button in whole panel pixels, and the dock is budgeted for that.
+            // The frame is laid out in the HUD's face points (panel px / upp), not CSS points. The web panel is scaled
+            // (1280x800 CSS is a 1214x759 panel, 1920x1080 and 2560x1440 are 1280x720) while every face, button and
+            // pad is sized in upp: in CSS points the 44 pt rows were 41.7 px under a 44 px info button (#322 CI
+            // 1280x800), the 36 pt strip was 24 px under a 28 px clock (#322 CI 1920x1080: h-t needed 64 x 26 in a
+            // 64 x 22 box), and at 2560x1440 the strip would be 18 px. The CSS insets scale into the same points.
+            float fw = pw / upp, fh = ph / upp;
+            float sx = fw / cssW, sy = fh / cssH;
+            float ux = upp;
+            float uy = upp;
             float rowPx = DockRowPx();
-            var f = FlightHudLayout.PlaceWide(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight, mode, rowPx / uy);
+            var f = FlightHudLayout.PlaceWide(fw, fh, safeTop * sy, safeBottom * sy, safeLeft * sx, safeRight * sx, mode, rowPx / upp, FlightHudLayout.ClockMinWidth());
             HudBox Sc(HudBox b) => FlightHudLayout.ToPanel(b, ux, uy);
             bool InDock(HudBox b) => b.Live && b.Y >= f.Dock.Y - 1f && b.Bottom <= f.Dock.Bottom + 1.5f;
 
@@ -653,7 +661,7 @@ namespace Kestrel.Slice
             if (health != null) health.style.overflow = Overflow.Visible;
             Pin(plot, Sc(f.Plot));
             Pin(stages, Sc(f.Stages));
-            DressClock(f.Clock.W, f.Clock.H);
+            DressClock(f.Clock.W, f.Telemetry.H);
 
             var tools = hud.Q("flight-tools");
             if (tools != null)
@@ -999,7 +1007,7 @@ namespace Kestrel.Slice
                 LayoutWide();
             // Portrait has the same problem: the rows were seated for the cruise dock when a call opened. A banner
             // that stops (or starts) fitting the stages card moves the card to (or from) its full-width row.
-            else if (!widePinned && railMode.HasValue && (LiveMode() != railMode || Math.Abs(RailBannerPt() - bannerRowPt) > 0.01f)) Layout(upp);
+            else if (!widePinned && railMode.HasValue && (LiveMode() != railMode || nudgeRowOpen != railNudges || Math.Abs(RailBannerPt() - bannerRowPt) > 0.01f)) Layout(upp);
             string key = shown + "|" + (quote != null ? quote.userData as string : "") + "|" + (primary != null ? primary.text : "") + "|" + (alternate != null ? alternate.text : "");
             if (key != fittedFor)
             {
@@ -1081,17 +1089,20 @@ namespace Kestrel.Slice
             // Landscape pins the dock; a flow spacer there would push the rows out of their seats.
             if (widePinned) { dockSpacer.style.height = 0; return; }
             bool prompt = shown != default;
-            // Notes float above the dock. The spacer only reserves the buttons.
-            float pt = FlightHudLayout.DockHeight(false, prompt);
-            if (!nudgeRowOpen) pt -= FlightHudLayout.ButtonPt + FlightHudLayout.GapPt;
+            // #322 CI SE cruise: the spacer reserved the buttons without the closed nudge row while LayoutRail pinned
+            // the frame's dock with it, so the flex tools row (Follow y 514) sat inside the dock (y 519). The spacer
+            // reserves exactly the frame's dock (FlightHudLayout.Place with the same mode and nudge row).
+            float pt = FlightHudLayout.DockHeight(infoOpen, prompt, FlightHudLayout.ButtonPt, nudgeRowOpen);
             dockSpacer.style.height = Px(pt);
         }
 
+        /// <summary>The clock face for its box in points of the HUD's face scale (upp): 28 -> 13 pt, widths budgeted.</summary>
         void DressClock(float boxW, float boxH)
         {
             var clock = hud != null ? hud.Q<Label>("h-t") : null;
             if (clock == null) return;
-            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFontPt(boxW, boxH));
+            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFit(boxW, boxH));
+            clock.style.marginLeft = 0; clock.style.marginRight = 0; clock.style.marginTop = 0; clock.style.marginBottom = 0;
         }
 
         void BuildHealth()
@@ -1289,15 +1300,23 @@ namespace Kestrel.Slice
             float dock = actions != null ? actions.resolvedStyle.height : float.NaN;
             if (float.IsNaN(dock) || dock < 8f)
             {
-                float pt = FlightHudLayout.DockHeight(false, prompt);
-                if (!nudgeRowOpen) pt -= FlightHudLayout.ButtonPt + FlightHudLayout.GapPt;
+                float pt = FlightHudLayout.DockHeight(true, prompt, FlightHudLayout.ButtonPt, nudgeRowOpen);
                 if (pt < FlightHudLayout.ButtonPt) pt = FlightHudLayout.ButtonPt;
                 dock = Px(pt);
             }
-            help.style.bottom = dock + Px(FlightHudLayout.GapPt);
+            // Portrait: Follow / Cam / Pause sit right above the dock, so the sheet floats above them, never over them.
+            float tools = widePinned ? 0f : Px(FlightHudLayout.ButtonPt + FlightHudLayout.GapPt);
+            float bottom = dock + Px(FlightHudLayout.GapPt) + tools;
+            help.style.bottom = bottom;
             float panelH = hud.resolvedStyle.height;
             if (float.IsNaN(panelH) || panelH < 8f) panelH = 700f * upp;
             float sheet = FlightHudLayout.InfoViewPt(panelH / upp, 0f, prompt);
+            if (!widePinned)
+            {
+                // Still under the rocket band where there is room (InfoViewPt's ceiling), never under 48 pt.
+                float room = (panelH - bottom) / upp - (panelH / upp * FlightHudLayout.StackBottom + 8f);
+                sheet = Mathf.Clamp(Mathf.Min(sheet, room), 48f, 96f);
+            }
             help.style.height = Px(sheet);
             help.style.maxHeight = Px(sheet);
             help.style.minHeight = Px(48f);
