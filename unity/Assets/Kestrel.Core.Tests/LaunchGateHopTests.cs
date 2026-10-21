@@ -249,7 +249,7 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void DesignFirstRocketsAreReadyUnlessThePredictRunReallyFails()
+        public void DesignFirstRocketsAreReadyAfterThePredictRun()
         {
             var bad = new List<string>();
             for (int cleared = 0; cleared < 20; cleared++)
@@ -260,13 +260,6 @@ namespace Kestrel.Core.Tests
                 Assert.That(PadHandoff.TryTake(out var json, out _), "m" + (cleared + 1));
                 var gate = GateAfterReference(json, out var sim);
                 if (gate.Ready || FitBlock(gate)) continue;
-                // KH-11 / KH-13 board starters are one strength step short by design (board-starters.json "strength").
-                // Their row names the real time, and Launch still flies after one confirm.
-                if (sim.failure != null && gate.code == sim.failure.kind && gate.CanLaunch)
-                {
-                    StringAssert.DoesNotContain("T+0 s", gate.Line, r.Session.MissionId);
-                    continue;
-                }
                 bad.Add(r.Session.MissionId + " " + gate.code + ": " + gate.Line);
             }
             Assert.That(bad, Is.Empty, string.Join(" | ", bad));

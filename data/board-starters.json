@@ -795,9 +795,9 @@
     },
     {
       "id": "m11",
-      "mode": "fix",
+      "mode": "fly",
       "restoreSafetyFactor": 1.7,
-      "edit": "Auto Fix it. open Strength 1.55 → 1.85. Air load is 68.6 kPa and the walls hold 81.4 kPa. The warning line is 45 kPa. An upper stage is still short on push. Another engine does not fit without a wider rocket than the limits allow.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -879,7 +879,7 @@
           "avionics": {
             "tier": "standard"
           },
-          "safetyFactor": 1.55,
+          "safetyFactor": 1.85,
           "livery": {
             "primary": "#f2f2f2",
             "accent": "#1a3c6e",
@@ -985,9 +985,9 @@
     },
     {
       "id": "m13",
-      "mode": "fix",
+      "mode": "fly",
       "restoreSafetyFactor": 1.7,
-      "edit": "Auto Fix it. cleared Strength 1.25 → 1.6. Max-Q throttle 100% → 85%.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -1072,7 +1072,7 @@
           "avionics": {
             "tier": "standard"
           },
-          "safetyFactor": 1.25,
+          "safetyFactor": 1.6,
           "livery": {
             "primary": "#f2f2f2",
             "accent": "#1a3c6e",

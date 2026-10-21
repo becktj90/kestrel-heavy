@@ -1,7 +1,7 @@
 // F1 / NAV-01, NAV-02 (NAV_BUGS.md, test/nav-flow #308). Mirrors KnownBug_NAV01_DesignFirstRocket_LaunchGateBlocks
 // and KnownBug_NAV02_GoldenWinners_DesignerGateDisagreesWithFlightBatch as plain tests: the designer gate, run the
 // way the nav harness runs it (ReferenceAscent.Run, then LaunchGate.Evaluate), is Ready for every campaign winner
-// and for every DESIGN FIRST rocket the campaign flight does not really fail. When #308 lands, its two KnownBug tests are removed in favour of these.
+// and for every DESIGN FIRST rocket, which also flies FlightBatch seeds 1-5 with no failure. When #308 lands, its two KnownBug tests are removed in favour of these.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -47,33 +47,61 @@ namespace Kestrel.Core.Tests
         }
 
         /// <summary>
-        /// Every DESIGN FIRST rocket is Ready, unless the campaign flight (FlightBatch, seeds 1-5, the same
-        /// MissionFlightSetup as the pad) really fails it the same way on every seed. Then the gate says so with the
-        /// real time, and Launch still flies after one confirm. Today that is the KH-11 and KH-13 board starters
-        /// (board-starters.json mode "fix": one strength step short until the player taps Fix it).
+        /// Every DESIGN FIRST rocket is Ready in the designer and flies in FlightBatch (seeds 1-5, the same
+        /// MissionFlightSetup as the pad) without a failure on any seed. Our own starters always fly; only the
+        /// player's own edits can make a rocket break.
         /// </summary>
         [Test]
-        public void NAV01_DesignFirstRocket_IsReadyInTheDesigner()
+        public void NAV01_DesignFirstRocket_IsReadyInTheDesignerAndFlies()
         {
             var bad = new List<string>();
-            var real = new List<string>();
             for (int cleared = 0; cleared < 20; cleared++)
             {
+                GameSession.Clear();
+                PadHandoff.Clear();
+                ReferenceAscent.Reset();
                 var r = HomeRoutes.DesignFirst(campaign, cleared, catalog, hangar.templates);
                 if (!PadHandoff.TryTake(out var json, out _)) { bad.Add("m" + (cleared + 1) + " no rocket"); continue; }
-                var gate = DesignerGate(json);
-                if (gate.Ready) continue;
                 string mid = r.Session.MissionId;
-                string flown = BatchFailure(campaign.ById(mid), json);
-                if (flown != null && flown == gate.code && gate.CanLaunch && gate.NeedsConfirm && !gate.Line.Contains("T+0 s"))
-                {
-                    real.Add(mid + " " + gate.code);
-                    continue;
-                }
-                bad.Add(mid + " " + gate.state + " " + gate.code + " (FlightBatch: " + (flown ?? "flies 5/5") + "): " + gate.Line.Split('.')[0]);
+                var flown = Failures(campaign.ById(mid), json);
+                var gate = DesignerGate(json);
+                if (!gate.Ready) bad.Add(mid + " " + gate.state + " " + gate.code + ": " + gate.Line.Split('.')[0]);
+                if (flown.Count > 0) bad.Add(mid + " FlightBatch " + string.Join(",", flown));
             }
-            Assert.That(bad, Is.Empty, bad.Count + "/20 blocked. " + string.Join(" | ", bad));
-            TestContext.WriteLine("Real predicted failures (Launch anyway): " + string.Join(", ", real));
+            Assert.That(bad, Is.Empty, bad.Count + " problems. " + string.Join(" | ", bad));
+        }
+
+        /// <summary>
+        /// A player-made weak rocket still fails: the KH-11 starter with strength dropped to 1.55 bends at max-Q on
+        /// every seed. The designer says so with the real time, and Launch still flies after one confirm.
+        /// </summary>
+        [Test]
+        public void NAV01_PlayerWeakenedRocket_StillFails_AndCanLaunchAnyway()
+        {
+            HomeRoutes.DesignFirst(campaign, 10, catalog, hangar.templates);
+            Assert.That(PadHandoff.TryTake(out var json, out _), "KH-11 DESIGN FIRST rocket");
+            Assert.AreEqual("m11", json.Str("missionId"));
+            json["safetyFactor"] = 1.55;
+            var mission = campaign.ById("m11");
+            Assert.AreEqual("structural-maxq", BatchFailure(mission, json), "a weak rocket must still break up");
+            var gate = DesignerGate(json);
+            Assert.IsFalse(gate.Ready, gate.Line);
+            Assert.AreEqual("structural-maxq", gate.code);
+            Assert.That(gate.CanLaunch && gate.NeedsConfirm, gate.state + ": " + gate.Line);
+            StringAssert.DoesNotContain("T+0 s", gate.Line);
+        }
+
+        /// <summary>Every failure kind FlightBatch reports for <paramref name="json"/> on campaign seeds 1-5.</summary>
+        List<string> Failures(CampaignMission mission, JsonObject json)
+        {
+            var design = Kestrel.Core.Vehicle.Design.FromJson(json);
+            var list = new List<string>();
+            for (ulong seed = 1; seed <= 5; seed++)
+            {
+                var f = FlightBatch.Fly(catalog, mission, design, seed);
+                if (f.failure != null) list.Add("seed " + seed + " " + f.failure);
+            }
+            return list;
         }
 
         /// <summary>The failure kind when FlightBatch fails <paramref name="json"/> on every campaign seed 1-5 the same way, else null.</summary>
