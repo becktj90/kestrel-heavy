@@ -1,6 +1,7 @@
 // One saved camera. Auto is the altitude-aware chase. The other four are fixed frames.
 // The button reads "Cam: <mode>" and opens a five-chip picker; C on web cycles without it.
 // The value lives in the save record kh.save.v1.settings. Poses: FlightViewPose.
+using System;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Json;
 
@@ -93,6 +94,19 @@ namespace Kestrel.Core.Flight
         /// </summary>
         public static FlightViewMode FollowToggle(FlightViewMode mode, bool following, FlightViewMode lastChase) =>
             following ? FlightViewMode.Pad : Chases(lastChase) ? lastChase : FlightViewMode.Auto;
+
+        /// <summary>The control row's short caption for a full one, used only when the full set cannot fit the row
+        /// (FlightHudLayout.ToolSlots): "Follow rocket" and "Following" read "Follow" (the Following plate and its
+        /// teal edge still tell the state), "Cam: Below" reads "Below". With <paramref name="shortL"/> false, as is.</summary>
+        public static string ShortToolCaption(string caption, bool shortL)
+        {
+            if (!shortL || string.IsNullOrEmpty(caption)) return caption;
+            if (caption == FollowLabel || caption == FollowingLabel) return ShortFollowLabel;
+            if (caption.StartsWith(CaptionPrefix, StringComparison.Ordinal)) return caption.Substring(CaptionPrefix.Length);
+            return caption;
+        }
+
+        public const string ShortFollowLabel = "Follow";
 
         /// <summary>"Following" when tapping would change nothing, "Follow rocket" when it would.</summary>
         public static string FollowCaption(bool following) => following ? FollowingLabel : FollowLabel;

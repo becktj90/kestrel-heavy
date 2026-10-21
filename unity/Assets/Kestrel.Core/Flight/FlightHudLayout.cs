@@ -482,17 +482,13 @@ namespace Kestrel.Core.Flight
                 }
             }
 
-            float followW = FollowWidthPt;
-            float centerL = width * 0.35f;
-            if (left + followW > centerL - GapPt) followW = Math.Max(ButtonPt, centerL - GapPt - left);
-            f.Follow = Box(left, toolsY, followW, ButtonPt);
-            float pauseX = right - PauseWidthPt;
-            float centerR = width * 0.65f;
-            if (pauseX < centerR + GapPt) pauseX = centerR + GapPt;
-            f.Pause = Box(pauseX, toolsY, PauseWidthPt, ButtonPt);
+            // The slots FlightChrome gives the flex row for this width (ToolSlots), Follow left, Pause right.
+            var slots = ToolSlots(width, left, right);
+            f.Follow = Box(left, toolsY, slots.FollowW, ButtonPt);
+            f.Pause = Box(right - slots.PauseW, toolsY, slots.PauseW, ButtonPt);
 
             // Camera sits centred in the gap between Follow and Pause, the way the flex row lays it out.
-            float camW = FlightView.WidestButton();
+            float camW = slots.CameraW;
             float gapL = f.Follow.Right + GapPt;
             float gapR = f.Pause.X - GapPt;
             if (camW > gapR - gapL) camW = Math.Max(ButtonPt, gapR - gapL);
@@ -570,6 +566,77 @@ namespace Kestrel.Core.Flight
             float ux = (float)Math.Ceiling(Math.Min(health.X, telemetry.X));
             float ur = (float)Math.Floor(Math.Max(health.Right, telemetry.Right));
             return Box(ux, (float)Math.Ceiling(under), Math.Max(1f, ur - ux), 0f);
+        }
+
+        /// <summary>Follow / Cam / Pause slot widths (points) and their caption face, for one row width.</summary>
+        public struct ToolRowFit
+        {
+            public float FollowW, CameraW, PauseW, FontPt;
+            /// <summary>The captions are the short set (<see cref="FlightView.ShortToolCaption"/>): the long set did not fit.</summary>
+            public bool Short;
+            public float Total => FollowW + CameraW + PauseW;
+        }
+
+        public const float ToolMinPt = 44f, ToolFontPt = 13f, ToolMinFontPt = 11f;
+        /// <summary>Caption room inside a slot (UI Toolkit is border-box): FlightChrome's 2 pt side paddings and the
+        /// Following plate's 2 pt teal edge (CountdownStack.FollowEdgePt), both sides.</summary>
+        public const float ToolTextPadPt = 2f * 2f + 2f * CountdownStack.FollowEdgePt;
+        public const string PauseCaption = "Pause";
+
+        static float ToolNeed(string[] labels, float fontPt)
+        {
+            float w = ToolMinPt;
+            foreach (var l in labels) w = Math.Max(w, BudgetWidth(l, fontPt) + ToolTextPadPt);
+            // Whole points, so a slot floored to whole pixels still holds its caption.
+            return (float)Math.Ceiling(w - 1e-3f);
+        }
+
+        /// <summary>
+        /// The control row on a <paramref name="panelW"/>-point-wide portrait HUD whose row runs from
+        /// <paramref name="left"/> to <paramref name="right"/> (the padded content box, rounded inward, less the side
+        /// margins). Was: fixed #304 slots (Follow 112, Cam widest caption, Pause 76) whatever the width, so on
+        /// 335x720 with 24 px safe pads Pause ended at 324 against a 311 content edge. Now, in order: the #304 slots
+        /// with every caption fitting by BudgetWidth at the largest face from 13 down to 11 pt, Follow kept left of
+        /// and Pause right of the rocket (0.35 / 0.65 of the width, from 360 pt up); then the full captions without
+        /// the rocket rule (narrow or deeply padded rows); then the short captions ("Follow", "Below"), last;
+        /// never a slot under 44 pt, never past the row.
+        /// </summary>
+        public static ToolRowFit ToolSlots(float panelW, float left, float right)
+        {
+            float followCap = panelW * 0.35f - GapPt - left;
+            float pauseCap = right - (panelW * 0.65f + GapPt);
+            return ToolSlotsCapped(right - left, followCap, pauseCap);
+        }
+
+        /// <summary><see cref="ToolSlots(float,float,float)"/> for a bare row width and optional slot caps.</summary>
+        public static ToolRowFit ToolSlotsCapped(float rowW, float followCap = float.MaxValue, float pauseCap = float.MaxValue)
+        {
+            float avail = rowW - 2f * GapPt;
+            for (int pass = 0; pass < 4; pass++)
+            {
+                // Full captions first (with, then without the rocket rule), the short set only when neither fits.
+                bool shortL = pass >= 2;
+                bool capped = (pass & 1) == 0;
+                float fCap = capped ? followCap : float.MaxValue, pCap = capped ? pauseCap : float.MaxValue;
+                var follow = new[] { FlightView.ShortToolCaption(FlightView.FollowLabel, shortL), FlightView.ShortToolCaption(FlightView.FollowingLabel, shortL) };
+                var cams = new string[FlightView.Cycle.Length];
+                for (int i = 0; i < cams.Length; i++) cams[i] = FlightView.ShortToolCaption(FlightView.Caption(FlightView.Cycle[i]), shortL);
+                var pause = new[] { PauseCaption };
+                for (float f = ToolFontPt; f >= ToolMinFontPt - 1e-3f; f -= 0.5f)
+                {
+                    float fw = ToolNeed(follow, f), cw = ToolNeed(cams, f), pw = ToolNeed(pause, f);
+                    if (fw > fCap + 1e-3f || pw > pCap + 1e-3f || fw + cw + pw > avail + 1e-3f) continue;
+                    float pf = Math.Max(fw, Math.Min(FollowWidthPt, fCap));
+                    float pc = Math.Max(cw, FlightView.WidestButton());
+                    float pp = Math.Max(pw, Math.Min(PauseWidthPt, pCap));
+                    float deficit = (pf - fw) + (pc - cw) + (pp - pw);
+                    float k = deficit > 0f ? Math.Min(1f, (avail - fw - cw - pw) / deficit) : 0f;
+                    return new ToolRowFit { FollowW = fw + k * (pf - fw), CameraW = cw + k * (pc - cw), PauseW = pw + k * (pp - pw), FontPt = f, Short = shortL };
+                }
+            }
+            // A row under about 190 pt: three 44 pt slots at the smallest face with the short captions.
+            float each = Math.Max(ToolMinPt, avail / 3f);
+            return new ToolRowFit { FollowW = each, CameraW = each, PauseW = each, FontPt = ToolMinFontPt, Short = true };
         }
 
         /// <summary>The Follow / Cam / Pause row as one box.</summary>

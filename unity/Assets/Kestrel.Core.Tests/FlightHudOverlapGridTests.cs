@@ -128,6 +128,93 @@ namespace Kestrel.Core.Tests
             Assert.That(fails, Is.Empty, fails.Count + ":\n" + string.Join("\n", fails.GetRange(0, Math.Min(40, fails.Count))));
         }
 
+        // Left / right safe pads (points), whole and fractional: phones, the 24 px device-test pads, the "23.5"
+        // CI read off a 24 px pad, odd web insets, and one-sided notches in both directions.
+        static readonly float[][] SidePads =
+        {
+            new[] { 0f, 0f }, new[] { 24f, 24f }, new[] { 23.5f, 23.5f }, new[] { 20.25f, 20.25f }, new[] { 0.5f, 0.5f },
+            new[] { 11.75f, 30.6f }, new[] { 47.333f, 0f }, new[] { 0f, 59f }, new[] { 34f, 34f }, new[] { 62f, 62f },
+        };
+
+        /// <summary>
+        /// #332 CI (job 119410329556), 335x720 with 24 px pads, cruise: flight-pause (248,495 76x44) ended at 324
+        /// against a 311.5 safe edge. FlightChrome.StyleTools' row, emulated pixel for pixel: the padded content
+        /// box rounded inward, less the side margins, slots from FlightHudLayout.ToolSlots floored to whole pixels,
+        /// laid out space-between. Every button is inside the padded safe box, a 44 pt target, a real gap from its
+        /// neighbour, and wide enough for its caption by BudgetWidth, at every width, pad and scale.
+        /// </summary>
+        [Test]
+        public void ControlRowStaysInsideThePaddedSafeBoxEverywhere()
+        {
+            var fails = new List<string>();
+            int cases = 0, shortRows = 0;
+            var widths = new List<float>(Widths) { 300f, 310f, 1024f, 1180f };
+            foreach (float w in widths)
+            foreach (var pad in SidePads)
+            foreach (float upp in Scales)
+            {
+                cases++;
+                float panel = w * upp, pl = pad[0] * upp, pr = pad[1] * upp;
+                // The safe box, exactly (no slack): nothing may cross a pad, even by a fraction of a pixel.
+                float safeL = pl, safeR = panel - pr;
+                float l = (float)Math.Ceiling(pl - 0.001f), r = (float)Math.Floor(panel - pr + 0.001f);
+                float side = (float)Math.Round(FlightHudLayout.SideMarginPt * upp);
+                float rowL = l + side, rowR = r - side, rowPx = rowR - rowL;
+                float contentPt = (panel - pl - pr) / upp;
+                float leftPt = (rowL - pl) / upp;
+                var fit = FlightHudLayout.ToolSlots(contentPt, leftPt, leftPt + rowPx / upp);
+                if (fit.Short) shortRows++;
+                // The short captions are the last resort: never on a real phone row (320 pt up, pads to 24 pt).
+                if (fit.Short && w >= 320f && pad[0] <= 24f && pad[1] <= 24f) fails.Add(w + "pt pads " + pad[0] + "/" + pad[1] + " x" + upp + " fell back to the short captions");
+                float fw = (float)Math.Floor(fit.FollowW * upp + 0.001f);
+                float cw = (float)Math.Floor(fit.CameraW * upp + 0.001f);
+                float pw = (float)Math.Floor(fit.PauseW * upp + 0.001f);
+                float spare = (rowPx - fw - cw - pw) / 2f;
+                var follow = new HudBox { X = rowL, Y = 0f, W = fw, H = 44f * upp };
+                var cam = new HudBox { X = rowL + fw + spare, Y = 0f, W = cw, H = 44f * upp };
+                var pause = new HudBox { X = rowR - pw, Y = 0f, W = pw, H = 44f * upp };
+                string where = w + "pt pads " + pad[0] + "/" + pad[1] + " x" + upp + " font " + fit.FontPt + (fit.Short ? " short" : "");
+                if (!Whole(follow.X) || !Whole(pause.X) || !Whole(pause.Right)) fails.Add(where + " row not on whole pixels");
+                foreach (var b in new[] { ("follow", follow), ("cam", cam), ("pause", pause) })
+                {
+                    if (b.Item2.X < safeL - 1e-3f || b.Item2.Right > safeR + 1e-3f)
+                        fails.Add(where + " " + b.Item1 + " " + Fmt(b.Item2) + " outside the safe box " + safeL + ".." + safeR);
+                    if (b.Item2.W < 44f * upp - 1e-3f) fails.Add(where + " " + b.Item1 + " under 44 pt: " + b.Item2.W);
+                }
+                float gap = FlightHudLayout.GapPt * upp - 1e-3f;
+                if (cam.X - follow.Right < gap || pause.X - cam.Right < gap) fails.Add(where + " no gap: " + Fmt(follow) + Fmt(cam) + Fmt(pause));
+                // Captions (the set the row will show) fit their slot by BudgetWidth, inside FlightChrome's 2 pt side
+                // paddings and the Following plate's teal edge (UI Toolkit sizes are border-box).
+                float room = (2f * 2f + 2f * CountdownStack.FollowEdgePt) * upp;
+                var labels = new List<(string, float)>
+                {
+                    (FlightView.ShortToolCaption(FlightView.FollowLabel, fit.Short), fw),
+                    (FlightView.ShortToolCaption(FlightView.FollowingLabel, fit.Short), fw),
+                    (FlightHudLayout.PauseCaption, pw),
+                };
+                foreach (var m in FlightView.Cycle) labels.Add((FlightView.ShortToolCaption(FlightView.Caption(m), fit.Short), cw));
+                foreach (var lb in labels)
+                    if (FlightHudLayout.BudgetWidth(lb.Item1, fit.FontPt) * upp + room > lb.Item2 + 1e-3f)
+                        fails.Add(where + " '" + lb.Item1 + "' does not fit " + lb.Item2 + " px");
+                if (fit.FontPt < FlightHudLayout.ToolMinFontPt - 1e-3f) fails.Add(where + " caption under " + FlightHudLayout.ToolMinFontPt + " pt");
+                // No side pad, 360 pt and up: Follow and Pause keep clear of the rocket, as the frame
+                // (FlightHudLayoutTests) has them. Narrower, the full captions win over the 0.35 / 0.65 rule.
+                if (pad[0] == 0f && pad[1] == 0f && w >= 360f && w < 700f)
+                {
+                    if (follow.Right > panel * 0.35f + 0.6f * upp) fails.Add(where + " follow covers the rocket " + Fmt(follow));
+                    if (pause.X < panel * 0.65f - 0.6f * upp) fails.Add(where + " pause covers the rocket " + Fmt(pause));
+                }
+
+                // The portrait frame's own row (the content box, no insets) agrees: inside, gapped, and the same slots.
+                var f = FlightHudLayout.Place(contentPt, 800f, 0f, 0f, 0f, 0f, FlightHudMode.Cruise, 0f, true);
+                if (f.Follow.X < -0.01f || f.Pause.Right > contentPt + 0.01f || f.Camera.X < f.Follow.Right + FlightHudLayout.GapPt - 0.01f
+                    || f.Pause.X < f.Camera.Right + FlightHudLayout.GapPt - 0.01f)
+                    fails.Add(where + " frame row " + Fmt(f.Follow) + Fmt(f.Camera) + Fmt(f.Pause) + " in " + contentPt);
+            }
+            Assert.That(fails, Is.Empty, fails.Count + " of " + cases + ":\n" + string.Join("\n", fails.GetRange(0, Math.Min(40, fails.Count))));
+            TestContext.WriteLine("control row: " + cases + " rows, " + shortRows + " on the short captions (deep pads or under 320 pt)");
+        }
+
         static bool Hit(HudBox a, HudBox b) =>
             a.X < b.Right - 0.5f && a.Right > b.X + 0.5f && a.Y < b.Bottom - 0.5f && a.Bottom > b.Y + 0.5f;
 

@@ -715,6 +715,8 @@ namespace Kestrel.Slice
                 tools.style.position = Position.Absolute;
                 tools.style.left = 0; tools.style.top = 0; tools.style.right = 0; tools.style.bottom = 0;
                 tools.style.marginBottom = 0;
+                // The portrait row's inward-rounded side margins (FlightChrome.StyleTools) would shift the pins.
+                tools.style.marginLeft = 0; tools.style.marginRight = 0;
             }
             PinTool(hud.Q(UiIds.FlightFollow), Sc(f.Follow));
             PinTool(hud.Q(UiIds.FlightCamera), Sc(f.Camera));
