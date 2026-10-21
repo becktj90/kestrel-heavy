@@ -34,6 +34,7 @@ namespace Kestrel.Slice
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; Kestrel.Pad.PadLights padLights; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; RecoveryShow recovery; GameObject rocketGO;
         Kestrel.Vehicle.FinCluster landingFins; Kestrel.Vehicle.StrutCluster landingLegs;
+        Kestrel.Vehicle.StrutCluster fairingSeams; // fairing seams + rings; FlightStageShow turns them off at separation
         FlightChrome chrome;
         FlightViewMode flightView = FlightViewMode.Auto;
         AscentHud ascentHud; Design flyingDesign;
@@ -742,7 +743,8 @@ namespace Kestrel.Slice
             if (rocketGO == null) return;
             staging = rocketGO.GetComponent<FlightStageShow>();
             if (staging == null) staging = rocketGO.AddComponent<FlightStageShow>();
-            try { staging.Prepare(SliceData.Catalog, design, built, hud); }
+            // The painted parts are the flight picture (#288): staging hides each one its moving piece replaces.
+            try { staging.Prepare(SliceData.Catalog, design, built, hud, rocketView, fairingSeams); }
             catch (System.Exception e) { Debug.LogWarning("[Staging] " + e.Message); }
             failureShow = rocketGO.GetComponent<FlightFailureShow>();
             if (failureShow == null) failureShow = rocketGO.AddComponent<FlightFailureShow>();
@@ -1045,6 +1047,7 @@ namespace Kestrel.Slice
         /// <summary>Separation seams, base ring and shoulder on the fairing. The ogive lathe is unchanged, so plume height stays put.</summary>
         void AddFairing(RocketMeshBuilder.Result r)
         {
+            fairingSeams = null;
             if (!r.fairing.Present) return;
             var f = r.fairing;
             var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic);
@@ -1053,6 +1056,7 @@ namespace Kestrel.Slice
             cluster.ViewCamera = cam;
             cluster.Gate = rocketGO.GetComponent<MeshRenderer>();
             cluster.Init(poses, Kestrel.Kit.KitBudgets.Medium);
+            fairingSeams = cluster;
         }
 
         /// <summary>Back to the title screen. In the shell, SceneFlow unloads the Design scene, which owns every
