@@ -456,6 +456,12 @@ namespace Kestrel.Game.Tests
                     Assert.That(detail, Is.Not.Null);
                     Assert.That(Shown(detail), Is.True, where + " opens");
                     Assert.That(ascent.HealthOpen, Is.EqualTo(i));
+                    // Open is a ring, not a colour: the calm (green) tab keeps its health plate and label colour.
+                    var look = HealthChip.Look(VehicleHealthTone.Green, true);
+                    var bg = tab.resolvedStyle.backgroundColor;
+                    Assert.That(Mathf.Abs(bg.r - look.Plate.R) + Mathf.Abs(bg.g - look.Plate.G) + Mathf.Abs(bg.b - look.Plate.B), Is.LessThan(0.02f), where + " open keeps the green plate, got " + bg);
+                    Assert.That(tab.resolvedStyle.borderTopColor.r, Is.EqualTo(HealthChip.OpenRing.R).Within(0.02f), where + " open shows the ring");
+                    float openW = tab.contentRect.width;
                     foreach (var id in new[] { "ascent-telemetry", "ascent-health" })
                         Assert.That(Overlaps(detail.worldBound, hud.Q(id).worldBound), Is.False, where + " covers " + id);
                     Assert.That(UiTreeChecks.TextBounds(detail), Is.Empty, where + " fully readable");
@@ -464,6 +470,8 @@ namespace Kestrel.Game.Tests
                     Click(tab);
                     surface.Pump(2);
                     Assert.That(Shown(detail), Is.False, where + " tap again closes");
+                    Assert.That(tab.resolvedStyle.borderTopColor.r, Is.EqualTo(HealthChip.GreenPlate.R).Within(0.02f), where + " closed hides the ring");
+                    Assert.That(tab.contentRect.width, Is.EqualTo(openW).Within(0.01f), where + " opening never moves the label");
                     // Or a tap outside it.
                     Click(tab);
                     surface.Pump(2);

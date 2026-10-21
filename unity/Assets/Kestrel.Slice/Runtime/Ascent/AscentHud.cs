@@ -1163,10 +1163,7 @@ namespace Kestrel.Slice
                 b.style.borderTopWidth = 0;
                 b.style.borderRightWidth = 0;
                 b.style.borderLeftWidth = 0;
-                b.style.borderBottomWidth = 2;
-                b.style.backgroundColor = FlightDusk.Ink;
-                b.style.color = FlightDusk.Tone(calm[i].Tone);
-                b.style.borderBottomColor = FlightDusk.Tone(calm[i].Tone);
+                PaintChip(b, calm[i].Tone, false);
                 FlightDusk.Face(b, FlightDusk.BodyFace());
                 healthButtons[i] = b;
                 row.Add(b);
@@ -1224,10 +1221,7 @@ namespace Kestrel.Slice
                 if (b == null) continue;
                 b.text = parts[i].Mark;
                 b.tooltip = parts[i].Name + ". " + parts[i].Detail;
-                var tone = FlightDusk.Tone(parts[i].Tone);
-                b.style.color = tone;
-                b.style.borderBottomColor = tone;
-                b.style.backgroundColor = healthOpen == i ? FlightDusk.AlarmInk : FlightDusk.Ink;
+                PaintChip(b, parts[i].Tone, healthOpen == i);
             }
             if (healthDetail == null) return;
             if (healthOpen >= 0 && healthOpen < parts.Length)
@@ -1240,6 +1234,23 @@ namespace Kestrel.Slice
         }
 
         public const string HealthDetailName = "ascent-health-detail";
+
+        /// <summary>The chip's plate, label and bottom edge are its health (HealthChip); open adds a cream ring and
+        /// changes nothing else (the ring is always there, plate-coloured when closed, so the label never moves). Was: an open tab took the dark alarm plate, so a green Eng or Hull read red.</summary>
+        void PaintChip(Button b, VehicleHealthTone tone, bool open)
+        {
+            var look = HealthChip.Look(tone, open);
+            float k = upp > 0.5f ? upp : 1f;
+            b.style.backgroundColor = new Color(look.Plate.R, look.Plate.G, look.Plate.B, look.Plate.A);
+            b.style.color = new Color(look.Text.R, look.Text.G, look.Text.B, 1f);
+            var edge = new Color(look.Edge.R, look.Edge.G, look.Edge.B, 1f);
+            var ring = new Color(look.Ring.R, look.Ring.G, look.Ring.B, look.Ring.A);
+            float ringW = Mathf.Max(1f, Mathf.Round(look.RingPt * k));
+            b.style.borderBottomWidth = Mathf.Max(1f, Mathf.Round(look.EdgePt * k));
+            b.style.borderBottomColor = edge;
+            b.style.borderTopWidth = ringW; b.style.borderLeftWidth = ringW; b.style.borderRightWidth = ringW;
+            b.style.borderTopColor = ring; b.style.borderLeftColor = ring; b.style.borderRightColor = ring;
+        }
 
         /// <summary>The open health popover: one gap under the stat strip, full width, whole pixels, never cut.</summary>
         void SeatHealthDetail()
@@ -1285,6 +1296,7 @@ namespace Kestrel.Slice
             healthOpen = -1;
             if (healthDetail != null) healthDetail.style.display = DisplayStyle.None;
             if (flight != null) Present(flight);
+            else PaintCalmChips(VehicleHealth.Read(new VehicleHealthInput { Fuel01 = 1, QLimitPa = 1, GLimit = 1 }));
         }
 
         /// <summary>A tap anywhere outside the health tabs closes the open detail (the tabs toggle it themselves).</summary>
@@ -1349,7 +1361,14 @@ namespace Kestrel.Slice
                 if (open) healthDetail.text = calm[healthOpen].Name + ". " + calm[healthOpen].Detail;
                 healthDetail.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
                 if (open) SeatHealthDetail();
+                PaintCalmChips(calm);
             }
+        }
+
+        void PaintCalmChips(VehicleHealthPart[] calm)
+        {
+            for (int i = 0; healthButtons != null && i < healthButtons.Length && i < calm.Length; i++)
+                if (healthButtons[i] != null) PaintChip(healthButtons[i], calm[i].Tone, healthOpen == i);
         }
 
         /// <summary>
@@ -1531,6 +1550,8 @@ namespace Kestrel.Slice
             {
                 trajectory.HasFairing = vehicle.HasFairing;
                 trajectory.Stages = vehicle.Stages > 0 ? vehicle.Stages : 1;
+                trajectory.StrapOns = vehicle.StrapOns > 0;
+                trajectory.RecoveryMode = string.IsNullOrEmpty(vehicle.RecoveryMode) ? null : vehicle.RecoveryMode;
                 if (vehicle.JettisonAltM > 0) trajectory.FairingAltM = vehicle.JettisonAltM;
             }
             trajectory.Recovery = RecoveryLog.Active || (RecoveryLog.Current != null && RecoveryLog.Current.Attempted);
@@ -1554,6 +1575,7 @@ namespace Kestrel.Slice
             }
             if (director != null && !double.IsNaN(director.FairingT))
                 trajectory.Seen(new TrajectoryEvent { T = director.FairingT, Type = "fairing", AltM = director.FairingAltM, SpeedMps = director.FairingSpeedMps });
+            if (flight.Sim != null) trajectory.Burn(flight.Sim.StageIdx + 1, flight.Sim.PropellantFraction);
             trajectory.Sample(flight.SimTime, alt, speed, q);
             var rec = RecoveryLog.Current;
             if (rec != null && rec.Marks != null)
