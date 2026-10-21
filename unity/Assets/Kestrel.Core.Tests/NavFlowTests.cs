@@ -349,16 +349,24 @@ namespace Kestrel.Core.Tests
             });
         }
 
+        /// <summary>NAV-07 (fixed): Home LAUNCH arms the starter from Home; Back on that first briefing still goes Home.
+        /// Once the designer takes the rocket, Back on the reopened briefing returns to Missions.</summary>
         [Test]
-        public void KnownBug_NAV07_FromHome_SurvivesTheDesigner_BriefingBackSkipsMissions()
+        public void NAV07_FromHome_EndsWhenTheDesignerTakesTheRocket_BriefingBackGoesToMissions()
         {
-            KnownBug("NAV-07", "once the designer takes the rocket, Back on the reopened briefing returns to Missions", () =>
-            {
-                HomeRoutes.Launch(campaign, 0, catalog, hangar.templates);
-                PadHandoff.TryTake(out _, out _); // the designer takes it (SliceApp StartSession)
-                GameSession.Apply(RouteId.DesignerBack); // Missions + briefing
-                return PadHandoff.FromHome ? "PadHandoff.FromHome is still true, so SceneFlow.BackFromBriefing routes ExitHome (Home), not Missions" : null;
-            });
+            HomeRoutes.Launch(campaign, 0, catalog, hangar.templates);
+            Assert.IsTrue(PadHandoff.FromHome, "the first briefing came from Home, so its Back is Home");
+            Assert.IsTrue(PadHandoff.TryTake(out _, out _), "the designer takes it (SliceApp StartSession)");
+            Assert.IsFalse(PadHandoff.FromHome, "PadHandoff.FromHome is cleared once the designer has the rocket");
+            var back = GameSession.Apply(RouteId.DesignerBack); // Missions + briefing
+            Assert.AreEqual(SessionScreens.Missions, back.Screen, Where(back));
+            Assert.AreEqual(SessionScreens.Briefing, back.Overlay, Where(back));
+            string flow = Src("unity", "Assets", "Kestrel.Game", "Shell", "SceneFlow.cs");
+            StringAssert.Contains("if (PadHandoff.FromHome)", flow);
+            StringAssert.Contains("Route(RouteId.BriefingBack);", flow);
+            var missions = GameSession.Apply(RouteId.BriefingBack);
+            Assert.AreEqual(SessionScreens.Missions, missions.Screen, Where(missions));
+            Assert.AreEqual(SessionScreens.None, missions.Overlay, Where(missions));
         }
 
         [Test]
