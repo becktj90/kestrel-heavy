@@ -518,6 +518,60 @@ namespace Kestrel.Core.Flight
             return Box(x, y, Math.Max(1f, right - x), Math.Max(1f, b - y));
         }
 
+        /// <summary>
+        /// Portrait: the pinned trajectory rail against the dock stack as it is really laid out. The rail is pinned from
+        /// the frame, but Follow / Cam / Pause and the notes sheet ride the flex flow (the tools row's 8 px margin and
+        /// the buttons' own margins put it about GapPt + 1 px above the frame's row): CI 335x720 had the rail's bottom
+        /// at 496 and Follow's top at 495. The rail ends one <paramref name="gap"/> above <paramref name="ceilingY"/>
+        /// (the highest measured top below it) in whole pixels: top ceiled, bottom and right floored, never grown.
+        /// All values are panel pixels.
+        /// </summary>
+        public static HudBox PlotAbove(HudBox plot, float ceilingY, float gap)
+        {
+            float x = (float)Math.Round(plot.X);
+            float y = (float)Math.Ceiling(plot.Y);
+            float r = (float)Math.Floor(plot.Right);
+            float b = (float)Math.Floor(plot.Bottom);
+            if (!float.IsNaN(ceilingY) && !float.IsInfinity(ceilingY))
+                b = Math.Min(b, (float)Math.Floor(ceilingY - gap));
+            return Box(x, y, Math.Max(1f, r - x), Math.Max(1f, b - y));
+        }
+
+        /// <summary>The shortest rail worth drawing (points). Shorter (a 568 pt screen under a notch with the notes and a
+        /// banner row open), it steps aside for the notes sheet instead of squeezing under or into it.</summary>
+        public const float RailMinPt = 48f;
+
+        /// <summary>The fitted rail (<see cref="PlotAbove"/>, panel px) is tall enough to show at <paramref name="upp"/> px per point.</summary>
+        public static bool RailShows(HudBox fit, float upp) => fit.H >= RailMinPt * (upp > 0f ? upp : 1f) - 0.01f;
+
+        public const float PopoverMinPt = 160f, PopoverMaxPt = 320f;
+
+        /// <summary>
+        /// Where the open health detail goes (its height is its text's): never on the health tabs or the stat strip.
+        /// Portrait stacks the tabs over the strip at full width, so it opens one gap under both. Landscape puts the
+        /// tabs in the left rail under the strip (CI 1280x800: "one gap under the strip" landed on the tabs), so it
+        /// opens beside the tabs, under the strip, at most <paramref name="maxW"/> wide; under both when there is no
+        /// room beside. Units are the caller's (panel px with px gap and widths); whole pixels: x and y ceiled, right floored.
+        /// </summary>
+        public static HudBox HealthPopover(HudBox health, HudBox telemetry, float gap, float minW, float maxW)
+        {
+            float under = Math.Max(health.Bottom, telemetry.Bottom) + gap;
+            bool stacked = health.W >= telemetry.W - 1f;
+            if (!stacked)
+            {
+                float x = (float)Math.Ceiling(health.Right + gap);
+                float room = (float)Math.Floor(telemetry.Right) - x;
+                if (room >= minW)
+                {
+                    float y = (float)Math.Ceiling(Math.Max(health.Y, telemetry.Bottom + gap));
+                    return Box(x, y, (float)Math.Floor(Math.Min(room, maxW)), 0f);
+                }
+            }
+            float ux = (float)Math.Ceiling(Math.Min(health.X, telemetry.X));
+            float ur = (float)Math.Floor(Math.Max(health.Right, telemetry.Right));
+            return Box(ux, (float)Math.Ceiling(under), Math.Max(1f, ur - ux), 0f);
+        }
+
         /// <summary>The Follow / Cam / Pause row as one box.</summary>
         public static HudBox ToolsRow(FlightHudFrame f)
         {

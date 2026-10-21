@@ -358,13 +358,14 @@ namespace Kestrel.Slice
             // 62 pt notch the dock covered Follow / Cam / Pause (and took their taps) and SECO hid under the strip.
             // CI's 24 px minimum padding hid it. Pins now add the padding, like SeatRailPicker.
             padOrigin = new Vector2(padL, padT);
-            Pin(plot, Offset(new HudBox
+            plotPinned = Offset(new HudBox
             {
                 X = frame.Plot.X * upp,
                 Y = frame.Plot.Y * upp,
                 W = frame.Plot.W * upp,
                 H = frame.Plot.H * upp,
-            }));
+            });
+            SeatPlot();
             plot.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.TrajectoryAlpha);
             plot.Apply(trajectory.At(flight != null ? flight.SimTime : 0, flight != null ? flight.Altitude : 0, flight != null ? flight.Speed : 0), upp);
             var dock = ScaleBox(frame.Dock);
@@ -416,7 +417,40 @@ namespace Kestrel.Slice
 
         void OnToolsMoved(GeometryChangedEvent _)
         {
-            if (!widePinned && !UseWideNow()) SeatRailPicker();
+            if (!widePinned && !UseWideNow()) { SeatPlot(); SeatRailPicker(); }
+        }
+
+        /// <summary>The frame's rail box (panel px, padding-edge relative), before it is fitted to the measured stack.</summary>
+        HudBox plotPinned;
+
+        /// <summary>
+        /// Portrait: pin the rail from the frame, ending one gap above the highest measured top of the dock stack under
+        /// it (Follow / Cam / Pause, the notes sheet, the dock) in whole pixels (FlightHudLayout.PlotAbove). CI 335x720
+        /// (24 px pads): the frame's rail ended at 496, the flex tools row started at 495.
+        /// </summary>
+        void SeatPlot()
+        {
+            // Landscape pins the rail from PlaceWide (LayoutWideAt); this is the portrait seat only.
+            if (plot == null || hud == null || !plotPinned.Live || widePinned) return;
+            float ceiling = float.NaN;
+            var hb = hud.worldBound;
+            if (!float.IsNaN(hb.yMin))
+            {
+                float plotTop = plotPinned.Y;
+                foreach (var e in new[] { hud.Q(UiIds.FlightFollow), hud.Q(UiIds.FlightCamera), hud.Q(UiIds.FlightPause), (VisualElement)help, actions })
+                {
+                    if (e == null || e.panel == null || e.resolvedStyle.display == DisplayStyle.None) continue;
+                    var wb = e.worldBound;
+                    if (float.IsNaN(wb.yMin) || wb.height < 0.5f || wb.width < 0.5f) continue;
+                    float top = wb.yMin - hb.yMin;
+                    if (top <= plotTop) continue;   // only what sits under the rail's top
+                    ceiling = float.IsNaN(ceiling) ? top : Mathf.Min(ceiling, top);
+                }
+            }
+            var fit = FlightHudLayout.PlotAbove(plotPinned, ceiling, Mathf.Round(Px(FlightHudLayout.GapPt)));
+            Pin(plot, fit);
+            // Too short to read (tiny screen, notes and banner open): the rail steps aside until the stack shrinks.
+            plot.style.display = FlightHudLayout.RailShows(fit, upp) ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         /// <summary>
@@ -1273,15 +1307,22 @@ namespace Kestrel.Slice
             var strip = hud != null ? hud.Q("ascent-telemetry") : null;
             float top = Mathf.Round(Px(FlightHudLayout.HealthPt + FlightHudLayout.GapPt + FlightHudLayout.TelemetryPt + FlightHudLayout.GapPt));
             healthDetail.style.left = 0; healthDetail.style.right = 0; healthDetail.style.width = StyleKeyword.Auto;
-            // Measured (the landscape pins move the strip): one gap under it and as wide as it, in the root's frame.
+            // Measured (the landscape pins move the strip and the tabs), in the root's frame: under both in portrait,
+            // beside the tabs and under the strip in landscape (FlightHudLayout.HealthPopover).
             var sb = strip != null ? strip.worldBound : default;
+            var hbx = health != null ? health.worldBound : default;
             var rb = root.worldBound;
-            if (strip != null && strip.panel != null && sb.height > 1f && !float.IsNaN(sb.yMax) && !float.IsNaN(rb.yMin))
+            if (strip != null && strip.panel != null && sb.height > 1f && !float.IsNaN(sb.yMax) && !float.IsNaN(rb.yMin)
+                && health != null && health.panel != null && hbx.height > 1f && !float.IsNaN(hbx.yMax))
             {
-                top = Mathf.Round(sb.yMax - rb.yMin + Px(FlightHudLayout.GapPt));
-                healthDetail.style.left = Mathf.Round(sb.xMin - rb.xMin);
+                var tabs = new HudBox { X = hbx.xMin - rb.xMin, Y = hbx.yMin - rb.yMin, W = hbx.width, H = hbx.height };
+                var cells = new HudBox { X = sb.xMin - rb.xMin, Y = sb.yMin - rb.yMin, W = sb.width, H = sb.height };
+                var at = FlightHudLayout.HealthPopover(tabs, cells, Mathf.Round(Px(FlightHudLayout.GapPt)),
+                    Mathf.Round(Px(FlightHudLayout.PopoverMinPt)), Mathf.Round(Px(FlightHudLayout.PopoverMaxPt)));
+                top = at.Y;
+                healthDetail.style.left = at.X;
                 healthDetail.style.right = StyleKeyword.Auto;
-                healthDetail.style.width = Mathf.Round(sb.width);
+                healthDetail.style.width = at.W;
             }
             healthDetail.style.top = top;
             healthDetail.BringToFront();
@@ -1381,6 +1422,7 @@ namespace Kestrel.Slice
             if (!infoOpen)
             {
                 help.style.display = DisplayStyle.None;
+                if (!widePinned) SeatPlot();
                 return;
             }
             if (help.parent != hud) hud.Add(help);
@@ -1762,6 +1804,8 @@ namespace Kestrel.Slice
             medalRow.Add(medal);
             medalRow.Add(info);
             help = new ScrollView(ScrollViewMode.Vertical) { name = "ascent-help" };
+            // The rail ends above the notes sheet as it is really laid out (SeatPlot), so it follows the sheet's moves.
+            help.RegisterCallback<GeometryChangedEvent>(_ => { if (!widePinned) SeatPlot(); });
             help.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             help.verticalScrollerVisibility = ScrollerVisibility.Auto;
             help.AddToClassList("flight-help");
