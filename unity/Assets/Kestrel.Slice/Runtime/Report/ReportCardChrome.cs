@@ -142,7 +142,7 @@ namespace Kestrel.Slice
             float side = ReportFit.SideMargin(wPt);
 
             // Every exit is a direct child of the footer grid, whatever row wrappers the exits code adds
-            // (#311 puts Missions and Home in one "report-exit-row"); the grid below owns their placement.
+            // (#311 puts Missions and Home in one NextMission.ExitRowId row); the grid below owns their placement.
             if (foot != null) FlattenExits(foot);
             var exits = new System.Collections.Generic.List<Button>();
             if (foot != null)
@@ -510,7 +510,6 @@ namespace Kestrel.Slice
                 case "report-next": return "next";
                 case "report-retry": return "retry";
                 case UiIds.ReportDesigner: return "designer";
-                case "report-back-to-designer": return "designer"; // #311's id for the same exit
                 case "report-missions": return "missions";
                 case "report-home": return "home";
                 default: return "home";

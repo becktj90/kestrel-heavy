@@ -5,8 +5,7 @@
 // Checks: every shown label and button keeps its text inside its own box (TextFit.Problems) and inside its parent,
 // siblings do not overlap, nothing leaves the screen or the safe area, every control is a 44 pt target that receives
 // the tap at its centre, the pause card is opaque and on top, and the report shows every exit with no scrolling,
-// both with main's five exits and with a sixth "Back to designer" exit in #311's row wrapper (the layout #301 / #311
-// will add). Each size is captured as a real PNG (UiCapture, #304's helper, CaptureOut/ui -> CI artifact "ui-captures").
+// with all six of #311's exits (Back to designer, Missions and Home in #311's row wrapper). Each size is captured as a real PNG (UiCapture, #304's helper, CaptureOut/ui -> CI artifact "ui-captures").
 // Batchmode: no LogError and no throw for a missing GPU, theme or font; the capture test ignores itself with a
 // warning when no offscreen panel can be sized. TearDown destroys every GameObject, panel and texture.
 using System;
@@ -235,18 +234,19 @@ namespace Kestrel.Game.Tests
 
         // ---- L4: report -------------------------------------------------------------------------
 
-        [Test]
-        public void ReportFitsWithoutScrolling_MainsFiveExits() => CheckReport(false);
-
         /// <summary>
-        /// The sixth exit #301 / #311 add ("Back to designer", 44 pt): #311 nests Missions and Home in one row; the
-        /// footer grid lifts them back into the grid, and all six fit at SE 375x667 (#311 failed with report-home at
-        /// y 645 + 48 on a 667 screen). TODO(#301 / #311): drop the injected button once the real exit is on main.
+        /// #311's six exits (Back to designer added; Missions and Home nested in one NextMission.ExitRowId row). The footer
+        /// grid lifts them back into its cells and all six fit at SE 375x667 (#311 alone had report-home at y 645 + 48
+        /// on a 667 screen).
         /// </summary>
         [Test]
-        public void ReportFitsWithoutScrolling_SixExitsIncludingBackToDesigner() => CheckReport(true);
+        public void ReportFitsWithoutScrolling_AllSixExitsIncludingBackToDesigner()
+        {
+            Assert.That(NextMission.DesignerId, Is.EqualTo(UiIds.ReportDesigner), "one id for Back to designer");
+            CheckReport();
+        }
 
-        void CheckReport(bool sixth)
+        void CheckReport()
         {
             foreach (var size in Sizes())
             using (var surface = DeviceSurface.Open(size.PanelW, size.PanelH))
@@ -259,15 +259,15 @@ namespace Kestrel.Game.Tests
                     Home = () => home++,
                     Missions = () => missions++,
                     Fix = () => fix++,
-                }, sixth ? (Action)(() => designer++) : null);
-                string at = size.Name + " report" + (sixth ? " (6 exits)" : "");
+                    Designer = () => designer++,
+                });
+                string at = size.Name + " report";
                 Assert.That(card.name, Is.EqualTo("screen-report"), at);
                 Assert.That(card.ClassListContains("post-flight"), Is.True, at + " keeps the USS class");
                 var stage = surface.Stage.worldBound;
                 float unit = stage.width / size.PanelW;
                 var safe = Rect.MinMaxRect(stage.xMin, stage.yMin + size.SafeTop * unit, stage.xMax, stage.yMax - size.SafeBottom * unit);
                 var ids = new List<string>(UiIds.ReportExits);
-                if (sixth) ids.Add(UiIds.ReportDesigner);
                 var foot = card.Q(UiIds.ReportFoot);
                 Assert.That(foot, Is.Not.Null, at);
                 foreach (var id in ids)
@@ -323,7 +323,7 @@ namespace Kestrel.Game.Tests
                 Assert.That(card.Query<Label>().ToList().FindAll(l => Shown(l) && string.IsNullOrEmpty(l.text)), Is.Empty, at + " no empty gap lines");
 
                 foreach (var id in ids) Click(card.Q<Button>(id));
-                Assert.That(new[] { fix, retry, next, missions, home, designer }, Is.EqualTo(new[] { 1, 1, 1, 1, 1, sixth ? 1 : 0 }), at + " each exit routes once");
+                Assert.That(new[] { fix, retry, next, missions, home, designer }, Is.EqualTo(new[] { 1, 1, 1, 1, 1, 1 }), at + " each exit routes once");
                 ReportCardChrome.Dismiss(surface.Stage);
             }
         }
@@ -412,7 +412,7 @@ namespace Kestrel.Game.Tests
                     chrome.Show(false);
                     ascent.Close();
                     huds.Remove(ascent);
-                    Report(surface, size, new ReportActions(), null);
+                    Report(surface, size, new ReportActions());
                     paths.Add(UiCapture.Save(surface.Texture, slug + "-report"));
                     foreach (var p in paths) Assert.That(System.IO.File.Exists(p), Is.True, p);
                 }
@@ -470,9 +470,7 @@ namespace Kestrel.Game.Tests
             return (hud, chrome, ascent);
         }
 
-        /// <param name="designer">Non-null: inject #301 / #311's sixth exit the way #311 builds the footer (Back to designer
-        /// after Retry, Missions and Home in one "report-exit-row").</param>
-        static VisualElement Report(DeviceSurface surface, Size size, ReportActions actions, Action designer)
+        static VisualElement Report(DeviceSurface surface, Size size, ReportActions actions)
         {
             var frame = ReportLayout.Solve(size.PanelW, size.PanelH, size.SafeTop, size.SafeBottom, 0, 0, true);
             var failure = new FailureEvent
@@ -490,32 +488,11 @@ namespace Kestrel.Game.Tests
             var facts = new FlightFacts { Failure = failure, Passed = false, Seed = 7, ApoKm = 41.2, GoalKm = 100, PeakG = 6.8 };
             var debrief = FlightDebrief.Compose(null, MissionContext.Free(), facts, NarrationPool.Empty, 100000, null);
             var card = ReportView.Build(failure, log, frame, true, null, debrief, actions);
-            if (designer != null) InjectBackToDesigner(card, designer);
             ReportCardChrome.Present(surface.Stage, card, 1f, size.SafeTop, size.SafeBottom);
             surface.Pump(8);
             ReportCardChrome.Dress(card, 1f, size.SafeTop, size.SafeBottom);
             surface.Pump(6);
             return card;
-        }
-
-        static void InjectBackToDesigner(VisualElement card, Action designer)
-        {
-            var foot = card.Q(UiIds.ReportFoot);
-            Assert.That(foot, Is.Not.Null);
-            var retry = foot.Q<Button>(UiIds.ReportRetry);
-            var missions = foot.Q<Button>(UiIds.ReportMissions);
-            var home = foot.Q<Button>(UiIds.ReportHome);
-            var back = new Button(() => designer()) { name = UiIds.ReportDesigner, text = "Back to designer", tooltip = "Back to the designer. Same mission, same seed." };
-            ReportCardChrome.PaintButton(back, ReportCardChrome.HitPt, "designer");
-            foot.Insert(foot.IndexOf(retry) + 1, back);
-            var row = new VisualElement { name = "report-exit-row", pickingMode = PickingMode.Ignore };
-            row.style.flexDirection = FlexDirection.Row;
-            int at = foot.IndexOf(missions);
-            missions.RemoveFromHierarchy();
-            home.RemoveFromHierarchy();
-            row.Add(missions);
-            row.Add(home);
-            foot.Insert(at, row);
         }
 
         // ---- checks -------------------------------------------------------------------------------
