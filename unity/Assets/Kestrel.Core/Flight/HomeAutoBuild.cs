@@ -468,6 +468,9 @@ namespace Kestrel.Core.Flight
             if (design == null) return false;
             Pending = null;
             FlyOnPad = false;
+            // NAV-07: once the designer has the rocket, the trip is no longer "from Home". A briefing reopened
+            // from the designer (DesignerBack) goes Back to Missions, not Home.
+            FromHome = false;
             return true;
         }
 

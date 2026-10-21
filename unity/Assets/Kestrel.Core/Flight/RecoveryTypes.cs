@@ -1,5 +1,5 @@
 // Player-facing booster recovery after stage separation. Pad-fixed state, fixed steps,
-// no wall clock. Expendable designs do not enter this phase.
+// no wall clock. An expendable first stage still flies it (BoosterLanding) and is never graded.
 using System;
 
 namespace Kestrel.Core.Flight
@@ -55,6 +55,12 @@ namespace Kestrel.Core.Flight
     public sealed class RecoveryVerdict
     {
         public bool Attempted;
+        /// <summary>
+        /// The design picked no landing. The stage still flew its attempt with what it kept, but the
+        /// result is not the flight's failure and not a landing grade. <see cref="LostWhy"/> says why it was lost.
+        /// </summary>
+        public bool Expendable;
+        public string LostWhy;
         public string Cause, GradeName, Medal;
         public double Sink, TiltDeg, MissM, T, PropLeft;
         public FailureEvent Failure;
