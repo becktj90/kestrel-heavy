@@ -283,8 +283,8 @@
       "cards": [
         {
           "id": "brief.kh11.c1",
-          "kid": "Plover-1 watches the same towns at the same hour.",
-          "eng": "2,200 kg. Sun-sync 550 km at 97.6 degrees. About 8,676 m/s."
+          "kid": "Plover-1 watches the weather. Keep the 550 km circle round.",
+          "eng": "2,200 kg. Circle at 550 km. About 8,676 m/s. Real Earth-watching satellites often fly sun-synchronous orbits."
         }
       ]
     },
@@ -314,7 +314,7 @@
         {
           "id": "brief.kh13.c1",
           "kid": "A rack of little satellites. The booster still has to find Haven.",
-          "eng": "480 kg to a 550 km sun-sync. The barge wants a good catch."
+          "eng": "480 kg to a 550 km circle. The barge wants a good catch."
         }
       ]
     },
