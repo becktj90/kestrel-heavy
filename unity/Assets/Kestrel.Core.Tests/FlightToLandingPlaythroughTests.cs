@@ -7,9 +7,10 @@
 // one. Every released first stage now gets its landing; an expendable one says why it is lost
 // and never counts against the flight. KH-1 is a one-stage hop: no stage separates, so it goes
 // straight to the report. KH-4 carries the expendable path (separation, booster-lost line, landing
-// attempt, report) and KH-7 the planned Haven landing. KH-3 (Trevor's Tiny Orbit on t432) still bends
-// before MECO in the live loop on main, even after its one-tap strength fix: that is the director's
-// auto-accepted pitch nudge and max-Q bucket (#313), so its test only pins "never a frozen screen".
+// attempt, report) and KH-7 the planned Haven landing. KH-3 (Trevor's Tiny Orbit on t432) bent before
+// MECO in the live loop before #313 (the director's auto-accepted pitch nudge and max-Q bucket), so its
+// restored-strength test only pins "never a frozen screen". KH-3's board starter is now an 8.65° kick
+// (calm-air retune); the 8° build it replaced (the t432 rocket) keeps its pinned live numbers.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
@@ -96,7 +97,8 @@ namespace Kestrel.Core.Tests
             // Trevor's Tiny Orbit (t432). Before #313 the live director bent this flight before MECO
             // (auto-accepted -1 deg nudge plus the 0.70 max-Q bucket); under #313 it separates. Either way the player is
             // never left on a frozen screen: a released booster flies to touchdown, or the report shows at once.
-            var run = Play(3, Restored("m3"));
+            // Pinned on the t432 rocket: the pre-retune 8° build with the old strength restore (1.9).
+            var run = Play(3, Restored("m3"), 8.0);
             TestContext.WriteLine(run.Log());
             Assert.AreEqual(BoosterFate.Expendable, run.Landing.Fate);
             Assert.IsFalse(RecoveryLog.Active, "the report is never held");
@@ -110,20 +112,23 @@ namespace Kestrel.Core.Tests
                 Assert.IsNotNull(run.AscentFailure, "no separation means the ascent ended first");
         }
 
-        [Test]
-        public void Kh3RawStarter_SeparatesAndReachesOrbit_ThenTheExpendableBoosterLandsBeforeTheReport()
+        // 8°: the pre-retune raw build (t432). 8.65°: the board starter after the calm-air retune (Physics, option b), seed-1
+        // briefing wind: 203.3 x 196.7 km, separation T+156.1.
+        [TestCase(8.0, 201.8, 198.2)]
+        [TestCase(8.65, 203.3, 196.7)]
+        public void Kh3RawStarter_SeparatesAndReachesOrbit_ThenTheExpendableBoosterLandsBeforeTheReport(double kickDeg, double apoKm, double periKm)
         {
             // #313 flipped this (was Kh3RawStarter_BreaksUpBeforeMeco_ReportDoesNotWaitForABooster): on main the live
             // director auto-accepted a held -1 deg nudge and flew a default 0.70 max-Q bucket, and the raw KH-3 starter
             // broke up before MECO. Under the shared director it separates (T+156.1, seed 1) and reaches orbit inside
             // the 200 km band (201.8 x 198.2 km); its expendable booster then flies its landing attempt to the surface
             // and the report waits for it, then composes with the ascent's pass.
-            var run = Play(3);
+            var run = Play(3, double.NaN, kickDeg);
             TestContext.WriteLine(run.Log());
             Assert.IsNull(run.AscentFailure, "no breakup: " + run.Log());
             Assert.AreEqual("orbit", run.Result.outcome, run.Log());
-            Assert.AreEqual(201.8, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
-            Assert.AreEqual(198.2, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(apoKm, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(periKm, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
             Assert.AreEqual(BoosterFate.Expendable, run.Landing.Fate);
             Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates");
             Assert.AreEqual(156.1, run.SeparatedAt, 0.5, run.Log());
@@ -289,13 +294,14 @@ namespace Kestrel.Core.Tests
             return double.NaN;
         }
 
-        Run Play(int index, double safetyFactor = double.NaN)
+        Run Play(int index, double safetyFactor = double.NaN, double pitchKickDeg = double.NaN)
         {
             const double frame = 1.0 / 60.0;
             var mission = campaign.Mission(index);
             var choice = HomeAutoBuild.Choose(catalog, hangar.templates, mission);
             var design = Design.FromJson(choice.Design);
             if (!double.IsNaN(safetyFactor)) design.safetyFactor = safetyFactor;
+            if (!double.IsNaN(pitchKickDeg)) design.guidance.pitchKickDeg = pitchKickDeg;
             ulong hash = FlightBatch.DesignHash(design);
             ulong seed = 1; // AscentFlight.ReadSeed on a design with no seed
             var card = MissionBriefing.Load(Golden.Root, index, hash, seed);
