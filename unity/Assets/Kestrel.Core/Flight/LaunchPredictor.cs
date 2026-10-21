@@ -26,6 +26,9 @@ namespace Kestrel.Core.Flight
         public double DvMarginMs;
         public string Timeline;
         public string Text;
+        /// <summary>The prediction flight's first failure, type and time (for example "overg at T+0.000 s. Peak 13.70 g,
+        /// past the 8.00 g limit."), or null. Not in <see cref="Canonical"/>; the timeline diff names it.</summary>
+        public string Failure;
 
         public string Canonical()
         {
@@ -56,17 +59,15 @@ namespace Kestrel.Core.Flight
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
             if (vehicle == null) throw new ArgumentNullException(nameof(vehicle));
             mode = string.Equals(mode, "kid", StringComparison.OrdinalIgnoreCase) ? "kid" : "standard";
-            var input = Inputs(catalog, vehicle);
-            var sim = PlayedChecks.Fly(catalog, vehicle, input.stages, input.opts);
+            // The designer practice flight under the live pad's director (#313).
+            var sim = Designer.ReferenceAscent.Flight(catalog, vehicle).Run();
             var req = Stack.RequiredDeltaV(catalog, vehicle.payloadOrbit);
             bool suborbital = req.orbit != null && req.orbit.periKm < 0;
-            // The sim raises "orbit" inside a 10 km cutoff band. The prediction uses the
-            // target itself: perigee at or above the orbital target, the flown apogee for a suborbital hop.
             // A hop's apogee is the drag-aware flown peak, the same number the batch, the designer and the report use.
             double apoM = MissionScore.FlownApoAltM(sim);
-            // A hop reaches at the designer's Ready edge (Readout.ReachesApogee, DesignerRepair.FlightShort): the
-            // bottom of the batch's ±5% apogee band.
-            bool success = suborbital ? apoM >= (1 - MissionScore.AltitudeFraction) * req.targetAlt : sim.orbit.periAlt >= req.targetAlt;
+            // #313 (Physics): the batch's own acceptance rule, MissionScore.TargetMet, on the campaign mission when the
+            // design has one, else on its free-build catalog orbit. No second copy of the ±5% band.
+            bool success = Accepts(catalog, vehicle, req, sim, apoM);
             double apoKm = apoM / 1000.0;
             double periKm = sim.orbit.periAlt / 1000.0;
             double targetKm = req.targetAlt / 1000.0;
@@ -97,11 +98,36 @@ namespace Kestrel.Core.Flight
                 Timeline = timeline.ToString(),
             };
             p.Text = Sentence(p, mode, suborbital, sim.outcome == "orbit");
+            if (sim.failure != null)
+                p.Failure = sim.failure.kind + " at T+" + sim.failure.t.ToString("0.000", CultureInfo.InvariantCulture) + " s."
+                    + (string.IsNullOrEmpty(sim.failure.engineer) ? "" : " " + sim.failure.engineer);
             return p;
         }
 
         public static LaunchPrediction Predict(Catalog catalog, Design vehicle)
             => Predict(catalog, vehicle, "standard", 1);
+
+        /// <summary>
+        /// The predict verdict: <see cref="MissionScore.TargetMet"/> on the flown orbit. A campaign design is judged on its
+        /// mission row, exactly as <see cref="FlightBatch"/> judges it; a free build on its catalog orbit.
+        /// </summary>
+        public static bool Accepts(Catalog catalog, Design vehicle, Stack.Required req, SimResult sim, double flownApoM)
+        {
+            if (sim == null || sim.failure != null || sim.outcome == "failure") return false;
+            var mission = Designer.ReferenceAscent.MissionFor(catalog, vehicle);
+            if (mission != null)
+            {
+                double need = mission.DepartsFromParking
+                    ? MissionScore.DepartureRequiredMps(mission.TargetKind, mission.ApoKm, mission.C3Km2PerS2, mission.GuidanceAltM, sim.departureTW) : double.NaN;
+                bool dv = !double.IsNaN(need) && sim.departureDv + 1e-6 >= need;
+                double apo = mission.TargetKind == "apogee" ? flownApoM : sim.orbit.apoAlt;
+                return MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2, apo, sim.orbit.periAlt, MissionScore.C3(sim.orbit.energy) / 1e6, dv, out _);
+            }
+            var o = req.orbit;
+            if (o == null) return false;
+            string kind = MissionScore.FreeOrbitKind(o.apoKm, o.periKm);
+            return MissionScore.TargetMet(kind, o.apoKm, o.periKm, double.NaN, kind == "apogee" ? flownApoM : sim.orbit.apoAlt, sim.orbit.periAlt, double.NaN, false, out _);
+        }
 
         /// <summary>
         /// The designer's predict inputs (<see cref="Designer.ReferenceAscent.Inputs"/>): the same MissionFlightSetup the
@@ -129,7 +155,7 @@ namespace Kestrel.Core.Flight
             string gap = p.DvMarginMs < 0
                 ? " Short by " + (-p.DvMarginMs).ToString("0", inv) + " m/s Δv."
                 : " Ideal Δv still shows " + p.DvMarginMs.ToString("0", inv) + " m/s of margin; the flight does not.";
-            string flag = !suborbital && simOrbitFlag ? " The ascent sim still raises an orbit flag; the target is the perigee." : "";
+            string flag = !suborbital && simOrbitFlag ? " The ascent sim still raises an orbit flag; the orbit is outside the target band (" + (MissionScore.AltitudeFraction * 100).ToString("0", CultureInfo.InvariantCulture) + "%)." : "";
             return "The sim does not reach the target. " + height + ", target " + target + " km." + gap + flag;
         }
 

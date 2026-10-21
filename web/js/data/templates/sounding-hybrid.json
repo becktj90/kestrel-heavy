@@ -37,7 +37,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 2,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
     }
   ],
@@ -99,21 +99,21 @@
       "cost": "pending: E1 cost model not landed"
     },
     "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
     ],
     "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
     }
   }
 }

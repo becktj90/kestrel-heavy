@@ -39,7 +39,7 @@ export const TEMPLATES = Object.freeze([
     "propellant": "hybrid",
     "engine": "hybrid-small",
     "engineCount": 2,
-    "propMass": 1900,
+    "propMass": 1750,
     "diameter": 1.3
    }
   ],
@@ -101,21 +101,21 @@ export const TEMPLATES = Object.freeze([
     "cost": "pending: E1 cost model not landed"
    },
    "review": [
-    "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+    "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
    ],
    "stats": {
     "stages": 1,
-    "liftoffMassT": 2.7,
-    "liftoffTWR": 1.91,
-    "deltaV": 3038,
+    "liftoffMassT": 2.5,
+    "liftoffTWR": 2.03,
+    "deltaV": 2921,
     "requiredDeltaV": 2400,
-    "marginPct": 26.6,
+    "marginPct": 21.7,
     "payloadKg": 300,
     "target": "Suborbital 100 km",
     "simOutcome": "suborbital",
-    "simApogeeKm": 125,
+    "simApogeeKm": 108,
     "simPerigeeKm": null,
-    "maxG": 7.2
+    "maxG": 7
    }
   }
  },
@@ -526,6 +526,10 @@ export const TEMPLATES = Object.freeze([
    "tier": "standard"
   },
   "safetyFactor": 1.4,
+  "guidance": {
+   "maxQThrottle": 55,
+   "gLimit": 3.5
+  },
   "id": "tpl-hydrogen-upper",
   "name": "Heron",
   "tier": "medium",
@@ -539,6 +543,9 @@ export const TEMPLATES = Object.freeze([
     "propellant": "kerolox",
     "engine": "gg-kerolox",
     "engineCount": 7,
+    "engineParams": {
+     "throttleMin": 0.45
+    },
     "propMass": 400000,
     "diameter": 3.7
    },
@@ -615,7 +622,7 @@ export const TEMPLATES = Object.freeze([
     "cost": "pending: E1 cost model not landed"
    },
    "review": [
-    "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+    "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
    ],
    "stats": {
     "stages": 2,

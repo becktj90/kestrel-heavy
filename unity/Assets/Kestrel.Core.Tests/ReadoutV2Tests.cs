@@ -246,8 +246,9 @@ namespace Kestrel.Core.Tests
             var cat = Golden.Catalog;
             foreach (var design in ReadoutBench.LoadDesigns(Golden.Root))
             {
-                var input = Stack.SimInputs(cat, Design.FromJson(design));
-                var full = Headless.Simulate(input.stages, input.opts);
+                // #313: the designer reads the shared directed flight (the predict schedule's events included), the
+                // same flight the batch and the pad fly; not a parity Stack.SimInputs run.
+                var full = ReferenceAscent.Flight(cat, Design.FromJson(design)).Run();
                 ReferenceAscent.Reset();
                 var got = Readout.Reference(cat, design);
                 string name = design.Str("id") ?? design.Str("name");
@@ -335,9 +336,9 @@ namespace Kestrel.Core.Tests
             Assert.IsNull(liquid.warnings.Find(w => w.code == "overstable"), "the 1-2 cal band and overstable do not apply to a finless steered rocket");
 
             ReferenceAscent.Reset();
-            foreach (var id in new[] { "stock", "kid" })
+            foreach (var id in new[] { "stock", "fixture-maxq-high-kid" })
             {
-                var design = Preset(id);
+                var design = id == "stock" ? Preset(id) : JsonMut.CloneObject(Golden.FixtureDesign("maxq-high-kid"));
                 var report = Readout.Reference(cat, design);
                 Assert.Greater(report.maxQ_kPa.Value, Validate.MaxQWarnKPa, id);
                 var eng = Validate.Engineering(cat, design);
@@ -345,16 +346,21 @@ namespace Kestrel.Core.Tests
                 Assert.IsNotNull(eng.warnings.Find(w => w.code == "maxq-high"), id + " warns");
                 Assert.IsNull(eng.blocks.Find(b => b.code == "maxq-high"), id + " does not block");
             }
-            if (System.Math.Abs(Readout.Reference(cat, Preset("stock")).maxQ_kPa.Value - 73.01) > 0.05)
+            // The bare stock vehicle peaks at the documented 73 kPa. The designer readout flies the predict schedule,
+            // whose stage-1 fuel imbalance throttles that stage to 97% until separation (#313 ruling 3): 70.7 kPa.
+            var stockIn = ReferenceAscent.Inputs(cat, Preset("stock"));
+            if (System.Math.Abs(Headless.Simulate(stockIn.stages, stockIn.opts).maxQ / 1000 - 73.01) > 0.05)
                 Assert.Fail("stock max-Q left the documented 73 kPa");
-            if (System.Math.Abs(Readout.Reference(cat, Preset("kid")).maxQ_kPa.Value - 90.07) > 0.05)
-                Assert.Fail("kid max-Q left the documented 90 kPa");
+            Assert.AreEqual(70.71, Readout.Reference(cat, Preset("stock")).maxQ_kPa.Value, 0.05, "stock readout under the predicted fuel imbalance");
+            if (System.Math.Abs(Readout.Reference(cat, Golden.FixtureDesign("maxq-high-kid")).maxQ_kPa.Value - 90.07) > 0.05)
+                Assert.Fail("the maxq-high kid fixture left the documented 90 kPa");
 
-            // #314: the shipped sounding template is two small hybrids on a long, low-thrust burn. It peaks at
-            // 36.2 kPa, under the warning line, so there is nothing to warn about.
+            // #314: the shipped sounding template is two small hybrids on a long, low-thrust burn. #313 (Physics, 1:24 PM)
+            // trims it to 1,750 kg of propellant for a ~102 km peak: it peaks at 37.8 kPa (36.2 kPa at 1,900 kg), under the
+            // warning line, so there is nothing to warn about.
             var sounding = Template("tpl-sounding-hybrid");
             var q = Readout.Reference(cat, sounding);
-            Assert.AreEqual(36.21, q.maxQ_kPa.Value, 0.05, "hybrid sounding rocket max-Q");
+            Assert.AreEqual(37.77, q.maxQ_kPa.Value, 0.05, "hybrid sounding rocket max-Q");
             Assert.Less(q.maxQ_kPa.Value, Validate.MaxQWarnKPa);
             var soundingReport = Validate.Engineering(cat, sounding);
             Assert.IsTrue(soundingReport.ok);

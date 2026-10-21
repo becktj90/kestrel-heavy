@@ -93,8 +93,8 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Kh3RestoredStarter_EitherLandsTheBooster_OrTheReportDoesNotWait()
         {
-            // Trevor's Tiny Orbit (t432). On main the live director still bends this flight before MECO
-            // (auto-accepted -1 deg nudge plus the 0.70 max-Q bucket: Physics / #313). Either way the player is
+            // Trevor's Tiny Orbit (t432). Before #313 the live director bent this flight before MECO
+            // (auto-accepted -1 deg nudge plus the 0.70 max-Q bucket); under #313 it separates. Either way the player is
             // never left on a frozen screen: a released booster flies to touchdown, or the report shows at once.
             var run = Play(3, Restored("m3"));
             TestContext.WriteLine(run.Log());
@@ -111,16 +111,36 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void Kh3RawStarter_BreaksUpBeforeMeco_ReportDoesNotWaitForABooster()
+        public void Kh3RawStarter_SeparatesAndReachesOrbit_ThenTheExpendableBoosterLandsBeforeTheReport()
         {
+            // #313 flipped this (was Kh3RawStarter_BreaksUpBeforeMeco_ReportDoesNotWaitForABooster): on main the live
+            // director auto-accepted a held -1 deg nudge and flew a default 0.70 max-Q bucket, and the raw KH-3 starter
+            // broke up before MECO. Under the shared director it separates (T+156.1, seed 1) and reaches orbit inside
+            // the 200 km band (201.8 x 198.2 km); its expendable booster then flies its landing attempt to the surface
+            // and the report waits for it, then composes with the ascent's pass.
             var run = Play(3);
             TestContext.WriteLine(run.Log());
-            Assert.IsNotNull(run.AscentFailure, "the strength near miss breaks up");
+            Assert.IsNull(run.AscentFailure, "no breakup: " + run.Log());
+            Assert.AreEqual("orbit", run.Result.outcome, run.Log());
+            Assert.AreEqual(201.8, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(198.2, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
             Assert.AreEqual(BoosterFate.Expendable, run.Landing.Fate);
-            Assert.IsFalse(run.Landing.Started, "nothing separated, so no landing");
-            Assert.IsFalse(RecoveryLog.Active, "the report is not held for a booster that never let go");
+            Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates");
+            Assert.AreEqual(156.1, run.SeparatedAt, 0.5, run.Log());
+            Assert.IsTrue(run.Landing.Started, "the released booster starts its landing attempt");
+            Assert.IsTrue(run.Landing.Touched, "and reaches the surface");
+            Assert.IsTrue(run.LostCall.Visible, "announced lost, with the reason");
+            StringAssert.StartsWith(BoosterLanding.LostTitle, run.LostCall.Line);
+            var verdict = RecoveryLog.Current;
+            Assert.IsNotNull(verdict);
+            Assert.IsTrue(verdict.Attempted);
+            Assert.IsTrue(verdict.Expendable);
+            Assert.IsFalse(RecoveryLog.Active, "the report no longer waits once it touched down");
+            Assert.IsNull(BoosterLanding.ReportGrade(null, verdict));
+            Assert.IsNull(BoosterLanding.ReportFailure(null, verdict));
             Assert.IsNotNull(run.Card);
-            Assert.AreSame(run.AscentFailure, run.Facts.Failure);
+            Assert.IsNull(run.Facts.Failure, "an expendable booster's loss is not the flight's failure");
+            Assert.IsTrue(run.Facts.Passed, "the ascent lands the 200 km circle");
         }
 
         [Test]
@@ -250,8 +270,10 @@ namespace Kestrel.Core.Tests
             if (MissionAim.IsApogeeHop(mission)) target = mission.GuidanceAltM;
             double qLim = FailureMonitor.StructuralQLimPa(catalog, design);
             FailureMonitor monitor = FailureMonitor.Engages(design) ? FailureMonitor.Create(catalog, design, target, hash, seed) : null;
+            // #313: the shared director (AscentFlight.Prepare builds it the same way).
+            var director = MissionFlightSetup.Director(catalog, design, monitor?.Events, card?.Wind, qLim, FailureMonitor.GentleTier(design),
+                target, hash, seed, auto, false, false, card?.Bonuses);
             var vehicle = AscentDecisions.FromDesign(design, catalog, monitor?.Events, card?.Wind, qLim, target, FailureMonitor.GentleTier(design), card?.Bonuses, hash, seed);
-            var director = AscentDirector.Start(vehicle, monitor?.Events, card?.Wind, auto, false, false);
 
             // FlightDriver.Launch
             var site = new MissionFlightSite { Wind = card?.Wind };
@@ -262,6 +284,8 @@ namespace Kestrel.Core.Tests
             var guidance = opts.guidance;
             var sim = new AscentSim(setup.Stages, opts);
             var checks = new PlayedChecks(catalog, design, setup.Stages, opts, sim);
+            // FlightDriver.Update under #313: DirectedFlight.Step applies the director's command before and after each tick.
+            var directed = new DirectedFlight(sim, director, opts);
             double omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
 
             // SliceApp.PresentAscent: RecoveryShow.Arm
@@ -276,8 +300,7 @@ namespace Kestrel.Core.Tests
             int fed = 0;
 
             double clock = 0, prevDown = 0, prevAlt = 0, attitude = 90;
-            bool hasAttitude = false, running = true, throttleHeld = false, savedSet = false, lostCmd = false;
-            double savedQ = 0;
+            bool hasAttitude = false, running = true;
             int frames = 0;
             double down = 0, alt = 0, speed = 0;
             while (frames++ < 200000)
@@ -288,21 +311,15 @@ namespace Kestrel.Core.Tests
                     int guard = 0;
                     while (sim.T < clock && !sim.Done && guard++ < 64)
                     {
-                        Apply(director, sim, guidance, ref throttleHeld, ref savedSet, ref savedQ, ref lostCmd);
                         int before = sim.Events.Count;
-                        sim.Tick();
-                        if (!sim.Done)
-                        {
-                            director.Advance(Sample(sim, omegaAir), MissionFlightSetup.LiveDt);
-                            Apply(director, sim, guidance, ref throttleHeld, ref savedSet, ref savedQ, ref lostCmd);
-                        }
+                        directed.Step();
                         checks.NoteEvents(sim, before);
                         if (checks.StopForBreakup(sim)) break;
                     }
                     if (sim.Done)
                     {
                         running = false;
-                        run.Result = sim.Finish();
+                        run.Result = directed.Finish();
                         run.AscentFailure = run.Result.failure;
                         run.AscentEndT = sim.T;
                     }
@@ -416,58 +433,5 @@ namespace Kestrel.Core.Tests
             }
         }
 
-        static void Apply(AscentDirector director, AscentSim sim, GuidanceProfile guidance, ref bool held, ref bool savedSet, ref double savedQ, ref bool lost)
-        {
-            var cmd = director.Command;
-            double scale = cmd.ThrottleScale;
-            if (double.IsNaN(scale) || scale <= 0) scale = 1;
-            else if (scale > 1) scale = 1;
-            sim.LiveThrottleScale = scale;
-            sim.LivePitchOffsetRad = cmd.PitchOffsetRad;
-            if (guidance != null && cmd.SuppressDesignThrottle)
-            {
-                if (!held) { savedSet = guidance.maxQThrottleSet; savedQ = guidance.maxQThrottle; held = true; }
-                guidance.maxQThrottleSet = false;
-            }
-            else if (held && guidance != null)
-            {
-                guidance.maxQThrottleSet = savedSet;
-                guidance.maxQThrottle = savedQ;
-                held = false;
-            }
-            if (cmd.Lost && !lost)
-            {
-                lost = true;
-                sim.BreakUp(new FailureEvent { t = sim.T, kind = cmd.LossKind, kid = cmd.LossKid, engineer = cmd.LossEngineer });
-            }
-        }
-
-        static AscentSample Sample(AscentSim sim, double omegaAir)
-        {
-            double x = sim.Y[0], y = sim.Y[1];
-            double r = Math.Sqrt(x * x + y * y);
-            double padAngle = Math.PI / 2 + omegaAir * sim.T;
-            double vx = sim.Y[2] + omegaAir * y, vy = sim.Y[3] - omegaAir * x;
-            double mass = sim.Y[4];
-            double prop = sim.PropellantFraction;
-            if (double.IsNaN(prop)) prop = 1;
-            return new AscentSample
-            {
-                T = sim.T,
-                AltM = r - Gravity.R_EARTH,
-                DownrangeM = Gravity.R_EARTH * (Math.Atan2(y, x) - padAngle),
-                SpeedMps = Math.Sqrt(vx * vx + vy * vy),
-                QPa = sim.LastQ,
-                G = mass > 1 && sim.LastThrust > 0 ? sim.LastThrust / mass / Atmosphere.G0 : 0,
-                MassKg = mass,
-                ThrustN = sim.LastThrust,
-                PropFraction = prop,
-                LossGravity = sim.LossGravity,
-                LossDrag = sim.LossDrag,
-                LossSteering = sim.LossSteering,
-                StageIndex = sim.StageIdx,
-                Thrusting = sim.Thrusting,
-            };
-        }
     }
 }

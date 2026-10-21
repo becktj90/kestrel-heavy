@@ -44,7 +44,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(1, diff.problems.Count, diff.Canonical());
             Assert.AreEqual(TimelineDiff.FailedPrediction, diff.problems[0].kind);
             StringAssert.DoesNotStartWith("The edit loses the target.", diff.problems[0].explainWhy, "nothing was edited");
-            StringAssert.Contains("Apogee 0.6 km, target 100.0 km", diff.problems[0].explainWhy);
+            StringAssert.Contains("Apogee 0.5 km, target 100.0 km", diff.problems[0].explainWhy);
         }
 
         [Test]

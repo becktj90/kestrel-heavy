@@ -62,9 +62,10 @@ namespace Kestrel.Slice
                     : MissionBriefing.Free(root, hash, seed);
             }
             catch (Exception e) { Debug.LogWarning("[Ascent] briefing skipped: " + e.Message); }
-            var vehicle = AscentDecisions.FromDesign(design, catalog, monitor != null ? monitor.Events : null, card != null ? card.Wind : null, qLim, target, gentle, card != null ? card.Bonuses : null, hash, seed);
-            if (card != null && !string.IsNullOrEmpty(card.FlightCode)) vehicle.FlightCode = card.FlightCode;
-            var director = AscentDirector.Start(vehicle, monitor != null ? monitor.Events : null, card != null ? card.Wind : null, auto, engineer, reduceMotion);
+            // The one director factory the batch, the designer and the timeline use too (#313).
+            var director = MissionFlightSetup.Director(catalog, design, monitor != null ? monitor.Events : null, card != null ? card.Wind : null,
+                qLim, gentle, target, hash, seed, auto, engineer, reduceMotion, card != null ? card.Bonuses : null);
+            if (card != null && !string.IsNullOrEmpty(card.FlightCode)) director.Vehicle.FlightCode = card.FlightCode;
             var hook = new AscentHook
             {
                 Director = director,

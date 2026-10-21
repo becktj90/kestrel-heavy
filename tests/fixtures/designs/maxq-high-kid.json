@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "strapOns": {
+    "count": 0,
+    "kind": "solid",
+    "propellant": "solid-apcp",
+    "engine": "srm-small",
+    "engineCount": 1,
+    "propMass": 0,
+    "diameter": 1.6,
+    "material": "steel",
+    "crossfeed": false
+  },
+  "aero": {
+    "nose": "blunt",
+    "fins": true
+  },
+  "landing": {
+    "legs": false,
+    "gridFins": false,
+    "rcs": false
+  },
+  "avionics": {
+    "tier": "standard"
+  },
+  "safetyFactor": 1.6,
+  "livery": {
+    "primary": "#4fc3f7",
+    "accent": "#ff4081",
+    "name": "KID CRUISER"
+  },
+  "id": "fixture-maxq-high-kid",
+  "name": "fixture-maxq-high-kid",
+  "tier": "kid",
+  "stages": [
+    {
+      "interstageMass": 800,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Big Booster",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 5,
+      "propMass": 140000,
+      "diameter": 3
+    },
+    {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Space Stage",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 12000,
+      "diameter": 3
+    }
+  ],
+  "payload": {
+    "type": "kid-box",
+    "mass": 300,
+    "orbit": "leo200"
+  },
+  "fairing": {
+    "diameter": 3,
+    "length": 4,
+    "material": "composite",
+    "jettisonAltitudeKm": 100
+  }
+}

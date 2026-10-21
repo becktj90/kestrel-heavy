@@ -261,7 +261,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -273,7 +273,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -292,13 +292,19 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
-    "recurring": 906949027,
+    "recurring": 796263665,
     "dev": 717174506,
-    "total": 1624123533,
-    "perKg": 6046327,
+    "total": 1513438171,
+    "perKg": 5308424,
     "lines": [
      {
       "cat": "engines",
@@ -309,7 +315,7 @@
      {
       "cat": "structure",
       "label": "Stage 1: tanks & structure",
-      "amount": 143727461,
+      "amount": 51546182,
       "group": "stage0"
      },
      {
@@ -327,7 +333,7 @@
      {
       "cat": "structure",
       "label": "Stage 2: tanks & structure",
-      "amount": 29070194,
+      "amount": 10566111,
       "group": "stage1"
      },
      {
@@ -393,7 +399,7 @@
     ],
     "byCategory": {
      "engines": 137458078,
-     "structure": 198447499,
+     "structure": 87762137,
      "propellant": 1043450,
      "avionics": 250000000,
      "recovery": 0,
@@ -449,7 +455,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -474,6 +483,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -817,7 +833,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 2,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -879,29 +895,29 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
    "out": {
-    "recurring": 349382006,
+    "recurring": 349265090,
     "dev": 165561880,
-    "total": 514943886,
-    "perKg": 1164607,
+    "total": 514826970,
+    "perKg": 1164217,
     "lines": [
      {
       "cat": "engines",
@@ -912,13 +928,13 @@
      {
       "cat": "structure",
       "label": "Motor: tanks & structure",
-      "amount": 1305713,
+      "amount": 1234067,
       "group": "stage0"
      },
      {
       "cat": "propellant",
       "label": "Motor: Hybrid HTPB / N2O",
-      "amount": 573420,
+      "amount": 528150,
       "group": "stage0"
      },
      {
@@ -967,8 +983,8 @@
     ],
     "byCategory": {
      "engines": 8652315,
-     "structure": 12156271,
-     "propellant": 573420,
+     "structure": 12084625,
+     "propellant": 528150,
      "avionics": 50000000,
      "recovery": 0,
      "ops": 278000000
@@ -1736,6 +1752,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -1749,6 +1769,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -1825,7 +1848,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -2455,7 +2478,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2467,7 +2490,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2486,6 +2509,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "companyState": {
@@ -2498,10 +2527,10 @@
     ]
    },
    "out": {
-    "recurring": 906949027,
+    "recurring": 796263665,
     "dev": 567174506,
-    "total": 1474123533,
-    "perKg": 6046327,
+    "total": 1363438171,
+    "perKg": 5308424,
     "lines": [
      {
       "cat": "engines",
@@ -2512,7 +2541,7 @@
      {
       "cat": "structure",
       "label": "Stage 1: tanks & structure",
-      "amount": 143727461,
+      "amount": 51546182,
       "group": "stage0"
      },
      {
@@ -2530,7 +2559,7 @@
      {
       "cat": "structure",
       "label": "Stage 2: tanks & structure",
-      "amount": 29070194,
+      "amount": 10566111,
       "group": "stage1"
      },
      {
@@ -2591,7 +2620,7 @@
     ],
     "byCategory": {
      "engines": 137458078,
-     "structure": 198447499,
+     "structure": 87762137,
      "propellant": 1043450,
      "avionics": 250000000,
      "recovery": 0,
@@ -2647,7 +2676,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -2672,6 +2704,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "companyState": {
@@ -3018,7 +3057,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 2,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -3080,21 +3119,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -3108,10 +3147,10 @@
     ]
    },
    "out": {
-    "recurring": 349382006,
+    "recurring": 349265090,
     "dev": 165561880,
-    "total": 514943886,
-    "perKg": 1164607,
+    "total": 514826970,
+    "perKg": 1164217,
     "lines": [
      {
       "cat": "engines",
@@ -3122,13 +3161,13 @@
      {
       "cat": "structure",
       "label": "Motor: tanks & structure",
-      "amount": 1305713,
+      "amount": 1234067,
       "group": "stage0"
      },
      {
       "cat": "propellant",
       "label": "Motor: Hybrid HTPB / N2O",
-      "amount": 573420,
+      "amount": 528150,
       "group": "stage0"
      },
      {
@@ -3177,8 +3216,8 @@
     ],
     "byCategory": {
      "engines": 8652315,
-     "structure": 12156271,
-     "propellant": 573420,
+     "structure": 12084625,
+     "propellant": 528150,
      "avionics": 50000000,
      "recovery": 0,
      "ops": 278000000
@@ -3948,6 +3987,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -3961,6 +4004,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -4037,7 +4083,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -4559,7 +4605,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4571,7 +4617,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4590,6 +4636,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -4658,7 +4710,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -4683,6 +4738,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -4838,7 +4900,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 2,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -4900,21 +4962,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -5403,6 +5465,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -5416,6 +5482,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -5492,7 +5561,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,

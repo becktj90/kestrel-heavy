@@ -159,8 +159,9 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("Ready. Reaches 200 kilometres with fuel to spare.", StarterScreen.Spoken(badge, rest));
             Assert.Greater(r.Check().Margin, StarterScreen.TightMargin);
 
-            // KH-7 with one notch less fuel and three stages: short on the readout, and Launch stays on.
-            var shortOne = StarterLayoutTests.Rocket("m7", "kerosene-3-f0-b0");
+            // KH-7 with two stages: short on the readout, and Launch stays on. (#313 regrew KH-7's GTO winner, so one notch
+            // less fuel on three stages now reads Tight, +9.5%; two stages at the default fuel is about 6% short.)
+            var shortOne = StarterLayoutTests.Rocket("m7", "kerosene-2-f2-b0");
             Assert.IsTrue(StarterScreen.Readiness(shortOne, out badge, out rest), "short is information, not a block");
             Assert.AreEqual(StarterScreen.ShortBadge, badge);
             StringAssert.StartsWith("About ", rest);

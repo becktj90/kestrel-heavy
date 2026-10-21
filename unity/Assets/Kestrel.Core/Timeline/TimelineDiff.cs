@@ -248,6 +248,10 @@ namespace Kestrel.Core.Timeline
             string why = afterPrediction.Text ?? "";
             if (beforePrediction != null && beforePrediction.Success)
                 why = "The edit loses the target. " + why;
+            // The failure that ended the prediction flight, by type and time, so a pad-level apogee reads as the
+            // breakup it is (scout prop cut: overg at T+0.000 s), not as a flight that never left.
+            if (!string.IsNullOrEmpty(afterPrediction.Failure))
+                why += " First failure: " + afterPrediction.Failure;
             report.problems.Add(new DiffProblem
             {
                 kind = FailedPrediction,

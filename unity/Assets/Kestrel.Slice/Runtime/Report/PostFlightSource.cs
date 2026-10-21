@@ -111,6 +111,7 @@ namespace Kestrel.Slice
                         Intact = intact, ApoM = apo, PeriM = peri, MaxG = result.maxG,
                         LandingGrade = facts.LandingGrade, Extra = extra,
                         Stages = design != null && design.stages != null ? design.stages.Count : 1,
+                        CutoffGammaDeg = result.cutoffGammaDeg,
                     });
                 }
             }
@@ -128,6 +129,8 @@ namespace Kestrel.Slice
             var extra = new GoalCheck
             {
                 IdealDv = result.idealDeltaV,
+                DepartureDv = result.departureDv,
+                DepartureTW = result.departureTW,
                 C3Km2PerS2 = MissionScore.C3(result.orbit.energy) / 1e6,
                 Margin = facts.Margin,
             };

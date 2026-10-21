@@ -104,7 +104,7 @@
         "codex": ["codex.count.n2o.s1.load"]
       },
       "visibility":"standard",
-      "economy": {"costOnDone":573420,"refundOnScrub":0,"currency":"Kc"},
+      "economy": {"costOnDone":528150,"refundOnScrub":0,"currency":"Kc"},
       "strings": {
         "name":"Motor oxidizer load",
         "short":"N2O load",
@@ -592,8 +592,8 @@
       "abortRules": [
         {"condition":"dynamic pressure above the vehicle limit","branchId":"abort.maxq"}
       ],
-      "nominal":30,
-      "actual":30,
+      "nominal":28,
+      "actual":28,
       "tolerance":5,
       "variance":2.32,
       "status": {"state":"pending","progress":0},
@@ -610,7 +610,7 @@
       "strings": {
         "name":"Max-Q",
         "short":"Max-Q",
-        "explainWhy":"Max-Q is the sim peak dynamic pressure (36175 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:30.",
+        "explainWhy":"Max-Q is the sim peak dynamic pressure (37733 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:28.",
         "anomaly":"dynamic pressure above the vehicle limit"
       }
     },
@@ -625,7 +625,7 @@
       "holdable":false,
       "criticality":"nominal",
       "abortRules": [],
-      "nominal":30,
+      "nominal":28,
       "actual":null,
       "tolerance":1,
       "variance":-0.265,
@@ -658,8 +658,8 @@
       "holdable":false,
       "criticality":"critical",
       "abortRules": [],
-      "nominal":76.636,
-      "actual":76.636,
+      "nominal":70.507,
+      "actual":70.507,
       "tolerance":1,
       "variance":0.547,
       "status": {"state":"pending","progress":0},
@@ -676,7 +676,7 @@
       "strings": {
         "name":"Main engine cutoff",
         "short":"MECO",
-        "explainWhy":"Main engine cutoff at sim T+1:16.636. A medium kerolox public anchor is about T+2:25; this time is the sim burnout.",
+        "explainWhy":"Main engine cutoff at sim T+1:10.507. A medium kerolox public anchor is about T+2:25; this time is the sim burnout.",
         "anomaly":""
       }
     },
@@ -691,8 +691,8 @@
       "holdable":false,
       "criticality":"nominal",
       "abortRules": [],
-      "nominal":145.636,
-      "actual":145.636,
+      "nominal":159.507,
+      "actual":159.507,
       "tolerance":1,
       "variance":0.16,
       "status": {"state":"pending","progress":0},
@@ -709,7 +709,7 @@
       "strings": {
         "name":"Karman line",
         "short":"Karman",
-        "explainWhy":"The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:25.636, on the ballistic coast after burnout.",
+        "explainWhy":"The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:39.507, on the ballistic coast after burnout.",
         "anomaly":""
       }
     },
@@ -724,8 +724,8 @@
       "holdable":false,
       "criticality":"nominal",
       "abortRules": [],
-      "nominal":145.636,
-      "actual":145.636,
+      "nominal":159.507,
+      "actual":159.507,
       "tolerance":1,
       "variance":-0.607,
       "status": {"state":"pending","progress":0},
@@ -742,7 +742,7 @@
       "strings": {
         "name":"Fairing separation",
         "short":"Fairing",
-        "explainWhy":"Fairing separates once heating has fallen (after Max-Q) and altitude reaches 100 km. Time T+2:25.636 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude.",
+        "explainWhy":"Fairing separates once heating has fallen (after Max-Q) and altitude reaches 100 km. Time T+2:39.507 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude.",
         "anomaly":""
       }
     },
@@ -751,14 +751,14 @@
       "name":"tl.dep.payload.name",
       "shortLabel":"tl.dep.payload.short",
       "phase":"deploy",
-      "trigger": {"kind":"after","eventId":"asc.meco","delay":135.567},
+      "trigger": {"kind":"after","eventId":"asc.meco","delay":126.186},
       "preconditions": ["asc.meco"],
       "blocks": [],
       "holdable":false,
       "criticality":"critical",
       "abortRules": [],
-      "nominal":212.203,
-      "actual":212.203,
+      "nominal":196.693,
+      "actual":196.693,
       "tolerance":1,
       "variance":0.97,
       "status": {"state":"pending","progress":0},
@@ -775,7 +775,7 @@
       "strings": {
         "name":"Payload deploy",
         "short":"Deploy",
-        "explainWhy":"Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+3:32.203). The ascent sim stops at burnout and does not fly the coast.",
+        "explainWhy":"Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+3:16.693). The ascent sim stops at burnout and does not fly the coast.",
         "anomaly":""
       }
     }
@@ -806,7 +806,7 @@
         "codex": ["codex.scrub"]
       },
       "visibility":"kid",
-      "economy": {"costOnDone":0,"refundOnScrub":573420,"currency":"Kc"},
+      "economy": {"costOnDone":0,"refundOnScrub":528150,"currency":"Kc"},
       "strings": {
         "name":"Scrub",
         "short":"Scrub",
@@ -891,7 +891,7 @@
       "holdable":false,
       "criticality":"safety",
       "abortRules": [],
-      "nominal":30,
+      "nominal":28,
       "actual":null,
       "tolerance":0,
       "variance":0,

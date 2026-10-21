@@ -53,8 +53,12 @@ namespace Kestrel.Core.Flight
     {
         public double ThrottleScale;
         public double PitchOffsetRad;
-        /// <summary>Hold the design max-Q cap off so this scale is the only bucket.</summary>
-        public bool SuppressDesignThrottle;
+        /// <summary>
+        /// #313 (Kestrel Physics): the design's built-in max-Q throttle (<see cref="GuidanceProfile"/>) is the only max-Q
+        /// law. 0 leaves the design's own setting alone. A fraction asks the flight to engage that same law at this
+        /// cap: a player who takes the max-Q call on a design without a max-Q throttle.
+        /// </summary>
+        public double EngageMaxQCap;
         public bool Lost;
         public string LossKind, LossKid, LossEngineer;
     }
@@ -423,7 +427,9 @@ namespace Kestrel.Core.Flight
         AscentSample last;
         double lastTrackT = -1;
         double engineScale = 1;
+        int engineStage = -1;
         double fuelScale = 1;
+        int fuelStage = -1;
         double windUntil = -1;
         bool maxQDown, lost, payloadDamaged, playerFlew;
         double peakAlt, peakSpeed, peakG, fairingFlux;
@@ -682,6 +688,11 @@ namespace Kestrel.Core.Flight
 
         bool AutopilotAccept(Call c, in AscentSample s)
         {
+            // #313 option (b): the default player flies the design's own settings. The autopilot takes the max-Q
+            // throttle-down only when the design set a max-Q throttle (and then at that value, OfferedThrottle), and
+            // never takes the open-loop nose-down nudge. A player tap (Choose) still does either.
+            if (c.Kind == AscentCall.MaxQ) return vehicle.MaxQSet;
+            if (c.Kind == AscentCall.Pitch) return false;
             if (c.Kind != AscentCall.EngineOut) return true;
             if (AscentDecisions.ToleratesEngineOut(vehicle.Engines, vehicle.Redundant, s.ThrustN, s.MassKg)) return true;
             return vehicle.HotChamber;
@@ -719,7 +730,10 @@ namespace Kestrel.Core.Flight
                     if (accept) windUntil = s.T + 12;
                     break;
                 case AscentCall.FuelBalance:
+                    // #313 (Kestrel Physics): the penalty throttles only the stage with the imbalance, and ends when
+                    // that stage separates or shuts down.
                     fuelScale = accept && vehicle.Crossfeed ? 1 : AscentDecisions.FuelPenalty;
+                    fuelStage = s.StageIndex;
                     break;
             }
         }
@@ -730,7 +744,11 @@ namespace Kestrel.Core.Flight
             if (shutdown)
             {
                 if (tolerate && vehicle.Engines > 1)
+                {
+                    // Like the fuel penalty (#313 ruling 3): the lost engine costs only its own stage's thrust.
                     engineScale = (vehicle.Engines - 1.0) / vehicle.Engines;
+                    engineStage = s.StageIndex;
+                }
                 else
                     Lose("engine-out",
                         "One engine is out, and this rocket cannot fly on the rest.",
@@ -755,14 +773,15 @@ namespace Kestrel.Core.Flight
 
         void Refresh(in AscentSample s)
         {
-            double offered = AscentDecisions.OfferedThrottle(vehicle.MaxQSet, vehicle.MaxQRaw, vehicle.ThrottleMin);
-            bool bucket = maxQDown && s.QPa >= 8000;
+            // #313 (Kestrel Physics): no director bucket. A design with a max-Q throttle already flies it through its
+            // guidance; a taken call on a design without one engages that same guidance law at the offered cap.
+            double engage = maxQDown && !vehicle.MaxQSet
+                ? AscentDecisions.OfferedThrottle(false, vehicle.MaxQRaw, vehicle.ThrottleMin) : 0;
             double scale = 1;
-            if (bucket) scale = Math.Min(scale, offered);
             bool easing = windUntil >= 0 && s.T <= windUntil;
             if (easing) scale = Math.Min(scale, Math.Max(vehicle.ThrottleMin, 0.85));
-            scale *= engineScale;
-            scale *= fuelScale;
+            if (engineStage >= 0 && s.Thrusting && s.StageIndex == engineStage) scale *= engineScale;
+            if (fuelStage >= 0 && s.Thrusting && s.StageIndex == fuelStage) scale *= fuelScale;
             if (scale < vehicle.ThrottleMin) scale = vehicle.ThrottleMin;
             if (scale > 1) scale = 1;
             double deg = NudgeDeg;
@@ -773,10 +792,7 @@ namespace Kestrel.Core.Flight
             {
                 ThrottleScale = scale,
                 PitchOffsetRad = deg * Math.PI / 180.0,
-                // The design's own max-Q cap keeps flying until the call is actually taken.
-                // Clearing it just because the design has a cap left the first hop at full
-                // throttle through the structural limit.
-                SuppressDesignThrottle = maxQDown,
+                EngageMaxQCap = engage,
                 Lost = lost,
                 LossKind = lossKind,
                 LossKid = lossKid,
