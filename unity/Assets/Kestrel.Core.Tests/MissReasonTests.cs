@@ -1,8 +1,7 @@
 // F4: the report says why an intact, Ready starter missed, with its own numbers, and what to change.
-// KH-3, 4, 5, 6, 8, 12, 14 and 16 stay design puzzles: each real miss (FlightBatch, seed 1) is pinned to
-// its exact text, and the advice is checked by flying it. One reason shows, in fix order (orbit, fuel,
-// structure, reliability, setup), and the reason counts any other gate that missed: KH-8 reads
-// "(+1 more issue)" until its fuel fix lands the circle, then the reason is reliability.
+// KH-3, 4, 6, 8, 12 and 16 stay design puzzles (#313: KH-5 and KH-14 now pass): each real miss (FlightBatch, seed 1)
+// is pinned to its exact text, and the advice is checked by flying it. One reason shows, in fix order (orbit, fuel,
+// structure, reliability, setup), and the reason counts any other gate that missed with "(+N more issue)" (#324).
 using System;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
@@ -41,26 +40,24 @@ namespace Kestrel.Core.Tests
             return MissReason.Explain(m, MissReason.FromFlight(flight, d.stages.Count));
         }
 
+        // #313 (closed-loop director, energy cutoff): the starters' misses are new numbers. KH-3, 4, 6 and 12 now cut off at
+        // the target energy at a bad flight-path angle, so both the high and the low point are out of the band and the
+        // reason names both. KH-8 now flies in the band and misses on reliability. KH-5 and KH-14 now pass (board rows
+        // "fly"), so they moved to PassingStarterHasNoReason.
         [TestCase("m3", "apo-high",
-            "Missed the 200 km circle: the orbit flew 192 km × 221 km, and the high point needs 190 km to 210 km. That is about 6 m/s too fast at the low point.",
+            "Missed the 200 km circle: the orbit flew 72.3 km × 328 km, and the high point needs 190 km to 210 km. That is about 38 m/s too fast at the low point. The low point, 72.3 km, needs 190 km to 210 km.",
             "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
         [TestCase("m4", "apo-high",
-            "Missed the 500 km circle: the orbit flew 502 km × 2,637 km, and the high point needs 475 km to 525 km. That is about 495 m/s too fast at the low point.",
-            "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
-        [TestCase("m5", "apo-high",
-            "Missed the 400 km circle: the orbit flew 393 km × 1,898 km, and the high point needs 380 km to 420 km. That is about 373 m/s too fast at the low point.",
+            "Missed the 500 km circle: the orbit flew 382 km × 618 km, and the high point needs 475 km to 525 km. That is about 32 m/s too fast at the low point. The low point, 382 km, needs 475 km to 525 km.",
             "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
         [TestCase("m6", "apo-high",
-            "Missed the 200 km circle: the orbit flew 193 km × 216 km, and the high point needs 190 km to 210 km. That is about 5 m/s too fast at the low point.",
+            "Missed the 200 km circle: the orbit flew 188 km × 212 km, and the high point needs 190 km to 210 km. That is about 4 m/s too fast at the low point. The low point, 188 km, needs 190 km to 210 km.",
             "Add fuel to stage 3, about 2% at a time (up to 10%), until the high point comes down into the band.")]
-        [TestCase("m8", "apo-high",
-            "Missed the 400 km circle: the orbit flew 393 km × 1,728 km, and the high point needs 380 km to 420 km. That is about 335 m/s too fast at the low point. (+1 more issue)",
-            "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
+        [TestCase("m8", "reliability",
+            "Reliability was 95.1%; this mission needs 98%.",
+            "Raise the safety factor to 1.5 or more for the reliability bonus, or pick redundant avionics.")]
         [TestCase("m12", "apo-high",
-            "Missed the 600 km circle: the orbit flew 590 km × 780 km, and the high point needs 570 km to 630 km. That is about 48 m/s too fast at the low point.",
-            "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
-        [TestCase("m14", "apo-high",
-            "Missed the 400 km circle: the orbit flew 391 km × 1,059 km, and the high point needs 380 km to 420 km. That is about 176 m/s too fast at the low point.",
+            "Missed the 600 km circle: the orbit flew 343 km × 857 km, and the high point needs 570 km to 630 km. That is about 69 m/s too fast at the low point. The low point, 343 km, needs 570 km to 630 km.",
             "Add fuel to stage 2, about 2% at a time (up to 10%), until the high point comes down into the band.")]
         [TestCase("m16", "reliability",
             "Reliability was 97.9%; this mission needs 98%.",
@@ -80,9 +77,11 @@ namespace Kestrel.Core.Tests
 
         [TestCase("m1")]
         [TestCase("m2")]
+        [TestCase("m5")]
         [TestCase("m7")]
         [TestCase("m11")]
         [TestCase("m13")]
+        [TestCase("m14")]
         [TestCase("m15")]
         public void PassingStarterHasNoReason(string id)
         {
@@ -106,13 +105,16 @@ namespace Kestrel.Core.Tests
         }
 
         /// <summary>The overshoot advice works: some +2% step up to +10% on the top stage brings the high point into the band.</summary>
-        [TestCase("m3", 1.02)]
-        [TestCase("m4", 1.04)]
+        // #313 real values: KH-3 1.02 → 1.06 (202 x 198 km), KH-4 1.04 → 1.02 (502 x 498 km), KH-14 1.04 → 1.02 (the
+        // starter already passes). KH-5 and KH-8 stay at 1.02 (KH-5 passes already; KH-8 misses on reliability, not
+        // altitude). KH-12 (a flight-path-angle miss, 857 x 343 km) does not come in with fuel: 1.10 still flies 866 x 334.
+        [TestCase("m3", 1.06)]
+        [TestCase("m4", 1.02)]
         [TestCase("m5", 1.02)]
         [TestCase("m6", 1.02)]
         [TestCase("m8", 1.02)]
-        [TestCase("m12", 1.04)]
-        [TestCase("m14", 1.04)]
+        [TestCase("m12", 1.10)]
+        [TestCase("m14", 1.02)]
         public void MoreTopStageFuelBringsTheHighPointIn(string id, double first)
         {
             var m = Mission(id);

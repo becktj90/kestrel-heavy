@@ -15,10 +15,30 @@ The shared director (option b) drives batch, designer predict, timeline and the 
 ## Physics B
 A stage-1 engine-out throttles only stage 1. New test: `AStageOneEngineOut_ThrottlesOnlyStageOne_NotTheUpperStage`.
 
-## Physics C
-- finch-leo400-k3 (seed 2, 657.8 × 142.2) and pantry-leo400-k3 (seed 3, 637.7 × 162.3) stay real misses. **Arcade: contract viability.**
-- The scout and kid retune is **not committed**. It needs a decision (below).
+## Physics C (approved 12:14 PM), plus the predictor band and Fix it
+- **Presets:**
+  - scout uses **al-li tanks** (rated for cryogenic propellant; no T+0 cryo failure, no exemption) and pitch settings. Predict and seeds 1-5 fly **410.1 × 389.9 km, g 6.48, q 21.4 kPa**.
+  - kid uses pitch settings with throttleMin 0.4. It flies **205.8 × 194.2 km, g 7.62 (limit 8), q 18.0 kPa (limit 40)**.
+  - The old kid and scout are now named fixtures: tests/fixtures/designs/maxq-high-kid.json (90.07 kPa) and weak-scout.json. GV7 follows the new rule, "presets may carry pitch settings". No assertion was loosened.
+- **One acceptance rule:** `MissionScore.TargetMet`. FlightBatch, FlightDebrief and LaunchPredictor all call it. The new `PredictorBatchVerdictTests` checks that predictor and batch agree on all 6 templates and 4 presets.
+- **Fix it:** a repair counts only if the mission passes on all 5 seeds. Clean misses are named `fpa-miss`, `miss` or `gate-miss`. A 95% max-Q throttle that lofts into a miss is never FullyFixed; Fix it falls back to strength on the original rocket.
+  - KH-14 is fixed at strength 1.3. KH-16 now honestly reports "not fixed": its first passing strength is 1.5, past the 8-step budget.
+  - KH-6 is asserted as an `fpa-miss` by name.
+- **Contracts:** finch-leo400-k3 is now **c10-462-k7-u38 (cost 27495, +1260)** and viable on 5/5. pantry-leo400-k3 has no design within 2 cost steps and stays failing. ISSUE_ENGINEOUT_CONTRACTS.md is drafted for the engine-out balance PR (not filed).
 - FOLLOWUP_CLOSED_LOOP.md is drafted. No ticket was opened.
+
+## Thin Δv margins: do not let future tuning push these negative
+Each is the minimum over seeds 1-5, available − required departure Δv:
+
+| Row | Design | Margin |
+|---|---|---:|
+| comsat-gto-k0 (contract) | n12-p494-m80-u28 | **+88 m/s** |
+| comsat-gto-k3 (contract) | n12-p416-m100-u28 | +90 m/s |
+| comsat-gto-k6 (contract) | n12-p416-m150-u42 | +94 m/s |
+| m20 winner | kh20-win | **+104 m/s** |
+| m7 viable | n14-p416-m200-u42 | +108 m/s |
+| m10 winner | b16-p544-m165-u33-s22 | **+112 m/s** |
+| m10 viable | b16-p544-m165-u33-s22 | +118 m/s |
 
 ## Arcade board rows
 - m5 `fix` → `fly` and m14 `strength` → `fly`: the raw starters pass 5/5.
@@ -29,7 +49,7 @@ A stage-1 engine-out throttles only stage 1. New test: `AStageOneEngineOut_Throt
 - `BoardStarter_FixItOrOneStrengthEdit` stays strict and passes.
 
 ## Heron (tpl-hydrogen-upper) batch vs live, ≤ 0.5% apo
-#314 is not on main yet (079d19b), and the file is untouched. On the shared director with the in-step energy cutoff:
+#314 is not on main yet (rebased onto e18218b), so the 9-engine case stays. The file is untouched. On the shared director with the in-step energy cutoff:
 
 | Heron | Batch, km | Live, km | Apo Δ | Peri Δ |
 |---|---|---|---:|---:|
@@ -40,18 +60,29 @@ A stage-1 engine-out throttles only stage 1. New test: `AStageOneEngineOut_Throt
 - With the failure monitor on, both Herons break up at max-Q (T+34.5 s and T+66.6 s). That is #314's to fix.
 
 ## Verdict flips
-- vs origin/main: 11 of 530, all fail → pass (the m5 and m14 starters, and found m18 seed 2).
+- vs origin/main: 11 of 530, all fail → pass (the m5 and m14 starters, and found m18 seed 2). After the rebase the batch is identical to 8eb886c (0 flips).
 - vs 961edad: 111 flips (106 fail → pass, 5 pass → fail). The 5 are the intended m12 near-miss.
 
-## Tests
-- **Expectations changed** (superseded or re-pinned, none loosened):
-  - the ellipse/C3 target energy in `TheEnginesCutOffAtTheTargetEnergy…`;
-  - KH-10 strap prop 14,000 → 22,400 kg and landing hold 2,800 → 4,480 kg in `Setup_HoldsOutCoastBoilOff…`.
-- **New:** `DepartureCheckTests`, the Physics B test, and the Heron batch-vs-live test.
+## Tests (rebased on e18218b)
+- **Expectations changed** (re-pinned to real values; full old → new list in GOLDEN_DIFF.md):
+  - the ellipse/C3 target energy;
+  - the KH-10 strap and landing hold;
+  - GV7 (new preset rule);
+  - Version1 liftoff masses (al-li);
+  - LaunchPredictorTests (now uses the shared rule);
+  - the Fix it tests (new rule, real values; the RanOutOfFuel fixture goes 50% → 16% upper load, the real depletion point);
+  - #311's MissReasonTests and #301's Starter tests (#313 numbers).
+- **New:**
+  - `DepartureCheckTests`;
+  - the Physics B test;
+  - the Heron batch-vs-live test;
+  - `PredictorBatchVerdictTests`;
+  - `FixIt_WeakAirframe_ThatOnlyFliesIntoAMiss_IsNotFixed`;
+  - `FixIt_WhenTheMaxQThrottleLoftsIntoAMiss_NeverClaimsFixed`.
 
 | Suite | Passed | Skipped | Failed |
 |---|---:|---:|---:|
-| Core | 754 | 14 | **9** |
+| Core | 880 | 12 | **4** |
 | Site | 28 | 0 | 0 |
 | Pad.Core | 84 | 0 | 0 |
 | Vehicle.Core | 41 | 0 | 0 |
@@ -61,26 +92,19 @@ A stage-1 engine-out throttles only stage 1. New test: `AStageOneEngineOut_Throt
 
 node: 179 tests, 172 pass, 0 fail, 1 skipped, 6 todo. `stubcheck --all`: exit 0. Unity EditMode and PlayMode were not run here (GameCI only).
 
-The 9 Core failures, by cause (none newly introduced by this commit's data):
-- **Fix it, 4 tests** (product decision): FixIt_WeakAirframe…(14) and (16), FixIt_ThatCannotFixTheFlight…, ReportFixIt_RanOutOfFuel….
-  - In 14 and 16, Fix it's 95% max-Q throttle lofts the rocket into a miss that `FullyFixed` counts as fixed.
-  - In the other two, the KH-6 rocket now misses at a bad γ instead of running dry.
-  - Decide: count misses as unfixed, or land closed-loop guidance first.
-- **finch/pantry contracts, 1 test:** EveryCell_AndEveryOffer_IsViable (a Physics C real miss).
-- **Scout predict, 2 tests:** UnchangedDesign_HasAnEmptyDiff and PropellantCut…. These need the preset decision below.
-- **tpl-hydrogen-upper predict, 2 tests:** BrokenPrecondition… and UpperEngineSwap…. Left for #314.
+The 4 Core failures:
+- **pantry-leo400-k3:** `EveryCell_AndEveryOffer_IsViable`. It is left failing and visible, per Arcade.
+- **tpl-hydrogen-upper (#314):** `BrokenPrecondition…` and `UpperEngineSwap…`. Their vectors are left for #314.
+- **`MissReasonTests.MoreTopStageFuelBringsTheHighPointIn("m12")`:** from #311 on main. The m12 board starter (#313's 6-engine near-miss) is an fpa miss (857 × 343 km). MissReason's "add top-stage fuel" advice does not bring it in: 1.10 still flies 866 × 334. Needs a decision.
 
 ## Decisions needed
-1. **The preset retune conflicts with existing invariants.**
-   - The tuned values are in GOLDEN_DIFF.md. kid's peak g is 5.71 (limit 8) and its max q 18.0 kPa (limit 40) on predict and seeds 1-5, at 203 × 197 km.
-   - It is not committed because it breaks GV7 (presets carry no V3 guidance), StabilityBand (kid is the > 45 kPa max-Q fixture), the weak-scout breakup fixtures, the JS save key count and GoldenTimelines.
-   - Also, with the exact energy cutoff, LaunchPredictor's strict `peri ≥ target` can never pass a circular target. Proposal: predict success = the ±5% band.
-2. **Fix it:** count misses as unfixed, or closed-loop guidance first.
-3. **Arcade:** finch/pantry leo400-k3 contract viability.
+1. **MissReason advice for a flight-path-angle miss:** either MissReason recognises the miss (energy on target, bad γ) and gives pitch or upper-engine advice, or m12's board starter changes. This is player-facing copy, so I left it.
+2. **Fix it strength budget:** KH-16 at strength 1.0 needs 1.5 (10 steps) and StrengthSteps is 8, so Fix it reports not fixed. Keep the budget or raise it.
+3. **Engine-out contracts (pantry):** see ISSUE_ENGINEOUT_CONTRACTS.md.
 
 ## Kestrel Physics sign-off
 - Parking cutoff and the departure Δv check, with the margins table (A): TBD
 - Engine-out scoping (B): TBD
 - Heron batch-vs-live ≤ 0.5% apo: TBD
-- Preset retune vs GV7, StabilityBand and the predict criterion (C): TBD
+- Preset retune, the predictor band and the Fix it rule (C): TBD
 - Signed off by:

@@ -68,7 +68,7 @@ namespace Kestrel.Core.Tests
                 n++;
             }
             Assert.That(n, Is.GreaterThanOrEqualTo(10), "templates and presets found");
-            CollectionAssert.IsEmpty(wrong, "the predictor and the batch disagree");
+            Assert.AreEqual(0, wrong.Count, "the predictor and the batch disagree:\n" + string.Join("\n", wrong));
         }
     }
 }

@@ -1,4 +1,120 @@
-# GOLDEN_DIFF: #313 shared throttle director, Physics rulings A/B/C and Arcade board rows
+# GOLDEN_DIFF: #313 shared throttle director, Physics rulings A/B/C, Arcade board rows, and the Physics-approved follow-up
+
+# Physics approval follow-up (12:14 PM): presets, predictor band, Fix it, finch/pantry, rebase
+
+Rebased onto origin/main **e18218b**. These 9 commits landed on main since 079d19b: #300, #301, #304, #311, #312, #319, #320, #321 and #322. **#314 has not landed**, so the 9-engine Heron batch-vs-live case stays. tpl-hydrogen-upper and its timeline-diff vectors (causality.txt, restart.txt) are untouched; those belong to #314.
+
+## 1. Presets (data/presets.json, from keep/presets_retune.patch, adjusted)
+
+| Preset | Change | Before (8eb886c) | After, predict and seeds 1-5 |
+|---|---|---|---|
+| scout | both stages composite → **al-li** (cryoOK); guidance pitchKickAlt 500, pitchKickDeg 6, maxQThrottle 40, gLimit 5 | predict 443.1 × 356.8 km (fail under the strict rule), g 11.29, q 53.7 kPa; with the patch's composite tanks: cryo-material at T+0 | **410.1 × 389.9 km**, peak g **6.48**, max q **21.4 kPa** (limit 35.0), no failure; predict 410.0 × 389.9, pass |
+| kid | guidance pitchKickAlt 34000, pitchKickDeg 3, turnShape 0.5, maxQThrottle 40, gLimit 6; stage 1 engineParams throttleMin 0.4 | predict 656.7 × −256.8 km (suborbital), g 18.87, q 90.1 kPa; seeds broke up at max-Q | **205.8 × 194.2 km**, peak g **7.62** (limit 8), max q **18.0 kPa** (limit 40), no failure; predict 205.7 × 194.2, pass |
+
+**Deviations from the patch, both for real-performance reasons:**
+- scout: the real cryo fix (al-li, rated for cryogenic propellant) made the stack heavier. With the patch's guidance (pitchKickAlt 1000, kick 8, gLimit 6) it flew 657 × 143 km, so I retuned it with `pgrid`. No exemption is used.
+- kid: the patch's throttleMin 0.3 brought in EngineModel's deep-throttle mass penalty (below 0.4), which the JS mass model does not have. That broke JS mass parity (stage-0 dry 10423.5 vs 10400). At throttleMin 0.4 there is no penalty, and I retuned the kick and turn shape to match.
+
+**Fixtures (new, tests/fixtures/designs/, like #314's sounding-solid.json):**
+- `maxq-high-kid.json`: the pre-#313 kid. It still peaks at **90.07 kPa**, the maxq-high warn-not-block case (`ReadoutV2Tests.StabilityBand…`).
+- `weak-scout.json`: the pre-#313 scout. Both breakup tests now load it (`FlightSimSinkTests.FlyWeakScout`, `PlayedBreakupTests.AVersion3Breakup`).
+- Both are loaded with `Golden.FixtureDesign(name)`. **No assertion was changed.**
+
+**Test updated to the new rule:** `DesignerV3GoldenTests.GV7`.
+- A bench design that carries pitch settings may only use {pitchKickAlt, pitchKickDeg, turnShape, maxQThrottle, gLimit}. It must engage the monitor, get a guidance profile and fly its own kick.
+- Designs without V3 fields keep the original strict asserts.
+- Exactly {scout, kid} carry pitch settings.
+
+**Golden values, old → new:**
+- `DesignV2Tests.Version1_DoesNotDeriveInterstageMass`: 44129.78 → **44723.54** and 44215.28 → **44845.68** (al-li). docs/PHYSICS.md is updated to match.
+- JS goldens (`npm run gen:golden`). At clean HEAD this produces no diff, so every change below comes from the presets:
+  - scout liftoff 44329.78 → **44923.54** kg;
+  - S1/S2 dry 2487.66/523.89 → **2994.53/610.78** kg;
+  - ideal Δv 11823.0 → **11389.5** m/s;
+  - recurring cost 906,949,027 → **796,263,665** (al-li structure 198.4M → 87.8M);
+  - JS sim (no guidance) 467.2 × 434.7 → 419.9 × 267.7 km, max q 53.58 → 52.58 kPa;
+  - kid gains guidance and engineParams in designer-validate, economy, vehicle and vehicle-migrate.
+- Save-store golden: the scout design gains `guidance` and al-li, so the save-key count is **12 → 13**. `Ids_Keys_AndSession_MatchJs` passes against JS.
+- `tests/vectors/prediction/launches.txt` (KESTREL_WRITE_PREDICT=1):
+  - scout success false → **true**, 443.1 × 356.8 → **410.0 × 389.9**, Δv margin 3063 → 2629;
+  - kid outcome suborbital → **orbit**, 656.7 × −256.8 → **205.7 × 194.2**, success false → **true**, and its timeline gains `orbit`.
+- `tests/vectors/timeline/scout.json` and `kid.json` (KESTREL_WRITE_TIMELINES=1). TimelineGenerator now flies the design's own pitch settings, as Stack.SimInputs and the predictor do; without them its bare sim had scout suborbital. Changes:
+  - scout: MECO 124.9 → 153.3 s, Karman/fairing 111 → 135 s, orbit insert 318.9 → 361.9 s, max-Q 43 → 44 s;
+  - kid: MECO 90.4 → 146.0 s, max-Q 32 → 10 s, Karman/fairing 83 → 135 s, orbit insert 332.4 → 331.0 s.
+- `tests/vectors/timeline-diff/prediction.txt`: the scout timelines above, and the cut scout misses at 7.6 km apogee (was 5.7 km).
+- `tests/vectors/timeline-diff/fairing.txt`: **+1 line**, a failed-prediction for Heron without a fairing (924.7 × 22458.9 km against GTO). Under the old strict rule a 9-engine Heron with perigee ≥ 200 km "reached" GTO; under the batch band it does not. #314 changes Heron, so this vector will move again there.
+- The predictor's miss text "the target is the perigee" now reads "the orbit is outside the target band (5%)".
+
+## 2. Predictor band: one acceptance function
+
+- `MissionScore.TargetMet(kind, apoTarget, periTarget, c3Target, apo, peri, c3, departureCovered, out criterion)` is the **only** ±5% target rule.
+- `FlightBatch.TargetReached`, `FlightDebrief.GoalMet` and `LaunchPredictor.Accepts` all call it. There is no second copy of the band.
+- The predictor judges a campaign design on its mission row (`ReferenceAscent.MissionFor`), with the same departure check. A free build is judged on its catalog orbit (`MissionScore.FreeOrbitKind`: hop, circle or ellipse). A flight with a failure is a miss.
+- `CampaignFlight.reached` records the acceptance verdict before the mission gates.
+- New test `PredictorBatchVerdictTests.Predictor_AndBatch_GiveTheSameVerdict_OnEveryTemplateAndPreset`: 6 templates and 4 presets, all agree. Scout and kid reach. Every template, stock and super-heavy miss on both sides; on the batch side they break up under the full monitor:
+  - Heron, medium-kerolox and medium-kerolox-reusable: structural-maxq;
+  - methane-reusable: overg / engine-out;
+  - small-kerolox: cryo-material at T+0;
+  - sounding-solid: overg;
+  - stock: thermal;
+  - super-heavy: engine-out / thermal.
+  
+  These template failures are not #313 changes and were not compared against main.
+- `LaunchPredictorTests.Prediction_IsTheSim_AndTheTimeline` now recomputes success with `LaunchPredictor.Accepts`, not the old strict formula.
+- The batch-vs-live checks (apo ≤ 0.5%, SMA ≤ 0.1%) are unchanged and pass, including Heron.
+- `PropellantCut_FlagsAFailedPrediction…` and `UnchangedDesign_HasAnEmptyDiff` now pass honestly: scout reaches in band before the cut.
+
+## 3. Fix it: a repair counts only when the mission passes on all 5 seeds
+
+`DesignerRepair`:
+- `FirstFailure` and `FailedSeeds` now use `MissKind`: the failure kind, else `fpa-miss`, `miss` or `gate-miss`, else null.
+  - `fpa-miss`: an intact flight whose mean altitude (semi-major axis) is in the target band but whose apo or peri is out of it. It cut off at the target energy at a bad flight-path angle.
+  - `miss`: any other clean miss, such as short or lofted.
+  - `gate-miss`: target reached, another mission gate failed.
+- `FullyFixed` requires every seed to pass.
+- Strength keeps stepping through a clean miss once it has stopped a breakup, inside the same `StrengthSteps` budget. When the stepper's 95% max-Q throttle lofts into a miss, Fix it falls back to strength on the rocket as it was. Otherwise it reports not fixed, and never FullyFixed.
+- No Fix it exists in web/js (grepped), so there was no JS change.
+
+| Test | Old | New (real values) |
+|---|---|---|
+| FixIt_WeakAirframe…(14) | FullyFixed on a lofted miss; the knife-edge vanished | The stepper's 95% throttle lofts (739.6 × −2284.7 km), so Fix it takes strength on the rocket as it was: **Strength 1 → 1.3, 416.2 × 383.8 km, 5/5 pass**. 1.25 passes (409.6 × 390.4); 1.20 is an fpa-miss (516.6 × 283.4), so two steps under fails |
+| FixIt_WeakAirframe…(16) | FullyFixed on a miss | Split out as **FixIt_WeakAirframe_ThatOnlyFliesIntoAMiss_IsNotFixed**: **not fixed, 5 of 5 fail**. Within 8 steps (1.0 → 1.4), strength trades the breakup for misses: 1.10-1.25 fpa-miss (635.9 × 364.1 at 1.20); 1.30-1.45 reach 500 km but miss the 0.98 reliability gate (gate-miss). The first strength that passes is **1.50** (500.6 × 499.4), two steps past the budget |
+| new: FixIt_WhenTheMaxQThrottleLoftsIntoAMiss_NeverClaimsFixed | — | KH-14 at SF 1.0 with a 95% max-Q throttle: clean `miss` on all seeds (876.0 × −2079.2 km; 794.8 × −2728.9 at 1.4). Fix it: not fixed, 5 of 5 |
+| FixIt_ThatCannotFixTheFlight… | expected a failure count; got 0 failures | KH-6 at half upper load: **fpa-miss** on 4 seeds (412.4 × −12.4 km; seed 2 engine-out). After Fix it, **fpa-miss on all 5** (412.0 × −12.0), note "still fails 5 of 5" |
+| ReportFixIt_RanOutOfFuel… → **…_AddsFuelUntilItNoLongerRunsDry_ThenSaysTheMissRemains** | expected prop-depletion at 50% load; got none | At 50% KH-6 no longer runs dry. It runs dry at **16%** on all 5 seeds (depletion starts at ≤ 18%), so the fixture factor is 0.5 → 0.16. Fuel Fix it adds propellant (DeltaVAdded; the ascent is no longer short; no seed runs dry). With the mission, every seed is then an **fpa-miss** (413.9 × −13.9 km), so the result is not fixed, 5 of 5 |
+
+KH-6's starter itself is an fpa-miss at 212.2 × 187.8 km (band 190-210). That is why board row m6 is "strength 1.8", which flies 203.5 × 196.5 km on 5/5.
+
+## 4. Rebase interactions (tests that landed on main with pre-#313 numbers)
+
+- **StarterRocketTests.Bases_…ShippedCopyMatchesTheGolden:** data/campaign-winners.json (new on main) now matches the #313 golden.
+- **StarterScreenTests.Readiness_…:** #313 regrew KH-7's GTO winner, so "kerosene-3-f0-b0" now reads **Tight (+9.5%)**. The short example moved to "kerosene-2-f2-b0" (**about 6% short**). The assertions are unchanged.
+- **MissReasonTests** (from #311), using the real #313 numbers:
+  - m3: 192 × 221 → **72.3 × 328** km (38 m/s);
+  - m4: 502 × 2,637 → **382 × 618** (32 m/s);
+  - m6: 193 × 216 → **188 × 212** (4 m/s);
+  - m12: 592 × 649 → **343 × 857** (69 m/s). These four now also name the low point, because both points are out of band (fpa misses).
+  - m8: apo-high → **reliability** ("Reliability was 95.1%; this mission needs 98%").
+  - m5 and m14 now pass (board rows "fly"), so they moved to `PassingStarterHasNoReason`.
+  - `MoreTopStageFuel…`: m3 1.02 → **1.06**, m4 1.04 → **1.02**, m14 1.04 → **1.02**.
+  - **m12 stays failing**: fuel does not bring an fpa miss in (1.10 flies 866 × 334). See the decisions below.
+
+## 5. finch / pantry (Arcade re-search, ≤ 2 cost steps)
+
+- **finch-leo400-k3: fixed.** c9-420-k7-u38 (26235) → **c10-462-k7-u38, cost 27495** (+1260): S1 engines 9 → 10 and S1 propellant 420000 → 462000. It passes 5/5 at 400.0 × 400.0 km.
+- **pantry-leo400-k3: nothing within 2 steps.** c8-360-k7-u35 (24559) stays failing at seed 3, 637.7 × 162.3 km. The closest variant, S2 propellant +10% (24708), passes 4/5; seed 3 flies 652.6 × 147.4.
+- Draft for the balance PR: ISSUE_ENGINEOUT_CONTRACTS.md (all 14 variants per row). Not filed.
+
+## 6. Re-run (seeds 1-5)
+
+- dump2 m1-m20 (530 flights) is **identical** to 8eb886c: 0 flips vs e7. vs origin/main (079d19b baseline), 11 flips, all fail → pass (the m5 and m14 starters, and found m18 seed 2).
+- Contracts: 63 designs, 62 viable; pantry is the 1 failure (finch is now viable).
+- Presets: scout and kid pass 5/5 (above). Templates: all fail under the full monitor (above).
+
+---
+
+(The sections below describe 8eb886c. Its "Decisions needed" 1 and 2 are resolved above, and 3 is section 5.)
+
 
 Local only (not pushed). This section is for this commit. Everything below "Earlier: Physics rulings 1-4" is the 961edad diff and is unchanged.
 Runs: FlightBatch 0.2 s and the pad at 1/120 s, seeds 1-5. Baselines are **old** = origin/main before #313 (old2), **961edad** = the last commit, and **Physics A on old data** = this code with the 961edad goldens (e6). **new** = this commit (e7, contracts5).
