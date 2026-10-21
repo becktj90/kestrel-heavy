@@ -1,7 +1,7 @@
 // F1 / NAV-01, NAV-02 (NAV_BUGS.md, test/nav-flow #308). Mirrors KnownBug_NAV01_DesignFirstRocket_LaunchGateBlocks
 // and KnownBug_NAV02_GoldenWinners_DesignerGateDisagreesWithFlightBatch as plain tests: the designer gate, run the
 // way the nav harness runs it (ReferenceAscent.Run, then LaunchGate.Evaluate), is Ready for every campaign winner
-// and for every DESIGN FIRST rocket, which also flies FlightBatch seeds 1-5 with no failure. When #308 lands, its two KnownBug tests are removed in favour of these.
+// and for every DESIGN FIRST rocket, which also flies FlightBatch seeds 1-5 with no failure. #308's two KnownBug tests were removed in favour of these.
 using System;
 using System.Collections.Generic;
 using System.IO;
