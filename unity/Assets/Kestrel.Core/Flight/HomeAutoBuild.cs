@@ -481,7 +481,8 @@ namespace Kestrel.Core.Flight
 
     /// <summary>
     /// Home buttons. Does not change <see cref="GameSession.Apply"/> for <see cref="RouteId.HomeLaunch"/>.
-    /// LAUNCH briefs the next mission and arms the pad. Design first opens the designer with the same load.
+    /// LAUNCH briefs the next mission and loads its starter into the designer (no auto-fly, NAV-03).
+    /// Design first opens the designer with the same load.
     /// </summary>
     public static class HomeRoutes
     {
@@ -520,8 +521,9 @@ namespace Kestrel.Core.Flight
             ctx.ApplyBriefing(briefing);
             ctx.VehicleLine = choice.VehicleLine;
             ctx.ReachLine = choice.ReachLine;
-            ctx.AutoPad = choice.LaunchEnabled;
-            PadHandoff.Arm(choice.Design, choice.LaunchEnabled, fromHome: true);
+            // NAV-03 / F4: the briefing opens the designer with the starter loaded; Launch is the designer's.
+            ctx.AutoPad = false;
+            PadHandoff.Arm(choice.Design, flyNow: false, fromHome: true);
             GameSession.Carry(ctx);
             return new RouteResult(SessionScreens.Missions, SessionScreens.Briefing, ctx);
         }

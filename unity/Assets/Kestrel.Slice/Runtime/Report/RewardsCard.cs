@@ -11,6 +11,8 @@ namespace Kestrel.Slice
     public sealed class ReportActions
     {
         public Action Next, Again, Missions, Home, Fix;
+        /// <summary>NAV-04 / F4: reopen the designer with the rocket that flew, mission kept.</summary>
+        public Action Designer;
     }
 
     public static class RewardsCard

@@ -341,7 +341,7 @@ namespace Kestrel.Game.Tests
                     Assert.That(card.Q<Label>("plot-label").resolvedStyle.fontSize / sx, Is.GreaterThanOrEqualTo(14f), d.Name + " plot");
                     Assert.That(card.resolvedStyle.backgroundColor.a, Is.EqualTo(1f).Within(0.001f), d.Name);
 
-                    foreach (var id in new[] { "failure-fix", "report-next", "report-retry", "report-missions", "report-home" })
+                    foreach (var id in new[] { "failure-fix", "report-next", "report-retry", NextMission.DesignerId, "report-missions", "report-home" })
                     {
                         var button = card.Q<Button>(id);
                         Assert.That(button, Is.Not.Null, d.Name + " " + id);
