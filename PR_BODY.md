@@ -121,6 +121,11 @@ Stage 1 gets `engineParams.throttleMin` 0.45 (stock 0.57), `guidance.maxQThrottl
 - vs origin/main: 11 of 530, all fail → pass (the m5 and m14 starters, and found m18 seed 2). After the rebase the batch is identical to 8eb886c (0 flips).
 - vs 961edad: 111 flips (106 fail → pass, 5 pass → fail). The 5 are the intended m12 near-miss.
 
+
+### When #313 rebases over #331
+
+#331 (`fix/flight-to-landing`) has not landed. Its `FlightToLandingPlaythroughTests.Kh3RawStarter_BreaksUpBeforeMeco_ReportDoesNotWaitForABooster` asserts the main-branch breakup (held nudge plus default 0.70 throttle). Under #313 the raw KH-3 starter no longer breaks up: it separates and reaches orbit on the live loop (201.8 x 198.2 km, seed 1). When #313 rebases over #331, that test must be flipped to assert separation and orbit, with the same coverage and nothing deleted.
+
 ## Tests (rebased on b2fa61a; head 37cb943 + this body)
 - **Expectations changed** (re-pinned to real values; full old → new list in GOLDEN_DIFF.md):
   - the ellipse/C3 target energy;

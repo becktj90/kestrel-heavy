@@ -246,6 +246,8 @@ namespace Kestrel.Core.Tests
                     if (!string.IsNullOrEmpty(text) && deg.IsMatch(text)) bad.Add(m.Id + ": " + text);
             }
             Assert.That(bad, Is.Empty, string.Join(" | ", bad));
+        }
+
         void AssertEverySeed(CampaignMission m, Design d, string what)
         {
             foreach (var seed in campaign.Seeds)
