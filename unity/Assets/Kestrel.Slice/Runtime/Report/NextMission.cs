@@ -16,8 +16,25 @@ namespace Kestrel.Slice
             parent.Add(Exit("report-next", ReportRoutes.NextLabel, ReportRoutes.NextTip, actions != null ? actions.Next : null, tap, "next"));
             parent.Add(Exit("report-retry", ReportRoutes.AgainLabel, ReportRoutes.AgainTip, actions != null ? actions.Again : null, tap, "retry"));
             parent.Add(Exit(DesignerId, ReportRoutes.DesignerLabel, ReportRoutes.DesignerTip, actions != null ? actions.Designer : null, tap, "designer"));
-            parent.Add(Exit("report-missions", ReportRoutes.MissionsLabel, ReportRoutes.MissionsTip, actions != null ? actions.Missions : null, tap, "missions"));
-            parent.Add(Exit("report-home", ReportRoutes.HomeLabel, ReportRoutes.HomeTip, actions != null ? actions.Home : null, tap, "home"));
+            // Missions and Home share one row, so six exits still fit the five-row footer that
+            // ReportCardChrome sizes. On an iPhone SE (375x667) a sixth full-width row pushed Home off the screen.
+            var row = new VisualElement { name = ExitRowId, pickingMode = PickingMode.Ignore };
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.flexShrink = 0;
+            row.Add(Half(Exit("report-missions", ReportRoutes.MissionsLabel, ReportRoutes.MissionsTip, actions != null ? actions.Missions : null, tap, "missions")));
+            row.Add(Half(Exit("report-home", ReportRoutes.HomeLabel, ReportRoutes.HomeTip, actions != null ? actions.Home : null, tap, "home")));
+            parent.Add(row);
+        }
+
+        /// <summary>The footer row that holds Missions and Home side by side.</summary>
+        public const string ExitRowId = "report-exit-row";
+
+        static Button Half(Button button)
+        {
+            button.style.flexGrow = 1;
+            button.style.flexBasis = 0;
+            button.style.minWidth = 0;
+            return button;
         }
 
         /// <summary>
