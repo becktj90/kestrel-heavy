@@ -205,11 +205,13 @@ namespace Kestrel.Core.Tests
         }
 
         /// <summary>KH-12 under #313 on #324's 32,000 kg top stage (Physics): the pitch kick is the lever, fuel is not. From the
-        /// 6° build: 4.5° (the board starter) lands every batch seed and the live pad, calm and in seed-1 wind; 4° misses
-        /// calm on every seed (cuts off diving, 740 x 460 km); 5° lands calm but misses the live pad in seed-1 wind
-        /// (831 x 369 km, the wind-shear ease tips it steep); extra top-stage fuel alone, +4% to +21%, never lands a seed.</summary>
+        /// 6° build, calm edges: 4.5° (the board starter) lands every batch seed and the live pad, calm and in seed-1 wind;
+        /// 4.3° and 4.7° land every batch seed and the live pad in calm air; 4° misses calm on every seed (cuts off diving,
+        /// 740 x 460 km); extra top-stage fuel alone, +4% to +21%, never lands a seed. Wind, separately: before #338 the
+        /// wind-shear ease tipped 5° steep in the seed-1 wind (831 x 369 km, a miss); with the ease gone it lands
+        /// (629.3 x 570.7 km).</summary>
         [Test]
-        public void KH12_KickWindow_FourPointFiveLands_FourAndFiveMiss_FuelAloneNever()
+        public void KH12_KickWindow_FourPointFiveLands_FourMisses_FuelAloneNever()
         {
             var m = Mission("m12");
             var board = Starter(m);
@@ -230,11 +232,14 @@ namespace Kestrel.Core.Tests
             }
             Assert.IsFalse(LivePadLoop.InBand(m, LivePadLoop.Fly(catalog, m, four, false)), "4° live calm misses");
 
-            var five = SixDegree(m);
-            five.guidance.pitchKickDeg = 5;
-            var fiveWind = LivePadLoop.Fly(catalog, m, five, true);
-            Assert.IsNull(fiveWind.failure);
-            Assert.IsFalse(LivePadLoop.InBand(m, fiveWind), "5° live seed-1 wind misses: " + LivePadLoop.Text(fiveWind));
+            foreach (double k in new[] { 4.3, 4.7 })
+            {
+                var edge = SixDegree(m);
+                edge.guidance.pitchKickDeg = k;
+                AssertEverySeed(m, edge, "kick " + k + "°");
+                var edgeCalm = LivePadLoop.Fly(catalog, m, edge, false);
+                Assert.IsTrue(LivePadLoop.InBand(m, edgeCalm), k + "° live calm " + LivePadLoop.Text(edgeCalm));
+            }
 
             var landed = new System.Collections.Generic.List<string>();
             for (int pct = 4; pct <= 21; pct++)
@@ -248,6 +253,22 @@ namespace Kestrel.Core.Tests
                 }
             }
             Assert.That(landed, Is.Empty, "fuel alone never lands KH-12: " + string.Join(" | ", landed));
+        }
+
+        /// <summary>KH-12 at a 5° kick in the live seed-1 wind (#338): with no wind-shear ease it lands, 629.3 x 570.7 km. Under
+        /// #313 the ease tipped it steep (831 x 369 km, a miss).</summary>
+        [Test]
+        public void KH12_FiveDegrees_LandsTheLivePadInSeedOneWind()
+        {
+            var m = Mission("m12");
+            var five = SixDegree(m);
+            five.guidance.pitchKickDeg = 5;
+            var fiveWind = LivePadLoop.Fly(catalog, m, five, true);
+            Assert.IsNull(fiveWind.failure, LivePadLoop.Text(fiveWind));
+            Assert.AreEqual("orbit", fiveWind.outcome, LivePadLoop.Text(fiveWind));
+            Assert.AreEqual(629.3, fiveWind.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(fiveWind));
+            Assert.AreEqual(570.7, fiveWind.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(fiveWind));
+            Assert.IsTrue(LivePadLoop.InBand(m, fiveWind), "5° live seed-1 wind lands: " + LivePadLoop.Text(fiveWind));
         }
 
         /// <summary>KH-12's starter at the template's 6° kick: the board starter with only the kick put back.</summary>

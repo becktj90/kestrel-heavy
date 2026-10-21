@@ -77,6 +77,10 @@ namespace Kestrel.Core.Physics
         public Flight.FailureEvent failure;
         public List<Flight.FlightRisk> risks;
         public double minStability = double.NaN, minCar = double.NaN, qLimPa = double.NaN;
+        /// <summary>#338: peak q·alpha share of the sideways allowance (FailureMonitor.PeakBendFraction); NaN with no monitor.</summary>
+        public double peakBendFraction = double.NaN;
+        /// <summary>#338: warning-only structural-margin note (q·alpha past 80% of the allowance); null when none.</summary>
+        public Flight.StructuralWarning bendWarning;
         /// <summary>
         /// Drag-aware peak of a ballistic coast (periapsis below ground), metres: <see cref="AscentSim.CoastApexAlt"/>
         /// after a clean cutoff. NaN for an orbit, a failure, a crash, or a run still thrusting. Score apogee trips with
@@ -781,6 +785,8 @@ namespace Kestrel.Core.Physics
                 result.minStability = o.monitor.MinStability;
                 result.minCar = o.monitor.MinCar;
                 result.qLimPa = o.monitor.QLimPa;
+                result.peakBendFraction = o.monitor.PeakBendFraction;
+                result.bendWarning = o.monitor.BendWarning;
             }
             if (result.failure == null && playedBreak != null) result.failure = playedBreak;
             return result;

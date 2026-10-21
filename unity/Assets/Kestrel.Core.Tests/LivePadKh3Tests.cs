@@ -115,15 +115,18 @@ namespace Kestrel.Core.Tests
         public void Kh3Starter_DefaultSettings_LiveLoop_SeparatesAndReachesOrbit()
         {
             // The starter as the home auto-build hands it over, no edits (calm-air retune: an 8.65° kick, strength 1.45).
-            // Seed 1 in the briefing wind: 203.3 x 196.7 km, separation at T+156.1: inside the +/-5% band of KH-3's 200 km
-            // circle. (The pre-retune 8° build flew 201.8 x 198.2 km here.)
+            // Seed 1 in the briefing wind with no wind-shear ease (#338): 200.4 x 199.6 km, separation at T+154.3: inside
+            // the +/-5% band of KH-3's 200 km circle. (203.3 x 196.7 km while the ease still flew.)
             var mission = campaign.Mission(3);
             var run = Play(3, double.NaN);
             TestContext.WriteLine(run.Text);
             Assert.IsTrue(run.Auto, "default settings: Simple depth, auto-assist on");
             Assert.IsNull(run.Result.failure, run.Text);
             Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates / " + run.Text);
+            Assert.AreEqual(154.3, run.SeparatedAt, 0.5, run.Text);
             Assert.AreEqual("orbit", run.Result.outcome, run.Text);
+            Assert.AreEqual(200.4, run.Result.orbit.apoAlt / 1000, 0.5, run.Text);
+            Assert.AreEqual(199.6, run.Result.orbit.periAlt / 1000, 0.5, run.Text);
             Assert.That(MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2,
                 run.Result.orbit.apoAlt, run.Result.orbit.periAlt, MissionScore.C3(run.Result.orbit.energy) / 1e6, false, out _), run.Text);
             // No held nose-down nudge: the autopilot never takes the pitch call (AscentDirector.AutopilotAccept).
@@ -131,19 +134,42 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void Kh3EightDegreeBuild_DefaultSettings_LiveLoop_SeparatesWithNoBreakup_AndMissesAsInCalmAir()
+        {
+            // The pre-retune 8° build (t432), no other edits. While the wind-shear ease flew it reached 201.8 x 198.2 km in
+            // the seed-1 wind, carried by the ease; calm air misses too flat. With no ease (#338): separation at T+154.3, no
+            // breakup, suborbital 308.0 x 92.0 km, outside the band.
+            var mission = campaign.Mission(3);
+            var run = Play(3, double.NaN, 8.0);
+            TestContext.WriteLine(run.Text);
+            Assert.IsNull(run.Result.failure, run.Text);
+            Assert.AreEqual(154.3, run.SeparatedAt, 0.5, run.Text);
+            Assert.AreEqual("suborbital", run.Result.outcome, run.Text);
+            Assert.AreEqual(308.0, run.Result.orbit.apoAlt / 1000, 0.5, run.Text);
+            Assert.AreEqual(92.0, run.Result.orbit.periAlt / 1000, 0.5, run.Text);
+            Assert.IsFalse(MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2,
+                run.Result.orbit.apoAlt, run.Result.orbit.periAlt, MissionScore.C3(run.Result.orbit.energy) / 1e6, false, out _), run.Text);
+            Assert.AreEqual(0.0, run.Director.NudgeDeg, 1e-12, run.Text);
+        }
+
+        [Test]
         public void Kh3EightDegreeBuild_WithItsStrengthRestore_LiveLoop_SeparatesAndReachesOrbit()
         {
             // The pre-retune 8° build with the board's old one-tap strength restore (1.9), the flight that bent at T+166 on
-            // main before #313. Seed 1: 223.1 x 176.9 km, separation at T+155.2, max-Q 44.3 kPa. It reaches orbit with no
-            // breakup; the heavier walls put it outside the +/-5% band of the 200 km circle (reported on #313). KH-3's board
+            // main before #313. While the wind-shear ease flew: 223.1 x 176.9 km, outside the band. With no ease (#338):
+            // 203.2 x 196.8 km, separation at T+153.4, no breakup, inside the +/-5% band of the 200 km circle. KH-3's board
             // row is now "fly" (8.65° kick), so this pins the old t432 rocket.
+            var mission = campaign.Mission(3);
             var run = Play(3, Restored("m3"), 8.0);
             TestContext.WriteLine(run.Text);
             Assert.IsNull(run.Result.failure, run.Text);
             Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates / " + run.Text);
+            Assert.AreEqual(153.4, run.SeparatedAt, 0.5, run.Text);
             Assert.AreEqual("orbit", run.Result.outcome, run.Text);
-            Assert.AreEqual(223.1, run.Result.orbit.apoAlt / 1000, 0.5, run.Text);
-            Assert.AreEqual(176.9, run.Result.orbit.periAlt / 1000, 0.5, run.Text);
+            Assert.AreEqual(203.2, run.Result.orbit.apoAlt / 1000, 0.5, run.Text);
+            Assert.AreEqual(196.8, run.Result.orbit.periAlt / 1000, 0.5, run.Text);
+            Assert.That(MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2,
+                run.Result.orbit.apoAlt, run.Result.orbit.periAlt, MissionScore.C3(run.Result.orbit.energy) / 1e6, false, out _), run.Text);
             Assert.AreEqual(0.0, run.Director.NudgeDeg, 1e-12, run.Text);
         }
     }
