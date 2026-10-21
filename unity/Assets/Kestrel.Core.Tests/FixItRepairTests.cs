@@ -118,6 +118,9 @@ namespace Kestrel.Core.Tests
             // q is now read at the breakup moment, not taken from the whole run after the stack is already coming apart,
             // so the step is asserted minimal instead of pinned to a value: the repaired strength flies every gate seed
             // with no failure, and one strength step less no longer clears the line for that same breakup q.
+            // Plainly: SF 1.20 is minimal against the stepper's 0.85 q_lim line (44.02 kPa needs 1.177, rounded up to the
+            // 0.05 grid). It is not the physical knife-edge: FlightBatch alone already flies all 5 seeds at SF 1.10
+            // (1.05 breaks up). The 0.85 line is the designer's margin on top of that.
             const int index = 16;
             var json = Starter(index);
             JsonMut.Set(json, "safetyFactor", 1.0);
