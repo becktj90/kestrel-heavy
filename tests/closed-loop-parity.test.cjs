@@ -49,8 +49,8 @@ test('closed loop zeroes the flight-path angle at cutoff and lands on the aim ra
 
 test('guidance computer data: label, mass, price, flag and unlock', async () => {
   const g = readJSON('data', 'guidance.json');
-  assert.strictEqual(g.basic.label, 'Pre-set pitch program, no correction');
-  assert.strictEqual(g.closedLoop.inControlNote, 'Guidance in control');
+  assert.strictEqual(g.basic.label, "Basic guidance: chases the right height, can't plan the engine cutoff");
+  assert.strictEqual(g.closedLoop.inControlNote, 'Guidance computer is flying the upper stage');
   assert.ok(g.closedLoop.massKg >= 10 && g.closedLoop.massKg < 100, 'tens of kg');
   assert.strictEqual(readJSON('data', 'credits.json').parts.guidanceComputer, g.closedLoop.credits);
   assert.strictEqual(readJSON('data', 'features.json').flags[g.closedLoop.featureFlag], false, 'off in the Starter designer');

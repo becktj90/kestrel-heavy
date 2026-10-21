@@ -45,10 +45,10 @@ namespace Kestrel.Core.Tests
         public void Data_PinsLabelMassPriceFlagAndUnlock()
         {
             var l = GuidanceComputer.Load(Golden.Root);
-            Assert.AreEqual("Pre-set pitch program, no correction", l.Basic);
-            Assert.AreEqual("Closed-loop guidance computer", l.Part);
-            Assert.AreEqual("Guidance in control", l.InControl);
-            StringAssert.StartsWith("Guidance in control", l.NudgeHeld);
+            Assert.AreEqual("Basic guidance: chases the right height, can't plan the engine cutoff", l.Basic);
+            Assert.AreEqual("Upper-stage guidance computer", l.Part);
+            Assert.AreEqual("Guidance computer is flying the upper stage", l.InControl);
+            StringAssert.StartsWith(l.InControl, l.NudgeHeld);
             Assert.AreEqual(GuidanceComputer.PartId, l.Id);
             Assert.AreEqual(Mass.GUIDANCE_COMPUTER_MASS, l.MassKg);
             Assert.That(l.MassKg, Is.InRange(10, 99), "a realistic small mass: tens of kg");

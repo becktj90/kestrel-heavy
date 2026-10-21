@@ -1,17 +1,20 @@
 {
   "version": 1,
-  "note": "#341 (Kestrel Physics and Arcade rulings, DESIGN_341.md). Guidance labels and the optional closed-loop guidance computer part. Labels are data, not UI code; Codex owns the guide copy and may reword them here. The mass and credit price are pinned by GuidanceComputerTests to Mass.GUIDANCE_COMPUTER_MASS and credits.json parts.guidanceComputer.",
+  "note": "#341 (Kestrel Physics and Arcade rulings, DESIGN_341.md). Guidance labels and the optional closed-loop guidance computer part. Labels are data, not UI code; Codex owns the guide copy and may reword them here. closedLoop.about (part description) and closedLoop.realWorld (dispersion note) are Codex copy that no code reads yet; sources lists the code they describe, and the real-world references are in the Codex follow-up PR body. The mass and credit price are pinned by GuidanceComputerTests to Mass.GUIDANCE_COMPUTER_MASS and credits.json parts.guidanceComputer.",
   "basic": {
-    "label": "Pre-set pitch program, no correction"
+    "label": "Basic guidance: chases the right height, can't plan the engine cutoff"
   },
   "closedLoop": {
     "id": "guidance-computer",
-    "label": "Closed-loop guidance computer",
+    "label": "Upper-stage guidance computer",
     "massKg": 25,
     "credits": 30,
     "featureFlag": "designer.guidanceComputer",
     "unlockAfterMission": 10,
-    "inControlNote": "Guidance in control",
-    "nudgeHeldNote": "Guidance in control: the pitch nudge is held on the upper stage."
+    "about": "A small computer that flies your upper stages. It keeps checking where the rocket is and how fast it's going, then steers so the engine cuts off at the target height, flying level. Basic guidance only chases the height, so the orbit can come out lopsided. Stage 1 is still yours to fly.",
+    "realWorld": "Real upper stages have steered this way since the 1960s Moon rockets. Their sensors are never perfect, so a real rocket reaches orbit a few km off its target, sometimes up to about 15 km. Engineers call that spread dispersion. The game's computer has no sensor or navigation error to fight, so whenever it has the propellant it lands almost exactly on target.",
+    "sources": ["GuidanceComputer", "AscentSim.ClosedLoopPitch", "GuidanceProfile.PegLitePitch", "MissReason.UpperOutReason"],
+    "inControlNote": "Guidance computer is flying the upper stage",
+    "nudgeHeldNote": "Guidance computer is flying the upper stage, so it kept its pitch, not your nudge."
   }
 }

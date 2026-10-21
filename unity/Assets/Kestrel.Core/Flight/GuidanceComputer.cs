@@ -1,4 +1,5 @@
-// #341 (Kestrel Physics and Arcade rulings, DESIGN_341.md): the optional "Closed-loop guidance computer" avionics part.
+// #341 (Kestrel Physics and Arcade rulings, DESIGN_341.md): the optional closed-loop guidance computer avionics part
+// (player-facing name "Upper-stage guidance computer", data/guidance.json closedLoop.label).
 // Basic guidance is a pre-set pitch program with no correction: the stage-1 kick and turn, then PEG-lite on the upper
 // stages, cut off at the target energy. With this part fitted the upper stages steer to (aim altitude, vr = 0) at that same
 // cutoff (AscentSim.ClosedLoopPitch); stage 1 stays player-flown. The part is opt-in (Design.guidanceComputer, JSON
@@ -39,7 +40,7 @@ namespace Kestrel.Core.Flight
         /// <summary>The data the report and HUD layers read (data only; Graphics owns the HUD and rail).</summary>
         public sealed class Labels
         {
-            /// <summary>Basic guidance, said honestly: "Pre-set pitch program, no correction".</summary>
+            /// <summary>Basic guidance, said honestly (data/guidance.json basic.label): it chases the target height but cannot plan the cutoff.</summary>
             public string Basic = "";
             public string Part = "";
             /// <summary>Shown while the part flies an upper stage (AscentSim.GuidanceInControl).</summary>
