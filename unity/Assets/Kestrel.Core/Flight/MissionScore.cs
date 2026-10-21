@@ -8,6 +8,18 @@ namespace Kestrel.Core.Flight
 {
     public static class MissionScore
     {
+        /// <summary>
+        /// The apoapsis a flight is scored on, metres. A ballistic coast scores its drag-aware flown peak
+        /// (<see cref="SimResult.coastApexAlt"/>); the vacuum Kepler apoapsis at cutoff ignored the drag on the coast
+        /// and read KH-1 at 9.7 km when it peaks at 6.6 km. Orbits, failures and old results keep the Kepler value.
+        /// FlightBatch, the designer's reference ascent and the live report all read this.
+        /// </summary>
+        public static double FlownApoAltM(SimResult r)
+        {
+            if (r == null) return double.NaN;
+            return double.IsNaN(r.coastApexAlt) ? r.orbit.apoAlt : r.coastApexAlt;
+        }
+
         public const double PassPoints = 1000;
         public const double MarginWeight = 300;
         public const double MarginPeak = 0.05;
