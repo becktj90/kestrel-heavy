@@ -4,11 +4,11 @@
   "templates": [
     {
       "id": "hopper",
-      "version": 1,
+      "version": 2,
       "name": "Hopper",
       "order": 1,
       "kidBlurb": "A little rocket that hops up to space and back down.",
-      "engineerBlurb": "Single-stage kerolox sounding rocket, 3 small engines in a row, fins, suborbital 100 km.",
+      "engineerBlurb": "Single-stage kerolox sounding rocket, 3 small engines in a row, max-Q and g caps, fins, 1.8 t to suborbital 100 km.",
       "design": {
         "version": 2,
         "id": "tpl-hopper",
@@ -48,7 +48,7 @@
         },
         "payload": {
           "type": "kid-box",
-          "mass": 300,
+          "mass": 1800,
           "orbit": "suborbital"
         },
         "fairing": {
@@ -92,6 +92,10 @@
               "rotate": 0
             }
           ]
+        },
+        "guidance": {
+          "maxQThrottle": 75,
+          "gLimit": 7.5
         }
       }
     },
