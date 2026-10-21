@@ -922,7 +922,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 2,
-              "propMass": 40000,
+              "propMass": 32000,
               "diameter": 3.2,
               "material": "titanium",
               "separationMass": 40,
