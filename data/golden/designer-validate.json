@@ -513,7 +513,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 2,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -575,21 +575,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -598,13 +598,13 @@
     "blocks": [],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 1.906344822758928,
-     "totalDeltaV": 3038.2725557101207,
-     "margin": 0.2656964382740094,
+     "liftoffTWR": 2.028360599194437,
+     "totalDeltaV": 2920.8738929978226,
+     "margin": 0.21679000656701003,
      "required": 2400.474919446971,
      "targetAlt": 100000,
-     "liftoffMass": 2674.5324371646466,
-     "cost": 349382006,
+     "liftoffMass": 2513.646275181318,
+     "cost": 349265090,
      "reliability": 0.9459939999999999,
      "orbitLabel": "Suborbital 100 km",
      "fairingMass": 116.64105204248182,
@@ -613,9 +613,9 @@
       {
        "label": "Motor",
        "role": "core",
-       "twr": 1.906344822758928,
-       "twrVac": 2.2876137873107134,
-       "deltaV": 3038.2725557101207
+       "twr": 2.028360599194437,
+       "twrVac": 2.434032719033324,
+       "deltaV": 2920.8738929978226
       }
      ]
     }
@@ -1145,6 +1145,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -1158,6 +1162,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -1234,7 +1241,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -8438,7 +8445,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 2,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -8500,21 +8507,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -8559,7 +8566,7 @@
        "propellant": "hybrid",
        "engine": "hybrid-small",
        "engineCount": 2,
-       "propMass": 1900,
+       "propMass": 1750,
        "diameter": 1.3
       }
      ],
@@ -8621,21 +8628,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 2.7,
-       "liftoffTWR": 1.91,
-       "deltaV": 3038,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 26.6,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 125,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 7.2
+       "maxG": 7
       }
      }
     }
@@ -8683,7 +8690,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 1,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -8745,21 +8752,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -8806,7 +8813,7 @@
        "propellant": "hybrid",
        "engine": "hybrid-small",
        "engineCount": 2,
-       "propMass": 1900,
+       "propMass": 1750,
        "diameter": 1.3
       }
      ],
@@ -8868,21 +8875,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 2.7,
-       "liftoffTWR": 1.91,
-       "deltaV": 3038,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 26.6,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 125,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 7.2
+       "maxG": 7
       }
      }
     }
@@ -8992,21 +8999,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -9117,21 +9124,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 2.7,
-       "liftoffTWR": 1.91,
-       "deltaV": 3038,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 26.6,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 125,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 7.2
+       "maxG": 7
       }
      }
     }
@@ -9179,7 +9186,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 0,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -9241,21 +9248,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -9303,7 +9310,7 @@
        "propellant": "hybrid",
        "engine": "hybrid-small",
        "engineCount": 2,
-       "propMass": 1900,
+       "propMass": 1750,
        "diameter": 1.3
       }
      ],
@@ -9365,21 +9372,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 2.7,
-       "liftoffTWR": 1.91,
-       "deltaV": 3038,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 26.6,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 125,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 7.2
+       "maxG": 7
       }
      }
     }
@@ -9427,7 +9434,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 2,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -9489,21 +9496,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -9552,7 +9559,7 @@
        "propellant": "hybrid",
        "engine": "hybrid-small",
        "engineCount": 3,
-       "propMass": 3059.9690000000005,
+       "propMass": 3100.2317500000017,
        "diameter": 1.3
       }
      ],
@@ -9614,21 +9621,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 2.7,
-       "liftoffTWR": 1.91,
-       "deltaV": 3038,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 26.6,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 125,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 7.2
+       "maxG": 7
       }
      }
     }
@@ -9676,7 +9683,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 40,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -9738,21 +9745,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -9801,7 +9808,7 @@
        "propellant": "hybrid",
        "engine": "hybrid-small",
        "engineCount": 40,
-       "propMass": 7936.771521889746,
+       "propMass": 8041.202726125138,
        "diameter": 2.5
       }
      ],
@@ -9863,21 +9870,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 2.7,
-       "liftoffTWR": 1.91,
-       "deltaV": 3038,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 26.6,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 125,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 7.2
+       "maxG": 7
       }
      }
     }
@@ -9925,7 +9932,7 @@
       "propellant": "hybrid",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -9987,21 +9994,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -10051,7 +10058,7 @@
        "propellant": "hybrid",
        "engine": "hybrid-mid",
        "engineCount": 2,
-       "propMass": 2528.9,
+       "propMass": 2562.175000000001,
        "diameter": 1.7
       }
      ],
@@ -10113,21 +10120,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 2.7,
-       "liftoffTWR": 1.91,
-       "deltaV": 3038,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 26.6,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 125,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 7.2
+       "maxG": 7
       }
      }
     }
@@ -10175,7 +10182,7 @@
       "propellant": "hybrid",
       "engine": "hybrid-small",
       "engineCount": 2,
-      "propMass": 1900,
+      "propMass": 1750,
       "diameter": 1.3
      }
     ],
@@ -10237,21 +10244,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 2.7,
-      "liftoffTWR": 1.91,
-      "deltaV": 3038,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 26.6,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 125,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 7.2
+      "maxG": 7
      }
     }
    },
@@ -10295,13 +10302,13 @@
       {
        "interstageMass": 0,
        "separationMass": 0,
-       "landingPropMass": 570,
+       "landingPropMass": 525,
        "material": "steel",
        "name": "Motor",
        "propellant": "hybrid",
        "engine": "hybrid-small",
        "engineCount": 3,
-       "propMass": 4072.8187390000016,
+       "propMass": 3751.2804175000024,
        "diameter": 1.3
       }
      ],
@@ -10363,21 +10370,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 36 kPa and peak acceleration about 7–8 g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 2.7,
-       "liftoffTWR": 1.91,
-       "deltaV": 3038,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 26.6,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 125,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 7.2
+       "maxG": 7
       }
      }
     }
@@ -16726,6 +16733,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -16739,6 +16750,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -16815,7 +16829,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -16861,6 +16875,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -16874,6 +16892,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -16950,7 +16971,7 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
@@ -16999,6 +17020,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -17012,6 +17037,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 1,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -17088,7 +17116,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -17136,6 +17164,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -17149,6 +17181,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -17225,7 +17260,7 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
@@ -17274,6 +17309,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -17287,6 +17326,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 0,
       "diameter": 3.7
      },
@@ -17363,7 +17405,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -17412,6 +17454,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -17425,6 +17471,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 277995.86567461205,
        "diameter": 3.7
       },
@@ -17501,7 +17550,7 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
@@ -17550,6 +17599,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -17563,6 +17616,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -17639,7 +17695,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -17688,6 +17744,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -17701,6 +17761,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -17777,7 +17840,7 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
@@ -17826,6 +17889,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -17839,6 +17906,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -17915,7 +17985,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -17967,6 +18037,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -17980,6 +18054,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 8,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 440000.00000000006,
        "diameter": 3.7
       },
@@ -18056,7 +18133,7 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
@@ -18105,6 +18182,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -18118,6 +18199,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 40,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -18194,7 +18278,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -18242,6 +18326,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -18255,6 +18343,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 40,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 5.6
       },
@@ -18331,7 +18422,7 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
@@ -18380,6 +18471,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -18393,6 +18488,9 @@
       "propellant": "kerolox",
       "engine": "exp-hydrolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -18469,7 +18567,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -18517,6 +18615,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -18530,6 +18632,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -18606,7 +18711,7 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
@@ -18655,6 +18760,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -18668,6 +18777,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -18744,7 +18856,7 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
@@ -18793,6 +18905,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -18806,6 +18922,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 8,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -18882,7 +19001,7 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3 and about 17 g at burnout. The upper stage is unthrottled in the sim (about 11 g at burnout); real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,

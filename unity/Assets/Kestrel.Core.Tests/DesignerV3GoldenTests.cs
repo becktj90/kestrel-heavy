@@ -88,7 +88,10 @@ namespace Kestrel.Core.Tests
                     Assert.IsTrue(FailureMonitor.Engages(d), name);
                     Assert.IsNotNull(input.opts.monitor, name);
                     Assert.IsNotNull(input.opts.guidance, name);
-                    Assert.AreEqual(design.Obj("guidance").Num("pitchKickDeg"), d.guidance.pitchKickDeg, 0, name + " flies its own pitch kick");
+                    var g = design.Obj("guidance");
+                    if (g.ContainsKey("pitchKickDeg")) Assert.AreEqual(g.Num("pitchKickDeg"), d.guidance.pitchKickDeg, 0, name + " flies its own pitch kick");
+                    if (g.ContainsKey("maxQThrottle")) Assert.AreEqual(g.Num("maxQThrottle"), d.guidance.maxQThrottle, 0, name + " flies its own max-Q throttle");
+                    if (g.ContainsKey("gLimit")) Assert.AreEqual(g.Num("gLimit"), d.guidance.gLimit, 0, name + " flies its own g limit");
                     continue;
                 }
                 plain++;
@@ -96,7 +99,8 @@ namespace Kestrel.Core.Tests
                 Assert.IsNull(input.opts.monitor, name);
                 Assert.IsNull(input.opts.guidance, name);
             }
-            CollectionAssert.AreEquivalent(new[] { "scout", "kid" }, guided, "only the retuned presets carry pitch settings");
+            // Heron (tpl-hydrogen-upper) carries throttle settings since its #313 retune (Physics, 1:24 PM): 55% max-Q and a 3.5 g limit.
+            CollectionAssert.AreEquivalent(new[] { "scout", "kid", "tpl-hydrogen-upper" }, guided, "only the retuned presets carry pitch or throttle settings");
             Assert.Greater(plain, 0, "designs with no V3 field are still on the bench");
         }
 

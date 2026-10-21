@@ -1,3 +1,6 @@
+Closes #313
+Closes #315
+
 # #313: one shared flight director for batch, designer, timeline and live pad (option b, Physics rulings 1-4 and A/B/C)
 
 The shared director (option b) drives batch, designer predict, timeline and the live pad. This commit adds Physics A/B/C and Arcade's board rows on top of the 961edad rulings 1-4 work. Full per-row numbers are in GOLDEN_DIFF.md.
@@ -68,16 +71,51 @@ A clean cutoff with |γ| ≥ 0.5°, the high point above the band and the low po
 - The suggested SF 1.3 starter breaks up at max-Q, which violates NAV01, and no strength-only near-miss exists for m12 (SF 1.35-2.2 all pass).
 - `BoardStarter_FixItOrOneStrengthEdit` stays strict and passes.
 
-## Heron (tpl-hydrogen-upper) batch vs live, ≤ 0.5% apo
-#314 is not on main yet (rebased onto e18218b), so the 9-engine case stays. The file is untouched. On the shared director with the in-step energy cutoff:
+## Rebased on #325 (main b2fa61a), and the Physics follow-ups (1:24 PM)
+Rebased onto origin/main b2fa61a (#325 and #323). Conflicts resolved toward #313: the reference ascent, the designer predict, the timeline and the live pad all fly `DirectedFlight` with #325's `PlayedChecks` (FlightDriver: `directed.Step()`, then the played checks).
 
-| Heron | Batch, km | Live, km | Apo Δ | Peri Δ |
-|---|---|---|---:|---:|
-| 7 engines (#314) | 35786.099 × 199.901 | 35786.095 × 199.905 | 0.00001% | 4 m |
-| 9 engines (main) | 6982.202 × 879.603 | 6979.026 × 879.659 | 0.045% | 56 m |
+### Live loop: no held nudge, no default 0.70 throttle (Arcade, TestFlight KH-3)
+- `AscentDirector.AutopilotAccept` (unity/Assets/Kestrel.Core/Flight/AscentDecisions.cs:682-692): the autopilot takes the max-Q call only when the design sets a max-Q throttle (`return vehicle.MaxQSet`, :687) and never takes the pitch call (`return false`, :688). So no -1° nudge is ever held unless the player taps it (:707-708).
+- `AscentDirector.Refresh` (:766-790): no director bucket. The 0.70 `DefaultBucket` is only the offer on a player-tapped max-Q call for a design without its own cap (:770-771, engaged through the design's guidance law in DirectedFlight.cs:100-108). A design with a cap flies its own value. Main's override (`bucket = maxQDown && q >= 8000`, `scale = min(scale, offered)`) is gone.
+- New `LivePadKh3Tests` (Core, the FlightDriver loop: AscentFlight.Prepare's director, 1/60 s frames, LiveDt, `DirectedFlight.Step`, played checks, seed 1, default Simple/auto-assist):
+  - KH-3 starter as built: **201.8 × 198.2 km, separation T+156.1, max-Q 44.2 kPa, nudge 0°**, inside the ±5% band.
+  - KH-3 starter with the board's strength restore (1.9): **223.1 × 176.9 km, separation T+155.2, max-Q 44.3 kPa**. Orbit, no breakup; outside the ±5% band (heavier walls). Flagged below for Arcade.
 
-- The 271 vs 230 km gap was the JS-parity `Stack.SimInputs` path, which has a perigee cutoff on the step. Kestrel flights no longer fly it.
-- With the failure monitor on, both Herons break up at max-Q (T+34.5 s and T+66.6 s). That is #314's to fix.
+### Pipit (tpl-sounding-hybrid): propellant 1900 → 1750 kg
+One rule (`TargetMet` ±5%). Flown peak **102.0 km** on predict, batch seeds 1-5 (102.01) and the live pad seeds 1-5 (102.02); `asc.karman` fires on every seed. Max-Q 37.8 kPa, peak 6.98 g. (At 1900 kg it peaked at 120.9 km, a miss; 1800 kg is 108.6, 1700 kg is 95.3.)
+
+| Golden | Old → new |
+|---|---|
+| Template stats (JS readout) | liftoff 2.7 → 2.5 t, TWR 1.91 → 2.03, Δv 3038 → 2921, margin 26.6 → 21.7%, sim apogee 125 → 108 km, max g 7.2 → 7 |
+| Review text | "peak air load about 36 kPa … 7–8 g" → "about 38 kPa … about 7 g. 1,750 kg … peaks about 102 km" |
+| Make it fly (designer-validate.json, 8 cases + preset) | only the echoed design and readout move: Δv 3038 → 2921, liftoff 2674.5 → 2513.6 kg, TWR 1.906 → 2.028, margin 0.266 → 0.217. No warning, block or fix changed. |
+| Economy (economy.json cases 4/14) | propellant 573,420 → 528,150; structure 12,156,271 → 12,084,625; total 514,943,886 → 514,826,970 |
+| catalog-flight / simulate (JS) | apo 124.9 → 107.7 km, burnout T+77.6 → T+71.5, max-Q 36.2 → 37.8 kPa |
+| Timeline golden | max-Q T+0:30 (36.2 kPa) → T+0:28 (37.7 kPa); MECO T+1:16.636 → T+1:10.507; Karman/fairing T+2:25.636 → T+2:39.507; deploy T+3:32.203 → T+3:16.693 |
+| launches.txt | 121.1 → 102.0 km, Δv margin 637 → 520 m/s (standard and kid) |
+| ReadoutV2 max-Q pin | 36.21 → 37.77 kPa |
+
+### Heron (tpl-hydrogen-upper): throttle only, engines stay at 7
+Stage 1 gets `engineParams.throttleMin` 0.45 (stock 0.57), `guidance.maxQThrottle` 55 and `guidance.gLimit` 3.5. No engine-count, propellant or payload change.
+- Why: with the full failure monitor the 7-engine Heron broke up at max-Q (35.05 kPa vs 35 kPa, T+66.7 s, 10 km). A max-Q throttle fixes that, but then the comsat's **6 g** rating (the monitor's g limit for gto-comsat, not 20 g) trips near stage-1 burnout because the stock 57% floor can't throttle low enough. A 6-engine Heron passes in C# but the JS readout (no guidance) crashes it, failing `templates-data`; so it stays at 7.
+- Result: predict **reach**, batch seeds 1-5 **pass**, live pad seeds 1-5 **orbit**: 35786.0 × 200.0 km, peak **4.82 g** (limit 6), max-Q **17.7 kPa** (limit 35). Robust ±5 points of max-Q throttle (50-60% all pass at gLimit 3.5).
+- **GTO Δv, the honest way:** flown to a 200 km parking orbit (196.3 × 203.7 km), rocket-equation Δv left is **3439 m/s** vs **2491 m/s** required (2492 at that T/W) → **+946 m/s**. Flown straight to GTO, 917 m/s is left after cutoff.
+- The JS template stats are unchanged (the JS readout ignores guidance and throttleMin), so the template card still shows the JS numbers (max g 10.7). The review text now describes the throttled flight.
+- Batch vs live (free build, seed 1): shipped 35785.993 × 200.007 vs 35785.994 × 200.006 km, with the monitor on. The unthrottled 7 and 9 engine cases are kept, without the monitor.
+
+| Heron vector | Old (4cc2859) → new |
+|---|---|
+| causality.txt | Heron failed-prediction line dropped (it now reaches); SECO-2 t 2217.128 → 2144.949 |
+| fairing.txt | Heron failed-prediction line dropped; shifted events re-timed with the throttled stage 1 (max-Q before/after 48/49 → 57/44 s, Karman 121/122 → 204/200, fairing 125/127 → 215/209, deploy after 390.709 → 350.34 s; MECO and SEP s1 now also shift, 231.949 → 229.418) |
+| restart.txt | "Perigee -3230.2, apogee 903.8 … Short by 1266" → "The edit loses the target. … Perigee -4866.3 km, apogee 175.0 km … Short by 1228 m/s Δv. First failure: structural-maxq at T+231.725 s. dv margin -0.11 < 0 at burnout." (the before-Heron now reaches) |
+| timeline golden | max-Q T+1:09 (35.3 kPa) → T+0:57 (18.3 kPa); MECO T+3:05.593 → T+3:51.949; orbit T+9:33.593 → T+10:44.949 |
+
+### KH-16: #313's rule
+`FixIt_WeakAirframe16_RepairIsTheMinimalStrengthForTheBreakupQ` (#325) now asserts the minimal passing strength is **1.5** (1.5 passes 5/5, 1.45 fails a gate seed), and that Fix it, within its 8-step budget (to 1.4), says "Fix it can't fix this rocket … strength 1.5. Fix it only goes up to 1.4." and does not apply it. #325's breakup-q checks are kept.
+
+### Fixtures
+- Sounding-solid fixture re-pinned at **0.5 km** (`UnchangedFailingDesign…`).
+- Scout prop cut (prediction.txt): the event log is a real failure, not an altitude artifact: **overg at T+0.000 s** (ignition, stage 1), **13.70 g vs the 8.0 g limit**. Liftoff T/W is 22.6 on the cut stage; even at minimum throttle it is 13.7 g. The sim then ends on the pad (apogee -0.1 km). The vector now names it: the timeline diff's failed-prediction line appends "First failure: overg at T+0.000 s. Peak 13.70 g, past the 8.00 g limit." (`LaunchPrediction.Failure`, not in `Canonical`, so launches.txt is unchanged by it).
 
 ## Verdict flips
 - vs origin/main: 11 of 530, all fail → pass (the m5 and m14 starters, and found m18 seed 2). After the rebase the batch is identical to 8eb886c (0 flips).
@@ -122,6 +160,7 @@ The 2 Core failures are both **tpl-hydrogen-upper (#314)**: `BrokenPrecondition_
 3. **Engine-out contracts:** pantry-leo400-k3 is tracked for **#326**. For #326: S2 at exactly ×1.10 (38.5 t, not rounded to the tonne) passes 5/5.
 
 ## For Arcade
+- **KH-3 strength restore:** the board's 1.9 restore flies the live pad to orbit but at 223.1 × 176.9 km, outside ±5% of 200 km; the starter as built lands 201.8 × 198.2. Which strength the row teaches is Arcade's call.
 - **KH-16 board row:** it uses strength **1.8** by hand (`restoreSafetyFactor`), while **1.5** is the minimum that passes seeds 1-5. Fix it's redesign note also names 1.5. Which number the row teaches is Arcade's call; it was left at 1.8.
 
 ## Kestrel Physics sign-off

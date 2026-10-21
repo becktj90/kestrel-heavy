@@ -200,15 +200,14 @@ namespace Kestrel.Core.Tests
         [Test]
         public void FixIt_WeakAirframe16_RepairIsTheMinimalStrengthForTheBreakupQ()
         {
-            // #314 (Physics): KH-16's starter with the walls cut to strength 1.0. The repair keeps its strength step, the
-            // stepper's: raise strength until the max-Q the designer read sits under the amber line (85% of q_lim). That
-            // q is now read at the breakup moment, not taken from the whole run after the stack is already coming apart,
-            // so the step is asserted minimal instead of pinned to a value: the repaired strength flies every gate seed
-            // with no failure, and one strength step less no longer clears the line for that same breakup q.
-            // Plainly: SF 1.20 is minimal against the stepper's 0.85 q_lim line (44.02 kPa needs 1.177, rounded up to the
-            // 0.05 grid). It is not the physical knife-edge: FlightBatch alone already flies all 5 seeds at SF 1.10
-            // (1.05 breaks up). The 0.85 line is the designer's margin on top of that.
+            // #314 (Physics) read the breakup q at the breakup moment; #313's rule decides what "fixed" means (Physics,
+            // 1:24 PM): fixed is passing every gate seed, not clearing the stepper's amber q line. KH-16's starter with the
+            // walls cut to strength 1.0 breaks up at max-Q on every seed. The minimal strength that passes FlightBatch
+            // seeds 1-5 is 1.50 (1.45 reaches 500 km but fails the 0.98 reliability gate), two steps past Fix it's
+            // 8-step budget (1.0 -> 1.4). So Fix it reports that it can't fix the rocket and names the 1.5 a redesign needs.
+            // Whether the budget or the mission changes is Arcade's call (PR_BODY "For Arcade").
             const int index = 16;
+            var mission = campaign.Mission(index);
             var json = Starter(index);
             JsonMut.Set(json, "safetyFactor", 1.0);
             var before = Gate(json);
@@ -216,8 +215,8 @@ namespace Kestrel.Core.Tests
             Assert.That(before.code, Is.EqualTo("structural-maxq"), before.Line);
             Assert.That(Fly(index, json).TrueForAll(f => f.failure == "structural-maxq"), "the weak rocket really breaks up");
 
-            // The q the repair reads: the designer's reference, frozen at the breakup. It sits at the weak walls' q_lim,
-            // far under the uncut full flight's peak.
+            // #314: the q the designer reads is frozen at the breakup. It sits at the weak walls' q_lim, far under the
+            // uncut full flight's peak.
             var weak = Design.FromJson(json);
             double qLimWeak = FailureMonitor.StructuralQLimPa(catalog, weak);
             var reference = Readout.Reference(catalog, json);
@@ -225,27 +224,29 @@ namespace Kestrel.Core.Tests
             double qBreak = reference.maxQ_kPa.Value * 1000;
             Assert.That(qBreak, Is.GreaterThanOrEqualTo(qLimWeak), "the reference breaks up at q_lim");
             Assert.That(qBreak, Is.LessThan(qLimWeak * 1.02), "q is read at the breakup moment");
-            var setup = MissionFlightSetup.Build(catalog, campaign.Mission(index), weak, MissionFlightSetup.BatchDt);
+            var setup = MissionFlightSetup.Build(catalog, mission, weak, MissionFlightSetup.BatchDt);
             Assert.That(Headless.Simulate(setup.Stages, setup.Options).maxQ, Is.GreaterThan(qBreak * 2), "the uncut run's peak is not the breakup q");
 
-            var outcome = DesignerRepair.Fix(catalog, json, before.code, campaign.Mission(index));
-            Assert.That(outcome.Changed, outcome.Note);
-            Assert.That(outcome.FullyFixed, outcome.Note);
-            Assert.That(outcome.Note, Does.Not.Contain("could not"), outcome.Note);
-            double sf = json.Num("safetyFactor");
-            Assert.That(sf, Is.GreaterThan(1.0), outcome.Note);
-            foreach (var f in Fly(index, json)) Assert.IsNull(f.failure, "KH-" + index + " seed " + f.seed + " / " + outcome.Note);
-            Assert.That(Gate(json).Ready);
-
-            // Minimal: the repaired strength clears the amber line for the breakup q; one step less does not.
+            // Minimal passing strength: 1.50 passes seeds 1-5; one step less (1.45) fails at least one.
             double step = DesignerLimits.Active.safetyStep;
-            double amber = Kestrel.Core.Designer.Stepper.StepperChecks.MaxQAmberFraction;
-            Assert.That(qBreak, Is.LessThanOrEqualTo(amber * FailureMonitor.StructuralQLimPa(catalog, Design.FromJson(json)) + 1e-6),
-                "KH-16 at strength " + sf + " clears the line");
-            var less = JsonMut.CloneObject(json);
-            HangarEditor.SetSafetyFactor(less, sf - step);
-            Assert.That(qBreak, Is.GreaterThan(amber * FailureMonitor.StructuralQLimPa(catalog, Design.FromJson(less))),
-                "KH-16 one step under " + sf + " does not clear the line, so the repair step is minimal");
+            Assert.AreEqual(0.05, step, 1e-9, "the strength grid");
+            var start = Starter(index);
+            HangarEditor.SetSafetyFactor(start, 1.5);
+            var pass = Fly(index, start);
+            Assert.That(pass.TrueForAll(f => f.passed), "1.50 passes seeds 1-5 /" + Seeds(mission, pass));
+            HangarEditor.SetSafetyFactor(start, 1.5 - step);
+            var under = Fly(index, start);
+            Assert.That(under.Exists(f => !f.passed), "1.45 fails a gate seed, so 1.50 is minimal /" + Seeds(mission, under));
+
+            // Fix it can't reach 1.50 inside its 8-step budget: it says so, names the 1.5, and does not apply it.
+            Assert.AreEqual(8, DesignerRepair.StrengthSteps, "Arcade: the strength budget holds at 8 steps");
+            Assert.That(1.0 + DesignerRepair.StrengthSteps * step, Is.LessThan(1.5 - 1e-9), "the budget stops short of 1.5");
+            var outcome = DesignerRepair.Fix(catalog, json, before.code, mission);
+            Assert.IsFalse(outcome.FullyFixed, outcome.Note);
+            Assert.That(outcome.Note, Is.EqualTo("Fix it can't fix this rocket: it still fails 5 of 5 test flights. It needs a redesign with a stronger airframe: strength 1.5. Fix it only goes up to 1.4."));
+            Assert.That(json.Num("safetyFactor"), Is.LessThanOrEqualTo(1.0 + DesignerRepair.StrengthSteps * step + 1e-9), "Fix it never applies the redesign strength");
+            var flights = Fly(index, json);
+            Assert.That(flights.FindAll(f => !f.passed).Count, Is.EqualTo(5), Seeds(mission, flights));
         }
 
         [Test]

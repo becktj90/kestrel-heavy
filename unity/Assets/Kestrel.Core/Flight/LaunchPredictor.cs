@@ -26,6 +26,9 @@ namespace Kestrel.Core.Flight
         public double DvMarginMs;
         public string Timeline;
         public string Text;
+        /// <summary>The prediction flight's first failure, type and time (for example "overg at T+0.000 s. Peak 13.70 g,
+        /// past the 8.00 g limit."), or null. Not in <see cref="Canonical"/>; the timeline diff names it.</summary>
+        public string Failure;
 
         public string Canonical()
         {
@@ -95,6 +98,9 @@ namespace Kestrel.Core.Flight
                 Timeline = timeline.ToString(),
             };
             p.Text = Sentence(p, mode, suborbital, sim.outcome == "orbit");
+            if (sim.failure != null)
+                p.Failure = sim.failure.kind + " at T+" + sim.failure.t.ToString("0.000", CultureInfo.InvariantCulture) + " s."
+                    + (string.IsNullOrEmpty(sim.failure.engineer) ? "" : " " + sim.failure.engineer);
             return p;
         }
 

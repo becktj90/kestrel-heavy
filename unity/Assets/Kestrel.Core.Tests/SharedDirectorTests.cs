@@ -217,27 +217,42 @@ namespace Kestrel.Core.Tests
             // #313 Physics acceptance: Heron (tpl-hydrogen-upper) as a free build, seed 1, on the shared director with the
             // energy cutoff located inside the step: the 0.2 s batch against the 1/120 s pad, within the orbit tolerances.
             // The 271 km vs 230 km gap Physics saw is the 7-engine Heron on the JS-parity Stack.SimInputs path (perigee
-            // cutoff on the step), which Kestrel flights no longer use. Both the 9-engine template on main and #314's
-            // 7-engine Heron are checked (the file is not edited here). No failure monitor: with it, both break up at
-            // max-Q (T+34.5 s / T+66.6 s), which #314 owns.
+            // cutoff on the step), which Kestrel flights no longer use.
+            // Three Herons: the shipped template (7 engines, throttled: 55% max-Q, 3.5 g limit, 45% minimum throttle on
+            // stage 1), flown with the full failure monitor on both steps; and the two unthrottled Herons that came
+            // before it (7 engines from #314/#325 and the older 9), flown without the monitor, because with it both
+            // break up at max-Q (T+66.7 s / T+34.5 s). That breakup is what the shipped throttle settings fix.
             string path = Path.Combine(Golden.Root, "web", "js", "data", "templates", "hydrogen-upper.json");
             var json = MiniJson.ParseObject(File.ReadAllText(path));
-            foreach (int engines in new[] { 9, 7 })
+            foreach (var (label, engines, shipped) in new[] { ("shipped", 7, true), ("n7 unthrottled", 7, false), ("n9 unthrottled", 9, false) })
             {
                 var heron = Design.FromJson(json);
+                Assert.AreEqual(7, heron.stages[0].engineCount, "the shipped Heron has 7 stage-1 engines");
+                Assert.IsNotNull(heron.guidance, "the shipped Heron carries its throttle settings");
                 heron.stages[0].engineCount = engines;
+                if (!shipped)
+                {
+                    heron.guidance = null;
+                    heron.stages[0].engineParams = null;
+                }
                 SimResult Fly(double dt)
                 {
+                    if (shipped) return Live(null, heron, campaign.Seeds[0], dt);
                     var setup = MissionFlightSetup.Build(catalog, null, heron, dt);
                     return MissionFlightSetup.Fly(setup, MissionFlightSetup.Director(catalog, setup, heron, FlightBatch.DesignHash(heron), campaign.Seeds[0]));
                 }
                 var batch = Fly(MissionFlightSetup.BatchDt);
                 var live = Fly(MissionFlightSetup.LiveDt);
-                string text = "Heron n" + engines + " batch " + (batch.orbit.apoAlt / 1000).ToString("0.000") + " x " + (batch.orbit.periAlt / 1000).ToString("0.000")
+                string text = "Heron " + label + " batch " + (batch.orbit.apoAlt / 1000).ToString("0.000") + " x " + (batch.orbit.periAlt / 1000).ToString("0.000")
                     + " km, live " + (live.orbit.apoAlt / 1000).ToString("0.000") + " x " + (live.orbit.periAlt / 1000).ToString("0.000") + " km";
                 TestContext.WriteLine(text);
                 Assert.AreEqual("orbit", batch.outcome, text);
                 Assert.AreEqual("orbit", live.outcome, text);
+                if (shipped)
+                {
+                    Assert.IsNull(batch.failure, text + " / batch " + batch.failure?.kind);
+                    Assert.IsNull(live.failure, text + " / live " + live.failure?.kind);
+                }
                 Assert.That(Math.Abs(batch.orbit.apoAlt - live.orbit.apoAlt) / live.orbit.apoAlt, Is.LessThanOrEqualTo(MissionFlightSetup.OrbitApoTolerance), text);
                 Assert.That(Math.Abs(batch.orbit.periAlt - live.orbit.periAlt), Is.LessThanOrEqualTo(MissionFlightSetup.OrbitPeriToleranceM), text);
                 Assert.That(Math.Abs(batch.orbit.a - live.orbit.a) / live.orbit.a, Is.LessThanOrEqualTo(MissionFlightSetup.OrbitSmaTolerance), text);

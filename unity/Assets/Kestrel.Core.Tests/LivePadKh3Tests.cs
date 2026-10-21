@@ -1,0 +1,147 @@
+// #313 (Arcade, TestFlight): Trevor's KH-3 "Tiny Orbit" bent at T+166 (84 kPa, ~33 km) in the live loop on main. The
+// live director auto-accepted a held -1 deg pitch nudge and flew a default 0.70 max-Q bucket over the design's own
+// throttle. Under #313's shared director the autopilot never takes the nudge, and a max-Q throttle flies only when the
+// design sets one (AscentDirector.AutopilotAccept / Refresh). This flies the KH-3 starter, as built and with its one-tap
+// strength restore, through the live pad loop on default settings: AscentFlight.Prepare's director (Simple depth,
+// auto-assist as the fresh design reads it, seed 1, briefing wind and pad) and FlightDriver's frame clock
+// (1/60 s frames, LiveDt physics, DirectedFlight.Step, played checks).
+using System;
+using System.IO;
+using Kestrel.Core.Data;
+using Kestrel.Core.Designer.Stepper;
+using Kestrel.Core.Flight;
+using Kestrel.Core.Hangar;
+using Kestrel.Core.Json;
+using Kestrel.Core.Physics;
+using Kestrel.Core.Vehicle;
+using NUnit.Framework;
+
+namespace Kestrel.Core.Tests
+{
+    public class LivePadKh3Tests
+    {
+        Catalog catalog;
+        HangarData hangar;
+        Campaign campaign;
+
+        [SetUp]
+        public void Load()
+        {
+            catalog = Catalog.LoadFromRepo(Golden.Root);
+            hangar = HangarData.LoadFromRepo(Golden.Root);
+            campaign = Campaign.Load(Golden.Root);
+        }
+
+        double Restored(string missionId)
+        {
+            var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "board-starters.json")));
+            foreach (JsonObject row in file.Arr("missions"))
+                if (row.Str("id") == missionId) return row.Num("restoreSafetyFactor");
+            Assert.Fail(missionId + " has no strength restore");
+            return double.NaN;
+        }
+
+        sealed class LiveRun
+        {
+            public SimResult Result;
+            public AscentDirector Director;
+            public double SeparatedAt = -1;
+            public bool Auto;
+            public string Text;
+        }
+
+        LiveRun Play(int index, double safetyFactor)
+        {
+            const double frame = 1.0 / 60.0;
+            var mission = campaign.Mission(index);
+            var choice = HomeAutoBuild.Choose(catalog, hangar.templates, mission);
+            var design = Design.FromJson(choice.Design);
+            if (!double.IsNaN(safetyFactor)) design.safetyFactor = safetyFactor;
+            ulong hash = FlightBatch.DesignHash(design);
+            const ulong seed = 1; // AscentFlight.ReadSeed on a design with no seed
+            var card = MissionBriefing.Load(Golden.Root, index, hash, seed);
+            bool auto = StepperProgress.Read(choice.Design).AutoAssistOn(DesignerDepth.Simple);
+
+            // AscentFlight.Prepare
+            double target = Stack.RequiredDeltaV(catalog, design.payloadOrbit).targetAlt;
+            if (MissionAim.IsApogeeHop(mission)) target = mission.GuidanceAltM;
+            double qLim = FailureMonitor.StructuralQLimPa(catalog, design);
+            var monitor = FailureMonitor.Engages(design) ? FailureMonitor.Create(catalog, design, target, hash, seed) : null;
+            var director = MissionFlightSetup.Director(catalog, design, monitor?.Events, card?.Wind, qLim, FailureMonitor.GentleTier(design),
+                target, hash, seed, auto, false, false, card?.Bonuses);
+
+            // FlightDriver.Launch
+            var site = new MissionFlightSite { Wind = card?.Wind };
+            if (card != null && card.Site != null) { site.HasLatitude = true; site.LatitudeDeg = card.Site.LatitudeDeg; }
+            var setup = MissionFlightSetup.Build(catalog, mission, design, MissionFlightSetup.LiveDt, site);
+            var opts = setup.Options;
+            if (monitor != null) opts.monitor = monitor;
+            var sim = new AscentSim(setup.Stages, opts);
+            var directed = new DirectedFlight(sim, director, opts);
+            var checks = new PlayedChecks(catalog, design, setup.Stages, opts, sim);
+
+            // FlightDriver.Update
+            var run = new LiveRun { Director = director, Auto = auto };
+            double clock = 0;
+            int frames = 0;
+            while (!sim.Done && frames++ < 400000)
+            {
+                clock += frame;
+                int guard = 0;
+                bool stop = false;
+                while (sim.T < clock && !sim.Done && guard++ < 64)
+                {
+                    int before = sim.Events.Count;
+                    directed.Step();
+                    for (int i = before; i < sim.Events.Count; i++)
+                        if (sim.Events[i].type == "separation" && run.SeparatedAt < 0) run.SeparatedAt = sim.Events[i].t;
+                    checks.NoteEvents(sim, before);
+                    if (checks.StopForBreakup(sim)) { stop = true; break; }
+                }
+                if (stop) break;
+            }
+            Assert.IsTrue(sim.Done, "the live flight ends");
+            run.Result = directed.Finish();
+            run.Text = "KH-" + index + " SF " + design.safetyFactor.ToString("0.00") + " auto " + auto + ": " + run.Result.outcome
+                + " " + (run.Result.orbit.apoAlt / 1000).ToString("0.0") + " x " + (run.Result.orbit.periAlt / 1000).ToString("0.0") + " km"
+                + " sep T+" + run.SeparatedAt.ToString("0.0") + " maxQ " + (run.Result.maxQ / 1000).ToString("0.0") + " kPa"
+                + " nudge " + director.NudgeDeg.ToString("0.0") + " deg"
+                + (run.Result.failure != null ? " failure " + run.Result.failure.kind + " T+" + run.Result.failure.t.ToString("0.0") : "");
+            return run;
+        }
+
+        [Test]
+        public void Kh3Starter_DefaultSettings_LiveLoop_SeparatesAndReachesOrbit()
+        {
+            // The starter as the home auto-build hands it over, no edits. Seed 1: 201.8 x 198.2 km, separation at T+156.1,
+            // max-Q 44.2 kPa: inside the +/-5% band of KH-3's 200 km circle.
+            var mission = campaign.Mission(3);
+            var run = Play(3, double.NaN);
+            TestContext.WriteLine(run.Text);
+            Assert.IsTrue(run.Auto, "default settings: Simple depth, auto-assist on");
+            Assert.IsNull(run.Result.failure, run.Text);
+            Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates / " + run.Text);
+            Assert.AreEqual("orbit", run.Result.outcome, run.Text);
+            Assert.That(MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2,
+                run.Result.orbit.apoAlt, run.Result.orbit.periAlt, MissionScore.C3(run.Result.orbit.energy) / 1e6, false, out _), run.Text);
+            // No held nose-down nudge: the autopilot never takes the pitch call (AscentDirector.AutopilotAccept).
+            Assert.AreEqual(0.0, run.Director.NudgeDeg, 1e-12, run.Text);
+        }
+
+        [Test]
+        public void Kh3Starter_WithItsStrengthRestore_LiveLoop_SeparatesAndReachesOrbit()
+        {
+            // The board's one-tap strength restore (1.9), the flight that bent at T+166 on main. Seed 1: 223.1 x 176.9 km,
+            // separation at T+155.2, max-Q 44.3 kPa. It reaches orbit with no breakup; the heavier walls put it outside
+            // the +/-5% band of the 200 km circle (reported on #313; the restore value is Arcade's board data).
+            var run = Play(3, Restored("m3"));
+            TestContext.WriteLine(run.Text);
+            Assert.IsNull(run.Result.failure, run.Text);
+            Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates / " + run.Text);
+            Assert.AreEqual("orbit", run.Result.outcome, run.Text);
+            Assert.AreEqual(223.1, run.Result.orbit.apoAlt / 1000, 0.5, run.Text);
+            Assert.AreEqual(176.9, run.Result.orbit.periAlt / 1000, 0.5, run.Text);
+            Assert.AreEqual(0.0, run.Director.NudgeDeg, 1e-12, run.Text);
+        }
+    }
+}

@@ -25,12 +25,12 @@ Nominal times are game seconds. T- is compressed for this mode (engineer keeps r
 | T-0:00.225 | — | `pad.umbilical` | pad | Umbilical | Umbilicals drop because this pad has them, after thrust is in the gate. Real T-0:00.6 compresses to T-0:00.225 in standard mode. |
 | T-0:00.075 | — | `ign.release` | ignition | Release | Hold-down release. The sequencer commands it; the vehicle is free. Real T-0:00.2 compresses to T-0:00.075 in standard mode. |
 | T+0:00 | T+0:00 | `term.liftoff` | terminal | Liftoff | Liftoff. The sim calls it when altitude passes 1 m. Nominal is T+0; the actual is the sim liftoff aligned to that zero. |
-| T+0:30 | T+0:30 | `asc.maxq` | ascent | Max-Q | Max-Q is the sim peak dynamic pressure (36175 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:30. |
-| T+0:30 | — | `asc.throttle` | ascent | Throttle | Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q. |
-| T+1:16.636 | T+1:16.636 | `asc.meco` | ascent | MECO | Main engine cutoff at sim T+1:16.636. A medium kerolox public anchor is about T+2:25; this time is the sim burnout. |
-| T+2:25.636 | T+2:25.636 | `asc.karman` | ascent | Karman | The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:25.636, on the ballistic coast after burnout. |
-| T+2:25.636 | T+2:25.636 | `stg.fairing` | staging | Fairing | Fairing separates once heating has fallen (after Max-Q) and altitude reaches 100 km. Time T+2:25.636 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude. |
-| T+3:32.203 | T+3:32.203 | `dep.payload` | deploy | Deploy | Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+3:32.203). The ascent sim stops at burnout and does not fly the coast. |
+| T+0:28 | T+0:28 | `asc.maxq` | ascent | Max-Q | Max-Q is the sim peak dynamic pressure (37733 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:28. |
+| T+0:28 | — | `asc.throttle` | ascent | Throttle | Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q. |
+| T+1:10.507 | T+1:10.507 | `asc.meco` | ascent | MECO | Main engine cutoff at sim T+1:10.507. A medium kerolox public anchor is about T+2:25; this time is the sim burnout. |
+| T+2:39.507 | T+2:39.507 | `asc.karman` | ascent | Karman | The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:39.507, on the ballistic coast after burnout. |
+| T+2:39.507 | T+2:39.507 | `stg.fairing` | staging | Fairing | Fairing separates once heating has fallen (after Max-Q) and altitude reaches 100 km. Time T+2:39.507 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude. |
+| T+3:16.693 | T+3:16.693 | `dep.payload` | deploy | Deploy | Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+3:16.693). The ascent sim stops at burnout and does not fly the coast. |
 
 ## Branches
 

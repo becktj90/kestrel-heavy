@@ -355,11 +355,12 @@ namespace Kestrel.Core.Tests
             if (System.Math.Abs(Readout.Reference(cat, Golden.FixtureDesign("maxq-high-kid")).maxQ_kPa.Value - 90.07) > 0.05)
                 Assert.Fail("the maxq-high kid fixture left the documented 90 kPa");
 
-            // #314: the shipped sounding template is two small hybrids on a long, low-thrust burn. It peaks at
-            // 36.2 kPa, under the warning line, so there is nothing to warn about.
+            // #314: the shipped sounding template is two small hybrids on a long, low-thrust burn. #313 (Physics, 1:24 PM)
+            // trims it to 1,750 kg of propellant for a ~102 km peak: it peaks at 37.8 kPa (36.2 kPa at 1,900 kg), under the
+            // warning line, so there is nothing to warn about.
             var sounding = Template("tpl-sounding-hybrid");
             var q = Readout.Reference(cat, sounding);
-            Assert.AreEqual(36.21, q.maxQ_kPa.Value, 0.05, "hybrid sounding rocket max-Q");
+            Assert.AreEqual(37.77, q.maxQ_kPa.Value, 0.05, "hybrid sounding rocket max-Q");
             Assert.Less(q.maxQ_kPa.Value, Validate.MaxQWarnKPa);
             var soundingReport = Validate.Engineering(cat, sounding);
             Assert.IsTrue(soundingReport.ok);
