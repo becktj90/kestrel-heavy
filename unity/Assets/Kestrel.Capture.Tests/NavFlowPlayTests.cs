@@ -33,7 +33,8 @@ namespace Kestrel.Capture.Tests
             ("settings-close", new[] { "home-settings-close" }),
             ("screen-settings", new[] { "home-settings-sheet" }),
             ("screen-missions", new[] { "mission-board", "mission-map" }),
-            ("missions-back", new[] { "missions-home" }),
+            // Main's live board is MissionBoardScreen ("mission-home"); MissionSelectScreen ("missions-home") is the older map.
+            ("missions-back", new[] { "mission-home", "missions-home" }),
             ("screen-briefing", new[] { "briefing-card" }),
             ("briefing-build", new string[0]),
             ("briefing-back", new string[0]),
@@ -272,8 +273,20 @@ namespace Kestrel.Capture.Tests
         {
             Directory.CreateDirectory(_saves);
             var store = new Kestrel.Core.Save.NativeStore(_saves, () => 1000, () => 0.5);
-            var draft = MiniJson.ParseObject("{\"name\":\"Hopper\",\"missionId\":\"m3\",\"stages\":[]}");
+            // The fixture is the KH-3 rocket the game itself builds (HomeRoutes.DesignFirst on the device's
+            // Resources catalog), saved the way the designer autosaves it. A stageless stub is not a save
+            // the game can write: it threw in Stack.BaseCd when the designer opened it (GameCI run 118345963804).
+            var text = Resources.Load<TextAsset>("KestrelData/campaign");
+            Assert.IsNotNull(text, "Resources/KestrelData/campaign is synced");
+            var campaign = Kestrel.Core.Flight.Campaign.FromJson(MiniJson.ParseObject(text.text));
+            Assert.IsNotNull(SliceData.Hangar, "designer templates are synced");
+            var built = HomeRoutes.DesignFirst(campaign, 2, SliceData.Catalog, SliceData.Hangar.templates);
+            Assert.AreEqual("m3", built.Session?.MissionId, "two cleared: the starter is for KH-3");
+            Assert.IsTrue(PadHandoff.TryTake(out var draft, out _), "DesignFirst armed the KH-3 rocket");
+            Assert.Greater(draft.Arr("stages")?.Count ?? 0, 0, "the fixture is a real rocket");
             new Kestrel.Core.Hangar.DesignLibrary(store).SaveDraft(draft, "Hopper", "m3");
+            GameSession.Clear();
+            PadHandoff.Clear();
             yield return Boot();
             var cont = NavIds.Find("home-continue", Shell);
             Assert.IsTrue(NavIds.Shown(cont), "an existing save offers CONTINUE");
