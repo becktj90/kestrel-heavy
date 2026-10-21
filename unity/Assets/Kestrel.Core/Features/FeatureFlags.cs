@@ -28,6 +28,9 @@ namespace Kestrel.Core.Features
         public const string DesignerLook = "designer.look";
         public const string DesignerRecoveryControls = "designer.recoveryControls";
         public const string DesignerUndoRedo = "designer.undoRedo";
+        /// <summary>#341: the optional closed-loop guidance computer part. Off in the Starter designer (data/features.json);
+        /// it is also gated on a campaign unlock (Flight.GuidanceComputer.Available).</summary>
+        public const string DesignerGuidanceComputer = "designer.guidanceComputer";
         public const string HomeDesignFirst = "home.designFirst";
         public const string HomeCodexTile = "home.codexTile";
         public const string HomeThrum = "home.thrum";
@@ -38,7 +41,7 @@ namespace Kestrel.Core.Features
         {
             DesignerStepper, DesignerFree, DesignerModeTabs, DesignerHangar, DesignerTemplates, DesignerFixPill,
             DesignerWarningsList, DesignerMakeItFly, DesignerPayloadStepper, DesignerV3Knobs, DesignerLook,
-            DesignerRecoveryControls, DesignerUndoRedo,
+            DesignerRecoveryControls, DesignerUndoRedo, DesignerGuidanceComputer,
             HomeDesignFirst, HomeCodexTile, HomeThrum, HomeCreditsChip, HomeStatsCard,
         };
 

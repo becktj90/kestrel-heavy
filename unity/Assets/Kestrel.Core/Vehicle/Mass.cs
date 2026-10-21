@@ -16,6 +16,8 @@ namespace Kestrel.Core.Vehicle
     public static class Mass
     {
         const double REF_SAFETY = 1.4, SOLID_CASE_FRACTION = 0.09, LEG_FRACTION = 0.06, GRIDFIN_MASS_PER_M2 = 120, RCS_MASS = 250;
+        /// <summary>#341: the closed-loop guidance computer on the top stage, kg (data/guidance.json closedLoop.massKg; GuidanceComputerTests pins it).</summary>
+        public const double GUIDANCE_COMPUTER_MASS = 25;
         static readonly Dictionary<string, double> AVIONICS_MASS = new Dictionary<string, double> { ["basic"] = 60, ["standard"] = 150, ["redundant"] = 300 };
         static readonly Dictionary<string, double> FAIRING_AREAL = new Dictionary<string, double> { ["composite"] = 14, ["al-li"] = 20, ["steel"] = 45, ["al-cu"] = 22, ["titanium"] = 18, ["glass-phenolic"] = 16 };
 
@@ -58,6 +60,7 @@ namespace Kestrel.Core.Vehicle
                 var s = d.stages[i];
                 double dry = StructureMass(c, s, sf) + EnginesMass(c, s) + InterstageAero.MassKg(c, d, i) + s.separationMass;
                 if (i == d.stages.Count - 1) dry += AVIONICS_MASS.TryGetValue(d.avionicsTier ?? "", out var av) ? av : 150;
+                if (i == d.stages.Count - 1 && d.guidanceComputer) dry += GUIDANCE_COMPUTER_MASS;
                 if (i == 0)
                 {
                     if (d.legs) dry *= 1 + LEG_FRACTION;

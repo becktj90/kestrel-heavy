@@ -240,6 +240,9 @@ namespace Kestrel.Core.Vehicle
         public bool heatShieldSet, heatShield;
         public string missionId;
         public string avionicsTier = "standard";
+        /// <summary>#341: the optional closed-loop guidance computer (avionics.guidanceComputer, Flight.GuidanceComputer). False is
+        /// basic guidance, a pre-set pitch program with no correction; the JSON keeps no key then, so existing designs stay byte-identical.</summary>
+        public bool guidanceComputer;
         public double safetyFactor = 1.4;
         public string liveryPrimary = "#f2f2f2", liveryAccent = "#1a3c6e", liveryName = "";
 
@@ -284,6 +287,7 @@ namespace Kestrel.Core.Vehicle
             if (o.ContainsKey("heatShield") && o["heatShield"] is bool hs) { d.heatShieldSet = true; d.heatShield = hs; }
             if (o.ContainsKey("missionId") && o["missionId"] is string mid) d.missionId = mid;
             d.avionicsTier = o.Obj("avionics")?.Str("tier", "standard") ?? "standard";
+            d.guidanceComputer = o.Obj("avionics")?.Bool("guidanceComputer") ?? false;
             d.safetyFactor = o.Num("safetyFactor", 1.4);
             var lv = o.Obj("livery"); if (lv != null) { d.liveryPrimary = lv.Str("primary"); d.liveryAccent = lv.Str("accent"); d.liveryName = lv.Str("name", ""); }
             return d;
@@ -324,7 +328,8 @@ namespace Kestrel.Core.Vehicle
             if (guidance != null && guidance.Any) d.Add("guidance", guidance.ToJson());
             if (heatShieldSet) d.Add("heatShield", heatShield);
             if (missionId != null) d.Add("missionId", missionId);
-            d.Add("avionics", DesignJson.Obj(("tier", avionicsTier ?? "standard")));
+            if (guidanceComputer) d.Add("avionics", DesignJson.Obj(("tier", avionicsTier ?? "standard"), ("guidanceComputer", true)));
+            else d.Add("avionics", DesignJson.Obj(("tier", avionicsTier ?? "standard")));
             d.Add("safetyFactor", safetyFactor);
             d.Add("livery", DesignJson.Obj(("primary", liveryPrimary), ("accent", liveryAccent), ("name", liveryName ?? "")));
             return d;
