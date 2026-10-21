@@ -1,6 +1,7 @@
 // Device stand-in: KESTREL_REPO_ROOT is an empty directory, and the flight fonts
 // come from Resources. Launch must hide the designer sheet and the web readout
 // column, and the notes sheet must scroll above the dock at 335 px.
+using Kestrel.Core.Ui;
 using System;
 using System.IO;
 using System.Reflection;
@@ -60,7 +61,7 @@ namespace Kestrel.Game.Tests
             home.style.display = DisplayStyle.Flex;
             var chip = new Label { name = "issue-chip", text = "2 checks" };
             chip.AddToClassList("hidden");
-            var hud = new VisualElement { name = "hud" };
+            var hud = new VisualElement { name = UiIds.ScreenFlight };
             hud.AddToClassList("hidden");
             hud.style.width = 335;
             hud.style.height = 700;
@@ -95,7 +96,7 @@ namespace Kestrel.Game.Tests
             Assert.That(help.verticalScrollerVisibility, Is.EqualTo(ScrollerVisibility.Auto));
             Assert.That(hud.Q("ascent-health"), Is.Not.Null);
             for (int i = 0; i < VehicleHealth.Count; i++)
-                Assert.That(hud.Q<Button>("health-" + i), Is.Not.Null, "health-" + i);
+                Assert.That(hud.Q<Button>(UiIds.FlightHealth(i)), Is.Not.Null, UiIds.FlightHealth(i));
             Assert.That(cast.style.backgroundColor.value.a, Is.EqualTo(0f).Within(0.001f));
             var verdict = hud.Q<Label>("h-verdict");
             Assert.That(verdict.style.unityFontDefinition.value.font, Is.SameAs(title));
@@ -151,6 +152,50 @@ namespace Kestrel.Game.Tests
             Assert.That(host.style.display.value, Is.EqualTo(DisplayStyle.None));
             Assert.That(design.style.display.value, Is.EqualTo(DisplayStyle.None));
             Assert.That(hud.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+        }
+
+        [Test]
+        public void LandscapePinsTheCameraButtonBesidePause()
+        {
+            var hud = new VisualElement { name = UiIds.ScreenFlight };
+            hud.style.width = 1280;
+            hud.style.height = 720;
+            var band = new VisualElement { name = "hud-band" };
+            band.Add(new Label { name = "h-t", text = "T+ 12.4" });
+            hud.Add(band);
+            hud.Add(new VisualElement { name = "webcast" });
+            var go = new GameObject("kh-polish-camera") { hideFlags = HideFlags.HideAndDontSave };
+            var ascent = new AscentHud();
+            try
+            {
+                var chrome = go.AddComponent<FlightChrome>();
+                chrome.Bind(hud, _ => { }, () => { }, () => { }, null, FlightViewMode.Auto);
+                AscentHud.ForceWide = true;
+                AscentHud.ForceCssW = 1280f;
+                AscentHud.ForceCssH = 720f;
+                ascent.Open(hud, 1f);
+                ascent.LayoutWideAt(1280f, 720f, 0f, 0f, 0f, 0f);
+                var cam = hud.Q(UiIds.FlightCamera);
+                var pause = hud.Q(UiIds.FlightPause);
+                Assert.That(cam, Is.Not.Null);
+                Assert.That(cam.style.position.value, Is.EqualTo(Position.Absolute), "landscape pins the camera button");
+                float x = cam.style.left.value.value, y = cam.style.top.value.value;
+                Assert.That(x > 1f || y > 1f, Is.True, "not left at the HUD origin over the T+ clock");
+                var f = FlightHudLayout.PlaceWide(1280f, 720f, 0f, 0f, 0f, 0f, FlightHudMode.Cruise);
+                Assert.That(x, Is.EqualTo(f.Camera.X).Within(0.5f));
+                Assert.That(y, Is.EqualTo(f.Camera.Y).Within(0.5f));
+                Assert.That(pause.style.top.value.value, Is.EqualTo(y).Within(0.5f), "same row as Pause");
+                Assert.That(hud.Q(FlightChrome.PickerName), Is.Not.Null);
+
+                ascent.Close();
+                Assert.That(cam.style.position.keyword, Is.EqualTo(StyleKeyword.Null), "Close unpins it");
+            }
+            finally
+            {
+                AscentHud.ForceWide = null;
+                AscentHud.ForceCssW = AscentHud.ForceCssH = 0f;
+                UnityEngine.Object.DestroyImmediate(go);
+            }
         }
 
         static string LongestWord(string text)

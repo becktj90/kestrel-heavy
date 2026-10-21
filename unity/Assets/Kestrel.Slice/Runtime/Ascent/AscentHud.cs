@@ -6,6 +6,7 @@
 using System;
 using System.Globalization;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Ui;
 using Kestrel.Game.Shell;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -55,7 +56,7 @@ namespace Kestrel.Slice
             if (band != null) hud.Insert(hud.IndexOf(band) + 1, root);
             else hud.Insert(0, root);
             dockSpacer = new VisualElement { name = "ascent-dock-spacer", pickingMode = PickingMode.Ignore };
-            var pause = hud.Q("pause-menu");
+            var pause = hud.Q(UiIds.ScreenPause);
             if (pause != null) hud.Insert(hud.IndexOf(pause), actions);
             else hud.Add(actions);
             if (pause != null) hud.Insert(hud.IndexOf(pause), dockSpacer);
@@ -63,11 +64,16 @@ namespace Kestrel.Slice
             pause?.BringToFront();
             var tools = hud.Q("flight-tools");
             if (tools != null) tools.pickingMode = PickingMode.Ignore;
+            WatchTools();
             Layout(upp);
         }
 
         public void Close()
         {
+            // Hand the tools row (Follow, Cam, Pause) back to the flex flow before the HUD goes.
+            ClearWidePins();
+            UnwatchTools();
+            railFrame = null;
             infoOpen = false;
             healthOpen = -1;
             if (help != null && help.parent != null) help.RemoveFromHierarchy();
@@ -89,12 +95,25 @@ namespace Kestrel.Slice
         }
 
         bool widePinned;
+        /// <summary>The dock mode the landscape pins were laid for; null when not pinned.</summary>
+        FlightHudMode? wideMode;
+        /// <summary>The dock mode the landscape pins were last laid for (tests).</summary>
+        public FlightHudMode? WideMode => wideMode;
+
+        /// <summary>
+        /// Device tests only: lay out as landscape web at this CSS viewport (zero insets) or as portrait,
+        /// instead of reading Screen and the browser. Null leaves the live checks.
+        /// </summary>
+        public static bool? ForceWide;
+        public static float ForceCssW, ForceCssH;
+
+        static bool UseWideNow() => ForceWide ?? WebLayoutMode.UseWide(Screen.width, Screen.height);
 
         public void Layout(float unitsPerPoint)
         {
             upp = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
             if (root == null) return;
-            if (!WebLayoutMode.UseWide(Screen.width, Screen.height)) ClearWidePins();
+            if (!UseWideNow()) ClearWidePins();
             float gapPx = Px(FlightHudLayout.GapPt);
             float plotH = Px(FlightHudLayout.PlotPt);
             root.style.marginTop = gapPx;
@@ -192,10 +211,12 @@ namespace Kestrel.Slice
             if (assistRow != null) assistRow.style.marginTop = Px(FlightHudLayout.GapPt);
             if (nudgeRow != null) nudgeRow.style.marginTop = Px(FlightHudLayout.GapPt);
             PlaceDockSpacer();
-            if (WebLayoutMode.UseWide(Screen.width, Screen.height)) LayoutWide();
+            if (UseWideNow()) LayoutWide();
             else LayoutRail();
             PlaceInfoSheet();
-            hud.Q("pause-menu")?.BringToFront();
+            // Picker above the HUD (rail pieces and the info sheet are re-added or brought forward above),
+            // pause menu above the picker.
+            FlightChrome.Restack(hud);
         }
 
         /// <summary>Portrait: the tested rail, inside the HUD's already-padded content box.</summary>
@@ -244,6 +265,119 @@ namespace Kestrel.Slice
                 Seat(assistRow, ScaleBox(frame.Assist), dock);
             }
             Seat(nudgeRow, ScaleBox(Union(frame.Alternate, frame.NudgeDown, frame.NudgeUp)), dock);
+            // The camera button stays in the flex tools row; its picker opens above that row as it is really
+            // laid out (SeatRailPicker), and again whenever that row moves.
+            railFrame = frame;
+            SeatRailPicker();
+        }
+
+        /// <summary>The last portrait frame, for re-seating the picker when the flex tools row moves.</summary>
+        FlightHudFrame railFrame;
+        VisualElement watchedTools;
+
+        void WatchTools()
+        {
+            var tools = hud != null ? hud.Q("flight-tools") : null;
+            if (tools == watchedTools) return;
+            UnwatchTools();
+            watchedTools = tools;
+            watchedTools?.RegisterCallback<GeometryChangedEvent>(OnToolsMoved);
+        }
+
+        void UnwatchTools()
+        {
+            watchedTools?.UnregisterCallback<GeometryChangedEvent>(OnToolsMoved);
+            watchedTools = null;
+        }
+
+        void OnToolsMoved(GeometryChangedEvent _)
+        {
+            if (!widePinned && !UseWideNow()) SeatRailPicker();
+        }
+
+        /// <summary>
+        /// Portrait picker. Follow / Cam / Pause stay in the HUD's flex flow (tools margin, the dock spacer and
+        /// the buttons' own margins), so the real row is not exactly the frame's row: CI 335x720 had the picker's
+        /// bottom (frame row - GapPt) 1 px inside Pause. Seat it from the measured row instead, one GapPt clear
+        /// (FlightHudLayout.PickerOverRow), in the room the frame leaves; fall back to the frame row before the
+        /// first layout pass. Frame boxes are in the HUD's content box; absolute offsets start at its padding edge.
+        /// </summary>
+        void SeatRailPicker()
+        {
+            if (hud == null || railFrame == null || widePinned || !(upp > 0f)) return;
+            // Before the first layout pass the frame is NaN (resolvedStyle): nothing to seat yet.
+            if (!FlightHudLayout.PickerRoom(railFrame).Live || !FlightHudLayout.ToolsRow(railFrame).Live) return;
+            float padL = hud.resolvedStyle.paddingLeft;
+            float padT = hud.resolvedStyle.paddingTop;
+            if (float.IsNaN(padL)) padL = 0f;
+            if (float.IsNaN(padT)) padT = 0f;
+            float ox = padL / upp, oy = padT / upp;
+            var room = FlightHudLayout.PickerRoom(railFrame);
+            room.X += ox;
+            room.Y += oy;
+            var row = FlightHudLayout.ToolsRow(railFrame);
+            row.X += ox;
+            row.Y += oy;
+            var cam = railFrame.Camera;
+            float anchor = cam.X + cam.W * 0.5f + ox;
+            if (MeasuredPt(hud.Q(UiIds.FlightFollow), hud.Q(UiIds.FlightCamera), hud.Q(UiIds.FlightPause), out var real))
+                row = real;
+            if (MeasuredPt(hud.Q(UiIds.FlightCamera), null, null, out var realCam))
+                anchor = realCam.X + realCam.W * 0.5f;
+            // The stat strip, health row and stages card ride the flex flow too; the trajectory rail is pinned.
+            if (MeasuredPt(hud.Q("ascent-stages"), hud.Q("ascent-telemetry"), hud.Q("ascent-health"), out var realTop)
+                && realTop.Bottom + FlightHudLayout.GapPt > room.Y)
+            {
+                float bottom = room.Bottom;
+                room.Y = realTop.Bottom + FlightHudLayout.GapPt;
+                room.H = Math.Max(1f, bottom - room.Y);
+            }
+            if (MeasuredPt(plot, null, null, out var realPlot) && realPlot.Right + FlightHudLayout.GapPt > room.X)
+            {
+                float right = room.Right;
+                room.X = realPlot.Right + FlightHudLayout.GapPt;
+                room.W = Math.Max(1f, right - room.X);
+            }
+            // Never past the real dock top either (the dock is pinned from the frame, without the padding offset).
+            if (MeasuredPt(actions, null, null, out var realDock) && realDock.Y - FlightHudLayout.GapPt < room.Bottom)
+                room.H = Math.Max(1f, realDock.Y - FlightHudLayout.GapPt - room.Y);
+            var box = FlightHudLayout.PickerOverRow(room, row, anchor, railFrame.Telemetry.Bottom + FlightHudLayout.GapPt + oy);
+            var chips = FlightHudLayout.PickerChips(box);
+            for (int i = 0; i < chips.Length; i++) chips[i] = FlightHudLayout.ToPanel(chips[i], upp, upp);
+            FlightChrome.SeatPicker(hud, FlightHudLayout.ToPanel(box, upp, upp), chips);
+        }
+
+        /// <summary>Union of the shown elements' laid-out rects, HUD-relative, in points. False before layout.</summary>
+        bool MeasuredPt(VisualElement a, VisualElement b, VisualElement c, out HudBox box)
+        {
+            box = default;
+            if (hud == null) return false;
+            var origin = hud.worldBound;
+            if (float.IsNaN(origin.x) || float.IsNaN(origin.y)) return false;
+            float x = float.MaxValue, y = float.MaxValue, r = float.MinValue, bt = float.MinValue;
+            bool any = false;
+            foreach (var e in new[] { a, b, c })
+            {
+                if (e == null || e.panel == null || e.resolvedStyle.display == DisplayStyle.None) continue;
+                var wb = e.worldBound;
+                if (float.IsNaN(wb.x) || float.IsNaN(wb.y) || float.IsNaN(wb.width) || float.IsNaN(wb.height)) continue;
+                if (wb.width < 0.5f || wb.height < 0.5f) continue;
+                any = true;
+                x = Math.Min(x, wb.xMin - origin.x);
+                y = Math.Min(y, wb.yMin - origin.y);
+                r = Math.Max(r, wb.xMax - origin.x);
+                bt = Math.Max(bt, wb.yMax - origin.y);
+            }
+            if (!any) return false;
+            box = new HudBox { X = x / upp, Y = y / upp, W = (r - x) / upp, H = (bt - y) / upp };
+            return true;
+        }
+
+        static HudBox[] ScaleAll(HudBox[] boxes, Func<HudBox, HudBox> scale)
+        {
+            var o = new HudBox[boxes.Length];
+            for (int i = 0; i < boxes.Length; i++) o[i] = scale(boxes[i]);
+            return o;
         }
 
         HudBox ScaleBox(HudBox b) => new HudBox { X = b.X * upp, Y = b.Y * upp, W = b.W * upp, H = b.H * upp };
@@ -304,9 +438,11 @@ namespace Kestrel.Slice
         /// <summary>Landscape web: stat strip across the top, plot and stages in the side rails, dock under the rocket.</summary>
         void LayoutWide()
         {
-            float pw = hud != null ? hud.resolvedStyle.width : 0f;
-            float ph = hud != null ? hud.resolvedStyle.height : 0f;
-            if (pw < 8f || ph < 8f) return;
+            if (ForceWide == true && ForceCssW > 8f && ForceCssH > 8f)
+            {
+                LayoutWideAt(ForceCssW, ForceCssH, 0f, 0f, 0f, 0f);
+                return;
+            }
             WebViewport.Css(out float cssW, out float cssH);
             if (cssW < 8f || cssH < 8f) return;
             float perX = Screen.width > 1 ? Screen.width / cssW : 1f;
@@ -316,16 +452,27 @@ namespace Kestrel.Slice
             float safeBottom = safe.yMin / perY;
             float safeLeft = safe.xMin / perX;
             float safeRight = (Screen.width - safe.xMax) / perX;
+            LayoutWideAt(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight);
+        }
+
+        /// <summary>
+        /// Landscape pins for a CSS viewport. Public so the device tests can drive it at 1280x720,
+        /// 1366x768 and 1920x1080 without a real browser window.
+        /// </summary>
+        public void LayoutWideAt(float cssW, float cssH, float safeTop, float safeBottom, float safeLeft, float safeRight)
+        {
+            float pw = hud != null ? hud.resolvedStyle.width : 0f;
+            float ph = hud != null ? hud.resolvedStyle.height : 0f;
+            // Before the first layout pass (or off-panel in a test) the inline size is the panel size.
+            if (!(pw >= 8f) && hud != null && hud.style.width.keyword == StyleKeyword.Undefined) pw = hud.style.width.value.value;
+            if (!(ph >= 8f) && hud != null && hud.style.height.keyword == StyleKeyword.Undefined) ph = hud.style.height.value.value;
+            if (!(pw >= 8f) || !(ph >= 8f) || root == null) return;
             bool prompt = shown != default;
-            bool notes = infoOpen;
-            var mode = prompt && notes ? FlightHudMode.PromptNotes
-                : prompt ? FlightHudMode.Prompt
-                : notes ? FlightHudMode.Notes
-                : FlightHudMode.Cruise;
+            var mode = FlightHudLayout.WideMode(prompt, infoOpen);
             var f = FlightHudLayout.PlaceWide(cssW, cssH, safeTop, safeBottom, safeLeft, safeRight, mode);
             float ux = pw / cssW;
             float uy = ph / cssH;
-            HudBox Sc(HudBox b) => new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
+            HudBox Sc(HudBox b) => FlightHudLayout.ToPanel(b, ux, uy);
             bool InDock(HudBox b) => b.Live && b.Y >= f.Dock.Y - 1f && b.Bottom <= f.Dock.Bottom + 1.5f;
 
             var band = hud.Q("hud-band");
@@ -373,8 +520,15 @@ namespace Kestrel.Slice
                 tools.style.left = 0; tools.style.top = 0; tools.style.right = 0; tools.style.bottom = 0;
                 tools.style.marginBottom = 0;
             }
-            Pin(hud.Q("follow"), Sc(f.Follow));
-            Pin(hud.Q("pause"), Sc(f.Pause));
+            PinTool(hud.Q(UiIds.FlightFollow), Sc(f.Follow));
+            PinTool(hud.Q(UiIds.FlightCamera), Sc(f.Camera));
+            PinTool(hud.Q(UiIds.FlightPause), Sc(f.Pause));
+            // flight-tools is a full-HUD box that ignores picking; keep it (and the picker) above the
+            // later-inserted ascent root so taps reach the buttons.
+            tools?.BringToFront();
+            var chips = FlightHudLayout.PickerChips(f.CameraPicker);
+            for (int i = 0; i < chips.Length; i++) chips[i] = Sc(chips[i]);
+            FlightChrome.SeatPicker(hud, Sc(f.CameraPicker), chips);
             Pin(actions, Sc(f.Dock));
             if (actions != null) actions.style.overflow = Overflow.Hidden;
             if (dockSpacer != null) dockSpacer.style.height = 0;
@@ -407,6 +561,7 @@ namespace Kestrel.Slice
             else if (nudgeRow != null)
                 nudgeRow.style.display = DisplayStyle.None;
             widePinned = true;
+            wideMode = mode;
         }
 
         void PlaceRailOrDock(VisualElement e, HudBox css, bool inDock, HudBox panel, VisualElement dock)
@@ -452,6 +607,7 @@ namespace Kestrel.Slice
         {
             if (!widePinned) return;
             widePinned = false;
+            wideMode = null;
             Unpin(hud != null ? hud.Q("hud-band") : null);
             Unpin(hud != null ? hud.Q("h-t") : null);
             Unpin(hud != null ? hud.Q("h-stage") : null);
@@ -471,8 +627,16 @@ namespace Kestrel.Slice
             var tools = hud != null ? hud.Q("flight-tools") : null;
             Unpin(tools);
             if (tools != null) tools.style.marginBottom = StyleKeyword.Null;
-            Unpin(hud != null ? hud.Q("follow") : null);
-            Unpin(hud != null ? hud.Q("pause") : null);
+            // Landscape brought the row to the front; portrait needs it back above the webcast block.
+            var webcast = hud != null ? hud.Q("webcast") : null;
+            if (tools != null && webcast != null && tools.parent == hud && webcast.parent == hud
+                && hud.IndexOf(tools) > hud.IndexOf(webcast))
+                hud.Insert(hud.IndexOf(webcast), tools);
+            UnpinTool(hud != null ? hud.Q(UiIds.FlightFollow) : null);
+            UnpinTool(hud != null ? hud.Q(UiIds.FlightCamera) : null);
+            UnpinTool(hud != null ? hud.Q(UiIds.FlightPause) : null);
+            // Give the flex row its own sizes back (FlightChrome.Layout only runs at Bind).
+            FlightChrome.StyleTools(hud, upp);
             Unpin(actions);
             if (actions != null) actions.style.overflow = StyleKeyword.Null;
             ReturnToDock(help);
@@ -502,6 +666,25 @@ namespace Kestrel.Slice
             row.style.maxHeight = StyleKeyword.Null;
         }
 
+        /// <summary>
+        /// Pin a tools-row button to its exact box. FlightChrome sized these with a min-width in points
+        /// (WidestButton x upp); on a scaled web panel (1280x800 CSS is a 1214x759 panel, 0.948 units per CSS
+        /// point) that min-width beat the pinned width by ~5 units, ate the 3.8-unit GapPt and Cam ran 1 px into
+        /// Pause. min = max = the box, and FlightChrome.StyleTool leaves a pinned button's size alone.
+        /// </summary>
+        static void PinTool(VisualElement e, HudBox b)
+        {
+            Pin(e, b);
+            if (e == null || !b.Live) return;
+            e.style.minWidth = b.W;
+            e.style.maxWidth = b.W;
+            e.style.minHeight = b.H;
+            e.style.maxHeight = b.H;
+            e.style.marginLeft = 0;
+            e.style.marginRight = 0;
+            e.style.flexShrink = 0;
+        }
+
         static void Pin(VisualElement e, HudBox b)
         {
             if (e == null || !b.Live) return;
@@ -515,6 +698,20 @@ namespace Kestrel.Slice
             e.style.marginTop = 0;
             e.style.marginBottom = 0;
             e.style.flexGrow = 0;
+        }
+
+        /// <summary>Undo PinTool; ClearWidePins then calls FlightChrome.StyleTools for the flex row's own sizes.</summary>
+        void UnpinTool(VisualElement e)
+        {
+            Unpin(e);
+            if (e == null) return;
+            e.style.minWidth = StyleKeyword.Null;
+            e.style.maxWidth = StyleKeyword.Null;
+            e.style.minHeight = StyleKeyword.Null;
+            e.style.maxHeight = StyleKeyword.Null;
+            e.style.marginLeft = StyleKeyword.Null;
+            e.style.marginRight = StyleKeyword.Null;
+            e.style.flexShrink = StyleKeyword.Null;
         }
 
         static void Unpin(VisualElement e)
@@ -653,6 +850,10 @@ namespace Kestrel.Slice
             StyleStages();
             PlaceDockSpacer();
             PlaceInfoSheet();
+            // A call opening or closing changes the landscape dock height. Re-pin on the change so the taller
+            // prompt dock never sits over Follow, the camera button or Pause (1280x800 live build).
+            if (widePinned && UseWideNow() && FlightHudLayout.WideMode(shown != default, infoOpen) != wideMode)
+                LayoutWide();
         }
 
         void PlaceAssist(bool prompt)
@@ -672,6 +873,8 @@ namespace Kestrel.Slice
         void PlaceDockSpacer()
         {
             if (dockSpacer == null || hud == null) return;
+            // Landscape pins the dock; a flow spacer there would push the rows out of their seats.
+            if (widePinned) { dockSpacer.style.height = 0; return; }
             bool prompt = shown != default;
             // Notes float above the dock. The spacer only reserves the buttons.
             float pt = FlightHudLayout.DockHeight(false, prompt);
@@ -703,7 +906,7 @@ namespace Kestrel.Slice
             for (int i = 0; i < VehicleHealth.Count; i++)
             {
                 int index = i;
-                var b = new Button(() => OnHealth(index)) { name = "health-" + i, text = calm[i].Mark };
+                var b = new Button(() => OnHealth(index)) { name = UiIds.FlightHealth(i), text = calm[i].Mark };
                 b.tooltip = calm[i].Name + ". " + calm[i].Detail;
                 b.style.flexGrow = 1;
                 b.style.flexShrink = 1;
@@ -1133,7 +1336,7 @@ namespace Kestrel.Slice
             medal.style.flexGrow = 1;
             medal.style.flexShrink = 1;
             medal.style.unityFontStyleAndWeight = FontStyle.Bold;
-            info = Action("ascent-info", () => OnInfo());
+            info = Action(UiIds.FlightInfo, () => OnInfo());
             info.text = "i";
             info.tooltip = "Flight notes. Timing, the path colours, and the extra readouts.";
             medalRow.Add(medal);
@@ -1175,10 +1378,10 @@ namespace Kestrel.Slice
             marker.style.backgroundColor = Color.white;
             bar.Add(green);
             bar.Add(marker);
-            primary = Action("ascent-primary", () => Press(true));
+            primary = Action(UiIds.FlightPrimary, () => Press(true));
             primary.style.backgroundColor = new Color(0.23f, 0.83f, 0.96f);
             primary.style.color = new Color(0.03f, 0.08f, 0.12f);
-            alternate = Action("ascent-alternate", () => Press(false));
+            alternate = Action(UiIds.FlightAlternate, () => Press(false));
             alternate.style.backgroundColor = new Color(0.08f, 0.1f, 0.14f, 0.2f);
             alternate.style.color = new Color(0.95f, 0.35f, 0.42f);
             alternate.style.borderTopWidth = 2;
@@ -1189,10 +1392,10 @@ namespace Kestrel.Slice
             alternate.style.borderRightColor = new Color(0.89f, 0.23f, 0.29f);
             alternate.style.borderBottomColor = new Color(0.89f, 0.23f, 0.29f);
             alternate.style.borderLeftColor = new Color(0.89f, 0.23f, 0.29f);
-            skip = Action("ascent-skip", OnSkip);
+            skip = Action(UiIds.FlightSkip, OnSkip);
             skip.text = "Skip";
             skip.tooltip = "Skip. The autopilot takes the planned action. This is not a fail.";
-            assist = Action("ascent-assist", OnAssist);
+            assist = Action(UiIds.FlightAssist, OnAssist);
             assist.text = "Auto-assist";
             promptRow = new VisualElement { name = "ascent-prompt-row" };
             promptRow.style.flexDirection = FlexDirection.Row;
@@ -1206,8 +1409,8 @@ namespace Kestrel.Slice
             assistRow.Add(assist);
             nudgeRow = new VisualElement { name = "ascent-nudge" };
             nudgeRow.style.flexDirection = FlexDirection.Row;
-            nudgeDown = Action("ascent-nudge-down", () => Nudge(-AscentDecisions.NudgeStepDeg));
-            nudgeUp = Action("ascent-nudge-up", () => Nudge(AscentDecisions.NudgeStepDeg));
+            nudgeDown = Action(UiIds.FlightNudgeDown, () => Nudge(-AscentDecisions.NudgeStepDeg));
+            nudgeUp = Action(UiIds.FlightNudgeUp, () => Nudge(AscentDecisions.NudgeStepDeg));
             nudgeDown.style.flexGrow = 1;
             nudgeUp.style.flexGrow = 1;
             alternate.style.flexGrow = 1;
@@ -1266,7 +1469,7 @@ namespace Kestrel.Slice
             {
                 PlaceDockSpacer();
                 PlaceInfoSheet();
-                if (hud != null) hud.Q("pause-menu")?.BringToFront();
+                FlightChrome.Restack(hud);
             }
         }
 
