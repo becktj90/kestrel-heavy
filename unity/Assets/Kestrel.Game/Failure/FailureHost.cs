@@ -465,8 +465,7 @@ namespace Kestrel.Game.Failure
                 Screen.dpi,
                 ui.layout.width);
             var shown = failure;
-            if (shown == null && RecoveryLog.Current != null && RecoveryLog.Current.Attempted && RecoveryLog.Current.Failure != null)
-                shown = RecoveryLog.Current.Failure;
+            if (shown == null) shown = Kestrel.Core.Flight.BoosterLanding.ReportFailure(null, RecoveryLog.Current);
             FlightDebrief debrief = null;
             try { debrief = PostFlightSource.Publish(flight, failure); }
             catch (System.Exception e) { Debug.LogWarning("[Kestrel] post-flight report: " + e.Message); }
