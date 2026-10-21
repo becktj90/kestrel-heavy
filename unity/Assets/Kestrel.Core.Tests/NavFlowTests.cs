@@ -288,30 +288,52 @@ namespace Kestrel.Core.Tests
 
         // ---------------------------------------------------------------- known bugs on main
 
+        /// <summary>NAV-03 / F4, fixed: Home LAUNCH (and Fly KH-n) brief, then open the designer with the starter. Launch is the designer's.</summary>
         [Test]
-        public void KnownBug_NAV03_HomeLaunch_SkipsTheDesigner()
+        public void NAV03_HomeLaunch_OpensTheDesigner_NotTheCountdown()
         {
-            KnownBug("NAV-03 / F4", "Home LAUNCH → briefing → designer, Launch from the designer", () =>
-            {
-                HomeRoutes.Launch(campaign, 0, catalog, hangar.templates);
-                return PadHandoff.FlyOnPad || (GameSession.Current != null && GameSession.Current.AutoPad)
-                    ? "pad armed to fly (FlyOnPad=" + PadHandoff.FlyOnPad + ", AutoPad=" + GameSession.Current?.AutoPad + "): briefing \"To the pad\" goes straight to the countdown"
-                    : null;
-            });
+            var route = HomeRoutes.Launch(campaign, 0, catalog, hangar.templates);
+            Assert.AreEqual(SessionScreens.Briefing, route.Overlay, Where(route));
+            Assert.IsFalse(PadHandoff.FlyOnPad, "the pad is not armed to fly");
+            Assert.IsFalse(GameSession.Current.AutoPad, "the briefing reads Build it, not To the pad");
+            var built = GameSession.Apply(RouteId.BriefingBuild);
+            Assert.AreEqual(SessionScreens.Design, built.Screen, Where(built));
+            Assert.IsTrue(PadHandoff.TryTake(out var doc, out bool fly));
+            Assert.IsNotNull(doc, "the designer opens with the starter");
+            Assert.IsFalse(fly, "Launch from the designer");
+            string flow = Src("unity", "Assets", "Kestrel.Game", "Shell", "SceneFlow.cs");
+            int start = flow.IndexOf("public void LaunchChosen", StringComparison.Ordinal);
+            int end = flow.IndexOf("public void DesignChosen", StringComparison.Ordinal);
+            string chosen = flow.Substring(start, end - start);
+            Assert.That(chosen, Does.Not.Contain("AutoPad = true"), "Fly KH-n: same as LAUNCH");
+            Assert.That(chosen, Does.Not.Contain("PadHandoff.Arm(choice.Design, true"), "Fly KH-n: same as LAUNCH");
         }
 
+        /// <summary>NAV-04 / F4, fixed: the report offers Retry and Back to designer (UiIds report-designer).</summary>
         [Test]
-        public void KnownBug_NAV04_Report_HasNoBackToDesigner()
+        public void NAV04_Report_HasBackToDesigner()
         {
-            KnownBug("NAV-04 / F4", "the report offers Retry and a Back to designer exit", () =>
-            {
-                string routes = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "Report", "NextMission.cs");
-                int add = routes.IndexOf("public static void AddRoutes", StringComparison.Ordinal);
-                int end = routes.IndexOf("public static ReportActions Actions", StringComparison.Ordinal);
-                string body = routes.Substring(add, end - add);
-                bool designer = body.Contains("designer", StringComparison.OrdinalIgnoreCase) || body.Contains("report-design", StringComparison.Ordinal);
-                return designer ? null : "exits are report-next, report-retry, report-missions, report-home; the designer is reachable only through \"Fix it\" (F2: does nothing)";
-            });
+            string routes = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "Report", "NextMission.cs");
+            int add = routes.IndexOf("public static void AddRoutes", StringComparison.Ordinal);
+            int end = routes.IndexOf("public static ReportActions Actions", StringComparison.Ordinal);
+            string body = routes.Substring(add, end - add);
+            StringAssert.Contains("\"report-retry\"", body);
+            StringAssert.Contains("Exit(DesignerId, ReportRoutes.DesignerLabel", body);
+            StringAssert.Contains("actions.Designer", body);
+            StringAssert.Contains("public const string DesignerId = \"report-designer\";", routes);
+            string slice = Src("unity", "Assets", "Kestrel.Slice", "Runtime", "SliceApp.cs");
+            StringAssert.Contains("PostFlightSource.Bind(RestartFlight, ExitToHome, () => { BackToDesign(); ShowDesigner(true); });", slice);
+            string host = Src("unity", "Assets", "Kestrel.Game", "Failure", "FailureHost.cs");
+            StringAssert.Contains("actions.Designer = () => { leave();", host);
+
+            var ctx = MissionContext.FromCampaign(campaign, "m3");
+            GameSession.Carry(ctx);
+            ulong seed = ctx.Seed;
+            var back = ReportRoutes.BackToDesigner();
+            Assert.AreEqual(SessionScreens.Design, back.Screen, Where(back));
+            Assert.AreEqual("m3", GameSession.Current.MissionId, "same mission still selected");
+            Assert.AreEqual(seed, GameSession.Current.Seed, "same seed");
+            Assert.IsFalse(PadHandoff.FlyOnPad, "nothing relaunches");
         }
 
         [Test]
