@@ -59,7 +59,7 @@ namespace Kestrel.Core.Tests
                 Assert.IsNull(Catalog.RepoRootOrNull());
                 var design = HomeAutoBuild.BoardStarter("m3");
                 Assert.IsNotNull(design);
-                Assert.AreEqual("h-n5-k8-24000-2500", design.Str("name"));
+                Assert.AreEqual("h-n5-k8-23500-2500", design.Str("name"));
                 Assert.IsNull(HomeAutoBuild.BoardStarter("m1"), "KH-1 stays on the armed hopper");
             }
             finally

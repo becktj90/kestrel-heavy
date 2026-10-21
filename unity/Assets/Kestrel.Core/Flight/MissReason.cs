@@ -4,7 +4,9 @@
 // and "(+N more issues)" counts the other gates that missed. A failure event explains itself, and a pass
 // has no reason.
 // The circle advice comes from flying the board starters: a top stage that overshoots the high point
-// with the low point on target rounds the orbit off with 2 to 10% more upper fuel (MissReasonTests).
+// with the low point on target rounds the orbit off with 2 to 10% more upper fuel (MissReasonTests). #313: one that
+// cuts off cleanly but tilted (flight-path angle off zero, high point over and low point under) gets the steep or
+// flat advice instead, each flown on the starters it names.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -22,11 +24,13 @@ namespace Kestrel.Core.Flight
         public GoalCheck Extra;
         /// <summary>Core stages on the design (1 for a single-stage hop). The advice names the top one.</summary>
         public int Stages = 1;
+        /// <summary>#313: flight-path angle at a clean engine cutoff, degrees (+ climbing, − diving); NaN on a burnout or failure.</summary>
+        public double CutoffGammaDeg = double.NaN;
     }
 
     public sealed class MissExplanation
     {
-        /// <summary>Which gate missed: altitude-low, altitude-high, apo-high, peri-low, orbit-low, speed, g, landing, boosters, margin, reliability, red-risk, boil-off, gentle, payload, fairing, budget.</summary>
+        /// <summary>Which gate missed: altitude-low, altitude-high, fpa-steep, fpa-steep-suborbital, fpa-flat, apo-high, peri-low, orbit-low, speed, g, landing, boosters, margin, reliability, red-risk, boil-off, gentle, payload, fairing, budget.</summary>
         public string Code = "";
         public string Reason = "";
         public string Advice = "";
@@ -43,6 +47,18 @@ namespace Kestrel.Core.Flight
         /// <summary>economy reliability.highSafetyFactor. MissReasonTests pins it to the catalog.</summary>
         public const double SafetyBonusAt = 1.5;
 
+        /// <summary>#313: |γ| at a clean cutoff past this, with the high point over the band and the low point under it, is a flight-path-angle miss.</summary>
+        public const double FlightPathAngleOffDeg = 0.5;
+        /// <summary>#313 (Physics): the steep advice's lever is a smaller pitch kick. MissReasonTests flies it on KH-12's 6° build:
+        /// 4.5° lands every seed and the live pad (calm and seed-1 wind); 4° and 5° miss. One more upper engine is not the lever:
+        /// at 32,000 kg it tips KH-12 into a dive (753 x 447 km).</summary>
+        public const string SteepAdvice = "Your rocket flew too steep. Use a smaller pitch kick at launch (for example 6° → 4.5° in Guidance).";
+        /// <summary>#313 (Physics): the flat advice's lever is a larger pitch kick. MissReasonTests flies it on the KH-3 (8° → 8.5°)
+        /// and KH-4 (6° → 6.5°) starters.</summary>
+        public const string FlatAdvice = "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).";
+
+        static bool FlightPathAngleOff(double gammaDeg) => !double.IsNaN(gammaDeg) && Math.Abs(gammaDeg) >= FlightPathAngleOffDeg;
+
         public static MissInput FromFlight(CampaignFlight flight, int stages)
         {
             if (flight == null) return null;
@@ -56,6 +72,7 @@ namespace Kestrel.Core.Flight
                 LandingGrade = flight.landingGrade,
                 Extra = FlightDebrief.FromFlight(flight),
                 Stages = Math.Max(1, stages),
+                CutoffGammaDeg = flight.cutoffGammaDeg,
             };
         }
 
@@ -138,6 +155,23 @@ namespace Kestrel.Core.Flight
                 case "circular":
                     if (apoOk && periOk) return null;
                     string orbit = Km(f.PeriM) + " × " + Km(f.ApoM);
+                    if (f.ApoM > apoGoal && !apoOk && !periOk && f.PeriM < periGoal && FlightPathAngleOff(f.CutoffGammaDeg))
+                    {
+                        // #313: the engines cut off cleanly with the orbit's energy, but tilted, so the high point is
+                        // far above the goal and the low point below it. More fuel does not round it off when climbing.
+                        bool steep = f.CutoffGammaDeg > 0;
+                        string tilt = steep ? "still climbing, " + Num(f.CutoffGammaDeg, "0.0") + "° up"
+                            : "already diving, " + Num(-f.CutoffGammaDeg, "0.0") + "° down";
+                        string reason = "Missed the " + Km(apoGoal) + " circle: the orbit flew " + orbit + ", and the high point needs " + Band(apoGoal)
+                            + ". The low point, " + Km(f.PeriM) + ", needs " + Band(periGoal) + ". The engines cut off while it was " + tilt + ".";
+                        // Fell back (low point under the ground): on the KH-6 fixtures neither lever above moves it; only a much
+                        // longer upper burn does (2x to 3x the fuel, FixItRepairTests). Above the ground: the steep levers.
+                        if (steep && f.PeriM < 0)
+                            return Miss("fpa-steep-suborbital", reason, "Your rocket flew too steep and fell back down. Give " + top + " much more fuel (it can take double or more), so it burns long enough to level out.");
+                        return steep
+                            ? Miss("fpa-steep", reason, SteepAdvice)
+                            : Miss("fpa-flat", reason, FlatAdvice);
+                    }
                     if (f.ApoM > apoGoal && !apoOk)
                     {
                         // Speed at the low point above what an orbit with the goal's high point needs there.

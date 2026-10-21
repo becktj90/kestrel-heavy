@@ -3,9 +3,12 @@
 // run length, cutoff and aim, coast boil-off, strap-on landing fuel, pad/wind and the fairing
 // release event cannot drift.
 // Only the step size and the failure monitor stay with the caller.
+// #313: every flight also flies the same AscentDirector (Director + Fly → DirectedFlight), so the
+// batch, the designer practice flight, the launch timeline and the live pad share one throttle model.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
+using Kestrel.Core.Designer.Stepper;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 
@@ -40,6 +43,96 @@ namespace Kestrel.Core.Flight
         /// <summary>The campaign batch step.</summary>
         public const double BatchDt = 0.2;
 
+        // Batch (BatchDt) vs live pad (LiveDt) agreement under the shared director (#313), set by Physics.
+        /// <summary>Apogee hops: relative difference of the drag-aware flown peak.</summary>
+        public const double HopPeakTolerance = 0.005;
+        /// <summary>Orbits: relative difference of the apoapsis altitude.</summary>
+        public const double OrbitApoTolerance = 0.005;
+        /// <summary>Orbits: absolute difference of the periapsis altitude, metres.</summary>
+        public const double OrbitPeriToleranceM = 1000;
+        /// <summary>Orbits: relative difference of the semi-major axis.</summary>
+        public const double OrbitSmaTolerance = 0.001;
+
+        /// <summary>
+        /// The ascent director a flight of <paramref name="design"/> flies (#313). The live pad builds it with the
+        /// player's own settings (AscentFlight.Prepare). Prediction flies the default player: auto-assist on, which
+        /// is the Simple-depth default (<see cref="StepperProgress.AutoAssistOn"/>), so every call is taken in its
+        /// green window. <paramref name="schedule"/> is the failure monitor's seeded event schedule (null when the
+        /// monitor does not engage). <paramref name="wind"/> null or calm is calm air.
+        /// </summary>
+        public static AscentDirector Director(Catalog catalog, Design design, EventSchedule schedule, SeededWind wind, double targetAltM,
+            ulong designHash, ulong missionSeed, bool autoAssist = DefaultAutoAssist, bool engineer = false, bool reduceMotion = false,
+            IList<BonusGoal> bonuses = null)
+        {
+            double qLim = 0;
+            bool gentle = false;
+            if (catalog != null && design != null)
+            {
+                qLim = FailureMonitor.StructuralQLimPa(catalog, design);
+                gentle = FailureMonitor.GentleTier(design);
+            }
+            return Director(catalog, design, schedule, wind, qLim, gentle, targetAltM, designHash, missionSeed, autoAssist, engineer, reduceMotion, bonuses);
+        }
+
+        /// <summary>As above with the structural q limit and gentle tier already read (the live pad reads them under its own guard).</summary>
+        public static AscentDirector Director(Catalog catalog, Design design, EventSchedule schedule, SeededWind wind, double qLimPa, bool gentle,
+            double targetAltM, ulong designHash, ulong missionSeed, bool autoAssist, bool engineer, bool reduceMotion, IList<BonusGoal> bonuses)
+        {
+            var vehicle = AscentDecisions.FromDesign(design, catalog, schedule, wind, qLimPa, targetAltM, gentle, bonuses, designHash, missionSeed);
+            return AscentDirector.Start(vehicle, schedule, wind, autoAssist, engineer, reduceMotion);
+        }
+
+        /// <summary>The prediction player: auto-assist on, the Simple-depth default.</summary>
+        public const bool DefaultAutoAssist = true;
+
+        /// <summary>The director for a built <paramref name="setup"/>: its monitor's schedule, its aim and its wind.</summary>
+        public static AscentDirector Director(Catalog catalog, MissionFlightInputs setup, Design design, ulong designHash, ulong missionSeed)
+        {
+            if (setup == null) throw new ArgumentNullException(nameof(setup));
+            var opts = setup.Options;
+            var schedule = opts != null && opts.monitor != null ? opts.monitor.Events : null;
+            var wind = opts != null ? opts.wind : null;
+            return Director(catalog, design, schedule, wind, setup.TargetAltM, designHash, missionSeed);
+        }
+
+        /// <summary>A directed flight of <paramref name="setup"/>, not yet stepped.</summary>
+        public static DirectedFlight Start(MissionFlightInputs setup, AscentDirector director)
+        {
+            if (setup == null) throw new ArgumentNullException(nameof(setup));
+            return new DirectedFlight(new AscentSim(setup.Stages, setup.Options), director, setup.Options);
+        }
+
+        /// <summary>Fly <paramref name="setup"/> to the end under <paramref name="director"/>.</summary>
+        public static SimResult Fly(MissionFlightInputs setup, AscentDirector director) => Start(setup, director).Run();
+
+        /// <summary>
+        /// The specific orbital energy a mission's ascent cuts off at, J/kg (#313): −μ/(2a). A circular target uses
+        /// a = R + (h_apo + h_peri)/2. An ellipse or C3 target (Physics A) climbs to the circular parking orbit at its aim
+        /// perigee, a = R + aim; the departure burn is judged from there (<see cref="MissionScore.DepartureRequiredMps"/>).
+        /// NaN for an apogee hop, which burns out.
+        /// </summary>
+        public static double TargetEnergy(CampaignMission mission)
+        {
+            if (mission == null) return double.NaN;
+            switch (mission.TargetKind)
+            {
+                case "circular":
+                    return SimOptions.EnergyFor(mission.ApoKm * 1000, mission.PeriKm * 1000);
+                case "ellipse":
+                case "c3":
+                    return SimOptions.EnergyFor(mission.GuidanceAltM, mission.GuidanceAltM);
+                default:
+                    return double.NaN;
+            }
+        }
+
+        static OrbitTarget FreeBuildOrbit(Catalog catalog, string orbitId)
+        {
+            if (catalog.Orbits == null) return null;
+            if (orbitId != null && catalog.Orbits.TryGetValue(orbitId, out var o) && o != null) return o;
+            return catalog.Orbits.TryGetValue("leo400", out var leo) ? leo : null;
+        }
+
         /// <summary>
         /// Sim inputs for <paramref name="design"/> flying <paramref name="mission"/>.
         /// A null mission is a free build: the design's own orbit, nothing held out. An apogee orbit aims at the
@@ -68,6 +161,12 @@ namespace Kestrel.Core.Flight
             var built = Stack.SimInputs(catalog, flown, dt, sampleEvery);
             var opts = built.opts;
             if (!(opts.tMax >= MinTMax)) opts.tMax = MinTMax;
+            // #313 (Kestrel Physics): every Kestrel flight cuts off at the target's specific orbital energy, located
+            // inside the step, so the batch step and the live step cut off at the same state. No perigee test, no offset.
+            opts.energyCutoff = true;
+            opts.cutoff = true;
+            opts.cutoffEnergy = double.NaN;
+            opts.continuousTurn = true;
             double target = opts.targetAlt;
             if (mission != null)
             {
@@ -75,38 +174,20 @@ namespace Kestrel.Core.Flight
                 if (aim > 0) target = aim;
                 opts.targetAlt = target;
                 if (opts.guidance != null) opts.guidance.targetAlt = target;
-                // The integrator cuts off when periapsis is merely near the target, which freezes lofted ellipses.
-                // Circular, GTO and C3 contracts burn the loaded upper propellant out. The depletion check uses a
-                // lower floor so a burnout just under the aim point is not a false "out of fuel". The pass check
-                // still requires the flown apoapsis and periapsis. Upper-stage pitch reads the guidance target,
-                // which stays on the real aim point when a profile is set.
-                if (mission.TargetKind == "circular" || mission.TargetKind == "ellipse" || mission.TargetKind == "c3")
-                {
-                    // Legacy pitch reads SimOptions.targetAlt, so it keeps burning the loaded
-                    // upper propellant (cutoff off) toward the real aim. A custom pitch keeps
-                    // the aim on the guidance profile. Headless then cuts off when periapsis is
-                    // within 10 km of min(targetAlt, altitude). A huge SimOptions target makes
-                    // that "periapsis has caught the vehicle": a near-circular insertion, not a
-                    // frozen lofted ellipse. Running out of propellant before then is depletion.
-                    bool custom = opts.guidance != null && !Headless.LegacyPitch(opts.guidance);
-                    if (custom)
-                    {
-                        opts.cutoff = true;
-                        opts.targetAlt = 1e12;
-                        opts.guidance.targetAlt = target;
-                    }
-                    else
-                    {
-                        opts.cutoff = false;
-                        opts.targetAlt = target;
-                    }
-                }
+                opts.cutoffEnergy = TargetEnergy(mission);
             }
             else if (MissionAim.ApplyToDesignOrbit(opts, catalog, design.payloadOrbit))
             {
                 // A free build with an apogee trip ("suborbital") is a hop: judge depletion at the hop floor, as a
                 // campaign hop does, not at the apogee (F1). The designer's predict run and the live pad agree.
                 target = opts.targetAlt;
+            }
+            else
+            {
+                // A free build aims at its own catalog orbit, circular or elliptical (Stack's leo400 default when unset).
+                var orbit = FreeBuildOrbit(catalog, design.payloadOrbit);
+                if (orbit != null && orbit.periKm >= 0)
+                    opts.cutoffEnergy = SimOptions.EnergyFor(orbit.apoKm * 1000, orbit.periKm * 1000);
             }
             opts.fairingJettisonAltM = FairingJettisonAltM(design);
             if (site != null)

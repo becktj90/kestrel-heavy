@@ -31,6 +31,17 @@ namespace Kestrel.Core.Flight
     }
 
     /// <summary>One viable (payload, orbit, k) cell. Designs are the three FlightBatch passes.</summary>
+    /// <summary>#313: a cell held back from the deal until its issue lands, with the miss that holds it back.</summary>
+    public sealed class TrackedCell
+    {
+        public string Id, Reason, FailingDesign;
+        public int Issue;
+        public ulong Seed;
+        public double ApoKm, PeriKm;
+        public JsonObject BestVariant;
+        public ContractCell Cell;
+    }
+
     public sealed class ContractCell
     {
         public string Id, ArchetypeId, OrbitId;
@@ -80,6 +91,8 @@ namespace Kestrel.Core.Flight
         public readonly List<ContractRequirement> Ladder = new List<ContractRequirement>();
         public readonly List<ContractCell> Cells = new List<ContractCell>();
         public readonly List<string> Rejected = new List<string>();
+        /// <summary>#313: cells held back for a named issue (contracts-viable.json "tracked"); never in <see cref="Cells"/>, never dealt.</summary>
+        public readonly List<TrackedCell> Tracked = new List<TrackedCell>();
         public readonly Dictionary<string, ContractArchetype> ArchetypeById = new Dictionary<string, ContractArchetype>();
         public readonly Dictionary<string, ContractOrbit> OrbitById = new Dictionary<string, ContractOrbit>();
 
@@ -263,42 +276,73 @@ namespace Kestrel.Core.Flight
                     else if (x is JsonObject row && row.Str("id") != null) pool.Rejected.Add(row.Str("id"));
                 }
             }
+            // #313: a tracked cell is held back for a named issue: parsed (so its miss can be pinned), never dealt.
+            var tracked = o.Arr("tracked");
+            if (tracked != null)
+            {
+                foreach (JsonObject t in tracked)
+                {
+                    var row = new TrackedCell
+                    {
+                        Id = t.Str("id"),
+                        Issue = (int)t.Num("issue"),
+                        Reason = t.Str("reason"),
+                        FailingDesign = t.Str("failingDesign"),
+                        Seed = (ulong)t.Num("seed"),
+                        ApoKm = t.Num("apoKm"),
+                        PeriKm = t.Num("periKm"),
+                        BestVariant = t.Obj("bestVariant"),
+                        Cell = t.Obj("cell") != null ? ParseCell(pool, t.Obj("cell")) : null,
+                    };
+                    if (string.IsNullOrEmpty(row.Id) || row.Cell == null || row.Cell.Id != row.Id)
+                        throw new InvalidOperationException("tracked cell " + row.Id + " needs its cell");
+                    pool.Tracked.Add(row);
+                }
+            }
             var cells = o.Arr("cells");
             if (cells == null) return;
             foreach (JsonObject c in cells)
             {
-                string archId = c.Str("archetype");
-                string orbitId = c.Str("orbit");
-                if (!pool.ArchetypeById.TryGetValue(archId ?? "", out var arch))
-                    throw new InvalidOperationException("viable cell archetype " + archId);
-                if (!pool.OrbitById.TryGetValue(orbitId ?? "", out var orbit))
-                    throw new InvalidOperationException("viable cell orbit " + orbitId);
-                int k = (int)c.Num("k");
-                double mass = c.Num("massKg");
-                double expect = MassKg(arch.BaseMassKg, k);
-                if (Math.Abs(mass - expect) > 0.5)
-                    throw new InvalidOperationException(c.Str("id") + " mass " + mass + " is not the formula mass " + expect);
-                var cell = new ContractCell
-                {
-                    Id = c.Str("id"),
-                    ArchetypeId = archId,
-                    OrbitId = orbitId,
-                    K = k,
-                    MassKg = expect,
-                    BudgetKc = c.Num("budgetKc"),
-                    Archetype = arch,
-                    Orbit = orbit,
-                };
-                if (string.IsNullOrEmpty(cell.Id)) cell.Id = archId + "-" + orbitId + "-k" + k.ToString(CultureInfo.InvariantCulture);
-                if (!(cell.BudgetKc > 0)) throw new InvalidOperationException(cell.Id + " needs a budget");
-                if (pool.Rejected.Contains(cell.Id)) throw new InvalidOperationException(cell.Id + " is both viable and rejected");
-                cell.Pool = pool;
-                var designs = c.Arr("designs");
-                if (designs == null || designs.Count < OfferCount)
-                    throw new InvalidOperationException(cell.Id + " needs 3 designs");
-                foreach (JsonObject raw in designs) cell.Designs.Add(Design.FromJson(raw));
+                var cell = ParseCell(pool, c);
+                foreach (var t in pool.Tracked)
+                    if (t.Id == cell.Id) throw new InvalidOperationException(cell.Id + " is both viable and tracked");
                 pool.Cells.Add(cell);
             }
+        }
+
+        static ContractCell ParseCell(ContractPool pool, JsonObject c)
+        {
+            string archId = c.Str("archetype");
+            string orbitId = c.Str("orbit");
+            if (!pool.ArchetypeById.TryGetValue(archId ?? "", out var arch))
+                throw new InvalidOperationException("viable cell archetype " + archId);
+            if (!pool.OrbitById.TryGetValue(orbitId ?? "", out var orbit))
+                throw new InvalidOperationException("viable cell orbit " + orbitId);
+            int k = (int)c.Num("k");
+            double mass = c.Num("massKg");
+            double expect = MassKg(arch.BaseMassKg, k);
+            if (Math.Abs(mass - expect) > 0.5)
+                throw new InvalidOperationException(c.Str("id") + " mass " + mass + " is not the formula mass " + expect);
+            var cell = new ContractCell
+            {
+                Id = c.Str("id"),
+                ArchetypeId = archId,
+                OrbitId = orbitId,
+                K = k,
+                MassKg = expect,
+                BudgetKc = c.Num("budgetKc"),
+                Archetype = arch,
+                Orbit = orbit,
+            };
+            if (string.IsNullOrEmpty(cell.Id)) cell.Id = archId + "-" + orbitId + "-k" + k.ToString(CultureInfo.InvariantCulture);
+            if (!(cell.BudgetKc > 0)) throw new InvalidOperationException(cell.Id + " needs a budget");
+            if (pool.Rejected.Contains(cell.Id)) throw new InvalidOperationException(cell.Id + " is both viable and rejected");
+            cell.Pool = pool;
+            var designs = c.Arr("designs");
+            if (designs == null || designs.Count < OfferCount)
+                throw new InvalidOperationException(cell.Id + " needs 3 designs");
+            foreach (JsonObject raw in designs) cell.Designs.Add(Design.FromJson(raw));
+            return cell;
         }
 
         public static CampaignMission ToMission(ContractCell cell)

@@ -17,8 +17,14 @@ namespace Kestrel.Core.Flight
         public string missionId, designId, outcome, failure, landingGrade, boosterGrade, criterion;
         public ulong seed;
         public bool passed, gentle, fairingFits, payloadMatch, underBudget, redRisk;
+        /// <summary>#313: the target acceptance (MissionScore.TargetMet) alone, before the mission gates.</summary>
+        public bool reached;
         public int stars;
         public double score, margin, costKc, budgetKc, apoKm, periKm, incDeg, maxG, idealDv, requiredDv, c3Km2PerS2, reliability, boilOffKg, qPeakKPa, burnoutMps, burnoutAltKm;
+        /// <summary>#313 Physics A: departure Δv left in the parking orbit, the burn it needs (with finite-burn loss), and the departing stage's T/W. NaN unless the mission departs from parking.</summary>
+        public double departDv = double.NaN, departReqDv = double.NaN, departTW = double.NaN;
+        /// <summary>#313: flight-path angle at a clean cutoff, degrees (NaN on burnout or failure).</summary>
+        public double cutoffGammaDeg = double.NaN;
         public long costMinor;
         public readonly List<string> redKinds = new List<string>();
     }
@@ -123,7 +129,10 @@ namespace Kestrel.Core.Flight
                 var monitor = FailureMonitor.Create(catalog, flown, target, DesignHash(design), seed);
                 monitor.Gentle = false;
                 setup.Options.monitor = monitor;
-                var sim = Headless.Simulate(setup.Stages, setup.Options);
+                // The live pad's director (#313): the batch flies the same max-Q call, throttle hold, pitch nudge and
+                // staging the default player gets on the pad, not the bare sim.
+                var director = MissionFlightSetup.Director(catalog, setup, design, DesignHash(design), seed);
+                var sim = MissionFlightSetup.Fly(setup, director);
 
                 flight.outcome = sim.outcome;
                 flight.failure = sim.failure != null ? sim.failure.kind : null;
@@ -132,7 +141,14 @@ namespace Kestrel.Core.Flight
                 flight.incDeg = sim.orbit.i * 180.0 / Math.PI;
                 flight.maxG = sim.maxG;
                 flight.idealDv = sim.idealDeltaV;
+                if (mission.DepartsFromParking)
+                {
+                    flight.departDv = sim.departureDv;
+                    flight.departTW = sim.departureTW;
+                    flight.departReqDv = MissionScore.DepartureRequiredMps(mission.TargetKind, mission.ApoKm, mission.C3Km2PerS2, mission.GuidanceAltM, sim.departureTW);
+                }
                 flight.c3Km2PerS2 = MissionScore.C3(sim.orbit.energy) / 1e6;
+                flight.cutoffGammaDeg = sim.cutoffGammaDeg;
                 flight.qPeakKPa = sim.maxQ / 1000.0;
                 flight.margin = flight.requiredDv > 0 ? (flight.idealDv - flight.requiredDv) / flight.requiredDv : 0;
                 if (sim.risks != null)
@@ -152,7 +168,7 @@ namespace Kestrel.Core.Flight
                     flight.boosterGrade = GradeLanding(catalog, design, sim, mission.LandingMode, true);
 
                 bool intact = sim.failure == null && sim.outcome != "failure" && sim.outcome != "crash";
-                TargetReached(mission, flight, out var criterion);
+                flight.reached = TargetReached(mission, flight, out var criterion);
                 flight.criterion = criterion;
                 flight.passed = FlightDebrief.GoalMet(mission, intact, flight.apoKm * 1000.0, flight.periKm * 1000.0, flight.maxG, flight.landingGrade, FlightDebrief.FromFlight(flight));
 
@@ -186,39 +202,10 @@ namespace Kestrel.Core.Flight
 
         static bool TargetReached(CampaignMission mission, CampaignFlight flight, out string criterion)
         {
-            criterion = null;
-            double apoM = flight.apoKm * 1000;
-            double periM = flight.periKm * 1000;
-            bool apo = MissionScore.AltitudeWithin(apoM, mission.ApoKm * 1000);
-            bool peri = MissionScore.AltitudeWithin(periM, mission.PeriKm * 1000);
-            bool dv = flight.idealDv + 1e-6 >= flight.requiredDv;
-            if (mission.TargetKind == "apogee")
-            {
-                criterion = "altitude";
-                return apo;
-            }
-            if (mission.TargetKind == "circular")
-            {
-                criterion = "altitude";
-                return apo && peri;
-            }
-            if (mission.TargetKind == "ellipse")
-            {
-                if (apo && peri) { criterion = "elements"; return true; }
-                if (peri && dv) { criterion = "delta-v"; return true; }
-                return false;
-            }
-            if (mission.TargetKind == "c3")
-            {
-                if (MissionScore.WithinFraction(flight.c3Km2PerS2, mission.C3Km2PerS2, MissionScore.AltitudeFraction))
-                {
-                    criterion = "c3";
-                    return true;
-                }
-                if (peri && dv) { criterion = "delta-v"; return true; }
-                return false;
-            }
-            return false;
+            // #313 Physics A: the honest departure check, the Δv actually left in the parking orbit against the burn.
+            bool dv = !double.IsNaN(flight.departDv) && !double.IsNaN(flight.departReqDv) && flight.departDv + 1e-6 >= flight.departReqDv;
+            return MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2,
+                flight.apoKm * 1000, flight.periKm * 1000, flight.c3Km2PerS2, dv, out criterion);
         }
 
         static double GLimit(Catalog catalog, Design design, CampaignMission mission)
