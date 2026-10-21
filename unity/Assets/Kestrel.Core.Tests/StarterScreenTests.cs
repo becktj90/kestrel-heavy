@@ -13,6 +13,49 @@ namespace Kestrel.Core.Tests
     {
         static StarterRocket R(string id) => StarterFixture.Rocket(id);
 
+        /// <summary>A twr-low setting one fuel notch from flying (KH-6, kerosene, three stages, full fuel).</summary>
+        public const string TooHeavyKey = "kerosene-3-f4-b0";
+
+        /// <summary>Arcade's condition for keeping the twr-low block (16 of 720 settings at this commit, on KH-6 to KH-9, KH-17 and KH-18): the plain message shows and
+        /// fits at 335 px, Launch is off, every control stays live, and one notch less fuel clears it on this screen.</summary>
+        [Test]
+        public void TooHeavy_At335_MessageFits_LaunchOff_ControlsLive_LessFuelClearsIt()
+        {
+            var heavy = StarterLayoutTests.Rocket("m6", TooHeavyKey);
+            Assert.IsFalse(StarterScreen.Readiness(heavy, out var badge, out var rest));
+            Assert.AreEqual("twr-low", heavy.Check().BlockCode);
+            Assert.AreEqual(StarterScreen.HeavyBadge, badge);
+            Assert.AreEqual("Too heavy to leave the pad. Try less fuel.", rest);
+            Assert.IsFalse(heavy.CanLaunch, "Launch off");
+
+            // On screen and fitting at 335x667 (the layout model's own text-fit, overlap and safe-area checks).
+            var input = new StarterLayoutInput
+            {
+                Width = 335, Height = 667, BoostersVisible = heavy.BoostersVisible,
+                Title = StarterScreen.Title(heavy.Mission), Subtitle = StarterScreen.Subtitle(heavy.Mission),
+                Hint = StarterScreen.Hint(heavy, StarterKnob.None), Badge = badge, Readiness = rest,
+            };
+            var frame = StarterLayout.Place(input);
+            Assert.That(StarterLayout.Problems(frame, input), Is.Empty, "335x667 too heavy");
+            Assert.IsTrue(frame.Readiness.Live, "the message has a box on screen");
+            Assert.LessOrEqual(frame.Readiness.Right, 335f + 0.5f);
+            Assert.LessOrEqual(frame.Readiness.Bottom, 667f + 0.5f);
+
+            // Every control is still live: each value the mission offers is accepted from the blocked state.
+            foreach (var e in StarterRocket.EngineOrder) Assert.IsTrue(heavy.IsEngineAllowed(e), "engine " + e);
+            foreach (var n in StarterRocket.StageValues) Assert.IsTrue(heavy.IsStagesAllowed(n), "stages " + n);
+            for (int k = 0; k < StarterRocket.FuelNotches; k++) Assert.IsTrue(heavy.IsFuelNotchAllowed(k), "fuel " + k);
+            Assert.IsFalse(heavy.BoostersLocked, "KH-6 boosters are not locked");
+
+            // Lowering fuel there clears the block and turns Launch back on.
+            heavy.FuelNotch = 3;
+            Assert.AreEqual("kerosene-3-f3-b0", heavy.Choice.Key);
+            Assert.IsFalse(heavy.Check().Blocked, "one notch less fuel lifts off");
+            Assert.IsTrue(heavy.CanLaunch);
+            Assert.IsTrue(StarterScreen.Readiness(heavy, out badge, out rest));
+            Assert.AreNotEqual(StarterScreen.HeavyBadge, badge);
+        }
+
         [Test]
         public void DefaultFlags_OpenStarter_AndTheFullDesignerToggleRestoresTheExistingOne()
         {

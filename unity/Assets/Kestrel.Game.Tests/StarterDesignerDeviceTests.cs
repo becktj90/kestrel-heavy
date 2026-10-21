@@ -1,22 +1,22 @@
 // Starter screen (Phase 1 PR 5): the REAL UI Toolkit tree (StarterPanel over the real catalog, the campaign and
-// each mission's campaign winner) at 335x667, 390x844 and 430x932 portrait, iPad portrait 820x1180, and landscape
-// web 1280x720, 1366x768 and 1920x1080 (each the panel WebPanelScale gives). Per size and case: every label's
-// MeasureTextSize fits its content rect, every element sits inside its parent, no siblings overlap, nothing is
-// off-screen or outside the safe area, 44 pt targets, exactly one primary (Launch) bottom-right on web / at the
-// bottom on portrait, ◀ Back top-left. One PNG per size (DeviceCapture → $KH_CAP_OUT or unity/CaptureOut).
-// The click-through goes by UiIds names only, and the pad design follows every control.
+// each mission's campaign winner) on #300's UiDeviceSurface at 335x667, 390x844 and 430x932 portrait, iPad portrait
+// 820x1180, and landscape web 1280x720, 1366x768 and 1920x1080 (each the panel WebPanelScale gives). Per size and
+// case, #300's UiTreeChecks (MeasureTextSize text inside its content rect and its parent, no overlapping leaves,
+// nothing off-screen or outside the safe area) plus the Starter rules: 44 pt targets, exactly one primary (Launch)
+// bottom-right on web / at the bottom on portrait, ◀ Back top-left. One PNG per size (DeviceCapture →
+// CaptureOut/starter). The click-through goes by UiIds names only; the too-heavy case stays fixable on screen.
+// Batchmode-safe: no LogError, no throw outside asserts; surfaces disposed per case, globals restored in TearDown.
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Ui;
 using Kestrel.Game.Shell;
 using Kestrel.Slice;
+using Kestrel.UiChecks;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -25,6 +25,9 @@ namespace Kestrel.Game.Tests
     public class StarterDesignerDeviceTests
     {
         const string LongReadiness = "Lands on Haven on its last fuel, and both boosters fly home with little to spare.";
+        /// <summary>A twr-low setting one fuel notch from flying (same as Kestrel.Core.Tests.StarterScreenTests.TooHeavyKey).</summary>
+        const string TooHeavyKey = "kerosene-3-f4-b0";
+        const string CaptureSub = "starter";
 
         struct Device { public string Name; public float W, H, Top, Bottom; public bool Wide; }
 
@@ -44,15 +47,51 @@ namespace Kestrel.Game.Tests
 
         static Catalog catalog;
         static Campaign campaign;
+        IReadOnlyDictionary<string, Kestrel.Core.Json.JsonObject> basesBefore;
+        bool loadedBefore;
+        readonly List<IDisposable> open = new List<IDisposable>();
+        readonly List<StarterPanel> panels = new List<StarterPanel>();
 
         [OneTimeSetUp]
         public void LoadBases()
         {
+            basesBefore = StarterBases.Active;
+            loadedBefore = StarterBasesBoot.Loaded;
             string root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
             catalog = Catalog.LoadFromRepo(root);
             campaign = Campaign.Load(root);
             StarterBases.Active = StarterBases.Parse(File.ReadAllText(Path.Combine(root, "data", "golden", "campaign-winners.json")));
             StarterBasesBoot.Loaded = true;
+        }
+
+        [TearDown]
+        public void CloseEverything()
+        {
+            foreach (var p in panels) { try { p.Detach(); } catch (Exception e) { Debug.LogWarning("[StarterDevice] detach: " + e.Message); } }
+            panels.Clear();
+            foreach (var d in open) { try { d.Dispose(); } catch (Exception e) { Debug.LogWarning("[StarterDevice] dispose: " + e.Message); } }
+            open.Clear();
+        }
+
+        [OneTimeTearDown]
+        public void RestoreBases()
+        {
+            StarterBases.Active = basesBefore;
+            StarterBasesBoot.Loaded = loadedBefore;
+        }
+
+        UiDeviceSurface Surface(float w, float h)
+        {
+            var s = UiDeviceSurface.Open(w, h);
+            open.Add(s);
+            return s;
+        }
+
+        StarterPanel Panel(StarterRocket r, UiDeviceSurface s)
+        {
+            var p = new StarterPanel(r, s.Stage);
+            panels.Add(p);
+            return p;
         }
 
         static StarterRocket Rocket(string id, string key = null)
@@ -74,7 +113,7 @@ namespace Kestrel.Game.Tests
             yield return ("kh5-boosters-shown", () => Rocket("m5"), null);
             yield return ("kh10-boosters-locked", () => Rocket("m10"), null);
             yield return ("kh7-short", () => Rocket("m7", "kerosene-3-f0-b0"), null);
-            yield return ("kh6-too-heavy", () => Rocket("m6", "methane-3-f4-b0"), null);
+            yield return ("kh6-too-heavy", () => Rocket("m6", TooHeavyKey), null);
             yield return ("kh19-long-readiness", () => Rocket("m19"), LongReadiness);
         }
 
@@ -100,7 +139,7 @@ namespace Kestrel.Game.Tests
         [Test]
         public void ClickThroughByName_ControlsBuildThePadRocket()
         {
-            using (var surface = DeviceSurface.Open(390, 844))
+            using (var surface = UiDeviceSurface.Open(390, 844))
             {
                 var r = Rocket("m5");
                 var panel = new StarterPanel(r, surface.Stage);
@@ -166,143 +205,119 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        /// <summary>Arcade's condition for the twr-low block: at 335x667 the plain message is on screen and fits, Launch
+        /// is off, every control is still live, and one notch less fuel (tapped there) clears it.</summary>
+        [Test]
+        public void TooHeavy_At335_MessageFits_LaunchOff_ControlsLive_LessFuelClearsIt()
+        {
+            var surface = Surface(335, 667);
+            var r = Rocket("m6", TooHeavyKey);
+            var panel = Panel(r, surface);
+            panel.Layout(335, 667, 20, 0, 0, 0, 1f, false, false);
+            surface.Pump(3);
+            Settle(surface, panel.Root);
+            Assert.IsTrue(r.Check().Blocked, "KH-6 " + TooHeavyKey + " is twr-low");
+
+            var line = panel.Root.Q<Label>(UiIds.StarterReadiness);
+            var badge = panel.Root.Q<Label>(UiIds.StarterBadge);
+            Assert.AreEqual("Too heavy to leave the pad. Try less fuel.", line.text);
+            Assert.AreEqual(StarterScreen.HeavyBadge, badge.text);
+            Assert.IsTrue(UiTreeChecks.Visible(line), "the message is on screen");
+            Assert.IsTrue(UiTreeChecks.Visible(badge), "the badge is on screen");
+            var stage = surface.Stage.worldBound;
+            var safe = new Rect(stage.xMin, stage.yMin + 20, stage.width, stage.height - 20);
+            var problems = UiTreeChecks.Problems(panel.Root, stage, safe, "335x667 too heavy");
+            Assert.That(problems, Is.Empty, UiTreeChecks.Report(problems));
+            Assert.That(TextFit.Problems(panel.Root), Is.Empty, "335x667 too heavy text-fit");
+
+            var launch = panel.Root.Q<Button>(UiIds.StarterLaunch);
+            Assert.IsFalse(launch.enabledSelf, "Launch is off on the hard block");
+            int launched = 0;
+            panel.LaunchRequested += () => launched++;
+            Click(launch);
+            Assert.AreEqual(0, launched, "a blocked Launch does nothing");
+
+            foreach (var id in UiIds.StarterControls)
+            {
+                if (id == UiIds.StarterLaunch) continue;
+                var c = panel.Root.Q(id);
+                Assert.That(c, Is.Not.Null, id);
+                if (!UiTreeChecks.Visible(c)) continue;   // a row the mission hides
+                Assert.IsTrue(c.enabledInHierarchy, id + " stays live while blocked");
+            }
+
+            Click(panel.Root.Q<Button>(UiIds.StarterFuelNotch(4)));
+            Assert.AreEqual("kerosene-3-f3-b0", r.Choice.Key);
+            Assert.IsFalse(r.Check().Blocked, "one notch less fuel lifts off");
+            Assert.IsTrue(launch.enabledSelf, "Launch comes back");
+            Assert.AreNotEqual(StarterScreen.HeavyBadge, badge.text);
+            Click(launch);
+            Assert.AreEqual(1, launched);
+        }
+
         string Check(Device d, StarterRocket rocket, string label, string readiness, bool capture)
         {
-            using (var surface = DeviceSurface.Open(d.W, d.H))
+            CloseEverything();   // one surface open at a time
+            var surface = Surface(d.W, d.H);
+            var panel = Panel(rocket, surface);
+            panel.Refresh();
+            if (readiness != null) panel.Root.Q<Label>(UiIds.StarterReadiness).text = readiness;
+            panel.Layout(d.W, d.H, d.Top, d.Bottom, 0, 0, 1f, d.Wide, d.Wide);
+            surface.Pump(3);
+            Settle(surface, panel.Root);
+            string where = d.Name + " " + label;
+            var stage = surface.Stage.worldBound;
+            var safe = new Rect(stage.xMin, stage.yMin + d.Top, stage.width, stage.height - d.Top - d.Bottom);
+
+            Assert.That(StarterLayout.Problems(panel.Frame, panel.Input), Is.Empty, where + " model");
+            var problems = UiTreeChecks.Problems(panel.Root, stage, safe, where);
+            Assert.That(problems, Is.Empty, UiTreeChecks.Report(problems));
+            Assert.That(TextFit.Problems(panel.Root), Is.Empty, where);
+
+            int primaries = 0;
+            foreach (var b in panel.Root.Query<Button>().ToList())
             {
-                var panel = new StarterPanel(rocket, surface.Stage);
-                try
-                {
-                    panel.Refresh();
-                    if (readiness != null) panel.Root.Q<Label>(UiIds.StarterReadiness).text = readiness;
-                    panel.Layout(d.W, d.H, d.Top, d.Bottom, 0, 0, 1f, d.Wide, d.Wide);
-                    surface.Pump(3);
-                    Settle(surface, panel.Root);
-                    string where = d.Name + " " + label;
-                    var stage = surface.Stage.worldBound;
-                    var safe = new Rect(stage.xMin, stage.yMin + d.Top, stage.width, stage.height - d.Top - d.Bottom);
-
-                    Assert.That(StarterLayout.Problems(panel.Frame, panel.Input), Is.Empty, where + " model");
-                    NoSiblingOverlap(panel.Root, where);
-                    InsideParents(panel.Root, where);
-                    Assert.That(TextFit.Problems(panel.Root), Is.Empty, where);
-                    foreach (var t in panel.Root.Query<TextElement>().ToList())
-                    {
-                        if (!Shown(t)) continue;
-                        TextFitsContent(t, where + " " + t.name);
-                        // The rocket window may run under the status bar; nothing readable or tappable does.
-                        Inside(t.worldBound, safe, where + " " + t.name + " inside the safe area");
-                    }
-                    var primaries = 0;
-                    foreach (var b in panel.Root.Query<Button>().ToList())
-                    {
-                        if (!Shown(b)) continue;
-                        if (b.ClassListContains("starter-primary") || b.name == UiIds.StarterLaunch) primaries++;
-                        Assert.GreaterOrEqual(b.worldBound.width, 44f - 0.5f, where + " " + b.name + " width");
-                        Assert.GreaterOrEqual(b.worldBound.height, 44f - 0.5f, where + " " + b.name + " height");
-                        Inside(b.worldBound, safe, where + " " + b.name + " on screen, inside the safe area");
-                    }
-                    Assert.AreEqual(1, primaries, where + " exactly one primary button");
-
-                    var launch = panel.Root.Q<Button>(UiIds.StarterLaunch);
-                    Assert.AreEqual(DisplayStyle.Flex, launch.resolvedStyle.display, where + " Launch always visible");
-                    bool blocked = rocket.Check().Blocked;
-                    Assert.AreEqual(!blocked, launch.enabledSelf, where + " Launch is off only on a hard block");
-                    if (label == "kh7-short") Assert.IsTrue(launch.enabledSelf, where + " a short rocket still launches");
-                    if (label == "kh6-too-heavy")
-                    {
-                        Assert.IsTrue(blocked, where);
-                        Assert.AreEqual(StarterScreen.HeavyBadge, panel.Root.Q<Label>(UiIds.StarterBadge).text, where);
-                    }
-                    var rocketBox = panel.Root.Q(UiIds.StarterRocket).worldBound;
-                    var sheet = panel.Root.Q(UiIds.StarterSheet).worldBound;
-                    Assert.That(rocketBox.Overlaps(Shrink(sheet)), Is.False, where + " the rocket window is clear of the sheet");
-                    if (d.Wide)
-                    {
-                        Assert.Greater(launch.worldBound.xMin, stage.xMin + stage.width * 0.5f, where + " Launch bottom-right");
-                        Assert.Greater(launch.worldBound.yMin, stage.yMin + stage.height * 0.5f, where + " Launch bottom-right");
-                        Assert.LessOrEqual(sheet.width, WebLandscapeType.SideCap + 0.5f, where);
-                    }
-                    else Assert.Greater(launch.worldBound.yMin, stage.yMin + stage.height * 0.6f, where + " Launch at the bottom");
-                    var back = panel.Root.Q<Button>(UiIds.StarterBack).worldBound;
-                    Assert.Less(back.xMin, stage.xMin + stage.width * 0.25f, where + " Back top-left");
-                    Assert.Less(back.yMin, stage.yMin + stage.height * 0.15f, where + " Back top-left");
-
-                    if (!capture) return null;
-                    string path = DeviceCapture.Save("starter-" + d.Name, surface.Stage, surface.Texture, surface.Window, out var kind);
-                    TestContext.WriteLine(where + " capture (" + kind + "): " + path);
-                    return path;
-                }
-                finally { panel.Detach(); }
+                if (!UiTreeChecks.Visible(b)) continue;
+                if (b.name == UiIds.StarterLaunch) primaries++;
+                Assert.GreaterOrEqual(b.worldBound.width, 44f - 0.5f, where + " " + b.name + " width");
+                Assert.GreaterOrEqual(b.worldBound.height, 44f - 0.5f, where + " " + b.name + " height");
             }
-        }
+            Assert.AreEqual(1, primaries, where + " exactly one primary button");
 
-        static bool Shown(VisualElement e)
-        {
-            for (var p = e; p != null; p = p.parent)
-                if (p.resolvedStyle.display == DisplayStyle.None) return false;
-            return e.panel != null && e.worldBound.width > 0.5f && e.worldBound.height > 0.5f;
-        }
-
-        static void Inside(Rect r, Rect outer, string where)
-        {
-            Assert.That(r.xMin >= outer.xMin - 0.5f && r.yMin >= outer.yMin - 0.5f && r.xMax <= outer.xMax + 0.5f && r.yMax <= outer.yMax + 0.5f,
-                Is.True, where + " " + r + " outside " + outer);
-        }
-
-        static void NoSiblingOverlap(VisualElement root, string where)
-        {
-            var kids = new List<VisualElement>();
-            foreach (var c in root.Children())
-                if (Shown(c)) kids.Add(c);
-            for (int i = 0; i < kids.Count; i++)
+            var launch = panel.Root.Q<Button>(UiIds.StarterLaunch);
+            Assert.IsTrue(UiTreeChecks.Visible(launch), where + " Launch always visible");
+            bool blocked = rocket.Check().Blocked;
+            Assert.AreEqual(!blocked, launch.enabledSelf, where + " Launch is off only on a hard block");
+            if (label == "kh7-short") Assert.IsTrue(launch.enabledSelf, where + " a short rocket still launches");
+            if (label == "kh6-too-heavy")
             {
-                for (int j = i + 1; j < kids.Count; j++)
-                    Assert.That(Shrink(kids[i].worldBound).Overlaps(Shrink(kids[j].worldBound)), Is.False,
-                        where + ": " + kids[i].name + " " + kids[i].worldBound + " overlaps " + kids[j].name + " " + kids[j].worldBound);
-                if (!(kids[i] is TextElement)) NoSiblingOverlap(kids[i], where);
+                Assert.IsTrue(blocked, where);
+                Assert.AreEqual(StarterScreen.HeavyBadge, panel.Root.Q<Label>(UiIds.StarterBadge).text, where);
+                Assert.IsTrue(UiTreeChecks.Visible(panel.Root.Q<Label>(UiIds.StarterReadiness)), where + " the reason is on screen");
             }
-        }
-
-        /// <summary>Every shown element inside its parent (the screen root is the stage-sized layer).</summary>
-        static void InsideParents(VisualElement e, string where)
-        {
-            foreach (var c in e.Children())
+            var rocketBox = panel.Root.Q(UiIds.StarterRocket).worldBound;
+            var sheet = panel.Root.Q(UiIds.StarterSheet).worldBound;
+            Assert.That(rocketBox.Overlaps(Shrink(sheet)), Is.False, where + " the rocket window is clear of the sheet");
+            if (d.Wide)
             {
-                if (!Shown(c)) continue;
-                if (e.name != UiIds.ScreenStarter) Inside(c.worldBound, e.worldBound, where + " " + c.name + " inside " + e.name);
-                InsideParents(c, where);
+                Assert.Greater(launch.worldBound.xMin, stage.xMin + stage.width * 0.5f, where + " Launch bottom-right");
+                Assert.Greater(launch.worldBound.yMin, stage.yMin + stage.height * 0.5f, where + " Launch bottom-right");
+                Assert.LessOrEqual(sheet.width, WebLandscapeType.SideCap + 0.5f, where);
             }
+            else Assert.Greater(launch.worldBound.yMin, stage.yMin + stage.height * 0.6f, where + " Launch at the bottom");
+            var back = panel.Root.Q<Button>(UiIds.StarterBack).worldBound;
+            Assert.Less(back.xMin, stage.xMin + stage.width * 0.25f, where + " Back top-left");
+            Assert.Less(back.yMin, stage.yMin + stage.height * 0.15f, where + " Back top-left");
+
+            if (!capture) return null;
+            string path = DeviceCapture.Save(CaptureSub, "starter-" + d.Name, surface, out var kind);
+            TestContext.WriteLine(where + " capture (" + kind + "): " + (path ?? "none"));
+            return path;
         }
 
         static Rect Shrink(Rect r) => new Rect(r.x + 0.5f, r.y + 0.5f, Mathf.Max(0f, r.width - 1f), Mathf.Max(0f, r.height - 1f));
 
-        /// <summary>MeasureTextSize against the content rect: the one-line need for no-wrap labels, else the longest
-        /// word and the wrapped height.</summary>
-        static void TextFitsContent(TextElement e, string where)
-        {
-            if (e == null || string.IsNullOrEmpty(e.text)) return;
-            float w = e.contentRect.width;
-            if (float.IsNaN(w) || w < 1f) w = e.layout.width;
-            float h = e.contentRect.height;
-            if (float.IsNaN(h) || h < 1f) h = e.layout.height;
-            Assert.Greater(w, 1f, where + " has no room for its text");
-            var one = e.MeasureTextSize(e.text, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined);
-            if (e.resolvedStyle.whiteSpace == WhiteSpace.NoWrap)
-            {
-                Assert.That(one.x, Is.LessThanOrEqualTo(w + TextFit.Slack), where + " need " + one.x.ToString("0") + " box " + w.ToString("0"));
-                Assert.That(one.y, Is.LessThanOrEqualTo(h + TextFit.Slack), where + " line " + one.y.ToString("0") + " box " + h.ToString("0"));
-                return;
-            }
-            float longest = 0f;
-            foreach (var word in e.text.Split(' '))
-                if (word.Length > 0) longest = Mathf.Max(longest, e.MeasureTextSize(word, 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined).x);
-            Assert.That(longest, Is.LessThanOrEqualTo(w + TextFit.Slack), where + " a word is wider than its box");
-            var need = e.MeasureTextSize(e.text, w, VisualElement.MeasureMode.AtMost, 0f, VisualElement.MeasureMode.Undefined);
-            Assert.That(need.y, Is.LessThanOrEqualTo(h + TextFit.Slack), where + " tall need " + need.y.ToString("0") + " box " + h.ToString("0"));
-        }
-
-        static void Settle(DeviceSurface surface, VisualElement root)
+        static void Settle(UiDeviceSurface surface, VisualElement root)
         {
             TextFit.Apply(root);
             surface.Pump(3);
@@ -319,149 +334,5 @@ namespace Kestrel.Game.Tests
                 button.SendEvent(ev);
             }
         }
-
-        /// <summary>Same device surface as WebDesignerOverlapDeviceTests, document first so the capture can read it.</summary>
-        sealed class DeviceSurface : IDisposable
-        {
-            EditorWindow window;
-            GameObject go;
-            PanelSettings settings;
-            RenderTexture texture;
-            public VisualElement Stage { get; private set; }
-            public RenderTexture Texture => texture;
-            public EditorWindow Window => window;
-
-            /// <summary>The UIDocument on a render texture first (it can be read back as a PNG), else an editor window.</summary>
-            public static DeviceSurface Open(float w, float h)
-            {
-                var surface = new DeviceSurface();
-                surface.TryDocument(w, h);
-                surface.Pump(6);
-                if (!surface.Sized(w, h))
-                {
-                    surface.CloseDocument();
-                    surface.TryWindow(w, h);
-                    surface.Pump(4);
-                }
-                if (!surface.Sized(w, h)) Assert.Fail("panel did not take the device size " + w + "x" + h);
-                return surface;
-            }
-
-            public void Pump(int passes)
-            {
-                for (int i = 0; i < passes; i++)
-                {
-                    if (Stage != null && Stage.panel != null)
-                    {
-                        var tree = Stage.panel.visualTree;
-                        if (tree != null && Stage.resolvedStyle.width > 2f)
-                        {
-                            tree.style.width = Stage.resolvedStyle.width;
-                            tree.style.height = Stage.resolvedStyle.height;
-                        }
-                    }
-                    if (settings != null)
-                    {
-                        var apply = typeof(PanelSettings).GetMethod("ApplyPanelSettings", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                        if (apply != null) apply.Invoke(settings, null);
-                    }
-                    var utility = typeof(VisualElement).Assembly.GetType("UnityEngine.UIElements.UIElementsRuntimeUtility");
-                    var update = utility != null ? utility.GetMethod("UpdatePanels", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) : null;
-                    if (update != null && update.GetParameters().Length == 0) update.Invoke(null, null);
-                    if (window != null) window.Repaint();
-                    var panel = Stage != null ? Stage.panel : null;
-                    if (panel != null)
-                    {
-                        var validate = panel.GetType().GetMethod("ValidateLayout", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                        if (validate != null && validate.GetParameters().Length == 0) validate.Invoke(panel, null);
-                    }
-                }
-            }
-
-            bool Sized(float w, float h)
-            {
-                if (Stage == null || Stage.panel == null) return false;
-                var bound = Stage.worldBound;
-                if (bound.width < 8f || bound.height < 8f) return false;
-                float sx = bound.width / w, sy = bound.height / h;
-                return sx >= 0.8f && sy >= 0.8f && sx <= 3.5f && sy <= 3.5f && Math.Abs(sx - sy) <= 0.15f;
-            }
-
-            void TryWindow(float w, float h)
-            {
-                try
-                {
-                    window = ScriptableObject.CreateInstance<StarterDeviceWindow>();
-                    window.position = new Rect(0f, 0f, w, h);
-                    window.minSize = new Vector2(w, h);
-                    window.maxSize = new Vector2(w, h);
-                    window.ShowUtility();
-                    var root = window.rootVisualElement;
-                    if (root == null) return;
-                    Stage = MakeStage(root, w, h);
-                }
-                catch (Exception) { }
-            }
-
-            void TryDocument(float w, float h)
-            {
-                try
-                {
-                    texture = new RenderTexture(Mathf.Max(8, (int)w), Mathf.Max(8, (int)h), 0, RenderTextureFormat.ARGB32);
-                    texture.Create();
-                    settings = ScriptableObject.CreateInstance<PanelSettings>();
-                    settings.scaleMode = PanelScaleMode.ConstantPixelSize;
-                    settings.scale = 1f;
-                    settings.targetTexture = texture;
-                    go = new GameObject("kh-starter-device");
-                    go.hideFlags = HideFlags.HideAndDontSave;
-                    var doc = go.AddComponent<UIDocument>();
-                    doc.panelSettings = settings;
-                    var root = doc.rootVisualElement;
-                    if (root == null) return;
-                    Stage = MakeStage(root, w, h);
-                }
-                catch (Exception) { }
-            }
-
-            static VisualElement MakeStage(VisualElement panelRoot, float w, float h)
-            {
-                var tree = panelRoot.panel != null ? panelRoot.panel.visualTree : null;
-                if (tree != null) { tree.style.width = w; tree.style.height = h; }
-                panelRoot.style.width = w;
-                panelRoot.style.height = h;
-                var stage = new VisualElement { name = "stage", pickingMode = PickingMode.Ignore };
-                stage.style.position = Position.Absolute;
-                stage.style.left = 0f; stage.style.top = 0f;
-                stage.style.width = w; stage.style.height = h;
-                stage.style.overflow = Overflow.Hidden;
-                panelRoot.Add(stage);
-                return stage;
-            }
-
-            void CloseWindow()
-            {
-                if (window == null) return;
-                window.Close();
-                window = null;
-                Stage = null;
-            }
-
-            void CloseDocument()
-            {
-                if (go != null) UnityEngine.Object.DestroyImmediate(go);
-                if (settings != null) UnityEngine.Object.DestroyImmediate(settings);
-                if (texture != null) { texture.Release(); UnityEngine.Object.DestroyImmediate(texture); }
-                go = null; settings = null; texture = null; Stage = null;
-            }
-
-            public void Dispose()
-            {
-                CloseWindow();
-                CloseDocument();
-            }
-        }
-
-        sealed class StarterDeviceWindow : EditorWindow { }
     }
 }

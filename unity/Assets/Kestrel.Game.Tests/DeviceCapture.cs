@@ -1,9 +1,10 @@
-// PNG capture of a device-test panel for the CI artifact (no reusable helper existed on main or
-// origin/feat/home-simple, so this one follows ScreenCaptureTests' conventions: $KH_CAP_OUT, else
-// <project>/CaptureOut, which unity.yml uploads). Order: (1) the UIDocument's render texture after forcing the
-// runtime panels to render, (2) the editor window's screen pixels, (3) only when both come back one flat colour
-// (batchmode -nographics), the measured worldBound rects painted from each element's resolved colours, saved
-// with a "-rects" suffix so nobody mistakes it for a render. Returns the path and the kind.
+// PNG capture of a UiDeviceSurface (#300's shared EditMode device panel) for the CI artifact. UiDeviceSurface
+// has no capture of its own, so this reads its window / render texture by field name instead of editing #300's
+// file. Output: $KH_CAP_OUT/<sub>, else <project>/CaptureOut/<sub> (unity.yml uploads CaptureOut/starter as
+// device-captures). Order: (1) the editor window's screen pixels, (2) the UIDocument's render texture after
+// forcing the runtime panels to render, (3) only when both are unavailable or one flat colour (batchmode
+// -nographics, no GPU), the measured worldBound rects, saved with a "-rects" suffix so nobody mistakes it for a
+// render. Never logs an error or throws: a GPU-less runner gets warnings and the rects file.
 using System;
 using System.IO;
 using System.Reflection;
@@ -17,37 +18,51 @@ namespace Kestrel.Game.Tests
     {
         public enum Kind { Render, Window, Rects }
 
-        public static string OutDir()
+        public static string OutDir(string sub)
         {
             string d = System.Environment.GetEnvironmentVariable("KH_CAP_OUT");
             if (string.IsNullOrEmpty(d)) d = Path.Combine(Path.GetDirectoryName(Application.dataPath), "CaptureOut");
+            if (!string.IsNullOrEmpty(sub)) d = Path.Combine(d, sub);
             Directory.CreateDirectory(d);
             return d;
         }
 
-        public static string Save(string fileStem, VisualElement stage, RenderTexture texture, EditorWindow window, out Kind kind)
+        static bool HasGpu => SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null;
+
+        static T Field<T>(UiDeviceSurface surface, string name) where T : class
         {
-            int w = Mathf.Max(8, Mathf.RoundToInt(stage.worldBound.width));
-            int h = Mathf.Max(8, Mathf.RoundToInt(stage.worldBound.height));
+            var f = typeof(UiDeviceSurface).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            return f != null ? f.GetValue(surface) as T : null;
+        }
+
+        /// <summary>The PNG path, or null (with a warning) if nothing could be written.</summary>
+        public static string Save(string sub, string fileStem, UiDeviceSurface surface, out Kind kind)
+        {
+            kind = Kind.Rects;
             Texture2D image = null;
-            kind = Kind.Render;
-            if (texture != null) image = FromTexture(texture);
-            if (Flat(image) && window != null)
+            try
             {
-                Destroy(image);
-                image = FromWindow(window, w, h);
-                kind = Kind.Window;
+                var stage = surface.Stage;
+                int w = Mathf.Max(8, Mathf.RoundToInt(stage.worldBound.width));
+                int h = Mathf.Max(8, Mathf.RoundToInt(stage.worldBound.height));
+                if (HasGpu)
+                {
+                    var window = Field<EditorWindow>(surface, "window");
+                    if (window != null && !Application.isBatchMode) { image = FromWindow(window, w, h); kind = Kind.Window; }
+                    var texture = Field<RenderTexture>(surface, "texture");
+                    if (Flat(image) && texture != null && texture.IsCreated()) { Destroy(image); image = FromTexture(texture); kind = Kind.Render; }
+                }
+                if (Flat(image)) { Destroy(image); image = FromRects(stage, w, h); kind = Kind.Rects; }
+                string path = Path.Combine(OutDir(sub), Safe(fileStem) + (kind == Kind.Rects ? "-rects" : "") + ".png");
+                File.WriteAllBytes(path, image.EncodeToPNG());
+                return path;
             }
-            if (Flat(image))
+            catch (Exception e)
             {
-                Destroy(image);
-                image = FromRects(stage, w, h);
-                kind = Kind.Rects;
+                Debug.LogWarning("[DeviceCapture] " + fileStem + ": " + e.GetType().Name + " " + e.Message);
+                return null;
             }
-            string path = Path.Combine(OutDir(), Safe(fileStem) + (kind == Kind.Rects ? "-rects" : "") + ".png");
-            File.WriteAllBytes(path, image.EncodeToPNG());
-            Destroy(image);
-            return path;
+            finally { Destroy(image); }
         }
 
         static Texture2D FromTexture(RenderTexture rt)
@@ -62,11 +77,14 @@ namespace Kestrel.Game.Tests
                 }
                 var was = RenderTexture.active;
                 RenderTexture.active = rt;
-                var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
-                tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
-                tex.Apply();
-                RenderTexture.active = was;
-                return tex;
+                try
+                {
+                    var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
+                    tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                    tex.Apply();
+                    return tex;
+                }
+                finally { RenderTexture.active = was; }
             }
             catch (Exception) { return null; }
         }
