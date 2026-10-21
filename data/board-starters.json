@@ -267,9 +267,9 @@
     },
     {
       "id": "m6",
-      "mode": "strength",
+      "mode": "fly",
       "restoreSafetyFactor": 1.8,
-      "edit": "Set strength to 1.8. Fix it also changes the fairing or the engines, and that misses.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -362,7 +362,7 @@
           "avionics": {
             "tier": "standard"
           },
-          "safetyFactor": 1.35,
+          "safetyFactor": 1.65,
           "livery": {
             "primary": "#f2f2f2",
             "accent": "#1a3c6e",

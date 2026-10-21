@@ -197,6 +197,51 @@ namespace Kestrel.Core.Tests
                 MissionScore.C3(r.orbit.energy) / 1e6, false, out _);
         }
 
+        /// <summary>
+        /// The live report card's verdict on an intact or failed live flight: the same gates as PostFlightSource (Slice)
+        /// builds for FlightDebrief.GoalMet. The parking-orbit departure Δv, C3, margin, red risks, reliability, airframe
+        /// (gentle, payload, fairing, budget), coast boil-off and the predicted landing grades.
+        /// </summary>
+        public static bool Passes(Catalog catalog, CampaignMission row, Design design, SimResult result)
+        {
+            bool intact = result.failure == null && result.outcome != "failure" && result.outcome != "crash";
+            double required = row.RequiredDeltaV();
+            var extra = new GoalCheck
+            {
+                IdealDv = result.idealDeltaV,
+                DepartureDv = result.departureDv,
+                DepartureTW = result.departureTW,
+                C3Km2PerS2 = MissionScore.C3(result.orbit.energy) / 1e6,
+                Margin = required > 1 ? (result.idealDeltaV - required) / required : 0,
+            };
+            if (result.risks != null)
+            {
+                extra.RedKnown = true;
+                for (int i = 0; i < result.risks.Count; i++)
+                    if (result.risks[i].level == "red") extra.RedRisk = true;
+            }
+            extra.Reliability = Kestrel.Core.Economy.Reliability.Of(catalog, design).reliability;
+            extra.Gentle = FailureMonitor.GentleTier(design);
+            extra.PayloadMatch = design.payloadType == row.PayloadId && design.payloadMass == row.MassKg;
+            extra.FairingFits = PayloadFit.Check(design, new PayloadSpec { id = row.PayloadId, volume = row.VolumeM3, diameter = row.DiameterM }).fits;
+            var price = Kestrel.Core.Economy.CostModel.PriceDesign(catalog, design);
+            long per = Kestrel.Core.Economy.CostModel.MinorPerKc(catalog);
+            extra.UnderBudget = price.recurring <= Kestrel.Core.Economy.Career.KcToMinor(row.BudgetKc, per > 0 ? per : 1);
+            extra.AirframeKnown = true;
+            if (row.CoastHours > 0 && design.stages != null && design.stages.Count > 0)
+            {
+                var upper = design.stages[design.stages.Count - 1];
+                extra.BoilOffKg = upper.propMass - TankModel.RemainingPropKg(catalog, upper, row.CoastHours);
+            }
+            string grade = row.LandingRequired || row.LandBoosters ? FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, false) : null;
+            if (row.LandBoosters)
+            {
+                extra.BoosterKnown = true;
+                extra.BoosterGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, true);
+            }
+            return FlightDebrief.GoalMet(row, intact, MissionScore.FlownApoAltM(result), result.orbit.periAlt, result.maxG, grade, extra);
+        }
+
         public static string Text(SimResult r) => r.outcome + " " + (MissionScore.FlownApoAltM(r) / 1000).ToString("0.0") + " x "
             + (r.orbit.periAlt / 1000).ToString("0.0") + " km" + (r.failure != null ? " " + r.failure.kind : "");
     }

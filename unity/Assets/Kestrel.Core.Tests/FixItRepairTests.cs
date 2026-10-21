@@ -34,6 +34,16 @@ namespace Kestrel.Core.Tests
 
         JsonObject Starter(int index) => JsonMut.CloneObject(HomeAutoBuild.Choose(catalog, hangar.templates, campaign.Mission(index)).Design);
 
+        // KH-6's auto-built rocket as it was before the calm-air retune (strength 1.35; the board design is now 1.65 and
+        // flies the band). These two Fix it cases are about the half- and 16%-load rocket, so they keep the 1.35 build and
+        // their exact numbers.
+        JsonObject Kh6RawBuild()
+        {
+            var json = Starter(6);
+            JsonMut.Set(json, "safetyFactor", 1.35);
+            return json;
+        }
+
         LaunchGateResult Gate(JsonObject json)
         {
             ReferenceAscent.Reset();
@@ -256,7 +266,7 @@ namespace Kestrel.Core.Tests
             // cuts off at the target energy at a bad flight-path angle (412.4 x -12.4 km against 200 km; seed 2 loses an
             // engine). Strength cannot fix that, so after its steps Fix it says it could not fully fix the rocket.
             var mission = campaign.Mission(6);
-            var json = Starter(6);
+            var json = Kh6RawBuild();
             TopStageProp(json, 0.5);
             var raw = Fly(6, json);
             Assert.That(raw.FindAll(f => DesignerRepair.MissKind(mission, f) == DesignerRepair.FlightPathAngleMiss).Count, Is.EqualTo(4), Seeds(mission, raw));
@@ -289,7 +299,7 @@ namespace Kestrel.Core.Tests
             // and no seed runs dry. Under the new rule the mission still has to pass: KH-6's starter then cuts off at the
             // target energy at a bad flight-path angle (413.9 x -13.9 km against 200 km), so Fix it reports not fixed.
             var mission = campaign.Mission(6);
-            var json = Starter(6);
+            var json = Kh6RawBuild();
             TopStageProp(json, 0.16);
             var raw = Fly(6, json);
             Assert.That(raw.TrueForAll(f => f.failure == "prop-depletion"), Seeds(mission, raw));
