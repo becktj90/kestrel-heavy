@@ -111,12 +111,35 @@ namespace Kestrel.UiChecks
             }
         }
 
+        /// <summary>True when <paramref name="e"/> has overflow: hidden. Unity 6.3 exposes no computed overflow
+        /// (IResolvedStyle has none), so: the inline value (element.style.overflow) when one is set, else the USS rules
+        /// mirrored in <see cref="UiClipRules"/> (kept in sync with the .uss files by UiClipRulesUssTests).
+        /// Unknown means "does not clip", which can only add reports, never hide one.</summary>
+        public static bool ClipsChildren(VisualElement e)
+        {
+            if (e == null) return false;
+            var inline = e.style.overflow;
+            if (inline.keyword == StyleKeyword.Undefined) return inline.value == Overflow.Hidden;   // set inline
+            if (inline.keyword == StyleKeyword.Initial) return false;                              // initial = visible
+            bool hidden = false;
+            foreach (var sel in UiClipRules.Hidden)
+                if (UiClipRules.Matches(sel, e, ParentOf, NameOf, HasClass)) { hidden = true; break; }
+            if (!hidden) return false;
+            foreach (var sel in UiClipRules.Visible)
+                if (UiClipRules.Matches(sel, e, ParentOf, NameOf, HasClass)) return false;
+            return true;
+        }
+
+        static VisualElement ParentOf(VisualElement e) => e.hierarchy.parent;
+        static string NameOf(VisualElement e) => e.name;
+        static bool HasClass(VisualElement e, string c) => e.ClassListContains(c);
+
         /// <summary>What is really drawn of <paramref name="r"/>: clipped by every overflow-hidden ancestor of <paramref name="e"/>.</summary>
         public static Rect Clipped(VisualElement e, Rect r)
         {
             for (var p = e.parent; p != null; p = p.parent)
             {
-                if (p.resolvedStyle.overflow != Overflow.Hidden) continue;
+                if (!ClipsChildren(p)) continue;
                 var c = PaddingWorld(p);
                 float x0 = Mathf.Max(r.xMin, c.xMin), y0 = Mathf.Max(r.yMin, c.yMin);
                 float x1 = Mathf.Min(r.xMax, c.xMax), y1 = Mathf.Min(r.yMax, c.yMax);

@@ -12,6 +12,8 @@
     <Compile Include="../../Assets/Kestrel.Slice/Runtime/Report/ReportLayout.cs" Link="ReportLayout.cs" />
     <Compile Include="ReportFixture.cs" />
     <Compile Include="PostFlightCardTests.cs" />
+    <Compile Include="../../Assets/Kestrel.UiChecks/UiClipRules.cs" Link="UiClipRules.cs" />
+    <Compile Include="UiClipRulesUssTests.cs" />
     <ProjectReference Include="../Kestrel.Core/Kestrel.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
