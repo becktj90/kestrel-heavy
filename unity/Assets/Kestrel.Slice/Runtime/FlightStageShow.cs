@@ -84,6 +84,26 @@ namespace Kestrel.Slice
 
         public int CoreSerial => coreSerial;
 
+        /// <summary>
+        /// Base of the stack still attached, metres up the vehicle axis from the pivot: the top of the
+        /// highest stage the sim has released (0 before the first separation). The flight camera frames
+        /// the stack from here, so the upper stage is not framed as if the spent core were still on it.
+        /// </summary>
+        public float KeptBase
+        {
+            get
+            {
+                if (!armed || bySerialStage == null) return 0f;
+                float y = 0f;
+                for (int i = 0; i < bySerialStage.Length; i++)
+                {
+                    var p = bySerialStage[i];
+                    if (p != null && staging.Released(p.Serial, playT) && p.SepY > y) y = p.SepY;
+                }
+                return y;
+            }
+        }
+
         /// <summary>Separated first-stage mesh. Recovery poses this instead of the kinematic tumble.</summary>
         public Transform Booster
         {

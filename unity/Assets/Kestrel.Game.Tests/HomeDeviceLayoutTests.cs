@@ -5,6 +5,7 @@
 // paint order and a non-zero rect inside the viewport.
 // KESTREL_REPO_ROOT points at an empty directory, the same device stand-in as #254, and
 // fonts are read with Resources.Load only.
+using Kestrel.Core.Ui;
 using System;
 using System.IO;
 using System.Reflection;
@@ -323,7 +324,7 @@ namespace Kestrel.Game.Tests
                     Assert.That(card.worldBound.height, Is.GreaterThan(stage.worldBound.height * 0.95f), d.Name + " card height");
                     Assert.That(stage.Q<Label>("h-t").text, Is.EqualTo(""), d.Name + " count");
                     Assert.That(stage.Q<Label>("h-verdict").text, Is.EqualTo(""), d.Name + " verdict");
-                    Assert.That(stage.Q("skip-count").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
+                    Assert.That(stage.Q(UiIds.FlightSkipCount).resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
                     Assert.That(stage.Q("ascent-nudge").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
                     Assert.That(stage.Q("guide-pop").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
                     Assert.That(stage.Q("guide-pop").pickingMode, Is.EqualTo(PickingMode.Ignore), d.Name);
@@ -369,7 +370,7 @@ namespace Kestrel.Game.Tests
 
         static VisualElement SampleFlightHud(VisualElement stage)
         {
-            var hud = new VisualElement { name = "hud", pickingMode = PickingMode.Position };
+            var hud = new VisualElement { name = UiIds.ScreenFlight, pickingMode = PickingMode.Position };
             hud.style.position = Position.Absolute;
             hud.style.left = 0f;
             hud.style.top = 0f;
@@ -377,7 +378,7 @@ namespace Kestrel.Game.Tests
             hud.style.bottom = 0f;
             hud.Add(new Label("T-0:07") { name = "h-t" });
             hud.Add(new Label("On the count") { name = "h-verdict" });
-            var skip = new Button { name = "skip-count", text = "Skip count" };
+            var skip = new Button { name = UiIds.FlightSkipCount, text = "Skip count" };
             skip.style.position = Position.Absolute;
             skip.style.top = 40f;
             skip.style.left = 16f;

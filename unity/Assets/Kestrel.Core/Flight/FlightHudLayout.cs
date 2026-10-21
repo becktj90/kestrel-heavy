@@ -40,12 +40,22 @@ namespace Kestrel.Core.Flight
     {
         public HudBox Clock, Stage, Health, Telemetry, Plot, Stages, Dock, Info, Medal, Help, Quote, Timer;
         public HudBox Assist, Primary, Skip, Alternate, NudgeDown, NudgeUp, Follow, Pause, Exit;
+        /// <summary>The "Cam: Auto" button, and where its five-chip picker opens (it is closed by default).</summary>
+        public HudBox Camera, CameraPicker;
         public HudBox[] Cells = new HudBox[4];
         public FlightHudMode Mode;
     }
 
     public static class FlightHudLayout
     {
+        /// <summary>
+        /// A CSS-point box in panel units (AscentHud.LayoutWideAt: ux = panel width / CSS width). The tools row
+        /// is laid out GapPt apart in points; the pinned buttons must take exactly these boxes (min = max width),
+        /// or a point-sized min-width outgrows a scaled box and eats the gap.
+        /// </summary>
+        public static HudBox ToPanel(HudBox b, float ux, float uy) =>
+            new HudBox { X = b.X * ux, Y = b.Y * uy, W = b.W * ux, H = b.H * uy };
+
         public const float SideMarginPt = 8f;
         public const float GapPt = 4f;
         public const float PadPt = 4f;
@@ -227,7 +237,136 @@ namespace Kestrel.Core.Flight
             float centerR = width * 0.65f;
             if (pauseX < centerR + GapPt) pauseX = centerR + GapPt;
             f.Pause = Box(pauseX, toolsY, PauseWidthPt, ButtonPt);
+
+            // Camera sits centred in the gap between Follow and Pause, the way the flex row lays it out.
+            float camW = FlightView.WidestButton();
+            float gapL = f.Follow.Right + GapPt;
+            float gapR = f.Pause.X - GapPt;
+            if (camW > gapR - gapL) camW = Math.Max(ButtonPt, gapR - gapL);
+            f.Camera = Box((gapL + gapR - camW) * 0.5f, toolsY, camW, ButtonPt);
+
+            // The picker opens above the tools row, right of the trajectory rail and under the stages card.
+            f.CameraPicker = PickerOverRow(PickerRoom(f), ToolsRow(f), f.Camera.X + f.Camera.W * 0.5f, f.Telemetry.Bottom + GapPt);
             return f;
+        }
+
+        /// <summary>
+        /// Portrait: where the open picker may go. Right of the trajectory rail, under the stages card and the
+        /// stat strip, inside the side margins, down to just above the dock. The tools row splits it in two.
+        /// </summary>
+        public static HudBox PickerRoom(FlightHudFrame f)
+        {
+            // The stat strip spans the side margins (safe area + SideMarginPt) on both edges.
+            float left = f.Telemetry.X;
+            float right = f.Telemetry.Right;
+            float x = Math.Max(f.Plot.Right, left) + GapPt;
+            float y = Math.Max(f.Stages.Bottom, f.Telemetry.Bottom) + GapPt;
+            float b = f.Dock.Live ? f.Dock.Y - GapPt : Math.Max(f.Follow.Bottom, f.Pause.Bottom);
+            return Box(x, y, Math.Max(1f, right - x), Math.Max(1f, b - y));
+        }
+
+        /// <summary>The Follow / Cam / Pause row as one box.</summary>
+        public static HudBox ToolsRow(FlightHudFrame f)
+        {
+            float x = float.MaxValue, y = float.MaxValue, r = float.MinValue, b = float.MinValue;
+            bool any = false;
+            foreach (var t in new[] { f.Follow, f.Camera, f.Pause })
+            {
+                if (!t.Live) continue;
+                any = true;
+                x = Math.Min(x, t.X); y = Math.Min(y, t.Y);
+                r = Math.Max(r, t.Right); b = Math.Max(b, t.Bottom);
+            }
+            return any ? Box(x, y, r - x, b - y) : default;
+        }
+
+        /// <summary>
+        /// The open picker against the tools row as it is really laid out (portrait keeps that row in the flex
+        /// flow, so it can sit a few points off the frame's row: CI 335x720 had the picker 1 px into Pause).
+        /// Opens one GapPt above the row, centred on the camera button and inside the room; if the room above
+        /// is too short it opens one GapPt below the row; it never shares a row's height band with the buttons
+        /// while either side has room. Units are points (the chip sizes are), so a panel-px row goes through
+        /// ToPanel's inverse first and the result through <see cref="ToPanel"/>.
+        /// </summary>
+        public static HudBox PickerOverRow(HudBox room, HudBox row, float anchorX, float ceiling = float.NaN)
+        {
+            if (!room.Live) return default;
+            if (!row.Live) row = Box(room.X, room.Bottom, room.W, 0f);
+            float aboveTop = room.Y;
+            float aboveBot = Math.Min(room.Bottom, row.Y - GapPt);
+            float belowTop = Math.Max(room.Y, row.Bottom + GapPt);
+            float belowBot = room.Bottom;
+            float aboveH = aboveBot - aboveTop;
+            float belowH = belowBot - belowTop;
+
+            var up = FitWidth(PickerSize(room.W, aboveH), room.W);
+            var down = FitWidth(PickerSize(room.W, belowH), room.W);
+            bool upFits = up.H <= aboveH + 0.01f;
+            bool downFits = down.H <= belowH + 0.01f;
+            bool openUp = upFits || !downFits;
+            var size = openUp ? up : down;
+            float w = size.W, h = size.H;
+            float px = anchorX - w * 0.5f;
+            if (px + w > room.Right) px = room.Right - w;
+            if (px < room.X) px = room.X;
+            float py;
+            if (!openUp) py = belowTop;
+            else if (upFits) py = aboveBot - h;
+            else
+            {
+                // No side has the room: keep the row clear (a covered Pause cannot be tapped) and let the
+                // picker rise over the translucent cards, never past the ceiling (the stat strip) or the room.
+                py = aboveBot - h;
+                float top = float.IsNaN(ceiling) ? aboveTop : Math.Min(aboveTop, ceiling);
+                if (py < top) py = top;
+            }
+            return Box(px, py, w, h);
+        }
+
+        /// <summary>A picker footprint that went wider than the room for a short room: back to as many columns as fit.</summary>
+        static HudBox FitWidth(HudBox size, float roomW) =>
+            size.W <= roomW + 0.01f ? size : PickerSize(roomW, float.MaxValue);
+
+        /// <summary>
+        /// Picker footprint for the room it has: as many chip columns as fit (one row of five on a wide
+        /// screen, three by two at 335 pt), every chip a 44 pt target.
+        /// </summary>
+        public static HudBox PickerSize(float roomW, float roomH)
+        {
+            int n = FlightView.Picker.Length;
+            float chip = FlightView.WidestChip();
+            int cols = (int)Math.Floor((roomW - 2f * PadPt + GapPt) / (chip + GapPt));
+            if (cols > n) cols = n;
+            if (cols < 1) cols = 1;
+            int rows = (n + cols - 1) / cols;
+            // Too short for that many rows: go wider if the width allows it (never narrower than one chip).
+            while (rows > 1 && rows * ButtonPt + (rows - 1) * GapPt + 2f * PadPt > roomH && cols < n)
+            {
+                cols++;
+                rows = (n + cols - 1) / cols;
+            }
+            float w = cols * chip + (cols - 1) * GapPt + 2f * PadPt;
+            float h = rows * ButtonPt + (rows - 1) * GapPt + 2f * PadPt;
+            return new HudBox { W = w, H = h };
+        }
+
+        /// <summary>Chip boxes inside an open picker, in <see cref="FlightView.Picker"/> order, row by row.</summary>
+        public static HudBox[] PickerChips(HudBox picker)
+        {
+            int n = FlightView.Picker.Length;
+            var chips = new HudBox[n];
+            if (!picker.Live) return chips;
+            float chip = FlightView.WidestChip();
+            int cols = (int)Math.Floor((picker.W - 2f * PadPt + GapPt) / (chip + GapPt) + 0.01f);
+            if (cols > n) cols = n;
+            if (cols < 1) cols = 1;
+            float cw = (picker.W - 2f * PadPt - (cols - 1) * GapPt) / cols;
+            for (int i = 0; i < n; i++)
+            {
+                int c = i % cols, r = i / cols;
+                chips[i] = Box(picker.X + PadPt + c * (cw + GapPt), picker.Y + PadPt + r * (ButtonPt + GapPt), cw, ButtonPt);
+            }
+            return chips;
         }
 
         public static float DockHeight(bool notes, bool prompt)
@@ -246,6 +385,16 @@ namespace Kestrel.Core.Flight
         static float Next(float y, float h) => y + h + GapPt;
 
         static HudBox Box(float x, float y, float w, float h) => new HudBox { X = x, Y = y, W = w, H = h };
+
+        /// <summary>
+        /// The landscape dock mode for the live state. The dock height depends on it, so a change re-pins
+        /// the HUD (a prompt opening mid-flight must lift Follow, the camera button and Pause with the dock).
+        /// </summary>
+        public static FlightHudMode WideMode(bool prompt, bool notes) =>
+            prompt && notes ? FlightHudMode.PromptNotes
+            : prompt ? FlightHudMode.Prompt
+            : notes ? FlightHudMode.Notes
+            : FlightHudMode.Cruise;
 
         /// <summary>
         /// Landscape web HUD. The stat strip runs across the top, the plot and the stages panel
@@ -340,7 +489,10 @@ namespace Kestrel.Core.Flight
             f.Follow = Box(left, yL, railW, toolsH);
 
             bool nudgesInRail = prompt && !Contains(f.Dock, f.NudgeDown);
-            float rightExtra = nudgesInRail ? ButtonPt + GapPt : 0f;
+            // Camera shares the Pause row when the rail is wide enough; a narrow rail stacks it above Pause.
+            float camW = FlightView.WidestButton();
+            bool camBeside = railW >= camW + GapPt + PauseWidthPt;
+            float rightExtra = (nudgesInRail ? ButtonPt + GapPt : 0f) + (camBeside ? 0f : toolsH + GapPt);
             float stagesH = followY - GapPt - rightExtra - railTop;
             if (stagesH < 48f) stagesH = 48f;
             f.Stages = Box(right - railW, railTop, railW, stagesH);
@@ -353,7 +505,27 @@ namespace Kestrel.Core.Flight
                 f.NudgeUp = Box(f.Stages.X + 2f * (col + GapPt), yR, col, ButtonPt);
                 yR += ButtonPt + GapPt;
             }
-            f.Pause = Box(right - railW, yR, railW, toolsH);
+            if (camBeside)
+            {
+                f.Camera = Box(right - railW, yR, camW, toolsH);
+                f.Pause = Box(f.Camera.Right + GapPt, yR, right - f.Camera.Right - GapPt, toolsH);
+            }
+            else
+            {
+                f.Camera = Box(right - railW, yR, railW, toolsH);
+                f.Pause = Box(right - railW, yR + toolsH + GapPt, railW, toolsH);
+            }
+
+            // The picker opens toward the centre: left of the button, inside the rocket column, above the dock.
+            var open = RocketColumn(f);
+            var size = PickerSize(open.W, open.H);
+            float px = f.Camera.X - GapPt - size.W;
+            if (px + size.W > open.Right) px = open.Right - size.W;
+            if (px < open.X) px = open.X;
+            float py = f.Camera.Bottom - size.H;
+            if (py + size.H > open.Bottom) py = open.Bottom - size.H;
+            if (py < open.Y) py = open.Y;
+            f.CameraPicker = Box(px, py, Math.Min(size.W, open.W), Math.Min(size.H, open.H));
             return f;
         }
 

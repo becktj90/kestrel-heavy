@@ -186,7 +186,7 @@ namespace Kestrel.Game.Guide
             string kind = debrief.Kind ?? "";
             if (kind == "pass") kind = "";
             double goal = mission != null && mission.Target != null ? mission.Target.ApoKm : double.NaN;
-            double apo = result != null ? result.orbit.apoAlt / 1000.0 : double.NaN;
+            double apo = result != null ? MissionScore.FlownApoAltM(result) / 1000.0 : double.NaN;
             double peri = result != null ? result.orbit.periAlt / 1000.0 : double.NaN;
             double q = double.NaN;
             double qlim = double.NaN;

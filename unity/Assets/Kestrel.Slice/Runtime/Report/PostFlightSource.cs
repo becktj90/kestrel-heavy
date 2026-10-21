@@ -88,7 +88,8 @@ namespace Kestrel.Slice
             if (result != null)
             {
                 facts.PeakG = result.maxG;
-                facts.ApoKm = result.orbit.apoAlt / 1000.0;
+                double apo = MissionScore.FlownApoAltM(result);
+                facts.ApoKm = apo / 1000.0;
                 double peri = result.orbit.periAlt;
                 CampaignMission row = Row(mission) ?? ApogeeFallback(mission);
                 if (row != null)
@@ -107,11 +108,11 @@ namespace Kestrel.Slice
                         extra.BoosterKnown = true;
                         extra.BoosterGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, true);
                     }
-                    facts.Passed = FlightDebrief.GoalMet(row, intact, result.orbit.apoAlt, peri, result.maxG, facts.LandingGrade, extra);
+                    facts.Passed = FlightDebrief.GoalMet(row, intact, apo, peri, result.maxG, facts.LandingGrade, extra);
                     // F4: an intact miss says why and what to change, from the same gates.
                     facts.Miss = MissReason.Explain(row, new MissInput
                     {
-                        Intact = intact, ApoM = result.orbit.apoAlt, PeriM = peri, MaxG = result.maxG,
+                        Intact = intact, ApoM = apo, PeriM = peri, MaxG = result.maxG,
                         LandingGrade = facts.LandingGrade, Extra = extra,
                         Stages = design != null && design.stages != null ? design.stages.Count : 1,
                     });

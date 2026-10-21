@@ -3,6 +3,7 @@
 // the sheet leaves that column on screen. On device an inline display on the
 // designer wins over the stylesheet class, so the player stays on the designer.
 // Show sets display:none on every designer surface and brings the flight HUD up.
+using Kestrel.Core.Ui;
 using UnityEngine.UIElements;
 
 namespace Kestrel.Slice
@@ -19,7 +20,7 @@ namespace Kestrel.Slice
             Hide(ui.Q(WebHost));
             Hide(ui.Q("home"));
             Hide(ui.Q("issue-chip"));
-            var hud = ui.Q("hud");
+            var hud = ui.Q(UiIds.ScreenFlight);
             if (hud == null) return;
             hud.RemoveFromClassList("hidden");
             hud.style.display = DisplayStyle.Flex;
@@ -44,7 +45,7 @@ namespace Kestrel.Slice
             Unhide(ui.Q("home"));
             var chip = ui.Q("issue-chip");
             if (chip != null) chip.style.display = StyleKeyword.Null;
-            var hud = ui.Q("hud");
+            var hud = ui.Q(UiIds.ScreenFlight);
             if (hud == null) return;
             hud.AddToClassList("hidden");
             hud.style.display = StyleKeyword.Null;
