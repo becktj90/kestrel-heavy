@@ -33,7 +33,7 @@
 .webcast-now { background-color: rgb(255, 176, 0); color: black; -unity-font-style: bold; }
 .webcast-past { color: rgba(255, 255, 255, 0.55); }
 .webcast-pin { border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-left-color: white; border-right-color: white; border-top-color: white; border-bottom-color: white; }
-.webcast-skip { font-size: 22px; margin-top: 8px; color: white; background-color: rgba(255, 255, 255, 0.16); border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+.webcast-skip { font-size: 22px; margin-top: 8px; color: white; background-color: rgba(8, 13, 26, 0.82); border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
 .home-button { position: absolute; -unity-font-style: bold; color: white; background-color: rgba(8, 12, 20, 0.80); border-width: 0; margin: 0; } /* size, padding, radius in points: SliceApp.HomeButtonMetrics */
 .hidden { display: none; }
 /* U1 designer validation (DESIGNER_SPEC §6). Static rings, no pulse (Reduce Motion / Reduce Flashing safe). */

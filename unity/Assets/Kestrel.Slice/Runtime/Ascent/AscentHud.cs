@@ -1294,7 +1294,7 @@ namespace Kestrel.Slice
             }
             stages.Query<Button>().ForEach(b =>
             {
-                if (b.name == "skip-count")
+                if (b.name == UiIds.FlightSkipCount)
                 {
                     b.style.fontSize = Px(11f);
                     b.style.whiteSpace = WhiteSpace.Normal;
