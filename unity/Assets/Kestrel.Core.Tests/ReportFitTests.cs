@@ -130,28 +130,71 @@ namespace Kestrel.Core.Tests
             ("430x932", 430f, 932f, 59f, 34f), ("820x1180", 820f, 1180f, 24f, 20f), ("1024x1366", 1024f, 1366f, 24f, 20f),
         };
 
+        /// <summary>
+        /// #322 CI, twice at SE: 4 lines at 15 px in a 96 x 53 box, then "Climbing through…" (a cut copy; a tooltip
+        /// does not help on a phone). The banner is never cut: every verdict the game can show (WebcastBoard.Verdicts)
+        /// and the device tests' 64-character line fit whole, at 11 pt or more, at every portrait width from 320 to
+        /// 1032 pt, widths budgeted at MeasureFactor. Where two lines at 11 pt do not fit the stages card the card
+        /// becomes a full-width banner row (FlightHudLayout.BannerRowPt), never taller than the card.
+        /// </summary>
         [Test]
-        public void StageBannerFitsTwoLinesOfItsCardAtEveryPortraitSize()
+        public void StageBannerIsNeverCutAtAnyPortraitWidth()
         {
-            // SE in GameCI: "Climbing through max-Q on the pitch progra" needed 89 x 74 px in a 96 x 53 box (4 lines at 15 px).
+            Assert.That(LongVerdict, Is.EqualTo(FlightHudLayout.BannerReserve));
+            var texts = new List<string>(WebcastBoard.Verdicts) { LongVerdict };
+            var misses = new List<string>();
+            foreach (var t in texts)
+            for (int w = 320; w <= 1032; w++)
+            {
+                float row = FlightHudLayout.BannerRowPt(t, w);
+                var f = FlightHudLayout.Place(w, 667f, 20f, 0f, 0f, 0f, FlightHudMode.Cruise, row);
+                Assert.That(f.BannerRow, Is.EqualTo(row > 0f), w + " " + t);
+                Assert.That(row, Is.LessThanOrEqualTo(FlightHudLayout.PlotPt), w + " the row is never taller than the card");
+                float cardW = f.Banner.W + 2f * FlightHudLayout.BannerCardPadPt;
+                var fit = FlightHudLayout.BannerFit(t, cardW);
+                Assert.That(fit.Cut, Is.False, w + " " + t);
+                Assert.That(fit.Text, Is.EqualTo(t), w + " whole text");
+                Assert.That(fit.FontPt, Is.GreaterThanOrEqualTo(FlightHudLayout.BannerMinFontPt), w + " " + t);
+                if (!FlightHudLayout.BannerFitsRow(t, f)) { misses.Add(w + " '" + t + "'"); continue; }
+                float textW = FlightHudLayout.BannerTextW(cardW) - 2f;
+                foreach (var line in Lines(t, textW, fit.FontPt))
+                    Assert.That(FlightHudLayout.BudgetWidth(line, fit.FontPt), Is.LessThanOrEqualTo(textW + 0.01f), w + " '" + line + "'");
+            }
+            Assert.That(misses, Is.Empty, "banner copy that does not fit whole (ask Kestrel UX for shorter copy)");
+            // The game's own verdicts never need the row: they fit two lines of the card at every width.
+            foreach (var t in WebcastBoard.Verdicts)
+                for (int w = 320; w <= 1032; w++)
+                    Assert.That(FlightHudLayout.BannerRowPt(t, w), Is.EqualTo(0f), w + " " + t + " stays in the card");
+            // The device-test sizes: SE needs the row (2 lines at 13.5 pt), the 1024 iPad does not.
             foreach (var d in Portrait)
             {
-                var f = FlightHudLayout.Place(d.w, d.h, d.top, d.bottom, 0f, 0f, FlightHudMode.Cruise);
-                float w = f.Stages.W - 8f - 16f; // stages padding, then the banner's own padding
-                var fit = FlightHudLayout.WrapFit(LongVerdict, w, float.PositiveInfinity, 2, 15f, 11f);
-                int lines = FlightHudLayout.WrapLines(fit.Text, w - 2f, fit.FontPt);
-                Assert.That(lines, Is.LessThanOrEqualTo(2), d.name + " " + fit.Text);
-                Assert.That(fit.FontPt, Is.GreaterThanOrEqualTo(11f), d.name);
-                float content = lines * fit.FontPt * FlightHudLayout.LineHeight;
-                Assert.That(content, Is.LessThanOrEqualTo(53f), d.name + " content height (SE box was 53 px)");
-                Assert.That(content + 11f, Is.LessThanOrEqualTo(f.Stages.H), d.name + " banner inside the stages card");
-                foreach (var line in Lines(fit.Text, w - 2f, fit.FontPt))
-                    Assert.That(FlightHudLayout.BudgetWidth(line, fit.FontPt), Is.LessThanOrEqualTo(w - 2f + 0.01f), d.name + " '" + line + "'");
+                float row = FlightHudLayout.BannerRowPt(LongVerdict, d.w);
+                Assert.That(row > 0f, Is.EqualTo(d.w < 1000f), d.name + " banner row");
             }
-            // The worked SE case at the CI box: 2 lines, cut at a word.
-            var se = FlightHudLayout.WrapFit(LongVerdict, 96f, float.PositiveInfinity, 2, 15f, 11f);
-            Assert.That(se.Cut, Is.True);
-            Assert.That(se.Text, Does.StartWith("Climbing").And.EndWith("…"));
+        }
+
+        /// <summary>The banner row clears the health tabs, the stat cells, the dock, the tools row and the picker, and the rail starts under it.</summary>
+        [Test]
+        public void BannerRowClearsTheHudAtEveryPortraitSize()
+        {
+            foreach (var d in Portrait)
+            foreach (var mode in new[] { FlightHudMode.Cruise, FlightHudMode.Prompt, FlightHudMode.Notes, FlightHudMode.PromptNotes })
+            {
+                float row = FlightHudLayout.BannerRowPt(LongVerdict, d.w);
+                var f = FlightHudLayout.Place(d.w, d.h, d.top, d.bottom, 0f, 0f, mode, row);
+                string at = d.name + " " + mode;
+                foreach (var (name, box) in new[] { ("health", f.Health), ("telemetry", f.Telemetry), ("dock", f.Dock), ("follow", f.Follow),
+                    ("camera", f.Camera), ("pause", f.Pause), ("picker", f.CameraPicker), ("plot", f.Plot), ("clock", f.Clock), ("stage", f.Stage) })
+                {
+                    Assert.That(f.Banner.Overlaps(box), Is.False, at + " banner over " + name);
+                    if (f.BannerRow) Assert.That(f.Stages.Overlaps(box), Is.False, at + " banner row over " + name);
+                }
+                foreach (var c in f.Cells) Assert.That(f.Banner.Overlaps(c), Is.False, at + " banner over a stat cell");
+                Assert.That(f.Banner.Y, Is.GreaterThanOrEqualTo(f.Telemetry.Bottom), at);
+                Assert.That(f.Stages.Bottom, Is.LessThan(FlightHudLayout.StackTop * d.h - 6f), at + " banner over the stack");
+                if (f.BannerRow) Assert.That(f.Plot.Y, Is.GreaterThanOrEqualTo(f.Stages.Bottom + FlightHudLayout.GapPt - 0.01f), at + " rail under the row");
+                Assert.That(f.Plot.Bottom, Is.LessThanOrEqualTo(f.Follow.Y + 0.6f), at + " rail clears Follow");
+            }
         }
 
         [Test]

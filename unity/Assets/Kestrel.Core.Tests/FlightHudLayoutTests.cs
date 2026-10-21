@@ -126,6 +126,41 @@ namespace Kestrel.Core.Tests
             }
         }
 
+        /// <summary>
+        /// #322 CI 1280x800 engine-out: flight-info (44 x 44 px) stuck out of ascent-medal-row (42 px: 44 CSS pt on a
+        /// 0.948 panel). With the rows at 44 px in CSS points every dock row holds it, inside the dock, and the dock
+        /// still clears the tools row and the rails.
+        /// </summary>
+        [Test]
+        public void WideDockRowsHoldA44PxButtonOnAScaledPanel()
+        {
+            foreach (var wh in CameraWide)
+            foreach (var mode in Modes)
+            {
+                float rowPt = 44f * 1280f / 1214f;
+                var f = FlightHudLayout.PlaceWide(wh[0], wh[1], 0f, 0f, 0f, 0f, mode, rowPt);
+                string at = wh[0] + "x" + wh[1] + " " + mode;
+                Assert.That(f.Medal.H, Is.GreaterThanOrEqualTo(rowPt - 0.01f), at + " medal row");
+                Assert.That(f.Info.H, Is.GreaterThanOrEqualTo(rowPt - 0.01f), at + " info");
+                var rows = new List<(string, HudBox)> { ("medal", f.Medal), ("info", f.Info), ("primary", f.Primary), ("skip", f.Skip), ("assist", f.Assist) };
+                if (f.NudgeDown.Live && f.NudgeDown.Y >= f.Dock.Y) rows.Add(("nudge-down", f.NudgeDown));
+                if (f.Timer.Live && f.Timer.Y >= f.Dock.Y) rows.Add(("timer", f.Timer));
+                if (f.Quote.Live && f.Quote.Y >= f.Dock.Y) rows.Add(("quote", f.Quote));
+                foreach (var (name, b) in rows)
+                {
+                    if (!b.Live) continue;
+                    if (name != "timer" && name != "quote") Assert.That(b.H, Is.GreaterThanOrEqualTo(rowPt - 0.01f), at + " " + name);
+                    Assert.That(b.Y >= f.Dock.Y - 0.01f && b.Bottom <= f.Dock.Bottom + 0.6f, Is.True, at + " " + name + " inside the dock " + Show(b) + " " + Show(f.Dock));
+                }
+                for (int i = 0; i < rows.Count; i++)
+                    for (int j = i + 1; j < rows.Count; j++)
+                        if (rows[i].Item2.Live && rows[j].Item2.Live)
+                            Assert.That(rows[i].Item2.Overlaps(rows[j].Item2), Is.False, at + " " + rows[i].Item1 + "/" + rows[j].Item1);
+                foreach (var t in new[] { f.Follow, f.Camera, f.Pause, f.Plot, f.Stages })
+                    Assert.That(t.Overlaps(f.Dock), Is.False, at + " dock clear of the tools and rails");
+            }
+        }
+
         // ---- Camera button and picker (CAMERA-PICKER brief) -------------------------------------------
 
         /// <summary>Portrait: 335 narrow, 390 and 430 iPhones, iPad. Full screen with insets, and the inset-free content box AscentHud lays out.</summary>
@@ -355,7 +390,7 @@ namespace Kestrel.Core.Tests
         {
             "Clock", "Stage", "Telemetry", "Cell0", "Cell1", "Cell2", "Cell3", "Health", "Plot", "Stages", "Dock", "Info",
             "Medal", "Help", "Quote", "Timer", "Follow", "Pause", "Primary", "Skip", "Assist", "Alternate", "NudgeDown",
-            "NudgeUp", "Exit", "Camera",
+            "NudgeUp", "Exit", "Camera", "Banner",
         };
 
         static void FillOthers(FlightHudFrame f, HudBox[] o)
@@ -365,7 +400,7 @@ namespace Kestrel.Core.Tests
             o[7] = f.Health; o[8] = f.Plot; o[9] = f.Stages; o[10] = f.Dock; o[11] = f.Info; o[12] = f.Medal;
             o[13] = f.Help; o[14] = f.Quote; o[15] = f.Timer; o[16] = f.Follow; o[17] = f.Pause; o[18] = f.Primary;
             o[19] = f.Skip; o[20] = f.Assist; o[21] = f.Alternate; o[22] = f.NudgeDown; o[23] = f.NudgeUp; o[24] = f.Exit;
-            o[25] = f.Camera;
+            o[25] = f.Camera; o[26] = f.Banner;
         }
 
         const int MaxReported = 40;
@@ -400,17 +435,21 @@ namespace Kestrel.Core.Tests
             float chipW = FlightView.WidestChip() - 0.01f;
             float gap = FlightHudLayout.GapPt - 0.01f;
             var insets = h >= 812 ? NotchedInsets : FlatInsets;
+            // #322: the stage banner in its card, and as the full-width banner row the device tests' longest line needs.
+            float bannerRow = FlightHudLayout.BannerRowPt(FlightHudLayout.BannerReserve, w);
+            var rows = bannerRow > 0f ? new[] { 0f, bannerRow } : new[] { 0f };
             foreach (var inset in insets)
             foreach (var mode in Modes)
+            foreach (float banner in rows)
             {
-                var f = FlightHudLayout.Place(w, h, inset[0], inset[1], inset[2], inset[3], mode);
+                var f = FlightHudLayout.Place(w, h, inset[0], inset[1], inset[2], inset[3], mode, banner);
                 // The frame's own picker: a real gap above the frame row.
                 if (!f.CameraPicker.Live || f.CameraPicker.Bottom > f.Pause.Y - gap)
-                    Fail(fails, ref failCount, w + "x" + h + " inset " + inset[0] + "/" + inset[1] + " " + mode + " frame picker " + Show(f.CameraPicker) + " vs Pause " + Show(f.Pause));
+                    Fail(fails, ref failCount, w + "x" + h + " inset " + inset[0] + "/" + inset[1] + " " + mode + " banner " + banner + " frame picker " + Show(f.CameraPicker) + " vs Pause " + Show(f.Pause));
                 FillOthers(f, others);
                 var room = FlightHudLayout.PickerRoom(f);
                 var row0 = FlightHudLayout.ToolsRow(f);
-                float ceiling = f.Telemetry.Bottom + FlightHudLayout.GapPt;
+                float ceiling = FlightHudLayout.PickerCeiling(f);
                 foreach (float dy in shifts)
                 {
                     cases++;
@@ -448,7 +487,7 @@ namespace Kestrel.Core.Tests
                         }
                     }
                     if (bad != null)
-                        Fail(fails, ref failCount, w + "x" + h + " inset " + inset[0] + "/" + inset[1] + " " + mode + " row " + dy + ": " + bad + " picker " + Show(p));
+                        Fail(fails, ref failCount, w + "x" + h + " inset " + inset[0] + "/" + inset[1] + " " + mode + " banner " + banner + " row " + dy + ": " + bad + " picker " + Show(p));
                 }
             }
             return cases;
@@ -463,6 +502,12 @@ namespace Kestrel.Core.Tests
             return g < gap ? "gap " + g + " to " + name : null;
         }
 
+        /// <summary>
+        /// Landscape dock button rows: 44 CSS pt, and 44 px on the 1280x800 device-test panel (1214 px wide: 44 / 0.948
+        /// = 46.4 CSS pt, rounded up to whole pixels by AscentHud).
+        /// </summary>
+        static readonly float[] DockRowPts = { FlightHudLayout.ButtonPt, 44f * 1280f / 1214f };
+
         /// <summary>One landscape CSS size (and the same aspect on the 1280-wide device-test panel): every inset and mode.</summary>
         static int LandscapePickerCases(float w, float h, HudBox[] others, List<string> fails, ref int failCount)
         {
@@ -471,9 +516,10 @@ namespace Kestrel.Core.Tests
             var insets = new[] { new[] { 0f, 0f, 0f, 0f }, new[] { 0f, 21f, 47f, 47f } };
             foreach (var inset in insets)
             foreach (var mode in Modes)
+            foreach (float rowPt in DockRowPts)
             {
                 cases++;
-                var f = FlightHudLayout.PlaceWide(w, h, inset[0], inset[1], inset[2], inset[3], mode);
+                var f = FlightHudLayout.PlaceWide(w, h, inset[0], inset[1], inset[2], inset[3], mode, rowPt);
                 var p = f.CameraPicker;
                 string bad = null;
                 if (!p.Live) bad = "picker not placed";
@@ -489,7 +535,7 @@ namespace Kestrel.Core.Tests
                         bad = "covers Pause on the 1280 panel";
                 }
                 if (bad != null)
-                    Fail(fails, ref failCount, w + "x" + h + " inset " + inset[2] + " " + mode + ": " + bad + " picker " + Show(p));
+                    Fail(fails, ref failCount, w + "x" + h + " inset " + inset[2] + " " + mode + " rows " + rowPt + ": " + bad + " picker " + Show(p));
             }
             return cases;
         }

@@ -42,6 +42,12 @@ namespace Kestrel.Core.Flight
         public HudBox Assist, Primary, Skip, Alternate, NudgeDown, NudgeUp, Follow, Pause, Exit;
         /// <summary>The "Cam: Auto" button, and where its five-chip picker opens (it is closed by default).</summary>
         public HudBox Camera, CameraPicker;
+        /// <summary>
+        /// The stage banner's label box (h-verdict): the stages card less its 4 pt padding. In banner-row mode
+        /// (<see cref="BannerRow"/>) the stages card is a full-width row under the stat strip, sized to the banner.
+        /// </summary>
+        public HudBox Banner;
+        public bool BannerRow;
         public HudBox[] Cells = new HudBox[4];
         public FlightHudMode Mode;
     }
@@ -170,7 +176,7 @@ namespace Kestrel.Core.Flight
         /// <paramref name="boxW"/> x <paramref name="boxH"/> (any one unit: points or pixels), widths budgeted with
         /// <see cref="MeasureFactor"/>. Still too long at the floor: cut after the last whole word that fits, plus "…".
         /// </summary>
-        public static QuoteFit WrapFit(string text, float boxW, float boxH, int maxLines, float fontPt, float minPt)
+        public static QuoteFit WrapFit(string text, float boxW, float boxH, int maxLines, float fontPt, float minPt, bool allowCut = true)
         {
             var fit = new QuoteFit { Text = text ?? "", FontPt = fontPt };
             if (string.IsNullOrEmpty(text) || !(boxW > 1f) || maxLines < 1) return fit;
@@ -182,6 +188,8 @@ namespace Kestrel.Core.Flight
             }
             float floor = minPt;
             fit.FontPt = floor;
+            // Never cut (the stage banner: a tooltip does not help on a phone): the floor face, the whole text.
+            if (!allowCut) return fit;
             var words = text.Split(' ');
             for (int n = words.Length - 1; n >= 1; n--)
             {
@@ -230,6 +238,84 @@ namespace Kestrel.Core.Flight
             return lines * font * LineHeight <= boxH + 0.01f;
         }
 
+        // ---- Stage banner (h-verdict) ---------------------------------------------------------------
+
+        /// <summary>Banner face: 15 pt, stepping to 11 pt; two lines in the card before it takes its own row.</summary>
+        public const float BannerFontPt = 15f;
+        public const float BannerMinFontPt = 11f;
+        public const int BannerCardLines = 2;
+        /// <summary>Stages card padding (each side), then the banner's own frame: 8 pt each side, 4 + 4 pt and a 3 pt edge.</summary>
+        public const float BannerCardPadPt = 4f;
+        public const float BannerPadXPt = 16f;
+        public const float BannerPadYPt = 11f;
+
+        /// <summary>
+        /// The longest stage banner line the portrait HUD is laid out and tested for (the device tests' stress line).
+        /// The game's own verdicts (<see cref="WebcastBoard.Verdicts"/>) top out at 14 characters and fit the card.
+        /// </summary>
+        public const string BannerReserve = "Climbing through max-Q on the pitch program, booster burning hot";
+
+        /// <summary>
+        /// Banner face for a card <paramref name="cardW"/> wide: the largest face (15 -> 11 pt, widths budgeted with
+        /// <see cref="MeasureFactor"/>) that wraps the whole text into two lines. Never cut: past the floor the face is
+        /// 11 pt and the text takes as many lines as it needs (<see cref="BannerLinesAt"/>). A card height
+        /// (<paramref name="cardH"/>) caps the face too, so a card wider than the model's never grows past its row.
+        /// </summary>
+        public static QuoteFit BannerFit(string text, float cardW, float cardH = float.PositiveInfinity) =>
+            WrapFit(text, BannerTextW(cardW), cardH - 2f * BannerCardPadPt - BannerPadYPt, BannerCardLines, BannerFontPt, BannerMinFontPt, allowCut: false);
+
+        /// <summary>Text width inside a stages card <paramref name="cardW"/> wide (card padding, then the banner's frame).</summary>
+        public static float BannerTextW(float cardW) => cardW - 2f * BannerCardPadPt - BannerPadXPt;
+
+        /// <summary>Lines the whole text takes at the fitted face (int.MaxValue when one word is wider than the card).</summary>
+        public static int BannerLinesAt(QuoteFit fit, float cardW) => WrapLines(fit.Text, BannerTextW(cardW) - 2f, fit.FontPt);
+
+        /// <summary>The banner label's height for its lines (whole points, rounded up): lines of the line box plus the frame.</summary>
+        public static float BannerLabelPt(int lines, float fontPt) => (float)Math.Ceiling(lines * fontPt * LineHeight + BannerPadYPt);
+
+        /// <summary>True when the whole text fits a stages card <paramref name="cardW"/> x <paramref name="cardH"/> in two lines at 11 pt or more.</summary>
+        public static bool BannerFitsCard(string text, float cardW, float cardH)
+        {
+            if (string.IsNullOrEmpty(text)) return true;
+            var fit = BannerFit(text, cardW);
+            int lines = BannerLinesAt(fit, cardW);
+            return lines <= BannerCardLines && BannerLabelPt(lines, fit.FontPt) <= cardH - 2f * BannerCardPadPt + 0.01f;
+        }
+
+        /// <summary>
+        /// Portrait: 0 when <paramref name="text"/> fits the stages card (32% of the content width) in two lines at 11 pt
+        /// or more; otherwise the height of the full-width banner row that holds the whole text (two lines at 15 -> 11 pt,
+        /// then more lines at 11 pt), capped at the card's own <see cref="PlotPt"/> so the row never takes more height
+        /// than the card it replaces (the picker room under it is the card mode's or larger). Text that still does not
+        /// fit at the cap is not cut; <see cref="BannerFitsRow"/> reports it.
+        /// </summary>
+        public static float BannerRowPt(string text, float width, float safeLeft = 0f, float safeRight = 0f)
+        {
+            float contentW = Math.Max(1f, width - safeLeft - safeRight - 2f * SideMarginPt);
+            if (BannerFitsCard(text, contentW * CardFraction, PlotPt)) return 0f;
+            var fit = BannerFit(text, contentW);
+            int lines = BannerLinesAt(fit, contentW);
+            float h = lines == int.MaxValue ? PlotPt : BannerLabelPt(lines, fit.FontPt) + 2f * BannerCardPadPt;
+            return Math.Min(PlotPt, h);
+        }
+
+        /// <summary>True when the whole text fits the frame's banner box (no word wider than it, every line inside it).</summary>
+        public static bool BannerFitsRow(string text, FlightHudFrame f)
+        {
+            if (string.IsNullOrEmpty(text)) return true;
+            float cardW = f.Banner.W + 2f * BannerCardPadPt;
+            var fit = BannerFit(text, cardW);
+            int lines = BannerLinesAt(fit, cardW);
+            return lines != int.MaxValue && BannerLabelPt(lines, fit.FontPt) <= f.Banner.H + 0.01f;
+        }
+
+        /// <summary>
+        /// Portrait picker ceiling: the open picker never rises past the stat strip, or in banner-row mode past the
+        /// banner row.
+        /// </summary>
+        public static float PickerCeiling(FlightHudFrame f) =>
+            (f.BannerRow ? Math.Max(f.Telemetry.Bottom, f.Stages.Bottom) : f.Telemetry.Bottom) + GapPt;
+
         public static float TextWidth(string text, float fontPt)
         {
             if (string.IsNullOrEmpty(text) || !(fontPt > 0f)) return 0f;
@@ -255,10 +341,12 @@ namespace Kestrel.Core.Flight
             new Device("iPad", 1032f, 1376f, 24f, 20f, 0f, 0f),
         };
 
-        public static FlightHudFrame Place(Device d, FlightHudMode mode) =>
-            Place(d.W, d.H, d.SafeTop, d.SafeBottom, d.SafeLeft, d.SafeRight, mode);
+        public static FlightHudFrame Place(Device d, FlightHudMode mode, float bannerRowPt = 0f) =>
+            Place(d.W, d.H, d.SafeTop, d.SafeBottom, d.SafeLeft, d.SafeRight, mode, bannerRowPt);
 
-        public static FlightHudFrame Place(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight, FlightHudMode mode)
+        /// <param name="bannerRowPt">0: the stage banner sits in the stages card. Above 0 (<see cref="BannerRowPt"/>):
+        /// the stages card is a full-width row that tall under the stat strip, and the trajectory rail starts under it.</param>
+        public static FlightHudFrame Place(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight, FlightHudMode mode, float bannerRowPt = 0f)
         {
             float left = safeLeft + SideMarginPt;
             float right = width - safeRight - SideMarginPt;
@@ -293,8 +381,19 @@ namespace Kestrel.Core.Flight
             float maxRight = width * 0.34f;
             float railW = RailMaxPt;
             if (left + railW > maxRight) railW = Math.Max(72f, maxRight - left);
+            if (bannerRowPt > 0f)
+            {
+                // Banner row: the card spans the content width, at most PlotPt tall, so the room under it is never
+                // less than the card mode's; the rail starts under it.
+                float rowH = Math.Min(PlotPt, bannerRowPt);
+                f.BannerRow = true;
+                f.Stages = Box(left, cardsY, contentW, rowH);
+                railTop = f.Stages.Bottom + GapPt;
+                if (railBot < railTop + 96f) railBot = railTop + 96f;
+            }
+            else f.Stages = Box(right - cardW, cardsY, cardW, PlotPt);
             f.Plot = Box(left, railTop, railW, railBot - railTop);
-            f.Stages = Box(right - cardW, cardsY, cardW, PlotPt);
+            f.Banner = Box(f.Stages.X + BannerCardPadPt, f.Stages.Y + BannerCardPadPt, f.Stages.W - 2f * BannerCardPadPt, f.Stages.H - 2f * BannerCardPadPt);
 
             f.Dock = Box(left, dockTop, contentW, dockH);
             float innerL = left + PadPt;
@@ -352,7 +451,7 @@ namespace Kestrel.Core.Flight
             f.Camera = Box((gapL + gapR - camW) * 0.5f, toolsY, camW, ButtonPt);
 
             // The picker opens above the tools row, right of the trajectory rail and under the stages card.
-            f.CameraPicker = PickerOverRow(PickerRoom(f), ToolsRow(f), f.Camera.X + f.Camera.W * 0.5f, f.Telemetry.Bottom + GapPt);
+            f.CameraPicker = PickerOverRow(PickerRoom(f), ToolsRow(f), f.Camera.X + f.Camera.W * 0.5f, PickerCeiling(f));
             return f;
         }
 
@@ -475,15 +574,18 @@ namespace Kestrel.Core.Flight
             return chips;
         }
 
-        public static float DockHeight(bool notes, bool prompt)
+        public static float DockHeight(bool notes, bool prompt) => DockHeight(notes, prompt, ButtonPt);
+
+        /// <summary>Dock height with button rows <paramref name="rowPt"/> tall (landscape: whole panel pixels, never under 44 pt).</summary>
+        public static float DockHeight(bool notes, bool prompt, float rowPt)
         {
             bool quote = prompt && !notes;
-            float h = PadPt + ButtonPt;
+            float h = PadPt + rowPt;
             if (notes) h += GapPt + HelpPt;
             if (quote) h += GapPt + QuotePt;
             if (prompt) h += GapPt + TimerPt;
-            h += GapPt + ButtonPt;
-            h += GapPt + ButtonPt;
+            h += GapPt + rowPt;
+            h += GapPt + rowPt;
             h += PadPt;
             return h;
         }
@@ -507,8 +609,12 @@ namespace Kestrel.Core.Flight
         /// sit in side rails, and the rocket column between them stays clear down to a short dock.
         /// Portrait <see cref="Place(float, float, float, float, float, float, FlightHudMode)"/> is unchanged.
         /// </summary>
-        public static FlightHudFrame PlaceWide(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight, FlightHudMode mode)
+        /// <param name="rowPt">Height of the dock's button rows (medal + info, prompt or assist, nudges) in these units.
+        /// AscentHud passes 44 pt as whole panel pixels (1280x800 CSS is a 0.948 panel: 44 px buttons need 46.4 CSS pt);
+        /// never under <see cref="ButtonPt"/>.</param>
+        public static FlightHudFrame PlaceWide(float width, float height, float safeTop, float safeBottom, float safeLeft, float safeRight, FlightHudMode mode, float rowPt = ButtonPt)
         {
+            if (!(rowPt >= ButtonPt)) rowPt = ButtonPt;
             if (!(width > height))
                 return Place(width, height, safeTop, safeBottom, safeLeft, safeRight, mode);
 
@@ -536,8 +642,8 @@ namespace Kestrel.Core.Flight
             // Keep the dock below the chase-camera stack (62% of the screen) so the rocket stays visible.
             float stackFloor = height * StackBottom;
             float maxDock = height - safeBottom - stackFloor - GapPt;
-            float wantDock = DockHeight(notes, prompt);
-            float oneRow = PadPt + ButtonPt + PadPt;
+            float wantDock = DockHeight(notes, prompt, rowPt);
+            float oneRow = PadPt + rowPt + PadPt;
             float dockH = wantDock;
             if (dockH > maxDock) dockH = Math.Max(oneRow, maxDock);
             if (dockH > height - safeBottom - stripY - stripH - 80f)
@@ -568,7 +674,7 @@ namespace Kestrel.Core.Flight
                 f.Cells[i] = Box(cellsL + i * (cellW + CellGapPt), stripY, Math.Max(1f, cellW), stripH);
 
             f.Dock = Box(left, dockTop, innerW, dockH);
-            PackDock(f, notes, prompt, quote);
+            PackDock(f, notes, prompt, quote, rowPt);
 
             float toolsH = ButtonPt;
             bool helpInRail = notes && !Contains(f.Dock, f.Help);
@@ -602,6 +708,7 @@ namespace Kestrel.Core.Flight
             float stagesH = followY - GapPt - rightExtra - railTop;
             if (stagesH < 48f) stagesH = 48f;
             f.Stages = Box(right - railW, railTop, railW, stagesH);
+            f.Banner = Box(f.Stages.X + BannerCardPadPt, f.Stages.Y + BannerCardPadPt, f.Stages.W - 2f * BannerCardPadPt, f.Stages.H - 2f * BannerCardPadPt);
             float yR = f.Stages.Bottom + GapPt;
             if (nudgesInRail)
             {
@@ -635,7 +742,7 @@ namespace Kestrel.Core.Flight
             return f;
         }
 
-        static void PackDock(FlightHudFrame f, bool notes, bool prompt, bool quote)
+        static void PackDock(FlightHudFrame f, bool notes, bool prompt, bool quote, float rowPt)
         {
             float inL = f.Dock.X + PadPt;
             float inW = f.Dock.W - 2f * PadPt;
@@ -643,34 +750,34 @@ namespace Kestrel.Core.Flight
             float maxY = f.Dock.Bottom - PadPt;
             bool Room(float h) => y + h <= maxY + 0.6f;
 
-            if (!Room(ButtonPt)) return;
-            f.Info = Box(inL + inW - InfoPt, y + (ButtonPt - InfoPt) * 0.5f, InfoPt, InfoPt);
-            f.Medal = Box(inL, y, Math.Max(44f, inW - InfoPt - GapPt), ButtonPt);
-            y += ButtonPt + GapPt;
+            if (!Room(rowPt)) return;
+            f.Info = Box(inL + inW - rowPt, y, rowPt, rowPt);
+            f.Medal = Box(inL, y, Math.Max(44f, inW - rowPt - GapPt), rowPt);
+            y += rowPt + GapPt;
 
-            if (!Room(ButtonPt)) return;
+            if (!Room(rowPt)) return;
             if (prompt)
             {
                 float col = (inW - 2f * GapPt) / 3f;
-                f.Primary = Box(inL, y, col, ButtonPt);
-                f.Skip = Box(inL + col + GapPt, y, col, ButtonPt);
-                f.Assist = Box(inL + 2f * (col + GapPt), y, col, ButtonPt);
+                f.Primary = Box(inL, y, col, rowPt);
+                f.Skip = Box(inL + col + GapPt, y, col, rowPt);
+                f.Assist = Box(inL + 2f * (col + GapPt), y, col, rowPt);
             }
             else
             {
                 float col = (inW - 2f * GapPt) / 3f;
-                f.Assist = Box(inL, y, col, ButtonPt);
-                f.NudgeDown = Box(inL + col + GapPt, y, col, ButtonPt);
-                f.NudgeUp = Box(inL + 2f * (col + GapPt), y, col, ButtonPt);
+                f.Assist = Box(inL, y, col, rowPt);
+                f.NudgeDown = Box(inL + col + GapPt, y, col, rowPt);
+                f.NudgeUp = Box(inL + 2f * (col + GapPt), y, col, rowPt);
             }
-            y += ButtonPt + GapPt;
-            if (prompt && Room(ButtonPt))
+            y += rowPt + GapPt;
+            if (prompt && Room(rowPt))
             {
                 float col = (inW - 2f * GapPt) / 3f;
-                f.Alternate = Box(inL, y, col, ButtonPt);
-                f.NudgeDown = Box(inL + col + GapPt, y, col, ButtonPt);
-                f.NudgeUp = Box(inL + 2f * (col + GapPt), y, col, ButtonPt);
-                y += ButtonPt + GapPt;
+                f.Alternate = Box(inL, y, col, rowPt);
+                f.NudgeDown = Box(inL + col + GapPt, y, col, rowPt);
+                f.NudgeUp = Box(inL + 2f * (col + GapPt), y, col, rowPt);
+                y += rowPt + GapPt;
             }
             if (prompt && Room(TimerPt))
             {

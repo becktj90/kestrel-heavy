@@ -550,6 +550,14 @@ namespace Kestrel.Game.Tests
             {
                 OnScreen(verdict.worldBound, screen, at + " stage banner");
                 Assert.That(TextFit.Problems(verdict), Is.Empty, at + " stage banner text");
+                // #322: the whole banner (its own row on narrow phones) clears the strip, the health tabs, the dock,
+                // the tools row and the open picker's seat.
+                foreach (var r in regions)
+                    if (!Contains(r, verdict))
+                        Assert.That(Overlaps(verdict.worldBound, r.worldBound), Is.False, at + " stage banner " + verdict.worldBound + " over " + Name(r) + " " + r.worldBound);
+                var picker = hud.Q(UiIds.FlightCameraPicker);
+                if (picker != null && Shown(picker))
+                    Assert.That(Overlaps(verdict.worldBound, picker.worldBound), Is.False, at + " stage banner over the camera picker");
             }
         }
 
