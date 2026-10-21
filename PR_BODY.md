@@ -122,32 +122,15 @@ Stage 1 gets `engineParams.throttleMin` 0.45 (stock 0.57), `guidance.maxQThrottl
 - vs 961edad: 111 flips (106 fail → pass, 5 pass → fail). The 5 are the intended m12 near-miss.
 
 
-### When #313 rebases over #331
+### Rebased over #331 (main 1dcb3b9)
 
-#331 (`fix/flight-to-landing`) has not landed. Its `FlightToLandingPlaythroughTests.Kh3RawStarter_BreaksUpBeforeMeco_ReportDoesNotWaitForABooster` asserts the main-branch breakup (held nudge plus default 0.70 throttle). Under #313 the raw KH-3 starter no longer breaks up: it separates and reaches orbit on the live loop (201.8 x 198.2 km, seed 1). When #313 rebases over #331, that test must be flipped to assert separation and orbit, with the same coverage and nothing deleted.
+#331 landed. Its `FlightToLandingPlaythroughTests` now fly #313's shared director: `MissionFlightSetup.Director` + `DirectedFlight.Step`, the same live loop as FlightDriver. The test's old `Apply`/`Sample` copy of the pre-#313 director is gone, since it read `AscentCommand.SuppressDesignThrottle`, which #313 removed. The raw KH-3 test is **flipped** with no coverage removed: `Kh3RawStarter_BreaksUpBeforeMeco_ReportDoesNotWaitForABooster` → `Kh3RawStarter_SeparatesAndReachesOrbit_ThenTheExpendableBoosterLandsBeforeTheReport`. Seed 1: no breakup, separation at T+156.1, orbit 201.8 × 198.2 km inside the band. The expendable booster flies to touchdown and is announced lost, and the report waits for it, then composes with no flight failure and a pass. The other 7 playthrough tests pass unchanged.
 
-## Tests (rebased on b2fa61a; head 37cb943 + this body)
-- **Expectations changed** (re-pinned to real values; full old → new list in GOLDEN_DIFF.md):
-  - the ellipse/C3 target energy;
-  - the KH-10 strap and landing hold;
-  - GV7 (new preset rule);
-  - Version1 liftoff masses (al-li);
-  - LaunchPredictorTests (now uses the shared rule);
-  - the Fix it tests (new rule, real values; the RanOutOfFuel fixture goes 50% → 16% upper load, the real depletion point);
-  - #311's MissReasonTests and #301's Starter tests (#313 numbers).
-- **New:**
-  - `DepartureCheckTests`;
-  - the Physics B test;
-  - the Heron batch-vs-live test;
-  - `PredictorBatchVerdictTests`;
-  - `FixIt_WeakAirframe_ThatOnlyFliesIntoAMiss_IsNotFixed`;
-  - `FixIt_WhenTheMaxQThrottleLoftsIntoAMiss_NeverClaimsFixed`;
-  - `KH12_SteepAdvice_IsFixItsEdit_AndFollowingItPassesEverySeed`, `KH12_SmallerPitchKickAlsoLands_AndOneEngineAloneIsNotEnough` and `FlightPathAngleMiss_NeedsACleanTiltedCutoff`;
-  - `TrackedCells_AreExactlyPantryLeo400K3_ForIssue326_AndStillMiss`.
+## Tests (rebased on main 1dcb3b9: #324, #327, #328, #330, #331)
 
 | Suite | Passed | Skipped | Failed |
 |---|---:|---:|---:|
-| Core | 892 | 12 | **0** |
+| Core | 912 | 10 | **0** |
 | Site | 28 | 0 | 0 |
 | Pad.Core | 84 | 0 | 0 |
 | Vehicle.Core | 41 | 0 | 0 |
@@ -155,11 +138,11 @@ Stage 1 gets `engineParams.throttleMin` 0.45 (stock 0.57), `guidance.maxQThrottl
 | Guide.Core | 41 | 0 | 0 |
 | Livery.Core / Livery.Branding | 15 / 39 | 0 | 0 |
 
-node: 179 tests, 172 pass, 0 fail, 1 skipped, 6 todo. `stubcheck --all`: exit 0. Unity EditMode and PlayMode were not run here (GameCI only).
+node: 179 tests, 172 pass, 0 fail. `stubcheck --all`: exit 0. Unity EditMode and PlayMode were not run here (GameCI only). Regenerating every vector (`KESTREL_WRITE_PREDICT/TIMELINE_DIFF/TIMELINES=1`, `npm run gen:golden`) on this head leaves the tree clean: no golden or fixture moves from the rebases.
 
-New since 4cc2859: `LivePadKh3Tests` (2), the Heron batch-vs-live test now flies the shipped throttled Heron with the monitor, `FixIt_WeakAirframe16…` asserts #313's rule, GV7 lists Heron (throttle settings), ReadoutV2 Pipit max-Q 36.21 → 37.77.
-
-main has moved since (#324, #327, #328): a rebase is needed for a clean merge; the only textual conflict is MissReasonTests.cs.
+- **Expectations changed** (re-pinned to real values; full old → new list in GOLDEN_DIFF.md): the ellipse/C3 target energy; the KH-10 strap and landing hold; GV7 (new preset rule, Heron); Version1 liftoff masses (al-li); LaunchPredictorTests (now uses the shared rule); the Fix it tests (new rule, real values); #311's MissReasonTests and #301's Starter tests (#313 numbers); ReadoutV2 Pipit max-Q 36.21 → 37.77; `FixIt_WeakAirframe16…` (#313's rule).
+- **On #324:** KH-8 → `KhEightOrbitIsInTheBand_ReliabilityIsTheOnlyReason`; KH-12 → the kick-window, steep-advice and flat-advice tests (list below).
+- **New:** `DepartureCheckTests`; the Physics B test; the Heron batch-vs-live test (shipped throttled Heron with the monitor); `PredictorBatchVerdictTests`; `FixIt_WeakAirframe_ThatOnlyFliesIntoAMiss_IsNotFixed`; `FixIt_WhenTheMaxQThrottleLoftsIntoAMiss_NeverClaimsFixed`; `FlightPathAngleMiss_NeedsACleanTiltedCutoff`; `TrackedCells_AreExactlyPantryLeo400K3_ForIssue326_AndStillMiss`; `LivePadKh3Tests` (2) and the `LivePadLoop` helper; `KH12_KickWindow_FourPointFiveLands_FourAndFiveMiss_FuelAloneNever`; `KH12_SixDegreeBuild_MissSaysWhyAndWhatToChange`; `KH12_SteepAdvice_IsTheSmallerKick_AndFollowingItPassesEverySeed`; `FlatAdvice_LargerKickLandsKh3AndKh4`.
 
 ## Decisions
 1. **Flight-path-angle advice:** done (above). The steep advice names the kick lever literally: a smaller initial pitch kick at launch (6° → 4.5° lands m12).
@@ -167,12 +150,108 @@ main has moved since (#324, #327, #328): a rebase is needed for a clean merge; t
 3. **Engine-out contracts:** pantry-leo400-k3 is tracked for **#326**. For #326: S2 at exactly ×1.10 (38.5 t, not rounded to the tonne) passes 5/5.
 
 ## For Arcade
-- **KH-3 strength restore:** the board's 1.9 restore flies the live pad to orbit but at 223.1 × 176.9 km, outside ±5% of 200 km; the starter as built lands 201.8 × 198.2. Which strength the row teaches is Arcade's call.
+- **KH-3 strength restore:** the board's 1.9 restore passes the batch (calm, 205.2 × 194.8 km on seeds 1–5) but flies the live pad in seed-1 wind to 223.1 × 176.9 km, outside ±5% of 200 km. This isn't a parity gap: in calm air live is 205.198 × 194.802, and the batch path in the same wind is 224.109 × 176.871 (0.44%). The difference is the auto-accepted wind-shear ease (#338). The starter as built lands 201.8 × 198.2 live. Which strength the row teaches is Arcade's call.
 - **KH-16 board row:** it uses strength **1.8** by hand (`restoreSafetyFactor`), while **1.5** is the minimum that passes seeds 1-5. Fix it's redesign note also names 1.5. Which number the row teaches is Arcade's call; it was left at 1.8.
+
+## Follow-ups
+- #338: gentler wind-shear ease (the auto-accepted 12 s ease moves KH-3's apogee about 9%, and tips KH-12 at 5°).
+- #339: briefing-wind cases in the starter gate (the batch flies calm air only).
+- #340: Fix it / board pitch-kick lever. Arcade's call; the 4.3–4.7° KH-12 window is a knife edge for kids.
+- KH-3 / KH-6 raw starters flying calm and live: follow-up PR right after #337 (approved). The raw KH-3 starter misses calm (327.7 × 72.3 km, diving) but lands in seed-1 wind; raw KH-6 misses at about 212 × 188 km in both.
+- #342: Booster landings miss Haven (KH-6/10/13/19), post-#313 live numbers.
+- #341: Closed-loop insertion guidance (widens the KH-12 knife edge, #340).
+- #335: jettison fairing mass at the fairing event.
+- #336: S1 sizing audit.
+- #333: upper-stage failure card shows before the booster lands.
+
+## KH-12 and the flight-path-angle advice: old → new (Physics approved 5460ca89)
+
+<details><summary>Full list</summary>
+
+
+Base: 1c21303 (#313 rebased on main 51d6e40, #324's 32,000 kg KH-12 top stage kept). Every number is from this branch.
+
+## Board row: `data/board-starters.json`, m12
+
+| Field | Old | New |
+|---|---|---|
+| `mode` | `fix` | `fly` |
+| `edit` | "Auto Fix it. Upper engines 2 → 3, with the max-Q throttle at 95%. With six first-stage engines the upper stage pushes at only 0.48 g, and the orbit comes out 856 × 344 km instead of the 600 km circle on every seed." | "Fly this rocket. It already clears every seed." (the text every other fly row uses) |
+| `designs[0].guidance.pitchKickDeg` | 6 | **4.5** |
+| `restoreSafetyFactor` | 1.7 | 1.7 (unchanged) |
+| Top stage `propMass` | 32,000 kg (#324) | 32,000 kg (unchanged) |
+| Strength (`safetyFactor`) | 1.55 | 1.55 (unchanged) |
+
+The starter's kick lives only in this row (HomeAutoBuild.Choose reads board-starters.json). No other data file has KH-12's kick.
+
+## KH-12 at 4.5° (the new board starter), seed 1 unless noted
+
+| Run | Apogee × perigee | In the 570–630 km band |
+|---|---|---|
+| Batch, calm (FlightBatch.Fly), seeds 1–5 | 602.8 × 597.2 on every seed | yes, 5/5 |
+| Live pad loop, calm (1/120 s, frame clock) | 602.787 × 597.213 | yes |
+| Live pad loop, seed-1 briefing wind and pad | 617.860 × 582.140 | yes |
+| Batch path with the same seed-1 wind (0.2 s) | 617.232 × 582.768 | yes (within 0.10% of live) |
+| Board + strength restore 1.7, batch | 604.8 × 595.2 | yes |
+
+The earlier live figure of 617.9 × 582.1 was flown **in the seed-1 briefing wind** (the live loop with the briefing card's wind, pad latitude and bonuses). Calm live is 602.8 × 597.2, the same as the batch to 0.0005%.
+
+## The kick window from the 6° build (32,000 kg, batch calm unless noted)
+
+| Kick | Batch seed 1 | Batch seeds passed | Live seed-1 wind |
+|---|---|---|---|
+| 6° (old starter) | 835.6 × 364.4, +1.88° at cutoff (fpa-steep) | 0/5 | 852.3 × 347.7, miss |
+| 5° | 617.2 × 582.8 | 5/5 | 830.8 × 369.2, **miss** |
+| 4.7° | 605.5 × 594.5 | 5/5 | 612.6 × 587.4, in band |
+| 4.5° | 602.8 × 597.2 | 5/5 | 617.9 × 582.1, in band |
+| 4.3° | 601.7 × 598.3 | 5/5 | 603.9 × 596.1, in band |
+| 4.2° | 689.7 × 510.3 | 0/5 | 605.3 × 594.7, in band |
+| 4° | 739.8 × 460.2, −1.14° (diving) | **0/5** | 612.8 × 587.2, in band |
+
+Window that wins batch 5/5 and live (wind): 4.3°–4.7°. 4.5° is the centre.
+Extra top-stage fuel alone (+4% to +21%) on the 6° build lands no seed: about 360 × 840 km on each step (+5% seed 1 has an engine-out).
+
+## Advice text and codes: `unity/Assets/Kestrel.Core/Flight/MissReason.cs`
+
+| Code | Old advice | New advice |
+|---|---|---|
+| `fpa-steep` (`MissReason.SteepAdvice`) | "Your rocket flew too steep. Give the upper stage more push (one more engine, with the max-Q throttle at 95%), or use a smaller pitch kick at launch (for example 6° → 4° in Guidance)." | "Your rocket flew too steep. Use a smaller pitch kick at launch (for example 6° → 4.5° in Guidance)." |
+| `fpa-flat` (new constant `MissReason.FlatAdvice`) | "Your rocket flew too flat. Add fuel to stage N, about 2% at a time (up to 10%), until the orbit rounds off." | "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance)." |
+| `fpa-steep-suborbital` | unchanged | unchanged |
+
+The codes are unchanged (`fpa-steep`, `fpa-flat`, `fpa-steep-suborbital`, `apo-high`), and so are the reasons and the 0.5° threshold.
+The flat lever is checked by flying it: KH-3 8° → 8.5° and KH-4 6° → 6.5° land seeds 1–5. KH-3 8° → 9° misses (212.7 × 187.3) and KH-4 7.5° breaks up (structural-maxq), so the example is a half-degree step.
+
+### weak-upper (kept, Physics)
+The rule is unchanged: weak-upper fires below 0.5 g upper-stage vacuum thrust-to-weight. KH-12's upper stage pushes at **0.584 g** at 32,000 kg (no warning) and 0.476 g at 40,000 kg (warning). Because the warning dropped, Fix it no longer adds an engine. Its first check is now maxq-high, and its edit is fins 1.10 → 3.10 m plus max-Q throttle 95%, which flies 797.6 × 402.4 (diving) and misses all 5 seeds. The old engine advice done by hand (+1 upper engine, 95%) flies 753.4 × 446.6 and misses all 5.
+
+## Test expectations
+
+| Test | Old | New |
+|---|---|---|
+| `MissReasonTests.StarterMissSaysWhyAndWhatToChange("m12", …)` | fpa-steep, 343 × 857 text, engine + kick advice | case removed: the board starter now passes. The exact 6° text moves to the new `KH12_SixDegreeBuild_MissSaysWhyAndWhatToChange` (364 km × 836 km, "still climbing, 1.9° up", new steep advice) |
+| `PassingStarterHasNoReason` | m1, m2, m5, m7, m11, m13, m14, m15 | adds **m12** |
+| `StarterMissSaysWhyAndWhatToChange` m3, m4 (fpa-flat) | fuel-step advice | larger-kick advice (reason text unchanged) |
+| `FlightPathAngleMiss_NeedsACleanTiltedCutoff` (made-up flat case) | fuel-step advice | larger-kick advice |
+| `KhTwelveLandsOnAWideFuelWindow` (#324) | starter apo-high on every seed; +4%…+21% fuel lands every seed | **replaced** by `KH12_KickWindow_FourPointFiveLands_FourAndFiveMiss_FuelAloneNever`. Board starter at 4.5° passes seeds 1–5 and lands live calm and live seed-1 wind. 4° misses seeds 1–5 (intact) and live calm. 5° misses live seed-1 wind. +4%…+21% fuel on the 6° build lands no seed |
+| `KH12_SteepAdvice_IsFixItsEdit_AndFollowingItPassesEverySeed` | Fix it adds 1 upper engine (2 → 3) + 95%, passes 5/5; engine + 95% by hand passes 5/5 | renamed `KH12_SteepAdvice_IsTheSmallerKick_AndFollowingItPassesEverySeed`. The 6° build is fpa-steep with the steep advice, and the 4.5° kick passes 5/5. weak-upper is pinned at 0.584 g (none) vs 0.476 g at 40,000 kg (warning). Fix it adds no engine and sets 95%, and **misses** 5/5. Engine + 95% by hand **misses** 5/5 |
+| `KH12_SmallerPitchKickAlsoLands_AndOneEngineAloneIsNotEnough` | 6° → 4° passes 5/5; engine only = fpa-steep | 6° → **4.5°** passes 5/5; engine only = fpa-steep (866.8 × 333.2) |
+| New `FlatAdvice_LargerKickLandsKh3AndKh4` | — | KH-3 8 → 8.5°, KH-4 6 → 6.5° pass seeds 1–5, and both starters read fpa-flat with `FlatAdvice` |
+| `CampaignFlightLoopTests.BoardStarter_FixItOrOneStrengthEdit_WinsEveryMission` | m12 in fix mode (Fix it's edit; failed at 797.6 × 402.4 after the rebase) | unchanged code. m12 is now a fly row and its starter passes 5/5. Fix-mode coverage stays on m4; still 18 rows |
+| `SharedDirectorTests.DefaultPlayer_EveryGoldenWinnerAndStarter_PassesOnEverySeed` | `starter(fix) m12` missed 5/5 at 797.6 × 402.4 after the rebase | unchanged code. m12 flies as `starter(fly)` and passes 5/5; still 20 winners and 20 starters |
+| `MoreTopStageFuelBringsTheHighPointIn` | comment: "the too-flat advice … is this same fuel step" | comment only: flat advice is the larger kick, and the fuel step also lands them (values unchanged) |
+| `KhEightOrbitIsInTheBand_ReliabilityIsTheOnlyReason` (from 1c21303) | — | unchanged |
+
+Test helper: `LivePadLoop` (in `LivePadKh3Tests.cs`) is the same live pad loop as the KH-3 test, for any design, calm or seed-1 wind.
+
+## Goldens and fixtures
+**None moved.** I regenerated every vector after the change (`KESTREL_WRITE_PREDICT=1 KESTREL_WRITE_TIMELINE_DIFF=1 KESTREL_WRITE_TIMELINES=1` on the Core suite, plus `npm run gen:golden`) and the tree came back clean. No file under `tests/vectors`, `data/golden` or `tests/fixtures` changed. The only data file changed is `data/board-starters.json` (m12's row, above). No advice text is pinned in any vector.
+
+</details>
 
 ## Kestrel Physics sign-off
 - Parking cutoff and the departure Δv check, with the margins table (A): TBD
 - Engine-out scoping (B): TBD
 - Heron batch-vs-live ≤ 0.5% apo: TBD
 - Preset retune, the predictor band and the Fix it rule (C): TBD
-- Signed off by: **Physics approved (4cc2859).**
+- Signed off by: **Physics approved (4cc2859; follow-ups approved at 5460ca89).**
