@@ -27,8 +27,10 @@ namespace Kestrel.Core.Tests
                     Assert.IsFalse(f.IsOn(k), k + " is off in the Starter Home");
                     continue;
                 }
-                Assert.IsTrue(f.IsOn(k), k + " stays on until PR 5");
-                Assert.AreEqual(f.Default(k), builtIn.Default(k), k + " built-in default matches the file");
+                // PR 5 (designer-starter): the file opens the Starter screen. The built-in stays on, so a missing
+                // file falls back to the existing designer rather than hiding things.
+                Assert.IsFalse(f.IsOn(k), k + " is off in the Starter designer");
+                Assert.IsTrue(builtIn.Default(k), k + " built-in default stays on");
             }
             Assert.IsFalse(f.IsOn("designer.nope"));
         }
