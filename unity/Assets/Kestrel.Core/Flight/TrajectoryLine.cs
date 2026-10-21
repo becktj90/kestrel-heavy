@@ -81,6 +81,7 @@ namespace Kestrel.Core.Flight
             liftoff = maxq = meco = fairing = seco = boost = entry = landing = default;
             qPeak = qPeakT = qPeakAlt = qPeakSpeed = 0;
             qHot = false;
+            highWater = 0f; highWaterT = -1;
             HasFairing = true;
             Recovery = false;
             Stages = 2;
@@ -201,15 +202,24 @@ namespace Kestrel.Core.Flight
                 double lastT = marks[last].TimeS;
                 double gap = NominalGap(marks[last].Stop, marks[upcoming].Stop);
                 if (!(gap > 1)) gap = 60;
-                double frac = (now - lastT) / gap;
-                if (frac < 0) frac = 0;
-                else if (frac > 0.82) frac = 0.82;
+                double x = (now - lastT) / gap;
+                // Toward the fairing the altitude says how far along we are (it jettisons at FairingAltM).
+                if (marks[upcoming].Stop == TrajectoryStop.Fairing && Finite(alt))
+                {
+                    double a0m = Finite(marks[last].AltM) ? marks[last].AltM : 0;
+                    double target = FairingAltM > 0 ? FairingAltM : 110000;
+                    if (target > a0m + 1) x = Math.Max(x, (alt - a0m) / (target - a0m));
+                }
+                double frac = Ease(x);
                 float a0 = marks[last].Along;
                 float a1 = marks[upcoming].Along;
                 progress = a0 + (float)frac * (a1 - a0);
             }
             if (progress < 0f) progress = 0f;
             else if (progress > 1f) progress = 1f;
+            // Never backwards within a flight (a late stop, a slow stage): the marker only moves up.
+            if (now + 1e-9 >= highWaterT && progress < highWater) progress = highWater;
+            if (now + 1e-9 >= highWaterT) { highWater = progress; highWaterT = now; }
             return new TrajectoryPlan { Marks = marks, Progress = progress, Upcoming = upcoming };
         }
 
@@ -363,6 +373,21 @@ namespace Kestrel.Core.Flight
                 default: return "Haven";
             }
         }
+
+        /// <summary>
+        /// Share of the way to the next stop. #333 (t432, T+116 and T+192): it was the nominal-gap fraction clamped at
+        /// 0.82, so a stage that burned longer than the table's gap parked the marker for minutes. Now linear to 0.6,
+        /// then easing toward 0.95 without ever stopping: the marker always creeps up and never reaches an unlit stop.
+        /// </summary>
+        public static double Ease(double x)
+        {
+            if (!(x > 0)) return 0;
+            if (x <= EaseKnee) return x;
+            return EaseKnee + (EaseCap - EaseKnee) * (1 - Math.Exp(-(x - EaseKnee) / (EaseCap - EaseKnee)));
+        }
+
+        public const double EaseKnee = 0.6, EaseCap = 0.95;
+        float highWater; double highWaterT = -1;
 
         static double NominalGap(TrajectoryStop from, TrajectoryStop to)
         {

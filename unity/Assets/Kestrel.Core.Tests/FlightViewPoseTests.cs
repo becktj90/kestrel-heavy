@@ -162,33 +162,107 @@ namespace Kestrel.Core.Tests
             Assert.That(pad.Fov, Is.EqualTo(Fov).Within(1e-9), "no zoom on the pad");
         }
 
-        [Test]
-        public void BelowOnThePadHoldsAboveTheDeckAndOffThePlume()
+        /// <summary>The countdown as SliceApp feeds it: ground anchor 1 m under the deck top (the vehicle base),
+        /// the pad yawed so its +Z points at the tower (PadTower.Fit), the trench in the pad frame.</summary>
+        static FlightPoseInput PadInput(FlightViewMode mode, double h, double r, double deckR, double alt = 0, double trench = 90)
         {
-            var pad = FlightViewPose.Pose(Input(FlightViewMode.Below, Flight()[0], 0));
-            Assert.That(pad.Position.Y, Is.GreaterThanOrEqualTo(FlightViewPose.BelowDeckLift * StackH - 1e-6), "0.15 h above the deck, not pressed onto it");
-            double side = Math.Sqrt(pad.Position.X * pad.Position.X + pad.Position.Z * pad.Position.Z);
-            Assert.That(side, Is.GreaterThanOrEqualTo(0.6 * StackH), "to the side of the plume axis");
-            // Trench along X (bearing 90): the camera sits square to it, toward -Z (away from the tower).
-            Assert.That(pad.Position.Z, Is.LessThan(-0.5 * StackH), "off the trench line");
-            Assert.That(Math.Abs(pad.Position.X), Is.LessThan(Math.Abs(pad.Position.Z)), "square to the trench, not down it");
+            return new FlightPoseInput
+            {
+                Mode = mode, Vehicle = new PoseVec(0, alt, 0), Up = PoseVec.Up, Height = h, Altitude = alt,
+                GroundY = -1, DeckY = 0, HasDeck = true, DeckRadius = deckR, Pad = new PoseVec(0, -1, 0),
+                TrenchBearingDeg = trench, BaseFovDeg = Fov, PadYawDeg = TowerYawDeg(r),
+            };
+        }
+
+        static double TowerYawDeg(double r) => Math.Atan2(-(r + 8), 6) * 180 / Math.PI;
+
+        static double AngleDeg(PoseVec a, PoseVec b) =>
+            Math.Acos(Math.Max(-1, Math.Min(1, PoseVec.Dot(a.Unit, b.Unit)))) * 180 / Math.PI;
+
+        [Test]
+        public void BelowOnThePadLooksUpFromThePad()
+        {
+            // TestFlight 202: a level side view 0.15 h over the deck, beside the tower legs and a light pole.
+            foreach (var (h, r, deckR) in new[] { (14.0, 0.45, 15.0), (22.0, 0.6, 15.0), (StackH, Radius, 24.0) })
+            foreach (var trench in new[] { 90.0, 0.0, 30.0, 200.0, double.NaN })
+            {
+                string where = "h " + h + " trench " + trench;
+                var input = PadInput(FlightViewMode.Below, h, r, deckR, 0, trench);
+                var pose = FlightViewPose.Pose(input);
+                var cam = pose.Position;
+                // Below the rocket's base (the deck top), above the apron by the low floor.
+                Assert.That(cam.Y, Is.LessThan(0), where + " under the rocket's base");
+                Assert.That(cam.Y, Is.GreaterThanOrEqualTo(input.GroundY + FlightViewPose.LowClearance - 1e-9), where + " clear of the ground");
+                Assert.That(pose.Clearance, Is.EqualTo(FlightViewPose.LowClearance).Within(1e-9), where + " runtime floor matches");
+                // Pitched up, with the base and the top both inside the frame.
+                var fwd = FlightViewPose.Forward(FlightViewMode.Below, cam, pose.LookAt, pose.Fov, 0, cam.Y + 1);
+                double pitch = Math.Asin(fwd.Y) * 180 / Math.PI;
+                Assert.That(pitch, Is.GreaterThan(10), where + " pitched up");
+                Assert.That(AngleDeg(fwd, new PoseVec(0, 0, 0) - cam), Is.LessThan(Fov * 0.5), where + " base in frame");
+                Assert.That(AngleDeg(fwd, new PoseVec(0, h, 0) - cam), Is.LessThan(Fov * 0.5), where + " top in frame");
+                Assert.That(FlightViewPose.Fill(pose), Is.GreaterThan(0.6), where + " the rocket fills the frame");
+                // Off the deck plinth and on the side away from the tower, so the tower stands behind the rocket.
+                double range = Math.Sqrt(cam.X * cam.X + cam.Z * cam.Z);
+                Assert.That(range, Is.GreaterThanOrEqualTo(deckR + FlightViewPose.BelowDeckGap - 1e-9), where + " outside the deck rim");
+                double yaw = input.PadYawDeg * Math.PI / 180;
+                var towerDir = new PoseVec(Math.Sin(yaw), 0, Math.Cos(yaw));
+                Assert.That(AngleDeg(new PoseVec(cam.X, 0, cam.Z), towerDir), Is.GreaterThan(125), where + " opposite the tower");
+                var tower = new PoseVec(-(r + 8), cam.Y, 6);
+                Assert.That((cam - tower).Length, Is.GreaterThan(deckR), where + " clear of the tower legs");
+                double camBearing = Math.Atan2(cam.X, cam.Z) * 180 / Math.PI - input.PadYawDeg;
+                if (!double.IsNaN(trench) && trench != 0 && trench != 30 && trench != 200)
+                    Assert.That(FlightViewPose.LineSeparation(camBearing, trench), Is.GreaterThanOrEqualTo(FlightViewPose.BelowTrenchClearDeg - 1e-6), where + " off the trench line");
+                Assert.That(FlightViewPose.LineSeparation(camBearing, double.IsNaN(trench) ? 90 : trench), Is.GreaterThanOrEqualTo(25), where + " never down the trench");
+            }
 
             // Before #288's offset hit the ground clamp: same height as the clamp floor, under the stack.
             var old = FlightView.Of(FlightViewMode.Below, StackH);
             Assert.That(old.Y, Is.LessThan(0), "the old Below sat under the deck at T-0");
 
             // Rising off the pad the pose moves without a jump, and is the plain low view a stack height up.
-            PoseVec prev = pad.Position;
+            PoseVec prev = FlightViewPose.Pose(PadInput(FlightViewMode.Below, StackH, Radius, 24)).Position;
+            PoseVec prevLook = FlightViewPose.Pose(PadInput(FlightViewMode.Below, StackH, Radius, 24)).LookAt;
             for (double alt = 0; alt <= 200; alt += 0.5)
             {
-                var m = new Moment { Name = "lift", Altitude = alt, PitchDeg = 90 };
-                var p = FlightViewPose.Pose(Input(FlightViewMode.Below, m, 0)).Position;
+                var pose = FlightViewPose.Pose(PadInput(FlightViewMode.Below, StackH, Radius, 24, alt));
+                var p = pose.Position;
                 Assert.That((p - prev).Length, Is.LessThan(2.5), "smooth at " + alt + " m");
-                Assert.That(p.Y - alt, Is.LessThan(StackH * 0.5) , "below the stack centre at " + alt + " m");
-                prev = p;
+                Assert.That((pose.LookAt - prevLook).Length, Is.LessThan(2.5), "look smooth at " + alt + " m");
+                Assert.That(p.Y - alt, Is.LessThan(StackH * 0.5), "below the stack centre at " + alt + " m");
+                var f = FlightViewPose.Forward(FlightViewMode.Below, p, pose.LookAt, pose.Fov, alt, p.Y + 1);
+                Assert.That(f.Y, Is.GreaterThan(0), "still looking up at " + alt + " m");
+                prev = p; prevLook = pose.LookAt;
             }
-            var high = FlightViewPose.Pose(Input(FlightViewMode.Below, new Moment { Altitude = 200, PitchDeg = 90 }, 0)).Position;
+            var high = FlightViewPose.Pose(PadInput(FlightViewMode.Below, StackH, Radius, 24, 200)).Position;
             Assert.That(high.Y, Is.EqualTo(200 + old.Y).Within(1e-6), "the low view once clear");
+        }
+
+        [Test]
+        public void EveryModeIsItsOwnViewMidFlightAndBelowLooksUpAtTheBelly()
+        {
+            // TestFlight t432 (#333): "Cam: Below is really a side or front view", and switching seemed to do nothing.
+            foreach (var m in Flight())
+            {
+                if (m.Altitude < 500) continue;
+                var poses = new FlightPose[All.Length];
+                for (int i = 0; i < All.Length; i++) poses[i] = FlightViewPose.Pose(Input(All[i], m, m.KeptBase));
+                double h = StackH - m.KeptBase;
+                for (int i = 0; i < All.Length; i++)
+                for (int j = i + 1; j < All.Length; j++)
+                {
+                    var a = poses[i]; var b = poses[j];
+                    double apart = (a.Position - b.Position).Length;
+                    double turn = AngleDeg(a.LookAt - a.Position, b.LookAt - b.Position);
+                    Assert.That(apart > 0.25 * h || turn > 10, Is.True,
+                        All[i] + " vs " + All[j] + " @ " + m.Name + ": " + apart.ToString("0") + " m apart, " + turn.ToString("0") + " deg");
+                }
+                var input = Input(FlightViewMode.Below, m, m.KeptBase);
+                var below = FlightViewPose.Pose(input);
+                var stackBase = input.Vehicle + input.Up.Unit * m.KeptBase;
+                Assert.That(below.Position.Y, Is.LessThan(stackBase.Y), "Below sits under the stack's base @ " + m.Name + " (pitch " + m.PitchDeg.ToString("0") + ")");
+                var fwd = FlightViewPose.Forward(FlightViewMode.Below, below.Position, below.LookAt, below.Fov, m.Altitude, below.Position.Y);
+                Assert.That(fwd.Y, Is.GreaterThan(0.2), "Below looks up @ " + m.Name);
+            }
         }
 
         [Test]

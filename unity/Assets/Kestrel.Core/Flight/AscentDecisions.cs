@@ -408,6 +408,10 @@ namespace Kestrel.Core.Flight
             public bool Accept, Touched;
         }
 
+        /// <summary>When the fairing call resolved (sim s, m, m/s); NaN until then. The trajectory rail lights Fairing
+        /// from it (#333): the flown AscentSim emits no "fairing" event (SimOptions.fairingJettisonAltM is unset).</summary>
+        public double FairingT = double.NaN, FairingAltM = double.NaN, FairingSpeedMps = double.NaN;
+
         readonly AscentVehicle vehicle;
         readonly EventSchedule schedule;
         readonly SeededWind wind;
@@ -701,6 +705,7 @@ namespace Kestrel.Core.Flight
                         schedule.SetSep(c.Stage + 1, 1);
                     break;
                 case AscentCall.Fairing:
+                    FairingT = s.T; FairingAltM = s.AltM; FairingSpeedMps = s.SpeedMps;
                     fairingFlux = AscentDecisions.HeatFlux(s.AltM, s.SpeedMps);
                     if (vehicle.MaxHeatFlux > 0 && fairingFlux >= vehicle.MaxHeatFlux) payloadDamaged = true;
                     break;

@@ -357,6 +357,7 @@ namespace Kestrel.Slice
         public void Choose(FlightViewMode mode)
         {
             viewMode = mode;
+            if (FlightView.Chases(mode)) lastChase = mode;
             RefreshCamera();
             RefreshFollow();
             ClosePicker();
@@ -610,8 +611,17 @@ namespace Kestrel.Slice
         public void FollowRocket()
         {
             if (Paused) return;
+            // A toggle (#333): following, a tap lets go to the ground camera; otherwise it recentres and chases again.
+            bool was = Following;
+            if (!was && !rig.Follow && FlightView.Chases(viewMode))
+            {
+                // Orbited off a chasing view: Follow recentres it, and that is the visible change.
+                rig = FlightCameraRig.Recenter(rig);
+                RefreshFollow();
+                return;
+            }
             rig = FlightCameraRig.Recenter(rig);
-            var next = FlightView.FollowView(viewMode);
+            var next = FlightView.FollowToggle(viewMode, was, lastChase);
             if (next != viewMode)
             {
                 Choose(next);
@@ -620,16 +630,28 @@ namespace Kestrel.Slice
             RefreshFollow();
         }
 
+        /// <summary>The last view that rides with the rocket, for Follow to come back to from Pad.</summary>
+        FlightViewMode lastChase = FlightViewMode.Auto;
+
         void RefreshFollow()
         {
             if (follow == null) return;
             bool on = Following;
             follow.text = FlightView.FollowCaption(on);
             follow.tooltip = FlightView.FollowTip(on);
-            follow.style.backgroundColor = on
-                ? new Color(1f, 1f, 1f, 0.12f)
-                : new Color(1f, 0.69f, 0f, 0.92f);
-            follow.style.color = on ? Color.white : new Color(0.08f, 0.08f, 0.1f);
+            // #333: Following was white at 12% under white text (about 1.1:1 on a pale sky). Now the dusk ink plate,
+            // cream text and a teal edge (a state); Follow rocket stays solid amber with dark text (an action).
+            // Kestrel.Core.Tests CountdownStackTests checks both at 4.5:1 or better over every backdrop.
+            var plate = on ? CountdownStack.FollowingPlate : CountdownStack.FollowPlate;
+            var ink = on ? CountdownStack.FollowingText : CountdownStack.FollowText;
+            follow.style.backgroundColor = new Color(plate.R, plate.G, plate.B, plate.A);
+            follow.style.color = new Color(ink.R, ink.G, ink.B, ink.A);
+            float edge = on ? Mathf.Max(1f, Mathf.Round(CountdownStack.FollowEdgePt * (lastUpp > 0.5f ? lastUpp : 1f))) : 0f;
+            var teal = new Color(CountdownStack.FollowingEdge.R, CountdownStack.FollowingEdge.G, CountdownStack.FollowingEdge.B, 1f);
+            follow.style.borderTopWidth = edge; follow.style.borderBottomWidth = edge;
+            follow.style.borderLeftWidth = edge; follow.style.borderRightWidth = edge;
+            follow.style.borderTopColor = teal; follow.style.borderBottomColor = teal;
+            follow.style.borderLeftColor = teal; follow.style.borderRightColor = teal;
         }
 
         static Button Tool(string name, string text, string tip)

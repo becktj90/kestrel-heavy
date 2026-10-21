@@ -114,6 +114,21 @@ jobs:
           name: device-captures
           path: unity/CaptureOut/starter/*.png
           if-no-files-found: warn
+      # PlayMode CountdownCaptureTests: the held count in every camera (auto, above, below, chase, pad) at 375x667,
+      # 390x844 and 430x932, with the pad-attachment, Below-pose, COUNT-tag and UiTreeChecks assertions.
+      - uses: actions/upload-artifact@v4
+        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'
+        with:
+          name: countdown-captures
+          path: unity/CaptureOut/countdown/*.png
+          if-no-files-found: warn
+      # PlayMode FlightPhaseCaptureTests: the ascent at T+17, T+116 and T+192 at the same phone sizes.
+      - uses: actions/upload-artifact@v4
+        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'
+        with:
+          name: flight-phase-captures
+          path: unity/CaptureOut/flight-phase/*.png
+          if-no-files-found: warn
 
 
   ios-compile:

@@ -53,6 +53,8 @@ namespace Kestrel.Slice
             BuildStrip();
             BuildCards();
             BuildActions();
+            if (healthDetail != null) root.Add(healthDetail);
+            hud.RegisterCallback<PointerDownEvent>(OnHudPointerDown);
             var band = hud.Q("hud-band");
             if (band != null) hud.Insert(hud.IndexOf(band) + 1, root);
             else hud.Insert(0, root);
@@ -74,6 +76,7 @@ namespace Kestrel.Slice
             // Hand the tools row (Follow, Cam, Pause) back to the flex flow before the HUD goes.
             ClearWidePins();
             UnwatchTools();
+            hud?.UnregisterCallback<PointerDownEvent>(OnHudPointerDown);
             railFrame = null;
             infoOpen = false;
             healthOpen = -1;
@@ -350,17 +353,22 @@ namespace Kestrel.Slice
             railMode = mode;
             railNudges = nudgeRowOpen;
             if (plot.parent != hud) hud.Insert(0, plot);
-            Pin(plot, new HudBox
+            // #333 (TestFlight t432): the frame is in the HUD's content box, but absolute offsets start at its padding
+            // edge. Pinned without the padding, the rail and the dock sat padTop higher than the flex rows: on a
+            // 62 pt notch the dock covered Follow / Cam / Pause (and took their taps) and SECO hid under the strip.
+            // CI's 24 px minimum padding hid it. Pins now add the padding, like SeatRailPicker.
+            padOrigin = new Vector2(padL, padT);
+            Pin(plot, Offset(new HudBox
             {
                 X = frame.Plot.X * upp,
                 Y = frame.Plot.Y * upp,
                 W = frame.Plot.W * upp,
                 H = frame.Plot.H * upp,
-            });
+            }));
             plot.style.backgroundColor = new Color(0.04f, 0.07f, 0.12f, FlightHudLayout.TrajectoryAlpha);
             plot.Apply(trajectory.At(flight != null ? flight.SimTime : 0, flight != null ? flight.Altitude : 0, flight != null ? flight.Speed : 0), upp);
             var dock = ScaleBox(frame.Dock);
-            Pin(actions, dock);
+            Pin(actions, Offset(dock));
             if (actions != null) actions.style.overflow = Overflow.Hidden;
             DressClock(frame.Clock.W, frame.Clock.H);
             SeatMedalRow(ScaleBox(Union(frame.Medal, frame.Info)), dock);
@@ -382,6 +390,10 @@ namespace Kestrel.Slice
             railFrame = frame;
             SeatRailPicker();
         }
+
+        /// <summary>The HUD's padding (panel px) the portrait pins are offset by: frame boxes are content-box relative.</summary>
+        Vector2 padOrigin;
+        HudBox Offset(HudBox b) => new HudBox { X = b.X + padOrigin.x, Y = b.Y + padOrigin.y, W = b.W, H = b.H };
 
         /// <summary>The last portrait frame, for re-seating the picker when the flex tools row moves.</summary>
         FlightHudFrame railFrame;
@@ -924,8 +936,8 @@ namespace Kestrel.Slice
                 if (skip != null) skip.style.display = DisplayStyle.None;
                 if (detail != null)
                     detail.text = director.Engineer
-                        ? "Engineer nudge offsets the planned pitch. The amber path is that offset."
-                        : "Auto-assist flies the timed calls. Tap one for a gold medal.";
+                        ? AscentNotes.EngineerDetail
+                        : AscentNotes.AssistDetail;
             }
             else
             {
@@ -986,7 +998,7 @@ namespace Kestrel.Slice
             GuideBinder.Prompts(flight);
             if (nudgeUp != null) nudgeUp.text = "Nudge +1°";
             if (caption != null)
-                caption.text = "Perfect window = green. Auto-assist does this for you in Simple. Cyan is the plan. Amber is the nudged path.";
+                caption.text = AscentNotes.Caption;
             if (bonus != null) bonus.text = BonusLine(score);
             if (extra != null) extra.text = ExtraLine(director);
             if (info != null)
@@ -1159,15 +1171,17 @@ namespace Kestrel.Slice
                 healthButtons[i] = b;
                 row.Add(b);
             }
-            healthDetail = new Label { name = "ascent-health-detail", pickingMode = PickingMode.Ignore };
+            // #333 (t432): the detail was pinned 28 pt down inside the health row, i.e. right on the ALT / SPEED / Q / G
+            // strip, and cut. It is now a popover under the strip (over the cards, never the readouts), added last to
+            // the ascent root so it draws above them, full text, dismissed by the same tab or any tap outside it.
+            healthDetail = new Label { name = HealthDetailName, pickingMode = PickingMode.Position };
             healthDetail.style.position = Position.Absolute;
             healthDetail.style.left = 0;
             healthDetail.style.right = 0;
-            healthDetail.style.top = Px(FlightHudLayout.HealthPt);
             healthDetail.style.display = DisplayStyle.None;
             healthDetail.style.whiteSpace = WhiteSpace.Normal;
+            healthDetail.RegisterCallback<ClickEvent>(_ => CloseHealth());
             health.Add(row);
-            health.Add(healthDetail);
             root.Add(health);
         }
 
@@ -1220,14 +1234,72 @@ namespace Kestrel.Slice
             {
                 healthDetail.text = parts[healthOpen].Name + ". " + parts[healthOpen].Detail;
                 healthDetail.style.display = DisplayStyle.Flex;
-                FlightDusk.Sentence(healthDetail, upp);
-                healthDetail.style.backgroundColor = FlightDusk.Ink;
-                healthDetail.style.paddingLeft = 6f * upp;
-                healthDetail.style.paddingRight = 6f * upp;
-                healthDetail.style.paddingTop = 2f * upp;
-                healthDetail.style.paddingBottom = 2f * upp;
+                SeatHealthDetail();
             }
             else healthDetail.style.display = DisplayStyle.None;
+        }
+
+        public const string HealthDetailName = "ascent-health-detail";
+
+        /// <summary>The open health popover: one gap under the stat strip, full width, whole pixels, never cut.</summary>
+        void SeatHealthDetail()
+        {
+            if (healthDetail == null || root == null) return;
+            FlightDusk.Sentence(healthDetail, upp);
+            healthDetail.style.overflow = Overflow.Visible;
+            healthDetail.style.height = StyleKeyword.Auto;
+            healthDetail.style.maxHeight = StyleKeyword.None;
+            healthDetail.style.backgroundColor = FlightDusk.Ink;
+            healthDetail.style.paddingLeft = Mathf.Round(Px(8f));
+            healthDetail.style.paddingRight = Mathf.Round(Px(8f));
+            healthDetail.style.paddingTop = Mathf.Round(Px(6f));
+            healthDetail.style.paddingBottom = Mathf.Round(Px(6f));
+            float r = Mathf.Round(Px(10f));
+            healthDetail.style.borderTopLeftRadius = r; healthDetail.style.borderTopRightRadius = r;
+            healthDetail.style.borderBottomLeftRadius = r; healthDetail.style.borderBottomRightRadius = r;
+            healthDetail.style.borderBottomWidth = Mathf.Round(Px(2f));
+            healthDetail.style.borderBottomColor = FlightDusk.Sun;
+            var strip = hud != null ? hud.Q("ascent-telemetry") : null;
+            float top = Mathf.Round(Px(FlightHudLayout.HealthPt + FlightHudLayout.GapPt + FlightHudLayout.TelemetryPt + FlightHudLayout.GapPt));
+            healthDetail.style.left = 0; healthDetail.style.right = 0; healthDetail.style.width = StyleKeyword.Auto;
+            // Measured (the landscape pins move the strip): one gap under it and as wide as it, in the root's frame.
+            var sb = strip != null ? strip.worldBound : default;
+            var rb = root.worldBound;
+            if (strip != null && strip.panel != null && sb.height > 1f && !float.IsNaN(sb.yMax) && !float.IsNaN(rb.yMin))
+            {
+                top = Mathf.Round(sb.yMax - rb.yMin + Px(FlightHudLayout.GapPt));
+                healthDetail.style.left = Mathf.Round(sb.xMin - rb.xMin);
+                healthDetail.style.right = StyleKeyword.Auto;
+                healthDetail.style.width = Mathf.Round(sb.width);
+            }
+            healthDetail.style.top = top;
+            healthDetail.BringToFront();
+        }
+
+        /// <summary>Health popover state (tests): the open tab, or -1.</summary>
+        public int HealthOpen => healthOpen;
+
+        void CloseHealth()
+        {
+            if (healthOpen < 0) return;
+            healthOpen = -1;
+            if (healthDetail != null) healthDetail.style.display = DisplayStyle.None;
+            if (flight != null) Present(flight);
+        }
+
+        /// <summary>A tap anywhere outside the health tabs closes the open detail (the tabs toggle it themselves).</summary>
+        void OnHudPointerDown(PointerDownEvent e) => TapAt(e.target as VisualElement);
+
+        /// <summary>A tap landed on <paramref name="target"/>: outside the health tabs it closes the open detail.
+        /// True when it closed it. The HUD's PointerDown handler and the device tests call it.</summary>
+        public bool TapAt(VisualElement target)
+        {
+            if (healthOpen < 0) return false;
+            var row = health != null ? health.Q(HealthRowName) : null;
+            for (var v = target; v != null; v = v.parent)
+                if (v == row) return false;
+            CloseHealth();
+            return true;
         }
 
         public const string HealthRowName = "ascent-health-row";
@@ -1270,7 +1342,14 @@ namespace Kestrel.Slice
             healthOpen = healthOpen == index ? -1 : index;
             if (flight != null) Present(flight);
             else if (healthDetail != null)
-                healthDetail.style.display = healthOpen >= 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            {
+                // Before the first flight frame (and in the device tests): the calm reading.
+                var calm = VehicleHealth.Read(new VehicleHealthInput { Fuel01 = 1, QLimitPa = 1, GLimit = 1 });
+                bool open = healthOpen >= 0 && healthOpen < calm.Length;
+                if (open) healthDetail.text = calm[healthOpen].Name + ". " + calm[healthOpen].Detail;
+                healthDetail.style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
+                if (open) SeatHealthDetail();
+            }
         }
 
         /// <summary>
@@ -1306,7 +1385,23 @@ namespace Kestrel.Slice
             }
             // Portrait: Follow / Cam / Pause sit right above the dock, so the sheet floats above them, never over them.
             float tools = widePinned ? 0f : Px(FlightHudLayout.ButtonPt + FlightHudLayout.GapPt);
-            float bottom = dock + Px(FlightHudLayout.GapPt) + tools;
+            // `bottom` is from the HUD's padding edge; the dock and the tools row sit inside the bottom padding (#333:
+            // without it the sheet covered Follow / Cam / Pause by the home-indicator inset).
+            float padB = widePinned ? 0f : hud.resolvedStyle.paddingBottom;
+            if (float.IsNaN(padB)) padB = 0f;
+            float toolsMargin = 0f;
+            var toolRow = hud.Q("flight-tools");
+            if (!widePinned && toolRow != null && toolRow.style.marginBottom.keyword == StyleKeyword.Undefined)
+                toolsMargin = toolRow.style.marginBottom.value.value;
+            float bottom = padB + dock + Px(FlightHudLayout.GapPt) + tools + toolsMargin;
+            // Once laid out, sit exactly one gap above the real tools row (the flex flow decides where it is).
+            if (!widePinned && toolRow != null && toolRow.panel != null && toolRow.resolvedStyle.display != DisplayStyle.None)
+            {
+                var hb = hud.worldBound; var tb = toolRow.worldBound;
+                if (!float.IsNaN(hb.yMax) && !float.IsNaN(tb.yMin) && tb.height > 0.5f)
+                    bottom = Mathf.Max(bottom, hb.yMax - tb.yMin + Px(FlightHudLayout.GapPt));
+            }
+            bottom = Mathf.Round(bottom);
             help.style.bottom = bottom;
             float panelH = hud.resolvedStyle.height;
             if (float.IsNaN(panelH) || panelH < 8f) panelH = 700f * upp;
@@ -1317,9 +1412,14 @@ namespace Kestrel.Slice
                 float room = (panelH - bottom) / upp - (panelH / upp * FlightHudLayout.StackBottom + 8f);
                 sheet = Mathf.Clamp(Mathf.Min(sheet, room), 48f, 96f);
             }
-            help.style.height = Px(sheet);
-            help.style.maxHeight = Px(sheet);
-            help.style.minHeight = Px(48f);
+            // Fixed height, and it scrolls: the notes never grow over the rows under them (#333).
+            help.style.height = Mathf.Round(Px(sheet));
+            help.style.maxHeight = Mathf.Round(Px(sheet));
+            help.style.minHeight = Mathf.Round(Px(48f));
+            help.style.overflow = Overflow.Hidden;
+            help.mode = ScrollViewMode.Vertical;
+            help.verticalScrollerVisibility = ScrollerVisibility.Auto;
+            help.pickingMode = PickingMode.Position;
             FlightDusk.Frame(help, upp, false);
             FlightDusk.Sentence(detail, upp);
             FlightDusk.Sentence(caption, upp);
@@ -1452,6 +1552,8 @@ namespace Kestrel.Slice
                     });
                 }
             }
+            if (director != null && !double.IsNaN(director.FairingT))
+                trajectory.Seen(new TrajectoryEvent { T = director.FairingT, Type = "fairing", AltM = director.FairingAltM, SpeedMps = director.FairingSpeedMps });
             trajectory.Sample(flight.SimTime, alt, speed, q);
             var rec = RecoveryLog.Current;
             if (rec != null && rec.Marks != null)

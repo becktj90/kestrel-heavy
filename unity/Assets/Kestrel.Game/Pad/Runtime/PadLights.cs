@@ -111,11 +111,13 @@ namespace Kestrel.Pad
                 {
                     var foot = new Vector3(s.Position.X, 0, s.Position.Z);
                     _polesLocal.Add(Matrix4x4.TRS(foot, Quaternion.identity, new Vector3(1, s.Position.Y, 1)));
+                    _polePlan.Add(i);
                 }
                 _fixLocal.Add((s.Kind, FixtureMatrix(s)));
                 if (s.Realtime) Realtime.Add(MakeLight(s));
             }
-            _glow = new PadGlow(Plan, BuiltQuality);
+            _hidden = new bool[Plan.Count];
+            _glow = new PadGlow(Plan, BuiltQuality) { HiddenPlan = _hidden };
             Plume = new PlumeSplash(transform, BuiltQuality, layout.DeckRadius);
             if (Plume.Light != null) Realtime.Add(Plume.Light);
             _builtFor = default; _lastNight = -1f; Refresh();
@@ -123,6 +125,26 @@ namespace Kestrel.Pad
 
         readonly List<(LightKind, Matrix4x4)> _fixLocal = new List<(LightKind, Matrix4x4)>();
         readonly List<Matrix4x4> _polesLocal = new List<Matrix4x4>();
+        readonly List<int> _polePlan = new List<int>();
+        bool[] _hidden;
+        /// <summary>Poles skipped this frame because they stand in the camera's foreground (PadLighting.PoleTooClose).</summary>
+        public int HiddenPoles { get; private set; }
+
+        /// <summary>Mark the poles too close to the camera. True when the set changed (the batches must be rebuilt).</summary>
+        bool UpdateHidden(Vector3 camWorld)
+        {
+            if (Plan == null || _hidden == null) return false;
+            var c = transform.InverseTransformPoint(camWorld);
+            bool changed = false; int n = 0;
+            for (int i = 0; i < Plan.Count; i++)
+            {
+                bool h = PadLighting.PoleTooClose(Plan[i], c.x, c.z);
+                if (h) n++;
+                if (h != _hidden[i]) { _hidden[i] = h; changed = true; }
+            }
+            HiddenPoles = n;
+            return changed;
+        }
 
         /// <summary>Fixture box: floods 1.2×0.8×0.3 facing Aim, aviation 0.35 cube, strips 6×0.08×0.08 along X.</summary>
         public static Matrix4x4 FixtureMatrix(LightSpec s)
@@ -162,8 +184,13 @@ namespace Kestrel.Pad
         {
             var w = transform.localToWorldMatrix; if (w == _builtFor) return; _builtFor = w;
             foreach (var b in _fix.Values) b.Clear(); _poles.Clear();
-            foreach (var (k, m) in _fixLocal) _fix[k].Add(w * m);
-            foreach (var m in _polesLocal) _poles.Add(w * m);
+            for (int i = 0; i < _fixLocal.Count; i++)
+                if (_hidden == null || i >= _hidden.Length || !_hidden[i]) _fix[_fixLocal[i].Item1].Add(w * _fixLocal[i].Item2);
+            for (int j = 0; j < _polesLocal.Count; j++)
+            {
+                int k = _polePlan[j];
+                if (_hidden == null || k >= _hidden.Length || !_hidden[k]) _poles.Add(w * _polesLocal[j]);
+            }
         }
 
         /// <summary>Kind intensity → emission. Day keeps a faint glow so fixtures read as lamps.</summary>
@@ -186,9 +213,12 @@ namespace Kestrel.Pad
         {
             if (Plan == null) return;
             if (FollowSun) Night = ResolveNight();
+            var cam = ViewCamera != null ? ViewCamera : Camera.main;
+            // A pole in a low view's foreground is skipped with its fixture and halo (Below, TestFlight 202).
+            if (cam != null && UpdateHidden(cam.transform.position)) _builtFor = default;
             Refresh(); ApplyNight(Time.timeAsDouble);
             Plume?.Update(transform.localToWorldMatrix, Night, gameObject.layer);
-            var cam = ViewCamera != null ? ViewCamera : Camera.main; if (cam == null) return;
+            if (cam == null) return;
             int q = BuiltQuality; Ledger.Reset(); var p = cam.transform.position;
             foreach (var b in _fix.Values) b.Draw(p, q, Ledger);
             _poles.Draw(p, q, Ledger);
@@ -198,7 +228,7 @@ namespace Kestrel.Pad
         public void Clear()
         {
             foreach (var l in Realtime) if (l != null) DestroyImmediate(l.gameObject);
-            Realtime.Clear(); _fix.Clear(); _fixLocal.Clear(); _polesLocal.Clear(); _blinkers.Clear(); _matColor.Clear();
+            Realtime.Clear(); _fix.Clear(); _fixLocal.Clear(); _polesLocal.Clear(); _polePlan.Clear(); _hidden = null; HiddenPoles = 0; _blinkers.Clear(); _matColor.Clear();
             foreach (var m in _mats.Values) if (m != null) DestroyImmediate(m);
             _mats.Clear();
             if (_box != null) DestroyImmediate(_box); if (_poleMesh != null) DestroyImmediate(_poleMesh);

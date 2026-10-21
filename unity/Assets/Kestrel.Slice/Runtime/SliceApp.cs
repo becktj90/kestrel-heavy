@@ -868,7 +868,9 @@ namespace Kestrel.Slice
             float fov = juiceFov * (viewZoom > 0f ? viewZoom : 1f);
             cam.fieldOfView = fov;
             Vector3 lead = fx != null ? fx.Lead : Vector3.zero;
-            cam.transform.position = PadGround.ClampAboveGround(v + framed + lead, ground.position.y);
+            // The floor comes with the pose: 3 m, or the Below pad hold's low floor (it looks up from under the deck top).
+            float clearance = (float)pose.Clearance;
+            cam.transform.position = PadGround.ClampAboveGround(v + framed + lead, ground.position.y, clearance);
             var cp = cam.transform.position;
             Vector3 look = v + lookOffset;
             if (flightView == FlightViewMode.Auto)
@@ -878,7 +880,7 @@ namespace Kestrel.Slice
             if (fx != null)
                 cam.transform.position = PadGround.ClampAboveGround(
                     cam.transform.position + cam.transform.right * fx.Shake.x + cam.transform.up * fx.Shake.y,
-                    ground.position.y);
+                    ground.position.y, clearance);
         }
 
         /// <summary>
@@ -910,6 +912,9 @@ namespace Kestrel.Slice
                 Pad = V(g),
                 TrenchBearingDeg = trench != null ? trench.BearingDeg : double.NaN,
                 BaseFovDeg = baseFov,
+                // The trench bearing and the Below hold's side are in the pad frame (+Z at the tower).
+                PadYawDeg = padRenderer != null ? padRenderer.transform.eulerAngles.y : 0f,
+                DeckRadius = deck != null ? deck.localScale.x * 0.5f : 0f,
             });
         }
 
@@ -1363,6 +1368,21 @@ namespace Kestrel.Slice
         /// <summary>Designer launch control. Home auto-build calls <see cref="Launch"/> itself.</summary>
         public void PressLaunch() => Launch();
 
+        // Capture hooks (Kestrel.Capture.Tests): hold the count on its current second, pick a camera the way the Cam
+        // button does, and read what the camera and pad are doing. Nothing in play sets HoldCountForCapture.
+        /// <summary>When set, the count does not advance (the clock, holds and liftoff all wait).</summary>
+        public static bool HoldCountForCapture;
+        /// <summary>The count is on screen and has not handed off to the ascent.</summary>
+        public bool CountingForCapture => handoff != null && !handoff.Closed && !handoff.Ascending && sequence != null;
+        /// <summary>The Cam picker's own path (FlightChrome.Choose): label, pose and Following all follow.</summary>
+        public void ChooseViewForCapture(FlightViewMode mode) { if (chrome != null) chrome.Choose(mode); }
+        public FlightViewMode ViewForCapture => flightView;
+        public Camera CameraForCapture => cam;
+        public Transform VehicleForCapture => vehicleRoot;
+        public Kestrel.Pad.PadRenderer PadForCapture => trenchPad;
+        public VisualElement UiForCapture => ui;
+        public double FlightClockForCapture => flight != null && flight.Sim != null ? flight.Sim.T : double.NaN;
+
         /// <summary>Same design that left the pad. The launch gate already passed.</summary>
         void RestartFlight()
         {
@@ -1698,12 +1718,13 @@ namespace Kestrel.Slice
         void TickCount()
         {
             if (handoff.Closed) return;
-            double dt = LiftoffHandoff.FrameDt(UnityEngine.Time.deltaTime, UnityEngine.Time.unscaledDeltaTime);
+            double dt = HoldCountForCapture ? 0 : LiftoffHandoff.FrameDt(UnityEngine.Time.deltaTime, UnityEngine.Time.unscaledDeltaTime);
             handoff.Tick(dt, TryAscend, LiveBlockers());
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             NoteAscentError();
             if (skipCount != null) skipCount.EnableInClassList("hidden", handoff.Ascending);
+            if (handoff.Ascending) UndressCount();
             if (handoff.Ascending || sequence == null) return;
             var pad = tower != null ? tower.Find("Pad") : null;
             var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
@@ -1713,9 +1734,34 @@ namespace Kestrel.Slice
                 hT.text = sequence.Clock;
                 DressClock(hT);
             }
-            if (hStage != null) hStage.text = "COUNT";
+            if (hStage != null)
+            {
+                hStage.text = CountdownStack.TagText;
+                CountdownChrome.DressTag(hStage, UnitsPerPoint());
+                countTagDressed = true;
+            }
             HideCountGrid();
             RefreshWebcast(sequence.Time, false);
+        }
+
+        bool countTagDressed;
+
+        /// <summary>Liftoff: the count card and the COUNT tag go back to the Slice.uxml tree before AscentHud adopts it.</summary>
+        void UndressCount()
+        {
+            var cast = hVerdict != null ? hVerdict.parent : null;
+            if (CountdownChrome.Dressed(hud != null ? hud.Q("webcast") : cast))
+                CountdownChrome.Undress(hud.Q("webcast"), hVerdict, hPulse, hCallout, skipCount);
+            if (countTagDressed) { CountdownChrome.UndressTag(hStage); countTagDressed = false; }
+        }
+
+        /// <summary>The count card's outer width (pt): the HUD's content box, as laid out.</summary>
+        float CountCardWidthPt(float upp)
+        {
+            var host = hud != null ? hud.Q("webcast")?.parent : null;
+            float w = host != null ? host.contentRect.width : float.NaN;
+            if (float.IsNaN(w) || w < 8f) w = ui != null ? ui.layout.width - 2f * FlightHudLayout.SideMarginPt * upp : float.NaN;
+            return float.IsNaN(w) || w < 8f ? 375f - 2f * FlightHudLayout.SideMarginPt : w / upp;
         }
 
         void HideCountGrid()
@@ -1758,6 +1804,12 @@ namespace Kestrel.Slice
                 : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
+            if (!flying && handoff != null && !handoff.Ascending)
+            {
+                RefreshCountCard();
+                return;
+            }
+            UndressCount();
             var cast = hVerdict.parent;
             if (cast != null) cast.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
             bool alarm = pulse.Verdict != null && pulse.Verdict.IndexOf("lost", System.StringComparison.OrdinalIgnoreCase) >= 0;
@@ -1790,6 +1842,28 @@ namespace Kestrel.Slice
                 hCallout.style.display = DisplayStyle.Flex;
                 FlightDusk.Callout(hCallout, UnitsPerPoint(), alarm);
             }
+        }
+
+        /// <summary>The count: one card (title, the spare line on the card, status pill + Skip count). #333.</summary>
+        void RefreshCountCard()
+        {
+            if (seqRow != null) { seqRow.Clear(); seqRow.style.display = DisplayStyle.None; }
+            string line = "";
+            if (juice != null && !string.IsNullOrEmpty(juice.Line)) line = juice.Line;
+            else if (sequence != null)
+            {
+                if (!string.IsNullOrEmpty(sequence.Label) && !Kestrel.Core.PlayerText.Leak(sequence.Label)) line = sequence.Label;
+                else if (!string.IsNullOrEmpty(sequence.Banner) && !Kestrel.Core.PlayerText.Leak(sequence.Banner)) line = sequence.Banner;
+            }
+            if (hCallout != null)
+            {
+                hCallout.text = line;
+                hCallout.style.display = string.IsNullOrEmpty(line) ? DisplayStyle.None : DisplayStyle.Flex;
+            }
+            float upp = UnitsPerPoint();
+            var cast = hud != null ? hud.Q("webcast") : hVerdict.parent;
+            bool skipShown = skipCount != null && !skipCount.ClassListContains("hidden");
+            CountdownChrome.Dress(cast, hVerdict, hPulse, hCallout, skipCount, upp, CountCardWidthPt(upp), skipShown);
         }
 
         void DressClock(Label clock)
