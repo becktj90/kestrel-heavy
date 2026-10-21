@@ -87,7 +87,8 @@ namespace Kestrel.Slice
             menu.style.bottom = 0;
             menu.style.alignItems = Align.Center;
             menu.style.justifyContent = Justify.Center;
-            menu.style.backgroundColor = new Color(0.02f, 0.04f, 0.08f, 0.78f);
+            // L3: a 0.78 scrim let the dock prompt read through the menu. Near-opaque, static (no fade, no flash).
+            menu.style.backgroundColor = PauseScrim;
             var title = new Label { name = "pause-title", text = "Paused" };
             title.style.color = new Color(1f, 0.69f, 0f);
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -103,6 +104,7 @@ namespace Kestrel.Slice
             menu.Add(music);
             menu.Add(sfx);
             menu.Add(narration);
+            BuildPauseCard();
             hud.Add(menu);
             RefreshFollow();
             RefreshCamera();
@@ -132,7 +134,78 @@ namespace Kestrel.Slice
                 b.style.height = StyleKeyword.Auto;
                 b.style.maxWidth = Length.Percent(100);
             });
+            ArrangePauseCard(upp);
             Kestrel.Game.Shell.TextFit.Apply(menu);
+        }
+
+        /// <summary>Pause backdrop: near-opaque ink. Static colour, no transition, so it is photosensitivity-safe.</summary>
+        public static readonly Color PauseScrim = new Color(0.02f, 0.04f, 0.08f, 0.96f);
+        public static readonly Color PauseCardInk = new Color(0.06f, 0.09f, 0.16f, 1f);
+        public const string PauseCardName = "pause-card";
+        public const float PauseCardWidthPt = 280f;
+
+        /// <summary>
+        /// The title and the six menu buttons sit on one opaque card (L3: "Narration on" landed on the dock's
+        /// Auto-assist and the prompt showed through). Button names are unchanged (UiIds.Pause*).
+        /// </summary>
+        void BuildPauseCard()
+        {
+            if (menu == null || menu.Q(PauseCardName) != null) return;
+            var card = new VisualElement { name = PauseCardName, pickingMode = PickingMode.Position };
+            card.style.backgroundColor = PauseCardInk;
+            card.style.flexDirection = FlexDirection.Column;
+            card.style.alignItems = Align.Stretch;
+            card.style.flexShrink = 1;
+            card.style.maxWidth = Length.Percent(100);
+            card.style.maxHeight = Length.Percent(100);
+            card.style.overflow = Overflow.Hidden;
+            var kids = new System.Collections.Generic.List<VisualElement>(menu.Children());
+            foreach (var k in kids) { k.RemoveFromHierarchy(); card.Add(k); }
+            menu.Add(card);
+        }
+
+        /// <summary>
+        /// One column when it fits the HUD height, else two columns of three (a 1280x720 web panel or a short
+        /// landscape phone), so every button stays a 44 pt target with no overlap and no scrolling.
+        /// </summary>
+        void ArrangePauseCard(float upp)
+        {
+            var card = menu != null ? menu.Q(PauseCardName) : null;
+            if (card == null) return;
+            float pad = 16f * upp;
+            card.style.paddingLeft = pad; card.style.paddingRight = pad;
+            card.style.paddingTop = 12f * upp; card.style.paddingBottom = pad;
+            float r = 14f * upp;
+            card.style.borderTopLeftRadius = r; card.style.borderTopRightRadius = r;
+            card.style.borderBottomLeftRadius = r; card.style.borderBottomRightRadius = r;
+            var buttons = card.Query<Button>().ToList();
+            float panelH = hud != null ? hud.resolvedStyle.height : 0f;
+            float panelW = hud != null ? hud.resolvedStyle.width : 0f;
+            float row = (TouchPt + 8f) * upp;
+            float oneCol = (22f * 1.4f + 12f) * upp + buttons.Count * row + 12f * upp + pad;
+            bool two = panelH > 8f && oneCol > panelH - 16f * upp && panelW > 2f * PauseCardWidthPt * upp * 0.8f;
+            float w = PauseCardWidthPt * upp * (two ? 2f : 1f);
+            if (panelW > 8f && w > panelW - 16f * upp) w = panelW - 16f * upp;
+            card.style.width = w;
+            card.style.flexDirection = two ? FlexDirection.Row : FlexDirection.Column;
+            card.style.flexWrap = two ? Wrap.Wrap : Wrap.NoWrap;
+            var title = card.Q<Label>("pause-title");
+            if (title != null)
+            {
+                title.style.width = Length.Percent(100);
+                title.style.unityTextAlign = TextAnchor.MiddleCenter;
+            }
+            float gap = 8f * upp;
+            for (int i = 0; i < buttons.Count; i++)
+            {
+                var b = buttons[i];
+                b.style.flexGrow = 0;
+                b.style.flexShrink = 0;
+                b.style.marginLeft = 0;
+                b.style.marginRight = two && i % 2 == 0 ? gap : 0;
+                b.style.width = two ? (w - 2f * pad - gap) * 0.5f : StyleKeyword.Auto;
+                if (!two) b.style.alignSelf = Align.Stretch;
+            }
         }
 
         public void Show(bool paused)
