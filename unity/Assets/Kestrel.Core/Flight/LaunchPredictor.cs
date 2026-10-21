@@ -56,14 +56,18 @@ namespace Kestrel.Core.Flight
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
             if (vehicle == null) throw new ArgumentNullException(nameof(vehicle));
             mode = string.Equals(mode, "kid", StringComparison.OrdinalIgnoreCase) ? "kid" : "standard";
-            var input = Stack.SimInputs(catalog, vehicle);
+            var input = Inputs(catalog, vehicle);
             var sim = Headless.Simulate(input.stages, input.opts);
             var req = Stack.RequiredDeltaV(catalog, vehicle.payloadOrbit);
             bool suborbital = req.orbit != null && req.orbit.periKm < 0;
             // The sim raises "orbit" inside a 10 km cutoff band. The prediction uses the
-            // target itself: perigee at or above the orbital target, apogee for a suborbital hop.
-            bool success = suborbital ? sim.orbit.apoAlt >= req.targetAlt : sim.orbit.periAlt >= req.targetAlt;
-            double apoKm = sim.orbit.apoAlt / 1000.0;
+            // target itself: perigee at or above the orbital target, the flown apogee for a suborbital hop.
+            // A hop's apogee is the drag-aware flown peak, the same number the batch, the designer and the report use.
+            double apoM = MissionScore.FlownApoAltM(sim);
+            // A hop reaches at the designer's Ready edge (Readout.ReachesApogee, DesignerRepair.FlightShort): the
+            // bottom of the batch's ±5% apogee band.
+            bool success = suborbital ? apoM >= (1 - MissionScore.AltitudeFraction) * req.targetAlt : sim.orbit.periAlt >= req.targetAlt;
+            double apoKm = apoM / 1000.0;
             double periKm = sim.orbit.periAlt / 1000.0;
             double targetKm = req.targetAlt / 1000.0;
             double dvMargin = sim.idealDeltaV - req.required;
@@ -98,6 +102,19 @@ namespace Kestrel.Core.Flight
 
         public static LaunchPrediction Predict(Catalog catalog, Design vehicle)
             => Predict(catalog, vehicle, "standard", 1);
+
+        /// <summary>
+        /// The designer's predict inputs (<see cref="Designer.ReferenceAscent.Inputs"/>): the same MissionFlightSetup the
+        /// batch and the live pad fly, so a campaign hop is aimed at its hop floor and the timeline, the designer, the
+        /// batch and the report show one apogee. Before this the timeline flew raw Stack.SimInputs, aimed a hop at its
+        /// apogee and called it out of fuel near the pad (KH-1 starter: "Apogee 0.8 km").
+        /// </summary>
+        public static (System.Collections.Generic.List<SimStage> stages, SimOptions opts) Inputs(Catalog catalog, Design vehicle)
+        {
+            var setup = MissionFlightSetup.Build(catalog, Designer.ReferenceAscent.MissionFor(catalog, vehicle), vehicle, MissionFlightSetup.BatchDt);
+            if (setup.Options.monitor != null) setup.Options.monitor.Predict = true;
+            return (setup.Stages, setup.Options);
+        }
 
         static string Sentence(LaunchPrediction p, string mode, bool suborbital, bool simOrbitFlag)
         {

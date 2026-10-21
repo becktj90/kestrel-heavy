@@ -12,10 +12,9 @@ namespace Kestrel.Core.Ui
         public const string ScreenBriefing = "screen-briefing";
         public const string ScreenStarter = "screen-starter";
         public const string ScreenDesigner = "screen-designer";
-        public const string ScreenFlight = "screen-flight";
         public const string ScreenReport = "screen-report";
         public const string ScreenSettings = "screen-settings";
-        public const string ScreenPause = "screen-pause";
+        // screen-flight and screen-pause live in UiIds.Flight.cs (#304).
 
         // ---- Home (feat(home-simple)) ----------------------------------------------------------
         /// <summary>The one primary CTA: CONTINUE with a save, else LAUNCH the next mission.</summary>

@@ -35,6 +35,7 @@ namespace Kestrel.Game.Shell
         public static bool Try(VisualElement root)
         {
             if (root == null) return false;
+            if (CloseIfOpen(root, "flight-camera-picker")) return true;
             if (CloseIfOpen(root, "home-thrum-note")) return true;
             if (CloseIfOpen(root, "home-codex-soon")) return true;
             if (CloseIfOpen(root, "home-patches-note")) return true;
