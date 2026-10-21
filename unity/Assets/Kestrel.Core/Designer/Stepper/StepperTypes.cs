@@ -44,6 +44,14 @@ namespace Kestrel.Core.Designer.Stepper
     }
 
     /// <summary>One segment of the seven-step progress bar.</summary>
+    /// <summary>What tapping a step chip does (F3). The Review chip is the one labelled "Launch".</summary>
+    public enum SegmentTap
+    {
+        None = 0,
+        Open = 1,
+        Launch = 2,
+    }
+
     public enum StepMark
     {
         Locked = 0,
