@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "note": "#341 (Kestrel Physics and Arcade rulings, DESIGN_341.md). Guidance labels and the optional closed-loop guidance computer part. Labels are data, not UI code; Codex owns the guide copy and may reword them here. The mass and credit price are pinned by GuidanceComputerTests to Mass.GUIDANCE_COMPUTER_MASS and credits.json parts.guidanceComputer.",
+  "basic": {
+    "label": "Pre-set pitch program, no correction"
+  },
+  "closedLoop": {
+    "id": "guidance-computer",
+    "label": "Closed-loop guidance computer",
+    "massKg": 25,
+    "credits": 30,
+    "featureFlag": "designer.guidanceComputer",
+    "unlockAfterMission": 10,
+    "inControlNote": "Guidance in control",
+    "nudgeHeldNote": "Guidance in control: the pitch nudge is held on the upper stage."
+  }
+}

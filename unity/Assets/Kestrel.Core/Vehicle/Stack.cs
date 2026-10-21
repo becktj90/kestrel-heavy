@@ -189,7 +189,7 @@ namespace Kestrel.Core.Vehicle
             var s = SerialStages(c, d); var req = RequiredDeltaV(c, d.payloadOrbit);
             GuidanceProfile guidance = d.guidance != null && d.guidance.Any ? GuidanceProfile.From(d, req.targetAlt) : null;
             FailureMonitor monitor = FailureMonitor.Engages(d) ? FailureMonitor.Create(c, d, req.targetAlt) : null;
-            return (s.stages.ConvertAll(x => x.ToSim()), new SimOptions { payload = s.payload, targetAlt = req.targetAlt, latitude = LAUNCH_LATITUDE, dt = dt, sampleEvery = sampleEvery, tMax = 2500, guidance = guidance, monitor = monitor });
+            return (s.stages.ConvertAll(x => x.ToSim()), new SimOptions { payload = s.payload, targetAlt = req.targetAlt, latitude = LAUNCH_LATITUDE, dt = dt, sampleEvery = sampleEvery, tMax = 2500, guidance = guidance, monitor = monitor, closedLoopInsertion = d.guidanceComputer });
         }
     }
 }

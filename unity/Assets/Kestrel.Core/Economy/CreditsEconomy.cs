@@ -13,6 +13,8 @@ namespace Kestrel.Core.Economy
     {
         public readonly long Starting, FirstClear, Medal, UnknownEngine, UnknownMaterial;
         public readonly long ExtraStage, StrapOn, Legs, GridFins, Rcs, Fins, Fairing;
+        /// <summary>#341: the optional closed-loop guidance computer (parts.guidanceComputer). 0 when the table has no price.</summary>
+        public long GuidanceComputer { get; private set; }
         public readonly string FreeStarter;
         readonly long[] missionClear;
         readonly Dictionary<string, long> engines, materials, avionics, finishes, decals;
@@ -59,7 +61,7 @@ namespace Kestrel.Core.Economy
                 for (int i = 0; i < arr.Count; i++)
                     if (arr[i] is double d) clears.Add((long)Math.Round(d, MidpointRounding.AwayFromZero));
             if (clears.Count == 0) throw new InvalidOperationException("credits missionClear is empty");
-            return new CreditsTable(
+            var table = new CreditsTable(
                 Long(o, "starting"), Long(o, "firstClear"), Long(o, "medal"),
                 Long(o, "unknownEngine"), Long(o, "unknownMaterial"),
                 Long(parts, "extraStage"), Long(parts, "strapOn"), Long(parts, "legs"),
@@ -68,6 +70,8 @@ namespace Kestrel.Core.Economy
                 clears.ToArray(),
                 Map(o.Obj("engines")), Map(o.Obj("materials")), Map(o.Obj("avionics")),
                 Map(hangar?.Obj("finishes")), Map(hangar?.Obj("decals")));
+            table.GuidanceComputer = Long(parts, "guidanceComputer");
+            return table;
         }
 
         public long MissionClear(int index)
@@ -119,6 +123,7 @@ namespace Kestrel.Core.Economy
             var av = design.Obj("avionics");
             string tier = av != null ? av.Str("tier") : null;
             total += AvionicsOf(tier);
+            if (av != null && av.Bool("guidanceComputer")) total += GuidanceComputer;
             total += HangarOf(design.Obj("look"));
             return total < 0 ? 0 : total;
         }

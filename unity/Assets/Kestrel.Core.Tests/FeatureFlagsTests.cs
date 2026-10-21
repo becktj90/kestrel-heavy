@@ -14,7 +14,7 @@ namespace Kestrel.Core.Tests
         {
             var o = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "features.json")));
             CollectionAssert.AreEquivalent(FeatureKeys.All, o.Obj("flags").Order);
-            Assert.AreEqual(18, FeatureKeys.All.Count);
+            Assert.AreEqual(19, FeatureKeys.All.Count); // #341: + designer.guidanceComputer
             var f = FeatureFlags.Load(Golden.Root);
             Assert.AreEqual(ExperienceTier.Starter, f.Tier);
             var builtIn = new FeatureFlags();
