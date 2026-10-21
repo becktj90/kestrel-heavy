@@ -83,7 +83,7 @@ namespace Kestrel.Core.Tests
         {
             // The starter with the walls cut to strength 1.0 breaks up at max-Q on every seed. The stepper's repair alone
             // read Ready but still broke up on one gusty seed (KH-14 seed 3, KH-16 seed 5). Fixed has to mean fixed:
-            // FlightBatch seeds 1-5, the gate's seeds, all fly with no failure.
+            // FlightBatch seeds 1-5, the gate's seeds, all fly with no failure, with one strength step of margin.
             var json = Starter(index);
             JsonMut.Set(json, "safetyFactor", 1.0);
             var before = Gate(json);
@@ -99,6 +99,15 @@ namespace Kestrel.Core.Tests
             Assert.That(outcome.Note, Does.Not.Contain("could not"), outcome.Note);
             var after = Gate(json);
             Assert.That(after.Ready, after.Line);
+            // Arcade: one step of margin past the first strength that flies seeds 1-5. One step less still flies all 5
+            // (so the last step is margin); two steps less breaks up on a seed (so it is exactly one step).
+            double step = DesignerLimits.Active.safetyStep;
+            double sf = json.Num("safetyFactor");
+            var less = JsonMut.CloneObject(json);
+            HangarEditor.SetSafetyFactor(less, sf - step);
+            foreach (var f in Fly(index, less)) Assert.IsNull(f.failure, "KH-" + index + " one step under " + sf + ", seed " + f.seed);
+            HangarEditor.SetSafetyFactor(less, sf - 2 * step);
+            Assert.That(Fly(index, less).Exists(f => f.failure != null), "KH-" + index + " two steps under " + sf + " is the knife-edge");
         }
 
         [Test]

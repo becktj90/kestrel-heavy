@@ -164,6 +164,8 @@ namespace Kestrel.Core.Designer
         public const ulong GateSeeds = 5;
         /// <summary>Strength steps Fix it may add while a gate seed still breaks up (DesignerLimits.safetyStep each).</summary>
         public const int StrengthSteps = 8;
+        /// <summary>Strength steps of margin added past the first step that flies seeds 1-5 (Arcade: not on a knife-edge).</summary>
+        public const int MarginSteps = 1;
 
         /// <summary>
         /// The first failure kind on FlightBatch seeds 1–<see cref="GateSeeds"/> (the same flight the gate and the goldens
@@ -195,6 +197,7 @@ namespace Kestrel.Core.Designer
         /// <summary>
         /// Adds strength one step at a time (at most <see cref="StrengthSteps"/>) while a gate seed breaks up at max-Q.
         /// Stops at once when the seeds pass, when the failure is not one strength fixes, or at the strength maximum.
+        /// After the first passing step it adds one more step of margin (<see cref="MarginSteps"/>) if seeds 1-5 still pass.
         /// The edit spans the first step's "from" to the last step's "to".
         /// </summary>
         static Edit Strengthen(Catalog catalog, CampaignMission mission, JsonObject design)
@@ -208,7 +211,18 @@ namespace Kestrel.Core.Designer
                 if (from == null) from = e.from;
                 to = e.to;
             }
-            return from == null ? Edit.None : new Edit("Strength", from, to);
+            if (from == null) return Edit.None;
+            // Arcade: one more step of margin past the first strength that flies seeds 1-5, so the repair is not on a
+            // knife-edge for later seeds. Kept only if seeds 1-5 still fly clean with it (more strength is more mass).
+            for (int step = 0; step < MarginSteps && FirstFailure(catalog, mission, design) == null; step++)
+            {
+                var margin = JsonMut.CloneObject(design);
+                var e = RaiseSafety(margin);
+                if (!e.changed || FirstFailure(catalog, mission, margin) != null) break;
+                Replace(design, margin);
+                to = e.to;
+            }
+            return new Edit("Strength", from, to);
         }
 
         /// <summary>Sets the honest note when a gate seed still fails after every step. True when it did.</summary>
