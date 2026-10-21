@@ -215,7 +215,7 @@ export const TEMPLATES = Object.freeze([
    },
    "thingsToTry": [
     "Swap the composite tanks for Al-Li and see what happens to payload.",
-    "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+    "Try a higher or lower circle and compare margin.",
     "Make the upper stage 20% bigger. Does it still lift off well?"
    ],
    "refMission": {

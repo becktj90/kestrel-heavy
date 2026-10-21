@@ -130,7 +130,7 @@
     {
       "id": "sso",
       "band": "SSO",
-      "label": "Sun-sync 550 km",
+      "label": "Circle 550 km",
       "step": 3,
       "kind": "circular",
       "apoKm": 550,
