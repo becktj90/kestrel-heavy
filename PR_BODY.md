@@ -121,7 +121,7 @@ Stage 1 gets `engineParams.throttleMin` 0.45 (stock 0.57), `guidance.maxQThrottl
 - vs origin/main: 11 of 530, all fail → pass (the m5 and m14 starters, and found m18 seed 2). After the rebase the batch is identical to 8eb886c (0 flips).
 - vs 961edad: 111 flips (106 fail → pass, 5 pass → fail). The 5 are the intended m12 near-miss.
 
-## Tests (rebased on e18218b)
+## Tests (rebased on b2fa61a; head 37cb943 + this body)
 - **Expectations changed** (re-pinned to real values; full old → new list in GOLDEN_DIFF.md):
   - the ellipse/C3 target energy;
   - the KH-10 strap and landing hold;
@@ -142,7 +142,7 @@ Stage 1 gets `engineParams.throttleMin` 0.45 (stock 0.57), `guidance.maxQThrottl
 
 | Suite | Passed | Skipped | Failed |
 |---|---:|---:|---:|
-| Core | 885 | 12 | **2** |
+| Core | 892 | 12 | **0** |
 | Site | 28 | 0 | 0 |
 | Pad.Core | 84 | 0 | 0 |
 | Vehicle.Core | 41 | 0 | 0 |
@@ -152,7 +152,9 @@ Stage 1 gets `engineParams.throttleMin` 0.45 (stock 0.57), `guidance.maxQThrottl
 
 node: 179 tests, 172 pass, 0 fail, 1 skipped, 6 todo. `stubcheck --all`: exit 0. Unity EditMode and PlayMode were not run here (GameCI only).
 
-The 2 Core failures are both **tpl-hydrogen-upper (#314)**: `BrokenPrecondition_FlagsCausality_AndKeepsTheRemovedEvent` and `UpperEngineSwap_DropsRestart_AndExplainsTheLostBurns`. Their vectors are left for #314, and they clear when #325 lands.
+New since 4cc2859: `LivePadKh3Tests` (2), the Heron batch-vs-live test now flies the shipped throttled Heron with the monitor, `FixIt_WeakAirframe16…` asserts #313's rule, GV7 lists Heron (throttle settings), ReadoutV2 Pipit max-Q 36.21 → 37.77.
+
+main has moved since (#324, #327, #328): a rebase is needed for a clean merge; the only textual conflict is MissReasonTests.cs.
 
 ## Decisions
 1. **Flight-path-angle advice:** done (above). The steep advice names the kick lever literally: a smaller initial pitch kick at launch (6° → 4° lands m12).
