@@ -127,7 +127,7 @@ namespace Kestrel.Core.Flight
 
                 flight.outcome = sim.outcome;
                 flight.failure = sim.failure != null ? sim.failure.kind : null;
-                flight.apoKm = sim.orbit.apoAlt / 1000.0;
+                flight.apoKm = MissionScore.FlownApoAltM(sim) / 1000.0;
                 flight.periKm = sim.orbit.periAlt / 1000.0;
                 flight.incDeg = sim.orbit.i * 180.0 / Math.PI;
                 flight.maxG = sim.maxG;

@@ -273,7 +273,7 @@ namespace Kestrel.Core.Designer
             catch (Exception) { return false; }
             if (sim == null) return false;
             bool hop = orbit != null && orbit.periKm < 0;
-            if (hop) return orbit.apoKm > 0 && sim.orbit.apoAlt < 0.95 * orbit.apoKm * 1000;
+            if (hop) return orbit.apoKm > 0 && MissionScore.FlownApoAltM(sim) < 0.95 * orbit.apoKm * 1000;
             return sim.failure != null && sim.failure.kind == "prop-depletion";
         }
 
