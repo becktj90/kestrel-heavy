@@ -53,6 +53,12 @@ namespace Kestrel.Core.Physics
         public Flight.FailureEvent failure;
         public List<Flight.FlightRisk> risks;
         public double minStability = double.NaN, minCar = double.NaN, qLimPa = double.NaN;
+        /// <summary>
+        /// Drag-aware peak of a ballistic coast (periapsis below ground), metres: <see cref="AscentSim.CoastApexAlt"/>
+        /// after a clean cutoff. NaN for an orbit, a failure, a crash, or a run still thrusting. Score apogee trips with
+        /// <see cref="Flight.MissionScore.FlownApoAltM"/>, not the vacuum Kepler apoapsis at cutoff.
+        /// </summary>
+        public double coastApexAlt = double.NaN;
         /// <summary>First integrator step with geometric altitude &gt;= 100 km. Observational: it does not change the step or the event list.</summary>
         public double? KarmanTime;
     }
@@ -570,6 +576,29 @@ namespace Kestrel.Core.Physics
             return o.monitor.Consider(step);
         }
 
+        /// <summary>
+        /// The flown peak of a ballistic coast: keeps integrating a copy of the state after a clean cutoff with the
+        /// same gravity, drag, rotation and wind as the ascent until the radial rate turns down. Above the drag
+        /// ceiling (300 km) or in vacuum the rest of the climb is Kepler, so it returns the vacuum apoapsis there.
+        /// NaN while thrusting or after a failure. Observational: the sim's own state, events and result are untouched.
+        /// </summary>
+        public double CoastApexAlt()
+        {
+            if (Thrusting || outcome == "failure" || outcome == "crash") return double.NaN;
+            var s = (double[])Y.Clone();
+            double t = T, dt = o.dt > 0 ? o.dt : 0.05;
+            for (int i = 0; i < 400000; i++)
+            {
+                double r = JsMath.Hypot(s[0], s[1]), alt = r - Gravity.R_EARTH;
+                double vr = (s[2] * s[0] + s[3] * s[1]) / r;
+                if (vr <= 0) return alt;
+                if (o.vacuum || alt >= 300e3) return Orbit.Planar(s[0], s[1], s[2], s[3]).apoAlt;
+                rk.Step(deriv, t, s, dt);
+                t += dt;
+            }
+            return JsMath.Hypot(s[0], s[1]) - Gravity.R_EARTH;
+        }
+
         public SimResult Finish()
         {
             EnsureIgnition();
@@ -591,6 +620,7 @@ namespace Kestrel.Core.Physics
                 x = Y[0], y = Y[1], vx = Y[2], vy = Y[3], m = Y[4], samples = Samples, warnings = warnings,
                 KarmanTime = sawKarman ? (double?)karmanT : null,
             };
+            if (orb.periAlt < 0) result.coastApexAlt = CoastApexAlt();
             if (o.monitor != null)
             {
                 o.monitor.Finish(maxQ);

@@ -1,3 +1,4 @@
+using Kestrel.Core.Ui;
 using Kestrel.Game.Shell;
 using Kestrel.Slice;
 using NUnit.Framework;
@@ -52,15 +53,15 @@ namespace Kestrel.Game.Tests
             try
             {
                 var driver = go.AddComponent<FlightDriver>();
-                var hud = new VisualElement { name = "hud" };
+                var hud = new VisualElement { name = UiIds.ScreenFlight };
                 var chrome = go.AddComponent<FlightChrome>();
                 chrome.Bind(hud, driver.Hold, () => { }, () => { });
                 Assert.AreEqual(44f, FlightChrome.TouchPt);
-                Assert.IsNotNull(hud.Q<Button>("pause"));
-                Assert.IsNotNull(hud.Q<Button>("follow"));
-                Assert.IsNotNull(hud.Q<Button>("resume"));
-                Assert.IsNotNull(hud.Q<Button>("restart"));
-                Assert.IsNotNull(hud.Q<Button>("exit-home"));
+                Assert.IsNotNull(hud.Q<Button>(UiIds.FlightPause));
+                Assert.IsNotNull(hud.Q<Button>(UiIds.FlightFollow));
+                Assert.IsNotNull(hud.Q<Button>(UiIds.PauseResume));
+                Assert.IsNotNull(hud.Q<Button>(UiIds.PauseRestart));
+                Assert.IsNotNull(hud.Q<Button>(UiIds.PauseExitHome));
                 Assert.IsNotNull(hud.Q<Button>("pause-music"));
                 Assert.IsNotNull(hud.Q<Button>("pause-sfx"));
                 Assert.IsNotNull(hud.Q<Button>("pause-narration"));
@@ -71,7 +72,7 @@ namespace Kestrel.Game.Tests
                 driver.Hold(true);
                 Assert.IsTrue(chrome.Paused);
                 Assert.IsTrue(driver.Held);
-                Assert.IsFalse(hud.Q("pause-menu").ClassListContains("hidden"));
+                Assert.IsFalse(hud.Q(UiIds.ScreenPause).ClassListContains("hidden"));
                 chrome.Show(false);
                 driver.Hold(false);
                 Assert.IsFalse(driver.Held);

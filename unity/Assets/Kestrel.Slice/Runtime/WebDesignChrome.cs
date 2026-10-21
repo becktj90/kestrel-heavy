@@ -1,5 +1,6 @@
 // Landscape web designer: parts on the left of the rocket, readouts and Launch on the right.
 // Portrait (and iOS) leave the sheet on the USS path.
+using Kestrel.Core.Ui;
 using Kestrel.Core.Flight;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -61,7 +62,7 @@ namespace Kestrel.Slice
             if (ui == null) return false;
             var design = ui.Q("design");
             if (design != null && design.ClassListContains("hidden")) return true;
-            var hud = ui.Q("hud");
+            var hud = ui.Q(UiIds.ScreenFlight);
             if (hud != null && !hud.ClassListContains("hidden")) return true;
             return ui.Q(ReportView.RootName) != null;
         }
