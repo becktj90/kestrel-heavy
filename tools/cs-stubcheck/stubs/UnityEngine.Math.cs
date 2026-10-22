@@ -52,6 +52,7 @@ namespace UnityEngine
     public struct Bounds { public Bounds(Vector3 c, Vector3 s) { center = c; size = s; } public Vector3 center, size; public Vector3 extents { get => default; set { } } public Vector3 min { get => default; set { } } public Vector3 max { get => default; set { } }
         public void Encapsulate(Vector3 p) { } public void Encapsulate(Bounds b) { } public bool Contains(Vector3 p) => false; public void Expand(float a) { } public bool Intersects(Bounds b) => false; public void SetMinMax(Vector3 a, Vector3 b) { } }
     public struct Ray { public Ray(Vector3 o, Vector3 d) { origin = o; direction = d; } public Vector3 origin, direction; public Vector3 GetPoint(float d) => default; }
+    public static class GeometryUtility { public static Plane[] CalculateFrustumPlanes(Camera camera) => null; public static bool TestPlanesAABB(Plane[] planes, Bounds bounds) => false; }
     public struct Plane { public Plane(Vector3 n, Vector3 p) { normal = n; distance = 0; } public Plane(Vector3 n, float d) { normal = n; distance = d; } public Vector3 normal; public float distance; public bool Raycast(Ray r, out float e) { e = 0; return false; } public float GetDistanceToPoint(Vector3 p) => 0; }
     public static class Mathf {
         public const float PI = 3.14159274f, Infinity = float.PositiveInfinity, NegativeInfinity = float.NegativeInfinity, Deg2Rad = 0.0174532924f, Rad2Deg = 57.29578f, Epsilon = 1.401298E-45f;

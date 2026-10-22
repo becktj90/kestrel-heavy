@@ -75,6 +75,13 @@ Shader "Kestrel/Sky"
                 // Linear, not perspective-correct. Perspective correction across the skybox cube
                 // stretches points into radial streaks.
                 noperspective float3 dirWS : TEXCOORD0;
+                // The same direction, perspective-correct. Screen-linear interpolation is only right while the
+                // triangle is in front of the camera: a cube face the near plane cuts (a vertex near w = 0, so its
+                // screen position runs off to infinity) interpolates from one side of the sky to the other through
+                // zero. That stretch was the black wedge in the top-right of the CI Below/Chase/Auto captures
+                // (#348; llvmpipe GL clips that way, phones did not): the fragment was discarded and the clear
+                // colour (black) showed. dirP is the exact view ray there, so it stands in.
+                float3 dirP : TEXCOORD1;
             };
 
             // Far clip in the current API. A unit skybox cube sits on the camera; with near
@@ -99,6 +106,7 @@ Shader "Kestrel/Sky"
                 o.positionCS = TransformObjectToHClip(posOS);
                 o.positionCS.z = SkyFarZ(o.positionCS.w);
                 o.dirWS = mul((float3x3)UNITY_MATRIX_M, posOS);
+                o.dirP = o.dirWS;
                 return o;
             }
 
@@ -196,10 +204,19 @@ Shader "Kestrel/Sky"
 
             half4 frag(Varyings input) : SV_Target
             {
-                // A clipped cube corner interpolates a non-finite direction and saturates to
-                // a black wedge. Drop that fragment; the unclipped sky faces already covered it.
+                // Screen-linear dirWS keeps stars round; where a near-clipped cube face makes it wrong (non-finite,
+                // near zero, or turned away from the true ray) the perspective-correct dirP is used, so no fragment
+                // of the sky is dropped to the clear colour. Discard only if both are unusable.
+                float3 dirP = input.dirP;
+                bool pOk = !(any(isnan(dirP)) || any(isinf(dirP)) || dot(dirP, dirP) < 1e-8);
                 float3 dir = input.dirWS;
-                if (any(isnan(dir)) || any(isinf(dir)) || dot(dir, dir) < 1e-8) discard;
+                bool lOk = !(any(isnan(dir)) || any(isinf(dir)) || dot(dir, dir) < 1e-8);
+                if (lOk && pOk && dot(normalize(dir), normalize(dirP)) < 0.98) lOk = false;   // > ~11 deg off: the stretched face, not tessellation error
+                if (!lOk)
+                {
+                    if (!pOk) discard;
+                    dir = dirP;
+                }
                 dir = normalize(dir);
                 float3 sunDir = normalize(_SunDir.xyz);
                 float mu = dir.y;

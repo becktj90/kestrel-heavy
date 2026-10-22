@@ -128,17 +128,36 @@ namespace Kestrel.Capture.Tests
             }
         }
 
+        /// <summary>#348's Below spec, live: the rocket base is the vehicle root (the stack bottom), not the lowest
+        /// renderer under it (#332 read -12.28 m from the trench plume). The camera stands 0.6-1.5 m over the deck top,
+        /// looks up >= 15 deg, and the whole stack is inside the viewport with >= 3% margin, >= 35% of its height.
+        /// The pure checks gate in EditMode (FlightViewPoseTests, PadBelowFramingTests, CountdownBelowDeviceTests).</summary>
         static void LooksUpFromThePad(SliceApp app, string name, List<string> problems)
         {
             var cam = app.CameraForCapture; var rocket = app.VehicleForCapture;
             if (cam == null || rocket == null) { problems.Add(name + ": no camera or vehicle"); return; }
-            float baseY = rocket.position.y;
-            var r = rocket.GetComponentsInChildren<Renderer>().Where(x => x.enabled).ToArray();
-            if (r.Length > 0) baseY = r.Min(x => x.bounds.min.y);
             var c = cam.transform;
-            if (c.position.y >= baseY) problems.Add(name + ": camera y " + c.position.y.ToString("0.00") + " is not below the rocket base " + baseY.ToString("0.00"));
+            float over = c.position.y - app.DeckTopForCapture;
+            if (over < 0.6f - 0.05f || over > 1.5f + 0.05f)
+                problems.Add(name + ": camera " + over.ToString("0.00") + " m over the deck top (want 0.6-1.5)");
+            if (c.position.y >= rocket.position.y + app.VehicleHeightForCapture * 0.5f)
+                problems.Add(name + ": camera y " + c.position.y.ToString("0.00") + " is not under the stack's middle (base " + rocket.position.y.ToString("0.00") + ")");
             float pitch = Mathf.Asin(Mathf.Clamp(c.forward.y, -1f, 1f)) * Mathf.Rad2Deg;
-            if (pitch < 10f) problems.Add(name + ": camera pitch " + pitch.ToString("0.0") + " deg is not looking up");
+            if (pitch < 15f) problems.Add(name + ": camera pitch " + pitch.ToString("0.0") + " deg is not looking up (want >= 15)");
+            float h = app.VehicleHeightForCapture, r = Mathf.Max(0.1f, app.VehicleRadiusForCapture);
+            float x0 = 1f, x1 = 0f, y0 = 1f, y1 = 0f;
+            for (int i = 0; i <= 8; i++)
+            for (int k = 0; k < 24; k++)
+            {
+                float a = k * Mathf.PI * 2f / 24f;
+                var w = rocket.position + rocket.up * (h * i / 8f) + rocket.right * (Mathf.Cos(a) * r) + rocket.forward * (Mathf.Sin(a) * r);
+                var v = cam.WorldToViewportPoint(w);
+                if (v.z <= cam.nearClipPlane) { problems.Add(name + ": stack point behind the near plane"); return; }
+                x0 = Mathf.Min(x0, v.x); x1 = Mathf.Max(x1, v.x); y0 = Mathf.Min(y0, v.y); y1 = Mathf.Max(y1, v.y);
+            }
+            if (x0 < 0.03f || x1 > 0.97f || y0 < 0.03f || y1 > 0.97f)
+                problems.Add(name + ": stack spans viewport x " + x0.ToString("0.000") + "-" + x1.ToString("0.000") + " y " + y0.ToString("0.000") + "-" + y1.ToString("0.000") + " (3% margin)");
+            if (y1 - y0 < 0.35f) problems.Add(name + ": stack fills " + (y1 - y0).ToString("0.00") + " of the height (want >= 0.35)");
         }
     }
 }
