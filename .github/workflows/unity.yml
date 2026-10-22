@@ -21,13 +21,28 @@ env:
 
 jobs:
   tests:
-    name: Unity tests (${{ matrix.testMode }})
+    name: Unity tests (${{ matrix.suite }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
+      # PlayMode is split in two jobs, each with its own 60-minute budget on the CPU-rendered (llvmpipe) runner:
+      #   PlayMode        everything in PlayMode except [Category("DeviceCapture")] fixtures;
+      #   PlayModeDevice  the heavy per-phone-size captures (CountdownCaptureTests, HomeCaptureTests,
+      #                   FlightPhaseCaptureTests), all marked [Category("DeviceCapture")].
+      # `suite` names the job, the check, the cache and the artifacts, so nothing collides between entries.
+      # -testCategory and -testFilter combine as AND (Unity CLI); "!" negates. Untagged tests match "!DeviceCapture".
       matrix:
-        testMode: [EditMode, PlayMode]
+        include:
+          - suite: EditMode
+            testMode: EditMode
+            category: ''
+          - suite: PlayMode
+            testMode: PlayMode
+            category: '-testCategory !DeviceCapture'
+          - suite: PlayModeDevice
+            testMode: PlayMode
+            category: '-testCategory DeviceCapture'
     env:
       HAS_LICENSE: ${{ secrets.UNITY_LICENSE != '' }}
     steps:
@@ -39,8 +54,9 @@ jobs:
         if: env.HAS_LICENSE == 'true'
         with:
           path: unity/Library
-          key: Library-test-${{ matrix.testMode }}-${{ hashFiles('unity/Packages/manifest.json', 'unity/Packages/packages-lock.json', 'unity/ProjectSettings/**') }}
+          key: Library-test-${{ matrix.suite }}-${{ hashFiles('unity/Packages/manifest.json', 'unity/Packages/packages-lock.json', 'unity/ProjectSettings/**') }}
           restore-keys: |
+            Library-test-${{ matrix.suite }}-
             Library-test-${{ matrix.testMode }}-
             Library-
       - name: Sync game data into Resources (gitignored copies; same as Kestrel > Sync Data)
@@ -74,57 +90,58 @@ jobs:
           # iOS module image: Assets/Editor/IconSetup.cs uses UnityEditor.iOS.
           customImage: unityci/editor:ubuntu-${{ env.UNITY_VERSION }}-ios-3
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-          checkName: Unity ${{ matrix.testMode }} results
+          checkName: Unity ${{ matrix.suite }} results
           # Wall-clock latency budgets are tuned for the M-series dev box; shared CI runners are 2-5x slower.
-          customParameters: '-testFilter !(Kestrel.Core.Tests.ReadoutV2Tests.Recompute_MeetsLatencyBudget|Kestrel.Core.Tests.TimelineTests.Generation_IsFasterThanAFewMilliseconds)'
-          artifactsPath: test-results-${{ matrix.testMode }}
+          # PlayMode entries also pick their half of the PlayMode suite by category (see the matrix).
+          customParameters: '-testFilter !(Kestrel.Core.Tests.ReadoutV2Tests.Recompute_MeetsLatencyBudget|Kestrel.Core.Tests.TimelineTests.Generation_IsFasterThanAFewMilliseconds) ${{ matrix.category }}'
+          artifactsPath: test-results-${{ matrix.suite }}
       - uses: actions/upload-artifact@v4
         if: always() && env.HAS_LICENSE == 'true'
         with:
-          name: test-results-${{ matrix.testMode }}
+          name: test-results-${{ matrix.suite }}
           # The runner only sets this output after it starts. A failure before that
           # left the path empty and failed the upload with "path not supplied".
-          path: test-results-${{ matrix.testMode }}
+          path: test-results-${{ matrix.suite }}
           if-no-files-found: warn
       # EditMode device tests write real UI Toolkit panel PNGs (UiCapture) to unity/CaptureOut/ui.
       - uses: actions/upload-artifact@v4
-        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'EditMode'
+        if: always() && env.HAS_LICENSE == 'true' && matrix.suite == 'EditMode'
         with:
           name: ui-captures
           path: unity/CaptureOut/ui/*.png
           if-no-files-found: warn
-      # PlayMode = Kestrel.Capture.Tests: real scenes after 60 frames; fails on flat-colour images.
+      # PlayMode (non-DeviceCapture half of Kestrel.Capture.Tests): real scenes after 60 frames; fails on flat-colour images.
       - uses: actions/upload-artifact@v4
-        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'
+        if: always() && env.HAS_LICENSE == 'true' && matrix.suite == 'PlayMode'
         with:
           name: screenshots
           path: unity/CaptureOut/*.png
           if-no-files-found: warn
-      # PlayMode HomeCaptureTests: real Home at every device size and Home mode (Starter CONTINUE/LAUNCH, full Home).
+      # PlayModeDevice HomeCaptureTests: real Home at every device size and Home mode (Starter CONTINUE/LAUNCH, full Home).
       - uses: actions/upload-artifact@v4
-        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'
+        if: always() && env.HAS_LICENSE == 'true' && matrix.suite == 'PlayModeDevice'
         with:
           name: home-captures
           path: unity/CaptureOut/home/*.png
           if-no-files-found: warn
       # EditMode device tests (StarterDesignerDeviceTests): one PNG per device size.
       - uses: actions/upload-artifact@v4
-        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'EditMode'
+        if: always() && env.HAS_LICENSE == 'true' && matrix.suite == 'EditMode'
         with:
           name: device-captures
           path: unity/CaptureOut/starter/*.png
           if-no-files-found: warn
-      # PlayMode CountdownCaptureTests: the held count in every camera (auto, above, below, chase, pad) at 375x667,
+      # PlayModeDevice CountdownCaptureTests: the held count in every camera (auto, above, below, chase, pad) at 375x667,
       # 390x844 and 430x932, with the pad-attachment, Below-pose, COUNT-tag and UiTreeChecks assertions.
       - uses: actions/upload-artifact@v4
-        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'
+        if: always() && env.HAS_LICENSE == 'true' && matrix.suite == 'PlayModeDevice'
         with:
           name: countdown-captures
           path: unity/CaptureOut/countdown/*.png
           if-no-files-found: warn
-      # PlayMode FlightPhaseCaptureTests: the ascent at T+17, T+116 and T+192 at the same phone sizes.
+      # PlayModeDevice FlightPhaseCaptureTests: the ascent at T+17, T+116 and T+192 at the same phone sizes.
       - uses: actions/upload-artifact@v4
-        if: always() && env.HAS_LICENSE == 'true' && matrix.testMode == 'PlayMode'
+        if: always() && env.HAS_LICENSE == 'true' && matrix.suite == 'PlayModeDevice'
         with:
           name: flight-phase-captures
           path: unity/CaptureOut/flight-phase/*.png
