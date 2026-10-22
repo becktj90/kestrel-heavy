@@ -61,6 +61,14 @@ namespace Kestrel.Slice
             public readonly string EngineId, Cycle; public readonly int Stage, Slot; public readonly bool StrapOn;
             public EngineSlot(Vector3 exit, float exitDiameter, float expansion, float gimbal, string id, string cycle, int stage, int slot, bool strap, float stageRadius)
             { Exit = exit; ExitDiameter = exitDiameter; Expansion = expansion; GimbalDeg = gimbal; EngineId = id; Cycle = cycle; Stage = stage; Slot = slot; StrapOn = strap; StageRadius = stageRadius; }
+
+            /// <summary>The fuel this bell burns (its stage's or the strap-ons' propellant), for the BellFinish fuel cue.</summary>
+            public string Propellant(Design d)
+            {
+                if (d == null) return null;
+                if (StrapOn) return d.strapOns != null ? d.strapOns.propellant : null;
+                return d.stages != null && Stage >= 0 && Stage < d.stages.Count ? d.stages[Stage].propellant : null;
+            }
         }
         public sealed class Result { public Mesh mesh; public float height; public float stage1Top; public float stage1AftY; public Vector3[] nozzleExits; public float exitDiameter; public List<TankSlot> tanks = new List<TankSlot>(); public List<EngineSlot> engines = new List<EngineSlot>(); public List<InterstageSlot> interstages = new List<InterstageSlot>(); public FairingSlot fairing; }
 
