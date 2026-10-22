@@ -151,7 +151,7 @@ namespace Kestrel.Core.Tests
                 // Live ticking with a throwing sink across a failure and its impact.
                 var weak = FlyWeakScout();
                 var cat = Golden.Catalog;
-                var design = cat.Preset("scout").Clone();
+                var design = Design.FromJson(Golden.FixtureDesign("weak-scout"));
                 design.version = 3; design.tier = "kid"; design.safetyFactor = 1.1;
                 for (int i = 0; i < design.stages.Count; i++) design.stages[i].material = "al-li";
                 var input = Stack.SimInputs(cat, design, 0.2);
