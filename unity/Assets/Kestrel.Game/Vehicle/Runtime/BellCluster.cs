@@ -21,12 +21,16 @@ namespace Kestrel.Vehicle
 
         sealed class Group
         {
+            /// <summary>SharedMeshes key (the contour). Bells of one contour but another fuel are their own group.</summary>
             public string Key;
+            public string Finish;
             public InstanceBatch Batch;
             public Matrix4x4[] Local;
         }
 
         public int GroupCount => _groups.Count;
+        /// <summary>The material each bell group draws with (tests read the fuel cue here).</summary>
+        public IEnumerable<Material> GroupMaterials { get { for (int i = 0; i < _groups.Count; i++) yield return _groups[i].Batch.Material; } }
         public int Lod => _lod;
 
         public void Init(IReadOnlyList<BellMount> mounts, int quality)
@@ -67,6 +71,7 @@ namespace Kestrel.Vehicle
             var order = new List<string>();
             var locals = new Dictionary<string, List<Matrix4x4>>();
             var contours = new Dictionary<string, BellContour>();
+            var finishes = new Dictionary<string, string>();
             for (int i = 0; i < _mounts.Count; i++)
             {
                 var m = _mounts[i];
@@ -84,23 +89,29 @@ namespace Kestrel.Vehicle
                 var inst = BellVariation.Place(spec, m.Stage, m.Slot);
                 var rot = Quaternion.Euler(inst.GimbalXDeg, inst.RollDeg, inst.GimbalZDeg);
                 var local = Matrix4x4.TRS(new Vector3(m.X, m.Y, m.Z), rot, Vector3.one);
-                if (!locals.TryGetValue(contour.MeshKey, out var list))
+                // Fuel cue (BellFinish): sooty kerosene, clean methane, cool hydrogen. Same mesh, own material.
+                string finish = BellFinish.For(m.Propellant);
+                string groupKey = contour.MeshKey + "|" + finish;
+                if (!locals.TryGetValue(groupKey, out var list))
                 {
                     list = new List<Matrix4x4>();
-                    locals[contour.MeshKey] = list;
-                    contours[contour.MeshKey] = contour;
-                    order.Add(contour.MeshKey);
+                    locals[groupKey] = list;
+                    contours[groupKey] = contour;
+                    finishes[groupKey] = finish;
+                    order.Add(groupKey);
                 }
                 list.Add(local);
             }
-            var mat = BellBuilder.Material();
             for (int i = 0; i < order.Count; i++)
             {
-                string key = order[i];
-                var mesh = SharedMeshes.Acquire(key, () => BellBuilder.Build(contours[key], lod));
+                string groupKey = order[i];
+                var contour = contours[groupKey];
+                string meshKey = contour.MeshKey;
+                var mesh = SharedMeshes.Acquire(meshKey, () => BellBuilder.Build(contour, lod));
+                var mat = BellBuilder.Material(finishes[groupKey]);
                 var batch = new InstanceBatch(mesh, mat, DetailSize.Medium) { Shadows = UnityEngine.Rendering.ShadowCastingMode.On };
-                var local = locals[key].ToArray();
-                _groups.Add(new Group { Key = key, Batch = batch, Local = local });
+                var local = locals[groupKey].ToArray();
+                _groups.Add(new Group { Key = meshKey, Finish = finishes[groupKey], Batch = batch, Local = local });
             }
         }
 

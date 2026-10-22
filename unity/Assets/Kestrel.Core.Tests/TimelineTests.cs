@@ -13,7 +13,7 @@ namespace Kestrel.Core.Tests
 {
     public class TimelineTests
     {
-        static readonly string[] SampleIds = { "tpl-sounding-solid", "tpl-medium-kerolox-reusable", "tpl-hydrogen-upper", "super-heavy" };
+        static readonly string[] SampleIds = { "tpl-sounding-hybrid", "tpl-medium-kerolox-reusable", "tpl-hydrogen-upper", "super-heavy" };
 
         [Test]
         public void Clock_EngineerIsReal_KidCountFitsTheBand()
@@ -88,7 +88,7 @@ namespace Kestrel.Core.Tests
         public void HardwareAndRestartRules()
         {
             var cat = Golden.Catalog;
-            var solid = LoadTemplate("sounding-solid.json");
+            var solid = Golden.Fixture(Golden.SolidSoundingFixture);
             var solidTl = Gen(cat, solid);
             Assert.IsNull(Find(solidTl, "pad.strongback"));
             Assert.IsNull(Find(solidTl, "count.lox.s1.load"));
@@ -180,7 +180,7 @@ namespace Kestrel.Core.Tests
         public void StatusBus_UsesOneSchema()
         {
             var cat = Golden.Catalog;
-            var tl = Gen(cat, LoadTemplate("sounding-solid.json"));
+            var tl = Gen(cat, LoadTemplate("sounding-hybrid.json"));
             var liftoff = Find(tl, "term.liftoff");
             string json = TimelineJson.StatusEvent(liftoff);
             StringAssert.Contains("\"type\":\"event.status\"", json);

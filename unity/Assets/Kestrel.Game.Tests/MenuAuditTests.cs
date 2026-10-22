@@ -106,7 +106,7 @@ namespace Kestrel.Game.Tests
             VisualElement root = null;
             Assert.DoesNotThrow(() =>
                 root = MainMenuOverlay.Build(full, safe, () => launch++, () => design++, () => missions++, true));
-            Press(root.Q<Button>("home-launch"));
+            Press(root.Q<Button>("home-primary"));
             Press(root.Q<Button>("home-design"));
             Press(root.Q<Button>("home-missions"));
             Assert.That(launch, Is.EqualTo(1));
@@ -123,19 +123,19 @@ namespace Kestrel.Game.Tests
 
             var gear = full.Q<Button>("home-settings");
             Assert.That(gear.style.minHeight.value.value, Is.GreaterThanOrEqualTo(44f));
-            var sheet = full.Q("home-settings-sheet");
+            var sheet = full.Q("screen-settings");
             Assert.That(sheet.style.display.value, Is.EqualTo(DisplayStyle.None));
             Press(gear);
             Assert.That(sheet.style.display.value, Is.EqualTo(DisplayStyle.Flex));
 
-            Toggle("home-setting-music", "Music", () => AudioPrefs.MusicMuted, full);
-            Toggle("home-setting-sound", "Sound", () => AudioPrefs.SfxMuted, full);
-            Toggle("home-setting-voice", "Voice", () => AudioPrefs.NarrationMuted, full);
+            Toggle("settings-music", "Music", () => AudioPrefs.MusicMuted, full);
+            Toggle("settings-sound", "Sound", () => AudioPrefs.SfxMuted, full);
+            Toggle("settings-voice", "Voice", () => AudioPrefs.NarrationMuted, full);
             Assert.That(full.Q<Button>("audio-music").text, Is.EqualTo(AudioPrefs.Caption("Music", AudioPrefs.MusicMuted)));
             Assert.That(full.Q<Button>("audio-sfx").text, Is.EqualTo(AudioPrefs.Caption("Sound", AudioPrefs.SfxMuted)));
             Assert.That(full.Q<Button>("audio-narration").text, Is.EqualTo(AudioPrefs.Caption("Voice", AudioPrefs.NarrationMuted)));
 
-            var subs = full.Q<Button>("home-setting-subtitles");
+            var subs = full.Q<Button>("settings-subtitles");
             Assert.That(subs.text, Is.EqualTo("Subtitles on"));
             Press(subs);
             Assert.That(AudioPrefs.SubtitlesOn, Is.False);
@@ -144,7 +144,7 @@ namespace Kestrel.Game.Tests
             Press(subs);
             Assert.That(MenuPrefs.SubtitlesOn, Is.True);
 
-            var sandbox = full.Q<Button>("home-setting-sandbox");
+            var sandbox = full.Q<Button>("settings-sandbox");
             Assert.That(sandbox.text, Is.EqualTo("Sandbox on"));
             Press(sandbox);
             Assert.That(AudioPrefs.SandboxUnlocked, Is.False);
@@ -152,7 +152,7 @@ namespace Kestrel.Game.Tests
             Press(sandbox);
             Assert.That(MenuPrefs.SandboxUnlocked, Is.True);
 
-            var motion = full.Q<Button>("home-reduce-motion");
+            var motion = full.Q<Button>("settings-reduce-motion");
             Press(motion);
             Assert.That(motion.text, Is.EqualTo("Reduce motion on"));
             Press(motion);
@@ -160,8 +160,8 @@ namespace Kestrel.Game.Tests
 
             foreach (var name in new[]
             {
-                "home-setting-music", "home-setting-sound", "home-setting-voice",
-                "home-setting-subtitles", "home-setting-sandbox", "home-reduce-motion", "home-settings-close",
+                "settings-music", "settings-sound", "settings-voice",
+                "settings-subtitles", "settings-sandbox", "settings-reduce-motion", "settings-close",
             })
             {
                 var key = full.Q<Button>(name);

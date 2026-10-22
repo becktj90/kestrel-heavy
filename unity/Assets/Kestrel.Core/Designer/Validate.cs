@@ -30,13 +30,8 @@ namespace Kestrel.Core.Designer
         /// <summary>Warn above this powered-flight max-Q. Never a block. Unguided solids are exempt.</summary>
         public const double MaxQWarnKPa = 45;
 
-        public static double PayloadVolume(Catalog c, JsonObject d)
-        {
-            var plj = d?.Obj("payload");
-            if (plj == null || plj.Str("type") == null || !c.PayloadById.TryGetValue(plj.Str("type"), out var pl)) return 0;
-            double m = plj.Num("mass") > 0 ? plj.Num("mass") : pl.mass;
-            return pl.volume * Math.Min(1.5, Math.Pow(m / pl.mass, 2.0 / 3.0));
-        }
+        /// <summary>Cargo volume the fairing must hold (<see cref="PayloadFit.SpecFor(Catalog, JsonObject)"/>); 0 without a payload.</summary>
+        public static double PayloadVolume(Catalog c, JsonObject d) => PayloadFit.SpecFor(c, d)?.volume ?? 0;
 
         public static EngineeringReport Engineering(Catalog c, JsonObject design)
         {
@@ -150,13 +145,18 @@ namespace Kestrel.Core.Designer
             var top = (JsonObject)stages[stages.Count - 1];
             var fairing = d.Obj("fairing");
             if (fairing.Num("diameter") < top.Num("diameter")) { JsonMut.Set(fairing, "diameter", top.Num("diameter")); Say("Widened the fairing to match the top stage"); }
-            if (d.Obj("payload")?.Str("type") is string pt && c.PayloadById.ContainsKey(pt))
+            var spec = PayloadFit.SpecFor(c, d);
+            if (spec != null)
             {
-                double Fd() => Math.PI * Math.Pow(fairing.Num("diameter") / 2, 2) * fairing.Num("length") * 0.6;
-                double pv = PayloadVolume(c, d);
-                if (Fd() < pv)
+                double needD = PayloadFit.RequiredDiameter(spec);
+                if (fairing.Num("diameter") < needD)
                 {
-                    JsonMut.Set(fairing, "length", Math.Ceiling(pv / (Math.PI * Math.Pow(fairing.Num("diameter") / 2, 2) * 0.6) * 10) / 10 + 0.5);
+                    JsonMut.Set(fairing, "diameter", Math.Ceiling((needD - PayloadFit.DiameterToleranceM) * 10) / 10);
+                    Say("Widened the fairing so the payload fits");
+                }
+                if (!PayloadFit.Check(fairing.Num("diameter"), fairing.Num("length"), spec).fits)
+                {
+                    JsonMut.Set(fairing, "length", Math.Ceiling(PayloadFit.RequiredLength(spec, fairing.Num("diameter")) * 10) / 10 + 0.5);
                     Say("Stretched the fairing so the payload fits");
                 }
             }
@@ -200,6 +200,14 @@ namespace Kestrel.Core.Designer
                     var up = (JsonObject)stages[stages.Count - 1];
                     if (stages.Count > 1 && r.stages[r.stages.Count - 1].twrVac > 0.7 && iter % 2 == 0) { JsonMut.Set(up, "propMass", up.Num("propMass") * 1.15); Say("Added upper-stage propellant"); continue; }
                     if (r.liftoffTWR > 1.45) { JsonMut.Set(s0, "propMass", s0.Num("propMass") * 1.1); Say("Added first-stage propellant"); continue; }
+                    // A low-thrust first stage (small hybrids) runs out of liftoff thrust before it has the propellant: one more
+                    // engine lets the next step add propellant again, instead of shrinking the cargo to nothing.
+                    if (stages.Count == 1)
+                    {
+                        var ep0 = EnginePoint.Of(c.EngineById[s0.Str("engine")], s0.Str("nozzle"));
+                        double fit0 = Math.Floor(Lim.pack * s0.Num("diameter") * s0.Num("diameter") / (ep0.diameter * ep0.diameter));
+                        if (s0.Num("engineCount") < Math.Min(Lim.engineCountMax, fit0)) { JsonMut.Set(s0, "engineCount", s0.Num("engineCount") + 1); Say("Added first-stage engines so it can carry more propellant"); continue; }
+                    }
                     var payload = d.Obj("payload");
                     if (payload.Num("mass") > Lim.payloadMassMin) { JsonMut.Set(payload, "mass", Math.Max(Lim.payloadMassMin, JsMath.Round(payload.Num("mass") * 0.85))); Say("Lightened the payload"); continue; }
                 }
@@ -222,6 +230,13 @@ namespace Kestrel.Core.Designer
             if (!(s.Num("engineCount") >= 1)) { JsonMut.Set(s, "engineCount", 1d); say($"Gave {NameOrStage(s)} an engine"); }
             JsonMut.Set(s, "engineCount", Math.Min(Lim.engineCountMax, JsMath.Round(s.Num("engineCount"))));
             if (!(s.Num("propMass") > 0)) { JsonMut.Set(s, "propMass", upper ? 10000d : 50000d); say($"Loaded propellant into {NameOrStage(s)}"); }
+            // A reserve as big as the whole load leaves no usable propellant, and adding propellant cannot catch up on a
+            // low-thrust stage. Trim it to the most the designer allows.
+            if (s.Num("landingPropMass") > 0 && s.Num("landingPropMass") >= s.Num("propMass"))
+            {
+                JsonMut.Set(s, "landingPropMass", (double)JsMath.Round(s.Num("propMass") * Lim.landingReserveMax));
+                say($"Trimmed the {NameOrStage(s)} landing reserve to fit its propellant");
+            }
             var en = EnginePoint.Of(c.EngineById[s.Str("engine")], s.Str("nozzle"));
             double need = Math.Sqrt(s.Num("engineCount") * en.diameter * en.diameter / Lim.pack) + 0.05;
             if (s.Num("diameter") < need) { JsonMut.Set(s, "diameter", Math.Min(Lim.diameterMax, Math.Ceiling(need * 10) / 10)); say($"Widened {NameOrStage(s)} so the engines fit"); }
@@ -363,12 +378,14 @@ namespace Kestrel.Core.Designer
             var fairing = d.Obj("fairing");
             if (fairing != null && top != null && fairing.Num("diameter") < top.Num("diameter") * Lim.fairingNarrowRatio)
                 outp.Add(Iss("fairing-narrow", "payload", "The fairing is narrower than half the top stage. Try a fairing at least as wide as the stage."));
-            var plj = d.Obj("payload");
-            if (plj != null && fairing != null && plj.Str("type") != null && c.PayloadById.TryGetValue(plj.Str("type"), out var pl))
+            var spec = PayloadFit.SpecFor(c, d);
+            if (spec != null && fairing != null)
             {
-                double vol = Math.PI * Math.Pow(fairing.Num("diameter") / 2, 2) * fairing.Num("length") * 0.6;
-                double pv = PayloadVolume(c, d);
-                if (vol < pv) outp.Add(Iss("payload-doesnt-fit", "payload", $"The {pl.label} needs about {Fmt(pv, 1)} m\u00b3; this fairing holds {Fmt(vol, 1)} m\u00b3. Try a longer or wider fairing."));
+                var plj = d.Obj("payload");
+                string label = plj?.Str("type") is string pt && c.PayloadById.TryGetValue(pt, out var pl) ? pl.label : "cargo";
+                var fit = PayloadFit.Check(fairing.Num("diameter"), fairing.Num("length"), spec);
+                if (fit.volumeMargin < 0) outp.Add(Iss("payload-doesnt-fit", "payload", $"The {label} needs about {Fmt(spec.volume, 1)} m\u00b3; this fairing holds {Fmt(fit.usableVolume, 1)} m\u00b3. Try a longer or wider fairing."));
+                else if (fit.diameterMargin < -PayloadFit.DiameterToleranceM) outp.Add(Iss("payload-doesnt-fit", "payload", $"The {label} is {Fmt(spec.diameter, 1)} m wide; it needs a fairing at least {Fmt(Math.Ceiling((PayloadFit.RequiredDiameter(spec) - PayloadFit.DiameterToleranceM) * 100) / 100, 2)} m wide. Try a wider fairing."));
             }
             return outp;
         }

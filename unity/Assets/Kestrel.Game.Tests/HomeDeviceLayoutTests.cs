@@ -5,6 +5,7 @@
 // paint order and a non-zero rect inside the viewport.
 // KESTREL_REPO_ROOT points at an empty directory, the same device stand-in as #254, and
 // fonts are read with Resources.Load only.
+using Kestrel.Core.Ui;
 using System;
 using System.IO;
 using System.Reflection;
@@ -160,7 +161,7 @@ namespace Kestrel.Game.Tests
                 var shell = MountHome(surface.Stage, 0f, 0f);
                 surface.Pump(6);
                 var root = shell.Q(MainMenuOverlay.RootName);
-                var launch = root.Q<Button>("home-launch");
+                var launch = root.Q<Button>("home-primary");
                 var title = root.Q("mm-title");
                 Assert.That(launch, Is.Not.Null);
                 Assert.That(title, Is.Not.Null);
@@ -198,7 +199,7 @@ namespace Kestrel.Game.Tests
 
         static bool ColumnCapped(VisualElement root)
         {
-            if (InlineMax(root.Q("mm-stats")) || InlineMax(root.Q("home-launch")) || InlineMax(root.Q("home-design")))
+            if (InlineMax(root.Q("mm-stats")) || InlineMax(root.Q("home-primary")) || InlineMax(root.Q("home-design")))
                 return true;
             if (InlineMax(root.Q("mm-title"))) return true;
             var title = root.Q("mm-title");
@@ -221,7 +222,7 @@ namespace Kestrel.Game.Tests
                 if (el == null) return name + " missing";
                 return name + " max " + el.style.maxHeight.keyword + " h " + el.resolvedStyle.height;
             }
-            return One("home-launch") + "; " + One("mm-title") + "; " + One("mm-stats");
+            return One("home-primary") + "; " + One("mm-title") + "; " + One("mm-stats");
         }
 
         [Test]
@@ -258,8 +259,8 @@ namespace Kestrel.Game.Tests
                     surface.Pump(8);
                     Click(shell.Q<Button>("home-settings"));
                     surface.Pump(4);
-                    var sheet = shell.Q("home-settings-sheet");
-                    var close = shell.Q<Button>("home-settings-close");
+                    var sheet = shell.Q("screen-settings");
+                    var close = shell.Q<Button>("settings-close");
                     Assert.That(sheet, Is.Not.Null, d.Name);
                     Assert.That(sheet.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None), d.Name);
                     Inside(surface.Stage, sheet, d.Name + " settings");
@@ -323,7 +324,7 @@ namespace Kestrel.Game.Tests
                     Assert.That(card.worldBound.height, Is.GreaterThan(stage.worldBound.height * 0.95f), d.Name + " card height");
                     Assert.That(stage.Q<Label>("h-t").text, Is.EqualTo(""), d.Name + " count");
                     Assert.That(stage.Q<Label>("h-verdict").text, Is.EqualTo(""), d.Name + " verdict");
-                    Assert.That(stage.Q("skip-count").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
+                    Assert.That(stage.Q(UiIds.FlightSkipCount).resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
                     Assert.That(stage.Q("ascent-nudge").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
                     Assert.That(stage.Q("guide-pop").resolvedStyle.display, Is.EqualTo(DisplayStyle.None), d.Name);
                     Assert.That(stage.Q("guide-pop").pickingMode, Is.EqualTo(PickingMode.Ignore), d.Name);
@@ -340,7 +341,7 @@ namespace Kestrel.Game.Tests
                     Assert.That(card.Q<Label>("plot-label").resolvedStyle.fontSize / sx, Is.GreaterThanOrEqualTo(14f), d.Name + " plot");
                     Assert.That(card.resolvedStyle.backgroundColor.a, Is.EqualTo(1f).Within(0.001f), d.Name);
 
-                    foreach (var id in new[] { "failure-fix", "report-next", "report-retry", "report-missions", "report-home" })
+                    foreach (var id in new[] { "failure-fix", "report-next", "report-retry", NextMission.DesignerId, "report-missions", "report-home" })
                     {
                         var button = card.Q<Button>(id);
                         Assert.That(button, Is.Not.Null, d.Name + " " + id);
@@ -369,7 +370,7 @@ namespace Kestrel.Game.Tests
 
         static VisualElement SampleFlightHud(VisualElement stage)
         {
-            var hud = new VisualElement { name = "hud", pickingMode = PickingMode.Position };
+            var hud = new VisualElement { name = UiIds.ScreenFlight, pickingMode = PickingMode.Position };
             hud.style.position = Position.Absolute;
             hud.style.left = 0f;
             hud.style.top = 0f;
@@ -377,7 +378,7 @@ namespace Kestrel.Game.Tests
             hud.style.bottom = 0f;
             hud.Add(new Label("T-0:07") { name = "h-t" });
             hud.Add(new Label("On the count") { name = "h-verdict" });
-            var skip = new Button { name = "skip-count", text = "Skip count" };
+            var skip = new Button { name = UiIds.FlightSkipCount, text = "Skip count" };
             skip.style.position = Position.Absolute;
             skip.style.top = 40f;
             skip.style.left = 16f;
@@ -521,11 +522,11 @@ namespace Kestrel.Game.Tests
             var root = shell.Q(MainMenuOverlay.RootName);
             Assert.That(root, Is.Not.Null, d.Name);
             var title = root.Q<Label>("mm-kestrel");
-            var launch = root.Q<Button>("home-launch");
+            var launch = root.Q<Button>("home-primary");
             var design = root.Q<Button>("home-design");
             var missions = root.Q<Button>("home-missions");
             var stats = root.Q("mm-stats");
-            var thrum = root.Q("mm-hint");
+            var thrum = root.Q("home-thrum");
             var sky = shell.Q("mm-dusk");
             var plate = shell.Q("mm-full");
             var gear = shell.Q<Button>("home-settings");
@@ -536,7 +537,8 @@ namespace Kestrel.Game.Tests
             Assert.That(sky, Is.Not.Null, d.Name + " dusk");
             Assert.That(plate, Is.Not.Null, d.Name);
             Assert.That(title.text, Is.EqualTo(MainMenuCopy.TitleTop), d.Name);
-            Assert.That(launch.Q<Label>(className: "kh-mm-launch-label").text, Is.EqualTo(MainMenuCopy.Launch.Label), d.Name);
+            // One primary CTA (STARTER_COPY.md): "LAUNCH KH-n · Name", "LAUNCH KH-n", or CONTINUE with a save.
+            Assert.That(launch.Q<Label>(className: "kh-mm-launch-label").text, Does.StartWith(MainMenuCopy.Launch.Label).Or.EqualTo("CONTINUE"), d.Name);
             Assert.That(design.Q<Label>(className: "kh-mm-design-label").text, Is.EqualTo(MainMenuCopy.Design.Label), d.Name);
             Assert.That(missions.Q<Label>(className: "kh-mm-tile-name").text, Does.Contain("Mission").IgnoreCase, d.Name);
             Assert.That(title.style.unityFontDefinition.value.font, Is.SameAs(black), d.Name + " title font is the Resources face");

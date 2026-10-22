@@ -59,7 +59,7 @@ namespace Kestrel.Core.Tests
                 Assert.IsNull(Catalog.RepoRootOrNull());
                 var design = HomeAutoBuild.BoardStarter("m3");
                 Assert.IsNotNull(design);
-                Assert.AreEqual("h-n5-k8-24000-2500", design.Str("name"));
+                Assert.AreEqual("h-n5-k8-23500-2500", design.Str("name"));
                 Assert.IsNull(HomeAutoBuild.BoardStarter("m1"), "KH-1 stays on the armed hopper");
             }
             finally
@@ -111,7 +111,8 @@ namespace Kestrel.Core.Tests
                 }
                 else if (index == 3)
                 {
-                    Assert.IsFalse(flight.passed, "KH-3 starter still misses, so a failed flight does not clear the campaign");
+                    // Calm-air retune (Physics, option b): KH-3's board starter is an 8.65° kick and flies the band.
+                    Assert.IsTrue(flight.passed, "KH-3 starter flies (" + flight.apoKm.ToString("0.0") + " x " + flight.periKm.ToString("0.0") + " km)");
                 }
                 lines.Add("KH-" + index + " " + choice.TemplateId
                     + (flight.passed ? " pass" : " fail " + (flight.failure ?? "short"))
@@ -130,7 +131,9 @@ namespace Kestrel.Core.Tests
             {
                 long minor = 100000;
                 var store = CareerStore.Load(new NativeStore(dir, () => 1000, () => 0.25), campaign, minor);
-                for (int index = 1; index <= 3; index++)
+                // KH-1..KH-3 starters pass (KH-3 since the calm-air retune); KH-4's raw starter (a Fix it row) is the miss.
+                int passes = 0, misses = 0;
+                for (int index = 1; index <= 4; index++)
                 {
                     var mission = campaign.Mission(index);
                     var choice = HomeAutoBuild.Choose(catalog, hangar.templates, mission);
@@ -147,6 +150,7 @@ namespace Kestrel.Core.Tests
                     Assert.IsNotNull(record, mission.Id);
                     Assert.GreaterOrEqual(record.Attempts, 1, mission.Id);
                     Assert.AreEqual(card.Stars, record.BestStars, mission.Id);
+                    if (flight.passed) passes++; else misses++;
                     if (flight.passed)
                     {
                         Assert.AreEqual(index, again.Career.Cleared, mission.Id);
@@ -163,6 +167,8 @@ namespace Kestrel.Core.Tests
                     }
                     store = again;
                 }
+                Assert.AreEqual(3, passes, "KH-1..KH-3 win");
+                Assert.AreEqual(1, misses, "KH-4's raw starter is the miss that must not clear");
 
                 GameSession.Carry(MissionContext.FromMission(campaign, campaign.Mission(1)));
                 Assert.AreEqual(SessionScreens.Home, GameSession.Apply(RouteId.ReportHome).Screen);
@@ -205,8 +211,41 @@ namespace Kestrel.Core.Tests
         [Test]
         public void BoardStarter_FixItOrOneStrengthEdit_WinsEveryMission()
         {
-            var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "board-starters.json")));
             int seen = 0;
+            foreach (var (mission, design, mode) in BoardStarters())
+            {
+                AssertSeeds(mission, design);
+                seen++;
+            }
+            Assert.AreEqual(18, seen, "KH-3 through KH-20");
+        }
+
+        /// <summary>
+        /// Every board starter, after its row's one move (fly, Fix it, or the strength restore), also wins the live pad
+        /// in calm air: seed 1, the live frame loop at LiveDt, the reference pad with no briefing wind, so no wind-shear
+        /// ease (#338) can carry it. Judged by the live report card's gates (LivePadLoop.Passes).
+        /// </summary>
+        [Test]
+        public void BoardStarter_FixItOrOneStrengthEdit_WinsTheLivePadInCalmAir()
+        {
+            var misses = new List<string>();
+            int seen = 0;
+            foreach (var (mission, design, mode) in BoardStarters())
+            {
+                var live = LivePadLoop.Fly(catalog, mission, design, false);
+                if (!LivePadLoop.Passes(catalog, mission, design, live))
+                    misses.Add(mission.Id + " (" + mode + ") live calm " + LivePadLoop.Text(live));
+                seen++;
+            }
+            Assert.AreEqual(18, seen, "KH-3 through KH-20");
+            Assert.That(misses, Is.Empty, string.Join(" | ", misses));
+        }
+
+        /// <summary>The board's starters after the row's move. A fix or strength row's raw starter must be the near miss.</summary>
+        List<(CampaignMission, Design, string)> BoardStarters()
+        {
+            var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "board-starters.json")));
+            var list = new List<(CampaignMission, Design, string)>();
             foreach (JsonObject row in file.Arr("missions"))
             {
                 var mission = campaign.ById(row.Str("id"));
@@ -218,7 +257,7 @@ namespace Kestrel.Core.Tests
                 string mode = row.Str("mode");
                 if (mode == "fly")
                 {
-                    AssertSeeds(mission, design);
+                    list.Add((mission, design, mode));
                 }
                 else if (mode == "fix")
                 {
@@ -238,19 +277,18 @@ namespace Kestrel.Core.Tests
                     }
                     Assert.IsNotNull(check, mission.Id + " has a warning for Fix it");
                     StepperFix.Apply(catalog, json, check);
-                    AssertSeeds(mission, Design.FromJson(json));
+                    list.Add((mission, Design.FromJson(json), mode));
                 }
                 else if (mode == "strength")
                 {
                     var raw = FlightBatch.Fly(catalog, mission, design, campaign.Seeds[0]);
                     Assert.IsFalse(raw.passed, mission.Id + " starter is the near miss");
                     design.safetyFactor = row.Num("restoreSafetyFactor");
-                    AssertSeeds(mission, design);
+                    list.Add((mission, design, mode));
                 }
                 else Assert.Fail(mission.Id + " mode " + mode);
-                seen++;
             }
-            Assert.AreEqual(18, seen, "KH-3 through KH-20");
+            return list;
         }
 
         void AssertSeeds(CampaignMission mission, Design design)

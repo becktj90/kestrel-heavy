@@ -24,7 +24,7 @@ namespace Kestrel.Game.Tests
             Assert.AreEqual("KH-4  Weather Eye", root.Q<Label>("briefing-title").text);
             Assert.AreEqual("Tern-3 · Weather sat · 2,500 kg", root.Q<Label>("briefing-payload").text);
             Assert.AreEqual("12 m3 · Diameter 2 m", root.Q<Label>("briefing-fit").text);
-            Assert.AreEqual("Circular orbit 500 km, 51.6°", root.Q<Label>("briefing-target").text);
+            Assert.AreEqual("Circular orbit 500 km", root.Q<Label>("briefing-target").text);
             Assert.AreEqual("Peak g at most 6", root.Q<Label>("briefing-requirement-0").text);
             Assert.IsNull(root.Q("briefing-requirement-1"));
             Assert.AreEqual("Optional.", root.Q<Label>("briefing-bonus-note").text);

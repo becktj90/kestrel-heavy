@@ -47,7 +47,7 @@ Sketches (procedural PIL, fictional marks only), in `docs/designer/art/`:
    - Each decal is 256×256 in **one 2048×2048 atlas** (64 cells; 2.0 uses 24), ASTC 6×6, about 1.8 MB.
    - Medium and High render as URP decal projectors; Low uses baked UVs.
 4. **Branding:**
-   - **12 glyphs and 6 frames ship as SVG**, with a 64×64 viewBox, single path or a few paths, `currentColor` fill and no text.
+   - **12 glyphs and 6 frames ship as SVG**, with a 64×64 viewBox, single path or a few paths, an explicit white (`#FFFFFF`) fill tinted to the palette colour at runtime (Unity's SVG importer rejects `currentColor`), and no text.
    - At build time they rasterise to **256×256 SDF PNG**, R8 inside a 1024² atlas (about 0.25 MB). The SVGs stay as the source.
    - **16-colour palette confirmed** (A2 `palette.json`), plus the engineer hex field.
    - **Trademark sign-off:** Chief of Staff signs the review checklist in each A2 or branding PR, and **Trevor has the final say** before store screenshots. This also covers the NAME_REVIEW step.

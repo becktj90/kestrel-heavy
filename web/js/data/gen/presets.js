@@ -113,7 +113,7 @@ export default {
           "interstageMass": 200,
           "separationMass": 50,
           "landingPropMass": 0,
-          "material": "composite",
+          "material": "al-li",
           "name": "Stage 1",
           "propellant": "methalox",
           "engine": "gg-methalox-small",
@@ -125,7 +125,7 @@ export default {
           "interstageMass": 0,
           "separationMass": 50,
           "landingPropMass": 0,
-          "material": "composite",
+          "material": "al-li",
           "name": "Stage 2",
           "propellant": "methalox",
           "engine": "gg-methalox-small",
@@ -144,6 +144,12 @@ export default {
         "length": 2.5,
         "material": "composite",
         "jettisonAltitudeKm": 100
+      },
+      "guidance": {
+        "pitchKickAlt": 500,
+        "pitchKickDeg": 6,
+        "maxQThrottle": 40,
+        "gLimit": 5
       }
     },
     {
@@ -191,7 +197,10 @@ export default {
           "engine": "gg-kerolox",
           "engineCount": 5,
           "propMass": 140000,
-          "diameter": 3
+          "diameter": 3,
+          "engineParams": {
+            "throttleMin": 0.4
+          }
         },
         {
           "interstageMass": 0,
@@ -216,6 +225,13 @@ export default {
         "length": 4,
         "material": "composite",
         "jettisonAltitudeKm": 100
+      },
+      "guidance": {
+        "pitchKickAlt": 34000,
+        "pitchKickDeg": 3,
+        "turnShape": 0.5,
+        "maxQThrottle": 40,
+        "gLimit": 6
       }
     },
     {

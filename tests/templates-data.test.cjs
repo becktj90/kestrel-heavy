@@ -15,7 +15,7 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
 
 test('the first five templates (plus the reusable variant) exist', () => {
   const ids = files.map((f) => read(f).id).sort();
-  for (const id of ['tpl-sounding-solid', 'tpl-small-kerolox', 'tpl-medium-kerolox', 'tpl-medium-kerolox-reusable', 'tpl-hydrogen-upper', 'tpl-methane-reusable']) assert.ok(ids.includes(id), id);
+  for (const id of ['tpl-sounding-hybrid', 'tpl-small-kerolox', 'tpl-medium-kerolox', 'tpl-medium-kerolox-reusable', 'tpl-hydrogen-upper', 'tpl-methane-reusable']) assert.ok(ids.includes(id), id);
 });
 
 test('every template passes vehicle schema and template-meta validation, with no hard blocks', async () => {

@@ -4,8 +4,8 @@ seed=1
 added:
 count.fuel.s2.load | + Fuel s2 | t=-96.207 | Stage 2 loads RP-1 (RP-1 / LOX). Anchor for a first stage is real T-35:00. Real T-20:00 compresses to T-1:36.207 in standard mode.
 count.lox.s2.top | + LOX top s2 | t=-92.328 | Stage 2 keeps LOX topped as it boils off. Real T-10:00 compresses to T-1:32.328 in standard mode.
-stg.light.s2 | + Upper light | t=144.128 | Stage 2 lights at T+2:24.128. Staged-combustion kerolox is not restartable, so this start is not called SES.
-stg.cutoff.s2 | + Upper cutoff | t=167.961 | Stage 2 ends its only burn at T+2:47.961. The engine cannot restart, so this is a cutoff, not SECO.
+stg.light.s2 | + Upper light | t=229.418 | Stage 2 lights at T+3:49.418. Staged-combustion kerolox is not restartable, so this start is not called SES.
+stg.cutoff.s2 | + Upper cutoff | t=277.083 | Stage 2 ends its only burn at T+4:37.083. The engine cannot restart, so this is a cutoff, not SECO.
 removed:
 count.lh2.s2.chill | − LH2 chill | t=-94.655 | The edited vehicle no longer produces this event.
 count.lh2.s2.slow | − LH2 slow | t=-94.138 | The edited vehicle no longer produces this event.
@@ -13,20 +13,22 @@ count.lh2.s2.fast | − LH2 fast | t=-93.621 | The edited vehicle no longer prod
 count.lh2.s2.leak | − H2 sniff | t=-93.103 | The edited vehicle no longer produces this event.
 count.lh2.s2.top | − LH2 top | t=-92.069 | The edited vehicle no longer produces this event.
 count.lh2.s2.replenish | − LH2 replen | t=-91.552 | The edited vehicle no longer produces this event.
-stg.ses.s2.1 | − SES-1 s2 | t=144.128 | SES-1 is absent on Stage 2 because sc-kerolox has restart set false.
-orb.insert | − Orbit | t=717.128 | Orbit insertion is absent because the sim outcome is suborbital, not orbit.
-stg.seco.s2.1 | − SECO-1 s2 | t=717.128 | SECO-1 is absent on Stage 2 because sc-kerolox is not restartable. Cutoff is stg.light's matching burnout, not a SECO.
-stg.ses.s2.2 | − SES-2 s2 | t=1917.128 | SES-2 is absent on Stage 2 because sc-kerolox cannot restart.
-stg.seco.s2.2 | − SECO-2 s2 | t=2217.128 | The edited vehicle no longer produces this event.
-disp.deorbit | − Deorbit | t=2307.128 | Deorbit is absent because sc-kerolox has no restart left after the mission burns (starts used 1 of 1).
+stg.ses.s2.1 | − SES-1 s2 | t=231.949 | SES-1 is absent on Stage 2 because sc-kerolox has restart set false.
+orb.insert | − Orbit | t=644.949 | Orbit insertion is absent because the sim outcome is suborbital, not orbit.
+stg.seco.s2.1 | − SECO-1 s2 | t=644.949 | SECO-1 is absent on Stage 2 because sc-kerolox is not restartable. Cutoff is stg.light's matching burnout, not a SECO.
+stg.ses.s2.2 | − SES-2 s2 | t=1844.949 | SES-2 is absent on Stage 2 because sc-kerolox cannot restart.
+stg.seco.s2.2 | − SECO-2 s2 | t=2144.949 | The edited vehicle no longer produces this event.
+disp.deorbit | − Deorbit | t=2234.949 | Deorbit is absent because sc-kerolox has no restart left after the mission burns (starts used 1 of 1).
 shifted:
 count.lox.s2.load | LOX s2 | before=-92.586 | after=-94.655 | delta=-2.069 | LOX s2 shifts -2.069 s. Stage 2 loads LOX beside the fuel. An upper stage uses the real T-16:00 LOX anchor. Real T-16:00 compresses to T-1:34.655 in standard mode.
 count.chill.s2 | Chill s2 | before=-90.776 | after=-91.164 | delta=-0.388 | Chill s2 shifts -0.388 s. Stage 2 chills Staged-combustion kerolox before terminal count. The anchor is real T-7:00 when the stage is the booster. Real T-7:00 compresses to T-1:31.164 in standard mode.
-asc.maxq | Max-Q | before=48 | after=49 | delta=+1 | Max-Q shifts +1 s. Max-Q is the sim peak dynamic pressure (46556 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:49.
-asc.throttle | Throttle | before=48 | after=49 | delta=+1 | Throttle shifts +1 s. Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q.
-asc.karman | Karman | before=121 | after=122 | delta=+1 | Karman shifts +1 s. The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:02, on an integrator step.
-stg.fairing | Fairing | before=125 | after=127 | delta=+2 | Fairing shifts +2 s. Fairing separates once heating has fallen (after Max-Q) and altitude reaches 110 km. Time T+2:07 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude.
-dep.payload | Deploy | before=2247.128 | after=390.709 | delta=-1856.419 | Deploy shifts -1856.419 s. Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+6:30.709). The ascent sim stops at burnout and does not fly the coast.
+asc.maxq | Max-Q | before=57 | after=44 | delta=-13 | Max-Q shifts -13 s. Max-Q is the sim peak dynamic pressure (18261 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:44.
+asc.throttle | Throttle | before=57 | after=44 | delta=-13 | Throttle shifts -13 s. Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q.
+asc.karman | Karman | before=204 | after=200 | delta=-4 | Karman shifts -4 s. The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+3:20, on an integrator step.
+stg.fairing | Fairing | before=215 | after=209 | delta=-6 | Fairing shifts -6 s. Fairing separates once heating has fallen (after Max-Q) and altitude reaches 110 km. Time T+3:29 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude.
+asc.meco | MECO | before=231.949 | after=229.418 | delta=-2.531 | MECO shifts -2.531 s. Main engine cutoff at sim T+3:49.418. A medium kerolox public anchor is about T+2:25; this time is the sim burnout.
+stg.sep.1 | SEP s1 | before=231.949 | after=229.418 | delta=-2.531 | SEP s1 shifts -2.531 s. Stage 1 separates at sim T+3:49.418, the same instant the sim records separation. The timeline orders it with the cutoff.
+dep.payload | Deploy | before=2174.949 | after=350.34 | delta=-1824.609 | Deploy shifts -1824.609 s. Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+5:50.34). The ascent sim stops at burnout and does not fly the coast.
 problems:
 lost-restart | s2 | s2 lost restart: exp-hydrolox had restart true and 15 restarts; sc-kerolox has restart false and 0 restarts. Removed stg.seco.s2.1, stg.seco.s2.2, stg.ses.s2.1, stg.ses.s2.2.
-failed-prediction | tpl-hydrogen-upper | The sim does not reach the target. Perigee -3230.2 km, apogee 903.8 km, target 200.0 km. Short by 1266 m/s Δv.
+failed-prediction | tpl-hydrogen-upper | The edit loses the target. The sim does not reach the target. Perigee -4866.3 km, apogee 175.0 km, target 200.0 km. Short by 1228 m/s Δv. First failure: structural-maxq at T+231.725 s. dv margin -0.11 < 0 at burnout.

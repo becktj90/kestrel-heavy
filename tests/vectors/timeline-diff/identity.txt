@@ -1,5 +1,5 @@
-before=tpl-sounding-solid
-after=tpl-sounding-solid
+before=scout
+after=scout
 seed=1
 added:
 removed:

@@ -6,7 +6,7 @@
   "relReliability": 1e-12,
   "note": "messages and makeItFly changes exact; readout closed-form; cost exact integer minor units"
  },
- "count": 117,
+ "count": 119,
  "cases": [
   {
    "kind": "validate",
@@ -167,7 +167,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -179,7 +179,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -198,6 +198,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -205,13 +211,13 @@
     "blocks": [],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 1.8632398067800464,
-     "totalDeltaV": 11823.042128881467,
-     "margin": 0.349690179694111,
+     "liftoffTWR": 1.8386133687777153,
+     "totalDeltaV": 11389.484873192032,
+     "margin": 0.30019632151782116,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 44329.78135753338,
-     "cost": 906949027,
+     "liftoffMass": 44923.53566760017,
+     "cost": 796263665,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -220,16 +226,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.8632398067800464,
-       "twrVac": 2.0702664519778295,
-       "deltaV": 5043.4315788151
+       "twr": 1.8386133687777153,
+       "twrVac": 2.0429037430863506,
+       "deltaV": 4886.82379324541
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.490351796092323,
-       "twrVac": 1.490351796092323,
-       "deltaV": 6779.610550066367
+       "twr": 1.471662545945757,
+       "twrVac": 1.471662545945757,
+       "deltaV": 6502.661079946621
       }
      ]
     }
@@ -283,7 +289,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -308,6 +317,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -457,7 +473,7 @@
   },
   {
    "kind": "validate",
-   "name": "preset:tpl-sounding-solid",
+   "name": "preset:tpl-sounding-hybrid",
    "design": {
     "version": 1,
     "strapOns": {
@@ -467,7 +483,7 @@
      "engine": "srm-small",
      "engineCount": 1,
      "propMass": 0,
-     "diameter": 1.6,
+     "diameter": 1.3,
      "material": "steel",
      "crossfeed": false
     },
@@ -484,7 +500,7 @@
      "tier": "basic"
     },
     "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
+    "id": "tpl-sounding-hybrid",
     "name": "Pipit",
     "tier": "starter",
     "stages": [
@@ -494,11 +510,11 @@
       "landingPropMass": 0,
       "material": "steel",
       "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
-      "engineCount": 1,
-      "propMass": 2300,
-      "diameter": 1.6
+      "propellant": "hybrid",
+      "engine": "hybrid-small",
+      "engineCount": 2,
+      "propMass": 1750,
+      "diameter": 1.3
      }
     ],
     "payload": {
@@ -507,8 +523,8 @@
      "orbit": "suborbital"
     },
     "fairing": {
-     "diameter": 1.6,
-     "length": 2,
+     "diameter": 1.3,
+     "length": 2.4,
      "material": "composite",
      "jettisonAltitudeKm": 100
     },
@@ -522,16 +538,16 @@
      "order": 1,
      "difficulty": "beginner",
      "tags": [
-      "solid",
+      "hybrid",
       "single stage",
       "suborbital",
       "tutorial"
      ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
      "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
       "sources": [
        {
         "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -546,9 +562,9 @@
       ]
      },
      "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
+      "Add 200 kg of propellant and watch the apogee climb.",
       "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
+      "Try one solid motor instead and compare the peak g and max-Q."
      ],
      "refMission": {
       "objective": "apogee",
@@ -559,21 +575,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 49.7,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 114,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 20.6
+      "maxG": 7
      }
     }
    },
@@ -582,24 +598,24 @@
     "blocks": [],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 19.580858081878564,
-     "totalDeltaV": 3592.5391699122347,
-     "margin": 0.49659516990075253,
+     "liftoffTWR": 2.028360599194437,
+     "totalDeltaV": 2920.8738929978226,
+     "margin": 0.21679000656701003,
      "required": 2400.474919446971,
      "targetAlt": 100000,
-     "liftoffMass": 3124.6318482486995,
-     "cost": 386770649,
-     "reliability": 0.982045,
+     "liftoffMass": 2513.646275181318,
+     "cost": 349265090,
+     "reliability": 0.9459939999999999,
      "orbitLabel": "Suborbital 100 km",
-     "fairingMass": 119.63184824869931,
+     "fairingMass": 116.64105204248182,
      "payloadMass": 300,
      "stages": [
       {
        "label": "Motor",
        "role": "core",
-       "twr": 19.580858081878564,
-       "twrVac": 21.53894389006642,
-       "deltaV": 3592.5391699122347
+       "twr": 2.028360599194437,
+       "twrVac": 2.434032719033324,
+       "deltaV": 2920.8738929978226
       }
      ]
     }
@@ -704,7 +720,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -1129,6 +1145,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -1141,7 +1161,10 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "gg-kerolox",
-      "engineCount": 9,
+      "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -1218,21 +1241,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
@@ -1241,14 +1264,14 @@
     "blocks": [],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 1.6745478983155186,
-     "totalDeltaV": 12640.902742999599,
-     "margin": 0.11569106003437997,
+     "liftoffTWR": 1.3050751458542817,
+     "totalDeltaV": 12680.476762916964,
+     "margin": 0.1191838786351621,
      "required": 11330.110274980665,
      "targetAlt": 200000,
-     "liftoffMass": 463106.59775680886,
-     "cost": 1912414958,
-     "reliability": 0.9753450950689916,
+     "liftoffMass": 462166.59775680886,
+     "cost": 1786330992,
+     "reliability": 0.9784540139305423,
      "orbitLabel": "GTO",
      "fairingMass": 2243.097154663112,
      "payloadMass": 4000,
@@ -1256,9 +1279,9 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.6745478983155186,
-       "twrVac": 1.850920398848159,
-       "deltaV": 6078.789610085667
+       "twr": 1.3050751458542817,
+       "twrVac": 1.4425327647667447,
+       "deltaV": 6118.363630003032
       },
       {
        "label": "Stage 2",
@@ -1478,7 +1501,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1490,7 +1513,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1509,6 +1532,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -1522,13 +1551,13 @@
     ],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 0.42137245095304754,
-     "totalDeltaV": 12045.091979820332,
-     "margin": 0.3750388589889788,
+     "liftoffTWR": 0.41570604836231756,
+     "totalDeltaV": 11594.919242150587,
+     "margin": 0.323648217174836,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 43559.78135753338,
-     "cost": 820156724,
+     "liftoffMass": 44153.53566760017,
+     "cost": 709471362,
      "reliability": 0.96351660999,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -1537,16 +1566,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 0.42137245095304754,
-       "twrVac": 0.46819161217005284,
-       "deltaV": 5265.481429753966
+       "twr": 0.41570604836231756,
+       "twrVac": 0.46189560929146395,
+       "deltaV": 5092.258162203967
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.490351796092323,
-       "twrVac": 1.490351796092323,
-       "deltaV": 6779.610550066367
+       "twr": 1.471662545945757,
+       "twrVac": 1.471662545945757,
+       "deltaV": 6502.661079946621
       }
      ]
     }
@@ -1594,7 +1623,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1606,7 +1635,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1625,6 +1654,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -1682,7 +1717,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1694,7 +1729,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1713,6 +1748,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -1770,7 +1811,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1782,7 +1823,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1801,6 +1842,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -1815,13 +1862,13 @@
     ],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 5.903187568429064,
-     "totalDeltaV": 11271.530054404033,
-     "margin": 0.2867308818424555,
+     "liftoffTWR": 5.828980905464984,
+     "totalDeltaV": 10874.511102254663,
+     "margin": 0.24140814890898615,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 46639.78135753338,
-     "cost": 1108259133,
+     "liftoffMass": 47233.53566760017,
+     "cost": 997573771,
      "reliability": 0.8982941524181798,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -1830,16 +1877,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 5.903187568429064,
-       "twrVac": 6.559097298254516,
-       "deltaV": 4491.919504337665
+       "twr": 5.828980905464984,
+       "twrVac": 6.476645450516649,
+       "deltaV": 4371.850022308043
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.490351796092323,
-       "twrVac": 1.490351796092323,
-       "deltaV": 6779.610550066367
+       "twr": 1.471662545945757,
+       "twrVac": 1.471662545945757,
+       "deltaV": 6502.661079946621
       }
      ]
     }
@@ -1887,7 +1934,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1899,7 +1946,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -1918,6 +1965,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -1937,13 +1990,13 @@
     ],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 1.8632398067800464,
-     "totalDeltaV": 11823.042128881467,
-     "margin": 0.349690179694111,
+     "liftoffTWR": 1.8386133687777153,
+     "totalDeltaV": 11389.484873192032,
+     "margin": 0.30019632151782116,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 44329.78135753338,
-     "cost": 987163335,
+     "liftoffMass": 44923.53566760017,
+     "cost": 852349389,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -1952,16 +2005,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.8632398067800464,
-       "twrVac": 2.0702664519778295,
-       "deltaV": 5043.4315788151
+       "twr": 1.8386133687777153,
+       "twrVac": 2.0429037430863506,
+       "deltaV": 4886.82379324541
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.490351796092323,
-       "twrVac": 1.490351796092323,
-       "deltaV": 6779.610550066367
+       "twr": 1.471662545945757,
+       "twrVac": 1.471662545945757,
+       "deltaV": 6502.661079946621
       }
      ]
     }
@@ -2015,7 +2068,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -2040,6 +2096,13 @@
      "length": 1,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -2048,7 +2111,7 @@
      {
       "code": "payload-doesnt-fit",
       "tab": "payload",
-      "msg": "The Crew capsule needs about 40.0 m³; this fairing holds 4.2 m³. Try a longer or wider fairing."
+      "msg": "The Crew capsule needs about 40.0 m³; this fairing holds 4.6 m³. Try a longer or wider fairing."
      }
     ],
     "warnings": [
@@ -2084,6 +2147,264 @@
        "twr": 0.8642980960580728,
        "twrVac": 0.8642980960580728,
        "deltaV": 2829.5003968935134
+      }
+     ]
+    }
+   }
+  },
+  {
+   "kind": "validate",
+   "name": "payload-diameter-edge",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "blunt",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.6,
+    "livery": {
+     "primary": "#4fc3f7",
+     "accent": "#ff4081",
+     "name": "KID CRUISER"
+    },
+    "id": "kid",
+    "name": "Kid Cruiser",
+    "tier": "kid",
+    "stages": [
+     {
+      "interstageMass": 800,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Big Booster",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 5,
+      "propMass": 140000,
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Space Stage",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 12000,
+      "diameter": 3
+     }
+    ],
+    "payload": {
+     "type": "crew-capsule",
+     "mass": 12000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 4,
+     "length": 20,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
+    }
+   },
+   "out": {
+    "ok": true,
+    "blocks": [],
+    "warnings": [
+     {
+      "code": "dv-margin",
+      "tab": "propellants",
+      "msg": "About 1673 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+     }
+    ],
+    "readout": {
+     "liftoffTWR": 2.4037206120219454,
+     "totalDeltaV": 7087.118888942314,
+     "margin": -0.1909514774236005,
+     "required": 8759.8193324345,
+     "targetAlt": 400000,
+     "liftoffMass": 179234.68219576983,
+     "cost": 1518543614,
+     "reliability": 0.9834896208689856,
+     "orbitLabel": "LEO 400 km",
+     "fairingMass": 2990.796206217483,
+     "payloadMass": 12000,
+     "stages": [
+      {
+       "label": "Big Booster",
+       "role": "core",
+       "twr": 2.4037206120219454,
+       "twrVac": 2.656893552223073,
+       "deltaV": 4633.161193804005
+      },
+      {
+       "label": "Space Stage",
+       "role": "core",
+       "twr": 0.7780129683137466,
+       "twrVac": 0.7780129683137466,
+       "deltaV": 2453.957695138309
+      }
+     ]
+    }
+   }
+  },
+  {
+   "kind": "validate",
+   "name": "payload-too-wide",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.6,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "blunt",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "standard"
+    },
+    "safetyFactor": 1.6,
+    "livery": {
+     "primary": "#4fc3f7",
+     "accent": "#ff4081",
+     "name": "KID CRUISER"
+    },
+    "id": "kid",
+    "name": "Kid Cruiser",
+    "tier": "kid",
+    "stages": [
+     {
+      "interstageMass": 800,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Big Booster",
+      "propellant": "kerolox",
+      "engine": "gg-kerolox",
+      "engineCount": 5,
+      "propMass": 140000,
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
+     },
+     {
+      "interstageMass": 0,
+      "separationMass": 50,
+      "landingPropMass": 0,
+      "material": "al-li",
+      "name": "Space Stage",
+      "propellant": "hydrolox",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 12000,
+      "diameter": 3
+     }
+    ],
+    "payload": {
+     "type": "crew-capsule",
+     "mass": 12000,
+     "orbit": "leo400"
+    },
+    "fairing": {
+     "diameter": 3.99,
+     "length": 20,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
+    }
+   },
+   "out": {
+    "ok": false,
+    "blocks": [
+     {
+      "code": "payload-doesnt-fit",
+      "tab": "payload",
+      "msg": "The Crew capsule is 3.6 m wide; it needs a fairing at least 4.00 m wide. Try a wider fairing."
+     }
+    ],
+    "warnings": [
+     {
+      "code": "dv-margin",
+      "tab": "propellants",
+      "msg": "About 1671 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+     }
+    ],
+    "readout": {
+     "liftoffTWR": 2.403820890303903,
+     "totalDeltaV": 7088.4160975530995,
+     "margin": -0.1908033911947005,
+     "required": 8759.8193324345,
+     "targetAlt": 400000,
+     "liftoffMass": 179227.2052052543,
+     "cost": 1517848066,
+     "reliability": 0.9834896208689856,
+     "orbitLabel": "LEO 400 km",
+     "fairingMass": 2983.3192157019394,
+     "payloadMass": 12000,
+     "stages": [
+      {
+       "label": "Big Booster",
+       "role": "core",
+       "twr": 2.403820890303903,
+       "twrVac": 2.6570043923595805,
+       "deltaV": 4633.615233877195
+      },
+      {
+       "label": "Space Stage",
+       "role": "core",
+       "twr": 0.778214763650604,
+       "twrVac": 0.778214763650604,
+       "deltaV": 2454.800863675904
       }
      ]
     }
@@ -2131,7 +2452,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2143,7 +2464,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2162,6 +2483,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -2171,17 +2498,17 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.05 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ],
     "readout": {
-     "liftoffTWR": 1.045510553133128,
-     "totalDeltaV": 11947.098184622468,
-     "margin": 0.3638521219708958,
+     "liftoffTWR": 1.0315553585240076,
+     "totalDeltaV": 11504.400091595628,
+     "margin": 0.31331476769148886,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 43889.78135753338,
-     "cost": 860048357,
+     "liftoffMass": 44483.53566760017,
+     "cost": 749362995,
      "reliability": 0.9679511951874789,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -2190,16 +2517,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.045510553133128,
-       "twrVac": 1.1616783923701421,
-       "deltaV": 5167.487634556101
+       "twr": 1.0315553585240076,
+       "twrVac": 1.1461726205822307,
+       "deltaV": 5001.739011649007
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.490351796092323,
-       "twrVac": 1.490351796092323,
-       "deltaV": 6779.610550066367
+       "twr": 1.471662545945757,
+       "twrVac": 1.471662545945757,
+       "deltaV": 6502.661079946621
       }
      ]
     }
@@ -2419,7 +2746,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2431,7 +2758,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2450,6 +2777,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -2459,17 +2792,17 @@
      {
       "code": "dv-margin",
       "tab": "propellants",
-      "msg": "About 1254 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+      "msg": "About 1414 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
      }
     ],
     "readout": {
-     "liftoffTWR": 1.7506866474281277,
-     "totalDeltaV": 7505.708850028208,
-     "margin": -0.14316624976074172,
+     "liftoffTWR": 1.7289282046425796,
+     "totalDeltaV": 7345.7497964967615,
+     "margin": -0.16142679229718135,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 47179.78135753338,
-     "cost": 906949027,
+     "liftoffMass": 47773.53566760017,
+     "cost": 796263665,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -2478,16 +2811,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.7506866474281277,
-       "twrVac": 1.945207386031253,
-       "deltaV": 4382.416173644463
+       "twr": 1.7289282046425796,
+       "twrVac": 1.921031338491755,
+       "deltaV": 4268.852302298693
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.0521088000044798,
-       "twrVac": 1.0521088000044798,
-       "deltaV": 3123.2926763837454
+       "twr": 1.0427603415313471,
+       "twrVac": 1.0427603415313471,
+       "deltaV": 3076.8974941980687
       }
      ]
     }
@@ -2541,7 +2874,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -2566,6 +2902,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -2651,7 +2994,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2663,7 +3006,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2682,6 +3025,12 @@
      "length": 8,
      "material": "steel",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -2691,7 +3040,7 @@
      {
       "code": "dv-margin",
       "tab": "propellants",
-      "msg": "About 55 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+      "msg": "About 267 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
      },
      {
       "code": "heavy-fairing",
@@ -2700,13 +3049,13 @@
      }
     ],
     "readout": {
-     "liftoffTWR": 1.7998153118552722,
-     "totalDeltaV": 8704.582688387422,
-     "margin": -0.006305683022771499,
+     "liftoffTWR": 1.7768265590018257,
+     "totalDeltaV": 8492.803742940774,
+     "margin": -0.030481860339865836,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 45891.9383045309,
-     "cost": 897772874,
+     "liftoffMass": 46485.69261459769,
+     "cost": 787087512,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 1730.3892335972578,
@@ -2715,16 +3064,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.7998153118552722,
-       "twrVac": 1.9997947909503024,
-       "deltaV": 4654.51031505278
+       "twr": 1.7768265590018257,
+       "twrVac": 1.9742517322242508,
+       "deltaV": 4524.337252511144
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.213330451555098,
-       "twrVac": 1.213330451555098,
-       "deltaV": 4050.0723733346404
+       "twr": 1.2009143296249019,
+       "twrVac": 1.2009143296249019,
+       "deltaV": 3968.4664904296314
       }
      ]
     }
@@ -2772,7 +3121,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2784,7 +3133,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2803,6 +3152,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -2859,7 +3214,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2871,7 +3226,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -2890,6 +3245,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -4167,7 +4528,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4179,7 +4540,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4198,6 +4559,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -4241,7 +4608,7 @@
        "interstageMass": 200,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 1",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4253,7 +4620,7 @@
        "interstageMass": 0,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 2",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4272,6 +4639,12 @@
       "length": 2.5,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 500,
+      "pitchKickDeg": 6,
+      "maxQThrottle": 40,
+      "gLimit": 5
      }
     }
    }
@@ -4318,7 +4691,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4330,7 +4703,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4349,6 +4722,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -4394,7 +4773,7 @@
        "interstageMass": 200,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 1",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4406,7 +4785,7 @@
        "interstageMass": 0,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 2",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4425,6 +4804,12 @@
       "length": 2.5,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 500,
+      "pitchKickDeg": 6,
+      "maxQThrottle": 40,
+      "gLimit": 5
      }
     }
    }
@@ -4471,7 +4856,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4483,7 +4868,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4502,6 +4887,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -4547,7 +4938,7 @@
        "interstageMass": 200,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 1",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4559,7 +4950,7 @@
        "interstageMass": 0,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 2",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4578,6 +4969,12 @@
       "length": 2.5,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 500,
+      "pitchKickDeg": 6,
+      "maxQThrottle": 40,
+      "gLimit": 5
      }
     }
    }
@@ -4624,7 +5021,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4636,7 +5033,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4655,6 +5052,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -4700,7 +5103,7 @@
        "interstageMass": 200,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 1",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4712,7 +5115,7 @@
        "interstageMass": 0,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 2",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4731,6 +5134,12 @@
       "length": 2.5,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 500,
+      "pitchKickDeg": 6,
+      "maxQThrottle": 40,
+      "gLimit": 5
      }
     }
    }
@@ -4777,7 +5186,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4789,7 +5198,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4808,6 +5217,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -4851,7 +5266,7 @@
        "interstageMass": 200,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 1",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4863,7 +5278,7 @@
        "interstageMass": 0,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 2",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -4882,6 +5297,12 @@
       "length": 2.5,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 500,
+      "pitchKickDeg": 6,
+      "maxQThrottle": 40,
+      "gLimit": 5
      }
     }
    }
@@ -4928,7 +5349,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4940,7 +5361,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -4959,6 +5380,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -5004,7 +5431,7 @@
        "interstageMass": 200,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 1",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -5016,7 +5443,7 @@
        "interstageMass": 0,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 2",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -5035,6 +5462,12 @@
       "length": 2.5,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 500,
+      "pitchKickDeg": 6,
+      "maxQThrottle": 40,
+      "gLimit": 5
      }
     }
    }
@@ -5081,7 +5514,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "exp-hydrolox",
@@ -5093,7 +5526,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -5112,6 +5545,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -5158,7 +5597,7 @@
        "interstageMass": 200,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 1",
        "propellant": "methalox",
        "engine": "ff-methalox",
@@ -5170,7 +5609,7 @@
        "interstageMass": 0,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 2",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -5189,6 +5628,12 @@
       "length": 2.5,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 500,
+      "pitchKickDeg": 6,
+      "maxQThrottle": 40,
+      "gLimit": 5
      }
     }
    }
@@ -5235,7 +5680,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 5000,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -5247,7 +5692,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -5266,6 +5711,12 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
@@ -5311,7 +5762,7 @@
        "interstageMass": 200,
        "separationMass": 50,
        "landingPropMass": 5000,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 1",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -5323,7 +5774,7 @@
        "interstageMass": 0,
        "separationMass": 50,
        "landingPropMass": 0,
-       "material": "composite",
+       "material": "al-li",
        "name": "Stage 2",
        "propellant": "methalox",
        "engine": "gg-methalox-small",
@@ -5342,6 +5793,12 @@
       "length": 2.5,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 500,
+      "pitchKickDeg": 6,
+      "maxQThrottle": 40,
+      "gLimit": 5
      }
     }
    }
@@ -5394,7 +5851,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -5419,6 +5879,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -5468,7 +5935,10 @@
        "engine": "gg-kerolox",
        "engineCount": 5,
        "propMass": 140000,
-       "diameter": 3
+       "diameter": 3,
+       "engineParams": {
+        "throttleMin": 0.4
+       }
       },
       {
        "interstageMass": 0,
@@ -5493,6 +5963,13 @@
       "length": 4,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 34000,
+      "pitchKickDeg": 3,
+      "turnShape": 0.5,
+      "maxQThrottle": 40,
+      "gLimit": 6
      }
     }
    }
@@ -5545,7 +6022,10 @@
       "engine": "gg-kerolox",
       "engineCount": 1,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -5570,6 +6050,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -5621,7 +6108,10 @@
        "engine": "gg-kerolox",
        "engineCount": 3,
        "propMass": 140000,
-       "diameter": 3
+       "diameter": 3,
+       "engineParams": {
+        "throttleMin": 0.4
+       }
       },
       {
        "interstageMass": 0,
@@ -5646,6 +6136,13 @@
       "length": 4,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 34000,
+      "pitchKickDeg": 3,
+      "turnShape": 0.5,
+      "maxQThrottle": 40,
+      "gLimit": 6
      }
     }
    }
@@ -5698,7 +6195,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 0,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -5723,6 +6223,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -5774,7 +6281,10 @@
        "engine": "gg-kerolox",
        "engineCount": 5,
        "propMass": 50000,
-       "diameter": 3
+       "diameter": 3,
+       "engineParams": {
+        "throttleMin": 0.4
+       }
       },
       {
        "interstageMass": 0,
@@ -5799,6 +6309,13 @@
       "length": 4,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 34000,
+      "pitchKickDeg": 3,
+      "turnShape": 0.5,
+      "maxQThrottle": 40,
+      "gLimit": 6
      }
     }
    }
@@ -5851,7 +6368,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -5876,6 +6396,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -5927,7 +6454,10 @@
        "engine": "gg-kerolox",
        "engineCount": 5,
        "propMass": 140000,
-       "diameter": 3
+       "diameter": 3,
+       "engineParams": {
+        "throttleMin": 0.4
+       }
       },
       {
        "interstageMass": 0,
@@ -5952,6 +6482,13 @@
       "length": 4,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 34000,
+      "pitchKickDeg": 3,
+      "turnShape": 0.5,
+      "maxQThrottle": 40,
+      "gLimit": 6
      }
     }
    }
@@ -6004,7 +6541,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -6029,6 +6569,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -6078,7 +6625,10 @@
        "engine": "gg-kerolox",
        "engineCount": 5,
        "propMass": 140000,
-       "diameter": 3
+       "diameter": 3,
+       "engineParams": {
+        "throttleMin": 0.4
+       }
       },
       {
        "interstageMass": 0,
@@ -6103,6 +6653,13 @@
       "length": 4,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 34000,
+      "pitchKickDeg": 3,
+      "turnShape": 0.5,
+      "maxQThrottle": 40,
+      "gLimit": 6
      }
     }
    }
@@ -6155,7 +6712,10 @@
       "engine": "gg-kerolox",
       "engineCount": 40,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -6180,6 +6740,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -6231,7 +6798,10 @@
        "engine": "gg-kerolox",
        "engineCount": 40,
        "propMass": 140000,
-       "diameter": 5.6
+       "diameter": 5.6,
+       "engineParams": {
+        "throttleMin": 0.4
+       }
       },
       {
        "interstageMass": 0,
@@ -6256,6 +6826,13 @@
       "length": 4,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 34000,
+      "pitchKickDeg": 3,
+      "turnShape": 0.5,
+      "maxQThrottle": 40,
+      "gLimit": 6
      }
     }
    }
@@ -6308,7 +6885,10 @@
       "engine": "exp-hydrolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -6333,6 +6913,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -6384,7 +6971,10 @@
        "engine": "gg-kerolox",
        "engineCount": 5,
        "propMass": 140000,
-       "diameter": 3
+       "diameter": 3,
+       "engineParams": {
+        "throttleMin": 0.4
+       }
       },
       {
        "interstageMass": 0,
@@ -6409,6 +6999,13 @@
       "length": 4,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 34000,
+      "pitchKickDeg": 3,
+      "turnShape": 0.5,
+      "maxQThrottle": 40,
+      "gLimit": 6
      }
     }
    }
@@ -6461,7 +7058,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -6486,6 +7086,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -6537,7 +7144,10 @@
        "engine": "gg-kerolox",
        "engineCount": 5,
        "propMass": 140000,
-       "diameter": 3
+       "diameter": 3,
+       "engineParams": {
+        "throttleMin": 0.4
+       }
       },
       {
        "interstageMass": 0,
@@ -6562,6 +7172,13 @@
       "length": 4,
       "material": "composite",
       "jettisonAltitudeKm": 100
+     },
+     "guidance": {
+      "pitchKickAlt": 34000,
+      "pitchKickDeg": 3,
+      "turnShape": 0.5,
+      "maxQThrottle": 40,
+      "gLimit": 6
      }
     }
    }
@@ -7788,7 +8405,7 @@
   },
   {
    "kind": "makeItFly",
-   "name": "tpl-sounding-solid#0:as-is",
+   "name": "tpl-sounding-hybrid#0:as-is",
    "design": {
     "version": 1,
     "strapOns": {
@@ -7798,7 +8415,7 @@
      "engine": "srm-small",
      "engineCount": 1,
      "propMass": 0,
-     "diameter": 1.6,
+     "diameter": 1.3,
      "material": "steel",
      "crossfeed": false
     },
@@ -7815,7 +8432,7 @@
      "tier": "basic"
     },
     "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
+    "id": "tpl-sounding-hybrid",
     "name": "Pipit",
     "tier": "starter",
     "stages": [
@@ -7825,11 +8442,11 @@
       "landingPropMass": 0,
       "material": "steel",
       "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
-      "engineCount": 1,
-      "propMass": 2300,
-      "diameter": 1.6
+      "propellant": "hybrid",
+      "engine": "hybrid-small",
+      "engineCount": 2,
+      "propMass": 1750,
+      "diameter": 1.3
      }
     ],
     "payload": {
@@ -7838,8 +8455,8 @@
      "orbit": "suborbital"
     },
     "fairing": {
-     "diameter": 1.6,
-     "length": 2,
+     "diameter": 1.3,
+     "length": 2.4,
      "material": "composite",
      "jettisonAltitudeKm": 100
     },
@@ -7853,16 +8470,16 @@
      "order": 1,
      "difficulty": "beginner",
      "tags": [
-      "solid",
+      "hybrid",
       "single stage",
       "suborbital",
       "tutorial"
      ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
      "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
       "sources": [
        {
         "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -7877,9 +8494,9 @@
       ]
      },
      "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
+      "Add 200 kg of propellant and watch the apogee climb.",
       "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
+      "Try one solid motor instead and compare the peak g and max-Q."
      ],
      "refMission": {
       "objective": "apogee",
@@ -7890,21 +8507,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 49.7,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 114,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 20.6
+      "maxG": 7
      }
     }
    },
@@ -7919,7 +8536,7 @@
       "engine": "srm-small",
       "engineCount": 1,
       "propMass": 0,
-      "diameter": 1.6,
+      "diameter": 1.3,
       "material": "steel",
       "crossfeed": false
      },
@@ -7936,7 +8553,7 @@
       "tier": "basic"
      },
      "safetyFactor": 1.4,
-     "id": "tpl-sounding-solid",
+     "id": "tpl-sounding-hybrid",
      "name": "Pipit",
      "tier": "starter",
      "stages": [
@@ -7946,11 +8563,11 @@
        "landingPropMass": 0,
        "material": "steel",
        "name": "Motor",
-       "propellant": "solid-apcp",
-       "engine": "srm-small",
-       "engineCount": 1,
-       "propMass": 2300,
-       "diameter": 1.6
+       "propellant": "hybrid",
+       "engine": "hybrid-small",
+       "engineCount": 2,
+       "propMass": 1750,
+       "diameter": 1.3
       }
      ],
      "payload": {
@@ -7959,8 +8576,8 @@
       "orbit": "suborbital"
      },
      "fairing": {
-      "diameter": 1.6,
-      "length": 2,
+      "diameter": 1.3,
+      "length": 2.4,
       "material": "composite",
       "jettisonAltitudeKm": 100
      },
@@ -7974,16 +8591,16 @@
       "order": 1,
       "difficulty": "beginner",
       "tags": [
-       "solid",
+       "hybrid",
        "single stage",
        "suborbital",
        "tutorial"
       ],
-      "tagline": "Light the motor, coast past 100 km, come home.",
-      "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+      "tagline": "Light two small hybrids, climb past 100 km, come home.",
+      "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
       "benchmark": {
-       "class": "Single-stage solid sounding rocket",
-       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+       "class": "Single-stage hybrid sounding rocket",
+       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
        "sources": [
         {
          "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -7998,9 +8615,9 @@
        ]
       },
       "thingsToTry": [
-       "Add 500 kg of propellant and watch the apogee climb.",
+       "Add 200 kg of propellant and watch the apogee climb.",
        "Swap fins off (Aero tab) and read the warnings.",
-       "Try the 100 km hop with a hybrid motor instead."
+       "Try one solid motor instead and compare the peak g and max-Q."
       ],
       "refMission": {
        "objective": "apogee",
@@ -8011,21 +8628,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 3.1,
-       "liftoffTWR": 19.58,
-       "deltaV": 3593,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 49.7,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 114,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 20.6
+       "maxG": 7
       }
      }
     }
@@ -8033,7 +8650,7 @@
   },
   {
    "kind": "makeItFly",
-   "name": "tpl-sounding-solid#1:one-engine",
+   "name": "tpl-sounding-hybrid#1:one-engine",
    "design": {
     "version": 1,
     "strapOns": {
@@ -8043,7 +8660,7 @@
      "engine": "srm-small",
      "engineCount": 1,
      "propMass": 0,
-     "diameter": 1.6,
+     "diameter": 1.3,
      "material": "steel",
      "crossfeed": false
     },
@@ -8060,7 +8677,7 @@
      "tier": "basic"
     },
     "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
+    "id": "tpl-sounding-hybrid",
     "name": "Pipit",
     "tier": "starter",
     "stages": [
@@ -8070,11 +8687,11 @@
       "landingPropMass": 0,
       "material": "steel",
       "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
+      "propellant": "hybrid",
+      "engine": "hybrid-small",
       "engineCount": 1,
-      "propMass": 2300,
-      "diameter": 1.6
+      "propMass": 1750,
+      "diameter": 1.3
      }
     ],
     "payload": {
@@ -8083,8 +8700,8 @@
      "orbit": "suborbital"
     },
     "fairing": {
-     "diameter": 1.6,
-     "length": 2,
+     "diameter": 1.3,
+     "length": 2.4,
      "material": "composite",
      "jettisonAltitudeKm": 100
     },
@@ -8098,16 +8715,16 @@
      "order": 1,
      "difficulty": "beginner",
      "tags": [
-      "solid",
+      "hybrid",
       "single stage",
       "suborbital",
       "tutorial"
      ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
      "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
       "sources": [
        {
         "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -8122,9 +8739,9 @@
       ]
      },
      "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
+      "Add 200 kg of propellant and watch the apogee climb.",
       "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
+      "Try one solid motor instead and compare the peak g and max-Q."
      ],
      "refMission": {
       "objective": "apogee",
@@ -8135,273 +8752,26 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 49.7,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 114,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 20.6
-     }
-    }
-   },
-   "out": {
-    "changes": [],
-    "design": {
-     "version": 1,
-     "strapOns": {
-      "count": 0,
-      "kind": "solid",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
-      "engineCount": 1,
-      "propMass": 0,
-      "diameter": 1.6,
-      "material": "steel",
-      "crossfeed": false
-     },
-     "aero": {
-      "nose": "ogive",
-      "fins": true
-     },
-     "landing": {
-      "legs": false,
-      "gridFins": false,
-      "rcs": false
-     },
-     "avionics": {
-      "tier": "basic"
-     },
-     "safetyFactor": 1.4,
-     "id": "tpl-sounding-solid",
-     "name": "Pipit",
-     "tier": "starter",
-     "stages": [
-      {
-       "interstageMass": 0,
-       "separationMass": 0,
-       "landingPropMass": 0,
-       "material": "steel",
-       "name": "Motor",
-       "propellant": "solid-apcp",
-       "engine": "srm-small",
-       "engineCount": 1,
-       "propMass": 2300,
-       "diameter": 1.6
-      }
-     ],
-     "payload": {
-      "type": "kid-box",
-      "mass": 300,
-      "orbit": "suborbital"
-     },
-     "fairing": {
-      "diameter": 1.6,
-      "length": 2,
-      "material": "composite",
-      "jettisonAltitudeKm": 100
-     },
-     "livery": {
-      "primary": "#f2f2f2",
-      "accent": "#ff6d00",
-      "name": "PIPIT"
-     },
-     "template": {
-      "version": 1,
-      "order": 1,
-      "difficulty": "beginner",
-      "tags": [
-       "solid",
-       "single stage",
-       "suborbital",
-       "tutorial"
-      ],
-      "tagline": "Light the motor, coast past 100 km, come home.",
-      "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
-      "benchmark": {
-       "class": "Single-stage solid sounding rocket",
-       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
-       "sources": [
-        {
-         "title": "FAI: 100 km Kármán line (boundary of space)",
-         "url": "https://www.fai.org/page/icare-boundary",
-         "claim": "100 km reference altitude"
-        },
-        {
-         "title": "NASA Sounding Rockets Program overview",
-         "url": "https://www.nasa.gov/soundingrockets/",
-         "claim": "what sounding rockets are used for"
-        }
-       ]
-      },
-      "thingsToTry": [
-       "Add 500 kg of propellant and watch the apogee climb.",
-       "Swap fins off (Aero tab) and read the warnings.",
-       "Try the 100 km hop with a hybrid motor instead."
-      ],
-      "refMission": {
-       "objective": "apogee",
-       "minApogeeKm": 100
-      },
-      "pending": {
-       "pad": "pending: G2 pad module (compat.js) not landed",
-       "cost": "pending: E1 cost model not landed"
-      },
-      "review": [
-       "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
-      ],
-      "stats": {
-       "stages": 1,
-       "liftoffMassT": 3.1,
-       "liftoffTWR": 19.58,
-       "deltaV": 3593,
-       "requiredDeltaV": 2400,
-       "marginPct": 49.7,
-       "payloadKg": 300,
-       "target": "Suborbital 100 km",
-       "simOutcome": "suborbital",
-       "simApogeeKm": 114,
-       "simPerigeeKm": null,
-       "maxG": 20.6
-      }
-     }
-    }
-   }
-  },
-  {
-   "kind": "makeItFly",
-   "name": "tpl-sounding-solid#2:zero-prop",
-   "design": {
-    "version": 1,
-    "strapOns": {
-     "count": 0,
-     "kind": "solid",
-     "propellant": "solid-apcp",
-     "engine": "srm-small",
-     "engineCount": 1,
-     "propMass": 0,
-     "diameter": 1.6,
-     "material": "steel",
-     "crossfeed": false
-    },
-    "aero": {
-     "nose": "ogive",
-     "fins": true
-    },
-    "landing": {
-     "legs": false,
-     "gridFins": false,
-     "rcs": false
-    },
-    "avionics": {
-     "tier": "basic"
-    },
-    "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
-    "name": "Pipit",
-    "tier": "starter",
-    "stages": [
-     {
-      "interstageMass": 0,
-      "separationMass": 0,
-      "landingPropMass": 0,
-      "material": "steel",
-      "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
-      "engineCount": 1,
-      "propMass": 0,
-      "diameter": 1.6
-     }
-    ],
-    "payload": {
-     "type": "kid-box",
-     "mass": 300,
-     "orbit": "suborbital"
-    },
-    "fairing": {
-     "diameter": 1.6,
-     "length": 2,
-     "material": "composite",
-     "jettisonAltitudeKm": 100
-    },
-    "livery": {
-     "primary": "#f2f2f2",
-     "accent": "#ff6d00",
-     "name": "PIPIT"
-    },
-    "template": {
-     "version": 1,
-     "order": 1,
-     "difficulty": "beginner",
-     "tags": [
-      "solid",
-      "single stage",
-      "suborbital",
-      "tutorial"
-     ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
-     "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
-      "sources": [
-       {
-        "title": "FAI: 100 km Kármán line (boundary of space)",
-        "url": "https://www.fai.org/page/icare-boundary",
-        "claim": "100 km reference altitude"
-       },
-       {
-        "title": "NASA Sounding Rockets Program overview",
-        "url": "https://www.nasa.gov/soundingrockets/",
-        "claim": "what sounding rockets are used for"
-       }
-      ]
-     },
-     "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
-      "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
-     ],
-     "refMission": {
-      "objective": "apogee",
-      "minApogeeKm": 100
-     },
-     "pending": {
-      "pad": "pending: G2 pad module (compat.js) not landed",
-      "cost": "pending: E1 cost model not landed"
-     },
-     "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
-     ],
-     "stats": {
-      "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
-      "requiredDeltaV": 2400,
-      "marginPct": 49.7,
-      "payloadKg": 300,
-      "target": "Suborbital 100 km",
-      "simOutcome": "suborbital",
-      "simApogeeKm": 114,
-      "simPerigeeKm": null,
-      "maxG": 20.6
+      "maxG": 7
      }
     }
    },
    "out": {
     "changes": [
-     "Loaded propellant into Motor",
-     "Widened the first stage to fit more engines",
      "Added first-stage engines for a stronger liftoff"
     ],
     "design": {
@@ -8413,7 +8783,7 @@
       "engine": "srm-small",
       "engineCount": 1,
       "propMass": 0,
-      "diameter": 1.6,
+      "diameter": 1.3,
       "material": "steel",
       "crossfeed": false
      },
@@ -8430,7 +8800,7 @@
       "tier": "basic"
      },
      "safetyFactor": 1.4,
-     "id": "tpl-sounding-solid",
+     "id": "tpl-sounding-hybrid",
      "name": "Pipit",
      "tier": "starter",
      "stages": [
@@ -8440,9 +8810,258 @@
        "landingPropMass": 0,
        "material": "steel",
        "name": "Motor",
-       "propellant": "solid-apcp",
-       "engine": "srm-small",
+       "propellant": "hybrid",
+       "engine": "hybrid-small",
        "engineCount": 2,
+       "propMass": 1750,
+       "diameter": 1.3
+      }
+     ],
+     "payload": {
+      "type": "kid-box",
+      "mass": 300,
+      "orbit": "suborbital"
+     },
+     "fairing": {
+      "diameter": 1.3,
+      "length": 2.4,
+      "material": "composite",
+      "jettisonAltitudeKm": 100
+     },
+     "livery": {
+      "primary": "#f2f2f2",
+      "accent": "#ff6d00",
+      "name": "PIPIT"
+     },
+     "template": {
+      "version": 1,
+      "order": 1,
+      "difficulty": "beginner",
+      "tags": [
+       "hybrid",
+       "single stage",
+       "suborbital",
+       "tutorial"
+      ],
+      "tagline": "Light two small hybrids, climb past 100 km, come home.",
+      "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
+      "benchmark": {
+       "class": "Single-stage hybrid sounding rocket",
+       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
+       "sources": [
+        {
+         "title": "FAI: 100 km Kármán line (boundary of space)",
+         "url": "https://www.fai.org/page/icare-boundary",
+         "claim": "100 km reference altitude"
+        },
+        {
+         "title": "NASA Sounding Rockets Program overview",
+         "url": "https://www.nasa.gov/soundingrockets/",
+         "claim": "what sounding rockets are used for"
+        }
+       ]
+      },
+      "thingsToTry": [
+       "Add 200 kg of propellant and watch the apogee climb.",
+       "Swap fins off (Aero tab) and read the warnings.",
+       "Try one solid motor instead and compare the peak g and max-Q."
+      ],
+      "refMission": {
+       "objective": "apogee",
+       "minApogeeKm": 100
+      },
+      "pending": {
+       "pad": "pending: G2 pad module (compat.js) not landed",
+       "cost": "pending: E1 cost model not landed"
+      },
+      "review": [
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
+      ],
+      "stats": {
+       "stages": 1,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
+       "requiredDeltaV": 2400,
+       "marginPct": 21.7,
+       "payloadKg": 300,
+       "target": "Suborbital 100 km",
+       "simOutcome": "suborbital",
+       "simApogeeKm": 108,
+       "simPerigeeKm": null,
+       "maxG": 7
+      }
+     }
+    }
+   }
+  },
+  {
+   "kind": "makeItFly",
+   "name": "tpl-sounding-hybrid#2:zero-prop",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.3,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "basic"
+    },
+    "safetyFactor": 1.4,
+    "id": "tpl-sounding-hybrid",
+    "name": "Pipit",
+    "tier": "starter",
+    "stages": [
+     {
+      "interstageMass": 0,
+      "separationMass": 0,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Motor",
+      "propellant": "hybrid",
+      "engine": "hybrid-small",
+      "engineCount": 2,
+      "propMass": 0,
+      "diameter": 1.3
+     }
+    ],
+    "payload": {
+     "type": "kid-box",
+     "mass": 300,
+     "orbit": "suborbital"
+    },
+    "fairing": {
+     "diameter": 1.3,
+     "length": 2.4,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    },
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#ff6d00",
+     "name": "PIPIT"
+    },
+    "template": {
+     "version": 1,
+     "order": 1,
+     "difficulty": "beginner",
+     "tags": [
+      "hybrid",
+      "single stage",
+      "suborbital",
+      "tutorial"
+     ],
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
+     "benchmark": {
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
+      "sources": [
+       {
+        "title": "FAI: 100 km Kármán line (boundary of space)",
+        "url": "https://www.fai.org/page/icare-boundary",
+        "claim": "100 km reference altitude"
+       },
+       {
+        "title": "NASA Sounding Rockets Program overview",
+        "url": "https://www.nasa.gov/soundingrockets/",
+        "claim": "what sounding rockets are used for"
+       }
+      ]
+     },
+     "thingsToTry": [
+      "Add 200 kg of propellant and watch the apogee climb.",
+      "Swap fins off (Aero tab) and read the warnings.",
+      "Try one solid motor instead and compare the peak g and max-Q."
+     ],
+     "refMission": {
+      "objective": "apogee",
+      "minApogeeKm": 100
+     },
+     "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+     },
+     "review": [
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
+     ],
+     "stats": {
+      "stages": 1,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
+      "requiredDeltaV": 2400,
+      "marginPct": 21.7,
+      "payloadKg": 300,
+      "target": "Suborbital 100 km",
+      "simOutcome": "suborbital",
+      "simApogeeKm": 108,
+      "simPerigeeKm": null,
+      "maxG": 7
+     }
+    }
+   },
+   "out": {
+    "changes": [
+     "Loaded propellant into Motor",
+     "Added first-stage engines for a stronger liftoff",
+     "Widened the first stage to fit more engines"
+    ],
+    "design": {
+     "version": 1,
+     "strapOns": {
+      "count": 0,
+      "kind": "solid",
+      "propellant": "solid-apcp",
+      "engine": "srm-small",
+      "engineCount": 1,
+      "propMass": 0,
+      "diameter": 1.3,
+      "material": "steel",
+      "crossfeed": false
+     },
+     "aero": {
+      "nose": "ogive",
+      "fins": true
+     },
+     "landing": {
+      "legs": false,
+      "gridFins": false,
+      "rcs": false
+     },
+     "avionics": {
+      "tier": "basic"
+     },
+     "safetyFactor": 1.4,
+     "id": "tpl-sounding-hybrid",
+     "name": "Pipit",
+     "tier": "starter",
+     "stages": [
+      {
+       "interstageMass": 0,
+       "separationMass": 0,
+       "landingPropMass": 0,
+       "material": "steel",
+       "name": "Motor",
+       "propellant": "hybrid",
+       "engine": "hybrid-small",
+       "engineCount": 29,
        "propMass": 50000,
        "diameter": 2.2
       }
@@ -8453,8 +9072,8 @@
       "orbit": "suborbital"
      },
      "fairing": {
-      "diameter": 1.6,
-      "length": 2,
+      "diameter": 1.3,
+      "length": 2.4,
       "material": "composite",
       "jettisonAltitudeKm": 100
      },
@@ -8468,16 +9087,16 @@
       "order": 1,
       "difficulty": "beginner",
       "tags": [
-       "solid",
+       "hybrid",
        "single stage",
        "suborbital",
        "tutorial"
       ],
-      "tagline": "Light the motor, coast past 100 km, come home.",
-      "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+      "tagline": "Light two small hybrids, climb past 100 km, come home.",
+      "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
       "benchmark": {
-       "class": "Single-stage solid sounding rocket",
-       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+       "class": "Single-stage hybrid sounding rocket",
+       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
        "sources": [
         {
          "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -8492,9 +9111,9 @@
        ]
       },
       "thingsToTry": [
-       "Add 500 kg of propellant and watch the apogee climb.",
+       "Add 200 kg of propellant and watch the apogee climb.",
        "Swap fins off (Aero tab) and read the warnings.",
-       "Try the 100 km hop with a hybrid motor instead."
+       "Try one solid motor instead and compare the peak g and max-Q."
       ],
       "refMission": {
        "objective": "apogee",
@@ -8505,21 +9124,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 3.1,
-       "liftoffTWR": 19.58,
-       "deltaV": 3593,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 49.7,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 114,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 20.6
+       "maxG": 7
       }
      }
     }
@@ -8527,7 +9146,7 @@
   },
   {
    "kind": "makeItFly",
-   "name": "tpl-sounding-solid#3:zero-upper",
+   "name": "tpl-sounding-hybrid#3:zero-upper",
    "design": {
     "version": 1,
     "strapOns": {
@@ -8537,7 +9156,7 @@
      "engine": "srm-small",
      "engineCount": 1,
      "propMass": 0,
-     "diameter": 1.6,
+     "diameter": 1.3,
      "material": "steel",
      "crossfeed": false
     },
@@ -8554,7 +9173,7 @@
      "tier": "basic"
     },
     "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
+    "id": "tpl-sounding-hybrid",
     "name": "Pipit",
     "tier": "starter",
     "stages": [
@@ -8564,11 +9183,11 @@
       "landingPropMass": 0,
       "material": "steel",
       "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
+      "propellant": "hybrid",
+      "engine": "hybrid-small",
       "engineCount": 0,
-      "propMass": 2300,
-      "diameter": 1.6
+      "propMass": 1750,
+      "diameter": 1.3
      }
     ],
     "payload": {
@@ -8577,8 +9196,8 @@
      "orbit": "suborbital"
     },
     "fairing": {
-     "diameter": 1.6,
-     "length": 2,
+     "diameter": 1.3,
+     "length": 2.4,
      "material": "composite",
      "jettisonAltitudeKm": 100
     },
@@ -8592,16 +9211,16 @@
      "order": 1,
      "difficulty": "beginner",
      "tags": [
-      "solid",
+      "hybrid",
       "single stage",
       "suborbital",
       "tutorial"
      ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
      "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
       "sources": [
        {
         "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -8616,9 +9235,9 @@
       ]
      },
      "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
+      "Add 200 kg of propellant and watch the apogee climb.",
       "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
+      "Try one solid motor instead and compare the peak g and max-Q."
      ],
      "refMission": {
       "objective": "apogee",
@@ -8629,27 +9248,28 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 49.7,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 114,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 20.6
+      "maxG": 7
      }
     }
    },
    "out": {
     "changes": [
-     "Gave Motor an engine"
+     "Gave Motor an engine",
+     "Added first-stage engines for a stronger liftoff"
     ],
     "design": {
      "version": 1,
@@ -8660,7 +9280,7 @@
       "engine": "srm-small",
       "engineCount": 1,
       "propMass": 0,
-      "diameter": 1.6,
+      "diameter": 1.3,
       "material": "steel",
       "crossfeed": false
      },
@@ -8677,7 +9297,7 @@
       "tier": "basic"
      },
      "safetyFactor": 1.4,
-     "id": "tpl-sounding-solid",
+     "id": "tpl-sounding-hybrid",
      "name": "Pipit",
      "tier": "starter",
      "stages": [
@@ -8687,11 +9307,11 @@
        "landingPropMass": 0,
        "material": "steel",
        "name": "Motor",
-       "propellant": "solid-apcp",
-       "engine": "srm-small",
-       "engineCount": 1,
-       "propMass": 2300,
-       "diameter": 1.6
+       "propellant": "hybrid",
+       "engine": "hybrid-small",
+       "engineCount": 2,
+       "propMass": 1750,
+       "diameter": 1.3
       }
      ],
      "payload": {
@@ -8700,8 +9320,8 @@
       "orbit": "suborbital"
      },
      "fairing": {
-      "diameter": 1.6,
-      "length": 2,
+      "diameter": 1.3,
+      "length": 2.4,
       "material": "composite",
       "jettisonAltitudeKm": 100
      },
@@ -8715,16 +9335,16 @@
       "order": 1,
       "difficulty": "beginner",
       "tags": [
-       "solid",
+       "hybrid",
        "single stage",
        "suborbital",
        "tutorial"
       ],
-      "tagline": "Light the motor, coast past 100 km, come home.",
-      "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+      "tagline": "Light two small hybrids, climb past 100 km, come home.",
+      "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
       "benchmark": {
-       "class": "Single-stage solid sounding rocket",
-       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+       "class": "Single-stage hybrid sounding rocket",
+       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
        "sources": [
         {
          "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -8739,9 +9359,9 @@
        ]
       },
       "thingsToTry": [
-       "Add 500 kg of propellant and watch the apogee climb.",
+       "Add 200 kg of propellant and watch the apogee climb.",
        "Swap fins off (Aero tab) and read the warnings.",
-       "Try the 100 km hop with a hybrid motor instead."
+       "Try one solid motor instead and compare the peak g and max-Q."
       ],
       "refMission": {
        "objective": "apogee",
@@ -8752,21 +9372,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 3.1,
-       "liftoffTWR": 19.58,
-       "deltaV": 3593,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 49.7,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 114,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 20.6
+       "maxG": 7
       }
      }
     }
@@ -8774,7 +9394,7 @@
   },
   {
    "kind": "makeItFly",
-   "name": "tpl-sounding-solid#4:heavy-payload",
+   "name": "tpl-sounding-hybrid#4:heavy-payload",
    "design": {
     "version": 1,
     "strapOns": {
@@ -8784,7 +9404,7 @@
      "engine": "srm-small",
      "engineCount": 1,
      "propMass": 0,
-     "diameter": 1.6,
+     "diameter": 1.3,
      "material": "steel",
      "crossfeed": false
     },
@@ -8801,7 +9421,7 @@
      "tier": "basic"
     },
     "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
+    "id": "tpl-sounding-hybrid",
     "name": "Pipit",
     "tier": "starter",
     "stages": [
@@ -8811,11 +9431,11 @@
       "landingPropMass": 0,
       "material": "steel",
       "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
-      "engineCount": 1,
-      "propMass": 2300,
-      "diameter": 1.6
+      "propellant": "hybrid",
+      "engine": "hybrid-small",
+      "engineCount": 2,
+      "propMass": 1750,
+      "diameter": 1.3
      }
     ],
     "payload": {
@@ -8824,8 +9444,8 @@
      "orbit": "suborbital"
     },
     "fairing": {
-     "diameter": 1.6,
-     "length": 2,
+     "diameter": 1.3,
+     "length": 2.4,
      "material": "composite",
      "jettisonAltitudeKm": 100
     },
@@ -8839,16 +9459,16 @@
      "order": 1,
      "difficulty": "beginner",
      "tags": [
-      "solid",
+      "hybrid",
       "single stage",
       "suborbital",
       "tutorial"
      ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
      "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
       "sources": [
        {
         "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -8863,9 +9483,9 @@
       ]
      },
      "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
+      "Add 200 kg of propellant and watch the apogee climb.",
       "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
+      "Try one solid motor instead and compare the peak g and max-Q."
      ],
      "refMission": {
       "objective": "apogee",
@@ -8876,27 +9496,29 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 49.7,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 114,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 20.6
+      "maxG": 7
      }
     }
    },
    "out": {
     "changes": [
-     "Stretched the fairing so the payload fits"
+     "Stretched the fairing so the payload fits",
+     "Added first-stage propellant",
+     "Added first-stage engines so it can carry more propellant"
     ],
     "design": {
      "version": 1,
@@ -8907,7 +9529,7 @@
       "engine": "srm-small",
       "engineCount": 1,
       "propMass": 0,
-      "diameter": 1.6,
+      "diameter": 1.3,
       "material": "steel",
       "crossfeed": false
      },
@@ -8924,7 +9546,7 @@
       "tier": "basic"
      },
      "safetyFactor": 1.4,
-     "id": "tpl-sounding-solid",
+     "id": "tpl-sounding-hybrid",
      "name": "Pipit",
      "tier": "starter",
      "stages": [
@@ -8934,11 +9556,11 @@
        "landingPropMass": 0,
        "material": "steel",
        "name": "Motor",
-       "propellant": "solid-apcp",
-       "engine": "srm-small",
-       "engineCount": 1,
-       "propMass": 2300,
-       "diameter": 1.6
+       "propellant": "hybrid",
+       "engine": "hybrid-small",
+       "engineCount": 3,
+       "propMass": 3100.2317500000017,
+       "diameter": 1.3
       }
      ],
      "payload": {
@@ -8947,8 +9569,8 @@
       "orbit": "suborbital"
      },
      "fairing": {
-      "diameter": 1.6,
-      "length": 3,
+      "diameter": 1.3,
+      "length": 4,
       "material": "composite",
       "jettisonAltitudeKm": 100
      },
@@ -8962,16 +9584,16 @@
       "order": 1,
       "difficulty": "beginner",
       "tags": [
-       "solid",
+       "hybrid",
        "single stage",
        "suborbital",
        "tutorial"
       ],
-      "tagline": "Light the motor, coast past 100 km, come home.",
-      "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+      "tagline": "Light two small hybrids, climb past 100 km, come home.",
+      "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
       "benchmark": {
-       "class": "Single-stage solid sounding rocket",
-       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+       "class": "Single-stage hybrid sounding rocket",
+       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
        "sources": [
         {
          "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -8986,9 +9608,9 @@
        ]
       },
       "thingsToTry": [
-       "Add 500 kg of propellant and watch the apogee climb.",
+       "Add 200 kg of propellant and watch the apogee climb.",
        "Swap fins off (Aero tab) and read the warnings.",
-       "Try the 100 km hop with a hybrid motor instead."
+       "Try one solid motor instead and compare the peak g and max-Q."
       ],
       "refMission": {
        "objective": "apogee",
@@ -8999,21 +9621,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 3.1,
-       "liftoffTWR": 19.58,
-       "deltaV": 3593,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 49.7,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 114,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 20.6
+       "maxG": 7
       }
      }
     }
@@ -9021,7 +9643,7 @@
   },
   {
    "kind": "makeItFly",
-   "name": "tpl-sounding-solid#5:cluster-40",
+   "name": "tpl-sounding-hybrid#5:cluster-40",
    "design": {
     "version": 1,
     "strapOns": {
@@ -9031,7 +9653,7 @@
      "engine": "srm-small",
      "engineCount": 1,
      "propMass": 0,
-     "diameter": 1.6,
+     "diameter": 1.3,
      "material": "steel",
      "crossfeed": false
     },
@@ -9048,7 +9670,7 @@
      "tier": "basic"
     },
     "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
+    "id": "tpl-sounding-hybrid",
     "name": "Pipit",
     "tier": "starter",
     "stages": [
@@ -9058,11 +9680,11 @@
       "landingPropMass": 0,
       "material": "steel",
       "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
+      "propellant": "hybrid",
+      "engine": "hybrid-small",
       "engineCount": 40,
-      "propMass": 2300,
-      "diameter": 1.6
+      "propMass": 1750,
+      "diameter": 1.3
      }
     ],
     "payload": {
@@ -9071,8 +9693,8 @@
      "orbit": "suborbital"
     },
     "fairing": {
-     "diameter": 1.6,
-     "length": 2,
+     "diameter": 1.3,
+     "length": 2.4,
      "material": "composite",
      "jettisonAltitudeKm": 100
     },
@@ -9086,16 +9708,16 @@
      "order": 1,
      "difficulty": "beginner",
      "tags": [
-      "solid",
+      "hybrid",
       "single stage",
       "suborbital",
       "tutorial"
      ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
      "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
       "sources": [
        {
         "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -9110,9 +9732,9 @@
       ]
      },
      "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
+      "Add 200 kg of propellant and watch the apogee climb.",
       "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
+      "Try one solid motor instead and compare the peak g and max-Q."
      ],
      "refMission": {
       "objective": "apogee",
@@ -9123,522 +9745,28 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 49.7,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 114,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 20.6
+      "maxG": 7
      }
     }
    },
    "out": {
     "changes": [
      "Widened Motor so the engines fit",
-     "Widened the fairing to match the top stage"
-    ],
-    "design": {
-     "version": 1,
-     "strapOns": {
-      "count": 0,
-      "kind": "solid",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
-      "engineCount": 1,
-      "propMass": 0,
-      "diameter": 1.6,
-      "material": "steel",
-      "crossfeed": false
-     },
-     "aero": {
-      "nose": "ogive",
-      "fins": true
-     },
-     "landing": {
-      "legs": false,
-      "gridFins": false,
-      "rcs": false
-     },
-     "avionics": {
-      "tier": "basic"
-     },
-     "safetyFactor": 1.4,
-     "id": "tpl-sounding-solid",
-     "name": "Pipit",
-     "tier": "starter",
-     "stages": [
-      {
-       "interstageMass": 0,
-       "separationMass": 0,
-       "landingPropMass": 0,
-       "material": "steel",
-       "name": "Motor",
-       "propellant": "solid-apcp",
-       "engine": "srm-small",
-       "engineCount": 40,
-       "propMass": 2300,
-       "diameter": 9.7
-      }
-     ],
-     "payload": {
-      "type": "kid-box",
-      "mass": 300,
-      "orbit": "suborbital"
-     },
-     "fairing": {
-      "diameter": 9.7,
-      "length": 2,
-      "material": "composite",
-      "jettisonAltitudeKm": 100
-     },
-     "livery": {
-      "primary": "#f2f2f2",
-      "accent": "#ff6d00",
-      "name": "PIPIT"
-     },
-     "template": {
-      "version": 1,
-      "order": 1,
-      "difficulty": "beginner",
-      "tags": [
-       "solid",
-       "single stage",
-       "suborbital",
-       "tutorial"
-      ],
-      "tagline": "Light the motor, coast past 100 km, come home.",
-      "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
-      "benchmark": {
-       "class": "Single-stage solid sounding rocket",
-       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
-       "sources": [
-        {
-         "title": "FAI: 100 km Kármán line (boundary of space)",
-         "url": "https://www.fai.org/page/icare-boundary",
-         "claim": "100 km reference altitude"
-        },
-        {
-         "title": "NASA Sounding Rockets Program overview",
-         "url": "https://www.nasa.gov/soundingrockets/",
-         "claim": "what sounding rockets are used for"
-        }
-       ]
-      },
-      "thingsToTry": [
-       "Add 500 kg of propellant and watch the apogee climb.",
-       "Swap fins off (Aero tab) and read the warnings.",
-       "Try the 100 km hop with a hybrid motor instead."
-      ],
-      "refMission": {
-       "objective": "apogee",
-       "minApogeeKm": 100
-      },
-      "pending": {
-       "pad": "pending: G2 pad module (compat.js) not landed",
-       "cost": "pending: E1 cost model not landed"
-      },
-      "review": [
-       "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
-      ],
-      "stats": {
-       "stages": 1,
-       "liftoffMassT": 3.1,
-       "liftoffTWR": 19.58,
-       "deltaV": 3593,
-       "requiredDeltaV": 2400,
-       "marginPct": 49.7,
-       "payloadKg": 300,
-       "target": "Suborbital 100 km",
-       "simOutcome": "suborbital",
-       "simApogeeKm": 114,
-       "simPerigeeKm": null,
-       "maxG": 20.6
-      }
-     }
-    }
-   }
-  },
-  {
-   "kind": "makeItFly",
-   "name": "tpl-sounding-solid#6:wrong-engine",
-   "design": {
-    "version": 1,
-    "strapOns": {
-     "count": 0,
-     "kind": "solid",
-     "propellant": "solid-apcp",
-     "engine": "srm-small",
-     "engineCount": 1,
-     "propMass": 0,
-     "diameter": 1.6,
-     "material": "steel",
-     "crossfeed": false
-    },
-    "aero": {
-     "nose": "ogive",
-     "fins": true
-    },
-    "landing": {
-     "legs": false,
-     "gridFins": false,
-     "rcs": false
-    },
-    "avionics": {
-     "tier": "basic"
-    },
-    "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
-    "name": "Pipit",
-    "tier": "starter",
-    "stages": [
-     {
-      "interstageMass": 0,
-      "separationMass": 0,
-      "landingPropMass": 0,
-      "material": "steel",
-      "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "exp-hydrolox",
-      "engineCount": 1,
-      "propMass": 2300,
-      "diameter": 1.6
-     }
-    ],
-    "payload": {
-     "type": "kid-box",
-     "mass": 300,
-     "orbit": "suborbital"
-    },
-    "fairing": {
-     "diameter": 1.6,
-     "length": 2,
-     "material": "composite",
-     "jettisonAltitudeKm": 100
-    },
-    "livery": {
-     "primary": "#f2f2f2",
-     "accent": "#ff6d00",
-     "name": "PIPIT"
-    },
-    "template": {
-     "version": 1,
-     "order": 1,
-     "difficulty": "beginner",
-     "tags": [
-      "solid",
-      "single stage",
-      "suborbital",
-      "tutorial"
-     ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
-     "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
-      "sources": [
-       {
-        "title": "FAI: 100 km Kármán line (boundary of space)",
-        "url": "https://www.fai.org/page/icare-boundary",
-        "claim": "100 km reference altitude"
-       },
-       {
-        "title": "NASA Sounding Rockets Program overview",
-        "url": "https://www.nasa.gov/soundingrockets/",
-        "claim": "what sounding rockets are used for"
-       }
-      ]
-     },
-     "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
-      "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
-     ],
-     "refMission": {
-      "objective": "apogee",
-      "minApogeeKm": 100
-     },
-     "pending": {
-      "pad": "pending: G2 pad module (compat.js) not landed",
-      "cost": "pending: E1 cost model not landed"
-     },
-     "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
-     ],
-     "stats": {
-      "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
-      "requiredDeltaV": 2400,
-      "marginPct": 49.7,
-      "payloadKg": 300,
-      "target": "Suborbital 100 km",
-      "simOutcome": "suborbital",
-      "simApogeeKm": 114,
-      "simPerigeeKm": null,
-      "maxG": 20.6
-     }
-    }
-   },
-   "out": {
-    "changes": [
-     "Matched Motor engine to its propellant"
-    ],
-    "design": {
-     "version": 1,
-     "strapOns": {
-      "count": 0,
-      "kind": "solid",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
-      "engineCount": 1,
-      "propMass": 0,
-      "diameter": 1.6,
-      "material": "steel",
-      "crossfeed": false
-     },
-     "aero": {
-      "nose": "ogive",
-      "fins": true
-     },
-     "landing": {
-      "legs": false,
-      "gridFins": false,
-      "rcs": false
-     },
-     "avionics": {
-      "tier": "basic"
-     },
-     "safetyFactor": 1.4,
-     "id": "tpl-sounding-solid",
-     "name": "Pipit",
-     "tier": "starter",
-     "stages": [
-      {
-       "interstageMass": 0,
-       "separationMass": 0,
-       "landingPropMass": 0,
-       "material": "steel",
-       "name": "Motor",
-       "propellant": "solid-apcp",
-       "engine": "srm-small",
-       "engineCount": 1,
-       "propMass": 2300,
-       "diameter": 1.6
-      }
-     ],
-     "payload": {
-      "type": "kid-box",
-      "mass": 300,
-      "orbit": "suborbital"
-     },
-     "fairing": {
-      "diameter": 1.6,
-      "length": 2,
-      "material": "composite",
-      "jettisonAltitudeKm": 100
-     },
-     "livery": {
-      "primary": "#f2f2f2",
-      "accent": "#ff6d00",
-      "name": "PIPIT"
-     },
-     "template": {
-      "version": 1,
-      "order": 1,
-      "difficulty": "beginner",
-      "tags": [
-       "solid",
-       "single stage",
-       "suborbital",
-       "tutorial"
-      ],
-      "tagline": "Light the motor, coast past 100 km, come home.",
-      "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
-      "benchmark": {
-       "class": "Single-stage solid sounding rocket",
-       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
-       "sources": [
-        {
-         "title": "FAI: 100 km Kármán line (boundary of space)",
-         "url": "https://www.fai.org/page/icare-boundary",
-         "claim": "100 km reference altitude"
-        },
-        {
-         "title": "NASA Sounding Rockets Program overview",
-         "url": "https://www.nasa.gov/soundingrockets/",
-         "claim": "what sounding rockets are used for"
-        }
-       ]
-      },
-      "thingsToTry": [
-       "Add 500 kg of propellant and watch the apogee climb.",
-       "Swap fins off (Aero tab) and read the warnings.",
-       "Try the 100 km hop with a hybrid motor instead."
-      ],
-      "refMission": {
-       "objective": "apogee",
-       "minApogeeKm": 100
-      },
-      "pending": {
-       "pad": "pending: G2 pad module (compat.js) not landed",
-       "cost": "pending: E1 cost model not landed"
-      },
-      "review": [
-       "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
-      ],
-      "stats": {
-       "stages": 1,
-       "liftoffMassT": 3.1,
-       "liftoffTWR": 19.58,
-       "deltaV": 3593,
-       "requiredDeltaV": 2400,
-       "marginPct": 49.7,
-       "payloadKg": 300,
-       "target": "Suborbital 100 km",
-       "simOutcome": "suborbital",
-       "simApogeeKm": 114,
-       "simPerigeeKm": null,
-       "maxG": 20.6
-      }
-     }
-    }
-   }
-  },
-  {
-   "kind": "makeItFly",
-   "name": "tpl-sounding-solid#7:landing-fuel",
-   "design": {
-    "version": 1,
-    "strapOns": {
-     "count": 0,
-     "kind": "solid",
-     "propellant": "solid-apcp",
-     "engine": "srm-small",
-     "engineCount": 1,
-     "propMass": 0,
-     "diameter": 1.6,
-     "material": "steel",
-     "crossfeed": false
-    },
-    "aero": {
-     "nose": "ogive",
-     "fins": true
-    },
-    "landing": {
-     "legs": false,
-     "gridFins": false,
-     "rcs": false
-    },
-    "avionics": {
-     "tier": "basic"
-    },
-    "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
-    "name": "Pipit",
-    "tier": "starter",
-    "stages": [
-     {
-      "interstageMass": 0,
-      "separationMass": 0,
-      "landingPropMass": 5000,
-      "material": "steel",
-      "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
-      "engineCount": 1,
-      "propMass": 2300,
-      "diameter": 1.6
-     }
-    ],
-    "payload": {
-     "type": "kid-box",
-     "mass": 300,
-     "orbit": "suborbital"
-    },
-    "fairing": {
-     "diameter": 1.6,
-     "length": 2,
-     "material": "composite",
-     "jettisonAltitudeKm": 100
-    },
-    "livery": {
-     "primary": "#f2f2f2",
-     "accent": "#ff6d00",
-     "name": "PIPIT"
-    },
-    "template": {
-     "version": 1,
-     "order": 1,
-     "difficulty": "beginner",
-     "tags": [
-      "solid",
-      "single stage",
-      "suborbital",
-      "tutorial"
-     ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
-     "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
-      "sources": [
-       {
-        "title": "FAI: 100 km Kármán line (boundary of space)",
-        "url": "https://www.fai.org/page/icare-boundary",
-        "claim": "100 km reference altitude"
-       },
-       {
-        "title": "NASA Sounding Rockets Program overview",
-        "url": "https://www.nasa.gov/soundingrockets/",
-        "claim": "what sounding rockets are used for"
-       }
-      ]
-     },
-     "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
-      "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
-     ],
-     "refMission": {
-      "objective": "apogee",
-      "minApogeeKm": 100
-     },
-     "pending": {
-      "pad": "pending: G2 pad module (compat.js) not landed",
-      "cost": "pending: E1 cost model not landed"
-     },
-     "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
-     ],
-     "stats": {
-      "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
-      "requiredDeltaV": 2400,
-      "marginPct": 49.7,
-      "payloadKg": 300,
-      "target": "Suborbital 100 km",
-      "simOutcome": "suborbital",
-      "simApogeeKm": 114,
-      "simPerigeeKm": null,
-      "maxG": 20.6
-     }
-    }
-   },
-   "out": {
-    "changes": [
-     "Added landing legs and grid fins",
+     "Widened the fairing to match the top stage",
      "Added first-stage propellant"
     ],
     "design": {
@@ -9650,7 +9778,507 @@
       "engine": "srm-small",
       "engineCount": 1,
       "propMass": 0,
-      "diameter": 1.6,
+      "diameter": 1.3,
+      "material": "steel",
+      "crossfeed": false
+     },
+     "aero": {
+      "nose": "ogive",
+      "fins": true
+     },
+     "landing": {
+      "legs": false,
+      "gridFins": false,
+      "rcs": false
+     },
+     "avionics": {
+      "tier": "basic"
+     },
+     "safetyFactor": 1.4,
+     "id": "tpl-sounding-hybrid",
+     "name": "Pipit",
+     "tier": "starter",
+     "stages": [
+      {
+       "interstageMass": 0,
+       "separationMass": 0,
+       "landingPropMass": 0,
+       "material": "steel",
+       "name": "Motor",
+       "propellant": "hybrid",
+       "engine": "hybrid-small",
+       "engineCount": 40,
+       "propMass": 8041.202726125138,
+       "diameter": 2.5
+      }
+     ],
+     "payload": {
+      "type": "kid-box",
+      "mass": 300,
+      "orbit": "suborbital"
+     },
+     "fairing": {
+      "diameter": 2.5,
+      "length": 2.4,
+      "material": "composite",
+      "jettisonAltitudeKm": 100
+     },
+     "livery": {
+      "primary": "#f2f2f2",
+      "accent": "#ff6d00",
+      "name": "PIPIT"
+     },
+     "template": {
+      "version": 1,
+      "order": 1,
+      "difficulty": "beginner",
+      "tags": [
+       "hybrid",
+       "single stage",
+       "suborbital",
+       "tutorial"
+      ],
+      "tagline": "Light two small hybrids, climb past 100 km, come home.",
+      "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
+      "benchmark": {
+       "class": "Single-stage hybrid sounding rocket",
+       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
+       "sources": [
+        {
+         "title": "FAI: 100 km Kármán line (boundary of space)",
+         "url": "https://www.fai.org/page/icare-boundary",
+         "claim": "100 km reference altitude"
+        },
+        {
+         "title": "NASA Sounding Rockets Program overview",
+         "url": "https://www.nasa.gov/soundingrockets/",
+         "claim": "what sounding rockets are used for"
+        }
+       ]
+      },
+      "thingsToTry": [
+       "Add 200 kg of propellant and watch the apogee climb.",
+       "Swap fins off (Aero tab) and read the warnings.",
+       "Try one solid motor instead and compare the peak g and max-Q."
+      ],
+      "refMission": {
+       "objective": "apogee",
+       "minApogeeKm": 100
+      },
+      "pending": {
+       "pad": "pending: G2 pad module (compat.js) not landed",
+       "cost": "pending: E1 cost model not landed"
+      },
+      "review": [
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
+      ],
+      "stats": {
+       "stages": 1,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
+       "requiredDeltaV": 2400,
+       "marginPct": 21.7,
+       "payloadKg": 300,
+       "target": "Suborbital 100 km",
+       "simOutcome": "suborbital",
+       "simApogeeKm": 108,
+       "simPerigeeKm": null,
+       "maxG": 7
+      }
+     }
+    }
+   }
+  },
+  {
+   "kind": "makeItFly",
+   "name": "tpl-sounding-hybrid#6:wrong-engine",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.3,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "basic"
+    },
+    "safetyFactor": 1.4,
+    "id": "tpl-sounding-hybrid",
+    "name": "Pipit",
+    "tier": "starter",
+    "stages": [
+     {
+      "interstageMass": 0,
+      "separationMass": 0,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Motor",
+      "propellant": "hybrid",
+      "engine": "exp-hydrolox",
+      "engineCount": 2,
+      "propMass": 1750,
+      "diameter": 1.3
+     }
+    ],
+    "payload": {
+     "type": "kid-box",
+     "mass": 300,
+     "orbit": "suborbital"
+    },
+    "fairing": {
+     "diameter": 1.3,
+     "length": 2.4,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    },
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#ff6d00",
+     "name": "PIPIT"
+    },
+    "template": {
+     "version": 1,
+     "order": 1,
+     "difficulty": "beginner",
+     "tags": [
+      "hybrid",
+      "single stage",
+      "suborbital",
+      "tutorial"
+     ],
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
+     "benchmark": {
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
+      "sources": [
+       {
+        "title": "FAI: 100 km Kármán line (boundary of space)",
+        "url": "https://www.fai.org/page/icare-boundary",
+        "claim": "100 km reference altitude"
+       },
+       {
+        "title": "NASA Sounding Rockets Program overview",
+        "url": "https://www.nasa.gov/soundingrockets/",
+        "claim": "what sounding rockets are used for"
+       }
+      ]
+     },
+     "thingsToTry": [
+      "Add 200 kg of propellant and watch the apogee climb.",
+      "Swap fins off (Aero tab) and read the warnings.",
+      "Try one solid motor instead and compare the peak g and max-Q."
+     ],
+     "refMission": {
+      "objective": "apogee",
+      "minApogeeKm": 100
+     },
+     "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+     },
+     "review": [
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
+     ],
+     "stats": {
+      "stages": 1,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
+      "requiredDeltaV": 2400,
+      "marginPct": 21.7,
+      "payloadKg": 300,
+      "target": "Suborbital 100 km",
+      "simOutcome": "suborbital",
+      "simApogeeKm": 108,
+      "simPerigeeKm": null,
+      "maxG": 7
+     }
+    }
+   },
+   "out": {
+    "changes": [
+     "Matched Motor engine to its propellant",
+     "Widened Motor so the engines fit",
+     "Widened the fairing to match the top stage",
+     "Added first-stage propellant"
+    ],
+    "design": {
+     "version": 1,
+     "strapOns": {
+      "count": 0,
+      "kind": "solid",
+      "propellant": "solid-apcp",
+      "engine": "srm-small",
+      "engineCount": 1,
+      "propMass": 0,
+      "diameter": 1.3,
+      "material": "steel",
+      "crossfeed": false
+     },
+     "aero": {
+      "nose": "ogive",
+      "fins": true
+     },
+     "landing": {
+      "legs": false,
+      "gridFins": false,
+      "rcs": false
+     },
+     "avionics": {
+      "tier": "basic"
+     },
+     "safetyFactor": 1.4,
+     "id": "tpl-sounding-hybrid",
+     "name": "Pipit",
+     "tier": "starter",
+     "stages": [
+      {
+       "interstageMass": 0,
+       "separationMass": 0,
+       "landingPropMass": 0,
+       "material": "steel",
+       "name": "Motor",
+       "propellant": "hybrid",
+       "engine": "hybrid-mid",
+       "engineCount": 2,
+       "propMass": 2562.175000000001,
+       "diameter": 1.7
+      }
+     ],
+     "payload": {
+      "type": "kid-box",
+      "mass": 300,
+      "orbit": "suborbital"
+     },
+     "fairing": {
+      "diameter": 1.7,
+      "length": 2.4,
+      "material": "composite",
+      "jettisonAltitudeKm": 100
+     },
+     "livery": {
+      "primary": "#f2f2f2",
+      "accent": "#ff6d00",
+      "name": "PIPIT"
+     },
+     "template": {
+      "version": 1,
+      "order": 1,
+      "difficulty": "beginner",
+      "tags": [
+       "hybrid",
+       "single stage",
+       "suborbital",
+       "tutorial"
+      ],
+      "tagline": "Light two small hybrids, climb past 100 km, come home.",
+      "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
+      "benchmark": {
+       "class": "Single-stage hybrid sounding rocket",
+       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
+       "sources": [
+        {
+         "title": "FAI: 100 km Kármán line (boundary of space)",
+         "url": "https://www.fai.org/page/icare-boundary",
+         "claim": "100 km reference altitude"
+        },
+        {
+         "title": "NASA Sounding Rockets Program overview",
+         "url": "https://www.nasa.gov/soundingrockets/",
+         "claim": "what sounding rockets are used for"
+        }
+       ]
+      },
+      "thingsToTry": [
+       "Add 200 kg of propellant and watch the apogee climb.",
+       "Swap fins off (Aero tab) and read the warnings.",
+       "Try one solid motor instead and compare the peak g and max-Q."
+      ],
+      "refMission": {
+       "objective": "apogee",
+       "minApogeeKm": 100
+      },
+      "pending": {
+       "pad": "pending: G2 pad module (compat.js) not landed",
+       "cost": "pending: E1 cost model not landed"
+      },
+      "review": [
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
+      ],
+      "stats": {
+       "stages": 1,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
+       "requiredDeltaV": 2400,
+       "marginPct": 21.7,
+       "payloadKg": 300,
+       "target": "Suborbital 100 km",
+       "simOutcome": "suborbital",
+       "simApogeeKm": 108,
+       "simPerigeeKm": null,
+       "maxG": 7
+      }
+     }
+    }
+   }
+  },
+  {
+   "kind": "makeItFly",
+   "name": "tpl-sounding-hybrid#7:landing-fuel",
+   "design": {
+    "version": 1,
+    "strapOns": {
+     "count": 0,
+     "kind": "solid",
+     "propellant": "solid-apcp",
+     "engine": "srm-small",
+     "engineCount": 1,
+     "propMass": 0,
+     "diameter": 1.3,
+     "material": "steel",
+     "crossfeed": false
+    },
+    "aero": {
+     "nose": "ogive",
+     "fins": true
+    },
+    "landing": {
+     "legs": false,
+     "gridFins": false,
+     "rcs": false
+    },
+    "avionics": {
+     "tier": "basic"
+    },
+    "safetyFactor": 1.4,
+    "id": "tpl-sounding-hybrid",
+    "name": "Pipit",
+    "tier": "starter",
+    "stages": [
+     {
+      "interstageMass": 0,
+      "separationMass": 0,
+      "landingPropMass": 5000,
+      "material": "steel",
+      "name": "Motor",
+      "propellant": "hybrid",
+      "engine": "hybrid-small",
+      "engineCount": 2,
+      "propMass": 1750,
+      "diameter": 1.3
+     }
+    ],
+    "payload": {
+     "type": "kid-box",
+     "mass": 300,
+     "orbit": "suborbital"
+    },
+    "fairing": {
+     "diameter": 1.3,
+     "length": 2.4,
+     "material": "composite",
+     "jettisonAltitudeKm": 100
+    },
+    "livery": {
+     "primary": "#f2f2f2",
+     "accent": "#ff6d00",
+     "name": "PIPIT"
+    },
+    "template": {
+     "version": 1,
+     "order": 1,
+     "difficulty": "beginner",
+     "tags": [
+      "hybrid",
+      "single stage",
+      "suborbital",
+      "tutorial"
+     ],
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
+     "benchmark": {
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
+      "sources": [
+       {
+        "title": "FAI: 100 km Kármán line (boundary of space)",
+        "url": "https://www.fai.org/page/icare-boundary",
+        "claim": "100 km reference altitude"
+       },
+       {
+        "title": "NASA Sounding Rockets Program overview",
+        "url": "https://www.nasa.gov/soundingrockets/",
+        "claim": "what sounding rockets are used for"
+       }
+      ]
+     },
+     "thingsToTry": [
+      "Add 200 kg of propellant and watch the apogee climb.",
+      "Swap fins off (Aero tab) and read the warnings.",
+      "Try one solid motor instead and compare the peak g and max-Q."
+     ],
+     "refMission": {
+      "objective": "apogee",
+      "minApogeeKm": 100
+     },
+     "pending": {
+      "pad": "pending: G2 pad module (compat.js) not landed",
+      "cost": "pending: E1 cost model not landed"
+     },
+     "review": [
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
+     ],
+     "stats": {
+      "stages": 1,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
+      "requiredDeltaV": 2400,
+      "marginPct": 21.7,
+      "payloadKg": 300,
+      "target": "Suborbital 100 km",
+      "simOutcome": "suborbital",
+      "simApogeeKm": 108,
+      "simPerigeeKm": null,
+      "maxG": 7
+     }
+    }
+   },
+   "out": {
+    "changes": [
+     "Trimmed the Motor landing reserve to fit its propellant",
+     "Added landing legs and grid fins",
+     "Added first-stage propellant",
+     "Added first-stage engines so it can carry more propellant"
+    ],
+    "design": {
+     "version": 1,
+     "strapOns": {
+      "count": 0,
+      "kind": "solid",
+      "propellant": "solid-apcp",
+      "engine": "srm-small",
+      "engineCount": 1,
+      "propMass": 0,
+      "diameter": 1.3,
       "material": "steel",
       "crossfeed": false
      },
@@ -9667,21 +10295,21 @@
       "tier": "basic"
      },
      "safetyFactor": 1.4,
-     "id": "tpl-sounding-solid",
+     "id": "tpl-sounding-hybrid",
      "name": "Pipit",
      "tier": "starter",
      "stages": [
       {
        "interstageMass": 0,
        "separationMass": 0,
-       "landingPropMass": 5000,
+       "landingPropMass": 525,
        "material": "steel",
        "name": "Motor",
-       "propellant": "solid-apcp",
-       "engine": "srm-small",
-       "engineCount": 1,
-       "propMass": 18722.63235897317,
-       "diameter": 1.6
+       "propellant": "hybrid",
+       "engine": "hybrid-small",
+       "engineCount": 3,
+       "propMass": 3751.2804175000024,
+       "diameter": 1.3
       }
      ],
      "payload": {
@@ -9690,8 +10318,8 @@
       "orbit": "suborbital"
      },
      "fairing": {
-      "diameter": 1.6,
-      "length": 2,
+      "diameter": 1.3,
+      "length": 2.4,
       "material": "composite",
       "jettisonAltitudeKm": 100
      },
@@ -9705,16 +10333,16 @@
       "order": 1,
       "difficulty": "beginner",
       "tags": [
-       "solid",
+       "hybrid",
        "single stage",
        "suborbital",
        "tutorial"
       ],
-      "tagline": "Light the motor, coast past 100 km, come home.",
-      "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+      "tagline": "Light two small hybrids, climb past 100 km, come home.",
+      "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
       "benchmark": {
-       "class": "Single-stage solid sounding rocket",
-       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+       "class": "Single-stage hybrid sounding rocket",
+       "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
        "sources": [
         {
          "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -9729,9 +10357,9 @@
        ]
       },
       "thingsToTry": [
-       "Add 500 kg of propellant and watch the apogee climb.",
+       "Add 200 kg of propellant and watch the apogee climb.",
        "Swap fins off (Aero tab) and read the warnings.",
-       "Try the 100 km hop with a hybrid motor instead."
+       "Try one solid motor instead and compare the peak g and max-Q."
       ],
       "refMission": {
        "objective": "apogee",
@@ -9742,21 +10370,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+       "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
       ],
       "stats": {
        "stages": 1,
-       "liftoffMassT": 3.1,
-       "liftoffTWR": 19.58,
-       "deltaV": 3593,
+       "liftoffMassT": 2.5,
+       "liftoffTWR": 2.03,
+       "deltaV": 2921,
        "requiredDeltaV": 2400,
-       "marginPct": 49.7,
+       "marginPct": 21.7,
        "payloadKg": 300,
        "target": "Suborbital 100 km",
        "simOutcome": "suborbital",
-       "simApogeeKm": 114,
+       "simApogeeKm": 108,
        "simPerigeeKm": null,
-       "maxG": 20.6
+       "maxG": 7
       }
      }
     }
@@ -9861,7 +10489,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -9989,7 +10617,7 @@
       },
       "thingsToTry": [
        "Swap the composite tanks for Al-Li and see what happens to payload.",
-       "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+       "Try a higher or lower circle and compare margin.",
        "Make the upper stage 20% bigger. Does it still lift off well?"
       ],
       "refMission": {
@@ -10120,7 +10748,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -10250,7 +10878,7 @@
       },
       "thingsToTry": [
        "Swap the composite tanks for Al-Li and see what happens to payload.",
-       "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+       "Try a higher or lower circle and compare margin.",
        "Make the upper stage 20% bigger. Does it still lift off well?"
       ],
       "refMission": {
@@ -10381,7 +11009,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -10512,7 +11140,7 @@
       },
       "thingsToTry": [
        "Swap the composite tanks for Al-Li and see what happens to payload.",
-       "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+       "Try a higher or lower circle and compare margin.",
        "Make the upper stage 20% bigger. Does it still lift off well?"
       ],
       "refMission": {
@@ -10643,7 +11271,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -10773,7 +11401,7 @@
       },
       "thingsToTry": [
        "Swap the composite tanks for Al-Li and see what happens to payload.",
-       "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+       "Try a higher or lower circle and compare margin.",
        "Make the upper stage 20% bigger. Does it still lift off well?"
       ],
       "refMission": {
@@ -10904,7 +11532,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -11032,7 +11660,7 @@
       },
       "thingsToTry": [
        "Swap the composite tanks for Al-Li and see what happens to payload.",
-       "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+       "Try a higher or lower circle and compare margin.",
        "Make the upper stage 20% bigger. Does it still lift off well?"
       ],
       "refMission": {
@@ -11163,7 +11791,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -11293,7 +11921,7 @@
       },
       "thingsToTry": [
        "Swap the composite tanks for Al-Li and see what happens to payload.",
-       "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+       "Try a higher or lower circle and compare margin.",
        "Make the upper stage 20% bigger. Does it still lift off well?"
       ],
       "refMission": {
@@ -11424,7 +12052,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -11555,7 +12183,7 @@
       },
       "thingsToTry": [
        "Swap the composite tanks for Al-Li and see what happens to payload.",
-       "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+       "Try a higher or lower circle and compare margin.",
        "Make the upper stage 20% bigger. Does it still lift off well?"
       ],
       "refMission": {
@@ -11686,7 +12314,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -11818,7 +12446,7 @@
       },
       "thingsToTry": [
        "Swap the composite tanks for Al-Li and see what happens to payload.",
-       "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+       "Try a higher or lower circle and compare margin.",
        "Make the upper stage 20% bigger. Does it still lift off well?"
       ],
       "refMission": {
@@ -16105,6 +16733,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -16117,7 +16749,10 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "gg-kerolox",
-      "engineCount": 9,
+      "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -16194,21 +16829,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
@@ -16240,6 +16875,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -16252,7 +16891,10 @@
        "name": "Stage 1",
        "propellant": "kerolox",
        "engine": "gg-kerolox",
-       "engineCount": 9,
+       "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -16329,21 +16971,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
-       "liftoffMassT": 463.1,
-       "liftoffTWR": 1.67,
-       "deltaV": 12641,
+       "liftoffMassT": 462.2,
+       "liftoffTWR": 1.31,
+       "deltaV": 12680,
        "requiredDeltaV": 11330,
-       "marginPct": 11.6,
+       "marginPct": 11.9,
        "payloadKg": 4000,
        "target": "GTO",
        "simOutcome": "orbit",
-       "simApogeeKm": 930,
-       "simPerigeeKm": 196,
-       "maxG": 13.5
+       "simApogeeKm": 271,
+       "simPerigeeKm": 191,
+       "maxG": 10.7
       }
      }
     }
@@ -16378,6 +17020,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -16391,6 +17037,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 1,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -16467,21 +17116,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
@@ -16515,6 +17164,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -16528,6 +17181,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -16604,21 +17260,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
-       "liftoffMassT": 463.1,
-       "liftoffTWR": 1.67,
-       "deltaV": 12641,
+       "liftoffMassT": 462.2,
+       "liftoffTWR": 1.31,
+       "deltaV": 12680,
        "requiredDeltaV": 11330,
-       "marginPct": 11.6,
+       "marginPct": 11.9,
        "payloadKg": 4000,
        "target": "GTO",
        "simOutcome": "orbit",
-       "simApogeeKm": 930,
-       "simPerigeeKm": 196,
-       "maxG": 13.5
+       "simApogeeKm": 271,
+       "simPerigeeKm": 191,
+       "maxG": 10.7
       }
      }
     }
@@ -16653,6 +17309,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -16665,7 +17325,10 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "gg-kerolox",
-      "engineCount": 9,
+      "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 0,
       "diameter": 3.7
      },
@@ -16742,21 +17405,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
@@ -16791,6 +17454,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -16803,7 +17470,10 @@
        "name": "Stage 1",
        "propellant": "kerolox",
        "engine": "gg-kerolox",
-       "engineCount": 9,
+       "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 277995.86567461205,
        "diameter": 3.7
       },
@@ -16880,21 +17550,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
-       "liftoffMassT": 463.1,
-       "liftoffTWR": 1.67,
-       "deltaV": 12641,
+       "liftoffMassT": 462.2,
+       "liftoffTWR": 1.31,
+       "deltaV": 12680,
        "requiredDeltaV": 11330,
-       "marginPct": 11.6,
+       "marginPct": 11.9,
        "payloadKg": 4000,
        "target": "GTO",
        "simOutcome": "orbit",
-       "simApogeeKm": 930,
-       "simPerigeeKm": 196,
-       "maxG": 13.5
+       "simApogeeKm": 271,
+       "simPerigeeKm": 191,
+       "maxG": 10.7
       }
      }
     }
@@ -16929,6 +17599,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -16941,7 +17615,10 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "gg-kerolox",
-      "engineCount": 9,
+      "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -17018,21 +17695,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
@@ -17067,6 +17744,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -17079,7 +17760,10 @@
        "name": "Stage 1",
        "propellant": "kerolox",
        "engine": "gg-kerolox",
-       "engineCount": 9,
+       "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -17156,21 +17840,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
-       "liftoffMassT": 463.1,
-       "liftoffTWR": 1.67,
-       "deltaV": 12641,
+       "liftoffMassT": 462.2,
+       "liftoffTWR": 1.31,
+       "deltaV": 12680,
        "requiredDeltaV": 11330,
-       "marginPct": 11.6,
+       "marginPct": 11.9,
        "payloadKg": 4000,
        "target": "GTO",
        "simOutcome": "orbit",
-       "simApogeeKm": 930,
-       "simPerigeeKm": 196,
-       "maxG": 13.5
+       "simApogeeKm": 271,
+       "simPerigeeKm": 191,
+       "maxG": 10.7
       }
      }
     }
@@ -17205,6 +17889,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -17217,7 +17905,10 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "gg-kerolox",
-      "engineCount": 9,
+      "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -17294,30 +17985,31 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
    "out": {
     "changes": [
+     "Added first-stage engines for a stronger liftoff",
      "Added an engine to Stage 2",
-     "Added first-stage propellant",
      "Added upper-stage propellant",
-     "Lightened the payload"
+     "Lightened the payload",
+     "Added first-stage propellant"
     ],
     "design": {
      "version": 1,
@@ -17345,6 +18037,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -17357,8 +18053,11 @@
        "name": "Stage 1",
        "propellant": "kerolox",
        "engine": "gg-kerolox",
-       "engineCount": 9,
-       "propMass": 484000.0000000001,
+       "engineCount": 8,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
+       "propMass": 440000.00000000006,
        "diameter": 3.7
       },
       {
@@ -17376,7 +18075,7 @@
      ],
      "payload": {
       "type": "gto-comsat",
-      "mass": 7370,
+      "mass": 6265,
       "orbit": "gto"
      },
      "fairing": {
@@ -17434,21 +18133,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
-       "liftoffMassT": 463.1,
-       "liftoffTWR": 1.67,
-       "deltaV": 12641,
+       "liftoffMassT": 462.2,
+       "liftoffTWR": 1.31,
+       "deltaV": 12680,
        "requiredDeltaV": 11330,
-       "marginPct": 11.6,
+       "marginPct": 11.9,
        "payloadKg": 4000,
        "target": "GTO",
        "simOutcome": "orbit",
-       "simApogeeKm": 930,
-       "simPerigeeKm": 196,
-       "maxG": 13.5
+       "simApogeeKm": 271,
+       "simPerigeeKm": 191,
+       "maxG": 10.7
       }
      }
     }
@@ -17483,6 +18182,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -17496,6 +18199,9 @@
       "propellant": "kerolox",
       "engine": "gg-kerolox",
       "engineCount": 40,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -17572,21 +18278,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
@@ -17620,6 +18326,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -17633,6 +18343,9 @@
        "propellant": "kerolox",
        "engine": "gg-kerolox",
        "engineCount": 40,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 5.6
       },
@@ -17709,21 +18422,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
-       "liftoffMassT": 463.1,
-       "liftoffTWR": 1.67,
-       "deltaV": 12641,
+       "liftoffMassT": 462.2,
+       "liftoffTWR": 1.31,
+       "deltaV": 12680,
        "requiredDeltaV": 11330,
-       "marginPct": 11.6,
+       "marginPct": 11.9,
        "payloadKg": 4000,
        "target": "GTO",
        "simOutcome": "orbit",
-       "simApogeeKm": 930,
-       "simPerigeeKm": 196,
-       "maxG": 13.5
+       "simApogeeKm": 271,
+       "simPerigeeKm": 191,
+       "maxG": 10.7
       }
      }
     }
@@ -17758,6 +18471,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -17770,7 +18487,10 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "exp-hydrolox",
-      "engineCount": 9,
+      "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -17847,21 +18567,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
@@ -17895,6 +18615,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -17907,7 +18631,10 @@
        "name": "Stage 1",
        "propellant": "kerolox",
        "engine": "gg-kerolox",
-       "engineCount": 9,
+       "engineCount": 7,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -17984,21 +18711,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
-       "liftoffMassT": 463.1,
-       "liftoffTWR": 1.67,
-       "deltaV": 12641,
+       "liftoffMassT": 462.2,
+       "liftoffTWR": 1.31,
+       "deltaV": 12680,
        "requiredDeltaV": 11330,
-       "marginPct": 11.6,
+       "marginPct": 11.9,
        "payloadKg": 4000,
        "target": "GTO",
        "simOutcome": "orbit",
-       "simApogeeKm": 930,
-       "simPerigeeKm": 196,
-       "maxG": 13.5
+       "simApogeeKm": 271,
+       "simPerigeeKm": 191,
+       "maxG": 10.7
       }
      }
     }
@@ -18033,6 +18760,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -18045,7 +18776,10 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "gg-kerolox",
-      "engineCount": 9,
+      "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -18122,27 +18856,28 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
    "out": {
     "changes": [
-     "Added landing legs and grid fins"
+     "Added landing legs and grid fins",
+     "Added first-stage engines for a stronger liftoff"
     ],
     "design": {
      "version": 1,
@@ -18170,6 +18905,10 @@
       "tier": "standard"
      },
      "safetyFactor": 1.4,
+     "guidance": {
+      "maxQThrottle": 55,
+      "gLimit": 3.5
+     },
      "id": "tpl-hydrogen-upper",
      "name": "Heron",
      "tier": "medium",
@@ -18182,7 +18921,10 @@
        "name": "Stage 1",
        "propellant": "kerolox",
        "engine": "gg-kerolox",
-       "engineCount": 9,
+       "engineCount": 8,
+       "engineParams": {
+        "throttleMin": 0.45
+       },
        "propMass": 400000,
        "diameter": 3.7
       },
@@ -18259,21 +19001,21 @@
        "cost": "pending: E1 cost model not landed"
       },
       "review": [
-       "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+       "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
       ],
       "stats": {
        "stages": 2,
-       "liftoffMassT": 463.1,
-       "liftoffTWR": 1.67,
-       "deltaV": 12641,
+       "liftoffMassT": 462.2,
+       "liftoffTWR": 1.31,
+       "deltaV": 12680,
        "requiredDeltaV": 11330,
-       "marginPct": 11.6,
+       "marginPct": 11.9,
        "payloadKg": 4000,
        "target": "GTO",
        "simOutcome": "orbit",
-       "simApogeeKm": 930,
-       "simPerigeeKm": 196,
-       "maxG": 13.5
+       "simApogeeKm": 271,
+       "simPerigeeKm": 191,
+       "maxG": 10.7
       }
      }
     }
@@ -20428,7 +21170,7 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.05 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ]
    },
@@ -20486,7 +21228,7 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.05 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ]
    },
@@ -20498,10 +21240,10 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.05 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ],
-    "next": "Liftoff TWR 1.05 is slow off the pad (lots of gravity loss). Aim for 1.25 or more.",
+    "next": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more.",
     "showTune": false,
     "showSchemaText": false,
     "makeItFly": true
@@ -20550,7 +21292,7 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.05 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ]
    },
@@ -20562,10 +21304,10 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.05 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ],
-    "next": "Liftoff TWR 1.05 is slow off the pad (lots of gravity loss). Aim for 1.25 or more.",
+    "next": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more.",
     "showTune": true,
     "showSchemaText": true,
     "makeItFly": true

@@ -32,25 +32,25 @@ Nominal times are game seconds. T- is compressed for this mode (engineer keeps r
 | T-0:11.25 | — | `pad.internal` | pad | Internal | The vehicle is on internal power because this pad provides that handover. Real T-0:30 compresses to T-0:11.25 in standard mode. |
 | T-0:07.5 | — | `term.sequencer` | terminal | Sequencer | The auto-sequencer arms and runs the commit steps from here to release. Real T-0:20 compresses to T-0:07.5 in standard mode. |
 | T-0:06 | — | `pad.deluge` | pad | Deluge | Deluge water is up because this pad has a deluge. Real T-0:16 compresses to T-0:06 in standard mode. |
-| T-0:01.725 | — | `ign.stagger` | ignition | Stagger | 9 engines light in a stagger so thrust comes up together. A single chamber does not stagger. Real T-0:04.6 compresses to T-0:01.725 in standard mode. |
+| T-0:01.575 | — | `ign.stagger` | ignition | Stagger | 7 engines light in a stagger so thrust comes up together. A single chamber does not stagger. Real T-0:04.2 compresses to T-0:01.575 in standard mode. |
 | T-0:01.125 | — | `ign.light` | ignition | Ignition | Ignition at real T-0:03. The ascent sim starts at this commit; liftoff is the separate release. Real T-0:03 compresses to T-0:01.125 in standard mode. |
 | T-0:00.375 | — | `ign.thrustok` | ignition | Thrust OK | Thrust is above the commit gate. Below the gate, the count recycles or aborts on the pad. Real T-0:01 compresses to T-0:00.375 in standard mode. |
 | T-0:00.225 | — | `pad.umbilical` | pad | Umbilical | Umbilicals drop because this pad has them, after thrust is in the gate. Real T-0:00.6 compresses to T-0:00.225 in standard mode. |
 | T-0:00.075 | — | `ign.release` | ignition | Release | Hold-down release. The sequencer commands it; the vehicle is free. Real T-0:00.2 compresses to T-0:00.075 in standard mode. |
 | T+0:00 | T+0:00 | `term.liftoff` | terminal | Liftoff | Liftoff. The sim calls it when altitude passes 1 m. Nominal is T+0; the actual is the sim liftoff aligned to that zero. |
-| T+0:48 | T+0:48 | `asc.maxq` | ascent | Max-Q | Max-Q is the sim peak dynamic pressure (46949 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:48. |
-| T+0:48 | — | `asc.throttle` | ascent | Throttle | Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q. |
-| T+2:01 | T+2:01 | `asc.karman` | ascent | Karman | The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:01, on an integrator step. |
-| T+2:05 | T+2:05 | `stg.fairing` | staging | Fairing | Fairing separates once heating has fallen (after Max-Q) and altitude reaches 110 km. Time T+2:05 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude. |
-| T+2:24.128 | T+2:24.128 | `asc.meco` | ascent | MECO | Main engine cutoff at sim T+2:24.128. A medium kerolox public anchor is about T+2:25; this time is the sim burnout. |
-| T+2:24.128 | T+2:24.128 | `stg.sep.1` | staging | SEP s1 | Stage 1 separates at sim T+2:24.128, the same instant the sim records separation. The timeline orders it with the cutoff. |
-| T+2:24.128 | T+2:24.128 | `stg.ses.s2.1` | staging | SES-1 s2 | SES-1 because Expander hydrolox upper (exp-hydrolox) is restartable (15 restarts) and this is its first start, at sim T+2:24.128. A public anchor for a medium kerolox upper start is about T+2:36; this time is the sim ignition. |
-| T+11:57.128 | T+11:57.128 | `stg.seco.s2.1` | staging | SECO-1 s2 | SECO-1 because exp-hydrolox is restartable and the ascent burn ends at sim T+11:57.128. |
-| T+11:57.128 | T+11:57.128 | `orb.insert` | orbit | Orbit | Orbit insertion from the sim outcome at the end of the ascent burn. A later transfer burn, when the mission has one, is planned after this and is not what the ascent sim flew. |
-| T+31:57.128 | — | `stg.ses.s2.2` | transfer | SES-2 s2 | SES-2 because exp-hydrolox is restartable (15 restarts) and GTO needs a transfer burn after SECO-1. The ascent sim flies one continuous upper burn, so this restart is planned, not a second sim ignition. |
-| T+36:57.128 | — | `stg.seco.s2.2` | transfer | SECO-2 s2 | SECO-2 closes the planned transfer burn. It is not taken from the ascent sim, which has already ended the first upper burn. |
-| T+37:27.128 | T+37:27.128 | `dep.payload` | deploy | Deploy | Payload deploys after the transfer burn (SECO-2), 30 s later. The ascent sim does not fly that second burn. |
-| T+38:27.128 | — | `disp.deorbit` | disposal | Deorbit | Deorbit because exp-hydrolox still has a restart after the mission burns (2 used, 15 restarts on the engine). The ascent sim does not fly this burn. |
+| T+0:57 | T+0:57 | `asc.maxq` | ascent | Max-Q | Max-Q is the sim peak dynamic pressure (18307 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:57. |
+| T+0:57 | — | `asc.throttle` | ascent | Throttle | Throttle bucket through Max-Q because a liftoff engine can throttle. The sim condition is a throttle below full near peak q. |
+| T+3:24 | T+3:24 | `asc.karman` | ascent | Karman | The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+3:24, on an integrator step. |
+| T+3:35 | T+3:35 | `stg.fairing` | staging | Fairing | Fairing separates once heating has fallen (after Max-Q) and altitude reaches 110 km. Time T+3:35 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude. |
+| T+3:51.949 | T+3:51.949 | `asc.meco` | ascent | MECO | Main engine cutoff at sim T+3:51.949. A medium kerolox public anchor is about T+2:25; this time is the sim burnout. |
+| T+3:51.949 | T+3:51.949 | `stg.sep.1` | staging | SEP s1 | Stage 1 separates at sim T+3:51.949, the same instant the sim records separation. The timeline orders it with the cutoff. |
+| T+3:51.949 | T+3:51.949 | `stg.ses.s2.1` | staging | SES-1 s2 | SES-1 because Expander hydrolox upper (exp-hydrolox) is restartable (15 restarts) and this is its first start, at sim T+3:51.949. A public anchor for a medium kerolox upper start is about T+2:36; this time is the sim ignition. |
+| T+10:44.949 | T+10:44.949 | `stg.seco.s2.1` | staging | SECO-1 s2 | SECO-1 because exp-hydrolox is restartable and the ascent burn ends at sim T+10:44.949. |
+| T+10:44.949 | T+10:44.949 | `orb.insert` | orbit | Orbit | Orbit insertion from the sim outcome at the end of the ascent burn. A later transfer burn, when the mission has one, is planned after this and is not what the ascent sim flew. |
+| T+30:44.949 | — | `stg.ses.s2.2` | transfer | SES-2 s2 | SES-2 because exp-hydrolox is restartable (15 restarts) and GTO needs a transfer burn after SECO-1. The ascent sim flies one continuous upper burn, so this restart is planned, not a second sim ignition. |
+| T+35:44.949 | — | `stg.seco.s2.2` | transfer | SECO-2 s2 | SECO-2 closes the planned transfer burn. It is not taken from the ascent sim, which has already ended the first upper burn. |
+| T+36:14.949 | T+36:14.949 | `dep.payload` | deploy | Deploy | Payload deploys after the transfer burn (SECO-2), 30 s later. The ascent sim does not fly that second burn. |
+| T+37:14.949 | — | `disp.deorbit` | disposal | Deorbit | Deorbit because exp-hydrolox still has a restart after the mission burns (2 used, 15 restarts on the engine). The ascent sim does not fly this burn. |
 
 ## Branches
 

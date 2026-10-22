@@ -342,7 +342,7 @@
       "interstageMass": 200,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 1",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -354,7 +354,7 @@
       "interstageMass": 0,
       "separationMass": 50,
       "landingPropMass": 0,
-      "material": "composite",
+      "material": "al-li",
       "name": "Stage 2",
       "propellant": "methalox",
       "engine": "gg-methalox-small",
@@ -373,23 +373,29 @@
      "length": 2.5,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 500,
+     "pitchKickDeg": 6,
+     "maxQThrottle": 40,
+     "gLimit": 5
     }
    },
    "out": {
     "stageMasses": [
      {
       "name": "Stage 1",
-      "dry": 2487.6638410409128,
+      "dry": 2994.527276463784,
       "prop": 35000,
-      "wet": 37487.663841040914,
+      "wet": 37994.527276463785,
       "usableProp": 35000,
       "landingProp": 0
      },
      {
       "name": "Stage 2",
-      "dry": 523.8852298927279,
+      "dry": 610.7761045366486,
       "prop": 6000,
-      "wet": 6523.885229892728,
+      "wet": 6610.776104536649,
       "usableProp": 6000,
       "landingProp": 0
      }
@@ -408,17 +414,17 @@
      "stages": [
       {
        "name": "Stage 1",
-       "dry": 2487.6638410409128,
+       "dry": 2994.527276463784,
        "prop": 35000,
-       "wet": 37487.663841040914,
+       "wet": 37994.527276463785,
        "usableProp": 35000,
        "landingProp": 0
       },
       {
        "name": "Stage 2",
-       "dry": 523.8852298927279,
+       "dry": 610.7761045366486,
        "prop": 6000,
-       "wet": 6523.885229892728,
+       "wet": 6610.776104536649,
        "usableProp": 6000,
        "landingProp": 0
       }
@@ -435,20 +441,20 @@
      },
      "payload": 150,
      "fairing": 168.2322865997334,
-     "liftoffMass": 44329.78135753337,
-     "dryMass": 3011.549070933641,
+     "liftoffMass": 44923.53566760017,
+     "dryMass": 3605.3033810004326,
      "ratios": [
       {
-       "m0": 44329.78135753337,
-       "mf": 9329.781357533371,
-       "massRatio": 4.7514276764630825,
-       "propFraction": 0.7895369417167704
+       "m0": 44923.53566760017,
+       "mf": 9923.535667600168,
+       "massRatio": 4.526968730940646,
+       "propFraction": 0.7791016330275794
       },
       {
-       "m0": 6842.117516492461,
-       "mf": 842.1175164924607,
-       "massRatio": 8.124896326810601,
-       "propFraction": 0.8769215064689266
+       "m0": 6929.008391136382,
+       "mf": 929.0083911363818,
+       "massRatio": 7.458499252800806,
+       "propFraction": 0.8659247703719376
       }
      ]
     },
@@ -462,7 +468,7 @@
       "ispSL": 300,
       "ispVac": 330,
       "propMass": 35000,
-      "dryMass": 2487.6638410409128,
+      "dryMass": 2994.527276463784,
       "diameter": 1.8,
       "Cd": 0.33999999999999997,
       "role": "core",
@@ -480,7 +486,7 @@
       "ispSL": 300,
       "ispVac": 330,
       "propMass": 6000,
-      "dryMass": 523.8852298927279,
+      "dryMass": 610.7761045366486,
       "diameter": 1.8,
       "Cd": 0.33999999999999997,
       "role": "core",
@@ -497,10 +503,10 @@
      }
     ],
     "idealDeltaV": {
-     "total": 11823.042128881467,
+     "total": 11389.484873192032,
      "perStage": [
-      5043.4315788151,
-      6779.610550066367
+      4886.82379324541,
+      6502.661079946621
      ]
     },
     "tanks": [
@@ -525,7 +531,7 @@
        "ispVac": 330,
        "ispSL": 300,
        "propMass": 35000,
-       "dryMass": 2487.6638410409128,
+       "dryMass": 2994.527276463784,
        "role": "core",
        "index": 0,
        "label": "Stage 1"
@@ -538,7 +544,7 @@
        "ispVac": 330,
        "ispSL": 300,
        "propMass": 6000,
-       "dryMass": 523.8852298927279,
+       "dryMass": 610.7761045366486,
        "role": "core",
        "index": 1,
        "label": "Stage 2"
@@ -560,10 +566,10 @@
     },
     "stackDeltaV": {
      "perStage": [
-      5043.4315788151,
-      6779.610550066367
+      4886.82379324541,
+      6502.661079946621
      ],
-     "total": 11823.042128881467
+     "total": 11389.484873192032
     }
    }
   },
@@ -614,7 +620,10 @@
       "engine": "gg-kerolox",
       "engineCount": 5,
       "propMass": 140000,
-      "diameter": 3
+      "diameter": 3,
+      "engineParams": {
+       "throttleMin": 0.4
+      }
      },
      {
       "interstageMass": 0,
@@ -639,6 +648,13 @@
      "length": 4,
      "material": "composite",
      "jettisonAltitudeKm": 100
+    },
+    "guidance": {
+     "pitchKickAlt": 34000,
+     "pitchKickDeg": 3,
+     "turnShape": 0.5,
+     "maxQThrottle": 40,
+     "gLimit": 6
     }
    },
    "out": {
@@ -1100,7 +1116,7 @@
    }
   },
   {
-   "preset": "tpl-sounding-solid",
+   "preset": "tpl-sounding-hybrid",
    "design": {
     "version": 1,
     "strapOns": {
@@ -1110,7 +1126,7 @@
      "engine": "srm-small",
      "engineCount": 1,
      "propMass": 0,
-     "diameter": 1.6,
+     "diameter": 1.3,
      "material": "steel",
      "crossfeed": false
     },
@@ -1127,7 +1143,7 @@
      "tier": "basic"
     },
     "safetyFactor": 1.4,
-    "id": "tpl-sounding-solid",
+    "id": "tpl-sounding-hybrid",
     "name": "Pipit",
     "tier": "starter",
     "stages": [
@@ -1137,11 +1153,11 @@
       "landingPropMass": 0,
       "material": "steel",
       "name": "Motor",
-      "propellant": "solid-apcp",
-      "engine": "srm-small",
-      "engineCount": 1,
-      "propMass": 2300,
-      "diameter": 1.6
+      "propellant": "hybrid",
+      "engine": "hybrid-small",
+      "engineCount": 2,
+      "propMass": 1750,
+      "diameter": 1.3
      }
     ],
     "payload": {
@@ -1150,8 +1166,8 @@
      "orbit": "suborbital"
     },
     "fairing": {
-     "diameter": 1.6,
-     "length": 2,
+     "diameter": 1.3,
+     "length": 2.4,
      "material": "composite",
      "jettisonAltitudeKm": 100
     },
@@ -1165,16 +1181,16 @@
      "order": 1,
      "difficulty": "beginner",
      "tags": [
-      "solid",
+      "hybrid",
       "single stage",
       "suborbital",
       "tutorial"
      ],
-     "tagline": "Light the motor, coast past 100 km, come home.",
-     "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+     "tagline": "Light two small hybrids, climb past 100 km, come home.",
+     "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
      "benchmark": {
-      "class": "Single-stage solid sounding rocket",
-      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+      "class": "Single-stage hybrid sounding rocket",
+      "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
       "sources": [
        {
         "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -1189,9 +1205,9 @@
       ]
      },
      "thingsToTry": [
-      "Add 500 kg of propellant and watch the apogee climb.",
+      "Add 200 kg of propellant and watch the apogee climb.",
       "Swap fins off (Aero tab) and read the warnings.",
-      "Try the 100 km hop with a hybrid motor instead."
+      "Try one solid motor instead and compare the peak g and max-Q."
      ],
      "refMission": {
       "objective": "apogee",
@@ -1202,21 +1218,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+      "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
      ],
      "stats": {
       "stages": 1,
-      "liftoffMassT": 3.1,
-      "liftoffTWR": 19.58,
-      "deltaV": 3593,
+      "liftoffMassT": 2.5,
+      "liftoffTWR": 2.03,
+      "deltaV": 2921,
       "requiredDeltaV": 2400,
-      "marginPct": 49.7,
+      "marginPct": 21.7,
       "payloadKg": 300,
       "target": "Suborbital 100 km",
       "simOutcome": "suborbital",
-      "simApogeeKm": 114,
+      "simApogeeKm": 108,
       "simPerigeeKm": null,
-      "maxG": 20.6
+      "maxG": 7
      }
     }
    },
@@ -1224,10 +1240,10 @@
     "stageMasses": [
      {
       "name": "Motor",
-      "dry": 405,
-      "prop": 2300,
-      "wet": 2705,
-      "usableProp": 2300,
+      "dry": 347.00522313883573,
+      "prop": 1750,
+      "wet": 2097.005223138836,
+      "usableProp": 1750,
       "landingProp": 0
      }
     ],
@@ -1245,10 +1261,10 @@
      "stages": [
       {
        "name": "Motor",
-       "dry": 405,
-       "prop": 2300,
-       "wet": 2705,
-       "usableProp": 2300,
+       "dry": 347.00522313883573,
+       "prop": 1750,
+       "wet": 2097.005223138836,
+       "usableProp": 1750,
        "landingProp": 0
       }
      ],
@@ -1263,74 +1279,74 @@
       }
      },
      "payload": 300,
-     "fairing": 119.63184824869931,
-     "liftoffMass": 3124.6318482486995,
-     "dryMass": 405,
+     "fairing": 116.64105204248182,
+     "liftoffMass": 2513.646275181318,
+     "dryMass": 347.00522313883573,
      "ratios": [
       {
-       "m0": 3124.6318482486995,
-       "mf": 824.6318482486995,
-       "massRatio": 3.7891234189955108,
-       "propFraction": 0.7360867173165085
+       "m0": 2513.646275181318,
+       "mf": 763.6462751813178,
+       "massRatio": 3.2916369225849826,
+       "propFraction": 0.6961997864531542
       }
      ]
     },
-    "fairingMass": 119.63184824869931,
+    "fairingMass": 116.64105204248182,
     "baseCd": 0.33999999999999997,
-    "referenceDiameter": 1.6,
+    "referenceDiameter": 1.3,
     "toSimStages": [
      {
-      "thrustSL": 600000,
-      "thrustVac": 660000,
-      "ispSL": 245,
-      "ispVac": 275,
-      "propMass": 2300,
-      "dryMass": 405,
-      "diameter": 1.6,
+      "thrustSL": 50000,
+      "thrustVac": 60000,
+      "ispSL": 220,
+      "ispVac": 250,
+      "propMass": 1750,
+      "dryMass": 347.00522313883573,
+      "diameter": 1.3,
       "Cd": 0.33999999999999997,
       "role": "core",
       "index": 0,
       "reserveMass": 0,
       "throttle": [
-       1,
+       0.4,
        1
       ],
-      "restart": false,
+      "restart": true,
       "payloadMass": 300,
-      "fairingMass": 119.63184824869931,
+      "fairingMass": 116.64105204248182,
       "fairingJettisonAltitudeM": 100000
      }
     ],
     "idealDeltaV": {
-     "total": 3592.5391699122347,
+     "total": 2920.8738929978226,
      "perStage": [
-      3592.5391699122347
+      2920.8738929978226
      ]
     },
     "tanks": [
      {
-      "volume": 1.316111111111111,
-      "length": 0.6545799655984375,
-      "diameter": 1.6
+      "volume": 1.6386363636363637,
+      "length": 1.663542377291625,
+      "diameter": 1.3
      }
     ],
     "serialStages": {
      "stages": [
       {
-       "diameter": 1.6,
+       "diameter": 1.3,
        "cd": 0.33999999999999997,
-       "thrustVac": 660000,
-       "thrustSL": 600000,
-       "ispVac": 275,
-       "ispSL": 245,
-       "propMass": 2300,
-       "dryMass": 405,
+       "thrustVac": 60000,
+       "thrustSL": 50000,
+       "ispVac": 250,
+       "ispSL": 220,
+       "propMass": 1750,
+       "dryMass": 347.00522313883573,
        "role": "core",
        "index": 0,
        "label": "Motor"
       }
      ],
-     "payload": 419.6318482486993
+     "payload": 416.6410520424818
     },
     "requiredDeltaV": {
      "orbit": {
@@ -1345,9 +1361,9 @@
     },
     "stackDeltaV": {
      "perStage": [
-      3592.5391699122347
+      2920.8738929978226
      ],
-     "total": 3592.5391699122347
+     "total": 2920.8738929978226
     }
    }
   },
@@ -1449,7 +1465,7 @@
      },
      "thingsToTry": [
       "Swap the composite tanks for Al-Li and see what happens to payload.",
-      "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+      "Try a higher or lower circle and compare margin.",
       "Make the upper stage 20% bigger. Does it still lift off well?"
      ],
      "refMission": {
@@ -2342,6 +2358,10 @@
      "tier": "standard"
     },
     "safetyFactor": 1.4,
+    "guidance": {
+     "maxQThrottle": 55,
+     "gLimit": 3.5
+    },
     "id": "tpl-hydrogen-upper",
     "name": "Heron",
     "tier": "medium",
@@ -2354,7 +2374,10 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "gg-kerolox",
-      "engineCount": 9,
+      "engineCount": 7,
+      "engineParams": {
+       "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
      },
@@ -2431,21 +2454,21 @@
       "cost": "pending: E1 cost model not landed"
      },
      "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
      ],
      "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
      }
     }
    },
@@ -2453,9 +2476,9 @@
     "stageMasses": [
      {
       "name": "Stage 1",
-      "dry": 23780,
+      "dry": 22840,
       "prop": 400000,
-      "wet": 423780,
+      "wet": 422840,
       "usableProp": 400000,
       "landingProp": 0
      },
@@ -2482,9 +2505,9 @@
      "stages": [
       {
        "name": "Stage 1",
-       "dry": 23780,
+       "dry": 22840,
        "prop": 400000,
-       "wet": 423780,
+       "wet": 422840,
        "usableProp": 400000,
        "landingProp": 0
       },
@@ -2509,14 +2532,14 @@
      },
      "payload": 4000,
      "fairing": 2243.097154663112,
-     "liftoffMass": 463106.59775680886,
-     "dryMass": 26863.50060214575,
+     "liftoffMass": 462166.59775680886,
+     "dryMass": 25923.50060214575,
      "ratios": [
       {
-       "m0": 463106.59775680886,
-       "mf": 63106.59775680886,
-       "massRatio": 7.3384814618189775,
-       "propFraction": 0.8637320261415321
+       "m0": 462166.59775680886,
+       "mf": 62166.59775680886,
+       "massRatio": 7.43432348613914,
+       "propFraction": 0.8654887695074822
       },
       {
        "m0": 39326.597756808864,
@@ -2531,12 +2554,12 @@
     "referenceDiameter": 5,
     "toSimStages": [
      {
-      "thrustSL": 7605000,
-      "thrustVac": 8406000,
+      "thrustSL": 5915000,
+      "thrustVac": 6538000,
       "ispSL": 282,
       "ispVac": 311,
       "propMass": 400000,
-      "dryMass": 23780,
+      "dryMass": 22840,
       "diameter": 5,
       "Cd": 0.32,
       "role": "core",
@@ -2571,9 +2594,9 @@
      }
     ],
     "idealDeltaV": {
-     "total": 12640.902742999599,
+     "total": 12680.476762916964,
      "perStage": [
-      6078.789610085667,
+      6118.363630003032,
       6562.113132913932
      ]
     },
@@ -2594,12 +2617,12 @@
       {
        "diameter": 5,
        "cd": 0.32,
-       "thrustVac": 8406000,
-       "thrustSL": 7605000,
+       "thrustVac": 6538000,
+       "thrustSL": 5915000,
        "ispVac": 311,
        "ispSL": 282,
        "propMass": 400000,
-       "dryMass": 23780,
+       "dryMass": 22840,
        "role": "core",
        "index": 0,
        "label": "Stage 1"
@@ -2634,10 +2657,10 @@
     },
     "stackDeltaV": {
      "perStage": [
-      6078.789610085667,
+      6118.363630003032,
       6562.113132913932
      ],
-     "total": 12640.902742999599
+     "total": 12680.476762916964
     }
    }
   },

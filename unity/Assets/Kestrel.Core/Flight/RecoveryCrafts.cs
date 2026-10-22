@@ -10,9 +10,28 @@ namespace Kestrel.Core.Flight
         public static bool TryFrom(Catalog catalog, Design design, out RecoveryCraft craft)
         {
             craft = default;
+            if (design == null || !RecoverySim.Offered(design.recoveryMode)) return false;
+            return Build(catalog, design, design.recoveryMode, out craft);
+        }
+
+        /// <summary>
+        /// The same first stage when the design picked no landing (expendable). It heads for Haven
+        /// (no boostback needed) with only what it really kept: its landing reserve, legs and fins.
+        /// An empty reserve falls to the sea. The flight shows that attempt and says why.
+        /// </summary>
+        public static bool TryAnyway(Catalog catalog, Design design, out RecoveryCraft craft)
+        {
+            craft = default;
+            if (design == null) return false;
+            string mode = RecoverySim.Offered(design.recoveryMode) ? design.recoveryMode : "barge";
+            return Build(catalog, design, mode, out craft);
+        }
+
+        static bool Build(Catalog catalog, Design design, string mode, out RecoveryCraft craft)
+        {
+            craft = default;
             if (catalog == null || design == null || design.stages == null || design.stages.Count < 2)
                 return false;
-            if (!RecoverySim.Offered(design.recoveryMode)) return false;
             var raw = Stack.ToSimStages(catalog, design);
             StackEntry core = null;
             for (int i = 0; i < raw.Count; i++)
@@ -52,7 +71,7 @@ namespace Kestrel.Core.Flight
                 GridFins = design.gridFins,
                 Legs = design.legs,
                 LegsKind = string.IsNullOrEmpty(design.legsKind) ? "light" : design.legsKind,
-                Mode = design.recoveryMode,
+                Mode = mode,
             };
             return craft.ThrustVacN > 1 || craft.ThrustSlN > 1;
         }

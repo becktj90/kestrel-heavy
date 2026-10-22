@@ -8,7 +8,14 @@
         "Kestrel.Game.Shell",
         "Kestrel.Game.Audio",
         "UnityEngine.TestRunner",
-        "Kestrel.Vehicle"
+        "Kestrel.Vehicle",
+        "Kestrel.UiChecks",
+        "Kestrel.Game.TextFit",
+        "Kestrel.Vehicle.Core",
+        "Kestrel.Kit.Core",
+        "Kestrel.Pad",
+        "Kestrel.Pad.Core",
+        "Kestrel.Kit.Contracts"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

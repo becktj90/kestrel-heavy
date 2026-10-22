@@ -314,7 +314,7 @@ namespace Kestrel.Core.Tests
         static ImpactRun FlyWeakScout()
         {
             var cat = Golden.Catalog;
-            var design = cat.Preset("scout").Clone();
+            var design = Design.FromJson(Golden.FixtureDesign("weak-scout"));
             design.version = 3;
             design.tier = "kid";
             design.safetyFactor = 1.1;

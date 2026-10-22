@@ -1,4 +1,5 @@
 // Post-flight card (§3): kid line, engineer line, Fix it deep link, plots, portrait from SE to iPad.
+using Kestrel.Core.Ui;
 using Kestrel.Core.Flight;
 using Kestrel.Slice;
 using NUnit.Framework;
@@ -54,7 +55,10 @@ namespace Kestrel.Game.Tests
             Assert.That(card.Q<Label>("failure-engineer").text, Is.EqualTo(ev.engineer));
             var names = new System.Collections.Generic.List<string>();
             foreach (var child in card.Children()) names.Add(child.name);
-            Assert.That(names, Is.EqualTo(new[] { "report-plate", "failure-icon", "failure-kid", "failure-engineer", "failure-plots", "failure-fix" }));
+            Assert.That(names, Is.EqualTo(new[] { "report-plate", "failure-icon", "failure-kid", "failure-engineer", "failure-plots", "report-actions" }));
+            // NAV-05: with no debrief the card still has every exit, not only Fix it.
+            foreach (var id in Kestrel.Core.Ui.UiIds.ReportExits)
+                Assert.That(card.Q("report-actions").Q<Button>(id), Is.Not.Null, id);
             Assert.That(card.style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
             Assert.That(card.Q("report-plate").style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
             Assert.That(card.Q("failure-icon").childCount, Is.GreaterThanOrEqualTo(2));
@@ -88,7 +92,7 @@ namespace Kestrel.Game.Tests
         {
             var root = new VisualElement();
             root.Add(new VisualElement { name = "design" });
-            root.Add(new VisualElement { name = "hud" });
+            root.Add(new VisualElement { name = UiIds.ScreenFlight });
             var engines = new Button { name = "engines" };
             root.Add(engines);
             var prop = new Button { name = "prop" };
@@ -96,7 +100,7 @@ namespace Kestrel.Game.Tests
             FixField.Apply(root, FixField.For("engine-out"));
             Assert.That(engines.ClassListContains("fix-target"), Is.True);
             Assert.That(root.Q("design").ClassListContains("hidden"), Is.False);
-            Assert.That(root.Q("hud").ClassListContains("hidden"), Is.True);
+            Assert.That(root.Q(UiIds.ScreenFlight).ClassListContains("hidden"), Is.True);
             Assert.That(FixField.Pending.Field, Is.EqualTo("engineCount"));
             FixField.Apply(root, FixField.For("prop-depletion"));
             Assert.That(prop.ClassListContains("fix-target"), Is.True);

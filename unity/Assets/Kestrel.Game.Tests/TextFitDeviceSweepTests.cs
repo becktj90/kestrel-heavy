@@ -1,6 +1,7 @@
 // Every menu, designer tab, pause sheet and result card at the widths Trevor checks.
 // 335, 390 and 430 portrait, and the same phones on their side. KESTREL_REPO_ROOT is an
 // empty directory. Fonts and campaign data come from Resources only.
+using Kestrel.Core.Ui;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -122,7 +123,7 @@ namespace Kestrel.Game.Tests
                     Click(home.Q<Button>("home-settings"));
                     surface.Pump(4);
                     Settle(surface, home);
-                    var sheet = home.Q("home-settings-sheet");
+                    var sheet = home.Q("screen-settings");
                     Assert.That(sheet, Is.Not.Null, frame.Name);
                     Assert.That(sheet.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None), frame.Name + " settings");
                     AssertFits(sheet, frame.Name + " settings");
@@ -171,7 +172,7 @@ namespace Kestrel.Game.Tests
                     {
                         surface.Pump(4);
                         Settle(surface, pause.Hud);
-                        AssertFits(pause.Hud.Q("pause-menu"), frame.Name + " pause");
+                        AssertFits(pause.Hud.Q(UiIds.ScreenPause), frame.Name + " pause");
                     }
                     finally { pause.Dispose(); }
                 }
@@ -380,7 +381,7 @@ namespace Kestrel.Game.Tests
 
         static PauseMount MountPause(VisualElement stage)
         {
-            var hud = new VisualElement { name = "hud" };
+            var hud = new VisualElement { name = UiIds.ScreenFlight };
             hud.style.position = Position.Absolute;
             hud.style.left = 0f;
             hud.style.top = 0f;

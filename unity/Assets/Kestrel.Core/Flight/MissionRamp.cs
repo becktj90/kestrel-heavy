@@ -141,11 +141,15 @@ namespace Kestrel.Core.Flight
         /// The pass check still requires the Kepler apogee within ±5% of ApoKm.
         /// Ellipse and C3 insert at periapsis. Circular aims at the orbit altitude.
         /// </summary>
+        /// <summary>#313 Physics A: ellipse and C3 targets climb to a circular parking orbit at the aim perigee and are
+        /// judged on the departure burn from there.</summary>
+        public bool DepartsFromParking => TargetKind == "ellipse" || TargetKind == "c3";
+
         public double GuidanceAltM
         {
             get
             {
-                if (TargetKind == "apogee") return 1000;
+                if (TargetKind == "apogee") return MissionAim.HopDepletionFloorM;
                 if (TargetKind == "circular") return ApoKm * 1000;
                 return PeriKm * 1000;
             }

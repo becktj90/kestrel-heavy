@@ -86,15 +86,15 @@ namespace Kestrel.Capture.Tests
 
             Click(root.Q<Button>("home-settings"));
             yield return null;
-            var sheet = root.Q("home-settings-sheet");
+            var sheet = root.Q("screen-settings");
             Assert.That(sheet, Is.Not.Null);
             Assert.That(sheet.style.display.value, Is.EqualTo(DisplayStyle.Flex));
-            Click(root.Q<Button>("home-setting-music"));
-            Click(root.Q<Button>("home-setting-sound"));
-            Click(root.Q<Button>("home-setting-voice"));
-            Click(root.Q<Button>("home-setting-subtitles"));
-            Click(root.Q<Button>("home-setting-sandbox"));
-            Click(root.Q<Button>("home-reduce-motion"));
+            Click(root.Q<Button>("settings-music"));
+            Click(root.Q<Button>("settings-sound"));
+            Click(root.Q<Button>("settings-voice"));
+            Click(root.Q<Button>("settings-subtitles"));
+            Click(root.Q<Button>("settings-sandbox"));
+            Click(root.Q<Button>("settings-reduce-motion"));
             yield return null;
             Assert.That(AudioPrefs.MusicMuted, Is.EqualTo(!_music));
             Assert.That(AudioPrefs.SfxMuted, Is.EqualTo(!_sfx));

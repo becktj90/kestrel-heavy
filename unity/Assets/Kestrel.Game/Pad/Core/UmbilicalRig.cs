@@ -1,6 +1,8 @@
-// Builds one service link per vehicle attach point: mount (tower anchor or, on a Rail pad, a free lanyard
-// post), hose bundle, quick-disconnect plates, and a mast when the release is not already a swing arm.
+// Builds one service link per vehicle attach point: mount (tower anchor or, on a Rail pad, a clamp on the
+// launch-rail beam), hose bundle, quick-disconnect plates, and a mast when the release is not already a swing arm.
 // Does not read or write tower members.
+// TestFlight 202 (Below view): on a Rail pad every link used to hang from a "lanyard post" 1.2 m off the skin with
+// nothing under it, so the hoses read as curved pieces floating beside the rocket. They now clamp to the rail.
 using System;
 using System.Collections.Generic;
 using Kestrel.Kit;
@@ -17,6 +19,10 @@ namespace Kestrel.Pad
         public ReleaseStyle Release;
         public string AnchorId;          // null when the pad has no tower anchors
         public Vec3 Anchor;
+        /// <summary>No tower anchor, but the pad has a launch rail: <see cref="Anchor"/> is a clamp on the rail beam
+        /// (<see cref="RailBase"/> to <see cref="RailTop"/>, pad space) at the plate height.</summary>
+        public bool OnRail;
+        public Vec3 RailBase, RailTop;
         public Quat AnchorRotation;
         public Vec3 Plate;
         public Vec3 Outward;
@@ -61,9 +67,66 @@ namespace Kestrel.Pad
             link.Plate = plate;
             if (ContractMath.Len(outward) > 1e-6f) link.Outward = ContractMath.Norm(outward);
             if (link.AnchorId == null)
-                link.Anchor = ContractMath.Add(plate, ContractMath.Scale(link.Outward, Math.Max(1.2f, link.PlateRadius * 4f)));
+                link.Anchor = link.OnRail
+                    ? RailAnchor(link.RailBase, link.RailTop, plate.Y)
+                    : ContractMath.Add(plate, ContractMath.Scale(link.Outward, Math.Max(1.2f, link.PlateRadius * 4f)));
             PlaceHead(link);
         }
+
+        /// <summary>Clamp face of the rail beam toward the vehicle (-Z, pad space) at height <paramref name="y"/>,
+        /// held inside the beam's own length.</summary>
+        /// <summary>Distance (m) from a point to the nearest pad structure centre line: the layout's members and the
+        /// links' own masts and arm beams. An umbilical's pad end farther than about half a beam plus a clamp
+        /// (PadGenerator.RailSkinGap) is hanging from nothing (TestFlight 202).</summary>
+        public static float StructureGap(PadLayout L, Vec3 p, out string nearest)
+        {
+            float best = float.MaxValue; nearest = null;
+            if (L == null) return best;
+            foreach (var m in L.Members)
+            {
+                float d = SegmentGap(p, m.A, m.B);
+                if (d < best) { best = d; nearest = m.Id; }
+            }
+            foreach (var link in L.Links)
+                if (link.Mast != null)
+                    foreach (var m in link.Mast)
+                    {
+                        float d = SegmentGap(p, m.A, m.B);
+                        if (d < best) { best = d; nearest = m.Id; }
+                    }
+            return best;
+        }
+
+        /// <summary>Where a link's hose leaves the pad while connected: the arm pivot for a swing arm, else the hose's tower end.</summary>
+        public static Vec3 PadEnd(ServiceLink link)
+        {
+            var pose = ServiceArmMotion.At(link, UmbilicalState.Connected, 0, 0);
+            return link.Rigid == ServiceRigid.Swing ? link.Anchor : pose.HoseTower;
+        }
+
+        static float SegmentGap(Vec3 p, Vec3 a, Vec3 b)
+        {
+            float dx = b.X - a.X, dy = b.Y - a.Y, dz = b.Z - a.Z;
+            float len2 = dx * dx + dy * dy + dz * dz;
+            float t = len2 > 1e-8f ? ((p.X - a.X) * dx + (p.Y - a.Y) * dy + (p.Z - a.Z) * dz) / len2 : 0f;
+            t = Math.Max(0f, Math.Min(1f, t));
+            float x = a.X + dx * t - p.X, y = a.Y + dy * t - p.Y, z = a.Z + dz * t - p.Z;
+            return (float)Math.Sqrt(x * x + y * y + z * z);
+        }
+
+        public static Vec3 RailAnchor(Vec3 railBase, Vec3 railTop, float y)
+        {
+            float span = railTop.Y - railBase.Y;
+            float t = span > 1e-4f ? (y - railBase.Y) / span : 0f;
+            float lo = span > 1e-4f ? Math.Min(0.5f, 0.5f * span) / span : 0f;
+            t = Math.Max(lo, Math.Min(1f, t));
+            return new Vec3(railBase.X + (railTop.X - railBase.X) * t,
+                railBase.Y + span * t,
+                railBase.Z + (railTop.Z - railBase.Z) * t - RailClampOffset);
+        }
+
+        /// <summary>Half the rail I-beam depth (PadRenderer.ColumnDepth): the clamp sits on the beam face.</summary>
+        public const float RailClampOffset = 0.25f;
 
         /// <summary>Vehicle-frame plates into pad space. <paramref name="vehicleToPad"/> is the pad rotation of a vehicle-space vector.</summary>
         public static List<AttachPoint> IntoPadFrame(IReadOnlyList<AttachPoint> points, Quat vehicleToPad)
@@ -117,7 +180,14 @@ namespace Kestrel.Pad
                 link.AnchorRotation = Quat.Identity;
                 link.HingeAxis = new Vec3(1, 0, 0);
                 link.Rigid = ServiceRigid.None;
-                link.Anchor = ContractMath.Add(link.Plate, ContractMath.Scale(link.Outward, Math.Max(1.2f, link.PlateRadius * 4f)));
+                if (layout.HasRail)
+                {
+                    link.OnRail = true;
+                    link.RailBase = layout.RailBase;
+                    link.RailTop = layout.RailTop;
+                    link.Anchor = RailAnchor(layout.RailBase, layout.RailTop, link.Plate.Y);
+                }
+                else link.Anchor = ContractMath.Add(link.Plate, ContractMath.Scale(link.Outward, Math.Max(1.2f, link.PlateRadius * 4f)));
             }
             else
             {

@@ -50,7 +50,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("Tern-3", card.PayloadName);
             Assert.AreEqual("Weather sat", card.PayloadKind);
             Assert.AreEqual("Tern-3 Weather Eye", card.Title);
-            Assert.AreEqual("Put a 2,500 kg fictional weather sat in a 500 km, 51.6° orbit.", card.Goal);
+            Assert.AreEqual("Put a 2,500 kg fictional weather sat in a 500 km circular orbit.", card.Goal);
             Assert.AreEqual(2500, card.MassKg);
             Assert.AreEqual(500, card.ApoKm);
             Assert.AreEqual(51.6, card.IncDeg);

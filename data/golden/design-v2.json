@@ -172,5 +172,5 @@
     "tpl-methane-reusable",
     "tpl-small-kerolox"
   ],
-  "suborbitalExempt": ["tpl-sounding-solid"]
+  "suborbitalExempt": ["tpl-sounding-hybrid"]
 }

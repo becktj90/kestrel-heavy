@@ -43,8 +43,18 @@ namespace Kestrel.Slice
         }
 
         /// <summary>Keep the camera above the ground plane (world y of the ground = groundWorldY).</summary>
-        public static Vector3 ClampAboveGround(Vector3 cam, float groundWorldY) =>
-            cam.y < groundWorldY + MinCameraClearance ? new Vector3(cam.x, groundWorldY + MinCameraClearance, cam.z) : cam;
+        public static Vector3 ClampAboveGround(Vector3 cam, float groundWorldY) => ClampAboveGround(cam, groundWorldY, MinCameraClearance);
+
+        /// <summary>Same with the pose's own floor (FlightPose.Clearance): the Below pad hold sits LowClearance
+        /// over the ground anchor, under the deck top, still above the apron (Coastline.Relief keeps it under GroundY).</summary>
+        public static Vector3 ClampAboveGround(Vector3 cam, float groundWorldY, float clearance)
+        {
+            float c = Mathf.Max(LowCameraClearance, clearance);
+            return cam.y < groundWorldY + c ? new Vector3(cam.x, groundWorldY + c, cam.z) : cam;
+        }
+
+        /// <summary>Lowest floor any pose may ask for (FlightViewPose.LowClearance).</summary>
+        public const float LowCameraClearance = 0.6f;
 
         /// <summary>Linear haze so the ground's far edge melts into the sky (a horizon) instead of a hard line.</summary>
         public static void ApplyHaze(float farClip)

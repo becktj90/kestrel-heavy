@@ -6,6 +6,8 @@ import { MATERIAL_BY_ID } from '../data/materials.js';
 const REF_SAFETY = 1.4;            // catalog structural fractions assume SF 1.4
 const SOLID_CASE_FRACTION = 0.09;  // solid motor case+nozzle per kg propellant (material-scaled)
 const AVIONICS_MASS = { basic: 60, standard: 150, redundant: 300 };
+/** #341: the optional closed-loop guidance computer on the top stage (data/guidance.json closedLoop.massKg; C# Mass.GUIDANCE_COMPUTER_MASS). */
+export const GUIDANCE_COMPUTER_MASS = 25;
 const LEG_FRACTION = 0.06;         // of stage dry mass, first stage only
 const GRIDFIN_MASS_PER_M2 = 120;   // per m^2 of stage cross-section (4 fins)
 const RCS_MASS = 250;
@@ -40,6 +42,7 @@ export function stageMasses(design) {
   return design.stages.map((s, i) => {
     let dry = structureMass(s, sf) + enginesMass(s) + (s.interstageMass || 0) + (s.separationMass || 0);
     if (i === design.stages.length - 1) dry += AVIONICS_MASS[design.avionics?.tier] ?? 150;
+    if (i === design.stages.length - 1 && design.avionics?.guidanceComputer === true) dry += GUIDANCE_COMPUTER_MASS;
     if (i === 0) {
       if (design.landing?.legs) dry *= 1 + LEG_FRACTION;
       if (design.landing?.gridFins) dry += GRIDFIN_MASS_PER_M2 * Math.PI * (s.diameter / 2) ** 2;

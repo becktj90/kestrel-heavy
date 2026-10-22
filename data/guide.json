@@ -283,8 +283,8 @@
       "cards": [
         {
           "id": "brief.kh11.c1",
-          "kid": "Plover-1 watches the same towns at the same hour.",
-          "eng": "2,200 kg. Sun-sync 550 km at 97.6 degrees. About 8,676 m/s."
+          "kid": "Plover-1 watches the weather. Keep the 550 km circle round.",
+          "eng": "2,200 kg. Circle at 550 km. About 8,676 m/s. Real weather sats often fly sun-sync."
         }
       ]
     },
@@ -314,7 +314,7 @@
         {
           "id": "brief.kh13.c1",
           "kid": "A rack of little satellites. The booster still has to find Haven.",
-          "eng": "480 kg to a 550 km sun-sync. The barge wants a good catch."
+          "eng": "480 kg to a 550 km circle. The barge wants a good catch."
         }
       ]
     },
@@ -624,7 +624,7 @@
         {
           "id": "step.4.fail.fit.c1",
           "kid": "The payload does not fit its coat. Pick a wider fairing or a smaller payload.",
-          "eng": "Need diameter plus 0.2 m inside the fairing. Volume uses 0.45 and 0.8."
+          "eng": "Cargo diameter must be at most 0.9 of the fairing. Volume uses 0.45 and 0.8."
         }
       ]
     },

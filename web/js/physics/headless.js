@@ -42,7 +42,12 @@ export function stackDeltaV(stages, payload = 0) {
  *  payload (kg, 0), targetAlt (m, 200e3), latitude (deg, 28.5), dt (s, 0.05), tMax (s, 3000),
  *  kickSpeed (m/s, 60), kickAngle (deg, 4), vacuum (bool: no atmosphere/drag),
  *  rotate (bool, true: Earth rotation + co-rotating air), sampleEvery (s, 0 = none),
- *  cutoff (bool, true: stop upper-stage burn once periapsis is near target; false = burn to depletion).
+ *  cutoff (bool, true: stop upper-stage burn once periapsis is near target; false = burn to depletion),
+ *  energyCutoff (bool, false) + cutoffEnergy (J/kg): cut off where the specific orbital energy reaches the
+ *    target, located by 40 bisections of the step (C# AscentSim, #313); replaces the periapsis cutoff,
+ *  closedLoop (bool, false; #341 guidance computer, needs energyCutoff) + closedLoopAimAlt (m, NaN = targetAlt)
+ *    + closedLoopRelaxPitch (bool): upper stages steer to (aim altitude, vr = 0) at the cutoff. Same law as C#
+ *    AscentSim.ClosedLoopPitch; parity is tests/closed-loop-parity.test.cjs and ClosedLoopParityTests.
  * Returns { outcome: 'orbit'|'suborbital'|'crash'|'timeout', time, events[], orbit, maxQ, maxQTime,
  *  maxG, losses:{gravity,drag,steering}, idealDeltaV, deltaVExpended, finalMass, samples[], warnings[] }.
  */
@@ -54,6 +59,11 @@ export function simulate(stagesIn, opts = {}) {
   const vacuum = !!opts.vacuum, rotate = opts.rotate !== false;
   const sampleEvery = opts.sampleEvery ?? 0;
   const lat = opts.latitude ?? 28.5;
+  const cutoffEnergy = opts.cutoffEnergy ?? NaN;
+  const locateEnergy = !!opts.energyCutoff && opts.cutoff !== false && !Number.isNaN(cutoffEnergy);
+  const closedLoop = !!opts.closedLoop && locateEnergy;
+  const aimAlt = Number.isFinite(opts.closedLoopAimAlt) ? opts.closedLoopAimAlt : targetAlt;
+  const pitchLo = opts.closedLoopRelaxPitch ? -1 : -0.6, pitchHi = opts.closedLoopRelaxPitch ? 1 : 0.95;
 
   let stageIdx = 0;
   const upperMass = new Float64Array(st.length + 1); // mass above and including stage i (wet)
@@ -73,6 +83,54 @@ export function simulate(stagesIn, opts = {}) {
   let mode = 0; // 0 vertical, 1 kick, 2 gravity turn, 3 closed-loop, 4 coast
   let pitchCmd = Math.PI / 2; // above local horizontal, used in modes 1 and 3
   let thrusting = true;
+
+  // #341: burn time for dv through the current stage (its actual thrust and flow) and the later stages (vacuum, full).
+  const burnTimeFor = (dv, m, F, mdot) => {
+    if (!(dv > 0)) return 0;
+    let t = 0;
+    for (let i = stageIdx; i < st.length; i++) {
+      const m0 = i === stageIdx ? m : upperMass[i];
+      const prop = i === stageIdx ? m - (upperMass[i] - st[i].propMass) : st[i].propMass;
+      const md = i === stageIdx ? mdot : st[i].mdot;
+      const ve = i === stageIdx ? (mdot > 0 ? F / mdot : 0) : st[i].ispVac * G0;
+      if (!(prop > 1e-9) || !(md > 0) || !(ve > 0)) continue;
+      const dvs = ve * Math.log(m0 / (m0 - prop));
+      if (dv <= dvs) return t + m0 / md * (1 - Math.exp(-dv / ve));
+      t += prop / md; dv -= dvs;
+    }
+    return t;
+  };
+  // #341: the closed-loop insertion law (C# AscentSim.ClosedLoopPitch), a pure function of the state.
+  const closedLoopPitch = (r, vr, vt, m, F, mdot) => {
+    let aT = m > 0 ? F / m : 0; if (!(aT > 1e-6)) aT = 1e-6;
+    const rAim = R_EARTH + aimAlt;
+    const vc2 = 2 * (cutoffEnergy + MU_EARTH / rAim);
+    const gNow = MU_EARTH / (r * r) - vt * vt / r;
+    if (!(vc2 > 0)) return Math.asin(Math.max(pitchLo, Math.min(pitchHi, gNow / aT)));
+    const vc = Math.sqrt(vc2);
+    const gEnd = MU_EARTH / (rAim * rAim) - vc2 / rAim;
+    let dvH = vc - vt; if (dvH < 0) dvH = 0;
+    let tgo = burnTimeFor(dvH, m, F, mdot);
+    for (let i = 0; i < 3; i++) {
+      const dvR = -vr + 0.5 * (gNow + gEnd) * tgo;
+      tgo = burnTimeFor(Math.sqrt(dvH * dvH + dvR * dvR), m, F, mdot);
+    }
+    const v = Math.sqrt(vr * vr + vt * vt);
+    const dE = cutoffEnergy - (0.5 * v * v - MU_EARTH / r);
+    const tE = dE > 0 && v > 0 ? dE / (v * aT) : 0;
+    if (tE < 60) tgo = tE;
+    const dh = aimAlt - (r - R_EARTH);
+    const T = tgo < 2 ? 2 : tgo;
+    const aTwo = -4 * vr / T + 6 * dh / (T * T);
+    let T1 = tgo - 2; if (T1 < 1) T1 = 1;
+    const aOne = -vr / T1;
+    let w = (tgo - 20) / (40 - 20); if (w < 0) w = 0; else if (w > 1) w = 1;
+    const ar = w * aTwo + (1 - w) * aOne;
+    let sinP = (ar + gNow) / aT;
+    if (sinP > pitchHi) sinP = pitchHi; else if (sinP < pitchLo) sinP = pitchLo;
+    return Math.asin(sinP);
+  };
+  const energyMargin = (s) => 0.5 * (s[2] * s[2] + s[3] * s[3]) - MU_EARTH / Math.sqrt(s[0] * s[0] + s[1] * s[1]) - cutoffEnergy;
 
   const deriv = (t, s, out) => {
     const x = s[0], yy = s[1], vx = s[2], vy = s[3], m = s[4];
@@ -94,13 +152,18 @@ export function simulate(stagesIn, opts = {}) {
       const F = S.mdot * G0 * ispAt(S.ispSL, S.ispVac, p);
       let dx, dy;
       if (mode === 2 && vrel > 1) { dx = avx / vrel; dy = avy / vrel; }
-      else { const c = Math.cos(pitchCmd), sn = Math.sin(pitchCmd); dx = c * tx + sn * ux; dy = c * ty + sn * uy; }
+      else {
+        let pitch = pitchCmd;
+        if (mode === 3 && closedLoop && stageIdx > 0) pitch = closedLoopPitch(r, vx * ux + vy * uy, vx * tx + vy * ty, m, F, S.mdot);
+        const c = Math.cos(pitch), sn = Math.sin(pitch); dx = c * tx + sn * ux; dy = c * ty + sn * uy;
+      }
       ax += F * dx / m; ay += F * dy / m; mdot = S.mdot;
     }
     out[0] = vx; out[1] = vy; out[2] = ax; out[3] = ay; out[4] = -mdot;
   };
 
   const step = createRK4(5);
+  const stepStart = new Float64Array(5), trial = new Float64Array(5);
   const events = [], samples = [], warnings = st.filter((s) => s.warn).map((s) => s.warn);
   const orb = {};
   let t = 0, maxQ = 0, maxQTime = 0, maxG = 0, lossG = 0, lossD = 0, lossS = 0, dvExp = 0;
@@ -133,6 +196,10 @@ export function simulate(stagesIn, opts = {}) {
         const aT = S.mdot * G0 * ispAt(S.ispSL, S.ispVac, vacuum ? 0 : atm.p) / m;
         const sinP = Math.max(-0.6, Math.min(0.95, (g + 0.03 * (vrCmd - vr)) / aT));
         pitchCmd = Math.asin(sinP);
+        if (closedLoop) {
+          const pa = !vacuum && alt < 300e3 ? (atmosphere(alt, atm), atm.p) : 0;
+          pitchCmd = closedLoopPitch(r, vr, vt, m, S.mdot * G0 * ispAt(S.ispSL, S.ispVac, pa), S.mdot);
+        }
       }
     }
 
@@ -154,6 +221,7 @@ export function simulate(stagesIn, opts = {}) {
     }
 
     // ---- diagnostics (before step) ----
+    const lossG0 = lossG, lossD0 = lossD, lossS0 = lossS, dvExp0 = dvExp;
     let p = 0, rho = 0;
     if (!vacuum && alt < 300e3) { atmosphere(alt, atm); p = atm.p; rho = atm.rho; }
     const q = 0.5 * rho * vrel * vrel;
@@ -178,8 +246,29 @@ export function simulate(stagesIn, opts = {}) {
       nextSample += sampleEvery;
     }
 
+    const t0 = t;
+    if (locateEnergy && thrusting) stepStart.set(y);
     step(deriv, t, y, dt);
     t += dt;
+    const energyCut = locateEnergy && thrusting && energyMargin(y) >= 0;
+    if (energyCut) {
+      // Bisect on the step length (40 fixed halvings, C# CutoffBisections): cut off at hi.
+      let lo = 0, hi = dt;
+      for (let it = 0; it < 40; it++) {
+        const mid = 0.5 * (lo + hi);
+        trial.set(stepStart);
+        step(deriv, t0, trial, mid);
+        if (energyMargin(trial) >= 0) hi = mid; else lo = mid;
+      }
+      y.set(stepStart);
+      step(deriv, t0, y, hi);
+      t = t0 + hi;
+      const f = dt > 0 ? hi / dt : 1;
+      lossG = lossG0 + (lossG - lossG0) * f;
+      lossD = lossD0 + (lossD - lossD0) * f;
+      lossS = lossS0 + (lossS - lossS0) * f;
+      dvExp = dvExp0 + (dvExp - dvExp0) * f;
+    }
 
     const r1 = Math.hypot(y[0], y[1]), alt1 = r1 - R_EARTH;
     if (!liftedOff && alt1 > 1) { liftedOff = true; events.push({ t, type: 'liftoff' }); }
@@ -187,7 +276,10 @@ export function simulate(stagesIn, opts = {}) {
       if (!liftedOff && thrusting) { y[0] = 0; y[1] = R_EARTH; y[2] = -vSite; y[3] = 0; continue; } // on pad, TWR<1
       outcome = 'crash'; events.push({ t, type: 'impact' }); break;
     }
-    if (thrusting && mode === 3 && opts.cutoff !== false) {
+    if (energyCut) {
+      thrusting = false; mode = 4;
+      events.push({ t, type: 'cutoff', stage: stageIdx + 1, alt: alt1 });
+    } else if (thrusting && mode === 3 && opts.cutoff !== false && !opts.energyCutoff) {
       orbit2D(y[0], y[1], y[2], y[3], MU_EARTH, orb);
       if (orb.periAlt >= Math.min(targetAlt, alt1) - 10e3 && orb.e < 1) {
         thrusting = false; mode = 4;

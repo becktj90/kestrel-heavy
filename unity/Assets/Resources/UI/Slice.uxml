@@ -22,7 +22,7 @@
         <!-- HOME: top-left, safe-area placed from code; hidden during flight so it never meets the HUD. -->
         <ui:Button name="home" text="◀  Home" class="home-button" />
         <!-- FLIGHT HUD -->
-        <ui:VisualElement name="hud" class="hud hidden">
+        <ui:VisualElement name="screen-flight" class="hud hidden">
             <!-- Top band: clock + telemetry stay above the vehicle (anchor 0.38 from top, VISUAL_SPEC §5). -->
             <ui:VisualElement name="hud-band" class="hud-band">
                 <ui:VisualElement class="hud-top">
@@ -45,10 +45,10 @@
                 <ui:Label name="h-pulse" text="" class="webcast-pulse" />
                 <ui:Label name="h-callout" text="Tap an event." class="webcast-pulse" />
                 <ui:VisualElement name="h-seq" class="webcast-seq" />
-                <ui:Button name="skip-count" text="Skip count" class="webcast-skip" />
+                <ui:Button name="flight-skip-count" text="Skip count" class="webcast-skip" />
             </ui:VisualElement>
             <ui:Label name="h-msg" text="" class="hud-msg" />
-            <ui:Button name="again" text="BACK TO DESIGN" class="launch hidden" />
+            <ui:Button name="flight-exit" text="BACK TO DESIGN" class="launch hidden" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

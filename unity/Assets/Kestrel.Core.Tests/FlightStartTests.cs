@@ -1,4 +1,4 @@
-// Home LAUNCH -> briefing -> To the pad -> designer launch -> flight.
+// Home LAUNCH -> briefing -> Build it -> designer launch -> flight (NAV-03: no auto-fly from the briefing).
 // The count used to reach T+0:00, clear itself, then drop the ascent if the first start threw.
 using System;
 using System.Collections.Generic;
@@ -43,13 +43,13 @@ namespace Kestrel.Core.Tests
         {
             var route = HomeRoutes.Launch(campaign, 0, catalog, hangar.templates);
             Assert.AreEqual(SessionScreens.Missions, route.Screen);
-            Assert.AreEqual(SessionScreens.Briefing, route.Overlay, "LAUNCH opens the briefing, To the pad is next");
+            Assert.AreEqual(SessionScreens.Briefing, route.Overlay, "LAUNCH opens the briefing, Build it is next");
             var built = GameSession.Apply(RouteId.BriefingBuild);
             Assert.AreEqual(SessionScreens.Design, built.Screen);
             Assert.AreEqual(SessionScreens.None, built.Overlay);
             Assert.IsTrue(PadHandoff.FromHome);
             Assert.IsTrue(PadHandoff.TryTake(out var doc, out bool fly));
-            Assert.IsTrue(fly, "Home LAUNCH enters flight from the pad");
+            Assert.IsFalse(fly, "NAV-03: Home LAUNCH opens the designer; Launch is the designer's");
             var design = Design.FromJson(doc);
             var session = new HangarSession(catalog, hangar, doc);
             Assert.IsTrue(session.LaunchEnabled, "First Hop is allowed to launch");

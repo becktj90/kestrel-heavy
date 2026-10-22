@@ -44,7 +44,7 @@ namespace Kestrel.Game.Tests
         public void OverlayBuildsControlsWithSpokenLabelsAndSoonTags()
         {
             var root = Build(false, out _, out _, out var full);
-            string[] ids = { "home-launch", "home-design", "home-missions", "home-codex" };
+            string[] ids = { "home-primary", "home-design", "home-missions", "home-codex" };
             foreach (var id in ids)
             {
                 var b = root.Q<Button>(id);
@@ -54,7 +54,7 @@ namespace Kestrel.Game.Tests
             var gear = full.Q<Button>("home-settings");
             Assert.That(gear, Is.Not.Null);
             Assert.That(gear.tooltip, Is.Not.Empty);
-            Assert.That(root.Q<Button>("home-launch").enabledSelf);
+            Assert.That(root.Q<Button>("home-primary").enabledSelf);
             Assert.That(root.Q<Button>("home-design").enabledSelf);
             Assert.That(root.Q<Button>("home-missions").enabledSelf);
             Assert.That(root.Q("home-hangar"), Is.Null);
@@ -65,7 +65,7 @@ namespace Kestrel.Game.Tests
             Assert.That(codex.Q(className: "kh-mm-tile-caption").parent, Is.SameAs(codex));
             Assert.That(root.Query<Label>("soon").ToList().Count, Is.EqualTo(0));
             Assert.That(root.Query<VisualElement>("lamp").ToList().Count, Is.EqualTo(3));
-            Assert.That(full.Q("home-settings-sheet").style.display.value, Is.EqualTo(DisplayStyle.None));
+            Assert.That(full.Q("screen-settings").style.display.value, Is.EqualTo(DisplayStyle.None));
             Assert.That(root.Q("mm-stats"), Is.Not.Null);
             Assert.That(root.Q<Label>("mm-fuel").text, Is.EqualTo(MainMenuCopy.FuelStat));
             Assert.That(root.Q<Label>("mm-thrust").text, Is.EqualTo(MainMenuCopy.ThrustStat));
@@ -74,7 +74,7 @@ namespace Kestrel.Game.Tests
             Assert.That(root.pickingMode, Is.EqualTo(PickingMode.Ignore));
             Assert.That(full.Q("mm-full").pickingMode, Is.EqualTo(PickingMode.Ignore));
             Assert.That(root.Q<Label>("mm-hint-line").text, Is.EqualTo(MainMenuCopy.ThrumLine));
-            Assert.That(root.Q("mm-hint"), Is.Not.Null);
+            Assert.That(root.Q("home-thrum"), Is.Not.Null);
             Assert.That(full.Q("mm-dusk"), Is.Not.Null);
             Assert.That(root.Q<Label>("mm-eyebrow").text, Is.EqualTo(MainMenuCopy.Eyebrow));
         }
@@ -364,7 +364,7 @@ namespace Kestrel.Game.Tests
             Assert.That(root.Q<Label>("mm-kestrel").style.fontSize.value.value, Is.EqualTo(z.Title).Within(0.01f));
             Assert.That(root.Q<Button>("home-missions").style.minHeight.value.value, Is.EqualTo(z.TileH).Within(0.01f));
             Assert.That(root.Q<Button>("home-missions").style.height.value.value, Is.EqualTo(z.TileH).Within(0.01f), "exact height, so the block is what the maths says");
-            Assert.That(root.Q<Button>("home-launch").style.height.value.value, Is.EqualTo(z.LaunchH).Within(0.01f));
+            Assert.That(root.Q<Button>("home-primary").style.height.value.value, Is.EqualTo(z.LaunchH).Within(0.01f));
             Assert.That(root.Q<Button>("home-design").style.height.value.value, Is.EqualTo(z.DesignH).Within(0.01f));
             Assert.That(root.Q("mm-stats").style.minHeight.value.value, Is.GreaterThanOrEqualTo(36f));
             Assert.That(root.Q<Label>("mm-fuel").style.fontSize.value.value, Is.GreaterThanOrEqualTo(13f));
