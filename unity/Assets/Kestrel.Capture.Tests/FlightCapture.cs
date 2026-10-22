@@ -57,8 +57,13 @@ namespace Kestrel.Capture.Tests
             yield return null;
         }
 
-        /// <summary>Boot -> Home LAUNCH -> briefing -> To the pad (FlightStartPlayTests' path); ends with the count on screen.</summary>
-        public static IEnumerator BootToCount(Action<SliceApp> got)
+        /// <summary>
+        /// Boot -> Home LAUNCH -> briefing -> To the pad (FlightStartPlayTests' path); ends with the count on screen.
+        /// <paramref name="cleared"/> &lt; 0 launches the save's next mission (a fresh save flies KH-1 First Hop, whose
+        /// starter cuts off near T+26 and ends the flight). A count &gt;= 0 takes Home LAUNCH's own route as if that many
+        /// missions were cleared (HomeRoutes.Launch: the same starter pick and briefing), without touching the save.
+        /// </summary>
+        public static IEnumerator BootToCount(Action<SliceApp> got, int cleared = -1)
         {
             if (AppShell.Instance != null) { UnityEngine.Object.Destroy(AppShell.Instance.gameObject); yield return null; }
             SceneManager.LoadScene(SceneFlow.BootScene, LoadSceneMode.Single);
@@ -69,7 +74,8 @@ namespace Kestrel.Capture.Tests
                 yield return null;
             }
             Assert.IsNotNull(flow, "Boot must own a scene flow");
-            flow.HomePressed("launch");
+            if (cleared < 0) flow.HomePressed("launch");
+            else flow.Present(LaunchAfter(cleared));
             for (int i = 0; i < 600 && (flow.Busy || flow.Overlay != "Briefing"); i++) yield return null;
             Assert.AreEqual("Briefing", flow.Overlay, "LAUNCH opens the briefing");
             flow.BuildFromBriefing();
@@ -84,6 +90,20 @@ namespace Kestrel.Capture.Tests
             for (int i = 0; i < 600 && !app.CountingForCapture; i++) yield return null;
             Assert.IsTrue(app.CountingForCapture, "the count is on screen");
             got(app);
+        }
+
+        /// <summary>SceneFlow.HomeLaunchRoute with a given cleared count: the next mission's starter armed, its briefing up.</summary>
+        static Kestrel.Core.Flight.RouteResult LaunchAfter(int cleared)
+        {
+            var campaign = ScreenStub.LoadCampaign();
+            Assert.IsNotNull(campaign, "campaign");
+            var mission = Kestrel.Core.Flight.HomeRoutes.NextMission(campaign, cleared);
+            Assert.IsNotNull(mission, "the mission after " + cleared + " cleared");
+            Kestrel.Core.Flight.MissionBriefing briefing = null;
+            string root = ScreenStub.RepoRoot();
+            if (root != null)
+                briefing = Kestrel.Core.Flight.MissionBriefing.Load(root, mission.Index, 0, Kestrel.Core.Flight.MissionContext.DefaultSeed(campaign));
+            return Kestrel.Core.Flight.HomeRoutes.Launch(campaign, cleared, ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, briefing);
         }
 
         /// <summary>Writes &lt;dir&gt;/&lt;name&gt;.png and returns the sampled distinct colour count.</summary>

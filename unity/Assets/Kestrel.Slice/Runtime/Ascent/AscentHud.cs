@@ -2128,6 +2128,7 @@ namespace Kestrel.Slice
                     born.style.position = Position.Absolute;
                     born.style.whiteSpace = WhiteSpace.Normal;
                     born.style.overflow = Overflow.Hidden;
+                    Unpad(born);
                     labels.Add(born);
                 }
                 for (int i = 0; i < tags.Length; i++)
@@ -2136,18 +2137,50 @@ namespace Kestrel.Slice
                     var mark = i < marks.Length ? marks[i] : default;
                     label.text = string.Join("\n", tags[i].Lines);
                     label.tooltip = label.text;
-                    label.style.fontSize = tags[i].FontPt * upp;
+                    float fontPx = tags[i].FontPt * upp;
+                    float widthPx = tags[i].Box.W * upp;
+                    label.style.fontSize = fontPx;
+                    label.style.unityFontStyleAndWeight = mark.Upcoming ? FontStyle.Bold : FontStyle.Normal;
                     label.style.left = tags[i].Box.X * upp;
                     label.style.top = tags[i].Box.Y * upp;
-                    label.style.width = tags[i].Box.W * upp;
-                    label.style.height = tags[i].Box.H * upp;
-                    label.style.unityFontStyleAndWeight = mark.Upcoming ? FontStyle.Bold : FontStyle.Normal;
+                    label.style.width = widthPx;
+                    // TrajectoryWatch.Tags budgets font + 3 pt a line, but the HUD face draws a taller line (CI t017: an 11 pt
+                    // "Liftoff" measured 34.6 px in a 28.3 px box at the SE). The box takes the drawn text's height; tags
+                    // are spaced well apart, and the checks compare the drawn text, not the box.
+                    label.style.height = Mathf.Max(tags[i].Box.H * upp, TextHeight(label, fontPx, widthPx, tags[i].Lines.Length));
                     label.style.color = mark.Passed
                         ? new Color(0.45f, 0.86f, 0.62f)
                         : mark.Upcoming
                             ? new Color(1f, 0.82f, 0.35f)
                             : new Color(0.78f, 0.84f, 0.9f, 0.82f);
                 }
+            }
+
+            /// <summary>Line box per pixel of face, a generous guess used until the label's face has resolved and can be measured.</summary>
+            const float DrawnLineHeight = 1.6f;
+
+            /// <summary>The drawn height of the label's text at <paramref name="fontPx"/>, measured once the face has resolved.</summary>
+            static float TextHeight(Label label, float fontPx, float widthPx, int lines)
+            {
+                float guess = Mathf.Ceil(Mathf.Max(1, lines) * fontPx * DrawnLineHeight);
+                // MeasureTextSize reads the resolved style: a label born this frame still has the theme's face.
+                if (Mathf.Abs(label.resolvedStyle.fontSize - fontPx) > 0.5f) return guess;
+                var need = label.MeasureTextSize(label.text, Mathf.Max(1f, widthPx), MeasureMode.AtMost, 0f, MeasureMode.Undefined);
+                if (float.IsNaN(need.y) || need.y <= 0f) return guess;
+                return Mathf.Ceil(need.y);
+            }
+
+            /// <summary>No theme padding or margin: the tag's box is its text box (MissionBoardScreen.Unpad).</summary>
+            static void Unpad(VisualElement el)
+            {
+                el.style.paddingLeft = 0f;
+                el.style.paddingRight = 0f;
+                el.style.paddingTop = 0f;
+                el.style.paddingBottom = 0f;
+                el.style.marginLeft = 0f;
+                el.style.marginRight = 0f;
+                el.style.marginTop = 0f;
+                el.style.marginBottom = 0f;
             }
 
             void OnPaint(MeshGenerationContext ctx)
