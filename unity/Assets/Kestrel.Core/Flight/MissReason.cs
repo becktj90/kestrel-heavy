@@ -246,17 +246,17 @@ namespace Kestrel.Core.Flight
         /// has 0.73 of its net weight in thrust, and the computer spends the burn at its pitch limit climbing, so fuel is not the lever.</summary>
         public static MissExplanation UpperOutReason(MissInput f, string top)
         {
-            string head = "The top stage ran out of propellant before reaching orbit speed.";
+            string head = "The top stage ran out of propellant before it reached orbit speed.";
             bool flatHandoff = !double.IsNaN(f.HandoffLiftRatio) && f.HandoffLiftRatio < HandoffLiftWeak
                 && !double.IsNaN(f.HandoffGammaDeg) && f.HandoffGammaDeg < HandoffSteepDeg;
             if (flatHandoff)
                 return Miss("upper-out-flat-handoff",
-                    head + " Stage 1 handed over at " + Km(f.HandoffAltM) + ", only " + Num(f.HandoffGammaDeg, "0.0") + "° up, where "
-                    + top + "'s thrust is " + Num(f.HandoffLiftRatio * 100, "0") + "% of its weight, so the guidance computer had to point it upward"
-                    + " to climb and spent the fuel there instead of on speed.",
-                    "Let stage 1 climb higher before it hands over: use a smaller pitch kick at launch, or give " + top + " a stronger engine. More fuel in "
+                    head + " Stage 1 let go at " + Km(f.HandoffAltM) + ", only " + Num(f.HandoffGammaDeg, "0.0") + "° above flat. Up there "
+                    + top + " pushes only " + Num(f.HandoffLiftRatio * 100, "0") + "% as hard as it takes to hold its height, so the guidance computer"
+                    + " tipped it up to climb and spent the propellant on height instead of speed.",
+                    "Let stage 1 climb higher and steeper before it lets go: use a smaller pitch kick at launch, or give " + top + " a stronger engine. More fuel in "
                     + top + " is not the fix.");
-            return Miss("upper-out", head, "Add fuel to " + top + ", or another stage.");
+            return Miss("upper-out", head, "Add fuel to " + top + ", or add another stage.");
         }
 
         static double PeriSpeed(double periM, double apoM)

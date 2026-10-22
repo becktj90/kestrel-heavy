@@ -53,6 +53,8 @@ namespace Kestrel.Slice
         VisualElement seqRow; Label hVerdict, hPulse, hCallout; Button skipCount;
         // Phase 1 Starter screen (PR 5): shown instead of the existing designer while every designer.* flag is off.
         StarterPanel starter; StarterRocket starterRocket; JsonObject starterEntryDesign; bool starterMode; FeatureFlags flagsSeen;
+        // Starter preview camera: frames the vehicle alone above the sheet while Starter is up (HangarCamera is off then).
+        StarterPreviewCamera starterCam;
 
         void Awake()
         {
@@ -264,6 +266,7 @@ namespace Kestrel.Slice
             hangarCam.ReduceMotion = HangarNative.SystemReduceMotion
                 || PlayerPrefs.GetInt(HangarCamera.ReduceMotionPref, 0) != 0
                 || PlayerPrefs.GetInt(HangarCamera.ReduceFlashingPref, 0) != 0;
+            if (starterCam != null) starterCam.ReduceMotion = hangarCam.ReduceMotion;
             if (birds != null) birds.FlapScale = hangarCam.ReduceMotion ? 0f : 1f;
         }
 
@@ -294,6 +297,8 @@ namespace Kestrel.Slice
             // The coast disc has to reach the geometric horizon the chase camera frames. SkyRig still owns fog.
             cam.nearClipPlane = 0.5f; cam.farClipPlane = SiteView.FarClip; cam.fieldOfView = 50;
             hangarCam = cam.gameObject.AddComponent<HangarCamera>();
+            starterCam = cam.gameObject.AddComponent<StarterPreviewCamera>();
+            starterCam.enabled = false;
             var sun = new GameObject("Sun").AddComponent<Light>(); sun.type = LightType.Directional; sun.intensity = 1.3f; sun.transform.rotation = Quaternion.Euler(40, -30, 0);
             sky = SkyRig.Attach(cam, sun);
             hangarCam.Tapped += OnTapped;
@@ -606,6 +611,13 @@ namespace Kestrel.Slice
         {
             if (starterMode && starter != null && cam != null && ui.layout.height > 0)
             {
+                // Starter: the vehicle alone fills ~62% of the preview box (StarterFrame.Rocket), not the whole pad.
+                if (starterCam != null && starterCam.enabled)
+                {
+                    float upp = UnitsPerPoint();
+                    if (starter.Frame != null) starterCam.SetPreview(starter.Frame.Rocket, ui.layout.width / upp, ui.layout.height / upp);
+                    return;
+                }
                 // Starter: the rocket window sits above the sheet (portrait) or left of the side panel (landscape web).
                 float top = starter.SheetTopPanel;
                 float sf = starter.Frame == null || starter.Frame.Wide || float.IsNaN(top) ? 1f : DesignFraming.VisibleFraction(ui.layout.height, top);
@@ -745,6 +757,8 @@ namespace Kestrel.Slice
             flight.Plume.AttachGroundCloud(tower, deckR, PadTower.Fit(r.height, rr).height);
             PadDetailLink.Apply(flight.Plume, tower, ground, deck, padR != null ? padR.Layout : null);
             rocketHeight = r.height; frameHeight = r.height; rocketRadius = rr; padSight = null;
+            // Starter frames the vehicle alone: bell exits on the deck (y = 0) to the nose, widest point incl. strap-ons.
+            if (starterCam != null) starterCam.SetVehicle(0f, r.height, VehicleRadius(r.mesh.bounds));
             if (hangarCam != null)
             {
                 hangarCam.SetVehicle(frameHeight, framePoints);
@@ -1089,7 +1103,8 @@ namespace Kestrel.Slice
                 {
                     EngineId = e.EngineId, Cycle = e.Cycle, ExpansionRatio = e.Expansion, ExitDiameter = e.ExitDiameter,
                     X = e.Exit.x, Y = e.Exit.y, Z = e.Exit.z, Stage = e.Stage, Slot = e.Slot, Seed = seed,
-                    SkinRadius = e.StageRadius, Gimbal = e.GimbalDeg > 0.01f
+                    SkinRadius = e.StageRadius, Gimbal = e.GimbalDeg > 0.01f,
+                    Propellant = e.Propellant(design)   // fuel cue: sooty kerosene, clean methane, cool hydrogen (BellFinish)
                 });
             }
             var gate = rocketGO.GetComponent<MeshRenderer>();
@@ -1255,9 +1270,32 @@ namespace Kestrel.Slice
                 starter.SetVisible(starterMode && !FlightHudVisible);
                 if (starterMode) { starter.Refresh(); LayoutStarter(); }
             }
+            bool entered = UseStarterCamera();
             ApplyWebDesignFrame();
             ApplyDesignFraming();
+            if (entered) starterCam.Snap();
         }
+
+        /// <summary>On the pad, Starter mode drives the camera with StarterPreviewCamera and HangarCamera rests; the
+        /// existing designer gets HangarCamera back. In flight neither is touched. True when the preview just took over.</summary>
+        bool UseStarterCamera()
+        {
+            if (starterCam == null || hangarCam == null || FlightHudVisible) return false;
+            if (starterMode)
+            {
+                if (hangarCam.enabled) hangarCam.enabled = false;
+                if (starterCam.enabled) return false;
+                starterCam.ReduceMotion = hangarCam.ReduceMotion;
+                starterCam.enabled = true;
+                return true;
+            }
+            if (starterCam.enabled) { starterCam.enabled = false; hangarCam.enabled = true; hangarCam.Reframe(); }
+            return false;
+        }
+
+        /// <summary>Widest horizontal reach of the built vehicle (core, strap-ons) from its axis.</summary>
+        static float VehicleRadius(Bounds b) =>
+            Mathf.Max(Mathf.Max(Mathf.Abs(b.min.x), Mathf.Abs(b.max.x)), Mathf.Max(Mathf.Abs(b.min.z), Mathf.Abs(b.max.z)));
 
         void WatchFlags()
         {
@@ -1303,7 +1341,20 @@ namespace Kestrel.Slice
             if (d == null && starterEntryDesign != null) d = JsonMut.CloneObject(starterEntryDesign);
             if (d == null) return;
             nextIsLoad = true;
-            session.Load(d, null, d.Str("name") ?? StarterScreen.Title(starterRocket.Mission));
+            // Never through the credits gate: a refused Load kept the old rocket on the pad (and on Launch) while the
+            // Starter readout described the new one. The setting is a gift, like the mission handoff it starts from.
+            StarterSettingLoad.Apply(session, d, d.Str("name") ?? StarterScreen.Title(starterRocket.Mission), RegiftStarter);
+        }
+
+        /// <summary>CreditsWallet.CatchUp on the loaded Starter rocket: it becomes the gifted baseline; the balance never moves.</summary>
+        static void RegiftStarter(JsonObject design)
+        {
+            try
+            {
+                var wallet = CreditsPlay.Current;
+                if (wallet != null && wallet.Table != null && design != null) wallet.CatchUp(wallet.Table.Quote(design));
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Starter] credits: " + e.Message); }
         }
 
         void OnStarterChanged(StarterRocket _)
@@ -1311,6 +1362,7 @@ namespace Kestrel.Slice
             LoadStarterDesign();
             SaveStarter();
             starter?.Refresh();
+            ApplyDesignFraming();   // the sheet can change height with the readiness line; the rebuild reframes again
         }
 
         void SaveStarter()
@@ -1468,6 +1520,8 @@ namespace Kestrel.Slice
             SetExploded(false, true);
             // Nothing queued from the Hangar is spoken after the flight.
             pendingAnnounce = null; feelBase = feelNow;
+            // The Starter preview hands the camera back first (resets its projection), so liftoff starts exactly as before.
+            if (starterCam != null) starterCam.enabled = false;
             if (hangarCam != null)
             {
                 // Snap back to the assembled pose before sampling the chase offset, so liftoff

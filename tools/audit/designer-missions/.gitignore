@@ -1,0 +1,5 @@
+bin/
+obj/
+out/
+out2500/
+*.log

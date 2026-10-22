@@ -766,6 +766,7 @@ namespace Kestrel.Slice
                         Seed = seed,
                         SkinRadius = e.StageRadius,
                         Gimbal = e.GimbalDeg > 0.01f,
+                        Propellant = e.Propellant(design),   // same fuel cue as SliceApp.AddBells after staging
                     },
                 });
             }
