@@ -2,6 +2,8 @@
 // The path ends above the sheet, so a node is never covered. Wide WebGL
 // (WebLayoutMode) puts the map on the left and the sheet on the right.
 // Glass is a baked fill: no backdrop blur. Type is Fraunces and Space Grotesk.
+// t461: the header (kicker, act title on whole-pixel line boxes, act bar, Patches) is its own rows above the map;
+// the sheet is sized to the longest card and its body is a ScrollView past that; the payload is a lit 3D render.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,7 +34,12 @@ namespace Kestrel.Game.MissionSelect
 
         MissionMap _map;
         ScrollView _path;
-        VisualElement _content, _body, _copy, _art, _pulse;
+        VisualElement _content, _body, _art, _pulse;
+        ScrollView _cardScroll;
+        PayloadThumb _artThumb;
+        readonly List<MissionBoardCopy> _copies = new List<MissionBoardCopy>();
+        MissionBoardFrame _frame;
+        MissionBoardCopy _shownCopy;
         Label _act, _name, _customer, _orbit, _brief, _facts, _noteWhat, _noteDoes;
         Button _primary, _contracts, _sandboxButton, _patches;
         VisualElement _note;
@@ -202,6 +209,8 @@ namespace Kestrel.Game.MissionSelect
                 _slots.Add(MakeSlot(entry, mission, record));
             }
 
+            BuildCopies(campaign);
+
             if (_map.Empty)
             {
                 var note = new Label(string.IsNullOrEmpty(_map.Note) ? MissionMapCopy.Empty : _map.Note)
@@ -229,6 +238,20 @@ namespace Kestrel.Game.MissionSelect
             _body.style.top = 0f;
             card.Add(_body);
 
+            // The card body scrolls when the longest card does not fit the room the map leaves (t461: the brief and
+            // the Need / Difficulty rows were clipped with no way to reach them). Contracts, Sandbox and the primary
+            // stay pinned under it.
+            _cardScroll = new ScrollView(ScrollViewMode.Vertical) { name = "mission-card-scroll" };
+            _cardScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            _cardScroll.verticalScrollerVisibility = ScrollerVisibility.Auto;
+            _cardScroll.touchScrollBehavior = ScrollView.TouchScrollBehavior.Clamped;
+            _cardScroll.style.position = Position.Absolute;
+            _cardScroll.style.overflow = Overflow.Hidden;
+            _cardScroll.style.backgroundColor = new StyleColor(new Color(0f, 0f, 0f, 0f));
+            _cardScroll.contentContainer.style.position = Position.Relative;
+            _cardScroll.contentContainer.style.flexShrink = 0f;
+            _body.Add(_cardScroll);
+
             var artButton = new Button(TogglePayloadNote) { name = "mission-art", text = string.Empty, tooltip = "Payload. What it is and what it does." };
             artButton.style.paddingLeft = 0f;
             artButton.style.paddingRight = 0f;
@@ -236,36 +259,41 @@ namespace Kestrel.Game.MissionSelect
             artButton.style.paddingBottom = 0f;
             artButton.style.marginTop = 0f;
             artButton.style.marginBottom = 0f;
+            artButton.style.marginLeft = 0f;
+            artButton.style.marginRight = 0f;
+            artButton.style.borderTopWidth = 0f;
+            artButton.style.borderRightWidth = 0f;
+            artButton.style.borderBottomWidth = 0f;
+            artButton.style.borderLeftWidth = 0f;
+            artButton.style.overflow = Overflow.Hidden;
             _art = artButton;
             _art.AddToClassList("mission-art");
             _art.style.backgroundColor = new StyleColor(MissionBoardPalette.Deep);
             Round(_art, 12f);
-            _body.Add(_art);
-
-            _copy = new VisualElement { name = "mission-copy", pickingMode = PickingMode.Ignore };
-            _copy.style.position = Position.Absolute;
-            _copy.style.overflow = Overflow.Hidden;
-            _copy.style.flexDirection = FlexDirection.Column;
-            _body.Add(_copy);
+            _artThumb = PayloadArt.Element("mission-art-render", "box", (int)MissionBoardLayout.ArtMax, PayloadBackdrop.Dusk, urgent: true);
+            _artThumb.style.position = Position.Absolute;
+            _artThumb.style.left = 0f;
+            _artThumb.style.top = 0f;
+            _artThumb.style.right = 0f;
+            _artThumb.style.bottom = 0f;
+            _artThumb.style.width = StyleKeyword.Auto;
+            _artThumb.style.height = StyleKeyword.Auto;
+            _art.Add(_artThumb);
+            _cardScroll.Add(_art);
 
             _name = Line("mission-name", "mission-act-name");
-            _name.style.fontSize = 20f;
+            _name.style.fontSize = MissionBoardLayout.NamePt;
             BoardType.Set(_name, BoardType.FrauncesBold);
             _customer = Line("mission-customer", "mission-fact");
             _customer.style.color = new StyleColor(MissionBoardPalette.Muted);
             _orbit = Line("mission-orbit", "mission-fact");
             _brief = Line("mission-brief", "mission-brief");
             _facts = Line("mission-facts", "mission-fact");
-            _name.style.flexShrink = 0;
-            _brief.style.flexShrink = 0;
-            _customer.style.flexShrink = 1;
-            _orbit.style.flexShrink = 1;
-            _facts.style.overflow = Overflow.Hidden;
-            _copy.Add(_name);
-            _copy.Add(_brief);
-            _copy.Add(_customer);
-            _copy.Add(_orbit);
-            _body.Add(_facts);
+            _cardScroll.Add(_name);
+            _cardScroll.Add(_brief);
+            _cardScroll.Add(_customer);
+            _cardScroll.Add(_orbit);
+            _cardScroll.Add(_facts);
 
             _note = new VisualElement { name = "mission-payload-note" };
             _note.style.display = DisplayStyle.None;
@@ -563,36 +591,101 @@ namespace Kestrel.Game.MissionSelect
         {
             if (card == null) card = MissionBoardFacts.Of(null, MissionBoardAccess.Locked, 0, null, 0, 0, false);
             _card = card;
-            SetLine(_name, card.Title);
-            SetLine(_customer, card.Customer);
-            SetLine(_orbit, card.Orbit);
-            SetLine(_brief, card.Briefing);
-            _factsTop = Join(card.Need, card.Mass);
-            _factsFull = FactsText(card);
-            SetLine(_facts, FactsShown());
+            _shownCopy = MissionBoardCopy.Of(card, _act != null ? _act.text : "");
+            SetLine(_name, _shownCopy.Name);
+            SetLine(_customer, _shownCopy.Customer);
+            SetLine(_orbit, _shownCopy.Orbit);
+            SetLine(_brief, _shownCopy.Brief);
+            SetLine(_facts, _shownCopy.Facts);
             _primary.text = string.IsNullOrEmpty(card.Primary) ? "Locked" : card.Primary;
             _primary.tooltip = string.IsNullOrEmpty(card.PrimaryTip) ? _primary.text : card.PrimaryTip;
             _primary.SetEnabled(card.CanGo);
+            LayoutBody();
+            if (_cardScroll != null) _cardScroll.scrollOffset = Vector2.zero;
         }
 
-        string _factsTop = "", _factsFull = "";
-        bool _factsOneLine;
-
-        /// <summary>Both fact lines, or only "Need · Mass" when the card is too short for two. The tooltip keeps the rest.</summary>
-        string FactsShown()
+        /// <summary>
+        /// Every card the board can show (each mission in its state, Contracts, Sandbox), so the sheet is sized once
+        /// to the longest and does not jump between selections.
+        /// </summary>
+        void BuildCopies(Campaign campaign)
         {
-            if (_facts != null) _facts.tooltip = _factsOneLine && _factsFull != _factsTop ? _factsFull : "";
-            if (_factsOneLine && !string.IsNullOrEmpty(_factsTop)) return _factsTop;
-            return _factsFull;
+            _copies.Clear();
+            for (int i = 0; i < _slots.Count; i++)
+            {
+                var slot = _slots[i];
+                int stars = slot.Record == null ? 0 : slot.Record.BestStars;
+                IReadOnlyList<string> medals = slot.Record == null ? null : slot.Record.BestMedals;
+                double score = slot.Record == null ? 0 : slot.Record.BestScore;
+                int attempts = slot.Record == null ? 0 : slot.Record.Attempts;
+                var facts = MissionBoardFacts.Of(slot.Mission, AccessOf(slot.Entry.Access), stars, medals, score, attempts, true);
+                _copies.Add(MissionBoardCopy.Of(facts, ActTitle(slot.Entry.ActId)));
+            }
+            bool open = _map != null && _map.ShowOpenContracts;
+            _copies.Add(MissionBoardCopy.Of(MissionBoardFacts.Contracts(open, MissionMapCopy.ContractsBody, MissionMapCopy.ContractsAfterCleared), ActTitle(null)));
+            _copies.Add(MissionBoardCopy.Of(MissionBoardFacts.Sandbox(), ActTitle(null)));
+            _copies.Add(MissionBoardCopy.Of(MissionBoardFacts.Of(null, MissionBoardAccess.Locked, 0, null, 0, 0, false), "Missions"));
         }
 
-        static string FactsText(MissionBoardFacts card)
+        string ActTitle(string actId)
         {
-            string top = Join(card.Need, card.Mass);
-            string bottom = Join(card.Difficulty, card.Best);
-            if (top.Length == 0) return bottom;
-            if (bottom.Length == 0) return top;
-            return top + "\n" + bottom;
+            if (_map == null || _map.Acts.Count == 0) return "Missions";
+            for (int i = 0; i < _map.Acts.Count; i++)
+                if (_map.Acts[i].Id == actId) return _map.Acts[i].Title ?? "";
+            return _map.Acts[0].Title ?? "";
+        }
+
+        /// <summary>The shown card's blocks inside the body ScrollView: whole-pixel boxes from its copy.</summary>
+        void LayoutBody()
+        {
+            var frame = _frame;
+            if (frame == null || _cardScroll == null || _shownCopy == null) return;
+            var sized = MissionBoardLayout.Body(frame, _shownCopy);
+            if (sized.Scrolls)
+            {
+                // Leave the scroller its lane so it never sits on the text.
+                sized = MissionBoardLayout.Body(Math.Max(120f, frame.Body.W - PathScrollbarW), frame.Body.H, _shownCopy);
+            }
+            frame.Sized = sized;
+            PinInside(_cardScroll, frame.Body, frame.Card);
+            var content = _cardScroll.contentContainer;
+            content.style.width = frame.Body.W - (sized.Scrolls ? PathScrollbarW : 0f);
+            content.style.height = sized.ContentH;
+            content.style.minHeight = sized.ContentH;
+            Pin(_art, sized.Art);
+            TextBox(_name, sized.Name, MissionBoardLayout.NamePt);
+            TextBox(_customer, sized.Customer, MissionBoardLayout.BodyPt);
+            TextBox(_orbit, sized.Orbit, MissionBoardLayout.BodyPt);
+            TextBox(_brief, sized.Brief, MissionBoardLayout.BodyPt);
+            TextBox(_facts, sized.Facts, MissionBoardLayout.BodyPt);
+            _cardScroll.verticalScrollerVisibility = sized.Scrolls ? ScrollerVisibility.Auto : ScrollerVisibility.Hidden;
+        }
+
+        /// <summary>A label pinned to a whole-pixel box of its line boxes: no theme padding or margin.</summary>
+        static void TextBox(Label label, HudBox box, float pt)
+        {
+            if (label == null) return;
+            Pin(label, box);
+            Unpad(label);
+            label.style.minHeight = box.H;
+            label.style.fontSize = pt;
+            label.style.whiteSpace = WhiteSpace.Normal;
+            label.style.unityTextAlign = TextAnchor.UpperLeft;
+            label.style.overflow = Overflow.Hidden;
+            if (box.H < 1f) label.style.display = DisplayStyle.None;
+            else if (!string.IsNullOrEmpty(label.text)) label.style.display = DisplayStyle.Flex;
+        }
+
+        static void Unpad(VisualElement el)
+        {
+            el.style.paddingLeft = 0f;
+            el.style.paddingRight = 0f;
+            el.style.paddingTop = 0f;
+            el.style.paddingBottom = 0f;
+            el.style.marginLeft = 0f;
+            el.style.marginRight = 0f;
+            el.style.marginTop = 0f;
+            el.style.marginBottom = 0f;
         }
 
         static string Join(string a, string b)
@@ -604,8 +697,7 @@ namespace Kestrel.Game.MissionSelect
 
         void ShowArt(string form)
         {
-            var tex = PayloadArt.Texture(form, 128);
-            if (tex != null) _art.style.backgroundImage = new StyleBackground(tex);
+            _artThumb?.SetForm(form, PayloadBackdrop.Dusk);
         }
 
         void Kick(bool animate)
@@ -682,7 +774,8 @@ namespace Kestrel.Game.MissionSelect
         void Apply(float width, float height, bool wide)
         {
             WebLayoutMode.ExitInset(WebLayoutMode.WantExitReserve, out float safeTop, out float safeRight);
-            var frame = MissionBoardLayout.Place(width, height, safeTop, 0f, 0f, safeRight, wide);
+            var frame = MissionBoardLayout.Place(width, height, safeTop, 0f, 0f, safeRight, wide, _copies.Count > 0 ? _copies : null);
+            _frame = frame;
             userData = frame;
             EnableInClassList("mission-board--wide", wide);
 
@@ -691,36 +784,33 @@ namespace Kestrel.Game.MissionSelect
             Pin(home, frame.Home);
             if (kicker != null)
             {
-                kicker.style.position = Position.Absolute;
-                kicker.style.left = frame.Title.X;
-                kicker.style.top = frame.Title.Y;
-                kicker.style.width = frame.Title.W;
-                kicker.style.height = 18f;
-                kicker.style.minHeight = 18f;
-                kicker.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(kicker, 14f);
+                Pin(kicker, frame.Kicker);
+                Unpad(kicker);
+                kicker.style.minHeight = frame.Kicker.H;
+                kicker.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(kicker, MissionBoardLayout.KickerPt);
                 kicker.style.whiteSpace = WhiteSpace.Normal;
                 kicker.style.unityTextAlign = TextAnchor.MiddleLeft;
             }
             if (_act != null)
             {
-                _act.style.position = Position.Absolute;
-                _act.style.left = frame.Title.X;
-                _act.style.top = frame.Title.Y + 16f;
-                _act.style.width = frame.Title.W;
-                _act.style.height = Math.Max(28f, frame.Title.H - 16f);
-                _act.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(_act, 16f);
+                // Whole-pixel line boxes: ActLines x ceil(font x 1.3), no theme padding (t461: a 32 pt box for two
+                // 16 pt lines, under the act bar).
+                Pin(_act, frame.Act);
+                Unpad(_act);
+                _act.style.minHeight = frame.Act.H;
+                _act.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(_act, frame.ActFontPt);
                 _act.style.whiteSpace = WhiteSpace.Normal;
+                _act.style.unityTextAlign = TextAnchor.UpperLeft;
             }
             if (_patches != null)
             {
-                _patches.style.position = Position.Absolute;
-                _patches.style.width = 92f;
-                _patches.style.height = 44f;
-                // L5 (live web): the path's vertical scrollbar sits on its right edge and covered Patches. Keep the
-                // button left of the bar and paint it over the path.
-                _patches.style.left = frame.Path.Right - 96f - PathScrollbarW;
-                _patches.style.top = frame.Path.Y + 4f;
-                _patches.style.whiteSpace = WhiteSpace.Normal;
+                // Its own header slot (t461: it sat inside the map on the KH-2 node).
+                Pin(_patches, frame.Patches);
+                _patches.style.marginLeft = 0f;
+                _patches.style.marginRight = 0f;
+                _patches.style.marginTop = 0f;
+                _patches.style.marginBottom = 0f;
+                _patches.style.whiteSpace = WhiteSpace.NoWrap;
                 _patches.style.fontSize = Kestrel.Game.Shell.TextFit.Cap(_patches, 13f);
             }
             for (int i = 0; i < _segments.Length; i++)
@@ -760,23 +850,7 @@ namespace Kestrel.Game.MissionSelect
                 _body.style.width = frame.Card.W;
                 _body.style.height = frame.Card.H;
             }
-            PinInside(_art, frame.Art, frame.Card);
-            if (_copy != null)
-            {
-                float top = frame.Name.Y - frame.Card.Y;
-                float bottom = frame.Facts.Y - frame.Card.Y;
-                _copy.style.left = frame.Name.X - frame.Card.X;
-                _copy.style.top = top;
-                _copy.style.width = frame.Name.W;
-                _copy.style.height = Math.Max(16f, bottom - top);
-            }
-            PinInside(_facts, frame.Facts, frame.Card);
-            bool oneLine = frame.Facts.H < MissionBoardLayout.FactsTwoLineH - 0.5f;
-            if (oneLine != _factsOneLine)
-            {
-                _factsOneLine = oneLine;
-                if (_facts != null && !string.IsNullOrEmpty(_factsFull)) SetLine(_facts, FactsShown());
-            }
+            LayoutBody();
             PinInside(_contracts, frame.Contracts, frame.Card);
             PinInside(_sandboxButton, frame.Sandbox, frame.Card);
             PinInside(_primary, frame.Primary, frame.Card);
@@ -840,6 +914,8 @@ namespace Kestrel.Game.MissionSelect
                 if (_shown > 1f) _shown = 1f;
                 ApplyMotion();
             }
+            // Time-sliced payload renders (a few ms a frame).
+            PayloadThumbnails.PumpFrame();
             if (_pulse == null) return;
             if (_reduce)
             {

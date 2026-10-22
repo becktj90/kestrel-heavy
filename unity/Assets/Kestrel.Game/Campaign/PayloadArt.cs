@@ -1,5 +1,6 @@
-// Payload card art and the URP mesh. Both are built from PayloadForms, so the picture and the
-// lit model are the same boxes. The card uses the CPU portrait: a mission list must not spawn a camera.
+// Payload card art and the URP mesh. Both are built from PayloadForms. The card art is the lit CPU render
+// (PayloadRender via PayloadThumbnails, at physical pixels); a mission list must not spawn a camera. The flat
+// portrait stays as the instant placeholder while a render is time-sliced.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Flight;
@@ -12,24 +13,27 @@ namespace Kestrel.Game.MissionSelect
     {
         static readonly Dictionary<string, Texture2D> Cache = new Dictionary<string, Texture2D>();
 
-        public static VisualElement Element(string name, string form, int size)
+        /// <summary>A square lit payload render <paramref name="size"/> points across, on a clear backdrop.</summary>
+        public static VisualElement Element(string name, string form, int size) =>
+            Element(name, form, size, PayloadBackdrop.Clear, urgent: false);
+
+        public static PayloadThumb Element(string name, string form, int size, PayloadBackdrop backdrop, bool urgent)
         {
             if (size < 32) size = 32;
-            var el = new VisualElement { name = name, pickingMode = PickingMode.Ignore };
+            var el = new PayloadThumb(name, form, backdrop, size, urgent);
             el.style.width = size;
             el.style.height = size;
             el.style.flexShrink = 0;
             el.style.alignSelf = Align.Center;
-            var tex = Texture(form, size);
-            if (tex != null)
-            {
-                el.style.backgroundImage = new StyleBackground(tex);
-                el.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
-            }
             return el;
         }
 
-        public static Texture2D Texture(string form, int size)
+        /// <summary>The lit render as a texture <paramref name="size"/> pixels square (cached; renders now if new).</summary>
+        public static Texture Texture(string form, int size, PayloadBackdrop backdrop = PayloadBackdrop.Clear) =>
+            PayloadThumbnails.RenderNow(form, size, backdrop);
+
+        /// <summary>The flat painted portrait (instant): the placeholder until the lit render lands.</summary>
+        public static Texture2D Portrait(string form, int size)
         {
             string key = (string.IsNullOrEmpty(form) ? "box" : form) + ":" + size.ToString(System.Globalization.CultureInfo.InvariantCulture);
             if (Cache.TryGetValue(key, out var cached) && cached != null) return cached;
