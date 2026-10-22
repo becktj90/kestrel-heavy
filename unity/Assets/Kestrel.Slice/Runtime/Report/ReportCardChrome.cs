@@ -1,6 +1,8 @@
 // Dusk post-flight sheet. Fonts come from Resources (USS font urls fall back to the
 // default sans on device), sizes are in points times the panel's units-per-point,
 // and the sheet replaces the flight HUD instead of sitting on top of a live count.
+using Kestrel.Core.Flight;
+using Kestrel.Core.Ui;
 using System;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -126,11 +128,30 @@ namespace Kestrel.Slice
             }
             var scroll = card.Q("report-scroll");
             var foot = card.Q("report-actions");
-            float footH = ((HitPt + 8f) * 5f + Mathf.Max(12f, safeBottomPt) + 24f) * upp;
-            float room = card.layout.height;
-            if (room <= 1f && card.parent != null) room = card.parent.layout.height;
-            if (room <= 1f) room = card.resolvedStyle.height;
-            if (room > 1f && footH > room * 0.58f) footH = room * 0.58f;
+            float roomH = card.layout.height;
+            if (roomH <= 1f && card.parent != null) roomH = card.parent.layout.height;
+            if (roomH <= 1f) roomH = card.resolvedStyle.height;
+            float roomW = card.layout.width;
+            if (roomW <= 1f && card.parent != null) roomW = card.parent.layout.width;
+            if (roomW <= 1f) roomW = card.resolvedStyle.width;
+            // L4: cap the scale on short landscape panels, then lay the sheet out in points of that scale.
+            upp = ReportFit.Units(upp, roomW, roomH);
+            float wPt = roomW > 1f && !float.IsNaN(roomW) ? roomW / upp : 375f;
+            float hPt = roomH > 1f && !float.IsNaN(roomH) ? roomH / upp : 667f;
+            float contentW = ReportFit.ContentWidth(wPt);
+            float side = ReportFit.SideMargin(wPt);
+
+            // Every exit is a direct child of the footer grid, whatever row wrappers the exits code adds
+            // (#311 puts Missions and Home in one NextMission.ExitRowId row); the grid below owns their placement.
+            if (foot != null) FlattenExits(foot);
+            var exits = new System.Collections.Generic.List<Button>();
+            if (foot != null)
+                foreach (var child in foot.Children())
+                    if (child is Button eb && eb.style.display != DisplayStyle.None) exits.Add(eb);
+            int rows = ReportFit.FootRows(contentW, exits.Count);
+            float footPt = foot != null ? ReportFit.FootPt(rows, safeBottomPt) : 0f;
+            float footH = Mathf.Ceil(footPt * upp);
+            float topPt = Mathf.Max(8f, safeTopPt);
             if (scroll != null)
             {
                 scroll.style.backgroundColor = Ink;
@@ -140,7 +161,15 @@ namespace Kestrel.Slice
                 scroll.style.top = 0;
                 scroll.style.bottom = foot != null ? footH : 0;
                 scroll.style.height = StyleKeyword.Auto;
-                scroll.style.paddingTop = Mathf.Max(8f, safeTopPt) * upp;
+                scroll.style.paddingTop = topPt * upp;
+                scroll.style.paddingLeft = side * upp;
+                scroll.style.paddingRight = side * upp;
+                if (scroll is ScrollView sv)
+                {
+                    // The body is sized to fit (below); no scroll bars, no scrolling sheet.
+                    sv.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+                    sv.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+                }
             }
             if (foot != null)
             {
@@ -151,6 +180,12 @@ namespace Kestrel.Slice
                 foot.style.height = footH;
                 foot.style.paddingTop = 8f * upp;
                 foot.style.paddingBottom = (Mathf.Max(12f, safeBottomPt) + 8f) * upp;
+                foot.style.paddingLeft = side * upp;
+                foot.style.paddingRight = side * upp;
+                foot.style.flexDirection = FlexDirection.Row;
+                foot.style.flexWrap = Wrap.Wrap;
+                foot.style.alignContent = Align.FlexStart;
+                foot.style.justifyContent = Justify.FlexStart;
                 foot.style.backgroundColor = Ink;
                 foot.BringToFront();
             }
@@ -160,31 +195,145 @@ namespace Kestrel.Slice
             var body = BodyFace();
             var titleDef = title != null ? new StyleFontDefinition(FontDefinition.FromFont(title)) : default;
             var bodyDef = body != null ? new StyleFontDefinition(FontDefinition.FromFont(body)) : default;
+
+            // Body lines: empty ones go (the gap under Apogee was an empty narrator line with a min height).
+            var lines = new System.Collections.Generic.List<ReportFit.Line>();
+            var shown = new System.Collections.Generic.List<Label>();
+            var plots = scroll != null ? scroll.Q("failure-plots") : null;
             card.Query<Label>().ForEach(label =>
             {
-                if (label == null || InGuide(label)) return;
+                if (label == null || InGuide(label) || label.name == "plot-label") return;
+                bool empty = string.IsNullOrEmpty(label.text);
+                label.style.display = empty ? DisplayStyle.None : DisplayStyle.Flex;
+                if (empty) return;
                 bool heading = IsTitle(label.name);
-                float pt = heading ? TitlePt : BodyPt;
-                if (label.name == "plot-label") pt = 14f;
+                lines.Add(new ReportFit.Line { Name = label.name, Text = label.text, FontPt = heading ? TitlePt : BodyPt, DropOrder = DropOrder(label.name) });
+                shown.Add(label);
+            });
+            float bodyRoom = hPt - footPt - topPt - 4f;
+            var plan = ReportFit.Body(lines, plots != null, contentW, bodyRoom);
+            for (int i = 0; i < shown.Count; i++)
+            {
+                var label = shown[i];
+                bool heading = IsTitle(label.name);
+                bool drop = plan.Dropped.Contains(label.name);
+                label.style.display = drop ? DisplayStyle.None : DisplayStyle.Flex;
+                float pt = (heading ? TitlePt : BodyPt) * plan.Scale;
                 label.style.fontSize = pt * upp;
+                label.style.minHeight = 0;
+                label.style.whiteSpace = WhiteSpace.Normal;
+                label.style.marginLeft = 0;
+                label.style.marginRight = 0;
+                label.style.marginTop = ReportFit.LineTopPt * upp;
+                label.style.marginBottom = ReportFit.LineBottomPt * upp;
+                label.style.paddingLeft = 0;
+                label.style.paddingRight = 0;
+                label.style.paddingTop = 0;
+                label.style.paddingBottom = 0;
+                label.style.maxWidth = Length.Percent(100);
                 label.style.color = heading ? Cream : new Color(Cream.r, Cream.g, Cream.b, 0.94f);
                 if (heading && title != null) label.style.unityFontDefinition = titleDef;
                 else if (body != null) label.style.unityFontDefinition = bodyDef;
-            });
+            }
+            if (plots != null)
+            {
+                plots.style.display = plan.Plots ? DisplayStyle.Flex : DisplayStyle.None;
+                plots.style.height = ReportFit.PlotsPt * plan.Scale * upp;
+                plots.style.marginLeft = 0;
+                plots.style.marginRight = 0;
+                plots.style.marginBottom = ReportFit.GapPt * upp;
+                plots.Query<Label>("plot-label").ForEach(l =>
+                {
+                    l.style.fontSize = 14f * upp;
+                    l.style.color = new Color(Cream.r, Cream.g, Cream.b, 0.94f);
+                    if (body != null) l.style.unityFontDefinition = bodyDef;
+                });
+            }
+
             var buttonFace = ButtonFace();
             var buttonDef = buttonFace != null ? new StyleFontDefinition(FontDefinition.FromFont(buttonFace)) : default;
             card.Query<Button>().ForEach(button =>
             {
                 if (button == null) return;
                 PaintButton(button, HitPt, Role(button.name));
-                button.style.minHeight = HitPt * upp;
+                button.style.minHeight = Mathf.Round(ReportFit.HitPt * upp);
+                button.style.height = Mathf.Round(ReportFit.HitPt * upp);
+                button.style.paddingTop = 0;
+                button.style.paddingBottom = 0;
                 button.style.fontSize = ButtonPt * upp;
-                button.style.marginBottom = 8f * upp;
-                button.style.marginLeft = 12f * upp;
-                button.style.marginRight = 12f * upp;
                 button.style.borderBottomWidth = 4f * upp;
+                button.style.whiteSpace = WhiteSpace.Normal;
+                button.style.paddingLeft = 6f * upp;
+                button.style.paddingRight = 6f * upp;
+                button.style.overflow = Overflow.Hidden;
                 if (buttonFace != null) button.style.unityFontDefinition = buttonDef;
+                int index = exits.IndexOf(button);
+                if (index < 0)
+                {
+                    button.style.marginBottom = 8f * upp;
+                    button.style.marginLeft = 0;
+                    button.style.marginRight = 0;
+                    return;
+                }
+                // Absolute cells in the footer's content box: no flex-wrap rounding can push a cell to a new row.
+                var cell = ReportFit.GridCell(contentW, exits.Count, index);
+                button.style.position = Position.Absolute;
+                // Whole pixels: rounded edges, widths floored so neighbours never share a pixel column.
+                button.style.left = Mathf.Round((side + cell.X) * upp);
+                button.style.top = Mathf.Round((8f + cell.Y) * upp);
+                button.style.flexGrow = 0;
+                button.style.flexShrink = 0;
+                button.style.flexBasis = StyleKeyword.Auto;
+                button.style.minWidth = 0;
+                button.style.maxWidth = StyleKeyword.None;
+                button.style.width = Mathf.Floor(cell.W * upp);
+                button.style.marginLeft = 0;
+                button.style.marginTop = 0;
+                button.style.marginRight = 0;
+                button.style.marginBottom = 0;
+                // A label too long for one line at 17 pt ("Back to designer" in a 2-column phone grid) steps
+                // down to the 14 pt floor and wraps to at most two lines inside the 48 pt target (44 pt above the
+                // 4 pt edge, no vertical padding), widths budgeted at FlightHudLayout.MeasureFactor.
+                var fitB = FlightHudLayout.WrapFit(button.text ?? "", cell.W - 12f, ReportFit.HitPt - 4f, 2, ButtonPt, 14f);
+                button.style.fontSize = Mathf.Min(ButtonPt, fitB.FontPt) * upp;
             });
+        }
+
+        /// <summary>
+        /// Lifts every exit button nested in a row wrapper up to be a direct footer child, in reading order, and
+        /// hides the emptied wrapper. Idempotent (a second Dress finds nothing nested).
+        /// </summary>
+        static void FlattenExits(VisualElement foot)
+        {
+            var kids = new System.Collections.Generic.List<VisualElement>(foot.Children());
+            foreach (var k in kids)
+            {
+                if (k is Button) continue;
+                var inner = k.Query<Button>().ToList();
+                if (inner.Count == 0) continue;
+                int at = foot.IndexOf(k);
+                foreach (var b in inner)
+                {
+                    b.RemoveFromHierarchy();
+                    foot.Insert(at++, b);
+                }
+                k.style.display = DisplayStyle.None;
+            }
+        }
+
+        /// <summary>Lines dropped (low first) when 70% type still does not fit: narration, then the engineer note.</summary>
+        static int DropOrder(string name)
+        {
+            switch (name)
+            {
+                case "narrator-eng": return 1;
+                case "narrator-kid": return 2;
+                case "report-cosmetics": return 3;
+                case "report-unlocks": return 4;
+                case "failure-engineer": return 5;
+                case "report-kc": return 6;
+                default: return 0;
+            }
         }
 
         public static void Cover(VisualElement card)
@@ -202,7 +351,7 @@ namespace Kestrel.Slice
             card.style.marginBottom = 0;
         }
 
-        static readonly string[] FlightChrome = { "hud", "ascent-hud", "ascent-nudge", "skip-count", "guide-overlay", "guide-pop", "guide-box" };
+        static readonly string[] FlightChrome = { UiIds.ScreenFlight, "ascent-hud", "ascent-nudge", UiIds.FlightSkipCount, "guide-overlay", "guide-pop", "guide-box" };
         static readonly string[] Readouts = { "h-t", "h-stage", "h-alt", "h-vel", "h-mach", "h-q", "h-thr", "h-dr", "h-msg", "h-verdict", "h-pulse", "h-callout" };
 
         /// <summary>Take the result card out of the tree so a retry can count down again.</summary>
@@ -233,7 +382,7 @@ namespace Kestrel.Slice
                 var button = buttons[i];
                 if (button == null || InReport(button)) continue;
                 string name = button.name ?? "";
-                if (name == "skip-count" || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (name == UiIds.FlightSkipCount || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
                     Restore(button);
             }
             for (int i = 0; i < Readouts.Length; i++) Clear(tree, Readouts[i]);
@@ -255,7 +404,7 @@ namespace Kestrel.Slice
                 var button = buttons[i];
                 if (button == null || InReport(button)) continue;
                 string name = button.name ?? "";
-                if (name == "skip-count" || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (name == UiIds.FlightSkipCount || name.IndexOf("nudge", StringComparison.OrdinalIgnoreCase) >= 0)
                     Retire(button);
             }
             for (int i = 0; i < Readouts.Length; i++) Clear(tree, Readouts[i]);
@@ -360,6 +509,7 @@ namespace Kestrel.Slice
                 case "failure-fix": return "fix";
                 case "report-next": return "next";
                 case "report-retry": return "retry";
+                case UiIds.ReportDesigner: return "designer";
                 case "report-missions": return "missions";
                 case "report-home": return "home";
                 default: return "home";
@@ -373,6 +523,7 @@ namespace Kestrel.Slice
                 case "fix": return Fly;
                 case "next": return new Color(20f / 255f, 92f / 255f, 96f / 255f, 1f);
                 case "retry": return Sun;
+                case "designer": return new Color(48f / 255f, 62f / 255f, 112f / 255f, 1f);
                 default: return new Color(30f / 255f, 46f / 255f, 72f / 255f, 1f);
             }
         }
@@ -384,6 +535,7 @@ namespace Kestrel.Slice
                 case "fix": return FlyEdge;
                 case "next": return new Color(10f / 255f, 48f / 255f, 52f / 255f, 1f);
                 case "retry": return new Color(140f / 255f, 72f / 255f, 20f / 255f, 1f);
+                case "designer": return new Color(24f / 255f, 32f / 255f, 66f / 255f, 1f);
                 default: return new Color(246f / 255f, 235f / 255f, 210f / 255f, 0.45f);
             }
         }

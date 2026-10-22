@@ -9,7 +9,7 @@ export const TEMPLATES = Object.freeze([
    "engine": "srm-small",
    "engineCount": 1,
    "propMass": 0,
-   "diameter": 1.6,
+   "diameter": 1.3,
    "material": "steel",
    "crossfeed": false
   },
@@ -26,7 +26,7 @@ export const TEMPLATES = Object.freeze([
    "tier": "basic"
   },
   "safetyFactor": 1.4,
-  "id": "tpl-sounding-solid",
+  "id": "tpl-sounding-hybrid",
   "name": "Pipit",
   "tier": "starter",
   "stages": [
@@ -36,11 +36,11 @@ export const TEMPLATES = Object.freeze([
     "landingPropMass": 0,
     "material": "steel",
     "name": "Motor",
-    "propellant": "solid-apcp",
-    "engine": "srm-small",
-    "engineCount": 1,
-    "propMass": 2300,
-    "diameter": 1.6
+    "propellant": "hybrid",
+    "engine": "hybrid-small",
+    "engineCount": 2,
+    "propMass": 1750,
+    "diameter": 1.3
    }
   ],
   "payload": {
@@ -49,8 +49,8 @@ export const TEMPLATES = Object.freeze([
    "orbit": "suborbital"
   },
   "fairing": {
-   "diameter": 1.6,
-   "length": 2,
+   "diameter": 1.3,
+   "length": 2.4,
    "material": "composite",
    "jettisonAltitudeKm": 100
   },
@@ -64,16 +64,16 @@ export const TEMPLATES = Object.freeze([
    "order": 1,
    "difficulty": "beginner",
    "tags": [
-    "solid",
+    "hybrid",
     "single stage",
     "suborbital",
     "tutorial"
    ],
-   "tagline": "Light the motor, coast past 100 km, come home.",
-   "brief": "One solid motor, fins for stability and a small science box. There is nothing to throttle and nothing to stage: the motor burns out in seconds and the rocket coasts up past the 100 km line that is commonly used as the edge of space. It is the simplest design that can do it.",
+   "tagline": "Light two small hybrids, climb past 100 km, come home.",
+   "brief": "Two small hybrid motors, fins for stability and a small science box. A hybrid burns a solid fuel grain with a liquid oxidizer, so it pushes gently for a long time instead of all at once: the rocket climbs through the thick air slowly, keeps the air load and the g low, and coasts up past the 100 km line that is commonly used as the edge of space. There is nothing to stage.",
    "benchmark": {
-    "class": "Single-stage solid sounding rocket",
-    "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. Many are simple solid motors with fins. 100 km is the altitude commonly used as the boundary of space.",
+    "class": "Single-stage hybrid sounding rocket",
+    "text": "Sounding rockets are short research flights: up, a few minutes of data or weightlessness, then down. A long, low-thrust burn keeps max-Q and acceleration modest, which is kinder to the payload than a short, violent solid burn. 100 km is the altitude commonly used as the boundary of space.",
     "sources": [
      {
       "title": "FAI: 100 km Kármán line (boundary of space)",
@@ -88,9 +88,9 @@ export const TEMPLATES = Object.freeze([
     ]
    },
    "thingsToTry": [
-    "Add 500 kg of propellant and watch the apogee climb.",
+    "Add 200 kg of propellant and watch the apogee climb.",
     "Swap fins off (Aero tab) and read the warnings.",
-    "Try the 100 km hop with a hybrid motor instead."
+    "Try one solid motor instead and compare the peak g and max-Q."
    ],
    "refMission": {
     "objective": "apogee",
@@ -101,21 +101,21 @@ export const TEMPLATES = Object.freeze([
     "cost": "pending: E1 cost model not landed"
    },
    "review": [
-    "TODO-review: peak acceleration (~20 g) is high for the science box; real sounding rockets often pull 10–20+ g."
+    "Hybrid motors (2× hybrid-small, 25 kN each at sea level) burn about 80 s; peak air load about 38 kPa and peak acceleration about 7 g. 1,750 kg of propellant peaks about 102 km in the flown sim: inside the ±5% band around the 100 km target, and still past the 100 km line."
    ],
    "stats": {
     "stages": 1,
-    "liftoffMassT": 3.1,
-    "liftoffTWR": 19.58,
-    "deltaV": 3593,
+    "liftoffMassT": 2.5,
+    "liftoffTWR": 2.03,
+    "deltaV": 2921,
     "requiredDeltaV": 2400,
-    "marginPct": 49.7,
+    "marginPct": 21.7,
     "payloadKg": 300,
     "target": "Suborbital 100 km",
     "simOutcome": "suborbital",
-    "simApogeeKm": 114,
+    "simApogeeKm": 108,
     "simPerigeeKm": null,
-    "maxG": 20.6
+    "maxG": 7
    }
   }
  },
@@ -215,7 +215,7 @@ export const TEMPLATES = Object.freeze([
    },
    "thingsToTry": [
     "Swap the composite tanks for Al-Li and see what happens to payload.",
-    "Fly it from a higher-latitude orbit (Sun-sync) and compare margin.",
+    "Try a higher or lower circle and compare margin.",
     "Make the upper stage 20% bigger. Does it still lift off well?"
    ],
    "refMission": {
@@ -526,6 +526,10 @@ export const TEMPLATES = Object.freeze([
    "tier": "standard"
   },
   "safetyFactor": 1.4,
+  "guidance": {
+   "maxQThrottle": 55,
+   "gLimit": 3.5
+  },
   "id": "tpl-hydrogen-upper",
   "name": "Heron",
   "tier": "medium",
@@ -538,7 +542,10 @@ export const TEMPLATES = Object.freeze([
     "name": "Stage 1",
     "propellant": "kerolox",
     "engine": "gg-kerolox",
-    "engineCount": 9,
+    "engineCount": 7,
+    "engineParams": {
+     "throttleMin": 0.45
+    },
     "propMass": 400000,
     "diameter": 3.7
    },
@@ -615,21 +622,21 @@ export const TEMPLATES = Object.freeze([
     "cost": "pending: E1 cost model not landed"
    },
    "review": [
-    "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+    "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
    ],
    "stats": {
     "stages": 2,
-    "liftoffMassT": 463.1,
-    "liftoffTWR": 1.67,
-    "deltaV": 12641,
+    "liftoffMassT": 462.2,
+    "liftoffTWR": 1.31,
+    "deltaV": 12680,
     "requiredDeltaV": 11330,
-    "marginPct": 11.6,
+    "marginPct": 11.9,
     "payloadKg": 4000,
     "target": "GTO",
     "simOutcome": "orbit",
-    "simApogeeKm": 930,
-    "simPerigeeKm": 196,
-    "maxG": 13.5
+    "simApogeeKm": 271,
+    "simPerigeeKm": 191,
+    "maxG": 10.7
    }
   }
  },

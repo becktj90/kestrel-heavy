@@ -53,7 +53,7 @@ Those fixture choices are inputs. The numbers in `out` come from `simulate`, `dr
 ## Gaps
 
 - Vacuum bells (`gg-kerolox-vac`, `gg-kerolox-small-vac`, `ff-methalox-vac`, `exp-hydrolox`, `pf-udmh`) have integrated max-Q and drag loss of 0. The reference ascent turns the atmosphere off for them. Their drag coverage is the closed-form Mach-peak evaluation, including nozzle area.
-- `tpl-sounding-solid` is a single stage. Its staging vector has burnout and no separation.
+- `tpl-sounding-hybrid` is a single stage. Its staging vector has burnout and no separation.
 - Mach-peak dynamic pressure on the ISA grid is highest at 0 m for every vehicle, because density falls faster than the speed of sound rises. `gridAltitudeM` is therefore 0. Engines are distinguished by area (stage diameter and nozzle diameter), not by a different winning altitude.
 - `gg-kerolox-small-vac` and `pf-hypergolic` share a 1 m nozzle, so their nozzle Mach-peak drag matches. The sea-level engine still has a non-zero trajectory max-Q; the vacuum engine does not.
 - `simulate()` has no J2, no throttle, no ullage, and no parallel-burn integration beyond the `serialStages()` combined phase. This file does not add those.
@@ -271,7 +271,7 @@ Fins, when `aero.fins` is set, are an unswept square (chord = span) with the tra
 
 `cp_m` is the hangar marker. When the raw CP is ahead of the nose it is clamped to the vehicle length and `cpAheadOfNose` is set. `stabilityCal` keeps the raw CP, `(cg − cp_raw) / d_ref`, so the clamp does not hide a destabilizing shoulder. The shoulder fixture raw CP is 43.136 m on a 19.446 m vehicle; the marker sits on the nose.
 
-A v1 save with no `interstageMass` key migrates to an explicit `0`. A stored value, including 0, stays. The derived frustum is not written onto that save. The parser does the same on a version-1 design: an absent key is 0, matching JS `(s.interstageMass || 0)`. The frustum is derived only when version is 2 or higher, and only on the upper stage of a joint whose lower stage also has no override. Scout with both keys removed is 44129.78 kg at version 1 and after migration, and 44215.28 kg when that same keyless design is version 2.
+A v1 save with no `interstageMass` key migrates to an explicit `0`. A stored value, including 0, stays. The derived frustum is not written onto that save. The parser does the same on a version-1 design: an absent key is 0, matching JS `(s.interstageMass || 0)`. The frustum is derived only when version is 2 or higher, and only on the upper stage of a joint whose lower stage also has no override. Scout (al-li tanks since #313) with both keys removed is 44723.54 kg at version 1 and after migration, and 44845.68 kg when that same keyless design is version 2.
 
 `maxq-high` warns above 45 kPa and never blocks. An unguided solid (stage-0 propellant storability `solid`, gimbal 0) is exempt. Pad steering is a gimbal on stage 0, or gimballed strap-ons on a gimbal-less core. `unstable` blocks when the rocket is unguided and `stabilityCal < 0`. That block stays. The 1–2 cal band and the `> 4` overstable warn apply only when the rocket is finned or unguided. A steered stage with no fins gets the engine-steered note instead of that band. Orbital templates stay launchable: after v1→v2 migration their engineering report has no blocks.
 

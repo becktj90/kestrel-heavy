@@ -3,6 +3,7 @@
 // cached ascent, the payload fits and the speed reaches the target. A stale ascent cache is
 // "Checking…", never ready. Experience.Present still drops warnings in Simple; this gate is what
 // decides the Ready line and the Launch button, so a red predicted failure can no longer read as ready.
+// F1: only a validation block (hard) disables Launch. A predicted failure is a soft block that asks once.
 using System.Collections.Generic;
 using Kestrel.Core.Flight;
 
@@ -18,7 +19,18 @@ namespace Kestrel.Core.Designer
         /// <summary>Designer tab id the fix lives on ("tanks", "payload", ...). Null when ready or checking.</summary>
         public string tab;
         public string code;
+        /// <summary>
+        /// A validation block: the design cannot be built (schema or a Block advisory). Only a hard block
+        /// disables Launch. A predicted failure, a speed shortfall or a cargo that does not fit is a soft
+        /// block: the reason shows and Launch asks once ("Launch anyway"), because a bad rocket is allowed
+        /// to fly and fail (Trevor, 2026-10-19; F1).
+        /// </summary>
+        public bool hard;
         public bool Ready => state == LaunchGateState.Ready;
+        /// <summary>False only for a hard block. Checking still launches: the press settles the check first.</summary>
+        public bool CanLaunch => state != LaunchGateState.Blocked || !hard;
+        /// <summary>A soft block flies only after the player confirms once.</summary>
+        public bool NeedsConfirm => state == LaunchGateState.Blocked && !hard;
         /// <summary>The line the designer shows: the reason, "Checking…", or <see cref="Experience.Ready"/>.</summary>
         public string Line => state == LaunchGateState.Ready ? Experience.Ready : state == LaunchGateState.Checking ? LaunchGate.Checking : reason;
     }
@@ -34,17 +46,17 @@ namespace Kestrel.Core.Designer
         public static LaunchGateResult Evaluate(EngineeringReport report, QuickReadout readout)
         {
             if (report == null || !report.ok)
-                return Blocked(First(report), "schema", "stages");
+                return Hard(Blocked(First(report), "schema", "stages"));
             if (report.blocks != null && report.blocks.Count > 0)
             {
                 var b = report.blocks[0];
-                return Blocked(Plain(b.kid, b.msg), b.code, b.tab);
+                return Hard(Blocked(Plain(b.kid, b.msg), b.code, b.tab));
             }
             var r = readout ?? report.readout;
             if (r == null) return new LaunchGateResult { state = LaunchGateState.Checking };
             if (r.fairingFits == false) return Blocked(NoFit, "payload-doesnt-fit", "payload");
-            if (r.margin < 0) return Blocked(TooSlow, "dv-margin", "tanks");
-            var red = DeterministicRed(r.risks);
+            if (r.margin < 0 && !r.ReachesApogee) return Blocked(TooSlow, "dv-margin", "tanks");
+            var red = DeterministicRed(r.risks, r);
             if (red != null) return Blocked(Plain(red.kid, red.engineer, WillFail), red.kind, red.tab);
             if (r.predictedFailure != null)
                 return Blocked(Plain(r.predictedFailure.kid, r.predictedFailure.fixHint, WillFail), r.predictedFailure.kind, null);
@@ -53,16 +65,30 @@ namespace Kestrel.Core.Designer
         }
 
         /// <summary>A red row that is not one of the seeded fair events (odds &lt; 0) happens on every flight.</summary>
-        public static FlightRisk DeterministicRed(IList<FlightRisk> risks)
+        public static FlightRisk DeterministicRed(IList<FlightRisk> risks) => DeterministicRed(risks, null);
+
+        /// <summary>
+        /// As above, minus a red tumble row the flown ascent shows cannot happen (F1 / NAV-01, NAV-02).
+        /// FailureModel tumbles only when stability &lt; 0 and CAR &lt; 1 hold together; the row goes red on
+        /// negative stability alone. With CAR &gt;= 1 for the whole climb and no tumble event, the gimbal held it,
+        /// so it is not a certain failure. The row itself (and the stepper's Aero warning) is unchanged.
+        /// </summary>
+        public static FlightRisk DeterministicRed(IList<FlightRisk> risks, QuickReadout flown)
         {
             if (risks == null) return null;
             for (int i = 0; i < risks.Count; i++)
             {
                 var risk = risks[i];
-                if (risk != null && risk.level == "red" && risk.odds < 0) return risk;
+                if (risk == null || risk.level != "red" || !(risk.odds < 0)) continue;
+                if (risk.kind == "tumble" && HeldByControl(flown)) continue;
+                return risk;
             }
             return null;
         }
+
+        static bool HeldByControl(QuickReadout r) =>
+            r != null && !r.maxQStale && r.minCar.HasValue && r.minCar.Value >= 1
+            && (r.predictedFailure == null || r.predictedFailure.kind != "tumble");
 
         static string First(EngineeringReport report)
         {
@@ -77,6 +103,8 @@ namespace Kestrel.Core.Designer
             if (!string.IsNullOrWhiteSpace(msg)) return msg.Trim();
             return fallback;
         }
+
+        static LaunchGateResult Hard(LaunchGateResult r) { r.hard = true; return r; }
 
         static LaunchGateResult Blocked(string reason, string code, string tab) =>
             new LaunchGateResult { state = LaunchGateState.Blocked, reason = reason ?? Fallback, code = code, tab = tab };

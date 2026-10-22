@@ -35,6 +35,20 @@ namespace Kestrel.Core.Flight
         public const int Ahead = 3;
         public const double HeatWarn = 0.85;
 
+        // The stage banner (h-verdict) lines. Every verdict Pulse and Lost can return; the HUD layout tests fit each one.
+        public const string VerdictCount = "On the count";
+        public const string VerdictHeating = "Heating hard";
+        public const string VerdictSpeed = "Speed is there";
+        public const string VerdictClimbing = "Climbing";
+        public const string VerdictPastGoal = "Past the goal";
+        public const string VerdictShort = "Short on speed";
+        public const string VerdictOnTrack = "On track";
+        public const string VerdictLost = "Vehicle lost";
+        public static readonly string[] Verdicts =
+        {
+            VerdictCount, VerdictHeating, VerdictSpeed, VerdictClimbing, VerdictPastGoal, VerdictShort, VerdictOnTrack, VerdictLost,
+        };
+
         /// <summary>Index of the latest beat whose nominal is at or before <paramref name="time"/>. -1 before the first.</summary>
         public static int CurrentIndex(IReadOnlyList<LaunchBeat> beats, double time)
         {
@@ -84,7 +98,7 @@ namespace Kestrel.Core.Flight
             var pulse = new DesignPulse { SpeedFraction = frac, HeatFraction = heat };
             if (!flying)
             {
-                pulse.Verdict = "On the count";
+                pulse.Verdict = VerdictCount;
                 pulse.Detail = spareMps >= 0
                     ? $"{spareMps:N0} m/s to spare for {trip}"
                     : $"{-spareMps:N0} m/s short for {trip}";
@@ -93,12 +107,12 @@ namespace Kestrel.Core.Flight
             bool heating = heat >= HeatWarn;
             bool underHop = goalAltM > 0 && altitudeM <= goalAltM * 1.05;
             bool pastHop = goalAltM > 0 && altitudeM > goalAltM * 1.08;
-            if (heating) pulse.Verdict = "Heating hard";
-            else if (frac >= 1) pulse.Verdict = "Speed is there";
-            else if (underHop || altitudeM < 10000) pulse.Verdict = "Climbing";
-            else if (pastHop) pulse.Verdict = "Past the goal";
-            else if (frac < 0.40) pulse.Verdict = "Short on speed";
-            else pulse.Verdict = "On track";
+            if (heating) pulse.Verdict = VerdictHeating;
+            else if (frac >= 1) pulse.Verdict = VerdictSpeed;
+            else if (underHop || altitudeM < 10000) pulse.Verdict = VerdictClimbing;
+            else if (pastHop) pulse.Verdict = VerdictPastGoal;
+            else if (frac < 0.40) pulse.Verdict = VerdictShort;
+            else pulse.Verdict = VerdictOnTrack;
             string q = maxQKpa.HasValue ? $" · Q {qPa / 1000:0} of {maxQKpa.Value:0} kPa" : $" · Q {qPa / 1000:0} kPa";
             pulse.Detail = $"{speedMps / 1000:0.00} of {req / 1000:0.00} km/s{q}";
             return pulse;
@@ -116,7 +130,7 @@ namespace Kestrel.Core.Flight
                 case "tumble": detail = "It tumbled and came apart at " + where + "."; break;
                 default: detail = "The vehicle came apart at " + where + "."; break;
             }
-            return new DesignPulse { Verdict = "Vehicle lost", Detail = detail };
+            return new DesignPulse { Verdict = VerdictLost, Detail = detail };
         }
 
         /// <summary>One line for a tapped event, using the live numbers. The same beat and the same pulse always read the same.</summary>

@@ -65,6 +65,27 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void ButtonSaysItIsTheCameraAndCKeyToastNamesTheView()
+        {
+            Assert.That(FlightView.Caption(FlightViewMode.Auto), Is.EqualTo("Cam: Auto"));
+            Assert.That(FlightView.Caption(FlightViewMode.Pad), Is.EqualTo("Cam: Pad"));
+            Assert.That(FlightView.Toast(FlightViewMode.Above), Is.EqualTo("Camera: Above"));
+            Assert.That(FlightView.ToastSec, Is.EqualTo(1f));
+            Assert.That(FlightView.Picker, Is.EqualTo(new[]
+            {
+                FlightViewMode.Auto, FlightViewMode.Above, FlightViewMode.Below, FlightViewMode.Chase, FlightViewMode.Pad,
+            }));
+            // The cycle C uses still visits every view once.
+            var seen = new System.Collections.Generic.HashSet<FlightViewMode>();
+            var m = FlightViewMode.Auto;
+            for (int i = 0; i < 5; i++) { seen.Add(m); m = FlightView.Next(m); }
+            Assert.That(seen.Count, Is.EqualTo(5));
+            Assert.That(m, Is.EqualTo(FlightViewMode.Auto));
+            Assert.That(FlightView.WidestButton(), Is.GreaterThanOrEqualTo(44f));
+            Assert.That(FlightView.WidestChip(), Is.GreaterThanOrEqualTo(44f));
+        }
+
+        [Test]
         public void SettingsRecordRoundTripsTheCamera()
         {
             string dir = Path.Combine(Path.GetTempPath(), "kh-cam-" + Guid.NewGuid().ToString("N"));
@@ -82,6 +103,26 @@ namespace Kestrel.Core.Tests
             {
                 try { Directory.Delete(dir, true); } catch (Exception) { }
             }
+        }
+
+        [Test]
+        public void FollowVisiblyChangesTheFramingOrSaysItIsAlreadyFollowing()
+        {
+            // Pad is the fixed ground camera: Follow leaves it for the Auto chase.
+            Assert.That(FlightView.Chases(FlightViewMode.Pad), Is.False);
+            Assert.That(FlightView.FollowView(FlightViewMode.Pad), Is.EqualTo(FlightViewMode.Auto));
+            Assert.That(FlightView.Following(true, FlightViewMode.Pad), Is.False, "Pad does not follow");
+            Assert.That(FlightView.FollowCaption(FlightView.Following(true, FlightViewMode.Pad)), Is.EqualTo("Follow rocket"));
+            foreach (var mode in FlightView.Cycle)
+            {
+                if (mode == FlightViewMode.Pad) continue;
+                Assert.That(FlightView.FollowView(mode), Is.EqualTo(mode), mode + " keeps the player's choice");
+                Assert.That(FlightView.Following(true, mode), Is.True, mode.ToString());
+                Assert.That(FlightView.Following(false, mode), Is.False, mode + " orbited away");
+                Assert.That(FlightView.FollowCaption(true), Is.EqualTo("Following"), "a no-op tap reads as a state");
+                Assert.That(FlightView.FollowCaption(false), Is.EqualTo("Follow rocket"));
+            }
+            Assert.That(FlightView.FollowTip(true), Is.Not.EqualTo(FlightView.FollowTip(false)));
         }
     }
 }

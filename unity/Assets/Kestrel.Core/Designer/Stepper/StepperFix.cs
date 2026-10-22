@@ -466,16 +466,18 @@ namespace Kestrel.Core.Designer.Stepper
             var lim = DesignerLimits.Active;
             double targetD = diameter;
             double targetL = length;
-            if (volume > 0 && diameter > 0)
+            double needD = PayloadFit.RequiredDiameter(PayloadFit.SpecFor(catalog, design));
+            if (needD > diameter) targetD = Ceil(needD, 0.1, lim.diameterMin, lim.diameterMax);
+            if (volume > 0 && targetD > 0)
             {
-                double radius = PayloadFit.RadiusFactor * diameter;
+                double radius = PayloadFit.RadiusFactor * targetD;
                 double denom = Math.PI * radius * radius * PayloadFit.LengthFactor;
                 if (denom > 0) targetL = volume / denom * 1.08;
             }
             targetL = Ceil(Math.Max(targetL, length + 0.5), 0.1, lim.fairingLengthMin, lim.fairingLengthMax);
             if (targetL <= length + 1e-6 && diameter < lim.diameterMax - 0.05)
             {
-                targetD = Ceil(diameter + 0.5, 0.1, lim.diameterMin, lim.diameterMax);
+                targetD = Ceil(Math.Max(targetD, diameter + 0.5), 0.1, lim.diameterMin, lim.diameterMax);
                 double radius = PayloadFit.RadiusFactor * targetD;
                 double denom = Math.PI * radius * radius * PayloadFit.LengthFactor;
                 if (volume > 0 && denom > 0) targetL = Ceil(volume / denom * 1.08, 0.1, lim.fairingLengthMin, lim.fairingLengthMax);
@@ -1030,12 +1032,7 @@ namespace Kestrel.Core.Designer.Stepper
             return cap;
         }
 
-        static double PayloadVolume(Catalog catalog, JsonObject design)
-        {
-            string type = design.Obj("payload")?.Str("type");
-            if (type != null && catalog != null && catalog.PayloadById.TryGetValue(type, out var payload)) return payload.volume;
-            return 0;
-        }
+        static double PayloadVolume(Catalog catalog, JsonObject design) => PayloadFit.SpecFor(catalog, design)?.volume ?? 0;
 
         static double ShownG(JsonObject design, double fallback)
         {

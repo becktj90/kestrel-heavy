@@ -93,7 +93,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Solid_UsesBurnout_NotMeco()
         {
-            var seq = Open("tpl-sounding-solid", "kid");
+            var seq = Open("fixture-sounding-solid", "kid");
             seq.Step(10_000);
             var ids = Ids(seq.AdvanceSim(1e9));
             Assert.Contains("asc.burnout", ids);
@@ -135,6 +135,7 @@ namespace Kestrel.Core.Tests
                     if (parsed != null && parsed.id == id) { d = parsed; break; }
                 }
             }
+            if (d == null && id == "fixture-sounding-solid") d = Golden.Fixture(Golden.SolidSoundingFixture);
             Assert.IsNotNull(d, id);
             var seq = LaunchSequence.Open(TimelineGenerator.Generate(cat, d, Pad.For(cat, d), new Mission { mode = mode, id = id }, 1));
             Assert.IsNotEmpty(seq.Beats, id);

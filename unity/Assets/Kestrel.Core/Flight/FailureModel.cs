@@ -97,6 +97,37 @@ namespace Kestrel.Core.Flight
         public double value, limit;
     }
 
+    /// <summary>
+    /// #338 (Physics): a warning-only structural-margin note. The flight's q·alpha bending passed
+    /// <see cref="FailureMonitor.BendWarnFraction"/> of what the walls could still take sideways at that moment
+    /// (the allowable load left after thrust and drag, FailureMonitor.Consider). It never changes the throttle,
+    /// the pitch or the outcome; a breakup is still the margin-of-safety check (ms &lt; 0).
+    /// </summary>
+    public sealed class StructuralWarning
+    {
+        public double t, fraction, qPa, alphaDeg;
+        public int stage;
+        public string kid, engineer;
+
+        /// <summary>q·alpha in kPa·deg.</summary>
+        public double QAlphaKPaDeg => qPa / 1000.0 * alphaDeg;
+
+        public static StructuralWarning Make(double t, double fraction, double qPa, double alphaRad, int stage)
+        {
+            var inv = CultureInfo.InvariantCulture;
+            double deg = alphaRad * 180.0 / Math.PI;
+            int pct = (int)Math.Floor(fraction * 100.0);
+            var w = new StructuralWarning { t = t, fraction = fraction, qPa = qPa, alphaDeg = deg, stage = stage };
+            w.kid = "Close call at T+" + t.ToString("0", inv) + " s: the wind pushed sideways on your rocket and used "
+                + pct.ToString(inv) + "% of the bend your tanks can take. It held. A higher safety factor gives more room.";
+            w.engineer = "q·alpha " + w.QAlphaKPaDeg.ToString("0.0", inv) + " kPa·deg (q " + (qPa / 1000.0).ToString("0.0", inv)
+                + " kPa, alpha " + deg.ToString("0.00", inv) + "°) at T+" + t.ToString("0.00", inv) + " s, stage " + stage.ToString(inv)
+                + ": " + pct.ToString(inv) + "% of the bending allowance left after axial load. Warning at "
+                + (FailureMonitor.BendWarnFraction * 100).ToString("0", inv) + "%, breakup at 100%.";
+            return w;
+        }
+    }
+
     public sealed class FlightRisk
     {
         public string kind, level, tab, field, kid, engineer;
@@ -228,8 +259,8 @@ namespace Kestrel.Core.Flight
                 limit = hit.limit,
                 cause = Cause(hit),
             };
-            double qShow = hit.kind == FailureKind.StructuralMaxQ && hit.cause == 0 && qPeakPa > hit.value ? qPeakPa : hit.value;
-            if (hit.kind == FailureKind.StructuralMaxQ && hit.cause == 0) ev.value = qShow;
+            // #314: the load AT the breakup, not a later or larger peak. qPeakPa is kept for callers and ignored.
+            double qShow = hit.value;
             ev.kid = Kid(hit, t, qShow);
             ev.engineer = Engineer(hit, t, qShow);
             ev.fixHint = Fix(hit.kind);
@@ -394,6 +425,16 @@ namespace Kestrel.Core.Flight
         public bool Gentle;
         public FailureEvent Event;
         public List<FlightRisk> Risks;
+        /// <summary>#338 (Physics): warn, never act, once q·alpha bending passes this share of the walls' sideways allowance.</summary>
+        public const double BendWarnFraction = 0.8;
+        /// <summary>Peak share of the sideways (q·alpha) allowance used while whole and thrusting. 0 in calm air with no alpha.</summary>
+        public double PeakBendFraction { get; private set; }
+        /// <summary>The first moment the share reached <see cref="BendWarnFraction"/>; null when it never did. Warning only.</summary>
+        public StructuralWarning BendWarning { get; private set; }
+        // #314: q and axial g at the latest step flown while the vehicle was whole. Frozen once Event is set, so a
+        // breakup reports the load at that moment and not the debris' fall.
+        double qNow, gNow;
+        bool sawStep;
 
         FailureMonitor(Info[] infos, Knot[] knots, double qLimPa, double limitG, double maxTempK, double heatFactor, double vLeg, bool legs, bool gentle, ulong hash, ulong seed, EventSchedule schedule)
         {
@@ -651,8 +692,18 @@ namespace Kestrel.Core.Flight
             {
                 double bend = step.qPa * step.area * cn * step.alphaRad * Math.Abs(cp - cg);
                 double feq = info.radius > 0 ? Math.Abs(2 * bend / info.radius) : 0;
-                double load = step.mass * step.accel + step.qPa * step.area * step.cd + feq;
+                double axial = step.mass * step.accel + step.qPa * step.area * step.cd;
+                double load = axial + feq;
                 if (load > 0) ms = info.fAllow / load - 1;
+                // #338: the q·alpha share of what is left after axial load (1 is ms = 0). Read only; no control change.
+                if (Event == null && step.thrusting && feq > 0)
+                {
+                    double left = info.fAllow - axial;
+                    double frac = left > 0 ? feq / left : double.PositiveInfinity;
+                    if (frac > PeakBendFraction) PeakBendFraction = frac;
+                    if (BendWarning == null && frac >= BendWarnFraction && frac < 1)
+                        BendWarning = StructuralWarning.Make(step.t, frac, step.qPa, step.alphaRad, idx + 1);
+                }
             }
             double tAtm = step.alt < 11000 ? 288.15 - 0.0065 * Math.Max(0, step.alt) : 216.65;
             double nose = tAtm + heatFactor * (step.qPa / 1000.0) * 2.0;
@@ -705,6 +756,12 @@ namespace Kestrel.Core.Flight
                 thrustN = info.thrustN,
                 massKg = step.mass,
             };
+            if (Event == null && !step.emptyLast)
+            {
+                qNow = step.qPa;
+                gNow = step.accel / FailureModel.G0;
+                sawStep = true;
+            }
             var hit = FailureModel.Evaluate(sample, ref scratch);
             if (!hit.on) return false;
             if (Event == null) Event = FailureModel.Explain(hit, step.t, scratch.qPeak);
@@ -760,28 +817,25 @@ namespace Kestrel.Core.Flight
             return hit.on && !Predict;
         }
 
+        /// <summary>
+        /// Close the flight and build the risk rows. <paramref name="qPeakPa"/> is the sim's peak over the whole run,
+        /// fall included; since #314 it no longer rewrites a structural breakup, which keeps the load at that moment.
+        /// </summary>
         public void Finish(double qPeakPa)
         {
-            if (Event != null && Event.kind == "structural-maxq" && Event.cause == "q" && qPeakPa > Event.value)
-            {
-                Event.value = qPeakPa;
-                Event.kid = "Your rocket bent in half at T+" + Math.Round(Event.t).ToString(CultureInfo.InvariantCulture)
-                    + " s. The air pushed " + Math.Round(qPeakPa / 1000.0).ToString(CultureInfo.InvariantCulture)
-                    + " kPa, but your tanks could only take " + Math.Round(Event.limit / 1000.0).ToString(CultureInfo.InvariantCulture)
-                    + " kPa. Try a higher safety factor or a lower max-Q throttle.";
-                Event.engineer = "Air load " + qPeakPa.ToString("0.0", CultureInfo.InvariantCulture)
-                    + " Pa, past the " + Event.limit.ToString("0.0", CultureInfo.InvariantCulture)
-                    + " Pa limit, at T+" + Event.t.ToString("0.00", CultureInfo.InvariantCulture) + " s.";
-            }
             Risks = BuildRisks();
         }
 
         public List<FlightRisk> BuildRisks()
         {
             var list = new List<FlightRisk>(11);
-            Add(list, FailureKind.StructuralMaxQ, qLimPa <= 0 ? 1 : (qLimPa - scratch.qPeak) / qLimPa, scratch.qPeak, qLimPa, "structure", "safetyFactor", EventKind(FailureKind.StructuralMaxQ));
+            // A breakup reads q and g at that moment (#314); a whole flight reads its peaks.
+            bool broke = Event != null && sawStep;
+            double q = broke ? (Event.kind == FailureKind.Name(FailureKind.StructuralMaxQ) && Event.cause == "q" ? Event.value : qNow) : scratch.qPeak;
+            double g = broke ? (Event.kind == FailureKind.Name(FailureKind.OverG) ? Event.value : gNow) : scratch.gPeak;
+            Add(list, FailureKind.StructuralMaxQ, qLimPa <= 0 ? 1 : (qLimPa - q) / qLimPa, q, qLimPa, "structure", "safetyFactor", EventKind(FailureKind.StructuralMaxQ));
             double gLim = limitG > 0 ? limitG : 8;
-            Add(list, FailureKind.OverG, (gLim - scratch.gPeak) / gLim, scratch.gPeak, gLim, "guidance", "gLimit", EventKind(FailureKind.OverG));
+            Add(list, FailureKind.OverG, (gLim - g) / gLim, g, gLim, "guidance", "gLimit", EventKind(FailureKind.OverG));
             double sMin = double.IsPositiveInfinity(scratch.minStability) ? 0 : scratch.minStability;
             double carMin = double.IsPositiveInfinity(scratch.minCar) ? 1 : scratch.minCar;
             bool tumble = EventKind(FailureKind.Tumble) || (sMin < 0 && carMin < 1);
@@ -814,6 +868,15 @@ namespace Kestrel.Core.Flight
             Add(list, FailureKind.LegCollapse, EventKind(FailureKind.LegCollapse) ? -1 : (legs ? 0.2 : 1), vLeg, vLeg, "recovery", "legs.kind", EventKind(FailureKind.LegCollapse));
             bool fatalOut = EventKind(FailureKind.EngineOut);
             Add(list, FailureKind.EngineOut, fatalOut ? -1 : 0.5, scratch.enginesOut, 0, "engines", "engineCount", fatalOut);
+            // The row for the failure that actually happened says when it happened. Risk() explains a row at
+            // T+0, so a burnout at T+58 s read "ran out of fuel at T+0 s" (F1).
+            if (Event != null)
+                for (int i = 0; i < list.Count; i++)
+                    if (list[i].kind == Event.kind && list[i].level == "red")
+                    {
+                        if (!string.IsNullOrEmpty(Event.kid)) list[i].kid = Event.kid;
+                        if (!string.IsNullOrEmpty(Event.engineer)) list[i].engineer = Event.engineer;
+                    }
             EventModel.Disclose(list, schedule, Gentle || gentle);
             return list;
         }

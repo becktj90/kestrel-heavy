@@ -24,6 +24,10 @@
     "tier": "standard"
   },
   "safetyFactor": 1.4,
+  "guidance": {
+    "maxQThrottle": 55,
+    "gLimit": 3.5
+  },
   "id": "tpl-hydrogen-upper",
   "name": "Heron",
   "tier": "medium",
@@ -36,7 +40,10 @@
       "name": "Stage 1",
       "propellant": "kerolox",
       "engine": "gg-kerolox",
-      "engineCount": 9,
+      "engineCount": 7,
+      "engineParams": {
+        "throttleMin": 0.45
+      },
       "propMass": 400000,
       "diameter": 3.7
     },
@@ -113,21 +120,21 @@
       "cost": "pending: E1 cost model not landed"
     },
     "review": [
-      "Upper-stage acceleration is high (~13 g at burnout) because the sim has no throttling; real stages throttle or shut down early."
+      "Seven kerosene engines on stage 1 (not nine): with nine, thrust over mass reached 21.8 g at stage-1 burnout and the stack broke up. Seven give liftoff TWR about 1.3. Flown full throttle, the seven still pass the 35 kPa air-load limit near 10 km and pass the comsat’s 6 g rating before burnout, so stage 1 throttles: 55% through max-Q (peak air load about 18 kPa), a 3.5 g limit, and a 45% minimum throttle so the engines can actually throttle that far. Peak acceleration is about 4.8 g, at stage-1 burnout."
     ],
     "stats": {
       "stages": 2,
-      "liftoffMassT": 463.1,
-      "liftoffTWR": 1.67,
-      "deltaV": 12641,
+      "liftoffMassT": 462.2,
+      "liftoffTWR": 1.31,
+      "deltaV": 12680,
       "requiredDeltaV": 11330,
-      "marginPct": 11.6,
+      "marginPct": 11.9,
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 930,
-      "simPerigeeKm": 196,
-      "maxG": 13.5
+      "simApogeeKm": 271,
+      "simPerigeeKm": 191,
+      "maxG": 10.7
     }
   }
 }

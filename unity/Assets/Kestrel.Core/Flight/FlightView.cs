@@ -1,5 +1,7 @@
 // One saved camera. Auto is the altitude-aware chase. The other four are fixed frames.
-// The button cycles them mid-flight. The value lives in the save record kh.save.v1.settings.
+// The button reads "Cam: <mode>" and opens a five-chip picker; C on web cycles without it.
+// The value lives in the save record kh.save.v1.settings. Poses: FlightViewPose.
+using System;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Json;
 
@@ -32,6 +34,19 @@ namespace Kestrel.Core.Flight
         public const float ButtonPadPt = 16f;
         public const float MinButtonPt = 52f;
 
+        public const string CaptionPrefix = "Cam: ";
+        public const float ChipFontPt = 13f;
+        public const float ChipPadPt = 16f;
+        public const float MinChipPt = 56f;
+        /// <summary>Seconds the C-key toast stays up.</summary>
+        public const float ToastSec = 1f;
+
+        /// <summary>Picker chips, in the brief's reading order. C and the old tap cycle use <see cref="Cycle"/>.</summary>
+        public static readonly FlightViewMode[] Picker =
+        {
+            FlightViewMode.Auto, FlightViewMode.Above, FlightViewMode.Below, FlightViewMode.Chase, FlightViewMode.Pad,
+        };
+
         public static readonly FlightViewMode[] Cycle =
         {
             FlightViewMode.Auto, FlightViewMode.Chase, FlightViewMode.Above, FlightViewMode.Below, FlightViewMode.Pad,
@@ -48,6 +63,59 @@ namespace Kestrel.Core.Flight
                 default: return "Auto";
             }
         }
+
+        /// <summary>The button caption. "Auto" alone did not read as a camera control.</summary>
+        public static string Caption(FlightViewMode mode) => CaptionPrefix + Name(mode);
+
+        /// <summary>The C-key toast.</summary>
+        public static string Toast(FlightViewMode mode) => "Camera: " + Name(mode);
+
+        /// <summary>Follow button label while the camera is chasing the rocket.</summary>
+        public const string FollowingLabel = "Following";
+        /// <summary>Follow button label when tapping it would change the framing.</summary>
+        public const string FollowLabel = "Follow rocket";
+
+        /// <summary>Every view but Pad rides with the rocket. Pad is the fixed ground camera.</summary>
+        public static bool Chases(FlightViewMode mode) => mode != FlightViewMode.Pad;
+
+        /// <summary>The camera follows the rocket: no manual orbit, and a view that rides with it.</summary>
+        public static bool Following(bool noOrbit, FlightViewMode mode) => noOrbit && Chases(mode);
+
+        /// <summary>
+        /// The view Follow lands on. Follow clears the manual orbit and, from the fixed Pad view, goes back
+        /// to Auto (the chase). From any chasing view it keeps the player's choice.
+        /// </summary>
+        public static FlightViewMode FollowView(FlightViewMode mode) => Chases(mode) ? mode : FlightViewMode.Auto;
+
+        /// <summary>
+        /// The Follow button toggles (#332, Trevor: "tapping Follow does nothing"). While following, a tap lets go:
+        /// the camera stays on the ground (Pad). Not following, a tap goes back to the last chasing view the
+        /// player had (or Auto), and the orbit is cleared.
+        /// </summary>
+        public static FlightViewMode FollowToggle(FlightViewMode mode, bool following, FlightViewMode lastChase) =>
+            following ? FlightViewMode.Pad : Chases(lastChase) ? lastChase : FlightViewMode.Auto;
+
+        /// <summary>The control row's short caption for a full one, used only when the full set cannot fit the row
+        /// (FlightHudLayout.ToolSlots): "Follow rocket" and "Following" read "Follow" (the Following plate and its
+        /// teal edge still tell the state), "Cam: Below" reads "Below". With <paramref name="shortL"/> false, as is.</summary>
+        public static string ShortToolCaption(string caption, bool shortL)
+        {
+            if (!shortL || string.IsNullOrEmpty(caption)) return caption;
+            if (caption == FollowLabel || caption == FollowingLabel) return ShortFollowLabel;
+            if (caption.StartsWith(CaptionPrefix, StringComparison.Ordinal)) return caption.Substring(CaptionPrefix.Length);
+            return caption;
+        }
+
+        public const string ShortFollowLabel = "Follow";
+
+        /// <summary>"Following" when tapping would change nothing, "Follow rocket" when it would.</summary>
+        public static string FollowCaption(bool following) => following ? FollowingLabel : FollowLabel;
+
+        public static string FollowTip(bool following) => following
+            ? "The camera is following the rocket. Tap to let go and watch from the pad."
+            : "Follow the rocket: the camera glides back behind it.";
+
+        public static string Tip(FlightViewMode mode) => "Camera: " + Name(mode) + ". Tap to pick a view. C cycles on a keyboard.";
 
         public static FlightViewMode Parse(string name)
         {
@@ -121,13 +189,14 @@ namespace Kestrel.Core.Flight
         /// <summary>The control is at least as wide as the caption, and the row fits a 335 pt portrait or landscape.</summary>
         public static float ButtonWidth(FlightViewMode mode)
         {
-            float text = LabelWidth(Name(mode), ButtonFontPt);
+            float text = LabelWidth(Caption(mode), ButtonFontPt);
             float w = text + ButtonPadPt;
             if (w < MinButtonPt) w = MinButtonPt;
             return w;
         }
 
-        public static bool FitsWidth(float screenWidthPt)
+        /// <summary>The widest caption, so the button does not change size as the mode changes.</summary>
+        public static float WidestButton()
         {
             float widest = MinButtonPt;
             for (int i = 0; i < Cycle.Length; i++)
@@ -135,6 +204,29 @@ namespace Kestrel.Core.Flight
                 float w = ButtonWidth(Cycle[i]);
                 if (w > widest) widest = w;
             }
+            return widest;
+        }
+
+        public static float ChipWidth(FlightViewMode mode)
+        {
+            float w = LabelWidth(Name(mode), ChipFontPt) + ChipPadPt;
+            return w < MinChipPt ? MinChipPt : w;
+        }
+
+        public static float WidestChip()
+        {
+            float widest = MinChipPt;
+            for (int i = 0; i < Picker.Length; i++)
+            {
+                float w = ChipWidth(Picker[i]);
+                if (w > widest) widest = w;
+            }
+            return widest;
+        }
+
+        public static bool FitsWidth(float screenWidthPt)
+        {
+            float widest = WidestButton();
             float row = FlightHudLayout.SideMarginPt * 2f + FlightHudLayout.FollowWidthPt + FlightHudLayout.GapPt
                 + widest + FlightHudLayout.GapPt + FlightHudLayout.PauseWidthPt;
             return row <= screenWidthPt + 0.5f && widest + ButtonPadPt <= screenWidthPt - FlightHudLayout.SideMarginPt * 2f;

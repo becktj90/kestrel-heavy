@@ -1,5 +1,7 @@
 // Player-facing booster recovery after the first stage lets go. Simple flies the
-// auto-assist law. Engineer sets pitch and throttle. The picture is the separated
+// auto-assist law. Engineer sets pitch and throttle. The flight logic is Core's
+// BoosterLanding (every released first stage gets its landing; an expendable one says
+// why it is lost and still flies the attempt, ungraded); this class draws it. The picture is the separated
 // stage: grid fins, legs, the landing plume, dust or splash, and a #247 break
 // when the touchdown is too hard. The ascent camera stays on the rocket until
 // entry, then follows the booster. Boostback keeps a corner inset.
@@ -18,11 +20,6 @@ namespace Kestrel.Slice
 {
     public sealed class RecoveryShow : MonoBehaviour
     {
-        struct Shot
-        {
-            public double Down, Alt, Speed, PitchDeg;
-        }
-
         readonly List<UnityEngine.Object> owned = new List<UnityEngine.Object>();
 
         FlightDriver flight;
@@ -33,20 +30,18 @@ namespace Kestrel.Slice
         Label callout, numbers;
         VisualElement stick;
         Camera inset;
-        RecoveryCraft craft;
-        RecoveryBody body;
-        RecoveryMark[] marks = Array.Empty<RecoveryMark>();
-        int markCount;
-        Shot shot;
+        BoosterLanding landing;
+        RecoveryCraft craft => landing != null ? landing.Craft : default;
+        RecoveryBody body => landing != null ? landing.Body : default;
         Transform[] finBits = new Transform[4];
         Transform[] legBits = new Transform[4];
         Transform plume, deck, dustRoot;
         ParticleSystem dust;
         UnityEngine.Material hotMat, deckMat;
         Mesh cube;
-        double accum, downAge;
+        double downAge;
         float units = 1f;
-        bool armed, haveShot, started, engineer, reduce, boomed, touched, puffed;
+        bool armed, started, engineer, reduce, boomed, puffed;
         double pitchCmd = Math.PI / 2;
         double throttleCmd;
 
@@ -66,10 +61,15 @@ namespace Kestrel.Slice
             staging = stageShow;
             engineer = engineerDepth;
             reduce = reduceMotion;
-            RecoveryLog.ArmFlight();
-            if (staging == null || !staging.CoreCanRelease) return;
-            if (!RecoveryCrafts.TryFrom(catalog, design, out craft)) return;
-            RecoveryLog.Engage();
+            // Before: only a design with recovery.mode and a landing craft armed here (TryFrom), so every
+            // expendable starter (KH-3..KH-5 and the templates) dropped its booster with no landing and no word.
+            landing = BoosterLanding.Arm(catalog, design);
+            if (!landing.Armed) return;
+            if (staging == null || !staging.CoreCanRelease || staging.CoreSerial != landing.CoreSerial)
+            {
+                landing.Release();
+                return;
+            }
             armed = true;
             pitchCmd = Math.PI / 2;
             throttleCmd = 0;
@@ -85,13 +85,11 @@ namespace Kestrel.Slice
         {
             armed = false;
             started = false;
-            haveShot = false;
             SteerCamera = false;
             boomed = false;
-            touched = false;
             puffed = false;
-            accum = 0;
             downAge = 0;
+            if (landing != null) landing.Release();
             if (staging != null) staging.SetRecoveryOwnsBooster(false);
             if (fins != null) fins.enabled = true;
             if (legs != null) legs.enabled = true;
@@ -116,34 +114,13 @@ namespace Kestrel.Slice
                 Watch(dt);
                 return;
             }
-            if (body.Phase != RecoveryPhase.Down)
-            {
-                if (dt < 0f || float.IsNaN(dt)) dt = 0f;
-                accum += Math.Min(dt, 0.1f);
-                var stickIn = Stick();
-                int guard = 0;
-                while (guard++ < 8 && body.Phase != RecoveryPhase.Down)
-                {
-                    RecoveryFrames.Axes(body.X, body.Y, out _, out double alt, out _, out _, out _, out _, out _);
-                    double step = alt < RecoverySim.NearAlt ? RecoverySim.NearDt : RecoverySim.Dt;
-                    if (accum + 1e-9 < step) break;
-                    var before = body.Phase;
-                    RecoverySim.Step(ref body, craft, stickIn, step);
-                    accum -= step;
-                    if (body.Phase != before) Remember();
-                }
-            }
-            else downAge += dt;
-            var sample = RecoverySim.Sample(body, craft);
-            if (sample.Phase == RecoveryPhase.Down && !touched)
-            {
-                touched = true;
-                var verdict = RecoveryScore.Judge(sample, craft, TrimMarks());
-                verdict.Attempted = true;
-                RecoveryLog.Publish(verdict);
-            }
+            if (body.Phase == RecoveryPhase.Down) downAge += dt;
+            // t466: once the ascent is over (insertion or a clean cutoff), the booster finishes at once so the report opens.
+            landing.Conclude(flight.Result != null && !flight.Running, flight.Lost);
+            var sample = landing.Step(dt, Stick());
             string cause = RecoveryLog.Current != null && RecoveryLog.Current.Attempted ? RecoveryLog.Current.Cause : null;
-            var pic = RecoveryViews.Of(sample, TrimMarks(), cause, craft.VLeg, sample.Phase == RecoveryPhase.Down);
+            var pic = RecoveryViews.Of(sample, landing.TrimMarks(), cause, craft.VLeg, sample.Phase == RecoveryPhase.Down);
+            pic.Call = landing.Callout(sample);
             Pose(sample);
             PoseHardware(sample);
             PosePlume(sample);
@@ -159,48 +136,26 @@ namespace Kestrel.Slice
             if (!SteerCamera || cam == null || staging == null || staging.Booster == null) return;
             var target = staging.Booster.position;
             float h = 26f;
-            var offset = ChaseCamera.DesiredOffset(Vector3.up, h, (float)Math.Max(0, RecoverySim.Sample(body, craft).Alt));
+            var offset = ChaseCamera.DesiredOffset(Vector3.up, h, (float)Math.Max(0, landing.Sample().Alt));
             var pos = PadGround.ClampAboveGround(target + offset, groundY);
             cam.transform.position = pos;
             cam.transform.rotation = ChaseCamera.Aim(pos, target + Vector3.up * (h * 0.25f), cam.fieldOfView,
-                (float)Math.Max(0, RecoverySim.Sample(body, craft).Alt), pos.y - groundY);
+                (float)Math.Max(0, landing.Sample().Alt), pos.y - groundY);
         }
 
         void Watch(float dt)
         {
-            if (flight.Sim.StageIdx == staging.CoreSerial && flight.HasAttitude)
-            {
-                shot = new Shot
-                {
-                    Down = flight.Downrange,
-                    Alt = flight.Altitude,
-                    Speed = flight.Speed,
-                    PitchDeg = flight.AttitudeDeg,
-                };
-                haveShot = true;
-            }
             bool over = flight.Lost || (flight.Result != null && !flight.Running);
-            if (!started && haveShot && flight.Sim.StageIdx > staging.CoreSerial)
+            if (landing.Watch(flight.SimTime, flight.Sim.StageIdx, flight.Downrange, flight.Altitude, flight.Speed, flight.AttitudeDeg, flight.HasAttitude, over))
             {
                 Begin();
                 return;
             }
-            if (over)
-            {
-                RecoveryLog.Release();
-                armed = false;
-            }
+            if (!landing.Armed) armed = false;
         }
 
         void Begin()
         {
-            double rad = shot.PitchDeg * Math.PI / 180.0;
-            double vEast = shot.Speed * Math.Cos(rad);
-            double vUp = shot.Speed * Math.Sin(rad);
-            body = RecoverySim.Begin(craft, shot.Down, shot.Alt, vEast, vUp);
-            marks = new RecoveryMark[8];
-            markCount = 0;
-            Remember();
             started = true;
             staging.SetRecoveryOwnsBooster(true);
             if (fins != null) fins.enabled = false;
@@ -214,29 +169,6 @@ namespace Kestrel.Slice
         {
             if (!engineer) return RecoveryStick.Assisted;
             return new RecoveryStick { Auto = false, PitchRad = pitchCmd, Throttle = throttleCmd };
-        }
-
-        void Remember()
-        {
-            if (markCount > 0 && marks[markCount - 1].Phase == body.Phase) return;
-            if (markCount >= marks.Length)
-            {
-                var grown = new RecoveryMark[marks.Length * 2];
-                for (int i = 0; i < marks.Length; i++) grown[i] = marks[i];
-                marks = grown;
-            }
-            var sample = RecoverySim.Sample(body, craft);
-            marks[markCount++] = new RecoveryMark
-            {
-                Phase = body.Phase,
-                T = body.T,
-                Alt = sample.Alt,
-                Speed = sample.Speed,
-                Sink = sample.Sink,
-                TiltDeg = sample.TiltDeg,
-                MissM = sample.MissM,
-                Prop = sample.Prop,
-            };
         }
 
         void Pose(in RecoverySample sample)
@@ -499,16 +431,6 @@ namespace Kestrel.Slice
             if (Application.isPlaying) Destroy(temp);
             else DestroyImmediate(temp);
             return cube;
-        }
-
-        RecoveryMark[] TrimMarks()
-        {
-            int n = markCount;
-            if (n < 0) n = 0;
-            if (n > marks.Length) n = marks.Length;
-            var kept = new RecoveryMark[n];
-            for (int i = 0; i < n; i++) kept[i] = marks[i];
-            return kept;
         }
 
         void EnsureChrome()

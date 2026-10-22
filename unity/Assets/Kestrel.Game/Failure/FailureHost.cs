@@ -465,13 +465,13 @@ namespace Kestrel.Game.Failure
                 Screen.dpi,
                 ui.layout.width);
             var shown = failure;
-            if (shown == null && RecoveryLog.Current != null && RecoveryLog.Current.Attempted && RecoveryLog.Current.Failure != null)
-                shown = RecoveryLog.Current.Failure;
+            if (shown == null) shown = Kestrel.Core.Flight.BoosterLanding.ReportFailure(null, RecoveryLog.Current);
             FlightDebrief debrief = null;
             try { debrief = PostFlightSource.Publish(flight, failure); }
             catch (System.Exception e) { Debug.LogWarning("[Kestrel] post-flight report: " + e.Message); }
             var actions = PostFlightSource.Actions();
-            string kind = shown != null ? shown.kind : "";
+            // F2: a miss with no failure event still repairs the speed. "" opened Structure and changed nothing.
+            string kind = Kestrel.Core.Designer.DesignerRepair.ReportKind(shown != null ? shown.kind : null, debrief != null ? debrief.Kind : null);
             var design = ui.Q("design");
             if (design != null) design.AddToClassList("hidden");
             System.Action reveal = () =>
@@ -485,6 +485,7 @@ namespace Kestrel.Game.Failure
                 var again = actions.Again;
                 var missions = actions.Missions;
                 var home = actions.Home;
+                var designer = actions.Designer;
                 System.Action leave = () =>
                 {
                     ReportCardChrome.Dismiss(ui);
@@ -494,6 +495,7 @@ namespace Kestrel.Game.Failure
                 actions.Again = () => { leave(); if (again != null) again(); };
                 actions.Missions = () => { leave(); if (missions != null) missions(); };
                 actions.Home = () => { leave(); if (home != null) home(); };
+                actions.Designer = () => { leave(); if (designer != null) designer(); };
                 actions.Fix = () => { leave(); FixField.Apply(ui, FixField.For(kind)); };
             }
             Card = ReportView.Build(shown, log, frame, reduce, () => { reveal(); FixField.Apply(ui, FixField.For(kind)); }, debrief, actions);

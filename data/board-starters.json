@@ -3,14 +3,14 @@
   "missions": [
     {
       "id": "m3",
-      "mode": "strength",
+      "mode": "fly",
       "restoreSafetyFactor": 1.9,
-      "edit": "Set strength to 1.9. Fix it also changes the fairing or the engines, and that misses.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
-          "id": "h-n5-k8-24000-2500",
-          "name": "h-n5-k8-24000-2500",
+          "id": "h-n5-k8-23500-2500",
+          "name": "h-n5-k8-23500-2500",
           "tier": "campaign",
           "stages": [
             {
@@ -18,7 +18,7 @@
               "propellant": "methalox",
               "engine": "gg-methalox-small",
               "engineCount": 5,
-              "propMass": 24000,
+              "propMass": 23500,
               "diameter": 1.6,
               "material": "titanium",
               "separationMass": 40,
@@ -70,7 +70,7 @@
             "rcs": false
           },
           "guidance": {
-            "pitchKickDeg": 8,
+            "pitchKickDeg": 8.65,
             "gLimit": 7.2
           },
           "heatShield": true,
@@ -178,9 +178,9 @@
     },
     {
       "id": "m5",
-      "mode": "fix",
+      "mode": "fly",
       "restoreSafetyFactor": 1.7,
-      "edit": "Auto Fix it. open Strength 1.25 → 1.45. Air load is 53.0 kPa and the walls hold 63.8 kPa. The warning line is 45 kPa. An upper stage is still short on push. Another engine does not fit without a wider rocket than the limits allow.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -267,9 +267,9 @@
     },
     {
       "id": "m6",
-      "mode": "strength",
+      "mode": "fly",
       "restoreSafetyFactor": 1.8,
-      "edit": "Set strength to 1.8. Fix it also changes the fairing or the engines, and that misses.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -362,7 +362,7 @@
           "avionics": {
             "tier": "standard"
           },
-          "safetyFactor": 1.35,
+          "safetyFactor": 1.65,
           "livery": {
             "primary": "#f2f2f2",
             "accent": "#1a3c6e",
@@ -379,20 +379,20 @@
       "designs": [
         {
           "version": 3,
-          "id": "n5-p260-m80-u28",
-          "name": "n5-p260-m80-u28",
+          "id": "n12-p416-m160-u42",
+          "name": "n12-p416-m160-u42",
           "tier": "campaign",
           "stages": [
             {
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox",
-              "engineCount": 5,
-              "propMass": 260000,
+              "engineCount": 12,
+              "propMass": 416000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
-              "landingPropMass": 31200,
+              "landingPropMass": 49920,
               "engineParams": {
                 "throttleMin": 0.35
               }
@@ -401,9 +401,9 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox-vac",
-              "engineCount": 1,
-              "propMass": 80000,
-              "diameter": 3.6,
+              "engineCount": 2,
+              "propMass": 160000,
+              "diameter": 4.5,
               "material": "titanium",
               "separationMass": 40,
               "landingPropMass": 0
@@ -413,7 +413,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 3,
-              "propMass": 28000,
+              "propMass": 42000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
@@ -458,8 +458,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
-            "turnShape": 0.2,
+            "pitchKickDeg": 6,
+            "turnShape": 0.5,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -574,8 +574,8 @@
       "designs": [
         {
           "version": 3,
-          "id": "n4-p260-m100-u28",
-          "name": "n4-p260-m100-u28",
+          "id": "n6-p260-m100-u42",
+          "name": "n6-p260-m100-u42",
           "tier": "campaign",
           "stages": [
             {
@@ -599,9 +599,9 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox-vac",
-              "engineCount": 1,
+              "engineCount": 2,
               "propMass": 100000,
-              "diameter": 3.6,
+              "diameter": 4.5,
               "material": "titanium",
               "separationMass": 40,
               "landingPropMass": 0,
@@ -614,7 +614,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 3,
-              "propMass": 28000,
+              "propMass": 42000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
@@ -659,8 +659,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
-            "turnShape": 0.2,
+            "pitchKickDeg": 6,
+            "turnShape": 0.5,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -686,20 +686,20 @@
       "designs": [
         {
           "version": 3,
-          "id": "b9-p340-m83-u33-s14",
-          "name": "b9-p340-m83-u33-s14",
+          "id": "b16-p544-m165-u33-s22",
+          "name": "b16-p544-m165-u33-s22",
           "tier": "campaign",
           "stages": [
             {
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox",
-              "engineCount": 9,
-              "propMass": 340000,
+              "engineCount": 16,
+              "propMass": 544000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
-              "landingPropMass": 68000,
+              "landingPropMass": 108800,
               "engineParams": {
                 "throttleMin": 0.35
               }
@@ -708,9 +708,9 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox-vac",
-              "engineCount": 1,
-              "propMass": 83000,
-              "diameter": 3.6,
+              "engineCount": 2,
+              "propMass": 165000,
+              "diameter": 4.5,
               "material": "titanium",
               "separationMass": 40,
               "landingPropMass": 0
@@ -736,12 +736,12 @@
             "engine": "gg-kerolox-small",
             "engineCount": 1,
             "count": 2,
-            "propMass": 14000,
+            "propMass": 22400,
             "diameter": 1.6,
             "material": "titanium",
             "kind": "liquid",
             "separationMass": 40,
-            "landingPropMass": 2800,
+            "landingPropMass": 4480,
             "engineParams": {
               "throttleMin": 0.35
             },
@@ -774,8 +774,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
-            "turnShape": 0.2,
+            "pitchKickDeg": 6,
+            "turnShape": 0.5,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -795,9 +795,9 @@
     },
     {
       "id": "m11",
-      "mode": "fix",
+      "mode": "fly",
       "restoreSafetyFactor": 1.7,
-      "edit": "Auto Fix it. open Strength 1.55 → 1.85. Air load is 68.6 kPa and the walls hold 81.4 kPa. The warning line is 45 kPa. An upper stage is still short on push. Another engine does not fit without a wider rocket than the limits allow.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -879,7 +879,7 @@
           "avionics": {
             "tier": "standard"
           },
-          "safetyFactor": 1.55,
+          "safetyFactor": 1.85,
           "livery": {
             "primary": "#f2f2f2",
             "accent": "#1a3c6e",
@@ -890,9 +890,9 @@
     },
     {
       "id": "m12",
-      "mode": "strength",
+      "mode": "fly",
       "restoreSafetyFactor": 1.7,
-      "edit": "Set strength to 1.7. Fix it also changes the fairing or the engines, and that misses.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -904,7 +904,7 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox",
-              "engineCount": 7,
+              "engineCount": 6,
               "propMass": 270000,
               "diameter": 3.2,
               "material": "titanium",
@@ -922,7 +922,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 2,
-              "propMass": 40000,
+              "propMass": 32000,
               "diameter": 3.2,
               "material": "titanium",
               "separationMass": 40,
@@ -966,7 +966,7 @@
             "rcs": false
           },
           "guidance": {
-            "pitchKickDeg": 8,
+            "pitchKickDeg": 4.5,
             "gLimit": 5
           },
           "heatShield": true,
@@ -985,9 +985,9 @@
     },
     {
       "id": "m13",
-      "mode": "fix",
+      "mode": "fly",
       "restoreSafetyFactor": 1.7,
-      "edit": "Auto Fix it. cleared Strength 1.25 → 1.6. Max-Q throttle 100% → 85%.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -1072,7 +1072,7 @@
           "avionics": {
             "tier": "standard"
           },
-          "safetyFactor": 1.25,
+          "safetyFactor": 1.6,
           "livery": {
             "primary": "#f2f2f2",
             "accent": "#1a3c6e",
@@ -1083,9 +1083,9 @@
     },
     {
       "id": "m14",
-      "mode": "strength",
+      "mode": "fly",
       "restoreSafetyFactor": 1.8,
-      "edit": "Set strength to 1.8. Fix it also changes the fairing or the engines, and that misses.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -1142,7 +1142,7 @@
             "orbit": "kh-m14"
           },
           "fairing": {
-            "diameter": 3.9,
+            "diameter": 4,
             "length": 4.8,
             "material": "titanium",
             "jettisonAltitudeKm": 110
@@ -1192,12 +1192,12 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox",
-              "engineCount": 7,
-              "propMass": 260000,
+              "engineCount": 10,
+              "propMass": 416000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
-              "landingPropMass": 31200,
+              "landingPropMass": 49920,
               "cluster": {
                 "pattern": "auto"
               },
@@ -1209,9 +1209,9 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox-vac",
-              "engineCount": 1,
-              "propMass": 80000,
-              "diameter": 3.6,
+              "engineCount": 3,
+              "propMass": 200000,
+              "diameter": 5.5,
               "material": "titanium",
               "separationMass": 40,
               "landingPropMass": 0,
@@ -1224,7 +1224,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 3,
-              "propMass": 28000,
+              "propMass": 42000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
@@ -1272,8 +1272,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
-            "turnShape": 0.2,
+            "pitchKickDeg": 6,
+            "turnShape": 0.5,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -1402,8 +1402,8 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox",
-              "engineCount": 6,
-              "propMass": 260000,
+              "engineCount": 9,
+              "propMass": 338000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
@@ -1419,9 +1419,9 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox-vac",
-              "engineCount": 1,
+              "engineCount": 2,
               "propMass": 100000,
-              "diameter": 3.6,
+              "diameter": 4.5,
               "material": "titanium",
               "separationMass": 40,
               "landingPropMass": 0,
@@ -1434,7 +1434,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 3,
-              "propMass": 28000,
+              "propMass": 42000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
@@ -1479,8 +1479,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
-            "turnShape": 0.2,
+            "pitchKickDeg": 6,
+            "turnShape": 0.5,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -1515,7 +1515,7 @@
               "propellant": "kerolox",
               "engine": "gg-kerolox",
               "engineCount": 6,
-              "propMass": 250000,
+              "propMass": 325000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
@@ -1591,8 +1591,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
-            "turnShape": 0.2,
+            "pitchKickDeg": 6,
+            "turnShape": 0.8,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -1626,12 +1626,12 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox",
-              "engineCount": 10,
-              "propMass": 374000,
+              "engineCount": 15,
+              "propMass": 711000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
-              "landingPropMass": 68000,
+              "landingPropMass": 129272,
               "cluster": {
                 "pattern": "auto"
               },
@@ -1643,9 +1643,9 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox-vac",
-              "engineCount": 1,
-              "propMass": 83000,
-              "diameter": 3.6,
+              "engineCount": 3,
+              "propMass": 208000,
+              "diameter": 5.5,
               "material": "titanium",
               "separationMass": 40,
               "landingPropMass": 0,
@@ -1658,7 +1658,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 3,
-              "propMass": 33000,
+              "propMass": 50000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
@@ -1677,12 +1677,12 @@
             "engine": "gg-kerolox-small",
             "engineCount": 1,
             "count": 2,
-            "propMass": 14000,
+            "propMass": 26600,
             "diameter": 1.6,
             "material": "titanium",
             "kind": "liquid",
             "separationMass": 40,
-            "landingPropMass": 2800,
+            "landingPropMass": 5320,
             "cluster": {
               "pattern": "auto"
             },
@@ -1718,8 +1718,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
-            "turnShape": 0.2,
+            "pitchKickDeg": 6,
+            "turnShape": 0.5,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -1753,8 +1753,8 @@
               "name": "gg-kerolox",
               "propellant": "kerolox",
               "engine": "gg-kerolox",
-              "engineCount": 7,
-              "propMass": 260000,
+              "engineCount": 10,
+              "propMass": 338000,
               "diameter": 3.6,
               "material": "titanium",
               "separationMass": 40,
@@ -1784,9 +1784,9 @@
               "name": "exp-hydrolox",
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
-              "engineCount": 3,
-              "propMass": 28000,
-              "diameter": 3.6,
+              "engineCount": 4,
+              "propMass": 42000,
+              "diameter": 4.1,
               "material": "titanium",
               "separationMass": 40,
               "landingPropMass": 0,
@@ -1830,8 +1830,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
-            "turnShape": 0.2,
+            "pitchKickDeg": 6,
+            "turnShape": 0.5,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },

@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "strapOns": {
+    "count": 0,
+    "kind": "solid",
+    "propellant": "solid-apcp",
+    "engine": "srm-small",
+    "engineCount": 1,
+    "propMass": 0,
+    "diameter": 1.6,
+    "material": "steel",
+    "crossfeed": false
+  },
+  "aero": {
+    "nose": "ogive",
+    "fins": true
+  },
+  "landing": {
+    "legs": false,
+    "gridFins": false,
+    "rcs": false
+  },
+  "avionics": {
+    "tier": "basic"
+  },
+  "safetyFactor": 1.4,
+  "id": "fixture-sounding-solid",
+  "name": "Solid sounding fixture",
+  "tier": "starter",
+  "stages": [
+    {
+      "interstageMass": 0,
+      "separationMass": 0,
+      "landingPropMass": 0,
+      "material": "steel",
+      "name": "Motor",
+      "propellant": "solid-apcp",
+      "engine": "srm-small",
+      "engineCount": 1,
+      "propMass": 2300,
+      "diameter": 1.6
+    }
+  ],
+  "payload": {
+    "type": "kid-box",
+    "mass": 300,
+    "orbit": "suborbital"
+  },
+  "fairing": {
+    "diameter": 1.6,
+    "length": 2,
+    "material": "composite",
+    "jettisonAltitudeKm": 100
+  },
+  "livery": {
+    "primary": "#f2f2f2",
+    "accent": "#ff6d00",
+    "name": "PIPIT"
+  }
+}

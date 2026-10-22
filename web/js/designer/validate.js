@@ -4,7 +4,7 @@ import { ENGINES, ENGINE_BY_ID } from '../data/engines.js';
 import { PAYLOAD_BY_ID } from '../data/payloads.js';
 import { validateDesign } from '../vehicle/design.js';
 import { quickReadout } from './readout.js';
-import { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK } from './limits.js';
+import { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK, LANDING_RESERVE_MAX } from './limits.js';
 export { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK } from './limits.js';
 
 /** Payload volume scaled from its archetype by mass^(2/3) (a lighter build of the same kind is smaller). */
@@ -13,6 +13,30 @@ export function payloadVolume(d) {
   if (!pl) return 0;
   const m = d.payload.mass > 0 ? d.payload.mass : pl.mass;
   return pl.volume * Math.min(1.5, (m / pl.mass) ** (2 / 3));
+}
+
+// Fairing fit (§2.9), the same rule as Kestrel.Core.Vehicle.PayloadFit (B-04):
+//   usable = π(0.45·D)²·0.8·L, and cargo diameter ≤ 0.9·D (the same 0.45·D usable radius).
+// 0.9 is an approximate game number; real fairings offer about 0.85–0.885 of their outer diameter.
+// 0.8 is optimistic: L is the whole fairing length, nose included, so it overstates the real volume
+// for conic and ogive noses (geometric fractions are about 0.73 conic, 0.78 otherwise, 0.90 blunt). It
+// stays 0.8 until the follow-up issue #302 "Payload volume packing retune: nose-inclusive L" (https://github.com/becktj90/kestrel-heavy/issues/302).
+export const FIT_RADIUS = 0.45;
+export const FIT_LENGTH = 0.8;
+export const FIT_DIAMETER = 2 * FIT_RADIUS;
+/** Diameter check tolerance (m): cargo exactly at 0.9·D fits on every platform. Same as PayloadFit.DiameterToleranceM. */
+export const FIT_DIAMETER_TOL = 1e-9;
+export function usableVolume(D, L) { const r = FIT_RADIUS * D; return Math.PI * r * r * FIT_LENGTH * L; }
+export function requiredLength(volume, D) { const r = FIT_RADIUS * D; return volume / (Math.PI * r * r * FIT_LENGTH); }
+export function requiredDiameter(cargoDiameter) { return cargoDiameter / FIT_DIAMETER; }
+/** Fit of a design against its catalog payload; null without a known payload or fairing. */
+export function payloadFit(d) {
+  const pl = PAYLOAD_BY_ID[d.payload?.type];
+  if (!pl || !d.fairing) return null;
+  const volume = payloadVolume(d), diameter = pl.diameter || 0;
+  const usable = usableVolume(d.fairing.diameter, d.fairing.length);
+  const volumeMargin = usable - volume, diameterMargin = FIT_DIAMETER * d.fairing.diameter - diameter;
+  return { fits: volumeMargin >= 0 && diameterMargin >= -FIT_DIAMETER_TOL, usable, volume, diameter, volumeMargin, diameterMargin };
 }
 
 const fmt = (n, d = 2) => Number(n).toFixed(d);
@@ -34,9 +58,10 @@ function geometryIssues(d) {
   const top = d.stages[d.stages.length - 1];
   if (d.fairing && top && d.fairing.diameter < top.diameter * 0.5) out.push({ code: 'fairing-narrow', tab: 'payload', msg: 'The fairing is narrower than half the top stage. Try a fairing at least as wide as the stage.' });
   const pl = PAYLOAD_BY_ID[d.payload?.type];
-  if (pl && d.fairing) {
-    const vol = Math.PI * (d.fairing.diameter / 2) ** 2 * d.fairing.length * 0.6;
-    if (vol < payloadVolume(d)) out.push({ code: 'payload-doesnt-fit', tab: 'payload', msg: `The ${pl.label} needs about ${fmt(payloadVolume(d), 1)} m³; this fairing holds ${fmt(vol, 1)} m³. Try a longer or wider fairing.` });
+  const fit = payloadFit(d);
+  if (pl && fit) {
+    if (fit.volumeMargin < 0) out.push({ code: 'payload-doesnt-fit', tab: 'payload', msg: `The ${pl.label} needs about ${fmt(fit.volume, 1)} m³; this fairing holds ${fmt(fit.usable, 1)} m³. Try a longer or wider fairing.` });
+    else if (fit.diameterMargin < -FIT_DIAMETER_TOL) out.push({ code: 'payload-doesnt-fit', tab: 'payload', msg: `The ${pl.label} is ${fmt(fit.diameter, 1)} m wide; it needs a fairing at least ${fmt(Math.ceil((requiredDiameter(fit.diameter) - FIT_DIAMETER_TOL) * 100) / 100, 2)} m wide. Try a wider fairing.` });
   }
   return out;
 }
@@ -93,6 +118,9 @@ export function makeItFly(input) {
     if (!(s.engineCount >= 1)) { s.engineCount = 1; say(`Gave ${s.name || 'stage'} an engine`); }
     s.engineCount = Math.min(40, Math.round(s.engineCount));
     if (!(s.propMass > 0)) { s.propMass = upper ? 10000 : 50000; say(`Loaded propellant into ${s.name || 'stage'}`); }
+    // A reserve as big as the whole load leaves no usable propellant, and adding propellant cannot catch up on a
+    // low-thrust stage. Trim it to the most the designer allows.
+    if (s.landingPropMass > 0 && s.landingPropMass >= s.propMass) { s.landingPropMass = Math.round(s.propMass * LANDING_RESERVE_MAX); say(`Trimmed the ${s.name || 'stage'} landing reserve to fit its propellant`); }
     const en = ENGINE_BY_ID[s.engine];
     const need = Math.sqrt(s.engineCount * en.diameter ** 2 / PACK) + 0.05;
     if (s.diameter < need) { s.diameter = Math.min(15, Math.ceil(need * 10) / 10); say(`Widened ${s.name || 'stage'} so the engines fit`); }
@@ -107,8 +135,9 @@ export function makeItFly(input) {
   if (d.fairing.diameter < top.diameter) { d.fairing.diameter = top.diameter; say('Widened the fairing to match the top stage'); }
   const pl = PAYLOAD_BY_ID[d.payload?.type];
   if (pl) {
-    const vol = () => Math.PI * (d.fairing.diameter / 2) ** 2 * d.fairing.length * 0.6;
-    if (vol() < payloadVolume(d)) { d.fairing.length = Math.ceil(payloadVolume(d) / (Math.PI * (d.fairing.diameter / 2) ** 2 * 0.6) * 10) / 10 + 0.5; say('Stretched the fairing so the payload fits'); }
+    const needD = requiredDiameter(pl.diameter || 0);
+    if (d.fairing.diameter < needD) { d.fairing.diameter = Math.ceil((needD - FIT_DIAMETER_TOL) * 10) / 10; say('Widened the fairing so the payload fits'); }
+    if (!payloadFit(d).fits) { d.fairing.length = Math.ceil(requiredLength(payloadVolume(d), d.fairing.diameter) * 10) / 10 + 0.5; say('Stretched the fairing so the payload fits'); }
   }
   if (d.stages.some((s) => s.landingPropMass > 0) && !(d.landing.legs && d.landing.gridFins)) { d.landing.legs = true; d.landing.gridFins = true; say('Added landing legs and grid fins'); }
 
@@ -135,6 +164,10 @@ export function makeItFly(input) {
       const up = d.stages[d.stages.length - 1];
       if (d.stages.length > 1 && r.stages[r.stages.length - 1].twrVac > 0.7 && iter % 2 === 0) { up.propMass *= 1.15; say('Added upper-stage propellant'); continue; }
       if (r.liftoffTWR > 1.45) { s0.propMass *= 1.1; say('Added first-stage propellant'); continue; }
+      // A low-thrust first stage (small hybrids) runs out of liftoff thrust before it has the propellant: one more
+      // engine lets the next step add propellant again, instead of shrinking the cargo to nothing.
+      const e0 = ENGINE_BY_ID[s0.engine];
+      if (d.stages.length === 1 && s0.engineCount < Math.min(40, Math.floor(PACK * s0.diameter ** 2 / e0.diameter ** 2))) { s0.engineCount++; say('Added first-stage engines so it can carry more propellant'); continue; }
       if (d.payload.mass > 50) { d.payload.mass = Math.max(50, Math.round(d.payload.mass * 0.85)); say('Lightened the payload'); continue; }
     }
     if (v.ok && r.margin >= MIN_MARGIN) break;

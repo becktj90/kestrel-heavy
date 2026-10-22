@@ -35,14 +35,17 @@ namespace Kestrel.Game.Shell
         public static bool Try(VisualElement root)
         {
             if (root == null) return false;
+            if (CloseIfOpen(root, "flight-camera-picker")) return true;
             if (CloseIfOpen(root, "home-thrum-note")) return true;
             if (CloseIfOpen(root, "home-codex-soon")) return true;
             if (CloseIfOpen(root, "home-patches-note")) return true;
             if (CloseIfOpen(root, "mission-payload-note")) return true;
-            var sheet = root.Q("home-settings-sheet");
+            var sheet = root.Q("screen-settings");
             if (SheetOpen(sheet))
             {
                 sheet.style.display = DisplayStyle.None;
+                var scrim = root.Q(MainMenuOverlay.SettingsScrimName);
+                if (scrim != null) scrim.style.display = DisplayStyle.None;
                 Claimed = true;
                 return true;
             }

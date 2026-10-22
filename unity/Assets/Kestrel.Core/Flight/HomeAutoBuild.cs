@@ -60,7 +60,13 @@ namespace Kestrel.Core.Flight
             {
                 var mission = campaign.Missions[i];
                 if (mission == null) continue;
+                if (!string.IsNullOrEmpty(mission.Id) && !catalog.MissionPayloads.ContainsKey(mission.Id))
+                    catalog.MissionPayloads[mission.Id] = PayloadFit.MissionSpec(mission);
+                if (!string.IsNullOrEmpty(mission.Id) && !catalog.CampaignMissions.ContainsKey(mission.Id))
+                    catalog.CampaignMissions[mission.Id] = mission;
                 var built = ToOrbit(mission);
+                if (!string.IsNullOrEmpty(built.id) && !catalog.CampaignMissions.ContainsKey(built.id))
+                    catalog.CampaignMissions[built.id] = mission;
                 if (string.IsNullOrEmpty(built.id)) continue;
                 if (!catalog.Orbits.ContainsKey(built.id)) catalog.Orbits[built.id] = built;
                 string legacy = OrbitId(mission.Id);
@@ -145,9 +151,12 @@ namespace Kestrel.Core.Flight
                 // The hopper template clears the padded delta-v check and then breaks up:
                 // three small kerolox engines at full throttle cross the 35 kPa wall, and
                 // a full tank coasts far past a 10 km hop. This fork is the rocket Home
-                // actually flies. One engine, a short load, SF 3 and a 60% max-Q cap keep
-                // peak dynamic pressure under 85% of the limit and peak g under 8, and the
-                // coast lands inside ±5% of 10 km on both the campaign step and the pad step.
+                // actually flies. One engine, a 515 kg load, SF 3 and a 60% max-Q cap keep
+                // peak dynamic pressure under 85% of the limit and peak g under 8. Scored on the
+                // drag-aware flown peak (MissionScore.FlownApoAltM), the batch, the designer and the
+                // live pad all fly the design's own 60% max-Q cap (#313) and reach 9.79 km on every
+                // seed: inside 9.5–10.5 km and above Physics' 9.7 km floor. 345 kg read 9.7 km on the
+                // vacuum Kepler apoapsis at burnout but flew to 6.6 km.
                 ArmFirstHop(best.Design);
                 FillPerformance(catalog, best);
                 best.ReachLine = "Enough for this hop.";
@@ -156,9 +165,9 @@ namespace Kestrel.Core.Flight
             else if (best != null && best.Design != null && mission.Id == "m2" && best.TemplateId == "hopper")
             {
                 // Three small engines and a full tank break the 35 kPa wall around 6 km.
-                // One engine, a 1380 kg load, steel walls, SF 2.2 and a 75% max-Q cap
-                // coast inside ±5% of 100 km on every campaign seed (about 100 km).
-                // 1360–1400 kg all clear. 1410 kg lofts past the band. While the cap
+                // One engine, a 1428 kg load, steel walls, SF 2.2, a 75% max-Q cap and its own 9 g limit (#316)
+                // fly a drag-aware peak of 100.3 km in the batch (band 95–105 km). With the old 6 g limit,
+                // 1405 kg flew 97.6 km; at 9 g, 1405 kg flew 94.3 km. 1380 kg read 100.4 km Kepler but flew 91.4 km. While the cap
                 // is actually biting, the path stays on the catch angle instead of
                 // ratcheting down with the sag. The template is not edited.
                 ArmHundredKm(best.Design);
@@ -197,9 +206,9 @@ namespace Kestrel.Core.Flight
         }
 
         public const double HundredKmSafetyFactor = 2.2;
-        public const double HundredKmPropKg = 1380;
+        public const double HundredKmPropKg = 1428;
         public const double HundredKmMaxQPercent = 75;
-        public const double HundredKmGLimit = 6;
+        public const double HundredKmGLimit = 9;
         public const string HundredKmMaterial = "steel";
 
         /// <summary>KH-2 only. The hopper template document is not modified.</summary>
@@ -223,7 +232,7 @@ namespace Kestrel.Core.Flight
         }
 
         public const double FirstHopSafetyFactor = 3;
-        public const double FirstHopPropKg = 345;
+        public const double FirstHopPropKg = 515;
         public const double FirstHopMaxQPercent = 60;
         public const double FirstHopGLimit = 6;
 
@@ -459,6 +468,9 @@ namespace Kestrel.Core.Flight
             if (design == null) return false;
             Pending = null;
             FlyOnPad = false;
+            // NAV-07: once the designer has the rocket, the trip is no longer "from Home". A briefing reopened
+            // from the designer (DesignerBack) goes Back to Missions, not Home.
+            FromHome = false;
             return true;
         }
 
@@ -472,7 +484,8 @@ namespace Kestrel.Core.Flight
 
     /// <summary>
     /// Home buttons. Does not change <see cref="GameSession.Apply"/> for <see cref="RouteId.HomeLaunch"/>.
-    /// LAUNCH briefs the next mission and arms the pad. Design first opens the designer with the same load.
+    /// LAUNCH briefs the next mission and loads its starter into the designer (no auto-fly, NAV-03).
+    /// Design first opens the designer with the same load.
     /// </summary>
     public static class HomeRoutes
     {
@@ -511,8 +524,9 @@ namespace Kestrel.Core.Flight
             ctx.ApplyBriefing(briefing);
             ctx.VehicleLine = choice.VehicleLine;
             ctx.ReachLine = choice.ReachLine;
-            ctx.AutoPad = choice.LaunchEnabled;
-            PadHandoff.Arm(choice.Design, choice.LaunchEnabled, fromHome: true);
+            // NAV-03 / F4: the briefing opens the designer with the starter loaded; Launch is the designer's.
+            ctx.AutoPad = false;
+            PadHandoff.Arm(choice.Design, flyNow: false, fromHome: true);
             GameSession.Carry(ctx);
             return new RouteResult(SessionScreens.Missions, SessionScreens.Briefing, ctx);
         }

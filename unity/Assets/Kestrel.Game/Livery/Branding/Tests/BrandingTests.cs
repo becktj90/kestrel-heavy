@@ -82,7 +82,7 @@ namespace Kestrel.Livery.Branding.Tests
                 Assert.That(File.Exists(p), Is.True, p);
                 var s = File.ReadAllText(p);
                 Assert.That(s, Does.Contain("viewBox=\"0 0 64 64\""), p);
-                foreach (var bad in new[] { "<text", "<image", "<use", "href", "font", "<script", "data:" }) Assert.That(s, Does.Not.Contain(bad), $"{p}: {bad}");
+                foreach (var bad in new[] { "<text", "<image", "<use", "href", "font", "<script", "data:", "currentColor" }) Assert.That(s, Does.Not.Contain(bad), $"{p}: {bad}");
                 var d = Regex.Match(s, "d=\"([^\"]*)\"").Groups[1].Value;
                 if (!p.EndsWith("frame_none.svg")) { Assert.That(d, Is.Not.Empty, p); Assert.That(paths.Add(d), Is.True, $"{p} duplicates another shape"); }
             }

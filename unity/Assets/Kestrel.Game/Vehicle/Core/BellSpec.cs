@@ -64,6 +64,8 @@ namespace Kestrel.Vehicle
         /// <summary>Aft-skirt radius (m). Bay parts are placed inside it. 0 means the caller has no skirt yet.</summary>
         public float SkinRadius;
         public bool Gimbal;
+        /// <summary>Catalog propellant id; picks the BellFinish fuel cue. Null keeps the shared metal.</summary>
+        public string Propellant;
     }
 
     /// <summary>Per-engine placement. Roll and the rest gimbal live on the instance, so the shared mesh stays one batch.</summary>

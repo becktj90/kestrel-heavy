@@ -55,14 +55,15 @@ namespace Kestrel.Core.Tests
             }
 
             var fine = Fly(catalog, design, mission);
-            Assert.IsTrue(FlightDebrief.GoalMet(mission, fine.failure == null && fine.outcome != "failure", fine.orbit.apoAlt, fine.orbit.periAlt, fine.maxG, null),
-                "pad step apo " + (fine.orbit.apoAlt / 1000).ToString("0.00") + " fail " + (fine.failure != null ? fine.failure.kind : "-") + " g " + fine.maxG.ToString("0.00") + " q " + (fine.maxQ / 1000).ToString("0.00"));
+            // The pad step is scored on the drag-aware flown peak, as the batch is (MissionScore.FlownApoAltM).
+            Assert.IsTrue(FlightDebrief.GoalMet(mission, fine.failure == null && fine.outcome != "failure", MissionScore.FlownApoAltM(fine), fine.orbit.periAlt, fine.maxG, null),
+                "pad step apo " + (MissionScore.FlownApoAltM(fine) / 1000).ToString("0.00") + " fail " + (fine.failure != null ? fine.failure.kind : "-") + " g " + fine.maxG.ToString("0.00") + " q " + (fine.maxQ / 1000).ToString("0.00"));
             Assert.That(fine.maxQ, Is.LessThan(qLim * 0.85));
             Assert.That(fine.maxG, Is.LessThan(7.2));
 
             var guided = FlyGuided(catalog, design, mission, qLim);
-            Assert.IsTrue(FlightDebrief.GoalMet(mission, guided.failure == null && guided.outcome != "failure", guided.orbit.apoAlt, guided.orbit.periAlt, guided.maxG, null),
-                "guided apo " + (guided.orbit.apoAlt / 1000).ToString("0.00") + " fail " + (guided.failure != null ? guided.failure.kind : "-"));
+            Assert.IsTrue(FlightDebrief.GoalMet(mission, guided.failure == null && guided.outcome != "failure", MissionScore.FlownApoAltM(guided), guided.orbit.periAlt, guided.maxG, null),
+                "guided apo " + (MissionScore.FlownApoAltM(guided) / 1000).ToString("0.00") + " fail " + (guided.failure != null ? guided.failure.kind : "-"));
             Assert.That(guided.maxQ, Is.LessThan(qLim * 0.85));
             Assert.That(guided.maxG, Is.LessThan(7.2));
         }
@@ -156,7 +157,8 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(vehicle.MaxQSet);
             var director = AscentDirector.Start(vehicle, null, null, true, false, true);
             director.Advance(new AscentSample { T = 1, QPa = 1000, Thrusting = true, MassKg = 2000, ThrustN = 80000, PropFraction = 1 }, 0.05);
-            Assert.IsFalse(director.Command.SuppressDesignThrottle, "the design cap is the guided path until the call is accepted");
+            Assert.AreEqual(0, director.Command.EngageMaxQCap, 1e-12, "the design cap is the guided path; the director never replaces it");
+            Assert.AreEqual(1, director.Command.ThrottleScale, 1e-12);
         }
 
         static SimResult Fly(Catalog catalog, Design design, CampaignMission mission)
@@ -191,7 +193,7 @@ namespace Kestrel.Core.Tests
                     guard++;
                 }
             }
-            return sim.Finish().orbit.apoAlt;
+            return MissionScore.FlownApoAltM(sim.Finish());
         }
 
         static SimResult FlyGuided(Catalog catalog, Design design, CampaignMission mission, double qLim)
@@ -211,8 +213,6 @@ namespace Kestrel.Core.Tests
                 double scale = cmd.ThrottleScale;
                 if (double.IsNaN(scale) || scale <= 0) scale = 1;
                 else if (scale > 1) scale = 1;
-                if (input.opts.guidance != null && cmd.SuppressDesignThrottle)
-                    input.opts.guidance.maxQThrottleSet = false;
                 sim.LiveThrottleScale = scale;
                 sim.Tick();
                 if (monitor.Event != null)

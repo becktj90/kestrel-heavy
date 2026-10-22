@@ -1,6 +1,6 @@
 // Cached Headless reference ascent for designer max-Q.
 // Quick() never runs this. A miss leaves maxQStale true.
-// Cost: Stack.SimInputs → the same RK4 step as Headless (dt 0.2 s, default steering, no sample buffer).
+// Cost: MissionFlightSetup (Stack.SimInputs plus the mission's aim) → the same RK4 step as Headless (dt 0.2 s, default steering, no sample buffer).
 // The run goes to thrust cutoff. There is no early stop: a climb-only seal drops a descent peak,
 // and a vacuum-periapsis bound both false-stopped the sounding rocket and ran slower than the full ascent.
 // The integrator returns when thrust ends, so this is not an unpowered re-entry.
@@ -29,6 +29,7 @@ namespace Kestrel.Core.Designer
             public double qPa, altM, maxG;
             public bool flown;
             public double lossGravity, lossDrag, lossSteering, minStability, minCar, burnoutSpeed;
+            public double apoAltM;
             public FailureEvent failure;
             public List<FlightRisk> risks;
         }
@@ -39,6 +40,8 @@ namespace Kestrel.Core.Designer
             public bool hit, flown;
             public double qPa, altM, maxG;
             public double lossGravity, lossDrag, lossSteering, minStability, minCar, burnoutSpeed;
+            /// <summary>Kepler apogee at cutoff (what FlightBatch scores an apogee trip on). NaN when not flown.</summary>
+            public double apoAltM;
             public FailureEvent failure;
             public List<FlightRisk> risks;
         }
@@ -110,6 +113,7 @@ namespace Kestrel.Core.Designer
                     key = key, qPa = sim.maxQ, altM = sim.maxQAlt, maxG = sim.maxG, flown = true,
                     lossGravity = sim.lossGravity, lossDrag = sim.lossDrag, lossSteering = sim.lossSteering,
                     minStability = sim.minStability, minCar = sim.minCar, burnoutSpeed = burnout,
+                    apoAltM = MissionScore.FlownApoAltM(sim),
                     failure = sim.failure, risks = sim.risks,
                 };
         }
@@ -125,6 +129,7 @@ namespace Kestrel.Core.Designer
                         hit = true, flown = e.flown, qPa = e.qPa, altM = e.altM, maxG = e.maxG,
                         lossGravity = e.lossGravity, lossDrag = e.lossDrag, lossSteering = e.lossSteering,
                         minStability = e.minStability, minCar = e.minCar, burnoutSpeed = e.burnoutSpeed,
+                        apoAltM = e.flown ? e.apoAltM : double.NaN,
                         failure = e.failure, risks = e.risks,
                     };
                     return true;
@@ -145,14 +150,52 @@ namespace Kestrel.Core.Designer
             return Readout.Quick(c, design);
         }
 
-        public static SimResult Simulate(Catalog c, JsonObject design)
+        public static SimResult Simulate(Catalog c, JsonObject design) => Flight(c, Design.FromJson(design)).Run();
+
+        /// <summary>
+        /// The designer practice flight (#313): <see cref="Inputs"/> flown under the live pad's director, so the
+        /// Ready check, the timeline and the pad share one throttle model. The predict monitor's seeded schedule
+        /// (design hash 1, seed 1) drives the director, as it drives the monitor.
+        /// </summary>
+        public static DirectedFlight Flight(Catalog c, Design d)
         {
-            var d = Design.FromJson(design);
-            var input = Stack.SimInputs(c, d);
-            // Predict keeps flying after the first hit so the cached peak is the real max-Q.
-            // A live launch leaves Predict false and breaks up.
-            if (input.opts.monitor != null) input.opts.monitor.Predict = true;
-            return Fly(input.stages, input.opts);
+            var setup = Setup(c, d);
+            var director = MissionFlightSetup.Director(c, setup, d, PredictHash, PredictSeed);
+            var flight = MissionFlightSetup.Start(setup, director);
+            // #314 + #313: the designer stops where play breaks up (PlayedChecks), under the pad's director.
+            flight.Checks = new PlayedChecks(c, d, setup.Stages, setup.Options, flight.Sim);
+            return flight;
+        }
+
+        /// <summary>The predict monitor's hash and seed (<see cref="Stack.SimInputs"/> builds it with the defaults).</summary>
+        public const ulong PredictHash = 1, PredictSeed = 1;
+
+        /// <summary>#314: the live monitor (Predict off), so the designer breaks up where play does.</summary>
+        static MissionFlightInputs Setup(Catalog c, Design d)
+            => MissionFlightSetup.Build(c, MissionFor(c, d), d, MissionFlightSetup.BatchDt);
+
+        /// <summary>
+        /// Predict inputs: the same <see cref="MissionFlightSetup"/> the live pad flight and FlightBatch fly (F1). The
+        /// monitor is the live one (Predict off) and the flight runs under <see cref="PlayedChecks"/>, so the designer
+        /// stops where play breaks up (#314). A design whose missionId (or kh- orbit) is a campaign
+        /// mission gets that mission's aim, cutoff, run length, coast boil-off and held-out landing fuel. Before F1 the
+        /// designer built its own Stack.SimInputs and aimed an apogee hop at its apogee, so a 100 km hop was called
+        /// "out of fuel" at its normal burnout. A free build keeps the design's own orbit (an apogee target is
+        /// judged against the 1 km hop floor, in MissionFlightSetup for the pad too).
+        /// </summary>
+        public static (List<SimStage> stages, SimOptions opts) Inputs(Catalog c, JsonObject design)
+        {
+            var setup = Setup(c, Design.FromJson(design));
+            return (setup.Stages, setup.Options);
+        }
+
+        /// <summary>The campaign mission a design flies: its missionId, else its catalog orbit key. Null for a free build.</summary>
+        public static CampaignMission MissionFor(Catalog c, Design d)
+        {
+            if (c == null || d == null) return null;
+            if (!string.IsNullOrEmpty(d.missionId) && c.CampaignMissions.TryGetValue(d.missionId, out var byId)) return byId;
+            if (!string.IsNullOrEmpty(d.payloadOrbit) && c.CampaignMissions.TryGetValue(d.payloadOrbit, out var byOrbit)) return byOrbit;
+            return null;
         }
 
         /// <summary>The reference ascent is a full powered flight. Same steps as <see cref="Headless.Simulate"/>.</summary>
@@ -208,17 +251,14 @@ namespace Kestrel.Core.Designer
     public sealed class ReferenceJob
     {
         readonly string key;
-        readonly AscentSim sim;
+        readonly DirectedFlight sim;
         bool done;
         public bool Done => done;
 
         public ReferenceJob(Catalog c, JsonObject design)
         {
             key = ReferenceAscent.CanonicalKey(c, design);
-            var d = Design.FromJson(design);
-            var input = Stack.SimInputs(c, d);
-            if (input.opts.monitor != null) input.opts.monitor.Predict = true;
-            sim = new AscentSim(input.stages, input.opts);
+            sim = ReferenceAscent.Flight(c, Design.FromJson(design));
         }
 
         /// <summary>Run ticks until the ascent ends or <paramref name="budgetMs"/> of wall time has elapsed. At least one tick runs when work remains, so a 0 budget still advances.</summary>
@@ -228,7 +268,7 @@ namespace Kestrel.Core.Designer
             var sw = System.Diagnostics.Stopwatch.StartNew();
             while (true)
             {
-                if (!sim.Tick())
+                if (!sim.Step())
                 {
                     var r = sim.Finish();
                     ReferenceAscent.Store(key, r);

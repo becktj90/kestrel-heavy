@@ -143,6 +143,24 @@ namespace Kestrel.Pad
             return o;
         }
 
+        /// <summary>A light pole nearer the camera than this (m, ground plane) is not drawn. TestFlight 202, Below view:
+        /// a pole stood in the left foreground, a few metres from the low camera.</summary>
+        public const float PoleNearMinM = 8f;
+        /// <summary>…or nearer than this share of the camera's own ground range to the pad centre, whichever is larger.
+        /// A low view 25 m out drops poles within 11 m of it; the far Pad view only the one at its feet.</summary>
+        public const float PoleNearShare = 0.45f;
+
+        /// <summary>True when a pole (and its fixture and halo) should be skipped for a camera at pad-space (x, z):
+        /// it would stand in the foreground of a low view. Anything but a pole is never skipped.</summary>
+        public static bool PoleTooClose(LightSpec s, float camX, float camZ)
+        {
+            if (s.Kind != LightKind.Pole) return false;
+            float range = (float)Math.Sqrt(camX * camX + camZ * camZ);
+            float near = Math.Max(PoleNearMinM, PoleNearShare * range);
+            float dx = s.Position.X - camX, dz = s.Position.Z - camZ;
+            return dx * dx + dz * dz < near * near;
+        }
+
         public static int CountRealtime(List<LightSpec> plan) { int n = 0; foreach (var s in plan) if (s.Realtime) n++; return n; }
 
         public static float AngleDiff(float a, float b) { float d = Math.Abs(((a - b) % 360f + 360f) % 360f); return d > 180f ? 360f - d : d; }

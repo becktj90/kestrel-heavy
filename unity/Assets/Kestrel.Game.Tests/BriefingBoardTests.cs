@@ -89,10 +89,10 @@ namespace Kestrel.Game.Tests
             var board = BriefingBoard.Compose(ctx, card);
 
             Assert.AreEqual("KH-4  Weather Eye", board.Title);
-            Assert.AreEqual("Put a 2,500 kg fictional weather sat in a 500 km, 51.6° orbit.", board.Goal);
+            Assert.AreEqual("Put a 2,500 kg fictional weather sat in a 500 km circular orbit.", board.Goal);
             Assert.AreEqual("Tern-3 · Weather sat · 2,500 kg", board.Payload);
             Assert.AreEqual("12 m3 · Diameter 2 m", board.Fit);
-            Assert.AreEqual("Circular orbit 500 km, 51.6°", board.Target);
+            Assert.AreEqual("Circular orbit 500 km", board.Target);
             CollectionAssert.AreEqual(new[] { "Peak g at most 6" }, board.Requirements);
             CollectionAssert.AreEqual(new[] { "Land the booster", "Keep peak g under 4" }, board.Bonuses);
             Assert.AreEqual("Budget 40,000,000 Kc", board.Budget);
@@ -131,7 +131,7 @@ namespace Kestrel.Game.Tests
                 "Random failures on",
             }, m8.Requirements);
             var m9 = Board(campaign, "m9");
-            Assert.AreEqual("C3 -2 km2/s2, closest point 200 km, 28.5°", m9.Target);
+            Assert.AreEqual("C3 -2 km2/s2, closest point 200 km", m9.Target);
             CollectionAssert.AreEqual(new[] { "Coast 3 h" }, m9.Requirements);
             var m10 = Board(campaign, "m10");
             CollectionAssert.AreEqual(new[] { "Land back at the pad. Grade good. Boosters too" }, m10.Requirements);

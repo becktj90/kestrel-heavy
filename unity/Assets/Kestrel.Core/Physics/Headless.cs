@@ -23,6 +23,43 @@ namespace Kestrel.Core.Physics
         public double payload = 0, targetAlt = 200e3, latitude = 28.5, dt = 0.05, tMax = 3000;
         public double kickSpeed = 60, kickAngleDeg = 4, sampleEvery = 0;
         public bool vacuum = false, rotate = true, cutoff = true;
+        /// <summary>
+        /// Energy cutoff (#313, Kestrel Physics): the engines cut off when the specific orbital energy
+        /// v²/2 − μ/r reaches <see cref="cutoffEnergy"/>, located inside the step by bisection, so a 0.2 s
+        /// batch step and the 1/120 s live step cut off at the same state. Replaces the perigee-based cutoff.
+        /// False keeps the JS simulate() parity path (perigee within 10 km of the target), which no Kestrel
+        /// flight uses: MissionFlightSetup turns this on for the batch, the designer, the timeline and the pad.
+        /// </summary>
+        public bool energyCutoff;
+        /// <summary>
+        /// Target specific orbital energy, J/kg: −μ/(2a), a = R + (h_apo + h_peri)/2; C3/2 for a C3 target.
+        /// NaN never cuts off (an apogee hop burns out). Only read when <see cref="energyCutoff"/> is set.
+        /// </summary>
+        public double cutoffEnergy = double.NaN;
+        /// <summary>
+        /// #313: when a designer profile's first-stage turn follows the flight path, steer along the air-relative
+        /// velocity inside every integrator substep (as the built-in gravity turn, mode 2, already does) instead of
+        /// holding the step-start angle for the whole step. Holding it lofted a 0.2 s batch step kilometres above the
+        /// 1/120 s pad. False keeps the JS simulate() parity path.
+        /// </summary>
+        public bool continuousTurn;
+
+        /// <summary>Specific orbital energy, J/kg, of an orbit with this apoapsis and periapsis altitude (metres).</summary>
+        public static double EnergyFor(double apoAltM, double periAltM)
+            => -Gravity.MU_EARTH / (2 * (Gravity.R_EARTH + 0.5 * (apoAltM + periAltM)));
+        /// <summary>
+        /// #341: the design carries the optional closed-loop guidance computer (Flight.GuidanceComputer). The upper stages
+        /// steer to (aim altitude, vr = 0) at the energy cutoff instead of PEG-lite, and the live pitch nudge is held on
+        /// them. Only read with <see cref="energyCutoff"/> on and a finite <see cref="cutoffEnergy"/>. False (the default)
+        /// leaves every step identical to basic guidance ("pre-set pitch program, no correction").
+        /// </summary>
+        public bool closedLoopInsertion;
+        /// <summary>#341: the closed loop's aim altitude, metres: the circular target, the parking orbit, or an elliptical
+        /// target's perigee. NaN aims at <see cref="targetAlt"/>.</summary>
+        public double closedLoopAimAlt = double.NaN;
+        /// <summary>#341 reference runs only (Physics ruling 4): lift the upper-stage pitch clamp (sin p in [−0.6, 0.95]) to
+        /// [−1, 1] so a run measures what the clamp itself costs. No flight sets it.</summary>
+        public bool closedLoopRelaxPitch;
         /// <summary>Null keeps the built-in kick. A profile adds its pitch program and throttle caps.</summary>
         public Flight.GuidanceProfile guidance;
         /// <summary>Null leaves the flight on the v2 path: no failure checks, identical steps.</summary>
@@ -53,8 +90,42 @@ namespace Kestrel.Core.Physics
         public Flight.FailureEvent failure;
         public List<Flight.FlightRisk> risks;
         public double minStability = double.NaN, minCar = double.NaN, qLimPa = double.NaN;
+        /// <summary>#338: peak q·alpha share of the sideways allowance (FailureMonitor.PeakBendFraction); NaN with no monitor.</summary>
+        public double peakBendFraction = double.NaN;
+        /// <summary>#338: warning-only structural-margin note (q·alpha past 80% of the allowance); null when none.</summary>
+        public Flight.StructuralWarning bendWarning;
+        /// <summary>
+        /// Drag-aware peak of a ballistic coast (periapsis below ground), metres: <see cref="AscentSim.CoastApexAlt"/>
+        /// after a clean cutoff. NaN for an orbit, a failure, a crash, or a run still thrusting. Score apogee trips with
+        /// <see cref="Flight.MissionScore.FlownApoAltM"/>, not the vacuum Kepler apoapsis at cutoff.
+        /// </summary>
+        public double coastApexAlt = double.NaN;
+        /// <summary>
+        /// #313: flight-path angle at a clean engine cutoff (the target-energy "cutoff" event), degrees; positive is
+        /// still climbing, negative is diving. NaN on a burnout, a failure, or a run not flown through DirectedFlight.
+        /// </summary>
+        public double cutoffGammaDeg = double.NaN;
+        /// <summary>
+        /// #313 Physics A: vacuum Δv left in the stack at the end of the run, m/s: Isp·g0·ln(m_now/m_dry_after_burn) on the
+        /// propellant actually left in the current stage (a mission's coast boil-off is already out of the upper tank),
+        /// plus any later stages, staged in order.
+        /// </summary>
+        public double departureDv;
+        /// <summary>Vacuum thrust over weight (g0) of the first stage with propellant left, at the end of the run. NaN if none.</summary>
+        public double departureTW = double.NaN;
         /// <summary>First integrator step with geometric altitude &gt;= 100 km. Observational: it does not change the step or the event list.</summary>
         public double? KarmanTime;
+        /// <summary>#341: the closed-loop guidance computer steered an upper stage on this run (the part is fitted and the run reached S2).</summary>
+        public bool guidanceInControl;
+        /// <summary>#341: a live pitch nudge was held while the guidance computer flew an upper stage (Physics ruling 3: never fight it silently).</summary>
+        public bool nudgeHeldByGuidance;
+        /// <summary>#341: with the guidance computer flying, the top stage burned dry before the cutoff energy (upper-out).
+        /// False on every run without the part.</summary>
+        public bool upperRanDry;
+        /// <summary>#341: the state the guidance computer was handed at its first upper-stage step: altitude (m), flight-path
+        /// angle (deg) and lift ratio, thrust acceleration over net gravity (g − vt²/r). Below 1 the stage cannot hold
+        /// altitude without pitching up. NaN when the part did not fly.</summary>
+        public double guidanceHandoffAltM = double.NaN, guidanceHandoffGammaDeg = double.NaN, guidanceHandoffLiftRatio = double.NaN;
     }
 
     public static class Headless
@@ -134,10 +205,93 @@ namespace Kestrel.Core.Physics
         public readonly List<SimEvent> Events = new List<SimEvent>();
         public readonly List<SimSample> Samples = new List<SimSample>();
         public int StageCount => st.Length;
+
+        /// <summary>#341: the guidance computer steers this stage (part fitted, energy cutoff armed, an upper stage).</summary>
+        bool UseClosedLoop => o.closedLoopInsertion && o.energyCutoff && o.cutoff && !double.IsNaN(o.cutoffEnergy) && StageIdx > 0;
+        /// <summary>#341: true while the guidance computer flies an upper stage. The live pitch nudge is held then; the report
+        /// and HUD layers read this (data only) to say plainly that guidance is in control.</summary>
+        public bool GuidanceInControl => Thrusting && UseClosedLoop && StageIdx < st.Length;
+        /// <summary>#341: a non-zero live nudge arrived while <see cref="GuidanceInControl"/> and was held.</summary>
+        public bool NudgeHeldByGuidance { get; private set; }
+        bool guidanceFlew, upperRanDry;
+        double handoffAlt = double.NaN, handoffGamma = double.NaN, handoffLift = double.NaN;
+        /// <summary>#341: seconds before the predicted cutoff at which the vertical-speed null completes (floor 1 s).</summary>
+        public const double ClosedLoopLeadS = 2;
+        /// <summary>#341: the altitude term fades out between these times-to-go, seconds.</summary>
+        public const double ClosedLoopFadeLoS = 20, ClosedLoopFadeHiS = 40;
+        /// <summary>#341: below this time-to-go the energy-rate clock replaces the rocket-equation estimate, seconds.</summary>
+        public const double ClosedLoopEnergyClockS = 60;
+
+        /// <summary>
+        /// #341 closed-loop insertion (Kestrel Physics rulings 1–2). Pure function of the state (no memory), so the 0.2 s
+        /// batch step and the 1/120 s live step fly the same law. t_go: the Δv still needed (horizontal to the cutoff speed
+        /// at the aim radius, radial to null vr against gravity) through the remaining stages by the rocket equation, and in
+        /// the last 60 s the energy-rate clock ΔE/(v·a_T). The radial acceleration a_r(t) = A + B·t brings (h, vr) to
+        /// (aim, 0) at t_go; between 40 s and 20 s to go the altitude term fades out, leaving vr nulled 2 s before cutoff.
+        /// sin p = (a_r + g_eff)/a_T with PEG-lite's clamps, so a weak top stage still pays its steering loss.
+        /// </summary>
+        double ClosedLoopPitch(double r, double vr, double vt, double m, double F, double mdot)
+        {
+            double aT = m > 0 ? F / m : 0; if (!(aT > 1e-6)) aT = 1e-6;
+            double aimAlt = double.IsNaN(o.closedLoopAimAlt) ? o.targetAlt : o.closedLoopAimAlt;
+            double rAim = Gravity.R_EARTH + aimAlt;
+            double vc2 = 2 * (o.cutoffEnergy + Gravity.MU_EARTH / rAim);
+            double gNow = Gravity.MU_EARTH / (r * r) - vt * vt / r;
+            double lo = o.closedLoopRelaxPitch ? -1 : -0.6, hi = o.closedLoopRelaxPitch ? 1 : 0.95;
+            if (!(vc2 > 0)) return Math.Asin(Math.Max(lo, Math.Min(hi, gNow / aT)));
+            double vc = Math.Sqrt(vc2);
+            double gEnd = Gravity.MU_EARTH / (rAim * rAim) - vc2 / rAim;
+            double dvH = vc - vt; if (dvH < 0) dvH = 0;
+            double tgo = BurnTime(dvH, m, F, mdot);
+            for (int i = 0; i < 3; i++)
+            {
+                double dvR = -vr + 0.5 * (gNow + gEnd) * tgo;
+                tgo = BurnTime(Math.Sqrt(dvH * dvH + dvR * dvR), m, F, mdot);
+            }
+            double v = Math.Sqrt(vr * vr + vt * vt);
+            double dE = o.cutoffEnergy - (0.5 * v * v - Gravity.MU_EARTH / r);
+            double tE = dE > 0 && v > 0 ? dE / (v * aT) : 0;
+            if (tE < ClosedLoopEnergyClockS) tgo = tE;
+            double dh = aimAlt - (r - Gravity.R_EARTH);
+            double T = tgo < 2 ? 2 : tgo;
+            double aTwo = -4 * vr / T + 6 * dh / (T * T);
+            double T1 = tgo - ClosedLoopLeadS; if (T1 < 1) T1 = 1;
+            double aOne = -vr / T1;
+            double w = (tgo - ClosedLoopFadeLoS) / (ClosedLoopFadeHiS - ClosedLoopFadeLoS); if (w < 0) w = 0; else if (w > 1) w = 1;
+            double ar = w * aTwo + (1 - w) * aOne;
+            double sinP = (ar + gNow) / aT;
+            if (sinP > hi) sinP = hi; else if (sinP < lo) sinP = lo;
+            return Math.Asin(sinP);
+        }
+
+        /// <summary>#341: burn time for <paramref name="dv"/> through the current stage (its actual thrust and flow) and the later stages (vacuum, full).
+        /// Past the propellant on board it returns the whole remaining burn: the stage runs out.</summary>
+        double BurnTime(double dv, double m, double F, double mdot)
+        {
+            if (!(dv > 0)) return 0;
+            double t = 0;
+            for (int i = StageIdx; i < st.Length; i++)
+            {
+                double m0 = i == StageIdx ? m : upperMass[i];
+                double prop = i == StageIdx ? m - (upperMass[i] - st[i].propMass) : st[i].propMass;
+                double md = i == StageIdx ? mdot : st[i].mdot;
+                double ve = i == StageIdx ? (mdot > 0 ? F / mdot : 0) : st[i].ispVac * Atmosphere.G0;
+                if (!(prop > 1e-9) || !(md > 0) || !(ve > 0)) continue;
+                double dvs = ve * Math.Log(m0 / (m0 - prop));
+                if (dv <= dvs) return t + m0 / md * (1 - Math.Exp(-dv / ve));
+                t += prop / md; dv -= dvs;
+            }
+            return t;
+        }
         /// <summary>Peak q is confirmed once it falls below this fraction of the running maximum. The hook reports that maximum.</summary>
         public const double MaxQConfirm = 0.98;
+        /// <summary>Bisection steps for the located energy cutoff. 40 halvings of a 0.2 s step is below 1e-12 s. Fixed, so deterministic.</summary>
+        public const int CutoffBisections = 40;
+        readonly double[] stepStart = new double[5];
         double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1, catchPitch;
-        bool turned;
+        bool turned, followVelocity, pegContinuous;
+        double pegTarget, pegThrottle = 1;
+        double kickPrevT = -1, kickPrevVrel, kickPrevAlt;
         bool liftedOff, sawKarman, maxQPassed, fairingSent, ignitionHooked; double karmanT; string outcome = "timeout";
         FailureEvent playedBreak;
         FlightVec pad;
@@ -215,14 +369,45 @@ namespace Kestrel.Core.Physics
                 mdot = S.mdot;
                 if (thrustScale != 1) { F *= thrustScale; mdot *= thrustScale; }
                 double dx, dyy;
-                if (Mode == 2 && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
-                else { double c = Math.Cos(PitchCmd), sn = Math.Sin(PitchCmd); dx = c * tx + sn * ux; dyy = c * ty + sn * uy; }
+                if ((Mode == 2 || followVelocity) && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
+                else
+                {
+                    double pitch = PitchCmd;
+                    if (Mode == 3 && UseClosedLoop)
+                    {
+                        double vr = vx * ux + vy * uy, vt = vx * tx + vy * ty;
+                        pitch = ClosedLoopPitch(r, vr, vt, m, F, mdot);
+                    }
+                    else if (pegContinuous && Mode == 3)
+                    {
+                        // #313: the closed-loop insertion law evaluated at this substage's state, not held from the
+                        // step start (same law, PegLitePitch, as the per-step command).
+                        double vr = vx * ux + vy * uy, vt = vx * tx + vy * ty;
+                        double gr = Gravity.MU_EARTH / r2 - vt * vt / r;
+                        double unscaled = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, p);
+                        pitch = Flight.GuidanceProfile.PegLitePitch(alt, pegTarget, vr, gr, m > 0 ? unscaled * pegThrottle / m : 0);
+                    }
+                    double c = Math.Cos(pitch), sn = Math.Sin(pitch); dx = c * tx + sn * ux; dyy = c * ty + sn * uy;
+                }
                 ax += F * dx / m; ay += F * dyy / m;
             }
             dy[0] = vx; dy[1] = vy; dy[2] = ax; dy[3] = ay; dy[4] = -mdot;
         }
 
         double StageEndMass() => upperMass[StageIdx] - st[StageIdx].propMass;
+
+        void DepartureBudget(out double dv, out double tw)
+        {
+            dv = 0; tw = double.NaN;
+            for (int i = StageIdx; i < st.Length; i++)
+            {
+                double m0 = i == StageIdx ? Y[4] : upperMass[i];
+                double prop = i == StageIdx ? Y[4] - (upperMass[i] - st[i].propMass) : st[i].propMass;
+                if (!(prop > 1e-6) || !(m0 > prop)) continue;
+                dv += st[i].ispVac * Atmosphere.G0 * Math.Log(m0 / (m0 - prop));
+                if (double.IsNaN(tw)) tw = st[i].thrustVac / (m0 * Atmosphere.G0);
+            }
+        }
 
         /// <summary>Run one loop iteration. Returns false when the run has ended (call Finish()).</summary>
         public bool Tick()
@@ -243,6 +428,7 @@ namespace Kestrel.Core.Physics
             if (Thrusting)
             {
                 thrustScale = o.monitor != null ? o.monitor.ThrustFactor : 1;
+                followVelocity = false; pegContinuous = false;
                 if (Headless.LegacyPitch(o.guidance))
                 {
                     bool holdKick = HoldingMaxQPitch(alt, m, vr, vrel);
@@ -292,6 +478,7 @@ namespace Kestrel.Core.Physics
                         double aT = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, o.vacuum ? 0 : atmG.p) / m;
                         double sinP = Math.Max(-0.6, Math.Min(0.95, (g + 0.03 * (vrCmd - vr)) / aT));
                         PitchCmd = Math.Asin(sinP);
+                        pegContinuous = o.continuousTurn; pegTarget = o.targetAlt; pegThrottle = 1;
                     }
                     if (o.guidance != null && (o.guidance.maxQThrottleSet || o.guidance.gLimitSet))
                     {
@@ -304,6 +491,8 @@ namespace Kestrel.Core.Physics
                     double flight = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
                     var cmd = o.guidance.Command(Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel, flight));
                     PitchCmd = cmd.pitchRad;
+                    followVelocity = o.continuousTurn && StageIdx == 0 && cmd.pitchRad == flight;
+                    if (StageIdx > 0 && o.continuousTurn) { pegContinuous = true; pegTarget = o.guidance.targetAlt; pegThrottle = cmd.throttle; }
                     if (StageIdx > 0) Mode = 3;
                     else if (Mode == 2) Mode = 1;
                     if (cmd.throttle != 1) thrustScale *= cmd.throttle;
@@ -322,9 +511,28 @@ namespace Kestrel.Core.Physics
                     if (dp > lim) dp = lim;
                     else if (dp < -lim) dp = -lim;
                     PitchCmd += dp;
+                    followVelocity = false; pegContinuous = false;
                 }
             }
 
+            if (Thrusting && Mode == 3 && UseClosedLoop && StageIdx < st.Length)
+            {
+                // #341: the guidance computer owns the upper stage. A live nudge is held, not added (Physics ruling 3).
+                if (LivePitchOffsetRad != 0 && !double.IsNaN(LivePitchOffsetRad)) NudgeHeldByGuidance = true;
+                var S = st[StageIdx];
+                double pa = !o.vacuum && alt < 300e3 ? Atmosphere.At(alt).p : 0;
+                double F = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, pa) * thrustScale;
+                if (!guidanceFlew)
+                {
+                    double gNet = Gravity.MU_EARTH / (r * r) - vt * vt / r;
+                    handoffAlt = alt;
+                    handoffGamma = Math.Atan2(vr, vt) * 180 / Math.PI;
+                    handoffLift = gNet > 0 ? F / m / gNet : double.PositiveInfinity;
+                }
+                guidanceFlew = true;
+                PitchCmd = ClosedLoopPitch(r, vr, vt, m, F, S.mdot * thrustScale);
+                followVelocity = false; pegContinuous = false;
+            }
             // ---- step size: land exactly on burnout ----
             double dt = o.dt;
             if (Thrusting && StageIdx < st.Length)
@@ -335,6 +543,7 @@ namespace Kestrel.Core.Physics
                     double spd = JsMath.Hypot(vx, vy);
                     Events.Add(new SimEvent { t = T, type = "burnout", stage = StageIdx + 1, alt = alt, v = spd });
                     bool fail = false;
+                    if (guidanceFlew && StageIdx >= st.Length - 1) upperRanDry = true;
                     if (o.monitor != null)
                     {
                         bool last = StageIdx >= st.Length - 1;
@@ -357,7 +566,9 @@ namespace Kestrel.Core.Physics
                 double flow = st[StageIdx].mdot;
                 if (thrustScale != 1) flow *= thrustScale;
                 dt = Math.Min(o.dt, flow > 0 ? remain / flow : o.dt);
+                if (o.continuousTurn && StageIdx == 0) dt = LandOnKick(dt, alt, vr, vrel);
             }
+            kickPrevT = T; kickPrevVrel = vrel; kickPrevAlt = alt;
 
             // ---- diagnostics ----
             double p = 0, rho = 0, sound = 340;
@@ -372,6 +583,7 @@ namespace Kestrel.Core.Physics
             }
             double gl = Gravity.MU_EARTH / (r * r);
             double v = JsMath.Hypot(vx, vy);
+            double lossG0 = lossG, lossD0 = lossD, lossS0 = lossS, dvExp0 = dvExp;
             LastP = p; LastQ = q; LastMach = vrel / sound; LastThrust = 0;
             if (o.monitor != null && Watch(alt, q, m, vrel, p, rho, sound, avx, avy, ux, uy, tx, ty, dt))
                 Fail(alt, v);
@@ -383,7 +595,7 @@ namespace Kestrel.Core.Physics
                 LastThrust = F;
                 double aT = F / m; dvExp += aT * dt;
                 double dx, dyy;
-                if (Mode == 2 && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
+                if ((Mode == 2 || followVelocity) && vrel > 1) { dx = avx / vrel; dyy = avy / vrel; }
                 else { double c = Math.Cos(PitchCmd), sn = Math.Sin(PitchCmd); dx = c * tx + sn * ux; dyy = c * ty + sn * uy; }
                 double cos = v > 1 ? (dx * vx + dyy * vy) / v : 0;
                 double Dm = rho > 0 ? 0.5 * rho * vrel * vrel * Aero.CdMach(vrel / sound, S.cd) * S.area / m : 0;
@@ -396,8 +608,35 @@ namespace Kestrel.Core.Physics
                 nextSample += o.sampleEvery;
             }
 
+            bool locate = o.energyCutoff && o.cutoff && Thrusting && !double.IsNaN(o.cutoffEnergy);
+            if (locate) Array.Copy(Y, stepStart, 5);
+            double t0 = T;
             rk.Step(deriv, T, Y, dt);
             T += dt;
+            bool energyCut = locate && EnergyMargin(Y) >= 0;
+            if (energyCut)
+            {
+                // The target energy was reached inside this step. Bisect on the step length (fixed count, deterministic):
+                // lo stays before the crossing, hi at or past it. The flight cuts off at hi.
+                double lo = 0, hi = dt;
+                var trial = new double[5];
+                for (int it = 0; it < CutoffBisections; it++)
+                {
+                    double mid = 0.5 * (lo + hi);
+                    Array.Copy(stepStart, trial, 5);
+                    rk.Step(deriv, t0, trial, mid);
+                    if (EnergyMargin(trial) >= 0) hi = mid; else lo = mid;
+                }
+                Array.Copy(stepStart, Y, 5);
+                rk.Step(deriv, t0, Y, hi);
+                T = t0 + hi;
+                // The loss and Δv tallies are linear in the step: keep only the part flown.
+                double f = dt > 0 ? hi / dt : 1;
+                lossG = lossG0 + (lossG - lossG0) * f;
+                lossD = lossD0 + (lossD - lossD0) * f;
+                lossS = lossS0 + (lossS - lossS0) * f;
+                dvExp = dvExp0 + (dvExp - dvExp0) * f;
+            }
 
             double r1 = JsMath.Hypot(Y[0], Y[1]), alt1 = r1 - Gravity.R_EARTH;
             if (!liftedOff && alt1 > 1)
@@ -428,8 +667,14 @@ namespace Kestrel.Core.Physics
                 Sink?.OnImpact(impactSpeed, Pos());
                 Done = true; return false;
             }
-            if (Thrusting && Mode == 3 && o.cutoff)
+            if (energyCut)
             {
+                Thrusting = false; Mode = 4;
+                Events.Add(new SimEvent { t = T, type = "cutoff", stage = StageIdx + 1, alt = alt1 });
+            }
+            else if (Thrusting && Mode == 3 && o.cutoff && !o.energyCutoff)
+            {
+                // JS simulate() parity only (energyCutoff off): perigee within 10 km of min(target, altitude).
                 var orb = Orbit.Planar(Y[0], Y[1], Y[2], Y[3]);
                 if (orb.periAlt >= Math.Min(o.targetAlt, alt1) - 10e3 && orb.e < 1)
                 {
@@ -440,6 +685,48 @@ namespace Kestrel.Core.Physics
             // Debris after a real failure coasts until impact or tMax. A clean cutoff still ends the run.
             if (!Thrusting && outcome != "failure") { Done = true; return false; }
             return true;
+        }
+
+        /// <summary>
+        /// #313: end the step where the pitch kick arms (air speed reaching the kick speed, or altitude reaching the kick
+        /// altitude), so the kick starts at the same state whatever the step. The crossing time is extrapolated from the
+        /// last step's rate; a gravity turn is sensitive to its kick, and a kick up to one 0.2 s step late lofted the
+        /// batch kilometres above the pad.
+        /// </summary>
+        double LandOnKick(double dt, double alt, double vr, double vrel)
+        {
+            var g = o.guidance;
+            bool legacy = Headless.LegacyPitch(g);
+            double now, target, rate;
+            if (legacy)
+            {
+                if (Mode != 0) return dt;
+                now = vrel; target = o.kickSpeed;
+                rate = kickPrevT >= 0 && T > kickPrevT ? (vrel - kickPrevVrel) / (T - kickPrevT) : 0;
+            }
+            else if (g.useAltitudeKick)
+            {
+                now = alt; target = g.pitchKickAlt; rate = vr;
+            }
+            else
+            {
+                now = vrel; target = g.kickSpeed;
+                rate = kickPrevT >= 0 && T > kickPrevT ? (vrel - kickPrevVrel) / (T - kickPrevT) : 0;
+            }
+            if (!(now < target) || !(rate > 0)) return dt;
+            double need = (target - now) / rate;
+            // Aim a hair past the crossing so the next step starts armed; never shorter than a microsecond.
+            need = need * (1 + 1e-9) + 1e-9;
+            if (need < 1e-6) need = 1e-6;
+            return need < dt ? need : dt;
+        }
+
+        /// <summary>Specific orbital energy minus the cutoff target, J/kg: at or above 0 cuts off.</summary>
+        double EnergyMargin(double[] y)
+        {
+            double r = Math.Sqrt(y[0] * y[0] + y[1] * y[1]);
+            double v2 = y[2] * y[2] + y[3] * y[3];
+            return 0.5 * v2 - Gravity.MU_EARTH / r - o.cutoffEnergy;
         }
 
         /// <summary>
@@ -570,6 +857,29 @@ namespace Kestrel.Core.Physics
             return o.monitor.Consider(step);
         }
 
+        /// <summary>
+        /// The flown peak of a ballistic coast: keeps integrating a copy of the state after a clean cutoff with the
+        /// same gravity, drag, rotation and wind as the ascent until the radial rate turns down. Above the drag
+        /// ceiling (300 km) or in vacuum the rest of the climb is Kepler, so it returns the vacuum apoapsis there.
+        /// NaN while thrusting or after a failure. Observational: the sim's own state, events and result are untouched.
+        /// </summary>
+        public double CoastApexAlt()
+        {
+            if (Thrusting || outcome == "failure" || outcome == "crash") return double.NaN;
+            var s = (double[])Y.Clone();
+            double t = T, dt = o.dt > 0 ? o.dt : 0.05;
+            for (int i = 0; i < 400000; i++)
+            {
+                double r = JsMath.Hypot(s[0], s[1]), alt = r - Gravity.R_EARTH;
+                double vr = (s[2] * s[0] + s[3] * s[1]) / r;
+                if (vr <= 0) return alt;
+                if (o.vacuum || alt >= 300e3) return Orbit.Planar(s[0], s[1], s[2], s[3]).apoAlt;
+                rk.Step(deriv, t, s, dt);
+                t += dt;
+            }
+            return JsMath.Hypot(s[0], s[1]) - Gravity.R_EARTH;
+        }
+
         public SimResult Finish()
         {
             EnsureIgnition();
@@ -590,7 +900,13 @@ namespace Kestrel.Core.Physics
                 idealDeltaV = Headless.StackDeltaV(stagesIn, o.payload).total, deltaVExpended = dvExp, finalMass = Y[4],
                 x = Y[0], y = Y[1], vx = Y[2], vy = Y[3], m = Y[4], samples = Samples, warnings = warnings,
                 KarmanTime = sawKarman ? (double?)karmanT : null,
+                guidanceInControl = guidanceFlew,
+                nudgeHeldByGuidance = NudgeHeldByGuidance,
+                upperRanDry = upperRanDry,
+                guidanceHandoffAltM = handoffAlt, guidanceHandoffGammaDeg = handoffGamma, guidanceHandoffLiftRatio = handoffLift,
             };
+            if (orb.periAlt < 0) result.coastApexAlt = CoastApexAlt();
+            DepartureBudget(out result.departureDv, out result.departureTW);
             if (o.monitor != null)
             {
                 o.monitor.Finish(maxQ);
@@ -599,6 +915,8 @@ namespace Kestrel.Core.Physics
                 result.minStability = o.monitor.MinStability;
                 result.minCar = o.monitor.MinCar;
                 result.qLimPa = o.monitor.QLimPa;
+                result.peakBendFraction = o.monitor.PeakBendFraction;
+                result.bendWarning = o.monitor.BendWarning;
             }
             if (result.failure == null && playedBreak != null) result.failure = playedBreak;
             return result;

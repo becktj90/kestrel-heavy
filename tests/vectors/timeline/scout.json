@@ -956,8 +956,8 @@
       "abortRules": [
         {"condition":"dynamic pressure above the vehicle limit","branchId":"abort.maxq"}
       ],
-      "nominal":43,
-      "actual":43,
+      "nominal":44,
+      "actual":44,
       "tolerance":5,
       "variance":2.32,
       "status": {"state":"pending","progress":0},
@@ -974,7 +974,7 @@
       "strings": {
         "name":"Max-Q",
         "short":"Max-Q",
-        "explainWhy":"Max-Q is the sim peak dynamic pressure (53506 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:43.",
+        "explainWhy":"Max-Q is the sim peak dynamic pressure (21971 Pa), not a scripted clock time. The public band is about T+1:07 to T+1:12 on a medium kerolox ascent; this vehicle's sim time is T+0:44.",
         "anomaly":"dynamic pressure above the vehicle limit"
       }
     },
@@ -989,7 +989,7 @@
       "holdable":false,
       "criticality":"nominal",
       "abortRules": [],
-      "nominal":43,
+      "nominal":44,
       "actual":null,
       "tolerance":1,
       "variance":-0.265,
@@ -1022,8 +1022,8 @@
       "holdable":false,
       "criticality":"nominal",
       "abortRules": [],
-      "nominal":111,
-      "actual":111,
+      "nominal":135,
+      "actual":135,
       "tolerance":1,
       "variance":0.16,
       "status": {"state":"pending","progress":0},
@@ -1040,7 +1040,7 @@
       "strings": {
         "name":"Karman line",
         "short":"Karman",
-        "explainWhy":"The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+1:51, on an integrator step.",
+        "explainWhy":"The Karman line is the first time geometric altitude reaches 100 km, the FAI boundary of space. It is a sim condition (alt>=100000), not a scripted clock time. This vehicle crosses it at T+2:15, on an integrator step.",
         "anomaly":""
       }
     },
@@ -1055,8 +1055,8 @@
       "holdable":false,
       "criticality":"nominal",
       "abortRules": [],
-      "nominal":111,
-      "actual":111,
+      "nominal":135,
+      "actual":135,
       "tolerance":1,
       "variance":-0.607,
       "status": {"state":"pending","progress":0},
@@ -1073,7 +1073,7 @@
       "strings": {
         "name":"Fairing separation",
         "short":"Fairing",
-        "explainWhy":"Fairing separates once heating has fallen (after Max-Q) and altitude reaches 100 km. Time T+1:51 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude.",
+        "explainWhy":"Fairing separates once heating has fallen (after Max-Q) and altitude reaches 100 km. Time T+2:15 is from the sim, or from a ballistic coast when the sim stops at burnout below that altitude.",
         "anomaly":""
       }
     },
@@ -1088,8 +1088,8 @@
       "holdable":false,
       "criticality":"critical",
       "abortRules": [],
-      "nominal":124.852,
-      "actual":124.852,
+      "nominal":153.322,
+      "actual":153.322,
       "tolerance":1,
       "variance":0.547,
       "status": {"state":"pending","progress":0},
@@ -1106,7 +1106,7 @@
       "strings": {
         "name":"Main engine cutoff",
         "short":"MECO",
-        "explainWhy":"Main engine cutoff at sim T+2:04.852. A medium kerolox public anchor is about T+2:25; this time is the sim burnout.",
+        "explainWhy":"Main engine cutoff at sim T+2:33.322. A medium kerolox public anchor is about T+2:25; this time is the sim burnout.",
         "anomaly":""
       }
     },
@@ -1123,8 +1123,8 @@
       "abortRules": [
         {"condition":"recontact in the separation corridor","branchId":"abort.staging"}
       ],
-      "nominal":124.852,
-      "actual":124.852,
+      "nominal":153.322,
+      "actual":153.322,
       "tolerance":0.5,
       "variance":0.401,
       "status": {"state":"pending","progress":0},
@@ -1141,7 +1141,7 @@
       "strings": {
         "name":"Stage separation",
         "short":"SEP s1",
-        "explainWhy":"Stage 1 separates at sim T+2:04.852, the same instant the sim records separation. The timeline orders it with the cutoff.",
+        "explainWhy":"Stage 1 separates at sim T+2:33.322, the same instant the sim records separation. The timeline orders it with the cutoff.",
         "anomaly":"recontact in the separation corridor"
       }
     },
@@ -1156,8 +1156,8 @@
       "holdable":false,
       "criticality":"critical",
       "abortRules": [],
-      "nominal":124.852,
-      "actual":124.852,
+      "nominal":153.322,
+      "actual":153.322,
       "tolerance":0.5,
       "variance":0.156,
       "status": {"state":"pending","progress":0},
@@ -1174,7 +1174,7 @@
       "strings": {
         "name":"Stage 2 SES-1",
         "short":"SES-1 s2",
-        "explainWhy":"SES-1 because Small gas-generator methalox (gg-methalox-small) is restartable (3 restarts) and this is its first start, at sim T+2:04.852. A public anchor for a medium kerolox upper start is about T+2:36; this time is the sim ignition.",
+        "explainWhy":"SES-1 because Small gas-generator methalox (gg-methalox-small) is restartable (3 restarts) and this is its first start, at sim T+2:33.322. A public anchor for a medium kerolox upper start is about T+2:36; this time is the sim ignition.",
         "anomaly":""
       }
     },
@@ -1189,8 +1189,8 @@
       "holdable":false,
       "criticality":"critical",
       "abortRules": [],
-      "nominal":318.852,
-      "actual":318.852,
+      "nominal":360.909,
+      "actual":360.909,
       "tolerance":0.5,
       "variance":-0.213,
       "status": {"state":"pending","progress":0},
@@ -1207,7 +1207,7 @@
       "strings": {
         "name":"Stage 2 SECO-1",
         "short":"SECO-1 s2",
-        "explainWhy":"SECO-1 because gg-methalox-small is restartable and the ascent burn ends at sim T+5:18.852.",
+        "explainWhy":"SECO-1 because gg-methalox-small is restartable and the ascent burn ends at sim T+6:00.909.",
         "anomaly":""
       }
     },
@@ -1222,8 +1222,8 @@
       "holdable":false,
       "criticality":"critical",
       "abortRules": [],
-      "nominal":318.852,
-      "actual":318.852,
+      "nominal":361.909,
+      "actual":361.909,
       "tolerance":1,
       "variance":0.006,
       "status": {"state":"pending","progress":0},
@@ -1255,8 +1255,8 @@
       "holdable":false,
       "criticality":"critical",
       "abortRules": [],
-      "nominal":348.852,
-      "actual":348.852,
+      "nominal":391.909,
+      "actual":391.909,
       "tolerance":1,
       "variance":0.97,
       "status": {"state":"pending","progress":0},
@@ -1288,7 +1288,7 @@
       "holdable":false,
       "criticality":"nominal",
       "abortRules": [],
-      "nominal":408.852,
+      "nominal":451.909,
       "actual":null,
       "tolerance":1,
       "variance":0.4,
@@ -1422,7 +1422,7 @@
       "holdable":false,
       "criticality":"safety",
       "abortRules": [],
-      "nominal":43,
+      "nominal":44,
       "actual":null,
       "tolerance":0,
       "variance":0,
@@ -1455,7 +1455,7 @@
       "holdable":false,
       "criticality":"safety",
       "abortRules": [],
-      "nominal":124.852,
+      "nominal":153.322,
       "actual":null,
       "tolerance":0,
       "variance":0,

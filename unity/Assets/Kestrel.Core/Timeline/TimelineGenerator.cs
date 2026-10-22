@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
 using Kestrel.Core.Economy;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Params;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
@@ -114,6 +115,9 @@ namespace Kestrel.Core.Timeline
                     // debug-build generate under a few milliseconds. Max-Q tolerance is
                     // 5 s, so the peak step stays inside the band.
                     dt = 1, sampleEvery = 2, tMax = 2500,
+                    // #313: a design that carries pitch settings (the retuned presets) flies them here too, as in
+                    // Stack.SimInputs and the predictor, so its timeline is the ascent it actually flies.
+                    guidance = d.guidance != null && d.guidance.Any ? GuidanceProfile.From(d, req.targetAlt) : null,
                 };
                 var sim = Headless.Simulate(simStages, opts);
 

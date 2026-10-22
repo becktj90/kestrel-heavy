@@ -6,12 +6,16 @@
     <Nullable>disable</Nullable>
     <IsPackable>false</IsPackable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- dotnet-only: exhaustive sweeps too slow for Unity's EditMode runner (180 s per test). Not in the asmdef. -->
+    <DefineConstants>$(DefineConstants);KH_DOTNET_TESTS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Assets/Kestrel.Core.Tests/**/*.cs" LinkBase="Kestrel.Core.Tests" />
     <Compile Include="../../Assets/Kestrel.Slice/Runtime/Report/ReportLayout.cs" Link="ReportLayout.cs" />
     <Compile Include="ReportFixture.cs" />
     <Compile Include="PostFlightCardTests.cs" />
+    <Compile Include="../../Assets/Kestrel.UiChecks/UiClipRules.cs" Link="UiClipRules.cs" />
+    <Compile Include="UiClipRulesUssTests.cs" />
     <ProjectReference Include="../Kestrel.Core/Kestrel.Core.csproj" />
   </ItemGroup>
   <ItemGroup>

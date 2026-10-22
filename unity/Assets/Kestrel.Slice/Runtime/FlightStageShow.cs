@@ -71,6 +71,11 @@ namespace Kestrel.Slice
         bool armed, hasFairing, hasBoosters, coreReleases, reduce, recoveryOwns, canLand;
         double playT, jettisonM = 110000;
         string[] fuelBySerial;
+        // Since #288 the painted Hangar parts are the visible rocket and the combined mesh is undrawn, so ApplyMask
+        // alone hides nothing on screen. These hide the painted part a moving piece replaces (StagingPartVisibility).
+        HangarRocketView partsView;
+        Behaviour fairingSeams;
+        StagingPartVisibility partVisibility;
 
         public IFlightStagingNarration Narration => narration ?? silent;
 
@@ -78,6 +83,26 @@ namespace Kestrel.Slice
         public bool CoreCanRelease => coreReleases;
 
         public int CoreSerial => coreSerial;
+
+        /// <summary>
+        /// Base of the stack still attached, metres up the vehicle axis from the pivot: the top of the
+        /// highest stage the sim has released (0 before the first separation). The flight camera frames
+        /// the stack from here, so the upper stage is not framed as if the spent core were still on it.
+        /// </summary>
+        public float KeptBase
+        {
+            get
+            {
+                if (!armed || bySerialStage == null) return 0f;
+                float y = 0f;
+                for (int i = 0; i < bySerialStage.Length; i++)
+                {
+                    var p = bySerialStage[i];
+                    if (p != null && staging.Released(p.Serial, playT) && p.SepY > y) y = p.SepY;
+                }
+                return y;
+            }
+        }
 
         /// <summary>Separated first-stage mesh. Recovery poses this instead of the kinematic tumble.</summary>
         public Transform Booster
@@ -95,8 +120,18 @@ namespace Kestrel.Slice
         public void SetNarration(IFlightStagingNarration sink) => narration = sink;
 
         public void Prepare(Catalog catalog, Design design, RocketMeshBuilder.Result built, VisualElement flightHud)
+            => Prepare(catalog, design, built, flightHud, null, null);
+
+        /// <param name="paintedParts">The painted per-part rocket (SliceApp's HangarRocketView). Released stages, the booster
+        /// set and the separated fairing are hidden on it, and the payload is shown after fairing separation.</param>
+        /// <param name="seams">The fairing's seam, base-ring and shoulder cluster; disabled when the fairing separates.</param>
+        public void Prepare(Catalog catalog, Design design, RocketMeshBuilder.Result built, VisualElement flightHud, HangarRocketView paintedParts, Behaviour seams)
         {
             ClearGeometry();
+            ResetParts();
+            partsView = paintedParts;
+            fairingSeams = seams;
+            partVisibility = null;
             hud = flightHud;
             narration = silent;
             canLand = false;
@@ -129,6 +164,7 @@ namespace Kestrel.Slice
                 break;
             }
             RememberFuel(design, bodies);
+            partVisibility = new StagingPartVisibility(bodies, design.stages.Count, hasFairing);
 
             List<RocketMeshBuilder.PartMesh> parts;
             try { parts = RocketMeshBuilder.BuildParts(catalog, design); }
@@ -259,6 +295,7 @@ namespace Kestrel.Slice
             if (leftHalf != null) leftHalf.Pivot.gameObject.SetActive(false);
             if (rightHalf != null) rightHalf.Pivot.gameObject.SetActive(false);
             if (plume != null) plume.ExitDiameter = fullDiameter;
+            ResetParts();
             EnsureChip();
             if (chip != null) chip.style.display = DisplayStyle.None;
         }
@@ -297,16 +334,76 @@ namespace Kestrel.Slice
                 if (playT < cap) playT += Time.unscaledDeltaTime;
                 if (playT > cap) playT = cap;
             }
-            staging.Advance(flight.Sim.Events, playT, flight.Altitude, flight.Speed, flight.DynPressure, flight.ThrustFraction);
-            int mask = Mask(playT);
-            ApplyMask(mask);
-            ApplyPieces(playT);
-            ApplyFairing(playT);
+            ApplyStaging(flight.Sim.Events, playT, flight.Altitude, flight.Speed, flight.DynPressure, flight.ThrustFraction);
             ApplyBells(playT);
             var read = staging.Plume(playT, flight.ThrustFraction);
             ApplyPlume(read);
             Offer();
             ApplyCallout(playT);
+        }
+
+        /// <summary>
+        /// The staging picture at sim time <paramref name="t"/> without a FlightDriver: pieces, fairing halves and
+        /// the painted parts they replace. Device tests and captures drive this after Arm(null, ...) resets the show.
+        /// The caller still owns SetVisible on the parts view (SliceApp.ShowFlightPicture does it every frame).
+        /// </summary>
+        public void PreviewAt(IList<SimEvent> events, double t, double alt, double speed, double q, double thrust01)
+        {
+            playT = t;
+            ApplyStaging(events, t, alt, speed, q, thrust01);
+        }
+
+        void ApplyStaging(IList<SimEvent> events, double t, double alt, double speed, double q, double thrust01)
+        {
+            staging.Advance(events, t, alt, speed, q, thrust01);
+            ApplyMask(Mask(t));
+            ApplyPieces(t);
+            ApplyFairing(t);
+            ApplyParts(t);
+        }
+
+        /// <summary>Moving piece for a stage ("stage", index) or one booster ("booster", k); null when none was built.</summary>
+        public Transform PieceOf(string role, int index)
+        {
+            for (int i = 0; i < pieces.Count; i++)
+                if (pieces[i].Role == role && pieces[i].Index == index) return pieces[i].Pivot;
+            return null;
+        }
+
+        /// <summary>FairingL (right = false) or FairingR; null for a rocket without a fairing.</summary>
+        public Transform FairingHalf(bool right)
+        {
+            var h = right ? rightHalf : leftHalf;
+            return h != null ? h.Pivot : null;
+        }
+
+        /// <summary>Painted parts hidden so far this flight (released bodies and the separated fairing).</summary>
+        public StagingPartVisibility Parts => partVisibility;
+
+        void ApplyParts(double t)
+        {
+            if (partVisibility == null) return;
+            if (partVisibility.Update(staging, t)) PushParts();
+        }
+
+        void PushParts()
+        {
+            if (partVisibility == null) return;
+            if (partsView != null)
+            {
+                foreach (var part in partVisibility.Hidden) partsView.SetPartHidden(part, true);
+                partsView.SetPayloadShown(partVisibility.PayloadShown);
+            }
+            if (fairingSeams != null) fairingSeams.enabled = !partVisibility.FairingSeparated;
+        }
+
+        /// <summary>Assembled stack again: every painted part may draw, the payload is enclosed, the seams are back.
+        /// SliceApp's next SetVisible (ShowFlightPicture) turns the parts back on.</summary>
+        void ResetParts()
+        {
+            partVisibility?.Reset();
+            if (partsView != null) partsView.ClearHidden();
+            if (fairingSeams != null) fairingSeams.enabled = true;
         }
 
         void OnDestroy()
@@ -480,6 +577,10 @@ namespace Kestrel.Slice
         void RaiseFairingSeparation()
         {
             fairingRaised = true;
+            // First frame the halves show: the painted fairing, its seams and rings go, and the payload is revealed,
+            // on this same tick (ApplyParts would do it a few lines later in the frame; doing it here keeps the
+            // swap atomic even if a caller only ever runs ApplyFairing).
+            if (partVisibility != null && partVisibility.Update((System.Func<int, bool>)null, true)) PushParts();
             if (leftHalf == null || rightHalf == null) return;
             float mass = 12f * Mathf.PI * fairingRadius * fairingLen;
             CinematicEvents.FairingSeparation(0f, leftHalf.Mid, 0f, 0f, 0f, 0f, mass, fairingLen, fairingRadius, mass * 2f, 0.5f, 4f, reduce);
@@ -665,6 +766,7 @@ namespace Kestrel.Slice
                         Seed = seed,
                         SkinRadius = e.StageRadius,
                         Gimbal = e.GimbalDeg > 0.01f,
+                        Propellant = e.Propellant(design),   // same fuel cue as SliceApp.AddBells after staging
                     },
                 });
             }
