@@ -32,7 +32,10 @@ namespace Kestrel.Core.Flight
 
     /// <summary>
     /// Fixed-step accumulator. Advance adds scaled wall time, then releases whole steps of <see cref="Step"/>.
-    /// Time is counted in microseconds so two different frame splits of the same sim time take the same steps.
+    /// Time is counted in whole microseconds, and each frame's slice is rounded to the nearest one. Splits that are whole
+    /// microseconds take the same steps; others can drift by the rounding, e.g. a 60 fps frame (16,666.67 µs) counts
+    /// as 16,667 µs, about 20 ppm fast, so a step can land one frame early over a long flight. Only the pacing moves:
+    /// every step is still <see cref="Step"/>, so the sim outcome does not depend on the frame split.
     /// Backlog is kept: a long frame runs more steps and does not drop sim time.
     /// </summary>
     public struct FixedStepAccumulator
