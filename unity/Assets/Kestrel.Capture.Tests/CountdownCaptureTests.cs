@@ -21,6 +21,8 @@ using UnityEngine.UIElements;
 
 namespace Kestrel.Capture.Tests
 {
+    // CI runs this fixture in its own job (unity.yml PlayModeDevice, -testCategory DeviceCapture).
+    [Category("DeviceCapture")]
     public class CountdownCaptureTests
     {
         const int SettleFrames = 150;   // FlightViewPose smoothing settles in about 1.5 s at the fixed 1/60 step
