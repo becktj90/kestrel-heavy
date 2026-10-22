@@ -1,6 +1,7 @@
 // Launch lighting for one flight. Deterministic and platform-independent:
-// FNV-1a 64 of the mission id and the seed, mapped through data/time-of-day.json.
+// FNV-1a 64 of the mission id (UTF-8 bytes) and the seed, mapped through data/time-of-day.json.
 // No System.Random and no string.GetHashCode (those differ by runtime and by process).
+// web/js/flight/launch-time.js is the BigInt port; data/golden/launch-time.json binds the two.
 // Named LaunchTimeOfDay because Flight.TimeOfDay is the weather-clock row on the briefing.
 using System;
 using System.Collections.Generic;
@@ -149,33 +150,111 @@ namespace Kestrel.Core.Flight
 
     public static class LaunchTime
     {
+        public const ulong FnvOffset = 14695981039346656037UL;
+        public const ulong FnvPrime = 1099511628211UL;
+        /// <summary>Resources path of the bundled table in a player build (CI copies data/*.json there).</summary>
+        public const string ResourcePath = "KestrelData/time-of-day";
+
         static readonly object Gate = new object();
         static LaunchTimeTable _table;
 
         /// <summary>
-        /// FNV-1a 64. The mission id is mixed as UTF-16 code units (ASCII ids are one byte each),
-        /// then the seed as eight little-endian bytes. Same bits on every runtime.
+        /// Install the weight table PickTimeOfDay uses. A player build calls this at boot with the
+        /// bundled <c>Resources/KestrelData/time-of-day</c> text, because a device has no repo checkout.
+        /// Pass null to drop it; the next pick then loads <c>data/time-of-day.json</c> from the checkout.
+        /// </summary>
+        public static void UseTable(LaunchTimeTable table)
+        {
+            lock (Gate) _table = table;
+        }
+
+        /// <summary>Parse <c>time-of-day.json</c> text and install it. Throws FormatException on a bad table.</summary>
+        public static LaunchTimeTable UseJson(string json)
+        {
+            var table = LaunchTimeTable.Parse(json);
+            UseTable(table);
+            return table;
+        }
+
+        /// <summary>True when a table is installed or was already loaded.</summary>
+        public static bool HasTable => _table != null;
+
+        /// <summary>
+        /// Plain FNV-1a 64 over the UTF-8 bytes of <paramref name="text"/> (null is ""). A lone
+        /// surrogate encodes as U+FFFD (EF BF BD), the same as Encoding.UTF8 and the JS TextEncoder.
+        /// Published vectors: "" cbf29ce484222325, "a" af63dc4c8601ec8c, "foobar" 85944171f73967e8.
+        /// </summary>
+        public static ulong Fnv1a64(string text) => MixUtf8(FnvOffset, text ?? "");
+
+        /// <summary>
+        /// FNV-1a 64 over the UTF-8 bytes of the mission id, then the seed as eight little-endian bytes.
+        /// Explicit UTF-8, not UTF-16 code units, so any runtime or language that hashes bytes agrees.
+        /// ASCII ids are one byte per character either way, so shipped KH-n picks are unchanged.
         /// </summary>
         public static ulong Hash(string missionId, ulong seed)
         {
-            ulong h = 14695981039346656037UL;
-            string s = missionId ?? "";
-            for (int i = 0; i < s.Length; i++)
-            {
-                h ^= s[i];
-                h *= 1099511628211UL;
-            }
+            ulong h = MixUtf8(FnvOffset, missionId ?? "");
             for (int i = 0; i < 8; i++)
             {
                 h ^= (seed >> (8 * i)) & 0xFFUL;
-                h *= 1099511628211UL;
+                h *= FnvPrime;
             }
             return h;
+        }
+
+        // UTF-8 encode inline so the hash allocates nothing.
+        static ulong MixUtf8(ulong h, string s)
+        {
+            for (int i = 0; i < s.Length; i++)
+            {
+                int cp = s[i];
+                if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < s.Length && s[i + 1] >= 0xDC00 && s[i + 1] <= 0xDFFF)
+                {
+                    cp = 0x10000 + ((cp - 0xD800) << 10) + (s[i + 1] - 0xDC00);
+                    i++;
+                }
+                else if (cp >= 0xD800 && cp <= 0xDFFF)
+                {
+                    cp = 0xFFFD;
+                }
+
+                if (cp < 0x80)
+                {
+                    h = Mix(h, cp);
+                }
+                else if (cp < 0x800)
+                {
+                    h = Mix(h, 0xC0 | (cp >> 6));
+                    h = Mix(h, 0x80 | (cp & 0x3F));
+                }
+                else if (cp < 0x10000)
+                {
+                    h = Mix(h, 0xE0 | (cp >> 12));
+                    h = Mix(h, 0x80 | ((cp >> 6) & 0x3F));
+                    h = Mix(h, 0x80 | (cp & 0x3F));
+                }
+                else
+                {
+                    h = Mix(h, 0xF0 | (cp >> 18));
+                    h = Mix(h, 0x80 | ((cp >> 12) & 0x3F));
+                    h = Mix(h, 0x80 | ((cp >> 6) & 0x3F));
+                    h = Mix(h, 0x80 | (cp & 0x3F));
+                }
+            }
+            return h;
+        }
+
+        static ulong Mix(ulong h, int b)
+        {
+            h ^= (ulong)(b & 0xFF);
+            return h * FnvPrime;
         }
 
         /// <summary>
         /// Time of day for this flight. Same id and seed always return the same value.
         /// A pinned mission ignores the seed. An id with no row uses the default weights.
+        /// Uses the table from <see cref="UseTable"/> when one is installed (player builds);
+        /// otherwise loads <c>data/time-of-day.json</c> from the repo checkout (editor, dotnet tests).
         /// </summary>
         public static LaunchTimeOfDay PickTimeOfDay(string missionId, ulong seed)
         {

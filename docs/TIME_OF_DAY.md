@@ -10,7 +10,19 @@ LaunchTimeOfDay tod = LaunchTime.PickTimeOfDay(missionId, seed);
 
 ## How the pick works
 
-The hash is FNV-1a 64. The id is mixed as UTF-16 code units, then the seed as eight little-endian bytes. Offset basis `14695981039346656037`, prime `1099511628211`. The bucket is `hash % (day + sunset + night)`, walked in order Day, then Sunset, then Night. The 2^64 modulo bias is under a part in 10^18 and is ignored.
+The hash is FNV-1a 64. The id is mixed as its **UTF-8 bytes** (explicitly encoded, not UTF-16 code units; a lone surrogate encodes as U+FFFD, `EF BF BD`), then the seed as eight little-endian bytes. Offset basis `14695981039346656037`, prime `1099511628211`. ASCII ids are one byte per character either way, so every shipped `KH-n` pick is the same as in #272 (`Hash("KH-1", 0)` is still `0xC39D71C85DA55BA0`). `LaunchTime.Fnv1a64(text)` is the plain hash and matches the published vectors (`""` `cbf29ce484222325`, `"a"` `af63dc4c8601ec8c`, `"foobar"` `85944171f73967e8`).
+
+The bucket is `hash % (day + sunset + night)`, walked in order Day, then Sunset, then Night. The modulo bias is at most weight total / 2^64 per bucket: about 5e-18 at a total of 100, and up to about 1.6e-13 at the largest allowed weights (3 × 1,000,000). It is ignored.
+
+## JS port and shared golden
+
+`web/js/flight/launch-time.js` is the BigInt port (`fnv1a64`, `hash`, `parseTable`, `pick`). It takes the parsed table, so it never reads the file system. `data/golden/launch-time.json` (written by `tools/golden-parts/launch-time.mjs` through `npm run gen:golden`) lists the published vectors, two non-ASCII ids, and hash plus pick for KH-1 … KH-20, an unknown id and `""` at eight seeds. `tests/launch-time.test.cjs` and `LaunchTimeGoldenTests` (Kestrel.Core.Tests) both replay it. Changing `data/time-of-day.json` changes picks, so regenerate the golden with it.
+
+## Loading the table
+
+Editor and dotnet tests: `PickTimeOfDay` loads `data/time-of-day.json` from the repo checkout (`KESTREL_REPO_ROOT`, then walking up from the working directory).
+
+Player builds have no checkout. CI copies `data/*.json` into `Assets/Resources/KestrelData` (Kestrel > Sync Data does it in the editor), and `Kestrel.Game.Shell.LaunchTimeBoot` installs `Resources/KestrelData/time-of-day` with `LaunchTime.UseJson` before the first scene loads. Any other host can inject its own table with `LaunchTime.UseTable(table)`; `UseTable(null)` returns to the checkout lookup.
 
 `System.Random` and `string.GetHashCode` are not used. Both change across runtimes.
 
@@ -35,5 +47,5 @@ Done. `Kestrel.Kit.LaunchTimeOfDay`, `TimeOfDayPresets.Pick`, `SeedFor` and `For
 `Kestrel.Kit.Core` now references `Kestrel.Core` (one way: Core still references nothing). `Kestrel.Kit.Tests` references it too.
 
 - `TimeOfDayRig.SetMission(missionId, seed)` calls `LaunchTime.PickTimeOfDay(missionId, seed)` and then `TimeOfDayPresets.For(tod, VarietySeed(seed))`.
-  `PickTimeOfDay` reads `data/time-of-day.json` from a repo checkout. If that table cannot be loaded on the running device, `SetMission` falls back to Day. Gameplay owns shipping the table with the player build.
+  In a player build `PickTimeOfDay` uses the table `LaunchTimeBoot` installed from Resources. If no table can be loaded, `SetMission` falls back to Day.
 - `-khTimeOfDay=night|sunset|day [-khTodSeed=N]` is unchanged. It still wins over the table through `TimeOfDayRig.Force`.

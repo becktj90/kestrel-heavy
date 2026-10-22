@@ -1,0 +1,2177 @@
+{
+ "generatedBy": "tools/export-golden.mjs (JS reference: web/js)",
+ "tolerance": {
+  "rel": 0,
+  "abs": 0,
+  "note": "exact: hash hex and pick name; table is data/time-of-day.json"
+ },
+ "count": 198,
+ "cases": [
+  {
+   "fn": "fnv1a64",
+   "in": {
+    "text": ""
+   },
+   "out": {
+    "hash": "cbf29ce484222325"
+   }
+  },
+  {
+   "fn": "fnv1a64",
+   "in": {
+    "text": "a"
+   },
+   "out": {
+    "hash": "af63dc4c8601ec8c"
+   }
+  },
+  {
+   "fn": "fnv1a64",
+   "in": {
+    "text": "foobar"
+   },
+   "out": {
+    "hash": "85944171f73967e8"
+   }
+  },
+  {
+   "fn": "fnv1a64",
+   "in": {
+    "text": "é"
+   },
+   "out": {
+    "hash": "0ac21707b7181e01"
+   }
+  },
+  {
+   "fn": "fnv1a64",
+   "in": {
+    "text": "KH-é"
+   },
+   "out": {
+    "hash": "c2100a9f5513f60d"
+   }
+  },
+  {
+   "fn": "fnv1a64",
+   "in": {
+    "text": "KH-🚀"
+   },
+   "out": {
+    "hash": "a175b49e47f93dae"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-1",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "c39d71c85da55ba0",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-1",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "e29838d16894a5c1",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-1",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "9c78e307aa306287",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-1",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "1a1057016d14fcca",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-1",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "7086007e9910d9f2",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-1",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "e8c5bdad5e8920d5",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-1",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "c39cf1c85da48220",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-1",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "e6a60ead5cbb4418",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-2",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "7ddc71e11b763dd9",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-2",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "5ee1aad81086f3b8",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-2",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "18c2550e5222b07e",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-2",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "e4a2e6897bf13cf3",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-2",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "4f1f40f7754d5c37",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-2",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "88a1a14be139e7dc",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-2",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "7ddcf1e11b771759",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-2",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "890f384be197ba51",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-3",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "ea721c8386db47c6",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-3",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "096ce38c91ca91e7",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-3",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "4f8c3956502ed521",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-3",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "83aba7db266048ac",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-3",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "e89880db55430fc4",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-3",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "c96780b92533102f",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-3",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "ea729c8386dc2146",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-3",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "c8fb55b924d7a83e",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-4",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "a4b11c9c44ac29ff",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-4",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "85b6559339bcdfde",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-4",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "cbd5ab5cf8212318",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-4",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "4e3e3763353c88d5",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-4",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "285f5a77e101c551",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-4",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "7311d3ab3bb1eaf6",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-4",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "a4b09c9c44ab507f",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-4",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "760a6eab3e379677",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-5",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "1146c73eb01133ec",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-5",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "30418e47bb007e0d",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-5",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "f24c0035a521e9cb",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-5",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "780d3be7108c3306",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-5",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "84c611e233b8547e",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-5",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "61a09d1534e79349",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-5",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "1147473eb0120d6c",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-5",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "63bf761536b40464",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-6",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "cb85c7576de21625",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-6",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "ac8b004e62f2cc04",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-6",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "6e95723c4d1437c2",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-6",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "e0aa6ed339243f8f",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-6",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "6e9d6f616b77dc03",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-6",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "53552fb054f02850",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-6",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "cb8547576de13ca5",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-6",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "51354eb05321f69d",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-7",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "381b71f9d9472012",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-7",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "57163902e4366a33",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-7",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "950bc714fa14fe75",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-7",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "d154fd5178cc20f8",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-7",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "a02727d9a5b199d0",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-7",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "797cb3e70089b2a3",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-7",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "381af1f9d9464692",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-7",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "768310e6fe02468a",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-8",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "f25a72129718024b",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-8",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "d35fab098c28b82a",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-8",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "1155391ba2074c6c",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-8",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "dd35ca96cbd5d8e1",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-8",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "ca7a045c5f87349d",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-8",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "193031e848e9e7aa",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-8",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "f25af2129718dbcb",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-8",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "18c3d4e8488e2ac3",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-9",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "5ef01cb5027d0c38",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-9",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "7deae3be0d6c5659",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-9",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "37cb8df44f08131f",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-9",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "c5b6915d62f80b52",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-9",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "8ed0433257f9b98a",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-9",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "ad1476fc9730f7fd",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-9",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "5eef9cb5027c32b8",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-9",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "abce57fc961c00b0",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-10",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "d33ea19dd64b4fb0",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-10",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "f23968a6e13a99d1",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-10",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "ac1a12dd22d65697",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-10",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "29b186d6e5baf0da",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-10",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "2964f57cfba03b82",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-10",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "424b70fa72084a05",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-10",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "d33e219dd64a7630",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-10",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "42b7a1fa7263bc28",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-11",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "66a8f6fb6ae645c3",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-11",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "47ae2ff25ff6fba2",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-11",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "85a3be0475d58fe4",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-11",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "4130c0104e98be69",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-11",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "f7db3d04c1667db5",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-11",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "4812d29fa9426772",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-11",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "66a876fb6ae56c43",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-11",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "4a32459fab0fde3b",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-12",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "fa134c58ff813bd6",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-12",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "190e13620a7085f7",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-12",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "5f2d692bc8d4c931",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-12",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "934cd7b09f063cbc",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-12",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "4efbeb87e3ff9654",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-12",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "daba8ebff4d7ed1f",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-12",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "fa12cc58ff806256",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-12",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "ddb3c3bff75e9e4e",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-13",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "8d7da1b6941c31e9",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-13",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "6e82daad892ce7c8",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-13",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "286384e3cac8a48e",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-13",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "b2f5d8a1b069b943",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-13",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "1d72330fa9c5d887",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-13",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "e1256efbb9afb4cc",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-13",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "8d7d21b6941b5869",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-13",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "de2c65fbb7294e61",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-14",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "20e7f71428b727fc",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-14",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "3fe2be1d33a6721d",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-14",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "01ed300b1dc7dddb",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-14",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "87ae6bbc89322716",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-14",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "3da506e09647b60e",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-14",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "e7c650a0f1a29c79",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-14",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "20e8771428b8017c",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-14",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "e5a709a0efd57074",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-15",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "b4524c71bd521e0f",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-15",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "95578568b262d3ee",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-15",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "db76db3270c71728",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-15",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "9f2da4f5f20ff4a5",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-15",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "794ec80a9dd53121",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-15",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "cc6f215b14e08226",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-15",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "b452cc71bd52f78f",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-15",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "cb299c5b13cc9087",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-16",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "47bca1cf51ed1422",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-16",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "66b768d85cdc5e43",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-16",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "a4acf6ea72baf285",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-16",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "22446ae4359f8cc8",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-16",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "f116956c628505a0",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-16",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "d2da0196d9b849d3",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-16",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "47bd21cf51ededa2",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-16",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "d26e3e96d95d929a",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-17",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "db26f72ce6880a35",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-17",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "bc2c3023db98c014",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-17",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "7e36a211c5ba2bd2",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-17",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "f04b9ea8b1ca339f",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-17",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "277c645fce073d93",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-17",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "3667b836afc72d40",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-17",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "db27772ce688e3b5",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-17",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "37ad3736b0db14ad",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-18",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "6e914c8a7b230048",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-18",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "8d8c139386124a69",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-18",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "476cbdc9c7ae072f",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-18",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "94098375977087a2",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-18",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "5d23354a8c7235da",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-18",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "60a13008c8010eed",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-18",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "6e90cc8a7b2226c8",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-18",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "62c07108c9ce30c0",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-19",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "01fba1e80fbdf65b",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-19",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "e300dadf04ceac3a",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-19",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "20f668f11aad407c",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-19",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "ecd6fa6c447bccf1",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-19",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "da1b3431d82d28ad",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-19",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "7c845488f037249a",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-19",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "01fb21e80fbd1cdb",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-19",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "7f7d5788f2bd80d3",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-20",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "afe358f5ccdcf42b",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-20",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "90e891ecc1edaa0a",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-20",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "cede1ffed7cc3e4c",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-20",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "597073bcbd6d5301",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-20",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "9d76e8596735413d",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-20",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "8f80a6029ee32f8a",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-20",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "afe2d8f5ccdc1aab",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-20",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "8fed09029f3ef6a3",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-99",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "2334a8784d30e513",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-99",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "0439e16f42419af2",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-99",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "422f6f8158202f34",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-99",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "fdbc718d30e35db9",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-99",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "b466ee81a3b11d05",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-99",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "bd90e03bdd7277e2",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-99",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "233528784d31be93",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-99",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "c08ab33bdffa358b",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "a8c7f832281a39c5",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "89cd31291d2aefa4",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "4bd7a317074c5b62",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "ff3add6b3789daef",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "8d2dddf969dd7763",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "8c88bb8bfc47c7f0",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "a8c7783228196045",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "8cf51a8bfca3883d",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-é",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "1be063d5f4d579ad",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-é",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "fce59ccce9e62f8c",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-é",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "bef00ebad4079b4a",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-é",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "41589ac111230107",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-é",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "05e55820645a39eb",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-é",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "8d97ac0aa3b1ed48",
+    "pick": "Night"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-é",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "1be0e3d5f4d6532d",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-é",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "90917b0aa639a425",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-🚀",
+    "seed": "0"
+   },
+   "out": {
+    "hash": "8b98646cb4673f6e",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-🚀",
+    "seed": "1"
+   },
+   "out": {
+    "hash": "aa932b75bf56898f",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-🚀",
+    "seed": "7"
+   },
+   "out": {
+    "hash": "f0b2813f7dbaccc9",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-🚀",
+    "seed": "42"
+   },
+   "out": {
+    "hash": "7673bcf0e9251604",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-🚀",
+    "seed": "999983"
+   },
+   "out": {
+    "hash": "a4c6d91ff72440ac",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-🚀",
+    "seed": "9007199254740991"
+   },
+   "out": {
+    "hash": "7957a35538385f47",
+    "pick": "Sunset"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-🚀",
+    "seed": "9223372036854775808"
+   },
+   "out": {
+    "hash": "8b97e46cb46665ee",
+    "pick": "Day"
+   }
+  },
+  {
+   "fn": "pick",
+   "in": {
+    "id": "KH-🚀",
+    "seed": "18446744073709551615"
+   },
+   "out": {
+    "hash": "765e685535b1a3e6",
+    "pick": "Day"
+   }
+  }
+ ]
+}

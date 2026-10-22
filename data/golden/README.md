@@ -19,6 +19,7 @@ Every file is `{ generatedBy, tolerance, count, cases[] }`. `index.json` lists t
 | designer-readout.json | 4 | readout v2 hand literals (cone, ogive+fins), a medium-kerolox max-Q band, and orbital templates that must still launch | mass and Δv rel 1e-12; CG/CP/stability abs 1e-9; max-Q is a band (docs/PHYSICS.md) |
 | designer-validate.json | 119 | validateEngineering, quick readout, Make it fly, experience layers, Number.toFixed | messages exact; readout rel 1e-9; cost exact |
 | landing-grade.json | 13 | Haven touchdown margins and Perfect/Good/Hard/Salvage | margins rel 1e-9; grade exact |
+| launch-time.json | 198 | launch time of day: FNV-1a 64 published vectors and non-ASCII ids (UTF-8 bytes), then hash and Day/Sunset/Night pick for KH-1..KH-20, an unknown id, "" and two non-ASCII ids at 8 seeds through data/time-of-day.json. Replayed by tests/launch-time.test.cjs and LaunchTimeGoldenTests | exact (hash hex, pick name) |
 | mission-ramp.json | 39 | per-mission wind, landing fuel, swell, stars, unlock | stars and unlock exact; drift rel 1e-9 |
 | params.json | 4 | params registry, sensor fidelity, weather-hold policy | rel 1e-9 |
 | quick-retry.json | 5 | one-tap landing and sep resume clocks | exact; clocks match PACE |
