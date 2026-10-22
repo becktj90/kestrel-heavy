@@ -434,6 +434,9 @@ namespace Kestrel.Game.MissionSelect
             code.style.right = 0f;
             code.style.bottom = 1f;
             code.style.height = 14f;
+            // No theme padding or margin: the runtime theme's label padding left a 6 pt content box for the 13 pt
+            // line inside this 14 pt strip (t461 CampaignCardDeviceTests: "KH-18 text past its content").
+            Unpad(code);
             code.style.fontSize = 10f;
             code.style.unityTextAlign = TextAnchor.MiddleCenter;
             code.style.whiteSpace = WhiteSpace.NoWrap;
