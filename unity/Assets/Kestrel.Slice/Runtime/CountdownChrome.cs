@@ -44,6 +44,9 @@ namespace Kestrel.Slice
             cast.style.borderBottomWidth = Px(CountdownStack.EdgePt, u);
             cast.style.borderBottomColor = FlightDusk.Sun;
             cast.style.overflow = Overflow.Hidden;
+            // The card grows to fit its rows and is never squeezed by the HUD column (t455: the spare line slid
+            // under the status row when the stack ran short of room).
+            cast.style.flexShrink = 0;
 
             float room = Mathf.Max(1f, cardWPt - 2f * CountdownStack.CardPadXPt);
             if (verdict != null)
@@ -54,6 +57,7 @@ namespace Kestrel.Slice
                 lines = lines == int.MaxValue ? 2 : Mathf.Max(1, lines);
                 verdict.style.fontSize = Px(titlePt, u);
                 verdict.style.height = Px(lines * CountdownStack.LinePt(titlePt), u);
+                verdict.style.flexShrink = 0;
                 verdict.style.color = FlightDusk.Cream;
                 verdict.style.unityFontStyleAndWeight = FontStyle.Bold;
                 verdict.style.whiteSpace = WhiteSpace.Normal;
@@ -69,6 +73,7 @@ namespace Kestrel.Slice
                 pulse.style.fontSize = Px(fit.SparePt > 0f ? fit.SparePt : CountdownStack.SparePt, u);
                 pulse.style.height = Px(Mathf.Max(1, fit.SpareLines) * CountdownStack.LinePt(fit.SparePt > 0f ? fit.SparePt : CountdownStack.SparePt), u);
                 pulse.style.marginTop = Px(CountdownStack.RowGapPt, u);
+                pulse.style.flexShrink = 0;   // its own reserved row: whole pixels, never squeezed
                 pulse.style.color = FlightDusk.Cream;
                 pulse.style.whiteSpace = WhiteSpace.Normal;
                 pulse.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -203,7 +208,7 @@ namespace Kestrel.Slice
             s.borderTopLeftRadius = StyleKeyword.Null; s.borderTopRightRadius = StyleKeyword.Null;
             s.borderBottomLeftRadius = StyleKeyword.Null; s.borderBottomRightRadius = StyleKeyword.Null;
             s.borderTopWidth = StyleKeyword.Null; s.borderBottomWidth = StyleKeyword.Null; s.borderLeftWidth = StyleKeyword.Null; s.borderRightWidth = StyleKeyword.Null;
-            s.borderBottomColor = StyleKeyword.Null; s.overflow = StyleKeyword.Null;
+            s.borderBottomColor = StyleKeyword.Null; s.overflow = StyleKeyword.Null; s.flexShrink = StyleKeyword.Null;
             foreach (var l in new TextElement[] { verdict, pulse, callout, skip })
             {
                 if (l == null) continue;

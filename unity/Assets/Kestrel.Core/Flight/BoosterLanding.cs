@@ -207,6 +207,45 @@ namespace Kestrel.Core.Flight
 
         public RecoverySample Sample() => Started ? RecoverySim.Sample(body, craft) : default;
 
+        /// <summary>Upper bound on the fixed recovery steps one <see cref="Settle"/> may run (MaxTime at NearDt, twice over).</summary>
+        public const int SettleSteps = (int)(2 * RecoverySim.MaxTime / RecoverySim.NearDt) + 1000;
+
+        /// <summary>
+        /// Fly the rest of the landing now, at the same fixed recovery steps <see cref="Step"/> takes (the step size
+        /// depends only on the booster's altitude, never on how presented time was sliced), and publish the verdict.
+        /// The verdict is bit-identical to stepping it out live with the same stick. True once it has touched down.
+        /// </summary>
+        public bool Settle(in RecoveryStick stick)
+        {
+            if (!Started) return false;
+            if (Touched) return true;
+            int guard = 0;
+            while (body.Phase != RecoveryPhase.Down && guard++ < SettleSteps)
+            {
+                RecoveryFrames.Axes(body.X, body.Y, out _, out double alt, out _, out _, out _, out _, out _);
+                double step = alt < RecoverySim.NearAlt ? RecoverySim.NearDt : RecoverySim.Dt;
+                var before = body.Phase;
+                RecoverySim.Step(ref body, craft, stick, step);
+                if (body.Phase != before) Remember();
+            }
+            accum = 0;
+            Step(0, stick);
+            return Touched;
+        }
+
+        /// <summary>
+        /// t466 (build 204, KH-3): the upper stage was in orbit, but the report waited for the booster (RecoveryLog.Active,
+        /// FailureHost) and the rail for its Boostback, minutes of dead air. Once the ascent has ended without a failure
+        /// (insertion or a clean cutoff), a booster still in the air finishes its landing at once on Auto-assist (the
+        /// stage-sep spec's Stay path: the booster lands or is lost automatically and its result joins the report).
+        /// A lost ascent is left alone (its failure card does not wait for the booster). True when it settled here.
+        /// </summary>
+        public bool Conclude(bool ascentOver, bool ascentLost)
+        {
+            if (!ascentOver || ascentLost || !Started || Touched) return false;
+            return Settle(RecoveryStick.Assisted);
+        }
+
         /// <summary>
         /// The line over the flight. An expendable stage says it is lost and why for the first
         /// seconds after separation; otherwise the phase callouts (BOOSTBACK ... TOUCHDOWN).

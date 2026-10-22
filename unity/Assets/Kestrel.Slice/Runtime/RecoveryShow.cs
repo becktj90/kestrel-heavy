@@ -115,6 +115,8 @@ namespace Kestrel.Slice
                 return;
             }
             if (body.Phase == RecoveryPhase.Down) downAge += dt;
+            // t466: once the ascent is over (insertion or a clean cutoff), the booster finishes at once so the report opens.
+            landing.Conclude(flight.Result != null && !flight.Running, flight.Lost);
             var sample = landing.Step(dt, Stick());
             string cause = RecoveryLog.Current != null && RecoveryLog.Current.Attempted ? RecoveryLog.Current.Cause : null;
             var pic = RecoveryViews.Of(sample, landing.TrimMarks(), cause, craft.VLeg, sample.Phase == RecoveryPhase.Down);

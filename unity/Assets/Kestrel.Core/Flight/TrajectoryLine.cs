@@ -98,8 +98,25 @@ namespace Kestrel.Core.Flight
         double qPeak, qPeakT, qPeakAlt, qPeakSpeed;
         bool qHot;
 
+        bool ascentOver; double ascentOverT;
+
+        /// <summary>
+        /// The ascent has ended without a failure at flight time <paramref name="t"/> (insertion, or a clean cutoff). From
+        /// then on the insertion stop (SECO / Orbit; MECO on a one-stage hop) is the rail's final stop: a recovery stop the
+        /// booster has not flown by now, or a fairing that never opened (KH-1/KH-2 hops), is dropped instead of holding the
+        /// marker under it. t466: after orbit the marker waited under Boostback for an expendable booster that never boosts
+        /// back. Stops already flown keep their place.
+        /// </summary>
+        public void AscentOver(double t)
+        {
+            if (ascentOver) return;
+            ascentOver = true;
+            ascentOverT = Finite(t) ? t : 0;
+        }
+
         public void Reset()
         {
+            ascentOver = false; ascentOverT = 0;
             liftoff = maxq = beco = meco = fairing = seco = boost = entry = landing = default;
             qPeak = qPeakT = qPeakAlt = qPeakSpeed = 0;
             qHot = false;
@@ -195,6 +212,8 @@ namespace Kestrel.Core.Flight
             stops.Add(TrajectoryStop.Meco);
             if (HasFairing || fairing.On) stops.Add(TrajectoryStop.Fairing);
             if (CoreStages >= 2 || seco.On) stops.Add(TrajectoryStop.Seco);
+            // A hop that ended below the jettison altitude never opened its fairing: that stop does not hold the end.
+            if (ascentOver && now + 1e-6 >= ascentOverT && !Flown(fairing, now)) stops.Remove(TrajectoryStop.Fairing);
             if (Recovery || boost.On || entry.On || landing.On)
             {
                 if (FliesBoostback() || boost.On) stops.Add(TrajectoryStop.Boostback);
@@ -206,6 +225,12 @@ namespace Kestrel.Core.Flight
                 if (!entry.On && later) stops.Remove(TrajectoryStop.Entry);
                 later |= entry.On && entry.T <= now + 1e-6;
                 if (!boost.On && later) stops.Remove(TrajectoryStop.Boostback);
+                if (ascentOver && now + 1e-6 >= ascentOverT)
+                {
+                    if (!Flown(landing, now)) stops.Remove(TrajectoryStop.Landing);
+                    if (!Flown(entry, now)) stops.Remove(TrajectoryStop.Entry);
+                    if (!Flown(boost, now)) stops.Remove(TrajectoryStop.Boostback);
+                }
             }
 
             int n = stops.Count;
@@ -474,6 +499,8 @@ namespace Kestrel.Core.Flight
             if (from == TrajectoryStop.Entry && to == TrajectoryStop.Landing) return 80;
             return 60;
         }
+
+        static bool Flown(in Hit hit, double now) => hit.On && hit.T <= now + 1e-6;
 
         static void Note(ref Hit hit, double t, double alt, double speed, bool orbit)
         {

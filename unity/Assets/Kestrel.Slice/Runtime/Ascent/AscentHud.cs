@@ -1701,6 +1701,8 @@ namespace Kestrel.Slice
                 trajectory.Seen(new TrajectoryEvent { T = director.FairingT, Type = "fairing", AltM = director.FairingAltM, SpeedMps = director.FairingSpeedMps });
             if (flight.Sim != null) trajectory.Burn(flight.Sim.StageIdx + 1, flight.Sim.PropellantFraction);
             trajectory.Sample(flight.SimTime, alt, speed, q);
+            // t466: insertion (or a clean cutoff) makes SECO / Orbit the final stop; no wait on a booster stop.
+            if (flight.Result != null && !flight.Running && !flight.Lost) trajectory.AscentOver(flight.SimTime);
             // Live marks while the booster flies, on the flight clock (RecoveryLog.FlightMarks). Current alone
             // exists only at touchdown, and its times count from separation.
             var recMarks = RecoveryLog.FlightMarks;

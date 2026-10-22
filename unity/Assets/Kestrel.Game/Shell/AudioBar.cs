@@ -53,7 +53,7 @@ namespace Kestrel.Game.Shell
         {
             var root = AppShell.Instance != null ? AppShell.Instance.Root : null;
             if (root == null || root.panel == null) return false;
-            var hit = root.panel.Pick(RuntimePanelUtils.ScreenToPanel(root.panel, screen));
+            var hit = PanelInput.Pick(root.panel, screen);   // screen is a legacy Input position (bottom-left)
             for (var ve = hit; ve != null; ve = ve.parent)
                 if (ve.name == "audio-bar") return true;
             return false;

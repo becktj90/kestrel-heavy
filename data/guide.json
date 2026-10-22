@@ -1334,7 +1334,7 @@
       "cards": [
         {
           "id": "fail.tumble.c1",
-          "kid": "Round and round! No fins to steer her. Add fins or move weight up.",
+          "kid": "Round and round!",
           "eng": "Hold is 0.5 s under stability 0. Or 15 deg at q above 20 kPa."
         }
       ]
