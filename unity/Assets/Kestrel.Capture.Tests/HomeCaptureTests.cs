@@ -81,6 +81,10 @@ namespace Kestrel.Capture.Tests
             if (priorWidth > 0 && priorHeight > 0)
                 UnityEditor.PlayModeWindow.SetCustomRenderingResolution(priorWidth, priorHeight, "Previous capture viewport");
 #endif
+            // Leave no shell behind. A surviving AppShell (DontDestroyOnLoad) makes the next test's Boot load destroy its own
+            // fresh shell as a duplicate, while the old shell's Home view is torn down with the old scene (ScreenStub.OnDisable):
+            // the next test then sees SceneFlow at Home over an empty root (MenuPlayWalkTests NRE on home-codex, GameCI 39813959626).
+            if (AppShell.Instance != null) UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
             yield return null;
         }
 
