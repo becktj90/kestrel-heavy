@@ -11,7 +11,7 @@ using NUnit.Framework;
 
 namespace Kestrel.Core.Tests
 {
-    public class FlightSimSinkTests
+    public partial class FlightSimSinkTests
     {
         const double FairingM = 110000;
         const double Dt = 0.2;
