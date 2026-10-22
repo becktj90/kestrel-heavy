@@ -17,7 +17,7 @@ namespace Kestrel.Game.Shell
             var asset = Resources.Load<TextAsset>(LaunchTime.ResourcePath);
             if (asset == null || string.IsNullOrEmpty(asset.text))
             {
-                if (!Application.isEditor) Debug.LogWarning("[Kestrel] Resources/" + LaunchTime.ResourcePath + " missing; launch lighting falls back to Day");
+                if (!Application.isEditor) Debug.LogWarning("[Kestrel] Resources/" + LaunchTime.ResourcePath + " missing; LaunchTime.PickTimeOfDay has no table on this device");
                 return;
             }
             try { LaunchTime.UseJson(asset.text); }
