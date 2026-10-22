@@ -24,9 +24,13 @@ using UnityEngine.UIElements;
 
 namespace Kestrel.Capture.Tests
 {
+    // CI runs this fixture in its own job (unity.yml PlayModeDevice, -testCategory DeviceCapture).
+    [Category("DeviceCapture")]
     public class HomeCaptureTests
     {
-        const int Frames = 60;
+        const int Frames = 60;          // most frames to wait for the play-mode viewport to take a new size
+        const int ReadyFrames = 600;    // most frames to wait for Boot to land on Home (FlightCapture.BootToCount's cap)
+        const int SettleFrames = 12;    // frames after Home is up, for layout and the GeometryChanged re-lay-out
 
         struct Device { public string Name; public int W, H; public bool Web; }
 
@@ -140,8 +144,23 @@ namespace Kestrel.Capture.Tests
                 yield return null;
             }
             CaptureCamera.Clear();
-            SceneManager.LoadScene("Boot", LoadSceneMode.Single);
-            for (int i = 0; i < Frames; i++) yield return null;
+            SceneManager.LoadScene(SceneFlow.BootScene, LoadSceneMode.Single);
+            // Until Boot's SceneFlow has settled on Home and the shell holds the Home root (FlightCapture.BootToCount's
+            // signal), then a few frames for layout (HeroLift re-lays out on GeometryChanged). With IntroPlayed set Home
+            // is whole on its first frame (MainMenuOverlay, F8), so the old fixed 60 frames per shot only burned CPU
+            // render time at full device resolution on the llvmpipe CI runner.
+            SceneFlow flow = null;
+            int waited = 0;
+            for (; waited < ReadyFrames; waited++)
+            {
+                yield return null;
+                if (flow == null) flow = UnityEngine.Object.FindAnyObjectByType<SceneFlow>();
+                var s = AppShell.Instance;
+                if (flow != null && !flow.Busy && flow.Current == AppScreen.Home
+                    && s != null && s.Root != null && s.Root.Q(UiIds.ScreenHome) != null) break;
+            }
+            Assert.Less(waited, ReadyFrames, name + ": Boot never settled on Home");
+            for (int i = 0; i < SettleFrames; i++) yield return null;
 
             shell = AppShell.Instance;
             Assert.IsNotNull(shell, name + " shell");

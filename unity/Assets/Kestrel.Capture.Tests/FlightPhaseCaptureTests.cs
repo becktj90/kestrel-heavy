@@ -15,6 +15,8 @@ using UnityEngine.TestTools;
 
 namespace Kestrel.Capture.Tests
 {
+    // CI runs this fixture in its own job (unity.yml PlayModeDevice, -testCategory DeviceCapture).
+    [Category("DeviceCapture")]
     public class FlightPhaseCaptureTests
     {
         static readonly int[] Phases = { 17, 116, 192 };
