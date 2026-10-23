@@ -21,6 +21,7 @@ namespace Kestrel.Capture.Tests
     {
         static readonly int[] Phases = { 17, 116, 192 };
         const int StallFrames = 600;   // 60 s of capture time with no sim progress: something holds the flight
+        const int OrbitalCleared = 2;  // Home LAUNCH as if KH-1 and KH-2 were cleared: the KH-3 Tiny Orbit starter
 
 #if UNITY_EDITOR
         uint priorWidth, priorHeight;
@@ -67,7 +68,9 @@ namespace Kestrel.Capture.Tests
             var vp = FlightCapture.Viewport(first, "flight-" + first.Name);
             while (vp.MoveNext()) yield return vp.Current;
             SliceApp app = null;
-            var boot = FlightCapture.BootToCount(a => app = a);
+            // KH-3 Tiny Orbit: Home LAUNCH's starter for it burns to orbit (about T+517 headless), so T+192 is still
+            // powered ascent. A fresh save would fly KH-1 First Hop, whose 10 km hop cuts off at T+25.7 and ends the flight.
+            var boot = FlightCapture.BootToCount(a => app = a, OrbitalCleared);
             while (boot.MoveNext()) yield return boot.Current;
             foreach (int t in Phases)
             {

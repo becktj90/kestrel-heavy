@@ -415,6 +415,7 @@ namespace Kestrel.Game.Shell
             if (kestrel != null) { kestrel.style.whiteSpace = WhiteSpace.NoWrap; kestrel.style.overflow = Overflow.Hidden; }
             var heavy = root.Q("mm-heavy");
             if (heavy != null) { heavy.style.whiteSpace = WhiteSpace.NoWrap; heavy.style.overflow = Overflow.Hidden; }
+            SeatWideTitle(root, frame.Title.H, type.Title, type.Tagline, sy);
             root.Query(className: "kh-mm-stat").ForEach(e => e.style.fontSize = type.Stat * fs);
             var record = root.Q("mm-record");
             if (record != null) record.style.fontSize = Mathf.Max(11f, type.Stat * fs);
@@ -716,6 +717,98 @@ namespace Kestrel.Game.Shell
                 grid.style.flexWrap = StyleKeyword.Null;
             }
             foreach (var it in MainMenuCopy.Tiles) Drop(root.Q("home-" + it.Id));
+            ClearWideTitle(root);
+        }
+
+        /// <summary>
+        /// Wide web: lays the pinned title box as WebHomeLayout's title model (eyebrow row, wordmark row of
+        /// <see cref="WebHomeLayout.WordmarkLine"/>, the gap, HEAVY's rule row), every row fixed and without the
+        /// label theme's vertical padding. The rows used to flex inside the pinned box: the 48 px KESTREL (drawn 60 px)
+        /// was squeezed into a 48 px row with a 34 px content box and ran over HEAVY at every web size.
+        /// Sizes are panel px: <paramref name="titleH"/> is the scaled title box, the faces' rows are scaled by the
+        /// same vertical factor (the applied face uses min(sx, sy), so it is never taller than its row).
+        /// </summary>
+        static void SeatWideTitle(VisualElement root, float titleH, float titleFont, float tagFont, float sy)
+        {
+            var title = root.Q("mm-title");
+            var eye = root.Q("mm-eyebrow");
+            var kestrel = root.Q("mm-kestrel");
+            var heavy = root.Q("mm-heavy");
+            var word = kestrel?.parent;
+            var rule = heavy?.parent;
+            if (title == null || word == null || rule == null || word == title || rule == title) return;
+            float wordH = titleFont * WebHomeLayout.WordmarkLine * sy;
+            float gap = WebHomeLayout.TitleGap * sy;
+            float ruleH = tagFont * WebHomeLayout.Line * sy;
+            // The eyebrow takes what the block leaves (WebHomeLayout: TitleBrow, unless the box was capped).
+            float browH = Mathf.Max(0f, titleH - wordH - gap - ruleH);
+            title.style.paddingTop = 0f;
+            title.style.paddingBottom = 0f;
+            title.style.justifyContent = Justify.FlexStart;
+            if (eye != null)
+            {
+                UnpadY(eye);
+                Row(eye, browH);
+            }
+            UnpadY(word);
+            Row(word, wordH);
+            UnpadY(kestrel);
+            Row(kestrel, wordH);
+            Row(rule, ruleH);
+            rule.style.marginTop = gap;
+            rule.style.marginBottom = 0f;
+            UnpadY(heavy);
+        }
+
+        static void Row(VisualElement e, float h)
+        {
+            e.style.height = h;
+            e.style.minHeight = h;
+            e.style.maxHeight = h;
+            e.style.flexShrink = 0;
+            e.style.flexGrow = 0;
+        }
+
+        /// <summary>No theme padding or margin above or below (MissionBoardScreen.Unpad, vertical only: the rules
+        /// beside HEAVY keep their spacing).</summary>
+        static void UnpadY(VisualElement e)
+        {
+            e.style.paddingTop = 0f;
+            e.style.paddingBottom = 0f;
+            e.style.marginTop = 0f;
+            e.style.marginBottom = 0f;
+        }
+
+        /// <summary>Back to the USS title block for the phone column.</summary>
+        static void ClearWideTitle(VisualElement root)
+        {
+            void Free(VisualElement e)
+            {
+                if (e == null) return;
+                e.style.height = StyleKeyword.Null;
+                e.style.minHeight = StyleKeyword.Null;
+                e.style.maxHeight = StyleKeyword.Null;
+                e.style.flexShrink = StyleKeyword.Null;
+                e.style.flexGrow = StyleKeyword.Null;
+                e.style.paddingTop = StyleKeyword.Null;
+                e.style.paddingBottom = StyleKeyword.Null;
+                e.style.marginTop = StyleKeyword.Null;
+                e.style.marginBottom = StyleKeyword.Null;
+            }
+            var title = root.Q("mm-title");
+            if (title != null)
+            {
+                title.style.paddingTop = StyleKeyword.Null;
+                title.style.paddingBottom = StyleKeyword.Null;
+                title.style.justifyContent = StyleKeyword.Null;
+            }
+            var kestrel = root.Q("mm-kestrel");
+            var heavy = root.Q("mm-heavy");
+            Free(root.Q("mm-eyebrow"));
+            Free(kestrel);
+            Free(kestrel?.parent);
+            Free(heavy);
+            Free(heavy?.parent);
         }
 
         /// <summary>

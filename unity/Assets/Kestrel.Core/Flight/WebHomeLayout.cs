@@ -68,6 +68,16 @@ namespace Kestrel.Core.Flight
         public const float ReelFrac = 0.06f;
         public const float ReelMin = 24f;
         public const float Line = 1.25f;
+        /// <summary>
+        /// KESTREL's drawn line per px of face (Fraunces Black). The block budgeted 1.05 em, so a 48 px wordmark got a
+        /// 50 px row while TextCore drew it 59-60 px tall (PlayMode HomeCaptureTests, every web size: "mm-kestrel text
+        /// 238x60 past its content 801x34", and over HEAVY).
+        /// </summary>
+        public const float WordmarkLine = 1.25f;
+        /// <summary>The teal eyebrow row above the wordmark.</summary>
+        public const float TitleBrow = 14f;
+        /// <summary>Between the wordmark row and the HEAVY rule row.</summary>
+        public const float TitleGap = 6f;
         // Chrome subtracted from a card before text is measured. Slack covers the USS border
         // (panel px) being a hair wider than the scaled layout px, plus glyph overhang.
         public const float Slack = 6f;
@@ -263,7 +273,7 @@ namespace Kestrel.Core.Flight
             float titleFont = WebLandscapeType.Wordmark(Fit(titleInner, HomeWideText.Kestrel, 72f, 16f), bottom - topBar);
             float tagFont = Fit(titleInner * 0.62f, HomeWideText.Heavy, 26f, 11f);
             // 14px under the top of the wordmark box for the teal eyebrow. The faces stay the measured block.
-            const float Brow = 14f;
+            const float Brow = TitleBrow;
             float titleH = TitleBlock(titleFont, tagFont) + Brow;
             float maxTitle = Math.Max(48f, span * 0.30f);
             if (titleH > maxTitle)
@@ -403,7 +413,7 @@ namespace Kestrel.Core.Flight
             float titleInner = Math.Max(1f, f.Title.W - 8f);
             if (HomeWideText.Width(HomeWideText.Kestrel, t.Title) > titleInner + 0.6f) return "KESTREL wider than the title";
             if (HomeWideText.Width(HomeWideText.Heavy, t.Tagline) > titleInner * 0.7f + 0.6f) return "HEAVY wider than the rule row";
-            if (t.Title * 1.05f + 6f + t.Tagline * Line > f.Title.H + 0.6f) return "title block taller than its box";
+            if (TitleBlock(t.Title, t.Tagline) > f.Title.H + 0.6f) return "title block taller than its box";
 
             string card = CardFit(f.Launch, t.Launch, f.LaunchAt100, t.LaunchCaption, HomeWideText.LaunchCaption, t.LaunchCaptionLines, LaunchChrome, 8f, 5f, "launch");
             if (card != null) return card;
@@ -449,14 +459,15 @@ namespace Kestrel.Core.Flight
             return null;
         }
 
-        static float TitleBlock(float titleFont, float tagFont) =>
-            titleFont * 1.05f + 6f + tagFont * Line;
+        /// <summary>Wordmark row, gap, HEAVY row: the block under the eyebrow (MainMenuOverlay.SeatWideTitle lays these rows).</summary>
+        public static float TitleBlock(float titleFont, float tagFont) =>
+            titleFont * WordmarkLine + TitleGap + tagFont * Line;
 
         /// <summary>Shrinks the wordmark so the gap between the faces stays 6px and the block fits the box.</summary>
         static float FitTitleBlock(ref float titleFont, ref float tagFont, float boxH)
         {
-            float faces = titleFont * 1.05f + tagFont * Line;
-            float room = Math.Max(1f, boxH - 6f);
+            float faces = titleFont * WordmarkLine + tagFont * Line;
+            float room = Math.Max(1f, boxH - TitleGap);
             if (faces > room && faces > 0f)
             {
                 float s = room / faces;

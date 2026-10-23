@@ -19,6 +19,31 @@ namespace Kestrel.Core.Tests
             pw = w / s; ph = h / s;
         }
 
+        /// <summary>
+        /// PlayMode HomeCaptureTests (every web size): a 48 px KESTREL drew 60 px tall in a row budgeted at 1.05 em and
+        /// ran over HEAVY. The title box holds the eyebrow, the wordmark's drawn line, the gap and HEAVY's line.
+        /// </summary>
+        [Test]
+        public void WideTitleBoxHoldsTheWordmarksDrawnLine()
+        {
+            Assert.That(WebHomeLayout.WordmarkLine, Is.GreaterThanOrEqualTo(1.25f), "CI: Fraunces Black 48 px measured 59-60 px");
+            foreach (var (w, h) in Monitors)
+            {
+                Panel(w, h, out float pw, out float ph);
+                foreach (bool save in new[] { false, true })
+                {
+                    var f = WebHomeLayout.Place(pw, ph, 0f, 0f, 0f, 0f, Kestrel.Core.Features.HomeShow.None, save);
+                    if (!f.Wide || f.Type == null) continue;
+                    string at = $"{w}x{h} save={save}";
+                    float block = WebHomeLayout.TitleBlock(f.Type.Title, f.Type.Tagline);
+                    Assert.That(block, Is.EqualTo(f.Type.Title * WebHomeLayout.WordmarkLine + WebHomeLayout.TitleGap
+                        + f.Type.Tagline * WebHomeLayout.Line).Within(0.01f), at);
+                    Assert.That(block + WebHomeLayout.TitleBrow, Is.LessThanOrEqualTo(f.Title.H + 0.6f), at + " title rows fit the box");
+                    Assert.IsNull(WebHomeLayout.TextFitError(f), at);
+                }
+            }
+        }
+
         [Test]
         public void SixteenByNineMonitorsAreAllTheSamePanel()
         {
