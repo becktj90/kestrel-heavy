@@ -35,6 +35,14 @@ namespace Kestrel.Capture.Tests
             _voice = AudioPrefs.NarrationMuted;
             _subs = AudioPrefs.SubtitlesOn;
             _sandbox = AudioPrefs.SandboxUnlocked;
+            // First launch means no shell yet. A shell left by an earlier test survives the Boot load below (AppShell is
+            // DontDestroyOnLoad and the new one destroys itself as a duplicate) but loses its Home view with the old scene,
+            // so its SceneFlow already reads Home over an empty root. Clear it and let the destroy land first.
+            if (AppShell.Instance != null)
+            {
+                UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
+                yield return null;
+            }
             yield return null;
         }
 

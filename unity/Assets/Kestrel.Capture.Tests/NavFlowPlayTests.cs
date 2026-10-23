@@ -7,6 +7,7 @@ using System.Collections;
 using System.IO;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
+using Kestrel.Core.Ui;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Shell;
 using Kestrel.Slice;
@@ -27,7 +28,6 @@ namespace Kestrel.Capture.Tests
         static readonly (string id, string[] main)[] Names =
         {
             ("home-primary", new[] { "home-launch", HomeResumeBar.ContinueName }),
-            ("home-continue", new[] { HomeResumeBar.ContinueName }),
             ("home-missions", new string[0]),
             ("home-settings", new string[0]),
             ("settings-close", new[] { "home-settings-close" }),
@@ -69,6 +69,18 @@ namespace Kestrel.Capture.Tests
             return null;
         }
 
+        /// <summary>The CONTINUE offer on Home, or null. Since feat(home-simple) (#300) CONTINUE is the one primary CTA
+        /// (home-primary reading CONTINUE, <see cref="MainMenuOverlay.CtaIsContinue"/>); the separate home-continue button
+        /// (<see cref="HomeResumeBar.ContinueName"/>) only appears where no Home CTA can take it.</summary>
+        public static VisualElement Continue(VisualElement root)
+        {
+            if (root == null) return null;
+            var separate = root.Q(HomeResumeBar.ContinueName);
+            if (separate != null) return separate;
+            var primary = root.Q(UiIds.HomePrimary);
+            return primary != null && MainMenuOverlay.CtaIsContinue(root) ? primary : null;
+        }
+
         public static bool Shown(VisualElement e)
         {
             for (var v = e; v != null; v = v.parent)
@@ -99,6 +111,12 @@ namespace Kestrel.Capture.Tests
             }
             GameSession.Clear();
             PadHandoff.Clear();
+            // A shell left by an earlier fixture would survive Boot with its Home view gone (see MenuPlayWalkTests).
+            if (AppShell.Instance != null)
+            {
+                UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
+                yield return null;
+            }
             yield return null;
         }
 
@@ -187,7 +205,8 @@ namespace Kestrel.Capture.Tests
         public IEnumerator FreshInstall_HomeSettingsMissionsBriefingDesignerAndBackOut()
         {
             yield return Boot();
-            Assert.IsFalse(NavIds.Shown(NavIds.Find("home-continue", Shell)), "fresh install offers no CONTINUE");
+            Assert.IsTrue(NavIds.Shown(NavIds.Find("home-primary", Shell)), "Home shows its one primary CTA");
+            Assert.IsFalse(NavIds.Shown(NavIds.Continue(Shell)), "fresh install offers no CONTINUE");
 
             Click(NavIds.Find("home-settings", Shell));
             yield return null;
@@ -245,9 +264,11 @@ namespace Kestrel.Capture.Tests
             NothingThrew();
         }
 
+        /// <summary>NAV-09 (fixed by #301: the Starter screen's ◀ Back, starter-back, runs SceneFlow.BackFromDesigner).
+        /// The designer's back control returns to the mission's briefing and keeps the mission, not Home with no session.</summary>
         [UnityTest]
         [Timeout(240000)]
-        public IEnumerator KnownBug_NAV09_DesignerBack_DropsTheMission()
+        public IEnumerator NAV09_DesignerBack_ReturnsToTheBriefing()
         {
             yield return Boot();
             flow.HomePressed("missions");
@@ -261,8 +282,10 @@ namespace Kestrel.Capture.Tests
             Click(back);
             yield return Until(() => !flow.Busy && (flow.Current != AppScreen.Design));
             NothingThrew();
-            bool briefing = flow.Current == AppScreen.Missions && flow.Overlay == "Briefing";
-            Ignore("NAV-09", "the designer's back control returns to KH-2's briefing", briefing ? null : flow.Current + "/" + flow.Overlay + ", session=" + (GameSession.Current?.MissionId ?? "none"));
+            string where = flow.Current + "/" + flow.Overlay + ", session=" + (GameSession.Current?.MissionId ?? "none");
+            Assert.AreEqual(AppScreen.Missions, flow.Current, "the designer's back control returns to the board, not Home: " + where);
+            Assert.AreEqual("Briefing", flow.Overlay, "the designer's back control reopens the briefing: " + where);
+            Assert.AreEqual("m2", GameSession.Current?.MissionId, "the mission is kept (KH-2): " + where);
         }
 
         // ---------------------------------------------------------------- existing save
@@ -288,7 +311,7 @@ namespace Kestrel.Capture.Tests
             GameSession.Clear();
             PadHandoff.Clear();
             yield return Boot();
-            var cont = NavIds.Find("home-continue", Shell);
+            var cont = NavIds.Continue(Shell);
             Assert.IsTrue(NavIds.Shown(cont), "an existing save offers CONTINUE");
             Click(cont);
             yield return At(AppScreen.Design);
