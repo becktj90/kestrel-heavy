@@ -377,6 +377,7 @@ namespace Kestrel.Slice
             dustRoot.SetParent(transform, false);
             owned.Add(dustRoot.gameObject);
             dust = dustRoot.gameObject.AddComponent<ParticleSystem>();
+            dust.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = dust.main;
             main.playOnAwake = false;
             main.duration = 0.8f;
@@ -387,7 +388,6 @@ namespace Kestrel.Slice
             main.maxParticles = 48;
             var emission = dust.emission;
             emission.SetBursts(new[] { new ParticleSystem.Burst(0f, reduce ? (short)8 : (short)28) });
-            dust.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
         void BuildDeck()
