@@ -1472,7 +1472,7 @@ export default class MissionScene extends Phaser.Scene {
     } else {
       this.session.burnHold = 0;
     }
-    if (alt < 200 && this.session.burnLit && !this.session.straightenCalled) {
+    if (alt < 200 && (this.session.burnLit || this.settings.difficulty === 'KID') && !this.session.straightenCalled) {
       this.session.straightenCalled = true;
       this.session.jacklynPhase = 'straighten';
       this.emitRcs();
@@ -1498,6 +1498,7 @@ export default class MissionScene extends Phaser.Scene {
 
     const side = this.session.havenSide || -1;
     const firstFlight = isFirstFlightGrace(this.currentFlight().id, this.settings);
+    const isKid = this.settings.difficulty === 'KID';
     const wantAngle = havenWantAngle({
       phase: this.session.jacklynPhase,
       side,
@@ -1506,9 +1507,10 @@ export default class MissionScene extends Phaser.Scene {
       alt,
       burnLit: Boolean(this.session.burnLit),
       firstFlight,
+      kid: isKid,
     });
     const nowAngle = this.rocket.angle || 0;
-    const leveling = !reentry && alt < HAVEN_LEVEL_ALT && (this.session.burnLit || firstFlight);
+    const leveling = !reentry && alt < HAVEN_LEVEL_ALT && (this.session.burnLit || firstFlight || isKid);
     const slew = reentry ? 2.2 : leveling ? 3.1 : gliding ? 1.35 : 3.1;
     const nextAngle = nowAngle + (wantAngle - nowAngle) * Math.min(1, dt * slew);
     if (Math.abs(nextAngle - nowAngle) > 0.7) this.emitRcs();
