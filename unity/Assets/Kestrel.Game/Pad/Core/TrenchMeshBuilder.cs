@@ -56,6 +56,11 @@ namespace Kestrel.Pad
             Grating(b.Galvanized, spec, detail);
             Drains(b.Concrete, spec, detail);
             EdgeMarks(b.Markings, spec, detail);
+            // Launch-pad polish (visual only, same meshes/draw calls as before): a painted pad circle
+            // with radial ticks on the deck, and a concrete apron terrace around the disc so the pad
+            // sits in a site instead of ending at a bare plinth edge.
+            PadCircle(b.Markings, spec, detail);
+            Apron(b.Concrete, spec, deck);
             return b;
         }
 
@@ -424,6 +429,89 @@ namespace Kestrel.Pad
                 // Still a visible lip mark if the slot edge was tiny.
                 m.AddQuad(new Vec3(-0.4f, 0.12f, s.HalfWidth(0f) + 0.2f), new Vec3(0.4f, 0.12f, s.HalfWidth(0f) + 0.2f),
                     new Vec3(0.4f, 0.12f, s.HalfWidth(0f) + 0.45f), new Vec3(-0.4f, 0.12f, s.HalfWidth(0f) + 0.45f), 0f, 1f, 0f);
+            }
+        }
+
+        /// <summary>Painted pad circle + radial ticks on the deck (WarningStripes mesh, above the plate
+        /// tops at 0.09 and the existing edge/slot marks at 0.11/0.12). Quads that would paint over the
+        /// trench slot are skipped, so the circle reads as broken for the slot — paint does not span
+        /// a trench. At most 40 ring + 8 tick quads (~96 triangles).</summary>
+        static void PadCircle(PadMeshData m, TrenchSpec s, float deck)
+        {
+            const float y = 0.13f;
+            float rr = deck * 0.4f, band = 0.4f;
+            var hole = TrenchGrammar.DeckOpening(s, deck);
+            bool OverSlot(float x, float z) => PolyCut.Contains(hole, x, z);
+            const int n = 40;
+            for (int i = 0; i < n; i++)
+            {
+                double a0 = 2 * Math.PI * i / n, a1 = 2 * Math.PI * (i + 1) / n;
+                float ox0 = rr * (float)Math.Cos(a0), oz0 = rr * (float)Math.Sin(a0);
+                float ox1 = rr * (float)Math.Cos(a1), oz1 = rr * (float)Math.Sin(a1);
+                float ix0 = (rr - band) * (float)Math.Cos(a0), iz0 = (rr - band) * (float)Math.Sin(a0);
+                float ix1 = (rr - band) * (float)Math.Cos(a1), iz1 = (rr - band) * (float)Math.Sin(a1);
+                float mx = (ox0 + ox1 + ix0 + ix1) * 0.25f, mz = (oz0 + oz1 + iz0 + iz1) * 0.25f;
+                if (OverSlot(ox0, oz0) || OverSlot(ox1, oz1) || OverSlot(ix0, iz0) || OverSlot(ix1, iz1) || OverSlot(mx, mz)) continue;
+                m.AddQuad(new Vec3(ox0, y, oz0), new Vec3(ox1, y, oz1), new Vec3(ix1, y, iz1), new Vec3(ix0, y, iz0), 0f, 1f, 0f);
+            }
+            for (int k = 0; k < 8; k++)
+            {
+                double a = 2 * Math.PI * (k + 0.5) / 8;
+                float dx = (float)Math.Cos(a), dz = (float)Math.Sin(a);
+                float px = -dz, pz = dx, hw = 0.15f;
+                float r0 = rr + 0.6f, r1 = rr + 2.0f;
+                float ax0 = r0 * dx + px * hw, az0 = r0 * dz + pz * hw;
+                float ax1 = r0 * dx - px * hw, az1 = r0 * dz - pz * hw;
+                float ax2 = r1 * dx - px * hw, az2 = r1 * dz - pz * hw;
+                float ax3 = r1 * dx + px * hw, az3 = r1 * dz + pz * hw;
+                if (OverSlot(ax0, az0) || OverSlot(ax1, az1) || OverSlot(ax2, az2) || OverSlot(ax3, az3)) continue;
+                m.AddQuad(new Vec3(ax0, y, az0), new Vec3(ax1, y, az1), new Vec3(ax2, y, az2), new Vec3(ax3, y, az3), 0f, 1f, 0f);
+            }
+        }
+
+        /// <summary>Concrete apron terrace around the disc: top at -0.80 (0.20 above the ground plane
+        /// at GradeY, 0.80 below the deck top so the plinth side still reads as a step), outer wall
+        /// down to grade. Segments crossing the trench channel are dropped — the grade opening
+        /// polygon already covers the channel out to ExitLength — plus one neighbour segment each
+        /// side, so a chord between two outside points cannot bridge the channel. The strip is
+        /// always wider than one segment (half-width at the disc edge is Width/2 + deck*tan(flare),
+        /// flare >= 10 deg), so at least one segment midpoint falls inside it wherever it crosses.
+        /// At most 48 top + 48 wall quads (~192 triangles), same Concrete draw call as the slab.</summary>
+        static void Apron(PadMeshData m, TrenchSpec s, float deck)
+        {
+            const int n = 48;
+            const float width = 8f, topY = -0.80f;
+            float inner = deck, outer = deck + width;
+            var hole = TrenchGrammar.GroundOpening(s);
+            var skip = new bool[n];
+            for (int i = 0; i < n; i++)
+            {
+                double am = 2 * Math.PI * (i + 0.5) / n;
+                double a0 = 2 * Math.PI * i / n, a1 = 2 * Math.PI * (i + 1) / n;
+                if (PolyCut.Contains(hole, inner * (float)Math.Cos(am), inner * (float)Math.Sin(am))
+                    || PolyCut.Contains(hole, outer * (float)Math.Cos(am), outer * (float)Math.Sin(am))
+                    || PolyCut.Contains(hole, inner * (float)Math.Cos(a0), inner * (float)Math.Sin(a0))
+                    || PolyCut.Contains(hole, outer * (float)Math.Cos(a1), outer * (float)Math.Sin(a1))) skip[i] = true;
+            }
+            // One segment of buffer each side, applied from a snapshot so the buffer itself does
+            // not propagate around the ring.
+            var drop = new bool[n];
+            for (int i = 0; i < n; i++)
+                if (skip[i]) { drop[(i + 1) % n] = true; drop[(i + n - 1) % n] = true; }
+            for (int i = 0; i < n; i++) skip[i] = skip[i] || drop[i];
+            for (int i = 0; i < n; i++)
+            {
+                if (skip[i]) continue;
+                double a0 = 2 * Math.PI * i / n, a1 = 2 * Math.PI * (i + 1) / n;
+                double am = 2 * Math.PI * (i + 0.5) / n;
+                float ix0 = inner * (float)Math.Cos(a0), iz0 = inner * (float)Math.Sin(a0);
+                float ix1 = inner * (float)Math.Cos(a1), iz1 = inner * (float)Math.Sin(a1);
+                float ox0 = outer * (float)Math.Cos(a0), oz0 = outer * (float)Math.Sin(a0);
+                float ox1 = outer * (float)Math.Cos(a1), oz1 = outer * (float)Math.Sin(a1);
+                m.AddQuad(new Vec3(ox0, topY, oz0), new Vec3(ox1, topY, oz1), new Vec3(ix1, topY, iz1), new Vec3(ix0, topY, iz0), 0f, 1f, 0f);
+                float nx = (float)Math.Cos(am), nz = (float)Math.Sin(am);
+                m.AddQuad(new Vec3(ox0, TrenchSpec.GradeY, oz0), new Vec3(ox1, TrenchSpec.GradeY, oz1),
+                    new Vec3(ox1, topY, oz1), new Vec3(ox0, topY, oz0), nx, 0f, nz);
             }
         }
     }
