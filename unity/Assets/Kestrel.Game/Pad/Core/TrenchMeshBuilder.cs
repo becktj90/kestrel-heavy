@@ -476,22 +476,44 @@ namespace Kestrel.Pad
         /// side, so a chord between two outside points cannot bridge the channel. The strip is
         /// always wider than one segment (half-width at the disc edge is Width/2 + deck*tan(flare),
         /// flare >= 10 deg), so at least one segment midpoint falls inside it wherever it crosses.
-        /// At most 48 top + 48 wall quads (~192 triangles), same Concrete draw call as the slab.</summary>
+        /// The crossing test samples both chords and both radial sides densely: the old
+        /// midpoint/endpoint test missed narrow corner lobes of the grade opening (a trench-exit
+        /// mouth corner landing on the ring) that the chord still bridged.
+        /// n = 28 on purpose: Slab and Plinth use a 28-sided boundary at this radius, so the apron
+        /// inner edge and the plinth wall share the same chords. With 48 sides the chords diverged
+        /// and left an exposed-ground gap between terrace and plinth (up to 52 cm on a 100 m pad).
+        /// At most 28 top + 28 wall quads (~112 triangles), same Concrete draw call as the slab.</summary>
         static void Apron(PadMeshData m, TrenchSpec s, float deck)
         {
-            const int n = 48;
+            const int n = 28;
             const float width = 8f, topY = -0.80f;
             float inner = deck, outer = deck + width;
             var hole = TrenchGrammar.GroundOpening(s);
             var skip = new bool[n];
             for (int i = 0; i < n; i++)
             {
-                double am = 2 * Math.PI * (i + 0.5) / n;
                 double a0 = 2 * Math.PI * i / n, a1 = 2 * Math.PI * (i + 1) / n;
-                if (PolyCut.Contains(hole, inner * (float)Math.Cos(am), inner * (float)Math.Sin(am))
-                    || PolyCut.Contains(hole, outer * (float)Math.Cos(am), outer * (float)Math.Sin(am))
-                    || PolyCut.Contains(hole, inner * (float)Math.Cos(a0), inner * (float)Math.Sin(a0))
-                    || PolyCut.Contains(hole, outer * (float)Math.Cos(a1), outer * (float)Math.Sin(a1))) skip[i] = true;
+                // Dense sampling, not just midpoints/endpoints: a narrow corner lobe of the
+                // grade opening (e.g. a trench-exit mouth corner landing on the ring) can fall
+                // between the old checked points while the quad still bridges the channel.
+                // Sample both chords and both radial sides; 16 steps catch any intrusion
+                // wider than ~1.6 m along the chord (a shallower poke is sub-centimetre deep).
+                float ix0 = inner * (float)Math.Cos(a0), iz0 = inner * (float)Math.Sin(a0);
+                float ix1 = inner * (float)Math.Cos(a1), iz1 = inner * (float)Math.Sin(a1);
+                float ox0 = outer * (float)Math.Cos(a0), oz0 = outer * (float)Math.Sin(a0);
+                float ox1 = outer * (float)Math.Cos(a1), oz1 = outer * (float)Math.Sin(a1);
+                for (int k = 0; k <= 16 && !skip[i]; k++)
+                {
+                    float t = k / 16f;
+                    if (PolyCut.Contains(hole, ix0 + (ix1 - ix0) * t, iz0 + (iz1 - iz0) * t)
+                        || PolyCut.Contains(hole, ox0 + (ox1 - ox0) * t, oz0 + (oz1 - oz0) * t)) skip[i] = true;
+                }
+                for (int k = 0; k <= 8 && !skip[i]; k++)
+                {
+                    float t = k / 8f;
+                    if (PolyCut.Contains(hole, ix0 + (ox0 - ix0) * t, iz0 + (oz0 - iz0) * t)
+                        || PolyCut.Contains(hole, ix1 + (ox1 - ix1) * t, iz1 + (oz1 - iz1) * t)) skip[i] = true;
+                }
             }
             // One segment of buffer each side, applied from a snapshot so the buffer itself does
             // not propagate around the ring.
