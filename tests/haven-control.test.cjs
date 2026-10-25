@@ -32,6 +32,11 @@ test('Haven hold levels a soft catch and does not climb when sink is already in 
   });
   assert.ok(Math.abs(held) < HAVEN_TIP_DEG, 'HOLD TO BURN stands the booster up');
 
+  const kid = havenWantAngle({
+    phase: 'glide', side: 1, vx: -1, axis: 0, alt: 40, burnLit: false, firstFlight: false, kid: true,
+  });
+  assert.ok(Math.abs(kid) < HAVEN_TIP_DEG, 'KID stands up before contact even without a lit burn');
+
   const mission = fs.readFileSync(path.join(arcade, 'mission.js'), 'utf8');
   assert.match(mission, /havenWantAngle\(/);
   assert.match(mission, /havenBurnLift\(/);
