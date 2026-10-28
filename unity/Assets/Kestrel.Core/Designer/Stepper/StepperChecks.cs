@@ -343,6 +343,7 @@ namespace Kestrel.Core.Designer.Stepper
                 case "interstage-shape":
                     return DesignerStep.Tanks;
                 case "fairing-narrow":
+                case "fairing-flare":
                 case "payload-doesnt-fit":
                 case "heavy-fairing":
                 case "unstable":
@@ -410,6 +411,7 @@ namespace Kestrel.Core.Designer.Stepper
                     return "stages";
                 case "payload-doesnt-fit":
                 case "fairing-narrow":
+                case "fairing-flare":
                 case "heavy-fairing":
                     return "fairing";
                 case "unstable":

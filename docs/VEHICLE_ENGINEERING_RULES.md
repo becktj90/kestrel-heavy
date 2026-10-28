@@ -13,7 +13,7 @@ _Status: describes main @ 4685247. Source of truth: `Kestrel.Core/Designer/Valid
 | `twr-low` | Liftoff TWR must be **> 1.0** (`MIN_TWR`). | Thrust must exceed weight to leave the pad. |
 | `engines-dont-fit` | Engine cluster must fit under the stage diameter. | Geometry (packing factor `PACK` = 1.1). |
 | `top-heavy` | An upper stage may not be ≥ 1.6× the diameter of the stage below. | Structural and aero load-path heuristic. |
-| `fairing-narrow` | Fairing ≥ half the top-stage diameter. | Geometry. |
+| `fairing-narrow` | Fairing ≥ half the top-stage diameter, and wide enough for the cargo (cargo ≤ 0.9 × the fairing diameter, `payload-doesnt-fit`). | Geometry. |
 | `payload-doesnt-fit` | Payload volume ≤ fairing volume. The volume scales as (m/m_ref)^(2/3), capped at 1.5×. | Constant-density scaling. |
 
 ## Warnings (flies, but badly)
@@ -26,6 +26,7 @@ _Status: describes main @ 4685247. Source of truth: `Kestrel.Core/Designer/Valid
 | `dv-margin` | Δv margin below `MIN_MARGIN` = 5 % (or negative). |
 | `landing-hardware` | Landing reserve without legs or grid fins. |
 | `heavy-fairing` | Fairing mass > payload mass. |
+| `fairing-flare` | Barrel diameter / top-stage diameter > 1.5, or the shoulder half angle > 30° (`data/designer-limits.json` `fairingFlare`). Advice only, never blocks. | Render and advice; the sim is untouched. |
 
 ## Physics constraints that are NOT rules yet (honest gaps)
 - **Gravity is point-mass.** There is no J2 (S3). Orbit predictions ignore nodal regression, which is about −5°/day for a 420 km, 51.6° orbit. Reference checks live in `tests/validation/atmosphere-j2-decay.test.cjs`.
