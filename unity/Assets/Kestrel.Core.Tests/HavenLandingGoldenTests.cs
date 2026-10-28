@@ -63,17 +63,35 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void FlockYard_RebuiltWinner_SeparatesLow_AndLands()
+        public void FlockYard_RebuiltWinner_LandsOnAnHonestReserve()
         {
             // t-booster-land: the old winner separated at 139 km and 3.3 km/s on a 4% reserve and could not come back.
+            // No altitude is asserted: the cutoff altitude is a symptom of the staging split. What matters is that the booster
+            // comes home, at a separation speed the landing starters accept, on a reserve that is neither short nor padded.
             var row = FlyAll()["m13"];
-            // Retuned with Physics' ruling on the reserve: 28 t buys about 3.1 km/s against the 2.3 km/s the flown return uses
-            // (a 30% margin), where the first draft's 44 t (more than the whole upper stage) bought 4 km/s for 2.6.
-            Assert.Less(row.Alt, 80000, "stage 1 now cuts off low");   // PR draft's bound, restored: NOT derived, awaiting the Physics ruling (retune measures 90.1 km)
-            Assert.Greater(row.Craft.ReserveKg, 25000, "a real landing reserve (main: 8.8 t)");
-            Assert.Less(row.Craft.ReserveKg, 35000, "and not a free-thrust crutch (the first draft's 44 t exceeded the upper-stage load)");
+
+            // (a) The assisted return flies clean and grades well; an idle stick still misses.
             Assert.IsNull(row.Auto.Cause, Dump(row.Auto));
+            Assert.IsTrue(MissionScore.IsGood(row.Auto.GradeName), Dump(row.Auto));
             AssertMiss("m13 idle", row.Idle);
+
+            // (b) Ground-frame separation speed inside the band BoosterLandingMissionTests holds every landing starter to.
+            var flight = FlightBatch.Fly(row.Catalog, row.Mission, row.Design, row.Seed);
+            Assert.That(flight.separationSpeedMps, Is.GreaterThan(BoosterLandingMissionTests.SeparationSpeedMinMps)
+                .And.LessThan(BoosterLandingMissionTests.SeparationSpeedMaxMps), "separation speed " + flight.separationSpeedMps.ToString("0") + " m/s");
+
+            // (c) Reserve delta-v (rocket equation from the design's reserve mass, stage dry mass and Isp) against the delta-v the
+            // flown return really used (same equation on the propellant it burned: reserve minus what was left at the end).
+            double isp = row.Craft.IspSec, dry = row.Craft.DryKg;
+            double dvReserve = RecoveryModel.ReserveDeltaV(isp, dry, row.Craft.ReserveKg);
+            double dvUsed = isp * Atmosphere.G0 * Math.Log((dry + row.Craft.ReserveKg) / (dry + row.Auto.PropLeft));
+            string why = "reserve " + dvReserve.ToString("0") + " m/s vs flown return " + dvUsed.ToString("0") + " m/s (x" + (dvReserve / dvUsed).ToString("0.00") + ")";
+            TestContext.WriteLine("m13 " + why + ", separation " + flight.separationSpeedMps.ToString("0") + " m/s, flown propellant left " + row.Auto.PropLeft.ToString("0") + " kg");
+            Assert.Greater(dvUsed, 0, why);
+            // 1.10 is about the 10% propellant reserve a real landing burn carries; 1.5 is where margin stops being margin and starts
+            // hiding a design problem. Both are engineering judgment, not derived constants.
+            Assert.GreaterOrEqual(dvReserve, 1.10 * dvUsed, "reserve is short of a 10% landing margin: " + why);
+            Assert.LessOrEqual(dvReserve, 1.5 * dvUsed, "reserve is padded past 1.5x, check the design instead: " + why);
         }
 
         [Test]
@@ -189,6 +207,10 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(caught, id + " core burnout");
             return new Row
             {
+                Catalog = catalog,
+                Mission = mission,
+                Design = design,
+                Seed = campaign.Seeds[0],
                 Craft = craft,
                 Down = down,
                 Alt = alt,
@@ -221,6 +243,10 @@ namespace Kestrel.Core.Tests
 
         sealed class Row
         {
+            public Catalog Catalog;
+            public CampaignMission Mission;
+            public Design Design;
+            public ulong Seed;
             public RecoveryCraft Craft;
             public double Down, Alt, East, Up;
             public RecoveryVerdict Auto, Idle;

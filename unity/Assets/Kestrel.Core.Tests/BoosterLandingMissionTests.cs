@@ -18,6 +18,10 @@ namespace Kestrel.Core.Tests
 {
     public class BoosterLandingMissionTests
     {
+        /// <summary>The booster separation-speed band of the landing starters (ground-frame hand-over). Shared by
+        /// HavenLandingGoldenTests so there is one band; the values are the literals this test always asserted.</summary>
+        internal const double SeparationSpeedMinMps = 500, SeparationSpeedMaxMps = 2500;
+
         Catalog catalog;
         HangarData hangar;
         Campaign campaign;
@@ -84,7 +88,7 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(flight.passed, why);
             Assert.IsTrue(MissionScore.IsGood(flight.landingGrade), why);
             Assert.IsNull(flight.landingCause, why);
-            Assert.That(flight.separationSpeedMps, Is.GreaterThan(500).And.LessThan(2500), why);
+            Assert.That(flight.separationSpeedMps, Is.GreaterThan(SeparationSpeedMinMps).And.LessThan(SeparationSpeedMaxMps), why);
         }
 
         [Test]
