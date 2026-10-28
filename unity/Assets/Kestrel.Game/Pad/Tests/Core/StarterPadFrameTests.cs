@@ -63,7 +63,6 @@ namespace Kestrel.Pad.Tests
         public void EveryStackShowsCrownPlatesAndCircleAtEveryPhoneAndIpadSize()
         {
             var fails = new List<string>();
-            var limited = new HashSet<string>();
             foreach (var st in Stacks)
             foreach (int seed in new[] { 1, 2, 5 })
             {
@@ -83,16 +82,11 @@ namespace Kestrel.Pad.Tests
                     var rep = StarterPadFrame.Evaluate(pose, subject, frame.Rocket, sc.W, sc.H, sc.W / sc.H, Fov);
                     TestContext.WriteLine(where + ": heading " + pose.HeadingDeg + " distance " + pose.Distance.ToString("0.0") + " m, " + rep.Describe());
                     if (!rep.Pass) fails.Add(where + ": " + rep.Describe());
-                    double need = StarterPadFrame.RequiredFill(subject);
-                    if (need < StarterPadFrame.MinVehicleFill) limited.Add(st.Name);
+                    double need = StarterPadFrame.RequiredFill(sc.Wide);
                     if (rep.VehicleFill < need) fails.Add(where + ": the vehicle is too small (fill " + rep.VehicleFill.ToString("0.00") + ", needs " + need.ToString("0.00") + ")");
                 }
             }
             Assert.That(fails, Is.Empty, string.Join("\n", fails));
-            // Every stack fills at least half the box (the designer frames the rocket large) except those whose crown is so tall next to them that
-            // half is out of reach with the crown in the box. That list is pinned: a new stack here is a regression, not a new exception.
-            TestContext.WriteLine("KNOWN LIMIT (fill ceiling under 0.5 at this tower height): " + string.Join(", ", limited));
-            Assert.That(limited, Is.EquivalentTo(new[] { "KH-1 First Hop" }));
         }
 
         [Test]

@@ -194,8 +194,8 @@ namespace Kestrel.Game.Tests
                 var rep = StarterPadFrame.Evaluate(preview.Pose, preview.Subject, frame.Rocket, size.W, size.H, (double)w / h, cam.fieldOfView);
                 TestContext.WriteLine(where + ": heading " + preview.Pose.HeadingDeg + ", distance " + preview.Pose.Distance.ToString("0.0") + " m, " + rep.Describe());
                 if (!rep.Pass) fails.Add(where + ": " + rep.Describe());
-                double need = StarterPadFrame.RequiredFill(preview.Subject);   // 0.5, or 0.9 of the crown-height ceiling for the 4.6 m KH-1 beside an 11 m crown
-                TestContext.WriteLine(where + ": vehicle fill " + rep.VehicleFill.ToString("0.00") + " (needs " + need.ToString("0.00") + ", the floor is " + StarterPadFrame.MinVehicleFill.ToString("0.00") + ")");
+                double need = StarterPadFrame.RequiredFill(size.Wide);   // 0.5 on phones and iPad, 0.4 on the landscape web box
+                TestContext.WriteLine(where + ": vehicle fill " + rep.VehicleFill.ToString("0.00") + " (needs " + need.ToString("0.00") + ")");
                 if (rep.VehicleFill < need) fails.Add(where + ": vehicle fill " + rep.VehicleFill.ToString("0.00") + " under " + need.ToString("0.00"));
 
                 // Unity's own projection: inside the preview box (points, y down) with a 1% margin.

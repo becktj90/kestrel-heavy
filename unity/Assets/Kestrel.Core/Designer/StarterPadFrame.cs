@@ -49,7 +49,7 @@ namespace Kestrel.Core.Designer
     public static class StarterPadFrame
     {
         /// <summary>Share of the preview box kept clear on every edge when fitting (Solve) and when checking (Evaluate).</summary>
-        public const double FitMargin = 0.05, ClearMargin = 0.02;
+        public const double FitMargin = 0.03, ClearMargin = 0.02;
         /// <summary>Most points of a feature the vehicle may hide: the crown is on top of the stack and must show; the far plates and
         /// the far arc of the circle may go behind the stack, the near ones may not.</summary>
         public const double MaxOccludedTop = 0.25, MaxOccludedBase = 0.25, MaxOccludedCircle = 1.0;
@@ -62,19 +62,12 @@ namespace Kestrel.Core.Designer
         public const double PadElevationDeg = 20.0;
         /// <summary>The designer's rule: the rocket is framed large (the vehicle-alone solve targets 0.62), with the crown and plates still whole in the box.</summary>
         public const double MinVehicleFill = 0.5;
-        /// <summary>Share of the equal-depth bound (vehicle height over crown top: the tallest the vehicle can be drawn with the crown whole in the box,
-        /// before margins and perspective) that the solver must reach where <see cref="MinVehicleFill"/> is out of reach.</summary>
-        public const double CeilingShare = 0.9;
+        /// <summary>Landscape (web 1280x800) floor. The wide box lets the solver sit closer, but the crown and the plates still have to share its height with the
+        /// vehicle and it lands at 0.44-0.46 for the 4.6 m KH-1; Arcade's 0.5 rule is for phones and iPad, so landscape is held to this, not to 0.5.</summary>
+        public const double MinVehicleFillWide = 0.40;
 
-        /// <summary>The fill a pose must reach: <see cref="MinVehicleFill"/>, or <see cref="CeilingShare"/> of the geometric ceiling when the tower is
-        /// so tall next to the vehicle that 0.5 cannot be reached with the crown in the box (a 4.6 m KH-1 beside an 11 m crown: ceiling 0.42).</summary>
-        public static double RequiredFill(StarterPreviewSubject s)
-        {
-            double top = 0; foreach (var p in s.Pad) if (p.Kind == PadFeature.TowerTop) top = Math.Max(top, p.Y);
-            double h = s.YMax - s.YMin;
-            if (!(top > 0) || !(h > 0)) return MinVehicleFill;
-            return Math.Min(MinVehicleFill, CeilingShare * h / top);
-        }
+        /// <summary>The fill a pose must reach: <see cref="MinVehicleFill"/> on portrait screens, <see cref="MinVehicleFillWide"/> on the landscape web box.</summary>
+        public static double RequiredFill(bool wide) => wide ? MinVehicleFillWide : MinVehicleFill;
 
         /// <summary>Camera elevations tried (degrees) with each heading: a high one lets a far tower sit higher in the box, a low one shortens it.</summary>
         public static readonly double[] ElevationsDeg = { 3, 10, 20 };

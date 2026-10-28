@@ -50,7 +50,7 @@ namespace Kestrel.Pad
             foreach (var m in L.Members)
             {
                 if (m.Id == null) continue;
-                if (m.Id.StartsWith("tower.cap.", StringComparison.Ordinal))
+                if (m.Id.StartsWith("tower.cap.", StringComparison.Ordinal) && !m.Id.EndsWith(".spike", StringComparison.Ordinal))   // the thin lightning spike is not the crown
                 {
                     pts.Add(new ShowPoint(ShowKind.TowerTop, m.A.X, m.A.Y, m.A.Z));
                     pts.Add(new ShowPoint(ShowKind.TowerTop, m.B.X, m.B.Y, m.B.Z));
