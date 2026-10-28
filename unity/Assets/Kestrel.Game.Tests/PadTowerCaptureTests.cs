@@ -23,12 +23,14 @@ namespace Kestrel.Game.Tests
         const int W = 390, H = 844;
         readonly List<Object> made = new List<Object>();
         readonly List<Camera> reEnable = new List<Camera>();
+        (AmbientMode mode, Color light)? savedAmbient;
 
         [TearDown]
         public void Clean()
         {
             foreach (var c in reEnable) if (c != null) c.enabled = true;
             reEnable.Clear();
+            if (savedAmbient.HasValue) { RenderSettings.ambientMode = savedAmbient.Value.mode; RenderSettings.ambientLight = savedAmbient.Value.light; savedAmbient = null; }
             for (int i = made.Count - 1; i >= 0; i--)
             {
                 var o = made[i];
@@ -56,8 +58,12 @@ namespace Kestrel.Game.Tests
             deck.transform.SetParent(root.transform, false);
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.transform.SetParent(root.transform, false);
-            sun.type = LightType.Directional; sun.intensity = 1.2f;
+            sun.type = LightType.Directional; sun.intensity = 1.0f;
             sun.transform.rotation = Quaternion.Euler(38f, 150f, 0f);
+            // A calm flat ambient (restored in Clean) so concrete and ground keep their tone instead of clipping to white.
+            savedAmbient = (RenderSettings.ambientMode, RenderSettings.ambientLight);
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.46f, 0.50f, 0.56f, 1f);
             var towerRoot = new GameObject("PadTower").transform;
             towerRoot.SetParent(root.transform, false);
 
@@ -129,8 +135,8 @@ namespace Kestrel.Game.Tests
         // tower, plinth and ground at those places. The constants below mirror the polish in TowerLayout.BuildDetail
         // (plate 2.2 m x 0.10 m up) and TrenchMeshBuilder.PadCircle / Apron (circle 0.4 x detail radius at y 0.13;
         // apron 8 m wide, top at y -0.80, seam at the surface radius).
-        const float CircleFactor = 0.4f, CircleY = 0.13f, ApronWidth = 8f, ApronTopY = -0.80f, PlateHalf = 1.1f, PlateY = 0.10f;
-        const float FrameMargin = 0.04f;
+        const float CircleFactor = 0.4f, CircleY = 0.13f, ApronWidth = 8f, ApronTopY = -0.80f, PlateHalf = 1.1f, PlateDepth = 0.45f, PlateY = 0.10f;
+        const float FrameMargin = 0.06f;
 
         [TestCase(1280, 800)]
         [TestCase(430, 932)]
@@ -173,7 +179,9 @@ namespace Kestrel.Game.Tests
             ground.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             ground.transform.localScale = new Vector3(900f, 900f, 1f);
             var gr = ground.GetComponent<Renderer>();
-            var gm = new Material(gr.sharedMaterial) { color = PadGround.GroundColor };
+            var gm = new Material(gr.sharedMaterial) { color = PadGround.GroundColor * 0.55f };
+            if (gm.HasProperty("_Smoothness")) gm.SetFloat("_Smoothness", 0f);
+            if (gm.HasProperty("_Glossiness")) gm.SetFloat("_Glossiness", 0f);
             made.Add(gm);
             gr.sharedMaterial = gm;
 
@@ -193,7 +201,8 @@ namespace Kestrel.Game.Tests
                 {
                     top.Add(padT.TransformPoint(new Vector3(sx * tw, tp.Height, tp.StandOff + sz * tw)));
                     foreach (float dx in new[] { -PlateHalf, PlateHalf })
-                        basePlates.Add(padT.TransformPoint(new Vector3(sx * tw + dx, PlateY, tp.StandOff + sz * tw)));
+                        foreach (float dz in new[] { -PlateDepth, PlateDepth })
+                            basePlates.Add(padT.TransformPoint(new Vector3(sx * tw + dx, PlateY, tp.StandOff + sz * tw + dz)));
                 }
             top.Add(padT.TransformPoint(new Vector3(0f, topY, tp.StandOff)));
             if (tp.SpikeHeight > 0f) top.Add(padT.TransformPoint(new Vector3(0f, topY + tp.SpikeHeight, tp.StandOff)));
@@ -227,14 +236,20 @@ namespace Kestrel.Game.Tests
             pad.QualityOverride = KitBudgets.Medium;
             Assert.That(pad.Quality, Is.EqualTo(KitBudgets.Medium));
 
-            var wide = Join(top, basePlates, circle, seam, apron);
-            var circleFrame = Join(circle, HalfRing(seam, padT, bearingDesign), HalfRing(apron, padT, bearingDesign));
+            // The seam and apron are rings 50+ m out on a big pad: frame the arc on the lens side only (+/- 75 deg in
+            // landscape, +/- 40 in portrait, where the width is the limit), and +/- 35 deg for the circle close-up.
+            float wideArc = w >= h ? 75f : 40f, circleArc = 35f;
+            var seamWide = Arc(seam, padT, bearingDesign, wideArc);
+            var apronWide = Arc(apron, padT, bearingDesign, wideArc);
+            var seamNear = Arc(seam, padT, bearingDesign, circleArc);
+            var circleFrame = Join(circle, seamNear, Arc(apron, padT, bearingDesign, circleArc));
+            var wide = Join(top, basePlates, circle, seamWide, apronWide);
             var frames = new (string name, float bearing, float elev, List<Vector3> pts, (string, List<Vector3>)[] must)[]
             {
-                ("wide", bearingDesign, 28f, wide, new[] { ("tower top", top), ("base plates", basePlates), ("pad circle", circle), ("apron seam", seam), ("apron edge", apron) }),
+                ("wide", bearingDesign, 30f, wide, new[] { ("tower top", top), ("base plates", basePlates), ("pad circle", circle), ("apron seam (lens-side arc)", seamWide), ("apron edge (lens-side arc)", apronWide) }),
                 ("top", bearingSide, 8f, top, new[] { ("tower top", top) }),
-                ("circle", bearingDesign, 40f, circleFrame, new[] { ("pad circle", circle), ("apron seam (near arc)", HalfRing(seam, padT, bearingDesign)) }),
-                ("base", bearingSide, 30f, basePlates, new[] { ("base plates", basePlates) }),
+                ("circle", bearingDesign, 35f, circleFrame, new[] { ("pad circle", circle), ("apron seam (near arc)", seamNear) }),
+                ("base", bearingSide, 50f, Join(basePlates, TowerFootprint(padT, tp.StandOff, tw)), new[] { ("base plates", basePlates) }),
             };
             foreach (var f in frames)
             {
@@ -257,8 +272,18 @@ namespace Kestrel.Game.Tests
             return all;
         }
 
-        /// <summary>The ring points on the lens side: within 75 deg of the camera bearing (pad-local, 0 = +Z, clockwise toward +X).</summary>
-        static List<Vector3> HalfRing(List<Vector3> ring, Transform padT, float bearingDeg)
+        /// <summary>The tower footprint at deck level, so the base close-up shows the legs standing on the plates.</summary>
+        static List<Vector3> TowerFootprint(Transform padT, float standOff, float half)
+        {
+            var l = new List<Vector3>();
+            for (int sx = -1; sx <= 1; sx += 2)
+                for (int sz = -1; sz <= 1; sz += 2)
+                    l.Add(padT.TransformPoint(new Vector3(sx * (half + 1.6f), 0f, standOff + sz * (half + 1.6f))));
+            return l;
+        }
+
+        /// <summary>The ring points on the lens side: within arcDeg of the camera bearing (pad-local, 0 = +Z, clockwise toward +X).</summary>
+        static List<Vector3> Arc(List<Vector3> ring, Transform padT, float bearingDeg, float arcDeg)
         {
             float b = bearingDeg * Mathf.Deg2Rad;
             var toCam = new Vector2(Mathf.Sin(b), Mathf.Cos(b));
@@ -267,7 +292,7 @@ namespace Kestrel.Game.Tests
             {
                 var l = padT.InverseTransformPoint(p);
                 var d = new Vector2(l.x, l.z).normalized;
-                if (Vector2.Dot(d, toCam) >= Mathf.Cos(75f * Mathf.Deg2Rad)) near.Add(p);
+                if (Vector2.Dot(d, toCam) >= Mathf.Cos(arcDeg * Mathf.Deg2Rad)) near.Add(p);
             }
             return near;
         }
