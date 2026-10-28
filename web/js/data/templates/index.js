@@ -239,9 +239,9 @@ export const TEMPLATES = Object.freeze([
     "payloadKg": 200,
     "target": "LEO 400 km",
     "simOutcome": "orbit",
-    "simApogeeKm": 2043,
-    "simPerigeeKm": 308,
-    "maxG": 8.8
+    "simApogeeKm": 6539,
+    "simPerigeeKm": 333,
+    "maxG": 10.5
    }
   }
  },
@@ -366,8 +366,8 @@ export const TEMPLATES = Object.freeze([
     "payloadKg": 15000,
     "target": "LEO 400 km",
     "simOutcome": "orbit",
-    "simApogeeKm": 1073,
-    "simPerigeeKm": 191,
+    "simApogeeKm": 2545,
+    "simPerigeeKm": 226,
     "maxG": 5.8
    }
   }
@@ -494,9 +494,9 @@ export const TEMPLATES = Object.freeze([
     "payloadKg": 10500,
     "target": "LEO 400 km",
     "simOutcome": "orbit",
-    "simApogeeKm": 1271,
-    "simPerigeeKm": 158,
-    "maxG": 5.5
+    "simApogeeKm": 3389,
+    "simPerigeeKm": 186,
+    "maxG": 6.4
    }
   }
  },
@@ -634,7 +634,7 @@ export const TEMPLATES = Object.freeze([
     "payloadKg": 4000,
     "target": "GTO",
     "simOutcome": "orbit",
-    "simApogeeKm": 271,
+    "simApogeeKm": 252,
     "simPerigeeKm": 191,
     "maxG": 10.7
    }
@@ -761,9 +761,9 @@ export const TEMPLATES = Object.freeze([
     "payloadKg": 15000,
     "target": "LEO 400 km",
     "simOutcome": "orbit",
-    "simApogeeKm": 2785,
-    "simPerigeeKm": 153,
-    "maxG": 7.2
+    "simApogeeKm": 4051,
+    "simPerigeeKm": 158,
+    "maxG": 7.8
    }
   }
  }

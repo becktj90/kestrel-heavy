@@ -119,8 +119,8 @@
       "payloadKg": 15000,
       "target": "LEO 400 km",
       "simOutcome": "orbit",
-      "simApogeeKm": 1073,
-      "simPerigeeKm": 191,
+      "simApogeeKm": 2545,
+      "simPerigeeKm": 226,
       "maxG": 5.8
     }
   }

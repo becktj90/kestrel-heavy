@@ -1,5 +1,7 @@
 // DESIGN screen: HTML overlay over the Phaser canvas. Plain DOM, no framework.
-// Launch is disabled until M3 (flight from designs). Does not touch flight code.
+// LAUNCH flies the design in the headless sim (designer/simflight.js) and reports the
+// flown result against the readout. It does not touch arcade flight code (mission.js)
+// or landing physics: the arcade mission keeps its own tune.
 import { ENGINES, ENGINE_BY_ID } from '../data/engines.js';
 import { PROPELLANTS, PROPELLANT_BY_ID } from '../data/propellants.js';
 import { MATERIALS } from '../data/materials.js';
@@ -14,6 +16,7 @@ import { getDesignStore } from './store.js';
 import { costPanel } from '../ui/finance/costPanel.js';
 import { STORAGE_KEY } from '../config.js';
 import { flightResult, hapticPattern, previewDelta, pulseHaptic } from './feel.js';
+import { canLaunch, flownVsReadout, frameAt } from './simflight.js';
 
 const TABS = [
   ['stages', 'Stages'], ['strapons', 'Strap-ons'], ['engines', 'Engines'], ['propellants', 'Propellants'],
@@ -153,6 +156,61 @@ export class DesignerScreen {
     try { this.sim = simReadout(this.design, this.quick); } catch (_) { this.sim = null; }
     this.renderReadout(); this.renderSchematic();
     if (prev && prev !== 'orbit' && this.sim?.outcome === 'orbit') pulseHaptic(hapticPattern('payoff'));
+  }
+
+  // LAUNCH: fly exactly this design in the headless sim and show the flown result
+  // against the readout. Playback replays the sim's own samples (no new physics).
+  flyDesign() {
+    if (!canLaunch(this.validation)) { this.toast('Fix the hard blocks first — then it can fly.'); return; }
+    if (!this.sim) this.runSim();
+    const cmp = flownVsReadout(this.quick, this.sim);
+    if (!cmp) { this.toast("The sim couldn't run this design."); return; }
+    const samples = this.sim.samples || [];
+    const sheet = h('div', { class: 'kd-sheet', role: 'dialog', 'aria-label': 'Sim flight result' });
+    const telT = h('b', { text: 'T+0 s' }), telAlt = h('b', { text: '—' }), telV = h('b', { text: '—' }), telM = h('b', { text: '—' });
+    const playBtn = h('button', { type: 'button', class: 'kd-btn' }, samples.length > 1 ? '▶ Play telemetry' : 'No telemetry samples');
+    let raf = 0, playing = false, t0 = 0, clock0 = 0;
+    const show = (f) => {
+      if (!f) return;
+      telT.textContent = `T+${fmtN(f.t)} s`;
+      telAlt.textContent = `${fmtN(f.alt / 1000, 1)} km`;
+      telV.textContent = `${fmtN(f.v, 0)} m/s`;
+      telM.textContent = tonnes(f.m);
+    };
+    const stop = () => { playing = false; cancelAnimationFrame(raf); playBtn.textContent = '▶ Play telemetry'; };
+    playBtn.disabled = samples.length <= 1;
+    playBtn.onclick = () => {
+      if (playing) { stop(); return; }
+      playing = true; playBtn.textContent = '⏸ Pause';
+      const speed = Math.max(1, (this.sim.time || 1) / 15); // whole flight in ~15 s
+      t0 = 0; clock0 = performance.now();
+      const tick = (now) => {
+        if (!playing) return;
+        const t = t0 + ((now - clock0) / 1000) * speed;
+        const f = frameAt(samples, t);
+        show(f);
+        if (t >= (this.sim.time || 0)) { show(samples.at(-1)); stop(); return; }
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+    show(samples[0]);
+    const done = () => { stop(); sheet.remove(); };
+    sheet.append(h('div', { class: 'kd-sheet-card' },
+      h('h3', { text: `Sim flight: ${this.design.name}` }),
+      h('p', { text: `Outcome ${cmp.outcome.toUpperCase()} · apogee ${fmtN(cmp.apogeeKm)} km · ${fmtN(cmp.timeS)} s` }),
+      h('p', { text: `Δv expended ${kms(cmp.deltaVExpended)} · ideal ${kms(cmp.idealDeltaV)} · readout ${kms(cmp.readoutDeltaV)} (${cmp.idealDiffPct >= 0 ? '+' : ''}${fmtN(cmp.idealDiffPct, 2)}% — ${cmp.idealMatchesReadout ? 'readout matches the sim' : 'readout/sim mismatch'})` }),
+      h('p', { text: `Losses ${kms(cmp.totalLosses)} · max-Q ${fmtN(cmp.maxQ / 1000, 1)} kPa · max ${fmtN(cmp.maxG, 1)} g · fairing ${cmp.fairingJettisoned ? 'jettisoned' : 'carried (altitude not reached while thrusting)'}` }),
+      h('div', { class: 'kd-kv' },
+        h('span', { text: 'Time' }), telT, h('span', { text: 'Altitude' }), telAlt,
+        h('span', { text: 'Velocity' }), telV, h('span', { text: 'Mass' }), telM),
+      playBtn,
+      h('h4', { text: 'Flight log' }),
+      h('ul', { class: 'kd-list' }, cmp.log.map((e) => h('li', { text: `T+${fmtN(e.t)} s — ${e.text}` }))),
+      h('p', { class: 'kd-hint', text: 'This is the design sim, not the arcade mission. The arcade flight keeps its own tune.' }),
+      h('button', { type: 'button', class: 'kd-btn', onclick: done }, 'Close')));
+    this.el.append(sheet);
+    if (cmp.outcome === 'orbit') pulseHaptic(hapticPattern('payoff'));
   }
 
   // ---------- header ----------
@@ -422,8 +480,8 @@ export class DesignerScreen {
     rows.push(notes,
       h('div', { class: 'kd-row kd-flyrow' },
         h('button', { type: 'button', class: 'kd-btn kd-fly', disabled: !needsFix, onclick: () => { const before = this.quick; const f = makeItFly(this.design); this._before = before; this.design = f.design; this.sim = null; this._snap = true; this.refresh(); this.toast(f.changes.length ? `Made it fly: ${f.changes.slice(0, 3).join(', ')}${f.changes.length > 3 ? '…' : ''}` : 'Already flyable!'); } }, '✨ Make it fly'),
-        h('button', { type: 'button', class: 'kd-btn kd-launch', disabled: true, 'aria-disabled': 'true', title: 'Flying your own designs is coming in M3' }, 'LAUNCH')),
-      h('p', { class: 'kd-hint', text: 'Flying custom designs is coming in M3.' }));
+        h('button', { type: 'button', class: 'kd-btn kd-launch', disabled: !canLaunch(v), title: canLaunch(v) ? 'Fly this design in the sim' : 'Fix the hard blocks to launch', onclick: () => this.flyDesign() }, 'LAUNCH')),
+      h('p', { class: 'kd-hint', text: 'LAUNCH flies this design in the headless sim and compares the flown result with the readout.' }));
     this.readEl.replaceChildren(...rows);
   }
 }
