@@ -15,12 +15,11 @@ namespace Kestrel.Slice
     {
         /// <summary>Kept for compatibility; the generated tower uses MaterialLibrary (Kit) roles.</summary>
         public static readonly Color Steel = new Color(0.16f, 0.17f, 0.19f);
-        public const float MastWidth = 4f, Clearance = 6f, Behind = 6f, Overtop = 1.08f;
+        public const float MastWidth = PadShowcase.MastWidth, Clearance = PadShowcase.Clearance, Behind = PadShowcase.Behind, Overtop = PadShowcase.Overtop;
         public const int DefaultSeed = 1;
 
         /// <summary>Tower direction (x, z) and minimum height for a rocket of height h and max half-width r (metres).</summary>
-        public static (float x, float z, float height) Fit(float h, float r) =>
-            (-(r + Clearance + MastWidth * 0.5f), Behind, Mathf.Max(20f, h * Overtop));
+        public static (float x, float z, float height) Fit(float h, float r) => PadShowcase.Fit(h, r);
 
         /// <summary>Same rule as Kestrel.Core.Timeline.Pad.For when only size is known: tower for stages >= 3 m across.</summary>
         public static PadArchetype DefaultArchetype(float r) => r * 2f >= 3f ? PadArchetype.Tower : PadArchetype.Rail;
@@ -42,8 +41,7 @@ namespace Kestrel.Slice
         public static PadRenderer Apply(Transform root, float h, float r, PadArchetype type, int seed, IReadOnlyList<AttachPoint> attach = null, Transform vehicleMesh = null, FarmPlan propellant = null)
         {
             var pad = root.Find("Pad"); if (pad == null) { pad = new GameObject("Pad").transform; pad.SetParent(root, false); }
-            var (x, z, _) = Fit(h, r);
-            float yaw = Mathf.Atan2(x, z) * Mathf.Rad2Deg;
+            float yaw = PadShowcase.YawDeg(h, r);   // pad +Z toward the tower; PadShowcase and the Starter camera use the same yaw
             pad.localPosition = Vector3.zero; pad.localRotation = Quaternion.Euler(0, yaw, 0);
             var existing = pad.GetComponent<PadRenderer>();
             var L = existing != null ? existing.Layout : null;
