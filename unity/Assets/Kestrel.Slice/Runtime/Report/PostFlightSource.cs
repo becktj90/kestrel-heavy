@@ -97,6 +97,8 @@ namespace Kestrel.Slice
                     facts.Margin = facts.RequiredMps > 1 ? (result.idealDeltaV - facts.RequiredMps) / facts.RequiredMps : 0;
                     bool intact = ascentFail == null && result.outcome != "failure" && result.outcome != "crash";
                     var extra = Check(row, result, facts);
+                    // The flown grade counts only with legs and at the mission's site (the batch's rule).
+                    facts.LandingGrade = BoosterLanding.MissionGrade(row, design, facts.LandingGrade);
                     if (string.IsNullOrEmpty(facts.LandingGrade) && (row.LandingRequired || row.LandBoosters))
                         facts.LandingGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, false);
                     if (row.LandBoosters)

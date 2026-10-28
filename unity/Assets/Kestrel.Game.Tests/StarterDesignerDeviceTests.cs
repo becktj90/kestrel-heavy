@@ -49,7 +49,7 @@ namespace Kestrel.Game.Tests
         static Campaign campaign;
         /// <summary>Honest Ready: a setting the launch predictor breaks up at max-Q (KH-3, two kerosene stages, full fuel)
         /// and one that keeps too little landing fuel (KH-13 methane, full fuel). Same as Kestrel.Core.Tests.StarterHonestReadyTests.</summary>
-        const string BreaksUpKey = "kerosene-2-f4-b0", CantLandKey = "methane-2-f4-b0";
+        const string BreaksUpKey = "kerosene-2-f4-b0", Kh13BreaksUpKey = "methane-2-f4-b0";
         IReadOnlyDictionary<string, Kestrel.Core.Json.JsonObject> basesBefore;
         StarterReadinessCopy copyBefore;
         bool loadedBefore;
@@ -123,7 +123,9 @@ namespace Kestrel.Game.Tests
             yield return ("kh6-too-heavy", () => Rocket("m6", TooHeavyKey), null);
             yield return ("kh19-long-readiness", () => Rocket("m19"), LongReadiness);
             yield return ("kh3-breaks-up", () => Rocket("m3", BreaksUpKey), null);
-            yield return ("kh13-cant-land", () => Rocket("m13", CantLandKey), null);
+            // t-booster-land: the rebuilt KH-13 winner keeps a 20% landing reserve at every fuel notch, so no Starter setting
+            // reads landing-short any more; this setting now breaks up at max-Q (the honest cause the predictor names).
+            yield return ("kh13-breaks-up", () => Rocket("m13", Kh13BreaksUpKey), null);
             yield return ("kh5-checking", () => Rocket("m5"), null);
         }
 
@@ -308,9 +310,9 @@ namespace Kestrel.Game.Tests
             }
             var badgeLabel = panel.Root.Q<Label>(UiIds.StarterBadge);
             var lineLabel = panel.Root.Q<Label>(UiIds.StarterReadiness);
-            if (label == "kh3-breaks-up" || label == "kh13-cant-land")
+            if (label == "kh3-breaks-up" || label == "kh13-breaks-up")
             {
-                string cause = label == "kh3-breaks-up" ? StarterVerdict.MaxQ : StarterVerdict.Landing;
+                string cause = StarterVerdict.MaxQ;
                 Assert.AreEqual(cause, rocket.Verdict().Cause, where);
                 Assert.AreEqual(StarterReadinessCopy.Current.Badge(cause), badgeLabel.text, where + " the Honest Ready badge");
                 Assert.AreNotEqual(StarterScreen.ReadyBadge, badgeLabel.text, where);

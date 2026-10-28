@@ -71,8 +71,25 @@ namespace Kestrel.Core.Tests
             ("m3", "kerosene-3-f1-b0", StarterVerdict.Tumble),
             ("m3", "methane-3-f0-b0", StarterVerdict.OverG),
             ("m5", "kerosene-2-f1-b2", StarterVerdict.Short),
-            ("m13", "methane-2-f4-b0", StarterVerdict.Landing),
+            // Was Landing on the old KH-13 winner (4% reserve). t-booster-land rebuilt it with a 20% reserve that every fuel
+            // notch keeps, so no Starter setting reads landing-short; this one now breaks up at max-Q instead.
+            // LandingCause_IsNamed_WhenTheReserveIsStripped keeps the landing cause covered.
+            ("m13", "methane-2-f4-b0", StarterVerdict.MaxQ),
         };
+
+        [Test]
+        public void LandingCause_IsNamed_WhenTheReserveIsStripped()
+        {
+            // The KH-13 default with its landing fuel cut to 2%: the predictor flight stays intact but the landing comes up short.
+            var r = StarterFixture.Rocket("m13");
+            var d = Design.FromJson(r.BuildDesign());
+            d.stages[0].landingPropMass = d.stages[0].propMass * 0.02;
+            var sim = ReferenceAscent.Flight(StarterFixture.Catalog, d).Run();
+            Assert.IsNull(sim.failure, "the ascent itself is fine");
+            var v = StarterVerdict.Judge(StarterFixture.Catalog, d, r.Mission, sim, true);
+            Assert.AreEqual(StarterVerdict.Landing, v.Cause, "grade " + v.LandingGrade);
+            Assert.IsNotNull(StarterReadinessCopy.Current.Badge(StarterVerdict.Landing));
+        }
 
         [Test]
         public void KnownReadyButFailing_Settings_NowNameTheirCause()

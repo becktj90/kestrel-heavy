@@ -134,6 +134,21 @@ namespace Kestrel.Core.Flight
             return verdict;
         }
 
+        /// <summary>
+        /// The flown grade as the mission counts it (FlightBatch and the live report share this). A flown touchdown counts
+        /// only for a stage with legs (RecoveryScore.Judge reads a legless stage as legs-down, so a soft legless touchdown would
+        /// otherwise pass) and only at the site the mission asks for: a Haven landing never satisfies a required RTLS, nor
+        /// the reverse. Anything else is "short", the batch's word for no qualifying landing.
+        /// </summary>
+        public static string MissionGrade(CampaignMission mission, Design design, string flownGrade)
+        {
+            if (string.IsNullOrEmpty(flownGrade) || mission == null || design == null) return flownGrade;
+            if (mission.LandingMode != "rtls" && mission.LandingMode != "barge") return flownGrade;
+            if (!design.legs) return "short";
+            if (design.recoveryMode != mission.LandingMode) return "short";
+            return flownGrade;
+        }
+
         /// <summary>Why an expendable stage cannot land, in the words the flight shows.</summary>
         public static void Why(in RecoveryCraft craft, out string kid, out string engineer)
         {
