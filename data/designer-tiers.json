@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "note": "Designer tiers copy (docs/DESIGNER_TIERS_SPEC.md, delivery step 2): the Kid / Builder / Engineer switch, the Kid Why? cards, the speed bar and the X-ray view. Kid wording: one or two short sentences, no digits or jargon in a Why card. A row may carry a \"locked\" card (the mission fixes the control) or a \"hydrogen\" card (the top stage burns hydrogen); they replace the one hint line. Read by Kestrel.Core.Designer.DesignerTierText. The Builder and Engineer chips stay hidden until data/features.json turns on designer.tierBuilder / designer.tierEngineer.",
+  "tiers": {
+    "starter": "Kid",
+    "builder": "Builder",
+    "engineer": "Engineer"
+  },
+  "switchHint": "How much detail the designer shows.",
+  "why": {
+    "button": "?",
+    "spoken": "Why does {row} matter?",
+    "rows": [
+      {
+        "row": "engine",
+        "codex": "isp",
+        "icon": "flame",
+        "text": "Methane gets a little more push out of each bit of fuel. Kerosene is heavier, so more of it fits in the same tank."
+      },
+      {
+        "row": "stages",
+        "codex": "staging",
+        "icon": "stages",
+        "text": "An empty tank is dead weight. Two stages drop the big one halfway up, so the top part gets lighter and faster.",
+        "hydrogen": "The big empty stage drops off halfway up. This top stage burns hydrogen, the lightest fuel there is."
+      },
+      {
+        "row": "fuel",
+        "codex": "delta-v",
+        "icon": "fuel",
+        "text": "More fuel lets the rocket speed up for longer. But fuel is heavy too, so too much makes it slow off the pad."
+      },
+      {
+        "row": "boosters",
+        "codex": "twr",
+        "icon": "boosters",
+        "text": "Boosters add extra push at liftoff, when the rocket is heaviest. They drop away once their fuel is gone.",
+        "locked": "This mission flies two boosters that come back and land. They add push at liftoff, so they stay on."
+      }
+    ]
+  },
+  "speed": {
+    "orbit": "Speed to reach orbit",
+    "hop": "Speed for the hop",
+    "escape": "Speed to leave Earth",
+    "enough": "Enough ✓",
+    "short": "Short",
+    "spokenEnough": "{label}: enough.",
+    "spokenShort": "{label}: short."
+  },
+  "xray": {
+    "button": "X-ray",
+    "buttonHint": "See inside your rocket.",
+    "title": "X-ray",
+    "close": "◀ Rocket",
+    "closeHint": "Back to your rocket.",
+    "pick": "Tap a part to see what it does.",
+    "plan": "Flight plan",
+    "parts": {
+      "fairing": { "title": "Nose cone", "line": "The cargo rides inside the nose cone. It keeps the air off, then splits open and falls away up high." },
+      "tank": { "title": "Stage {n} tanks", "line": "Oxidizer on top, fuel below. The engines mix the two to burn." },
+      "tankLanding": { "title": "Stage {n} tanks", "line": "Oxidizer on top, fuel below. The teal band is fuel kept back for the landing." },
+      "tankSolid": { "title": "Stage {n} motor", "line": "Solid fuel packed in a tube. Once it lights, it burns until it is gone." },
+      "interstage": { "title": "Interstage", "line": "This ring joins two stages. It hides the upper engine until the stages split apart." },
+      "engines": { "title": "Stage {n} engines", "line": "These engines push the stage. They burn until its tanks run dry." },
+      "boosters": { "title": "Boosters", "line": "Side boosters burn at liftoff for extra push. Then they drop away." },
+      "boostersLanding": { "title": "Boosters", "line": "Side boosters burn at liftoff for extra push. Then they drop away and fly home to land." }
+    },
+    "numbers": {
+      "fairing": "Cargo {cargo} t, cone {cone} t",
+      "tank": "Oxidizer {ox} t, fuel {fuel} t, dry {dry} t",
+      "landing": ", landing {land} t",
+      "interstage": "{mass} t",
+      "engines": "{count} x {engine}",
+      "boosters": "{count} x {prop} t propellant"
+    },
+    "events": {
+      "liftoff": "Liftoff",
+      "maxq": "Max-Q",
+      "meco": "MECO",
+      "seco": "SECO",
+      "landing": "Landing"
+    }
+  }
+}
