@@ -3,9 +3,15 @@
 // readiness line and an always-visible Launch, with Back top-left and Reset top-right. Every element is
 // pinned to a Kestrel.Core.Designer.StarterLayout box, so the Core size tests and the EditMode device test
 // check the same rectangles. No animation: state changes are instant (photosensitivity-safe).
+// Designer tiers (docs/DESIGNER_TIERS_SPEC.md, step 2): a 44 pt "?" ends each row and opens a teal Kid Why? card under
+// it (replacing the hint line), the "Speed to reach orbit" bar sits over the readiness line, an X-ray button in the
+// rocket window opens StarterXrayView, and the Kid / Builder / Engineer switch shows once a later PR turns on
+// designer.tierBuilder / designer.tierEngineer. All copy is data/designer-tiers.json (DesignerTierText); without it
+// the screen is the PR 5 Starter screen. Badge and Launch logic are untouched.
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Designer;
+using Kestrel.Core.Features;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Ui;
 using Kestrel.Game.Shell;
@@ -30,16 +36,41 @@ namespace Kestrel.Slice
         static readonly Color ShortRed = new Color(1f, 128f / 255f, 128f / 255f);
         static readonly Color LaunchRed = new Color(200f / 255f, 16f / 255f, 46f / 255f);
         static readonly Color LaunchOff = new Color(90f / 255f, 90f / 255f, 100f / 255f);
+        /// <summary>Tier chip and "?" selected: amber #f5a524 with dark text (mockup).</summary>
+        static readonly Color TierAmber = new Color(245f / 255f, 165f / 255f, 36f / 255f);
+        static readonly Color WhyTeal = new Color(14f / 255f, 92f / 255f, 98f / 255f, 0.96f);
+        static readonly Color TrackBg = new Color(1f, 1f, 1f, 0.16f);
+        static readonly Color NeedInk = new Color(1f, 1f, 1f, 0.95f);
 
         sealed class Row
         {
             public VisualElement Box;
             public Label Label;
             public Button[] Options;
+            public Button Help;
+            public StarterKnob Knob;
         }
 
         public event Action LaunchRequested;
         public event Action BackRequested;
+        /// <summary>The rocket window moved or resized (a Why? card opened or closed): the host re-frames its camera.</summary>
+        public event Action RocketBoxChanged;
+        /// <summary>The X-ray view opened (true) or closed (false).</summary>
+        public event Action<bool> XrayToggled;
+
+        /// <summary>The tier copy (data/designer-tiers.json). Null: no "?", speed bar, X-ray or switch.</summary>
+        public DesignerTierText Copy { get; }
+        /// <summary>The flags that offer the Builder / Engineer chips. Read on every Refresh.</summary>
+        public Func<FeatureFlags> Flags { get; set; } = () => FeatureFlags.Active;
+        /// <summary>Where the tier is stored (kh.settings.tier through ExperienceSettings). PlayerPrefs by default.</summary>
+        public Func<string, bool> PrefHas { get; set; } = PlayerPrefs.HasKey;
+        public Func<string, int> PrefGet { get; set; } = k => PlayerPrefs.GetInt(k, 0);
+        public Action<string, int> PrefSet { get; set; } = (k, v) => { PlayerPrefs.SetInt(k, v); PlayerPrefs.Save(); };
+        public ExperienceTier Tier { get; private set; } = ExperienceTier.Starter;
+        public StarterKnob WhyOpen { get; private set; } = StarterKnob.None;
+        public StarterSpeed Speed { get; private set; } = new StarterSpeed();
+        public StarterXrayView Xray { get; private set; }
+        public bool XrayOpen => Xray != null && Xray.Root.style.display.value != DisplayStyle.None;
 
         public StarterRocket Rocket { get; }
         public VisualElement Root { get; }
@@ -53,13 +84,24 @@ namespace Kestrel.Slice
         readonly Label title, subtitle, hint, badge, readiness, fuelLess, fuelMore;
         readonly Button back, reset, launch;
         readonly Row engine, stages, fuel, boosters;
+        readonly VisualElement whyCard, speedTrack, speedFill, speedNeed, tierSwitch;
+        readonly StarterGlyph whyIcon;
+        readonly Label whyText, speedLabel, speedStatus;
+        readonly Button xrayButton;
+        readonly Dictionary<ExperienceTier, Button> chips = new Dictionary<ExperienceTier, Button>();
+        List<ExperienceTier> shownTiers = new List<ExperienceTier>();
+        HudBox lastRocket;
         readonly VisualElement[] fuelDots = new VisualElement[StarterRocket.FuelNotches];
         float upp = 1f, wPt, hPt, safeT, safeB, safeL, safeR;
         bool wide, reserveExit, shown = true, laidOut;
 
         public StarterPanel(StarterRocket rocket, VisualElement parent, int insertAt = -1)
+            : this(rocket, parent, insertAt, DesignerTiersBoot.Load()) { }
+
+        public StarterPanel(StarterRocket rocket, VisualElement parent, int insertAt, DesignerTierText copy)
         {
             Rocket = rocket ?? throw new ArgumentNullException(nameof(rocket));
+            Copy = copy;
             Root = new VisualElement { name = RootName, pickingMode = PickingMode.Ignore };
             Root.style.position = Position.Absolute;
             Root.style.left = 0f; Root.style.top = 0f; Root.style.right = 0f; Root.style.bottom = 0f;
@@ -103,6 +145,41 @@ namespace Kestrel.Slice
             fuelMore.style.unityTextAlign = TextAnchor.MiddleRight;
             fuel.Box.Add(fuelLess);
             fuel.Box.Add(fuelMore);
+            engine.Knob = StarterKnob.Engine; stages.Knob = StarterKnob.Stages; fuel.Knob = StarterKnob.FuelNotch; boosters.Knob = StarterKnob.Boosters;
+            foreach (var row in new[] { engine, stages, fuel, boosters })
+            {
+                var r = row;
+                r.Help = new Button(() => ToggleWhy(r.Knob)) { name = UiIds.StarterWhy(r.Knob), text = Copy?.WhyButton ?? "?" };
+                Style(r.Help, OptionBg, Ink, true);
+                r.Help.tooltip = Copy?.WhySpokenFor(r.Label.text) ?? "";
+                r.Help.style.display = Copy != null && Copy.WhyFor(r.Knob) != null ? DisplayStyle.Flex : DisplayStyle.None;
+                r.Box.Add(r.Help);
+            }
+
+            // The open Why? card (one at a time), under its row.
+            whyCard = new VisualElement { name = UiIds.StarterWhyCard, pickingMode = PickingMode.Ignore };
+            whyCard.style.backgroundColor = WhyTeal;
+            whyIcon = new StarterGlyph("") { name = UiIds.StarterWhyIcon };
+            whyText = Text(UiIds.StarterWhyText, 14f, Color.white, false, true);
+            whyCard.Add(whyIcon);
+            whyCard.Add(whyText);
+            whyCard.style.display = DisplayStyle.None;
+            sheet.Add(whyCard);
+
+            // The speed bar: label, Enough / Short, a track with the fill and the need marker.
+            speedLabel = Text(UiIds.StarterSpeedLabel, 13f, Muted, true, false);
+            speedStatus = Text(UiIds.StarterSpeedStatus, 13f, ReadyGreen, true, false);
+            speedStatus.style.unityTextAlign = TextAnchor.MiddleRight;
+            speedTrack = new VisualElement { name = UiIds.StarterSpeedTrack, pickingMode = PickingMode.Ignore };
+            speedTrack.style.backgroundColor = TrackBg;
+            speedFill = new VisualElement { name = UiIds.StarterSpeedFill, pickingMode = PickingMode.Ignore };
+            speedFill.style.position = Position.Absolute;
+            speedNeed = new VisualElement { name = UiIds.StarterSpeedNeed, pickingMode = PickingMode.Ignore };
+            speedNeed.style.position = Position.Absolute;
+            speedNeed.style.backgroundColor = NeedInk;
+            speedTrack.Add(speedFill);
+            speedTrack.Add(speedNeed);
+            sheet.Add(speedLabel); sheet.Add(speedStatus); sheet.Add(speedTrack);
 
             hint = Text(UiIds.StarterHint, 13f, Muted, false, true);
             badge = Text(UiIds.StarterBadge, 16f, ReadyGreen, true, false);
@@ -122,6 +199,27 @@ namespace Kestrel.Slice
             Root.Add(back);
             Root.Add(reset);
             Root.Add(header); // re-parented into the sheet on landscape web
+
+            // Kid / Builder / Engineer (only drawn when a later PR offers more than Kid).
+            tierSwitch = new VisualElement { name = UiIds.StarterTierSwitch, pickingMode = PickingMode.Ignore };
+            foreach (var t in DesignerTiers.Order)
+            {
+                var tier = t;
+                var chip = new Button(() => ChooseTier(tier)) { name = UiIds.StarterTierChip(tier), text = Copy?.TierLabel(tier) ?? "" };
+                Style(chip, OptionBg, Ink, true);
+                chip.tooltip = (Copy?.TierLabel(tier) ?? "") + ". " + (Copy?.SwitchHint ?? "");
+                chips[tier] = chip;
+                tierSwitch.Add(chip);
+            }
+            tierSwitch.style.display = DisplayStyle.None;
+            Root.Add(tierSwitch);
+
+            xrayButton = new Button(OpenXray) { name = UiIds.StarterXrayButton, text = Copy?.XrayButton ?? "", tooltip = Copy?.XrayButtonHint ?? "" };
+            Style(xrayButton, CornerBg, Color.white, true);
+            xrayButton.style.borderLeftWidth = 1.5f; xrayButton.style.borderRightWidth = 1.5f; xrayButton.style.borderTopWidth = 1.5f; xrayButton.style.borderBottomWidth = 1.5f;
+            xrayButton.style.borderLeftColor = Muted; xrayButton.style.borderRightColor = Muted; xrayButton.style.borderTopColor = Muted; xrayButton.style.borderBottomColor = Muted;
+            xrayButton.style.display = DisplayStyle.None;
+            Root.Add(xrayButton);
 
             Rocket.Changed += OnRocketChanged;
             if (parent != null)
@@ -193,7 +291,98 @@ namespace Kestrel.Slice
             launch.SetEnabled(LaunchReady);
             launch.style.backgroundColor = LaunchReady ? LaunchRed : LaunchOff;
             launch.tooltip = LaunchReady ? "Launch this rocket." : rest;
+            RefreshTiers();
             Relayout();
+        }
+
+        /// <summary>The tier extras: which chips show and which is on, the "?" states, the open card's text, the speed bar.</summary>
+        void RefreshTiers()
+        {
+            var r = Rocket;
+            var flags = Flags?.Invoke();
+            shownTiers = Copy != null ? DesignerTiers.Shown(flags) : new List<ExperienceTier> { ExperienceTier.Starter };
+            Tier = DesignerTiers.Resolve(flags, PrefHas, PrefGet);
+            foreach (var kv in chips)
+            {
+                bool shown = shownTiers.Contains(kv.Key), on = kv.Key == Tier;
+                kv.Value.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+                kv.Value.EnableInClassList("starter-on", on);
+                kv.Value.style.backgroundColor = on ? TierAmber : OptionBg;
+                kv.Value.style.color = on ? AccentInk : Ink;
+            }
+            if (Xray != null) Xray.Engineer = Tier == ExperienceTier.Engineer;
+
+            if (WhyOpen == StarterKnob.Boosters && !r.BoostersVisible) WhyOpen = StarterKnob.None;
+            foreach (var row in new[] { engine, stages, fuel, boosters })
+            {
+                bool on = row.Knob == WhyOpen;
+                row.Help.EnableInClassList("starter-on", on);
+                row.Help.style.backgroundColor = on ? TierAmber : OptionBg;
+                row.Help.style.color = on ? AccentInk : Ink;
+            }
+            var w = Copy?.WhyFor(WhyOpen);
+            whyText.text = Copy != null ? Copy.WhyText(WhyOpen, r) : "";
+            whyText.tooltip = whyText.text;
+            whyIcon.Kind = w?.Icon ?? "";
+
+            Speed = StarterSpeedBar.Of(r, Copy);
+            speedLabel.text = Speed.Label;
+            speedStatus.text = Speed.Status;
+            speedStatus.style.color = Speed.Enough ? ReadyGreen : ShortRed;
+            speedFill.style.backgroundColor = Speed.Enough ? ReadyGreen : TightAmber;
+            speedTrack.tooltip = Speed.Spoken;
+            xrayButton.text = Copy?.XrayButton ?? "";
+        }
+
+        /// <summary>A "?" tap: opens that row's Why? card (closing any other), or closes it when it is already open.</summary>
+        public void ToggleWhy(StarterKnob knob)
+        {
+            if (Copy == null || Copy.WhyFor(knob) == null) return;
+            WhyOpen = WhyOpen == knob ? StarterKnob.None : knob;
+            Refresh();
+        }
+
+        /// <summary>A chip tap: stores the tier (DesignerTiers.Choose); a chip that is not offered does nothing.</summary>
+        public void ChooseTier(ExperienceTier t)
+        {
+            DesignerTiers.Choose(Flags?.Invoke(), t, PrefHas, PrefGet, PrefSet);
+            Refresh();
+        }
+
+        /// <summary>Open the X-ray view on the rocket as it is now.</summary>
+        public void OpenXray()
+        {
+            if (Copy == null) return;
+            if (Xray == null)
+            {
+                Xray = new StarterXrayView(Copy, Root);
+                Xray.Closed += CloseXray;
+            }
+            Xray.Engineer = Tier == ExperienceTier.Engineer;
+            Covered(true);
+            Xray.Root.style.display = DisplayStyle.Flex;
+            Xray.Root.BringToFront();
+            Xray.Show(StarterXray.Build(Rocket, Copy));
+            if (laidOut) Xray.Layout(wPt, hPt, safeT, safeB, safeL, safeR, upp, reserveExit);
+            XrayToggled?.Invoke(true);
+        }
+
+        public void CloseXray()
+        {
+            if (Xray == null) return;
+            Xray.Root.style.display = DisplayStyle.None;
+            Covered(false);
+            XrayToggled?.Invoke(false);
+        }
+
+        /// <summary>While the X-ray is open the Starter screen under it is hidden (not drawn, not tappable, not read out).</summary>
+        void Covered(bool on)
+        {
+            foreach (var child in Root.Children())
+            {
+                if (Xray != null && child == Xray.Root) continue;
+                child.style.visibility = on ? Visibility.Hidden : StyleKeyword.Null;
+            }
         }
 
         void OnRocketChanged(StarterRocket _) => Refresh();
@@ -231,10 +420,22 @@ namespace Kestrel.Slice
                 Wide = wide, ReserveExit = reserveExit, BoostersVisible = r.BoostersVisible,
                 Title = title.text, Subtitle = subtitle.text, Hint = hint.text, Badge = badge.text, Readiness = readiness.text,
                 Engines = Texts(engine), Stages = Texts(stages), Boosters = Texts(boosters),
+                Help = Copy != null && Copy.Why.Count > 0, HelpText = Copy?.WhyButton ?? "?",
+                WhyOpen = WhyOpen, WhyText = whyText.text,
+                Speed = Speed.Visible, SpeedLabel = Speed.Label, SpeedStatus = Speed.Status,
+                Tiers = shownTiers.Count > 1 && Copy != null ? shownTiers.ConvertAll(t => Copy.TierLabel(t)).ToArray() : null,
+                Xray = Copy != null, XrayText = Copy?.XrayButton ?? "",
             };
             var f = StarterLayout.Place(Input);
             Frame = f;
             Apply(f);
+            if (Xray != null) Xray.Layout(wPt, hPt, safeT, safeB, safeL, safeR, upp, reserveExit);
+            if (lastRocket.X != f.Rocket.X || lastRocket.Y != f.Rocket.Y || lastRocket.W != f.Rocket.W || lastRocket.H != f.Rocket.H)
+            {
+                bool first = !lastRocket.Live;
+                lastRocket = f.Rocket;
+                if (!first) RocketBoxChanged?.Invoke();
+            }
         }
 
         void Apply(StarterFrame f)
@@ -273,7 +474,68 @@ namespace Kestrel.Slice
             boosters.Box.style.display = f.Boosters != null ? DisplayStyle.Flex : DisplayStyle.None;
             if (f.Boosters != null) PlaceRow(boosters, f.Boosters, f.Sheet, f.LabelPt, f.OptionPt);
 
-            Pin(hint, f.Hint, f.Sheet); Font(hint, f.HintPt);
+            hint.style.display = f.Hint.Live ? DisplayStyle.Flex : DisplayStyle.None;
+            if (f.Hint.Live) { Pin(hint, f.Hint, f.Sheet); Font(hint, f.HintPt); }
+
+            // Tier switch.
+            tierSwitch.style.display = f.Switch.Live ? DisplayStyle.Flex : DisplayStyle.None;
+            if (f.Switch.Live)
+            {
+                Pin(tierSwitch, f.Switch, zero);
+                Radius(tierSwitch, 12f);
+                tierSwitch.style.overflow = Overflow.Hidden;
+                for (int k = 0; k < shownTiers.Count && k < f.Chips.Length; k++)
+                {
+                    var chip = chips[shownTiers[k]];
+                    Pin(chip, f.Chips[k], f.Switch);
+                    Font(chip, f.ChipPt);
+                    chip.style.paddingLeft = StarterLayout.ChipPadX * upp; chip.style.paddingRight = StarterLayout.ChipPadX * upp;
+                }
+            }
+
+            // "?" buttons, the Why? card, the speed bar, the X-ray button.
+            foreach (var row in new[] { engine, stages, fuel, boosters })
+            {
+                var rf = row == engine ? f.Engine : row == stages ? f.Stages : row == fuel ? f.Fuel : f.Boosters;
+                bool on = rf != null && rf.Help.Live;
+                row.Help.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
+                if (!on) continue;
+                Pin(row.Help, rf.Help, rf.Row);
+                Font(row.Help, f.OptionPt);
+                Radius(row.Help, 22f);
+                row.Label.style.whiteSpace = rf.LabelWraps ? WhiteSpace.Normal : WhiteSpace.NoWrap;
+            }
+            whyCard.style.display = f.Why.Live ? DisplayStyle.Flex : DisplayStyle.None;
+            if (f.Why.Live)
+            {
+                Pin(whyCard, f.Why, f.Sheet);
+                Radius(whyCard, 12f);
+                Pin(whyIcon, f.WhyIcon, f.Why);
+                Pin(whyText, f.WhyText, f.Why);
+                Font(whyText, f.WhyPt);
+                whyIcon.MarkDirtyRepaint();
+            }
+            bool speedOn = f.SpeedBar.Live;
+            speedLabel.style.display = speedOn ? DisplayStyle.Flex : DisplayStyle.None;
+            speedStatus.style.display = speedOn && f.SpeedStatus.Live ? DisplayStyle.Flex : DisplayStyle.None;
+            speedTrack.style.display = speedOn ? DisplayStyle.Flex : DisplayStyle.None;
+            if (speedOn)
+            {
+                Pin(speedLabel, f.SpeedLabel, f.Sheet); Font(speedLabel, f.SpeedPt);
+                if (f.SpeedStatus.Live) { Pin(speedStatus, f.SpeedStatus, f.Sheet); Font(speedStatus, f.SpeedPt); }
+                Pin(speedTrack, f.SpeedBar, f.Sheet);
+                Radius(speedTrack, StarterLayout.SpeedBarH * 0.5f);
+                float tw = f.SpeedBar.W * upp, th = f.SpeedBar.H * upp;
+                speedFill.style.left = 0f; speedFill.style.top = 0f;
+                speedFill.style.width = tw * (float)Speed.Fill; speedFill.style.height = th;
+                Radius(speedFill, StarterLayout.SpeedBarH * 0.5f);
+                float mw = 2f * upp, mh = th + 6f * upp;
+                speedNeed.style.width = mw; speedNeed.style.height = mh;
+                speedNeed.style.left = Mathf.Clamp(tw * (float)Speed.NeedAt - mw * 0.5f, 0f, Mathf.Max(0f, tw - mw));
+                speedNeed.style.top = -3f * upp;
+            }
+            xrayButton.style.display = f.Xray.Live ? DisplayStyle.Flex : DisplayStyle.None;
+            if (f.Xray.Live) Corner(xrayButton, f.Xray, StarterLayout.XrayPt);
             badge.style.display = f.Badge.Live ? DisplayStyle.Flex : DisplayStyle.None;
             if (f.Badge.Live) { Pin(badge, f.Badge, f.Sheet); Font(badge, f.ReadinessPt); }
             Pin(readiness, f.Readiness, f.Sheet); Font(readiness, f.ReadinessPt);
