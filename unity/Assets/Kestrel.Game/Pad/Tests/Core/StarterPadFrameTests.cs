@@ -21,7 +21,7 @@ namespace Kestrel.Pad.Tests
         // (name, height, tank radius, widest radius, pad). KH-1 First Hop is a Rail pad (widest radius under 1.5 m).
         public static readonly (string Name, float H, float R, float Rr, PadArchetype Type)[] Stacks =
         {
-            ("KH-1 First Hop", 4.5f, 0.9f, 0.9f, PadArchetype.Rail), ("KH-1 tall", 8f, 0.9f, 1.0f, PadArchetype.Rail),
+            ("KH-1 First Hop", 4.57f, 0.6f, 0.6f, PadArchetype.Rail), ("KH-1 tall", 8f, 0.9f, 1.0f, PadArchetype.Rail),
             ("starter", 14f, 0.45f, 0.45f, PadArchetype.Rail), ("Tiny Orbit", 22f, 0.6f, 0.6f, PadArchetype.Rail),
             ("rail 36", 36f, 1.2f, 1.2f, PadArchetype.Rail), ("tower 48", 48f, 1.6f, 1.6f, PadArchetype.Tower),
             ("tower 70", 70f, 2.5f, 2.5f, PadArchetype.Tower), ("strap-ons 90", 90f, 3.6f, 8.5f, PadArchetype.TowerStrongback),
@@ -53,8 +53,11 @@ namespace Kestrel.Pad.Tests
             return new StarterPreviewSubject(0, h, rr, pts.ToArray());
         }
 
+        /// <summary>The farm every real pad carries (KH-1's kerolox stage): it is what widens the surface, and so the pad circle, to 13-14 m.</summary>
+        static FarmPlan Farm() => new FarmPlan { Kerolox = true };
+
         static PadLayout Layout((string Name, float H, float R, float Rr, PadArchetype Type) st, int seed) =>
-            PadGenerator.Generate(seed, st.Type, new PadFit(st.H, st.Rr, PadShowcase.Clearance));
+            PadGenerator.Generate(seed, st.Type, new PadFit(st.H, st.Rr, PadShowcase.Clearance), null, Farm());
 
         [Test]
         public void EveryStackShowsCrownPlatesAndCircleAtEveryPhoneAndIpadSize()

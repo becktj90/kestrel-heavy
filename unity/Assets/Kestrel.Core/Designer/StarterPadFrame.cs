@@ -34,13 +34,15 @@ namespace Kestrel.Core.Designer
         public double VehicleHiddenByTower;
         public int PointsTop, PointsBase, PointsCircle;
 
-        public bool InFrame => OutsideTop == 0 && OutsideBase == 0 && OutsideCircle == 0 && OutsideVehicle == 0;
+        /// <summary>Share of the pad circle's points inside the preview box.</summary>
+        public double CircleInBox => PointsCircle > 0 ? 1.0 - (double)OutsideCircle / PointsCircle : 0;
+        public bool InFrame => OutsideTop == 0 && OutsideBase == 0 && OutsideVehicle == 0 && CircleInBox >= StarterPadFrame.MinCircleInBox;
         public bool Visible => OccludedTop <= StarterPadFrame.MaxOccludedTop && OccludedBase <= StarterPadFrame.MaxOccludedBase && OccludedCircle <= StarterPadFrame.MaxOccludedCircle
             && VehicleHiddenByTower <= StarterPadFrame.MaxVehicleHiddenByTower;
         public bool Pass => PointsTop > 0 && PointsBase > 0 && PointsCircle > 0 && InFrame && Visible;
 
         public string Describe() =>
-            $"outside top/base/circle/vehicle {OutsideTop}/{OutsideBase}/{OutsideCircle}/{OutsideVehicle} of {PointsTop}/{PointsBase}/{PointsCircle}, " +
+            $"outside top/base/circle/vehicle {OutsideTop}/{OutsideBase}/{OutsideCircle}/{OutsideVehicle} of {PointsTop}/{PointsBase}/{PointsCircle} (circle in box {CircleInBox:0.00}), " +
             $"hidden behind the vehicle top {OccludedTop:0.00} base {OccludedBase:0.00} circle {OccludedCircle:0.00}, vehicle hidden by tower {VehicleHiddenByTower:0.00}, vehicle fill {VehicleFill:0.00}";
     }
 
@@ -51,12 +53,17 @@ namespace Kestrel.Core.Designer
         /// <summary>Most points of a feature the vehicle may hide: the crown is on top of the stack and must show; the far plates and
         /// the far arc of the circle may go behind the stack, the near ones may not.</summary>
         public const double MaxOccludedTop = 0.25, MaxOccludedBase = 0.50, MaxOccludedCircle = 0.25;
-        /// <summary>None of the five samples along the vehicle's axis may be behind the tower (a heading from the tower's side would "see" the stack through the lattice and fail this).</summary>
+        /// <summary>The pad circle is 0.4 x the pad's surface radius, which grows with the propellant farm (13-14 m on a KH-1 pad whose vehicle is 4.6 m
+        /// tall): the whole ring and a legible vehicle cannot share a portrait box. The crown, the plates and the vehicle are always whole inside the
+        /// box; at least this share of the circle's points must be too (the rest runs under the sheet, still on screen).</summary>
+        public const double MinCircleInBox = 0.5;
+        /// <summary>None of the 15 samples (axis and both silhouette edges, five heights) may be behind the tower (a heading from the tower's side would "see" the stack through the lattice and fail this).</summary>
         public const double MaxVehicleHiddenByTower = 0.0;
         /// <summary>Looking down a little more than the vehicle-alone view so the circle and plates read as a pad, not a line.</summary>
         public const double PadElevationDeg = 20.0;
-        /// <summary>The vehicle must stay legible: at least this share of the preview box height (the vehicle-alone solve targets 0.62).</summary>
-        public const double MinVehicleFill = 0.25;
+        /// <summary>The vehicle must stay legible: at least this share of the preview box height (the vehicle-alone solve targets 0.62). A 4.6 m KH-1
+        /// stands beside an 11 m crown, so with the tower whole in the box the stack cannot fill more than ~0.4 of it; 0.15 is the floor.</summary>
+        public const double MinVehicleFill = 0.15;
         /// <summary>Heading search: every <see cref="HeadingStepDeg"/> degrees about the default heading, closest to it first.</summary>
         public const double HeadingStepDeg = 15.0;
         const int Ring = 16;
@@ -84,8 +91,8 @@ namespace Kestrel.Core.Designer
                 if (!pose.Valid) continue;
                 var rep = Evaluate(pose, s, box, panelW, panelH, aspect, vFovDeg);
                 // A passing heading scores by the vehicle's size; one that fails scores below every pass by how badly it fails.
-                double score = rep.Pass ? 1.0 + rep.VehicleFill : -(rep.OutsideTop + rep.OutsideBase + rep.OutsideCircle + rep.OutsideVehicle)
-                    - rep.VehicleHiddenByTower - Math.Max(0, rep.OccludedTop - MaxOccludedTop) - Math.Max(0, rep.OccludedBase - MaxOccludedBase) - Math.Max(0, rep.OccludedCircle - MaxOccludedCircle);
+                double score = rep.Pass ? 1.0 + rep.VehicleFill : -(rep.OutsideTop + rep.OutsideBase + rep.OutsideVehicle)
+                    - rep.VehicleHiddenByTower - Math.Max(0, MinCircleInBox - rep.CircleInBox) - Math.Max(0, rep.OccludedTop - MaxOccludedTop) - Math.Max(0, rep.OccludedBase - MaxOccludedBase) - Math.Max(0, rep.OccludedCircle - MaxOccludedCircle);
                 if (score > bestScore + 1e-9) { bestScore = score; best = pose; }
             }
             return best;
@@ -106,9 +113,15 @@ namespace Kestrel.Core.Designer
             StarterPreviewFraming.BoxNdc(box, panelW, panelH, out double bx0, out double bx1, out double by0, out double by1);
             double boxW = (bx1 - bx0) * (1 - 2 * FitMargin), boxH = (by1 - by0) * (1 - 2 * FitMargin);
             double tanH = Math.Tan(vFovDeg * Math.PI / 360.0);
-            double cx = 0, cy = 0, cz = 0, rad = s.Radius;
-            foreach (var p in s.Pad) { cx += p.X; cy += p.Y; cz += p.Z; rad = Math.Max(rad, Math.Sqrt(p.X * p.X + p.Z * p.Z)); }
-            cx = 0.5 * (cx / s.Pad.Length); cz = 0.5 * (cz / s.Pad.Length); cy = 0.5 * (s.YMin + Math.Max(s.YMax, MaxY(s)));
+            double cx = 0, cy = 0, cz = 0, rad = s.Radius; int nStrict = 0;
+            foreach (var p in s.Pad)
+            {
+                rad = Math.Max(rad, Math.Sqrt(p.X * p.X + p.Z * p.Z));
+                if (p.Kind == PadFeature.PadCircle) continue;   // the circle is fitted by share (MinCircleInBox), the rest whole
+                cx += p.X; cz += p.Z; nStrict++;
+            }
+            if (nStrict > 0) { cx = 0.5 * (cx / nStrict); cz = 0.5 * (cz / nStrict); }
+            cy = 0.5 * (s.YMin + Math.Max(s.YMax, MaxY(s)));
             double ax0 = cx, ay0 = cy, az0 = cz;
 
             double Over(double d, out StarterPreviewPose pose)
@@ -117,7 +130,7 @@ namespace Kestrel.Core.Designer
                 pose = StarterPreviewFraming.Compose(basis, ax, ay, az, d);
                 for (int k = 0; k < 10; k++)
                 {
-                    Extent(pose, s, aspect, vFovDeg, out double ex0, out double ex1, out double ey0, out double ey1);
+                    Extent(pose, s, aspect, vFovDeg, false, out double ex0, out double ex1, out double ey0, out double ey1);
                     if (double.IsInfinity(ex0) || double.IsInfinity(ex1)) return double.PositiveInfinity;
                     double mx = 0.5 * (ex0 + ex1) - basis.ShiftX, my = 0.5 * (ey0 + ey1) - basis.ShiftY;
                     if (Math.Abs(mx) < 1e-7 && Math.Abs(my) < 1e-7) break;
@@ -126,9 +139,12 @@ namespace Kestrel.Core.Designer
                     ax += rx * dx + ux * dy; ay += ry * dx + uy * dy; az += rz * dx + uz * dy;
                     pose = StarterPreviewFraming.Compose(basis, ax, ay, az, d);
                 }
-                Extent(pose, s, aspect, vFovDeg, out double fx0, out double fx1, out double fy0, out double fy1);
+                Extent(pose, s, aspect, vFovDeg, false, out double fx0, out double fx1, out double fy0, out double fy1);
                 if (double.IsInfinity(fx0) || double.IsInfinity(fx1)) return double.PositiveInfinity;
-                return Math.Max((fx1 - fx0) / boxW, (fy1 - fy0) / boxH);
+                double over = Math.Max((fx1 - fx0) / boxW, (fy1 - fy0) / boxH);
+                // Too close for the circle: report it as over so the distance grows until MinCircleInBox of its points are inside the (shrunk) box.
+                if (CircleShare(pose, s, aspect, vFovDeg, bx0 + (bx1 - bx0) * FitMargin, bx1 - (bx1 - bx0) * FitMargin, by0 + (by1 - by0) * FitMargin, by1 - (by1 - by0) * FitMargin) < MinCircleInBox) over = Math.Max(over, 1.0 + 1e-6);
+                return over;
             }
 
             double lo = Math.Max(1.0, rad), hi = Math.Max(lo * 2, (s.YMax - s.YMin + rad) * 2);
@@ -150,13 +166,27 @@ namespace Kestrel.Core.Designer
             return m;
         }
 
-        /// <summary>Projected NDC bounds of the vehicle cylinder (both rings) and every pad point; infinite when any is behind the camera.</summary>
-        static void Extent(StarterPreviewPose pose, StarterPreviewSubject s, double aspect, double vFovDeg, out double x0, out double x1, out double y0, out double y1)
+        /// <summary>Share of the circle's points whose projection lies inside the NDC rectangle.</summary>
+        static double CircleShare(StarterPreviewPose pose, StarterPreviewSubject s, double aspect, double vFovDeg, double x0, double x1, double y0, double y1)
+        {
+            int n = 0, inside = 0;
+            foreach (var p in s.Pad)
+            {
+                if (p.Kind != PadFeature.PadCircle) continue;
+                n++;
+                if (StarterPreviewFraming.Project(pose, p.X, p.Y, p.Z, aspect, vFovDeg, out double nx, out double ny) && nx >= x0 && nx <= x1 && ny >= y0 && ny <= y1) inside++;
+            }
+            return n == 0 ? 1.0 : (double)inside / n;
+        }
+
+        /// <summary>Projected NDC bounds of the vehicle cylinder (both rings) and the crown and plate points (and the circle when asked); infinite when any is behind the camera.</summary>
+        static void Extent(StarterPreviewPose pose, StarterPreviewSubject s, double aspect, double vFovDeg, bool withCircle, out double x0, out double x1, out double y0, out double y1)
         {
             StarterPreviewFraming.Extent(pose, s, aspect, vFovDeg, out x0, out x1, out y0, out y1);
             if (double.IsInfinity(x0) || double.IsInfinity(x1)) return;
             foreach (var p in s.Pad)
             {
+                if (!withCircle && p.Kind == PadFeature.PadCircle) continue;
                 if (!StarterPreviewFraming.Project(pose, p.X, p.Y, p.Z, aspect, vFovDeg, out double nx, out double ny)) { x0 = double.NegativeInfinity; x1 = double.PositiveInfinity; return; }
                 x0 = Math.Min(x0, nx); x1 = Math.Max(x1, nx); y0 = Math.Min(y0, ny); y1 = Math.Max(y1, ny);
             }
@@ -195,23 +225,33 @@ namespace Kestrel.Core.Designer
             return r;
         }
 
-        /// <summary>Share of five samples up the vehicle's axis the tower hides from the camera. The tower is the prism over the crown
-        /// points (circle through their furthest corner, floor to the highest crown point). 0 when the pad has no tower.</summary>
+        /// <summary>Share of 15 samples on the vehicle (axis and both silhouette edges as seen from the camera, five heights) the tower hides from
+        /// the camera. The tower is the prism over its footprint (the base plates, else the crown: circle through the furthest point around their
+        /// centre) up to the highest crown point. 0 when the pad has no tower.</summary>
         public static double VehicleHiddenByTower(StarterPreviewPose pose, StarterPreviewSubject s)
         {
-            double cx = 0, cz = 0, top = 0; int n = 0;
-            foreach (var p in s.Pad) if (p.Kind == PadFeature.TowerTop) { cx += p.X; cz += p.Z; top = Math.Max(top, p.Y); n++; }
+            PadFeature kind = PadFeature.BasePlate;
+            int n = 0;
+            foreach (var p in s.Pad) if (p.Kind == kind) n++;
+            if (n == 0) { kind = PadFeature.TowerTop; foreach (var p in s.Pad) if (p.Kind == kind) n++; }
             if (n == 0) return 0;
+            double cx = 0, cz = 0, top = 0;
+            foreach (var p in s.Pad) { if (p.Kind == kind) { cx += p.X; cz += p.Z; } if (p.Kind == PadFeature.TowerTop) top = Math.Max(top, p.Y); }
             cx /= n; cz /= n;
             double rad = 0;
-            foreach (var p in s.Pad) if (p.Kind == PadFeature.TowerTop) rad = Math.Max(rad, Math.Sqrt((p.X - cx) * (p.X - cx) + (p.Z - cz) * (p.Z - cz)));
+            foreach (var p in s.Pad) if (p.Kind == kind) rad = Math.Max(rad, Math.Sqrt((p.X - cx) * (p.X - cx) + (p.Z - cz) * (p.Z - cz)));
+            if (top <= 0) top = s.YMax;
+            // Horizontal direction perpendicular to the view, for the silhouette edges.
+            double vx = pose.AimX - pose.PosX, vz = pose.AimZ - pose.PosZ, vl = Math.Sqrt(vx * vx + vz * vz);
+            double sx = vl > 1e-9 ? -vz / vl : 1, sz = vl > 1e-9 ? vx / vl : 0;
             int hidden = 0;
             for (int k = 0; k < 5; k++)
             {
                 double y = s.YMin + (s.YMax - s.YMin) * (0.1 + 0.2 * k);
-                if (Blocked(pose, 0, y, 0, cx, cz, rad, 0, top)) hidden++;
+                foreach (double e in new[] { -s.Radius, 0.0, s.Radius })
+                    if (Blocked(pose, sx * e, y, sz * e, cx, cz, rad, 0, top)) hidden++;
             }
-            return hidden / 5.0;
+            return hidden / 15.0;
         }
 
         /// <summary>True when the segment from the camera to the point passes through the vehicle cylinder first.</summary>

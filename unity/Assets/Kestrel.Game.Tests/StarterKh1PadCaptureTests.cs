@@ -85,8 +85,11 @@ namespace Kestrel.Game.Tests
             made.Add(scene);
             var body = Resources.Load<Material>("Materials/KH_Body");
             var vehicleGo = new GameObject("Vehicle"); vehicleGo.transform.SetParent(scene.transform, false);
+            // The livery colour the flight vehicle gets (SliceApp.BuildRocket), so the stack reads against the pad in the frame.
+            var vehicleMat = body != null ? new Material(body) : null;
+            if (vehicleMat != null) { FlightSolidBody.Apply(vehicleMat, HangarRocketView.Hex(design.liveryPrimary, Color.white)); made.Add(vehicleMat); }
             var view = new HangarRocketView();
-            view.Build(parts, vehicleGo.transform, body);
+            view.Build(parts, vehicleGo.transform, vehicleMat != null ? vehicleMat : body);
             view.SetVisible(true);
             foreach (var e in built.engines)
             {
@@ -149,6 +152,7 @@ namespace Kestrel.Game.Tests
             Assert.That(nPlate, Is.GreaterThan(0), "KH-1: the layout has no base plates (tower.base.plate*)");
             Assert.That(nCircle, Is.GreaterThan(0), "KH-1: no pad circle");
             var tp = layout.Tower;
+            TestContext.WriteLine("KH-1 pad: surface radius " + TrenchGrammar.SurfaceRadius(layout).ToString("0.0") + " m, circle radius " + PadShowcase.CircleRadius(layout).ToString("0.0") + " m, crown top " + (tp.Height + tp.CapHeight).ToString("0.0") + " m, tower stand-off " + tp.StandOff.ToString("0.0") + " m");
             var padT = pad.transform;
             var crown = new List<Vector3>();
             float topY = tp.Height + tp.CapHeight;
@@ -200,12 +204,17 @@ namespace Kestrel.Game.Tests
                     at = new Vector2(v.x * size.W, (1f - v.y) * size.H);
                     return v.z > 0f && at.x >= frame.Rocket.X + mx && at.x <= frame.Rocket.Right - mx && at.y >= frame.Rocket.Y + my && at.y <= frame.Rocket.Bottom - my;
                 }
-                int outside = 0; string first = null;
+                int outside = 0, circleIn = 0, circleAll = 0; string first = null;
                 foreach (var p in padPoints)
-                    if (!Inside(new Vector3((float)p.X, (float)p.Y, (float)p.Z), out var at)) { outside++; first = first ?? (p.Kind + " at " + at); }
+                {
+                    bool inside = Inside(new Vector3((float)p.X, (float)p.Y, (float)p.Z), out var at);
+                    if (p.Kind == PadFeature.PadCircle) { circleAll++; if (inside) circleIn++; continue; }   // the ring is held to a share, below
+                    if (!inside) { outside++; first = first ?? (p.Kind + " at " + at); }
+                }
+                if (circleAll == 0 || circleIn < StarterPadFrame.MinCircleInBox * circleAll) fails.Add(where + ": only " + circleIn + " of " + circleAll + " pad-circle points inside the preview box in Unity's projection");
                 foreach (var c in crown)
                     if (!Inside(c, out var at)) { outside++; first = first ?? ("crown corner at " + at); }
-                if (outside > 0) fails.Add(where + ": " + outside + " crown/plate/circle points outside the preview box in Unity's projection (first: " + first + "; box " + frame.Rocket.X.ToString("0") + "-" + frame.Rocket.Right.ToString("0") + " x " + frame.Rocket.Y.ToString("0") + "-" + frame.Rocket.Bottom.ToString("0") + ")");
+                if (outside > 0) fails.Add(where + ": " + outside + " crown/plate points outside the preview box in Unity's projection (first: " + first + "; box " + frame.Rocket.X.ToString("0") + "-" + frame.Rocket.Right.ToString("0") + " x " + frame.Rocket.Y.ToString("0") + "-" + frame.Rocket.Bottom.ToString("0") + ")");
 
                 pad.ViewCamera = cam;
                 pad.QualityOverride = KitBudgets.Low;   // the iPhone tier: nothing may be culled or LOD'd away at it
