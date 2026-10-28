@@ -753,21 +753,20 @@ namespace Kestrel.Game.Tests
                 Assert.That(Vector3.Distance(b, c), Is.GreaterThan(50f), name + " following again moves the camera back onto the rocket");
 
                 // A free orbit: a drag on open sky (no control under it), then Follow recentres, visibly.
-                var sky = new Vector2(t.Size.PanelW * 0.5f, t.Size.PanelH * 0.3f);
-                bool open = true;
-                for (var ve = hud.panel.Pick(sky); ve != null; ve = ve.parent) if (ve is Button) open = false;
-                if (open)
+                var sky = OpenSky(hud, chrome, t.Size);
+                Assert.That(sky.HasValue, Is.True, name + " the rocket column has open view to orbit from");
+                if (sky.HasValue)
                 {
-                    var s0 = PanelInput.BottomLeft(sky, t.Size.PanelH);
+                    var s0 = PanelInput.BottomLeft(sky.Value, t.Size.PanelH);
                     // Just past the slop: too small to read, so it is still Following (no dead Follow tap later).
-                    chrome.PointerAt(sky, s0, true, false);
-                    chrome.PointerAt(sky, s0 + new Vector2(20f, 0f), false, false);
-                    chrome.PointerAt(sky, s0 + new Vector2(20f, 0f), false, true);
+                    chrome.PointerAt(sky.Value, s0, true, false);
+                    chrome.PointerAt(sky.Value, s0 + new Vector2(20f, 0f), false, false);
+                    chrome.PointerAt(sky.Value, s0 + new Vector2(20f, 0f), false, true);
                     Assert.That(chrome.Following, Is.True, name + " a nudge is not an orbit");
                     Agree("nudge");
-                    chrome.PointerAt(sky, s0, true, false);
-                    chrome.PointerAt(sky, s0 + new Vector2(160f, -40f), false, false);
-                    chrome.PointerAt(sky, s0 + new Vector2(160f, -40f), false, true);
+                    chrome.PointerAt(sky.Value, s0, true, false);
+                    chrome.PointerAt(sky.Value, s0 + new Vector2(160f, -40f), false, false);
+                    chrome.PointerAt(sky.Value, s0 + new Vector2(160f, -40f), false, true);
                     Assert.That(chrome.Following, Is.False, name + " a real drag orbits");
                     Agree("orbited");
                     var d = CameraAt(chrome);
@@ -780,6 +779,162 @@ namespace Kestrel.Game.Tests
                     Assert.That(Vector3.Distance(d, e), Is.GreaterThan(5f), name + " recentring moves the camera");
                     Assert.That(Vector3.Distance(c, e), Is.LessThan(0.01f), name + " back on the chase");
                 }
+                ascent.Close();
+            }
+        }
+
+        /// <summary>A point in the rocket column (the middle of the width, 20-65% down) where a touch lands on the open view,
+        /// not on any HUD element, or null.</summary>
+        static Vector2? OpenSky(VisualElement hud, FlightChrome chrome, Size size)
+        {
+            for (float f = 0.3f; f <= 0.65f; f += 0.05f)
+            {
+                var pt = new Vector2(size.PanelW * 0.5f, size.PanelH * f);
+                if (!chrome.OverHud(pt)) return pt;
+            }
+            for (float f = 0.2f; f < 0.3f; f += 0.05f)
+            {
+                var pt = new Vector2(size.PanelW * 0.5f, size.PanelH * f);
+                if (!chrome.OverHud(pt)) return pt;
+            }
+            return null;
+        }
+
+        /// <summary>A slide from <paramref name="from"/> through the chrome's PointerAt, 160 x -40 points, and lift.</summary>
+        static void Slide(FlightChrome chrome, Vector2 from, float panelH)
+        {
+            var s0 = PanelInput.BottomLeft(from, panelH);
+            chrome.PointerAt(from, s0, true, false);
+            chrome.PointerAt(from, s0 + new Vector2(80f, -20f), false, false);
+            chrome.PointerAt(from, s0 + new Vector2(160f, -40f), false, false);
+            chrome.PointerAt(from, s0 + new Vector2(160f, -40f), false, true);
+        }
+
+        [Test]
+        public void ASlideThatStartsOnTheDockOrAButtonNeverOrbitsTheCamera()
+        {
+            // TestFlight booster mission, T+116-126 at 55-65 km: "Follow rocket" up and "Cam: Auto" with the Engineer dock
+            // in use. Only buttons blocked an orbit, so a thumb that started on the dock between Nudge buttons, or on the
+            // medal note, and slid, orbited the camera and dropped "Following". Only the open view orbits now.
+            foreach (var c in DockCases())
+            using (var surface = DeviceSurface.Open(c.Size.PanelW, c.Size.PanelH))
+            {
+                string where = c.Size.Name + " " + c.Pads;
+                var (hud, chrome, ascent) = Flight(surface, c.Size, FlightViewMode.Auto, c.Top, c.Bottom, c.Side);
+                ShowClimbingDock(ascent, chrome, surface, true);
+                Assert.That(chrome.Following, Is.True, where + " starts following");
+                var dock = hud.Q("ascent-actions");
+                Assert.That(dock != null && Shown(dock), Is.True, where + " dock shown");
+                // Every 6 pt across the dock: wherever a slide starts, buttons and the panel between them alike, no orbit.
+                var d = dock.worldBound;
+                int probes = 0;
+                for (float y = d.yMin + 2f; y < d.yMax - 1f; y += 6f)
+                for (float x = d.xMin + 2f; x < d.xMax - 1f; x += 6f)
+                {
+                    var pt = new Vector2(x, y);
+                    var hit = hud.panel.Pick(pt);
+                    if (hit == null || !OnElement(hit, hud)) continue;
+                    probes++;
+                    Assert.That(chrome.OverHud(pt), Is.True, where + " " + pt + " on " + hit.name + " counts as the HUD");
+                    Slide(chrome, pt, c.Size.PanelH);
+                    Assert.That(chrome.Following, Is.True, where + " a slide from " + hit.name + " at " + pt + " orbited the camera");
+                }
+                Assert.That(probes, Is.GreaterThan(10), where + " probed the dock");
+                foreach (var id in new[] { UiIds.FlightFollow, UiIds.FlightCamera, UiIds.FlightPause })
+                {
+                    var b = hud.Q<Button>(id);
+                    Slide(chrome, b.worldBound.center, c.Size.PanelH);
+                    if (chrome.PickerOpen) chrome.ClosePicker();
+                    Assert.That(FlightCameraRig.Orbited(RigOf(chrome)), Is.False, where + " a slide from " + id + " is not an orbit");
+                }
+                // And the open view still orbits, and a tap on it recentres.
+                var sky = OpenSky(hud, chrome, c.Size);
+                Assert.That(sky.HasValue, Is.True, where + " open view in the rocket column");
+                Slide(chrome, sky.Value, c.Size.PanelH);
+                Assert.That(chrome.Following, Is.False, where + " a slide on the open view orbits");
+                Assert.That(hud.Q<Button>(UiIds.FlightFollow).userData as string, Is.EqualTo(FlightView.FollowLabel), where + " label says Follow rocket");
+                var s0 = PanelInput.BottomLeft(sky.Value, c.Size.PanelH);
+                chrome.PointerAt(sky.Value, s0, true, false);
+                chrome.PointerAt(sky.Value, s0 + new Vector2(4f, 3f), false, true);
+                Assert.That(chrome.Following, Is.True, where + " a (slightly wobbly) tap on the view recentres");
+                ascent.Close();
+            }
+        }
+
+        [Test]
+        public void PadOutOfRangeIsDisabledFallsBackUnsavedAndFollowNeverCutsToADot()
+        {
+            foreach (var t in TapSizes())
+            using (var surface = DeviceSurface.Open(t.Size.PanelW, t.Size.PanelH))
+            {
+                string name = t.Size.Name;
+                var (hud, chrome, ascent) = Flight(surface, t.Size, FlightViewMode.Chase, t.Top, t.Bottom, t.Side);
+                var follow = hud.Q<Button>(UiIds.FlightFollow);
+                var cam = hud.Q<Button>(UiIds.FlightCamera);
+                var picker = hud.Q(FlightChrome.PickerName);
+                var padChip = picker.Q<Button>(FlightChrome.ChipName(FlightViewMode.Pad));
+
+                // On the pad, Following lets go to the ground camera and Follow rocket comes back to the saved Chase.
+                Assert.That(chrome.PadInRange, Is.True, name);
+                Tap(hud, chrome, surface, follow, t.Size.PanelH);
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Pad), name + " near the pad: let go to Pad");
+                Tap(hud, chrome, surface, follow, t.Size.PanelH);
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Chase), name + " Follow rocket returns to the saved Chase (was Auto)");
+
+                // Pick Pad, then the rocket climbs out of its range: back to Chase with a toast, not saved.
+                Tap(hud, chrome, surface, cam, t.Size.PanelH);
+                Tap(hud, chrome, surface, padChip, t.Size.PanelH);
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Pad), name);
+                Assert.That(FlightCameraStore.Load(), Is.EqualTo(FlightViewMode.Pad), name + " saved");
+                chrome.SetPadInRange(false);
+                surface.Pump(2);
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Chase), name + " out of range: back to the player's chase");
+                Assert.That(chrome.ToastText, Is.EqualTo(FlightCameraControl.FallbackToast(FlightViewMode.Chase)), name + " says why");
+                Assert.That(cam.userData as string ?? cam.text, Is.EqualTo(FlightView.Caption(FlightViewMode.Chase)), name + " label follows");
+                Assert.That(chrome.Following, Is.True, name);
+                Assert.That(FlightCameraStore.Load(), Is.EqualTo(FlightViewMode.Pad), name + " the fallback is not saved");
+                chrome.TickToast(FlightView.ToastSec + 0.05f);
+
+                // The Pad chip is dimmed; a real tap on it only explains.
+                Tap(hud, chrome, surface, cam, t.Size.PanelH);
+                Assert.That(chrome.PickerOpen, Is.True, name);
+                Assert.That(padChip.ClassListContains(FlightChrome.ChipOffClass), Is.True, name + " Pad chip is off");
+                foreach (var m in Modes)
+                    if (m != FlightViewMode.Pad)
+                        Assert.That(picker.Q<Button>(FlightChrome.ChipName(m)).ClassListContains(FlightChrome.ChipOffClass), Is.False, name + " " + m + " chip is on");
+                var hit = Tap(hud, chrome, surface, padChip, t.Size.PanelH);
+                Assert.That(OnElement(hit, padChip), Is.True, name + " the dimmed chip still takes the tap");
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Chase), name + " no change");
+                Assert.That(chrome.ToastText, Is.EqualTo(FlightCameraControl.PadOutOfRangeToast), name);
+                Assert.That(FlightCameraStore.Load(), Is.EqualTo(FlightViewMode.Pad), name + " still not saved");
+                chrome.TickToast(FlightView.ToastSec + 0.05f);
+
+                // C skips Pad.
+                for (int i = 0; i < 6; i++)
+                {
+                    chrome.CycleWithToast();
+                    Assert.That(chrome.View, Is.Not.EqualTo(FlightViewMode.Pad), name + " C skips Pad");
+                }
+                chrome.Choose(FlightViewMode.Chase);
+
+                // Following at altitude: the tap changes nothing and says so; the label stays "Following".
+                Assert.That(chrome.Following, Is.True, name);
+                Tap(hud, chrome, surface, follow, t.Size.PanelH);
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Chase), name + " no cut to Pad at altitude");
+                Assert.That(chrome.Following, Is.True, name);
+                Assert.That(follow.userData as string ?? follow.text, Is.EqualTo(FlightView.FollowingLabel), name);
+                Assert.That(chrome.ToastText, Is.EqualTo(FlightCameraControl.AlreadyFollowingToast), name);
+
+                // The next flight starts on the pad, on the view the player last picked.
+                chrome.OnFlightStarted();
+                Assert.That(chrome.PadInRange, Is.True, name);
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Chase), name + " the last pick was Chase");
+                chrome.Choose(FlightViewMode.Pad);
+                chrome.SetPadInRange(false);
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Chase), name);
+                chrome.OnFlightStarted();
+                Assert.That(chrome.View, Is.EqualTo(FlightViewMode.Pad), name + " a new flight is back on the picked Pad");
+                Assert.That(padChip.ClassListContains(FlightChrome.ChipOffClass), Is.False, name + " Pad chip on again");
                 ascent.Close();
             }
         }

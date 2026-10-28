@@ -19,7 +19,10 @@ export const MEDAL_RULES = {
 };
 
 /**
- * @param {{kind:'deck'|'water'|'rud', vy:number, dx:number, tilt:number, landingVy:number, landingTol:number, recovered?:boolean}} t
+ * Gate: a landing whose burn was never lit (burnLit === false) or whose gear never came
+ * down (legsDown === false) is capped at bronze, whatever its sink, miss and tilt.
+ * Both flags are optional; undefined means "not modelled" and does not gate.
+ * @param {{kind:'deck'|'water'|'rud', vy:number, dx:number, tilt:number, landingVy:number, landingTol:number, recovered?:boolean, burnLit?:boolean, legsDown?:boolean}} t
  * @returns {'gold'|'silver'|'bronze'|null}
  */
 export function gradeLanding(t) {
@@ -29,7 +32,7 @@ export function gradeLanding(t) {
   const tilt = Math.abs(Number(t.tilt) || 0);
   const limVy = Math.max(0.1, Number(t.landingVy) || 6);
   const limDx = Math.max(1, Number(t.landingTol) || 36);
-  if (!t.recovered) return 'bronze';
+  if (!t.recovered || t.burnLit === false || t.legsDown === false) return 'bronze';
   const meets = (rule) => vy <= limVy * rule.vy && dx <= limDx * rule.dx && tilt <= rule.tilt;
   if (meets(MEDAL_RULES.gold)) return 'gold';
   if (meets(MEDAL_RULES.silver)) return 'silver';

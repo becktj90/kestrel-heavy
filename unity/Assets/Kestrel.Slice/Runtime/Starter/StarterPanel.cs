@@ -182,9 +182,10 @@ namespace Kestrel.Slice
             title.text = StarterScreen.Title(r.Mission);
             subtitle.text = StarterScreen.Subtitle(r.Mission);
             hint.text = StarterScreen.Hint(r, LastKnob);
-            // The existing readout as plain information. Launch is off only on a hard Validate block, whose one
-            // plain reason is the line; a rocket that looks short still launches (and may explode).
-            LaunchReady = StarterScreen.Readiness(r, out var b, out var rest);
+            // The existing readout and the launch predictor (Honest Ready) as plain information. Launch is off only on a
+            // hard Validate block, whose one plain reason is the line; a rocket the predictor says breaks up shows its
+            // cause and still launches (and may explode). An unchecked setting reads "Test-flying it" until TickPrediction lands.
+            LaunchReady = StarterScreen.ReadinessNow(r, out var b, out var rest);
             badge.text = b;
             badge.style.color = b == StarterScreen.ReadyBadge ? ReadyGreen : b == StarterScreen.TightBadge ? TightAmber : ShortRed;
             readiness.text = rest;
@@ -196,6 +197,22 @@ namespace Kestrel.Slice
         }
 
         void OnRocketChanged(StarterRocket _) => Refresh();
+
+        /// <summary>Honest Ready: advance the launch predictor by one frame budget (ReferenceAscent.FrameBudgetMs), the
+        /// current setting first, then its one-tap neighbours. SliceApp calls this from Update while Starter shows.</summary>
+        public void TickPrediction()
+        {
+            try { if (Rocket.StepPrediction(ReferenceAscent.FrameBudgetMs)) Refresh(); }
+            catch (Exception e) { Debug.LogWarning("[Starter] predictor: " + e.Message); }
+        }
+
+        /// <summary>Finish the current setting's prediction now (captures and tests settle the badge with this).</summary>
+        public void FinishPrediction()
+        {
+            try { if (!Rocket.Check().Blocked) Rocket.Verdict(); }
+            catch (Exception e) { Debug.LogWarning("[Starter] predictor: " + e.Message); }
+            Refresh();
+        }
 
         void Pick(StarterKnob knob, Action set)
         {

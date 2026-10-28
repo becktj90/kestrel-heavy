@@ -1472,7 +1472,7 @@ export default class MissionScene extends Phaser.Scene {
     } else {
       this.session.burnHold = 0;
     }
-    if (alt < 200 && this.session.burnLit && !this.session.straightenCalled) {
+    if (alt < 200 && (this.session.burnLit || this.settings.difficulty === 'KID') && !this.session.straightenCalled) {
       this.session.straightenCalled = true;
       this.session.jacklynPhase = 'straighten';
       this.emitRcs();
@@ -1498,6 +1498,7 @@ export default class MissionScene extends Phaser.Scene {
 
     const side = this.session.havenSide || -1;
     const firstFlight = isFirstFlightGrace(this.currentFlight().id, this.settings);
+    const isKid = this.settings.difficulty === 'KID';
     const wantAngle = havenWantAngle({
       phase: this.session.jacklynPhase,
       side,
@@ -1506,9 +1507,10 @@ export default class MissionScene extends Phaser.Scene {
       alt,
       burnLit: Boolean(this.session.burnLit),
       firstFlight,
+      kid: isKid,
     });
     const nowAngle = this.rocket.angle || 0;
-    const leveling = !reentry && alt < HAVEN_LEVEL_ALT && (this.session.burnLit || firstFlight);
+    const leveling = !reentry && alt < HAVEN_LEVEL_ALT && (this.session.burnLit || firstFlight || isKid);
     const slew = reentry ? 2.2 : leveling ? 3.1 : gliding ? 1.35 : 3.1;
     const nextAngle = nowAngle + (wantAngle - nowAngle) * Math.min(1, dt * slew);
     if (Math.abs(nextAngle - nowAngle) > 0.7) this.emitRcs();
@@ -1790,6 +1792,10 @@ export default class MissionScene extends Phaser.Scene {
     const onPaint = kind === 'deck' && dx <= catchTol;
     const soft = vy <= mode.landingVy;
     const tipped = Math.abs(this.rocket.angle) > 14;
+    // Gear only comes down with the landing burn (holdingBurn). No burn, no legs:
+    // Unity RecoveryScore's tipped = tilted || !legsDown, so it is never 'recovered'.
+    const legsDown = Boolean(this.session.gearDeployed);
+    const burnLit = Boolean(this.session.burnLit);
     const landingGrade = gradeTouchdown({
       kind,
       vy,
@@ -1797,6 +1803,7 @@ export default class MissionScene extends Phaser.Scene {
       landingVy: mode.landingVy,
       landingTol: catchTol,
       tipped,
+      legsDown,
     });
     this.session.landingGrade = landingGrade;
     this.session.touchdown = { kind, vy, dx, tilt: Math.abs(this.rocket.angle), grade: landingGrade };
@@ -1807,12 +1814,14 @@ export default class MissionScene extends Phaser.Scene {
       tilt: Math.abs(this.rocket.angle),
       landingVy: mode.landingVy,
       landingTol: catchTol,
-      recovered: kind === 'deck' && onPaint && soft && !tipped,
+      recovered: kind === 'deck' && onPaint && soft && !tipped && legsDown,
+      burnLit,
+      legsDown,
     });
     this.rocket.setVelocity(0, 0);
     this.rocket.setIgnoreGravity(true);
 
-    if (kind === 'deck' && onPaint && soft && !tipped) {
+    if (kind === 'deck' && onPaint && soft && !tipped && legsDown) {
       this.session.recovered = true;
       this.session.score += HAVEN_BONUS;
       if (this.currentFlight().objective?.id === 'recover') this.completeObjective();
