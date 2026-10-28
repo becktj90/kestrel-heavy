@@ -77,7 +77,9 @@ namespace Kestrel.Pad
                 var leg = CornerAt(c, 0f);
                 Add("tower.base", $"tower.base.plate.{Corner[c]}", MemberKind.Deck,
                     new Vec3(leg.X - 1.1f, 0.10f, leg.Z), new Vec3(leg.X + 1.1f, 0.10f, leg.Z),
-                    MaterialRole.Galvanized, "base-plate");
+                    // Tone pass: safety yellow (the crown/handrail accent) instead of Galvanized so the footings
+                    // do not match the deck plates. Same tag and geometry, so level queries are unchanged.
+                    MaterialRole.SafetyYellowSteel, "base-plate");
             }
             for (int l = 0; l < P.Levels; l++)
             {
