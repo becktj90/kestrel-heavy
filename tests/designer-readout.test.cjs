@@ -56,7 +56,8 @@ test('sim readout comes from simulate(): same outcome, losses and ideal Δv', as
   for (const p of PRESETS) {
     const q = quickReadout(p);
     const s = simReadout(p, q);
-    const ref = simulate(q.serial, { payload: q.payload, targetAlt: q.targetAlt, latitude: 28.5, dt: 0.2, sampleEvery: 2, tMax: 2500 });
+    // Same inputs simReadout uses, including the design's fairing jettison.
+    const ref = simulate(q.serial, { payload: q.payload, targetAlt: q.targetAlt, latitude: 28.5, dt: 0.2, sampleEvery: 2, tMax: 2500, fairingMass: q.fairingMass || 0, fairingJettisonAltitudeM: q.fairingJettisonAltitudeM ?? NaN });
     assert.strictEqual(s.outcome, ref.outcome, p.id);
     assert.ok(Math.abs(s.totalLosses - (ref.losses.gravity + ref.losses.drag + ref.losses.steering)) < 1e-6);
     assert.ok(Math.abs(s.idealDeltaV - q.totalDeltaV) < 1e-6, `${p.id} sim ideal Δv == readout Δv`);

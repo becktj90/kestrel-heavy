@@ -65,8 +65,22 @@ namespace Kestrel.Pad
 
         // D2 detail: mid-bay struts + secondary lattice on each face (reads as truss, not 4 sticks),
         // plan bracing under each deck, handrails on the vehicle face, crew-access arm, cap spike.
+        // Launch-pad polish: galvanised base plates under each leg so the tower reads as bolted to the
+        // deck instead of floating on it. Visual only: plates sit outside the vehicle keep-out cylinder
+        // (TowerClearsVehicle) and carry the "base-plate" tag, never "column"/"brace", so level queries
+        // in PadGeneratorTests are unaffected.
         void BuildDetail()
         {
+            Graph.Add("tower.base", ElementCategory.Structure, TowerId, "steel", "base");
+            for (int c = 0; c < 4; c++)
+            {
+                var leg = CornerAt(c, 0f);
+                Add("tower.base", $"tower.base.plate.{Corner[c]}", MemberKind.Deck,
+                    new Vec3(leg.X - 1.1f, 0.10f, leg.Z), new Vec3(leg.X + 1.1f, 0.10f, leg.Z),
+                    // Tone pass: safety yellow (the crown/handrail accent) instead of Galvanized so the footings
+                    // do not match the deck plates. Same tag and geometry, so level queries are unchanged.
+                    MaterialRole.SafetyYellowSteel, "base-plate");
+            }
             for (int l = 0; l < P.Levels; l++)
             {
                 float y0 = l * P.LevelHeight, y1 = y0 + P.LevelHeight, ym = (y0 + y1) * 0.5f;
@@ -169,12 +183,20 @@ namespace Kestrel.Pad
                 }
             }
             // Cap: four short mast posts + ring, lightning-mast style frame (generic).
+            // Launch-pad polish: the crown is safety yellow (same accent as the level handrails) so the
+            // tower top reads against the sky above the vehicle nose at liftoff. The ring the old
+            // comment promised but never built now closes the square at the posts' feet.
             string cap = "tower.cap"; var ce = Graph.Add(cap, ElementCategory.Level, TowerId, "steel", "cap");
             ce.Center = new Vec3(0, P.Height + P.CapHeight * 0.5f, P.StandOff); ce.Size = new Vec3(P.Width, P.CapHeight, P.Width);
             for (int c = 0; c < 4; c++)
             {
                 var top = new Vec3(0, P.Height + P.CapHeight, P.StandOff);
-                Add(cap, $"{cap}.post.{Corner[c]}", MemberKind.Brace, CornerAt(c, P.Height), top, MaterialRole.PaintedSteel, "brace", "cap");
+                Add(cap, $"{cap}.post.{Corner[c]}", MemberKind.Brace, CornerAt(c, P.Height), top, MaterialRole.SafetyYellowSteel, "brace", "cap");
+                // Rail kind on purpose: PadRenderer batches Rail on the brace mesh and PadPerf counts
+                // (beam, SafetyYellowSteel) as an existing batch (the level handrails), so the ring
+                // adds no draw call. A Girt ring would open a new (I-beam, SafetyYellowSteel) batch
+                // and break WorstCaseInsideHighAndLowBudgets' 14-draw cap.
+                Add(cap, $"{cap}.ring.{Corner[c]}", MemberKind.Rail, CornerAt(c, P.Height), CornerAt((c + 1) % 4, P.Height), MaterialRole.SafetyYellowSteel, "cap-ring");
             }
         }
 
