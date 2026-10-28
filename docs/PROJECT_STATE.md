@@ -3,6 +3,7 @@
 _Last updated: 2026-10-14 (main is through #216; always merge when green; WP-H is next)._
 
 ## Now
+- **Oct 25:** handoff notes for the grok bot team are in `docs/HANDOFF_GROK.md`. They cover current state, CI layout, the in-flight work (tower detail, camera buttons, booster landing), the backlog and known traps. The latest export is 2.0.0 (207); main has moved on since then.
 - Standing brief: `docs/STANDING_BRIEF.md` (Vehicle Designer top priority; WP-H next).
 - Engine: Unity 6.3 LTS, portrait-only, 2.0 = first Unity release under the existing bundle/record. Phaser = beckify.com web demo. `release/1.0.1` archived.
 - Feature work through #215 is on `main`. No open pull requests. `xcode-export` is the orphan Xcode Cloud branch and is never merged. The audio-delivery review branch's game fixes landed in #210–#212; its screenshot commits stay off main.

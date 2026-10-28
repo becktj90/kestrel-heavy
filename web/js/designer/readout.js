@@ -20,8 +20,9 @@ export const LOSS_BUDGET = 1500;
  * Convert toSimStages() output into the plain serial list that physics/headless.js
  * (stackDeltaV/simulate) understands. Strap-ons burn in parallel with the core: they become
  * a combined phase (boosters + the core propellant burned meanwhile), then the core continues.
- * Landing reserve rides as dry mass. Payload for the sim = payload + fairing (carried to orbit;
- * jettison is an M3 sim feature, so this is conservative).
+ * Landing reserve rides as dry mass. Payload for the sim = payload + fairing; simReadout passes
+ * the fairing mass and jettison altitude through separately, so simulate() drops the fairing at
+ * the design's altitude instead of carrying it to orbit.
  */
 export const TUNE_LIMIT = 15; // ± percent: "editable numbers" stay within build tolerance of the catalog engine
 
@@ -37,6 +38,8 @@ export function serialStages(design) {
   const sim = toSimStages(design).map((s) => applyTune({ ...s }, s.role === 'strapons' ? design.strapOns?.tune : design.stages[s.index]?.tune));
   const last = sim[sim.length - 1];
   const payload = (last.payloadMass || 0) + (last.fairingMass || 0);
+  const fairingMass = last.fairingMass || 0;
+  const fairingJettisonAltitudeM = last.fairingJettisonAltitudeM ?? NaN;
   const out = [];
   for (let k = 0; k < sim.length; k++) {
     const s = sim[k];
@@ -58,7 +61,7 @@ export function serialStages(design) {
     }
     out.push({ ...base, thrustVac: s.thrustVac, thrustSL: s.thrustSL, ispVac: s.ispVac, ispSL: s.ispSL, propMass: s.propMass, dryMass: s.dryMass + (s.reserveMass || 0), role: 'core', index: s.index, label: design.stages[s.index].name || `Stage ${s.index + 1}` });
   }
-  return { stages: out, payload };
+  return { stages: out, payload, fairingMass, fairingJettisonAltitudeM };
 }
 
 /** Target orbit info: altitude to aim the sim at and required Δv (m/s). */
@@ -78,7 +81,7 @@ export function requiredDeltaV(orbitId, latitude = LAUNCH_LATITUDE) {
 /** Instant readout. Never throws on a shape-valid design; returns null fields if it can't compute. */
 export function quickReadout(design) {
   const mass = vehicleMass(design);
-  const { stages, payload } = serialStages(design);
+  const { stages, payload, fairingMass, fairingJettisonAltitudeM } = serialStages(design);
   const dv = stackDeltaV(stages, payload);
   const per = stages.map((s, i) => {
     let above = payload;
@@ -95,16 +98,21 @@ export function quickReadout(design) {
   const req = requiredDeltaV(design.payload?.orbit);
   const margin = (dv.total - req.required) / req.required;
   return {
-    mass, stages: per, serial: stages, payload, totalDeltaV: dv.total, liftoffMass: per[0]?.m0 ?? mass.liftoffMass,
+    mass, stages: per, serial: stages, payload, fairingMass, fairingJettisonAltitudeM,
+    totalDeltaV: dv.total, liftoffMass: per[0]?.m0 ?? mass.liftoffMass,
     liftoffTWR: per[0]?.twr ?? 0, required: req.required, targetAlt: req.targetAlt, orbit: req.orbit, margin,
     // cost = per-launch (recurring) price in integer minor units of fictional Kc; price has the full breakdown.
     ...(() => { const price = priceDesign(design); const rel = reliabilityOf(design); return { price, cost: price.recurring, reliability: rel.reliability, reliabilityDetail: rel }; })(),
   };
 }
 
-/** Headless-sim readout (heavier: ~tens of ms). */
+/** Headless-sim readout (heavier: ~tens of ms). The sim flies the same serial stages the
+ * readout is computed from, and drops the fairing at the design's jettison altitude, so the
+ * flown mass history matches the design — not just the ideal Δv. quick.totalDeltaV stays the
+ * conservative carried-fairing figure, so flown Δv expended should come in at or under it
+ * plus losses, never far above it. */
 export function simReadout(design, quick = quickReadout(design), { dt = 0.2, sampleEvery = 2 } = {}) {
-  const r = simulate(quick.serial, { payload: quick.payload, targetAlt: quick.targetAlt, latitude: LAUNCH_LATITUDE, dt, sampleEvery, tMax: 2500 });
+  const r = simulate(quick.serial, { payload: quick.payload, targetAlt: quick.targetAlt, latitude: LAUNCH_LATITUDE, dt, sampleEvery, tMax: 2500, fairingMass: quick.fairingMass || 0, fairingJettisonAltitudeM: quick.fairingJettisonAltitudeM ?? NaN });
   const losses = r.losses.gravity + r.losses.drag + r.losses.steering;
   return {
     outcome: r.outcome, time: r.time, losses: r.losses, totalLosses: losses,

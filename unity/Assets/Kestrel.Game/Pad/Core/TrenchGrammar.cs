@@ -132,8 +132,10 @@ namespace Kestrel.Pad
 
             bool heavy = type == PadArchetype.TowerStrongback;
             bool rail = type == PadArchetype.Rail;
-            // Tower/heavy exits run out the sides, clear of the +Z tower and the -Z strongback.
-            float bearing = rail ? bearingT * 180f : 84f + bearingT * 12f;
+            // Tower/heavy exits run out the sides, clear of the +Z tower and the -Z strongback. The one-sided rail ramp
+            // exits anywhere from +X round to -Z: the rail's service tower stands on +Z (was 0-180, which could run
+            // the channel under it).
+            float bearing = rail ? 90f + bearingT * 90f : 84f + bearingT * 12f;
             float minF = heavy ? 3.4f : 2.5f;
             float maxF = heavy ? 4f : rail ? 3.2f : 3.5f;
             float factor = minF + (maxF - minF) * factorT;

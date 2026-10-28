@@ -11,6 +11,16 @@ namespace Kestrel.Pad
 
         public static int TrisFor(MemberKind k) => k == MemberKind.Column || k == MemberKind.Girt ? IBeamTris : BeamTris;
 
+        /// <summary>Triangles of the service tower and launch-rail steel alone (members under tower.* / rail.*), worst case.</summary>
+        public static long StructureTriangles(PadLayout l)
+        {
+            long tris = 0;
+            foreach (var m in l.Members)
+                if (m.Id != null && (m.Id.StartsWith("tower.", System.StringComparison.Ordinal) || m.Id.StartsWith("rail.", System.StringComparison.Ordinal)))
+                    tris += TrisFor(m.Kind);
+            return tris;
+        }
+
         /// <summary>Worst case: everything inside cull range (camera at the pad).</summary>
         public static void Estimate(PadLayout l, BudgetLedger ledger)
         {
