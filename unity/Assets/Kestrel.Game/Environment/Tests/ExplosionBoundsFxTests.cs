@@ -79,7 +79,8 @@ namespace Kestrel.Game.Environment.Tests
                 var flash = Systems(fx.LayerRenderer(ExplosionLayer.Flash).gameObject)[0];
                 float card = LargestParticle(flash);
                 float viewH = 2f * Vector3.Distance(cam.transform.position, at) * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
-                Assert.That(card, Is.GreaterThan(0f), $"radius {radius}: a flash card is still drawn");
+                var lp = fx.LastPlan;
+                Assert.That(card, Is.GreaterThan(0f), $"radius {radius}: a flash card is still drawn (plan flash {lp.Flash} size {lp.FlashSize:0.00} alpha {lp.FlashAlpha:0.00} radius {lp.Radius:0.0}; system particles {flash.particleCount} playing {flash.isPlaying} max {flash.main.maxParticles})");
                 Assert.That(card, Is.LessThanOrEqualTo(viewH * 0.31f), $"radius {radius}: flash card {card:0.0} m in a {viewH:0.0} m view");
                 flash.Clear();
             }

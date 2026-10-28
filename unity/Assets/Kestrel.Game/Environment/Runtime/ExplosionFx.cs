@@ -222,7 +222,7 @@ namespace Kestrel.Game.Environment
             r.shadowCastingMode = ShadowCastingMode.Off;
             r.receiveShadows = false;
             int idx = (int)layer;
-            if (mats[idx] == null) mats[idx] = MakeMaterial(layer == ExplosionLayer.Smoke);
+            if (mats[idx] == null) mats[idx] = MakeMaterial(layer == ExplosionLayer.Smoke || layer == ExplosionLayer.Fire);   // fire is alpha-blended: additive orange on a bright day sky washes out to a pale haze (CI frames)
             FxMaterials.Apply(r, mats[idx]);   // no safe material: the layer is switched off, never drawn with the error (magenta) material
             ps.Play();
             return ps;
