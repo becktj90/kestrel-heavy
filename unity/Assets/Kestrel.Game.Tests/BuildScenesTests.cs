@@ -16,6 +16,7 @@ namespace Kestrel.Game.Tests
             "Assets/Resources/Materials/KH_Metal.mat",
             "Assets/Resources/Materials/KH_Ink.mat",
             "Assets/Resources/Materials/KH_Plume.mat",
+            "Assets/Resources/Materials/KH_FxParticle.mat",
         };
 
         static string[] GitIgnored()

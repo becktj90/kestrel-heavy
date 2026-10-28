@@ -72,6 +72,11 @@ namespace Kestrel.Game.Environment
             return q < 0 ? 0 : q > 2 ? 2 : q;
         }
 
+        /// <summary>Camera the flash is sized against. Null means Camera.main. Set by capture tests, which render through their own camera.</summary>
+        public static Camera ViewCamera;
+        /// <summary>The plan the last blast used (after the view limit). Tests assert its sizes and alpha.</summary>
+        public ExplosionPlan LastPlan { get; private set; }
+
         void Handle(CinematicEvent e)
         {
             if (e.Kind > CinematicKind.EngineFailure) return;   // separation / debris events belong to DebrisFx
@@ -83,6 +88,12 @@ namespace Kestrel.Game.Environment
             float grant = wantFlash ? FlashGovernor.Grant(Time.unscaledTime, 1f, ExplosionBudgets.FlashAmplitudeCap(night)) : 0f;
             var plan = ExplosionPlan.Build(e, q, tod, e.Reduce, grant);
             var at = new Vector3(e.X, e.Y, e.Z);
+            // Photosensitivity: the flash card never spans more than ExplosionBudgets.MaxFlashScreenFraction of the view.
+            var cam = ViewCamera != null ? ViewCamera : Camera.main;
+            float dist = cam != null ? Vector3.Distance(cam.transform.position, at) : 20f;
+            float fov = cam != null && !cam.orthographic ? cam.fieldOfView : 60f;
+            plan = plan.LimitFlashToView(dist, fov);
+            LastPlan = plan;
             var inherit = new Vector3(e.VelX, e.VelY, e.VelZ) * 0.25f;
 
             Emit(ExplosionLayer.Flash, plan.Flash, at, plan.FlashSize, 0.18f, plan.FlashColor, plan.FlashAlpha, 0f, 0f, Vector3.zero, false);
@@ -212,7 +223,7 @@ namespace Kestrel.Game.Environment
             r.receiveShadows = false;
             int idx = (int)layer;
             if (mats[idx] == null) mats[idx] = MakeMaterial(layer == ExplosionLayer.Smoke);
-            if (mats[idx] != null) r.sharedMaterial = mats[idx];
+            FxMaterials.Apply(r, mats[idx]);   // no safe material: the layer is switched off, never drawn with the error (magenta) material
             ps.Play();
             return ps;
         }
@@ -253,36 +264,15 @@ namespace Kestrel.Game.Environment
             }
         }
 
+        /// <summary>Additive (fire, flash, sparks, embers) or alpha-blended (smoke) soft particle material. Null only if no usable shader exists.</summary>
         internal static Material MakeMaterial(bool alphaBlend)
+            => FxMaterials.Particle(SoftTexture(), alphaBlend ? "ExplosionSmoke" : "ExplosionAdd", !alphaBlend);
+
+        /// <summary>The renderer of one pooled layer (tests read it: the real Build path made it).</summary>
+        public ParticleSystemRenderer LayerRenderer(ExplosionLayer layer)
         {
-            var shader = Shader.Find(ParticleShader);
-            if (shader == null) shader = Shader.Find("Sprites/Default");
-            if (shader == null) return null;
-            var mat = new Material(shader) { name = alphaBlend ? "ExplosionSmoke" : "ExplosionAdd" };
-            mat.SetFloat("_Surface", 1f);
-            mat.SetFloat("_ZWrite", 0f);
-            if (alphaBlend)
-            {
-                mat.SetFloat("_Blend", 0f);
-                mat.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-                mat.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
-            }
-            else
-            {
-                mat.SetFloat("_Blend", 2f);
-                mat.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-                mat.SetFloat("_DstBlend", (float)BlendMode.One);
-                mat.EnableKeyword("_BLENDMODE_ADD");
-            }
-            // Same keywords FailureHost / PadGlow already use, so the iOS shader stripper keeps these variants.
-            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            mat.DisableKeyword("_SOFTPARTICLES_ON");
-            mat.SetOverrideTag("RenderType", "Transparent");
-            var tex = SoftTexture();
-            if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", tex);
-            mat.mainTexture = tex;
-            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", Color.white);
-            return mat;
+            int i = (int)layer;
+            return systems != null && i < systems.Length && systems[i] != null ? systems[i].GetComponent<ParticleSystemRenderer>() : null;
         }
 
         /// <summary>64x64 gaussian blob, built once. Procedural, no asset.</summary>
