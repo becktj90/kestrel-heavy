@@ -333,7 +333,7 @@ namespace Kestrel.Game.Tests
             var lineLabel = panel.Root.Q<Label>(UiIds.StarterReadiness);
             if (label == "kh3-breaks-up" || (label == "kh13-cant-land" && expectKnownGapCause))
             {
-                string cause = StarterVerdict.MaxQ;
+                string cause = label == "kh3-breaks-up" ? StarterVerdict.MaxQ : StarterVerdict.Landing;
                 Assert.AreEqual(cause, rocket.Verdict().Cause, where);
                 Assert.AreEqual(StarterReadinessCopy.Current.Badge(cause), badgeLabel.text, where + " the Honest Ready badge");
                 Assert.AreNotEqual(StarterScreen.ReadyBadge, badgeLabel.text, where);
