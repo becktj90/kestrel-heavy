@@ -17,6 +17,8 @@
     "designer.recoveryControls": false,
     "designer.undoRedo": false,
     "designer.guidanceComputer": false,
+    "designer.tierBuilder": false,
+    "designer.tierEngineer": false,
     "home.designFirst": false,
     "home.codexTile": false,
     "home.thrum": false,
