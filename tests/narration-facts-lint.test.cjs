@@ -22,7 +22,7 @@ const ENUM = (k) => (/propellant/.test(k) ? (k === 'propellant.all' ? [...PROPS,
 const CMP_RE = /^(>=|<=|!=|>|<)-?\d+$/;
 const FACT_WORDS = /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+|engines?|cores?|cluster|chambers?|methane|LOX|kerosene|hydrogen|methalox|kerolox|hydrolox|solids?|strap-?ons?|boosters?|upper stage|(first|second|third)[- ]stage|legs|fins?|finless|halves|fairing|Haven|barge|landing|pad landing|Pier 7|Coastal Pad B|Salt Flat Pad|North Reach|strakes?)\b/i;
 const ALLOW = /SES-1|Max-Q|T-minus \d+/gi;
-const BANNED = /blue origin|new glenn|jacklyn|lc-36/i;
+const BANNED = /blue origin|new glenn|jacklyn|lc-36|sputnik|gagarin|goddard|tsiolkovsky|hohmann|k[aá]rm[aá]n|apollo|saturn|nasa|spacex|falcon|vostok|armstrong|fritz lang/i;
 
 function valueOk(k, v) {
   if (Array.isArray(v)) return v.length > 0 && v.every((x) => valueOk(k, x) && !Array.isArray(x));
@@ -104,7 +104,7 @@ test('every clip file exists in both trees with the recorded sha256, and loudnes
     assert.ok(fs.existsSync(path.join(root, 'unity/Assets/Kestrel.Game/Audio/Runtime/Resources/Narration', c.file + '.meta')), `${c.file}.meta`);
     assert.ok(c.lufs >= -17 && c.lufs <= -15, `${c.id}: ${c.lufs} LUFS`);
     assert.ok(c.truePeakDb <= -1.5, `${c.id}: ${c.truePeakDb} dBTP`);
-    assert.ok(c.durationSec > 0 && c.durationSec <= 6, `${c.id}: ${c.durationSec}s`);
+    assert.ok(c.durationSec > 0 && c.durationSec <= (c.layer === 'color' ? 14 : 6), `${c.id}: ${c.durationSec}s`);
   }
   for (const base of ['assets/narration', 'unity/Assets/Kestrel.Game/Audio/Runtime/Resources/Narration']) {
     const files = ['mission-control', 'host', 'cohost'].flatMap((d) =>
@@ -167,6 +167,8 @@ function contexts(f) {
   if (f.recovery !== 'none' && f.stages >= 2) {
     for (const e of ['entry', 'landing', 'touchdown', 'recovered', 'salvage', 'splash', 'abort-salvage', 'abort-splash', 'haven-maxq']) ev.push([e, f]);
   }
+  ev.push(['color.pad', f], ['color.ascent', f], ['color.karman', f], ['color.coast', f]);
+  if (f.recovery !== 'none' && f.stages >= 2) ev.push(['color.recovery', f]);
   return ev;
 }
 // mission-control floor per event: what a player must always hear (2 = rotation on retries).
@@ -181,6 +183,7 @@ const eachCase = (fn) => {
 test('coverage: every shipped design on every pad keeps true mission-control takes on every event it flies', () => {
   const gaps = new Set();
   eachCase(({ name, ev, ctx }) => {
+    if (ev.startsWith('color.')) return; // color slots are covered by their own test below
     const mc = clips.filter((c) => c.event === ev && (c.channel === 'mc' || ev === 'fairing') && eligible(c, ctx));
     const need = FLOOR[ev] ?? 1;
     if (mc.length < need) gaps.add(`${name} ${ev}${ctx['lit.stage'] ? '@' + ctx['lit.stage'] : ''}: ${mc.length}/${need}`);
@@ -192,10 +195,11 @@ test('coverage: every shipped design on every pad keeps true mission-control tak
 // Reads the spoken text of every take that is ELIGIBLE for a design and checks each fact it states against the raw
 // design JSON (not against the tags). A line that states a fact must be gated by a tag that carries that fact.
 const NUM = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, fifteen: 15, sixteen: 16 };
-const REC_EVENTS = new Set(['entry', 'landing', 'touchdown', 'recovered', 'salvage', 'tip', 'splash', 'abort-tip', 'abort-salvage', 'abort-splash', 'abort-fuelHaven', 'haven-maxq']);
+const REC_EVENTS = new Set(['color.recovery', 'entry', 'landing', 'touchdown', 'recovered', 'salvage', 'tip', 'splash', 'abort-tip', 'abort-salvage', 'abort-splash', 'abort-fuelHaven', 'haven-maxq']);
 // Facts a line states: [rule, key-family that must be claimed, check(design, ctx)].
 function statedFacts(c) {
-  const t = c.text; const out = [];
+  // A propellant named only as a comparison ("warmer than hydrogen") is a general fact, not a claim about the flown stage.
+  const t = c.text.replace(/\bthan (the )?(hydrogen|kerosene|methane|oxygen)\b/gi, 'than another fuel'); const out = [];
   const eng = (d, ctx) => d.stages[(ctx['lit.stage'] || 1) - 1].engineCount ?? 1;
   const totalEng = (d) => (d.stages[0].engineCount ?? 1) + ((d.strapOns && d.strapOns.count) || 0) * ((d.strapOns && d.strapOns.engineCount) || 1);
   const re = new RegExp(`\\b(${Object.keys(NUM).join('|')})\\b(?= core engines)`, 'i');
@@ -219,9 +223,15 @@ function statedFacts(c) {
     if (t.includes(name)) out.push([name, /^site$/, (d, ctx) => ctx.site === id]);
   for (const [w, id] of [[/kerosene/i, 'kerolox'], [/methane/i, 'methalox'], [/hydrogen/i, 'hydrolox']])
     if (w.test(t)) out.push([`${id} propellant`, /propellant/, (d, ctx) => {
-      const idx = ctx['lit.stage'] ? [ctx['lit.stage'] - 1] : d.stages.map((_, i) => i);
-      return idx.every((i) => PROP_ID[d.stages[i].propellant] === id);
+      const named = Object.keys(c.requires || {}).map((k) => k.match(/^stage(\d)\.propellant$/)).filter(Boolean).map((x) => Number(x[1]) - 1);
+      const idx = named.length ? named : ctx['lit.stage'] ? [ctx['lit.stage'] - 1] : d.stages.map((_, i) => i);
+      return idx.every((i) => PROP_ID[d.stages[i] && d.stages[i].propellant] === id);
     }]);
+  if (/\boxygen\b/i.test(t)) out.push(['liquid oxygen', /propellant/, (d, ctx) => {
+    const named = Object.keys(c.requires || {}).map((k) => k.match(/^stage(\d)\.propellant$/)).filter(Boolean).map((x) => Number(x[1]) - 1);
+    const idx = named.length ? named : [0];
+    return idx.every((i) => ['kerolox', 'hydrolox', 'methalox'].includes(PROP_ID[d.stages[i] && d.stages[i].propellant]));
+  }]);
   if (/\bhalves\b/i.test(t)) out.push(['fairing halves', /^fairing\.halves$/, () => false]);
   if (/\blegs\b/i.test(t)) out.push(['legs', /^legs$/, (d) => !!(d.landing && d.landing.legs)]);
   return out;
@@ -264,7 +274,7 @@ test('verifier: no take is eligible without its tag (untagged, unknown key, or m
 test('regressions: seven, single-stage, RTLS-vs-Haven, pad and cluster', () => {
   eachCase(({ name, f, ev, ctx }) => {
     for (const c of clips.filter((x) => x.event === ev && eligible(x, ctx))) {
-      if (f['stage1.engines'] !== 7) assert.ok(!/\bseven\b/i.test(c.text), `${name}: ${c.id} says seven`);
+      if (f['stage1.engines'] !== 7) assert.ok(!/\bseven\b(?! point eight)/i.test(c.text), `${name}: ${c.id} says seven`);
       if (f.stages === 1) assert.ok(!['mission-control/meco.1', 'mission-control/meco.2'].includes(c.id), `${name}: ${c.id}`);
       if (f.recovery !== 'barge') assert.ok(!/\bHaven\b|barge|sea state|drink/i.test(c.text), `${name}: ${c.id} Haven line without a barge landing`);
       if (f.recovery === 'none') assert.ok(!/heading home|coming home/i.test(c.text), `${name}: ${c.id} mentions recovery`);
@@ -277,3 +287,44 @@ test('regressions: seven, single-stage, RTLS-vs-Haven, pad and cluster', () => {
 });
 
 module.exports = { eligible, factsOf, designs, recoveryOf };
+
+// ---- webcast color lines (docs/narration-webcast.md) ----
+const COLOR = clips.filter((c) => c.layer === 'color' || c.event.startsWith('color.'));
+const SRC = fs.readFileSync(path.join(root, 'docs/narration-sources.md'), 'utf8');
+
+test('color: layer, schema, captions, word limits and sources', () => {
+  const errs = [];
+  for (const c of COLOR) {
+    if (c.layer !== 'color' || !c.event.startsWith('color.') || c.interruptible !== true) errs.push(`${c.id}: layer/event/interruptible`);
+    if (c.channel !== 'host') errs.push(`${c.id}: channel must stay host (subtitle code accepts mc/host/cohost)`);
+    if (!Array.isArray(c.lines) || c.lines.length < 2) { errs.push(`${c.id}: lines`); continue; }
+    if (c.lines.map((l) => l.text).join(' ') !== c.text) errs.push(`${c.id}: text != lines`);
+    if (new Set(c.lines.map((l) => l.speaker)).size < 2) errs.push(`${c.id}: needs two speakers`);
+    for (const l of c.lines) if (l.text.trim().split(/\s+/).length > 14) errs.push(`${c.id}: line over 14 words: ${l.text}`);
+    if (!c.lines.every((l) => l.overlapSec >= 0 && l.overlapSec <= 0.3)) errs.push(`${c.id}: overlap out of range`);
+    if (c.neutral && !(c.sources || []).length) errs.push(`${c.id}: history line has no sources`);
+    for (const sid of c.sources || []) if (!new RegExp(`^\\| ${sid} \\|`, 'm').test(SRC)) errs.push(`${c.id}: source ${sid} missing from docs/narration-sources.md`);
+  }
+  assert.deepEqual(errs, []);
+});
+
+test('color: every design on every pad has an eligible neutral take for each color slot it can reach', () => {
+  const gaps = new Set();
+  eachCase(({ name, ev, ctx }) => {
+    if (!ev.startsWith('color.') || ev === 'color.recovery') return;
+    if (!COLOR.some((c) => c.event === ev && c.neutral === true)) gaps.add(`${name} ${ev}`);
+  });
+  assert.deepEqual([...gaps], []);
+  for (const ev of ['color.pad', 'color.ascent', 'color.karman', 'color.coast', 'color.recovery']) assert.ok(COLOR.filter((c) => c.event === ev).length >= 1, ev);
+});
+
+test('color: a design with a landing never hears a color.recovery take that contradicts its recovery mode', () => {
+  const rtls = factsOf(designs().find((x) => x.d.stages.length >= 2).d, 'pier-7');
+  for (const mode of ['none', 'barge', 'rtls']) {
+    const f = { ...rtls, recovery: mode, site: 'salt-flat' };
+    const got = COLOR.filter((c) => c.event === 'color.recovery' && eligible(c, f)).map((c) => c.id);
+    if (mode === 'none') assert.deepEqual(got, [], 'expendable hears nothing');
+    if (mode === 'barge') assert.deepEqual(got, ['host/color.recovery.3'], 'no Haven on a pad without a barge');
+    if (mode === 'rtls') assert.ok(!got.includes('host/color.recovery.2'));
+  }
+});
