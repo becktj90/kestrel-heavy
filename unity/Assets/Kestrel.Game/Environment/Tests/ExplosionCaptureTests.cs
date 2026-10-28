@@ -106,7 +106,17 @@ namespace Kestrel.Game.Environment.Tests
             var V = new FlightVec(0, 3000);
             sink.OnFailure("structural-maxq", "q", -1, V, V, 63.0);
 
-            var systems = new List<ParticleSystem>(scene.GetComponentsInChildren<ParticleSystem>(true));
+            // The pools are hidden objects the fx components own (not children of this scene): step exactly those systems.
+            var systems = new List<ParticleSystem>();
+            foreach (ExplosionLayer layer in System.Enum.GetValues(typeof(ExplosionLayer)))
+            {
+                var lr = fx.LayerRenderer(layer);
+                if (lr != null) systems.Add(lr.GetComponent<ParticleSystem>());
+            }
+            var spark = debris.SparkRenderer;
+            if (spark != null) systems.Add(spark.GetComponent<ParticleSystem>());
+            systems.RemoveAll(x => x == null);
+            Assert.That(systems.Count, Is.GreaterThanOrEqualTo(4), "the explosion pools exist");
             float t = 0f, sawFire = 0f;
             var plan = fx.LastPlan;
             Assert.That(plan.Fire, Is.GreaterThan(0), "the failure planned no fire");
@@ -137,6 +147,8 @@ namespace Kestrel.Game.Environment.Tests
                 tex.ReadPixels(new Rect(0, 0, W, H), 0, 0); tex.Apply();
                 RenderTexture.active = prev;
                 Count(tex, out float magenta, out float white, out float fire);
+                int live = 0; foreach (var ps in systems) live += ps.particleCount;
+                TestContext.WriteLine($"explosion frame {names[f]}: live particles {live}");
                 TestContext.WriteLine($"explosion frame {names[f]}: magenta {magenta:P2} white {white:P2} fire {fire:P2}");
                 Assert.That(magenta, Is.LessThan(0.002f), names[f] + ": magenta pixels, a missing material or shader");
                 Assert.That(white, Is.LessThan(0.30f), names[f] + ": a bright flash covers more than 30% of the screen");

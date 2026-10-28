@@ -27,13 +27,14 @@ namespace Kestrel.Game.Environment.Tests
             debris = go.AddComponent<DebrisFx>(); debris.Subscribe();
             camGo = new GameObject("cam") { tag = "MainCamera" };
             cam = camGo.AddComponent<Camera>(); cam.fieldOfView = 50f;
+            ExplosionFx.ViewCamera = cam;   // the camera the flash card is sized against (production: Camera.main)
             camGo.transform.position = new Vector3(0f, 10f, -8f);   // 8 m from the blast: a chase camera hugging a skinny stack
         }
 
         [TearDown]
         public void TearDown()
         {
-            ExplosionFx.QualityOverride = -1;
+            ExplosionFx.QualityOverride = -1; ExplosionFx.ViewCamera = null;
             fx.Unsubscribe(); sw.Unsubscribe(); debris.Unsubscribe();
             Object.DestroyImmediate(go); Object.DestroyImmediate(camGo);
             CinematicEvents.ClearSubscribers();
