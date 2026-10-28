@@ -165,6 +165,9 @@ namespace Kestrel.Game.Tests
                     }
                     Click(panel.Root.Q<Button>(UiIds.StarterXrayClose));
                     Assert.IsFalse(panel.XrayOpen, xw);
+                    // Visible() reads resolvedStyle, which only catches up with the restored inline visibility on the next panel update.
+                    surface.Pump(2);
+                    Assert.IsFalse(UiTreeChecks.Visible(panel.Xray.Root), xw + " the X-ray layer is gone");
                     Assert.IsTrue(UiTreeChecks.Visible(panel.Root.Q<Button>(UiIds.StarterLaunch)), xw + " back on the Starter screen");
                 }
             Assert.AreEqual(8, shots.Count, "a Why card and an X-ray PNG per size");
