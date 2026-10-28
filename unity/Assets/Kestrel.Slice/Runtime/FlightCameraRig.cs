@@ -21,9 +21,11 @@ namespace Kestrel.Slice
         public const float PitchMin = -28f;
         public const float PitchMax = 48f;
         public const float YawLimit = 180f;
-        public const float SlopPx = 14f;
-        public const float YawPerPx = 0.18f;
-        public const float PitchPerPx = 0.14f;
+        /// <summary>Drag slop and orbit rates, in UI points (FlightChrome converts device pixels). They were 14 px and
+        /// 0.18 deg/px: on a 3x iPhone a 5 pt wobble left the slop and an 11 pt slide read as an orbit.</summary>
+        public const float SlopPt = (float)Kestrel.Core.Flight.FlightCameraControl.SlopPt;
+        public const float YawPerPt = (float)Kestrel.Core.Flight.FlightCameraControl.YawPerPt;
+        public const float PitchPerPt = (float)Kestrel.Core.Flight.FlightCameraControl.PitchPerPt;
         /// <summary>Smallest orbit that reads on screen (deg of yaw or pitch, or zoom off 1 by this much). Below it
         /// the camera is still following: a drag just past the slop no longer leaves "Follow rocket" up with a
         /// Follow tap that changes nothing visible (#348, t463 T+16).</summary>
@@ -48,14 +50,21 @@ namespace Kestrel.Slice
             return rig;
         }
 
+        /// <summary>Positions in points. Inside the slop nothing moves; crossing it orbits only by the distance past
+        /// the slop (FlightCameraControl.PastSlop), so a tap that wobbles never jumps the view.</summary>
         public static FlightRig Drag(FlightRig rig, Vector2 pos)
         {
             var delta = pos - rig.Origin;
-            if (!rig.Moved && delta.magnitude < SlopPx) return rig;
+            if (!rig.Moved)
+            {
+                if (delta.magnitude <= SlopPt) return rig;
+                Kestrel.Core.Flight.FlightCameraControl.PastSlop(delta.x, delta.y, out double ox, out double oy);
+                delta = new Vector2((float)ox, (float)oy);
+            }
             rig.Moved = true;
             rig.Follow = false;
-            rig.Yaw = Clamp(rig.Yaw + (pos.x - rig.Origin.x) * YawPerPx, -YawLimit, YawLimit);
-            rig.Pitch = Clamp(rig.Pitch - (pos.y - rig.Origin.y) * PitchPerPx, PitchMin, PitchMax);
+            rig.Yaw = Clamp(rig.Yaw + delta.x * YawPerPt, -YawLimit, YawLimit);
+            rig.Pitch = Clamp(rig.Pitch - delta.y * PitchPerPt, PitchMin, PitchMax);
             rig.Origin = pos;
             return rig;
         }
