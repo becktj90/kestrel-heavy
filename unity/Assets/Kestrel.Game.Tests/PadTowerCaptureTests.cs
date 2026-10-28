@@ -22,10 +22,13 @@ namespace Kestrel.Game.Tests
     {
         const int W = 390, H = 844;
         readonly List<Object> made = new List<Object>();
+        readonly List<Camera> reEnable = new List<Camera>();
 
         [TearDown]
         public void Clean()
         {
+            foreach (var c in reEnable) if (c != null) c.enabled = true;
+            reEnable.Clear();
             for (int i = made.Count - 1; i >= 0; i--)
             {
                 var o = made[i];
@@ -114,6 +117,229 @@ namespace Kestrel.Game.Tests
             else { Debug.LogWarning("pad-tower: the pipeline takes no render request; no capture"); return; }
             var png = UiCapture.Save(rt, "pad-tower-" + name);
             if (png != null) Assert.That(System.IO.File.Exists(png), Is.True, name + " capture written");
+        }
+
+        // ---- Wide / top / circle / base frames of one tower pad (deterministic poses, both a landscape and a portrait size) ----
+        //
+        // The frames show the four pad features the launch-pad polish adds, so a reviewer can SEE them, not only trust
+        // the harness: the tower top (crown, ring, spike), the base plates under the four legs, the painted pad circle
+        // on the deck, and the apron seam (where the apron terrace meets the plinth). The feature positions are derived
+        // from the generated layout here (tower params and TrenchGrammar.SurfaceRadius), not from any one PR's geometry
+        // API, so this test compiles and passes on a branch without the polish: the frames then simply show the bare
+        // tower, plinth and ground at those places. The constants below mirror the polish in TowerLayout.BuildDetail
+        // (plate 2.2 m x 0.10 m up) and TrenchMeshBuilder.PadCircle / Apron (circle 0.4 x detail radius at y 0.13;
+        // apron 8 m wide, top at y -0.80, seam at the surface radius).
+        const float CircleFactor = 0.4f, CircleY = 0.13f, ApronWidth = 8f, ApronTopY = -0.80f, PlateHalf = 1.1f, PlateY = 0.10f;
+        const float FrameMargin = 0.04f;
+
+        [TestCase(1280, 800)]
+        [TestCase(430, 932)]
+        public void TowerPadFramesTowerTopBasePlatesPadCircleAndApronSeam(int w, int h)
+        {
+            const float stackH = 48f, stackR = 1.6f;
+            string size = w + "x" + h;
+            var root = new GameObject("kh-pad-tower-wide-" + size) { hideFlags = HideFlags.HideAndDontSave };
+            made.Add(root);
+            var vehicle = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            Object.DestroyImmediate(vehicle.GetComponent<Collider>());
+            vehicle.transform.SetParent(root.transform, false);
+            vehicle.transform.localPosition = new Vector3(0f, stackH * 0.5f, 0f);
+            vehicle.transform.localScale = new Vector3(2f * stackR, stackH * 0.5f, 2f * stackR);
+            var sun = new GameObject("Sun").AddComponent<Light>();
+            sun.transform.SetParent(root.transform, false);
+            sun.type = LightType.Directional; sun.intensity = 1.2f;
+            sun.transform.rotation = Quaternion.Euler(38f, 150f, 0f);
+            var towerRoot = new GameObject("PadTower").transform;
+            towerRoot.SetParent(root.transform, false);
+
+            var plates = new List<AttachPoint>();
+            float lower = stackH * 0.55f, upper = stackH * 0.25f;
+            plates.AddRange(TankShellUmbilicals.ForStage(TankShellSpec.Default(stackR * 1.005f, lower, 11UL), 0, 0, new Vec3(0, 1f, 0), true, true, true, ReleaseStyle.TailServiceMastDrop));
+            plates.AddRange(TankShellUmbilicals.ForStage(TankShellSpec.Default(stackR * 1.005f, upper, 29UL), 1, 0, new Vec3(0, lower + 3f, 0), true, true, true, ReleaseStyle.SwingArmRetract));
+            var pad = PadTower.Apply(towerRoot, stackH, stackR, PadArchetype.Tower, PadTower.DefaultSeed, plates);
+            Assert.That(pad, Is.Not.Null, "PadTower.Apply built no pad");
+            var layout = pad.Layout;
+            var tp = layout.Tower;
+            Assert.That(tp, Is.Not.Null, "no service tower beside the stack");
+            var detailRenderer = pad.GetComponent<PadDetailRenderer>();
+            Assert.That(detailRenderer, Is.Not.Null, "the pad has no deck/trench detail renderer");
+            Assert.That(detailRenderer.MeshFor(MaterialRole.Concrete), Is.Not.Null, "no concrete deck mesh to frame");
+
+            // Ground under the pad: a flat quad a hair below the grade the apron wall stands on, so the terrace edge reads.
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Object.DestroyImmediate(ground.GetComponent<Collider>());
+            ground.transform.SetParent(root.transform, false);
+            ground.transform.localPosition = new Vector3(0f, TrenchSpec.GradeY - 0.03f, 0f);
+            ground.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            ground.transform.localScale = new Vector3(900f, 900f, 1f);
+            var gr = ground.GetComponent<Renderer>();
+            var gm = new Material(gr.sharedMaterial) { color = PadGround.GroundColor };
+            made.Add(gm);
+            gr.sharedMaterial = gm;
+
+            // Feature points, pad-local then world. Wide frames hold all four; close frames hold their own feature.
+            var padT = pad.transform;
+            float surface = Mathf.Max(8f, TrenchGrammar.SurfaceRadius(layout));
+            float detail = Mathf.Min(surface, TrenchMeshBuilder.DetailRadiusCap);
+            float circleR = detail * CircleFactor;
+            float tw = tp.Width * 0.5f, topY = tp.Height + tp.CapHeight;
+            var top = new List<Vector3>();
+            var basePlates = new List<Vector3>();
+            var circle = new List<Vector3>();
+            var seam = new List<Vector3>();
+            var apron = new List<Vector3>();
+            for (int sx = -1; sx <= 1; sx += 2)
+                for (int sz = -1; sz <= 1; sz += 2)
+                {
+                    top.Add(padT.TransformPoint(new Vector3(sx * tw, tp.Height, tp.StandOff + sz * tw)));
+                    foreach (float dx in new[] { -PlateHalf, PlateHalf })
+                        basePlates.Add(padT.TransformPoint(new Vector3(sx * tw + dx, PlateY, tp.StandOff + sz * tw)));
+                }
+            top.Add(padT.TransformPoint(new Vector3(0f, topY, tp.StandOff)));
+            if (tp.SpikeHeight > 0f) top.Add(padT.TransformPoint(new Vector3(0f, topY + tp.SpikeHeight, tp.StandOff)));
+            foreach (var m in layout.Members)   // a pad built with the base-plate polish: frame the real plate ends too
+                if (m.Id != null && m.Id.StartsWith("tower.base.plate"))
+                { basePlates.Add(padT.TransformPoint(new Vector3(m.A.X, m.A.Y, m.A.Z))); basePlates.Add(padT.TransformPoint(new Vector3(m.B.X, m.B.Y, m.B.Z))); }
+            const int ring = 24;
+            for (int i = 0; i < ring; i++)
+            {
+                float a = 2f * Mathf.PI * i / ring, c = Mathf.Cos(a), s = Mathf.Sin(a);
+                circle.Add(padT.TransformPoint(new Vector3(circleR * c, CircleY, circleR * s)));
+                seam.Add(padT.TransformPoint(new Vector3(surface * c, ApronTopY, surface * s)));
+                apron.Add(padT.TransformPoint(new Vector3((surface + ApronWidth) * c, ApronTopY, (surface + ApronWidth) * s)));
+            }
+
+            // Fixed poses. Bearings are pad-local (0 = toward the tower, clockwise toward +X): the design camera's 208 deg
+            // for the wide and circle frames, and the tower's open west side (270) for the two close frames, so the
+            // stack never stands between the lens and the tower. Elevations are fixed; only the distance is solved.
+            float bearingDesign = PadGenerator.DefaultViewBearingDeg, bearingSide = 270f;
+
+            var camGo = new GameObject("PadTowerCaptureCamera") { tag = "MainCamera" };
+            camGo.transform.SetParent(root.transform, false);
+            var cam = camGo.AddComponent<Camera>();
+            cam.enabled = false; cam.fieldOfView = 40f; cam.aspect = (float)w / h; cam.nearClipPlane = 0.3f; cam.farClipPlane = 4000f;
+            cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.62f, 0.74f, 0.88f, 1f);
+            // PadDetailRenderer draws for Camera.main only: park any other main camera for the length of the test.
+            foreach (var other in Object.FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                if (other != cam && other.CompareTag("MainCamera") && other.enabled) { other.enabled = false; reEnable.Add(other); }
+
+            pad.ViewCamera = cam;
+            pad.QualityOverride = KitBudgets.Medium;
+            Assert.That(pad.Quality, Is.EqualTo(KitBudgets.Medium));
+
+            var wide = Join(top, basePlates, circle, seam, apron);
+            var circleFrame = Join(circle, HalfRing(seam, padT, bearingDesign), HalfRing(apron, padT, bearingDesign));
+            var frames = new (string name, float bearing, float elev, List<Vector3> pts, (string, List<Vector3>)[] must)[]
+            {
+                ("wide", bearingDesign, 28f, wide, new[] { ("tower top", top), ("base plates", basePlates), ("pad circle", circle), ("apron seam", seam), ("apron edge", apron) }),
+                ("top", bearingSide, 8f, top, new[] { ("tower top", top) }),
+                ("circle", bearingDesign, 40f, circleFrame, new[] { ("pad circle", circle), ("apron seam (near arc)", HalfRing(seam, padT, bearingDesign)) }),
+                ("base", bearingSide, 30f, basePlates, new[] { ("base plates", basePlates) }),
+            };
+            foreach (var f in frames)
+            {
+                Aim(cam, padT, f.bearing, f.elev, f.pts);
+                foreach (var (label, pts) in f.must)
+                    foreach (var p in pts)
+                    {
+                        var v = cam.WorldToViewportPoint(p);
+                        Assert.That(v.z > 0f && v.x >= 0f && v.x <= 1f && v.y >= 0f && v.y <= 1f, Is.True,
+                            size + " " + f.name + ": " + label + " point " + p + " is outside the frustum at " + v);
+                    }
+                Render(cam, pad, detailRenderer, w, h, "pad-tower-" + f.name + "-" + size);
+            }
+        }
+
+        static List<Vector3> Join(params List<Vector3>[] lists)
+        {
+            var all = new List<Vector3>();
+            foreach (var l in lists) all.AddRange(l);
+            return all;
+        }
+
+        /// <summary>The ring points on the lens side: within 75 deg of the camera bearing (pad-local, 0 = +Z, clockwise toward +X).</summary>
+        static List<Vector3> HalfRing(List<Vector3> ring, Transform padT, float bearingDeg)
+        {
+            float b = bearingDeg * Mathf.Deg2Rad;
+            var toCam = new Vector2(Mathf.Sin(b), Mathf.Cos(b));
+            var near = new List<Vector3>();
+            foreach (var p in ring)
+            {
+                var l = padT.InverseTransformPoint(p);
+                var d = new Vector2(l.x, l.z).normalized;
+                if (Vector2.Dot(d, toCam) >= Mathf.Cos(75f * Mathf.Deg2Rad)) near.Add(p);
+            }
+            return near;
+        }
+
+        /// <summary>Fixed bearing and elevation about the bounds centre of the points; the distance is the smallest (bisected,
+        /// 40 steps) at which every point sits inside the viewport with FrameMargin to spare. Deterministic, no flyover.</summary>
+        static void Aim(Camera cam, Transform padT, float bearingDeg, float elevDeg, List<Vector3> pts)
+        {
+            Assert.That(pts.Count, Is.GreaterThan(0), "no points to frame");
+            var bmin = pts[0]; var bmax = pts[0];
+            foreach (var p in pts) { bmin = Vector3.Min(bmin, p); bmax = Vector3.Max(bmax, p); }
+            var centre = (bmin + bmax) * 0.5f;
+            float b = bearingDeg * Mathf.Deg2Rad, e = elevDeg * Mathf.Deg2Rad;
+            var horiz = padT.TransformDirection(new Vector3(Mathf.Sin(b), 0f, Mathf.Cos(b))).normalized;
+            var dir = (horiz * Mathf.Cos(e) + Vector3.up * Mathf.Sin(e)).normalized;
+            bool Fits(float d)
+            {
+                cam.transform.position = centre + dir * d;
+                cam.transform.LookAt(centre, Vector3.up);
+                foreach (var p in pts)
+                {
+                    var v = cam.WorldToViewportPoint(p);
+                    if (v.z <= cam.nearClipPlane || v.x < FrameMargin || v.x > 1f - FrameMargin || v.y < FrameMargin || v.y > 1f - FrameMargin) return false;
+                }
+                return true;
+            }
+            float lo = 1f, hi = 900f;
+            Assert.That(Fits(hi), Is.True, "the points cannot be framed within 900 m");
+            for (int i = 0; i < 40; i++) { float mid = (lo + hi) * 0.5f; if (Fits(mid)) hi = mid; else lo = mid; }
+            Fits(hi);
+        }
+
+        void Render(Camera cam, PadRenderer pad, PadDetailRenderer detail, int w, int h, string name)
+        {
+            // The pad draws in LateUpdate, which EditMode never runs: call it for this pose, then render.
+            const BindingFlags any = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+            cam.enabled = true;   // PadDetailRenderer resolves Camera.main
+            typeof(PadRenderer).GetMethod("LateUpdate", any)?.Invoke(pad, null);
+            typeof(PadDetailRenderer).GetMethod("LateUpdate", any)?.Invoke(detail, null);
+            cam.enabled = false;
+            Assert.That(pad.Ledger.DrawCalls, Is.GreaterThan(0), name + ": the pad drew nothing for this camera");
+
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
+            var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+            rt.Create();
+            made.Add(rt);
+            var req = new RenderPipeline.StandardRequest { destination = rt };
+            if (GraphicsSettings.currentRenderPipeline == null) { cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; }
+            else if (RenderPipeline.SupportsRenderRequest(cam, req)) RenderPipeline.SubmitRenderRequest(cam, req);
+            else { Debug.LogWarning("pad-tower: the pipeline takes no render request; no capture of " + name); return; }
+
+            // Not blank: more than 1% of the pixels differ from the top-left pixel, and not all of them do.
+            var prev = RenderTexture.active;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            made.Add(tex);
+            RenderTexture.active = rt;
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            var px = tex.GetPixels32();
+            var c0 = px[(h - 1) * w];
+            int diff = 0, n = 0;
+            for (int i = 0; i < px.Length; i += 5)
+            {
+                n++;
+                var c = px[i];
+                if (Mathf.Abs(c.r - c0.r) + Mathf.Abs(c.g - c0.g) + Mathf.Abs(c.b - c0.b) > 12) diff++;
+            }
+            Assert.That(diff, Is.GreaterThan(n / 100), name + ": the frame is blank (" + diff + " of " + n + " sampled pixels differ from the corner)");
+            var png = UiCapture.Save(rt, name);
+            Assert.That(png, Is.Not.Null, name + ": no PNG written");
+            Assert.That(System.IO.File.Exists(png), Is.True, name + " capture written");
         }
     }
 }
