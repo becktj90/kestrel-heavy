@@ -109,6 +109,41 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void LeglessBooster_FlownTouchdownDoesNotCount()
+        {
+            // Review (PR #367): RecoveryScore.Judge reads a legless craft as legs-down, so a soft legless touchdown graded Good.
+            // The mission needs legs before the flown grade counts, in the batch and on the live card.
+            var mission = campaign.Mission(7);
+            var design = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, mission).Design);
+            design.legs = false;
+            var flight = FlightBatch.Fly(catalog, mission, design, campaign.Seeds[0]);
+            Assert.AreEqual("short", flight.landingGrade, "flown " + flight.landingCause + " sink " + flight.landingSink.ToString("0.0"));
+            Assert.IsFalse(flight.passed);
+            Assert.AreEqual("short", BoosterLanding.MissionGrade(mission, design, "perfect"));
+            design.legs = true;
+            Assert.AreEqual("perfect", BoosterLanding.MissionGrade(mission, design, "perfect"));
+        }
+
+        [TestCase(6, "barge")]
+        [TestCase(7, "rtls")]
+        public void WrongSite_DoesNotSatisfyTheMissionsLanding(int index, string flownMode)
+        {
+            // Review (PR #367): the flown landing follows design.recoveryMode, so a Haven catch could have satisfied KH-6's
+            // required pad return. Only the mission's own site counts.
+            var mission = campaign.Mission(index);
+            var design = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, mission).Design);
+            Assert.AreNotEqual(flownMode, mission.LandingMode);
+            design.recoveryMode = flownMode;
+            var flight = FlightBatch.Fly(catalog, mission, design, campaign.Seeds[0]);
+            Assert.AreEqual("short", flight.landingGrade, "flown " + flight.landingCause);
+            Assert.IsFalse(flight.passed);
+            Assert.AreEqual("short", BoosterLanding.MissionGrade(mission, design, "good"));
+            design.recoveryMode = mission.LandingMode;
+            Assert.AreEqual("good", BoosterLanding.MissionGrade(mission, design, "good"));
+            Assert.AreEqual("good", BoosterLanding.MissionGrade(campaign.Mission(4), design, "good"), "a mission with no landing leaves the grade alone");
+        }
+
+        [Test]
         public void HandOver_IsFlightDriversGroundFrame()
         {
             // A state 40 km up, 10 km east of a pad that has rotated for 100 s: FlightDriver.UpdateFrame's numbers.

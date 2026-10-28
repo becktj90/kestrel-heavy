@@ -205,7 +205,8 @@ namespace Kestrel.Core.Flight
                 if (mission.LandingMode == "rtls" || mission.LandingMode == "barge")
                 {
                     var landed = separated ? BoosterLanding.FlyPlanned(catalog, design, shotDown, shotAlt, shotSpeed, shotPitch) : null;
-                    flight.landingGrade = landed != null ? FlownGrade(landed) : "short";
+                    // Legs and the mission's site are required before a flown grade counts (BoosterLanding.MissionGrade).
+                    flight.landingGrade = landed != null ? BoosterLanding.MissionGrade(mission, design, FlownGrade(landed)) : "short";
                     flight.landingCause = landed != null ? landed.Cause : null;
                     flight.landingMissM = landed != null ? landed.MissM : double.NaN;
                     flight.landingSink = landed != null ? landed.Sink : double.NaN;

@@ -100,6 +100,20 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void LandingCause_IsNamed_WhenTheReserveIsStripped()
+        {
+            // The KH-13 default with its landing fuel cut to 2%: the predictor flight stays intact but the landing comes up short.
+            var r = StarterFixture.Rocket("m13");
+            var d = Design.FromJson(r.BuildDesign());
+            d.stages[0].landingPropMass = d.stages[0].propMass * 0.02;
+            var sim = ReferenceAscent.Flight(StarterFixture.Catalog, d).Run();
+            Assert.IsNull(sim.failure, "the ascent itself is fine");
+            var v = StarterVerdict.Judge(StarterFixture.Catalog, d, r.Mission, sim, true);
+            Assert.AreEqual(StarterVerdict.Landing, v.Cause, "grade " + v.LandingGrade);
+            Assert.IsNotNull(StarterReadinessCopy.Current.Badge(StarterVerdict.Landing));
+        }
+
+        [Test]
         public void KnownReadyButFailing_Settings_NowNameTheirCause()
         {
             foreach (var (mission, key, cause) in Known) AssertNamesItsCause(mission, key, cause);
