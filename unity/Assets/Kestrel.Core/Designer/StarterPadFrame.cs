@@ -39,7 +39,7 @@ namespace Kestrel.Core.Designer
         public bool InFrame => OutsideTop == 0 && OutsideBase == 0 && OutsideVehicle == 0 && CircleInBox >= StarterPadFrame.MinCircleInBox;
         public bool Visible => OccludedTop <= StarterPadFrame.MaxOccludedTop && OccludedBase <= StarterPadFrame.MaxOccludedBase && OccludedCircle <= StarterPadFrame.MaxOccludedCircle
             && VehicleHiddenByTower <= StarterPadFrame.MaxVehicleHiddenByTower;
-        public bool Pass => PointsTop > 0 && PointsBase > 0 && PointsCircle > 0 && InFrame && Visible;
+        public bool Pass => PointsTop > 0 && PointsBase > 0 && InFrame && Visible;   // the circle is optional
 
         public string Describe() =>
             $"outside top/base/circle/vehicle {OutsideTop}/{OutsideBase}/{OutsideCircle}/{OutsideVehicle} of {PointsTop}/{PointsBase}/{PointsCircle} (circle in box {CircleInBox:0.00}), " +
@@ -52,18 +52,32 @@ namespace Kestrel.Core.Designer
         public const double FitMargin = 0.05, ClearMargin = 0.02;
         /// <summary>Most points of a feature the vehicle may hide: the crown is on top of the stack and must show; the far plates and
         /// the far arc of the circle may go behind the stack, the near ones may not.</summary>
-        public const double MaxOccludedTop = 0.25, MaxOccludedBase = 0.50, MaxOccludedCircle = 0.25;
-        /// <summary>The pad circle is 0.4 x the pad's surface radius, which grows with the propellant farm (13-14 m on a KH-1 pad whose vehicle is 4.6 m
-        /// tall): the whole ring and a legible vehicle cannot share a portrait box. The crown, the plates and the vehicle are always whole inside the
-        /// box; at least this share of the circle's points must be too (the rest runs under the sheet, still on screen).</summary>
-        public const double MinCircleInBox = 0.5;
+        public const double MaxOccludedTop = 0.25, MaxOccludedBase = 0.25, MaxOccludedCircle = 1.0;
+        /// <summary>The pad circle is secondary (it is 0.4 x the surface radius, 13-14 m on a KH-1 pad whose vehicle is 4.6 m tall, so it cannot
+        /// share a box with a large vehicle): no share of it is required in the box. It is reported, and a heading that shows more of it wins a tie.</summary>
+        public const double MinCircleInBox = 0.0;
         /// <summary>None of the 15 samples (axis and both silhouette edges, five heights) may be behind the tower (a heading from the tower's side would "see" the stack through the lattice and fail this).</summary>
         public const double MaxVehicleHiddenByTower = 0.0;
         /// <summary>Looking down a little more than the vehicle-alone view so the circle and plates read as a pad, not a line.</summary>
         public const double PadElevationDeg = 20.0;
-        /// <summary>The vehicle must stay legible: at least this share of the preview box height (the vehicle-alone solve targets 0.62). A 4.6 m KH-1
-        /// stands beside an 11 m crown, so with the tower whole in the box the stack cannot fill more than ~0.4 of it; 0.15 is the floor.</summary>
-        public const double MinVehicleFill = 0.15;
+        /// <summary>The designer's rule: the rocket is framed large (the vehicle-alone solve targets 0.62), with the crown and plates still whole in the box.</summary>
+        public const double MinVehicleFill = 0.5;
+        /// <summary>Share of the equal-depth bound (vehicle height over crown top: the tallest the vehicle can be drawn with the crown whole in the box,
+        /// before margins and perspective) that the solver must reach where <see cref="MinVehicleFill"/> is out of reach.</summary>
+        public const double CeilingShare = 0.9;
+
+        /// <summary>The fill a pose must reach: <see cref="MinVehicleFill"/>, or <see cref="CeilingShare"/> of the geometric ceiling when the tower is
+        /// so tall next to the vehicle that 0.5 cannot be reached with the crown in the box (a 4.6 m KH-1 beside an 11 m crown: ceiling 0.42).</summary>
+        public static double RequiredFill(StarterPreviewSubject s)
+        {
+            double top = 0; foreach (var p in s.Pad) if (p.Kind == PadFeature.TowerTop) top = Math.Max(top, p.Y);
+            double h = s.YMax - s.YMin;
+            if (!(top > 0) || !(h > 0)) return MinVehicleFill;
+            return Math.Min(MinVehicleFill, CeilingShare * h / top);
+        }
+
+        /// <summary>Camera elevations tried (degrees) with each heading: a high one lets a far tower sit higher in the box, a low one shortens it.</summary>
+        public static readonly double[] ElevationsDeg = { 3, 10, 20 };
         /// <summary>Heading search: every <see cref="HeadingStepDeg"/> degrees about the default heading, closest to it first.</summary>
         public const double HeadingStepDeg = 15.0;
         const int Ring = 16;
@@ -83,15 +97,17 @@ namespace Kestrel.Core.Designer
             if (!s.Usable || !s.HasPad || !(aspect > 0) || !(vFovDeg > 1) || vFovDeg >= 179) return none;
             if (!StarterPreviewFraming.BoxNdc(box, panelW, panelH, out double x0, out double x1, out double y0, out double y1)) return none;
             var basis = new StarterPreviewPose { ShiftX = 0.5 * (x0 + x1), ShiftY = 0.5 * (y0 + y1), ElevDeg = PadElevationDeg };
+            var elevs = ElevationsDeg;
             StarterPreviewPose best = none; double bestScore = double.NegativeInfinity;
+            foreach (double el in elevs)
             foreach (double h in Headings())
             {
-                basis.HeadingDeg = h;
+                basis.HeadingDeg = h; basis.ElevDeg = el;
                 var pose = Fit(s, basis, box, panelW, panelH, aspect, vFovDeg);
                 if (!pose.Valid) continue;
                 var rep = Evaluate(pose, s, box, panelW, panelH, aspect, vFovDeg);
                 // A passing heading scores by the vehicle's size; one that fails scores below every pass by how badly it fails.
-                double score = rep.Pass ? 1.0 + rep.VehicleFill : -(rep.OutsideTop + rep.OutsideBase + rep.OutsideVehicle)
+                double score = rep.Pass ? 1.0 + rep.VehicleFill + 0.01 * rep.CircleInBox : -(rep.OutsideTop + rep.OutsideBase + rep.OutsideVehicle)
                     - rep.VehicleHiddenByTower - Math.Max(0, MinCircleInBox - rep.CircleInBox) - Math.Max(0, rep.OccludedTop - MaxOccludedTop) - Math.Max(0, rep.OccludedBase - MaxOccludedBase) - Math.Max(0, rep.OccludedCircle - MaxOccludedCircle);
                 if (score > bestScore + 1e-9) { bestScore = score; best = pose; }
             }

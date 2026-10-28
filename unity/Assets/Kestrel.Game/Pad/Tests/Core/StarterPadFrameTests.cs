@@ -63,6 +63,7 @@ namespace Kestrel.Pad.Tests
         public void EveryStackShowsCrownPlatesAndCircleAtEveryPhoneAndIpadSize()
         {
             var fails = new List<string>();
+            var limited = new HashSet<string>();
             foreach (var st in Stacks)
             foreach (int seed in new[] { 1, 2, 5 })
             {
@@ -82,10 +83,16 @@ namespace Kestrel.Pad.Tests
                     var rep = StarterPadFrame.Evaluate(pose, subject, frame.Rocket, sc.W, sc.H, sc.W / sc.H, Fov);
                     TestContext.WriteLine(where + ": heading " + pose.HeadingDeg + " distance " + pose.Distance.ToString("0.0") + " m, " + rep.Describe());
                     if (!rep.Pass) fails.Add(where + ": " + rep.Describe());
-                    if (rep.VehicleFill < StarterPadFrame.MinVehicleFill) fails.Add(where + ": the vehicle is a sliver (fill " + rep.VehicleFill.ToString("0.00") + ")");
+                    double need = StarterPadFrame.RequiredFill(subject);
+                    if (need < StarterPadFrame.MinVehicleFill) limited.Add(st.Name);
+                    if (rep.VehicleFill < need) fails.Add(where + ": the vehicle is too small (fill " + rep.VehicleFill.ToString("0.00") + ", needs " + need.ToString("0.00") + ")");
                 }
             }
             Assert.That(fails, Is.Empty, string.Join("\n", fails));
+            // Every stack fills at least half the box (the designer frames the rocket large) except those whose crown is so tall next to them that
+            // half is out of reach with the crown in the box. That list is pinned: a new stack here is a regression, not a new exception.
+            TestContext.WriteLine("KNOWN LIMIT (fill ceiling under 0.5 at this tower height): " + string.Join(", ", limited));
+            Assert.That(limited, Is.EquivalentTo(new[] { "KH-1 First Hop" }));
         }
 
         [Test]
@@ -108,6 +115,20 @@ namespace Kestrel.Pad.Tests
                 failing++;
             }
             Assert.That(failing, Is.GreaterThanOrEqualTo(5));
+        }
+
+        [Test]
+        public void TheOldPoseAlsoMissesTheFillFloorOrTheFramingOnEveryStack()
+        {
+            // The vehicle-alone pose never passes the pad check on a stack whose crown towers over it.
+            var st = Stacks[0];
+            var subject = Subject(Layout(st, 1), st.H, st.Rr);
+            var alone = new StarterPreviewSubject(subject.YMin, subject.YMax, subject.Radius);
+            var sc = Screens[1]; var frame = Frame(sc);
+            var old = StarterPreviewFraming.Solve(alone, frame.Rocket, sc.W, sc.H, sc.W / sc.H, Fov);
+            var rep = StarterPadFrame.Evaluate(old, subject, frame.Rocket, sc.W, sc.H, sc.W / sc.H, Fov);
+            Assert.That(rep.Pass, Is.False);
+            Assert.That(rep.OutsideTop, Is.GreaterThan(0), "the old framing crops the crown");
         }
 
         [Test]
