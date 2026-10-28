@@ -186,13 +186,18 @@ namespace Kestrel.Slice
                 float noseFrac = Mathf.Clamp(p.NoseFraction, 0f, 0.9f);
                 float cyl = L * (1f - noseFrac), nose = L * noseFrac;
                 bool conic = p.Kind == HangarPartKind.Booster || (noseFrac > 0.39f && noseFrac < 0.41f);
+                string kind = conic ? "conic" : Mathf.Abs(noseFrac - RocketMeshBuilder.NoseFraction("von-karman")) < 0.001f ? "von-karman" : "ogive";
+                // A fairing starts as wide as the stage under it (TopRadius) and flares to its barrel through the shared shoulder; boosters have no shoulder.
+                float rJoint = p.Kind == HangarPartKind.Fairing && p.TopRadius > 0.05f ? p.TopRadius : r;
+                float hs = Kestrel.Vehicle.FairingShoulder.Height(rJoint, r, L, noseFrac);
                 profile.Add(new Vector2(0f, 0f));
-                profile.Add(new Vector2(r, 0f));
+                profile.Add(new Vector2(rJoint, 0f));
+                if (hs > 0f) profile.Add(new Vector2(r, hs));   // the conical shoulder
                 profile.Add(new Vector2(r, cyl));
                 for (int k = 1; k <= 8; k++)
                 {
                     float u = k / 8f;
-                    float rr = RocketMeshBuilder.NoseRadius(conic ? "conic" : Mathf.Abs(noseFrac - RocketMeshBuilder.NoseFraction("von-karman")) < 0.001f ? "von-karman" : "ogive", r, u);
+                    float rr = RocketMeshBuilder.NoseRadius(kind, r, u);
                     profile.Add(new Vector2(k == 8 ? 0f : rr, cyl + nose * u));
                 }
             }
