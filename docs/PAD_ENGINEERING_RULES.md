@@ -8,7 +8,7 @@ Source of truth for live rules: `Kestrel.Core/Timeline/PadMission.cs` (`Pad.For`
 
 | # | Rule | Why (physics / ops) |
 |---|---|---|
-| P1 | First-stage diameter ≥ 3 m ⇒ **tower pad** (`pad.tower`), else **rail pad** (`pad.rail`). | Small vehicles launch off a rail; larger ones need a tower for access and umbilicals. |
+| P1 | First-stage diameter ≥ 3 m ⇒ **tower pad** (`pad.tower`), else **rail pad** (`pad.rail`). | Small vehicles launch off a rail; larger ones need a tower for access and umbilicals. Drawn: the rail rides a compact lattice service tower scaled to the stack (stairs, platforms, access arm beside the stack, lightning spike), but it has no swing arms and its umbilicals clamp to the rail (`PadGenerator.RailTowerFor`). |
 | P2 | **Strongback** only when the vehicle is liquid **and** on a tower. | A strongback carries propellant and electrical lines to a liquid stack. A solid has nothing to load. |
 | P3 | **Umbilical** iff any stage or strap-on is liquid (storability ≠ solid). | Liquids need loading and top-off up to the final minutes of the count. |
 | P4 | **Deluge** iff liquid **or** tower. | Sound suppression and flame-trench cooling scale with pad structure and engine type. A small solid on a rail gets none. |
