@@ -1,0 +1,111 @@
+{
+  "schema": "starter_readiness_copy_v1",
+  "version": 1,
+  "locale": "en",
+  "note": "Starter screen readiness when the launch predictor (ReferenceAscent, the live pad's checks and director) says the flight fails, the landing fuel is short, or the cargo does not fit (DESIGNER_TIERS_SPEC 'Honest Ready', audit B-10). Cause ids match StarterVerdict.Causes. kid is the plain lead sentence the Starter shows; engineer is the same cause in engineering terms (Builder/Engineer tiers). fixes are Starter controls, most helpful first; the screen names the first two that can still move, else reset. Fix order was picked from a sweep of every Starter setting on every mission.",
+  "checking": "Test-flying it…",
+  "tryOne": "Try {0}.",
+  "tryTwo": "Try {0} or {1}.",
+  "tryReset": "Tap Reset.",
+  "fixes": {
+    "fuel-": "less fuel",
+    "fuel+": "more fuel",
+    "stages-": "fewer stages",
+    "stages+": "another stage",
+    "boosters-": "fewer boosters",
+    "boosters+": "more boosters",
+    "engine": "the other fuel"
+  },
+  "causes": {
+    "maxq": {
+      "badge": "✗ Breaks up.",
+      "kid": "It would shake apart in the thick air.",
+      "engineer": "Max-Q break-up: dynamic pressure passes the structure's q limit low in the climb.",
+      "fixes": ["stages-", "fuel-", "engine"]
+    },
+    "overload": {
+      "badge": "✗ Breaks up.",
+      "kid": "It would buckle under its own weight.",
+      "engineer": "Structural margin below zero: the stack load passes what the tanks can carry.",
+      "fixes": ["fuel-", "stages-"]
+    },
+    "overg": {
+      "badge": "✗ Breaks up.",
+      "kid": "It would squash the cargo.",
+      "engineer": "Over-g: peak sensed acceleration passes the payload or stack g limit near burnout.",
+      "fixes": ["stages+", "engine"]
+    },
+    "tumble": {
+      "badge": "✗ Breaks up.",
+      "kid": "It would flip over in the air.",
+      "engineer": "Tumble: angle of attack or stability left the controllable range in dense air.",
+      "fixes": ["stages-", "fuel-", "boosters-"]
+    },
+    "heat": {
+      "badge": "✗ Breaks up.",
+      "kid": "Its nose would get too hot.",
+      "engineer": "Thermal: nose temperature passes the material limit.",
+      "fixes": ["boosters-", "fuel+"]
+    },
+    "base-heat": {
+      "badge": "✗ Breaks up.",
+      "kid": "So many engines would cook its base.",
+      "engineer": "Base heating: more than nine engines with no heat shield, past 5 kPa.",
+      "fixes": ["boosters-"]
+    },
+    "cryo": {
+      "badge": "✗ Breaks up.",
+      "kid": "The cold fuel would crack its tanks.",
+      "engineer": "Cryo-on-composite: a cryogenic propellant in a tank material with cryoOK false fails at T+0.",
+      "fixes": []
+    },
+    "separation": {
+      "badge": "✗ Breaks up.",
+      "kid": "Its stages would bump when they split.",
+      "engineer": "Separation collision: stage relative speed below the minimum in the separation window.",
+      "fixes": []
+    },
+    "legs": {
+      "badge": "✗ Breaks up.",
+      "kid": "Its landing legs would fold.",
+      "engineer": "Leg collapse: touchdown sink rate passes the legs' rating.",
+      "fixes": []
+    },
+    "overpressure": {
+      "badge": "✗ Breaks up.",
+      "kid": "An engine would push too hard and break.",
+      "engineer": "Engine overpressure: chamber pressure passes 1.15 × rated.",
+      "fixes": []
+    },
+    "pad": {
+      "badge": "✗ Too heavy.",
+      "kid": "It would break on the pad.",
+      "engineer": "Liftoff thrust-to-weight below 1: the stack never leaves the pad.",
+      "fixes": ["fuel-", "boosters+"]
+    },
+    "short": {
+      "badge": "✗ Short.",
+      "kid": "It would run out of push before the target.",
+      "engineer": "Propellant depleted below the target (or Δv margin below zero at core burnout).",
+      "fixes": ["stages+", "fuel+", "engine"]
+    },
+    "landing": {
+      "badge": "✗ Can't land.",
+      "kid": "It would not keep fuel to land.",
+      "engineer": "Landing reserve Δv below the boost-back need at stage-1 burnout speed.",
+      "fixes": ["fuel-", "engine"]
+    },
+    "booster-landing": {
+      "badge": "✗ Can't land.",
+      "kid": "Its boosters would not save fuel to land.",
+      "engineer": "Booster landing reserve Δv below the boost-back need at booster burnout speed.",
+      "fixes": []
+    },
+    "fit": {
+      "badge": "✗ Won't fit.",
+      "kid": "The cargo would not fit in the nose cone.",
+      "engineer": "Payload envelope exceeds the fairing's volume or diameter.",
+      "fixes": []
+    }
+  }
+}

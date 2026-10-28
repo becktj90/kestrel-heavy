@@ -1230,6 +1230,7 @@ namespace Kestrel.Slice
             var mission = Kestrel.Game.Shell.ScreenStub.LoadCampaign()?.ById(mid);
             var baseDesign = StarterBases.For(mid) ?? (session.Design != null ? JsonMut.CloneObject(session.Design) : null);
             if (mission == null || baseDesign == null) return;
+            Kestrel.Game.Shell.StarterBasesBoot.LoadCopy();
             try
             {
                 starterRocket = new StarterRocket(session.catalog, mission, baseDesign);
@@ -1719,6 +1720,7 @@ namespace Kestrel.Slice
             if (!claimed && ReportCardChrome.ConsumeKey(ui)) return;
             if (hud != null && !hud.ClassListContains("hidden")) { chrome?.TickInput(); return; }
             designer?.TickReference();
+            if (starterMode && starter != null && starter.Visible) starter.TickPrediction();
             if (rocketDirty && Time.unscaledTime - lastRocketBuild >= RebuildEverySeconds) BuildRocket();
             FlushAnnouncement();
         }

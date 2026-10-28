@@ -16,6 +16,7 @@ namespace Kestrel.Core.Tests
 
         public static void EnsureBases()
         {
+            if (StarterReadinessCopy.Active == null) StarterReadinessCopy.Active = StarterReadinessCopy.Load(Golden.Root);
             if (StarterBases.Active != null) return;
             StarterBases.Active = StarterBases.Parse(File.ReadAllText(Path.Combine(Golden.Root, "data", "golden", "campaign-winners.json")));
         }

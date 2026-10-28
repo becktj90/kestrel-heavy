@@ -47,7 +47,11 @@ namespace Kestrel.Game.Tests
 
         static Catalog catalog;
         static Campaign campaign;
+        /// <summary>Honest Ready: a setting the launch predictor breaks up at max-Q (KH-3, two kerosene stages, full fuel)
+        /// and one that keeps too little landing fuel (KH-13 methane, full fuel). Same as Kestrel.Core.Tests.StarterHonestReadyTests.</summary>
+        const string BreaksUpKey = "kerosene-2-f4-b0", CantLandKey = "methane-2-f4-b0";
         IReadOnlyDictionary<string, Kestrel.Core.Json.JsonObject> basesBefore;
+        StarterReadinessCopy copyBefore;
         bool loadedBefore;
         readonly List<IDisposable> open = new List<IDisposable>();
         readonly List<StarterPanel> panels = new List<StarterPanel>();
@@ -62,6 +66,8 @@ namespace Kestrel.Game.Tests
             campaign = Campaign.Load(root);
             StarterBases.Active = StarterBases.Parse(File.ReadAllText(Path.Combine(root, "data", "golden", "campaign-winners.json")));
             StarterBasesBoot.Loaded = true;
+            copyBefore = StarterReadinessCopy.Active;
+            StarterReadinessCopy.Active = StarterReadinessCopy.Load(root);
         }
 
         [TearDown]
@@ -78,6 +84,7 @@ namespace Kestrel.Game.Tests
         {
             StarterBases.Active = basesBefore;
             StarterBasesBoot.Loaded = loadedBefore;
+            StarterReadinessCopy.Active = copyBefore;
         }
 
         UiDeviceSurface Surface(float w, float h)
@@ -115,6 +122,9 @@ namespace Kestrel.Game.Tests
             yield return ("kh7-short", () => Rocket("m7", "kerosene-3-f0-b0"), null);
             yield return ("kh6-too-heavy", () => Rocket("m6", TooHeavyKey), null);
             yield return ("kh19-long-readiness", () => Rocket("m19"), LongReadiness);
+            yield return ("kh3-breaks-up", () => Rocket("m3", BreaksUpKey), null);
+            yield return ("kh13-cant-land", () => Rocket("m13", CantLandKey), null);
+            yield return ("kh5-checking", () => Rocket("m5"), null);
         }
 
         [Test]
@@ -124,10 +134,10 @@ namespace Kestrel.Game.Tests
             foreach (var d in Devices())
                 foreach (var c in Cases())
                 {
-                    string path = Check(d, c.Make(), c.Label, c.Readiness, capture: c.Label == "kh5-boosters-shown");
+                    string path = Check(d, c.Make(), c.Label, c.Readiness, capture: c.Label == "kh5-boosters-shown" || c.Label == "kh3-breaks-up");
                     if (path != null) shots.Add(path);
                 }
-            Assert.AreEqual(7, shots.Count, "one PNG per size");
+            Assert.AreEqual(14, shots.Count, "one PNG per size, plus the Honest Ready badge per size");
             foreach (var p in shots)
             {
                 Assert.That(File.Exists(p), p);
@@ -260,7 +270,8 @@ namespace Kestrel.Game.Tests
             CloseEverything();   // one surface open at a time
             var surface = Surface(d.W, d.H);
             var panel = Panel(rocket, surface);
-            panel.Refresh();
+            if (label == "kh5-checking") panel.Refresh();   // not flown yet: the "Test-flying it" line
+            else panel.FinishPrediction();
             if (readiness != null) panel.Root.Q<Label>(UiIds.StarterReadiness).text = readiness;
             panel.Layout(d.W, d.H, d.Top, d.Bottom, 0, 0, 1f, d.Wide, d.Wide);
             surface.Pump(3);
@@ -295,6 +306,26 @@ namespace Kestrel.Game.Tests
                 Assert.AreEqual(StarterScreen.HeavyBadge, panel.Root.Q<Label>(UiIds.StarterBadge).text, where);
                 Assert.IsTrue(UiTreeChecks.Visible(panel.Root.Q<Label>(UiIds.StarterReadiness)), where + " the reason is on screen");
             }
+            var badgeLabel = panel.Root.Q<Label>(UiIds.StarterBadge);
+            var lineLabel = panel.Root.Q<Label>(UiIds.StarterReadiness);
+            if (label == "kh3-breaks-up" || label == "kh13-cant-land")
+            {
+                string cause = label == "kh3-breaks-up" ? StarterVerdict.MaxQ : StarterVerdict.Landing;
+                Assert.AreEqual(cause, rocket.Verdict().Cause, where);
+                Assert.AreEqual(StarterReadinessCopy.Current.Badge(cause), badgeLabel.text, where + " the Honest Ready badge");
+                Assert.AreNotEqual(StarterScreen.ReadyBadge, badgeLabel.text, where);
+                Assert.AreNotEqual(StarterScreen.TightBadge, badgeLabel.text, where);
+                StringAssert.StartsWith(StarterReadinessCopy.Current.Causes[cause].Kid, lineLabel.text, where);
+                Assert.IsTrue(UiTreeChecks.Visible(badgeLabel), where + " the badge is on screen");
+                Assert.IsTrue(UiTreeChecks.Visible(lineLabel), where + " the reason is on screen");
+                Assert.IsTrue(launch.enabledSelf, where + " a bad but buildable rocket still launches");
+            }
+            if (label == "kh5-checking")
+            {
+                Assert.AreEqual(StarterReadinessCopy.Current.Checking, lineLabel.text, where);
+                Assert.AreEqual("", badgeLabel.text, where + " no Ready while checking");
+                Assert.IsTrue(launch.enabledSelf, where);
+            }
             var rocketBox = panel.Root.Q(UiIds.StarterRocket).worldBound;
             var sheet = panel.Root.Q(UiIds.StarterSheet).worldBound;
             Assert.That(rocketBox.Overlaps(Shrink(sheet)), Is.False, where + " the rocket window is clear of the sheet");
@@ -310,7 +341,7 @@ namespace Kestrel.Game.Tests
             Assert.Less(back.yMin, stage.yMin + stage.height * 0.15f, where + " Back top-left");
 
             if (!capture) return null;
-            string path = DeviceCapture.Save(CaptureSub, "starter-" + d.Name, surface, out var kind);
+            string path = DeviceCapture.Save(CaptureSub, (label == "kh3-breaks-up" ? "starter-breaks-up-" : "starter-") + d.Name, surface, out var kind);
             TestContext.WriteLine(where + " capture (" + kind + "): " + (path ?? "none"));
             return path;
         }

@@ -66,6 +66,8 @@ namespace Kestrel.Core.Designer
         public double LiftoffTwr, DeltaV, Required;
         /// <summary>DeltaV / Required - 1 (0.08 = 8% to spare; negative = short).</summary>
         public double Margin;
+        /// <summary>The readout's fairing fit (null when the payload has no envelope).</summary>
+        public bool? FairingFits;
     }
 
     /// <summary>Each mission's base rocket: its campaign winner. The host sets <see cref="Active"/> at boot.</summary>
@@ -206,6 +208,111 @@ namespace Kestrel.Core.Designer
         /// <summary>The same check on the base rocket (the mission's flown winner), for comparisons.</summary>
         public StarterCheck BaseCheck() => baseCheck ??= CheckDesign(catalog, Build(catalog, baseDesign, Default, Default, Mission), Mission);
         StarterCheck baseCheck;
+
+        // ---- the launch predictor (Honest Ready) ----
+
+        readonly Dictionary<StarterChoice, StarterVerdict> verdicts = new Dictionary<StarterChoice, StarterVerdict>();
+        StarterPredictionJob job;
+
+        /// <summary>The predictor's verdict for the current setting: one practice flight, cached per setting. Blocking
+        /// (one full ascent on a miss); the screen uses <see cref="TryVerdict"/> and <see cref="StepPrediction"/>.</summary>
+        public StarterVerdict Verdict() => Verdict(choice);
+
+        /// <summary>The verdict for any setting (cached). Null for a hard-blocked setting, which never flies.</summary>
+        public StarterVerdict Verdict(StarterChoice c)
+        {
+            if (verdicts.TryGetValue(c, out var v)) return v;
+            var j = job != null && job.Choice.Equals(c) ? job : NewJob(c);
+            if (j == null) return null;
+            j.Step(double.PositiveInfinity);
+            if (ReferenceEquals(j, job)) job = null;
+            return verdicts[c] = j.Verdict;
+        }
+
+        /// <summary>The cached verdict for the current setting, without flying. False while it is still being checked.</summary>
+        public bool TryVerdict(out StarterVerdict v) => verdicts.TryGetValue(choice, out v);
+
+        /// <summary>True when the current setting is cached (or never flies because it is hard-blocked).</summary>
+        public bool VerdictReady => verdicts.ContainsKey(choice) || Check().Blocked;
+
+        /// <summary>
+        /// Advance the predictor by at most <paramref name="budgetMs"/> of wall time: the current setting first, then
+        /// each one-tap neighbour (one control moved one step), so the next tap usually reads from the cache.
+        /// True when this call finished the current setting's verdict (the screen refreshes then).
+        /// </summary>
+        public bool StepPrediction(double budgetMs)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            bool current = false;
+            // A tap moved off the setting being flown: fly the new one first.
+            if (job != null && !job.Choice.Equals(choice) && !verdicts.ContainsKey(choice)) job = null;
+            while (true)
+            {
+                if (job == null)
+                {
+                    if (!NextToPredict(out var next)) return current;
+                    job = NewJob(next);
+                    if (job == null) { verdicts[next] = null; continue; }
+                }
+                double left = budgetMs - sw.Elapsed.TotalMilliseconds;
+                if (!job.Step(Math.Max(0, left))) return current;
+                verdicts[job.Choice] = job.Verdict;
+                if (job.Choice.Equals(choice)) current = true;
+                job = null;
+                if (sw.Elapsed.TotalMilliseconds >= budgetMs) return current;
+            }
+        }
+
+        /// <summary>The settings one tap away from the current one, in the order the predictor warms them.</summary>
+        public IEnumerable<StarterChoice> Neighbours()
+        {
+            var c = choice;
+            foreach (var e in EngineOrder) if (e != c.Engine) yield return c.WithEngine(e);
+            yield return c.WithFuelNotch(c.FuelNotch + 1);
+            yield return c.WithFuelNotch(c.FuelNotch - 1);
+            yield return c.WithStages(c.Stages + 1);
+            yield return c.WithStages(c.Stages - 1);
+            yield return c.WithBoosters(c.Boosters + 2);
+            yield return c.WithBoosters(c.Boosters - 2);
+        }
+
+        bool NextToPredict(out StarterChoice next)
+        {
+            next = choice;
+            if (!verdicts.ContainsKey(choice)) return true;
+            foreach (var n in Neighbours())
+            {
+                if (!Clamp(n).Equals(n) || verdicts.ContainsKey(n)) continue;
+                next = n;
+                return true;
+            }
+            return false;
+        }
+
+        StarterPredictionJob NewJob(StarterChoice c)
+        {
+            var d = c.Equals(choice) ? Design() : Build(catalog, baseDesign, Default, c, Mission);
+            var chk = c.Equals(choice) ? Check() : CheckDesign(catalog, d, Mission);
+            if (chk.Blocked) return null;
+            return new StarterPredictionJob(catalog, JsonMut.CloneObject(d), Mission, chk.FairingFits, c);
+        }
+
+        /// <summary>Can the player still move this control in the direction a fix names ("fuel-", "stages+", ...)?</summary>
+        public bool CanFix(string fix)
+        {
+            var c = choice;
+            switch (fix)
+            {
+                case "fuel-": return IsFuelNotchAllowed(c.FuelNotch - 1);
+                case "fuel+": return IsFuelNotchAllowed(c.FuelNotch + 1);
+                case "stages-": return IsStagesAllowed(c.Stages - 1);
+                case "stages+": return IsStagesAllowed(c.Stages + 1);
+                case "boosters-": return IsBoostersAllowed(c.Boosters - 2);
+                case "boosters+": return IsBoostersAllowed(c.Boosters + 2);
+                case "engine": return true;
+                default: return false;
+            }
+        }
 
         /// <summary>True unless Validate reports a hard schema block. A rocket that will not reach orbit still launches.</summary>
         public bool CanLaunch => !Check().Blocked;
@@ -378,6 +485,7 @@ namespace Kestrel.Core.Designer
             r.DeltaV = q.totalDeltaV;
             r.Required = q.required;
             r.Margin = q.margin;
+            r.FairingFits = q.fairingFits;
             if (mission != null && mission.TargetKind == "apogee")
             {
                 double need = mission.RequiredDeltaV();
