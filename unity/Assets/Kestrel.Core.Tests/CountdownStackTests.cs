@@ -88,16 +88,18 @@ namespace Kestrel.Core.Tests
         [Test]
         public void FollowTogglesAndComesBackToThePlayersView()
         {
-            // #332: "tapping Follow does nothing". Following, a tap lets go to the ground camera; the next tap chases again.
-            Assert.That(FlightView.FollowToggle(FlightViewMode.Chase, true, FlightViewMode.Chase), Is.EqualTo(FlightViewMode.Pad));
-            Assert.That(FlightView.FollowToggle(FlightViewMode.Pad, false, FlightViewMode.Chase), Is.EqualTo(FlightViewMode.Chase));
-            Assert.That(FlightView.FollowToggle(FlightViewMode.Pad, false, FlightViewMode.Pad), Is.EqualTo(FlightViewMode.Auto));
+            // #332: "tapping Follow does nothing". Following (with the pad camera in range, as on the count), a tap lets
+            // go to the ground camera; the next tap chases again. Out of range: FlightCameraControlTests.
+            FlightViewMode Tap(FlightViewMode view, FlightViewMode last) => FlightCameraControl.Follow(view, false, last, true).View;
+            Assert.That(Tap(FlightViewMode.Chase, FlightViewMode.Chase), Is.EqualTo(FlightViewMode.Pad));
+            Assert.That(Tap(FlightViewMode.Pad, FlightViewMode.Chase), Is.EqualTo(FlightViewMode.Chase));
+            Assert.That(Tap(FlightViewMode.Pad, FlightViewMode.Pad), Is.EqualTo(FlightViewMode.Auto));
             foreach (var mode in new[] { FlightViewMode.Auto, FlightViewMode.Above, FlightViewMode.Below, FlightViewMode.Chase })
             {
-                var off = FlightView.FollowToggle(mode, true, mode);
+                var off = Tap(mode, mode);
                 Assert.That(FlightView.Following(true, off), Is.False, mode + " lets go");
                 Assert.That(FlightView.FollowCaption(FlightView.Following(true, off)), Is.Not.EqualTo(FlightView.FollowCaption(true)), mode + " label changes");
-                Assert.That(FlightView.FollowToggle(off, false, mode), Is.EqualTo(mode), mode + " comes back");
+                Assert.That(Tap(off, mode), Is.EqualTo(mode), mode + " comes back");
             }
         }
 

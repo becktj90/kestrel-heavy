@@ -47,6 +47,26 @@ namespace Kestrel.Game.Tests
         }
 
         [Test]
+        public void CrossingTheSlopDoesNotJumpTheView()
+        {
+            // Points, 10 pt slop. Crossing it orbits only by the distance past it (a 14 px slop on a 3x phone was 5 pt,
+            // and the first sample past it jumped the view by the whole slop).
+            var rig = FlightCameraRig.Begin(FlightCameraRig.Following(), Vector2.zero);
+            rig = FlightCameraRig.Drag(rig, new Vector2(FlightCameraRig.SlopPt - 1f, 0f));
+            Assert.IsTrue(rig.Follow, "inside the slop");
+            rig = FlightCameraRig.Drag(rig, new Vector2(FlightCameraRig.SlopPt + 2f, 0f));
+            Assert.IsFalse(rig.Follow);
+            Assert.AreEqual(2f * FlightCameraRig.YawPerPt, rig.Yaw, 1e-4f, "only the 2 pt past the slop");
+            rig = FlightCameraRig.End(rig, new Vector2(FlightCameraRig.SlopPt + 2f, 0f));
+            Assert.IsTrue(rig.Follow, "too small to read: the lift hands the view back, still following");
+            rig = FlightCameraRig.Begin(rig, Vector2.zero);
+            rig = FlightCameraRig.Drag(rig, new Vector2(FlightCameraRig.SlopPt + 40f, 0f));
+            rig = FlightCameraRig.End(rig, new Vector2(FlightCameraRig.SlopPt + 40f, 0f));
+            Assert.IsTrue(FlightCameraRig.Orbited(rig), "a 50 pt slide is an orbit");
+            Assert.AreEqual(40f * FlightCameraRig.YawPerPt, rig.Yaw, 1e-3f);
+        }
+
+        [Test]
         public void PauseFreezesTheSimAndTheMenuHasTheFlightCommands()
         {
             var go = new GameObject("flight-chrome");

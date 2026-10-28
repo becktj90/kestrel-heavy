@@ -3,6 +3,8 @@
 // The "Cam: Auto" button opens a five-chip picker (Auto / Above / Below / Chase / Pad). A chip applies,
 // saves and closes; a tap outside or Esc closes with no change. C on a keyboard cycles with a 1 s toast.
 // None of it pauses the flight. AscentHud places the picker and the toast (FlightHudLayout.CameraPicker).
+// What each tap does (Follow, a disabled Pad chip, the Pad fallback, where a drag may start) is
+// FlightCameraControl (Core), so the rules are pinned by EditMode tests.
 using Kestrel.Core.Ui;
 using System;
 using Kestrel.Core.Flight;
@@ -18,6 +20,8 @@ namespace Kestrel.Slice
         public const string PickerName = UiIds.FlightCameraPicker;
         public const string ToastName = UiIds.FlightCameraToast;
         public static string ChipName(FlightViewMode mode) => UiIds.FlightCameraChip(mode);
+        /// <summary>A chip whose view the camera cannot use now (Pad out of range): dimmed, a tap only explains.</summary>
+        public const string ChipOffClass = "flight-camera-chip-off";
 
         static readonly Color Amber = new Color(1f, 0.69f, 0f, 0.92f);
         static readonly Color Ink = new Color(0.08f, 0.08f, 0.1f);
@@ -32,13 +36,19 @@ namespace Kestrel.Slice
         Action<bool> setPaused;
         Action<FlightViewMode> viewChanged;
         FlightViewMode viewMode;
-        bool tracking, blockGesture, pinching;
+        bool tracking, blockGesture, pinching, pinchBlocked;
         float pinchDist, lastUpp = 1f;
+        /// <summary>The pad ground camera can see the rocket (SliceApp feeds FlightViewPose.PadInRange each frame).</summary>
+        bool padInRange = true;
+        /// <summary>Device pixels per UI point for drag distances (1 in tests, which feed points).</summary>
+        float pixelsPerPoint = 1f;
 
         public bool Paused { get; private set; }
         public bool Follow => rig.Follow;
         public FlightRig Rig => rig;
         public FlightViewMode View => viewMode;
+        /// <summary>The Pad view can show the rocket now (its chip is enabled).</summary>
+        public bool PadInRange => padInRange;
         public bool PickerOpen => picker != null && picker.style.display.value == DisplayStyle.Flex;
         public string ToastText => toast != null && toast.style.display.value == DisplayStyle.Flex ? toast.text : null;
 
@@ -48,6 +58,10 @@ namespace Kestrel.Slice
             setPaused = onPause;
             viewChanged = onView;
             viewMode = initial;
+            // Follow from Pad returns to the player's chasing view: seed it from the saved one (it was always Auto).
+            lastChase = FlightCameraControl.RememberChase(FlightViewMode.Auto, initial);
+            padInRange = true;
+            chosen = initial;
             if (hud == null) return;
             hud.pickingMode = PickingMode.Ignore;
 
@@ -239,9 +253,15 @@ namespace Kestrel.Slice
             tracking = false;
             pinching = false;
             Show(false);
+            // A new flight starts on the pad, on the view the player picked (a Pad fallback last flight was not saved).
+            padInRange = true;
+            if (viewMode != chosen) Apply(chosen);
             RefreshFollow();
             RefreshCamera();
         }
+
+        /// <summary>The view the player last picked and saved (Bind's initial, a chip, C or Follow).</summary>
+        FlightViewMode chosen;
 
         public Vector3 Frame(Vector3 chaseOffset) => FlightCameraRig.Orbit(chaseOffset, rig);
 
@@ -271,6 +291,7 @@ namespace Kestrel.Slice
         {
             // pos is a legacy Input position (bottom-left origin); hit tests need the panel point (PanelInput).
             var at = began && hud != null && hud.panel != null ? Kestrel.Game.Shell.PanelInput.ToPanel(hud.panel, pos) : Vector2.zero;
+            if (began) pixelsPerPoint = DevicePixelsPerPoint();
             PointerAt(at, pos, began, ended);
         }
 
@@ -282,7 +303,8 @@ namespace Kestrel.Slice
         public void PointerAt(Vector2 panelPoint, Vector2 screen, bool began, bool ended)
         {
             if (Paused || hud == null) return;
-            var pos = screen;
+            // The orbit measures in points: the same thumb slide orbits the same amount on a 2x, 3x or web panel.
+            var pos = screen / (pixelsPerPoint > 0.25f ? pixelsPerPoint : 1f);
             if (began && PickerOpen && !OverPickerOrButton(panelPoint))
             {
                 // A tap outside closes the picker with no change, and does not start an orbit drag.
@@ -293,7 +315,7 @@ namespace Kestrel.Slice
             }
             if (began)
             {
-                blockGesture = OverControl(panelPoint);
+                blockGesture = OverHud(panelPoint);
                 tracking = !blockGesture;
                 if (tracking) rig = FlightCameraRig.Begin(rig, pos);
             }
@@ -311,19 +333,39 @@ namespace Kestrel.Slice
         {
             float dist = Vector2.Distance(a, b);
             if (dist < 12f) return;
-            if (!pinching) { pinching = true; pinchDist = dist; return; }
+            if (!pinching)
+            {
+                pinching = true;
+                pinchDist = dist;
+                // A pinch with a finger on a HUD panel or button is not a camera pinch (a thumb resting on the dock).
+                pinchBlocked = hud.panel != null && (OverHud(Kestrel.Game.Shell.PanelInput.ToPanel(hud.panel, a)) || OverHud(Kestrel.Game.Shell.PanelInput.ToPanel(hud.panel, b)));
+                return;
+            }
+            if (pinchBlocked) return;
             if (pinchDist > 1f) rig = FlightCameraRig.Pinch(rig, dist / pinchDist);
             pinchDist = dist;
             RefreshFollow();
         }
 
-        bool OverControl(Vector2 panelPoint)
+        /// <summary>
+        /// The touch lands on the flight HUD: a button, or any pickable HUD element (the dock and its notes, the band,
+        /// cards, the picker). Only the open view orbits. It used to block buttons only, so a slide that started on the
+        /// dock between Nudge buttons or on the medal note orbited the camera and dropped "Following".
+        /// </summary>
+        public bool OverHud(Vector2 panelPoint)
         {
-            if (hud.panel == null) return false;
+            if (hud == null || hud.panel == null) return false;
             var hit = hud.panel.Pick(panelPoint);
             for (var ve = hit; ve != null; ve = ve.parent)
-                if (ve is Button) return true;
+                if (ve is Button || ve == hud) return true;
             return false;
+        }
+
+        float DevicePixelsPerPoint()
+        {
+            var root = hud != null && hud.panel != null ? hud.panel.visualTree : null;
+            float panelW = root != null ? root.layout.width : 0f;
+            return (float)FlightCameraControl.PixelsPerPoint(Screen.width, float.IsNaN(panelW) ? 0f : panelW, lastUpp);
         }
 
         bool OverPickerOrButton(Vector2 panelPoint)
@@ -373,19 +415,51 @@ namespace Kestrel.Slice
         {
             if (Paused) return;
             ClosePicker();
-            Choose(FlightView.Next(viewMode));
+            Choose(FlightCameraControl.Next(viewMode, padInRange));
             ShowToast(FlightView.Toast(viewMode));
         }
 
-        /// <summary>Apply, save (through the bound callback) and close the picker.</summary>
+        /// <summary>Apply, save (through the bound callback) and close the picker. A view the camera cannot use now
+        /// (Pad out of range) only explains itself in the toast slot and changes nothing.</summary>
         public void Choose(FlightViewMode mode)
         {
+            if (!FlightCameraControl.Available(mode, padInRange))
+            {
+                ClosePicker();
+                ShowToast(FlightCameraControl.PadOutOfRangeToast);
+                return;
+            }
+            Apply(mode);
+            chosen = mode;
+            viewChanged?.Invoke(viewMode);
+        }
+
+        void Apply(FlightViewMode mode)
+        {
             viewMode = mode;
-            if (FlightView.Chases(mode)) lastChase = mode;
+            lastChase = FlightCameraControl.RememberChase(lastChase, mode);
             RefreshCamera();
             RefreshFollow();
             ClosePicker();
-            viewChanged?.Invoke(viewMode);
+        }
+
+        /// <summary>
+        /// SliceApp, each camera step: can the Pad camera see the rocket? Out of range the Pad chip dims, and if Pad is
+        /// the live view the camera goes back to the player's chasing view with a toast. The fallback is not saved.
+        /// </summary>
+        public void SetPadInRange(bool inRange)
+        {
+            if (inRange == padInRange) return;
+            padInRange = inRange;
+            var back = FlightCameraControl.Fallback(viewMode, lastChase, padInRange);
+            if (back.HasValue)
+            {
+                rig = FlightCameraRig.Recenter(rig);
+                Apply(back.Value);
+                if (!Paused) ShowToast(FlightCameraControl.FallbackToast(back.Value));
+            }
+            RefreshChips();
+            RefreshFollow();
         }
 
         public void TogglePicker()
@@ -545,9 +619,11 @@ namespace Kestrel.Slice
                 var chip = picker.Q<Button>(ChipName(mode));
                 if (chip == null) continue;
                 bool on = mode == viewMode;
-                chip.style.backgroundColor = on ? Amber : new Color(1f, 1f, 1f, 0.12f);
-                chip.style.color = on ? Ink : Color.white;
-                chip.tooltip = "Camera: " + FlightView.Name(mode) + (on ? " (current)." : ".");
+                bool usable = FlightCameraControl.Available(mode, padInRange);
+                chip.style.backgroundColor = on ? Amber : new Color(1f, 1f, 1f, usable ? 0.12f : 0.05f);
+                chip.style.color = on ? Ink : usable ? Color.white : new Color(1f, 1f, 1f, 0.5f);
+                chip.EnableInClassList(ChipOffClass, !usable);
+                chip.tooltip = "Camera: " + FlightView.Name(mode) + (on ? " (current)." : usable ? "." : ". Out of range now.");
             }
         }
 
@@ -624,28 +700,17 @@ namespace Kestrel.Slice
         public bool Following => FlightView.Following(!FlightCameraRig.Orbited(rig), viewMode);
 
         /// <summary>
-        /// Follow: clear the manual orbit (the camera glides back, see SliceApp) and, from the fixed Pad view,
-        /// return to Auto with the usual toast. While already following it changes nothing, and says so.
+        /// Follow (FlightCameraControl.Follow): "Follow rocket" recentres the orbit, or leaves Pad for the player's last
+        /// chasing view. "Following" lets go to the Pad ground camera while it can see the rocket; out of its range the
+        /// tap changes nothing and says so (it used to cut to Pad at 60 km, a dot in the dark).
         /// </summary>
         public void FollowRocket()
         {
             if (Paused) return;
-            // A toggle (#332): following, a tap lets go to the ground camera; otherwise it recentres and chases again.
-            bool was = Following;
-            if (!was && FlightCameraRig.Orbited(rig) && FlightView.Chases(viewMode))
-            {
-                // Orbited off a chasing view: Follow recentres it, and that is the visible change.
-                rig = FlightCameraRig.Recenter(rig);
-                RefreshFollow();
-                return;
-            }
-            rig = FlightCameraRig.Recenter(rig);
-            var next = FlightView.FollowToggle(viewMode, was, lastChase);
-            if (next != viewMode)
-            {
-                Choose(next);
-                ShowToast(FlightView.Toast(next));
-            }
+            var tap = FlightCameraControl.Follow(viewMode, FlightCameraRig.Orbited(rig), lastChase, padInRange);
+            if (tap.Recentre) rig = FlightCameraRig.Recenter(rig);
+            if (tap.View != viewMode) Choose(tap.View);
+            if (tap.Toast != null) ShowToast(tap.Toast);
             RefreshFollow();
         }
 
@@ -657,7 +722,7 @@ namespace Kestrel.Slice
             if (follow == null) return;
             bool on = Following;
             SetToolCaption(follow, FlightView.FollowCaption(on));
-            follow.tooltip = FlightView.FollowTip(on);
+            follow.tooltip = FlightView.FollowTip(on, padInRange);
             // #332: Following was white at 12% under white text (about 1.1:1 on a pale sky). Now the dusk ink plate,
             // cream text and a teal edge (a state); Follow rocket stays solid amber with dark text (an action).
             // Kestrel.Core.Tests CountdownStackTests checks both at 4.5:1 or better over every backdrop.

@@ -87,13 +87,8 @@ namespace Kestrel.Core.Flight
         /// </summary>
         public static FlightViewMode FollowView(FlightViewMode mode) => Chases(mode) ? mode : FlightViewMode.Auto;
 
-        /// <summary>
-        /// The Follow button toggles (#332, Trevor: "tapping Follow does nothing"). While following, a tap lets go:
-        /// the camera stays on the ground (Pad). Not following, a tap goes back to the last chasing view the
-        /// player had (or Auto), and the orbit is cleared.
-        /// </summary>
-        public static FlightViewMode FollowToggle(FlightViewMode mode, bool following, FlightViewMode lastChase) =>
-            following ? FlightViewMode.Pad : Chases(lastChase) ? lastChase : FlightViewMode.Auto;
+        // The Follow tap itself (recentre, back from Pad, let go to Pad only while it can see the rocket) is
+        // FlightCameraControl.Follow.
 
         /// <summary>The control row's short caption for a full one, used only when the full set cannot fit the row
         /// (FlightHudLayout.ToolSlots): "Follow rocket" and "Following" read "Follow" (the Following plate and its
@@ -111,9 +106,14 @@ namespace Kestrel.Core.Flight
         /// <summary>"Following" when tapping would change nothing, "Follow rocket" when it would.</summary>
         public static string FollowCaption(bool following) => following ? FollowingLabel : FollowLabel;
 
-        public static string FollowTip(bool following) => following
-            ? "The camera is following the rocket. Tap to let go and watch from the pad."
-            : "Follow the rocket: the camera glides back behind it.";
+        public static string FollowTip(bool following) => FollowTip(following, true);
+
+        /// <summary>The Follow tooltip. Following, the tap lets go to the Pad camera only while it can see the rocket.</summary>
+        public static string FollowTip(bool following, bool padInRange) => !following
+            ? "Follow the rocket: the camera glides back behind it."
+            : padInRange
+                ? "The camera is following the rocket. Tap to let go and watch from the pad."
+                : "The camera is following the rocket. Drag to look around; tap the view to recentre.";
 
         public static string Tip(FlightViewMode mode) => "Camera: " + Name(mode) + ". Tap to pick a view. C cycles on a keyboard.";
 
