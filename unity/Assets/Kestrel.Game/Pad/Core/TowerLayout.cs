@@ -31,6 +31,11 @@ namespace Kestrel.Pad
         public float CrewArmX = 0f;          // lateral offset of the crew arm root on the s face
         public float CrewArmReach = 0f;      // arm length from the s face toward the vehicle (0 = none)
         public float SpikeHeight = 0f;       // D2: lightning spike on the cap (0 = none)
+        public float CrewArmHalfWidth = 0.9f; // crew arm box section: half width (x) and height (y), m
+        public float CrewArmHeight = 2.4f;
+        /// <summary>Stair flights up the west side every level and, when Width >= ElevatorMinWidth, an elevator shaft.</summary>
+        public bool ServiceCore = true;
+        public const float ElevatorMinWidth = 6f;
 
         /// <summary>Tower tall enough to clear the highest attach point by one level (min 6 levels).</summary>
         public static TowerParams ForVehicle(IReadOnlyList<AttachPoint> pts, float levelHeight = 6f)
@@ -105,6 +110,7 @@ namespace Kestrel.Pad
                 var r0 = CornerAt(0, y1 + 1.1f); var r1 = CornerAt(1, y1 + 1.1f); r0.Z -= 0.3f; r1.Z -= 0.3f;
                 Add(lid, $"{lid}.rail.s", MemberKind.Rail, r0, r1, MaterialRole.SafetyYellowSteel, "handrail");
             }
+            if (P.ServiceCore) BuildCore();
             if (P.CrewLevel >= 0 && P.CrewLevel < P.Levels && P.CrewArmReach > 0.5f) BuildCrewArm();
             if (P.SpikeHeight > 0)
             {
@@ -118,7 +124,7 @@ namespace Kestrel.Pad
         {
             const string id = "tower.crewarm";
             float y = (P.CrewLevel + 1) * P.LevelHeight, z0 = P.NearFaceZ, z1 = z0 - P.CrewArmReach, x = P.CrewArmX;
-            const float hw = 0.9f, h = 2.4f;
+            float hw = P.CrewArmHalfWidth, h = P.CrewArmHeight;
             var e = Graph.Add(id, ElementCategory.CrewArm, $"tower.l{P.CrewLevel:00}", "steel", "crew-access-arm", "walkable");
             e.Center = new Vec3(x, y + h * 0.5f, (z0 + z1) * 0.5f); e.Size = new Vec3(hw * 2, h, P.CrewArmReach); e.DisplayName = "Crew access arm";
             int bays = Math.Max(2, (int)Math.Round(P.CrewArmReach / 2.4f));
@@ -141,6 +147,55 @@ namespace Kestrel.Pad
                 Add(id, $"{id}.diag.{b}.t", MemberKind.ArmBrace, new Vec3(x - hw, y + h, z), new Vec3(x + hw, y + h, zn), MaterialRole.PaintedSteel, "diag");
             }
             Add(id, $"{id}.walk", MemberKind.Deck, new Vec3(x, y + 0.05f, z0), new Vec3(x, y + 0.05f, z1), MaterialRole.Galvanized, "walkway");
+        }
+
+        /// <summary>Deck plank width (PadRenderer.DeckW) and the open strip on the west face the stairs climb in.</summary>
+        public const float DeckW = 0.9f, StairwellWidth = 1.2f, PlankPitch = 2.2f;
+
+        /// <summary>Plank centre lines (x) of each level's work platform: about one plank per <see cref="PlankPitch"/> m,
+        /// clear of the stairwell strip on the west side.</summary>
+        public static List<(int Index, float X)> DeckPlanks(TowerParams p)
+        {
+            float hw = p.Width * 0.5f;
+            float x0 = p.ServiceCore ? -hw + StairwellWidth + DeckW * 0.5f : -hw + DeckW * 0.5f + 0.25f, x1 = hw - DeckW * 0.5f - 0.25f;
+            int n = Math.Max(2, (int)Math.Round((x1 - x0) / PlankPitch) + 1);
+            var list = new List<(int, float)>(n);
+            for (int i = 0; i < n; i++) list.Add((i, x0 + (x1 - x0) * i / (n - 1)));
+            return list;
+        }
+
+        /// <summary>X of the stair flights: the west stairwell, inside the columns.</summary>
+        public static float StairX(TowerParams p) => -p.Width * 0.5f + StairwellWidth * 0.5f + 0.1f;
+
+        // Service core: one stair flight per level in the west stairwell, alternating direction (switchback), and on
+        // towers wide enough an elevator shaft east of centre.
+        void BuildCore()
+        {
+            const string id = "tower.core";
+            float hw = P.Width * 0.5f, zs = P.StandOff - hw + 0.6f, zn = P.StandOff + hw - 0.6f, xs = StairX(P);
+            var e = Graph.Add(id, ElementCategory.Structure, TowerId, "steel", "service-core", "stairs");
+            e.Center = new Vec3(xs, P.Height * 0.5f, P.StandOff); e.Size = new Vec3(StairwellWidth, P.Height, P.Width); e.DisplayName = "Stairs and elevator";
+            for (int l = 0; l < P.Levels; l++)
+            {
+                float y0 = l * P.LevelHeight, y1 = y0 + P.LevelHeight;
+                bool north = l % 2 == 0;
+                // Flights run along Z so the plank (DeckW wide in x) lies flat as the tread surface.
+                Add(id, $"{id}.stair.{l:00}", MemberKind.Deck, new Vec3(xs, y0 + 0.05f, north ? zs : zn), new Vec3(xs, y1 + 0.05f, north ? zn : zs), MaterialRole.Galvanized, "stair", "walkable");
+            }
+            if (P.Width < TowerParams.ElevatorMinWidth) return;
+            // East of centre on the tower's mid line, off both plan-brace diagonals.
+            float c = Math.Max(1.4f, Math.Min(2.4f, P.Width * 0.2f)) * 0.5f, cx = P.Width * 0.3f, cz = P.StandOff;
+            Vec3 S(int k, float y) => new Vec3(cx + (k == 0 || k == 3 ? -c : c), y, cz + (k < 2 ? -c : c));
+            // Guide posts run the full height (one instance each); a ring every other deck keeps the shaft legible
+            // inside the PadPerf ceiling (FullFarmStaysInsideThePadBudget).
+            for (int k = 0; k < 4; k++)
+                Add(id, $"{id}.lift.post.{k}", MemberKind.Brace, S(k, 0f), S(k, P.Height), MaterialRole.PaintedSteel, "elevator", "post");
+            for (int l = 1; l < P.Levels; l += 2)
+            {
+                float y = (l + 1) * P.LevelHeight;
+                for (int k = 0; k < 4; k++)
+                    Add(id, $"{id}.lift.{l:00}.ring.{k}", MemberKind.Brace, S(k, y), S((k + 1) % 4, y), MaterialRole.PaintedSteel, "elevator", "ring");
+            }
         }
 
         static readonly string[] Corner = { "sw", "se", "ne", "nw" };
@@ -175,12 +230,10 @@ namespace Kestrel.Pad
                     Add(lid, $"{lid}.br.{Face[f]}.0", MemberKind.Brace, CornerAt(a, y0), CornerAt(b, y1), MaterialRole.PaintedSteel, "brace", $"face:{Face[f]}");
                     Add(lid, $"{lid}.br.{Face[f]}.1", MemberKind.Brace, CornerAt(b, y0), CornerAt(a, y1), MaterialRole.PaintedSteel, "brace", $"face:{Face[f]}");
                 }
-                // Grated deck: two galvanised stringers across the level (instanced flat beams).
-                for (int s = 0; s < 2; s++)
-                {
-                    float x = (s == 0 ? -0.25f : 0.25f) * P.Width;
+                // Grated work platform: galvanised planks across the level (instanced flat beams), leaving the west
+                // strip open as the stairwell (BuildCore). Was two stringers, which read as an empty frame.
+                foreach (var (s, x) in DeckPlanks(P))
                     Add(lid, $"{lid}.deck.{s}", MemberKind.Deck, new Vec3(x, y1, P.StandOff - P.Width * 0.5f), new Vec3(x, y1, P.StandOff + P.Width * 0.5f), MaterialRole.Galvanized, "deck", "walkable");
-                }
             }
             // Cap: four short mast posts + ring, lightning-mast style frame (generic).
             // Launch-pad polish: the crown is safety yellow (same accent as the level handrails) so the

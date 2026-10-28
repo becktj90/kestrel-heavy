@@ -9,7 +9,8 @@ using Kestrel.Kit.Contracts;
 
 namespace Kestrel.Pad
 {
-    /// <summary>Rail = small solids (no tower, lanyard umbilical). Tower = service tower + swing arms.
+    /// <summary>Rail = small stacks: launch rail on a compact service tower (no tower anchors; umbilicals clamp to the
+    /// rail, no swing arms). Tower = service tower + swing arms.
     /// TowerStrongback = heavy pad: tower + arms + a hinged strongback lattice on the far side.</summary>
     public enum PadArchetype { Rail, Tower, TowerStrongback }
 
@@ -81,7 +82,7 @@ namespace Kestrel.Pad
 
     public static class PadGenerator
     {
-        public const int Version = 6;   // rail leans away from the vehicle; rail-pad umbilicals hang from the rail (invalidates caches)
+        public const int Version = 7;   // rail rides a compact service tower; towers get plank decks, stairs and an elevator shaft (invalidates caches)
         /// <summary>Rail beam centre line to the vehicle skin (m). The I-beam is 0.5 m deep, so its face stays 0.35 m off the skin.</summary>
         public const float RailSkinGap = 0.6f;
 
@@ -237,13 +238,59 @@ namespace Kestrel.Pad
             var top = new Vec3(0, len * (float)Math.Cos(tilt), z0 + len * (float)Math.Sin(tilt));
             AddM(L, "rail", "rail.beam", MemberKind.Column, new Vec3(0, 0, z0), top, MaterialRole.PaintedSteel, "rail");
             L.HasRail = true; L.RailBase = new Vec3(0, 0, z0); L.RailTop = top;
-            int legs = rng.Range(2, 4);
-            for (int i = 0; i < legs; i++)
+            // Owner feedback (iPhone recording, KH-1 First Hop): "the tower needs more detail like an actual tower on
+            // a launch pad". The rail on its two yellow legs read as one flat slab. The rail now rides a compact
+            // service tower (same TowerLayout lattice as the big pads, scaled to the stack) tied to it at every deck.
+            // No tower anchors: the umbilicals still clamp to the rail (UmbilicalRig, PadAttachmentTests).
+            var tp = RailTowerFor(L.Fit, top);
+            L.Tower = tp;
+            var tower = new TowerLayout(tp, L.Graph);
+            L.Members.AddRange(tower.Members);
+            var arm = L.Graph.Get("tower.crewarm"); if (arm != null) arm.DisplayName = "Service access arm";
+            L.Graph.Get(TowerLayout.TowerId).DisplayName = "Rail service tower";
+            for (int l = 0; l < tp.Levels; l++)
             {
-                float y = len * (i + 1) / (legs + 1);
-                AddM(L, "rail", $"rail.leg.{i}", MemberKind.Brace, new Vec3(0, 0, z0 + y * 0.6f), new Vec3(0, y, z0 + y * (float)Math.Tan(tilt)), MaterialRole.SafetyYellowSteel, "brace");
+                float y = (l + 1) * tp.LevelHeight;
+                if (y > top.Y - 0.3f) break;
+                // Rail face to the girt on the tower's vehicle face; yellow like the old legs.
+                AddM(L, "rail", $"rail.tie.{l:00}", MemberKind.Brace, new Vec3(0, y, z0 + y * (float)Math.Tan(tilt)), new Vec3(0, y, tp.NearFaceZ), MaterialRole.SafetyYellowSteel, "brace", "rail-tie");
             }
         }
+
+        /// <summary>Rail tower face to the rail top (m): the beam (0.5 m deep) and a column flange clear each other.</summary>
+        public const float RailTowerGap = 0.8f;
+        /// <summary>Tallest level of the compact rail tower (m); levels are spread evenly up to its height.</summary>
+        public const float RailTowerMaxLevel = 4f;
+
+        /// <summary>Compact fixed service tower behind a launch rail, scaled to the stack: 3–6 m square, levels of at most
+        /// <see cref="RailTowerMaxLevel"/>, at least 1.5 m (and 8%) taller than the vehicle and up to the rail's top
+        /// stretch, an access arm a level below the tip beside the stack (never across the rail), stairs, lightning spike.</summary>
+        public static TowerParams RailTowerFor(PadFit fit, Vec3 railTop)
+        {
+            float h = Math.Max(1f, fit.VehicleHeight), r = Math.Max(0.1f, fit.VehicleRadius);
+            float width = (float)Math.Round(Math.Max(3f, Math.Min(6f, Math.Max(r * 3.2f, h * 0.08f))) * 2f) / 2f;
+            float target = Math.Max(6f, Math.Max(h * 1.08f, Math.Max(h + 1.5f, railTop.Y * 0.85f)));
+            int levels = Math.Max(2, (int)Math.Ceiling(target / RailTowerMaxLevel));
+            float lh = target / levels;
+            var tp = new TowerParams
+            {
+                Width = width, LevelHeight = lh, Levels = levels,
+                CapHeight = Math.Max(1.2f, Math.Min(3f, lh * 0.5f)),
+                StandOff = Math.Max(railTop.Z, r + RailSkinGap) + RailTowerGap + width * 0.5f,
+                CrewArmHalfWidth = Math.Max(0.45f, Math.Min(0.9f, r * 0.5f)),
+                CrewArmHeight = Math.Max(1.2f, Math.Min(2.4f, lh * 0.55f)),
+            };
+            tp.SpikeHeight = Math.Max(1.5f, tp.CapHeight * 1.5f);
+            tp.CrewLevel = Math.Max(0, Math.Min(levels - 1, (int)Math.Floor(h * 0.85f / lh) - 1));
+            // Beside the stack on +X (the design camera looks from -X), its inner chord RailArmGap off the skin line,
+            // reaching to abreast of the vehicle axis.
+            tp.CrewArmX = r + RailArmGap + tp.CrewArmHalfWidth;
+            tp.CrewArmReach = Math.Max(1f, tp.NearFaceZ);
+            return tp;
+        }
+
+        /// <summary>Rail-pad access arm: inner chord to the vehicle's skin line (x), m.</summary>
+        public const float RailArmGap = 0.5f;
 
         static void BuildStrongback(PadLayout L, ref PadRng rng)
         {
