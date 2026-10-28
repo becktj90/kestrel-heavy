@@ -277,7 +277,9 @@
        "label": "Upper"
       }
      ],
-     "payload": 10527.222794253774
+     "payload": 10527.222794253774,
+     "fairingMass": 2527.2227942537734,
+     "fairingJettisonAltitudeM": 110000
     },
     "requiredDeltaV": {
      "orbit": {
@@ -550,7 +552,9 @@
        "label": "Stage 2"
       }
      ],
-     "payload": 318.2322865997334
+     "payload": 318.2322865997334,
+     "fairingMass": 168.2322865997334,
+     "fairingJettisonAltitudeM": 100000
     },
     "requiredDeltaV": {
      "orbit": {
@@ -826,7 +830,9 @@
        "label": "Space Stage"
       }
      ],
-     "payload": 748.6194309326224
+     "payload": 748.6194309326224,
+     "fairingMass": 448.61943093262244,
+     "fairingJettisonAltitudeM": 100000
     },
     "requiredDeltaV": {
      "orbit": {
@@ -1092,7 +1098,9 @@
        "label": "Upper"
       }
      ],
-     "payload": 79466.87887796915
+     "payload": 79466.87887796915,
+     "fairingMass": 19466.878877969153,
+     "fairingJettisonAltitudeM": 120000
     },
     "requiredDeltaV": {
      "orbit": {
@@ -1346,7 +1354,9 @@
        "label": "Motor"
       }
      ],
-     "payload": 416.6410520424818
+     "payload": 416.6410520424818,
+     "fairingMass": 116.64105204248182,
+     "fairingJettisonAltitudeM": 100000
     },
     "requiredDeltaV": {
      "orbit": {
@@ -1489,9 +1499,9 @@
       "payloadKg": 200,
       "target": "LEO 400 km",
       "simOutcome": "orbit",
-      "simApogeeKm": 2043,
-      "simPerigeeKm": 308,
-      "maxG": 8.8
+      "simApogeeKm": 6539,
+      "simPerigeeKm": 333,
+      "maxG": 10.5
      }
     }
    },
@@ -1664,7 +1674,9 @@
        "label": "Stage 2"
       }
      ],
-     "payload": 368.2322865997334
+     "payload": 368.2322865997334,
+     "fairingMass": 168.2322865997334,
+     "fairingJettisonAltitudeM": 100000
     },
     "requiredDeltaV": {
      "orbit": {
@@ -1810,8 +1822,8 @@
       "payloadKg": 15000,
       "target": "LEO 400 km",
       "simOutcome": "orbit",
-      "simApogeeKm": 1073,
-      "simPerigeeKm": 191,
+      "simApogeeKm": 2545,
+      "simPerigeeKm": 226,
       "maxG": 5.8
      }
     }
@@ -1985,7 +1997,9 @@
        "label": "Stage 2"
       }
      ],
-     "payload": 17527.222794253772
+     "payload": 17527.222794253772,
+     "fairingMass": 2527.2227942537734,
+     "fairingJettisonAltitudeM": 110000
     },
     "requiredDeltaV": {
      "orbit": {
@@ -2132,9 +2146,9 @@
       "payloadKg": 10500,
       "target": "LEO 400 km",
       "simOutcome": "orbit",
-      "simApogeeKm": 1271,
-      "simPerigeeKm": 158,
-      "maxG": 5.5
+      "simApogeeKm": 3389,
+      "simPerigeeKm": 186,
+      "maxG": 6.4
      }
     }
    },
@@ -2307,7 +2321,9 @@
        "label": "Stage 2"
       }
      ],
-     "payload": 13027.222794253774
+     "payload": 13027.222794253774,
+     "fairingMass": 2527.2227942537734,
+     "fairingJettisonAltitudeM": 110000
     },
     "requiredDeltaV": {
      "orbit": {
@@ -2466,7 +2482,7 @@
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 271,
+      "simApogeeKm": 252,
       "simPerigeeKm": 191,
       "maxG": 10.7
      }
@@ -2641,7 +2657,9 @@
        "label": "Stage 2"
       }
      ],
-     "payload": 6243.097154663112
+     "payload": 6243.097154663112,
+     "fairingMass": 2243.097154663112,
+     "fairingJettisonAltitudeM": 110000
     },
     "requiredDeltaV": {
      "orbit": {
@@ -2787,9 +2805,9 @@
       "payloadKg": 15000,
       "target": "LEO 400 km",
       "simOutcome": "orbit",
-      "simApogeeKm": 2785,
-      "simPerigeeKm": 153,
-      "maxG": 7.2
+      "simApogeeKm": 4051,
+      "simPerigeeKm": 158,
+      "maxG": 7.8
      }
     }
    },
@@ -2962,7 +2980,9 @@
        "label": "Upper"
       }
      ],
-     "payload": 17527.222794253772
+     "payload": 17527.222794253772,
+     "fairingMass": 2527.2227942537734,
+     "fairingJettisonAltitudeM": 110000
     },
     "requiredDeltaV": {
      "orbit": {

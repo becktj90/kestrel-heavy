@@ -132,7 +132,7 @@
       "payloadKg": 4000,
       "target": "GTO",
       "simOutcome": "orbit",
-      "simApogeeKm": 271,
+      "simApogeeKm": 252,
       "simPerigeeKm": 191,
       "maxG": 10.7
     }
