@@ -176,8 +176,32 @@ namespace Kestrel.Game.Tests
             Object.DestroyImmediate(ground.GetComponent<Collider>());
             ground.transform.SetParent(root.transform, false);
             ground.transform.localPosition = new Vector3(0f, TrenchSpec.GradeY - 0.03f, 0f);
-            ground.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            ground.transform.localScale = new Vector3(900f, 900f, 1f);
+            // Cut the trench opening and flame ponds out of it exactly as PadDetailLink does in the game
+            // (SiteView.SetGroundOpenings). An uncut quad sits above the channel floor and fills the trench with
+            // flat ground, which read as dark wedges where the channel and apron should show.
+            ground.transform.localRotation = Quaternion.identity;
+            ground.transform.localScale = Vector3.one;
+            // Pad-local polygons go through the pad transform into the ground's local space (PadDetailLink.ToMetres).
+            IList<Vec2> ToGround(IList<Vec2> poly)
+            {
+                var o = new List<Vec2>(poly.Count);
+                foreach (var p in poly)
+                {
+                    var l = ground.transform.InverseTransformPoint(pad.transform.TransformPoint(new Vector3(p.X, 0f, p.Y)));
+                    o.Add(new Vec2(l.x, l.z));
+                }
+                return o;
+            }
+            var groundHoles = new List<IList<Vec2>>();
+            if (layout.Trench != null)
+            {
+                groundHoles.Add(ToGround(TrenchGrammar.GroundOpening(layout.Trench)));
+                foreach (var pond in TrenchGrammar.PondPolys(layout.Trench)) groundHoles.Add(ToGround(pond));
+            }
+            var groundMesh = PadMeshUpload.Upload(PolyCut.Frame(450f, groundHoles, 0f), "KH_CaptureGroundCut");
+            Assert.That(groundMesh, Is.Not.Null, "ground cut mesh");
+            made.Add(groundMesh);
+            ground.GetComponent<MeshFilter>().sharedMesh = groundMesh;
             var gr = ground.GetComponent<Renderer>();
             var gm = new Material(gr.sharedMaterial) { color = PadGround.GroundColor * 0.55f };
             if (gm.HasProperty("_Smoothness")) gm.SetFloat("_Smoothness", 0f);
