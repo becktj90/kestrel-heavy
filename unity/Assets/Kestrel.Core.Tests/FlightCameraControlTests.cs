@@ -102,7 +102,7 @@ namespace Kestrel.Core.Tests
             var seen = new System.Collections.Generic.HashSet<FlightViewMode>();
             var m = FlightViewMode.Auto;
             for (int i = 0; i < 10; i++) { m = FlightCameraControl.Next(m, false); seen.Add(m); }
-            Assert.That(seen, Does.Not.Contain(FlightViewMode.Pad));
+            Assert.IsFalse(seen.Contains(FlightViewMode.Pad), "C never lands on Pad when it cannot see the rocket");
             Assert.That(seen.Count, Is.EqualTo(4));
         }
 
