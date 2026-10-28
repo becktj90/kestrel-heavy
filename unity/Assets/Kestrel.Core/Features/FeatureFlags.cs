@@ -31,6 +31,11 @@ namespace Kestrel.Core.Features
         /// <summary>#341: the optional closed-loop guidance computer part. Off in the Starter designer (data/features.json);
         /// it is also gated on a campaign unlock (Flight.GuidanceComputer.Available).</summary>
         public const string DesignerGuidanceComputer = "designer.guidanceComputer";
+        /// <summary>Designer tiers (docs/DESIGNER_TIERS_SPEC.md): the Builder and Engineer chips on the Starter switch.
+        /// Off by default, also with no features.json (they are not in <see cref="All"/>), so no chip ever opens a tier
+        /// whose controls have not shipped. Kid is always offered.</summary>
+        public const string DesignerTierBuilder = "designer.tierBuilder";
+        public const string DesignerTierEngineer = "designer.tierEngineer";
         public const string HomeDesignFirst = "home.designFirst";
         public const string HomeCodexTile = "home.codexTile";
         public const string HomeThrum = "home.thrum";
@@ -44,6 +49,9 @@ namespace Kestrel.Core.Features
             DesignerRecoveryControls, DesignerUndoRedo, DesignerGuidanceComputer,
             HomeDesignFirst, HomeCodexTile, HomeThrum, HomeCreditsChip, HomeStatsCard,
         };
+
+        /// <summary>Flags whose built-in default is off: a missing file or an unknown build never shows them.</summary>
+        public static readonly IReadOnlyList<string> OffByDefault = new[] { DesignerTierBuilder, DesignerTierEngineer };
 
         /// <summary>Settings pref for the "Show full designer" toggle (off by default).</summary>
         public const string ShowFullDesignerPref = ExperienceSettings.ShowFullDesignerPref;

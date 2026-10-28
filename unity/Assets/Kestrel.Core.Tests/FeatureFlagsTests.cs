@@ -13,7 +13,9 @@ namespace Kestrel.Core.Tests
         public void DataFile_ListsExactlyThePlanKeys_DesignerOn_HomeStarter_TierStarter()
         {
             var o = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "features.json")));
-            CollectionAssert.AreEquivalent(FeatureKeys.All, o.Obj("flags").Order);
+            var listed = new List<string>(FeatureKeys.All);
+            listed.AddRange(FeatureKeys.OffByDefault);
+            CollectionAssert.AreEquivalent(listed, o.Obj("flags").Order);
             Assert.AreEqual(19, FeatureKeys.All.Count); // #341: + designer.guidanceComputer
             var f = FeatureFlags.Load(Golden.Root);
             Assert.AreEqual(ExperienceTier.Starter, f.Tier);
@@ -33,6 +35,13 @@ namespace Kestrel.Core.Tests
                 Assert.IsTrue(builtIn.Default(k), k + " built-in default stays on");
             }
             Assert.IsFalse(f.IsOn("designer.nope"));
+            // Designer tiers: the Builder / Engineer chips are off in the file AND with no file (built-in off).
+            foreach (var k in FeatureKeys.OffByDefault)
+            {
+                Assert.IsFalse(new List<string>(FeatureKeys.All).Contains(k), k + " is not a default-on flag");
+                Assert.IsFalse(f.IsOn(k), k + " is off in data/features.json");
+                Assert.IsFalse(builtIn.IsOn(k), k + " built-in default is off");
+            }
         }
 
         [Test]

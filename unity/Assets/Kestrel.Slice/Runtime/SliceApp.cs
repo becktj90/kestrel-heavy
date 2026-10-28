@@ -1250,6 +1250,7 @@ namespace Kestrel.Slice
                 starter = new StarterPanel(starterRocket, parent, hudEl != null ? parent.IndexOf(hudEl) : -1);
                 starter.LaunchRequested += StarterLaunch;
                 starter.BackRequested += StarterBack;
+                starter.RocketBoxChanged += ApplyDesignFraming;   // a Why? card resized the rocket window
                 starterRocket.Changed += OnStarterChanged;
                 starter.SetVisible(false);
             }
