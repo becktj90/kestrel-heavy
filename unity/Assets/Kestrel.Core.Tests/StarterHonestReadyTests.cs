@@ -230,6 +230,34 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void Judge_NamesTheLandingCause_ForAnIntactFlight_WhoseReserveCannotBuyTheReturn()
+        {
+            // The Landing branch has an exemplar here whether or not any shipped Starter setting reaches it: an intact
+            // predictor flight of the KH-13 winner whose landing reserve is a token 1 t cannot buy the return (the
+            // reserve's delta-v is under the barge need, FlightBatch.GradeLanding), so the verdict names Landing and
+            // not a flown failure. The copy for that cause is the shipped one.
+            var cat = StarterFixture.Catalog;
+            var r = StarterFixture.Rocket("m13");
+            Assert.IsTrue(r.Mission.LandingRequired, "KH-13 grades a landing");
+            var d = r.BuildDesign();
+            JsonMut.Set((JsonObject)d.Arr("stages")[0], "landingPropMass", 1000);
+            var design = Design.FromJson(d);
+            var sim = ReferenceAscent.Flight(cat, design).Run();
+            Assert.IsNull(sim.failure, "the flight stays intact: " + sim.failure?.kind + "/" + sim.failure?.cause);
+            var v = StarterVerdict.Judge(cat, design, r.Mission, sim, true);
+            Assert.AreEqual("short", v.LandingGrade);
+            Assert.AreEqual(StarterVerdict.Landing, v.Cause);
+            Assert.IsFalse(v.Survives);
+            Assert.AreEqual("\u2717 Can't land.", StarterReadinessCopy.Current.Badge(v.Cause));
+
+            // The same flight with its real reserve is not a Landing verdict.
+            var real = Design.FromJson(r.BuildDesign());
+            var ok = StarterVerdict.Judge(cat, real, r.Mission, ReferenceAscent.Flight(cat, real).Run(), true);
+            Assert.AreNotEqual(StarterVerdict.Landing, ok.Cause);
+            Assert.IsNull(ok.Cause, "the shipped KH-13 starter reads clean: " + ok.Cause);
+        }
+
+        [Test]
         public void TheScreen_ChecksWithoutBlocking_ThenWarmsEveryOneTapNeighbour()
         {
             var r = StarterLayoutTests.Rocket("m3", "kerosene-2-f4-b0");

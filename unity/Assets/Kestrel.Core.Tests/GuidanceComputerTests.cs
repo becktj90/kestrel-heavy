@@ -453,7 +453,7 @@ namespace Kestrel.Core.Tests
                     design = Design.FromJson(json);
                 }
                 else if (mode == "strength") design.safetyFactor = row.Num("restoreSafetyFactor");
-                // t-booster-land: KH-13's starter ships with the part (a 20% landing reserve cuts stage 1 off near 63 km,
+                // t-booster-land: KH-13's starter ships with the part (a 13% landing reserve cuts stage 1 off near 90 km,
                 // and only the closed-loop upper stage circles that at 550 km). The part tests start from its basic twin.
                 if (design.guidanceComputer)
                 {

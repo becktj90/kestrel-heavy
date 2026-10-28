@@ -1108,7 +1108,7 @@
               "diameter": 3.2,
               "material": "titanium",
               "separationMass": 40,
-              "landingPropMass": 44000,
+              "landingPropMass": 28000,
               "cluster": {
                 "pattern": "auto"
               },
@@ -1121,7 +1121,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 2,
-              "propMass": 40000,
+              "propMass": 36000,
               "diameter": 3.2,
               "material": "titanium",
               "separationMass": 40,
@@ -1168,7 +1168,7 @@
             "mode": "barge"
           },
           "guidance": {
-            "pitchKickDeg": 6,
+            "pitchKickDeg": 3,
             "gLimit": 5.5
           },
           "heatShield": true,
