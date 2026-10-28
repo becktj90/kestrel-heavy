@@ -6,7 +6,7 @@
 // and web landscape 1280x800.
 //
 // Asserts, with Unity's own projection (WorldToViewportPoint, off-axis shift included), not the solver's: every tower-crown, base-plate
-// and pad-circle point of the layout is inside the preview box, and the crown's real top corners are too. Also runs the pure
+// and pad-circle point of the layout is inside the preview box, and the crown's real member ends (through the Pad child's own transform) are too. Also runs the pure
 // StarterPadFrame evaluator on the camera's pose (inside the box, none hidden behind the vehicle past its limits, vehicle legible).
 // PNG per size: starter-kh1-<size>.png in UiCapture.OutDir() (CI artifact "ui-captures"), the preview box outlined.
 // Batchmode-safe: no LogError; everything created here is destroyed in TearDown.
@@ -154,11 +154,16 @@ namespace Kestrel.Game.Tests
             var tp = layout.Tower;
             TestContext.WriteLine("KH-1 pad: surface radius " + TrenchGrammar.SurfaceRadius(layout).ToString("0.0") + " m, circle radius " + PadShowcase.CircleRadius(layout).ToString("0.0") + " m, crown top " + (tp.Height + tp.CapHeight).ToString("0.0") + " m, tower stand-off " + tp.StandOff.ToString("0.0") + " m");
             var padT = pad.transform;
+            // The crown's real geometry (every tower.cap.* member end except the thin lightning spike), put in the world by the Pad child's own
+            // Unity transform rather than the solver's yaw maths. (A box of the tower's full width at the apex height overstates it: the apex is one point.)
             var crown = new List<Vector3>();
-            float topY = tp.Height + tp.CapHeight;
-            for (int sx = -1; sx <= 1; sx += 2)
-                for (int sz = -1; sz <= 1; sz += 2)
-                    crown.Add(padT.TransformPoint(new Vector3(sx * tp.Width * 0.5f, topY, tp.StandOff + sz * tp.Width * 0.5f)));
+            foreach (var m in layout.Members)
+            {
+                if (m.Id == null || !m.Id.StartsWith("tower.cap.", System.StringComparison.Ordinal) || m.Id.EndsWith(".spike", System.StringComparison.Ordinal)) continue;
+                crown.Add(padT.TransformPoint(new Vector3(m.A.X, m.A.Y, m.A.Z)));
+                crown.Add(padT.TransformPoint(new Vector3(m.B.X, m.B.Y, m.B.Z)));
+            }
+            Assert.That(crown.Count, Is.GreaterThan(0), "KH-1: no crown members to check");
 
             foreach (var other in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
                 if (other.CompareTag("MainCamera") && other.enabled) { other.enabled = false; reEnable.Add(other); }   // PadDetailRenderer draws for Camera.main
@@ -215,7 +220,7 @@ namespace Kestrel.Game.Tests
                 }
                 TestContext.WriteLine(where + ": pad circle (optional) " + circleIn + " of " + circleAll + " points inside the preview box in Unity's projection");
                 foreach (var c in crown)
-                    if (!Inside(c, out var at)) { outside++; first = first ?? ("crown corner at " + at); }
+                    if (!Inside(c, out var at)) { outside++; first = first ?? ("crown member end at " + at); }
                 if (outside > 0) fails.Add(where + ": " + outside + " crown/plate points outside the preview box in Unity's projection (first: " + first + "; box " + frame.Rocket.X.ToString("0") + "-" + frame.Rocket.Right.ToString("0") + " x " + frame.Rocket.Y.ToString("0") + "-" + frame.Rocket.Bottom.ToString("0") + ")");
 
                 pad.ViewCamera = cam;
