@@ -15,6 +15,7 @@
 | time-of-day.json | loader in Kestrel.Core.Flight.LaunchTime (no JSON Schema file) | per-mission launch lighting (`docs/TIME_OF_DAY.md`) |
 | finishes.json | loader in Kestrel.Livery (no JSON Schema file) | per-part paint |
 | codex.json | schemas/codex.schema.json | CodexBook (Unity); web/js/data/gen/codex.js |
+| starter-readiness.json | loader in Kestrel.Core.Designer.StarterReadinessCopy (no JSON Schema file) | Starter screen Honest Ready badge and reason, kid + engineer per predicted cause |
 | golden/*.json | see golden/README.md and docs/PHYSICS.md | ports (tolerances are per quantity for catalog-flight) |
 
 Economy constants stay in `web/js/economy-data/constants.json` (already JSON + schema).

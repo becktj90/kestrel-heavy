@@ -187,8 +187,18 @@ namespace Kestrel.Core.Tests
                 StringAssert.StartsWith("Hops to ", rest);
                 hop.FuelNotch = 0;
                 StarterScreen.Readiness(hop, out badge, out rest);
-                Assert.AreNotEqual(StarterScreen.ShortBadge, badge, id);
-                StringAssert.Contains("may fall short", rest);
+                if (hop.Verdict().Cause == StarterVerdict.Short)
+                {
+                    // Honest Ready: KH-2 at the lowest notch breaks up short at burnout in the predictor flight
+                    // (PlayedChecks), so the screen names that instead of the readout's soft "may fall short".
+                    Assert.AreEqual(StarterScreen.ShortBadge, badge, id);
+                    StringAssert.StartsWith("It would run out of push before the target.", rest, id);
+                }
+                else
+                {
+                    Assert.AreNotEqual(StarterScreen.ShortBadge, badge, id);
+                    StringAssert.Contains("may fall short", rest);
+                }
                 hop.FuelNotch = 4;
                 StarterScreen.Readiness(hop, out badge, out rest);
                 StringAssert.Contains("may overshoot", rest);
