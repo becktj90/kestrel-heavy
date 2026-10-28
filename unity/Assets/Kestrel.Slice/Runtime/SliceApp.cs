@@ -856,8 +856,12 @@ namespace Kestrel.Slice
         void StepFlightCamera(float juiceFov, double altitude, FlightJuice fx = null)
         {
             if (cam == null || vehicleRoot == null || ground == null) return;
+            // The chrome owns the live view (a Pad fallback is not saved, so OnFlightView does not hear of it).
+            if (chrome != null) flightView = chrome.View;
             var v = vehicleRoot.position; var up = vehicleRoot.up;
             var pose = DesiredFlightPose(up, v, juiceFov);
+            // Out of the pad camera's range the Pad chip dims and a live Pad view goes back to the chase (FlightCameraControl).
+            chrome?.SetPadInRange(FlightViewPose.PadInRange(lastPoseInput));
             // One smoothing rate for the offset, the look point and the FOV: a view switch, a staging event or
             // the Pad zoom glides over about a second. No cuts, no FOV pops (photosensitivity, 60 fps).
             camOffset = ChaseCamera.StepOffset(camOffset, U(pose.Offset), FlightViewPose.SmoothRate, Time.deltaTime);
@@ -912,7 +916,7 @@ namespace Kestrel.Slice
             var padRenderer = trenchPad;
             var trench = padRenderer != null && padRenderer.Layout != null ? padRenderer.Layout.Trench : null;
             var g = ground != null ? ground.position : Vector3.zero;
-            return FlightViewPose.Pose(new FlightPoseInput
+            lastPoseInput = new FlightPoseInput
             {
                 Mode = flightView,
                 Vehicle = V(vehiclePos),
@@ -933,8 +937,12 @@ namespace Kestrel.Slice
                 Radius = rocketRadius,
                 Aspect = cam != null ? cam.aspect : 0f,
                 Obstacles = flightView == FlightViewMode.Below ? PadSight(padRenderer) : null,
-            });
+            };
+            return FlightViewPose.Pose(lastPoseInput);
         }
+
+        /// <summary>The inputs of the last camera pose (the Pad range check reuses them).</summary>
+        FlightPoseInput lastPoseInput;
 
         float rocketRadius;
         PoseObstacle[] padSight;
