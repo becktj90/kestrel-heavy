@@ -4,7 +4,7 @@
 // mode 'replay': only the recorded trace drives input (no state reads).
 const ANCHOR_MS = 600000; // 10 min virtual; boot is far shorter
 const SETTLE_FRAMES = 120;
-window.__replayRun = async function replayRun({ mission, difficulty, seed, mode, trace, maxFrames = 60 * 240, every = 30 }) {
+window.__replayRun = async function replayRun({ mission, difficulty, seed, mode, trace, maxFrames = 60 * 240, every = 30, pilotKind = 'default' }) {
   const R = window.__replay;
   const game = window.__ngGame;
   const scene = game.scene.scenes[0];
@@ -93,7 +93,8 @@ window.__replayRun = async function replayRun({ mission, difficulty, seed, mode,
       if (s.sepPhase === 'window' && (s.sepAlignHold || 0) > 0.35) space = fr % 12 < 2;
     } else if (st === 'HAVEN') {
       target = scene.deck?.x ?? rk.x; vxGain = 22;
-      if (s.burnWindow && b.velocity.y > 1.2) space = true;
+      if (pilotKind === 'burn') space = Boolean(s.burnWindow);
+      else if (s.burnWindow && b.velocity.y > 1.2) space = true;
     }
     const err = (target - rk.x) / 120 - b.velocity.x / vxGain * 10;
     set('ArrowLeft', err < -0.25, fr);

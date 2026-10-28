@@ -79,11 +79,22 @@ namespace Kestrel.Core.Designer
         }
 
         /// <summary>
-        /// The readiness line from the existing readout (Validate.Engineering + Readout.Quick) on the rocket the
-        /// controls built: a short badge and the rest in body colour. Plain information. Returns false (Launch off)
-        /// only on a hard schema block, with its one plain reason. No numbers: no line, Launch stays on.
+        /// The readiness line from the existing readout (Validate.Engineering + Readout.Quick) and the launch predictor
+        /// (Honest Ready, audit B-10) on the rocket the controls built: a short badge and the rest in body colour.
+        /// Returns false (Launch off) only on a hard schema block, with its one plain reason. A rocket the predictor
+        /// says breaks up, cannot land or does not fit never reads Ready or Tight; it gets its cause's badge and one
+        /// plain sentence from data/starter-readiness.json, and still launches. No numbers: no line, Launch stays on.
+        /// Blocking: flies the predictor for this setting when it is not cached (tests and one-off callers).
         /// </summary>
         public static bool Readiness(StarterRocket r, out string badge, out string rest)
+        {
+            if (r != null && !r.Check().Blocked) r.Verdict();
+            return ReadinessNow(r, out badge, out rest);
+        }
+
+        /// <summary>As <see cref="Readiness"/>, never flying: a setting still being checked reads
+        /// <see cref="StarterReadinessCopy.Checking"/> where it would otherwise read Ready or Tight.</summary>
+        public static bool ReadinessNow(StarterRocket r, out string badge, out string rest)
         {
             badge = ""; rest = "";
             if (r == null) return false;
@@ -93,21 +104,29 @@ namespace Kestrel.Core.Designer
             var m = r.Mission;
             string target = TargetText(m);
             bool hop = m != null && m.TargetKind == "apogee";
-            if (hop) return HopLine(r, c, out badge, out rest);
-            if (c.LiftoffTwr < Validate.MIN_TWR)
+            if (!hop && c.LiftoffTwr < Validate.MIN_TWR)
             {
                 badge = HeavyBadge;
                 bool more = r.BoostersVisible && !r.BoostersLocked && r.Boosters < 4;
                 rest = more ? "Can't lift off. Try less fuel or boosters." : "Can't lift off. Try less fuel.";
                 return true;
             }
-            if (c.Margin < 0)
+            var copy = StarterReadinessCopy.Current;
+            if (!r.TryVerdict(out var v))
             {
-                badge = ShortBadge;
-                int pct = Math.Max(1, (int)Math.Round(-c.Margin * 100));
-                rest = "About " + pct.ToString(CultureInfo.InvariantCulture) + "% short of " + target + ". Try more fuel or a stage.";
+                if (!hop && c.Margin < 0) return ShortLine(c, target, out badge, out rest);
+                rest = copy.Checking;
                 return true;
             }
+            if (v != null && v.Cause != null)
+            {
+                if (v.Cause == StarterVerdict.Short && !hop && c.Margin < 0) return ShortLine(c, target, out badge, out rest);
+                badge = copy.Badge(v.Cause);
+                rest = copy.Kid(v.Cause, r.CanFix);
+                return true;
+            }
+            if (hop) return HopLine(r, c, out badge, out rest);
+            if (c.Margin < 0) return ShortLine(c, target, out badge, out rest);
             if (c.Margin < TightMargin)
             {
                 badge = TightBadge;
@@ -127,6 +146,18 @@ namespace Kestrel.Core.Designer
             else rest = "Reaches " + target + " with fuel to spare.";
             return true;
         }
+
+        static bool ShortLine(StarterCheck c, string target, out string badge, out string rest)
+        {
+            badge = ShortBadge;
+            int pct = Math.Max(1, (int)Math.Round(-c.Margin * 100));
+            rest = "About " + pct.ToString(CultureInfo.InvariantCulture) + "% short of " + target + ". Try more fuel or a stage.";
+            return true;
+        }
+
+        /// <summary>The engineer wording of the current setting's predicted cause, or "" (Builder/Engineer tiers, tooltips).</summary>
+        public static string EngineerReason(StarterRocket r)
+            => r != null && r.TryVerdict(out var v) && v != null && v.Cause != null ? StarterReadinessCopy.Current.Engineer(v.Cause) : "";
 
         /// <summary>Hops (KH-1, KH-2) compare with the mission's flown rocket, not the readout's orbital margin:
         /// that margin reads "short" on rockets that fly the hop (M-10), so it never reaches this line.</summary>

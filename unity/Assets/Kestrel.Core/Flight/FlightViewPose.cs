@@ -185,6 +185,15 @@ namespace Kestrel.Core.Flight
             return pose;
         }
 
+        /// <summary>The Pad ground camera can still show the rocket from these inputs (its pose is not Far), whatever
+        /// view is live. FlightChrome disables the Pad chip and leaves Pad when this goes false (FlightCameraControl).</summary>
+        public static bool PadInRange(FlightPoseInput p)
+        {
+            p.Mode = FlightViewMode.Pad;
+            p.Obstacles = null;
+            return !Pose(p).Far;
+        }
+
         /// <summary>1 on the pad, 0 once the stack is about a height clear, smooth in between.</summary>
         public static double BelowHoldWeight(double altitude, double h)
         {
