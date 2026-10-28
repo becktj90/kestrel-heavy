@@ -25,6 +25,10 @@ namespace Kestrel.Core.Flight
         public double departDv = double.NaN, departReqDv = double.NaN, departTW = double.NaN;
         /// <summary>#313: flight-path angle at a clean cutoff, degrees (NaN on burnout or failure).</summary>
         public double cutoffGammaDeg = double.NaN;
+        /// <summary>The first stage's flown landing (BoosterLanding.FlyPlanned): its cause (null on a clean touchdown), miss
+        /// from the deck centre, sink, landing fuel left, and the hand-over speed and height. NaN when nothing was flown.</summary>
+        public string landingCause;
+        public double landingMissM = double.NaN, landingSink = double.NaN, landingPropLeftKg = double.NaN, separationSpeedMps = double.NaN, separationAltKm = double.NaN;
         /// <summary>#341: the design carried the closed-loop guidance computer; it flew the upper stage (guidanceInControl);
         /// a live nudge was held; the top stage burned dry before the cutoff energy (upperOut); and the state the part was
         /// handed at its first upper-stage step (altitude, flight-path angle, thrust over net gravity). All false or NaN without the part.</summary>
@@ -137,7 +141,28 @@ namespace Kestrel.Core.Flight
                 // The live pad's director (#313): the batch flies the same max-Q call, throttle hold, pitch nudge and
                 // staging the default player gets on the pad, not the bare sim.
                 var director = MissionFlightSetup.Director(catalog, setup, design, DesignHash(design), seed);
-                var sim = MissionFlightSetup.Fly(setup, director);
+                // Step the flight so the batch sees the first stage's hand-over exactly where the live pad does
+                // (BoosterLanding.Watch: the last state while the core is the active stage).
+                var run = MissionFlightSetup.Start(setup, director);
+                bool releases = BoosterLanding.Releases(catalog, design, out int coreSerial);
+                double omegaAir = setup.Options.rotate ? Earth.SiteRotationSpeed(setup.Options.latitude) / Gravity.R_EARTH : 0;
+                bool shot = false, separated = false;
+                double shotDown = 0, shotAlt = 0, shotSpeed = 0, shotPitch = 0;
+                while (true)
+                {
+                    bool more = run.Step();
+                    if (releases && !separated)
+                    {
+                        if (run.Sim.StageIdx == coreSerial)
+                        {
+                            BoosterLanding.HandOver(run.Sim.Y, run.Sim.T, omegaAir, out shotDown, out shotAlt, out shotSpeed, out shotPitch);
+                            shot = shotAlt > 20;
+                        }
+                        else if (shot && run.Sim.StageIdx > coreSerial) separated = true;
+                    }
+                    if (!more) break;
+                }
+                var sim = run.Finish();
 
                 flight.outcome = sim.outcome;
                 flight.failure = sim.failure != null ? sim.failure.kind : null;
@@ -175,7 +200,19 @@ namespace Kestrel.Core.Flight
 
                 flight.burnoutMps = BurnoutSpeed(sim, CoreSerial(design));
                 flight.burnoutAltKm = BurnoutAlt(sim, CoreSerial(design)) / 1000.0;
-                flight.landingGrade = GradeLanding(catalog, design, sim, mission.LandingMode, false);
+                // The landing the player sees: the booster flown from its hand-over on Auto-assist (one rule with the
+                // live pad, BoosterLanding.FlyPlanned). A stage that never separated, or picked no landing, is short.
+                if (mission.LandingMode == "rtls" || mission.LandingMode == "barge")
+                {
+                    var landed = separated ? BoosterLanding.FlyPlanned(catalog, design, shotDown, shotAlt, shotSpeed, shotPitch) : null;
+                    flight.landingGrade = landed != null ? FlownGrade(landed) : "short";
+                    flight.landingCause = landed != null ? landed.Cause : null;
+                    flight.landingMissM = landed != null ? landed.MissM : double.NaN;
+                    flight.landingSink = landed != null ? landed.Sink : double.NaN;
+                    flight.landingPropLeftKg = landed != null ? landed.PropLeft : double.NaN;
+                    flight.separationSpeedMps = separated ? shotSpeed : double.NaN;
+                    flight.separationAltKm = separated ? shotAlt / 1000.0 : double.NaN;
+                }
                 if (mission.LandBoosters)
                     flight.boosterGrade = GradeLanding(catalog, design, sim, mission.LandingMode, true);
 
@@ -227,6 +264,13 @@ namespace Kestrel.Core.Flight
                 g = pl.maxG;
             if (!double.IsNaN(mission.MaxG) && mission.MaxG > 0 && mission.MaxG < g) g = mission.MaxG;
             return g;
+        }
+
+        /// <summary>The flown verdict's grade in the batch's words: perfect, good, hard, salvage or water.</summary>
+        public static string FlownGrade(RecoveryVerdict v)
+        {
+            if (v == null || string.IsNullOrEmpty(v.GradeName)) return "short";
+            return v.GradeName.ToLowerInvariant();
         }
 
         /// <summary>

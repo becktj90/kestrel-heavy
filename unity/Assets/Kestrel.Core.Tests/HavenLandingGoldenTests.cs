@@ -1,7 +1,9 @@
 // Flown Haven recoveries from the campaign winners. The ascent grade is only a
 // prediction. These tests fly the booster from MECO to the surface.
-// Assist can make a feasible return. An idle stick, a stuck burn, and the lofted
-// KH-13 miss do not. An empty checkout still flies off the pack already in memory.
+// Assist can make a feasible return. An idle stick and a stuck burn do not. KH-13's winner used to be a lofted
+// 139 km / 3.3 km/s miss on a 4% reserve; t-booster-land rebuilt it (20% reserve, MECO near 63 km) and it lands.
+// These states are the bare sim's inertial burnout; BoosterLandingMissionTests flies the live ground-frame hand-over.
+// An empty checkout still flies off the pack already in memory.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,7 +18,7 @@ namespace Kestrel.Core.Tests
 {
     public class HavenLandingGoldenTests
     {
-        static readonly string[] Feasible = { "m6", "m7", "m10", "m15", "m19" };
+        static readonly string[] Feasible = { "m6", "m7", "m10", "m13", "m15", "m19" };
 
         [Test]
         public void Assisted_LandsTheFeasibleReturns_AndReplaysBitIdentical()
@@ -61,12 +63,13 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void FlockYard_StaysALoftedMiss()
+        public void FlockYard_RebuiltWinner_SeparatesLow_AndLands()
         {
+            // t-booster-land: the old winner separated at 139 km and 3.3 km/s on a 4% reserve and could not come back.
             var row = FlyAll()["m13"];
-            Assert.Greater(Math.Abs(row.Auto.MissM), 10000, Dump(row.Auto));
-            Assert.Greater(row.Auto.End.Alt, 100000, "still high when the clock stops");
-            Assert.IsNull(row.Auto.Medal);
+            Assert.Less(row.Alt, 80000, "stage 1 now cuts off low");
+            Assert.Greater(row.Craft.ReserveKg, 40000, "20% landing fuel");
+            Assert.IsNull(row.Auto.Cause, Dump(row.Auto));
             AssertMiss("m13 idle", row.Idle);
         }
 

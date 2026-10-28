@@ -1,6 +1,12 @@
 // Closed-loop recovery law. Command(state) → pitch, throttle, fin and leg orders.
-// One boostback tracks the east speed that reaches Haven, then the hoverslam
-// follows the suicide curve so it does not hover and drift off the deck.
+// The law steers on the predicted touchdown point (RecoverySim.Predict: the unpowered fall
+// with drag, fins and the planned entry burn), not on a vacuum fall-time guess:
+// one boostback burn until the predicted point sits on Haven or the pad, an entry burn
+// that brings the fall down to a speed the landing burn can stop, fin steering on the
+// predicted miss, then the hoverslam on the suicide curve so it does not hover and drift
+// off the deck. The live flight hands the booster over in the ground frame (FlightDriver's
+// air-relative speed); this law lands that state (t-booster-land: the old east-speed law
+// was tuned on inertial states and crashed every steep live hand-over but KH-7's).
 // A manual stick replaces pitch and throttle and still gets the fin, leg and phase gates.
 using System;
 using Kestrel.Core.Physics;
@@ -9,11 +15,25 @@ namespace Kestrel.Core.Flight
 {
     public static class RecoveryGuidance
     {
-        public const double MissBandM = 140;
-        public const double EntryAltM = 62000;
-        public const double EntrySpeed = 300;
         public const double FinAltM = 52000;
         public const double LegAltM = 650;
+        /// <summary>The sink the hoverslam settles onto the deck at. Under 0.55 of the light-leg limit (2 m/s) is a Perfect catch.</summary>
+        public const double TouchdownSinkMps = 0.8;
+
+        /// <summary>The entry burn window: it starts below this height on the way down.</summary>
+        public const double EntryTopM = 42000;
+        /// <summary>No entry burn below this height; the air and the landing burn take over.</summary>
+        public const double EntryFloorM = 9000;
+        /// <summary>No boostback below this height: a horizontal burn low down shovels the stage into the sea.</summary>
+        public const double BoostFloorM = 15000;
+        /// <summary>A predicted miss wider than this opens a boostback burn.</summary>
+        public const double BoostEnterM = 300;
+        /// <summary>The boostback ends once the predicted miss is inside this.</summary>
+        public const double BoostLeaveM = 25;
+        /// <summary>The hoverslam never opens above this height.</summary>
+        public const double LandingTopM = 9000;
+        /// <summary>An open entry burn holds on this far under the target speed, so gravity does not reopen it every few seconds.</summary>
+        public const double EntryUndershoot = 120;
 
         public static RecoveryCommand Command(in RecoveryBody body, in RecoveryCraft craft, in RecoveryStick stick)
         {
@@ -27,6 +47,44 @@ namespace Kestrel.Core.Flight
             return auto;
         }
 
+        /// <summary>
+        /// The speed the entry burn holds the fall to at <paramref name="alt"/>: 700 m/s at the top of the window,
+        /// 320 m/s at its floor. Thick air does the rest before the landing burn.
+        /// </summary>
+        public static double EntryTargetSpeed(double alt)
+        {
+            double u = (alt - EntryFloorM) / (EntryTopM - EntryFloorM);
+            if (u < 0) u = 0;
+            if (u > 1) u = 1;
+            return 320 + 380 * u;
+        }
+
+        /// <summary>True while a falling stage inside the entry window is faster than <see cref="EntryTargetSpeed"/> and
+        /// still holds more than the landing burn's share. The predictor and the law share this test.</summary>
+        public static bool EntryWanted(double alt, double radialUp, double speed, double prop, double floorKg, double over)
+        {
+            if (!(radialUp < -60) || alt >= EntryTopM || alt <= EntryFloorM) return false;
+            if (!(prop > floorKg * 1.2 + 300)) return false;
+            return speed > EntryTargetSpeed(alt) + over;
+        }
+
+        public static double EntryThrottle(double speed, double alt)
+        {
+            double thr = (speed - EntryTargetSpeed(alt)) / 150;
+            if (thr < 0.15) thr = 0.15;
+            if (thr > 0.6) thr = 0.6;
+            return thr;
+        }
+
+        /// <summary>Predicted touchdown arc minus the Haven arc, metres. Positive lands beyond Haven (further east).</summary>
+        public static double PredictedMiss(in RecoveryBody body, in RecoveryCraft craft)
+        {
+            double arc = body.PredArc;
+            if (double.IsNaN(body.PredStamp) || double.IsNaN(arc))
+                RecoverySim.Predict(body, craft, out arc, out _);
+            return arc - body.BargeArc;
+        }
+
         static RecoveryCommand Plan(in RecoveryBody body, in RecoveryCraft craft)
         {
             RecoveryFrames.Axes(body.X, body.Y, out _, out double alt, out double arc, out _, out _, out _, out _);
@@ -35,51 +93,32 @@ namespace Kestrel.Core.Flight
             double g = Gravity.Accel(Gravity.R_EARTH + (alt > 0 ? alt : 0));
             double floor = RecoverySim.LandingReserveKg(craft);
             double gap = body.BargeArc - arc;
-            double eastTarget = EastTarget(body.BargeArc, arc, alt, radial, g);
-            double eastErr = east - eastTarget;
             double suicide = SuicideAlt(craft, radial, g, body.Mass);
-            if (suicide > 2600) suicide = 2600;
+            if (suicide > LandingTopM) suicide = LandingTopM;
+            double mass = body.Mass > 1 ? body.Mass : (craft.DryKg > 1 ? craft.DryKg : 1);
+            double spare = body.Prop - floor;
 
             bool falling = radial < 1.5;
-            // The last clause starts the hoverslam while a coast that is already
-            // over Haven still has altitude. The suicide test alone shrinks as drag
-            // slows the fall, so the burn never opens until the deck.
+            // The hoverslam opens on the suicide curve wherever the stage is: a fall that is still off the deck steers
+            // in during the burn (Landing), and a stage that never lights hits the sea at full speed. The last clause
+            // starts a slow approach that is already over Haven while it still has height.
             bool landing = body.Phase == RecoveryPhase.Landing
-                || (falling && alt < suicide && (Math.Abs(gap) < 220 || alt < 420))
+                || (falling && alt < suicide)
                 || (falling && Math.Abs(gap) < 1200 && alt < 900);
-            // Not a latch. Fire only when the fall will reach the water before the barge,
-            // so a boostback that is still short on time can stay in the air.
-            double sinkNow = radial < 0 ? -radial : 0;
-            double tGround = sinkNow > 40 && alt > 0 ? alt / sinkNow : 1e9;
-            double tClose = Math.Abs(east) > 20 ? Math.Abs(gap) / Math.Abs(east) : 1e9;
-            // Only a fast return that will splash before it arrives. A slow
-            // approach (the assisted test from 20 km) must not chatter this burn.
-            // Grid fins on a fast barge run bleed the closing speed in the lower
-            // air. Stretch that fall while the stage is still high, or the deck
-            // arrives after the horizontal speed is gone.
-            bool wantEntry = Math.Abs(east) > 240 && Math.Abs(gap) > 1800 && sinkNow > 200
-                && tClose > tGround * 1.12 && alt > 3000 && alt < 40000
-                && body.Prop > floor + 400;
-            bool holdEntry = body.Phase == RecoveryPhase.Entry && Math.Abs(east) > 200
-                && Math.Abs(gap) > 1800 && sinkNow > 160 && alt > 2500
-                && body.Prop > floor + 400;
-            bool entry = !landing && (wantEntry || holdEntry);
-            // Wide at MECO altitude so one burn sets the intercept and the coast does not
-            // chase a few metres per second. Tight again once the deck is in sight.
-            double enter = alt < 8000 ? 12 : alt < 25000 ? 34 : 70;
-            double leave = alt < 8000 ? 3.5 : alt < 25000 ? 6 : 24;
+            bool inPlay = !landing && !(alt <= 0 && falling);
+            double miss = inPlay ? PredictedMiss(body, craft) : -gap;
+
+            bool entry = false;
+            if (inPlay)
+            {
+                if (body.Phase == RecoveryPhase.Entry)
+                    entry = EntryWanted(alt, radial, speed, body.Prop, floor, -EntryUndershoot);
+                else
+                    entry = EntryWanted(alt, radial, speed, body.Prop, floor, 30);
+            }
             bool boosting = body.Phase == RecoveryPhase.Boostback;
-            // A second burn while the stage is falling through the upper air flips the
-            // nose through downward and spends the landing reserve. The first burn is
-            // the climb. Trims wait until the approach.
-            bool fallingHard = radial < -40 && alt > 18000;
-            // Slowing a fall that is still short of Haven throws away the speed that
-            // covers the last kilometres. The entry burn is what buys time.
-            bool closing = gap * east > 0;
-            bool keepSpeed = closing && sinkNow > 250 && alt > 3500 && alt < 22000
-                && Math.Abs(gap) > 2500 && Math.Abs(east) > 120;
-            bool boost = !landing && !entry && !fallingHard && !keepSpeed && alt > 550 && body.Prop > floor + 1
-                && Math.Abs(eastErr) > (boosting ? leave : enter);
+            bool boost = inPlay && !entry && alt > BoostFloorM && spare > 1
+                && Math.Abs(miss) > (boosting ? BoostLeaveM : BoostEnterM);
 
             RecoveryPhase phase;
             if (alt <= 0 && falling) phase = RecoveryPhase.Down;
@@ -97,75 +136,53 @@ namespace Kestrel.Core.Flight
             };
 
             if (phase == RecoveryPhase.Landing)
-                Landing(east, radial, alt, gap, g, craft, body.Mass, out cmd.Pitch, out cmd.Throttle);
+                Landing(east, radial, alt, gap, g, craft, mass, out cmd.Pitch, out cmd.Throttle);
             else if (phase == RecoveryPhase.Entry)
             {
-                // Nearly vertical. A 20° tilt on a high-TWR stage adds hundreds of
-                // metres per second of closing speed and flies the stage past Haven.
-                double mass = body.Mass > 1 ? body.Mass : (craft.DryKg > 1 ? craft.DryKg : 1);
-                double thrust = craft.ThrustSlN > 0 ? craft.ThrustSlN : craft.ThrustVacN;
-                double accel = thrust > 0 ? thrust / mass : 20;
-                double tiltCap = accel > 1 ? 12.0 / accel : 0.12;
-                if (tiltCap > 0.12) tiltCap = 0.12;
-                if (tiltCap < 0.02) tiltCap = 0.02;
-                double bias = eastErr / 400;
-                if (bias > tiltCap) bias = tiltCap;
-                else if (bias < -tiltCap) bias = -tiltCap;
-                cmd.Pitch = Math.PI / 2 + bias;
-                // Hold a fall the hoverslam can finish. Full thrust on a high-TWR
-                // stage reverses the sink in one second and climbs off the barge.
-                // Stay dark until the nose is up so the flip does not add east speed.
-                double sink = radial < 0 ? -radial : 0;
-                double thr = (sink - 120) / 90;
-                double aim = RecoveryFrames.Wrap(cmd.Pitch - body.Pitch);
-                if (aim < 0) aim = -aim;
-                if (aim > 0.45) thr = 0;
-                if (thr < 0 || body.Prop <= floor) thr = 0;
-                if (thr > 0.55) thr = 0.55;
+                // Retrograde, leaning a little toward Haven: a positive miss wants more westward thrust (pitch toward π).
+                double retro = Math.Atan2(-radial, -east);
+                double bias = miss / 1500;
+                if (bias > 0.25) bias = 0.25;
+                else if (bias < -0.25) bias = -0.25;
+                cmd.Pitch = retro + bias;
+                double thr = EntryThrottle(speed, alt);
+                double aim = Math.Abs(RecoveryFrames.Wrap(cmd.Pitch - body.Pitch));
+                if (aim > 0.45 || spare <= 0) thr = 0;
                 cmd.Throttle = thr;
             }
             else if (phase == RecoveryPhase.Boostback)
             {
-                // Above the thick air the burn is horizontal. Pitching 20° up on a
-                // high-TWR stage lofts it past the barge and spends the landing fuel.
-                // Low: a steeper trim so the burn does not shovel the stage into the ground.
-                if (alt > 8000)
-                {
-                    double noseUp = 0.07;
-                    cmd.Pitch = eastErr > 0 ? Math.PI - noseUp : noseUp;
-                }
-                else
-                {
-                    double tilt = alt > 7000 ? 1.05 : 0.58;
-                    cmd.Pitch = Math.PI / 2 + (eastErr > 0 ? tilt : -tilt);
-                }
-                double thr = Math.Abs(eastErr) / (alt > 8000 ? 90 : alt > 7000 ? 40 : 24);
-                if (thr < 0.16) thr = 0.16;
+                // Horizontal, a touch nose-up. The burn closes the predicted miss: the speed change it needs is the miss
+                // over the time left to the surface, spread over about a second and a half of thrust.
+                const double noseUp = 0.07;
+                cmd.Pitch = miss > 0 ? Math.PI - noseUp : noseUp;
+                double thrust = craft.ThrustVacN > 0 ? craft.ThrustVacN : craft.ThrustSlN;
+                double aMax = thrust / mass;
+                double tLeft = body.PredTime > 20 ? body.PredTime : 20;
+                double dv = Math.Abs(miss) / tLeft;
+                double thr = aMax > 0.1 ? dv / (aMax * 1.5) : 1;
+                if (thr < 0.04) thr = 0.04;
                 if (thr > 1) thr = 1;
-                if (alt < 8000 && thr > 0.62) thr = 0.62;
-                // Light the engines once the nose is on the burn. A flip through
-                // downward thrust is what lofted the early flights off Haven.
-                double aim = RecoveryFrames.Wrap(cmd.Pitch - body.Pitch);
-                if (aim < 0) aim = -aim;
-                if (aim > 0.45) thr = 0;
-                if (body.Prop <= floor) thr = 0;
+                // Light the engines once the nose is on the burn. A flip through downward thrust lofts the stage.
+                double aim = Math.Abs(RecoveryFrames.Wrap(cmd.Pitch - body.Pitch));
+                if (aim > 0.45 || spare <= 0) thr = 0;
                 cmd.Throttle = thr;
             }
             else
             {
-                double along = Math.Abs(east) < 1 && Math.Abs(radial) < 1 ? 1 : east;
-                double gamma = Math.Atan2(radial, along);
+                // Unpowered: nose along the flight path, with fin lift toward Haven. Falling, a positive angle of attack
+                // pushes the stage east; climbing, west. The lean grows with the miss so the stage does not hunt.
                 double alpha = 0;
-                if (Math.Abs(eastErr) > 4)
+                if (Math.Abs(miss) > 4)
                 {
-                    alpha = eastErr > 0 ? -0.38 : 0.38;
-                    if (Math.Abs(eastErr) < 24) alpha *= Math.Abs(eastErr) / 24;
+                    double want = miss > 0 ? -1 : 1; // falling: a positive miss wants westward lift
+                    if (radial > 0) want = -want;
+                    double u = Math.Abs(miss) / 1500;
+                    if (u > 1) u = 1;
+                    alpha = 0.38 * want * u;
                 }
                 if (!craft.GridFins) alpha *= 0.35;
-                double vertical = 0;
-                if (alt < 8000) vertical = (8000 - Math.Max(0, alt)) / 8000;
-                if (vertical > 1) vertical = 1;
-                cmd.Pitch = RecoveryFrames.Wrap((1 - vertical) * (gamma + alpha) + vertical * (Math.PI / 2));
+                cmd.Pitch = DescentPitch(east, radial, alt, alpha);
                 cmd.Throttle = 0;
             }
             if (body.Prop <= 1e-6) cmd.Throttle = 0;
@@ -173,30 +190,20 @@ namespace Kestrel.Core.Flight
             return cmd;
         }
 
-        /// <summary>East speed that reaches the barge before the deck, and stays gentle in the last kilometres.</summary>
-        public static double EastTarget(double bargeArc, double arc, double alt, double radialUp, double g)
+        /// <summary>The unpowered attitude: on the flight path plus <paramref name="alpha"/> (tail first once falling inside the entry window), swinging upright below 8 km
+        /// for the landing burn. The predictor flies the same attitude with no lean.</summary>
+        public static double DescentPitch(double east, double radial, double alt, double alpha)
         {
-            double gap = bargeArc - arc;
-            double sink = radialUp < 0 ? -radialUp : 0;
-            double t = sink > 25 && alt > 0 ? alt / sink : RecoveryFrames.FallTime(alt, radialUp, g);
-            if (t < 4) t = 4;
-            // 220 m/s under the Karman line keeps the old approach. Above a real MECO
-            // the barge was placed on a 0.3 east cut, which is several hundred m/s.
-            double cap = EastCap(alt);
-            double want = gap / t;
-            if (want > cap) want = cap;
-            else if (want < -cap) want = -cap;
-            return want;
-        }
-
-        /// <summary>East-speed limit. High altitude tracks the ballistic intercept. The deck wants a walk.</summary>
-        public static double EastCap(double alt)
-        {
-            if (alt < 1500) return 16;
-            if (alt < 6000) return 70;
-            if (alt < 22000) return 220;
-            if (alt < 55000) return 220 + (alt - 22000) / 33000 * 700;
-            return 1400;
+            double along = Math.Abs(east) < 1 && Math.Abs(radial) < 1 ? 1 : east;
+            double gamma = Math.Atan2(radial, along);
+            // Falling through the entry window and below, the stage rides engines first (retrograde), the attitude of the
+            // entry and landing burns, so no half-turn flip throws the predicted point off. The lean flips sign with it:
+            // a body at retrograde − α makes the same lift as one at the flight path + α.
+            if (radial < 0 && alt < EntryTopM) gamma = gamma + Math.PI - 2 * alpha;
+            double vertical = 0;
+            if (alt < 8000) vertical = (8000 - Math.Max(0, alt)) / 8000;
+            if (vertical > 1) vertical = 1;
+            return RecoveryFrames.Wrap((1 - vertical) * (gamma + alpha) + vertical * (Math.PI / 2));
         }
 
         public static double SuicideAlt(in RecoveryCraft craft, double radialUp, double g, double mass)
@@ -244,15 +251,15 @@ namespace Kestrel.Core.Flight
             pitch = Math.PI / 2 + tilt;
 
             double vTrack;
-            if (alt < 40) vTrack = 1.15;
+            if (alt < 40) vTrack = TouchdownSinkMps;
             else if (alt < 900)
             {
                 // Blend onto the deck target. A knee at 40 m cannot stop a 100 m/s fall.
                 double curve = Math.Sqrt(2 * aNet * altSafe * 0.56);
                 if (curve < 5.5) curve = 5.5;
                 double u = alt / 900.0;
-                vTrack = 1.15 + (curve - 1.15) * u;
-                if (vTrack < 1.15) vTrack = 1.15;
+                vTrack = TouchdownSinkMps + (curve - TouchdownSinkMps) * u;
+                if (vTrack < TouchdownSinkMps) vTrack = TouchdownSinkMps;
             }
             else
             {

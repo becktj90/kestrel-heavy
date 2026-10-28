@@ -39,6 +39,9 @@ namespace Kestrel.Core.Tests
 
         static Design Fitted(Design d) { var c = d.Clone(); GuidanceComputer.Fit(c, true); return c; }
 
+        /// <summary>Board starters that ship with the part. KH-13 (t-booster-land): its landable stage 1 needs the closed-loop upper stage.</summary>
+        static readonly HashSet<string> ShipsThePart = new HashSet<string> { "m13" };
+
         // ---- data and opt-in ----
 
         [Test]
@@ -187,6 +190,8 @@ namespace Kestrel.Core.Tests
             {
                 foreach (var (d, tag) in new[] { (design, "basic"), (Fitted(design), "part") })
                 {
+                    // A starter that ships the part is only promised to pass with it.
+                    if (tag == "basic" && ShipsThePart.Contains(mission.Id)) continue;
                     foreach (var seed in campaign.Seeds)
                     {
                         var f = FlightBatch.Fly(catalog, mission, d, seed);
@@ -448,6 +453,13 @@ namespace Kestrel.Core.Tests
                     design = Design.FromJson(json);
                 }
                 else if (mode == "strength") design.safetyFactor = row.Num("restoreSafetyFactor");
+                // t-booster-land: KH-13's starter ships with the part (a 20% landing reserve cuts stage 1 off near 63 km,
+                // and only the closed-loop upper stage circles that at 550 km). The part tests start from its basic twin.
+                if (design.guidanceComputer)
+                {
+                    Assert.IsTrue(ShipsThePart.Contains(mission.Id), mission.Id + " ships the guidance computer");
+                    GuidanceComputer.Fit(design, false);
+                }
                 list.Add((mission, design, mode));
             }
             return list;
