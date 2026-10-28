@@ -154,15 +154,11 @@ namespace Kestrel.Game.Tests
             var tp = layout.Tower;
             TestContext.WriteLine("KH-1 pad: surface radius " + TrenchGrammar.SurfaceRadius(layout).ToString("0.0") + " m, circle radius " + PadShowcase.CircleRadius(layout).ToString("0.0") + " m, crown top " + (tp.Height + tp.CapHeight).ToString("0.0") + " m, tower stand-off " + tp.StandOff.ToString("0.0") + " m");
             var padT = pad.transform;
-            // The crown's real geometry (every tower.cap.* member end except the thin lightning spike), put in the world by the Pad child's own
-            // Unity transform rather than the solver's yaw maths. (A box of the tower's full width at the apex height overstates it: the apex is one point.)
+            // The crown's points are PadShowcase.Points (the set the solver frames: every tower.cap.* member end except the thin lightning spike),
+            // put in the world by the Pad child's own Unity transform rather than the solver's yaw maths.
             var crown = new List<Vector3>();
-            foreach (var m in layout.Members)
-            {
-                if (m.Id == null || !m.Id.StartsWith("tower.cap.", System.StringComparison.Ordinal) || m.Id.EndsWith(".spike", System.StringComparison.Ordinal)) continue;
-                crown.Add(padT.TransformPoint(new Vector3(m.A.X, m.A.Y, m.A.Z)));
-                crown.Add(padT.TransformPoint(new Vector3(m.B.X, m.B.Y, m.B.Z)));
-            }
+            foreach (var sp in PadShowcase.Points(layout))
+                if (sp.Kind == ShowKind.TowerTop) crown.Add(padT.TransformPoint(new Vector3(sp.X, sp.Y, sp.Z)));
             Assert.That(crown.Count, Is.GreaterThan(0), "KH-1: no crown members to check");
 
             foreach (var other in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
