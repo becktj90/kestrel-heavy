@@ -69,7 +69,7 @@ namespace Kestrel.Core.Tests
             var row = FlyAll()["m13"];
             // Retuned with Physics' ruling on the reserve: 28 t buys about 3.1 km/s against the 2.3 km/s the flown return uses
             // (a 30% margin), where the first draft's 44 t (more than the whole upper stage) bought 4 km/s for 2.6.
-            Assert.Less(row.Alt, 100000, "stage 1 now cuts off low (main: 139 km)");
+            Assert.Less(row.Alt, 80000, "stage 1 now cuts off low");   // PR draft's bound, restored: NOT derived, awaiting the Physics ruling (retune measures 90.1 km)
             Assert.Greater(row.Craft.ReserveKg, 25000, "a real landing reserve (main: 8.8 t)");
             Assert.Less(row.Craft.ReserveKg, 35000, "and not a free-thrust crutch (the first draft's 44 t exceeded the upper-stage load)");
             Assert.IsNull(row.Auto.Cause, Dump(row.Auto));
