@@ -1792,6 +1792,10 @@ export default class MissionScene extends Phaser.Scene {
     const onPaint = kind === 'deck' && dx <= catchTol;
     const soft = vy <= mode.landingVy;
     const tipped = Math.abs(this.rocket.angle) > 14;
+    // Gear only comes down with the landing burn (holdingBurn). No burn, no legs:
+    // Unity RecoveryScore's tipped = tilted || !legsDown, so it is never 'recovered'.
+    const legsDown = Boolean(this.session.gearDeployed);
+    const burnLit = Boolean(this.session.burnLit);
     const landingGrade = gradeTouchdown({
       kind,
       vy,
@@ -1799,6 +1803,7 @@ export default class MissionScene extends Phaser.Scene {
       landingVy: mode.landingVy,
       landingTol: catchTol,
       tipped,
+      legsDown,
     });
     this.session.landingGrade = landingGrade;
     this.session.touchdown = { kind, vy, dx, tilt: Math.abs(this.rocket.angle), grade: landingGrade };
@@ -1809,12 +1814,14 @@ export default class MissionScene extends Phaser.Scene {
       tilt: Math.abs(this.rocket.angle),
       landingVy: mode.landingVy,
       landingTol: catchTol,
-      recovered: kind === 'deck' && onPaint && soft && !tipped,
+      recovered: kind === 'deck' && onPaint && soft && !tipped && legsDown,
+      burnLit,
+      legsDown,
     });
     this.rocket.setVelocity(0, 0);
     this.rocket.setIgnoreGravity(true);
 
-    if (kind === 'deck' && onPaint && soft && !tipped) {
+    if (kind === 'deck' && onPaint && soft && !tipped && legsDown) {
       this.session.recovered = true;
       this.session.score += HAVEN_BONUS;
       if (this.currentFlight().objective?.id === 'recover') this.completeObjective();
