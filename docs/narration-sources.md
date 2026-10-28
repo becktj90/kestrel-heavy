@@ -1,6 +1,6 @@
 # Webcast "color" lines: sources (for Kestrel Codex review)
 
-Status: sources checked on 2026-10-28 (America/New_York) by web search. Lines are NOT shipped yet (audio not generated, see docs/narration-webcast.md).
+Status: sources checked on 2026-10-28 (America/New_York) by web search. The lines are shipped in the manifest as `color.*` events and are inert until wired (docs/narration-webcast.md).
 Rules: no company, vehicle, agency or person names in any spoken line (STYLE_GUIDE). History is stated generically ("a pioneer", "the first satellite"). Any fact about the flown rocket is tagged (requires/claims) and checked by tests/narration-facts-lint.test.cjs.
 Items marked CHECK need a second read by Codex (only a search summary was available, the primary page blocked our fetch).
 

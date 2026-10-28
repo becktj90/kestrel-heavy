@@ -22,5 +22,8 @@ NarrationSchedule plays one line at a time with one Pending slot, and only `abor
 4. Picker (PR B): supply the same facts as the lint (site, recovery = the picked mode, stages, stageN.propellant). Round-robin per event, prefer the eligible clip with the most claims.
 5. Mix (Kestrel Sound): Color clips at -3 dB relative to Call clips (manifest loudness is -16 LUFS for both, so use the voice bus gain), and the existing VoiceDuck on music and SFX applies to both.
 
-## Honesty note
-The webcast clips are not generated or shipped because the generation step was blocked (see the PR report). `tools/clipgen`-style pipeline for the duo mix is kept at /workspace/kh-gen3 (color.py, gen.sh, duo.py).
+## Loudness note
+21 clips measured -16.4 to -16.5 LUFS with loudnorm linear. Four clips (color.pad.3, color.pad.6, color.ascent.2, color.karman.1) fell back to loudnorm dynamic mode and landed at -17.2 to -17.5 LUFS, outside the -16 +/-1 spec. They were re-rendered with a plain gain to -16 LUFS and a 4x-oversampled limiter (`normalization: "gain+limiter"`): -16.7 to -16.9 LUFS, true peak -1.7 to -2.2 dBTP. All 25 are within -17..-15 LUFS and at or below -1.5 dBTP (checked by the lint test). The "about 3 dB under calls" color mix is a hint for Sound (voice bus gain), not a manifest field.
+
+## Tests
+`tests/narration-facts-lint.test.cjs` also covers every `color.*` slot: contexts for all designs on all pads, the claim-vs-design verifier (propellant is checked against the stage named in `requires`, "oxygen" must be a liquid-oxygen stage, comparisons such as "warmer than hydrogen" are general facts), schema (two speakers, lines match text, <=14 words per line, overlap <=0.3 s, sources listed in docs/narration-sources.md), a neutral take per slot for every design, and `color.recovery` eligibility per recovery mode and pad.

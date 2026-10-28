@@ -6218,6 +6218,1091 @@
    "sources": [
     "H22"
    ]
+  },
+  {
+   "id": "host/color.pad.1",
+   "event": "color.pad",
+   "channel": "host",
+   "text": "Fun fact while we wait: the rocket countdown is credited to a movie. Really? A silent film in 1929 counted backward to build suspense. Real crews adopted it. And it stuck. Crews still count down today.",
+   "spokenText": "Fun fact while we wait: the rocket countdown is credited to a movie. Really? A silent film in 1929 counted backward to build suspense. Real crews adopted it. And it stuck. Crews still count down today.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.1.mp3",
+   "durationSec": 12.774,
+   "lufs": -16.44,
+   "truePeakDb": -3.06,
+   "normalization": "linear",
+   "hash": "8410935e68b5",
+   "sha256": "733a4a606cfe757f60eff37a8a500c4e0a51dd08a924e0e0dff405f68d645e84",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Fun fact while we wait: the rocket countdown is credited to a movie.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Really?",
+     "overlapSec": 0.2
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "A silent film in 1929 counted backward to build suspense. Real crews adopted it.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "And it stuck. Crews still count down today.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S1"
+   ],
+   "neutral": true,
+   "neutralReason": "film and countdown history; no vehicle fact"
+  },
+  {
+   "id": "host/color.pad.2",
+   "event": "color.pad",
+   "channel": "host",
+   "text": "Oxygen boils at about minus one eighty-three Celsius. That is why loaded rockets so often vent white vapor on the pad.",
+   "spokenText": "Oxygen boils at about minus one eighty-three Celsius. That is why loaded rockets so often vent white vapor on the pad.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.2.mp3",
+   "durationSec": 6.478,
+   "lufs": -16.45,
+   "truePeakDb": -3.16,
+   "normalization": "linear",
+   "hash": "93cb04699c79",
+   "sha256": "d5e87f159c3ed1e3338d20470f864faf9f32ef90ba4ec9af7032a6894a036c64",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Oxygen boils at about minus one eighty-three Celsius.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "That is why loaded rockets so often vent white vapor on the pad.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S3"
+   ],
+   "requires": {
+    "stage1.propellant": [
+     "kerolox",
+     "hydrolox",
+     "methalox"
+    ]
+   },
+   "claims": [
+    "stage1.propellant"
+   ]
+  },
+  {
+   "id": "host/color.pad.3",
+   "event": "color.pad",
+   "channel": "host",
+   "text": "The first stage carries liquid hydrogen. It boils at minus two fifty-three Celsius. The lightest fuel there is, so those tanks are enormous.",
+   "spokenText": "The first stage carries liquid hydrogen. It boils at minus two fifty-three Celsius. The lightest fuel there is, so those tanks are enormous.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.3.mp3",
+   "durationSec": 7.863,
+   "lufs": -16.68,
+   "truePeakDb": -2.21,
+   "normalization": "gain+limiter",
+   "hash": "ad732b3082a3",
+   "sha256": "cc228bf730b4d3cc63f3769bd6d57feefde3998e0e7a3c5e21e397f2f07882f4",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "The first stage carries liquid hydrogen. It boils at minus two fifty-three Celsius.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "The lightest fuel there is, so those tanks are enormous.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S3"
+   ],
+   "requires": {
+    "stage1.propellant": "hydrolox"
+   },
+   "claims": [
+    "stage1.propellant"
+   ]
+  },
+  {
+   "id": "host/color.pad.4",
+   "event": "color.pad",
+   "channel": "host",
+   "text": "Methane boils at minus one sixty-two Celsius. Warmer than hydrogen, easier to handle. And it burns cleaner than kerosene.",
+   "spokenText": "Methane boils at minus one sixty-two Celsius. Warmer than hydrogen, easier to handle. And it burns cleaner than kerosene.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.4.mp3",
+   "durationSec": 6.975,
+   "lufs": -16.45,
+   "truePeakDb": -2.91,
+   "normalization": "linear",
+   "hash": "3b3e1607b8a9",
+   "sha256": "10016459e64a3b12c98a3b815c6f275a7b96b0dfef0ee4d3615a944ac530b62b",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Methane boils at minus one sixty-two Celsius. Warmer than hydrogen, easier to handle.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "And it burns cleaner than kerosene.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S3"
+   ],
+   "requires": {
+    "stage1.propellant": "methalox"
+   },
+   "claims": [
+    "stage1.propellant"
+   ]
+  },
+  {
+   "id": "host/color.pad.5",
+   "event": "color.pad",
+   "channel": "host",
+   "text": "Rocket kerosene stays liquid at room temperature. Only the oxygen is chilled. That keeps the fuel side much simpler to store.",
+   "spokenText": "Rocket kerosene stays liquid at room temperature. Only the oxygen is chilled. That keeps the fuel side much simpler to store.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.5.mp3",
+   "durationSec": 7.158,
+   "lufs": -16.44,
+   "truePeakDb": -2.81,
+   "normalization": "linear",
+   "hash": "db9d39a03c7d",
+   "sha256": "2f0c16f78a19120bca05f9ec4a27dc26d5c9b213770d0fa587b2e8f3efd38188",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Rocket kerosene stays liquid at room temperature. Only the oxygen is chilled.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "That keeps the fuel side much simpler to store.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S3"
+   ],
+   "requires": {
+    "stage1.propellant": "kerolox"
+   },
+   "claims": [
+    "stage1.propellant"
+   ]
+  },
+  {
+   "id": "host/color.pad.6",
+   "event": "color.pad",
+   "channel": "host",
+   "text": "Many pads flood the base with water at ignition to soak up sound. One large pad could release three hundred thousand gallons in forty-one seconds.",
+   "spokenText": "Many pads flood the base with water at ignition to soak up sound. One large pad could release three hundred thousand gallons in forty-one seconds.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.6.mp3",
+   "durationSec": 7.863,
+   "lufs": -16.91,
+   "truePeakDb": -2.19,
+   "normalization": "gain+limiter",
+   "hash": "bc67893e62b6",
+   "sha256": "88ea3a85ea2b2b90d3eca107cd7d769891da186be182db5a79acbfa61c078613",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Many pads flood the base with water at ignition to soak up sound.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "One large pad could release three hundred thousand gallons in forty-one seconds.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S6"
+   ],
+   "neutral": true,
+   "neutralReason": "general pad practice; no claim about this vehicle's pad"
+  },
+  {
+   "id": "host/color.pad.7",
+   "event": "color.pad",
+   "channel": "host",
+   "text": "In 1926 a pioneer launched the first liquid-fueled rocket from a farm field. How far did it go? About forty-one feet up, in two and a half seconds. Humble start. Look how far it has come.",
+   "spokenText": "In 1926 a pioneer launched the first liquid-fueled rocket from a farm field. How far did it go? About forty-one feet up, in two and a half seconds. Humble start. Look how far it has come.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.7.mp3",
+   "durationSec": 11.703,
+   "lufs": -16.43,
+   "truePeakDb": -3.03,
+   "normalization": "linear",
+   "hash": "73d8e4fc5e3d",
+   "sha256": "9dce06dc3c4c792bee140756d89ed4282708bc865cff388a24ec184d4ecde05d",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "In 1926 a pioneer launched the first liquid-fueled rocket from a farm field.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "How far did it go?",
+     "overlapSec": 0.1
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "About forty-one feet up, in two and a half seconds.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Humble start. Look how far it has come.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S2"
+   ],
+   "neutral": true,
+   "neutralReason": "rocketry history; no vehicle fact"
+  },
+  {
+   "id": "host/color.pad.8",
+   "event": "color.pad",
+   "channel": "host",
+   "text": "Rockets are older than you think. Gunpowder rockets flew in thirteenth-century China. Quite a long way from fire arrows to this.",
+   "spokenText": "Rockets are older than you think. Gunpowder rockets flew in thirteenth-century China. Quite a long way from fire arrows to this.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.8.mp3",
+   "durationSec": 7.158,
+   "lufs": -16.49,
+   "truePeakDb": -3.11,
+   "normalization": "linear",
+   "hash": "67d8637feec7",
+   "sha256": "ecf09b6676612a006a31ea8aa6ca4cfa08a123ed759c47f1cb8d125ca18e8fb2",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Rockets are older than you think. Gunpowder rockets flew in thirteenth-century China.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Quite a long way from fire arrows to this.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S4"
+   ],
+   "neutral": true,
+   "neutralReason": "rocketry history; no vehicle fact"
+  },
+  {
+   "id": "host/color.pad.9",
+   "event": "color.pad",
+   "channel": "host",
+   "text": "Why are rockets mostly fuel? A 1903 paper gave us the rocket equation. Each extra ton of cargo demands far more propellant. So most rockets end up mostly propellant.",
+   "spokenText": "Why are rockets mostly fuel? A 1903 paper gave us the rocket equation. Each extra ton of cargo demands far more propellant. So most rockets end up mostly propellant.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.9.mp3",
+   "durationSec": 9.77,
+   "lufs": -16.43,
+   "truePeakDb": -3.19,
+   "normalization": "linear",
+   "hash": "770ea996ee64",
+   "sha256": "008b6104b28fbc15cc9a844c4512248942d53a0eb4bcfd8077c50313cf87c108",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Why are rockets mostly fuel?",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "A 1903 paper gave us the rocket equation.",
+     "overlapSec": 0.1
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Each extra ton of cargo demands far more propellant.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "So most rockets end up mostly propellant.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S5"
+   ],
+   "neutral": true,
+   "neutralReason": "rocket equation history; general statement, no vehicle fact"
+  },
+  {
+   "id": "host/color.ascent.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "text": "Max-Q is the moment of peak aerodynamic pressure on the vehicle. Typically about a minute or so after liftoff. Many rockets throttle down through it, then back up.",
+   "spokenText": "Max-Q is the moment of peak aerodynamic pressure on the vehicle. Typically about a minute or so after liftoff. Many rockets throttle down through it, then back up.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.1.mp3",
+   "durationSec": 9.456,
+   "lufs": -16.44,
+   "truePeakDb": -2.87,
+   "normalization": "linear",
+   "hash": "937f986c3162",
+   "sha256": "96186277916744b4ddcb3d71e0e2343feb15516d79155101b81c72b771eebe1d",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Max-Q is the moment of peak aerodynamic pressure on the vehicle.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Typically about a minute or so after liftoff.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Many rockets throttle down through it, then back up.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S7"
+   ],
+   "neutral": true,
+   "neutralReason": "general max-Q explainer; no vehicle fact"
+  },
+  {
+   "id": "host/color.ascent.2",
+   "event": "color.ascent",
+   "channel": "host",
+   "text": "Most launchers climb straight up first, then tip over gradually. That is the gravity turn. It keeps aerodynamic stress low.",
+   "spokenText": "Most launchers climb straight up first, then tip over gradually. That is the gravity turn. It keeps aerodynamic stress low.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.2.mp3",
+   "durationSec": 6.713,
+   "lufs": -16.69,
+   "truePeakDb": -2.19,
+   "normalization": "gain+limiter",
+   "hash": "bc25dd4dbcf1",
+   "sha256": "be7de309ef45e930b9bf8f5e1687b45b115fbc589444ae8c5409b7f62f1ce672",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Most launchers climb straight up first, then tip over gradually.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "That is the gravity turn. It keeps aerodynamic stress low.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S8"
+   ],
+   "neutral": true,
+   "neutralReason": "general ascent profile; no vehicle fact"
+  },
+  {
+   "id": "host/color.ascent.3",
+   "event": "color.ascent",
+   "channel": "host",
+   "text": "Most rockets steer by swiveling their nozzles. It is called gimbaling. Tiny angles, huge turning force.",
+   "spokenText": "Most rockets steer by swiveling their nozzles. It is called gimbaling. Tiny angles, huge turning force.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.3.mp3",
+   "durationSec": 5.93,
+   "lufs": -16.44,
+   "truePeakDb": -2.92,
+   "normalization": "linear",
+   "hash": "36c6cfe135d7",
+   "sha256": "53c3e3b6393be479526d836a159d954da0098212d39cdde7edab2ed1201971a1",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Most rockets steer by swiveling their nozzles.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "It is called gimbaling. Tiny angles, huge turning force.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S8"
+   ],
+   "neutral": true,
+   "neutralReason": "general steering explainer; no vehicle fact"
+  },
+  {
+   "id": "host/color.ascent.4",
+   "event": "color.ascent",
+   "channel": "host",
+   "text": "Staying in orbit takes about seven point eight kilometers per second. Roughly twenty-eight thousand kilometers per hour. Speed is the hard part, not altitude.",
+   "spokenText": "Staying in orbit takes about seven point eight kilometers per second. Roughly twenty-eight thousand kilometers per hour. Speed is the hard part, not altitude.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.4.mp3",
+   "durationSec": 8.385,
+   "lufs": -16.43,
+   "truePeakDb": -2.51,
+   "normalization": "linear",
+   "hash": "4cc137881ef9",
+   "sha256": "57f354c0691a4f31430ec37747f0f914004b4f1d04c03e8a4a55dca486af756d",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Staying in orbit takes about seven point eight kilometers per second.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Roughly twenty-eight thousand kilometers per hour. Speed is the hard part, not altitude.",
+     "overlapSec": 0.1
+    }
+   ],
+   "sources": [
+    "S9"
+   ],
+   "neutral": true,
+   "neutralReason": "orbital speed fact; no vehicle claim"
+  },
+  {
+   "id": "host/color.karman.1",
+   "event": "color.karman",
+   "channel": "host",
+   "text": "Passing one hundred kilometers, the conventional boundary of space. Set in 1960 for records. The air does not simply stop there.",
+   "spokenText": "Passing one hundred kilometers, the conventional boundary of space. Set in 1960 for records. The air does not simply stop there.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.karman.1.mp3",
+   "durationSec": 7.288,
+   "lufs": -16.9,
+   "truePeakDb": -1.68,
+   "normalization": "gain+limiter",
+   "hash": "3ad0a3827bc6",
+   "sha256": "bbe7bfc736ee55f6149213afc159e801fa2ce40b7f97530a2fa428a14173efe8",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Passing one hundred kilometers, the conventional boundary of space.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Set in 1960 for records. The air does not simply stop there.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S10"
+   ],
+   "neutral": true,
+   "neutralReason": "conventional boundary fact; only fire on crossing the line"
+  },
+  {
+   "id": "host/color.coast.1",
+   "event": "color.coast",
+   "channel": "host",
+   "text": "Low orbit takes about ninety minutes per lap. Which means a sunrise roughly every ninety minutes.",
+   "spokenText": "Low orbit takes about ninety minutes per lap. Which means a sunrise roughly every ninety minutes.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.coast.1.mp3",
+   "durationSec": 4.885,
+   "lufs": -16.45,
+   "truePeakDb": -2.63,
+   "normalization": "linear",
+   "hash": "e5535c58d459",
+   "sha256": "1e07aaf537b2f179e09ada71a9abf2a296fbd22ffcd4bff16c10ad149234da48",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Low orbit takes about ninety minutes per lap.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Which means a sunrise roughly every ninety minutes.",
+     "overlapSec": 0.1
+    }
+   ],
+   "sources": [
+    "S9"
+   ],
+   "neutral": true,
+   "neutralReason": "general LEO fact; no vehicle claim"
+  },
+  {
+   "id": "host/color.coast.2",
+   "event": "color.coast",
+   "channel": "host",
+   "text": "Burn at the high point of an orbit, and the low point rises. A two-burn transfer worked out in 1925. Still used today.",
+   "spokenText": "Burn at the high point of an orbit, and the low point rises. A two-burn transfer worked out in 1925. Still used today.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.coast.2.mp3",
+   "durationSec": 7.367,
+   "lufs": -16.43,
+   "truePeakDb": -2.63,
+   "normalization": "linear",
+   "hash": "fe9aa292baa1",
+   "sha256": "c37661c30de4c8647f62f13d9b844f56e9e7f86d1d6bc8acc9c3bbe143cfb1fa",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Burn at the high point of an orbit, and the low point rises.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "A two-burn transfer worked out in 1925. Still used today.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S11"
+   ],
+   "neutral": true,
+   "neutralReason": "orbital mechanics history; no vehicle claim"
+  },
+  {
+   "id": "host/color.coast.3",
+   "event": "color.coast",
+   "channel": "host",
+   "text": "Weightless does not mean gravity is gone. Orbit is a constant fall. A fall that keeps missing the Earth.",
+   "spokenText": "Weightless does not mean gravity is gone. Orbit is a constant fall. A fall that keeps missing the Earth.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.coast.3.mp3",
+   "durationSec": 5.904,
+   "lufs": -16.44,
+   "truePeakDb": -2.91,
+   "normalization": "linear",
+   "hash": "34f1142cb7e3",
+   "sha256": "f885bb9a130432434fd1f32c2d9d254dc754efb0f300b2d75fc586164aa6a87c",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Weightless does not mean gravity is gone. Orbit is a constant fall.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "A fall that keeps missing the Earth.",
+     "overlapSec": 0.1
+    }
+   ],
+   "sources": [
+    "S12"
+   ],
+   "neutral": true,
+   "neutralReason": "orbit physics; no vehicle claim"
+  },
+  {
+   "id": "host/color.coast.4",
+   "event": "color.coast",
+   "channel": "host",
+   "text": "In 1957 the first satellite weighed about eighty-four kilograms. Under a hundred kilos, and it started the space age. It circled the Earth every ninety-six minutes.",
+   "spokenText": "In 1957 the first satellite weighed about eighty-four kilograms. Under a hundred kilos, and it started the space age. It circled the Earth every ninety-six minutes.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.coast.4.mp3",
+   "durationSec": 10.162,
+   "lufs": -16.41,
+   "truePeakDb": -2.8,
+   "normalization": "linear",
+   "hash": "e94d12ba26a8",
+   "sha256": "1d0c6f7fb0585678a44af47120c9a74cebf9c8a2cba688cdfbab31e5f6981b0e",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "In 1957 the first satellite weighed about eighty-four kilograms.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Under a hundred kilos, and it started the space age.",
+     "overlapSec": 0.1
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "It circled the Earth every ninety-six minutes.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S13"
+   ],
+   "neutral": true,
+   "neutralReason": "spaceflight history; no vehicle fact"
+  },
+  {
+   "id": "host/color.coast.5",
+   "event": "color.coast",
+   "channel": "host",
+   "text": "In 1961 the first human orbit lasted one hundred eight minutes. One lap of the Earth, start to finish.",
+   "spokenText": "In 1961 the first human orbit lasted one hundred eight minutes. One lap of the Earth, start to finish.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.coast.5.mp3",
+   "durationSec": 5.407,
+   "lufs": -16.44,
+   "truePeakDb": -2.95,
+   "normalization": "linear",
+   "hash": "d5cd0685fa8e",
+   "sha256": "50debb23d9cfc63e82fab5babd9d7f7cac531850c75f0bb21823d9d997654065",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "In 1961 the first human orbit lasted one hundred eight minutes.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "One lap of the Earth, start to finish.",
+     "overlapSec": 0.1
+    }
+   ],
+   "sources": [
+    "S14"
+   ],
+   "neutral": true,
+   "neutralReason": "spaceflight history; no vehicle fact"
+  },
+  {
+   "id": "host/color.coast.6",
+   "event": "color.coast",
+   "channel": "host",
+   "text": "In 1969 humans first landed on the Moon. Same trick we fly today: drop the empty stages.",
+   "spokenText": "In 1969 humans first landed on the Moon. Same trick we fly today: drop the empty stages.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.coast.6.mp3",
+   "durationSec": 5.486,
+   "lufs": -16.45,
+   "truePeakDb": -2.87,
+   "normalization": "linear",
+   "hash": "3aefd6c05a25",
+   "sha256": "1875e7d85df0b14594d65d0471f36b6c53280d8a386781f7197049b8d9d11047",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "In 1969 humans first landed on the Moon.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Same trick we fly today: drop the empty stages.",
+     "overlapSec": 0.1
+    }
+   ],
+   "sources": [
+    "S15"
+   ],
+   "requires": {
+    "stages": ">=2"
+   },
+   "claims": [
+    "stages"
+   ]
+  },
+  {
+   "id": "host/color.coast.7",
+   "event": "color.coast",
+   "channel": "host",
+   "text": "The second stage burns hydrogen, the most efficient common rocket fuel. Thirty to forty percent better than most other fuels.",
+   "spokenText": "The second stage burns hydrogen, the most efficient common rocket fuel. Thirty to forty percent better than most other fuels.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.coast.7.mp3",
+   "durationSec": 6.609,
+   "lufs": -16.44,
+   "truePeakDb": -2.11,
+   "normalization": "linear",
+   "hash": "e54e7b5a91b3",
+   "sha256": "e3d05e56b11bb79bf8be7768106e9ad8d6f81bea3f03801e8cd47c0fa1d681a1",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "The second stage burns hydrogen, the most efficient common rocket fuel.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "Thirty to forty percent better than most other fuels.",
+     "overlapSec": 0.1
+    }
+   ],
+   "sources": [
+    "S3"
+   ],
+   "requires": {
+    "stages": ">=2",
+    "stage2.propellant": "hydrolox"
+   },
+   "claims": [
+    "stages",
+    "stage2.propellant"
+   ]
+  },
+  {
+   "id": "host/color.recovery.1",
+   "event": "color.recovery",
+   "channel": "host",
+   "text": "The booster is coasting back toward the pad. The burn is over. It will relight for a landing burn to slow down.",
+   "spokenText": "The booster is coasting back toward the pad. The burn is over. It will relight for a landing burn to slow down.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.recovery.1.mp3",
+   "durationSec": 5.538,
+   "lufs": -16.46,
+   "truePeakDb": -3.15,
+   "normalization": "linear",
+   "hash": "41c0ef24000f",
+   "sha256": "8fa1ee6b6718fff64a8a04076db195feed929883272163c53243f258d75b8b9c",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "The booster is coasting back toward the pad. The burn is over.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "It will relight for a landing burn to slow down.",
+     "overlapSec": 0.1
+    }
+   ],
+   "sources": [],
+   "requires": {
+    "stages": ">=2",
+    "recovery": "rtls"
+   },
+   "claims": [
+    "stages",
+    "recovery"
+   ]
+  },
+  {
+   "id": "host/color.recovery.2",
+   "event": "color.recovery",
+   "channel": "host",
+   "text": "The booster is coasting toward Haven, our barge downrange. It relights before the deck to slow down.",
+   "spokenText": "The booster is coasting toward Haven, our barge downrange. It relights before the deck to slow down.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.recovery.2.mp3",
+   "durationSec": 4.885,
+   "lufs": -16.43,
+   "truePeakDb": -2.32,
+   "normalization": "linear",
+   "hash": "7c2378d29a2d",
+   "sha256": "01097f3b68feab772475d3d59b144a14654574de67d5eb8af26f74d36f78b175",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "The booster is coasting toward Haven, our barge downrange.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "It relights before the deck to slow down.",
+     "overlapSec": 0.1
+    }
+   ],
+   "sources": [],
+   "requires": {
+    "stages": ">=2",
+    "recovery": "barge",
+    "site": [
+     "pier-7",
+     "coastal-pad-b"
+    ]
+   },
+   "claims": [
+    "stages",
+    "recovery",
+    "site"
+   ]
+  },
+  {
+   "id": "host/color.recovery.3",
+   "event": "color.recovery",
+   "channel": "host",
+   "text": "In late 2015 an orbital booster first landed upright after flight. And in 2017 an orbital booster flew a second time. Same idea we are attempting right now.",
+   "spokenText": "In late 2015 an orbital booster first landed upright after flight. And in 2017 an orbital booster flew a second time. Same idea we are attempting right now.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.recovery.3.mp3",
+   "durationSec": 9.535,
+   "lufs": -16.43,
+   "truePeakDb": -3.12,
+   "normalization": "linear",
+   "hash": "cbd59be789ec",
+   "sha256": "649114ea151675fa4f0678c16e3d74e62aedeb2c3377becbd7e57862d2c53776",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "In late 2015 an orbital booster first landed upright after flight.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "And in 2017 an orbital booster flew a second time.",
+     "overlapSec": 0.1
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Same idea we are attempting right now.",
+     "overlapSec": 0
+    }
+   ],
+   "sources": [
+    "S16"
+   ],
+   "requires": {
+    "stages": ">=2",
+    "recovery": [
+     "barge",
+     "rtls"
+    ]
+   },
+   "claims": [
+    "stages",
+    "recovery"
+   ]
+  },
+  {
+   "id": "host/color.recovery.4",
+   "event": "color.recovery",
+   "channel": "host",
+   "text": "To come back to the pad, the booster first has to turn around. Then it has to cancel all that speed away from the pad.",
+   "spokenText": "To come back to the pad, the booster first has to turn around. Then it has to cancel all that speed away from the pad.",
+   "voice": "Sarah+Chris",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.recovery.4.mp3",
+   "durationSec": 6.034,
+   "lufs": -16.43,
+   "truePeakDb": -2.86,
+   "normalization": "linear",
+   "hash": "0390568a14d9",
+   "sha256": "8ee54c1c92e9ac6ec0c3794cf00e150239842489d2fff8440816a994866ea2d2",
+   "layer": "color",
+   "interruptible": true,
+   "lines": [
+    {
+     "speaker": "Chris",
+     "voiceId": "iP95p4xoKVk53GoZ742B",
+     "text": "To come back to the pad, the booster first has to turn around.",
+     "overlapSec": 0
+    },
+    {
+     "speaker": "Sarah",
+     "voiceId": "EXAVITQu4vr4xnSDxMaL",
+     "text": "Then it has to cancel all that speed away from the pad.",
+     "overlapSec": 0.1
+    }
+   ],
+   "sources": [],
+   "requires": {
+    "stages": ">=2",
+    "recovery": "rtls"
+   },
+   "claims": [
+    "stages",
+    "recovery"
+   ]
   }
  ],
  "factTags": "Every clip has exactly one of neutral:true (+neutralReason) or requires+claims. Keys and operators: docs/narration-facts.md. Lint: tests/narration-facts-lint.test.cjs."
