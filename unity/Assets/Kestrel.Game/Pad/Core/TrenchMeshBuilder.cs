@@ -482,54 +482,85 @@ namespace Kestrel.Pad
         /// n = 28 on purpose: Slab and Plinth use a 28-sided boundary at this radius, so the apron
         /// inner edge and the plinth wall share the same chords. With 48 sides the chords diverged
         /// and left an exposed-ground gap between terrace and plinth (up to 52 cm on a 100 m pad).
-        /// At most 28 top + 28 wall quads (~112 triangles), same Concrete draw call as the slab.</summary>
+        /// Each of the 28 chords is cut into ApronSub equal pieces along its own straight line, so the
+        /// outline is unchanged but the trench cut-out is ApronSub times finer. Whole 28ths were dropped
+        /// plus a whole neighbour each side: on an 80 m pad that left about 77 deg of bare ground per
+        /// trench mouth for a 32 deg channel, which read as missing geometry. Now a piece is dropped
+        /// when the grade opening touches it, plus one piece of buffer each side.
+        /// At most 112 top + 112 wall quads (~448 triangles), same Concrete draw call as the slab.</summary>
+        /// <summary>Pieces per 28-gon chord. The apron outline is the same 28-gon; only the cut-out is finer.</summary>
+        public const int ApronSub = 4;
+
+        static bool PointInQuad(float px, float pz, float ax, float az, float bx, float bz, float cx, float cz, float dx, float dz)
+        {
+            float s0 = (bx - ax) * (pz - az) - (bz - az) * (px - ax);
+            float s1 = (cx - bx) * (pz - bz) - (cz - bz) * (px - bx);
+            float s2 = (dx - cx) * (pz - cz) - (dz - cz) * (px - cx);
+            float s3 = (ax - dx) * (pz - dz) - (az - dz) * (px - dx);
+            bool neg = s0 < 0f || s1 < 0f || s2 < 0f || s3 < 0f;
+            bool pos = s0 > 0f || s1 > 0f || s2 > 0f || s3 > 0f;
+            return !(neg && pos);
+        }
+
         static void Apron(PadMeshData m, TrenchSpec s, float deck)
         {
-            const int n = 28;
+            const int n = 28, sub = ApronSub, total = n * sub;
             const float width = 8f, topY = -0.80f;
             float inner = deck, outer = deck + width;
             var hole = TrenchGrammar.GroundOpening(s);
-            var skip = new bool[n];
-            for (int i = 0; i < n; i++)
+            // Piece j lies on chord j / sub of the 28-gon; k is its slot along that chord.
+            void Piece(int j, out float ix0, out float iz0, out float ix1, out float iz1, out float ox0, out float oz0, out float ox1, out float oz1)
             {
+                int i = j / sub, k = j % sub;
                 double a0 = 2 * Math.PI * i / n, a1 = 2 * Math.PI * (i + 1) / n;
-                // Dense sampling, not just midpoints/endpoints: a narrow corner lobe of the
-                // grade opening (e.g. a trench-exit mouth corner landing on the ring) can fall
-                // between the old checked points while the quad still bridges the channel.
-                // Sample both chords and both radial sides; 16 steps catch any intrusion
-                // wider than ~1.6 m along the chord (a shallower poke is sub-centimetre deep).
-                float ix0 = inner * (float)Math.Cos(a0), iz0 = inner * (float)Math.Sin(a0);
-                float ix1 = inner * (float)Math.Cos(a1), iz1 = inner * (float)Math.Sin(a1);
-                float ox0 = outer * (float)Math.Cos(a0), oz0 = outer * (float)Math.Sin(a0);
-                float ox1 = outer * (float)Math.Cos(a1), oz1 = outer * (float)Math.Sin(a1);
-                for (int k = 0; k <= 16 && !skip[i]; k++)
-                {
-                    float t = k / 16f;
-                    if (PolyCut.Contains(hole, ix0 + (ix1 - ix0) * t, iz0 + (iz1 - iz0) * t)
-                        || PolyCut.Contains(hole, ox0 + (ox1 - ox0) * t, oz0 + (oz1 - oz0) * t)) skip[i] = true;
-                }
-                for (int k = 0; k <= 8 && !skip[i]; k++)
+                float ci0 = inner * (float)Math.Cos(a0), ci1 = inner * (float)Math.Cos(a1);
+                float zi0 = inner * (float)Math.Sin(a0), zi1 = inner * (float)Math.Sin(a1);
+                float co0 = outer * (float)Math.Cos(a0), co1 = outer * (float)Math.Cos(a1);
+                float zo0 = outer * (float)Math.Sin(a0), zo1 = outer * (float)Math.Sin(a1);
+                float t0 = k / (float)sub, t1 = (k + 1) / (float)sub;
+                ix0 = ci0 + (ci1 - ci0) * t0; iz0 = zi0 + (zi1 - zi0) * t0;
+                ix1 = ci0 + (ci1 - ci0) * t1; iz1 = zi0 + (zi1 - zi0) * t1;
+                ox0 = co0 + (co1 - co0) * t0; oz0 = zo0 + (zo1 - zo0) * t0;
+                ox1 = co0 + (co1 - co0) * t1; oz1 = zo0 + (zo1 - zo0) * t1;
+            }
+            var skip = new bool[total];
+            for (int j = 0; j < total; j++)
+            {
+                Piece(j, out float ix0, out float iz0, out float ix1, out float iz1, out float ox0, out float oz0, out float ox1, out float oz1);
+                // Dense sampling, not just midpoints/endpoints: a narrow corner lobe of the grade
+                // opening can fall between checked points while the quad still bridges the channel.
+                // Both edges and both sides are sampled, and an 8 x 8 grid covers the interior.
+                for (int k = 0; k <= 8 && !skip[j]; k++)
                 {
                     float t = k / 8f;
-                    if (PolyCut.Contains(hole, ix0 + (ox0 - ix0) * t, iz0 + (oz0 - iz0) * t)
-                        || PolyCut.Contains(hole, ix1 + (ox1 - ix1) * t, iz1 + (oz1 - iz1) * t)) skip[i] = true;
+                    if (PolyCut.Contains(hole, ix0 + (ix1 - ix0) * t, iz0 + (iz1 - iz0) * t)
+                        || PolyCut.Contains(hole, ox0 + (ox1 - ox0) * t, oz0 + (oz1 - oz0) * t)
+                        || PolyCut.Contains(hole, ix0 + (ox0 - ix0) * t, iz0 + (oz0 - iz0) * t)
+                        || PolyCut.Contains(hole, ix1 + (ox1 - ix1) * t, iz1 + (oz1 - iz1) * t)) skip[j] = true;
                 }
+                for (int a = 1; a < 8 && !skip[j]; a++)
+                    for (int b = 1; b < 8 && !skip[j]; b++)
+                    {
+                        float u = a / 8f, v = b / 8f;
+                        float px = ix0 + (ix1 - ix0) * u, pz = iz0 + (iz1 - iz0) * u;
+                        float qx = ox0 + (ox1 - ox0) * u, qz = oz0 + (oz1 - oz0) * u;
+                        if (PolyCut.Contains(hole, px + (qx - px) * v, pz + (qz - pz) * v)) skip[j] = true;
+                    }
+                // A grade-opening corner inside the piece with no edge or sample inside the opening.
+                for (int h = 0; h < hole.Count && !skip[j]; h++)
+                    if (PointInQuad(hole[h].X, hole[h].Y, ix0, iz0, ix1, iz1, ox1, oz1, ox0, oz0)) skip[j] = true;
             }
-            // One segment of buffer each side, applied from a snapshot so the buffer itself does
+            // One piece of buffer each side, applied from a snapshot so the buffer itself does
             // not propagate around the ring.
-            var drop = new bool[n];
-            for (int i = 0; i < n; i++)
-                if (skip[i]) { drop[(i + 1) % n] = true; drop[(i + n - 1) % n] = true; }
-            for (int i = 0; i < n; i++) skip[i] = skip[i] || drop[i];
-            for (int i = 0; i < n; i++)
+            var drop = new bool[total];
+            for (int j = 0; j < total; j++)
+                if (skip[j]) { drop[(j + 1) % total] = true; drop[(j + total - 1) % total] = true; }
+            for (int j = 0; j < total; j++) skip[j] = skip[j] || drop[j];
+            for (int j = 0; j < total; j++)
             {
-                if (skip[i]) continue;
-                double a0 = 2 * Math.PI * i / n, a1 = 2 * Math.PI * (i + 1) / n;
-                double am = 2 * Math.PI * (i + 0.5) / n;
-                float ix0 = inner * (float)Math.Cos(a0), iz0 = inner * (float)Math.Sin(a0);
-                float ix1 = inner * (float)Math.Cos(a1), iz1 = inner * (float)Math.Sin(a1);
-                float ox0 = outer * (float)Math.Cos(a0), oz0 = outer * (float)Math.Sin(a0);
-                float ox1 = outer * (float)Math.Cos(a1), oz1 = outer * (float)Math.Sin(a1);
+                if (skip[j]) continue;
+                Piece(j, out float ix0, out float iz0, out float ix1, out float iz1, out float ox0, out float oz0, out float ox1, out float oz1);
+                double am = 2 * Math.PI * ((j / sub) + 0.5) / n;
                 m.AddQuad(new Vec3(ox0, topY, oz0), new Vec3(ox1, topY, oz1), new Vec3(ix1, topY, iz1), new Vec3(ix0, topY, iz0), 0f, 1f, 0f);
                 float nx = (float)Math.Cos(am), nz = (float)Math.Sin(am);
                 m.AddQuad(new Vec3(ox0, TrenchSpec.GradeY, oz0), new Vec3(ox1, TrenchSpec.GradeY, oz1),
