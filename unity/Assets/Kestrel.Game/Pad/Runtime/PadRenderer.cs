@@ -101,6 +101,27 @@ namespace Kestrel.Pad
         {
             Vector3 a = m.A.ToUnity(), b = m.B.ToUnity(), d = b - a; float len = d.magnitude;
             var rot = len > 1e-5f ? Quaternion.FromToRotation(Vector3.up, d / len) : Quaternion.identity;
+            if (m.Kind == MemberKind.Deck && len > 1e-5f)
+            {
+                Vector3 dir = d / len;
+                // Deck beams are planks: the 0.08 m thickness must stay vertical. The minimal
+                // rotation above twists X-running planks so the 0.9 m width goes vertical —
+                // that rendered the tower base plates as fins (0.9 m tall, 0.08 m across).
+                // For axis-aligned horizontal planks, build the basis flat instead: length
+                // along the run, width horizontal across it, thickness up. Z-running planks
+                // render identically under both bases (the box is symmetric), diagonal planks
+                // keep the legacy matrix, and every non-Deck kind is untouched.
+                if (Mathf.Abs(dir.y) < 1e-4f && (Mathf.Abs(dir.x) > 0.9999f || Mathf.Abs(dir.z) > 0.9999f))
+                {
+                    Vector3 xAxis = Vector3.Cross(dir, Vector3.up);
+                    var basis = new Matrix4x4(
+                        new Vector4(xAxis.x, xAxis.y, xAxis.z, 0f),
+                        new Vector4(dir.x, dir.y, dir.z, 0f),
+                        new Vector4(0f, 1f, 0f, 0f),
+                        new Vector4(0f, 0f, 0f, 1f));
+                    rot = basis.rotation;
+                }
+            }
             return Matrix4x4.TRS(a, rot, new Vector3(1, len, 1));
         }
 

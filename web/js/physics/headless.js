@@ -47,6 +47,12 @@ export function stackDeltaV(stages, payload = 0) {
  *    target, located by 40 bisections of the step (C# AscentSim, #313); replaces the periapsis cutoff,
  *  closedLoop (bool, false; #341 guidance computer, needs energyCutoff) + closedLoopAimAlt (m, NaN = targetAlt)
  *    + closedLoopRelaxPitch (bool): upper stages steer to (aim altitude, vr = 0) at the cutoff. Same law as C#
+ *  fairingMass (kg, 0) + fairingJettisonAltitudeM (m, NaN): when both are given, the fairing mass is
+ *    dropped once the vehicle climbs past that altitude (a `fairing-jettison` event), exactly like the
+ *    stage-separation mass drops. `payload` must still include the fairing mass, so the pre-jettison
+ *    stack is correct. Without these options behaviour is unchanged (fairing rides to orbit).
+ *    Jettison is only observed while the sim is thrusting: the loop stops at cutoff, so a design whose
+ *    jettison altitude is reached only on the coast after cutoff keeps its fairing (conservative).
  *    AscentSim.ClosedLoopPitch; parity is tests/closed-loop-parity.test.cjs and ClosedLoopParityTests.
  * Returns { outcome: 'orbit'|'suborbital'|'crash'|'timeout', time, events[], orbit, maxQ, maxQTime,
  *  maxG, losses:{gravity,drag,steering}, idealDeltaV, deltaVExpended, finalMass, samples[], warnings[] }.
@@ -62,6 +68,9 @@ export function simulate(stagesIn, opts = {}) {
   const cutoffEnergy = opts.cutoffEnergy ?? NaN;
   const locateEnergy = !!opts.energyCutoff && opts.cutoff !== false && !Number.isNaN(cutoffEnergy);
   const closedLoop = !!opts.closedLoop && locateEnergy;
+  const fairingMass = opts.fairingMass ?? 0;
+  const fairingAlt = opts.fairingJettisonAltitudeM ?? NaN;
+  let fairingDropped = false;
   const aimAlt = Number.isFinite(opts.closedLoopAimAlt) ? opts.closedLoopAimAlt : targetAlt;
   const pitchLo = opts.closedLoopRelaxPitch ? -1 : -0.6, pitchHi = opts.closedLoopRelaxPitch ? 1 : 0.95;
 
@@ -168,7 +177,8 @@ export function simulate(stagesIn, opts = {}) {
   const orb = {};
   let t = 0, maxQ = 0, maxQTime = 0, maxG = 0, lossG = 0, lossD = 0, lossS = 0, dvExp = 0;
   let nextSample = 0, outcome = 'timeout', kickStart = -1, liftedOff = false;
-  const stageEndMass = () => upperMass[stageIdx] - st[stageIdx].propMass;
+  // Stage-end mass, net of a fairing already jettisoned (it no longer rides the stack).
+  const stageEndMass = () => upperMass[stageIdx] - st[stageIdx].propMass - (fairingDropped ? fairingMass : 0);
   events.push({ t: 0, type: 'ignition', stage: 1 });
 
   while (t < tMax) {
@@ -212,7 +222,7 @@ export function simulate(stagesIn, opts = {}) {
         events.push({ t, type: 'burnout', stage: stageIdx + 1, alt, v: Math.hypot(vx, vy) });
         stageIdx++;
         if (stageIdx >= st.length) { thrusting = false; mode = 4; continue; }
-        y[4] = upperMass[stageIdx];
+        y[4] = upperMass[stageIdx] - (fairingDropped ? fairingMass : 0);
         events.push({ t, type: 'separation', stage: stageIdx, alt });
         events.push({ t, type: 'ignition', stage: stageIdx + 1, alt });
         continue;
@@ -271,6 +281,12 @@ export function simulate(stagesIn, opts = {}) {
     }
 
     const r1 = Math.hypot(y[0], y[1]), alt1 = r1 - R_EARTH;
+    // Fairing jettison: one mass drop at the design's altitude, recorded as an event.
+    if (!fairingDropped && fairingMass > 0 && Number.isFinite(fairingAlt) && alt1 >= fairingAlt) {
+      fairingDropped = true;
+      y[4] -= fairingMass;
+      events.push({ t, type: 'fairing-jettison', alt: alt1, mass: fairingMass });
+    }
     if (!liftedOff && alt1 > 1) { liftedOff = true; events.push({ t, type: 'liftoff' }); }
     if (alt1 < 0) {
       if (!liftedOff && thrusting) { y[0] = 0; y[1] = R_EARTH; y[2] = -vSite; y[3] = 0; continue; } // on pad, TWR<1

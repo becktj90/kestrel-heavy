@@ -25,7 +25,9 @@ namespace Kestrel.Kit
         {
             MaterialRole.PaintedSteel      => new MaterialSpec(new Color(0.78f, 0.80f, 0.82f), 0.35f, 0.45f),
             MaterialRole.Galvanized        => new MaterialSpec(new Color(0.62f, 0.64f, 0.66f), 0.90f, 0.55f),
-            MaterialRole.Concrete          => new MaterialSpec(new Color(0.55f, 0.54f, 0.51f), 0.00f, 0.15f),
+            // Tone pass: warmer mid-grey, lower albedo and sheen so pad concrete does not blow out under the CI sun
+            // (was 0.55/0.54/0.51, smoothness 0.15, which read near-white). Grain multiplies this by ~0.92.
+            MaterialRole.Concrete          => new MaterialSpec(new Color(0.36f, 0.33f, 0.29f), 0.00f, 0.08f),
             MaterialRole.RubberHose        => new MaterialSpec(new Color(0.07f, 0.07f, 0.08f), 0.00f, 0.30f),
             MaterialRole.Insulation        => new MaterialSpec(new Color(0.86f, 0.84f, 0.78f), 0.00f, 0.20f),
             MaterialRole.WarningStripes    => new MaterialSpec(new Color(1f, 1f, 1f), 0.10f, 0.35f, striped: true),

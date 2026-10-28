@@ -29,8 +29,10 @@ namespace Kestrel.Pad.Tests
         public void ArchetypesHaveTheirHardware()
         {
             var rail = PadGenerator.Generate(1, PadArchetype.Rail, new PadFit(15f, 0.6f));
-            Assert.That(rail.Tower, Is.Null); Assert.That(rail.Arms, Is.Empty);
-            Assert.That(rail.Graph.Contains("rail"), Is.True);
+            // The rail rides a compact service tower (owner feedback: the bare rail read as a slab), but it has no
+            // tower anchors and no swing arms: rail-pad umbilicals clamp to the rail.
+            Assert.That(rail.Tower, Is.Not.Null); Assert.That(rail.Anchors, Is.Null); Assert.That(rail.Arms, Is.Empty);
+            Assert.That(rail.Graph.Contains("rail"), Is.True); Assert.That(rail.Graph.Contains("tower"), Is.True);
             var tower = PadGenerator.Generate(1, PadArchetype.Tower, Heavy);
             Assert.That(tower.Graph.Contains("tower"), Is.True); Assert.That(tower.Graph.Contains("strongback"), Is.False);
             Assert.That(tower.Arms.Count, Is.EqualTo(3));
