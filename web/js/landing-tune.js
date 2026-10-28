@@ -21,10 +21,20 @@ export function landingMargins(vy, dx, landingVy, landingTol) {
 /**
  * @returns {'Perfect'|'Good'|'Hard'|'Salvage'|null}
  */
-export function gradeTouchdown({ kind, vy, dx, landingVy, landingTol, tipped }) {
+/**
+ * Same rule as Unity RecoveryScore: tipped = tilted || !legsDown. A booster whose
+ * gear never came down (no landing burn, so no leg deploy) is a Salvage even when
+ * the sink, miss and tilt would have passed. legsDown defaults to true so callers
+ * that do not model the gear (golden vectors, tests) keep the old result.
+ */
+export function landingTipped(tilted, legsDown = true) {
+  return Boolean(tilted) || !legsDown;
+}
+
+export function gradeTouchdown({ kind, vy, dx, landingVy, landingTol, tipped, legsDown = true }) {
   if (kind !== 'deck') return null;
   const { vyMargin, dxMargin, margin } = landingMargins(vy, dx, landingVy, landingTol);
-  if (tipped || vyMargin < 0 || dxMargin < 0) return 'Salvage';
+  if (landingTipped(tipped, legsDown) || vyMargin < 0 || dxMargin < 0) return 'Salvage';
   if (margin >= LANDING.perfectMin) return 'Perfect';
   if (margin >= LANDING.goodMin) return 'Good';
   return 'Hard';
