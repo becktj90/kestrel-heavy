@@ -119,6 +119,7 @@ test('nothing that ships raises the flare advisory', async () => {
     walk(JSON.parse(fs.readFileSync(path.join(root, 'data', f + '.json'), 'utf8')), f);
   assert.ok(n > 30, `walked ${n} designs`);
   // The one exception is a legacy flight-loop golden fixture, not a player design: a 1.2 m fairing on a 0.75 m stage (r = 1.6).
-  // It is schema v1 and does not pass the designer, so the advisory is never shown for it; it is listed so a new one cannot slip in.
+  // m1p-360 is a v1 flight fixture that is never designer-reachable (it fails the designer's schema, so the advisory is never shown for it).
+  // The pin stays so a new shipped design over the threshold cannot slip in unnoticed.
   assert.deepStrictEqual(flagged, ['golden/campaign-viable:m1p-360']);
 });
