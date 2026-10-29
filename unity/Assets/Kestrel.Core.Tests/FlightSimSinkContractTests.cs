@@ -115,7 +115,14 @@ namespace Kestrel.Core.Tests
                 {
                     fired++;
                     var fair = Find(flown, "fairing", 0);
-                    Assert.GreaterOrEqual(fair.alt.Value, want, w.missionId);
+                    if (setup.Options.fairingMaxHeatFlux > 0)
+                    {
+                        // Physics (KH-7 follow-up): with a payload heat limit the event waits for the heat gate.
+                        setup.Options.fairingJettisonAltM = want;
+                        Assert.GreaterOrEqual(fair.alt.Value, FairingHeatGate.FloorFor(want), w.missionId + ": not before the fairing call arms");
+                        Assert.AreEqual(FairingHeatGateTests.ReplayGateT(setup.Stages, setup.Options), fair.t, 1e-9, w.missionId + ": at the heat gate");
+                    }
+                    else Assert.GreaterOrEqual(fair.alt.Value, want, w.missionId);
                     Assert.GreaterOrEqual(fair.t, flown.maxQTime >= log.MaxQT ? log.MaxQT : flown.maxQTime, w.missionId);
                 }
                 flights++;
