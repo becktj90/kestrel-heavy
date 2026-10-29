@@ -113,7 +113,8 @@ namespace Kestrel.Capture.Tests
                 var tr = sa != null ? sa.HudTraceForCapture : Vector4.zero;
                 var nose = sa != null && Camera.main != null ? Camera.main.WorldToViewportPoint(sa.NoseTraceForCapture) : Vector3.zero;
                 TestContext.WriteLine("flight framing " + d.Name + ": " + Framing(UnityEngine.Object.FindAnyObjectByType<FlightDriver>()) + " hud cover " + HudCover().ToString("0.000")
-                    + "; camera trace cover " + tr.x.ToString("0.000") + " pitch aimed " + tr.y.ToString("0.0") + " kept " + tr.z.ToString("0.0") + " frame " + tr.w + " (now " + Time.frameCount + ") nose point vy " + nose.y.ToString("0.000"));
+                    + "; camera trace cover " + tr.x.ToString("0.000") + " pitch aimed " + tr.y.ToString("0.0") + " kept " + tr.z.ToString("0.0") + " frame " + tr.w + " (now " + Time.frameCount + ") nose point vy " + nose.y.ToString("0.000")
+                    + " projection shift " + (Camera.main != null ? Camera.main.projectionMatrix.m12.ToString("0.000") : "-"));
             }
             int distinct = 0;
             var png = FlightCapture.Png(d, Dir, name, n => distinct = n);

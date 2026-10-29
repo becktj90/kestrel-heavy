@@ -609,6 +609,11 @@ namespace Kestrel.Slice
         /// On iPad the panel is on the side, so the whole height is free and HangarCamera shifts left instead.</summary>
         void ApplyDesignFraming()
         {
+            // Flight owns the camera. A Starter-launched flight kept starterMode, so a screen geometry change mid-flight
+            // (rotation, an iPad multitasking resize) ran FrameCamera: it moved the camera and left the design screen's
+            // off-centre projection on the chase camera for the rest of the flight. The stack sat high, under the HUD's
+            // telemetry strip, and the juice FOV no longer applied (#381 iPad flight and landing frames).
+            if (hud != null && !hud.ClassListContains("hidden")) return;
             if (starterMode && starter != null && cam != null && ui.layout.height > 0)
             {
                 // Starter: the vehicle alone fills ~62% of the preview box (StarterFrame.Rocket), not the whole pad.
