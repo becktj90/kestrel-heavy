@@ -1582,14 +1582,19 @@ namespace Kestrel.Slice
             chrome?.OnFlightStarted();
         }
 
+        Kestrel.Core.Flight.Narration.CallSchedule flightCalls;
+
         LaunchSequence OpenSequence()
         {
+            flightCalls = null;
             try
             {
                 var cat = SliceData.Catalog;
                 if (cat == null || design == null || design.stages == null || design.stages.Count == 0) return null;
                 string mode = EngineerEnabled ? "engineer" : "standard";
                 var tl = TimelineGenerator.Generate(cat, design, Kestrel.Core.Timeline.Pad.For(cat, design), new Mission { mode = mode }, 1);
+                // The same timeline says when the calls are due, so a color exchange is only offered with room before the next one.
+                flightCalls = Kestrel.Core.Flight.Narration.CallSchedule.From(tl);
                 return LaunchSequence.Open(tl);
             }
             catch (System.Exception) { return null; }
@@ -1633,6 +1638,7 @@ namespace Kestrel.Slice
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
             try { hook = AscentFlight.Prepare(SliceData.Catalog, design, doc, engineer, reduced); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
+            flight.Calls = flightCalls;
             flight.Launch(design, hook);
             if (flight.Sim == null) return false;
             PresentAscent(engineer);

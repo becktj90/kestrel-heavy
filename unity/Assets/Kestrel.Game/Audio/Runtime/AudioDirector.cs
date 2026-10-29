@@ -11,7 +11,7 @@ namespace Kestrel.Game.Audio
     /// Wire with <see cref="Attach"/> once. Music is managed by MusicPlayer.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class AudioDirector : MonoBehaviour, IFlightEventSink
+    public sealed class AudioDirector : MonoBehaviour, IFlightStageSink
     {
         public const int PoolSize = 12;
         public const string MutePref = "kh.audio.muted";
@@ -81,12 +81,26 @@ namespace Kestrel.Game.Audio
             else ReleaseSources();
         }
 
-        public void OnEvent(string id)
+        public void OnEvent(string id) => OnStagedEvent(id, 0);
+
+        /// <summary>Sound effects key on the raw sim id. Narration gets the stack entry too (see <see cref="IFlightStageSink"/>).</summary>
+        public void OnStagedEvent(string id, int stage)
         {
             if (string.IsNullOrEmpty(id)) return;
             if (id == "flight.begin") { MusicPlayer.Instance?.Play(MusicBed.Flight); BeginFlight(); }
             else PlaySfx(id);
-            if (forward != null) forward.OnEvent(id);
+            if (forward is IFlightStageSink staged) staged.OnStagedEvent(id, stage);
+            else if (forward != null) forward.OnEvent(id);
+        }
+
+        public void BeginNarration(Kestrel.Core.Flight.Narration.NarrationFacts facts, Kestrel.Core.Flight.Narration.CallSchedule calls)
+        {
+            if (forward is IFlightStageSink staged) staged.BeginNarration(facts, calls);
+        }
+
+        public void SetFlightClock(double seconds, double altM)
+        {
+            if (forward is IFlightStageSink staged) staged.SetFlightClock(seconds, altM);
         }
 
         public void SetFlightState(float altitudeM, float qPa, float throttle01)

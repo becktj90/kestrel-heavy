@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Flight.Narration;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Audio;
@@ -26,6 +27,8 @@ namespace Kestrel.Slice
         public PlumeController Plume;
         public event Action<FlightDriver> OnMeco;
         public IFlightEventSink Sink { get; set; }
+        /// <summary>When the timeline expects its calls (from the launch sequence). Null: unknown, so no color exchange is offered.</summary>
+        public CallSchedule Calls { get; set; }
 
         public AscentSim Sim { get; private set; }
         public double SimTime => Sim?.T ?? 0;
@@ -143,6 +146,7 @@ namespace Kestrel.Slice
                 thrustRef = Math.Max(1, stages[0].thrustVac);
                 omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
                 UpdateFrame();
+                (Sink as IFlightStageSink)?.BeginNarration(NarrationFacts.From(d, hook != null ? hook.SiteId : null), Calls);
                 Sink?.OnEvent("flight.begin");
                 PumpEvents();
                 PublishAudio();
@@ -185,10 +189,14 @@ namespace Kestrel.Slice
         {
             if (Sink == null || Sim == null) return;
             var ev = Sim.Events;
+            var staged = Sink as IFlightStageSink;
             while (seenEvents < ev.Count)
             {
-                var type = ev[seenEvents++].type;
-                if (!string.IsNullOrEmpty(type)) Sink.OnEvent(type);
+                var e = ev[seenEvents++];
+                if (string.IsNullOrEmpty(e.type)) continue;
+                // Stage-aware sinks route ignitions by the sim stack entry (ses1 for a later core stage); the rest get the plain id.
+                if (staged != null) staged.OnStagedEvent(e.type, e.stage ?? 0);
+                else Sink.OnEvent(e.type);
             }
         }
 
@@ -196,6 +204,7 @@ namespace Kestrel.Slice
         {
             if (Sink == null || Sim == null) return;
             Sink.SetFlightState((float)Altitude, (float)DynPressure, (float)ThrustFraction);
+            (Sink as IFlightStageSink)?.SetFlightClock(SimTime, Altitude);
         }
 
         void UpdateFrame()

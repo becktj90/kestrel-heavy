@@ -49,12 +49,17 @@ namespace Kestrel.Core.Flight
         public FailureEvent Failure;
         public AscentMedal TimingMedal;
         public bool RedundantAvionics;
+        /// <summary>The flown design has no fins (design.fins false). False when unknown, so a "finless" line never plays by accident.</summary>
+        public bool Finless;
         public int EngineCount;
         public double ApoKm;
         public double GoalKm;
         public double RequiredMps;
         /// <summary>F4: why an intact flight missed (<see cref="MissReason.Explain"/>). Null on a pass or a failure event.</summary>
         public MissExplanation Miss;
+
+        /// <summary>Every design tag true of the flight: the avionics/engine one, then finless when the design has no fins.</summary>
+        public string[] DesignTags => Finless ? new[] { DesignTag, "finless" } : new[] { DesignTag };
 
         public string DesignTag
         {
@@ -284,7 +289,7 @@ namespace Kestrel.Core.Flight
             debrief.MedalsLine = MedalSentence(debrief.Medals);
 
             string narrKind = kind;
-            var line = pool.Pick(narrKind, cause, facts.DesignTag, debrief.Seed);
+            var line = pool.Pick(narrKind, cause, facts.DesignTags, debrief.Seed);
             if (miss != null)
             {
                 debrief.NarratorKid = "";
