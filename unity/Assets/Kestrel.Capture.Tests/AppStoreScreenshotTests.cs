@@ -247,7 +247,7 @@ namespace Kestrel.Capture.Tests
                 double now = app.FlightClockForCapture;
                 if (now >= 60) { reached = true; break; }
                 if (now > last) { last = now; still = 0; } else still++;
-                if (still == 120) TestContext.WriteLine("flight stall: " + StallState(driver));
+                if (now > 1 && (still == 30 || still == 300)) TestContext.WriteLine("flight stall: " + StallState(driver));
             }
             if (!reached) problems.Add("flight: the flight stopped at T+" + app.FlightClockForCapture.ToString("0.0") + " before T+60 (" + StallState(driver) + ")");
             if (app.FlightClockForCapture >= 5)   // still shot where it stands, so the artifact shows what the flight looked like
@@ -294,7 +294,10 @@ namespace Kestrel.Capture.Tests
         {
             if (d == null) return "no FlightDriver";
             var sim = d.Sim;
-            return "running " + d.Running + ", held " + d.Held + ", lost " + d.Lost + ", simDone " + (sim != null && sim.Done) + ", stage " + (sim != null ? sim.StageIdx : -1)
+            string lastEvent = sim != null && sim.Events.Count > 0 ? sim.Events[sim.Events.Count - 1].type + "@" + sim.Events[sim.Events.Count - 1].t.ToString("0.0") : "none";
+            return "enabled " + d.enabled + ", activeAndEnabled " + d.isActiveAndEnabled + ", simT " + (sim != null ? sim.T.ToString("0.000") : "-")
+                + ", alt " + d.Altitude.ToString("0") + ", thrusting " + (sim != null && sim.Thrusting) + ", events " + (sim != null ? sim.Events.Count : 0) + " last " + lastEvent
+                + ", frame " + Time.frameCount + ", running " + d.Running + ", held " + d.Held + ", lost " + d.Lost + ", simDone " + (sim != null && sim.Done) + ", stage " + (sim != null ? sim.StageIdx : -1)
                 + ", timeScale " + Time.timeScale + ", captureDt " + Time.captureDeltaTime + ", dt " + Time.deltaTime + ", presentation " + Kestrel.Kit.CinematicEvents.PresentationScale;
         }
 
