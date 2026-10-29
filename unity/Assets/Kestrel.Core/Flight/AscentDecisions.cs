@@ -145,7 +145,8 @@ namespace Kestrel.Core.Flight
         public double AltitudeTargetM, SpeedTargetMps, BonusMaxG;
         public bool BonusAltitude, BonusSpeed, BonusFuel, BonusClean, BonusPeakG;
         public int StrapOns;
-        /// <summary>The design's planned booster recovery ("rtls", "barge", "expendable"); null when unknown.</summary>
+        /// <summary>The recovery the released first stage actually flies ("rtls" or "barge"); null when unknown. An expendable
+        /// design's stage still flies its Haven attempt (RecoveryCrafts.TryAnyway: barge), so its rail plans no Boostback.</summary>
         public string RecoveryMode;
         public string FlightCode = "KH-1";
     }
@@ -288,7 +289,7 @@ namespace Kestrel.Core.Flight
             int cores = design != null && design.stages != null ? design.stages.Count : 0;
             int straps = design != null ? design.StrapOnCount : 0;
             v.StrapOns = straps;
-            v.RecoveryMode = design != null ? design.recoveryMode : null;
+            v.RecoveryMode = design == null ? null : RecoverySim.Offered(design.recoveryMode) ? design.recoveryMode : "barge";
             v.Stages = (cores > 0 ? cores : 1) + (straps > 0 ? 1 : 0);
             v.CanStage = v.Stages > 1;
             v.Crossfeed = straps >= 2 && design.strapOns != null && design.strapOns.crossfeed;

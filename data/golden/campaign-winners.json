@@ -1108,7 +1108,7 @@
               "diameter": 3.2,
               "material": "titanium",
               "separationMass": 40,
-              "landingPropMass": 8800,
+              "landingPropMass": 28000,
               "cluster": {
                 "pattern": "auto"
               },
@@ -1121,7 +1121,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 2,
-              "propMass": 32000,
+              "propMass": 36000,
               "diameter": 3.2,
               "material": "titanium",
               "separationMass": 40,
@@ -1174,7 +1174,8 @@
           "heatShield": true,
           "missionId": "m13",
           "avionics": {
-            "tier": "standard"
+            "tier": "standard",
+            "guidanceComputer": true
           },
           "safetyFactor": 1.7,
           "livery": {
