@@ -425,6 +425,7 @@ namespace Kestrel.Core.Flight
         readonly SeededWind wind;
         readonly List<Call> calls = new List<Call>();
         readonly AscentTrack track = new AscentTrack();
+        readonly FairingHeatGate fairingGate;
         AscentSample last;
         double lastTrackT = -1;
         double engineScale = 1;
@@ -455,6 +456,7 @@ namespace Kestrel.Core.Flight
         AscentDirector(AscentVehicle vehicle, EventSchedule schedule, SeededWind wind, bool autoAssist, bool engineer, bool reduceMotion)
         {
             this.vehicle = vehicle ?? new AscentVehicle();
+            fairingGate = new FairingHeatGate(this.vehicle.JettisonAltM, this.vehicle.MaxHeatFlux);
             this.schedule = schedule;
             this.wind = wind;
             AutoAssist = autoAssist;
@@ -502,6 +504,7 @@ namespace Kestrel.Core.Flight
                 lastTrackT = sample.T;
             }
             track.Nudged = Math.Abs(NudgeDeg) > 0.05;
+            if (vehicle.MaxHeatFlux > 0 && vehicle.HasFairing) fairingGate.Update(sample.T, sample.AltM, sample.SpeedMps);
             Arm(sample);
             TryOpen();
             for (int i = 0; i < calls.Count; i++)
@@ -509,8 +512,17 @@ namespace Kestrel.Core.Flight
                 var c = calls[i];
                 if (c.Phase != Phase.Open) continue;
                 c.Age += dt;
+                // Physics (KH-7 follow-up): the fairing's green zone waits for the heat gate, the first time ½ρv³ drops
+                // under the payload's limit and stays there for FairingHeatGate.CoolHoldS. Until then the clock holds
+                // just short of the green zone, so neither Auto-assist nor the window running out jettisons it hot.
+                // A player's own early tap stays live and is judged honestly in Resolve (damage when hot).
+                bool gated = c.Kind == AscentCall.Fairing && FairingGated;
+                if (gated && !fairingGate.Open)
+                    c.Age = Math.Min(c.Age, AscentDecisions.TimePerfectStart * Window * (1 - 1e-9));
                 var grade = GradeFor(c, sample);
-                bool fire = AutoAssist && (c.Kind == AscentCall.MaxQ ? grade == AscentGrade.Perfect : c.Age >= AscentDecisions.TimePerfectStart * Window && grade == AscentGrade.Perfect);
+                bool fire = AutoAssist && (c.Kind == AscentCall.MaxQ ? grade == AscentGrade.Perfect
+                    : gated ? fairingGate.Open
+                    : c.Age >= AscentDecisions.TimePerfectStart * Window && grade == AscentGrade.Perfect);
                 if (fire) Resolve(c, AutopilotAccept(c, sample), AscentGrade.Perfect, false, sample);
                 else if (c.Age >= Window) Resolve(c, AutopilotAccept(c, sample), AscentGrade.Late, false, sample);
             }
@@ -650,7 +662,7 @@ namespace Kestrel.Core.Flight
                         ready = s.Thrusting && s.StageIndex == c.Stage && s.PropFraction > 0 && s.PropFraction <= 0.12;
                         break;
                     case AscentCall.Fairing:
-                        ready = s.AltM >= vehicle.JettisonAltM - 12000;
+                        ready = s.AltM >= FairingHeatGate.FloorFor(vehicle.JettisonAltM);
                         break;
                     case AscentCall.EngineOut:
                         ready = s.Thrusting && s.StageIndex == c.Stage && s.T > 10 && s.AltM > 1500;
@@ -686,6 +698,18 @@ namespace Kestrel.Core.Flight
             if (c.Kind == AscentCall.MaxQ) return AscentDecisions.GradeMaxQ(s.QPa, vehicle.QLimPa, c.Age, Window);
             return AscentDecisions.GradeTime(c.Age, Window);
         }
+
+        /// <summary>True when the fairing call waits on the heat gate: the vehicle has a fairing and the payload sets a limit.</summary>
+        bool FairingGated => vehicle.HasFairing && vehicle.MaxHeatFlux > 0;
+
+        /// <summary>The fairing heat gate this director runs on its own samples. The flown AscentSim runs the same
+        /// <see cref="FairingHeatGate"/> on the same state for its "fairing" event (SimOptions.fairingMaxHeatFlux).</summary>
+        public FairingHeatGate FairingGate => fairingGate;
+
+        /// <summary>True while jettisoning the fairing now would put the payload past its heat limit
+        /// (<see cref="AscentDecisions.HeatFlux"/> ≥ the payload's max). False when the payload sets no limit.</summary>
+        public bool FairingHot(in AscentSample s)
+            => vehicle.MaxHeatFlux > 0 && AscentDecisions.HeatFlux(s.AltM, s.SpeedMps) >= vehicle.MaxHeatFlux;
 
         bool AutopilotAccept(Call c, in AscentSample s)
         {
@@ -857,7 +881,9 @@ namespace Kestrel.Core.Flight
                 case AscentCall.Fairing:
                     p.Eyebrow = "MISSION CONTROL · FAIRING";
                     p.Quote = "Jettison the fairing near " + (vehicle.JettisonAltM / 1000).ToString("0", inv) + " km?";
-                    p.Detail = "Window " + Clock(left) + " · Heat after jettison is ½ρv³ against the payload limit.";
+                    p.Detail = FairingGated && !fairingGate.Open
+                        ? "Waiting for the heat · ½ρv³ must stay under the payload limit for " + FairingHeatGate.CoolHoldS.ToString("0", inv) + " s."
+                        : "Window " + Clock(left) + " · Heat after jettison is ½ρv³ against the payload limit.";
                     p.Primary = "JETTISON FAIRING";
                     p.Marker = Marker(c);
                     p.GreenStart = AscentDecisions.TimePerfectStart;
@@ -941,6 +967,55 @@ namespace Kestrel.Core.Flight
             int r = s % 60;
             var inv = CultureInfo.InvariantCulture;
             return m.ToString(inv) + ":" + r.ToString("00", inv);
+        }
+    }
+    /// <summary>
+    /// The fairing heat gate (Physics, KH-7 follow-up). It opens at the first time the payload's heat after jettison,
+    /// ½ρv³ (<see cref="AscentDecisions.HeatFlux"/>), has dropped under its limit and stayed under it for
+    /// <see cref="CoolHoldS"/>, counting only from <see cref="FloorFor"/> (the fairing call's arming height) up. Once open
+    /// it stays open. The director times the fairing call's Auto-assist press with it, and the flown AscentSim gates its
+    /// observational "fairing" event with it, both on the same (t, altitude, air-relative speed) state, so the two
+    /// cannot disagree. Nothing in it is fitted: the limit is the payload catalog's maxHeatFlux.
+    /// </summary>
+    public sealed class FairingHeatGate
+    {
+        /// <summary>The fairing call arms this far below the design's jettison height (the director's long-standing rule).</summary>
+        public const double ArmBelowM = 12000;
+        /// <summary>How long ½ρv³ must stay under the limit before the gate opens (Physics: "~2 s").</summary>
+        public const double CoolHoldS = 2.0;
+
+        readonly double floorM, limit;
+        double coolSince = double.NaN;
+
+        public FairingHeatGate(double jettisonAltM, double maxHeatFlux)
+        {
+            floorM = FloorFor(jettisonAltM);
+            limit = maxHeatFlux;
+        }
+
+        public static double FloorFor(double jettisonAltM) => jettisonAltM - ArmBelowM;
+
+        public bool Open { get; private set; }
+        public double OpenT { get; private set; } = double.NaN;
+        public double LimitWm2 => limit;
+
+        /// <summary>Feeds one state. Returns true once the gate is open. A payload with no limit (≤ 0) never opens it:
+        /// callers fall back to the release height.</summary>
+        public bool Update(double t, double altM, double airSpeedMps)
+        {
+            if (Open) return true;
+            if (!(limit > 0) || altM < floorM || AscentDecisions.HeatFlux(altM, airSpeedMps) >= limit)
+            {
+                coolSince = double.NaN;
+                return false;
+            }
+            if (double.IsNaN(coolSince)) coolSince = t;
+            if (t - coolSince >= CoolHoldS - 1e-9)
+            {
+                Open = true;
+                OpenT = t;
+            }
+            return Open;
         }
     }
 }
