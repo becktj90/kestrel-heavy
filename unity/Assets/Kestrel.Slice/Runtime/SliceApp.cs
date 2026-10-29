@@ -1217,7 +1217,7 @@ namespace Kestrel.Slice
             fairingSeams = null;
             if (!r.fairing.Present) return;
             var f = r.fairing;
-            var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic);
+            var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic, f.JointRadius);
             if (poses.Count == 0) return;
             var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
             cluster.ViewCamera = cam;
@@ -1566,6 +1566,7 @@ namespace Kestrel.Slice
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             ascentErrorLogged = false;
+            BeginCountNarration();
             var gates = LiveBlockers();
             Debug.Log("[Count] gates audio=" + gates.AudioDeviceReady
                 + " clip=" + gates.ClipLoadFinished
@@ -1582,14 +1583,19 @@ namespace Kestrel.Slice
             chrome?.OnFlightStarted();
         }
 
+        Kestrel.Core.Flight.Narration.CallSchedule flightCalls;
+
         LaunchSequence OpenSequence()
         {
+            flightCalls = null;
             try
             {
                 var cat = SliceData.Catalog;
                 if (cat == null || design == null || design.stages == null || design.stages.Count == 0) return null;
                 string mode = EngineerEnabled ? "engineer" : "standard";
                 var tl = TimelineGenerator.Generate(cat, design, Kestrel.Core.Timeline.Pad.For(cat, design), new Mission { mode = mode }, 1);
+                // The same timeline says when the calls are due, so a color exchange is only offered with room before the next one.
+                flightCalls = Kestrel.Core.Flight.Narration.CallSchedule.From(tl);
                 return LaunchSequence.Open(tl);
             }
             catch (System.Exception) { return null; }
@@ -1633,6 +1639,7 @@ namespace Kestrel.Slice
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
             try { hook = AscentFlight.Prepare(SliceData.Catalog, design, doc, engineer, reduced); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
+            flight.Calls = flightCalls;
             flight.Launch(design, hook);
             if (flight.Sim == null) return false;
             PresentAscent(engineer);
@@ -1698,6 +1705,7 @@ namespace Kestrel.Slice
             handoff.Reset();
             ascentErrorLogged = false;
             counting = false; sequence = null;
+            CountVoice()?.EndCount();
             if (flight != null) flight.enabled = false;
             if (cam != null) cam.ResetProjectionMatrix();
             recovery?.Stop();
@@ -1849,6 +1857,28 @@ namespace Kestrel.Slice
             }
             HideCountGrid();
             RefreshWebcast(sequence.Time, false);
+            if (counting) CountVoice()?.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+        }
+
+        static bool GuideSpeaking()
+        {
+            var box = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Guide.GuideBoxDriver>();
+            return box != null && box.Stage != null && box.Stage.Count > 0;
+        }
+
+        Kestrel.Game.Audio.NarrationPlayer CountVoice() => flight != null ? flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>() : null;
+
+        // Pad and tank-press calls belong to the count: they get the design's facts and timeline when it opens.
+        void BeginCountNarration()
+        {
+            var voice = CountVoice();
+            if (voice == null || !counting || sequence == null) return;
+            try
+            {
+                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null), flightCalls);
+                voice.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Count] narration: " + e.Message); }
         }
 
         bool countTagDressed;

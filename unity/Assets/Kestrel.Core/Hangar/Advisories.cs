@@ -42,6 +42,7 @@ namespace Kestrel.Core.Hangar
             ["engines-dont-fit"] = "Too many engines for this width. Use fewer or make it wider.",
             ["top-heavy"] = "One stage is much wider than the one under it. Make it narrower.",
             ["fairing-narrow"] = "The nose is too thin for the stage under it. Make it as wide as the stage.",
+            ["fairing-flare"] = "The nose flares out a lot above the stage. Try a wider stage or a smaller nose.",
             ["payload-doesnt-fit"] = "The cargo doesn't fit in the nose. Make the nose longer or wider.",
             ["twr-marginal"] = "Slow off the pad. A bit more push helps.",
             ["weak-upper"] = "One of the upper stages pushes gently. A stronger engine helps.",
@@ -60,7 +61,7 @@ namespace Kestrel.Core.Hangar
         {
             ["zero-engines"] = "No engines", ["zero-propellant"] = "No fuel", ["schema"] = "Can't build", ["math"] = "Can't work it out",
             ["twr-low"] = "Too heavy to lift off", ["twr-marginal"] = "Slow liftoff", ["engines-dont-fit"] = "Engines don't fit",
-            ["top-heavy"] = "Top-heavy", ["fairing-narrow"] = "Nose too thin", ["payload-doesnt-fit"] = "Cargo doesn't fit",
+            ["top-heavy"] = "Top-heavy", ["fairing-narrow"] = "Nose too thin", ["fairing-flare"] = "Steep nose flare", ["payload-doesnt-fit"] = "Cargo doesn't fit",
             ["weak-upper"] = "Weak upper stage", ["weak-upper-dv"] = "Top stage too small", ["dv-margin"] = "Not enough speed",
             ["landing-hardware"] = "Missing landing gear", ["heavy-fairing"] = "Heavy nose", ["unstable"] = "Wobbly",
             ["overstable"] = "Too stiff", ["maxq-high"] = "Hard air push", ["over-budget"] = "Over budget", ["near-budget"] = "Near budget",
@@ -136,7 +137,7 @@ namespace Kestrel.Core.Hangar
             int idx = i.index ?? 0;
             switch (i.code)
             {
-                case "fairing-narrow": case "heavy-fairing": case "payload-doesnt-fit": return PartRef.Fairing;
+                case "fairing-narrow": case "fairing-flare": case "heavy-fairing": case "payload-doesnt-fit": return PartRef.Fairing;
                 case "payload-g": return PartRef.Payload;
                 case "weak-upper-dv": return PartRef.Stage(top);
                 case "interstage-shape": return idx >= 1 ? PartRef.Interstage(idx) : PartRef.Stage(idx);
