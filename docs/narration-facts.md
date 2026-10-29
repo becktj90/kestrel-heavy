@@ -15,10 +15,11 @@ AND over fact keys. Values: exact (number, bool, string), a comparison string on
 | `stage{N}.engines`, `stage{N}.propellant` | int, enum | per core stage, 1-based |
 | `strapons`, `strapons.engines`, `strapons.propellant` | int, int, enum | strap-on count, engines each, propellant (missing with none) |
 | `propellant.all` | enum or `mixed` | one id shared by every stage and strap-on, else `mixed` |
-| `recovery` | `none`/`barge`/`rtls` | `barge` = Haven lines |
+| `recovery` | `none`/`barge`/`rtls` | the landing the design picked (`design.recovery.mode`; no pick = `none`). `barge` = Haven lines (Haven, deck, sea state, in the drink). `rtls` = the booster lands on the pad; a miss is ground, not sea |
+| `site` | enum | launch pad id from `data/sites.json` (`pier-7`, `coastal-pad-b`, `salt-flat`, `north-reach`); flight context (`MissionBriefing.Site.Id`), not a design field. Only Pier 7 and Coastal Pad B have Haven |
 | `legs`, `fairing`, `fins`, `finless` | bool | |
 | `fairing.halves` | int | missing until Graphics confirms; gates `host/fairing.2` |
-| `lit.stage`, `lit.engines`, `lit.propellant`, `lit.last` | event context | stage the event is about; `lit.last` = it is the top core stage |
+| `lit.stage`, `lit.engines`, `lit.propellant`, `lit.last` | event context | stage the event is about (ignition, ses1, seco, tankpress, fuel-low, abort-fuel); `lit.last` = it is the top core stage |
 
 Propellants: `kerolox`, `hydrolox`, `methalox`, `solid`, `storable`.
 
@@ -26,7 +27,7 @@ Propellants: `kerolox`, `hydrolox`, `methalox`, `solid`, `storable`.
 Non-empty list of the keys the spoken line asserts; a subset of the `requires` keys. Other `requires` keys are routing only.
 
 ## Lint
-`tests/narration-facts-lint.test.cjs` (`npm test`): tag form, keys and values, fact words need claims or a neutral reason, banned names, both manifests byte-equal, every mp3 present in both trees with its sha256 and a Unity `.meta`, −16 LUFS ±1 and ≤ −1.5 dBTP, and a coverage floor: every shipped design keeps true mission-control takes for each event it flies.
+`tests/narration-facts-lint.test.cjs` (`npm test`): tag form, keys and values, fact words need claims or a neutral reason, banned names, both manifests byte-equal, every mp3 present in both trees with its sha256 and a Unity `.meta`, −16 LUFS ±1 and ≤ −1.5 dBTP, and a coverage floor: every shipped design, on every pad, keeps true mission-control takes for each event it flies; and a claim-vs-design verifier that reads the spoken text of every take eligible for a design (starters, golden sets, winners, templates, presets, the hopper, on all four pads) and checks each stated fact (engine counts, stage words, strap-ons, propellants, Haven/deck/ground, pad names, "coming home") against the raw design JSON. A line that states one of those facts must claim it in a tag; a neutral line may not state it.
 
 ## Adding a clip
 Append it after the event's existing takes (the pre-picker round-robin plays them in file order), tag it, generate with the fixed voice and settings from `tools/clipgen/gen_static.py`, normalize to −16 LUFS / −1.5 dBTP, copy the mp3 into the Unity folder with a `.meta`, and update both manifests. Note: re-running `gen_static.py` rebuilds the manifest from `web/js/narration/manifest.js` and would drop the tags and the PR A clips; port the tags first.
