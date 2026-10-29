@@ -73,6 +73,14 @@ namespace Kestrel.Core.Physics
         /// the JS-parity goldens leave it 0.
         /// </summary>
         public double fairingJettisonAltM;
+        /// <summary>
+        /// The payload's heat limit for the fairing event, W/m². 0 keeps the plain release-height rule above. A positive
+        /// value gates the "fairing" event on <see cref="Flight.FairingHeatGate"/> instead (Physics, KH-7 follow-up): the
+        /// first time ½ρv³ on the air-relative speed drops under this limit and stays under it for 2 s, counting from the
+        /// fairing call's arming height (fairingJettisonAltM − 12 km) up. The AscentDirector runs the same gate on the
+        /// same state, so the event and the director's jettison cannot disagree. Still observational: no mass change.
+        /// </summary>
+        public double fairingMaxHeatFlux;
     }
 
     public sealed class SimEvent
@@ -297,6 +305,7 @@ namespace Kestrel.Core.Physics
         bool turned, followVelocity, pegContinuous;
         double pegTarget, pegThrottle = 1;
         double kickPrevT = -1, kickPrevVrel, kickPrevAlt;
+        Flight.FairingHeatGate fairingGate;
         bool liftedOff, sawKarman, maxQPassed, fairingSent, ignitionHooked; double karmanT; string outcome = "timeout";
         FailureEvent playedBreak;
         FlightVec pad;
@@ -341,6 +350,9 @@ namespace Kestrel.Core.Physics
             }
         }
 
+        /// <summary>True when this sim's "fairing" event waits for the payload heat gate (SimOptions.fairingMaxHeatFlux).</summary>
+        public bool FairingHeatGated => fairingGate != null;
+
         public AscentSim(IList<SimStage> stages, SimOptions opts)
         {
             stagesIn = stages; o = opts; st = Headless.Normalize(stages);
@@ -352,6 +364,8 @@ namespace Kestrel.Core.Physics
             Y[0] = 0; Y[1] = Gravity.R_EARTH; Y[2] = -vSite; Y[3] = 0; Y[4] = upperMass[0];
             pad = new FlightVec(Y[0], Y[1]);
             omegaAir = o.rotate ? vSite / Gravity.R_EARTH : 0;
+            if (o.fairingJettisonAltM > 0 && o.fairingMaxHeatFlux > 0)
+                fairingGate = new Flight.FairingHeatGate(o.fairingJettisonAltM, o.fairingMaxHeatFlux);
             deriv = Deriv;
             Events.Add(new SimEvent { t = 0, type = "ignition", stage = 1 });
         }
@@ -659,7 +673,10 @@ namespace Kestrel.Core.Physics
                 hook?.OnLiftoff(T, pad);
             }
             if (!sawKarman && alt1 >= UpperAtmosphere.KarmanM) { sawKarman = true; karmanT = T; }
-            if (!fairingSent && o.fairingJettisonAltM > 0 && maxQPassed && alt1 >= o.fairingJettisonAltM)
+            if (!fairingSent && o.fairingJettisonAltM > 0 && maxQPassed
+                && (fairingGate != null
+                    ? fairingGate.Update(T, alt1, JsMath.Hypot(Y[2] + omegaAir * Y[1], Y[3] - omegaAir * Y[0]))
+                    : alt1 >= o.fairingJettisonAltM))
             {
                 fairingSent = true;
                 double spd = JsMath.Hypot(Y[2], Y[3]);
