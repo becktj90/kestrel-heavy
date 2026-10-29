@@ -88,14 +88,20 @@ Shader "Kestrel/Sky"
             // clip at 0.5 a corner of that cube is cut by the near plane and shows up as a
             // black triangle (the clear colour, or a NaN direction saturated to black).
             // Pinning z to the far plane keeps every in-front vertex inside the frustum.
+            // z must stay LINEAR in w, for vertices behind the camera too: the clipper cuts a triangle that
+            // straddles w = 0 where the interpolated z leaves the clip volume. With z = k*w that is exactly
+            // w = 0. The old branch (z = w when w <= 0) moved the reversed-Z far-plane cut (z >= 0) to
+            // t = k*w1 / (k*w1 - w2), right next to the in-front vertex, so most of every straddling sky
+            // triangle was clipped away: the black corner wedges in the App Store / countdown / flight-phase
+            // captures (#381). Same clip maths on any reversed-Z API (Metal, Vulkan, D3D), not only llvmpipe.
             float SkyFarZ(float clipW)
             {
                 // Stay just inside the far plane. Exactly on it is clipped by some GL drivers,
                 // which brings the black corner back.
                 #if UNITY_REVERSED_Z
-                return clipW > 0.0 ? 1e-4 * clipW : clipW;
+                return 1e-4 * clipW;
                 #else
-                return clipW > 0.0 ? clipW * 0.999 : clipW;
+                return clipW * 0.999;
                 #endif
             }
 
@@ -279,11 +285,11 @@ Shader "Kestrel/Sky"
             {
                 v2fb o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                // Same far-plane pin as the URP pass: a near-clipped cube corner is a black triangle.
+                // Same far-plane pin as the URP pass (linear in w, see SkyFarZ): a near-clipped cube corner is a black triangle.
                 #if UNITY_REVERSED_Z
-                o.pos.z = o.pos.w > 0.0 ? 1e-4 * o.pos.w : o.pos.w;
+                o.pos.z = 1e-4 * o.pos.w;
                 #else
-                o.pos.z = o.pos.w > 0.0 ? o.pos.w * 0.999 : o.pos.w;
+                o.pos.z = o.pos.w * 0.999;
                 #endif
                 return o;
             }

@@ -256,45 +256,86 @@ namespace Kestrel.Capture.Tests
             if (app.FlightClockForCapture >= 5)   // still shot where it stands, so the artifact shows what the flight looked like
             {
                 if (driver != null) driver.Hold(true);
+                TestContext.WriteLine("flight framing: " + Framing(driver));
                 var fl = ShootAll("flight", problems);
                 while (fl.MoveNext()) yield return fl.Current;
                 if (driver != null) driver.Hold(false);
             }
 
-            // The booster landing: the first stage lets go, boosts back, and comes down on its legs. Shot in the landing burn.
+            // The booster landing: the first stage lets go, boosts back, and comes down on its legs, shot in the landing burn while
+            // the camera follows the booster (RecoveryShow.SteerCamera). Once the booster has separated the ascent is held: the
+            // recovery show runs on its own clock, and an ascent that ends first makes the booster finish at once (t466 Conclude),
+            // which in run 5 left the camera on the upper stage at T+412.7. The landing itself is the game's, unchanged.
             bool landing = false;
             if (reached)
             {
                 last = app.FlightClockForCapture; still = 0;
+                RecoveryShow rec = null;
                 for (int f = 0; f < MaxFlightFrames && still < StallFrames; f++)
                 {
                     yield return null;
-                    var rec = app.RecoveryForCapture;
-                    if (rec != null && rec.StartedForCapture && rec.PhaseForCapture >= RecoveryPhase.Landing) { landing = true; break; }
-                    if (driver != null && !driver.Running && (rec == null || !rec.StartedForCapture)) break;
+                    rec = app.RecoveryForCapture;
+                    if (rec != null && rec.StartedForCapture) break;
+                    if (driver != null && !driver.Running) break;
                     double now = app.FlightClockForCapture;
-                    // Once the recovery show has the booster it runs on its own clock; the ascent sim may finish first.
-                    if (rec != null && rec.StartedForCapture) still = 0;
-                    else if (!(now <= last)) { last = now; still = 0; } else still++;
+                    if (!(now <= last)) { last = now; still = 0; } else still++;
                 }
-                if (landing)
+                if (rec != null && rec.StartedForCapture)
                 {
-                    // A couple of seconds into the burn, unless it has already touched down.
-                    for (int i = 0; i < 20 && app.RecoveryForCapture.PhaseForCapture == RecoveryPhase.Landing; i++) yield return null;
-                    RecoveryShow.HoldForCapture = true;
+                    TestContext.WriteLine("booster separated at T+" + app.FlightClockForCapture.ToString("0.0") + "; ascent held while the booster flies");
                     if (driver != null) driver.Hold(true);
-                    var ld = ShootAll("landing", problems);
-                    while (ld.MoveNext()) yield return ld.Current;
+                    var seen = rec.PhaseForCapture;
+                    TestContext.WriteLine("recovery phase " + seen + " at frame " + Time.frameCount);
+                    for (int f = 0; f < MaxFlightFrames; f++)
+                    {
+                        yield return null;
+                        var ph = rec.PhaseForCapture;
+                        if (ph != seen) { seen = ph; TestContext.WriteLine("recovery phase " + ph + " at frame " + Time.frameCount + " steer " + rec.SteerCamera); }
+                        if (ph == RecoveryPhase.Landing && rec.SteerCamera) { landing = true; break; }
+                        if (ph > RecoveryPhase.Landing || !rec.StartedForCapture) break;
+                    }
+                    if (landing)
+                    {
+                        // About a second into the burn, unless it has already touched down.
+                        for (int i = 0; i < 10 && rec.PhaseForCapture == RecoveryPhase.Landing; i++) yield return null;
+                        RecoveryShow.HoldForCapture = true;
+                        var ld = ShootAll("landing", problems);
+                        while (ld.MoveNext()) yield return ld.Current;
+                        RecoveryShow.HoldForCapture = false;
+                    }
+                    else problems.Add("landing: the booster never reached its landing burn with the camera on it (last phase " + seen + ")");
                     if (driver != null) driver.Hold(false);
-                    RecoveryShow.HoldForCapture = false;
                 }
-                else problems.Add("landing: the booster never reached its landing burn (flight clock T+" + app.FlightClockForCapture.ToString("0.0") + ")");
+                else problems.Add("landing: the booster never separated (flight clock T+" + app.FlightClockForCapture.ToString("0.0") + ")");
             }
             Assert.That(problems, Is.Empty, UiTreeChecks.Report(problems, 120));
 #endif
         }
 
 #if UNITY_EDITOR
+        /// <summary>Where the stack sits in the frame: camera pitch and FOV, the vehicle root and the stack's renderer bounds in
+        /// viewport y (0 bottom, 1 top), at the current game-view aspect.</summary>
+        static string Framing(FlightDriver d)
+        {
+            var cam = Camera.main;
+            if (cam == null || d == null || d.Vehicle == null) return "no camera or vehicle";
+            var root = cam.WorldToViewportPoint(d.Vehicle.position);
+            float lo = 1e9f, hi = -1e9f; int n = 0;
+            foreach (var r in d.Vehicle.GetComponentsInChildren<Renderer>())
+            {
+                if (!r.enabled || r is ParticleSystemRenderer) continue;
+                var b = r.bounds; n++;
+                for (int i = 0; i < 8; i++)
+                {
+                    var c = new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z);
+                    float y = cam.WorldToViewportPoint(c).y;
+                    lo = Mathf.Min(lo, y); hi = Mathf.Max(hi, y);
+                }
+            }
+            return "aspect " + cam.aspect.ToString("0.000") + " fov " + cam.fieldOfView.ToString("0.0") + " pitch " + (-Mathf.DeltaAngle(0f, cam.transform.eulerAngles.x)).ToString("0.0")
+                + " root vy " + root.y.ToString("0.000") + " stack vy " + lo.ToString("0.000") + "-" + hi.ToString("0.000") + " (" + n + " renderers) alt " + d.Altitude.ToString("0");
+        }
+
         static string StallState(FlightDriver d)
         {
             if (d == null) return "no FlightDriver";
