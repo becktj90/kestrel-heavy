@@ -14,7 +14,6 @@ namespace Kestrel.Core.Save
             "kh.audio.muted",
             "kh.audio.music.muted",
             "kh.audio.narration.muted",
-            "kh.audio.commentary",
             "kh.settings.subtitles",
             "kh.settings.sandbox",
             "kh.a11y.reduceMotion",
@@ -25,6 +24,7 @@ namespace Kestrel.Core.Save
             "kh.designer.v3.tutorial",
             "kh.settings.tier",
             "kh.settings.fullDesigner",
+            "kh.settings.cornerCharacter",
             "kh.quality.chosen",
             "kh.quality.batterySaver",
         };
