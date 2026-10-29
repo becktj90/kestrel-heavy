@@ -1217,7 +1217,7 @@ namespace Kestrel.Slice
             fairingSeams = null;
             if (!r.fairing.Present) return;
             var f = r.fairing;
-            var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic);
+            var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic, f.JointRadius);
             if (poses.Count == 0) return;
             var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
             cluster.ViewCamera = cam;
