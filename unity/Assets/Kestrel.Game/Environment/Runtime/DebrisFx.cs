@@ -215,8 +215,8 @@ namespace Kestrel.Game.Environment
                     t.SetPositionAndRotation(new Vector3(b.P.X, b.P.Y, b.P.Z), new Quaternion(b.R.X, b.R.Y, b.R.Z, b.R.W));
                     float s = b.Radius * 2f * Mathf.Clamp01((b.Life - b.Age) * 2f + 0.001f);
                     t.localScale = new Vector3(s, s, s);
-                    var g = DebrisMath.Glow(b.Temp);
-                    block.SetColor(EmissionId, new Color(g.R, g.G, g.B) * (b.Temp * 2.5f * expo));
+                    var em = DebrisMath.FragmentEmission(b.Temp, expo);
+                    block.SetColor(EmissionId, new Color(em.R, em.G, em.B));
                     fragmentRenderers[k].SetPropertyBlock(block);
                 }
                 else if (b.Alive && b.Kind == DebrisKind.Spark && sparkCount < sparkBuffer.Length)

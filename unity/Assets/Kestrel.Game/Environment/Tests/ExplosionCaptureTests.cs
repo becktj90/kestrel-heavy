@@ -86,11 +86,16 @@ namespace Kestrel.Game.Environment.Tests
                 var lr = fx.LayerRenderer(layer);
                 if (lr != null) groups.Add(new KeyValuePair<string, List<Renderer>>("fx-" + layer, new List<Renderer> { lr }));
             }
-            var shock = new List<Renderer>(sw.GetComponentsInChildren<MeshRenderer>(true));
+            var shock = new List<Renderer>();
+            for (int i = 0; i < sw.RingCap; i++) shock.Add(sw.RingRenderer(i));
+            for (int i = 0; i < sw.HazeCap; i++) shock.Add(sw.HazeRenderer(i));
             groups.Add(new KeyValuePair<string, List<Renderer>>("shockwave", shock));
             var deb = new List<Renderer>();
             if (debris.SparkRenderer != null) deb.Add(debris.SparkRenderer);
             groups.Add(new KeyValuePair<string, List<Renderer>>("debris-sparks", deb));
+            var frag = new List<Renderer>();
+            for (int i = 0; i < 128; i++) { var fr = debris.FragmentRenderer(i); if (fr != null) frag.Add(fr); }
+            groups.Add(new KeyValuePair<string, List<Renderer>>("debris-fragments", frag));
             groups.Add(new KeyValuePair<string, List<Renderer>>("rocket", new List<Renderer>(rocket.GetComponentsInChildren<Renderer>(true))));
             groups.Add(new KeyValuePair<string, List<Renderer>>("none-of-the-above", new List<Renderer>()));   // debris chunks, lights, anything unlisted
             var all = new List<Renderer>();
