@@ -609,11 +609,6 @@ namespace Kestrel.Slice
         /// On iPad the panel is on the side, so the whole height is free and HangarCamera shifts left instead.</summary>
         void ApplyDesignFraming()
         {
-            // Flight owns the camera. A Starter-launched flight kept starterMode, so a screen geometry change mid-flight
-            // (rotation, an iPad multitasking resize) ran FrameCamera: it moved the camera and left the design screen's
-            // off-centre projection on the chase camera for the rest of the flight. The stack sat high, under the HUD's
-            // telemetry strip, and the juice FOV no longer applied (#381 iPad flight and landing frames).
-            if (hud != null && !hud.ClassListContains("hidden")) return;
             if (starterMode && starter != null && cam != null && ui.layout.height > 0)
             {
                 // Starter: the vehicle alone fills ~62% of the preview box (StarterFrame.Rocket), not the whole pad.
@@ -899,20 +894,7 @@ namespace Kestrel.Slice
             var cp = cam.transform.position;
             Vector3 look = v + lookOffset;
             if (flightView == FlightViewMode.Auto)
-            {
                 cam.transform.rotation = ChaseCamera.Aim(cp, look, fov, (float)altitude, cp.y - ground.position.y);
-                // The nose stays under the HUD's telemetry strip, measured as laid out (it reaches further down a 4:3 iPad).
-                float cover = ascentHud != null ? ascentHud.TopCover() : 0f;
-                float aimed = cam.transform.eulerAngles.x;
-                if (cover > 0f)
-                {
-                    var stackBase = U(pose.LookAt) - up * (float)(pose.Height * 0.5);
-                    cam.transform.rotation = ChaseCamera.KeepBelow(cam.transform.rotation, cp, stackBase + up * (float)pose.Height,
-                        stackBase, fov, 1f - cover - ChaseCamera.HudMargin);
-                    noseTrace = stackBase + up * (float)pose.Height;
-                }
-                hudTrace = new Vector4(cover, -Mathf.DeltaAngle(0f, aimed), -Mathf.DeltaAngle(0f, cam.transform.eulerAngles.x), Time.frameCount);
-            }
             else
                 cam.transform.LookAt(look, Vector3.up);
             if (fx != null)
@@ -1504,12 +1486,6 @@ namespace Kestrel.Slice
         public Kestrel.Pad.PadRenderer PadForCapture => trenchPad;
         public VisualElement UiForCapture => ui;
         public double FlightClockForCapture => flight != null && flight.Sim != null ? flight.Sim.T : double.NaN;
-        /// <summary>The booster landing, for the App Store captures (started? which phase?). Null before the stage is armed.</summary>
-        public RecoveryShow RecoveryForCapture => recovery;
-        /// <summary>Last Auto flight-camera frame: HUD cover, pitch after Aim, pitch after KeepBelow, frame; and the nose point used.</summary>
-        public Vector4 HudTraceForCapture => hudTrace;
-        public Vector3 NoseTraceForCapture => noseTrace;
-        Vector4 hudTrace; Vector3 noseTrace;
 
         /// <summary>Same design that left the pad. The launch gate already passed.</summary>
         void RestartFlight()
@@ -1733,6 +1709,7 @@ namespace Kestrel.Slice
             if (flight != null) flight.enabled = false;
             if (cam != null) cam.ResetProjectionMatrix();
             recovery?.Stop();
+            ApplyHudFocus(FlightHudFocus.Ascent);
             RecoveryLog.Clear();
             if (juice != null) juice.Reset();
             if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
@@ -1774,12 +1751,7 @@ namespace Kestrel.Slice
         void LateUpdate()
         {
             if (padLights != null && flight != null) padLights.SetPlume((float)flight.ThrustFraction, (float)flight.Altitude);
-            if (sky != null && flight != null)
-            {
-                // The sky is graded for where the camera is: the booster's altitude while it is followed down, else the ascent's.
-                double viewAlt = recovery != null ? recovery.ViewAltitude : double.NaN;
-                sky.SetAltitude(double.IsNaN(viewAlt) ? flight.Altitude : viewAlt);
-            }
+            if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
             if (explodedView != null && hangarCam != null && hangarCam.enabled)
             {
                 SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
@@ -1827,9 +1799,33 @@ namespace Kestrel.Slice
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
             ShowFlightPicture();
             RefreshWebcast(flight.SimTime, true);
+            // Booster follow: the HUD reads the stage the camera is on (polled, like recovery.Aim above).
+            bool onBooster = recovery != null && recovery.SteerCamera;
+            ascentHud?.SetBooster(onBooster ? recovery.HudReadout : (BoosterHudReadout?)null);
+            ApplyHudFocus(BoosterHud.Focus(onBooster));
             ascentHud?.Present(flight);
             }
             catch (System.Exception e) { Debug.LogException(e); }
+        }
+
+        /// <summary>
+        /// The upper stage's own header chrome (the S3 stage chip, BACK TO DESIGN) hides while the HUD reads the
+        /// booster and comes back with the ascent focus. Visibility, not display, so the header and dock never move;
+        /// the "hidden" class still decides whether BACK TO DESIGN is shown at all.
+        /// </summary>
+        void ApplyHudFocus(FlightHudFocus focus)
+        {
+            bool ascent = BoosterHud.ShowsAscentChrome(focus);
+            if (hStage != null)
+            {
+                if (ascent) hStage.style.visibility = StyleKeyword.Null;
+                else hStage.style.visibility = Visibility.Hidden;
+            }
+            if (again != null)
+            {
+                if (ascent) again.style.visibility = StyleKeyword.Null;
+                else again.style.visibility = Visibility.Hidden;
+            }
         }
 
         void PaintAscentReadout()
