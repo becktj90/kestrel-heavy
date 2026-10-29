@@ -13,6 +13,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Kestrel.Core.Features;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Ui;
 using Kestrel.Game.Shell;
@@ -52,11 +54,16 @@ namespace Kestrel.Capture.Tests
         uint priorWidth, priorHeight;
 #endif
 
+        FeatureFlags savedFlags;
+        bool savedLoaded;
+
         static bool Wanted() => Array.IndexOf(Environment.GetCommandLineArgs(), Flag) >= 0;
 
         [UnitySetUp]
         public IEnumerator Remember()
         {
+            savedFlags = FeatureFlags.Active;
+            savedLoaded = HomeFlagsBoot.Loaded;
 #if UNITY_EDITOR
             UnityEditor.PlayModeWindow.GetRenderingResolution(out priorWidth, out priorHeight);
 #endif
@@ -66,6 +73,8 @@ namespace Kestrel.Capture.Tests
         [UnityTearDown]
         public IEnumerator Restore()
         {
+            FeatureFlags.Active = savedFlags;
+            HomeFlagsBoot.Loaded = savedLoaded;
             SliceApp.HoldCountForCapture = false;
             RecoveryShow.HoldForCapture = false;
             Time.captureDeltaTime = 0f;
@@ -197,6 +206,12 @@ namespace Kestrel.Capture.Tests
             if (!Wanted()) { Assert.Ignore("App Store captures run only with " + Flag); yield break; }
             FlightCapture.RequireGraphics("App Store flight captures");
             var problems = new List<string>();
+            // The App Store shows the app as shipped: FullHomeFlagsFixture turns every home.* flag on for this assembly, so load
+            // data/features.json the way Boot does (tier Starter: the Starter screen and the campaign-winner design).
+            HomeFlagsBoot.Loaded = false;
+            FeatureFlags.Active = new FeatureFlags();
+            HomeFlagsBoot.Load();
+            if (!StarterScreen.UseStarter(FeatureFlags.Active)) problems.Add("starter: data/features.json did not load as the Starter tier");
             SliceApp.HoldCountForCapture = true;
             Time.captureDeltaTime = 1f / 60f;
             var vp = Resize(Flown, "flown", problems);
@@ -233,8 +248,8 @@ namespace Kestrel.Capture.Tests
                 if (now >= 60) { reached = true; break; }
                 if (now > last) { last = now; still = 0; } else still++;
             }
-            if (!reached) problems.Add("flight: the flight stopped at T+" + app.FlightClockForCapture.ToString("0.0") + " before T+60");
-            else
+            if (!reached) problems.Add("flight: the flight stopped at T+" + app.FlightClockForCapture.ToString("0.0") + " before T+60 (driver running: " + (driver != null && driver.Running) + ", hud: " + app.FlightHudVisible + ")");
+            if (app.FlightClockForCapture >= 5)   // still shot where it stands, so the artifact shows what the flight looked like
             {
                 if (driver != null) driver.Hold(true);
                 var fl = ShootAll("flight", problems);
