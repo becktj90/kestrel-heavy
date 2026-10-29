@@ -33,6 +33,13 @@ _Status: describes main @ 4685247. Source of truth: `Kestrel.Core/Designer/Valid
 - **Atmosphere** follows USSA76 within 1e-4 from 0 to 86 km (validated). Above 86 km it uses an approximate tail: +11 % density at 100 km, and no thermosphere. There is **no orbital decay**, so a "stable orbit" verdict has no lifetime yet.
 - No max-Q, structural-load, or heating limits gate a design today. `maxQ` is reported only (docs/PHYSICS.md).
 
+## Guidance computer exception (#341, KH-13)
+- The guidance computer (#341) is an optional upper-stage part: 25 kg, 30 credits, unlocked after mission 10, flag `designer.guidanceComputer`. A design without it flies exactly as before.
+- **KH-13 (starter m13) is the one starter that ships with it on.** Reason, as decided by Trevor and relayed by Kestrel Arcade (DECISIONS #70): KH-13 must land its booster and still hold a 550 x 550 km orbit. The computer is what plans the engine cutoff for a near-circular orbit, where basic guidance only chases the right height (`data/guidance.json`, `basic.label`). Landing reserve, stage-2 propellant and the 3 degree pitch kick were retuned in #367 so the booster return closes with spare propellant and max-Q stays under its limit.
+- **Why it is an exception and not the rule:** a starter that needs an optional paid part teaches nothing about choosing that part. No other starter may turn it on without a new DECISIONS entry, and GuidanceComputerTests fails if one does.
+- **Physics conditions that stay true.** The computer's mass is counted in the stack, so Δv and TargetMet already include it. The game has no navigation or sensor error, so its insertion is better than a real rocket's. Real upper stages land within a few km of target (data/guidance.json, `closedLoop.realWorld`). Do not tighten the TargetMet band (±5 %) because of it.
+- **Changing it:** moving the exception to another starter, or removing it, changes goldens and needs a DECISIONS entry plus a Physics old to new list.
+
 ## Change rules
 - Any threshold change regenerates `data/golden/designer-validate.json` (`npm run gen:golden`) and needs Physics ε review (docs/PHYSICS.md).
 - The JS and C# implementations change in the same PR, or the golden harness fails.

@@ -25,6 +25,8 @@ namespace Kestrel.Game.Environment
         ParticleSystem.Particle[] sparkBuffer = System.Array.Empty<ParticleSystem.Particle>();
         MaterialPropertyBlock block;
         Material fragmentMat, sparkMat;
+        public MeshRenderer FragmentRenderer(int i) => fragmentRenderers != null && i >= 0 && i < fragmentRenderers.Length ? fragmentRenderers[i] : null;
+        public ParticleSystemRenderer SparkRenderer => sparks != null ? sparks.GetComponent<ParticleSystemRenderer>() : null;
         Mesh cubeMesh, cylinderMesh;
         System.Action<CinematicEvent> handler;
         static readonly int EmissionId = Shader.PropertyToID("_EmissionColor");
@@ -101,13 +103,26 @@ namespace Kestrel.Game.Environment
                 case CinematicKind.Crash:
                 case CinematicKind.Failure:
                     SetSurfaces(e.Grounded);
-                    world.Burst(at, vel, e.Energy01, Mathf.Max(0.5f, e.Radius), e.Grounded, e.Seed + (int)(e.X * 13f), e.Reduce);
+                    world.Burst(at, LimitBurstVelocity(vel), e.Energy01, Mathf.Max(0.5f, e.Radius), e.Grounded, e.Seed + (int)(e.X * 13f), e.Reduce);
                     break;
                 case CinematicKind.EngineFailure:
                     if (!e.Overpressure) break;
-                    world.Burst(at, vel, e.Energy01 * 0.5f, Mathf.Max(0.5f, e.Radius), false, e.Seed + e.EngineIndex, e.Reduce);
+                    world.Burst(at, LimitBurstVelocity(vel), e.Energy01 * 0.5f, Mathf.Max(0.5f, e.Radius), false, e.Seed + e.EngineIndex, e.Reduce);
                     break;
             }
+        }
+
+        /// <summary>The chunks fly at their own 10..28 m/s and share half the vehicle's velocity. At ascent speed that share carries every
+        /// chunk 100+ m away within a tenth of a second, so the blast has no debris in frame: bound the vehicle share to a chunk's own speed.</summary>
+        public const float MaxBurstVehicleSpeed = 16f;
+
+        static V3 LimitBurstVelocity(V3 v)
+        {
+            float m2 = v.X * v.X + v.Y * v.Y + v.Z * v.Z;
+            if (float.IsNaN(m2) || float.IsInfinity(m2)) return new V3(0f, 0f, 0f);
+            if (m2 <= MaxBurstVehicleSpeed * MaxBurstVehicleSpeed) return v;
+            float k = MaxBurstVehicleSpeed / Mathf.Sqrt(m2);
+            return new V3(v.X * k, v.Y * k, v.Z * k);
         }
 
         void SetSurfaces(bool grounded) { if (grounded) world.Surfaces = CinematicEvents.Surfaces; }
@@ -200,8 +215,8 @@ namespace Kestrel.Game.Environment
                     t.SetPositionAndRotation(new Vector3(b.P.X, b.P.Y, b.P.Z), new Quaternion(b.R.X, b.R.Y, b.R.Z, b.R.W));
                     float s = b.Radius * 2f * Mathf.Clamp01((b.Life - b.Age) * 2f + 0.001f);
                     t.localScale = new Vector3(s, s, s);
-                    var g = DebrisMath.Glow(b.Temp);
-                    block.SetColor(EmissionId, new Color(g.R, g.G, g.B) * (b.Temp * 2.5f * expo));
+                    var em = DebrisMath.FragmentEmission(b.Temp, expo);
+                    block.SetColor(EmissionId, new Color(em.R, em.G, em.B));
                     fragmentRenderers[k].SetPropertyBlock(block);
                 }
                 else if (b.Alive && b.Kind == DebrisKind.Spark && sparkCount < sparkBuffer.Length)
@@ -240,7 +255,7 @@ namespace Kestrel.Game.Environment
                 go.transform.SetParent(transform, false);
                 go.AddComponent<MeshFilter>().sharedMesh = cubeMesh;
                 var mr = go.AddComponent<MeshRenderer>();
-                mr.sharedMaterial = fragmentMat;
+                FxMaterials.Apply(mr, fragmentMat);
                 mr.shadowCastingMode = ShadowCastingMode.Off;
                 mr.receiveShadows = false;
                 fragments[i] = go.transform; fragmentRenderers[i] = mr;
@@ -260,7 +275,7 @@ namespace Kestrel.Game.Environment
                 go.transform.SetParent(transform, false);
                 go.AddComponent<MeshFilter>().sharedMesh = cylinderMesh;
                 var mr = go.AddComponent<MeshRenderer>();
-                mr.sharedMaterial = fragmentMat;
+                FxMaterials.Apply(mr, fragmentMat);
                 mr.shadowCastingMode = ShadowCastingMode.Off;
                 fallback[slot] = go.transform;
                 go.SetActive(false);
@@ -283,15 +298,14 @@ namespace Kestrel.Game.Environment
             r.renderMode = ParticleSystemRenderMode.Billboard;
             r.shadowCastingMode = ShadowCastingMode.Off;
             if (sparkMat == null) sparkMat = MakeSparkMaterial();
-            if (sparkMat != null) r.sharedMaterial = sparkMat;
+            FxMaterials.Apply(r, sparkMat);
             ps.Play();
             return ps;
         }
 
         static Material MakeLit()
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) shader = Shader.Find("Standard");
+            var shader = MaterialLibrary.Lit();   // Resources-pinned URP/Lit, checked for an error shader
             if (shader == null) return null;
             var m = new Material(shader) { name = "DebrisLit" };
             if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", new Color(0.2f, 0.19f, 0.18f));
@@ -302,20 +316,7 @@ namespace Kestrel.Game.Environment
             return m;
         }
 
-        static Material MakeSparkMaterial()
-        {
-            var shader = Shader.Find(ExplosionFx.ParticleShader);
-            if (shader == null) shader = Shader.Find("Sprites/Default");
-            if (shader == null) return null;
-            var mat = new Material(shader) { name = "DebrisSpark" };
-            mat.SetFloat("_Surface", 1f); mat.SetFloat("_Blend", 2f); mat.SetFloat("_ZWrite", 0f);
-            mat.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha); mat.SetFloat("_DstBlend", (float)BlendMode.One);
-            // Same keyword set FailureHost / PadGlow / ExplosionFx use, so the iOS shader stripper keeps the variant.
-            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT"); mat.EnableKeyword("_BLENDMODE_ADD"); mat.DisableKeyword("_SOFTPARTICLES_ON");
-            mat.SetOverrideTag("RenderType", "Transparent");
-            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", Color.white);
-            return mat;
-        }
+        static Material MakeSparkMaterial() => FxMaterials.Particle(null, "DebrisSpark", true);
 
         static Mesh BuildCube()
         {
