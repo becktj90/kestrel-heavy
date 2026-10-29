@@ -137,6 +137,10 @@ namespace Kestrel.Slice
         /// <summary>The payload as drawn in the exploded view: a capsule at the cargo's real diameter (held to the barrel so a cargo that
         /// does not fit does not poke through the skin; Validate already blocks that design). Falls back to the old 0.55 x fairing radius
         /// when the design has no known cargo.</summary>
+        /// <summary>Height of #375's shoulder cone above the fairing joint (0 when the fairing is flush with the stage).</summary>
+        public static float PayloadShoulderHeight(Design d) =>
+            Kestrel.Vehicle.FairingShoulder.Height(JointRadius(d), (float)d.fairingDiameter / 2, (float)d.fairingLength, d.nose);
+
         public static float PayloadRadius(Catalog c, Design d, float fairingRadius)
         {
             var spec = Kestrel.Core.Vehicle.PayloadFit.SpecFor(c, d);
@@ -259,7 +263,11 @@ namespace Kestrel.Slice
                 Lathe(prof, Vector3.zero, g.v, g.n, g.uv, g.t);
                 parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Fairing, Mesh = g.ToMesh("Fairing"), Y0 = y, Y1 = y + L, Radius = rf });
                 // Payload: a capsule inside the fairing barrel at the cargo's real diameter (seen when the view explodes).
+                // Its base sits above the shoulder cone (FairingShoulder, the same geometry the fairing mesh is lathed from), so a cargo
+                // wider than the stage never crosses the cone; when the shoulder pushes it up, it is held to the barrel's top.
                 float pr = PayloadRadius(c, d, rf), ph = Mathf.Max(0.5f, cyl * 0.6f), py = y + 0.15f * cyl;
+                float shoulder = PayloadShoulderHeight(d);
+                if (shoulder > 0.15f * cyl) { py = y + shoulder; ph = Mathf.Min(ph, cyl - shoulder); }
                 var pg = new Geo();
                 Lathe(new List<Vector2> { new Vector2(0, py), new Vector2(pr, py), new Vector2(pr, py + ph * 0.75f), new Vector2(pr * 0.5f, py + ph), new Vector2(0, py + ph) }, Vector3.zero, pg.v, pg.n, pg.uv, pg.t);
                 parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Payload, Mesh = pg.ToMesh("Payload"), Y0 = py, Y1 = py + ph, Radius = pr });
