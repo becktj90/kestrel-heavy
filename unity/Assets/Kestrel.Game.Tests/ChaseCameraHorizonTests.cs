@@ -97,6 +97,49 @@ namespace Kestrel.Game.Tests
             Assert.That(Quaternion.Angle(level, ChaseCamera.KeepBelow(level, cam, top, b, VFov, 1f)), Is.LessThan(0.01f));
         }
 
+        // #381 landing frames: the followed booster's engines, flame and the deck sat behind the bottom control row.
+        // Covers are the measured top strip / bottom tools-row shares at each App Store size and the 390x844 phone.
+        [TestCase(1320f / 2868f, 0.117f, 0.27f, "6.9in")]
+        [TestCase(1206f / 2622f, 0.120f, 0.28f, "6.3in")]
+        [TestCase(2064f / 2752f, 0.184f, 0.40f, "iPad 13in")]
+        [TestCase(390f / 844f, 0.130f, 0.30f, "390x844")]
+        public void FitBandKeepsTheLandingBoosterBetweenTheHudBars(float aspect, float topCover, float bottomCover, string device)
+        {
+            const float Booster = 26f, R = 1.85f, Flame = 12.2f;
+            float yMax = 1f - topCover - 0.03f, yMin = bottomCover + 0.03f;
+            foreach (float alt in new[] { 40f, 15f, 3f, 120f })
+            {
+                var b = new Vector3(0f, alt, 0f);
+                var cam = b + ChaseCamera.DesiredOffset(Vector3.up, Booster, alt);
+                var rot = ChaseCamera.Aim(cam, b + Vector3.up * Booster * 0.25f, VFov, alt, cam.y - PadGround.GroundY);
+                var pts = new Vector3[9]; int n = 0;
+                float lo = alt - Flame, hiY = alt + Booster;
+                for (int i = 0; i < 8; i++)
+                    pts[n++] = new Vector3((i & 1) == 0 ? -R : R, (i & 2) == 0 ? lo : hiY, (i & 4) == 0 ? -R : R);
+                pts[n++] = new Vector3(0f, Mathf.Max(0f, lo - 1.6f * Booster), 0f);   // the deck once it is near
+                var fit = ChaseCamera.FitBand(rot, cam, pts, n, VFov, aspect, yMin, yMax);
+                foreach (var p in pts)
+                {
+                    var v = Project(p, fit, rot, aspect);
+                    Assert.That(v.z, Is.GreaterThan(0f), $"{device} alt {alt}: in front");
+                    Assert.That(v.y, Is.InRange(yMin - 0.005f, yMax + 0.005f), $"{device} alt {alt}: {p} between the HUD bars");
+                    Assert.That(v.x, Is.InRange(0.045f, 0.955f), $"{device} alt {alt}: {p} across the frame");
+                }
+                // Widens only: never closer than the follow offset.
+                Assert.That(Vector3.Dot(fit - cam, rot * Vector3.forward), Is.LessThanOrEqualTo(1e-3f), $"{device}: backs off only");
+                // Tight: the band is filled at one end or the other (not zoomed out for nothing).
+                float top = float.NegativeInfinity, bot = float.PositiveInfinity;
+                foreach (var p in pts) { var v = Project(p, fit, rot, aspect); top = Mathf.Max(top, v.y); bot = Mathf.Min(bot, v.y); }
+                if (Vector3.Dot(cam - fit, rot * Vector3.forward) > 0.01f)
+                    Assert.That(Mathf.Min(yMax - top, bot - yMin), Is.LessThan(0.01f), $"{device} alt {alt}: no needless zoom-out");
+            }
+            // Already inside a generous band: unchanged. Degenerate band: unchanged.
+            var c0 = new Vector3(0f, 10f, -400f); var r0 = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            var one = new[] { new Vector3(0f, 10f, 0f) };
+            Assert.That(ChaseCamera.FitBand(r0, c0, one, 1, VFov, aspect, 0.1f, 0.9f), Is.EqualTo(c0));
+            Assert.That(ChaseCamera.FitBand(r0, c0, one, 1, VFov, aspect, 0.6f, 0.55f), Is.EqualTo(c0));
+        }
+
         [Test]
         public void HoldBlendsOut()
         {
