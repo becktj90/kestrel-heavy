@@ -247,8 +247,9 @@ namespace Kestrel.Capture.Tests
                 double now = app.FlightClockForCapture;
                 if (now >= 60) { reached = true; break; }
                 if (now > last) { last = now; still = 0; } else still++;
+                if (still == 120) TestContext.WriteLine("flight stall: " + StallState(driver));
             }
-            if (!reached) problems.Add("flight: the flight stopped at T+" + app.FlightClockForCapture.ToString("0.0") + " before T+60 (driver running: " + (driver != null && driver.Running) + ", hud: " + app.FlightHudVisible + ")");
+            if (!reached) problems.Add("flight: the flight stopped at T+" + app.FlightClockForCapture.ToString("0.0") + " before T+60 (" + StallState(driver) + ")");
             if (app.FlightClockForCapture >= 5)   // still shot where it stands, so the artifact shows what the flight looked like
             {
                 if (driver != null) driver.Hold(true);
@@ -289,6 +290,14 @@ namespace Kestrel.Capture.Tests
         }
 
 #if UNITY_EDITOR
+        static string StallState(FlightDriver d)
+        {
+            if (d == null) return "no FlightDriver";
+            var sim = d.Sim;
+            return "running " + d.Running + ", held " + d.Held + ", lost " + d.Lost + ", simDone " + (sim != null && sim.Done) + ", stage " + (sim != null ? sim.StageIdx : -1)
+                + ", timeScale " + Time.timeScale + ", captureDt " + Time.captureDeltaTime + ", dt " + Time.deltaTime + ", presentation " + Kestrel.Kit.CinematicEvents.PresentationScale;
+        }
+
         /// <summary>FlightCapture.BootToCount's first half: Boot -> Home LAUNCH for KH-7 -> briefing -> build, ending on the Starter screen.</summary>
         static IEnumerator BootToStarter(Action<SliceApp> got, List<string> problems)
         {
