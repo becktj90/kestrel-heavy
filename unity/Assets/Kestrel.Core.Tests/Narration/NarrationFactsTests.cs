@@ -278,6 +278,19 @@ namespace Kestrel.Core.Tests.Narration
         }
 
         [Test]
+        public void TheStepperReportCarriesWhetherTheDesignIsFinless()
+        {
+            foreach (var fins in new[] { true, false })
+            {
+                var raw = Clone(StarterDesign("m3"));
+                raw["aero"] = MiniJson.ParseObject("{\"nose\":\"ogive\",\"fins\":" + (fins ? "true" : "false") + "}");
+                var report = Kestrel.Core.Designer.Stepper.StepperModel.Evaluate(Golden.Catalog, raw);
+                Assert.AreEqual(!fins, report.Finless);
+            }
+            Assert.IsNull(Kestrel.Core.Designer.Stepper.StepperModel.Evaluate(Golden.Catalog, null).Finless);
+        }
+
+        [Test]
         public void FinlessIsTheOppositeOfFins()
         {
             foreach (var (label, raw) in AllDesigns())
