@@ -103,8 +103,9 @@ namespace Kestrel.Game.Environment.Tests
 
             // The real hook, with the vehicle radius the sim wiring (FlightDriver) derives from the design.
             var sink = new CinematicFlightSink { Anchor = () => center, Reduce = () => false, VehicleRadiusM = FlightSinkMath.VehicleRadiusM(widest) };
-            var V = new FlightVec(0, 3000);
-            sink.OnFailure("structural-maxq", "q", -1, V, V, 63.0);
+            var V = new FlightVec(0, 3000);          // 3000 m up
+            var ascent = new FlightVec(45, 260);     // m/s at max-q: the vehicle's own velocity, which the blast must not be carried away by
+            sink.OnFailure("structural-maxq", "q", -1, V, ascent, 63.0);
 
             // The pools are hidden objects the fx components own (not children of this scene): step exactly those systems.
             var systems = new List<ParticleSystem>();
@@ -122,7 +123,7 @@ namespace Kestrel.Game.Environment.Tests
             Assert.That(plan.Fire, Is.GreaterThan(0), "the failure planned no fire");
             Assert.That(plan.Radius, Is.LessThan(16f));
 
-            float[] at = { 0.12f, 0.55f, 1.5f };
+            float[] at = { 0.12f, 0.35f, 1.5f };   // breakup; the fireball at its orange peak (the colour ramp turns dark red past ~0.5 s); the smoke column
             string[] names = { "breakup", "fireball", "smoke" };
             for (int f = 0; f < at.Length; f++)
             {

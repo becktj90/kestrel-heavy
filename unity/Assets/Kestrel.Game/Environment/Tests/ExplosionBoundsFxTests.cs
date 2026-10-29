@@ -70,19 +70,49 @@ namespace Kestrel.Game.Environment.Tests
         public void TheFlashCardNeverCoversMoreThanAThirdOfTheView()
         {
             // Camera 8 m from the blast, 50 degrees: the view is 2 * 8 * tan(25) = 7.5 m tall there.
+            // One pool per blast: EditMode Simulate() pauses a system, and this test measures the card, not a pool that earlier blasts left paused.
             var at = new Vector3(0f, 10f, 0f);
+            fx.Unsubscribe();
             foreach (float radius in new[] { 0.4f, 1.5f, 6f, 500f })
             {
-                TimeOfDayRig.Force(LaunchTimeOfDay.Night);   // night allows the strongest flash
-                FlashGovernor.Reset();                        // the 3 Hz limiter would otherwise swallow the second card
-                CinematicEvents.Failure(at.x, at.y, at.z, 1f, radius, false);
-                var flash = Systems(fx.LayerRenderer(ExplosionLayer.Flash).gameObject)[0];
-                float card = LargestParticle(flash);
-                float viewH = 2f * Vector3.Distance(cam.transform.position, at) * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
-                var lp = fx.LastPlan;
-                Assert.That(card, Is.GreaterThan(0f), $"radius {radius}: a flash card is still drawn (plan flash {lp.Flash} size {lp.FlashSize:0.00} alpha {lp.FlashAlpha:0.00} radius {lp.Radius:0.0}; system particles {flash.particleCount} playing {flash.isPlaying} max {flash.main.maxParticles})");
-                Assert.That(card, Is.LessThanOrEqualTo(viewH * 0.31f), $"radius {radius}: flash card {card:0.0} m in a {viewH:0.0} m view");
-                flash.Clear();
+                var pool = new GameObject("fx-card");
+                var cardFx = pool.AddComponent<ExplosionFx>();
+                try
+                {
+                    cardFx.Subscribe();
+                    TimeOfDayRig.Force(LaunchTimeOfDay.Night);   // night allows the strongest flash
+                    FlashGovernor.Reset();                        // the 3 Hz limiter would otherwise swallow the second card
+                    CinematicEvents.Failure(at.x, at.y, at.z, 1f, radius, false);
+                    var flash = Systems(cardFx.LayerRenderer(ExplosionLayer.Flash).gameObject)[0];
+                    float card = LargestParticle(flash);
+                    float viewH = 2f * Vector3.Distance(cam.transform.position, at) * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+                    var lp = cardFx.LastPlan;
+                    Assert.That(card, Is.GreaterThan(0f), $"radius {radius}: a flash card is still drawn (plan flash {lp.Flash} size {lp.FlashSize:0.00} alpha {lp.FlashAlpha:0.00} radius {lp.Radius:0.0}; system particles {flash.particleCount} playing {flash.isPlaying} paused {flash.isPaused} max {flash.main.maxParticles})");
+                    Assert.That(card, Is.LessThanOrEqualTo(viewH * 0.31f), $"radius {radius}: flash card {card:0.0} m in a {viewH:0.0} m view");
+                }
+                finally { cardFx.Unsubscribe(); Object.DestroyImmediate(pool); }
+            }
+        }
+
+        [Test]
+        public void AFastVehicleCannotCarryTheFireballOutOfFrame()
+        {
+            // The failure hook passes the vehicle's velocity (a skinny stack at max-q is ~260 m/s up). The fire and smoke may share a little of it,
+            // never so much that the cloud is 90 m away a tenth of a second after the blast. 0.4 m radius -> a ~2 m blast.
+            var at = new Vector3(0f, 10f, 0f);
+            CinematicEvents.Failure(at.x, at.y, at.z, 1f, 0.4f, false, 45f, 260f, 0f);
+            float radius = fx.LastPlan.Radius;
+            Assert.That(radius, Is.LessThan(4f), "a skinny stack has a small blast");
+            foreach (var layer in new[] { ExplosionLayer.Fire, ExplosionLayer.Smoke })
+            {
+                var ps = fx.LayerRenderer(layer).GetComponent<ParticleSystem>();
+                for (int i = 0; i < 12; i++) ps.Simulate(1f / 30f, false, false, true);   // 0.4 s
+                var buf = new ParticleSystem.Particle[Mathf.Max(1, ps.particleCount)];
+                int n = ps.GetParticles(buf);
+                Assert.That(n, Is.GreaterThan(0), layer + ": the cloud is still there");
+                float far = 0f;
+                for (int i = 0; i < n; i++) far = Mathf.Max(far, Vector3.Distance(buf[i].position, at));
+                Assert.That(far, Is.LessThanOrEqualTo(radius * 3f), layer + ": the cloud is " + far.ToString("0.0") + " m from the blast (blast radius " + radius.ToString("0.0") + " m)");
             }
         }
 

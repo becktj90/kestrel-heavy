@@ -49,6 +49,9 @@ namespace Kestrel.Kit
         /// <summary>Per-particle size jitter (x1.3 in ExplosionFx.Emit) times the size-over-lifetime peak (x1.2) the flash can grow by.</summary>
         public const float FlashGrowthMax = 1.3f * 1.2f;
 
+        /// <summary>Fastest the fire and smoke may drift with the vehicle, in blast radii per second. A skinny 2 m blast drifts at most ~1 m/s.</summary>
+        public const float MaxInheritRadiiPerSecond = 0.45f;
+
         /// <summary>Largest flash start size (m) that keeps the card within MaxFlashScreenFraction of the view at <paramref name="distanceM"/>.</summary>
         public static float FlashSizeCap(float distanceM, float verticalFovDeg)
         {

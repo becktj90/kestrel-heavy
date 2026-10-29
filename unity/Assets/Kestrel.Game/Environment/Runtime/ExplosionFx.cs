@@ -94,7 +94,10 @@ namespace Kestrel.Game.Environment
             float fov = cam != null && !cam.orthographic ? cam.fieldOfView : 60f;
             plan = plan.LimitFlashToView(dist, fov);
             LastPlan = plan;
-            var inherit = new Vector3(e.VelX, e.VelY, e.VelZ) * 0.25f;
+            // The smoke and fire share the vehicle's velocity, but only as much as a camera framing the blast can follow: a quarter of a
+            // 260 m/s airspeed would carry the whole fireball 90 m away in a tenth of a second (a frame with no fire in it). Bounded to a
+            // fraction of the blast's own expansion speed, so the cloud drifts with the vehicle's direction without leaving the frame.
+            var inherit = LimitInherit(new Vector3(e.VelX, e.VelY, e.VelZ) * 0.25f, plan.Radius * ExplosionBudgets.MaxInheritRadiiPerSecond);
 
             Emit(ExplosionLayer.Flash, plan.Flash, at, plan.FlashSize, 0.18f, plan.FlashColor, plan.FlashAlpha, 0f, 0f, Vector3.zero, false);
             Emit(ExplosionLayer.Fire, plan.Fire, at, plan.FireSize, plan.FireLife, plan.FireColor, plan.FireAlpha, plan.FireSpeed, plan.Radius * 0.4f, inherit, e.Grounded);
@@ -115,10 +118,20 @@ namespace Kestrel.Game.Environment
             }
         }
 
+        /// <summary>The vector, or a NaN-free copy shortened to <paramref name="maxSpeed"/> m/s.</summary>
+        static Vector3 LimitInherit(Vector3 v, float maxSpeed)
+        {
+            if (float.IsNaN(v.x) || float.IsNaN(v.y) || float.IsNaN(v.z)) return Vector3.zero;
+            float m = v.magnitude;
+            if (float.IsInfinity(m)) return Vector3.zero;
+            return m > maxSpeed && m > 0f ? v * (maxSpeed / m) : v;
+        }
+
         void Emit(ExplosionLayer layer, int count, Vector3 at, float size, float life, Rgb3 color, float alpha, float speed, float spread, Vector3 inherit, bool grounded)
         {
             var ps = systems[(int)layer];
             if (ps == null || count <= 0) return;
+            if (!ps.isPlaying) ps.Play();   // a pooled system that was paused, or ran out its duration, must still simulate what is emitted
             var ep = new ParticleSystem.EmitParams();
             ep.applyShapeToPosition = false;
             for (int i = 0; i < count; i++)

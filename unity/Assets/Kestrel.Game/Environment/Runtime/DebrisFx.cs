@@ -103,13 +103,26 @@ namespace Kestrel.Game.Environment
                 case CinematicKind.Crash:
                 case CinematicKind.Failure:
                     SetSurfaces(e.Grounded);
-                    world.Burst(at, vel, e.Energy01, Mathf.Max(0.5f, e.Radius), e.Grounded, e.Seed + (int)(e.X * 13f), e.Reduce);
+                    world.Burst(at, LimitBurstVelocity(vel), e.Energy01, Mathf.Max(0.5f, e.Radius), e.Grounded, e.Seed + (int)(e.X * 13f), e.Reduce);
                     break;
                 case CinematicKind.EngineFailure:
                     if (!e.Overpressure) break;
-                    world.Burst(at, vel, e.Energy01 * 0.5f, Mathf.Max(0.5f, e.Radius), false, e.Seed + e.EngineIndex, e.Reduce);
+                    world.Burst(at, LimitBurstVelocity(vel), e.Energy01 * 0.5f, Mathf.Max(0.5f, e.Radius), false, e.Seed + e.EngineIndex, e.Reduce);
                     break;
             }
+        }
+
+        /// <summary>The chunks fly at their own 10..28 m/s and share half the vehicle's velocity. At ascent speed that share carries every
+        /// chunk 100+ m away within a tenth of a second, so the blast has no debris in frame: bound the vehicle share to a chunk's own speed.</summary>
+        public const float MaxBurstVehicleSpeed = 16f;
+
+        static V3 LimitBurstVelocity(V3 v)
+        {
+            float m2 = v.X * v.X + v.Y * v.Y + v.Z * v.Z;
+            if (float.IsNaN(m2) || float.IsInfinity(m2)) return new V3(0f, 0f, 0f);
+            if (m2 <= MaxBurstVehicleSpeed * MaxBurstVehicleSpeed) return v;
+            float k = MaxBurstVehicleSpeed / Mathf.Sqrt(m2);
+            return new V3(v.X * k, v.Y * k, v.Z * k);
         }
 
         void SetSurfaces(bool grounded) { if (grounded) world.Surfaces = CinematicEvents.Surfaces; }
