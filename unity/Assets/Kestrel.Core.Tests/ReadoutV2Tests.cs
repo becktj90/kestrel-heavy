@@ -57,6 +57,7 @@ using System.Collections.Generic;
 using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
@@ -346,13 +347,15 @@ namespace Kestrel.Core.Tests
                 Assert.IsNotNull(eng.warnings.Find(w => w.code == "maxq-high"), id + " warns");
                 Assert.IsNull(eng.blocks.Find(b => b.code == "maxq-high"), id + " does not block");
             }
-            // The bare stock vehicle peaks at the documented 73 kPa. The designer readout flies the predict schedule,
-            // whose stage-1 fuel imbalance throttles that stage to 97% until separation (#313 ruling 3): 70.7 kPa.
-            var stockIn = ReferenceAscent.Inputs(cat, Preset("stock"));
-            if (System.Math.Abs(Headless.Simulate(stockIn.stages, stockIn.opts).maxQ / 1000 - 73.01) > 0.05)
+            // The bare stock vehicle in calm air peaks at the documented 73 kPa. KH-7 E: ReferenceAscent.Inputs
+            // now carries the free-build briefing wind, so the calm check builds without a site.
+            var stockCalm = MissionFlightSetup.Build(cat, null, Design.FromJson(Preset("stock")), MissionFlightSetup.BatchDt);
+            if (System.Math.Abs(Headless.Simulate(stockCalm.Stages, stockCalm.Options).maxQ / 1000 - 73.01) > 0.05)
                 Assert.Fail("stock max-Q left the documented 73 kPa");
-            Assert.AreEqual(70.71, Readout.Reference(cat, Preset("stock")).maxQ_kPa.Value, 0.05, "stock readout under the predicted fuel imbalance");
-            if (System.Math.Abs(Readout.Reference(cat, Golden.FixtureDesign("maxq-high-kid")).maxQ_kPa.Value - 90.07) > 0.05)
+            // The designer readout flies the predict schedule under briefing wind + stage-1 fuel imbalance (#313 ruling 3).
+            // Number refreshed with KH-7 E (predictor-briefing-wind); was 70.71 in calm air.
+            Assert.AreEqual(70.96, Readout.Reference(cat, Preset("stock")).maxQ_kPa.Value, 0.05, "stock readout under the predicted fuel imbalance");
+            if (System.Math.Abs(Readout.Reference(cat, Golden.FixtureDesign("maxq-high-kid")).maxQ_kPa.Value - 90.32) > 0.05)
                 Assert.Fail("the maxq-high kid fixture left the documented 90 kPa");
 
             // #314: the shipped sounding template is two small hybrids on a long, low-thrust burn. #313 (Physics, 1:24 PM)
@@ -360,7 +363,7 @@ namespace Kestrel.Core.Tests
             // warning line, so there is nothing to warn about.
             var sounding = Template("tpl-sounding-hybrid");
             var q = Readout.Reference(cat, sounding);
-            Assert.AreEqual(37.77, q.maxQ_kPa.Value, 0.05, "hybrid sounding rocket max-Q");
+            Assert.AreEqual(37.85, q.maxQ_kPa.Value, 0.05, "hybrid sounding rocket max-Q");
             Assert.Less(q.maxQ_kPa.Value, Validate.MaxQWarnKPa);
             var soundingReport = Validate.Engineering(cat, sounding);
             Assert.IsTrue(soundingReport.ok);

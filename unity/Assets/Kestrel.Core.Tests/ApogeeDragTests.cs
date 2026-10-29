@@ -111,9 +111,17 @@ namespace Kestrel.Core.Tests
                     while (!job.Step(1000)) { }
                     var readout = Readout.Quick(catalog, json);
                     Assert.IsTrue(readout.predictedApo_m.HasValue);
-                    var batch = FlightBatch.Fly(catalog, campaign.ById("m1"), Design.FromJson(json), 1);
-                    Assert.AreEqual(batch.apoKm * 1000, readout.predictedApo_m.Value, 1e-6, "designer and batch: one function");
-                    Assert.AreEqual(batch.passed, readout.ReachesApogee, "designer Ready matches the batch at " + batch.apoKm.ToString("0.000") + " km");
+                    // KH-7 E: the predictor flies the live pad's briefing wind (seed 1). The batch stays calm
+                    // (FlightBatch.Fly: "reference pad in calm air"), so Ready matches the live-pad flight, not the batch.
+                    var d = Design.FromJson(json);
+                    var live = ReferenceAscent.Flight(catalog, d).Run();
+                    double liveApo = MissionScore.FlownApoAltM(live);
+                    Assert.AreEqual(liveApo, readout.predictedApo_m.Value, 1e-6, "designer and live-pad briefing: one function");
+                    var m = campaign.ById("m1");
+                    double need = m.DepartsFromParking
+                        ? MissionScore.DepartureRequiredMps(m.TargetKind, m.ApoKm, m.C3Km2PerS2, m.GuidanceAltM, live.departureTW) : double.NaN;
+                    bool livePass = live.failure == null && MissionScore.TargetMet(m.TargetKind, m.ApoKm, m.PeriKm, m.C3Km2PerS2, liveApo, live.orbit.periAlt, MissionScore.C3(live.orbit.energy) / 1e6, !double.IsNaN(need) && live.departureDv + 1e-6 >= need, out _);
+                    Assert.AreEqual(livePass, readout.ReachesApogee, "designer Ready matches the live pad at " + (liveApo / 1000).ToString("0.000") + " km");
                 }
             }
             finally { ReferenceAscent.Reset(); }

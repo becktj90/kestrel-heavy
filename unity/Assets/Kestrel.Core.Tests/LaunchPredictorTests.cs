@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
@@ -22,12 +23,10 @@ namespace Kestrel.Core.Tests
                 var d = Load(id);
                 var p = LaunchPredictor.Predict(cat, d, "standard", 1);
                 var again = LaunchPredictor.Predict(cat, d, "standard", 99);
-                var input = LaunchPredictor.Inputs(cat, d);
-                // #314: the prediction is the played flight (PlayedChecks), not the uncut sim.
-                var sim = PlayedChecks.Fly(cat, d, input.stages, input.opts);
+                // #314 + KH-7 E: the prediction is ReferenceAscent.Flight (director + PlayedChecks + briefing wind).
+                var sim = ReferenceAscent.Flight(cat, d).Run();
                 var req = Stack.RequiredDeltaV(cat, d.payloadOrbit);
                 double apo = MissionScore.FlownApoAltM(sim);
-                // #313: the batch's acceptance rule (MissionScore.TargetMet) on the bare sim's flown orbit.
                 bool success = LaunchPredictor.Accepts(cat, d, req, sim, apo);
 
                 Assert.AreEqual(sim.outcome, p.Outcome, id);
@@ -36,7 +35,7 @@ namespace Kestrel.Core.Tests
                 Assert.AreEqual(success ? 1 : 0, p.Probability, 0, id);
                 Assert.AreEqual(success ? "pass" : "fail", p.Meter, id);
                 Assert.AreEqual(1, p.Runs, id);
-                Assert.LessOrEqual(p.ApoKm, apo / 1000.0 + 1e-9, id);
+                Assert.AreEqual(Math.Floor(apo / 100.0) / 10.0, p.ApoKm, 1e-9, id);
                 Assert.LessOrEqual(apo, sim.orbit.apoAlt + 1e-6, id + " drag only lowers the peak");
                 Assert.AreEqual(p.Canonical(), again.Canonical().Replace("seed=99", "seed=1"), id + " seed");
                 Assert.IsTrue(p.Text.IndexOf("almost", StringComparison.OrdinalIgnoreCase) < 0, id);
