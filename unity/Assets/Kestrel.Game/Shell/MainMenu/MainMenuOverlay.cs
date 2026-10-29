@@ -1176,6 +1176,7 @@ namespace Kestrel.Game.Shell
             dusk.SetHero(new Rect(left, top, width, bottom - top), root.ClassListContains("kh-mm-reduce"));
         }
 
+        // The Home hint strip is gated by the home.thrum flag only. Settings > Show corner character does not touch it (DECISIONS #72).
         static VisualElement ThrumStrip(VisualElement full)
         {
             var row = new Button { name = "home-thrum", text = string.Empty, tooltip = MainMenuCopy.ThrumLine };
@@ -1385,6 +1386,7 @@ namespace Kestrel.Game.Shell
             var sandbox = SettingButton(UiIds.SettingsSandbox, "Sandbox");
             var motion = SettingButton(UiIds.SettingsReduceMotion, "Reduce motion");
             var fullDesigner = SettingButton(FullDesignerId, "Show full designer");
+            var cornerCharacter = SettingButton(UiIds.SettingsCornerCharacter, CornerCharacterLabel);
             motion.tooltip = "Reduce motion. Holds the menu still.";
 
             void PaintMix()
@@ -1411,6 +1413,12 @@ namespace Kestrel.Game.Shell
                 bool on = Kestrel.Core.Features.ExperienceSettings.ShowFullDesigner(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
                 PaintCaption(fullDesigner, "Show full designer", on);
                 fullDesigner.tooltip = "Show full designer. " + FullDesignerNote + (on ? " On." : " Off.");
+            }
+            void PaintCornerCharacter()
+            {
+                bool on = GuideBoxDriver.SpriteOn();
+                PaintCaption(cornerCharacter, CornerCharacterLabel, on);
+                cornerCharacter.tooltip = CornerCharacterLabel + ". " + CornerCharacterNote + (on ? " On." : " Off.");
             }
             void PaintMotion()
             {
@@ -1444,9 +1452,17 @@ namespace Kestrel.Game.Shell
                 Kestrel.Core.Features.FeatureFlags.Active.ShowFullDesigner = next;
                 PaintFullDesigner();
             };
+            // The driver reads the pref every frame, so the portrait comes or goes the moment this is pressed.
+            cornerCharacter.clicked += () =>
+            {
+                Kestrel.Core.Features.ExperienceSettings.SetCornerCharacter(!GuideBoxDriver.SpriteOn(), PlayerPrefs.SetInt);
+                PlayerPrefs.Save();
+                PaintCornerCharacter();
+            };
             PaintMix();
             PaintSubs();
             PaintFullDesigner();
+            PaintCornerCharacter();
             PaintSandbox();
             PaintMotion();
 
@@ -1477,6 +1493,14 @@ namespace Kestrel.Game.Shell
             SettingFont(fullNote, "SpaceGrotesk-Medium");
             list.Add(fullDesigner);
             list.Add(fullNote);
+            var cornerNote = new Label(CornerCharacterNote) { name = "settings-corner-character-note", pickingMode = PickingMode.Ignore };
+            cornerNote.style.fontSize = 14;
+            cornerNote.style.whiteSpace = WhiteSpace.Normal;
+            cornerNote.style.marginLeft = 10; cornerNote.style.marginRight = 10; cornerNote.style.marginBottom = 6;
+            cornerNote.style.color = new Color(0.86f, 0.84f, 0.78f, 1f);
+            SettingFont(cornerNote, "SpaceGrotesk-Medium");
+            list.Add(cornerCharacter);
+            list.Add(cornerNote);
 
             var close = new Button { name = UiIds.SettingsClose, text = "Close" };
             close.AddToClassList("kh-button");
@@ -1618,6 +1642,7 @@ namespace Kestrel.Game.Shell
                 PaintSandbox();
                 PaintMotion();
                 PaintFullDesigner();
+                PaintCornerCharacter();
                 ApplySettingsFeatures(full);
                 sheet.style.display = DisplayStyle.Flex;
                 scrim.style.display = DisplayStyle.Flex;
@@ -1643,6 +1668,8 @@ namespace Kestrel.Game.Shell
         public const float SheetCloseGap = 8f, SheetPadBottom = 8f;
 
         public const string FullDesignerNote = "Every part and number. For older kids and engineers.";
+        public const string CornerCharacterLabel = "Show corner character";
+        public const string CornerCharacterNote = "A little helper in the corner. Off by default.";
 
         /// <summary>The Settings Codex row stands in for the Codex tile: shown only while home.codexTile is off.</summary>
         static void ApplySettingsFeatures(VisualElement full)
