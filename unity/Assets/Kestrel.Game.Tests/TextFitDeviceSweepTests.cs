@@ -27,6 +27,7 @@ namespace Kestrel.Game.Tests
 {
     public class TextFitDeviceSweepTests
     {
+        const string ExperienceKey = Kestrel.Core.Features.ExperienceSettings.CornerCharacterPref;
         const string Tokens = "Assets/Kestrel.Game/Shell/UI/KH_Tokens.uss";
 
         struct Frame
@@ -279,6 +280,61 @@ namespace Kestrel.Game.Tests
                 Assert.That(seen.Count, Is.EqualTo(StepperCatalog.Count), where + " " + string.Join(",", seen));
             }
             finally { panel.Detach(); }
+        }
+
+        /// <summary>Settings > Show corner character: the label and its note fit, on and off, with a 44 pt row, at every frame.</summary>
+        [Test]
+        public void SettingsCornerCharacterRowAndNoteFitInPortraitAndLandscape()
+        {
+            const string key = ExperienceKey;
+            bool had = PlayerPrefs.HasKey(key);
+            int prev = PlayerPrefs.GetInt(key, 0);
+            try
+            {
+                foreach (bool on in new[] { false, true })
+                    foreach (var frame in Frames)
+                    {
+                        PlayerPrefs.SetInt(key, on ? 1 : 0);
+                        MainMenuOverlay.ForceWide = frame.Landscape;
+                        string where = frame.Name + (on ? " on" : " off");
+                        using (var surface = DeviceSurface.Open(frame.W, frame.H))
+                        {
+                            var home = MountHome(surface.Stage);
+                            surface.Pump(8);
+                            Click(home.Q<Button>("home-settings"));
+                            surface.Pump(4);
+                            Settle(surface, home);
+                            var row = home.Q<Button>(UiIds.SettingsCornerCharacter);
+                            var note = home.Q<Label>("settings-corner-character-note");
+                            Assert.That(row, Is.Not.Null, where);
+                            Assert.That(note, Is.Not.Null, where);
+                            Assert.That(row.text, Is.EqualTo("Show corner character"), where);
+                            Assert.That(note.text, Is.EqualTo("A little helper in the corner. Off by default."), where);
+                            Assert.That(row.Q<Label>(row.name + "-state").text, Is.EqualTo(on ? "On" : "Off"), where);
+                            Assert.That(row.layout.height, Is.GreaterThanOrEqualTo(43.5f), where + " touch target");
+                            var sheet = home.Q("screen-settings");
+                            AssertFits(sheet, where + " settings");
+                            // Short landscape sheets scroll: both must be reachable inside the list's viewport.
+                            var list = home.Q<ScrollView>("settings-list");
+                            Assert.That(list, Is.Not.Null, where);
+                            foreach (var el in new VisualElement[] { row, note })
+                            {
+                                list.ScrollTo(el);
+                                surface.Pump(2);
+                                AssertStringInside((TextElement)el, where + " " + el.name);
+                                var view = list.worldBound;
+                                Assert.That(el.worldBound.yMin, Is.GreaterThanOrEqualTo(view.yMin - TextFit.Slack - 0.5f), where + " " + el.name + " above the list");
+                                Assert.That(el.worldBound.yMax, Is.LessThanOrEqualTo(view.yMax + TextFit.Slack + 0.5f), where + " " + el.name + " below the list");
+                                Assert.That(el.worldBound.xMax, Is.LessThanOrEqualTo(sheet.worldBound.xMax + TextFit.Slack), where + " " + el.name + " past the sheet");
+                            }
+                        }
+                    }
+            }
+            finally
+            {
+                MainMenuOverlay.ForceWide = null;
+                if (had) PlayerPrefs.SetInt(key, prev); else PlayerPrefs.DeleteKey(key);
+            }
         }
 
         static void Settle(DeviceSurface surface, VisualElement root)
