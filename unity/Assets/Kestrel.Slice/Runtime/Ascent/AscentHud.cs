@@ -25,6 +25,11 @@ namespace Kestrel.Slice
         Label medal, quote, detail, caption, bonus, extra;
         Label[] cellKey = new Label[CellCount];
         Label[] cellVal = new Label[CellCount];
+        // The upper stage's last strip reading, kept while the booster has the strip so it comes straight back.
+        readonly string[] ascentKey = new string[CellCount];
+        readonly string[] ascentVal = new string[CellCount];
+        readonly Color[] ascentInk = new Color[CellCount];
+        BoosterHudReadout? booster;
         Button primary, alternate, skip, assist, nudgeDown, nudgeUp, info;
         VisualElement health;
         Label healthDetail;
@@ -72,22 +77,6 @@ namespace Kestrel.Slice
             Layout(upp);
         }
 
-        /// <summary>
-        /// Share of the screen height (0..1, from the top) the HUD's top block covers over the middle of the frame:
-        /// the bottom of the telemetry strip (ALT / SPEED / Q / G), measured as laid out. 0 while the HUD is closed or
-        /// not laid out. The chase camera keeps the stack's nose under it (ChaseCamera.KeepBelow): the strip is sized in
-        /// points and scales with the panel width, so on a 4:3 iPad it reaches 18% down the frame against 12% on a phone.
-        /// </summary>
-        public float TopCover()
-        {
-            var strip = hud != null ? hud.Q("ascent-telemetry") : null;
-            if (strip == null || strip.panel == null || strip.resolvedStyle.display == DisplayStyle.None) return 0f;
-            var top = strip.panel.visualTree.worldBound;
-            var sb = strip.worldBound;
-            if (!(top.height > 1f) || !(sb.height > 1f) || float.IsNaN(sb.yMax)) return 0f;
-            return Mathf.Clamp01((sb.yMax - top.yMin) / top.height);
-        }
-
         public void Close()
         {
             // Hand the tools row (Follow, Cam, Pause) back to the flex flow before the HUD goes.
@@ -110,6 +99,7 @@ namespace Kestrel.Slice
             plot = null;
             trajectory.Reset();
             fedEvents = 0;
+            booster = null;
             root = null;
             actions = null;
             dockSpacer = null;
@@ -1029,6 +1019,7 @@ namespace Kestrel.Slice
                 SetCell(2, "Q", (q / 1000.0).ToString("0", inv) + " kPa", new Color(0.94f, 0.63f, 0.12f));
                 SetCell(3, "G", g.ToString("0.0", inv), new Color(0.30f, 0.82f, 0.55f));
             }
+            PaintFocus();
             FeedTrajectory(director, alt, speed, q);
             if (plot != null) plot.Apply(trajectory.At(RecoveryLog.RailClock(flight.SimTime), alt, speed), upp);
             var score = director.Score();
@@ -1161,6 +1152,7 @@ namespace Kestrel.Slice
             SetCell(1, "SPEED", speedText, ink);
             SetCell(2, prompt ? "TWR" : "Q", prompt ? "0.94" : "999 kPa", new Color(0.94f, 0.63f, 0.12f));
             SetCell(3, prompt ? "PROP" : "G", prompt ? "100%" : "12.4", new Color(0.30f, 0.82f, 0.55f));
+            PaintFocus();
             var v = stages != null ? stages.Q<Label>("h-verdict") : null;
             if (v != null) v.text = verdict ?? "";
             if (medal != null) medal.text = medalLine ?? "Medal timing: Silver · 1 perfect · 0 good · 0 late";
@@ -1621,10 +1613,71 @@ namespace Kestrel.Slice
 
         void SetCell(int i, string name, string value, Color color)
         {
+            ascentKey[i] = name;
+            ascentVal[i] = value;
+            ascentInk[i] = color;
+            if (booster.HasValue) return;   // the booster has the strip; PaintFocus draws it
+            DrawCell(i, name, value, color, "");
+        }
+
+        void DrawCell(int i, string name, string value, Color color, string spoken)
+        {
             if (cellKey[i] != null) cellKey[i].text = name;
             if (cellVal[i] == null) return;
             cellVal[i].text = value;
             cellVal[i].style.color = color;
+            cellVal[i].tooltip = spoken ?? "";
+        }
+
+        /// <summary>Which stage the strip reads: the upper stage (ascent) or the booster the camera is following.</summary>
+        public FlightHudFocus Focus => booster.HasValue ? FlightHudFocus.Booster : FlightHudFocus.Ascent;
+
+        /// <summary>
+        /// SliceApp, every flight frame: the booster's readout while the camera follows it (RecoveryShow.SteerCamera),
+        /// null otherwise. Applies at once: the strip reads ALT / DOWN / FUEL / TO DECK and the upper stage's health
+        /// tabs hide (visibility, so no row moves); null brings back the last ascent reading and the tabs.
+        /// </summary>
+        public void SetBooster(BoosterHudReadout? readout)
+        {
+            booster = readout;
+            if (root != null) PaintFocus();
+        }
+
+        void PaintFocus()
+        {
+            bool onBooster = booster.HasValue;
+            if (onBooster)
+            {
+                var r = booster.Value;
+                for (int i = 0; i < CellCount && i < BoosterHudReadout.Count; i++)
+                {
+                    var c = r[i];
+                    DrawCell(i, c.Key, c.Value, ToneInk(c.Tone), c.Spoken);
+                }
+                // The upper stage's tabs (Eng .. Fair) are not the booster's health: close any open note with them.
+                if (healthOpen >= 0) healthOpen = -1;
+                if (healthDetail != null) healthDetail.style.display = DisplayStyle.None;
+            }
+            else
+            {
+                for (int i = 0; i < CellCount; i++)
+                    if (ascentKey[i] != null) DrawCell(i, ascentKey[i], ascentVal[i], ascentInk[i], "");
+            }
+            if (health != null)
+            {
+                if (BoosterHud.ShowsAscentChrome(Focus)) health.style.visibility = StyleKeyword.Null;
+                else health.style.visibility = Visibility.Hidden;
+            }
+        }
+
+        static Color ToneInk(BoosterHudTone tone)
+        {
+            switch (tone)
+            {
+                case BoosterHudTone.Amber: return new Color(0.94f, 0.63f, 0.12f);
+                case BoosterHudTone.Green: return new Color(0.30f, 0.82f, 0.55f);
+                default: return new Color(0.85f, 0.92f, 0.96f);
+            }
         }
 
         void BuildStrip()
