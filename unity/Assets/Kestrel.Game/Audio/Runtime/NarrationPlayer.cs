@@ -63,7 +63,7 @@ namespace Kestrel.Game.Audio
             color = new ColorDirector(recovery);
             color.UseCalls(calls);
             // The flight's own triggers: whatever the count had due is gone at liftoff.
-            triggers = new CallTriggers(calls, launch != null ? launch.Stages : 0, strapOns);
+            triggers = new CallTriggers(calls, launch != null ? launch.Stages : 0, strapOns, recovery);
             triggers.Liftoff();
             guideTalking = false;
         }

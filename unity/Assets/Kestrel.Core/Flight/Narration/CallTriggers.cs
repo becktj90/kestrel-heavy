@@ -45,6 +45,7 @@ namespace Kestrel.Core.Flight.Narration
         readonly CallSchedule calls;
         readonly int stages;
         readonly bool strapOns;
+        readonly bool recovery;
         readonly List<Due> due = new List<Due>();
         readonly HashSet<string> seen = new HashSet<string>();
         bool counting, launched, topCutoff;
@@ -54,11 +55,14 @@ namespace Kestrel.Core.Flight.Narration
         /// <param name="schedule">The calls of this design's generated timeline (what it really flies).</param>
         /// <param name="coreStages">Core stage count of the flown design.</param>
         /// <param name="strapOnGroup">The sim stack starts with the strap-on group (its stage numbers are one ahead of the core's).</param>
-        public CallTriggers(CallSchedule schedule, int coreStages, bool strapOnGroup)
+        /// <param name="recoveryPicked">The player gave the booster a landing (barge or rtls). The timeline also plans an entry burn
+        /// for landing hardware with no landing picked; that booster is not coming home, so there is no entry call.</param>
+        public CallTriggers(CallSchedule schedule, int coreStages, bool strapOnGroup, bool recoveryPicked = false)
         {
             calls = schedule ?? CallSchedule.Empty;
             stages = coreStages;
             strapOns = strapOnGroup;
+            recovery = recoveryPicked;
         }
 
         public void Reset()
@@ -144,7 +148,7 @@ namespace Kestrel.Core.Flight.Narration
         /// </summary>
         public void OnRecovery(RecoveryMark[] flightMarks, double railNow, double now)
         {
-            if (!calls.HasEntry || flightMarks == null || seen.Contains(Entry)) return;
+            if (!calls.HasEntry || !recovery || flightMarks == null || seen.Contains(Entry)) return;
             for (int i = 0; i < flightMarks.Length; i++)
             {
                 if (flightMarks[i].Phase != RecoveryPhase.Entry) continue;
