@@ -328,3 +328,32 @@ test('color: a design with a landing never hears a color.recovery take that cont
     if (mode === 'rtls') assert.ok(!got.includes('host/color.recovery.2'));
   }
 });
+
+test('color: Codex fact-check corrections stay applied (no unsupported numbers or dates)', () => {
+  const txt = (id) => clips.find((c) => c.id === id).text;
+  // wording that was removed after review must not come back
+  const STALE = [
+    /three hundred thousand/i, /forty-one seconds/i, /disproportionately/i, /far more propellant/i,
+    /thirteenth-century china/i, /worked out in 1925/i, /first human orbit/i, /thirty to forty percent/i,
+    /orbital booster flew a second time/i, /first satellite weighed/i, /staying in orbit takes/i,
+  ];
+  for (const c of clips.filter((x) => x.layer === 'color')) {
+    for (const r of STALE) assert.ok(!r.test(c.text), c.id + ' still says ' + r);
+  }
+  assert.match(txt('host/color.pad.6'), /hundreds of thousands of gallons in about forty seconds/);
+  assert.match(txt('host/color.recovery.3'), /In late 2015 an orbital-class booster first landed upright after flight\. And in 2017 a landed booster flew a second time/);
+  assert.match(txt('host/color.coast.5'), /first human spaceflight lasted one hundred eight minutes, launch to landing/);
+  assert.match(txt('host/color.pad.9'), /1903 paper showed how the rocket equation applies to spaceflight/);
+  assert.match(txt('host/color.pad.9'), /many tons of propellant/);
+  assert.match(txt('host/color.pad.8'), /by the thirteenth century/);
+  assert.doesNotMatch(txt('host/color.pad.8'), /1232/);
+  assert.match(txt('host/color.coast.7'), /quarter to a third better/);
+  assert.match(txt('host/color.coast.2'), /published in 1925/);
+  assert.match(txt('host/color.ascent.4'), /low orbit/);
+  assert.match(txt('host/color.coast.4'), /first artificial satellite/);
+  // the doc records the disputed date and the corrected sources
+  assert.match(SRC, /1232[^|]*DISPUTED/);
+  assert.match(SRC, /nas\.nasa\.gov/);
+  assert.match(SRC, /spacenews\.com/);
+  assert.match(SRC, /launch to landing/i);
+});
