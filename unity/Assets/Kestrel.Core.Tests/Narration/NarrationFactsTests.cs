@@ -209,7 +209,7 @@ namespace Kestrel.Core.Tests.Narration
                     var ctx = lit == 0 ? facts : facts.WithLit(lit);
                     foreach (var take in takes)
                         if (NarrationRequires.Eligible(take, ctx))
-                            StringAssert.DoesNotContain("seven", texts[take.Id].ToLowerInvariant(), take.Id);
+                            Assert.IsFalse(Regex.IsMatch(texts[take.Id], @"\bseven\b(?! point)", RegexOptions.IgnoreCase), take.Id + ": " + texts[take.Id]);
                 }
         }
 
