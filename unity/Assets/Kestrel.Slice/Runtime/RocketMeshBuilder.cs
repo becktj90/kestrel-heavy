@@ -51,9 +51,10 @@ namespace Kestrel.Slice
         public readonly struct InterstageSlot { public readonly float Y0, Y1, R0, R1;
             public InterstageSlot(float y0, float y1, float r0, float r1) { Y0 = y0; Y1 = y1; R0 = r0; R1 = r1; } }
         /// <summary>Fairing cylinder + nose. The lathe still draws the ogive; FairingLayout draws seams and rings proud of it.</summary>
-        public readonly struct FairingSlot { public readonly float BaseY, Radius, Length, NoseFraction; public readonly bool Conic, Present;
-            public FairingSlot(float baseY, float radius, float length, float noseFraction, bool conic, bool present)
-            { BaseY = baseY; Radius = radius; Length = length; NoseFraction = noseFraction; Conic = conic; Present = present; } }
+        public readonly struct FairingSlot { public readonly float BaseY, Radius, Length, NoseFraction, JointRadius; public readonly bool Conic, Present;
+            /// <summary>Radius is the barrel (the data fairing diameter / 2, the widest point). JointRadius is the base, equal to the stage under it.</summary>
+            public FairingSlot(float baseY, float radius, float length, float noseFraction, bool conic, bool present, float jointRadius = -1f)
+            { BaseY = baseY; Radius = radius; Length = length; NoseFraction = noseFraction; Conic = conic; Present = present; JointRadius = jointRadius > 0f ? jointRadius : radius; } }
         /// <summary>One engine bell. The mesh is drawn by Kestrel.Vehicle.BellCluster, not lathed into the body.</summary>
         public readonly struct EngineSlot
         {
@@ -111,19 +112,26 @@ namespace Kestrel.Slice
         }
 
         /// <summary>Nose share of the fairing length, by aero.nose.</summary>
-        public static float NoseFraction(string nose) => nose == "blunt" ? 0.25f : nose == "conic" ? 0.4f : nose == "von-karman" ? 0.5f : 0.45f;
+        public static float NoseFraction(string nose) => Kestrel.Vehicle.FairingShoulder.NoseFraction(nose);
 
-        /// <summary>Nose radius at t (0 = shoulder, 1 = tip). Von Kármán is the LD-Haack series (C = 0).</summary>
-        public static float NoseRadius(string nose, float rf, float t)
+        /// <summary>Nose radius at t (0 = shoulder, 1 = tip). Von Karman is the LD-Haack series (C = 0).</summary>
+        public static float NoseRadius(string nose, float rf, float t) => Kestrel.Vehicle.FairingShoulder.NoseRadius(nose, rf, t);
+
+        /// <summary>Radius (m) of the stage the fairing sits on; the fairing's base is exactly this wide (Trevor's rule). The fairing's own radius when there is no stage or no fairing.</summary>
+        public static float JointRadius(Design d)
         {
-            t = Mathf.Clamp01(t);
-            if (nose == "conic") return rf * (1 - t);
-            if (nose == "von-karman")
-            {
-                float th = Mathf.Acos(Mathf.Clamp(1f - 2f * (1f - t), -1f, 1f));
-                return rf * Mathf.Sqrt(Mathf.Max(0f, (th - Mathf.Sin(2f * th) * 0.5f) / Mathf.PI));
-            }
-            return rf * Mathf.Sqrt(Mathf.Max(0, 1 - t * t)); // tangent ogive approximation
+            float rf = (float)d.fairingDiameter / 2;
+            if (d.stages == null || d.stages.Count == 0 || rf <= 0.05f) return rf;
+            return Mathf.Max(0.05f, (float)d.stages[d.stages.Count - 1].diameter / 2);
+        }
+
+        /// <summary>The fairing lathe profile at vehicle height y: base at the stage radius, smooth shoulder to the barrel, nose to the tip.</summary>
+        public static List<Vector2> FairingProfile(Design d, float y)
+        {
+            var p = new List<Vector2>();
+            foreach (var st in Kestrel.Vehicle.FairingShoulder.Profile(JointRadius(d), (float)d.fairingDiameter / 2, (float)d.fairingLength, d.nose))
+                p.Add(new Vector2(st.R, y + st.Y));
+            return p;
         }
 
         public static Result Build(Catalog c, Design d)
@@ -159,15 +167,8 @@ namespace Kestrel.Slice
             {
                 float rf = (float)d.fairingDiameter / 2, L = (float)d.fairingLength;
                 float noseFrac = NoseFraction(d.nose);
-                fairing = new FairingSlot(y, rf, L, noseFrac, d.nose == "conic", L > 0.2f && rf > 0.05f);
-                float cyl = L * (1 - noseFrac), nose = L * noseFrac;
-                var prof = new List<Vector2> { new Vector2(0, y), new Vector2(rf, y), new Vector2(rf, y + cyl) };
-                for (int k = 1; k <= 10; k++)
-                {
-                    float t = k / 10f;
-                    float rr = NoseRadius(d.nose, rf, t);
-                    prof.Add(new Vector2(k == 10 ? 0 : rr, y + cyl + nose * t));
-                }
+                fairing = new FairingSlot(y, rf, L, noseFrac, d.nose == "conic", L > 0.2f && rf > 0.05f, JointRadius(d));
+                var prof = FairingProfile(d, y);
                 Lathe(prof, Vector3.zero, verts, normals, uvs, tris);
                 y += L;
             }
@@ -243,15 +244,8 @@ namespace Kestrel.Slice
             }
             {
                 float rf = (float)d.fairingDiameter / 2, L = (float)d.fairingLength;
-                float noseFrac = NoseFraction(d.nose);
-                float cyl = L * (1 - noseFrac), nose = L * noseFrac;
-                var prof = new List<Vector2> { new Vector2(0, y), new Vector2(rf, y), new Vector2(rf, y + cyl) };
-                for (int k = 1; k <= 10; k++)
-                {
-                    float t = k / 10f;
-                    float rr = NoseRadius(d.nose, rf, t);
-                    prof.Add(new Vector2(k == 10 ? 0 : rr, y + cyl + nose * t));
-                }
+                float cyl = L * (1 - NoseFraction(d.nose));
+                var prof = FairingProfile(d, y);
                 var g = new Geo();
                 Lathe(prof, Vector3.zero, g.v, g.n, g.uv, g.t);
                 parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Fairing, Mesh = g.ToMesh("Fairing"), Y0 = y, Y1 = y + L, Radius = rf });

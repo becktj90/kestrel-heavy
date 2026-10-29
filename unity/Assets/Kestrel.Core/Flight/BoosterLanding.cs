@@ -7,6 +7,7 @@
 using System;
 using System.Globalization;
 using Kestrel.Core.Data;
+using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 
 namespace Kestrel.Core.Flight
@@ -93,6 +94,59 @@ namespace Kestrel.Core.Flight
                 return bodies[i].Releases;
             }
             return false;
+        }
+
+        /// <summary>
+        /// The hand-over state <see cref="Watch"/> receives, read straight from the ascent state <paramref name="y"/>
+        /// (x, y, vx, vy, inertial) at flight time <paramref name="t"/>: FlightDriver's downrange from the co-rotating pad,
+        /// altitude, ground-relative (air-relative) speed, and the flight-path angle of the pad-frame track in degrees
+        /// (FlightDriver's AttitudeDeg, d(alt)/d(downrange)). <paramref name="omegaAir"/> is the site rotation rate over
+        /// Earth's radius (0 without rotation). The live pad and the batch hand the booster over in this one frame.
+        /// </summary>
+        public static void HandOver(double[] y, double t, double omegaAir, out double downrangeM, out double altM, out double speedMps, out double pitchDeg)
+        {
+            double x = y[0], yy = y[1];
+            double r = Math.Sqrt(x * x + yy * yy);
+            if (!(r > 1)) r = 1;
+            double padAngle = Math.PI / 2 + omegaAir * t;
+            downrangeM = Gravity.R_EARTH * (Math.Atan2(yy, x) - padAngle);
+            altM = r - Gravity.R_EARTH;
+            double vx = y[2] + omegaAir * yy, vy = y[3] - omegaAir * x;
+            speedMps = Math.Sqrt(vx * vx + vy * vy);
+            double up = (vx * x + vy * yy) / r;
+            double east = (vy * x - vx * yy) / r;
+            // FlightDriver differences downrange (on the ground arc), so the east rate is scaled by R / r.
+            pitchDeg = Math.Atan2(up, east * Gravity.R_EARTH / r) * 180.0 / Math.PI;
+        }
+
+        /// <summary>
+        /// Fly a planned landing out from a hand-over state, on Auto-assist (the default player and the stage-sep spec's
+        /// Stay path), exactly as <see cref="Watch"/>, <see cref="Settle"/> and RecoveryShow fly it. Null when the design
+        /// picked no Haven or pad landing (an expendable stage is never graded). FlightBatch judges the flight with this.
+        /// </summary>
+        public static RecoveryVerdict FlyPlanned(Catalog catalog, Design design, double downrangeM, double altM, double speedMps, double pitchDeg)
+        {
+            if (!RecoveryCrafts.TryFrom(catalog, design, out var craft)) return null;
+            double rad = pitchDeg * Math.PI / 180.0;
+            var body = RecoverySim.Begin(craft, downrangeM, altM, speedMps * Math.Cos(rad), speedMps * Math.Sin(rad));
+            var verdict = RecoverySim.Fly(craft, body, RecoveryStick.Assisted);
+            verdict.Attempted = true;
+            return verdict;
+        }
+
+        /// <summary>
+        /// The flown grade as the mission counts it (FlightBatch and the live report share this). A flown touchdown counts
+        /// only for a stage with legs (RecoveryScore.Judge reads a legless stage as legs-down, so a soft legless touchdown would
+        /// otherwise pass) and only at the site the mission asks for: a Haven landing never satisfies a required RTLS, nor
+        /// the reverse. Anything else is "short", the batch's word for no qualifying landing.
+        /// </summary>
+        public static string MissionGrade(CampaignMission mission, Design design, string flownGrade)
+        {
+            if (string.IsNullOrEmpty(flownGrade) || mission == null || design == null) return flownGrade;
+            if (mission.LandingMode != "rtls" && mission.LandingMode != "barge") return flownGrade;
+            if (!design.legs) return "short";
+            if (design.recoveryMode != mission.LandingMode) return "short";
+            return flownGrade;
         }
 
         /// <summary>Why an expendable stage cannot land, in the words the flight shows.</summary>

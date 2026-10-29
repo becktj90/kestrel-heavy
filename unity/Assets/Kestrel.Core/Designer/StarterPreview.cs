@@ -20,6 +20,9 @@ namespace Kestrel.Core.Designer
     public struct StarterPreviewPose
     {
         public double PosX, PosY, PosZ, AimX, AimY, AimZ, ShiftX, ShiftY, Distance;
+        /// <summary>Degrees about +Y added to the default heading (0 = the Hangar rest heading), and the camera elevation
+        /// (0 = <see cref="StarterPreviewFraming.ElevationDeg"/>). A pad solve (StarterPadFrame) sets both.</summary>
+        public double HeadingDeg, ElevDeg;
         public bool Valid;
     }
 
@@ -28,7 +31,12 @@ namespace Kestrel.Core.Designer
     public struct StarterPreviewSubject
     {
         public double YMin, YMax, Radius;
-        public StarterPreviewSubject(double yMin, double yMax, double radius) { YMin = yMin; YMax = yMax; Radius = radius; }
+        /// <summary>The pad art to keep in frame beside the vehicle (world metres, vehicle axis at the origin, deck at y 0),
+        /// or null to frame the vehicle alone (the build 204 behaviour).</summary>
+        public PadPoint[] Pad;
+        public StarterPreviewSubject(double yMin, double yMax, double radius) { YMin = yMin; YMax = yMax; Radius = radius; Pad = null; }
+        public StarterPreviewSubject(double yMin, double yMax, double radius, PadPoint[] pad) { YMin = yMin; YMax = yMax; Radius = radius; Pad = pad; }
+        public bool HasPad => Pad != null && Pad.Length > 0;
         public double Height => YMax - YMin;
         public bool Usable => !(double.IsNaN(YMin) || double.IsNaN(YMax) || double.IsNaN(Radius) || double.IsInfinity(YMax) || double.IsInfinity(Radius)) && YMax - YMin > 0.5 && Radius > 0.05;
     }
@@ -57,11 +65,17 @@ namespace Kestrel.Core.Designer
         }
 
         /// <summary>Unit vector from the aim point to the camera.</summary>
-        public static void Heading(out double dx, out double dy, out double dz)
+        public static void Heading(out double dx, out double dy, out double dz) => Heading(0, 0, out dx, out dy, out dz);
+
+        /// <summary>The same heading turned <paramref name="headingDeg"/> about +Y (Unity yaw: +Z toward +X), at <paramref name="elevDeg"/>
+        /// degrees up (0 = <see cref="ElevationDeg"/>).</summary>
+        public static void Heading(double headingDeg, double elevDeg, out double dx, out double dy, out double dz)
         {
             double h = Math.Sqrt(HeadingX * HeadingX + HeadingZ * HeadingZ);
-            double e = ElevationDeg * Math.PI / 180.0;
-            dx = HeadingX / h * Math.Cos(e); dy = Math.Sin(e); dz = HeadingZ / h * Math.Cos(e);
+            double e = (elevDeg > 0 ? elevDeg : ElevationDeg) * Math.PI / 180.0;
+            double ux = HeadingX / h, uz = HeadingZ / h, t = headingDeg * Math.PI / 180.0, c = Math.Cos(t), sn = Math.Sin(t);
+            double rx = ux * c + uz * sn, rz = -ux * sn + uz * c;
+            dx = rx * Math.Cos(e); dy = Math.Sin(e); dz = rz * Math.Cos(e);
         }
 
         /// <summary>Pose that puts the subject's projected height at TargetFill of the box (or its width at MaxWidthFill,
@@ -71,6 +85,7 @@ namespace Kestrel.Core.Designer
             var pose = new StarterPreviewPose();
             if (!s.Usable || !(aspect > 0) || !(vFovDeg > 1) || vFovDeg >= 179) return pose;
             if (!BoxNdc(box, panelW, panelH, out double x0, out double x1, out double y0, out double y1)) return pose;
+            if (s.HasPad) return StarterPadFrame.Solve(s, box, panelW, panelH, aspect, vFovDeg);
             pose.ShiftX = 0.5 * (x0 + x1); pose.ShiftY = 0.5 * (y0 + y1);
             double boxH = y1 - y0, boxW = x1 - x0;
             double aimY = 0.5 * (s.YMin + s.YMax);
@@ -110,13 +125,31 @@ namespace Kestrel.Core.Designer
             return pose;
         }
 
-        static StarterPreviewPose Compose(StarterPreviewPose basis, double aimY, double distance)
+        static StarterPreviewPose Compose(StarterPreviewPose basis, double aimY, double distance) => Compose(basis, 0, aimY, 0, distance);
+
+        internal static StarterPreviewPose Compose(StarterPreviewPose basis, double aimX, double aimY, double aimZ, double distance)
         {
-            Heading(out double dx, out double dy, out double dz);
+            Heading(basis.HeadingDeg, basis.ElevDeg, out double dx, out double dy, out double dz);
             var p = basis;
-            p.AimX = 0; p.AimY = aimY; p.AimZ = 0; p.Distance = distance;
-            p.PosX = dx * distance; p.PosY = aimY + dy * distance; p.PosZ = dz * distance;
+            p.AimX = aimX; p.AimY = aimY; p.AimZ = aimZ; p.Distance = distance;
+            p.PosX = aimX + dx * distance; p.PosY = aimY + dy * distance; p.PosZ = aimZ + dz * distance;
             return p;
+        }
+
+        /// <summary>The camera's right and up unit vectors (Unity view: right = up x forward).</summary>
+        internal static bool Basis(StarterPreviewPose p, out double rx, out double ry, out double rz, out double ux, out double uy, out double uz)
+        {
+            rx = ry = rz = ux = uy = uz = 0;
+            double fx = p.AimX - p.PosX, fy = p.AimY - p.PosY, fz = p.AimZ - p.PosZ;
+            double fl = Math.Sqrt(fx * fx + fy * fy + fz * fz);
+            if (!(fl > 1e-9)) return false;
+            fx /= fl; fy /= fl; fz /= fl;
+            rx = fz; rz = -fx;
+            double rl = Math.Sqrt(rx * rx + rz * rz);
+            if (!(rl > 1e-9)) return false;
+            rx /= rl; rz /= rl;
+            ux = fy * rz - fz * ry; uy = fz * rx - fx * rz; uz = fx * ry - fy * rx;
+            return true;
         }
 
         /// <summary>NDC of a world point for the pose (Unity view: right = up x forward). False behind the camera.</summary>
@@ -194,13 +227,21 @@ namespace Kestrel.Core.Designer
             p.ShiftY = Ease(now.ShiftY, target.ShiftY, dt, false);
             double ay = Ease(now.AimY, target.AimY, dt, false);
             double d = Ease(now.Distance, target.Distance, dt, false);
-            var c = Compose(p, ay, d);
+            double ax = Ease(now.AimX, target.AimX, dt, false), az = Ease(now.AimZ, target.AimZ, dt, false);
+            p.HeadingDeg = now.HeadingDeg + Wrap180(target.HeadingDeg - now.HeadingDeg) * (Ease(0, 1, dt, false));
+            p.ElevDeg = Ease(now.ElevDeg, target.ElevDeg, dt, false);
+            if (Math.Abs(Wrap180(target.HeadingDeg - p.HeadingDeg)) < 1e-3) p.HeadingDeg = target.HeadingDeg;
+            var c = Compose(p, ax, ay, az, d);
             c.Valid = true;
             return c;
         }
 
+        /// <summary>Angle difference folded to (-180, 180].</summary>
+        internal static double Wrap180(double d) { d %= 360.0; if (d > 180) d -= 360; if (d <= -180) d += 360; return d; }
+
         public static bool Same(StarterPreviewPose a, StarterPreviewPose b) =>
             a.Valid == b.Valid && Math.Abs(a.AimY - b.AimY) < 1e-6 && Math.Abs(a.Distance - b.Distance) < 1e-6
+            && Math.Abs(a.AimX - b.AimX) < 1e-6 && Math.Abs(a.AimZ - b.AimZ) < 1e-6 && Math.Abs(a.HeadingDeg - b.HeadingDeg) < 1e-6 && Math.Abs(a.ElevDeg - b.ElevDeg) < 1e-6
             && Math.Abs(a.ShiftX - b.ShiftX) < 1e-9 && Math.Abs(a.ShiftY - b.ShiftY) < 1e-9;
     }
 
