@@ -162,6 +162,7 @@ namespace Kestrel.Core.Tests
                 var v = new StagingPartVisibility(plan, design.stages.Count, hasFairing);
                 var staging = new FlightStaging();
                 staging.Reset(hasFairing, jettison, design.StrapOnCount, false);
+                staging.FairingWaitsForSimEvent = sim.FairingHeatGated;
                 var hiddenBefore = new HashSet<PartRef>();
                 double fairingT = -1, fairingAlt = 0, apogee = 0;
                 foreach (var s in result.samples)
@@ -191,7 +192,16 @@ namespace Kestrel.Core.Tests
                 if (hasFairing && apogee > jettison + 1000 && result.outcome != "failure")
                 {
                     Assert.That(fairingT, Is.GreaterThan(0), id + " climbed past " + jettison / 1000 + " km but the painted fairing never left");
-                    Assert.That(fairingAlt, Is.GreaterThanOrEqualTo(jettison - 2000), id + " fairing went early");
+                    if (setup.Options.fairingMaxHeatFlux > 0)
+                    {
+                        // Physics (KH-7 follow-up): the painted fairing leaves at the sim's heat-gated "fairing" event.
+                        var ev = result.events.Find(e => e.type == "fairing");
+                        Assert.IsNotNull(ev, id + " no fairing event");
+                        Assert.That(fairingAlt, Is.GreaterThanOrEqualTo(FairingHeatGate.FloorFor(jettison)), id + " fairing went before its call arms");
+                        Assert.That(fairingT, Is.GreaterThanOrEqualTo(ev.t - 1e-9), id + " fairing hidden before the sim released it");
+                        Assert.That(fairingT - ev.t, Is.LessThanOrEqualTo(MissionFlightSetup.BatchDt + 1e-9), id + " fairing hidden late");
+                    }
+                    else Assert.That(fairingAlt, Is.GreaterThanOrEqualTo(jettison - 2000), id + " fairing went early");
                     fairings++;
                     TestContext.WriteLine($"{id}: fairing hidden T+{fairingT:0.0} s at {fairingAlt / 1000:0.0} km");
                 }
