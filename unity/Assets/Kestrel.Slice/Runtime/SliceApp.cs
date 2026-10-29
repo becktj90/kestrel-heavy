@@ -757,8 +757,10 @@ namespace Kestrel.Slice
             flight.Plume.AttachGroundCloud(tower, deckR, PadTower.Fit(r.height, rr).height);
             PadDetailLink.Apply(flight.Plume, tower, ground, deck, padR != null ? padR.Layout : null);
             rocketHeight = r.height; frameHeight = r.height; rocketRadius = rr; padSight = null;
-            // Starter frames the vehicle alone: bell exits on the deck (y = 0) to the nose, widest point incl. strap-ons.
-            if (starterCam != null) starterCam.SetVehicle(0f, r.height, VehicleRadius(r.mesh.bounds));
+            // Starter frames the vehicle (bell exits on the deck, y = 0, to the nose, widest point incl. strap-ons) together with the pad art
+            // (tower crown, base plates, pad circle): the same PadShowcase points the pad tests check, in world space (TestFlight 208: KH-1
+            // showed the tower cropped, no crown, no plates, no circle).
+            if (starterCam != null) starterCam.SetVehicle(0f, r.height, VehicleRadius(r.mesh.bounds), Kestrel.Slice.StarterPadPoints.For(padR != null ? padR.Layout : null, r.height, rr, tower.position));
             if (hangarCam != null)
             {
                 hangarCam.SetVehicle(frameHeight, framePoints);

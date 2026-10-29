@@ -37,6 +37,8 @@ namespace Kestrel.Pad
         /// <summary>Plates, grating, drains and edge marks stay inside this radius. Lightning masts can
         /// push the concrete disc past 100 m; a 4 m plate grid out there exceeds the pad triangle budget.</summary>
         public const float DetailRadiusCap = 36f;
+        /// <summary>Painted pad circle: radius = CircleFactor x the detail radius, drawn CircleY above the deck (PadShowcase frames it).</summary>
+        public const float CircleFactor = 0.4f, CircleY = 0.13f;
 
         public static PadDetailBuild Build(TrenchSpec spec, float surfaceRadius)
         {
@@ -438,8 +440,8 @@ namespace Kestrel.Pad
         /// a trench. At most 40 ring + 8 tick quads (~96 triangles).</summary>
         static void PadCircle(PadMeshData m, TrenchSpec s, float deck)
         {
-            const float y = 0.13f;
-            float rr = deck * 0.4f, band = 0.4f;
+            const float y = CircleY;
+            float rr = deck * CircleFactor, band = 0.4f;
             var hole = TrenchGrammar.DeckOpening(s, deck);
             bool OverSlot(float x, float z) => PolyCut.Contains(hole, x, z);
             const int n = 40;
