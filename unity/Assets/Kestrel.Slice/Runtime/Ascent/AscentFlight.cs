@@ -59,9 +59,8 @@ namespace Kestrel.Slice
             {
                 string root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
                 int index = MissionIndex(design, json);
-                card = index > 0
-                    ? MissionBriefing.Load(root, index, hash, seed)
-                    : MissionBriefing.Free(root, hash, seed);
+                // The same call the designer's predictor makes (ReferenceAscent.Briefing, KH-7 E).
+                card = MissionBriefing.ForPad(root, index, hash, seed);
             }
             catch (Exception e) { Debug.LogWarning("[Ascent] briefing skipped: " + e.Message); }
             // The one director factory the batch, the designer and the timeline use too (#313).
