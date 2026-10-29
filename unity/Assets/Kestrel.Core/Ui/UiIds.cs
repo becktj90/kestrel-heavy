@@ -46,6 +46,7 @@ namespace Kestrel.Core.Ui
         /// <summary>Shown only while home.codexTile is off; opens the Codex (codex-back returns).</summary>
         public const string SettingsCodex = "settings-codex";
         public const string SettingsFullDesigner = "settings-full-designer";
+        public const string SettingsCornerCharacter = "settings-corner-character";
 
         // ---- sub-screens reachable from Home, and their ways out ---------------------------------
         public const string CodexBack = "codex-back";
@@ -61,7 +62,7 @@ namespace Kestrel.Core.Ui
         public static readonly string[] SettingsControls =
         {
             SettingsMusic, SettingsSound, SettingsVoice, SettingsSubtitles, SettingsSandbox, SettingsReduceMotion,
-            SettingsCodex, SettingsFullDesigner, SettingsClose,
+            SettingsCodex, SettingsFullDesigner, SettingsCornerCharacter, SettingsClose,
         };
     }
 }
