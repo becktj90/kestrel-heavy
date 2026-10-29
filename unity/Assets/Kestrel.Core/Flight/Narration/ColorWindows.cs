@@ -13,6 +13,8 @@ namespace Kestrel.Core.Flight.Narration
     {
         public const double PadHoldMinSec = 20;
         public const double AscentMecoMinSec = 12;
+        /// <summary>A rocket with no MECO (solid first stage: it burns out, it does not shut down) opens color.ascent this long after max-Q.</summary>
+        public const double AscentAfterMaxQSec = 10;
         public const double CoastQuietSec = 15;
         public const double KarmanAltM = 100000;
         /// <summary>How long after the 100 km crossing color.karman may still start (the line is about the crossing).</summary>
@@ -27,6 +29,12 @@ namespace Kestrel.Core.Flight.Narration
 
         /// <summary>color.ascent: only after max-Q and with more than 12 s to MECO.</summary>
         public static bool AscentOk(bool pastMaxQ, double secToMeco) => pastMaxQ && secToMeco > AscentMecoMinSec;
+
+        /// <summary>
+        /// color.ascent on a rocket with no MECO: at least 10 s after max-Q, and only for a line that ends before the
+        /// next call (no call pending while it plays). The 1.5 s gap and call priority still apply in the schedule.
+        /// </summary>
+        public static bool AscentNoMecoOk(double secSinceMaxQ) => secSinceMaxQ >= AscentAfterMaxQSec;
 
         /// <summary>color.karman: the flight crossed 100 km on this step.</summary>
         public static bool KarmanCrossed(double prevAltM, double altM) => prevAltM < KarmanAltM && altM >= KarmanAltM;
@@ -48,7 +56,12 @@ namespace Kestrel.Core.Flight.Narration
         public static readonly CallSchedule Empty = new CallSchedule();
 
         readonly List<double> calls = new List<double>();
+        /// <summary>Main engine cutoff (asc.meco), or a solid first stage's burnout (asc.burnout) when there is no MECO.</summary>
         public double Meco = double.NaN;
+        /// <summary>The timeline has a real MECO (asc.meco). False for a solid first stage, which only burns out.</summary>
+        public bool HasMeco;
+        /// <summary>Nominal max-Q (asc.maxq). Used when the live max-Q event did not carry a time.</summary>
+        public double MaxQ = double.NaN;
         public double Boostback = double.NaN;
         public double Entry = double.NaN;
 
@@ -72,7 +85,8 @@ namespace Kestrel.Core.Flight.Narration
             {
                 var e = tl.events[i];
                 if (e == null) continue;
-                if (e.id == "asc.meco") s.Meco = e.nominal;
+                if (e.id == "asc.meco") { s.Meco = e.nominal; s.HasMeco = true; }
+                else if (e.id == "asc.maxq") s.MaxQ = e.nominal;
                 else if (e.id == "asc.burnout" && double.IsNaN(s.Meco)) s.Meco = e.nominal;
                 else if (e.id == "rec.boostback") s.Boostback = e.nominal;
                 else if (e.id == "rec.entry") s.Entry = e.nominal;
@@ -96,7 +110,9 @@ namespace Kestrel.Core.Flight.Narration
     {
         public readonly string EventId;
         public readonly double SecToNextCall;
-        public ColorCue(string eventId, double secToNextCall) { EventId = eventId; SecToNextCall = secToNextCall; }
+        /// <summary>The line must end before the next call (<see cref="ColorWindows.RecoveryFits"/>): recovery, and ascent on a rocket with no MECO.</summary>
+        public readonly bool MustFit;
+        public ColorCue(string eventId, double secToNextCall, bool mustFit = false) { EventId = eventId; SecToNextCall = secToNextCall; MustFit = mustFit; }
     }
 
     /// <summary>
@@ -112,6 +128,7 @@ namespace Kestrel.Core.Flight.Narration
         readonly bool hasRecovery;
         CallSchedule calls = CallSchedule.Empty;
         bool pastMaxQ, mecoSeen;
+        double maxQAt = double.NaN, lastT = double.NaN;
         double prevAlt = double.NaN, karmanAt = double.NaN, nextPoll = double.NegativeInfinity;
         bool holdOpen; double secToT60 = double.NaN;
 
@@ -124,14 +141,22 @@ namespace Kestrel.Core.Flight.Narration
         {
             done.Clear();
             pastMaxQ = mecoSeen = false;
+            maxQAt = lastT = double.NaN;
             prevAlt = karmanAt = double.NaN;
             nextPoll = double.NegativeInfinity;
             holdOpen = false; secToT60 = double.NaN;
         }
 
-        public void OnEvent(string id)
+        public void OnEvent(string id) => OnEvent(id, double.NaN);
+
+        /// <param name="t">Flight seconds the event happened at. NaN: the last polled time, else the nominal max-Q.</param>
+        public void OnEvent(string id, double t)
         {
-            if (id == "maxq") pastMaxQ = true;
+            if (id == "maxq")
+            {
+                if (!pastMaxQ) maxQAt = !double.IsNaN(t) ? t : lastT;
+                pastMaxQ = true;
+            }
             else if (id == "meco") mecoSeen = true;
         }
 
@@ -145,19 +170,38 @@ namespace Kestrel.Core.Flight.Narration
             into.Clear();
             if (!double.IsNaN(prevAlt) && ColorWindows.KarmanCrossed(prevAlt, altM)) karmanAt = t;
             prevAlt = altM;
+            lastT = t;
             if (t < nextPoll) return;
             nextPoll = t + PollSec;
             double toNext = calls.SecondsToNextCall(t);
             if (!done.Contains(ColorWindows.Pad) && ColorWindows.PadOk(holdOpen, secToT60))
                 into.Add(new ColorCue(ColorWindows.Pad, toNext));
-            if (!done.Contains(ColorWindows.Ascent) && ColorWindows.AscentOk(pastMaxQ, calls.Meco - t))
-                into.Add(new ColorCue(ColorWindows.Ascent, toNext));
+            if (!done.Contains(ColorWindows.Ascent))
+            {
+                if (calls.HasMeco)
+                {
+                    if (ColorWindows.AscentOk(pastMaxQ, calls.Meco - t)) into.Add(new ColorCue(ColorWindows.Ascent, toNext));
+                }
+                else if (AscentNoMeco(t))
+                    into.Add(new ColorCue(ColorWindows.Ascent, toNext, true));
+            }
             if (!done.Contains(ColorWindows.Karman) && !double.IsNaN(karmanAt) && t - karmanAt <= ColorWindows.KarmanGraceSec)
                 into.Add(new ColorCue(ColorWindows.Karman, toNext));
             if (!done.Contains(ColorWindows.Coast) && mecoSeen && ColorWindows.CoastOk(toNext))
                 into.Add(new ColorCue(ColorWindows.Coast, toNext));
             if (hasRecovery && !done.Contains(ColorWindows.Recovery) && mecoSeen && RecoveryAnchor(t))
-                into.Add(new ColorCue(ColorWindows.Recovery, toNext));
+                into.Add(new ColorCue(ColorWindows.Recovery, toNext, true));
+        }
+
+        // No MECO (a solid first stage burns out, often inside the 12 s MECO margin): time-based instead, from
+        // max-Q + 10 s. The burnout does not close it (the ascent takes are general and stay true after a burnout);
+        // the entry burn does. The cue must fit before the next call. Unknown max-Q time means no.
+        bool AscentNoMeco(double t)
+        {
+            if (!pastMaxQ) return false;
+            double q = !double.IsNaN(maxQAt) ? maxQAt : calls.MaxQ;
+            if (double.IsNaN(q) || !ColorWindows.AscentNoMecoOk(t - q)) return false;
+            return double.IsNaN(calls.Entry) || t < calls.Entry;
         }
 
         // The booster coast back: from the boostback burn (return to launch site) or 20 s after MECO (droneship

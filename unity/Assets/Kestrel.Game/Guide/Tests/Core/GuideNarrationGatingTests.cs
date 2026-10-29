@@ -70,11 +70,21 @@ namespace Kestrel.Game.Guide.Tests
         }
 
         [Test]
-        public void AnUnknownDesignKeepsTheOldLine()
+        public void AnUnknownDesignFailsClosedToTheNeutralTumbleLine()
         {
             var engine = Engine();
             GuideHooks.Designer(engine, 4, Tumble(null), false);
-            Assert.IsTrue(Has(engine, "step.4.fail.tumble"));
+            Assert.IsFalse(Has(engine, "step.4.fail.tumble"), "that card says the rocket is finless, which is not known");
+            Assert.IsTrue(Has(engine, "fail.tumble"), "Round and round! is true of any rocket");
+            Assert.IsFalse(Has(engine, "pre.stability"));
+            StringAssert.AreEqualIgnoringCase("Round and round!", FindKid(engine, "fail.tumble"));
+        }
+
+        static string FindKid(LiveGuideEngine engine, string id)
+        {
+            for (int i = 0; i < engine.Pending.Count; i++)
+                if (engine.Pending[i] != null && engine.Pending[i].Id == id) return GuidePages.Of(engine.Pending[i], false)[0];
+            return null;
         }
 
         [Test]

@@ -96,18 +96,68 @@ namespace Kestrel.Core.Tests.Narration
         }
 
         [Test]
-        public void Picker_OrdersByClaimsThenManifestOrder_AndNullFactsOnlyGetNeutral()
+        public void Picker_OrdersByClaimsThenClipId_AndNullFactsOnlyGetNeutral()
         {
             var a = Tagged("a", 1); var b = Tagged("b", 3); var c = Tagged("c", 3); var n = new NarrationTake { Id = "n", Neutral = true, Tagged = true };
-            var list = new List<NarrationTake> { a, n, b, c };
+            var list = new List<NarrationTake> { a, n, c, b };
             var f = NarrationFacts.From(Design.FromJson(StarterDesign("m3")), null);
             var order = NarrationPicker.Order(list, f);
-            CollectionAssert.AreEqual(new[] { 2, 3, 0, 1 }, order, "claims desc, ties in manifest order, neutral last");
+            CollectionAssert.AreEqual(new[] { 3, 2, 0, 1 }, order, "claims desc, ties by clip id (b before c though c is first in the file), neutral last");
             CollectionAssert.AreEqual(new[] { 1 }, NarrationPicker.Order(list, null), "null facts: neutral only");
             Assert.AreEqual(-1, NarrationPicker.Pick(new List<NarrationTake> { a }, null, 0));
-            Assert.AreEqual(2, NarrationPicker.Pick(list, f, 0));
-            Assert.AreEqual(3, NarrationPicker.Pick(list, f, 1));
-            Assert.AreEqual(2, NarrationPicker.Pick(list, f, 4), "the cursor wraps");
+            Assert.AreEqual(3, NarrationPicker.Pick(list, f, 0));
+            Assert.AreEqual(2, NarrationPicker.Pick(list, f, 1));
+            Assert.AreEqual(3, NarrationPicker.Pick(list, f, 4), "the cursor wraps");
+        }
+
+        [Test]
+        public void Picker_TiesUseOrdinalIdCompare()
+        {
+            // Ordinal: upper case sorts before lower case and "x.10" before "x.2"; culture rules would not.
+            var list = new List<NarrationTake> { Tagged("x.2", 1), Tagged("x.10", 1), Tagged("b", 1), Tagged("B", 1) };
+            var f = NarrationFacts.From(Design.FromJson(StarterDesign("m3")), null);
+            var ids = NarrationPicker.Order(list, f).Select(i => list[i].Id).ToArray();
+            CollectionAssert.AreEqual(new[] { "B", "b", "x.10", "x.2" }, ids);
+        }
+
+        [Test]
+        public void ReorderingTheShippedManifest_NeverChangesThePick()
+        {
+            LoadManifest();
+            var byEvent = new Dictionary<string, List<NarrationTake>>();
+            foreach (var t in takes)
+            {
+                if (string.IsNullOrEmpty(t.Event)) continue;
+                if (!byEvent.TryGetValue(t.Event, out var l)) byEvent[t.Event] = l = new List<NarrationTake>();
+                l.Add(t);
+            }
+            var rng = new Random(377);
+            int compared = 0, ties = 0;
+            foreach (var (label, raw) in AllDesigns())
+                foreach (var site in Sites)
+                {
+                    var launch = NarrationFacts.From(Design.FromJson(raw), site);
+                    for (int lit = 0; lit <= Math.Max(1, launch.Stages); lit++)
+                    {
+                        var facts = lit == 0 ? launch : launch.WithLit(lit);
+                        foreach (var kv in byEvent)
+                        {
+                            var file = kv.Value;
+                            var reversed = Enumerable.Reverse(file).ToList();
+                            var shuffled = file.OrderBy(_ => rng.Next()).ToList();
+                            var want = NarrationPicker.Order(file, facts).Select(i => file[i].Id).ToList();
+                            CollectionAssert.AreEqual(want, NarrationPicker.Order(reversed, facts).Select(i => reversed[i].Id).ToList(), label + " " + site + " " + kv.Key + " reversed");
+                            CollectionAssert.AreEqual(want, NarrationPicker.Order(shuffled, facts).Select(i => shuffled[i].Id).ToList(), label + " " + site + " " + kv.Key + " shuffled");
+                            for (int cursor = 0; cursor < want.Count; cursor++)
+                                Assert.AreEqual(file[NarrationPicker.Pick(file, facts, cursor)].Id, reversed[NarrationPicker.Pick(reversed, facts, cursor)].Id);
+                            var elig = file.Where(t => NarrationRequires.Eligible(t, facts)).ToList();
+                            if (elig.GroupBy(t => t.Claims).Any(g => g.Count() > 1)) ties++;
+                            compared++;
+                        }
+                    }
+                }
+            Assert.Greater(compared, 100);
+            Assert.Greater(ties, 0, "the shipped manifest has ties, so the test really exercises the tie-break");
         }
 
         static NarrationTake Tagged(string id, int claims)
@@ -191,6 +241,16 @@ namespace Kestrel.Core.Tests.Narration
                 foreach (var take in takes.Where(t => t.Requires.Any(r => r.Key == "fairing.halves")))
                     Assert.IsFalse(NarrationRequires.Eligible(take, facts), label + " " + take.Id);
             }
+        }
+
+        [Test]
+        public void FairingHalvesIsNeverSet_TheDesignDoesNotSayHowItsFairingSplits()
+        {
+            // Design.fairing carries diameter, length, material and jettison altitude; data/fairings.json adds shape.
+            // None of them says how the shell splits (the two halves in FlightStageShow are a picture choice).
+            foreach (var (label, raw) in AllDesigns())
+                foreach (var site in Sites)
+                    Assert.IsFalse(NarrationFacts.From(Design.FromJson(raw), site).TryGet("fairing.halves", out _), label);
         }
 
         [Test]

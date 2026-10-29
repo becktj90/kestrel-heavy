@@ -4,8 +4,9 @@ namespace Kestrel.Core.Flight.Narration
 {
     /// <summary>
     /// Picks the take to speak. Only eligible takes (see <see cref="NarrationRequires"/>) are candidates, ordered
-    /// by most claims first and then by manifest order, so the most specific true line is heard first and the
-    /// generic ones are the rotation. The caller keeps a cursor per event and lit stage and walks the ordered list.
+    /// by most claims first and then by clip id (ordinal string compare), so the most specific true line is heard
+    /// first, the generic ones are the rotation, and reordering the manifest never changes what plays. The caller
+    /// keeps a cursor per event and lit stage and walks the ordered list.
     /// </summary>
     public static class NarrationPicker
     {
@@ -16,15 +17,23 @@ namespace Kestrel.Core.Flight.Narration
             if (takes == null) return list;
             for (int i = 0; i < takes.Count; i++)
                 if (NarrationRequires.Eligible(takes[i], facts)) list.Add(i);
-            // Stable insertion sort: claims descending, manifest order kept for ties.
+            // Insertion sort: claims descending, then clip id ordinal ascending. Equal ids (never in a valid
+            // manifest) keep manifest order so the result is still deterministic.
             for (int i = 1; i < list.Count; i++)
             {
                 int cur = list[i];
                 int j = i - 1;
-                while (j >= 0 && takes[list[j]].Claims < takes[cur].Claims) { list[j + 1] = list[j]; j--; }
+                while (j >= 0 && Before(takes[cur], takes[list[j]])) { list[j + 1] = list[j]; j--; }
                 list[j + 1] = cur;
             }
             return list;
+        }
+
+        /// <summary>True when <paramref name="a"/> must be heard before <paramref name="b"/>.</summary>
+        static bool Before(NarrationTake a, NarrationTake b)
+        {
+            if (a.Claims != b.Claims) return a.Claims > b.Claims;
+            return string.CompareOrdinal(a.Id ?? "", b.Id ?? "") < 0;
         }
 
         /// <summary>The take at <paramref name="cursor"/> (wrapping) in the ordered eligible list, or -1.</summary>

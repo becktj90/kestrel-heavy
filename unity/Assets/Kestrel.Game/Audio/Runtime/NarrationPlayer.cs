@@ -75,7 +75,7 @@ namespace Kestrel.Game.Audio
                 color?.Reset();
                 return;
             }
-            color?.OnEvent(type);
+            color?.OnEvent(type, simTime);
             // Facts unknown (no launch gave them) means only the neutral takes can play.
             var cue = NarrationRoute.Route(type, stage, strapOns, facts != null ? facts.Stages : 0);
             if (cue.Silent) return;
@@ -153,9 +153,10 @@ namespace Kestrel.Game.Audio
             for (int i = 0; i < due.Count; i++)
             {
                 var cue = due[i];
-                bool recovery = cue.EventId == ColorWindows.Recovery;
+                // Recovery, and ascent on a rocket with no MECO, only take a line that ends before the next call.
+                bool mustFit = cue.MustFit;
                 var offer = schedule.Offer(catalog, cue.EventId, facts, 0, CommentaryMode.Full, (double)Time.unscaledTime,
-                    line => !recovery || ColorWindows.RecoveryFits(cue.SecToNextCall, line.Duration));
+                    line => !mustFit || ColorWindows.RecoveryFits(cue.SecToNextCall, line.Duration));
                 if (!offer.Started) continue;
                 color.MarkDone(cue.EventId);
                 StartVoice(offer.Resource);

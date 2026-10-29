@@ -295,6 +295,12 @@ namespace Kestrel.Game.Guide
                 engine.Offer("guide.pre", "stability", null, stepId, false);
                 return;
             }
+            // Fins unknown: fail closed to the neutral tumble line ("Round and round!"), true of any rocket.
+            if (variant == UnknownTumble)
+            {
+                engine.Offer("abort", "tumble", null, stepId, false);
+                return;
+            }
             var tokens = VariantTokens(variant, check, report);
             if (tokens == null && NeedsTokens(variant)) return;
             engine.Offer("guide.step", variant, tokens, stepId, false);
@@ -479,6 +485,7 @@ namespace Kestrel.Game.Guide
         }
 
         const string FinnedTumble = "4.pre.stability";
+        const string UnknownTumble = "4.tumble.neutral";
 
         static string Variant(int step, StepCheck check, StepperReport report)
         {
@@ -498,8 +505,9 @@ namespace Kestrel.Game.Guide
                     if (Has(check, "payload-doesnt-fit") || Has(check, "fairing-narrow")) return "4.fail.fit";
                     if (Has(check, "tumble") || Has(check, "unstable"))
                         // "Top-heavy and finless" is only true of a design with no fins. A finned one gets pre.stability.
-                        // An unknown design (the report did not carry it) keeps the old line.
-                        return report != null && report.Finless == false ? FinnedTumble : "4.fail.tumble";
+                        // An unknown design (the report did not carry it) fails closed to the neutral tumble line.
+                        return report == null || report.Finless == null ? UnknownTumble
+                            : report.Finless == true ? "4.fail.tumble" : FinnedTumble;
                     return "";
                 case 5:
                     if (Has(check, "recovery-skip")) return "5.skip";

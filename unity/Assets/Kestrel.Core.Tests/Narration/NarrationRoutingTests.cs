@@ -156,7 +156,7 @@ namespace Kestrel.Core.Tests.Narration
 
         static CallSchedule Calls(double meco, params double[] calls)
         {
-            var s = new CallSchedule { Meco = meco };
+            var s = new CallSchedule { Meco = meco, HasMeco = !double.IsNaN(meco) };
             foreach (var c in calls) s.AddCall(c);
             return s;
         }
@@ -175,6 +175,138 @@ namespace Kestrel.Core.Tests.Narration
             late.UseCalls(Calls(150, 60, 150));
             late.OnEvent("maxq");
             CollectionAssert.DoesNotContain(Poll(late, 139, 40000), "color.ascent", "11 s to MECO is too late");
+        }
+
+        // ---- color.ascent on a rocket with no MECO (solid first stage) ---------------------------------
+
+        static CallSchedule Solid(double burnout, double maxq, params double[] calls)
+        {
+            var s = new CallSchedule { Meco = burnout, HasMeco = false, MaxQ = maxq };
+            foreach (var c in calls) s.AddCall(c);
+            return s;
+        }
+
+        static ColorCue? Ascent(ColorDirector d, double t)
+        {
+            var cues = new List<ColorCue>();
+            d.Poll(t, 9000, cues);
+            foreach (var c in cues) if (c.EventId == ColorWindows.Ascent) return c;
+            return null;
+        }
+
+        [Test]
+        public void Director_NoMeco_AscentOpensTenSecondsAfterMaxQ_AndMustFitBeforeTheNextCall()
+        {
+            // Burnout 4 s after max-Q: the MECO rule (12 s before MECO) could never open; the time rule does.
+            var calls = Solid(36, 32, 0, 36, 120);
+            var d = new ColorDirector(false);
+            d.UseCalls(calls);
+            Assert.IsNull(Ascent(d, 31), "before max-Q");
+            d.OnEvent("maxq", 31.5);
+            Assert.IsNull(Ascent(d, 41.4), "9.9 s after max-Q");
+            var cue = Ascent(d, 41.9);
+            Assert.IsNotNull(cue, "the next poll, 10.4 s after max-Q and past the burnout");
+            Assert.IsTrue(cue.Value.MustFit, "the line must end before the next call");
+            Assert.AreEqual(120 - 41.9, cue.Value.SecToNextCall, 1e-9);
+            Assert.IsFalse(ColorWindows.AscentNoMecoOk(9.999));
+            Assert.IsTrue(ColorWindows.AscentNoMecoOk(10));
+            Assert.IsTrue(ColorWindows.RecoveryFits(cue.Value.SecToNextCall, 9.5));
+            d.MarkDone(ColorWindows.Ascent);
+            Assert.IsNull(Ascent(d, 50), "once only");
+        }
+
+        [Test]
+        public void Director_NoMeco_AClipThatRunsIntoTheNextCallIsRefused()
+        {
+            var d = new ColorDirector(false);
+            d.UseCalls(Solid(36, 32, 36, 48));
+            d.OnEvent("maxq", 32);
+            var cue = Ascent(d, 42);
+            Assert.IsNotNull(cue);
+            Assert.IsTrue(cue.Value.MustFit);
+            Assert.AreEqual(6, cue.Value.SecToNextCall, 1e-9);
+            Assert.IsFalse(ColorWindows.RecoveryFits(cue.Value.SecToNextCall, 8), "an 8 s exchange would sit on the 48 s call");
+            Assert.IsTrue(ColorWindows.RecoveryFits(cue.Value.SecToNextCall, 6));
+        }
+
+        [Test]
+        public void Director_NoMeco_UsesTheNominalMaxQ_WhenTheEventHadNoTime_AndFailsClosedWithNeither()
+        {
+            var nominal = new ColorDirector(false);
+            nominal.UseCalls(Solid(36, 30, 120));
+            nominal.OnEvent("maxq");
+            Assert.IsNull(Ascent(nominal, 39.9));
+            Assert.IsNotNull(Ascent(nominal, 40.5), "nominal max-Q 30 s + 10 s");
+
+            var polled = new ColorDirector(false);
+            polled.UseCalls(Solid(36, double.NaN, 120));
+            Ascent(polled, 33);
+            polled.OnEvent("maxq");
+            Assert.IsNull(Ascent(polled, 42.9));
+            Assert.IsNotNull(Ascent(polled, 43.4), "the last polled time stands in for the event time");
+
+            var blind = new ColorDirector(false);
+            blind.UseCalls(Solid(36, double.NaN, 120));
+            blind.OnEvent("maxq");
+            Assert.IsNull(Ascent(blind, 200), "no max-Q time at all: no window");
+        }
+
+        [Test]
+        public void Director_NoMeco_EntryClosesTheWindow_AndAMecoRocketKeepsTheMecoRule()
+        {
+            var calls = Solid(36, 30, 400);
+            calls.Entry = 60;
+            var d = new ColorDirector(false);
+            d.UseCalls(calls);
+            d.OnEvent("maxq", 30);
+            Assert.IsNull(Ascent(d, 61), "after the entry burn");
+
+            var liquid = new ColorDirector(false);
+            liquid.UseCalls(Calls(150, 150));
+            liquid.OnEvent("maxq", 60);
+            var cue = Ascent(liquid, 61);
+            Assert.IsNotNull(cue, "a MECO rocket opens right after max-Q");
+            Assert.IsFalse(cue.Value.MustFit, "the MECO window already keeps 12 s clear");
+            Assert.IsNull(Ascent(liquid, 139), "and still closes 12 s before MECO, whatever max-Q + 10 s says");
+        }
+
+        [Test]
+        public void SolidFirstStages_HaveNoMeco_AndStillOpenColorAscent()
+        {
+            // No shipped template or preset flies a solid first stage today, so the golden solid sounding fixture
+            // stands in, plus any shipped one that appears later.
+            var cat = Golden.Catalog;
+            var designs = new List<Kestrel.Core.Vehicle.Design> { Golden.Fixture(Golden.SolidSoundingFixture) };
+            var dir = Path.Combine(Golden.Root, "web", "js", "data", "templates");
+            var files = new List<string>(Directory.GetFiles(dir, "*.json"));
+            files.Sort(System.StringComparer.Ordinal);
+            foreach (var f in files) designs.Add(Kestrel.Core.Vehicle.Design.FromJson(Kestrel.Core.Json.MiniJson.ParseObject(File.ReadAllText(f))));
+            designs.AddRange(cat.Presets);
+            int solids = 0;
+            foreach (var design in designs)
+            {
+                if (design.stages == null || design.stages.Count == 0 || design.stages[0].propellant != "solid-apcp") continue;
+                var tl = Kestrel.Core.Timeline.TimelineGenerator.Generate(cat, design, Kestrel.Core.Timeline.Pad.For(cat, design),
+                    new Kestrel.Core.Timeline.Mission { mode = "standard" }, 1);
+                var calls = CallSchedule.From(tl);
+                if (double.IsNaN(calls.MaxQ)) continue;
+                solids++;
+                Assert.IsFalse(calls.HasMeco, design.id + ": a solid burns out, it has no MECO");
+                var d = new ColorDirector(false);
+                d.UseCalls(calls);
+                d.OnEvent("maxq", calls.MaxQ);
+                bool opened = false;
+                for (double t = calls.MaxQ; t < calls.MaxQ + 600 && !opened; t += 0.5)
+                {
+                    var cue = Ascent(d, t);
+                    if (cue == null) continue;
+                    Assert.GreaterOrEqual(t, calls.MaxQ + ColorWindows.AscentAfterMaxQSec - 1e-9, design.id);
+                    Assert.IsTrue(cue.Value.MustFit, design.id);
+                    opened = true;
+                }
+                Assert.IsTrue(opened, design.id + ": color.ascent is not dropped on a rocket with no MECO");
+            }
+            Assert.Greater(solids, 0, "the solid fixture has a max-Q");
         }
 
         [Test]
@@ -288,6 +420,76 @@ namespace Kestrel.Core.Tests.Narration
             }
             Assert.AreEqual(1, pool.VariantCount("tumble", "stability", finless), "only the finless line ties for best");
             Assert.AreEqual(2, pool.VariantCount("tumble", "stability", finned), "the two neutral lines");
+        }
+
+        // ---- the debrief pool's engine-out cluster gate ------------------------------------------------
+
+        static FlightFacts EngineOut(int enginesOnFailedStage, bool redundant = false, int engineCount = 9)
+            => new FlightFacts
+            {
+                RedundantAvionics = redundant,
+                EngineCount = engineCount,
+                Failure = new FailureEvent { kind = "engine-out", cause = "engine-out", value = 1, limit = enginesOnFailedStage, t = 48, stage = 1 },
+            };
+
+        [Test]
+        public void Pool_ClusterEngineOutNeedsThreeEnginesOnTheFailedStage()
+        {
+            var pool = NarrationPool.Load(Golden.Root);
+            foreach (int n in new[] { 3, 4, 7, 9, 27 })
+            {
+                var facts = EngineOut(n);
+                CollectionAssert.Contains(facts.DesignTags, FlightFacts.ClusterOutTag, n + " engines");
+                Assert.AreEqual(n, facts.FailedStageEngines);
+                for (ulong seed = 0; seed < 40; seed++)
+                    Assert.AreEqual("narr.engine.out.2", pool.Pick("engine-out", "engine-out", facts.DesignTags, seed).Id,
+                        "the cluster take claims the engine count, so it is the most specific true line (" + n + " engines, seed " + seed + ")");
+                Assert.AreEqual(1, pool.VariantCount("engine-out", "engine-out", facts.DesignTags));
+            }
+        }
+
+        [Test]
+        public void Pool_FewerThanThreeEnginesFallBackToThePlainEngineOutTake()
+        {
+            var pool = NarrationPool.Load(Golden.Root);
+            foreach (var (n, count) in new[] { (0, 1), (1, 1), (2, 2), (2, 9) })
+            {
+                var facts = EngineOut(n, false, count);
+                CollectionAssert.DoesNotContain(facts.DesignTags, FlightFacts.ClusterOutTag, n + " engines");
+                for (ulong seed = 0; seed < 40; seed++)
+                {
+                    var line = pool.Pick("engine-out", "engine-out", facts.DesignTags, seed);
+                    Assert.IsNotNull(line, n + " engines still hear an engine-out line");
+                    Assert.AreEqual("narr.engine.out.1", line.Id, n + " engines, seed " + seed);
+                    StringAssert.DoesNotContain("cluster", line.Kid.ToLowerInvariant());
+                }
+            }
+        }
+
+        [Test]
+        public void Pool_ClusterTagOnlyComesFromAnEngineOut()
+        {
+            var facts = new FlightFacts { EngineCount = 9, Failure = new FailureEvent { kind = "engine-overpressure", limit = 9 } };
+            CollectionAssert.DoesNotContain(facts.DesignTags, FlightFacts.ClusterOutTag);
+            Assert.AreEqual(0, facts.FailedStageEngines);
+            Assert.AreEqual(0, new FlightFacts { EngineCount = 9 }.FailedStageEngines, "no failure, no count");
+        }
+
+        [Test]
+        public void Pool_EveryEngineOutCaseKeepsATrueLine()
+        {
+            var pool = NarrationPool.Load(Golden.Root);
+            foreach (bool redundant in new[] { false, true })
+                foreach (bool finless in new[] { false, true })
+                    for (int n = 0; n <= 12; n++)
+                    {
+                        var facts = EngineOut(n, redundant, n);
+                        facts.Finless = finless;
+                        Assert.GreaterOrEqual(pool.VariantCount("engine-out", "engine-out", facts.DesignTags), 1, "n " + n + " redundant " + redundant);
+                        var line = pool.Pick("engine-out", "engine-out", facts.DesignTags, 7);
+                        Assert.IsNotNull(line);
+                        if (n < FlightFacts.ClusterOutMinEngines) Assert.AreNotEqual("narr.engine.out.2", line.Id, "n " + n);
+                    }
         }
 
         [Test]
