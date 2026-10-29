@@ -1868,31 +1868,6 @@
    "neutralReason": "fairing event only fires when the design has a fairing"
   },
   {
-   "id": "host/fairing.2",
-   "event": "fairing",
-   "channel": "host",
-   "text": "Fairing separation. Those two halves protected the payload through the thick air.",
-   "spokenText": "Fairing separation. Those two halves protected the payload through the thick air.",
-   "voice": "Sarah",
-   "voiceId": "EXAVITQu4vr4xnSDxMaL",
-   "voiceDir": "host",
-   "model": "eleven_multilingual_v2",
-   "file": "host/fairing.2.mp3",
-   "durationSec": 5.016,
-   "lufs": -16.43,
-   "truePeakDb": -3.2,
-   "normalization": "linear",
-   "hash": "8238b5dbcdb8",
-   "sha256": "2e937c3b16c434b028bd377316becf54935fdc76ec501fdcf759905e7e8ce449",
-   "requires": {
-    "fairing": true,
-    "fairing.halves": 2
-   },
-   "claims": [
-    "fairing.halves"
-   ]
-  },
-  {
    "id": "host/fairing.3",
    "event": "fairing",
    "channel": "host",
