@@ -77,7 +77,7 @@
       "id": "narr.engine.out.2",
       "kind": "engine-out",
       "when": "any",
-      "design": "any",
+      "design": "engine-out-cluster",
       "kid": "The cluster lost {n0} engine at T+{t} s. {n0lim} were lit.",
       "eng": "engine-out value {value} of limit {limit}."
     },

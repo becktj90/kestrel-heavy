@@ -20,6 +20,8 @@ namespace Kestrel.Slice
         public SeededWind Wind;
         public bool HasLatitude;
         public double Latitude;
+        /// <summary>The briefing's launch site id (sites.json), for narration lines that name the pad. Null when no briefing loaded.</summary>
+        public string SiteId;
         /// <summary>Campaign hop this launch is flying. Null for a free build.</summary>
         public CampaignMission Mission;
     }
@@ -77,6 +79,7 @@ namespace Kestrel.Slice
             {
                 hook.HasLatitude = true;
                 hook.Latitude = card.Site.LatitudeDeg;
+                hook.SiteId = card.Site.Id;
             }
             return hook;
         }

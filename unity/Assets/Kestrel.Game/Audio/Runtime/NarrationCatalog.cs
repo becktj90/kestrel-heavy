@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kestrel.Core.Flight.Narration;
 using Kestrel.Core.Json;
 
 namespace Kestrel.Game.Audio
@@ -10,11 +11,15 @@ namespace Kestrel.Game.Audio
         public readonly string Relative;
         public readonly string Channel;
         public readonly float Duration;
+        /// <summary>The clip's fact tags and layer. Null for a line built by hand (tests), which is never picked by facts.</summary>
+        public readonly NarrationTake Take;
 
-        public NarrationLine(string eventId, string resource, string relative, string channel, float duration)
+        public NarrationLine(string eventId, string resource, string relative, string channel, float duration, NarrationTake take = null)
         {
-            EventId = eventId; Resource = resource; Relative = relative; Channel = channel; Duration = duration;
+            EventId = eventId; Resource = resource; Relative = relative; Channel = channel; Duration = duration; Take = take;
         }
+
+        public bool IsColor => Take != null && Take.IsColor;
     }
 
     /// <summary>
@@ -26,6 +31,7 @@ namespace Kestrel.Game.Audio
         public static readonly NarrationCatalog Empty = new NarrationCatalog();
 
         readonly Dictionary<string, List<NarrationLine>> byEvent = new Dictionary<string, List<NarrationLine>>();
+        readonly Dictionary<string, List<NarrationTake>> takesByEvent = new Dictionary<string, List<NarrationTake>>();
         readonly List<NarrationLine> all = new List<NarrationLine>();
 
         public int EventCount => byEvent.Count;
@@ -48,13 +54,16 @@ namespace Kestrel.Game.Audio
                 if (string.IsNullOrEmpty(ev) || string.IsNullOrEmpty(file)) continue;
                 var relative = file.Replace('\\', '/');
                 var bare = relative.EndsWith(".mp3") ? relative.Substring(0, relative.Length - 4) : relative;
-                var line = new NarrationLine(ev, "Narration/" + bare, relative, o.Str("channel"), (float)o.Num("durationSec"));
+                var take = NarrationTake.FromJson(o);
+                var line = new NarrationLine(ev, "Narration/" + bare, relative, o.Str("channel"), (float)o.Num("durationSec"), take);
                 if (!cat.byEvent.TryGetValue(ev, out var list))
                 {
                     list = new List<NarrationLine>();
                     cat.byEvent[ev] = list;
+                    cat.takesByEvent[ev] = new List<NarrationTake>();
                 }
                 list.Add(line);
+                cat.takesByEvent[ev].Add(take);
                 cat.all.Add(line);
             }
             return cat;
@@ -70,6 +79,19 @@ namespace Kestrel.Game.Audio
             if (index < 0) index = 0;
             line = list[index % list.Count];
             return true;
+        }
+
+        /// <summary>
+        /// The lines of an event that are true for the facts, most specific first (see <see cref="NarrationPicker"/>).
+        /// Null facts leave only the neutral lines. Empty when the event has none.
+        /// </summary>
+        public List<NarrationLine> Eligible(string eventId, NarrationFacts facts)
+        {
+            var result = new List<NarrationLine>();
+            if (string.IsNullOrEmpty(eventId) || !byEvent.TryGetValue(eventId, out var lines)) return result;
+            var order = NarrationPicker.Order(takesByEvent[eventId], facts);
+            for (int i = 0; i < order.Count; i++) result.Add(lines[order[i]]);
+            return result;
         }
 
         public float Duration(string resource)
