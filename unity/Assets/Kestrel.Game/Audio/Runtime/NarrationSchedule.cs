@@ -104,9 +104,16 @@ namespace Kestrel.Game.Audio
                 Busy = true;
                 return new NarrationOffer(NarrationOutcome.Started, Current, false, true, null);
             }
-            // A call with a check (a pre-launch call that must end before T-0) is dropped when its take does not pass.
-            if (accept != null && !accept(line)) return Dropped("no room");
-            Bump(key);
+            // A call with a check (a pre-launch call that must end before T-0) takes the next true take, in rotation, that
+            // passes it, and is dropped when none does. Every eligible take is true, so skipping a long one never lies.
+            int skip = 0;
+            if (accept != null)
+            {
+                while (skip < lines.Count && !accept(lines[(cursor + skip) % lines.Count])) skip++;
+                if (skip == lines.Count) return Dropped("no room");
+                line = lines[(cursor + skip) % lines.Count];
+            }
+            for (int k = 0; k <= skip; k++) Bump(key);
             if (Busy && !id.StartsWith("abort") && !CurrentIsColor)
             {
                 Pending = line.Resource;

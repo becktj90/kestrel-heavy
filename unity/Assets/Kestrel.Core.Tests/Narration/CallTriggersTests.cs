@@ -3,7 +3,7 @@ using System.IO;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Flight.Narration;
 using Kestrel.Core.Timeline;
-using Kestrel.Game.Audio;
+using Kestrel.Core.Json;
 using NUnit.Framework;
 
 namespace Kestrel.Core.Tests.Narration
@@ -188,23 +188,6 @@ namespace Kestrel.Core.Tests.Narration
             Assert.IsFalse(t.Next(10 + CallTriggers.FreshSec + 0.01, false, false, out _), "past its moment it is dropped, not said late");
         }
 
-        [Test]
-        public void Schedule_ACallThatDoesNotFitIsDropped_AndDoesNotStepOnThePlayingCall()
-        {
-            var cat = NarrationCatalog.Parse(File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Game", "Audio", "Runtime", "Resources", "Narration", "manifest.json")));
-            var s = new NarrationSchedule();
-            var none = s.Offer(cat, "pad", null, 0, CommentaryMode.Full, 0, line => line.Duration <= 0.1);
-            Assert.AreEqual(NarrationOutcome.Dropped, none.Outcome);
-            Assert.AreEqual("no room", none.Reason);
-            Assert.IsFalse(s.Busy);
-            var first = s.Offer(cat, "pad", null, 0, CommentaryMode.Full, 0, line => line.Duration <= 11.5);
-            Assert.IsTrue(first.Started);
-            var again = new NarrationSchedule();
-            Assert.AreEqual(first.Resource, again.Offer(cat, "pad", null, 0, CommentaryMode.Full, 0).Resource, "a dropped offer does not move the cursor");
-            var queued = s.Offer(cat, "ignition", null, 1, CommentaryMode.Full, 1);
-            Assert.AreEqual(NarrationOutcome.Queued, queued.Outcome, "calls still wait for the playing call");
-        }
-
         // ---- the truth comes from the timeline ----
 
         static List<Kestrel.Core.Vehicle.Design> Designs()
@@ -313,23 +296,41 @@ namespace Kestrel.Core.Tests.Narration
         {
             foreach (var path in Manifests())
             {
-                var cat = NarrationCatalog.Parse(File.ReadAllText(path));
+                var clips = Clips(path);
                 foreach (var d in Designs())
                 {
                     var s = CallSchedule.From(Generate(d));
                     var facts = NarrationFacts.From(d, null);
-                    foreach (var line in cat.Eligible(CallTriggers.Pad, facts))
-                        Assert.LessOrEqual(line.Duration, -LiftoffHandoff.OpenAt - CallTriggers.LiftoffMarginSec, path + " " + line.Resource);
+                    foreach (var line in Eligible(clips, CallTriggers.Pad, facts))
+                        Assert.LessOrEqual(line.sec, -LiftoffHandoff.OpenAt - CallTriggers.LiftoffMarginSec, path + " " + line.take.Id);
                     foreach (int n in s.PressStages)
-                        foreach (var line in cat.Eligible(CallTriggers.TankPress, facts.WithLit(n)))
-                            Assert.LessOrEqual(line.Duration, -LiftoffHandoff.OpenAt - CallTriggers.LiftoffMarginSec, path + " " + line.Resource);
+                        foreach (var line in Eligible(clips, CallTriggers.TankPress, facts.WithLit(n)))
+                            Assert.LessOrEqual(line.sec, -LiftoffHandoff.OpenAt - CallTriggers.LiftoffMarginSec, path + " " + line.take.Id);
                     if (!s.HasEntry) continue;
                     // Entry fires only with a picked landing; then a true take exists. Without one nothing is true (and nothing fires).
-                    int entryTakes = cat.Eligible(CallTriggers.Entry, facts).Count;
+                    int entryTakes = Eligible(clips, CallTriggers.Entry, facts).Count;
                     if (NarrationFacts.RecoveryOf(d) != "none") Assert.Greater(entryTakes, 0, path + " " + d.id + ": an entry burn with no true take");
                     else Assert.AreEqual(0, entryTakes, path + " " + d.id + ": no landing picked, no entry take is true");
                 }
             }
+        }
+
+        static List<(NarrationTake take, double sec)> Clips(string path)
+        {
+            var list = new List<(NarrationTake, double)>();
+            foreach (JsonObject c in MiniJson.ParseObject(File.ReadAllText(path)).Arr("clips"))
+                list.Add((NarrationTake.FromJson(c), c.Num("durationSec")));
+            return list;
+        }
+
+        /// <summary>The takes the picker may play for an event, the same way the game's catalog orders them.</summary>
+        static List<(NarrationTake take, double sec)> Eligible(List<(NarrationTake take, double sec)> clips, string eventId, NarrationFacts facts)
+        {
+            var mine = clips.FindAll(c => c.take.Event == eventId);
+            var takes = mine.ConvertAll(c => c.take);
+            var result = new List<(NarrationTake, double)>();
+            foreach (int i in NarrationPicker.Order(takes, facts)) result.Add(mine[i]);
+            return result;
         }
 
         static IEnumerable<string> Manifests()

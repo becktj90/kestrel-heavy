@@ -204,5 +204,31 @@ namespace Kestrel.Game.Audio.Tests
             Assert.AreEqual(2, cat.Eligible("color.ascent", null).Count);
             Assert.AreEqual(0, cat.Eligible("color.coast", Facts(2)).Count);
         }
+
+        [Test]
+        public void ACallThatDoesNotFitIsDropped_AndDoesNotStepOnThePlayingCall()
+        {
+            // Pre-launch triggers offer a call with a "must end before T-0" filter. No take fitting is a drop, not a queue.
+            var cat = NarrationCatalog.Parse(@"{ ""clips"": [
+  { ""id"": ""mc/pad.1"", ""event"": ""pad"", ""file"": ""mc/pad.1.mp3"", ""channel"": ""mc"", ""durationSec"": 9.0, ""neutral"": true },
+  { ""id"": ""mc/pad.2"", ""event"": ""pad"", ""file"": ""mc/pad.2.mp3"", ""channel"": ""mc"", ""durationSec"": 4.0, ""neutral"": true },
+  { ""id"": ""mc/ignition.1"", ""event"": ""ignition"", ""file"": ""mc/ignition.1.mp3"", ""channel"": ""mc"", ""durationSec"": 2.0, ""neutral"": true }
+] }");
+            var s = new NarrationSchedule();
+            var none = s.Offer(cat, "pad", Facts(2), 0, CommentaryMode.Full, 0, line => line.Duration <= 0.1);
+            Assert.AreEqual(NarrationOutcome.Dropped, none.Outcome);
+            Assert.AreEqual("no room", none.Reason);
+            Assert.IsFalse(s.Busy);
+            var first = s.Offer(cat, "pad", Facts(2), 0, CommentaryMode.Full, 0, line => line.Duration <= 5);
+            Assert.IsTrue(first.Started);
+            StringAssert.Contains("pad.2", first.Resource, "the long take is skipped for the one that ends in time");
+            var fresh = new NarrationSchedule();
+            Assert.IsTrue(fresh.Offer(cat, "pad", Facts(2), 0, CommentaryMode.Full, 0, line => line.Duration <= 0.1).Outcome == NarrationOutcome.Dropped);
+            var after = fresh.Offer(cat, "pad", Facts(2), 0, CommentaryMode.Full, 0);
+            Assert.AreEqual(new NarrationSchedule().Offer(cat, "pad", Facts(2), 0, CommentaryMode.Full, 0).Resource, after.Resource,
+                "a dropped offer does not move the cursor");
+            var queued = s.Offer(cat, "ignition", Facts(2), 1, CommentaryMode.Full, 1);
+            Assert.AreEqual(NarrationOutcome.Queued, queued.Outcome, "calls still wait for the playing call");
+        }
     }
 }
