@@ -57,7 +57,7 @@ namespace Kestrel.Capture.Tests
                 seams.ViewCamera = cam;
                 seams.Gate = mr;
                 var f = built.fairing;
-                seams.Init(Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic), Kestrel.Kit.KitBudgets.Medium);
+                seams.Init(Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic, f.JointRadius), Kestrel.Kit.KitBudgets.Medium);
                 var show = rocket.AddComponent<FlightStageShow>();
                 show.Prepare(catalog, design, built, null, view, seams);
                 show.Arm(null, false);

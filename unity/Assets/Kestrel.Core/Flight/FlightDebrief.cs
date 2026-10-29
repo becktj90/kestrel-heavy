@@ -49,12 +49,41 @@ namespace Kestrel.Core.Flight
         public FailureEvent Failure;
         public AscentMedal TimingMedal;
         public bool RedundantAvionics;
+        /// <summary>The flown design has no fins (design.fins false). False when unknown, so a "finless" line never plays by accident.</summary>
+        public bool Finless;
         public int EngineCount;
         public double ApoKm;
         public double GoalKm;
         public double RequiredMps;
         /// <summary>F4: why an intact flight missed (<see cref="MissReason.Explain"/>). Null on a pass or a failure event.</summary>
         public MissExplanation Miss;
+
+        /// <summary>
+        /// Every design tag true of the flight: the avionics/engine one, finless when the design has no fins, and
+        /// <see cref="ClusterOutTag"/> when an engine-out hit a stage that had three or more engines lit.
+        /// </summary>
+        public string[] DesignTags
+        {
+            get
+            {
+                var tags = new List<string> { DesignTag };
+                if (Finless) tags.Add("finless");
+                if (FailedStageEngines >= ClusterOutMinEngines) tags.Add(ClusterOutTag);
+                return tags.ToArray();
+            }
+        }
+
+        /// <summary>"The cluster lost an engine" is only true of a stage with at least this many engines.</summary>
+        public const int ClusterOutMinEngines = 3;
+        /// <summary>Design tag of the engine-out line that claims the failed stage's engine count (narr.engine.out.2).</summary>
+        public const string ClusterOutTag = "engine-out-cluster";
+
+        /// <summary>
+        /// Engines lit on the stage that lost one: the engine-out failure's limit. 0 for any other failure or
+        /// when unknown, so the cluster line fails closed.
+        /// </summary>
+        public int FailedStageEngines
+            => Failure != null && Failure.kind == "engine-out" && Failure.limit >= 1 ? (int)Math.Round(Failure.limit) : 0;
 
         public string DesignTag
         {
@@ -284,7 +313,7 @@ namespace Kestrel.Core.Flight
             debrief.MedalsLine = MedalSentence(debrief.Medals);
 
             string narrKind = kind;
-            var line = pool.Pick(narrKind, cause, facts.DesignTag, debrief.Seed);
+            var line = pool.Pick(narrKind, cause, facts.DesignTags, debrief.Seed);
             if (miss != null)
             {
                 debrief.NarratorKid = "";

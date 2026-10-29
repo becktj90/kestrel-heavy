@@ -14,7 +14,8 @@ Assets/Resources/UI/KH_PanelSettings.asset
 Assets/Resources/UI/KH_ShellPanelSettings.asset
 Assets/Resources/Materials/KH_Body.mat
 Assets/Resources/Materials/KH_LitEmission.mat
-Assets/Resources/Materials/KH_Plume.mat"
+Assets/Resources/Materials/KH_Plume.mat
+Assets/Resources/Materials/KH_FxParticle.mat"
 while IFS= read -r p; do
   for f in "unity/$p" "unity/$p.meta"; do
     if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then echo "ok  $f"; else echo "::error::$f is not tracked in git"; fail=1; fi
