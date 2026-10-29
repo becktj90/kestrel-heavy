@@ -116,6 +116,8 @@ namespace Kestrel.Capture.Tests
                     + "; camera trace cover " + tr.x.ToString("0.000") + " pitch aimed " + tr.y.ToString("0.0") + " kept " + tr.z.ToString("0.0") + " frame " + tr.w + " (now " + Time.frameCount + ") nose point vy " + nose.y.ToString("0.000")
                     + " projection shift " + (Camera.main != null ? Camera.main.projectionMatrix.m12.ToString("0.000") : "-"));
             }
+            var recNow = UnityEngine.Object.FindAnyObjectByType<RecoveryShow>();
+            TestContext.WriteLine("hud " + name + ": " + ClockAndCovers() + (recNow != null && recNow.SteerCamera ? "; " + BoosterView(recNow) : ""));
             int distinct = 0;
             var png = FlightCapture.Png(d, Dir, name, n => distinct = n);
             while (png.MoveNext()) yield return png.Current;
@@ -398,6 +400,22 @@ namespace Kestrel.Capture.Tests
         }
 
         /// <summary>AscentHud.TopCover as the flight camera reads it (viewport fraction under the telemetry strip).</summary>
+        /// <summary>The T+ clock face in points (style font size over the app's units per point) and the HUD covers.</summary>
+        static string ClockAndCovers()
+        {
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            if (app == null || app.UiForCapture == null) return "no app";
+            var m = typeof(SliceApp).GetMethod("UnitsPerPoint", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            float upp = m != null ? (float)m.Invoke(app, null) : 0f;
+            var clock = app.UiForCapture.Q<Label>("h-t");
+            var f = typeof(SliceApp).GetField("ascentHud", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var hud = f != null ? f.GetValue(app) as Kestrel.Slice.AscentHud : null;
+            string c = clock == null ? "no clock" : "clock \"" + clock.text + "\" " + clock.resolvedStyle.fontSize.ToString("0.0") + " units / upp "
+                + upp.ToString("0.000") + " = " + (upp > 0f ? clock.resolvedStyle.fontSize / upp : 0f).ToString("0.0") + " pt, box "
+                + clock.resolvedStyle.width.ToString("0") + "x" + clock.resolvedStyle.height.ToString("0") + " units";
+            return c + "; cover top " + (hud != null ? hud.TopCover() : -1f).ToString("0.000") + " bottom " + (hud != null ? hud.BottomCover() : -1f).ToString("0.000");
+        }
+
         static float HudCover()
         {
             var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();

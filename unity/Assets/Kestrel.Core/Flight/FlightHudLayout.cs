@@ -155,6 +155,21 @@ namespace Kestrel.Core.Flight
             return (float)Math.Ceiling(w + ClockPadXPt + 2f);
         }
 
+        /// <summary>
+        /// Portrait header clock face from the header row, never from the clock label. The label is content-sized in that
+        /// row (flex row, no grow), so sizing the face from its own resolved width chased the box down frame after frame:
+        /// "T-00:00.0" never fits a box cut to "T+ 60.0" plus pads, so the face stepped down to the 13 pt floor. Next to
+        /// the panel-scaled header and tabs on a 4:3 iPad (2064x2752, 1032 pt wide) that read tiny (#381 frames). The
+        /// box is the row less what else sits in it (at least the stage chip) and a gap, HeaderPt tall, as in the
+        /// portrait frame's Clock box.
+        /// </summary>
+        public static float HeaderClockFontPt(float rowWidthPt, float siblingsPt)
+        {
+            if (!(rowWidthPt > 8f)) return ClockFontPt(0f, HeaderPt);
+            float others = siblingsPt > StageChipPt ? siblingsPt : StageChipPt;
+            return ClockFontPt(Math.Max(44f, rowWidthPt - others - GapPt), HeaderPt);
+        }
+
         public static float ClockFontPt(float boxW, float boxH)
         {
             float font = 28f;

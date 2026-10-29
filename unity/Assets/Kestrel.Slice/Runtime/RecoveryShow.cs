@@ -148,16 +148,62 @@ namespace Kestrel.Slice
             AimInset(pic.Inset && !SteerCamera, sample);
         }
 
-        public void Aim(Camera cam, float groundY)
+        public void Aim(Camera cam, float groundY) => Aim(cam, groundY, 0f, 0f);
+
+        /// <summary>Margin (viewport) kept between the booster's framing points and the HUD's top strip and bottom row.</summary>
+        public const float HudMargin = 0.03f;
+        /// <summary>How far under the booster's lowest point the shot keeps in view (booster heights): its flame and, low down, the deck.</summary>
+        public const float BelowHeights = 1.6f;
+
+        /// <summary>
+        /// Follow the booster, and keep the whole booster (renderer bounds: body, fins, legs, landing flame) plus the sea or deck
+        /// up to <see cref="BelowHeights"/> under it inside the band between the HUD's top strip (<paramref name="topCover"/>)
+        /// and its bottom control row (<paramref name="bottomCover"/>), both measured viewport fractions. ChaseCamera.FitBand
+        /// backs the camera off (a wider shot on a 4:3 iPad) without turning it, so the held horizon stays where Aim put it.
+        /// </summary>
+        public void Aim(Camera cam, float groundY, float topCover, float bottomCover)
         {
             if (!SteerCamera || cam == null || staging == null || staging.Booster == null) return;
             var target = staging.Booster.position;
             float h = 26f;
-            var offset = ChaseCamera.DesiredOffset(Vector3.up, h, (float)Math.Max(0, landing.Sample().Alt));
+            float alt = (float)Math.Max(0, landing.Sample().Alt);
+            var offset = ChaseCamera.DesiredOffset(Vector3.up, h, alt);
             var pos = PadGround.ClampAboveGround(target + offset, groundY);
+            var rot = ChaseCamera.Aim(pos, target + Vector3.up * (h * 0.25f), cam.fieldOfView, alt, pos.y - groundY);
+            if (topCover > 0f || bottomCover > 0f)
+            {
+                int n = FramePoints(groundY, h);
+                if (n > 0)
+                {
+                    float yMax = 1f - Mathf.Clamp01(topCover) - HudMargin, yMin = Mathf.Clamp01(bottomCover) + HudMargin;
+                    pos = ChaseCamera.FitBand(rot, pos, framePts, n, cam.fieldOfView, cam.aspect, yMin, yMax);
+                    pos.y = Mathf.Max(pos.y, groundY + 1f);
+                }
+            }
             cam.transform.position = pos;
-            cam.transform.rotation = ChaseCamera.Aim(pos, target + Vector3.up * (h * 0.25f), cam.fieldOfView,
-                (float)Math.Max(0, landing.Sample().Alt), pos.y - groundY);
+            cam.transform.rotation = rot;
+        }
+
+        readonly System.Collections.Generic.List<Renderer> boosterRenderers = new System.Collections.Generic.List<Renderer>();
+        readonly Vector3[] framePts = new Vector3[10];
+
+        /// <summary>The booster's drawn bounds (8 corners) and the point <see cref="BelowHeights"/> under it, not below the sea or deck.</summary>
+        int FramePoints(float groundY, float h)
+        {
+            staging.Booster.GetComponentsInChildren(false, boosterRenderers);
+            bool any = false; var bounds = new Bounds();
+            foreach (var r in boosterRenderers)
+            {
+                if (r == null || !r.enabled || r is ParticleSystemRenderer) continue;
+                if (!any) { bounds = r.bounds; any = true; } else bounds.Encapsulate(r.bounds);
+            }
+            if (!any) return 0;
+            var mn = bounds.min; var mx = bounds.max; int n = 0;
+            for (int i = 0; i < 8; i++)
+                framePts[n++] = new Vector3((i & 1) == 0 ? mn.x : mx.x, (i & 2) == 0 ? mn.y : mx.y, (i & 4) == 0 ? mn.z : mx.z);
+            float floorY = Mathf.Max(groundY, mn.y - BelowHeights * h);
+            framePts[n++] = new Vector3(bounds.center.x, floorY, bounds.center.z);
+            return n;
         }
 
         void Watch(float dt)
