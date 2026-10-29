@@ -126,6 +126,15 @@ namespace Kestrel.Slice
             return rf * Mathf.Sqrt(Mathf.Max(0, 1 - t * t)); // tangent ogive approximation
         }
 
+        /// <summary>The payload as drawn in the exploded view: a capsule at the cargo's real diameter (held to the barrel so a cargo that
+        /// does not fit does not poke through the skin; Validate already blocks that design). Falls back to the old 0.55 x fairing radius
+        /// when the design has no known cargo.</summary>
+        public static float PayloadRadius(Catalog c, Design d, float fairingRadius)
+        {
+            var spec = Kestrel.Core.Vehicle.PayloadFit.SpecFor(c, d);
+            return (float)Kestrel.Core.Designer.FairingFlare.CargoDrawRadius(spec != null ? spec.diameter : 0, fairingRadius);
+        }
+
         public static Result Build(Catalog c, Design d)
         {
             var verts = new List<Vector3>(); var normals = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
@@ -255,8 +264,8 @@ namespace Kestrel.Slice
                 var g = new Geo();
                 Lathe(prof, Vector3.zero, g.v, g.n, g.uv, g.t);
                 parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Fairing, Mesh = g.ToMesh("Fairing"), Y0 = y, Y1 = y + L, Radius = rf });
-                // Payload: a capsule inside the fairing barrel, sized to the fairing (seen when the view explodes).
-                float pr = rf * 0.55f, ph = Mathf.Max(0.5f, cyl * 0.6f), py = y + 0.15f * cyl;
+                // Payload: a capsule inside the fairing barrel at the cargo's real diameter (seen when the view explodes).
+                float pr = PayloadRadius(c, d, rf), ph = Mathf.Max(0.5f, cyl * 0.6f), py = y + 0.15f * cyl;
                 var pg = new Geo();
                 Lathe(new List<Vector2> { new Vector2(0, py), new Vector2(pr, py), new Vector2(pr, py + ph * 0.75f), new Vector2(pr * 0.5f, py + ph), new Vector2(0, py + ph) }, Vector3.zero, pg.v, pg.n, pg.uv, pg.t);
                 parts.Add(new PartMesh { Part = Kestrel.Core.Hangar.PartRef.Payload, Mesh = pg.ToMesh("Payload"), Y0 = py, Y1 = py + ph, Radius = pr });
