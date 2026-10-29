@@ -107,7 +107,14 @@ namespace Kestrel.Capture.Tests
             for (int i = 0; i < 10; i++) yield return null;   // the panel re-lays out at the new size
             if (ShortBannerShown(UnityEngine.Object.FindAnyObjectByType<SliceApp>()?.UiForCapture))
                 TestContext.WriteLine("WARNING " + name + ": the \"" + WebcastBoard.VerdictShort + "\" pill is on screen");
-            if (scene == "flight") TestContext.WriteLine("flight framing " + d.Name + ": " + Framing(UnityEngine.Object.FindAnyObjectByType<FlightDriver>()) + " hud cover " + HudCover().ToString("0.000"));
+            if (scene == "flight")
+            {
+                var sa = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+                var tr = sa != null ? sa.HudTraceForCapture : Vector4.zero;
+                var nose = sa != null && Camera.main != null ? Camera.main.WorldToViewportPoint(sa.NoseTraceForCapture) : Vector3.zero;
+                TestContext.WriteLine("flight framing " + d.Name + ": " + Framing(UnityEngine.Object.FindAnyObjectByType<FlightDriver>()) + " hud cover " + HudCover().ToString("0.000")
+                    + "; camera trace cover " + tr.x.ToString("0.000") + " pitch aimed " + tr.y.ToString("0.0") + " kept " + tr.z.ToString("0.0") + " frame " + tr.w + " (now " + Time.frameCount + ") nose point vy " + nose.y.ToString("0.000"));
+            }
             int distinct = 0;
             var png = FlightCapture.Png(d, Dir, name, n => distinct = n);
             while (png.MoveNext()) yield return png.Current;
@@ -304,8 +311,10 @@ namespace Kestrel.Capture.Tests
                     }
                     if (landing)
                     {
-                        // About a second into the burn, unless it has already touched down.
-                        for (int i = 0; i < 10 && rec.PhaseForCapture == RecoveryPhase.Landing; i++) yield return null;
+                        // Low in the burn, so Haven's deck is in the frame under the booster and its flame: 40 m up, unless it
+                        // has already touched down.
+                        for (int i = 0; i < 2000 && rec.PhaseForCapture == RecoveryPhase.Landing && !(rec.AltitudeForCapture < 40.0); i++) yield return null;
+                        TestContext.WriteLine("landing burn at " + rec.AltitudeForCapture.ToString("0") + " m, throttle " + rec.ThrottleForCapture.ToString("0.00") + ", phase " + rec.PhaseForCapture);
                         RecoveryShow.HoldForCapture = true;
                         yield return null;
                         // The live webcast pill reads "Short on speed" while speed / total budget < 0.40, which on KH-7 is the

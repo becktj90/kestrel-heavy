@@ -53,6 +53,15 @@ namespace Kestrel.Slice
         /// <summary>The booster has separated and its landing is flying.</summary>
         public bool StartedForCapture => started;
         public RecoveryPhase PhaseForCapture => started && landing != null ? landing.Sample().Phase : RecoveryPhase.Idle;
+        public double AltitudeForCapture => started && landing != null ? landing.Sample().Alt : double.NaN;
+        public double ThrottleForCapture => started && landing != null ? landing.Sample().Throttle : double.NaN;
+
+        /// <summary>
+        /// Altitude the sky should be graded for while the camera follows the booster (else NaN). The sky used to stay on the
+        /// ascent's altitude, so a booster landing at sea level was shown against black space (#381 landing frame, ascent at
+        /// 159 km): what players saw too whenever Follow was on the booster.
+        /// </summary>
+        public double ViewAltitude => SteerCamera && started && landing != null ? Math.Max(0, landing.Sample().Alt) : double.NaN;
 
         public void Bind(FinCluster finCluster, StrutCluster legCluster, VisualElement flightHud)
         {

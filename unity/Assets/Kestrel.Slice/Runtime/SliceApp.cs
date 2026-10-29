@@ -898,12 +898,15 @@ namespace Kestrel.Slice
                 cam.transform.rotation = ChaseCamera.Aim(cp, look, fov, (float)altitude, cp.y - ground.position.y);
                 // The nose stays under the HUD's telemetry strip, measured as laid out (it reaches further down a 4:3 iPad).
                 float cover = ascentHud != null ? ascentHud.TopCover() : 0f;
+                float aimed = cam.transform.eulerAngles.x;
                 if (cover > 0f)
                 {
                     var stackBase = U(pose.LookAt) - up * (float)(pose.Height * 0.5);
                     cam.transform.rotation = ChaseCamera.KeepBelow(cam.transform.rotation, cp, stackBase + up * (float)pose.Height,
                         stackBase, fov, 1f - cover - ChaseCamera.HudMargin);
+                    noseTrace = stackBase + up * (float)pose.Height;
                 }
+                hudTrace = new Vector4(cover, -Mathf.DeltaAngle(0f, aimed), -Mathf.DeltaAngle(0f, cam.transform.eulerAngles.x), Time.frameCount);
             }
             else
                 cam.transform.LookAt(look, Vector3.up);
@@ -1498,6 +1501,10 @@ namespace Kestrel.Slice
         public double FlightClockForCapture => flight != null && flight.Sim != null ? flight.Sim.T : double.NaN;
         /// <summary>The booster landing, for the App Store captures (started? which phase?). Null before the stage is armed.</summary>
         public RecoveryShow RecoveryForCapture => recovery;
+        /// <summary>Last Auto flight-camera frame: HUD cover, pitch after Aim, pitch after KeepBelow, frame; and the nose point used.</summary>
+        public Vector4 HudTraceForCapture => hudTrace;
+        public Vector3 NoseTraceForCapture => noseTrace;
+        Vector4 hudTrace; Vector3 noseTrace;
 
         /// <summary>Same design that left the pad. The launch gate already passed.</summary>
         void RestartFlight()
@@ -1754,7 +1761,12 @@ namespace Kestrel.Slice
         void LateUpdate()
         {
             if (padLights != null && flight != null) padLights.SetPlume((float)flight.ThrustFraction, (float)flight.Altitude);
-            if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
+            if (sky != null && flight != null)
+            {
+                // The sky is graded for where the camera is: the booster's altitude while it is followed down, else the ascent's.
+                double viewAlt = recovery != null ? recovery.ViewAltitude : double.NaN;
+                sky.SetAltitude(double.IsNaN(viewAlt) ? flight.Altitude : viewAlt);
+            }
             if (explodedView != null && hangarCam != null && hangarCam.enabled)
             {
                 SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
