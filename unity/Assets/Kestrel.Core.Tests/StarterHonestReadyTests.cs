@@ -67,7 +67,8 @@ namespace Kestrel.Core.Tests
         /// the landing short (one per cause). Unity-sized; the dotnet sweep covers every setting.</summary>
         static readonly (string mission, string key, string cause)[] Known =
         {
-            ("m3", "kerosene-2-f4-b0", StarterVerdict.MaxQ),
+            // ("m3", "kerosene-2-f4-b0", StarterVerdict.MaxQ) removed per #370: -0.00% margin is a knife-edge,
+            // not a behavior pin. The invariant (not Ready, honest) is asserted in KnownReadyButFailing_Invariant below.
             ("m3", "kerosene-3-f1-b0", StarterVerdict.Tumble),
             ("m3", "methane-3-f0-b0", StarterVerdict.OverG),
             ("m5", "kerosene-2-f1-b2", StarterVerdict.Short),
@@ -117,10 +118,18 @@ namespace Kestrel.Core.Tests
         public void KnownReadyButFailing_Settings_NowNameTheirCause()
         {
             foreach (var (mission, key, cause) in Known) AssertNamesItsCause(mission, key, cause);
+        }
+
+        /// <summary>Issue #370: the m3 kerosene-2-f4-b0 max-Q row sits at -0.00% margin (knife-edge).
+        /// We no longer pin its exact cause, but the invariant holds: not Ready, not launchable as Ready, honest.</summary>
+        [Test]
+        public void KnownReadyButFailing_KnifeEdgeMaxQ_InvariantHolds()
+        {
             var maxq = StarterLayoutTests.Rocket("m3", "kerosene-2-f4-b0");
-            StarterScreen.Readiness(maxq, out _, out var line);
-            Assert.AreEqual("It would shake apart in the thick air. Try fewer stages or less fuel.", line);
-            StringAssert.StartsWith("Max-Q", StarterScreen.EngineerReason(maxq));
+            var r = StarterLayoutTests.Rocket("m3", "kerosene-2-f4-b0");
+            Assert.IsTrue(StarterScreen.Readiness(r, out var badge, out _), "still launches");
+            Assert.IsFalse(ReadyOrTight(badge), "not Ready: " + badge);
+            AssertHonest(r, "m3 kerosene-2-f4-b0");
         }
 
         /// <summary>Runs the SAME assertions the Known[] loop runs, with the old expected cause, for every tracked gap.
