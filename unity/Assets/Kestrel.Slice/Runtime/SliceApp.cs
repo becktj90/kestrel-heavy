@@ -1709,6 +1709,7 @@ namespace Kestrel.Slice
             if (flight != null) flight.enabled = false;
             if (cam != null) cam.ResetProjectionMatrix();
             recovery?.Stop();
+            ApplyHudFocus(FlightHudFocus.Ascent);
             RecoveryLog.Clear();
             if (juice != null) juice.Reset();
             if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
@@ -1798,9 +1799,33 @@ namespace Kestrel.Slice
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
             ShowFlightPicture();
             RefreshWebcast(flight.SimTime, true);
+            // Booster follow: the HUD reads the stage the camera is on (polled, like recovery.Aim above).
+            bool onBooster = recovery != null && recovery.SteerCamera;
+            ascentHud?.SetBooster(onBooster ? recovery.HudReadout : (BoosterHudReadout?)null);
+            ApplyHudFocus(BoosterHud.Focus(onBooster));
             ascentHud?.Present(flight);
             }
             catch (System.Exception e) { Debug.LogException(e); }
+        }
+
+        /// <summary>
+        /// The upper stage's own header chrome (the S3 stage chip, BACK TO DESIGN) hides while the HUD reads the
+        /// booster and comes back with the ascent focus. Visibility, not display, so the header and dock never move;
+        /// the "hidden" class still decides whether BACK TO DESIGN is shown at all.
+        /// </summary>
+        void ApplyHudFocus(FlightHudFocus focus)
+        {
+            bool ascent = BoosterHud.ShowsAscentChrome(focus);
+            if (hStage != null)
+            {
+                if (ascent) hStage.style.visibility = StyleKeyword.Null;
+                else hStage.style.visibility = Visibility.Hidden;
+            }
+            if (again != null)
+            {
+                if (ascent) again.style.visibility = StyleKeyword.Null;
+                else again.style.visibility = Visibility.Hidden;
+            }
         }
 
         void PaintAscentReadout()
