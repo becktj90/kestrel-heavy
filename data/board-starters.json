@@ -5,7 +5,7 @@
       "id": "m3",
       "mode": "fly",
       "restoreSafetyFactor": 1.9,
-      "edit": "Fly this rocket. It already clears every seed and lands on Haven: 13% landing fuel (28 t), stage 1 cuts off near 90 km and 2.5 km/s, and the guidance computer circles stage 2 at 550 km.",
+      "edit": "Fly this rocket. It already clears every seed.",
       "designs": [
         {
           "version": 3,
@@ -987,7 +987,7 @@
       "id": "m13",
       "mode": "fly",
       "restoreSafetyFactor": 1.7,
-      "edit": "Fly this rocket. It already clears every seed.",
+      "edit": "Fly this rocket. It already clears every seed and lands on Haven: 13% landing fuel (28 t), stage 1 cuts off near 90 km and 2.5 km/s, and the guidance computer circles stage 2 at 550 km.",
       "designs": [
         {
           "version": 3,
