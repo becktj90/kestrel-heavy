@@ -290,7 +290,7 @@ namespace Kestrel.Capture.Tests
                     {
                         yield return null;
                         var ph = rec.PhaseForCapture;
-                        if (ph != seen) { seen = ph; TestContext.WriteLine("recovery phase " + ph + " at frame " + Time.frameCount + " steer " + rec.SteerCamera); }
+                        if (ph != seen) { seen = ph; TestContext.WriteLine("recovery phase " + ph + " at frame " + Time.frameCount + " steer " + rec.SteerCamera + "; " + BoosterView(rec)); }
                         if (ph == RecoveryPhase.Landing && rec.SteerCamera) { landing = true; break; }
                         if (ph > RecoveryPhase.Landing || !rec.StartedForCapture) break;
                     }
@@ -299,6 +299,8 @@ namespace Kestrel.Capture.Tests
                         // About a second into the burn, unless it has already touched down.
                         for (int i = 0; i < 10 && rec.PhaseForCapture == RecoveryPhase.Landing; i++) yield return null;
                         RecoveryShow.HoldForCapture = true;
+                        yield return null;
+                        TestContext.WriteLine("landing shot: phase " + rec.PhaseForCapture + " steer " + rec.SteerCamera + "; " + BoosterView(rec));
                         var ld = ShootAll("landing", problems);
                         while (ld.MoveNext()) yield return ld.Current;
                         RecoveryShow.HoldForCapture = false;
@@ -334,6 +336,34 @@ namespace Kestrel.Capture.Tests
             }
             return "aspect " + cam.aspect.ToString("0.000") + " fov " + cam.fieldOfView.ToString("0.0") + " pitch " + (-Mathf.DeltaAngle(0f, cam.transform.eulerAngles.x)).ToString("0.0")
                 + " root vy " + root.y.ToString("0.000") + " stack vy " + lo.ToString("0.000") + "-" + hi.ToString("0.000") + " (" + n + " renderers) alt " + d.Altitude.ToString("0");
+        }
+
+        /// <summary>Where the recovered booster is for the main camera: active, renderers, distance and viewport box.</summary>
+        static string BoosterView(RecoveryShow rec)
+        {
+            var cam = Camera.main;
+            var f = typeof(RecoveryShow).GetField("staging", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var staging = f != null ? f.GetValue(rec) as FlightStageShow : null;
+            var b = staging != null ? staging.Booster : null;
+            if (cam == null || b == null) return "booster view: no camera or booster";
+            float x0 = 1e9f, x1 = -1e9f, y0 = 1e9f, y1 = -1e9f, z0 = 1e9f; int n = 0, on = 0;
+            foreach (var r in b.GetComponentsInChildren<Renderer>(true))
+            {
+                n++;
+                if (!r.enabled || !r.gameObject.activeInHierarchy || r is ParticleSystemRenderer) continue;
+                on++;
+                var bb = r.bounds;
+                for (int i = 0; i < 8; i++)
+                {
+                    var c = new Vector3((i & 1) == 0 ? bb.min.x : bb.max.x, (i & 2) == 0 ? bb.min.y : bb.max.y, (i & 4) == 0 ? bb.min.z : bb.max.z);
+                    var v = cam.WorldToViewportPoint(c);
+                    x0 = Mathf.Min(x0, v.x); x1 = Mathf.Max(x1, v.x); y0 = Mathf.Min(y0, v.y); y1 = Mathf.Max(y1, v.y); z0 = Mathf.Min(z0, v.z);
+                }
+            }
+            return "booster active " + b.gameObject.activeInHierarchy + " renderers " + on + "/" + n + " pos " + b.position.ToString("F0") + " cam " + cam.transform.position.ToString("F0")
+                + " fwd " + cam.transform.forward.ToString("F2") + " dist " + Vector3.Distance(cam.transform.position, b.position).ToString("0") + " near " + cam.nearClipPlane + " far " + cam.farClipPlane.ToString("0")
+                + " vp x " + x0.ToString("0.00") + ".." + x1.ToString("0.00") + " y " + y0.ToString("0.00") + ".." + y1.ToString("0.00") + " zmin " + z0.ToString("0.0")
+                + " clear " + cam.clearFlags + " target " + (cam.targetTexture != null ? cam.targetTexture.width + "x" + cam.targetTexture.height : "screen");
         }
 
         static string StallState(FlightDriver d)

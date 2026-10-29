@@ -76,6 +76,27 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        // #381 iPad flight frame: the telemetry strip reaches ~18% down a 4:3 screen and the nose sat under it.
+        [TestCase(2064f / 2752f, 0.184f)]
+        [TestCase(1320f / 2868f, 0.117f)]
+        public void KeepBelowPutsTheNoseUnderTheHudStrip(float aspect, float cover)
+        {
+            var cam = new Vector3(0f, 0f, -200f);
+            var b = new Vector3(0f, 0f, 0f); var top = b + Vector3.up * H;
+            var level = Quaternion.LookRotation(Vector3.forward, Vector3.up);   // nose at ~0.88: under a 0.82 strip edge
+            float maxY = 1f - cover - ChaseCamera.HudMargin;
+            var rot = ChaseCamera.KeepBelow(level, cam, top, b, VFov, maxY);
+            var t = Project(top, cam, rot, aspect); var f = Project(b, cam, rot, aspect);
+            Assert.That(t.y, Is.LessThanOrEqualTo(maxY + 0.005f), "nose under the strip");
+            Assert.That(f.y, Is.GreaterThan(0.05f), "base still in frame");
+            Assert.That(t.y, Is.GreaterThan(maxY - 0.02f), "raised only as far as needed");
+            // Already clear: unchanged.
+            var low = ChaseCamera.Aim(cam, b + Vector3.up * H * 0.5f, VFov, 0f, 0f);
+            Assert.That(Quaternion.Angle(low, ChaseCamera.KeepBelow(low, cam, top, b, VFov, 0.95f)), Is.LessThan(0.01f));
+            // No cover measured: unchanged.
+            Assert.That(Quaternion.Angle(level, ChaseCamera.KeepBelow(level, cam, top, b, VFov, 1f)), Is.LessThan(0.01f));
+        }
+
         [Test]
         public void HoldBlendsOut()
         {

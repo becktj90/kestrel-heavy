@@ -894,7 +894,17 @@ namespace Kestrel.Slice
             var cp = cam.transform.position;
             Vector3 look = v + lookOffset;
             if (flightView == FlightViewMode.Auto)
+            {
                 cam.transform.rotation = ChaseCamera.Aim(cp, look, fov, (float)altitude, cp.y - ground.position.y);
+                // The nose stays under the HUD's telemetry strip, measured as laid out (it reaches further down a 4:3 iPad).
+                float cover = ascentHud != null ? ascentHud.TopCover() : 0f;
+                if (cover > 0f)
+                {
+                    var stackBase = U(pose.LookAt) - up * (float)(pose.Height * 0.5);
+                    cam.transform.rotation = ChaseCamera.KeepBelow(cam.transform.rotation, cp, stackBase + up * (float)pose.Height,
+                        stackBase, fov, 1f - cover - ChaseCamera.HudMargin);
+                }
+            }
             else
                 cam.transform.LookAt(look, Vector3.up);
             if (fx != null)

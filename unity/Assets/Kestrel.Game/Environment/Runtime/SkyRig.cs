@@ -12,6 +12,7 @@ using UnityEngine;
 namespace Kestrel.Game.Environment
 {
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(10000)]   // LateUpdate after the flight / countdown camera has its pose for the frame
     public sealed class SkyRig : MonoBehaviour
     {
         /// <summary>Degrees. Same value as SkySun.ElevationDeg. Pad: Night = PadLighting.NightFactor(SkyRig.SunElevationDeg).</summary>
@@ -277,7 +278,7 @@ namespace Kestrel.Game.Environment
             }
             _mat.hideFlags = HideFlags.HideAndDontSave;
             RenderSettings.skybox = _mat;
-            if (View != null) View.clearFlags = CameraClearFlags.Skybox;
+            if (View != null) View.clearFlags = CameraClearFlags.SolidColor;
             BakeStars();
         }
 
@@ -362,8 +363,13 @@ namespace Kestrel.Game.Environment
             }
             if (View != null)
             {
-                View.clearFlags = CameraClearFlags.Skybox;
+                // Cleared to the horizon grade, then the sky is drawn as a camera-locked backdrop (DrawBackdrop), not
+                // as Unity's skybox. Under a Skybox camera URP never clears colour (depth only on desktop, DontCare on
+                // Metal/Vulkan), so every pixel the skybox draw missed kept stale or black contents: the black corner
+                // wedges in the countdown / flight-phase / App Store captures (#348, #381).
+                View.clearFlags = CameraClearFlags.SolidColor;
                 View.backgroundColor = horizon;
+                _clearColor = horizon;
             }
             RenderSettings.skybox = _mat;
             ApplyFog(g, horizon);
@@ -416,6 +422,57 @@ namespace Kestrel.Game.Environment
         {
             if (_stars != null) Destroy(_stars);
             if (_mat != null) Destroy(_mat);
+            if (_backdrop != null) Destroy(_backdrop);
+        }
+
+        // ---- Sky backdrop ----------------------------------------------------------------------------------------
+        // Unity's skybox is a mesh around the camera whose faces straddle the camera plane (w = 0) at the frame edges;
+        // a rasteriser that drops or mis-clips those triangles (llvmpipe in CI did, at the corners) leaves holes, and
+        // URP does not clear colour under a skybox. The backdrop is one quad in front of the camera, just past the
+        // near plane and wider than the frustum, so nothing about it is ever clipped. KH_Sky colours each pixel
+        // from its view ray (dirWS = model rotation x object position), so the picture is the same sky.
+        Mesh _backdrop;
+        Color _clearColor = new Color(-1f, -1f, -1f, -1f);
+
+        /// <summary>Margin past the frustum edge, so the quad still covers the frame while the FOV punch widens it.</summary>
+        public const float BackdropMargin = 1.25f;
+
+        void LateUpdate() => DrawBackdrop();
+
+        void DrawBackdrop()
+        {
+            if (_mat == null || View == null || !View.isActiveAndEnabled || View.orthographic) return;
+            // A test or a caller that set its own clear owns the camera: no sky over its colour.
+            if (View.clearFlags != CameraClearFlags.SolidColor || View.backgroundColor != _clearColor) return;
+            if (_backdrop == null) _backdrop = BackdropMesh();
+            var t = View.transform;
+            float d = Mathf.Max(1f, View.nearClipPlane * 2f);
+            if (d >= View.farClipPlane * 0.5f) return;
+            float ty = Mathf.Tan(0.5f * View.fieldOfView * Mathf.Deg2Rad) * BackdropMargin;
+            float tx = ty * Mathf.Max(0.05f, View.aspect);
+            var m = Matrix4x4.TRS(t.position, t.rotation, new Vector3(tx * d, ty * d, d));
+            int layer = 0;
+            int mask = View.cullingMask;
+            if ((mask & 1) == 0) for (int i = 1; i < 32; i++) if ((mask & (1 << i)) != 0) { layer = i; break; }
+            var rp = new RenderParams(_mat)
+            {
+                camera = View,
+                layer = layer,
+                worldBounds = new Bounds(t.position, Vector3.one * (4f * d * (1f + tx + ty))),
+                shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
+                receiveShadows = false,
+                lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off,
+            };
+            Graphics.RenderMesh(rp, _backdrop, 0, m);
+        }
+
+        static Mesh BackdropMesh()
+        {
+            var mesh = new Mesh { name = "KH_SkyBackdrop", hideFlags = HideFlags.HideAndDontSave };
+            mesh.vertices = new[] { new Vector3(-1f, -1f, 1f), new Vector3(1f, -1f, 1f), new Vector3(1f, 1f, 1f), new Vector3(-1f, 1f, 1f) };
+            mesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
+            mesh.bounds = new Bounds(new Vector3(0f, 0f, 1f), new Vector3(2f, 2f, 0.1f));
+            return mesh;
         }
     }
 }

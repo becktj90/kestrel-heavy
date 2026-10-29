@@ -88,12 +88,11 @@ Shader "Kestrel/Sky"
             // clip at 0.5 a corner of that cube is cut by the near plane and shows up as a
             // black triangle (the clear colour, or a NaN direction saturated to black).
             // Pinning z to the far plane keeps every in-front vertex inside the frustum.
-            // z must stay LINEAR in w, for vertices behind the camera too: the clipper cuts a triangle that
-            // straddles w = 0 where the interpolated z leaves the clip volume. With z = k*w that is exactly
-            // w = 0. The old branch (z = w when w <= 0) moved the reversed-Z far-plane cut (z >= 0) to
-            // t = k*w1 / (k*w1 - w2), right next to the in-front vertex, so most of every straddling sky
-            // triangle was clipped away: the black corner wedges in the App Store / countdown / flight-phase
-            // captures (#381). Same clip maths on any reversed-Z API (Metal, Vulkan, D3D), not only llvmpipe.
+            // z stays linear in w (also behind the camera) so a straddling triangle is only ever cut at w = 0.
+            // This alone did not remove the black corner wedges in the CI captures (#381, GL, not reversed-Z):
+            // those were pixels Unity's skybox draw never covered, left uncleared because URP does not clear colour
+            // under a Skybox camera. SkyRig now clears to the horizon grade and draws this material as a
+            // camera-locked backdrop quad (SkyRig.DrawBackdrop) in the Background queue instead.
             float SkyFarZ(float clipW)
             {
                 // Stay just inside the far plane. Exactly on it is clipped by some GL drivers,
@@ -285,7 +284,7 @@ Shader "Kestrel/Sky"
             {
                 v2fb o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                // Same far-plane pin as the URP pass (linear in w, see SkyFarZ): a near-clipped cube corner is a black triangle.
+                // Same far-plane pin as the URP pass (linear in w, see SkyFarZ).
                 #if UNITY_REVERSED_Z
                 o.pos.z = 1e-4 * o.pos.w;
                 #else

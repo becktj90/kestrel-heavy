@@ -72,6 +72,22 @@ namespace Kestrel.Slice
             Layout(upp);
         }
 
+        /// <summary>
+        /// Share of the screen height (0..1, from the top) the HUD's top block covers over the middle of the frame:
+        /// the bottom of the telemetry strip (ALT / SPEED / Q / G), measured as laid out. 0 while the HUD is closed or
+        /// not laid out. The chase camera keeps the stack's nose under it (ChaseCamera.KeepBelow): the strip is sized in
+        /// points and scales with the panel width, so on a 4:3 iPad it reaches 18% down the frame against 12% on a phone.
+        /// </summary>
+        public float TopCover()
+        {
+            var strip = hud != null ? hud.Q("ascent-telemetry") : null;
+            if (strip == null || strip.panel == null || strip.resolvedStyle.display == DisplayStyle.None) return 0f;
+            var top = strip.panel.visualTree.worldBound;
+            var sb = strip.worldBound;
+            if (!(top.height > 1f) || !(sb.height > 1f) || float.IsNaN(sb.yMax)) return 0f;
+            return Mathf.Clamp01((sb.yMax - top.yMin) / top.height);
+        }
+
         public void Close()
         {
             // Hand the tools row (Follow, Cam, Pause) back to the flex flow before the HUD goes.
