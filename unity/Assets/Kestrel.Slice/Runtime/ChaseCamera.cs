@@ -103,6 +103,42 @@ namespace Kestrel.Slice
             return Quaternion.Euler(-raised * Mathf.Rad2Deg, yaw * Mathf.Rad2Deg, 0f);
         }
 
+        /// <summary>
+        /// Move a camera along its own back and up axes, rotation unchanged (so a held horizon stays put), just far enough
+        /// that every point projects inside the viewport band y in [<paramref name="yMin"/>, <paramref name="yMax"/>] and
+        /// |x - 0.5| &lt;= <paramref name="xHalf"/>. It only ever backs away (widens), never closes in, and moves up or down
+        /// as little as it can. The booster follow used to centre the booster with no HUD inset, so its engines, flame
+        /// and the deck sat behind the bottom control row (#381 landing frames; worst on a 4:3 iPad). Returns
+        /// <paramref name="camPos"/> unchanged for an empty or degenerate band.
+        /// </summary>
+        public static Vector3 FitBand(Quaternion rot, Vector3 camPos, Vector3[] points, int count, float vFovDeg, float aspect,
+            float yMin, float yMax, float xHalf = 0.45f)
+        {
+            if (points == null || count <= 0 || !(yMax - yMin > 0.1f) || !(aspect > 0.05f) || !(vFovDeg > 1f)) return camPos;
+            if (count > points.Length) count = points.Length;
+            var f = rot * Vector3.forward; var u = rot * Vector3.up; var r = rot * Vector3.right;
+            float t2 = 2f * Mathf.Tan(0.5f * vFovDeg * Mathf.Deg2Rad);
+            float a = (yMax - 0.5f) * t2, b = (yMin - 0.5f) * t2, h = xHalf * t2 * aspect;
+            // Shifting the camera by -f*dz + u*dy maps a point (x, y, z) in camera space to (x, y - dy, z + dz).
+            // y - dy <= a (z + dz) and y - dy >= b (z + dz) for all points  <=>  dz (a - b) >= max(y - a z) - min(y - b z).
+            float hiA = float.NegativeInfinity, loB = float.PositiveInfinity, dz = 0f;
+            for (int i = 0; i < count; i++)
+            {
+                var d = points[i] - camPos;
+                float x = Vector3.Dot(d, r), y = Vector3.Dot(d, u), z = Vector3.Dot(d, f);
+                if (float.IsNaN(x + y + z)) return camPos;
+                hiA = Mathf.Max(hiA, y - a * z);
+                loB = Mathf.Min(loB, y - b * z);
+                if (h > 1e-4f) dz = Mathf.Max(dz, Mathf.Abs(x) / h - z);
+            }
+            dz = Mathf.Max(dz, (hiA - loB) / (a - b));
+            if (!(dz < 1e5f)) return camPos;
+            // dy in [hiA - a dz, loB - b dz]: the smallest move up or down that fits.
+            float lo = hiA - a * dz, hi = loB - b * dz;
+            float dy = lo > 0f ? lo : hi < 0f ? hi : 0f;
+            return camPos - f * dz + u * dy;
+        }
+
         /// <summary>Exponentially smooth the current offset toward the desired one (frame-rate independent).</summary>
         public static Vector3 StepOffset(Vector3 current, Vector3 desired, float rate, float dt) =>
             Vector3.Lerp(current, desired, 1 - Mathf.Exp(-rate * dt));

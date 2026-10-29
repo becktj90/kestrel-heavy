@@ -84,6 +84,30 @@ namespace Kestrel.Core.Tests
             Assert.That(wide.Plot.H, Is.GreaterThan(48f), "trajectory rail");
         }
 
+        // #381 iPad frames: the T+ chip read tiny next to the header. The face was sized from the content-sized label's
+        // own width, so it chased its box down to the floor; it now comes from the header row (HeaderClockFontPt).
+        [TestCase("iPad 13in", 1032f)]
+        [TestCase("6.9in", 440f)]
+        [TestCase("6.3in", 402f)]
+        [TestCase("390x844", 390f)]
+        public void HeaderClockFaceComesFromTheRowNotTheLabel(string device, float screenPt)
+        {
+            float row = screenPt - 2f * 16f;                        // header row inside the HUD side padding
+            float font = FlightHudLayout.HeaderClockFontPt(row, FlightHudLayout.StageChipPt);
+            Assert.That(font, Is.EqualTo(28f), device + ": full header face");
+            Assert.That(font, Is.LessThanOrEqualTo(FlightHudLayout.HeaderPt - 4f), device + ": fits the 36 pt header");
+            Assert.That(font, Is.GreaterThanOrEqualTo(2f * FlightHudLayout.ValueFontPt), device + ": reads above the stat strip");
+            float box = row - FlightHudLayout.StageChipPt - FlightHudLayout.GapPt;
+            Assert.That(FlightHudLayout.TextWidth("T-00:00.0", font), Is.LessThanOrEqualTo(box - 1.5f), device);
+            Assert.That(FlightHudLayout.TextWidth("T+ 1234.5", font), Is.LessThanOrEqualTo(box - 1.5f), device);
+            // A wider stage chip than the model's takes its own width off the row.
+            Assert.That(FlightHudLayout.HeaderClockFontPt(row, row - 60f), Is.LessThan(28f), device + ": crowded row");
+            // The old feedback, modelled: face from the label's own width (its text plus 4 pt pads) runs to the floor.
+            float chase = 28f;
+            for (int i = 0; i < 200; i++) chase = FlightHudLayout.ClockFontPt(FlightHudLayout.TextWidth("T+ 60.0", chase) + 8f, FlightHudLayout.HeaderPt);
+            Assert.That(chase, Is.LessThan(font * 0.6f), device + ": self-sized face collapses (the bug)");
+        }
+
         static void AssertClock(FlightHudFrame f, string where)
         {
             float font = FlightHudLayout.ClockFontPt(f.Clock.W, f.Clock.H);
