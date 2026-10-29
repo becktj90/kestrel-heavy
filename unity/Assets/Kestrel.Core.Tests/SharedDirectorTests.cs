@@ -301,8 +301,25 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(MissionScore.FlownApoAltM(bare), MissionScore.FlownApoAltM(designer), "the default player flies the design's own max-Q law");
             var timeline = LaunchPredictor.Predict(catalog, design);
             Assert.AreEqual(Math.Floor(MissionScore.FlownApoAltM(designer) / 100) / 10, timeline.ApoKm, 1e-9);
-            // KH-7 E: the batch stays calm (FlightBatch.Fly); the predictor flies briefing wind. No peak equality.
-            _ = FlightBatch.Fly(catalog, m, design, campaign.Seeds[0]);
+            // KH-7 E: the predictor flies the briefing wind and the batch stays calm, so their peaks are not compared
+            // here. PredictorPhysicsInCalmAir_MatchesTheCalmBatch pins the physics path in calm air.
+        }
+
+        [Test]
+        public void PredictorPhysicsInCalmAir_MatchesTheCalmBatch()
+        {
+            // KH-7 E: FlightBatch flies calm air on purpose; the readout and the live pad share the briefing wind.
+            // With the wind taken out, the predictor's physics path (ReferenceAscent.Flight: shared director on the
+            // predict schedule + PlayedChecks) still flies the calm batch's peak, so the wind is the only difference.
+            var m = campaign.Mission(1);
+            var design = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, m).Design);
+            var calm = MissionFlightSetup.Build(catalog, m, design, MissionFlightSetup.BatchDt);
+            var flight = MissionFlightSetup.Start(calm, MissionFlightSetup.Director(catalog, calm, design, ReferenceAscent.PredictHash, ReferenceAscent.PredictSeed));
+            flight.Checks = new PlayedChecks(catalog, design, calm.Stages, calm.Options, flight.Sim);
+            double peak = MissionScore.FlownApoAltM(flight.Run());
+            var batch = FlightBatch.Fly(catalog, m, design, campaign.Seeds[0]);
+            Assert.That(Math.Abs(batch.apoKm * 1000 - peak) / peak, Is.LessThanOrEqualTo(MissionFlightSetup.HopPeakTolerance),
+                "calm predictor " + peak.ToString("0") + " m vs calm batch " + (batch.apoKm * 1000).ToString("0") + " m");
         }
 
         [Test]

@@ -262,9 +262,13 @@ namespace Kestrel.Core.Tests
                 var input = LaunchPredictor.Inputs(catalog, d);
                 var sim = Headless.Simulate(input.stages, input.opts);
                 double flown = MissionScore.FlownApoAltM(sim);
-                var batch = FlightBatch.Fly(catalog, campaign.ById("m1"), d, 1);
-                Assert.AreEqual(batch.apoKm * 1000, flown, 1e-6, "timeline and batch: one apogee");
-                Assert.AreEqual(batch.passed, p.Success, "timeline pass matches the batch");
+                // KH-7 E: the timeline flies the live pad's briefing wind (seed 1); the batch stays calm on purpose
+                // (FlightBatch.Fly). So the timeline's apogee and pass are the live-pad flight's (ReferenceAscent.Flight).
+                var live = ReferenceAscent.Flight(catalog, d).Run();
+                double liveApo = MissionScore.FlownApoAltM(live);
+                Assert.AreEqual(liveApo, flown, 1e-6, "timeline and live-pad briefing: one apogee");
+                var req = Stack.RequiredDeltaV(catalog, d.payloadOrbit);
+                Assert.AreEqual(LaunchPredictor.Accepts(catalog, d, req, live, liveApo), p.Success, "timeline pass matches the live pad");
                 Assert.AreEqual(Math.Floor(flown / 100 + 1e-9) / 10, p.ApoKm, 1e-9, "timeline apogee is the flown peak");
                 Assert.That(flown, Is.LessThan(sim.orbit.apoAlt));
             }
