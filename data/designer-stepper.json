@@ -1579,6 +1579,46 @@
         }
       }
     },
+    "fairing-flare": {
+      "code": "fairing-flare",
+      "steps": [
+        "aero"
+      ],
+      "field": "fairing",
+      "failure": false,
+      "gates": [
+        "pass",
+        "amber"
+      ],
+      "simple": {
+        "pass": {
+          "id": "check.fairing-flare.simple.pass",
+          "text": "The nose widens gently above the stage."
+        },
+        "amber": {
+          "id": "check.fairing-flare.simple.amber",
+          "text": "The nose flares out a lot above the stage. Try a wider stage or a smaller nose."
+        },
+        "fix": {
+          "id": "check.fairing-flare.simple.fix",
+          "text": "Make the nose a bit narrower, or the stage under it wider. The cargo still has to fit inside it."
+        }
+      },
+      "engineer": {
+        "pass": {
+          "id": "check.fairing-flare.engineer.pass",
+          "text": "Barrel diameter D_f over top-stage diameter D_s is at most the flare ratio, and the shoulder half angle is under the flare angle limit (designer-limits fairingFlare)."
+        },
+        "amber": {
+          "id": "check.fairing-flare.engineer.amber",
+          "text": "D_f / D_s is over warnRatio, or the shoulder half angle is over warnAngleDeg. Above that the shoulder is closer to a ledge than a cone."
+        },
+        "fix": {
+          "id": "check.fairing-flare.engineer.fix",
+          "text": "Lower D_f (m), or raise the top-stage diameter. Keep payload diameter at or under 0.9 D_f."
+        }
+      }
+    },
     "payload-doesnt-fit": {
       "code": "payload-doesnt-fit",
       "steps": [

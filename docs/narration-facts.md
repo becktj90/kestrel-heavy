@@ -31,3 +31,18 @@ Non-empty list of the keys the spoken line asserts; a subset of the `requires` k
 
 ## Adding a clip
 Append it after the event's existing takes (the pre-picker round-robin plays them in file order), tag it, generate with the fixed voice and settings from `tools/clipgen/gen_static.py`, normalize to −16 LUFS / −1.5 dBTP, copy the mp3 into the Unity folder with a `.meta`, and update both manifests. Note: re-running `gen_static.py` rebuilds the manifest from `web/js/narration/manifest.js` and would drop the tags and the PR A clips; port the tags first.
+
+## Event calls the sim does not raise
+
+`pad`, `tankpress`, `seco`, `karman` and `entry` come from `CallTriggers` (Kestrel.Core/Flight/Narration). Each is due only
+when the flown design really does it, read from its generated timeline:
+
+- `pad`: once, when the live count opens (T−12). `tankpress`: when a `count.press.s<n>` beat fires (only parts the pad
+  pressurises: no solids, no storables, the pad has an umbilical; a strap-on-only press says nothing).
+- `seco`: on orbit insertion right after the top core stage's guided cutoff, only if the timeline flies a SECO for it.
+- `karman`: on the 100 km crossing, only if the timeline has `asc.karman`.
+- `entry`: on a live entry-burn mark under 4 s old, only with `rec.entry` in the timeline and a picked landing.
+
+Never over a call: a trigger waits while a call is queued. A pre-launch call starts only into silence (and not over a
+staged guide line) and only with a take that ends 0.5 s before T−0, because launch stops the voice. A flight call past
+4 s late is dropped, not said late. Each event fires once per flight.

@@ -52,6 +52,8 @@ namespace Kestrel.Kit
         /// <summary>Ceiling on any ring or haze alpha. Low enough that an additive ring is never a flash.</summary>
         public const float MaxRingAlpha = 0.35f;
         public const float MaxHazeAlpha = 0.14f;
+        /// <summary>Ceiling on a ring's radius (m): a 60 m wide flat disc is the most the camera ever sees.</summary>
+        public const float MaxRingRadiusM = 30f;
     }
 
     public struct ShockwavePlan
@@ -87,7 +89,8 @@ namespace Kestrel.Kit
             float night = tod != null ? Math.Max(0f, Math.Min(1f, tod.NightFactor)) : 0f;
             p.Draw = true;
             // Blast radius scales with the cube root of energy: 8x energy doubles the radius.
-            p.MaxRadius = Math.Max(1f, e.Radius) * 14f * (float)Math.Pow(energy, 1.0 / 3.0);
+            float src = float.IsNaN(e.Radius) ? 1f : e.Radius;
+            p.MaxRadius = Math.Min(ShockwaveBudgets.MaxRingRadiusM, Math.Max(1f, src) * 14f * (float)Math.Pow(energy, 1.0 / 3.0));
             p.Duration = 0.9f + 0.9f * energy;
             p.PeakAlpha = Math.Min(ShockwaveBudgets.MaxRingAlpha, 0.12f + 0.23f * energy) * (1f - 0.3f * night);
             p.Thickness01 = 0.08f + 0.06f * energy;
