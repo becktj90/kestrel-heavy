@@ -1486,6 +1486,8 @@ namespace Kestrel.Slice
         public Kestrel.Pad.PadRenderer PadForCapture => trenchPad;
         public VisualElement UiForCapture => ui;
         public double FlightClockForCapture => flight != null && flight.Sim != null ? flight.Sim.T : double.NaN;
+        /// <summary>The booster landing, for the App Store captures (started? which phase?). Null before the stage is armed.</summary>
+        public RecoveryShow RecoveryForCapture => recovery;
 
         /// <summary>Same design that left the pad. The launch gate already passed.</summary>
         void RestartFlight()

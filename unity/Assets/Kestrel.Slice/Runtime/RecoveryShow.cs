@@ -47,6 +47,13 @@ namespace Kestrel.Slice
 
         public bool SteerCamera { get; private set; }
 
+        // Capture hooks (Kestrel.Capture.Tests AppStoreScreenshotTests). Nothing in play sets HoldForCapture.
+        /// <summary>When set, the landing does not advance, so one moment can be shot at several screen sizes.</summary>
+        public static bool HoldForCapture;
+        /// <summary>The booster has separated and its landing is flying.</summary>
+        public bool StartedForCapture => started;
+        public RecoveryPhase PhaseForCapture => started && landing != null ? landing.Sample().Phase : RecoveryPhase.Idle;
+
         public void Bind(FinCluster finCluster, StrutCluster legCluster, VisualElement flightHud)
         {
             fins = finCluster;
@@ -104,6 +111,7 @@ namespace Kestrel.Slice
 
         public void Present(float dt)
         {
+            if (HoldForCapture) dt = 0f;
             if (!armed || flight == null || flight.Sim == null || staging == null)
             {
                 SteerCamera = false;
