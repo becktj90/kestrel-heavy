@@ -5,7 +5,7 @@
       "id": "m3",
       "mode": "fly",
       "restoreSafetyFactor": 1.9,
-      "edit": "Fly this rocket. It already clears every seed.",
+      "edit": "Fly this rocket. It already clears every seed and lands on Haven: 13% landing fuel (28 t), stage 1 cuts off near 90 km and 2.5 km/s, and the guidance computer circles stage 2 at 550 km.",
       "designs": [
         {
           "version": 3,
@@ -1004,7 +1004,7 @@
               "diameter": 3.2,
               "material": "titanium",
               "separationMass": 40,
-              "landingPropMass": 8800,
+              "landingPropMass": 28000,
               "cluster": {
                 "pattern": "auto"
               },
@@ -1017,7 +1017,7 @@
               "propellant": "hydrolox",
               "engine": "exp-hydrolox",
               "engineCount": 2,
-              "propMass": 32000,
+              "propMass": 36000,
               "diameter": 3.2,
               "material": "titanium",
               "separationMass": 40,
@@ -1070,7 +1070,8 @@
           "heatShield": true,
           "missionId": "m13",
           "avionics": {
-            "tier": "standard"
+            "tier": "standard",
+            "guidanceComputer": true
           },
           "safetyFactor": 1.6,
           "livery": {
