@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kestrel.Core.Flight;
 using Kestrel.Core.Flight.Narration;
 using UnityEngine;
 
@@ -25,6 +26,9 @@ namespace Kestrel.Game.Audio
         bool sawAudio;
         NarrationFacts facts;
         ColorDirector color;
+        CallTriggers triggers;
+        readonly List<string> countBeats = new List<string>();
+        bool guideTalking;
         bool strapOns;
         double simTime, altitude;
         readonly List<ColorCue> due = new List<ColorCue>();
@@ -58,12 +62,52 @@ namespace Kestrel.Game.Audio
             bool recovery = launch != null && launch.Recovery != null && launch.Recovery != "none" && launch.Stages >= 2;
             color = new ColorDirector(recovery);
             color.UseCalls(calls);
+            // The flight's own triggers: whatever the count had due is gone at liftoff.
+            triggers = new CallTriggers(calls, launch != null ? launch.Stages : 0, strapOns);
+            triggers.Liftoff();
+            guideTalking = false;
+        }
+
+        /// <summary>
+        /// The terminal count opened for this design. Pad and tank-press calls can play during it, into silence and
+        /// only with a take that ends before T-0. <paramref name="launch"/> is the same facts the flight will use.
+        /// </summary>
+        public void BeginCount(NarrationFacts launch, CallSchedule calls)
+        {
+            facts = launch;
+            strapOns = launch != null && launch.TryGet("strapons", out var n) && n is int count && count > 0;
+            color = null;
+            schedule.Reset();
+            StopVoice();
+            countBeats.Clear();
+            triggers = launch != null ? new CallTriggers(calls, launch.Stages, strapOns) : null;
+        }
+
+        /// <summary>
+        /// The count's clock (negative seconds) and the ids of the beats it has fired so far.
+        /// <paramref name="guideSpeaking"/>: the guide has a line up; a pre-launch call waits for it.
+        /// </summary>
+        public void CountTick(double countSeconds, IReadOnlyList<Kestrel.Core.Timeline.LaunchBeat> fired, bool guideSpeaking = false)
+        {
+            guideTalking = guideSpeaking;
+            if (triggers == null) return;
+            countBeats.Clear();
+            if (fired != null) for (int i = 0; i < fired.Count; i++) countBeats.Add(fired[i] != null ? fired[i].Id : null);
+            triggers.CountTick(countSeconds, countBeats, (double)Time.unscaledTime);
+        }
+
+        /// <summary>The count closed without a flight (back to the hangar). Its calls stop.</summary>
+        public void EndCount()
+        {
+            triggers = null;
+            Stop();
         }
 
         public void SetFlightClock(double seconds, double altM)
         {
             simTime = seconds;
             altitude = altM;
+            triggers?.OnAltitude(altM, (double)Time.unscaledTime);
         }
 
         public void OnStagedEvent(string type, int stage)
@@ -76,6 +120,7 @@ namespace Kestrel.Game.Audio
                 return;
             }
             color?.OnEvent(type, simTime);
+            triggers?.OnSimEvent(type, stage, (double)Time.unscaledTime);
             // Facts unknown (no launch gave them) means only the neutral takes can play.
             var cue = NarrationRoute.Route(type, stage, strapOns, facts != null ? facts.Stages : 0);
             if (cue.Silent) return;
@@ -136,6 +181,7 @@ namespace Kestrel.Game.Audio
         {
             TickFade();
             if (Held || !Application.isPlaying || voice == null) return;
+            OfferTrigger();
             if (!schedule.Busy) { OfferColor(); return; }
             if (voice.isPlaying) { sawAudio = true; return; }
             if (!sawAudio && Time.unscaledTime < startedAt + 0.1f) return;
@@ -143,6 +189,22 @@ namespace Kestrel.Game.Audio
             var next = schedule.Complete((double)Time.unscaledTime);
             if (next != null) StartVoice(next);
             else director?.SetVoiceDuck(false);
+        }
+
+        // Pad, tank press, SECO, Karman and entry: due only when the event really happened (CallTriggers). Never over
+        // a waiting call; before liftoff only into silence and with a take that ends before T-0.
+        void OfferTrigger()
+        {
+            if (triggers == null || facts == null) return;
+            double now = (double)Time.unscaledTime;
+            if (color != null) triggers.OnRecovery(RecoveryLog.FlightMarks, RecoveryLog.RailClock(simTime), now);
+            if (!triggers.Next(now, schedule.Busy || guideTalking, !string.IsNullOrEmpty(schedule.Pending), out var cue)) return;
+            triggers.Offered(cue);
+            int lit = cue.LitStage > 0 ? cue.LitStage : NarrationRoute.DefaultLit(cue.EventId, facts.Stages);
+            double max = cue.MaxSec;
+            System.Func<NarrationLine, bool> fits = null;
+            if (!double.IsInfinity(max)) fits = line => line.Duration <= max;
+            Apply(schedule.Offer(catalog, cue.EventId, facts, lit, AudioPrefs.CommentaryMode, now, fits));
         }
 
         // Color exchanges are offered only from here: never queued, never on a call's event.

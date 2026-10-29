@@ -79,7 +79,7 @@ namespace Kestrel.Game.Audio
         /// </summary>
         /// <param name="litStage">The core stage this event lit (0 for none): it adds the lit.* facts and separates cursors.</param>
         /// <param name="now">Seconds on any steady clock (unscaled time); used for the gap after a line.</param>
-        /// <param name="accept">Last check on a color take before it starts (its length against the next call). Null accepts.</param>
+        /// <param name="accept">Last check on a take before it starts or queues: a color take's length against the next call, a pre-launch call's against T-0. Null accepts.</param>
         public NarrationOffer Offer(NarrationCatalog catalog, string id, NarrationFacts facts, int litStage,
             CommentaryMode mode, double now, Func<NarrationLine, bool> accept = null)
         {
@@ -104,6 +104,8 @@ namespace Kestrel.Game.Audio
                 Busy = true;
                 return new NarrationOffer(NarrationOutcome.Started, Current, false, true, null);
             }
+            // A call with a check (a pre-launch call that must end before T-0) is dropped when its take does not pass.
+            if (accept != null && !accept(line)) return Dropped("no room");
             Bump(key);
             if (Busy && !id.StartsWith("abort") && !CurrentIsColor)
             {

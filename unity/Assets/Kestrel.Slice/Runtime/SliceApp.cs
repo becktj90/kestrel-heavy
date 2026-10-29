@@ -1566,6 +1566,7 @@ namespace Kestrel.Slice
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             ascentErrorLogged = false;
+            BeginCountNarration();
             var gates = LiveBlockers();
             Debug.Log("[Count] gates audio=" + gates.AudioDeviceReady
                 + " clip=" + gates.ClipLoadFinished
@@ -1704,6 +1705,7 @@ namespace Kestrel.Slice
             handoff.Reset();
             ascentErrorLogged = false;
             counting = false; sequence = null;
+            CountVoice()?.EndCount();
             if (flight != null) flight.enabled = false;
             if (cam != null) cam.ResetProjectionMatrix();
             recovery?.Stop();
@@ -1855,6 +1857,28 @@ namespace Kestrel.Slice
             }
             HideCountGrid();
             RefreshWebcast(sequence.Time, false);
+            if (counting) CountVoice()?.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+        }
+
+        static bool GuideSpeaking()
+        {
+            var box = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Guide.GuideBoxDriver>();
+            return box != null && box.Stage != null && box.Stage.Count > 0;
+        }
+
+        Kestrel.Game.Audio.NarrationPlayer CountVoice() => flight != null ? flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>() : null;
+
+        // Pad and tank-press calls belong to the count: they get the design's facts and timeline when it opens.
+        void BeginCountNarration()
+        {
+            var voice = CountVoice();
+            if (voice == null || !counting || sequence == null) return;
+            try
+            {
+                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null), flightCalls);
+                voice.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Count] narration: " + e.Message); }
         }
 
         bool countTagDressed;

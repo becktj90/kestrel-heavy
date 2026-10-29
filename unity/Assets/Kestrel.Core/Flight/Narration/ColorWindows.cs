@@ -64,6 +64,14 @@ namespace Kestrel.Core.Flight.Narration
         public double MaxQ = double.NaN;
         public double Boostback = double.NaN;
         public double Entry = double.NaN;
+        /// <summary>Core stages (1-based) whose tanks this design presses on the pad (count.press.s&lt;n&gt;, linked to tankpress).</summary>
+        public readonly List<int> PressStages = new List<int>();
+        /// <summary>Core stages (1-based) whose ascent burn ends in a SECO (stg.seco.s&lt;n&gt;.1, a restartable engine), linked to seco.</summary>
+        public readonly List<int> SecoStages = new List<int>();
+        /// <summary>The flight reaches 100 km (asc.karman, linked to karman).</summary>
+        public bool HasKarman;
+        /// <summary>The design flies a booster entry burn (rec.entry, linked to entry).</summary>
+        public bool HasEntry;
 
         public int Count => calls.Count;
 
@@ -92,6 +100,7 @@ namespace Kestrel.Core.Flight.Narration
                 else if (e.id == "rec.entry") s.Entry = e.nominal;
                 var ids = e.links != null ? e.links.narration : null;
                 if (ids == null) continue;
+                NoteTrigger(s, e.id, ids);
                 for (int k = 0; k < ids.Count; k++)
                 {
                     string id = ids[k];
@@ -102,6 +111,22 @@ namespace Kestrel.Core.Flight.Narration
             }
             s.calls.Sort();
             return s;
+        }
+
+        // The event a call trigger needs, read from the generated timeline: the generator only emits an event the
+        // design really flies (no tank press for a solid or hypergolic stage, no SECO for an engine that cannot
+        // restart, no entry burn without a recovery), so these lists are the truth the triggers are gated on.
+        static void NoteTrigger(CallSchedule s, string id, List<string> narration)
+        {
+            if (string.IsNullOrEmpty(id)) return;
+            if (narration.Contains(CallTriggers.TankPress) && id.StartsWith("count.press.s", StringComparison.Ordinal)
+                && int.TryParse(id.Substring("count.press.s".Length), out int press) && press >= 1 && !s.PressStages.Contains(press))
+                s.PressStages.Add(press);
+            else if (narration.Contains(CallTriggers.Seco) && id.StartsWith("stg.seco.s", StringComparison.Ordinal) && id.EndsWith(".1", StringComparison.Ordinal)
+                && int.TryParse(id.Substring("stg.seco.s".Length, id.Length - "stg.seco.s".Length - 2), out int seco) && seco >= 1 && !s.SecoStages.Contains(seco))
+                s.SecoStages.Add(seco);
+            else if (id == "asc.karman" && narration.Contains(CallTriggers.Karman)) s.HasKarman = true;
+            else if (id == "rec.entry" && narration.Contains(CallTriggers.Entry)) s.HasEntry = true;
         }
     }
 
