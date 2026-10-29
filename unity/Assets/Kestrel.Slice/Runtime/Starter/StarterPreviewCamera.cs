@@ -29,13 +29,25 @@ namespace Kestrel.Slice
         public StarterPreviewSubject Subject => subject;
         public HudBox Box => box;
 
-        /// <summary>The built vehicle: deck (bell exits) at yMin, nose at yMax, widest radius (core, strap-ons, legs).</summary>
-        public void SetVehicle(float yMin, float yMax, float radius)
+        /// <summary>The built vehicle: deck (bell exits) at yMin, nose at yMax, widest radius (core, strap-ons, legs).
+        /// <paramref name="pad"/> (optional) is the pad art the frame must show: tower crown, base plates and pad circle in world space
+        /// (<see cref="StarterPadFrame.World"/>). With it the pose also picks a heading that shows them beside, not behind, the vehicle.</summary>
+        public void SetVehicle(float yMin, float yMax, float radius, PadPoint[] pad = null)
         {
-            var s = new StarterPreviewSubject(yMin, yMax, radius);
+            var s = new StarterPreviewSubject(yMin, yMax, radius, pad != null && pad.Length > 0 ? pad : null);
             if (!s.Usable) return;
-            if (haveSubject && System.Math.Abs(s.YMin - subject.YMin) < 1e-4 && System.Math.Abs(s.YMax - subject.YMax) < 1e-4 && System.Math.Abs(s.Radius - subject.Radius) < 1e-4) return;
+            if (haveSubject && System.Math.Abs(s.YMin - subject.YMin) < 1e-4 && System.Math.Abs(s.YMax - subject.YMax) < 1e-4 && System.Math.Abs(s.Radius - subject.Radius) < 1e-4
+                && SamePad(s.Pad, subject.Pad)) return;
             subject = s; haveSubject = true; dirty = true;
+        }
+
+        static bool SamePad(PadPoint[] a, PadPoint[] b)
+        {
+            if (a == null || b == null) return a == b;
+            if (a.Length != b.Length) return false;
+            for (int i = 0; i < a.Length; i++)
+                if (a[i].Kind != b[i].Kind || System.Math.Abs(a[i].X - b[i].X) > 1e-4 || System.Math.Abs(a[i].Y - b[i].Y) > 1e-4 || System.Math.Abs(a[i].Z - b[i].Z) > 1e-4) return false;
+            return true;
         }
 
         /// <summary>The preview box in points on a <paramref name="widthPt"/> x <paramref name="heightPt"/> screen.</summary>

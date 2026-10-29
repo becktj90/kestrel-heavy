@@ -240,13 +240,13 @@ namespace Kestrel.Core.Tests
         [TestCase(3)]
         [TestCase(4)]
         [TestCase(12)]
-        [TestCase(13)]
         public void Concluded_BoosterVerdict_IsBitIdentical_ToFlyingItOutLive(int index)
         {
             // Physics (one plant, same steps): finishing the landing at insertion runs the same fixed recovery steps on
             // Auto-assist, so the published verdict equals the one the live frames reach, bit for bit. These starters'
             // boosters were still in the air at insertion on main (seed 1, live frames): KH-3 174 s, KH-4 331 s and KH-12
-            // 360 s (expendable), KH-13 277 s (a planned, graded Haven landing).
+            // 360 s (expendable). KH-13 (277 s, a planned Haven landing) left this list with t-booster-land: its rebuilt
+            // starter separates early and lands on Haven well before insertion.
             var live = Play(index, false);
             var liveV = live.Verdict;
             RecoveryLog.Clear();
