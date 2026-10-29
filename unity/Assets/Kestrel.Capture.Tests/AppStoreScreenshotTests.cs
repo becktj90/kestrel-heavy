@@ -246,7 +246,10 @@ namespace Kestrel.Capture.Tests
                 yield return null;
                 double now = app.FlightClockForCapture;
                 if (now >= 60) { reached = true; break; }
-                if (now > last) { last = now; still = 0; } else still++;
+                // !(now <= last), not now > last: the clock is NaN until liftoff (no Sim during the held count), and
+                // NaN > NaN is false, so the old test counted every frame from the count as a stall and gave up 600
+                // frames (60 s) later, at T+47.9, while the sim was still climbing at 0.1 s a frame.
+                if (!(now <= last)) { last = now; still = 0; } else still++;
                 if (now > 1 && (still == 30 || still == 300)) TestContext.WriteLine("flight stall: " + StallState(driver));
             }
             if (!reached) problems.Add("flight: the flight stopped at T+" + app.FlightClockForCapture.ToString("0.0") + " before T+60 (" + StallState(driver) + ")");
@@ -270,7 +273,9 @@ namespace Kestrel.Capture.Tests
                     if (rec != null && rec.StartedForCapture && rec.PhaseForCapture >= RecoveryPhase.Landing) { landing = true; break; }
                     if (driver != null && !driver.Running && (rec == null || !rec.StartedForCapture)) break;
                     double now = app.FlightClockForCapture;
-                    if (now > last) { last = now; still = 0; } else still++;
+                    // Once the recovery show has the booster it runs on its own clock; the ascent sim may finish first.
+                    if (rec != null && rec.StartedForCapture) still = 0;
+                    else if (!(now <= last)) { last = now; still = 0; } else still++;
                 }
                 if (landing)
                 {
