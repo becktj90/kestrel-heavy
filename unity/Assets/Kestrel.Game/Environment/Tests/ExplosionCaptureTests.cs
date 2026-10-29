@@ -56,6 +56,58 @@ namespace Kestrel.Game.Environment.Tests
             magenta = m / (float)px.Length; white = w / (float)px.Length; fire = f / (float)px.Length;
         }
 
+        RenderTexture Shoot(Camera cam)
+        {
+            var rt = Track(new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32));
+            rt.Create();
+            var req = new RenderPipeline.StandardRequest { destination = rt };
+            if (GraphicsSettings.currentRenderPipeline == null) { cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; }
+            else if (RenderPipeline.SupportsRenderRequest(cam, req)) RenderPipeline.SubmitRenderRequest(cam, req);
+            else { Assert.Ignore("the pipeline takes no render request"); }
+            return rt;
+        }
+
+        Texture2D ReadBack(RenderTexture rt)
+        {
+            var prev = RenderTexture.active;
+            var tex = Track(new Texture2D(W, H, TextureFormat.RGBA32, false));
+            RenderTexture.active = rt;
+            tex.ReadPixels(new Rect(0, 0, W, H), 0, 0); tex.Apply();
+            RenderTexture.active = prev;
+            return tex;
+        }
+
+        /// <summary>Draws each renderer group alone and logs/saves what it puts on screen, so a bright frame names its cause.</summary>
+        void DiagnoseLayers(Camera cam, ExplosionFx fx, ShockwaveFx sw, DebrisFx debris, GameObject rocket, string frame)
+        {
+            var groups = new List<KeyValuePair<string, List<Renderer>>>();
+            foreach (ExplosionLayer layer in System.Enum.GetValues(typeof(ExplosionLayer)))
+            {
+                var lr = fx.LayerRenderer(layer);
+                if (lr != null) groups.Add(new KeyValuePair<string, List<Renderer>>("fx-" + layer, new List<Renderer> { lr }));
+            }
+            var shock = new List<Renderer>(sw.GetComponentsInChildren<MeshRenderer>(true));
+            groups.Add(new KeyValuePair<string, List<Renderer>>("shockwave", shock));
+            var deb = new List<Renderer>();
+            if (debris.SparkRenderer != null) deb.Add(debris.SparkRenderer);
+            groups.Add(new KeyValuePair<string, List<Renderer>>("debris-sparks", deb));
+            groups.Add(new KeyValuePair<string, List<Renderer>>("rocket", new List<Renderer>(rocket.GetComponentsInChildren<Renderer>(true))));
+            groups.Add(new KeyValuePair<string, List<Renderer>>("none-of-the-above", new List<Renderer>()));   // debris chunks, lights, anything unlisted
+            var all = new List<Renderer>();
+            foreach (var g in groups) all.AddRange(g.Value);
+            var was = new List<bool>(); foreach (var r in all) was.Add(r != null && r.enabled);
+            for (int i = 0; i < groups.Count; i++)
+            {
+                for (int k = 0; k < all.Count; k++) if (all[k] != null) all[k].enabled = false;
+                foreach (var r in groups[i].Value) if (r != null) r.enabled = was[all.IndexOf(r)];
+                var rt = Shoot(cam);
+                Count(ReadBack(rt), out float m, out float w, out float fi);
+                TestContext.WriteLine($"explosion diag {frame} only {groups[i].Key}: magenta {m:P2} white {w:P2} fire {fi:P2}");
+                UiCapture.Save(rt, $"explosion-diag-{frame}-{groups[i].Key}");
+            }
+            for (int k = 0; k < all.Count; k++) if (all[k] != null) all[k].enabled = was[k];
+        }
+
         [Test]
         public void SkinnyRocketBlowingUpRendersFireDebrisAndSmokeNeverMagenta()
         {
@@ -135,26 +187,18 @@ namespace Kestrel.Game.Environment.Tests
                     t += dt;
                 }
                 rocket.SetActive(f == 0);   // the airframe is gone once it has broken up
-                var rt = Track(new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32));
-                rt.Create();
-                var req = new RenderPipeline.StandardRequest { destination = rt };
-                if (GraphicsSettings.currentRenderPipeline == null) { cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; }
-                else if (RenderPipeline.SupportsRenderRequest(cam, req)) RenderPipeline.SubmitRenderRequest(cam, req);
-                else { Assert.Ignore("the pipeline takes no render request"); }
-
-                var prev = RenderTexture.active;
-                var tex = Track(new Texture2D(W, H, TextureFormat.RGBA32, false));
-                RenderTexture.active = rt;
-                tex.ReadPixels(new Rect(0, 0, W, H), 0, 0); tex.Apply();
-                RenderTexture.active = prev;
+                var rt = Shoot(cam);
+                var tex = ReadBack(rt);
                 Count(tex, out float magenta, out float white, out float fire);
                 int live = 0; foreach (var ps in systems) live += ps.particleCount;
                 TestContext.WriteLine($"explosion frame {names[f]}: live particles {live}");
                 TestContext.WriteLine($"explosion frame {names[f]}: magenta {magenta:P2} white {white:P2} fire {fire:P2}");
+                // Save before asserting: a failing frame is the evidence.
+                var png = UiCapture.Save(rt, $"explosion-skinny-{f + 1}-{names[f]}");
+                if (white >= 0.30f || f == 0) DiagnoseLayers(cam, fx, sw, debris, rocket, names[f]);
                 Assert.That(magenta, Is.LessThan(0.002f), names[f] + ": magenta pixels, a missing material or shader");
                 Assert.That(white, Is.LessThan(0.30f), names[f] + ": a bright flash covers more than 30% of the screen");
                 sawFire = Mathf.Max(sawFire, fire);
-                var png = UiCapture.Save(rt, $"explosion-skinny-{f + 1}-{names[f]}");
                 Assert.That(png, Is.Not.Null, names[f] + ": no PNG written");
             }
             Assert.That(sawFire, Is.GreaterThan(0.002f), "no fire-coloured pixels in any frame: the explosion is not visible");
