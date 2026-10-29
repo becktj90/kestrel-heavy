@@ -334,6 +334,7 @@ namespace Kestrel.Slice
                 if (playT < cap) playT += Time.unscaledDeltaTime;
                 if (playT > cap) playT = cap;
             }
+            staging.FairingWaitsForSimEvent = flight.Sim.FairingHeatGated;
             ApplyStaging(flight.Sim.Events, playT, flight.Altitude, flight.Speed, flight.DynPressure, flight.ThrustFraction);
             ApplyBells(playT);
             var read = staging.Plume(playT, flight.ThrustFraction);
