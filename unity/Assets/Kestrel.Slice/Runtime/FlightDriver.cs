@@ -78,6 +78,16 @@ namespace Kestrel.Slice
             Sim.Sink = CinematicSink;
         }
 
+        /// <summary>Widest stage (or strap-on) diameter of the design, m. Drives the size of the blast so it follows the real rocket.</summary>
+        internal static double WidestDiameterM(Design d)
+        {
+            double w = 0;
+            if (d == null) return w;
+            if (d.stages != null) foreach (var s in d.stages) if (s != null && s.diameter > w) w = s.diameter;
+            if (d.strapOns != null && d.strapOns.diameter > w) w = d.strapOns.diameter;
+            return w;
+        }
+
         UnityEngine.Vector3 VehicleScenePosition() => Vehicle != null ? Vehicle.position : UnityEngine.Vector3.zero;
 
         void OnDisable()
@@ -132,6 +142,7 @@ namespace Kestrel.Slice
             Sim = new AscentSim(stages, opts);
             directed = new DirectedFlight(Sim, Decisions, opts);
             BindCinematicSink();
+            CinematicSink.VehicleRadiusM = Kestrel.Kit.FlightSinkMath.VehicleRadiusM(WidestDiameterM(d));
             Running = true;
             clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             AttitudeDeg = 90f; HasAttitude = false;
