@@ -77,6 +77,38 @@ namespace Kestrel.Slice
             Layout(upp);
         }
 
+        /// <summary>
+        /// Share of the screen height (0..1, from the top) the HUD's top block covers over the middle of the frame:
+        /// the bottom of the telemetry strip (ALT / SPEED / Q / G), measured as laid out. 0 while the HUD is closed or
+        /// not laid out. The chase camera keeps the stack's nose under it (ChaseCamera.KeepBelow): the strip is sized in
+        /// points and scales with the panel width, so on a 4:3 iPad it reaches 18% down the frame against 12% on a phone.
+        /// </summary>
+        public float TopCover()
+        {
+            var strip = hud != null ? hud.Q("ascent-telemetry") : null;
+            if (strip == null || strip.panel == null || strip.resolvedStyle.display == DisplayStyle.None) return 0f;
+            var top = strip.panel.visualTree.worldBound;
+            var sb = strip.worldBound;
+            if (!(top.height > 1f) || !(sb.height > 1f) || float.IsNaN(sb.yMax)) return 0f;
+            return Mathf.Clamp01((sb.yMax - top.yMin) / top.height);
+        }
+
+        /// <summary>
+        /// Share of the panel height (0..1) from the bottom edge up to the top of the tools row (Follow, Cam, Pause) as laid
+        /// out: the row and everything under it (the flight message, BACK TO DESIGN, the medal card) cover the scene there.
+        /// 0 while the HUD is not laid out.
+        /// </summary>
+        public float BottomCover()
+        {
+            var tools = hud != null ? hud.Q("flight-tools") : null;
+            if (tools == null || tools.panel == null || tools.resolvedStyle.display == DisplayStyle.None) return 0f;
+            var top = tools.panel.visualTree.worldBound;
+            var tb = tools.worldBound;
+            if (!(top.height > 1f) || !(tb.height > 1f) || float.IsNaN(tb.yMin)) return 0f;
+            float c = (top.yMax - tb.yMin) / top.height;
+            return c > 0f && c < 0.6f ? c : 0f;   // a layout that puts the row up top is not a bottom cover
+        }
+
         public void Close()
         {
             // Hand the tools row (Follow, Cam, Pause) back to the flex flow before the HUD goes.
