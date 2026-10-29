@@ -86,6 +86,13 @@ namespace Kestrel.Core.Tests.Narration
         }
 
         [Test]
+        public void Commentary_PrefIsMirroredWithTheOtherSettings()
+        {
+            CollectionAssert.Contains(Kestrel.Core.Save.SettingsMirror.Keys, Commentary.Pref);
+            CollectionAssert.Contains(Kestrel.Core.Save.SettingsMirror.Keys, "kh.audio.narration.muted", "the old mute stays so a save can still migrate");
+        }
+
+        [Test]
         public void Commentary_LegacyMuteMigratesToOff_AndAnExplicitPrefWins()
         {
             Assert.AreEqual(CommentaryMode.Full, Commentary.Resolve(false, 0, false));
