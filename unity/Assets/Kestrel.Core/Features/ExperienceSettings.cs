@@ -18,6 +18,9 @@ namespace Kestrel.Core.Features
     {
         public const string TierPref = "kh.settings.tier";
         public const string ShowFullDesignerPref = "kh.settings.fullDesigner";
+        /// <summary>Settings > Show corner character (Thrum's portrait in the corner). A key no older build wrote,
+        /// so a save from before this setting reads as off. Only a stored 1 turns it on.</summary>
+        public const string CornerCharacterPref = "kh.settings.cornerCharacter";
         public const string LegacyDesignerEngineerPref = "kh.designer.v3.engineer";
         public const string LegacyHangarEngineerPref = "kh.hangar.engineer";
 
@@ -34,6 +37,11 @@ namespace Kestrel.Core.Features
         public static bool ShowFullDesigner(Func<string, bool> has, Func<string, int> read) => Read(has, read, ShowFullDesignerPref) != 0;
 
         public static void SetShowFullDesigner(bool on, Action<string, int> write) => write?.Invoke(ShowFullDesignerPref, on ? 1 : 0);
+
+        /// <summary>The corner character shows only when the player switched it on. No stored value is off.</summary>
+        public static bool CornerCharacter(Func<string, bool> has, Func<string, int> read) => Read(has, read, CornerCharacterPref) == 1;
+
+        public static void SetCornerCharacter(bool on, Action<string, int> write) => write?.Invoke(CornerCharacterPref, on ? 1 : 0);
 
         /// <summary>
         /// Store a tier. Engineer turns both old prefs on; starter/builder turn both off.
