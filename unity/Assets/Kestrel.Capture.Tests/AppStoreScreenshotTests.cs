@@ -105,6 +105,9 @@ namespace Kestrel.Capture.Tests
         {
             string name = scene + "-" + d.Name;
             for (int i = 0; i < 10; i++) yield return null;   // the panel re-lays out at the new size
+            if (ShortBannerShown(UnityEngine.Object.FindAnyObjectByType<SliceApp>()?.UiForCapture))
+                TestContext.WriteLine("WARNING " + name + ": the \"" + WebcastBoard.VerdictShort + "\" pill is on screen");
+            if (scene == "flight") TestContext.WriteLine("flight framing " + d.Name + ": " + Framing(UnityEngine.Object.FindAnyObjectByType<FlightDriver>()) + " hud cover " + HudCover().ToString("0.000"));
             int distinct = 0;
             var png = FlightCapture.Png(d, Dir, name, n => distinct = n);
             while (png.MoveNext()) yield return png.Current;
@@ -282,7 +285,12 @@ namespace Kestrel.Capture.Tests
                 }
                 if (rec != null && rec.StartedForCapture)
                 {
-                    TestContext.WriteLine("booster separated at T+" + app.FlightClockForCapture.ToString("0.0") + "; ascent held while the booster flies");
+                    TestContext.WriteLine("booster separated at T+" + app.FlightClockForCapture.ToString("0.0"));
+                    // The separated stage's mesh only appears FlightStaging.SepDelaySec (3 s) after the separation event, on the
+                    // ascent clock. Holding the ascent at once (run 40820418960: held at T+114.1) froze it hidden for the whole
+                    // landing. Let the ascent run until the booster mesh is shown, then hold.
+                    for (int f = 0; f < 600 && !BoosterShown(rec) && driver != null && driver.Running; f++) yield return null;
+                    TestContext.WriteLine("booster shown " + BoosterShown(rec) + " at T+" + app.FlightClockForCapture.ToString("0.0") + "; ascent held while the booster flies");
                     if (driver != null) driver.Hold(true);
                     var seen = rec.PhaseForCapture;
                     TestContext.WriteLine("recovery phase " + seen + " at frame " + Time.frameCount);
@@ -300,6 +308,18 @@ namespace Kestrel.Capture.Tests
                         for (int i = 0; i < 10 && rec.PhaseForCapture == RecoveryPhase.Landing; i++) yield return null;
                         RecoveryShow.HoldForCapture = true;
                         yield return null;
+                        // The live webcast pill reads "Short on speed" while speed / total budget < 0.40, which on KH-7 is the
+                        // whole ascent from MECO into the S3 burn: true of that moment, false as a picture of a flight that
+                        // reaches GTO. With the booster frozen in its burn (camera still on it), let the ascent fly on until
+                        // the pill moves off it, then hold the ascent and shoot. The banner rule itself is Gameplay's.
+                        if (ShortBannerShown(app.UiForCapture) && driver != null)
+                        {
+                            driver.Hold(false);
+                            for (int f = 0; f < MaxFlightFrames && driver.Running && ShortBannerShown(app.UiForCapture); f++) yield return null;
+                            driver.Hold(true);
+                            yield return null;
+                            TestContext.WriteLine("ascent flown on to T+" + app.FlightClockForCapture.ToString("0.0") + " for the landing shot; short banner " + ShortBannerShown(app.UiForCapture) + ", running " + driver.Running);
+                        }
                         TestContext.WriteLine("landing shot: phase " + rec.PhaseForCapture + " steer " + rec.SteerCamera + "; " + BoosterView(rec));
                         var ld = ShootAll("landing", problems);
                         while (ld.MoveNext()) yield return ld.Current;
@@ -338,13 +358,49 @@ namespace Kestrel.Capture.Tests
                 + " root vy " + root.y.ToString("0.000") + " stack vy " + lo.ToString("0.000") + "-" + hi.ToString("0.000") + " (" + n + " renderers) alt " + d.Altitude.ToString("0");
         }
 
+        /// <summary>The live "Short on speed" webcast pill is laid out and visible.</summary>
+        static bool ShortBannerShown(VisualElement ui)
+        {
+            if (ui == null) return false;
+            foreach (var l in ui.Query<Label>().ToList())
+            {
+                if (l.text == null || !l.text.StartsWith(WebcastBoard.VerdictShort, StringComparison.Ordinal)) continue;
+                if (!(l.worldBound.width > 1f) || !(l.worldBound.height > 1f)) continue;
+                bool shown = true;
+                for (VisualElement e = l; e != null; e = e.parent)
+                    if (e.resolvedStyle.display == DisplayStyle.None || e.resolvedStyle.visibility == Visibility.Hidden || e.resolvedStyle.opacity < 0.05f) { shown = false; break; }
+                if (shown) return true;
+            }
+            return false;
+        }
+
+        static Transform BoosterOf(RecoveryShow rec)
+        {
+            var f = typeof(RecoveryShow).GetField("staging", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var staging = f != null && rec != null ? f.GetValue(rec) as FlightStageShow : null;
+            return staging != null ? staging.Booster : null;
+        }
+
+        static bool BoosterShown(RecoveryShow rec)
+        {
+            var b = BoosterOf(rec);
+            return b != null && b.gameObject.activeInHierarchy;
+        }
+
+        /// <summary>AscentHud.TopCover as the flight camera reads it (viewport fraction under the telemetry strip).</summary>
+        static float HudCover()
+        {
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            var f = typeof(SliceApp).GetField("ascentHud", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var hud = f != null && app != null ? f.GetValue(app) as Kestrel.Slice.AscentHud : null;
+            return hud != null ? hud.TopCover() : -1f;
+        }
+
         /// <summary>Where the recovered booster is for the main camera: active, renderers, distance and viewport box.</summary>
         static string BoosterView(RecoveryShow rec)
         {
             var cam = Camera.main;
-            var f = typeof(RecoveryShow).GetField("staging", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var staging = f != null ? f.GetValue(rec) as FlightStageShow : null;
-            var b = staging != null ? staging.Booster : null;
+            var b = BoosterOf(rec);
             if (cam == null || b == null) return "booster view: no camera or booster";
             float x0 = 1e9f, x1 = -1e9f, y0 = 1e9f, y1 = -1e9f, z0 = 1e9f; int n = 0, on = 0;
             foreach (var r in b.GetComponentsInChildren<Renderer>(true))
