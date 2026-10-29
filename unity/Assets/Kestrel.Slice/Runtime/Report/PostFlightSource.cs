@@ -77,6 +77,7 @@ namespace Kestrel.Slice
                 Seed = mission != null ? mission.Seed : 0,
                 DesignId = design != null ? design.name : null,
                 RedundantAvionics = design != null && EventModel.Tier(design.avionicsTier) == "redundant",
+                Finless = design != null && !design.fins,
                 EngineCount = Engines(design),
                 BudgetKc = mission != null ? mission.BudgetKc : 0,
                 GoalKm = mission != null && mission.Target != null ? mission.Target.ApoKm : 0,

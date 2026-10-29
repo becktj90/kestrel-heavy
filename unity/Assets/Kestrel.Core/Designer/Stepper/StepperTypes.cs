@@ -120,6 +120,8 @@ namespace Kestrel.Core.Designer.Stepper
         public bool CanLaunch;
         public string LaunchLabel;
         public bool LandingRequired;
+        /// <summary>The design has no fins. Null when the design did not parse. Thrum's tumble line needs it: "finless" is false for a finned rocket.</summary>
+        public bool? Finless;
 
         public StepCheck this[DesignerStep step] => Checks[(int)step];
     }
