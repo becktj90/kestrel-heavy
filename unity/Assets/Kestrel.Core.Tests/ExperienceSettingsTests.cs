@@ -106,5 +106,64 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(1.0, System.Convert.ToDouble(data["kh.settings.tier"]));
             Assert.AreEqual(1.0, System.Convert.ToDouble(data["kh.settings.fullDesigner"]));
         }
+
+        // ---- Settings > Show corner character (Thrum's corner portrait) ----
+
+        [Test]
+        public void CornerCharacter_IsOffWithNoStoredValue_AndReadingNeverWrites()
+        {
+            var p = new Prefs();
+            Assert.IsFalse(ExperienceSettings.CornerCharacter(p.Has, p.Get));
+            Assert.IsEmpty(p.Map, "reading never writes");
+            Assert.IsFalse(ExperienceSettings.CornerCharacter(null, null), "no prefs at all is off");
+        }
+
+        [Test]
+        public void CornerCharacter_ExistingInstallIsOff_WhateverElseItStored()
+        {
+            // A save from a build before this setting: every other pref on, this key never written.
+            var p = new Prefs();
+            foreach (var k in SettingsMirror.Keys) if (k != ExperienceSettings.CornerCharacterPref) p.Set(k, 1);
+            Assert.IsFalse(p.Has(ExperienceSettings.CornerCharacterPref));
+            Assert.IsFalse(ExperienceSettings.CornerCharacter(p.Has, p.Get));
+            // Only a stored 1 turns it on; a stray 0, 2 or -1 does not.
+            foreach (int v in new[] { 0, 2, -1 })
+            {
+                p.Set(ExperienceSettings.CornerCharacterPref, v);
+                Assert.IsFalse(ExperienceSettings.CornerCharacter(p.Has, p.Get), "stored " + v);
+            }
+        }
+
+        [Test]
+        public void CornerCharacter_ToggleSurvivesAReload_AndTheSettingsFile()
+        {
+            var p = new Prefs();
+            ExperienceSettings.SetCornerCharacter(true, p.Set);
+            Assert.AreEqual(1, p.Get("kh.settings.cornerCharacter"));
+            var reloaded = new Prefs();
+            foreach (var kv in p.Map) reloaded.Set(kv.Key, kv.Value);
+            Assert.IsTrue(ExperienceSettings.CornerCharacter(reloaded.Has, reloaded.Get));
+
+            // The WebGL path: the settings file carries the key and puts it back on a fresh device.
+            CollectionAssert.Contains(SettingsMirror.Keys, ExperienceSettings.CornerCharacterPref);
+            var data = SettingsMirror.Capture(p.Has, p.Get);
+            Assert.AreEqual(1.0, System.Convert.ToDouble(data["kh.settings.cornerCharacter"]));
+
+            ExperienceSettings.SetCornerCharacter(false, p.Set);
+            Assert.AreEqual(0, p.Get("kh.settings.cornerCharacter"));
+            Assert.IsFalse(ExperienceSettings.CornerCharacter(p.Has, p.Get));
+        }
+
+        [Test]
+        public void CornerCharacter_DoesNotTouchTierOrReduceMotion()
+        {
+            var p = new Prefs();
+            p.Set("kh.a11y.reduceMotion", 1);
+            ExperienceSettings.SetCornerCharacter(true, p.Set);
+            Assert.AreEqual(1, p.Get("kh.a11y.reduceMotion"));
+            Assert.AreEqual(ExperienceTier.Starter, ExperienceSettings.Tier(p.Has, p.Get));
+            Assert.IsFalse(ExperienceSettings.ShowFullDesigner(p.Has, p.Get));
+            Assert.AreEqual(2, p.Map.Count, "only the corner key was added");
+        }
     }
 }
