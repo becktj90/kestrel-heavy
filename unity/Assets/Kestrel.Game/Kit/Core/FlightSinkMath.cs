@@ -43,6 +43,17 @@ namespace Kestrel.Kit
         public static float TouchdownShockwave01(double vz, bool solid)
             => solid && HardTouchdown(vz) ? C01(0.1 + Math.Abs(vz) / 20.0) : 0f;
 
+        /// <summary>
+        /// Blast source radius (m) from the design's widest stage diameter, so a skinny rocket gets a small fireball and a fat one a big one.
+        /// Falls back to 1.5 m for a missing or non-finite diameter; clamped to 0.3..6 m (ExplosionBudgets caps the result again).
+        /// </summary>
+        public static float VehicleRadiusM(double widestDiameterM)
+        {
+            if (double.IsNaN(widestDiameterM) || double.IsInfinity(widestDiameterM) || widestDiameterM <= 0) return 1.5f;
+            double r = widestDiameterM * 0.5;
+            return (float)(r < 0.3 ? 0.3 : r > 6.0 ? 6.0 : r);
+        }
+
         public static float StageScale01(int stage) => stage <= 1 ? 1f : stage == 2 ? 0.7f : 0.5f;
     }
 }

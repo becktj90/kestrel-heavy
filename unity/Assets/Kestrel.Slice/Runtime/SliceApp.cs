@@ -609,6 +609,11 @@ namespace Kestrel.Slice
         /// On iPad the panel is on the side, so the whole height is free and HangarCamera shifts left instead.</summary>
         void ApplyDesignFraming()
         {
+            // Flight owns the camera. A Starter-launched flight kept starterMode, so a screen geometry change mid-flight
+            // (rotation, an iPad multitasking resize) ran FrameCamera: it moved the camera and left the design screen's
+            // off-centre projection on the chase camera for the rest of the flight. The stack sat high, under the HUD's
+            // telemetry strip, and the juice FOV no longer applied (#381 iPad flight and landing frames).
+            if (hud != null && !hud.ClassListContains("hidden")) return;
             if (starterMode && starter != null && cam != null && ui.layout.height > 0)
             {
                 // Starter: the vehicle alone fills ~62% of the preview box (StarterFrame.Rocket), not the whole pad.
@@ -894,7 +899,20 @@ namespace Kestrel.Slice
             var cp = cam.transform.position;
             Vector3 look = v + lookOffset;
             if (flightView == FlightViewMode.Auto)
+            {
                 cam.transform.rotation = ChaseCamera.Aim(cp, look, fov, (float)altitude, cp.y - ground.position.y);
+                // The nose stays under the HUD's telemetry strip, measured as laid out (it reaches further down a 4:3 iPad).
+                float cover = ascentHud != null ? ascentHud.TopCover() : 0f;
+                float aimed = cam.transform.eulerAngles.x;
+                if (cover > 0f)
+                {
+                    var stackBase = U(pose.LookAt) - up * (float)(pose.Height * 0.5);
+                    cam.transform.rotation = ChaseCamera.KeepBelow(cam.transform.rotation, cp, stackBase + up * (float)pose.Height,
+                        stackBase, fov, 1f - cover - ChaseCamera.HudMargin);
+                    noseTrace = stackBase + up * (float)pose.Height;
+                }
+                hudTrace = new Vector4(cover, -Mathf.DeltaAngle(0f, aimed), -Mathf.DeltaAngle(0f, cam.transform.eulerAngles.x), Time.frameCount);
+            }
             else
                 cam.transform.LookAt(look, Vector3.up);
             if (fx != null)
@@ -1486,6 +1504,12 @@ namespace Kestrel.Slice
         public Kestrel.Pad.PadRenderer PadForCapture => trenchPad;
         public VisualElement UiForCapture => ui;
         public double FlightClockForCapture => flight != null && flight.Sim != null ? flight.Sim.T : double.NaN;
+        /// <summary>The booster landing, for the App Store captures (started? which phase?). Null before the stage is armed.</summary>
+        public RecoveryShow RecoveryForCapture => recovery;
+        /// <summary>Last Auto flight-camera frame: HUD cover, pitch after Aim, pitch after KeepBelow, frame; and the nose point used.</summary>
+        public Vector4 HudTraceForCapture => hudTrace;
+        public Vector3 NoseTraceForCapture => noseTrace;
+        Vector4 hudTrace; Vector3 noseTrace;
 
         /// <summary>Same design that left the pad. The launch gate already passed.</summary>
         void RestartFlight()
@@ -1566,6 +1590,7 @@ namespace Kestrel.Slice
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             ascentErrorLogged = false;
+            BeginCountNarration();
             var gates = LiveBlockers();
             Debug.Log("[Count] gates audio=" + gates.AudioDeviceReady
                 + " clip=" + gates.ClipLoadFinished
@@ -1582,14 +1607,19 @@ namespace Kestrel.Slice
             chrome?.OnFlightStarted();
         }
 
+        Kestrel.Core.Flight.Narration.CallSchedule flightCalls;
+
         LaunchSequence OpenSequence()
         {
+            flightCalls = null;
             try
             {
                 var cat = SliceData.Catalog;
                 if (cat == null || design == null || design.stages == null || design.stages.Count == 0) return null;
                 string mode = EngineerEnabled ? "engineer" : "standard";
                 var tl = TimelineGenerator.Generate(cat, design, Kestrel.Core.Timeline.Pad.For(cat, design), new Mission { mode = mode }, 1);
+                // The same timeline says when the calls are due, so a color exchange is only offered with room before the next one.
+                flightCalls = Kestrel.Core.Flight.Narration.CallSchedule.From(tl);
                 return LaunchSequence.Open(tl);
             }
             catch (System.Exception) { return null; }
@@ -1633,6 +1663,7 @@ namespace Kestrel.Slice
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
             try { hook = AscentFlight.Prepare(SliceData.Catalog, design, doc, engineer, reduced); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
+            flight.Calls = flightCalls;
             flight.Launch(design, hook);
             if (flight.Sim == null) return false;
             PresentAscent(engineer);
@@ -1698,6 +1729,7 @@ namespace Kestrel.Slice
             handoff.Reset();
             ascentErrorLogged = false;
             counting = false; sequence = null;
+            CountVoice()?.EndCount();
             if (flight != null) flight.enabled = false;
             if (cam != null) cam.ResetProjectionMatrix();
             recovery?.Stop();
@@ -1742,7 +1774,12 @@ namespace Kestrel.Slice
         void LateUpdate()
         {
             if (padLights != null && flight != null) padLights.SetPlume((float)flight.ThrustFraction, (float)flight.Altitude);
-            if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
+            if (sky != null && flight != null)
+            {
+                // The sky is graded for where the camera is: the booster's altitude while it is followed down, else the ascent's.
+                double viewAlt = recovery != null ? recovery.ViewAltitude : double.NaN;
+                sky.SetAltitude(double.IsNaN(viewAlt) ? flight.Altitude : viewAlt);
+            }
             if (explodedView != null && hangarCam != null && hangarCam.enabled)
             {
                 SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
@@ -1849,6 +1886,28 @@ namespace Kestrel.Slice
             }
             HideCountGrid();
             RefreshWebcast(sequence.Time, false);
+            if (counting) CountVoice()?.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+        }
+
+        static bool GuideSpeaking()
+        {
+            var box = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Guide.GuideBoxDriver>();
+            return box != null && box.Stage != null && box.Stage.Count > 0;
+        }
+
+        Kestrel.Game.Audio.NarrationPlayer CountVoice() => flight != null ? flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>() : null;
+
+        // Pad and tank-press calls belong to the count: they get the design's facts and timeline when it opens.
+        void BeginCountNarration()
+        {
+            var voice = CountVoice();
+            if (voice == null || !counting || sequence == null) return;
+            try
+            {
+                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null), flightCalls);
+                voice.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Count] narration: " + e.Message); }
         }
 
         bool countTagDressed;

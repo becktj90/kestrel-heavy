@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Flight.Narration;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 using Kestrel.Game.Audio;
@@ -26,6 +27,8 @@ namespace Kestrel.Slice
         public PlumeController Plume;
         public event Action<FlightDriver> OnMeco;
         public IFlightEventSink Sink { get; set; }
+        /// <summary>When the timeline expects its calls (from the launch sequence). Null: unknown, so no color exchange is offered.</summary>
+        public CallSchedule Calls { get; set; }
 
         public AscentSim Sim { get; private set; }
         public double SimTime => Sim?.T ?? 0;
@@ -76,6 +79,16 @@ namespace Kestrel.Slice
             }
             CinematicSink.Attach();
             Sim.Sink = CinematicSink;
+        }
+
+        /// <summary>Widest stage (or strap-on) diameter of the design, m. Drives the size of the blast so it follows the real rocket.</summary>
+        internal static double WidestDiameterM(Design d)
+        {
+            double w = 0;
+            if (d == null) return w;
+            if (d.stages != null) foreach (var s in d.stages) if (s != null && s.diameter > w) w = s.diameter;
+            if (d.strapOns != null && d.strapOns.diameter > w) w = d.strapOns.diameter;
+            return w;
         }
 
         UnityEngine.Vector3 VehicleScenePosition() => Vehicle != null ? Vehicle.position : UnityEngine.Vector3.zero;
@@ -132,6 +145,7 @@ namespace Kestrel.Slice
             Sim = new AscentSim(stages, opts);
             directed = new DirectedFlight(Sim, Decisions, opts);
             BindCinematicSink();
+            CinematicSink.VehicleRadiusM = Kestrel.Kit.FlightSinkMath.VehicleRadiusM(WidestDiameterM(d));
             Running = true;
             clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             AttitudeDeg = 90f; HasAttitude = false;
@@ -143,6 +157,7 @@ namespace Kestrel.Slice
                 thrustRef = Math.Max(1, stages[0].thrustVac);
                 omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
                 UpdateFrame();
+                (Sink as IFlightStageSink)?.BeginNarration(NarrationFacts.From(d, hook != null ? hook.SiteId : null), Calls);
                 Sink?.OnEvent("flight.begin");
                 PumpEvents();
                 PublishAudio();
@@ -185,10 +200,14 @@ namespace Kestrel.Slice
         {
             if (Sink == null || Sim == null) return;
             var ev = Sim.Events;
+            var staged = Sink as IFlightStageSink;
             while (seenEvents < ev.Count)
             {
-                var type = ev[seenEvents++].type;
-                if (!string.IsNullOrEmpty(type)) Sink.OnEvent(type);
+                var e = ev[seenEvents++];
+                if (string.IsNullOrEmpty(e.type)) continue;
+                // Stage-aware sinks route ignitions by the sim stack entry (ses1 for a later core stage); the rest get the plain id.
+                if (staged != null) staged.OnStagedEvent(e.type, e.stage ?? 0);
+                else Sink.OnEvent(e.type);
             }
         }
 
@@ -196,6 +215,7 @@ namespace Kestrel.Slice
         {
             if (Sink == null || Sim == null) return;
             Sink.SetFlightState((float)Altitude, (float)DynPressure, (float)ThrustFraction);
+            (Sink as IFlightStageSink)?.SetFlightClock(SimTime, Altitude);
         }
 
         void UpdateFrame()

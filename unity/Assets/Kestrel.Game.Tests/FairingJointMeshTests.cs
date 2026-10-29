@@ -103,6 +103,46 @@ namespace Kestrel.Game.Tests
             Assert.That(failures, Is.Empty, string.Join("\n", failures));
         }
 
+        static string PayloadCheck(Design d, List<RocketMeshBuilder.PartMesh> parts)
+        {
+            var fairing = parts.Find(p => p.Part == PartRef.Fairing);
+            var payload = parts.Find(p => p.Part == PartRef.Payload);
+            if (fairing == null || payload == null) return "no fairing or payload part";
+            float rj = RocketMeshBuilder.JointRadius(d), rf = (float)d.fairingDiameter / 2, L = (float)d.fairingLength;
+            float hs = Kestrel.Vehicle.FairingShoulder.Height(rj, rf, L, d.nose);
+            float barrelTop = fairing.Y0 + L * (1f - Kestrel.Vehicle.FairingShoulder.NoseFraction(d.nose));
+            if (payload.Y0 < fairing.Y0 + hs - 1e-4f) return "payload base " + payload.Y0 + " is inside the shoulder (ends at " + (fairing.Y0 + hs) + ")";
+            if (payload.Y1 > barrelTop + 1e-4f && hs > 0f) return "payload top " + payload.Y1 + " is above the barrel (" + barrelTop + ")";
+            if (payload.Radius > rf + 1e-4f) return "payload radius " + payload.Radius + " wider than the barrel " + rf;
+            return null;
+        }
+
+        [Test]
+        public void ExplodedPayload_SitsAboveTheShoulder_OnEveryRealDesign_AndOnAFlaredOne()
+        {
+            var failures = new List<string>();
+            int shouldered = 0;
+            foreach (var row in FairingJointTestData.All())
+            {
+                var d = row.Value;
+                var parts = RocketMeshBuilder.BuildParts(C, d);
+                try { var why = PayloadCheck(d, parts); if (why != null) failures.Add(row.Key + ": " + why); }
+                finally { foreach (var p in parts) { UnityEngine.Object.DestroyImmediate(p.Mesh); if (p.Engines != null) UnityEngine.Object.DestroyImmediate(p.Engines); } }
+
+                // The same design with a fairing 1.45 x the stage (under the flare advisory): the shoulder is long, the payload must clear it.
+                var flared = Design.FromJson(d.ToJson());
+                flared.fairingDiameter = 1.45 * flared.stages[flared.stages.Count - 1].diameter;
+                float hs = Kestrel.Vehicle.FairingShoulder.Height(RocketMeshBuilder.JointRadius(flared), (float)flared.fairingDiameter / 2, (float)flared.fairingLength, flared.nose);
+                float cyl = (float)flared.fairingLength * (1f - Kestrel.Vehicle.FairingShoulder.NoseFraction(flared.nose));
+                if (hs > 0.15f * cyl) shouldered++;
+                var fp = RocketMeshBuilder.BuildParts(C, flared);
+                try { var why = PayloadCheck(flared, fp); if (why != null) failures.Add(row.Key + " (flared 1.45x): " + why); }
+                finally { foreach (var p in fp) { UnityEngine.Object.DestroyImmediate(p.Mesh); if (p.Engines != null) UnityEngine.Object.DestroyImmediate(p.Engines); } }
+            }
+            Assert.That(shouldered, Is.GreaterThan(0), "no case where the shoulder is longer than the old 0.15 x cylinder payload offset");
+            Assert.That(failures, Is.Empty, string.Join("\n", failures));
+        }
+
         [Test]
         public void FairingTotalLengthAndStackHeightAreUnchanged()
         {
