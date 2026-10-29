@@ -1,0 +1,110 @@
+# App Store screenshot frames, rendered by CI (free: existing GameCI + the same UNITY_LICENSE secret).
+# A SEPARATE, NON-REQUIRED workflow: it does not touch Unity CI's jobs, names, triggers or pass criteria. The Unity tests that
+# draw the frames (Kestrel.Capture.Tests/AppStoreScreenshotTests.cs) skip unless Unity is started with -khAppStoreShots, which
+# only this workflow passes, so the required PlayMode jobs just list them as skipped.
+#   iPhone 6.9"  1320x2868   iPhone 6.3"  1206x2622   iPad 13"  2064x2752
+#   scenes: starter, designer, countdown, flight, landing  ->  unity/CaptureOut/appstore/<scene>-<device>.png (15 files)
+# Artifact: appstore-screenshots. The only gates are about the picture: exact size, not blank, not magenta.
+name: App Store screenshots
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/appstore-screenshots.yml'
+      - 'unity/Assets/Kestrel.Capture.Tests/AppStoreScreenshotTests.cs'
+      - 'unity/Assets/Kestrel.Capture.Tests/FlightCapture.cs'
+      - 'unity/Assets/Kestrel.Slice/Runtime/RecoveryShow.cs'
+      - 'unity/Assets/Kestrel.Slice/Runtime/SliceApp.cs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+
+concurrency:
+  group: appstore-screenshots-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  UNITY_VERSION: 6000.3.26f1
+  PROJECT_PATH: unity
+
+jobs:
+  shots:
+    name: App Store screenshots (PlayMode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      HAS_LICENSE: ${{ secrets.UNITY_LICENSE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.HAS_LICENSE == 'true'
+        with:
+          lfs: true
+      - uses: actions/cache@v4
+        if: env.HAS_LICENSE == 'true'
+        with:
+          path: unity/Library
+          key: Library-test-AppStoreShots-${{ hashFiles('unity/Packages/manifest.json', 'unity/Packages/packages-lock.json', 'unity/ProjectSettings/**') }}
+          restore-keys: |
+            Library-test-AppStoreShots-
+            Library-test-PlayModeDevice-
+            Library-test-PlayMode-
+            Library-
+      - name: Sync game data into Resources (gitignored copies; same as Kestrel > Sync Data)
+        if: env.HAS_LICENSE == 'true'
+        run: |
+          mkdir -p unity/Assets/Resources/KestrelData
+          cp data/*.json web/js/economy-data/constants.json unity/Assets/Resources/KestrelData/
+      - name: Pack Thrum guide clips into the player
+        if: env.HAS_LICENSE == 'true'
+        run: bash tools/pack-guide-clips.sh
+      - name: Drop a cached script graph that will not load
+        if: env.HAS_LICENSE == 'true'
+        run: rm -rf unity/Library/Bee
+      - uses: game-ci/unity-test-runner@v4
+        if: env.HAS_LICENSE == 'true'
+        id: tests
+        # Not a gate for the PR: the frames and the log are uploaded either way, and the last step reports the outcome.
+        continue-on-error: true
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          projectPath: ${{ env.PROJECT_PATH }}
+          testMode: PlayMode
+          cliVersion: v0.1.72
+          customImage: unityci/editor:ubuntu-${{ env.UNITY_VERSION }}-ios-3
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          # Its own check name: never one of Unity CI's.
+          checkName: App Store screenshots results
+          customParameters: '-khAppStoreShots -testCategory AppStoreShots'
+          artifactsPath: test-results-AppStoreShots
+      - uses: actions/upload-artifact@v4
+        if: always() && env.HAS_LICENSE == 'true'
+        with:
+          name: appstore-screenshots
+          path: unity/CaptureOut/appstore/*.png
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: always() && env.HAS_LICENSE == 'true'
+        with:
+          name: test-results-AppStoreShots
+          path: test-results-AppStoreShots
+          if-no-files-found: warn
+      - name: Report the frames
+        if: always() && env.HAS_LICENSE == 'true'
+        run: |
+          n=$(ls unity/CaptureOut/appstore/*.png 2>/dev/null | wc -l)
+          echo "frames: $n of 15"
+          ls -l unity/CaptureOut/appstore 2>/dev/null || true
+          {
+            echo "### App Store screenshots"
+            echo "Unity step: \`${{ steps.tests.outcome }}\`, PNGs written: $n of 15 (artifact \`appstore-screenshots\`)."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.tests.outcome }}" != "success" ] || [ "$n" -lt 15 ]; then
+            echo "::error::App Store screenshots incomplete (Unity step ${{ steps.tests.outcome }}, $n of 15 PNGs); see the test-results-AppStoreShots artifact"
+            exit 1
+          fi

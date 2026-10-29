@@ -70,6 +70,39 @@ namespace Kestrel.Slice
             return Quaternion.Euler(-pitch * Mathf.Rad2Deg, yaw * Mathf.Rad2Deg, 0f);
         }
 
+        /// <summary>Clear of the HUD's top block: the nose sits this far (viewport) under the strip's bottom edge.</summary>
+        public const float HudMargin = 0.03f;
+
+        /// <summary>
+        /// Raise a roll-free camera's pitch just enough that <paramref name="point"/> (the stack's nose) projects at or below
+        /// viewport y <paramref name="maxY"/> (0 = bottom). The horizon hold above only bounds where the horizon sits, so on a
+        /// 4:3 screen it could leave the nose under the telemetry strip (#381 iPad flight frame at T+60). The pitch never
+        /// rises past the point where <paramref name="floorPoint"/> (the stack's base) would drop under viewport y
+        /// <paramref name="minY"/>. maxY outside (0.5, 1) leaves the rotation unchanged.
+        /// </summary>
+        public static Quaternion KeepBelow(Quaternion rot, Vector3 camPos, Vector3 point, Vector3 floorPoint, float vFovDeg, float maxY, float minY = 0.05f)
+        {
+            if (!(maxY > 0.5f && maxY < 1f)) return rot;
+            var fwd = rot * Vector3.forward;
+            var flat = new Vector3(fwd.x, 0f, fwd.z);
+            if (flat.sqrMagnitude < 1e-8f) return rot;
+            flat.Normalize();
+            float pitch = Mathf.Asin(Mathf.Clamp(fwd.y, -1f, 1f));
+            float t2 = 2f * Mathf.Tan(0.5f * vFovDeg * Mathf.Deg2Rad);
+            float Elevation(Vector3 p)
+            {
+                var d = p - camPos;
+                return Mathf.Atan2(d.y, Mathf.Max(1e-4f, Vector3.Dot(d, flat)));
+            }
+            // y = 0.5 + tan(e - pitch) / t2 for a point in the camera's vertical plane.
+            float need = Elevation(point) - Mathf.Atan((maxY - 0.5f) * t2);
+            if (need <= pitch) return rot;
+            float cap = Elevation(floorPoint) - Mathf.Atan((Mathf.Clamp(minY, 0f, 0.49f) - 0.5f) * t2);
+            float raised = Mathf.Max(pitch, Mathf.Min(need, cap));
+            float yaw = Mathf.Atan2(flat.x, flat.z);
+            return Quaternion.Euler(-raised * Mathf.Rad2Deg, yaw * Mathf.Rad2Deg, 0f);
+        }
+
         /// <summary>Exponentially smooth the current offset toward the desired one (frame-rate independent).</summary>
         public static Vector3 StepOffset(Vector3 current, Vector3 desired, float rate, float dt) =>
             Vector3.Lerp(current, desired, 1 - Mathf.Exp(-rate * dt));

@@ -93,7 +93,7 @@ namespace Kestrel.Capture.Tests
         }
 
         /// <summary>SceneFlow.HomeLaunchRoute with a given cleared count: the next mission's starter armed, its briefing up.</summary>
-        static Kestrel.Core.Flight.RouteResult LaunchAfter(int cleared)
+        public static Kestrel.Core.Flight.RouteResult LaunchAfter(int cleared)
         {
             var campaign = ScreenStub.LoadCampaign();
             Assert.IsNotNull(campaign, "campaign");

@@ -1,0 +1,473 @@
+// App Store screenshot frames, rendered by CI at the exact store sizes and uploaded as the "appstore-screenshots"
+// artifact (workflow: .github/workflows/appstore-screenshots.yml, a separate non-required job).
+//   iPhone 6.9"  1320x2868        iPhone 6.3"  1206x2622        iPad 13"  2064x2752
+// Scenes: the Starter screen, the Designer, the held countdown, the ascent and the booster landing, from the shipping flow
+// (Boot -> Home LAUNCH -> briefing -> Starter -> count -> ascent -> landing for the KH-7 starter, whose first stage lands on Haven).
+// Reuses the existing harness: FlightCapture.Png renders every camera and UI Toolkit panel into a RenderTexture of exactly
+// W x H (the same path HomeCaptureTests, CountdownCaptureTests and FlightPhaseCaptureTests use), after the play-mode viewport
+// has been set to the same size (PlayModeWindow.SetCustomRenderingResolution) so the layout is the one a device draws.
+// The only assertions are about the picture: the PNG is exactly the requested size, is not blank, and is not magenta.
+// Output: $KH_CAP_OUT/appstore or <project>/CaptureOut/appstore/<scene>-<device>.png.
+// Opt-in: the tests skip unless Unity was started with -khAppStoreShots, so the required PlayMode jobs only report them as skipped.
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using Kestrel.Core.Features;
+using Kestrel.Core.Designer;
+using Kestrel.Core.Flight;
+using Kestrel.Core.Ui;
+using Kestrel.Game.Shell;
+using Kestrel.Kit;
+using Kestrel.Slice;
+using Kestrel.UiChecks;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
+using UnityEngine.UIElements;
+
+namespace Kestrel.Capture.Tests
+{
+    [Category("AppStoreShots")]
+    public class AppStoreScreenshotTests
+    {
+        public const string Flag = "-khAppStoreShots";
+        public const string Folder = "appstore";
+        const int KhSevenCleared = 6;      // Home LAUNCH as if KH-1..KH-6 were cleared: the KH-7 starter, a planned booster landing on Haven
+        const int StallFrames = 600;
+        const int MaxFlightFrames = 9000;  // 900 s of sim at the 0.1 s capture step
+
+        /// <summary>The three App Store screenshot sizes this job produces (pixels, portrait).</summary>
+        public static readonly FlightCapture.Device[] StoreSizes =
+        {
+            new FlightCapture.Device { Name = "iphone-1320x2868", W = 1320, H = 2868 },
+            new FlightCapture.Device { Name = "iphone-1206x2622", W = 1206, H = 2622 },
+            new FlightCapture.Device { Name = "ipad-2064x2752", W = 2064, H = 2752 },
+        };
+
+        // Flown at the smallest phone size so the ~2000 sim frames are cheap on the CPU-rendered runner; each moment then holds
+        // while it is shot at every store size.
+        static readonly FlightCapture.Device Flown = FlightCapture.Phones[0];
+
+#if UNITY_EDITOR
+        uint priorWidth, priorHeight;
+#endif
+
+        FeatureFlags savedFlags;
+        bool savedLoaded;
+
+        static bool Wanted() => Array.IndexOf(Environment.GetCommandLineArgs(), Flag) >= 0;
+
+        [UnitySetUp]
+        public IEnumerator Remember()
+        {
+            savedFlags = FeatureFlags.Active;
+            savedLoaded = HomeFlagsBoot.Loaded;
+#if UNITY_EDITOR
+            UnityEditor.PlayModeWindow.GetRenderingResolution(out priorWidth, out priorHeight);
+#endif
+            yield return null;
+        }
+
+        [UnityTearDown]
+        public IEnumerator Restore()
+        {
+            FeatureFlags.Active = savedFlags;
+            HomeFlagsBoot.Loaded = savedLoaded;
+            SliceApp.HoldCountForCapture = false;
+            RecoveryShow.HoldForCapture = false;
+            Time.captureDeltaTime = 0f;
+            if (AppShell.Instance != null) UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
+#if UNITY_EDITOR
+            if (priorWidth > 0 && priorHeight > 0)
+                UnityEditor.PlayModeWindow.SetCustomRenderingResolution(priorWidth, priorHeight, "Previous capture viewport");
+#endif
+            yield return null;
+        }
+
+        static string Dir => FlightCapture.OutDir(Folder);
+
+#if UNITY_EDITOR
+        /// <summary>Set the play-mode viewport to the device size. A viewport that will not take the size is reported, not asserted:
+        /// the PNG is rendered into a W x H texture either way, so its size is exact.</summary>
+        static IEnumerator Resize(FlightCapture.Device d, string name, List<string> problems)
+        {
+            UnityEditor.PlayModeWindow.SetCustomRenderingResolution((uint)d.W, (uint)d.H, "Kestrel " + name);
+            for (int i = 0; i < 60 && (Screen.width != d.W || Screen.height != d.H); i++) yield return null;
+            if (Screen.width != d.W || Screen.height != d.H)
+                problems.Add(name + ": the game view is " + Screen.width + "x" + Screen.height + ", wanted " + d.W + "x" + d.H);
+            yield return null;
+        }
+
+        /// <summary>Render the scene as it stands into a W x H PNG and check the file.</summary>
+        static IEnumerator Shoot(FlightCapture.Device d, string scene, List<string> problems)
+        {
+            string name = scene + "-" + d.Name;
+            for (int i = 0; i < 10; i++) yield return null;   // the panel re-lays out at the new size
+            if (ShortBannerShown(UnityEngine.Object.FindAnyObjectByType<SliceApp>()?.UiForCapture))
+                TestContext.WriteLine("WARNING " + name + ": the \"" + WebcastBoard.VerdictShort + "\" pill is on screen");
+            if (scene == "flight")
+            {
+                var sa = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+                var tr = sa != null ? sa.HudTraceForCapture : Vector4.zero;
+                var nose = sa != null && Camera.main != null ? Camera.main.WorldToViewportPoint(sa.NoseTraceForCapture) : Vector3.zero;
+                TestContext.WriteLine("flight framing " + d.Name + ": " + Framing(UnityEngine.Object.FindAnyObjectByType<FlightDriver>()) + " hud cover " + HudCover().ToString("0.000")
+                    + "; camera trace cover " + tr.x.ToString("0.000") + " pitch aimed " + tr.y.ToString("0.0") + " kept " + tr.z.ToString("0.0") + " frame " + tr.w + " (now " + Time.frameCount + ") nose point vy " + nose.y.ToString("0.000")
+                    + " projection shift " + (Camera.main != null ? Camera.main.projectionMatrix.m12.ToString("0.000") : "-"));
+            }
+            int distinct = 0;
+            var png = FlightCapture.Png(d, Dir, name, n => distinct = n);
+            while (png.MoveNext()) yield return png.Current;
+            Verify(Path.Combine(Dir, name + ".png"), d, name, problems);
+        }
+
+        static IEnumerator ShootAll(string scene, List<string> problems)
+        {
+            foreach (var d in StoreSizes)
+            {
+                var size = Resize(d, scene + "-" + d.Name, problems);
+                while (size.MoveNext()) yield return size.Current;
+                var shot = Shoot(d, scene, problems);
+                while (shot.MoveNext()) yield return shot.Current;
+            }
+            var back = Resize(Flown, "flown", problems);
+            while (back.MoveNext()) yield return back.Current;
+        }
+#endif
+
+        /// <summary>The only gate: the PNG on disk is exactly W x H, is not (nearly) one colour, and is not magenta.</summary>
+        public static void Verify(string path, FlightCapture.Device d, string name, List<string> problems)
+        {
+            if (!File.Exists(path)) { problems.Add(name + ": no PNG written"); return; }
+            var bytes = File.ReadAllBytes(path);
+            if (bytes.Length < 33 || bytes[1] != (byte)'P' || bytes[2] != (byte)'N' || bytes[3] != (byte)'G') { problems.Add(name + ": not a PNG"); return; }
+            int w = bytes[16] << 24 | bytes[17] << 16 | bytes[18] << 8 | bytes[19];
+            int h = bytes[20] << 24 | bytes[21] << 16 | bytes[22] << 8 | bytes[23];
+            if (w != d.W || h != d.H) problems.Add(name + ": PNG is " + w + "x" + h + ", wanted " + d.W + "x" + d.H);
+            var tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            try
+            {
+                if (!ImageConversion.LoadImage(tex, bytes, false)) { problems.Add(name + ": PNG does not decode"); return; }
+                if (tex.width != d.W || tex.height != d.H) problems.Add(name + ": decoded size " + tex.width + "x" + tex.height);
+                var px = tex.GetPixels32();
+                var seen = new HashSet<int>();
+                int magenta = 0, sampled = 0;
+                for (int i = 0; i < px.Length; i += 7)
+                {
+                    sampled++;
+                    var p = px[i];
+                    if (seen.Count < 64) seen.Add(p.r << 16 | p.g << 8 | p.b);
+                    if (p.r >= 200 && p.b >= 200 && p.g <= 60) magenta++;
+                }
+                float share = sampled > 0 ? magenta / (float)sampled : 0f;
+                TestContext.WriteLine("appstore frame " + name + ": " + w + "x" + h + " colours>=" + seen.Count + " magenta " + (share * 100f).ToString("0.00") + "%");
+                if (seen.Count <= 8) problems.Add(name + ": blank (" + seen.Count + " colours)");
+                if (share > 0.01f) problems.Add(name + ": " + (share * 100f).ToString("0.0") + "% magenta pixels (a missing material or shader)");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(tex); }
+        }
+
+        [UnityTest]
+        [Timeout(1800000)]
+        public IEnumerator DesignerAtEveryStoreSize()
+        {
+#if !UNITY_EDITOR
+            Assert.Ignore("Store captures need the editor play-mode viewport.");
+            yield break;
+#else
+            if (!Wanted()) { Assert.Ignore("App Store captures run only with " + Flag); yield break; }
+            FlightCapture.RequireGraphics("App Store designer captures");
+            var problems = new List<string>();
+            PadHandoff.Clear();
+            GameSession.Clear();
+            int prevEngineer = PlayerPrefs.GetInt(Kestrel.Slice.DesignerV3.DesignerV3Panel.EngineerPref, 0);
+            foreach (var d in StoreSizes)
+            {
+                string name = "designer-" + d.Name;
+                var size = Resize(d, name, problems);
+                while (size.MoveNext()) yield return size.Current;
+                CaptureCamera.Clear();
+                SceneManager.LoadScene("Design", LoadSceneMode.Single);
+                for (int i = 0; i < 60; i++) yield return null;
+                var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+                if (app == null) { problems.Add(name + ": no SliceApp in the Design scene"); continue; }
+                app.ShowDesigner(true);
+                if (app.Designer == null) { problems.Add(name + ": the designer panel did not open"); continue; }
+                app.Designer.SetEngineer(true);
+                app.Designer.FinishReference();
+                for (int i = 0; i < 5; i++) yield return null;
+                var shot = Shoot(d, "designer", problems);
+                while (shot.MoveNext()) yield return shot.Current;
+                CaptureCamera.Clear();
+            }
+            PlayerPrefs.SetInt(Kestrel.Slice.DesignerV3.DesignerV3Panel.EngineerPref, prevEngineer);
+            Assert.That(problems, Is.Empty, UiTreeChecks.Report(problems, 120));
+#endif
+        }
+
+        [UnityTest]
+        [Timeout(3600000)]
+        public IEnumerator StarterCountdownFlightAndLandingAtEveryStoreSize()
+        {
+#if !UNITY_EDITOR
+            Assert.Ignore("Store captures need the editor play-mode viewport.");
+            yield break;
+#else
+            if (!Wanted()) { Assert.Ignore("App Store captures run only with " + Flag); yield break; }
+            FlightCapture.RequireGraphics("App Store flight captures");
+            var problems = new List<string>();
+            // The App Store shows the app as shipped: FullHomeFlagsFixture turns every home.* flag on for this assembly, so load
+            // data/features.json the way Boot does (tier Starter: the Starter screen and the campaign-winner design).
+            HomeFlagsBoot.Loaded = false;
+            FeatureFlags.Active = new FeatureFlags();
+            HomeFlagsBoot.Load();
+            if (!StarterScreen.UseStarter(FeatureFlags.Active)) problems.Add("starter: data/features.json did not load as the Starter tier");
+            SliceApp.HoldCountForCapture = true;
+            Time.captureDeltaTime = 1f / 60f;
+            var vp = Resize(Flown, "flown", problems);
+            while (vp.MoveNext()) yield return vp.Current;
+
+            // Boot -> Home LAUNCH (KH-7's route) -> briefing -> build: the Starter screen is up on the pad.
+            SliceApp app = null;
+            var boot = BootToStarter(a => app = a, problems);
+            while (boot.MoveNext()) yield return boot.Current;
+            if (app == null) { Assert.That(problems, Is.Empty, UiTreeChecks.Report(problems, 120)); yield break; }
+            for (int i = 0; i < 30; i++) yield return null;
+            if (app.UiForCapture == null || !app.UiForCapture.ClassListContains("starter-mode")) problems.Add("starter: the Starter screen is not up (no starter-mode)");
+            var starter = ShootAll("starter", problems);
+            while (starter.MoveNext()) yield return starter.Current;
+
+            // Launch: the held count.
+            if (!app.FlightHudVisible) app.PressLaunch();
+            for (int i = 0; i < 600 && !app.CountingForCapture; i++) yield return null;
+            if (!app.CountingForCapture) problems.Add("countdown: the count never came up");
+            for (int i = 0; i < 150; i++) yield return null;   // FlightViewPose smoothing settles in about 1.5 s
+            var count = ShootAll("countdown", problems);
+            while (count.MoveNext()) yield return count.Current;
+
+            // The ascent, at T+60.
+            SliceApp.HoldCountForCapture = false;
+            Time.captureDeltaTime = 0.1f;
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            bool reached = false;
+            double last = app.FlightClockForCapture; int still = 0;
+            for (int f = 0; f < MaxFlightFrames && still < StallFrames; f++)
+            {
+                yield return null;
+                double now = app.FlightClockForCapture;
+                if (now >= 60) { reached = true; break; }
+                // !(now <= last), not now > last: the clock is NaN until liftoff (no Sim during the held count), and
+                // NaN > NaN is false, so the old test counted every frame from the count as a stall and gave up 600
+                // frames (60 s) later, at T+47.9, while the sim was still climbing at 0.1 s a frame.
+                if (!(now <= last)) { last = now; still = 0; } else still++;
+                if (now > 1 && (still == 30 || still == 300)) TestContext.WriteLine("flight stall: " + StallState(driver));
+            }
+            if (!reached) problems.Add("flight: the flight stopped at T+" + app.FlightClockForCapture.ToString("0.0") + " before T+60 (" + StallState(driver) + ")");
+            if (app.FlightClockForCapture >= 5)   // still shot where it stands, so the artifact shows what the flight looked like
+            {
+                if (driver != null) driver.Hold(true);
+                TestContext.WriteLine("flight framing: " + Framing(driver));
+                var fl = ShootAll("flight", problems);
+                while (fl.MoveNext()) yield return fl.Current;
+                if (driver != null) driver.Hold(false);
+            }
+
+            // The booster landing: the first stage lets go, boosts back, and comes down on its legs, shot in the landing burn while
+            // the camera follows the booster (RecoveryShow.SteerCamera). Once the booster has separated the ascent is held: the
+            // recovery show runs on its own clock, and an ascent that ends first makes the booster finish at once (t466 Conclude),
+            // which in run 5 left the camera on the upper stage at T+412.7. The landing itself is the game's, unchanged.
+            bool landing = false;
+            if (reached)
+            {
+                last = app.FlightClockForCapture; still = 0;
+                RecoveryShow rec = null;
+                for (int f = 0; f < MaxFlightFrames && still < StallFrames; f++)
+                {
+                    yield return null;
+                    rec = app.RecoveryForCapture;
+                    if (rec != null && rec.StartedForCapture) break;
+                    if (driver != null && !driver.Running) break;
+                    double now = app.FlightClockForCapture;
+                    if (!(now <= last)) { last = now; still = 0; } else still++;
+                }
+                if (rec != null && rec.StartedForCapture)
+                {
+                    TestContext.WriteLine("booster separated at T+" + app.FlightClockForCapture.ToString("0.0"));
+                    // The separated stage's mesh only appears FlightStaging.SepDelaySec (3 s) after the separation event, on the
+                    // ascent clock. Holding the ascent at once (run 40820418960: held at T+114.1) froze it hidden for the whole
+                    // landing. Let the ascent run until the booster mesh is shown, then hold.
+                    for (int f = 0; f < 600 && !BoosterShown(rec) && driver != null && driver.Running; f++) yield return null;
+                    TestContext.WriteLine("booster shown " + BoosterShown(rec) + " at T+" + app.FlightClockForCapture.ToString("0.0") + "; ascent held while the booster flies");
+                    if (driver != null) driver.Hold(true);
+                    var seen = rec.PhaseForCapture;
+                    TestContext.WriteLine("recovery phase " + seen + " at frame " + Time.frameCount);
+                    for (int f = 0; f < MaxFlightFrames; f++)
+                    {
+                        yield return null;
+                        var ph = rec.PhaseForCapture;
+                        if (ph != seen) { seen = ph; TestContext.WriteLine("recovery phase " + ph + " at frame " + Time.frameCount + " steer " + rec.SteerCamera + "; " + BoosterView(rec)); }
+                        if (ph == RecoveryPhase.Landing && rec.SteerCamera) { landing = true; break; }
+                        if (ph > RecoveryPhase.Landing || !rec.StartedForCapture) break;
+                    }
+                    if (landing)
+                    {
+                        // Low in the burn, so Haven's deck is in the frame under the booster and its flame: 40 m up, unless it
+                        // has already touched down.
+                        for (int i = 0; i < 2000 && rec.PhaseForCapture == RecoveryPhase.Landing && !(rec.AltitudeForCapture < 40.0); i++) yield return null;
+                        TestContext.WriteLine("landing burn at " + rec.AltitudeForCapture.ToString("0") + " m, throttle " + rec.ThrottleForCapture.ToString("0.00") + ", phase " + rec.PhaseForCapture);
+                        RecoveryShow.HoldForCapture = true;
+                        yield return null;
+                        // The live webcast pill reads "Short on speed" while speed / total budget < 0.40, which on KH-7 is the
+                        // whole ascent from MECO into the S3 burn: true of that moment, false as a picture of a flight that
+                        // reaches GTO. With the booster frozen in its burn (camera still on it), let the ascent fly on until
+                        // the pill moves off it, then hold the ascent and shoot. The banner rule itself is Gameplay's.
+                        if (ShortBannerShown(app.UiForCapture) && driver != null)
+                        {
+                            driver.Hold(false);
+                            for (int f = 0; f < MaxFlightFrames && driver.Running && ShortBannerShown(app.UiForCapture); f++) yield return null;
+                            driver.Hold(true);
+                            yield return null;
+                            TestContext.WriteLine("ascent flown on to T+" + app.FlightClockForCapture.ToString("0.0") + " for the landing shot; short banner " + ShortBannerShown(app.UiForCapture) + ", running " + driver.Running);
+                        }
+                        TestContext.WriteLine("landing shot: phase " + rec.PhaseForCapture + " steer " + rec.SteerCamera + "; " + BoosterView(rec));
+                        var ld = ShootAll("landing", problems);
+                        while (ld.MoveNext()) yield return ld.Current;
+                        RecoveryShow.HoldForCapture = false;
+                    }
+                    else problems.Add("landing: the booster never reached its landing burn with the camera on it (last phase " + seen + ")");
+                    if (driver != null) driver.Hold(false);
+                }
+                else problems.Add("landing: the booster never separated (flight clock T+" + app.FlightClockForCapture.ToString("0.0") + ")");
+            }
+            Assert.That(problems, Is.Empty, UiTreeChecks.Report(problems, 120));
+#endif
+        }
+
+#if UNITY_EDITOR
+        /// <summary>Where the stack sits in the frame: camera pitch and FOV, the vehicle root and the stack's renderer bounds in
+        /// viewport y (0 bottom, 1 top), at the current game-view aspect.</summary>
+        static string Framing(FlightDriver d)
+        {
+            var cam = Camera.main;
+            if (cam == null || d == null || d.Vehicle == null) return "no camera or vehicle";
+            var root = cam.WorldToViewportPoint(d.Vehicle.position);
+            float lo = 1e9f, hi = -1e9f; int n = 0;
+            foreach (var r in d.Vehicle.GetComponentsInChildren<Renderer>())
+            {
+                if (!r.enabled || r is ParticleSystemRenderer) continue;
+                var b = r.bounds; n++;
+                for (int i = 0; i < 8; i++)
+                {
+                    var c = new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z);
+                    float y = cam.WorldToViewportPoint(c).y;
+                    lo = Mathf.Min(lo, y); hi = Mathf.Max(hi, y);
+                }
+            }
+            return "aspect " + cam.aspect.ToString("0.000") + " fov " + cam.fieldOfView.ToString("0.0") + " pitch " + (-Mathf.DeltaAngle(0f, cam.transform.eulerAngles.x)).ToString("0.0")
+                + " root vy " + root.y.ToString("0.000") + " stack vy " + lo.ToString("0.000") + "-" + hi.ToString("0.000") + " (" + n + " renderers) alt " + d.Altitude.ToString("0");
+        }
+
+        /// <summary>The live "Short on speed" webcast pill is laid out and visible.</summary>
+        static bool ShortBannerShown(VisualElement ui)
+        {
+            if (ui == null) return false;
+            foreach (var l in ui.Query<Label>().ToList())
+            {
+                if (l.text == null || !l.text.StartsWith(WebcastBoard.VerdictShort, StringComparison.Ordinal)) continue;
+                if (!(l.worldBound.width > 1f) || !(l.worldBound.height > 1f)) continue;
+                bool shown = true;
+                for (VisualElement e = l; e != null; e = e.parent)
+                    if (e.resolvedStyle.display == DisplayStyle.None || e.resolvedStyle.visibility == Visibility.Hidden || e.resolvedStyle.opacity < 0.05f) { shown = false; break; }
+                if (shown) return true;
+            }
+            return false;
+        }
+
+        static Transform BoosterOf(RecoveryShow rec)
+        {
+            var f = typeof(RecoveryShow).GetField("staging", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var staging = f != null && rec != null ? f.GetValue(rec) as FlightStageShow : null;
+            return staging != null ? staging.Booster : null;
+        }
+
+        static bool BoosterShown(RecoveryShow rec)
+        {
+            var b = BoosterOf(rec);
+            return b != null && b.gameObject.activeInHierarchy;
+        }
+
+        /// <summary>AscentHud.TopCover as the flight camera reads it (viewport fraction under the telemetry strip).</summary>
+        static float HudCover()
+        {
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            var f = typeof(SliceApp).GetField("ascentHud", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var hud = f != null && app != null ? f.GetValue(app) as Kestrel.Slice.AscentHud : null;
+            return hud != null ? hud.TopCover() : -1f;
+        }
+
+        /// <summary>Where the recovered booster is for the main camera: active, renderers, distance and viewport box.</summary>
+        static string BoosterView(RecoveryShow rec)
+        {
+            var cam = Camera.main;
+            var b = BoosterOf(rec);
+            if (cam == null || b == null) return "booster view: no camera or booster";
+            float x0 = 1e9f, x1 = -1e9f, y0 = 1e9f, y1 = -1e9f, z0 = 1e9f; int n = 0, on = 0;
+            foreach (var r in b.GetComponentsInChildren<Renderer>(true))
+            {
+                n++;
+                if (!r.enabled || !r.gameObject.activeInHierarchy || r is ParticleSystemRenderer) continue;
+                on++;
+                var bb = r.bounds;
+                for (int i = 0; i < 8; i++)
+                {
+                    var c = new Vector3((i & 1) == 0 ? bb.min.x : bb.max.x, (i & 2) == 0 ? bb.min.y : bb.max.y, (i & 4) == 0 ? bb.min.z : bb.max.z);
+                    var v = cam.WorldToViewportPoint(c);
+                    x0 = Mathf.Min(x0, v.x); x1 = Mathf.Max(x1, v.x); y0 = Mathf.Min(y0, v.y); y1 = Mathf.Max(y1, v.y); z0 = Mathf.Min(z0, v.z);
+                }
+            }
+            return "booster active " + b.gameObject.activeInHierarchy + " renderers " + on + "/" + n + " pos " + b.position.ToString("F0") + " cam " + cam.transform.position.ToString("F0")
+                + " fwd " + cam.transform.forward.ToString("F2") + " dist " + Vector3.Distance(cam.transform.position, b.position).ToString("0") + " near " + cam.nearClipPlane + " far " + cam.farClipPlane.ToString("0")
+                + " vp x " + x0.ToString("0.00") + ".." + x1.ToString("0.00") + " y " + y0.ToString("0.00") + ".." + y1.ToString("0.00") + " zmin " + z0.ToString("0.0")
+                + " clear " + cam.clearFlags + " target " + (cam.targetTexture != null ? cam.targetTexture.width + "x" + cam.targetTexture.height : "screen");
+        }
+
+        static string StallState(FlightDriver d)
+        {
+            if (d == null) return "no FlightDriver";
+            var sim = d.Sim;
+            string lastEvent = sim != null && sim.Events.Count > 0 ? sim.Events[sim.Events.Count - 1].type + "@" + sim.Events[sim.Events.Count - 1].t.ToString("0.0") : "none";
+            return "enabled " + d.enabled + ", activeAndEnabled " + d.isActiveAndEnabled + ", simT " + (sim != null ? sim.T.ToString("0.000") : "-")
+                + ", alt " + d.Altitude.ToString("0") + ", thrusting " + (sim != null && sim.Thrusting) + ", events " + (sim != null ? sim.Events.Count : 0) + " last " + lastEvent
+                + ", frame " + Time.frameCount + ", running " + d.Running + ", held " + d.Held + ", lost " + d.Lost + ", simDone " + (sim != null && sim.Done) + ", stage " + (sim != null ? sim.StageIdx : -1)
+                + ", timeScale " + Time.timeScale + ", captureDt " + Time.captureDeltaTime + ", dt " + Time.deltaTime + ", presentation " + Kestrel.Kit.CinematicEvents.PresentationScale;
+        }
+
+        /// <summary>FlightCapture.BootToCount's first half: Boot -> Home LAUNCH for KH-7 -> briefing -> build, ending on the Starter screen.</summary>
+        static IEnumerator BootToStarter(Action<SliceApp> got, List<string> problems)
+        {
+            if (AppShell.Instance != null) { UnityEngine.Object.Destroy(AppShell.Instance.gameObject); yield return null; }
+            SceneManager.LoadScene(SceneFlow.BootScene, LoadSceneMode.Single);
+            SceneFlow flow = null;
+            for (int i = 0; i < 600 && (flow == null || flow.Busy || flow.Current != AppScreen.Home); i++)
+            {
+                if (flow == null) flow = UnityEngine.Object.FindAnyObjectByType<SceneFlow>();
+                yield return null;
+            }
+            if (flow == null || flow.Current != AppScreen.Home) { problems.Add("starter: Boot never settled on Home"); yield break; }
+            flow.Present(FlightCapture.LaunchAfter(KhSevenCleared));
+            for (int i = 0; i < 600 && (flow.Busy || flow.Overlay != "Briefing"); i++) yield return null;
+            if (flow.Overlay != "Briefing") { problems.Add("starter: LAUNCH did not open the briefing"); yield break; }
+            flow.BuildFromBriefing();
+            SliceApp app = null;
+            for (int i = 0; i < 600 && (flow.Busy || flow.Current != AppScreen.Design || app == null); i++)
+            {
+                app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+                yield return null;
+            }
+            if (app == null) { problems.Add("starter: no SliceApp after the briefing"); yield break; }
+            got(app);
+        }
+#endif
+    }
+}
