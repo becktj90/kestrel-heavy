@@ -480,7 +480,7 @@ namespace Kestrel.Core.Flight
             if (!hasFairing || fairingT >= 0) return;
             if (q > qPeak) qPeak = q;
             if (!qPassed && qPeak >= QArmPa && q < qPeak * QDrop) qPassed = true;
-            if (!qPassed || alt < fairingAltM || FairingWaitsForSimEvent) return;
+            if (!qPassed || alt < fairingAltM) return;
             AddFairing(t, alt, speed, 0);
         }
 
