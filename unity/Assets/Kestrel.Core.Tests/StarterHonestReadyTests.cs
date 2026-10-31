@@ -72,16 +72,14 @@ namespace Kestrel.Core.Tests
             ("m3", "kerosene-3-f1-b0", StarterVerdict.Tumble),
             ("m3", "methane-3-f0-b0", StarterVerdict.OverG),
             ("m5", "kerosene-2-f1-b2", StarterVerdict.Short),
+            // #369: m13 methane-2-f4-b0 now reads Landing via the return-Δv formula (was a tracked gap).
+            ("m13", "methane-2-f4-b0", StarterVerdict.Landing),
         };
 
-        /// <summary>TRACKED GAPS (issue #369), not deleted rows: settings that SHOULD read their cause but cannot yet.
-        /// The expected cause is the old one, unchanged; the row is only parked here until it can be asserted again.
-        /// m13 methane-2-f4-b0 -> Landing: the predictor reaches orbit and the formula grades the landing "perfect", but the
-        /// flown booster runs dry (Salvage, sink 51 m/s, 0 kg left). StarterVerdict.Judge's landing check is a dv formula
-        /// (~0.7 km/s) that does not see the flown return (~2.3 km/s). Fix and parity gate are in #369.</summary>
+        /// <summary>TRACKED GAPS, not deleted rows: settings that SHOULD read their cause but cannot yet.
+        /// The expected cause is the old one, unchanged; the row is only parked here until it can be asserted again.</summary>
         static readonly (string mission, string key, string cause, string issue)[] KnownGaps =
         {
-            ("m13", "methane-2-f4-b0", StarterVerdict.Landing, "#369"),
         };
 
         static void AssertNamesItsCause(string mission, string key, string cause)

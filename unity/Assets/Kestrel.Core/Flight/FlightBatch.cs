@@ -290,17 +290,129 @@ namespace Kestrel.Core.Flight
             {
                 if (design.StrapOnCount <= 0 || !(design.strapOns.landingPropMass > 0)) return "short";
             }
-            else if (!design.legs || design.stages.Count == 0 || !(design.stages[0].landingPropMass > 0))
-                return "short";
+            else
+            {
+                if (!design.legs || design.stages.Count == 0 || !(design.stages[0].landingPropMass > 0)) return "short";
+                // #369: the flown grade is "short" when the stage never separates (a one-stage hop) or lands
+                // somewhere the mission does not grade (BoosterLanding.MissionGrade). The predictor must agree.
+                if (design.stages.Count < 2) return "short";
+                if (design.recoveryMode != mode) return "short";
+            }
 
-            double speed = BurnoutSpeed(sim, boosters ? 1 : CoreSerial(design));
-            double need = RecoveryModel.BoostbackDeltaV(mode, speed);
+            double need = ReturnDeltaV(catalog, design, sim, mode, boosters);
             double avail = Reserve(catalog, design, boosters);
             if (!(avail > 0) || avail < need) return "short";
             double margin = 1 - need / avail;
             if (margin >= 0.45) return "perfect";
             if (margin >= 0.20) return "good";
             return "hard";
+        }
+
+        /// <summary>
+        /// #369: the Δv the flown return actually needs, closed-form from the separation state of the predictor's
+        /// flight: boostback + entry burn + landing burn. The RecoverySim/RecoveryModel/RecoveryGuidance constants
+        /// are the single source of truth (no second copy of the numbers). Closed-form arithmetic only, so the
+        /// Starter job stays inside its 80 ms ceiling: no simulated return.
+        /// </summary>
+        public static double ReturnDeltaV(Catalog catalog, Design design, SimResult sim, string mode, bool boosters)
+            => ReturnDeltaVParts(catalog, design, sim, mode, boosters, out _, out _, out _);
+
+        /// <summary>#369: <see cref="ReturnDeltaV"/> with the three shares (diagnostics, tuning).</summary>
+        public static double ReturnDeltaVParts(Catalog catalog, Design design, SimResult sim, string mode, bool boosters,
+            out double boostback, out double entry, out double land)
+        {
+            boostback = entry = land = 0;
+            int serial = boosters ? 1 : CoreSerial(design);
+            double alt = double.NaN, v = double.NaN, gammaDeg = double.NaN;
+            if (sim?.events != null)
+                foreach (var e in sim.events)
+                {
+                    if (e.type != "burnout" || e.stage != serial) continue;
+                    if (e.alt.HasValue) alt = e.alt.Value;
+                    if (e.v.HasValue) v = e.v.Value;
+                    if (e.gamma.HasValue) gammaDeg = e.gamma.Value;
+                    break;
+                }
+            if (!(v > 0) || double.IsNaN(alt) || alt < 0) return double.PositiveInfinity;
+
+            // Ground frame, as RecoverySim flies it: the site rotation comes off the eastward speed.
+            // The sim's default site (Headless.Options.latitude) is 28.5 deg.
+            double gamma = double.IsNaN(gammaDeg) ? 0 : gammaDeg * Math.PI / 180.0;
+            double vSite = Earth.SiteRotationSpeed(28.5);
+            double vEast = v * Math.Cos(gamma) - vSite;
+            double vUp = v * Math.Sin(gamma);
+
+            // 1. Boostback: RecoveryModel.BoostbackDeltaV holds the RtlsFactor/BargeFactor.
+            double bb = RecoveryModel.BoostbackDeltaV(mode, vEast);
+            boostback = bb;
+
+            // 2. Entry burn: retrograde from the entry-interface speed down to the guidance's floor target
+            // (RecoveryGuidance.EntryTargetSpeed at EntryFloorM). The interface speed is the post-boostback
+            // state flown down to the window top (EntryTopM) on vis-viva; below the window it is now.
+            double vEastAfter = vEast - Math.Sign(vEast) * bb;
+            double vInertEastAfter = vEastAfter + vSite;
+            double v0sq = vInertEastAfter * vInertEastAfter + vUp * vUp;
+            double vEntry;
+            if (alt >= RecoveryGuidance.EntryTopM || vUp > 0)
+            {
+                double r0 = Gravity.R_EARTH + alt, r1 = Gravity.R_EARTH + RecoveryGuidance.EntryTopM;
+                double v1sq = v0sq + 2 * Gravity.MU_EARTH * (1 / r1 - 1 / r0);
+                vEntry = v1sq > 0 ? Math.Sqrt(v1sq) : Math.Sqrt(v0sq);
+            }
+            else vEntry = Math.Sqrt(v0sq);
+            double entryNeed = Math.Max(0, vEntry - RecoveryGuidance.EntryTargetSpeed(RecoveryGuidance.EntryFloorM));
+            entry = entryNeed;
+
+            // 3. Landing burn: RecoverySim.LandingDeltaVNeed holds the vTerm/twr/tBurn.
+            // No craft means no landing burn is flyable: the return cannot be bought.
+            double landNeed;
+            if (boosters)
+            {
+                if (!TryStrapOnCraft(catalog, design, mode, out var strapOn)) return double.PositiveInfinity;
+                landNeed = RecoverySim.LandingDeltaVNeed(strapOn);
+            }
+            else
+            {
+                if (!RecoveryCrafts.TryFrom(catalog, design, out var craft)) return double.PositiveInfinity;
+                landNeed = RecoverySim.LandingDeltaVNeed(craft);
+            }
+            land = landNeed;
+
+            return bb + entryNeed + landNeed;
+        }
+
+        /// <summary>#369: a RecoveryCraft for the strap-on set (the booster grade's landing burn), from the
+        /// strap-on part and its catalog engine. The core path uses RecoveryCrafts.TryFrom.</summary>
+        static bool TryStrapOnCraft(Catalog catalog, Design design, string mode, out RecoveryCraft craft)
+        {
+            craft = default;
+            var so = design?.strapOns;
+            if (so == null || design.StrapOnCount <= 0) return false;
+            if (!catalog.EngineById.TryGetValue(so.engine ?? "", out var eng)) return false;
+            var point = EnginePoint.Of(catalog, so);
+            double isp = point.known ? point.ispVac : eng.ispVac;
+            if (!(isp > 1)) return false;
+            var mass = Mass.Of(catalog, design);
+            double dry = mass.strapOns.eachDry;
+            if (!(dry > 1)) return false;
+            int n = so.engineCount > 0 ? so.engineCount : 1;
+            double thrustVac = (point.known ? point.thrustVac : eng.thrustVac) * n;
+            double thrustSl = (point.known ? point.thrustSL : eng.thrustSL) * n;
+            craft = new RecoveryCraft
+            {
+                DryKg = dry,
+                ReserveKg = Math.Max(0, so.landingPropMass),
+                ThrustVacN = thrustVac,
+                ThrustSlN = thrustSl,
+                IspSec = isp,
+                DiameterM = so.diameter > 0.2 ? so.diameter : 1,
+                Cd = 0.45,
+                GridFins = design.gridFins,
+                Legs = false,
+                LegsKind = "light",
+                Mode = mode,
+            };
+            return craft.ThrustVacN > 1 || craft.ThrustSlN > 1;
         }
 
         static int CoreSerial(Design design) => design.StrapOnCount > 0 ? 2 : 1;
@@ -335,5 +447,8 @@ namespace Kestrel.Core.Flight
             else dry = mass.stages != null && mass.stages.Count > 0 ? mass.stages[0].dry : 0;
             return RecoveryModel.ReserveDeltaV(isp, dry, part.landingPropMass);
         }
+
+        /// <summary>#369: the landing reserve's Δv (diagnostic accessor).</summary>
+        public static double LandingAvailDeltaV(Catalog catalog, Design design, bool boosters) => Reserve(catalog, design, boosters);
     }
 }

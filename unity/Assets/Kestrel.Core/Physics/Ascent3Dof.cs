@@ -169,7 +169,8 @@ namespace Kestrel.Core.Physics
                 if (remain <= 1e-6)
                 {
                     double spd = JsMath.Hypot(vx, vy);
-                    Events.Add(new SimEvent { t = T, type = "burnout", stage = StageIdx + 1, alt = alt, v = spd });
+                    Events.Add(new SimEvent { t = T, type = "burnout", stage = StageIdx + 1, alt = alt, v = spd,
+                        gamma = Math.Atan2(vr, Math.Abs(vt)) * 180 / Math.PI });
                     bool fail = false;
                     if (o.monitor != null)
                     {
