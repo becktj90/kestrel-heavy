@@ -332,12 +332,15 @@ namespace Kestrel.Core.Flight
             return true;
         }
 
-        /// <summary>Screen-y of the callout inside the padded HUD, just under the plot and stages cards.</summary>
-        public static float CalloutTopInsideHud()
+        /// <summary>Screen-y of the callout inside the padded HUD, just under the plot and stages cards.
+        /// #395: When a banner row is showing (e.g. BOOSTER LOST at MECO), the callout must sit below it,
+        /// not at the fixed plot position, or the two overlap.</summary>
+        public static float CalloutTopInsideHud(float bannerRowPt = 0f)
         {
+            float plotH = bannerRowPt > 0f ? bannerRowPt : FlightHudLayout.PlotPt;
             return FlightHudLayout.HealthPt + FlightHudLayout.GapPt
                 + FlightHudLayout.TelemetryPt + FlightHudLayout.GapPt
-                + FlightHudLayout.PlotPt + FlightHudLayout.GapPt;
+                + plotH + FlightHudLayout.GapPt;
         }
 
         public static string Title(StagingKind kind)

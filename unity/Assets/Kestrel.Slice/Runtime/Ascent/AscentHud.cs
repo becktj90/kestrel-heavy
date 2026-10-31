@@ -274,6 +274,9 @@ namespace Kestrel.Slice
         /// the full-width banner row the card becomes (FlightHudLayout.BannerRowPt). Never in landscape.
         /// </summary>
         float bannerRowPt;
+        /// <summary>#395: Current banner row height (pt), 0 when the banner fits in the stages card.
+        /// The staging callout uses this to sit below the banner instead of overlapping it.</summary>
+        public float BannerRowPt => bannerRowPt;
         /// <summary>Whether the dock's last row (Alternate / nudges) was open when LayoutRail last seated the rows.</summary>
         bool railNudges = true;
 
