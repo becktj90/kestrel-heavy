@@ -23,7 +23,9 @@ namespace Kestrel.Core.Flight
         public const double NearDt = 0.0125;
         public const double NearAlt = 2500;
         public const double MaxTime = 900;
-        public const double PitchRate = 0.55;
+        // #351: 10 deg/s max pitch rate, matching real booster attitude rates
+        // (was 0.55 rad/s ~= 31.5 deg/s, faster than real vehicles).
+        public const double PitchRate = 0.1745;
         public const double FinRate = 1.0 / 1.6;
         public const double LegRate = 1.0 / 1.4;
         public const double DeckRadiusM = 36;
