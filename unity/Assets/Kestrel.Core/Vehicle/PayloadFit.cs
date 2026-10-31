@@ -1,6 +1,6 @@
 // Fairing fit (§2.9). The one fit rule (B-04): Validate, Readout, the stepper, LaunchGate,
 // FlightBatch and the debrief all use it.
-//   usable = π (0.45 · D_f)² · 0.8 · L_f
+//   usable = π (0.45 · D_f)² · 0.7 · L_f
 //   fits when volume ≤ usable and cargo diameter ≤ 0.9 · D_f
 // Both use the same envelope: a usable inner radius of 0.45 · D_f (diameter 0.9 · D_f).
 // 0.9 is an approximate game number; real fairings offer about 0.85–0.885 of their outer diameter.
@@ -43,7 +43,7 @@ namespace Kestrel.Core.Vehicle
     public static class PayloadFit
     {
         public const double RadiusFactor = 0.45;
-        public const double LengthFactor = 0.8;
+        public const double LengthFactor = 0.7; // #302: retuned from 0.8 (nose-inclusive L)
         /// <summary>Usable inner diameter as a fraction of the fairing diameter (2 × <see cref="RadiusFactor"/>).</summary>
         public const double DiameterFactor = 2 * RadiusFactor;
         /// <summary>
