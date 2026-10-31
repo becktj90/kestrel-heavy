@@ -114,7 +114,16 @@ namespace Kestrel.Game.Tests
                 if (!seen)
                 {
                     seen = true;
-                    Assert.That(s.alt, Is.GreaterThanOrEqualTo(108000), id + " fairing below the 110 km gate");
+                    // Since KH-7 the sim's "fairing" event is heat-gated: it fires when ½ρv³ drops
+                    // under the payload's MaxHeatFlux, which can be below the design's 110 km
+                    // jettison height (m10: 106.3 km). The visual must match the sim's event,
+                    // not a fixed altitude.
+                    var fairingEvent = rig.Flight.events.Find(e => e.type == "fairing");
+                    if (fairingEvent != null && fairingEvent.alt.HasValue)
+                        Assert.That(s.alt, Is.EqualTo(fairingEvent.alt.Value).Within(2000),
+                            id + " fairing visual separated away from the sim's fairing event");
+                    else
+                        Assert.That(s.alt, Is.GreaterThanOrEqualTo(108000), id + " fairing below the 110 km gate");
                     Assert.IsTrue(rig.Show.FairingHalf(false).gameObject.activeSelf, id + " FairingL not shown on the separation frame");
                     Assert.IsTrue(rig.Show.FairingHalf(true).gameObject.activeSelf, id + " FairingR not shown on the separation frame");
                     TestContext.WriteLine($"{id}: fairing swap T+{s.t:0.0} s at {s.alt / 1000:0.0} km");
