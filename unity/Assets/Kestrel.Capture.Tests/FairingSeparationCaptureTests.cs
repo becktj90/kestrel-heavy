@@ -71,6 +71,7 @@ namespace Kestrel.Capture.Tests
                 var setup = MissionFlightSetup.Build(catalog, campaign.ById(id), design, MissionFlightSetup.BatchDt, null, MissionFlightSetup.BatchDt);
                 var sim = new AscentSim(setup.Stages, setup.Options);
                 while (!sim.Done) sim.Tick();
+                show.FairingWaitsForSimEvent = sim.FairingHeatGated;
                 var flight = sim.Finish();
 
                 var samples = flight.samples;
