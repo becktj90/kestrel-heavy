@@ -405,7 +405,8 @@ namespace Kestrel.Slice
             }
             chrome?.Layout(UnitsPerPoint());
             ascentHud?.Layout(UnitsPerPoint());
-            staging?.Layout(UnitsPerPoint());
+            // #395: pass the banner height so the staging callout sits below the banner, not on top of it.
+            staging?.Layout(UnitsPerPoint(), ascentHud != null ? ascentHud.BannerRowPt : 0f);
         }
 
         readonly Kestrel.Game.Shell.WebPanelScale.Watch panelScale = new Kestrel.Game.Shell.WebPanelScale.Watch();
@@ -1682,7 +1683,8 @@ namespace Kestrel.Slice
                 ascentHud.Present(flight);
                 bool reduced = hangarCam != null && hangarCam.ReduceMotion;
                 staging?.Arm(flight, reduced);
-                staging?.Layout(UnitsPerPoint());
+                // #395: pass the banner height so the staging callout sits below the banner.
+                staging?.Layout(UnitsPerPoint(), ascentHud != null ? ascentHud.BannerRowPt : 0f);
                 failureShow?.Arm(flight, reduced);
                 failureShow?.Layout(UnitsPerPoint());
                 recovery?.Arm(flight, staging, SliceData.Catalog, design, engineer, reduced);

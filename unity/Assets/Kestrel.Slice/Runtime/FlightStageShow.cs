@@ -300,12 +300,14 @@ namespace Kestrel.Slice
             if (chip != null) chip.style.display = DisplayStyle.None;
         }
 
-        public void Layout(float unitsPerPoint)
+        /// <summary>#395: bannerRowPt is the height of the banner row when showing (0 when not).
+        /// The callout sits below the banner so they don't overlap at MECO/stage sep.</summary>
+        public void Layout(float unitsPerPoint, float bannerRowPt = 0f)
         {
             if (chip == null) return;
             units = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
             float u = units;
-            float top = FlightStaging.CalloutTopInsideHud() * u;
+            float top = FlightStaging.CalloutTopInsideHud(bannerRowPt) * u;
             chip.style.top = top;
             chip.style.left = FlightHudLayout.SideMarginPt * u;
             chip.style.right = FlightHudLayout.SideMarginPt * u;

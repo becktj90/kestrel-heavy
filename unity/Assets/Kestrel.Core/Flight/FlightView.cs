@@ -170,7 +170,9 @@ namespace Kestrel.Core.Flight
                 case FlightViewMode.Chase:
                     return new FlightViewOffset { OnVehicle = true, X = h * 1.35, Y = h * 0.12, Z = -h * 2.7 };
                 case FlightViewMode.Above:
-                    return new FlightViewOffset { OnVehicle = true, X = 0, Y = h * 1.45, Z = -h * 0.42 };
+                    // #396: Pull the Above camera back so the full rocket is visible (was h*1.45/h*0.42,
+                    // which filled the screen with the rocket). Distance is now ~3h from the stack.
+                    return new FlightViewOffset { OnVehicle = true, X = 0, Y = h * 2.8, Z = -h * 1.2 };
                 case FlightViewMode.Below:
                     return new FlightViewOffset { OnVehicle = true, X = h * 0.28, Y = -h * 0.82, Z = -h * 0.35 };
                 case FlightViewMode.Pad:
