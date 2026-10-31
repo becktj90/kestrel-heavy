@@ -356,6 +356,11 @@ namespace Kestrel.Slice
             ApplyStaging(events, t, alt, speed, q, thrust01);
         }
 
+        /// <summary>Test hook: mirrors FlightStaging.FairingWaitsForSimEvent. Production sets this from
+        /// flight.Sim.FairingHeatGated in Present(); device tests driving PreviewAt must set it the same way,
+        /// otherwise the altitude fallback can fire before the sim's heat-gated fairing event.</summary>
+        public bool FairingWaitsForSimEvent { get => staging.FairingWaitsForSimEvent; set => staging.FairingWaitsForSimEvent = value; }
+
         void ApplyStaging(IList<SimEvent> events, double t, double alt, double speed, double q, double thrust01)
         {
             staging.Advance(events, t, alt, speed, q, thrust01);

@@ -72,6 +72,9 @@ namespace Kestrel.Game.Tests
             var setup = MissionFlightSetup.Build(C, mission, design, MissionFlightSetup.BatchDt, null, MissionFlightSetup.BatchDt);
             var sim = new AscentSim(setup.Stages, setup.Options);
             while (!sim.Done) sim.Tick();
+            // As Present(): when the sim's fairing event is heat-gated, the visual must wait for
+            // it instead of firing the altitude fallback early.
+            show.FairingWaitsForSimEvent = sim.FairingHeatGated;
             return new Rig { Rocket = go, View = view, Seams = seams, Show = show, Design = design, Flight = sim.Finish() };
         }
 
