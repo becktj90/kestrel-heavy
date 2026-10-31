@@ -595,10 +595,11 @@ namespace Kestrel.Core.Flight
             info.sepImpulse = s.SepImpulseOrZero;
             info.redundant = d != null && d.avionicsTier == "redundant";
             info.baseHeat = d != null && !d.heatShield && info.engines > 9;
-            // Hoop margin only when a tank pressure is set. Unpressurized stages break on q_lim,
-            // which is the max-Q structural limit. A liftoff axial load would otherwise trip MS first.
-            bool pressure = s.tank != null && s.tank.pressureSet && s.tank.pressureBar > 0;
-            info.fAllow = pressure ? StructureModel.Allowables(c, s, d != null ? d.safetyFactor : 1.4).fAllowN : 0;
+            // #344: q·alpha bending allowance for all stages, including unpressurized.
+            // The wall model (StructureModel.Allowables) derives an equivalent wall from the
+            // structural fraction when no tank pressure is set, so unpressurized stages get a
+            // bending margin. The q_lim check still applies as the max-Q structural limit.
+            info.fAllow = StructureModel.Allowables(c, s, d != null ? d.safetyFactor : 1.4).fAllowN;
             info.radius = s.diameter > 0 ? s.diameter / 2 : 0;
             return info;
         }
