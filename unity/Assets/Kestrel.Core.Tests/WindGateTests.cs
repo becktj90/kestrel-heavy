@@ -47,6 +47,23 @@ namespace Kestrel.Core.Tests
             Assert.That(misses, Is.Empty, string.Join(" | ", misses));
         }
 
+        /// <summary>#339: every board starter must also pass the live pad in calm air, not just in seed-1 wind.</summary>
+        [Test]
+        public void BoardStarter_FixItOrOneStrengthEdit_WinsTheLivePadInCalmAir()
+        {
+            var misses = new List<string>();
+            int seen = 0;
+            foreach (var (mission, design, mode) in BoardStarters())
+            {
+                var live = LivePadLoop.Fly(catalog, mission, design, false);
+                if (!LivePadLoop.Passes(catalog, mission, design, live))
+                    misses.Add(mission.Id + " (" + mode + ") live calm air " + LivePadLoop.Text(live));
+                seen++;
+            }
+            Assert.AreEqual(18, seen, "KH-3 through KH-20");
+            Assert.That(misses, Is.Empty, string.Join(" | ", misses));
+        }
+
         /// <summary>No wind-shear call is offered any more, in wind or calm (the ease is gone, #338).</summary>
         [Test]
         public void NoWindShearCall_InTheSeedOneWind()
