@@ -86,6 +86,8 @@ namespace Kestrel.Core.Physics
     public sealed class SimEvent
     {
         public double t; public string type; public int? stage; public double? alt, v, apoAlt, periAlt;
+        /// <summary>#369: inertial flight-path angle at the event, degrees (+ climbing). Set on burnout; null elsewhere.</summary>
+        public double? gamma;
         public override string ToString() => $"T+{t:F1} {type}{(stage.HasValue ? " S" + stage : "")}";
     }
 
@@ -568,7 +570,8 @@ namespace Kestrel.Core.Physics
                 if (remain <= 1e-6)
                 {
                     double spd = JsMath.Hypot(vx, vy);
-                    Events.Add(new SimEvent { t = T, type = "burnout", stage = StageIdx + 1, alt = alt, v = spd });
+                    Events.Add(new SimEvent { t = T, type = "burnout", stage = StageIdx + 1, alt = alt, v = spd,
+                        gamma = Math.Atan2(vr, Math.Abs(vt)) * 180 / Math.PI });
                     bool fail = false;
                     if (guidanceFlew && StageIdx >= st.Length - 1) upperRanDry = true;
                     if (o.monitor != null)
