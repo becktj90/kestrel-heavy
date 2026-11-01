@@ -63,6 +63,17 @@ namespace Kestrel.Core.Tests
             "m19 methane-3-f2-b2",
             "m19 methane-3-f3-b2",
             "m19 methane-3-f4-b2",
+            // #409 guidance retune: these m13 combos now land (were guidance failures under the 10°/s
+            // pitch rate). The Judge grades their tight fuel margins "hard"/"good" vs flown "perfect" —
+            // the designed conservative behavior (fuel-margin grade vs touchdown-quality grade).
+            "m13 kerosene-2-f1-b0",
+            "m13 kerosene-2-f2-b0",
+            "m13 kerosene-2-f3-b0",
+            "m13 kerosene-3-f4-b0",
+            "m13 methane-2-f0-b0",
+            "m13 methane-2-f1-b0",
+            "m13 methane-2-f2-b0",
+            "m13 methane-3-f1-b0",
         };
 
         /// <summary>
@@ -79,21 +90,14 @@ namespace Kestrel.Core.Tests
         /// Flown guidance failures (miss/fast/tilt with fuel left): #342's scope, not #369's. The fuel formula
         /// is not expected to predict them. Listed explicitly; the parity test does not fail on them.
         /// All are m13 2-stage/3-stage designs missing Haven under the 0.1745 rad/s pitch rate (#400).
+        /// #409 retuned the guidance: the 2-f1/f2/f3, 3-f4, methane-2-f0/f1/f2 and methane-3-f1 rows now land,
+        /// so they moved to <see cref="Conservative"/>. The kerosene-3-f0/f1/f2 rows below still miss.
         /// </summary>
         static readonly HashSet<string> GuidanceFailures = new HashSet<string>
         {
-            "m13 kerosene-2-f1-b0",
-            "m13 kerosene-2-f2-b0",
-            "m13 kerosene-2-f3-b0",
-            "m13 kerosene-2-f4-b0",
             "m13 kerosene-3-f0-b0",
             "m13 kerosene-3-f1-b0",
             "m13 kerosene-3-f2-b0",
-            "m13 kerosene-3-f4-b0",
-            "m13 methane-2-f0-b0",
-            "m13 methane-2-f1-b0",
-            "m13 methane-2-f2-b0",
-            "m13 methane-3-f1-b0",
         };
 
 #if KH_DOTNET_TESTS
