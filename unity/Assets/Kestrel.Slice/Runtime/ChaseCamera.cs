@@ -16,10 +16,11 @@ namespace Kestrel.Slice
     public static class ChaseCamera
     {
         // Lateral standoff, in vehicle heights. Was (0.8, 1.6), which filled a portrait frame with the
-        // tank wall once the HUD covered the nose and the tail. 2.5× that distance keeps the whole
-        // stack in the middle of the frame with sky around it. Follow still returns this offset unchanged.
-        public const float StandoffX = 2.0f;
-        public const float StandoffZ = 4.0f;
+        // tank wall once the HUD covered the nose and the tail. 2.0/4.0 kept the whole stack in frame
+        // but left the rocket small on phone screens (KH-3 playtest: tiny sliver at T+40s). 1.4/2.8 splits
+        // the difference: the stack stays framed with sky around it, but reads bigger and more arcade.
+        public const float StandoffX = 1.4f;
+        public const float StandoffZ = 2.8f;
 
         /// <summary>Desired camera offset from the vehicle pivot for a rocket of height h with axis 'up'.</summary>
         public static Vector3 DesiredOffset(Vector3 up, float h) => -up * h * 0.6f + new Vector3(h * StandoffX, 0, -h * StandoffZ);

@@ -93,7 +93,7 @@ namespace Kestrel.Core.Flight
     public static class FlightViewPose
     {
         // Mirrors ChaseCamera (Slice): StandoffX/Z and the horizon hold window. ChaseCamera reads these.
-        public const double StandoffX = 2.0, StandoffZ = 4.0;
+        public const double StandoffX = 1.4, StandoffZ = 2.8;
         public const double HoldFullAlt = 13000, HoldEndAlt = 20000;
         /// <summary>Default camera floor above the ground anchor (PadGround.MinCameraClearance).</summary>
         public const double MinClearance = 3;
