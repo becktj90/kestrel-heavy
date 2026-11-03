@@ -70,8 +70,9 @@ namespace Kestrel.Core.Flight
         /// <summary>The design flies strap-on boosters: sim stage 1 is the boosters (BECO), stage 2 the core (MECO), and
         /// only a stage after the core is an upper stage (SECO). Was: booster burnout read MECO and core burnout SECO.</summary>
         public bool StrapOns;
-        /// <summary>The planned recovery mode ("rtls", "barge", anything else = no boostback planned). Null: unknown, all
-        /// three recovery stops are planned. A stop the booster never flew is dropped once a later recovery stop lights.</summary>
+        /// <summary>The planned recovery mode ("rtls", "barge", "expendable", anything else = no boostback planned).
+        /// Null: unknown, all three recovery stops are planned. "expendable": no recovery stops shown (no landing fuel/legs).
+        /// A stop the booster never flew is dropped once a later recovery stop lights.</summary>
         public string RecoveryMode;
 
         int burnStage; double burnLeft = double.NaN;
@@ -216,9 +217,15 @@ namespace Kestrel.Core.Flight
             if (ascentOver && now + 1e-6 >= ascentOverT && !Flown(fairing, now)) stops.Remove(TrajectoryStop.Fairing);
             if (Recovery || boost.On || entry.On || landing.On)
             {
+                // Expendable missions (RecoveryMode="expendable") have no landing fuel/legs:
+                // do not show Entry/Haven stops. Fixes KH-3 showing Haven for an expendable flight.
+                bool isExpendable = string.Equals(RecoveryMode, "expendable", StringComparison.OrdinalIgnoreCase);
                 if (FliesBoostback() || boost.On) stops.Add(TrajectoryStop.Boostback);
-                stops.Add(TrajectoryStop.Entry);
-                stops.Add(TrajectoryStop.Landing);
+                if (!isExpendable)
+                {
+                    stops.Add(TrajectoryStop.Entry);
+                    stops.Add(TrajectoryStop.Landing);
+                }
                 // A stop this booster skipped (no boostback on a barge run, no entry burn on a gentle fall) used to stay
                 // upcoming and hold the marker at 0.88 after touchdown. Once a later recovery stop lights, it goes.
                 bool later = landing.On && landing.T <= now + 1e-6;
