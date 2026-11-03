@@ -19,8 +19,10 @@ namespace Kestrel.Core.Feel
             bool hard = false;
             switch (name)
             {
-                case "liftoff": shake = 0.55; flash = 0.70; haptic = 28; rumble = 0.80; punch = 0.80; break;
-                case "maxq": shake = 0.72; flash = 0.25; haptic = 18; rumble = 1.00; punch = 0.45; break;
+                // Arcade juice: liftoff and max-Q hit hard. KH-3 playtest: "no screen shake, impact,
+                // or juice on liftoff. Rocket just quietly lifts off." These are up from 0.55/0.72.
+                case "liftoff": shake = 1.00; flash = 0.70; haptic = 28; rumble = 0.80; punch = 0.80; break;
+                case "maxq": shake = 1.00; flash = 0.25; haptic = 18; rumble = 1.00; punch = 0.45; break;
                 case "stage": shake = 0.40; flash = 0.35; haptic = 14; rumble = 0.50; punch = 0.60; break;
                 case "meco": shake = 0.22; flash = 0.10; haptic = 10; rumble = 0.20; punch = 0.30; break;
                 case "hit": shake = 0.85; flash = 1.00; haptic = 22; rumble = 0.40; punch = 0.50; hard = true; break;
