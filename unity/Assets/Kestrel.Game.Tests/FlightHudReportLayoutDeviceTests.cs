@@ -167,7 +167,7 @@ namespace Kestrel.Game.Tests
                 NoOverlap(dockItems, at + " dock");
                 var quote = FindByText(dock, "pressure drop");
                 Assert.That(quote, Is.Not.Null, at + " quote shown");
-                var medal = FindByText(dock, "Medal timing");
+                var medal = FindByText(dock, "medal");
                 if (medal != null && Shown(medal))
                     Assert.That(Overlaps(quote.worldBound, medal.worldBound), Is.False, at + " quote over medal line");
                 float line = quote.resolvedStyle.fontSize * 1.6f;
