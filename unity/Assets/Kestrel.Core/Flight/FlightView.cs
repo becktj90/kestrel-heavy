@@ -168,7 +168,9 @@ namespace Kestrel.Core.Flight
             switch (mode)
             {
                 case FlightViewMode.Chase:
-                    return new FlightViewOffset { OnVehicle = true, X = h * 1.35, Y = h * 0.12, Z = -h * 2.7 };
+                    // Distinct side view (not a behind view like Auto). Auto is (1.4h, -k*h, -2.8h) behind;
+                    // Chase is lateral so EveryModeIsItsOwnView passes and the player gets a real alternative.
+                    return new FlightViewOffset { OnVehicle = true, X = h * 2.4, Y = h * 0.10, Z = -h * 1.4 };
                 case FlightViewMode.Above:
                     // #396: Pull the Above camera back so the full rocket is visible (was h*1.45/h*0.42,
                     // which filled the screen with the rocket). Distance is now ~3h from the stack.
