@@ -1879,6 +1879,13 @@ namespace Kestrel.Slice
                 if (hMsg != null) hMsg.text = "Flight ended before MECO";
                 again?.RemoveFromClassList("hidden");
             }
+            else if (!flight.Running && flight.Meco && flight.Sim.Done)
+            {
+                // P0 (KH-3 playtest): the flight just stopped with no win signal. If we got through MECO
+                // intact, that's a completed ascent — say so clearly.
+                if (hMsg != null) hMsg.text = "MISSION COMPLETE!";
+                again?.RemoveFromClassList("hidden");
+            }
         }
 
         void TickCount()
