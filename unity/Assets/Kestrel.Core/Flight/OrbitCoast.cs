@@ -113,6 +113,23 @@ namespace Kestrel.Core.Flight
 
         public bool Finished(double wall) => !(wall < WallSeconds);
 
+        /// <summary>Largest step one frame may add to the coast's wall clock (a hitch or a very slow frame).</summary>
+        public const double MaxStepSeconds = 0.5;
+
+        /// <summary>
+        /// One frame of the coast's wall clock. The coast is a propagated track (no integration), so it follows the real
+        /// clock: the larger of the scaled and unscaled frame time, capped at <see cref="MaxStepSeconds"/>. The climax then
+        /// ends after its WallSeconds of real time at any frame rate down to 2 fps, and after at most
+        /// ceil(WallSeconds / MaxStepSeconds) frames below that. (#431: with the ascent's 0.1 s hitch clamp a slow CI
+        /// player took 3.5 s of coast past a 15 s wait.) NaN or negative times count as zero; an endless frame counts as one capped step.
+        /// </summary>
+        public static double Advance(double wall, double frameSeconds, double realFrameSeconds)
+        {
+            double a = frameSeconds > 0 ? frameSeconds : 0;
+            double b = realFrameSeconds > 0 ? realFrameSeconds : 0;
+            return wall + Math.Min(Math.Max(a, b), MaxStepSeconds);
+        }
+
         /// <summary>State at <paramref name="wall"/> seconds into the coast: sim time and the planar inertial state, interpolated
         /// (Hermite on position, linear on velocity) between propagated samples.</summary>
         public CoastState At(double wall)
