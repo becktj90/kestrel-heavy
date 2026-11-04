@@ -56,7 +56,7 @@ namespace Kestrel.Slice
         double clock; double thrustRef = 1; double prevX, prevY;
         PlayedChecks checks;
         double[] thrustByStage = System.Array.Empty<double>();
-        int seenEvents; bool mecoSent;
+        int seenEvents; bool mecoSent; int maxQBeatSeen;
         readonly List<(Transform t, double x, double y, double z)> anchored = new List<(Transform, double, double, double)>();
         double omegaAir;
 
@@ -149,7 +149,7 @@ namespace Kestrel.Slice
             Running = true;
             clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             AttitudeDeg = 90f; HasAttitude = false;
-            seenEvents = 0; mecoSent = false;
+            seenEvents = 0; mecoSent = false; maxQBeatSeen = 0;
             try
             {
                 // The designer and the launch predictor fly these same checks (#314).
@@ -190,6 +190,12 @@ namespace Kestrel.Slice
                 if (Result == null) Result = directed != null ? directed.Finish() : Sim.Finish();
             }
             PumpEvents();
+            // DECISIONS #80: the design's max-Q throttle law engaging / releasing (real sim transitions, AscentDirector).
+            if (Decisions != null && Decisions.MaxQBeatSerial != maxQBeatSeen)
+            {
+                maxQBeatSeen = Decisions.MaxQBeatSerial;
+                Sink?.OnEvent(Decisions.MaxQBeatEvent);
+            }
             if (Meco && !mecoSent && !Lost) { mecoSent = true; Sink?.OnEvent("meco"); }
             UpdateFrame();
             PublishAudio();

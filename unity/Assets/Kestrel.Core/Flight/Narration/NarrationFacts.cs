@@ -12,6 +12,8 @@ namespace Kestrel.Core.Flight.Narration
     /// </summary>
     public sealed class NarrationFacts
     {
+        /// <summary>DECISIONS #80: fact key, true only when the design has a max-Q throttle setting.</summary>
+        public const string MaxQThrottle = "throttle.maxq";
         public const string Kerolox = "kerolox", Hydrolox = "hydrolox", Methalox = "methalox", Solid = "solid", Storable = "storable";
 
         readonly Dictionary<string, object> values = new Dictionary<string, object>();
@@ -96,6 +98,9 @@ namespace Kestrel.Core.Flight.Narration
             v["fins"] = d.fins;
             v["finless"] = !d.fins;
             if (!string.IsNullOrEmpty(siteId)) v["site"] = siteId;
+            // DECISIONS #80: the max-Q beats (events maxq-throttle / maxq-through) are true only for a design with its own
+            // max-Q throttle setting, the same test AscentDecisions.FromDesign uses for MaxQSet.
+            v[MaxQThrottle] = d.guidance != null && d.guidance.maxQThrottleSet;
             return f;
         }
 
