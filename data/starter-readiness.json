@@ -124,6 +124,12 @@
       "kid": "It reaches a lopsided orbit.",
       "engineer": "Mean altitude is on target, but apogee or perigee is outside the band (an eccentric cutoff).",
       "fixes": []
+    },
+    "goal": {
+      "badge": "✗ Misses a goal.",
+      "kid": "It flies, but breaks a mission rule.",
+      "engineer": "On target, but a result-screen gate fails: margin, reliability, red risk, coast boil-off, budget, payload or fairing.",
+      "fixes": []
     }
   }
 }

@@ -68,12 +68,15 @@ namespace Kestrel.Core.Tests
                 Assert.IsNotEmpty(rest, where);
                 return;
             }
-            // DECISIONS #77 (#416 item 5): Ready only when the predictor's flight passes the mission by the batch's rule.
+            // DECISIONS #77 (#416 item 5): Ready only when the predictor's flight passes the result screen's gates
+            // (LivePadLoop.Passes, the test mirror of PostFlightSource → FlightDebrief.GoalMet).
             if (sim.failure != null) { Assert.AreEqual(StarterScreen.ChanceLine, rest, where + ": a seeded random end is no verdict"); return; }
-            bool passes = LaunchPredictor.AcceptsMission(r.Mission, sim, MissionScore.FlownApoAltM(sim));
+            var flown = Design.FromJson(r.BuildDesign());
+            bool passes = LivePadLoop.Passes(StarterFixture.Catalog, r.Mission, flown, sim)
+                || LivePadLoop.IsM13HardButWins(StarterFixture.Catalog, r.Mission, flown, sim);
             Assert.AreEqual(passes, v.Passes, where + ": verdict pass vs the predictor flight (" + v.Cause + ")");
             Assert.AreEqual(passes, ReadyOrTight(badge), where + ": pass " + passes + " but the badge reads " + badge + " " + rest);
-            if (!passes) Assert.IsTrue(StarterVerdict.IsMiss(v.Cause), where + ": an intact miss names low, high or shape, not " + v.Cause);
+            if (!passes) Assert.IsTrue(StarterVerdict.IsMiss(v.Cause), where + ": an intact miss names low, high, shape or goal, not " + v.Cause);
         }
 
         /// <summary>Settings the sweep found reading Ready before this change while the predictor broke them up or left
