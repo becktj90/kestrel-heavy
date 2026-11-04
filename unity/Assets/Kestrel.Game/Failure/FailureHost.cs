@@ -52,21 +52,10 @@ namespace Kestrel.Game.Failure
         {
             if (rocket == null) return null;
             var host = rocket.GetComponent<FailureHost>();
-            if (host == null)
-            {
-                host = rocket.AddComponent<FailureHost>();
-                // Fix it / Back to designer rebuild the rocket on the pad while the driver still holds the
-                // last flight's result (Running false). A fresh host used to report it again: the card came
-                // back (and charged the hardware again), or a failure replayed its break-up on the pad and the
-                // designer never showed (the WebGL "Fix it -> empty sky" soft-lock). Only a new launch reports.
-                host.closedResult = ReportGate.Stale(flight != null ? flight.Result : null, flight != null && flight.Running);
-            }
+            if (host == null) host = rocket.AddComponent<FailureHost>();
             host.Bind(flight, ui, built);
             return host;
         }
-
-        /// <summary>True when this host would open a card or play a failure for <paramref name="result"/>.</summary>
-        public bool WouldReport(SimResult result) => ReportGate.Opens(result, reported, closedResult);
 
         public void Bind(FlightDriver flightDriver, VisualElement root, RocketMeshBuilder.Result built)
         {
@@ -152,7 +141,7 @@ namespace Kestrel.Game.Failure
                 return;
             }
             var result = flight.Result;
-            if (!WouldReport(result)) return;
+            if (result == null || reported || ReferenceEquals(result, closedResult)) return;
             if (result.failure == null)
             {
                 if (flight.Running) return;

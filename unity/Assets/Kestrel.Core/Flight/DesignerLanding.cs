@@ -1,26 +1,8 @@
-// When the post-flight card (or a failure replay) may open, and the guard that every route back to the pad
-// (Fix it, Back to designer) really lands in the designer.
-//
-// Fix it rebuilt the rocket on the pad and attached a new FailureHost while the FlightDriver still held the last
-// result. The fresh host had nothing to compare against, so it reported that result again: a miss reopened the card
-// (and charged the hardware again on every tap), and a break-up replayed on the pad with the designer hidden
-// (the WebGL "Fix it -> empty sky for 35 s" soft-lock, UX fun review 2026-11-03 #1).
-using Kestrel.Core.Physics;
-
+// The guard that every route back to the pad (Fix it, Back to designer) really lands in the designer.
+// UX fun review 2026-11-03 #1 / QA #417: Fix it after a break-up left an empty sky with no buttons. The stale-result
+// re-report itself is fixed by ReportLatch (#419); this is the fallback for anything else that strands the player.
 namespace Kestrel.Core.Flight
 {
-    public static class ReportGate
-    {
-        /// <summary>The result a freshly attached host must ignore: whatever a stopped driver still holds.
-        /// A running driver has no result yet (Launch clears it), so nothing is ignored.</summary>
-        public static SimResult Stale(SimResult onDriver, bool running) => running ? null : onDriver;
-
-        /// <summary>True when a host that has <paramref name="reported"/> (or not) and last closed
-        /// <paramref name="closed"/> must open the card or the failure replay for <paramref name="result"/>.</summary>
-        public static bool Opens(SimResult result, bool reported, SimResult closed)
-            => result != null && !reported && !ReferenceEquals(result, closed);
-    }
-
     /// <summary>
     /// Armed by a route back to the pad. If after <see cref="GraceSeconds"/> neither the designer nor a new flight is
     /// on screen (or the report is still up), the caller forces the designer. Any throw in the route lands there too.

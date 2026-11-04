@@ -1,42 +1,12 @@
-// UX fun review 2026-11-03 #1 / QA #417: Fix it soft-lock. A host attached after the flight must not re-open the
-// last card or replay the break-up; every route back lands in the designer within the grace period.
+// UX fun review 2026-11-03 #1 / QA #417: Fix it soft-lock. Every route back lands in the designer within the grace
+// period (the stale-result re-report itself is ReportLatch, #419, with its own tests).
 using Kestrel.Core.Flight;
-using Kestrel.Core.Physics;
 using NUnit.Framework;
 
 namespace Kestrel.Core.Tests
 {
-    public class ReportGateTests
+    public class DesignerLandingTests
     {
-        [Test]
-        public void HostAttachedAfterTheFlightIgnoresTheResultStillOnTheDriver()
-        {
-            var last = new SimResult { outcome = "crash" };
-            var closed = ReportGate.Stale(last, running: false);
-            Assert.AreSame(last, closed);
-            Assert.IsFalse(ReportGate.Opens(last, reported: false, closed), "Fix it rebuilt the rocket and re-reported the crash");
-        }
-
-        [Test]
-        public void NextFlightOpensItsOwnCard()
-        {
-            var last = new SimResult { outcome = "crash" };
-            var closed = ReportGate.Stale(last, running: false);
-            var next = new SimResult { outcome = "orbit" };
-            Assert.IsTrue(ReportGate.Opens(next, reported: false, closed));
-            Assert.IsFalse(ReportGate.Opens(next, reported: true, closed), "one card per flight");
-            Assert.IsFalse(ReportGate.Opens(null, reported: false, closed));
-        }
-
-        [Test]
-        public void HostAttachedMidFlightIgnoresNothing()
-        {
-            Assert.IsNull(ReportGate.Stale(new SimResult(), running: true));
-            Assert.IsNull(ReportGate.Stale(null, running: false));
-            var first = new SimResult();
-            Assert.IsTrue(ReportGate.Opens(first, reported: false, ReportGate.Stale(null, running: false)));
-        }
-
         [Test]
         public void LandingIsJudgedAtTheEndOfTheGrace()
         {
