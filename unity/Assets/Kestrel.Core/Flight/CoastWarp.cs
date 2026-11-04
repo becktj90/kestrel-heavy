@@ -68,15 +68,28 @@ namespace Kestrel.Core.Flight
         public static string AccessibleText(double factor) => factor > Off ? "Time warp, " + ((int)factor).ToString(System.Globalization.CultureInfo.InvariantCulture) + " times" : "";
 
         /// <summary>
-        /// Narrator Voice: an interruptible line of <paramref name="clipSec"/> may start only when it and
-        /// <see cref="LineTailS"/> end before the next call, counted in wall seconds at the current warp factor
-        /// (<paramref name="simSecondsToNext"/> / factor). An unknown or zero lead fits nothing.
+        /// The factor the clock returns to once nothing blocks it, for a lead of <paramref name="simSecondsToNext"/>:
+        /// ×1 under <see cref="LeadS"/>, ×4 to <see cref="FarS"/>, ×10 beyond (as <see cref="Factor"/> unblocked).
         /// </summary>
-        public static bool LineFits(double clipSec, double simSecondsToNext, double factor)
+        public static double ResumeFactor(double simSecondsToNext)
+        {
+            if (double.IsNaN(simSecondsToNext) || simSecondsToNext < LeadS) return Off;
+            return simSecondsToNext < FarS ? Slow : Fast;
+        }
+
+        /// <summary>
+        /// Narrator Voice: an interruptible line of <paramref name="clipSec"/> may start only when it and
+        /// <see cref="LineTailS"/> end before the next call, counted in wall seconds at the factor the clock will run at:
+        /// the larger of the current <paramref name="factor"/> and, when warp is on, <see cref="ResumeFactor"/>. A brief ×1
+        /// (the narration tail, the booster camera, an open call) must not let a long line into a gap warp then shrinks
+        /// (Narrator Voice on #436). An unknown or zero lead fits nothing.
+        /// </summary>
+        public static bool LineFits(double clipSec, double simSecondsToNext, double factor, bool warpEnabled = true)
         {
             if (double.IsNaN(simSecondsToNext)) return false;
             if (double.IsPositiveInfinity(simSecondsToNext)) return true;
             if (!(factor >= Off)) factor = Off;
+            if (warpEnabled) factor = Math.Max(factor, ResumeFactor(simSecondsToNext));
             return clipSec + LineTailS <= simSecondsToNext / factor;
         }
 

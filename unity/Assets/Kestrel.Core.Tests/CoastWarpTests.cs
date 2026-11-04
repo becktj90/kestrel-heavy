@@ -276,17 +276,36 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void LineStartsOnlyWhenItFitsBeforeTheNextCallAtTheCurrentWarp()
+        public void LineStartsOnlyWhenItFitsBeforeTheNextCallAtTheCurrentWarpWithWarpOff()
         {
-            // 6 s line + 1.5 s tail = 7.5 wall s.
-            Assert.That(CoastWarp.LineFits(6, 75, 10), Is.True, "75 sim s at ×10 = 7.5 wall s");
-            Assert.That(CoastWarp.LineFits(6, 74, 10), Is.False);
-            Assert.That(CoastWarp.LineFits(6, 30, 4), Is.True);
-            Assert.That(CoastWarp.LineFits(6, 29, 4), Is.False);
-            Assert.That(CoastWarp.LineFits(6, 7.5, 1), Is.True);
-            Assert.That(CoastWarp.LineFits(6, 0, 1), Is.False, "nothing fits a call due now: silence");
-            Assert.That(CoastWarp.LineFits(6, double.PositiveInfinity, 10), Is.True, "nothing ahead");
-            Assert.That(CoastWarp.LineFits(6, double.NaN, 1), Is.False);
+            // 6 s line + 1.5 s tail = 7.5 wall s. Warp off: the factor given is the one the clock keeps.
+            Assert.That(CoastWarp.LineFits(6, 75, 10, false), Is.True, "75 sim s at ×10 = 7.5 wall s");
+            Assert.That(CoastWarp.LineFits(6, 74, 10, false), Is.False);
+            Assert.That(CoastWarp.LineFits(6, 30, 4, false), Is.True);
+            Assert.That(CoastWarp.LineFits(6, 29, 4, false), Is.False);
+            Assert.That(CoastWarp.LineFits(6, 7.5, 1, false), Is.True);
+            Assert.That(CoastWarp.LineFits(6, 0, 1, false), Is.False, "nothing fits a call due now: silence");
+            Assert.That(CoastWarp.LineFits(6, double.PositiveInfinity, 10, false), Is.True, "nothing ahead");
+            Assert.That(CoastWarp.LineFits(6, double.NaN, 1, false), Is.False);
+        }
+
+        /// <summary>
+        /// Narrator Voice on #436: during a brief ×1 (the 0.5 s tail, the booster camera, an open call) the fit is measured
+        /// at the factor the clock returns to, so a 10 s or longer color line is not picked into a gap warp then cuts.
+        /// </summary>
+        [Test]
+        public void LongColorLineIsNotPickedIntoAGapWarpWillShrink()
+        {
+            Assert.That(CoastWarp.ResumeFactor(4.9), Is.EqualTo(CoastWarp.Off));
+            Assert.That(CoastWarp.ResumeFactor(15), Is.EqualTo(CoastWarp.Slow));
+            Assert.That(CoastWarp.ResumeFactor(30), Is.EqualTo(CoastWarp.Fast));
+            // 15 sim s at a brief ×1 looked like 15 wall s; warp resumes ×4, so it is 3.75 wall s.
+            Assert.That(CoastWarp.LineFits(10, 15, CoastWarp.Off), Is.False, "10 s color into 15 sim s at a brief ×1");
+            Assert.That(CoastWarp.LineFits(10, 15, CoastWarp.Off, false), Is.True, "warp off: ×1 is where the clock stays");
+            Assert.That(CoastWarp.LineFits(10, 100, CoastWarp.Off), Is.False, "100 sim s resumes ×10: 10 wall s");
+            Assert.That(CoastWarp.LineFits(10, 115, CoastWarp.Off), Is.True, "115 sim s at ×10 = 11.5 wall s");
+            Assert.That(CoastWarp.LineFits(10, 46, CoastWarp.Slow), Is.False, "×4 now, ×10 next: the larger wins");
+            Assert.That(CoastWarp.LineFits(2, 4, CoastWarp.Off), Is.True, "under the lead the clock stays ×1");
         }
 
         [Test]
