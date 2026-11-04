@@ -1,7 +1,8 @@
 // Arcade P1 (rule from Kestrel Physics): the stage banner said "Short on speed" whenever speed was under 40 % of the
 // whole Δv budget, a fitted share that read every orbital starter short for minutes of a flight that made its orbit
 // (KH-7 from MECO into the S3 burn). It now reads LiveSpare: Δv on board − (speed still to gain + the sheet's loss term
-// less the ∫(g·sinγ + D/m)dt flown so far), and says short only once that has stayed below zero for LiveSpare.HoldS.
+// less the sim's gravity + drag + steering loss tallies so far, inertial frame), and says short only once that has
+// stayed below zero for LiveSpare.HoldS.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,11 +18,11 @@ namespace Kestrel.Core.Tests
 {
     public class LiveSpareShortOnSpeedTests
     {
-        /// <summary>The live pad's ascent (briefing card wind and site for the design hash, seed 1, shared director), not yet flown.</summary>
-        static DirectedFlight StartLive(Design d, CampaignMission m, bool autoAssist)
+        /// <summary>The live pad's ascent (briefing card wind and site for the design hash and seed, seed 1 by default as the app flies, shared director), not yet flown.</summary>
+        static DirectedFlight StartLive(Design d, CampaignMission m, bool autoAssist, ulong seed = 1)
         {
             var c = StarterFixture.Catalog;
-            ulong hash = FlightBatch.DesignHash(d), seed = 1;
+            ulong hash = FlightBatch.DesignHash(d);
             var card = MissionBriefing.Load(Golden.Root, m.Index, hash, seed);
             double target = Stack.RequiredDeltaV(c, d.payloadOrbit).targetAlt;
             if (MissionAim.IsApogeeHop(m)) target = m.GuidanceAltM;
@@ -47,7 +48,7 @@ namespace Kestrel.Core.Tests
         }
 
         /// <summary>Fly the design on the live pad and read the banner every step the way SliceApp.RefreshWebcast does.</summary>
-        internal static Reading Read(JsonObject json, CampaignMission m, bool autoAssist, double traceEvery = 0)
+        internal static Reading Read(JsonObject json, CampaignMission m, bool autoAssist, double traceEvery = 0, ulong seed = 1)
         {
             var c = StarterFixture.Catalog;
             var d = Design.FromJson(json);
@@ -55,7 +56,7 @@ namespace Kestrel.Core.Tests
             double required = q.required, hopGoal = 0;
             if (m.TargetKind == "apogee") { hopGoal = m.ApoKm * 1000.0; required = m.RequiredDeltaV(); }
             var live = LiveSpare.For(c, d.payloadOrbit);
-            var f = StartLive(d, m, autoAssist);
+            var f = StartLive(d, m, autoAssist, seed);
             var r = new Reading { SheetSpare = q.totalDeltaV - q.required, Spare0 = live.Spare(f.Sim) };
             if (traceEvery > 0)
             {
@@ -200,6 +201,28 @@ namespace Kestrel.Core.Tests
             }
             Assert.IsEmpty(bad, "a winner is never short on speed:\n" + string.Join("\n", bad));
             Assert.GreaterOrEqual(flown, 20, "every campaign winner was flown and won");
+        }
+
+        /// <summary>
+        /// Kestrel Physics' windy-seed check: every campaign winner on the windy briefing seeds (#75's known windy rows for
+        /// KH-5, plus seed 1). Many of these flights miss; a miss may read short, a flight that makes it never does.
+        /// </summary>
+        [Test]
+        public void NoPassingFlight_ReadsShortOnSpeed_OnTheWindySeeds()
+        {
+            var shown = new List<string>();
+            int passes = 0, shortMisses = 0;
+            foreach (ulong seed in new ulong[] { 1, 2, 5, 6, 7, 9, 10, 12 })
+                foreach (var m in Starters())
+                {
+                    var r = Read(StarterFixture.Rocket(m.Id).BuildDesign(), m, MissionFlightSetup.DefaultAutoAssist, 0, seed);
+                    if (!r.Pass) { if (r.ShortS > 0) shortMisses++; continue; }
+                    passes++;
+                    if (r.ShortS > 0) shown.Add($"seed {seed} {m.Id}: {r.ShortS:0.0} s from T+{r.FirstShortT:0.0}, min spare {r.MinSpare:0}");
+                }
+            Assert.IsEmpty(shown, "a flight that wins read \"Short on speed\"");
+            Assert.Greater(passes, 60, "the windy seeds still have winners to check");
+            Assert.Greater(shortMisses, 0, "some windy misses are short on speed and say so");
         }
 
         [Test]
