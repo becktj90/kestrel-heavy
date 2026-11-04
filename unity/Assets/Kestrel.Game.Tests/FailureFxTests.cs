@@ -212,5 +212,18 @@ namespace Kestrel.Game.Tests
             foreach (var v in lower.vertices) Assert.That(v.y, Is.LessThanOrEqualTo(1f + 1e-3f));
             foreach (var v in upper.vertices) Assert.That(v.y, Is.GreaterThanOrEqualTo(1f - 1e-3f));
         }
+
+        [Test]
+        public void TheCardWaitsForTheFailureToPlay_ExceptUnderReduceMotion()
+        {
+            foreach (var mode in new[] { FailureFx.BreakMode, FailureFx.TumbleMode, FailureFx.BellMode, FailureFx.SputterMode, FailureFx.GlowMode, FailureFx.FrostMode, FailureFx.FlameoutMode, FailureFx.BumpMode, FailureFx.FoldMode })
+            {
+                float d = FailureFx.CardDelaySeconds(mode, false);
+                Assert.That(d, Is.InRange(1.2f, 3f), mode + " plays on screen before its card");
+                Assert.That(FailureFx.CardDelaySeconds(mode, true), Is.EqualTo(0f), mode + ": Reduce Motion opens the card at once");
+            }
+            // The break gap is fully open (28 m) before the card covers it.
+            Assert.That(FailureFx.Gap(FailureFx.BreakMode, FailureFx.CardDelaySeconds(FailureFx.BreakMode, false), false), Is.EqualTo(28f).Within(0.01f));
+        }
     }
 }

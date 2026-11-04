@@ -2109,7 +2109,9 @@ namespace Kestrel.Slice
             double alt = flying && flight != null ? flight.Altitude : 0;
             double spd = flying && flight != null ? flight.Speed : 0;
             double q = flying && flight != null ? flight.DynPressure : 0;
-            var pulse = flying && flight != null && flight.Lost
+            var pulse = flying && flight != null && flight.Coasting
+                ? WebcastBoard.Coast(flight.Coast)
+                : flying && flight != null && flight.Lost
                 ? WebcastBoard.Lost(flight.Result.failure.kind, alt)
                 : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM);
             hVerdict.text = pulse.Verdict;

@@ -31,7 +31,7 @@ namespace Kestrel.Slice
         public CallSchedule Calls { get; set; }
 
         public AscentSim Sim { get; private set; }
-        public double SimTime => Sim?.T ?? 0;
+        public double SimTime => Coasting ? coastState.t : Sim?.T ?? 0;
         public double Downrange { get; private set; }
         public double Altitude { get; private set; }
         public double Speed { get; private set; }
@@ -110,6 +110,24 @@ namespace Kestrel.Slice
             SkipReached = reached;
         }
         public SimResult Result { get; private set; }
+        /// <summary>
+        /// The climax after a clean final cutoff (Kestrel.Core.Flight.OrbitCoast): the propagated coast to the apex or along
+        /// the orbit, time-warped into 3-5 s with an "Orbit!"/"Apogee!" callout. While it plays the flight is still Running
+        /// and Result is held back, so the result card, the guide report and the debrief wait for it.
+        /// </summary>
+        public OrbitCoast Coast { get; private set; }
+        public bool Coasting => Coast != null && !coastOver;
+        /// <summary>Wall seconds into the coast.</summary>
+        public double CoastWall { get; private set; }
+        /// <summary>How the last coast ended: "played", "skipped" (a tap), "reduced" (Reduce Motion), "recovery" (booster still flying), or null.</summary>
+        public string CoastEnd { get; private set; }
+        /// <summary>Tests and captures can turn the climax off; the shipping game leaves it on.</summary>
+        public static bool ClimaxEnabled = true;
+        /// <summary>Reduce Motion for the climax; null reads the player's comfort setting.</summary>
+        public bool? ReduceMotionOverride { get; set; }
+        bool coastOver;
+        SimResult pending;
+        CoastState coastState;
         public bool Lost => Result != null && Result.failure != null;
         public double OriginX { get; private set; }   // floating origin in pad-local metres (double)
         public double OriginY { get; private set; }
@@ -212,7 +230,7 @@ namespace Kestrel.Slice
             BindCinematicSink();
             CinematicSink.VehicleRadiusM = Kestrel.Kit.FlightSinkMath.VehicleRadiusM(WidestDiameterM(d));
             Running = true;
-            clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
+            clock = 0; Meco = false; Result = null; pending = null; Coast = null; coastOver = false; CoastWall = 0; CoastEnd = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             skipping = false; skipTarget = StageSkipTarget.None; SkipAdvancedSimS = 0; SkipStop = StageSkipStop.None; SkipReached = StageSkipTarget.None;
             AttitudeDeg = 90f; HasAttitude = false;
             seenEvents = 0; mecoSent = false;
@@ -275,16 +293,95 @@ namespace Kestrel.Slice
                     if (checks != null && checks.StopForBreakup(Sim)) break;
                 }
             }
-            if (Sim.Done)
+            if (Coasting)
             {
+                StepCoast(frame);
+                return;
+            }
+            if (Sim.Done && Result == null)
+            {
+                if (pending == null) pending = directed != null ? directed.Finish() : Sim.Finish();
+                if (!coastOver && BeginCoast(pending))
+                {
+                    PumpEvents();
+                    StepCoast(0f);
+                    NotifyMeco();
+                    return;
+                }
                 Running = false;
-                if (Result == null) Result = directed != null ? directed.Finish() : Sim.Finish();
+                Result = pending;
             }
             PumpEvents();
             if (Meco && !mecoSent && !Lost) { mecoSent = true; Sink?.OnEvent("meco"); }
             UpdateFrame();
             PublishAudio();
             if (Meco && !Lost) OnMeco?.Invoke(this);
+        }
+
+        // The cutoff that starts the climax is usually MECO itself, so the coast frame still sends it.
+        void NotifyMeco()
+        {
+            if (Meco && !mecoSent && !Lost) { mecoSent = true; Sink?.OnEvent("meco"); }
+            if (Meco && !Lost) OnMeco?.Invoke(this);
+        }
+
+        bool BeginCoast(SimResult r)
+        {
+            coastOver = true;
+            if (!ClimaxEnabled || r == null || r.failure != null) return false;
+            bool reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;
+            // A booster still landing owns the camera and keeps the card waiting; the climax would fight it.
+            if (RecoveryLog.Active) { CoastEnd = "recovery"; return false; }
+            OrbitCoast plan = null;
+            try { plan = OrbitCoast.Plan(Sim, r); }
+            catch (Exception e) { Debug.LogException(e); return false; }
+            if (plan == null) return false;
+            if (reduce) { CoastEnd = "reduced"; Coast = plan; return false; }
+            Coast = plan;
+            coastOver = false;
+            CoastWall = 0;
+            coastState = plan.At(0);
+            return true;
+        }
+
+        void StepCoast(float frame)
+        {
+            if (Coast == null) return;
+            if (frame > 0f && TappedToSkip()) { SkipCoast(); return; }
+            CoastWall += Math.Min(frame, 0.1f);
+            coastState = Coast.At(CoastWall);
+            UpdateFrame(coastState.t, coastState.x, coastState.y, coastState.vx, coastState.vy, false);
+            PublishAudio();
+            if (Coast.Finished(CoastWall)) EndCoast("played");
+        }
+
+        /// <summary>Tap to skip: jump to the end of the coast and hand over to the result card this frame.</summary>
+        public void SkipCoast()
+        {
+            if (!Coasting) return;
+            CoastWall = Coast.WallSeconds;
+            coastState = Coast.End;
+            UpdateFrame(coastState.t, coastState.x, coastState.y, coastState.vx, coastState.vy, false);
+            EndCoast("skipped");
+        }
+
+        void EndCoast(string how)
+        {
+            coastOver = true;
+            if (CoastEnd == null) CoastEnd = how;
+            Running = false;
+            if (Result == null) Result = pending;
+        }
+
+        static bool TappedToSkip()
+        {
+            try
+            {
+                if (Input.GetMouseButtonDown(0)) return true;
+                for (int i = 0; i < Input.touchCount; i++) if (Input.GetTouch(i).phase == TouchPhase.Began) return true;
+            }
+            catch (InvalidOperationException) { }
+            return false;
         }
 
         void PumpEvents()
@@ -309,19 +406,20 @@ namespace Kestrel.Slice
             (Sink as IFlightStageSink)?.SetFlightClock(SimTime, Altitude);
         }
 
-        void UpdateFrame()
+        void UpdateFrame() => UpdateFrame(Sim.T, Sim.Y[0], Sim.Y[1], Sim.Y[2], Sim.Y[3], Sim.Thrusting);
+
+        void UpdateFrame(double t, double x, double y, double svx, double svy, bool thrusting)
         {
-            double x = Sim.Y[0], y = Sim.Y[1];
             double r = Math.Sqrt(x * x + y * y);
-            double padAngle = Math.PI / 2 + omegaAir * Sim.T;     // pad co-rotates with Earth (CCW)
+            double padAngle = Math.PI / 2 + omegaAir * t;     // pad co-rotates with Earth (CCW)
             double ang = Math.Atan2(y, x);
             Downrange = Gravity.R_EARTH * (ang - padAngle);       // east positive
             Altitude = r - Gravity.R_EARTH;
-            double vx = Sim.Y[2] + omegaAir * y, vy = Sim.Y[3] - omegaAir * x; // air-relative (= ground-relative)
+            double vx = svx + omegaAir * y, vy = svy - omegaAir * x; // air-relative (= ground-relative)
             Speed = Math.Sqrt(vx * vx + vy * vy);
             int stage = Sim.StageIdx;
             if (stage >= 0 && stage < thrustByStage.Length) thrustRef = Math.Max(1, thrustByStage[stage]);
-            ThrustFraction = Sim.Thrusting ? Sim.LastThrust / thrustRef : 0;
+            ThrustFraction = thrusting ? Sim.LastThrust / thrustRef : 0;
 
             // Floating origin: rebase when the vehicle drifts too far from (OriginX, OriginY).
             if (Math.Abs(Downrange - OriginX) > RebaseDistance || Math.Abs(Altitude - OriginY) > RebaseDistance)

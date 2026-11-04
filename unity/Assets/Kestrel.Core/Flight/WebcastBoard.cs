@@ -44,10 +44,26 @@ namespace Kestrel.Core.Flight
         public const string VerdictShort = "Short on speed";
         public const string VerdictOnTrack = "On track";
         public const string VerdictLost = "Vehicle lost";
+        public const string VerdictOrbit = OrbitCoast.CalloutOrbit;
+        public const string VerdictApogee = OrbitCoast.CalloutApogee;
+        public const string SkipHint = "Tap to skip";
         public static readonly string[] Verdicts =
         {
             VerdictCount, VerdictHeating, VerdictSpeed, VerdictClimbing, VerdictPastGoal, VerdictShort, VerdictOnTrack, VerdictLost,
+            VerdictOrbit, VerdictApogee,
         };
+
+        /// <summary>The climax banner while the post-cutoff coast plays: "Orbit!" or "Apogee!" over the orbit or apex line.</summary>
+        public static DesignPulse Coast(OrbitCoast coast)
+        {
+            if (coast == null) return new DesignPulse { Verdict = VerdictOnTrack, Detail = "" };
+            return new DesignPulse
+            {
+                Verdict = coast.Callout,
+                Detail = coast.Detail + " · " + SkipHint,
+                SpeedFraction = 1,
+            };
+        }
 
         /// <summary>Index of the latest beat whose nominal is at or before <paramref name="time"/>. -1 before the first.</summary>
         public static int CurrentIndex(IReadOnlyList<LaunchBeat> beats, double time)
