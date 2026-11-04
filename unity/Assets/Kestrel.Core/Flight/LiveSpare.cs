@@ -11,7 +11,9 @@
 //                     is in because the sim keeps its books in inertial speed: the vertical rise off a rotating pad is
 //                     thrust across a 400 m/s eastward velocity, so most of what the sheet's lump loss term pays for early
 //                     is booked there (KH-6 starter: 1,911 m/s steering against 1,293 gravity + drag). Leaving it out
-//                     would hold back loss allowance for losses already paid and read four campaign winners short.
+//                     would hold back loss allowance for losses already paid and read five campaign winners short.
+//                     The sim keeps no pressure-loss tally (vacuum vs. local Isp), so back-pressure loss stays inside
+//                     the allowance: the spare is slightly pessimistic, which can only add a pill, never hide one.
 //
 // The sheet's loss term is its required Δv minus its ideal speed from the pad (Stack.RequiredDeltaV: LOSS_BUDGET for an
 // orbit, 1000 m/s for a hop), so at liftoff the live spare is the sheet's spare. Nothing is fitted: every number is the
