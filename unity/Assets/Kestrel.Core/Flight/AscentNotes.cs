@@ -5,10 +5,12 @@ namespace Kestrel.Core.Flight
     public static class AscentNotes
     {
         public const string EngineerDetail = "Nudge shifts the planned pitch. Amber shows the shift.";
+        /// <summary>DECISIONS #78: the nudge row before the rocket clears the tower.</summary>
+        public const string NudgeGated = "Nudge opens once the rocket clears the tower.";
         public const string AssistDetail = "Auto-assist flies the timed calls. Tap one for gold.";
         public const string Caption = "Green: perfect window. Cyan: the plan. Amber: your nudge.";
         /// <summary>Longest note line, characters: one or two lines at 13 pt on a 320 pt phone.</summary>
         public const int MaxChars = 60;
-        public static readonly string[] All = { EngineerDetail, AssistDetail, Caption };
+        public static readonly string[] All = { EngineerDetail, NudgeGated, AssistDetail, Caption };
     }
 }

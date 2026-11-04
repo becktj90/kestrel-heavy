@@ -199,6 +199,8 @@ namespace Kestrel.Core.Tests
         public void Nudge_StaysInsideThreeDegrees_AndMarksTheAmberPath()
         {
             var director = AscentDirector.Start(new AscentVehicle(), null, null, false, true, false);
+            // DECISIONS #78: clear of the tower first (Pr4NudgeGateTests pins the gate itself).
+            director.Advance(new AscentSample { T = 6, AltM = 400, SpeedMps = AscentDecisions.NudgeGateMps, Thrusting = true, PropFraction = 1 }, 0.05);
             director.SetNudge(9);
             Assert.AreEqual(3, director.NudgeDeg, 1e-12);
             director.NudgePitch(-10);
