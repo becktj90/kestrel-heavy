@@ -112,6 +112,24 @@
       "kid": "It would climb too steep and fall back to Earth.",
       "engineer": "Intact but off the circle: the orbit's energy is there, but the fixed pitch program lofts this setting (apoapsis over the band, periapsis under it).",
       "fixes": []
+    },
+    "low": {
+      "badge": "✗ Falls short.",
+      "kid": "It flies, but falls short.",
+      "engineer": "Intact flight below the mission band: the flown apogee or orbit is under the target by more than the tolerance.",
+      "fixes": ["fuel+", "stages+", "engine"]
+    },
+    "high": {
+      "badge": "✗ Overshoots.",
+      "kid": "It flies, but goes too high.",
+      "engineer": "Intact flight above the mission band: the flown apogee or orbit is over the target by more than the tolerance.",
+      "fixes": ["fuel-", "boosters-", "stages-"]
+    },
+    "shape": {
+      "badge": "✗ Misses.",
+      "kid": "It reaches a lopsided orbit.",
+      "engineer": "Mean altitude is on target, but apogee or perigee is outside the band (an eccentric cutoff).",
+      "fixes": []
     }
   }
 }

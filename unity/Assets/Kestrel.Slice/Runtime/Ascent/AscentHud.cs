@@ -1091,7 +1091,7 @@ namespace Kestrel.Slice
             if (plot != null) plot.Apply(trajectory.At(RecoveryLog.RailClock(flight.SimTime), alt, speed), upp);
             var score = director.Score();
             if (medal != null)
-                medal.text = score.Decided > 0 ? score.Summary : "Flying the plan.";
+                medal.text = FlightVerdict.InFlightMedalLine; // DECISIONS #77: no medal named until the flight passes
             bool prompt = prompts.Length > 0;
             if (!prompt)
             {
@@ -1701,15 +1701,15 @@ namespace Kestrel.Slice
         static string BonusLine(AscentFlightScore score)
         {
             if (score == null) return "";
-            string bits = "";
-            if (score.AltitudeHit) bits += "Altitude target  ·  ";
-            if (score.SpeedHit) bits += "Speed target  ·  ";
-            if (score.FuelHit) bits += "Fuel-efficient ascent  ·  ";
-            if (score.CleanStaging) bits += "Clean staging  ·  ";
-            if (score.PeakGHit) bits += "Gentle ride  ·  ";
-            if (score.PayloadDamaged) bits += "Payload heat is past the limit  ·  ";
-            if (bits.Length == 0) return score.Decided > 0 ? score.Summary : "";
-            return bits + score.Summary;
+            var parts = new System.Collections.Generic.List<string>();
+            if (score.AltitudeHit) parts.Add("Altitude target");
+            if (score.SpeedHit) parts.Add("Speed target");
+            if (score.FuelHit) parts.Add("Fuel-efficient ascent");
+            if (score.CleanStaging) parts.Add("Clean staging");
+            if (score.PeakGHit) parts.Add("Gentle ride");
+            if (score.PayloadDamaged) parts.Add("Payload heat is past the limit");
+            // DECISIONS #77: the medal is named only on the result screen, after the flight has passed.
+            return parts.Count == 0 ? "" : string.Join("  ·  ", parts);
         }
 
         void SetCell(int i, string name, string value, Color color)
