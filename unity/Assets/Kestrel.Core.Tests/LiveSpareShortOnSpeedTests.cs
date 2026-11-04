@@ -206,23 +206,33 @@ namespace Kestrel.Core.Tests
         /// <summary>
         /// Kestrel Physics' windy-seed check: every campaign winner on the windy briefing seeds (#75's known windy rows for
         /// KH-5, plus seed 1). Many of these flights miss; a miss may read short, a flight that makes it never does.
+        /// One case per seed so each stays inside the Unity runner's 180 s per-test timeout: all eight seeds in one test
+        /// ran 348 s on the Mono EditMode runner (about 112 s on CoreCLR). The floors are one under each seed's count on
+        /// CoreCLR (passes 20/13/12/7/12/11/11/3, short misses 0/4/4/7/4/0/1/4), so together they still require more than
+        /// 60 winners checked (at least 81) and some windy misses that read short, as the single test did.
         /// </summary>
-        [Test]
-        public void NoPassingFlight_ReadsShortOnSpeed_OnTheWindySeeds()
+        [TestCase(1UL, 19, 0)]
+        [TestCase(2UL, 12, 1)]
+        [TestCase(5UL, 11, 1)]
+        [TestCase(6UL, 6, 1)]
+        [TestCase(7UL, 11, 1)]
+        [TestCase(9UL, 10, 0)]
+        [TestCase(10UL, 10, 0)]
+        [TestCase(12UL, 2, 1)]
+        public void NoPassingFlight_ReadsShortOnSpeed_OnTheWindySeeds(ulong seed, int minPasses, int minShortMisses)
         {
             var shown = new List<string>();
             int passes = 0, shortMisses = 0;
-            foreach (ulong seed in new ulong[] { 1, 2, 5, 6, 7, 9, 10, 12 })
-                foreach (var m in Starters())
-                {
-                    var r = Read(StarterFixture.Rocket(m.Id).BuildDesign(), m, MissionFlightSetup.DefaultAutoAssist, 0, seed);
-                    if (!r.Pass) { if (r.ShortS > 0) shortMisses++; continue; }
-                    passes++;
-                    if (r.ShortS > 0) shown.Add($"seed {seed} {m.Id}: {r.ShortS:0.0} s from T+{r.FirstShortT:0.0}, min spare {r.MinSpare:0}");
-                }
+            foreach (var m in Starters())
+            {
+                var r = Read(StarterFixture.Rocket(m.Id).BuildDesign(), m, MissionFlightSetup.DefaultAutoAssist, 0, seed);
+                if (!r.Pass) { if (r.ShortS > 0) shortMisses++; continue; }
+                passes++;
+                if (r.ShortS > 0) shown.Add($"seed {seed} {m.Id}: {r.ShortS:0.0} s from T+{r.FirstShortT:0.0}, min spare {r.MinSpare:0}");
+            }
             Assert.IsEmpty(shown, "a flight that wins read \"Short on speed\"");
-            Assert.Greater(passes, 60, "the windy seeds still have winners to check");
-            Assert.Greater(shortMisses, 0, "some windy misses are short on speed and say so");
+            Assert.GreaterOrEqual(passes, minPasses, $"seed {seed} still has winners to check");
+            Assert.GreaterOrEqual(shortMisses, minShortMisses, $"seed {seed}: windy misses that are short on speed say so");
         }
 
         [Test]
