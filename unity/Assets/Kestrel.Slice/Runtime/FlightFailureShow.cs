@@ -410,7 +410,7 @@ namespace Kestrel.Slice
             if (col != null) Kill(col);
             go.transform.SetParent(root, false);
             var renderer = go.GetComponent<Renderer>();
-            if (renderer != null && mat != null) renderer.sharedMaterial = mat;
+            if (renderer != null) Kestrel.Kit.FxMaterials.Apply(renderer, mat); // null -> hidden, never magenta Default-Material
             return go.transform;
         }
 

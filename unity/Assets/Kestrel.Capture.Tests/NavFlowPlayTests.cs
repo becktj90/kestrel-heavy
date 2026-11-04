@@ -530,6 +530,46 @@ namespace Kestrel.Capture.Tests
             NothingThrew();
         }
 
+        /// <summary>
+        /// UX fun review 2026-11-03 #1 / QA #417: Fix it after a break-up rebuilt the rocket, the new FailureHost
+        /// re-reported the old crash and replayed it on the pad with the designer hidden (empty sky, no buttons).
+        /// Fix it must land in the designer and stay there, with no card coming back and no fallback needed.
+        /// </summary>
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator CrashingRocket_FixIt_LandsInTheDesigner_AndStays()
+        {
+            yield return ToThePad(d => d.stages[0].engineCount = 1);
+            VisualElement report = null;
+            yield return Until(() => (report = Find("screen-report")) != null && NavIds.Shown(report), 150f);
+            Assert.IsNotNull(report, "a rocket that breaks up reaches the report");
+            var fix = Find("report-fix");
+            Assert.IsNotNull(fix, "the report offers Fix it");
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            Click(fix);
+            // Past the landing grace: the old bug re-opened the card a frame later and stayed stuck for 35 s.
+            float until = Time.realtimeSinceStartup + Kestrel.Core.Flight.DesignerLanding.GraceSeconds + 1.5f;
+            bool cardCameBack = false;
+            while (Time.realtimeSinceStartup < until)
+            {
+                var again = Find("screen-report");
+                if (again != null && NavIds.Shown(again)) cardCameBack = true;
+                yield return null;
+            }
+            Assert.IsFalse(cardCameBack, "Fix it re-opened the report (stale result re-reported by the rebuilt rocket)");
+            Assert.AreEqual(AppScreen.Design, flow.Current, "Fix it stays on the Design screen");
+            Assert.IsFalse(app.FlightHudVisible, "the flight HUD is closed");
+            var design = SliceUi()?.Q("design");
+            Assert.IsNotNull(design, "the design sheet exists");
+            Assert.IsFalse(design.ClassListContains("hidden"), "the designer is on screen after Fix it");
+            Assert.AreEqual(0, app.ForcedDesignerLandings, "Fix it landed on its own; the fallback did not have to fire");
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            Assert.IsTrue(driver == null || !driver.Running, "Fix it does not launch");
+            var marker = GameObject.Find("FailureMarker");
+            Assert.IsTrue(marker == null || !marker.activeInHierarchy, "no break-up replay on the pad");
+            NothingThrew();
+        }
+
         [UnityTest]
         [Timeout(300000)]
         public IEnumerator PauseResume_ThenQuitMidFlight_ThenContinue()
