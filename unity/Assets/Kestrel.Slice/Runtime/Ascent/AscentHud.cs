@@ -1132,6 +1132,19 @@ namespace Kestrel.Slice
             if (nudgeDown != null) nudgeDown.text = "Nudge −1°";
             GuideBinder.Prompts(flight);
             if (nudgeUp != null) nudgeUp.text = "Nudge +1°";
+            // DECISIONS #78: no nudge until the rocket clears the tower; the row stays in place, greyed out.
+            nudgeDown?.SetEnabled(director.NudgeOpen);
+            nudgeUp?.SetEnabled(director.NudgeOpen);
+            if (!director.NudgeOpen)
+            {
+                if (nudgeDown != null) nudgeDown.tooltip = AscentNotes.NudgeGated;
+                if (nudgeUp != null) nudgeUp.tooltip = AscentNotes.NudgeGated;
+            }
+            else
+            {
+                if (nudgeDown != null) nudgeDown.tooltip = "Pitch the planned kick down one degree.";
+                if (nudgeUp != null) nudgeUp.tooltip = "Pitch the planned kick up one degree.";
+            }
             if (caption != null)
                 caption.text = AscentNotes.Caption;
             if (bonus != null) bonus.text = BonusLine(score);
