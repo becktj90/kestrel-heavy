@@ -51,6 +51,10 @@ namespace Kestrel.Game.Audio
         public string Current { get; private set; }
         public string Pending { get; private set; }
         public bool CurrentIsColor { get; private set; }
+        /// <summary>The playing line may be cut (interruptible: color and history). False for mission control and
+        /// event-bound host lines, which hold the coast warp at ×1 (Narrator Voice, #436).</summary>
+        public bool CurrentInterruptible { get; private set; }
+        bool pendingInterruptible;
 
         /// <summary>
         /// Legacy facts-blind path: walks every take of the event in file order, true or not. The live player does
@@ -69,6 +73,7 @@ namespace Kestrel.Game.Audio
             Pending = null;
             Current = line.Resource;
             CurrentIsColor = false;
+            CurrentInterruptible = line.Take != null && line.Take.Interruptible;
             Busy = true;
             return Current;
         }
@@ -101,6 +106,7 @@ namespace Kestrel.Game.Audio
                 Bump(key);
                 Current = line.Resource;
                 CurrentIsColor = true;
+                CurrentInterruptible = true;
                 Busy = true;
                 return new NarrationOffer(NarrationOutcome.Started, Current, false, true, null);
             }
@@ -117,6 +123,7 @@ namespace Kestrel.Game.Audio
             if (Busy && !id.StartsWith("abort") && !CurrentIsColor)
             {
                 Pending = line.Resource;
+                pendingInterruptible = line.Take != null && line.Take.Interruptible;
                 return new NarrationOffer(NarrationOutcome.Queued, null, false, false, null);
             }
             // Idle, an abort, or a call over a color exchange: plays now. A color that was playing fades.
@@ -124,6 +131,8 @@ namespace Kestrel.Game.Audio
             Pending = null;
             Current = line.Resource;
             CurrentIsColor = false;
+            // The clip that took over decides: a call cutting in over a color line holds the warp (Narrator Voice, #436).
+            CurrentInterruptible = line.Take != null && line.Take.Interruptible;
             Busy = true;
             return new NarrationOffer(NarrationOutcome.Started, Current, fade, false, null);
         }
@@ -137,9 +146,11 @@ namespace Kestrel.Game.Audio
             Busy = false;
             Current = null;
             CurrentIsColor = false;
+            CurrentInterruptible = false;
             lastEnd = now;
             if (string.IsNullOrEmpty(Pending)) return null;
             Current = Pending;
+            CurrentInterruptible = pendingInterruptible;
             Pending = null;
             Busy = true;
             return Current;
@@ -151,6 +162,8 @@ namespace Kestrel.Game.Audio
             Current = null;
             Pending = null;
             CurrentIsColor = false;
+            CurrentInterruptible = false;
+            pendingInterruptible = false;
             lastEnd = double.NegativeInfinity;
         }
 

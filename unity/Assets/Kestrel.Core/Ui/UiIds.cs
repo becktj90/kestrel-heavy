@@ -47,6 +47,10 @@ namespace Kestrel.Core.Ui
         public const string SettingsCodex = "settings-codex";
         public const string SettingsFullDesigner = "settings-full-designer";
         public const string SettingsCornerCharacter = "settings-corner-character";
+        /// <summary>Commentary: Full / Calls only / Off (kh.audio.commentary). Tap cycles.</summary>
+        public const string SettingsCommentary = "settings-commentary";
+        /// <summary>Time warp: Auto / Off (kh.flight.timewarp). Tap flips.</summary>
+        public const string SettingsTimeWarp = "settings-time-warp";
 
         // ---- sub-screens reachable from Home, and their ways out ---------------------------------
         public const string CodexBack = "codex-back";
@@ -62,7 +66,7 @@ namespace Kestrel.Core.Ui
         public static readonly string[] SettingsControls =
         {
             SettingsMusic, SettingsSound, SettingsVoice, SettingsSubtitles, SettingsSandbox, SettingsReduceMotion,
-            SettingsCodex, SettingsFullDesigner, SettingsCornerCharacter, SettingsClose,
+            SettingsCodex, SettingsFullDesigner, SettingsCornerCharacter, SettingsCommentary, SettingsTimeWarp, SettingsClose,
         };
     }
 }

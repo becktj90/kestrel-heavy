@@ -786,6 +786,13 @@ namespace Kestrel.Core.Physics
             return need < dt ? need : dt;
         }
 
+        /// <summary>
+        /// PR5 coast warp (read-only): the cutoff energy margin now, J/kg (below 0 still burning toward it). NaN when this
+        /// flight has no energy cutoff or is not thrusting. Reads the state; changes nothing.
+        /// </summary>
+        public double CutoffEnergyMargin
+            => o.energyCutoff && o.cutoff && Thrusting && !double.IsNaN(o.cutoffEnergy) ? EnergyMargin(Y) : double.NaN;
+
         /// <summary>Specific orbital energy minus the cutoff target, J/kg: at or above 0 cuts off.</summary>
         double EnergyMargin(double[] y)
         {
