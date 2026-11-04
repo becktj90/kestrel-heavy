@@ -77,7 +77,15 @@ namespace Kestrel.Slice
                 el.Focus();
             }
             var applied = OnApply;
-            if (applied != null) applied(link);
+            if (applied == null) return;
+            // Each listener on its own: a listener on a destroyed object is dropped, and one that throws must not stop
+            // the live one (QA #417: a dead SliceApp threw first and the live app never left the report).
+            foreach (System.Action<FixField> h in applied.GetInvocationList())
+            {
+                if (h.Target is UnityEngine.Object o && o == null) { OnApply -= h; continue; }
+                try { h(link); }
+                catch (System.Exception e) { UnityEngine.Debug.LogException(e); }
+            }
         }
     }
 }
