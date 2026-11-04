@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
+using Kestrel.Core.Flight.Narration;
 using Kestrel.Core.Hangar;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
@@ -13,7 +14,7 @@ namespace Kestrel.Core.Tests
 {
     public class Pr7MaxQAutoTests
     {
-        struct Run { public List<(double t, bool on, bool thrusting)> Law; public List<(double t, string text, int serial)> Beats; public bool CallSeen; }
+        struct Run { public List<(double t, bool on, bool thrusting)> Law; public List<(double t, string text, int serial, string ev)> Beats; public bool CallSeen; }
 
         static Run Fly(Catalog catalog, CampaignMission mission, Design design, bool auto)
         {
@@ -25,13 +26,13 @@ namespace Kestrel.Core.Tests
                 target, FlightBatch.DesignHash(design), 1, auto, false, false, null);
             var sim = new AscentSim(setup.Stages, setup.Options);
             var flight = new DirectedFlight(sim, director, setup.Options);
-            var run = new Run { Law = new List<(double, bool, bool)>(), Beats = new List<(double, string, int)>() };
+            var run = new Run { Law = new List<(double, bool, bool)>(), Beats = new List<(double, string, int, string)>() };
             bool was = false; int serial = 0; int guard = 0;
             while (!sim.Done && guard++ < 2000000)
             {
                 flight.Step();
                 if (sim.MaxQThrottling != was) { was = sim.MaxQThrottling; run.Law.Add((sim.T, was, sim.Thrusting)); }
-                if (director.MaxQBeatSerial != serial) { serial = director.MaxQBeatSerial; run.Beats.Add((sim.T, director.MaxQBeatText, serial)); }
+                if (director.MaxQBeatSerial != serial) { serial = director.MaxQBeatSerial; run.Beats.Add((sim.T, director.MaxQBeatText, serial, director.MaxQBeatEvent)); }
                 if (director.IsOpen(AscentCall.MaxQ) || director.IsDone(AscentCall.MaxQ)) run.CallSeen = true;
             }
             return run;
@@ -49,6 +50,8 @@ namespace Kestrel.Core.Tests
             foreach (var mission in Campaign.Load(Golden.Root).Missions)
             {
                 var design = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, mission).Design);
+                bool fact = NarrationFacts.From(design, null).TryGet(NarrationFacts.MaxQThrottle, out var fv) && fv is bool fb && fb;
+                Assert.AreEqual(design.guidance != null && design.guidance.maxQThrottleSet, fact, mission.Id + ": throttle.maxq fact");
                 if (design.guidance == null || !design.guidance.maxQThrottleSet || design.guidance.maxQThrottle >= 100) continue;
                 foreach (bool auto in new[] { true, false })
                 {
@@ -69,6 +72,7 @@ namespace Kestrel.Core.Tests
                         Assert.AreEqual(want[i].Item2, run.Beats[i].text, at);
                         Assert.AreEqual(want[i].Item1, run.Beats[i].t, 1e-9, at + ": on the transition tick");
                         Assert.AreEqual(i + 1, run.Beats[i].serial, at);
+                        Assert.AreEqual(i == 0 ? "maxq-throttle" : "maxq-through", run.Beats[i].ev, at + ": Narrator Voice key");
                     }
                     flown++;
                     if (want.Count == 2) throughs++;
@@ -88,6 +92,8 @@ namespace Kestrel.Core.Tests
                 bool set = design.guidance != null && design.guidance.maxQThrottleSet && design.guidance.maxQThrottle < 100;
                 var run = Fly(StarterFixture.Catalog, mission, design, true);
                 Assert.IsFalse(run.CallSeen, mission.Id);
+                Assert.IsTrue(NarrationFacts.From(design, null).TryGet("throttle.maxq", out var fv) && fv is bool, mission.Id);
+                if (design.guidance == null || !design.guidance.maxQThrottleSet) Assert.AreEqual(false, fv, mission.Id + ": no setting, no throttle.maxq");
                 if (!set)
                 {
                     plain++;
