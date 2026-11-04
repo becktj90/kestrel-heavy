@@ -118,6 +118,7 @@ namespace Kestrel.Game.Failure.Capture
             var ps = rocket.GetComponentInChildren<ParticleSystem>();
             if (ps != null) ps.Simulate(0.35f, true, false);
             for (int i = 0; i < 5; i++) yield return null;
+            NoDefaultMaterial(rocket, kind, cue.Radius);
 
             var rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32);
             cam.targetTexture = rt;
@@ -149,6 +150,27 @@ namespace Kestrel.Game.Failure.Capture
             UnityEngine.Object.Destroy(tex);
             UnityEngine.Object.Destroy(root);
             yield return null;
+        }
+
+        /// <summary>QA #417: the break-up marker and shards kept CreatePrimitive's Default-Material, which a URP player
+        /// draws as a flat magenta ball. Every visible renderer the host adds must carry a safe URP material, and the
+        /// marker stays near the body instead of growing to a 15 m sphere.</summary>
+        static void NoDefaultMaterial(GameObject rocket, string kind, float bodyRadius)
+        {
+            foreach (var r in rocket.GetComponentsInChildren<Renderer>(true))
+            {
+                if (r is ParticleSystemRenderer || r.gameObject == rocket || !r.enabled) continue;
+                var mats = r.sharedMaterials;
+                Assert.That(mats.Length, Is.GreaterThan(0), kind + ": " + r.name + " has no material");
+                foreach (var m in mats)
+                {
+                    Assert.That(Kestrel.Kit.FxMaterials.IsSafe(m), Is.True, kind + ": " + r.name + " material is unsafe");
+                    Assert.That(m.name, Does.Not.StartWith("Default-Material"), kind + ": " + r.name + " kept the built-in Default-Material (magenta in a URP player)");
+                    Assert.That(m.shader.name, Does.Not.EqualTo("Standard"), kind + ": " + r.name + " uses the built-in Standard shader");
+                }
+                if (r.name == "FailureMarker")
+                    Assert.That(r.transform.localScale.x, Is.LessThanOrEqualTo(Mathf.Max(1.1f, bodyRadius * 4f) + 1e-3f), kind + ": marker size");
+            }
         }
 
         static Mesh RocketMesh()

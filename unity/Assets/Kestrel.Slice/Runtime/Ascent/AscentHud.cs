@@ -116,6 +116,9 @@ namespace Kestrel.Slice
             UnwatchTools();
             UnwatchStack();
             hud?.UnregisterCallback<PointerDownEvent>(OnHudPointerDown);
+            // Leave nothing hidden by a booster follow behind: the webcast card goes home and h-msg stays SliceApp's.
+            SetShown(stages, true);
+            SetShown(hud != null ? hud.Q(MessageName) : null, true);
             railFrame = null;
             infoOpen = false;
             healthOpen = -1;
@@ -1698,11 +1701,22 @@ namespace Kestrel.Slice
                 for (int i = 0; i < CellCount; i++)
                     if (ascentKey[i] != null) DrawCell(i, ascentKey[i], ascentVal[i], ascentInk[i], "");
             }
-            if (health != null)
-            {
-                if (BoosterHud.ShowsAscentChrome(Focus)) health.style.visibility = StyleKeyword.Null;
-                else health.style.visibility = Visibility.Hidden;
-            }
+            bool ascent = BoosterHud.ShowsAscentChrome(Focus);
+            SetShown(health, ascent);
+            // The S3 stages card ("On track") and the MECO line under the tools row are the upper stage's too.
+            SetShown(stages, ascent);
+            SetShown(hud != null ? hud.Q(MessageName) : null, ascent);
+        }
+
+        /// <summary>SliceApp's flight message line (h-msg: "MECO · 42.7 km · 1,091 m/s", "Vehicle lost").</summary>
+        public const string MessageName = "h-msg";
+
+        /// <summary>Hide by visibility so no row moves and nothing reflows; Null hands the element back to its stylesheet.</summary>
+        static void SetShown(VisualElement e, bool shown)
+        {
+            if (e == null) return;
+            if (shown) e.style.visibility = StyleKeyword.Null;
+            else e.style.visibility = Visibility.Hidden;
         }
 
         static Color ToneInk(BoosterHudTone tone)
@@ -2102,10 +2116,13 @@ namespace Kestrel.Slice
             return label;
         }
 
-        void Press(bool accept)
+        /// <summary>The big button (<paramref name="primary"/>) or the secondary one. The director maps each to accept or
+        /// decline: on an engine-out the design cannot hold, the big button rides it out (DECISIONS #76).</summary>
+        void Press(bool primary)
         {
             if (shown == default || flight == null || flight.Decisions == null) return;
-            flight.Decisions.Choose(shown, accept);
+            if (primary) flight.Decisions.ChoosePrimary(shown);
+            else flight.Decisions.ChooseAlternate(shown);
             Present(flight);
         }
 
