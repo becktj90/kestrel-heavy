@@ -68,7 +68,7 @@ namespace Kestrel.Core.Flight.Narration
     public static class NarrationRequires
     {
         static readonly Regex KeyRe = new Regex(
-            @"^(stages|stage[1-9]\.engines|stage[1-9]\.propellant|strapons|strapons\.engines|strapons\.propellant|propellant\.all|recovery|legs|fairing|fairing\.halves|fins|finless|site|mission|lit\.stage|lit\.engines|lit\.propellant|lit\.last)$",
+            @"^(stages|stage[1-9]\.engines|stage[1-9]\.propellant|strapons|strapons\.engines|strapons\.propellant|propellant\.all|recovery|legs|fairing|fairing\.halves|fins|finless|site|throttle\.maxq|mission|lit\.stage|lit\.engines|lit\.propellant|lit\.last)$",
             RegexOptions.CultureInvariant);
         static readonly Regex CmpRe = new Regex(@"^(>=|<=|!=|>|<)(-?\d+)$", RegexOptions.CultureInvariant);
 
