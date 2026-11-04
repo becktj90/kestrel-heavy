@@ -151,7 +151,10 @@ namespace Kestrel.Game.Guide.Tests
             Assert.IsTrue(Has(engine, "step.4.fail.fit"));
 
             engine = Engine(true);
-            GuideHooks.Designer(engine, 4, ReportWith(4, "tumble", StepGate.Red, 0, 0), false);
+            // The finless card needs a design known to have no fins (an unknown one hears fail.tumble, GuideNarrationGatingTests).
+            var finless = ReportWith(4, "tumble", StepGate.Red, 0, 0);
+            finless.Finless = true;
+            GuideHooks.Designer(engine, 4, finless, false);
             Assert.IsTrue(Has(engine, "step.4.fail.tumble"));
 
             engine = Engine(true);

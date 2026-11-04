@@ -107,6 +107,10 @@ namespace Kestrel.Core.Flight
         /// The same seed returns the same id. A line whose when or design does not match is skipped.
         /// </summary>
         public NarrationLine Pick(string kind, string cause, string design, ulong seed)
+            => Pick(kind, cause, design != null ? new[] { design } : System.Array.Empty<string>(), seed);
+
+        /// <summary>As above, with every design tag that is true of the flight (for example redundant and finless). A line's design must be in the set.</summary>
+        public NarrationLine Pick(string kind, string cause, IReadOnlyCollection<string> designs, ulong seed)
         {
             if (string.IsNullOrEmpty(kind)) return null;
             int best = -1;
@@ -115,7 +119,7 @@ namespace Kestrel.Core.Flight
             {
                 var line = lines[i];
                 if (line.Kind != kind) continue;
-                int score = Score(line, cause, design);
+                int score = Score(line, cause, designs);
                 if (score < 0) continue;
                 if (score > best)
                 {
@@ -130,6 +134,9 @@ namespace Kestrel.Core.Flight
         }
 
         public int VariantCount(string kind, string cause, string design)
+            => VariantCount(kind, cause, design != null ? new[] { design } : System.Array.Empty<string>());
+
+        public int VariantCount(string kind, string cause, IReadOnlyCollection<string> designs)
         {
             int best = -1;
             int count = 0;
@@ -137,7 +144,7 @@ namespace Kestrel.Core.Flight
             {
                 var line = lines[i];
                 if (line.Kind != kind) continue;
-                int score = Score(line, cause, design);
+                int score = Score(line, cause, designs);
                 if (score < 0) continue;
                 if (score > best) { best = score; count = 1; }
                 else if (score == best) count++;
@@ -145,7 +152,14 @@ namespace Kestrel.Core.Flight
             return count;
         }
 
-        static int Score(NarrationLine line, string cause, string design)
+        static bool HasTag(IReadOnlyCollection<string> designs, string tag)
+        {
+            if (designs == null) return false;
+            foreach (var d in designs) if (d == tag) return true;
+            return false;
+        }
+
+        static int Score(NarrationLine line, string cause, IReadOnlyCollection<string> designs)
         {
             int score = 0;
             bool whenAny = line.When.Length == 0 || line.When == "any";
@@ -157,7 +171,7 @@ namespace Kestrel.Core.Flight
             }
             if (!designAny)
             {
-                if (line.Design != (design ?? "")) return -1;
+                if (!HasTag(designs, line.Design)) return -1;
                 score += 1;
             }
             return score;

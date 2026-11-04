@@ -1,4 +1,5 @@
 using Kestrel.Core.Flight;
+using Kestrel.Core.Flight.Narration;
 using UnityEngine;
 
 namespace Kestrel.Game.Audio
@@ -11,12 +12,17 @@ namespace Kestrel.Game.Audio
     {
         public const string MusicMutePref = "kh.audio.music.muted";
         public const string NarrationMutePref = "kh.audio.narration.muted";
+        /// <summary>Full (0, default), Calls only (1), Off (2). A save from before it exists reads the narration mute (muted = Off).</summary>
+        public const string CommentaryPref = Commentary.Pref;
         public const string SubtitlesPref = "kh.settings.subtitles";
         public const string SandboxPref = "kh.settings.sandbox";
 
         public static bool MusicMuted => PlayerPrefs.GetInt(MusicMutePref, 0) == 1;
         public static bool SfxMuted => PlayerPrefs.GetInt(AudioDirector.MutePref, 0) == 1;
-        public static bool NarrationMuted => PlayerPrefs.GetInt(NarrationMutePref, 0) == 1;
+        /// <summary>The voice is off. Calls only keeps the calls, so it is not muted: the guide voice follows this.</summary>
+        public static bool NarrationMuted => CommentaryMode == Kestrel.Core.Flight.Narration.CommentaryMode.Off;
+        public static Kestrel.Core.Flight.Narration.CommentaryMode CommentaryMode
+            => Commentary.Resolve(PlayerPrefs.HasKey(CommentaryPref), PlayerPrefs.GetInt(CommentaryPref, 0), PlayerPrefs.GetInt(NarrationMutePref, 0) == 1);
         public static bool SubtitlesOn => PlayerPrefs.GetInt(SubtitlesPref, 1) == 1;
         public static bool SandboxUnlocked => PlayerPrefs.GetInt(SandboxPref, 1) == 1;
 
@@ -42,13 +48,18 @@ namespace Kestrel.Game.Audio
             PlayerPrefs.Save();
         }
 
+        /// <summary>The old on/off narration switch: muted is Off, unmuted is Full.</summary>
         public static void SetNarrationMuted(bool on)
+            => SetCommentary(on ? Kestrel.Core.Flight.Narration.CommentaryMode.Off : Kestrel.Core.Flight.Narration.CommentaryMode.Full);
+
+        public static void SetCommentary(Kestrel.Core.Flight.Narration.CommentaryMode mode)
         {
-            PlayerPrefs.SetInt(NarrationMutePref, on ? 1 : 0);
+            PlayerPrefs.SetInt(CommentaryPref, (int)mode);
+            // The old key keeps meaning "voice off", for builds and tools that still read it.
+            PlayerPrefs.SetInt(NarrationMutePref, mode == Kestrel.Core.Flight.Narration.CommentaryMode.Off ? 1 : 0);
             PlayerPrefs.Save();
-            if (!on) return;
             var voice = Object.FindAnyObjectByType<NarrationPlayer>();
-            voice?.Stop();
+            voice?.OnCommentaryChanged(mode);
         }
 
         public static void SetSubtitlesOn(bool on)

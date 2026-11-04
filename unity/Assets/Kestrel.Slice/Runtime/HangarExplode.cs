@@ -168,7 +168,7 @@ namespace Kestrel.Slice
                 float rf = Mathf.Max(0.05f, (float)d.fairingDiameter * 0.5f);
                 float nose = RocketMeshBuilder.NoseFraction(d.nose);
                 Add(new Part("fairing", "Fairing", HangarPartKind.Fairing, 0, -1, false,
-                    new Vector3(0f, y, 0f), fairingL, rf, 0f, nose, fairingL, 0f));
+                    new Vector3(0f, y, 0f), fairingL, rf, RocketMeshBuilder.JointRadius(d), nose, fairingL, 0f));   // TopRadius = base radius at the joint
                 EndGroup(fairingL, before);
             }
         }

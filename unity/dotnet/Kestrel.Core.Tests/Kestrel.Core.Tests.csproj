@@ -12,6 +12,10 @@
   <ItemGroup>
     <Compile Include="../../Assets/Kestrel.Core.Tests/**/*.cs" LinkBase="Kestrel.Core.Tests" />
     <Compile Include="../../Assets/Kestrel.Slice/Runtime/Report/ReportLayout.cs" Link="ReportLayout.cs" />
+    <!-- Narration priority classes: pure game-side types and the test file Unity runs. -->
+    <Compile Include="../../Assets/Kestrel.Game/Audio/Runtime/NarrationSchedule.cs" Link="NarrationSchedule.cs" />
+    <Compile Include="../../Assets/Kestrel.Game/Audio/Runtime/NarrationCatalog.cs" Link="NarrationCatalog.cs" />
+    <Compile Include="../../Assets/Kestrel.Game/Audio/Tests/NarrationPriorityTests.cs" Link="NarrationPriorityTests.cs" />
     <Compile Include="ReportFixture.cs" />
     <Compile Include="PostFlightCardTests.cs" />
     <Compile Include="../../Assets/Kestrel.UiChecks/UiClipRules.cs" Link="UiClipRules.cs" />

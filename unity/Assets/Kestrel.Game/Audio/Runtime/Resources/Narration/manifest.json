@@ -27,8 +27,12 @@
    "normalization": "linear",
    "hash": "1957bc41d37e",
    "sha256": "46272b778cad1961b82c7b1b41a01b1be78d5c7fabad0c7d2bbee780074f9900",
-   "neutral": true,
-   "neutralReason": "Pier 7 is the pad name; no vehicle fact"
+   "requires": {
+    "site": "pier-7"
+   },
+   "claims": [
+    "site"
+   ]
   },
   {
    "id": "mission-control/pad.4",
@@ -48,9 +52,11 @@
    "hash": "f0298a38f89c",
    "sha256": "2a1f847fd88ba2b913e2cf9752254baaeda844f67c6514aff68f8b8664f34cd4",
    "requires": {
+    "site": "pier-7",
     "recovery": "barge"
    },
    "claims": [
+    "site",
     "recovery"
    ]
   },
@@ -119,6 +125,122 @@
    },
    "claims": [
     "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/pad.5",
+   "event": "pad",
+   "channel": "mc",
+   "text": "Pad is green. Terminal count is armed.",
+   "spokenText": "Pad is green. Terminal count is armed.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/pad.5.mp3",
+   "durationSec": 2.09,
+   "lufs": -16.45,
+   "truePeakDb": -2.75,
+   "normalization": "linear",
+   "hash": "ce09f4a287d2",
+   "sha256": "e8d5e973e5d881790d52f9dc453ce1956a1a8b54a47a9125cedb71adb708d206",
+   "neutral": true,
+   "neutralReason": "no vehicle or site fact"
+  },
+  {
+   "id": "mission-control/pad.6",
+   "event": "pad",
+   "channel": "mc",
+   "text": "Pad is green. Haven is on station downrange.",
+   "spokenText": "Pad is green. Haven is on station downrange.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/pad.6.mp3",
+   "durationSec": 2.456,
+   "lufs": -16.44,
+   "truePeakDb": -2.99,
+   "normalization": "linear",
+   "hash": "0c763aa1a6d1",
+   "sha256": "c92c092b0c71a481796cb2c942c3adcb3c73fcb2d4d4f4dc258e23bf0b68c3a7",
+   "requires": {
+    "recovery": "barge"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/pad.7",
+   "event": "pad",
+   "channel": "mc",
+   "text": "Coastal Pad B standing by. Terminal count is armed.",
+   "spokenText": "Coastal Pad B standing by. Terminal count is armed.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/pad.7.mp3",
+   "durationSec": 3.109,
+   "lufs": -16.46,
+   "truePeakDb": -3.1,
+   "normalization": "linear",
+   "hash": "cf14fa7b8a72",
+   "sha256": "e1950329c1253447b3cfb2a0d11809d07e943c3120c012c150242fbff8ad2444",
+   "requires": {
+    "site": "coastal-pad-b"
+   },
+   "claims": [
+    "site"
+   ]
+  },
+  {
+   "id": "mission-control/pad.8",
+   "event": "pad",
+   "channel": "mc",
+   "text": "Salt Flat Pad standing by. Terminal count is armed.",
+   "spokenText": "Salt Flat Pad standing by. Terminal count is armed.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/pad.8.mp3",
+   "durationSec": 2.952,
+   "lufs": -16.43,
+   "truePeakDb": -2.72,
+   "normalization": "linear",
+   "hash": "87636689e7ee",
+   "sha256": "dc9fd2dd5a4081795bebb4126961cec5d30148ab4bd5decf62cfbcfe1c8f8826",
+   "requires": {
+    "site": "salt-flat"
+   },
+   "claims": [
+    "site"
+   ]
+  },
+  {
+   "id": "mission-control/pad.9",
+   "event": "pad",
+   "channel": "mc",
+   "text": "North Reach standing by. Terminal count is armed.",
+   "spokenText": "North Reach standing by. Terminal count is armed.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/pad.9.mp3",
+   "durationSec": 2.691,
+   "lufs": -16.46,
+   "truePeakDb": -3.29,
+   "normalization": "linear",
+   "hash": "1930ce4d3f8d",
+   "sha256": "c858e49bef1f5e60a359ddffe4b7fcab1916a09219cb5c8e70e77b0d0be0da42",
+   "requires": {
+    "site": "north-reach"
+   },
+   "claims": [
+    "site"
    ]
   },
   {
@@ -267,9 +389,13 @@
    "hash": "bb5738b6b73b",
    "sha256": "73cd99f924bec8a425ef52cfe3bcf6838762a12ce6eeb31fad8a5ac9e3e4bc15",
    "requires": {
+    "lit.stage": 1,
+    "stages": ">=2",
     "stage1.propellant": "kerolox"
    },
    "claims": [
+    "lit.stage",
+    "stages",
     "stage1.propellant"
    ]
   },
@@ -291,9 +417,13 @@
    "hash": "39e8f50b93ab",
    "sha256": "6b563fea6d164e4b136ef76e9cae1f808963d6e5da87ec1050721bdd806669e4",
    "requires": {
+    "lit.stage": 1,
+    "stages": ">=2",
     "stage1.propellant": "methalox"
    },
    "claims": [
+    "lit.stage",
+    "stages",
     "stage1.propellant"
    ]
   },
@@ -315,9 +445,11 @@
    "hash": "3a5bdfb38385",
    "sha256": "793c9a1e4e1672ce7a18958d89a2071ab95c3fe11be496a9529444934d7b09a0",
    "requires": {
+    "lit.stage": 2,
     "stage2.propellant": "hydrolox"
    },
    "claims": [
+    "lit.stage",
     "stage2.propellant"
    ]
   },
@@ -339,9 +471,11 @@
    "hash": "9211d865c095",
    "sha256": "32360aaf542e2efe66f42d4b9f71a4abbcab6f1cb82f883d8c81aa1ff2781cd1",
    "requires": {
+    "lit.stage": 3,
     "stage3.propellant": "hydrolox"
    },
    "claims": [
+    "lit.stage",
     "stage3.propellant"
    ]
   },
@@ -382,8 +516,18 @@
    "normalization": "linear",
    "hash": "acec01e174c9",
    "sha256": "2b76c8f92d2d8dc6af8b25ca579855c33651dd8f74255403697fd10562f7301e",
-   "neutral": true,
-   "neutralReason": "power status; no vehicle fact"
+   "requires": {
+    "propellant.all": [
+     "kerolox",
+     "hydrolox",
+     "methalox",
+     "storable",
+     "mixed"
+    ]
+   },
+   "claims": [
+    "propellant.all"
+   ]
   },
   {
    "id": "mission-control/internal.3",
@@ -509,10 +653,12 @@
    "sha256": "9d209b72a27273a3263f7e240f95d39e7e0b7e1e8a8a9fcb286a41b98d87fc5d",
    "requires": {
     "lit.stage": 1,
-    "stage1.engines": 7
+    "stage1.engines": 7,
+    "strapons": 0
    },
    "claims": [
-    "stage1.engines"
+    "stage1.engines",
+    "strapons"
    ]
   },
   {
@@ -599,10 +745,12 @@
    "sha256": "2beb5d7ad8f22dbb2199dc7eef3a6f535dce93ccec482dd60ff4e07b08090e19",
    "requires": {
     "lit.stage": 1,
-    "stage1.engines": 1
+    "stage1.engines": 1,
+    "strapons": 0
    },
    "claims": [
-    "stage1.engines"
+    "stage1.engines",
+    "strapons"
    ]
   },
   {
@@ -928,8 +1076,12 @@
    "normalization": "linear",
    "hash": "7a270f2b87bd",
    "sha256": "48598a1313dccb2e838d4fb8ebcc193c48732a3890dc0ec86de390e288b86f1c",
-   "neutral": true,
-   "neutralReason": "Pier 7 is the pad name; no vehicle fact"
+   "requires": {
+    "site": "pier-7"
+   },
+   "claims": [
+    "site"
+   ]
   },
   {
    "id": "mission-control/liftoff.6",
@@ -954,6 +1106,26 @@
    "claims": [
     "strapons"
    ]
+  },
+  {
+   "id": "mission-control/liftoff.7",
+   "event": "liftoff",
+   "channel": "mc",
+   "text": "Liftoff. Vehicle is climbing. Good thrust.",
+   "spokenText": "Liftoff. Vehicle is climbing. Good thrust.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/liftoff.7.mp3",
+   "durationSec": 2.403,
+   "lufs": -16.44,
+   "truePeakDb": -2.75,
+   "normalization": "linear",
+   "hash": "8ac519ec25d1",
+   "sha256": "9fab8f021a1843edb259749410b990b20b65a09c91f05e4bd295077dac262456",
+   "neutral": true,
+   "neutralReason": "no engine count or pad named"
   },
   {
    "id": "mission-control/maxq.1",
@@ -1166,10 +1338,12 @@
    "hash": "3c2b275317c8",
    "sha256": "582bc4159b680d013a845a03f45d68cba762da87757ce86a0a478e2e917847fe",
    "requires": {
-    "stages": ">=2"
+    "stages": ">=2",
+    "stage1.engines": ">=2"
    },
    "claims": [
-    "stages"
+    "stages",
+    "stage1.engines"
    ]
   },
   {
@@ -1283,6 +1457,7 @@
    "sha256": "f6c1296e3bca8390e1d5e7b7c5129cc7b43a992662432bcef8224ad2195c77cd",
    "requires": {
     "stages": ">=2",
+    "strapons": 0,
     "recovery": "barge"
    },
    "claims": [
@@ -1978,6 +2153,30 @@
    ]
   },
   {
+   "id": "mission-control/landing.4",
+   "event": "landing",
+   "channel": "mc",
+   "text": "Landing burn. Light up and settle onto the pad.",
+   "spokenText": "Landing burn. Light up and settle onto the pad.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/landing.4.mp3",
+   "durationSec": 2.769,
+   "lufs": -16.45,
+   "truePeakDb": -2.49,
+   "normalization": "linear",
+   "hash": "b4ed2606615e",
+   "sha256": "7bdbeeb5af646850f50748a1ab4eb7fec26b39761ccfd089b0f80a08137ce7e8",
+   "requires": {
+    "recovery": "rtls"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
    "id": "mission-control/touchdown.1",
    "event": "touchdown",
    "channel": "mc",
@@ -2128,6 +2327,54 @@
    ]
   },
   {
+   "id": "mission-control/touchdown.4",
+   "event": "touchdown",
+   "channel": "mc",
+   "text": "Touchdown. Booster is back on the pad.",
+   "spokenText": "Touchdown. Booster is back on the pad.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/touchdown.4.mp3",
+   "durationSec": 2.09,
+   "lufs": -16.45,
+   "truePeakDb": -2.73,
+   "normalization": "linear",
+   "hash": "acef4220102f",
+   "sha256": "a3c0aad2163f88a32953f3ff939a71f6284200e6dddaad7f6cad4d23a169fcfa",
+   "requires": {
+    "recovery": "rtls"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/touchdown.5",
+   "event": "touchdown",
+   "channel": "mc",
+   "text": "Back at the pad. Booster is standing.",
+   "spokenText": "Back at the pad. Booster is standing.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/touchdown.5.mp3",
+   "durationSec": 2.325,
+   "lufs": -16.42,
+   "truePeakDb": -2.71,
+   "normalization": "linear",
+   "hash": "a502451c12db",
+   "sha256": "200f6ac40a8a42ad4008ab416df27e1eca69b7463a472aab0c8abc4380526e68",
+   "requires": {
+    "recovery": "rtls"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
    "id": "mission-control/seco.1",
    "event": "seco",
    "channel": "mc",
@@ -2145,10 +2392,12 @@
    "hash": "dbd93cbc971e",
    "sha256": "0c42a137086a5c33de943a527538f55aad2ca74deca0e41d86851ac23102fc5e",
    "requires": {
-    "stages": ">=2"
+    "stages": ">=2",
+    "lit.last": true
    },
    "claims": [
-    "stages"
+    "stages",
+    "lit.last"
    ]
   },
   {
@@ -2169,11 +2418,33 @@
    "hash": "9d1fe80d997c",
    "sha256": "b619b7c51203eb049348a11141a37d149909972fc180647a71d16edea7f27a99",
    "requires": {
-    "stages": ">=2"
+    "stages": ">=2",
+    "lit.last": true
    },
    "claims": [
-    "stages"
+    "stages",
+    "lit.last"
    ]
+  },
+  {
+   "id": "mission-control/seco.4",
+   "event": "seco",
+   "channel": "mc",
+   "text": "Stage shutdown. Burn is complete.",
+   "spokenText": "Stage shutdown. Burn is complete.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/seco.4.mp3",
+   "durationSec": 2.038,
+   "lufs": -16.43,
+   "truePeakDb": -2.85,
+   "normalization": "linear",
+   "hash": "4dbe1e7bda6f",
+   "sha256": "88d38a661361d6ccefdbd333fdf67932e7dd9d5313d14e2cc94dbe35e9178993",
+   "neutral": true,
+   "neutralReason": "no insertion or stage-number claim"
   },
   {
    "id": "mission-control/deploy.4",
@@ -2298,6 +2569,30 @@
    "sha256": "964ebde9e5d9422bcbbf5494c0c240cae590e4aff9b90a8bdc2d817cf1a7cbd4",
    "requires": {
     "recovery": "barge"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/haven-maxq.3",
+   "event": "haven-maxq",
+   "channel": "mc",
+   "text": "Descent max-Q. Hold the glide to the pad.",
+   "spokenText": "Descent max-Q. Hold the glide to the pad.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/haven-maxq.3.mp3",
+   "durationSec": 2.273,
+   "lufs": -16.45,
+   "truePeakDb": -2.92,
+   "normalization": "linear",
+   "hash": "9e8dcfee2e2d",
+   "sha256": "c8dae680bd7893d116fec251cd725665b34892d85eb08fa46da446e675ead768",
+   "requires": {
+    "recovery": "rtls"
    },
    "claims": [
     "recovery"
@@ -2496,6 +2791,54 @@
    ]
   },
   {
+   "id": "mission-control/recovered.3",
+   "event": "recovered",
+   "channel": "mc",
+   "text": "Landed at the pad. Booster is standing.",
+   "spokenText": "Landed at the pad. Booster is standing.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/recovered.3.mp3",
+   "durationSec": 2.325,
+   "lufs": -16.43,
+   "truePeakDb": -2.73,
+   "normalization": "linear",
+   "hash": "b7a374836b89",
+   "sha256": "3bdd86df3e64c617b5875a21b18d32277d78a929048dbc592d0383197203405a",
+   "requires": {
+    "recovery": "rtls"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/recovered.4",
+   "event": "recovered",
+   "channel": "mc",
+   "text": "Soft landing. Booster is home on the pad.",
+   "spokenText": "Soft landing. Booster is home on the pad.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/recovered.4.mp3",
+   "durationSec": 2.403,
+   "lufs": -16.44,
+   "truePeakDb": -2.81,
+   "normalization": "linear",
+   "hash": "92045b098387",
+   "sha256": "cf408c519124d68c7111376baf751ee3ceee3d532327344dc3a760a1192c82cf",
+   "requires": {
+    "recovery": "rtls"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
    "id": "mission-control/salvage.1",
    "event": "salvage",
    "channel": "mc",
@@ -2538,6 +2881,57 @@
    "sha256": "343e3028382d0d9249c093cc2246e504dd5c1e83d6d80dc694b09bc3149725f5",
    "requires": {
     "recovery": "barge"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/salvage.3",
+   "event": "salvage",
+   "channel": "mc",
+   "text": "Hard landing at the pad. Score takes the hit.",
+   "spokenText": "Hard landing at the pad. Score takes the hit.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/salvage.3.mp3",
+   "durationSec": 2.586,
+   "lufs": -16.45,
+   "truePeakDb": -2.89,
+   "normalization": "linear",
+   "hash": "c46d96e4fbce",
+   "sha256": "6b5b956bd12895d6bf271fa428d2c739543bb513764ad5c14442aeda54e0d6e5",
+   "requires": {
+    "recovery": "rtls"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/salvage.4",
+   "event": "salvage",
+   "channel": "mc",
+   "text": "Booster is down, but it was ugly. Score clipped.",
+   "spokenText": "Booster is down, but it was ugly. Score clipped.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/salvage.4.mp3",
+   "durationSec": 2.638,
+   "lufs": -16.43,
+   "truePeakDb": -3.11,
+   "normalization": "linear",
+   "hash": "e88b75818fd8",
+   "sha256": "ab1e6e0d9a2caf543a14fe873f671ffc2bd2aa4bf075808aed60a9763a962594",
+   "requires": {
+    "recovery": [
+     "barge",
+     "rtls"
+    ]
    },
    "claims": [
     "recovery"
@@ -2613,10 +3007,7 @@
    "sha256": "16d2f6bbdf9fae4b9a585bfd407cfdade0b0e58713e6b14b87b29bffedd5cd43",
    "requires": {
     "stages": ">=2",
-    "recovery": [
-     "barge",
-     "rtls"
-    ]
+    "recovery": "barge"
    },
    "claims": [
     "stages",
@@ -2642,10 +3033,59 @@
    "sha256": "d4a266c87b1ef692a3c7c966ed51d7ef18519987d2356dce86ea3280e15f4290",
    "requires": {
     "stages": ">=2",
-    "recovery": [
-     "barge",
-     "rtls"
-    ]
+    "recovery": "barge"
+   },
+   "claims": [
+    "stages",
+    "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/splash.3",
+   "event": "splash",
+   "channel": "mc",
+   "text": "Missed the pad. Combo reset. Upper stage still flies.",
+   "spokenText": "Missed the pad. Combo reset. Upper stage still flies.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/splash.3.mp3",
+   "durationSec": 3.579,
+   "lufs": -16.43,
+   "truePeakDb": -2.63,
+   "normalization": "linear",
+   "hash": "8c06eb600666",
+   "sha256": "0fb1f89ca99e3c13a3b2bc8d6b25ba1aa8ccf715f0bce126b7377abdc31b6421",
+   "requires": {
+    "stages": ">=2",
+    "recovery": "rtls"
+   },
+   "claims": [
+    "stages",
+    "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/splash.4",
+   "event": "splash",
+   "channel": "mc",
+   "text": "Booster hit the ground. Upper stage still flies.",
+   "spokenText": "Booster hit the ground. Upper stage still flies.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/splash.4.mp3",
+   "durationSec": 2.534,
+   "lufs": -16.44,
+   "truePeakDb": -3.29,
+   "normalization": "linear",
+   "hash": "e4c76104c2c7",
+   "sha256": "560c125eb689b972acadbcabebea0fc15b3a14e294d3921cbaf8462e756b0605",
+   "requires": {
+    "stages": ">=2",
+    "recovery": "rtls"
    },
    "claims": [
     "stages",
@@ -2729,8 +3169,12 @@
    "normalization": "linear",
    "hash": "6ef15ad7d595",
    "sha256": "97f634447aa87585ec3bf707ed8b159ae5482284b1ced18f3eb908e0e616c6c6",
-   "neutral": true,
-   "neutralReason": "Pier 7 is the pad name; no vehicle fact"
+   "requires": {
+    "site": "pier-7"
+   },
+   "claims": [
+    "site"
+   ]
   },
   {
    "id": "mission-control/abort-corridor.2",
@@ -2751,6 +3195,26 @@
    "sha256": "7c864b3c5560c038cf9eeba08ff9da69b893aea6781550155fd0cd84b96547ec",
    "neutral": true,
    "neutralReason": "no vehicle fact"
+  },
+  {
+   "id": "mission-control/abort-corridor.3",
+   "event": "abort-corridor",
+   "channel": "mc",
+   "text": "No climb. Falling back toward the pad. Range safe.",
+   "spokenText": "No climb. Falling back toward the pad. Range safe.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/abort-corridor.3.mp3",
+   "durationSec": 3.056,
+   "lufs": -16.44,
+   "truePeakDb": -2.54,
+   "normalization": "linear",
+   "hash": "fc4783c829fd",
+   "sha256": "f71e4e8e8ef63e55f640f798379d56236d4d4a10f9926035577868d347a03178",
+   "neutral": true,
+   "neutralReason": "no pad named; no vehicle fact"
   },
   {
    "id": "mission-control/abort-fuel.1",
@@ -3310,6 +3774,30 @@
    ]
   },
   {
+   "id": "mission-control/abort-salvage.3",
+   "event": "abort-salvage",
+   "channel": "mc",
+   "text": "Down at the pad, but off the paint. Salvage.",
+   "spokenText": "Down at the pad, but off the paint. Salvage.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/abort-salvage.3.mp3",
+   "durationSec": 2.508,
+   "lufs": -16.44,
+   "truePeakDb": -1.86,
+   "normalization": "linear",
+   "hash": "8c9c2e81041f",
+   "sha256": "8c496ff6af1da0e3f6ca1e2d2831bd2a9ba2d6a3c073b0f04f4f3d1089f6c8da",
+   "requires": {
+    "recovery": "rtls"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
    "id": "mission-control/abort-splash.2",
    "event": "abort-splash",
    "channel": "mc",
@@ -3328,6 +3816,30 @@
    "sha256": "79c13b1ead416b4a32d816e8f912f9b2297b69b5ac28ca0a4fbe508d3f8060bb",
    "requires": {
     "recovery": "barge"
+   },
+   "claims": [
+    "recovery"
+   ]
+  },
+  {
+   "id": "mission-control/abort-splash.3",
+   "event": "abort-splash",
+   "channel": "mc",
+   "text": "Missed the pad. Booster hit the ground.",
+   "spokenText": "Missed the pad. Booster hit the ground.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/abort-splash.3.mp3",
+   "durationSec": 2.168,
+   "lufs": -16.43,
+   "truePeakDb": -2.92,
+   "normalization": "linear",
+   "hash": "c168c1368754",
+   "sha256": "796d196c0451641582f132453112398636eb908fc2325dbc9bbb400e4548e2ab",
+   "requires": {
+    "recovery": "rtls"
    },
    "claims": [
     "recovery"

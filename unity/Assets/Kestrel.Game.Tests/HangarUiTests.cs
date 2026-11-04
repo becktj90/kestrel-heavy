@@ -193,6 +193,28 @@ namespace Kestrel.Game.Tests
         }
 
         [Test]
+        public void ExplodedPayload_IsDrawnAtTheRealCargoDiameter()
+        {
+            foreach (var t in H.templates)
+            {
+                var d = Design.FromJson(Template(t.id));
+                var parts = RocketMeshBuilder.BuildParts(C, d);
+                try
+                {
+                    var spec = PayloadFit.SpecFor(C, d);
+                    var fairing = parts.Find(p => p.Part == PartRef.Fairing);
+                    var payload = parts.Find(p => p.Part == PartRef.Payload);
+                    Assert.IsNotNull(payload, t.id);
+                    float want = spec != null ? Mathf.Min((float)spec.diameter * 0.5f, 0.98f * (float)d.fairingDiameter * 0.5f) : 0.55f * (float)d.fairingDiameter * 0.5f;
+                    Assert.AreEqual(want, payload.Radius, 1e-4f, t.id + ": payload radius is the cargo's, not 0.55 x the fairing");
+                    Assert.AreEqual((float)d.fairingDiameter * 0.5f, fairing.Radius, 1e-4f, t.id + ": the fairing part keeps the barrel radius");
+                    Assert.Less(payload.Radius, fairing.Radius, t.id);
+                }
+                finally { foreach (var p in parts) { UnityEngine.Object.DestroyImmediate(p.Mesh); if (p.Engines != null) UnityEngine.Object.DestroyImmediate(p.Engines); } }
+            }
+        }
+
+        [Test]
         public void ExtendedNozzle_ChangesTheDrawnBells()
         {
             var d = Template("workhorse");

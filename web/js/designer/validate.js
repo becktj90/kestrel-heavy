@@ -4,7 +4,7 @@ import { ENGINES, ENGINE_BY_ID } from '../data/engines.js';
 import { PAYLOAD_BY_ID } from '../data/payloads.js';
 import { validateDesign } from '../vehicle/design.js';
 import { quickReadout } from './readout.js';
-import { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK, LANDING_RESERVE_MAX } from './limits.js';
+import { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK, LANDING_RESERVE_MAX, FAIRING_NARROW_RATIO, FAIRING_FLARE_WARN_RATIO, FAIRING_FLARE_WARN_ANGLE_DEG, FAIRING_SHOULDER_ANGLE_DEG, FAIRING_SHOULDER_MAX_CYL_FRACTION } from './limits.js';
 export { MIN_TWR, GOOD_TWR, MIN_MARGIN, PACK } from './limits.js';
 
 /** Payload volume scaled from its archetype by mass^(2/3) (a lighter build of the same kind is smaller). */
@@ -39,6 +39,30 @@ export function payloadFit(d) {
   return { fits: volumeMargin >= 0 && diameterMargin >= -FIT_DIAMETER_TOL, usable, volume, diameter, volumeMargin, diameterMargin };
 }
 
+// Fairing joint and flare, the same rule as Kestrel.Core.Designer.FairingFlare: the base is the top stage's radius, a cone of 15 degrees
+// (at most half the cylinder) runs out to the barrel radius. Render and advice only; the sim is untouched.
+export const fairingBaseRadius = (topDiameter) => topDiameter / 2;
+/** Nose fraction of the fairing length (Balance.NoseFraction). */
+export const fairingNoseFraction = (nose) => (nose === 'blunt' || nose === 'capsule-tower' ? 0.25 : nose === 'conic' ? 0.4 : 0.45);
+export function fairingShoulderLength(baseR, barrelR, cylinderLength) {
+  const dr = Math.abs(barrelR - baseR);
+  if (dr < 1e-6 || !(cylinderLength > 0)) return 0;
+  return Math.min(dr / Math.tan(FAIRING_SHOULDER_ANGLE_DEG * Math.PI / 180), FAIRING_SHOULDER_MAX_CYL_FRACTION * cylinderLength);
+}
+export const fairingShoulderAngleDeg = (baseR, barrelR, len) => (len > 0 ? Math.atan(Math.abs(barrelR - baseR) / len) * 180 / Math.PI : 0);
+export function fairingRadiusAt(baseR, barrelR, len, h) {
+  if (h <= 0) return baseR;
+  if (!(len > 0) || h >= len) return barrelR;
+  return baseR + (barrelR - baseR) * (h / len);
+}
+export function fairingFlareExtreme(fairingD, topD, fairingLength, nose) {
+  if (!(topD > 0) || !(fairingD > topD)) return false;
+  if (fairingD / topD > FAIRING_FLARE_WARN_RATIO + 1e-9) return true;
+  const rb = topD / 2, rf = fairingD / 2;
+  return fairingShoulderAngleDeg(rb, rf, fairingShoulderLength(rb, rf, fairingLength * (1 - fairingNoseFraction(nose)))) > FAIRING_FLARE_WARN_ANGLE_DEG + 1e-9;
+}
+const ratioWords = (r) => (Math.abs(r - 0.5) < 1e-9 ? 'half' : `${Math.round(r * 100)}%`);
+
 const fmt = (n, d = 2) => Number(n).toFixed(d);
 const clone = (d) => JSON.parse(JSON.stringify(d));
 
@@ -56,7 +80,7 @@ function geometryIssues(d) {
     if (d.stages[i].diameter > d.stages[i - 1].diameter * 1.6) out.push({ code: 'top-heavy', tab: 'stages', index: i, msg: `${d.stages[i].name || `Stage ${i + 1}`} is much wider than the stage below it. Try a diameter under ${fmt(d.stages[i - 1].diameter * 1.6, 1)} m.` });
   }
   const top = d.stages[d.stages.length - 1];
-  if (d.fairing && top && d.fairing.diameter < top.diameter * 0.5) out.push({ code: 'fairing-narrow', tab: 'payload', msg: 'The fairing is narrower than half the top stage. Try a fairing at least as wide as the stage.' });
+  if (d.fairing && top && d.fairing.diameter < top.diameter * FAIRING_NARROW_RATIO) { const w = ratioWords(FAIRING_NARROW_RATIO); out.push({ code: 'fairing-narrow', tab: 'payload', msg: `The fairing is less than ${w} as wide as the top stage. Try a fairing at least ${w} the stage width, and wide enough for the cargo (cargo up to 0.9 \u00d7 the fairing width).` }); }
   const pl = PAYLOAD_BY_ID[d.payload?.type];
   const fit = payloadFit(d);
   if (pl && fit) {
@@ -94,6 +118,9 @@ export function validateEngineering(design) {
     if (r.margin < MIN_MARGIN) warnings.push({ code: 'dv-margin', tab: 'propellants', msg: r.margin < 0 ? `About ${fmt(-r.margin * r.required, 0)} m/s short of ${r.orbit.label}. Try more propellant, a lighter payload, or a higher-Isp upper stage.` : `Only ${fmt(r.margin * 100, 0)}% Δv margin for ${r.orbit.label}. A little more propellant gives breathing room.` });
     if (design.stages.some((s) => s.landingPropMass > 0) && !(design.landing?.legs && design.landing?.gridFins)) warnings.push({ code: 'landing-hardware', tab: 'recovery', msg: 'Landing fuel is reserved but legs or grid fins are missing. Add them, or set the landing reserve to 0.' });
     if (r.mass.fairing > Math.max(500, r.mass.payload)) warnings.push({ code: 'heavy-fairing', tab: 'payload', msg: `The fairing (${fmt(r.mass.fairing / 1000, 1)} t) outweighs the payload. A composite or shorter fairing saves mass.` });
+    // Fairing joint and flare (DECISIONS #71): wider than the stage is fine; only a very big flare is flagged, as a warning that never blocks.
+    const topS = design.stages[design.stages.length - 1];
+    if (design.fairing && topS && fairingFlareExtreme(design.fairing.diameter, topS.diameter, design.fairing.length, design.aero?.nose)) warnings.push({ code: 'fairing-flare', tab: 'payload', msg: 'This fairing flares a lot above the stage. Try a wider stage or a smaller fairing.' });
   }
   return { ok: blocks.length === 0, blocks, warnings, readout: r };
 }

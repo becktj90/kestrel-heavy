@@ -35,7 +35,12 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("Out of fuel", pool.Title("prop-depletion"));
             Assert.AreEqual("Stage collision", pool.Title("separation-collision"));
             Assert.GreaterOrEqual(pool.VariantCount("structural-maxq", "q", "any"), 2);
-            Assert.GreaterOrEqual(pool.VariantCount("engine-out", "engine-out", "any"), 2);
+            // Engine-out: the cluster take is gated on 3+ engines on the failed stage (Narrator Voice, #384), so a
+            // small stage has exactly the plain take and a cluster has exactly the cluster take. Both exist.
+            Assert.AreEqual(1, pool.VariantCount("engine-out", "engine-out", "any"));
+            Assert.AreEqual(1, pool.VariantCount("engine-out", "engine-out", new[] { "cluster", FlightFacts.ClusterOutTag }));
+            Assert.AreNotEqual(pool.Pick("engine-out", "engine-out", "any", 1).Id,
+                pool.Pick("engine-out", "engine-out", new[] { "cluster", FlightFacts.ClusterOutTag }, 1).Id);
             Assert.GreaterOrEqual(pool.VariantCount("engine-out", "engine-out", "redundant"), 2);
             Assert.GreaterOrEqual(pool.VariantCount("engine-overpressure", "pc-cap", "any"), 2);
             Assert.GreaterOrEqual(pool.VariantCount("tumble", "alpha", "any"), 2);

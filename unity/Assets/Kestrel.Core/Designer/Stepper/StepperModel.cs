@@ -25,6 +25,7 @@ namespace Kestrel.Core.Designer.Stepper
                 try { parsed = Design.FromJson(design); }
                 catch (Exception) { parsed = null; }
             }
+            if (parsed != null) report.Finless = !parsed.fins;
 
             EngineeringReport engineering = null;
             if (design != null)

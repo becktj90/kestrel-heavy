@@ -61,7 +61,9 @@ namespace Kestrel.Core.Designer
         {
             string ver = c != null && c.VersionKey != null ? c.VersionKey : "0";
             string body = c != null && c.ContentHash != null ? c.ContentHash : "0";
-            return "cat=" + ver + ":" + body + "\n" + JsonWriter.Stringify(Canon(design));
+            // KH-7 E: the flight flies the live pad's briefing wind for (design hash, seed 1), so the key carries whether
+            // a briefing is readable (a player build has none and flies calm, as the live pad does there).
+            return "cat=" + ver + ":" + body + "\nbrief=" + BriefingKey + "\n" + JsonWriter.Stringify(Canon(design));
         }
 
         /// <summary>FNV-1a 64-bit of <see cref="CanonicalKey"/>, 16 lowercase hex digits.</summary>
@@ -170,9 +172,67 @@ namespace Kestrel.Core.Designer
         /// <summary>The predict monitor's hash and seed (<see cref="Stack.SimInputs"/> builds it with the defaults).</summary>
         public const ulong PredictHash = 1, PredictSeed = 1;
 
-        /// <summary>#314: the live monitor (Predict off), so the designer breaks up where play does.</summary>
+        /// <summary>The mission seed of the briefing the predictor flies: the live pad's default (AscentFlight.ReadSeed).</summary>
+        public const ulong BriefingSeed = 1;
+
+        /// <summary>
+        /// #314: the live monitor (Predict off), so the designer breaks up where play does. KH-7 E: under the live pad's
+        /// briefing wind and launch site for (design hash, seed 1), from <see cref="Briefing"/>.
+        /// </summary>
         static MissionFlightInputs Setup(Catalog c, Design d)
-            => MissionFlightSetup.Build(c, MissionFor(c, d), d, MissionFlightSetup.BatchDt);
+            => MissionFlightSetup.Build(c, MissionFor(c, d), d, MissionFlightSetup.BatchDt, Site(Briefing(d)));
+
+        static string briefingRoot;
+        static bool briefingRootRead;
+
+        /// <summary>The checkout the briefing data is read from, or null on a player build (then the flight is calm).</summary>
+        static string BriefingRoot
+        {
+            get
+            {
+                lock (Gate)
+                {
+                    if (!briefingRootRead) { briefingRoot = Catalog.RepoRootOrNull(); briefingRootRead = true; }
+                    return briefingRoot;
+                }
+            }
+        }
+
+        static string BriefingKey => BriefingRoot != null ? "seed" + BriefingSeed : "calm";
+
+        /// <summary>
+        /// KH-7 E: the briefing card the live pad flies for this design at seed 1. The same call AscentFlight.Prepare
+        /// makes (MissionBriefing.Load for a campaign mission "mN", MissionBriefing.Free otherwise) with the design's
+        /// FlightBatch.DesignHash. Null when no briefing data is readable or it fails; the flight is calm then, as the pad's is.
+        /// </summary>
+        public static MissionBriefing Briefing(Design d)
+        {
+            string root = BriefingRoot;
+            if (root == null || d == null) return null;
+            try
+            {
+                ulong hash = FlightBatch.DesignHash(d);
+                return MissionBriefing.ForPad(root, MissionIndex(d), hash, BriefingSeed);
+            }
+            catch (System.Exception) { return null; }
+        }
+
+        /// <summary>The campaign index of a design's missionId ("m5" is 5), 0 for a free build. As AscentFlight.MissionIndex.</summary>
+        public static int MissionIndex(Design d)
+        {
+            string id = d != null ? d.missionId : null;
+            if (string.IsNullOrEmpty(id) || id.Length < 2 || (id[0] != 'm' && id[0] != 'M')) return 0;
+            return int.TryParse(id.Substring(1), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int n) ? n : 0;
+        }
+
+        /// <summary>The pad and wind of a briefing card, as AscentFlight.Prepare hands them to FlightDriver.Launch.</summary>
+        static MissionFlightSite Site(MissionBriefing card)
+        {
+            if (card == null) return null;
+            var site = new MissionFlightSite { Wind = card.Wind };
+            if (card.Site != null) { site.HasLatitude = true; site.LatitudeDeg = card.Site.LatitudeDeg; }
+            return site;
+        }
 
         /// <summary>
         /// Predict inputs: the same <see cref="MissionFlightSetup"/> the live pad flight and FlightBatch fly (F1). The
@@ -186,6 +246,13 @@ namespace Kestrel.Core.Designer
         public static (List<SimStage> stages, SimOptions opts) Inputs(Catalog c, JsonObject design)
         {
             var setup = Setup(c, Design.FromJson(design));
+            return (setup.Stages, setup.Options);
+        }
+
+        /// <summary>As <see cref="Inputs(Catalog, JsonObject)"/> for a parsed design.</summary>
+        public static (List<SimStage> stages, SimOptions opts) Inputs(Catalog c, Design design)
+        {
+            var setup = Setup(c, design);
             return (setup.Stages, setup.Options);
         }
 

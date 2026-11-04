@@ -63,6 +63,10 @@ namespace Kestrel.Slice
         /// </summary>
         public double ViewAltitude => SteerCamera && started && landing != null ? Math.Max(0, landing.Sample().Alt) : double.NaN;
 
+        /// <summary>The booster's HUD numbers from this frame's sample (read-only; valid while <see cref="SteerCamera"/>).
+        /// SliceApp hands it to AscentHud so the strip reads the stage the camera is on.</summary>
+        public BoosterHudReadout HudReadout { get; private set; }
+
         public void Bind(FinCluster finCluster, StrutCluster legCluster, VisualElement flightHud)
         {
             fins = finCluster;
@@ -145,6 +149,7 @@ namespace Kestrel.Slice
             Touch(pic, sample);
             Call(pic, sample);
             SteerCamera = pic.Follow && (sample.Phase != RecoveryPhase.Down || downAge < 8);
+            HudReadout = BoosterHud.Read(sample, craft);
             AimInset(pic.Inset && !SteerCamera, sample);
         }
 

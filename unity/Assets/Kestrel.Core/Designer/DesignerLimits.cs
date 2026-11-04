@@ -34,6 +34,8 @@ namespace Kestrel.Core.Designer
         public double pitchKickAltMin = 0, pitchKickAltMax = 50000;
         public double minTwr = 1, goodTwr = 1.25, minMargin = 0.05, pack = 1.1;
         public double topHeavyRatio = 1.6, fairingNarrowRatio = 0.5;
+        /// <summary>Fairing joint and flare (designer-limits fairingFlare). The advisory fires over warnRatio or warnAngleDeg; the shoulder is a cone of shoulderAngleDeg, at most shoulderMaxCylFraction of the cylinder.</summary>
+        public double fairingFlareWarnRatio = 1.5, fairingFlareWarnAngleDeg = 30, fairingShoulderAngleDeg = 15, fairingShoulderMaxCylFraction = 0.5;
         public double weakUpperTwrVac = 0.5, weakUpperDvFraction = 0.2, heavyFairingKg = 500;
         public double stabilityAimMin = 1, stabilityAimMax = 2, overstableAbove = 4;
         public double maxQWarnKPa = 45;
@@ -109,6 +111,7 @@ namespace Kestrel.Core.Designer
             if (o.ContainsKey("pack")) l.pack = o.Num("pack", 1.1);
             if (o.ContainsKey("topHeavyRatio")) l.topHeavyRatio = o.Num("topHeavyRatio", 1.6);
             if (o.ContainsKey("fairingNarrowRatio")) l.fairingNarrowRatio = o.Num("fairingNarrowRatio", 0.5);
+            var ff = o.Obj("fairingFlare"); if (ff != null) { l.fairingFlareWarnRatio = ff.Num("warnRatio", 1.5); l.fairingFlareWarnAngleDeg = ff.Num("warnAngleDeg", 30); l.fairingShoulderAngleDeg = ff.Num("shoulderAngleDeg", 15); l.fairingShoulderMaxCylFraction = ff.Num("shoulderMaxCylFraction", 0.5); }
             if (o.ContainsKey("weakUpperTwrVac")) l.weakUpperTwrVac = o.Num("weakUpperTwrVac", 0.5);
             if (o.ContainsKey("weakUpperDvFraction")) l.weakUpperDvFraction = o.Num("weakUpperDvFraction", 0.2);
             if (o.ContainsKey("heavyFairingKg")) l.heavyFairingKg = o.Num("heavyFairingKg", 500);

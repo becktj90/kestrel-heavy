@@ -399,33 +399,13 @@ namespace Kestrel.Game.Failure
             sh.enabled = false;
             var renderer = go.GetComponent<ParticleSystemRenderer>();
             particleMat = ParticleMaterial();
-            if (particleMat != null) renderer.sharedMaterial = particleMat;
+            Kestrel.Kit.FxMaterials.Apply(renderer, particleMat);
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             burst.Play();
             return burst;
         }
 
-        static Material ParticleMaterial()
-        {
-            var shader = Shader.Find(ParticleShader);
-            if (shader == null) shader = Shader.Find("Sprites/Default");
-            if (shader == null) return null;
-            var mat = new Material(shader) { name = "FailureBurst" };
-            mat.SetFloat("_Surface", 1f);
-            mat.SetFloat("_Blend", 2f);
-            mat.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-            mat.SetFloat("_DstBlend", (float)BlendMode.One);
-            mat.SetFloat("_ZWrite", 0f);
-            // Keywords already required by PadGlow. Soft particles stay off.
-            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            mat.EnableKeyword("_BLENDMODE_ADD");
-            mat.DisableKeyword("_SOFTPARTICLES_ON");
-            mat.SetOverrideTag("RenderType", "Transparent");
-            if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", SoftParticle.Texture);
-            mat.mainTexture = SoftParticle.Texture;
-            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", Color.white);
-            return mat;
-        }
+        static Material ParticleMaterial() => Kestrel.Kit.FxMaterials.Particle(SoftParticle.Texture, "FailureBurst", true);
 
         static Color Tint(string name)
         {

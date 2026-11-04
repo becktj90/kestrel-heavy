@@ -34,6 +34,8 @@ namespace Kestrel.Game.Guide
         public double ApoKm = double.NaN;
         public double GoalKm = double.NaN;
         public double PeriKm = double.NaN;
+        /// <summary>Engines lit on the stage that lost one (the failure's limit). 0 when unknown: the engine-out line then stays quiet.</summary>
+        public int EnginesLit;
     }
 
     public interface IGuideReport
@@ -105,7 +107,7 @@ namespace Kestrel.Game.Guide
             engine.Settings.StepId = stepId;
             engine.Offer("guide.step", stepId, null, stepId, false);
             var check = CheckAt(report, step);
-            string variant = Variant(step, check);
+            string variant = Variant(step, check, report);
             if (engine.SameStep(stepId + "|" + variant + "|" + Fingerprint(report))) return;
             OfferVariant(engine, step, variant, check, report, stepId);
             if (step == 7) Prelaunch(engine, report, stepId);
@@ -227,6 +229,7 @@ namespace Kestrel.Game.Guide
                 PeriKm = peri,
                 GoalKm = goal,
                 DvShort = Shortfall(kind, result, mission),
+                EnginesLit = kind == "engine-out" && ev != null ? (int)Math.Round(ev.limit) : 0,
             };
         }
 
@@ -269,6 +272,11 @@ namespace Kestrel.Game.Guide
                 string dv = Num(facts.DvShort, "0");
                 if (dv != null) engine.Offer("abort", kind, Token("dv", dv), "report", true);
             }
+            else if (kind == "engine-out")
+            {
+                // "An engine quit and the others could not cope" needs other engines. One-engine stages hear nothing here.
+                if (facts.EnginesLit >= 2) engine.Offer("abort", kind, null, "report", true);
+            }
             else if (!string.IsNullOrEmpty(kind))
                 engine.Offer("abort", kind, null, "report", true);
             if (facts.Landing == "splash") engine.Offer("splash", "", null, "report", true);
@@ -281,6 +289,18 @@ namespace Kestrel.Game.Guide
         static void OfferVariant(LiveGuideEngine engine, int step, string variant, StepCheck check, StepperReport report, string stepId)
         {
             if (string.IsNullOrEmpty(variant)) return;
+            // A tumble on a finned design is the stability warning, not the finless one.
+            if (variant == FinnedTumble)
+            {
+                engine.Offer("guide.pre", "stability", null, stepId, false);
+                return;
+            }
+            // Fins unknown: fail closed to the neutral tumble line ("Round and round!"), true of any rocket.
+            if (variant == UnknownTumble)
+            {
+                engine.Offer("abort", "tumble", null, stepId, false);
+                return;
+            }
             var tokens = VariantTokens(variant, check, report);
             if (tokens == null && NeedsTokens(variant)) return;
             engine.Offer("guide.step", variant, tokens, stepId, false);
@@ -464,7 +484,10 @@ namespace Kestrel.Game.Guide
             return text;
         }
 
-        static string Variant(int step, StepCheck check)
+        const string FinnedTumble = "4.pre.stability";
+        const string UnknownTumble = "4.tumble.neutral";
+
+        static string Variant(int step, StepCheck check, StepperReport report)
         {
             if (check == null && step != 2) return "";
             switch (step)
@@ -480,7 +503,11 @@ namespace Kestrel.Game.Guide
                     return "";
                 case 4:
                     if (Has(check, "payload-doesnt-fit") || Has(check, "fairing-narrow")) return "4.fail.fit";
-                    if (Has(check, "tumble") || Has(check, "unstable")) return "4.fail.tumble";
+                    if (Has(check, "tumble") || Has(check, "unstable"))
+                        // "Top-heavy and finless" is only true of a design with no fins. A finned one gets pre.stability.
+                        // An unknown design (the report did not carry it) fails closed to the neutral tumble line.
+                        return report == null || report.Finless == null ? UnknownTumble
+                            : report.Finless == true ? "4.fail.tumble" : FinnedTumble;
                     return "";
                 case 5:
                     if (Has(check, "recovery-skip")) return "5.skip";

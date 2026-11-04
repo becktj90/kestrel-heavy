@@ -190,6 +190,21 @@ namespace Kestrel.Kit.Tests
         }
 
         [Test]
+        public void HotChunkEmissionNeverClipsToWhite()
+        {
+            for (int i = 0; i <= 100; i++)
+                foreach (float expo in new[] { 1f, 0.7f })
+                {
+                    var e = DebrisMath.FragmentEmission(i / 100f, expo);
+                    Assert.That(e.R, Is.InRange(0f, DebrisMath.MaxFragmentGlow)); Assert.That(e.G, Is.InRange(0f, DebrisMath.MaxFragmentGlow)); Assert.That(e.B, Is.InRange(0f, DebrisMath.MaxFragmentGlow));
+                    Assert.That(e.B, Is.LessThan(0.8f * DebrisMath.MaxFragmentGlow + 0.001f), "blue stays under the hot colour so a chunk reads orange or cream, never flat white");
+                }
+            var hot = DebrisMath.FragmentEmission(1f, 1f); var cold = DebrisMath.FragmentEmission(0.05f, 1f);
+            Assert.That(hot.R + hot.G + hot.B, Is.GreaterThan(cold.R + cold.G + cold.B), "hotter is still brighter");
+            Assert.That(DebrisMath.FragmentEmission(float.NaN, 1f).R, Is.EqualTo(0f));
+        }
+
+        [Test]
         public void BurstRespectsTierAndReduceMotion()
         {
             for (int q = 0; q <= 2; q++)

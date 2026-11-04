@@ -15,7 +15,7 @@ namespace Kestrel.Game.Tests
         static readonly string[] Codes =
         {
             "zero-engines", "zero-propellant", "schema", "math", "twr-low", "engines-dont-fit", "top-heavy",
-            "fairing-narrow", "payload-doesnt-fit", "twr-marginal", "weak-upper", "weak-upper-dv", "dv-margin",
+            "fairing-narrow", "fairing-flare", "payload-doesnt-fit", "twr-marginal", "weak-upper", "weak-upper-dv", "dv-margin",
             "landing-hardware", "heavy-fairing",
         };
 

@@ -40,6 +40,7 @@ namespace Kestrel.Core.Tests
             ["top-heavy"] = new[] { "pass", "red" },
             ["interstage-shape"] = new[] { "pass", "amber" },
             ["fairing-narrow"] = new[] { "pass", "red" },
+            ["fairing-flare"] = new[] { "pass", "amber" },
             ["payload-doesnt-fit"] = new[] { "pass", "red" },
             ["heavy-fairing"] = new[] { "pass", "amber" },
             ["unstable"] = new[] { "pass", "amber", "red" },

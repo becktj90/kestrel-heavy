@@ -234,10 +234,12 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void Kh7Starter_LiveFlight_EmitsOneFairingEvent_AtTheDesignReleaseHeight()
+        public void Kh7Starter_LiveFlight_EmitsOneFairingEvent_AtTheHeatGate()
         {
             // Graphics (#332): the flown sim emits a real "fairing" event. The live setup takes the release height
             // from the design (fairing.jettisonAltitudeKm), the number the staging show and the director use.
+            // Physics (KH-7 follow-up): with the payload's heat limit the event waits for the heat gate (½ρv³ under the
+            // limit for 2 s, from the fairing call's arming height up), the same gate the director runs on its samples.
             var run = Play(7);
             double expected = run.Design.fairingJettisonAltitudeKm * 1000;
             Assert.Greater(expected, 0);
@@ -246,13 +248,14 @@ namespace Kestrel.Core.Tests
             var fairings = run.Result.events.FindAll(e => e.type == "fairing");
             Assert.AreEqual(1, fairings.Count, "exactly one fairing event");
             var f = fairings[0];
-            Assert.That(f.alt.Value, Is.GreaterThanOrEqualTo(expected), "not before the release height");
-            Assert.That(f.alt.Value - expected, Is.LessThan(f.v.Value * MissionFlightSetup.LiveDt + 1), "on the first step past it");
+            Assert.Greater(run.GateLimit, 0, "the KH-7 payload sets a heat limit");
+            Assert.That(f.alt.Value, Is.GreaterThanOrEqualTo(FairingHeatGate.FloorFor(expected)), "not before the fairing call arms");
+            Assert.AreEqual(run.GateOpenT, f.t, 1e-9, "on the step the director's heat gate opens");
             Assert.Greater(run.Result.maxQTime, 0);
             Assert.Greater(f.t, run.Result.maxQTime, "after max-Q");
             Assert.IsTrue(Array.Exists(run.Rail.Marks, m => m.Stop == TrajectoryStop.Fairing && m.Passed), "the rail's Fairing tick is lit");
             Assert.IsTrue(run.Landing.Touched, "the stage and recovery chain still runs to touchdown");
-            TestContext.WriteLine("fairing T+" + f.t.ToString("0.00") + " alt " + f.alt.Value.ToString("0") + " m (release " + expected + " m)");
+            TestContext.WriteLine("fairing T+" + f.t.ToString("0.00") + " alt " + f.alt.Value.ToString("0") + " m (design release " + expected + " m)");
         }
 
         [Test]
@@ -287,7 +290,7 @@ namespace Kestrel.Core.Tests
         {
             public BoosterLanding Landing;
             public Design Design;
-            public double FairingOptM;
+            public double FairingOptM, GateLimit, GateOpenT = double.NaN;
             public double SeparatedAt = -1, AscentEndT, TouchdownT;
             public RecoveryCallout LostCall;
             public bool RailRecoveryBeforeTouchdown, RailBurnBeforeTouchdown;
@@ -361,7 +364,7 @@ namespace Kestrel.Core.Tests
             double omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
 
             // SliceApp.PresentAscent: RecoveryShow.Arm
-            var run = new Run { Mission = "KH-" + index, Design = design, FairingOptM = opts.fairingJettisonAltM };
+            var run = new Run { Mission = "KH-" + index, Design = design, FairingOptM = opts.fairingJettisonAltM, GateLimit = opts.fairingMaxHeatFlux };
             run.Landing = BoosterLanding.Arm(catalog, design);
 
             // AscentHud.FeedTrajectory
@@ -392,6 +395,7 @@ namespace Kestrel.Core.Tests
                     {
                         running = false;
                         run.Result = directed.Finish();
+                        run.GateOpenT = director.FairingGate.OpenT;
                         run.AscentFailure = run.Result.failure;
                         run.AscentEndT = sim.T;
                     }

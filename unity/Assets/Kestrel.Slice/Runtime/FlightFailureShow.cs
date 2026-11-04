@@ -353,7 +353,7 @@ namespace Kestrel.Slice
 
         Material MakeMat(Color color)
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            var shader = Kestrel.Kit.MaterialLibrary.Lit();   // Resources-pinned and checked for an error shader
             if (shader == null) shader = Shader.Find("Sprites/Default");
             if (shader == null) return null;
             var mat = new Material(shader) { color = color };

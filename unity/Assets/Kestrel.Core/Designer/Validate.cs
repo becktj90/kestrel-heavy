@@ -80,6 +80,14 @@ namespace Kestrel.Core.Designer
                     warnings.Add(Iss("landing-hardware", "recovery", "Landing fuel is reserved but legs or grid fins are missing. Add them, or set the landing reserve to 0."));
                 if (r.mass.fairing > Math.Max(Lim.heavyFairingKg, r.mass.payload))
                     warnings.Add(Iss("heavy-fairing", "payload", $"The fairing ({Fmt(r.mass.fairing / 1000, 1)} t) outweighs the payload. A composite or shorter fairing saves mass."));
+                // Fairing joint and flare (DECISIONS #71): the base is the top stage's diameter and the barrel may flare wider, so a wide
+                // fairing is allowed. Only a very big flare is flagged, as a warning that never blocks (designer-limits fairingFlare).
+                {
+                    var flFairing = design.Obj("fairing");
+                    double flTop = stages.Count > 0 ? ((JsonObject)stages[stages.Count - 1]).Num("diameter") : 0;
+                    if (flFairing != null && FairingFlare.Extreme(flFairing.Num("diameter"), flTop, flFairing.Num("length"), design.Obj("aero")?.Str("nose")))
+                        warnings.Add(Iss("fairing-flare", "payload", "This fairing flares a lot above the stage. Try a wider stage or a smaller fairing."));
+                }
                 // Version 2 stability and max-Q wording lives in DesignRules. Emitting both would double the issues.
                 if ((int)design.Num("version") < 2)
                     AeroNotes(c, design, r, blocks, warnings);
@@ -377,7 +385,10 @@ namespace Kestrel.Core.Designer
             var top = (JsonObject)stages[stages.Count - 1];
             var fairing = d.Obj("fairing");
             if (fairing != null && top != null && fairing.Num("diameter") < top.Num("diameter") * Lim.fairingNarrowRatio)
-                outp.Add(Iss("fairing-narrow", "payload", "The fairing is narrower than half the top stage. Try a fairing at least as wide as the stage."));
+            {
+                string w = FairingFlare.RatioWords(Lim.fairingNarrowRatio);
+                outp.Add(Iss("fairing-narrow", "payload", $"The fairing is less than {w} as wide as the top stage. Try a fairing at least {w} the stage width, and wide enough for the cargo (cargo up to 0.9 \u00d7 the fairing width)."));
+            }
             var spec = PayloadFit.SpecFor(c, d);
             if (spec != null && fairing != null)
             {

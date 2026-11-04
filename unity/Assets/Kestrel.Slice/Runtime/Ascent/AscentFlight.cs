@@ -20,6 +20,8 @@ namespace Kestrel.Slice
         public SeededWind Wind;
         public bool HasLatitude;
         public double Latitude;
+        /// <summary>The briefing's launch site id (sites.json), for narration lines that name the pad. Null when no briefing loaded.</summary>
+        public string SiteId;
         /// <summary>Campaign hop this launch is flying. Null for a free build.</summary>
         public CampaignMission Mission;
     }
@@ -57,9 +59,8 @@ namespace Kestrel.Slice
             {
                 string root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
                 int index = MissionIndex(design, json);
-                card = index > 0
-                    ? MissionBriefing.Load(root, index, hash, seed)
-                    : MissionBriefing.Free(root, hash, seed);
+                // The same call the designer's predictor makes (ReferenceAscent.Briefing, KH-7 E).
+                card = MissionBriefing.ForPad(root, index, hash, seed);
             }
             catch (Exception e) { Debug.LogWarning("[Ascent] briefing skipped: " + e.Message); }
             // The one director factory the batch, the designer and the timeline use too (#313).
@@ -77,6 +78,7 @@ namespace Kestrel.Slice
             {
                 hook.HasLatitude = true;
                 hook.Latitude = card.Site.LatitudeDeg;
+                hook.SiteId = card.Site.Id;
             }
             return hook;
         }

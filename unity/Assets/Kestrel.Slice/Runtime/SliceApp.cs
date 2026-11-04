@@ -405,7 +405,8 @@ namespace Kestrel.Slice
             }
             chrome?.Layout(UnitsPerPoint());
             ascentHud?.Layout(UnitsPerPoint());
-            staging?.Layout(UnitsPerPoint());
+            // #395: pass the banner height so the staging callout sits below the banner, not on top of it.
+            staging?.Layout(UnitsPerPoint(), ascentHud != null ? ascentHud.BannerRowPt : 0f);
         }
 
         readonly Kestrel.Game.Shell.WebPanelScale.Watch panelScale = new Kestrel.Game.Shell.WebPanelScale.Watch();
@@ -1235,7 +1236,7 @@ namespace Kestrel.Slice
             fairingSeams = null;
             if (!r.fairing.Present) return;
             var f = r.fairing;
-            var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic);
+            var poses = Kestrel.Vehicle.FairingLayout.Build(f.BaseY, f.Radius, f.Length, f.NoseFraction, f.Conic, f.JointRadius);
             if (poses.Count == 0) return;
             var cluster = rocketGO.AddComponent<Kestrel.Vehicle.StrutCluster>();
             cluster.ViewCamera = cam;
@@ -1590,6 +1591,7 @@ namespace Kestrel.Slice
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             ascentErrorLogged = false;
+            BeginCountNarration();
             var gates = LiveBlockers();
             Debug.Log("[Count] gates audio=" + gates.AudioDeviceReady
                 + " clip=" + gates.ClipLoadFinished
@@ -1606,14 +1608,19 @@ namespace Kestrel.Slice
             chrome?.OnFlightStarted();
         }
 
+        Kestrel.Core.Flight.Narration.CallSchedule flightCalls;
+
         LaunchSequence OpenSequence()
         {
+            flightCalls = null;
             try
             {
                 var cat = SliceData.Catalog;
                 if (cat == null || design == null || design.stages == null || design.stages.Count == 0) return null;
                 string mode = EngineerEnabled ? "engineer" : "standard";
                 var tl = TimelineGenerator.Generate(cat, design, Kestrel.Core.Timeline.Pad.For(cat, design), new Mission { mode = mode }, 1);
+                // The same timeline says when the calls are due, so a color exchange is only offered with room before the next one.
+                flightCalls = Kestrel.Core.Flight.Narration.CallSchedule.From(tl);
                 return LaunchSequence.Open(tl);
             }
             catch (System.Exception) { return null; }
@@ -1657,6 +1664,7 @@ namespace Kestrel.Slice
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
             try { hook = AscentFlight.Prepare(SliceData.Catalog, design, doc, engineer, reduced); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
+            flight.Calls = flightCalls;
             flight.Launch(design, hook);
             if (flight.Sim == null) return false;
             PresentAscent(engineer);
@@ -1675,7 +1683,8 @@ namespace Kestrel.Slice
                 ascentHud.Present(flight);
                 bool reduced = hangarCam != null && hangarCam.ReduceMotion;
                 staging?.Arm(flight, reduced);
-                staging?.Layout(UnitsPerPoint());
+                // #395: pass the banner height so the staging callout sits below the banner.
+                staging?.Layout(UnitsPerPoint(), ascentHud != null ? ascentHud.BannerRowPt : 0f);
                 failureShow?.Arm(flight, reduced);
                 failureShow?.Layout(UnitsPerPoint());
                 recovery?.Arm(flight, staging, SliceData.Catalog, design, engineer, reduced);
@@ -1722,9 +1731,11 @@ namespace Kestrel.Slice
             handoff.Reset();
             ascentErrorLogged = false;
             counting = false; sequence = null;
+            CountVoice()?.EndCount();
             if (flight != null) flight.enabled = false;
             if (cam != null) cam.ResetProjectionMatrix();
             recovery?.Stop();
+            ApplyHudFocus(FlightHudFocus.Ascent);
             RecoveryLog.Clear();
             if (juice != null) juice.Reset();
             if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
@@ -1820,9 +1831,33 @@ namespace Kestrel.Slice
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
             ShowFlightPicture();
             RefreshWebcast(flight.SimTime, true);
+            // Booster follow: the HUD reads the stage the camera is on (polled, like recovery.Aim above).
+            bool onBooster = recovery != null && recovery.SteerCamera;
+            ascentHud?.SetBooster(onBooster ? recovery.HudReadout : (BoosterHudReadout?)null);
+            ApplyHudFocus(BoosterHud.Focus(onBooster));
             ascentHud?.Present(flight);
             }
             catch (System.Exception e) { Debug.LogException(e); }
+        }
+
+        /// <summary>
+        /// The upper stage's own header chrome (the S3 stage chip, BACK TO DESIGN) hides while the HUD reads the
+        /// booster and comes back with the ascent focus. Visibility, not display, so the header and dock never move;
+        /// the "hidden" class still decides whether BACK TO DESIGN is shown at all.
+        /// </summary>
+        void ApplyHudFocus(FlightHudFocus focus)
+        {
+            bool ascent = BoosterHud.ShowsAscentChrome(focus);
+            if (hStage != null)
+            {
+                if (ascent) hStage.style.visibility = StyleKeyword.Null;
+                else hStage.style.visibility = Visibility.Hidden;
+            }
+            if (again != null)
+            {
+                if (ascent) again.style.visibility = StyleKeyword.Null;
+                else again.style.visibility = Visibility.Hidden;
+            }
         }
 
         void PaintAscentReadout()
@@ -1879,6 +1914,28 @@ namespace Kestrel.Slice
             }
             HideCountGrid();
             RefreshWebcast(sequence.Time, false);
+            if (counting) CountVoice()?.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+        }
+
+        static bool GuideSpeaking()
+        {
+            var box = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Guide.GuideBoxDriver>();
+            return box != null && box.Stage != null && box.Stage.Count > 0;
+        }
+
+        Kestrel.Game.Audio.NarrationPlayer CountVoice() => flight != null ? flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>() : null;
+
+        // Pad and tank-press calls belong to the count: they get the design's facts and timeline when it opens.
+        void BeginCountNarration()
+        {
+            var voice = CountVoice();
+            if (voice == null || !counting || sequence == null) return;
+            try
+            {
+                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null), flightCalls);
+                voice.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Count] narration: " + e.Message); }
         }
 
         bool countTagDressed;

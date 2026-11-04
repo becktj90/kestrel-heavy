@@ -31,4 +31,4 @@ stg.sep.1 | SEP s1 | before=231.949 | after=229.418 | delta=-2.531 | SEP s1 shif
 dep.payload | Deploy | before=2174.949 | after=350.34 | delta=-1824.609 | Deploy shifts -1824.609 s. Payload deploys at the ballistic apogee estimated from the sim state at burnout (T+5:50.34). The ascent sim stops at burnout and does not fly the coast.
 problems:
 lost-restart | s2 | s2 lost restart: exp-hydrolox had restart true and 15 restarts; sc-kerolox has restart false and 0 restarts. Removed stg.seco.s2.1, stg.seco.s2.2, stg.ses.s2.1, stg.ses.s2.2.
-failed-prediction | tpl-hydrogen-upper | The edit loses the target. The sim does not reach the target. Perigee -4866.3 km, apogee 175.0 km, target 200.0 km. Short by 1228 m/s Δv. First failure: structural-maxq at T+231.725 s. dv margin -0.11 < 0 at burnout.
+failed-prediction | tpl-hydrogen-upper | The edit loses the target. The sim does not reach the target. Perigee -4842.5 km, apogee 153.7 km, target 200.0 km. Short by 1228 m/s Δv. First failure: structural-maxq at T+232.175 s. dv margin -0.11 < 0 at burnout.

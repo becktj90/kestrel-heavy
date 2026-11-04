@@ -121,6 +121,9 @@ namespace Kestrel.Game.Guide
             return false;
         }
 
+        /// <summary>Drops beats that are waiting to be shown. Used while the corner character is off so they do not pile up.</summary>
+        public void DropQueued() => queued.Clear();
+
         public void BeginFlight()
         {
             thisFlight.Clear();

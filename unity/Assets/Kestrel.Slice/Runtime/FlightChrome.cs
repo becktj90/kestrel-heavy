@@ -114,7 +114,7 @@ namespace Kestrel.Slice
             menu.Add(MenuButton(UiIds.PauseExitHome, "Exit to Home", "Exit to Home.", () => exitHome?.Invoke()));
             music = MenuButton(UiIds.PauseMusic, "Music on", "Music. Tap to mute or unmute.", ToggleMusic);
             sfx = MenuButton(UiIds.PauseSfx, "Sound on", "Sound effects. Tap to mute or unmute.", ToggleSfx);
-            narration = MenuButton(UiIds.PauseNarration, "Narration on", "Narration. Tap to mute or unmute.", ToggleNarration);
+            narration = MenuButton(UiIds.PauseNarration, "Narration on", "Commentary. Tap to cycle full, calls only, off.", ToggleNarration);
             menu.Add(music);
             menu.Add(sfx);
             menu.Add(narration);
@@ -391,7 +391,8 @@ namespace Kestrel.Slice
 
         void ToggleNarration()
         {
-            Kestrel.Game.Audio.AudioPrefs.SetNarrationMuted(!Kestrel.Game.Audio.AudioPrefs.NarrationMuted);
+            // Full, then calls only (no two-voice color), then off, then full again.
+            Kestrel.Game.Audio.AudioPrefs.SetCommentary(Kestrel.Core.Flight.Narration.Commentary.Next(Kestrel.Game.Audio.AudioPrefs.CommentaryMode));
             RefreshAudio();
         }
 
@@ -399,7 +400,7 @@ namespace Kestrel.Slice
         {
             if (music != null) Label(music, "Music", Kestrel.Game.Audio.AudioPrefs.MusicMuted);
             if (sfx != null) Label(sfx, "Sound", Kestrel.Game.Audio.AudioPrefs.SfxMuted);
-            if (narration != null) Label(narration, "Narration", Kestrel.Game.Audio.AudioPrefs.NarrationMuted);
+            if (narration != null) narration.text = Kestrel.Core.Flight.Narration.Commentary.Label(Kestrel.Game.Audio.AudioPrefs.CommentaryMode);
         }
 
         static void Label(Button button, string name, bool muted)

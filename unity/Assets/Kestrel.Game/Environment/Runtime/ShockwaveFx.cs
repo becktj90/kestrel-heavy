@@ -32,6 +32,10 @@ namespace Kestrel.Game.Environment
         public int LiveRings { get { int n = 0; for (int i = 0; i < rings.Length; i++) if (rings[i].Live) n++; return n; } }
         public int LiveHaze { get { int n = 0; for (int i = 0; i < hazes.Length; i++) if (hazes[i].Live) n++; return n; } }
         public int RingCap => rings.Length;
+        public MeshRenderer RingRenderer(int i) => i >= 0 && i < ringR.Length ? ringR[i] : null;
+        public MeshRenderer HazeRenderer(int i) => i >= 0 && i < hazeR.Length ? hazeR[i] : null;
+        /// <summary>Largest ring quad edge (m) currently drawn, for the size-bound tests.</summary>
+        public float LargestRingEdge { get { float m = 0f; for (int i = 0; i < rings.Length; i++) if (rings[i].Live && ringT[i] != null) m = Mathf.Max(m, ringT[i].localScale.x); return m; } }
         public int HazeCap => hazes.Length;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -108,7 +112,8 @@ namespace Kestrel.Game.Environment
             go.transform.SetParent(transform, false);
             go.AddComponent<MeshFilter>().sharedMesh = quad;
             r = go.AddComponent<MeshRenderer>();
-            r.sharedMaterial = mat; r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
+            FxMaterials.Apply(r, mat);   // no safe material: the quad is switched off, never drawn with the error (magenta) material
+            r.shadowCastingMode = ShadowCastingMode.Off; r.receiveShadows = false;
             t = go.transform; go.SetActive(false);
         }
 
@@ -200,21 +205,7 @@ namespace Kestrel.Game.Environment
             return m;
         }
 
-        static Material MakeMaterial(Texture2D tex, string name)
-        {
-            var shader = Shader.Find(ExplosionFx.ParticleShader);
-            if (shader == null) shader = Shader.Find("Sprites/Default");
-            if (shader == null) return null;
-            var mat = new Material(shader) { name = name };
-            mat.SetFloat("_Surface", 1f); mat.SetFloat("_Blend", 2f); mat.SetFloat("_ZWrite", 0f);
-            mat.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha); mat.SetFloat("_DstBlend", (float)BlendMode.One);
-            // Same keyword set as ExplosionFx / FailureHost / PadGlow so the iOS shader stripper keeps the variant.
-            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT"); mat.EnableKeyword("_BLENDMODE_ADD"); mat.DisableKeyword("_SOFTPARTICLES_ON");
-            mat.SetOverrideTag("RenderType", "Transparent");
-            if (mat.HasProperty("_BaseMap")) mat.SetTexture("_BaseMap", tex);
-            mat.mainTexture = tex;
-            return mat;
-        }
+        internal static Material MakeMaterial(Texture2D tex, string name) => FxMaterials.Particle(tex, name, true, true);
 
         static Texture2D ringTex, blobTex;
 

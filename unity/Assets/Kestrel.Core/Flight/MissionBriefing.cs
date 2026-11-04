@@ -289,6 +289,13 @@ namespace Kestrel.Core.Flight
         public static MissionBriefing Free(string repoRoot, ulong designHash, ulong missionSeed)
             => Compose(repoRoot, 0, new ReplaySeed(designHash, missionSeed), true);
 
+        /// <summary>
+        /// The card the pad flies: <see cref="Load"/> for a campaign mission (index &gt; 0), <see cref="Free"/> otherwise.
+        /// One call for the live pad (AscentFlight.Prepare) and the designer's predictor (ReferenceAscent), KH-7 E.
+        /// </summary>
+        public static MissionBriefing ForPad(string repoRoot, int missionIndex, ulong designHash, ulong missionSeed)
+            => missionIndex > 0 ? Load(repoRoot, missionIndex, designHash, missionSeed) : Free(repoRoot, designHash, missionSeed);
+
         public static MissionBriefing FromReplay(string repoRoot, ReplaySeed replay, int missionIndex, bool freeBuild)
             => Compose(repoRoot, missionIndex, replay, freeBuild);
 

@@ -37,6 +37,30 @@ namespace Kestrel.Kit
         /// <summary>Cap on the flash amplitude (0..1) the limiter may grant.</summary>
         public static float FlashAmplitudeCap(float night01) => Lerp(0.85f, 0.6f, Clamp01(night01));
 
+        // ---- size / flash bounds (photosensitivity + "driven by real sim values") ----
+        /// <summary>Largest blast radius (m) any plan may use, whatever the vehicle. A 3.6 m stage reads as ~16 m of fireball.</summary>
+        public const float MaxBlastRadiusM = 16f;
+        /// <summary>Smallest blast radius (m), so a tiny probe still reads as a fireball.</summary>
+        public const float MinBlastRadiusM = 0.5f;
+        /// <summary>Ceiling on the additive flash particle alpha. Below the old 0.85 so stacked flash cards never clip to a white screen.</summary>
+        public const float MaxFlashAlpha = 0.6f;
+        /// <summary>Largest share of the screen height one flash card may span (the card, not the soft blob inside it).</summary>
+        public const float MaxFlashScreenFraction = 0.30f;
+        /// <summary>Per-particle size jitter (x1.3 in ExplosionFx.Emit) times the size-over-lifetime peak (x1.2) the flash can grow by.</summary>
+        public const float FlashGrowthMax = 1.3f * 1.2f;
+
+        /// <summary>Fastest the fire and smoke may drift with the vehicle, in blast radii per second. A skinny 2 m blast drifts at most ~1 m/s.</summary>
+        public const float MaxInheritRadiiPerSecond = 0.45f;
+
+        /// <summary>Largest flash start size (m) that keeps the card within MaxFlashScreenFraction of the view at <paramref name="distanceM"/>.</summary>
+        public static float FlashSizeCap(float distanceM, float verticalFovDeg)
+        {
+            if (float.IsNaN(distanceM) || distanceM < 1f) distanceM = 1f;
+            if (float.IsNaN(verticalFovDeg) || verticalFovDeg < 5f) verticalFovDeg = 5f; else if (verticalFovDeg > 120f) verticalFovDeg = 120f;
+            float viewHeight = 2f * distanceM * (float)Math.Tan(verticalFovDeg * 0.5f * Math.PI / 180.0);
+            return viewHeight * MaxFlashScreenFraction / FlashGrowthMax;
+        }
+
         internal static float Clamp01(float v) => float.IsNaN(v) ? 0f : v < 0f ? 0f : v > 1f ? 1f : v;
         internal static float Lerp(float a, float b, float t) => a + (b - a) * t;
     }
@@ -135,7 +159,9 @@ namespace Kestrel.Kit
             float energy = ExplosionBudgets.Clamp01(e.Energy01);
             float kind = e.Kind == CinematicKind.EngineFailure ? (e.Overpressure ? 0.7f : 0.45f) : 1f;
             float s = ExplosionBudgets.Lerp(0.35f, 1f, energy) * kind;
-            float radius = Math.Max(0.5f, e.Radius) * (e.Kind == CinematicKind.EngineFailure ? 2.2f : 4.5f) * ExplosionBudgets.Lerp(0.6f, 1f, energy);
+            float baseRadius = float.IsNaN(e.Radius) ? 1f : e.Radius;
+            float radius = Math.Max(ExplosionBudgets.MinBlastRadiusM, baseRadius) * (e.Kind == CinematicKind.EngineFailure ? 2.2f : 4.5f) * ExplosionBudgets.Lerp(0.6f, 1f, energy);
+            if (radius > ExplosionBudgets.MaxBlastRadiusM) radius = ExplosionBudgets.MaxBlastRadiusM;
 
             var p = new ExplosionPlan { Radius = radius, Night = night, Calm = reduce };
             bool flashes = !reduce && flashGrant > 0f && (e.Kind != CinematicKind.EngineFailure || e.Overpressure);
@@ -167,7 +193,7 @@ namespace Kestrel.Kit
             p.FireColor = new Rgb3(1f, 0.52f, 0.14f);
             p.SparkColor = new Rgb3(1f, 0.8f, 0.4f);
             p.EmberColor = new Rgb3(1f, 0.36f, 0.08f);
-            p.FlashAlpha = Math.Min(1f, amp * expo);
+            p.FlashAlpha = Math.Min(ExplosionBudgets.MaxFlashAlpha, amp * expo);
             p.FireAlpha = Math.Min(1f, (reduce ? 0.55f : 0.5f + 0.5f * Math.Max(amp, 0.4f)) * expo);
 
             // Smoke is lit by the scene: albedo x (direct sun + ambient), plus a little fire under-glow in the dark.
@@ -194,6 +220,18 @@ namespace Kestrel.Kit
             p.LightHold = reduce ? 1.0f : 0.06f;
             p.LightRise = reduce ? 1.5f : 25f;       // units/s: peak reached over >= 40 ms, never a one-frame step
             p.LightDecay = reduce ? 0.9f : 4.5f;     // exponential, ~0.5 s to a fifth
+            return p;
+        }
+
+        /// <summary>
+        /// The same plan with the flash card shrunk so it never spans more than MaxFlashScreenFraction of the view from the camera
+        /// <paramref name="distanceM"/> away. Fire and smoke keep their blast-radius size: they are the explosion, the flash is the glare.
+        /// </summary>
+        public ExplosionPlan LimitFlashToView(float distanceM, float verticalFovDeg)
+        {
+            float cap = ExplosionBudgets.FlashSizeCap(distanceM, verticalFovDeg);
+            var p = this;
+            if (p.FlashSize > cap) p.FlashSize = cap;
             return p;
         }
 

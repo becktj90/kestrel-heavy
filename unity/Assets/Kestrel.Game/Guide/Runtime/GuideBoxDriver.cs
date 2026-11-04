@@ -29,6 +29,17 @@ namespace Kestrel.Game.Guide
             catch (System.Exception) { return false; }
         }
 
+        /// <summary>Settings > Show corner character. Off unless the player switched it on (no stored value is off).</summary>
+        public static bool SpriteOn()
+            => Kestrel.Core.Features.ExperienceSettings.CornerCharacter(HasPref, ReadPref);
+
+        // Cached once so the per-frame check allocates nothing.
+        static readonly System.Func<string, bool> HasPref = key => PlayerPrefs.HasKey(key);
+        static readonly System.Func<string, int> ReadPref = key => PlayerPrefs.GetInt(key, 0);
+
+        /// <summary>True while the corner portrait's views exist. False whenever the setting is off.</summary>
+        public bool HasSprite => pop != null;
+
         GuideStage stage;
         GuidePopView pop;
         GuideClipPlayer voice;
@@ -91,6 +102,7 @@ namespace Kestrel.Game.Guide
                 voice.Use(GuideClipPlayer.ReadManifest(RepoRoot()));
             }
             if (pop != null) return;
+            if (!SpriteOn()) return;   // off: no overlay, no portrait view, no blip source
             var art = GuideArt.Load();
             var doc = Document != null ? Document : GetComponent<UIDocument>();
             var parent = doc != null ? doc.rootVisualElement : null;
@@ -118,9 +130,43 @@ namespace Kestrel.Game.Guide
             stage.Blip += OnBlip;
         }
 
+        /// <summary>Builds or removes the corner portrait to match the setting. Cheap when nothing changed.
+        /// The overlay is absolute and ignores picking, so removing it leaves no gap in the layout.</summary>
+        public void SyncSprite()
+        {
+            if (SpriteOn())
+            {
+                if (pop == null) Ensure();
+                return;
+            }
+            DropSprite();
+            // Off: nothing consumes the engine's queue, so keep it empty. Turning the character on later starts clean.
+            var live = stage != null ? stage.Engine as LiveGuideEngine : null;
+            if (live != null) live.DropQueued();
+        }
+
+        void DropSprite()
+        {
+            if (pop == null && overlay == null && blipSource == null) return;
+            Silence();
+            if (stage != null) stage.Blip -= OnBlip;
+            if (overlay != null) overlay.RemoveFromHierarchy();
+            if (blipSource != null)
+            {
+                if (Application.isPlaying) Destroy(blipSource);
+                else DestroyImmediate(blipSource);
+            }
+            overlay = null;
+            pop = null;
+            blipSource = null;
+            blipClip = null;
+            blipUntil = 0f;
+            shownKey = "";
+        }
+
         void Update()
         {
-            if (pop == null) Ensure();
+            SyncSprite();
             if (stage == null || pop == null) return;
             if (blipUntil > 0f && Time.unscaledTime >= blipUntil && blipSource != null) blipSource.Stop();
             stage.Place = Place;

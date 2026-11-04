@@ -137,8 +137,8 @@ namespace Kestrel.Core.Flight
         /// </summary>
         public static (System.Collections.Generic.List<SimStage> stages, SimOptions opts) Inputs(Catalog catalog, Design vehicle)
         {
-            var setup = MissionFlightSetup.Build(catalog, Designer.ReferenceAscent.MissionFor(catalog, vehicle), vehicle, MissionFlightSetup.BatchDt);
-            return (setup.Stages, setup.Options);
+            // KH-7 E: one setup with the predictor, briefing wind and pad included.
+            return Designer.ReferenceAscent.Inputs(catalog, vehicle);
         }
 
         static string Sentence(LaunchPrediction p, string mode, bool suborbital, bool simOrbitFlag)

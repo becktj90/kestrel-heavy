@@ -19,6 +19,13 @@
   "pack": 1.1,
   "topHeavyRatio": 1.6,
   "fairingNarrowRatio": 0.5,
+  "fairingFlare": {
+    "note": "Fairing joint and flare (DECISIONS #71, VEHICLE_ENGINEERING_RULES 'Fairing joint and flare'). The fairing base is the top stage diameter at the joint; fairing.diameter is the barrel. A conical shoulder of half angle shoulderAngleDeg joins them, carved from the fairing cylinder and never longer than shoulderMaxCylFraction of it. The fairing-flare WARNING (never a block) fires when barrel / top stage diameter is over warnRatio, or the shoulder half angle is over warnAngleDeg. Render and advice only: no mass, Cd, fit or flight number reads these.",
+    "warnRatio": 1.5,
+    "warnAngleDeg": 30,
+    "shoulderAngleDeg": 15,
+    "shoulderMaxCylFraction": 0.5
+  },
   "weakUpperTwrVac": 0.5,
   "weakUpperDvFraction": 0.2,
   "heavyFairingKg": 500,

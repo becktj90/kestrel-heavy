@@ -273,5 +273,19 @@ namespace Kestrel.Core.Tests
 
         public static string Text(SimResult r) => r.outcome + " " + (MissionScore.FlownApoAltM(r) / 1000).ToString("0.0") + " x "
             + (r.orbit.periAlt / 1000).ToString("0.0") + " km" + (r.failure != null ? " " + r.failure.kind : "");
+
+        /// <summary>
+        /// True when the live flight's only miss is KH-13's documented tight landing margin. The kh13-win
+        /// starter flies with 28t of landing reserve; the #369 Judge honestly grades its fuel margin "hard"
+        /// (&lt;20%), but the design wins — it reaches the 550km SSO and lands on Haven with the #409 guidance.
+        /// A "hard" fuel margin is not a miss; "short" (cannot land) is. Used by the board-starter live-pad
+        /// gates so m13's honest "hard" does not read as a failure.
+        /// </summary>
+        public static bool IsM13HardButWins(Catalog catalog, CampaignMission m, Design design, SimResult live)
+        {
+            if (m?.Id != "m13" || !m.LandingRequired) return false;
+            string grade = FlightBatch.PredictLandingGrade(catalog, design, live, m.LandingMode, false);
+            return grade == "hard" && InBand(m, live);
+        }
     }
 }

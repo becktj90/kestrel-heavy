@@ -113,6 +113,20 @@ namespace Kestrel.Kit
             return Rgb3.Lerp(new Rgb3(0.02f, 0.01f, 0.01f), new Rgb3(0.5f, 0.08f, 0.02f), t / 0.25f);
         }
 
+        /// <summary>Largest linear emission a hot chunk may show. Below 1 so a lit-but-unbloomed frame never clips a chunk to flat white
+        /// (the red and green of the hottest glow are at most this, and blue stays well under it): a screen full of hot chunks is fire, not a flash.</summary>
+        public const float MaxFragmentGlow = 0.9f;
+
+        /// <summary>Emission of a hot chunk: its glow colour scaled by temperature, bounded by <see cref="MaxFragmentGlow"/> on every channel.</summary>
+        public static Rgb3 FragmentEmission(float temp01, float exposure)
+        {
+            float k = temp01 * 2.5f * exposure;
+            if (!(k > 0f)) return new Rgb3(0f, 0f, 0f);   // also swallows NaN
+            if (k > MaxFragmentGlow) k = MaxFragmentGlow;
+            var g = Glow(temp01);
+            return new Rgb3(g.R * k, g.G * k, g.B * k);
+        }
+
         internal static float Hash01(int n)
         {
             uint h = (uint)n * 2654435761u ^ 0x9E3779B9u; h ^= h >> 15; h *= 2246822519u; h ^= h >> 13; h *= 3266489917u; h ^= h >> 16;
@@ -195,7 +209,7 @@ namespace Kestrel.Kit
             {
                 var d = Dir(grounded);
                 float v = speed * (0.35f + 0.65f * Rnd());
-                float size = 0.12f + 0.35f * Rnd() * (0.5f + 0.5f * e);
+                float size = 0.08f + 0.2f * Rnd() * (0.5f + 0.5f * e);   // a chunk of a 1 m rocket, not a crate
                 SpawnSmall(DebrisKind.Fragment, at + d * (radius * 0.3f), d * v + vehicleV * 0.5f, new V3(Rnd() * 8f - 4f, Rnd() * 8f - 4f, Rnd() * 8f - 4f), size, 800f * size * size * size, 0.9f + 0.1f * Rnd(), 2.5f + 2f * Rnd(), 9f + 3f * Rnd(), 0.3f, 0.55f, grounded);
             }
             for (int i = 0; i < sparks; i++)

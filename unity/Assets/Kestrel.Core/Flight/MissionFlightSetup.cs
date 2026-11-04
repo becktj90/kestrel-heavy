@@ -196,6 +196,7 @@ namespace Kestrel.Core.Flight
                 }
             }
             opts.fairingJettisonAltM = FairingJettisonAltM(design);
+            opts.fairingMaxHeatFlux = FairingMaxHeatFlux(catalog, design);
             if (site != null)
             {
                 if (site.Wind != null && !site.Wind.Calm) opts.wind = site.Wind;
@@ -214,6 +215,16 @@ namespace Kestrel.Core.Flight
         /// The event is a marker only: the fairing's mass rides with the payload for the whole burn (Stack), as
         /// in every sim test that sets this option.
         /// </summary>
+        /// <summary>
+        /// The payload's heat limit (catalog maxHeatFlux, W/m²) that gates the flown sim's "fairing" event, the same number
+        /// AscentVehicle.MaxHeatFlux gives the director. 0 when there is no fairing or the payload sets no limit.
+        /// </summary>
+        public static double FairingMaxHeatFlux(Catalog catalog, Design design)
+        {
+            if (FairingJettisonAltM(design) <= 0 || catalog == null || string.IsNullOrEmpty(design.payloadType)) return 0;
+            return catalog.PayloadById.TryGetValue(design.payloadType, out var payload) && payload.maxHeatFlux > 0 ? payload.maxHeatFlux : 0;
+        }
+
         public static double FairingJettisonAltM(Design design)
         {
             if (design == null || !(design.fairingLength > 0.2 && design.fairingDiameter > 0.1)) return 0;

@@ -23,7 +23,9 @@ namespace Kestrel.Core.Flight
         public const double NearDt = 0.0125;
         public const double NearAlt = 2500;
         public const double MaxTime = 900;
-        public const double PitchRate = 0.55;
+        // #351: 10 deg/s max pitch rate, matching real booster attitude rates
+        // (was 0.55 rad/s ~= 31.5 deg/s, faster than real vehicles).
+        public const double PitchRate = 0.1745;
         public const double FinRate = 1.0 / 1.6;
         public const double LegRate = 1.0 / 1.4;
         public const double DeckRadiusM = 36;
@@ -327,7 +329,12 @@ namespace Kestrel.Core.Flight
             ay += lift * vhx;
         }
 
-        public static double LandingReserveKg(in RecoveryCraft craft)
+        /// <summary>
+        /// #369: the hoverslam's own Δv, closed-form from the craft: the same vTerm/twr/tBurn the reserve
+        /// floor is built on, via <see cref="RecoveryModel.LandingDeltaV"/>. Single source of truth for the
+        /// landing share; <see cref="LandingReserveKg"/> converts it to kilograms.
+        /// </summary>
+        public static double LandingDeltaVNeed(in RecoveryCraft craft)
         {
             double dry = craft.DryKg > 1 ? craft.DryKg : 1;
             double g = Atmosphere.G0;
@@ -342,6 +349,15 @@ namespace Kestrel.Core.Flight
             if (vTerm > 85) vTerm = 85;
             double dv = RecoveryModel.LandingDeltaV(vTerm, g, 4, twr);
             if (double.IsNaN(dv) || double.IsInfinity(dv) || dv < 0) return 0;
+            return dv;
+        }
+
+        public static double LandingReserveKg(in RecoveryCraft craft)
+        {
+            double dv = LandingDeltaVNeed(craft);
+            if (dv <= 0) return 0;
+            double dry = craft.DryKg > 1 ? craft.DryKg : 1;
+            double g = Atmosphere.G0;
             if (!(craft.IspSec > 1)) return craft.ReserveKg;
             double prop = dry * (Math.Exp(dv / (craft.IspSec * g)) - 1);
             if (prop < 0) prop = 0;

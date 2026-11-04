@@ -163,6 +163,13 @@ namespace Kestrel.Core.Flight
 
         public int CueCount => cues.Count;
 
+        /// <summary>
+        /// True when the flown sim gates its "fairing" event on the payload heat (AscentSim.FairingHeatGated): the
+        /// fairing then trips only from that event, never from the plain altitude fallback, so the picture separates
+        /// when the sim and the director do (Physics, KH-7 follow-up). False keeps the altitude fallback.
+        /// </summary>
+        public bool FairingWaitsForSimEvent { get; set; }
+
         public void Reset(bool fairing, double jettisonAltM, int boosters, bool reduceMotion)
         {
             beats.Clear();
@@ -325,12 +332,15 @@ namespace Kestrel.Core.Flight
             return true;
         }
 
-        /// <summary>Screen-y of the callout inside the padded HUD, just under the plot and stages cards.</summary>
-        public static float CalloutTopInsideHud()
+        /// <summary>Screen-y of the callout inside the padded HUD, just under the plot and stages cards.
+        /// #395: When a banner row is showing (e.g. BOOSTER LOST at MECO), the callout must sit below it,
+        /// not at the fixed plot position, or the two overlap.</summary>
+        public static float CalloutTopInsideHud(float bannerRowPt = 0f)
         {
+            float plotH = bannerRowPt > 0f ? bannerRowPt : FlightHudLayout.PlotPt;
             return FlightHudLayout.HealthPt + FlightHudLayout.GapPt
                 + FlightHudLayout.TelemetryPt + FlightHudLayout.GapPt
-                + FlightHudLayout.PlotPt + FlightHudLayout.GapPt;
+                + plotH + FlightHudLayout.GapPt;
         }
 
         public static string Title(StagingKind kind)
@@ -471,6 +481,7 @@ namespace Kestrel.Core.Flight
         void NoteFairing(double t, double alt, double speed, double q)
         {
             if (!hasFairing || fairingT >= 0) return;
+            if (FairingWaitsForSimEvent) return;
             if (q > qPeak) qPeak = q;
             if (!qPassed && qPeak >= QArmPa && q < qPeak * QDrop) qPassed = true;
             if (!qPassed || alt < fairingAltM) return;

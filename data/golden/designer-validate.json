@@ -1985,7 +1985,7 @@
      {
       "code": "fairing-narrow",
       "tab": "payload",
-      "msg": "The fairing is narrower than half the top stage. Try a fairing at least as wide as the stage."
+      "msg": "The fairing is less than half as wide as the top stage. Try a fairing at least half the stage width, and wide enough for the cargo (cargo up to 0.9 × the fairing width)."
      }
     ],
     "warnings": [],

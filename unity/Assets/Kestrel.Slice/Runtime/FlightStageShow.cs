@@ -300,12 +300,14 @@ namespace Kestrel.Slice
             if (chip != null) chip.style.display = DisplayStyle.None;
         }
 
-        public void Layout(float unitsPerPoint)
+        /// <summary>#395: bannerRowPt is the height of the banner row when showing (0 when not).
+        /// The callout sits below the banner so they don't overlap at MECO/stage sep.</summary>
+        public void Layout(float unitsPerPoint, float bannerRowPt = 0f)
         {
             if (chip == null) return;
             units = unitsPerPoint > 0.5f ? unitsPerPoint : 1f;
             float u = units;
-            float top = FlightStaging.CalloutTopInsideHud() * u;
+            float top = FlightStaging.CalloutTopInsideHud(bannerRowPt) * u;
             chip.style.top = top;
             chip.style.left = FlightHudLayout.SideMarginPt * u;
             chip.style.right = FlightHudLayout.SideMarginPt * u;
@@ -334,6 +336,7 @@ namespace Kestrel.Slice
                 if (playT < cap) playT += Time.unscaledDeltaTime;
                 if (playT > cap) playT = cap;
             }
+            staging.FairingWaitsForSimEvent = flight.Sim.FairingHeatGated;
             ApplyStaging(flight.Sim.Events, playT, flight.Altitude, flight.Speed, flight.DynPressure, flight.ThrustFraction);
             ApplyBells(playT);
             var read = staging.Plume(playT, flight.ThrustFraction);
@@ -352,6 +355,11 @@ namespace Kestrel.Slice
             playT = t;
             ApplyStaging(events, t, alt, speed, q, thrust01);
         }
+
+        /// <summary>Test hook: mirrors FlightStaging.FairingWaitsForSimEvent. Production sets this from
+        /// flight.Sim.FairingHeatGated in Present(); device tests driving PreviewAt must set it the same way,
+        /// otherwise the altitude fallback can fire before the sim's heat-gated fairing event.</summary>
+        public bool FairingWaitsForSimEvent { get => staging.FairingWaitsForSimEvent; set => staging.FairingWaitsForSimEvent = value; }
 
         void ApplyStaging(IList<SimEvent> events, double t, double alt, double speed, double q, double thrust01)
         {
