@@ -106,6 +106,30 @@
       "kid": "The cargo would not fit in the nose cone.",
       "engineer": "Payload envelope exceeds the fairing's volume or diameter.",
       "fixes": []
+    },
+    "low": {
+      "badge": "✗ Falls short.",
+      "kid": "It flies, but falls short.",
+      "engineer": "Intact flight below the mission band: the flown apogee or orbit is under the target by more than the tolerance.",
+      "fixes": ["fuel+", "stages+", "engine"]
+    },
+    "high": {
+      "badge": "✗ Overshoots.",
+      "kid": "It flies, but goes too high.",
+      "engineer": "Intact flight above the mission band: the flown apogee or orbit is over the target by more than the tolerance.",
+      "fixes": ["fuel-", "boosters-", "stages-"]
+    },
+    "shape": {
+      "badge": "✗ Misses.",
+      "kid": "It reaches a lopsided orbit.",
+      "engineer": "Mean altitude is on target, but apogee or perigee is outside the band (an eccentric cutoff).",
+      "fixes": []
+    },
+    "goal": {
+      "badge": "✗ Misses a goal.",
+      "kid": "It flies, but breaks a mission rule.",
+      "engineer": "On target, but a result-screen gate fails: margin, reliability, red risk, coast boil-off, budget, payload or fairing.",
+      "fixes": []
     }
   }
 }

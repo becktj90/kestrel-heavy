@@ -196,12 +196,18 @@ namespace Kestrel.Core.Tests
                 }
                 else
                 {
+                    // DECISIONS #77: an intact hop that misses the band names the miss from the predictor's flight
+                    // (was the sheet's soft "may fall short"), and never reads Ready.
                     Assert.AreNotEqual(StarterScreen.ShortBadge, badge, id);
-                    StringAssert.Contains("may fall short", rest);
+                    Assert.IsFalse(hop.Verdict().Passes, id);
+                    Assert.AreEqual(StarterVerdict.Low, hop.Verdict().Cause, id);
+                    Assert.AreEqual(StarterReadinessCopy.Current.Badge(StarterVerdict.Low), badge, id);
                 }
                 hop.FuelNotch = 4;
                 StarterScreen.Readiness(hop, out badge, out rest);
-                StringAssert.Contains("may overshoot", rest);
+                Assert.IsFalse(hop.Verdict().Passes, id);
+                Assert.AreEqual(StarterVerdict.High, hop.Verdict().Cause, id);
+                Assert.AreEqual(StarterReadinessCopy.Current.Badge(StarterVerdict.High), badge, id);
             }
             Assert.IsFalse(StarterScreen.Readiness(null, out badge, out rest));
         }

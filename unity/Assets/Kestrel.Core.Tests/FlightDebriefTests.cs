@@ -191,6 +191,29 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void FailedFlight_KeepsNoMedal_EvenWithPerfectTimingAndLanding()
+        {
+            // DECISIONS #77: a failed flight gets no medal (timing or landing), and the line says so.
+            using (var fx = new Fixture())
+            {
+                var store = fx.Load();
+                var mission = MissionFor(fx.Campaign, "m1", 11);
+                var facts = new FlightFacts
+                {
+                    Passed = false, EconomyKnown = true, Margin = 0.05, CostMinor = 400, BudgetKc = 50, PeakG = 2, GLimit = 6,
+                    Seed = 11, DesignId = "pencil", TimingMedal = AscentMedal.Gold, LandingGrade = "Perfect", ApoKm = 4, GoalKm = 10,
+                };
+                var card = FlightDebrief.Compose(store, mission, facts, NarrationPool.Empty, Minor, null);
+                Assert.IsFalse(card.Passed);
+                Assert.IsEmpty(card.Medals);
+                Assert.AreEqual("No medal this flight.", card.MedalsLine);
+                Assert.AreEqual(0, card.Stars);
+                Assert.AreEqual(AscentMedal.None, FlightVerdict.Medal(AscentMedal.Gold, false));
+                Assert.AreEqual(AscentMedal.Gold, FlightVerdict.Medal(AscentMedal.Gold, true));
+            }
+        }
+
+        [Test]
         public void FreeBuild_WritesNoKc_AndReplayDoesNotPayTwice()
         {
             using (var fx = new Fixture())

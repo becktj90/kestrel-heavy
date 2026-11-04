@@ -1587,6 +1587,8 @@ namespace Kestrel.Slice
             if (hopGoalM > 0) requiredMps = hop.RequiredDeltaV();
             maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
             orbitLabel = sheet != null ? sheet.orbitLabel : "";
+            try { verdictKey = session.Design != null ? ReferenceAscent.CanonicalKey(session.catalog, session.Design) : null; }
+            catch (System.Exception) { verdictKey = null; }
             handoff.Enter(OpenSequence());
             sequence = handoff.Sequence;
             counting = handoff.Counting;
@@ -1981,15 +1983,19 @@ namespace Kestrel.Slice
             return gates;
         }
 
+        string verdictKey;
+
         void RefreshWebcast(double time, bool flying)
         {
             if (hVerdict == null) return;
             double alt = flying && flight != null ? flight.Altitude : 0;
             double spd = flying && flight != null ? flight.Speed : 0;
             double q = flying && flight != null ? flight.DynPressure : 0;
+            // DECISIONS #77: the count line and in-flight "short" cue follow the predictor's verdict for this design.
+            var countVerdict = verdictKey != null ? FlightVerdict.Recall(verdictKey) : null;
             var pulse = flying && flight != null && flight.Lost
                 ? WebcastBoard.Lost(flight.Result.failure.kind, alt)
-                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM);
+                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM, countVerdict);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
             if (!flying && handoff != null && !handoff.Ascending)
