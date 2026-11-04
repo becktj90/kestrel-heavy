@@ -174,5 +174,36 @@ namespace Kestrel.Game.Tests
             Assert.That(link.VoiceOver, Does.StartWith("Fix it."));
             Assert.That(ReportView.Shapes(kind), Is.GreaterThanOrEqualTo(2), kind);
         }
+
+        /// <summary>QA #417: a destroyed listener threw first and the live one never ran (Fix it -> empty sky).</summary>
+        [Test]
+        public void FixItReachesEveryLiveListener_EvenWhenOneThrowsOrIsDestroyed()
+        {
+            var dead = new UnityEngine.GameObject("dead").AddComponent<FixListener>();
+            var live = new UnityEngine.GameObject("live").AddComponent<FixListener>();
+            System.Action<FixField> thrower = _ => throw new System.InvalidOperationException("dead app");
+            FixField.OnApply += dead.Hear;
+            FixField.OnApply += thrower;
+            FixField.OnApply += live.Hear;
+            try
+            {
+                UnityEngine.Object.DestroyImmediate(dead.gameObject);
+                UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Exception, new System.Text.RegularExpressions.Regex("dead app"));
+                FixField.Apply(new VisualElement(), FixField.For("engine-out"));
+                Assert.That(live.Heard, Is.EqualTo(1), "the live listener still routes to the designer");
+            }
+            finally
+            {
+                FixField.OnApply -= thrower;
+                FixField.OnApply -= live.Hear;
+                UnityEngine.Object.DestroyImmediate(live.gameObject);
+            }
+        }
+
+        sealed class FixListener : UnityEngine.MonoBehaviour
+        {
+            public int Heard;
+            public void Hear(FixField link) { var p = transform.position; if (link != null && p.x < float.PositiveInfinity) Heard++; }
+        }
     }
 }

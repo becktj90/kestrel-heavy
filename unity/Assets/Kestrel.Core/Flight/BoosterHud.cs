@@ -57,6 +57,11 @@ namespace Kestrel.Core.Flight
         public const string FuelKey = "FUEL";
         public const string DeckKey = "TO DECK";
         public const string PadKey = "TO PAD";
+        /// <summary>Every key the booster strip can show, for the text-fit sweeps (FlightHudLayoutTests, WebLayoutModeTests).</summary>
+        public static readonly string[] Labels = { AltKey, DownKey, UpKey, FuelKey, DeckKey, PadKey };
+        /// <summary>The widest booster readings per format (m, km, m/s, km/s, %).</summary>
+        public static readonly string[] ValueSamples = { "999 m", "999.9 km", "999 m/s", "9.99 km/s", "100%" };
+
         /// <summary>Fuel at or under this share of the landing reserve draws amber (static, never blinks).</summary>
         public const double LowFuel01 = 0.15;
 

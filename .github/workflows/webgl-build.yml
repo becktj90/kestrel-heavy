@@ -23,6 +23,8 @@ on:
       - unity/Assets/Plugins/WebGL/**
       - unity/Assets/Kestrel.Slice/Editor/BuildScript.cs
       - unity/Assets/Kestrel.Slice/Editor/BuildScript.WebGL.cs
+      # Stripping keep-list: a link.xml change only shows up in a stripped player.
+      - unity/Assets/link.xml
   workflow_dispatch:
     inputs:
       compression:
@@ -55,6 +57,15 @@ jobs:
         with:
           lfs: true
           persist-credentials: false
+      # GitHub-hosted runners can run out of disk pulling the multi-GB unityci/editor image.
+      # No later step in this job uses /usr/share/dotnet (dotnet tests run in core-dotnet jobs).
+      - name: Free runner disk before Unity image pull
+        if: env.HAS_LICENSE == 'true'
+        continue-on-error: true
+        run: |
+          df -h / || true
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL || true
+          df -h / || true
       - uses: actions/cache@v4
         if: env.HAS_LICENSE == 'true'
         with:
