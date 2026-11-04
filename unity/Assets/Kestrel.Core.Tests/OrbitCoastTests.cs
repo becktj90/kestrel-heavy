@@ -137,5 +137,34 @@ namespace Kestrel.Core.Tests
                 prev = a;
             }
         }
+
+        /// <summary>
+        /// #431 guaranteed exit: the coast's wall clock follows real time, so the climax ends after its 3-5 s at any frame
+        /// rate down to 2 fps, and within ceil(5 / 0.5) = 10 frames below that. At 0.1 s per frame (the ascent's hitch
+        /// clamp) a 2.5 fps CI player still had most of the coast to play 15 s later.
+        /// </summary>
+        [Test]
+        public void TheCoastClockFollowsRealTime_AndEndsInBoundedFrames_AtAnyFrameRate()
+        {
+            foreach (double fps in new[] { 120.0, 60.0, 30.0, 10.0, 4.0, 2.5, 2.0 })
+            {
+                double dt = 1.0 / fps, wall = 0, real = 0;
+                int frames = 0;
+                while (wall < OrbitCoast.MaxWallSeconds && frames < 100000) { wall = OrbitCoast.Advance(wall, dt, dt); real += dt; frames++; }
+                Assert.That(real, Is.LessThanOrEqualTo(OrbitCoast.MaxWallSeconds + dt + 1e-9), fps + " fps: real seconds to finish");
+            }
+            foreach (double slow in new[] { 0.75, 2.0, 30.0, double.PositiveInfinity })
+            {
+                double wall = 0; int frames = 0;
+                while (wall < OrbitCoast.MaxWallSeconds && frames < 1000) { wall = OrbitCoast.Advance(wall, slow, slow); frames++; }
+                Assert.That(frames, Is.LessThanOrEqualTo((int)Math.Ceiling(OrbitCoast.MaxWallSeconds / OrbitCoast.MaxStepSeconds)) ,
+                    slow + " s frames: the coast still ends in bounded frames");
+            }
+            // Paused game time (timeScale 0) still advances on the unscaled clock; a hitch is capped; NaN or negative counts as zero.
+            Assert.AreEqual(1.0 / 60, OrbitCoast.Advance(0, 0, 1.0 / 60), 1e-12);
+            Assert.AreEqual(1.0 / 30, OrbitCoast.Advance(0, 1.0 / 60, 1.0 / 30), 1e-12, "a slow frame counts in full, not clamped to the scaled step");
+            Assert.AreEqual(OrbitCoast.MaxStepSeconds, OrbitCoast.Advance(0, 3, 3), 1e-12);
+            Assert.AreEqual(0.0, OrbitCoast.Advance(0, double.NaN, -1), 1e-12);
+        }
     }
 }

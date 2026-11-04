@@ -257,7 +257,7 @@ namespace Kestrel.Slice
         {
             if (Coast == null) return;
             if (frame > 0f && TappedToSkip()) { SkipCoast(); return; }
-            CoastWall += Math.Min(frame, 0.1f);
+            CoastWall = OrbitCoast.Advance(CoastWall, frame, Time.unscaledDeltaTime);
             coastState = Coast.At(CoastWall);
             UpdateFrame(coastState.t, coastState.x, coastState.y, coastState.vx, coastState.vy, false);
             PublishAudio();
