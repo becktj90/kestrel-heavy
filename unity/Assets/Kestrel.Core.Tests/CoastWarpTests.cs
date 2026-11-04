@@ -63,6 +63,8 @@ namespace Kestrel.Core.Tests
             public double MaxFactor;
             public List<string> WarpedEvents = new List<string>();
             public double WallS;
+            public List<string> Log = new List<string>();
+            public int Forced;
         }
 
         static (DirectedFlight flight, PlayedChecks checks, double fairingAlt) Build(string missionId)
@@ -105,18 +107,20 @@ namespace Kestrel.Core.Tests
             return new Flown { Result = flight.Finish(), Y = (double[])sim.Y.Clone(), Score = flight.Director.Score(), Frames = frames, WallS = frames / 60.0 };
         }
 
-        static Flown FlyWarped(string id, Func<int, double> frame)
+        static Flown FlyWarped(string id, Func<int, double> frame, Func<int, bool> narrationBusy = null)
         {
             var (flight, checks, fairingAlt) = Build(id);
             var sim = flight.Sim;
             var clock = new WarpedFlightClock(flight, checks, fairingAlt);
             var f = new Flown();
+            clock.WarpChanged += (a, b, t) => f.Log.Add("C " + a + " " + b);
+            clock.WarpWillDrop += (a, r) => f.Log.Add("W " + a + " " + r.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
             while (!sim.Done && f.Frames < 2000000)
             {
                 double s = frame(f.Frames++);
                 f.WallS += s;
                 int before = sim.Events.Count, open = flight.Director.OpenCount;
-                clock.Advance(s, 1, false);
+                clock.Advance(s, 1, false, narrationBusy != null && narrationBusy(f.Frames));
                 if (clock.Factor > f.MaxFactor) f.MaxFactor = clock.Factor;
                 if (clock.Factor > 1)
                 {
@@ -124,6 +128,7 @@ namespace Kestrel.Core.Tests
                     if (flight.Director.OpenCount > open) f.WarpedEvents.Add("call@" + sim.T.ToString("0.00"));
                 }
             }
+            f.Forced = clock.ForcedDrops;
             f.Result = flight.Finish(); f.Y = (double[])sim.Y.Clone(); f.Score = flight.Director.Score();
             return f;
         }
@@ -188,5 +193,120 @@ namespace Kestrel.Core.Tests
             var f = FlyWarped(id, _ => 1.0 / 60);
             Assert.That(f.WarpedEvents, Is.Empty, id + ": events or calls inside a warped frame");
         }
-    }
+    
+        [TestCase("m3")]
+        [TestCase("m6")]
+        [TestCase("m10")]
+        [TestCase("m19")]
+        public void NarrationHoldStaysBitIdentical(string id)
+        {
+            var old = FlyOld(id);
+            // A non-interruptible line every ~8 s of real time, 2 s long.
+            var held = FlyWarped(id, _ => 1.0 / 60, i => i % 480 < 120);
+            AssertBitIdentical(old, held, id + " narration hold");
+            Assert.That(held.Frames, Is.GreaterThan(FlyWarped(id, _ => 1.0 / 60).Frames), "the hold slows the flight");
+        }
+
+        /// <summary>UX: ×10 steps down through ×4 before ×1 wherever the clock sees what is ahead, ×1 at least
+        /// <see cref="CoastWarp.LeadS"/> sim seconds before every call and event. Sound: WarpWillDrop comes before every
+        /// WarpChanged(x→1), about 0.5 s of real time ahead; WarpChanged only on a real change.</summary>
+        [TestCase("m3")]
+        [TestCase("m6")]
+        [TestCase("m10")]
+        [TestCase("m19")]
+        public void StepsDownThroughFourAndWarnsBeforeEveryDrop(string id)
+        {
+            var f = FlyWarped(id, _ => 1.0 / 60);
+            Assert.That(f.Log, Does.Contain("C 10 4"), id + " steps down through ×4");
+            Assert.That(f.Log, Has.None.EqualTo("C 10 1"), id + " never drops ×10 straight to ×1");
+            Assert.That(f.Forced, Is.EqualTo(0), id + " every drop was foreseen");
+            bool warned = false; int drops = 0, shortWarn = 0;
+            foreach (var e in f.Log)
+            {
+                var p = e.Split(' ');
+                if (p[0] == "W")
+                {
+                    float r = float.Parse(p[2], System.Globalization.CultureInfo.InvariantCulture);
+                    Assert.That(r, Is.InRange(0f, (float)CoastWarp.WillDropLeadRealS + 1e-4f), e);
+                    Assert.That(r, Is.GreaterThan(0f), id + " a foreseen drop warns ahead: " + e);
+                    if (r < 0.4f) shortWarn++; // the estimate stepped late (m19 has one at ~0.14 s; documented in DECISIONS #79)
+                    warned = true;
+                    continue;
+                }
+                Assert.That(p[1], Is.Not.EqualTo(p[2]), "WarpChanged only on a change: " + e);
+                if (p[2] == "1") { Assert.That(warned, Is.True, id + " WarpWillDrop before " + e); drops++; }
+                warned = false;
+            }
+            Assert.That(drops, Is.GreaterThan(0));
+            Assert.That(shortWarn, Is.LessThanOrEqualTo(1), id + " drops warned well under 0.5 s");
+        }
+
+        [Test]
+        public void UnforeseenDropWarnsWithZeroFirst()
+        {
+            var (flight, checks, fairingAlt) = Build("m6");
+            var clock = new WarpedFlightClock(flight, checks, fairingAlt);
+            var log = new List<string>();
+            clock.WarpChanged += (a, b, t) => log.Add("C " + a + " " + b);
+            clock.WarpWillDrop += (a, r) => log.Add("W " + a + " " + r);
+            while (clock.Factor < CoastWarp.Fast && !flight.Sim.Done) clock.Advance(1.0 / 60, 1, false);
+            log.Clear();
+            clock.Advance(1.0 / 60, 1, true); // the camera swings to the booster: a hard blocker
+            Assert.That(log, Is.EqualTo(new[] { "W 10 0", "C 10 1" }));
+            Assert.That(clock.ForcedDrops, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void NarrationBusyHoldsRealTime()
+        {
+            var s = Clear(1000); s.NarrationBusy = true;
+            Assert.That(CoastWarp.Factor(s), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void NarrationHoldKeepsHalfASecondTail()
+        {
+            var h = new NarrationWarpHold();
+            Assert.That(h.Holds(0), Is.False);
+            h.Note(true, 10); Assert.That(h.Holds(10), Is.True);
+            h.Note(true, 12); h.Note(false, 12.1);
+            Assert.That(h.Holds(12.4), Is.True, "inside the 0.5 s tail");
+            Assert.That(h.Holds(12.51), Is.False, "tail over");
+            h.Note(false, 20); Assert.That(h.Holds(20), Is.False, "interruptible lines never hold");
+        }
+
+        [Test]
+        public void LineStartsOnlyWhenItFitsBeforeTheNextCallAtTheCurrentWarp()
+        {
+            // 6 s line + 1.5 s tail = 7.5 wall s.
+            Assert.That(CoastWarp.LineFits(6, 75, 10), Is.True, "75 sim s at ×10 = 7.5 wall s");
+            Assert.That(CoastWarp.LineFits(6, 74, 10), Is.False);
+            Assert.That(CoastWarp.LineFits(6, 30, 4), Is.True);
+            Assert.That(CoastWarp.LineFits(6, 29, 4), Is.False);
+            Assert.That(CoastWarp.LineFits(6, 7.5, 1), Is.True);
+            Assert.That(CoastWarp.LineFits(6, 0, 1), Is.False, "nothing fits a call due now: silence");
+            Assert.That(CoastWarp.LineFits(6, double.PositiveInfinity, 10), Is.True, "nothing ahead");
+            Assert.That(CoastWarp.LineFits(6, double.NaN, 1), Is.False);
+        }
+
+        [Test]
+        public void TimeWarpSettingIsAutoUnlessSavedOff()
+        {
+            Assert.That(TimeWarpSetting.Pref, Is.EqualTo("kh.flight.timewarp"));
+            Assert.That(TimeWarpSetting.Resolve(false, 0), Is.EqualTo(TimeWarpMode.Auto));
+            Assert.That(TimeWarpSetting.Resolve(true, 0), Is.EqualTo(TimeWarpMode.Auto));
+            Assert.That(TimeWarpSetting.Resolve(true, 1), Is.EqualTo(TimeWarpMode.Off));
+            CollectionAssert.Contains(Kestrel.Core.Save.SettingsMirror.Keys, TimeWarpSetting.Pref);
+        }
+
+        [Test]
+        public void ChipAndAccessibleText()
+        {
+            Assert.That(CoastWarp.ChipText(10), Is.EqualTo("⏩ ×10"));
+            Assert.That(CoastWarp.ChipText(4), Is.EqualTo("⏩ ×4"));
+            Assert.That(CoastWarp.ChipText(1), Is.EqualTo(""));
+            Assert.That(CoastWarp.AccessibleText(10), Is.EqualTo("Time warp, 10 times"));
+            Assert.That(CoastWarp.AccessibleText(4), Is.EqualTo("Time warp, 4 times"));
+        }
+}
 }

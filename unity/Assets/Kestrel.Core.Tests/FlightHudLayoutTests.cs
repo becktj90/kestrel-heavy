@@ -346,6 +346,39 @@ namespace Kestrel.Core.Tests
             new[] { 1280f, 720f }, new[] { 1280f, 800f }, new[] { 1366f, 768f }, new[] { 1920f, 1080f },
         };
 
+        /// <summary>
+        /// UX review on #436 (pattern of #420's BoosterKeysFitTheStripAt335IpadAndWebLandscape): the warp chip "⏩ ×10" fits
+        /// its fixed width, and beside a worst-case clock ("T+ 12:34") inside the clock box, on 335 px, the iPads and the web
+        /// landscape viewports, in every HUD mode. The clock face is fitted to the box less the chip's reserve, shown or not.
+        /// </summary>
+        [Test]
+        public void WarpChipFitsBesideTheClockAt335IpadAndWebLandscape()
+        {
+            float chip = FlightHudLayout.WarpChipWidth();
+            foreach (var t in FlightHudLayout.WarpChipSamples)
+                Assert.That(FlightHudLayout.BudgetWidth(t, FlightHudLayout.WarpChipFontPt) + FlightHudLayout.WarpChipPadXPt, Is.LessThanOrEqualTo(chip), t);
+            var clocks = new[] { "T+ 12:34", "T+ 1234.5" };
+            foreach (var d in CameraPortraits)
+            foreach (var mode in Modes)
+            {
+                var f = FlightHudLayout.Place(d, mode);
+                // Portrait: SliceApp.DressClock, ClockFontPt over the box less the reserve.
+                float font = FlightHudLayout.ClockFontPt(f.Clock.W - FlightHudLayout.WarpChipReserve(), f.Clock.H);
+                Assert.That(FlightHudLayout.BudgetWidth("T+ 12:34", font) + FlightHudLayout.ClockPadXPt / 2f + FlightHudLayout.WarpChipReserve(),
+                    Is.LessThanOrEqualTo(f.Clock.W), d.Name + " " + mode);
+            }
+            foreach (var wh in CameraWide)
+            foreach (var mode in Modes)
+            {
+                var f = FlightHudLayout.PlaceWide(wh[0], wh[1], 0f, 0f, 0f, 0f, mode, FlightHudLayout.ButtonPt, FlightHudLayout.ClockMinWidthWithChip());
+                float font = FlightHudLayout.ClockFitWithChip(f.Clock.W, f.Clock.H);
+                foreach (var c in clocks)
+                    Assert.That(FlightHudLayout.BudgetWidth(c, font) + FlightHudLayout.ClockPadXPt / 2f + FlightHudLayout.WarpChipReserve(),
+                        Is.LessThanOrEqualTo(f.Clock.W), wh[0] + "x" + wh[1] + " " + mode + " " + c);
+                Assert.That(f.Cells[0].X, Is.GreaterThanOrEqualTo(f.Clock.Right), "the chip never covers the first cell");
+            }
+        }
+
         [Test]
         public void WideModeFollowsThePromptAndNotes()
         {

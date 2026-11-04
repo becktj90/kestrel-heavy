@@ -147,6 +147,28 @@ namespace Kestrel.Core.Flight
             return true;
         }
 
+        /// <summary>PR5 coast warp chip ("⏩ ×4", "⏩ ×10"), right after the clock reading inside the clock box.</summary>
+        public static readonly string[] WarpChipSamples = { "⏩ ×4", "⏩ ×10" };
+        public const float WarpChipFontPt = 11f;
+        public const float WarpChipPadXPt = 8f;
+
+        /// <summary>The chip's fixed width, the same at ×4 and ×10 so nothing moves when it changes.</summary>
+        public static float WarpChipWidth()
+        {
+            float w = 0f;
+            foreach (var t in WarpChipSamples) w = Math.Max(w, BudgetWidth(t, WarpChipFontPt));
+            return (float)Math.Ceiling(w + WarpChipPadXPt);
+        }
+
+        /// <summary>The clock box width the chip always reserves (chip plus a gap), shown or not, so nothing reflows.</summary>
+        public static float WarpChipReserve() => WarpChipWidth() + GapPt;
+
+        /// <summary>Clock face for a box that also holds the reserved warp chip.</summary>
+        public static float ClockFitWithChip(float boxW, float boxH) => ClockFit(boxW - WarpChipReserve(), boxH);
+
+        /// <summary>The narrowest clock box that holds every reading at the 13 pt floor plus the reserved warp chip.</summary>
+        public static float ClockMinWidthWithChip() => ClockMinWidth() + WarpChipReserve();
+
         /// <summary>The narrowest clock box (border box) that holds every reading at the 13 pt floor.</summary>
         public static float ClockMinWidth()
         {

@@ -18,8 +18,11 @@ namespace Kestrel.Core.Flight
         public bool CameraOnBooster;
         /// <summary>A cinematic slow-mo is on (presentation scale not 1).</summary>
         public bool SlowMo;
-        /// <summary>The player turned warp off.</summary>
+        /// <summary>The player turned warp off (<see cref="TimeWarpSetting"/> Off).</summary>
         public bool Disabled;
+        /// <summary>Narrator Voice: a non-interruptible line (mission control, event-bound host) is playing, or ended
+        /// under <see cref="NarrationWarpHold.TailS"/> real seconds ago (<see cref="NarrationWarpHold"/>).</summary>
+        public bool NarrationBusy;
         /// <summary>Sim seconds to the next call or predictable event. 0 when one is due now or the estimate is unknown.</summary>
         public double SecondsToNext;
     }
@@ -39,15 +42,43 @@ namespace Kestrel.Core.Flight
         /// </summary>
         public const int WarpStepCap = 160;
 
+        /// <summary>Real seconds of warning Sound gets before a drop to ×1 (<see cref="WarpedFlightClock.WarpWillDrop"/>).</summary>
+        public const double WillDropLeadRealS = 0.5;
+        /// <summary>Narrator Voice: real seconds of quiet an interruptible line needs after it ends, before the next call.</summary>
+        public const double LineTailS = 1.5;
+
+        /// <summary>A blocker that holds ×1 whatever the clear time ahead.</summary>
+        public static bool Blocked(in CoastWarpState s)
+            => s.Disabled || s.SlowMo || s.CameraOnBooster || s.OpenCalls > 0 || s.NarrationBusy;
+
         public static double Factor(in CoastWarpState s)
         {
-            if (s.Disabled || s.SlowMo || s.CameraOnBooster || s.OpenCalls > 0) return Off;
+            if (Blocked(s)) return Off;
             double next = s.SecondsToNext;
             if (double.IsNaN(next) || next < LeadS) return Off;
             return next < FarS ? Slow : Fast;
         }
 
         public static int StepCap(double factor) => factor > Off ? WarpStepCap : BaseStepCap;
+
+        /// <summary>The HUD chip: "⏩ ×4" or "⏩ ×10". Empty at ×1.</summary>
+        public static string ChipText(double factor) => factor > Off ? "⏩ ×" + ((int)factor).ToString(System.Globalization.CultureInfo.InvariantCulture) : "";
+
+        /// <summary>The chip's accessible text: "Time warp, 10 times". Empty at ×1.</summary>
+        public static string AccessibleText(double factor) => factor > Off ? "Time warp, " + ((int)factor).ToString(System.Globalization.CultureInfo.InvariantCulture) + " times" : "";
+
+        /// <summary>
+        /// Narrator Voice: an interruptible line of <paramref name="clipSec"/> may start only when it and
+        /// <see cref="LineTailS"/> end before the next call, counted in wall seconds at the current warp factor
+        /// (<paramref name="simSecondsToNext"/> / factor). An unknown or zero lead fits nothing.
+        /// </summary>
+        public static bool LineFits(double clipSec, double simSecondsToNext, double factor)
+        {
+            if (double.IsNaN(simSecondsToNext)) return false;
+            if (double.IsPositiveInfinity(simSecondsToNext)) return true;
+            if (!(factor >= Off)) factor = Off;
+            return clipSec + LineTailS <= simSecondsToNext / factor;
+        }
 
         /// <summary>Sim seconds until a value moving at <paramref name="rate"/> per second covers <paramref name="gap"/>.
         /// 0 when already there; +Infinity when it is not moving toward it or either value is unknown.</summary>
@@ -83,6 +114,19 @@ namespace Kestrel.Core.Flight
         /// <summary>True on the frame the core burned out (PlayedChecks.NoteEvents).</summary>
         public bool MecoThisFrame { get; private set; }
         public bool Disabled { get; set; }
+        /// <summary>Drops to ×1 that came with no lead (an unforeseen event or a hard blocker): WarpWillDrop fired with 0.</summary>
+        public int ForcedDrops { get; private set; }
+
+        /// <summary>Sound: the rate changed (from, to, sim time). Fires only on a real change, at the start of the frame
+        /// that runs at the new rate.</summary>
+        public event Action<int, int, double> WarpChanged;
+        /// <summary>
+        /// Sound: a drop to ×1 is coming in about <c>realSecondsUntil</c> wall seconds (≤ <see cref="CoastWarp.WillDropLeadRealS"/>).
+        /// Always fires before the matching WarpChanged(x→1). When the drop is unforeseen (an event the estimate missed,
+        /// a call, the booster camera, a narration hold, the player's switch) it fires with 0 in the same frame, just before.
+        /// </summary>
+        public event Action<int, float> WarpWillDrop;
+        bool warned;
 
         /// <param name="fairingJettisonAltM">SimOptions.fairingJettisonAltM (0: no fairing event).</param>
         public WarpedFlightClock(DirectedFlight flight, PlayedChecks checks, double fairingJettisonAltM)
@@ -93,20 +137,23 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>One rendered frame. Returns the physics steps run.</summary>
-        public int Advance(double frameS, double presentationScale, bool cameraOnBooster)
+        public int Advance(double frameS, double presentationScale, bool cameraOnBooster, bool narrationBusy = false)
         {
             var sim = flight.Sim;
             MecoThisFrame = false;
             Measure(sim);
             var dir = flight.Director;
+            double prev = Factor;
             Factor = CoastWarp.Factor(new CoastWarpState
             {
                 OpenCalls = dir != null ? dir.OpenCount : 0,
                 CameraOnBooster = cameraOnBooster,
                 SlowMo = presentationScale != 1,
                 Disabled = Disabled,
+                NarrationBusy = narrationBusy,
                 SecondsToNext = SecondsToNext,
             });
+            Announce(prev, Factor, sim.T);
             Clock += new PresentationTimeScale(presentationScale).ToSimSeconds(Math.Min(frameS, 0.1)) * Factor;
             int cap = CoastWarp.StepCap(Factor), steps = 0;
             bool warped = Factor > CoastWarp.Off;
@@ -124,6 +171,31 @@ namespace Kestrel.Core.Flight
             // A warped frame never banks a debt of sim time to replay later.
             if (warped && Clock > sim.T) Clock = sim.T;
             return steps;
+        }
+
+        // Events only: nothing here feeds the clock or the steps.
+        void Announce(double prev, double now, double simT)
+        {
+            if (now != prev)
+            {
+                if (now == CoastWarp.Off && !warned)
+                {
+                    ForcedDrops++;
+                    WarpWillDrop?.Invoke((int)prev, 0f);
+                }
+                warned = false;
+                WarpChanged?.Invoke((int)prev, (int)now, simT);
+            }
+            if (now > CoastWarp.Off && !warned)
+            {
+                // The ×1 band starts LeadS sim seconds before the next call or event.
+                double real = (SecondsToNext - CoastWarp.LeadS) / now;
+                if (real <= CoastWarp.WillDropLeadRealS)
+                {
+                    warned = true;
+                    WarpWillDrop?.Invoke((int)now, (float)Math.Max(0, real));
+                }
+            }
         }
 
         void Measure(AscentSim sim)
@@ -163,5 +235,50 @@ namespace Kestrel.Core.Flight
             if (dir != null) next = Math.Min(next, dir.SecondsToNextArm(propRate, climb));
             SecondsToNext = next;
         }
+    }
+}
+
+namespace Kestrel.Core.Flight
+{
+    /// <summary>The player's time-warp setting (pref <see cref="Pref"/>), saved like kh.audio.commentary. The Settings row
+    /// comes from UX after #436.</summary>
+    public enum TimeWarpMode
+    {
+        Auto = 0,
+        Off = 1,
+    }
+
+    public static class TimeWarpSetting
+    {
+        public const string Pref = "kh.flight.timewarp";
+
+        public static TimeWarpMode FromInt(int value) => value == 1 ? TimeWarpMode.Off : TimeWarpMode.Auto;
+
+        /// <summary>The saved mode. No pref is Auto.</summary>
+        public static TimeWarpMode Resolve(bool hasPref, int pref) => hasPref ? FromInt(pref) : TimeWarpMode.Auto;
+
+        public static string Label(TimeWarpMode mode) => mode == TimeWarpMode.Off ? "Time warp off" : "Time warp auto";
+    }
+
+    /// <summary>
+    /// Narrator Voice: warp holds ×1 while a non-interruptible line plays (mission control, event-bound host lines) and for
+    /// <see cref="TailS"/> real seconds after it ends. Interruptible lines (history, color) may play under warp. Clocked in
+    /// real seconds by the caller (NarrationPlayer, unscaled time).
+    /// </summary>
+    public sealed class NarrationWarpHold
+    {
+        public const double TailS = 0.5;
+        bool playing;
+        double until = double.NegativeInfinity;
+
+        public void Note(bool nonInterruptiblePlaying, double nowRealS)
+        {
+            playing = nonInterruptiblePlaying;
+            if (playing) until = nowRealS + TailS;
+        }
+
+        public bool Holds(double nowRealS) => playing || nowRealS < until;
+
+        public void Reset() { playing = false; until = double.NegativeInfinity; }
     }
 }
