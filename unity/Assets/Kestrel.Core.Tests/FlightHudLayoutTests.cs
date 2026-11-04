@@ -86,6 +86,25 @@ namespace Kestrel.Core.Tests
 
         // #381 iPad frames: the T+ chip read tiny next to the header. The face was sized from the content-sized label's
         // own width, so it chased its box down to the floor; it now comes from the header row (HeaderClockFontPt).
+        // PR #435 iPad landing frame: 28 pt was 32 panel units on the iPad's scaled panel, a stat value's size, while the
+        // designer and starter clocks sat at 56. The resting face (56 units at each size's units-per-point) is the floor.
+        [TestCase("iPad 13in", 1032f, 1.142f)]
+        [TestCase("6.9in", 440f, 2.680f)]
+        [TestCase("6.3in", 402f, 2.933f)]
+        public void HeaderClockKeepsTheHudsRestingFace_OnAScaledIPadPanel(string device, float screenPt, float upp)
+        {
+            float row = screenPt - 2f * 16f, resting = 56f / upp;
+            float font = FlightHudLayout.HeaderClockFontPt(row, FlightHudLayout.StageChipPt, resting);
+            Assert.That(font, Is.EqualTo(Math.Max(28f, resting)).Within(0.01f), device + ": the larger of 28 pt and the resting face");
+            Assert.That(font * upp, Is.GreaterThanOrEqualTo(55.9f), device + ": never under the resting 56 units");
+            float box = row - FlightHudLayout.StageChipPt - FlightHudLayout.GapPt;
+            Assert.That(FlightHudLayout.TextWidth("T+ 1234.5", font), Is.LessThanOrEqualTo(box - 1.5f), device + ": fits the row");
+            Assert.That(FlightHudLayout.HeaderClockFontPt(row, FlightHudLayout.StageChipPt, 0f),
+                Is.EqualTo(FlightHudLayout.HeaderClockFontPt(row, FlightHudLayout.StageChipPt)), device + ": no resting size, old face");
+            // A crowded row still shrinks it.
+            Assert.That(FlightHudLayout.HeaderClockFontPt(row, row - 60f, resting), Is.LessThan(28f), device + ": crowded row");
+        }
+
         [TestCase("iPad 13in", 1032f)]
         [TestCase("6.9in", 440f)]
         [TestCase("6.3in", 402f)]

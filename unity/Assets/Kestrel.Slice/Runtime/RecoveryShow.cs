@@ -181,7 +181,7 @@ namespace Kestrel.Slice
                 if (n > 0)
                 {
                     float yMax = 1f - Mathf.Clamp01(topCover) - HudMargin, yMin = Mathf.Clamp01(bottomCover) + HudMargin;
-                    pos = ChaseCamera.FitBand(rot, pos, framePts, n, cam.fieldOfView, cam.aspect, yMin, yMax);
+                    pos = ChaseCamera.FitBandAbove(ref rot, pos, framePts, n, cam.fieldOfView, cam.aspect, yMin, yMax, groundY + 1f);
                     pos.y = Mathf.Max(pos.y, groundY + 1f);
                 }
             }

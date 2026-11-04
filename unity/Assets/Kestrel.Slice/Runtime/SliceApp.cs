@@ -2060,6 +2060,9 @@ namespace Kestrel.Slice
             CountdownChrome.Dress(cast, hVerdict, hPulse, hCallout, skipCount, upp, CountCardWidthPt(upp), skipShown);
         }
 
+        /// <summary>The clock's .hud-big face in panel units (Slice.uss); on a scaled-up iPad panel the header clock keeps at least this.</summary>
+        const float RestingClockUnits = 56f;
+
         void DressClock(Label clock)
         {
             if (clock == null) return;
@@ -2076,7 +2079,7 @@ namespace Kestrel.Slice
                     float cw = c.layout.width;
                     if (!float.IsNaN(cw)) sib += cw + c.resolvedStyle.marginLeft + c.resolvedStyle.marginRight;
                 }
-                FlightDusk.Clock(clock, upp, FlightHudLayout.HeaderClockFontPt(row.contentRect.width / upp, sib / upp));
+                FlightDusk.Clock(clock, upp, FlightHudLayout.HeaderClockFontPt(row.contentRect.width / upp, sib / upp, RestingClockUnits / upp));
                 return;
             }
             float w = clock.resolvedStyle.width;
