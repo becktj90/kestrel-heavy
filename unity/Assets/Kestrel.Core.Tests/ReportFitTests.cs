@@ -60,7 +60,7 @@ namespace Kestrel.Core.Tests
                 new ReportFit.Line { Name = "narrator-kid", Text = "Next time, throttle down before the rumble gets loud and the rocket will ride it out.", FontPt = 16f, DropOrder = 2 },
                 new ReportFit.Line { Name = "narrator-eng", Text = "Pitch program and throttle bucket: hold q under the limit through transonic.", FontPt = 16f, DropOrder = 1 },
                 new ReportFit.Line { Name = "report-stars", Text = "1 of 3 stars", FontPt = 22f },
-                new ReportFit.Line { Name = "report-medals", Text = "Medal timing: Silver · 1 perfect · 0 good · 0 late", FontPt = 16f },
+                new ReportFit.Line { Name = "report-medals", Text = "Silver medal", FontPt = 16f },
                 new ReportFit.Line { Name = "report-kc", Text = "+120 Kc for the attempt", FontPt = 16f, DropOrder = 6 },
             };
             foreach (var (w, h) in Sizes)
