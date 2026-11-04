@@ -1522,12 +1522,48 @@ namespace Kestrel.Slice
         Vector4 hudTrace; Vector3 noseTrace;
 
         /// <summary>Same design that left the pad. The launch gate already passed.</summary>
+        /// <remarks>
+        /// One more launch and Restart used to go straight to <see cref="EnterFlight"/>: the count ran over the last
+        /// flight (rocket and camera still in the sky, fireballs, the old HUD and BACK TO DESIGN), and after a
+        /// mid-flight Restart the old sim was still Running, so T-0 resumed it instead of launching. The flight is
+        /// cleared and the rocket rebuilt on the pad first, the same as Back to design.
+        /// </remarks>
         void RestartFlight()
         {
             SetFlightPaused(false);
             if (flyingDesign != null) design = flyingDesign;
             if (design == null) return;
+            ClearFlight();
+            BuildRocket();
             EnterFlight();
+        }
+
+        /// <summary>
+        /// Everything a flight leaves behind, put back: the count, the driver (sim, result, floating origin, pad
+        /// anchors, vehicle), the booster landing, the camera juice, the ascent HUD, debris and fireballs.
+        /// Shared by <see cref="RestartFlight"/> and <see cref="ReturnToPad"/>.
+        /// </summary>
+        void ClearFlight()
+        {
+            ReportCardChrome.Dismiss(ui);
+            SetFlightPaused(false);
+            handoff.Reset();
+            ascentErrorLogged = false;
+            counting = false; sequence = null;
+            CountVoice()?.EndCount();
+            if (flight != null) { flight.ResetToPad(); flight.enabled = false; }
+            if (cam != null) cam.ResetProjectionMatrix();
+            recovery?.Stop();
+            ApplyHudFocus(FlightHudFocus.Ascent);
+            RecoveryLog.Clear();
+            if (juice != null) juice.Reset();
+            if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
+            ascentHud?.Close();
+            Kestrel.Kit.CinematicEvents.DebrisClear();
+            if (again != null) again.AddToClassList("hidden");
+            var grid = hud != null ? hud.Q("hud-grid") : null;
+            if (grid != null) grid.style.display = StyleKeyword.Null;
+            if (hMsg != null) hMsg.text = "";
         }
 
         void ExitToHome()
@@ -1792,28 +1828,12 @@ namespace Kestrel.Slice
         /// </summary>
         void ReturnToPad()
         {
-            ReportCardChrome.Dismiss(ui);
-            SetFlightPaused(false);
+            ClearFlight();
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
-            handoff.Reset();
-            ascentErrorLogged = false;
-            counting = false; sequence = null;
-            CountVoice()?.EndCount();
-            if (flight != null) flight.enabled = false;
-            if (cam != null) cam.ResetProjectionMatrix();
-            recovery?.Stop();
-            ApplyHudFocus(FlightHudFocus.Ascent);
-            RecoveryLog.Clear();
-            if (juice != null) juice.Reset();
-            if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
-            ascentHud?.Close();
             FlightEntry.Release(ui);
             if (hud != null) hud.AddToClassList("hidden");
             if (designPanel != null) designPanel.RemoveFromClassList("hidden");
             if (homeButton != null) homeButton.RemoveFromClassList("hidden");
-            if (again != null) again.AddToClassList("hidden");
-            var grid = hud != null ? hud.Q("hud-grid") : null;
-            if (grid != null) grid.style.display = StyleKeyword.Null;
             ShowFlightPicture(false);
             if (designer != null) designer.SetOpen(designer.Open);
             if (hangarCam != null) hangarCam.enabled = true;
