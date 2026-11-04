@@ -93,6 +93,12 @@ namespace Kestrel.Core.Physics
 
     public struct SimSample { public double t, alt, v, vrel, q, m, pitch; public int stage, mode; }
 
+    /// <summary>One sample of a post-cutoff coast (<see cref="AscentSim.CoastTrack"/>): inertial planar state, sim seconds.</summary>
+    public struct CoastState
+    {
+        public double t, x, y, vx, vy;
+    }
+
     public sealed class SimResult
     {
         public string outcome; public double time; public List<SimEvent> events; public OrbitElements orbit;
@@ -943,6 +949,42 @@ namespace Kestrel.Core.Physics
                 t += dt;
             }
             return JsMath.Hypot(s[0], s[1]) - Gravity.R_EARTH;
+        }
+
+        /// <summary>
+        /// The coast after a clean cutoff, flown on this sim's own equations of motion (gravity, drag and wind; no thrust)
+        /// from the state the run ended in, sampled every <paramref name="sampleEvery"/> sim seconds (first sample is the
+        /// cutoff state itself). Stops at the apex when <paramref name="stopAtApex"/> (radial speed through zero), at the
+        /// ground, or after <paramref name="maxSpan"/> seconds. Read-only: Y, T and the event list are untouched.
+        /// Empty while thrusting and after a failure or a crash.
+        /// </summary>
+        public List<CoastState> CoastTrack(double maxSpan, double sampleEvery, bool stopAtApex)
+        {
+            var track = new List<CoastState>();
+            if (Thrusting || outcome == "failure" || outcome == "crash" || !(maxSpan > 0) || !(sampleEvery > 0)) return track;
+            var s = (double[])Y.Clone();
+            double t = T, end = T + maxSpan, nextSample = T;
+            double fine = o.dt > 0 ? o.dt : 0.05;
+            for (int i = 0; i < 2000000; i++)
+            {
+                double r = JsMath.Hypot(s[0], s[1]), alt = r - Gravity.R_EARTH;
+                double vr = (s[2] * s[0] + s[3] * s[1]) / r;
+                bool apex = stopAtApex && vr <= 0 && i > 0;
+                bool last = apex || alt < 0 || t >= end - 1e-9;
+                if (t >= nextSample - 1e-9 || last)
+                {
+                    track.Add(new CoastState { t = t, x = s[0], y = s[1], vx = s[2], vy = s[3] });
+                    nextSample += sampleEvery;
+                }
+                if (last) break;
+                // Above the air the step only has gravity to follow; RK4 at 1 s holds a low orbit to well under a metre a minute.
+                double dt = !o.vacuum && alt < 150e3 ? fine : 1.0;
+                if (t + dt > end) dt = end - t;
+                if (t + dt > nextSample && nextSample > t) dt = nextSample - t;
+                rk.Step(deriv, t, s, dt);
+                t += dt;
+            }
+            return track;
         }
 
         public SimResult Finish()

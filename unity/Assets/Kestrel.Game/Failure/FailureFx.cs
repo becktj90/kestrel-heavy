@@ -169,6 +169,19 @@ namespace Kestrel.Game.Failure
             return (engines - 1f) / engines;
         }
 
+        /// <summary>
+        /// Seconds the failure plays on screen before the result card covers it. The card used to open on the same frame
+        /// as the failure, so the break-up, the tumble and the fold all played under an opaque card (the WebGL "hard cut").
+        /// Reduce Motion keeps the card immediate. A tap opens it early.
+        /// </summary>
+        public static float CardDelaySeconds(string mode, bool reduceMotion)
+        {
+            if (reduceMotion) return 0f;
+            if (mode == TumbleMode) return (float)FailureModel.TumbleHoldS + 2.0f;
+            if (mode == BreakMode || mode == FoldMode) return 2.2f;
+            return 1.6f;
+        }
+
         public static bool BellFlash(string kind, bool reduceMotion)
         {
             if (reduceMotion) return false;
