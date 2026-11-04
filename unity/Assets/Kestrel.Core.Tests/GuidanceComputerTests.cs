@@ -194,17 +194,26 @@ namespace Kestrel.Core.Tests
         List<(CampaignMission mission, Design design, string mode)> starters;
         List<(CampaignMission mission, Design design, string mode)> CachedStarters() => starters ??= BoardStarters();
 
-        static IEnumerable<TestCaseData> StarterCases()
+        static List<string> StarterIds()
         {
             var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "board-starters.json")));
-            foreach (JsonObject row in file.Arr("missions")) yield return new TestCaseData(row.Str("id")).SetName("Starter_PassesWithAndWithoutThePart_GammaUnder005WithIt(" + row.Str("id") + ")");
+            var ids = new List<string>();
+            foreach (JsonObject row in file.Arr("missions")) ids.Add(row.Str("id"));
+            return ids;
+        }
+
+        static IEnumerable<TestCaseData> StarterCases()
+        {
+            foreach (var id in StarterIds()) yield return new TestCaseData(id).SetName("Starter_PassesWithAndWithoutThePart_GammaUnder005WithIt(" + id + ")");
         }
 
         [Test]
         public void StarterCases_CoverEveryBoardStarter()
         {
-            var ids = new List<string>();
-            foreach (var c in StarterCases()) ids.Add((string)c.Arguments[0]);
+            var ids = StarterIds();
+            int n = 0;
+            foreach (var _ in StarterCases()) n++;
+            Assert.AreEqual(ids.Count, n);
             var flown = CachedStarters().ConvertAll(x => x.mission.Id);
             Assert.AreEqual(18, ids.Count);
             CollectionAssert.AreEqual(flown, ids, "one case per board starter, in board order");
