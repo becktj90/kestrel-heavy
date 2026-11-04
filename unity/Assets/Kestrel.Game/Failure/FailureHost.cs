@@ -40,7 +40,7 @@ namespace Kestrel.Game.Failure
         ParticleSystem burst;
         bool emitted;
         PlumeController plume;
-        Material particleMat;
+        Material particleMat, markerMat, bitMat;
         readonly FailurePool pool = new FailurePool();
 
         public TelemetryLog Log => log;
@@ -52,10 +52,21 @@ namespace Kestrel.Game.Failure
         {
             if (rocket == null) return null;
             var host = rocket.GetComponent<FailureHost>();
-            if (host == null) host = rocket.AddComponent<FailureHost>();
+            if (host == null)
+            {
+                host = rocket.AddComponent<FailureHost>();
+                // Fix it / Back to designer rebuild the rocket on the pad while the driver still holds the
+                // last flight's result (Running false). A fresh host used to report it again: the card came
+                // back (and charged the hardware again), or a failure replayed its break-up on the pad and the
+                // designer never showed (the WebGL "Fix it -> empty sky" soft-lock). Only a new launch reports.
+                host.closedResult = ReportGate.Stale(flight != null ? flight.Result : null, flight != null && flight.Running);
+            }
             host.Bind(flight, ui, built);
             return host;
         }
+
+        /// <summary>True when this host would open a card or play a failure for <paramref name="result"/>.</summary>
+        public bool WouldReport(SimResult result) => ReportGate.Opens(result, reported, closedResult);
 
         public void Bind(FlightDriver flightDriver, VisualElement root, RocketMeshBuilder.Result built)
         {
@@ -141,7 +152,7 @@ namespace Kestrel.Game.Failure
                 return;
             }
             var result = flight.Result;
-            if (result == null || reported || ReferenceEquals(result, closedResult)) return;
+            if (!WouldReport(result)) return;
             if (result.failure == null)
             {
                 if (flight.Running) return;
@@ -218,18 +229,30 @@ namespace Kestrel.Game.Failure
                 if (col != null) Destroy(col);
                 go.transform.SetParent(transform, false);
                 marker = go.transform;
+                // CreatePrimitive leaves Unity's Default-Material (Standard), which a URP player does not ship: the
+                // marker drew as a flat magenta ball on WebGL (QA #417). Pinned URP material, or no marker at all.
+                markerMat = Kestrel.Kit.FxMaterials.Solid(Tint(plan.Tint), "FailureMarker", glow: true);
+                Kestrel.Kit.FxMaterials.Apply(go.GetComponent<Renderer>(), markerMat);
             }
             marker.gameObject.SetActive(true);
             marker.localPosition = BurstPoint(0f);
-            float size = plan.Mode == FailureFx.BreakMode ? 2.4f + plan.Gap * 0.45f : plan.Flash ? 1.8f : 1.1f;
-            marker.localScale = Vector3.one * size;
-            var renderer = marker.GetComponent<Renderer>();
-            if (renderer != null)
+            marker.localScale = Vector3.one * MarkerSize(plan.Mode, plan.Gap, plan.Flash, cue.Radius);
+            if (markerMat != null)
             {
-                if (renderer.material != null && renderer.material.HasProperty("_BaseColor"))
-                    renderer.material.SetColor("_BaseColor", Tint(plan.Tint));
-                else if (renderer.material != null) renderer.material.color = Tint(plan.Tint);
+                var tint = Tint(plan.Tint);
+                if (markerMat.HasProperty("_BaseColor")) markerMat.SetColor("_BaseColor", tint);
+                markerMat.color = tint;
+                if (markerMat.HasProperty("_EmissionColor")) markerMat.SetColor("_EmissionColor", tint * 0.6f);
             }
+        }
+
+        /// <summary>Marker diameter. A break used to grow with the gap to 2.4 + 28 x 0.45 = 15 m, a ball far wider than the
+        /// rocket. ExplosionFx is the blast now; the marker stays within two body diameters (radius x 4).</summary>
+        public static float MarkerSize(string mode, float gap, bool flash, float bodyRadius)
+        {
+            float size = mode == FailureFx.BreakMode ? 2.4f + gap * 0.45f : flash ? 1.8f : 1.1f;
+            float cap = Mathf.Max(1.1f, (bodyRadius > 0f ? bodyRadius : 1.6f) * 4f);
+            return Mathf.Min(size, cap);
         }
 
         void EnsureSplit()
@@ -305,6 +328,9 @@ namespace Kestrel.Game.Failure
                 var col = go.GetComponent<Collider>();
                 if (col != null) Destroy(col);
                 go.transform.SetParent(transform, false);
+                // Same Default-Material trap as the marker: shards and folded legs drew magenta in the player.
+                if (bitMat == null) bitMat = Kestrel.Kit.FxMaterials.Solid(new Color(0.32f, 0.31f, 0.30f), "FailureBit");
+                Kestrel.Kit.FxMaterials.Apply(go.GetComponent<Renderer>(), bitMat);
                 bits[i] = go.transform;
             }
         }
@@ -587,6 +613,8 @@ namespace Kestrel.Game.Failure
             if (lowerMesh != null) Destroy(lowerMesh);
             if (upperMesh != null) Destroy(upperMesh);
             if (particleMat != null) Destroy(particleMat);
+            if (markerMat != null) Destroy(markerMat);
+            if (bitMat != null) Destroy(bitMat);
         }
     }
 }
