@@ -30,6 +30,7 @@ namespace Kestrel.Game.Failure
         float age;
         bool reduce;
         bool cardPending;
+        bool cardTapped;
         /// <summary>The failure is playing and its result card is still to come (FailureFx.CardDelaySeconds, or a tap).</summary>
         public bool CardPending => cardPending;
         /// <summary>Age (s) at which the pending card opens.</summary>
@@ -107,6 +108,7 @@ namespace Kestrel.Game.Failure
             latch.Arm(flight != null ? flight.Result : null);
             played = false;
             cardPending = false;
+            cardTapped = false;
             reported = false;
             failure = null;
             age = 0f;
@@ -159,7 +161,11 @@ namespace Kestrel.Game.Failure
             if (played)
             {
                 Seek(age + Time.deltaTime);
-                if (cardPending && (age >= CardDueAt || Tapped())) OpenCardNow();
+                if (cardPending)
+                {
+                    if (Tapped()) cardTapped = true;
+                    if (FailureFx.CardOpens(age, CardDueAt, cardTapped, RecoveryLog.Active)) OpenCardNow();
+                }
                 return;
             }
             var result = flight.Result;
@@ -207,7 +213,9 @@ namespace Kestrel.Game.Failure
             ApplyPose();
             CardDueAt = FailureFx.CardDelaySeconds(plan.Mode, reduce);
             cardPending = false;
-            if (cardNow || CardDueAt <= 0f) ShowCard();
+            cardTapped = false;
+            // The break-up plays now, live. Its card waits for the show and for a booster landing still in the air (#333).
+            if (cardNow || FailureFx.CardOpens(0f, CardDueAt, false, RecoveryLog.Active)) ShowCard();
             else cardPending = true;
         }
 

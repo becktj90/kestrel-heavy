@@ -94,12 +94,19 @@ namespace Kestrel.Capture.Tests
         string _errors;
         string _saves;
         string _parked;
+        int _motionPref, _flashPref;
         SceneFlow flow;
 
         [UnitySetUp]
         public IEnumerator FreshDevice()
         {
             _errors = "";
+            // A fresh device has the comfort settings off. An earlier fixture (the Settings walk) can leave Reduce Motion
+            // or Reduce Flashing on in the player prefs, which turns off the climax and the break-up show these tests check.
+            _motionPref = PlayerPrefs.GetInt(HangarCamera.ReduceMotionPref, 0);
+            _flashPref = PlayerPrefs.GetInt(HangarCamera.ReduceFlashingPref, 0);
+            PlayerPrefs.SetInt(HangarCamera.ReduceMotionPref, 0);
+            PlayerPrefs.SetInt(HangarCamera.ReduceFlashingPref, 0);
             Application.logMessageReceived += OnLog;
             // Park any save so "fresh install" really is empty prefs and save; restored in teardown.
             _saves = CreditsPlay.SaveDir();
@@ -125,6 +132,8 @@ namespace Kestrel.Capture.Tests
         {
             Application.logMessageReceived -= OnLog;
             Time.timeScale = 1f;
+            PlayerPrefs.SetInt(HangarCamera.ReduceMotionPref, _motionPref);
+            PlayerPrefs.SetInt(HangarCamera.ReduceFlashingPref, _flashPref);
             GameSession.Clear();
             PadHandoff.Clear();
             if (AppShell.Instance != null) UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
@@ -341,7 +350,8 @@ namespace Kestrel.Capture.Tests
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             Assert.IsNotNull(driver, "live FlightDriver");
             yield return Until(() => driver.Sim != null && driver.Running, 90f);
-            Assert.IsTrue(driver.Running, "the count reached liftoff");
+            Assert.IsTrue(driver.Running, "the count reached liftoff (counting=" + app.CountingForCapture + " held=" + driver.Held
+                + " sim=" + (driver.Sim != null) + " timeScale=" + Time.timeScale + " hold=" + SliceApp.HoldCountForCapture + ")");
         }
 
         [UnityTest]

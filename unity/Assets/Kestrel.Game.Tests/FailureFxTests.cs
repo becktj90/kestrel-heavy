@@ -225,5 +225,21 @@ namespace Kestrel.Game.Tests
             // The break gap is fully open (28 m) before the card covers it.
             Assert.That(FailureFx.Gap(FailureFx.BreakMode, FailureFx.CardDelaySeconds(FailureFx.BreakMode, false), false), Is.EqualTo(28f).Within(0.01f));
         }
+
+        [Test]
+        public void TheCardWaitsForTheLaterOf_TheFailureShow_AndTheBoosterLanding()
+        {
+            float due = FailureFx.CardDelaySeconds(FailureFx.BreakMode, false);
+            Assert.IsFalse(FailureFx.CardOpens(0f, due, false, false), "the break-up plays first");
+            Assert.IsTrue(FailureFx.CardOpens(due, due, false, false), "then the card");
+            Assert.IsTrue(FailureFx.CardOpens(0.1f, due, true, false), "a tap skips the show");
+            // #333: a booster still landing holds the card past the show, and a tap does not cut the landing short.
+            Assert.IsFalse(FailureFx.CardOpens(due + 30f, due, false, true), "the landing is still in the air");
+            Assert.IsFalse(FailureFx.CardOpens(0.1f, due, true, true), "a tap never skips the landing");
+            Assert.IsTrue(FailureFx.CardOpens(due + 30f, due, false, false), "the card opens once the landing ends");
+            // Reduce Motion: no show to wait for, but the landing still holds it.
+            Assert.IsTrue(FailureFx.CardOpens(0f, FailureFx.CardDelaySeconds(FailureFx.BreakMode, true), false, false));
+            Assert.IsFalse(FailureFx.CardOpens(0f, FailureFx.CardDelaySeconds(FailureFx.BreakMode, true), false, true));
+        }
     }
 }
