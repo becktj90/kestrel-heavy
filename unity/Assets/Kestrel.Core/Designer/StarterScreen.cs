@@ -112,21 +112,34 @@ namespace Kestrel.Core.Designer
                 return true;
             }
             var copy = StarterReadinessCopy.Current;
-            if (!r.TryVerdict(out var v))
+            // DECISIONS #77: one verdict source. Ready (or Tight) only when the predictor's flight passes the mission; until
+            // it has flown the line reads Checking, never a sheet Δv guess that the flight may contradict.
+            if (!r.TryVerdict(out var v) || v == null)
             {
-                if (!hop && c.Margin < 0) return ShortLine(c, target, out badge, out rest);
                 rest = copy.Checking;
                 return true;
             }
-            if (v != null && v.Cause != null)
+            if (v.Chance)
             {
-                if (v.Cause == StarterVerdict.Short && !hop && c.Margin < 0) return ShortLine(c, target, out badge, out rest);
-                badge = copy.Badge(v.Cause);
-                rest = copy.Kid(v.Cause, r.CanFix);
+                // A seeded random event ended the test flight: nothing certain, so neither Ready nor a cause.
+                badge = TightBadge;
+                rest = ChanceLine;
                 return true;
             }
-            if (hop) return HopLine(r, c, out badge, out rest);
-            if (c.Margin < 0) return ShortLine(c, target, out badge, out rest);
+            if (!v.Passes)
+            {
+                string cause = v.Cause ?? StarterVerdict.Low;
+                if ((cause == StarterVerdict.Short || cause == StarterVerdict.Low) && !hop && c.Margin < 0) return ShortLine(c, target, out badge, out rest);
+                badge = copy.Badge(cause);
+                rest = copy.Kid(cause, r.CanFix);
+                return true;
+            }
+            if (hop)
+            {
+                badge = ReadyBadge;
+                rest = "Hops to " + target + " and back.";
+                return true;
+            }
             if (c.Margin < TightMargin)
             {
                 badge = TightBadge;
@@ -159,19 +172,12 @@ namespace Kestrel.Core.Designer
         public static string EngineerReason(StarterRocket r)
             => r != null && r.TryVerdict(out var v) && v != null && v.Cause != null ? StarterReadinessCopy.Current.Engineer(v.Cause) : "";
 
-        /// <summary>Hops (KH-1, KH-2) compare with the mission's flown rocket, not the readout's orbital margin:
-        /// that margin reads "short" on rockets that fly the hop (M-10), so it never reaches this line.</summary>
+        /// <summary>Hops (KH-1, KH-2): the speed bar compares with the mission's flown rocket within this fraction, not the
+        /// readout's orbital margin, which reads "short" on rockets that fly the hop (M-10). The badge reads the predictor.</summary>
         public const double HopSame = 0.02;
 
-        static bool HopLine(StarterRocket r, StarterCheck c, out string badge, out string rest)
-        {
-            var b = r.BaseCheck();
-            double rel = b != null && b.HasNumbers && b.DeltaV > 0 ? c.DeltaV / b.DeltaV - 1 : 0;
-            if (rel > HopSame) { badge = TightBadge; rest = "More push than the rocket that flew this hop. It may overshoot."; }
-            else if (rel < -HopSame) { badge = TightBadge; rest = "Less push than the rocket that flew this hop. It may fall short."; }
-            else { badge = ReadyBadge; rest = "Hops to " + TargetText(r.Mission) + " and back."; }
-            return true;
-        }
+        /// <summary>The line when the predictor's test flight ended on a seeded random event (not a verdict).</summary>
+        public const string ChanceLine = "The test flight hit a random fault. It may still fly.";
 
         static string TargetText(CampaignMission m)
         {

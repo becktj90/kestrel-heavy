@@ -7,6 +7,7 @@ using System.Diagnostics;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Json;
+using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
 using NUnit.Framework;
 
@@ -14,16 +15,21 @@ namespace Kestrel.Core.Tests
 {
     public class StarterHonestReadyTests
     {
+        /// <summary>Board defaults whose predictor flight is intact but misses the band (also FAIL in the played Auto-on matrix).</summary>
+        static readonly HashSet<string> DefaultsThatMiss = new HashSet<string> { "m5" };
+
         static readonly HashSet<string> RandomKinds = new HashSet<string> { "bad-mixture", "engine-out" };
 
         static bool ReadyOrTight(string badge) => badge == StarterScreen.ReadyBadge || badge == StarterScreen.TightBadge;
 
         /// <summary>Independent of StarterVerdict: did the predictor's own flight fail for certain, or the landing come up short?</summary>
-        static string Truth(StarterRocket r)
+        static string Truth(StarterRocket r) => Truth(r, out _);
+
+        static string Truth(StarterRocket r, out SimResult sim)
         {
             var dj = r.BuildDesign();
             var d = Design.FromJson(dj);
-            var sim = ReferenceAscent.Flight(StarterFixture.Catalog, d).Run();
+            sim = ReferenceAscent.Flight(StarterFixture.Catalog, d).Run();
             var f = sim.failure;
             if (f != null && !RandomKinds.Contains(f.kind) && !(f.kind == "engine-overpressure" && f.cause == "hazard"))
                 return f.kind + "/" + f.cause;
@@ -53,14 +59,21 @@ namespace Kestrel.Core.Tests
             bool launches = StarterScreen.Readiness(r, out var badge, out var rest);
             Assert.AreEqual(!r.Check().Blocked, launches, where + ": Launch follows the hard block only");
             if (r.Check().Blocked) return;
-            string truth = Truth(r);
+            string truth = Truth(r, out var sim);
             var v = r.Verdict();
             Assert.AreEqual(truth == null, v.Survives, where + ": verdict " + v.Cause + " vs predictor " + truth);
             if (truth != null)
             {
                 Assert.IsFalse(ReadyOrTight(badge), where + ": " + truth + " but the badge reads " + badge + " " + rest);
                 Assert.IsNotEmpty(rest, where);
+                return;
             }
+            // DECISIONS #77 (#416 item 5): Ready only when the predictor's flight passes the mission by the batch's rule.
+            if (sim.failure != null) { Assert.AreEqual(StarterScreen.ChanceLine, rest, where + ": a seeded random end is no verdict"); return; }
+            bool passes = LaunchPredictor.AcceptsMission(r.Mission, sim, MissionScore.FlownApoAltM(sim));
+            Assert.AreEqual(passes, v.Passes, where + ": verdict pass vs the predictor flight (" + v.Cause + ")");
+            Assert.AreEqual(passes, ReadyOrTight(badge), where + ": pass " + passes + " but the badge reads " + badge + " " + rest);
+            if (!passes) Assert.IsTrue(StarterVerdict.IsMiss(v.Cause), where + ": an intact miss names low, high or shape, not " + v.Cause);
         }
 
         /// <summary>Settings the sweep found reading Ready before this change while the predictor broke them up or left
@@ -158,6 +171,14 @@ namespace Kestrel.Core.Tests
                 AssertHonest(r, m.Id + " default");
                 StarterScreen.Readiness(r, out var badge, out var rest);
                 Assert.IsTrue(r.Verdict().Survives, m.Id + ": the campaign winner survives the predictor (" + r.Verdict().Cause + ")");
+                if (DefaultsThatMiss.Contains(m.Id))
+                {
+                    // Tracked, not hidden: this default stays intact but misses its band in the predictor flight AND the
+                    // played Auto-on flight (pr3-oldnew.txt), so it must not read Ready (DECISIONS #77).
+                    Assert.IsFalse(r.Verdict().Passes, m.Id + ": still a tracked miss; remove it from DefaultsThatMiss");
+                    Assert.IsFalse(ReadyOrTight(badge), m.Id + ": a missing default reads " + badge);
+                    continue;
+                }
                 Assert.IsTrue(ReadyOrTight(badge), m.Id + ": the winner reads " + badge + " " + rest);
             }
         }
