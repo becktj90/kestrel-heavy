@@ -107,18 +107,18 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Risk_NamesMaxQ_BeforeItNamesAShortDesign()
         {
-            var hot = HudRisk.Evaluate(1, 0.8, 0.7, 90000, 100000, -0.2);
+            var hot = HudRisk.Evaluate(1, 0.8, 0.7, 90000, 100000);
             Assert.AreEqual("MAX-Q", hot.Call);
             Assert.That(hot.QRisk, Is.EqualTo(0.9).Within(1e-12));
-            var hurt = HudRisk.Evaluate(0.2, 0.8, 0.7, 1000, 100000, 0.1);
+            var hurt = HudRisk.Evaluate(0.2, 0.8, 0.7, 1000, 100000);
             Assert.AreEqual("AIRFRAME", hurt.Call);
             Assert.AreEqual("critical", hurt.Band);
-            var prop = HudRisk.Evaluate(1, 0.4, 0.1, 0, 100000, 0.2);
+            var prop = HudRisk.Evaluate(1, 0.4, 0.1, 0, 100000);
             Assert.AreEqual("PROP", prop.Call);
-            var ok = HudRisk.Evaluate(1, 1, 1, 1000, 100000, 0.1);
+            var ok = HudRisk.Evaluate(1, 1, 1, 1000, 100000);
             Assert.AreEqual("NOMINAL", ok.Call);
             Assert.AreEqual("", ok.Line);
-            var unknown = HudRisk.Evaluate(1, 0, double.NaN, 0, 100000, 0.2);
+            var unknown = HudRisk.Evaluate(1, 0, double.NaN, 0, 100000);
             Assert.AreEqual("NOMINAL", unknown.Call);
         }
 
@@ -212,7 +212,7 @@ namespace Kestrel.Core.Tests
             var s = new FlightSample
             {
                 Running = true, HasAttitude = true, AttitudeDeg = 90, VehicleHeight = 70,
-                Stage = 0, Health01 = 1, Fuel01 = 1, ThrustFraction = 1, QLimitPa = 35000, DvMargin = 0.1,
+                Stage = 0, Health01 = 1, Fuel01 = 1, ThrustFraction = 1, QLimitPa = 35000,
             };
             p.Step(s, 1.0 / 60.0, false);
             Assert.That(p.Began, Is.True);

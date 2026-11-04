@@ -449,6 +449,18 @@ namespace Kestrel.Core.Physics
 
         double StageEndMass() => upperMass[StageIdx] - st[StageIdx].propMass;
 
+        /// <summary>
+        /// Ideal (vacuum) Δv still on board, m/s: the burning stage's propellant left from the current mass, then every
+        /// later stage full (the same sum as SimResult.departureDv). Read only, for the stage banner's live spare
+        /// (LiveSpare); 0 once the last stage is gone.
+        /// </summary>
+        public double RemainingVacDeltaV()
+        {
+            if (StageIdx < 0 || StageIdx >= st.Length) return 0;
+            DepartureBudget(out double dv, out _);
+            return dv;
+        }
+
         void DepartureBudget(out double dv, out double tw)
         {
             dv = 0; tw = double.NaN;

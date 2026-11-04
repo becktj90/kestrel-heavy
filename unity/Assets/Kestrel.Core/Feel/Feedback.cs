@@ -84,7 +84,7 @@ namespace Kestrel.Core.Feel
 
     public struct RiskReadout
     {
-        public double Integrity, Energy, QRisk, Margin;
+        public double Integrity, Energy, QRisk;
         public string Band, Call, Line;
     }
 
@@ -93,7 +93,7 @@ namespace Kestrel.Core.Feel
         /// <summary>Hot when live q is 85% of the design max-Q, the same mark the webcast heat warning uses.</summary>
         public const double Hot = 0.85;
 
-        public static RiskReadout Evaluate(double health01, double throttle01, double fuel01, double qPa, double qLimPa, double dvMargin)
+        public static RiskReadout Evaluate(double health01, double throttle01, double fuel01, double qPa, double qLimPa)
         {
             double qRisk = 0;
             if (qLimPa > 1 && !double.IsNaN(qPa)) qRisk = qPa / qLimPa;
@@ -111,7 +111,7 @@ namespace Kestrel.Core.Feel
             else { call = "NOMINAL"; line = ""; }
             return new RiskReadout
             {
-                Integrity = integ, Energy = energy, QRisk = qRisk, Margin = dvMargin,
+                Integrity = integ, Energy = energy, QRisk = qRisk,
                 Band = band, Call = call, Line = line,
             };
         }

@@ -102,10 +102,14 @@ namespace Kestrel.Core.Flight
         /// <summary>
         /// How the flying design compares with the speed the mission asked for, and with its own max-Q readout.
         /// Before liftoff the verdict is the count, and the detail is the sheet's spare or shortfall.
+        /// In flight "Short on speed" is <paramref name="shortOnSpeed"/>: the caller's LiveSpare has stayed below zero for
+        /// LiveSpare.HoldS (Δv on board against the Δv still needed). The speed share of the budget no longer decides it.
         /// </summary>
         /// <param name="verdict">The one predictor verdict for this design (DECISIONS #83). When known, the count line and
         /// in-flight "short" cue follow it; when null the sheet spare/shortfall is used as before.</param>
-        public static DesignPulse Pulse(bool flying, double altitudeM, double speedMps, double requiredMps, double spareMps, double qPa, double? maxQKpa, string orbitLabel, double goalAltM = 0, FlightVerdict verdict = null)
+        /// <param name="shortOnSpeed">The caller's held live spare (LiveSpare.Short): the live sim has stayed below zero
+        /// for 3 s (DECISIONS #90). The in-flight "short" cue reads this, not the speed share of the budget.</param>
+        public static DesignPulse Pulse(bool flying, double altitudeM, double speedMps, double requiredMps, double spareMps, double qPa, double? maxQKpa, string orbitLabel, double goalAltM = 0, FlightVerdict verdict = null, bool shortOnSpeed = false)
         {
             double req = requiredMps > 1 ? requiredMps : 1;
             double frac = flying ? speedMps / req : 0;
@@ -126,12 +130,11 @@ namespace Kestrel.Core.Flight
             bool heating = heat >= HeatWarn;
             bool underHop = goalAltM > 0 && altitudeM <= goalAltM * 1.05;
             bool pastHop = goalAltM > 0 && altitudeM > goalAltM * 1.08;
-            bool predictPass = verdict != null && verdict.Passes;
             if (heating) pulse.Verdict = VerdictHeating;
             else if (frac >= 1) pulse.Verdict = VerdictSpeed;
             else if (underHop || altitudeM < 10000) pulse.Verdict = VerdictClimbing;
             else if (pastHop) pulse.Verdict = VerdictPastGoal;
-            else if (frac < 0.40 && !predictPass) pulse.Verdict = VerdictShort;
+            else if (shortOnSpeed) pulse.Verdict = VerdictShort;
             else pulse.Verdict = VerdictOnTrack;
             string q = maxQKpa.HasValue ? $" · Q {qPa / 1000:0} of {maxQKpa.Value:0} kPa" : $" · Q {qPa / 1000:0} kPa";
             pulse.Detail = $"{speedMps / 1000:0.00} of {req / 1000:0.00} km/s{q}";
