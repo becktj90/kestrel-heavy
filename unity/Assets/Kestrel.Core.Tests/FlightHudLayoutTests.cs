@@ -379,6 +379,40 @@ namespace Kestrel.Core.Tests
             }
         }
 
+        /// <summary>
+        /// UX review on #436 at cecc301c: PlaceWide capped the clock at 120 pt even when the box also had to hold the warp
+        /// chip's reserve, so on the web landscape viewports the face fell to the 13 pt floor, shown or hidden. The cap now
+        /// grows by the reserve: the face is the same as a clock with no chip, the stage chip and EXIT stay put, every cell
+        /// keeps its width less the reserve, and nothing clips.
+        /// </summary>
+        [Test]
+        public void WideClockKeepsItsFaceWithTheWarpChipReserve()
+        {
+            var clocks = new[] { "T+ 12:34", "T+ 1234.5", "T-00:00.0" };
+            foreach (var wh in CameraWide)
+            foreach (var mode in Modes)
+            {
+                string at = wh[0] + "x" + wh[1] + " " + mode;
+                var bare = FlightHudLayout.PlaceWide(wh[0], wh[1], 0f, 0f, 0f, 0f, mode);
+                var f = FlightHudLayout.PlaceWide(wh[0], wh[1], 0f, 0f, 0f, 0f, mode, FlightHudLayout.ButtonPt, FlightHudLayout.ClockMinWidthWithChip());
+                float bareFont = FlightHudLayout.ClockFit(bare.Clock.W, bare.Clock.H);
+                float font = FlightHudLayout.ClockFitWithChip(f.Clock.W, f.Clock.H);
+                Assert.That(font, Is.EqualTo(bareFont), at + " face, chip shown or hidden (the reserve is kept either way)");
+                Assert.That(font, Is.GreaterThan(FlightHudLayout.ClockMinFontPt), at + " face above the floor");
+                Assert.That(f.Clock.W, Is.EqualTo(bare.Clock.W + FlightHudLayout.WarpChipReserve()).Within(0.01f), at + " clock grows by the reserve");
+                foreach (var c in clocks)
+                    Assert.That(FlightHudLayout.BudgetWidth(c, font) + FlightHudLayout.ClockPadXPt / 2f + FlightHudLayout.WarpChipReserve(),
+                        Is.LessThanOrEqualTo(f.Clock.W), at + " " + c);
+                Assert.That(f.Stage.X, Is.EqualTo(bare.Stage.X), at + " stage chip");
+                Assert.That(f.Stage.Y, Is.EqualTo(bare.Stage.Y), at + " stage chip");
+                Assert.That(f.Exit.X, Is.EqualTo(bare.Exit.X), at + " EXIT");
+                Assert.That(f.Exit.Y, Is.EqualTo(bare.Exit.Y), at + " EXIT");
+                Assert.That(f.Cells[0].X, Is.GreaterThanOrEqualTo(f.Clock.Right), at + " first cell clear of the clock");
+                Assert.That(f.Cells[f.Cells.Length - 1].Right, Is.LessThanOrEqualTo(f.Stage.X), at + " last cell clear of the stage chip");
+                Assert.That(f.Cells[0].W, Is.GreaterThan(100f), at + " cells keep room");
+            }
+        }
+
         [Test]
         public void WideModeFollowsThePromptAndNotes()
         {

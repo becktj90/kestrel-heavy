@@ -913,7 +913,10 @@ namespace Kestrel.Core.Flight
 
             var f = new FlightHudFrame { Mode = mode, Exit = exit };
             f.Telemetry = Box(left, stripY, stripW, stripH);
-            float clockW = Math.Max(clockMinW, Math.Min(120f, Math.Max(64f, stripW * 0.12f)));
+            // A clock box that must also hold the warp chip's reserve (clockMinW above ClockMinWidth) grows by that reserve
+            // past both the 120 pt cap and the 12% share, so its face stays the chip-less face (UX on #436).
+            float chipExtra = Math.Max(0f, clockMinW - ClockMinWidth());
+            float clockW = Math.Max(clockMinW, chipExtra + Math.Min(120f, Math.Max(64f, stripW * 0.12f)));
             f.Clock = Box(left, stripY, clockW, stripH);
             f.Stage = Box(stripRight - StageChipPt, stripY + (stripH - StageChipPt) * 0.5f, StageChipPt, StageChipPt);
             float cellsL = f.Clock.Right + GapPt;

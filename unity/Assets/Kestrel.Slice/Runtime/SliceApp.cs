@@ -1833,7 +1833,7 @@ namespace Kestrel.Slice
             if (voice != null)
             {
                 flight.NarrationBusy = voice.HoldsWarp;
-                voice.UseWarp(flight.Running ? flight.SecondsToNext : double.PositiveInfinity, flight.Warp);
+                voice.UseWarp(flight.Running ? flight.SecondsToNext : double.PositiveInfinity, flight.Warp, !flight.WarpOff);
             }
             ascentHud?.SetBooster(onBooster ? recovery.HudReadout : (BoosterHudReadout?)null);
             ApplyHudFocus(BoosterHud.Focus(onBooster));
