@@ -131,6 +131,8 @@ namespace Kestrel.Game.Audio
             Pending = null;
             Current = line.Resource;
             CurrentIsColor = false;
+            // The clip that took over decides: a call cutting in over a color line holds the warp (Narrator Voice, #436).
+            CurrentInterruptible = line.Take != null && line.Take.Interruptible;
             Busy = true;
             return new NarrationOffer(NarrationOutcome.Started, Current, fade, false, null);
         }
