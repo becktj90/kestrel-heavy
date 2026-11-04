@@ -41,6 +41,14 @@ namespace Kestrel.Game.Shell
             {
                 bar.style.width = 0f;
                 bar.style.minWidth = 0f;
+                bar.style.maxWidth = 0f;
+                // The default theme gives the scroller a 1 px side border, which keeps a 1 px grey line.
+                bar.style.borderLeftWidth = 0f;
+                bar.style.borderRightWidth = 0f;
+                bar.style.paddingLeft = 0f;
+                bar.style.paddingRight = 0f;
+                bar.style.marginLeft = 0f;
+                bar.style.marginRight = 0f;
                 bar.style.opacity = 0f;
             }
             if (sv.ClassListContains(DressedClass)) { Refresh(sv); return; }
