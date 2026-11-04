@@ -57,6 +57,21 @@ namespace Kestrel.Game.Environment.Tests
         }
 
         [Test]
+        public void DebrisClearPutsOutTheFireballAndTheFlash()
+        {
+            // One more launch raises DebrisClear: the last flight's blast must not hang over the pad for the next count.
+            TimeOfDayRig.Force(LaunchTimeOfDay.Night);
+            CinematicEvents.Crash(0f, 10f, 0f, 1f, 2f, false, false);
+            Assert.That(fx.LightEnabled, Is.True);
+            CinematicEvents.DebrisClear();
+            Assert.That(fx.LightEnabled, Is.False);
+            Assert.That(fx.LightLevel, Is.EqualTo(0f));
+            Assert.That(fx.LiveParticles, Is.EqualTo(0));
+            CinematicEvents.Crash(0f, 10f, 0f, 1f, 2f, false, false);
+            Assert.That(fx.BuiltQuality, Is.EqualTo(2), "still listening after a clear");
+        }
+
+        [Test]
         public void DisabledComponentStopsListening()
         {
             CinematicEvents.Crash(0f, 10f, 0f, 1f, 2f, false, false);
