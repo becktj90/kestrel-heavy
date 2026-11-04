@@ -400,6 +400,9 @@ namespace Kestrel.Capture.Tests
             Assert.IsNotNull(verdict, "flight HUD verdict");
             Assert.AreEqual(OrbitCoast.CalloutApogee, verdict.text, "the HUD calls the climax");
             Assert.IsFalse(ReportShown(), "no card during the coast");
+            var exit = SliceUi()?.Q<Button>(UiIds.FlightExit);
+            Assert.IsTrue(exit == null || exit.ClassListContains("hidden") || exit.resolvedStyle.visibility == Visibility.Hidden,
+                "BACK TO DESIGN stays off the climax");
             yield return Frame("climax-apogee");
             driver.Hold(false);
             yield return Until(() => driver.Result != null, 15f);
@@ -456,7 +459,10 @@ namespace Kestrel.Capture.Tests
             // The CI player keeps the comfort prefs on (fast frames); this test is about the break-up show, so turn the motion
             // on for live failures before the launch (a one-engine stack can fail on the pad). Teardown clears it.
             Kestrel.Game.Failure.FailureHost.ReduceMotionOverride = false;
-            yield return ToThePad(d => d.stages[0].engineCount = 1);
+            // One engine alone no longer breaks the KH-1 hop (the CI profile is on m1: it flies suborbital to MECO, so
+            // there was no break-up to play; run 41781261062). Strength 1.0 (the designer's minimum, so Launch is not
+            // blocked) tears it at max-Q on every seed of m1-m5 (FlightBatch probe).
+            yield return ToThePad(d => { d.stages[0].engineCount = 1; d.safetyFactor = 1.0; });
             Kestrel.Game.Failure.FailureHost host = null;
             yield return Until(() => (host = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Failure.FailureHost>()) != null && host.CardPending || ReportShown(), 150f);
             Assert.IsNotNull(host, "the rocket has a failure host");

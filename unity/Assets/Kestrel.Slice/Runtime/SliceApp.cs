@@ -1849,7 +1849,11 @@ namespace Kestrel.Slice
             }
             if (again != null)
             {
-                if (ascent) again.style.visibility = StyleKeyword.Null;
+                // #431 climax: MECO reveals BACK TO DESIGN, but during the time-warped coast the report is on its way
+                // and any tap skips the coast; the exit sat over the climax frame (climax-apogee.png). It comes back
+                // when the coast ends.
+                bool coasting = flight != null && flight.Coasting;
+                if (ascent && !coasting) again.style.visibility = StyleKeyword.Null;
                 else again.style.visibility = Visibility.Hidden;
             }
         }
