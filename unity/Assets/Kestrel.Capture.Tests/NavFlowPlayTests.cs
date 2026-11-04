@@ -538,6 +538,28 @@ namespace Kestrel.Capture.Tests
             Assert.IsFalse(dock.worldBound.Overlaps(tools.worldBound), where + ": dock " + dock.worldBound + " over the tools row " + tools.worldBound);
         }
 
+        /// <summary>
+        /// #431: the failure callout ("BREAKUP Air pushed…") sits between the stage banner and Follow / Auto / Pause, and its
+        /// text fits its box (FlightHudLayout.CalloutInBand). At 94e79369 it sat over the tools row.
+        /// </summary>
+        static void CalloutInTheBand()
+        {
+            var ui = SliceUi();
+            var chip = ui?.Q<Label>("failure-callout");
+            if (chip == null || chip.resolvedStyle.display == DisplayStyle.None) return;
+            var c = chip.worldBound;
+            var tools = ui.Q("flight-tools");
+            Assert.IsNotNull(tools, "the tools row");
+            Assert.That(c.yMax, Is.LessThanOrEqualTo(tools.worldBound.yMin + 0.5f), "the callout " + c + " clears the tools row " + tools.worldBound);
+            foreach (var id in new[] { "webcast", "ascent-stages", "ascent-telemetry" })
+            {
+                var e = ui.Q(id);
+                if (e == null || e.resolvedStyle.display == DisplayStyle.None || !(e.worldBound.height > 0.5f)) continue;
+                Assert.IsFalse(c.Overlaps(e.worldBound), "the callout " + c + " clears " + id + " " + e.worldBound);
+            }
+            Assert.That(TextFit.Problems(chip), Is.Empty, "the callout's text fits its box: '" + chip.text + "'");
+        }
+
         static bool ReportShown() { var r = Find("screen-report"); return r != null && NavIds.Shown(r); }
 
         [UnityTest]
@@ -647,6 +669,7 @@ namespace Kestrel.Capture.Tests
             if (host.CardPending)
             {
                 DockClearOfTheToolsRow("break-up", false);
+                CalloutInTheBand();
                 yield return Frame("breakup-live-show");
             }
             yield return Until(ReportShown, 15f);

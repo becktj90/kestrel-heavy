@@ -1081,5 +1081,52 @@ namespace Kestrel.Core.Tests
             Assert.That(FlightHudLayout.CoastBand(-1f, -1f, out lo, out hi), Is.True, "no covers measured yet");
             Assert.That(lo, Is.EqualTo(FlightHudLayout.BandMarginVp).Within(1e-5f));
         }
+
+        // #431 break-up show (breakup-live-show.png at 94e79369, CI 321x531): the failure callout sat over Follow / Auto /
+        // Pause. It is seated in the band between the banner and the tools row, and its text never overflows its box.
+        [TestCase(160f, 150f, 192f, "CI 321x531 (about 160 x 265 pt)")]
+        [TestCase(402f, 220f, 640f, "6.9in")]
+        [TestCase(375f, 200f, 520f, "SE")]
+        [TestCase(1024f, 260f, 1100f, "iPad 13in")]
+        public void TheFailureCalloutSitsInTheBandAndItsTextFits(float width, float bandTop, float bandBottom, string device)
+        {
+            foreach (var text in new[]
+            {
+                "BREAKUP Air pushed 25 kPa. The walls held 25 kPa.",
+                "OVER-G The stack pulled 9.4 g. The airframe is rated for 6 g.",
+                "RUD",
+                "ENGINE OUT Engine 3 of 9 shut down: turbopump overspeed on the climb through max-Q.",
+            })
+            foreach (float preferred in new[] { 0f, bandTop + 10f, 2000f })
+            {
+                string at = device + " '" + text + "' at " + preferred;
+                var seat = FlightHudLayout.CalloutInBand(text, width, bandTop, bandBottom, preferred);
+                Assert.That(seat.Live, Is.True, at);
+                Assert.That(seat.Top, Is.GreaterThanOrEqualTo(bandTop - 0.01f), at + " under the banner");
+                Assert.That(seat.Top + seat.Height, Is.LessThanOrEqualTo(bandBottom + 0.01f), at + " over the tools row");
+                Assert.That(seat.FontPt, Is.InRange(FlightHudLayout.CalloutMinFontPt, FlightHudLayout.CalloutFontPt), at);
+                float room = width - 2f * FlightHudLayout.CalloutPadX - 2f;
+                int lines = FlightHudLayout.WrapLines(seat.Text, room, seat.FontPt);
+                Assert.That(lines, Is.InRange(1, FlightHudLayout.CalloutLines), at + " lines");
+                Assert.That(lines * seat.FontPt * FlightHudLayout.LineHeight + 2f * FlightHudLayout.CalloutPadY,
+                    Is.LessThanOrEqualTo(seat.Height + 0.01f), at + " text fits its box");
+                if (seat.Cut) Assert.That(seat.Text, Does.EndWith("…"), at + " a cut ends in an ellipsis");
+                else Assert.That(seat.Text, Is.EqualTo(text), at + " whole");
+                if (preferred >= bandTop && preferred + seat.Height <= bandBottom)
+                    Assert.That(seat.Top, Is.EqualTo(preferred).Within(0.01f), at + " keeps its seat when it fits");
+            }
+            // On a phone the whole break-up line fits.
+            if (width >= 375f)
+                Assert.That(FlightHudLayout.CalloutInBand("BREAKUP Air pushed 25 kPa. The walls held 25 kPa.", width, bandTop, bandBottom, bandTop).Cut,
+                    Is.False, device + " whole line");
+        }
+
+        [Test]
+        public void TheFailureCalloutStandsDownWithNoBand()
+        {
+            Assert.That(FlightHudLayout.CalloutInBand("BREAKUP", 160f, 150f, 160f, 150f).Live, Is.False, "under one line of room");
+            Assert.That(FlightHudLayout.CalloutInBand("", 400f, 100f, 400f, 100f).Live, Is.False, "no text");
+            Assert.That(FlightHudLayout.CalloutInBand("BREAKUP", 10f, 100f, 400f, 100f).Live, Is.False, "no width");
+        }
     }
 }

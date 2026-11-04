@@ -834,6 +834,55 @@ namespace Kestrel.Core.Flight
             return yMax - yMin > 0.1f;
         }
 
+        /// <summary>A failure callout seated in the HUD band (<see cref="CalloutInBand"/>), in points.</summary>
+        public struct CalloutSeat
+        {
+            public float Top, Height, FontPt;
+            public string Text;
+            public bool Cut, Live;
+        }
+
+        /// <summary>Failure callout face (FlightDusk.Callout): 13 pt, stepping to 11 pt; three lines at most.</summary>
+        public const float CalloutFontPt = 13f;
+        public const float CalloutMinFontPt = 11f;
+        public const int CalloutLines = 3;
+        /// <summary>The callout's padding (FlightDusk.Frame): 8 pt each side, 4 pt top and bottom.</summary>
+        public const float CalloutPadX = 8f, CalloutPadY = 4f;
+
+        /// <summary>
+        /// #431 break-up show: the failure callout ("BREAKUP Air pushed 25 kPa. The walls held 25 kPa.") was pinned at a
+        /// fixed depth, so on CI's short panel it sat over Follow / Auto / Pause (breakup-live-show.png at 94e79369). Seat it
+        /// in the band between <paramref name="bandTop"/> (under the stat strip and the stage banner) and
+        /// <paramref name="bandBottom"/> (over the tools row), as near <paramref name="preferredTop"/> as the band allows.
+        /// The text never overflows its box: the face steps 13 to 11 pt within three lines and the band's height; still too
+        /// long, it is cut after a whole word with an ellipsis (the full line goes in the tooltip). Not Live when the band
+        /// cannot hold one line at the floor face.
+        /// </summary>
+        public static CalloutSeat CalloutInBand(string text, float width, float bandTop, float bandBottom, float preferredTop)
+        {
+            var seat = new CalloutSeat { Text = text ?? "", FontPt = CalloutFontPt, Top = bandTop };
+            float room = width - 2f * CalloutPadX;
+            float bandH = bandBottom - bandTop;
+            float oneLine = CalloutMinFontPt * LineHeight + 2f * CalloutPadY;
+            if (string.IsNullOrEmpty(text) || !(room > 8f) || !(bandH >= oneLine)) return seat;
+            float textH = bandH - 2f * CalloutPadY;
+            var fit = WrapFit(text, room, textH, CalloutLines, CalloutFontPt, CalloutMinFontPt);
+            int lines = WrapLines(fit.Text, room - 2f, fit.FontPt);
+            if (lines < 1 || lines == int.MaxValue) return seat;
+            float h = lines * fit.FontPt * LineHeight + 2f * CalloutPadY;
+            h = Math.Min(bandH, Math.Max(h, Math.Min(bandH, FlightStaging.CalloutPt)));
+            float top = preferredTop;
+            if (top > bandBottom - h) top = bandBottom - h;
+            if (top < bandTop) top = bandTop;
+            seat.Top = top;
+            seat.Height = h;
+            seat.FontPt = fit.FontPt;
+            seat.Text = fit.Text;
+            seat.Cut = fit.Cut;
+            seat.Live = true;
+            return seat;
+        }
+
         /// <summary>Viewport margin between a framed object and the HUD bar beside it (ChaseCamera.HudMargin).</summary>
         public const float BandMarginVp = 0.03f;
 
