@@ -246,40 +246,6 @@ namespace Kestrel.Core.Flight
             return AscentGrade.Good;
         }
 
-        /// <summary>DECISIONS #77: the max-Q green zone sits on this flight's own peak dynamic pressure, not a fixed fraction of
-        /// the structural line the design may never reach (the old band was unreachable below a ~0.70·limit peak, so those
-        /// flights could only time out to Bronze). Green once q has topped out (falling, or rising slower than
-        /// <see cref="MaxQPlateauRate"/> of itself per second) and stays within <see cref="MaxQPeakGreen"/> of the flight's
-        /// peak. Still climbing hard is early (Good); dropping below the green after the peak, crossing the line or the
-        /// window running out is late.</summary>
-        public const double MaxQPeakGreen = 0.85;
-        public const double MaxQPlateauRate = 0.02;
-
-        /// <summary>True when q has topped out: below its running peak, or rising slower than the plateau rate.</summary>
-        public static bool AtMaxQPeak(double qPa, double peakQPa, double qRatePaPerS)
-            => qPa < peakQPa || qRatePaPerS <= MaxQPlateauRate * qPa;
-
-        public static AscentGrade GradeMaxQPeak(double qPa, double peakQPa, double qLimPa, double age, double window, bool atPeak)
-        {
-            if (age >= window) return AscentGrade.Late;
-            double lim = qLimPa > 1000 ? qLimPa : GuidanceProfile.MaxQReferencePa;
-            if (qPa > lim * 1.02) return AscentGrade.Late;
-            double peak = Math.Max(peakQPa, qPa);
-            if (!atPeak) return AscentGrade.Good;
-            return peak > 0 && qPa >= MaxQPeakGreen * peak ? AscentGrade.Perfect : AscentGrade.Late;
-        }
-
-        /// <summary>The prompt bar for <see cref="GradeMaxQPeak"/>: climbing toward the green edge while q still rises
-        /// (q over the structural line, scaled under the green), then q over the flight's peak once it has topped out.</summary>
-        public static double MaxQPeakMarker(double qPa, double peakQPa, double qLimPa, bool atPeak)
-        {
-            double peak = Math.Max(peakQPa, qPa);
-            if (!(peak > 0)) return 0;
-            double lim = qLimPa > 1000 ? qLimPa : GuidanceProfile.MaxQReferencePa;
-            double u = atPeak ? qPa / peak : MaxQPeakGreen * 0.98 * Math.Min(1, qPa / lim);
-            return u < 0 ? 0 : u > 1 ? 1 : u;
-        }
-
         public static double MaxQMarker(double qPa, double qLimPa)
         {
             double lim = qLimPa > 1000 ? qLimPa : GuidanceProfile.MaxQReferencePa;
@@ -467,9 +433,7 @@ namespace Kestrel.Core.Flight
         double fuelScale = 1;
         int fuelStage = -1;
         bool lost, payloadDamaged, playerFlew;
-        double peakAlt, peakSpeed, peakG, fairingFlux, peakQ, qRate;
-        bool hasLast;
-        bool AtPeak(in AscentSample s) => AscentDecisions.AtMaxQPeak(s.QPa, peakQ, qRate);
+        double peakAlt, peakSpeed, peakG, fairingFlux;
         string lossKind, lossKid, lossEngineer;
 
         public bool AutoAssist { get; set; }
@@ -524,8 +488,6 @@ namespace Kestrel.Core.Flight
         {
             if (double.IsNaN(dt) || dt < 0) dt = 0;
             else if (dt > 0.5) dt = 0.5;
-            if (dt > 0 && hasLast) qRate = (sample.QPa - last.QPa) / dt;
-            hasLast = true;
             last = sample;
             LiveAlt = sample.AltM;
             LiveSpeed = sample.SpeedMps;
@@ -536,7 +498,6 @@ namespace Kestrel.Core.Flight
             if (sample.AltM > peakAlt) peakAlt = sample.AltM;
             if (sample.SpeedMps > peakSpeed) peakSpeed = sample.SpeedMps;
             if (sample.G > peakG) peakG = sample.G;
-            if (sample.QPa > peakQ) peakQ = sample.QPa;
             if (lastTrackT < 0 || sample.T - lastTrackT >= 0.4)
             {
                 track.Push(sample.AltM, sample.DownrangeM, sample.QPa);
@@ -557,11 +518,6 @@ namespace Kestrel.Core.Flight
                 // A player's own early tap stays live and is judged honestly in Resolve (damage when hot).
                 bool gated = c.Kind == AscentCall.Fairing && FairingGated;
                 if (gated && !fairingGate.Open)
-                    c.Age = Math.Min(c.Age, AscentDecisions.TimePerfectStart * Window * (1 - 1e-9));
-                // DECISIONS #77: likewise the max-Q window waits for q to top out, so the green on the flight's own peak is
-                // always reachable before the clock runs out (q may take longer than the window to climb from the arming
-                // line to its peak).
-                if (c.Kind == AscentCall.MaxQ && !AtPeak(sample))
                     c.Age = Math.Min(c.Age, AscentDecisions.TimePerfectStart * Window * (1 - 1e-9));
                 var grade = GradeFor(c, sample);
                 bool fire = AutoAssist && (c.Kind == AscentCall.MaxQ ? grade == AscentGrade.Perfect
@@ -743,7 +699,7 @@ namespace Kestrel.Core.Flight
 
         AscentGrade GradeFor(Call c, in AscentSample s)
         {
-            if (c.Kind == AscentCall.MaxQ) return AscentDecisions.GradeMaxQPeak(s.QPa, peakQ, vehicle.QLimPa, c.Age, Window, AtPeak(s));
+            if (c.Kind == AscentCall.MaxQ) return AscentDecisions.GradeMaxQ(s.QPa, vehicle.QLimPa, c.Age, Window);
             return AscentDecisions.GradeTime(c.Age, Window);
         }
 
@@ -905,9 +861,9 @@ namespace Kestrel.Core.Flight
                     p.Detail = "Window " + Clock(left) + " · Design influences risk (SF " + sf + ")";
                     if (pct >= 100) p.Detail += " · This engine cannot throttle down.";
                     p.Primary = "THROTTLE DOWN to " + pct.ToString(inv) + " %";
-                    p.Marker = AscentDecisions.MaxQPeakMarker(s.QPa, peakQ, Lim(), AtPeak(s));
-                    p.GreenStart = AscentDecisions.MaxQPeakGreen;
-                    p.GreenEnd = 1;
+                    p.Marker = AscentDecisions.MaxQMarker(s.QPa, vehicle.QLimPa);
+                    p.GreenStart = AscentDecisions.MaxQGreenStart;
+                    p.GreenEnd = AscentDecisions.MaxQGreenEnd;
                     break;
                 case AscentCall.Pitch:
                     p.Eyebrow = "MISSION CONTROL · GRAVITY TURN";
