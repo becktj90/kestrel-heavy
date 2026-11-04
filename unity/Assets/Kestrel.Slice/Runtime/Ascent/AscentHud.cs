@@ -1816,6 +1816,7 @@ namespace Kestrel.Slice
                 trajectory.Stages = vehicle.Stages > 0 ? vehicle.Stages : 1;
                 trajectory.StrapOns = vehicle.StrapOns > 0;
                 trajectory.RecoveryMode = string.IsNullOrEmpty(vehicle.RecoveryMode) ? null : vehicle.RecoveryMode;
+                trajectory.LandingPlanned = vehicle.LandingPlanned;
                 if (vehicle.JettisonAltM > 0) trajectory.FairingAltM = vehicle.JettisonAltM;
             }
             trajectory.Recovery = RecoveryLog.Active || (RecoveryLog.Current != null && RecoveryLog.Current.Attempted);
