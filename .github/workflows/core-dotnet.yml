@@ -13,7 +13,8 @@ jobs:
   core-dotnet:
     name: Kestrel.Core golden tests (dotnet)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The Core suite takes 11-15 min on ubuntu-latest since #407/#408 (10/31); 15 min cut main runs off as "cancelled".
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
