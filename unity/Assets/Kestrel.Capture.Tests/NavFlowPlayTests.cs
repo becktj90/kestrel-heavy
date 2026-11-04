@@ -94,19 +94,12 @@ namespace Kestrel.Capture.Tests
         string _errors;
         string _saves;
         string _parked;
-        int _motionPref, _flashPref;
         SceneFlow flow;
 
         [UnitySetUp]
         public IEnumerator FreshDevice()
         {
             _errors = "";
-            // A fresh device has the comfort settings off. An earlier fixture (the Settings walk) can leave Reduce Motion
-            // or Reduce Flashing on in the player prefs, which turns off the climax and the break-up show these tests check.
-            _motionPref = PlayerPrefs.GetInt(HangarCamera.ReduceMotionPref, 0);
-            _flashPref = PlayerPrefs.GetInt(HangarCamera.ReduceFlashingPref, 0);
-            PlayerPrefs.SetInt(HangarCamera.ReduceMotionPref, 0);
-            PlayerPrefs.SetInt(HangarCamera.ReduceFlashingPref, 0);
             Application.logMessageReceived += OnLog;
             // Park any save so "fresh install" really is empty prefs and save; restored in teardown.
             _saves = CreditsPlay.SaveDir();
@@ -132,8 +125,7 @@ namespace Kestrel.Capture.Tests
         {
             Application.logMessageReceived -= OnLog;
             Time.timeScale = 1f;
-            PlayerPrefs.SetInt(HangarCamera.ReduceMotionPref, _motionPref);
-            PlayerPrefs.SetInt(HangarCamera.ReduceFlashingPref, _flashPref);
+            Kestrel.Game.Failure.FailureHost.ReduceMotionOverride = null;
             GameSession.Clear();
             PadHandoff.Clear();
             if (AppShell.Instance != null) UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
@@ -390,6 +382,7 @@ namespace Kestrel.Capture.Tests
         {
             yield return ToThePad(null);
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            driver.ReduceMotionOverride = false;   // the CI player keeps the comfort prefs on (fast frames); this test is about the motion
             yield return Until(() => driver.Coasting || driver.Result != null, 150f);
             Assert.IsTrue(driver.Coasting, "the clean First Hop cutoff starts the climax (CoastEnd=" + driver.CoastEnd + ")");
             Assert.IsNull(driver.Result, "the result waits for the coast");
@@ -425,6 +418,7 @@ namespace Kestrel.Capture.Tests
         {
             yield return ToThePad(null);
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            driver.ReduceMotionOverride = false;   // the CI player keeps the comfort prefs on (fast frames); this test is about the motion
             yield return Until(() => driver.Coasting || driver.Result != null, 150f);
             Assert.IsTrue(driver.Coasting, "the climax starts");
             yield return null;
@@ -459,6 +453,9 @@ namespace Kestrel.Capture.Tests
         [Timeout(300000)]
         public IEnumerator CrashingRocket_PlaysTheBreakUp_BeforeTheCard()
         {
+            // The CI player keeps the comfort prefs on (fast frames); this test is about the break-up show, so turn the motion
+            // on for live failures before the launch (a one-engine stack can fail on the pad). Teardown clears it.
+            Kestrel.Game.Failure.FailureHost.ReduceMotionOverride = false;
             yield return ToThePad(d => d.stages[0].engineCount = 1);
             Kestrel.Game.Failure.FailureHost host = null;
             yield return Until(() => (host = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Failure.FailureHost>()) != null && host.CardPending || ReportShown(), 150f);
