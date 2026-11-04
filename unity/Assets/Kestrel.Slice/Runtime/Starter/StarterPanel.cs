@@ -438,6 +438,20 @@ namespace Kestrel.Slice
             }
         }
 
+        static readonly Color HeaderPlateBg = new Color(
+            StarterScreen.HeaderPlateRgb[0] / 255f, StarterScreen.HeaderPlateRgb[1] / 255f, StarterScreen.HeaderPlateRgb[2] / 255f,
+            StarterScreen.HeaderPlateAlpha);
+
+        /// <summary>#416 item 8: on the sky the title and subtitle get a dusk plate (subtitle 7.1:1 even on white).
+        /// The plate is the header box itself, so the pinned text boxes do not move.</summary>
+        void HeaderPlate(bool on)
+        {
+            header.style.backgroundColor = on ? HeaderPlateBg : new Color(0f, 0f, 0f, 0f);
+            float rad = on ? StarterScreen.HeaderPlateRadiusPt * upp : 0f;
+            header.style.borderTopLeftRadius = rad; header.style.borderTopRightRadius = rad;
+            header.style.borderBottomLeftRadius = rad; header.style.borderBottomRightRadius = rad;
+        }
+
         void Apply(StarterFrame f)
         {
             var zero = new HudBox();
@@ -450,6 +464,7 @@ namespace Kestrel.Slice
             var headerParent = f.HeaderInSheet ? sheet : Root;
             if (header.parent != headerParent) headerParent.Add(header);
             Pin(header, f.Header, f.HeaderInSheet ? f.Sheet : zero);
+            HeaderPlate(!f.HeaderInSheet);
             Pin(title, f.Title, f.Header); Font(title, f.TitlePt);
             subtitle.style.display = f.Subtitle.Live ? DisplayStyle.Flex : DisplayStyle.None;
             if (f.Subtitle.Live) { Pin(subtitle, f.Subtitle, f.Header); Font(subtitle, f.SubtitlePt); }

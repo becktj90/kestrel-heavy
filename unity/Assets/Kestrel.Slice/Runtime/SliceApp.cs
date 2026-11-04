@@ -346,6 +346,8 @@ namespace Kestrel.Slice
             slicePanel = doc.panelSettings;
             doc.visualTreeAsset = Resources.Load<VisualTreeAsset>("UI/Slice");
             ui = doc.rootVisualElement;
+            // Web: no grey desktop scrollers; a bottom fade shows there is more (#416 item 8).
+            Kestrel.Game.Shell.WebScrollChrome.Watch(ui);
             designPanel = ui.Q("design"); hud = ui.Q(UiIds.ScreenFlight);
             designBody = ui.Q("design-body"); designToggle = ui.Q<Button>("design-toggle");
             ui.RegisterCallback<GeometryChangedEvent>(_ => { ApplyHudSafeArea(); ApplyDesignPanelMetrics(); ApplyDesignFraming(); });
