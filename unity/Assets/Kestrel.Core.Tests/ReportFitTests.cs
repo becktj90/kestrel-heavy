@@ -142,6 +142,7 @@ namespace Kestrel.Core.Tests
         {
             Assert.That(LongVerdict, Is.EqualTo(FlightHudLayout.BannerReserve));
             var texts = new List<string>(WebcastBoard.Verdicts) { LongVerdict };
+            texts.AddRange(AscentNotes.Beats); // DECISIONS #80: the max-Q beats share the banner.
             var misses = new List<string>();
             foreach (var t in texts)
             for (int w = 320; w <= 1032; w++)

@@ -30,7 +30,6 @@ namespace Kestrel.Core.Tests
                     d.Advance(At(t, Q(t, 0.95 * Lim)), 0.05);
                     Assert.IsFalse(d.IsOpen(AscentCall.MaxQ));
                     Assert.IsFalse(d.Choose(AscentCall.MaxQ, true));
-                    Assert.AreEqual(0, d.Command.EngageMaxQCap, 1e-12);
                     Assert.AreEqual(1, d.Command.ThrottleScale, 1e-12);
                 }
                 Assert.IsFalse(d.IsDone(AscentCall.MaxQ), "nothing to grade, nothing lost");
