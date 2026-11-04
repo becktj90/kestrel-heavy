@@ -24,6 +24,13 @@ namespace Kestrel.Core.Ui
         public const string ReportBody = "report-scroll";
         public const string ReportFoot = "report-actions";
 
+        /// <summary>#416 item 3, pass card only: the "MISSION COMPLETE" hero, its drawn star row, and the "+2.0M Kc" line.
+        /// The card root carries <see cref="ReportPassClass"/>; Next mission leads the footer and Fix it is not built.</summary>
+        public const string ReportHero = "report-hero";
+        public const string ReportStarRow = "report-star-row";
+        public const string ReportKcHeadline = "report-kc-headline";
+        public const string ReportPassClass = "report-pass";
+
         /// <summary>The six exits that must be on screen, tap targets, without scrolling at every size.</summary>
         public static readonly string[] ReportExits = { ReportFix, ReportNext, ReportRetry, ReportDesigner, ReportMissions, ReportHome };
     }
