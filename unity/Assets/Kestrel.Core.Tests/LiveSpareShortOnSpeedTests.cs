@@ -94,7 +94,7 @@ namespace Kestrel.Core.Tests
                     r.Trace.AppendLine(string.Format(System.Globalization.CultureInfo.InvariantCulture,
                         "{0,7:0.0} {1,8:0.0} {2,6:0} {3,8:0} {4,6:0} {5,12:0} {6,10:0} {7,7:0} {8,6:0}  {9}",
                         sim.T, s.AltM / 1000, Math.Sqrt(Y[2] * Y[2] + Y[3] * Y[3]), sim.RemainingVacDeltaV(), togo, acc,
-                        live.LossAllowance(acc), live.Needed(togo, acc), spare, pulse.Verdict)));
+                        live.LossAllowance(acc), live.Needed(togo, acc), spare, pulse.Verdict));
                 }
             }
             r.EndSpare = spare;
