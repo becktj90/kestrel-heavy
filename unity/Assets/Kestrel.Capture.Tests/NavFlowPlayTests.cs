@@ -522,6 +522,22 @@ namespace Kestrel.Capture.Tests
             NothingThrew();
         }
 
+        /// <summary>
+        /// #431: the ascent dock ("Bronze medal / i / Auto-assist on") never sits over Follow / Auto / Pause. It folds away
+        /// for the climax coast and the loss show (FlightHudLayout.DockShown); <paramref name="folded"/> requires that.
+        /// </summary>
+        static void DockClearOfTheToolsRow(string where, bool folded)
+        {
+            var ui = SliceUi();
+            var tools = ui?.Q("flight-tools");
+            Assert.IsNotNull(tools, where + ": the tools row");
+            var dock = ui.Q("ascent-actions");
+            bool up = dock != null && dock.resolvedStyle.display != DisplayStyle.None && dock.worldBound.height > 0.5f;
+            if (folded) Assert.IsFalse(up, where + ": the dock folds away");
+            if (!up) return;
+            Assert.IsFalse(dock.worldBound.Overlaps(tools.worldBound), where + ": dock " + dock.worldBound + " over the tools row " + tools.worldBound);
+        }
+
         static bool ReportShown() { var r = Find("screen-report"); return r != null && NavIds.Shown(r); }
 
         [UnityTest]
@@ -549,8 +565,18 @@ namespace Kestrel.Capture.Tests
             Assert.AreEqual(OrbitCoast.CalloutApogee, verdict.text, "the HUD calls the climax");
             Assert.IsFalse(ReportShown(), "no card during the coast");
             var exit = SliceUi()?.Q<Button>(UiIds.FlightExit);
-            Assert.IsTrue(exit == null || exit.ClassListContains("hidden") || exit.resolvedStyle.visibility == Visibility.Hidden,
+            Assert.IsTrue(exit == null || exit.ClassListContains("hidden") || exit.resolvedStyle.display == DisplayStyle.None
+                || exit.resolvedStyle.visibility == Visibility.Hidden,
                 "BACK TO DESIGN stays off the climax");
+            DockClearOfTheToolsRow("climax", true);
+            // The stack sits between the Apogee! banner and Follow / Auto / Pause (FitBand over FlightHudLayout.CoastBand);
+            // at 1085e8b7 / 38e8e1b5 it was mostly behind them.
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            var band = app.CoastTrace;
+            Assert.That(band.y - band.x, Is.GreaterThan(0.1f), "a coast band between the banner and the tools row: " + band);
+            Assert.That(band.z, Is.GreaterThanOrEqualTo(band.x - 0.01f), "the stack's base clears Follow / Auto / Pause: " + band);
+            Assert.That(band.w, Is.LessThanOrEqualTo(band.y + 0.01f), "the nose clears the Apogee! banner: " + band);
+            Assert.That(band.w - band.z, Is.GreaterThan(0.05f), "the stack is clearly there: " + band);
             yield return Frame("climax-apogee");
             driver.Hold(false);
             yield return Until(() => driver.Result != null, 15f);
@@ -618,7 +644,11 @@ namespace Kestrel.Capture.Tests
             Assert.IsFalse(ReportShown(), "no card yet");
             float start = Time.realtimeSinceStartup;
             yield return Until(() => Time.realtimeSinceStartup - start >= 0.6f || !host.CardPending, 5f);
-            if (host.CardPending) yield return Frame("breakup-live-show");
+            if (host.CardPending)
+            {
+                DockClearOfTheToolsRow("break-up", false);
+                yield return Frame("breakup-live-show");
+            }
             yield return Until(ReportShown, 15f);
             Assert.IsTrue(ReportShown(), "the card opens once the break-up has played");
             Assert.IsFalse(host.CardPending);
