@@ -56,6 +56,42 @@ namespace Kestrel.Kit
             else r.enabled = false;
         }
 
+        public const string SolidResource = "Materials/KH_Body";
+        public const string GlowResource = "Materials/KH_LitEmission";
+
+        /// <summary>
+        /// Opaque URP Lit material for a GameObject.CreatePrimitive visual (failure marker, shards, legs). A primitive made at
+        /// runtime in the player keeps Unity's built-in Default-Material, whose Standard shader a URP player does not ship:
+        /// it draws flat MAGENTA (the giant sphere on WebGL breakups, QA #417). Clone a pinned Resources material instead.
+        /// <paramref name="glow"/> uses the emissive template with the emission bounded to <paramref name="glowScale"/>
+        /// (at most 1, so a hot marker never blows out to a white flash). Null when nothing safe exists; use Apply.
+        /// </summary>
+        public static Material Solid(Color tint, string name, bool glow = false, float glowScale = 0.6f)
+        {
+            var tmpl = Resources.Load<Material>(glow ? GlowResource : SolidResource);
+            if (tmpl == null || !Usable(tmpl.shader)) tmpl = Resources.Load<Material>(SolidResource);
+            Material mat = null;
+            if (tmpl != null && Usable(tmpl.shader)) mat = new Material(tmpl);
+            if (mat == null)
+            {
+                var sh = Shader.Find("Universal Render Pipeline/Lit");
+                if (!Usable(sh)) sh = Shader.Find("Universal Render Pipeline/Simple Lit");
+                if (!Usable(sh)) sh = Shader.Find("Universal Render Pipeline/Unlit");
+                if (!Usable(sh)) return null;
+                mat = new Material(sh);
+            }
+            mat.name = name;
+            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", tint);
+            mat.color = tint;
+            if (mat.HasProperty("_EmissionColor"))
+            {
+                float k = glow ? Mathf.Clamp01(glowScale) : 0f;
+                mat.SetColor("_EmissionColor", new Color(tint.r * k, tint.g * k, tint.b * k, 1f));
+                if (k > 0f) mat.EnableKeyword("_EMISSION"); else mat.DisableKeyword("_EMISSION");
+            }
+            return mat;
+        }
+
         /// <summary>Material for a soft particle texture. <paramref name="additive"/> adds light; otherwise it is alpha blended (smoke).</summary>
         public static Material Particle(Texture tex, string name, bool additive, bool doubleSided = false, int queueOffset = 0)
         {
