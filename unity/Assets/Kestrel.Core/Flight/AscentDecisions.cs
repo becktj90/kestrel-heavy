@@ -578,6 +578,61 @@ namespace Kestrel.Core.Flight
         }
 
         public bool IsOpen(AscentCall kind) => Find(kind, Phase.Open) != null;
+
+        /// <summary>
+        /// PR5 coast warp (read-only): sim seconds until the next call could arm, from the last sample and the caller's
+        /// propellant burn rate (fraction per second) and climb rate (m/s). 0 while a call is armed or open, or while one
+        /// can arm at any moment (early ascent: max-Q, pitch, fuel balance, engine-out). +Infinity when none is left.
+        /// Mirrors the thresholds in Arm; an unknown rate (NaN) gives no estimate (+Infinity) for that call.
+        /// </summary>
+        public double SecondsToNextArm(double propRatePerS, double climbMps)
+        {
+            var s = last;
+            double best = double.PositiveInfinity;
+            for (int i = 0; i < calls.Count; i++)
+            {
+                var c = calls[i];
+                if (c.Phase == Phase.Done) continue;
+                if (c.Armed || c.Phase == Phase.Open) return 0;
+                double t = double.PositiveInfinity;
+                switch (c.Kind)
+                {
+                    case AscentCall.MaxQ:
+                        if (s.StageIndex == 0 && s.AltM < 20000) t = 0;
+                        break;
+                    case AscentCall.Pitch:
+                        if (s.StageIndex == 0 && s.AltM < 50000) t = 0;
+                        break;
+                    case AscentCall.FuelBalance:
+                    case AscentCall.WindShear:
+                        if (s.StageIndex == 0) t = 0;
+                        break;
+                    case AscentCall.Staging:
+                        if (c.Stage == s.StageIndex) t = Until(s.PropFraction - 0.12, propRatePerS);
+                        else if (c.Stage > s.StageIndex) t = Until(s.PropFraction, propRatePerS);
+                        break;
+                    case AscentCall.EngineOut:
+                        if (c.Stage == s.StageIndex) t = 0;
+                        else if (c.Stage > s.StageIndex) t = Until(s.PropFraction, propRatePerS);
+                        break;
+                    case AscentCall.Fairing:
+                    {
+                        double floor = FairingHeatGate.FloorFor(vehicle.JettisonAltM);
+                        t = s.AltM >= floor ? 0 : climbMps > 0 ? (floor - s.AltM) / climbMps : double.PositiveInfinity;
+                        break;
+                    }
+                }
+                if (t < best) best = t;
+            }
+            return best;
+        }
+
+        static double Until(double amount, double ratePerS)
+        {
+            if (double.IsNaN(amount)) return double.PositiveInfinity;
+            if (amount <= 0) return 0;
+            return ratePerS > 0 ? amount / ratePerS : double.PositiveInfinity;
+        }
         public bool IsDone(AscentCall kind) => Find(kind, Phase.Done) != null;
 
         public AscentFlightScore Score()
