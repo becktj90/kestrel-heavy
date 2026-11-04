@@ -34,6 +34,7 @@ namespace Kestrel.Slice
         HangarExplodedView explodedView; Material explodedMat;
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
+        FlightDebrief debriefAtLaunch;
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; Kestrel.Pad.PadLights padLights; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; RecoveryShow recovery; GameObject rocketGO;
         Kestrel.Vehicle.FinCluster landingFins; Kestrel.Vehicle.StrutCluster landingLegs;
         Kestrel.Vehicle.StrutCluster fairingSeams; // fairing seams + rings; FlightStageShow turns them off at separation
@@ -1665,6 +1666,8 @@ namespace Kestrel.Slice
             try { hook = AscentFlight.Prepare(SliceData.Catalog, design, doc, engineer, reduced); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
             flight.Calls = flightCalls;
+            // The end-of-flight banner only reads a debrief published after this launch, never the last flight's.
+            debriefAtLaunch = FlightDebrief.Latest;
             flight.Launch(design, hook);
             if (flight.Sim == null) return false;
             PresentAscent(engineer);
@@ -1881,10 +1884,15 @@ namespace Kestrel.Slice
             }
             else if (!flight.Running && flight.Meco && flight.Sim.Done)
             {
-                // P0 (KH-3 playtest): the flight just stopped with no win signal. If we got through MECO
-                // intact, that's a completed ascent — say so clearly.
-                if (hMsg != null) hMsg.text = "MISSION COMPLETE!";
-                again?.RemoveFromClassList("hidden");
+                // P0 (KH-3 playtest): the flight just stopped with no win signal. The win is the debrief's verdict
+                // (FailureHost publishes it once the booster show is over), not MECO alone: an intact flight
+                // that missed its orbit must not read MISSION COMPLETE.
+                var debrief = FlightDebrief.Latest;
+                if (debrief != null && !ReferenceEquals(debrief, debriefAtLaunch))
+                {
+                    if (hMsg != null) hMsg.text = debrief.FreeBuild ? "Flight complete" : debrief.Passed ? "MISSION COMPLETE!" : "Target missed";
+                    again?.RemoveFromClassList("hidden");
+                }
             }
         }
 
