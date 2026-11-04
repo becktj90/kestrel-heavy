@@ -1,4 +1,4 @@
-// #422 (DECISIONS #79): the Engineer pitch nudge is a bounded offset on the program pitch, slewed at the vehicle's
+// #422 (DECISIONS #82): the Engineer pitch nudge is a bounded offset on the program pitch, slewed at the vehicle's
 // attitude rate (RecoverySim.PitchRate, 10°/s, #351). It used to be added to PitchCmd every tick on the legacy pitch
 // path (Mode 0 and Mode 1 before the catch), so a held 1° became ~120°/s and the rocket looped over off the pad.
 using System;
