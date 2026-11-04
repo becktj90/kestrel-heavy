@@ -50,6 +50,9 @@ namespace Kestrel.Slice
         readonly LiftoffHandoff handoff = new LiftoffHandoff();
         bool ascentErrorLogged;
         double requiredMps, spareMps, hopGoalM; double? maxQKpa; string orbitLabel = "";
+        // Arcade P1: "Short on speed" reads the live spare (Δv on board against the Δv still needed), held below zero for
+        // LiveSpare.HoldS of sim time. Null when the design or its target can't be read; the pill then never shows.
+        LiveSpare liveSpare;
         VisualElement seqRow; Label hVerdict, hPulse, hCallout; Button skipCount;
         // Phase 1 Starter screen (PR 5): shown instead of the existing designer while every designer.* flag is off.
         StarterPanel starter; StarterRocket starterRocket; JsonObject starterEntryDesign; bool starterMode; FeatureFlags flagsSeen;
@@ -1632,6 +1635,8 @@ namespace Kestrel.Slice
             if (hopGoalM > 0) requiredMps = hop.RequiredDeltaV();
             maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
             orbitLabel = sheet != null ? sheet.orbitLabel : "";
+            try { liveSpare = session.Design != null ? LiveSpare.For(session.catalog, Design.FromJson(session.Design).payloadOrbit) : null; }
+            catch (System.Exception) { liveSpare = null; }
             handoff.Enter(OpenSequence());
             sequence = handoff.Sequence;
             counting = handoff.Counting;
@@ -1902,9 +1907,8 @@ namespace Kestrel.Slice
             // Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
             double qLim = maxQKpa.HasValue ? maxQKpa.Value * 1000.0 : 0;
-            double margin = requiredMps > 1 ? spareMps / requiredMps : 0;
             bool reduced = hangarCam != null && hangarCam.ReduceMotion;
-            if (juice != null) juice.Present(flight, rocketHeight, qLim, margin, reduced, Time.deltaTime);
+            if (juice != null) juice.Present(flight, rocketHeight, qLim, reduced, Time.deltaTime);
             StepFlightCamera(juice != null ? juice.Fov : FlightJuice.BaseFov, flight.Altitude, juice);
             if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
@@ -2075,9 +2079,12 @@ namespace Kestrel.Slice
             double alt = flying && flight != null ? flight.Altitude : 0;
             double spd = flying && flight != null ? flight.Speed : 0;
             double q = flying && flight != null ? flight.DynPressure : 0;
+            bool shortOnSpeed = false;
+            if (flying && flight != null && flight.Sim != null && liveSpare != null)
+                shortOnSpeed = liveSpare.Short(flight.Sim.T, liveSpare.Spare(flight.Sim));
             var pulse = flying && flight != null && flight.Lost
                 ? WebcastBoard.Lost(flight.Result.failure.kind, alt)
-                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM);
+                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM, shortOnSpeed);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
             if (!flying && handoff != null && !handoff.Ascending)

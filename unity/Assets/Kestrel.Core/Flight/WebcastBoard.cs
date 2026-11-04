@@ -86,8 +86,10 @@ namespace Kestrel.Core.Flight
         /// <summary>
         /// How the flying design compares with the speed the mission asked for, and with its own max-Q readout.
         /// Before liftoff the verdict is the count, and the detail is the sheet's spare or shortfall.
+        /// In flight "Short on speed" is <paramref name="shortOnSpeed"/>: the caller's LiveSpare has stayed below zero for
+        /// LiveSpare.HoldS (Δv on board against the Δv still needed). The speed share of the budget no longer decides it.
         /// </summary>
-        public static DesignPulse Pulse(bool flying, double altitudeM, double speedMps, double requiredMps, double spareMps, double qPa, double? maxQKpa, string orbitLabel, double goalAltM = 0)
+        public static DesignPulse Pulse(bool flying, double altitudeM, double speedMps, double requiredMps, double spareMps, double qPa, double? maxQKpa, string orbitLabel, double goalAltM = 0, bool shortOnSpeed = false)
         {
             double req = requiredMps > 1 ? requiredMps : 1;
             double frac = flying ? speedMps / req : 0;
@@ -111,7 +113,7 @@ namespace Kestrel.Core.Flight
             else if (frac >= 1) pulse.Verdict = VerdictSpeed;
             else if (underHop || altitudeM < 10000) pulse.Verdict = VerdictClimbing;
             else if (pastHop) pulse.Verdict = VerdictPastGoal;
-            else if (frac < 0.40) pulse.Verdict = VerdictShort;
+            else if (shortOnSpeed) pulse.Verdict = VerdictShort;
             else pulse.Verdict = VerdictOnTrack;
             string q = maxQKpa.HasValue ? $" · Q {qPa / 1000:0} of {maxQKpa.Value:0} kPa" : $" · Q {qPa / 1000:0} kPa";
             pulse.Detail = $"{speedMps / 1000:0.00} of {req / 1000:0.00} km/s{q}";

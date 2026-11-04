@@ -320,18 +320,6 @@ namespace Kestrel.Capture.Tests
                         TestContext.WriteLine("landing burn at " + rec.AltitudeForCapture.ToString("0") + " m, throttle " + rec.ThrottleForCapture.ToString("0.00") + ", phase " + rec.PhaseForCapture);
                         RecoveryShow.HoldForCapture = true;
                         yield return null;
-                        // The live webcast pill reads "Short on speed" while speed / total budget < 0.40, which on KH-7 is the
-                        // whole ascent from MECO into the S3 burn: true of that moment, false as a picture of a flight that
-                        // reaches GTO. With the booster frozen in its burn (camera still on it), let the ascent fly on until
-                        // the pill moves off it, then hold the ascent and shoot. The banner rule itself is Gameplay's.
-                        if (ShortBannerShown(app.UiForCapture) && driver != null)
-                        {
-                            driver.Hold(false);
-                            for (int f = 0; f < MaxFlightFrames && driver.Running && ShortBannerShown(app.UiForCapture); f++) yield return null;
-                            driver.Hold(true);
-                            yield return null;
-                            TestContext.WriteLine("ascent flown on to T+" + app.FlightClockForCapture.ToString("0.0") + " for the landing shot; short banner " + ShortBannerShown(app.UiForCapture) + ", running " + driver.Running);
-                        }
                         TestContext.WriteLine("landing shot: phase " + rec.PhaseForCapture + " steer " + rec.SteerCamera + "; " + BoosterView(rec));
                         var ld = ShootAll("landing", problems);
                         while (ld.MoveNext()) yield return ld.Current;

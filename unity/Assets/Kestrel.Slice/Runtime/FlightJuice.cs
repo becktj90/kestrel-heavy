@@ -44,7 +44,7 @@ namespace Kestrel.Slice
             if (body != null) body.color = baseColor;
         }
 
-        public void Present(FlightDriver flight, float vehicleHeight, double qLimPa, double dvMargin, bool reduced, float dt)
+        public void Present(FlightDriver flight, float vehicleHeight, double qLimPa, bool reduced, float dt)
         {
             if (flight == null || flight.Sim == null)
             {
@@ -65,7 +65,6 @@ namespace Kestrel.Slice
                 AttitudeDeg = flight.AttitudeDeg,
                 VehicleHeight = vehicleHeight,
                 QLimitPa = qLimPa,
-                DvMargin = dvMargin,
                 Health01 = flight.Lost ? 0 : 1,
                 Fuel01 = flight.Sim.PropellantFraction,
                 Stage = flight.Sim.StageIdx,
