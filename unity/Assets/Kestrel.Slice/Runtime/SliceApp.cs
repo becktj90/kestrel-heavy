@@ -1827,6 +1827,7 @@ namespace Kestrel.Slice
             RefreshWebcast(flight.SimTime, true);
             // Booster follow: the HUD reads the stage the camera is on (polled, like recovery.Aim above).
             bool onBooster = recovery != null && recovery.SteerCamera;
+            flight.CameraOnBooster = onBooster; // PR5: coast warp holds ×1 while the camera follows the booster
             ascentHud?.SetBooster(onBooster ? recovery.HudReadout : (BoosterHudReadout?)null);
             ApplyHudFocus(BoosterHud.Focus(onBooster));
             ascentHud?.Present(flight);
@@ -1858,7 +1859,8 @@ namespace Kestrel.Slice
         {
             if (hT != null)
             {
-                hT.text = $"T+ {flight.SimTime:F1}";
+                // PR5: the coast warp chip rides the mission clock (UX to review).
+                hT.text = flight.Warp > 1 ? $"T+ {flight.SimTime:F1}  ⏩×{flight.Warp:0}" : $"T+ {flight.SimTime:F1}";
                 DressClock(hT);
             }
             if (hStage != null) hStage.text = $"S{flight.Sim.StageIdx + 1}";
