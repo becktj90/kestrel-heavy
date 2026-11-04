@@ -1,0 +1,1063 @@
+{"ev":"goto","t":"0.00","wall":"2026-11-04T01:47:46.218Z"}
+{"ev":"netreq","url":"blob:http://localhost:8797/d30e3bad-47b1-48cf-9b95-46574fa3f03c","t":"0.60","wall":"2026-11-04T01:47:46.816Z"}
+{"ev":"console","type":"error","text":"Failed to load resource: the server responded with a status of 404 (File not found)","t":"0.61","wall":"2026-11-04T01:47:46.827Z"}
+{"ev":"console","type":"log","text":"[UnityMemory] Configuration Parameters - Can be set up in boot.config\n","t":"1.31","wall":"2026-11-04T01:47:47.524Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-allocator-temp-initial-block-size-main=262144\"\n","t":"1.31","wall":"2026-11-04T01:47:47.529Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-allocator-temp-initial-block-size-worker=262144\"\n","t":"1.31","wall":"2026-11-04T01:47:47.529Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-audio-worker=65536\"\n","t":"1.31","wall":"2026-11-04T01:47:47.529Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-remapper-allocator-initial-capacity=32768\"\n","t":"1.31","wall":"2026-11-04T01:47:47.529Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-background-worker=32768\"\n","t":"1.31","wall":"2026-11-04T01:47:47.529Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-granularity=16\"\n","t":"1.31","wall":"2026-11-04T01:47:47.529Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-bucket-count=8\"\n","t":"1.31","wall":"2026-11-04T01:47:47.529Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-block-size=4194304\"\n","t":"1.31","wall":"2026-11-04T01:47:47.529Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-block-count=1\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-main-allocator-block-size=16777216\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-thread-allocator-block-size=16777216\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-gfx-main-allocator-block-size=16777216\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-gfx-thread-allocator-block-size=16777216\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-cache-allocator-block-size=4194304\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-typetree-allocator-block-size=2097152\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-granularity=16\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-bucket-count=8\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-block-size=4194304\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-block-count=1\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-allocator-block-size=16777216\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-editor-allocator-block-size=1048576\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-main=4194304\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-block-size=2097152\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-block-size-background=1048576\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-reduction-small-platforms=262144\"\n","t":"1.31","wall":"2026-11-04T01:47:47.530Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Initialized fallback backend.\n","t":"1.36","wall":"2026-11-04T01:47:47.580Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Id: 0xdecafbad\n","t":"1.36","wall":"2026-11-04T01:47:47.580Z"}
+{"ev":"console","type":"log","text":"Loading player data from data.unity3d\n","t":"1.36","wall":"2026-11-04T01:47:47.581Z"}
+{"ev":"console","type":"log","text":"Initialize engine version: 6000.3.26f1 (de8167e7440c)\n","t":"1.37","wall":"2026-11-04T01:47:47.587Z"}
+{"ev":"console","type":"log","text":"Creating WebGL 2.0 context.","t":"1.37","wall":"2026-11-04T01:47:47.589Z"}
+{"ev":"console","type":"log","text":"Renderer: WebKit WebGL\n","t":"1.40","wall":"2026-11-04T01:47:47.615Z"}
+{"ev":"console","type":"log","text":"Vendor:   WebKit\n","t":"1.40","wall":"2026-11-04T01:47:47.615Z"}
+{"ev":"console","type":"log","text":"Version:  OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n","t":"1.40","wall":"2026-11-04T01:47:47.616Z"}
+{"ev":"console","type":"log","text":"GLES:     3\n","t":"1.40","wall":"2026-11-04T01:47:47.616Z"}
+{"ev":"console","type":"log","text":" EXT_clip_control EXT_color_buffer_float EXT_color_buffer_half_float EXT_conservative_depth EXT_depth_clamp EXT_disjoint_timer_query_webgl2 EXT_float_blend EXT_polygon_offset_clamp EXT_texture_compression_bptc EXT_texture_compression_rgtc EXT_texture_filter_anisotropic EXT_texture_mirror_clamp_to_ed","t":"1.40","wall":"2026-11-04T01:47:47.616Z"}
+{"ev":"console","type":"log","text":"ression_rgtc GL_EXT_texture_filter_anisotropic GL_EXT_texture_mirror_clamp_to_edge GL_NV_shader_noperspective_interpolation GL_OES_draw_buffers_indexed GL_OES_sample_variables GL_OES_shader_multisample_interpolation GL_OES_texture_float_linear GL_OVR_multiview2 GL_WEBGL_clip_cull_distance GL_WEBGL_c","t":"1.40","wall":"2026-11-04T01:47:47.616Z"}
+{"ev":"console","type":"log","text":"OPENGL LOG: Creating OpenGL ES 3.0 graphics device ; Context level  <OpenGL ES 3.0> ; Context handle 1\n","t":"1.40","wall":"2026-11-04T01:47:47.622Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Selected backend.\n","t":"1.46","wall":"2026-11-04T01:47:47.681Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Name: PhysX\n","t":"1.46","wall":"2026-11-04T01:47:47.682Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Id: 0xf2b8ea05\n","t":"1.46","wall":"2026-11-04T01:47:47.682Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] SDK Version: 4.1.2\n","t":"1.46","wall":"2026-11-04T01:47:47.682Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Integration Version: 1.0.0\n","t":"1.46","wall":"2026-11-04T01:47:47.682Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Threading Mode: Single-Threaded\n","t":"1.46","wall":"2026-11-04T01:47:47.682Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"1.55","wall":"2026-11-04T01:47:47.771Z"}
+{"ev":"console","type":"log","text":"Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"1.55","wall":"2026-11-04T01:47:47.771Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"1.55","wall":"2026-11-04T01:47:47.771Z"}
+{"ev":"console","type":"log","text":"Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"1.55","wall":"2026-11-04T01:47:47.771Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"1.55","wall":"2026-11-04T01:47:47.771Z"}
+{"ev":"console","type":"log","text":"Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"1.55","wall":"2026-11-04T01:47:47.771Z"}
+{"ev":"console","type":"log","text":"Input Manager initialize...\n","t":"1.56","wall":"2026-11-04T01:47:47.782Z"}
+{"ev":"console","type":"log","text":"UnloadTime: 0.500000 ms\n","t":"1.60","wall":"2026-11-04T01:47:47.822Z"}
+{"ev":"console","type":"log","text":"[Kestrel] quality low (renderScale≈1.00, 60 fps, 150 particles)\n","t":"1.67","wall":"2026-11-04T01:47:47.890Z"}
+{"ev":"console","type":"log","text":"[Kestrel] guide clips: 78 found\n","t":"1.72","wall":"2026-11-04T01:47:47.934Z"}
+{"ev":"console","type":"log","text":"Audio context resumed after 0.327 seconds.","t":"1.75","wall":"2026-11-04T01:47:47.967Z"}
+{"ev":"console","type":"log","text":"[UnityCache] 'http://localhost:8797/Build/c5d29fe5a605e4f64be087cd6d32b458.data.unityweb' successfully downloaded and stored in the browser cache","t":"1.91","wall":"2026-11-04T01:47:48.125Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"4.10","wall":"2026-11-04T01:47:50.319Z"}
+{"ev":"loader-ready","load_s":0.076,"t":"4.42","wall":"2026-11-04T01:47:50.634Z"}
+{"ev":"console","type":"error","text":"Failed to load resource: the server responded with a status of 404 (File not found)","t":"4.86","wall":"2026-11-04T01:47:51.080Z"}
+{"ev":"tap","sel":"#start","note":"TAP TO PLAY","t":"4.89","wall":"2026-11-04T01:47:51.113Z"}
+{"ev":"wait","ms":5000,"note":"","t":"9.91","wall":"2026-11-04T01:47:56.131Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/001-home-1.png","note":"","t":"10.70","wall":"2026-11-04T01:47:56.916Z"}
+{"ev":"note","text":"Engineer persona, fresh profile, 440x956 (6.9in class). Taps LAUNCH KH-1","t":"10.75","wall":"2026-11-04T01:47:56.964Z"}
+{"ev":"tap","x":418,"y":84,"hold":120,"note":"settings gear (half under web EXIT button)","t":"16.67","wall":"2026-11-04T01:48:02.887Z"}
+{"ev":"wait","ms":2500,"note":"","t":"19.19","wall":"2026-11-04T01:48:05.410Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/002-gear-1.png","note":"","t":"20.16","wall":"2026-11-04T01:48:06.383Z"}
+{"ev":"tap","x":220,"y":840,"hold":120,"note":"Missions card","t":"21.08","wall":"2026-11-04T01:48:07.301Z"}
+{"ev":"wait","ms":3000,"note":"","t":"24.10","wall":"2026-11-04T01:48:10.320Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/003-missions-1.png","note":"","t":"25.00","wall":"2026-11-04T01:48:11.219Z"}
+{"ev":"tap","x":328,"y":628,"hold":120,"note":"Show full designer -> On","t":"33.36","wall":"2026-11-04T01:48:19.579Z"}
+{"ev":"wait","ms":2000,"note":"","t":"35.39","wall":"2026-11-04T01:48:21.609Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/004-fulldes-1.png","note":"","t":"36.12","wall":"2026-11-04T01:48:22.340Z"}
+{"ev":"tap","x":220,"y":901,"hold":120,"note":"Close settings","t":"37.09","wall":"2026-11-04T01:48:23.311Z"}
+{"ev":"wait","ms":2500,"note":"","t":"39.61","wall":"2026-11-04T01:48:25.832Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/005-closeset-1.png","note":"","t":"40.25","wall":"2026-11-04T01:48:26.466Z"}
+{"ev":"tap","x":220,"y":740,"hold":120,"note":"LAUNCH KH-1","t":"40.83","wall":"2026-11-04T01:48:27.052Z"}
+{"ev":"wait","ms":3000,"note":"","t":"43.87","wall":"2026-11-04T01:48:30.083Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/006-brief-1.png","note":"","t":"44.44","wall":"2026-11-04T01:48:30.659Z"}
+{"ev":"tap","x":220,"y":811,"hold":120,"note":"Build it (full designer on)","t":"52.44","wall":"2026-11-04T01:48:38.659Z"}
+{"ev":"console","type":"log","text":"[Count] boot\n","t":"53.33","wall":"2026-11-04T01:48:39.551Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"53.43","wall":"2026-11-04T01:48:39.644Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.46","wall":"2026-11-04T01:48:39.676Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.46","wall":"2026-11-04T01:48:39.681Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.46","wall":"2026-11-04T01:48:39.682Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.46","wall":"2026-11-04T01:48:39.682Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.47","wall":"2026-11-04T01:48:39.688Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.47","wall":"2026-11-04T01:48:39.688Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.48","wall":"2026-11-04T01:48:39.699Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.48","wall":"2026-11-04T01:48:39.699Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.48","wall":"2026-11-04T01:48:39.700Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.48","wall":"2026-11-04T01:48:39.700Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.48","wall":"2026-11-04T01:48:39.701Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.48","wall":"2026-11-04T01:48:39.702Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.49","wall":"2026-11-04T01:48:39.704Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: auth skipped\n","t":"53.49","wall":"2026-11-04T01:48:39.710Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"53.51","wall":"2026-11-04T01:48:39.730Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"53.52","wall":"2026-11-04T01:48:39.733Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"53.72","wall":"2026-11-04T01:48:39.940Z"}
+{"ev":"console","type":"error","text":"NotSupportedError: screen.orientation.lock() is not available on this device.","t":"54.36","wall":"2026-11-04T01:48:40.580Z"}
+{"ev":"wait","ms":3000,"note":"","t":"55.48","wall":"2026-11-04T01:48:41.694Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/007-fulld-1.png","note":"","t":"56.11","wall":"2026-11-04T01:48:42.327Z"}
+{"ev":"wait","ms":3000,"note":"","t":"59.12","wall":"2026-11-04T01:48:45.338Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/008-fulld-2.png","note":"","t":"59.59","wall":"2026-11-04T01:48:45.812Z"}
+{"ev":"note","text":"Full designer on default KH-1 build: '4 things to fix' + warnings, but simple designer said Ready. Cost shown as dollars ($516.71M) vs Kc elsewhere","t":"67.49","wall":"2026-11-04T01:48:53.704Z"}
+{"ev":"tap","x":141,"y":433,"hold":120,"note":"Tanks tab","t":"68.05","wall":"2026-11-04T01:48:54.264Z"}
+{"ev":"wait","ms":2500,"note":"","t":"70.57","wall":"2026-11-04T01:48:56.792Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/009-tanks-1.png","note":"","t":"70.99","wall":"2026-11-04T01:48:57.211Z"}
+{"ev":"note","text":"Stats row clipped after switching tab (Max-Q label 'Ma:' / '49.0 kP' cut off; Cost gone)","t":"76.53","wall":"2026-11-04T01:49:02.750Z"}
+{"ev":"tap","x":165,"y":575,"hold":120,"note":"Skip tour","t":"77.00","wall":"2026-11-04T01:49:03.217Z"}
+{"ev":"wait","ms":2500,"note":"","t":"79.52","wall":"2026-11-04T01:49:05.739Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/010-skiptour-1.png","note":"","t":"80.24","wall":"2026-11-04T01:49:06.457Z"}
+{"ev":"drag","x1":200,"y1":820,"x2":200,"y2":540,"note":"scroll designer list","t":"88.08","wall":"2026-11-04T01:49:14.294Z"}
+{"ev":"wait","ms":1500,"note":"","t":"89.61","wall":"2026-11-04T01:49:15.823Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/011-scroll-1.png","note":"","t":"90.12","wall":"2026-11-04T01:49:16.339Z"}
+{"ev":"drag","x1":200,"y1":820,"x2":200,"y2":540,"note":"scroll designer list","t":"93.36","wall":"2026-11-04T01:49:19.580Z"}
+{"ev":"wait","ms":1500,"note":"","t":"94.89","wall":"2026-11-04T01:49:21.104Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/012-scroll2-1.png","note":"","t":"95.86","wall":"2026-11-04T01:49:22.083Z"}
+{"ev":"note","text":"Mouse drag does not scroll the designer list (touch not tested). Trying Parts","t":"102.73","wall":"2026-11-04T01:49:28.945Z"}
+{"ev":"tap","x":166,"y":921,"hold":120,"note":"Parts","t":"103.34","wall":"2026-11-04T01:49:29.562Z"}
+{"ev":"wait","ms":2500,"note":"","t":"105.88","wall":"2026-11-04T01:49:32.098Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/013-parts-1.png","note":"","t":"106.54","wall":"2026-11-04T01:49:32.761Z"}
+{"ev":"tap","x":166,"y":921,"hold":120,"note":"Join (undo exploded view)","t":"115.68","wall":"2026-11-04T01:49:41.901Z"}
+{"ev":"wait","ms":1500,"note":"","t":"117.20","wall":"2026-11-04T01:49:43.422Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/014-join-1.png","note":"","t":"117.78","wall":"2026-11-04T01:49:43.996Z"}
+{"ev":"note","text":"Edge case 1: Launch default KH-1 from full designer while it shows 4 things to fix","t":"117.85","wall":"2026-11-04T01:49:44.064Z"}
+{"ev":"tap","x":75,"y":869,"hold":120,"note":"Launch (with 4 warnings)","t":"118.53","wall":"2026-11-04T01:49:44.746Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"118.58","wall":"2026-11-04T01:49:44.800Z"}
+{"ev":"console","type":"log","text":"[Count] boot->counting t=-12\n","t":"118.61","wall":"2026-11-04T01:49:44.831Z"}
+{"ev":"console","type":"log","text":"[Count] gates audio=True clip=True voice=False guideHold=False\n","t":"118.62","wall":"2026-11-04T01:49:44.834Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"118.73","wall":"2026-11-04T01:49:44.948Z"}
+{"ev":"wait","ms":2500,"note":"","t":"121.04","wall":"2026-11-04T01:49:47.262Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/015-warnlaunch-1.png","note":"","t":"121.87","wall":"2026-11-04T01:49:48.085Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"123.57","wall":"2026-11-04T01:49:49.785Z"}
+{"ev":"wait","ms":2500,"note":"","t":"124.39","wall":"2026-11-04T01:49:50.603Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/016-warnlaunch-2.png","note":"","t":"125.13","wall":"2026-11-04T01:49:51.353Z"}
+{"ev":"tap","x":312,"y":684,"hold":120,"note":"Skip count","t":"133.66","wall":"2026-11-04T01:49:59.877Z"}
+{"ev":"wait","ms":1000,"note":"","t":"134.67","wall":"2026-11-04T01:50:00.891Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/017-skipcount-1.png","note":"","t":"135.74","wall":"2026-11-04T01:50:01.959Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/018-e-kh1-001.png","note":"","t":"136.65","wall":"2026-11-04T01:50:02.871Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/019-e-kh1-002.png","note":"","t":"137.50","wall":"2026-11-04T01:50:03.723Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/020-e-kh1-003.png","note":"","t":"138.20","wall":"2026-11-04T01:50:04.415Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/021-e-kh1-004.png","note":"","t":"138.99","wall":"2026-11-04T01:50:05.205Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/022-e-kh1-005.png","note":"","t":"140.00","wall":"2026-11-04T01:50:06.213Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/023-e-kh1-006.png","note":"","t":"140.88","wall":"2026-11-04T01:50:07.102Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/024-e-kh1-007.png","note":"","t":"141.91","wall":"2026-11-04T01:50:08.124Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/025-e-kh1-008.png","note":"","t":"142.95","wall":"2026-11-04T01:50:09.170Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/026-e-kh1-009.png","note":"","t":"144.15","wall":"2026-11-04T01:50:10.365Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/027-e-kh1-010.png","note":"","t":"145.36","wall":"2026-11-04T01:50:11.582Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/028-e-kh1-011.png","note":"","t":"146.27","wall":"2026-11-04T01:50:12.490Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/029-e-kh1-012.png","note":"","t":"147.35","wall":"2026-11-04T01:50:13.567Z"}
+{"ev":"console","type":"log","text":"[Count] counting->committed t=0\n","t":"147.77","wall":"2026-11-04T01:50:13.988Z"}
+{"ev":"console","type":"warning","text":"[Ascent] briefing skipped: repo root with data/golden not found above /\n","t":"147.77","wall":"2026-11-04T01:50:13.988Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"147.84","wall":"2026-11-04T01:50:14.058Z"}
+{"ev":"console","type":"log","text":"[Count] committed->ascending t=0\n","t":"147.86","wall":"2026-11-04T01:50:14.077Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/030-e-kh1-013.png","note":"","t":"148.57","wall":"2026-11-04T01:50:14.792Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/031-e-kh1-014.png","note":"","t":"149.44","wall":"2026-11-04T01:50:15.656Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/032-e-kh1-015.png","note":"","t":"150.97","wall":"2026-11-04T01:50:17.184Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"151.12","wall":"2026-11-04T01:50:17.342Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/033-e-kh1-016.png","note":"","t":"151.97","wall":"2026-11-04T01:50:18.183Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/034-e-kh1-017.png","note":"","t":"152.89","wall":"2026-11-04T01:50:19.111Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/035-e-kh1-018.png","note":"","t":"153.79","wall":"2026-11-04T01:50:20.008Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/036-e-kh1-019.png","note":"","t":"154.44","wall":"2026-11-04T01:50:20.662Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/037-e-kh1-020.png","note":"","t":"155.36","wall":"2026-11-04T01:50:21.577Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/038-e-kh1-021.png","note":"","t":"156.15","wall":"2026-11-04T01:50:22.365Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/039-e-kh1-022.png","note":"","t":"156.94","wall":"2026-11-04T01:50:23.160Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/040-e-kh1-023.png","note":"","t":"157.51","wall":"2026-11-04T01:50:23.725Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/041-e-kh1-024.png","note":"","t":"158.22","wall":"2026-11-04T01:50:24.442Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/042-e-kh1-025.png","note":"","t":"159.15","wall":"2026-11-04T01:50:25.368Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/043-e-kh1-026.png","note":"","t":"159.94","wall":"2026-11-04T01:50:26.153Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/044-e-kh1-027.png","note":"","t":"160.73","wall":"2026-11-04T01:50:26.951Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/045-e-kh1-028.png","note":"","t":"161.41","wall":"2026-11-04T01:50:27.627Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/046-e-kh1-029.png","note":"","t":"162.31","wall":"2026-11-04T01:50:28.531Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/047-e-kh1-030.png","note":"","t":"163.01","wall":"2026-11-04T01:50:29.228Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/048-e-kh1-031.png","note":"","t":"163.58","wall":"2026-11-04T01:50:29.795Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/049-e-kh1-032.png","note":"","t":"164.29","wall":"2026-11-04T01:50:30.506Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/050-e-kh1-033.png","note":"","t":"165.11","wall":"2026-11-04T01:50:31.327Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/051-e-kh1-034.png","note":"","t":"165.91","wall":"2026-11-04T01:50:32.132Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/052-e-kh1-035.png","note":"","t":"166.73","wall":"2026-11-04T01:50:32.948Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/053-e-kh1-036.png","note":"","t":"167.54","wall":"2026-11-04T01:50:33.755Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/054-e-kh1-037.png","note":"","t":"168.13","wall":"2026-11-04T01:50:34.353Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/055-e-kh1-038.png","note":"","t":"168.92","wall":"2026-11-04T01:50:35.138Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/056-e-kh1-039.png","note":"","t":"169.62","wall":"2026-11-04T01:50:35.838Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/057-e-kh1-040.png","note":"","t":"170.45","wall":"2026-11-04T01:50:36.664Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"170.91","wall":"2026-11-04T01:50:37.127Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/058-e-kh1-041.png","note":"","t":"171.28","wall":"2026-11-04T01:50:37.493Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/059-e-kh1-042.png","note":"","t":"172.06","wall":"2026-11-04T01:50:38.274Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/060-e-kh1-043.png","note":"","t":"172.66","wall":"2026-11-04T01:50:38.881Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/061-e-kh1-044.png","note":"","t":"173.32","wall":"2026-11-04T01:50:39.541Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/062-e-kh1-045.png","note":"","t":"174.07","wall":"2026-11-04T01:50:40.285Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/063-e-kh1-046.png","note":"","t":"174.83","wall":"2026-11-04T01:50:41.046Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/064-e-kh1-047.png","note":"","t":"175.39","wall":"2026-11-04T01:50:41.605Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/065-e-kh1-048.png","note":"","t":"176.19","wall":"2026-11-04T01:50:42.403Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/066-e-kh1-049.png","note":"","t":"176.93","wall":"2026-11-04T01:50:43.143Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/067-e-kh1-050.png","note":"","t":"177.57","wall":"2026-11-04T01:50:43.792Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/068-e-kh1-051.png","note":"","t":"178.25","wall":"2026-11-04T01:50:44.468Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/069-e-kh1-052.png","note":"","t":"178.91","wall":"2026-11-04T01:50:45.132Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/070-e-kh1-053.png","note":"","t":"179.64","wall":"2026-11-04T01:50:45.860Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/071-e-kh1-054.png","note":"","t":"180.41","wall":"2026-11-04T01:50:46.624Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/072-e-kh1-055.png","note":"","t":"181.08","wall":"2026-11-04T01:50:47.296Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/073-e-kh1-056.png","note":"","t":"181.79","wall":"2026-11-04T01:50:48.007Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/074-e-kh1-057.png","note":"","t":"182.56","wall":"2026-11-04T01:50:48.773Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/075-e-kh1-058.png","note":"","t":"183.15","wall":"2026-11-04T01:50:49.368Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/076-e-kh1-059.png","note":"","t":"183.92","wall":"2026-11-04T01:50:50.139Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/077-e-kh1-060.png","note":"","t":"184.51","wall":"2026-11-04T01:50:50.727Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/078-e-kh1-061.png","note":"","t":"185.24","wall":"2026-11-04T01:50:51.456Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/079-e-kh1-062.png","note":"","t":"185.70","wall":"2026-11-04T01:50:51.919Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"191.44","wall":"2026-11-04T01:50:57.655Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: would submit 7190 to kh.unityproto.meco_alt_m\n","t":"191.44","wall":"2026-11-04T01:50:57.661Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"191.47","wall":"2026-11-04T01:50:57.686Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"191.47","wall":"2026-11-04T01:50:57.693Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"191.48","wall":"2026-11-04T01:50:57.696Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.49","wall":"2026-11-04T01:50:57.709Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.49","wall":"2026-11-04T01:50:57.711Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.49","wall":"2026-11-04T01:50:57.712Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.49","wall":"2026-11-04T01:50:57.712Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.713Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.713Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.714Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.714Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.715Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.716Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.716Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.718Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.718Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.719Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.50","wall":"2026-11-04T01:50:57.720Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.727Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.728Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.731Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.731Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.731Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.731Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.51","wall":"2026-11-04T01:50:57.733Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.734Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.734Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.734Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.734Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.734Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.734Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.734Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.735Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.736Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.736Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.736Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.736Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.736Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.739Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.739Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.739Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.739Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.739Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.741Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.741Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.52","wall":"2026-11-04T01:50:57.741Z"}
+{"ev":"console","type":"log","text":"[Count] ascending->done t=0 flight ended\n","t":"191.54","wall":"2026-11-04T01:50:57.761Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/080-e-kh1b-001.png","note":"","t":"203.05","wall":"2026-11-04T01:51:09.272Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/081-e-kh1b-002.png","note":"","t":"203.78","wall":"2026-11-04T01:51:09.996Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/082-e-kh1b-003.png","note":"","t":"204.54","wall":"2026-11-04T01:51:10.759Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/083-e-kh1b-004.png","note":"","t":"205.66","wall":"2026-11-04T01:51:11.873Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/084-e-kh1b-005.png","note":"","t":"206.38","wall":"2026-11-04T01:51:12.602Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/085-e-kh1b-006.png","note":"","t":"207.30","wall":"2026-11-04T01:51:13.521Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/086-e-kh1b-007.png","note":"","t":"208.19","wall":"2026-11-04T01:51:14.408Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/087-e-kh1b-008.png","note":"","t":"208.96","wall":"2026-11-04T01:51:15.176Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/088-e-kh1b-009.png","note":"","t":"210.06","wall":"2026-11-04T01:51:16.275Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/089-e-kh1b-010.png","note":"","t":"211.07","wall":"2026-11-04T01:51:17.287Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/090-e-kh1b-011.png","note":"","t":"212.20","wall":"2026-11-04T01:51:18.421Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/091-e-kh1b-012.png","note":"","t":"213.43","wall":"2026-11-04T01:51:19.646Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/092-e-kh1b-013.png","note":"","t":"214.86","wall":"2026-11-04T01:51:21.075Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/093-e-kh1b-014.png","note":"","t":"215.90","wall":"2026-11-04T01:51:22.120Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/094-e-kh1b-015.png","note":"","t":"217.15","wall":"2026-11-04T01:51:23.364Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/095-e-kh1b-016.png","note":"","t":"218.17","wall":"2026-11-04T01:51:24.391Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/096-e-kh1b-017.png","note":"","t":"219.26","wall":"2026-11-04T01:51:25.481Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/097-e-kh1b-018.png","note":"","t":"220.31","wall":"2026-11-04T01:51:26.523Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/098-e-kh1b-019.png","note":"","t":"221.17","wall":"2026-11-04T01:51:27.388Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/099-e-kh1b-020.png","note":"","t":"222.05","wall":"2026-11-04T01:51:28.267Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/100-e-kh1b-021.png","note":"","t":"223.06","wall":"2026-11-04T01:51:29.274Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/101-e-kh1b-022.png","note":"","t":"224.11","wall":"2026-11-04T01:51:30.332Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/102-e-kh1b-023.png","note":"","t":"225.15","wall":"2026-11-04T01:51:31.363Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/103-e-kh1b-024.png","note":"","t":"226.17","wall":"2026-11-04T01:51:32.386Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/104-e-kh1b-025.png","note":"","t":"227.43","wall":"2026-11-04T01:51:33.648Z"}
+{"ev":"note","text":"KH-1 with 4 'things to fix' flew fine: 1 star bronze (prompts ignored). Warnings had no visible effect","t":"237.64","wall":"2026-11-04T01:51:43.860Z"}
+{"ev":"tap","x":118,"y":815,"hold":120,"note":"Back to designer","t":"238.29","wall":"2026-11-04T01:51:44.510Z"}
+{"ev":"console","type":"log","text":"[Count] done->boot t=0\n","t":"238.55","wall":"2026-11-04T01:51:44.770Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"238.72","wall":"2026-11-04T01:51:44.938Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"238.72","wall":"2026-11-04T01:51:44.942Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"238.73","wall":"2026-11-04T01:51:44.945Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.956Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.958Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.958Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.958Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.958Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.958Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.958Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.958Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.958Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.959Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.959Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.959Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.959Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.74","wall":"2026-11-04T01:51:44.959Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.965Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.969Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.969Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.970Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.970Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.970Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.970Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.970Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.970Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.971Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.971Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.971Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.972Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"238.75","wall":"2026-11-04T01:51:44.972Z"}
+{"ev":"console","type":"log","text":"[Count] boot->done t=0 flight ended\n","t":"238.77","wall":"2026-11-04T01:51:44.992Z"}
+{"ev":"wait","ms":4000,"note":"","t":"242.32","wall":"2026-11-04T01:51:48.538Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/105-bdes-1.png","note":"","t":"243.09","wall":"2026-11-04T01:51:49.308Z"}
+{"ev":"tap","x":52,"y":481,"hold":120,"note":"Simple (switch to simple panel)","t":"243.78","wall":"2026-11-04T01:51:50.002Z"}
+{"ev":"wait","ms":2500,"note":"","t":"246.30","wall":"2026-11-04T01:51:52.521Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/106-simple-1.png","note":"","t":"247.15","wall":"2026-11-04T01:51:53.371Z"}
+{"ev":"note","text":"First tap on results (Back to designer) was swallowed: report re-rendered as 'Stars saved...' with empty charts, buttons shifted ~25px. Same as kid's first Fix it tap","t":"255.19","wall":"2026-11-04T01:52:01.411Z"}
+{"ev":"tap","x":118,"y":813,"hold":120,"note":"Back to designer (2nd tap)","t":"255.91","wall":"2026-11-04T01:52:02.123Z"}
+{"ev":"console","type":"log","text":"[Count] done->boot t=0\n","t":"256.14","wall":"2026-11-04T01:52:02.358Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"256.39","wall":"2026-11-04T01:52:02.607Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"256.39","wall":"2026-11-04T01:52:02.607Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"256.40","wall":"2026-11-04T01:52:02.623Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.635Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.636Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.636Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.636Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.636Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.42","wall":"2026-11-04T01:52:02.636Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.648Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.43","wall":"2026-11-04T01:52:02.649Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.653Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"256.44","wall":"2026-11-04T01:52:02.661Z"}
+{"ev":"console","type":"log","text":"[Count] boot->done t=0 flight ended\n","t":"256.48","wall":"2026-11-04T01:52:02.700Z"}
+{"ev":"wait","ms":4000,"note":"","t":"259.94","wall":"2026-11-04T01:52:06.154Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/107-bdes2-1.png","note":"","t":"260.87","wall":"2026-11-04T01:52:07.085Z"}
+{"ev":"wait","ms":4000,"note":"","t":"271.63","wall":"2026-11-04T01:52:17.853Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/108-bdes-wait-1.png","note":"","t":"272.30","wall":"2026-11-04T01:52:18.521Z"}
+{"ev":"wait","ms":4000,"note":"","t":"276.31","wall":"2026-11-04T01:52:22.531Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/109-bdes-wait-2.png","note":"","t":"276.96","wall":"2026-11-04T01:52:23.178Z"}
+{"ev":"note","text":"Back to designer tapped twice: stays on results (re-renders, FS.syncfs in console). Treat as dead button. Try Home","t":"284.06","wall":"2026-11-04T01:52:30.275Z"}
+{"ev":"tap","x":220,"y":891,"hold":120,"note":"Home","t":"284.46","wall":"2026-11-04T01:52:30.682Z"}
+{"ev":"wait","ms":4000,"note":"","t":"288.49","wall":"2026-11-04T01:52:34.707Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/110-home2-1.png","note":"","t":"289.05","wall":"2026-11-04T01:52:35.265Z"}
+{"ev":"tap","x":220,"y":840,"hold":120,"note":"Missions","t":"295.49","wall":"2026-11-04T01:52:41.711Z"}
+{"ev":"wait","ms":3000,"note":"","t":"298.51","wall":"2026-11-04T01:52:44.731Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/111-emap-1.png","note":"","t":"299.13","wall":"2026-11-04T01:52:45.344Z"}
+{"ev":"tap","x":322,"y":816,"hold":120,"note":"Sandbox","t":"304.89","wall":"2026-11-04T01:52:51.105Z"}
+{"ev":"wait","ms":3000,"note":"","t":"307.91","wall":"2026-11-04T01:52:54.127Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/112-sandbox-1.png","note":"","t":"308.48","wall":"2026-11-04T01:52:54.693Z"}
+{"ev":"wait","ms":3000,"note":"","t":"311.49","wall":"2026-11-04T01:52:57.708Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/113-sandbox-2.png","note":"","t":"311.77","wall":"2026-11-04T01:52:57.991Z"}
+{"ev":"tap","x":226,"y":893,"hold":120,"note":"Design first (sandbox)","t":"317.55","wall":"2026-11-04T01:53:03.763Z"}
+{"ev":"console","type":"log","text":"[Count] boot\n","t":"318.07","wall":"2026-11-04T01:53:04.290Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"318.11","wall":"2026-11-04T01:53:04.332Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: auth skipped\n","t":"318.12","wall":"2026-11-04T01:53:04.339Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"318.13","wall":"2026-11-04T01:53:04.349Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"318.13","wall":"2026-11-04T01:53:04.350Z"}
+{"ev":"wait","ms":3500,"note":"","t":"321.06","wall":"2026-11-04T01:53:07.279Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/114-sbdes-1.png","note":"","t":"321.80","wall":"2026-11-04T01:53:08.019Z"}
+{"ev":"wait","ms":3500,"note":"","t":"325.31","wall":"2026-11-04T01:53:11.533Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/115-sbdes-2.png","note":"","t":"325.85","wall":"2026-11-04T01:53:12.069Z"}
+{"ev":"eval","result":"wheel","t":"335.88","wall":"2026-11-04T01:53:22.103Z"}
+{"ev":"wait","ms":1500,"note":"","t":"337.40","wall":"2026-11-04T01:53:23.619Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/116-wheel-1.png","note":"","t":"337.99","wall":"2026-11-04T01:53:24.209Z"}
+{"ev":"note","text":"Scrolled sandbox part list with synthetic mouse wheel x5","t":"338.02","wall":"2026-11-04T01:53:24.242Z"}
+{"ev":"hold","x":423,"y":887,"ms":2500,"note":"hold scrollbar down arrow","t":"347.82","wall":"2026-11-04T01:53:34.037Z"}
+{"ev":"wait","ms":1000,"note":"","t":"348.85","wall":"2026-11-04T01:53:35.063Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/117-arrow-1.png","note":"","t":"349.58","wall":"2026-11-04T01:53:35.799Z"}
+{"ev":"hold","x":423,"y":530,"ms":900,"note":"hold scrollbar up arrow","t":"355.42","wall":"2026-11-04T01:53:41.638Z"}
+{"ev":"wait","ms":1000,"note":"","t":"356.43","wall":"2026-11-04T01:53:42.652Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/118-arrow-up-1.png","note":"","t":"357.11","wall":"2026-11-04T01:53:43.332Z"}
+{"ev":"note","text":"Edge case 2: minimum fuel. Tap Fuel load minus x20","t":"361.78","wall":"2026-11-04T01:53:48.001Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"362.05","wall":"2026-11-04T01:53:48.265Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"362.07","wall":"2026-11-04T01:53:48.286Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"362.28","wall":"2026-11-04T01:53:48.498Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"362.30","wall":"2026-11-04T01:53:48.513Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"362.52","wall":"2026-11-04T01:53:48.739Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"362.54","wall":"2026-11-04T01:53:48.754Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"362.74","wall":"2026-11-04T01:53:48.960Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"362.75","wall":"2026-11-04T01:53:48.972Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"362.97","wall":"2026-11-04T01:53:49.187Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"362.99","wall":"2026-11-04T01:53:49.209Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"363.19","wall":"2026-11-04T01:53:49.407Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"363.20","wall":"2026-11-04T01:53:49.421Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"363.41","wall":"2026-11-04T01:53:49.630Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"363.43","wall":"2026-11-04T01:53:49.649Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"363.63","wall":"2026-11-04T01:53:49.844Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"363.64","wall":"2026-11-04T01:53:49.859Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"363.85","wall":"2026-11-04T01:53:50.069Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"363.87","wall":"2026-11-04T01:53:50.089Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"364.10","wall":"2026-11-04T01:53:50.316Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"364.11","wall":"2026-11-04T01:53:50.328Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"364.33","wall":"2026-11-04T01:53:50.544Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"364.38","wall":"2026-11-04T01:53:50.602Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"364.55","wall":"2026-11-04T01:53:50.766Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"364.80","wall":"2026-11-04T01:53:51.016Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"365.10","wall":"2026-11-04T01:53:51.319Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"365.33","wall":"2026-11-04T01:53:51.544Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"365.56","wall":"2026-11-04T01:53:51.779Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"365.84","wall":"2026-11-04T01:53:52.060Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"366.07","wall":"2026-11-04T01:53:52.289Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"366.30","wall":"2026-11-04T01:53:52.515Z"}
+{"ev":"tap","x":346,"y":625,"hold":60,"note":"fuel-minus","t":"366.52","wall":"2026-11-04T01:53:52.738Z"}
+{"ev":"wait","ms":1500,"note":"","t":"368.03","wall":"2026-11-04T01:53:54.252Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/119-nofuel-1.png","note":"","t":"368.21","wall":"2026-11-04T01:53:54.432Z"}
+{"ev":"note","text":"Min fuel floor 2.9 t (cannot go to zero). Speed 96% red, LAUNCH still enabled. Panel jumped ~23px when error line appeared. Launch","t":"375.93","wall":"2026-11-04T01:54:02.143Z"}
+{"ev":"tap","x":356,"y":897,"hold":120,"note":"LAUNCH min fuel","t":"376.20","wall":"2026-11-04T01:54:02.416Z"}
+{"ev":"console","type":"log","text":"[Count] boot->counting t=-12\n","t":"376.31","wall":"2026-11-04T01:54:02.530Z"}
+{"ev":"console","type":"log","text":"[Count] gates audio=True clip=True voice=False guideHold=False\n","t":"376.31","wall":"2026-11-04T01:54:02.531Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/120-e-nofuel-001.png","note":"","t":"376.47","wall":"2026-11-04T01:54:02.687Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/121-e-nofuel-002.png","note":"","t":"377.06","wall":"2026-11-04T01:54:03.273Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/122-e-nofuel-003.png","note":"","t":"377.62","wall":"2026-11-04T01:54:03.834Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/123-e-nofuel-004.png","note":"","t":"378.13","wall":"2026-11-04T01:54:04.347Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/124-e-nofuel-005.png","note":"","t":"378.65","wall":"2026-11-04T01:54:04.865Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/125-e-nofuel-006.png","note":"","t":"379.17","wall":"2026-11-04T01:54:05.386Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/126-e-nofuel-007.png","note":"","t":"379.73","wall":"2026-11-04T01:54:05.945Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/127-e-nofuel-008.png","note":"","t":"380.29","wall":"2026-11-04T01:54:06.507Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/128-e-nofuel-009.png","note":"","t":"380.86","wall":"2026-11-04T01:54:07.076Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/129-e-nofuel-010.png","note":"","t":"381.36","wall":"2026-11-04T01:54:07.573Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/130-e-nofuel-011.png","note":"","t":"381.93","wall":"2026-11-04T01:54:08.151Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/131-e-nofuel-012.png","note":"","t":"382.44","wall":"2026-11-04T01:54:08.653Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/132-e-nofuel-013.png","note":"","t":"382.99","wall":"2026-11-04T01:54:09.212Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/133-e-nofuel-014.png","note":"","t":"383.67","wall":"2026-11-04T01:54:09.888Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/134-e-nofuel-015.png","note":"","t":"384.25","wall":"2026-11-04T01:54:10.470Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/135-e-nofuel-016.png","note":"","t":"384.74","wall":"2026-11-04T01:54:10.955Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/136-e-nofuel-017.png","note":"","t":"385.24","wall":"2026-11-04T01:54:11.455Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/137-e-nofuel-018.png","note":"","t":"385.81","wall":"2026-11-04T01:54:12.026Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/138-e-nofuel-019.png","note":"","t":"386.41","wall":"2026-11-04T01:54:12.626Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/139-e-nofuel-020.png","note":"","t":"387.03","wall":"2026-11-04T01:54:13.249Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/140-e-nofuel-021.png","note":"","t":"387.72","wall":"2026-11-04T01:54:13.936Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/141-e-nofuel-022.png","note":"","t":"388.23","wall":"2026-11-04T01:54:14.451Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/142-e-nofuel-023.png","note":"","t":"388.74","wall":"2026-11-04T01:54:14.958Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/143-e-nofuel-024.png","note":"","t":"389.24","wall":"2026-11-04T01:54:15.462Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/144-e-nofuel-025.png","note":"","t":"389.83","wall":"2026-11-04T01:54:16.049Z"}
+{"ev":"console","type":"log","text":"[Count] counting->committed t=0\n","t":"389.93","wall":"2026-11-04T01:54:16.150Z"}
+{"ev":"console","type":"warning","text":"[Ascent] briefing skipped: repo root with data/golden not found above /\n","t":"389.93","wall":"2026-11-04T01:54:16.152Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"389.95","wall":"2026-11-04T01:54:16.164Z"}
+{"ev":"console","type":"log","text":"[Count] committed->ascending t=0\n","t":"389.95","wall":"2026-11-04T01:54:16.168Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/145-e-nofuel-026.png","note":"","t":"390.43","wall":"2026-11-04T01:54:16.647Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/146-e-nofuel-027.png","note":"","t":"391.14","wall":"2026-11-04T01:54:17.358Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/147-e-nofuel-028.png","note":"","t":"391.57","wall":"2026-11-04T01:54:17.793Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/148-e-nofuel-029.png","note":"","t":"392.05","wall":"2026-11-04T01:54:18.265Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/149-e-nofuel-030.png","note":"","t":"392.51","wall":"2026-11-04T01:54:18.724Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/150-e-nofuel-031.png","note":"","t":"392.97","wall":"2026-11-04T01:54:19.188Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/151-e-nofuel-032.png","note":"","t":"393.52","wall":"2026-11-04T01:54:19.736Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/152-e-nofuel-033.png","note":"","t":"393.97","wall":"2026-11-04T01:54:20.184Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/153-e-nofuel-034.png","note":"","t":"394.45","wall":"2026-11-04T01:54:20.669Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/154-e-nofuel-035.png","note":"","t":"394.89","wall":"2026-11-04T01:54:21.108Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/155-e-nofuel-036.png","note":"","t":"395.34","wall":"2026-11-04T01:54:21.559Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/156-e-nofuel-037.png","note":"","t":"395.82","wall":"2026-11-04T01:54:22.035Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/157-e-nofuel-038.png","note":"","t":"396.27","wall":"2026-11-04T01:54:22.489Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/158-e-nofuel-039.png","note":"","t":"396.72","wall":"2026-11-04T01:54:22.937Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/159-e-nofuel-040.png","note":"","t":"397.24","wall":"2026-11-04T01:54:23.462Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'SphereCollider' doesn't exist!\n","t":"397.55","wall":"2026-11-04T01:54:23.763Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.773Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.773Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.774Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.774Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.775Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.775Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.775Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.775Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.776Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.776Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.776Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.776Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.777Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.777Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.777Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.778Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.778Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.779Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.779Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.779Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.779Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.779Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.779Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.780Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.780Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.780Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.780Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.781Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.781Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.781Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.781Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.781Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.782Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.782Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.782Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.782Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.783Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.783Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.56","wall":"2026-11-04T01:54:23.783Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.784Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.784Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.784Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.784Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.784Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.785Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.785Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.785Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.785Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.786Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.786Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.786Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.791Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.791Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"397.57","wall":"2026-11-04T01:54:23.791Z"}
+{"ev":"console","type":"log","text":"[Count] ascending->done t=0 flight ended\n","t":"397.58","wall":"2026-11-04T01:54:23.803Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"397.67","wall":"2026-11-04T01:54:23.886Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"397.67","wall":"2026-11-04T01:54:23.886Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"397.67","wall":"2026-11-04T01:54:23.892Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"397.67","wall":"2026-11-04T01:54:23.892Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"397.67","wall":"2026-11-04T01:54:23.892Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"397.67","wall":"2026-11-04T01:54:23.892Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"397.67","wall":"2026-11-04T01:54:23.892Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"397.67","wall":"2026-11-04T01:54:23.892Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/160-e-nofuel-041.png","note":"","t":"397.68","wall":"2026-11-04T01:54:23.893Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/161-e-nofuel-042.png","note":"","t":"398.28","wall":"2026-11-04T01:54:24.494Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/162-e-nofuel-043.png","note":"","t":"398.89","wall":"2026-11-04T01:54:25.110Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/163-e-nofuel-044.png","note":"","t":"399.49","wall":"2026-11-04T01:54:25.710Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/164-e-nofuel-045.png","note":"","t":"400.17","wall":"2026-11-04T01:54:26.391Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/165-e-nofuel-046.png","note":"","t":"400.79","wall":"2026-11-04T01:54:27.012Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/166-e-nofuel-047.png","note":"","t":"401.45","wall":"2026-11-04T01:54:27.669Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/167-e-nofuel-048.png","note":"","t":"402.18","wall":"2026-11-04T01:54:28.395Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/168-e-nofuel-049.png","note":"","t":"402.71","wall":"2026-11-04T01:54:28.926Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/169-e-nofuel-050.png","note":"","t":"403.30","wall":"2026-11-04T01:54:29.518Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/170-e-nofuel-051.png","note":"","t":"403.88","wall":"2026-11-04T01:54:30.095Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/171-e-nofuel-052.png","note":"","t":"404.54","wall":"2026-11-04T01:54:30.758Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/172-e-nofuel-053.png","note":"","t":"405.19","wall":"2026-11-04T01:54:31.411Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/173-e-nofuel-054.png","note":"","t":"405.79","wall":"2026-11-04T01:54:32.009Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/174-e-nofuel-055.png","note":"","t":"406.39","wall":"2026-11-04T01:54:32.613Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/175-e-nofuel-056.png","note":"","t":"407.06","wall":"2026-11-04T01:54:33.274Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/176-e-nofuel-057.png","note":"","t":"407.76","wall":"2026-11-04T01:54:33.979Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/177-e-nofuel-058.png","note":"","t":"408.35","wall":"2026-11-04T01:54:34.565Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/178-e-nofuel-059.png","note":"","t":"408.95","wall":"2026-11-04T01:54:35.164Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/179-e-nofuel-060.png","note":"","t":"409.32","wall":"2026-11-04T01:54:35.541Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/180-e-nofuel-061.png","note":"","t":"409.93","wall":"2026-11-04T01:54:36.145Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/181-e-nofuel-062.png","note":"","t":"410.50","wall":"2026-11-04T01:54:36.716Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/182-e-nofuel-063.png","note":"","t":"411.13","wall":"2026-11-04T01:54:37.344Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/183-e-nofuel-064.png","note":"","t":"411.73","wall":"2026-11-04T01:54:37.948Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/184-e-nofuel-065.png","note":"","t":"412.40","wall":"2026-11-04T01:54:38.616Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/185-e-nofuel-066.png","note":"","t":"412.99","wall":"2026-11-04T01:54:39.205Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/186-e-nofuel-067.png","note":"","t":"413.61","wall":"2026-11-04T01:54:39.825Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/187-e-nofuel-068.png","note":"","t":"414.30","wall":"2026-11-04T01:54:40.518Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/188-e-nofuel-069.png","note":"","t":"414.98","wall":"2026-11-04T01:54:41.198Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/189-e-nofuel-070.png","note":"","t":"415.55","wall":"2026-11-04T01:54:41.771Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/190-e-nofuel-071.png","note":"","t":"416.13","wall":"2026-11-04T01:54:42.350Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/191-e-nofuel-072.png","note":"","t":"416.80","wall":"2026-11-04T01:54:43.014Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/192-e-nofuel-073.png","note":"","t":"417.27","wall":"2026-11-04T01:54:43.492Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/193-e-nofuel-074.png","note":"","t":"417.83","wall":"2026-11-04T01:54:44.044Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/194-e-nofuel-075.png","note":"","t":"418.49","wall":"2026-11-04T01:54:44.706Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/195-e-nofuel-076.png","note":"","t":"419.07","wall":"2026-11-04T01:54:45.288Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/196-e-nofuel-077.png","note":"","t":"419.64","wall":"2026-11-04T01:54:45.860Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/197-e-nofuel-078.png","note":"","t":"420.24","wall":"2026-11-04T01:54:46.454Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/198-e-nofuel-079.png","note":"","t":"420.82","wall":"2026-11-04T01:54:47.036Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/199-e-nofuel-080.png","note":"","t":"421.41","wall":"2026-11-04T01:54:47.628Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/200-e-nofuel-081.png","note":"","t":"422.01","wall":"2026-11-04T01:54:48.228Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/201-e-nofuel-082.png","note":"","t":"422.60","wall":"2026-11-04T01:54:48.821Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/202-e-nofuel-083.png","note":"","t":"423.20","wall":"2026-11-04T01:54:49.421Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/203-e-nofuel-084.png","note":"","t":"423.80","wall":"2026-11-04T01:54:50.015Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/204-e-nofuel-085.png","note":"","t":"424.37","wall":"2026-11-04T01:54:50.585Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/205-e-nofuel-086.png","note":"","t":"424.95","wall":"2026-11-04T01:54:51.164Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/206-e-nofuel-087.png","note":"","t":"425.51","wall":"2026-11-04T01:54:51.732Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/207-e-nofuel-088.png","note":"","t":"426.10","wall":"2026-11-04T01:54:52.316Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/208-e-nofuel-089.png","note":"","t":"426.59","wall":"2026-11-04T01:54:52.809Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/209-e-nofuel-090.png","note":"","t":"427.07","wall":"2026-11-04T01:54:53.284Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/210-e-nofuel-091.png","note":"","t":"427.64","wall":"2026-11-04T01:54:53.860Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/211-e-nofuel-092.png","note":"","t":"428.31","wall":"2026-11-04T01:54:54.523Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/212-e-nofuel-093.png","note":"","t":"428.97","wall":"2026-11-04T01:54:55.185Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/213-e-nofuel-094.png","note":"","t":"429.56","wall":"2026-11-04T01:54:55.774Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/214-e-nofuel-095.png","note":"","t":"430.22","wall":"2026-11-04T01:54:56.441Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/215-e-nofuel-096.png","note":"","t":"430.81","wall":"2026-11-04T01:54:57.024Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/216-e-nofuel-097.png","note":"","t":"431.38","wall":"2026-11-04T01:54:57.596Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/217-e-nofuel-098.png","note":"","t":"431.96","wall":"2026-11-04T01:54:58.180Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/218-e-nofuel-099.png","note":"","t":"432.53","wall":"2026-11-04T01:54:58.745Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/219-e-nofuel-100.png","note":"","t":"433.12","wall":"2026-11-04T01:54:59.338Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/220-e-nofuel-101.png","note":"","t":"433.62","wall":"2026-11-04T01:54:59.834Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/221-e-nofuel-102.png","note":"","t":"434.22","wall":"2026-11-04T01:55:00.435Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/222-e-nofuel-103.png","note":"","t":"434.82","wall":"2026-11-04T01:55:01.040Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/223-e-nofuel-104.png","note":"","t":"435.50","wall":"2026-11-04T01:55:01.723Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/224-e-nofuel-105.png","note":"","t":"436.14","wall":"2026-11-04T01:55:02.363Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/225-e-nofuel-106.png","note":"","t":"436.71","wall":"2026-11-04T01:55:02.932Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/226-e-nofuel-107.png","note":"","t":"437.22","wall":"2026-11-04T01:55:03.439Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/227-e-nofuel-108.png","note":"","t":"437.88","wall":"2026-11-04T01:55:04.103Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/228-e-nofuel-109.png","note":"","t":"438.47","wall":"2026-11-04T01:55:04.688Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/229-e-nofuel-110.png","note":"","t":"439.13","wall":"2026-11-04T01:55:05.349Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/230-e-nofuel-111.png","note":"","t":"439.70","wall":"2026-11-04T01:55:05.918Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/231-e-nofuel-112.png","note":"","t":"440.28","wall":"2026-11-04T01:55:06.495Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/232-e-nofuel-113.png","note":"","t":"440.86","wall":"2026-11-04T01:55:07.079Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/233-e-nofuel-114.png","note":"","t":"441.50","wall":"2026-11-04T01:55:07.721Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/234-e-nofuel-115.png","note":"","t":"442.18","wall":"2026-11-04T01:55:08.394Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/235-e-nofuel-116.png","note":"","t":"442.75","wall":"2026-11-04T01:55:08.969Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/236-e-nofuel-117.png","note":"","t":"443.34","wall":"2026-11-04T01:55:09.560Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/237-e-nofuel-118.png","note":"","t":"443.92","wall":"2026-11-04T01:55:10.140Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/238-e-nofuel-119.png","note":"","t":"444.60","wall":"2026-11-04T01:55:10.816Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/239-e-nofuel-120.png","note":"","t":"445.17","wall":"2026-11-04T01:55:11.386Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/240-e-nofuel-121.png","note":"","t":"445.75","wall":"2026-11-04T01:55:11.966Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/241-e-nofuel-122.png","note":"","t":"446.34","wall":"2026-11-04T01:55:12.558Z"}
+{"ev":"note","text":"Min-fuel result: Structural breakup T+6.98, 35052.5 Pa vs 35000 Pa limit; 'Silver for timing' but 'No stars'","t":"454.18","wall":"2026-11-04T01:55:20.398Z"}
+{"ev":"tap","x":220,"y":875,"hold":120,"note":"Back to designer (1st tap)","t":"454.51","wall":"2026-11-04T01:55:20.726Z"}
+{"ev":"wait","ms":1200,"note":"","t":"455.73","wall":"2026-11-04T01:55:21.943Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/242-btd-1.png","note":"","t":"456.16","wall":"2026-11-04T01:55:22.381Z"}
+{"ev":"wait","ms":1200,"note":"","t":"457.37","wall":"2026-11-04T01:55:23.589Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/243-btd-2.png","note":"","t":"457.83","wall":"2026-11-04T01:55:24.050Z"}
+{"ev":"note","text":"Tester error: tap at y=875 hit Home (not Back to designer). Re-enter sandbox via Missions","t":"467.97","wall":"2026-11-04T01:55:34.189Z"}
+{"ev":"tap","x":220,"y":845,"hold":120,"note":"Missions","t":"468.44","wall":"2026-11-04T01:55:34.657Z"}
+{"ev":"wait","ms":1500,"note":"","t":"469.95","wall":"2026-11-04T01:55:36.169Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/244-mis-1.png","note":"","t":"470.25","wall":"2026-11-04T01:55:36.471Z"}
+{"ev":"tap","x":322,"y":816,"hold":120,"note":"Sandbox","t":"474.10","wall":"2026-11-04T01:55:40.316Z"}
+{"ev":"wait","ms":1500,"note":"","t":"475.62","wall":"2026-11-04T01:55:41.839Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/245-sb-1.png","note":"","t":"476.02","wall":"2026-11-04T01:55:42.237Z"}
+{"ev":"tap","x":226,"y":895,"hold":120,"note":"Design first","t":"480.91","wall":"2026-11-04T01:55:47.124Z"}
+{"ev":"console","type":"log","text":"[Count] boot\n","t":"481.21","wall":"2026-11-04T01:55:47.432Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"481.23","wall":"2026-11-04T01:55:47.448Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: auth skipped\n","t":"481.24","wall":"2026-11-04T01:55:47.455Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"481.24","wall":"2026-11-04T01:55:47.460Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"481.25","wall":"2026-11-04T01:55:47.467Z"}
+{"ev":"wait","ms":2500,"note":"","t":"483.42","wall":"2026-11-04T01:55:49.637Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/246-sbd-1.png","note":"","t":"483.72","wall":"2026-11-04T01:55:49.934Z"}
+{"ev":"note","text":"Sandbox design reset to default Hopper after leaving (min-fuel edit not kept). Edge case 1: extreme mass - Heavy gas-generator + max fuel","t":"488.93","wall":"2026-11-04T01:55:55.144Z"}
+{"ev":"tap","x":287,"y":799,"hold":120,"note":"Heavy gas-generator","t":"489.24","wall":"2026-11-04T01:55:55.454Z"}
+{"ev":"wait","ms":1500,"note":"","t":"490.75","wall":"2026-11-04T01:55:56.965Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/247-heavy-1.png","note":"","t":"491.06","wall":"2026-11-04T01:55:57.279Z"}
+{"ev":"note","text":"First tap on Heavy gas-generator did nothing; retry","t":"495.83","wall":"2026-11-04T01:56:02.046Z"}
+{"ev":"tap","x":287,"y":799,"hold":120,"note":"Heavy gas-generator (2nd)","t":"496.13","wall":"2026-11-04T01:56:02.351Z"}
+{"ev":"wait","ms":1500,"note":"","t":"497.64","wall":"2026-11-04T01:56:03.863Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/248-heavy2-1.png","note":"","t":"497.96","wall":"2026-11-04T01:56:04.180Z"}
+{"ev":"note","text":"Heavy gas-generator unresponsive x2 (no lock icon/feedback). Try Gas-generator","t":"502.27","wall":"2026-11-04T01:56:08.487Z"}
+{"ev":"tap","x":82,"y":703,"hold":120,"note":"Gas-generator","t":"502.53","wall":"2026-11-04T01:56:08.747Z"}
+{"ev":"wait","ms":1500,"note":"","t":"504.04","wall":"2026-11-04T01:56:10.260Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/249-gg-1.png","note":"","t":"504.30","wall":"2026-11-04T01:56:10.513Z"}
+{"ev":"tap","x":287,"y":799,"hold":60,"note":"Heavy gas-generator short press","t":"518.70","wall":"2026-11-04T01:56:24.920Z"}
+{"ev":"wait","ms":1500,"note":"","t":"520.21","wall":"2026-11-04T01:56:26.431Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/250-heavy3-1.png","note":"","t":"520.56","wall":"2026-11-04T01:56:26.775Z"}
+{"ev":"note","text":"Engine-type chips unresponsive (3 attempts, Heavy + Gas-generator, normal and short press). No console error. Fallback for extreme mass: max fuel + more engines","t":"533.10","wall":"2026-11-04T01:56:39.321Z"}
+{"ev":"hold","x":423,"y":887,"ms":2500,"note":"scroll down","t":"535.64","wall":"2026-11-04T01:56:41.863Z"}
+{"ev":"hold","x":423,"y":530,"ms":900,"note":"scroll up","t":"536.62","wall":"2026-11-04T01:56:42.838Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"536.87","wall":"2026-11-04T01:56:43.086Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"537.09","wall":"2026-11-04T01:56:43.311Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"537.31","wall":"2026-11-04T01:56:43.530Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"537.54","wall":"2026-11-04T01:56:43.760Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"537.77","wall":"2026-11-04T01:56:43.991Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"538.00","wall":"2026-11-04T01:56:44.222Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"538.21","wall":"2026-11-04T01:56:44.432Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"538.44","wall":"2026-11-04T01:56:44.660Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"538.66","wall":"2026-11-04T01:56:44.880Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"538.88","wall":"2026-11-04T01:56:45.101Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"539.12","wall":"2026-11-04T01:56:45.333Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"539.34","wall":"2026-11-04T01:56:45.559Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"539.63","wall":"2026-11-04T01:56:45.848Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"539.86","wall":"2026-11-04T01:56:46.076Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"540.09","wall":"2026-11-04T01:56:46.303Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"540.31","wall":"2026-11-04T01:56:46.532Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"540.52","wall":"2026-11-04T01:56:46.739Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"540.75","wall":"2026-11-04T01:56:46.967Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"540.98","wall":"2026-11-04T01:56:47.196Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"541.20","wall":"2026-11-04T01:56:47.415Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"541.42","wall":"2026-11-04T01:56:47.634Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"541.63","wall":"2026-11-04T01:56:47.852Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"541.87","wall":"2026-11-04T01:56:48.084Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"542.08","wall":"2026-11-04T01:56:48.299Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"542.30","wall":"2026-11-04T01:56:48.517Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"542.52","wall":"2026-11-04T01:56:48.743Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"542.75","wall":"2026-11-04T01:56:48.971Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"542.98","wall":"2026-11-04T01:56:49.196Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"543.19","wall":"2026-11-04T01:56:49.410Z"}
+{"ev":"tap","x":395,"y":625,"hold":60,"note":"fuel-plus","t":"543.41","wall":"2026-11-04T01:56:49.631Z"}
+{"ev":"wait","ms":1500,"note":"","t":"544.92","wall":"2026-11-04T01:56:51.143Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/251-maxfuel-1.png","note":"","t":"545.19","wall":"2026-11-04T01:56:51.409Z"}
+{"ev":"note","text":"Scroll landed at engines section instead (scroll offset inconsistent); 30 fuel+ taps landed on chip row, no change - again chips ignore taps","t":"551.16","wall":"2026-11-04T01:56:57.378Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"551.39","wall":"2026-11-04T01:56:57.604Z"}
+{"ev":"tap","x":395,"y":750,"hold":60,"note":"engines-plus","t":"551.40","wall":"2026-11-04T01:56:57.618Z"}
+{"ev":"tap","x":395,"y":750,"hold":60,"note":"engines-plus","t":"551.62","wall":"2026-11-04T01:56:57.835Z"}
+{"ev":"tap","x":395,"y":750,"hold":60,"note":"engines-plus","t":"551.86","wall":"2026-11-04T01:56:58.077Z"}
+{"ev":"tap","x":395,"y":750,"hold":60,"note":"engines-plus","t":"552.08","wall":"2026-11-04T01:56:58.294Z"}
+{"ev":"tap","x":395,"y":750,"hold":60,"note":"engines-plus","t":"552.30","wall":"2026-11-04T01:56:58.516Z"}
+{"ev":"tap","x":395,"y":750,"hold":60,"note":"engines-plus","t":"552.47","wall":"2026-11-04T01:56:58.688Z"}
+{"ev":"tap","x":395,"y":750,"hold":60,"note":"engines-plus","t":"552.75","wall":"2026-11-04T01:56:58.969Z"}
+{"ev":"tap","x":395,"y":750,"hold":60,"note":"engines-plus","t":"552.91","wall":"2026-11-04T01:56:59.132Z"}
+{"ev":"wait","ms":1500,"note":"","t":"554.42","wall":"2026-11-04T01:57:00.643Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/252-engplus-1.png","note":"","t":"554.79","wall":"2026-11-04T01:57:01.004Z"}
+{"ev":"note","text":"Only 1 of 8 engine+ taps applied: a breakup warning appeared and pushed the whole panel up ~57px, later taps missed. Designer warning in past tense ('Your rocket bent in half at T+25 s') before flight","t":"560.13","wall":"2026-11-04T01:57:06.352Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"560.32","wall":"2026-11-04T01:57:06.534Z"}
+{"ev":"tap","x":395,"y":693,"hold":60,"note":"engines-plus","t":"560.34","wall":"2026-11-04T01:57:06.558Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"560.91","wall":"2026-11-04T01:57:07.128Z"}
+{"ev":"tap","x":395,"y":693,"hold":60,"note":"engines-plus","t":"560.92","wall":"2026-11-04T01:57:07.143Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"561.45","wall":"2026-11-04T01:57:07.668Z"}
+{"ev":"tap","x":395,"y":693,"hold":60,"note":"engines-plus","t":"561.47","wall":"2026-11-04T01:57:07.685Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"561.96","wall":"2026-11-04T01:57:08.175Z"}
+{"ev":"tap","x":395,"y":693,"hold":60,"note":"engines-plus","t":"561.97","wall":"2026-11-04T01:57:08.186Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"562.49","wall":"2026-11-04T01:57:08.704Z"}
+{"ev":"tap","x":395,"y":693,"hold":60,"note":"engines-plus","t":"562.53","wall":"2026-11-04T01:57:08.751Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"563.04","wall":"2026-11-04T01:57:09.261Z"}
+{"ev":"tap","x":395,"y":693,"hold":60,"note":"engines-plus","t":"563.06","wall":"2026-11-04T01:57:09.276Z"}
+{"ev":"wait","ms":1500,"note":"","t":"564.88","wall":"2026-11-04T01:57:11.093Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/253-engplus2-1.png","note":"","t":"565.16","wall":"2026-11-04T01:57:11.375Z"}
+{"ev":"note","text":"10 engines: LAUNCH greyed, 'Fix first: Too many engines for this width' - good guard, '4 things to fix' badge turns red","t":"569.90","wall":"2026-11-04T01:57:16.121Z"}
+{"ev":"tap","x":346,"y":710,"hold":60,"note":"engines-minus","t":"570.52","wall":"2026-11-04T01:57:16.743Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"570.54","wall":"2026-11-04T01:57:16.757Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"571.19","wall":"2026-11-04T01:57:17.411Z"}
+{"ev":"tap","x":346,"y":710,"hold":60,"note":"engines-minus","t":"571.20","wall":"2026-11-04T01:57:17.416Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"571.81","wall":"2026-11-04T01:57:18.027Z"}
+{"ev":"tap","x":346,"y":710,"hold":60,"note":"engines-minus","t":"571.85","wall":"2026-11-04T01:57:18.065Z"}
+{"ev":"wait","ms":1500,"note":"","t":"573.76","wall":"2026-11-04T01:57:19.976Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/254-engminus-1.png","note":"","t":"574.06","wall":"2026-11-04T01:57:20.276Z"}
+{"ev":"note","text":"Edge case 1b: 7 engines, 3.94x push, designer predicts breakup at T+9. LAUNCH anyway","t":"580.02","wall":"2026-11-04T01:57:26.236Z"}
+{"ev":"tap","x":356,"y":864,"hold":120,"note":"LAUNCH 7-engine","t":"580.31","wall":"2026-11-04T01:57:26.529Z"}
+{"ev":"console","type":"log","text":"[Count] boot->counting t=-12\n","t":"580.35","wall":"2026-11-04T01:57:26.567Z"}
+{"ev":"console","type":"log","text":"[Count] gates audio=True clip=True voice=False guideHold=False\n","t":"580.35","wall":"2026-11-04T01:57:26.567Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/255-e-7eng-001.png","note":"","t":"580.66","wall":"2026-11-04T01:57:26.880Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/256-e-7eng-002.png","note":"","t":"581.20","wall":"2026-11-04T01:57:27.416Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/257-e-7eng-003.png","note":"","t":"581.58","wall":"2026-11-04T01:57:27.795Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/258-e-7eng-004.png","note":"","t":"582.18","wall":"2026-11-04T01:57:28.397Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/259-e-7eng-005.png","note":"","t":"582.88","wall":"2026-11-04T01:57:29.103Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/260-e-7eng-006.png","note":"","t":"583.47","wall":"2026-11-04T01:57:29.684Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/261-e-7eng-007.png","note":"","t":"584.12","wall":"2026-11-04T01:57:30.340Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/262-e-7eng-008.png","note":"","t":"584.78","wall":"2026-11-04T01:57:31.001Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/263-e-7eng-009.png","note":"","t":"585.50","wall":"2026-11-04T01:57:31.713Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/264-e-7eng-010.png","note":"","t":"586.01","wall":"2026-11-04T01:57:32.225Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/265-e-7eng-011.png","note":"","t":"586.54","wall":"2026-11-04T01:57:32.758Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/266-e-7eng-012.png","note":"","t":"587.03","wall":"2026-11-04T01:57:33.249Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/267-e-7eng-013.png","note":"","t":"587.57","wall":"2026-11-04T01:57:33.785Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/268-e-7eng-014.png","note":"","t":"588.13","wall":"2026-11-04T01:57:34.344Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/269-e-7eng-015.png","note":"","t":"588.77","wall":"2026-11-04T01:57:34.986Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/270-e-7eng-016.png","note":"","t":"589.28","wall":"2026-11-04T01:57:35.494Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/271-e-7eng-017.png","note":"","t":"589.79","wall":"2026-11-04T01:57:36.007Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/272-e-7eng-018.png","note":"","t":"590.27","wall":"2026-11-04T01:57:36.490Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/273-e-7eng-019.png","note":"","t":"590.75","wall":"2026-11-04T01:57:36.972Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/274-e-7eng-020.png","note":"","t":"591.38","wall":"2026-11-04T01:57:37.603Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/275-e-7eng-021.png","note":"","t":"591.88","wall":"2026-11-04T01:57:38.097Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/276-e-7eng-022.png","note":"","t":"592.57","wall":"2026-11-04T01:57:38.788Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/277-e-7eng-023.png","note":"","t":"593.45","wall":"2026-11-04T01:57:39.667Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/278-e-7eng-024.png","note":"","t":"594.37","wall":"2026-11-04T01:57:40.587Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/279-e-7eng-025.png","note":"","t":"595.18","wall":"2026-11-04T01:57:41.395Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/280-e-7eng-026.png","note":"","t":"595.81","wall":"2026-11-04T01:57:42.026Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/281-e-7eng-027.png","note":"","t":"596.80","wall":"2026-11-04T01:57:43.021Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/282-e-7eng-028.png","note":"","t":"597.60","wall":"2026-11-04T01:57:43.822Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/283-e-7eng-029.png","note":"","t":"598.52","wall":"2026-11-04T01:57:44.738Z"}
+{"ev":"console","type":"log","text":"[Count] counting->committed t=0\n","t":"598.90","wall":"2026-11-04T01:57:45.114Z"}
+{"ev":"console","type":"warning","text":"[Ascent] briefing skipped: repo root with data/golden not found above /\n","t":"598.90","wall":"2026-11-04T01:57:45.116Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"598.91","wall":"2026-11-04T01:57:45.126Z"}
+{"ev":"console","type":"log","text":"[Count] committed->ascending t=0\n","t":"598.93","wall":"2026-11-04T01:57:45.149Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/284-e-7eng-030.png","note":"","t":"599.23","wall":"2026-11-04T01:57:45.451Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/285-e-7eng-031.png","note":"","t":"600.16","wall":"2026-11-04T01:57:46.380Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/286-e-7eng-032.png","note":"","t":"601.01","wall":"2026-11-04T01:57:47.231Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"601.37","wall":"2026-11-04T01:57:47.584Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/287-e-7eng-033.png","note":"","t":"602.08","wall":"2026-11-04T01:57:48.298Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/288-e-7eng-034.png","note":"","t":"602.80","wall":"2026-11-04T01:57:49.022Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/289-e-7eng-035.png","note":"","t":"603.47","wall":"2026-11-04T01:57:49.684Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/290-e-7eng-036.png","note":"","t":"604.14","wall":"2026-11-04T01:57:50.355Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/291-e-7eng-037.png","note":"","t":"604.83","wall":"2026-11-04T01:57:51.050Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/292-e-7eng-038.png","note":"","t":"605.48","wall":"2026-11-04T01:57:51.698Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/293-e-7eng-039.png","note":"","t":"606.12","wall":"2026-11-04T01:57:52.334Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/294-e-7eng-040.png","note":"","t":"606.78","wall":"2026-11-04T01:57:52.995Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/295-e-7eng-041.png","note":"","t":"607.44","wall":"2026-11-04T01:57:53.655Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/296-e-7eng-042.png","note":"","t":"607.99","wall":"2026-11-04T01:57:54.203Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/297-e-7eng-043.png","note":"","t":"608.56","wall":"2026-11-04T01:57:54.779Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/298-e-7eng-044.png","note":"","t":"609.33","wall":"2026-11-04T01:57:55.549Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/299-e-7eng-045.png","note":"","t":"610.14","wall":"2026-11-04T01:57:56.355Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/300-e-7eng-046.png","note":"","t":"610.91","wall":"2026-11-04T01:57:57.131Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/301-e-7eng-047.png","note":"","t":"611.53","wall":"2026-11-04T01:57:57.748Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/302-e-7eng-048.png","note":"","t":"612.33","wall":"2026-11-04T01:57:58.543Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/303-e-7eng-049.png","note":"","t":"612.99","wall":"2026-11-04T01:57:59.205Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/304-e-7eng-050.png","note":"","t":"613.66","wall":"2026-11-04T01:57:59.876Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/305-e-7eng-051.png","note":"","t":"614.39","wall":"2026-11-04T01:58:00.612Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'SphereCollider' doesn't exist!\n","t":"614.55","wall":"2026-11-04T01:58:00.768Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.791Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.57","wall":"2026-11-04T01:58:00.792Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.803Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.59","wall":"2026-11-04T01:58:00.804Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"614.60","wall":"2026-11-04T01:58:00.815Z"}
+{"ev":"console","type":"log","text":"[Count] ascending->done t=0 flight ended\n","t":"614.62","wall":"2026-11-04T01:58:00.839Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"614.68","wall":"2026-11-04T01:58:00.898Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"614.68","wall":"2026-11-04T01:58:00.898Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"614.68","wall":"2026-11-04T01:58:00.898Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"614.68","wall":"2026-11-04T01:58:00.898Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"614.68","wall":"2026-11-04T01:58:00.898Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"614.68","wall":"2026-11-04T01:58:00.898Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"614.68","wall":"2026-11-04T01:58:00.898Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"614.68","wall":"2026-11-04T01:58:00.898Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/306-e-7eng-052.png","note":"","t":"615.68","wall":"2026-11-04T01:58:01.897Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/307-e-7eng-053.png","note":"","t":"617.09","wall":"2026-11-04T01:58:03.311Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/308-e-7eng-054.png","note":"","t":"618.36","wall":"2026-11-04T01:58:04.575Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/309-e-7eng-055.png","note":"","t":"619.49","wall":"2026-11-04T01:58:05.710Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/310-e-7eng-056.png","note":"","t":"620.32","wall":"2026-11-04T01:58:06.534Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/311-e-7eng-057.png","note":"","t":"621.54","wall":"2026-11-04T01:58:07.763Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/312-e-7eng-058.png","note":"","t":"622.42","wall":"2026-11-04T01:58:08.641Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/313-e-7eng-059.png","note":"","t":"623.47","wall":"2026-11-04T01:58:09.688Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/314-e-7eng-060.png","note":"","t":"624.45","wall":"2026-11-04T01:58:10.671Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/315-e-7eng-061.png","note":"","t":"625.52","wall":"2026-11-04T01:58:11.743Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/316-e-7eng-062.png","note":"","t":"626.49","wall":"2026-11-04T01:58:12.708Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/317-e-7eng-063.png","note":"","t":"627.54","wall":"2026-11-04T01:58:13.756Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/318-e-7eng-064.png","note":"","t":"628.24","wall":"2026-11-04T01:58:14.455Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/319-e-7eng-065.png","note":"","t":"629.06","wall":"2026-11-04T01:58:15.276Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/320-e-7eng-066.png","note":"","t":"629.95","wall":"2026-11-04T01:58:16.169Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/321-e-7eng-067.png","note":"","t":"630.70","wall":"2026-11-04T01:58:16.919Z"}
+{"ev":"note","text":"7-engine result: breakup T+9.45 (designer prediction accurate). Countdown said '2,396 m/s to spare' with no breakup warning. No breakup visual: rocket intact at T+4.6 then hard cut to results. Now reproduce Fix-it soft-lock from kid run","t":"639.95","wall":"2026-11-04T01:58:26.170Z"}
+{"ev":"tap","x":220,"y":660,"hold":120,"note":"Fix it on breakup result (repro attempt)","t":"643.52","wall":"2026-11-04T01:58:29.742Z"}
+{"ev":"console","type":"log","text":"[Count] done->boot t=0\n","t":"643.71","wall":"2026-11-04T01:58:29.924Z"}
+{"ev":"console","type":"error","text":"NullReferenceException: Object reference not set to an instance of an object.\n  at UnityEngine.Bindings.ThrowHelper.ThrowNullReferenceException (System.Object obj) [0x00000] in <00000000000000000000000000000000>:0 \n\n","t":"643.71","wall":"2026-11-04T01:58:29.929Z"}
+{"ev":"wait","ms":1500,"note":"","t":"645.04","wall":"2026-11-04T01:58:31.255Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/322-fixit-1.png","note":"","t":"645.47","wall":"2026-11-04T01:58:31.688Z"}
+{"ev":"wait","ms":1500,"note":"","t":"646.98","wall":"2026-11-04T01:58:33.199Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/323-fixit-2.png","note":"","t":"647.27","wall":"2026-11-04T01:58:33.484Z"}
+{"ev":"wait","ms":1500,"note":"","t":"648.77","wall":"2026-11-04T01:58:34.993Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/324-fixit-3.png","note":"","t":"649.06","wall":"2026-11-04T01:58:35.279Z"}
+{"ev":"wait","ms":1500,"note":"","t":"650.58","wall":"2026-11-04T01:58:36.795Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/325-fixit-4.png","note":"","t":"651.10","wall":"2026-11-04T01:58:37.316Z"}
+{"ev":"note","text":"REPRODUCED soft-lock: Fix it on breakup -> NRE at t=643.71, UI gone, rocket-bottom + giant MAGENTA sphere (missing/stripped shader) on screen","t":"659.33","wall":"2026-11-04T01:58:45.547Z"}
+{"ev":"wait","ms":20000,"note":"","t":"679.37","wall":"2026-11-04T01:59:05.583Z"}
+{"ev":"tap","x":220,"y":480,"hold":120,"note":"tap center to recover","t":"679.61","wall":"2026-11-04T01:59:05.827Z"}
+{"ev":"key","k":"Escape","note":"","t":"679.63","wall":"2026-11-04T01:59:05.845Z"}
+{"ev":"wait","ms":3000,"note":"","t":"682.65","wall":"2026-11-04T01:59:08.872Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/326-fixit-after-1.png","note":"","t":"683.00","wall":"2026-11-04T01:59:09.216Z"}
+{"ev":"note","text":"Still soft-locked after 20s + tap + Escape. Reloading page (t~670) to continue","t":"688.96","wall":"2026-11-04T01:59:15.175Z"}
+{"ev":"eval","t":"689.02","wall":"2026-11-04T01:59:15.236Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/327-probe.png","note":"","t":"782.71","wall":"2026-11-04T02:00:48.926Z"}
+{"ev":"note","text":"Local static server had died (harness issue, not game). Restarted; reloading","t":"802.28","wall":"2026-11-04T02:01:08.494Z"}
+{"ev":"eval","result":1,"t":"802.32","wall":"2026-11-04T02:01:08.533Z"}
+{"ev":"netreq","url":"blob:http://localhost:8797/8020d7c9-08e1-497a-bd1b-f772ccf12012","t":"802.52","wall":"2026-11-04T02:01:08.738Z"}
+{"ev":"console","type":"log","text":"[UnityCache] 'http://localhost:8797/Build/c5d29fe5a605e4f64be087cd6d32b458.data.unityweb' successfully revalidated and served from the browser cache","t":"802.63","wall":"2026-11-04T02:01:08.852Z"}
+{"ev":"console","type":"log","text":"[UnityMemory] Configuration Parameters - Can be set up in boot.config\n","t":"802.92","wall":"2026-11-04T02:01:09.143Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-allocator-temp-initial-block-size-main=262144\"\n","t":"802.93","wall":"2026-11-04T02:01:09.146Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-allocator-temp-initial-block-size-worker=262144\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-audio-worker=65536\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-remapper-allocator-initial-capacity=32768\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-background-worker=32768\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-granularity=16\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-bucket-count=8\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-block-size=4194304\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-block-count=1\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-main-allocator-block-size=16777216\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-thread-allocator-block-size=16777216\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-gfx-main-allocator-block-size=16777216\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-gfx-thread-allocator-block-size=16777216\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-cache-allocator-block-size=4194304\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-typetree-allocator-block-size=2097152\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-granularity=16\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-bucket-count=8\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-block-size=4194304\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-block-count=1\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-allocator-block-size=16777216\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-editor-allocator-block-size=1048576\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-main=4194304\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-block-size=2097152\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-block-size-background=1048576\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-reduction-small-platforms=262144\"\n","t":"802.93","wall":"2026-11-04T02:01:09.149Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Initialized fallback backend.\n","t":"802.98","wall":"2026-11-04T02:01:09.197Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Id: 0xdecafbad\n","t":"802.98","wall":"2026-11-04T02:01:09.199Z"}
+{"ev":"console","type":"log","text":"Loading player data from data.unity3d\n","t":"802.98","wall":"2026-11-04T02:01:09.199Z"}
+{"ev":"console","type":"log","text":"Initialize engine version: 6000.3.26f1 (de8167e7440c)\n","t":"802.98","wall":"2026-11-04T02:01:09.202Z"}
+{"ev":"console","type":"log","text":"Creating WebGL 2.0 context.","t":"802.99","wall":"2026-11-04T02:01:09.207Z"}
+{"ev":"console","type":"log","text":"Renderer: WebKit WebGL\n","t":"803.00","wall":"2026-11-04T02:01:09.216Z"}
+{"ev":"console","type":"log","text":"Vendor:   WebKit\n","t":"803.00","wall":"2026-11-04T02:01:09.216Z"}
+{"ev":"console","type":"log","text":"Version:  OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n","t":"803.00","wall":"2026-11-04T02:01:09.216Z"}
+{"ev":"console","type":"log","text":"GLES:     3\n","t":"803.00","wall":"2026-11-04T02:01:09.217Z"}
+{"ev":"console","type":"log","text":" EXT_clip_control EXT_color_buffer_float EXT_color_buffer_half_float EXT_conservative_depth EXT_depth_clamp EXT_disjoint_timer_query_webgl2 EXT_float_blend EXT_polygon_offset_clamp EXT_texture_compression_bptc EXT_texture_compression_rgtc EXT_texture_filter_anisotropic EXT_texture_mirror_clamp_to_ed","t":"803.00","wall":"2026-11-04T02:01:09.218Z"}
+{"ev":"console","type":"log","text":"ression_rgtc GL_EXT_texture_filter_anisotropic GL_EXT_texture_mirror_clamp_to_edge GL_NV_shader_noperspective_interpolation GL_OES_draw_buffers_indexed GL_OES_sample_variables GL_OES_shader_multisample_interpolation GL_OES_texture_float_linear GL_OVR_multiview2 GL_WEBGL_clip_cull_distance GL_WEBGL_c","t":"803.00","wall":"2026-11-04T02:01:09.218Z"}
+{"ev":"console","type":"log","text":"OPENGL LOG: Creating OpenGL ES 3.0 graphics device ; Context level  <OpenGL ES 3.0> ; Context handle 1\n","t":"803.00","wall":"2026-11-04T02:01:09.223Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Selected backend.\n","t":"803.08","wall":"2026-11-04T02:01:09.299Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Name: PhysX\n","t":"803.08","wall":"2026-11-04T02:01:09.299Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Id: 0xf2b8ea05\n","t":"803.08","wall":"2026-11-04T02:01:09.299Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] SDK Version: 4.1.2\n","t":"803.08","wall":"2026-11-04T02:01:09.299Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Integration Version: 1.0.0\n","t":"803.08","wall":"2026-11-04T02:01:09.299Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Threading Mode: Single-Threaded\n","t":"803.08","wall":"2026-11-04T02:01:09.300Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"803.16","wall":"2026-11-04T02:01:09.377Z"}
+{"ev":"console","type":"log","text":"Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"803.16","wall":"2026-11-04T02:01:09.378Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"803.16","wall":"2026-11-04T02:01:09.378Z"}
+{"ev":"console","type":"log","text":"Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"803.16","wall":"2026-11-04T02:01:09.378Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"803.16","wall":"2026-11-04T02:01:09.379Z"}
+{"ev":"console","type":"log","text":"Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"803.16","wall":"2026-11-04T02:01:09.380Z"}
+{"ev":"console","type":"log","text":"Input Manager initialize...\n","t":"803.17","wall":"2026-11-04T02:01:09.393Z"}
+{"ev":"console","type":"log","text":"UnloadTime: 0.600000 ms\n","t":"803.22","wall":"2026-11-04T02:01:09.441Z"}
+{"ev":"console","type":"log","text":"[Kestrel] quality low (renderScale≈1.00, 60 fps, 150 particles)\n","t":"803.28","wall":"2026-11-04T02:01:09.498Z"}
+{"ev":"console","type":"log","text":"[Kestrel] guide clips: 78 found\n","t":"803.34","wall":"2026-11-04T02:01:09.557Z"}
+{"ev":"console","type":"log","text":"Audio context resumed after 0.366 seconds.","t":"803.39","wall":"2026-11-04T02:01:09.605Z"}
+{"ev":"loader-ready","load_s":114.394,"t":"803.42","wall":"2026-11-04T02:01:09.641Z"}
+{"ev":"tap","sel":"#start","note":"TAP TO PLAY","t":"803.50","wall":"2026-11-04T02:01:09.715Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"805.67","wall":"2026-11-04T02:01:11.889Z"}
+{"ev":"console","type":"error","text":"Failed to load resource: the server responded with a status of 404 (File not found)","t":"806.53","wall":"2026-11-04T02:01:12.753Z"}
+{"ev":"wait","ms":4000,"note":"","t":"807.51","wall":"2026-11-04T02:01:13.730Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/328-reload-1.png","note":"","t":"808.10","wall":"2026-11-04T02:01:14.313Z"}
+{"ev":"wait","ms":100,"note":"","t":"827.46","wall":"2026-11-04T02:01:33.679Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/329-reload-1.png","note":"","t":"828.32","wall":"2026-11-04T02:01:34.541Z"}
+{"ev":"note","text":"Edge case 3: odd staging via sandbox Stack tab","t":"833.87","wall":"2026-11-04T02:01:40.088Z"}
+{"ev":"tap","x":220,"y":845,"hold":120,"note":"Missions","t":"834.33","wall":"2026-11-04T02:01:40.551Z"}
+{"ev":"tap","x":322,"y":816,"hold":120,"note":"Sandbox","t":"836.42","wall":"2026-11-04T02:01:42.642Z"}
+{"ev":"tap","x":226,"y":895,"hold":120,"note":"Design first","t":"838.57","wall":"2026-11-04T02:01:44.788Z"}
+{"ev":"console","type":"log","text":"[Count] boot\n","t":"839.27","wall":"2026-11-04T02:01:45.488Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"839.33","wall":"2026-11-04T02:01:45.548Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.35","wall":"2026-11-04T02:01:45.567Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.35","wall":"2026-11-04T02:01:45.567Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.35","wall":"2026-11-04T02:01:45.567Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.35","wall":"2026-11-04T02:01:45.571Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.35","wall":"2026-11-04T02:01:45.572Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.36","wall":"2026-11-04T02:01:45.576Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.36","wall":"2026-11-04T02:01:45.580Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.36","wall":"2026-11-04T02:01:45.581Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.36","wall":"2026-11-04T02:01:45.581Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.36","wall":"2026-11-04T02:01:45.581Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.36","wall":"2026-11-04T02:01:45.582Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.36","wall":"2026-11-04T02:01:45.582Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.36","wall":"2026-11-04T02:01:45.582Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: auth skipped\n","t":"839.37","wall":"2026-11-04T02:01:45.591Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"839.40","wall":"2026-11-04T02:01:45.614Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"839.40","wall":"2026-11-04T02:01:45.623Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"839.58","wall":"2026-11-04T02:01:45.801Z"}
+{"ev":"console","type":"error","text":"NotSupportedError: screen.orientation.lock() is not available on this device.","t":"840.02","wall":"2026-11-04T02:01:46.237Z"}
+{"ev":"tap","x":53,"y":500,"hold":120,"note":"Stack tab","t":"841.63","wall":"2026-11-04T02:01:47.850Z"}
+{"ev":"wait","ms":1500,"note":"","t":"843.15","wall":"2026-11-04T02:01:49.373Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/330-stack-1.png","note":"","t":"843.75","wall":"2026-11-04T02:01:49.967Z"}
+{"ev":"tap","x":83,"y":797,"hold":120,"note":"+ Stage on top","t":"859.24","wall":"2026-11-04T02:02:05.453Z"}
+{"ev":"wait","ms":1500,"note":"","t":"860.75","wall":"2026-11-04T02:02:06.972Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/331-st1-1.png","note":"","t":"861.30","wall":"2026-11-04T02:02:07.520Z"}
+{"ev":"note","text":"+ Stage on top: no change on first tap. Retry x2","t":"881.58","wall":"2026-11-04T02:02:27.795Z"}
+{"ev":"tap","x":83,"y":797,"hold":120,"note":"Stage on top retry","t":"882.00","wall":"2026-11-04T02:02:28.223Z"}
+{"ev":"tap","x":83,"y":797,"hold":120,"note":"Stage on top retry2","t":"883.71","wall":"2026-11-04T02:02:29.927Z"}
+{"ev":"wait","ms":1500,"note":"","t":"885.23","wall":"2026-11-04T02:02:31.451Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/332-st2-1.png","note":"","t":"885.89","wall":"2026-11-04T02:02:32.109Z"}
+{"ev":"note","text":"+ Stage on top dead after 3 taps (Undo stays disabled = no edit applied). Try side boosters 4","t":"890.68","wall":"2026-11-04T02:02:36.898Z"}
+{"ev":"tap","x":158,"y":870,"hold":120,"note":"Side boosters 4","t":"891.26","wall":"2026-11-04T02:02:37.480Z"}
+{"ev":"wait","ms":1500,"note":"","t":"892.77","wall":"2026-11-04T02:02:38.989Z"}
+{"ev":"shot","file":"/workspace/fun-review/engineer/333-boost-1.png","note":"","t":"893.40","wall":"2026-11-04T02:02:39.622Z"}
+{"ev":"note","text":"Side boosters 4: no change. Conclusion: in sandbox Hangar panel, steppers (+/-) apply but chips/Add-stage/booster buttons never applied (no console warning, Undo stays disabled). Odd staging untestable. End engineer session","t":"907.61","wall":"2026-11-04T02:02:53.829Z"}
+{"ev":"quit","t":"907.64","wall":"2026-11-04T02:02:53.854Z"}
