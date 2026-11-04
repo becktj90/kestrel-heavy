@@ -233,6 +233,8 @@ namespace Kestrel.Core.Tests
             Assert.That(inner, Is.GreaterThan(36f), where + " cell");
             foreach (var word in FlightHudLayout.TelemetryLabels)
                 Assert.That(FlightHudLayout.TextWidth(word, FlightHudLayout.LabelFontPt), Is.LessThan(inner), where + " " + word);
+            foreach (var word in BoosterHud.Labels)
+                Assert.That(FlightHudLayout.TextWidth(word, FlightHudLayout.LabelFontPt), Is.LessThan(inner), where + " booster " + word);
 
             var boxes = HudBoxes(f);
             boxes.Add(("rocket", rocket));

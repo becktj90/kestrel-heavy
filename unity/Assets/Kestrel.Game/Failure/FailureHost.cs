@@ -23,8 +23,7 @@ namespace Kestrel.Game.Failure
         Vector3[] exits = new Vector3[0];
         readonly TelemetryLog log = new TelemetryLog();
         bool played;
-        bool reported;
-        SimResult closedResult;
+        readonly ReportLatch latch = new ReportLatch();
         Mesh intactMesh;
         float age;
         bool reduce;
@@ -68,6 +67,9 @@ namespace Kestrel.Game.Failure
         public void Bind(FlightDriver flightDriver, VisualElement root, RocketMeshBuilder.Result built)
         {
             flight = flightDriver;
+            // A rebuilt rocket gets a new host. The finished flight's result is still on the driver;
+            // without this the next frame re-opened the card and swallowed the tap that left it.
+            if (!played) latch.Arm(flight != null ? flight.Result : null);
             ui = root;
             plume = flight != null ? flight.Plume : null;
             cue = FromRocket(built);
@@ -103,11 +105,10 @@ namespace Kestrel.Game.Failure
         {
             // A pass never calls Begin, so baseRotation is still the default and the mesh is whole.
             bool broke = played;
-            closedResult = flight != null ? flight.Result : closedResult;
+            latch.Arm(flight != null ? flight.Result : null);
             played = false;
             cardPending = false;
             cardTapped = false;
-            reported = false;
             failure = null;
             age = 0f;
             emitted = false;
@@ -167,24 +168,18 @@ namespace Kestrel.Game.Failure
                 return;
             }
             var result = flight.Result;
-            if (result == null || reported || ReferenceEquals(result, closedResult)) return;
-            if (result.failure == null)
+            if (result == null) return;
+            bool failed = result.failure != null;
+            if (!latch.TryOpen(result, failed, flight.Running, RecoveryLog.Active)) return;
+            reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;
+            StampLosses(result);
+            if (!failed)
             {
-                if (flight.Running) return;
-                if (RecoveryLog.Active) return;
-                reported = true;
-                closedResult = result;
-                reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;
-                StampLosses(result);
                 failure = null;
                 ShowCard();
                 return;
             }
-            reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;
-            StampLosses(result);
             Begin(result.failure, false);
-            reported = true;
-            closedResult = result;
         }
 
         static bool Tapped()
