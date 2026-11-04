@@ -23,6 +23,8 @@ on:
       - unity/Assets/Plugins/WebGL/**
       - unity/Assets/Kestrel.Slice/Editor/BuildScript.cs
       - unity/Assets/Kestrel.Slice/Editor/BuildScript.WebGL.cs
+      # Stripping keep-list: a link.xml change only shows up in a stripped player.
+      - unity/Assets/link.xml
   workflow_dispatch:
     inputs:
       compression:
