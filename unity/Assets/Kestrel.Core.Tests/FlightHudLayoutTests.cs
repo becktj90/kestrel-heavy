@@ -1018,8 +1018,8 @@ namespace Kestrel.Core.Tests
                 float room = width - 2f * FlightHudLayout.CalloutPadX - 2f;
                 int lines = FlightHudLayout.WrapLines(seat.Text, room, seat.FontPt);
                 Assert.That(lines, Is.InRange(1, FlightHudLayout.CalloutLines), at + " lines");
-                Assert.That(lines * seat.FontPt * FlightHudLayout.LineHeight + 2f * FlightHudLayout.CalloutPadY,
-                    Is.LessThanOrEqualTo(seat.Height + 0.01f), at + " text fits its box");
+                Assert.That(lines * seat.FontPt * FlightHudLayout.LineHeight + FlightHudLayout.CalloutChromeY,
+                    Is.LessThanOrEqualTo(seat.Height + 0.01f), at + " text fits its box (pads and the 3 pt rule inside the height)");
                 if (seat.Cut) Assert.That(seat.Text, Does.EndWith("…"), at + " a cut ends in an ellipsis");
                 else Assert.That(seat.Text, Is.EqualTo(text), at + " whole");
                 if (preferred >= bandTop && preferred + seat.Height <= bandBottom)
@@ -1029,6 +1029,28 @@ namespace Kestrel.Core.Tests
             if (width >= 375f)
                 Assert.That(FlightHudLayout.CalloutInBand("BREAKUP Air pushed 25 kPa. The walls held 25 kPa.", width, bandTop, bandBottom, bandTop).Cut,
                     Is.False, device + " whole line");
+        }
+
+        // cbb3a18d PlaysTheBreakUp: the one-line seat left out the chip's 3 pt bottom rule, "need 646x107 box 760x84".
+        [Test]
+        public void TheFailureCalloutBoxCarriesItsRuleAndATallerFace()
+        {
+            const string text = "BREAKUP Air pushed 25 kPa. The walls held 25 kPa.";
+            var one = FlightHudLayout.CalloutInBand(text, 160f, 150f, 180f, 150f);
+            Assert.That(one.Live, Is.True);
+            float textRoom = one.Height - FlightHudLayout.CalloutChromeY;
+            Assert.That(textRoom, Is.GreaterThanOrEqualTo(FlightHudLayout.WrapLines(one.Text, 160f - 2f * FlightHudLayout.CalloutPadX - 2f, one.FontPt) * one.FontPt * FlightHudLayout.LineHeight - 0.01f),
+                "the text's room is the height less both pads and the rule");
+            foreach (float lh in new[] { 1.3f, 1.5f, 1.7f })
+            {
+                var s = FlightHudLayout.CalloutInBand(text, 160f, 150f, 192f, 150f, lh);
+                if (!s.Live) { Assert.That(42f, Is.LessThan(FlightHudLayout.CalloutMinFontPt * lh + FlightHudLayout.CalloutChromeY), lh + ": stands down only without one line of room"); continue; }
+                int lines = FlightHudLayout.WrapLines(s.Text, 160f - 2f * FlightHudLayout.CalloutPadX - 2f, s.FontPt);
+                Assert.That(lines * s.FontPt * lh + FlightHudLayout.CalloutChromeY, Is.LessThanOrEqualTo(s.Height + 0.01f), lh + ": fits at that line box");
+                Assert.That(s.Top + s.Height, Is.LessThanOrEqualTo(192.01f), lh + ": in the band");
+            }
+            Assert.That(FlightHudLayout.CalloutInBand(text, 160f, 150f, 192f, 150f, 1.0f).Height,
+                Is.EqualTo(FlightHudLayout.CalloutInBand(text, 160f, 150f, 192f, 150f).Height), "a line box under 1.3 is read as 1.3");
         }
 
         [Test]

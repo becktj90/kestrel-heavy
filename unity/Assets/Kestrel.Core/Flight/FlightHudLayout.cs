@@ -230,7 +230,7 @@ namespace Kestrel.Core.Flight
         /// <paramref name="boxW"/> x <paramref name="boxH"/> (any one unit: points or pixels), widths budgeted with
         /// <see cref="MeasureFactor"/>. Still too long at the floor: cut after the last whole word that fits, plus "…".
         /// </summary>
-        public static QuoteFit WrapFit(string text, float boxW, float boxH, int maxLines, float fontPt, float minPt, bool allowCut = true)
+        public static QuoteFit WrapFit(string text, float boxW, float boxH, int maxLines, float fontPt, float minPt, bool allowCut = true, float lineHeight = LineHeight)
         {
             var fit = new QuoteFit { Text = text ?? "", FontPt = fontPt };
             if (string.IsNullOrEmpty(text) || !(boxW > 1f) || maxLines < 1) return fit;
@@ -238,7 +238,7 @@ namespace Kestrel.Core.Flight
             for (float font = fontPt; font >= minPt - 0.001f; font -= 0.5f)
             {
                 fit.FontPt = font;
-                if (Fits(text, room, boxH, maxLines, font)) return fit;
+                if (Fits(text, room, boxH, maxLines, font, lineHeight)) return fit;
             }
             float floor = minPt;
             fit.FontPt = floor;
@@ -248,14 +248,14 @@ namespace Kestrel.Core.Flight
             for (int n = words.Length - 1; n >= 1; n--)
             {
                 string cut = string.Join(" ", words, 0, n).TrimEnd(' ', ',', '.', ';', ':', '·') + "…";
-                if (Fits(cut, room, boxH, maxLines, floor)) { fit.Text = cut; fit.Cut = true; return fit; }
+                if (Fits(cut, room, boxH, maxLines, floor, lineHeight)) { fit.Text = cut; fit.Cut = true; return fit; }
             }
             // One word wider than the box: cut by characters.
             string first = words[0];
             for (int n = first.Length - 1; n >= 1; n--)
             {
                 string cut = first.Substring(0, n) + "…";
-                if (Fits(cut, room, boxH, maxLines, floor)) { fit.Text = cut; fit.Cut = true; return fit; }
+                if (Fits(cut, room, boxH, maxLines, floor, lineHeight)) { fit.Text = cut; fit.Cut = true; return fit; }
             }
             fit.Text = "…";
             fit.Cut = true;
@@ -285,11 +285,11 @@ namespace Kestrel.Core.Flight
             return lines;
         }
 
-        static bool Fits(string text, float room, float boxH, int maxLines, float font)
+        static bool Fits(string text, float room, float boxH, int maxLines, float font, float lineHeight = LineHeight)
         {
             int lines = WrapLines(text, room, font);
             if (lines > maxLines) return false;
-            return lines * font * LineHeight <= boxH + 0.01f;
+            return lines * font * lineHeight <= boxH + 0.01f;
         }
 
         // ---- Stage banner (h-verdict) ---------------------------------------------------------------
@@ -832,6 +832,11 @@ namespace Kestrel.Core.Flight
         public const int CalloutLines = 3;
         /// <summary>The callout's padding (FlightDusk.Frame): 8 pt each side, 4 pt top and bottom.</summary>
         public const float CalloutPadX = 8f, CalloutPadY = 4f;
+        /// <summary>FlightDusk.Frame's 3 pt bottom rule: inside the chip's height (border-box), so out of the text's room.
+        /// Left out at cbb3a18d, a one-line seat was 3 pt short ("need 646x107 box 760x84").</summary>
+        public const float CalloutBorderPt = 3f;
+        /// <summary>Vertical chrome of the chip: both pads and the bottom rule.</summary>
+        public const float CalloutChromeY = 2f * CalloutPadY + CalloutBorderPt;
 
         /// <summary>
         /// #431 break-up show: the failure callout ("BREAKUP Air pushed 25 kPa. The walls held 25 kPa.") was pinned at a
@@ -840,20 +845,23 @@ namespace Kestrel.Core.Flight
         /// <paramref name="bandBottom"/> (over the tools row), as near <paramref name="preferredTop"/> as the band allows.
         /// The text never overflows its box: the face steps 13 to 11 pt within three lines and the band's height; still too
         /// long, it is cut after a whole word with an ellipsis (the full line goes in the tooltip). Not Live when the band
-        /// cannot hold one line at the floor face.
+        /// cannot hold one line at the floor face. <paramref name="lineHeight"/> is the face's line box over its size: the
+        /// 1.3 budget by default, or a taller box the runtime measured. The height carries the pads and the 3 pt rule
+        /// (<see cref="CalloutChromeY"/>).
         /// </summary>
-        public static CalloutSeat CalloutInBand(string text, float width, float bandTop, float bandBottom, float preferredTop)
+        public static CalloutSeat CalloutInBand(string text, float width, float bandTop, float bandBottom, float preferredTop, float lineHeight = LineHeight)
         {
+            if (!(lineHeight >= LineHeight)) lineHeight = LineHeight;
             var seat = new CalloutSeat { Text = text ?? "", FontPt = CalloutFontPt, Top = bandTop };
             float room = width - 2f * CalloutPadX;
             float bandH = bandBottom - bandTop;
-            float oneLine = CalloutMinFontPt * LineHeight + 2f * CalloutPadY;
+            float oneLine = CalloutMinFontPt * lineHeight + CalloutChromeY;
             if (string.IsNullOrEmpty(text) || !(room > 8f) || !(bandH >= oneLine)) return seat;
-            float textH = bandH - 2f * CalloutPadY;
-            var fit = WrapFit(text, room, textH, CalloutLines, CalloutFontPt, CalloutMinFontPt);
+            float textH = bandH - CalloutChromeY;
+            var fit = WrapFit(text, room, textH, CalloutLines, CalloutFontPt, CalloutMinFontPt, true, lineHeight);
             int lines = WrapLines(fit.Text, room - 2f, fit.FontPt);
             if (lines < 1 || lines == int.MaxValue) return seat;
-            float h = lines * fit.FontPt * LineHeight + 2f * CalloutPadY;
+            float h = lines * fit.FontPt * lineHeight + CalloutChromeY;
             h = Math.Min(bandH, Math.Max(h, Math.Min(bandH, FlightStaging.CalloutPt)));
             float top = preferredTop;
             if (top > bandBottom - h) top = bandBottom - h;
