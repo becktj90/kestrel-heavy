@@ -337,6 +337,84 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        /// <summary>Settings > Commentary and Time warp: label, the longest state chip ("Calls only") and the helper
+        /// lines fit with a 44 pt row at 335 px, the phone frames, and the web landscape sizes.</summary>
+        [Test]
+        public void SettingsCommentaryAndTimeWarpRowsFitAt335AndWebLandscape()
+        {
+            string[] keys = { Kestrel.Core.Flight.Narration.Commentary.Pref, Kestrel.Core.Features.ExperienceSettings.LegacyNarrationMutePref, Kestrel.Core.Flight.TimeWarpSetting.Pref };
+            var had = new bool[keys.Length];
+            var prev = new int[keys.Length];
+            for (int i = 0; i < keys.Length; i++) { had[i] = PlayerPrefs.HasKey(keys[i]); prev[i] = PlayerPrefs.GetInt(keys[i], 0); }
+            var frames = new System.Collections.Generic.List<Frame>(Frames)
+            {
+                new Frame("web 1280x720", 1280f, 720f),
+                new Frame("web 1366x768", 1366f, 768f),
+                new Frame("web 1920x1080", 1920f, 1080f),
+            };
+            // Each pass sets both rows to their widest chip: Calls only + Auto, then Off + Off.
+            var passes = new[] { (c: 1, w: 0, cs: "Calls only", ws: "Auto"), (c: 2, w: 1, cs: "Off", ws: "Off"), (c: 0, w: 0, cs: "Full", ws: "Auto") };
+            try
+            {
+                foreach (var pass in passes)
+                    foreach (var frame in frames)
+                    {
+                        PlayerPrefs.SetInt(keys[0], pass.c);
+                        PlayerPrefs.SetInt(keys[1], pass.c == 2 ? 1 : 0);
+                        PlayerPrefs.SetInt(keys[2], pass.w);
+                        MainMenuOverlay.ForceWide = frame.Landscape;
+                        string where = frame.Name + " " + pass.cs + "/" + pass.ws;
+                        using (var surface = DeviceSurface.Open(frame.W, frame.H))
+                        {
+                            var home = MountHome(surface.Stage);
+                            surface.Pump(8);
+                            Click(home.Q<Button>("home-settings"));
+                            surface.Pump(4);
+                            Settle(surface, home);
+                            var sheet = home.Q("screen-settings");
+                            AssertFits(sheet, where + " settings");
+                            var list = home.Q<ScrollView>("settings-list");
+                            Assert.That(list, Is.Not.Null, where);
+                            var c = home.Q<Button>(UiIds.SettingsCommentary);
+                            var w = home.Q<Button>(UiIds.SettingsTimeWarp);
+                            Assert.That(c, Is.Not.Null, where);
+                            Assert.That(w, Is.Not.Null, where);
+                            var cState = c.Q<Label>(c.name + "-state");
+                            var wState = w.Q<Label>(w.name + "-state");
+                            Assert.That(cState.text, Is.EqualTo(pass.cs), where);
+                            Assert.That(wState.text, Is.EqualTo(pass.ws), where);
+                            Assert.That(c.layout.height, Is.GreaterThanOrEqualTo(43.5f), where + " touch target");
+                            Assert.That(w.layout.height, Is.GreaterThanOrEqualTo(43.5f), where + " touch target");
+                            var els = new VisualElement[] { c, cState, home.Q<Label>("settings-commentary-note"), w, wState, home.Q<Label>("settings-time-warp-note") };
+                            foreach (var el in els)
+                            {
+                                Assert.That(el, Is.Not.Null, where);
+                                list.ScrollTo(el);
+                                surface.Pump(2);
+                                AssertStringInside((TextElement)el, where + " " + el.name);
+                                var view = list.worldBound;
+                                Assert.That(el.worldBound.yMin, Is.GreaterThanOrEqualTo(view.yMin - TextFit.Slack - 0.5f), where + " " + el.name + " above the list");
+                                Assert.That(el.worldBound.yMax, Is.LessThanOrEqualTo(view.yMax + TextFit.Slack + 0.5f), where + " " + el.name + " below the list");
+                                Assert.That(el.worldBound.xMax, Is.LessThanOrEqualTo(sheet.worldBound.xMax + TextFit.Slack), where + " " + el.name + " past the sheet");
+                            }
+                            // The row's label never runs under its state chip.
+                            foreach (var row in new[] { c, w })
+                            {
+                                var chip = row.Q<Label>(row.name + "-state");
+                                float labelRight = row.worldBound.xMin + row.resolvedStyle.paddingLeft + row.MeasureTextSize(row.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
+                                Assert.That(labelRight, Is.LessThanOrEqualTo(chip.worldBound.xMin + TextFit.Slack), where + " " + row.name + " label under the chip");
+                            }
+                        }
+                    }
+            }
+            finally
+            {
+                MainMenuOverlay.ForceWide = null;
+                for (int i = 0; i < keys.Length; i++)
+                    if (had[i]) PlayerPrefs.SetInt(keys[i], prev[i]); else PlayerPrefs.DeleteKey(keys[i]);
+            }
+        }
+
         static void Settle(DeviceSurface surface, VisualElement root)
         {
             TextFit.Apply(root);
