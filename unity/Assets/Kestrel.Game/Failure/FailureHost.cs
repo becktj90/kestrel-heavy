@@ -154,6 +154,10 @@ namespace Kestrel.Game.Failure
                 ShowCard();
                 return;
             }
+            // #333: wait for booster landing to complete before showing failure card.
+            // The success path above already checks RecoveryLog.Active; the failure path
+            // must do the same so the player gets their landing attempt.
+            if (RecoveryLog.Active) return;
             reduce = Comfort.ReduceMotion;
             StampLosses(result);
             Begin(result.failure);
