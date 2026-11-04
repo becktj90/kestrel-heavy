@@ -140,6 +140,41 @@ namespace Kestrel.Game.Tests
             Assert.That(ChaseCamera.FitBand(r0, c0, one, 1, VFov, aspect, 0.6f, 0.55f), Is.EqualTo(c0));
         }
 
+        // PR #435 iPad landing frame: low over the deck FitBand wanted the camera under the deck, the clamp put it back, and the
+        // flame and deck sat behind the bottom row. FitBandAbove keeps the camera above the floor and pitches down just enough.
+        [TestCase(1320f / 2868f, 0.136f, 0.251f, "6.9in")]
+        [TestCase(1206f / 2622f, 0.127f, 0.226f, "6.3in")]
+        [TestCase(2064f / 2752f, 0.186f, 0.393f, "iPad 13in")]
+        public void FitBandAbove_KeepsTheLandingInTheBand_WithTheCameraOverTheDeck(float aspect, float topCover, float bottomCover, string device)
+        {
+            const float Booster = 26f, R = 1.85f, Flame = 12.2f, Deck = 0f, Floor = Deck + 1f;
+            float yMax = 1f - topCover - 0.03f, yMin = bottomCover + 0.03f;
+            foreach (float alt in new[] { 39f, 15f, 3f, 120f })
+            {
+                var b = new Vector3(0f, Deck + alt, 0f);
+                var cam = b + ChaseCamera.DesiredOffset(Vector3.up, Booster, alt);
+                cam.y = Mathf.Max(cam.y, Floor);
+                var rot0 = ChaseCamera.Aim(cam, b + Vector3.up * Booster * 0.25f, VFov, alt, cam.y - Deck);
+                var pts = new Vector3[9]; int n = 0;
+                float lo = b.y - Flame, hiY = b.y + Booster;
+                for (int i = 0; i < 8; i++)
+                    pts[n++] = new Vector3((i & 1) == 0 ? -R : R, Mathf.Max(Deck, (i & 2) == 0 ? lo : hiY), (i & 4) == 0 ? -R : R);
+                pts[n++] = new Vector3(0f, Mathf.Max(Deck, lo - 1.6f * Booster), 0f);
+                var rot = rot0;
+                var fit = ChaseCamera.FitBandAbove(ref rot, cam, pts, n, VFov, aspect, yMin, yMax, Floor);
+                Assert.That(fit.y, Is.GreaterThanOrEqualTo(Floor - 1e-3f), $"{device} alt {alt}: camera over the deck");
+                foreach (var p in pts)
+                {
+                    var v = Project(p, fit, rot, aspect);
+                    Assert.That(v.z, Is.GreaterThan(0f), $"{device} alt {alt}: in front");
+                    Assert.That(v.y, Is.InRange(yMin - 0.01f, yMax + 0.01f), $"{device} alt {alt}: {p} between the HUD bars");
+                }
+                // When the plain fit already stays over the deck, nothing turns.
+                var plain = ChaseCamera.FitBand(rot0, cam, pts, n, VFov, aspect, yMin, yMax);
+                if (plain.y >= Floor) Assert.That(Quaternion.Angle(rot, rot0), Is.LessThan(0.01f), $"{device} alt {alt}: horizon held when it can be");
+            }
+        }
+
         [Test]
         public void HoldBlendsOut()
         {
