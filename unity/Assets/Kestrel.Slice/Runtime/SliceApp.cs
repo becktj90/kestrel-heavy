@@ -1867,7 +1867,7 @@ namespace Kestrel.Slice
             if (hT != null)
             {
                 hT.text = $"T+ {flight.SimTime:F1}";
-                FlightWarpChip.Show(hWarp, flight.Warp, UnitsPerPoint());
+                FlightWarpChip.Show(hWarp, hT, flight.Warp, UnitsPerPoint());
                 DressClock(hT);
             }
             if (hStage != null) hStage.text = $"S{flight.Sim.StageIdx + 1}";
@@ -2075,7 +2075,8 @@ namespace Kestrel.Slice
                 w = panel > 8f ? panel * 0.55f : 160f * upp;
             }
             if (float.IsNaN(h) || h < 8f) h = FlightHudLayout.HeaderPt * upp;
-            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFontPt(w / upp - FlightHudLayout.WarpChipReserve(), h / upp)); // the warp chip's width is always reserved
+            // Portrait: the warp chip sits out of flow past the content-sized clock (FlightWarpChip), so the face is not cut for it.
+            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFontPt(w / upp, h / upp));
         }
 
         async void OnMeco(FlightDriver f)
