@@ -121,7 +121,7 @@ namespace Kestrel.Capture.Tests
                 var qText = designer.Q<Label>("strip-value-q")?.text ?? "";
                 StringAssert.Contains("kPa", qText, name + " max-Q");
                 var costText = designer.Q<Label>("strip-value-cost")?.text ?? "";
-                StringAssert.EndsWith(" Kc", costText, name + " cost in Kc (#416 item 10)");
+                Assert.IsTrue(costText.EndsWith(" Kc"), name + " cost in Kc (#416 item 10): " + costText);
                 StringAssert.DoesNotContain("$", costText, name + " no dollar sign");
                 StringAssert.DoesNotContain(",", costText, name + " cost wraps when unformatted");
 
