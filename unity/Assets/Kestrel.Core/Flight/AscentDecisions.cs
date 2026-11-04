@@ -14,6 +14,7 @@ namespace Kestrel.Core.Flight
 {
     public enum AscentCall
     {
+        /// <summary>DECISIONS #80: never built. The design's max-Q throttle flies automatically; the value stays for saved data.</summary>
         MaxQ = 1,
         Pitch = 2,
         Staging = 3,
@@ -46,6 +47,8 @@ namespace Kestrel.Core.Flight
         public double LossGravity, LossDrag, LossSteering;
         public int StageIndex;
         public bool Thrusting;
+        /// <summary>DECISIONS #80: the design's own max-Q law held the throttle down on this step (AscentSim.MaxQThrottling).</summary>
+        public bool MaxQThrottling;
     }
 
     /// <summary>What the next integrator step should apply. Scale 1 and offset 0 are a no-op.</summary>
@@ -53,12 +56,6 @@ namespace Kestrel.Core.Flight
     {
         public double ThrottleScale;
         public double PitchOffsetRad;
-        /// <summary>
-        /// #313 (Kestrel Physics): the design's built-in max-Q throttle (<see cref="GuidanceProfile"/>) is the only max-Q
-        /// law. 0 leaves the design's own setting alone. A fraction asks the flight to engage that same law at this
-        /// cap: a player who takes the max-Q call on a design without a max-Q throttle.
-        /// </summary>
-        public double EngageMaxQCap;
         public bool Lost;
         public string LossKind, LossKid, LossEngineer;
     }
@@ -157,8 +154,6 @@ namespace Kestrel.Core.Flight
         public const double WindowReducedS = 14;
         public const double TimePerfectStart = 0.45;
         public const double TimePerfectEnd = 0.70;
-        public const double MaxQGreenStart = 0.33;
-        public const double MaxQGreenEnd = 0.90;
         public const double NudgeLimitDeg = 3;
         public const double NudgeStepDeg = 1;
         public const double DefaultBucket = 0.70;
@@ -233,26 +228,6 @@ namespace Kestrel.Core.Flight
             if (u >= 1) return AscentGrade.Late;
             if (u >= TimePerfectStart && u <= TimePerfectEnd) return AscentGrade.Perfect;
             return AscentGrade.Good;
-        }
-
-        public static AscentGrade GradeMaxQ(double qPa, double qLimPa, double age, double window)
-        {
-            if (age >= window) return AscentGrade.Late;
-            double lim = qLimPa > 1000 ? qLimPa : GuidanceProfile.MaxQReferencePa;
-            if (qPa > lim * 1.02) return AscentGrade.Late;
-            double u = (qPa - 0.55 * lim) / (0.45 * lim);
-            if (u >= MaxQGreenStart && u <= MaxQGreenEnd) return AscentGrade.Perfect;
-            if (u >= 0 && u < 1.2) return AscentGrade.Good;
-            return AscentGrade.Good;
-        }
-
-        public static double MaxQMarker(double qPa, double qLimPa)
-        {
-            double lim = qLimPa > 1000 ? qLimPa : GuidanceProfile.MaxQReferencePa;
-            double u = (qPa - 0.55 * lim) / (0.45 * lim);
-            if (u < 0) return 0;
-            if (u > 1) return 1;
-            return u;
         }
 
         public static AscentMedal MedalFrom(int perfect, int good, int late, bool playerFlew)
@@ -441,6 +416,44 @@ namespace Kestrel.Core.Flight
         public bool ReduceMotion { get; private set; }
         public double NudgeDeg { get; private set; }
         public AscentCommand Command { get; private set; }
+
+        /// <summary>
+        /// DECISIONS #80: the max-Q moment, now that there is no max-Q call. Set from the sim's real throttle-law
+        /// transitions (<see cref="AscentSample.MaxQThrottling"/>): <see cref="AscentNotes.MaxQThrottleDown"/> when the
+        /// design's own law first throttles down, <see cref="AscentNotes.MaxQThrough"/> when it first throttles back up.
+        /// Each fires once and shows for <see cref="MaxQBeatHoldS"/>. Null otherwise, and always null on a design with no
+        /// max-Q setting (the narration only says what is true for this rocket).
+        /// </summary>
+        public string MaxQBeatText { get; private set; }
+        /// <summary>Counts the beats fired (0, 1 or 2), so a HUD or narrator can react once per beat.</summary>
+        public int MaxQBeatSerial { get; private set; }
+        /// <summary>Sim time of the last beat, NaN before the first.</summary>
+        public double MaxQBeatT { get; private set; } = double.NaN;
+        public const double MaxQBeatHoldS = 3;
+        bool maxQDownSeen, maxQUpSeen;
+
+        void MaxQBeatStep(in AscentSample s)
+        {
+            if (MaxQBeatText != null && !(s.T - MaxQBeatT < MaxQBeatHoldS)) MaxQBeatText = null;
+            if (!vehicle.MaxQSet) return;
+            if (!maxQDownSeen && s.MaxQThrottling)
+            {
+                maxQDownSeen = true;
+                Beat(AscentNotes.MaxQThrottleDown, s.T);
+            }
+            else if (maxQDownSeen && !maxQUpSeen && !s.MaxQThrottling && s.Thrusting)
+            {
+                maxQUpSeen = true;
+                Beat(AscentNotes.MaxQThrough, s.T);
+            }
+        }
+
+        void Beat(string text, double t)
+        {
+            MaxQBeatText = text;
+            MaxQBeatT = t;
+            MaxQBeatSerial++;
+        }
         public AscentTrack Track => track;
         public double LiveAlt { get; private set; }
         public double LiveSpeed { get; private set; }
@@ -497,6 +510,7 @@ namespace Kestrel.Core.Flight
             LiveTwr = sample.MassKg > 1 ? sample.ThrustN / (sample.MassKg * Atmosphere.G0) : 0;
             if (sample.AltM > peakAlt) peakAlt = sample.AltM;
             if (sample.SpeedMps > peakSpeed) peakSpeed = sample.SpeedMps;
+            MaxQBeatStep(sample);
             if (sample.G > peakG) peakG = sample.G;
             if (lastTrackT < 0 || sample.T - lastTrackT >= 0.4)
             {
@@ -520,8 +534,7 @@ namespace Kestrel.Core.Flight
                 if (gated && !fairingGate.Open)
                     c.Age = Math.Min(c.Age, AscentDecisions.TimePerfectStart * Window * (1 - 1e-9));
                 var grade = GradeFor(c, sample);
-                bool fire = AutoAssist && (c.Kind == AscentCall.MaxQ ? grade == AscentGrade.Perfect
-                    : gated ? fairingGate.Open
+                bool fire = AutoAssist && (gated ? fairingGate.Open
                     : c.Age >= AscentDecisions.TimePerfectStart * Window && grade == AscentGrade.Perfect);
                 if (fire) Resolve(c, AutopilotAccept(c, sample), AscentGrade.Perfect, false, sample);
                 else if (c.Age >= Window) Resolve(c, AutopilotAccept(c, sample), AscentGrade.Late, false, sample);
@@ -632,8 +645,10 @@ namespace Kestrel.Core.Flight
             // DECISIONS #77 (Physics): no design max-Q throttle, no max-Q call. The design's guidance has nothing to throttle
             // to, and a director cap there was a dip that stuck (Home KH-5 and KH-14 cut off eccentric). Not offered, so it
             // never costs medal credit either.
-            if (vehicle.MaxQSet)
-                calls.Add(new Call { Kind = AscentCall.MaxQ });
+            // DECISIONS #80 (Physics option b, for release): no max-Q call at all. The press never changed the throttle: a
+            // design with a max-Q setting flies its own law (GuidanceProfile) whether the player presses or not, so the
+            // call was a graded button with no effect. The law runs automatically, like a flight computer's throttle
+            // bucket, and the HUD/narrator beat (MaxQBeat) marks it. No call, so no medal or timing credit either.
             if (vehicle.FuelEvent)
                 calls.Add(new Call { Kind = AscentCall.FuelBalance });
             int seps = vehicle.Stages - 1;
@@ -648,7 +663,6 @@ namespace Kestrel.Core.Flight
 
         void Arm(in AscentSample s)
         {
-            double lim = Lim();
             for (int i = 0; i < calls.Count; i++)
             {
                 var c = calls[i];
@@ -656,9 +670,6 @@ namespace Kestrel.Core.Flight
                 bool ready = false;
                 switch (c.Kind)
                 {
-                    case AscentCall.MaxQ:
-                        ready = s.Thrusting && s.QPa >= 0.55 * lim;
-                        break;
                     case AscentCall.Pitch:
                         ready = s.Thrusting && s.StageIndex == 0 && s.SpeedMps > 70 && s.AltM > 1500 && s.AltM < 50000;
                         break;
@@ -699,7 +710,6 @@ namespace Kestrel.Core.Flight
 
         AscentGrade GradeFor(Call c, in AscentSample s)
         {
-            if (c.Kind == AscentCall.MaxQ) return AscentDecisions.GradeMaxQ(s.QPa, vehicle.QLimPa, c.Age, Window);
             return AscentDecisions.GradeTime(c.Age, Window);
         }
 
@@ -717,10 +727,8 @@ namespace Kestrel.Core.Flight
 
         bool AutopilotAccept(Call c, in AscentSample s)
         {
-            // #313 option (b): the default player flies the design's own settings. The autopilot takes the max-Q
-            // throttle-down only when the design set a max-Q throttle (and then at that value, OfferedThrottle), and
-            // never takes the open-loop nose-down nudge. A player tap (Choose) still does either.
-            if (c.Kind == AscentCall.MaxQ) return vehicle.MaxQSet;
+            // #313 option (b): the default player flies the design's own settings. The autopilot never takes the
+            // open-loop nose-down nudge; a player tap (Choose) still does. (DECISIONS #80: no max-Q call to accept.)
             if (c.Kind == AscentCall.Pitch) return false;
             if (c.Kind != AscentCall.EngineOut) return true;
             if (AscentDecisions.ToleratesEngineOut(vehicle.Engines, vehicle.Redundant, s.ThrustN, s.MassKg)) return true;
@@ -737,9 +745,6 @@ namespace Kestrel.Core.Flight
             if (touched) playerFlew = true;
             switch (c.Kind)
             {
-                case AscentCall.MaxQ:
-                    // The design's own max-Q law flies the throttle-down (the call is offered only when it has one).
-                    break;
                 case AscentCall.Pitch:
                     if (accept && Math.Abs(NudgeDeg) < 0.05) SetNudge(-AscentDecisions.NudgeStepDeg);
                     break;
@@ -805,7 +810,6 @@ namespace Kestrel.Core.Flight
             // guidance; a taken call on a design without one engages that same guidance law at the offered cap.
             // DECISIONS #77: the call is offered only on a design max-Q throttle, which its own guidance already flies, so the
             // director never engages a cap of its own (no dip that sticks).
-            double engage = 0;
             double scale = 1;
             if (engineStage >= 0 && s.Thrusting && s.StageIndex == engineStage) scale *= engineScale;
             if (fuelStage >= 0 && s.Thrusting && s.StageIndex == fuelStage) scale *= fuelScale;
@@ -818,7 +822,6 @@ namespace Kestrel.Core.Flight
             {
                 ThrottleScale = scale,
                 PitchOffsetRad = deg * Math.PI / 180.0,
-                EngageMaxQCap = engage,
                 Lost = lost,
                 LossKind = lossKind,
                 LossKid = lossKid,
@@ -853,18 +856,6 @@ namespace Kestrel.Core.Flight
             string sf = vehicle.SafetyFactor.ToString("0.0", inv);
             switch (c.Kind)
             {
-                case AscentCall.MaxQ:
-                    double lim = Lim();
-                    int pct = (int)Math.Round(AscentDecisions.OfferedThrottle(vehicle.MaxQSet, vehicle.MaxQRaw, vehicle.ThrottleMin) * 100);
-                    p.Eyebrow = "MISSION CONTROL · MAX-Q";
-                    p.Quote = "Approaching max-Q. Throttle down now? q " + Kpa(s.QPa) + " / " + Kpa(lim) + " kPa";
-                    p.Detail = "Window " + Clock(left) + " · Design influences risk (SF " + sf + ")";
-                    if (pct >= 100) p.Detail += " · This engine cannot throttle down.";
-                    p.Primary = "THROTTLE DOWN to " + pct.ToString(inv) + " %";
-                    p.Marker = AscentDecisions.MaxQMarker(s.QPa, vehicle.QLimPa);
-                    p.GreenStart = AscentDecisions.MaxQGreenStart;
-                    p.GreenEnd = AscentDecisions.MaxQGreenEnd;
-                    break;
                 case AscentCall.Pitch:
                     p.Eyebrow = "MISSION CONTROL · GRAVITY TURN";
                     p.Quote = "Nudge the nose down 1° on the planned kick (" + vehicle.PitchKickDeg.ToString("0.0", inv) + "°)?";

@@ -148,7 +148,7 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void DesignThrottleStaysOnUntilTheMaxQCallIsTaken()
+        public void DesignThrottle_IsTheGuidedPath_NoMaxQCall()
         {
             var mission = campaign.Mission(1);
             var design = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, mission).Design);
@@ -157,8 +157,8 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(vehicle.MaxQSet);
             var director = AscentDirector.Start(vehicle, null, null, true, false, true);
             director.Advance(new AscentSample { T = 1, QPa = 1000, Thrusting = true, MassKg = 2000, ThrustN = 80000, PropFraction = 1 }, 0.05);
-            Assert.AreEqual(0, director.Command.EngageMaxQCap, 1e-12, "the design cap is the guided path; the director never replaces it");
-            Assert.AreEqual(1, director.Command.ThrottleScale, 1e-12);
+            Assert.IsFalse(director.IsOpen(AscentCall.MaxQ), "DECISIONS #80: no max-Q call; the design cap is the guided path");
+            Assert.AreEqual(1, director.Command.ThrottleScale, 1e-12, "the director never replaces the design cap");
         }
 
         static SimResult Fly(Catalog catalog, Design design, CampaignMission mission)

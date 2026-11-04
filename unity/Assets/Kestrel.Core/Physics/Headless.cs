@@ -333,6 +333,9 @@ namespace Kestrel.Core.Physics
         /// </summary>
         public double LiveThrottleScale = 1;
         public double LivePitchOffsetRad;
+        /// <summary>DECISIONS #80: true on a tick where the design's own max-Q law held the throttle down (GuidanceProfile.MaxQThrottleActive). Observer only.</summary>
+        public bool MaxQThrottling => maxQThrottleNow;
+        bool maxQThrottleNow;
         /// <summary>
         /// Observer. Null leaves the step alone. The sim does not read the sink. Every call goes through a
         /// <see cref="Flight.GuardedFlightSink"/>, so a sink that throws is logged and cannot end or change the run.
@@ -462,6 +465,7 @@ namespace Kestrel.Core.Physics
                 vrel = o.wind.Retarget(alt, tx, ty, ref avx, ref avy, vrel);
 
             // ---- guidance ----
+            maxQThrottleNow = false;
             if (Thrusting)
             {
                 thrustScale = o.monitor != null ? o.monitor.ThrustFactor : 1;
@@ -527,14 +531,18 @@ namespace Kestrel.Core.Physics
                     }
                     if (o.guidance != null && (o.guidance.maxQThrottleSet || o.guidance.gLimitSet))
                     {
-                        double cap = o.guidance.Command(Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel)).throttle;
+                        var gs = Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel);
+                        double cap = o.guidance.Command(gs).throttle;
                         if (cap != 1) thrustScale *= cap;
+                        maxQThrottleNow = o.guidance.MaxQThrottleActive(gs);
                     }
                 }
                 else
                 {
                     double flight = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
-                    var cmd = o.guidance.Command(Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel, flight));
+                    var gs = Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel, flight);
+                    var cmd = o.guidance.Command(gs);
+                    maxQThrottleNow = o.guidance.MaxQThrottleActive(gs);
                     PitchCmd = cmd.pitchRad;
                     followVelocity = o.continuousTurn && StageIdx == 0 && cmd.pitchRad == flight;
                     if (StageIdx > 0 && o.continuousTurn) { pegContinuous = true; pegTarget = o.guidance.targetAlt; pegThrottle = cmd.throttle; }

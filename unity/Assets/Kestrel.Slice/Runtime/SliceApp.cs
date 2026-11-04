@@ -2021,7 +2021,11 @@ namespace Kestrel.Slice
             }
             if (hCallout == null) return;
             string line = "";
-            if (juice != null && !string.IsNullOrEmpty(juice.Line)) line = juice.Line;
+            // DECISIONS #80: the max-Q beat (the design's own throttle law starting and ending) outranks the generic
+            // q line, never an airframe alarm. Null on a design with no max-Q setting.
+            string maxQBeat = flight != null && flight.Decisions != null ? flight.Decisions.MaxQBeatText : null;
+            if (!string.IsNullOrEmpty(maxQBeat) && !alarm && (juice == null || juice.Call != "AIRFRAME")) line = maxQBeat;
+            else if (juice != null && !string.IsNullOrEmpty(juice.Line)) line = juice.Line;
             else if (!flying && sequence != null)
             {
                 if (!string.IsNullOrEmpty(sequence.Label) && !Kestrel.Core.PlayerText.Leak(sequence.Label))
