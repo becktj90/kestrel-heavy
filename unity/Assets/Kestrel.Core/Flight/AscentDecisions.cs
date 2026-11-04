@@ -82,6 +82,10 @@ namespace Kestrel.Core.Flight
         public AscentCall Call;
         public string Eyebrow, Quote, Detail, Primary, Alternate;
         public bool ShowAlternate, DangerAlternate;
+        /// <summary>True when the big (primary) button is the decline: the engine-out call on a design that cannot
+        /// hold the shutdown, where the big button is "Ride it out" (DECISIONS #76). Press it through
+        /// <see cref="AscentDirector.ChoosePrimary"/>.</summary>
+        public bool PrimaryDeclines;
         public double Marker, GreenStart, GreenEnd, LeftS;
         public bool InGreen;
     }
@@ -538,6 +542,20 @@ namespace Kestrel.Core.Flight
             return true;
         }
 
+        /// <summary>True when the big button takes the call (accept). False only on an engine-out call the design
+        /// cannot hold: the big button rides it out and the shutdown is the secondary button (DECISIONS #76).</summary>
+        public bool PrimaryAccepts(AscentCall kind)
+        {
+            if (kind != AscentCall.EngineOut) return true;
+            return AscentDecisions.ToleratesEngineOut(vehicle.Engines, vehicle.Redundant, last.ThrustN, last.MassKg);
+        }
+
+        /// <summary>The big (primary) button, whatever it means for this call.</summary>
+        public bool ChoosePrimary(AscentCall kind) => Choose(kind, PrimaryAccepts(kind));
+
+        /// <summary>The secondary (alternate) button: the opposite of <see cref="ChoosePrimary"/>.</summary>
+        public bool ChooseAlternate(AscentCall kind) => Choose(kind, !PrimaryAccepts(kind));
+
         public bool Skip(AscentCall kind)
         {
             var c = Find(kind, Phase.Open);
@@ -792,7 +810,8 @@ namespace Kestrel.Core.Flight
                     if (accept) maxQDown = true;
                     break;
                 case AscentCall.Pitch:
-                    if (accept && Math.Abs(NudgeDeg) < 0.05) SetNudge(-AscentDecisions.NudgeStepDeg);
+                    // DECISIONS #76: accept confirms the autopilot's pitch program. One-shot, no held offset: the flight
+                    // is the same as no input or auto-assist. Manual steering stays on the Engineer nudge row.
                     break;
                 case AscentCall.Staging:
                     if (accept && grade != AscentGrade.Late && schedule != null)
@@ -917,9 +936,9 @@ namespace Kestrel.Core.Flight
                     break;
                 case AscentCall.Pitch:
                     p.Eyebrow = "MISSION CONTROL · GRAVITY TURN";
-                    p.Quote = "Nudge the nose down 1° on the planned kick (" + vehicle.PitchKickDeg.ToString("0.0", inv) + "°)?";
-                    p.Detail = "Window " + Clock(left) + " · The nudge stays inside ±" + AscentDecisions.NudgeLimitDeg.ToString("0", inv) + "°.";
-                    p.Primary = "NUDGE PITCH −1°";
+                    p.Quote = "Gravity turn on the planned kick (" + vehicle.PitchKickDeg.ToString("0.0", inv) + "°). Confirm the pitch program?";
+                    p.Detail = "Window " + Clock(left) + " · Confirming keeps the autopilot's program; it does not steer.";
+                    p.Primary = "CONFIRM PITCH PROGRAM";
                     p.Marker = Marker(c);
                     p.GreenStart = AscentDecisions.TimePerfectStart;
                     p.GreenEnd = AscentDecisions.TimePerfectEnd;
@@ -953,8 +972,19 @@ namespace Kestrel.Core.Flight
                     p.Quote = "Engine " + shown.ToString(inv) + " pressure drop. Shut it down?";
                     p.Detail = leftEng.ToString(inv) + " of " + vehicle.Engines.ToString(inv) + " still burning · TWR after "
                         + twr.ToString("0.00", inv) + (ok ? " > 1.05 · you chose redundant avionics" : " · this design cannot hold an engine-out");
-                    p.Primary = "SHUT DOWN ENGINE " + shown.ToString(inv) + (ok ? " (safe)" : " (will not hold)");
-                    p.Alternate = "RIDE IT OUT (risk overpressure)";
+                    if (ok)
+                    {
+                        p.Primary = "SHUT DOWN ENGINE " + shown.ToString(inv) + " (safe)";
+                        p.Alternate = vehicle.HotChamber ? "RIDE IT OUT (hot engine will fail)" : "RIDE IT OUT (keep it burning)";
+                    }
+                    else
+                    {
+                        // DECISIONS #76: a shutdown this design cannot hold loses the rocket, so the big button rides it
+                        // out. Riding is safe unless the engine runs hot (pc above rated), which the copy says.
+                        p.Primary = vehicle.HotChamber ? "RIDE IT OUT (hot engine will fail)" : "RIDE IT OUT (keep it burning)";
+                        p.Alternate = "SHUT DOWN ENGINE " + shown.ToString(inv) + " (will not hold)";
+                        p.PrimaryDeclines = true;
+                    }
                     p.ShowAlternate = true;
                     p.DangerAlternate = true;
                     p.Marker = Marker(c);

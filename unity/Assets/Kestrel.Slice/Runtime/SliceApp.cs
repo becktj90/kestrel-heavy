@@ -164,6 +164,10 @@ namespace Kestrel.Slice
                     // Designer / Hangar and Guided / All parts switches re-decide which launch reason shows.
                     designer.ViewChanged += ApplyValidation;
                 }
+                // Static event: one subscription per live app. Without the -= (and OnDestroy below) every Design scene
+                // load left a dead SliceApp subscribed; Fix it ran the dead one first, it threw on its destroyed Vehicle
+                // (QA #417 NRE after "[Count] done->boot") and the live app's handler never ran: empty sky, no buttons.
+                FixField.OnApply -= HandleReportedFix;
                 FixField.OnApply += HandleReportedFix;
             }
             else
@@ -1340,6 +1344,11 @@ namespace Kestrel.Slice
 
         void OnFlagsChanged(FeatureFlags _) => ApplyStarterMode();
 
+        void OnDestroy()
+        {
+            FixField.OnApply -= HandleReportedFix;
+        }
+
         void OnDisable()
         {
             if (flagsSeen != null) flagsSeen.Changed -= OnFlagsChanged;
@@ -1513,12 +1522,48 @@ namespace Kestrel.Slice
         Vector4 hudTrace; Vector3 noseTrace;
 
         /// <summary>Same design that left the pad. The launch gate already passed.</summary>
+        /// <remarks>
+        /// One more launch and Restart used to go straight to <see cref="EnterFlight"/>: the count ran over the last
+        /// flight (rocket and camera still in the sky, fireballs, the old HUD and BACK TO DESIGN), and after a
+        /// mid-flight Restart the old sim was still Running, so T-0 resumed it instead of launching. The flight is
+        /// cleared and the rocket rebuilt on the pad first, the same as Back to design.
+        /// </remarks>
         void RestartFlight()
         {
             SetFlightPaused(false);
             if (flyingDesign != null) design = flyingDesign;
             if (design == null) return;
+            ClearFlight();
+            BuildRocket();
             EnterFlight();
+        }
+
+        /// <summary>
+        /// Everything a flight leaves behind, put back: the count, the driver (sim, result, floating origin, pad
+        /// anchors, vehicle), the booster landing, the camera juice, the ascent HUD, debris and fireballs.
+        /// Shared by <see cref="RestartFlight"/> and <see cref="ReturnToPad"/>.
+        /// </summary>
+        void ClearFlight()
+        {
+            ReportCardChrome.Dismiss(ui);
+            SetFlightPaused(false);
+            handoff.Reset();
+            ascentErrorLogged = false;
+            counting = false; sequence = null;
+            CountVoice()?.EndCount();
+            if (flight != null) { flight.ResetToPad(); flight.enabled = false; }
+            if (cam != null) cam.ResetProjectionMatrix();
+            recovery?.Stop();
+            ApplyHudFocus(FlightHudFocus.Ascent);
+            RecoveryLog.Clear();
+            if (juice != null) juice.Reset();
+            if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
+            ascentHud?.Close();
+            Kestrel.Kit.CinematicEvents.DebrisClear();
+            if (again != null) again.AddToClassList("hidden");
+            var grid = hud != null ? hud.Q("hud-grid") : null;
+            if (grid != null) grid.style.display = StyleKeyword.Null;
+            if (hMsg != null) hMsg.text = "";
         }
 
         void ExitToHome()
@@ -1702,21 +1747,79 @@ namespace Kestrel.Slice
 
         void HandleReportedFix(FixField link)
         {
-            if (link == null) return;
-            // Starter has no tabs to jump to: back on the pad, the four knobs are the fix.
-            if (starterMode) { ReturnToPad(); return; }
-            ReturnToPad();
-            ShowDesigner(true);
-            designer?.ApplyReportedFix(link.Kind, link.Tab);
-            if (rocketDirty) BuildRocket();
-            if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
-            ApplyWebDesignFrame();
+            if (this == null) { FixField.OnApply -= HandleReportedFix; return; } // a destroyed app never routes
+            if (link == null || !isActiveAndEnabled) return;
+            landing.Arm(Time.unscaledTime);
+            try
+            {
+                // Starter has no tabs to jump to: back on the pad, the four knobs are the fix.
+                if (starterMode) { ReturnToPad(); return; }
+                ReturnToPad();
+                ShowDesigner(true);
+                designer?.ApplyReportedFix(link.Kind, link.Tab);
+                if (rocketDirty) BuildRocket();
+                if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); }
+                ApplyWebDesignFrame();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+                ForceDesigner("fix it threw");
+            }
         }
 
         void BackToDesign()
         {
-            ReturnToPad();
-            ApplyValidation();
+            landing.Arm(Time.unscaledTime);
+            try
+            {
+                ReturnToPad();
+                ApplyValidation();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+                ForceDesigner("back to designer threw");
+            }
+        }
+
+        /// <summary>Fix it / Back to designer must always land in the designer (UX fun review 2026-11-03 #1).</summary>
+        readonly Kestrel.Core.Flight.DesignerLanding landing = new Kestrel.Core.Flight.DesignerLanding();
+
+        /// <summary>Times the fallback fired this session; PlayMode tests assert the normal route never needs it.</summary>
+        public int ForcedDesignerLandings { get; private set; }
+
+        bool DesignerOnScreen => designPanel != null && !designPanel.ClassListContains("hidden");
+
+        void CheckDesignerLanding()
+        {
+            if (!landing.Armed) return;
+            bool report = ui != null && ui.Q(ReportView.RootName) != null;
+            if (landing.Check(Time.unscaledTime, DesignerOnScreen, report, FlightHudVisible))
+                ForceDesigner("no designer " + Kestrel.Core.Flight.DesignerLanding.GraceSeconds + " s after the route");
+        }
+
+        /// <summary>Last-resort landing: every step on its own so one broken piece cannot strand the player on an empty
+        /// sky. Never launches, never charges, never re-opens a card.</summary>
+        void ForceDesigner(string why)
+        {
+            ForcedDesignerLandings++;
+            landing.Clear();
+            Debug.LogWarning("[Hangar] forced the designer: " + why);
+            void Step(System.Action a) { try { a(); } catch (System.Exception e) { Debug.LogException(e); } }
+            Step(() => ReportCardChrome.Dismiss(ui));
+            Step(() => SetFlightPaused(false));
+            Step(() => { if (flight != null) flight.enabled = false; });
+            Step(() => { var host = rocketGO != null ? rocketGO.GetComponent<Kestrel.Game.Failure.FailureHost>() : null; if (host != null) host.ResetFlight(); });
+            Step(() => { if (hud != null) hud.AddToClassList("hidden"); });
+            Step(() => { if (designPanel != null) designPanel.RemoveFromClassList("hidden"); });
+            Step(() => { if (homeButton != null) homeButton.RemoveFromClassList("hidden"); });
+            Step(() => FlightEntry.Release(ui));
+            Step(() => ShowFlightPicture(false));
+            Step(() => { if (cam != null) { cam.ResetProjectionMatrix(); cam.fieldOfView = FlightJuice.BaseFov; } });
+            Step(() => { if (hangarCam != null) { hangarCam.enabled = true; hangarCam.Reframe(); } });
+            Step(() => ApplyStarterMode());
+            Step(() => { if (!starterMode) ShowDesigner(true); });
         }
 
         /// <summary>
@@ -1725,28 +1828,12 @@ namespace Kestrel.Slice
         /// </summary>
         void ReturnToPad()
         {
-            ReportCardChrome.Dismiss(ui);
-            SetFlightPaused(false);
+            ClearFlight();
             Kestrel.Game.Audio.MusicPlayer.Instance?.Select(false);
-            handoff.Reset();
-            ascentErrorLogged = false;
-            counting = false; sequence = null;
-            CountVoice()?.EndCount();
-            if (flight != null) flight.enabled = false;
-            if (cam != null) cam.ResetProjectionMatrix();
-            recovery?.Stop();
-            ApplyHudFocus(FlightHudFocus.Ascent);
-            RecoveryLog.Clear();
-            if (juice != null) juice.Reset();
-            if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
-            ascentHud?.Close();
             FlightEntry.Release(ui);
             if (hud != null) hud.AddToClassList("hidden");
             if (designPanel != null) designPanel.RemoveFromClassList("hidden");
             if (homeButton != null) homeButton.RemoveFromClassList("hidden");
-            if (again != null) again.AddToClassList("hidden");
-            var grid = hud != null ? hud.Q("hud-grid") : null;
-            if (grid != null) grid.style.display = StyleKeyword.Null;
             ShowFlightPicture(false);
             if (designer != null) designer.SetOpen(designer.Open);
             if (hangarCam != null) hangarCam.enabled = true;
@@ -1786,6 +1873,7 @@ namespace Kestrel.Slice
             if (birds != null) birds.TrackFlight = hud != null && !hud.ClassListContains("hidden");
             if (ui != null && ui.Q(ReportView.RootName) != null)
                 handoff.Finish();
+            CheckDesignerLanding();
             if (chrome != null && chrome.Paused) return;
             bool inFlight = hud != null && !hud.ClassListContains("hidden");
             if (!handoff.Closed && !handoff.Ascending && (counting || (inFlight && (sequence != null || handoff.StartAttempts > 0))))

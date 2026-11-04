@@ -165,6 +165,9 @@ namespace Kestrel.Slice
             clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             AttitudeDeg = 90f; HasAttitude = false;
             seenEvents = 0; mecoSent = false; warp = null;
+            // The origin is back at the pad, so the pad has to be too: after a flight past RebaseDistance the
+            // anchored ground, deck and tower were left where the last rebase put them (a displaced pad on relaunch).
+            PlaceAnchors();
             try
             {
                 // The designer and the launch predictor fly these same checks (#314).
@@ -267,7 +270,7 @@ namespace Kestrel.Slice
             if (Math.Abs(Downrange - OriginX) > RebaseDistance || Math.Abs(Altitude - OriginY) > RebaseDistance)
             {
                 OriginX = Downrange; OriginY = Altitude; Rebases++;
-                foreach (var a in anchored) Place(a.t, a.x, a.y, a.z);
+                PlaceAnchors();
             }
             if (Vehicle != null)
             {
@@ -283,6 +286,43 @@ namespace Kestrel.Slice
                 prevX = Downrange; prevY = Altitude;
             }
             if (Plume != null) Plume.Apply(ThrustFraction, AmbientPressure, Speed);
+        }
+
+        /// <summary>
+        /// One more launch / Restart: put the driver back on the pad before the next count. The old flight stops
+        /// (Running was still true after a mid-flight Restart, so the next T-0 resumed it instead of launching), the
+        /// result is dropped (a rebuilt FailureHost must not replay it), and the floating origin, the anchored pad
+        /// and the vehicle all go back to pad-local zero.
+        /// </summary>
+        public void ResetToPad()
+        {
+            Running = false; Held = false;
+            Result = null; Meco = false; mecoSent = false; seenEvents = 0;
+            Sim = null; directed = null; checks = null;
+            clock = 0; prevX = prevY = 0;
+            Downrange = Altitude = Speed = ThrustFraction = 0;
+            AttitudeDeg = 90f; HasAttitude = false;
+            OriginX = OriginY = 0; Rebases = 0;
+            PlaceAnchors();
+            if (Vehicle != null) { Vehicle.localPosition = Vector3.zero; Vehicle.localRotation = Quaternion.identity; }
+            if (Plume != null) Plume.Apply(0, Atmosphere.P0, 0);
+        }
+
+        /// <summary>True when every anchored pad object sits at its pad-local spot for the current origin (tests).</summary>
+        public bool AnchorsAtOrigin()
+        {
+            foreach (var a in anchored)
+            {
+                if (a.t == null) continue;
+                var want = new Vector3((float)(a.x - OriginX), (float)(a.y - OriginY), (float)a.z);
+                if ((a.t.localPosition - want).sqrMagnitude > 1e-4f) return false;
+            }
+            return true;
+        }
+
+        void PlaceAnchors()
+        {
+            foreach (var a in anchored) if (a.t != null) Place(a.t, a.x, a.y, a.z);
         }
 
         void Place(Transform t, double x, double y, double z) => t.localPosition = new Vector3((float)(x - OriginX), (float)(y - OriginY), (float)z);

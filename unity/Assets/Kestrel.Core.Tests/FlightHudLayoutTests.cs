@@ -362,7 +362,7 @@ namespace Kestrel.Core.Tests
             foreach (var mode in Modes)
             {
                 var f = FlightHudLayout.Place(d, mode);
-                // Portrait: SliceApp.DressClock, ClockFontPt over the box less the reserve.
+                // Portrait: the chip sits out of flow past the clock (FlightWarpChip); the box still has room for both.
                 float font = FlightHudLayout.ClockFontPt(f.Clock.W - FlightHudLayout.WarpChipReserve(), f.Clock.H);
                 Assert.That(FlightHudLayout.BudgetWidth("T+ 12:34", font) + FlightHudLayout.ClockPadXPt / 2f + FlightHudLayout.WarpChipReserve(),
                     Is.LessThanOrEqualTo(f.Clock.W), d.Name + " " + mode);
@@ -411,6 +411,40 @@ namespace Kestrel.Core.Tests
                 Assert.That(f.Cells[f.Cells.Length - 1].Right, Is.LessThanOrEqualTo(f.Stage.X), at + " last cell clear of the stage chip");
                 Assert.That(f.Cells[0].W, Is.GreaterThan(100f), at + " cells keep room");
             }
+        }
+
+        /// <summary>
+        /// Booster follow: the strip's four cells read ALT / DOWN / FUEL / TO DECK (TO PAD on a pad landing, UP on a
+        /// boostback). Every key fits one cell on one line at the budgeted width (MeasureFactor, the slack for a
+        /// wider font than the metrics table) on 335 px, the iPads and the web landscape viewports, in every HUD
+        /// mode, with no label shortened; every booster reading is no wider than the strip's WidestValue.
+        /// </summary>
+        [Test]
+        public void BoosterKeysFitTheStripAt335IpadAndWebLandscape()
+        {
+            var frames = new List<(string, FlightHudFrame)>();
+            foreach (var d in CameraPortraits)
+            foreach (var mode in Modes)
+                frames.Add((d.Name + " " + mode, FlightHudLayout.Place(d, mode)));
+            foreach (var wh in CameraWide)
+            foreach (var mode in Modes)
+                frames.Add((wh[0] + "x" + wh[1] + " " + mode, FlightHudLayout.PlaceWide(wh[0], wh[1], 0f, 0f, 0f, 0f, mode)));
+            Assert.That(BoosterHud.Labels, Does.Contain(BoosterHud.DeckKey).And.Contain(BoosterHud.PadKey));
+            foreach (var (where, f) in frames)
+            {
+                Assert.That(f.Cells.Length, Is.EqualTo(BoosterHudReadout.Count), where);
+                foreach (var cell in f.Cells)
+                {
+                    float inner = cell.W - 2f * FlightHudLayout.CellPadPt;
+                    foreach (var word in BoosterHud.Labels)
+                        Assert.That(FlightHudLayout.BudgetWidth(word, FlightHudLayout.LabelFontPt), Is.LessThan(inner), where + " " + word);
+                }
+            }
+            // Values: AscentHud.FitCells steps the cell face down until WidestValue fits, so a booster reading
+            // no wider than WidestValue fits wherever the ascent strip does.
+            float widest = FlightHudLayout.TextWidth(FlightHudLayout.WidestValue, FlightHudLayout.ValueFontPt);
+            foreach (var word in BoosterHud.ValueSamples)
+                Assert.That(FlightHudLayout.TextWidth(word, FlightHudLayout.ValueFontPt), Is.LessThanOrEqualTo(widest), word);
         }
 
         [Test]
@@ -1000,6 +1034,11 @@ namespace Kestrel.Core.Tests
             foreach (var word in FlightHudLayout.TelemetryLabels)
                 Assert.That(FlightHudLayout.TextWidth(word, FlightHudLayout.LabelFontPt), Is.LessThan(inner), where + " " + word);
             foreach (var word in FlightHudLayout.ValueSamples)
+                Assert.That(FlightHudLayout.TextWidth(word, FlightHudLayout.ValueFontPt), Is.LessThan(inner), where + " " + word);
+            // The same cells read the booster while the camera follows it (BoosterHud keys, TO DECK the widest).
+            foreach (var word in BoosterHud.Labels)
+                Assert.That(FlightHudLayout.TextWidth(word, FlightHudLayout.LabelFontPt), Is.LessThan(inner), where + " " + word);
+            foreach (var word in BoosterHud.ValueSamples)
                 Assert.That(FlightHudLayout.TextWidth(word, FlightHudLayout.ValueFontPt), Is.LessThan(inner), where + " " + word);
             Assert.That(FlightHudLayout.TextWidth("Auto-assist on", 12f), Is.LessThan(f.Assist.W - 8f), where);
             Assert.That(FlightHudLayout.TextWidth("Follow rocket", 13f), Is.LessThan(f.Follow.W - 4f), where);
