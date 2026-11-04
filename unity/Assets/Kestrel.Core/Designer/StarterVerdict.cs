@@ -25,13 +25,13 @@ namespace Kestrel.Core.Designer
         public const string MaxQ = "maxq", Overload = "overload", OverG = "overg", Tumble = "tumble", Heat = "heat",
             BaseHeat = "base-heat", Cryo = "cryo", Separation = "separation", Legs = "legs", Overpressure = "overpressure",
             Pad = "pad", Short = "short", Landing = "landing", BoosterLanding = "booster-landing", Fit = "fit", Orbit = "orbit",
-            Low = "low", High = "high", Shape = "shape";
+            Low = "low", High = "high", Shape = "shape", Goal = "goal";
 
         /// <summary>Every cause the verdict can name. data/starter-readiness.json has copy for each.</summary>
         public static readonly IReadOnlyList<string> Causes = new[]
         {
             MaxQ, Overload, OverG, Tumble, Heat, BaseHeat, Cryo, Separation, Legs, Overpressure, Pad, Short, Landing, BoosterLanding, Fit, Orbit,
-            Low, High, Shape,
+            Low, High, Shape, Goal,
         };
 
         public string Cause;
@@ -41,7 +41,7 @@ namespace Kestrel.Core.Designer
         /// <summary>The predictor's flight stays intact (no breakup, landing or fit cause); it may still miss the target.</summary>
         public bool Survives => Cause == null || IsMiss(Cause);
         /// <summary>An intact flight that misses the mission band (DECISIONS #77).</summary>
-        public static bool IsMiss(string cause) => cause == Low || cause == High || cause == Shape;
+        public static bool IsMiss(string cause) => cause == Low || cause == High || cause == Shape || cause == Goal;
         /// <summary>DECISIONS #77: the predictor's flight passes the mission (the batch's acceptance rule plus the landing).
         /// "Ready" reads only this. An intact flight that misses the band gets <see cref="Low"/>, <see cref="High"/> or
         /// <see cref="Shape"/> as its cause.</summary>
@@ -105,8 +105,10 @@ namespace Kestrel.Core.Designer
             }
             if (v.Cause != null) return v;
             double apoM = MissionScore.FlownApoAltM(sim);
-            if (LaunchPredictor.AcceptsMission(mission, sim, apoM)) { v.Passes = true; return v; }
-            v.Cause = MissOf(mission, sim, apoM);
+            if (!LaunchPredictor.AcceptsMission(mission, sim, apoM)) { v.Cause = MissOf(mission, sim, apoM); return v; }
+            // In the band: the result screen's other gates (margin, reliability, red risk, budget, ...) decide the pass.
+            if (FlightVerdict.ResultPasses(c, mission, design, sim, landingJudged: true)) v.Passes = true;
+            else v.Cause = Goal;
             return v;
         }
 
