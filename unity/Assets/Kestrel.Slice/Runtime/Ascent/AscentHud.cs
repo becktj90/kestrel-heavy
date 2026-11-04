@@ -2117,10 +2117,13 @@ namespace Kestrel.Slice
             return label;
         }
 
-        void Press(bool accept)
+        /// <summary>The big button (<paramref name="primary"/>) or the secondary one. The director maps each to accept or
+        /// decline: on an engine-out the design cannot hold, the big button rides it out (DECISIONS #76).</summary>
+        void Press(bool primary)
         {
             if (shown == default || flight == null || flight.Decisions == null) return;
-            flight.Decisions.Choose(shown, accept);
+            if (primary) flight.Decisions.ChoosePrimary(shown);
+            else flight.Decisions.ChooseAlternate(shown);
             Present(flight);
         }
 
