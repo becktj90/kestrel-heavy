@@ -59,8 +59,9 @@ namespace Kestrel.Game.Tests
             Eyebrow = "ANOMALY · ENGINE 1 (seeded, fair)",
             Quote = "Engine 1 pressure drop. Shut it down?",
             Detail = "0 of 1 still burning · TWR after 0.00 · this design cannot hold an engine-out",
-            Primary = "SHUT DOWN ENGINE 1 (will not hold)",
-            Alternate = "RIDE IT OUT (risk overpressure)",
+            Primary = "RIDE IT OUT (hot engine will fail)",
+            Alternate = "SHUT DOWN ENGINE 1 (will not hold)",
+            PrimaryDeclines = true,
             ShowAlternate = true,
             DangerAlternate = true,
         };
@@ -157,9 +158,10 @@ namespace Kestrel.Game.Tests
                 Assert.That(primary, Is.Not.Null, at);
                 Assert.That(alternate, Is.Not.Null, at);
                 Assert.That(Shown(primary) && Shown(alternate), Is.True, at + " both calls shown");
-                Assert.That(primary.text, Does.StartWith("SHUT DOWN"), at);
-                Assert.That(alternate.text, Does.StartWith("RIDE IT OUT"), at);
-                Assert.That(Overlaps(primary.worldBound, alternate.worldBound), Is.False, at + " SHUT DOWN vs RIDE IT OUT");
+                // DECISIONS #76: on a design that cannot hold the shutdown, the big button rides it out.
+                Assert.That(primary.text, Does.StartWith("RIDE IT OUT"), at);
+                Assert.That(alternate.text, Does.StartWith("SHUT DOWN"), at);
+                Assert.That(Overlaps(primary.worldBound, alternate.worldBound), Is.False, at + " RIDE IT OUT vs SHUT DOWN");
                 var dock = hud.Q("ascent-actions");
                 var dockItems = new List<VisualElement>();
                 foreach (var e in dock.Query<VisualElement>().ToList())
