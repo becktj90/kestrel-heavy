@@ -140,6 +140,46 @@ namespace Kestrel.Game.Tests
             Assert.That(ChaseCamera.FitBand(r0, c0, one, 1, VFov, aspect, 0.6f, 0.55f), Is.EqualTo(c0));
         }
 
+        // #431 climax: the coasting stack sat behind the Apogee! banner and Follow / Auto / Pause (climax-apogee.png).
+        // The coast frames the stack's box between the banner and the tools row (FlightHudLayout.CoastBand) with the same
+        // FitBand. Covers: CI 321x531 with the dock folded, and the App Store portrait sizes.
+        [TestCase(321f / 531f, 0.50f, 0.23f, "CI 321x531")]
+        [TestCase(1320f / 2868f, 0.30f, 0.12f, "6.9in")]
+        [TestCase(1206f / 2622f, 0.31f, 0.12f, "6.3in")]
+        [TestCase(2064f / 2752f, 0.36f, 0.16f, "iPad 13in")]
+        public void TheCoastingStackSitsBetweenTheBannerAndTheToolsRow(float aspect, float bannerCover, float toolsCover, string device)
+        {
+            const float Height = 32f, R = 1.85f;
+            Assert.That(Kestrel.Core.Flight.FlightHudLayout.CoastBand(bannerCover, toolsCover, out float yMin, out float yMax), Is.True, device);
+            var pts = new Vector3[8];
+            Assert.That(ChaseCamera.StackPoints(new Vector3[7], Vector3.zero, Vector3.up, Height, R), Is.EqualTo(0), "too few slots");
+            foreach (float alt in new[] { 2000f, 7200f, 30000f })
+            foreach (float pitchDeg in new[] { 0f, 25f, 60f })
+            {
+                // Pitched over on the gravity turn (downrange +x), the chase offset and aim as in flight.
+                var up = Quaternion.AngleAxis(-pitchDeg, Vector3.forward) * Vector3.up;
+                var pivot = new Vector3(0f, alt, 0f);
+                var cam = pivot + ChaseCamera.DesiredOffset(up, Height, alt);
+                var rot = ChaseCamera.Aim(cam, pivot + up * Height * 0.5f, VFov, alt, cam.y - PadGround.GroundY);
+                var stackBase = pivot - up * Height * 0.5f;
+                int n = ChaseCamera.StackPoints(pts, stackBase, up, Height, R);
+                Assert.That(n, Is.EqualTo(8));
+                var fit = ChaseCamera.FitBand(rot, cam, pts, n, VFov, aspect, yMin, yMax);
+                float lo = float.PositiveInfinity, hi = float.NegativeInfinity;
+                for (int i = 0; i < n; i++)
+                {
+                    var v = Project(pts[i], fit, rot, aspect);
+                    string at = $"{device} alt {alt} pitch {pitchDeg}: corner {i}";
+                    Assert.That(v.z, Is.GreaterThan(0f), at + " in front");
+                    Assert.That(v.y, Is.InRange(yMin - 0.005f, yMax + 0.005f), at + " between the banner and the tools row");
+                    Assert.That(v.x, Is.InRange(0.045f, 0.955f), at + " across the frame");
+                    lo = Mathf.Min(lo, v.y); hi = Mathf.Max(hi, v.y);
+                }
+                // Clearly there, not a speck: FitBand only backs off as far as the band needs.
+                Assert.That(hi - lo, Is.GreaterThan(0.05f), $"{device} alt {alt} pitch {pitchDeg}: stack size {hi - lo:F3}");
+            }
+        }
+
         [Test]
         public void HoldBlendsOut()
         {
