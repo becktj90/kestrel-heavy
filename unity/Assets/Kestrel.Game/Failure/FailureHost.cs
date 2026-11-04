@@ -35,6 +35,8 @@ namespace Kestrel.Game.Failure
         public bool CardPending => cardPending;
         /// <summary>Age (s) at which the pending card opens.</summary>
         public float CardDueAt { get; private set; }
+        /// <summary>Tests only: decide Reduce Motion for live failures instead of the player prefs (null = the prefs). Nothing in play sets it.</summary>
+        public static bool? ReduceMotionOverride;
         FailureEvent failure;
         FailurePlan plan = new FailurePlan();
         int seenEvents;
@@ -172,7 +174,7 @@ namespace Kestrel.Game.Failure
             if (result == null) return;
             bool failed = result.failure != null;
             if (!latch.TryOpen(result, failed, flight.Running, RecoveryLog.Active)) return;
-            reduce = Comfort.ReduceMotion;
+            reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;
             StampLosses(result);
             if (!failed)
             {
