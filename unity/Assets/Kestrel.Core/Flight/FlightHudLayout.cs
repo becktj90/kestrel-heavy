@@ -852,7 +852,9 @@ namespace Kestrel.Core.Flight
 
             float exitW = HomeCornerLayout.ExitW;
             float exitH = HomeCornerLayout.ExitH;
-            var exit = Box(width - safeRight - edge - exitW, safeTop, exitW, exitH);
+            // The web page's #fs EXIT button sits at top: max(8px, safe-area-inset-top), so its clearance box does too;
+            // at y = safeTop it ended 8 pt short and the right stage panel slid under the button.
+            var exit = Box(width - safeRight - edge - exitW, Math.Max(SideMarginPt, safeTop), exitW, exitH);
 
             float left = safeLeft + edge;
             float right = width - safeRight - edge;
