@@ -1059,7 +1059,7 @@ namespace Kestrel.Slice
             if (plot != null) plot.Apply(trajectory.At(RecoveryLog.RailClock(flight.SimTime), alt, speed), upp);
             var score = director.Score();
             if (medal != null)
-                medal.text = score.Decided > 0 ? "Medal timing: " + score.Summary : "Flying the plan.";
+                medal.text = score.Decided > 0 ? score.Summary : "Flying the plan.";
             bool prompt = prompts.Length > 0;
             if (!prompt)
             {
@@ -1190,7 +1190,7 @@ namespace Kestrel.Slice
             PaintFocus();
             var v = stages != null ? stages.Q<Label>("h-verdict") : null;
             if (v != null) v.text = verdict ?? "";
-            if (medal != null) medal.text = medalLine ?? "Medal timing: Silver · 1 perfect · 0 good · 0 late";
+            if (medal != null) medal.text = medalLine ?? "Silver medal";
             if (assist != null) assist.text = "Auto-assist on";
             if (prompt)
             {
@@ -1642,7 +1642,7 @@ namespace Kestrel.Slice
             if (score.CleanStaging) bits += "Clean staging  ·  ";
             if (score.PeakGHit) bits += "Gentle ride  ·  ";
             if (score.PayloadDamaged) bits += "Payload heat is past the limit  ·  ";
-            if (bits.Length == 0) return score.Decided > 0 ? "Medal timing: " + score.Summary : "";
+            if (bits.Length == 0) return score.Decided > 0 ? score.Summary : "";
             return bits + score.Summary;
         }
 

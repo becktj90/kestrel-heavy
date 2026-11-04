@@ -947,9 +947,10 @@ namespace Kestrel.Core.Flight
 
         static string Summary(AscentFlightScore score)
         {
-            string medal = score.Medal == AscentMedal.Gold ? "Gold" : score.Medal == AscentMedal.Silver ? "Silver" : score.Medal == AscentMedal.Bronze ? "Bronze" : "No medal yet";
-            var inv = CultureInfo.InvariantCulture;
-            return medal + " · " + score.Perfect.ToString(inv) + " perfect · " + score.Good.ToString(inv) + " good · " + score.Late.ToString(inv) + " late";
+            // Arcade-clear: just the medal. The perfect/good/late breakdown was cryptic telemetry
+            // (KH-3 playtest: "Medal timing: Bronze · 0 perfect · 0 good · 1 late" confused the player).
+            string medal = score.Medal == AscentMedal.Gold ? "Gold medal!" : score.Medal == AscentMedal.Silver ? "Silver medal" : score.Medal == AscentMedal.Bronze ? "Bronze medal" : "No medal yet";
+            return medal;
         }
 
         static string Kpa(double pa)
