@@ -257,7 +257,29 @@ namespace Kestrel.Slice
             float bottom = (tools.worldBound.yMin - host.yMin) / u - gap;
             float width = host.width / u - 2f * FlightHudLayout.SideMarginPt;
             float preferred = FlightStaging.CalloutTopInsideHud();
-            var seat = FlightHudLayout.CalloutInBand(cue.Callout, width, top, bottom, preferred);
+            // The face's real line box, measured by UI Toolkit at the size it resolved to, in case it runs taller than the
+            // 1.3 budget. Ratio of two units-measures, so a style written this frame and not yet resolved does not skew it.
+            float lineHeight = FlightHudLayout.LineHeight;
+            float resolvedFont = chip.resolvedStyle.fontSize;
+            if (resolvedFont > 1f)
+            {
+                var one = chip.MeasureTextSize("BREAKUP Ag", 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined);
+                if (one.y > 1f && !float.IsNaN(one.y)) lineHeight = Mathf.Max(lineHeight, one.y / resolvedFont + 0.02f);
+            }
+            var seat = FlightHudLayout.CalloutInBand(cue.Callout, width, top, bottom, preferred, lineHeight);
+            // Last word to UI Toolkit: measure the seated text in the seated box; still taller than its box, stand down
+            // rather than spill (the banner already says Vehicle lost).
+            for (int pass = 0; pass < 3 && seat.Live && resolvedFont > 1f; pass++)
+            {
+                float scale = seat.FontPt * u / resolvedFont;
+                float boxH = (seat.Height - FlightHudLayout.CalloutChromeY) * u;
+                var need = chip.MeasureTextSize(seat.Text, (width - 2f * FlightHudLayout.CalloutPadX) * u / Mathf.Max(0.01f, scale), VisualElement.MeasureMode.AtMost, 0f, VisualElement.MeasureMode.Undefined);
+                float needH = need.y * scale;
+                if (!(needH > boxH + 1f)) break;
+                if (pass == 2) { seat.Live = false; break; }
+                lineHeight = lineHeight * needH / Mathf.Max(1f, boxH) + 0.05f;
+                seat = FlightHudLayout.CalloutInBand(cue.Callout, width, top, bottom, preferred, lineHeight);
+            }
             if (!seat.Live)
             {
                 // No room between the banner and the row: the banner already says it (Vehicle lost).
