@@ -1,6 +1,7 @@
 // Booster follow HUD on the real AscentHud (no scene, no flight): handing it the booster's readout swaps the
 // telemetry strip to ALT / DOWN / FUEL / TO DECK with spoken tooltips and hides the upper stage's health tabs
-// (Eng .. Fair) by visibility, so no row moves; handing it null brings the ascent strip and the tabs straight back.
+// (Eng .. Fair), the S3 "On track" card and the MECO line by visibility, so no row moves; handing it null brings
+// the ascent strip and all three straight back, and closing the HUD leaves none of them hidden.
 using System.Reflection;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Ui;
@@ -23,6 +24,7 @@ namespace Kestrel.Game.Tests
             var cast = new VisualElement { name = "webcast" };
             cast.Add(new Label { name = "h-verdict", text = "On track" });
             hud.Add(cast);
+            hud.Add(new Label { name = AscentHud.MessageName, text = "MECO  ·  64.2 km  ·  1,604 m/s" });
             return hud;
         }
 
@@ -85,6 +87,71 @@ namespace Kestrel.Game.Tests
                 ascent.Close();
                 AscentHud.ForceWide = null;
             }
+        }
+
+        [Test]
+        public void FollowingTheBoosterHidesTheOnTrackCardAndTheMecoLine()
+        {
+            var hud = Hud();
+            var cast = hud.Q("webcast");
+            var msg = hud.Q<Label>(AscentHud.MessageName);
+            var ascent = new AscentHud();
+            AscentHud.ForceWide = false;
+            try
+            {
+                ascent.Open(hud, 1f);
+                ascent.Preview("64.2 km", "1.60 km/s", "On track", null);
+                Assert.That(cast.style.visibility.keyword, Is.EqualTo(StyleKeyword.Null), "On track shows in ascent");
+                Assert.That(msg.style.visibility.keyword, Is.EqualTo(StyleKeyword.Null), "MECO line shows in ascent");
+
+                ascent.SetBooster(Landing());
+                Assert.That(cast.style.visibility.value, Is.EqualTo(Visibility.Hidden), "S3's On track card is not the booster's");
+                Assert.That(msg.style.visibility.value, Is.EqualTo(Visibility.Hidden), "S3's MECO line is not the booster's");
+                Assert.That(cast.style.display.keyword, Is.Not.EqualTo(StyleKeyword.None), "hidden by visibility: nothing reflows");
+                Assert.That(msg.style.display.keyword, Is.Not.EqualTo(StyleKeyword.None), "hidden by visibility: nothing reflows");
+                Assert.That(msg.text, Does.StartWith("MECO"), "the line keeps its text for when S3 is back");
+
+                // Upper-stage frames during the follow keep both hidden; a fresh booster frame keeps them hidden too.
+                ascent.Preview("64.9 km", "1.62 km/s", "On track", null);
+                ascent.SetBooster(Landing());
+                Assert.That(cast.style.visibility.value, Is.EqualTo(Visibility.Hidden));
+                Assert.That(msg.style.visibility.value, Is.EqualTo(Visibility.Hidden));
+
+                ascent.SetBooster(null);
+                Assert.That(cast.style.visibility.keyword, Is.EqualTo(StyleKeyword.Null), "On track comes back");
+                Assert.That(msg.style.visibility.keyword, Is.EqualTo(StyleKeyword.Null), "MECO line comes back");
+                Assert.That(msg.text, Does.StartWith("MECO"));
+            }
+            finally
+            {
+                ascent.Close();
+                AscentHud.ForceWide = null;
+            }
+        }
+
+        [Test]
+        public void ClosingTheHudDuringTheFollowLeavesNothingHidden()
+        {
+            var hud = Hud();
+            var cast = hud.Q("webcast");
+            var msg = hud.Q<Label>(AscentHud.MessageName);
+            var ascent = new AscentHud();
+            AscentHud.ForceWide = false;
+            try
+            {
+                ascent.Open(hud, 1f);
+                ascent.SetBooster(Landing());
+                Assert.That(cast.style.visibility.value, Is.EqualTo(Visibility.Hidden));
+            }
+            finally
+            {
+                ascent.Close();
+                AscentHud.ForceWide = null;
+            }
+            Assert.That(ascent.Focus, Is.EqualTo(FlightHudFocus.Ascent));
+            Assert.That(cast.parent, Is.SameAs(hud), "the webcast card went home");
+            Assert.That(cast.style.visibility.keyword, Is.EqualTo(StyleKeyword.Null), "the next flight's On track card shows");
+            Assert.That(msg.style.visibility.keyword, Is.EqualTo(StyleKeyword.Null), "the next flight's message line shows");
         }
 
         [Test]
