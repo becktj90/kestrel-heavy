@@ -16,7 +16,7 @@ namespace Kestrel.Core.Tests
     public class StarterHonestReadyTests
     {
         /// <summary>Board defaults whose predictor flight is intact but misses the band (also FAIL in the played Auto-on matrix).</summary>
-        static readonly HashSet<string> DefaultsThatMiss = new HashSet<string> { "m5" };
+        static readonly HashSet<string> DefaultsThatMiss = new HashSet<string> { };
 
         static readonly HashSet<string> RandomKinds = new HashSet<string> { "bad-mixture", "engine-out" };
 
