@@ -916,10 +916,52 @@ namespace Kestrel.Slice
             }
             else
                 cam.transform.LookAt(look, Vector3.up);
+            FrameTheCoast(pose, up, fov);
             if (fx != null)
                 cam.transform.position = PadGround.ClampAboveGround(
                     cam.transform.position + cam.transform.right * fx.Shake.x + cam.transform.up * fx.Shake.y,
                     ground.position.y, clearance);
+        }
+
+        /// <summary>Seconds the climax framing glides in over (no cut when the coast starts).</summary>
+        const float CoastFrameSeconds = 0.6f;
+        float coastBlend;
+        readonly Vector3[] coastPts = new Vector3[8];
+
+        /// <summary>
+        /// #431 climax, for tests: x, y = the coast band (viewport y, 0 = bottom); z, w = the lowest and highest the
+        /// stack projects this frame; all 0 outside the coast or with no band.
+        /// </summary>
+        public Vector4 CoastTrace { get; private set; }
+
+        /// <summary>
+        /// #431 climax: during the coast the stack sat behind the Apogee! banner and Follow / Auto / Pause
+        /// (climax-apogee.png at 1085e8b7 and 38e8e1b5). Back the chase off along its own axes, rotation unchanged
+        /// (ChaseCamera.FitBand, the booster follow's framing), so the whole stack sits between the banner and the
+        /// tools row. Recomputed from this frame's chase pose, so nothing accumulates; it glides in over
+        /// CoastFrameSeconds and lets go when the coast ends.
+        /// </summary>
+        void FrameTheCoast(FlightPose pose, Vector3 up, float fov)
+        {
+            CoastTrace = Vector4.zero;
+            if (flight == null || !flight.Coasting || ascentHud == null || cam == null) { coastBlend = 0f; return; }
+            if (!FlightHudLayout.CoastBand(ascentHud.BannerCover(), ascentHud.BottomCover(), out float yMin, out float yMax)) return;
+            var rot = cam.transform.rotation;
+            var from = cam.transform.position;
+            var stackBase = U(pose.LookAt) - up * (float)(pose.Height * 0.5);
+            int n = ChaseCamera.StackPoints(coastPts, stackBase, up, (float)pose.Height, rocketRadius);
+            var fit = ChaseCamera.FitBand(rot, from, coastPts, n, fov, cam.aspect, yMin, yMax);
+            coastBlend = Mathf.MoveTowards(coastBlend, 1f, Time.unscaledDeltaTime / CoastFrameSeconds);
+            float w = coastBlend * coastBlend * (3f - 2f * coastBlend);
+            cam.transform.position = Vector3.Lerp(from, fit, w);
+            float lo = float.PositiveInfinity, hi = float.NegativeInfinity;
+            for (int i = 0; i < n; i++)
+            {
+                float y = cam.WorldToViewportPoint(coastPts[i]).y;
+                lo = Mathf.Min(lo, y);
+                hi = Mathf.Max(hi, y);
+            }
+            CoastTrace = new Vector4(yMin, yMax, lo, hi);
         }
 
         /// <summary>
@@ -1855,6 +1897,15 @@ namespace Kestrel.Slice
                 bool coasting = flight != null && flight.Coasting;
                 if (ascent && !coasting) again.style.visibility = StyleKeyword.Null;
                 else again.style.visibility = Visibility.Hidden;
+                // Out of the flow too while coasting, and the MECO line with it (the Apogee! / Orbit! banner is the
+                // call): on a short panel they held the tools row up into the coast band (FrameTheCoast).
+                if (coasting) again.style.display = DisplayStyle.None;
+                else again.style.display = StyleKeyword.Null;
+            }
+            if (hMsg != null)
+            {
+                if (flight != null && flight.Coasting) hMsg.style.display = DisplayStyle.None;
+                else hMsg.style.display = StyleKeyword.Null;
             }
         }
 

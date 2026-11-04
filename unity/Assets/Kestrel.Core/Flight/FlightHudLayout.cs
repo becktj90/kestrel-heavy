@@ -797,6 +797,30 @@ namespace Kestrel.Core.Flight
             return chips;
         }
 
+        /// <summary>
+        /// #431 climax: whether the in-flight dock (medal line, notes, calls, assist, nudges) is up. It steers the ascent;
+        /// once the climax coast or a loss show runs nothing in it can be used. On a short panel (CI 321x531) the flow under
+        /// the tools row (the MECO / loss line, BACK TO DESIGN) then ran past the dock's seat and Follow / Auto / Pause sat
+        /// under "Bronze medal / i / Auto-assist on" (climax-apogee.png, breakup-live-show.png). Folded away, its flow
+        /// spacer goes to 0 and the tools row drops back onto the bottom edge.
+        /// </summary>
+        public static bool DockShown(bool coasting, bool lost) => !coasting && !lost;
+
+        /// <summary>
+        /// #431 climax: the viewport band (y, 0 = bottom) the coasting stack is framed in: under the top block (the stat
+        /// strip, or the callout banner when it reaches lower) and over the tools row, <see cref="BandMarginVp"/> clear of
+        /// each. Covers are shares of the panel height (0..1). False when there is no usable band (under 0.1 tall).
+        /// </summary>
+        public static bool CoastBand(float topCover, float bottomCover, out float yMin, out float yMax)
+        {
+            yMin = Math.Max(0f, bottomCover) + BandMarginVp;
+            yMax = 1f - Math.Max(0f, topCover) - BandMarginVp;
+            return yMax - yMin > 0.1f;
+        }
+
+        /// <summary>Viewport margin between a framed object and the HUD bar beside it (ChaseCamera.HudMargin).</summary>
+        public const float BandMarginVp = 0.03f;
+
         public static float DockHeight(bool notes, bool prompt) => DockHeight(notes, prompt, ButtonPt);
 
         /// <summary>Dock height with button rows <paramref name="rowPt"/> tall (landscape: whole panel pixels, never under 44 pt).</summary>

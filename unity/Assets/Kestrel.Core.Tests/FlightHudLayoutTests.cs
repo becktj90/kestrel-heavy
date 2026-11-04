@@ -960,5 +960,36 @@ namespace Kestrel.Core.Tests
             for (int i = 0; i < f.Cells.Length; i++) list.Add(("cell-" + i, f.Cells[i]));
             return list;
         }
+
+        // #431 climax (run 41785561140, CI 321x531): the dock ("Bronze medal / i / Auto-assist on") sat over Follow / Auto /
+        // Pause through the coast and the break-up show, and the coasting rocket was behind the Apogee! banner and the row.
+        [TestCase(false, false, true)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, false)]
+        [TestCase(true, true, false)]
+        public void TheDockFoldsAwayForTheClimaxAndTheLossShow(bool coasting, bool lost, bool shown)
+        {
+            Assert.That(FlightHudLayout.DockShown(coasting, lost), Is.EqualTo(shown));
+        }
+
+        [Test]
+        public void TheCoastBandSitsBetweenTheBannerAndTheToolsRow()
+        {
+            // Measured on climax-apogee.png at 38e8e1b5: banner bottom 0.50 down, tools row top 0.48 up with the dock seated.
+            Assert.That(FlightHudLayout.CoastBand(0.50f, 0.48f, out _, out _), Is.False, "dock seated: no room for the rocket");
+            // Dock folded: the tools row drops to the bottom edge (about 0.23 up on that panel).
+            Assert.That(FlightHudLayout.CoastBand(0.50f, 0.23f, out float lo, out float hi), Is.True);
+            Assert.That(lo, Is.EqualTo(0.23f + FlightHudLayout.BandMarginVp).Within(1e-5f));
+            Assert.That(hi, Is.EqualTo(0.50f - FlightHudLayout.BandMarginVp).Within(1e-5f));
+            // App Store portrait shares (strip / tools row as laid out), dock folded.
+            foreach (var (top, bottom) in new[] { (0.30f, 0.12f), (0.36f, 0.16f), (0.12f, 0.10f) })
+            {
+                Assert.That(FlightHudLayout.CoastBand(top, bottom, out lo, out hi), Is.True, top + "/" + bottom);
+                Assert.That(lo, Is.GreaterThan(bottom));
+                Assert.That(hi, Is.LessThan(1f - top));
+            }
+            Assert.That(FlightHudLayout.CoastBand(-1f, -1f, out lo, out hi), Is.True, "no covers measured yet");
+            Assert.That(lo, Is.EqualTo(FlightHudLayout.BandMarginVp).Within(1e-5f));
+        }
     }
 }
