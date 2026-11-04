@@ -164,6 +164,10 @@ namespace Kestrel.Slice
                     // Designer / Hangar and Guided / All parts switches re-decide which launch reason shows.
                     designer.ViewChanged += ApplyValidation;
                 }
+                // Static event: one subscription per live app. Without the -= (and OnDestroy below) every Design scene
+                // load left a dead SliceApp subscribed; Fix it ran the dead one first, it threw on its destroyed Vehicle
+                // (QA #417 NRE after "[Count] done->boot") and the live app's handler never ran: empty sky, no buttons.
+                FixField.OnApply -= HandleReportedFix;
                 FixField.OnApply += HandleReportedFix;
             }
             else
@@ -1340,6 +1344,11 @@ namespace Kestrel.Slice
 
         void OnFlagsChanged(FeatureFlags _) => ApplyStarterMode();
 
+        void OnDestroy()
+        {
+            FixField.OnApply -= HandleReportedFix;
+        }
+
         void OnDisable()
         {
             if (flagsSeen != null) flagsSeen.Changed -= OnFlagsChanged;
@@ -1702,7 +1711,8 @@ namespace Kestrel.Slice
 
         void HandleReportedFix(FixField link)
         {
-            if (link == null) return;
+            if (this == null) { FixField.OnApply -= HandleReportedFix; return; } // a destroyed app never routes
+            if (link == null || !isActiveAndEnabled) return;
             landing.Arm(Time.unscaledTime);
             try
             {
