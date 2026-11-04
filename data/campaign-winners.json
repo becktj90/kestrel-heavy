@@ -376,7 +376,7 @@
             "rcs": false
           },
           "guidance": {
-            "pitchKickDeg": 8,
+            "pitchKickDeg": 7.5,
             "gLimit": 5.5
           },
           "heatShield": true,
