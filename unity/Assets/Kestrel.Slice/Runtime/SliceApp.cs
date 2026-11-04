@@ -41,7 +41,7 @@ namespace Kestrel.Slice
         FlightViewMode flightView = FlightViewMode.Auto;
         AscentHud ascentHud; Design flyingDesign;
         BirdFlockView birds;
-        VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
+        VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg, hWarp; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
         public int OrbitsCompleted; public bool EngineerEnabled;
@@ -362,7 +362,7 @@ namespace Kestrel.Slice
             homeButton.clicked += GoHome;
             homeButton.userData = (System.Action)GoHome;
             homeButton.tooltip = "Home. Back to the title screen.";
-            hT = ui.Q<Label>("h-t"); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
+            hT = ui.Q<Label>("h-t"); hWarp = FlightWarpChip.Build(hT); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
             hMach = ui.Q<Label>("h-mach"); hQ = ui.Q<Label>("h-q"); hThr = ui.Q<Label>("h-thr"); hDr = ui.Q<Label>("h-dr"); hMsg = ui.Q<Label>("h-msg");
             hVerdict = ui.Q<Label>("h-verdict"); hPulse = ui.Q<Label>("h-pulse"); hCallout = ui.Q<Label>("h-callout");
             seqRow = ui.Q("h-seq"); skipCount = ui.Q<Button>(UiIds.FlightSkipCount);
@@ -1828,6 +1828,13 @@ namespace Kestrel.Slice
             // Booster follow: the HUD reads the stage the camera is on (polled, like recovery.Aim above).
             bool onBooster = recovery != null && recovery.SteerCamera;
             flight.CameraOnBooster = onBooster; // PR5: coast warp holds ×1 while the camera follows the booster
+            // Narrator Voice (#436): a non-interruptible line holds ×1; the picker sees the warp's lead.
+            var voice = flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>();
+            if (voice != null)
+            {
+                flight.NarrationBusy = voice.HoldsWarp;
+                voice.UseWarp(flight.Running ? flight.SecondsToNext : double.PositiveInfinity, flight.Warp);
+            }
             ascentHud?.SetBooster(onBooster ? recovery.HudReadout : (BoosterHudReadout?)null);
             ApplyHudFocus(BoosterHud.Focus(onBooster));
             ascentHud?.Present(flight);
@@ -1859,8 +1866,8 @@ namespace Kestrel.Slice
         {
             if (hT != null)
             {
-                // PR5: the coast warp chip rides the mission clock (UX to review).
-                hT.text = flight.Warp > 1 ? $"T+ {flight.SimTime:F1}  ⏩×{flight.Warp:0}" : $"T+ {flight.SimTime:F1}";
+                hT.text = $"T+ {flight.SimTime:F1}";
+                FlightWarpChip.Show(hWarp, flight.Warp, UnitsPerPoint());
                 DressClock(hT);
             }
             if (hStage != null) hStage.text = $"S{flight.Sim.StageIdx + 1}";
@@ -2068,7 +2075,7 @@ namespace Kestrel.Slice
                 w = panel > 8f ? panel * 0.55f : 160f * upp;
             }
             if (float.IsNaN(h) || h < 8f) h = FlightHudLayout.HeaderPt * upp;
-            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFontPt(w / upp, h / upp));
+            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFontPt(w / upp - FlightHudLayout.WarpChipReserve(), h / upp)); // the warp chip's width is always reserved
         }
 
         async void OnMeco(FlightDriver f)
