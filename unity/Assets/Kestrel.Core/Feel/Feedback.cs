@@ -107,7 +107,6 @@ namespace Kestrel.Core.Feel
             string call, line;
             if (band == "critical" || band == "lost") { call = "AIRFRAME"; line = "AIRFRAME — load is high"; }
             else if (qRisk >= Hot) { call = "MAX-Q"; line = "MAX-Q — the air is heavy"; }
-            else if (!double.IsNaN(dvMargin) && dvMargin < 0) { call = "SHORT"; line = "SHORT — light on speed for this trip"; }
             else if (fuelKnown && energy < 0.12 && fuel < 0.2) { call = "PROP"; line = "PROP — tanks are thin"; }
             else { call = "NOMINAL"; line = ""; }
             return new RiskReadout
