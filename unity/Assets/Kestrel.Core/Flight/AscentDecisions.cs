@@ -462,8 +462,14 @@ namespace Kestrel.Core.Flight
             }
         }
 
+        /// <summary>DECISIONS #80: narration events for the two beats (Narrator Voice keys), gated on fact throttle.maxq.</summary>
+        public const string MaxQThrottleEvent = "maxq-throttle", MaxQThroughEvent = "maxq-through";
+        /// <summary>The narration event of the latest beat (changes with <see cref="MaxQBeatSerial"/>).</summary>
+        public string MaxQBeatEvent { get; private set; }
+
         void Beat(string text, double t)
         {
+            MaxQBeatEvent = text == AscentNotes.MaxQThrottleDown ? MaxQThrottleEvent : MaxQThroughEvent;
             MaxQBeatText = text;
             MaxQBeatT = t;
             MaxQBeatSerial++;
