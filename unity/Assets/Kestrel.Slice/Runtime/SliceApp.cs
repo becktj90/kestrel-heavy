@@ -63,6 +63,8 @@ namespace Kestrel.Slice
                 Screen.orientation = ScreenOrientation.Portrait;
             Debug.Log("[Count] boot");
             handoff.Transitioned += line => Debug.Log("[Count] " + line);
+            // #416 item 9: the first liftoff marks the player as flown; every later count opens at T-5.
+            handoff.Transitioned += _ => { if (handoff.Phase == "ascending" && PlayerPrefs.GetInt(FlownPref, 0) == 0) { PlayerPrefs.SetInt(FlownPref, 1); PlayerPrefs.Save(); } };
             bodyMat = Resources.Load<Material>("Materials/KH_Body");
             plumeMat = Resources.Load<Material>("Materials/KH_Plume");
             BuildScene();
@@ -1587,7 +1589,7 @@ namespace Kestrel.Slice
             if (hopGoalM > 0) requiredMps = hop.RequiredDeltaV();
             maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
             orbitLabel = sheet != null ? sheet.orbitLabel : "";
-            handoff.Enter(OpenSequence());
+            handoff.Enter(OpenSequence(), LiftoffHandoff.OpenFor(PlayerPrefs.GetInt(FlownPref, 0)));
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             ascentErrorLogged = false;
@@ -1609,6 +1611,9 @@ namespace Kestrel.Slice
         }
 
         Kestrel.Core.Flight.Narration.CallSchedule flightCalls;
+
+        /// <summary>Set after the first liftoff ever (#416 item 9): later counts open at LiftoffHandoff.RepeatOpenAt.</summary>
+        public const string FlownPref = "kh.count.flown";
 
         LaunchSequence OpenSequence()
         {

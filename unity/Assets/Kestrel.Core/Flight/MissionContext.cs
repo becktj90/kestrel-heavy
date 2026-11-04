@@ -335,8 +335,11 @@ namespace Kestrel.Core.Flight
                 case RouteId.ReportRetry:
                     return Done(SessionScreens.Design, SessionScreens.None);
                 case RouteId.ReportNext:
-                    Advance(campaign);
-                    return Done(SessionScreens.Missions, SessionScreens.None);
+                    // #416 item 9 / NAV-06: Next goes straight to the next mission's designer, which carries the
+                    // brief's goal line. With no next mission (KH-20, free build) it stays the Missions list.
+                    return Advance(campaign)
+                        ? Done(SessionScreens.Design, SessionScreens.None)
+                        : Done(SessionScreens.Missions, SessionScreens.None);
                 case RouteId.ReportHome:
                 case RouteId.ExitHome:
                     Current = null;
@@ -346,16 +349,18 @@ namespace Kestrel.Core.Flight
             }
         }
 
-        static void Advance(Campaign campaign)
+        static bool Advance(Campaign campaign)
         {
             var cur = Current;
-            if (campaign == null || cur == null || cur.Mode != MissionMode.Campaign) return;
+            if (campaign == null || cur == null || cur.Mode != MissionMode.Campaign) return false;
             var mission = campaign.ById(cur.MissionId);
-            if (mission == null) return;
+            if (mission == null) return false;
             var next = campaign.Mission(mission.Index + 1);
-            if (next == null) return;
+            if (next == null) return false;
             var ctx = MissionContext.FromMission(campaign, next, cur.Seed);
-            if (ctx != null) Current = ctx;
+            if (ctx == null) return false;
+            Current = ctx;
+            return true;
         }
 
         static RouteResult Done(string screen, string overlay) => new RouteResult(screen, overlay, Current);
