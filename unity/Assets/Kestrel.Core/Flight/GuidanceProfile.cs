@@ -136,6 +136,21 @@ namespace Kestrel.Core.Flight
             return cap < 1;
         }
 
+        /// <summary>
+        /// DECISIONS #80: true while this profile's own max-Q law holds the throttle below full on this state (the
+        /// design set a max-Q throttle under 100 %, q is inside the bucket, and the stage can throttle below 1).
+        /// A g-limit cap is not a max-Q throttle-down. Read-only: the HUD/narrator beat follows it, the step never does.
+        /// </summary>
+        public bool MaxQThrottleActive(GuidanceState s)
+        {
+            if (!maxQThrottleSet || s.q < MaxQReferencePa * MaxQBucketFraction) return false;
+            double cap = maxQThrottle > 1.5 ? maxQThrottle / 100.0 : maxQThrottle;
+            double min = s.throttleMin;
+            if (double.IsNaN(min) || min < 0) min = 0;
+            if (cap < min) cap = min;
+            return cap < 1;
+        }
+
         double ThrottleOf(GuidanceState s)
         {
             double throttle = 1;

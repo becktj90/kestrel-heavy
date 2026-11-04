@@ -15,9 +15,9 @@ const clips = man.clips;
 const PROPS = ['kerolox', 'hydrolox', 'methalox', 'solid', 'storable'];
 const RECOVERY = ['none', 'barge', 'rtls'];
 const SITES = JSON.parse(fs.readFileSync(path.join(root, 'data/sites.json'), 'utf8')).sites.map((x) => x.id);
-const KEY_RE = /^(stages|stage[1-9]\.engines|stage[1-9]\.propellant|strapons|strapons\.engines|strapons\.propellant|propellant\.all|recovery|legs|fairing|fairing\.halves|fins|finless|site|lit\.stage|lit\.engines|lit\.propellant|lit\.last)$/;
+const KEY_RE = /^(stages|stage[1-9]\.engines|stage[1-9]\.propellant|strapons|strapons\.engines|strapons\.propellant|propellant\.all|recovery|legs|fairing|fairing\.halves|fins|finless|site|throttle\.maxq|lit\.stage|lit\.engines|lit\.propellant|lit\.last)$/;
 const NUMERIC = (k) => /^(stages|stage\d\.engines|strapons|strapons\.engines|fairing\.halves|lit\.stage|lit\.engines)$/.test(k);
-const BOOL = (k) => /^(legs|fairing|fins|finless|lit\.last)$/.test(k);
+const BOOL = (k) => /^(legs|fairing|fins|finless|throttle\.maxq|lit\.last)$/.test(k);
 const ENUM = (k) => (/propellant/.test(k) ? (k === 'propellant.all' ? [...PROPS, 'mixed'] : PROPS) : k === 'recovery' ? RECOVERY : k === 'site' ? SITES : null);
 const CMP_RE = /^(>=|<=|!=|>|<)-?\d+$/;
 const FACT_WORDS = /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+|engines?|cores?|cluster|chambers?|methane|LOX|kerosene|hydrogen|methalox|kerolox|hydrolox|solids?|strap-?ons?|boosters?|upper stage|(first|second|third)[- ]stage|legs|fins?|finless|halves|fairing|Haven|barge|landing|pad landing|Pier 7|Coastal Pad B|Salt Flat Pad|North Reach|strakes?)\b/i;
@@ -155,6 +155,8 @@ function factsOf(d, site) {
   f.fairing = !!(d.fairing && (d.fairing.jettisonAltitudeKm || 0) > 0);
   f.fins = !!(d.aero && d.aero.fins);
   f.finless = !f.fins;
+  // DECISIONS #80: true only for a design with its own max-Q throttle setting (NarrationFacts.From, #439).
+  f['throttle.maxq'] = !!(d.guidance && typeof d.guidance.maxQThrottle === 'number');
   if (site) f.site = site;
   return f;
 }
@@ -163,6 +165,8 @@ function contexts(f) {
   const ev = [['pad', f], ['tankpress', lit(1)], ['ignition', lit(1)], ['liftoff', f], ['maxq', f], ['meco', lit(1)], ['fuel-low', lit(1)], ['abort-fuel', lit(1)], ['abort-corridor', f], ['deploy', f]];
   for (let k = 2; k <= f.stages; k++) ev.push(['ses1', lit(k)], ['fuel-low', lit(k)], ['abort-fuel', lit(k)], ['tankpress', lit(k)], ['seco', lit(k)]);
   if (f.stages >= 2) ev.push(['sep-clear', f]);
+  // maxq-throttle joins this list (floor 1) when its recorded takes ship; today it has none and stays silent (HUD banner only).
+  if (f['throttle.maxq']) ev.push(['maxq-through', f]);
   if (f.fairing) ev.push(['fairing', f]);
   if (f.recovery !== 'none' && f.stages >= 2) {
     for (const e of ['entry', 'landing', 'touchdown', 'recovered', 'salvage', 'splash', 'abort-salvage', 'abort-splash', 'haven-maxq']) ev.push([e, f]);

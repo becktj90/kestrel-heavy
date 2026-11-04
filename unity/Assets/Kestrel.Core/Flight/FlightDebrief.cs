@@ -309,7 +309,8 @@ namespace Kestrel.Core.Flight
                 : stars == 1
                     ? "1 star."
                     : stars.ToString(CultureInfo.InvariantCulture) + " stars.";
-            CollectMedals(facts, debrief);
+            // DECISIONS #77: a failed flight keeps no medal (landing or timing); the line reads "No medal this flight."
+            if (passed) CollectMedals(facts, debrief);
             debrief.MedalsLine = MedalSentence(debrief.Medals);
 
             string narrKind = kind;
