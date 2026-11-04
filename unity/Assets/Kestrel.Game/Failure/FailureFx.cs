@@ -182,6 +182,17 @@ namespace Kestrel.Game.Failure
             return 1.6f;
         }
 
+        /// <summary>
+        /// Whether the held-back card may open now: the failure has played (or a tap skipped it) AND no booster landing
+        /// is still on screen (#333). The card waits for whichever ends later. A tap only skips the failure show, never
+        /// the landing; one made during the landing is kept and opens the card as soon as the landing is resolved.
+        /// </summary>
+        public static bool CardOpens(float age, float dueAt, bool tapped, bool landingActive)
+        {
+            if (landingActive) return false;
+            return tapped || age >= dueAt;
+        }
+
         public static bool BellFlash(string kind, bool reduceMotion)
         {
             if (reduceMotion) return false;
