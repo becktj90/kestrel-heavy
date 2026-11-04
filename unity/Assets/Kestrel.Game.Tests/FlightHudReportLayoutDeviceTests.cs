@@ -59,7 +59,7 @@ namespace Kestrel.Game.Tests
             Eyebrow = "ANOMALY · ENGINE 1 (seeded, fair)",
             Quote = "Engine 1 pressure drop. Shut it down?",
             Detail = "0 of 1 still burning · TWR after 0.00 · this design cannot hold an engine-out",
-            Primary = "RIDE IT OUT (hot engine may fail)",
+            Primary = "RIDE IT OUT (hot engine will fail)",
             Alternate = "SHUT DOWN ENGINE 1 (will not hold)",
             PrimaryDeclines = true,
             ShowAlternate = true,

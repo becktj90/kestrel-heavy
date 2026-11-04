@@ -109,12 +109,12 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void EngineOut_CannotHold_HotEngine_CopySaysRidingMayFail()
+        public void EngineOut_CannotHold_HotEngine_CopySaysRidingWillFail()
         {
             var d = EngineOutOpen(Weak(true));
             var p = d.OpenPrompts()[0];
             Assert.IsTrue(p.PrimaryDeclines);
-            Assert.AreEqual("RIDE IT OUT (hot engine may fail)", p.Primary);
+            Assert.AreEqual("RIDE IT OUT (hot engine will fail)", p.Primary);
             Assert.IsTrue(d.ChoosePrimary(AscentCall.EngineOut));
             Assert.AreEqual("engine-overpressure", d.Command.LossKind, "honest: a hot engine comes apart either way");
         }
@@ -131,10 +131,77 @@ namespace Kestrel.Core.Tests
             var p = d.OpenPrompts()[0];
             Assert.IsFalse(p.PrimaryDeclines);
             Assert.AreEqual("SHUT DOWN ENGINE 4 (safe)", p.Primary);
-            Assert.AreEqual("RIDE IT OUT (risk overpressure)", p.Alternate);
+            Assert.AreEqual("RIDE IT OUT (keep it burning)", p.Alternate);
             Assert.IsTrue(d.ChoosePrimary(AscentCall.EngineOut));
             Assert.IsFalse(d.Command.Lost);
             Assert.AreEqual(8.0 / 9.0, d.Command.ThrottleScale, 1e-9, "the lost engine costs its share of thrust");
+        }
+    }
+
+    public class RideItOutRiskTests
+    {
+        /// <summary>Every engine part of <paramref name="d"/> set above its rated chamber pressure (pc &gt; pc rated), the
+        /// existing hot-chamber model (AscentVehicle.HotChamber).</summary>
+        static Design Hot(Catalog c, Design d)
+        {
+            foreach (var part in d.stages)
+            {
+                if (part == null || string.IsNullOrEmpty(part.engine) || !c.EngineById.TryGetValue(part.engine, out var e) || !(e.pcRated > 0)) continue;
+                part.engineParams = part.engineParams ?? new EngineParams();
+                part.engineParams.pc = e.pcRated * 1.05;
+                part.engineParams.pcSet = true;
+            }
+            return d;
+        }
+
+        /// <summary>Physics' PR2 condition: the risk the ride-it-out label names exists in the sim. Across the 12 briefing
+        /// seeds, KH-20's Starter rocket with hot chambers rides out its engine-out (the big button) and comes apart.</summary>
+        [Test]
+        public void HotChamber_RideItOut_LosesTheEngine_AcrossBriefingSeeds()
+        {
+            var catalog = StarterFixture.Catalog;
+            var mission = StarterFixture.Campaign.ById("m20");
+            int calls = 0, lost = 0;
+            var log = new System.Text.StringBuilder();
+            for (ulong seed = 1; seed <= 12; seed++)
+            {
+                var design = Hot(catalog, Design.FromJson(StarterFixture.Rocket("m20").BuildDesign()));
+                var r = PlayLoop.Fly(catalog, mission, design, false, PlayLoop.Style.TapGreenPrimary, seed, out var taps);
+                log.Append(seed).Append(": ").Append(taps).Append(' ').Append(r.failure?.kind ?? r.outcome).Append('\n');
+                if (!taps.Contains("EngineOut+")) continue;
+                calls++;
+                if (r.failure != null && r.failure.kind == "engine-overpressure") lost++;
+            }
+            TestContext.WriteLine(log.ToString());
+            Assert.Greater(calls, 0, "an engine-out call was ridden out on some seed\n" + log);
+            Assert.Greater(lost, 0, "a hot chamber ridden out loses the engine on some seed\n" + log);
+            Assert.AreEqual(calls, lost, "the model is deterministic: every hot ride-out comes apart\n" + log);
+        }
+
+        /// <summary>The tolerated case: shutdown is safe, and the alternate (ride it out) on a hot chamber fails.
+        /// On a cool chamber the sim models no risk, so the label promises none.</summary>
+        [Test]
+        public void Tolerated_RideItOutAlternate_FailsOnAHotChamber_AndPromisesNoRiskWhenCool()
+        {
+            foreach (bool hot in new[] { true, false })
+            {
+                var v = new AscentVehicle
+                {
+                    HasAnomaly = true, AnomalyStage = 0, AnomalyEngine = 3, Engines = 9, Redundant = true,
+                    HotChamber = hot, ThrottleMin = 0.5, QLimPa = 35000,
+                };
+                var d = AscentDirector.Start(v, null, null, false, true, false);
+                d.Advance(new AscentSample
+                {
+                    T = 20, AltM = 8000, SpeedMps = 300, QPa = 4000, StageIndex = 0, Thrusting = true,
+                    PropFraction = 0.8, MassKg = 500000, ThrustN = 1.2e7,
+                }, 0.05);
+                var p = d.OpenPrompts()[0];
+                Assert.AreEqual(hot ? "RIDE IT OUT (hot engine will fail)" : "RIDE IT OUT (keep it burning)", p.Alternate);
+                Assert.IsTrue(d.ChooseAlternate(AscentCall.EngineOut));
+                Assert.AreEqual(hot, d.Command.Lost);
+                if (hot) Assert.AreEqual("engine-overpressure", d.Command.LossKind);
+            }
         }
     }
 
@@ -144,9 +211,11 @@ namespace Kestrel.Core.Tests
         public enum Style { AutoOn, Idle, DeclineAll, TapGreenPrimary, TapGreenSmart, TapEarly, TapLast, ConfirmPitchOnly }
 
         public static SimResult Fly(Catalog catalog, CampaignMission mission, Design design, bool autoAssist, Style style, out string taps)
+            => Fly(catalog, mission, design, autoAssist, style, 1, out taps);
+
+        public static SimResult Fly(Catalog catalog, CampaignMission mission, Design design, bool autoAssist, Style style, ulong seed, out string taps)
         {
             taps = "";
-            const ulong seed = 1;
             ulong hash = FlightBatch.DesignHash(design);
             var card = MissionBriefing.Load(Golden.Root, mission.Index, hash, seed);
             var weather = card?.Wind;

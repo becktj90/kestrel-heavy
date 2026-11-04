@@ -920,13 +920,13 @@ namespace Kestrel.Core.Flight
                     if (ok)
                     {
                         p.Primary = "SHUT DOWN ENGINE " + shown.ToString(inv) + " (safe)";
-                        p.Alternate = "RIDE IT OUT (risk overpressure)";
+                        p.Alternate = vehicle.HotChamber ? "RIDE IT OUT (hot engine will fail)" : "RIDE IT OUT (keep it burning)";
                     }
                     else
                     {
                         // DECISIONS #76: a shutdown this design cannot hold loses the rocket, so the big button rides it
                         // out. Riding is safe unless the engine runs hot (pc above rated), which the copy says.
-                        p.Primary = vehicle.HotChamber ? "RIDE IT OUT (hot engine may fail)" : "RIDE IT OUT (keep it burning)";
+                        p.Primary = vehicle.HotChamber ? "RIDE IT OUT (hot engine will fail)" : "RIDE IT OUT (keep it burning)";
                         p.Alternate = "SHUT DOWN ENGINE " + shown.ToString(inv) + " (will not hold)";
                         p.PrimaryDeclines = true;
                     }
