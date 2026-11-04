@@ -71,7 +71,8 @@ namespace Kestrel.Slice
                 go.name = "Shard" + i;
                 var col = go.GetComponent<Collider>();
                 if (col != null) Destroy(col);
-                if (mat != null) go.GetComponent<Renderer>().sharedMaterial = mat;
+                // No safe material -> hide, never the primitive's Default-Material (magenta in a URP player).
+                Kestrel.Kit.FxMaterials.Apply(go.GetComponent<Renderer>(), mat);
                 go.transform.SetParent(transform, false);
                 go.SetActive(false);
                 nodes[i] = go.transform;
