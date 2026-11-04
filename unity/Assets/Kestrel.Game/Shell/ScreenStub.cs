@@ -169,12 +169,8 @@ namespace Kestrel.Game.Shell
                             var safe = Screen.safeArea;
                             var frame = WebHomeLayout.Place(cssW, cssH,
                                 (Screen.height - safe.yMax) / perY, safe.yMin / perY, safe.xMin / perX, (Screen.width - safe.xMax) / perX);
-                            float ux = width / cssW;
-                            float uy = height / cssH;
-                            gx = frame.Gear.X * ux;
-                            gy = frame.Gear.Y * uy;
-                            gw = frame.Gear.W * ux;
-                            gh = frame.Gear.H * uy;
+                            var g = WebHomeLayout.GearInPanel(frame.Gear, width / cssW, height / cssH);
+                            gx = g.X; gy = g.Y; gw = g.W; gh = g.H;
                         }
                     }
                     if (placed && Mathf.Abs(gx - placedW) < 0.5f && Mathf.Abs(gy - placedH) < 0.5f && Mathf.Abs(top - placedTop) < 0.5f)

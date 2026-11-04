@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Kestrel.Core.Designer;
+using Kestrel.Core.Economy;
 using Kestrel.Core.Flight;
 using Kestrel.Slice;
 
@@ -73,44 +74,27 @@ namespace Kestrel.Slice.DesignerV3
             list.Add(new StripCell("q", "Max-Q", qVal, qState));
 
             string costVal = CompactMoney(r.cost);
-            string costHint = r.cost.ToString("N0", Inv);
+            string costHint = ExactKc(r.cost);
             CellState costState = CellState.Neutral;
             if (r.budget.HasValue && r.budget.Value > 0)
             {
                 string both = costVal + " / " + CompactMoney(r.budget.Value);
                 costVal = both.Length > 16 ? costVal : both;
-                costHint += " / " + r.budget.Value.ToString("N0", Inv);
+                costHint += " / " + ExactKc(r.budget.Value);
                 costState = r.cost <= r.budget.Value ? CellState.Good : CellState.Bad;
             }
             list.Add(new StripCell("cost", "Cost", costVal, costState, costHint));
             return list;
         }
 
-        /// <summary>Strip cost. 1660781357 → "$1.66B". The exact integer stays on the tooltip.</summary>
-        public static string CompactMoney(long amount)
-        {
-            double v = amount;
-            double a = Math.Abs(v);
-            string body;
-            if (a >= 1e9) body = (v / 1e9).ToString("0.00", Inv) + "B";
-            else if (a >= 1e6) body = (v / 1e6).ToString("0.00", Inv) + "M";
-            else if (a >= 1e3) body = (v / 1e3).ToString("0.00", Inv) + "k";
-            else body = v.ToString("N0", Inv);
-            return "$" + body;
-        }
+        /// <summary>Strip cost in Kc, the one money unit the player sees everywhere else (fun review item 10).
+        /// <paramref name="minor"/> is the readout's minor units: 516,710,000 → "5.2k Kc". The exact Kc stays on the tooltip.</summary>
+        public static string CompactMoney(long minor, long minorPerKc = CostModel.DefaultMinorPerKc) =>
+            CostModel.FormatKc(minor, minorPerKc);
 
-        /// <summary>One token, no cents, so a narrow cell does not wrap "$516.30M" into "$516.3" and "0M".</summary>
-        public static string StripMoney(long amount)
-        {
-            double v = amount;
-            double a = Math.Abs(v);
-            string body;
-            if (a >= 1e9) body = (v / 1e9).ToString("0", Inv) + "B";
-            else if (a >= 1e6) body = (v / 1e6).ToString("0", Inv) + "M";
-            else if (a >= 1e3) body = (v / 1e3).ToString("0", Inv) + "k";
-            else body = v.ToString("N0", Inv);
-            return "$" + body;
-        }
+        /// <summary>Exact Kc for the tooltip: 516,710,000 → "5,167 Kc".</summary>
+        public static string ExactKc(long minor, long minorPerKc = CostModel.DefaultMinorPerKc) =>
+            ((double)minor / (minorPerKc > 0 ? minorPerKc : CostModel.DefaultMinorPerKc)).ToString("N0", Inv) + " Kc";
 
         public static List<FlightRisk> RiskChips(QuickReadout r)
         {
