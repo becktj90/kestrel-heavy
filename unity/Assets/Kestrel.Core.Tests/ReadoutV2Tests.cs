@@ -521,13 +521,36 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Recompute_MeetsLatencyBudget()
         {
-            var result = ReadoutBench.Measure(Golden.Catalog, ReadoutBench.LoadDesigns(Golden.Root));
-            Assert.Less(result.quickP95Ms, ReadoutBench.QuickP95BudgetMs, "quick p95 " + result.quickWorst + " " + result.quickP95Ms.ToString("R"));
-            Assert.Less(result.validateP95Ms, ReadoutBench.ValidateP95BudgetMs, "validate p95 " + result.validateWorst + " " + result.validateP95Ms.ToString("R"));
+            // Wall-clock timing on a shared box: one warm-up pass, then the median of
+            // five timed passes must meet the same budgets. A real slowdown moves every
+            // pass, so the median still catches it; a single noisy pass does not fail CI.
+            const int Runs = 5;
+            var catalog = Golden.Catalog;
+            var designs = ReadoutBench.LoadDesigns(Golden.Root);
+            ReadoutBench.Measure(catalog, designs);
+            var runs = new ReadoutBench.Result[Runs];
+            for (int i = 0; i < Runs; i++) runs[i] = ReadoutBench.Measure(catalog, designs);
+
+            var quick = MedianRun(runs, r => r.quickP95Ms);
+            var val = MedianRun(runs, r => r.validateP95Ms);
+            var reference = MedianRun(runs, r => r.referenceMaxMs);
+            TestContext.WriteLine("latency medians: quick p95 " + quick.quickP95Ms.ToString("R")
+                + " ms, validate p95 " + val.validateP95Ms.ToString("R")
+                + " ms, reference max " + reference.referenceMaxMs.ToString("R") + " ms");
+
+            Assert.Less(quick.quickP95Ms, ReadoutBench.QuickP95BudgetMs, "median quick p95 " + quick.quickWorst + " " + quick.quickP95Ms.ToString("R"));
+            Assert.Less(val.validateP95Ms, ReadoutBench.ValidateP95BudgetMs, "median validate p95 " + val.validateWorst + " " + val.validateP95Ms.ToString("R"));
             // Release stays under ReferenceBudgetMs (30). Debug CI of super-heavy was 31.2 ms.
             // 80 ms is the regression ceiling so that Debug noise does not fail the suite.
-            Assert.Less(result.referenceMaxMs, 80, "reference " + result.referenceWorst + " " + result.referenceMaxMs.ToString("R")
+            Assert.Less(reference.referenceMaxMs, 80, "median reference " + reference.referenceWorst + " " + reference.referenceMaxMs.ToString("R")
                 + " (Release budget " + ReadoutBench.ReferenceBudgetMs.ToString("R") + " ms)");
+        }
+
+        static ReadoutBench.Result MedianRun(ReadoutBench.Result[] runs, System.Func<ReadoutBench.Result, double> metric)
+        {
+            var sorted = (ReadoutBench.Result[])runs.Clone();
+            System.Array.Sort(sorted, (a, b) => metric(a).CompareTo(metric(b)));
+            return sorted[sorted.Length / 2];
         }
 
         static JsonObject Preset(string id)
