@@ -139,6 +139,35 @@ namespace Kestrel.Slice
             return camPos - f * dz + u * dy;
         }
 
+        /// <summary>
+        /// <see cref="FitBand"/> with a floor under the camera (it may not go below <paramref name="minCamY"/>: sea or deck).
+        /// FitBand lifts low points by moving the camera down; low over the deck that can be impossible, and clamping the
+        /// result back up left the flame and the deck behind the bottom control row on a 4:3 iPad (PR #435 landing frame,
+        /// booster vy 0.38 under a 0.42 band). Then, and only then, the shot pitches down by the smallest angle (bisection, at
+        /// most <paramref name="maxPitchDeg"/>) for which the fit stays above the floor. <paramref name="rot"/> is updated.
+        /// </summary>
+        public static Vector3 FitBandAbove(ref Quaternion rot, Vector3 camPos, Vector3[] points, int count, float vFovDeg, float aspect,
+            float yMin, float yMax, float minCamY, float maxPitchDeg = 35f)
+        {
+            var fit = FitBand(rot, camPos, points, count, vFovDeg, aspect, yMin, yMax);
+            if (!(fit.y < minCamY)) return fit;
+            var baseRot = rot;
+            var axis = baseRot * Vector3.right;
+            Quaternion Pitched(float deg) => Quaternion.AngleAxis(deg, axis) * baseRot;
+            var hiRot = Pitched(maxPitchDeg);
+            var hiFit = FitBand(hiRot, camPos, points, count, vFovDeg, aspect, yMin, yMax);
+            if (hiFit.y < minCamY) { rot = hiRot; hiFit.y = minCamY; return hiFit; }
+            float lo = 0f, hi = maxPitchDeg;
+            for (int i = 0; i < 14; i++)
+            {
+                float mid = 0.5f * (lo + hi);
+                var m = FitBand(Pitched(mid), camPos, points, count, vFovDeg, aspect, yMin, yMax);
+                if (m.y < minCamY) lo = mid; else { hi = mid; hiFit = m; }
+            }
+            rot = Pitched(hi);
+            return hiFit;
+        }
+
         /// <summary>Exponentially smooth the current offset toward the desired one (frame-rate independent).</summary>
         public static Vector3 StepOffset(Vector3 current, Vector3 desired, float rate, float dt) =>
             Vector3.Lerp(current, desired, 1 - Mathf.Exp(-rate * dt));

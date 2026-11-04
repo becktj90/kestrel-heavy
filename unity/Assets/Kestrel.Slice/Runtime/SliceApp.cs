@@ -1864,7 +1864,12 @@ namespace Kestrel.Slice
         void LateUpdate()
         {
             if (padLights != null && flight != null) padLights.SetPlume((float)flight.ThrustFraction, (float)flight.Altitude);
-            if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
+            if (sky != null && flight != null)
+            {
+                // The sky is graded for where the camera is: the booster's altitude while it is followed down, else the ascent's.
+                double viewAlt = recovery != null ? recovery.ViewAltitude : double.NaN;
+                sky.SetAltitude(double.IsNaN(viewAlt) ? flight.Altitude : viewAlt);
+            }
             if (explodedView != null && hangarCam != null && hangarCam.enabled)
             {
                 SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
@@ -1909,7 +1914,8 @@ namespace Kestrel.Slice
             if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
             recovery?.Present(Time.unscaledDeltaTime);
-            if (recovery != null && ground != null) recovery.Aim(cam, ground.position.y);
+            if (recovery != null && ground != null)
+                recovery.Aim(cam, ground.position.y, ascentHud != null ? ascentHud.TopCover() : 0f, ascentHud != null ? ascentHud.BottomCover() : 0f);
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
             ShowFlightPicture();
             RefreshWebcast(flight.SimTime, true);
@@ -2142,10 +2148,28 @@ namespace Kestrel.Slice
             CountdownChrome.Dress(cast, hVerdict, hPulse, hCallout, skipCount, upp, CountCardWidthPt(upp), skipShown);
         }
 
+        /// <summary>The clock's .hud-big face in panel units (Slice.uss); on a scaled-up iPad panel the header clock keeps at least this.</summary>
+        const float RestingClockUnits = 56f;
+
         void DressClock(Label clock)
         {
             if (clock == null) return;
             float upp = UnitsPerPoint();
+            var row = clock.parent;
+            if (clock.resolvedStyle.position != Position.Absolute && row != null && row.contentRect.width > 8f)
+            {
+                // Portrait header: size from the row (FlightHudLayout.HeaderClockFontPt), not the content-sized label,
+                // or the face chases its own box down to the floor (tiny iPad clock, #381).
+                float sib = 0f;
+                foreach (var c in row.Children())
+                {
+                    if (c == clock || c.resolvedStyle.display == DisplayStyle.None || c.resolvedStyle.position == Position.Absolute) continue;
+                    float cw = c.layout.width;
+                    if (!float.IsNaN(cw)) sib += cw + c.resolvedStyle.marginLeft + c.resolvedStyle.marginRight;
+                }
+                FlightDusk.Clock(clock, upp, FlightHudLayout.HeaderClockFontPt(row.contentRect.width / upp, sib / upp, RestingClockUnits / upp));
+                return;
+            }
             float w = clock.resolvedStyle.width;
             float h = clock.resolvedStyle.height;
             if (float.IsNaN(w) || w < 8f)
