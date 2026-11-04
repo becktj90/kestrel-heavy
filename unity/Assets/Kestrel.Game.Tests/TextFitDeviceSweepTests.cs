@@ -180,6 +180,32 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        /// <summary>#416 item 3: the pass card (MISSION COMPLETE, stars, "+2.0M Kc", green Next mission) fits at 335 and at
+        /// the landscape web panel (WebPanelScale: 1280x720 points).</summary>
+        [Test]
+        public void PassCardFitsAt335AndWebLandscape()
+        {
+            foreach (var frame in new[] { new Frame("335 portrait", 335f, 720f), new Frame("web landscape", 1280f, 720f) })
+            {
+                using (var surface = DeviceSurface.Open(frame.W, frame.H))
+                {
+                    var card = ReportView.Build(null, SampleLog(), ReportLayout.Solve(frame.W, frame.H, 0, 0, 0, 0, true), true, null,
+                        ReportTests.PassDebrief(), new ReportActions());
+                    surface.Stage.Add(card);
+                    ReportCardChrome.Present(surface.Stage, card, 1f, 0f, 0f);
+                    surface.Pump(6);
+                    Settle(surface, card);
+                    AssertFits(card, frame.Name + " pass card");
+                    foreach (var id in new[] { Kestrel.Core.Ui.UiIds.ReportHero, Kestrel.Core.Ui.UiIds.ReportKcHeadline })
+                        AssertStringInside(card.Q<Label>(id), frame.Name + " " + id);
+                    var next = card.Q<Button>(Kestrel.Core.Ui.UiIds.ReportNext);
+                    Assert.That(next.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None), frame.Name);
+                    Assert.That(next.worldBound.yMax, Is.LessThanOrEqualTo(surface.Stage.worldBound.yMax + 0.5f), frame.Name + " Next mission on screen");
+                    Assert.That(card.Q<Button>(Kestrel.Core.Ui.UiIds.ReportFix), Is.Null, frame.Name);
+                }
+            }
+        }
+
         [Test]
         public void EveryDesignerTabFitsAndTheGuidedFlowStillAdvances()
         {

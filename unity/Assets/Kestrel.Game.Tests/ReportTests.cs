@@ -3,6 +3,7 @@ using Kestrel.Core.Ui;
 using Kestrel.Core.Flight;
 using Kestrel.Slice;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Kestrel.Game.Tests
@@ -163,6 +164,71 @@ namespace Kestrel.Game.Tests
             Assert.That(card.style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
             Assert.That(card.Q("report-plate"), Is.Not.Null);
             Assert.That(card.Q("report-scroll").style.backgroundColor.value.a, Is.EqualTo(1f).Within(0.001f));
+        }
+
+        /// <summary>#416 item 3: a pass opens on MISSION COMPLETE, stars and "+2.0M Kc", leads with a green Next mission,
+        /// and has no Fix it. Every other exit stays, as a secondary button.</summary>
+        [Test]
+        public void PassCardCelebratesAndLeadsWithNextMission()
+        {
+            var card = ReportView.Build(null, new TelemetryLog(), ReportLayout.Solve(390, 844, 20, 0, 0, 0, true), true, null, PassDebrief(), new ReportActions());
+            Assert.IsTrue(card.ClassListContains(UiIds.ReportPassClass));
+            Assert.That(card.Q<Label>(UiIds.ReportHero).text, Is.EqualTo("MISSION COMPLETE"));
+            Assert.That(card.Q<Label>(UiIds.ReportKcHeadline).text, Is.EqualTo("+2.0M Kc"));
+            var stars = card.Q(UiIds.ReportStarRow);
+            Assert.That(stars, Is.Not.Null);
+            Assert.That(stars.childCount, Is.EqualTo(3));
+            Assert.That(stars.tooltip, Is.EqualTo("2 of 3 stars"));
+            Assert.That(card.Q<Label>("report-kc").text, Does.Contain("Reward 2.0M Kc").And.Contain("Bank 4.0M Kc").And.Not.Contain("2000000"));
+            Assert.That(card.Q<Button>(UiIds.ReportFix), Is.Null, "no Fix it on a pass");
+            var foot = card.Q(UiIds.ReportFoot);
+            var first = foot.Q<Button>();
+            Assert.That(first.name, Is.EqualTo(UiIds.ReportNext), "Next mission leads");
+            Assert.That(ReportCardChrome.PassRole(UiIds.ReportNext), Is.EqualTo("primary"));
+            Color go = first.style.backgroundColor.value;
+            Assert.That(go.g, Is.GreaterThan(go.r + 0.2f), "green primary");
+            foreach (var id in new[] { UiIds.ReportRetry, UiIds.ReportDesigner, UiIds.ReportMissions, UiIds.ReportHome })
+            {
+                var b = card.Q<Button>(id);
+                Assert.That(b, Is.Not.Null, id);
+                Assert.That(ReportCardChrome.PassRole(id), Is.EqualTo("home"), id + " secondary");
+                Assert.That(b.style.backgroundColor.value, Is.Not.EqualTo(go), id);
+            }
+            ReportCardChrome.Dress(card, 1f, 20f, 0f);
+            Assert.That(card.Q<Button>(UiIds.ReportNext).style.backgroundColor.value, Is.EqualTo(ReportCardChrome.Go), "Dress keeps the green primary");
+            Assert.That(card.Q<Label>(UiIds.ReportHero).style.color.value, Is.EqualTo(ReportCardChrome.Win));
+        }
+
+        [Test]
+        public void FailCardStillLeadsWithFixIt()
+        {
+            var debrief = PassDebrief();
+            debrief.Passed = false;
+            debrief.KcHeadline = "";
+            var card = ReportView.Build(null, new TelemetryLog(), ReportLayout.Solve(390, 844, 20, 0, 0, 0, true), true, null, debrief, new ReportActions());
+            Assert.IsFalse(card.ClassListContains(UiIds.ReportPassClass));
+            Assert.That(card.Q(UiIds.ReportHero), Is.Null);
+            Assert.That(card.Q(UiIds.ReportStarRow), Is.Null);
+            Assert.That(card.Q(UiIds.ReportFoot).Q<Button>().name, Is.EqualTo(UiIds.ReportFix));
+            var withFailure = ReportView.Build(new FailureEvent { kind = "overg", kid = "Too many g.", engineer = "8 g." }, new TelemetryLog(),
+                ReportLayout.Solve(390, 844, 20, 0, 0, 0, true), true, null, PassDebrief(), new ReportActions());
+            Assert.That(withFailure.Q<Button>(UiIds.ReportFix), Is.Not.Null, "a failure event always keeps Fix it");
+        }
+
+        internal static FlightDebrief PassDebrief()
+        {
+            return new FlightDebrief
+            {
+                Passed = true,
+                Kind = "pass",
+                CauseTitle = "She flew",
+                Numbers = "Apogee 10 km. Goal 10 km.",
+                Stars = 2,
+                StarsLine = "2 stars.",
+                MedalsLine = "Bronze for timing.",
+                KcLine = "Reward 2.0M Kc. Hardware 4.8K Kc. Bank 4.0M Kc.",
+                KcHeadline = "+2.0M Kc",
+            };
         }
 
         static void Expect(string kind, string tab, string field)
