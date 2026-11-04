@@ -129,6 +129,7 @@ namespace Kestrel.Core.Tests
                 Assert.That(Array.Exists(after.Marks, m => m.Stop == TrajectoryStop.Boostback || m.Stop == TrajectoryStop.Entry || m.Stop == TrajectoryStop.Landing),
                     Is.False, "expendable " + mode + " flown attempt");
                 Assert.That(after.Progress, Is.EqualTo(1f), "expendable " + mode + " ends at SECO");
+                Assert.That(after.Marks[after.Marks.Length - 1].Stop, Is.EqualTo(TrajectoryStop.Seco), "expendable " + mode + ": SECO is the last stop, nothing after it");
             }
 
             var barge = Watch(2, false, "barge");
