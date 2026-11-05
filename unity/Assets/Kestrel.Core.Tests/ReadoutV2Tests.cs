@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 // G1 readout v2. Mass, sea-level Δv, CG and CP are hard-coded literals from the Python
 // below, not from Readout.Quick. Max-Q is a literature band plus an identity check that
 // the cached ascent is Headless, not a second formula.
@@ -521,13 +522,93 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Recompute_MeetsLatencyBudget()
         {
-            var result = ReadoutBench.Measure(Golden.Catalog, ReadoutBench.LoadDesigns(Golden.Root));
-            Assert.Less(result.quickP95Ms, ReadoutBench.QuickP95BudgetMs, "quick p95 " + result.quickWorst + " " + result.quickP95Ms.ToString("R"));
-            Assert.Less(result.validateP95Ms, ReadoutBench.ValidateP95BudgetMs, "validate p95 " + result.validateWorst + " " + result.validateP95Ms.ToString("R"));
+            // Wall-clock timing on a shared box: one warm-up pass, then the median of
+            // five timed passes must meet the same budgets. A real slowdown moves every
+            // pass, so the median still catches it; a single noisy pass does not fail CI.
+            // DECISIONS #85: on Linux/macOS every timing below (quick, validate and the reference
+            // ascent) reads the thread's own CPU clock (CLOCK_THREAD_CPUTIME_ID), not wall time.
+            // On a saturated box the scheduler takes the core away mid-sample: wall-clock reference
+            // medians read 61-108 ms and p95s 0.6-4 ms while the work was unchanged. CPU time still
+            // grows with any real slowdown in the code, so the same budgets keep measuring speed.
+            // Elsewhere (Windows, where GetThreadTimes ticks at ~15 ms; Mono/IL2CPP without the
+            // libc symbol; a clock that doesn't advance) it falls back to ReadoutBench.Measure's
+            // wall-clock numbers, and the reason is printed. Budgets are the same either way.
+            const int Runs = 5;
+            var catalog = Golden.Catalog;
+            var designs = ReadoutBench.LoadDesigns(Golden.Root);
+            bool cpu = ThreadCpuClock.Available;
+            System.Func<ReadoutBench.Result> once = () => cpu ? CpuMeasure(catalog, designs) : ReadoutBench.Measure(catalog, designs);
+            once(); // warm-up pass, not asserted
+            var runs = new ReadoutBench.Result[Runs];
+            for (int i = 0; i < Runs; i++) runs[i] = once();
+
+            var quick = MedianRun(runs, r => r.quickP95Ms);
+            var val = MedianRun(runs, r => r.validateP95Ms);
+            var reference = MedianRun(runs, r => r.referenceMaxMs);
+            string clock = cpu ? "thread CPU" : "wall clock (fallback: " + ThreadCpuClock.Unavailable + ")";
+            TestContext.WriteLine("latency medians [" + clock + "]: quick p95 " + quick.quickP95Ms.ToString("R")
+                + " ms, validate p95 " + val.validateP95Ms.ToString("R")
+                + " ms, reference max " + reference.referenceMaxMs.ToString("R") + " ms");
+
+            Assert.Less(quick.quickP95Ms, ReadoutBench.QuickP95BudgetMs, "median quick p95 [" + clock + "] " + quick.quickWorst + " " + quick.quickP95Ms.ToString("R"));
+            Assert.Less(val.validateP95Ms, ReadoutBench.ValidateP95BudgetMs, "median validate p95 [" + clock + "] " + val.validateWorst + " " + val.validateP95Ms.ToString("R"));
             // Release stays under ReferenceBudgetMs (30). Debug CI of super-heavy was 31.2 ms.
             // 80 ms is the regression ceiling so that Debug noise does not fail the suite.
-            Assert.Less(result.referenceMaxMs, 80, "reference " + result.referenceWorst + " " + result.referenceMaxMs.ToString("R")
+            Assert.Less(reference.referenceMaxMs, 80, "median reference [" + clock + "] " + reference.referenceWorst + " " + reference.referenceMaxMs.ToString("R")
                 + " (Release budget " + ReadoutBench.ReferenceBudgetMs.ToString("R") + " ms)");
+        }
+
+        /// <summary>ReadoutBench.Measure's loop (3 untimed passes, 60 samples, per-design p95, worst design;
+        /// one reference flight per design after Reset) timed on the thread CPU clock.</summary>
+        static ReadoutBench.Result CpuMeasure(Catalog c, System.Collections.Generic.IList<JsonObject> designs, int samples = 60)
+        {
+            for (int i = 0; i < 3; i++)
+                foreach (var d in designs) { Readout.Quick(c, d); Validate.Engineering(c, d); }
+            System.GC.Collect();
+            System.GC.WaitForPendingFinalizers();
+            var r = new ReadoutBench.Result { designs = designs.Count, quickWorst = "", validateWorst = "", referenceWorst = "" };
+            foreach (var d in designs)
+            {
+                var q = new double[samples];
+                var v = new double[samples];
+                for (int i = 0; i < samples; i++)
+                {
+                    double t0 = ThreadCpuClock.NowMs();
+                    Readout.Quick(c, d);
+                    double t1 = ThreadCpuClock.NowMs();
+                    Validate.Engineering(c, d);
+                    double t2 = ThreadCpuClock.NowMs();
+                    q[i] = t1 - t0; v[i] = t2 - t1;
+                }
+                double qp = P95(q), vp = P95(v);
+                if (qp > r.quickP95Ms) { r.quickP95Ms = qp; r.quickWorst = Id(d); }
+                if (vp > r.validateP95Ms) { r.validateP95Ms = vp; r.validateWorst = Id(d); }
+            }
+            ReferenceAscent.Reset();
+            foreach (var d in designs)
+            {
+                double t0 = ThreadCpuClock.NowMs();
+                Readout.Reference(c, d);
+                double ms = ThreadCpuClock.NowMs() - t0;
+                if (ms > r.referenceMaxMs) { r.referenceMaxMs = ms; r.referenceWorst = Id(d); }
+            }
+            return r;
+        }
+
+        static double P95(double[] xs)
+        {
+            System.Array.Sort(xs);
+            int index = (int)System.Math.Ceiling(0.95 * xs.Length) - 1;
+            return xs[System.Math.Max(0, System.Math.Min(xs.Length - 1, index))];
+        }
+
+        static string Id(JsonObject d) => d.Str("id") ?? d.Str("name") ?? "?";
+
+        static ReadoutBench.Result MedianRun(ReadoutBench.Result[] runs, System.Func<ReadoutBench.Result, double> metric)
+        {
+            var sorted = (ReadoutBench.Result[])runs.Clone();
+            System.Array.Sort(sorted, (a, b) => metric(a).CompareTo(metric(b)));
+            return sorted[sorted.Length / 2];
         }
 
         static JsonObject Preset(string id)
@@ -544,5 +625,40 @@ namespace Kestrel.Core.Tests
             if (!(err <= abs + rel * System.Math.Abs(e)))
                 Assert.Fail($"{what}: got {actual:R}, expected {e:R} (err {err:E3})");
         }
+    }
+
+    /// <summary>Per-thread CPU clock for latency tests (DECISIONS #85). Available is false where it's unsupported or untrustworthy.</summary>
+    static class ThreadCpuClock
+    {
+        public static readonly bool Available;
+        public static readonly string Unavailable = "";
+        static readonly int ClockId;
+
+        [StructLayout(LayoutKind.Sequential)] struct Timespec { public long sec; public long nsec; }
+        [DllImport("libc", EntryPoint = "clock_gettime")] static extern int clock_gettime(int clk, out Timespec ts);
+
+        static ThreadCpuClock()
+        {
+            try
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) ClockId = 3;      // CLOCK_THREAD_CPUTIME_ID
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) ClockId = 16;  // CLOCK_THREAD_CPUTIME_ID
+                else { Unavailable = "no high-resolution thread CPU clock on " + RuntimeInformation.OSDescription; return; }
+                double a = Raw();
+                double x = 0; for (int i = 0; i < 2000000; i++) x += System.Math.Sqrt(i);
+                double b = Raw();
+                if (x < 0 || !(b > a)) { Unavailable = "thread CPU clock did not advance (" + a + " -> " + b + ")"; return; }
+                Available = true;
+            }
+            catch (System.Exception e) { Unavailable = e.GetType().Name + ": " + e.Message; }
+        }
+
+        static double Raw()
+        {
+            if (clock_gettime(ClockId, out var ts) != 0) throw new System.InvalidOperationException("clock_gettime failed");
+            return ts.sec * 1000.0 + ts.nsec / 1e6;
+        }
+
+        public static double NowMs() => Raw();
     }
 }
