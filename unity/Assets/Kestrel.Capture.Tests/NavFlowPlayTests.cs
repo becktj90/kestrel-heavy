@@ -348,7 +348,14 @@ namespace Kestrel.Capture.Tests
         [Timeout(300000)]
         public IEnumerator CrashingRocket_LiveFlight_ReachesTheReport_WithRetry()
         {
-            yield return ToThePad(d => d.stages[0].engineCount = 1);
+            // The m1 starter already flies on one engine, so that spoil alone now passes (and a pass card has no Fix it,
+            // #416 item 3). Starve the first stage too so the flight really falls short and the report offers Fix it.
+            yield return ToThePad(d =>
+            {
+                d.stages[0].engineCount = 1;
+                // 5% left the count unable to reach liftoff; 40% of the first stage still lifts off but falls short.
+                d.stages[0].propMass *= 0.4;
+            });
             VisualElement report = null;
             yield return Until(() => (report = Find("screen-report")) != null && NavIds.Shown(report), 150f);
             Assert.IsNotNull(report, "a rocket that breaks up still reaches the report");
