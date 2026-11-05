@@ -93,7 +93,44 @@ namespace Kestrel.Game.Shell
         }
         public void BackFromDesigner() => Route(RouteId.DesignerBack);
         public void OpenReport() => Route(RouteId.OpenReport);
-        public void ReportNext() => Route(RouteId.ReportNext, ScreenStub.LoadCampaign());
+        /// <summary>
+        /// #416 item 9 / NAV-06: Next mission opens the next mission's designer with its starter and briefing
+        /// (the designer shows the brief's goal line), skipping the board and briefing taps. A locked next
+        /// mission (a miss) or one with no starter lands on the Missions list as before.
+        /// </summary>
+        public void ReportNext()
+        {
+            if (Busy) return;
+            var campaign = ScreenStub.LoadCampaign();
+            var r = GameSession.Apply(RouteId.ReportNext, campaign);
+            if (r.Screen == SessionScreens.Design)
+            {
+                if (OpenNextDesigner(campaign, r.Session)) return;
+                r = new RouteResult(SessionScreens.Missions, SessionScreens.None, GameSession.Current);
+            }
+            Present(r);
+        }
+
+        bool OpenNextDesigner(Campaign campaign, MissionContext ctx)
+        {
+            var mission = campaign != null && ctx != null ? campaign.ById(ctx.MissionId) : null;
+            if (mission == null || mission.Index > ScreenStub.ClearedCount() + 1) return false;
+            var choice = HomeAutoBuild.Choose(ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, mission);
+            if (choice == null || choice.Design == null) return false;
+            string root = ScreenStub.RepoRoot();
+            if (root != null)
+            {
+                try { ctx.ApplyBriefing(MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign))); }
+                catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
+            }
+            ctx.VehicleLine = choice.VehicleLine;
+            ctx.ReachLine = choice.ReachLine;
+            ctx.AutoPad = false;
+            PadHandoff.Arm(choice.Design, false, fromHome: false);
+            GameSession.Carry(ctx);
+            Present(new RouteResult(SessionScreens.Design, SessionScreens.None, ctx));
+            return true;
+        }
         public void ReportRetry() => Route(RouteId.ReportRetry);
 
         /// <summary>Same exit the in-flight pause menu reaches via Go(Home): title screen, session cleared.</summary>
