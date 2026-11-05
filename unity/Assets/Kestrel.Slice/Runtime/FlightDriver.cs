@@ -46,6 +46,20 @@ namespace Kestrel.Slice
         public void Hold(bool on) => Held = on;
         public SimResult Result { get; private set; }
         public bool Lost => Result != null && Result.failure != null;
+        /// <summary>PR5: the coast warp the last frame ran at (1 = real time). See Kestrel.Core.Flight.CoastWarp.</summary>
+        public double Warp => Running && warp != null ? warp.Factor : 1;
+        /// <summary>Sim seconds to the next call or predictable event (CoastWarp), +Infinity with no flight.</summary>
+        public double SecondsToNext => Running && warp != null ? warp.SecondsToNext : double.PositiveInfinity;
+        /// <summary>Narrator Voice: set each frame while a non-interruptible line holds warp at ×1 (NarrationPlayer.HoldsWarp).</summary>
+        public bool NarrationBusy { get; set; }
+        /// <summary>Sound: the warp rate changed (from, to, sim time). Only on a real change. See WarpedFlightClock.WarpChanged.</summary>
+        public event Action<int, int, double> WarpChanged;
+        /// <summary>Sound: a drop to ×1 in about this many real seconds (0 when unforeseen). Always before WarpChanged(x→1).</summary>
+        public event Action<int, float> WarpWillDrop;
+        /// <summary>PR5: set each frame by the app while the camera follows the returning booster (RecoveryShow.SteerCamera); warp holds ×1.</summary>
+        public bool CameraOnBooster { get; set; }
+        /// <summary>PR5: the player's warp switch. True keeps real time. Launch reads it from kh.flight.timewarp (TimeWarpSetting).</summary>
+        public bool WarpOff { get; set; }
         public double OriginX { get; private set; }   // floating origin in pad-local metres (double)
         public double OriginY { get; private set; }
         public int Rebases { get; private set; }
@@ -55,6 +69,7 @@ namespace Kestrel.Slice
 
         double clock; double thrustRef = 1; double prevX, prevY;
         PlayedChecks checks;
+        WarpedFlightClock warp;
         double[] thrustByStage = System.Array.Empty<double>();
         int seenEvents; bool mecoSent;
         readonly List<(Transform t, double x, double y, double z)> anchored = new List<(Transform, double, double, double)>();
@@ -149,7 +164,7 @@ namespace Kestrel.Slice
             Running = true;
             clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             AttitudeDeg = 90f; HasAttitude = false;
-            seenEvents = 0; mecoSent = false;
+            seenEvents = 0; mecoSent = false; warp = null;
             // The origin is back at the pad, so the pad has to be too: after a flight past RebaseDistance the
             // anchored ground, deck and tower were left where the last rebase put them (a displaced pad on relaunch).
             PlaceAnchors();
@@ -157,6 +172,10 @@ namespace Kestrel.Slice
             {
                 // The designer and the launch predictor fly these same checks (#314).
                 checks = new PlayedChecks(c, d, stages, opts, Sim);
+                warp = new WarpedFlightClock(directed, checks, opts.fairingJettisonAltM);
+                warp.WarpChanged += (a, b, t) => WarpChanged?.Invoke(a, b, t);
+                warp.WarpWillDrop += (a, r) => WarpWillDrop?.Invoke(a, r);
+                WarpOff = TimeWarpSetting.Resolve(PlayerPrefs.HasKey(TimeWarpSetting.Pref), PlayerPrefs.GetInt(TimeWarpSetting.Pref, 0)) == TimeWarpMode.Off;
                 thrustRef = Math.Max(1, stages[0].thrustVac);
                 omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
                 UpdateFrame();
@@ -178,14 +197,26 @@ namespace Kestrel.Slice
             float frame = Time.deltaTime;
             if (frame <= 0f && Time.unscaledDeltaTime > 0f) frame = Time.unscaledDeltaTime;
             // Slow-mo scales only how much wall-clock feeds the clock (Core PresentationTimeScale); Sim.Tick and PhysicsDt are untouched.
-            clock += new Kestrel.Core.Flight.PresentationTimeScale(Kestrel.Kit.CinematicEvents.PresentationScale).ToSimSeconds(Math.Min(frame, 0.1f)); // clamp hitches; physics catches up at fixed dt
-            int guard = 0;
-            while (Sim.T < clock && !Sim.Done && guard++ < 64)
+            // PR5 coast warp (Core WarpedFlightClock): more fixed 1/120 s steps per frame while nothing is due, ×1 before every
+            // call and event. The steps, director and played checks run exactly as before, so the flight is bit-identical.
+            if (warp != null)
             {
-                int before = Sim.Events.Count;
-                directed.Step();
-                if (checks != null && checks.NoteEvents(Sim, before)) Meco = true;
-                if (checks != null && checks.StopForBreakup(Sim)) break;
+                warp.Disabled = WarpOff;
+                warp.Advance(Math.Min(frame, 0.1f), Kestrel.Kit.CinematicEvents.PresentationScale, CameraOnBooster, NarrationBusy);
+                if (warp.MecoThisFrame) Meco = true;
+                clock = warp.Clock;
+            }
+            else
+            {
+                clock += new Kestrel.Core.Flight.PresentationTimeScale(Kestrel.Kit.CinematicEvents.PresentationScale).ToSimSeconds(Math.Min(frame, 0.1f)); // clamp hitches; physics catches up at fixed dt
+                int guard = 0;
+                while (Sim.T < clock && !Sim.Done && guard++ < 64)
+                {
+                    int before = Sim.Events.Count;
+                    directed.Step();
+                    if (checks != null && checks.NoteEvents(Sim, before)) Meco = true;
+                    if (checks != null && checks.StopForBreakup(Sim)) break;
+                }
             }
             if (Sim.Done)
             {

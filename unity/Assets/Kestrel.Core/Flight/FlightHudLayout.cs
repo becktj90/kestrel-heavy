@@ -147,6 +147,28 @@ namespace Kestrel.Core.Flight
             return true;
         }
 
+        /// <summary>PR5 coast warp chip ("⏩ ×4", "⏩ ×10"), right after the clock reading inside the clock box.</summary>
+        public static readonly string[] WarpChipSamples = { "⏩ ×4", "⏩ ×10" };
+        public const float WarpChipFontPt = 11f;
+        public const float WarpChipPadXPt = 8f;
+
+        /// <summary>The chip's fixed width, the same at ×4 and ×10 so nothing moves when it changes.</summary>
+        public static float WarpChipWidth()
+        {
+            float w = 0f;
+            foreach (var t in WarpChipSamples) w = Math.Max(w, BudgetWidth(t, WarpChipFontPt));
+            return (float)Math.Ceiling(w + WarpChipPadXPt);
+        }
+
+        /// <summary>The clock box width the chip always reserves (chip plus a gap), shown or not, so nothing reflows.</summary>
+        public static float WarpChipReserve() => WarpChipWidth() + GapPt;
+
+        /// <summary>Clock face for a box that also holds the reserved warp chip.</summary>
+        public static float ClockFitWithChip(float boxW, float boxH) => ClockFit(boxW - WarpChipReserve(), boxH);
+
+        /// <summary>The narrowest clock box that holds every reading at the 13 pt floor plus the reserved warp chip.</summary>
+        public static float ClockMinWidthWithChip() => ClockMinWidth() + WarpChipReserve();
+
         /// <summary>The narrowest clock box (border box) that holds every reading at the 13 pt floor.</summary>
         public static float ClockMinWidth()
         {
@@ -907,7 +929,10 @@ namespace Kestrel.Core.Flight
 
             var f = new FlightHudFrame { Mode = mode, Exit = exit };
             f.Telemetry = Box(left, stripY, stripW, stripH);
-            float clockW = Math.Max(clockMinW, Math.Min(120f, Math.Max(64f, stripW * 0.12f)));
+            // A clock box that must also hold the warp chip's reserve (clockMinW above ClockMinWidth) grows by that reserve
+            // past both the 120 pt cap and the 12% share, so its face stays the chip-less face (UX on #436).
+            float chipExtra = Math.Max(0f, clockMinW - ClockMinWidth());
+            float clockW = Math.Max(clockMinW, chipExtra + Math.Min(120f, Math.Max(64f, stripW * 0.12f)));
             f.Clock = Box(left, stripY, clockW, stripH);
             f.Stage = Box(stripRight - StageChipPt, stripY + (stripH - StageChipPt) * 0.5f, StageChipPt, StageChipPt);
             float cellsL = f.Clock.Right + GapPt;

@@ -37,6 +37,16 @@ namespace Kestrel.Game.Audio
         public int Started { get; private set; }
         public string LastResource { get; private set; }
         public bool Busy => schedule.Busy;
+
+        // Narrator Voice (#436): the coast warp's hold and lead. Real (unscaled) seconds; warp never touches the voice
+        // source's pitch or rate.
+        readonly Kestrel.Core.Flight.NarrationWarpHold warpHold = new Kestrel.Core.Flight.NarrationWarpHold();
+        double warpSecondsToNext = double.PositiveInfinity, warpFactor = 1;
+        bool warpEnabled = true;
+        /// <summary>A non-interruptible line is playing, or ended under 0.5 s ago: the coast warp holds ×1.</summary>
+        public bool HoldsWarp => warpHold.Holds((double)Time.unscaledTime);
+        /// <summary>The flight's warp lead (sim seconds to the next call or event) and factor, each frame.</summary>
+        public void UseWarp(double simSecondsToNext, double factor, bool enabled = true) { warpSecondsToNext = simSecondsToNext; warpFactor = factor; warpEnabled = enabled; }
         public bool Held { get; private set; }
 
         public void Bind(AudioDirector audio) => director = audio;
@@ -151,6 +161,7 @@ namespace Kestrel.Game.Audio
 
         public void Stop()
         {
+            warpHold.Reset(); warpSecondsToNext = double.PositiveInfinity; warpFactor = 1; warpEnabled = true;
             schedule.Release();
             StopVoice();
         }
@@ -180,6 +191,7 @@ namespace Kestrel.Game.Audio
         void Update()
         {
             TickFade();
+            warpHold.Note(schedule.Busy && !schedule.CurrentInterruptible, (double)Time.unscaledTime);
             if (Held || !Application.isPlaying || voice == null) return;
             OfferTrigger();
             if (!schedule.Busy) { OfferColor(); return; }
@@ -218,7 +230,9 @@ namespace Kestrel.Game.Audio
                 // Recovery, and ascent on a rocket with no MECO, only take a line that ends before the next call.
                 bool mustFit = cue.MustFit;
                 var offer = schedule.Offer(catalog, cue.EventId, facts, 0, CommentaryMode.Full, (double)Time.unscaledTime,
-                    line => !mustFit || ColorWindows.RecoveryFits(cue.SecToNextCall, line.Duration));
+                    line => (!mustFit || ColorWindows.RecoveryFits(cue.SecToNextCall, line.Duration))
+                        // Narrator Voice (#436): it and 1.5 s must end before the next call at the current warp; else silence.
+                        && Kestrel.Core.Flight.CoastWarp.LineFits(line.Duration, warpSecondsToNext, warpFactor, warpEnabled));
                 if (!offer.Started) continue;
                 color.MarkDone(cue.EventId);
                 StartVoice(offer.Resource);
