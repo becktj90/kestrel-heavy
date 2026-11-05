@@ -18,7 +18,7 @@ AND over fact keys. Values: exact (number, bool, string), a comparison string on
 | `recovery` | `none`/`barge`/`rtls` | the landing the design picked (`design.recovery.mode`; no pick = `none`). `barge` = Haven lines (Haven, deck, sea state, in the drink). `rtls` = the booster lands on the pad; a miss is ground, not sea |
 | `site` | enum | launch pad id from `data/sites.json` (`pier-7`, `coastal-pad-b`, `salt-flat`, `north-reach`); flight context (`MissionBriefing.Site.Id`), not a design field. Only Pier 7 and Coastal Pad B have Haven |
 | `legs`, `fairing`, `fins`, `finless` | bool | |
-| `fairing.halves` | int | missing until Graphics confirms; gates `host/fairing.2` |
+| `fairing.halves` | int | deliberately unset: no design data says how a fairing splits, so no take may require or state it (the "two halves" take was cut) |
 | `lit.stage`, `lit.engines`, `lit.propellant`, `lit.last` | event context | stage the event is about (ignition, ses1, seco, tankpress, fuel-low, abort-fuel); `lit.last` = it is the top core stage |
 
 Propellants: `kerolox`, `hydrolox`, `methalox`, `solid`, `storable`.
