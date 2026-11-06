@@ -1913,6 +1913,14 @@ namespace Kestrel.Slice
             StepFlightCamera(juice != null ? juice.Fov : FlightJuice.BaseFov, flight.Altitude, juice);
             if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
+            if (recovery != null && flight != null && flight.SkipAdvancedSimS > 0)
+            {
+                // Skip to next stage (#78): the booster advances by the sim-seconds the ascent just skipped, in
+                // lockstep; when it enters its next burn phase (or touches down), the ascent skip stops there — the
+                // first event on either timeline wins.
+                var reached = recovery.SkipAdvance(flight.SkipAdvancedSimS);
+                if (reached != StageSkipTarget.None) flight.HaltSkip(reached);
+            }
             recovery?.Present(Time.unscaledDeltaTime);
             if (recovery != null && ground != null)
                 recovery.Aim(cam, ground.position.y, ascentHud != null ? ascentHud.TopCover() : 0f, ascentHud != null ? ascentHud.BottomCover() : 0f);
