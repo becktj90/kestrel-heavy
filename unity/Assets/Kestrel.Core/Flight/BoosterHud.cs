@@ -131,6 +131,22 @@ namespace Kestrel.Core.Flight
             };
         }
 
+        /// <summary>The engineer's recovery numbers line (RecoveryShow.Call): phase, sink and tilt describe the booster's
+        /// real coast, and the landing miss and propellant left are reported only when the booster is actually landing.
+        /// An expendable booster was never going to land (BoosterLanding.Fate Expendable: the design picked no landing,
+        /// so the attempt is ungraded), so a miss from the Haven deck and a 0 kg reserve would read as a landing that
+        /// failed instead of a stage that was never meant to come back. Its coast numbers stay; the miss and prop go.</summary>
+        public static string EngineerLine(in RecoverySample s, bool expendable)
+        {
+            var inv = CultureInfo.InvariantCulture;
+            string line = s.Phase + "  sink " + s.Sink.ToString("0.0", inv)
+                + " m/s  tilt " + s.TiltDeg.ToString("0.0", inv) + "°";
+            if (!expendable)
+                line += "  miss " + s.MissM.ToString("0", inv)
+                    + " m  prop " + s.Prop.ToString("0", inv) + " kg";
+            return line;
+        }
+
         /// <summary>Metres under 1 km ("40 m"), then kilometres to one place ("12.3 km"), as the ascent ALT reads.</summary>
         public static string Distance(double m, IFormatProvider inv)
             => m < 999.5 ? m.ToString("0", inv) + " m" : (m / 1000.0).ToString("0.0", inv) + " km";

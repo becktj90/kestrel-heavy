@@ -7,7 +7,6 @@
 // entry, then follows the booster. Boostback keeps a corner inset.
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
 using Kestrel.Core.Vehicle;
@@ -442,11 +441,9 @@ namespace Kestrel.Slice
                 }
                 else if (engineer)
                 {
-                    var inv = CultureInfo.InvariantCulture;
-                    numbers.text = sample.Phase + "  sink " + sample.Sink.ToString("0.0", inv)
-                        + " m/s  tilt " + sample.TiltDeg.ToString("0.0", inv)
-                        + "°  miss " + sample.MissM.ToString("0", inv)
-                        + " m  prop " + sample.Prop.ToString("0", inv) + " kg";
+                    // An expendable booster reports no landing miss or propellant: it was never going to land, so
+                    // those numbers would read as a failed landing under the upper stage's "On track" badge.
+                    numbers.text = BoosterHud.EngineerLine(sample, landing != null && landing.Expendable);
                 }
             }
             // The engineer's free pitch/throttle row stands down during the burn: the burn panel
