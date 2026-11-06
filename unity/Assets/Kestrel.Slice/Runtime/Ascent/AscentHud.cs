@@ -2090,9 +2090,13 @@ namespace Kestrel.Slice
             // Skip to next stage (#78): the cruise row's second button, next to Auto-assist. It lives in the
             // assist row (not the prompt row) so it is there when there is nothing to decide, and hides with the
             // row while a call is open — a call is decided first, then the flight can skip on.
+            // The row is a Row, not the default Column: LayoutRail pins it to the frame's single Assist seat, so
+            // stacked buttons would overflow the seat onto the nudge row (EditMode DockStackNeverOverlaps, PR #451).
+            // The split is 1:2, not 1:1: the long label needs two thirds of the seat to stay on one line at the
+            // narrowest size (335 px), while Auto-assist fits in one third.
             stageSkip = Action(UiIds.FlightStageSkip, OnStageSkip);
             stageSkip.text = "Skip to next stage";
-            stageSkip.style.flexGrow = 1;
+            stageSkip.style.flexGrow = 2;
             stageSkip.style.marginRight = 0;
             promptRow = new VisualElement { name = "ascent-prompt-row" };
             promptRow.style.flexDirection = FlexDirection.Row;
@@ -2103,6 +2107,7 @@ namespace Kestrel.Slice
             promptRow.Add(primary);
             promptRow.Add(skip);
             assistRow = new VisualElement { name = "ascent-assist-row" };
+            assistRow.style.flexDirection = FlexDirection.Row;
             assistRow.Add(assist);
             assistRow.Add(stageSkip);
             nudgeRow = new VisualElement { name = "ascent-nudge" };

@@ -20,6 +20,10 @@ namespace Kestrel.Core.Tests
             StringAssert.Contains("UiIds.FlightStageSkip", src, "the button has a harness id");
             StringAssert.Contains("stageSkip.text = \"Skip to next stage\"", src, "the button is named for the decision");
             StringAssert.Contains("assistRow.Add(stageSkip)", src, "it sits in the cruise row, next to Auto-assist");
+            StringAssert.Contains("assistRow.style.flexDirection = FlexDirection.Row;", src,
+                "the row lays its two buttons side by side: LayoutRail pins it to the frame's single Assist seat, so a stacked (Column) row would overflow the seat onto the nudge row (EditMode DockStackNeverOverlaps, PR #451)");
+            StringAssert.Contains("stageSkip.style.flexGrow = 2;", src,
+                "the split is 1:2, not 1:1: the long label needs two thirds of the seat to stay on one line at 335 px");
             StringAssert.Contains("StyleButton(stageSkip)", src, "it is styled like the other dock buttons");
             StringAssert.Contains("stageSkip.style.display = DisplayStyle.None; // Preview has no flight to skip.", src,
                 "device-test previews never offer a skip");
