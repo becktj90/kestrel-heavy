@@ -74,6 +74,8 @@ namespace Kestrel.Slice
             {
                 Failure = ev,
                 LandingGrade = landingGrade,
+                // #79: the flown burn's player input reaches the score's landing-bonus multiplier.
+                PlayerFlownBurn = rec != null && rec.PlayerFlown,
                 Seed = mission != null ? mission.Seed : 0,
                 DesignId = design != null ? design.name : null,
                 RedundantAvionics = design != null && EventModel.Tier(design.avionicsTier) == "redundant",

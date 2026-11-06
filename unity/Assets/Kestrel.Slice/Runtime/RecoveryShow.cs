@@ -44,6 +44,13 @@ namespace Kestrel.Slice
         bool armed, started, engineer, reduce, boomed, puffed;
         double pitchCmd = Math.PI / 2;
         double throttleCmd;
+        // #79: the player-flown landing burn. Hold-to-burn throttle and left/right tilt, read every
+        // frame while the Landing phase flies on a planned landing. Engineer flies it Manual (no
+        // assist floor); everyone else gets Assisted, so a player who never touches the controls
+        // lands exactly as on Auto-assist.
+        VisualElement burnPanel;
+        Label burnTitle;
+        bool burnHeld, tiltLeftHeld, tiltRightHeld;
 
         public bool SteerCamera { get; private set; }
 
@@ -117,6 +124,8 @@ namespace Kestrel.Slice
             if (callout != null) callout.style.display = DisplayStyle.None;
             if (numbers != null) numbers.style.display = DisplayStyle.None;
             if (stick != null) stick.style.display = DisplayStyle.None;
+            if (burnPanel != null) burnPanel.style.display = DisplayStyle.None;
+            burnHeld = tiltLeftHeld = tiltRightHeld = false;
             if (deck != null) deck.gameObject.SetActive(false);
             if (plume != null) plume.gameObject.SetActive(false);
             RecoveryLog.Release();
@@ -137,8 +146,10 @@ namespace Kestrel.Slice
             }
             if (body.Phase == RecoveryPhase.Down) downAge += dt;
             // t466: once the ascent is over (insertion or a clean cutoff), the booster finishes at once so the report opens.
-            landing.Conclude(flight.Result != null && !flight.Running, flight.Lost);
-            var sample = landing.Step(dt, Stick());
+            // #79: the sink is the flight sink, so the touchdown announces its camera beat (the slow-motion
+            // touchdown) as the batch flight already does; Conclude never settles an open player burn.
+            landing.Conclude(flight.Result != null && !flight.Running, flight.Lost, flight.CinematicSink);
+            var sample = landing.Step(dt, Stick(), flight.CinematicSink);
             string cause = RecoveryLog.Current != null && RecoveryLog.Current.Attempted ? RecoveryLog.Current.Cause : null;
             var pic = RecoveryViews.Of(sample, landing.TrimMarks(), cause, craft.VLeg, sample.Phase == RecoveryPhase.Down);
             pic.Call = landing.Callout(sample);
@@ -149,7 +160,7 @@ namespace Kestrel.Slice
             Touch(pic, sample);
             Call(pic, sample);
             SteerCamera = pic.Follow && (sample.Phase != RecoveryPhase.Down || downAge < 8);
-            HudReadout = BoosterHud.Read(sample, craft);
+            HudReadout = BoosterHud.Read(sample, craft, landing.DeckOffsetM);
             AimInset(pic.Inset && !SteerCamera, sample);
         }
 
@@ -235,9 +246,30 @@ namespace Kestrel.Slice
 
         RecoveryStick Stick()
         {
+            // #79: the final landing burn is the player's on a planned landing: throttle and tilt into
+            // the same sim the autopilot flies. Boostback, entry and descent keep Auto-assist (or the
+            // engineer's free stick), as do expendable attempts, which never get a burn panel.
+            if (started && landing != null && landing.Fate == BoosterFate.Planned
+                && landing.Sample().Phase == RecoveryPhase.Landing)
+            {
+                double tilt = (tiltRightHeld ? 1 : 0) - (tiltLeftHeld ? 1 : 0);
+                var input = new LandingBurnInput { Throttle01 = burnHeld ? 1 : 0, Tilt01 = tilt };
+                return LandingBurnDirector.Stick(landing.Body, landing.Craft, input,
+                    engineer ? LandingBurnAssist.Manual : LandingBurnAssist.Assisted);
+            }
             if (!engineer) return RecoveryStick.Assisted;
-            return new RecoveryStick { Auto = false, PitchRad = pitchCmd, Throttle = throttleCmd };
+            return new RecoveryStick
+            {
+                Auto = false,
+                PitchRad = pitchCmd,
+                Throttle = throttleCmd,
+                PlayerInput = throttleCmd > 0 || Math.Abs(RecoveryFrames.Wrap(pitchCmd - Math.PI / 2)) > 1e-9,
+            };
         }
+
+        /// <summary>#79: true while the burn panel is the player's (planned landing, Landing phase).</summary>
+        bool BurnActive(in RecoverySample sample)
+            => started && landing != null && landing.Fate == BoosterFate.Planned && sample.Phase == RecoveryPhase.Landing;
 
         void Pose(in RecoverySample sample)
         {
@@ -304,8 +336,18 @@ namespace Kestrel.Slice
             if (deck == null || flight == null) return;
             deck.gameObject.SetActive(true);
             var space = flight.Vehicle != null ? flight.Vehicle.parent : null;
-            var local = new Vector3((float)(body.BargeArc - flight.OriginX), (float)(0 - flight.OriginY), 0f);
+            // #79: the deck rides the swell: it slides along the ground arc from its charted centre and
+            // rolls a touch with it. The sim grades the touchdown against the same moved deck, and the
+            // burn panel's offset reads it live, so what the player sees is what they are graded on.
+            // The roll is presentation only; the sim's deck is the horizontal offset.
+            double sway = landing != null ? landing.DeckOffsetM : 0;
+            var local = new Vector3((float)(body.BargeArc + sway - flight.OriginX), (float)(0 - flight.OriginY), 0f);
             deck.position = space != null ? space.TransformPoint(local) : local;
+            float roll = (float)(sway * 0.12);
+            if (roll > 3f) roll = 3f;
+            else if (roll < -3f) roll = -3f;
+            var rot = space != null ? space.rotation : Quaternion.identity;
+            deck.rotation = rot * Quaternion.Euler(0f, 0f, roll);
         }
 
         void Touch(in RecoveryPicture pic, in RecoverySample sample)
@@ -371,8 +413,17 @@ namespace Kestrel.Slice
             }
             if (numbers != null)
             {
-                numbers.style.display = engineer ? DisplayStyle.Flex : DisplayStyle.None;
-                if (engineer)
+                // #79: during the landing burn the sink / offset / tilt readouts are the player's
+                // instruments, so every player sees them, not just Engineer. Outside the burn the
+                // numbers stay the engineer's extended line.
+                bool burn = BurnActive(sample);
+                numbers.style.display = burn || engineer ? DisplayStyle.Flex : DisplayStyle.None;
+                if (burn)
+                {
+                    var burnReadout = LandingBurnDirector.Readout(sample, craft, landing != null ? landing.DeckOffsetM : 0);
+                    numbers.text = "LANDING BURN  " + burnReadout.Line();
+                }
+                else if (engineer)
                 {
                     var inv = CultureInfo.InvariantCulture;
                     numbers.text = sample.Phase + "  sink " + sample.Sink.ToString("0.0", inv)
@@ -381,7 +432,10 @@ namespace Kestrel.Slice
                         + " m  prop " + sample.Prop.ToString("0", inv) + " kg";
                 }
             }
-            if (stick != null) stick.style.display = engineer && sample.Phase != RecoveryPhase.Down ? DisplayStyle.Flex : DisplayStyle.None;
+            // The engineer's free pitch/throttle row stands down during the burn: the burn panel
+            // is the control then, Manual for Engineer, Assisted for everyone else.
+            if (stick != null) stick.style.display = engineer && !BurnActive(sample) && sample.Phase != RecoveryPhase.Down ? DisplayStyle.Flex : DisplayStyle.None;
+            if (burnPanel != null) burnPanel.style.display = BurnActive(sample) ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         void AimInset(bool on, in RecoverySample sample)
@@ -520,7 +574,9 @@ namespace Kestrel.Slice
                     host.Add(callout);
                 }
             }
-            if (engineer && (numbers == null || numbers.parent != host))
+            // The numbers line is everyone's during the landing burn (#79: sink / offset / tilt), and
+            // the engineer's extended line outside it — so it is built for every player, not just Engineer.
+            if (numbers == null || numbers.parent != host)
             {
                 numbers = host.Q<Label>("recovery-numbers");
                 if (numbers == null)
@@ -533,24 +589,68 @@ namespace Kestrel.Slice
                     numbers.style.display = DisplayStyle.None;
                     host.Add(numbers);
                 }
-                if (stick == null || stick.parent != host)
+            }
+            if (engineer && (stick == null || stick.parent != host))
+            {
+                stick = host.Q("recovery-stick");
+                if (stick == null)
                 {
-                    stick = host.Q("recovery-stick");
-                    if (stick == null)
-                    {
-                        stick = new VisualElement { name = "recovery-stick" };
-                        stick.style.position = Position.Absolute;
-                        stick.style.flexDirection = FlexDirection.Row;
-                        stick.style.display = DisplayStyle.None;
-                        stick.Add(Hold("Pitch −", () => pitchCmd -= 0.08));
-                        stick.Add(Hold("Pitch +", () => pitchCmd += 0.08));
-                        stick.Add(Hold("Thr −", () => throttleCmd = Math.Max(0, throttleCmd - 0.1)));
-                        stick.Add(Hold("Thr +", () => throttleCmd = Math.Min(1, throttleCmd + 0.1)));
-                        host.Add(stick);
-                    }
+                    stick = new VisualElement { name = "recovery-stick" };
+                    stick.style.position = Position.Absolute;
+                    stick.style.flexDirection = FlexDirection.Row;
+                    stick.style.display = DisplayStyle.None;
+                    stick.Add(Hold("Pitch −", () => pitchCmd -= 0.08));
+                    stick.Add(Hold("Pitch +", () => pitchCmd += 0.08));
+                    stick.Add(Hold("Thr −", () => throttleCmd = Math.Max(0, throttleCmd - 0.1)));
+                    stick.Add(Hold("Thr +", () => throttleCmd = Math.Min(1, throttleCmd + 0.1)));
+                    host.Add(stick);
                 }
             }
+            // #79: the landing-burn panel, for every player (not just Engineer). Hold-to-burn
+            // throttle and left/right tilt, in the same bottom row the engineer's stick uses.
+            if (burnPanel == null || burnPanel.parent != host)
+            {
+                burnPanel = host.Q("recovery-burn");
+                if (burnPanel == null)
+                {
+                    burnPanel = new VisualElement { name = "recovery-burn" };
+                    burnPanel.style.position = Position.Absolute;
+                    burnPanel.style.flexDirection = FlexDirection.Column;
+                    burnPanel.style.display = DisplayStyle.None;
+                    burnTitle = new Label { name = "recovery-burn-title", pickingMode = PickingMode.Ignore };
+                    burnTitle.text = "YOUR LANDING BURN — hold to burn, tilt to steer";
+                    burnTitle.style.unityTextAlign = TextAnchor.MiddleCenter;
+                    burnTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+                    burnTitle.style.whiteSpace = WhiteSpace.Normal;
+                    burnTitle.style.color = new Color(0.95f, 0.85f, 0.55f);
+                    burnPanel.Add(burnTitle);
+                    var row = new VisualElement { name = "recovery-burn-row" };
+                    row.style.flexDirection = FlexDirection.Row;
+                    row.Add(HoldBurn("◀ TILT", held => tiltLeftHeld = held));
+                    row.Add(HoldBurn("HOLD TO BURN", held => burnHeld = held, grow: true));
+                    row.Add(HoldBurn("TILT ▶", held => tiltRightHeld = held));
+                    burnPanel.Add(row);
+                    host.Add(burnPanel);
+                }
+                else burnTitle = burnPanel.Q<Label>("recovery-burn-title");
+            }
             PlaceChrome();
+        }
+
+        /// <summary>Press-and-hold button, after HangarUi's stepper: down latches, any release clears.</summary>
+        Button HoldBurn(string label, Action<bool> held, bool grow = false)
+        {
+            var button = new Button { text = label };
+            button.style.height = 52f * units;
+            button.style.marginRight = 4f * units;
+            button.style.fontSize = 14f * units;
+            if (grow) button.style.flexGrow = 1;
+            button.RegisterCallback<PointerDownEvent>(e => { held(true); e.StopPropagation(); });
+            button.RegisterCallback<PointerUpEvent>(e => held(false));
+            button.RegisterCallback<PointerLeaveEvent>(e => held(false));
+            button.RegisterCallback<PointerCancelEvent>(e => held(false));
+            button.RegisterCallback<DetachFromPanelEvent>(e => held(false));
+            return button;
         }
 
         Button Hold(string label, Action tap)
@@ -586,6 +686,13 @@ namespace Kestrel.Slice
                 stick.style.left = 12f * u;
                 stick.style.right = 12f * u;
             }
+            if (burnPanel != null)
+            {
+                burnPanel.style.bottom = 18f * u;
+                burnPanel.style.left = 12f * u;
+                burnPanel.style.right = 12f * u;
+            }
+            if (burnTitle != null) burnTitle.style.fontSize = 12f * u;
         }
 
         void OnDestroy()
@@ -595,6 +702,7 @@ namespace Kestrel.Slice
             if (callout != null && callout.parent != null) callout.RemoveFromHierarchy();
             if (numbers != null && numbers.parent != null) numbers.RemoveFromHierarchy();
             if (stick != null && stick.parent != null) stick.RemoveFromHierarchy();
+            if (burnPanel != null && burnPanel.parent != null) burnPanel.RemoveFromHierarchy();
         }
 
         void EnsureInset()

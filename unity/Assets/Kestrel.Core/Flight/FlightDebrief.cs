@@ -39,6 +39,9 @@ namespace Kestrel.Core.Flight
         public double BudgetKc;
         public bool LandingRequired;
         public string LandingGrade;
+        /// <summary>#79: the player flew the landing burn (BoosterLanding.PlayerFlown). Only the score's
+        /// landing bonus reads it; the grade, medal and stars never do.</summary>
+        public bool PlayerFlownBurn;
         public double PeakG;
         public double GLimit;
         public long CostMinor;
@@ -301,7 +304,7 @@ namespace Kestrel.Core.Flight
             if (costKc == 0 && facts.CostMinor > 0) costKc = facts.CostMinor / (double)minorPerKc;
             int stars = MissionScore.Stars(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingRequired, perfectLanding, facts.PeakG, facts.GLimit);
             if (passed) stars = AscentDecisions.ApplyStars(stars, facts.TimingMedal);
-            double score = MissionScore.Points(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingGrade);
+            double score = MissionScore.Points(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingGrade, facts.PlayerFlownBurn);
             debrief.Stars = stars;
             debrief.Score = score;
             debrief.StarsLine = stars <= 0

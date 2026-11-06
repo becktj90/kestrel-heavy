@@ -223,6 +223,12 @@ namespace Kestrel.Core.Flight
             return 1.18 * sink * sink / (2 * aNet);
         }
 
+        /// <summary>The tilt the hoverslam allows at <paramref name="alt"/>: 0.2 rad low (the legs and the
+        /// deck demand a near-vertical stage), 0.55 rad higher up where the stage still has room to steer.
+        /// <see cref="LandingBurnDirector"/> caps the player's tilt at the same value, so a hand-flown burn
+        /// can never command an attitude the autopilot would not.</summary>
+        public static double LandingTiltMax(double alt) => alt < 48 ? 0.2 : 0.55;
+
         static void Landing(double east, double radial, double alt, double gap, double g, in RecoveryCraft craft, double mass,
             out double pitch, out double throttle)
         {
@@ -249,7 +255,7 @@ namespace Kestrel.Core.Flight
             if (eastWant > cap) eastWant = cap;
             else if (eastWant < -cap) eastWant = -cap;
             double eErr = east - eastWant;
-            double tiltMax = alt < 48 ? 0.2 : 0.55;
+            double tiltMax = LandingTiltMax(alt);
             double tilt = eErr / (Math.Abs(eErr) + 6.5);
             tilt *= tiltMax;
             pitch = Math.PI / 2 + tilt;

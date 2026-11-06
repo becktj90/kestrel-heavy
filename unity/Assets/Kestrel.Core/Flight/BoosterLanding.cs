@@ -35,6 +35,12 @@ namespace Kestrel.Core.Flight
         double accum;
         bool haveShot;
         double shotDown, shotAlt, shotSpeed, shotPitchDeg;
+        /// <summary>#79: the Haven deck's swell amplitude (metres). The deck's charted centre stays the
+        /// guidance aim; the swell moves the deck around it, and the touchdown miss is measured against
+        /// where the deck is when the stage arrives.</summary>
+        double swellAmpM = LandingBurnDirector.DefaultSwellAmpM;
+        /// <summary>#79: the player gave throttle or tilt input while the Landing phase was flying.</summary>
+        bool playerFlown;
 
         public BoosterFate Fate { get; private set; }
         public int CoreSerial { get; private set; }
@@ -47,15 +53,22 @@ namespace Kestrel.Core.Flight
         public RecoveryCraft Craft => craft;
         public RecoveryBody Body => body;
         public bool Expendable => Fate == BoosterFate.Expendable;
+        /// <summary>#79: the Haven deck's swell amplitude in metres (0: the deck never moves, as before).</summary>
+        public double SwellAmpM => swellAmpM;
+        /// <summary>#79: where the swell has moved the deck at the booster's current clock.</summary>
+        public double DeckOffsetM => Started ? LandingBurnDirector.DeckOffsetM(body.T, swellAmpM) : 0;
 
         /// <summary>
         /// Arm for one flight. Clears the last flight's log. Engages the log (so the report waits for
         /// touchdown) whenever a first stage will leave the stack.
+        /// <paramref name="swellAmpM"/> is the Haven deck's swell (#79); the default is the gentlest
+        /// mission-ramp entry, and 0 keeps the deck fixed as before.
         /// </summary>
-        public static BoosterLanding Arm(Catalog catalog, Design design)
+        public static BoosterLanding Arm(Catalog catalog, Design design, double swellAmpM = LandingBurnDirector.DefaultSwellAmpM)
         {
             RecoveryLog.ArmFlight();
             var landing = new BoosterLanding();
+            landing.swellAmpM = double.IsNaN(swellAmpM) || swellAmpM < 0 ? 0 : swellAmpM;
             if (!Releases(catalog, design, out int coreSerial)) return landing;
             landing.CoreSerial = coreSerial;
             if (RecoveryCrafts.TryFrom(catalog, design, out var planned))
@@ -216,9 +229,14 @@ namespace Kestrel.Core.Flight
         /// <summary>
         /// Advance by presented time <paramref name="dt"/> (seconds, clamped to 0.1 per call) at the
         /// fixed recovery steps, at most 8 steps per call. Publishes the verdict on touchdown.
+        /// <paramref name="sink"/> is the flight sink, as the batch flight passes it: phase changes,
+        /// touchdown and a crash are announced on it (the touchdown camera beat is the slow-motion
+        /// touchdown). Null keeps the old behaviour. A throwing sink never breaks the flight.
+        /// The touchdown miss is measured against the deck where the swell has moved it.
         /// </summary>
-        public RecoverySample Step(double dt, in RecoveryStick stick)
+        public RecoverySample Step(double dt, in RecoveryStick stick, IFlightSimSink sink = null)
         {
+            sink = GuardedFlightSink.Wrap(sink);
             if (!Started) return default;
             if (body.Phase != RecoveryPhase.Down)
             {
@@ -233,7 +251,15 @@ namespace Kestrel.Core.Flight
                     var before = body.Phase;
                     RecoverySim.Step(ref body, craft, stick, step);
                     accum -= step;
-                    if (body.Phase != before) Remember();
+                    // #79: input that shaped a step of the landing burn, on a planned landing, makes
+                    // the burn player-flown. Auto-assist and expendable attempts never set it.
+                    if (Fate == BoosterFate.Planned && body.Phase == RecoveryPhase.Landing && stick.PlayerInput)
+                        playerFlown = true;
+                    if (body.Phase != before)
+                    {
+                        Remember();
+                        if (sink != null) sink.OnRecoveryPhase(body.Phase, body.T);
+                    }
                 }
             }
             var sample = RecoverySim.Sample(body, craft);
@@ -241,8 +267,13 @@ namespace Kestrel.Core.Flight
             if (sample.Phase == RecoveryPhase.Down && !Touched)
             {
                 Touched = true;
+                // The deck is where the swell has moved it at touchdown, not where it was charted.
+                sample.MissM -= LandingBurnDirector.DeckOffsetM(sample.T, swellAmpM);
+                if (markCount > 0 && marks[markCount - 1].Phase == RecoveryPhase.Down)
+                    marks[markCount - 1].MissM = sample.MissM;
                 var verdict = RecoveryScore.Judge(sample, craft, TrimMarks());
                 verdict.Attempted = true;
+                verdict.PlayerFlown = playerFlown;
                 if (Expendable)
                 {
                     verdict.Expendable = true;
@@ -255,6 +286,16 @@ namespace Kestrel.Core.Flight
                 }
                 Verdict = verdict;
                 RecoveryLog.Publish(verdict);
+                if (sink != null)
+                {
+                    sink.OnTouchdown(sample.Sink, sample.TiltDeg, FlightSurfaces.Choose(sample.MissM, RecoverySim.DeckRadiusM, craft.Mode));
+                    string boom = RecoveryViews.Boom(verdict.Cause, sample.Sink, craft.VLeg);
+                    if (!string.IsNullOrEmpty(boom))
+                    {
+                        double energy = 0.5 * sample.Mass * sample.Speed * sample.Speed;
+                        sink.OnCrash(boom, new FlightVec(body.X, body.Y), new FlightVec(body.Vx, body.Vy), energy);
+                    }
+                }
             }
             return sample;
         }
@@ -268,11 +309,13 @@ namespace Kestrel.Core.Flight
         /// Fly the rest of the landing now, at the same fixed recovery steps <see cref="Step"/> takes (the step size
         /// depends only on the booster's altitude, never on how presented time was sliced), and publish the verdict.
         /// The verdict is bit-identical to stepping it out live with the same stick. True once it has touched down.
+        /// <paramref name="sink"/> is passed to <see cref="Step"/>, so a settled touchdown still announces itself.
         /// </summary>
-        public bool Settle(in RecoveryStick stick)
+        public bool Settle(in RecoveryStick stick, IFlightSimSink sink = null)
         {
             if (!Started) return false;
             if (Touched) return true;
+            sink = GuardedFlightSink.Wrap(sink);
             int guard = 0;
             while (body.Phase != RecoveryPhase.Down && guard++ < SettleSteps)
             {
@@ -280,10 +323,16 @@ namespace Kestrel.Core.Flight
                 double step = alt < RecoverySim.NearAlt ? RecoverySim.NearDt : RecoverySim.Dt;
                 var before = body.Phase;
                 RecoverySim.Step(ref body, craft, stick, step);
-                if (body.Phase != before) Remember();
+                if (Fate == BoosterFate.Planned && body.Phase == RecoveryPhase.Landing && stick.PlayerInput)
+                    playerFlown = true;
+                if (body.Phase != before)
+                {
+                    Remember();
+                    if (sink != null) sink.OnRecoveryPhase(body.Phase, body.T);
+                }
             }
             accum = 0;
-            Step(0, stick);
+            Step(0, stick, sink);
             return Touched;
         }
 
@@ -293,11 +342,17 @@ namespace Kestrel.Core.Flight
         /// (insertion or a clean cutoff), a booster still in the air finishes its landing at once on Auto-assist (the
         /// stage-sep spec's Stay path: the booster lands or is lost automatically and its result joins the report).
         /// A lost ascent is left alone (its failure card does not wait for the booster). True when it settled here.
+        /// #79: a planned landing whose landing burn has already opened is never settled: the player is flying
+        /// the burn, and settling it would skip their touchdown. The burn is seconds long (the six landing
+        /// missions touch down before the ascent ends, so this gate is a safety net, not the common path);
+        /// the live loop keeps stepping it until it touches down, then the report opens. An expendable
+        /// attempt, and a planned landing still in boostback, entry or descent, settle as before.
         /// </summary>
-        public bool Conclude(bool ascentOver, bool ascentLost)
+        public bool Conclude(bool ascentOver, bool ascentLost, IFlightSimSink sink = null)
         {
             if (!ascentOver || ascentLost || !Started || Touched) return false;
-            return Settle(RecoveryStick.Assisted);
+            if (Fate == BoosterFate.Planned && body.Phase == RecoveryPhase.Landing) return false;
+            return Settle(RecoveryStick.Assisted, sink);
         }
 
         /// <summary>
