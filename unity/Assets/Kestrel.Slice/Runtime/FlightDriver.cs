@@ -62,6 +62,13 @@ namespace Kestrel.Slice
         public StageSkipTarget SkipReached { get; private set; } = StageSkipTarget.None;
         /// <summary>Sim seconds the skip pump advanced this frame (0 when not skipping): SliceApp advances the booster by the same amount, so the two sims stay in lockstep.</summary>
         public double SkipAdvancedSimS { get; private set; }
+        /// <summary>
+        /// Telemetry sink for skipped time (set by SliceApp to the FailureHost's sampler). The frame sampler
+        /// only runs once per rendered frame, so while the skip fast-forwards the sim it would starve the
+        /// debrief log; the pump hands this sink one sample per 0.1 sim-seconds from the real stepped state
+        /// instead. Null flies without it (the batch and the predictor never set it).
+        /// </summary>
+        public Action<AscentSample> SkipSampler { get; set; }
         /// <summary>The next ascent event, or None when the flight is over.</summary>
         public StageSkipTarget NextSkipTarget => Running && Sim != null && !Sim.Done ? StageSkip.NextAscentTarget(Sim, checks) : StageSkipTarget.None;
         /// <summary>
@@ -243,7 +250,7 @@ namespace Kestrel.Slice
                 // DirectedFlight.Step with the same played checks as the real-time loop below, so the state at the
                 // event is the state real time would have reached; the clock is kept on the sim so no debt is banked.
                 double before = Sim.T;
-                var run = StageSkip.Advance(directed, checks, StageSkip.MaxStepsPerFrame);
+                var run = StageSkip.Advance(directed, checks, StageSkip.MaxStepsPerFrame, SkipSampler);
                 SkipAdvancedSimS = Sim.T - before;
                 if (run.Meco) Meco = true;
                 if (run.Stop != StageSkipStop.Budget)

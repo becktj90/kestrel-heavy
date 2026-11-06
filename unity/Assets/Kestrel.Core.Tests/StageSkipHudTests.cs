@@ -47,8 +47,8 @@ namespace Kestrel.Core.Tests
         public void DriverSkipsTheSameSim_InBoundedFrames()
         {
             string src = Driver();
-            StringAssert.Contains("StageSkip.Advance(directed, checks, StageSkip.MaxStepsPerFrame)", src,
-                "the pump steps the directed flight with its played checks");
+            StringAssert.Contains("StageSkip.Advance(directed, checks, StageSkip.MaxStepsPerFrame, SkipSampler)", src,
+                "the pump steps the directed flight with its played checks, sampling telemetry through the sink");
             StringAssert.Contains("SkipAdvancedSimS = Sim.T - before;", src, "the skipped seconds are published for the booster");
             StringAssert.Contains("clock = Sim.T;", src, "a skipped frame banks no debt");
             StringAssert.Contains("if (on) CancelSkip();", src, "pausing cancels a skip");
@@ -60,6 +60,19 @@ namespace Kestrel.Core.Tests
             string src = App();
             StringAssert.Contains("recovery.SkipAdvance(flight.SkipAdvancedSimS)", src, "the booster advances by the skipped seconds");
             StringAssert.Contains("flight.HaltSkip(reached)", src, "its next burn stops the ascent skip");
+        }
+
+        [Test]
+        public void SkipSamplesTelemetryIntoTheDebriefLog()
+        {
+            // Area C, bug 3: the frame sampler starves while the sim fast-forwards, so the pump hands the
+            // FailureHost's sampler one sample per 0.1 sim-seconds from the stepped state.
+            string driver = Driver();
+            StringAssert.Contains("public Action<AscentSample> SkipSampler { get; set; }", driver,
+                "the driver holds the skip telemetry sink");
+            string app = App();
+            StringAssert.Contains("flight.SkipSampler = ", app, "SliceApp wires the sink when the rocket builds");
+            StringAssert.Contains("host.SampleSkip", app, "the sink is the FailureHost's, so skip samples land in the debrief log");
         }
 
         [Test]

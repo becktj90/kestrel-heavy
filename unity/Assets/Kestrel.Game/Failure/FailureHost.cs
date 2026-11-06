@@ -513,6 +513,27 @@ namespace Kestrel.Game.Failure
             }
         }
 
+        /// <summary>
+        /// One telemetry sample from the skip pump (StageSkip.Advance via FlightDriver.SkipSampler): the same
+        /// 0.1 s cadence and the same values Sample() records from a rendered frame, but taken from the real
+        /// stepped state while the sim fast-forwards between frames. It shares Sample()'s gate (nextSample), so
+        /// a frame sample and a skip sample never double-record one interval, and it keeps prevT/prevV current
+        /// so the next frame sample's g-load is still a 0.1 s difference, not a whole skip. The loss channels
+        /// stay the host's own (0 until the result lands, then stamped onto the newest sample): the sim's
+        /// running totals are a different definition and must not mix with the frame samples in one log.
+        /// </summary>
+        public void SampleSkip(AscentSample s)
+        {
+            double t = s.T;
+            if (t + 1e-4 < nextSample) return;
+            nextSample = t + 0.1;
+            double dt = t - prevT;
+            double g = dt > 1e-3 ? (s.SpeedMps - prevV) / dt / FailureModel.G0 : 0;
+            log.Push(t, s.AltM, s.SpeedMps, s.QPa, g, s.MassKg, lossG, lossD, lossS);
+            prevT = t;
+            prevV = s.SpeedMps;
+        }
+
         void Sample()
         {
             if (flight.Sim == null) return;
