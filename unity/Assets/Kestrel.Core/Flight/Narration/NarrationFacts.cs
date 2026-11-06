@@ -21,6 +21,9 @@ namespace Kestrel.Core.Flight.Narration
         public bool Finless => values.TryGetValue("finless", out var v) && v is bool b && b;
         public string Site => values.TryGetValue("site", out var v) ? v as string : null;
         public string Recovery => values.TryGetValue("recovery", out var v) ? v as string : null;
+        /// <summary>The campaign mission being flown (m1..m20), or null on a sandbox/free flight. Set at the
+        /// narration entry points from the aimed mission; mission-gated historical takes stay silent without it.</summary>
+        public string Mission => values.TryGetValue("mission", out var v) ? v as string : null;
 
         public bool TryGet(string key, out object value) => values.TryGetValue(key ?? "", out value);
 
