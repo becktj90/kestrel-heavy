@@ -26,6 +26,11 @@ namespace Kestrel.Core.Flight
         public const double CostWeight = 200;
         public const double LandingPerfect = 200;
         public const double LandingGood = 100;
+        /// <summary>#79: score multipliers for a landing burn the player flew. A Perfect flown by hand
+        /// pays double (400), a Good one and a half (150). The grade, medal and stars never change:
+        /// only the bonus multiplies, and only when the burn was player-flown.</summary>
+        public const double PlayerFlownPerfectMult = 2;
+        public const double PlayerFlownGoodMult = 1.5;
         public const double StarMarginMin = 0.02;
         public const double StarMarginMax = 0.10;
         public const double ThreeStarGFraction = 0.80;
@@ -42,17 +47,28 @@ namespace Kestrel.Core.Flight
         /// A failed flight scores 0: the margin and cost terms describe a success.
         /// </summary>
         public static double Points(bool pass, double margin, double cost, double budget, string landingGrade)
+            => Points(pass, margin, cost, budget, landingGrade, false);
+
+        /// <summary>As <see cref="Points(bool, double, double, double, string)"/>, with the #79 player-flown
+        /// burn multiplier on the landing bonus (<see cref="LandingBonus(string, bool)"/>).</summary>
+        public static double Points(bool pass, double margin, double cost, double budget, string landingGrade, bool playerFlownBurn)
         {
             if (!pass) return 0;
             double marginTerm = MarginWeight * Math.Max(0, 1 - Math.Abs(margin - MarginPeak) / MarginPeak);
             double costTerm = budget > 0 ? CostWeight * Math.Max(0, (budget - cost) / budget) : 0;
-            return PassPoints + marginTerm + costTerm + LandingBonus(landingGrade);
+            return PassPoints + marginTerm + costTerm + LandingBonus(landingGrade, playerFlownBurn);
         }
 
         public static double LandingBonus(string landingGrade)
+            => LandingBonus(landingGrade, false);
+
+        /// <summary>The landing bonus, multiplied when the player flew the landing burn: a hand-flown
+        /// Perfect pays <see cref="PlayerFlownPerfectMult"/>x, a hand-flown Good <see cref="PlayerFlownGoodMult"/>x.
+        /// Auto-assist pays the plain bonus. Hard, Salvage and water pay 0 either way.</summary>
+        public static double LandingBonus(string landingGrade, bool playerFlownBurn)
         {
-            if (IsPerfect(landingGrade)) return LandingPerfect;
-            if (IsGood(landingGrade)) return LandingGood;
+            if (IsPerfect(landingGrade)) return LandingPerfect * (playerFlownBurn ? PlayerFlownPerfectMult : 1);
+            if (IsGood(landingGrade)) return LandingGood * (playerFlownBurn ? PlayerFlownGoodMult : 1);
             return 0;
         }
 

@@ -82,7 +82,10 @@ namespace Kestrel.Core.Flight
             return f < 0 ? 0 : f > 1 ? 1 : f;
         }
 
-        public static BoosterHudReadout Read(in RecoverySample s, in RecoveryCraft craft)
+        /// <summary>The HUD reads the booster exactly while the camera is steered onto it.
+        /// <paramref name="deckOffsetM"/> is where the swell has moved the deck (#79): the TO DECK cell
+        /// reads the deck's live position, 0 keeps the charted centre as before.</summary>
+        public static BoosterHudReadout Read(in RecoverySample s, in RecoveryCraft craft, double deckOffsetM = 0)
         {
             var inv = CultureInfo.InvariantCulture;
             double alt = Math.Max(0, s.Alt);
@@ -92,7 +95,7 @@ namespace Kestrel.Core.Flight
             double vAbs = Math.Abs(vUp);
             double fuel = Fuel01(s.Prop, craft.ReserveKg);
             int fuelPct = (int)Math.Round(fuel * 100.0, MidpointRounding.AwayFromZero);
-            double miss = Math.Abs(s.MissM);
+            double miss = Math.Abs(s.MissM - deckOffsetM);
             bool pad = craft.Mode == "rtls";
             string place = pad ? "pad" : "deck";
             return new BoosterHudReadout
