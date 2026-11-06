@@ -785,7 +785,12 @@ namespace Kestrel.Slice
             ApplyTankCutaway();
             ApplyDesignFraming();
             // One registration: failure visuals and the post-flight card.
-            Kestrel.Game.Failure.FailureHost.Attach(rocketGO, flight, ui, r);
+            var host = Kestrel.Game.Failure.FailureHost.Attach(rocketGO, flight, ui, r);
+            // Debrief telemetry during a skip: the frame sampler starves while the sim fast-forwards between
+            // rendered frames, so the host samples the stepped state through the driver's skip sink instead
+            // (StageSkip.Advance hands it one sample per 0.1 sim-seconds). One sampler per rocket — BuildRocket
+            // destroyed the old rocket above, so re-assigning here drops the dead host.
+            if (flight != null) flight.SkipSampler = host != null ? (System.Action<AscentSample>)host.SampleSkip : null;
             AttachStaging(r);
         }
 

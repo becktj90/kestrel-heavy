@@ -75,6 +75,9 @@ namespace Kestrel.Core.Flight
         /// </summary>
         public const int MaxStepsPerFrame = 1024;
 
+        /// <summary>Telemetry cadence for a skip (seconds of sim time between samples): the same 0.1 s the frame sampler gates on.</summary>
+        public const double SampleIntervalS = 0.1;
+
         /// <summary>The HUD copy for a target: "Max-Q", "MECO", "Staging", "SECO", "Entry burn", "Landing burn".</summary>
         public static string Label(StageSkipTarget target)
         {
@@ -135,8 +138,15 @@ namespace Kestrel.Core.Flight
         /// per-step order is the pad loop's (FlightDriver.Update): DirectedFlight.Step, then the played checks.
         /// The director is never bypassed: its calls arm, open and (under auto-assist) resolve inside the steps,
         /// at the same grades as real time.
+        /// <para>
+        /// <paramref name="onSample"/> (optional) gets one <see cref="AscentSample"/> per 0.1 sim-seconds of
+        /// skipped time, taken from the real stepped state right after the step that crossed the boundary. The
+        /// frame sampler only runs once per rendered frame, so without this a minutes-long skip starves the
+        /// debrief log to one sample per frame (~5 bars for a mostly-skipped flight). The cadence matches the
+        /// frame sampler's 0.1 s gate and no sample is fabricated: each one is the sim's own state at that time.
+        /// </para>
         /// </summary>
-        public static StageSkipRun Advance(DirectedFlight flight, PlayedChecks checks, int maxSteps)
+        public static StageSkipRun Advance(DirectedFlight flight, PlayedChecks checks, int maxSteps, Action<AscentSample> onSample = null)
         {
             if (flight == null) throw new ArgumentNullException(nameof(flight));
             var sim = flight.Sim;
@@ -148,6 +158,11 @@ namespace Kestrel.Core.Flight
             }
             if (maxSteps < 1) maxSteps = 1;
             double startT = sim.T;
+            // One sample per 0.1 sim-seconds from the stepped state (see the doc on Advance). The grid is
+            // anchored to absolute sim time (the next 0.1 s multiple), not to this call's start, so a skip
+            // split across frame chunks keeps one continuous grid — the same grid a real-time run samples on.
+            // The fixed 1/120 s step can cross at most one boundary per step.
+            double nextSampleT = Math.Ceiling(startT / SampleIntervalS) * SampleIntervalS;
             bool maxQBefore = sim.MaxQPassed;
             bool mecoBefore = checks != null && checks.Meco;
             int sepsBefore = CountEvents(sim, "separation");
@@ -159,6 +174,11 @@ namespace Kestrel.Core.Flight
                 int before = sim.Events.Count;
                 flight.Step();
                 run.Steps++;
+                if (onSample != null && sim.T >= nextSampleT)
+                {
+                    onSample(flight.Sample());
+                    nextSampleT += SampleIntervalS;
+                }
                 bool mecoNow = false;
                 if (checks != null)
                 {

@@ -267,6 +267,56 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void SkipSamplesTelemetryEveryTenthOfASimSecond()
+        {
+            // Area C, bug 3: the frame sampler runs once per rendered frame, so a mostly-skipped flight starved
+            // the debrief log to ~5 bars. The pump's sink gets one sample per 0.1 sim-seconds from the real
+            // stepped state — dense because the sim ran, not because frames ran.
+            const string id = "m3";
+            var skipped = Build(id);
+            var samples = new System.Collections.Generic.List<AscentSample>();
+            int frames = 0;
+            StageSkipRun run = null;
+            while (frames++ < 10000)
+            {
+                run = StageSkip.Advance(skipped.Flight, skipped.Checks, StageSkip.MaxStepsPerFrame, s => samples.Add(s));
+                if (run.Stop != StageSkipStop.Budget) break;
+            }
+            Assert.That(run.Stop, Is.EqualTo(StageSkipStop.Target), "m3 skips to Max-Q");
+            Assert.That(run.Reached, Is.EqualTo(StageSkipTarget.MaxQ));
+            Assert.That(frames, Is.LessThan(20), "a skip is a few frames, not a flight");
+            Assert.That(samples.Count, Is.GreaterThanOrEqualTo((int)(run.SimSeconds / StageSkip.SampleIntervalS) - 1),
+                "one sample per 0.1 sim-seconds of skipped time, not one per frame");
+            Assert.That(samples.Count, Is.GreaterThan(frames * 10), "density comes from sim seconds, not frames");
+            for (int i = 1; i < samples.Count; i++)
+            {
+                double gap = samples[i].T - samples[i - 1].T;
+                Assert.That(samples[i].T, Is.GreaterThan(samples[i - 1].T), "times climb");
+                Assert.That(gap, Is.GreaterThan(0.05).And.LessThan(0.16), "sample " + i + " gap " + gap);
+            }
+
+            // The samples are the sim's own state, not fills: step a real-time run to each sample's time and
+            // the state there is bit-identical.
+            var real = Build(id);
+            foreach (var s in samples)
+            {
+                while (real.Sim.T < s.T && !real.Sim.Done)
+                {
+                    int before = real.Sim.Events.Count;
+                    real.Flight.Step();
+                    real.Checks.NoteEvents(real.Sim, before);
+                    if (real.Checks.StopForBreakup(real.Sim)) break;
+                }
+                Assert.That(BitConverter.DoubleToInt64Bits(real.Sim.T), Is.EqualTo(BitConverter.DoubleToInt64Bits(s.T)),
+                    "sample T is a real step time");
+                var rs = real.Flight.Sample();
+                Assert.That(BitConverter.DoubleToInt64Bits(rs.AltM), Is.EqualTo(BitConverter.DoubleToInt64Bits(s.AltM)), "alt at " + s.T);
+                Assert.That(BitConverter.DoubleToInt64Bits(rs.SpeedMps), Is.EqualTo(BitConverter.DoubleToInt64Bits(s.SpeedMps)), "speed at " + s.T);
+                Assert.That(BitConverter.DoubleToInt64Bits(rs.QPa), Is.EqualTo(BitConverter.DoubleToInt64Bits(s.QPa)), "q at " + s.T);
+            }
+        }
+
+        [Test]
         public void StepBudgetKeepsTheSkipAcrossFrames()
         {
             var b = Build("m10");

@@ -63,6 +63,21 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void SkipSamplesTelemetryIntoTheDebriefLog()
+        {
+            // Area C, bug 3: the frame sampler starves while the sim fast-forwards, so the pump hands the
+            // FailureHost's sampler one sample per 0.1 sim-seconds from the stepped state.
+            string driver = Driver();
+            StringAssert.Contains("public Action<AscentSample> SkipSampler { get; set; }", driver,
+                "the driver holds the skip telemetry sink");
+            StringAssert.Contains("StageSkip.Advance(directed, checks, StageSkip.MaxStepsPerFrame, SkipSampler)", driver,
+                "the pump samples through the sink");
+            string app = App();
+            StringAssert.Contains("flight.SkipSampler = ", app, "SliceApp wires the sink when the rocket builds");
+            StringAssert.Contains("host.SampleSkip", app, "the sink is the FailureHost's, so skip samples land in the debrief log");
+        }
+
+        [Test]
         public void StageSkipIdIsInTheFlightControls()
         {
             Assert.That(UiIds.FlightStageSkip, Is.EqualTo("flight-stage-skip"));
