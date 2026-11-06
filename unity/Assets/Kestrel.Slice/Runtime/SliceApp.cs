@@ -2020,7 +2020,8 @@ namespace Kestrel.Slice
             if (voice == null || !counting || sequence == null) return;
             try
             {
-                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null), flightCalls);
+                var mission = AscentFlight.CurrentMission();
+                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null).With("mission", mission != null ? mission.Id : null), flightCalls);
                 voice.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
             }
             catch (System.Exception e) { Debug.LogWarning("[Count] narration: " + e.Message); }

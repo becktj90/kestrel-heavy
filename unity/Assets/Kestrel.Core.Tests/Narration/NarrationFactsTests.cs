@@ -96,6 +96,27 @@ namespace Kestrel.Core.Tests.Narration
         }
 
         [Test]
+        public void MissionFact_GatesHistoricalTakes_Decisions77()
+        {
+            LoadManifest();
+            Assert.IsTrue(NarrationRequires.KnownKey("mission"));
+            var m7 = takes.First(t => t.Id == "host/color.pad.m7.1");
+            Assert.AreEqual(1, m7.Claims);
+            var facts = new NarrationFacts().With("mission", "m7");
+            Assert.AreEqual("m7", facts.Mission);
+            Assert.IsTrue(NarrationRequires.Eligible(m7, facts));
+            Assert.IsFalse(NarrationRequires.Eligible(m7, new NarrationFacts()));
+            Assert.IsFalse(NarrationRequires.Eligible(m7, new NarrationFacts().With("mission", "m6")));
+            Assert.IsFalse(NarrationRequires.Eligible(m7, new NarrationFacts().With("mission", null)));
+            // Every mission-gated take in the shipped manifest is a color take with a mission claim.
+            foreach (var t in takes.Where(t => t.Requires.Any(r => r.Key == "mission")))
+            {
+                Assert.IsTrue(t.IsColor, t.Id);
+                Assert.AreEqual(1, t.Claims, t.Id);
+            }
+        }
+
+        [Test]
         public void Picker_OrdersByClaimsThenClipId_AndNullFactsOnlyGetNeutral()
         {
             var a = Tagged("a", 1); var b = Tagged("b", 3); var c = Tagged("c", 3); var n = new NarrationTake { Id = "n", Neutral = true, Tagged = true };
