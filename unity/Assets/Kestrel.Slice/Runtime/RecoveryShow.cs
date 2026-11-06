@@ -153,6 +153,23 @@ namespace Kestrel.Slice
             AimInset(pic.Inset && !SteerCamera, sample);
         }
 
+        /// <summary>
+        /// Skip to next stage (DECISIONS #78): advance the booster by <paramref name="simSeconds"/> — the same
+        /// sim-seconds the ascent skip just advanced, so the two sims stay in lockstep — at the fixed recovery
+        /// steps, and report the burn phase (or touchdown) the advance entered, so the ascent skip can stop there:
+        /// the first event on either timeline wins. None when it entered nothing, or when the booster has not
+        /// started or is already down.
+        /// </summary>
+        public StageSkipTarget SkipAdvance(double simSeconds)
+        {
+            if (HoldForCapture || !(simSeconds > 0) || landing == null || !landing.Started || landing.Touched) return StageSkipTarget.None;
+            int maxSteps = (int)Math.Ceiling(simSeconds / RecoverySim.NearDt) + 8;
+            var entered = landing.AdvanceSkip(Stick(), maxSteps, simSeconds);
+            if (entered == RecoveryPhase.Entry) return StageSkipTarget.EntryBurn;
+            if (entered == RecoveryPhase.Landing || entered == RecoveryPhase.Down) return StageSkipTarget.LandingBurn;
+            return StageSkipTarget.None;
+        }
+
         public void Aim(Camera cam, float groundY) => Aim(cam, groundY, 0f, 0f);
 
         /// <summary>Margin (viewport) kept between the booster's framing points and the HUD's top strip and bottom row.</summary>

@@ -30,7 +30,7 @@ namespace Kestrel.Slice
         readonly string[] ascentVal = new string[CellCount];
         readonly Color[] ascentInk = new Color[CellCount];
         BoosterHudReadout? booster;
-        Button primary, alternate, skip, assist, nudgeDown, nudgeUp, info;
+        Button primary, alternate, skip, assist, stageSkip, nudgeDown, nudgeUp, info;
         VisualElement health;
         Label healthDetail;
         Button[] healthButtons;
@@ -204,6 +204,7 @@ namespace Kestrel.Slice
             StyleButton(alternate);
             StyleButton(skip);
             StyleButton(assist);
+            StyleButton(stageSkip);
             StyleButton(nudgeDown);
             StyleButton(nudgeUp);
             if (info != null)
@@ -1124,6 +1125,25 @@ namespace Kestrel.Slice
                     : "Auto-assist is off. Tap to let the planned calls fly themselves.";
             }
             PlaceAssist(prompt);
+            if (stageSkip != null)
+            {
+                // Skip to next stage (#78): offered on the cruise row, never over a prompt (the prompt row is the
+                // decision; the skip waits). While skipping, the button is the tap-to-cancel back to real time.
+                bool skipping = flight.Skipping;
+                var target = skipping ? flight.SkipTarget : flight.NextSkipTarget;
+                // Hidden in slow-mo or while held (StartSkip would no-op there) — but never hidden mid-skip, so
+                // the tap-to-cancel is always there while one is running.
+                bool show = !prompt && flight.Running && !flight.Lost && target != StageSkipTarget.None
+                    && (skipping || (!flight.Held && Kestrel.Kit.CinematicEvents.PresentationScale == 1));
+                stageSkip.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+                if (show)
+                {
+                    stageSkip.text = skipping ? "Skipping…" : "Skip to next stage";
+                    stageSkip.tooltip = skipping
+                        ? "Skipping to " + StageSkip.Label(target) + ". Tap to stop and fly in real time."
+                        : "Skip to " + StageSkip.Label(target) + ". The same flight plays faster — no step is skipped. Stops at the next event, a call, or a failure.";
+                }
+            }
             if (promptRow != null) promptRow.style.display = prompt ? DisplayStyle.Flex : DisplayStyle.None;
             if (assistRow != null) assistRow.style.display = prompt ? DisplayStyle.None : DisplayStyle.Flex;
             bool showAlternate = prompt && prompts[0].ShowAlternate;
@@ -1204,6 +1224,7 @@ namespace Kestrel.Slice
                 if (primary != null) { primary.text = p.Primary; primary.style.display = DisplayStyle.Flex; }
                 if (alternate != null) { alternate.text = p.Alternate ?? ""; alternate.style.display = p.ShowAlternate ? DisplayStyle.Flex : DisplayStyle.None; }
                 if (skip != null) skip.style.display = DisplayStyle.Flex;
+                if (stageSkip != null) stageSkip.style.display = DisplayStyle.None; // Preview has no flight to skip.
                 if (nudgeDown != null) nudgeDown.style.display = DisplayStyle.None;
                 if (nudgeUp != null) nudgeUp.style.display = DisplayStyle.None;
                 nudgeRowOpen = p.ShowAlternate;
@@ -1216,6 +1237,7 @@ namespace Kestrel.Slice
                 if (primary != null) primary.style.display = DisplayStyle.None;
                 if (alternate != null) alternate.style.display = DisplayStyle.None;
                 if (skip != null) skip.style.display = DisplayStyle.None;
+                if (stageSkip != null) stageSkip.style.display = DisplayStyle.None; // Preview has no flight to skip.
                 // Present: showNudgeRow = director.Engineer || showAlternate, the nudges themselves for Engineer.
                 nudgeRowOpen = engineerNudges;
                 if (nudgeDown != null) { nudgeDown.text = "Nudge −1°"; nudgeDown.style.display = engineerNudges ? DisplayStyle.Flex : DisplayStyle.None; }
@@ -2065,6 +2087,13 @@ namespace Kestrel.Slice
             skip.tooltip = "Skip. The autopilot takes the planned action. This is not a fail.";
             assist = Action(UiIds.FlightAssist, OnAssist);
             assist.text = "Auto-assist";
+            // Skip to next stage (#78): the cruise row's second button, next to Auto-assist. It lives in the
+            // assist row (not the prompt row) so it is there when there is nothing to decide, and hides with the
+            // row while a call is open — a call is decided first, then the flight can skip on.
+            stageSkip = Action(UiIds.FlightStageSkip, OnStageSkip);
+            stageSkip.text = "Skip to next stage";
+            stageSkip.style.flexGrow = 1;
+            stageSkip.style.marginRight = 0;
             promptRow = new VisualElement { name = "ascent-prompt-row" };
             promptRow.style.flexDirection = FlexDirection.Row;
             primary.style.flexGrow = 1;
@@ -2075,6 +2104,7 @@ namespace Kestrel.Slice
             promptRow.Add(skip);
             assistRow = new VisualElement { name = "ascent-assist-row" };
             assistRow.Add(assist);
+            assistRow.Add(stageSkip);
             nudgeRow = new VisualElement { name = "ascent-nudge" };
             nudgeRow.style.flexDirection = FlexDirection.Row;
             nudgeDown = Action(UiIds.FlightNudgeDown, () => Nudge(-AscentDecisions.NudgeStepDeg));
@@ -2130,6 +2160,15 @@ namespace Kestrel.Slice
         {
             if (shown == default || flight == null || flight.Decisions == null) return;
             flight.Decisions.Skip(shown);
+            Present(flight);
+        }
+
+        /// <summary>Skip to next stage (#78): start the fast-forward, or tap again mid-skip to fly real time.</summary>
+        void OnStageSkip()
+        {
+            if (flight == null) return;
+            if (flight.Skipping) flight.CancelSkip();
+            else flight.StartSkip();
             Present(flight);
         }
 

@@ -288,6 +288,51 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>
+        /// Skip to next stage (DECISIONS #78): advance the booster by up to <paramref name="maxSeconds"/> of its own
+        /// clock, at the same fixed recovery steps <see cref="Step"/> takes (the step size depends only on the
+        /// booster's altitude, never on how presented time was sliced), so the landing is the one live stepping
+        /// flies. Returns the burn phase (or touchdown) the advance entered — Entry, Landing or Down — or null
+        /// when it ran out of budget without entering one. A booster already in its entry burn keeps advancing
+        /// toward the landing burn; one already in its landing burn keeps advancing to touchdown. The verdict is
+        /// published on touchdown, as <see cref="Step"/> does.
+        /// </summary>
+        public RecoveryPhase? AdvanceSkip(in RecoveryStick stick, int maxSteps, double maxSeconds)
+        {
+            if (!Started || Touched || body.Phase == RecoveryPhase.Down) return null;
+            if (maxSteps < 1) maxSteps = 1;
+            if (!(maxSeconds > 0)) maxSeconds = 0;
+            RecoveryPhase? entered = null;
+            double elapsed = 0;
+            int guard = 0;
+            var startPhase = body.Phase;
+            while (guard++ < maxSteps && elapsed < maxSeconds)
+            {
+                if (body.Phase == RecoveryPhase.Down) break;
+                RecoveryFrames.Axes(body.X, body.Y, out _, out double alt, out _, out _, out _, out _, out _);
+                double step = alt < RecoverySim.NearAlt ? RecoverySim.NearDt : RecoverySim.Dt;
+                var before = body.Phase;
+                RecoverySim.Step(ref body, craft, stick, step);
+                elapsed += step;
+                if (body.Phase != before)
+                {
+                    Remember();
+                    // A burn the advance started in does not count again: an entry burn that drops out and
+                    // lights again is the same burn, and the skip is heading for the next one (the landing burn).
+                    if (body.Phase != startPhase
+                        && (body.Phase == RecoveryPhase.Entry || body.Phase == RecoveryPhase.Landing || body.Phase == RecoveryPhase.Down))
+                    {
+                        entered = body.Phase;
+                        break;
+                    }
+                }
+            }
+            accum = 0;
+            Step(0, stick);
+            if (entered == null && body.Phase == RecoveryPhase.Down) entered = RecoveryPhase.Down;
+            return entered;
+        }
+
+        /// <summary>
         /// t466 (build 204, KH-3): the upper stage was in orbit, but the report waited for the booster (RecoveryLog.Active,
         /// FailureHost) and the rail for its Boostback, minutes of dead air. Once the ascent has ended without a failure
         /// (insertion or a clean cutoff), a booster still in the air finishes its landing at once on Auto-assist (the
