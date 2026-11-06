@@ -26,6 +26,10 @@ namespace Kestrel.Core.Flight
         public int Stages = 1;
         /// <summary>#313: flight-path angle at a clean engine cutoff, degrees (+ climbing, − diving); NaN on a burnout or failure.</summary>
         public double CutoffGammaDeg = double.NaN;
+        /// <summary>The pitch kick the flown design launched with, degrees; NaN when unknown. The flat/steep advice
+        /// names it, so the lever is the design's own kick: the old constant text always named 6°, which on an 8.65°
+        /// design told the player to set 6.5° — steeper, the opposite of the fix.</summary>
+        public double PitchKickDeg = double.NaN;
         /// <summary>#341: the closed-loop guidance computer was fitted. Without it every field below is ignored and the
         /// explanation is exactly the basic one.</summary>
         public bool GuidanceComputer;
@@ -59,15 +63,33 @@ namespace Kestrel.Core.Flight
         public const double FlightPathAngleOffDeg = 0.5;
         /// <summary>#313 (Physics): the steep advice's lever is a smaller pitch kick. MissReasonTests flies it on KH-12's 6° build:
         /// 4.5° lands every seed and the live pad (calm and seed-1 wind); 4° and 5° miss. One more upper engine is not the lever:
-        /// at 32,000 kg it tips KH-12 into a dive (753 x 447 km).</summary>
+        /// at 32,000 kg it tips KH-12 into a dive (753 x 447 km). The constant below is the unknown-kick fallback;
+        /// <see cref="SteepAdviceFor"/> names the flown kick when it is known.</summary>
         public const string SteepAdvice = "Your rocket flew too steep. Use a smaller pitch kick at launch (for example 6° → 4.5° in Guidance).";
         /// <summary>#313 (Physics): the flat advice's lever is a larger pitch kick. MissReasonTests flies it on the KH-3 (8° → 8.5°)
-        /// and KH-4 (6° → 6.5°) starters.</summary>
+        /// and KH-4 (6° → 6.5°) starters. The constant below is the unknown-kick fallback;
+        /// <see cref="FlatAdviceFor"/> names the flown kick when it is known.</summary>
         public const string FlatAdvice = "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).";
+        /// <summary>The flat advice's lever: the flown kick plus this, degrees. One designer step (DesignerKnobs.PitchDegStep).</summary>
+        public const double FlatKickStepDeg = 0.5;
+        /// <summary>The steep advice's lever: the flown kick minus this, degrees.</summary>
+        public const double SteepKickStepDeg = 1.5;
+
+        /// <summary>The flat advice for the kick the design actually flew, or <see cref="FlatAdvice"/> when it is unknown.</summary>
+        public static string FlatAdviceFor(double kickDeg)
+            => double.IsNaN(kickDeg) ? FlatAdvice
+                : "Your rocket flew too flat. Use a larger pitch kick at launch (for example " + Kick(kickDeg) + "° → " + Kick(kickDeg + FlatKickStepDeg) + "° in Guidance).";
+        /// <summary>The steep advice for the kick the design actually flew, or <see cref="SteepAdvice"/> when it is unknown.</summary>
+        public static string SteepAdviceFor(double kickDeg)
+            => double.IsNaN(kickDeg) ? SteepAdvice
+                : "Your rocket flew too steep. Use a smaller pitch kick at launch (for example " + Kick(kickDeg) + "° → " + Kick(kickDeg - SteepKickStepDeg) + "° in Guidance).";
+        /// <summary>One decimal when needed, so an integer kick reads as the old constant text did (6°, not 6.0°) and
+        /// 8.65° reads as the designer shows it (8.7°).</summary>
+        static string Kick(double deg) => Num(deg, "0.#");
 
         static bool FlightPathAngleOff(double gammaDeg) => !double.IsNaN(gammaDeg) && Math.Abs(gammaDeg) >= FlightPathAngleOffDeg;
 
-        public static MissInput FromFlight(CampaignFlight flight, int stages)
+        public static MissInput FromFlight(CampaignFlight flight, int stages, double pitchKickDeg = double.NaN)
         {
             if (flight == null) return null;
             return new MissInput
@@ -81,6 +103,7 @@ namespace Kestrel.Core.Flight
                 Extra = FlightDebrief.FromFlight(flight),
                 Stages = Math.Max(1, stages),
                 CutoffGammaDeg = flight.cutoffGammaDeg,
+                PitchKickDeg = pitchKickDeg,
                 GuidanceComputer = flight.guidanceComputer,
                 UpperOut = flight.guidanceComputer && flight.upperOut,
                 HandoffAltM = flight.handoffAltKm * 1000,
@@ -192,8 +215,8 @@ namespace Kestrel.Core.Flight
                         if (steep && f.PeriM < 0)
                             return Miss("fpa-steep-suborbital", reason, "Your rocket flew too steep and fell back down. Give " + top + " much more fuel (it can take double or more), so it burns long enough to level out.");
                         return steep
-                            ? Miss("fpa-steep", reason, SteepAdvice)
-                            : Miss("fpa-flat", reason, FlatAdvice);
+                            ? Miss("fpa-steep", reason, SteepAdviceFor(f.PitchKickDeg))
+                            : Miss("fpa-flat", reason, FlatAdviceFor(f.PitchKickDeg));
                     }
                     if (f.ApoM > apoGoal && !apoOk)
                     {

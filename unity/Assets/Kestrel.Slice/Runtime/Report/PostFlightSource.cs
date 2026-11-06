@@ -110,13 +110,17 @@ namespace Kestrel.Slice
                         extra.BoosterGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, true);
                     }
                     facts.Passed = FlightDebrief.GoalMet(row, intact, apo, peri, result.maxG, facts.LandingGrade, extra);
-                    // F4: an intact miss says why and what to change, from the same gates.
+                    // F4: an intact miss says why and what to change, from the same gates. The advice names the
+                    // kick the design actually flew (the sim's default when the design never set one), so the
+                    // flat/steep lever is never the old constant 6°.
                     facts.Miss = MissReason.Explain(row, new MissInput
                     {
                         Intact = intact, ApoM = apo, PeriM = peri, MaxG = result.maxG,
                         LandingGrade = facts.LandingGrade, Extra = extra,
                         Stages = design != null && design.stages != null ? design.stages.Count : 1,
                         CutoffGammaDeg = result.cutoffGammaDeg,
+                        PitchKickDeg = design != null && design.guidance != null && design.guidance.pitchKickDegSet
+                            ? design.guidance.pitchKickDeg : GuidanceProfile.DefaultKickDeg,
                     });
                 }
             }
