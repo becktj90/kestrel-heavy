@@ -85,6 +85,7 @@ namespace Kestrel.Core.Designer
                     return Overload;
                 case "overg": return OverG;
                 case "tumble": return Tumble;
+                case "axial-overload": return Overload;
                 case "thermal": return f.cause == "base-heating" ? BaseHeat : Heat;
                 case "cryo-material": return Cryo;
                 case "prop-depletion": return Short;

@@ -753,7 +753,15 @@ namespace Kestrel.Core.Flight
             double alphaEff = Math.Min(s.alphaRad, FailureModel.TumbleAlphaRad);
             double bend = useBend ? s.qPa * sec.area * cn * alphaEff * Math.Abs(cp - cg) : 0;
             double feq = sec.radius > 0 ? Math.Abs(2 * bend / sec.radius) : 0;
-            double axial = loadMassKg * s.accel + s.qPa * s.area * s.cd;
+            // #344: the axial load is the mass above × the axial acceleration. That acceleration already nets
+            // the drag (aAxial = thrust/mass − drag/mass), so no separate drag term is added: the step's
+            // q·area·cd is the CURRENT stage's own drag, and a stage's own drag does not load the interface
+            // above it (it is carried by the stage's own skin to the thrust structure). Adding it double-counts
+            // it and overstates the axial load — it was enough to break the SF 1.35 KH-6 "runs dry" scenario
+            // (a lighter rocket flies faster through thick air, so the spurious drag term grows). The drag on
+            // the mass above is real but small next to the inertial term, and loadMass × aAxial already carries
+            // the drag's share through the net acceleration.
+            double axial = loadMassKg * s.accel;
             double load = axial + feq;
             if (load > 0) ms = sec.fAllow / load - 1;
             if (axial > sec.fAllow) axialOverload = true;

@@ -297,12 +297,16 @@ namespace Kestrel.Core.Tests
             // #313: KH-6's rocket at half the upper-stage load no longer runs dry (it misses on flight-path angle). It runs
             // dry at 14% of the load, on every seed. The report's Fix it adds propellant until the test ascent is not short
             // and no seed runs dry. Under the new rule the mission still has to pass: KH-6's starter then cuts off at the
-            // target energy at a bad flight-path angle (413.9 x -14.3 km against 200 km), so Fix it reports not fixed.
+            // target energy at a bad flight-path angle (413.9 x -13.9 km against 200 km), so Fix it reports not fixed.
             // #335: 16% no longer runs dry - the fairing drop (89 kg shell off the top stage at the fairing event) gives
             // the rocket enough delta-v to reach the energy cutoff at 16% (415.9 x -15.9 km, fpa-miss). 14% runs dry on
             // every seed, so the run-dry fraction is now 0.14.
+            // #344: the raw build's strength 1.35 leaves the top stage's thin wall below the payload's axial load, so the
+            // rocket breaks up (axial-overload) before it can run dry. Strength 1.65 is the auto-build value for KH-6 and
+            // lets the stage carry the payload to the dry point this scenario is about.
             var mission = campaign.Mission(6);
             var json = Kh6RawBuild();
+            JsonMut.Set(json, "safetyFactor", 1.65);
             TopStageProp(json, 0.14);
             var raw = Fly(6, json);
             Assert.That(raw.TrueForAll(f => f.failure == "prop-depletion"), Seeds(mission, raw));

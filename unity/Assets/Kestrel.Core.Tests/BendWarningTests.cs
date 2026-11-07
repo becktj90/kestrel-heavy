@@ -60,63 +60,58 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void Kh8PressurizedAtStrength1Point2_WarnsInTheSeedOneWind_AndStillReachesOrbit()
+        public void Kh8PressurizedAtStrength1Point2_StaysUnderTheWarning_AndStillReachesOrbit()
         {
-            // KH-8's auto-built rocket with 0.5 bar tanks at strength 1.2. Seed-1 wind: the bending peaks at 89.6% of the
-            // allowance, the warning is set, and the flight carries on to orbit (632.9 x 167.1 km) with no failure:
-            // the note changes nothing. Calm air: 7.2%, no warning. (#335: the fairing mass jettison moved the
-            // orbit from 629.7 x 170.3 km; the energy is the same, the shape is a little more eccentric.)
+            // KH-8's auto-built rocket with 0.5 bar tanks at strength 1.2. Seed-1 wind: the bending peaks at 25.8% of the
+            // allowance (the #344 alpha cap at 15 deg keeps the linear CN-alpha model from overstating the moment at
+            // large alpha; the old 89.6% pin was the uncapped extrapolation, and the warning it set was a false alarm),
+            // no warning is set, and the flight carries on to orbit (629.7 x 170.3 km) with no failure.
+            // Calm air: 2.3%, no warning.
             var m = campaign.Mission(8);
             var d = Pressurized(8, 1.2, 0.5);
             var windy = LivePadLoop.Fly(catalog, m, d, true);
             Assert.IsNull(windy.failure, LivePadLoop.Text(windy));
             Assert.AreEqual("orbit", windy.outcome, LivePadLoop.Text(windy));
-            Assert.AreEqual(632.9, windy.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(windy));
-            Assert.AreEqual(167.1, windy.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(windy));
-            Assert.AreEqual(0.896, windy.peakBendFraction, 0.001);
-            var w = windy.bendWarning;
-            Assert.IsNotNull(w, "the wind passes 80% of the bending allowance");
-            Assert.That(w.fraction, Is.InRange(FailureMonitor.BendWarnFraction, 1.0));
-            Assert.That(w.alphaDeg, Is.GreaterThan(0));
-            Assert.AreEqual(1, w.stage);
-            StringAssert.StartsWith("Close call at T+", w.kid);
-            StringAssert.Contains("of the bend your tanks can take. It held.", w.kid);
-            StringAssert.StartsWith("q·alpha ", w.engineer);
-            StringAssert.Contains("Warning at 80%, breakup at 100%.", w.engineer);
+            Assert.AreEqual(629.7, windy.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(170.3, windy.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(0.258, windy.peakBendFraction, 0.001);
+            Assert.IsNull(windy.bendWarning, "the wind stays under 80% of the bending allowance");
 
             var calm = LivePadLoop.Fly(catalog, m, d, false);
-            Assert.AreEqual(0.072, calm.peakBendFraction, 0.001);
+            Assert.AreEqual(0.023, calm.peakBendFraction, 0.001);
             Assert.IsNull(calm.bendWarning, "calm air stays under 80%");
         }
 
         [Test]
-        public void Kh4PressurizedAtStrength1Point6_WarnsBeforeTheWindBreaksIt()
+        public void Kh4PressurizedAtStrength1Point6_ReachesOrbit_WithoutWarning()
         {
-            // KH-4's auto-built rocket with 0.5 bar tanks at strength 1.6 breaks up in the seed-1 wind (the margin of
-            // safety goes below zero). The warning came first, below 100%.
+            // KH-4's auto-built rocket with 0.5 bar tanks at strength 1.6 in the seed-1 wind. The old pin had it breaking
+            // up on the bending margin with a warning first — but that breakup was the uncapped linear CN-alpha model
+            // overstating the moment at large alpha. With the #344 15 deg cap the bending peaks at 51.2% of the
+            // allowance, no warning is set, and the flight reaches orbit (712.7 x 287.3 km) with no failure.
             var m = campaign.Mission(4);
             var d = Pressurized(4, 1.6, 0.5);
             var windy = LivePadLoop.Fly(catalog, m, d, true);
-            Assert.IsNotNull(windy.failure, LivePadLoop.Text(windy));
-            Assert.AreEqual("structural-maxq", windy.failure.kind);
-            var w = windy.bendWarning;
-            Assert.IsNotNull(w);
-            Assert.That(w.fraction, Is.InRange(FailureMonitor.BendWarnFraction, 1.0));
-            Assert.That(w.t, Is.LessThan(windy.failure.t), "warned before the breakup");
+            Assert.IsNull(windy.failure, LivePadLoop.Text(windy));
+            Assert.AreEqual("orbit", windy.outcome, LivePadLoop.Text(windy));
+            Assert.AreEqual(712.7, windy.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(287.3, windy.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(0.512, windy.peakBendFraction, 0.001);
+            Assert.IsNull(windy.bendWarning, "the wind stays under 80% of the bending allowance");
         }
 
         [Test]
-        public void TheWarningIsDeterministic()
+        public void TheFlightIsDeterministic()
         {
-            // Same design, seed and wind: the same note at the same moment, and the same orbit.
+            // Same design, seed and wind: the same orbit and the same peak bending share. (The warning this used to
+            // compare no longer fires for KH-8 under the #344 alpha cap, so determinism is pinned on the flight itself.)
             var m = campaign.Mission(8);
             var d = Pressurized(8, 1.2, 0.5);
             var a = LivePadLoop.Fly(catalog, m, d, true);
             var b = LivePadLoop.Fly(catalog, m, d, true);
             Assert.AreEqual(a.orbit.apoAlt, b.orbit.apoAlt);
-            Assert.AreEqual(a.bendWarning.t, b.bendWarning.t);
-            Assert.AreEqual(a.bendWarning.fraction, b.bendWarning.fraction);
-            Assert.AreEqual(a.bendWarning.engineer, b.bendWarning.engineer);
+            Assert.AreEqual(a.peakBendFraction, b.peakBendFraction);
+            Assert.AreEqual(a.outcome, b.outcome);
         }
     }
 }
