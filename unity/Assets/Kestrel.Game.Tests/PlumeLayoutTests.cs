@@ -182,6 +182,35 @@ namespace Kestrel.Game.Tests
             finally { UnityEngine.Object.DestroyImmediate(root); UnityEngine.Object.DestroyImmediate(deck); }
         }
 
+        // #403: after MECO/stage sep the S2 plume rendered as a solid red-orange blob. SetStagingTint's red
+        // afterglow (heat 1 through the collapse + afterglow, FlightStaging.Plume) latched in body startColor:
+        // ApplyPlume only calls it while heat/flash > 0, so nothing cleared it for the steady S2 burn, and the
+        // red startColor multiplied the whole body gradient flat. Apply must reset it every frame.
+        [Test]
+        public void StagingTintDoesNotLatchIntoTheNextBurn()
+        {
+            var root = new UnityEngine.GameObject("plume-test");
+            try
+            {
+                var pc = PlumeController.Create(root.transform, UnityEngine.Vector3.zero, 14f, null);
+                pc.Apply(1.0, PlumeShape.P0, 0);
+                Assert.That(pc.Body.main.startColor.color, Is.EqualTo(UnityEngine.Color.white), "steady burn: no tint");
+                // MECO collapse + afterglow: heat 1 tints the body red.
+                pc.SetStagingTint(1f, 0f);
+                Assert.That(pc.Body.main.startColor.color.r, Is.EqualTo(1f).Within(1e-4f));
+                Assert.That(pc.Body.main.startColor.color.g, Is.LessThan(0.3f), "heat 1: red afterglow");
+                // S2 steady burn: heat 0, Apply runs again — the red must not survive into it.
+                pc.Apply(1.0, PlumeShape.P0 * 0.5f, 1000);
+                Assert.That(pc.Body.main.startColor.color, Is.EqualTo(UnityEngine.Color.white), "#403: red tint latched into S2");
+                // While heat is live the tint still applies (Apply resets, SetStagingTint re-applies after it).
+                pc.Apply(1.0, PlumeShape.P0 * 0.5f, 1000);
+                pc.SetStagingTint(0.5f, 0f);
+                Assert.That(pc.Body.main.startColor.color.g, Is.LessThan(0.82f), "heat still tints while live");
+                Assert.That(pc.Body.main.startColor.color.g, Is.GreaterThan(0.3f), "heat 0.5: between burn yellow and red");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+
         [Test]
         public void BodyFadeInMatchesOffsetSilhouette()
         {
