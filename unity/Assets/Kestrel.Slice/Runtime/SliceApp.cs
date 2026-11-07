@@ -1732,7 +1732,17 @@ namespace Kestrel.Slice
                 staging?.Layout(UnitsPerPoint(), ascentHud != null ? ascentHud.BannerRowPt : 0f);
                 failureShow?.Arm(flight, reduced);
                 failureShow?.Layout(UnitsPerPoint());
-                recovery?.Arm(flight, staging, SliceData.Catalog, design, engineer, reduced);
+                // DECISIONS #79: with Auto-assist off the player flies the booster's final landing burn; on, the autopilot lands it.
+                // Same read as the ascent director's (AscentFlight.Prepare).
+                bool assist = true;
+                try
+                {
+                    var assistDoc = session != null ? session.Design : null;
+                    assist = Kestrel.Core.Designer.Stepper.StepperProgress.Read(assistDoc)
+                        .AutoAssistOn(engineer ? Kestrel.Core.Designer.Stepper.DesignerDepth.Engineer : Kestrel.Core.Designer.Stepper.DesignerDepth.Simple);
+                }
+                catch (System.Exception e) { Debug.LogWarning("[Recovery] auto-assist: " + e.Message); }
+                recovery?.Arm(flight, staging, SliceData.Catalog, design, engineer, reduced, assist);
                 recovery?.Layout(UnitsPerPoint());
             }
             catch (System.Exception e) { Debug.LogException(e); }
@@ -1914,6 +1924,7 @@ namespace Kestrel.Slice
             if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
             recovery?.Present(Time.unscaledDeltaTime);
+            HoldAscentForLandingBurn();
             if (recovery != null && ground != null)
                 recovery.Aim(cam, ground.position.y, ascentHud != null ? ascentHud.TopCover() : 0f, ascentHud != null ? ascentHud.BottomCover() : 0f);
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
@@ -1933,6 +1944,22 @@ namespace Kestrel.Slice
         /// booster and comes back with the ascent focus. Visibility, not display, so the header and dock never move;
         /// the "hidden" class still decides whether BACK TO DESIGN is shown at all.
         /// </summary>
+        bool heldForLandingBurn;
+
+        /// <summary>
+        /// DECISIONS #79: while the player flies the booster's landing burn the ascent clock holds (FlightDriver.Hold, the
+        /// sim is not stepped, so nothing upstairs waits on a thumb) and the ascent dock hides under the landing layer. Released
+        /// after the grade splash. The pause sheet's own hold still works: LateUpdate returns before this while it is up.
+        /// </summary>
+        void HoldAscentForLandingBurn()
+        {
+            bool burn = recovery != null && recovery.PlayerBurn;
+            ascentHud?.SetLandingBurn(burn);
+            if (flight == null) { heldForLandingBurn = false; return; }
+            if (burn) { flight.Hold(true); heldForLandingBurn = true; }
+            else if (heldForLandingBurn) { flight.Hold(false); heldForLandingBurn = false; }
+        }
+
         void ApplyHudFocus(FlightHudFocus focus)
         {
             bool ascent = BoosterHud.ShowsAscentChrome(focus);

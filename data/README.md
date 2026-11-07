@@ -13,6 +13,7 @@
 | fins.json | schemas/fins.schema.json | web/js/data/fins.js |
 | liveries.json | loader in Kestrel.Livery (no JSON Schema file) | earned paint schemes |
 | time-of-day.json | loader in Kestrel.Core.Flight.LaunchTime (no JSON Schema file) | per-mission launch lighting (`docs/TIME_OF_DAY.md`) |
+| arcade-landing.json | loader in Kestrel.Core.Flight.ArcadeLandingTune (no JSON Schema file) | the player-flown landing burn: hand-over, slider T/W, light-now cue, score multipliers, slow motion, drawn swell (DECISIONS #79) |
 | finishes.json | loader in Kestrel.Livery (no JSON Schema file) | per-part paint |
 | codex.json | schemas/codex.schema.json | CodexBook (Unity); web/js/data/gen/codex.js |
 | starter-readiness.json | loader in Kestrel.Core.Designer.StarterReadinessCopy (no JSON Schema file) | Starter screen Honest Ready badge and reason, kid + engineer per predicted cause |

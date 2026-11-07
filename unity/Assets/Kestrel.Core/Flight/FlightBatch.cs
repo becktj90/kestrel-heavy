@@ -29,6 +29,9 @@ namespace Kestrel.Core.Flight
         /// from the deck centre, sink, landing fuel left, and the hand-over speed and height. NaN when nothing was flown.</summary>
         public string landingCause;
         public double landingMissM = double.NaN, landingSink = double.NaN, landingPropLeftKg = double.NaN, separationSpeedMps = double.NaN, separationAltKm = double.NaN;
+        /// <summary>The rest of that hand-over (BoosterLanding.HandOver): downrange from the pad, metres, and the flight-path angle,
+        /// degrees. With separationSpeedMps and separationAltKm it is the state FlyPlanned flew (ArcadeLanding replays it). NaN when nothing was flown.</summary>
+        public double separationDownM = double.NaN, separationPitchDeg = double.NaN;
         /// <summary>#341: the design carried the closed-loop guidance computer; it flew the upper stage (guidanceInControl);
         /// a live nudge was held; the top stage burned dry before the cutoff energy (upperOut); and the state the part was
         /// handed at its first upper-stage step (altitude, flight-path angle, thrust over net gravity). All false or NaN without the part.</summary>
@@ -213,6 +216,8 @@ namespace Kestrel.Core.Flight
                     flight.landingPropLeftKg = landed != null ? landed.PropLeft : double.NaN;
                     flight.separationSpeedMps = separated ? shotSpeed : double.NaN;
                     flight.separationAltKm = separated ? shotAlt / 1000.0 : double.NaN;
+                    flight.separationDownM = separated ? shotDown : double.NaN;
+                    flight.separationPitchDeg = separated ? shotPitch : double.NaN;
                 }
                 if (mission.LandBoosters)
                     flight.boosterGrade = GradeLanding(catalog, design, sim, mission.LandingMode, true);

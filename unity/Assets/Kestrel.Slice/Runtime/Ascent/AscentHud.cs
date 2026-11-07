@@ -111,6 +111,7 @@ namespace Kestrel.Slice
 
         public void Close()
         {
+            landingBurn = false;
             // Hand the tools row (Follow, Cam, Pause) back to the flex flow before the HUD goes.
             ClearWidePins();
             UnwatchTools();
@@ -1679,6 +1680,22 @@ namespace Kestrel.Slice
         {
             booster = readout;
             if (root != null) PaintFocus();
+        }
+
+        bool landingBurn;
+
+        /// <summary>
+        /// DECISIONS #79: while the player flies the booster's landing burn (RecoveryShow.PlayerBurn) the ascent is held and
+        /// RecoveryShow's landing layer owns the band between the top strip and the tools row, so the ascent dock (calls,
+        /// assist, nudges) and the trajectory line hide by visibility (nothing moves) and come back after the grade splash.
+        /// </summary>
+        public void SetLandingBurn(bool on)
+        {
+            if (landingBurn == on) return;
+            landingBurn = on;
+            SetShown(actions, !on);
+            SetShown(plot, !on);
+            SetShown(dockSpacer, !on);
         }
 
         void PaintFocus()

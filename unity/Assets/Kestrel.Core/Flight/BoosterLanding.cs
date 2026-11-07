@@ -288,6 +288,31 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>
+        /// Fly on at the fixed recovery steps (the same ones <see cref="Step"/> and <see cref="Settle"/> take) until
+        /// <paramref name="until"/> holds for the body, touchdown, or <paramref name="maxSteps"/>. ArcadeLandingSession uses it
+        /// to run the autopilot to the player's hand-over at once. True when <paramref name="until"/> holds.
+        /// </summary>
+        public bool AdvanceUntil(in RecoveryStick stick, Func<RecoveryBody, bool> until, int maxSteps = SettleSteps)
+        {
+            if (!Started || Touched || until == null) return false;
+            int guard = 0;
+            while (body.Phase != RecoveryPhase.Down && guard++ < maxSteps)
+            {
+                if (until(body)) break;
+                RecoveryFrames.Axes(body.X, body.Y, out _, out double alt, out _, out _, out _, out _, out _);
+                double step = alt < RecoverySim.NearAlt ? RecoverySim.NearDt : RecoverySim.Dt;
+                var before = body.Phase;
+                RecoverySim.Step(ref body, craft, stick, step);
+                if (body.Phase != before) Remember();
+            }
+            accum = 0;
+            bool met = until(body);
+            if (body.Phase == RecoveryPhase.Down) Step(0, stick);
+            else RecoveryLog.Tick(body.T);
+            return met;
+        }
+
+        /// <summary>
         /// t466 (build 204, KH-3): the upper stage was in orbit, but the report waited for the booster (RecoveryLog.Active,
         /// FailureHost) and the rail for its Boostback, minutes of dead air. Once the ascent has ended without a failure
         /// (insertion or a clean cutoff), a booster still in the air finishes its landing at once on Auto-assist (the

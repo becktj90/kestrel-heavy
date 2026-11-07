@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "note": "DECISIONS #79: the player flies the final landing burn onto Haven or the pad. Loader: Kestrel.Core.Flight.ArcadeLandingTune (no JSON Schema file; ArcadeLandingTests pins Default to this file). The autopilot (RecoveryGuidance) flies boostback and entry and hands over on the suicide-burn curve. Player input becomes a RecoveryStick into the same RecoverySim step the autopilot uses; nothing here is a force. Grades still come from RecoveryScore and data/landing.json; the score below is a points layer on top and never changes a grade. Slow motion is a PresentationTimeScale (fed time only, never a physics dt). Deck heave and roll are drawn only: the sim deck is flat at sea level.",
+  "handover": {
+    "note": "Hand over once the stage is falling after its entry burn, no higher than maxAltM, and at most leadSec (at the current sink) above the light-now height (cue.lightNowRatio x the stopping height at full slider, sink^2 / 2(maxTw - 1)g); or as soon as the autopilot opens its landing burn, whichever is first.",
+    "leadSec": 6,
+    "maxAltM": 3500
+  },
+  "controls": {
+    "note": "The throttle slider 0..1 commands thrust over weight: under cutoffInput is engine off, full travel is maxTw (or the engine's whole thrust if that is less), turned into the engine throttle for the stage's mass and height each frame. A near-empty core lights at a T/W of 10 to 20, which stops a 260 m/s fall in about 1.5 s; the landing limit makes it a burn of about ten seconds a thumb can fly. The engine throttles its whole range, as it does for the autopilot. Steer -1..1 (+ leans the thrust toward +east) commands a lean of steer * maxTiltDeg; the stage still turns at RecoverySim.PitchRate.",
+    "maxTiltDeg": 14,
+    "maxTw": 3.5,
+    "cutoffInput": 0.04
+  },
+  "cue": {
+    "note": "ratio = height / stopping height at full slider (maxTw). LIGHT NOW at or under lightNowRatio; TOO LATE under lateRatio (even full slider cannot stop before the deck, drag ignored).",
+    "lightNowRatio": 1.3,
+    "lateRatio": 1.0
+  },
+  "score": {
+    "note": "points = base[grade] * centre * soft * fuel, rounded. Multipliers only on a clean touchdown (no RecoveryScore cause). Each list is checked in order; the first tier met wins, else x1. fuel left01 is the share of the propellant the player was handed that is still aboard.",
+    "base": { "Perfect": 1000, "Good": 600, "Hard": 250, "Salvage": 100 },
+    "centre": [ { "withinM": 3, "x": 2.0, "call": "BULLSEYE" }, { "withinM": 8, "x": 1.5, "call": "CENTRE" }, { "withinM": 15, "x": 1.2, "call": "ON THE PAINT" } ],
+    "soft": [ { "sinkMps": 0.6, "x": 2.0, "call": "FEATHER" }, { "sinkMps": 1.0, "x": 1.5, "call": "SOFT" }, { "sinkMps": 1.5, "x": 1.2, "call": "SMOOTH" } ],
+    "fuel": [ { "left01": 0.8, "x": 1.5, "call": "FUEL MISER" }, { "left01": 0.65, "x": 1.25, "call": "FUEL LEFT" } ]
+  },
+  "slowMo": {
+    "note": "Below altM on the player's burn, and for holdSec of real time after touchdown, presented time runs at scale. Reduce Motion keeps it (it moves nothing extra).",
+    "altM": 18,
+    "scale": 0.35,
+    "holdSec": 1.4
+  },
+  "deck": {
+    "note": "Drawn swell on Haven only (a pad does not move): heave metres and roll degrees, two sines.",
+    "heaveM": 0.35,
+    "rollDeg": 1.4,
+    "periodSec": 8.5
+  }
+}
