@@ -19,6 +19,9 @@ namespace Kestrel.Core.Physics
         public int Mode { get; private set; }
         public double PitchCmd { get; private set; } = Math.PI / 2;
         public bool Thrusting { get; private set; } = true;
+        /// <summary>#440: steps on which the upper-stage alpha clamp actually moved the pitch command.
+        /// 0 means the clamp never engaged and the flight is bit-identical to the pre-clamp sim.</summary>
+        public int AlphaClampSteps;
         public double T { get; private set; }
         public bool Done { get; private set; }
         public readonly List<SimEvent> Events = new List<SimEvent>();
@@ -197,6 +200,25 @@ namespace Kestrel.Core.Physics
             if (q > maxQ) { maxQ = q; maxQTime = T; }
             double gl = Gravity.MU_EARTH / (r * r);
             double v = JsMath.Hypot(vx, vy);
+            // #440: same upper-stage alpha clamp as Headless.AscentSim (2D): in sensible air a stage with control
+            // authority must not hold a fixed pitch far off the air-relative velocity. Clamp the commanded
+            // in-plane angle of attack to the 15° the breakup rule allows, slewed at RecoverySim.PitchRate.
+            // The 3D flight-path angle uses all three air-relative components; the pitch command is the same
+            // in-plane angle as in 2D, so the clamp is identical. Without it the 3D sim diverges from the 2D
+            // sim (and the JS reference) on any ascent whose program pitch exceeds 15° in q > 20 kPa.
+            if (Thrusting && Mode != 2 && q > Flight.FailureModel.TumbleQPa && vrel > 1)
+            {
+                double gammaAir = Math.Atan2(avx * ux + avy * uy + avz * uz, avx * tx + avy * ty + avz * tz);
+                double lo = gammaAir - Flight.FailureModel.TumbleAlphaRad;
+                double hi = gammaAir + Flight.FailureModel.TumbleAlphaRad;
+                double want = PitchCmd;
+                if (want < lo) want = lo;
+                else if (want > hi) want = hi;
+                double step = Flight.RecoverySim.PitchRate * dt;
+                if (want > PitchCmd + step) { PitchCmd += step; AlphaClampSteps++; }
+                else if (want < PitchCmd - step) { PitchCmd -= step; AlphaClampSteps++; }
+                else if (want != PitchCmd) { PitchCmd = want; AlphaClampSteps++; }
+            }
             if (o.monitor != null && Watch(alt, q, m, vrel, p, rho, sound, avx, avy, avz, ux, uy, uz, tx, ty, tz, dt))
                 Fail(alt, v);
             if (Thrusting && StageIdx < st.Length)
@@ -346,6 +368,7 @@ namespace Kestrel.Core.Physics
                 lossGravity = lossG, lossDrag = lossD, lossSteering = lossS,
                 idealDeltaV = Headless.StackDeltaV(stagesIn, o.payload).total, deltaVExpended = dvExp, finalMass = Y[6],
                 x = Y[0], y = Y[1], vx = Y[3], vy = Y[4], m = Y[6], samples = Samples, warnings = warnings,
+                alphaClampSteps = AlphaClampSteps,
             };
             if (o.monitor != null)
             {
