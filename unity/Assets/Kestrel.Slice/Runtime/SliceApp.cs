@@ -1710,7 +1710,7 @@ namespace Kestrel.Slice
             catch (System.Exception) { reduced = false; }
             AscentHook hook = null;
             var doc = session != null ? session.Design : null;
-            try { PostFlightSource.Arm(SliceData.Catalog, design, doc, engineer); }
+            try { PostFlightSource.Arm(SliceData.Catalog, design, doc, engineer, starterMode); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
             try { hook = AscentFlight.Prepare(SliceData.Catalog, design, doc, engineer, reduced); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }

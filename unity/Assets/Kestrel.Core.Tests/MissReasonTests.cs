@@ -110,7 +110,7 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(flight.passed, "m6 raw build misses");
             Assert.IsNotNull(x, "m6 raw build has a reason");
             Assert.AreEqual("apo-high", x.Code);
-            Assert.AreEqual("Missed the 200 km circle: the orbit flew 188 km × 212 km, and the high point needs 190 km to 210 km. That is about 4 m/s too fast at the low point. The low point, 188 km, needs 190 km to 210 km.", x.Reason);
+            Assert.AreEqual("Missed the 200 km circle: the orbit flew 188 km × 212 km, and both points need 190 km to 210 km. That is about 4 m/s too fast at the low point.", x.Reason);
             Assert.AreEqual("Add fuel to stage 3, about 2% at a time (up to 10%), until the high point comes down into the band.", x.Advice);
             Assert.AreEqual(x.Reason + " " + x.Advice, x.Line);
         }
@@ -601,6 +601,89 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("orbit-low", x.Code);
             StringAssert.Contains("it topped out at 36 km of 200 km", x.Reason);
             StringAssert.Contains("km/s", x.Reason);
+        }
+
+        /// <summary>Trevor 11-07, KH-3 on the device: 470 x -394 km, the top stage burned dry (no clean cutoff). The card said
+        /// "79 m/s too fast at the low point" and "add fuel to stage 2 until the high point comes down", and named the band
+        /// twice. It never reached orbit: it lacked sideways speed and ran out of push.</summary>
+        [Test]
+        public void Suborbital_RanOutOfPush_SaysItNeverReachedOrbit()
+        {
+            var x = MissReason.Explain(Row("circular", 200, 200), Flown(470, -394));
+            Assert.AreEqual("suborbital-short", x.Code, x.Line);
+            StringAssert.StartsWith("Didn't reach orbit. It climbed to 470 km but wasn't going fast enough sideways, so it fell back down (about ", x.Reason);
+            StringAssert.EndsWith(" m/s short at the top). The 200 km circle needs 190 km to 210 km all the way round.", x.Reason);
+            Assert.AreEqual("It ran out of push before it was going fast enough. Add fuel to stage 2, or add a stage.", x.Advice);
+            Assert.IsFalse(x.Line.Contains("too fast"), x.Line);
+            Assert.IsFalse(x.Line.Contains("comes down"), x.Line);
+            Assert.AreEqual(1, Count(x.Line, "190 km to 210 km"), "the band once: " + x.Line);
+            // The sideways shortfall at 470 km: circular speed there minus the arc's speed at its top, about 257 m/s.
+            double ra = Kestrel.Core.Physics.Gravity.R_EARTH + 470000, rp = Kestrel.Core.Physics.Gravity.R_EARTH - 394000;
+            double mu = Kestrel.Core.Physics.Gravity.MU_EARTH;
+            double gap = Math.Sqrt(mu / ra) - Math.Sqrt(mu * (2 / ra - 2 / (rp + ra)));
+            StringAssert.Contains("about " + Math.Round(gap).ToString(System.Globalization.CultureInfo.InvariantCulture) + " m/s short", x.Reason);
+
+            var starter = Flown(470, -394); starter.Starter = true;
+            var s = MissReason.Explain(Row("circular", 200, 200), starter);
+            Assert.AreEqual("suborbital-short", s.Code);
+            Assert.AreEqual("It ran out of push. Try more fuel or another stage. " + MissReason.StarterReset, s.Advice);
+        }
+
+        /// <summary>The energy was there (mean altitude in the band), but it lofted and fell back: the lever is a larger kick,
+        /// or Reset on the Starter, which has no kick control. KH-3's Starter at Kerosene and the second fuel dot, calm air.</summary>
+        [Test]
+        public void Suborbital_WithTheEnergy_ClimbedTooSteeply()
+        {
+            var f = Flown(408, -8); f.PitchKickDeg = 8;
+            var x = MissReason.Explain(Row("circular", 200, 200), f);
+            Assert.AreEqual("suborbital-steep", x.Code, x.Line);
+            StringAssert.StartsWith("Didn't reach orbit. It climbed to 408 km", x.Reason);
+            Assert.AreEqual("It had the push but climbed too steeply. Use a larger pitch kick at launch so it turns sideways sooner (for example 8° → 8.5° in Guidance).", x.Advice);
+            f.Starter = true;
+            Assert.AreEqual("It had the push but climbed too steeply. " + MissReason.StarterReset, MissReason.Explain(Row("circular", 200, 200), f).Advice);
+        }
+
+        /// <summary>Too high but a real orbit (both points above the ground, the low point on target): the overshoot text
+        /// stays, and names the band once.</summary>
+        [Test]
+        public void TooHigh_BoundOrbit_KeepsTheOvershootAdvice()
+        {
+            var x = MissReason.Explain(Row("circular", 200, 200), Flown(260, 198));
+            Assert.AreEqual("apo-high", x.Code, x.Line);
+            StringAssert.StartsWith("Missed the 200 km circle: the orbit flew 198 km × 260 km, and the high point needs 190 km to 210 km. That is about ", x.Reason);
+            StringAssert.EndsWith(" m/s too fast at the low point.", x.Reason);
+            Assert.AreEqual(1, Count(x.Line, "190 km to 210 km"), x.Line);
+        }
+
+        /// <summary>Too low: the orbit holds but under the band. Unchanged: the speed shortfall and "add fuel".</summary>
+        [Test]
+        public void TooLow_BoundOrbit_SaysTheShortfall()
+        {
+            var x = MissReason.Explain(Row("circular", 200, 200), Flown(170, 150));
+            Assert.AreEqual("orbit-low", x.Code, x.Line);
+            StringAssert.Contains("the orbit flew 150 km × 170 km", x.Reason);
+            Assert.AreEqual("Add fuel to stage 2, or another stage.", x.Advice);
+        }
+
+        /// <summary>The Starter has no kick control: a tilted cutoff names Reset there, not Guidance.</summary>
+        [Test]
+        public void FlightPathAngleMiss_FromTheStarter_NamesReset()
+        {
+            var climbing = Flown(412, -12); climbing.CutoffGammaDeg = 1.8; climbing.Starter = true;
+            var x = MissReason.Explain(Row("circular", 200, 200), climbing);
+            Assert.AreEqual("fpa-steep-suborbital", x.Code);
+            Assert.AreEqual("Your rocket flew too steep and fell back down. " + MissReason.StarterReset, x.Advice);
+            var diving = Flown(857, 343); diving.CutoffGammaDeg = -1.1; diving.Starter = true;
+            var flat = MissReason.Explain(Row("circular", 600, 600), diving);
+            Assert.AreEqual("fpa-flat", flat.Code);
+            Assert.AreEqual("Your rocket flew too flat. " + MissReason.StarterReset, flat.Advice);
+        }
+
+        static int Count(string text, string part)
+        {
+            int n = 0;
+            for (int i = text.IndexOf(part, StringComparison.Ordinal); i >= 0; i = text.IndexOf(part, i + part.Length, StringComparison.Ordinal)) n++;
+            return n;
         }
 
         [Test]

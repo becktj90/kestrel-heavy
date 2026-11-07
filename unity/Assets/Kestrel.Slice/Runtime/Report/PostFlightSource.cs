@@ -25,6 +25,7 @@ namespace Kestrel.Slice
         static Catalog catalog;
         static Design design;
         static bool engineer;
+        static bool starter;
 
         public static void Bind(Action relaunch, Action home, Action designer = null)
         {
@@ -33,11 +34,14 @@ namespace Kestrel.Slice
             OpenDesigner = designer;
         }
 
-        public static void Arm(Catalog cat, Design flying, JsonObject doc, bool engineerDepth)
+        /// <param name="fromStarter">Launched from the Starter screen: the miss advice names the Starter's controls (Reset),
+        /// not the pitch kick or one stage's fuel it does not have (MissInput.Starter).</param>
+        public static void Arm(Catalog cat, Design flying, JsonObject doc, bool engineerDepth, bool fromStarter = false)
         {
             catalog = cat;
             design = flying;
             engineer = engineerDepth;
+            starter = fromStarter;
             if (design == null && doc != null)
             {
                 try { design = Design.FromJson(doc); }
@@ -121,6 +125,7 @@ namespace Kestrel.Slice
                         CutoffGammaDeg = result.cutoffGammaDeg,
                         PitchKickDeg = design != null && design.guidance != null && design.guidance.pitchKickDegSet
                             ? design.guidance.pitchKickDeg : GuidanceProfile.DefaultKickDeg,
+                        Starter = starter,
                     });
                 }
             }
