@@ -966,13 +966,14 @@
             "rcs": false
           },
           "guidance": {
-            "pitchKickDeg": 4.5,
+            "pitchKickDeg": 6,
             "gLimit": 5
           },
           "heatShield": true,
           "missionId": "m12",
           "avionics": {
-            "tier": "redundant"
+            "tier": "redundant",
+            "guidanceComputer": true
           },
           "safetyFactor": 1.55,
           "livery": {
