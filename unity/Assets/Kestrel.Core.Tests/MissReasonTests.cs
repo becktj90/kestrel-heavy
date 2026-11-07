@@ -486,11 +486,12 @@ namespace Kestrel.Core.Tests
             kick.guidance.pitchKickDeg = 4.5;
             AssertEverySeed(m, kick, "the advice: kick 6° → 4.5°");
 
-            // weak-upper: 0.584 g on 32,000 kg (no warning), 0.476 g on 40,000 kg (warning). Rule: 0.5 g.
+            // weak-upper: 0.583 g on 32,000 kg (no warning), 0.476 g on 40,000 kg (warning). Rule: 0.5 g.
+            // #340: 0.584 -> 0.583 - the guidance computer's mass lowers the upper-stage TWR slightly.
             var json = JsonMut.CloneObject(HomeAutoBuild.Choose(catalog, hangar.templates, m).Design);
             JsonMut.Set(json.Obj("guidance"), "pitchKickDeg", 6.0);
             var quick = Readout.Quick(catalog, json);
-            Assert.AreEqual(0.584, quick.stages[quick.stages.Count - 1].twrVac, 0.0005);
+            Assert.AreEqual(0.583, quick.stages[quick.stages.Count - 1].twrVac, 0.0005);
             CollectionAssert.DoesNotContain(Validate.Engineering(catalog, json).warnings.ConvertAll(w => w.code), "weak-upper");
             var heavy = JsonMut.CloneObject(json);
             JsonMut.Set((JsonObject)heavy.Arr("stages")[1], "propMass", 40000.0);
