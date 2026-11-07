@@ -104,15 +104,19 @@ namespace Kestrel.Core.Tests
             Assert.IsNotNull(v);
             Assert.AreEqual(StarterVerdict.Short, v.Cause, "predictor " + v.Outcome);
 
-            // The card: never reached orbit, ran out of push; on the Starter, Reset.
+            // The card: never reached orbit; on the Starter, Reset. #335: the fairing drop gives the
+            // rocket more push, so the energy cutoff now fires while it is already diving 1.1 deg,
+            // and MissReason calls it a flat miss (it has the energy - apo 461 km - but cuts off
+            // diving, so the low point is under the ground). Was "suborbital-short" before #335,
+            // when the cutoff fired near level.
             var x = MissReason.Explain(mission, new MissInput
             {
                 ApoM = MissionScore.FlownApoAltM(live), PeriM = live.orbit.periAlt, MaxG = live.maxG, Stages = design.stages.Count,
                 CutoffGammaDeg = live.cutoffGammaDeg, PitchKickDeg = design.guidance.pitchKickDeg, Starter = true,
             });
             Assert.IsNotNull(x, text);
-            Assert.AreEqual("suborbital-short", x.Code, x.Line);
-            StringAssert.StartsWith("Didn't reach orbit. It climbed to 461 km", x.Reason);
+            Assert.AreEqual("fpa-flat", x.Code, x.Line);
+            StringAssert.StartsWith("Missed the 200 km circle: the orbit flew -90.9 km × 461 km", x.Reason);
             StringAssert.EndsWith(MissReason.StarterReset, x.Advice);
         }
 

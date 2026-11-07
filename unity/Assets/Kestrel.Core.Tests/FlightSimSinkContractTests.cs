@@ -258,22 +258,18 @@ namespace Kestrel.Core.Tests
 
         static void SameExceptFairing(SimResult a, SimResult b)
         {
+            // a = without (no fairing event), b = flown (fairing dropped at the event).
+            // #335: the fairing drop removes mass, so the flown flight is lighter and reaches
+            // the target energy sooner. The two sims are NOT bit-identical; what must hold is
+            // the same outcome, the same event sequence (minus the fairing event), and the
+            // flown flight finishing no later than the one that kept the shell.
             Assert.AreEqual(a.outcome, b.outcome);
-            Assert.AreEqual(a.time, b.time, 0);
-            Assert.AreEqual(a.maxQ, b.maxQ, 0);
-            Assert.AreEqual(a.x, b.x, 0);
-            Assert.AreEqual(a.y, b.y, 0);
-            Assert.AreEqual(a.vx, b.vx, 0);
-            Assert.AreEqual(a.vy, b.vy, 0);
-            Assert.AreEqual(a.m, b.m, 0);
-            Assert.AreEqual(a.orbit.periAlt, b.orbit.periAlt, 0);
-            Assert.AreEqual(a.orbit.apoAlt, b.orbit.apoAlt, 0);
+            Assert.LessOrEqual(b.time, a.time, "the fairing drop can only make the flight finish sooner");
             var rest = b.events.FindAll(e => e.type != "fairing");
             Assert.AreEqual(a.events.Count, rest.Count);
             for (int i = 0; i < rest.Count; i++)
             {
                 Assert.AreEqual(a.events[i].type, rest[i].type);
-                Assert.AreEqual(a.events[i].t, rest[i].t, 0);
             }
         }
 

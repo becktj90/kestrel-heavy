@@ -130,7 +130,7 @@ export default {
           "propellant": "methalox",
           "engine": "gg-methalox-small",
           "engineCount": 1,
-          "propMass": 5800,
+          "propMass": 5900,
           "diameter": 1.8
         }
       ],

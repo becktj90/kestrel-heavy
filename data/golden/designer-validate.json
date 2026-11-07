@@ -184,7 +184,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -211,13 +211,13 @@
     "blocks": [],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 1.8472496036516601,
-     "totalDeltaV": 11379.051821314517,
-     "margin": 0.29900530929695435,
+     "liftoffTWR": 1.8429213685633594,
+     "totalDeltaV": 11384.427730516658,
+     "margin": 0.2996190102190996,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 44713.50979744895,
-     "cost": 795984230,
+     "liftoffMass": 44818.52273252456,
+     "cost": 796123948,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -226,16 +226,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.8472496036516601,
-       "twrVac": 2.0524995596129556,
-       "deltaV": 4940.88587292527
+       "twr": 1.8429213685633594,
+       "twrVac": 2.0476904095148436,
+       "deltaV": 4913.678609463561
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.51766463120433,
-       "twrVac": 1.51766463120433,
-       "deltaV": 6438.165948389247
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -1518,7 +1518,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -1551,13 +1551,13 @@
     ],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 0.4176928952240466,
-     "totalDeltaV": 11590.112622320248,
-     "margin": 0.32309950496423806,
+     "liftoffTWR": 0.41669710344337657,
+     "totalDeltaV": 11592.642782125122,
+     "margin": 0.32338834194920935,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 43943.50979744895,
-     "cost": 709191927,
+     "liftoffMass": 44048.52273252456,
+     "cost": 709331645,
      "reliability": 0.96351660999,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -1566,16 +1566,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 0.4176928952240466,
-       "twrVac": 0.46410321691560735,
-       "deltaV": 5151.946673931002
+       "twr": 0.41669710344337657,
+       "twrVac": 0.46299678160375174,
+       "deltaV": 5121.893661072025
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.51766463120433,
-       "twrVac": 1.51766463120433,
-       "deltaV": 6438.165948389247
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -1640,7 +1640,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 0,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -1734,7 +1734,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -1828,7 +1828,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -1862,13 +1862,13 @@
     ],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 5.855015473961433,
-     "totalDeltaV": 10851.635588126914,
-     "margin": 0.23879673499054505,
+     "liftoffTWR": 5.841969184279845,
+     "totalDeltaV": 10863.29567757879,
+     "margin": 0.24012782288281503,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 47023.50979744895,
-     "cost": 997294336,
+     "liftoffMass": 47128.52273252456,
+     "cost": 997434054,
      "reliability": 0.8982941524181798,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -1877,16 +1877,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 5.855015473961433,
-       "twrVac": 6.505572748846037,
-       "deltaV": 4413.4696397376665
+       "twr": 5.841969184279845,
+       "twrVac": 6.491076871422051,
+       "deltaV": 4392.546556525692
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.51766463120433,
-       "twrVac": 1.51766463120433,
-       "deltaV": 6438.165948389247
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -1951,7 +1951,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 6
      }
     ],
@@ -1990,13 +1990,13 @@
     ],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 1.8472496036516601,
-     "totalDeltaV": 11379.051821314517,
-     "margin": 0.29900530929695435,
+     "liftoffTWR": 1.8429213685633594,
+     "totalDeltaV": 11384.427730516658,
+     "margin": 0.2996190102190996,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 44713.50979744895,
-     "cost": 852219886,
+     "liftoffMass": 44818.52273252456,
+     "cost": 852284637,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -2005,16 +2005,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.8472496036516601,
-       "twrVac": 2.0524995596129556,
-       "deltaV": 4940.88587292527
+       "twr": 1.8429213685633594,
+       "twrVac": 2.0476904095148436,
+       "deltaV": 4913.678609463561
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.51766463120433,
-       "twrVac": 1.51766463120433,
-       "deltaV": 6438.165948389247
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -2469,7 +2469,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -2498,17 +2498,17 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.04 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ],
     "readout": {
-     "liftoffTWR": 1.0364488786622201,
-     "totalDeltaV": 11497.064795925366,
-     "margin": 0.31247738790180507,
+     "liftoffTWR": 1.033996328822737,
+     "totalDeltaV": 11500.874226651636,
+     "margin": 0.3129122633920068,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 44273.50979744895,
-     "cost": 749083560,
+     "liftoffMass": 44378.52273252456,
+     "cost": 749223278,
      "reliability": 0.9679511951874789,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -2517,16 +2517,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.0364488786622201,
-       "twrVac": 1.1516098651802444,
-       "deltaV": 5058.898847536119
+       "twr": 1.033996328822737,
+       "twrVac": 1.148884809803041,
+       "deltaV": 5030.125105598539
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.51766463120433,
-       "twrVac": 1.51766463120433,
-       "deltaV": 6438.165948389247
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -2763,7 +2763,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -2792,17 +2792,17 @@
      {
       "code": "dv-margin",
       "tab": "propellants",
-      "msg": "About 1436 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+      "msg": "About 1425 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
      }
     ],
     "readout": {
-     "liftoffTWR": 1.736562621281625,
-     "totalDeltaV": 7323.479368666373,
-     "margin": -0.1639691310127675,
+     "liftoffTWR": 1.7327370037178786,
+     "totalDeltaV": 7334.699073300993,
+     "margin": -0.16268831639675396,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 47563.50979744895,
-     "cost": 795984230,
+     "liftoffMass": 47668.52273252456,
+     "cost": 796123948,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -2811,16 +2811,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.736562621281625,
-       "twrVac": 1.92951402364625,
-       "deltaV": 4308.246392760936
+       "twr": 1.7327370037178786,
+       "twrVac": 1.9252633374643096,
+       "deltaV": 4288.446013602179
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.0656474821034,
-       "twrVac": 1.0656474821034,
-       "deltaV": 3015.2329759054373
+       "twr": 1.0540796898339193,
+       "twrVac": 1.0540796898339193,
+       "deltaV": 3046.253059698814
       }
      ]
     }
@@ -3011,7 +3011,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -3040,7 +3040,7 @@
      {
       "code": "dv-margin",
       "tab": "propellants",
-      "msg": "About 290 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+      "msg": "About 278 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
      },
      {
       "code": "heavy-fairing",
@@ -3049,13 +3049,13 @@
      }
     ],
     "readout": {
-     "liftoffTWR": 1.7848908305815958,
-     "totalDeltaV": 8469.871501180309,
-     "margin": -0.0330997501490261,
+     "liftoffTWR": 1.7808495654211012,
+     "totalDeltaV": 8481.455308609071,
+     "margin": -0.03177737042986095,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 46275.66674444647,
-     "cost": 786808077,
+     "liftoffMass": 46380.67967952208,
+     "cost": 786947795,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 1730.3892335972578,
@@ -3064,16 +3064,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.7848908305815958,
-       "twrVac": 1.983212033979551,
-       "deltaV": 4569.407115390867
+       "twr": 1.7808495654211012,
+       "twrVac": 1.9787217393567789,
+       "deltaV": 4546.742703367175
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.2313718624356593,
-       "twrVac": 1.2313718624356593,
-       "deltaV": 3900.464385789442
+       "twr": 1.2159523986304543,
+       "twrVac": 1.2159523986304543,
+       "deltaV": 3934.7126052418957
       }
      ]
     }
@@ -3138,7 +3138,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -3231,7 +3231,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -4545,7 +4545,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -4625,7 +4625,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 5800,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -4708,7 +4708,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -4790,7 +4790,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 5800,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -4873,7 +4873,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -4955,7 +4955,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 5800,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5038,7 +5038,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 0,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5120,7 +5120,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 5800,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5203,7 +5203,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5283,7 +5283,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 5800,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5366,7 +5366,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5448,7 +5448,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 5800,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5531,7 +5531,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5614,7 +5614,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 5800,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5697,7 +5697,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 5800,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5779,7 +5779,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 5800,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -21170,7 +21170,7 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.04 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ]
    },
@@ -21228,7 +21228,7 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.04 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ]
    },
@@ -21240,10 +21240,10 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.04 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ],
-    "next": "Liftoff TWR 1.04 is slow off the pad (lots of gravity loss). Aim for 1.25 or more.",
+    "next": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more.",
     "showTune": false,
     "showSchemaText": false,
     "makeItFly": true
@@ -21292,7 +21292,7 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.04 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ]
    },
@@ -21304,10 +21304,10 @@
      {
       "code": "twr-marginal",
       "tab": "engines",
-      "msg": "Liftoff TWR 1.04 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
+      "msg": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more."
      }
     ],
-    "next": "Liftoff TWR 1.04 is slow off the pad (lots of gravity loss). Aim for 1.25 or more.",
+    "next": "Liftoff TWR 1.03 is slow off the pad (lots of gravity loss). Aim for 1.25 or more.",
     "showTune": true,
     "showSchemaText": true,
     "makeItFly": true
