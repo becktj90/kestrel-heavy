@@ -469,7 +469,7 @@ namespace Kestrel.Core.Tests
 
         /// <summary>#313 (Physics): KH-12's 6° build gets the steep advice, and its lever is the smaller pitch kick; following
         /// it (4.5°) lands every seed. One more upper engine is no longer advised: on #324's 32,000 kg top stage the upper stage
-        /// pushes at 0.584 g, over the 0.5 g weak-upper rule (it was 0.476 g at 40,000 kg), so weak-upper drops and Fix it
+        /// pushes at 0.583 g, over the 0.5 g weak-upper rule (it was 0.476 g at 40,000 kg), so weak-upper drops and Fix it
         /// no longer adds an engine. Fix it's edit (fins 1.10 → 3.10 m, max-Q throttle 95%) and the old engine advice by
         /// hand both tip it into a dive and miss every seed.</summary>
         [Test]
@@ -500,7 +500,11 @@ namespace Kestrel.Core.Tests
             CollectionAssert.Contains(Validate.Engineering(catalog, heavy).warnings.ConvertAll(w => w.code), "weak-upper");
 
             // Fix it, exactly as the board runs it, on the 6° build: no engine, and it misses.
+            // #340: strip the computer here - the board starter now ships it, and with it the
+            // 6° build passes; this section is about the raw no-guidance build, where Fix it
+            // (max-Q 95%, no engine) cannot fix the steep miss.
             var fix = JsonMut.CloneObject(json);
+            JsonMut.Set(fix.Obj("avionics"), "guidanceComputer", false);
             Readout.Reference(catalog, fix);
             var report = StepperModel.Evaluate(catalog, fix);
             StepCheck check = null;
