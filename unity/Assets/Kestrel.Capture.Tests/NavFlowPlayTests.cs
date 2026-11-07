@@ -471,7 +471,13 @@ namespace Kestrel.Capture.Tests
         [Timeout(300000)]
         public IEnumerator CrashingRocket_FixIt_LandsInTheDesigner_AndStays()
         {
-            yield return ToThePad(d => d.stages[0].engineCount = 1);
+            // Same spoil as the retry test: the 1-engine starter alone now passes (and a pass card has no Fix it,
+            // #416 item 3), so starve the first stage so the flight really falls short and the report offers Fix it.
+            yield return ToThePad(d =>
+            {
+                d.stages[0].engineCount = 1;
+                d.stages[0].propMass *= 0.4;
+            });
             VisualElement report = null;
             yield return Until(() => (report = Find("screen-report")) != null && NavIds.Shown(report), 150f);
             Assert.IsNotNull(report, "a rocket that breaks up reaches the report");
