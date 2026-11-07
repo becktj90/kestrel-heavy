@@ -80,7 +80,9 @@ namespace Kestrel.Core.Tests
                 || LivePadLoop.IsM13HardButWins(StarterFixture.Catalog, r.Mission, flown, sim);
             Assert.AreEqual(passes, v.Passes, where + ": verdict pass vs the predictor flight (" + v.Cause + ")");
             Assert.AreEqual(passes, ReadyOrTight(badge), where + ": pass " + passes + " but the badge reads " + badge + " " + rest);
-            if (!passes) Assert.IsTrue(StarterVerdict.IsMiss(v.Cause), where + ": an intact miss names low, high, shape or goal, not " + v.Cause);
+            // The miss is named in Miss, not Cause: Cause stays null so the flight survives (Trevor 11-07), and
+            // the badge still names the miss. Circular misses never reach here (truth is "orbit" above).
+            if (!passes) Assert.IsTrue(StarterVerdict.IsMiss(v.Cause ?? v.Miss), where + ": an intact miss names low, high, shape or goal, not " + (v.Cause ?? v.Miss));
         }
 
         /// <summary>Settings the sweep found reading Ready before this change while the predictor broke them up or left
