@@ -46,6 +46,9 @@ namespace Kestrel.Slice
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
         public int OrbitsCompleted; public bool EngineerEnabled;
         Label issueChip, launchReason; Button launchButton;
+        // Fun review item 13: the reason line keeps its room so the sheet does not jump as a tweak crosses a limit.
+        readonly LaunchReasonSlot reasonSlot = new LaunchReasonSlot();
+        float reasonFont = 14f;
         LaunchSequence sequence; bool counting;
         readonly LiftoffHandoff handoff = new LiftoffHandoff();
         bool ascentErrorLogged;
@@ -380,6 +383,11 @@ namespace Kestrel.Slice
             explodeButton.clicked += () => SetExploded(!(hangarCam != null && hangarCam.Exploded));
             explodeButton.tooltip = "Exploded view: pull the parts apart";
             issueChip = ui.Q<Label>("issue-chip"); launchReason = ui.Q<Label>("launch-reason");
+            launchReason?.RegisterCallback<GeometryChangedEvent>(e =>
+            {
+                if (string.IsNullOrEmpty(launchReason.text)) return;
+                if (reasonSlot.Saw(reasonFont, e.newRect.height)) launchReason.style.minHeight = reasonSlot.Reserve(reasonFont);
+            });
             issueChip.RegisterCallback<ClickEvent>(_ => { panel?.Show(HangarPanel.Tab.Data); if (designCollapsed) SetDesignCollapsed(false); });
             again.clicked += BackToDesign;
             chrome = gameObject.AddComponent<FlightChrome>();
@@ -499,7 +507,9 @@ namespace Kestrel.Slice
             launchButton.style.flexShrink = 1;
             launchButton.style.whiteSpace = WhiteSpace.Normal;
             launchButton.style.overflow = Overflow.Visible;
-            launchReason.style.fontSize = 14f * upp;
+            reasonFont = 14f * upp;
+            launchReason.style.fontSize = reasonFont;
+            launchReason.style.minHeight = reasonSlot.Reserve(reasonFont);
 
             bool side = HangarPanelLayout.SidePanel(Screen.width, Screen.height);
             designPanel.EnableInClassList("side", side);
@@ -680,7 +690,9 @@ namespace Kestrel.Slice
             // The free designer's launch row already shows this reason with its Fix it. Showing it here
             // too printed the out-of-fuel warning twice on the first designer view.
             bool designerSaysIt = designer != null && designer.ShowsLaunchRow;
-            launchReason.EnableInClassList("hidden", ok || designerSaysIt);
+            // Keep the slot (empty when ready) instead of hiding it, so the sheet height holds still.
+            launchReason.EnableInClassList("hidden", designerSaysIt);
+            launchReason.style.minHeight = reasonSlot.Reserve(reasonFont);
             launchButton.tooltip = ok ? "Roll out and launch the current design"
                 : gate.state == LaunchGateState.Checking ? LaunchGate.Checking
                 : gate.CanLaunch ? "Launch anyway. " + reason : "Launch unavailable. " + reason;
