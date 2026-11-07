@@ -2,6 +2,7 @@
     "name": "Kestrel.Game.TextFit",
     "rootNamespace": "Kestrel.Game.Shell",
     "references": [
+        "Kestrel.Core",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],
