@@ -127,18 +127,22 @@ namespace Kestrel.Pad
         readonly List<Matrix4x4> _polesLocal = new List<Matrix4x4>();
         readonly List<int> _polePlan = new List<int>();
         bool[] _hidden;
-        /// <summary>Poles skipped this frame because they stand in the camera's foreground (PadLighting.PoleTooClose).</summary>
+        /// <summary>Poles skipped this frame because they stand in the camera's foreground (PadLighting.PoleTooClose)
+        /// or in its view cone against the sky (PadLighting.PoleInView, #401).</summary>
         public int HiddenPoles { get; private set; }
 
-        /// <summary>Mark the poles too close to the camera. True when the set changed (the batches must be rebuilt).</summary>
-        bool UpdateHidden(Vector3 camWorld)
+        /// <summary>Mark the poles too close to the camera, or in its view cone against the sky. True when the set
+        /// changed (the batches must be rebuilt).</summary>
+        bool UpdateHidden(Vector3 camWorld, Vector3 camForwardWorld)
         {
             if (Plan == null || _hidden == null) return false;
             var c = transform.InverseTransformPoint(camWorld);
+            var f = transform.InverseTransformDirection(camForwardWorld);
             bool changed = false; int n = 0;
             for (int i = 0; i < Plan.Count; i++)
             {
-                bool h = PadLighting.PoleTooClose(Plan[i], c.x, c.z);
+                bool h = PadLighting.PoleTooClose(Plan[i], c.x, c.z)
+                    || PadLighting.PoleInView(Plan[i], c.x, c.y, c.z, f.x, f.y, f.z);
                 if (h) n++;
                 if (h != _hidden[i]) { _hidden[i] = h; changed = true; }
             }
@@ -214,8 +218,9 @@ namespace Kestrel.Pad
             if (Plan == null) return;
             if (FollowSun) Night = ResolveNight();
             var cam = ViewCamera != null ? ViewCamera : Camera.main;
-            // A pole in a low view's foreground is skipped with its fixture and halo (Below, TestFlight 202).
-            if (cam != null && UpdateHidden(cam.transform.position)) _builtFor = default;
+            // A pole in a low view's foreground is skipped with its fixture and halo (Below, TestFlight 202),
+            // and so is one in its view cone against the sky (#401).
+            if (cam != null && UpdateHidden(cam.transform.position, cam.transform.forward)) _builtFor = default;
             Refresh(); ApplyNight(Time.timeAsDouble);
             Plume?.Update(transform.localToWorldMatrix, Night, gameObject.layer);
             if (cam == null) return;

@@ -159,5 +159,38 @@ namespace Kestrel.Pad.Tests
             // A camera far out (the Pad overview) only skips poles within PoleNearShare of its range.
             foreach (var s in poles) Assert.That(PadLighting.PoleTooClose(s, 0f, 400f), Is.False, s.Id);
         }
+
+        // #401: a grey bar floated in the sky above the pad in the Oct 29 playtest — the best-supported cause
+        // from static analysis is a lamp-pole fixture: a mid-grey 1.6 x 0.5 m box by day, on a 0.25 m pole that
+        // is nearly invisible at distance, so in a low view looking up at the stack it reads as a bar floating
+        // in the sky. PoleTooClose only hides poles near the camera; PoleInView hides the mid-distance ones
+        // that sit in the frame against the sky. This pins the rule's geometry; whether it is the bar in the
+        // screenshot still needs a device comparison on TestFlight.
+        [Test]
+        public void PoleInViewHidesTheFixtureInALowCamerasSightline()
+        {
+            var L = PadGenerator.Generate(3, PadArchetype.Rail, new PadFit(22f, 0.6f));
+            var plan = PadLighting.Plan(L, 2);
+            var poles = plan.FindAll(s => s.Kind == LightKind.Pole);
+            Assert.That(poles.Count, Is.GreaterThan(0));
+            var p = poles[0].Position;
+            // A low camera on the pad looking straight at the pole: the fixture is in its sightline, so it hides.
+            float camX = 0f, camY = 1f, camZ = 0f;
+            Assert.That(PadLighting.PoleInView(poles[0], camX, camY, camZ, p.X - camX, p.Y - camY, p.Z - camZ), Is.True);
+            // Same pole, same camera, looking 30 deg off it: it stays (frame-edge clutter, not the bar).
+            float dx = p.X - camX, dy = p.Y - camY, dz = p.Z - camZ;
+            float c30 = (float)Math.Cos(30f * Math.PI / 180.0), s30 = (float)Math.Sin(30f * Math.PI / 180.0);
+            Assert.That(PadLighting.PoleInView(poles[0], camX, camY, camZ, dx * c30 - dz * s30, dy, dx * s30 + dz * c30), Is.False);
+            // The same sightline from a high camera (ascent / overview) keeps the pole.
+            Assert.That(PadLighting.PoleInView(poles[0], camX, 100f, camZ, p.X - camX, p.Y - 100f, p.Z - camZ), Is.False);
+            // A far pole stays even dead-ahead: at 400 m it is small in the frame.
+            Assert.That(PadLighting.PoleInView(poles[0], 0f, 1f, 400f, p.X, p.Y - 1f, p.Z - 400f), Is.False);
+            // A pole behind the camera stays.
+            Assert.That(PadLighting.PoleInView(poles[0], camX, camY, camZ, -(p.X - camX), -(p.Y - camY), -(p.Z - camZ)), Is.False);
+            // And a non-pole light dead-ahead is never skipped by this rule (spots are in every plan).
+            var spot = plan.Find(s => s.Kind == LightKind.Spot);
+            Assert.That(spot.Kind, Is.EqualTo(LightKind.Spot));
+            Assert.That(PadLighting.PoleInView(spot, camX, camY, camZ, spot.Position.X - camX, spot.Position.Y - camY, spot.Position.Z - camZ), Is.False);
+        }
     }
 }
