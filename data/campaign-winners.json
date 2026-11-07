@@ -477,8 +477,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
-            "turnShape": 0.2,
+            "pitchKickDeg": 1,
+            "turnShape": 0,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -580,8 +580,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 6,
-            "turnShape": 0.5,
+            "pitchKickDeg": 2,
+            "turnShape": 0,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -887,8 +887,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 6,
-            "turnShape": 0.5,
+            "pitchKickDeg": 4,
+            "turnShape": 0,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -1371,8 +1371,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 6,
-            "turnShape": 0.5,
+            "pitchKickDeg": 4,
+            "turnShape": 0,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
