@@ -28,6 +28,9 @@ namespace Kestrel.Core.Flight
         public const int SeparationCollision = 9;
         public const int LegCollapse = 10;
         public const int EngineOut = 11;
+        /// <summary>#344: the axial load alone (mass above × acceleration, no bending) exceeded the wall's
+        /// allowable. Distinct from StructuralMaxQ (q, or axial + bending together).</summary>
+        public const int AxialOverload = 12;
 
         public static string Name(int kind)
         {
@@ -44,6 +47,7 @@ namespace Kestrel.Core.Flight
                 case SeparationCollision: return "separation-collision";
                 case LegCollapse: return "leg-collapse";
                 case EngineOut: return "engine-out";
+                case AxialOverload: return "axial-overload";
                 default: return "";
             }
         }
@@ -58,6 +62,8 @@ namespace Kestrel.Core.Flight
         public double noseT, maxTempK;
         public double sepRelSpeed, sepMinSpeed, sepAgeS;
         public double sinkRate, vLeg;
+        /// <summary>#344: the axial load alone exceeded the wall's allowable (margin &lt; 0 from axial, not bending).</summary>
+        public bool axialOverload;
         public double dt;
         public bool cryoFail, baseHeat, hotStaging, bulkhead;
         public bool propEmptyBelowTarget, sepArmed, legsArmed;
@@ -182,7 +188,11 @@ namespace Kestrel.Core.Flight
             if (s.qLimPa > 0 && s.qPa > s.qLimPa)
                 return Seal(ref scratch, Hit(FailureKind.StructuralMaxQ, 0, s, s.qPa, s.qLimPa));
             if (s.margin < 0 && !double.IsPositiveInfinity(s.margin))
+            {
+                // #344: axial alone over the allowable is its own kind; axial + bending together stays structural-maxq.
+                if (s.axialOverload) return Seal(ref scratch, Hit(FailureKind.AxialOverload, 0, s, s.margin, 0));
                 return Seal(ref scratch, Hit(FailureKind.StructuralMaxQ, 1, s, s.margin, 0));
+            }
             if (s.limitG > 0 && s.accelMps2 > s.limitG * G0)
                 return Seal(ref scratch, Hit(FailureKind.OverG, 0, s, s.accelMps2 / G0, s.limitG));
             if (s.alphaRad > TumbleAlphaRad && s.qPa > TumbleQPa)
@@ -327,6 +337,7 @@ namespace Kestrel.Core.Flight
                 case FailureKind.SeparationCollision: return "more sepImpulse, springs";
                 case FailureKind.LegCollapse: return "heavier legs, more reserve";
                 case FailureKind.EngineOut: return "more engines + redundant avionics";
+                case FailureKind.AxialOverload: return "raise SF, use a stronger material, lighten the upper stack";
                 default: return "";
             }
         }
@@ -371,6 +382,8 @@ namespace Kestrel.Core.Flight
                     return "The legs folded at touchdown. The booster was falling at " + N1(hit.value) + " m/s and the legs take " + N1(hit.limit) + " m/s. Use heavier legs or save more fuel for landing.";
                 case FailureKind.EngineOut:
                     return "An engine quit at T+" + ts + " s. The stage could not stay up on the ones left. Add engines and redundant avionics.";
+                case FailureKind.AxialOverload:
+                    return "Your rocket crushed at T+" + ts + " s. The weight above pushed harder than the tanks can hold. Try a higher safety factor, a stronger material, or a lighter upper stack.";
                 default:
                     return "";
             }
@@ -389,6 +402,8 @@ namespace Kestrel.Core.Flight
                     return "Peak " + hit.value.ToString("0.00", inv) + " g, past the " + hit.limit.ToString("0.00", inv) + " g limit.";
                 case FailureKind.Tumble:
                     return "Stability " + hit.value.ToString("0.000", inv) + " at T+" + t.ToString("0.00", inv) + " s.";
+                case FailureKind.AxialOverload:
+                    return "Axial load margin " + hit.value.ToString("0.000", inv) + " at T+" + t.ToString("0.00", inv) + " s. The mass above, on its own, is past the wall's allowable.";
                 default:
                     return "Reading " + hit.value.ToString("0.000", inv) + ", limit " + hit.limit.ToString("0.000", inv) + ", at T+" + t.ToString("0.00", inv) + " s.";
             }
@@ -407,6 +422,11 @@ namespace Kestrel.Core.Flight
             public bool cryo, sepCheck, hotStaging, bulkhead, baseHeat, redundant;
             public double sepImpulse, pc, pcRated, hazard, mixture, reliability, thrustN, fAllow, radius;
             public int engines, designIndex;
+            /// <summary>#344: the section's own dry and propellant mass (kg). The strap-on's own axial load is
+            /// its own mass × acceleration, so Consider needs these to carry the strap-on against itself.</summary>
+            public double dryMassKg, propMassKg;
+            /// <summary>#344: the section's own reference area (pi*r^2), for its own q·alpha bending moment.</summary>
+            public double area;
         }
 
         struct Knot { public double frac, stability, carCoeff, cn, cg, cp, mCtrl; }
@@ -416,6 +436,8 @@ namespace Kestrel.Core.Flight
         readonly int stages;
         readonly double qLimPa, limitG, maxTempK, heatFactor, vLeg;
         readonly bool legs, gentle;
+        /// <summary>#344: infos[0] is the strap-on section (infos[1] the core) when true.</summary>
+        readonly bool hasStrapOn;
         readonly EventSchedule schedule;
         FailureScratch scratch;
         double sepV, sepT;
@@ -436,7 +458,7 @@ namespace Kestrel.Core.Flight
         double qNow, gNow;
         bool sawStep;
 
-        FailureMonitor(Info[] infos, Knot[] knots, double qLimPa, double limitG, double maxTempK, double heatFactor, double vLeg, bool legs, bool gentle, ulong hash, ulong seed, EventSchedule schedule)
+        FailureMonitor(Info[] infos, Knot[] knots, double qLimPa, double limitG, double maxTempK, double heatFactor, double vLeg, bool legs, bool gentle, ulong hash, ulong seed, EventSchedule schedule, bool hasStrapOn = false)
         {
             this.infos = infos;
             this.knots = knots;
@@ -448,6 +470,7 @@ namespace Kestrel.Core.Flight
             this.vLeg = vLeg;
             this.legs = legs;
             this.gentle = gentle;
+            this.hasStrapOn = hasStrapOn;
             Gentle = gentle;
             this.schedule = schedule;
             scratch = FailureModel.Fresh(hash, seed);
@@ -490,15 +513,19 @@ namespace Kestrel.Core.Flight
         public static FailureMonitor Create(Catalog c, Design d, double targetAlt, ulong designHash = 1, ulong missionSeed = 1)
         {
             var list = new List<Info>();
+            var masses = c != null && d != null ? Mass.StageMasses(c, d) : null;
             if (d != null && d.StrapOnCount > 0 && d.stages.Count > 0)
             {
-                list.Add(Make(c, d, d.strapOns, false));
-                list.Add(Make(c, d, d.stages[0], true));
-                for (int i = 1; i < d.stages.Count; i++) list.Add(Make(c, d, d.stages[i], true));
+                var so = Mass.StrapOnMasses(c, d);
+                // #344: fAllow is one strap-on's section, so its load mass is one strap-on's own mass
+                // (eachDry/eachProp), not the total across all strap-ons.
+                list.Add(Make(c, d, d.strapOns, false, so.eachDry, so.eachProp));
+                list.Add(Make(c, d, d.stages[0], true, masses != null && masses.Count > 0 ? masses[0].dry : 0, masses != null && masses.Count > 0 ? masses[0].usableProp : 0));
+                for (int i = 1; i < d.stages.Count; i++) list.Add(Make(c, d, d.stages[i], true, masses != null && masses.Count > i ? masses[i].dry : 0, masses != null && masses.Count > i ? masses[i].usableProp : 0));
             }
             else if (d != null)
             {
-                for (int i = 0; i < d.stages.Count; i++) list.Add(Make(c, d, d.stages[i], i > 0));
+                for (int i = 0; i < d.stages.Count; i++) list.Add(Make(c, d, d.stages[i], i > 0, masses != null && masses.Count > i ? masses[i].dry : 0, masses != null && masses.Count > i ? masses[i].usableProp : 0));
             }
             if (list.Count == 0) list.Add(new Info());
             double qLim = StructuralQLimPa(c, d);
@@ -514,7 +541,7 @@ namespace Kestrel.Core.Flight
             var knots = Knots(c, d);
             var built = list.ToArray();
             var schedule = ScheduleOf(built, d, land, designHash, missionSeed);
-            return new FailureMonitor(built, knots, qLim, maxG, maxT, heat, vleg, land, GentleTier(d), designHash, missionSeed, schedule);
+            return new FailureMonitor(built, knots, qLim, maxG, maxT, heat, vleg, land, GentleTier(d), designHash, missionSeed, schedule, d != null && d.StrapOnCount > 0);
         }
 
         static EventSchedule ScheduleOf(Info[] infos, Design d, bool landing, ulong designHash, ulong missionSeed)
@@ -570,9 +597,9 @@ namespace Kestrel.Core.Flight
             return StructureModel.QLimPa(d.safetyFactor, m.yieldMPa);
         }
 
-        static Info Make(Catalog c, Design d, StagePart s, bool sep)
+        static Info Make(Catalog c, Design d, StagePart s, bool sep, double dryMassKg, double propMassKg)
         {
-            var info = new Info { designIndex = -1 };
+            var info = new Info { designIndex = -1, dryMassKg = dryMassKg, propMassKg = propMassKg };
             if (s == null || c == null) return info;
             c.EngineById.TryGetValue(s.engine ?? "", out var eng);
             var point = EnginePoint.Of(c, s);
@@ -595,11 +622,19 @@ namespace Kestrel.Core.Flight
             info.sepImpulse = s.SepImpulseOrZero;
             info.redundant = d != null && d.avionicsTier == "redundant";
             info.baseHeat = d != null && !d.heatShield && info.engines > 9;
-            // Hoop margin only when a tank pressure is set. Unpressurized stages break on q_lim,
-            // which is the max-Q structural limit. A liftoff axial load would otherwise trip MS first.
+            // #344: every stage gets an axial allowable now, not just pressurized ones. A pressurized stage keeps
+            // the hoop-based F_allow (yield + pressure). An unpressurized stage gets min(yield, SP-8007 buckling),
+            // so wind alpha can bend it short of the tumble rule. The old pressure gate (fAllow = 0) was hiding
+            // the strap-on load-path bug below; with a real allowable the load path has to be right, so Consider
+            // now loads each section against its own mass (mass above, or its own mass for a strap-on).
             bool pressure = s.tank != null && s.tank.pressureSet && s.tank.pressureBar > 0;
-            info.fAllow = pressure ? StructureModel.Allowables(c, s, d != null ? d.safetyFactor : 1.4).fAllowN : 0;
+            double sf = d != null ? d.safetyFactor : 1.4;
+            var section = StructureModel.Section(c, s, sf);
+            info.fAllow = pressure
+                ? StructureModel.Allowables(section).fAllowN
+                : StructureModel.UnpressurizedFAllowN(section, TankModel.ElasticGPa(s.material ?? ""));
             info.radius = s.diameter > 0 ? s.diameter / 2 : 0;
+            info.area = Math.PI * info.radius * info.radius;
             return info;
         }
 
@@ -677,6 +712,61 @@ namespace Kestrel.Core.Flight
             public double propFraction;
             public bool thrusting, emptyLast;
             public double targetAlt;
+            /// <summary>#344: mass above the current stage's section (kg), for the axial load (mass above ×
+            /// acceleration). The integrator sets it from its upper-mass table; 0 falls back to <see cref="mass"/>.</summary>
+            public double massAboveKg;
+            /// <summary>#344: mass above the core (kg) while the strap-ons are attached, for the extra core check
+            /// in the strap-on phase. 0 means no strap-on phase (no extra check).</summary>
+            public double massAboveCoreKg;
+        }
+
+        /// <summary>#344: the load mass for one section's axial check. A strap-on carries only itself (its own dry
+        /// mass plus the propellant still on board); any other section carries the mass above it, which the
+        /// integrator passes in the step (0 falls back to the whole-stack mass for callers that do not set it).</summary>
+        double LoadMassFor(int secIdx, in Step s)
+        {
+            if (hasStrapOn && secIdx == 0)
+            {
+                var so = infos[0];
+                double prop = Math.Max(0, Math.Min(1, s.propFraction)) * so.propMassKg;
+                return so.dryMassKg + prop;
+            }
+            if (s.massAboveKg > 0) return s.massAboveKg;
+            return s.mass;
+        }
+
+        /// <summary>#344: one section's margin of safety under the shared vehicle bending moment. Returns the
+        /// margin (fAllow / (axial + bending) - 1) and whether the axial load alone is past the allowable.
+        /// A side-mounted strap-on does not carry the stack's bending moment (the core does); its own local
+        /// q·alpha moment is negligible next to its axial load, so the strap-on is checked axial-only
+        /// (useBend = false) while the core and every plain stage carry the vehicle moment.</summary>
+        (double ms, bool axialOverload) SectionMargin(Info sec, double loadMassKg, in Step s, double cn, double cp, double cg, int secIdx, bool useBend = true)
+        {
+            double ms = double.PositiveInfinity;
+            bool axialOverload = false;
+            if (!(sec.fAllow > 0) || !(loadMassKg > 0) || !(s.qPa > 0)) return (ms, axialOverload);
+            // #344: the linear CN-alpha model is only valid for small alpha; past the 15 deg tumble threshold
+            // the flow is separated and CN saturates, so the bending moment is capped there. Past 15 deg the
+            // tumble rule (alpha > 15 deg and q > 20 kPa) governs breakup, not this bending check. Without the
+            // cap a 78 deg stage-transition transient at q = 2.4 kPa (m10 S1 burnout) reads as a 6.5 MN·m
+            // moment and falsely breaks a core that is at 89% of its buckling allowable on axial alone.
+            double alphaEff = Math.Min(s.alphaRad, FailureModel.TumbleAlphaRad);
+            double bend = useBend ? s.qPa * sec.area * cn * alphaEff * Math.Abs(cp - cg) : 0;
+            double feq = sec.radius > 0 ? Math.Abs(2 * bend / sec.radius) : 0;
+            double axial = loadMassKg * s.accel + s.qPa * s.area * s.cd;
+            double load = axial + feq;
+            if (load > 0) ms = sec.fAllow / load - 1;
+            if (axial > sec.fAllow) axialOverload = true;
+            // #338: the q·alpha share of what is left after axial load (1 is ms = 0). Read only; no control change.
+            if (Event == null && s.thrusting && feq > 0)
+            {
+                double left = sec.fAllow - axial;
+                double frac = left > 0 ? feq / left : double.PositiveInfinity;
+                if (frac > PeakBendFraction) PeakBendFraction = frac;
+                if (BendWarning == null && frac >= BendWarnFraction && frac < 1)
+                    BendWarning = StructuralWarning.Make(s.t, frac, s.qPa, s.alphaRad, secIdx + 1);
+            }
+            return (ms, axialOverload);
         }
 
         /// <summary>True when thrust should stop. Predict records the hit and returns false.</summary>
@@ -688,21 +778,20 @@ namespace Kestrel.Core.Flight
             var info = infos[idx];
             Interp(step.propFraction, out double stability, out double car, out double cn, out double cg, out double cp, step.qPa);
             double ms = double.PositiveInfinity;
-            if (info.fAllow > 0 && step.mass > 0 && step.qPa > 0)
+            bool axialOverload = false;
+            if (step.qPa > 0)
             {
-                double bend = step.qPa * step.area * cn * step.alphaRad * Math.Abs(cp - cg);
-                double feq = info.radius > 0 ? Math.Abs(2 * bend / info.radius) : 0;
-                double axial = step.mass * step.accel + step.qPa * step.area * step.cd;
-                double load = axial + feq;
-                if (load > 0) ms = info.fAllow / load - 1;
-                // #338: the q·alpha share of what is left after axial load (1 is ms = 0). Read only; no control change.
-                if (Event == null && step.thrusting && feq > 0)
+                // #344: each section is loaded against its own mass, not the whole stack. A strap-on carries
+                // only itself; any other section carries the mass above it (the integrator passes massAboveKg).
+                // The strap-on is axial-only (it does not carry the stack's bending moment; see SectionMargin).
+                (ms, axialOverload) = SectionMargin(info, LoadMassFor(idx, step), step, cn, cp, cg, idx, useBend: !(hasStrapOn && idx == 0));
+                // During the strap-on phase the core is burning too, so check it as well (infos[1], against the
+                // mass above the core). The worst margin across the two sections is the flight's margin.
+                if (hasStrapOn && idx == 0 && step.massAboveCoreKg > 0 && stages > 1)
                 {
-                    double left = info.fAllow - axial;
-                    double frac = left > 0 ? feq / left : double.PositiveInfinity;
-                    if (frac > PeakBendFraction) PeakBendFraction = frac;
-                    if (BendWarning == null && frac >= BendWarnFraction && frac < 1)
-                        BendWarning = StructuralWarning.Make(step.t, frac, step.qPa, step.alphaRad, idx + 1);
+                    var (coreMs, coreAxial) = SectionMargin(infos[1], step.massAboveCoreKg, step, cn, cp, cg, 1);
+                    if (coreMs < ms) { ms = coreMs; axialOverload = coreAxial; }
+                    else if (coreMs == ms) axialOverload = axialOverload || coreAxial;
                 }
             }
             double tAtm = step.alt < 11000 ? 288.15 - 0.0065 * Math.Max(0, step.alt) : 216.65;
@@ -724,6 +813,7 @@ namespace Kestrel.Core.Flight
                 qPa = step.qPa,
                 qLimPa = qLimPa,
                 margin = ms,
+                axialOverload = axialOverload,
                 accelMps2 = step.accel,
                 limitG = limitG,
                 alphaRad = step.alphaRad,

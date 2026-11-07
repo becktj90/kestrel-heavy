@@ -2,8 +2,8 @@
 // q·alpha bending into the margin of safety (bend = q·A·CNα·α·|xcp − xcg|, turned into an equivalent axial load) for a
 // stage with a set tank pressure; a breakup is ms < 0. The monitor now also records the first moment that bending uses
 // 80% of what the walls can still take after thrust and drag (StructuralWarning). It never touches the throttle, the
-// pitch or the outcome. Stages without a tank pressure have no bending allowance (fAllow 0) and break on q against q_lim
-// only, so they never warn: every board starter is one of those.
+// pitch or the outcome. #344: stages without a tank pressure now have the same check (allowable = min(yield, SP-8007
+// buckling)), so every board starter bends a little and can warn; none reaches 80% in the seed-1 wind.
 using System.Collections.Generic;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
@@ -43,14 +43,18 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void UnpressurizedStarters_HaveNoBendingAllowance_SoNeverWarn()
+        public void UnpressurizedStarters_NowHaveABendingAllowance_AndStayUnderTheWarning()
         {
+            // #344: stages without a tank pressure now have a bending allowance (min(yield, SP-8007 buckling)),
+            // so the q·alpha share is positive instead of exactly 0. None of the starters reaches the 80%
+            // warning in the seed-1 wind, so no note fires and every flight still reaches orbit.
             for (int index = 3; index <= 20; index++)
             {
                 var m = campaign.Mission(index);
                 var d = Design.FromJson(HomeAutoBuild.Choose(catalog, hangar.templates, m).Design);
                 var r = LivePadLoop.Fly(catalog, m, d, true);
-                Assert.AreEqual(0.0, r.peakBendFraction, 0.0, m.Id + " (q against q_lim only)");
+                Assert.That(r.peakBendFraction, Is.GreaterThan(0), m.Id + " (bending now engages)");
+                Assert.That(r.peakBendFraction, Is.LessThan(FailureMonitor.BendWarnFraction), m.Id);
                 Assert.IsNull(r.bendWarning, m.Id);
             }
         }

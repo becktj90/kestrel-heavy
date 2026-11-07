@@ -351,6 +351,9 @@ namespace Kestrel.Core.Physics
                 t = T, dt = dt, alt = alt, qPa = q, accel = aAxial, alphaRad = alpha,
                 mass = m, area = body.area, cd = body.cd, stageIndex = StageIdx, propFraction = propFrac,
                 thrusting = Thrusting, targetAlt = o.targetAlt,
+                // #344: the axial load is the mass above the section, not the whole stack (see Headless.Watch).
+                massAboveKg = upperMass[si + 1],
+                massAboveCoreKg = o.hasStrapOn && StageIdx == 0 && st.Length > 2 ? upperMass[2] : 0,
             };
             return o.monitor.Consider(step);
         }
