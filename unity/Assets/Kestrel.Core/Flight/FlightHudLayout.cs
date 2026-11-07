@@ -185,16 +185,32 @@ namespace Kestrel.Core.Flight
         /// box is the row less what else sits in it (at least the stage chip) and a gap, HeaderPt tall, as in the
         /// portrait frame's Clock box.
         /// </summary>
-        public static float HeaderClockFontPt(float rowWidthPt, float siblingsPt)
+        public static float HeaderClockFontPt(float rowWidthPt, float siblingsPt) => HeaderClockFontPt(rowWidthPt, siblingsPt, 0f);
+
+        /// <summary>
+        /// As above, but never under <paramref name="restingPt"/>: the size the HUD's own type scale gives the clock (the
+        /// .hud-big face, 56 panel units, in points). The panel scales up on an iPad (about 1.14 units a point against 2.7
+        /// on a phone), so a flat 28 pt cap left the iPad clock the size of a stat value while everything round it grew
+        /// (PR #435 landing frame: 32 units next to 56-unit designer and starter clocks). The header grows to fit; the row
+        /// width still shrinks it. A resting size at or under 28 pt (every phone) changes nothing.
+        /// </summary>
+        public static float HeaderClockFontPt(float rowWidthPt, float siblingsPt, float restingPt)
         {
-            if (!(rowWidthPt > 8f)) return ClockFontPt(0f, HeaderPt);
+            float start = restingPt > ClockPt && restingPt < 96f ? restingPt : ClockPt;
+            float boxH = Math.Max(HeaderPt, start + 4f);
+            if (!(rowWidthPt > 8f)) return ClockFontPt(0f, boxH, start);
             float others = siblingsPt > StageChipPt ? siblingsPt : StageChipPt;
-            return ClockFontPt(Math.Max(44f, rowWidthPt - others - GapPt), HeaderPt);
+            return ClockFontPt(Math.Max(44f, rowWidthPt - others - GapPt), boxH, start);
         }
 
-        public static float ClockFontPt(float boxW, float boxH)
+        /// <summary>The header clock face on a phone (pt).</summary>
+        public const float ClockPt = 28f;
+
+        public static float ClockFontPt(float boxW, float boxH) => ClockFontPt(boxW, boxH, ClockPt);
+
+        public static float ClockFontPt(float boxW, float boxH, float startPt)
         {
-            float font = 28f;
+            float font = startPt > 13f ? startPt : ClockPt;
             float limit = boxH > 8f ? boxH - 4f : font;
             if (font > limit) font = limit;
             if (!(boxW > 8f)) return font > 13f ? font : 13f;

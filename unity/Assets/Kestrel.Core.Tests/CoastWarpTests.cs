@@ -229,7 +229,7 @@ namespace Kestrel.Core.Tests
                     float r = float.Parse(p[2], System.Globalization.CultureInfo.InvariantCulture);
                     Assert.That(r, Is.InRange(0f, (float)CoastWarp.WillDropLeadRealS + 1e-4f), e);
                     Assert.That(r, Is.GreaterThan(0f), id + " a foreseen drop warns ahead: " + e);
-                    if (r < 0.4f) shortWarn++; // the estimate stepped late (m19 has one at ~0.14 s; documented in DECISIONS #79)
+                    if (r < 0.4f) shortWarn++; // the estimate stepped late (m19 has one at ~0.14 s; documented in DECISIONS #88)
                     warned = true;
                     continue;
                 }

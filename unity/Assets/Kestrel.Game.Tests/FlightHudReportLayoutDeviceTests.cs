@@ -324,6 +324,26 @@ namespace Kestrel.Game.Tests
                 Assert.That(lines.Count, Is.GreaterThanOrEqualTo(4), at + " cause, numbers, kid and stars are on the card");
                 Assert.That(card.Query<Label>().ToList().FindAll(l => Shown(l) && string.IsNullOrEmpty(l.text)), Is.Empty, at + " no empty gap lines");
 
+                // The five mini-chart captions and bars sit in ~55 pt plots with overflow hidden: a caption
+                // wider than its plot is cut, not wrapped (TextFit cannot see it — the absolute label's own
+                // box is its text width, which is why plot-label is skipped above), and a bar at the last
+                // sample sat outside the plot entirely (Trevor's m3 debrief: "Dynamic p", "Delta-v los", no
+                // losses spike). Real rects, real font, at every size including 335 pt.
+                var plots = card.Q("failure-plots");
+                Assert.That(plots, Is.Not.Null, at + " plots");
+                foreach (var plot in plots.Children())
+                {
+                    var caption = plot.Q<Label>("plot-label");
+                    if (caption != null && Shown(caption))
+                        Inside(caption.worldBound, plot.worldBound, at + " caption '" + caption.text + "' inside its plot");
+                    foreach (var bar in plot.Query<VisualElement>("bar").ToList())
+                        Inside(bar.worldBound, plot.worldBound, at + " bar inside its plot");
+                    foreach (var mark in plot.Query<VisualElement>("marker").ToList())
+                        Inside(mark.worldBound, plot.worldBound, at + " marker inside its plot");
+                    var failMark = plot.Q<VisualElement>("failure-marker");
+                    if (failMark != null) Inside(failMark.worldBound, plot.worldBound, at + " failure marker inside its plot");
+                }
+
                 foreach (var id in ids) Click(card.Q<Button>(id));
                 Assert.That(new[] { fix, retry, next, missions, home, designer }, Is.EqualTo(new[] { 1, 1, 1, 1, 1, 1 }), at + " each exit routes once");
                 ReportCardChrome.Dismiss(surface.Stage);

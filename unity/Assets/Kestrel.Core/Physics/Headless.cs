@@ -300,6 +300,8 @@ namespace Kestrel.Core.Physics
         /// maximum (the first peak) at that moment. A later, higher peak still raises SimResult.maxQ but emits nothing.
         /// </summary>
         public const double MaxQConfirm = 0.98;
+        /// <summary>Peak q is confirmed (q fell below <see cref="MaxQConfirm"/> of the running maximum).</summary>
+        public bool MaxQPassed => maxQPassed;
         /// <summary>Bisection steps for the located energy cutoff. 40 halvings of a 0.2 s step is below 1e-12 s. Fixed, so deterministic.</summary>
         public const int CutoffBisections = 40;
         readonly double[] stepStart = new double[5];

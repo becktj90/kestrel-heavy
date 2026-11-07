@@ -785,7 +785,12 @@ namespace Kestrel.Slice
             ApplyTankCutaway();
             ApplyDesignFraming();
             // One registration: failure visuals and the post-flight card.
-            Kestrel.Game.Failure.FailureHost.Attach(rocketGO, flight, ui, r);
+            var host = Kestrel.Game.Failure.FailureHost.Attach(rocketGO, flight, ui, r);
+            // Debrief telemetry during a skip: the frame sampler starves while the sim fast-forwards between
+            // rendered frames, so the host samples the stepped state through the driver's skip sink instead
+            // (StageSkip.Advance hands it one sample per 0.1 sim-seconds). One sampler per rocket — BuildRocket
+            // destroyed the old rocket above, so re-assigning here drops the dead host.
+            if (flight != null) flight.SkipSampler = host != null ? (System.Action<AscentSample>)host.SampleSkip : null;
             AttachStaging(r);
         }
 
@@ -1705,7 +1710,7 @@ namespace Kestrel.Slice
             catch (System.Exception) { reduced = false; }
             AscentHook hook = null;
             var doc = session != null ? session.Design : null;
-            try { PostFlightSource.Arm(SliceData.Catalog, design, doc, engineer); }
+            try { PostFlightSource.Arm(SliceData.Catalog, design, doc, engineer, starterMode); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
             try { hook = AscentFlight.Prepare(SliceData.Catalog, design, doc, engineer, reduced); }
             catch (System.Exception e) { Debug.LogWarning("[Ascent] " + e.Message); }
@@ -1864,7 +1869,12 @@ namespace Kestrel.Slice
         void LateUpdate()
         {
             if (padLights != null && flight != null) padLights.SetPlume((float)flight.ThrustFraction, (float)flight.Altitude);
-            if (sky != null && flight != null) sky.SetAltitude(flight.Altitude);
+            if (sky != null && flight != null)
+            {
+                // The sky is graded for where the camera is: the booster's altitude while it is followed down, else the ascent's.
+                double viewAlt = recovery != null ? recovery.ViewAltitude : double.NaN;
+                sky.SetAltitude(double.IsNaN(viewAlt) ? flight.Altitude : viewAlt);
+            }
             if (explodedView != null && hangarCam != null && hangarCam.enabled)
             {
                 SetAssembledDrawn(!explodedView.IsExploded && explodedView.Shown <= 0.001f);
@@ -1908,8 +1918,17 @@ namespace Kestrel.Slice
             StepFlightCamera(juice != null ? juice.Fov : FlightJuice.BaseFov, flight.Altitude, juice);
             if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
+            if (recovery != null && flight != null && flight.SkipAdvancedSimS > 0)
+            {
+                // Skip to next stage (#78): the booster advances by the sim-seconds the ascent just skipped, in
+                // lockstep; when it enters its next burn phase (or touches down), the ascent skip stops there — the
+                // first event on either timeline wins.
+                var reached = recovery.SkipAdvance(flight.SkipAdvancedSimS);
+                if (reached != StageSkipTarget.None) flight.HaltSkip(reached);
+            }
             recovery?.Present(Time.unscaledDeltaTime);
-            if (recovery != null && ground != null) recovery.Aim(cam, ground.position.y);
+            if (recovery != null && ground != null)
+                recovery.Aim(cam, ground.position.y, ascentHud != null ? ascentHud.TopCover() : 0f, ascentHud != null ? ascentHud.BottomCover() : 0f);
             failureShow?.Present(hangarCam != null && hangarCam.ReduceMotion);
             ShowFlightPicture();
             RefreshWebcast(flight.SimTime, true);
@@ -2023,7 +2042,8 @@ namespace Kestrel.Slice
             if (voice == null || !counting || sequence == null) return;
             try
             {
-                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null), flightCalls);
+                var mission = AscentFlight.CurrentMission();
+                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null).With("mission", mission != null ? mission.Id : null), flightCalls);
                 voice.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
             }
             catch (System.Exception e) { Debug.LogWarning("[Count] narration: " + e.Message); }
@@ -2151,10 +2171,28 @@ namespace Kestrel.Slice
             CountdownChrome.Dress(cast, hVerdict, hPulse, hCallout, skipCount, upp, CountCardWidthPt(upp), skipShown);
         }
 
+        /// <summary>The clock's .hud-big face in panel units (Slice.uss); on a scaled-up iPad panel the header clock keeps at least this.</summary>
+        const float RestingClockUnits = 56f;
+
         void DressClock(Label clock)
         {
             if (clock == null) return;
             float upp = UnitsPerPoint();
+            var row = clock.parent;
+            if (clock.resolvedStyle.position != Position.Absolute && row != null && row.contentRect.width > 8f)
+            {
+                // Portrait header: size from the row (FlightHudLayout.HeaderClockFontPt), not the content-sized label,
+                // or the face chases its own box down to the floor (tiny iPad clock, #381).
+                float sib = 0f;
+                foreach (var c in row.Children())
+                {
+                    if (c == clock || c.resolvedStyle.display == DisplayStyle.None || c.resolvedStyle.position == Position.Absolute) continue;
+                    float cw = c.layout.width;
+                    if (!float.IsNaN(cw)) sib += cw + c.resolvedStyle.marginLeft + c.resolvedStyle.marginRight;
+                }
+                FlightDusk.Clock(clock, upp, FlightHudLayout.HeaderClockFontPt(row.contentRect.width / upp, sib / upp, RestingClockUnits / upp));
+                return;
+            }
             float w = clock.resolvedStyle.width;
             float h = clock.resolvedStyle.height;
             if (float.IsNaN(w) || w < 8f)
