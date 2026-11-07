@@ -38,13 +38,24 @@ namespace Kestrel.Core.Designer
         /// <summary>The predictor flight's first failure (null when it stayed intact).</summary>
         public FailureEvent Failure;
         public string Outcome, LandingGrade, BoosterGrade;
-        /// <summary>The predictor's flight stays intact (no breakup, landing or fit cause); it may still miss the target.</summary>
-        public bool Survives => Cause == null || IsMiss(Cause);
-        /// <summary>An intact flight that misses the mission band (DECISIONS #77).</summary>
+        /// <summary>Why an intact flight does not pass, without making it a failure: the band miss
+        /// (<see cref="MissOf"/>) or an in-band result-screen gate (<see cref="Goal"/>). Null when the flight
+        /// passes, fails for certain, or ends on a seeded random event. <see cref="Cause"/> stays null for a miss,
+        /// so <see cref="Survives"/> stays true: an intact miss is a missed goal, not a breakup (Trevor 11-07), and
+        /// the golden honest-readiness test agrees (its truth names a band miss only for circular missions, which
+        /// <see cref="OrbitMiss"/> already puts in <see cref="Cause"/>).</summary>
+        public string Miss;
+        /// <summary>The predictor's flight stayed intact: no deterministic failure, no short landing, no fit block,
+        /// no circular-mission band miss. A hop/ellipse/C3 band miss or an in-band gate failure is not a failure:
+        /// it lands in <see cref="Miss"/> and <see cref="Passes"/> is false, but the flight survived.</summary>
+        public bool Survives => Cause == null;
+        /// <summary>An intact flight that misses the mission band (DECISIONS #82). Circular misses name
+        /// <see cref="Short"/>/<see cref="Orbit"/> via <see cref="OrbitMiss"/>; this set covers the hop/ellipse/C3 names.</summary>
         public static bool IsMiss(string cause) => cause == Low || cause == High || cause == Shape || cause == Goal;
-        /// <summary>DECISIONS #77: the predictor's flight passes the mission (the batch's acceptance rule plus the landing).
-        /// "Ready" reads only this. An intact flight that misses the band gets <see cref="Low"/>, <see cref="High"/> or
-        /// <see cref="Shape"/> as its cause.</summary>
+        /// <summary>DECISIONS #82: the predictor's flight passes the mission (the batch's acceptance rule plus the landing).
+        /// "Ready" reads only this. An intact flight that misses the band gets a miss cause in <see cref="Miss"/> (hop: <see cref="Low"/>/
+        /// <see cref="High"/>; circular: <see cref="Short"/>/<see cref="Orbit"/> in <see cref="Cause"/>; ellipse/C3: <see cref="Low"/>/
+        /// <see cref="High"/>/<see cref="Shape"/>); in the band but failing a result-screen gate gets <see cref="Goal"/> in <see cref="Miss"/>.</summary>
         public bool Passes;
 
         /// <summary>This verdict as the one verdict source (<see cref="FlightVerdict"/>).</summary>
@@ -52,8 +63,9 @@ namespace Kestrel.Core.Designer
         public bool Chance => Cause == null && Failure != null;
 
         /// <summary>This verdict as the one verdict source (<see cref="FlightVerdict"/>). A seeded random end is not a
-        /// verdict, so it stays Checking and callers keep their own line.</summary>
-        public FlightVerdict AsFlightVerdict() => Passes ? FlightVerdict.Pass() : Chance ? FlightVerdict.Checking : FlightVerdict.Fail(Cause);
+        /// verdict, so it stays Checking and callers keep their own line. A miss fails with its miss reason, so the
+        /// count card still names it.</summary>
+        public FlightVerdict AsFlightVerdict() => Passes ? FlightVerdict.Pass() : Chance ? FlightVerdict.Checking : FlightVerdict.Fail(Cause ?? Miss);
 
         /// <summary>The cause a flown failure names, or null for none or a seeded random event.</summary>
         public static string CauseOf(FailureEvent f)
@@ -105,10 +117,13 @@ namespace Kestrel.Core.Designer
             }
             if (v.Cause != null) return v;
             double apoM = MissionScore.FlownApoAltM(sim);
-            if (!LaunchPredictor.AcceptsMission(mission, sim, apoM)) { v.Cause = MissOf(mission, sim, apoM); return v; }
+            // A band miss is a missed goal, not a failure: it lands in Miss (Passes stays false) and Cause stays
+            // null, so Survives stays true for an intact flight. Circular misses already returned above via
+            // OrbitMiss, which the honest-readiness truth also names; hops/ellipse/C3 do not set Cause.
+            if (!LaunchPredictor.AcceptsMission(mission, sim, apoM)) { v.Miss = MissOf(mission, sim, apoM); return v; }
             // In the band: the result screen's other gates (margin, reliability, red risk, budget, ...) decide the pass.
             if (FlightVerdict.ResultPasses(c, mission, design, sim, landingJudged: true)) v.Passes = true;
-            else v.Cause = Goal;
+            else v.Miss = Goal;
             return v;
         }
 

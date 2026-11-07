@@ -138,7 +138,7 @@ namespace Kestrel.Core.Designer
             }
             if (!v.Passes)
             {
-                string cause = v.Cause ?? StarterVerdict.Low;
+                string cause = v.Cause ?? v.Miss ?? StarterVerdict.Low;
                 if ((cause == StarterVerdict.Short || cause == StarterVerdict.Low) && !hop && c.Margin < 0) return ShortLine(c, target, out badge, out rest);
                 badge = copy.Badge(cause);
                 rest = copy.Kid(cause, r.CanFix);
@@ -180,7 +180,7 @@ namespace Kestrel.Core.Designer
 
         /// <summary>The engineer wording of the current setting's predicted cause, or "" (Builder/Engineer tiers, tooltips).</summary>
         public static string EngineerReason(StarterRocket r)
-            => r != null && r.TryVerdict(out var v) && v != null && v.Cause != null ? StarterReadinessCopy.Current.Engineer(v.Cause) : "";
+            => r != null && r.TryVerdict(out var v) && v != null && (v.Cause ?? v.Miss) != null ? StarterReadinessCopy.Current.Engineer(v.Cause ?? v.Miss) : "";
 
         /// <summary>Hops (KH-1, KH-2): the speed bar compares with the mission's flown rocket within this fraction, not the
         /// readout's orbital margin, which reads "short" on rockets that fly the hop (M-10). The badge reads the predictor.</summary>
