@@ -775,8 +775,8 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 6,
-            "turnShape": 0.5,
+            "pitchKickDeg": 11,
+            "turnShape": 0,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
@@ -887,7 +887,7 @@
           },
           "guidance": {
             "pitchKickAlt": 12000,
-            "pitchKickDeg": 4,
+            "pitchKickDeg": 7,
             "turnShape": 0,
             "maxQThrottle": 40,
             "gLimit": 5.5
