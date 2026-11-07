@@ -30,6 +30,9 @@ namespace Kestrel.Core.Flight
         /// names it, so the lever is the design's own kick: the old constant text always named 6°, which on an 8.65°
         /// design told the player to set 6.5° — steeper, the opposite of the fix.</summary>
         public double PitchKickDeg = double.NaN;
+        /// <summary>Flown from the Starter screen (fuel, stages, engine fuel and boosters, plus Reset): advice that needs a
+        /// control the Starter does not have (pitch kick, one stage's fuel) names the Starter's own instead.</summary>
+        public bool Starter;
         /// <summary>#341: the closed-loop guidance computer was fitted. Without it every field below is ignored and the
         /// explanation is exactly the basic one.</summary>
         public bool GuidanceComputer;
@@ -42,7 +45,7 @@ namespace Kestrel.Core.Flight
 
     public sealed class MissExplanation
     {
-        /// <summary>Which gate missed: upper-out, upper-out-flat-handoff (#341, guidance computer only), altitude-low, altitude-high, fpa-steep, fpa-steep-suborbital, fpa-flat, apo-high, peri-low, orbit-low, speed, g, landing, boosters, margin, reliability, red-risk, boil-off, gentle, payload, fairing, budget.</summary>
+        /// <summary>Which gate missed: upper-out, upper-out-flat-handoff (#341, guidance computer only), altitude-low, altitude-high, fpa-steep, fpa-steep-suborbital, fpa-flat, suborbital-short, suborbital-steep, apo-high, peri-low, orbit-low, speed, g, landing, boosters, margin, reliability, red-risk, boil-off, gentle, payload, fairing, budget.</summary>
         public string Code = "";
         public string Reason = "";
         public string Advice = "";
@@ -70,6 +73,8 @@ namespace Kestrel.Core.Flight
         /// and KH-4 (6° → 6.5°) starters. The constant below is the unknown-kick fallback;
         /// <see cref="FlatAdviceFor"/> names the flown kick when it is known.</summary>
         public const string FlatAdvice = "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).";
+        /// <summary>The Starter screen's lever for an orbit it flew off: its default rocket wins every mission (DECISIONS #75).</summary>
+        public const string StarterReset = "On the Starter screen, tap Reset for the rocket that makes this orbit.";
         /// <summary>The flat advice's lever: the flown kick plus this, degrees. One designer step (DesignerKnobs.PitchDegStep).</summary>
         public const double FlatKickStepDeg = 0.5;
         /// <summary>The steep advice's lever: the flown kick minus this, degrees.</summary>
@@ -213,17 +218,29 @@ namespace Kestrel.Core.Flight
                         // Fell back (low point under the ground): on the KH-6 fixtures neither lever above moves it; only a much
                         // longer upper burn does (2x to 3x the fuel, FixItRepairTests). Above the ground: the steep levers.
                         if (steep && f.PeriM < 0)
-                            return Miss("fpa-steep-suborbital", reason, "Your rocket flew too steep and fell back down. Give " + top + " much more fuel (it can take double or more), so it burns long enough to level out.");
+                            return Miss("fpa-steep-suborbital", reason, f.Starter
+                                ? "Your rocket flew too steep and fell back down. " + StarterReset
+                                : "Your rocket flew too steep and fell back down. Give " + top + " much more fuel (it can take double or more), so it burns long enough to level out.");
+                        // The Starter has no pitch-kick control: its lever is Reset (every Starter default wins its mission).
+                        if (f.Starter)
+                            return Miss(steep ? "fpa-steep" : "fpa-flat", reason, (steep ? "Your rocket flew too steep. " : "Your rocket flew too flat. ") + StarterReset);
                         return steep
                             ? Miss("fpa-steep", reason, SteepAdviceFor(f.PitchKickDeg))
                             : Miss("fpa-flat", reason, FlatAdviceFor(f.PitchKickDeg));
                     }
+                    // Trevor 11-07: the low point under the ground after climbing past the band is not an orbit that
+                    // "overshot". It never went around: it fell back. Say so, and give the lever that helps.
+                    if (f.PeriM < 0 && f.ApoM > -Gravity.R_EARTH && f.ApoM >= apoGoal * (1 - MissionScore.AltitudeFraction))
+                        return Suborbital(f, apoGoal, periGoal, top);
                     if (f.ApoM > apoGoal && !apoOk)
                     {
                         // Speed at the low point above what an orbit with the goal's high point needs there.
                         double extra = PeriSpeed(f.PeriM, f.ApoM) - PeriSpeed(f.PeriM, Math.Max(f.PeriM, apoGoal));
-                        string low = periOk ? "" : " The low point, " + Km(f.PeriM) + ", needs " + Band(periGoal) + ".";
-                        return Miss("apo-high", "Missed the " + Km(apoGoal) + " circle: the orbit flew " + orbit + ", and the high point needs " + Band(apoGoal) + ". That is about " + Speed(extra) + " too fast at the low point." + low,
+                        string need = periOk || Band(periGoal) != Band(apoGoal)
+                            ? ", and the high point needs " + Band(apoGoal) + "."
+                            : ", and both points need " + Band(apoGoal) + ".";
+                        string low = periOk || Band(periGoal) == Band(apoGoal) ? "" : " The low point, " + Km(f.PeriM) + ", needs " + Band(periGoal) + ".";
+                        return Miss("apo-high", "Missed the " + Km(apoGoal) + " circle: the orbit flew " + orbit + need + " That is about " + Speed(extra) + " too fast at the low point." + low,
                             "Add fuel to " + top + ", about 2% at a time (up to 10%), until the high point comes down into the band.");
                     }
                     if (apoOk)
@@ -280,6 +297,36 @@ namespace Kestrel.Core.Flight
                     "Let stage 1 climb higher and steeper before it lets go: use a smaller pitch kick at launch, or give " + top + " a stronger engine. More fuel in "
                     + top + " is not the fix.");
             return Miss("upper-out", head, "Add fuel to " + top + ", or add another stage.");
+        }
+
+        /// <summary>
+        /// Trevor 11-07: a circular mission's flight that climbed past the band and fell back (low point under the ground).
+        /// The reason says it never reached orbit and how much sideways speed it lacked at the top (circular speed at the
+        /// flown peak minus the speed it had there). The lever comes from the orbit's energy: a mean altitude, (apo + peri) / 2,
+        /// under the band ran out of push (more fuel or a stage, "suborbital-short"); one at or over it had the energy but
+        /// climbed too steeply (a larger pitch kick turns it sideways sooner, "suborbital-steep"). KH-3's Starter at
+        /// Kerosene and the lowest fuel (470 x -394 km in calm air) is the short case; at the next fuel dot (408 x -8 km)
+        /// it is the steep one. A Starter flight has no kick or per-stage fuel control, so its advice is the Starter's own
+        /// controls, ending with Reset (every Starter default wins its mission, StarterDefaultWindGateTests).
+        /// </summary>
+        static MissExplanation Suborbital(MissInput f, double apoGoal, double periGoal, string top)
+        {
+            double ra = Gravity.R_EARTH + f.ApoM;
+            double shortBy = Math.Sqrt(Gravity.MU_EARTH / ra) - ApoSpeed(f.PeriM, f.ApoM);
+            string band = Band(periGoal) == Band(apoGoal) ? Band(apoGoal) : Band(periGoal) + " at the low point";
+            string reason = "Didn't reach orbit. It climbed to " + Km(f.ApoM) + " but wasn't going fast enough sideways, so it fell back down"
+                + " (about " + Speed(shortBy) + " short at the top). The " + Km(apoGoal) + " circle needs " + band + " all the way round.";
+            double mean = 0.5 * (f.ApoM + f.PeriM);
+            bool ranOut = mean < 0.5 * (apoGoal + periGoal) * (1 - MissionScore.AltitudeFraction);
+            if (ranOut)
+                return Miss("suborbital-short", reason, f.Starter
+                    ? "It ran out of push. Try more fuel or another stage. " + StarterReset
+                    : "It ran out of push before it was going fast enough. Add fuel to " + top + ", or add a stage.");
+            string steep = "It had the push but climbed too steeply.";
+            return Miss("suborbital-steep", reason, f.Starter
+                ? steep + " " + StarterReset
+                : steep + " Use a larger pitch kick at launch so it turns sideways sooner"
+                    + (double.IsNaN(f.PitchKickDeg) ? "." : " (for example " + Kick(f.PitchKickDeg) + "° → " + Kick(f.PitchKickDeg + FlatKickStepDeg) + "° in Guidance)."));
         }
 
         static double PeriSpeed(double periM, double apoM)
