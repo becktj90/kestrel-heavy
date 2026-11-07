@@ -439,7 +439,8 @@ namespace Kestrel.Core.Tests
             var native = JsonMut.CloneObject(scout);
             JsonMut.Set(native, "version", 2d);
             double derived = Mass.Of(Golden.Catalog, Design.FromJson(native)).liftoffMass;
-            Assert.AreEqual(44845.68, derived, 0.01, "version 2 still derives the frustum when the key is absent (was 44215.28 on composite)");
+            // #335: scout S2 prop 6000 -> 5900 kg, so the derived liftoff drops 105 kg too.
+            Assert.AreEqual(44740.67, derived, 0.01, "version 2 still derives the frustum when the key is absent (was 44215.28 on composite)");
             Assert.Greater(derived, bare);
         }
 
