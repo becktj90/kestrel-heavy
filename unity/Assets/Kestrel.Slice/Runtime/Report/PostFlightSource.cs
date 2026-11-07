@@ -25,6 +25,7 @@ namespace Kestrel.Slice
         static Catalog catalog;
         static Design design;
         static bool engineer;
+        static bool starter;
 
         public static void Bind(Action relaunch, Action home, Action designer = null)
         {
@@ -33,11 +34,14 @@ namespace Kestrel.Slice
             OpenDesigner = designer;
         }
 
-        public static void Arm(Catalog cat, Design flying, JsonObject doc, bool engineerDepth)
+        /// <param name="fromStarter">Launched from the Starter screen: the miss advice names the Starter's controls (Reset),
+        /// not the pitch kick or one stage's fuel it does not have (MissInput.Starter).</param>
+        public static void Arm(Catalog cat, Design flying, JsonObject doc, bool engineerDepth, bool fromStarter = false)
         {
             catalog = cat;
             design = flying;
             engineer = engineerDepth;
+            starter = fromStarter;
             if (design == null && doc != null)
             {
                 try { design = Design.FromJson(doc); }
@@ -74,6 +78,8 @@ namespace Kestrel.Slice
             {
                 Failure = ev,
                 LandingGrade = landingGrade,
+                // #79: the flown burn's player input reaches the score's landing-bonus multiplier.
+                PlayerFlownBurn = rec != null && rec.PlayerFlown,
                 Seed = mission != null ? mission.Seed : 0,
                 DesignId = design != null ? design.name : null,
                 RedundantAvionics = design != null && EventModel.Tier(design.avionicsTier) == "redundant",
@@ -108,13 +114,18 @@ namespace Kestrel.Slice
                         extra.BoosterGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, true);
                     }
                     facts.Passed = FlightDebrief.GoalMet(row, intact, apo, peri, result.maxG, facts.LandingGrade, extra);
-                    // F4: an intact miss says why and what to change, from the same gates.
+                    // F4: an intact miss says why and what to change, from the same gates. The advice names the
+                    // kick the design actually flew (the sim's default when the design never set one), so the
+                    // flat/steep lever is never the old constant 6°.
                     facts.Miss = MissReason.Explain(row, new MissInput
                     {
                         Intact = intact, ApoM = apo, PeriM = peri, MaxG = result.maxG,
                         LandingGrade = facts.LandingGrade, Extra = extra,
                         Stages = design != null && design.stages != null ? design.stages.Count : 1,
                         CutoffGammaDeg = result.cutoffGammaDeg,
+                        PitchKickDeg = design != null && design.guidance != null && design.guidance.pitchKickDegSet
+                            ? design.guidance.pitchKickDeg : GuidanceProfile.DefaultKickDeg,
+                        Starter = starter,
                     });
                 }
             }

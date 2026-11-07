@@ -1201,7 +1201,7 @@ namespace Kestrel.Slice.DesignerV3
         void BuildFlow()
         {
             stepRail.Clear();
-            foreach (var step in DesignerCoach.Flow)
+            foreach (var step in DesignerCoach.RailSteps(s => tabButtons.ContainsKey(StepTab(s))))
             {
                 var captured = step;
                 var b = ui.Btn(step, () => ShowStep(captured), DesignerCoach.Goal(step), minWidthPt: 44f);
@@ -1236,6 +1236,9 @@ namespace Kestrel.Slice.DesignerV3
             }
             Show(TabOf(step));
         }
+
+        /// <summary>The tab a rail step opens. Mission opens Cargo (Payload); Launch has no tab.</summary>
+        static DesignerV3Tab StepTab(string step) => step == "Mission" ? DesignerV3Tab.Payload : TabOf(step);
 
         static DesignerV3Tab TabOf(string step)
         {

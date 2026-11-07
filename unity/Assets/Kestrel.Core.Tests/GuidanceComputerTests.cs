@@ -180,82 +180,144 @@ namespace Kestrel.Core.Tests
         }
 
         // ---- the flown law ----
+        // #446 follow-up: these two used to be single [Test]s that flew every starter / every golden in one method and
+        // overran Unity's 180 s per-test timeout on slow EditMode runners. They are now one case per mission / per golden
+        // design (TestCaseSource) with the same flights and the same checks, each with its own small timeout; the
+        // *_CoverEvery* tests pin that the case lists still cover all 18 starters and all 113 golden designs.
+
+        /// <summary>Per-case timeouts. Slowest measured dotnet case: starter m19 5.1 s, golden winners m13 d0 1.9 s. Unity EditMode ran
+        /// the old tests ~1.6x slower than dotnet (145 s vs 92 s) and slow runners another ~1.5x (~2.4x total), so the slowest
+        /// slow-runner case is ~12 s / ~5 s; these leave about 2.5x / 3x on top of that.</summary>
+        const int StarterCaseTimeoutMs = 30000;
+        const int GoldenCaseTimeoutMs = 15000;
+
+        List<(CampaignMission mission, Design design, string mode)> starters;
+        List<(CampaignMission mission, Design design, string mode)> CachedStarters() => starters ??= BoardStarters();
+
+        static List<string> StarterIds()
+        {
+            var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "board-starters.json")));
+            var ids = new List<string>();
+            foreach (JsonObject row in file.Arr("missions")) ids.Add(row.Str("id"));
+            return ids;
+        }
+
+        static IEnumerable<TestCaseData> StarterCases()
+        {
+            foreach (var id in StarterIds()) yield return new TestCaseData(id).SetName("Starter_PassesWithAndWithoutThePart_GammaUnder005WithIt(" + id + ")");
+        }
 
         [Test]
-        public void AllEighteenStarters_PassWithAndWithoutThePart_GammaUnder005WithIt()
+        public void StarterCases_CoverEveryBoardStarter()
         {
+            var ids = StarterIds();
+            int n = 0;
+            foreach (var _ in StarterCases()) n++;
+            Assert.AreEqual(ids.Count, n);
+            var flown = CachedStarters().ConvertAll(x => x.mission.Id);
+            Assert.AreEqual(18, ids.Count);
+            CollectionAssert.AreEqual(flown, ids, "one case per board starter, in board order");
+        }
+
+        [Test, TestCaseSource(nameof(StarterCases)), Timeout(StarterCaseTimeoutMs)]
+        public void Starter_PassesWithAndWithoutThePart_GammaUnder005WithIt(string id)
+        {
+            var (mission, design, _) = CachedStarters().Find(x => x.mission.Id == id);
+            Assert.IsNotNull(mission, id);
             var misses = new List<string>();
             double gammaMax = 0;
-            foreach (var (mission, design, mode) in BoardStarters())
+            foreach (var (d, tag) in new[] { (design, "basic"), (Fitted(design), "part") })
             {
-                foreach (var (d, tag) in new[] { (design, "basic"), (Fitted(design), "part") })
+                // A starter that ships the part is only promised to pass with it.
+                if (tag == "basic" && ShipsThePart.Contains(mission.Id)) continue;
+                foreach (var seed in campaign.Seeds)
                 {
-                    // A starter that ships the part is only promised to pass with it.
-                    if (tag == "basic" && ShipsThePart.Contains(mission.Id)) continue;
-                    foreach (var seed in campaign.Seeds)
+                    var f = FlightBatch.Fly(catalog, mission, d, seed);
+                    if (!f.passed) misses.Add(mission.Id + " " + tag + " seed " + seed);
+                    if (tag == "part")
                     {
-                        var f = FlightBatch.Fly(catalog, mission, d, seed);
-                        if (!f.passed) misses.Add(mission.Id + " " + tag + " seed " + seed);
-                        if (tag == "part")
-                        {
-                            Assert.IsTrue(f.guidanceComputer && f.guidanceInControl, mission.Id);
-                            gammaMax = Math.Max(gammaMax, Math.Abs(f.cutoffGammaDeg));
-                            if (!(Math.Abs(f.cutoffGammaDeg) < GammaMaxDeg)) misses.Add(mission.Id + " seed " + seed + " γ " + f.cutoffGammaDeg);
-                        }
-                        else Assert.IsFalse(f.guidanceComputer || f.guidanceInControl || f.upperOut, mission.Id);
+                        Assert.IsTrue(f.guidanceComputer && f.guidanceInControl, mission.Id);
+                        gammaMax = Math.Max(gammaMax, Math.Abs(f.cutoffGammaDeg));
+                        if (!(Math.Abs(f.cutoffGammaDeg) < GammaMaxDeg)) misses.Add(mission.Id + " seed " + seed + " γ " + f.cutoffGammaDeg);
                     }
-                    foreach (bool wind in new[] { false, true })
+                    else Assert.IsFalse(f.guidanceComputer || f.guidanceInControl || f.upperOut, mission.Id);
+                }
+                foreach (bool wind in new[] { false, true })
+                {
+                    var live = LivePadLoop.Fly(catalog, mission, d, wind);
+                    if (!LivePadLoop.Passes(catalog, mission, d, live)
+                        && !LivePadLoop.IsM13HardButWins(catalog, mission, d, live))
+                        misses.Add(mission.Id + " " + tag + " live " + (wind ? "wind " : "calm ") + LivePadLoop.Text(live));
+                    if (tag == "part")
                     {
-                        var live = LivePadLoop.Fly(catalog, mission, d, wind);
-                        if (!LivePadLoop.Passes(catalog, mission, d, live)
-                            && !LivePadLoop.IsM13HardButWins(catalog, mission, d, live))
-                            misses.Add(mission.Id + " " + tag + " live " + (wind ? "wind " : "calm ") + LivePadLoop.Text(live));
-                        if (tag == "part")
-                        {
-                            gammaMax = Math.Max(gammaMax, Math.Abs(live.cutoffGammaDeg));
-                            if (!(Math.Abs(live.cutoffGammaDeg) < GammaMaxDeg)) misses.Add(mission.Id + " live γ " + live.cutoffGammaDeg);
-                            Assert.IsTrue(live.guidanceInControl, mission.Id);
-                        }
+                        gammaMax = Math.Max(gammaMax, Math.Abs(live.cutoffGammaDeg));
+                        if (!(Math.Abs(live.cutoffGammaDeg) < GammaMaxDeg)) misses.Add(mission.Id + " live γ " + live.cutoffGammaDeg);
+                        Assert.IsTrue(live.guidanceInControl, mission.Id);
                     }
                 }
             }
             Assert.That(misses, Is.Empty, string.Join(" | ", misses));
-            Console.WriteLine("#341 |γ| max with the part (18 starters, 5 seeds + live calm and wind): " + gammaMax.ToString("0.00000") + "°");
+            Console.WriteLine("#341 |γ| max with the part (" + id + ", 5 seeds + live calm and wind): " + gammaMax.ToString("0.00000") + "°");
         }
 
-        [Test]
-        public void AllGoldens_PassWithThePart()
+        sealed class GoldenCase { public CampaignMission Mission; public Design Design; public bool Tracked; }
+
+        static Dictionary<string, GoldenCase> goldenCases;
+        static List<string> goldenOrder;
+
+        /// <summary>Every golden design, loaded once and shared by the cases (read-only: the part is fitted on a clone).</summary>
+        static List<string> GoldenOrder()
         {
-            var misses = new List<string>();
-            int seen = 0;
-            void Check(CampaignMission m, Design d, string id, bool tracked)
-            {
-                int basic = 0, part = 0;
-                var fit = Fitted(d);
-                foreach (var seed in campaign.Seeds)
-                {
-                    if (FlightBatch.Fly(catalog, m, d, seed).passed) basic++;
-                    if (FlightBatch.Fly(catalog, m, fit, seed).passed) part++;
-                }
-                if (part < basic || (!tracked && part < campaign.Seeds.Count)) misses.Add(id + " basic " + basic + " part " + part);
-                seen++;
-            }
+            if (goldenOrder != null) return goldenOrder;
+            var cases = new Dictionary<string, GoldenCase>();
+            var order = new List<string>();
+            void Add(CampaignMission m, Design d, string id, bool tracked) { cases.Add(id, new GoldenCase { Mission = m, Design = d, Tracked = tracked }); order.Add(id); }
+            var camp = Campaign.Load(Golden.Root);
             foreach (var gf in new[] { "campaign-winners", "campaign-viable" })
             {
                 var file = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "golden", gf + ".json")));
                 foreach (JsonObject row in file.Arr("missions"))
                 {
-                    var m = campaign.ById(row.Str("id"));
+                    var m = camp.ById(row.Str("id"));
                     if (m == null) continue;
                     int i = 0;
-                    foreach (JsonObject dj in row.Arr("designs")) Check(m, Design.FromJson(dj), gf + " " + m.Id + " d" + i++, false);
+                    foreach (JsonObject dj in row.Arr("designs")) Add(m, Design.FromJson(dj), gf + " " + m.Id + " d" + i++, false);
                 }
             }
             var pool = ContractGen.Load(Golden.Root);
-            foreach (var cell in pool.Cells) { var m = ContractGen.ToMission(cell); foreach (var d in cell.Designs) Check(m, d, "contract " + cell.Id + " " + d.id, false); }
-            foreach (var t in pool.Tracked) { var m = ContractGen.ToMission(t.Cell); foreach (var d in t.Cell.Designs) Check(m, d, "tracked " + t.Id + " " + d.id, true); }
-            Assert.AreEqual(113, seen, "every golden design");
-            Assert.That(misses, Is.Empty, string.Join(" | ", misses));
+            foreach (var cell in pool.Cells) { var m = ContractGen.ToMission(cell); foreach (var d in cell.Designs) Add(m, d, "contract " + cell.Id + " " + d.id, false); }
+            foreach (var t in pool.Tracked) { var m = ContractGen.ToMission(t.Cell); foreach (var d in t.Cell.Designs) Add(m, d, "tracked " + t.Id + " " + d.id, true); }
+            goldenCases = cases;
+            return goldenOrder = order;
+        }
+
+        static IEnumerable<TestCaseData> GoldenCaseSource()
+        {
+            foreach (var id in GoldenOrder()) yield return new TestCaseData(id).SetName("Golden_PassesWithThePart(" + id + ")");
+        }
+
+        [Test]
+        public void GoldenCases_CoverEveryGoldenDesign()
+        {
+            Assert.AreEqual(113, GoldenOrder().Count, "every golden design");
+            int n = 0;
+            foreach (var _ in GoldenCaseSource()) n++;
+            Assert.AreEqual(113, n);
+        }
+
+        [Test, TestCaseSource(nameof(GoldenCaseSource)), Timeout(GoldenCaseTimeoutMs)]
+        public void Golden_PassesWithThePart(string id)
+        {
+            GoldenOrder();
+            var g = goldenCases[id];
+            int basic = 0, part = 0;
+            var fit = Fitted(g.Design);
+            foreach (var seed in campaign.Seeds)
+            {
+                if (FlightBatch.Fly(catalog, g.Mission, g.Design, seed).passed) basic++;
+                if (FlightBatch.Fly(catalog, g.Mission, fit, seed).passed) part++;
+            }
+            Assert.That(!(part < basic || (!g.Tracked && part < campaign.Seeds.Count)), id + " basic " + basic + " part " + part);
         }
 
         [Test]

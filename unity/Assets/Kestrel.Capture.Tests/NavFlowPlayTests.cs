@@ -360,6 +360,141 @@ namespace Kestrel.Capture.Tests
             NothingThrew();
         }
 
+        // ---------------------------------------------------------------- one more launch
+
+        static IEnumerator RelaunchFrame(string name)
+        {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) yield break;
+            var d = new FlightCapture.Device { Name = name, W = Math.Max(64, Screen.width), H = Math.Max(64, Screen.height) };
+            int distinct = 0;
+            var png = FlightCapture.Png(d, FlightCapture.OutDir(""), name, n => distinct = n);
+            while (png.MoveNext()) yield return png.Current;
+            Assert.That(distinct, Is.GreaterThan(8), name + " capture is flat");
+        }
+
+        /// <summary>The count after One more launch / Restart starts from a clean pad: nothing of the last flight is left.</summary>
+        static void AssertBackOnThePad(SliceApp app, FlightDriver driver, string how)
+        {
+            Assert.IsTrue(app.FlightHudVisible, how + ": the flight HUD is up for the count");
+            Assert.IsTrue(app.CountingForCapture, how + ": the count is running");
+            Assert.IsFalse(driver.Running, how + ": the last flight is not still flying under the count");
+            Assert.IsNull(driver.Result, how + ": the last result is dropped (no replayed card)");
+            Assert.AreEqual(0.0, driver.Altitude, 1e-6, how + ": altitude back to the pad");
+            Assert.AreEqual(0.0, driver.Downrange, 1e-6, how + ": downrange back to the pad");
+            Assert.AreEqual(0.0, driver.OriginX, 1e-6, how + ": floating origin back at the pad");
+            Assert.AreEqual(0.0, driver.OriginY, 1e-6, how + ": floating origin back at the pad");
+            Assert.IsTrue(driver.AnchorsAtOrigin(), how + ": ground, deck and tower are where the pad is");
+            Assert.That(app.VehicleForCapture.localPosition.magnitude, Is.LessThan(0.01f), how + ": the rocket is on the pad");
+            if (driver.Vehicle != null)
+                Assert.That(driver.Vehicle.localPosition.magnitude, Is.LessThan(0.01f), how + ": the flight vehicle is on the pad");
+            var cam = app.CameraForCapture;
+            Assert.IsNotNull(cam, "flight camera");
+            Assert.That(Vector3.Distance(cam.transform.position, app.VehicleForCapture.position), Is.LessThan(600f),
+                how + ": the camera looks at the pad, not the sky the last flight left it in");
+            var exit = Find(UiIds.FlightExit);
+            Assert.IsTrue(exit == null || exit.ClassListContains("hidden"), how + ": no stale BACK TO DESIGN");
+            Assert.IsFalse(ReportShownAfterRelaunch(), how + ": no report card over the count");
+        }
+
+        static bool ReportShownAfterRelaunch() { var r = Find("screen-report"); return r != null && NavIds.Shown(r); }
+
+        IEnumerator LaunchesFresh(FlightDriver driver, string how)
+        {
+            yield return Until(() => driver.Sim != null && driver.Running, 90f);
+            Assert.IsTrue(driver.Running, how + ": the count reaches liftoff again");
+            Assert.That(driver.SimTime, Is.LessThan(5.0), how + ": a new flight from T+0, not the old one resumed");
+        }
+
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator CrashingRocket_OneMoreLaunch_CountsDownFromACleanPad()
+        {
+            yield return ToThePad(d => d.stages[0].engineCount = 1);
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            yield return Until(ReportShownAfterRelaunch, 150f);
+            Assert.IsTrue(ReportShownAfterRelaunch(), "the break-up reaches the report");
+            Assert.IsNotNull(driver.Result, "the report has a result");
+            SliceApp.HoldCountForCapture = true;
+            try
+            {
+                Click(Find("report-retry"));
+                for (int i = 0; i < 6; i++) yield return null;
+                AssertBackOnThePad(app, driver, "One more launch");
+                yield return RelaunchFrame("relaunch-countdown");
+            }
+            finally { SliceApp.HoldCountForCapture = false; }
+            yield return LaunchesFresh(driver, "One more launch");
+            NothingThrew();
+        }
+
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator MidFlightRestart_LaunchesANewFlight_FromThePad()
+        {
+            yield return ToThePad(null);
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            // Past RebaseDistance the floating origin has moved the pad: the case that left it displaced on relaunch.
+            yield return Until(() => driver.Rebases > 0 || !driver.Running, 120f);
+            Debug.Log("[Relaunch] restart at alt=" + driver.Altitude.ToString("F0") + " m rebases=" + driver.Rebases);
+            Click(Find("flight-pause"));
+            yield return null;
+            SliceApp.HoldCountForCapture = true;
+            try
+            {
+                Click(Find(UiIds.PauseRestart));
+                for (int i = 0; i < 6; i++) yield return null;
+                Assert.IsFalse(NavIds.Shown(Find("screen-pause")), "Restart closes the pause menu");
+                Assert.AreEqual(1f, Time.timeScale, "Restart unfreezes time");
+                AssertBackOnThePad(app, driver, "Restart");
+                yield return RelaunchFrame("relaunch-restart-countdown");
+            }
+            finally { SliceApp.HoldCountForCapture = false; }
+            yield return LaunchesFresh(driver, "Restart");
+            NothingThrew();
+        }
+
+        /// <summary>
+        /// UX fun review 2026-11-03 #1 / QA #417: Fix it after a break-up rebuilt the rocket, the new FailureHost
+        /// re-reported the old crash and replayed it on the pad with the designer hidden (empty sky, no buttons).
+        /// Fix it must land in the designer and stay there, with no card coming back and no fallback needed.
+        /// </summary>
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator CrashingRocket_FixIt_LandsInTheDesigner_AndStays()
+        {
+            yield return ToThePad(d => d.stages[0].engineCount = 1);
+            VisualElement report = null;
+            yield return Until(() => (report = Find("screen-report")) != null && NavIds.Shown(report), 150f);
+            Assert.IsNotNull(report, "a rocket that breaks up reaches the report");
+            var fix = Find("report-fix");
+            Assert.IsNotNull(fix, "the report offers Fix it");
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            Click(fix);
+            // Past the landing grace: the old bug re-opened the card a frame later and stayed stuck for 35 s.
+            float until = Time.realtimeSinceStartup + Kestrel.Core.Flight.DesignerLanding.GraceSeconds + 1.5f;
+            bool cardCameBack = false;
+            while (Time.realtimeSinceStartup < until)
+            {
+                var again = Find("screen-report");
+                if (again != null && NavIds.Shown(again)) cardCameBack = true;
+                yield return null;
+            }
+            Assert.IsFalse(cardCameBack, "Fix it re-opened the report (stale result re-reported by the rebuilt rocket)");
+            Assert.AreEqual(AppScreen.Design, flow.Current, "Fix it stays on the Design screen");
+            Assert.IsFalse(app.FlightHudVisible, "the flight HUD is closed");
+            var design = SliceUi()?.Q("design");
+            Assert.IsNotNull(design, "the design sheet exists");
+            Assert.IsFalse(design.ClassListContains("hidden"), "the designer is on screen after Fix it");
+            Assert.AreEqual(0, app.ForcedDesignerLandings, "Fix it landed on its own; the fallback did not have to fire");
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            Assert.IsTrue(driver == null || !driver.Running, "Fix it does not launch");
+            var marker = GameObject.Find("FailureMarker");
+            Assert.IsTrue(marker == null || !marker.activeInHierarchy, "no break-up replay on the pad");
+            NothingThrew();
+        }
+
         [UnityTest]
         [Timeout(300000)]
         public IEnumerator PauseResume_ThenQuitMidFlight_ThenContinue()

@@ -106,6 +106,12 @@
       "kid": "The cargo would not fit in the nose cone.",
       "engineer": "Payload envelope exceeds the fairing's volume or diameter.",
       "fixes": []
+    },
+    "orbit": {
+      "badge": "✗ Misses orbit.",
+      "kid": "It would climb too steep and fall back to Earth.",
+      "engineer": "Intact but off the circle: the orbit's energy is there, but the fixed pitch program lofts this setting (apoapsis over the band, periapsis under it).",
+      "fixes": []
     }
   }
 }
