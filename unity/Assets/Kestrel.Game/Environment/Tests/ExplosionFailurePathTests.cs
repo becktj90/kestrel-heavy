@@ -71,7 +71,8 @@ namespace Kestrel.Game.Environment.Tests
         public void EveryFailureKindIsKnownAndEnumerated()
         {
             var kinds = AllFailureKinds();
-            Assert.That(kinds.Count, Is.EqualTo(11), "FailureKind gained or lost a kind: update the failure paths below");
+            // #344: AxialOverload (12) is the 12th kind - the axial load alone over the wall's allowable.
+            Assert.That(kinds.Count, Is.EqualTo(12), "FailureKind gained or lost a kind: update the failure paths below");
             foreach (int k in kinds) Assert.That(FailureKind.Name(k), Is.Not.Empty, "kind " + k);
         }
 
