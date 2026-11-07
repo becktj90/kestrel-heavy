@@ -57,6 +57,11 @@ namespace Kestrel.Core.Flight
         public const string FuelKey = "FUEL";
         public const string DeckKey = "TO DECK";
         public const string PadKey = "TO PAD";
+        /// <summary>Every key the booster strip can show, for the text-fit sweeps (FlightHudLayoutTests, WebLayoutModeTests).</summary>
+        public static readonly string[] Labels = { AltKey, DownKey, UpKey, FuelKey, DeckKey, PadKey };
+        /// <summary>The widest booster readings per format (m, km, m/s, km/s, %).</summary>
+        public static readonly string[] ValueSamples = { "999 m", "999.9 km", "999 m/s", "9.99 km/s", "100%" };
+
         /// <summary>Fuel at or under this share of the landing reserve draws amber (static, never blinks).</summary>
         public const double LowFuel01 = 0.15;
 
@@ -77,7 +82,10 @@ namespace Kestrel.Core.Flight
             return f < 0 ? 0 : f > 1 ? 1 : f;
         }
 
-        public static BoosterHudReadout Read(in RecoverySample s, in RecoveryCraft craft)
+        /// <summary>The HUD reads the booster exactly while the camera is steered onto it.
+        /// <paramref name="deckOffsetM"/> is where the swell has moved the deck (#79): the TO DECK cell
+        /// reads the deck's live position, 0 keeps the charted centre as before.</summary>
+        public static BoosterHudReadout Read(in RecoverySample s, in RecoveryCraft craft, double deckOffsetM = 0)
         {
             var inv = CultureInfo.InvariantCulture;
             double alt = Math.Max(0, s.Alt);
@@ -87,7 +95,7 @@ namespace Kestrel.Core.Flight
             double vAbs = Math.Abs(vUp);
             double fuel = Fuel01(s.Prop, craft.ReserveKg);
             int fuelPct = (int)Math.Round(fuel * 100.0, MidpointRounding.AwayFromZero);
-            double miss = Math.Abs(s.MissM);
+            double miss = Math.Abs(s.MissM - deckOffsetM);
             bool pad = craft.Mode == "rtls";
             string place = pad ? "pad" : "deck";
             return new BoosterHudReadout
@@ -121,6 +129,22 @@ namespace Kestrel.Core.Flight
                     Tone = BoosterHudTone.Amber,
                 },
             };
+        }
+
+        /// <summary>The engineer's recovery numbers line (RecoveryShow.Call): phase, sink and tilt describe the booster's
+        /// real coast, and the landing miss and propellant left are reported only when the booster is actually landing.
+        /// An expendable booster was never going to land (BoosterLanding.Fate Expendable: the design picked no landing,
+        /// so the attempt is ungraded), so a miss from the Haven deck and a 0 kg reserve would read as a landing that
+        /// failed instead of a stage that was never meant to come back. Its coast numbers stay; the miss and prop go.</summary>
+        public static string EngineerLine(in RecoverySample s, bool expendable)
+        {
+            var inv = CultureInfo.InvariantCulture;
+            string line = s.Phase + "  sink " + s.Sink.ToString("0.0", inv)
+                + " m/s  tilt " + s.TiltDeg.ToString("0.0", inv) + "°";
+            if (!expendable)
+                line += "  miss " + s.MissM.ToString("0", inv)
+                    + " m  prop " + s.Prop.ToString("0", inv) + " kg";
+            return line;
         }
 
         /// <summary>Metres under 1 km ("40 m"), then kilometres to one place ("12.3 km"), as the ascent ALT reads.</summary>

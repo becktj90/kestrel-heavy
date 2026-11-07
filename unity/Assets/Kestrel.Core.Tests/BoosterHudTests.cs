@@ -100,5 +100,36 @@ namespace Kestrel.Core.Tests
             Assert.That(r.Vertical.Key, Is.EqualTo("DOWN"), "standing still reads DOWN 0, not UP");
             Assert.That(r.Vertical.Value, Is.EqualTo("0 m/s"));
         }
+
+        [Test]
+        public void ToDeckReadsTheDeckWhereTheSwellMovedIt()
+        {
+            // #79: 12 m short of the charted centre, deck 6 m further west on the swell: 18 m to go.
+            var s = new RecoverySample { Alt = 40, Radial = -6, Sink = 6, Speed = 6.5, Prop = 3000, MissM = -12, Phase = RecoveryPhase.Landing };
+            var moved = BoosterHud.Read(s, Craft("barge", 20000), 6);
+            Assert.That(moved.Target.Value, Is.EqualTo("18 m"), "the deck is 18 m away, not 12");
+            var toward = BoosterHud.Read(s, Craft("barge", 20000), -6);
+            Assert.That(toward.Target.Value, Is.EqualTo("6 m"), "the deck rode 6 m toward the booster");
+            var charted = BoosterHud.Read(s, Craft("barge", 20000));
+            Assert.That(charted.Target.Value, Is.EqualTo("12 m"), "no swell reads the charted centre as before");
+        }
+
+        [Test]
+        public void EngineerLineReportsNoLandingMissForAnExpendableBooster()
+        {
+            // The Nov 6 KH-3 playtest footer (TestFlight build 50, T+141.1, expendable: no landing fuel, no legs):
+            // "Coast sink 0.0 m/s tilt 0.0 deg miss -111275 m prop 0 kg" under the upper stage's "On track" badge.
+            // The miss and the 0 kg reserve are a landing that was never going to happen, so the expendable line
+            // keeps only the coast numbers the booster really flew.
+            var s = new RecoverySample { Phase = RecoveryPhase.Coast, Sink = 0, TiltDeg = 0, MissM = -111275, Prop = 0 };
+            Assert.That(BoosterHud.EngineerLine(s, expendable: true), Is.EqualTo("Coast  sink 0.0 m/s  tilt 0.0°"));
+            Assert.That(BoosterHud.EngineerLine(s, expendable: true), Does.Not.Contain("miss").And.Not.Contain("prop"));
+            // A booster that is landing keeps the line exactly as before, miss and prop included.
+            Assert.That(BoosterHud.EngineerLine(s, expendable: false),
+                Is.EqualTo("Coast  sink 0.0 m/s  tilt 0.0°  miss -111275 m  prop 0 kg"));
+            var landing = new RecoverySample { Phase = RecoveryPhase.Landing, Sink = 6, TiltDeg = 1.5, MissM = -12, Prop = 3000 };
+            Assert.That(BoosterHud.EngineerLine(landing, expendable: false),
+                Is.EqualTo("Landing  sink 6.0 m/s  tilt 1.5°  miss -12 m  prop 3000 kg"));
+        }
     }
 }

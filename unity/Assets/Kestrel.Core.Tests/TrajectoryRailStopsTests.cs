@@ -111,6 +111,38 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void AnExpendableDesignGetsNoBoostbackEntryOrLandingAndARecoveryDesignStillDoes()
+        {
+            // #414 redo: an expendable design's stage still flies a barge attempt (RecoveryMode "barge", the lost line),
+            // and RecoveryLog is active, but the design chose no landing, so the rail never shows a recovery stop.
+            foreach (string mode in new[] { "barge", "rtls", null })
+            {
+                var exp = Watch(2, false, mode);
+                exp.LandingPlanned = false;
+                exp.Recovery = true;
+                Assert.That(Labels(exp.At(0, 0, 0)), Is.EqualTo(new[] { "Liftoff", "Max-Q", "MECO", "Fairing", "SECO" }), "expendable " + mode);
+                Ascend(exp);
+                exp.RecoveryPhase("boostback", 170, 70000, 1500);
+                exp.RecoveryPhase("entry", 400, 40000, 1200);
+                exp.RecoveryPhase("landing", 560, 0, 2);
+                var after = exp.At(600, 0, 2);
+                Assert.That(Array.Exists(after.Marks, m => m.Stop == TrajectoryStop.Boostback || m.Stop == TrajectoryStop.Entry || m.Stop == TrajectoryStop.Landing),
+                    Is.False, "expendable " + mode + " flown attempt");
+                Assert.That(after.Progress, Is.EqualTo(1f), "expendable " + mode + " ends at SECO");
+                Assert.That(after.Marks[after.Marks.Length - 1].Stop, Is.EqualTo(TrajectoryStop.Seco), "expendable " + mode + ": SECO is the last stop, nothing after it");
+            }
+
+            var barge = Watch(2, false, "barge");
+            barge.LandingPlanned = true;
+            barge.Recovery = true;
+            Assert.That(Labels(barge.At(0, 0, 0)), Is.EqualTo(new[] { "Liftoff", "Max-Q", "MECO", "Fairing", "SECO", "Entry", "Haven" }));
+            var rtls = Watch(2, false, "rtls");
+            rtls.Recovery = true;
+            Assert.That(rtls.LandingPlanned, Is.True, "Reset default");
+            Assert.That(Labels(rtls.At(0, 0, 0)), Is.EqualTo(new[] { "Liftoff", "Max-Q", "MECO", "Fairing", "SECO", "Boostback", "Entry", "Haven" }));
+        }
+
+        [Test]
         public void AFlatAscentStillLightsFairingAndTheMarkerNeverFreezes()
         {
             // Cutoff at 92 km, never 110 km: no altitude jettison, no director call (it arms at JettisonAltM - 12 km).

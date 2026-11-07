@@ -61,6 +61,26 @@ namespace Kestrel.Game.Environment
             if (Instance == this) Instance = null;
         }
 
+        /// <summary>Drop every live particle and put out the flash light (DebrisClear: One more launch, the next flight's arm).</summary>
+        public void Clear()
+        {
+            for (int i = 0; i < systems.Length; i++)
+                if (systems[i] != null) systems[i].Clear(true);
+            if (flashLight != null) { flashLight.intensity = 0f; flashLight.enabled = false; }
+            envelope.Reset();
+        }
+
+        /// <summary>Live particles across every layer (tests).</summary>
+        public int LiveParticles
+        {
+            get
+            {
+                int n = 0;
+                for (int i = 0; i < systems.Length; i++) if (systems[i] != null) n += systems[i].particleCount;
+                return n;
+            }
+        }
+
         void OnDestroy()
         {
             for (int i = 0; i < mats.Length; i++) if (mats[i] != null) Destroy(mats[i]);
@@ -79,6 +99,8 @@ namespace Kestrel.Game.Environment
 
         void Handle(CinematicEvent e)
         {
+            // A relaunch clears the scene: the fireballs and the flash go with the debris, not on their particle timers.
+            if (e.Kind == CinematicKind.DebrisClear) { Clear(); return; }
             if (e.Kind > CinematicKind.EngineFailure) return;   // separation / debris events belong to DebrisFx
             int q = CurrentQuality();
             if (builtQuality != q) Build(q);

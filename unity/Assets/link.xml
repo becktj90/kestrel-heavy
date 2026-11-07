@@ -1,0 +1,18 @@
+<!--
+  Managed code stripping keep-list (WebGL builds use stripEngineCode + ManagedStrippingLevel.High).
+
+  GameObject.CreatePrimitive adds a collider by name at runtime (Sphere -> SphereCollider, Cylinder/Capsule ->
+  CapsuleCollider, Cube -> BoxCollider, Plane/Quad -> MeshCollider). No script references those types directly
+  (every caller destroys the collider at once), so the WebGL build stripped CapsuleCollider and SphereCollider and
+  each break-up logged "Can't add component 'CapsuleCollider' ... doesn't exist" (QA #417, UX fun review 2026-11-03).
+  Kestrel.Build.Tests (LinkXmlTests) fails if a runtime CreatePrimitive type loses its collider here.
+-->
+<linker>
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.Collider" preserve="all"/>
+    <type fullname="UnityEngine.BoxCollider" preserve="all"/>
+    <type fullname="UnityEngine.SphereCollider" preserve="all"/>
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all"/>
+    <type fullname="UnityEngine.MeshCollider" preserve="all"/>
+  </assembly>
+</linker>
