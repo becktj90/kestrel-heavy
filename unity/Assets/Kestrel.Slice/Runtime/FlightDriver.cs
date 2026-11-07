@@ -43,7 +43,72 @@ namespace Kestrel.Slice
         public bool Running { get; private set; }
         /// <summary>Pause. The sim clock does not advance until <see cref="Hold"/> is cleared.</summary>
         public bool Held { get; private set; }
-        public void Hold(bool on) => Held = on;
+        public void Hold(bool on)
+        {
+            Held = on;
+            if (on) CancelSkip();
+        }
+
+        // ---- Skip to next stage (DECISIONS #78) ----
+        bool skipping;
+        StageSkipTarget skipTarget = StageSkipTarget.None;
+        /// <summary>True while a skip is fast-forwarding the sim.</summary>
+        public bool Skipping => skipping;
+        /// <summary>The event the current skip is heading for (the HUD label while skipping).</summary>
+        public StageSkipTarget SkipTarget => skipTarget;
+        /// <summary>Why the last skip stopped (None while one is running or none has run).</summary>
+        public StageSkipStop SkipStop { get; private set; } = StageSkipStop.None;
+        /// <summary>The event the last skip actually stopped at (None unless it stopped at a target).</summary>
+        public StageSkipTarget SkipReached { get; private set; } = StageSkipTarget.None;
+        /// <summary>Sim seconds the skip pump advanced this frame (0 when not skipping): SliceApp advances the booster by the same amount, so the two sims stay in lockstep.</summary>
+        public double SkipAdvancedSimS { get; private set; }
+        /// <summary>
+        /// Telemetry sink for skipped time (set by SliceApp to the FailureHost's sampler). The frame sampler
+        /// only runs once per rendered frame, so while the skip fast-forwards the sim it would starve the
+        /// debrief log; the pump hands this sink one sample per 0.1 sim-seconds from the real stepped state
+        /// instead. Null flies without it (the batch and the predictor never set it).
+        /// </summary>
+        public Action<AscentSample> SkipSampler { get; set; }
+        /// <summary>The next ascent event, or None when the flight is over.</summary>
+        public StageSkipTarget NextSkipTarget => Running && Sim != null && !Sim.Done ? StageSkip.NextAscentTarget(Sim, checks) : StageSkipTarget.None;
+        /// <summary>
+        /// True when the button may be offered: the flight is running, nothing is waiting on the player, and a
+        /// next event exists. Not while held, not in a cinematic slow-mo, not after a failure.
+        /// </summary>
+        public bool SkipAvailable => Running && Sim != null && !Sim.Done && !Lost && !Held
+            && Kestrel.Kit.CinematicEvents.PresentationScale == 1
+            && NextSkipTarget != StageSkipTarget.None
+            && (Decisions == null || Decisions.OpenCount == 0);
+
+        /// <summary>Start skipping to the next flight event. No-op when <see cref="SkipAvailable"/> is false.</summary>
+        public void StartSkip()
+        {
+            if (!SkipAvailable) return;
+            skipping = true;
+            skipTarget = NextSkipTarget;
+            SkipStop = StageSkipStop.None;
+            SkipReached = StageSkipTarget.None;
+        }
+
+        /// <summary>Stop skipping and fly in real time from exactly where the sim is (the tap-to-cancel).</summary>
+        public void CancelSkip()
+        {
+            skipping = false;
+            skipTarget = StageSkipTarget.None;
+        }
+
+        /// <summary>
+        /// Stop skipping because the booster reached its next burn phase or touchdown (SliceApp): the first event
+        /// on either timeline wins. No-op when not skipping.
+        /// </summary>
+        public void HaltSkip(StageSkipTarget reached)
+        {
+            if (!skipping) return;
+            skipping = false;
+            skipTarget = StageSkipTarget.None;
+            SkipStop = StageSkipStop.Target;
+            SkipReached = reached;
+        }
         public SimResult Result { get; private set; }
         public bool Lost => Result != null && Result.failure != null;
         public double OriginX { get; private set; }   // floating origin in pad-local metres (double)
@@ -148,8 +213,12 @@ namespace Kestrel.Slice
             CinematicSink.VehicleRadiusM = Kestrel.Kit.FlightSinkMath.VehicleRadiusM(WidestDiameterM(d));
             Running = true;
             clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
+            skipping = false; skipTarget = StageSkipTarget.None; SkipAdvancedSimS = 0; SkipStop = StageSkipStop.None; SkipReached = StageSkipTarget.None;
             AttitudeDeg = 90f; HasAttitude = false;
             seenEvents = 0; mecoSent = false;
+            // The origin is back at the pad, so the pad has to be too: after a flight past RebaseDistance the
+            // anchored ground, deck and tower were left where the last rebase put them (a displaced pad on relaunch).
+            PlaceAnchors();
             try
             {
                 // The designer and the launch predictor fly these same checks (#314).
@@ -157,7 +226,7 @@ namespace Kestrel.Slice
                 thrustRef = Math.Max(1, stages[0].thrustVac);
                 omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
                 UpdateFrame();
-                (Sink as IFlightStageSink)?.BeginNarration(NarrationFacts.From(d, hook != null ? hook.SiteId : null), Calls);
+                (Sink as IFlightStageSink)?.BeginNarration(NarrationFacts.From(d, hook != null ? hook.SiteId : null).With("mission", aimed != null ? aimed.Id : null), Calls);
                 Sink?.OnEvent("flight.begin");
                 PumpEvents();
                 PublishAudio();
@@ -174,15 +243,37 @@ namespace Kestrel.Slice
             if (Held || !Running || Sim == null) return;
             float frame = Time.deltaTime;
             if (frame <= 0f && Time.unscaledDeltaTime > 0f) frame = Time.unscaledDeltaTime;
-            // Slow-mo scales only how much wall-clock feeds the clock (Core PresentationTimeScale); Sim.Tick and PhysicsDt are untouched.
-            clock += new Kestrel.Core.Flight.PresentationTimeScale(Kestrel.Kit.CinematicEvents.PresentationScale).ToSimSeconds(Math.Min(frame, 0.1f)); // clamp hitches; physics catches up at fixed dt
-            int guard = 0;
-            while (Sim.T < clock && !Sim.Done && guard++ < 64)
+            SkipAdvancedSimS = 0;
+            if (skipping)
             {
-                int before = Sim.Events.Count;
-                directed.Step();
-                if (checks != null && checks.NoteEvents(Sim, before)) Meco = true;
-                if (checks != null && checks.StopForBreakup(Sim)) break;
+                // Skip to next stage (#78): fast-forward the same sim in bounded per-frame chunks. The pump runs
+                // DirectedFlight.Step with the same played checks as the real-time loop below, so the state at the
+                // event is the state real time would have reached; the clock is kept on the sim so no debt is banked.
+                double before = Sim.T;
+                var run = StageSkip.Advance(directed, checks, StageSkip.MaxStepsPerFrame, SkipSampler);
+                SkipAdvancedSimS = Sim.T - before;
+                if (run.Meco) Meco = true;
+                if (run.Stop != StageSkipStop.Budget)
+                {
+                    skipping = false;
+                    skipTarget = StageSkipTarget.None;
+                    SkipStop = run.Stop;
+                    SkipReached = run.Reached;
+                }
+                clock = Sim.T;
+            }
+            else
+            {
+                // Slow-mo scales only how much wall-clock feeds the clock (Core PresentationTimeScale); Sim.Tick and PhysicsDt are untouched.
+                clock += new Kestrel.Core.Flight.PresentationTimeScale(Kestrel.Kit.CinematicEvents.PresentationScale).ToSimSeconds(Math.Min(frame, 0.1f)); // clamp hitches; physics catches up at fixed dt
+                int guard = 0;
+                while (Sim.T < clock && !Sim.Done && guard++ < 64)
+                {
+                    int before = Sim.Events.Count;
+                    directed.Step();
+                    if (checks != null && checks.NoteEvents(Sim, before)) Meco = true;
+                    if (checks != null && checks.StopForBreakup(Sim)) break;
+                }
             }
             if (Sim.Done)
             {
@@ -236,7 +327,7 @@ namespace Kestrel.Slice
             if (Math.Abs(Downrange - OriginX) > RebaseDistance || Math.Abs(Altitude - OriginY) > RebaseDistance)
             {
                 OriginX = Downrange; OriginY = Altitude; Rebases++;
-                foreach (var a in anchored) Place(a.t, a.x, a.y, a.z);
+                PlaceAnchors();
             }
             if (Vehicle != null)
             {
@@ -252,6 +343,44 @@ namespace Kestrel.Slice
                 prevX = Downrange; prevY = Altitude;
             }
             if (Plume != null) Plume.Apply(ThrustFraction, AmbientPressure, Speed);
+        }
+
+        /// <summary>
+        /// One more launch / Restart: put the driver back on the pad before the next count. The old flight stops
+        /// (Running was still true after a mid-flight Restart, so the next T-0 resumed it instead of launching), the
+        /// result is dropped (a rebuilt FailureHost must not replay it), and the floating origin, the anchored pad
+        /// and the vehicle all go back to pad-local zero.
+        /// </summary>
+        public void ResetToPad()
+        {
+            Running = false; Held = false;
+            Result = null; Meco = false; mecoSent = false; seenEvents = 0;
+            skipping = false; skipTarget = StageSkipTarget.None; SkipAdvancedSimS = 0; SkipStop = StageSkipStop.None; SkipReached = StageSkipTarget.None;
+            Sim = null; directed = null; checks = null;
+            clock = 0; prevX = prevY = 0;
+            Downrange = Altitude = Speed = ThrustFraction = 0;
+            AttitudeDeg = 90f; HasAttitude = false;
+            OriginX = OriginY = 0; Rebases = 0;
+            PlaceAnchors();
+            if (Vehicle != null) { Vehicle.localPosition = Vector3.zero; Vehicle.localRotation = Quaternion.identity; }
+            if (Plume != null) Plume.Apply(0, Atmosphere.P0, 0);
+        }
+
+        /// <summary>True when every anchored pad object sits at its pad-local spot for the current origin (tests).</summary>
+        public bool AnchorsAtOrigin()
+        {
+            foreach (var a in anchored)
+            {
+                if (a.t == null) continue;
+                var want = new Vector3((float)(a.x - OriginX), (float)(a.y - OriginY), (float)a.z);
+                if ((a.t.localPosition - want).sqrMagnitude > 1e-4f) return false;
+            }
+            return true;
+        }
+
+        void PlaceAnchors()
+        {
+            foreach (var a in anchored) if (a.t != null) Place(a.t, a.x, a.y, a.z);
         }
 
         void Place(Transform t, double x, double y, double z) => t.localPosition = new Vector3((float)(x - OriginX), (float)(y - OriginY), (float)z);

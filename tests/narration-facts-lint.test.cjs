@@ -15,14 +15,20 @@ const clips = man.clips;
 const PROPS = ['kerolox', 'hydrolox', 'methalox', 'solid', 'storable'];
 const RECOVERY = ['none', 'barge', 'rtls'];
 const SITES = JSON.parse(fs.readFileSync(path.join(root, 'data/sites.json'), 'utf8')).sites.map((x) => x.id);
-const KEY_RE = /^(stages|stage[1-9]\.engines|stage[1-9]\.propellant|strapons|strapons\.engines|strapons\.propellant|propellant\.all|recovery|legs|fairing|fairing\.halves|fins|finless|site|lit\.stage|lit\.engines|lit\.propellant|lit\.last)$/;
+const MISSIONS = Array.from({ length: 20 }, (_, i) => `m${i + 1}`);
+const KEY_RE = /^(stages|stage[1-9]\.engines|stage[1-9]\.propellant|strapons|strapons\.engines|strapons\.propellant|propellant\.all|recovery|legs|fairing|fairing\.halves|fins|finless|site|mission|lit\.stage|lit\.engines|lit\.propellant|lit\.last)$/;
 const NUMERIC = (k) => /^(stages|stage\d\.engines|strapons|strapons\.engines|fairing\.halves|lit\.stage|lit\.engines)$/.test(k);
 const BOOL = (k) => /^(legs|fairing|fins|finless|lit\.last)$/.test(k);
-const ENUM = (k) => (/propellant/.test(k) ? (k === 'propellant.all' ? [...PROPS, 'mixed'] : PROPS) : k === 'recovery' ? RECOVERY : k === 'site' ? SITES : null);
+const ENUM = (k) => (/propellant/.test(k) ? (k === 'propellant.all' ? [...PROPS, 'mixed'] : PROPS) : k === 'recovery' ? RECOVERY : k === 'site' ? SITES : k === 'mission' ? MISSIONS : null);
 const CMP_RE = /^(>=|<=|!=|>|<)-?\d+$/;
 const FACT_WORDS = /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+|engines?|cores?|cluster|chambers?|methane|LOX|kerosene|hydrogen|methalox|kerolox|hydrolox|solids?|strap-?ons?|boosters?|upper stage|(first|second|third)[- ]stage|legs|fins?|finless|halves|fairing|Haven|barge|landing|pad landing|Pier 7|Coastal Pad B|Salt Flat Pad|North Reach|strakes?)\b/i;
 const ALLOW = /SES-1|Max-Q|T-minus \d+/gi;
+// DECISIONS #77: historical commentary lines may name real companies, rockets, programs, ships and
+// people. A take is historical only when it is gated to one campaign mission AND carries sources;
+// those takes are exempt from the banned-names rule. Every other take still fails on a banned name.
 const BANNED = /blue origin|new glenn|jacklyn|lc-36/i;
+const isHistorical = (c) => c.requires && typeof c.requires.mission === 'string'
+  && Array.isArray(c.sources) && c.sources.length > 0;
 
 function valueOk(k, v) {
   if (Array.isArray(v)) return v.length > 0 && v.every((x) => valueOk(k, x) && !Array.isArray(x));
@@ -83,12 +89,28 @@ test('every clip carries exactly one valid fact tag form', () => {
 test('fact-word lines are gated or carry a neutral reason; no banned names', () => {
   for (const c of clips) {
     for (const t of [c.text, c.spokenText]) {
-      assert.ok(!BANNED.test(t), `${c.id}: banned name`);
+      assert.ok(isHistorical(c) || !BANNED.test(t), `${c.id}: banned name`);
       if (FACT_WORDS.test(t.replace(ALLOW, ''))) {
         assert.ok((c.claims && c.claims.length) || (c.neutral && c.neutralReason), `${c.id}: fact words need claims or neutralReason`);
       }
     }
   }
+});
+
+test('historical takes (DECISIONS #77): mission-gated, sourced, and the only takes that may name real programs', () => {
+  const errs = [];
+  for (const c of clips) {
+    if (BANNED.test(c.text) || BANNED.test(c.spokenText)) {
+      if (!isHistorical(c)) errs.push(`${c.id}: banned name on a non-historical take`);
+    }
+    if (c.requires && 'mission' in c.requires) {
+      if (!MISSIONS.includes(c.requires.mission)) errs.push(`${c.id}: bad mission ${c.requires.mission}`);
+      if (!isHistorical(c)) errs.push(`${c.id}: mission-gated take needs sources`);
+      if (!c.claims || !c.claims.includes('mission')) errs.push(`${c.id}: mission-gated take must claim mission`);
+      if (!/^color\./.test(c.event)) errs.push(`${c.id}: mission-gated take must be a color take`);
+    }
+  }
+  assert.deepEqual(errs, []);
 });
 
 test('every clip file exists in both trees with the recorded sha256, and loudness is in spec', () => {
