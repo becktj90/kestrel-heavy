@@ -295,12 +295,15 @@ namespace Kestrel.Core.Tests
         public void ReportFixIt_RanOutOfFuel_AddsFuelUntilItNoLongerRunsDry_ThenSaysTheMissRemains()
         {
             // #313: KH-6's rocket at half the upper-stage load no longer runs dry (it misses on flight-path angle). It runs
-            // dry at 16% of the load, on every seed. The report's Fix it adds propellant until the test ascent is not short
+            // dry at 14% of the load, on every seed. The report's Fix it adds propellant until the test ascent is not short
             // and no seed runs dry. Under the new rule the mission still has to pass: KH-6's starter then cuts off at the
             // target energy at a bad flight-path angle (413.9 x -13.9 km against 200 km), so Fix it reports not fixed.
+            // #335: 16% no longer runs dry - the fairing drop (89 kg shell off the top stage at the fairing event) gives
+            // the rocket enough delta-v to reach the energy cutoff at 16% (415.9 x -15.9 km, fpa-miss). 14% runs dry on
+            // every seed, so the run-dry fraction is now 0.14.
             var mission = campaign.Mission(6);
             var json = Kh6RawBuild();
-            TopStageProp(json, 0.16);
+            TopStageProp(json, 0.14);
             var raw = Fly(6, json);
             Assert.That(raw.TrueForAll(f => f.failure == "prop-depletion"), Seeds(mission, raw));
             Assert.That(DesignerRepair.FlightShort(catalog, json), "the designer's test ascent runs dry");
