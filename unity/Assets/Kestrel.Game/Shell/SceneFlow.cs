@@ -70,10 +70,9 @@ namespace Kestrel.Game.Shell
             var campaign = ScreenStub.LoadCampaign();
             MissionBriefing card = null;
             var mission = campaign != null ? campaign.ById(missionId) : null;
-            string root = ScreenStub.RepoRoot();
-            if (mission != null && root != null)
+            if (mission != null)
             {
-                try { card = MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign)); }
+                try { card = LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
             }
             Present(BriefingBoard.BeforeDesign(GameSession.Apply(RouteId.MissionChosen, campaign, missionId, card)));
@@ -115,12 +114,8 @@ namespace Kestrel.Game.Shell
                 if (ctx != null)
                 {
                     MissionBriefing card = null;
-                    string root = ScreenStub.RepoRoot();
-                    if (root != null)
-                    {
-                        try { card = MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign)); }
-                        catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
-                    }
+                    try { card = LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
+                    catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
                     ctx.ApplyBriefing(card);
                     ctx.VehicleLine = choice.VehicleLine;
                     ctx.ReachLine = choice.ReachLine;
@@ -225,9 +220,8 @@ namespace Kestrel.Game.Shell
         static MissionBriefing TryMissionBriefing(Campaign campaign, int cleared)
         {
             var mission = HomeRoutes.NextMission(campaign, cleared);
-            string root = ScreenStub.RepoRoot();
-            if (mission == null || root == null) return null;
-            try { return MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign)); }
+            if (mission == null) return null;
+            try { return LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
             catch (Exception e)
             {
                 Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message);
@@ -237,14 +231,27 @@ namespace Kestrel.Game.Shell
 
         static MissionBriefing TryFreeBriefing()
         {
-            string root = ScreenStub.RepoRoot();
-            if (root == null) return null;
-            try { return MissionBriefing.Free(root, 0, 1); }
+            try { return LoadFreeBriefing(0, 1); }
             catch (Exception e)
             {
                 Debug.LogWarning("[Kestrel] free-build briefing unavailable: " + e.Message);
                 return null;
             }
+        }
+
+        /// <summary>Checkout when present; otherwise BriefingBooks from Resources (DECISIONS #86).</summary>
+        static MissionBriefing LoadBriefing(int missionIndex, ulong seed)
+        {
+            string root = ScreenStub.RepoRoot();
+            if (root == null && !BriefingBooks.HasBooks) return null;
+            return MissionBriefing.Load(root, missionIndex, 0, seed);
+        }
+
+        static MissionBriefing LoadFreeBriefing(ulong designHash, ulong seed)
+        {
+            string root = ScreenStub.RepoRoot();
+            if (root == null && !BriefingBooks.HasBooks) return null;
+            return MissionBriefing.Free(root, designHash, seed);
         }
 
         IEnumerator Switch(AppScreen to)
