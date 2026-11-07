@@ -297,7 +297,7 @@ namespace Kestrel.Core.Tests
             // #313: KH-6's rocket at half the upper-stage load no longer runs dry (it misses on flight-path angle). It runs
             // dry at 14% of the load, on every seed. The report's Fix it adds propellant until the test ascent is not short
             // and no seed runs dry. Under the new rule the mission still has to pass: KH-6's starter then cuts off at the
-            // target energy at a bad flight-path angle (413.9 x -13.9 km against 200 km), so Fix it reports not fixed.
+            // target energy at a bad flight-path angle (413.9 x -14.3 km against 200 km), so Fix it reports not fixed.
             // #335: 16% no longer runs dry - the fairing drop (89 kg shell off the top stage at the fairing event) gives
             // the rocket enough delta-v to reach the energy cutoff at 16% (415.9 x -15.9 km, fpa-miss). 14% runs dry on
             // every seed, so the run-dry fraction is now 0.14.
@@ -324,10 +324,10 @@ namespace Kestrel.Core.Tests
                 Assert.That(DesignerRepair.MissKind(mission, f), Is.EqualTo(DesignerRepair.FlightPathAngleMiss), "seed " + f.seed + Seeds(mission, flights));
             Assert.IsFalse(outcome.FullyFixed, outcome.Note);
             Assert.That(outcome.Note, Is.EqualTo("Fix it could not fully fix this rocket. It still fails 5 of 5 test flights. Lighten the cargo or change the rocket."));
-            // #313: the report text after Fix it, pinned (413.9 x -13.9 km), and following it: about 3x the fuel lands all 5.
+            // #313: the report text after Fix it, pinned (413.9 x -14.3 km), and following it: about 3x the fuel lands all 5.
             var x = MissReason.Explain(mission, MissReason.FromFlight(flights[0], json.Arr("stages").Count));
             Assert.AreEqual("fpa-steep-suborbital", x.Code);
-            Assert.AreEqual("Missed the 200 km circle: the orbit flew -13.9 km × 414 km, and the high point needs 190 km to 210 km. The low point, -13.9 km, needs 190 km to 210 km. The engines cut off while it was still climbing, 1.8° up. Your rocket flew too steep and fell back down. Give stage 3 much more fuel (it can take double or more), so it burns long enough to level out.", x.Line);
+            Assert.AreEqual("Missed the 200 km circle: the orbit flew -14.3 km × 414 km, and the high point needs 190 km to 210 km. The low point, -14.3 km, needs 190 km to 210 km. The engines cut off while it was still climbing, 1.8° up. Your rocket flew too steep and fell back down. Give stage 3 much more fuel (it can take double or more), so it burns long enough to level out.", x.Line);
             var more = JsonMut.CloneObject(json);
             TopStageProp(more, 3.06);
             foreach (var f in Fly(6, more)) Assert.That(f.passed, "seed " + f.seed + Seeds(mission, Fly(6, more)));

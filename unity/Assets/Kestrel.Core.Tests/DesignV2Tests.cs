@@ -426,7 +426,8 @@ namespace Kestrel.Core.Tests
                 s.Order.Remove("interstageMass");
             }
             double bare = Mass.Of(Golden.Catalog, Design.FromJson(scout)).liftoffMass;
-            Assert.AreEqual(44723.54, bare, 0.01, "absent key on version 1 is 0, matching JS (al-li tanks since #313; was 44129.78 on composite)");
+            // #335: scout S2 prop 6000 -> 5800 kg, so liftoff drops 210 kg (200 prop + 10 tank).
+            Assert.AreEqual(44513.51, bare, 0.01, "absent key on version 1 is 0, matching JS (al-li tanks since #313; was 44129.78 on composite)");
             Assert.AreEqual(200, stored - bare, 0.01, "dropping the keys also drops Scout's stored 200 kg");
 
             var migrated = DesignMigration.Migrate(JsonMut.CloneObject(scout));
