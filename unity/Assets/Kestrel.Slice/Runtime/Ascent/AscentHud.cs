@@ -30,7 +30,7 @@ namespace Kestrel.Slice
         readonly string[] ascentVal = new string[CellCount];
         readonly Color[] ascentInk = new Color[CellCount];
         BoosterHudReadout? booster;
-        Button primary, alternate, skip, assist, nudgeDown, nudgeUp, info;
+        Button primary, alternate, skip, assist, stageSkip, nudgeDown, nudgeUp, info;
         VisualElement health;
         Label healthDetail;
         Button[] healthButtons;
@@ -116,6 +116,9 @@ namespace Kestrel.Slice
             UnwatchTools();
             UnwatchStack();
             hud?.UnregisterCallback<PointerDownEvent>(OnHudPointerDown);
+            // Leave nothing hidden by a booster follow behind: the webcast card goes home and h-msg stays SliceApp's.
+            SetShown(stages, true);
+            SetShown(hud != null ? hud.Q(MessageName) : null, true);
             railFrame = null;
             infoOpen = false;
             healthOpen = -1;
@@ -201,6 +204,7 @@ namespace Kestrel.Slice
             StyleButton(alternate);
             StyleButton(skip);
             StyleButton(assist);
+            StyleButton(stageSkip);
             StyleButton(nudgeDown);
             StyleButton(nudgeUp);
             if (info != null)
@@ -1059,7 +1063,7 @@ namespace Kestrel.Slice
             if (plot != null) plot.Apply(trajectory.At(RecoveryLog.RailClock(flight.SimTime), alt, speed), upp);
             var score = director.Score();
             if (medal != null)
-                medal.text = score.Decided > 0 ? "Medal timing: " + score.Summary : "Flying the plan.";
+                medal.text = score.Decided > 0 ? score.Summary : "Flying the plan.";
             bool prompt = prompts.Length > 0;
             if (!prompt)
             {
@@ -1121,6 +1125,25 @@ namespace Kestrel.Slice
                     : "Auto-assist is off. Tap to let the planned calls fly themselves.";
             }
             PlaceAssist(prompt);
+            if (stageSkip != null)
+            {
+                // Skip to next stage (#78): offered on the cruise row, never over a prompt (the prompt row is the
+                // decision; the skip waits). While skipping, the button is the tap-to-cancel back to real time.
+                bool skipping = flight.Skipping;
+                var target = skipping ? flight.SkipTarget : flight.NextSkipTarget;
+                // Hidden in slow-mo or while held (StartSkip would no-op there) — but never hidden mid-skip, so
+                // the tap-to-cancel is always there while one is running.
+                bool show = !prompt && flight.Running && !flight.Lost && target != StageSkipTarget.None
+                    && (skipping || (!flight.Held && Kestrel.Kit.CinematicEvents.PresentationScale == 1));
+                stageSkip.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+                if (show)
+                {
+                    stageSkip.text = skipping ? "Skipping…" : "Skip to next stage";
+                    stageSkip.tooltip = skipping
+                        ? "Skipping to " + StageSkip.Label(target) + ". Tap to stop and fly in real time."
+                        : "Skip to " + StageSkip.Label(target) + ". The same flight plays faster — no step is skipped. Stops at the next event, a call, or a failure.";
+                }
+            }
             if (promptRow != null) promptRow.style.display = prompt ? DisplayStyle.Flex : DisplayStyle.None;
             if (assistRow != null) assistRow.style.display = prompt ? DisplayStyle.None : DisplayStyle.Flex;
             bool showAlternate = prompt && prompts[0].ShowAlternate;
@@ -1190,7 +1213,7 @@ namespace Kestrel.Slice
             PaintFocus();
             var v = stages != null ? stages.Q<Label>("h-verdict") : null;
             if (v != null) v.text = verdict ?? "";
-            if (medal != null) medal.text = medalLine ?? "Medal timing: Silver · 1 perfect · 0 good · 0 late";
+            if (medal != null) medal.text = medalLine ?? "Silver medal";
             if (assist != null) assist.text = "Auto-assist on";
             if (prompt)
             {
@@ -1201,6 +1224,7 @@ namespace Kestrel.Slice
                 if (primary != null) { primary.text = p.Primary; primary.style.display = DisplayStyle.Flex; }
                 if (alternate != null) { alternate.text = p.Alternate ?? ""; alternate.style.display = p.ShowAlternate ? DisplayStyle.Flex : DisplayStyle.None; }
                 if (skip != null) skip.style.display = DisplayStyle.Flex;
+                if (stageSkip != null) stageSkip.style.display = DisplayStyle.None; // Preview has no flight to skip.
                 if (nudgeDown != null) nudgeDown.style.display = DisplayStyle.None;
                 if (nudgeUp != null) nudgeUp.style.display = DisplayStyle.None;
                 nudgeRowOpen = p.ShowAlternate;
@@ -1213,6 +1237,7 @@ namespace Kestrel.Slice
                 if (primary != null) primary.style.display = DisplayStyle.None;
                 if (alternate != null) alternate.style.display = DisplayStyle.None;
                 if (skip != null) skip.style.display = DisplayStyle.None;
+                if (stageSkip != null) stageSkip.style.display = DisplayStyle.None; // Preview has no flight to skip.
                 // Present: showNudgeRow = director.Engineer || showAlternate, the nudges themselves for Engineer.
                 nudgeRowOpen = engineerNudges;
                 if (nudgeDown != null) { nudgeDown.text = "Nudge −1°"; nudgeDown.style.display = engineerNudges ? DisplayStyle.Flex : DisplayStyle.None; }
@@ -1642,7 +1667,7 @@ namespace Kestrel.Slice
             if (score.CleanStaging) bits += "Clean staging  ·  ";
             if (score.PeakGHit) bits += "Gentle ride  ·  ";
             if (score.PayloadDamaged) bits += "Payload heat is past the limit  ·  ";
-            if (bits.Length == 0) return score.Decided > 0 ? "Medal timing: " + score.Summary : "";
+            if (bits.Length == 0) return score.Decided > 0 ? score.Summary : "";
             return bits + score.Summary;
         }
 
@@ -1698,11 +1723,22 @@ namespace Kestrel.Slice
                 for (int i = 0; i < CellCount; i++)
                     if (ascentKey[i] != null) DrawCell(i, ascentKey[i], ascentVal[i], ascentInk[i], "");
             }
-            if (health != null)
-            {
-                if (BoosterHud.ShowsAscentChrome(Focus)) health.style.visibility = StyleKeyword.Null;
-                else health.style.visibility = Visibility.Hidden;
-            }
+            bool ascent = BoosterHud.ShowsAscentChrome(Focus);
+            SetShown(health, ascent);
+            // The S3 stages card ("On track") and the MECO line under the tools row are the upper stage's too.
+            SetShown(stages, ascent);
+            SetShown(hud != null ? hud.Q(MessageName) : null, ascent);
+        }
+
+        /// <summary>SliceApp's flight message line (h-msg: "MECO · 42.7 km · 1,091 m/s", "Vehicle lost").</summary>
+        public const string MessageName = "h-msg";
+
+        /// <summary>Hide by visibility so no row moves and nothing reflows; Null hands the element back to its stylesheet.</summary>
+        static void SetShown(VisualElement e, bool shown)
+        {
+            if (e == null) return;
+            if (shown) e.style.visibility = StyleKeyword.Null;
+            else e.style.visibility = Visibility.Hidden;
         }
 
         static Color ToneInk(BoosterHudTone tone)
@@ -1780,6 +1816,7 @@ namespace Kestrel.Slice
                 trajectory.Stages = vehicle.Stages > 0 ? vehicle.Stages : 1;
                 trajectory.StrapOns = vehicle.StrapOns > 0;
                 trajectory.RecoveryMode = string.IsNullOrEmpty(vehicle.RecoveryMode) ? null : vehicle.RecoveryMode;
+                trajectory.LandingPlanned = vehicle.LandingPlanned;
                 if (vehicle.JettisonAltM > 0) trajectory.FairingAltM = vehicle.JettisonAltM;
             }
             trajectory.Recovery = RecoveryLog.Active || (RecoveryLog.Current != null && RecoveryLog.Current.Attempted);
@@ -2051,6 +2088,17 @@ namespace Kestrel.Slice
             skip.tooltip = "Skip. The autopilot takes the planned action. This is not a fail.";
             assist = Action(UiIds.FlightAssist, OnAssist);
             assist.text = "Auto-assist";
+            // Skip to next stage (#78): the cruise row's second button, next to Auto-assist. It lives in the
+            // assist row (not the prompt row) so it is there when there is nothing to decide, and hides with the
+            // row while a call is open — a call is decided first, then the flight can skip on.
+            // The row is a Row, not the default Column: LayoutRail pins it to the frame's single Assist seat, so
+            // stacked buttons would overflow the seat onto the nudge row (EditMode DockStackNeverOverlaps, PR #451).
+            // The split is 1:2, not 1:1: the long label needs two thirds of the seat to stay on one line at the
+            // narrowest size (335 px), while Auto-assist fits in one third.
+            stageSkip = Action(UiIds.FlightStageSkip, OnStageSkip);
+            stageSkip.text = "Skip to next stage";
+            stageSkip.style.flexGrow = 2;
+            stageSkip.style.marginRight = 0;
             promptRow = new VisualElement { name = "ascent-prompt-row" };
             promptRow.style.flexDirection = FlexDirection.Row;
             primary.style.flexGrow = 1;
@@ -2060,7 +2108,9 @@ namespace Kestrel.Slice
             promptRow.Add(primary);
             promptRow.Add(skip);
             assistRow = new VisualElement { name = "ascent-assist-row" };
+            assistRow.style.flexDirection = FlexDirection.Row;
             assistRow.Add(assist);
+            assistRow.Add(stageSkip);
             nudgeRow = new VisualElement { name = "ascent-nudge" };
             nudgeRow.style.flexDirection = FlexDirection.Row;
             nudgeDown = Action(UiIds.FlightNudgeDown, () => Nudge(-AscentDecisions.NudgeStepDeg));
@@ -2102,10 +2152,13 @@ namespace Kestrel.Slice
             return label;
         }
 
-        void Press(bool accept)
+        /// <summary>The big button (<paramref name="primary"/>) or the secondary one. The director maps each to accept or
+        /// decline: on an engine-out the design cannot hold, the big button rides it out (DECISIONS #76).</summary>
+        void Press(bool primary)
         {
             if (shown == default || flight == null || flight.Decisions == null) return;
-            flight.Decisions.Choose(shown, accept);
+            if (primary) flight.Decisions.ChoosePrimary(shown);
+            else flight.Decisions.ChooseAlternate(shown);
             Present(flight);
         }
 
@@ -2113,6 +2166,15 @@ namespace Kestrel.Slice
         {
             if (shown == default || flight == null || flight.Decisions == null) return;
             flight.Decisions.Skip(shown);
+            Present(flight);
+        }
+
+        /// <summary>Skip to next stage (#78): start the fast-forward, or tap again mid-skip to fly real time.</summary>
+        void OnStageSkip()
+        {
+            if (flight == null) return;
+            if (flight.Skipping) flight.CancelSkip();
+            else flight.StartSkip();
             Present(flight);
         }
 

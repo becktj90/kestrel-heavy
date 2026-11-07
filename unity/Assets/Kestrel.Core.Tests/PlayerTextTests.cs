@@ -89,7 +89,7 @@ namespace Kestrel.Core.Tests
             Assert.That(numbers, Does.Contain("g"));
             Assert.IsFalse(PlayerText.Leak(numbers), numbers);
             var card = FlightDebrief.Compose(null, MissionContext.Free(), new FlightFacts { Failure = over, Passed = false, PeakG = 8.04, GLimit = 8 }, NarrationPool.Empty, 100000, null);
-            Assert.AreEqual("No stars this flight.", card.StarsLine);
+            Assert.AreEqual(FlightDebrief.MissedStarsLine, card.StarsLine);
             Assert.IsFalse(PlayerText.Leak(card.Numbers));
             Assert.IsFalse(PlayerText.Leak(card.StarsLine));
             Assert.IsFalse(PlayerText.Leak(card.MedalsLine));

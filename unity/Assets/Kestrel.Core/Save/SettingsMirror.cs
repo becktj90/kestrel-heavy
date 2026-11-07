@@ -14,6 +14,7 @@ namespace Kestrel.Core.Save
             "kh.audio.muted",
             "kh.audio.music.muted",
             "kh.audio.narration.muted",
+            "kh.audio.commentary",
             "kh.settings.subtitles",
             "kh.settings.sandbox",
             "kh.a11y.reduceMotion",

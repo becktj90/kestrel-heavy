@@ -15,7 +15,14 @@ namespace Kestrel.Slice
         public const string RootName = UiIds.ScreenReport;
         public static readonly Color PanelInk = ReportCardChrome.Ink;
 
-        static readonly string[] ChannelLabels = { "Altitude", "Speed", "Dynamic pressure", "g load", "Delta-v losses" };
+        // Mini-chart captions (14 pt, one line, plot clips). Measured at 14 pt in the Unity default font
+        // (Liberation Sans advances): the five plots share the card width, so at the narrowest tested phone
+        // (335 pt, 55 pt plots, caption left 2) a caption has ~53 pt of room. "Dynamic pressure" (113 pt)
+        // rendered as "Dynamic p" and "Delta-v losses" (88 pt) as "Delta-v los" on Trevor's m3 debrief.
+        // Short forms that fit with margin at 335 pt: "Dyn. q" 40 pt, "Δv loss" 45 pt ("Δv" is already the
+        // game's own vocabulary for delta-v). The full names stay in the tooltips and the wrap tooltip.
+        static readonly string[] ChannelLabels = { "Altitude", "Speed", "Dyn. q", "g load", "Δv loss" };
+        static readonly string[] ChannelFullNames = { "Altitude", "Speed", "Dynamic pressure", "g load", "Delta-v losses" };
 
         /// <summary>Solid sheet behind every line, in front of the designer stats.</summary>
         public static void Seal(VisualElement root)
@@ -184,6 +191,7 @@ namespace Kestrel.Slice
                 plot.style.backgroundColor = new Color(0.14f, 0.17f, 0.22f);
                 plot.style.overflow = Overflow.Hidden;
                 string label = i < ChannelLabels.Length ? ChannelLabels[i] : built[i].Channel;
+                string full = i < ChannelFullNames.Length ? ChannelFullNames[i] : label;
                 var caption = new Label(label) { name = "plot-label" };
                 caption.style.fontSize = 14;
                 caption.style.color = new Color(0.8f, 0.86f, 0.92f);
@@ -225,9 +233,9 @@ namespace Kestrel.Slice
                     fail.style.left = Length.Percent(built[i].FailureX * 100f);
                     fail.style.backgroundColor = new Color(1f, 0.35f, 0.25f);
                     plot.Add(fail);
-                    plot.tooltip = label + ". Failure marked.";
+                    plot.tooltip = full + ". Failure marked.";
                 }
-                else plot.tooltip = label + ".";
+                else plot.tooltip = full + ".";
                 wrap.Add(plot);
             }
             wrap.tooltip = "Altitude, speed, dynamic pressure, g load and delta-v losses.";

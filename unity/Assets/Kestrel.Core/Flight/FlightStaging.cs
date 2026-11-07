@@ -481,6 +481,7 @@ namespace Kestrel.Core.Flight
         void NoteFairing(double t, double alt, double speed, double q)
         {
             if (!hasFairing || fairingT >= 0) return;
+            if (FairingWaitsForSimEvent) return;
             if (q > qPeak) qPeak = q;
             if (!qPassed && qPeak >= QArmPa && q < qPeak * QDrop) qPassed = true;
             if (!qPassed || alt < fairingAltM) return;

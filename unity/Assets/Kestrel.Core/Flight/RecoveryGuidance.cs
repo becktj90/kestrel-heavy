@@ -101,10 +101,11 @@ namespace Kestrel.Core.Flight
             bool falling = radial < 1.5;
             // The hoverslam opens on the suicide curve wherever the stage is: a fall that is still off the deck steers
             // in during the burn (Landing), and a stage that never lights hits the sea at full speed. The last clause
-            // starts a slow approach that is already over Haven while it still has height.
+            // starts a slow approach that is already over Haven while it still has height — only when slow, or a fast
+            // stage wastes fuel fighting gravity for hundreds of metres instead of waiting for the suicide curve.
             bool landing = body.Phase == RecoveryPhase.Landing
                 || (falling && alt < suicide)
-                || (falling && Math.Abs(gap) < 1200 && alt < 900);
+                || (falling && Math.Abs(gap) < 1200 && alt < 900 && speed < 60);
             bool inPlay = !landing && !(alt <= 0 && falling);
             double miss = inPlay ? PredictedMiss(body, craft) : -gap;
 
@@ -190,16 +191,19 @@ namespace Kestrel.Core.Flight
             return cmd;
         }
 
-        /// <summary>The unpowered attitude: on the flight path plus <paramref name="alpha"/> (tail first once falling inside the entry window), swinging upright below 8 km
+        /// <summary>The unpowered attitude: on the flight path plus <paramref name="alpha"/> (tail first once falling), swinging upright below 8 km
         /// for the landing burn. The predictor flies the same attitude with no lean.</summary>
         public static double DescentPitch(double east, double radial, double alt, double alpha)
         {
             double along = Math.Abs(east) < 1 && Math.Abs(radial) < 1 ? 1 : east;
             double gamma = Math.Atan2(radial, along);
-            // Falling through the entry window and below, the stage rides engines first (retrograde), the attitude of the
+            // Falling, the stage rides engines first (retrograde), the attitude of the
             // entry and landing burns, so no half-turn flip throws the predicted point off. The lean flips sign with it:
             // a body at retrograde − α makes the same lift as one at the flight path + α.
-            if (radial < 0 && alt < EntryTopM) gamma = gamma + Math.PI - 2 * alpha;
+            // #369/#400: at the 10°/s pitch rate the 180° flip needs a head start — begin it as soon as the
+            // stage falls, not at the 42 km entry window, or the entry burn's aim gate never opens in time
+            // on steep trajectories (m13 SSO).
+            if (radial < 0) gamma = gamma + Math.PI - 2 * alpha;
             double vertical = 0;
             if (alt < 8000) vertical = (8000 - Math.Max(0, alt)) / 8000;
             if (vertical > 1) vertical = 1;
@@ -218,6 +222,12 @@ namespace Kestrel.Core.Flight
             if (aNet < 0.8) aNet = 0.8;
             return 1.18 * sink * sink / (2 * aNet);
         }
+
+        /// <summary>The tilt the hoverslam allows at <paramref name="alt"/>: 0.2 rad low (the legs and the
+        /// deck demand a near-vertical stage), 0.55 rad higher up where the stage still has room to steer.
+        /// <see cref="LandingBurnDirector"/> caps the player's tilt at the same value, so a hand-flown burn
+        /// can never command an attitude the autopilot would not.</summary>
+        public static double LandingTiltMax(double alt) => alt < 48 ? 0.2 : 0.55;
 
         static void Landing(double east, double radial, double alt, double gap, double g, in RecoveryCraft craft, double mass,
             out double pitch, out double throttle)
@@ -245,7 +255,7 @@ namespace Kestrel.Core.Flight
             if (eastWant > cap) eastWant = cap;
             else if (eastWant < -cap) eastWant = -cap;
             double eErr = east - eastWant;
-            double tiltMax = alt < 48 ? 0.2 : 0.55;
+            double tiltMax = LandingTiltMax(alt);
             double tilt = eErr / (Math.Abs(eErr) + 6.5);
             tilt *= tiltMax;
             pitch = Math.PI / 2 + tilt;

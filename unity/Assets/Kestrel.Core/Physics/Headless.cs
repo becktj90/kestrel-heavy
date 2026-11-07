@@ -86,6 +86,8 @@ namespace Kestrel.Core.Physics
     public sealed class SimEvent
     {
         public double t; public string type; public int? stage; public double? alt, v, apoAlt, periAlt;
+        /// <summary>#369: inertial flight-path angle at the event, degrees (+ climbing). Set on burnout; null elsewhere.</summary>
+        public double? gamma;
         public override string ToString() => $"T+{t:F1} {type}{(stage.HasValue ? " S" + stage : "")}";
     }
 
@@ -298,12 +300,22 @@ namespace Kestrel.Core.Physics
         /// maximum (the first peak) at that moment. A later, higher peak still raises SimResult.maxQ but emits nothing.
         /// </summary>
         public const double MaxQConfirm = 0.98;
+        /// <summary>Peak q is confirmed (q fell below <see cref="MaxQConfirm"/> of the running maximum).</summary>
+        public bool MaxQPassed => maxQPassed;
         /// <summary>Bisection steps for the located energy cutoff. 40 halvings of a 0.2 s step is below 1e-12 s. Fixed, so deterministic.</summary>
         public const int CutoffBisections = 40;
         readonly double[] stepStart = new double[5];
         double maxQ, maxQTime, maxQAlt, maxG, lossG, lossD, lossS, dvExp, nextSample, kickStart = -1, thrustScale = 1, catchPitch;
         bool turned, followVelocity, pegContinuous;
         double pegTarget, pegThrottle = 1;
+        /// <summary>
+        /// #326: latched when a tolerated stage-1 engine-out drops the monitor's thrust factor. The open-loop
+        /// pitch program was tuned for nominal thrust; the remaining S1 burn is re-planned closed-loop
+        /// (PEG-lite to the target altitude) so the handoff to S2 stays recoverable.
+        /// </summary>
+        bool s1EngineOut;
+        /// <summary>#326: the monitor's thrust factor when the S1 engine-out latched (e.g. 0.875 for 7 of 8).</summary>
+        double s1EngineOutThrust = 1;
         double kickPrevT = -1, kickPrevVrel, kickPrevAlt;
         Flight.FairingHeatGate fairingGate;
         bool liftedOff, sawKarman, maxQPassed, fairingSent, ignitionHooked; double karmanT; string outcome = "timeout";
@@ -455,6 +467,14 @@ namespace Kestrel.Core.Physics
             if (Thrusting)
             {
                 thrustScale = o.monitor != null ? o.monitor.ThrustFactor : 1;
+                // #326: detect a tolerated stage-1 engine-out. The monitor's thrust factor drops only on a
+                // survived engine-out; max-Q and g-limit caps multiply thrustScale but leave ThrustFactor at 1.
+                if (StageIdx == 0 && !s1EngineOut && o.monitor != null && thrustScale < 0.999)
+                {
+                    s1EngineOut = true;
+                    s1EngineOutThrust = thrustScale;
+                    Events.Add(new SimEvent { t = T, type = "engine-out", stage = 1, alt = alt });
+                }
                 followVelocity = false; pegContinuous = false;
                 if (Headless.LegacyPitch(o.guidance))
                 {
@@ -540,6 +560,22 @@ namespace Kestrel.Core.Physics
                     PitchCmd += dp;
                     followVelocity = false; pegContinuous = false;
                 }
+                // #326: re-plan the remaining S1 burn closed-loop after an engine-out. The open-loop
+                // pitch program was tuned for nominal thrust; with less thrust it lofts the handoff and
+                // S2's PEG-lite cannot recover. Steer S1 with the same PEG-lite law the upper stages use,
+                // aimed at the target altitude, so the handoff stays recoverable. Mode 3 makes Deriv use
+                // PitchCmd instead of following the (now wrong) velocity vector.
+                if (s1EngineOut && StageIdx == 0)
+                {
+                    double g = Gravity.MU_EARTH / (r * r) - vt * vt / r;
+                    var S = st[StageIdx];
+                    var atmG = Atmosphere.At(Math.Min(alt, 300e3));
+                    double aT = S.mdot * Atmosphere.G0 * RocketEq.IspAt(S.ispSL, S.ispVac, o.vacuum ? 0 : atmG.p) * thrustScale / m;
+                    PitchCmd = Flight.GuidanceProfile.PegLitePitch(alt, o.targetAlt, vr, g, aT);
+                    Mode = 3;
+                    followVelocity = false;
+                    pegContinuous = false;
+                }
             }
 
             if (Thrusting && Mode == 3 && UseClosedLoop && StageIdx < st.Length)
@@ -568,7 +604,8 @@ namespace Kestrel.Core.Physics
                 if (remain <= 1e-6)
                 {
                     double spd = JsMath.Hypot(vx, vy);
-                    Events.Add(new SimEvent { t = T, type = "burnout", stage = StageIdx + 1, alt = alt, v = spd });
+                    Events.Add(new SimEvent { t = T, type = "burnout", stage = StageIdx + 1, alt = alt, v = spd,
+                        gamma = Math.Atan2(vr, Math.Abs(vt)) * 180 / Math.PI });
                     bool fail = false;
                     if (guidanceFlew && StageIdx >= st.Length - 1) upperRanDry = true;
                     if (o.monitor != null)

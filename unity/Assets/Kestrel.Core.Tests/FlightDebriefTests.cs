@@ -23,6 +23,45 @@ namespace Kestrel.Core.Tests
             FlightDebrief.ClearLatest();
         }
 
+        /// <summary>Trevor 11-07: "No reward. Hardware 7612.17 Kc. Bank 8846363.3 Kc." The card writes Kc as Home does
+        /// (HomeRecord.Kc): no stray decimals, separators, k and M past a thousand.</summary>
+        [Test]
+        public void KcLine_FormatsLikeHome_NoStrayDecimals()
+        {
+            Assert.AreEqual("7.6k Kc", FlightDebrief.Kc(7612.17));
+            Assert.AreEqual("8.85M Kc", FlightDebrief.Kc(8846363.3));
+            Assert.AreEqual("850 Kc", FlightDebrief.Kc(850.4));
+            Assert.AreEqual("4 Kc", FlightDebrief.Kc(4));
+            Assert.AreEqual("0 Kc", FlightDebrief.Kc(double.NaN));
+            Assert.AreEqual(HomeRecord.Kc(8846363), FlightDebrief.Kc(8846363.3), "the card and Home print the bank the same way");
+            using (var fx = new Fixture())
+            {
+                var store = fx.Load();
+                var mission = MissionFor(fx.Campaign, "m1", 5);
+                var facts = new FlightFacts { Passed = false, EconomyKnown = true, CostMinor = 761217, BudgetKc = 50, Seed = 5, DesignId = "miss", ApoKm = 40, GoalKm = 100 };
+                var card = FlightDebrief.Commit(store, mission, facts, NarrationPool.Load(Golden.Root), Minor, HangarData.LoadFromRepo(Golden.Root));
+                StringAssert.StartsWith("No reward. Hardware 7.6k Kc. Bank ", card.KcLine);
+                StringAssert.EndsWith(" Kc.", card.KcLine);
+                Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(card.KcLine, @"\d\.\d{2,} Kc|\d{4,} Kc"), card.KcLine);
+            }
+        }
+
+        /// <summary>Trevor 11-07: "No stars this flight." over "Gold for timing." read as a contradiction. A missed goal says
+        /// stars need the goal, and a medal it still earned reads as still earned.</summary>
+        [Test]
+        public void MissedGoal_StarsAndMedalLinesAgree()
+        {
+            var timing = new List<string> { "timing-gold" };
+            Assert.AreEqual("Gold for timing.", FlightDebrief.MedalSentence(timing, true));
+            Assert.AreEqual("You still earned gold for timing.", FlightDebrief.MedalSentence(timing, false));
+            Assert.AreEqual("You still earned silver for the landing and gold for timing.", FlightDebrief.MedalSentence(new List<string> { "silver", "timing-gold" }, false));
+            Assert.AreEqual("Silver for the landing. Gold for timing.", FlightDebrief.MedalSentence(new List<string> { "silver", "timing-gold" }, true));
+            Assert.AreEqual("No medal this flight.", FlightDebrief.MedalSentence(new List<string>(), false));
+            var card = FlightDebrief.Compose(null, MissionContext.Free(), new FlightFacts { Passed = false, ApoKm = 40, GoalKm = 100, TimingMedal = AscentMedal.Gold }, NarrationPool.Empty, 100000, null);
+            Assert.AreEqual(FlightDebrief.MissedStarsLine, card.StarsLine);
+            Assert.AreEqual("You still earned gold for timing.", card.MedalsLine);
+        }
+
         [Test]
         public void Narration_CoversTheFiveCauses_WithTwoVariantsEach()
         {

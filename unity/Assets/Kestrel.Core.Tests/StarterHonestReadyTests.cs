@@ -28,6 +28,10 @@ namespace Kestrel.Core.Tests
             if (f != null && !RandomKinds.Contains(f.kind) && !(f.kind == "engine-overpressure" && f.cause == "hazard"))
                 return f.kind + "/" + f.cause;
             var m = r.Mission;
+            // Trevor 11-07: an intact flight off a circular mission's band (the live card's gate) is not Ready either.
+            if (f == null && m.TargetKind == "circular"
+                && !MissionScore.TargetMet(m.TargetKind, m.ApoKm, m.PeriKm, m.C3Km2PerS2, MissionScore.FlownApoAltM(sim), sim.orbit.periAlt, 0, false, out _))
+                return "orbit";
             if (f == null && m.LandingRequired)
             {
                 if (FlightBatch.PredictLandingGrade(StarterFixture.Catalog, d, sim, m.LandingMode, false) == "short") return "landing";
@@ -71,17 +75,18 @@ namespace Kestrel.Core.Tests
             // not a behavior pin. The invariant (not Ready, honest) is asserted in KnownReadyButFailing_Invariant below.
             ("m3", "kerosene-3-f1-b0", StarterVerdict.Tumble),
             ("m3", "methane-3-f0-b0", StarterVerdict.OverG),
+            // Trevor 11-07: read "Ready… fuel to spare", flew 470 x -394 km on the device (calm air) and missed every time.
+            ("m3", "kerosene-2-f0-b0", StarterVerdict.Short),
+            ("m3", "methane-2-f1-b0", StarterVerdict.Orbit),
             ("m5", "kerosene-2-f1-b2", StarterVerdict.Short),
+            // #369: m13 methane-2-f4-b0 now reads Landing via the return-Δv formula (was a tracked gap).
+            ("m13", "methane-2-f4-b0", StarterVerdict.Landing),
         };
 
-        /// <summary>TRACKED GAPS (issue #369), not deleted rows: settings that SHOULD read their cause but cannot yet.
-        /// The expected cause is the old one, unchanged; the row is only parked here until it can be asserted again.
-        /// m13 methane-2-f4-b0 -> Landing: the predictor reaches orbit and the formula grades the landing "perfect", but the
-        /// flown booster runs dry (Salvage, sink 51 m/s, 0 kg left). StarterVerdict.Judge's landing check is a dv formula
-        /// (~0.7 km/s) that does not see the flown return (~2.3 km/s). Fix and parity gate are in #369.</summary>
+        /// <summary>TRACKED GAPS, not deleted rows: settings that SHOULD read their cause but cannot yet.
+        /// The expected cause is the old one, unchanged; the row is only parked here until it can be asserted again.</summary>
         static readonly (string mission, string key, string cause, string issue)[] KnownGaps =
         {
-            ("m13", "methane-2-f4-b0", StarterVerdict.Landing, "#369"),
         };
 
         static void AssertNamesItsCause(string mission, string key, string cause)

@@ -1,0 +1,1462 @@
+{"ev":"goto","t":"0.00","wall":"2026-11-04T01:29:45.343Z"}
+{"ev":"netreq","url":"blob:http://localhost:8797/9fb0cf1a-cf5c-4adb-9a00-cd60fb551b5d","t":"0.26","wall":"2026-11-04T01:29:45.599Z"}
+{"ev":"console","type":"error","text":"Failed to load resource: the server responded with a status of 404 (File not found)","t":"0.30","wall":"2026-11-04T01:29:45.648Z"}
+{"ev":"console","type":"log","text":"[UnityMemory] Configuration Parameters - Can be set up in boot.config\n","t":"0.85","wall":"2026-11-04T01:29:46.196Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-allocator-temp-initial-block-size-main=262144\"\n","t":"0.85","wall":"2026-11-04T01:29:46.197Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-allocator-temp-initial-block-size-worker=262144\"\n","t":"0.85","wall":"2026-11-04T01:29:46.198Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-audio-worker=65536\"\n","t":"0.85","wall":"2026-11-04T01:29:46.199Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-remapper-allocator-initial-capacity=32768\"\n","t":"0.86","wall":"2026-11-04T01:29:46.199Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-background-worker=32768\"\n","t":"0.86","wall":"2026-11-04T01:29:46.199Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-granularity=16\"\n","t":"0.86","wall":"2026-11-04T01:29:46.200Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-bucket-count=8\"\n","t":"0.86","wall":"2026-11-04T01:29:46.201Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-block-size=4194304\"\n","t":"0.86","wall":"2026-11-04T01:29:46.202Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-block-count=1\"\n","t":"0.86","wall":"2026-11-04T01:29:46.203Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-main-allocator-block-size=16777216\"\n","t":"0.86","wall":"2026-11-04T01:29:46.203Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-thread-allocator-block-size=16777216\"\n","t":"0.86","wall":"2026-11-04T01:29:46.203Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-gfx-main-allocator-block-size=16777216\"\n","t":"0.86","wall":"2026-11-04T01:29:46.203Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-gfx-thread-allocator-block-size=16777216\"\n","t":"0.86","wall":"2026-11-04T01:29:46.203Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-cache-allocator-block-size=4194304\"\n","t":"0.86","wall":"2026-11-04T01:29:46.203Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-typetree-allocator-block-size=2097152\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-granularity=16\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-bucket-count=8\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-block-size=4194304\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-block-count=1\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-allocator-block-size=16777216\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-editor-allocator-block-size=1048576\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-main=4194304\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-block-size=2097152\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-block-size-background=1048576\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-reduction-small-platforms=262144\"\n","t":"0.86","wall":"2026-11-04T01:29:46.204Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Initialized fallback backend.\n","t":"0.92","wall":"2026-11-04T01:29:46.260Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Id: 0xdecafbad\n","t":"0.92","wall":"2026-11-04T01:29:46.260Z"}
+{"ev":"console","type":"log","text":"Loading player data from data.unity3d\n","t":"0.92","wall":"2026-11-04T01:29:46.260Z"}
+{"ev":"console","type":"log","text":"Initialize engine version: 6000.3.26f1 (de8167e7440c)\n","t":"0.92","wall":"2026-11-04T01:29:46.261Z"}
+{"ev":"console","type":"log","text":"Creating WebGL 2.0 context.","t":"0.92","wall":"2026-11-04T01:29:46.261Z"}
+{"ev":"console","type":"log","text":"Renderer: WebKit WebGL\n","t":"0.95","wall":"2026-11-04T01:29:46.290Z"}
+{"ev":"console","type":"log","text":"Vendor:   WebKit\n","t":"0.95","wall":"2026-11-04T01:29:46.291Z"}
+{"ev":"console","type":"log","text":"Version:  OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n","t":"0.95","wall":"2026-11-04T01:29:46.291Z"}
+{"ev":"console","type":"log","text":"GLES:     3\n","t":"0.95","wall":"2026-11-04T01:29:46.291Z"}
+{"ev":"console","type":"log","text":" EXT_clip_control EXT_color_buffer_float EXT_color_buffer_half_float EXT_conservative_depth EXT_depth_clamp EXT_disjoint_timer_query_webgl2 EXT_float_blend EXT_polygon_offset_clamp EXT_texture_compression_bptc EXT_texture_compression_rgtc EXT_texture_filter_anisotropic EXT_texture_mirror_clamp_to_ed","t":"0.95","wall":"2026-11-04T01:29:46.291Z"}
+{"ev":"console","type":"log","text":"ression_rgtc GL_EXT_texture_filter_anisotropic GL_EXT_texture_mirror_clamp_to_edge GL_NV_shader_noperspective_interpolation GL_OES_draw_buffers_indexed GL_OES_sample_variables GL_OES_shader_multisample_interpolation GL_OES_texture_float_linear GL_OVR_multiview2 GL_WEBGL_clip_cull_distance GL_WEBGL_c","t":"0.95","wall":"2026-11-04T01:29:46.291Z"}
+{"ev":"console","type":"log","text":"OPENGL LOG: Creating OpenGL ES 3.0 graphics device ; Context level  <OpenGL ES 3.0> ; Context handle 1\n","t":"0.95","wall":"2026-11-04T01:29:46.297Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Selected backend.\n","t":"1.02","wall":"2026-11-04T01:29:46.361Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Name: PhysX\n","t":"1.02","wall":"2026-11-04T01:29:46.361Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Id: 0xf2b8ea05\n","t":"1.02","wall":"2026-11-04T01:29:46.361Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] SDK Version: 4.1.2\n","t":"1.02","wall":"2026-11-04T01:29:46.361Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Integration Version: 1.0.0\n","t":"1.02","wall":"2026-11-04T01:29:46.362Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Threading Mode: Single-Threaded\n","t":"1.02","wall":"2026-11-04T01:29:46.362Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"1.08","wall":"2026-11-04T01:29:46.424Z"}
+{"ev":"console","type":"log","text":"Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"1.08","wall":"2026-11-04T01:29:46.424Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"1.08","wall":"2026-11-04T01:29:46.425Z"}
+{"ev":"console","type":"log","text":"Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"1.08","wall":"2026-11-04T01:29:46.425Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"1.08","wall":"2026-11-04T01:29:46.426Z"}
+{"ev":"console","type":"log","text":"Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"1.08","wall":"2026-11-04T01:29:46.426Z"}
+{"ev":"console","type":"log","text":"Input Manager initialize...\n","t":"1.10","wall":"2026-11-04T01:29:46.440Z"}
+{"ev":"console","type":"log","text":"UnloadTime: 1.300001 ms\n","t":"1.12","wall":"2026-11-04T01:29:46.460Z"}
+{"ev":"console","type":"log","text":"[Kestrel] quality low (renderScale≈1.00, 60 fps, 150 particles)\n","t":"1.18","wall":"2026-11-04T01:29:46.519Z"}
+{"ev":"console","type":"log","text":"[Kestrel] guide clips: 78 found\n","t":"1.22","wall":"2026-11-04T01:29:46.561Z"}
+{"ev":"console","type":"log","text":"Audio context resumed after 0.278 seconds.","t":"1.25","wall":"2026-11-04T01:29:46.594Z"}
+{"ev":"console","type":"log","text":"[UnityCache] 'http://localhost:8797/Build/c5d29fe5a605e4f64be087cd6d32b458.data.unityweb' successfully downloaded and stored in the browser cache","t":"1.40","wall":"2026-11-04T01:29:46.743Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"3.60","wall":"2026-11-04T01:29:48.943Z"}
+{"ev":"loader-ready","load_s":0.051,"t":"4.25","wall":"2026-11-04T01:29:49.593Z"}
+{"ev":"console","type":"error","text":"Failed to load resource: the server responded with a status of 404 (File not found)","t":"4.33","wall":"2026-11-04T01:29:49.673Z"}
+{"ev":"tap","sel":"#start","note":"TAP TO PLAY","t":"4.39","wall":"2026-11-04T01:29:49.737Z"}
+{"ev":"wait","ms":1000,"note":"","t":"5.40","wall":"2026-11-04T01:29:50.745Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/001-after-tap-to-play.png","note":"","t":"6.28","wall":"2026-11-04T01:29:51.619Z"}
+{"ev":"fps","fps":[20,57,60,7,6],"t":"6.30","wall":"2026-11-04T01:29:51.639Z"}
+{"ev":"wait","ms":6000,"note":"","t":"15.56","wall":"2026-11-04T01:30:00.899Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/002-t12s.png","note":"","t":"16.12","wall":"2026-11-04T01:30:01.464Z"}
+{"ev":"fps","fps":[6,6,5,4,4,8,8,9,7,9],"t":"16.14","wall":"2026-11-04T01:30:01.484Z"}
+{"ev":"note","text":"Home screen visible. Kid taps biggest button LAUNCH KH-1","t":"21.62","wall":"2026-11-04T01:30:06.960Z"}
+{"ev":"tap","x":195,"y":655,"hold":120,"note":"LAUNCH KH-1","t":"22.09","wall":"2026-11-04T01:30:07.435Z"}
+{"ev":"wait","ms":2500,"note":"","t":"24.62","wall":"2026-11-04T01:30:09.959Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/003-after-launch-1.png","note":"","t":"25.10","wall":"2026-11-04T01:30:10.445Z"}
+{"ev":"wait","ms":2500,"note":"","t":"27.63","wall":"2026-11-04T01:30:12.972Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/004-after-launch-2.png","note":"","t":"28.10","wall":"2026-11-04T01:30:13.440Z"}
+{"ev":"wait","ms":2500,"note":"","t":"30.61","wall":"2026-11-04T01:30:15.955Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/005-after-launch-3.png","note":"","t":"31.05","wall":"2026-11-04T01:30:16.392Z"}
+{"ev":"wait","ms":2500,"note":"","t":"33.57","wall":"2026-11-04T01:30:18.909Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/006-after-launch-4.png","note":"","t":"33.95","wall":"2026-11-04T01:30:19.293Z"}
+{"ev":"note","text":"Briefing KH-1 (text heavy, grey desktop scrollbar). Kid skips text, taps Build it","t":"46.19","wall":"2026-11-04T01:30:31.534Z"}
+{"ev":"tap","x":195,"y":715,"hold":120,"note":"Build it","t":"46.58","wall":"2026-11-04T01:30:31.926Z"}
+{"ev":"console","type":"log","text":"[Count] boot\n","t":"47.02","wall":"2026-11-04T01:30:32.367Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"47.09","wall":"2026-11-04T01:30:32.435Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.11","wall":"2026-11-04T01:30:32.454Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.11","wall":"2026-11-04T01:30:32.454Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.11","wall":"2026-11-04T01:30:32.455Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.11","wall":"2026-11-04T01:30:32.456Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.11","wall":"2026-11-04T01:30:32.457Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.12","wall":"2026-11-04T01:30:32.463Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.13","wall":"2026-11-04T01:30:32.473Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.13","wall":"2026-11-04T01:30:32.473Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.13","wall":"2026-11-04T01:30:32.476Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.13","wall":"2026-11-04T01:30:32.476Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.13","wall":"2026-11-04T01:30:32.477Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.13","wall":"2026-11-04T01:30:32.478Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.14","wall":"2026-11-04T01:30:32.479Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: auth skipped\n","t":"47.14","wall":"2026-11-04T01:30:32.485Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"47.16","wall":"2026-11-04T01:30:32.500Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"47.16","wall":"2026-11-04T01:30:32.503Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"47.23","wall":"2026-11-04T01:30:32.575Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"47.37","wall":"2026-11-04T01:30:32.708Z"}
+{"ev":"console","type":"error","text":"NotSupportedError: screen.orientation.lock() is not available on this device.","t":"47.85","wall":"2026-11-04T01:30:33.190Z"}
+{"ev":"wait","ms":2500,"note":"","t":"49.10","wall":"2026-11-04T01:30:34.447Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/007-after-build-1.png","note":"","t":"49.59","wall":"2026-11-04T01:30:34.928Z"}
+{"ev":"wait","ms":2500,"note":"","t":"52.10","wall":"2026-11-04T01:30:37.448Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/008-after-build-2.png","note":"","t":"52.61","wall":"2026-11-04T01:30:37.949Z"}
+{"ev":"wait","ms":2500,"note":"","t":"55.12","wall":"2026-11-04T01:30:40.463Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/009-after-build-3.png","note":"","t":"55.56","wall":"2026-11-04T01:30:40.906Z"}
+{"ev":"wait","ms":2500,"note":"","t":"58.07","wall":"2026-11-04T01:30:43.417Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/010-after-build-4.png","note":"","t":"58.52","wall":"2026-11-04T01:30:43.864Z"}
+{"ev":"note","text":"Designer (simple panel). Defaults Ready. Kid taps LAUNCH","t":"74.27","wall":"2026-11-04T01:30:59.616Z"}
+{"ev":"tap","x":195,"y":790,"hold":120,"note":"LAUNCH (designer)","t":"74.82","wall":"2026-11-04T01:31:00.167Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"74.91","wall":"2026-11-04T01:31:00.248Z"}
+{"ev":"console","type":"log","text":"[Count] boot->counting t=-12\n","t":"74.92","wall":"2026-11-04T01:31:00.265Z"}
+{"ev":"console","type":"log","text":"[Count] gates audio=True clip=True voice=False guideHold=False\n","t":"74.92","wall":"2026-11-04T01:31:00.265Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"75.20","wall":"2026-11-04T01:31:00.545Z"}
+{"ev":"wait","ms":1500,"note":"","t":"76.34","wall":"2026-11-04T01:31:01.688Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/011-flight-a1.png","note":"","t":"76.83","wall":"2026-11-04T01:31:02.169Z"}
+{"ev":"wait","ms":1500,"note":"","t":"78.34","wall":"2026-11-04T01:31:03.682Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/012-flight-a2.png","note":"","t":"78.88","wall":"2026-11-04T01:31:04.227Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"80.03","wall":"2026-11-04T01:31:05.368Z"}
+{"ev":"wait","ms":1500,"note":"","t":"80.40","wall":"2026-11-04T01:31:05.740Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/013-flight-a3.png","note":"","t":"80.92","wall":"2026-11-04T01:31:06.263Z"}
+{"ev":"wait","ms":1500,"note":"","t":"82.43","wall":"2026-11-04T01:31:07.772Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/014-flight-a4.png","note":"","t":"82.83","wall":"2026-11-04T01:31:08.173Z"}
+{"ev":"wait","ms":1500,"note":"","t":"84.34","wall":"2026-11-04T01:31:09.681Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/015-flight-a5.png","note":"","t":"84.82","wall":"2026-11-04T01:31:10.159Z"}
+{"ev":"wait","ms":1500,"note":"","t":"86.33","wall":"2026-11-04T01:31:11.668Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/016-flight-a6.png","note":"","t":"86.76","wall":"2026-11-04T01:31:12.107Z"}
+{"ev":"wait","ms":1500,"note":"","t":"88.28","wall":"2026-11-04T01:31:13.620Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/017-flight-a7.png","note":"","t":"88.71","wall":"2026-11-04T01:31:14.051Z"}
+{"ev":"wait","ms":1500,"note":"","t":"90.22","wall":"2026-11-04T01:31:15.561Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/018-flight-a8.png","note":"","t":"90.66","wall":"2026-11-04T01:31:15.998Z"}
+{"ev":"console","type":"log","text":"[Count] counting->committed t=0\n","t":"91.99","wall":"2026-11-04T01:31:17.331Z"}
+{"ev":"console","type":"warning","text":"[Ascent] briefing skipped: repo root with data/golden not found above /\n","t":"91.99","wall":"2026-11-04T01:31:17.334Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"92.00","wall":"2026-11-04T01:31:17.341Z"}
+{"ev":"console","type":"log","text":"[Count] committed->ascending t=0\n","t":"92.02","wall":"2026-11-04T01:31:17.363Z"}
+{"ev":"wait","ms":1500,"note":"","t":"92.16","wall":"2026-11-04T01:31:17.507Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/019-flight-a9.png","note":"","t":"92.76","wall":"2026-11-04T01:31:18.103Z"}
+{"ev":"wait","ms":1500,"note":"","t":"94.27","wall":"2026-11-04T01:31:19.611Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/020-flight-a10.png","note":"","t":"94.54","wall":"2026-11-04T01:31:19.883Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"94.75","wall":"2026-11-04T01:31:20.090Z"}
+{"ev":"wait","ms":1500,"note":"","t":"96.06","wall":"2026-11-04T01:31:21.398Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/021-flight-a11.png","note":"","t":"96.34","wall":"2026-11-04T01:31:21.683Z"}
+{"ev":"wait","ms":1500,"note":"","t":"97.85","wall":"2026-11-04T01:31:23.192Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/022-flight-a12.png","note":"","t":"98.29","wall":"2026-11-04T01:31:23.637Z"}
+{"ev":"fps","fps":[10,10,9,9,9,8,13,17,16,19],"t":"98.32","wall":"2026-11-04T01:31:23.659Z"}
+{"ev":"wait","ms":2500,"note":"","t":"114.33","wall":"2026-11-04T01:31:39.671Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"114.42","wall":"2026-11-04T01:31:39.767Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/023-flight-b1.png","note":"","t":"114.66","wall":"2026-11-04T01:31:40.005Z"}
+{"ev":"wait","ms":2500,"note":"","t":"117.18","wall":"2026-11-04T01:31:42.522Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/024-flight-b2.png","note":"","t":"117.61","wall":"2026-11-04T01:31:42.948Z"}
+{"ev":"wait","ms":2500,"note":"","t":"120.11","wall":"2026-11-04T01:31:45.458Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/025-flight-b3.png","note":"","t":"120.49","wall":"2026-11-04T01:31:45.835Z"}
+{"ev":"wait","ms":2500,"note":"","t":"123.00","wall":"2026-11-04T01:31:48.345Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/026-flight-b4.png","note":"","t":"123.34","wall":"2026-11-04T01:31:48.684Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"124.33","wall":"2026-11-04T01:31:49.668Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: would submit 6789 to kh.unityproto.meco_alt_m\n","t":"124.33","wall":"2026-11-04T01:31:49.668Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"124.34","wall":"2026-11-04T01:31:49.686Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"124.35","wall":"2026-11-04T01:31:49.693Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"124.35","wall":"2026-11-04T01:31:49.695Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.709Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.709Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.711Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.712Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.712Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.712Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.712Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.713Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.714Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.714Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.714Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.37","wall":"2026-11-04T01:31:49.714Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.719Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.719Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.719Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.719Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.719Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.719Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.719Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.719Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.721Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.721Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.721Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.721Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.721Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.722Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.722Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.722Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.722Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.723Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.723Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.723Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.38","wall":"2026-11-04T01:31:49.723Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.39","wall":"2026-11-04T01:31:49.731Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.39","wall":"2026-11-04T01:31:49.731Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.739Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.739Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.739Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"124.40","wall":"2026-11-04T01:31:49.740Z"}
+{"ev":"console","type":"log","text":"[Count] ascending->done t=0 flight ended\n","t":"124.41","wall":"2026-11-04T01:31:49.750Z"}
+{"ev":"wait","ms":2500,"note":"","t":"125.86","wall":"2026-11-04T01:31:51.199Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/027-flight-b5.png","note":"","t":"126.37","wall":"2026-11-04T01:31:51.713Z"}
+{"ev":"wait","ms":2500,"note":"","t":"128.88","wall":"2026-11-04T01:31:54.225Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/028-flight-b6.png","note":"","t":"129.45","wall":"2026-11-04T01:31:54.793Z"}
+{"ev":"wait","ms":2500,"note":"","t":"131.96","wall":"2026-11-04T01:31:57.303Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/029-flight-b7.png","note":"","t":"132.38","wall":"2026-11-04T01:31:57.727Z"}
+{"ev":"wait","ms":2500,"note":"","t":"134.90","wall":"2026-11-04T01:32:00.245Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/030-flight-b8.png","note":"","t":"135.50","wall":"2026-11-04T01:32:00.848Z"}
+{"ev":"wait","ms":2500,"note":"","t":"138.01","wall":"2026-11-04T01:32:03.357Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/031-flight-b9.png","note":"","t":"138.52","wall":"2026-11-04T01:32:03.865Z"}
+{"ev":"wait","ms":2500,"note":"","t":"141.03","wall":"2026-11-04T01:32:06.375Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/032-flight-b10.png","note":"","t":"141.60","wall":"2026-11-04T01:32:06.944Z"}
+{"ev":"wait","ms":2500,"note":"","t":"144.12","wall":"2026-11-04T01:32:09.463Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/033-flight-b11.png","note":"","t":"144.57","wall":"2026-11-04T01:32:09.913Z"}
+{"ev":"wait","ms":2500,"note":"","t":"147.08","wall":"2026-11-04T01:32:12.424Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/034-flight-b12.png","note":"","t":"147.62","wall":"2026-11-04T01:32:12.966Z"}
+{"ev":"wait","ms":2500,"note":"","t":"150.13","wall":"2026-11-04T01:32:15.475Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/035-flight-b13.png","note":"","t":"150.57","wall":"2026-11-04T01:32:15.910Z"}
+{"ev":"wait","ms":2500,"note":"","t":"153.08","wall":"2026-11-04T01:32:18.426Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/036-flight-b14.png","note":"","t":"153.58","wall":"2026-11-04T01:32:18.920Z"}
+{"ev":"wait","ms":2500,"note":"","t":"156.09","wall":"2026-11-04T01:32:21.430Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/037-flight-b15.png","note":"","t":"156.66","wall":"2026-11-04T01:32:21.998Z"}
+{"ev":"wait","ms":2500,"note":"","t":"159.17","wall":"2026-11-04T01:32:24.513Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/038-flight-b16.png","note":"","t":"159.55","wall":"2026-11-04T01:32:24.895Z"}
+{"ev":"wait","ms":2500,"note":"","t":"162.06","wall":"2026-11-04T01:32:27.406Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/039-flight-b17.png","note":"","t":"162.39","wall":"2026-11-04T01:32:27.736Z"}
+{"ev":"wait","ms":2500,"note":"","t":"164.91","wall":"2026-11-04T01:32:30.253Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/040-flight-b18.png","note":"","t":"165.38","wall":"2026-11-04T01:32:30.718Z"}
+{"ev":"note","text":"Results KH-1: 1 star, bronze. Throttle prompt missed (kid no input). Kid taps biggest primary button Fix it","t":"190.28","wall":"2026-11-04T01:32:55.624Z"}
+{"ev":"tap","x":195,"y":583,"hold":120,"note":"Fix it","t":"190.63","wall":"2026-11-04T01:32:55.975Z"}
+{"ev":"console","type":"log","text":"[Count] done->boot t=0\n","t":"190.75","wall":"2026-11-04T01:32:56.092Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"191.00","wall":"2026-11-04T01:32:56.347Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"191.01","wall":"2026-11-04T01:32:56.349Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"191.01","wall":"2026-11-04T01:32:56.351Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.01","wall":"2026-11-04T01:32:56.354Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.01","wall":"2026-11-04T01:32:56.355Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.01","wall":"2026-11-04T01:32:56.356Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.01","wall":"2026-11-04T01:32:56.357Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.01","wall":"2026-11-04T01:32:56.357Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.01","wall":"2026-11-04T01:32:56.358Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.02","wall":"2026-11-04T01:32:56.359Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.02","wall":"2026-11-04T01:32:56.367Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.02","wall":"2026-11-04T01:32:56.367Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.02","wall":"2026-11-04T01:32:56.367Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.368Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.377Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.377Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.377Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.377Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.377Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.03","wall":"2026-11-04T01:32:56.377Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"191.04","wall":"2026-11-04T01:32:56.379Z"}
+{"ev":"console","type":"log","text":"[Count] boot->done t=0 flight ended\n","t":"191.04","wall":"2026-11-04T01:32:56.388Z"}
+{"ev":"wait","ms":2500,"note":"","t":"193.15","wall":"2026-11-04T01:32:58.493Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/041-after-fixit-1.png","note":"","t":"193.90","wall":"2026-11-04T01:32:59.243Z"}
+{"ev":"wait","ms":2500,"note":"","t":"196.42","wall":"2026-11-04T01:33:01.763Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/042-after-fixit-2.png","note":"","t":"197.24","wall":"2026-11-04T01:33:02.582Z"}
+{"ev":"wait","ms":2500,"note":"","t":"199.76","wall":"2026-11-04T01:33:05.099Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/043-after-fixit-3.png","note":"","t":"200.32","wall":"2026-11-04T01:33:05.665Z"}
+{"ev":"tap","x":195,"y":606,"hold":120,"note":"Fix it again (primary button, screen looked unchanged)","t":"225.41","wall":"2026-11-04T01:33:30.754Z"}
+{"ev":"console","type":"log","text":"[Count] done->boot t=0\n","t":"225.79","wall":"2026-11-04T01:33:31.132Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"226.02","wall":"2026-11-04T01:33:31.365Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"226.03","wall":"2026-11-04T01:33:31.376Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"226.03","wall":"2026-11-04T01:33:31.376Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.04","wall":"2026-11-04T01:33:31.386Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.04","wall":"2026-11-04T01:33:31.387Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.04","wall":"2026-11-04T01:33:31.387Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.04","wall":"2026-11-04T01:33:31.387Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.04","wall":"2026-11-04T01:33:31.388Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.04","wall":"2026-11-04T01:33:31.388Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.05","wall":"2026-11-04T01:33:31.390Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.05","wall":"2026-11-04T01:33:31.390Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.05","wall":"2026-11-04T01:33:31.391Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.05","wall":"2026-11-04T01:33:31.392Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.402Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.402Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.402Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.402Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.402Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.403Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.403Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.403Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.403Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.403Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.403Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.403Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.403Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.06","wall":"2026-11-04T01:33:31.403Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.409Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.409Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.409Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.409Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.409Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.409Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.409Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.409Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.416Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.417Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.417Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.417Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.417Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.417Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.417Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.417Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"226.07","wall":"2026-11-04T01:33:31.417Z"}
+{"ev":"console","type":"log","text":"[Count] boot->done t=0 flight ended\n","t":"226.08","wall":"2026-11-04T01:33:31.419Z"}
+{"ev":"wait","ms":3000,"note":"","t":"228.44","wall":"2026-11-04T01:33:33.787Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/044-fixit-again.png","note":"","t":"229.36","wall":"2026-11-04T01:33:34.699Z"}
+{"ev":"note","text":"Kid gives up on Fix it loop, taps Next mission","t":"229.39","wall":"2026-11-04T01:33:34.732Z"}
+{"ev":"tap","x":100,"y":676,"hold":120,"note":"Next mission","t":"230.42","wall":"2026-11-04T01:33:35.764Z"}
+{"ev":"wait","ms":2500,"note":"","t":"232.94","wall":"2026-11-04T01:33:38.282Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/045-next-mission-1.png","note":"","t":"233.51","wall":"2026-11-04T01:33:38.852Z"}
+{"ev":"wait","ms":2500,"note":"","t":"236.04","wall":"2026-11-04T01:33:41.381Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/046-next-mission-2.png","note":"","t":"236.44","wall":"2026-11-04T01:33:41.783Z"}
+{"ev":"wait","ms":2500,"note":"","t":"238.96","wall":"2026-11-04T01:33:44.301Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/047-next-mission-3.png","note":"","t":"239.43","wall":"2026-11-04T01:33:44.770Z"}
+{"ev":"note","text":"Campaign map. Kid taps big red Fly KH-2","t":"254.45","wall":"2026-11-04T01:33:59.793Z"}
+{"ev":"tap","x":195,"y":790,"hold":120,"note":"Fly KH-2","t":"254.95","wall":"2026-11-04T01:34:00.297Z"}
+{"ev":"wait","ms":2500,"note":"","t":"257.47","wall":"2026-11-04T01:34:02.811Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/048-kh2-1.png","note":"","t":"257.92","wall":"2026-11-04T01:34:03.264Z"}
+{"ev":"wait","ms":2500,"note":"","t":"260.44","wall":"2026-11-04T01:34:05.783Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/049-kh2-2.png","note":"","t":"261.11","wall":"2026-11-04T01:34:06.456Z"}
+{"ev":"wait","ms":2500,"note":"","t":"263.62","wall":"2026-11-04T01:34:08.966Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/050-kh2-3.png","note":"","t":"264.06","wall":"2026-11-04T01:34:09.403Z"}
+{"ev":"wait","ms":2500,"note":"","t":"266.57","wall":"2026-11-04T01:34:11.918Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/051-kh2-4.png","note":"","t":"267.02","wall":"2026-11-04T01:34:12.365Z"}
+{"ev":"note","text":"Briefing again (Fly KH-2 did not fly). Kid taps Build it","t":"272.56","wall":"2026-11-04T01:34:17.903Z"}
+{"ev":"tap","x":195,"y":715,"hold":120,"note":"Build it KH-2","t":"272.94","wall":"2026-11-04T01:34:18.281Z"}
+{"ev":"console","type":"log","text":"[Count] boot\n","t":"273.59","wall":"2026-11-04T01:34:18.929Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"273.62","wall":"2026-11-04T01:34:18.963Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: auth skipped\n","t":"273.62","wall":"2026-11-04T01:34:18.967Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"273.63","wall":"2026-11-04T01:34:18.973Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"273.63","wall":"2026-11-04T01:34:18.976Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"273.64","wall":"2026-11-04T01:34:18.979Z"}
+{"ev":"console","type":"error","text":"warning: 5 FS.syncfs operations in flight at once, probably just doing extra work","t":"273.67","wall":"2026-11-04T01:34:19.010Z"}
+{"ev":"wait","ms":2500,"note":"","t":"275.47","wall":"2026-11-04T01:34:20.809Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/052-kh2-design-1.png","note":"","t":"276.14","wall":"2026-11-04T01:34:21.480Z"}
+{"ev":"wait","ms":2500,"note":"","t":"278.64","wall":"2026-11-04T01:34:23.988Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/053-kh2-design-2.png","note":"","t":"279.26","wall":"2026-11-04T01:34:24.601Z"}
+{"ev":"wait","ms":2500,"note":"","t":"281.77","wall":"2026-11-04T01:34:27.118Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/054-kh2-design-3.png","note":"","t":"282.24","wall":"2026-11-04T01:34:27.582Z"}
+{"ev":"note","text":"Designer KH-2 defaults Ready. Kid taps LAUNCH; reflex watcher taps any glowing prompt","t":"299.34","wall":"2026-11-04T01:34:44.679Z"}
+{"ev":"tap","x":195,"y":822,"hold":120,"note":"LAUNCH","t":"300.21","wall":"2026-11-04T01:34:45.551Z"}
+{"ev":"console","type":"log","text":"[Count] boot->counting t=-12\n","t":"300.44","wall":"2026-11-04T01:34:45.781Z"}
+{"ev":"console","type":"log","text":"[Count] gates audio=True clip=True voice=False guideHold=False\n","t":"300.44","wall":"2026-11-04T01:34:45.782Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/055-kh2-fl-001.png","note":"","t":"301.13","wall":"2026-11-04T01:34:46.468Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/056-kh2-fl-002.png","note":"","t":"302.31","wall":"2026-11-04T01:34:47.648Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/057-kh2-fl-003.png","note":"","t":"303.13","wall":"2026-11-04T01:34:48.477Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/058-kh2-fl-004.png","note":"","t":"304.26","wall":"2026-11-04T01:34:49.603Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/059-kh2-fl-005.png","note":"","t":"305.28","wall":"2026-11-04T01:34:50.624Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/060-kh2-fl-006.png","note":"","t":"306.28","wall":"2026-11-04T01:34:51.620Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/061-kh2-fl-007.png","note":"","t":"307.04","wall":"2026-11-04T01:34:52.383Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/062-kh2-fl-008.png","note":"","t":"307.71","wall":"2026-11-04T01:34:53.054Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/063-kh2-fl-009.png","note":"","t":"308.32","wall":"2026-11-04T01:34:53.664Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/064-kh2-fl-010.png","note":"","t":"309.09","wall":"2026-11-04T01:34:54.429Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/065-kh2-fl-011.png","note":"","t":"310.01","wall":"2026-11-04T01:34:55.355Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/066-kh2-fl-012.png","note":"","t":"310.72","wall":"2026-11-04T01:34:56.060Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/067-kh2-fl-013.png","note":"","t":"311.57","wall":"2026-11-04T01:34:56.916Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/068-kh2-fl-014.png","note":"","t":"312.19","wall":"2026-11-04T01:34:57.530Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/069-kh2-fl-015.png","note":"","t":"313.06","wall":"2026-11-04T01:34:58.403Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/070-kh2-fl-016.png","note":"","t":"313.84","wall":"2026-11-04T01:34:59.180Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/071-kh2-fl-017.png","note":"","t":"314.50","wall":"2026-11-04T01:34:59.845Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/072-kh2-fl-018.png","note":"","t":"315.12","wall":"2026-11-04T01:35:00.459Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/073-kh2-fl-019.png","note":"","t":"315.72","wall":"2026-11-04T01:35:01.064Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/074-kh2-fl-020.png","note":"","t":"316.55","wall":"2026-11-04T01:35:01.895Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/075-kh2-fl-021.png","note":"","t":"317.19","wall":"2026-11-04T01:35:02.531Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/076-kh2-fl-022.png","note":"","t":"318.16","wall":"2026-11-04T01:35:03.503Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/077-kh2-fl-023.png","note":"","t":"319.06","wall":"2026-11-04T01:35:04.401Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/078-kh2-fl-024.png","note":"","t":"319.79","wall":"2026-11-04T01:35:05.135Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/079-kh2-fl-025.png","note":"","t":"320.46","wall":"2026-11-04T01:35:05.807Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/080-kh2-fl-026.png","note":"","t":"321.27","wall":"2026-11-04T01:35:06.610Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/081-kh2-fl-027.png","note":"","t":"322.06","wall":"2026-11-04T01:35:07.399Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/082-kh2-fl-028.png","note":"","t":"322.68","wall":"2026-11-04T01:35:08.024Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/083-kh2-fl-029.png","note":"","t":"323.53","wall":"2026-11-04T01:35:08.870Z"}
+{"ev":"console","type":"log","text":"[Count] counting->committed t=0\n","t":"324.27","wall":"2026-11-04T01:35:09.609Z"}
+{"ev":"console","type":"warning","text":"[Ascent] briefing skipped: repo root with data/golden not found above /\n","t":"324.27","wall":"2026-11-04T01:35:09.609Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"324.27","wall":"2026-11-04T01:35:09.609Z"}
+{"ev":"console","type":"log","text":"[Count] committed->ascending t=0\n","t":"324.27","wall":"2026-11-04T01:35:09.609Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/084-kh2-fl-030.png","note":"","t":"324.27","wall":"2026-11-04T01:35:09.614Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/085-kh2-fl-031.png","note":"","t":"325.15","wall":"2026-11-04T01:35:10.494Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/086-kh2-fl-032.png","note":"","t":"326.15","wall":"2026-11-04T01:35:11.490Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/087-kh2-fl-033.png","note":"","t":"327.11","wall":"2026-11-04T01:35:12.456Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/088-kh2-fl-034.png","note":"","t":"327.96","wall":"2026-11-04T01:35:13.303Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/089-kh2-fl-035.png","note":"","t":"328.68","wall":"2026-11-04T01:35:14.022Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/090-kh2-fl-036.png","note":"","t":"329.34","wall":"2026-11-04T01:35:14.682Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/091-kh2-fl-037.png","note":"","t":"329.96","wall":"2026-11-04T01:35:15.304Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/092-kh2-fl-038.png","note":"","t":"330.58","wall":"2026-11-04T01:35:15.928Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/093-kh2-fl-039.png","note":"","t":"331.22","wall":"2026-11-04T01:35:16.565Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/094-kh2-fl-040.png","note":"","t":"331.84","wall":"2026-11-04T01:35:17.180Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/095-kh2-fl-041.png","note":"","t":"332.36","wall":"2026-11-04T01:35:17.702Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/096-kh2-fl-042.png","note":"","t":"332.93","wall":"2026-11-04T01:35:18.271Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/097-kh2-fl-043.png","note":"","t":"333.58","wall":"2026-11-04T01:35:18.927Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/098-kh2-fl-044.png","note":"","t":"334.24","wall":"2026-11-04T01:35:19.585Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/099-kh2-fl-045.png","note":"","t":"334.86","wall":"2026-11-04T01:35:20.205Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/100-kh2-fl-046.png","note":"","t":"335.36","wall":"2026-11-04T01:35:20.704Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/101-kh2-fl-047.png","note":"","t":"335.97","wall":"2026-11-04T01:35:21.311Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/102-kh2-fl-048.png","note":"","t":"336.49","wall":"2026-11-04T01:35:21.834Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/103-kh2-fl-049.png","note":"","t":"337.00","wall":"2026-11-04T01:35:22.344Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/104-kh2-fl-050.png","note":"","t":"337.60","wall":"2026-11-04T01:35:22.941Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/105-kh2-fl-051.png","note":"","t":"338.26","wall":"2026-11-04T01:35:23.606Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/106-kh2-fl-052.png","note":"","t":"338.85","wall":"2026-11-04T01:35:24.196Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/107-kh2-fl-053.png","note":"","t":"339.57","wall":"2026-11-04T01:35:24.910Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/108-kh2-fl-054.png","note":"","t":"340.20","wall":"2026-11-04T01:35:25.543Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/109-kh2-fl-055.png","note":"","t":"340.80","wall":"2026-11-04T01:35:26.140Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/110-kh2-fl-056.png","note":"","t":"341.33","wall":"2026-11-04T01:35:26.670Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/111-kh2-fl-057.png","note":"","t":"342.10","wall":"2026-11-04T01:35:27.444Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/112-kh2-fl-058.png","note":"","t":"342.73","wall":"2026-11-04T01:35:28.071Z"}
+{"ev":"tap","x":60,"y":808,"hold":120,"note":"kid reflex: tapped glowing prompt (322 cyan px) seen in 112-kh2-fl-058.png","t":"342.99","wall":"2026-11-04T01:35:28.336Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/113-kh2-fl-059.png","note":"","t":"343.54","wall":"2026-11-04T01:35:28.884Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/114-kh2-fl-060.png","note":"","t":"344.17","wall":"2026-11-04T01:35:29.509Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/115-kh2-fl-061.png","note":"","t":"344.75","wall":"2026-11-04T01:35:30.097Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/116-kh2-fl-062.png","note":"","t":"345.38","wall":"2026-11-04T01:35:30.727Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/117-kh2-fl-063.png","note":"","t":"345.92","wall":"2026-11-04T01:35:31.263Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/118-kh2-fl-064.png","note":"","t":"346.44","wall":"2026-11-04T01:35:31.779Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/119-kh2-fl-065.png","note":"","t":"347.05","wall":"2026-11-04T01:35:32.397Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/120-kh2-fl-066.png","note":"","t":"347.67","wall":"2026-11-04T01:35:33.012Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/121-kh2-fl-067.png","note":"","t":"348.15","wall":"2026-11-04T01:35:33.498Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/122-kh2-fl-068.png","note":"","t":"348.76","wall":"2026-11-04T01:35:34.106Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/123-kh2-fl-069.png","note":"","t":"349.33","wall":"2026-11-04T01:35:34.676Z"}
+{"ev":"tap","x":60,"y":810,"hold":120,"note":"kid reflex: tapped glowing prompt (315 cyan px) seen in 123-kh2-fl-069.png","t":"349.71","wall":"2026-11-04T01:35:35.056Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/124-kh2-fl-070.png","note":"","t":"350.19","wall":"2026-11-04T01:35:35.538Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/125-kh2-fl-071.png","note":"","t":"350.71","wall":"2026-11-04T01:35:36.055Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/126-kh2-fl-072.png","note":"","t":"351.25","wall":"2026-11-04T01:35:36.594Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/127-kh2-fl-073.png","note":"","t":"351.81","wall":"2026-11-04T01:35:37.150Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/128-kh2-fl-074.png","note":"","t":"352.53","wall":"2026-11-04T01:35:37.876Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/129-kh2-fl-075.png","note":"","t":"353.08","wall":"2026-11-04T01:35:38.427Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/130-kh2-fl-076.png","note":"","t":"353.75","wall":"2026-11-04T01:35:39.093Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/131-kh2-fl-077.png","note":"","t":"354.33","wall":"2026-11-04T01:35:39.670Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/132-kh2-fl-078.png","note":"","t":"354.94","wall":"2026-11-04T01:35:40.281Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/133-kh2-fl-079.png","note":"","t":"355.60","wall":"2026-11-04T01:35:40.939Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/134-kh2-fl-080.png","note":"","t":"356.27","wall":"2026-11-04T01:35:41.618Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/135-kh2-fl-081.png","note":"","t":"356.83","wall":"2026-11-04T01:35:42.174Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/136-kh2-fl-082.png","note":"","t":"357.42","wall":"2026-11-04T01:35:42.763Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/137-kh2-fl-083.png","note":"","t":"358.02","wall":"2026-11-04T01:35:43.366Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/138-kh2-fl-084.png","note":"","t":"358.63","wall":"2026-11-04T01:35:43.972Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/139-kh2-fl-085.png","note":"","t":"359.12","wall":"2026-11-04T01:35:44.463Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/140-kh2-fl-086.png","note":"","t":"359.85","wall":"2026-11-04T01:35:45.193Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/141-kh2-fl-087.png","note":"","t":"360.32","wall":"2026-11-04T01:35:45.661Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/142-kh2-fl-088.png","note":"","t":"360.94","wall":"2026-11-04T01:35:46.288Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/143-kh2-fl-089.png","note":"","t":"361.61","wall":"2026-11-04T01:35:46.953Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/144-kh2-fl-090.png","note":"","t":"362.23","wall":"2026-11-04T01:35:47.572Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/145-kh2-fl-091.png","note":"","t":"362.92","wall":"2026-11-04T01:35:48.263Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/146-kh2-fl-092.png","note":"","t":"363.49","wall":"2026-11-04T01:35:48.833Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/147-kh2-fl-093.png","note":"","t":"364.16","wall":"2026-11-04T01:35:49.507Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/148-kh2-fl-094.png","note":"","t":"364.80","wall":"2026-11-04T01:35:50.146Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/149-kh2-fl-095.png","note":"","t":"365.46","wall":"2026-11-04T01:35:50.804Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/150-kh2-fl-096.png","note":"","t":"366.08","wall":"2026-11-04T01:35:51.419Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/151-kh2-fl-097.png","note":"","t":"366.74","wall":"2026-11-04T01:35:52.087Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/152-kh2-fl-098.png","note":"","t":"367.34","wall":"2026-11-04T01:35:52.679Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/153-kh2-fl-099.png","note":"","t":"368.07","wall":"2026-11-04T01:35:53.414Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/154-kh2-fl-100.png","note":"","t":"368.72","wall":"2026-11-04T01:35:54.059Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/155-kh2-fl-101.png","note":"","t":"369.30","wall":"2026-11-04T01:35:54.639Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/156-kh2-fl-102.png","note":"","t":"369.80","wall":"2026-11-04T01:35:55.139Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/157-kh2-fl-103.png","note":"","t":"370.48","wall":"2026-11-04T01:35:55.826Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/158-kh2-fl-104.png","note":"","t":"371.09","wall":"2026-11-04T01:35:56.433Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/159-kh2-fl-105.png","note":"","t":"371.76","wall":"2026-11-04T01:35:57.103Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/160-kh2-fl-106.png","note":"","t":"372.39","wall":"2026-11-04T01:35:57.737Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/161-kh2-fl-107.png","note":"","t":"372.99","wall":"2026-11-04T01:35:58.332Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/162-kh2-fl-108.png","note":"","t":"373.52","wall":"2026-11-04T01:35:58.863Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/163-kh2-fl-109.png","note":"","t":"374.17","wall":"2026-11-04T01:35:59.512Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/164-kh2-fl-110.png","note":"","t":"374.67","wall":"2026-11-04T01:36:00.011Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/165-kh2-fl-111.png","note":"","t":"375.25","wall":"2026-11-04T01:36:00.592Z"}
+{"ev":"tap","x":195,"y":546,"hold":120,"note":"kid reflex: tapped glowing prompt (238 cyan px) seen in 165-kh2-fl-111.png","t":"375.65","wall":"2026-11-04T01:36:00.993Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/166-kh2-fl2-001.png","note":"","t":"401.11","wall":"2026-11-04T01:36:26.454Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: would submit 28365 to kh.unityproto.meco_alt_m\n","t":"401.73","wall":"2026-11-04T01:36:27.068Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"401.73","wall":"2026-11-04T01:36:27.073Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"401.73","wall":"2026-11-04T01:36:27.074Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"401.74","wall":"2026-11-04T01:36:27.078Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.75","wall":"2026-11-04T01:36:27.093Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.75","wall":"2026-11-04T01:36:27.094Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.75","wall":"2026-11-04T01:36:27.096Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.75","wall":"2026-11-04T01:36:27.097Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.75","wall":"2026-11-04T01:36:27.097Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.75","wall":"2026-11-04T01:36:27.098Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.75","wall":"2026-11-04T01:36:27.098Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.099Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.099Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.101Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.101Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.101Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.101Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.101Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.101Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.101Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.102Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.107Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.107Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.76","wall":"2026-11-04T01:36:27.107Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.109Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.115Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.116Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.116Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.116Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.116Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"401.77","wall":"2026-11-04T01:36:27.116Z"}
+{"ev":"console","type":"log","text":"[Count] ascending->done t=0 flight ended\n","t":"401.80","wall":"2026-11-04T01:36:27.138Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/167-kh2-fl2-002.png","note":"","t":"401.81","wall":"2026-11-04T01:36:27.157Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/168-kh2-fl2-003.png","note":"","t":"402.57","wall":"2026-11-04T01:36:27.910Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/169-kh2-fl2-004.png","note":"","t":"403.35","wall":"2026-11-04T01:36:28.690Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/170-kh2-fl2-005.png","note":"","t":"404.01","wall":"2026-11-04T01:36:29.356Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/171-kh2-fl2-006.png","note":"","t":"404.79","wall":"2026-11-04T01:36:30.136Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/172-kh2-fl2-007.png","note":"","t":"405.30","wall":"2026-11-04T01:36:30.647Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/173-kh2-fl2-008.png","note":"","t":"406.09","wall":"2026-11-04T01:36:31.435Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/174-kh2-fl2-009.png","note":"","t":"406.58","wall":"2026-11-04T01:36:31.925Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/175-kh2-fl2-010.png","note":"","t":"407.36","wall":"2026-11-04T01:36:32.705Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/176-kh2-fl2-011.png","note":"","t":"408.01","wall":"2026-11-04T01:36:33.353Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/177-kh2-fl2-012.png","note":"","t":"408.68","wall":"2026-11-04T01:36:34.019Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/178-kh2-fl2-013.png","note":"","t":"409.32","wall":"2026-11-04T01:36:34.667Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/179-kh2-fl2-014.png","note":"","t":"409.96","wall":"2026-11-04T01:36:35.304Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/180-kh2-fl2-015.png","note":"","t":"410.70","wall":"2026-11-04T01:36:36.048Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/181-kh2-fl2-016.png","note":"","t":"411.31","wall":"2026-11-04T01:36:36.655Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/182-kh2-fl2-017.png","note":"","t":"411.85","wall":"2026-11-04T01:36:37.189Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/183-kh2-fl2-018.png","note":"","t":"412.53","wall":"2026-11-04T01:36:37.876Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/184-kh2-fl2-019.png","note":"","t":"413.30","wall":"2026-11-04T01:36:38.645Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/185-kh2-fl2-020.png","note":"","t":"413.95","wall":"2026-11-04T01:36:39.293Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/186-kh2-fl2-021.png","note":"","t":"414.61","wall":"2026-11-04T01:36:39.951Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/187-kh2-fl2-022.png","note":"","t":"415.26","wall":"2026-11-04T01:36:40.601Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/188-kh2-fl2-023.png","note":"","t":"416.04","wall":"2026-11-04T01:36:41.381Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/189-kh2-fl2-024.png","note":"","t":"416.72","wall":"2026-11-04T01:36:42.064Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/190-kh2-fl2-025.png","note":"","t":"417.40","wall":"2026-11-04T01:36:42.747Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/191-kh2-fl2-026.png","note":"","t":"417.94","wall":"2026-11-04T01:36:43.282Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/192-kh2-fl2-027.png","note":"","t":"418.59","wall":"2026-11-04T01:36:43.934Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/193-kh2-fl2-028.png","note":"","t":"419.25","wall":"2026-11-04T01:36:44.588Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/194-kh2-fl2-029.png","note":"","t":"419.98","wall":"2026-11-04T01:36:45.320Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/195-kh2-fl2-030.png","note":"","t":"420.71","wall":"2026-11-04T01:36:46.050Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/196-kh2-fl2-031.png","note":"","t":"421.30","wall":"2026-11-04T01:36:46.644Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/197-kh2-fl2-032.png","note":"","t":"421.86","wall":"2026-11-04T01:36:47.202Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/198-kh2-fl2-033.png","note":"","t":"422.63","wall":"2026-11-04T01:36:47.968Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/199-kh2-fl2-034.png","note":"","t":"423.26","wall":"2026-11-04T01:36:48.604Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/200-kh2-fl2-035.png","note":"","t":"423.82","wall":"2026-11-04T01:36:49.160Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/201-kh2-fl2-036.png","note":"","t":"424.39","wall":"2026-11-04T01:36:49.729Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/202-kh2-fl2-037.png","note":"","t":"425.05","wall":"2026-11-04T01:36:50.393Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/203-kh2-fl2-038.png","note":"","t":"425.68","wall":"2026-11-04T01:36:51.022Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/204-kh2-fl2-039.png","note":"","t":"426.36","wall":"2026-11-04T01:36:51.702Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/205-kh2-fl2-040.png","note":"","t":"427.04","wall":"2026-11-04T01:36:52.381Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/206-kh2-fl2-041.png","note":"","t":"427.62","wall":"2026-11-04T01:36:52.963Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/207-kh2-fl2-042.png","note":"","t":"428.38","wall":"2026-11-04T01:36:53.722Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/208-kh2-fl2-043.png","note":"","t":"429.10","wall":"2026-11-04T01:36:54.446Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/209-kh2-fl2-044.png","note":"","t":"429.88","wall":"2026-11-04T01:36:55.221Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/210-kh2-fl2-045.png","note":"","t":"430.41","wall":"2026-11-04T01:36:55.750Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/211-kh2-fl2-046.png","note":"","t":"431.10","wall":"2026-11-04T01:36:56.443Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/212-kh2-fl2-047.png","note":"","t":"431.78","wall":"2026-11-04T01:36:57.127Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/213-kh2-fl2-048.png","note":"","t":"432.43","wall":"2026-11-04T01:36:57.776Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/214-kh2-fl2-049.png","note":"","t":"433.13","wall":"2026-11-04T01:36:58.469Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/215-kh2-fl2-050.png","note":"","t":"433.72","wall":"2026-11-04T01:36:59.064Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/216-kh2-fl2-051.png","note":"","t":"434.38","wall":"2026-11-04T01:36:59.723Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/217-kh2-fl2-052.png","note":"","t":"435.03","wall":"2026-11-04T01:37:00.369Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/218-kh2-fl2-053.png","note":"","t":"435.58","wall":"2026-11-04T01:37:00.920Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/219-kh2-fl2-054.png","note":"","t":"436.17","wall":"2026-11-04T01:37:01.516Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/220-kh2-fl2-055.png","note":"","t":"437.16","wall":"2026-11-04T01:37:02.503Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/221-kh2-fl2-056.png","note":"","t":"437.83","wall":"2026-11-04T01:37:03.170Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/222-kh2-fl2-057.png","note":"","t":"438.49","wall":"2026-11-04T01:37:03.835Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/223-kh2-fl2-058.png","note":"","t":"439.08","wall":"2026-11-04T01:37:04.425Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/224-kh2-fl2-059.png","note":"","t":"439.63","wall":"2026-11-04T01:37:04.968Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/225-kh2-fl2-060.png","note":"","t":"440.16","wall":"2026-11-04T01:37:05.501Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/226-kh2-fl2-061.png","note":"","t":"440.88","wall":"2026-11-04T01:37:06.226Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/227-kh2-fl2-062.png","note":"","t":"441.36","wall":"2026-11-04T01:37:06.700Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/228-kh2-fl2-063.png","note":"","t":"441.88","wall":"2026-11-04T01:37:07.225Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/229-kh2-fl2-064.png","note":"","t":"442.60","wall":"2026-11-04T01:37:07.940Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/230-kh2-fl2-065.png","note":"","t":"443.18","wall":"2026-11-04T01:37:08.526Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/231-kh2-fl2-066.png","note":"","t":"443.77","wall":"2026-11-04T01:37:09.112Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/232-kh2-fl2-067.png","note":"","t":"444.42","wall":"2026-11-04T01:37:09.760Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/233-kh2-fl2-068.png","note":"","t":"445.19","wall":"2026-11-04T01:37:10.534Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/234-kh2-fl2-069.png","note":"","t":"445.87","wall":"2026-11-04T01:37:11.212Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/235-kh2-fl2-070.png","note":"","t":"446.48","wall":"2026-11-04T01:37:11.824Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/236-kh2-fl2-071.png","note":"","t":"447.12","wall":"2026-11-04T01:37:12.462Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/237-kh2-fl2-072.png","note":"","t":"447.72","wall":"2026-11-04T01:37:13.063Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/238-kh2-fl2-073.png","note":"","t":"448.53","wall":"2026-11-04T01:37:13.869Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/239-kh2-fl2-074.png","note":"","t":"449.22","wall":"2026-11-04T01:37:14.563Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/240-kh2-fl2-075.png","note":"","t":"449.78","wall":"2026-11-04T01:37:15.122Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/241-kh2-fl2-076.png","note":"","t":"450.55","wall":"2026-11-04T01:37:15.888Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/242-kh2-fl2-077.png","note":"","t":"451.23","wall":"2026-11-04T01:37:16.569Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/243-kh2-fl2-078.png","note":"","t":"451.92","wall":"2026-11-04T01:37:17.259Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/244-kh2-fl2-079.png","note":"","t":"452.50","wall":"2026-11-04T01:37:17.844Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/245-kh2-fl2-080.png","note":"","t":"453.32","wall":"2026-11-04T01:37:18.660Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/246-kh2-fl2-081.png","note":"","t":"453.92","wall":"2026-11-04T01:37:19.264Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/247-kh2-fl2-082.png","note":"","t":"454.57","wall":"2026-11-04T01:37:19.914Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/248-kh2-fl2-083.png","note":"","t":"455.14","wall":"2026-11-04T01:37:20.485Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/249-kh2-fl2-084.png","note":"","t":"455.92","wall":"2026-11-04T01:37:21.266Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/250-kh2-fl2-085.png","note":"","t":"456.62","wall":"2026-11-04T01:37:21.964Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/251-kh2-fl2-086.png","note":"","t":"457.31","wall":"2026-11-04T01:37:22.657Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/252-kh2-fl2-087.png","note":"","t":"458.13","wall":"2026-11-04T01:37:23.469Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/253-kh2-fl2-088.png","note":"","t":"458.83","wall":"2026-11-04T01:37:24.174Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/254-kh2-fl2-089.png","note":"","t":"459.39","wall":"2026-11-04T01:37:24.731Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/255-kh2-fl2-090.png","note":"","t":"460.04","wall":"2026-11-04T01:37:25.381Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/256-kh2-fl2-091.png","note":"","t":"460.87","wall":"2026-11-04T01:37:26.213Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/257-kh2-fl2-092.png","note":"","t":"461.72","wall":"2026-11-04T01:37:27.062Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/258-kh2-fl2-093.png","note":"","t":"462.59","wall":"2026-11-04T01:37:27.931Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/259-kh2-fl2-094.png","note":"","t":"463.33","wall":"2026-11-04T01:37:28.678Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/260-kh2-fl2-095.png","note":"","t":"464.00","wall":"2026-11-04T01:37:29.347Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/261-kh2-fl2-096.png","note":"","t":"464.77","wall":"2026-11-04T01:37:30.110Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/262-kh2-fl2-097.png","note":"","t":"465.33","wall":"2026-11-04T01:37:30.673Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/263-kh2-fl2-098.png","note":"","t":"466.04","wall":"2026-11-04T01:37:31.383Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/264-kh2-fl2-099.png","note":"","t":"466.76","wall":"2026-11-04T01:37:32.108Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/265-kh2-fl2-100.png","note":"","t":"467.45","wall":"2026-11-04T01:37:32.793Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/266-kh2-fl2-101.png","note":"","t":"468.14","wall":"2026-11-04T01:37:33.480Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/267-kh2-fl2-102.png","note":"","t":"468.80","wall":"2026-11-04T01:37:34.140Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/268-kh2-fl2-103.png","note":"","t":"469.44","wall":"2026-11-04T01:37:34.784Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/269-kh2-fl2-104.png","note":"","t":"470.06","wall":"2026-11-04T01:37:35.399Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/270-kh2-fl2-105.png","note":"","t":"470.71","wall":"2026-11-04T01:37:36.050Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/271-kh2-fl2-106.png","note":"","t":"471.39","wall":"2026-11-04T01:37:36.732Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/272-kh2-fl2-107.png","note":"","t":"472.07","wall":"2026-11-04T01:37:37.410Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/273-kh2-fl2-108.png","note":"","t":"472.67","wall":"2026-11-04T01:37:38.016Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/274-kh2-fl2-109.png","note":"","t":"473.47","wall":"2026-11-04T01:37:38.813Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/275-kh2-fl2-110.png","note":"","t":"474.05","wall":"2026-11-04T01:37:39.394Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/276-kh2-fl2-111.png","note":"","t":"474.79","wall":"2026-11-04T01:37:40.134Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/277-kh2-fl2-112.png","note":"","t":"475.30","wall":"2026-11-04T01:37:40.647Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/278-kh2-fl2-113.png","note":"","t":"475.99","wall":"2026-11-04T01:37:41.334Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/279-kh2-fl2-114.png","note":"","t":"476.70","wall":"2026-11-04T01:37:42.045Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/280-kh2-fl2-115.png","note":"","t":"477.90","wall":"2026-11-04T01:37:43.246Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/281-kh2-fl2-116.png","note":"","t":"478.85","wall":"2026-11-04T01:37:44.196Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/282-kh2-fl2-117.png","note":"","t":"479.41","wall":"2026-11-04T01:37:44.756Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/283-kh2-fl2-118.png","note":"","t":"480.06","wall":"2026-11-04T01:37:45.398Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/284-kh2-fl2-119.png","note":"","t":"480.71","wall":"2026-11-04T01:37:46.058Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/285-kh2-fl2-120.png","note":"","t":"481.38","wall":"2026-11-04T01:37:46.725Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/286-kh2-fl2-121.png","note":"","t":"482.26","wall":"2026-11-04T01:37:47.600Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/287-kh2-fl2-122.png","note":"","t":"482.92","wall":"2026-11-04T01:37:48.261Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/288-kh2-fl2-123.png","note":"","t":"483.44","wall":"2026-11-04T01:37:48.785Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/289-kh2-fl2-124.png","note":"","t":"484.08","wall":"2026-11-04T01:37:49.426Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/290-kh2-fl2-125.png","note":"","t":"484.89","wall":"2026-11-04T01:37:50.236Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/291-kh2-fl2-126.png","note":"","t":"485.71","wall":"2026-11-04T01:37:51.053Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/292-kh2-fl2-127.png","note":"","t":"486.33","wall":"2026-11-04T01:37:51.675Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/293-kh2-fl2-128.png","note":"","t":"487.09","wall":"2026-11-04T01:37:52.431Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/294-kh2-fl2-129.png","note":"","t":"487.65","wall":"2026-11-04T01:37:52.992Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/295-kh2-fl2-130.png","note":"","t":"488.17","wall":"2026-11-04T01:37:53.515Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/296-kh2-fl2-131.png","note":"","t":"488.66","wall":"2026-11-04T01:37:54.003Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/297-kh2-fl2-132.png","note":"","t":"489.54","wall":"2026-11-04T01:37:54.884Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/298-kh2-fl2-133.png","note":"","t":"490.29","wall":"2026-11-04T01:37:55.636Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/299-kh2-fl2-134.png","note":"","t":"490.94","wall":"2026-11-04T01:37:56.285Z"}
+{"ev":"note","text":"KH-2 results 2 stars silver. Kid taps Next mission","t":"536.26","wall":"2026-11-04T01:38:41.604Z"}
+{"ev":"tap","x":100,"y":652,"hold":120,"note":"Next mission","t":"536.80","wall":"2026-11-04T01:38:42.145Z"}
+{"ev":"wait","ms":3000,"note":"","t":"539.82","wall":"2026-11-04T01:38:45.166Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/300-kh3-map-1.png","note":"","t":"540.41","wall":"2026-11-04T01:38:45.753Z"}
+{"ev":"tap","x":195,"y":790,"hold":120,"note":"Fly KH-3","t":"540.85","wall":"2026-11-04T01:38:46.193Z"}
+{"ev":"wait","ms":3000,"note":"","t":"543.88","wall":"2026-11-04T01:38:49.219Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/301-kh3-brief-1.png","note":"","t":"544.38","wall":"2026-11-04T01:38:49.727Z"}
+{"ev":"tap","x":195,"y":715,"hold":120,"note":"Build it KH-3","t":"544.92","wall":"2026-11-04T01:38:50.267Z"}
+{"ev":"console","type":"log","text":"[Count] boot\n","t":"545.75","wall":"2026-11-04T01:38:51.092Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"545.81","wall":"2026-11-04T01:38:51.149Z"}
+{"ev":"console","type":"log","text":"[GameCenter] plug-in not installed: auth skipped\n","t":"545.82","wall":"2026-11-04T01:38:51.162Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"545.83","wall":"2026-11-04T01:38:51.174Z"}
+{"ev":"console","type":"error","text":"warning: 3 FS.syncfs operations in flight at once, probably just doing extra work","t":"545.84","wall":"2026-11-04T01:38:51.179Z"}
+{"ev":"console","type":"error","text":"warning: 4 FS.syncfs operations in flight at once, probably just doing extra work","t":"545.84","wall":"2026-11-04T01:38:51.183Z"}
+{"ev":"wait","ms":4000,"note":"","t":"548.95","wall":"2026-11-04T01:38:54.288Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/302-kh3-design-1.png","note":"","t":"549.70","wall":"2026-11-04T01:38:55.044Z"}
+{"ev":"note","text":"KH-3 designer defaults Ready. Kid taps LAUNCH","t":"556.49","wall":"2026-11-04T01:39:01.828Z"}
+{"ev":"tap","x":195,"y":798,"hold":120,"note":"LAUNCH KH-3","t":"557.00","wall":"2026-11-04T01:39:02.343Z"}
+{"ev":"console","type":"log","text":"[Count] boot->counting t=-12\n","t":"557.42","wall":"2026-11-04T01:39:02.760Z"}
+{"ev":"console","type":"log","text":"[Count] gates audio=True clip=True voice=False guideHold=False\n","t":"557.42","wall":"2026-11-04T01:39:02.760Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/303-kh3-fl-001.png","note":"","t":"557.74","wall":"2026-11-04T01:39:03.084Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/304-kh3-fl-002.png","note":"","t":"558.51","wall":"2026-11-04T01:39:03.850Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/305-kh3-fl-003.png","note":"","t":"559.49","wall":"2026-11-04T01:39:04.828Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/306-kh3-fl-004.png","note":"","t":"560.39","wall":"2026-11-04T01:39:05.735Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/307-kh3-fl-005.png","note":"","t":"561.37","wall":"2026-11-04T01:39:06.713Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/308-kh3-fl-006.png","note":"","t":"562.23","wall":"2026-11-04T01:39:07.568Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"562.57","wall":"2026-11-04T01:39:07.908Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/309-kh3-fl-007.png","note":"","t":"563.26","wall":"2026-11-04T01:39:08.602Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/310-kh3-fl-008.png","note":"","t":"564.36","wall":"2026-11-04T01:39:09.698Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/311-kh3-fl-009.png","note":"","t":"565.32","wall":"2026-11-04T01:39:10.667Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"566.34","wall":"2026-11-04T01:39:11.679Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/312-kh3-fl-010.png","note":"","t":"566.34","wall":"2026-11-04T01:39:11.681Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/313-kh3-fl-011.png","note":"","t":"567.28","wall":"2026-11-04T01:39:12.628Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/314-kh3-fl-012.png","note":"","t":"568.10","wall":"2026-11-04T01:39:13.444Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/315-kh3-fl-013.png","note":"","t":"568.96","wall":"2026-11-04T01:39:14.307Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/316-kh3-fl-014.png","note":"","t":"569.87","wall":"2026-11-04T01:39:15.214Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/317-kh3-fl-015.png","note":"","t":"570.63","wall":"2026-11-04T01:39:15.971Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/318-kh3-fl-016.png","note":"","t":"571.72","wall":"2026-11-04T01:39:17.067Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/319-kh3-fl-017.png","note":"","t":"572.76","wall":"2026-11-04T01:39:18.105Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/320-kh3-fl-018.png","note":"","t":"573.57","wall":"2026-11-04T01:39:18.908Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/321-kh3-fl-019.png","note":"","t":"574.33","wall":"2026-11-04T01:39:19.674Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/322-kh3-fl-020.png","note":"","t":"575.20","wall":"2026-11-04T01:39:20.543Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/323-kh3-fl-021.png","note":"","t":"576.00","wall":"2026-11-04T01:39:21.348Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/324-kh3-fl-022.png","note":"","t":"576.76","wall":"2026-11-04T01:39:22.107Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/325-kh3-fl-023.png","note":"","t":"577.79","wall":"2026-11-04T01:39:23.132Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/326-kh3-fl-024.png","note":"","t":"578.79","wall":"2026-11-04T01:39:24.135Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/327-kh3-fl-025.png","note":"","t":"579.78","wall":"2026-11-04T01:39:25.121Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/328-kh3-fl-026.png","note":"","t":"580.43","wall":"2026-11-04T01:39:25.774Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/329-kh3-fl-027.png","note":"","t":"581.39","wall":"2026-11-04T01:39:26.729Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/330-kh3-fl-028.png","note":"","t":"582.46","wall":"2026-11-04T01:39:27.802Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/331-kh3-fl-029.png","note":"","t":"583.29","wall":"2026-11-04T01:39:28.637Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/332-kh3-fl-030.png","note":"","t":"584.51","wall":"2026-11-04T01:39:29.856Z"}
+{"ev":"console","type":"log","text":"[Count] counting->committed t=0\n","t":"584.84","wall":"2026-11-04T01:39:30.187Z"}
+{"ev":"console","type":"warning","text":"[Ascent] briefing skipped: repo root with data/golden not found above /\n","t":"584.84","wall":"2026-11-04T01:39:30.187Z"}
+{"ev":"console","type":"log","text":"[Count] committed->ascending t=0\n","t":"584.87","wall":"2026-11-04T01:39:30.210Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/333-kh3-fl-031.png","note":"","t":"585.32","wall":"2026-11-04T01:39:30.663Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/334-kh3-fl-032.png","note":"","t":"586.46","wall":"2026-11-04T01:39:31.805Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/335-kh3-fl-033.png","note":"","t":"587.54","wall":"2026-11-04T01:39:32.882Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/336-kh3-fl-034.png","note":"","t":"588.65","wall":"2026-11-04T01:39:33.993Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/337-kh3-fl-035.png","note":"","t":"589.96","wall":"2026-11-04T01:39:35.307Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/338-kh3-fl-036.png","note":"","t":"590.95","wall":"2026-11-04T01:39:36.295Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/339-kh3-fl-037.png","note":"","t":"591.67","wall":"2026-11-04T01:39:37.013Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/340-kh3-fl-038.png","note":"","t":"592.53","wall":"2026-11-04T01:39:37.874Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/341-kh3-fl-039.png","note":"","t":"593.31","wall":"2026-11-04T01:39:38.652Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/342-kh3-fl-040.png","note":"","t":"594.60","wall":"2026-11-04T01:39:39.946Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/343-kh3-fl-041.png","note":"","t":"595.55","wall":"2026-11-04T01:39:40.894Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/344-kh3-fl-042.png","note":"","t":"596.49","wall":"2026-11-04T01:39:41.837Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/345-kh3-fl-043.png","note":"","t":"597.14","wall":"2026-11-04T01:39:42.488Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/346-kh3-fl-044.png","note":"","t":"598.06","wall":"2026-11-04T01:39:43.404Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/347-kh3-fl-045.png","note":"","t":"598.89","wall":"2026-11-04T01:39:44.231Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/348-kh3-fl-046.png","note":"","t":"599.54","wall":"2026-11-04T01:39:44.884Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/349-kh3-fl-047.png","note":"","t":"600.24","wall":"2026-11-04T01:39:45.583Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/350-kh3-fl-048.png","note":"","t":"601.00","wall":"2026-11-04T01:39:46.343Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/351-kh3-fl-049.png","note":"","t":"601.77","wall":"2026-11-04T01:39:47.116Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/352-kh3-fl-050.png","note":"","t":"602.45","wall":"2026-11-04T01:39:47.789Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/353-kh3-fl-051.png","note":"","t":"603.18","wall":"2026-11-04T01:39:48.526Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/354-kh3-fl-052.png","note":"","t":"603.91","wall":"2026-11-04T01:39:49.252Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/355-kh3-fl-053.png","note":"","t":"604.65","wall":"2026-11-04T01:39:49.992Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/356-kh3-fl-054.png","note":"","t":"605.41","wall":"2026-11-04T01:39:50.751Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/357-kh3-fl-055.png","note":"","t":"605.95","wall":"2026-11-04T01:39:51.290Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/358-kh3-fl-056.png","note":"","t":"606.53","wall":"2026-11-04T01:39:51.872Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/359-kh3-fl-057.png","note":"","t":"607.06","wall":"2026-11-04T01:39:52.400Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/360-kh3-fl-058.png","note":"","t":"607.70","wall":"2026-11-04T01:39:53.043Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/361-kh3-fl-059.png","note":"","t":"608.22","wall":"2026-11-04T01:39:53.562Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/362-kh3-fl-060.png","note":"","t":"608.83","wall":"2026-11-04T01:39:54.177Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/363-kh3-fl-061.png","note":"","t":"609.50","wall":"2026-11-04T01:39:54.842Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/364-kh3-fl-062.png","note":"","t":"610.24","wall":"2026-11-04T01:39:55.587Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/365-kh3-fl-063.png","note":"","t":"610.87","wall":"2026-11-04T01:39:56.211Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/366-kh3-fl-064.png","note":"","t":"611.63","wall":"2026-11-04T01:39:56.977Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/367-kh3-fl-065.png","note":"","t":"612.29","wall":"2026-11-04T01:39:57.631Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/368-kh3-fl-066.png","note":"","t":"613.03","wall":"2026-11-04T01:39:58.375Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/369-kh3-fl-067.png","note":"","t":"613.73","wall":"2026-11-04T01:39:59.071Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/370-kh3-fl-068.png","note":"","t":"614.29","wall":"2026-11-04T01:39:59.637Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/371-kh3-fl-069.png","note":"","t":"614.99","wall":"2026-11-04T01:40:00.336Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/372-kh3-fl-070.png","note":"","t":"615.78","wall":"2026-11-04T01:40:01.124Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/373-kh3-fl-071.png","note":"","t":"616.45","wall":"2026-11-04T01:40:01.792Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/374-kh3-fl-072.png","note":"","t":"617.14","wall":"2026-11-04T01:40:02.480Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/375-kh3-fl-073.png","note":"","t":"617.82","wall":"2026-11-04T01:40:03.160Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/376-kh3-fl-074.png","note":"","t":"618.61","wall":"2026-11-04T01:40:03.950Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/377-kh3-fl-075.png","note":"","t":"619.27","wall":"2026-11-04T01:40:04.613Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/378-kh3-fl-076.png","note":"","t":"620.04","wall":"2026-11-04T01:40:05.386Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/379-kh3-fl-077.png","note":"","t":"620.78","wall":"2026-11-04T01:40:06.119Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/380-kh3-fl-078.png","note":"","t":"621.51","wall":"2026-11-04T01:40:06.858Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/381-kh3-fl-079.png","note":"","t":"622.12","wall":"2026-11-04T01:40:07.463Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/382-kh3-fl-080.png","note":"","t":"623.04","wall":"2026-11-04T01:40:08.379Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/383-kh3-fl-081.png","note":"","t":"623.80","wall":"2026-11-04T01:40:09.147Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/384-kh3-fl-082.png","note":"","t":"624.66","wall":"2026-11-04T01:40:09.999Z"}
+{"ev":"tap","x":60,"y":808,"hold":120,"note":"kid reflex: tapped glowing prompt (322 cyan px) seen in 384-kh3-fl-082.png","t":"625.09","wall":"2026-11-04T01:40:10.433Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/385-kh3-fl-083.png","note":"","t":"625.78","wall":"2026-11-04T01:40:11.120Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/386-kh3-fl-084.png","note":"","t":"626.50","wall":"2026-11-04T01:40:11.841Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/387-kh3-fl-085.png","note":"","t":"627.06","wall":"2026-11-04T01:40:12.403Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/388-kh3-fl-086.png","note":"","t":"627.77","wall":"2026-11-04T01:40:13.109Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/389-kh3-fl-087.png","note":"","t":"628.41","wall":"2026-11-04T01:40:13.756Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/390-kh3-fl-088.png","note":"","t":"629.12","wall":"2026-11-04T01:40:14.466Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/391-kh3-fl-089.png","note":"","t":"629.80","wall":"2026-11-04T01:40:15.142Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/392-kh3-fl-090.png","note":"","t":"630.47","wall":"2026-11-04T01:40:15.808Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/393-kh3-fl-091.png","note":"","t":"631.14","wall":"2026-11-04T01:40:16.482Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/394-kh3-fl-092.png","note":"","t":"631.83","wall":"2026-11-04T01:40:17.174Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/395-kh3-fl-093.png","note":"","t":"632.71","wall":"2026-11-04T01:40:18.048Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/396-kh3-fl-094.png","note":"","t":"633.47","wall":"2026-11-04T01:40:18.816Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/397-kh3-fl-095.png","note":"","t":"634.36","wall":"2026-11-04T01:40:19.707Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/398-kh3-fl-096.png","note":"","t":"635.12","wall":"2026-11-04T01:40:20.463Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/399-kh3-fl-097.png","note":"","t":"635.85","wall":"2026-11-04T01:40:21.192Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/400-kh3-fl-098.png","note":"","t":"636.48","wall":"2026-11-04T01:40:21.823Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/401-kh3-fl-099.png","note":"","t":"637.16","wall":"2026-11-04T01:40:22.507Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/402-kh3-fl-100.png","note":"","t":"637.93","wall":"2026-11-04T01:40:23.271Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/403-kh3-fl-101.png","note":"","t":"638.69","wall":"2026-11-04T01:40:24.032Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/404-kh3-fl-102.png","note":"","t":"639.45","wall":"2026-11-04T01:40:24.790Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/405-kh3-fl-103.png","note":"","t":"640.20","wall":"2026-11-04T01:40:25.545Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/406-kh3-fl-104.png","note":"","t":"640.90","wall":"2026-11-04T01:40:26.242Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/407-kh3-fl-105.png","note":"","t":"641.66","wall":"2026-11-04T01:40:27.008Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/408-kh3-fl-106.png","note":"","t":"642.18","wall":"2026-11-04T01:40:27.525Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/409-kh3-fl-107.png","note":"","t":"642.74","wall":"2026-11-04T01:40:28.081Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/410-kh3-fl-108.png","note":"","t":"643.46","wall":"2026-11-04T01:40:28.804Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/411-kh3-fl-109.png","note":"","t":"644.12","wall":"2026-11-04T01:40:29.458Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/412-kh3-fl-110.png","note":"","t":"644.77","wall":"2026-11-04T01:40:30.115Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/413-kh3-fl-111.png","note":"","t":"645.48","wall":"2026-11-04T01:40:30.826Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/414-kh3-fl-112.png","note":"","t":"646.29","wall":"2026-11-04T01:40:31.635Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/415-kh3-fl-113.png","note":"","t":"646.86","wall":"2026-11-04T01:40:32.202Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/416-kh3-fl-114.png","note":"","t":"647.58","wall":"2026-11-04T01:40:32.926Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/417-kh3-fl-115.png","note":"","t":"648.07","wall":"2026-11-04T01:40:33.417Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/418-kh3-fl-116.png","note":"","t":"648.81","wall":"2026-11-04T01:40:34.149Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/419-kh3-fl-117.png","note":"","t":"649.43","wall":"2026-11-04T01:40:34.771Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/420-kh3-fl-118.png","note":"","t":"650.09","wall":"2026-11-04T01:40:35.429Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/421-kh3-fl-119.png","note":"","t":"650.85","wall":"2026-11-04T01:40:36.189Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/422-kh3-fl-120.png","note":"","t":"651.45","wall":"2026-11-04T01:40:36.792Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/423-kh3-fl-121.png","note":"","t":"652.19","wall":"2026-11-04T01:40:37.532Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/424-kh3-fl-122.png","note":"","t":"652.89","wall":"2026-11-04T01:40:38.232Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/425-kh3-fl-123.png","note":"","t":"653.53","wall":"2026-11-04T01:40:38.872Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/426-kh3-fl-124.png","note":"","t":"654.23","wall":"2026-11-04T01:40:39.576Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/427-kh3-fl-125.png","note":"","t":"655.02","wall":"2026-11-04T01:40:40.364Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/428-kh3-fl-126.png","note":"","t":"655.69","wall":"2026-11-04T01:40:41.034Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/429-kh3-fl-127.png","note":"","t":"656.38","wall":"2026-11-04T01:40:41.722Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/430-kh3-fl-128.png","note":"","t":"657.31","wall":"2026-11-04T01:40:42.653Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/431-kh3-fl-129.png","note":"","t":"657.92","wall":"2026-11-04T01:40:43.263Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/432-kh3-fl-130.png","note":"","t":"658.79","wall":"2026-11-04T01:40:44.131Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/433-kh3-fl-131.png","note":"","t":"659.53","wall":"2026-11-04T01:40:44.877Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/434-kh3-fl-132.png","note":"","t":"660.13","wall":"2026-11-04T01:40:45.478Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/435-kh3-fl-133.png","note":"","t":"660.78","wall":"2026-11-04T01:40:46.119Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/436-kh3-fl-134.png","note":"","t":"661.69","wall":"2026-11-04T01:40:47.036Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/437-kh3-fl-135.png","note":"","t":"662.33","wall":"2026-11-04T01:40:47.675Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/438-kh3-fl-136.png","note":"","t":"663.15","wall":"2026-11-04T01:40:48.491Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/439-kh3-fl-137.png","note":"","t":"663.83","wall":"2026-11-04T01:40:49.176Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/440-kh3-fl-138.png","note":"","t":"664.60","wall":"2026-11-04T01:40:49.946Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/441-kh3-fl-139.png","note":"","t":"665.38","wall":"2026-11-04T01:40:50.726Z"}
+{"ev":"tap","x":60,"y":810,"hold":120,"note":"kid reflex: tapped glowing prompt (299 cyan px) seen in 441-kh3-fl-139.png","t":"665.91","wall":"2026-11-04T01:40:51.251Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/442-kh3-fl-140.png","note":"","t":"666.68","wall":"2026-11-04T01:40:52.028Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/443-kh3-fl-141.png","note":"","t":"667.27","wall":"2026-11-04T01:40:52.618Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/444-kh3-fl-142.png","note":"","t":"667.85","wall":"2026-11-04T01:40:53.191Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/445-kh3-fl-143.png","note":"","t":"668.50","wall":"2026-11-04T01:40:53.841Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/446-kh3-fl-144.png","note":"","t":"669.04","wall":"2026-11-04T01:40:54.385Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/447-kh3-fl-145.png","note":"","t":"669.56","wall":"2026-11-04T01:40:54.904Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/448-kh3-fl-146.png","note":"","t":"670.07","wall":"2026-11-04T01:40:55.417Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/449-kh3-fl-147.png","note":"","t":"670.67","wall":"2026-11-04T01:40:56.012Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/450-kh3-fl-148.png","note":"","t":"671.25","wall":"2026-11-04T01:40:56.591Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/451-kh3-fl-149.png","note":"","t":"671.91","wall":"2026-11-04T01:40:57.257Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/452-kh3-fl-150.png","note":"","t":"672.57","wall":"2026-11-04T01:40:57.909Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/453-kh3-fl-151.png","note":"","t":"673.12","wall":"2026-11-04T01:40:58.462Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/454-kh3-fl-152.png","note":"","t":"673.65","wall":"2026-11-04T01:40:58.997Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/455-kh3-fl-153.png","note":"","t":"674.19","wall":"2026-11-04T01:40:59.534Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/456-kh3-fl-154.png","note":"","t":"674.72","wall":"2026-11-04T01:41:00.064Z"}
+{"ev":"tap","x":197,"y":546,"hold":120,"note":"kid reflex: tapped glowing prompt (213 cyan px) seen in 456-kh3-fl-154.png","t":"675.08","wall":"2026-11-04T01:41:00.427Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/457-kh3-fl-155.png","note":"","t":"675.63","wall":"2026-11-04T01:41:00.970Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/458-kh3-fl-156.png","note":"","t":"676.12","wall":"2026-11-04T01:41:01.458Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/459-kh3-fl-157.png","note":"","t":"676.73","wall":"2026-11-04T01:41:02.073Z"}
+{"ev":"tap","x":197,"y":537,"hold":120,"note":"kid reflex: tapped glowing prompt (969 cyan px) seen in 459-kh3-fl-157.png","t":"677.07","wall":"2026-11-04T01:41:02.412Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/460-kh3-fl-158.png","note":"","t":"677.69","wall":"2026-11-04T01:41:03.034Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/461-kh3-fl-159.png","note":"","t":"678.26","wall":"2026-11-04T01:41:03.607Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/462-kh3-fl-160.png","note":"","t":"678.93","wall":"2026-11-04T01:41:04.273Z"}
+{"ev":"tap","x":198,"y":527,"hold":120,"note":"kid reflex: tapped glowing prompt (1863 cyan px) seen in 462-kh3-fl-160.png","t":"679.27","wall":"2026-11-04T01:41:04.609Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/463-kh3-fl-161.png","note":"","t":"679.77","wall":"2026-11-04T01:41:05.109Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/464-kh3-fl-162.png","note":"","t":"680.40","wall":"2026-11-04T01:41:05.747Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/465-kh3-fl-163.png","note":"","t":"681.01","wall":"2026-11-04T01:41:06.350Z"}
+{"ev":"tap","x":198,"y":542,"hold":120,"note":"kid reflex: tapped glowing prompt (3124 cyan px) seen in 465-kh3-fl-163.png","t":"681.41","wall":"2026-11-04T01:41:06.755Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/466-kh3-fl-164.png","note":"","t":"681.90","wall":"2026-11-04T01:41:07.243Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/467-kh3-fl-165.png","note":"","t":"682.46","wall":"2026-11-04T01:41:07.804Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/468-kh3-fl-166.png","note":"","t":"683.05","wall":"2026-11-04T01:41:08.391Z"}
+{"ev":"tap","x":198,"y":543,"hold":120,"note":"kid reflex: tapped glowing prompt (3045 cyan px) seen in 468-kh3-fl-166.png","t":"683.47","wall":"2026-11-04T01:41:08.814Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/469-kh3-fl-167.png","note":"","t":"684.14","wall":"2026-11-04T01:41:09.480Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/470-kh3-fl-168.png","note":"","t":"684.70","wall":"2026-11-04T01:41:10.045Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/471-kh3-fl-169.png","note":"","t":"685.20","wall":"2026-11-04T01:41:10.545Z"}
+{"ev":"tap","x":198,"y":546,"hold":120,"note":"kid reflex: tapped glowing prompt (2557 cyan px) seen in 471-kh3-fl-169.png","t":"685.56","wall":"2026-11-04T01:41:10.900Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/472-kh3-fl-170.png","note":"","t":"686.13","wall":"2026-11-04T01:41:11.471Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/473-kh3-fl-171.png","note":"","t":"686.72","wall":"2026-11-04T01:41:12.065Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/474-kh3-fl-172.png","note":"","t":"687.23","wall":"2026-11-04T01:41:12.568Z"}
+{"ev":"tap","x":199,"y":554,"hold":120,"note":"kid reflex: tapped glowing prompt (1928 cyan px) seen in 474-kh3-fl-172.png","t":"687.66","wall":"2026-11-04T01:41:13.006Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/475-kh3-fl-173.png","note":"","t":"688.17","wall":"2026-11-04T01:41:13.510Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/476-kh3-fl-174.png","note":"","t":"688.63","wall":"2026-11-04T01:41:13.973Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/477-kh3-fl-175.png","note":"","t":"689.22","wall":"2026-11-04T01:41:14.560Z"}
+{"ev":"tap","x":200,"y":564,"hold":120,"note":"kid reflex: tapped glowing prompt (1525 cyan px) seen in 477-kh3-fl-175.png","t":"689.58","wall":"2026-11-04T01:41:14.927Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/478-kh3-fl-176.png","note":"","t":"690.13","wall":"2026-11-04T01:41:15.468Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/479-kh3-fl-177.png","note":"","t":"690.73","wall":"2026-11-04T01:41:16.075Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/480-kh3-fl-178.png","note":"","t":"691.37","wall":"2026-11-04T01:41:16.708Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/481-kh3-fl-179.png","note":"","t":"691.91","wall":"2026-11-04T01:41:17.255Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/482-kh3-fl-180.png","note":"","t":"692.52","wall":"2026-11-04T01:41:17.862Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/483-kh3-fl-181.png","note":"","t":"692.99","wall":"2026-11-04T01:41:18.328Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/484-kh3-fl-182.png","note":"","t":"693.58","wall":"2026-11-04T01:41:18.920Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/485-kh3-fl-183.png","note":"","t":"694.10","wall":"2026-11-04T01:41:19.441Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/486-kh3-fl-184.png","note":"","t":"694.54","wall":"2026-11-04T01:41:19.880Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/487-kh3-fl-185.png","note":"","t":"695.10","wall":"2026-11-04T01:41:20.445Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/488-kh3-fl-186.png","note":"","t":"695.69","wall":"2026-11-04T01:41:21.036Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/489-kh3-fl-187.png","note":"","t":"696.32","wall":"2026-11-04T01:41:21.666Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/490-kh3-fl-188.png","note":"","t":"696.89","wall":"2026-11-04T01:41:22.235Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/491-kh3-fl-189.png","note":"","t":"697.35","wall":"2026-11-04T01:41:22.691Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/492-kh3-fl-190.png","note":"","t":"697.91","wall":"2026-11-04T01:41:23.257Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/493-kh3-fl-191.png","note":"","t":"698.54","wall":"2026-11-04T01:41:23.883Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/494-kh3-fl-192.png","note":"","t":"699.05","wall":"2026-11-04T01:41:24.391Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/495-kh3-fl-193.png","note":"","t":"699.58","wall":"2026-11-04T01:41:24.923Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/496-kh3-fl-194.png","note":"","t":"700.03","wall":"2026-11-04T01:41:25.372Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/497-kh3-fl-195.png","note":"","t":"700.54","wall":"2026-11-04T01:41:25.883Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/498-kh3-fl-196.png","note":"","t":"701.02","wall":"2026-11-04T01:41:26.368Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/499-kh3-fl-197.png","note":"","t":"701.63","wall":"2026-11-04T01:41:26.971Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/500-kh3-fl-198.png","note":"","t":"702.17","wall":"2026-11-04T01:41:27.510Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/501-kh3-fl-199.png","note":"","t":"702.75","wall":"2026-11-04T01:41:28.090Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/502-kh3-fl-200.png","note":"","t":"703.23","wall":"2026-11-04T01:41:28.570Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/503-kh3-fl-201.png","note":"","t":"703.82","wall":"2026-11-04T01:41:29.161Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/504-kh3-fl-202.png","note":"","t":"704.40","wall":"2026-11-04T01:41:29.744Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/505-kh3-fl-203.png","note":"","t":"704.92","wall":"2026-11-04T01:41:30.263Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/506-kh3-fl-204.png","note":"","t":"705.48","wall":"2026-11-04T01:41:30.827Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/507-kh3-fl-205.png","note":"","t":"706.08","wall":"2026-11-04T01:41:31.422Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/508-kh3-fl-206.png","note":"","t":"706.67","wall":"2026-11-04T01:41:32.018Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/509-kh3-fl-207.png","note":"","t":"707.29","wall":"2026-11-04T01:41:32.634Z"}
+{"ev":"note","text":"Watcher detector tightened after sky false positives at y~540 (no-op taps on empty sky, logged above)","t":"729.67","wall":"2026-11-04T01:41:55.012Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/510-kh3-now.png","note":"","t":"730.15","wall":"2026-11-04T01:41:55.493Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/511-kh3-fl2-001.png","note":"","t":"736.65","wall":"2026-11-04T01:42:01.989Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/512-kh3-fl2-002.png","note":"","t":"737.21","wall":"2026-11-04T01:42:02.548Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/513-kh3-fl2-003.png","note":"","t":"737.68","wall":"2026-11-04T01:42:03.027Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/514-kh3-fl2-004.png","note":"","t":"738.42","wall":"2026-11-04T01:42:03.762Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/515-kh3-fl2-005.png","note":"","t":"739.07","wall":"2026-11-04T01:42:04.411Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/516-kh3-fl2-006.png","note":"","t":"739.62","wall":"2026-11-04T01:42:04.966Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/517-kh3-fl2-007.png","note":"","t":"740.21","wall":"2026-11-04T01:42:05.553Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/518-kh3-fl2-008.png","note":"","t":"740.75","wall":"2026-11-04T01:42:06.092Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/519-kh3-fl2-009.png","note":"","t":"741.26","wall":"2026-11-04T01:42:06.600Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/520-kh3-fl2-010.png","note":"","t":"741.74","wall":"2026-11-04T01:42:07.080Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/521-kh3-fl2-011.png","note":"","t":"742.32","wall":"2026-11-04T01:42:07.664Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/522-kh3-fl2-012.png","note":"","t":"742.98","wall":"2026-11-04T01:42:08.325Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/523-kh3-fl2-013.png","note":"","t":"743.41","wall":"2026-11-04T01:42:08.754Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/524-kh3-fl2-014.png","note":"","t":"743.99","wall":"2026-11-04T01:42:09.331Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/525-kh3-fl2-015.png","note":"","t":"744.57","wall":"2026-11-04T01:42:09.912Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/526-kh3-fl2-016.png","note":"","t":"745.15","wall":"2026-11-04T01:42:10.497Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/527-kh3-fl2-017.png","note":"","t":"745.71","wall":"2026-11-04T01:42:11.048Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/528-kh3-fl2-018.png","note":"","t":"746.18","wall":"2026-11-04T01:42:11.525Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/529-kh3-fl2-019.png","note":"","t":"746.67","wall":"2026-11-04T01:42:12.011Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/530-kh3-fl2-020.png","note":"","t":"747.21","wall":"2026-11-04T01:42:12.555Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/531-kh3-fl2-021.png","note":"","t":"747.67","wall":"2026-11-04T01:42:13.014Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/532-kh3-fl2-022.png","note":"","t":"748.27","wall":"2026-11-04T01:42:13.611Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/533-kh3-fl2-023.png","note":"","t":"748.88","wall":"2026-11-04T01:42:14.227Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/534-kh3-fl2-024.png","note":"","t":"749.51","wall":"2026-11-04T01:42:14.852Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/535-kh3-fl2-025.png","note":"","t":"750.13","wall":"2026-11-04T01:42:15.476Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/536-kh3-fl2-026.png","note":"","t":"750.64","wall":"2026-11-04T01:42:15.980Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/537-kh3-fl2-027.png","note":"","t":"751.28","wall":"2026-11-04T01:42:16.622Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/538-kh3-fl2-028.png","note":"","t":"751.99","wall":"2026-11-04T01:42:17.332Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/539-kh3-fl2-029.png","note":"","t":"752.48","wall":"2026-11-04T01:42:17.825Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/540-kh3-fl2-030.png","note":"","t":"752.89","wall":"2026-11-04T01:42:18.238Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/541-kh3-fl2-031.png","note":"","t":"753.54","wall":"2026-11-04T01:42:18.883Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/542-kh3-fl2-032.png","note":"","t":"754.15","wall":"2026-11-04T01:42:19.494Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/543-kh3-fl2-033.png","note":"","t":"754.66","wall":"2026-11-04T01:42:20.003Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/544-kh3-fl2-034.png","note":"","t":"755.27","wall":"2026-11-04T01:42:20.611Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/545-kh3-fl2-035.png","note":"","t":"755.82","wall":"2026-11-04T01:42:21.161Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/546-kh3-fl2-036.png","note":"","t":"756.35","wall":"2026-11-04T01:42:21.689Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/547-kh3-fl2-037.png","note":"","t":"756.94","wall":"2026-11-04T01:42:22.282Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/548-kh3-fl2-038.png","note":"","t":"757.40","wall":"2026-11-04T01:42:22.743Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/549-kh3-fl2-039.png","note":"","t":"757.97","wall":"2026-11-04T01:42:23.308Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/550-kh3-fl2-040.png","note":"","t":"758.65","wall":"2026-11-04T01:42:23.995Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/551-kh3-fl2-041.png","note":"","t":"759.15","wall":"2026-11-04T01:42:24.491Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/552-kh3-fl2-042.png","note":"","t":"759.62","wall":"2026-11-04T01:42:24.966Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/553-kh3-fl2-043.png","note":"","t":"760.18","wall":"2026-11-04T01:42:25.525Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/554-kh3-fl2-044.png","note":"","t":"760.71","wall":"2026-11-04T01:42:26.050Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/555-kh3-fl2-045.png","note":"","t":"761.18","wall":"2026-11-04T01:42:26.527Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/556-kh3-fl2-046.png","note":"","t":"761.60","wall":"2026-11-04T01:42:26.938Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/557-kh3-fl2-047.png","note":"","t":"762.05","wall":"2026-11-04T01:42:27.396Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/558-kh3-fl2-048.png","note":"","t":"762.52","wall":"2026-11-04T01:42:27.859Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/559-kh3-fl2-049.png","note":"","t":"763.07","wall":"2026-11-04T01:42:28.415Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/560-kh3-fl2-050.png","note":"","t":"763.52","wall":"2026-11-04T01:42:28.861Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/561-kh3-fl2-051.png","note":"","t":"763.93","wall":"2026-11-04T01:42:29.270Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/562-kh3-fl2-052.png","note":"","t":"764.46","wall":"2026-11-04T01:42:29.802Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/563-kh3-fl2-053.png","note":"","t":"764.92","wall":"2026-11-04T01:42:30.261Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/564-kh3-fl2-054.png","note":"","t":"765.42","wall":"2026-11-04T01:42:30.767Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/565-kh3-fl2-055.png","note":"","t":"765.92","wall":"2026-11-04T01:42:31.260Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/566-kh3-fl2-056.png","note":"","t":"766.52","wall":"2026-11-04T01:42:31.865Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/567-kh3-fl2-057.png","note":"","t":"767.01","wall":"2026-11-04T01:42:32.357Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/568-kh3-fl2-058.png","note":"","t":"767.48","wall":"2026-11-04T01:42:32.818Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/569-kh3-fl2-059.png","note":"","t":"768.00","wall":"2026-11-04T01:42:33.346Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/570-kh3-fl2-060.png","note":"","t":"768.45","wall":"2026-11-04T01:42:33.789Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/571-kh3-fl2-061.png","note":"","t":"768.92","wall":"2026-11-04T01:42:34.265Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/572-kh3-fl2-062.png","note":"","t":"769.50","wall":"2026-11-04T01:42:34.843Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/573-kh3-fl2-063.png","note":"","t":"770.01","wall":"2026-11-04T01:42:35.355Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/574-kh3-fl2-064.png","note":"","t":"770.57","wall":"2026-11-04T01:42:35.915Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/575-kh3-fl2-065.png","note":"","t":"771.07","wall":"2026-11-04T01:42:36.417Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/576-kh3-fl2-066.png","note":"","t":"771.57","wall":"2026-11-04T01:42:36.914Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/577-kh3-fl2-067.png","note":"","t":"772.08","wall":"2026-11-04T01:42:37.421Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/578-kh3-fl2-068.png","note":"","t":"772.56","wall":"2026-11-04T01:42:37.900Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/579-kh3-fl2-069.png","note":"","t":"773.11","wall":"2026-11-04T01:42:38.451Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/580-kh3-fl2-070.png","note":"","t":"773.63","wall":"2026-11-04T01:42:38.975Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/581-kh3-fl2-071.png","note":"","t":"774.16","wall":"2026-11-04T01:42:39.503Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/582-kh3-fl2-072.png","note":"","t":"774.67","wall":"2026-11-04T01:42:40.018Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/583-kh3-fl2-073.png","note":"","t":"775.20","wall":"2026-11-04T01:42:40.539Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/584-kh3-fl2-074.png","note":"","t":"775.70","wall":"2026-11-04T01:42:41.047Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/585-kh3-fl2-075.png","note":"","t":"776.18","wall":"2026-11-04T01:42:41.523Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/586-kh3-fl2-076.png","note":"","t":"776.65","wall":"2026-11-04T01:42:41.995Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/587-kh3-fl2-077.png","note":"","t":"777.17","wall":"2026-11-04T01:42:42.517Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/588-kh3-fl2-078.png","note":"","t":"777.78","wall":"2026-11-04T01:42:43.128Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/589-kh3-fl2-079.png","note":"","t":"778.20","wall":"2026-11-04T01:42:43.540Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/590-kh3-fl2-080.png","note":"","t":"778.72","wall":"2026-11-04T01:42:44.066Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/591-kh3-fl2-081.png","note":"","t":"779.27","wall":"2026-11-04T01:42:44.611Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/592-kh3-fl2-082.png","note":"","t":"779.70","wall":"2026-11-04T01:42:45.045Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/593-kh3-fl2-083.png","note":"","t":"780.16","wall":"2026-11-04T01:42:45.499Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/594-kh3-fl2-084.png","note":"","t":"780.57","wall":"2026-11-04T01:42:45.913Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/595-kh3-fl2-085.png","note":"","t":"781.04","wall":"2026-11-04T01:42:46.387Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/596-kh3-fl2-086.png","note":"","t":"781.57","wall":"2026-11-04T01:42:46.914Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/597-kh3-fl2-087.png","note":"","t":"782.05","wall":"2026-11-04T01:42:47.394Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/598-kh3-fl2-088.png","note":"","t":"782.49","wall":"2026-11-04T01:42:47.829Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/599-kh3-fl2-089.png","note":"","t":"782.88","wall":"2026-11-04T01:42:48.225Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/600-kh3-fl2-090.png","note":"","t":"783.35","wall":"2026-11-04T01:42:48.696Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/601-kh3-fl2-091.png","note":"","t":"783.84","wall":"2026-11-04T01:42:49.181Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/602-kh3-fl2-092.png","note":"","t":"784.40","wall":"2026-11-04T01:42:49.743Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/603-kh3-fl2-093.png","note":"","t":"784.88","wall":"2026-11-04T01:42:50.223Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/604-kh3-fl2-094.png","note":"","t":"785.43","wall":"2026-11-04T01:42:50.775Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/605-kh3-fl2-095.png","note":"","t":"785.91","wall":"2026-11-04T01:42:51.257Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/606-kh3-fl2-096.png","note":"","t":"786.48","wall":"2026-11-04T01:42:51.818Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/607-kh3-fl2-097.png","note":"","t":"786.88","wall":"2026-11-04T01:42:52.225Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/608-kh3-fl2-098.png","note":"","t":"787.33","wall":"2026-11-04T01:42:52.676Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/609-kh3-fl2-099.png","note":"","t":"787.88","wall":"2026-11-04T01:42:53.219Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/610-kh3-fl2-100.png","note":"","t":"788.40","wall":"2026-11-04T01:42:53.745Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/611-kh3-fl2-101.png","note":"","t":"788.94","wall":"2026-11-04T01:42:54.284Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/612-kh3-fl2-102.png","note":"","t":"789.39","wall":"2026-11-04T01:42:54.731Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/613-kh3-fl2-103.png","note":"","t":"789.86","wall":"2026-11-04T01:42:55.203Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/614-kh3-fl2-104.png","note":"","t":"790.38","wall":"2026-11-04T01:42:55.726Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/615-kh3-fl2-105.png","note":"","t":"791.10","wall":"2026-11-04T01:42:56.440Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/616-kh3-fl2-106.png","note":"","t":"791.55","wall":"2026-11-04T01:42:56.896Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/617-kh3-fl2-107.png","note":"","t":"792.08","wall":"2026-11-04T01:42:57.420Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/618-kh3-fl2-108.png","note":"","t":"792.59","wall":"2026-11-04T01:42:57.937Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/619-kh3-fl2-109.png","note":"","t":"793.15","wall":"2026-11-04T01:42:58.490Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/620-kh3-fl2-110.png","note":"","t":"793.67","wall":"2026-11-04T01:42:59.018Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/621-kh3-fl2-111.png","note":"","t":"794.15","wall":"2026-11-04T01:42:59.496Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/622-kh3-fl2-112.png","note":"","t":"794.59","wall":"2026-11-04T01:42:59.931Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/623-kh3-fl2-113.png","note":"","t":"795.15","wall":"2026-11-04T01:43:00.493Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/624-kh3-fl2-114.png","note":"","t":"795.60","wall":"2026-11-04T01:43:00.940Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/625-kh3-fl2-115.png","note":"","t":"796.01","wall":"2026-11-04T01:43:01.358Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/626-kh3-fl2-116.png","note":"","t":"796.56","wall":"2026-11-04T01:43:01.900Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/627-kh3-fl2-117.png","note":"","t":"797.03","wall":"2026-11-04T01:43:02.373Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/628-kh3-fl2-118.png","note":"","t":"797.53","wall":"2026-11-04T01:43:02.871Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/629-kh3-fl2-119.png","note":"","t":"797.98","wall":"2026-11-04T01:43:03.320Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/630-kh3-fl2-120.png","note":"","t":"798.49","wall":"2026-11-04T01:43:03.831Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/631-kh3-fl2-121.png","note":"","t":"799.02","wall":"2026-11-04T01:43:04.359Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/632-kh3-fl2-122.png","note":"","t":"799.53","wall":"2026-11-04T01:43:04.877Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/633-kh3-fl2-123.png","note":"","t":"800.08","wall":"2026-11-04T01:43:05.425Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/634-kh3-fl2-124.png","note":"","t":"800.61","wall":"2026-11-04T01:43:05.950Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/635-kh3-fl2-125.png","note":"","t":"801.07","wall":"2026-11-04T01:43:06.415Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/636-kh3-fl2-126.png","note":"","t":"801.59","wall":"2026-11-04T01:43:06.932Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/637-kh3-fl2-127.png","note":"","t":"802.00","wall":"2026-11-04T01:43:07.348Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/638-kh3-fl2-128.png","note":"","t":"802.42","wall":"2026-11-04T01:43:07.767Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/639-kh3-fl2-129.png","note":"","t":"803.04","wall":"2026-11-04T01:43:08.383Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/640-kh3-fl2-130.png","note":"","t":"803.56","wall":"2026-11-04T01:43:08.900Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'SphereCollider' doesn't exist!\n","t":"803.68","wall":"2026-11-04T01:43:09.021Z"}
+{"ev":"console","type":"error","text":"warning: 2 FS.syncfs operations in flight at once, probably just doing extra work","t":"803.69","wall":"2026-11-04T01:43:09.035Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.049Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.051Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.052Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.052Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.052Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.052Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.052Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.052Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.055Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.71","wall":"2026-11-04T01:43:09.056Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.062Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.063Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.067Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.067Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.72","wall":"2026-11-04T01:43:09.067Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.069Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.070Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.076Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.076Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.076Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.076Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.076Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.076Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.076Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.076Z"}
+{"ev":"console","type":"warning","text":"Trying to access the DPI setting of a visual element that is not on a panel.\n","t":"803.73","wall":"2026-11-04T01:43:09.076Z"}
+{"ev":"console","type":"log","text":"[Count] ascending->done t=0 flight ended\n","t":"803.77","wall":"2026-11-04T01:43:09.109Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"803.81","wall":"2026-11-04T01:43:09.157Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"803.82","wall":"2026-11-04T01:43:09.158Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"803.82","wall":"2026-11-04T01:43:09.159Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"803.82","wall":"2026-11-04T01:43:09.160Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"803.82","wall":"2026-11-04T01:43:09.161Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"803.82","wall":"2026-11-04T01:43:09.161Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"803.82","wall":"2026-11-04T01:43:09.162Z"}
+{"ev":"console","type":"error","text":"Can't add component because class 'CapsuleCollider' doesn't exist!\n","t":"803.82","wall":"2026-11-04T01:43:09.163Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/641-kh3-fl2-131.png","note":"","t":"804.19","wall":"2026-11-04T01:43:09.531Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/642-kh3-fl2-132.png","note":"","t":"804.75","wall":"2026-11-04T01:43:10.095Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/643-kh3-fl2-133.png","note":"","t":"805.34","wall":"2026-11-04T01:43:10.678Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/644-kh3-fl2-134.png","note":"","t":"806.00","wall":"2026-11-04T01:43:11.344Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/645-kh3-fl2-135.png","note":"","t":"806.75","wall":"2026-11-04T01:43:12.091Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/646-kh3-fl2-136.png","note":"","t":"807.35","wall":"2026-11-04T01:43:12.695Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/647-kh3-fl2-137.png","note":"","t":"807.93","wall":"2026-11-04T01:43:13.273Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/648-kh3-fl2-138.png","note":"","t":"808.59","wall":"2026-11-04T01:43:13.934Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/649-kh3-fl2-139.png","note":"","t":"809.18","wall":"2026-11-04T01:43:14.524Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/650-kh3-fl2-140.png","note":"","t":"809.78","wall":"2026-11-04T01:43:15.121Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/651-kh3-fl2-141.png","note":"","t":"810.32","wall":"2026-11-04T01:43:15.661Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/652-kh3-fl2-142.png","note":"","t":"810.91","wall":"2026-11-04T01:43:16.253Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/653-kh3-fl2-143.png","note":"","t":"811.33","wall":"2026-11-04T01:43:16.672Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/654-kh3-fl2-144.png","note":"","t":"811.90","wall":"2026-11-04T01:43:17.246Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/655-kh3-fl2-145.png","note":"","t":"812.58","wall":"2026-11-04T01:43:17.920Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/656-kh3-fl2-146.png","note":"","t":"813.21","wall":"2026-11-04T01:43:18.549Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/657-kh3-fl2-147.png","note":"","t":"813.85","wall":"2026-11-04T01:43:19.188Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/658-kh3-fl2-148.png","note":"","t":"814.37","wall":"2026-11-04T01:43:19.713Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/659-kh3-fl2-149.png","note":"","t":"815.01","wall":"2026-11-04T01:43:20.351Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/660-kh3-fl2-150.png","note":"","t":"815.64","wall":"2026-11-04T01:43:20.981Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/661-kh3-fl2-151.png","note":"","t":"816.18","wall":"2026-11-04T01:43:21.525Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/662-kh3-fl2-152.png","note":"","t":"816.77","wall":"2026-11-04T01:43:22.118Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/663-kh3-fl2-153.png","note":"","t":"817.40","wall":"2026-11-04T01:43:22.744Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/664-kh3-fl2-154.png","note":"","t":"818.13","wall":"2026-11-04T01:43:23.477Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/665-kh3-fl2-155.png","note":"","t":"818.83","wall":"2026-11-04T01:43:24.168Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/666-kh3-fl2-156.png","note":"","t":"819.63","wall":"2026-11-04T01:43:24.971Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/667-kh3-fl2-157.png","note":"","t":"820.25","wall":"2026-11-04T01:43:25.588Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/668-kh3-fl2-158.png","note":"","t":"820.90","wall":"2026-11-04T01:43:26.239Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/669-kh3-fl2-159.png","note":"","t":"821.58","wall":"2026-11-04T01:43:26.919Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/670-kh3-fl2-160.png","note":"","t":"822.21","wall":"2026-11-04T01:43:27.555Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/671-kh3-fl2-161.png","note":"","t":"822.85","wall":"2026-11-04T01:43:28.191Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/672-kh3-fl2-162.png","note":"","t":"823.45","wall":"2026-11-04T01:43:28.789Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/673-kh3-fl2-163.png","note":"","t":"824.18","wall":"2026-11-04T01:43:29.521Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/674-kh3-fl2-164.png","note":"","t":"824.82","wall":"2026-11-04T01:43:30.166Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/675-kh3-fl2-165.png","note":"","t":"825.55","wall":"2026-11-04T01:43:30.891Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/676-kh3-fl2-166.png","note":"","t":"826.20","wall":"2026-11-04T01:43:31.544Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/677-kh3-fl2-167.png","note":"","t":"826.91","wall":"2026-11-04T01:43:32.251Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/678-kh3-fl2-168.png","note":"","t":"827.49","wall":"2026-11-04T01:43:32.834Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/679-kh3-fl2-169.png","note":"","t":"828.14","wall":"2026-11-04T01:43:33.487Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/680-kh3-fl2-170.png","note":"","t":"828.80","wall":"2026-11-04T01:43:34.145Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/681-kh3-fl2-171.png","note":"","t":"829.40","wall":"2026-11-04T01:43:34.746Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/682-kh3-fl2-172.png","note":"","t":"830.07","wall":"2026-11-04T01:43:35.414Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/683-kh3-fl2-173.png","note":"","t":"830.59","wall":"2026-11-04T01:43:35.929Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/684-kh3-fl2-174.png","note":"","t":"831.16","wall":"2026-11-04T01:43:36.500Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/685-kh3-fl2-175.png","note":"","t":"831.79","wall":"2026-11-04T01:43:37.133Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/686-kh3-fl2-176.png","note":"","t":"832.41","wall":"2026-11-04T01:43:37.749Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/687-kh3-fl2-177.png","note":"","t":"833.00","wall":"2026-11-04T01:43:38.348Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/688-kh3-fl2-178.png","note":"","t":"833.69","wall":"2026-11-04T01:43:39.036Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/689-kh3-fl2-179.png","note":"","t":"834.20","wall":"2026-11-04T01:43:39.541Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/690-kh3-fl2-180.png","note":"","t":"834.88","wall":"2026-11-04T01:43:40.224Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/691-kh3-fl2-181.png","note":"","t":"835.53","wall":"2026-11-04T01:43:40.869Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/692-kh3-fl2-182.png","note":"","t":"836.16","wall":"2026-11-04T01:43:41.500Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/693-kh3-fl2-183.png","note":"","t":"836.66","wall":"2026-11-04T01:43:42.000Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/694-kh3-fl2-184.png","note":"","t":"837.45","wall":"2026-11-04T01:43:42.793Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/695-kh3-fl2-185.png","note":"","t":"838.23","wall":"2026-11-04T01:43:43.571Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/696-kh3-fl2-186.png","note":"","t":"838.85","wall":"2026-11-04T01:43:44.196Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/697-kh3-fl2-187.png","note":"","t":"839.48","wall":"2026-11-04T01:43:44.819Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/698-kh3-fl2-188.png","note":"","t":"840.32","wall":"2026-11-04T01:43:45.663Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/699-kh3-fl2-189.png","note":"","t":"841.25","wall":"2026-11-04T01:43:46.590Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/700-kh3-fl2-190.png","note":"","t":"841.92","wall":"2026-11-04T01:43:47.259Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/701-kh3-fl2-191.png","note":"","t":"842.77","wall":"2026-11-04T01:43:48.112Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/702-kh3-fl2-192.png","note":"","t":"843.42","wall":"2026-11-04T01:43:48.768Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/703-kh3-fl2-193.png","note":"","t":"844.21","wall":"2026-11-04T01:43:49.552Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/704-kh3-fl2-194.png","note":"","t":"844.85","wall":"2026-11-04T01:43:50.188Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/705-kh3-fl2-195.png","note":"","t":"845.59","wall":"2026-11-04T01:43:50.936Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/706-kh3-fl2-196.png","note":"","t":"846.25","wall":"2026-11-04T01:43:51.589Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/707-kh3-fl2-197.png","note":"","t":"847.00","wall":"2026-11-04T01:43:52.348Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/708-kh3-fl2-198.png","note":"","t":"847.53","wall":"2026-11-04T01:43:52.872Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/709-kh3-fl2-199.png","note":"","t":"848.22","wall":"2026-11-04T01:43:53.561Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/710-kh3-fl2-200.png","note":"","t":"848.87","wall":"2026-11-04T01:43:54.209Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/711-kh3-fl2-201.png","note":"","t":"849.62","wall":"2026-11-04T01:43:54.963Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/712-kh3-fl2-202.png","note":"","t":"850.22","wall":"2026-11-04T01:43:55.560Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/713-kh3-fl2-203.png","note":"","t":"850.81","wall":"2026-11-04T01:43:56.153Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/714-kh3-fl2-204.png","note":"","t":"851.48","wall":"2026-11-04T01:43:56.821Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/715-kh3-fl2-205.png","note":"","t":"852.21","wall":"2026-11-04T01:43:57.552Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/716-kh3-fl2-206.png","note":"","t":"852.73","wall":"2026-11-04T01:43:58.076Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/717-kh3-fl2-207.png","note":"","t":"853.47","wall":"2026-11-04T01:43:58.809Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/718-kh3-fl2-208.png","note":"","t":"854.28","wall":"2026-11-04T01:43:59.625Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/719-kh3-fl2-209.png","note":"","t":"855.22","wall":"2026-11-04T01:44:00.563Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/720-kh3-fl2-210.png","note":"","t":"855.95","wall":"2026-11-04T01:44:01.291Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/721-kh3-fl2-211.png","note":"","t":"856.77","wall":"2026-11-04T01:44:02.115Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/722-kh3-fl2-212.png","note":"","t":"857.44","wall":"2026-11-04T01:44:02.781Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/723-kh3-fl2-213.png","note":"","t":"858.20","wall":"2026-11-04T01:44:03.547Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/724-kh3-fl2-214.png","note":"","t":"858.74","wall":"2026-11-04T01:44:04.083Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/725-kh3-fl2-215.png","note":"","t":"859.46","wall":"2026-11-04T01:44:04.807Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/726-kh3-fl2-216.png","note":"","t":"860.12","wall":"2026-11-04T01:44:05.466Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/727-kh3-fl2-217.png","note":"","t":"860.74","wall":"2026-11-04T01:44:06.085Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/728-kh3-fl2-218.png","note":"","t":"861.40","wall":"2026-11-04T01:44:06.743Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/729-kh3-fl2-219.png","note":"","t":"862.16","wall":"2026-11-04T01:44:07.508Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/730-kh3-fl2-220.png","note":"","t":"862.97","wall":"2026-11-04T01:44:08.308Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/731-kh3-fl2-221.png","note":"","t":"863.75","wall":"2026-11-04T01:44:09.088Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/732-kh3-fl2-222.png","note":"","t":"864.58","wall":"2026-11-04T01:44:09.918Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/733-kh3-fl2-223.png","note":"","t":"865.25","wall":"2026-11-04T01:44:10.596Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/734-kh3-fl2-224.png","note":"","t":"866.07","wall":"2026-11-04T01:44:11.412Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/735-kh3-fl2-225.png","note":"","t":"866.78","wall":"2026-11-04T01:44:12.123Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/736-kh3-fl2-226.png","note":"","t":"867.43","wall":"2026-11-04T01:44:12.772Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/737-kh3-fl2-227.png","note":"","t":"868.07","wall":"2026-11-04T01:44:13.409Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/738-kh3-fl2-228.png","note":"","t":"868.81","wall":"2026-11-04T01:44:14.155Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/739-kh3-fl2-229.png","note":"","t":"869.63","wall":"2026-11-04T01:44:14.971Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/740-kh3-fl2-230.png","note":"","t":"870.43","wall":"2026-11-04T01:44:15.769Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/741-kh3-fl2-231.png","note":"","t":"870.98","wall":"2026-11-04T01:44:16.327Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/742-kh3-fl2-232.png","note":"","t":"871.75","wall":"2026-11-04T01:44:17.093Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/743-kh3-fl2-233.png","note":"","t":"872.40","wall":"2026-11-04T01:44:17.741Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/744-kh3-fl2-234.png","note":"","t":"873.19","wall":"2026-11-04T01:44:18.535Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/745-kh3-fl2-235.png","note":"","t":"873.95","wall":"2026-11-04T01:44:19.288Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/746-kh3-fl2-236.png","note":"","t":"874.59","wall":"2026-11-04T01:44:19.931Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/747-kh3-fl2-237.png","note":"","t":"875.36","wall":"2026-11-04T01:44:20.706Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/748-kh3-fl2-238.png","note":"","t":"875.89","wall":"2026-11-04T01:44:21.230Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/749-kh3-fl2-239.png","note":"","t":"876.54","wall":"2026-11-04T01:44:21.881Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/750-kh3-fl2-240.png","note":"","t":"877.28","wall":"2026-11-04T01:44:22.626Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/751-kh3-fl2-241.png","note":"","t":"878.02","wall":"2026-11-04T01:44:23.361Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/752-kh3-fl2-242.png","note":"","t":"878.64","wall":"2026-11-04T01:44:23.987Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/753-kh3-fl2-243.png","note":"","t":"879.42","wall":"2026-11-04T01:44:24.760Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/754-kh3-fl2-244.png","note":"","t":"880.39","wall":"2026-11-04T01:44:25.734Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/755-kh3-fl2-245.png","note":"","t":"881.10","wall":"2026-11-04T01:44:26.442Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/756-kh3-fl2-246.png","note":"","t":"881.83","wall":"2026-11-04T01:44:27.173Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/757-kh3-fl2-247.png","note":"","t":"882.37","wall":"2026-11-04T01:44:27.713Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/758-kh3-fl2-248.png","note":"","t":"882.84","wall":"2026-11-04T01:44:28.187Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/759-kh3-fl2-249.png","note":"","t":"883.65","wall":"2026-11-04T01:44:28.991Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/760-kh3-fl2-250.png","note":"","t":"884.33","wall":"2026-11-04T01:44:29.669Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/761-kh3-fl2-251.png","note":"","t":"884.96","wall":"2026-11-04T01:44:30.306Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/762-kh3-fl2-252.png","note":"","t":"885.62","wall":"2026-11-04T01:44:30.960Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/763-kh3-fl2-253.png","note":"","t":"886.26","wall":"2026-11-04T01:44:31.606Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/764-kh3-fl2-254.png","note":"","t":"886.91","wall":"2026-11-04T01:44:32.251Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/765-kh3-fl2-255.png","note":"","t":"887.41","wall":"2026-11-04T01:44:32.751Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/766-kh3-fl2-256.png","note":"","t":"888.08","wall":"2026-11-04T01:44:33.423Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/767-kh3-fl2-257.png","note":"","t":"888.78","wall":"2026-11-04T01:44:34.119Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/768-kh3-fl2-258.png","note":"","t":"889.51","wall":"2026-11-04T01:44:34.851Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/769-kh3-fl2-259.png","note":"","t":"890.07","wall":"2026-11-04T01:44:35.412Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/770-kh3-fl2-260.png","note":"","t":"890.76","wall":"2026-11-04T01:44:36.100Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/771-kh3-fl2-261.png","note":"","t":"891.23","wall":"2026-11-04T01:44:36.575Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/772-kh3-fl2-262.png","note":"","t":"891.97","wall":"2026-11-04T01:44:37.316Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/773-kh3-fl2-263.png","note":"","t":"892.54","wall":"2026-11-04T01:44:37.879Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/774-kh3-fl2-264.png","note":"","t":"893.16","wall":"2026-11-04T01:44:38.504Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/775-kh3-fl2-265.png","note":"","t":"893.82","wall":"2026-11-04T01:44:39.166Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/776-kh3-fl2-266.png","note":"","t":"894.49","wall":"2026-11-04T01:44:39.832Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/777-kh3-fl2-267.png","note":"","t":"895.26","wall":"2026-11-04T01:44:40.608Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/778-kh3-fl2-268.png","note":"","t":"895.88","wall":"2026-11-04T01:44:41.218Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/779-kh3-fl2-269.png","note":"","t":"896.55","wall":"2026-11-04T01:44:41.895Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/780-kh3-fl2-270.png","note":"","t":"897.55","wall":"2026-11-04T01:44:42.891Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/781-kh3-fl2-271.png","note":"","t":"898.23","wall":"2026-11-04T01:44:43.568Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/782-kh3-fl2-272.png","note":"","t":"898.77","wall":"2026-11-04T01:44:44.118Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/783-kh3-fl2-273.png","note":"","t":"899.39","wall":"2026-11-04T01:44:44.729Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/784-kh3-fl2-274.png","note":"","t":"900.01","wall":"2026-11-04T01:44:45.353Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/785-kh3-fl2-275.png","note":"","t":"900.66","wall":"2026-11-04T01:44:46.005Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/786-kh3-fl2-276.png","note":"","t":"901.34","wall":"2026-11-04T01:44:46.683Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/787-kh3-fl2-277.png","note":"","t":"902.12","wall":"2026-11-04T01:44:47.465Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/788-kh3-fl2-278.png","note":"","t":"902.81","wall":"2026-11-04T01:44:48.153Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/789-kh3-fl2-279.png","note":"","t":"903.50","wall":"2026-11-04T01:44:48.838Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/790-kh3-fl2-280.png","note":"","t":"904.05","wall":"2026-11-04T01:44:49.397Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/791-kh3-fl2-281.png","note":"","t":"904.71","wall":"2026-11-04T01:44:50.054Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/792-kh3-fl2-282.png","note":"","t":"905.27","wall":"2026-11-04T01:44:50.615Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/793-kh3-fl2-283.png","note":"","t":"905.93","wall":"2026-11-04T01:44:51.274Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/794-kh3-fl2-284.png","note":"","t":"906.49","wall":"2026-11-04T01:44:51.829Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/795-kh3-fl2-285.png","note":"","t":"907.15","wall":"2026-11-04T01:44:52.493Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/796-kh3-fl2-286.png","note":"","t":"907.82","wall":"2026-11-04T01:44:53.160Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/797-kh3-fl2-287.png","note":"","t":"908.34","wall":"2026-11-04T01:44:53.685Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/798-kh3-fl2-288.png","note":"","t":"909.01","wall":"2026-11-04T01:44:54.355Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/799-kh3-fl2-289.png","note":"","t":"909.67","wall":"2026-11-04T01:44:55.009Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/800-kh3-fl2-290.png","note":"","t":"910.37","wall":"2026-11-04T01:44:55.713Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/801-kh3-fl2-291.png","note":"","t":"911.00","wall":"2026-11-04T01:44:56.348Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/802-kh3-fl2-292.png","note":"","t":"911.61","wall":"2026-11-04T01:44:56.948Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/803-kh3-fl2-293.png","note":"","t":"912.27","wall":"2026-11-04T01:44:57.615Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/804-kh3-fl2-294.png","note":"","t":"912.98","wall":"2026-11-04T01:44:58.318Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/805-kh3-fl2-295.png","note":"","t":"913.75","wall":"2026-11-04T01:44:59.094Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/806-kh3-fl2-296.png","note":"","t":"914.51","wall":"2026-11-04T01:44:59.858Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/807-kh3-fl2-297.png","note":"","t":"915.30","wall":"2026-11-04T01:45:00.641Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/808-kh3-fl2-298.png","note":"","t":"915.94","wall":"2026-11-04T01:45:01.282Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/809-kh3-fl2-299.png","note":"","t":"916.74","wall":"2026-11-04T01:45:02.079Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/810-kh3-fl2-300.png","note":"","t":"917.46","wall":"2026-11-04T01:45:02.804Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/811-kh3-fl2-301.png","note":"","t":"918.08","wall":"2026-11-04T01:45:03.422Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/812-kh3-fl2-302.png","note":"","t":"918.76","wall":"2026-11-04T01:45:04.108Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/813-kh3-fl2-303.png","note":"","t":"919.68","wall":"2026-11-04T01:45:05.028Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/814-kh3-fl2-304.png","note":"","t":"920.36","wall":"2026-11-04T01:45:05.699Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/815-kh3-fl2-305.png","note":"","t":"921.10","wall":"2026-11-04T01:45:06.442Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/816-kh3-fl2-306.png","note":"","t":"922.03","wall":"2026-11-04T01:45:07.372Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/817-kh3-fl2-307.png","note":"","t":"922.71","wall":"2026-11-04T01:45:08.048Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/818-kh3-fl2-308.png","note":"","t":"923.41","wall":"2026-11-04T01:45:08.749Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/819-kh3-fl2-309.png","note":"","t":"924.19","wall":"2026-11-04T01:45:09.530Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/820-kh3-fl2-310.png","note":"","t":"924.91","wall":"2026-11-04T01:45:10.255Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/821-kh3-fl2-311.png","note":"","t":"925.38","wall":"2026-11-04T01:45:10.727Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/822-kh3-fl2-312.png","note":"","t":"926.05","wall":"2026-11-04T01:45:11.392Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/823-kh3-fl2-313.png","note":"","t":"926.70","wall":"2026-11-04T01:45:12.039Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/824-kh3-fl2-314.png","note":"","t":"927.38","wall":"2026-11-04T01:45:12.720Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/825-kh3-fl2-315.png","note":"","t":"928.18","wall":"2026-11-04T01:45:13.521Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/826-kh3-fl2-316.png","note":"","t":"928.95","wall":"2026-11-04T01:45:14.289Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/827-kh3-fl2-317.png","note":"","t":"929.56","wall":"2026-11-04T01:45:14.902Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/828-kh3-fl2-318.png","note":"","t":"930.17","wall":"2026-11-04T01:45:15.512Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/829-kh3-fl2-319.png","note":"","t":"930.64","wall":"2026-11-04T01:45:15.983Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/830-kh3-fl2-320.png","note":"","t":"931.43","wall":"2026-11-04T01:45:16.775Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/831-kh3-fl2-321.png","note":"","t":"932.06","wall":"2026-11-04T01:45:17.402Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/832-kh3-fl2-322.png","note":"","t":"932.73","wall":"2026-11-04T01:45:18.071Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/833-kh3-fl2-323.png","note":"","t":"933.30","wall":"2026-11-04T01:45:18.639Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/834-kh3-fl2-324.png","note":"","t":"933.93","wall":"2026-11-04T01:45:19.272Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/835-kh3-fl2-325.png","note":"","t":"934.71","wall":"2026-11-04T01:45:20.049Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/836-kh3-fl2-326.png","note":"","t":"935.25","wall":"2026-11-04T01:45:20.598Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/837-kh3-fl2-327.png","note":"","t":"935.94","wall":"2026-11-04T01:45:21.287Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/838-kh3-fl2-328.png","note":"","t":"936.44","wall":"2026-11-04T01:45:21.787Z"}
+{"ev":"note","text":"KH-3 Structural breakup T+165 on default auto-build after following both game prompts (NUDGE PITCH -1, THROTTLE 70%). No stars. Kid taps Fix it","t":"975.57","wall":"2026-11-04T01:46:00.916Z"}
+{"ev":"tap","x":195,"y":606,"hold":120,"note":"Fix it (after breakup)","t":"976.18","wall":"2026-11-04T01:46:01.526Z"}
+{"ev":"console","type":"log","text":"[Count] done->boot t=0\n","t":"976.28","wall":"2026-11-04T01:46:01.624Z"}
+{"ev":"console","type":"error","text":"NullReferenceException: Object reference not set to an instance of an object.\n  at UnityEngine.Bindings.ThrowHelper.ThrowNullReferenceException (System.Object obj) [0x00000] in <00000000000000000000000000000000>:0 \n\n","t":"976.28","wall":"2026-11-04T01:46:01.624Z"}
+{"ev":"wait","ms":2500,"note":"","t":"978.70","wall":"2026-11-04T01:46:04.039Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/839-kh3-fix-1.png","note":"","t":"978.84","wall":"2026-11-04T01:46:04.187Z"}
+{"ev":"wait","ms":2500,"note":"","t":"981.36","wall":"2026-11-04T01:46:06.699Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/840-kh3-fix-2.png","note":"","t":"981.57","wall":"2026-11-04T01:46:06.913Z"}
+{"ev":"wait","ms":2500,"note":"","t":"984.09","wall":"2026-11-04T01:46:09.428Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/841-kh3-fix-3.png","note":"","t":"984.26","wall":"2026-11-04T01:46:09.605Z"}
+{"ev":"wait","ms":5000,"note":"","t":"993.88","wall":"2026-11-04T01:46:19.227Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/842-kh3-fix-wait-1.png","note":"","t":"994.13","wall":"2026-11-04T01:46:19.475Z"}
+{"ev":"wait","ms":5000,"note":"","t":"999.15","wall":"2026-11-04T01:46:24.493Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/843-kh3-fix-wait-2.png","note":"","t":"999.51","wall":"2026-11-04T01:46:24.856Z"}
+{"ev":"wait","ms":5000,"note":"","t":"1004.53","wall":"2026-11-04T01:46:29.871Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/844-kh3-fix-wait-3.png","note":"","t":"1004.74","wall":"2026-11-04T01:46:30.083Z"}
+{"ev":"wait","ms":5000,"note":"","t":"1009.76","wall":"2026-11-04T01:46:35.099Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/845-kh3-fix-wait-4.png","note":"","t":"1010.31","wall":"2026-11-04T01:46:35.655Z"}
+{"ev":"wait","ms":5000,"note":"","t":"1015.34","wall":"2026-11-04T01:46:40.679Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/846-kh3-fix-wait-5.png","note":"","t":"1015.63","wall":"2026-11-04T01:46:40.975Z"}
+{"ev":"wait","ms":5000,"note":"","t":"1020.65","wall":"2026-11-04T01:46:45.991Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/847-kh3-fix-wait-6.png","note":"","t":"1020.97","wall":"2026-11-04T01:46:46.317Z"}
+{"ev":"note","text":"STUCK: blank sky, no UI for >40 s after Fix it. NRE logged 0.1 s after tap. Kid taps screen centre, then bottom","t":"1036.62","wall":"2026-11-04T01:47:01.966Z"}
+{"ev":"tap","x":195,"y":420,"hold":120,"note":"tap centre (stuck)","t":"1036.96","wall":"2026-11-04T01:47:02.299Z"}
+{"ev":"wait","ms":3000,"note":"","t":"1039.99","wall":"2026-11-04T01:47:05.330Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/848-stuck-a-1.png","note":"","t":"1040.11","wall":"2026-11-04T01:47:05.449Z"}
+{"ev":"tap","x":195,"y":790,"hold":120,"note":"tap bottom (stuck)","t":"1040.37","wall":"2026-11-04T01:47:05.715Z"}
+{"ev":"wait","ms":3000,"note":"","t":"1043.40","wall":"2026-11-04T01:47:08.741Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/849-stuck-b-1.png","note":"","t":"1043.64","wall":"2026-11-04T01:47:08.979Z"}
+{"ev":"key","k":"Escape","note":"Escape key (web back)","t":"1043.65","wall":"2026-11-04T01:47:08.998Z"}
+{"ev":"wait","ms":3000,"note":"","t":"1046.68","wall":"2026-11-04T01:47:12.023Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/850-stuck-esc-1.png","note":"","t":"1046.95","wall":"2026-11-04T01:47:12.294Z"}
+{"ev":"wait","ms":3000,"note":"","t":"1049.98","wall":"2026-11-04T01:47:15.319Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/851-stuck-esc-2.png","note":"","t":"1050.18","wall":"2026-11-04T01:47:15.526Z"}
+{"ev":"note","text":"Soft-lock confirmed (taps + Escape do nothing for ~60 s). Kid session ends here (~16.5 min). Recovery check: reload page, same browser profile","t":"1057.30","wall":"2026-11-04T01:47:22.640Z"}
+{"ev":"eval","t":"1057.31","wall":"2026-11-04T01:47:22.655Z"}
+{"ev":"netreq","url":"blob:http://localhost:8797/6c7a92d1-4f2d-45ab-9fa3-82e7eea6b0f8","t":"1057.54","wall":"2026-11-04T01:47:22.884Z"}
+{"ev":"console","type":"log","text":"[UnityCache] 'http://localhost:8797/Build/c5d29fe5a605e4f64be087cd6d32b458.data.unityweb' successfully revalidated and served from the browser cache","t":"1057.59","wall":"2026-11-04T01:47:22.936Z"}
+{"ev":"console","type":"log","text":"[UnityMemory] Configuration Parameters - Can be set up in boot.config\n","t":"1058.02","wall":"2026-11-04T01:47:23.358Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-allocator-temp-initial-block-size-main=262144\"\n","t":"1058.02","wall":"2026-11-04T01:47:23.358Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-allocator-temp-initial-block-size-worker=262144\"\n","t":"1058.02","wall":"2026-11-04T01:47:23.358Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-audio-worker=65536\"\n","t":"1058.02","wall":"2026-11-04T01:47:23.358Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-remapper-allocator-initial-capacity=32768\"\n","t":"1058.02","wall":"2026-11-04T01:47:23.358Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-background-worker=32768\"\n","t":"1058.02","wall":"2026-11-04T01:47:23.359Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-granularity=16\"\n","t":"1058.02","wall":"2026-11-04T01:47:23.359Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-bucket-count=8\"\n","t":"1058.02","wall":"2026-11-04T01:47:23.359Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-block-size=4194304\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.368Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-bucket-allocator-block-count=1\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-main-allocator-block-size=16777216\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-thread-allocator-block-size=16777216\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-gfx-main-allocator-block-size=16777216\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-gfx-thread-allocator-block-size=16777216\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-cache-allocator-block-size=4194304\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-typetree-allocator-block-size=2097152\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-granularity=16\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-bucket-count=8\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-block-size=4194304\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-bucket-allocator-block-count=1\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-allocator-block-size=16777216\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-profiler-editor-allocator-block-size=1048576\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-temp-allocator-size-main=4194304\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-block-size=2097152\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-block-size-background=1048576\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"    \"memorysetup-job-temp-allocator-reduction-small-platforms=262144\"\n","t":"1058.03","wall":"2026-11-04T01:47:23.369Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Initialized fallback backend.\n","t":"1058.08","wall":"2026-11-04T01:47:23.421Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Id: 0xdecafbad\n","t":"1058.08","wall":"2026-11-04T01:47:23.421Z"}
+{"ev":"console","type":"log","text":"Loading player data from data.unity3d\n","t":"1058.08","wall":"2026-11-04T01:47:23.422Z"}
+{"ev":"console","type":"log","text":"Initialize engine version: 6000.3.26f1 (de8167e7440c)\n","t":"1058.09","wall":"2026-11-04T01:47:23.429Z"}
+{"ev":"console","type":"log","text":"Creating WebGL 2.0 context.","t":"1058.09","wall":"2026-11-04T01:47:23.431Z"}
+{"ev":"console","type":"log","text":"Renderer: WebKit WebGL\n","t":"1058.10","wall":"2026-11-04T01:47:23.442Z"}
+{"ev":"console","type":"log","text":"Vendor:   WebKit\n","t":"1058.10","wall":"2026-11-04T01:47:23.443Z"}
+{"ev":"console","type":"log","text":"Version:  OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n","t":"1058.10","wall":"2026-11-04T01:47:23.443Z"}
+{"ev":"console","type":"log","text":"GLES:     3\n","t":"1058.10","wall":"2026-11-04T01:47:23.443Z"}
+{"ev":"console","type":"log","text":" EXT_clip_control EXT_color_buffer_float EXT_color_buffer_half_float EXT_conservative_depth EXT_depth_clamp EXT_disjoint_timer_query_webgl2 EXT_float_blend EXT_polygon_offset_clamp EXT_texture_compression_bptc EXT_texture_compression_rgtc EXT_texture_filter_anisotropic EXT_texture_mirror_clamp_to_ed","t":"1058.10","wall":"2026-11-04T01:47:23.443Z"}
+{"ev":"console","type":"log","text":"ression_rgtc GL_EXT_texture_filter_anisotropic GL_EXT_texture_mirror_clamp_to_edge GL_NV_shader_noperspective_interpolation GL_OES_draw_buffers_indexed GL_OES_sample_variables GL_OES_shader_multisample_interpolation GL_OES_texture_float_linear GL_OVR_multiview2 GL_WEBGL_clip_cull_distance GL_WEBGL_c","t":"1058.10","wall":"2026-11-04T01:47:23.443Z"}
+{"ev":"console","type":"log","text":"OPENGL LOG: Creating OpenGL ES 3.0 graphics device ; Context level  <OpenGL ES 3.0> ; Context handle 1\n","t":"1058.10","wall":"2026-11-04T01:47:23.447Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Selected backend.\n","t":"1058.20","wall":"2026-11-04T01:47:23.548Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Name: PhysX\n","t":"1058.21","wall":"2026-11-04T01:47:23.553Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Id: 0xf2b8ea05\n","t":"1058.21","wall":"2026-11-04T01:47:23.553Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] SDK Version: 4.1.2\n","t":"1058.21","wall":"2026-11-04T01:47:23.553Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Integration Version: 1.0.0\n","t":"1058.21","wall":"2026-11-04T01:47:23.553Z"}
+{"ev":"console","type":"log","text":"[Physics::Module] Threading Mode: Single-Threaded\n","t":"1058.21","wall":"2026-11-04T01:47:23.553Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"1058.28","wall":"2026-11-04T01:47:23.624Z"}
+{"ev":"console","type":"log","text":"Hidden/CoreSRP/CoreCopy shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"1058.28","wall":"2026-11-04T01:47:23.624Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"1058.28","wall":"2026-11-04T01:47:23.625Z"}
+{"ev":"console","type":"log","text":"Hidden/Universal Render Pipeline/StencilDitherMaskSeed shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"1058.28","wall":"2026-11-04T01:47:23.626Z"}
+{"ev":"console","type":"log","text":"ERROR: Shader ","t":"1058.28","wall":"2026-11-04T01:47:23.627Z"}
+{"ev":"console","type":"log","text":"Hidden/Universal/HDRDebugView shader is not supported on this GPU (none of subshaders/fallbacks are suitable)\n","t":"1058.29","wall":"2026-11-04T01:47:23.628Z"}
+{"ev":"console","type":"log","text":"Input Manager initialize...\n","t":"1058.30","wall":"2026-11-04T01:47:23.647Z"}
+{"ev":"console","type":"log","text":"UnloadTime: 1.300000 ms\n","t":"1058.33","wall":"2026-11-04T01:47:23.673Z"}
+{"ev":"console","type":"log","text":"[Kestrel] quality low (renderScale≈1.00, 60 fps, 150 particles)\n","t":"1058.39","wall":"2026-11-04T01:47:23.732Z"}
+{"ev":"console","type":"log","text":"[Kestrel] guide clips: 78 found\n","t":"1058.43","wall":"2026-11-04T01:47:23.771Z"}
+{"ev":"console","type":"log","text":"Audio context resumed after 0.338 seconds.","t":"1058.46","wall":"2026-11-04T01:47:23.804Z"}
+{"ev":"loader-ready","load_s":0.025,"t":"1060.35","wall":"2026-11-04T01:47:25.693Z"}
+{"ev":"tap","sel":"#start","note":"TAP TO PLAY","t":"1060.41","wall":"2026-11-04T01:47:25.754Z"}
+{"ev":"console","type":"log","text":"Trying to get length of sound which is not loaded yet.","t":"1060.78","wall":"2026-11-04T01:47:26.119Z"}
+{"ev":"console","type":"error","text":"Failed to load resource: the server responded with a status of 404 (File not found)","t":"1061.55","wall":"2026-11-04T01:47:26.888Z"}
+{"ev":"wait","ms":3000,"note":"","t":"1063.42","wall":"2026-11-04T01:47:28.768Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/852-reload-1.png","note":"","t":"1064.01","wall":"2026-11-04T01:47:29.356Z"}
+{"ev":"wait","ms":3000,"note":"","t":"1067.03","wall":"2026-11-04T01:47:32.368Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/853-reload-2.png","note":"","t":"1067.37","wall":"2026-11-04T01:47:32.708Z"}
+{"ev":"wait","ms":3000,"note":"","t":"1070.38","wall":"2026-11-04T01:47:35.728Z"}
+{"ev":"shot","file":"/workspace/fun-review/kid/854-reload-3.png","note":"","t":"1070.86","wall":"2026-11-04T01:47:36.202Z"}
+{"ev":"quit","t":"1080.20","wall":"2026-11-04T01:47:45.544Z"}
