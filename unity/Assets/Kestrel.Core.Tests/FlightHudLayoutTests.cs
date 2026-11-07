@@ -265,6 +265,33 @@ namespace Kestrel.Core.Tests
         }
 
         /// <summary>
+        /// #397: one frame at T+140.5 showed the telemetry header's health marks (Eng/Tnk/Hull/Guide/Fair) smeared
+        /// together. On a narrow landscape rail the 11 pt face does not fit its button, and TextFit only shrinks
+        /// the marks on a later pass (it measures the buttons' pre-layout widths), so the first frame after the rail
+        /// narrowed rendered them overflowing. The mark face now follows the rail width in the layout math, and the
+        /// rail never narrows past five marks at the floor face — so the marks fit by budget at every size, and
+        /// portrait keeps the 11 pt design face.
+        /// </summary>
+        [Test]
+        public void HealthMarksFitTheirRailAtEveryLandscapeSize()
+        {
+            foreach (var (w, h) in new[] { (844f, 390f), (667f, 375f), (932f, 430f), (1280f, 720f), (1920f, 1080f), (1180f, 820f) })
+            foreach (var mode in Modes)
+            {
+                var f = FlightHudLayout.PlaceWide(w, h, 0f, 0f, 0f, 0f, mode);
+                string at = w + "x" + h + " " + mode;
+                float font = FlightHudLayout.HealthMarksFontPt(f.Health.W);
+                Assert.That(font, Is.GreaterThanOrEqualTo(FlightHudLayout.HealthMarkMinFontPt - 0.01f), at + ": marks stay legible");
+                float need = VehicleHealth.Count * (FlightHudLayout.BudgetWidth(FlightHudLayout.WidestHealthMark, font) + FlightHudLayout.HealthTabPadPt)
+                    + (VehicleHealth.Count - 1) * FlightHudLayout.GapPt;
+                Assert.That(need, Is.LessThanOrEqualTo(f.Health.W + 0.01f), at + ": five marks fit the rail at " + font + " pt");
+            }
+            // Portrait: the full-width rail keeps the 11 pt design face.
+            var p = FlightHudLayout.Place(390f, 844f, 47f, 34f, 0f, 0f, FlightHudMode.Cruise);
+            Assert.That(FlightHudLayout.HealthMarksFontPt(p.Health.W), Is.EqualTo(FlightHudLayout.LabelFontPt));
+        }
+
+        /// <summary>
         /// #322 CI SE cruise: ascent-actions (8,519 359x148) ran over flight-follow (3,514). AscentHud's flow spacer
         /// reserves FlightHudLayout.DockHeight for the open rows; the frame's dock is exactly that tall, so the tools
         /// row sits a whole GapPt above it. Every portrait size, every mode, the banner in its card and as the 64-char
