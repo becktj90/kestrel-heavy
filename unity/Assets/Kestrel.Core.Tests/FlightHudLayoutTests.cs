@@ -1018,5 +1018,37 @@ namespace Kestrel.Core.Tests
             for (int i = 0; i < f.Cells.Length; i++) list.Add(("cell-" + i, f.Cells[i]));
             return list;
         }
+
+        [Test]
+        public void WideExitBoxMatchesThePageButtonAndClearsTheStagePanel()
+        {
+            // #fs is 88x44 at top: max(8px, safe-area-inset-top), right: max(8px, safe-area-inset-right).
+            var sizes = new[] { new[] { 1280f, 720f }, new[] { 1280f, 800f }, new[] { 1366f, 768f }, new[] { 1920f, 1080f } };
+            foreach (var wh in sizes)
+                foreach (float safeTop in new[] { 0f, 8f, 20f, 47f })
+                    foreach (var mode in Modes)
+                    {
+                        var f = FlightHudLayout.PlaceWide(wh[0], wh[1], safeTop, 0f, 0f, 0f, mode);
+                        string where = wh[0] + "x" + wh[1] + " top " + safeTop + " " + mode;
+                        float y = Math.Max(8f, safeTop);
+                        Assert.That(f.Exit.X, Is.EqualTo(wh[0] - 8f - 88f).Within(0.01f), where + " exit x");
+                        Assert.That(f.Exit.Y, Is.EqualTo(y).Within(0.01f), where + " exit y");
+                        Assert.That(f.Exit.W, Is.EqualTo(88f).Within(0.01f), where + " exit w");
+                        Assert.That(f.Exit.H, Is.EqualTo(44f).Within(0.01f), where + " exit h");
+                        Assert.That(f.Stages.Y, Is.GreaterThanOrEqualTo(f.Exit.Bottom + FlightHudLayout.GapPt - 0.01f), where + " stages below exit");
+                        Assert.That(f.Stages.Overlaps(f.Exit), Is.False, where + " stages/exit");
+                        if (safeTop == 0f) Assert.That(f.Stages.Y, Is.EqualTo(56f).Within(0.01f), where + " stages top");
+                    }
+
+            // The 335 pt portrait layout does not go through the wide path and is unchanged.
+            foreach (var mode in Modes)
+            {
+                var p = FlightHudLayout.Place(335f, 700f, 20f, 0f, 0f, 0f, mode);
+                var w = FlightHudLayout.PlaceWide(335f, 700f, 20f, 0f, 0f, 0f, mode);
+                Assert.That(w.Stages.Y, Is.EqualTo(p.Stages.Y), "335 " + mode);
+                Assert.That(w.Exit.Y, Is.EqualTo(p.Exit.Y), "335 exit " + mode);
+                Assert.That(w.Clock.Y, Is.EqualTo(p.Clock.Y), "335 clock " + mode);
+            }
+        }
     }
 }

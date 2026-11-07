@@ -868,7 +868,9 @@ namespace Kestrel.Core.Flight
 
             float exitW = HomeCornerLayout.ExitW;
             float exitH = HomeCornerLayout.ExitH;
-            var exit = Box(width - safeRight - edge - exitW, safeTop, exitW, exitH);
+            // The web page's #fs EXIT button sits at top: max(8px, safe-area-inset-top), so its clearance box does too;
+            // at y = safeTop it ended 8 pt short and the right stage panel slid under the button.
+            var exit = Box(width - safeRight - edge - exitW, Math.Max(SideMarginPt, safeTop), exitW, exitH);
 
             float left = safeLeft + edge;
             float right = width - safeRight - edge;
@@ -950,7 +952,9 @@ namespace Kestrel.Core.Flight
             bool camBeside = railW >= camW + GapPt + PauseWidthPt;
             float rightExtra = (nudgesInRail ? ButtonPt + GapPt : 0f) + (camBeside ? 0f : toolsH + GapPt);
             float stagesH = followY - GapPt - rightExtra - railTop;
-            if (stagesH < 48f) stagesH = 48f;
+            // 48 pt floor. On a short landscape phone the EXIT clearance (now at max(8, safeTop), up to 8 pt lower than
+            // before) gives up that drop from the floor, so the nudges and Pause below keep their rows above the dock.
+            if (stagesH < 48f) stagesH = Math.Max(stagesH, 48f - Math.Max(0f, exit.Y - safeTop));
             f.Stages = Box(right - railW, railTop, railW, stagesH);
             f.Banner = Box(f.Stages.X + BannerCardPadPt, f.Stages.Y + BannerCardPadPt, f.Stages.W - 2f * BannerCardPadPt, f.Stages.H - 2f * BannerCardPadPt);
             float yR = f.Stages.Bottom + GapPt;
