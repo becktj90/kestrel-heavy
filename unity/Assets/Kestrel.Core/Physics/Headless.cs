@@ -121,6 +121,8 @@ namespace Kestrel.Core.Physics
         public double minStability = double.NaN, minCar = double.NaN, qLimPa = double.NaN;
         /// <summary>#338: peak q·alpha share of the sideways allowance (FailureMonitor.PeakBendFraction); NaN with no monitor.</summary>
         public double peakBendFraction = double.NaN;
+        /// <summary>#440: steps where the sensible-air α clamp moved the pitch command. 0 on a no-input flight.</summary>
+        public int alphaClampSteps;
         /// <summary>#338: warning-only structural-margin note (q·alpha past 80% of the allowance); null when none.</summary>
         public Flight.StructuralWarning bendWarning;
         /// <summary>
@@ -344,6 +346,8 @@ namespace Kestrel.Core.Physics
 
         /// <summary>Last diagnostics for HUD use (ambient pressure Pa, dynamic pressure Pa, Mach, thrust N).</summary>
         public double LastP, LastQ, LastMach, LastThrust;
+        /// <summary>#440: steps where the sensible-air α clamp moved the pitch command. 0 on a no-input flight.</summary>
+        public int AlphaClampSteps;
         /// <summary>Running loss totals (m/s). Read by the ascent HUD. Writing them does not feed the step.</summary>
         public double LossGravity => lossG;
         public double LossDrag => lossD;
@@ -714,6 +718,28 @@ namespace Kestrel.Core.Physics
             double v = JsMath.Hypot(vx, vy);
             double lossG0 = lossG, lossD0 = lossD, lossS0 = lossS, dvExp0 = dvExp;
             LastP = p; LastQ = q; LastMach = vrel / sound; LastThrust = 0;
+            // #440: in sensible air, a stage with control authority must not hold a fixed pitch far off
+            // the air-relative velocity. Clamp the commanded in-plane angle of attack to the same 15° the
+            // breakup rule allows (FailureModel.TumbleAlphaRad), slewed at RecoverySim.PitchRate so the
+            // nose moves like the real vehicle. Below 20 kPa (TumbleQPa) the program pitch flies unchanged;
+            // a passive stage (not thrusting) stays passive and the breakup rule applies as before. Mode 2
+            // is the gravity turn, whose thrust already follows the velocity (α = 0), so there is nothing to
+            // clamp. RCS is a recovery-side concept (RecoveryModel); in the ascent sim the engine is the
+            // authority. No-input flights never command more than 15° in sensible air, so this is a no-op
+            // for them and their goldens stay bit-identical.
+            if (Thrusting && Mode != 2 && q > Flight.FailureModel.TumbleQPa && vrel > 1)
+            {
+                double gammaAir = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
+                double lo = gammaAir - Flight.FailureModel.TumbleAlphaRad;
+                double hi = gammaAir + Flight.FailureModel.TumbleAlphaRad;
+                double want = PitchCmd;
+                if (want < lo) want = lo;
+                else if (want > hi) want = hi;
+                double step = Flight.RecoverySim.PitchRate * dt;
+                if (want > PitchCmd + step) { PitchCmd += step; AlphaClampSteps++; }
+                else if (want < PitchCmd - step) { PitchCmd -= step; AlphaClampSteps++; }
+                else if (want != PitchCmd) { PitchCmd = want; AlphaClampSteps++; }
+            }
             if (o.monitor != null && Watch(alt, q, m, vrel, p, rho, sound, avx, avy, ux, uy, tx, ty, dt))
                 Fail(alt, v);
             if (Thrusting && StageIdx < st.Length)
@@ -1084,6 +1110,7 @@ namespace Kestrel.Core.Physics
                 guidanceInControl = guidanceFlew,
                 nudgeHeldByGuidance = NudgeHeldByGuidance,
                 upperRanDry = upperRanDry,
+                alphaClampSteps = AlphaClampSteps,
                 guidanceHandoffAltM = handoffAlt, guidanceHandoffGammaDeg = handoffGamma, guidanceHandoffLiftRatio = handoffLift,
             };
             if (orb.periAlt < 0) result.coastApexAlt = CoastApexAlt();
