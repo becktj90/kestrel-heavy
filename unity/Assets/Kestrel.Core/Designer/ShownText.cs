@@ -241,7 +241,7 @@ namespace Kestrel.Core.Designer
                 "Set the trip to a 10 km hop.",
                 "Welcome to the hangar. We will build a rocket that reaches a 10 km hop.",
                 "Max-Q",
-                "$516M / $12M",
+                "5.2k Kc / 12.0k Kc",
                 "-",
                 "+",
                 "OK",

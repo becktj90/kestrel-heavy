@@ -1,0 +1,833 @@
+{
+ "_meta": {
+  "model": "eleven_multilingual_v2",
+  "note": "Per-mission historical commentary takes for Kestrel Heavy (DECISIONS #77, PR #449). Source of truth for generation; docs/plans/per-mission-commentary.md renders the same lines in readable tables. Each take is one single-speaker color-layer line (layer=color, interruptible=true), gated by requires.mission so it only ever plays on its own mission. Real names appear ONLY in these lines. No invented quotes; the single verbatim quote (m17-coa-1, Armstrong) is flagged in the plan doc.",
+  "rules": "Every line at most 14 words (WRITING_BIBLE 6.2 / color lint). No line states a fact about the flown design (no engine counts, no 'booster', no strap-ons, no Haven/pad/site claims) so the claim-vs-design verifier stays green with claims ['mission'] only.",
+  "voices": {
+   "cohost": {
+    "name": "Chris",
+    "similarity_boost": 0.8,
+    "stability": 0.45,
+    "style": 0.25,
+    "use_speaker_boost": true,
+    "voiceDir": "cohost",
+    "voiceId": "iP95p4xoKVk53GoZ742B"
+   },
+   "host": {
+    "name": "Sarah",
+    "similarity_boost": 0.8,
+    "stability": 0.45,
+    "style": 0.25,
+    "use_speaker_boost": true,
+    "voiceDir": "host",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL"
+   }
+  }
+ },
+ "takes": [
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m1.1",
+   "mission": "m1",
+   "sources": [
+    "S2"
+   ],
+   "text": "In 1926, Robert Goddard flew the first liquid-fuel rocket."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m1.2",
+   "mission": "m1",
+   "sources": [
+    "S2"
+   ],
+   "text": "It rose forty-one feet, in two and a half seconds."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m1.1",
+   "mission": "m1",
+   "sources": [
+    "S2"
+   ],
+   "text": "Goddard launched from a farm field in Massachusetts."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.ascent",
+   "id": "cohost/color.ascent.m1.2",
+   "mission": "m1",
+   "sources": [
+    "S2"
+   ],
+   "text": "It burned gasoline and liquid oxygen, not gunpowder."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m2.1",
+   "mission": "m2",
+   "sources": [
+    "S10"
+   ],
+   "text": "One hundred kilometres up is the edge of space."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m2.2",
+   "mission": "m2",
+   "sources": [
+    "S10"
+   ],
+   "text": "The line is a convention, set in 1960 for record keeping."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m2.1",
+   "mission": "m2",
+   "sources": [
+    "S10"
+   ],
+   "text": "Above the line, the air is too thin for wings."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.karman",
+   "id": "cohost/color.karman.m2.1",
+   "mission": "m2",
+   "sources": [
+    "H1"
+   ],
+   "text": "The first American in space flew above this line in 1961."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m3.1",
+   "mission": "m3",
+   "sources": [
+    "S13"
+   ],
+   "text": "On October 4, 1957, Sputnik became the first satellite."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m3.2",
+   "mission": "m3",
+   "sources": [
+    "S13"
+   ],
+   "text": "It weighed about eighty-four kilograms, a beach ball with antennas."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m3.1",
+   "mission": "m3",
+   "sources": [
+    "S13"
+   ],
+   "text": "Sputnik circled Earth once every ninety-six minutes."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m3.1",
+   "mission": "m3",
+   "sources": [
+    "S13"
+   ],
+   "text": "Its beep was heard by radio operators around the world."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m4.1",
+   "mission": "m4",
+   "sources": [
+    "H2"
+   ],
+   "text": "On April 1, 1960, TIROS-1 became the first weather satellite."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m4.2",
+   "mission": "m4",
+   "sources": [
+    "H2"
+   ],
+   "text": "It carried two television cameras and weighed two hundred seventy pounds."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m4.1",
+   "mission": "m4",
+   "sources": [
+    "H2"
+   ],
+   "text": "TIROS-1 sent back nineteen thousand usable pictures in seventy-eight days."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m4.1",
+   "mission": "m4",
+   "sources": [
+    "H2"
+   ],
+   "text": "Forecasters saw cloud patterns from space for the first time."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m5.1",
+   "mission": "m5",
+   "sources": [
+    "H3"
+   ],
+   "text": "The Saturn V stood one hundred eleven metres tall."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m5.2",
+   "mission": "m5",
+   "sources": [
+    "H3"
+   ],
+   "text": "Five F-1s made seven and a half million pounds of thrust."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m5.1",
+   "mission": "m5",
+   "sources": [
+    "H3"
+   ],
+   "text": "It could lift one hundred forty tonnes to low Earth orbit."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.ascent",
+   "id": "cohost/color.ascent.m5.2",
+   "mission": "m5",
+   "sources": [
+    "H3"
+   ],
+   "text": "Thirteen Saturn Vs flew, and none ever lost crew or payload."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m6.1",
+   "mission": "m6",
+   "sources": [
+    "S16"
+   ],
+   "text": "On December 21, 2015, a Falcon 9 first stage landed upright."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m6.2",
+   "mission": "m6",
+   "sources": [
+    "S16",
+    "H23"
+   ],
+   "text": "It touched down at Landing Zone 1, nine minutes after liftoff."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m6.1",
+   "mission": "m6",
+   "sources": [
+    "S16"
+   ],
+   "text": "Before that, no orbital first stage had ever landed."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.recovery",
+   "id": "cohost/color.recovery.m6.1",
+   "mission": "m6",
+   "sources": [
+    "H4"
+   ],
+   "text": "In 2024, Starship's first stage was caught by its tower."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m7.1",
+   "mission": "m7",
+   "sources": [
+    "H5"
+   ],
+   "text": "In November 2025, New Glenn's first stage landed on Jacklyn."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m7.2",
+   "mission": "m7",
+   "sources": [
+    "H5"
+   ],
+   "text": "Jacklyn waited about six hundred kilometres downrange in the Atlantic."
+  },
+  {
+   "channel": "host",
+   "event": "color.coast",
+   "id": "host/color.coast.m7.1",
+   "mission": "m7",
+   "sources": [
+    "H6"
+   ],
+   "text": "A transfer orbit stretches from low orbit out to thirty-six thousand kilometres."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.recovery",
+   "id": "cohost/color.recovery.m7.1",
+   "mission": "m7",
+   "sources": [
+    "H7"
+   ],
+   "text": "The first droneship landing was a Falcon 9, in April 2016."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m8.1",
+   "mission": "m8",
+   "sources": [
+    "S14"
+   ],
+   "text": "On April 12, 1961, Yuri Gagarin became the first human in space."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m8.2",
+   "mission": "m8",
+   "sources": [
+    "S14"
+   ],
+   "text": "His flight lasted one hundred eight minutes, launch to landing."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m8.1",
+   "mission": "m8",
+   "sources": [
+    "S14"
+   ],
+   "text": "One orbit proved a person could live and work in space."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m8.1",
+   "mission": "m8",
+   "sources": [
+    "H8"
+   ],
+   "text": "In 1962, John Glenn became the first American to orbit Earth."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m9.1",
+   "mission": "m9",
+   "sources": [
+    "H9"
+   ],
+   "text": "In September 1959, Luna 2 became the first object to reach the Moon."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m9.2",
+   "mission": "m9",
+   "sources": [
+    "H9"
+   ],
+   "text": "It flew thirty-six hours and struck the Moon at three kilometres per second."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m9.1",
+   "mission": "m9",
+   "sources": [
+    "H9"
+   ],
+   "text": "Luna 2 carried no engine of its own, only instruments and pennants."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m9.1",
+   "mission": "m9",
+   "sources": [
+    "H10"
+   ],
+   "text": "In 1968, Apollo 8 carried the first crew around the Moon."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m10.1",
+   "mission": "m10",
+   "sources": [
+    "H11"
+   ],
+   "text": "Falcon Heavy is three Falcon 9 first stages strapped side by side."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m10.2",
+   "mission": "m10",
+   "sources": [
+    "H11"
+   ],
+   "text": "Twenty-seven Merlins lit together on its first flight in 2018."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m10.1",
+   "mission": "m10",
+   "sources": [
+    "H11"
+   ],
+   "text": "Its first payload was a red Tesla Roadster, with a mannequin driver."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.recovery",
+   "id": "cohost/color.recovery.m10.1",
+   "mission": "m10",
+   "sources": [
+    "H11",
+    "H24"
+   ],
+   "text": "The two side boosters landed together, eight minutes after liftoff."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m11.1",
+   "mission": "m11",
+   "sources": [
+    "H12"
+   ],
+   "text": "Landsat 1 launched July 23, 1972, to map Earth's resources."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m11.2",
+   "mission": "m11",
+   "sources": [
+    "H12"
+   ],
+   "text": "It flew a sun-synchronous orbit, crossing the equator at the same morning hour."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m11.1",
+   "mission": "m11",
+   "sources": [
+    "H12"
+   ],
+   "text": "Its orbit repeated every eighteen days, imaging the whole planet."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m11.1",
+   "mission": "m11",
+   "sources": [
+    "H12"
+   ],
+   "text": "Landsat began the longest Earth-observation program ever flown."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m12.1",
+   "mission": "m12",
+   "sources": [
+    "H13"
+   ],
+   "text": "Hubble launched aboard Space Shuttle Discovery in April 1990."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m12.2",
+   "mission": "m12",
+   "sources": [
+    "H13"
+   ],
+   "text": "It orbits about five hundred forty kilometres up, above the blurring air."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m12.1",
+   "mission": "m12",
+   "sources": [
+    "H13"
+   ],
+   "text": "Its mirror was flawed, and astronauts fixed it in orbit in 1993."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m12.1",
+   "mission": "m12",
+   "sources": [
+    "H13"
+   ],
+   "text": "Five shuttle crews serviced Hubble, the last in 2009."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m13.1",
+   "mission": "m13",
+   "sources": [
+    "H14"
+   ],
+   "text": "The CubeSat standard was drawn up in 1999, a ten-centimetre cube."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m13.2",
+   "mission": "m13",
+   "sources": [
+    "H14"
+   ],
+   "text": "The first CubeSats flew in June 2003, built mostly by students."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m13.1",
+   "mission": "m13",
+   "sources": [
+    "H15"
+   ],
+   "text": "One Falcon 9 flight carried one hundred forty-three satellites at once."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m13.1",
+   "mission": "m13",
+   "sources": [
+    "H15"
+   ],
+   "text": "That rideshare beat the old record of one hundred four satellites."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m14.1",
+   "mission": "m14",
+   "sources": [
+    "H16"
+   ],
+   "text": "In October 2012, Dragon flew the first commercial cargo run to the station."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m14.2",
+   "mission": "m14",
+   "sources": [
+    "H16"
+   ],
+   "text": "It carried about nine hundred kilograms of supplies to the station."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m14.1",
+   "mission": "m14",
+   "sources": [
+    "H16"
+   ],
+   "text": "The station's robotic arm caught Dragon and berthed it."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m14.1",
+   "mission": "m14",
+   "sources": [
+    "H16"
+   ],
+   "text": "Dragon could bring cargo back down, not just carry it up."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m15.1",
+   "mission": "m15",
+   "sources": [
+    "H17"
+   ],
+   "text": "In 1964, Syncom 3 became the first satellite to hold still over Earth."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m15.2",
+   "mission": "m15",
+   "sources": [
+    "H17"
+   ],
+   "text": "It relayed the Tokyo Olympics live from Japan to America."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m15.1",
+   "mission": "m15",
+   "sources": [
+    "H17"
+   ],
+   "text": "Early Bird followed in 1965, the first commercial satellite of its kind."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m15.1",
+   "mission": "m15",
+   "sources": [
+    "H17"
+   ],
+   "text": "Early Bird carried two hundred forty phone calls at once."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m16.1",
+   "mission": "m16",
+   "sources": [
+    "H18"
+   ],
+   "text": "People have lived aboard the space station without a break since 2000."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m16.2",
+   "mission": "m16",
+   "sources": [
+    "H18"
+   ],
+   "text": "Expedition 1 arrived on November 2, three people in three modules."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m16.1",
+   "mission": "m16",
+   "sources": [
+    "H18"
+   ],
+   "text": "Crews hand the station over in person, so the chain never breaks."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m16.1",
+   "mission": "m16",
+   "sources": [
+    "H18"
+   ],
+   "text": "The station hosts crews from five space agencies working together."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m17.1",
+   "mission": "m17",
+   "sources": [
+    "H19"
+   ],
+   "text": "Apollo 11 launched on July 16, 1969, atop a Saturn V."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m17.2",
+   "mission": "m17",
+   "sources": [
+    "H19"
+   ],
+   "text": "Eagle landed in the Sea of Tranquility on July 20."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m17.1",
+   "mission": "m17",
+   "sources": [
+    "H19"
+   ],
+   "text": "Armstrong flew the lander by hand past a rocky crater."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m17.1",
+   "mission": "m17",
+   "sources": [
+    "H19"
+   ],
+   "text": "That is one small step for a man, one giant leap for mankind.",
+   "verbatimQuote": "Armstrong, July 20 1969 (NASA transcript); the only verbatim quote in this set."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m18.1",
+   "mission": "m18",
+   "sources": [
+    "H20"
+   ],
+   "text": "New Horizons left Earth faster than any spacecraft before it."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m18.2",
+   "mission": "m18",
+   "sources": [
+    "H20"
+   ],
+   "text": "It passed the Moon's orbit in just nine hours."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m18.1",
+   "mission": "m18",
+   "sources": [
+    "H20"
+   ],
+   "text": "Nine years later it flew past Pluto, twelve thousand five hundred kilometres away."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m18.1",
+   "mission": "m18",
+   "sources": [
+    "H20"
+   ],
+   "text": "It kept flying, past Arrokoth, the most distant world ever visited."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m19.1",
+   "mission": "m19",
+   "sources": [
+    "H21"
+   ],
+   "text": "March 2017, a Falcon 9 flew again, the first reused orbital rocket."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m19.2",
+   "mission": "m19",
+   "sources": [
+    "H21"
+   ],
+   "text": "That stage had already flown a station cargo run in 2016."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m19.1",
+   "mission": "m19",
+   "sources": [
+    "H21"
+   ],
+   "text": "It landed again on a droneship, the first stage to fly twice."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.recovery",
+   "id": "cohost/color.recovery.m19.1",
+   "mission": "m19",
+   "sources": [
+    "H21",
+    "H25"
+   ],
+   "text": "Today, single first stages have flown more than thirty times each."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m20.1",
+   "mission": "m20",
+   "sources": [
+    "H22"
+   ],
+   "text": "Voyager 1 launched in 1977 and is still flying, past the planets."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m20.2",
+   "mission": "m20",
+   "sources": [
+    "H22"
+   ],
+   "text": "It crossed into interstellar space in 2012, the first spacecraft to do so."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m20.1",
+   "mission": "m20",
+   "sources": [
+    "H22"
+   ],
+   "text": "Its golden record carries greetings in fifty-five languages."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m20.1",
+   "mission": "m20",
+   "sources": [
+    "H22"
+   ],
+   "text": "Voyager 1 is the farthest human-made object from Earth."
+  }
+ ]
+}

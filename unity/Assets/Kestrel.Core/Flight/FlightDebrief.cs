@@ -39,6 +39,9 @@ namespace Kestrel.Core.Flight
         public double BudgetKc;
         public bool LandingRequired;
         public string LandingGrade;
+        /// <summary>#79: the player flew the landing burn (BoosterLanding.PlayerFlown). Only the score's
+        /// landing bonus reads it; the grade, medal and stars never do.</summary>
+        public bool PlayerFlownBurn;
         public double PeakG;
         public double GLimit;
         public long CostMinor;
@@ -301,16 +304,18 @@ namespace Kestrel.Core.Flight
             if (costKc == 0 && facts.CostMinor > 0) costKc = facts.CostMinor / (double)minorPerKc;
             int stars = MissionScore.Stars(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingRequired, perfectLanding, facts.PeakG, facts.GLimit);
             if (passed) stars = AscentDecisions.ApplyStars(stars, facts.TimingMedal);
-            double score = MissionScore.Points(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingGrade);
+            double score = MissionScore.Points(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingGrade, facts.PlayerFlownBurn);
             debrief.Stars = stars;
             debrief.Score = score;
+            // Trevor 11-07: "No stars this flight." next to "Gold for timing." read as a contradiction. Stars come from the
+            // mission goal; a medal is for how the calls were timed (or the landing), and a missed goal can still earn one.
             debrief.StarsLine = stars <= 0
-                ? "No stars this flight."
+                ? (passed ? "No stars this flight." : MissedStarsLine)
                 : stars == 1
                     ? "1 star."
                     : stars.ToString(CultureInfo.InvariantCulture) + " stars.";
             CollectMedals(facts, debrief);
-            debrief.MedalsLine = MedalSentence(debrief.Medals);
+            debrief.MedalsLine = MedalSentence(debrief.Medals, passed);
 
             string narrKind = kind;
             var line = pool.Pick(narrKind, cause, facts.DesignTags, debrief.Seed);
@@ -519,21 +524,29 @@ namespace Kestrel.Core.Flight
             return null;
         }
 
-        static string MedalSentence(List<string> medals)
+        /// <summary>The stars line of a flight that missed its goal: stars are for the goal, so say that, not "this flight".</summary>
+        public const string MissedStarsLine = "No stars: stars need the mission goal.";
+
+        /// <summary>"Gold for the landing. Silver for timing." on a pass. On a miss the same medals read as still earned
+        /// ("You still earned gold for timing."), so the line does not contradict the stars line above it.</summary>
+        public static string MedalSentence(List<string> medals, bool passed = true)
         {
             if (medals == null || medals.Count == 0) return "No medal this flight.";
             var parts = new List<string>();
             for (int i = 0; i < medals.Count; i++)
             {
                 string medal = medals[i];
-                if (medal == "gold") parts.Add("Gold for the landing.");
-                else if (medal == "silver") parts.Add("Silver for the landing.");
-                else if (medal == "bronze") parts.Add("Bronze for the landing.");
-                else if (medal == "timing-gold") parts.Add("Gold for timing.");
-                else if (medal == "timing-silver") parts.Add("Silver for timing.");
-                else if (medal == "timing-bronze") parts.Add("Bronze for timing.");
+                if (medal == "gold") parts.Add("gold for the landing");
+                else if (medal == "silver") parts.Add("silver for the landing");
+                else if (medal == "bronze") parts.Add("bronze for the landing");
+                else if (medal == "timing-gold") parts.Add("gold for timing");
+                else if (medal == "timing-silver") parts.Add("silver for timing");
+                else if (medal == "timing-bronze") parts.Add("bronze for timing");
             }
-            return parts.Count == 0 ? "No medal this flight." : string.Join(" ", parts);
+            if (parts.Count == 0) return "No medal this flight.";
+            if (!passed) return "You still earned " + string.Join(" and ", parts) + ".";
+            for (int i = 0; i < parts.Count; i++) parts[i] = char.ToUpperInvariant(parts[i][0]) + parts[i].Substring(1) + ".";
+            return string.Join(" ", parts);
         }
 
         static void GrantLooks(HangarData look, Career career, string label, bool passed, List<string> into)
@@ -563,15 +576,19 @@ namespace Kestrel.Core.Flight
             if (free) return "Free build. No Kc, and no unlocks. Medals still count.";
             if (facts == null || !facts.EconomyKnown) return "Kc waits until the build cost is known.";
             if (d.EconomySettled && d.Passed)
-                return "Reward " + Kc(d.RewardKc) + " Kc. Hardware " + Kc(d.CostKc) + " Kc. Recovery " + Kc(d.RefundKc) + " Kc. Bank " + Kc(d.BankKc) + " Kc.";
+                return "Reward " + Kc(d.RewardKc) + ". Hardware " + Kc(d.CostKc) + ". Recovery " + Kc(d.RefundKc) + ". Bank " + Kc(d.BankKc) + ".";
             if (d.EconomySettled)
-                return "No reward. Hardware " + Kc(d.CostKc) + " Kc. Bank " + Kc(d.BankKc) + " Kc.";
+                return "No reward. Hardware " + Kc(d.CostKc) + ". Bank " + Kc(d.BankKc) + ".";
             if (d.TriedSettle)
                 return "Stars saved. Kc was settled the first time this mission opened.";
             return "Kc is not posted from this screen.";
         }
 
-        static string Kc(double kc) => kc.ToString("0.##", CultureInfo.InvariantCulture);
+        /// <summary>Trevor 11-07: "Hardware 7612.17 Kc. Bank 8846363.3 Kc." printed raw doubles. The card writes Kc the way Home
+        /// and the designer strip do (HomeRecord.Kc, CostModel.FormatKc): whole Kc with separators under 1,000, then
+        /// "7.6k Kc", "8.85M Kc".</summary>
+        public static string Kc(double kc)
+            => double.IsNaN(kc) || double.IsInfinity(kc) ? "0 Kc" : HomeRecord.Kc((long)Math.Round(kc, MidpointRounding.AwayFromZero));
 
         static string N0(double x) => Math.Round(x).ToString(CultureInfo.InvariantCulture);
         static string N1(double x) => x.ToString("0.0", CultureInfo.InvariantCulture);

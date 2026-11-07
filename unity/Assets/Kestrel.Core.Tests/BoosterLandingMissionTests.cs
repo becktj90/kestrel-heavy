@@ -106,6 +106,20 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("barge", vehicle.RecoveryMode);
             var rail = new TrajectoryWatch { RecoveryMode = vehicle.RecoveryMode };
             Assert.IsFalse(rail.FliesBoostback());
+            // The design chose no landing, so the rail shows no recovery stop at all, even while that attempt flies.
+            Assert.IsFalse(vehicle.LandingPlanned);
+            var expendable = new TrajectoryWatch { RecoveryMode = vehicle.RecoveryMode, LandingPlanned = vehicle.LandingPlanned, Recovery = true };
+            var plan = expendable.At(0, 0, 0);
+            Assert.IsFalse(Array.Exists(plan.Marks, m => m.Stop == TrajectoryStop.Boostback || m.Stop == TrajectoryStop.Entry || m.Stop == TrajectoryStop.Landing));
+
+            // The same build with a barge landing chosen still plans Entry and Haven.
+            design.recoveryMode = "barge";
+            var landing = AscentDecisions.FromDesign(design, catalog, null, null, 0, 200000, false, null, 1, 1);
+            Assert.IsTrue(landing.LandingPlanned);
+            var planned = new TrajectoryWatch { RecoveryMode = landing.RecoveryMode, LandingPlanned = landing.LandingPlanned, Recovery = true };
+            var stops = planned.At(0, 0, 0);
+            Assert.IsTrue(Array.Exists(stops.Marks, m => m.Stop == TrajectoryStop.Entry));
+            Assert.IsTrue(Array.Exists(stops.Marks, m => m.Stop == TrajectoryStop.Landing));
         }
 
         [Test]

@@ -647,12 +647,12 @@ namespace Kestrel.Game.MissionSelect
             if (sized.Scrolls)
             {
                 // Leave the scroller its lane so it never sits on the text.
-                sized = MissionBoardLayout.Body(Math.Max(120f, frame.Body.W - PathScrollbarW), frame.Body.H, _shownCopy);
+                sized = MissionBoardLayout.Body(Math.Max(120f, frame.Body.W - CardLane), frame.Body.H, _shownCopy);
             }
             frame.Sized = sized;
             PinInside(_cardScroll, frame.Body, frame.Card);
             var content = _cardScroll.contentContainer;
-            content.style.width = frame.Body.W - (sized.Scrolls ? PathScrollbarW : 0f);
+            content.style.width = frame.Body.W - (sized.Scrolls ? CardLane : 0f);
             content.style.height = sized.ContentH;
             content.style.minHeight = sized.ContentH;
             Pin(_art, sized.Art);
@@ -984,6 +984,10 @@ namespace Kestrel.Game.MissionSelect
 
         /// <summary>Room for the path ScrollView's vertical bar (Unity's runtime theme draws it about 13 px wide).</summary>
         public const float PathScrollbarW = 16f;
+
+        /// <summary>The card body's scroller lane: none on the web, where WebScrollChrome hides the scroller (#416 item 8:
+        /// the 30 px desktop bar sat over the KH-3 title and brief).</summary>
+        static float CardLane => Kestrel.Core.Feel.WebScroll.Lane(Kestrel.Game.Shell.WebScrollChrome.Active, PathScrollbarW);
 
         static void Pin(VisualElement el, HudBox box)
         {

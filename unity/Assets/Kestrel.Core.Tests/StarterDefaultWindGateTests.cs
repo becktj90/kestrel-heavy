@@ -41,6 +41,70 @@ namespace Kestrel.Core.Tests
             Assert.That(misses, Is.Empty, string.Join(" | ", misses));
         }
 
+        /// <summary>Trevor 11-07: a player build has no checkout, so AscentFlight.Prepare's MissionBriefing.ForPad (and the
+        /// designer predictor's ReferenceAscent.Briefing) find no briefing data and the device flies calm air on the
+        /// reference pad (28.5°), not the seed-1 briefing wind the gate above flies. Every Starter default must win that
+        /// pad too (LivePadLoop.Fly with wind false: no wind, no site latitude, as FlightDriver.Launch gets from a null card).</summary>
+        [Test]
+        public void StarterDefault_EveryMission_WinsTheDeviceCalmPad()
+        {
+            var catalog = StarterFixture.Catalog;
+            var misses = new List<string>();
+            foreach (var mission in StarterFixture.Campaign.Missions)
+            {
+                var design = Design.FromJson(StarterFixture.Rocket(mission.Id).BuildDesign());
+                var live = LivePadLoop.Fly(catalog, mission, design, false);
+                if (!LivePadLoop.Passes(catalog, mission, design, live)
+                    && !LivePadLoop.IsM13HardButWins(catalog, mission, design, live))
+                    misses.Add(mission.Id + " Starter default live calm " + LivePadLoop.Text(live));
+            }
+            Assert.That(misses, Is.Empty, string.Join(" | ", misses));
+        }
+
+        /// <summary>
+        /// Trevor 11-07, KH-3 "Wrong place" on every retry: the card's 470 x -394 km is the KH-3 Starter at Kerosene and the
+        /// lowest fuel dot (kerosene-2-f0-b0; the Starter saves its setting per mission, so every retry flew it), on the
+        /// device's calm pad. The top stage burns dry short of orbit speed. The Starter default (methane, middle fuel)
+        /// wins the same pad. Before this fix the Starter read that setting "Ready… fuel to spare" and the card said
+        /// "79 m/s too fast at the low point… add fuel to stage 2 until the high point comes down"; now the Starter names
+        /// Short before launch and the card says it never reached orbit and ran out of push.
+        /// </summary>
+        [Test]
+        public void Kh3_TrevorsStarterSetting_ReproducesTheDeviceMiss_AndIsNamedBeforeLaunch()
+        {
+            var catalog = StarterFixture.Catalog;
+            var mission = StarterFixture.Campaign.ById("m3");
+            var rocket = StarterFixture.Rocket("m3");
+            var trevor = new StarterChoice(StarterEngine.Kerosene, 2, 0, 0);
+            var design = Design.FromJson(rocket.BuildDesign(trevor));
+            var live = LivePadLoop.Fly(catalog, mission, design, false);
+            string text = LivePadLoop.Text(live);
+            Assert.IsNull(live.failure, text);
+            Assert.AreEqual(470.0, MissionScore.FlownApoAltM(live) / 1000.0, 2.0, "the card's high point / " + text);
+            Assert.AreEqual(-394.0, live.orbit.periAlt / 1000.0, 2.0, "the card's low point / " + text);
+            Assert.IsFalse(LivePadLoop.Passes(catalog, mission, design, live), text);
+
+            // The default on the same pad: in the band.
+            var fixedLive = LivePadLoop.Fly(catalog, mission, Design.FromJson(rocket.BuildDesign()), false);
+            Assert.IsTrue(LivePadLoop.Passes(catalog, mission, Design.FromJson(rocket.BuildDesign()), fixedLive), LivePadLoop.Text(fixedLive));
+
+            // Honest Ready: the Starter no longer reads that setting Ready.
+            var v = rocket.Verdict(trevor);
+            Assert.IsNotNull(v);
+            Assert.AreEqual(StarterVerdict.Short, v.Cause, "predictor " + v.Outcome);
+
+            // The card: never reached orbit, ran out of push; on the Starter, Reset.
+            var x = MissReason.Explain(mission, new MissInput
+            {
+                ApoM = MissionScore.FlownApoAltM(live), PeriM = live.orbit.periAlt, MaxG = live.maxG, Stages = design.stages.Count,
+                CutoffGammaDeg = live.cutoffGammaDeg, PitchKickDeg = design.guidance.pitchKickDeg, Starter = true,
+            });
+            Assert.IsNotNull(x, text);
+            Assert.AreEqual("suborbital-short", x.Code, x.Line);
+            StringAssert.StartsWith("Didn't reach orbit. It climbed to 470 km", x.Reason);
+            StringAssert.EndsWith(MissReason.StarterReset, x.Advice);
+        }
+
         /// <summary>The launch predictor (Honest Ready) on every Starter default names no cause: it never reads a
         /// failure badge on the rocket the player is handed.</summary>
         [Test]

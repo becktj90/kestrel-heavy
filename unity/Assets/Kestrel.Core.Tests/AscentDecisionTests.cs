@@ -64,7 +64,7 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(1, tapped.Command.ThrottleScale, 1e-12, "no second director bucket");
             Assert.AreEqual(AscentDecisions.DefaultBucket, tapped.Command.EngageMaxQCap, 1e-12);
 
-            // Pitch: the autopilot never takes the open-loop nose-down nudge; a tap still does.
+            // Pitch (DECISIONS #76): accept confirms the autopilot's pitch program. Neither the autopilot nor a tap adds an offset.
             var sample = new AscentSample { T = 5, AltM = 4000, SpeedMps = 120, QPa = 1000, Thrusting = true, PropFraction = 1 };
             var auto = AscentDirector.Start(new AscentVehicle { Stages = 1 }, null, null, true, false, false);
             var tap = AscentDirector.Start(new AscentVehicle { Stages = 1 }, null, null, false, false, false);
@@ -78,7 +78,9 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(auto.IsDone(AscentCall.Pitch));
             Assert.AreEqual(0, auto.NudgeDeg, 1e-12);
             Assert.AreEqual(0, auto.Command.PitchOffsetRad, 1e-12);
-            Assert.AreEqual(-AscentDecisions.NudgeStepDeg, tap.NudgeDeg, 1e-12);
+            Assert.AreEqual(0, tap.NudgeDeg, 1e-12, "a confirmed pitch program holds no nudge");
+            Assert.AreEqual(0, tap.Command.PitchOffsetRad, 1e-12);
+            Assert.IsTrue(tap.IsDone(AscentCall.Pitch));
         }
 
         [Test]

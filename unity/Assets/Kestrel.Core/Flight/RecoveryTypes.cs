@@ -31,6 +31,10 @@ namespace Kestrel.Core.Flight
     {
         public bool Auto;
         public double Throttle, PitchRad;
+        /// <summary>Set when the stick carries a player's own input this step (the landing-burn
+        /// director sets it from the burn controls; the engineer stick from its buttons). The sim
+        /// ignores it; BoosterLanding reads it to say whether the burn was player-flown.</summary>
+        public bool PlayerInput;
 
         public static RecoveryStick Assisted => new RecoveryStick { Auto = true };
     }
@@ -61,6 +65,10 @@ namespace Kestrel.Core.Flight
         /// </summary>
         public bool Expendable;
         public string LostWhy;
+        /// <summary>#79: the player gave throttle or tilt input during the landing burn (Assisted or
+        /// Manual). False on Auto-assist and for a burn the player never touched. Only the score's
+        /// landing bonus reads it; the grade never does.</summary>
+        public bool PlayerFlown;
         public string Cause, GradeName, Medal;
         public double Sink, TiltDeg, MissM, T, PropLeft;
         public FailureEvent Failure;

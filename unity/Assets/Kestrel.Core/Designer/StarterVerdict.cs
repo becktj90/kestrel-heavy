@@ -4,6 +4,10 @@
 // readout's fairing fit. A deterministic red result is a cause with one plain sentence from data/starter-readiness.json.
 // Seeded random events (engine-out, bad mixture, the overpressure hazard) are not deterministic and never set a cause.
 // Information only: Launch stays as the hard schema block decides (StarterRocket header, LaunchGate F1).
+// Trevor 11-07 (KH-3 "Wrong place"): an intact flight that misses a circular mission's band names a cause too. KH-3 at
+// Kerosene and the lowest fuel read "Ready… fuel to spare", then flew a suborbital 470 x -394 km arc on the device every
+// time (the setting is saved per mission, so every retry flew it again). Only the default and one other setting of the
+// 30 KH-3 Starter settings make the circle; the predictor now says so.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,12 +24,12 @@ namespace Kestrel.Core.Designer
     {
         public const string MaxQ = "maxq", Overload = "overload", OverG = "overg", Tumble = "tumble", Heat = "heat",
             BaseHeat = "base-heat", Cryo = "cryo", Separation = "separation", Legs = "legs", Overpressure = "overpressure",
-            Pad = "pad", Short = "short", Landing = "landing", BoosterLanding = "booster-landing", Fit = "fit";
+            Pad = "pad", Short = "short", Landing = "landing", BoosterLanding = "booster-landing", Fit = "fit", Orbit = "orbit";
 
         /// <summary>Every cause the verdict can name. data/starter-readiness.json has copy for each.</summary>
         public static readonly IReadOnlyList<string> Causes = new[]
         {
-            MaxQ, Overload, OverG, Tumble, Heat, BaseHeat, Cryo, Separation, Legs, Overpressure, Pad, Short, Landing, BoosterLanding, Fit,
+            MaxQ, Overload, OverG, Tumble, Heat, BaseHeat, Cryo, Separation, Legs, Overpressure, Pad, Short, Landing, BoosterLanding, Fit, Orbit,
         };
 
         public string Cause;
@@ -72,6 +76,9 @@ namespace Kestrel.Core.Designer
             if (fits == false) { v.Cause = Fit; return v; }
             v.Cause = CauseOf(v.Failure);
             if (v.Cause != null || v.Failure != null || sim == null || mission == null) return v;
+            // The orbit first, as the report's fix order has it (MissReason): a landing never fixes a missed circle.
+            v.Cause = OrbitMiss(mission, sim);
+            if (v.Cause != null) return v;
             if (mission.LandingRequired)
             {
                 v.LandingGrade = FlightBatch.PredictLandingGrade(c, design, sim, mission.LandingMode, false);
@@ -80,6 +87,24 @@ namespace Kestrel.Core.Designer
                 else if (v.BoosterGrade == "short") v.Cause = BoosterLanding;
             }
             return v;
+        }
+
+        /// <summary>
+        /// The cause an intact flight gets for missing a circular mission's band (<see cref="MissionScore.TargetMet"/>, the
+        /// live card's rule, on the flown peak and the periapsis): <see cref="Short"/> when the flown orbit's mean altitude,
+        /// (apo + peri) / 2, is under the band (not enough energy for the circle), else <see cref="Orbit"/> (the energy was
+        /// there, but it climbed too steeply and fell back). Null on a hit or another target kind: hops are judged against
+        /// the flown hop (StarterScreen.HopLine), and an ellipse or C3 target also counts the departure burn.
+        /// </summary>
+        public static string OrbitMiss(CampaignMission mission, SimResult sim)
+        {
+            if (mission == null || sim == null || sim.failure != null || mission.TargetKind != "circular") return null;
+            double apo = MissionScore.FlownApoAltM(sim), peri = sim.orbit.periAlt;
+            if (double.IsNaN(apo) || double.IsNaN(peri)) return null;
+            if (MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2, apo, peri, 0, false, out _)) return null;
+            double mean = 0.5 * (sim.orbit.apoAlt + sim.orbit.periAlt);
+            double low = 0.5 * (mission.ApoKm + mission.PeriKm) * 1000 * (1 - MissionScore.AltitudeFraction);
+            return mean < low ? Short : Orbit;
         }
     }
 

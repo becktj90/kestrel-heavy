@@ -36,6 +36,8 @@ namespace Kestrel.Core.Ui
         public const string FlightAlternate = "flight-alternate";
         public const string FlightSkip = "flight-skip";
         public const string FlightAssist = "flight-assist";
+        /// <summary>Skip to next stage (#78): the cruise row's second button, next to Auto-assist.</summary>
+        public const string FlightStageSkip = "flight-stage-skip";
         public const string FlightNudgeDown = "flight-nudge-down";
         public const string FlightNudgeUp = "flight-nudge-up";
 
@@ -70,6 +72,7 @@ namespace Kestrel.Core.Ui
             FlightFollow, FlightCamera, FlightPause,
             FlightCameraAuto, FlightCameraAbove, FlightCameraBelow, FlightCameraChase, FlightCameraPad,
             FlightExit, FlightSkipCount, FlightInfo, FlightPrimary, FlightAlternate, FlightSkip, FlightAssist,
+            FlightStageSkip,
             FlightNudgeDown, FlightNudgeUp,
             PauseResume, PauseRestart, PauseExitHome, PauseMusic, PauseSfx, PauseNarration,
         };
