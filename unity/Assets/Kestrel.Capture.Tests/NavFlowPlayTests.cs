@@ -346,18 +346,23 @@ namespace Kestrel.Capture.Tests
                 + " sim=" + (driver.Sim != null) + " timeScale=" + Time.timeScale + " hold=" + SliceApp.HoldCountForCapture + ")");
         }
 
+        /// <summary>
+        /// Home LAUNCH on a fresh install is KH-1, whose winner already has one engine. Setting engineCount=1 alone
+        /// leaves a hop that flies to MECO without a failure (~minutes wall-clock under CI load), so the report wait
+        /// times out (PlayMode #458 OneMoreLaunch, and the same flake on docs #457 FixIt). Drop the safety factor so
+        /// the airframe breaks up promptly, matching the climax-coast PlayMode spoil.
+        /// </summary>
+        static void SpoilForBreakUp(Design d)
+        {
+            d.stages[0].engineCount = 1;
+            d.safetyFactor = 1.0;
+        }
+
         [UnityTest]
         [Timeout(300000)]
         public IEnumerator CrashingRocket_LiveFlight_ReachesTheReport_WithRetry()
         {
-            // The m1 starter already flies on one engine, so that spoil alone now passes (and a pass card has no Fix it,
-            // #416 item 3). Starve the first stage too so the flight really falls short and the report offers Fix it.
-            yield return ToThePad(d =>
-            {
-                d.stages[0].engineCount = 1;
-                // 5% left the count unable to reach liftoff; 40% of the first stage still lifts off but falls short.
-                d.stages[0].propMass *= 0.4;
-            });
+            yield return ToThePad(SpoilForBreakUp);
             VisualElement report = null;
             yield return Until(() => (report = Find("screen-report")) != null && NavIds.Shown(report), 150f);
             Assert.IsNotNull(report, "a rocket that breaks up still reaches the report");
@@ -430,7 +435,7 @@ namespace Kestrel.Capture.Tests
         [Timeout(300000)]
         public IEnumerator CrashingRocket_OneMoreLaunch_CountsDownFromACleanPad()
         {
-            yield return ToThePad(d => d.stages[0].engineCount = 1);
+            yield return ToThePad(SpoilForBreakUp);
             var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             yield return Until(ReportShownAfterRelaunch, 150f);
@@ -485,13 +490,7 @@ namespace Kestrel.Capture.Tests
         [Timeout(300000)]
         public IEnumerator CrashingRocket_FixIt_LandsInTheDesigner_AndStays()
         {
-            // Same spoil as the retry test: the 1-engine starter alone now passes (and a pass card has no Fix it,
-            // #416 item 3), so starve the first stage so the flight really falls short and the report offers Fix it.
-            yield return ToThePad(d =>
-            {
-                d.stages[0].engineCount = 1;
-                d.stages[0].propMass *= 0.4;
-            });
+            yield return ToThePad(SpoilForBreakUp);
             VisualElement report = null;
             yield return Until(() => (report = Find("screen-report")) != null && NavIds.Shown(report), 150f);
             Assert.IsNotNull(report, "a rocket that breaks up reaches the report");
