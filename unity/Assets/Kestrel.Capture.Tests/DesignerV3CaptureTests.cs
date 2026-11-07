@@ -121,7 +121,8 @@ namespace Kestrel.Capture.Tests
                 var qText = designer.Q<Label>("strip-value-q")?.text ?? "";
                 StringAssert.Contains("kPa", qText, name + " max-Q");
                 var costText = designer.Q<Label>("strip-value-cost")?.text ?? "";
-                StringAssert.StartsWith("$", costText, name + " cost");
+                Assert.IsTrue(costText.EndsWith(" Kc"), name + " cost in Kc (#416 item 10): " + costText);
+                StringAssert.DoesNotContain("$", costText, name + " no dollar sign");
                 StringAssert.DoesNotContain(",", costText, name + " cost wraps when unformatted");
 
                 var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);

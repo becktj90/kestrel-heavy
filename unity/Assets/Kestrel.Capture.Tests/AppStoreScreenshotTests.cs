@@ -37,6 +37,11 @@ namespace Kestrel.Capture.Tests
         const int KhSevenCleared = 6;      // Home LAUNCH as if KH-1..KH-6 were cleared: the KH-7 starter, a planned booster landing on Haven
         const int StallFrames = 600;
         const int MaxFlightFrames = 9000;  // 900 s of sim at the 0.1 s capture step
+        // Budgets for flying the ascent on past the "Short on speed" pill before the landing shot (see the landing block).
+        const int FlyOnMaxFrames = 1800;          // 180 s of sim at the 0.1 s capture step
+        const double FlyOnMaxSimSeconds = 180.0;
+        const int FlyOnStallFrames = 300;         // flight clock not moving
+        const float FlyOnMaxWallSeconds = 300f;
 
         /// <summary>The three App Store screenshot sizes this job produces (pixels, portrait).</summary>
         public static readonly FlightCapture.Device[] StoreSizes =
@@ -327,7 +332,31 @@ namespace Kestrel.Capture.Tests
                         if (ShortBannerShown(app.UiForCapture) && driver != null)
                         {
                             driver.Hold(false);
-                            for (int f = 0; f < MaxFlightFrames && driver.Running && ShortBannerShown(app.UiForCapture); f++) yield return null;
+                            // Bounded: run 41765048843 sat here for the whole 1 h test timeout (the pill never cleared while the
+                            // booster was frozen in its burn). Stop at a sim-time budget, a flight clock that stops moving, or a
+                            // wall-clock budget, warn, and shoot anyway; the per-frame pill warning in Shoot still reports it.
+                            double flyFrom = app.FlightClockForCapture, flyLast = flyFrom;
+                            float flyWall = Time.realtimeSinceStartup;
+                            int flyStill = 0, flyFrames = 0;
+                            string flyBudget = null;
+                            while (driver.Running && ShortBannerShown(app.UiForCapture))
+                            {
+                                if (flyFrames >= FlyOnMaxFrames) { flyBudget = FlyOnMaxFrames + " frames"; break; }
+                                if (app.FlightClockForCapture - flyFrom >= FlyOnMaxSimSeconds) { flyBudget = FlyOnMaxSimSeconds + " s of flight clock"; break; }
+                                if (flyStill >= FlyOnStallFrames) { flyBudget = "flight clock stuck at T+" + flyLast.ToString("0.0") + " for " + FlyOnStallFrames + " frames"; break; }
+                                if (Time.realtimeSinceStartup - flyWall >= FlyOnMaxWallSeconds) { flyBudget = FlyOnMaxWallSeconds + " s wall clock"; break; }
+                                yield return null;
+                                flyFrames++;
+                                double now = app.FlightClockForCapture;
+                                if (now > flyLast) { flyLast = now; flyStill = 0; } else flyStill++;
+                            }
+                            if (flyBudget != null)
+                            {
+                                string warn = "WARNING landing: the \"" + WebcastBoard.VerdictShort + "\" pill was still up after the fly-on budget (" + flyBudget
+                                    + ", T+" + flyFrom.ToString("0.0") + " -> T+" + app.FlightClockForCapture.ToString("0.0") + "); shooting the landing anyway";
+                                TestContext.WriteLine(warn);
+                                Debug.LogWarning("[AppStoreShots] " + warn);
+                            }
                             driver.Hold(true);
                             yield return null;
                             TestContext.WriteLine("ascent flown on to T+" + app.FlightClockForCapture.ToString("0.0") + " for the landing shot; short banner " + ShortBannerShown(app.UiForCapture) + ", running " + driver.Running);

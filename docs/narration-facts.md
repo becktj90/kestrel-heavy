@@ -20,6 +20,29 @@ AND over fact keys. Values: exact (number, bool, string), a comparison string on
 | `legs`, `fairing`, `fins`, `finless` | bool | |
 | `fairing.halves` | int | missing until Graphics confirms; gates `host/fairing.2` |
 | `lit.stage`, `lit.engines`, `lit.propellant`, `lit.last` | event context | stage the event is about (ignition, ses1, seco, tankpress, fuel-low, abort-fuel); `lit.last` = it is the top core stage |
+| `mission` | enum `m1`–`m20` | the campaign mission being flown (`CampaignMission.Id`); absent on sandbox/free flights, so a mission-gated take stays silent there. A take that requires `mission` must claim `mission` and carry a `sources` list (see below) |
+
+## Historical commentary (DECISIONS #77)
+
+In-game commentary may name real companies, rockets, programs, ships and people when it tells true
+spaceflight history — for example Sputnik, Apollo, Saturn V, Falcon 9, New Glenn, Jacklyn. This
+supersedes WRITING_BIBLE §6.6 and §8 for the historical commentary lines only. A historical take:
+
+- is a color-layer take (`"layer": "color"`) on a `color.*` event, gated to exactly one mission:
+  `"requires": {"mission": "m<n>"}`, `"claims": ["mission"]`, plus `"mission": "m<n>"` and
+  `"sources": [...]` fields on the manifest entry;
+- states no fact about the flown design (no engine counts, no "booster", no strap-ons, no
+  Haven/pad/site claims) — the claim-vs-design verifier only ever sees `claims: ["mission"]`;
+- has every fact sourced in `docs/plans/per-mission-commentary.md` (S-rows reuse
+  `docs/narration-sources.md`; H-rows are checked there). The lint exempts historical takes from
+  the banned-names rule (`blue origin|new glenn|jacklyn|lc-36`) and fails any other take that
+  names them, and fails a mission-gated take that has no sources or does not claim `mission`.
+
+The game's own world stays fictional: pads, ships, missions and rockets keep their names (Pier 7,
+Haven, KH-n, the stack), and no real brand or trade dress is used in art, UI, store copy or code
+enums. The mission id is threaded into `NarrationFacts` at the two narration entry points
+(`FlightDriver` from the aimed mission, `SliceApp.BeginCountNarration` from
+`AscentFlight.CurrentMission()`); a flight with no mission id simply never hears these lines.
 
 Propellants: `kerolox`, `hydrolox`, `methalox`, `solid`, `storable`.
 

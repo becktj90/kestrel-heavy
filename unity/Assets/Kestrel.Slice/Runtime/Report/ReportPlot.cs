@@ -18,6 +18,20 @@ namespace Kestrel.Slice
     {
         public static readonly string[] Channels = { "alt", "vel", "q", "g", "losses" };
 
+        /// <summary>
+        /// Right-edge holdback for every plotted X (bars, event marks, failure mark). ReportView positions each
+        /// element by its left edge in percent, and the plot clips overflow — so a bar at X = 1 (2 pt wide) sat
+        /// entirely outside the plot, and with it the losses panel's only tall bar: the final loss totals are
+        /// stamped onto the newest sample only. The map is X * (1 - EdgeInset), so the first bar still starts at
+        /// the left edge and the relative spacing is kept. Sized for the widest element (the 4 pt failure mark)
+        /// at the narrowest tested plot (335 pt screen: 55 pt plots; 4 / 52 ≈ 0.077 at a 320 pt screen, so 0.08
+        /// covers both with margin). The card caps at 560 pt, so the widest plot is ~103 pt and the holdback
+        /// reads as chart padding there, not a gap.
+        /// </summary>
+        public const float EdgeInset = 0.08f;
+
+        static float Inset(float u) => u * (1f - EdgeInset);
+
         public static PlotGeometry[] Build(TelemetryLog log)
         {
             var plots = new PlotGeometry[Channels.Length];
@@ -36,7 +50,7 @@ namespace Kestrel.Slice
                 for (int i = 0; i < n; i++)
                 {
                     double v = Value(log[i], Channels[c]);
-                    x[i] = (float)((log[i].T - t0) / (t1 - t0));
+                    x[i] = Inset(NormTime(log[i].T, t0, t1));
                     if (!any) { min = max = v; any = true; }
                     else { if (v < min) min = v; if (v > max) max = v; }
                     y[i] = (float)v;
@@ -68,7 +82,7 @@ namespace Kestrel.Slice
                 double d = Math.Abs(log[i].T - mark.T);
                 if (d < best) { best = d; nearest = i; }
             }
-            return NormTime(log[nearest].T, t0, t1);
+            return Inset(NormTime(log[nearest].T, t0, t1));
         }
 
         static float[] Marks(TelemetryLog log, double t0, double t1, bool failureOnly)
@@ -80,7 +94,7 @@ namespace Kestrel.Slice
             {
                 var m = log.EventAt(i);
                 if (failureOnly && !m.Failure) continue;
-                tmp[n++] = NormTime(m.T, t0, t1);
+                tmp[n++] = Inset(NormTime(m.T, t0, t1));
             }
             if (n == tmp.Length) return tmp;
             var cut = new float[n];

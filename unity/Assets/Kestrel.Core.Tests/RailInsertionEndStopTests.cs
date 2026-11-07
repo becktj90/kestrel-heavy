@@ -108,6 +108,7 @@ namespace Kestrel.Core.Tests
             rail.Stages = vehicle.Stages > 0 ? vehicle.Stages : 1;
             rail.StrapOns = vehicle.StrapOns > 0;
             rail.RecoveryMode = string.IsNullOrEmpty(vehicle.RecoveryMode) ? null : vehicle.RecoveryMode;
+            rail.LandingPlanned = vehicle.LandingPlanned;
             if (vehicle.JettisonAltM > 0) rail.FairingAltM = vehicle.JettisonAltM;
             int fed = 0;
 

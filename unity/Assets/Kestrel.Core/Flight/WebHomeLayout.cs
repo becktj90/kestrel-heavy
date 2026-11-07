@@ -105,6 +105,23 @@ namespace Kestrel.Core.Flight
         /// <summary>Below this width the gear stacks under the page FULL button so they cannot share pixels.</summary>
         public const float NarrowGear = 520f;
 
+        /// <summary>
+        /// The gear's CSS box mapped into panel units (<paramref name="ux"/>, <paramref name="uy"/> are panel units per
+        /// CSS px). The gear's USS min size is <see cref="HomeCornerLayout.Gear"/> panel units, so when a panel unit is
+        /// smaller than a CSS px the drawn gear is bigger than its box. Anchored left/top it grew right and down, into
+        /// the page FULL/EXIT button and off the screen edge (fun review, engineer/002). Keep the right edge and the
+        /// top edge, and grow left instead.
+        /// </summary>
+        public static HudBox GearInPanel(HudBox css, float ux, float uy)
+        {
+            if (ux <= 0f || float.IsNaN(ux)) ux = 1f;
+            if (uy <= 0f || float.IsNaN(uy)) uy = 1f;
+            float w = Math.Max(css.W * ux, HomeCornerLayout.Gear);
+            float h = Math.Max(css.H * uy, HomeCornerLayout.Gear);
+            float right = css.Right * ux;
+            return new HudBox { X = right - w, Y = css.Y * uy, W = w, H = h };
+        }
+
         public static float Reel(float height, float safeInset) =>
             Math.Max(height * ReelFrac, Math.Max(0f, safeInset) + ReelMin);
 

@@ -12,6 +12,16 @@ namespace Kestrel.Core.Designer
 {
     public static class StarterScreen
     {
+        // ---- header contrast (#416 item 8) ----
+
+        /// <summary>The designer title and subtitle sat straight on the 3D sky (about 1.1:1 on pale sky).
+        /// Outside the sheet they get this dusk Ink plate: rgb(8,12,20) at 80%.</summary>
+        public static readonly byte[] HeaderPlateRgb = { 8, 12, 20 };
+        public const float HeaderPlateAlpha = 0.80f;
+        public const float HeaderPlateRadiusPt = 10f;
+        /// <summary>Subtitle colour, rgb(199,209,230); with the plate over pure white it reads 7.1:1.</summary>
+        public static readonly byte[] SubtitleRgb = { 199, 209, 230 };
+
         // ---- flags ----
 
         /// <summary>The flags that open one of the existing designer screens. Any of them on shows the

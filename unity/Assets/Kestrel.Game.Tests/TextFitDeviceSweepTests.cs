@@ -337,6 +337,49 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        /// <summary>#416 item 8: with the web scroll chrome on, every list loses its grey scroller, the mission card's
+        /// text takes the lane back, and the board still fits at 335 portrait and the 1280x720 web landscape panel.</summary>
+        [Test]
+        public void WebScrollChromeBoardFitsAt335AndWebLandscape()
+        {
+            var frames = new[] { new Frame("335 portrait", 335f, 720f), new Frame("web landscape", 1280f, 720f) };
+            WebScrollChrome.Force = true;
+            try
+            {
+                foreach (var frame in frames)
+                {
+                    MainMenuOverlay.ForceWide = frame.Landscape;
+                    using (var surface = DeviceSurface.Open(frame.W, frame.H))
+                    {
+                        var shell = MountBoard(surface.Stage, frame);
+                        surface.Pump(6);
+                        WebScrollChrome.Sweep(shell);
+                        Settle(surface, shell);
+                        AssertFits(shell, frame.Name + " board (web scroll)");
+                        int lists = 0;
+                        shell.Query<ScrollView>().ForEach(sv =>
+                        {
+                            lists++;
+                            Assert.That(sv.ClassListContains(WebScrollChrome.DressedClass), Is.True, frame.Name + " " + sv.name);
+                            Assert.That(sv.verticalScroller.resolvedStyle.width, Is.LessThanOrEqualTo(0.5f), frame.Name + " " + sv.name + " scroller");
+                        });
+                        Assert.That(lists, Is.GreaterThan(0), frame.Name);
+                        var card = shell.Q<ScrollView>("mission-card-scroll");
+                        var name = shell.Q<Label>("mission-name");
+                        Assert.That(card, Is.Not.Null, frame.Name);
+                        Assert.That(name, Is.Not.Null, frame.Name);
+                        AssertStringInside(name, frame.Name + " mission title");
+                        Assert.That(name.worldBound.xMax, Is.LessThanOrEqualTo(card.worldBound.xMax + TextFit.Slack), frame.Name + " title under the lane");
+                    }
+                }
+            }
+            finally
+            {
+                WebScrollChrome.Force = null;
+                MainMenuOverlay.ForceWide = null;
+            }
+        }
+
         static void Settle(DeviceSurface surface, VisualElement root)
         {
             TextFit.Apply(root);
