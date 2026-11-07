@@ -16,25 +16,32 @@ export function payloadVolume(d) {
 }
 
 // Fairing fit (§2.9), the same rule as Kestrel.Core.Vehicle.PayloadFit (B-04):
-//   usable = π(0.45·D)²·0.8·L, and cargo diameter ≤ 0.9·D (the same 0.45·D usable radius).
+//   usable = π(0.45·D)²·k(nose)·L, and cargo diameter ≤ 0.9·D (the same 0.45·D usable radius).
 // 0.9 is an approximate game number; real fairings offer about 0.85–0.885 of their outer diameter.
-// 0.8 is optimistic: L is the whole fairing length, nose included, so it overstates the real volume
-// for conic and ogive noses (geometric fractions are about 0.73 conic, 0.78 otherwise, 0.90 blunt). It
-// stays 0.8 until the follow-up issue #302 "Payload volume packing retune: nose-inclusive L" (https://github.com/becktj90/kestrel-heavy/issues/302).
+// k depends on the nose shape (#302): the fill fraction over the whole length, from the nose profile
+// integral — ogive 0.85, conic 0.733, blunt 0.917, von Kármán 0.762 (see fitLengthFor). The old flat
+// 0.8 overstated the volume for conic/von Kármán noses and understated it for ogive/blunt.
 export const FIT_RADIUS = 0.45;
+/** The old flat fill fraction (0.8), kept for reference. Superseded by fitLengthFor (#302). */
 export const FIT_LENGTH = 0.8;
 export const FIT_DIAMETER = 2 * FIT_RADIUS;
 /** Diameter check tolerance (m): cargo exactly at 0.9·D fits on every platform. Same as PayloadFit.DiameterToleranceM. */
 export const FIT_DIAMETER_TOL = 1e-9;
-export function usableVolume(D, L) { const r = FIT_RADIUS * D; return Math.PI * r * r * FIT_LENGTH * L; }
-export function requiredLength(volume, D) { const r = FIT_RADIUS * D; return volume / (Math.PI * r * r * FIT_LENGTH); }
+/** #302: the nose's own volume as a fraction of a cylinder of the same length and base radius. A cone is
+ * exactly 1/3; a tangent ogive and a half-ellipsoid (blunt) are both 2/3; a von Kármán ogive is ~0.47. */
+export const noseProfileFraction = (nose) => (nose === 'conic' ? 1 / 3 : nose === 'von-karman' ? 0.47 : 2 / 3);
+/** #302: the fill fraction k over the whole fairing length for a nose shape: k = 1 − noseFrac × (1 − profile),
+ * where noseFrac is fairingNoseFraction (the same split as Balance.NoseFraction). Mirror of PayloadFit.LengthFactorFor. */
+export const fitLengthFor = (nose) => 1 - fairingNoseFraction(nose) * (1 - noseProfileFraction(nose));
+export function usableVolume(D, L, nose = 'ogive') { const r = FIT_RADIUS * D; return Math.PI * r * r * fitLengthFor(nose) * L; }
+export function requiredLength(volume, D, nose = 'ogive') { const r = FIT_RADIUS * D; return volume / (Math.PI * r * r * fitLengthFor(nose)); }
 export function requiredDiameter(cargoDiameter) { return cargoDiameter / FIT_DIAMETER; }
 /** Fit of a design against its catalog payload; null without a known payload or fairing. */
 export function payloadFit(d) {
   const pl = PAYLOAD_BY_ID[d.payload?.type];
   if (!pl || !d.fairing) return null;
   const volume = payloadVolume(d), diameter = pl.diameter || 0;
-  const usable = usableVolume(d.fairing.diameter, d.fairing.length);
+  const usable = usableVolume(d.fairing.diameter, d.fairing.length, d.aero?.nose ?? 'ogive');
   const volumeMargin = usable - volume, diameterMargin = FIT_DIAMETER * d.fairing.diameter - diameter;
   return { fits: volumeMargin >= 0 && diameterMargin >= -FIT_DIAMETER_TOL, usable, volume, diameter, volumeMargin, diameterMargin };
 }
