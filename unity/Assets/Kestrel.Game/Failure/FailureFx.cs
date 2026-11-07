@@ -169,6 +169,30 @@ namespace Kestrel.Game.Failure
             return (engines - 1f) / engines;
         }
 
+        /// <summary>
+        /// Seconds the failure plays on screen before the result card covers it. The card used to open on the same frame
+        /// as the failure, so the break-up, the tumble and the fold all played under an opaque card (the WebGL "hard cut").
+        /// Reduce Motion keeps the card immediate. A tap opens it early.
+        /// </summary>
+        public static float CardDelaySeconds(string mode, bool reduceMotion)
+        {
+            if (reduceMotion) return 0f;
+            if (mode == TumbleMode) return (float)FailureModel.TumbleHoldS + 2.0f;
+            if (mode == BreakMode || mode == FoldMode) return 2.2f;
+            return 1.6f;
+        }
+
+        /// <summary>
+        /// Whether the held-back card may open now: the failure has played (or a tap skipped it) AND no booster landing
+        /// is still on screen (#333). The card waits for whichever ends later. A tap only skips the failure show, never
+        /// the landing; one made during the landing is kept and opens the card as soon as the landing is resolved.
+        /// </summary>
+        public static bool CardOpens(float age, float dueAt, bool tapped, bool landingActive)
+        {
+            if (landingActive) return false;
+            return tapped || age >= dueAt;
+        }
+
         public static bool BellFlash(string kind, bool reduceMotion)
         {
             if (reduceMotion) return false;

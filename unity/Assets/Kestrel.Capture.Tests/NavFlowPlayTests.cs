@@ -125,6 +125,7 @@ namespace Kestrel.Capture.Tests
         {
             Application.logMessageReceived -= OnLog;
             Time.timeScale = 1f;
+            Kestrel.Game.Failure.FailureHost.ReduceMotionOverride = null;
             GameSession.Clear();
             PadHandoff.Clear();
             if (AppShell.Instance != null) UnityEngine.Object.Destroy(AppShell.Instance.gameObject);
@@ -341,7 +342,8 @@ namespace Kestrel.Capture.Tests
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             Assert.IsNotNull(driver, "live FlightDriver");
             yield return Until(() => driver.Sim != null && driver.Running, 90f);
-            Assert.IsTrue(driver.Running, "the count reached liftoff");
+            Assert.IsTrue(driver.Running, "the count reached liftoff (counting=" + app.CountingForCapture + " held=" + driver.Held
+                + " sim=" + (driver.Sim != null) + " timeScale=" + Time.timeScale + " hold=" + SliceApp.HoldCountForCapture + ")");
         }
 
         [UnityTest]
@@ -370,6 +372,18 @@ namespace Kestrel.Capture.Tests
         // ---------------------------------------------------------------- one more launch
 
         static IEnumerator RelaunchFrame(string name)
+        {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) yield break;
+            var d = new FlightCapture.Device { Name = name, W = Math.Max(64, Screen.width), H = Math.Max(64, Screen.height) };
+            int distinct = 0;
+            var png = FlightCapture.Png(d, FlightCapture.OutDir(""), name, n => distinct = n);
+            while (png.MoveNext()) yield return png.Current;
+            Assert.That(distinct, Is.GreaterThan(8), name + " capture is flat");
+        }
+
+        // ---------------------------------------------------------------- the climax and the break-up show
+
+        static IEnumerator Frame(string name)
         {
             if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) yield break;
             var d = new FlightCapture.Device { Name = name, W = Math.Max(64, Screen.width), H = Math.Max(64, Screen.height) };
@@ -505,6 +519,162 @@ namespace Kestrel.Capture.Tests
             Assert.IsTrue(driver == null || !driver.Running, "Fix it does not launch");
             var marker = GameObject.Find("FailureMarker");
             Assert.IsTrue(marker == null || !marker.activeInHierarchy, "no break-up replay on the pad");
+            NothingThrew();
+        }
+
+        /// <summary>
+        /// #431: the ascent dock ("Bronze medal / i / Auto-assist on") never sits over Follow / Auto / Pause. It folds away
+        /// for the climax coast and the loss show (FlightHudLayout.DockShown); <paramref name="folded"/> requires that.
+        /// </summary>
+        static void DockClearOfTheToolsRow(string where, bool folded)
+        {
+            var ui = SliceUi();
+            var tools = ui?.Q("flight-tools");
+            Assert.IsNotNull(tools, where + ": the tools row");
+            var dock = ui.Q("ascent-actions");
+            bool up = dock != null && dock.resolvedStyle.display != DisplayStyle.None && dock.worldBound.height > 0.5f;
+            if (folded) Assert.IsFalse(up, where + ": the dock folds away");
+            if (!up) return;
+            Assert.IsFalse(dock.worldBound.Overlaps(tools.worldBound), where + ": dock " + dock.worldBound + " over the tools row " + tools.worldBound);
+        }
+
+        /// <summary>
+        /// #431: the failure callout ("BREAKUP Air pushed…") sits between the stage banner and Follow / Auto / Pause, and its
+        /// text fits its box (FlightHudLayout.CalloutInBand). At 94e79369 it sat over the tools row.
+        /// </summary>
+        static void CalloutInTheBand()
+        {
+            var ui = SliceUi();
+            var chip = ui?.Q<Label>("failure-callout");
+            if (chip == null || chip.resolvedStyle.display == DisplayStyle.None) return;
+            var c = chip.worldBound;
+            var tools = ui.Q("flight-tools");
+            Assert.IsNotNull(tools, "the tools row");
+            Assert.That(c.yMax, Is.LessThanOrEqualTo(tools.worldBound.yMin + 0.5f), "the callout " + c + " clears the tools row " + tools.worldBound);
+            foreach (var id in new[] { "webcast", "ascent-stages", "ascent-telemetry" })
+            {
+                var e = ui.Q(id);
+                if (e == null || e.resolvedStyle.display == DisplayStyle.None || !(e.worldBound.height > 0.5f)) continue;
+                Assert.IsFalse(c.Overlaps(e.worldBound), "the callout " + c + " clears " + id + " " + e.worldBound);
+            }
+            Assert.That(TextFit.Problems(chip), Is.Empty, "the callout's text fits its box: '" + chip.text + "'");
+        }
+
+        static bool ReportShown() { var r = Find("screen-report"); return r != null && NavIds.Shown(r); }
+
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator GoodRocket_FirstHop_CoastsToApogee_BeforeTheReport()
+        {
+            yield return ToThePad(null);
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            driver.ReduceMotionOverride = false;   // the CI player keeps the comfort prefs on (fast frames); this test is about the motion
+            yield return Until(() => driver.Coasting || driver.Result != null, 150f);
+            Assert.IsTrue(driver.Coasting, "the clean First Hop cutoff starts the climax (CoastEnd=" + driver.CoastEnd + ")");
+            Assert.IsNull(driver.Result, "the result waits for the coast");
+            Assert.IsTrue(driver.Running, "the flight is still on screen");
+            Assert.IsFalse(driver.Coast.IsOrbit, "a hop coasts to its apex");
+            Assert.AreEqual(OrbitCoast.CalloutApogee, driver.Coast.Callout);
+            Assert.That(driver.Coast.WallSeconds, Is.InRange(OrbitCoast.MinWallSeconds, OrbitCoast.MaxWallSeconds));
+            double startAlt = driver.Altitude;
+            yield return Until(() => driver.CoastWall >= 1.5 || !driver.Coasting, 15f);
+            Assert.IsTrue(driver.Coasting, "still coasting 1.5 s in");
+            driver.Hold(true);
+            for (int i = 0; i < 4; i++) yield return null;
+            Assert.That(driver.Altitude, Is.GreaterThan(startAlt), "the coast climbs on the propagated arc");
+            var verdict = SliceUi()?.Q<Label>("h-verdict");
+            Assert.IsNotNull(verdict, "flight HUD verdict");
+            Assert.AreEqual(OrbitCoast.CalloutApogee, verdict.text, "the HUD calls the climax");
+            Assert.IsFalse(ReportShown(), "no card during the coast");
+            var exit = SliceUi()?.Q<Button>(UiIds.FlightExit);
+            Assert.IsTrue(exit == null || exit.ClassListContains("hidden") || exit.resolvedStyle.display == DisplayStyle.None
+                || exit.resolvedStyle.visibility == Visibility.Hidden,
+                "BACK TO DESIGN stays off the climax");
+            DockClearOfTheToolsRow("climax", true);
+            // The stack sits between the Apogee! banner and Follow / Auto / Pause (FitBand over FlightHudLayout.CoastBand);
+            // at 1085e8b7 / 38e8e1b5 it was mostly behind them.
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            var band = app.CoastTrace;
+            Assert.That(band.y - band.x, Is.GreaterThan(0.1f), "a coast band between the banner and the tools row: " + band);
+            Assert.That(band.z, Is.GreaterThanOrEqualTo(band.x - 0.01f), "the stack's base clears Follow / Auto / Pause: " + band);
+            Assert.That(band.w, Is.LessThanOrEqualTo(band.y + 0.01f), "the nose clears the Apogee! banner: " + band);
+            Assert.That(band.w - band.z, Is.GreaterThan(0.05f), "the stack is clearly there: " + band);
+            yield return Frame("climax-apogee");
+            driver.Hold(false);
+            yield return Until(() => driver.Result != null, 15f);
+            Assert.IsNotNull(driver.Result, "the coast ends and hands over the result");
+            Assert.AreEqual("played", driver.CoastEnd);
+            Assert.That(driver.Altitude, Is.EqualTo(driver.Coast.EndAltM).Within(Math.Max(50.0, driver.Coast.EndAltM * 0.02)), "it ends at the apex");
+            yield return Until(ReportShown, 30f);
+            Assert.IsTrue(ReportShown(), "the report opens after the climax");
+            yield return Frame("climax-apogee-report");
+            NothingThrew();
+        }
+
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator GoodRocket_TapSkipsTheClimax()
+        {
+            yield return ToThePad(null);
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            driver.ReduceMotionOverride = false;   // the CI player keeps the comfort prefs on (fast frames); this test is about the motion
+            yield return Until(() => driver.Coasting || driver.Result != null, 150f);
+            Assert.IsTrue(driver.Coasting, "the climax starts");
+            yield return null;
+            driver.SkipCoast();   // what a tap does (FlightDriver.TappedToSkip)
+            Assert.AreEqual("skipped", driver.CoastEnd);
+            Assert.IsNotNull(driver.Result, "a skip hands over the result at once");
+            Assert.IsFalse(driver.Running);
+            Assert.That(driver.Altitude, Is.EqualTo(driver.Coast.EndAltM).Within(Math.Max(50.0, driver.Coast.EndAltM * 0.02)), "a skip lands on the end of the coast");
+            yield return Until(ReportShown, 30f);
+            Assert.IsTrue(ReportShown(), "the report opens after a skip");
+            NothingThrew();
+        }
+
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator GoodRocket_ReduceMotion_HasNoTimeWarp()
+        {
+            yield return ToThePad(null);
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            driver.ReduceMotionOverride = true;
+            bool coasted = false;
+            yield return Until(() => { coasted |= driver.Coasting; return driver.Result != null; }, 150f);
+            Assert.IsNotNull(driver.Result, "the flight ends");
+            Assert.IsFalse(coasted, "Reduce Motion: no warped coast");
+            Assert.AreEqual("reduced", driver.CoastEnd);
+            yield return Until(ReportShown, 30f);
+            Assert.IsTrue(ReportShown(), "the report opens straight away");
+            NothingThrew();
+        }
+
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator CrashingRocket_PlaysTheBreakUp_BeforeTheCard()
+        {
+            // The CI player keeps the comfort prefs on (fast frames); this test is about the break-up show, so turn the motion
+            // on for live failures before the launch (a one-engine stack can fail on the pad). Teardown clears it.
+            Kestrel.Game.Failure.FailureHost.ReduceMotionOverride = false;
+            // One engine alone no longer breaks the KH-1 hop (the CI profile is on m1: it flies suborbital to MECO, so
+            // there was no break-up to play; run 41781261062). Strength 1.0 (the designer's minimum, so Launch is not
+            // blocked) tears it at max-Q on every seed of m1-m5 (FlightBatch probe).
+            yield return ToThePad(d => { d.stages[0].engineCount = 1; d.safetyFactor = 1.0; });
+            Kestrel.Game.Failure.FailureHost host = null;
+            yield return Until(() => (host = UnityEngine.Object.FindAnyObjectByType<Kestrel.Game.Failure.FailureHost>()) != null && host.CardPending || ReportShown(), 150f);
+            Assert.IsNotNull(host, "the rocket has a failure host");
+            Assert.IsTrue(host.CardPending, "the break-up plays before its card (not a hard cut)");
+            Assert.IsFalse(ReportShown(), "no card yet");
+            float start = Time.realtimeSinceStartup;
+            yield return Until(() => Time.realtimeSinceStartup - start >= 0.6f || !host.CardPending, 5f);
+            if (host.CardPending)
+            {
+                DockClearOfTheToolsRow("break-up", false);
+                CalloutInTheBand();
+                yield return Frame("breakup-live-show");
+            }
+            yield return Until(ReportShown, 15f);
+            Assert.IsTrue(ReportShown(), "the card opens once the break-up has played");
+            Assert.IsFalse(host.CardPending);
             NothingThrew();
         }
 
