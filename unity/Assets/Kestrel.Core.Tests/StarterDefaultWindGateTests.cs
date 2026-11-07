@@ -71,12 +71,14 @@ namespace Kestrel.Core.Tests
         }
 
         /// <summary>
-        /// Trevor 11-07, KH-3 "Wrong place" on every retry: the card's 470 x -394 km is the KH-3 Starter at Kerosene and the
+        /// Trevor 11-07, KH-3 "Wrong place" on every retry: the card's 461 x -91 km is the KH-3 Starter at Kerosene and the
         /// lowest fuel dot (kerosene-2-f0-b0; the Starter saves its setting per mission, so every retry flew it), on a calm
         /// reference pad (the pre-#86 device path). The top stage burns dry short of orbit speed. The Starter default
         /// (methane, middle fuel) wins the same pad. Before the #456 fix the Starter read that setting "Ready… fuel to
         /// spare" and the card said "79 m/s too fast at the low point…"; now the Starter names Short before launch and
         /// the card says it never reached orbit and ran out of push. Kept on calm air so the orbit numbers stay pinned.
+        /// #335 moved the card from 470 x -394 km: the fairing shell (89 kg) now leaves the stack at the fairing event,
+        /// so the top stage flies lighter and the burnout state is far less eccentric.
         /// </summary>
         [Test]
         public void Kh3_TrevorsStarterSetting_ReproducesTheDeviceMiss_AndIsNamedBeforeLaunch()
@@ -89,8 +91,8 @@ namespace Kestrel.Core.Tests
             var live = LivePadLoop.Fly(catalog, mission, design, false);
             string text = LivePadLoop.Text(live);
             Assert.IsNull(live.failure, text);
-            Assert.AreEqual(470.0, MissionScore.FlownApoAltM(live) / 1000.0, 2.0, "the card's high point / " + text);
-            Assert.AreEqual(-394.0, live.orbit.periAlt / 1000.0, 2.0, "the card's low point / " + text);
+            Assert.AreEqual(460.7, MissionScore.FlownApoAltM(live) / 1000.0, 2.0, "the card's high point / " + text);
+            Assert.AreEqual(-90.9, live.orbit.periAlt / 1000.0, 2.0, "the card's low point / " + text);
             Assert.IsFalse(LivePadLoop.Passes(catalog, mission, design, live), text);
 
             // The default on the same pad: in the band.
@@ -110,7 +112,7 @@ namespace Kestrel.Core.Tests
             });
             Assert.IsNotNull(x, text);
             Assert.AreEqual("suborbital-short", x.Code, x.Line);
-            StringAssert.StartsWith("Didn't reach orbit. It climbed to 470 km", x.Reason);
+            StringAssert.StartsWith("Didn't reach orbit. It climbed to 461 km", x.Reason);
             StringAssert.EndsWith(MissReason.StarterReset, x.Advice);
         }
 

@@ -94,12 +94,15 @@ export function simulate(stagesIn, opts = {}) {
   let thrusting = true;
 
   // #341: burn time for dv through the current stage (its actual thrust and flow) and the later stages (vacuum, full).
+  // #335: net a jettisoned fairing, the same way stageEndMass does: the live mass m no longer carries it,
+  // and a later stage starts that much lighter. (C# AscentSim.BurnTime mirrors this.)
   const burnTimeFor = (dv, m, F, mdot) => {
     if (!(dv > 0)) return 0;
     let t = 0;
+    const dropped = fairingDropped ? fairingMass : 0;
     for (let i = stageIdx; i < st.length; i++) {
-      const m0 = i === stageIdx ? m : upperMass[i];
-      const prop = i === stageIdx ? m - (upperMass[i] - st[i].propMass) : st[i].propMass;
+      const m0 = i === stageIdx ? m : upperMass[i] - dropped;
+      const prop = i === stageIdx ? m - (upperMass[i] - st[i].propMass - dropped) : st[i].propMass;
       const md = i === stageIdx ? mdot : st[i].mdot;
       const ve = i === stageIdx ? (mdot > 0 ? F / mdot : 0) : st[i].ispVac * G0;
       if (!(prop > 1e-9) || !(md > 0) || !(ve > 0)) continue;

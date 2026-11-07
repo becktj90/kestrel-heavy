@@ -68,17 +68,26 @@ namespace Kestrel.Core.Physics
         public Flight.SeededWind wind;
         /// <summary>
         /// Fairing jettison altitude in metres. 0 emits nothing. A positive value records one "fairing"
-        /// event after max-Q, once altitude has reached it. The event is observational: no mass or step change.
-        /// MissionFlightSetup (live flight and FlightBatch) sets it from the design; Stack.SimInputs and
-        /// the JS-parity goldens leave it 0.
+        /// event after max-Q, once altitude has reached it, and drops the fairing mass
+        /// (<see cref="fairingMassKg"/>) from the stack at that moment (#335, JS parity:
+        /// web/js/physics/headless.js drops fairingMass at the fairing-jettison event).
+        /// MissionFlightSetup (live flight and FlightBatch) sets it from the design; Stack.SimInputs sets
+        /// fairingMassKg from the design; the JS-parity goldens leave both 0.
         /// </summary>
         public double fairingJettisonAltM;
+        /// <summary>
+        /// #335: fairing shell mass in kg, dropped from the stack at the "fairing" event. 0 keeps the old
+        /// marker-only event (and is the default, so direct Simulate calls and the JS-parity goldens are
+        /// unchanged). Stack.SimInputs sets it from Mass.FairingMass(design); a design with no fairing has 0.
+        /// </summary>
+        public double fairingMassKg;
         /// <summary>
         /// The payload's heat limit for the fairing event, W/m². 0 keeps the plain release-height rule above. A positive
         /// value gates the "fairing" event on <see cref="Flight.FairingHeatGate"/> instead (Physics, KH-7 follow-up): the
         /// first time ½ρv³ on the air-relative speed drops under this limit and stays under it for 2 s, counting from the
         /// fairing call's arming height (fairingJettisonAltM − 12 km) up. The AscentDirector runs the same gate on the
-        /// same state, so the event and the director's jettison cannot disagree. Still observational: no mass change.
+        /// same state, so the event and the director's jettison cannot disagree. The mass drop follows the
+        /// (possibly heat-gated) event.
         /// </summary>
         public double fairingMaxHeatFlux;
     }
@@ -88,6 +97,8 @@ namespace Kestrel.Core.Physics
         public double t; public string type; public int? stage; public double? alt, v, apoAlt, periAlt;
         /// <summary>#369: inertial flight-path angle at the event, degrees (+ climbing). Set on burnout; null elsewhere.</summary>
         public double? gamma;
+        /// <summary>#335: jettisoned fairing mass in kg, set on the "fairing" event; null elsewhere.</summary>
+        public double? mass;
         public override string ToString() => $"T+{t:F1} {type}{(stage.HasValue ? " S" + stage : "")}";
     }
 
@@ -288,10 +299,13 @@ namespace Kestrel.Core.Physics
         {
             if (!(dv > 0)) return 0;
             double t = 0;
+            // #335: net a jettisoned fairing, the same way StageEndMass does: the live mass m no longer
+            // carries it, and a later stage starts that much lighter (separation reset). JS parity.
+            double dropped = fairingDropped ? o.fairingMassKg : 0;
             for (int i = StageIdx; i < st.Length; i++)
             {
-                double m0 = i == StageIdx ? m : upperMass[i];
-                double prop = i == StageIdx ? m - (upperMass[i] - st[i].propMass) : st[i].propMass;
+                double m0 = i == StageIdx ? m : upperMass[i] - dropped;
+                double prop = i == StageIdx ? m - (upperMass[i] - st[i].propMass - dropped) : st[i].propMass;
                 double md = i == StageIdx ? mdot : st[i].mdot;
                 double ve = i == StageIdx ? (mdot > 0 ? F / mdot : 0) : st[i].ispVac * Atmosphere.G0;
                 if (!(prop > 1e-9) || !(md > 0) || !(ve > 0)) continue;
@@ -324,7 +338,7 @@ namespace Kestrel.Core.Physics
         double s1EngineOutThrust = 1;
         double kickPrevT = -1, kickPrevVrel, kickPrevAlt;
         Flight.FairingHeatGate fairingGate;
-        bool liftedOff, sawKarman, maxQPassed, fairingSent, ignitionHooked; double karmanT; string outcome = "timeout";
+        bool liftedOff, sawKarman, maxQPassed, fairingSent, fairingDropped, ignitionHooked; double karmanT; string outcome = "timeout";
         FailureEvent playedBreak;
         FlightVec pad;
 
@@ -447,7 +461,8 @@ namespace Kestrel.Core.Physics
             dy[0] = vx; dy[1] = vy; dy[2] = ax; dy[3] = ay; dy[4] = -mdot;
         }
 
-        double StageEndMass() => upperMass[StageIdx] - st[StageIdx].propMass;
+        /// <summary>#335: stage-end mass, net of a fairing already jettisoned (it no longer rides the stack). JS parity.</summary>
+        double StageEndMass() => upperMass[StageIdx] - st[StageIdx].propMass - (fairingDropped ? o.fairingMassKg : 0);
 
         /// <summary>
         /// Ideal (vacuum) Δv still on board, m/s: the burning stage's propellant left from the current mass, then every
@@ -464,10 +479,14 @@ namespace Kestrel.Core.Physics
         void DepartureBudget(out double dv, out double tw)
         {
             dv = 0; tw = double.NaN;
+            // #335: net a jettisoned fairing, the same way StageEndMass does: the live mass no longer
+            // carries it, and a later stage starts that much lighter. Without this the remaining
+            // propellant (and so the reported departure Δv) is undercounted by the shell's mass.
+            double dropped = fairingDropped ? o.fairingMassKg : 0;
             for (int i = StageIdx; i < st.Length; i++)
             {
-                double m0 = i == StageIdx ? Y[4] : upperMass[i];
-                double prop = i == StageIdx ? Y[4] - (upperMass[i] - st[i].propMass) : st[i].propMass;
+                double m0 = i == StageIdx ? Y[4] : upperMass[i] - dropped;
+                double prop = i == StageIdx ? Y[4] - (upperMass[i] - st[i].propMass - dropped) : st[i].propMass;
                 if (!(prop > 1e-6) || !(m0 > prop)) continue;
                 dv += st[i].ispVac * Atmosphere.G0 * Math.Log(m0 / (m0 - prop));
                 if (double.IsNaN(tw)) tw = st[i].thrustVac / (m0 * Atmosphere.G0);
@@ -663,7 +682,7 @@ namespace Kestrel.Core.Physics
                     if (fail) { Fail(alt, spd); return true; }
                     StageIdx++;
                     if (StageIdx >= st.Length) { Thrusting = false; Mode = 4; return true; }
-                    Y[4] = upperMass[StageIdx];
+                    Y[4] = upperMass[StageIdx] - (fairingDropped ? o.fairingMassKg : 0);
                     Events.Add(new SimEvent { t = T, type = "separation", stage = StageIdx, alt = alt });
                     Events.Add(new SimEvent { t = T, type = "ignition", stage = StageIdx + 1, alt = alt });
                     if (hook != null)
@@ -762,8 +781,14 @@ namespace Kestrel.Core.Physics
                     : alt1 >= o.fairingJettisonAltM))
             {
                 fairingSent = true;
+                // #335: the fairing shell leaves the stack here (JS parity: headless.js drops
+                // fairingMass at the fairing-jettison event). A design with no fairing has
+                // fairingMassKg 0, so this is a no-op for it. The drop follows the (possibly
+                // heat-gated) event; the stage-end mass and the separation reset net it too.
+                fairingDropped = true;
+                Y[4] -= o.fairingMassKg;
                 double spd = JsMath.Hypot(Y[2], Y[3]);
-                Events.Add(new SimEvent { t = T, type = "fairing", alt = alt1, v = spd });
+                Events.Add(new SimEvent { t = T, type = "fairing", alt = alt1, v = spd, mass = o.fairingMassKg });
                 hook?.OnFairingSeparation(T, Pos(), Vel());
             }
             if (alt1 < 0)
