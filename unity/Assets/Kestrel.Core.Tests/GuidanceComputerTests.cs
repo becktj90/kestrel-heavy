@@ -39,8 +39,9 @@ namespace Kestrel.Core.Tests
 
         static Design Fitted(Design d) { var c = d.Clone(); GuidanceComputer.Fit(c, true); return c; }
 
-        /// <summary>Board starters that ship with the part. KH-13 (t-booster-land): its landable stage 1 needs the closed-loop upper stage.</summary>
-        static readonly HashSet<string> ShipsThePart = new HashSet<string> { "m13" };
+        /// <summary>Board starters that ship with the part. KH-13 (t-booster-land): its landable stage 1 needs the closed-loop upper stage.
+        /// KH-12 (#340): the 4.3-4.7 deg knife-edge kick is replaced by the closed-loop upper stage, so it ships the part too.</summary>
+        static readonly HashSet<string> ShipsThePart = new HashSet<string> { "m13", "m12" };
 
         // ---- data and opt-in ----
 
