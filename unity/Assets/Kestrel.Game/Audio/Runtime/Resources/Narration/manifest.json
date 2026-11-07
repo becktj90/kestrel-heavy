@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-11",
+ "generatedAt": "2026-11-06",
  "model": "eleven_multilingual_v2",
  "format": "mp3 44.1kHz mono 96k",
  "loudness": {
@@ -8,7 +8,7 @@
   "lra": 7,
   "method": "pre-gain + alimiter (4x oversampled), then ffmpeg loudnorm two-pass linear"
  },
- "source": "web/js/narration/manifest.js (mc/host/cohost channels; token lines excluded)",
+ "source": "web/js/narration/manifest.js (mc/host/cohost channels; token lines excluded); tools/clipgen/mission-lines.json (per-mission historical commentary, DECISIONS #77)",
  "clips": [
   {
    "id": "mission-control/pad.1",
@@ -3894,6 +3894,2329 @@
    },
    "claims": [
     "recovery"
+   ]
+  },
+  {
+   "id": "host/color.pad.m1.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "In 1926, Robert Goddard flew the first liquid-fuel rocket.",
+   "spokenText": "In 1926, Robert Goddard flew the first liquid-fuel rocket.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m1.1.mp3",
+   "durationSec": 4.644,
+   "lufs": -16.46,
+   "truePeakDb": -3.02,
+   "normalization": "linear",
+   "hash": "1b86127e91c9",
+   "sha256": "9e7ab1a228bb833bc2fba5aa285c546cadbf6314fa2d2abc3b511474ddf04e5a",
+   "requires": {
+    "mission": "m1"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m1",
+   "sources": [
+    "S2"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m1.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It rose forty-one feet, in two and a half seconds.",
+   "spokenText": "It rose forty-one feet, in two and a half seconds.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m1.2.mp3",
+   "durationSec": 2.461,
+   "lufs": -16.43,
+   "truePeakDb": -2.69,
+   "normalization": "linear",
+   "hash": "bd19465d8d47",
+   "sha256": "dc300098b537b8938bbfe73cf6352fa909b58fc238f11584e57a017ecba1505d",
+   "requires": {
+    "mission": "m1"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m1",
+   "sources": [
+    "S2"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m1.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Goddard launched from a farm field in Massachusetts.",
+   "spokenText": "Goddard launched from a farm field in Massachusetts.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m1.1.mp3",
+   "durationSec": 3.019,
+   "lufs": -16.44,
+   "truePeakDb": -3.38,
+   "normalization": "linear",
+   "hash": "b59e41fa929a",
+   "sha256": "ee35b8b5a23ddcb0186e8908f3b1a1b93f1ab9be9bf52025a6b77de2d2fa34d5",
+   "requires": {
+    "mission": "m1"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m1",
+   "sources": [
+    "S2"
+   ]
+  },
+  {
+   "id": "cohost/color.ascent.m1.2",
+   "event": "color.ascent",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It burned gasoline and liquid oxygen, not gunpowder.",
+   "spokenText": "It burned gasoline and liquid oxygen, not gunpowder.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.ascent.m1.2.mp3",
+   "durationSec": 2.786,
+   "lufs": -16.44,
+   "truePeakDb": -1.96,
+   "normalization": "linear",
+   "hash": "45364016a64e",
+   "sha256": "67ea9b30e1233b9f54b578e047c61d73a0f46e3efd7210441d0a4f4db37146b5",
+   "requires": {
+    "mission": "m1"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m1",
+   "sources": [
+    "S2"
+   ]
+  },
+  {
+   "id": "host/color.pad.m2.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "One hundred kilometres up is the edge of space.",
+   "spokenText": "One hundred kilometres up is the edge of space.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m2.1.mp3",
+   "durationSec": 2.74,
+   "lufs": -16.45,
+   "truePeakDb": -3.35,
+   "normalization": "linear",
+   "hash": "84e75605b2a3",
+   "sha256": "78cec0ca6d79eb93a8776daea804abc6cbdfe568b269c481a6380f7b756142fb",
+   "requires": {
+    "mission": "m2"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m2",
+   "sources": [
+    "S10"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m2.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "The line is a convention, set in 1960 for record keeping.",
+   "spokenText": "The line is a convention, set in 1960 for record keeping.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m2.2.mp3",
+   "durationSec": 3.344,
+   "lufs": -16.45,
+   "truePeakDb": -1.88,
+   "normalization": "linear",
+   "hash": "037924ae8553",
+   "sha256": "1d3e286e0769e36a9b19abe0334d59aea3839b5da21d188eee5cac163df3a32f",
+   "requires": {
+    "mission": "m2"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m2",
+   "sources": [
+    "S10"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m2.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Above the line, the air is too thin for wings.",
+   "spokenText": "Above the line, the air is too thin for wings.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m2.1.mp3",
+   "durationSec": 2.786,
+   "lufs": -16.43,
+   "truePeakDb": -3.26,
+   "normalization": "linear",
+   "hash": "885927c0b66b",
+   "sha256": "fa9dee251065d54aa7a8b9aa42af917dd5adfd30cf7a08647053894fb1aa8348",
+   "requires": {
+    "mission": "m2"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m2",
+   "sources": [
+    "S10"
+   ]
+  },
+  {
+   "id": "cohost/color.karman.m2.1",
+   "event": "color.karman",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "The first American in space flew above this line in 1961.",
+   "spokenText": "The first American in space flew above this line in 1961.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.karman.m2.1.mp3",
+   "durationSec": 3.344,
+   "lufs": -16.43,
+   "truePeakDb": -2.46,
+   "normalization": "linear",
+   "hash": "5cf3734a674d",
+   "sha256": "79c4b1c6c3b2d2dcbdfc4844b761c44b3b0cf828f553fb47e5598bd9b23f4965",
+   "requires": {
+    "mission": "m2"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m2",
+   "sources": [
+    "H1"
+   ]
+  },
+  {
+   "id": "host/color.pad.m3.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "On October 4, 1957, Sputnik became the first satellite.",
+   "spokenText": "On October 4, 1957, Sputnik became the first satellite.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m3.1.mp3",
+   "durationSec": 4.272,
+   "lufs": -16.44,
+   "truePeakDb": -3.09,
+   "normalization": "linear",
+   "hash": "7e9186d4f509",
+   "sha256": "1a163ff52c61f98e296cb536116c32b3aa6e7e65b679336b63dc61eb462a6980",
+   "requires": {
+    "mission": "m3"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m3",
+   "sources": [
+    "S13"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m3.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It weighed about eighty-four kilograms, a beach ball with antennas.",
+   "spokenText": "It weighed about eighty-four kilograms, a beach ball with antennas.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m3.2.mp3",
+   "durationSec": 3.994,
+   "lufs": -16.45,
+   "truePeakDb": -2.19,
+   "normalization": "linear",
+   "hash": "3abf82377ff4",
+   "sha256": "178d607251d126e4f2dd631b2b7a9fdf48b148abe411a47f1cd871c0651b0d1c",
+   "requires": {
+    "mission": "m3"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m3",
+   "sources": [
+    "S13"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m3.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Sputnik circled Earth once every ninety-six minutes.",
+   "spokenText": "Sputnik circled Earth once every ninety-six minutes.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m3.1.mp3",
+   "durationSec": 3.111,
+   "lufs": -16.44,
+   "truePeakDb": -2.98,
+   "normalization": "linear",
+   "hash": "a53919268368",
+   "sha256": "5425774bc0c5169d434f1ef9c53a0a8e00fd0986c4b8ea4409694d500ab3906b",
+   "requires": {
+    "mission": "m3"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m3",
+   "sources": [
+    "S13"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m3.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Its beep was heard by radio operators around the world.",
+   "spokenText": "Its beep was heard by radio operators around the world.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m3.1.mp3",
+   "durationSec": 2.74,
+   "lufs": -16.44,
+   "truePeakDb": -2.61,
+   "normalization": "linear",
+   "hash": "b18fff551e93",
+   "sha256": "54b348a63d56ac6fbf64ed02935bd811c7b7aa40236aad04b716e7743ae67cc3",
+   "requires": {
+    "mission": "m3"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m3",
+   "sources": [
+    "S13"
+   ]
+  },
+  {
+   "id": "host/color.pad.m4.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "On April 1, 1960, TIROS-1 became the first weather satellite.",
+   "spokenText": "On April 1, 1960, TIROS-1 became the first weather satellite.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m4.1.mp3",
+   "durationSec": 4.876,
+   "lufs": -16.45,
+   "truePeakDb": -3.31,
+   "normalization": "linear",
+   "hash": "3a0c80a408d4",
+   "sha256": "2d54ed72f2f4de1d36819e4c40f83684e63b386a57047ac6b8f3261dfc19db98",
+   "requires": {
+    "mission": "m4"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m4",
+   "sources": [
+    "H2"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m4.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It carried two television cameras and weighed two hundred seventy pounds.",
+   "spokenText": "It carried two television cameras and weighed two hundred seventy pounds.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m4.2.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.44,
+   "truePeakDb": -2.38,
+   "normalization": "linear",
+   "hash": "9c8a504f5f5f",
+   "sha256": "206ee7173dca21a2091073b15a9b2e5f64b846a72e9b78d97cdb6f572b022568",
+   "requires": {
+    "mission": "m4"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m4",
+   "sources": [
+    "H2"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m4.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "TIROS-1 sent back nineteen thousand usable pictures in seventy-eight days.",
+   "spokenText": "TIROS-1 sent back nineteen thousand usable pictures in seventy-eight days.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m4.1.mp3",
+   "durationSec": 4.783,
+   "lufs": -16.45,
+   "truePeakDb": -3.22,
+   "normalization": "linear",
+   "hash": "634cd73ac597",
+   "sha256": "62ad301babc0eaac5a45abf6356178528fee13172560ddf4cbc93cd375ff2cc9",
+   "requires": {
+    "mission": "m4"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m4",
+   "sources": [
+    "H2"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m4.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Forecasters saw cloud patterns from space for the first time.",
+   "spokenText": "Forecasters saw cloud patterns from space for the first time.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m4.1.mp3",
+   "durationSec": 2.926,
+   "lufs": -16.6,
+   "truePeakDb": -1.7,
+   "normalization": "linear",
+   "hash": "9cfab376b95d",
+   "sha256": "5b0f563335a4a94f03052fabb07995faf51ab268c88d1bfd849f67e91d25ec9f",
+   "requires": {
+    "mission": "m4"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m4",
+   "sources": [
+    "H2"
+   ]
+  },
+  {
+   "id": "host/color.pad.m5.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "The Saturn V stood one hundred eleven metres tall.",
+   "spokenText": "The Saturn V stood one hundred eleven metres tall.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m5.1.mp3",
+   "durationSec": 3.297,
+   "lufs": -16.43,
+   "truePeakDb": -3.37,
+   "normalization": "linear",
+   "hash": "e2d5898022d0",
+   "sha256": "6cb270d9f6e780f04fa90e9b65088e2d448a15729cfa8256a31e71c1660b10cc",
+   "requires": {
+    "mission": "m5"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m5",
+   "sources": [
+    "H3"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m5.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Five F-1s made seven and a half million pounds of thrust.",
+   "spokenText": "Five F-1s made seven and a half million pounds of thrust.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m5.2.mp3",
+   "durationSec": 2.694,
+   "lufs": -16.44,
+   "truePeakDb": -1.66,
+   "normalization": "linear",
+   "hash": "0526fd95dfb2",
+   "sha256": "9573b2a3079ac8854615f279721dce189477cbb1cf2b7b1a0eb3fc704efa9694",
+   "requires": {
+    "mission": "m5"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m5",
+   "sources": [
+    "H3"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m5.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "It could lift one hundred forty tonnes to low Earth orbit.",
+   "spokenText": "It could lift one hundred forty tonnes to low Earth orbit.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m5.1.mp3",
+   "durationSec": 3.437,
+   "lufs": -16.44,
+   "truePeakDb": -3.03,
+   "normalization": "linear",
+   "hash": "2e6f4fb9a6d7",
+   "sha256": "c48217d7e5b865367dbfe5c63a2334da5ba2f15634595304236e352bc29c1ab8",
+   "requires": {
+    "mission": "m5"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m5",
+   "sources": [
+    "H3"
+   ]
+  },
+  {
+   "id": "cohost/color.ascent.m5.2",
+   "event": "color.ascent",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Thirteen Saturn Vs flew, and none ever lost crew or payload.",
+   "spokenText": "Thirteen Saturn Vs flew, and none ever lost crew or payload.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.ascent.m5.2.mp3",
+   "durationSec": 3.808,
+   "lufs": -16.44,
+   "truePeakDb": -2.18,
+   "normalization": "linear",
+   "hash": "2726e1b18a53",
+   "sha256": "19c494475306f5b9fa60963c183feedf5a076cdf5f55114a2a0643f4dd386e69",
+   "requires": {
+    "mission": "m5"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m5",
+   "sources": [
+    "H3"
+   ]
+  },
+  {
+   "id": "host/color.pad.m6.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "On December 21, 2015, a Falcon 9 first stage landed upright.",
+   "spokenText": "On December 21, 2015, a Falcon 9 first stage landed upright.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m6.1.mp3",
+   "durationSec": 5.108,
+   "lufs": -16.45,
+   "truePeakDb": -3.24,
+   "normalization": "linear",
+   "hash": "f55f2f085cd1",
+   "sha256": "37afb0c4cf97fc2c66c8924b22028cba8dcad1851802f9521c19c8f962733222",
+   "requires": {
+    "mission": "m6"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m6",
+   "sources": [
+    "S16"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m6.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It touched down at Landing Zone 1, nine minutes after liftoff.",
+   "spokenText": "It touched down at Landing Zone 1, nine minutes after liftoff.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m6.2.mp3",
+   "durationSec": 3.204,
+   "lufs": -16.65,
+   "truePeakDb": -1.7,
+   "normalization": "dynamic",
+   "hash": "9a5b8d4758f2",
+   "sha256": "1d9468db5cf55e5598519dbbd13a151901248042cf2457a93cffe661181f0295",
+   "requires": {
+    "mission": "m6"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m6",
+   "sources": [
+    "S16",
+    "H23"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m6.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Before that, no orbital first stage had ever landed.",
+   "spokenText": "Before that, no orbital first stage had ever landed.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m6.1.mp3",
+   "durationSec": 3.808,
+   "lufs": -16.43,
+   "truePeakDb": -3.33,
+   "normalization": "linear",
+   "hash": "520e79ee1aa0",
+   "sha256": "a0e21210af373c91b2113752e7704067ec01e2433a465b2b62812c43b28f1eb6",
+   "requires": {
+    "mission": "m6"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m6",
+   "sources": [
+    "S16"
+   ]
+  },
+  {
+   "id": "cohost/color.recovery.m6.1",
+   "event": "color.recovery",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "In 2024, Starship's first stage was caught by its tower.",
+   "spokenText": "In 2024, Starship's first stage was caught by its tower.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.recovery.m6.1.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.7,
+   "truePeakDb": -1.94,
+   "normalization": "dynamic",
+   "hash": "5de149d85d95",
+   "sha256": "549a7a18318f4e90c120ceaf6c479e995dd0eaec52794d6de863bcdfd40b1926",
+   "requires": {
+    "mission": "m6"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m6",
+   "sources": [
+    "H4"
+   ]
+  },
+  {
+   "id": "host/color.pad.m7.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "In November 2025, New Glenn's first stage landed on Jacklyn.",
+   "spokenText": "In November 2025, New Glenn's first stage landed on Jacklyn.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m7.1.mp3",
+   "durationSec": 4.644,
+   "lufs": -16.44,
+   "truePeakDb": -3.19,
+   "normalization": "linear",
+   "hash": "90d5a02b575f",
+   "sha256": "61f50612ed8ee36539345939ed2e792cabcf57b08502baaab1e419d34a3192f5",
+   "requires": {
+    "mission": "m7"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m7",
+   "sources": [
+    "H5"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m7.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Jacklyn waited about six hundred kilometres downrange in the Atlantic.",
+   "spokenText": "Jacklyn waited about six hundred kilometres downrange in the Atlantic.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m7.2.mp3",
+   "durationSec": 3.39,
+   "lufs": -16.45,
+   "truePeakDb": -1.83,
+   "normalization": "linear",
+   "hash": "08d5123995c1",
+   "sha256": "872e06bab160cef42b3dc4cc3bcdcc752e4faa794abb44d5c4ca467f9db1b253",
+   "requires": {
+    "mission": "m7"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m7",
+   "sources": [
+    "H5"
+   ]
+  },
+  {
+   "id": "host/color.coast.m7.1",
+   "event": "color.coast",
+   "channel": "host",
+   "layer": "color",
+   "text": "A transfer orbit stretches from low orbit out to thirty-six thousand kilometres.",
+   "spokenText": "A transfer orbit stretches from low orbit out to thirty-six thousand kilometres.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.coast.m7.1.mp3",
+   "durationSec": 4.969,
+   "lufs": -16.43,
+   "truePeakDb": -3.17,
+   "normalization": "linear",
+   "hash": "5cdd0427f8bb",
+   "sha256": "fb673aef265686c0de496936daa03f5e1a95653316c9d0f881f67286615d3189",
+   "requires": {
+    "mission": "m7"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m7",
+   "sources": [
+    "H6"
+   ]
+  },
+  {
+   "id": "cohost/color.recovery.m7.1",
+   "event": "color.recovery",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "The first droneship landing was a Falcon 9, in April 2016.",
+   "spokenText": "The first droneship landing was a Falcon 9, in April 2016.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.recovery.m7.1.mp3",
+   "durationSec": 3.715,
+   "lufs": -16.85,
+   "truePeakDb": -1.8,
+   "normalization": "dynamic",
+   "hash": "5db4485d05e2",
+   "sha256": "b3445a7e0c9bcbc17b7b0de4985a7da6c31b6df04ab88b0558b0e93063d79a10",
+   "requires": {
+    "mission": "m7"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m7",
+   "sources": [
+    "H7"
+   ]
+  },
+  {
+   "id": "host/color.pad.m8.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "On April 12, 1961, Yuri Gagarin became the first human in space.",
+   "spokenText": "On April 12, 1961, Yuri Gagarin became the first human in space.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m8.1.mp3",
+   "durationSec": 5.294,
+   "lufs": -16.45,
+   "truePeakDb": -3.17,
+   "normalization": "linear",
+   "hash": "4ae50fb2e99f",
+   "sha256": "ec5ec0824e8b26f1045aba05727933f8169b5f8d20c5cc8320ef1a0df4dbb41f",
+   "requires": {
+    "mission": "m8"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m8",
+   "sources": [
+    "S14"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m8.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "His flight lasted one hundred eight minutes, launch to landing.",
+   "spokenText": "His flight lasted one hundred eight minutes, launch to landing.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m8.2.mp3",
+   "durationSec": 3.251,
+   "lufs": -16.6,
+   "truePeakDb": -1.84,
+   "normalization": "dynamic",
+   "hash": "5fb9cceeb7a3",
+   "sha256": "d406cb6300cb98b80e7369215443939ae7a80b47d97aed8ff73c69b9ae93c32c",
+   "requires": {
+    "mission": "m8"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m8",
+   "sources": [
+    "S14"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m8.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "One orbit proved a person could live and work in space.",
+   "spokenText": "One orbit proved a person could live and work in space.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m8.1.mp3",
+   "durationSec": 3.158,
+   "lufs": -16.44,
+   "truePeakDb": -3.32,
+   "normalization": "linear",
+   "hash": "0678a31a8606",
+   "sha256": "fb3331925f211ea29f699c5cbb68c40ee0e05d8420ab01c9ee5146d6b6ef84a2",
+   "requires": {
+    "mission": "m8"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m8",
+   "sources": [
+    "S14"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m8.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "In 1962, John Glenn became the first American to orbit Earth.",
+   "spokenText": "In 1962, John Glenn became the first American to orbit Earth.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m8.1.mp3",
+   "durationSec": 3.251,
+   "lufs": -16.43,
+   "truePeakDb": -1.77,
+   "normalization": "linear",
+   "hash": "1f848e861d6b",
+   "sha256": "67477ecceba028a38665a92f6f5c14bc35f30d2b100f21ebc6f4ba1b6277bedd",
+   "requires": {
+    "mission": "m8"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m8",
+   "sources": [
+    "H8"
+   ]
+  },
+  {
+   "id": "host/color.pad.m9.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "In September 1959, Luna 2 became the first object to reach the Moon.",
+   "spokenText": "In September 1959, Luna 2 became the first object to reach the Moon.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m9.1.mp3",
+   "durationSec": 5.944,
+   "lufs": -16.44,
+   "truePeakDb": -3.23,
+   "normalization": "linear",
+   "hash": "c948f6d93c97",
+   "sha256": "995dd8c792e385edee1f0624b6095e20603f21e5eeef81e489f26f3eff5f2a21",
+   "requires": {
+    "mission": "m9"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m9",
+   "sources": [
+    "H9"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m9.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It flew thirty-six hours and struck the Moon at three kilometres per second.",
+   "spokenText": "It flew thirty-six hours and struck the Moon at three kilometres per second.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m9.2.mp3",
+   "durationSec": 3.576,
+   "lufs": -16.44,
+   "truePeakDb": -2.06,
+   "normalization": "linear",
+   "hash": "6213c9434105",
+   "sha256": "0aabfd77a05ca11dfb9bc829e0ec9909cc7b1c1f87ac0e7d0cedbdadfb691f5d",
+   "requires": {
+    "mission": "m9"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m9",
+   "sources": [
+    "H9"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m9.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Luna 2 carried no engine of its own, only instruments and pennants.",
+   "spokenText": "Luna 2 carried no engine of its own, only instruments and pennants.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m9.1.mp3",
+   "durationSec": 4.458,
+   "lufs": -16.44,
+   "truePeakDb": -3.48,
+   "normalization": "linear",
+   "hash": "a57da352c010",
+   "sha256": "bdd914d9e3b687be0f99ed220cd2fb8f13a5ba1b502dcb047b2f9fdfaa11216c",
+   "requires": {
+    "mission": "m9"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m9",
+   "sources": [
+    "H9"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m9.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "In 1968, Apollo 8 carried the first crew around the Moon.",
+   "spokenText": "In 1968, Apollo 8 carried the first crew around the Moon.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m9.1.mp3",
+   "durationSec": 3.622,
+   "lufs": -16.44,
+   "truePeakDb": -1.83,
+   "normalization": "linear",
+   "hash": "25775796bdd1",
+   "sha256": "f536f2e61ad4751cac98f96de57767c87a7d523c2be41ced928be6cef3b21680",
+   "requires": {
+    "mission": "m9"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m9",
+   "sources": [
+    "H10"
+   ]
+  },
+  {
+   "id": "host/color.pad.m10.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Falcon Heavy is three Falcon 9 first stages strapped side by side.",
+   "spokenText": "Falcon Heavy is three Falcon 9 first stages strapped side by side.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m10.1.mp3",
+   "durationSec": 4.598,
+   "lufs": -16.45,
+   "truePeakDb": -3.09,
+   "normalization": "linear",
+   "hash": "75128fbb6396",
+   "sha256": "080e9490391ef04452ca83182edff313e95d59e44638f9c5535c2940bc137bfc",
+   "requires": {
+    "mission": "m10"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m10",
+   "sources": [
+    "H11"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m10.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Twenty-seven Merlins lit together on its first flight in 2018.",
+   "spokenText": "Twenty-seven Merlins lit together on its first flight in 2018.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m10.2.mp3",
+   "durationSec": 3.204,
+   "lufs": -16.43,
+   "truePeakDb": -2.15,
+   "normalization": "linear",
+   "hash": "80466a5beb85",
+   "sha256": "14c5a3290d4266c29fe00ed15fac2458c481daef0351ce5cddc8f3b7bb4943f4",
+   "requires": {
+    "mission": "m10"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m10",
+   "sources": [
+    "H11"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m10.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Its first payload was a red Tesla Roadster, with a mannequin driver.",
+   "spokenText": "Its first payload was a red Tesla Roadster, with a mannequin driver.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m10.1.mp3",
+   "durationSec": 4.319,
+   "lufs": -16.44,
+   "truePeakDb": -3.04,
+   "normalization": "linear",
+   "hash": "008ba2a9052d",
+   "sha256": "25ef0730176e21961f07755249702303110dd93cf3ccd69a6516f3d52bf5b6bf",
+   "requires": {
+    "mission": "m10"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m10",
+   "sources": [
+    "H11"
+   ]
+  },
+  {
+   "id": "cohost/color.recovery.m10.1",
+   "event": "color.recovery",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "The two side boosters landed together, eight minutes after liftoff.",
+   "spokenText": "The two side boosters landed together, eight minutes after liftoff.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.recovery.m10.1.mp3",
+   "durationSec": 3.669,
+   "lufs": -16.94,
+   "truePeakDb": -1.72,
+   "normalization": "dynamic",
+   "hash": "57f89843b1d0",
+   "sha256": "e4fe7957043801836bb718125404a9ed333f89d47d5c2aa561cf91b73ffadfe6",
+   "requires": {
+    "mission": "m10"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m10",
+   "sources": [
+    "H11",
+    "H24"
+   ]
+  },
+  {
+   "id": "host/color.pad.m11.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Landsat 1 launched July 23, 1972, to map Earth's resources.",
+   "spokenText": "Landsat 1 launched July 23, 1972, to map Earth's resources.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m11.1.mp3",
+   "durationSec": 5.48,
+   "lufs": -16.44,
+   "truePeakDb": -3.27,
+   "normalization": "linear",
+   "hash": "880f3f39a19b",
+   "sha256": "e62d9553c88fd24624047981b3eb0620a8bcc9721f096a6aa4a24fb70aed9295",
+   "requires": {
+    "mission": "m11"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m11",
+   "sources": [
+    "H12"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m11.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It flew a sun-synchronous orbit, crossing the equator at the same morning hour.",
+   "spokenText": "It flew a sun-synchronous orbit, crossing the equator at the same morning hour.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m11.2.mp3",
+   "durationSec": 4.18,
+   "lufs": -16.44,
+   "truePeakDb": -2.22,
+   "normalization": "linear",
+   "hash": "e67e6d66438b",
+   "sha256": "480d89bcc32185ef345929b0088cbe0f1b02e84fc56ade96ff7ad542cd804243",
+   "requires": {
+    "mission": "m11"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m11",
+   "sources": [
+    "H12"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m11.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Its orbit repeated every eighteen days, imaging the whole planet.",
+   "spokenText": "Its orbit repeated every eighteen days, imaging the whole planet.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m11.1.mp3",
+   "durationSec": 4.458,
+   "lufs": -16.43,
+   "truePeakDb": -3.32,
+   "normalization": "linear",
+   "hash": "d0cb7f926577",
+   "sha256": "8404c5c720e5d657a5af046fc1f3602901d1ea4987b9addeb678a644e8255aab",
+   "requires": {
+    "mission": "m11"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m11",
+   "sources": [
+    "H12"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m11.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Landsat began the longest Earth-observation program ever flown.",
+   "spokenText": "Landsat began the longest Earth-observation program ever flown.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m11.1.mp3",
+   "durationSec": 3.529,
+   "lufs": -16.76,
+   "truePeakDb": -1.5,
+   "normalization": "dynamic",
+   "hash": "7d56f045ee7f",
+   "sha256": "41fb0fb99288c7cbb2a5e8f20a7de748c4e9294c5409dee72d94c0993bd99428",
+   "requires": {
+    "mission": "m11"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m11",
+   "sources": [
+    "H12"
+   ]
+  },
+  {
+   "id": "host/color.pad.m12.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Hubble launched aboard Space Shuttle Discovery in April 1990.",
+   "spokenText": "Hubble launched aboard Space Shuttle Discovery in April 1990.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m12.1.mp3",
+   "durationSec": 4.087,
+   "lufs": -16.44,
+   "truePeakDb": -3.24,
+   "normalization": "linear",
+   "hash": "1fbd994b7a14",
+   "sha256": "afe81d204a219f762dfdfb5f179e9173e8c1c88a1b9af7a9bdb4a01755cba303",
+   "requires": {
+    "mission": "m12"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m12",
+   "sources": [
+    "H13"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m12.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It orbits about five hundred forty kilometres up, above the blurring air.",
+   "spokenText": "It orbits about five hundred forty kilometres up, above the blurring air.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m12.2.mp3",
+   "durationSec": 4.226,
+   "lufs": -16.62,
+   "truePeakDb": -1.91,
+   "normalization": "dynamic",
+   "hash": "99ac92bbbbfe",
+   "sha256": "83f5e7ae51b33b412eca8ebad32d4fcdf9d83807b5328a87c86e3579c173be8d",
+   "requires": {
+    "mission": "m12"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m12",
+   "sources": [
+    "H13"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m12.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Its mirror was flawed, and astronauts fixed it in orbit in 1993.",
+   "spokenText": "Its mirror was flawed, and astronauts fixed it in orbit in 1993.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m12.1.mp3",
+   "durationSec": 5.062,
+   "lufs": -16.45,
+   "truePeakDb": -3.23,
+   "normalization": "linear",
+   "hash": "e7cfe4397db5",
+   "sha256": "cf323bb2beb47787712a38dec03185acccfd48754dae5367db8e7a1696b9b6b1",
+   "requires": {
+    "mission": "m12"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m12",
+   "sources": [
+    "H13"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m12.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Five shuttle crews serviced Hubble, the last in 2009.",
+   "spokenText": "Five shuttle crews serviced Hubble, the last in 2009.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m12.1.mp3",
+   "durationSec": 3.111,
+   "lufs": -16.56,
+   "truePeakDb": -1.61,
+   "normalization": "dynamic",
+   "hash": "0802e69f3361",
+   "sha256": "587c3ffc905027239dbcf9e0a24c281930982ba153934ab2c5e974eb9e699331",
+   "requires": {
+    "mission": "m12"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m12",
+   "sources": [
+    "H13"
+   ]
+  },
+  {
+   "id": "host/color.pad.m13.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "The CubeSat standard was drawn up in 1999, a ten-centimetre cube.",
+   "spokenText": "The CubeSat standard was drawn up in 1999, a ten-centimetre cube.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m13.1.mp3",
+   "durationSec": 4.969,
+   "lufs": -16.45,
+   "truePeakDb": -3.38,
+   "normalization": "linear",
+   "hash": "bca0c03ef758",
+   "sha256": "699c83862299fb4ad86c10bcf0b885c45ac3cb7bc78b04772fe15b9c22e29e73",
+   "requires": {
+    "mission": "m13"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m13",
+   "sources": [
+    "H14"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m13.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "The first CubeSats flew in June 2003, built mostly by students.",
+   "spokenText": "The first CubeSats flew in June 2003, built mostly by students.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m13.2.mp3",
+   "durationSec": 3.762,
+   "lufs": -16.43,
+   "truePeakDb": -1.94,
+   "normalization": "linear",
+   "hash": "e09f69b7f4a7",
+   "sha256": "e7714af1de5880c40a82d6dd1e3611d996dfc454925a4cd403c2086dd48bf04e",
+   "requires": {
+    "mission": "m13"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m13",
+   "sources": [
+    "H14"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m13.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "One Falcon 9 flight carried one hundred forty-three satellites at once.",
+   "spokenText": "One Falcon 9 flight carried one hundred forty-three satellites at once.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m13.1.mp3",
+   "durationSec": 4.505,
+   "lufs": -16.45,
+   "truePeakDb": -3.36,
+   "normalization": "linear",
+   "hash": "b7223711f227",
+   "sha256": "19362d0804cc41b6a95c5bcdb44dbb6099649e893f0652531e93fca09d8304b0",
+   "requires": {
+    "mission": "m13"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m13",
+   "sources": [
+    "H15"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m13.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "That rideshare beat the old record of one hundred four satellites.",
+   "spokenText": "That rideshare beat the old record of one hundred four satellites.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m13.1.mp3",
+   "durationSec": 3.529,
+   "lufs": -16.46,
+   "truePeakDb": -2.18,
+   "normalization": "linear",
+   "hash": "a37188ba4f59",
+   "sha256": "edf96778eeebb40ef50243c2a45fc9e34a770000a5f2383c5ff2eec4dcdc1609",
+   "requires": {
+    "mission": "m13"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m13",
+   "sources": [
+    "H15"
+   ]
+  },
+  {
+   "id": "host/color.pad.m14.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "In October 2012, Dragon flew the first commercial cargo run to the station.",
+   "spokenText": "In October 2012, Dragon flew the first commercial cargo run to the station.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m14.1.mp3",
+   "durationSec": 5.108,
+   "lufs": -16.45,
+   "truePeakDb": -3.2,
+   "normalization": "linear",
+   "hash": "f61c34acdc77",
+   "sha256": "caa21f02bc394725e11b75709b14aa2e454e59d4e70a930bebd3e85423b49861",
+   "requires": {
+    "mission": "m14"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m14",
+   "sources": [
+    "H16"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m14.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It carried about nine hundred kilograms of supplies to the station.",
+   "spokenText": "It carried about nine hundred kilograms of supplies to the station.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m14.2.mp3",
+   "durationSec": 3.251,
+   "lufs": -16.71,
+   "truePeakDb": -1.68,
+   "normalization": "dynamic",
+   "hash": "a50a190af05e",
+   "sha256": "9ed649c2ae47a8fabd16f1a630526146ee74c285765e6c99bb02b1493eaddaee",
+   "requires": {
+    "mission": "m14"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m14",
+   "sources": [
+    "H16"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m14.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "The station's robotic arm caught Dragon and berthed it.",
+   "spokenText": "The station's robotic arm caught Dragon and berthed it.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m14.1.mp3",
+   "durationSec": 3.019,
+   "lufs": -16.45,
+   "truePeakDb": -3.25,
+   "normalization": "linear",
+   "hash": "a0269dff42d9",
+   "sha256": "c75eaabfe8b36c1092fd10097e4c290b1643076f55b33e5e6e473088b820e07d",
+   "requires": {
+    "mission": "m14"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m14",
+   "sources": [
+    "H16"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m14.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Dragon could bring cargo back down, not just carry it up.",
+   "spokenText": "Dragon could bring cargo back down, not just carry it up.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m14.1.mp3",
+   "durationSec": 3.019,
+   "lufs": -16.72,
+   "truePeakDb": -1.52,
+   "normalization": "dynamic",
+   "hash": "74e52bc2db03",
+   "sha256": "874e2777bda32872cd5edc0b98225d334a6ab36a7cdedef622274a33e3bc907d",
+   "requires": {
+    "mission": "m14"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m14",
+   "sources": [
+    "H16"
+   ]
+  },
+  {
+   "id": "host/color.pad.m15.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "In 1964, Syncom 3 became the first satellite to hold still over Earth.",
+   "spokenText": "In 1964, Syncom 3 became the first satellite to hold still over Earth.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m15.1.mp3",
+   "durationSec": 5.666,
+   "lufs": -16.45,
+   "truePeakDb": -3.11,
+   "normalization": "linear",
+   "hash": "269094434f12",
+   "sha256": "918e84d711682d156d4c12e52dd03ad1a7eb7676891712b3f1e2f1ab8fc80780",
+   "requires": {
+    "mission": "m15"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m15",
+   "sources": [
+    "H17"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m15.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It relayed the Tokyo Olympics live from Japan to America.",
+   "spokenText": "It relayed the Tokyo Olympics live from Japan to America.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m15.2.mp3",
+   "durationSec": 3.065,
+   "lufs": -16.45,
+   "truePeakDb": -2.23,
+   "normalization": "linear",
+   "hash": "3cf328ba87cf",
+   "sha256": "1300b41abe4c5251291db9d22b68d4e0b2f0441f9a1a1d60cb3f3a5c9c9c01df",
+   "requires": {
+    "mission": "m15"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m15",
+   "sources": [
+    "H17"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m15.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Early Bird followed in 1965, the first commercial satellite of its kind.",
+   "spokenText": "Early Bird followed in 1965, the first commercial satellite of its kind.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m15.1.mp3",
+   "durationSec": 5.573,
+   "lufs": -16.45,
+   "truePeakDb": -2.64,
+   "normalization": "linear",
+   "hash": "8f9e11c2618b",
+   "sha256": "66400e3c3b7648d9f149c0f616de47a916945bca5f313870fb53964a7a06c8a1",
+   "requires": {
+    "mission": "m15"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m15",
+   "sources": [
+    "H17"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m15.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Early Bird carried two hundred forty phone calls at once.",
+   "spokenText": "Early Bird carried two hundred forty phone calls at once.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m15.1.mp3",
+   "durationSec": 2.74,
+   "lufs": -16.44,
+   "truePeakDb": -1.98,
+   "normalization": "linear",
+   "hash": "49f873b5d279",
+   "sha256": "ce4d8e26491b0b9b8f6af4520548964338970193ba8cc261404199ce4cf8fa5e",
+   "requires": {
+    "mission": "m15"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m15",
+   "sources": [
+    "H17"
+   ]
+  },
+  {
+   "id": "host/color.pad.m16.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "People have lived aboard the space station without a break since 2000.",
+   "spokenText": "People have lived aboard the space station without a break since 2000.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m16.1.mp3",
+   "durationSec": 3.947,
+   "lufs": -16.45,
+   "truePeakDb": -3.1,
+   "normalization": "linear",
+   "hash": "45374496be47",
+   "sha256": "99194722a2901cf190cd28bd0d7b03978aa7f6351038bc8fb7ef1d939da14ea6",
+   "requires": {
+    "mission": "m16"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m16",
+   "sources": [
+    "H18"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m16.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Expedition 1 arrived on November 2, three people in three modules.",
+   "spokenText": "Expedition 1 arrived on November 2, three people in three modules.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m16.2.mp3",
+   "durationSec": 3.808,
+   "lufs": -16.44,
+   "truePeakDb": -2.15,
+   "normalization": "linear",
+   "hash": "aa9e0734dc1c",
+   "sha256": "7c70628698e68a5ce3c3065a5e64353271fca640b2443e95bac343f58365b9bb",
+   "requires": {
+    "mission": "m16"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m16",
+   "sources": [
+    "H18"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m16.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Crews hand the station over in person, so the chain never breaks.",
+   "spokenText": "Crews hand the station over in person, so the chain never breaks.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m16.1.mp3",
+   "durationSec": 3.901,
+   "lufs": -16.43,
+   "truePeakDb": -2.99,
+   "normalization": "linear",
+   "hash": "d86c1baadf68",
+   "sha256": "e52340211b89475025fea8d3781126ad091d0c0824d559ddca52509bd9eb2196",
+   "requires": {
+    "mission": "m16"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m16",
+   "sources": [
+    "H18"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m16.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "The station hosts crews from five space agencies working together.",
+   "spokenText": "The station hosts crews from five space agencies working together.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m16.1.mp3",
+   "durationSec": 3.669,
+   "lufs": -16.45,
+   "truePeakDb": -2.12,
+   "normalization": "linear",
+   "hash": "23d7c32ff337",
+   "sha256": "d983f19472c53859770d387a8454df0a3c570504cfaf21863e2651764a832fd0",
+   "requires": {
+    "mission": "m16"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m16",
+   "sources": [
+    "H18"
+   ]
+  },
+  {
+   "id": "host/color.pad.m17.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Apollo 11 launched on July 16, 1969, atop a Saturn V.",
+   "spokenText": "Apollo 11 launched on July 16, 1969, atop a Saturn V.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m17.1.mp3",
+   "durationSec": 4.737,
+   "lufs": -16.44,
+   "truePeakDb": -3.15,
+   "normalization": "linear",
+   "hash": "6af9d2b35fab",
+   "sha256": "01eb9bc2b7300845c73f84213cd532489ff653914c5aa91994dde3da96bc857b",
+   "requires": {
+    "mission": "m17"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m17",
+   "sources": [
+    "H19"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m17.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Eagle landed in the Sea of Tranquility on July 20.",
+   "spokenText": "Eagle landed in the Sea of Tranquility on July 20.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m17.2.mp3",
+   "durationSec": 2.833,
+   "lufs": -16.44,
+   "truePeakDb": -2.49,
+   "normalization": "linear",
+   "hash": "f54cc7a3446b",
+   "sha256": "256c18bfa02375d40c80dfeb1c0058424f10704a33750f8dfb5a01dcda9edc66",
+   "requires": {
+    "mission": "m17"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m17",
+   "sources": [
+    "H19"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m17.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Armstrong flew the lander by hand past a rocky crater.",
+   "spokenText": "Armstrong flew the lander by hand past a rocky crater.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m17.1.mp3",
+   "durationSec": 3.204,
+   "lufs": -16.46,
+   "truePeakDb": -3.25,
+   "normalization": "linear",
+   "hash": "5b107a524bef",
+   "sha256": "54b19dea6990ebc60b46715a4dee6db98cf9e4c5df76b29b03bec1d5bdc24e26",
+   "requires": {
+    "mission": "m17"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m17",
+   "sources": [
+    "H19"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m17.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "That is one small step for a man, one giant leap for mankind.",
+   "spokenText": "That is one small step for a man, one giant leap for mankind.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m17.1.mp3",
+   "durationSec": 3.204,
+   "lufs": -16.75,
+   "truePeakDb": -1.84,
+   "normalization": "dynamic",
+   "hash": "fe7ce8dcc256",
+   "sha256": "c4a7108f1aca98884f63a839b0784f98eb6ed5c9052fbda292be781dbae3efff",
+   "requires": {
+    "mission": "m17"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m17",
+   "sources": [
+    "H19"
+   ]
+  },
+  {
+   "id": "host/color.pad.m18.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "New Horizons left Earth faster than any spacecraft before it.",
+   "spokenText": "New Horizons left Earth faster than any spacecraft before it.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m18.1.mp3",
+   "durationSec": 3.715,
+   "lufs": -16.43,
+   "truePeakDb": -3.35,
+   "normalization": "linear",
+   "hash": "2a37d29e50d7",
+   "sha256": "80703bcdf0d7381c707051997812ac787d552b1368c4a58b54506163f6c4f53a",
+   "requires": {
+    "mission": "m18"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m18",
+   "sources": [
+    "H20"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m18.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It passed the Moon's orbit in just nine hours.",
+   "spokenText": "It passed the Moon's orbit in just nine hours.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m18.2.mp3",
+   "durationSec": 2.601,
+   "lufs": -16.42,
+   "truePeakDb": -2.65,
+   "normalization": "linear",
+   "hash": "cffa50a35571",
+   "sha256": "2f184eef563af19535baf5b6467f7dae7351d9810a002788413549e651921ff0",
+   "requires": {
+    "mission": "m18"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m18",
+   "sources": [
+    "H20"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m18.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Nine years later it flew past Pluto, twelve thousand five hundred kilometres away.",
+   "spokenText": "Nine years later it flew past Pluto, twelve thousand five hundred kilometres away.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m18.1.mp3",
+   "durationSec": 4.783,
+   "lufs": -16.44,
+   "truePeakDb": -3.35,
+   "normalization": "linear",
+   "hash": "113f4d973489",
+   "sha256": "c974c0f3dbe0e64f1b3602bb13c2c18a28eb27025f79e99485d66eed36f09076",
+   "requires": {
+    "mission": "m18"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m18",
+   "sources": [
+    "H20"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m18.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It kept flying, past Arrokoth, the most distant world ever visited.",
+   "spokenText": "It kept flying, past Arrokoth, the most distant world ever visited.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m18.1.mp3",
+   "durationSec": 3.669,
+   "lufs": -16.45,
+   "truePeakDb": -2.13,
+   "normalization": "linear",
+   "hash": "c2000308b97f",
+   "sha256": "64c4de49c4813508d767055992d64c92fda61c871eb7a0eeef5e1315ee1080a6",
+   "requires": {
+    "mission": "m18"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m18",
+   "sources": [
+    "H20"
+   ]
+  },
+  {
+   "id": "host/color.pad.m19.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "March 2017, a Falcon 9 flew again, the first reused orbital rocket.",
+   "spokenText": "March 2017, a Falcon 9 flew again, the first reused orbital rocket.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m19.1.mp3",
+   "durationSec": 5.851,
+   "lufs": -16.44,
+   "truePeakDb": -3.17,
+   "normalization": "linear",
+   "hash": "9846311f12cc",
+   "sha256": "62b5c6ed0766862a9f7884c8b4e54e5a30a076d510c0843930c0596449632a60",
+   "requires": {
+    "mission": "m19"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m19",
+   "sources": [
+    "H21"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m19.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "That stage had already flown a station cargo run in 2016.",
+   "spokenText": "That stage had already flown a station cargo run in 2016.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m19.2.mp3",
+   "durationSec": 3.204,
+   "lufs": -16.44,
+   "truePeakDb": -1.92,
+   "normalization": "linear",
+   "hash": "2414d3fcb6f2",
+   "sha256": "86095a4383d24dcec20edb445f57442cf12012e66a2f4f1d878f91f7eba8e055",
+   "requires": {
+    "mission": "m19"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m19",
+   "sources": [
+    "H21"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m19.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "It landed again on a droneship, the first stage to fly twice.",
+   "spokenText": "It landed again on a droneship, the first stage to fly twice.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m19.1.mp3",
+   "durationSec": 4.087,
+   "lufs": -16.45,
+   "truePeakDb": -2.92,
+   "normalization": "linear",
+   "hash": "6e73c2418f6c",
+   "sha256": "0c172611a98e463d973db4583329f724baf1138b171d40a3af15e7a02b17687b",
+   "requires": {
+    "mission": "m19"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m19",
+   "sources": [
+    "H21"
+   ]
+  },
+  {
+   "id": "cohost/color.recovery.m19.1",
+   "event": "color.recovery",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Today, single first stages have flown more than thirty times each.",
+   "spokenText": "Today, single first stages have flown more than thirty times each.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.recovery.m19.1.mp3",
+   "durationSec": 3.901,
+   "lufs": -16.45,
+   "truePeakDb": -1.76,
+   "normalization": "linear",
+   "hash": "908ce9de2f71",
+   "sha256": "ea7c1c18bbee099a97f4f710d3e201e83a28508c073362c70489f0a6c85923aa",
+   "requires": {
+    "mission": "m19"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m19",
+   "sources": [
+    "H21",
+    "H25"
+   ]
+  },
+  {
+   "id": "host/color.pad.m20.1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Voyager 1 launched in 1977 and is still flying, past the planets.",
+   "spokenText": "Voyager 1 launched in 1977 and is still flying, past the planets.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m20.1.mp3",
+   "durationSec": 5.062,
+   "lufs": -16.42,
+   "truePeakDb": -3.28,
+   "normalization": "linear",
+   "hash": "9cf404a1392c",
+   "sha256": "9e041e95fb10299242254ec7b8d7740e07fbf27796ec6257a914d176f0a6938b",
+   "requires": {
+    "mission": "m20"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m20",
+   "sources": [
+    "H22"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m20.2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "It crossed into interstellar space in 2012, the first spacecraft to do so.",
+   "spokenText": "It crossed into interstellar space in 2012, the first spacecraft to do so.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m20.2.mp3",
+   "durationSec": 3.947,
+   "lufs": -16.43,
+   "truePeakDb": -2.06,
+   "normalization": "linear",
+   "hash": "a62e0f3ecf2d",
+   "sha256": "4aec021b44016adffcc3a56e988d946456e6e992f807588833a9249e55fa0557",
+   "requires": {
+    "mission": "m20"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m20",
+   "sources": [
+    "H22"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m20.1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Its golden record carries greetings in fifty-five languages.",
+   "spokenText": "Its golden record carries greetings in fifty-five languages.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m20.1.mp3",
+   "durationSec": 3.529,
+   "lufs": -16.45,
+   "truePeakDb": -3.15,
+   "normalization": "linear",
+   "hash": "6cb6cb9be0e7",
+   "sha256": "041ce9678a21213ea2441f7d684a574f342ce6324fe11935dad76452d2dd51c5",
+   "requires": {
+    "mission": "m20"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m20",
+   "sources": [
+    "H22"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m20.1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Voyager 1 is the farthest human-made object from Earth.",
+   "spokenText": "Voyager 1 is the farthest human-made object from Earth.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m20.1.mp3",
+   "durationSec": 2.926,
+   "lufs": -16.45,
+   "truePeakDb": -1.95,
+   "normalization": "linear",
+   "hash": "aa330597d5db",
+   "sha256": "c9e53f042b94e43a243753923d5fc9ad87c1a746c6eba397a7fdc753b8c6520c",
+   "requires": {
+    "mission": "m20"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m20",
+   "sources": [
+    "H22"
    ]
   }
  ],

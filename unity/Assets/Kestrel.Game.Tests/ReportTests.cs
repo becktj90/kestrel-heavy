@@ -120,9 +120,9 @@ namespace Kestrel.Game.Tests
             Assert.That(plots.Length, Is.EqualTo(5));
             Assert.That(plots[0].Channel, Is.EqualTo("alt"));
             Assert.That(plots[4].Channel, Is.EqualTo("losses"));
-            Assert.That(plots[0].FailureX, Is.EqualTo(0.5f).Within(1e-4));
+            Assert.That(plots[0].FailureX, Is.EqualTo(0.5f * (1f - ReportPlot.EdgeInset)).Within(1e-4));
             Assert.That(plots[0].X[0], Is.EqualTo(0f).Within(1e-4));
-            Assert.That(plots[0].X[2], Is.EqualTo(1f).Within(1e-4));
+            Assert.That(plots[0].X[2], Is.EqualTo(1f - ReportPlot.EdgeInset).Within(1e-4));
             Assert.That(plots[0].Y[0], Is.EqualTo(0f).Within(1e-4));
             Assert.That(plots[0].Y[2], Is.EqualTo(1f).Within(1e-4));
             Assert.That(plots[4].Y[2], Is.EqualTo(1f).Within(1e-4), "loss total grows");
@@ -132,6 +132,101 @@ namespace Kestrel.Game.Tests
             Assert.That(card.ClassListContains("reduce-motion"), Is.True);
             Assert.That(card.Q("plot-alt").Q("failure-marker"), Is.Not.Null);
             Assert.That(card.Q("failure-plots").tooltip, Does.Contain("Altitude"));
+        }
+
+        [Test]
+        public void PlotBarsAndMarkersStayInsideThePlot()
+        {
+            // Area C, bug 2: a bar at X = 1 sat entirely outside its plot (left:100%, 2 pt wide, overflow
+            // hidden) — and with it the losses panel's only tall bar, since the final loss totals are stamped
+            // onto the newest sample only. Every plotted X is held back by ReportPlot.EdgeInset, so at the
+            // narrowest tested plot (335 pt screen: 55 pt plots) even the 4 pt failure mark stays inside.
+            var log = new TelemetryLog();
+            log.Push(0, 0, 0, 0, 1, 1000, 0, 0, 0);
+            log.Push(5, 2000, 100, 8000, 1.5, 900, 5, 2, 1);
+            log.Push(10, 5000, 200, 20000, 2, 800, 10, 4, 2);
+            log.Push(15, 8000, 300, 12000, 2.5, 700, 20, 6, 3);
+            log.Push(20, 9000, 400, 5000, 1.5, 600, 30, 9, 5);
+            log.Mark(0, "liftoff", false);
+            log.Mark(20, "structural-maxq", true);
+            var plots = ReportPlot.Build(log);
+            float maxX = 1f - ReportPlot.EdgeInset;
+            const float narrowestPlotPt = 55f; // 335 pt screen: (335 - 16 - 24 - 5 * 4) / 5
+            foreach (var p in plots)
+            {
+                foreach (float x in p.X)
+                {
+                    Assert.That(x, Is.GreaterThanOrEqualTo(0f).And.LessThanOrEqualTo(maxX), p.Channel + " bar X " + x);
+                    Assert.That(x * narrowestPlotPt + 2f, Is.LessThanOrEqualTo(narrowestPlotPt + 0.01f), p.Channel + " bar inside");
+                }
+                foreach (float x in p.MarkerX)
+                {
+                    Assert.That(x, Is.GreaterThanOrEqualTo(0f).And.LessThanOrEqualTo(maxX), p.Channel + " marker X " + x);
+                    Assert.That(x * narrowestPlotPt + 2f, Is.LessThanOrEqualTo(narrowestPlotPt + 0.01f), p.Channel + " marker inside");
+                }
+                Assert.That(p.FailureX, Is.GreaterThanOrEqualTo(0f).And.LessThanOrEqualTo(maxX), p.Channel + " failure X");
+                Assert.That(p.FailureX * narrowestPlotPt + 4f, Is.LessThanOrEqualTo(narrowestPlotPt + 0.01f), p.Channel + " failure mark inside");
+            }
+            Assert.That(plots[0].X[plots[0].X.Length - 1], Is.EqualTo(maxX).Within(1e-4), "the last sample still reaches the edge");
+            Assert.That(plots[0].MarkerX[1], Is.EqualTo(maxX).Within(1e-4), "the last mark still reaches the edge");
+
+            // The rendered bars carry the same inset: every bar/marker/failure left is within the plot bounds.
+            var frame = ReportLayout.Solve(335, 720, 20, 0, 0, 0, true);
+            var card = ReportView.Build(new FailureEvent { kind = "structural-maxq", kid = "Bent.", engineer = "q high." }, log, frame, true, null);
+            foreach (var plot in card.Q("failure-plots").Children())
+            {
+                foreach (var bar in plot.Query<VisualElement>("bar").ToList())
+                {
+                    Assert.That(bar.style.left.value.unit, Is.EqualTo(LengthUnit.Percent), plot.name + " bar left is a percent");
+                    Assert.That(bar.style.left.value.value, Is.GreaterThanOrEqualTo(0f).And.LessThanOrEqualTo(maxX * 100f), plot.name + " bar left");
+                }
+                foreach (var mark in plot.Query<VisualElement>("marker").ToList())
+                    Assert.That(mark.style.left.value.value, Is.GreaterThanOrEqualTo(0f).And.LessThanOrEqualTo(maxX * 100f), plot.name + " marker left");
+                var fail = plot.Q<VisualElement>("failure-marker");
+                if (fail != null)
+                    Assert.That(fail.style.left.value.value, Is.GreaterThanOrEqualTo(0f).And.LessThanOrEqualTo(maxX * 100f), plot.name + " failure left");
+            }
+
+            // Area C, bug 1: the captions are the short forms that fit a 55 pt plot at 14 pt
+            // ("Dynamic pressure" rendered as "Dynamic p", "Delta-v losses" as "Delta-v los").
+            Assert.That(card.Q("plot-alt").Q<Label>("plot-label").text, Is.EqualTo("Altitude"));
+            Assert.That(card.Q("plot-vel").Q<Label>("plot-label").text, Is.EqualTo("Speed"));
+            Assert.That(card.Q("plot-q").Q<Label>("plot-label").text, Is.EqualTo("Dyn. q"));
+            Assert.That(card.Q("plot-g").Q<Label>("plot-label").text, Is.EqualTo("g load"));
+            Assert.That(card.Q("plot-losses").Q<Label>("plot-label").text, Is.EqualTo("Δv loss"));
+            // The full names stay in the tooltips.
+            Assert.That(card.Q("plot-q").tooltip, Does.StartWith("Dynamic pressure"));
+            Assert.That(card.Q("plot-losses").tooltip, Does.StartWith("Delta-v losses"));
+        }
+
+        [Test]
+        public void SkipSamplesLandInTheLogAtTheFrameCadence()
+        {
+            // Area C, bug 3 (host side): skip-time samples land in the same log at the frame sampler's
+            // 0.1 s cadence, with the same kinematic g-load — no fabricated fills.
+            var go = new UnityEngine.GameObject("skip-host");
+            var host = go.AddComponent<Kestrel.Game.Failure.FailureHost>();
+            try
+            {
+                host.SampleSkip(new AscentSample { T = 0, AltM = 0, SpeedMps = 0, QPa = 0, MassKg = 10000 });
+                host.SampleSkip(new AscentSample { T = 0.05, AltM = 10, SpeedMps = 50, QPa = 100, MassKg = 9900 });
+                host.SampleSkip(new AscentSample { T = 0.1, AltM = 40, SpeedMps = 100, QPa = 400, MassKg = 9800 });
+                host.SampleSkip(new AscentSample { T = 0.2, AltM = 160, SpeedMps = 200, QPa = 900, MassKg = 9600 });
+                host.SampleSkip(new AscentSample { T = 0.3, AltM = 360, SpeedMps = 300, QPa = 1600, MassKg = 9400 });
+                var log = host.Log;
+                Assert.That(log.Count, Is.EqualTo(4), "the 0.05 sample is gated out by the 0.1 s gate");
+                Assert.That(log[0].T, Is.EqualTo(0).Within(1e-9));
+                Assert.That(log[1].T, Is.EqualTo(0.1).Within(1e-9));
+                Assert.That(log[2].T, Is.EqualTo(0.2).Within(1e-9));
+                Assert.That(log[3].T, Is.EqualTo(0.3).Within(1e-9));
+                Assert.That(log[3].Alt, Is.EqualTo(360).Within(1e-9));
+                Assert.That(log[3].V, Is.EqualTo(300).Within(1e-9));
+                Assert.That(log[3].Q, Is.EqualTo(1600).Within(1e-9));
+                Assert.That(log[3].Mass, Is.EqualTo(9400).Within(1e-9));
+                Assert.That(log[3].G, Is.EqualTo((300 - 200) / 0.1 / 9.80665).Within(1e-6), "kinematic g over the 0.1 s gap");
+                Assert.That(log[3].LossTotal, Is.EqualTo(0), "losses stay the host's own until the result lands");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
         }
 
         [Test]
@@ -173,6 +268,37 @@ namespace Kestrel.Game.Tests
             Assert.That(link.Uri, Is.EqualTo("kestrel://design?tab=" + tab + "&field=" + field));
             Assert.That(link.VoiceOver, Does.StartWith("Fix it."));
             Assert.That(ReportView.Shapes(kind), Is.GreaterThanOrEqualTo(2), kind);
+        }
+
+        /// <summary>QA #417: a destroyed listener threw first and the live one never ran (Fix it -> empty sky).</summary>
+        [Test]
+        public void FixItReachesEveryLiveListener_EvenWhenOneThrowsOrIsDestroyed()
+        {
+            var dead = new UnityEngine.GameObject("dead").AddComponent<FixListener>();
+            var live = new UnityEngine.GameObject("live").AddComponent<FixListener>();
+            System.Action<FixField> thrower = _ => throw new System.InvalidOperationException("dead app");
+            FixField.OnApply += dead.Hear;
+            FixField.OnApply += thrower;
+            FixField.OnApply += live.Hear;
+            try
+            {
+                UnityEngine.Object.DestroyImmediate(dead.gameObject);
+                UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Exception, new System.Text.RegularExpressions.Regex("dead app"));
+                FixField.Apply(new VisualElement(), FixField.For("engine-out"));
+                Assert.That(live.Heard, Is.EqualTo(1), "the live listener still routes to the designer");
+            }
+            finally
+            {
+                FixField.OnApply -= thrower;
+                FixField.OnApply -= live.Hear;
+                UnityEngine.Object.DestroyImmediate(live.gameObject);
+            }
+        }
+
+        sealed class FixListener : UnityEngine.MonoBehaviour
+        {
+            public int Heard;
+            public void Hear(FixField link) { var p = transform.position; if (link != null && p.x < float.PositiveInfinity) Heard++; }
         }
     }
 }

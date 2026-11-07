@@ -1,6 +1,6 @@
 // Vertical flight trajectory. A line runs up the screen edge, bottom to top.
 // Milestones are ticks: liftoff, max-Q, BECO (strap-on boosters), MECO, fairing, SECO/orbit (SECO only with a real
-// upper stage), and, when the booster returns, the recovery stops its planned mode flies (RTLS: boostback, entry,
+// upper stage), and, when the design chose a booster landing and the booster returns, the recovery stops its planned mode flies (RTLS: boostback, entry,
 // Haven; barge: entry, Haven), and never a stop the booster skipped once a later one has lit. Passed ticks are done,
 // the next one is the highlight, and the fill plus the marker move with the clock.
 // Labels are short plain words and the numbers the flight actually flew. Raw ids stay out.
@@ -73,6 +73,9 @@ namespace Kestrel.Core.Flight
         /// <summary>The planned recovery mode ("rtls", "barge", anything else = no boostback planned). Null: unknown, all
         /// three recovery stops are planned. A stop the booster never flew is dropped once a later recovery stop lights.</summary>
         public string RecoveryMode;
+        /// <summary>The design chose a booster landing (AscentVehicle.LandingPlanned). False: an expendable design. Its
+        /// stage may still fly a barge attempt (the lost line), but the rail shows no Boostback, Entry or Landing stop.</summary>
+        public bool LandingPlanned = true;
 
         int burnStage; double burnLeft = double.NaN;
 
@@ -127,6 +130,7 @@ namespace Kestrel.Core.Flight
             FairingAltM = 110000;
             StrapOns = false;
             RecoveryMode = null;
+            LandingPlanned = true;
             burnStage = 0; burnLeft = double.NaN;
         }
 
@@ -214,7 +218,7 @@ namespace Kestrel.Core.Flight
             if (CoreStages >= 2 || seco.On) stops.Add(TrajectoryStop.Seco);
             // A hop that ended below the jettison altitude never opened its fairing: that stop does not hold the end.
             if (ascentOver && now + 1e-6 >= ascentOverT && !Flown(fairing, now)) stops.Remove(TrajectoryStop.Fairing);
-            if (Recovery || boost.On || entry.On || landing.On)
+            if (LandingPlanned && (Recovery || boost.On || entry.On || landing.On))
             {
                 if (FliesBoostback() || boost.On) stops.Add(TrajectoryStop.Boostback);
                 stops.Add(TrajectoryStop.Entry);
