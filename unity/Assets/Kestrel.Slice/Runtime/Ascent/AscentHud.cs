@@ -783,7 +783,7 @@ namespace Kestrel.Slice
             float ux = upp;
             float uy = upp;
             float rowPx = DockRowPx();
-            var f = FlightHudLayout.PlaceWide(fw, fh, safeTop * sy, safeBottom * sy, safeLeft * sx, safeRight * sx, mode, rowPx / upp, FlightHudLayout.ClockMinWidth());
+            var f = FlightHudLayout.PlaceWide(fw, fh, safeTop * sy, safeBottom * sy, safeLeft * sx, safeRight * sx, mode, rowPx / upp, FlightHudLayout.ClockMinWidthWithChip());
             HudBox Sc(HudBox b) => FlightHudLayout.ToPanel(b, ux, uy);
             bool InDock(HudBox b) => b.Live && b.Y >= f.Dock.Y - 1f && b.Bottom <= f.Dock.Bottom + 1.5f;
 
@@ -1326,7 +1326,7 @@ namespace Kestrel.Slice
         {
             var clock = hud != null ? hud.Q<Label>("h-t") : null;
             if (clock == null) return;
-            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFit(boxW, boxH));
+            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFitWithChip(boxW, boxH)); // reserves the warp chip
             clock.style.marginLeft = 0; clock.style.marginRight = 0; clock.style.marginTop = 0; clock.style.marginBottom = 0;
         }
 
