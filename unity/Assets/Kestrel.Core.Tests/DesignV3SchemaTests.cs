@@ -217,7 +217,9 @@ namespace Kestrel.Core.Tests
         {
             const double diameter = 5;
             const double length = 10;
-            double usable = Math.PI * Math.Pow(0.45 * diameter, 2) * 0.8 * length;
+            // #302: the fill fraction k is per nose shape from the profile integral (ogive 0.85),
+            // not the flat 0.8 the spec formula used to pin.
+            double usable = Math.PI * Math.Pow(0.45 * diameter, 2) * PayloadFit.LengthFactorFor("ogive") * length;
             var design = Design.FromJson(Minimal(diameter, length));
 
             var exact = PayloadFit.Check(design, new PayloadSpec { id = "edge", volume = usable, diameter = 0.9 * diameter });

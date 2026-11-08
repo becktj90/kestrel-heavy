@@ -2111,7 +2111,7 @@
      {
       "code": "payload-doesnt-fit",
       "tab": "payload",
-      "msg": "The Crew capsule needs about 40.0 m³; this fairing holds 4.6 m³. Try a longer or wider fairing."
+      "msg": "The Crew capsule needs about 40.0 m³; this fairing holds 5.2 m³. Try a longer or wider fairing."
      }
     ],
     "warnings": [
@@ -9570,7 +9570,7 @@
      },
      "fairing": {
       "diameter": 1.3,
-      "length": 4,
+      "length": 3.8,
       "material": "composite",
       "jettisonAltitudeKm": 100
      },

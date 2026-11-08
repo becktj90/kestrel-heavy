@@ -1,7 +1,8 @@
 // B-04: one fairing-fit rule. Validate, Readout, the stepper and LaunchGate used three different
 // rules (docs/audits/DESIGNER_MISSION_DISCREPANCIES.md). They now all call PayloadFit, which is the
 // rule FlightBatch judges with. Expected numbers come from the §2.9 formula
-// usable = π(0.45·D)²·0.8·L, cargo diameter ≤ 0.9·D (same 0.45·D envelope), and the cargo in campaign.json / payloads.json.
+// usable = π(0.45·D)²·k(nose)·L, cargo diameter ≤ 0.9·D (same 0.45·D envelope), and the cargo in campaign.json / payloads.json.
+// k is per nose shape (#302): ogive 0.85, conic 0.733, blunt 0.917, von Kármán 0.762.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,6 +29,20 @@ namespace Kestrel.Core.Tests
         }
 
         /// <summary>What each of the four surfaces says about fit, plus the flight judge.</summary>
+        /// <summary>#302: the fill fraction is per nose shape, from the profile integral (k = 1 − noseFrac × (1 − profile)):
+        /// ogive 0.85, conic 0.733, blunt 0.917, von Kármán 0.762. The old flat 0.8 was ~6% conservative for the
+        /// ogive every golden uses, so ogive/blunt designs gain usable volume and conic/von Kármán lose a little.</summary>
+        [TestCase("ogive", 2.0 / 3.0, 0.85)]
+        [TestCase("conic", 1.0 / 3.0, 0.7333333333333333)]
+        [TestCase("blunt", 2.0 / 3.0, 0.9166666666666666)]
+        [TestCase("von-karman", 0.47, 0.7615)]
+        public void LengthFactor_IsPerNoseShape_FromTheProfileIntegral(string nose, double profile, double k)
+        {
+            Assert.AreEqual(profile, PayloadFit.ProfileFraction(nose), 1e-12);
+            Assert.AreEqual(k, PayloadFit.LengthFactorFor(nose), 1e-12);
+            // Usable volume follows k: a 3 m × 10 m ogive fairing holds 6.25% more than the old flat 0.8.
+            Assert.AreEqual(Math.PI * Math.Pow(0.45 * 3, 2) * k * 10, PayloadFit.UsableVolume(3, 10, nose), 1e-9);
+        }
         (bool validate, bool readout, bool stepper, bool gate, bool judge) Verdicts(JsonObject design, CampaignMission mission)
         {
             var report = Validate.Engineering(catalog, design);
@@ -115,9 +130,9 @@ namespace Kestrel.Core.Tests
         public void Diameter_IsChecked_AWideCargoInANarrowLongFairingDoesNotFit()
         {
             var d = Stamped(Path.Combine("data", "golden", "campaign-winners.json"), "m12");
-            SetFairing(d, 1.5, 20); // usable π(0.675)²·0.8·20 ≈ 22.9 m³ > 10 m³, but the telescope is 2.4 m wide
+            SetFairing(d, 1.5, 20); // usable π(0.675)²·0.85·20 ≈ 24.3 m³ > 10 m³, but the telescope is 2.4 m wide
             var fit = PayloadFit.Check(catalog, d).Value;
-            Assert.AreEqual(Math.PI * 0.675 * 0.675 * 0.8 * 20 - 10, fit.volumeMargin, 1e-9);
+            Assert.AreEqual(Math.PI * 0.675 * 0.675 * 0.85 * 20 - 10, fit.volumeMargin, 1e-9);
             Assert.Greater(fit.volumeMargin, 0);
             Assert.AreEqual(0.9 * 1.5 - 2.4, fit.diameterMargin, 1e-12);
             Assert.AreEqual(fit.diameterMargin, Readout.Quick(catalog, d).fairingDiameterMargin_m, 1e-12);
@@ -134,7 +149,7 @@ namespace Kestrel.Core.Tests
             double dia = PayloadFit.RequiredDiameter(spec);
             Assert.AreEqual(2.0 / 0.9, dia, 1e-12);
             double len = PayloadFit.RequiredLength(spec, dia);
-            Assert.AreEqual(12 / (Math.PI * Math.Pow(0.45 * dia, 2) * 0.8), len, 1e-9);
+            Assert.AreEqual(12 / (Math.PI * Math.Pow(0.45 * dia, 2) * 0.85), len, 1e-9);
             var d = Stamped(Path.Combine("data", "golden", "campaign-winners.json"), "m4");
             SetFairing(d, dia, len * (1 + 1e-9));
             AssertAgree(d, m, true, "at the limit");

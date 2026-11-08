@@ -471,7 +471,7 @@ namespace Kestrel.Core.Designer.Stepper
             if (volume > 0 && targetD > 0)
             {
                 double radius = PayloadFit.RadiusFactor * targetD;
-                double denom = Math.PI * radius * radius * PayloadFit.LengthFactor;
+                double denom = Math.PI * radius * radius * PayloadFit.LengthFactorFor(design.Obj("aero")?.Str("nose", "ogive"));
                 if (denom > 0) targetL = volume / denom * 1.08;
             }
             targetL = Ceil(Math.Max(targetL, length + 0.5), 0.1, lim.fairingLengthMin, lim.fairingLengthMax);
@@ -479,7 +479,7 @@ namespace Kestrel.Core.Designer.Stepper
             {
                 targetD = Ceil(Math.Max(targetD, diameter + 0.5), 0.1, lim.diameterMin, lim.diameterMax);
                 double radius = PayloadFit.RadiusFactor * targetD;
-                double denom = Math.PI * radius * radius * PayloadFit.LengthFactor;
+                double denom = Math.PI * radius * radius * PayloadFit.LengthFactorFor(design.Obj("aero")?.Str("nose", "ogive"));
                 if (volume > 0 && denom > 0) targetL = Ceil(volume / denom * 1.08, 0.1, lim.fairingLengthMin, lim.fairingLengthMax);
             }
             var edit = ApplyFairing(design, targetL, targetD);
