@@ -75,16 +75,20 @@ namespace Kestrel.Game.Tests
             var cost = cells.Find(c => c.id == "cost");
             Assert.AreEqual(DesignerV3Strip.CompactMoney(r.cost), cost.value);
             Assert.IsFalse(cost.value.Contains(","));
-            StringAssert.Contains(r.cost.ToString("N0", System.Globalization.CultureInfo.InvariantCulture), cost.hint);
+            StringAssert.Contains(DesignerV3Strip.ExactKc(r.cost), cost.hint);
+            StringAssert.EndsWith(" Kc", cost.value);
+            Assert.IsFalse(cost.value.Contains("$"), "the designer speaks Kc, not dollars");
         }
 
         [Test]
-        public void CompactMoney_UsesBillionsForTheWorkhorseScale()
+        public void CompactMoney_ShowsKcNotDollars()
         {
-            Assert.AreEqual("$1.66B", DesignerV3Strip.CompactMoney(1660781357));
-            Assert.AreEqual("$1.66M", DesignerV3Strip.CompactMoney(1660781));
-            Assert.AreEqual("$16.61k", DesignerV3Strip.CompactMoney(16607));
-            Assert.AreEqual("$850", DesignerV3Strip.CompactMoney(850));
+            // Minor units: 100,000 per Kc. The KH-1 hopper's $516.71M was 5,167 Kc.
+            Assert.AreEqual("5.2k Kc", DesignerV3Strip.CompactMoney(516_710_000));
+            Assert.AreEqual("1.23M Kc", DesignerV3Strip.CompactMoney(123_000_000_000));
+            Assert.AreEqual("16.6k Kc", DesignerV3Strip.CompactMoney(1_660_781_357));
+            Assert.AreEqual("850 Kc", DesignerV3Strip.CompactMoney(85_000_000));
+            Assert.AreEqual("5,167 Kc", DesignerV3Strip.ExactKc(516_710_000));
         }
 
         [Test]

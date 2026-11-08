@@ -22,6 +22,10 @@ namespace Kestrel.Slice
         public static readonly Color Fly = new Color(242f / 255f, 84f / 255f, 61f / 255f, 1f);
         public static readonly Color FlyEdge = new Color(158f / 255f, 36f / 255f, 56f / 255f, 1f);
         public static readonly Color Teal = new Color(70f / 255f, 217f / 255f, 204f / 255f, 1f);
+        /// <summary>#416 item 3 pass card. Win green on Ink is 10.1:1 for the hero; white on Go is 5.4:1.</summary>
+        public static readonly Color Win = new Color(102f / 255f, 214f / 255f, 140f / 255f, 1f);
+        public static readonly Color Go = new Color(28f / 255f, 122f / 255f, 70f / 255f, 1f);
+        public static readonly Color GoEdge = new Color(14f / 255f, 70f / 255f, 40f / 255f, 1f);
         public static readonly Color Sun = new Color(232f / 255f, 140f / 255f, 60f / 255f, 1f);
 
         /// <summary>Home, when the card is up. Back and Escape use this.</summary>
@@ -211,6 +215,8 @@ namespace Kestrel.Slice
                 shown.Add(label);
             });
             float bodyRoom = hPt - footPt - topPt - 4f;
+            var starRow = scroll != null ? scroll.Q(UiIds.ReportStarRow) : null;
+            if (starRow != null) bodyRoom -= RewardsCard.StarPt + 6f;
             var plan = ReportFit.Body(lines, plots != null, contentW, bodyRoom);
             for (int i = 0; i < shown.Count; i++)
             {
@@ -232,6 +238,8 @@ namespace Kestrel.Slice
                 label.style.paddingBottom = 0;
                 label.style.maxWidth = Length.Percent(100);
                 label.style.color = heading ? Cream : new Color(Cream.r, Cream.g, Cream.b, 0.94f);
+                if (label.name == UiIds.ReportHero) label.style.color = Win;
+                else if (label.name == UiIds.ReportKcHeadline) label.style.color = Sun;
                 if (heading && title != null) label.style.unityFontDefinition = titleDef;
                 else if (body != null) label.style.unityFontDefinition = bodyDef;
             }
@@ -250,12 +258,13 @@ namespace Kestrel.Slice
                 });
             }
 
+            bool pass = card.ClassListContains(UiIds.ReportPassClass);
             var buttonFace = ButtonFace();
             var buttonDef = buttonFace != null ? new StyleFontDefinition(FontDefinition.FromFont(buttonFace)) : default;
             card.Query<Button>().ForEach(button =>
             {
                 if (button == null) return;
-                PaintButton(button, HitPt, Role(button.name));
+                PaintButton(button, HitPt, pass ? PassRole(button.name) : Role(button.name));
                 button.style.minHeight = Mathf.Round(ReportFit.HitPt * upp);
                 button.style.height = Mathf.Round(ReportFit.HitPt * upp);
                 button.style.paddingTop = 0;
@@ -500,7 +509,10 @@ namespace Kestrel.Slice
         }
 
         public static bool IsTitle(string name)
-            => name == "failure-cause" || name == "report-stars";
+            => name == "failure-cause" || name == "report-stars" || name == UiIds.ReportHero || name == UiIds.ReportKcHeadline;
+
+        /// <summary>Pass card roles: Next mission is the one green primary, every other exit is secondary.</summary>
+        public static string PassRole(string name) => name == UiIds.ReportNext ? "primary" : "home";
 
         public static string Role(string name)
         {
@@ -521,6 +533,7 @@ namespace Kestrel.Slice
             switch (role)
             {
                 case "fix": return Fly;
+                case "primary": return Go;
                 case "next": return new Color(20f / 255f, 92f / 255f, 96f / 255f, 1f);
                 case "retry": return Sun;
                 case "designer": return new Color(48f / 255f, 62f / 255f, 112f / 255f, 1f);
@@ -533,6 +546,7 @@ namespace Kestrel.Slice
             switch (role)
             {
                 case "fix": return FlyEdge;
+                case "primary": return GoEdge;
                 case "next": return new Color(10f / 255f, 48f / 255f, 52f / 255f, 1f);
                 case "retry": return new Color(140f / 255f, 72f / 255f, 20f / 255f, 1f);
                 case "designer": return new Color(24f / 255f, 32f / 255f, 66f / 255f, 1f);
