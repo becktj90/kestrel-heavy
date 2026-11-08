@@ -53,6 +53,9 @@ namespace Kestrel.Slice
         public bool ExplodedOn { get; private set; }
         public bool Engineer => engineer;
 
+        Label refusedNote;
+        int refusedShown;
+
         public HangarPanel(HangarSession session, DesignLibrary library, VisualElement body, float upp)
         {
             this.session = session;
@@ -73,8 +76,23 @@ namespace Kestrel.Slice
             content = ui.Column();
             scroll.Add(content);
             root.Add(scroll);
+            // Overlay, not a row: showing it must not move the controls under the finger.
+            refusedNote = ui.Text(HangarSession.RefusedText, HangarUi.SmallPt, Color.white, bold: true);
+            refusedNote.name = "hangar-refused";
+            refusedNote.style.position = Position.Absolute;
+            refusedNote.style.left = 8; refusedNote.style.right = 8; refusedNote.style.bottom = 4;
+            refusedNote.style.whiteSpace = WhiteSpace.Normal;
+            refusedNote.style.backgroundColor = new Color(0.62f, 0.12f, 0.12f, 0.96f); // white on this is ~8:1
+            refusedNote.style.paddingLeft = 8; refusedNote.style.paddingRight = 8;
+            refusedNote.style.paddingTop = 6; refusedNote.style.paddingBottom = 6;
+            refusedNote.style.borderTopLeftRadius = 6; refusedNote.style.borderTopRightRadius = 6;
+            refusedNote.style.borderBottomLeftRadius = 6; refusedNote.style.borderBottomRightRadius = 6;
+            refusedNote.pickingMode = PickingMode.Ignore;
+            refusedNote.style.display = DisplayStyle.None;
+            root.Add(refusedNote);
             BuildTabs();
             session.Changed += OnChanged;
+            session.Refused += OnRefused;
             session.SelectionChanged += _ => Rebuild();
             Rebuild();
         }
@@ -82,6 +100,19 @@ namespace Kestrel.Slice
         public void Detach()
         {
             session.Changed -= OnChanged;
+            session.Refused -= OnRefused;
+        }
+
+        void OnRefused()
+        {
+            if (refusedNote == null) return;
+            refusedNote.style.display = DisplayStyle.Flex;
+            refusedNote.BringToFront();
+            int shown = ++refusedShown;
+            refusedNote.schedule.Execute(() =>
+            {
+                if (shown == refusedShown) refusedNote.style.display = DisplayStyle.None;
+            }).StartingIn(3000);
         }
 
         /// <summary>Units per point changed (first layout on a new device): rebuild at the new size.</summary>

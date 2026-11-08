@@ -169,6 +169,11 @@ namespace Kestrel.Core.Flight
         public const double MaxQGreenEnd = 0.90;
         public const double NudgeLimitDeg = 3;
         public const double NudgeStepDeg = 1;
+        /// <summary>DECISIONS #80: the Engineer pitch nudge (and the pitch call that sets it) opens once the rocket is clear
+        /// of the tower, the first time its speed reaches this (m/s). Every Starter and Home default is then 106 m or more
+        /// up and past the sim's 60 m/s pitch kick; at T+10 s the slowest (m18) is still at 40 m and 9 m/s. Before the gate
+        /// a nudge is not possible at all: not held, not queued.</summary>
+        public const double NudgeGateMps = 100;
         public const double DefaultBucket = 0.70;
         public const double FuelPenalty = 0.97;
         public const double FuelWasteFraction = 0.25;
@@ -478,14 +483,19 @@ namespace Kestrel.Core.Flight
         public static AscentDirector Start(AscentVehicle vehicle, EventSchedule schedule, SeededWind wind, bool autoAssist, bool engineer, bool reduceMotion)
             => new AscentDirector(vehicle, schedule, wind, autoAssist, engineer, reduceMotion);
 
+        /// <summary>DECISIONS #80: true once the rocket has cleared the tower (<see cref="AscentDecisions.NudgeGateMps"/>).
+        /// Latched, so a later slowdown never takes the row away again.</summary>
+        public bool NudgeOpen { get; private set; }
+
         public void NudgePitch(double deltaDeg)
         {
-            if (double.IsNaN(deltaDeg)) return;
+            if (double.IsNaN(deltaDeg) || !NudgeOpen) return;
             SetNudge(NudgeDeg + deltaDeg);
         }
 
         public void SetNudge(double deg)
         {
+            if (!NudgeOpen) return;
             if (double.IsNaN(deg)) deg = 0;
             if (deg > AscentDecisions.NudgeLimitDeg) deg = AscentDecisions.NudgeLimitDeg;
             else if (deg < -AscentDecisions.NudgeLimitDeg) deg = -AscentDecisions.NudgeLimitDeg;
@@ -500,6 +510,7 @@ namespace Kestrel.Core.Flight
             last = sample;
             LiveAlt = sample.AltM;
             LiveSpeed = sample.SpeedMps;
+            if (!NudgeOpen && sample.SpeedMps >= AscentDecisions.NudgeGateMps) NudgeOpen = true;
             LiveQ = sample.QPa;
             LiveG = sample.G;
             LiveProp = sample.PropFraction;
@@ -734,7 +745,7 @@ namespace Kestrel.Core.Flight
                         ready = s.Thrusting && s.QPa >= 0.55 * lim;
                         break;
                     case AscentCall.Pitch:
-                        ready = s.Thrusting && s.StageIndex == 0 && s.SpeedMps > 70 && s.AltM > 1500 && s.AltM < 50000;
+                        ready = s.Thrusting && s.StageIndex == 0 && NudgeOpen && s.SpeedMps > 70 && s.AltM > 1500 && s.AltM < 50000;
                         break;
                     case AscentCall.Staging:
                         ready = s.Thrusting && s.StageIndex == c.Stage && s.PropFraction > 0 && s.PropFraction <= 0.12;

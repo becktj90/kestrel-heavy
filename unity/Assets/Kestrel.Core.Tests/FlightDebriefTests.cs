@@ -175,6 +175,8 @@ namespace Kestrel.Core.Tests
                 Assert.That(card.KcLine, Does.Contain("Reward 10 Kc"));
                 Assert.That(card.KcLine, Does.Contain("Hardware 4 Kc"));
                 Assert.That(card.KcLine, Does.Not.Contain("you failed"));
+                Assert.That(card.KcHeadline, Is.EqualTo(KcFormat.Signed(card.DeltaKc) + " Kc"), "#416 pass card money");
+                Assert.That(card.KcHeadline, Does.StartWith("+"));
                 Assert.IsTrue(store.Career.HasUnlock("fins"));
                 Assert.IsTrue(store.Career.HasUnlock("decal_thrums_toolbox"));
                 Assert.That(card.CosmeticLine, Does.Contain("Thrum's Toolbox"));
@@ -222,6 +224,7 @@ namespace Kestrel.Core.Tests
                 Assert.AreEqual(0, card.RewardMinor);
                 Assert.AreEqual(bank - 400, store.Career.BankMinor);
                 Assert.That(card.KcLine, Does.StartWith("No reward."));
+                Assert.That(card.KcHeadline, Is.Empty, "no hero money on a fail");
                 Assert.AreEqual(0, store.Career.Cleared);
                 Assert.IsFalse(store.Career.HasUnlock("decal_thrums_toolbox"));
                 Assert.AreEqual(0, store.Mission("m1").BestStars);
@@ -275,7 +278,8 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(42UL, GameSession.Current.Seed);
 
             var next = ReportRoutes.Next(campaign);
-            Assert.AreEqual(SessionScreens.Missions, next.Screen);
+            // NAV-06 (#416 item 9): Next mission opens the next mission's designer directly.
+            Assert.AreEqual(SessionScreens.Design, next.Screen);
             Assert.AreEqual("m2", next.Session.MissionId);
             Assert.AreEqual(42UL, next.Session.Seed);
 

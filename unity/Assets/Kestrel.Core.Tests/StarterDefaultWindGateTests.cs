@@ -41,33 +41,42 @@ namespace Kestrel.Core.Tests
             Assert.That(misses, Is.Empty, string.Join(" | ", misses));
         }
 
-        /// <summary>Trevor 11-07: a player build has no checkout, so AscentFlight.Prepare's MissionBriefing.ForPad (and the
-        /// designer predictor's ReferenceAscent.Briefing) find no briefing data and the device flies calm air on the
-        /// reference pad (28.5°), not the seed-1 briefing wind the gate above flies. Every Starter default must win that
-        /// pad too (LivePadLoop.Fly with wind false: no wind, no site latitude, as FlightDriver.Launch gets from a null card).</summary>
+        /// <summary>DECISIONS #86: with the Resources books installed and no checkout, ForPad builds the same seed-1
+        /// card the checkout path builds. The device gate is then the seed-1 live gate above (no separate calm pad).</summary>
         [Test]
-        public void StarterDefault_EveryMission_WinsTheDeviceCalmPad()
+        public void InstalledBooks_MatchCheckoutSeedOne_WithNoCheckout()
         {
-            var catalog = StarterFixture.Catalog;
-            var misses = new List<string>();
-            foreach (var mission in StarterFixture.Campaign.Missions)
+            string campaign = File.ReadAllText(Path.Combine(Golden.Root, "data", "campaign.json"));
+            string sites = File.ReadAllText(Path.Combine(Golden.Root, "data", "sites.json"));
+            string weather = File.ReadAllText(Path.Combine(Golden.Root, "data", "weather.json"));
+            BriefingBooks.UseJson(campaign, sites, weather);
+            try
             {
-                var design = Design.FromJson(StarterFixture.Rocket(mission.Id).BuildDesign());
-                var live = LivePadLoop.Fly(catalog, mission, design, false);
-                if (!LivePadLoop.Passes(catalog, mission, design, live)
-                    && !LivePadLoop.IsM13HardButWins(catalog, mission, design, live))
-                    misses.Add(mission.Id + " Starter default live calm " + LivePadLoop.Text(live));
+                Assert.IsTrue(BriefingBooks.HasBooks);
+                for (int i = 1; i <= 20; i++)
+                {
+                    var fromDisk = MissionBriefing.Load(Golden.Root, i, 7, 1);
+                    var fromBooks = MissionBriefing.Load(null, i, 7, 1);
+                    Assert.AreEqual(fromDisk.Wind.SurfaceMs, fromBooks.Wind.SurfaceMs, 0, "m" + i + " surface");
+                    Assert.AreEqual(fromDisk.Wind.Compass, fromBooks.Wind.Compass, "m" + i + " compass");
+                    Assert.AreEqual(fromDisk.Site.Id, fromBooks.Site.Id, "m" + i + " site");
+                    Assert.AreEqual(fromDisk.Site.LatitudeDeg, fromBooks.Site.LatitudeDeg, 0, "m" + i + " lat");
+                    Assert.AreEqual(fromDisk.TimeId, fromBooks.TimeId, "m" + i + " time");
+                    Assert.AreEqual(fromDisk.WindLine, fromBooks.WindLine, "m" + i + " wind line");
+                    Assert.IsFalse(fromBooks.Wind.Calm, "m" + i + " must not be calm on seed 1");
+                }
             }
-            Assert.That(misses, Is.Empty, string.Join(" | ", misses));
+            finally { BriefingBooks.Clear(); }
+            Assert.IsFalse(BriefingBooks.HasBooks);
         }
 
         /// <summary>
         /// Trevor 11-07, KH-3 "Wrong place" on every retry: the card's 470 x -394 km is the KH-3 Starter at Kerosene and the
-        /// lowest fuel dot (kerosene-2-f0-b0; the Starter saves its setting per mission, so every retry flew it), on the
-        /// device's calm pad. The top stage burns dry short of orbit speed. The Starter default (methane, middle fuel)
-        /// wins the same pad. Before this fix the Starter read that setting "Ready… fuel to spare" and the card said
-        /// "79 m/s too fast at the low point… add fuel to stage 2 until the high point comes down"; now the Starter names
-        /// Short before launch and the card says it never reached orbit and ran out of push.
+        /// lowest fuel dot (kerosene-2-f0-b0; the Starter saves its setting per mission, so every retry flew it), on a calm
+        /// reference pad (the pre-#86 device path). The top stage burns dry short of orbit speed. The Starter default
+        /// (methane, middle fuel) wins the same pad. Before the #456 fix the Starter read that setting "Ready… fuel to
+        /// spare" and the card said "79 m/s too fast at the low point…"; now the Starter names Short before launch and
+        /// the card says it never reached orbit and ran out of push. Kept on calm air so the orbit numbers stay pinned.
         /// </summary>
         [Test]
         public void Kh3_TrevorsStarterSetting_ReproducesTheDeviceMiss_AndIsNamedBeforeLaunch()

@@ -2,7 +2,6 @@
 // wind, and pad the briefing already disclosed. Missing data falls back to a calm flight.
 using System;
 using System.Globalization;
-using System.IO;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer.Stepper;
 using Kestrel.Core.Flight;
@@ -57,10 +56,14 @@ namespace Kestrel.Slice
             if (MissionAim.IsApogeeHop(mission)) target = mission.GuidanceAltM;
             try
             {
-                string root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory());
-                int index = MissionIndex(design, json);
-                // The same call the designer's predictor makes (ReferenceAscent.Briefing, KH-7 E).
-                card = MissionBriefing.ForPad(root, index, hash, seed);
+                // Checkout when present; otherwise BriefingBooks from Resources (DECISIONS #86).
+                string root = Catalog.RepoRootOrNull();
+                if (root != null || BriefingBooks.HasBooks)
+                {
+                    int index = MissionIndex(design, json);
+                    // The same call the designer's predictor makes (ReferenceAscent.Briefing, KH-7 E).
+                    card = MissionBriefing.ForPad(root, index, hash, seed);
+                }
             }
             catch (Exception e) { Debug.LogWarning("[Ascent] briefing skipped: " + e.Message); }
             // The one director factory the batch, the designer and the timeline use too (#313).

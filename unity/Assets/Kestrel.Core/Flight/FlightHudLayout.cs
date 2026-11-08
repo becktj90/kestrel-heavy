@@ -268,7 +268,7 @@ namespace Kestrel.Core.Flight
         /// <paramref name="boxW"/> x <paramref name="boxH"/> (any one unit: points or pixels), widths budgeted with
         /// <see cref="MeasureFactor"/>. Still too long at the floor: cut after the last whole word that fits, plus "…".
         /// </summary>
-        public static QuoteFit WrapFit(string text, float boxW, float boxH, int maxLines, float fontPt, float minPt, bool allowCut = true)
+        public static QuoteFit WrapFit(string text, float boxW, float boxH, int maxLines, float fontPt, float minPt, bool allowCut = true, float lineHeight = LineHeight)
         {
             var fit = new QuoteFit { Text = text ?? "", FontPt = fontPt };
             if (string.IsNullOrEmpty(text) || !(boxW > 1f) || maxLines < 1) return fit;
@@ -276,7 +276,7 @@ namespace Kestrel.Core.Flight
             for (float font = fontPt; font >= minPt - 0.001f; font -= 0.5f)
             {
                 fit.FontPt = font;
-                if (Fits(text, room, boxH, maxLines, font)) return fit;
+                if (Fits(text, room, boxH, maxLines, font, lineHeight)) return fit;
             }
             float floor = minPt;
             fit.FontPt = floor;
@@ -286,14 +286,14 @@ namespace Kestrel.Core.Flight
             for (int n = words.Length - 1; n >= 1; n--)
             {
                 string cut = string.Join(" ", words, 0, n).TrimEnd(' ', ',', '.', ';', ':', '·') + "…";
-                if (Fits(cut, room, boxH, maxLines, floor)) { fit.Text = cut; fit.Cut = true; return fit; }
+                if (Fits(cut, room, boxH, maxLines, floor, lineHeight)) { fit.Text = cut; fit.Cut = true; return fit; }
             }
             // One word wider than the box: cut by characters.
             string first = words[0];
             for (int n = first.Length - 1; n >= 1; n--)
             {
                 string cut = first.Substring(0, n) + "…";
-                if (Fits(cut, room, boxH, maxLines, floor)) { fit.Text = cut; fit.Cut = true; return fit; }
+                if (Fits(cut, room, boxH, maxLines, floor, lineHeight)) { fit.Text = cut; fit.Cut = true; return fit; }
             }
             fit.Text = "…";
             fit.Cut = true;
@@ -323,11 +323,11 @@ namespace Kestrel.Core.Flight
             return lines;
         }
 
-        static bool Fits(string text, float room, float boxH, int maxLines, float font)
+        static bool Fits(string text, float room, float boxH, int maxLines, float font, float lineHeight = LineHeight)
         {
             int lines = WrapLines(text, room, font);
             if (lines > maxLines) return false;
-            return lines * font * LineHeight <= boxH + 0.01f;
+            return lines * font * lineHeight <= boxH + 0.01f;
         }
 
         // ---- Stage banner (h-verdict) ---------------------------------------------------------------
@@ -835,6 +835,87 @@ namespace Kestrel.Core.Flight
             return chips;
         }
 
+        /// <summary>
+        /// #431 climax: whether the in-flight dock (medal line, notes, calls, assist, nudges) is up. It steers the ascent;
+        /// once the climax coast or a loss show runs nothing in it can be used. On a short panel (CI 321x531) the flow under
+        /// the tools row (the MECO / loss line, BACK TO DESIGN) then ran past the dock's seat and Follow / Auto / Pause sat
+        /// under "Bronze medal / i / Auto-assist on" (climax-apogee.png, breakup-live-show.png). Folded away, its flow
+        /// spacer goes to 0 and the tools row drops back onto the bottom edge.
+        /// </summary>
+        public static bool DockShown(bool coasting, bool lost) => !coasting && !lost;
+
+        /// <summary>
+        /// #431 climax: the viewport band (y, 0 = bottom) the coasting stack is framed in: under the top block (the stat
+        /// strip, or the callout banner when it reaches lower) and over the tools row, <see cref="BandMarginVp"/> clear of
+        /// each. Covers are shares of the panel height (0..1). False when there is no usable band (under 0.1 tall).
+        /// </summary>
+        public static bool CoastBand(float topCover, float bottomCover, out float yMin, out float yMax)
+        {
+            yMin = Math.Max(0f, bottomCover) + BandMarginVp;
+            yMax = 1f - Math.Max(0f, topCover) - BandMarginVp;
+            return yMax - yMin > 0.1f;
+        }
+
+        /// <summary>A failure callout seated in the HUD band (<see cref="CalloutInBand"/>), in points.</summary>
+        public struct CalloutSeat
+        {
+            public float Top, Height, FontPt;
+            public string Text;
+            public bool Cut, Live;
+        }
+
+        /// <summary>Failure callout face (FlightDusk.Callout): 13 pt, stepping to 11 pt; three lines at most.</summary>
+        public const float CalloutFontPt = 13f;
+        public const float CalloutMinFontPt = 11f;
+        public const int CalloutLines = 3;
+        /// <summary>The callout's padding (FlightDusk.Frame): 8 pt each side, 4 pt top and bottom.</summary>
+        public const float CalloutPadX = 8f, CalloutPadY = 4f;
+        /// <summary>FlightDusk.Frame's 3 pt bottom rule: inside the chip's height (border-box), so out of the text's room.
+        /// Left out at cbb3a18d, a one-line seat was 3 pt short ("need 646x107 box 760x84").</summary>
+        public const float CalloutBorderPt = 3f;
+        /// <summary>Vertical chrome of the chip: both pads and the bottom rule.</summary>
+        public const float CalloutChromeY = 2f * CalloutPadY + CalloutBorderPt;
+
+        /// <summary>
+        /// #431 break-up show: the failure callout ("BREAKUP Air pushed 25 kPa. The walls held 25 kPa.") was pinned at a
+        /// fixed depth, so on CI's short panel it sat over Follow / Auto / Pause (breakup-live-show.png at 94e79369). Seat it
+        /// in the band between <paramref name="bandTop"/> (under the stat strip and the stage banner) and
+        /// <paramref name="bandBottom"/> (over the tools row), as near <paramref name="preferredTop"/> as the band allows.
+        /// The text never overflows its box: the face steps 13 to 11 pt within three lines and the band's height; still too
+        /// long, it is cut after a whole word with an ellipsis (the full line goes in the tooltip). Not Live when the band
+        /// cannot hold one line at the floor face. <paramref name="lineHeight"/> is the face's line box over its size: the
+        /// 1.3 budget by default, or a taller box the runtime measured. The height carries the pads and the 3 pt rule
+        /// (<see cref="CalloutChromeY"/>).
+        /// </summary>
+        public static CalloutSeat CalloutInBand(string text, float width, float bandTop, float bandBottom, float preferredTop, float lineHeight = LineHeight)
+        {
+            if (!(lineHeight >= LineHeight)) lineHeight = LineHeight;
+            var seat = new CalloutSeat { Text = text ?? "", FontPt = CalloutFontPt, Top = bandTop };
+            float room = width - 2f * CalloutPadX;
+            float bandH = bandBottom - bandTop;
+            float oneLine = CalloutMinFontPt * lineHeight + CalloutChromeY;
+            if (string.IsNullOrEmpty(text) || !(room > 8f) || !(bandH >= oneLine)) return seat;
+            float textH = bandH - CalloutChromeY;
+            var fit = WrapFit(text, room, textH, CalloutLines, CalloutFontPt, CalloutMinFontPt, true, lineHeight);
+            int lines = WrapLines(fit.Text, room - 2f, fit.FontPt);
+            if (lines < 1 || lines == int.MaxValue) return seat;
+            float h = lines * fit.FontPt * lineHeight + CalloutChromeY;
+            h = Math.Min(bandH, Math.Max(h, Math.Min(bandH, FlightStaging.CalloutPt)));
+            float top = preferredTop;
+            if (top > bandBottom - h) top = bandBottom - h;
+            if (top < bandTop) top = bandTop;
+            seat.Top = top;
+            seat.Height = h;
+            seat.FontPt = fit.FontPt;
+            seat.Text = fit.Text;
+            seat.Cut = fit.Cut;
+            seat.Live = true;
+            return seat;
+        }
+
+        /// <summary>Viewport margin between a framed object and the HUD bar beside it (ChaseCamera.HudMargin).</summary>
+        public const float BandMarginVp = 0.03f;
+
         public static float DockHeight(bool notes, bool prompt) => DockHeight(notes, prompt, ButtonPt);
 
         /// <summary>Dock height with button rows <paramref name="rowPt"/> tall (landscape: whole panel pixels, never under 44 pt).</summary>
@@ -890,7 +971,9 @@ namespace Kestrel.Core.Flight
 
             float exitW = HomeCornerLayout.ExitW;
             float exitH = HomeCornerLayout.ExitH;
-            var exit = Box(width - safeRight - edge - exitW, safeTop, exitW, exitH);
+            // The web page's #fs EXIT button sits at top: max(8px, safe-area-inset-top), so its clearance box does too;
+            // at y = safeTop it ended 8 pt short and the right stage panel slid under the button.
+            var exit = Box(width - safeRight - edge - exitW, Math.Max(SideMarginPt, safeTop), exitW, exitH);
 
             float left = safeLeft + edge;
             float right = width - safeRight - edge;
@@ -975,7 +1058,9 @@ namespace Kestrel.Core.Flight
             bool camBeside = railW >= camW + GapPt + PauseWidthPt;
             float rightExtra = (nudgesInRail ? ButtonPt + GapPt : 0f) + (camBeside ? 0f : toolsH + GapPt);
             float stagesH = followY - GapPt - rightExtra - railTop;
-            if (stagesH < 48f) stagesH = 48f;
+            // 48 pt floor. On a short landscape phone the EXIT clearance (now at max(8, safeTop), up to 8 pt lower than
+            // before) gives up that drop from the floor, so the nudges and Pause below keep their rows above the dock.
+            if (stagesH < 48f) stagesH = Math.Max(stagesH, 48f - Math.Max(0f, exit.Y - safeTop));
             f.Stages = Box(right - railW, railTop, railW, stagesH);
             f.Banner = Box(f.Stages.X + BannerCardPadPt, f.Stages.Y + BannerCardPadPt, f.Stages.W - 2f * BannerCardPadPt, f.Stages.H - 2f * BannerCardPadPt);
             float yR = f.Stages.Bottom + GapPt;

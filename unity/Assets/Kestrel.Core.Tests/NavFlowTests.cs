@@ -214,14 +214,23 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void KnownBug_NAV06_ReportNext_LandsOnTheList_NotTheNextMission()
+        public void NAV06_ReportNext_OpensTheNextMissionsDesigner()
         {
-            KnownBug("NAV-06", "\"" + ReportRoutes.NextLabel + "\" opens KH-4's briefing", () =>
-            {
-                GameSession.Carry(MissionContext.FromCampaign(campaign, "m3"));
-                var r = ReportRoutes.Next(campaign);
-                return r.Overlay == SessionScreens.Briefing && r.Session != null && r.Session.MissionId == "m4" ? null : Where(r) + " (the plain Missions list, same screen as the Missions button)";
-            });
+            // Closed by #416 item 9: the brief is folded into the designer, so Next skips the list and the briefing.
+            GameSession.Carry(MissionContext.FromCampaign(campaign, "m3"));
+            var r = ReportRoutes.Next(campaign);
+            Assert.AreEqual(SessionScreens.Design, r.Screen, Where(r));
+            Assert.AreEqual(SessionScreens.None, r.Overlay, Where(r));
+            Assert.AreEqual("m4", r.Session.MissionId, Where(r));
+        }
+
+        [Test]
+        public void NAV06_ReportNext_ShellArmsTheStarterAndBriefing()
+        {
+            string flow = Src("unity", "Assets", "Kestrel.Game", "Shell", "SceneFlow.cs");
+            StringAssert.Contains("if (OpenNextDesigner(campaign, r.Session)) return;", flow);
+            StringAssert.Contains("ctx.ApplyBriefing(MissionBriefing.Load(", flow);
+            StringAssert.Contains("mission.Index > ScreenStub.ClearedCount() + 1) return false;", flow);
         }
 
         // ---------------------------------------------------------------- a crashing rocket still reaches the report
