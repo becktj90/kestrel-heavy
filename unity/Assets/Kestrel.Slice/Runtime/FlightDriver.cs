@@ -154,7 +154,7 @@ namespace Kestrel.Slice
         PlayedChecks checks;
         WarpedFlightClock warp;
         double[] thrustByStage = System.Array.Empty<double>();
-        int seenEvents; bool mecoSent;
+        int seenEvents; bool mecoSent; int maxQBeatSeen;
         readonly List<(Transform t, double x, double y, double z)> anchored = new List<(Transform, double, double, double)>();
         double omegaAir;
 
@@ -248,7 +248,7 @@ namespace Kestrel.Slice
             clock = 0; Meco = false; Result = null; pending = null; Coast = null; coastOver = false; CoastWall = 0; CoastEnd = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             skipping = false; skipTarget = StageSkipTarget.None; SkipAdvancedSimS = 0; SkipStop = StageSkipStop.None; SkipReached = StageSkipTarget.None;
             AttitudeDeg = 90f; HasAttitude = false;
-            seenEvents = 0; mecoSent = false; warp = null;
+            seenEvents = 0; mecoSent = false; maxQBeatSeen = 0; warp = null;
             // The origin is back at the pad, so the pad has to be too: after a flight past RebaseDistance the
             // anchored ground, deck and tower were left where the last rebase put them (a displaced pad on relaunch).
             PlaceAnchors();
@@ -341,6 +341,12 @@ namespace Kestrel.Slice
                 Result = pending;
             }
             PumpEvents();
+            // DECISIONS #89: the design's max-Q throttle law engaging / releasing (real sim transitions, AscentDirector).
+            if (Decisions != null && Decisions.MaxQBeatSerial != maxQBeatSeen)
+            {
+                maxQBeatSeen = Decisions.MaxQBeatSerial;
+                Sink?.OnEvent(Decisions.MaxQBeatEvent);
+            }
             if (Meco && !mecoSent && !Lost) { mecoSent = true; Sink?.OnEvent("meco"); }
             UpdateFrame();
             PublishAudio();

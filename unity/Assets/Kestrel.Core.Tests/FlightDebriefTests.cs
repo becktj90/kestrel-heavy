@@ -233,6 +233,34 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void MissedFlight_StillEarnsMedals_EvenWithPerfectTimingAndLanding()
+        {
+            // DECISIONS #83 (Trevor 11-07): medals are for timing/landing, not the goal, so a missed
+            // flight still earns them and the line says so ("You still earned ..."). Stars stay 0:
+            // stars need the mission goal. FlightVerdict.Medal still drops the timing medal at the
+            // PostFlightSource level on a miss; the debrief collects whatever medals are in the facts.
+            using (var fx = new Fixture())
+            {
+                var store = fx.Load();
+                var mission = MissionFor(fx.Campaign, "m1", 11);
+                var facts = new FlightFacts
+                {
+                    Passed = false, EconomyKnown = true, Margin = 0.05, CostMinor = 400, BudgetKc = 50, PeakG = 2, GLimit = 6,
+                    Seed = 11, DesignId = "pencil", TimingMedal = AscentMedal.Gold, LandingGrade = "Perfect", ApoKm = 4, GoalKm = 10,
+                };
+                var card = FlightDebrief.Compose(store, mission, facts, NarrationPool.Empty, Minor, null);
+                Assert.IsFalse(card.Passed);
+                Assert.AreEqual(2, card.Medals.Count);
+                Assert.That(card.Medals, Does.Contain("gold"));
+                Assert.That(card.Medals, Does.Contain("timing-gold"));
+                Assert.AreEqual("You still earned gold for the landing and gold for timing.", card.MedalsLine);
+                Assert.AreEqual(0, card.Stars);
+                Assert.AreEqual(AscentMedal.None, FlightVerdict.Medal(AscentMedal.Gold, false));
+                Assert.AreEqual(AscentMedal.Gold, FlightVerdict.Medal(AscentMedal.Gold, true));
+            }
+        }
+
+        [Test]
         public void FreeBuild_WritesNoKc_AndReplayDoesNotPayTwice()
         {
             using (var fx = new Fixture())
