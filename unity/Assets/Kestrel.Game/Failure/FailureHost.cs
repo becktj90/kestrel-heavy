@@ -173,6 +173,12 @@ namespace Kestrel.Game.Failure
             var result = flight.Result;
             if (result == null) return;
             bool failed = result.failure != null;
+            // #333: wait for booster landing to complete before showing the failure card.
+            // The latch's recovering wait covers the pass path only ("a failure opens at
+            // once"), so the failure path checks RecoveryLog.Active itself, before the
+            // latch, so the player gets their landing attempt. Checked before TryOpen so
+            // the latch is not consumed while the recovery is still running.
+            if (failed && RecoveryLog.Active) return;
             if (!latch.TryOpen(result, failed, flight.Running, RecoveryLog.Active)) return;
             reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;
             StampLosses(result);
