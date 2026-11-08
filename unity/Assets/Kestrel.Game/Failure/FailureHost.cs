@@ -23,10 +23,20 @@ namespace Kestrel.Game.Failure
         Vector3[] exits = new Vector3[0];
         readonly TelemetryLog log = new TelemetryLog();
         bool played;
+        bool reported;
+        SimResult closedResult;
         readonly ReportLatch latch = new ReportLatch();
         Mesh intactMesh;
         float age;
         bool reduce;
+        bool cardPending;
+        bool cardTapped;
+        /// <summary>The failure is playing and its result card is still to come (FailureFx.CardDelaySeconds, or a tap).</summary>
+        public bool CardPending => cardPending;
+        /// <summary>Age (s) at which the pending card opens.</summary>
+        public float CardDueAt { get; private set; }
+        /// <summary>Tests only: decide Reduce Motion for live failures instead of the player prefs (null = the prefs). Nothing in play sets it.</summary>
+        public static bool? ReduceMotionOverride;
         FailureEvent failure;
         FailurePlan plan = new FailurePlan();
         int seenEvents;
@@ -69,12 +79,23 @@ namespace Kestrel.Game.Failure
         }
 
         /// <summary>Capture and tests: play a failure without a running flight.</summary>
-        public void Play(FailureEvent ev, FailureCue scene, Vector3[] engines, bool? reduceMotion)
+        public void Play(FailureEvent ev, FailureCue scene, Vector3[] engines, bool? reduceMotion) => Play(ev, scene, engines, reduceMotion, true);
+
+        /// <summary>Capture and tests: <paramref name="cardNow"/> false plays the failure the way a live flight does, with the card held back.</summary>
+        public void Play(FailureEvent ev, FailureCue scene, Vector3[] engines, bool? reduceMotion, bool cardNow)
         {
             if (scene != null) cue = scene;
             if (engines != null) exits = engines;
             reduce = reduceMotion ?? Comfort.ReduceMotion;
-            Begin(ev);
+            Begin(ev, cardNow);
+        }
+
+        /// <summary>Open the held-back card now (a tap, or a capture after its show frame).</summary>
+        public void OpenCardNow()
+        {
+            if (!cardPending) return;
+            cardPending = false;
+            ShowCard();
         }
 
         /// <summary>
@@ -88,6 +109,9 @@ namespace Kestrel.Game.Failure
             bool broke = played;
             latch.Arm(flight != null ? flight.Result : null);
             played = false;
+            cardPending = false;
+            cardTapped = false;
+            reported = false;
             failure = null;
             age = 0f;
             emitted = false;
@@ -139,6 +163,11 @@ namespace Kestrel.Game.Failure
             if (played)
             {
                 Seek(age + Time.deltaTime);
+                if (cardPending)
+                {
+                    if (Tapped()) cardTapped = true;
+                    if (FailureFx.CardOpens(age, CardDueAt, cardTapped, RecoveryLog.Active)) OpenCardNow();
+                }
                 return;
             }
             var result = flight.Result;
@@ -151,7 +180,7 @@ namespace Kestrel.Game.Failure
             // the latch is not consumed while the recovery is still running.
             if (failed && RecoveryLog.Active) return;
             if (!latch.TryOpen(result, failed, flight.Running, RecoveryLog.Active)) return;
-            reduce = Comfort.ReduceMotion;
+            reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;
             StampLosses(result);
             if (!failed)
             {
@@ -159,10 +188,23 @@ namespace Kestrel.Game.Failure
                 ShowCard();
                 return;
             }
-            Begin(result.failure);
+            Begin(result.failure, false);
+            reported = true;
+            closedResult = result;
         }
 
-        void Begin(FailureEvent ev)
+        static bool Tapped()
+        {
+            try
+            {
+                if (Input.GetMouseButtonDown(0)) return true;
+                for (int i = 0; i < Input.touchCount; i++) if (Input.GetTouch(i).phase == TouchPhase.Began) return true;
+            }
+            catch (System.InvalidOperationException) { }
+            return false;
+        }
+
+        void Begin(FailureEvent ev, bool cardNow)
         {
             failure = ev;
             played = true;
@@ -177,7 +219,12 @@ namespace Kestrel.Game.Failure
             SeedIfEmpty(ev);
             plan = FailureFx.Plan(ev != null ? ev.kind : "", ev != null ? ev.cause : "", cue, 0f, reduce);
             ApplyPose();
-            ShowCard();
+            CardDueAt = FailureFx.CardDelaySeconds(plan.Mode, reduce);
+            cardPending = false;
+            cardTapped = false;
+            // The break-up plays now, live. Its card waits for the show and for a booster landing still in the air (#333).
+            if (cardNow || FailureFx.CardOpens(0f, CardDueAt, false, RecoveryLog.Active)) ShowCard();
+            else cardPending = true;
         }
 
         void ApplyPose()

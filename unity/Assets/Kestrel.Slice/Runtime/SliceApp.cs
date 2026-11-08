@@ -46,6 +46,9 @@ namespace Kestrel.Slice
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
         public int OrbitsCompleted; public bool EngineerEnabled;
         Label issueChip, launchReason; Button launchButton;
+        // Fun review item 13: the reason line keeps its room so the sheet does not jump as a tweak crosses a limit.
+        readonly LaunchReasonSlot reasonSlot = new LaunchReasonSlot();
+        float reasonFont = 14f;
         LaunchSequence sequence; bool counting;
         readonly LiftoffHandoff handoff = new LiftoffHandoff();
         bool ascentErrorLogged;
@@ -350,6 +353,8 @@ namespace Kestrel.Slice
             slicePanel = doc.panelSettings;
             doc.visualTreeAsset = Resources.Load<VisualTreeAsset>("UI/Slice");
             ui = doc.rootVisualElement;
+            // Web: no grey desktop scrollers; a bottom fade shows there is more (#416 item 8).
+            Kestrel.Game.Shell.WebScrollChrome.Watch(ui);
             designPanel = ui.Q("design"); hud = ui.Q(UiIds.ScreenFlight);
             designBody = ui.Q("design-body"); designToggle = ui.Q<Button>("design-toggle");
             ui.RegisterCallback<GeometryChangedEvent>(_ => { ApplyHudSafeArea(); ApplyDesignPanelMetrics(); ApplyDesignFraming(); });
@@ -380,6 +385,11 @@ namespace Kestrel.Slice
             explodeButton.clicked += () => SetExploded(!(hangarCam != null && hangarCam.Exploded));
             explodeButton.tooltip = "Exploded view: pull the parts apart";
             issueChip = ui.Q<Label>("issue-chip"); launchReason = ui.Q<Label>("launch-reason");
+            launchReason?.RegisterCallback<GeometryChangedEvent>(e =>
+            {
+                if (string.IsNullOrEmpty(launchReason.text)) return;
+                if (reasonSlot.Saw(reasonFont, e.newRect.height)) launchReason.style.minHeight = reasonSlot.Reserve(reasonFont);
+            });
             issueChip.RegisterCallback<ClickEvent>(_ => { panel?.Show(HangarPanel.Tab.Data); if (designCollapsed) SetDesignCollapsed(false); });
             again.clicked += BackToDesign;
             chrome = gameObject.AddComponent<FlightChrome>();
@@ -499,7 +509,9 @@ namespace Kestrel.Slice
             launchButton.style.flexShrink = 1;
             launchButton.style.whiteSpace = WhiteSpace.Normal;
             launchButton.style.overflow = Overflow.Visible;
-            launchReason.style.fontSize = 14f * upp;
+            reasonFont = 14f * upp;
+            launchReason.style.fontSize = reasonFont;
+            launchReason.style.minHeight = reasonSlot.Reserve(reasonFont);
 
             bool side = HangarPanelLayout.SidePanel(Screen.width, Screen.height);
             designPanel.EnableInClassList("side", side);
@@ -680,7 +692,9 @@ namespace Kestrel.Slice
             // The free designer's launch row already shows this reason with its Fix it. Showing it here
             // too printed the out-of-fuel warning twice on the first designer view.
             bool designerSaysIt = designer != null && designer.ShowsLaunchRow;
-            launchReason.EnableInClassList("hidden", ok || designerSaysIt);
+            // Keep the slot (empty when ready) instead of hiding it, so the sheet height holds still.
+            launchReason.EnableInClassList("hidden", designerSaysIt);
+            launchReason.style.minHeight = reasonSlot.Reserve(reasonFont);
             launchButton.tooltip = ok ? "Roll out and launch the current design"
                 : gate.state == LaunchGateState.Checking ? LaunchGate.Checking
                 : gate.CanLaunch ? "Launch anyway. " + reason : "Launch unavailable. " + reason;
@@ -925,10 +939,52 @@ namespace Kestrel.Slice
             }
             else
                 cam.transform.LookAt(look, Vector3.up);
+            FrameTheCoast(pose, up, fov);
             if (fx != null)
                 cam.transform.position = PadGround.ClampAboveGround(
                     cam.transform.position + cam.transform.right * fx.Shake.x + cam.transform.up * fx.Shake.y,
                     ground.position.y, clearance);
+        }
+
+        /// <summary>Seconds the climax framing glides in over (no cut when the coast starts).</summary>
+        const float CoastFrameSeconds = 0.6f;
+        float coastBlend;
+        readonly Vector3[] coastPts = new Vector3[8];
+
+        /// <summary>
+        /// #431 climax, for tests: x, y = the coast band (viewport y, 0 = bottom); z, w = the lowest and highest the
+        /// stack projects this frame; all 0 outside the coast or with no band.
+        /// </summary>
+        public Vector4 CoastTrace { get; private set; }
+
+        /// <summary>
+        /// #431 climax: during the coast the stack sat behind the Apogee! banner and Follow / Auto / Pause
+        /// (climax-apogee.png at 1085e8b7 and 38e8e1b5). Back the chase off along its own axes, rotation unchanged
+        /// (ChaseCamera.FitBand, the booster follow's framing), so the whole stack sits between the banner and the
+        /// tools row. Recomputed from this frame's chase pose, so nothing accumulates; it glides in over
+        /// CoastFrameSeconds and lets go when the coast ends.
+        /// </summary>
+        void FrameTheCoast(FlightPose pose, Vector3 up, float fov)
+        {
+            CoastTrace = Vector4.zero;
+            if (flight == null || !flight.Coasting || ascentHud == null || cam == null) { coastBlend = 0f; return; }
+            if (!FlightHudLayout.CoastBand(ascentHud.BannerCover(), ascentHud.BottomCover(), out float yMin, out float yMax)) return;
+            var rot = cam.transform.rotation;
+            var from = cam.transform.position;
+            var stackBase = U(pose.LookAt) - up * (float)(pose.Height * 0.5);
+            int n = ChaseCamera.StackPoints(coastPts, stackBase, up, (float)pose.Height, rocketRadius);
+            var fit = ChaseCamera.FitBand(rot, from, coastPts, n, fov, cam.aspect, yMin, yMax);
+            coastBlend = Mathf.MoveTowards(coastBlend, 1f, Time.unscaledDeltaTime / CoastFrameSeconds);
+            float w = coastBlend * coastBlend * (3f - 2f * coastBlend);
+            cam.transform.position = Vector3.Lerp(from, fit, w);
+            float lo = float.PositiveInfinity, hi = float.NegativeInfinity;
+            for (int i = 0; i < n; i++)
+            {
+                float y = cam.WorldToViewportPoint(coastPts[i]).y;
+                lo = Mathf.Min(lo, y);
+                hi = Mathf.Max(hi, y);
+            }
+            CoastTrace = new Vector4(yMin, yMax, lo, hi);
         }
 
         /// <summary>
@@ -1956,8 +2012,21 @@ namespace Kestrel.Slice
             }
             if (again != null)
             {
-                if (ascent) again.style.visibility = StyleKeyword.Null;
+                // #431 climax: MECO reveals BACK TO DESIGN, but during the time-warped coast the report is on its way
+                // and any tap skips the coast; the exit sat over the climax frame (climax-apogee.png). It comes back
+                // when the coast ends.
+                bool coasting = flight != null && flight.Coasting;
+                if (ascent && !coasting) again.style.visibility = StyleKeyword.Null;
                 else again.style.visibility = Visibility.Hidden;
+                // Out of the flow too while coasting, and the MECO line with it (the Apogee! / Orbit! banner is the
+                // call): on a short panel they held the tools row up into the coast band (FrameTheCoast).
+                if (coasting) again.style.display = DisplayStyle.None;
+                else again.style.display = StyleKeyword.Null;
+            }
+            if (hMsg != null)
+            {
+                if (flight != null && flight.Coasting) hMsg.style.display = DisplayStyle.None;
+                else hMsg.style.display = StyleKeyword.Null;
             }
         }
 
@@ -2095,7 +2164,9 @@ namespace Kestrel.Slice
             double alt = flying && flight != null ? flight.Altitude : 0;
             double spd = flying && flight != null ? flight.Speed : 0;
             double q = flying && flight != null ? flight.DynPressure : 0;
-            var pulse = flying && flight != null && flight.Lost
+            var pulse = flying && flight != null && flight.Coasting
+                ? WebcastBoard.Coast(flight.Coast)
+                : flying && flight != null && flight.Lost
                 ? WebcastBoard.Lost(flight.Result.failure.kind, alt)
                 : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM);
             hVerdict.text = pulse.Verdict;
