@@ -341,6 +341,11 @@ namespace Kestrel.Core.Physics
         /// </summary>
         public double LiveThrottleScale = 1;
         public double LivePitchOffsetRad;
+        /// <summary>#422: largest nudge offset on the program pitch (rad).</summary>
+        public const double MaxNudgeRad = 10 * Math.PI / 180.0;
+        /// <summary>#422: offset currently added to the program pitch (rad); slews at RecoverySim.PitchRate.</summary>
+        public double NudgeAppliedRad => nudgeApplied;
+        double nudgeApplied, pitchWithNudge = double.NaN;
         /// <summary>
         /// Observer. Null leaves the step alone. The sim does not read the sink. Every call goes through a
         /// <see cref="Flight.GuardedFlightSink"/>, so a sink that throws is logged and cannot end or change the run.
@@ -482,6 +487,7 @@ namespace Kestrel.Core.Physics
                     Events.Add(new SimEvent { t = T, type = "engine-out", stage = 1, alt = alt });
                 }
                 followVelocity = false; pegContinuous = false;
+                if (nudgeApplied != 0 && PitchCmd == pitchWithNudge) PitchCmd -= nudgeApplied;
                 if (Headless.LegacyPitch(o.guidance))
                 {
                     bool holdKick = HoldingMaxQPitch(alt, m, vr, vrel);
@@ -557,14 +563,28 @@ namespace Kestrel.Core.Physics
                     else if (s > 1) s = 1;
                     if (s != 1) thrustScale *= s;
                 }
-                if (LivePitchOffsetRad != 0 && !double.IsNaN(LivePitchOffsetRad))
+                // #422: the nudge is a bounded offset on the program pitch, not an increment. The legacy
+                // program does not rewrite PitchCmd every tick (Mode 0, Mode 1 before the catch), so the
+                // old `PitchCmd += dp` integrated a held 1° into ~120°/s. Strip last tick's offset if the
+                // program left it in place, then slew the applied offset toward the clamped target at the
+                // vehicle attitude rate (RecoverySim.PitchRate, 10°/s, #351) and add it once.
+                double dpTarget = LivePitchOffsetRad;
+                if (double.IsNaN(dpTarget)) dpTarget = 0;
+                if (dpTarget > MaxNudgeRad) dpTarget = MaxNudgeRad;
+                else if (dpTarget < -MaxNudgeRad) dpTarget = -MaxNudgeRad;
+                if (dpTarget != 0 || nudgeApplied != 0)
                 {
-                    double dp = LivePitchOffsetRad;
-                    double lim = 10 * Math.PI / 180.0;
-                    if (dp > lim) dp = lim;
-                    else if (dp < -lim) dp = -lim;
-                    PitchCmd += dp;
-                    followVelocity = false; pegContinuous = false;
+                    double step = Flight.RecoverySim.PitchRate * o.dt;
+                    double diff = dpTarget - nudgeApplied;
+                    if (diff > step) diff = step;
+                    else if (diff < -step) diff = -step;
+                    nudgeApplied += diff;
+                    if (nudgeApplied != 0)
+                    {
+                        PitchCmd += nudgeApplied;
+                        pitchWithNudge = PitchCmd;
+                        followVelocity = false; pegContinuous = false;
+                    }
                 }
                 // #326: re-plan the remaining S1 burn closed-loop after an engine-out. The open-loop
                 // pitch program was tuned for nominal thrust; with less thrust it lofts the handoff and
