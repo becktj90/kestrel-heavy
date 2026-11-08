@@ -627,7 +627,7 @@ namespace Kestrel.Core.Tests
         }
     }
 
-    /// <summary>Per-thread CPU clock for latency tests (DECISIONS #85). Available is false where it's unsupported or untrustworthy.</summary>
+    /// <summary>Per-thread CPU clock for latency tests (DECISIONS #91). Available is false where it's unsupported or untrustworthy.</summary>
     static class ThreadCpuClock
     {
         public static readonly bool Available;
