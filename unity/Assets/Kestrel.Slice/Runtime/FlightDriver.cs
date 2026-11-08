@@ -31,7 +31,7 @@ namespace Kestrel.Slice
         public CallSchedule Calls { get; set; }
 
         public AscentSim Sim { get; private set; }
-        public double SimTime => Sim?.T ?? 0;
+        public double SimTime => Coasting ? coastState.t : Sim?.T ?? 0;
         public double Downrange { get; private set; }
         public double Altitude { get; private set; }
         public double Speed { get; private set; }
@@ -110,7 +110,39 @@ namespace Kestrel.Slice
             SkipReached = reached;
         }
         public SimResult Result { get; private set; }
+        /// <summary>
+        /// The climax after a clean final cutoff (Kestrel.Core.Flight.OrbitCoast): the propagated coast to the apex or along
+        /// the orbit, time-warped into 3-5 s with an "Orbit!"/"Apogee!" callout. While it plays the flight is still Running
+        /// and Result is held back, so the result card, the guide report and the debrief wait for it.
+        /// </summary>
+        public OrbitCoast Coast { get; private set; }
+        public bool Coasting => Coast != null && !coastOver;
+        /// <summary>Wall seconds into the coast.</summary>
+        public double CoastWall { get; private set; }
+        /// <summary>How the last coast ended: "played", "skipped" (a tap), "reduced" (Reduce Motion), "recovery" (booster still flying), or null.</summary>
+        public string CoastEnd { get; private set; }
+        /// <summary>Tests and captures can turn the climax off; the shipping game leaves it on.</summary>
+        public static bool ClimaxEnabled = true;
+        /// <summary>Reduce Motion for the climax; null reads the player's comfort setting.</summary>
+        public bool? ReduceMotionOverride { get; set; }
+        bool coastOver;
+        SimResult pending;
+        CoastState coastState;
         public bool Lost => Result != null && Result.failure != null;
+        /// <summary>PR5: the coast warp the last frame ran at (1 = real time). See Kestrel.Core.Flight.CoastWarp.</summary>
+        public double Warp => Running && warp != null ? warp.Factor : 1;
+        /// <summary>Sim seconds to the next call or predictable event (CoastWarp), +Infinity with no flight.</summary>
+        public double SecondsToNext => Running && warp != null ? warp.SecondsToNext : double.PositiveInfinity;
+        /// <summary>Narrator Voice: set each frame while a non-interruptible line holds warp at ×1 (NarrationPlayer.HoldsWarp).</summary>
+        public bool NarrationBusy { get; set; }
+        /// <summary>Sound: the warp rate changed (from, to, sim time). Only on a real change. See WarpedFlightClock.WarpChanged.</summary>
+        public event Action<int, int, double> WarpChanged;
+        /// <summary>Sound: a drop to ×1 in about this many real seconds (0 when unforeseen). Always before WarpChanged(x→1).</summary>
+        public event Action<int, float> WarpWillDrop;
+        /// <summary>PR5: set each frame by the app while the camera follows the returning booster (RecoveryShow.SteerCamera); warp holds ×1.</summary>
+        public bool CameraOnBooster { get; set; }
+        /// <summary>PR5: the player's warp switch. True keeps real time. Launch reads it from kh.flight.timewarp (TimeWarpSetting).</summary>
+        public bool WarpOff { get; set; }
         public double OriginX { get; private set; }   // floating origin in pad-local metres (double)
         public double OriginY { get; private set; }
         public int Rebases { get; private set; }
@@ -120,8 +152,9 @@ namespace Kestrel.Slice
 
         double clock; double thrustRef = 1; double prevX, prevY;
         PlayedChecks checks;
+        WarpedFlightClock warp;
         double[] thrustByStage = System.Array.Empty<double>();
-        int seenEvents; bool mecoSent;
+        int seenEvents; bool mecoSent; int maxQBeatSeen;
         readonly List<(Transform t, double x, double y, double z)> anchored = new List<(Transform, double, double, double)>();
         double omegaAir;
 
@@ -212,10 +245,10 @@ namespace Kestrel.Slice
             BindCinematicSink();
             CinematicSink.VehicleRadiusM = Kestrel.Kit.FlightSinkMath.VehicleRadiusM(WidestDiameterM(d));
             Running = true;
-            clock = 0; Meco = false; Result = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
+            clock = 0; Meco = false; Result = null; pending = null; Coast = null; coastOver = false; CoastWall = 0; CoastEnd = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             skipping = false; skipTarget = StageSkipTarget.None; SkipAdvancedSimS = 0; SkipStop = StageSkipStop.None; SkipReached = StageSkipTarget.None;
             AttitudeDeg = 90f; HasAttitude = false;
-            seenEvents = 0; mecoSent = false;
+            seenEvents = 0; mecoSent = false; maxQBeatSeen = 0; warp = null;
             // The origin is back at the pad, so the pad has to be too: after a flight past RebaseDistance the
             // anchored ground, deck and tower were left where the last rebase put them (a displaced pad on relaunch).
             PlaceAnchors();
@@ -223,6 +256,10 @@ namespace Kestrel.Slice
             {
                 // The designer and the launch predictor fly these same checks (#314).
                 checks = new PlayedChecks(c, d, stages, opts, Sim);
+                warp = new WarpedFlightClock(directed, checks, opts.fairingJettisonAltM);
+                warp.WarpChanged += (a, b, t) => WarpChanged?.Invoke(a, b, t);
+                warp.WarpWillDrop += (a, r) => WarpWillDrop?.Invoke(a, r);
+                WarpOff = TimeWarpSetting.Resolve(PlayerPrefs.HasKey(TimeWarpSetting.Pref), PlayerPrefs.GetInt(TimeWarpSetting.Pref, 0)) == TimeWarpMode.Off;
                 thrustRef = Math.Max(1, stages[0].thrustVac);
                 omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
                 UpdateFrame();
@@ -262,6 +299,16 @@ namespace Kestrel.Slice
                 }
                 clock = Sim.T;
             }
+            // PR5 coast warp (Core WarpedFlightClock): more fixed 1/120 s steps per frame while nothing is due, ×1 before every
+            // call and event. The steps, director and played checks run exactly as before, so the flight is bit-identical.
+            // Skip wins over warp: while a skip is fast-forwarding, the warp clock is frozen and resumes after.
+            else if (warp != null)
+            {
+                warp.Disabled = WarpOff;
+                warp.Advance(Math.Min(frame, 0.1f), Kestrel.Kit.CinematicEvents.PresentationScale, CameraOnBooster, NarrationBusy);
+                if (warp.MecoThisFrame) Meco = true;
+                clock = warp.Clock;
+            }
             else
             {
                 // Slow-mo scales only how much wall-clock feeds the clock (Core PresentationTimeScale); Sim.Tick and PhysicsDt are untouched.
@@ -275,16 +322,101 @@ namespace Kestrel.Slice
                     if (checks != null && checks.StopForBreakup(Sim)) break;
                 }
             }
-            if (Sim.Done)
+            if (Coasting)
             {
+                StepCoast(frame);
+                return;
+            }
+            if (Sim.Done && Result == null)
+            {
+                if (pending == null) pending = directed != null ? directed.Finish() : Sim.Finish();
+                if (!coastOver && BeginCoast(pending))
+                {
+                    PumpEvents();
+                    StepCoast(0f);
+                    NotifyMeco();
+                    return;
+                }
                 Running = false;
-                if (Result == null) Result = directed != null ? directed.Finish() : Sim.Finish();
+                Result = pending;
             }
             PumpEvents();
+            // DECISIONS #89: the design's max-Q throttle law engaging / releasing (real sim transitions, AscentDirector).
+            if (Decisions != null && Decisions.MaxQBeatSerial != maxQBeatSeen)
+            {
+                maxQBeatSeen = Decisions.MaxQBeatSerial;
+                Sink?.OnEvent(Decisions.MaxQBeatEvent);
+            }
             if (Meco && !mecoSent && !Lost) { mecoSent = true; Sink?.OnEvent("meco"); }
             UpdateFrame();
             PublishAudio();
             if (Meco && !Lost) OnMeco?.Invoke(this);
+        }
+
+        // The cutoff that starts the climax is usually MECO itself, so the coast frame still sends it.
+        void NotifyMeco()
+        {
+            if (Meco && !mecoSent && !Lost) { mecoSent = true; Sink?.OnEvent("meco"); }
+            if (Meco && !Lost) OnMeco?.Invoke(this);
+        }
+
+        bool BeginCoast(SimResult r)
+        {
+            coastOver = true;
+            if (!ClimaxEnabled || r == null || r.failure != null) return false;
+            bool reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;
+            // A booster still landing owns the camera and keeps the card waiting; the climax would fight it.
+            if (RecoveryLog.Active) { CoastEnd = "recovery"; return false; }
+            OrbitCoast plan = null;
+            try { plan = OrbitCoast.Plan(Sim, r); }
+            catch (Exception e) { Debug.LogException(e); return false; }
+            if (plan == null) return false;
+            if (reduce) { CoastEnd = "reduced"; Coast = plan; return false; }
+            Coast = plan;
+            coastOver = false;
+            CoastWall = 0;
+            coastState = plan.At(0);
+            return true;
+        }
+
+        void StepCoast(float frame)
+        {
+            if (Coast == null) return;
+            if (frame > 0f && TappedToSkip()) { SkipCoast(); return; }
+            CoastWall = OrbitCoast.Advance(CoastWall, frame, Time.unscaledDeltaTime);
+            coastState = Coast.At(CoastWall);
+            UpdateFrame(coastState.t, coastState.x, coastState.y, coastState.vx, coastState.vy, false);
+            PublishAudio();
+            if (Coast.Finished(CoastWall)) EndCoast("played");
+        }
+
+        /// <summary>Tap to skip: jump to the end of the coast and hand over to the result card this frame.</summary>
+        public void SkipCoast()
+        {
+            if (!Coasting) return;
+            CoastWall = Coast.WallSeconds;
+            coastState = Coast.End;
+            UpdateFrame(coastState.t, coastState.x, coastState.y, coastState.vx, coastState.vy, false);
+            EndCoast("skipped");
+        }
+
+        void EndCoast(string how)
+        {
+            coastOver = true;
+            if (CoastEnd == null) CoastEnd = how;
+            Running = false;
+            if (Result == null) Result = pending;
+        }
+
+        static bool TappedToSkip()
+        {
+            try
+            {
+                if (Input.GetMouseButtonDown(0)) return true;
+                for (int i = 0; i < Input.touchCount; i++) if (Input.GetTouch(i).phase == TouchPhase.Began) return true;
+            }
+            catch (InvalidOperationException) { }
+            return false;
         }
 
         void PumpEvents()
@@ -309,19 +441,20 @@ namespace Kestrel.Slice
             (Sink as IFlightStageSink)?.SetFlightClock(SimTime, Altitude);
         }
 
-        void UpdateFrame()
+        void UpdateFrame() => UpdateFrame(Sim.T, Sim.Y[0], Sim.Y[1], Sim.Y[2], Sim.Y[3], Sim.Thrusting);
+
+        void UpdateFrame(double t, double x, double y, double svx, double svy, bool thrusting)
         {
-            double x = Sim.Y[0], y = Sim.Y[1];
             double r = Math.Sqrt(x * x + y * y);
-            double padAngle = Math.PI / 2 + omegaAir * Sim.T;     // pad co-rotates with Earth (CCW)
+            double padAngle = Math.PI / 2 + omegaAir * t;     // pad co-rotates with Earth (CCW)
             double ang = Math.Atan2(y, x);
             Downrange = Gravity.R_EARTH * (ang - padAngle);       // east positive
             Altitude = r - Gravity.R_EARTH;
-            double vx = Sim.Y[2] + omegaAir * y, vy = Sim.Y[3] - omegaAir * x; // air-relative (= ground-relative)
+            double vx = svx + omegaAir * y, vy = svy - omegaAir * x; // air-relative (= ground-relative)
             Speed = Math.Sqrt(vx * vx + vy * vy);
             int stage = Sim.StageIdx;
             if (stage >= 0 && stage < thrustByStage.Length) thrustRef = Math.Max(1, thrustByStage[stage]);
-            ThrustFraction = Sim.Thrusting ? Sim.LastThrust / thrustRef : 0;
+            ThrustFraction = thrusting ? Sim.LastThrust / thrustRef : 0;
 
             // Floating origin: rebase when the vehicle drifts too far from (OriginX, OriginY).
             if (Math.Abs(Downrange - OriginX) > RebaseDistance || Math.Abs(Altitude - OriginY) > RebaseDistance)

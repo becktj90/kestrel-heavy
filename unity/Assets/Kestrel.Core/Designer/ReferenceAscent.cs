@@ -185,7 +185,7 @@ namespace Kestrel.Core.Designer
         static string briefingRoot;
         static bool briefingRootRead;
 
-        /// <summary>The checkout the briefing data is read from, or null on a player build (then the flight is calm).</summary>
+        /// <summary>The checkout the briefing data is read from, or null on a player build (then BriefingBooks).</summary>
         static string BriefingRoot
         {
             get
@@ -198,21 +198,24 @@ namespace Kestrel.Core.Designer
             }
         }
 
-        static string BriefingKey => BriefingRoot != null ? "seed" + BriefingSeed : "calm";
+        /// <summary>True when a checkout or installed books can build a seed-1 briefing card (DECISIONS #86).</summary>
+        static bool BriefingReady => BriefingRoot != null || BriefingBooks.HasBooks;
+
+        static string BriefingKey => BriefingReady ? "seed" + BriefingSeed : "calm";
 
         /// <summary>
         /// KH-7 E: the briefing card the live pad flies for this design at seed 1. The same call AscentFlight.Prepare
         /// makes (MissionBriefing.Load for a campaign mission "mN", MissionBriefing.Free otherwise) with the design's
         /// FlightBatch.DesignHash. Null when no briefing data is readable or it fails; the flight is calm then, as the pad's is.
+        /// On a player build the books come from Resources via BriefingBooks (DECISIONS #86), so the device matches the predictor.
         /// </summary>
         public static MissionBriefing Briefing(Design d)
         {
-            string root = BriefingRoot;
-            if (root == null || d == null) return null;
+            if (d == null || !BriefingReady) return null;
             try
             {
                 ulong hash = FlightBatch.DesignHash(d);
-                return MissionBriefing.ForPad(root, MissionIndex(d), hash, BriefingSeed);
+                return MissionBriefing.ForPad(BriefingRoot, MissionIndex(d), hash, BriefingSeed);
             }
             catch (System.Exception) { return null; }
         }

@@ -393,6 +393,73 @@ namespace Kestrel.Core.Tests
         };
 
         /// <summary>
+        /// UX review on #436 (pattern of #420's BoosterKeysFitTheStripAt335IpadAndWebLandscape): the warp chip "⏩ ×10" fits
+        /// its fixed width, and beside a worst-case clock ("T+ 12:34") inside the clock box, on 335 px, the iPads and the web
+        /// landscape viewports, in every HUD mode. The clock face is fitted to the box less the chip's reserve, shown or not.
+        /// </summary>
+        [Test]
+        public void WarpChipFitsBesideTheClockAt335IpadAndWebLandscape()
+        {
+            float chip = FlightHudLayout.WarpChipWidth();
+            foreach (var t in FlightHudLayout.WarpChipSamples)
+                Assert.That(FlightHudLayout.BudgetWidth(t, FlightHudLayout.WarpChipFontPt) + FlightHudLayout.WarpChipPadXPt, Is.LessThanOrEqualTo(chip), t);
+            var clocks = new[] { "T+ 12:34", "T+ 1234.5" };
+            foreach (var d in CameraPortraits)
+            foreach (var mode in Modes)
+            {
+                var f = FlightHudLayout.Place(d, mode);
+                // Portrait: the chip sits out of flow past the clock (FlightWarpChip); the box still has room for both.
+                float font = FlightHudLayout.ClockFontPt(f.Clock.W - FlightHudLayout.WarpChipReserve(), f.Clock.H);
+                Assert.That(FlightHudLayout.BudgetWidth("T+ 12:34", font) + FlightHudLayout.ClockPadXPt / 2f + FlightHudLayout.WarpChipReserve(),
+                    Is.LessThanOrEqualTo(f.Clock.W), d.Name + " " + mode);
+            }
+            foreach (var wh in CameraWide)
+            foreach (var mode in Modes)
+            {
+                var f = FlightHudLayout.PlaceWide(wh[0], wh[1], 0f, 0f, 0f, 0f, mode, FlightHudLayout.ButtonPt, FlightHudLayout.ClockMinWidthWithChip());
+                float font = FlightHudLayout.ClockFitWithChip(f.Clock.W, f.Clock.H);
+                foreach (var c in clocks)
+                    Assert.That(FlightHudLayout.BudgetWidth(c, font) + FlightHudLayout.ClockPadXPt / 2f + FlightHudLayout.WarpChipReserve(),
+                        Is.LessThanOrEqualTo(f.Clock.W), wh[0] + "x" + wh[1] + " " + mode + " " + c);
+                Assert.That(f.Cells[0].X, Is.GreaterThanOrEqualTo(f.Clock.Right), "the chip never covers the first cell");
+            }
+        }
+
+        /// <summary>
+        /// UX review on #436 at cecc301c: PlaceWide capped the clock at 120 pt even when the box also had to hold the warp
+        /// chip's reserve, so on the web landscape viewports the face fell to the 13 pt floor, shown or hidden. The cap now
+        /// grows by the reserve: the face is the same as a clock with no chip, the stage chip and EXIT stay put, every cell
+        /// keeps its width less the reserve, and nothing clips.
+        /// </summary>
+        [Test]
+        public void WideClockKeepsItsFaceWithTheWarpChipReserve()
+        {
+            var clocks = new[] { "T+ 12:34", "T+ 1234.5", "T-00:00.0" };
+            foreach (var wh in CameraWide)
+            foreach (var mode in Modes)
+            {
+                string at = wh[0] + "x" + wh[1] + " " + mode;
+                var bare = FlightHudLayout.PlaceWide(wh[0], wh[1], 0f, 0f, 0f, 0f, mode);
+                var f = FlightHudLayout.PlaceWide(wh[0], wh[1], 0f, 0f, 0f, 0f, mode, FlightHudLayout.ButtonPt, FlightHudLayout.ClockMinWidthWithChip());
+                float bareFont = FlightHudLayout.ClockFit(bare.Clock.W, bare.Clock.H);
+                float font = FlightHudLayout.ClockFitWithChip(f.Clock.W, f.Clock.H);
+                Assert.That(font, Is.EqualTo(bareFont), at + " face, chip shown or hidden (the reserve is kept either way)");
+                Assert.That(font, Is.GreaterThan(FlightHudLayout.ClockMinFontPt), at + " face above the floor");
+                Assert.That(f.Clock.W, Is.EqualTo(bare.Clock.W + FlightHudLayout.WarpChipReserve()).Within(0.01f), at + " clock grows by the reserve");
+                foreach (var c in clocks)
+                    Assert.That(FlightHudLayout.BudgetWidth(c, font) + FlightHudLayout.ClockPadXPt / 2f + FlightHudLayout.WarpChipReserve(),
+                        Is.LessThanOrEqualTo(f.Clock.W), at + " " + c);
+                Assert.That(f.Stage.X, Is.EqualTo(bare.Stage.X), at + " stage chip");
+                Assert.That(f.Stage.Y, Is.EqualTo(bare.Stage.Y), at + " stage chip");
+                Assert.That(f.Exit.X, Is.EqualTo(bare.Exit.X), at + " EXIT");
+                Assert.That(f.Exit.Y, Is.EqualTo(bare.Exit.Y), at + " EXIT");
+                Assert.That(f.Cells[0].X, Is.GreaterThanOrEqualTo(f.Clock.Right), at + " first cell clear of the clock");
+                Assert.That(f.Cells[f.Cells.Length - 1].Right, Is.LessThanOrEqualTo(f.Stage.X), at + " last cell clear of the stage chip");
+                Assert.That(f.Cells[0].W, Is.GreaterThan(100f), at + " cells keep room");
+            }
+        }
+
+        /// <summary>
         /// Booster follow: the strip's four cells read ALT / DOWN / FUEL / TO DECK (TO PAD on a pad landing, UP on a
         /// boostback). Every key fits one cell on one line at the budgeted width (MeasureFactor, the slack for a
         /// wider font than the metrics table) on 335 px, the iPads and the web landscape viewports, in every HUD
@@ -1044,6 +1111,138 @@ namespace Kestrel.Core.Tests
             // The strip is the union of the cells. Cells are the overlap contract.
             for (int i = 0; i < f.Cells.Length; i++) list.Add(("cell-" + i, f.Cells[i]));
             return list;
+        }
+
+        [Test]
+        public void WideExitBoxMatchesThePageButtonAndClearsTheStagePanel()
+        {
+            // #fs is 88x44 at top: max(8px, safe-area-inset-top), right: max(8px, safe-area-inset-right).
+            var sizes = new[] { new[] { 1280f, 720f }, new[] { 1280f, 800f }, new[] { 1366f, 768f }, new[] { 1920f, 1080f } };
+            foreach (var wh in sizes)
+                foreach (float safeTop in new[] { 0f, 8f, 20f, 47f })
+                    foreach (var mode in Modes)
+                    {
+                        var f = FlightHudLayout.PlaceWide(wh[0], wh[1], safeTop, 0f, 0f, 0f, mode);
+                        string where = wh[0] + "x" + wh[1] + " top " + safeTop + " " + mode;
+                        float y = Math.Max(8f, safeTop);
+                        Assert.That(f.Exit.X, Is.EqualTo(wh[0] - 8f - 88f).Within(0.01f), where + " exit x");
+                        Assert.That(f.Exit.Y, Is.EqualTo(y).Within(0.01f), where + " exit y");
+                        Assert.That(f.Exit.W, Is.EqualTo(88f).Within(0.01f), where + " exit w");
+                        Assert.That(f.Exit.H, Is.EqualTo(44f).Within(0.01f), where + " exit h");
+                        Assert.That(f.Stages.Y, Is.GreaterThanOrEqualTo(f.Exit.Bottom + FlightHudLayout.GapPt - 0.01f), where + " stages below exit");
+                        Assert.That(f.Stages.Overlaps(f.Exit), Is.False, where + " stages/exit");
+                        if (safeTop == 0f) Assert.That(f.Stages.Y, Is.EqualTo(56f).Within(0.01f), where + " stages top");
+                    }
+
+            // The 335 pt portrait layout does not go through the wide path and is unchanged.
+            foreach (var mode in Modes)
+            {
+                var p = FlightHudLayout.Place(335f, 700f, 20f, 0f, 0f, 0f, mode);
+                var w = FlightHudLayout.PlaceWide(335f, 700f, 20f, 0f, 0f, 0f, mode);
+                Assert.That(w.Stages.Y, Is.EqualTo(p.Stages.Y), "335 " + mode);
+                Assert.That(w.Exit.Y, Is.EqualTo(p.Exit.Y), "335 exit " + mode);
+                Assert.That(w.Clock.Y, Is.EqualTo(p.Clock.Y), "335 clock " + mode);
+            }
+        }
+
+        // #431 climax (run 41785561140, CI 321x531): the dock ("Bronze medal / i / Auto-assist on") sat over Follow / Auto /
+        // Pause through the coast and the break-up show, and the coasting rocket was behind the Apogee! banner and the row.
+        [TestCase(false, false, true)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, false)]
+        [TestCase(true, true, false)]
+        public void TheDockFoldsAwayForTheClimaxAndTheLossShow(bool coasting, bool lost, bool shown)
+        {
+            Assert.That(FlightHudLayout.DockShown(coasting, lost), Is.EqualTo(shown));
+        }
+
+        [Test]
+        public void TheCoastBandSitsBetweenTheBannerAndTheToolsRow()
+        {
+            // Measured on climax-apogee.png at 38e8e1b5: banner bottom 0.50 down, tools row top 0.48 up with the dock seated.
+            Assert.That(FlightHudLayout.CoastBand(0.50f, 0.48f, out _, out _), Is.False, "dock seated: no room for the rocket");
+            // Dock folded: the tools row drops to the bottom edge (about 0.23 up on that panel).
+            Assert.That(FlightHudLayout.CoastBand(0.50f, 0.23f, out float lo, out float hi), Is.True);
+            Assert.That(lo, Is.EqualTo(0.23f + FlightHudLayout.BandMarginVp).Within(1e-5f));
+            Assert.That(hi, Is.EqualTo(0.50f - FlightHudLayout.BandMarginVp).Within(1e-5f));
+            // App Store portrait shares (strip / tools row as laid out), dock folded.
+            foreach (var (top, bottom) in new[] { (0.30f, 0.12f), (0.36f, 0.16f), (0.12f, 0.10f) })
+            {
+                Assert.That(FlightHudLayout.CoastBand(top, bottom, out lo, out hi), Is.True, top + "/" + bottom);
+                Assert.That(lo, Is.GreaterThan(bottom));
+                Assert.That(hi, Is.LessThan(1f - top));
+            }
+            Assert.That(FlightHudLayout.CoastBand(-1f, -1f, out lo, out hi), Is.True, "no covers measured yet");
+            Assert.That(lo, Is.EqualTo(FlightHudLayout.BandMarginVp).Within(1e-5f));
+        }
+
+        // #431 break-up show (breakup-live-show.png at 94e79369, CI 321x531): the failure callout sat over Follow / Auto /
+        // Pause. It is seated in the band between the banner and the tools row, and its text never overflows its box.
+        [TestCase(160f, 150f, 192f, "CI 321x531 (about 160 x 265 pt)")]
+        [TestCase(402f, 220f, 640f, "6.9in")]
+        [TestCase(375f, 200f, 520f, "SE")]
+        [TestCase(1024f, 260f, 1100f, "iPad 13in")]
+        public void TheFailureCalloutSitsInTheBandAndItsTextFits(float width, float bandTop, float bandBottom, string device)
+        {
+            foreach (var text in new[]
+            {
+                "BREAKUP Air pushed 25 kPa. The walls held 25 kPa.",
+                "OVER-G The stack pulled 9.4 g. The airframe is rated for 6 g.",
+                "RUD",
+                "ENGINE OUT Engine 3 of 9 shut down: turbopump overspeed on the climb through max-Q.",
+            })
+            foreach (float preferred in new[] { 0f, bandTop + 10f, 2000f })
+            {
+                string at = device + " '" + text + "' at " + preferred;
+                var seat = FlightHudLayout.CalloutInBand(text, width, bandTop, bandBottom, preferred);
+                Assert.That(seat.Live, Is.True, at);
+                Assert.That(seat.Top, Is.GreaterThanOrEqualTo(bandTop - 0.01f), at + " under the banner");
+                Assert.That(seat.Top + seat.Height, Is.LessThanOrEqualTo(bandBottom + 0.01f), at + " over the tools row");
+                Assert.That(seat.FontPt, Is.InRange(FlightHudLayout.CalloutMinFontPt, FlightHudLayout.CalloutFontPt), at);
+                float room = width - 2f * FlightHudLayout.CalloutPadX - 2f;
+                int lines = FlightHudLayout.WrapLines(seat.Text, room, seat.FontPt);
+                Assert.That(lines, Is.InRange(1, FlightHudLayout.CalloutLines), at + " lines");
+                Assert.That(lines * seat.FontPt * FlightHudLayout.LineHeight + FlightHudLayout.CalloutChromeY,
+                    Is.LessThanOrEqualTo(seat.Height + 0.01f), at + " text fits its box (pads and the 3 pt rule inside the height)");
+                if (seat.Cut) Assert.That(seat.Text, Does.EndWith("…"), at + " a cut ends in an ellipsis");
+                else Assert.That(seat.Text, Is.EqualTo(text), at + " whole");
+                if (preferred >= bandTop && preferred + seat.Height <= bandBottom)
+                    Assert.That(seat.Top, Is.EqualTo(preferred).Within(0.01f), at + " keeps its seat when it fits");
+            }
+            // On a phone the whole break-up line fits.
+            if (width >= 375f)
+                Assert.That(FlightHudLayout.CalloutInBand("BREAKUP Air pushed 25 kPa. The walls held 25 kPa.", width, bandTop, bandBottom, bandTop).Cut,
+                    Is.False, device + " whole line");
+        }
+
+        // cbb3a18d PlaysTheBreakUp: the one-line seat left out the chip's 3 pt bottom rule, "need 646x107 box 760x84".
+        [Test]
+        public void TheFailureCalloutBoxCarriesItsRuleAndATallerFace()
+        {
+            const string text = "BREAKUP Air pushed 25 kPa. The walls held 25 kPa.";
+            var one = FlightHudLayout.CalloutInBand(text, 160f, 150f, 180f, 150f);
+            Assert.That(one.Live, Is.True);
+            float textRoom = one.Height - FlightHudLayout.CalloutChromeY;
+            Assert.That(textRoom, Is.GreaterThanOrEqualTo(FlightHudLayout.WrapLines(one.Text, 160f - 2f * FlightHudLayout.CalloutPadX - 2f, one.FontPt) * one.FontPt * FlightHudLayout.LineHeight - 0.01f),
+                "the text's room is the height less both pads and the rule");
+            foreach (float lh in new[] { 1.3f, 1.5f, 1.7f })
+            {
+                var s = FlightHudLayout.CalloutInBand(text, 160f, 150f, 192f, 150f, lh);
+                if (!s.Live) { Assert.That(42f, Is.LessThan(FlightHudLayout.CalloutMinFontPt * lh + FlightHudLayout.CalloutChromeY), lh + ": stands down only without one line of room"); continue; }
+                int lines = FlightHudLayout.WrapLines(s.Text, 160f - 2f * FlightHudLayout.CalloutPadX - 2f, s.FontPt);
+                Assert.That(lines * s.FontPt * lh + FlightHudLayout.CalloutChromeY, Is.LessThanOrEqualTo(s.Height + 0.01f), lh + ": fits at that line box");
+                Assert.That(s.Top + s.Height, Is.LessThanOrEqualTo(192.01f), lh + ": in the band");
+            }
+            Assert.That(FlightHudLayout.CalloutInBand(text, 160f, 150f, 192f, 150f, 1.0f).Height,
+                Is.EqualTo(FlightHudLayout.CalloutInBand(text, 160f, 150f, 192f, 150f).Height), "a line box under 1.3 is read as 1.3");
+        }
+
+        [Test]
+        public void TheFailureCalloutStandsDownWithNoBand()
+        {
+            Assert.That(FlightHudLayout.CalloutInBand("BREAKUP", 160f, 150f, 160f, 150f).Live, Is.False, "under one line of room");
+            Assert.That(FlightHudLayout.CalloutInBand("", 400f, 100f, 400f, 100f).Live, Is.False, "no text");
+            Assert.That(FlightHudLayout.CalloutInBand("BREAKUP", 10f, 100f, 400f, 100f).Live, Is.False, "no width");
         }
     }
 }

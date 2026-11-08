@@ -26,6 +26,10 @@ namespace Kestrel.Core.Economy
         static double N(JsonObject o, string k) => o.Num(k);
         static double Map(JsonObject o, string k, double def) => o.TryGetValue(k ?? "", out var v) && v is double d ? d : def;
 
+        /// <summary>The shipped currency (minorPerCredit 100 × creditsPerKc 1000). For readouts that hold no
+        /// catalog; a test pins it to the catalog so the two cannot drift.</summary>
+        public const long DefaultMinorPerKc = 100000;
+
         public static long MinorPerKc(Catalog c) => (long)(N(c.Econ.Obj("currency"), "minorPerCredit") * N(c.Econ.Obj("currency"), "creditsPerKc"));
 
         public static double EngineTrl(Catalog c, string id) { var E = c.Econ.Obj("engine"); return Map(E.Obj("trl"), id, N(E, "defaultTrl")); }
@@ -181,9 +185,12 @@ namespace Kestrel.Core.Economy
         }
 
         /// <summary>"850 Kc", "34.1k Kc", "1.23M Kc".</summary>
-        public static string FormatKc(Catalog c, long minor)
+        public static string FormatKc(Catalog c, long minor) => FormatKc(minor, MinorPerKc(c));
+
+        /// <summary>Same as <see cref="FormatKc(Catalog, long)"/> with an explicit minor-units-per-Kc.</summary>
+        public static string FormatKc(long minor, long minorPerKc)
         {
-            double kc = (double)minor / MinorPerKc(c), a = Math.Abs(kc);
+            double kc = (double)minor / (minorPerKc > 0 ? minorPerKc : DefaultMinorPerKc), a = Math.Abs(kc);
             var ci = System.Globalization.CultureInfo.InvariantCulture;
             if (a >= 1e6) return (kc / 1e6).ToString("N2", ci) + "M Kc";
             if (a >= 1e3) return (kc / 1e3).ToString("N1", ci) + "k Kc";

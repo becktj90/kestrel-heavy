@@ -22,6 +22,13 @@ namespace Kestrel.Core.Flight
     {
         /// <summary>Game seconds before liftoff. The full count is longer; the player opens here.</summary>
         public const double OpenAt = -12;
+        /// <summary>#416 item 9: after the first-ever flight the count opens at T-5. The first flight keeps
+        /// <see cref="OpenAt"/> because the pad narration's takes are sized to fit it (CallTriggersTests);
+        /// shorter counts drop pre-launch takes that would not finish (CallTriggers.LiftoffMarginSec).</summary>
+        public const double RepeatOpenAt = -5;
+
+        /// <summary>Where the count opens for a player who has already flown <paramref name="flown"/> times.</summary>
+        public static double OpenFor(int flown) => flown <= 0 ? OpenAt : RepeatOpenAt;
         /// <summary>Same hitch cap as the ascent integrator. One slow frame must not skip the count.</summary>
         public const double MaxStep = 0.1;
 
@@ -52,7 +59,10 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>Open the count. Does not start the ascent; the caller ticks.</summary>
-        public void Enter(LaunchSequence sequence)
+        public void Enter(LaunchSequence sequence) => Enter(sequence, OpenAt);
+
+        /// <summary>Open the count at <paramref name="openAt"/> game seconds (clamped to the full count).</summary>
+        public void Enter(LaunchSequence sequence, double openAt)
         {
             Sequence = sequence;
             Ascending = false;
@@ -62,7 +72,8 @@ namespace Kestrel.Core.Flight
             releasedHold = false;
             if (sequence != null && !sequence.Liftoff)
             {
-                if (sequence.Time < OpenAt) sequence.Step(OpenAt - sequence.Time);
+                if (openAt > 0) openAt = 0;
+                if (sequence.Time < openAt) sequence.Step(openAt - sequence.Time);
                 Counting = !sequence.Liftoff;
             }
             else Counting = false;

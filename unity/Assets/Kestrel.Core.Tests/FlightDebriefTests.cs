@@ -175,6 +175,8 @@ namespace Kestrel.Core.Tests
                 Assert.That(card.KcLine, Does.Contain("Reward 10 Kc"));
                 Assert.That(card.KcLine, Does.Contain("Hardware 4 Kc"));
                 Assert.That(card.KcLine, Does.Not.Contain("you failed"));
+                Assert.That(card.KcHeadline, Is.EqualTo(KcFormat.Signed(card.DeltaKc) + " Kc"), "#416 pass card money");
+                Assert.That(card.KcHeadline, Does.StartWith("+"));
                 Assert.IsTrue(store.Career.HasUnlock("fins"));
                 Assert.IsTrue(store.Career.HasUnlock("decal_thrums_toolbox"));
                 Assert.That(card.CosmeticLine, Does.Contain("Thrum's Toolbox"));
@@ -222,10 +224,39 @@ namespace Kestrel.Core.Tests
                 Assert.AreEqual(0, card.RewardMinor);
                 Assert.AreEqual(bank - 400, store.Career.BankMinor);
                 Assert.That(card.KcLine, Does.StartWith("No reward."));
+                Assert.That(card.KcHeadline, Is.Empty, "no hero money on a fail");
                 Assert.AreEqual(0, store.Career.Cleared);
                 Assert.IsFalse(store.Career.HasUnlock("decal_thrums_toolbox"));
                 Assert.AreEqual(0, store.Mission("m1").BestStars);
                 Assert.AreEqual(1, store.Mission("m1").Attempts);
+            }
+        }
+
+        [Test]
+        public void MissedFlight_StillEarnsMedals_EvenWithPerfectTimingAndLanding()
+        {
+            // DECISIONS #83 (Trevor 11-07): medals are for timing/landing, not the goal, so a missed
+            // flight still earns them and the line says so ("You still earned ..."). Stars stay 0:
+            // stars need the mission goal. FlightVerdict.Medal still drops the timing medal at the
+            // PostFlightSource level on a miss; the debrief collects whatever medals are in the facts.
+            using (var fx = new Fixture())
+            {
+                var store = fx.Load();
+                var mission = MissionFor(fx.Campaign, "m1", 11);
+                var facts = new FlightFacts
+                {
+                    Passed = false, EconomyKnown = true, Margin = 0.05, CostMinor = 400, BudgetKc = 50, PeakG = 2, GLimit = 6,
+                    Seed = 11, DesignId = "pencil", TimingMedal = AscentMedal.Gold, LandingGrade = "Perfect", ApoKm = 4, GoalKm = 10,
+                };
+                var card = FlightDebrief.Compose(store, mission, facts, NarrationPool.Empty, Minor, null);
+                Assert.IsFalse(card.Passed);
+                Assert.AreEqual(2, card.Medals.Count);
+                Assert.That(card.Medals, Does.Contain("gold"));
+                Assert.That(card.Medals, Does.Contain("timing-gold"));
+                Assert.AreEqual("You still earned gold for the landing and gold for timing.", card.MedalsLine);
+                Assert.AreEqual(0, card.Stars);
+                Assert.AreEqual(AscentMedal.None, FlightVerdict.Medal(AscentMedal.Gold, false));
+                Assert.AreEqual(AscentMedal.Gold, FlightVerdict.Medal(AscentMedal.Gold, true));
             }
         }
 
@@ -275,7 +306,8 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(42UL, GameSession.Current.Seed);
 
             var next = ReportRoutes.Next(campaign);
-            Assert.AreEqual(SessionScreens.Missions, next.Screen);
+            // NAV-06 (#416 item 9): Next mission opens the next mission's designer directly.
+            Assert.AreEqual(SessionScreens.Design, next.Screen);
             Assert.AreEqual("m2", next.Session.MissionId);
             Assert.AreEqual(42UL, next.Session.Seed);
 

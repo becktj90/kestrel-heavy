@@ -168,6 +168,22 @@ namespace Kestrel.Slice
             return hiFit;
         }
 
+        /// The eight corners of a stack's box (FitBand's points): <paramref name="height"/> up its axis from
+        /// <paramref name="stackBase"/>, <paramref name="radius"/> out on both sides. Returns the count written (0 when
+        /// <paramref name="points"/> holds fewer than 8).
+        /// </summary>
+        public static int StackPoints(Vector3[] points, Vector3 stackBase, Vector3 up, float height, float radius)
+        {
+            if (points == null || points.Length < 8) return 0;
+            up = up.sqrMagnitude > 1e-6f ? up.normalized : Vector3.up;
+            var a = Vector3.Cross(up, Mathf.Abs(up.y) < 0.9f ? Vector3.up : Vector3.forward).normalized;
+            var b = Vector3.Cross(up, a);
+            float r = Mathf.Max(0.1f, radius), h = Mathf.Max(0.1f, height);
+            for (int i = 0; i < 8; i++)
+                points[i] = stackBase + up * ((i & 1) == 0 ? 0f : h) + a * ((i & 2) == 0 ? -r : r) + b * ((i & 4) == 0 ? -r : r);
+            return 8;
+        }
+
         /// <summary>Exponentially smooth the current offset toward the desired one (frame-rate independent).</summary>
         public static Vector3 StepOffset(Vector3 current, Vector3 desired, float rate, float dt) =>
             Vector3.Lerp(current, desired, 1 - Mathf.Exp(-rate * dt));

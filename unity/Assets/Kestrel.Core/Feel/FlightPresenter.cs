@@ -8,7 +8,7 @@ namespace Kestrel.Core.Feel
     {
         public bool Running, Lost, HasAttitude;
         public double Altitude, Speed, Mach, DynPressure, ThrustFraction, Downrange;
-        public double AttitudeDeg, VehicleHeight, QLimitPa, DvMargin, Health01, Fuel01;
+        public double AttitudeDeg, VehicleHeight, QLimitPa, Health01, Fuel01;
         public int Stage;
     }
 
@@ -129,7 +129,7 @@ namespace Kestrel.Core.Feel
             }
 
             double health = s.Lost ? 0 : s.Health01;
-            var risk = HudRisk.Evaluate(health, s.ThrustFraction, s.Fuel01, s.DynPressure, s.QLimitPa, s.DvMargin);
+            var risk = HudRisk.Evaluate(health, s.ThrustFraction, s.Fuel01, s.DynPressure, s.QLimitPa);
             Band = risk.Band;
             Call = risk.Call;
             Line = risk.Line;

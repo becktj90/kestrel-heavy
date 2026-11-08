@@ -93,6 +93,12 @@ namespace Kestrel.Core.Physics
 
     public struct SimSample { public double t, alt, v, vrel, q, m, pitch; public int stage, mode; }
 
+    /// <summary>One sample of a post-cutoff coast (<see cref="AscentSim.CoastTrack"/>): inertial planar state, sim seconds.</summary>
+    public struct CoastState
+    {
+        public double t, x, y, vx, vy;
+    }
+
     public sealed class SimResult
     {
         public string outcome; public double time; public List<SimEvent> events; public OrbitElements orbit;
@@ -335,6 +341,14 @@ namespace Kestrel.Core.Physics
         /// </summary>
         public double LiveThrottleScale = 1;
         public double LivePitchOffsetRad;
+        /// <summary>#422: largest nudge offset on the program pitch (rad).</summary>
+        public const double MaxNudgeRad = 10 * Math.PI / 180.0;
+        /// <summary>#422: offset currently added to the program pitch (rad); slews at RecoverySim.PitchRate.</summary>
+        public double NudgeAppliedRad => nudgeApplied;
+        double nudgeApplied, pitchWithNudge = double.NaN;
+        /// <summary>DECISIONS #89: true on a tick where the design's own max-Q law held the throttle down (GuidanceProfile.MaxQThrottleActive). Observer only.</summary>
+        public bool MaxQThrottling => maxQThrottleNow;
+        bool maxQThrottleNow;
         /// <summary>
         /// Observer. Null leaves the step alone. The sim does not read the sink. Every call goes through a
         /// <see cref="Flight.GuardedFlightSink"/>, so a sink that throws is logged and cannot end or change the run.
@@ -435,6 +449,18 @@ namespace Kestrel.Core.Physics
 
         double StageEndMass() => upperMass[StageIdx] - st[StageIdx].propMass;
 
+        /// <summary>
+        /// Ideal (vacuum) Δv still on board, m/s: the burning stage's propellant left from the current mass, then every
+        /// later stage full (the same sum as SimResult.departureDv). Read only, for the stage banner's live spare
+        /// (LiveSpare); 0 once the last stage is gone.
+        /// </summary>
+        public double RemainingVacDeltaV()
+        {
+            if (StageIdx < 0 || StageIdx >= st.Length) return 0;
+            DepartureBudget(out double dv, out _);
+            return dv;
+        }
+
         void DepartureBudget(out double dv, out double tw)
         {
             dv = 0; tw = double.NaN;
@@ -464,6 +490,7 @@ namespace Kestrel.Core.Physics
                 vrel = o.wind.Retarget(alt, tx, ty, ref avx, ref avy, vrel);
 
             // ---- guidance ----
+            maxQThrottleNow = false;
             if (Thrusting)
             {
                 thrustScale = o.monitor != null ? o.monitor.ThrustFactor : 1;
@@ -476,6 +503,7 @@ namespace Kestrel.Core.Physics
                     Events.Add(new SimEvent { t = T, type = "engine-out", stage = 1, alt = alt });
                 }
                 followVelocity = false; pegContinuous = false;
+                if (nudgeApplied != 0 && PitchCmd == pitchWithNudge) PitchCmd -= nudgeApplied;
                 if (Headless.LegacyPitch(o.guidance))
                 {
                     bool holdKick = HoldingMaxQPitch(alt, m, vr, vrel);
@@ -529,14 +557,18 @@ namespace Kestrel.Core.Physics
                     }
                     if (o.guidance != null && (o.guidance.maxQThrottleSet || o.guidance.gLimitSet))
                     {
-                        double cap = o.guidance.Command(Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel)).throttle;
+                        var gs = Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel);
+                        double cap = o.guidance.Command(gs).throttle;
                         if (cap != 1) thrustScale *= cap;
+                        maxQThrottleNow = o.guidance.MaxQThrottleActive(gs);
                     }
                 }
                 else
                 {
                     double flight = Math.Atan2(avx * ux + avy * uy, avx * tx + avy * ty);
-                    var cmd = o.guidance.Command(Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel, flight));
+                    var gs = Guide(alt, m, vr, Gravity.MU_EARTH / (r * r) - vt * vt / r, vrel, flight);
+                    var cmd = o.guidance.Command(gs);
+                    maxQThrottleNow = o.guidance.MaxQThrottleActive(gs);
                     PitchCmd = cmd.pitchRad;
                     followVelocity = o.continuousTurn && StageIdx == 0 && cmd.pitchRad == flight;
                     if (StageIdx > 0 && o.continuousTurn) { pegContinuous = true; pegTarget = o.guidance.targetAlt; pegThrottle = cmd.throttle; }
@@ -551,14 +583,28 @@ namespace Kestrel.Core.Physics
                     else if (s > 1) s = 1;
                     if (s != 1) thrustScale *= s;
                 }
-                if (LivePitchOffsetRad != 0 && !double.IsNaN(LivePitchOffsetRad))
+                // #422: the nudge is a bounded offset on the program pitch, not an increment. The legacy
+                // program does not rewrite PitchCmd every tick (Mode 0, Mode 1 before the catch), so the
+                // old `PitchCmd += dp` integrated a held 1° into ~120°/s. Strip last tick's offset if the
+                // program left it in place, then slew the applied offset toward the clamped target at the
+                // vehicle attitude rate (RecoverySim.PitchRate, 10°/s, #351) and add it once.
+                double dpTarget = LivePitchOffsetRad;
+                if (double.IsNaN(dpTarget)) dpTarget = 0;
+                if (dpTarget > MaxNudgeRad) dpTarget = MaxNudgeRad;
+                else if (dpTarget < -MaxNudgeRad) dpTarget = -MaxNudgeRad;
+                if (dpTarget != 0 || nudgeApplied != 0)
                 {
-                    double dp = LivePitchOffsetRad;
-                    double lim = 10 * Math.PI / 180.0;
-                    if (dp > lim) dp = lim;
-                    else if (dp < -lim) dp = -lim;
-                    PitchCmd += dp;
-                    followVelocity = false; pegContinuous = false;
+                    double step = Flight.RecoverySim.PitchRate * o.dt;
+                    double diff = dpTarget - nudgeApplied;
+                    if (diff > step) diff = step;
+                    else if (diff < -step) diff = -step;
+                    nudgeApplied += diff;
+                    if (nudgeApplied != 0)
+                    {
+                        PitchCmd += nudgeApplied;
+                        pitchWithNudge = PitchCmd;
+                        followVelocity = false; pegContinuous = false;
+                    }
                 }
                 // #326: re-plan the remaining S1 burn closed-loop after an engine-out. The open-loop
                 // pitch program was tuned for nominal thrust; with less thrust it lofts the handoff and
@@ -788,6 +834,13 @@ namespace Kestrel.Core.Physics
             return need < dt ? need : dt;
         }
 
+        /// <summary>
+        /// PR5 coast warp (read-only): the cutoff energy margin now, J/kg (below 0 still burning toward it). NaN when this
+        /// flight has no energy cutoff or is not thrusting. Reads the state; changes nothing.
+        /// </summary>
+        public double CutoffEnergyMargin
+            => o.energyCutoff && o.cutoff && Thrusting && !double.IsNaN(o.cutoffEnergy) ? EnergyMargin(Y) : double.NaN;
+
         /// <summary>Specific orbital energy minus the cutoff target, J/kg: at or above 0 cuts off.</summary>
         double EnergyMargin(double[] y)
         {
@@ -945,6 +998,42 @@ namespace Kestrel.Core.Physics
                 t += dt;
             }
             return JsMath.Hypot(s[0], s[1]) - Gravity.R_EARTH;
+        }
+
+        /// <summary>
+        /// The coast after a clean cutoff, flown on this sim's own equations of motion (gravity, drag and wind; no thrust)
+        /// from the state the run ended in, sampled every <paramref name="sampleEvery"/> sim seconds (first sample is the
+        /// cutoff state itself). Stops at the apex when <paramref name="stopAtApex"/> (radial speed through zero), at the
+        /// ground, or after <paramref name="maxSpan"/> seconds. Read-only: Y, T and the event list are untouched.
+        /// Empty while thrusting and after a failure or a crash.
+        /// </summary>
+        public List<CoastState> CoastTrack(double maxSpan, double sampleEvery, bool stopAtApex)
+        {
+            var track = new List<CoastState>();
+            if (Thrusting || outcome == "failure" || outcome == "crash" || !(maxSpan > 0) || !(sampleEvery > 0)) return track;
+            var s = (double[])Y.Clone();
+            double t = T, end = T + maxSpan, nextSample = T;
+            double fine = o.dt > 0 ? o.dt : 0.05;
+            for (int i = 0; i < 2000000; i++)
+            {
+                double r = JsMath.Hypot(s[0], s[1]), alt = r - Gravity.R_EARTH;
+                double vr = (s[2] * s[0] + s[3] * s[1]) / r;
+                bool apex = stopAtApex && vr <= 0 && i > 0;
+                bool last = apex || alt < 0 || t >= end - 1e-9;
+                if (t >= nextSample - 1e-9 || last)
+                {
+                    track.Add(new CoastState { t = t, x = s[0], y = s[1], vx = s[2], vy = s[3] });
+                    nextSample += sampleEvery;
+                }
+                if (last) break;
+                // Above the air the step only has gravity to follow; RK4 at 1 s holds a low orbit to well under a metre a minute.
+                double dt = !o.vacuum && alt < 150e3 ? fine : 1.0;
+                if (t + dt > end) dt = end - t;
+                if (t + dt > nextSample && nextSample > t) dt = nextSample - t;
+                rk.Step(deriv, t, s, dt);
+                t += dt;
+            }
+            return track;
         }
 
         public SimResult Finish()

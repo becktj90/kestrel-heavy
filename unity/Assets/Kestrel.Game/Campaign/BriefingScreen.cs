@@ -1,11 +1,11 @@
 // Portrait briefing overlay. Sits on the mission map. Build it and Back use the G1 routes.
 // Numbers are the campaign row and the seeded S4 card. Offline. No timer and no price.
 using System;
-using System.IO;
+using System.Globalization;
 using Kestrel.Core.Data;
 using Kestrel.Core.Flight;
 using Kestrel.Game.Guide;
-using Kestrel.Game.Shell;
+using Kestrel.Game.Shell; // MissionPatch / MissionPatchArt live in this namespace inside this asm
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -196,16 +196,21 @@ namespace Kestrel.Game.MissionSelect
         static MissionBriefing TryCard(MissionContext ctx)
         {
             if (ctx == null || ctx.IsFree || string.IsNullOrEmpty(ctx.MissionId)) return null;
-            string root;
-            try { root = Catalog.FindRepoRoot(Directory.GetCurrentDirectory()); }
+            // Checkout when present; otherwise BriefingBooks from Resources (DECISIONS #86).
+            // Campaign asm cannot call ScreenStub (Shell), so the index is parsed from missionId.
+            string root = Catalog.RepoRootOrNull();
+            if (root == null && !BriefingBooks.HasBooks) return null;
+            int index = MissionIndex(ctx.MissionId);
+            if (index <= 0) return null;
+            try { return MissionBriefing.Load(root, index, 0, ctx.Seed); }
             catch (Exception) { return null; }
-            try
-            {
-                var mission = Campaign.Load(root).ById(ctx.MissionId);
-                if (mission == null) return null;
-                return MissionBriefing.Load(root, mission.Index, 0, ctx.Seed);
-            }
-            catch (Exception) { return null; }
+        }
+
+        static int MissionIndex(string missionId)
+        {
+            if (string.IsNullOrEmpty(missionId) || missionId.Length < 2) return 0;
+            if (missionId[0] != 'm' && missionId[0] != 'M') return 0;
+            return int.TryParse(missionId.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) ? n : 0;
         }
     }
 }

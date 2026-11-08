@@ -116,7 +116,17 @@ namespace Kestrel.Site
         public static bool IsScrubPatch(float x, float z, int seed)
         {
             if (!IsLand(x, z) || IsBeach(x, z) || IsApron(x, z)) return false;
-            return ValueNoise(x, z, 0.0042f, seed + 3) > 0.60f;
+            return ScrubPatchAmount(x, z, seed) >= 0.5f;
+        }
+
+        /// <summary>How much of the dark scrub-patch colour a point takes (0 = open scrub, 1 = patch):
+        /// the patch noise smoothed across the 0.60 threshold instead of a hard cut, so neighbouring
+        /// vertices no longer flip between two flat greens and the grid reads as stripes (#402).
+        /// >= 0.5 is exactly the old IsScrubPatch cut, so patch coverage is unchanged.</summary>
+        public static float ScrubPatchAmount(float x, float z, int seed)
+        {
+            float n = ValueNoise(x, z, 0.0042f, seed + 3);
+            return Smooth(Saturate((n - 0.56f) / 0.08f));
         }
 
         /// <summary>Height above the local sea plane before Earth curvature. Water is slightly below the lip.</summary>
@@ -142,7 +152,23 @@ namespace Kestrel.Site
 
         public static void WriteLandColor(float x, float z, int seed, bool road, float[] dst, int o)
         {
-            float[] src = ApronColor(x, z) ? Apron : road ? Road : IsBeach(x, z) ? Beach : IsScrubPatch(x, z, seed) ? ScrubPatch : Scrub;
+            // #402: the old code wrote one of two flat greens per vertex, so the 75 m grid flipped between
+            // them along straight threshold lines and the ground read as bright green with artificial
+            // stripes. Blend the patch in over a band of the noise, and mottle each vertex a little (the
+            // same fine field Relief uses, so darker where the ground dips). Patch interiors stay exactly
+            // ScrubPatch and open scrub exactly Scrub — only the transition softens. Beach, apron and road
+            // keep their exact colours.
+            if (!ApronColor(x, z) && !road && !IsBeach(x, z))
+            {
+                float t = ScrubPatchAmount(x, z, seed);
+                float fine = 1f + 0.10f * (ValueNoise(x, z, 0.021f, seed + 11) - 0.5f);
+                dst[o] = Lerp(Scrub[0], ScrubPatch[0], t) * fine;
+                dst[o + 1] = Lerp(Scrub[1], ScrubPatch[1], t) * fine;
+                dst[o + 2] = Lerp(Scrub[2], ScrubPatch[2], t) * fine;
+                dst[o + 3] = 1f;
+                return;
+            }
+            float[] src = ApronColor(x, z) ? Apron : road ? Road : Beach;
             dst[o] = src[0]; dst[o + 1] = src[1]; dst[o + 2] = src[2]; dst[o + 3] = 1f;
         }
 

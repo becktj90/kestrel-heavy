@@ -70,10 +70,9 @@ namespace Kestrel.Game.Shell
             var campaign = ScreenStub.LoadCampaign();
             MissionBriefing card = null;
             var mission = campaign != null ? campaign.ById(missionId) : null;
-            string root = ScreenStub.RepoRoot();
-            if (mission != null && root != null)
+            if (mission != null)
             {
-                try { card = MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign)); }
+                try { card = LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
             }
             Present(BriefingBoard.BeforeDesign(GameSession.Apply(RouteId.MissionChosen, campaign, missionId, card)));
@@ -93,7 +92,44 @@ namespace Kestrel.Game.Shell
         }
         public void BackFromDesigner() => Route(RouteId.DesignerBack);
         public void OpenReport() => Route(RouteId.OpenReport);
-        public void ReportNext() => Route(RouteId.ReportNext, ScreenStub.LoadCampaign());
+        /// <summary>
+        /// #416 item 9 / NAV-06: Next mission opens the next mission's designer with its starter and briefing
+        /// (the designer shows the brief's goal line), skipping the board and briefing taps. A locked next
+        /// mission (a miss) or one with no starter lands on the Missions list as before.
+        /// </summary>
+        public void ReportNext()
+        {
+            if (Busy) return;
+            var campaign = ScreenStub.LoadCampaign();
+            var r = GameSession.Apply(RouteId.ReportNext, campaign);
+            if (r.Screen == SessionScreens.Design)
+            {
+                if (OpenNextDesigner(campaign, r.Session)) return;
+                r = new RouteResult(SessionScreens.Missions, SessionScreens.None, GameSession.Current);
+            }
+            Present(r);
+        }
+
+        bool OpenNextDesigner(Campaign campaign, MissionContext ctx)
+        {
+            var mission = campaign != null && ctx != null ? campaign.ById(ctx.MissionId) : null;
+            if (mission == null || mission.Index > ScreenStub.ClearedCount() + 1) return false;
+            var choice = HomeAutoBuild.Choose(ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, mission);
+            if (choice == null || choice.Design == null) return false;
+            string root = ScreenStub.RepoRoot();
+            if (root != null)
+            {
+                try { ctx.ApplyBriefing(MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign))); }
+                catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
+            }
+            ctx.VehicleLine = choice.VehicleLine;
+            ctx.ReachLine = choice.ReachLine;
+            ctx.AutoPad = false;
+            PadHandoff.Arm(choice.Design, false, fromHome: false);
+            GameSession.Carry(ctx);
+            Present(new RouteResult(SessionScreens.Design, SessionScreens.None, ctx));
+            return true;
+        }
         public void ReportRetry() => Route(RouteId.ReportRetry);
 
         /// <summary>Same exit the in-flight pause menu reaches via Go(Home): title screen, session cleared.</summary>
@@ -115,12 +151,8 @@ namespace Kestrel.Game.Shell
                 if (ctx != null)
                 {
                     MissionBriefing card = null;
-                    string root = ScreenStub.RepoRoot();
-                    if (root != null)
-                    {
-                        try { card = MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign)); }
-                        catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
-                    }
+                    try { card = LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
+                    catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
                     ctx.ApplyBriefing(card);
                     ctx.VehicleLine = choice.VehicleLine;
                     ctx.ReachLine = choice.ReachLine;
@@ -225,9 +257,8 @@ namespace Kestrel.Game.Shell
         static MissionBriefing TryMissionBriefing(Campaign campaign, int cleared)
         {
             var mission = HomeRoutes.NextMission(campaign, cleared);
-            string root = ScreenStub.RepoRoot();
-            if (mission == null || root == null) return null;
-            try { return MissionBriefing.Load(root, mission.Index, 0, MissionContext.DefaultSeed(campaign)); }
+            if (mission == null) return null;
+            try { return LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
             catch (Exception e)
             {
                 Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message);
@@ -237,14 +268,27 @@ namespace Kestrel.Game.Shell
 
         static MissionBriefing TryFreeBriefing()
         {
-            string root = ScreenStub.RepoRoot();
-            if (root == null) return null;
-            try { return MissionBriefing.Free(root, 0, 1); }
+            try { return LoadFreeBriefing(0, 1); }
             catch (Exception e)
             {
                 Debug.LogWarning("[Kestrel] free-build briefing unavailable: " + e.Message);
                 return null;
             }
+        }
+
+        /// <summary>Checkout when present; otherwise BriefingBooks from Resources (DECISIONS #86).</summary>
+        static MissionBriefing LoadBriefing(int missionIndex, ulong seed)
+        {
+            string root = ScreenStub.RepoRoot();
+            if (root == null && !BriefingBooks.HasBooks) return null;
+            return MissionBriefing.Load(root, missionIndex, 0, seed);
+        }
+
+        static MissionBriefing LoadFreeBriefing(ulong designHash, ulong seed)
+        {
+            string root = ScreenStub.RepoRoot();
+            if (root == null && !BriefingBooks.HasBooks) return null;
+            return MissionBriefing.Free(root, designHash, seed);
         }
 
         IEnumerator Switch(AppScreen to)
