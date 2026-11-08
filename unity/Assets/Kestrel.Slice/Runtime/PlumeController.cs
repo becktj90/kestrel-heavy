@@ -488,6 +488,17 @@ namespace Kestrel.Slice
 
             float since = ignitionTime < 0f ? 0f : Clock() - ignitionTime;
             if (cloud != null) Rate(cloud, PlumeShape.GroundCloud(tf, heightAboveDeck, towerHeight, since));
+            // #403: SetStagingTint writes body startColor (the red afterglow) and nothing ever cleared it.
+            // ApplyPlume only calls it while heat/flash > 0, so the red latched into the whole S2 burn: the
+            // startColor multiplies the body gradient, flattening yellow -> orange -> red to solid red-orange
+            // (the "red blob", no shape or fade). Apply owns the per-frame tint, so reset to white here and
+            // let SetStagingTint re-apply the staging colour after Apply while heat/flash are live. The
+            // failure tint below still wins while held.
+            if (!forced && body != null)
+            {
+                var plain = body.main;
+                plain.startColor = Color.white;
+            }
             if (forced && body != null)
             {
                 var glow = new Color(1f, 0.22f, 0.05f);

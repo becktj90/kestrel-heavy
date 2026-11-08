@@ -113,7 +113,10 @@ namespace Kestrel.Game.Failure.Capture
                 engineer = kind + " at T+62.00 s.",
             };
             if (doc != null && doc.rootVisualElement != null) host.Bind(null, doc.rootVisualElement, null);
-            host.Play(ev, cue, exits, false);
+            // Live order: the failure plays first with the card held back, then the card opens over it.
+            host.Play(ev, cue, exits, false, false);
+            Assert.That(host.CardPending, Is.True, kind + ": the card waits for the failure to play");
+            Assert.That(host.CardDueAt, Is.GreaterThan(0.7f), kind + ": the show frame is before the card");
             host.Seek(0.7f);
             var ps = rocket.GetComponentInChildren<ParticleSystem>();
             if (ps != null) ps.Simulate(0.35f, true, false);
@@ -121,6 +124,27 @@ namespace Kestrel.Game.Failure.Capture
             NoDefaultMaterial(rocket, kind, cue.Radius);
 
             var rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32);
+            {
+                cam.targetTexture = rt;
+                cam.Render();
+                cam.targetTexture = null;
+                var prevShow = RenderTexture.active;
+                RenderTexture.active = rt;
+                var show = new Texture2D(W, H, TextureFormat.RGB24, false);
+                show.ReadPixels(new Rect(0, 0, W, H), 0, 0);
+                show.Apply();
+                RenderTexture.active = prevShow;
+                var showPath = Path.ChangeExtension(path, null) + "-show.png";
+                File.WriteAllBytes(showPath, show.EncodeToPNG());
+                int showDistinct = show.GetPixels32().Where((_, i) => i % 97 == 0).Select(p => (p.r << 16) | (p.g << 8) | p.b).Distinct().Count();
+                Debug.Log("[Capture] " + kind + " show: " + showPath + " colours=" + showDistinct);
+                Assert.That(showDistinct, Is.GreaterThan(8), kind + " show capture is flat");
+                UnityEngine.Object.Destroy(show);
+            }
+            Assert.That(host.CardPending, Is.True, kind + ": still playing at 0.7 s");
+            host.OpenCardNow();
+            Assert.That(host.CardPending, Is.False, kind + ": the card opened");
+            for (int i = 0; i < 2; i++) yield return null;
             cam.targetTexture = rt;
             cam.Render();
             cam.targetTexture = null;

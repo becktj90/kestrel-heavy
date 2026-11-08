@@ -68,6 +68,8 @@ namespace Kestrel.Game.Shell
             Safe = new VisualElement { name = "safe" };
             Safe.AddToClassList(SafeAreaRoot.SafeClass);
             Root.Add(Safe);
+            // Web: no grey desktop scrollers; a bottom fade shows there is more (#416 item 8).
+            WebScrollChrome.Watch(Root);
             Portrait.FrameChanged += OnFrame;
             Root.RegisterCallback<GeometryChangedEvent>(_ =>
             {

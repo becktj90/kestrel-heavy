@@ -11,6 +11,8 @@
 //   - No prefs at all: Starter, Engineer off, Show full designer off. That is today's default.
 // Pure C#: callers pass PlayerPrefs.HasKey / GetInt / SetInt (or a test dictionary).
 using System;
+using Kestrel.Core.Flight;
+using Kestrel.Core.Flight.Narration;
 
 namespace Kestrel.Core.Features
 {
@@ -78,6 +80,54 @@ namespace Kestrel.Core.Features
 
         static bool LegacyEngineer(Func<string, bool> has, Func<string, int> read)
             => Read(has, read, LegacyDesignerEngineerPref) != 0 || Read(has, read, LegacyHangarEngineerPref) != 0;
+
+        // ---- Settings > Commentary and Time warp (UX after #384 and #436) ------------------------------------------
+        /// <summary>The old voice mute, still written alongside <see cref="Commentary.Pref"/> for older builds.</summary>
+        public const string LegacyNarrationMutePref = "kh.audio.narration.muted";
+        public const string CommentaryLabel = "Commentary";
+        public const string CommentaryNote = "Who talks during the flight.";
+        public const string TimeWarpLabel = "Time warp";
+        public const string TimeWarpNote = "Speeds up quiet parts of the flight.";
+
+        /// <summary>The saved commentary mode. No pref reads the old voice mute (muted is Off); a fresh save is Full.</summary>
+        public static CommentaryMode CommentaryChoice(Func<string, bool> has, Func<string, int> read)
+            => Kestrel.Core.Flight.Narration.Commentary.Resolve(has != null && has(Kestrel.Core.Flight.Narration.Commentary.Pref), Read(has, read, Kestrel.Core.Flight.Narration.Commentary.Pref), Read(has, read, LegacyNarrationMutePref) == 1);
+
+        /// <summary>Stores the mode and keeps the old mute key meaning "voice off", as AudioPrefs.SetCommentary does.</summary>
+        public static void SetCommentaryChoice(CommentaryMode mode, Action<string, int> write)
+        {
+            if (write == null) return;
+            write(Kestrel.Core.Flight.Narration.Commentary.Pref, (int)mode);
+            write(LegacyNarrationMutePref, mode == CommentaryMode.Off ? 1 : 0);
+        }
+
+        public static string CommentaryState(CommentaryMode mode)
+            => mode == CommentaryMode.CallsOnly ? "Calls only" : mode == CommentaryMode.Off ? "Off" : "Full";
+
+        public static string CommentaryTooltip(CommentaryMode mode)
+        {
+            switch (mode)
+            {
+                case CommentaryMode.CallsOnly: return "Commentary: Calls only. Mission control calls only. Tap for Off.";
+                case CommentaryMode.Off: return "Commentary: Off. Nobody talks. Tap for Full.";
+                default: return "Commentary: Full. Mission control and the hosts talk. Tap for Calls only.";
+            }
+        }
+
+        /// <summary>The saved time-warp mode. No pref is Auto.</summary>
+        public static TimeWarpMode TimeWarp(Func<string, bool> has, Func<string, int> read)
+            => TimeWarpSetting.Resolve(has != null && has(TimeWarpSetting.Pref), Read(has, read, TimeWarpSetting.Pref));
+
+        public static void SetTimeWarp(TimeWarpMode mode, Action<string, int> write) => write?.Invoke(TimeWarpSetting.Pref, (int)mode);
+
+        public static TimeWarpMode NextTimeWarp(TimeWarpMode mode) => mode == TimeWarpMode.Auto ? TimeWarpMode.Off : TimeWarpMode.Auto;
+
+        public static string TimeWarpState(TimeWarpMode mode) => mode == TimeWarpMode.Off ? "Off" : "Auto";
+
+        public static string TimeWarpTooltip(TimeWarpMode mode)
+            => mode == TimeWarpMode.Off
+                ? "Time warp: Off. Flights play in real time. Tap for Auto."
+                : "Time warp: Auto. " + TimeWarpNote + " Tap for Off.";
 
         static int Read(Func<string, bool> has, Func<string, int> read, string key)
         {
