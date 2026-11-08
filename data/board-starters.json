@@ -1720,7 +1720,7 @@
           "guidance": {
             "pitchKickAlt": 12000,
             "pitchKickDeg": 6,
-            "turnShape": 0.5,
+            "turnShape": 0,
             "maxQThrottle": 40,
             "gLimit": 5.5
           },
