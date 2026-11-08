@@ -1248,6 +1248,78 @@
    "neutralReason": "Max-Q explainer; no vehicle fact"
   },
   {
+   "id": "mission-control/maxq-through.2",
+   "event": "maxq-through",
+   "channel": "mc",
+   "text": "Through Max-Q. Dynamic pressure is falling off.",
+   "spokenText": "Through Max-Q. Dynamic pressure is falling off.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/maxq-through.2.mp3",
+   "durationSec": 2.691,
+   "lufs": -16.43,
+   "truePeakDb": -2.81,
+   "normalization": "linear",
+   "hash": "2e2a301f564e",
+   "sha256": "36b0d5b54bed15124ec85deebc552b4db2173149c20150535d137050d648b86c",
+   "requires": {
+    "throttle.maxq": true
+   },
+   "claims": [
+    "throttle.maxq"
+   ]
+  },
+  {
+   "id": "cohost/maxq-through.1",
+   "event": "maxq-through",
+   "channel": "cohost",
+   "text": "That was Max-Q, the point where the air pushes hardest on the vehicle.",
+   "spokenText": "That was Max-Q, the point where the air pushes hardest on the vehicle.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/maxq-through.1.mp3",
+   "durationSec": 4.18,
+   "lufs": -16.67,
+   "truePeakDb": -1.96,
+   "normalization": "dynamic",
+   "hash": "9e40d05e4b71",
+   "sha256": "b893b677d8b946e0de8e71effe9f6469e9365d4129580265a010c0211a9a8129",
+   "requires": {
+    "throttle.maxq": true
+   },
+   "claims": [
+    "throttle.maxq"
+   ]
+  },
+  {
+   "id": "cohost/maxq-through.2",
+   "event": "maxq-through",
+   "channel": "cohost",
+   "text": "Past the peak of aerodynamic pressure. The ride gets smoother now.",
+   "spokenText": "Past the peak of aerodynamic pressure. The ride gets smoother now.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/maxq-through.2.mp3",
+   "durationSec": 3.709,
+   "lufs": -16.51,
+   "truePeakDb": -1.83,
+   "normalization": "dynamic",
+   "hash": "5dfd8c57255e",
+   "sha256": "8f191224e48e006d5bad6d74e50f503f1ead543e37c56c3bc0dfc5e13586680a",
+   "requires": {
+    "throttle.maxq": true
+   },
+   "claims": [
+    "throttle.maxq"
+   ]
+  },
+  {
    "id": "mission-control/meco.1",
    "event": "meco",
    "channel": "mc",
