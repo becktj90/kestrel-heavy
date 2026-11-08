@@ -52,6 +52,9 @@ namespace Kestrel.Core.Tests
         // #440 rule (3): no-input goldens stay bit-identical. The clamp is a no-op on a flight that never
         // commands more than 15 deg off the air-relative velocity in sensible air, and the counter proves it:
         // 0 steps means PitchCmd was never moved, so the flight is exactly the pre-clamp flight.
+        // Pins re-measured on the #464 rebase onto main ee1b329 (#463's fairing-mass jettison moved m3/m10:
+        // m3 206.0x194.0 -> 202.8x197.2, m10 202.3x197.7 -> 203.2x196.8; m1/m2 unchanged). The clamp still
+        // never engages on any of them (steps = 0), so the flights are the pre-clamp flights on current main.
         [Test]
         public void NoInput_LeavesTheGoldenFlightBitIdentical([Values(1, 2, 3, 10)] int index)
         {
@@ -63,14 +66,15 @@ namespace Kestrel.Core.Tests
             {
                 case 1: Assert.AreEqual("suborbital", r.outcome); Assert.AreEqual(13.9, apoKm, 1.0); break;
                 case 2: Assert.AreEqual("suborbital", r.outcome); Assert.AreEqual(111.6, apoKm, 1.0); break;
-                case 3: Assert.AreEqual("orbit", r.outcome); Assert.AreEqual(206.0, apoKm, 1.0); Assert.AreEqual(194.0, periKm, 1.0); break;
-                case 10: Assert.AreEqual("orbit", r.outcome); Assert.AreEqual(202.3, apoKm, 1.0); Assert.AreEqual(197.7, periKm, 1.0); break;
+                case 3: Assert.AreEqual("orbit", r.outcome); Assert.AreEqual(202.8, apoKm, 1.0); Assert.AreEqual(197.2, periKm, 1.0); break;
+                case 10: Assert.AreEqual("orbit", r.outcome); Assert.AreEqual(203.2, apoKm, 1.0); Assert.AreEqual(196.8, periKm, 1.0); break;
             }
         }
 
         // #440 rule (4), m8 with a -3 deg nudge held from T+20, live pad (director + briefing wind, seed 1).
-        // Measured on main cab8bf4: the S1 stages low (55.7 km, gamma 2.3 deg) and the S2 holds a fixed 68.8 deg
-        // pitch at alpha ~69 deg; it falls back and the alpha>15 deg / q>20 kPa breakup rule trips at T+456.
+        // Measured on main ee1b329 (rebase; was cab8bf4: S1 55.7 km, gamma 2.3 deg, tumble T+456): the S1 stages
+        // low (56.5 km, gamma 2.5 deg, v 4.79 km/s) and the S2 holds a fixed 68.8 deg
+        // pitch at alpha ~69 deg; it falls back and the alpha>15 deg / q>20 kPa breakup rule trips at T+488.
         // The clamp DOES engage (AlphaClampSteps > 0) but it cannot save this flight: the breakup rule trips on
         // the very first step where q exceeds 20 kPa, while alpha is already ~71 deg, and the 10 deg/s slew
         // closes only ~0.08 deg in one LiveDt step. The clamp is a guard for a stage that pitches over too far
