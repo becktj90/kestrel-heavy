@@ -278,7 +278,8 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(42UL, GameSession.Current.Seed);
 
             var next = ReportRoutes.Next(campaign);
-            Assert.AreEqual(SessionScreens.Missions, next.Screen);
+            // NAV-06 (#416 item 9): Next mission opens the next mission's designer directly.
+            Assert.AreEqual(SessionScreens.Design, next.Screen);
             Assert.AreEqual("m2", next.Session.MissionId);
             Assert.AreEqual(42UL, next.Session.Seed);
 
