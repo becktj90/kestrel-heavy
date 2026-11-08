@@ -161,6 +161,33 @@ namespace Kestrel.Pad
             return dx * dx + dz * dz < near * near;
         }
 
+        /// <summary>Half-angle (deg) of the cone around a low camera's forward inside which a pole fixture is hidden.</summary>
+        public const float PoleViewHalfAngleDeg = 15f;
+        /// <summary>Only cameras below this height (m) hide poles this way — a pad camera looking up at the stack.</summary>
+        public const float PoleViewMaxCamHeightM = 30f;
+        /// <summary>Only poles within this range (m) of the camera are hidden — a far pole is small in the frame.</summary>
+        public const float PoleViewMaxDistM = 150f;
+
+        /// <summary>True when a pole's fixture falls inside a low camera's view cone. The fixture is a mid-grey box
+        /// by day (1.6 x 0.5 m, base colour x 0.3, day emission x 0.2) on a 0.25 m pole that is nearly invisible at
+        /// distance, so in a low view looking up at the stack it reads as a grey bar floating in the sky, blocking
+        /// the view (#401, Oct 29 playtest). PoleTooClose only hides poles near the camera; this one hides the
+        /// mid-distance poles that sit in the frame against the sky. Anything but a pole is never skipped.
+        /// Anchored to the camera's forward (what "in the frame" means); a pole at the frame edge stays, so panning
+        /// does not pop poles at the edge in and out.</summary>
+        public static bool PoleInView(LightSpec s, float camX, float camY, float camZ, float fwdX, float fwdY, float fwdZ)
+        {
+            if (s.Kind != LightKind.Pole) return false;
+            if (camY > PoleViewMaxCamHeightM) return false;
+            float dx = s.Position.X - camX, dy = s.Position.Y - camY, dz = s.Position.Z - camZ;
+            float distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq > PoleViewMaxDistM * PoleViewMaxDistM || distSq < 1e-6f) return false;
+            float fwdLenSq = fwdX * fwdX + fwdY * fwdY + fwdZ * fwdZ;
+            if (fwdLenSq < 1e-6f) return false;
+            float dot = (dx * fwdX + dy * fwdY + dz * fwdZ) / ((float)Math.Sqrt(distSq * fwdLenSq));
+            return dot > (float)Math.Cos(PoleViewHalfAngleDeg * Math.PI / 180.0);
+        }
+
         public static int CountRealtime(List<LightSpec> plan) { int n = 0; foreach (var s in plan) if (s.Realtime) n++; return n; }
 
         public static float AngleDiff(float a, float b) { float d = Math.Abs(((a - b) % 360f + 360f) % 360f); return d > 180f ? 360f - d : d; }
