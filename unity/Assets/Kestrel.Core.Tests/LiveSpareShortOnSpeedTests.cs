@@ -71,7 +71,7 @@ namespace Kestrel.Core.Tests
                 spare = live.Spare(sim);
                 if (s.AltM >= 10000 && spare < r.MinSpare) { r.MinSpare = spare; r.MinT = sim.T; }
                 bool isShort = live.Short(sim.T, spare);
-                var pulse = WebcastBoard.Pulse(true, s.AltM, s.SpeedMps, required, r.SheetSpare, 0, null, "", hopGoal, isShort);
+                var pulse = WebcastBoard.Pulse(true, s.AltM, s.SpeedMps, required, r.SheetSpare, 0, null, "", hopGoal, shortOnSpeed: isShort);
                 if (pulse.Verdict == WebcastBoard.VerdictShort)
                 {
                     r.ShortS += MissionFlightSetup.LiveDt;

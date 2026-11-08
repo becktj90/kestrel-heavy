@@ -60,13 +60,13 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("Speed is there", done.Verdict);
 
             // Arcade P1: "Short on speed" is the caller's held live spare (LiveSpare.Short), not the speed share of the budget.
-            var shortOn = WebcastBoard.Pulse(true, 40000, 2000, 7600, -300, 1000, 40, "LEO", 0, true);
+            var shortOn = WebcastBoard.Pulse(true, 40000, 2000, 7600, -300, 1000, 40, "LEO", 0, shortOnSpeed: true);
             Assert.AreEqual("Short on speed", shortOn.Verdict);
             var slow = WebcastBoard.Pulse(true, 40000, 2000, 7600, -300, 1000, 40, "LEO");
             Assert.AreEqual("On track", slow.Verdict, "26 % of the budget with the live spare not held below zero is on track");
-            var heatWins = WebcastBoard.Pulse(true, 12000, 900, 7600, 420, 36000, 40, "LEO", 0, true);
+            var heatWins = WebcastBoard.Pulse(true, 12000, 900, 7600, 420, 36000, 40, "LEO", 0, shortOnSpeed: true);
             Assert.AreEqual("Heating hard", heatWins.Verdict, "heating still comes first");
-            var hopClimb = WebcastBoard.Pulse(true, 9000, 200, 1443, 0, 2000, 40, "10 km", 10000, true);
+            var hopClimb = WebcastBoard.Pulse(true, 9000, 200, 1443, 0, 2000, 40, "10 km", 10000, shortOnSpeed: true);
             Assert.AreEqual("Climbing", hopClimb.Verdict, "below 10 km it is still climbing");
 
             var hop = WebcastBoard.Pulse(true, 9000, 200, 1443, 0, 2000, 40, "10 km", 10000);
