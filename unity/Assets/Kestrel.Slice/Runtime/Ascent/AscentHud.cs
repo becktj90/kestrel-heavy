@@ -1091,7 +1091,7 @@ namespace Kestrel.Slice
             if (plot != null) plot.Apply(trajectory.At(RecoveryLog.RailClock(flight.SimTime), alt, speed), upp);
             var score = director.Score();
             if (medal != null)
-                medal.text = FlightVerdict.InFlightMedalLine; // DECISIONS #77: no medal named until the flight passes
+                medal.text = FlightVerdict.InFlightMedalLine; // DECISIONS #83: no medal named until the flight passes
             bool prompt = prompts.Length > 0;
             if (!prompt)
             {
@@ -1708,7 +1708,7 @@ namespace Kestrel.Slice
             if (score.CleanStaging) parts.Add("Clean staging");
             if (score.PeakGHit) parts.Add("Gentle ride");
             if (score.PayloadDamaged) parts.Add("Payload heat is past the limit");
-            // DECISIONS #77: the medal is named only on the result screen, after the flight has passed.
+            // DECISIONS #83: the medal is named only on the result screen, after the flight has passed.
             return parts.Count == 0 ? "" : string.Join("  ·  ", parts);
         }
 

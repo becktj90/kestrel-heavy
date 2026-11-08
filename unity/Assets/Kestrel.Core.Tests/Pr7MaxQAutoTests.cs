@@ -1,4 +1,4 @@
-// DECISIONS #80 (fun review PR7, Physics option b for release): no max-Q call. The press never changed the throttle: a design
+// DECISIONS #89 (fun review PR7, Physics option b for release): no max-Q call. The press never changed the throttle: a design
 // with a max-Q setting flies its own law (GuidanceProfile) whether the player presses or not. The law now runs on its own, like a
 // flight computer's throttle bucket, and the HUD marks it with two beats taken from the sim's real throttle-law transitions.
 using System.Collections.Generic;

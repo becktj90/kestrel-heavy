@@ -72,7 +72,7 @@ namespace Kestrel.Core.Tests
                 Assert.IsNotEmpty(rest, where);
                 return;
             }
-            // DECISIONS #77 (#416 item 5): Ready only when the predictor's flight passes the result screen's gates
+            // DECISIONS #83 (#416 item 5): Ready only when the predictor's flight passes the result screen's gates
             // (LivePadLoop.Passes, the test mirror of PostFlightSource → FlightDebrief.GoalMet).
             if (sim.failure != null) { Assert.AreEqual(StarterScreen.ChanceLine, rest, where + ": a seeded random end is no verdict"); return; }
             var flown = Design.FromJson(r.BuildDesign());
@@ -186,7 +186,7 @@ namespace Kestrel.Core.Tests
                 if (DefaultsThatMiss.Contains(m.Id))
                 {
                     // Tracked, not hidden: this default stays intact but misses its band in the predictor flight AND the
-                    // played Auto-on flight (pr3-oldnew.txt), so it must not read Ready (DECISIONS #77).
+                    // played Auto-on flight (pr3-oldnew.txt), so it must not read Ready (DECISIONS #83).
                     Assert.IsFalse(r.Verdict().Passes, m.Id + ": still a tracked miss; remove it from DefaultsThatMiss");
                     Assert.IsFalse(ReadyOrTight(badge), m.Id + ": a missing default reads " + badge);
                     continue;

@@ -122,7 +122,7 @@ namespace Kestrel.Core.Designer
                 return true;
             }
             var copy = StarterReadinessCopy.Current;
-            // DECISIONS #77: one verdict source. Ready (or Tight) only when the predictor's flight passes the mission; until
+            // DECISIONS #83: one verdict source. Ready (or Tight) only when the predictor's flight passes the mission; until
             // it has flown the line reads Checking, never a sheet Δv guess that the flight may contradict.
             if (!r.TryVerdict(out var v) || v == null)
             {

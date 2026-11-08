@@ -19,7 +19,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void MaxQSetting_FliesAutomatically_NoCallNoGradeNoMedalCredit()
         {
-            // DECISIONS #80 (Physics option b): the design's own max-Q law flies the throttle bucket like a flight
+            // DECISIONS #89 (Physics option b): the design's own max-Q law flies the throttle bucket like a flight
             // computer. There is no call to take or skip, with or without auto-assist, so it is never graded and never
             // counts for or against the medal; the director commands nothing for it.
             var vehicle = new AscentVehicle { QLimPa = 35000, SafetyFactor = 1.4, ThrottleMin = 0.4, FlightCode = "KH-14", MaxQSet = true, MaxQRaw = 60 };
@@ -42,7 +42,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void Autopilot_KeepsTheDesignSettings_ButAPlayerTapStillTakesEitherCall()
         {
-            // #313 (b), DECISIONS #77. No design max-Q throttle: the call is not offered at all (Physics: "a no-op or
+            // #313 (b), DECISIONS #83. No design max-Q throttle: the call is not offered at all (Physics: "a no-op or
             // greyed out, never a dip that sticks"), so neither the autopilot nor a tap can change the throttle, and it
             // never counts for or against the medal.
             var plain = new AscentVehicle { QLimPa = 35000, ThrottleMin = 0.4 };
@@ -79,7 +79,7 @@ namespace Kestrel.Core.Tests
         [Test]
         public void PlayerTapInTheGreen_EarnsGold()
         {
-            // DECISIONS #80: with no max-Q call, a tap in the green on a call that remains (the pitch call) earns gold.
+            // DECISIONS #89: with no max-Q call, a tap in the green on a call that remains (the pitch call) earns gold.
             var director = AscentDirector.Start(new AscentVehicle { Stages = 1 }, null, null, false, false, false);
             var sample = new AscentSample { T = 5, AltM = 4000, SpeedMps = 120, QPa = 1000, Thrusting = true, PropFraction = 1 };
             director.Advance(sample, 0.05);
@@ -216,7 +216,7 @@ namespace Kestrel.Core.Tests
         {
             var busy = new AscentVehicle
             {
-                // DECISIONS #80: no max-Q call; a staging call is the third candidate instead.
+                // DECISIONS #89: no max-Q call; a staging call is the third candidate instead.
                 Stages = 2,
                 HasAnomaly = true,
                 AnomalyEngine = 1,

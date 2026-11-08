@@ -233,9 +233,12 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void FailedFlight_KeepsNoMedal_EvenWithPerfectTimingAndLanding()
+        public void MissedFlight_StillEarnsMedals_EvenWithPerfectTimingAndLanding()
         {
-            // DECISIONS #77: a failed flight gets no medal (timing or landing), and the line says so.
+            // DECISIONS #83 (Trevor 11-07): medals are for timing/landing, not the goal, so a missed
+            // flight still earns them and the line says so ("You still earned ..."). Stars stay 0:
+            // stars need the mission goal. FlightVerdict.Medal still drops the timing medal at the
+            // PostFlightSource level on a miss; the debrief collects whatever medals are in the facts.
             using (var fx = new Fixture())
             {
                 var store = fx.Load();
@@ -247,8 +250,10 @@ namespace Kestrel.Core.Tests
                 };
                 var card = FlightDebrief.Compose(store, mission, facts, NarrationPool.Empty, Minor, null);
                 Assert.IsFalse(card.Passed);
-                Assert.IsEmpty(card.Medals);
-                Assert.AreEqual("No medal this flight.", card.MedalsLine);
+                Assert.AreEqual(2, card.Medals.Count);
+                Assert.That(card.Medals, Does.Contain("gold"));
+                Assert.That(card.Medals, Does.Contain("timing-gold"));
+                Assert.AreEqual("You still earned gold for the landing and gold for timing.", card.MedalsLine);
                 Assert.AreEqual(0, card.Stars);
                 Assert.AreEqual(AscentMedal.None, FlightVerdict.Medal(AscentMedal.Gold, false));
                 Assert.AreEqual(AscentMedal.Gold, FlightVerdict.Medal(AscentMedal.Gold, true));

@@ -427,7 +427,7 @@ namespace Kestrel.Core.Tests.Narration
             string mode = raw.Obj("recovery")?.Str("mode");
             o["recovery"] = mode == "barge" || mode == "rtls" ? mode : "none";
             var gd = raw.Obj("guidance");
-            o["throttle.maxq"] = gd != null && gd.ContainsKey("maxQThrottle") && gd["maxQThrottle"] is double; // DECISIONS #80
+            o["throttle.maxq"] = gd != null && gd.ContainsKey("maxQThrottle") && gd["maxQThrottle"] is double; // DECISIONS #89
             if (!string.IsNullOrEmpty(site)) o["site"] = site;
             return o;
         }

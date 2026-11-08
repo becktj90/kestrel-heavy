@@ -2,7 +2,7 @@
 // live pad flies it. FlightDriver, FlightBatch, the designer practice flight (ReferenceAscent) and
 // LaunchPredictor all step through this class, so prediction and play fly one throttle model. The max-Q
 // throttle is always the design's own guidance law (GuidanceProfile), never a second director bucket, and
-// (DECISIONS #80) there is no max-Q call that could engage one.
+// (DECISIONS #89) there is no max-Q call that could engage one.
 // Deterministic: no clock, no randomness beyond the seeded schedule the caller passes in.
 using System;
 using Kestrel.Core.Physics;

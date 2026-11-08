@@ -341,7 +341,7 @@ namespace Kestrel.Slice
                 Result = pending;
             }
             PumpEvents();
-            // DECISIONS #80: the design's max-Q throttle law engaging / releasing (real sim transitions, AscentDirector).
+            // DECISIONS #89: the design's max-Q throttle law engaging / releasing (real sim transitions, AscentDirector).
             if (Decisions != null && Decisions.MaxQBeatSerial != maxQBeatSeen)
             {
                 maxQBeatSeen = Decisions.MaxQBeatSerial;

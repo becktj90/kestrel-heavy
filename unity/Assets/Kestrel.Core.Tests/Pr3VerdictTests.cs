@@ -1,4 +1,4 @@
-// DECISIONS #77 (UX review #416 item 5, fun review PR3): the max-Q green sits on the flight's own peak, a design with no
+// DECISIONS #83 (UX review #416 item 5, fun review PR3): the max-Q green sits on the flight's own peak, a design with no
 // max-Q setting is never offered the call, and the count card follows the one predictor verdict.
 using Kestrel.Core.Flight;
 using NUnit.Framework;

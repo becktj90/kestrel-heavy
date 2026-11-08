@@ -346,7 +346,7 @@ namespace Kestrel.Core.Physics
         /// <summary>#422: offset currently added to the program pitch (rad); slews at RecoverySim.PitchRate.</summary>
         public double NudgeAppliedRad => nudgeApplied;
         double nudgeApplied, pitchWithNudge = double.NaN;
-        /// <summary>DECISIONS #80: true on a tick where the design's own max-Q law held the throttle down (GuidanceProfile.MaxQThrottleActive). Observer only.</summary>
+        /// <summary>DECISIONS #89: true on a tick where the design's own max-Q law held the throttle down (GuidanceProfile.MaxQThrottleActive). Observer only.</summary>
         public bool MaxQThrottling => maxQThrottleNow;
         bool maxQThrottleNow;
         /// <summary>

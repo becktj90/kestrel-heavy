@@ -11,7 +11,7 @@ namespace Kestrel.Core.Flight
         public const string Caption = "Green: perfect window. Cyan: the plan. Amber: your nudge.";
         /// <summary>Longest note line, characters: one or two lines at 13 pt on a 320 pt phone.</summary>
         public const int MaxChars = 60;
-        /// <summary>DECISIONS #80: HUD beats when the design's own max-Q throttle law starts and ends (no call to press).</summary>
+        /// <summary>DECISIONS #89: HUD beats when the design's own max-Q throttle law starts and ends (no call to press).</summary>
         public const string MaxQThrottleDown = "Max-Q, throttling down";
         public const string MaxQThrough = "Through max-Q";
         public static readonly string[] All = { EngineerDetail, NudgeGated, AssistDetail, Caption };

@@ -49,10 +49,10 @@ namespace Kestrel.Core.Designer
         /// no circular-mission band miss. A hop/ellipse/C3 band miss or an in-band gate failure is not a failure:
         /// it lands in <see cref="Miss"/> and <see cref="Passes"/> is false, but the flight survived.</summary>
         public bool Survives => Cause == null;
-        /// <summary>An intact flight that misses the mission band (DECISIONS #82). Circular misses name
+        /// <summary>An intact flight that misses the mission band (DECISIONS #83). Circular misses name
         /// <see cref="Short"/>/<see cref="Orbit"/> via <see cref="OrbitMiss"/>; this set covers the hop/ellipse/C3 names.</summary>
         public static bool IsMiss(string cause) => cause == Low || cause == High || cause == Shape || cause == Goal;
-        /// <summary>DECISIONS #82: the predictor's flight passes the mission (the batch's acceptance rule plus the landing).
+        /// <summary>DECISIONS #83: the predictor's flight passes the mission (the batch's acceptance rule plus the landing).
         /// "Ready" reads only this. An intact flight that misses the band gets a miss cause in <see cref="Miss"/> (hop: <see cref="Low"/>/
         /// <see cref="High"/>; circular: <see cref="Short"/>/<see cref="Orbit"/> in <see cref="Cause"/>; ellipse/C3: <see cref="Low"/>/
         /// <see cref="High"/>/<see cref="Shape"/>); in the band but failing a result-screen gate gets <see cref="Goal"/> in <see cref="Miss"/>.</summary>

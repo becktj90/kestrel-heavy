@@ -14,7 +14,7 @@ namespace Kestrel.Core.Flight
 {
     public enum AscentCall
     {
-        /// <summary>DECISIONS #80: never built. The design's max-Q throttle flies automatically; the value stays for saved data.</summary>
+        /// <summary>DECISIONS #89: never built. The design's max-Q throttle flies automatically; the value stays for saved data.</summary>
         MaxQ = 1,
         Pitch = 2,
         Staging = 3,
@@ -47,7 +47,7 @@ namespace Kestrel.Core.Flight
         public double LossGravity, LossDrag, LossSteering;
         public int StageIndex;
         public bool Thrusting;
-        /// <summary>DECISIONS #80: the design's own max-Q law held the throttle down on this step (AscentSim.MaxQThrottling).</summary>
+        /// <summary>DECISIONS #89: the design's own max-Q law held the throttle down on this step (AscentSim.MaxQThrottling).</summary>
         public bool MaxQThrottling;
     }
 
@@ -432,7 +432,7 @@ namespace Kestrel.Core.Flight
         public AscentCommand Command { get; private set; }
 
         /// <summary>
-        /// DECISIONS #80: the max-Q moment, now that there is no max-Q call. Set from the sim's real throttle-law
+        /// DECISIONS #89: the max-Q moment, now that there is no max-Q call. Set from the sim's real throttle-law
         /// transitions (<see cref="AscentSample.MaxQThrottling"/>): <see cref="AscentNotes.MaxQThrottleDown"/> when the
         /// design's own law first throttles down, <see cref="AscentNotes.MaxQThrough"/> when it first throttles back up.
         /// Each fires once and shows for <see cref="MaxQBeatHoldS"/>. Null otherwise, and always null on a design with no
@@ -462,7 +462,7 @@ namespace Kestrel.Core.Flight
             }
         }
 
-        /// <summary>DECISIONS #80: narration events for the two beats (Narrator Voice keys), gated on fact throttle.maxq.</summary>
+        /// <summary>DECISIONS #89: narration events for the two beats (Narrator Voice keys), gated on fact throttle.maxq.</summary>
         public const string MaxQThrottleEvent = "maxq-throttle", MaxQThroughEvent = "maxq-through";
         /// <summary>The narration event of the latest beat (changes with <see cref="MaxQBeatSerial"/>).</summary>
         public string MaxQBeatEvent { get; private set; }
@@ -737,10 +737,10 @@ namespace Kestrel.Core.Flight
             // #338 (Physics, variant B): no wind-shear call. Its 12 s ease (85% throttle, -0.5° pitch) switched on only in
             // wind and moved the high point about 9%, flipping neighbouring designs in and out of the band. The wind still
             // flies through drag, q and alpha (and the structural q·alpha check, FailureMonitor).
-            // DECISIONS #77 (Physics): no design max-Q throttle, no max-Q call. The design's guidance has nothing to throttle
+            // DECISIONS #83 (Physics): no design max-Q throttle, no max-Q call. The design's guidance has nothing to throttle
             // to, and a director cap there was a dip that stuck (Home KH-5 and KH-14 cut off eccentric). Not offered, so it
             // never costs medal credit either.
-            // DECISIONS #80 (Physics option b, for release): no max-Q call at all. The press never changed the throttle: a
+            // DECISIONS #89 (Physics option b, for release): no max-Q call at all. The press never changed the throttle: a
             // design with a max-Q setting flies its own law (GuidanceProfile) whether the player presses or not, so the
             // call was a graded button with no effect. The law runs automatically, like a flight computer's throttle
             // bucket, and the HUD/narrator beat (MaxQBeat) marks it. No call, so no medal or timing credit either.
@@ -823,7 +823,7 @@ namespace Kestrel.Core.Flight
         bool AutopilotAccept(Call c, in AscentSample s)
         {
             // #313 option (b): the default player flies the design's own settings. The autopilot never takes the
-            // open-loop nose-down nudge; a player tap (Choose) still does. (DECISIONS #80: no max-Q call to accept.)
+            // open-loop nose-down nudge; a player tap (Choose) still does. (DECISIONS #89: no max-Q call to accept.)
             if (c.Kind == AscentCall.Pitch) return false;
             if (c.Kind != AscentCall.EngineOut) return true;
             if (AscentDecisions.ToleratesEngineOut(vehicle.Engines, vehicle.Redundant, s.ThrustN, s.MassKg)) return true;
@@ -904,7 +904,7 @@ namespace Kestrel.Core.Flight
         {
             // #313 (Kestrel Physics): no director bucket. A design with a max-Q throttle already flies it through its
             // guidance; a taken call on a design without one engages that same guidance law at the offered cap.
-            // DECISIONS #77: the call is offered only on a design max-Q throttle, which its own guidance already flies, so the
+            // DECISIONS #83: the call is offered only on a design max-Q throttle, which its own guidance already flies, so the
             // director never engages a cap of its own (no dip that sticks).
             double scale = 1;
             if (engineStage >= 0 && s.Thrusting && s.StageIndex == engineStage) scale *= engineScale;

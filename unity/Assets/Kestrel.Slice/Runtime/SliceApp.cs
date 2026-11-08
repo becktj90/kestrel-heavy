@@ -2183,7 +2183,7 @@ namespace Kestrel.Slice
             double alt = flying && flight != null ? flight.Altitude : 0;
             double spd = flying && flight != null ? flight.Speed : 0;
             double q = flying && flight != null ? flight.DynPressure : 0;
-            // DECISIONS #77: the count line and in-flight "short" cue follow the predictor's verdict for this design.
+            // DECISIONS #83: the count line and in-flight "short" cue follow the predictor's verdict for this design.
             var countVerdict = verdictKey != null ? FlightVerdict.Recall(verdictKey) : null;
             var pulse = flying && flight != null && flight.Coasting
                 ? WebcastBoard.Coast(flight.Coast)
@@ -2215,7 +2215,7 @@ namespace Kestrel.Slice
             }
             if (hCallout == null) return;
             string line = "";
-            // DECISIONS #80: the max-Q beat (the design's own throttle law starting and ending) outranks the generic
+            // DECISIONS #89: the max-Q beat (the design's own throttle law starting and ending) outranks the generic
             // q line, never an airframe alarm. Null on a design with no max-Q setting.
             string maxQBeat = flight != null && flight.Decisions != null ? flight.Decisions.MaxQBeatText : null;
             if (!string.IsNullOrEmpty(maxQBeat) && !alarm && (juice == null || juice.Call != "AIRFRAME")) line = maxQBeat;

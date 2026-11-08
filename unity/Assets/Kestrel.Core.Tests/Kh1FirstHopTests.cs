@@ -157,7 +157,7 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(vehicle.MaxQSet);
             var director = AscentDirector.Start(vehicle, null, null, true, false, true);
             director.Advance(new AscentSample { T = 1, QPa = 1000, Thrusting = true, MassKg = 2000, ThrustN = 80000, PropFraction = 1 }, 0.05);
-            Assert.IsFalse(director.IsOpen(AscentCall.MaxQ), "DECISIONS #80: no max-Q call; the design cap is the guided path");
+            Assert.IsFalse(director.IsOpen(AscentCall.MaxQ), "DECISIONS #89: no max-Q call; the design cap is the guided path");
             Assert.AreEqual(1, director.Command.ThrottleScale, 1e-12, "the director never replaces the design cap");
         }
 

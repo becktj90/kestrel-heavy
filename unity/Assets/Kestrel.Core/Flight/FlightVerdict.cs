@@ -1,4 +1,4 @@
-// DECISIONS #77 (UX review #416 item 5): one verdict source. The designer and Starter badge, the count card's spare or
+// DECISIONS #83 (UX review #416 item 5): one verdict source. The designer and Starter badge, the count card's spare or
 // short line, the in-flight speed verdict, the medal and the result screen all read whether the flight passes from here,
 // so "Ready" never sits next to "89 m/s short", a doomed flight never shows a medal, and a pass never reads short.
 // Before launch the source is the launch predictor's flight (ReferenceAscent, the live pad's director and checks) judged

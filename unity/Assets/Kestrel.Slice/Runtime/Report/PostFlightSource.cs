@@ -132,7 +132,7 @@ namespace Kestrel.Slice
             if (flight != null && flight.Decisions != null)
             {
                 var score = flight.Decisions.Score();
-                if (score != null) facts.TimingMedal = FlightVerdict.Medal(score.Medal, facts.Passed); // DECISIONS #77
+                if (score != null) facts.TimingMedal = FlightVerdict.Medal(score.Medal, facts.Passed); // DECISIONS #83
             }
             Quote(facts);
             return facts;

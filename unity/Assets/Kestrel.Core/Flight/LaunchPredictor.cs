@@ -122,7 +122,7 @@ namespace Kestrel.Core.Flight
             return MissionScore.TargetMet(kind, o.apoKm, o.periKm, double.NaN, kind == "apogee" ? flownApoM : sim.orbit.apoAlt, sim.orbit.periAlt, double.NaN, false, out _);
         }
 
-        /// <summary>The batch's acceptance rule on one campaign mission row (DECISIONS #77: the one verdict source's pass).</summary>
+        /// <summary>The batch's acceptance rule on one campaign mission row (DECISIONS #83: the one verdict source's pass).</summary>
         public static bool AcceptsMission(CampaignMission mission, SimResult sim, double flownApoM)
         {
             if (sim == null || sim.failure != null || sim.outcome == "failure" || mission == null) return false;

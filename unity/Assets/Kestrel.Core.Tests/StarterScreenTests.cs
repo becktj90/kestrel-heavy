@@ -196,7 +196,7 @@ namespace Kestrel.Core.Tests
                 }
                 else
                 {
-                    // DECISIONS #82: an intact hop that misses the band names the miss from the predictor's flight
+                    // DECISIONS #83: an intact hop that misses the band names the miss from the predictor's flight
                     // (was the sheet's soft "may fall short"), and never reads Ready. The miss is named in Miss,
                     // not Cause: Cause stays null so the flight survives (Trevor 11-07, honest-readiness truth).
                     Assert.AreNotEqual(StarterScreen.ShortBadge, badge, id);

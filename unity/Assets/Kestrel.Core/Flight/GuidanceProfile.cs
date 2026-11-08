@@ -137,7 +137,7 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>
-        /// DECISIONS #80: true while this profile's own max-Q law holds the throttle below full on this state (the
+        /// DECISIONS #89: true while this profile's own max-Q law holds the throttle below full on this state (the
         /// design set a max-Q throttle under 100 %, q is inside the bucket, and the stage can throttle below 1).
         /// A g-limit cap is not a max-Q throttle-down. Read-only: the HUD/narrator beat follows it, the step never does.
         /// </summary>

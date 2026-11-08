@@ -103,7 +103,7 @@ namespace Kestrel.Core.Flight
         /// How the flying design compares with the speed the mission asked for, and with its own max-Q readout.
         /// Before liftoff the verdict is the count, and the detail is the sheet's spare or shortfall.
         /// </summary>
-        /// <param name="verdict">The one predictor verdict for this design (DECISIONS #77). When known, the count line and
+        /// <param name="verdict">The one predictor verdict for this design (DECISIONS #83). When known, the count line and
         /// in-flight "short" cue follow it; when null the sheet spare/shortfall is used as before.</param>
         public static DesignPulse Pulse(bool flying, double altitudeM, double speedMps, double requiredMps, double spareMps, double qPa, double? maxQKpa, string orbitLabel, double goalAltM = 0, FlightVerdict verdict = null)
         {
