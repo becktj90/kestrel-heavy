@@ -1388,13 +1388,33 @@ namespace Kestrel.Game.Shell
             var fullDesigner = SettingButton(FullDesignerId, "Show full designer");
             var cornerCharacter = SettingButton(UiIds.SettingsCornerCharacter, CornerCharacterLabel);
             motion.tooltip = "Reduce motion. Holds the menu still.";
+            // UX after #384/#436: two choice rows. Same row as the others, with a wider state chip for "Calls only".
+            var commentary = SettingButton(UiIds.SettingsCommentary, Kestrel.Core.Features.ExperienceSettings.CommentaryLabel);
+            var timeWarp = SettingButton(UiIds.SettingsTimeWarp, Kestrel.Core.Features.ExperienceSettings.TimeWarpLabel);
+            WidenState(commentary, ChoiceStateW);
+            WidenState(timeWarp, ChoiceStateW);
 
             void PaintMix()
             {
                 PaintToggle(music, "Music", AudioPrefs.MusicMuted);
                 PaintToggle(sound, "Sound", AudioPrefs.SfxMuted);
                 PaintToggle(voice, "Voice", AudioPrefs.NarrationMuted);
+                PaintCommentary();
                 AudioBar.Sync(full);
+            }
+            void PaintCommentary()
+            {
+                var mode = AudioPrefs.CommentaryMode;
+                PaintChoice(commentary, Kestrel.Core.Features.ExperienceSettings.CommentaryLabel,
+                    Kestrel.Core.Features.ExperienceSettings.CommentaryState(mode), mode != Kestrel.Core.Flight.Narration.CommentaryMode.Off);
+                commentary.tooltip = Kestrel.Core.Features.ExperienceSettings.CommentaryTooltip(mode);
+            }
+            void PaintTimeWarp()
+            {
+                var mode = Kestrel.Core.Features.ExperienceSettings.TimeWarp(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
+                PaintChoice(timeWarp, Kestrel.Core.Features.ExperienceSettings.TimeWarpLabel,
+                    Kestrel.Core.Features.ExperienceSettings.TimeWarpState(mode), mode == Kestrel.Core.Flight.TimeWarpMode.Auto);
+                timeWarp.tooltip = Kestrel.Core.Features.ExperienceSettings.TimeWarpTooltip(mode);
             }
             void PaintSubs()
             {
@@ -1430,6 +1450,16 @@ namespace Kestrel.Game.Shell
             music.clicked += () => { AudioPrefs.SetMusicMuted(!AudioPrefs.MusicMuted); PaintMix(); };
             sound.clicked += () => { AudioPrefs.SetSfxMuted(!AudioPrefs.SfxMuted); PaintMix(); };
             voice.clicked += () => { AudioPrefs.SetNarrationMuted(!AudioPrefs.NarrationMuted); PaintMix(); };
+            // Full, then Calls only, then Off. AudioPrefs keeps the old voice mute in step, so Voice repaints too.
+            commentary.clicked += () => { AudioPrefs.SetCommentary(Kestrel.Core.Flight.Narration.Commentary.Next(AudioPrefs.CommentaryMode)); PaintMix(); };
+            // FlightDriver reads kh.flight.timewarp at launch, so the next flight uses it.
+            timeWarp.clicked += () =>
+            {
+                var cur = Kestrel.Core.Features.ExperienceSettings.TimeWarp(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
+                Kestrel.Core.Features.ExperienceSettings.SetTimeWarp(Kestrel.Core.Features.ExperienceSettings.NextTimeWarp(cur), PlayerPrefs.SetInt);
+                PlayerPrefs.Save();
+                PaintTimeWarp();
+            };
             subtitles.clicked += () =>
             {
                 AudioPrefs.SetSubtitlesOn(!AudioPrefs.SubtitlesOn);
@@ -1465,10 +1495,15 @@ namespace Kestrel.Game.Shell
             PaintCornerCharacter();
             PaintSandbox();
             PaintMotion();
+            PaintTimeWarp();
 
             list.Add(music);
             list.Add(sound);
             list.Add(voice);
+            list.Add(commentary);
+            list.Add(SettingNote("settings-commentary-note", Kestrel.Core.Features.ExperienceSettings.CommentaryNote));
+            list.Add(timeWarp);
+            list.Add(SettingNote("settings-time-warp-note", Kestrel.Core.Features.ExperienceSettings.TimeWarpNote));
             list.Add(subtitles);
             list.Add(sandbox);
             list.Add(motion);
@@ -1682,6 +1717,37 @@ namespace Kestrel.Game.Shell
         {
             PaintCaption(b, AudioPrefs.Caption(label, muted), !muted);
             b.tooltip = label + ". " + b.text + ".";
+        }
+
+        /// <summary>Settings: the state chip for a choice row ("Calls only", "Auto") is wider than On/Off.</summary>
+        public const float ChoiceStateW = 84f;
+
+        static void WidenState(Button b, float w)
+        {
+            var state = b?.Q<Label>(b.name + "-state");
+            if (state == null) return;
+            state.style.width = w;
+            b.style.paddingRight = w + 16f;
+        }
+
+        /// <summary>A choice row: the label stays put, the chip names the choice, green unless it is Off.</summary>
+        static void PaintChoice(Button b, string caption, string choice, bool on)
+        {
+            PaintCaption(b, caption, on);
+            var state = b?.Q<Label>(b.name + "-state");
+            if (state != null) state.text = choice;
+        }
+
+        /// <summary>The short helper line under a Settings row (same look as the Show full designer note).</summary>
+        static Label SettingNote(string name, string text)
+        {
+            var note = new Label(text) { name = name, pickingMode = PickingMode.Ignore };
+            note.style.fontSize = 14;
+            note.style.whiteSpace = WhiteSpace.Normal;
+            note.style.marginLeft = 10; note.style.marginRight = 10; note.style.marginBottom = 6;
+            note.style.color = new Color(0.86f, 0.84f, 0.78f, 1f);
+            SettingFont(note, "SpaceGrotesk-Medium");
+            return note;
         }
 
         static void PaintCaption(Button b, string caption, bool on)

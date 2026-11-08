@@ -41,6 +41,22 @@ namespace Kestrel.Core.Hangar
         /// </summary>
         public Func<JsonObject, JsonObject, bool> Afford;
 
+        /// <summary>
+        /// Raised when <see cref="Afford"/> turns down an edit, undo or redo. The design is unchanged, so without this
+        /// the tap looked dead (fun review: side boosters "did nothing" in the sandbox designer).
+        /// </summary>
+        public event Action Refused;
+        /// <summary>What the designer says when the wallet turns an edit down. Kid-readable; no store link.</summary>
+        public const string RefusedText = "Not enough Kc for that. Fly a mission to earn more.";
+        /// <summary>How many edits, undos or redos the wallet turned down this session.</summary>
+        public int RefusedCount { get; private set; }
+
+        void Refuse()
+        {
+            RefusedCount++;
+            Refused?.Invoke();
+        }
+
         string cleanSnapshot;
         EngineeringReport report;
         DataSheet sheet;
@@ -97,6 +113,7 @@ namespace Kestrel.Core.Hangar
             {
                 Design = MiniJson.ParseObject(before);
                 Invalidate();
+                Refuse();
                 return Edit.None;
             }
             history.Record(before, after, e.what, e.from, e.to, coalesceKey);
@@ -112,7 +129,7 @@ namespace Kestrel.Core.Hangar
         {
             var peek = history.NextUndo;
             if (peek == null) return null;
-            if (!Allows(peek.before)) return null;
+            if (!Allows(peek.before)) { Refuse(); return null; }
             string json = history.Undo(out var step);
             if (json == null) return null;
             Restore(json);
@@ -123,7 +140,7 @@ namespace Kestrel.Core.Hangar
         {
             var peek = history.NextRedo;
             if (peek == null) return null;
-            if (!Allows(peek.after)) return null;
+            if (!Allows(peek.after)) { Refuse(); return null; }
             string json = history.Redo(out var step);
             if (json == null) return null;
             Restore(json);

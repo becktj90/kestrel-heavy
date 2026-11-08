@@ -94,6 +94,25 @@ namespace Kestrel.Slice
         }
 
         /// <summary>
+        /// #431 climax: share of the panel height (0..1, from the top) down to the lower of the stat strip and the stages
+        /// card (the callout banner, "Apogee!"), as laid out. The coasting stack is framed under it.
+        /// </summary>
+        public float BannerCover()
+        {
+            float c = TopCover();
+            if (stages == null || stages.panel == null || stages.resolvedStyle.display == DisplayStyle.None) return c;
+            var top = stages.panel.visualTree.worldBound;
+            var sb = stages.worldBound;
+            if (!(top.height > 1f) || !(sb.height > 1f) || float.IsNaN(sb.yMax)) return c;
+            float s = (sb.yMax - top.yMin) / top.height;
+            return s > c && s < 0.75f ? s : c;
+        }
+
+        /// <summary>Whether the in-flight dock is up (FlightHudLayout.DockShown): down for the climax coast and the loss show.</summary>
+        public bool DockShown => dockShown;
+        bool dockShown = true;
+
+        /// <summary>
         /// Share of the panel height (0..1) from the bottom edge up to the top of the tools row (Follow, Cam, Pause) as laid
         /// out: the row and everything under it (the flight message, BACK TO DESIGN, the medal card) cover the scene there.
         /// 0 while the HUD is not laid out.
@@ -121,6 +140,7 @@ namespace Kestrel.Slice
             SetShown(hud != null ? hud.Q(MessageName) : null, true);
             railFrame = null;
             infoOpen = false;
+            dockShown = true;
             healthOpen = -1;
             if (help != null && help.parent != null) help.RemoveFromHierarchy();
             if (hud != null) hud.EnableInClassList("hud-info", false);
@@ -381,6 +401,26 @@ namespace Kestrel.Slice
         }
 
         /// <summary>Portrait: the tested rail, inside the HUD's already-padded content box.</summary>
+        /// <summary>
+        /// #397: the health marks' face follows the rail they sit in (FlightHudLayout.HealthMarksFontPt), set in
+        /// the same pass that pins the rail — so the first frame already fits. The old fixed 11 pt (still the
+        /// pre-layout default in Layout) relied on TextFit shrinking the marks after the fact, but TextFit measures
+        /// the buttons' pre-layout widths: after the rail narrowed (rotation to landscape, or the banner-row flip at
+        /// staging) the first frame rendered 11 pt marks in buttons too small for them and they smeared together,
+        /// and only a later pass shrank them. TextFit stays as the backstop.
+        /// </summary>
+        void SetHealthFont(float railWpt)
+        {
+            if (healthButtons == null) return;
+            float face = Px(FlightHudLayout.HealthMarksFontPt(railWpt));
+            for (int i = 0; i < healthButtons.Length; i++)
+            {
+                var b = healthButtons[i];
+                if (b == null) continue;
+                b.style.fontSize = face;
+            }
+        }
+
         void LayoutRail()
         {
             if (plot == null || hud == null) return;
@@ -400,6 +440,8 @@ namespace Kestrel.Slice
             var frame = FlightHudLayout.Place(w / upp, h / upp, 0f, 0f, 0f, 0f, mode, bannerRowPt, nudgeRowOpen);
             railMode = mode;
             railNudges = nudgeRowOpen;
+            // #397: the portrait health row is frame.Health wide — fit its marks to that width in this pass.
+            SetHealthFont(frame.Health.W);
             if (plot.parent != hud) hud.Insert(0, plot);
             // #332 (TestFlight t432): the frame is in the HUD's content box, but absolute offsets start at its padding
             // edge. Pinned without the padding, the rail and the dock sat padTop higher than the flex rows: on a
@@ -763,7 +805,7 @@ namespace Kestrel.Slice
             float ux = upp;
             float uy = upp;
             float rowPx = DockRowPx();
-            var f = FlightHudLayout.PlaceWide(fw, fh, safeTop * sy, safeBottom * sy, safeLeft * sx, safeRight * sx, mode, rowPx / upp, FlightHudLayout.ClockMinWidth());
+            var f = FlightHudLayout.PlaceWide(fw, fh, safeTop * sy, safeBottom * sy, safeLeft * sx, safeRight * sx, mode, rowPx / upp, FlightHudLayout.ClockMinWidthWithChip());
             HudBox Sc(HudBox b) => FlightHudLayout.ToPanel(b, ux, uy);
             bool InDock(HudBox b) => b.Live && b.Y >= f.Dock.Y - 1f && b.Bottom <= f.Dock.Bottom + 1.5f;
 
@@ -801,6 +843,8 @@ namespace Kestrel.Slice
             Pin(root.Q("ascent-telemetry"), cellBox);
             Pin(health, Sc(f.Health));
             if (health != null) health.style.overflow = Overflow.Visible;
+            // #397: the landscape health rail is f.Health wide — fit its marks to that width in this pass.
+            SetHealthFont(f.Health.W);
             // The rail's frame box; SeatPlot fits it over the stack as laid out (after the pins below, and again
             // whenever a stack element moves).
             plotPinned = Sc(f.Plot);
@@ -1035,7 +1079,15 @@ namespace Kestrel.Slice
                 return;
             }
             root.style.display = DisplayStyle.Flex;
-            if (actions != null) actions.style.display = DisplayStyle.Flex;
+            // #431: the dock folds away for the climax coast and the loss show (FlightHudLayout.DockShown), and its flow
+            // spacer with it, so the tools row is never under it.
+            bool dockUp = FlightHudLayout.DockShown(flight.Coasting, flight.Lost);
+            if (actions != null) actions.style.display = dockUp ? DisplayStyle.Flex : DisplayStyle.None;
+            if (dockUp != dockShown)
+            {
+                dockShown = dockUp;
+                PlaceDockSpacer();
+            }
             var inv = CultureInfo.InvariantCulture;
             double alt = director.LiveAlt > 0 ? director.LiveAlt : flight.Altitude;
             double speed = director.LiveSpeed > 0 ? director.LiveSpeed : flight.Speed;
@@ -1063,7 +1115,7 @@ namespace Kestrel.Slice
             if (plot != null) plot.Apply(trajectory.At(RecoveryLog.RailClock(flight.SimTime), alt, speed), upp);
             var score = director.Score();
             if (medal != null)
-                medal.text = score.Decided > 0 ? score.Summary : "Flying the plan.";
+                medal.text = FlightVerdict.InFlightMedalLine; // DECISIONS #83: no medal named until the flight passes
             bool prompt = prompts.Length > 0;
             if (!prompt)
             {
@@ -1155,6 +1207,19 @@ namespace Kestrel.Slice
             if (nudgeDown != null) nudgeDown.text = "Nudge −1°";
             GuideBinder.Prompts(flight);
             if (nudgeUp != null) nudgeUp.text = "Nudge +1°";
+            // DECISIONS #80: no nudge until the rocket clears the tower; the row stays in place, greyed out.
+            nudgeDown?.SetEnabled(director.NudgeOpen);
+            nudgeUp?.SetEnabled(director.NudgeOpen);
+            if (!director.NudgeOpen)
+            {
+                if (nudgeDown != null) nudgeDown.tooltip = AscentNotes.NudgeGated;
+                if (nudgeUp != null) nudgeUp.tooltip = AscentNotes.NudgeGated;
+            }
+            else
+            {
+                if (nudgeDown != null) nudgeDown.tooltip = "Pitch the planned kick down one degree.";
+                if (nudgeUp != null) nudgeUp.tooltip = "Pitch the planned kick up one degree.";
+            }
             if (caption != null)
                 caption.text = AscentNotes.Caption;
             if (bonus != null) bonus.text = BonusLine(score);
@@ -1271,7 +1336,7 @@ namespace Kestrel.Slice
         {
             if (dockSpacer == null || hud == null) return;
             // Landscape pins the dock; a flow spacer there would push the rows out of their seats.
-            if (widePinned) { dockSpacer.style.height = 0; return; }
+            if (widePinned || !dockShown) { dockSpacer.style.height = 0; return; }
             bool prompt = shown != default;
             // #322 CI SE cruise: the spacer reserved the buttons without the closed nudge row while LayoutRail pinned
             // the frame's dock with it, so the flex tools row (Follow y 514) sat inside the dock (y 519). The spacer
@@ -1285,7 +1350,7 @@ namespace Kestrel.Slice
         {
             var clock = hud != null ? hud.Q<Label>("h-t") : null;
             if (clock == null) return;
-            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFit(boxW, boxH));
+            FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFitWithChip(boxW, boxH)); // reserves the warp chip
             clock.style.marginLeft = 0; clock.style.marginRight = 0; clock.style.marginTop = 0; clock.style.marginBottom = 0;
         }
 
@@ -1660,15 +1725,15 @@ namespace Kestrel.Slice
         static string BonusLine(AscentFlightScore score)
         {
             if (score == null) return "";
-            string bits = "";
-            if (score.AltitudeHit) bits += "Altitude target  ·  ";
-            if (score.SpeedHit) bits += "Speed target  ·  ";
-            if (score.FuelHit) bits += "Fuel-efficient ascent  ·  ";
-            if (score.CleanStaging) bits += "Clean staging  ·  ";
-            if (score.PeakGHit) bits += "Gentle ride  ·  ";
-            if (score.PayloadDamaged) bits += "Payload heat is past the limit  ·  ";
-            if (bits.Length == 0) return score.Decided > 0 ? score.Summary : "";
-            return bits + score.Summary;
+            var parts = new System.Collections.Generic.List<string>();
+            if (score.AltitudeHit) parts.Add("Altitude target");
+            if (score.SpeedHit) parts.Add("Speed target");
+            if (score.FuelHit) parts.Add("Fuel-efficient ascent");
+            if (score.CleanStaging) parts.Add("Clean staging");
+            if (score.PeakGHit) parts.Add("Gentle ride");
+            if (score.PayloadDamaged) parts.Add("Payload heat is past the limit");
+            // DECISIONS #83: the medal is named only on the result screen, after the flight has passed.
+            return parts.Count == 0 ? "" : string.Join("  ·  ", parts);
         }
 
         void SetCell(int i, string name, string value, Color color)

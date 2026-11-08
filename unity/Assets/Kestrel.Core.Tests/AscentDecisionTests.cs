@@ -17,52 +17,45 @@ namespace Kestrel.Core.Tests
         };
 
         [Test]
-        public void AutoAssist_ThrottlesInTheGreen_AndManualSkipIsLateNotAFail()
+        public void MaxQSetting_FliesAutomatically_NoCallNoGradeNoMedalCredit()
         {
-            // #313: the autopilot takes the call on a design max-Q throttle, and that design's own guidance law flies the
-            // 60% cap (Physics ruling 4). The director adds no second bucket of its own.
+            // DECISIONS #89 (Physics option b): the design's own max-Q law flies the throttle bucket like a flight
+            // computer. There is no call to take or skip, with or without auto-assist, so it is never graded and never
+            // counts for or against the medal; the director commands nothing for it.
             var vehicle = new AscentVehicle { QLimPa = 35000, SafetyFactor = 1.4, ThrottleMin = 0.4, FlightCode = "KH-14", MaxQSet = true, MaxQRaw = 60 };
-            var assisted = AscentDirector.Start(vehicle, null, null, true, false, false);
-            assisted.Advance(MaxQSample(), 0.05);
-            Assert.AreEqual(AscentGrade.Perfect, assisted.GradeOf(AscentCall.MaxQ));
-            Assert.AreEqual(1, assisted.Command.ThrottleScale, 1e-9);
-            Assert.AreEqual(0, assisted.Command.EngageMaxQCap, 1e-9, "the design law already holds 60%");
-            Assert.IsFalse(assisted.Command.Lost);
-            Assert.AreEqual(AscentMedal.Silver, assisted.Score().Medal, "auto-assist perfect timing without a tap is silver");
-
-            var manual = AscentDirector.Start(vehicle, null, null, false, true, false);
-            manual.Advance(MaxQSample(), 0.05);
-            Assert.IsTrue(manual.IsOpen(AscentCall.MaxQ));
-            Assert.IsTrue(manual.Skip(AscentCall.MaxQ));
-            Assert.AreEqual(AscentGrade.Late, manual.GradeOf(AscentCall.MaxQ));
-            Assert.AreEqual(1, manual.Command.ThrottleScale, 1e-9, "skip still takes the autopilot call: the design's own cap");
-            Assert.AreEqual(0, manual.Command.EngageMaxQCap, 1e-9);
-            Assert.IsFalse(manual.Command.Lost);
-            Assert.AreEqual(AscentMedal.Bronze, manual.Score().Medal);
+            foreach (bool assist in new[] { true, false })
+            {
+                var d = AscentDirector.Start(vehicle, null, null, assist, true, false);
+                d.Advance(MaxQSample(), 0.05);
+                Assert.IsFalse(d.IsOpen(AscentCall.MaxQ), "never offered, auto " + assist);
+                Assert.IsFalse(d.Choose(AscentCall.MaxQ, true));
+                Assert.IsFalse(d.Skip(AscentCall.MaxQ));
+                Assert.IsFalse(d.IsDone(AscentCall.MaxQ));
+                Assert.AreEqual(AscentGrade.None, d.GradeOf(AscentCall.MaxQ));
+                Assert.AreEqual(1, d.Command.ThrottleScale, 1e-12, "the design law flies the cap, not the director");
+                Assert.IsFalse(d.Command.Lost);
+                Assert.AreEqual(0, d.Score().Decided, "no max-Q credit either way");
+                Assert.AreEqual(AscentMedal.None, d.Score().Medal);
+            }
         }
 
         [Test]
         public void Autopilot_KeepsTheDesignSettings_ButAPlayerTapStillTakesEitherCall()
         {
-            // #313 (b). No design max-Q throttle: auto-assist grades the call but leaves the throttle alone.
+            // #313 (b), DECISIONS #83. No design max-Q throttle: the call is not offered at all (Physics: "a no-op or
+            // greyed out, never a dip that sticks"), so neither the autopilot nor a tap can change the throttle, and it
+            // never counts for or against the medal.
             var plain = new AscentVehicle { QLimPa = 35000, ThrottleMin = 0.4 };
-            var assisted = AscentDirector.Start(plain, null, null, true, false, false);
-            assisted.Advance(MaxQSample(), 0.05);
-            Assert.AreEqual(AscentGrade.Perfect, assisted.GradeOf(AscentCall.MaxQ));
-            Assert.AreEqual(1, assisted.Command.ThrottleScale, 1e-12);
-            Assert.AreEqual(0, assisted.Command.EngageMaxQCap, 1e-12);
-
-            var skipped = AscentDirector.Start(plain, null, null, false, false, false);
-            skipped.Advance(MaxQSample(), 0.05);
-            Assert.IsTrue(skipped.Skip(AscentCall.MaxQ));
-            Assert.AreEqual(1, skipped.Command.ThrottleScale, 1e-12, "the autopilot does not invent a bucket");
-
-            // A player tap still throttles to the offered 70% default, through the design's own max-Q law (#313 ruling 4).
-            var tapped = AscentDirector.Start(plain, null, null, false, false, false);
-            tapped.Advance(MaxQSample(), 0.05);
-            Assert.IsTrue(tapped.Choose(AscentCall.MaxQ, true));
-            Assert.AreEqual(1, tapped.Command.ThrottleScale, 1e-12, "no second director bucket");
-            Assert.AreEqual(AscentDecisions.DefaultBucket, tapped.Command.EngageMaxQCap, 1e-12);
+            foreach (bool assist in new[] { true, false })
+            {
+                var d = AscentDirector.Start(plain, null, null, assist, false, false);
+                d.Advance(MaxQSample(), 0.05);
+                Assert.IsFalse(d.IsOpen(AscentCall.MaxQ), "not offered, auto " + assist);
+                Assert.IsFalse(d.Choose(AscentCall.MaxQ, true), "a tap on an absent call does nothing");
+                Assert.IsFalse(d.Skip(AscentCall.MaxQ));
+                Assert.AreEqual(1, d.Command.ThrottleScale, 1e-12, "the autopilot does not invent a bucket");
+                Assert.AreEqual(0, d.Score().Decided, "an absent call costs no medal credit");
+            }
 
             // Pitch (DECISIONS #76): accept confirms the autopilot's pitch program. Neither the autopilot nor a tap adds an offset.
             var sample = new AscentSample { T = 5, AltM = 4000, SpeedMps = 120, QPa = 1000, Thrusting = true, PropFraction = 1 };
@@ -86,11 +79,14 @@ namespace Kestrel.Core.Tests
         [Test]
         public void PlayerTapInTheGreen_EarnsGold()
         {
-            var vehicle = new AscentVehicle { QLimPa = 35000, ThrottleMin = 0.4 };
-            var director = AscentDirector.Start(vehicle, null, null, false, false, false);
-            director.Advance(MaxQSample(), 0.05);
-            Assert.IsTrue(director.Choose(AscentCall.MaxQ, true));
-            Assert.AreEqual(AscentGrade.Perfect, director.GradeOf(AscentCall.MaxQ));
+            // DECISIONS #89: with no max-Q call, a tap in the green on a call that remains (the pitch call) earns gold.
+            var director = AscentDirector.Start(new AscentVehicle { Stages = 1 }, null, null, false, false, false);
+            var sample = new AscentSample { T = 5, AltM = 4000, SpeedMps = 120, QPa = 1000, Thrusting = true, PropFraction = 1 };
+            director.Advance(sample, 0.05);
+            Assert.IsTrue(director.IsOpen(AscentCall.Pitch));
+            for (int i = 0; i < 400 && !director.OpenPrompts()[0].InGreen; i++) { sample.T += 0.05; director.Advance(sample, 0.05); }
+            Assert.IsTrue(director.Choose(AscentCall.Pitch, true));
+            Assert.AreEqual(AscentGrade.Perfect, director.GradeOf(AscentCall.Pitch));
             var score = director.Score();
             Assert.IsTrue(score.PlayerFlew);
             Assert.AreEqual(AscentMedal.Gold, score.Medal);
@@ -201,6 +197,8 @@ namespace Kestrel.Core.Tests
         public void Nudge_StaysInsideThreeDegrees_AndMarksTheAmberPath()
         {
             var director = AscentDirector.Start(new AscentVehicle(), null, null, false, true, false);
+            // DECISIONS #80: clear of the tower first (Pr4NudgeGateTests pins the gate itself).
+            director.Advance(new AscentSample { T = 6, AltM = 400, SpeedMps = AscentDecisions.NudgeGateMps, Thrusting = true, PropFraction = 1 }, 0.05);
             director.SetNudge(9);
             Assert.AreEqual(3, director.NudgeDeg, 1e-12);
             director.NudgePitch(-10);
@@ -218,6 +216,8 @@ namespace Kestrel.Core.Tests
         {
             var busy = new AscentVehicle
             {
+                // DECISIONS #89: no max-Q call; a staging call is the third candidate instead.
+                Stages = 2,
                 HasAnomaly = true,
                 AnomalyEngine = 1,
                 Engines = 9,
@@ -228,11 +228,12 @@ namespace Kestrel.Core.Tests
             director.Advance(new AscentSample
             {
                 T = 20, AltM = 11000, SpeedMps = 500, QPa = 31000, ThrustN = 8e6, MassKg = 4e5,
-                Thrusting = true, PropFraction = 0.8,
+                Thrusting = true, PropFraction = 0.1,
             }, 0.05);
             Assert.AreEqual(2, director.OpenCount);
             Assert.AreEqual(AscentLayout.MaxPrompts, director.OpenPrompts().Length);
-            Assert.IsFalse(director.IsOpen(AscentCall.Pitch));
+            int open = (director.IsOpen(AscentCall.EngineOut) ? 1 : 0) + (director.IsOpen(AscentCall.Pitch) ? 1 : 0) + (director.IsOpen(AscentCall.Staging) ? 1 : 0);
+            Assert.AreEqual(2, open, "three calls ready, two prompts open");
 
             var held = AscentDirector.Start(new AscentVehicle { Stages = 1 }, null, null, false, false, true);
             var plain = AscentDirector.Start(new AscentVehicle { Stages = 1 }, null, null, false, false, false);

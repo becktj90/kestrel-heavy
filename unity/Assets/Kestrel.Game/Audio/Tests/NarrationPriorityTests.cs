@@ -29,6 +29,26 @@ namespace Kestrel.Game.Audio.Tests
             CommentaryMode mode = CommentaryMode.Full, System.Func<NarrationLine, bool> accept = null)
             => s.Offer(Shared, id, f ?? Facts(2), lit, mode, now, accept);
 
+        /// <summary>Narrator Voice on #436: a call that cuts in over a color line takes over the interruptible flag, so
+        /// NarrationPlayer's hold reads busy and the coast warp holds ×1 for the call.</summary>
+        [Test]
+        public void ACallCuttingInOverColorHoldsTheWarpAtX1()
+        {
+            var s = new NarrationSchedule();
+            Assert.AreEqual(NarrationOutcome.Started, Offer(s, "color.ascent", 10).Outcome);
+            Assert.IsTrue(s.CurrentInterruptible, "color may be cut");
+            var call = Offer(s, "maxq", 11);
+            Assert.AreEqual(NarrationOutcome.Started, call.Outcome);
+            Assert.IsTrue(call.FadeOutPrevious);
+            Assert.IsFalse(s.CurrentInterruptible, "the call that took over is not interruptible");
+            var hold = new Kestrel.Core.Flight.NarrationWarpHold();
+            hold.Note(s.Busy && !s.CurrentInterruptible, 11);
+            bool busy = hold.Holds(11);
+            Assert.IsTrue(busy, "NarrationBusy");
+            var st = new Kestrel.Core.Flight.CoastWarpState { NarrationBusy = busy, SecondsToNext = 120 };
+            Assert.AreEqual(Kestrel.Core.Flight.CoastWarp.Off, Kestrel.Core.Flight.CoastWarp.Factor(st), "warp holds ×1 for the call");
+        }
+
         [Test]
         public void ACallOverAPlayingColorCutsItWithA120msFade()
         {

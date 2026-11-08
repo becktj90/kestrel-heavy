@@ -97,6 +97,32 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        public void TheFirstEverCountKeepsItsLengthLaterCountsOpenAtTMinus5()
+        {
+            // #416 item 9. The first flight keeps the full open count the pad narration is sized for.
+            Assert.AreEqual(LiftoffHandoff.OpenAt, LiftoffHandoff.OpenFor(0));
+            Assert.AreEqual(-12.0, LiftoffHandoff.OpenAt, "pad narration takes are sized to the first count (CallTriggersTests)");
+            Assert.AreEqual(-5.0, LiftoffHandoff.OpenFor(1));
+            Assert.AreEqual(-5.0, LiftoffHandoff.OpenFor(40));
+            var design = HomeDesign();
+            var later = new LiftoffHandoff();
+            later.Enter(OpenSequence(design), LiftoffHandoff.OpenFor(1));
+            Assert.IsTrue(later.Counting);
+            Assert.AreEqual(LiftoffHandoff.RepeatOpenAt, later.Sequence.Time, 1e-6);
+            var first = new LiftoffHandoff();
+            first.Enter(OpenSequence(design), LiftoffHandoff.OpenFor(0));
+            Assert.AreEqual(LiftoffHandoff.OpenAt, first.Sequence.Time, 1e-6);
+        }
+
+        [Test]
+        public void TheSliceRemembersTheFirstLiftoff()
+        {
+            string slice = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Slice", "Runtime", "SliceApp.cs"));
+            StringAssert.Contains("handoff.Enter(OpenSequence(), LiftoffHandoff.OpenFor(PlayerPrefs.GetInt(FlownPref, 0)));", slice);
+            StringAssert.Contains("handoff.Phase == \"ascending\"", slice);
+        }
+
+        [Test]
         public void OneSlowFrameDoesNotSkipTheCount()
         {
             var design = HomeDesign();

@@ -24,19 +24,48 @@ namespace Kestrel.Core.Designer
     {
         public const string MaxQ = "maxq", Overload = "overload", OverG = "overg", Tumble = "tumble", Heat = "heat",
             BaseHeat = "base-heat", Cryo = "cryo", Separation = "separation", Legs = "legs", Overpressure = "overpressure",
-            Pad = "pad", Short = "short", Landing = "landing", BoosterLanding = "booster-landing", Fit = "fit", Orbit = "orbit";
+            Pad = "pad", Short = "short", Landing = "landing", BoosterLanding = "booster-landing", Fit = "fit", Orbit = "orbit",
+            Low = "low", High = "high", Shape = "shape", Goal = "goal";
 
         /// <summary>Every cause the verdict can name. data/starter-readiness.json has copy for each.</summary>
         public static readonly IReadOnlyList<string> Causes = new[]
         {
             MaxQ, Overload, OverG, Tumble, Heat, BaseHeat, Cryo, Separation, Legs, Overpressure, Pad, Short, Landing, BoosterLanding, Fit, Orbit,
+            Low, High, Shape, Goal,
         };
 
         public string Cause;
         /// <summary>The predictor flight's first failure (null when it stayed intact).</summary>
         public FailureEvent Failure;
         public string Outcome, LandingGrade, BoosterGrade;
+        /// <summary>Why an intact flight does not pass, without making it a failure: the band miss
+        /// (<see cref="MissOf"/>) or an in-band result-screen gate (<see cref="Goal"/>). Null when the flight
+        /// passes, fails for certain, or ends on a seeded random event. <see cref="Cause"/> stays null for a miss,
+        /// so <see cref="Survives"/> stays true: an intact miss is a missed goal, not a breakup (Trevor 11-07), and
+        /// the golden honest-readiness test agrees (its truth names a band miss only for circular missions, which
+        /// <see cref="OrbitMiss"/> already puts in <see cref="Cause"/>).</summary>
+        public string Miss;
+        /// <summary>The predictor's flight stayed intact: no deterministic failure, no short landing, no fit block,
+        /// no circular-mission band miss. A hop/ellipse/C3 band miss or an in-band gate failure is not a failure:
+        /// it lands in <see cref="Miss"/> and <see cref="Passes"/> is false, but the flight survived.</summary>
         public bool Survives => Cause == null;
+        /// <summary>An intact flight that misses the mission band (DECISIONS #83). Circular misses name
+        /// <see cref="Short"/>/<see cref="Orbit"/> via <see cref="OrbitMiss"/>; this set covers the hop/ellipse/C3 names.</summary>
+        public static bool IsMiss(string cause) => cause == Low || cause == High || cause == Shape || cause == Goal;
+        /// <summary>DECISIONS #83: the predictor's flight passes the mission (the batch's acceptance rule plus the landing).
+        /// "Ready" reads only this. An intact flight that misses the band gets a miss cause in <see cref="Miss"/> (hop: <see cref="Low"/>/
+        /// <see cref="High"/>; circular: <see cref="Short"/>/<see cref="Orbit"/> in <see cref="Cause"/>; ellipse/C3: <see cref="Low"/>/
+        /// <see cref="High"/>/<see cref="Shape"/>); in the band but failing a result-screen gate gets <see cref="Goal"/> in <see cref="Miss"/>.</summary>
+        public bool Passes;
+
+        /// <summary>This verdict as the one verdict source (<see cref="FlightVerdict"/>).</summary>
+        /// <summary>The predictor flight ended on a seeded random event (bad mixture, engine-out): not certain either way.</summary>
+        public bool Chance => Cause == null && Failure != null;
+
+        /// <summary>This verdict as the one verdict source (<see cref="FlightVerdict"/>). A seeded random end is not a
+        /// verdict, so it stays Checking and callers keep their own line. A miss fails with its miss reason, so the
+        /// count card still names it.</summary>
+        public FlightVerdict AsFlightVerdict() => Passes ? FlightVerdict.Pass() : Chance ? FlightVerdict.Checking : FlightVerdict.Fail(Cause ?? Miss);
 
         /// <summary>The cause a flown failure names, or null for none or a seeded random event.</summary>
         public static string CauseOf(FailureEvent f)
@@ -86,6 +115,15 @@ namespace Kestrel.Core.Designer
                 if (v.LandingGrade == "short") v.Cause = Landing;
                 else if (v.BoosterGrade == "short") v.Cause = BoosterLanding;
             }
+            if (v.Cause != null) return v;
+            double apoM = MissionScore.FlownApoAltM(sim);
+            // A band miss is a missed goal, not a failure: it lands in Miss (Passes stays false) and Cause stays
+            // null, so Survives stays true for an intact flight. Circular misses already returned above via
+            // OrbitMiss, which the honest-readiness truth also names; hops/ellipse/C3 do not set Cause.
+            if (!LaunchPredictor.AcceptsMission(mission, sim, apoM)) { v.Miss = MissOf(mission, sim, apoM); return v; }
+            // In the band: the result screen's other gates (margin, reliability, red risk, budget, ...) decide the pass.
+            if (FlightVerdict.ResultPasses(c, mission, design, sim, landingJudged: true)) v.Passes = true;
+            else v.Miss = Goal;
             return v;
         }
 
@@ -105,6 +143,21 @@ namespace Kestrel.Core.Designer
             double mean = 0.5 * (sim.orbit.apoAlt + sim.orbit.periAlt);
             double low = 0.5 * (mission.ApoKm + mission.PeriKm) * 1000 * (1 - MissionScore.AltitudeFraction);
             return mean < low ? Short : Orbit;
+        }
+
+        /// <summary>Which way an intact flight missed the mission band: low, high, or the right height in the wrong shape.</summary>
+        public static string MissOf(CampaignMission mission, SimResult sim, double flownApoM)
+        {
+            if (mission.TargetKind == "apogee")
+                return flownApoM > mission.ApoKm * 1000 ? High : Low;
+            if (sim.outcome != "orbit") return Low;
+            if (mission.TargetKind == "c3") return Low;
+            double want = (mission.ApoKm + (mission.PeriKm > 0 ? mission.PeriKm : mission.ApoKm)) * 500;
+            double mean = (sim.orbit.apoAlt + sim.orbit.periAlt) / 2;
+            double band = MissionScore.AltitudeFraction * want;
+            if (mean > want + band) return High;
+            if (mean < want - band) return Low;
+            return Shape;
         }
     }
 
@@ -127,7 +180,7 @@ namespace Kestrel.Core.Designer
             catalog = c; this.mission = mission; this.fits = fits; Choice = choice;
             design = Design.FromJson(designJson);
             key = ReferenceAscent.CanonicalKey(c, designJson);
-            if (fits == false) { Verdict = StarterVerdict.Judge(c, design, mission, null, false); return; }
+            if (fits == false) { Verdict = StarterVerdict.Judge(c, design, mission, null, false); FlightVerdict.Remember(key, Verdict.AsFlightVerdict()); return; }
             flight = ReferenceAscent.Flight(c, design);
         }
 
@@ -141,6 +194,7 @@ namespace Kestrel.Core.Designer
             var sim = flight.Finish();
             ReferenceAscent.Store(key, sim);
             Verdict = StarterVerdict.Judge(catalog, design, mission, sim, fits);
+            FlightVerdict.Remember(key, Verdict.AsFlightVerdict());
             return true;
         }
     }

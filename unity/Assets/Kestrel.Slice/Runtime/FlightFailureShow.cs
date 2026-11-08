@@ -226,7 +226,82 @@ namespace Kestrel.Slice
             chip.tooltip = cue.CauseId;
             chip.style.display = DisplayStyle.Flex;
             FlightDusk.Callout(chip, units, true);
+            SeatChip();
             chip.BringToFront();
+        }
+
+        /// <summary>
+        /// #431: seat the callout in the HUD band as laid out, under the stat strip and the stage banner and over
+        /// Follow / Auto / Pause (FlightHudLayout.CalloutInBand), its text fitted to the box. Before the first layout pass
+        /// it keeps Layout's fixed seat.
+        /// </summary>
+        void SeatChip()
+        {
+            if (chip == null || hud == null || chip.parent == null) return;
+            var host = chip.parent.worldBound;
+            var tools = hud.Q("flight-tools");
+            if (!Laid(host) || tools == null || !Shown(tools) || !Laid(tools.worldBound)) return;
+            float u = units;
+            float bandTop = float.NegativeInfinity;
+            foreach (var id in new[] { "ascent-telemetry", "ascent-health", "ascent-stages", "webcast" })
+            {
+                var e = hud.Q(id);
+                if (e == null || !Shown(e) || !Laid(e.worldBound)) continue;
+                if (e.worldBound.yMax > tools.worldBound.yMin) continue;   // not above the row: not a top cover
+                bandTop = Mathf.Max(bandTop, e.worldBound.yMax);
+            }
+            if (float.IsNegativeInfinity(bandTop)) return;
+            // Points, relative to the chip's host (absolute offsets start there).
+            float gap = FlightHudLayout.GapPt;
+            float top = (bandTop - host.yMin) / u + gap;
+            float bottom = (tools.worldBound.yMin - host.yMin) / u - gap;
+            float width = host.width / u - 2f * FlightHudLayout.SideMarginPt;
+            float preferred = FlightStaging.CalloutTopInsideHud();
+            // The face's real line box, measured by UI Toolkit at the size it resolved to, in case it runs taller than the
+            // 1.3 budget. Ratio of two units-measures, so a style written this frame and not yet resolved does not skew it.
+            float lineHeight = FlightHudLayout.LineHeight;
+            float resolvedFont = chip.resolvedStyle.fontSize;
+            if (resolvedFont > 1f)
+            {
+                var one = chip.MeasureTextSize("BREAKUP Ag", 0f, VisualElement.MeasureMode.Undefined, 0f, VisualElement.MeasureMode.Undefined);
+                if (one.y > 1f && !float.IsNaN(one.y)) lineHeight = Mathf.Max(lineHeight, one.y / resolvedFont + 0.02f);
+            }
+            var seat = FlightHudLayout.CalloutInBand(cue.Callout, width, top, bottom, preferred, lineHeight);
+            // Last word to UI Toolkit: measure the seated text in the seated box; still taller than its box, stand down
+            // rather than spill (the banner already says Vehicle lost).
+            for (int pass = 0; pass < 3 && seat.Live && resolvedFont > 1f; pass++)
+            {
+                float scale = seat.FontPt * u / resolvedFont;
+                float boxH = (seat.Height - FlightHudLayout.CalloutChromeY) * u;
+                var need = chip.MeasureTextSize(seat.Text, (width - 2f * FlightHudLayout.CalloutPadX) * u / Mathf.Max(0.01f, scale), VisualElement.MeasureMode.AtMost, 0f, VisualElement.MeasureMode.Undefined);
+                float needH = need.y * scale;
+                if (!(needH > boxH + 1f)) break;
+                if (pass == 2) { seat.Live = false; break; }
+                lineHeight = lineHeight * needH / Mathf.Max(1f, boxH) + 0.05f;
+                seat = FlightHudLayout.CalloutInBand(cue.Callout, width, top, bottom, preferred, lineHeight);
+            }
+            if (!seat.Live)
+            {
+                // No room between the banner and the row: the banner already says it (Vehicle lost).
+                chip.style.display = DisplayStyle.None;
+                return;
+            }
+            chip.text = seat.Text;
+            if (seat.Cut) chip.tooltip = cue.Callout;
+            chip.style.top = seat.Top * u;
+            chip.style.height = seat.Height * u;
+            chip.style.minHeight = 0;
+            chip.style.maxHeight = seat.Height * u;
+            chip.style.fontSize = seat.FontPt * u;
+        }
+
+        static bool Laid(Rect r) => !(float.IsNaN(r.x) || float.IsNaN(r.y) || float.IsNaN(r.width) || float.IsNaN(r.height)) && r.width > 0.5f && r.height > 0.5f;
+
+        static bool Shown(VisualElement e)
+        {
+            for (var p = e; p != null; p = p.parent)
+                if (p.resolvedStyle.display == DisplayStyle.None || p.resolvedStyle.visibility == Visibility.Hidden) return false;
+            return e.panel != null;
         }
 
         void Play(in FailureTone tone)

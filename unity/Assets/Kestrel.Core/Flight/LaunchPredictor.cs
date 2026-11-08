@@ -115,7 +115,17 @@ namespace Kestrel.Core.Flight
         {
             if (sim == null || sim.failure != null || sim.outcome == "failure") return false;
             var mission = Designer.ReferenceAscent.MissionFor(catalog, vehicle);
-            if (mission != null)
+            if (mission != null) return AcceptsMission(mission, sim, flownApoM);
+            var o = req.orbit;
+            if (o == null) return false;
+            string kind = MissionScore.FreeOrbitKind(o.apoKm, o.periKm);
+            return MissionScore.TargetMet(kind, o.apoKm, o.periKm, double.NaN, kind == "apogee" ? flownApoM : sim.orbit.apoAlt, sim.orbit.periAlt, double.NaN, false, out _);
+        }
+
+        /// <summary>The batch's acceptance rule on one campaign mission row (DECISIONS #83: the one verdict source's pass).</summary>
+        public static bool AcceptsMission(CampaignMission mission, SimResult sim, double flownApoM)
+        {
+            if (sim == null || sim.failure != null || sim.outcome == "failure" || mission == null) return false;
             {
                 double need = mission.DepartsFromParking
                     ? MissionScore.DepartureRequiredMps(mission.TargetKind, mission.ApoKm, mission.C3Km2PerS2, mission.GuidanceAltM, sim.departureTW) : double.NaN;
@@ -123,10 +133,6 @@ namespace Kestrel.Core.Flight
                 double apo = mission.TargetKind == "apogee" ? flownApoM : sim.orbit.apoAlt;
                 return MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2, apo, sim.orbit.periAlt, MissionScore.C3(sim.orbit.energy) / 1e6, dv, out _);
             }
-            var o = req.orbit;
-            if (o == null) return false;
-            string kind = MissionScore.FreeOrbitKind(o.apoKm, o.periKm);
-            return MissionScore.TargetMet(kind, o.apoKm, o.periKm, double.NaN, kind == "apogee" ? flownApoM : sim.orbit.apoAlt, sim.orbit.periAlt, double.NaN, false, out _);
         }
 
         /// <summary>

@@ -26,7 +26,9 @@ namespace Kestrel.Slice.Editor
         public const string ShipVersion = "2.0.0";
         public const string TeamId = "9TR6R5LV8M";
         public const string ScenePath = "Assets/Scenes/Slice.unity";
-        static readonly string[] DataFiles = { "propellants", "engines", "materials", "payloads", "presets", "designer-limits", "designer-templates", "designer-look", "designer-budget", "finishes", "liveries", "designer-feel", "board-starters", "credits", "features", "campaign-winners", "time-of-day", "starter-readiness", "designer-tiers" };
+        // campaign / sites / weather: MissionBriefingBoot (DECISIONS #86). time-of-day: LaunchTimeBoot.
+        // CI also copies every data/*.json; this list is the editor Sync Data set.
+        static readonly string[] DataFiles = { "propellants", "engines", "materials", "payloads", "presets", "designer-limits", "designer-templates", "designer-look", "designer-budget", "finishes", "liveries", "designer-feel", "board-starters", "credits", "features", "campaign", "campaign-winners", "sites", "weather", "time-of-day", "starter-readiness", "designer-tiers" };
 
         static SliceBootstrap()
         {

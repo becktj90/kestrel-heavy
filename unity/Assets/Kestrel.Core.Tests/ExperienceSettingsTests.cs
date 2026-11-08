@@ -5,6 +5,8 @@
 using System.Collections.Generic;
 using Kestrel.Core.Designer;
 using Kestrel.Core.Features;
+using Kestrel.Core.Flight;
+using Kestrel.Core.Flight.Narration;
 using Kestrel.Core.Save;
 using NUnit.Framework;
 
@@ -165,5 +167,64 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(ExperienceSettings.ShowFullDesigner(p.Has, p.Get));
             Assert.AreEqual(2, p.Map.Count, "only the corner key was added");
         }
-    }
+    
+        // ---- Settings > Commentary and Time warp ----------------------------------------------------------------
+
+        [Test]
+        public void CommentaryAndTimeWarp_FreshSave_IsFullAndAuto_AndReadingNeverWrites()
+        {
+            var p = new Prefs();
+            Assert.AreEqual(CommentaryMode.Full, ExperienceSettings.CommentaryChoice(p.Has, p.Get));
+            Assert.AreEqual(TimeWarpMode.Auto, ExperienceSettings.TimeWarp(p.Has, p.Get));
+            Assert.AreEqual("Full", ExperienceSettings.CommentaryState(CommentaryMode.Full));
+            Assert.AreEqual("Auto", ExperienceSettings.TimeWarpState(TimeWarpMode.Auto));
+            Assert.IsEmpty(p.Map, "reading never writes");
+        }
+
+        [Test]
+        public void Commentary_EveryValueRoundTrips_AndKeepsTheOldMuteInStep()
+        {
+            foreach (CommentaryMode m in System.Enum.GetValues(typeof(CommentaryMode)))
+            {
+                var p = new Prefs();
+                ExperienceSettings.SetCommentaryChoice(m, p.Set);
+                Assert.AreEqual(m, ExperienceSettings.CommentaryChoice(p.Has, p.Get), m.ToString());
+                Assert.AreEqual(m == CommentaryMode.Off ? 1 : 0, p.Get(ExperienceSettings.LegacyNarrationMutePref), m.ToString());
+                Assert.AreEqual((int)m, p.Get(Commentary.Pref));
+            }
+            var old = new Prefs();
+            old.Set(ExperienceSettings.LegacyNarrationMutePref, 1);
+            Assert.AreEqual(CommentaryMode.Off, ExperienceSettings.CommentaryChoice(old.Has, old.Get), "an old muted save reads Off");
+            Assert.AreEqual(Commentary.Pref, "kh.audio.commentary");
+            CollectionAssert.Contains(SettingsMirror.Keys, Commentary.Pref);
+        }
+
+        [Test]
+        public void TimeWarp_EveryValueRoundTrips_AndTheRowFlips()
+        {
+            foreach (TimeWarpMode m in System.Enum.GetValues(typeof(TimeWarpMode)))
+            {
+                var p = new Prefs();
+                ExperienceSettings.SetTimeWarp(m, p.Set);
+                Assert.AreEqual(m, ExperienceSettings.TimeWarp(p.Has, p.Get), m.ToString());
+                Assert.AreEqual(m, ExperienceSettings.NextTimeWarp(ExperienceSettings.NextTimeWarp(m)));
+            }
+            Assert.AreEqual(TimeWarpMode.Off, ExperienceSettings.NextTimeWarp(TimeWarpMode.Auto));
+            Assert.AreEqual(TimeWarpSetting.Pref, "kh.flight.timewarp");
+            CollectionAssert.Contains(SettingsMirror.Keys, TimeWarpSetting.Pref);
+        }
+
+        [Test]
+        public void CommentaryAndTimeWarp_KidCopyAndTooltips()
+        {
+            Assert.AreEqual("Calls only", ExperienceSettings.CommentaryState(CommentaryMode.CallsOnly));
+            Assert.AreEqual("Off", ExperienceSettings.CommentaryState(CommentaryMode.Off));
+            Assert.AreEqual("Off", ExperienceSettings.TimeWarpState(TimeWarpMode.Off));
+            Assert.AreEqual("Speeds up quiet parts of the flight.", ExperienceSettings.TimeWarpNote);
+            foreach (CommentaryMode m in System.Enum.GetValues(typeof(CommentaryMode)))
+                StringAssert.StartsWith("Commentary: " + ExperienceSettings.CommentaryState(m) + ".", ExperienceSettings.CommentaryTooltip(m));
+            foreach (TimeWarpMode m in System.Enum.GetValues(typeof(TimeWarpMode)))
+                StringAssert.StartsWith("Time warp: " + ExperienceSettings.TimeWarpState(m) + ".", ExperienceSettings.TimeWarpTooltip(m));
+        }
+}
 }

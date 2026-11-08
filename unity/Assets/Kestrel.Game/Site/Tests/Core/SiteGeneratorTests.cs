@@ -74,6 +74,26 @@ namespace Kestrel.Site.Tests
             Assert.That(CountColor(Site().Land(0), Coastline.ScrubPatch), Is.GreaterThan(40), "patches are on the mesh");
         }
 
+        // #402: the ground read as bright green with artificial stripes — WriteLandColor wrote one of two
+        // flat greens per vertex, so the grid flipped between them along straight threshold lines. Patch
+        // edges must blend (vertices between the two scrub greens on both channels — a flat colour plus
+        // the fine mottling cannot land there), while patch interiors stay the patch colour.
+        [Test]
+        public void ScrubColoursBlendInsteadOfStriping()
+        {
+            var land = Site().Land(0);
+            int between = 0, exact = 0;
+            for (int i = 0; i < land.Colors.Length; i += 4)
+            {
+                float r = land.Colors[i], g = land.Colors[i + 1];
+                if (g > Coastline.ScrubPatch[1] + 0.02f && g < Coastline.Scrub[1] - 0.02f
+                    && r > Coastline.ScrubPatch[0] + 0.02f && r < Coastline.Scrub[0] - 0.02f) between++;
+                if (Close(land.Colors, i, Coastline.ScrubPatch)) exact++;
+            }
+            Assert.That(between, Is.GreaterThan(20), "patch edges blend instead of cutting");
+            Assert.That(exact, Is.GreaterThan(40), "patch interiors stay the patch colour");
+        }
+
         [Test]
         public void RoadStaysOnLandAndReachesTheApron()
         {

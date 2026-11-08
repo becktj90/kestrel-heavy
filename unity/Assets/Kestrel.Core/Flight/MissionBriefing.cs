@@ -213,6 +213,80 @@ namespace Kestrel.Core.Flight
         public double AirSpeedMs, QPa, AlphaRad, BendingNm, ShearPerSec;
     }
 
+    /// <summary>
+    /// Installed campaign / sites / weather books for a player build (no checkout).
+    /// <see cref="LaunchTime.UseTable"/> is the same pattern: boot installs Resources text; Compose
+    /// reads the books when <c>repoRoot</c> is null. Editor and Core tests keep reading the checkout.
+    /// </summary>
+    public static class BriefingBooks
+    {
+        public const string CampaignResource = "KestrelData/campaign";
+        public const string SitesResource = "KestrelData/sites";
+        public const string WeatherResource = "KestrelData/weather";
+
+        static readonly object Gate = new object();
+        static Campaign _campaign;
+        static JsonObject _campaignRaw;
+        static SiteBook _sites;
+        static WeatherBook _weather;
+
+        /// <summary>True when campaign, sites and weather are installed (device boot or a test).</summary>
+        public static bool HasBooks
+        {
+            get { lock (Gate) return _campaign != null && _campaignRaw != null && _sites != null && _weather != null; }
+        }
+
+        /// <summary>Install the three books. Pass nulls to clear (tests).</summary>
+        public static void Use(Campaign campaign, JsonObject campaignRaw, SiteBook sites, WeatherBook weather)
+        {
+            lock (Gate)
+            {
+                _campaign = campaign;
+                _campaignRaw = campaignRaw;
+                _sites = sites;
+                _weather = weather;
+            }
+        }
+
+        /// <summary>Parse campaign.json, sites.json and weather.json text and install them.</summary>
+        public static void UseJson(string campaignJson, string sitesJson, string weatherJson)
+        {
+            if (string.IsNullOrWhiteSpace(campaignJson)) throw new ArgumentException("campaign json is empty", nameof(campaignJson));
+            if (string.IsNullOrWhiteSpace(sitesJson)) throw new ArgumentException("sites json is empty", nameof(sitesJson));
+            if (string.IsNullOrWhiteSpace(weatherJson)) throw new ArgumentException("weather json is empty", nameof(weatherJson));
+            var raw = MiniJson.ParseObject(campaignJson);
+            Use(Campaign.FromJson(raw), raw, SiteBook.FromJson(MiniJson.ParseObject(sitesJson)), WeatherBook.FromJson(MiniJson.ParseObject(weatherJson)));
+        }
+
+        /// <summary>Drop installed books so the next Compose needs a checkout again.</summary>
+        public static void Clear() => Use(null, null, null, null);
+
+        internal static void Resolve(string repoRoot, out Campaign campaign, out JsonObject raw, out SiteBook sites, out WeatherBook weather)
+        {
+            if (!string.IsNullOrEmpty(repoRoot))
+            {
+                string campaignPath = Path.Combine(repoRoot, "data", "campaign.json");
+                if (File.Exists(campaignPath))
+                {
+                    raw = MiniJson.ParseObject(File.ReadAllText(campaignPath));
+                    campaign = Campaign.FromJson(raw);
+                    sites = SiteBook.Load(repoRoot);
+                    weather = WeatherBook.Load(repoRoot);
+                    return;
+                }
+            }
+            lock (Gate)
+            {
+                if (_campaign == null || _campaignRaw == null || _sites == null || _weather == null)
+                    throw new InvalidOperationException("briefing books not installed and no checkout at " + (repoRoot ?? "(null)"));
+                campaign = _campaign;
+                raw = _campaignRaw;
+                sites = _sites;
+                weather = _weather;
+            }
+        }
+    }
+
     /// <summary>One KH-n card: fictional payload, orbit, goal, bonuses, and the seeded pad, clock and wind.</summary>
     public sealed class MissionBriefing
     {
@@ -309,10 +383,8 @@ namespace Kestrel.Core.Flight
 
         static MissionBriefing Compose(string repoRoot, int missionIndex, ReplaySeed replay, bool freeBuild)
         {
-            var campaign = Campaign.Load(repoRoot);
-            var sites = SiteBook.Load(repoRoot);
-            var weather = WeatherBook.Load(repoRoot);
-            var raw = MiniJson.ParseObject(File.ReadAllText(Path.Combine(repoRoot, "data", "campaign.json")));
+            // Checkout when present; otherwise the books MissionBriefingBoot installs from Resources (DECISIONS #86).
+            BriefingBooks.Resolve(repoRoot, out var campaign, out var raw, out var sites, out var weather);
             string prefix = raw.Str("flightPrefix", "KH");
             if (string.IsNullOrEmpty(prefix)) prefix = "KH";
 
