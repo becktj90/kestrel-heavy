@@ -325,10 +325,11 @@ namespace Kestrel.Capture.Tests
                         TestContext.WriteLine("landing burn at " + rec.AltitudeForCapture.ToString("0") + " m, throttle " + rec.ThrottleForCapture.ToString("0.00") + ", phase " + rec.PhaseForCapture);
                         RecoveryShow.HoldForCapture = true;
                         yield return null;
-                        // The live webcast pill reads "Short on speed" while speed / total budget < 0.40, which on KH-7 is the
-                        // whole ascent from MECO into the S3 burn: true of that moment, false as a picture of a flight that
-                        // reaches GTO. With the booster frozen in its burn (camera still on it), let the ascent fly on until
-                        // the pill moves off it, then hold the ascent and shoot. The banner rule itself is Gameplay's.
+                        // The live webcast pill reads "Short on speed" while the live spare is held below zero (LiveSpare,
+                        // DECISIONS #90), which on KH-7 can cover the ascent from MECO into the S3 burn: true of that moment,
+                        // false as a picture of a flight that reaches GTO. With the booster frozen in its burn (camera still on
+                        // it), let the ascent fly on until the pill moves off it, then hold the ascent and shoot. The banner rule
+                        // itself is Gameplay's.
                         if (ShortBannerShown(app.UiForCapture) && driver != null)
                         {
                             driver.Hold(false);

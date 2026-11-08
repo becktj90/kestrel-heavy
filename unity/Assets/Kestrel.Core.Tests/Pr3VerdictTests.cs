@@ -48,10 +48,14 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("Test flight misses LEO", b.Detail);
             var c = WebcastBoard.Pulse(false, 0, 0, 7600, 420, 0, 35, "LEO", 0, FlightVerdict.Checking);
             StringAssert.Contains("m/s to spare for LEO", c.Detail, "unknown keeps the sheet line");
-            // In flight below 40% of the speed: "short" only when the verdict does not pass.
-            Assert.AreEqual(WebcastBoard.VerdictShort, WebcastBoard.Pulse(true, 30000, 1000, 7600, 0, 1000, 35, "LEO", 0, null).Verdict);
-            Assert.AreEqual(WebcastBoard.VerdictShort, WebcastBoard.Pulse(true, 30000, 1000, 7600, 0, 1000, 35, "LEO", 0, miss).Verdict);
-            Assert.AreNotEqual(WebcastBoard.VerdictShort, WebcastBoard.Pulse(true, 30000, 1000, 7600, 0, 1000, 35, "LEO", 0, pass).Verdict);
+            // In flight the "short" cue reads the live spare (DECISIONS #90), not the speed share or the verdict:
+            // a held live spare reads short even on a design the predictor passes, and a fine live spare reads on
+            // track even at 13 % of the budget on a design the predictor fails. The verdict still drives the
+            // count line above; it no longer gates the in-flight cue.
+            Assert.AreEqual(WebcastBoard.VerdictShort, WebcastBoard.Pulse(true, 30000, 1000, 7600, 0, 1000, 35, "LEO", 0, pass, true).Verdict);
+            Assert.AreEqual(WebcastBoard.VerdictShort, WebcastBoard.Pulse(true, 30000, 1000, 7600, 0, 1000, 35, "LEO", 0, miss, true).Verdict);
+            Assert.AreEqual(WebcastBoard.VerdictShort, WebcastBoard.Pulse(true, 30000, 1000, 7600, 0, 1000, 35, "LEO", 0, null, true).Verdict);
+            Assert.AreNotEqual(WebcastBoard.VerdictShort, WebcastBoard.Pulse(true, 30000, 1000, 7600, 0, 1000, 35, "LEO", 0, miss).Verdict);
             Assert.AreEqual(FlightVerdict.InFlightMedalLine, "Flying the plan.");
         }
     }
