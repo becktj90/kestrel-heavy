@@ -57,7 +57,9 @@ namespace Kestrel.Core.Tests
             d.Advance(new AscentSample { T = 45, AltM = 2000, SpeedMps = 101, Thrusting = true, PropFraction = 0.9 }, 0.05);
             Assert.IsTrue(d.IsOpen(AscentCall.Pitch));
             Assert.IsTrue(d.Choose(AscentCall.Pitch, true));
-            Assert.AreEqual(-AscentDecisions.NudgeStepDeg, d.NudgeDeg, 1e-12);
+            // DECISIONS #76: accept confirms the autopilot's pitch program and holds no offset;
+            // the -1 deg nudge it used to hold is gone. Manual deviation stays on the Engineer nudge row.
+            Assert.AreEqual(0, d.NudgeDeg, 1e-12);
         }
 
         [Test]
