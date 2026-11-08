@@ -249,7 +249,9 @@ function statedFacts(c) {
       const idx = named.length ? named : ctx['lit.stage'] ? [ctx['lit.stage'] - 1] : d.stages.map((_, i) => i);
       return idx.every((i) => PROP_ID[d.stages[i] && d.stages[i].propellant] === id);
     }]);
-  if (/\boxygen\b/i.test(t)) out.push(['liquid oxygen', /propellant/, (d, ctx) => {
+  // A historical take's "liquid oxygen" is history (Goddard's 1926 rocket), not a claim about the flown design,
+  // so the oxygen rule does not apply to mission-gated historical takes (DECISIONS #77).
+  if (/\boxygen\b/i.test(t) && !isHistorical(c)) out.push(['liquid oxygen', /propellant/, (d, ctx) => {
     const named = Object.keys(c.requires || {}).map((k) => k.match(/^stage(\d)\.propellant$/)).filter(Boolean).map((x) => Number(x[1]) - 1);
     const idx = named.length ? named : [0];
     return idx.every((i) => ['kerolox', 'hydrolox', 'methalox'].includes(PROP_ID[d.stages[i] && d.stages[i].propellant]));
@@ -317,6 +319,9 @@ const SRC = fs.readFileSync(path.join(root, 'docs/narration-sources.md'), 'utf8'
 test('color: layer, schema, captions, word limits and sources', () => {
   const errs = [];
   for (const c of COLOR) {
+    // DECISIONS #77 historical takes are single-voice, mission-gated and sourced; their shape is covered
+    // by the historical test above, not by the two-voice webcast schema below.
+    if (isHistorical(c)) continue;
     if (c.layer !== 'color' || !c.event.startsWith('color.') || c.interruptible !== true) errs.push(`${c.id}: layer/event/interruptible`);
     if (c.channel !== 'host') errs.push(`${c.id}: channel must stay host (subtitle code accepts mc/host/cohost)`);
     if (!Array.isArray(c.lines) || c.lines.length < 2) { errs.push(`${c.id}: lines`); continue; }
