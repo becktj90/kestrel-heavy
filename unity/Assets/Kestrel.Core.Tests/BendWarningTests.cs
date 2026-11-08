@@ -65,15 +65,15 @@ namespace Kestrel.Core.Tests
             // KH-8's auto-built rocket with 0.5 bar tanks at strength 1.2. Seed-1 wind: the bending peaks at 25.8% of the
             // allowance (the #344 alpha cap at 15 deg keeps the linear CN-alpha model from overstating the moment at
             // large alpha; the old 89.6% pin was the uncapped extrapolation, and the warning it set was a false alarm),
-            // no warning is set, and the flight carries on to orbit (629.7 x 170.3 km) with no failure.
-            // Calm air: 2.3%, no warning.
+            // no warning is set, and the flight carries on to orbit (632.9 x 167.1 km) with no failure.
+            // Calm air: 2.3%, no warning. (#335: the fairing mass jettison moved the orbit from 629.7 x 170.3 km.)
             var m = campaign.Mission(8);
             var d = Pressurized(8, 1.2, 0.5);
             var windy = LivePadLoop.Fly(catalog, m, d, true);
             Assert.IsNull(windy.failure, LivePadLoop.Text(windy));
             Assert.AreEqual("orbit", windy.outcome, LivePadLoop.Text(windy));
-            Assert.AreEqual(629.7, windy.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(windy));
-            Assert.AreEqual(170.3, windy.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(632.9, windy.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(167.1, windy.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(windy));
             Assert.AreEqual(0.258, windy.peakBendFraction, 0.001);
             Assert.IsNull(windy.bendWarning, "the wind stays under 80% of the bending allowance");
 
@@ -88,14 +88,15 @@ namespace Kestrel.Core.Tests
             // KH-4's auto-built rocket with 0.5 bar tanks at strength 1.6 in the seed-1 wind. The old pin had it breaking
             // up on the bending margin with a warning first — but that breakup was the uncapped linear CN-alpha model
             // overstating the moment at large alpha. With the #344 15 deg cap the bending peaks at 51.2% of the
-            // allowance, no warning is set, and the flight reaches orbit (712.7 x 287.3 km) with no failure.
+            // allowance, no warning is set, and the flight reaches orbit (713.9 x 286.1 km) with no failure.
+            // (#335: the fairing mass jettison moved the orbit from 712.7 x 287.3 km.)
             var m = campaign.Mission(4);
             var d = Pressurized(4, 1.6, 0.5);
             var windy = LivePadLoop.Fly(catalog, m, d, true);
             Assert.IsNull(windy.failure, LivePadLoop.Text(windy));
             Assert.AreEqual("orbit", windy.outcome, LivePadLoop.Text(windy));
-            Assert.AreEqual(712.7, windy.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(windy));
-            Assert.AreEqual(287.3, windy.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(713.9, windy.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(286.1, windy.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(windy));
             Assert.AreEqual(0.512, windy.peakBendFraction, 0.001);
             Assert.IsNull(windy.bendWarning, "the wind stays under 80% of the bending allowance");
         }

@@ -61,7 +61,7 @@ namespace Kestrel.Core.Tests
             // against the whole-stack axial load; that is the load-path bug this PR fixes (a strap-on carries only
             // itself, and the core is checked against the mass above it). Both must fly to orbit in the seed-1
             // briefing wind with no liftoff breakup.
-            foreach (var (index, apo, peri) in new[] { (10, 202.2, 197.8), (19, 205.6, 194.4) })
+            foreach (var (index, apo, peri) in new[] { (10, 203.7, 196.3), (19, 205.1, 194.9) })
             {
                 var m = campaign.Mission(index);
                 var r = LivePadLoop.Fly(catalog, m, Starter(index), true);
