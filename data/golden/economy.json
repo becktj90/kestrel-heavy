@@ -278,7 +278,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -301,10 +301,10 @@
     }
    },
    "out": {
-    "recurring": 796263665,
+    "recurring": 796123948,
     "dev": 717174506,
-    "total": 1513438171,
-    "perKg": 5308424,
+    "total": 1513298454,
+    "perKg": 5307493,
     "lines": [
      {
       "cat": "engines",
@@ -333,13 +333,13 @@
      {
       "cat": "structure",
       "label": "Stage 2: tanks & structure",
-      "amount": 10566111,
+      "amount": 10428939,
       "group": "stage1"
      },
      {
       "cat": "propellant",
       "label": "Stage 2: CH4 / LOX",
-      "amount": 152700,
+      "amount": 150155,
       "group": "stage1"
      },
      {
@@ -399,8 +399,8 @@
     ],
     "byCategory": {
      "engines": 137458078,
-     "structure": 87762137,
-     "propellant": 1043450,
+     "structure": 87624965,
+     "propellant": 1040905,
      "avionics": 250000000,
      "recovery": 0,
      "ops": 320000000
@@ -469,7 +469,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -493,10 +493,10 @@
     }
    },
    "out": {
-    "recurring": 1282057086,
+    "recurring": 1283566368,
     "dev": 2434121534,
-    "total": 3716178620,
-    "perKg": 4273524,
+    "total": 3717687902,
+    "perKg": 4278555,
     "lines": [
      {
       "cat": "engines",
@@ -525,13 +525,13 @@
      {
       "cat": "structure",
       "label": "Space Stage: tanks & structure",
-      "amount": 43290491,
+      "amount": 44736173,
       "group": "stage1"
      },
      {
       "cat": "propellant",
       "label": "Space Stage: LH2 / LOX",
-      "amount": 1526400,
+      "amount": 1590000,
       "group": "stage1"
      },
      {
@@ -596,8 +596,8 @@
     ],
     "byCategory": {
      "engines": 476079588,
-     "structure": 230200698,
-     "propellant": 5776800,
+     "structure": 231646380,
+     "propellant": 5840400,
      "avionics": 250000000,
      "recovery": 0,
      "ops": 320000000
@@ -2495,7 +2495,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -2527,10 +2527,10 @@
     ]
    },
    "out": {
-    "recurring": 796263665,
+    "recurring": 796123948,
     "dev": 567174506,
-    "total": 1363438171,
-    "perKg": 5308424,
+    "total": 1363298454,
+    "perKg": 5307493,
     "lines": [
      {
       "cat": "engines",
@@ -2559,13 +2559,13 @@
      {
       "cat": "structure",
       "label": "Stage 2: tanks & structure",
-      "amount": 10566111,
+      "amount": 10428939,
       "group": "stage1"
      },
      {
       "cat": "propellant",
       "label": "Stage 2: CH4 / LOX",
-      "amount": 152700,
+      "amount": 150155,
       "group": "stage1"
      },
      {
@@ -2620,8 +2620,8 @@
     ],
     "byCategory": {
      "engines": 137458078,
-     "structure": 87762137,
-     "propellant": 1043450,
+     "structure": 87624965,
+     "propellant": 1040905,
      "avionics": 250000000,
      "recovery": 0,
      "ops": 320000000
@@ -2690,7 +2690,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -2723,10 +2723,10 @@
     ]
    },
    "out": {
-    "recurring": 1078003284,
+    "recurring": 1079512566,
     "dev": 574693831,
-    "total": 1652697115,
-    "perKg": 3593344,
+    "total": 1654206397,
+    "perKg": 3598375,
     "lines": [
      {
       "cat": "engines",
@@ -2755,13 +2755,13 @@
      {
       "cat": "structure",
       "label": "Space Stage: tanks & structure",
-      "amount": 43290491,
+      "amount": 44736173,
       "group": "stage1"
      },
      {
       "cat": "propellant",
       "label": "Space Stage: LH2 / LOX",
-      "amount": 1526400,
+      "amount": 1590000,
       "group": "stage1"
      },
      {
@@ -2816,8 +2816,8 @@
     ],
     "byCategory": {
      "engines": 272025786,
-     "structure": 230200698,
-     "propellant": 5776800,
+     "structure": 231646380,
+     "propellant": 5840400,
      "avionics": 250000000,
      "recovery": 0,
      "ops": 320000000
@@ -4622,7 +4622,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -4724,7 +4724,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],

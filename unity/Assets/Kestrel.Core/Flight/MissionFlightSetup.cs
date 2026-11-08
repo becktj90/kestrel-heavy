@@ -212,8 +212,8 @@ namespace Kestrel.Core.Flight
         /// The flown sim's fairing release height: the design's fairing.jettisonAltitudeKm, the same number the
         /// staging show (FlightStageShow), the director (AscentVehicle.JettisonAltM) and the timeline use. 0 for a
         /// design with no fairing, using the staging show's rule, so a bare stack never emits a "fairing" event.
-        /// The event is a marker only: the fairing's mass rides with the payload for the whole burn (Stack), as
-        /// in every sim test that sets this option.
+        /// #335: the fairing's mass leaves the stack at the event (SimOptions.fairingMassKg, set by
+        /// Stack.SimInputs from Mass.FairingMass); it rides with the payload only until then.
         /// </summary>
         /// <summary>
         /// The payload's heat limit (catalog maxHeatFlux, W/m²) that gates the flown sim's "fairing" event, the same number

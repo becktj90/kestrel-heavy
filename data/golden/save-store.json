@@ -154,7 +154,7 @@
         "propellant": "methalox",
         "engine": "gg-methalox-small",
         "engineCount": 1,
-        "propMass": 6000,
+        "propMass": 5900,
         "diameter": 1.8
        }
       ],

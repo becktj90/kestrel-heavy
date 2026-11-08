@@ -177,8 +177,8 @@ namespace Kestrel.Core.Tests
 
         /// <summary>
         /// #313 (Arcade): pantry-leo400-k3 is held back for #326 (engine-out balance), the only tracked cell. Its c8-360-k7-u35
-        /// design still misses on seed 3 after the seeded engine-out (637.7 x 162.3 km against 400 km); the best variant
-        /// found, S2 propellant +10% (cost 24708), passes 4 of 5 (seed 3 flies 652.6 x 147.4). When #326 makes it fly,
+        /// design still misses on seed 3 after the seeded engine-out (638.31 x 161.69 km against 400 km); the best variant
+        /// found, S2 propellant +10% (cost 24708), passes 4 of 5 (seed 3 flies 650.6 x 149.4). When #326 makes it fly,
         /// this fails: move the cell back to "cells".
         /// </summary>
         [Test, Timeout(120000)]
@@ -190,8 +190,8 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(326, t.Issue);
             Assert.AreEqual("pantry-leo400-k3-c8-360-k7-u35", t.FailingDesign);
             Assert.AreEqual(3UL, t.Seed);
-            Assert.AreEqual(637.7, t.ApoKm, 1e-9);
-            Assert.AreEqual(162.3, t.PeriKm, 1e-9);
+            Assert.AreEqual(638.31, t.ApoKm, 1e-9);
+            Assert.AreEqual(161.69, t.PeriKm, 1e-9);
             Assert.AreEqual("S2 propellant +10%", t.BestVariant.Str("change"));
             Assert.AreEqual(24708, t.BestVariant.Num("cost"), 1e-9);
             Assert.AreEqual(4, t.BestVariant.Num("passes"), 1e-9);

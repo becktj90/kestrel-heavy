@@ -184,7 +184,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -211,13 +211,13 @@
     "blocks": [],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 1.8386133687777153,
-     "totalDeltaV": 11389.484873192032,
-     "margin": 0.30019632151782116,
+     "liftoffTWR": 1.8429213685633594,
+     "totalDeltaV": 11384.427730516658,
+     "margin": 0.2996190102190996,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 44923.53566760017,
-     "cost": 796263665,
+     "liftoffMass": 44818.52273252456,
+     "cost": 796123948,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -226,16 +226,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.8386133687777153,
-       "twrVac": 2.0429037430863506,
-       "deltaV": 4886.82379324541
+       "twr": 1.8429213685633594,
+       "twrVac": 2.0476904095148436,
+       "deltaV": 4913.678609463561
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.471662545945757,
-       "twrVac": 1.471662545945757,
-       "deltaV": 6502.661079946621
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -303,7 +303,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -331,13 +331,13 @@
     "blocks": [],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 2.611210120636693,
-     "totalDeltaV": 13635.396847831584,
-     "margin": 0.5362922267080166,
+     "liftoffTWR": 2.6026368780161344,
+     "totalDeltaV": 13670.696245610226,
+     "margin": 0.5402693893106164,
      "required": 8875.52290559307,
      "targetAlt": 200000,
-     "liftoffMass": 164992.50542048496,
-     "cost": 1282057086,
+     "liftoffMass": 165536.00067004963,
+     "cost": 1283566368,
      "reliability": 0.9834896208689856,
      "orbitLabel": "LEO 200 km",
      "fairingMass": 448.61943093262244,
@@ -346,16 +346,16 @@
       {
        "label": "Big Booster",
        "role": "core",
-       "twr": 2.611210120636693,
-       "twrVac": 2.886236985413812,
-       "deltaV": 5756.0895223389325
+       "twr": 2.6026368780161344,
+       "twrVac": 2.8767607622095497,
+       "deltaV": 5700.506882841729
       },
       {
        "label": "Space Stage",
        "role": "core",
-       "twr": 1.537347839804254,
-       "twrVac": 1.537347839804254,
-       "deltaV": 7879.30732549265
+       "twr": 1.48214559278563,
+       "twrVac": 1.48214559278563,
+       "deltaV": 7970.1893627684985
       }
      ]
     }
@@ -1518,7 +1518,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -1551,13 +1551,13 @@
     ],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 0.41570604836231756,
-     "totalDeltaV": 11594.919242150587,
-     "margin": 0.323648217174836,
+     "liftoffTWR": 0.41669710344337657,
+     "totalDeltaV": 11592.642782125122,
+     "margin": 0.32338834194920935,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 44153.53566760017,
-     "cost": 709471362,
+     "liftoffMass": 44048.52273252456,
+     "cost": 709331645,
      "reliability": 0.96351660999,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -1566,16 +1566,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 0.41570604836231756,
-       "twrVac": 0.46189560929146395,
-       "deltaV": 5092.258162203967
+       "twr": 0.41669710344337657,
+       "twrVac": 0.46299678160375174,
+       "deltaV": 5121.893661072025
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.471662545945757,
-       "twrVac": 1.471662545945757,
-       "deltaV": 6502.661079946621
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -1640,7 +1640,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 0,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -1734,7 +1734,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -1828,7 +1828,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -1862,13 +1862,13 @@
     ],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 5.828980905464984,
-     "totalDeltaV": 10874.511102254663,
-     "margin": 0.24140814890898615,
+     "liftoffTWR": 5.841969184279845,
+     "totalDeltaV": 10863.29567757879,
+     "margin": 0.24012782288281503,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 47233.53566760017,
-     "cost": 997573771,
+     "liftoffMass": 47128.52273252456,
+     "cost": 997434054,
      "reliability": 0.8982941524181798,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -1877,16 +1877,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 5.828980905464984,
-       "twrVac": 6.476645450516649,
-       "deltaV": 4371.850022308043
+       "twr": 5.841969184279845,
+       "twrVac": 6.491076871422051,
+       "deltaV": 4392.546556525692
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.471662545945757,
-       "twrVac": 1.471662545945757,
-       "deltaV": 6502.661079946621
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -1951,7 +1951,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 6
      }
     ],
@@ -1990,13 +1990,13 @@
     ],
     "warnings": [],
     "readout": {
-     "liftoffTWR": 1.8386133687777153,
-     "totalDeltaV": 11389.484873192032,
-     "margin": 0.30019632151782116,
+     "liftoffTWR": 1.8429213685633594,
+     "totalDeltaV": 11384.427730516658,
+     "margin": 0.2996190102190996,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 44923.53566760017,
-     "cost": 852349389,
+     "liftoffMass": 44818.52273252456,
+     "cost": 852284637,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -2005,16 +2005,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.8386133687777153,
-       "twrVac": 2.0429037430863506,
-       "deltaV": 4886.82379324541
+       "twr": 1.8429213685633594,
+       "twrVac": 2.0476904095148436,
+       "deltaV": 4913.678609463561
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.471662545945757,
-       "twrVac": 1.471662545945757,
-       "deltaV": 6502.661079946621
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -2082,7 +2082,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -2118,17 +2118,17 @@
      {
       "code": "dv-margin",
       "tab": "propellants",
-      "msg": "About 1114 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+      "msg": "About 1070 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
      }
     ],
     "readout": {
-     "liftoffTWR": 2.442956294058844,
-     "totalDeltaV": 7645.683018981398,
-     "margin": -0.12718713379485466,
+     "liftoffTWR": 2.4354507054631327,
+     "totalDeltaV": 7690.120189352032,
+     "margin": -0.12211429282813532,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 176356.0408472855,
-     "cost": 1250757398,
+     "liftoffMass": 176899.53609685018,
+     "cost": 1252266680,
      "reliability": 0.9834896208689856,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 112.15485773315561,
@@ -2137,16 +2137,16 @@
       {
        "label": "Big Booster",
        "role": "core",
-       "twr": 2.442956294058844,
-       "twrVac": 2.7002617498827934,
-       "deltaV": 4816.182622087885
+       "twr": 2.4354507054631327,
+       "twrVac": 2.6919656318373564,
+       "deltaV": 4780.311489613895
       },
       {
        "label": "Space Stage",
        "role": "core",
-       "twr": 0.8642980960580728,
-       "twrVac": 0.8642980960580728,
-       "deltaV": 2829.5003968935134
+       "twr": 0.8465716759540167,
+       "twrVac": 0.8465716759540167,
+       "deltaV": 2909.8086997381365
       }
      ]
     }
@@ -2214,7 +2214,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -2244,17 +2244,17 @@
      {
       "code": "dv-margin",
       "tab": "propellants",
-      "msg": "About 1673 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+      "msg": "About 1632 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
      }
     ],
     "readout": {
-     "liftoffTWR": 2.4037206120219454,
-     "totalDeltaV": 7087.118888942314,
-     "margin": -0.1909514774236005,
+     "liftoffTWR": 2.3964538193973963,
+     "totalDeltaV": 7127.780009827211,
+     "margin": -0.18630970122459334,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 179234.68219576983,
-     "cost": 1518543614,
+     "liftoffMass": 179778.1774453345,
+     "cost": 1520052896,
      "reliability": 0.9834896208689856,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 2990.796206217483,
@@ -2263,16 +2263,16 @@
       {
        "label": "Big Booster",
        "role": "core",
-       "twr": 2.4037206120219454,
-       "twrVac": 2.656893552223073,
-       "deltaV": 4633.161193804005
+       "twr": 2.3964538193973963,
+       "twrVac": 2.648861381440436,
+       "deltaV": 4600.437241738507
       },
       {
        "label": "Space Stage",
        "role": "core",
-       "twr": 0.7780129683137466,
-       "twrVac": 0.7780129683137466,
-       "deltaV": 2453.957695138309
+       "twr": 0.7636197557611623,
+       "twrVac": 0.7636197557611623,
+       "deltaV": 2527.3427680887044
       }
      ]
     }
@@ -2340,7 +2340,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -2376,17 +2376,17 @@
      {
       "code": "dv-margin",
       "tab": "propellants",
-      "msg": "About 1671 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+      "msg": "About 1631 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
      }
     ],
     "readout": {
-     "liftoffTWR": 2.403820890303903,
-     "totalDeltaV": 7088.4160975530995,
-     "margin": -0.1908033911947005,
+     "liftoffTWR": 2.3965534922719707,
+     "totalDeltaV": 7129.086319756525,
+     "margin": -0.18616057601096284,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 179227.2052052543,
-     "cost": 1517848066,
+     "liftoffMass": 179770.70045481896,
+     "cost": 1519357348,
      "reliability": 0.9834896208689856,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 2983.3192157019394,
@@ -2395,16 +2395,16 @@
       {
        "label": "Big Booster",
        "role": "core",
-       "twr": 2.403820890303903,
-       "twrVac": 2.6570043923595805,
-       "deltaV": 4633.615233877195
+       "twr": 2.3965534922719707,
+       "twrVac": 2.648971552404758,
+       "deltaV": 4600.883723710117
       },
       {
        "label": "Space Stage",
        "role": "core",
-       "twr": 0.778214763650604,
-       "twrVac": 0.778214763650604,
-       "deltaV": 2454.800863675904
+       "twr": 0.7638141528161487,
+       "twrVac": 0.7638141528161487,
+       "deltaV": 2528.2025960464084
       }
      ]
     }
@@ -2469,7 +2469,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -2502,13 +2502,13 @@
      }
     ],
     "readout": {
-     "liftoffTWR": 1.0315553585240076,
-     "totalDeltaV": 11504.400091595628,
-     "margin": 0.31331476769148886,
+     "liftoffTWR": 1.033996328822737,
+     "totalDeltaV": 11500.874226651636,
+     "margin": 0.3129122633920068,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 44483.53566760017,
-     "cost": 749362995,
+     "liftoffMass": 44378.52273252456,
+     "cost": 749223278,
      "reliability": 0.9679511951874789,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -2517,16 +2517,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.0315553585240076,
-       "twrVac": 1.1461726205822307,
-       "deltaV": 5001.739011649007
+       "twr": 1.033996328822737,
+       "twrVac": 1.148884809803041,
+       "deltaV": 5030.125105598539
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.471662545945757,
-       "twrVac": 1.471662545945757,
-       "deltaV": 6502.661079946621
+       "twr": 1.494309630690421,
+       "twrVac": 1.494309630690421,
+       "deltaV": 6470.749121053097
       }
      ]
     }
@@ -2763,7 +2763,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -2792,17 +2792,17 @@
      {
       "code": "dv-margin",
       "tab": "propellants",
-      "msg": "About 1414 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+      "msg": "About 1425 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
      }
     ],
     "readout": {
-     "liftoffTWR": 1.7289282046425796,
-     "totalDeltaV": 7345.7497964967615,
-     "margin": -0.16142679229718135,
+     "liftoffTWR": 1.7327370037178786,
+     "totalDeltaV": 7334.699073300993,
+     "margin": -0.16268831639675396,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 47773.53566760017,
-     "cost": 796263665,
+     "liftoffMass": 47668.52273252456,
+     "cost": 796123948,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 168.2322865997334,
@@ -2811,16 +2811,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.7289282046425796,
-       "twrVac": 1.921031338491755,
-       "deltaV": 4268.852302298693
+       "twr": 1.7327370037178786,
+       "twrVac": 1.9252633374643096,
+       "deltaV": 4288.446013602179
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.0427603415313471,
-       "twrVac": 1.0427603415313471,
-       "deltaV": 3076.8974941980687
+       "twr": 1.0540796898339193,
+       "twrVac": 1.0540796898339193,
+       "deltaV": 3046.253059698814
       }
      ]
     }
@@ -2888,7 +2888,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -2922,13 +2922,13 @@
      }
     ],
     "readout": {
-     "liftoffTWR": 2.611210120636693,
-     "totalDeltaV": 12608.939594523868,
-     "margin": 0.42064188540126674,
+     "liftoffTWR": 2.6026368780161344,
+     "totalDeltaV": 12662.845848943381,
+     "margin": 0.426715471711944,
      "required": 8875.52290559307,
      "targetAlt": 200000,
-     "liftoffMass": 164992.50542048496,
-     "cost": 1282360686,
+     "liftoffMass": 165536.00067004963,
+     "cost": 1283869968,
      "reliability": 0.9834896208689856,
      "orbitLabel": "LEO 200 km",
      "fairingMass": 448.61943093262244,
@@ -2937,16 +2937,16 @@
       {
        "label": "Big Booster",
        "role": "core",
-       "twr": 2.611210120636693,
-       "twrVac": 2.886236985413812,
-       "deltaV": 4729.632269031218
+       "twr": 2.6026368780161344,
+       "twrVac": 2.8767607622095497,
+       "deltaV": 4692.656486174883
       },
       {
        "label": "Space Stage",
        "role": "core",
-       "twr": 1.537347839804254,
-       "twrVac": 1.537347839804254,
-       "deltaV": 7879.30732549265
+       "twr": 1.48214559278563,
+       "twrVac": 1.48214559278563,
+       "deltaV": 7970.1893627684985
       }
      ]
     }
@@ -3011,7 +3011,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -3040,7 +3040,7 @@
      {
       "code": "dv-margin",
       "tab": "propellants",
-      "msg": "About 267 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
+      "msg": "About 278 m/s short of LEO 400 km. Try more propellant, a lighter payload, or a higher-Isp upper stage."
      },
      {
       "code": "heavy-fairing",
@@ -3049,13 +3049,13 @@
      }
     ],
     "readout": {
-     "liftoffTWR": 1.7768265590018257,
-     "totalDeltaV": 8492.803742940774,
-     "margin": -0.030481860339865836,
+     "liftoffTWR": 1.7808495654211012,
+     "totalDeltaV": 8481.455308609071,
+     "margin": -0.03177737042986095,
      "required": 8759.8193324345,
      "targetAlt": 400000,
-     "liftoffMass": 46485.69261459769,
-     "cost": 787087512,
+     "liftoffMass": 46380.67967952208,
+     "cost": 786947795,
      "reliability": 0.9552097453056878,
      "orbitLabel": "LEO 400 km",
      "fairingMass": 1730.3892335972578,
@@ -3064,16 +3064,16 @@
       {
        "label": "Stage 1",
        "role": "core",
-       "twr": 1.7768265590018257,
-       "twrVac": 1.9742517322242508,
-       "deltaV": 4524.337252511144
+       "twr": 1.7808495654211012,
+       "twrVac": 1.9787217393567789,
+       "deltaV": 4546.742703367175
       },
       {
        "label": "Stage 2",
        "role": "core",
-       "twr": 1.2009143296249019,
-       "twrVac": 1.2009143296249019,
-       "deltaV": 3968.4664904296314
+       "twr": 1.2159523986304543,
+       "twrVac": 1.2159523986304543,
+       "deltaV": 3934.7126052418957
       }
      ]
     }
@@ -3138,7 +3138,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -3231,7 +3231,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -4545,7 +4545,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -4625,7 +4625,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 6000,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -4708,7 +4708,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -4790,7 +4790,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 6000,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -4873,7 +4873,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -4955,7 +4955,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 6000,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5038,7 +5038,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 0,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5120,7 +5120,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 6000,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5203,7 +5203,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5283,7 +5283,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 6000,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5366,7 +5366,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5448,7 +5448,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 6000,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5531,7 +5531,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5614,7 +5614,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 6000,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5697,7 +5697,7 @@
       "propellant": "methalox",
       "engine": "gg-methalox-small",
       "engineCount": 1,
-      "propMass": 6000,
+      "propMass": 5900,
       "diameter": 1.8
      }
     ],
@@ -5779,7 +5779,7 @@
        "propellant": "methalox",
        "engine": "gg-methalox-small",
        "engineCount": 1,
-       "propMass": 6000,
+       "propMass": 5900,
        "diameter": 1.8
       }
      ],
@@ -5865,7 +5865,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -5949,7 +5949,7 @@
        "propellant": "hydrolox",
        "engine": "exp-hydrolox",
        "engineCount": 2,
-       "propMass": 12000,
+       "propMass": 12500,
        "diameter": 3
       }
      ],
@@ -6036,7 +6036,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -6122,7 +6122,7 @@
        "propellant": "hydrolox",
        "engine": "exp-hydrolox",
        "engineCount": 2,
-       "propMass": 12000,
+       "propMass": 12500,
        "diameter": 3
       }
      ],
@@ -6209,7 +6209,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -6295,7 +6295,7 @@
        "propellant": "hydrolox",
        "engine": "exp-hydrolox",
        "engineCount": 2,
-       "propMass": 12000,
+       "propMass": 12500,
        "diameter": 3
       }
      ],
@@ -6382,7 +6382,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 0,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -6468,7 +6468,7 @@
        "propellant": "hydrolox",
        "engine": "exp-hydrolox",
        "engineCount": 1,
-       "propMass": 12000,
+       "propMass": 12500,
        "diameter": 3
       }
      ],
@@ -6555,7 +6555,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -6639,7 +6639,7 @@
        "propellant": "hydrolox",
        "engine": "exp-hydrolox",
        "engineCount": 2,
-       "propMass": 12000,
+       "propMass": 12500,
        "diameter": 3
       }
      ],
@@ -6726,7 +6726,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -6812,7 +6812,7 @@
        "propellant": "hydrolox",
        "engine": "exp-hydrolox",
        "engineCount": 2,
-       "propMass": 12000,
+       "propMass": 12500,
        "diameter": 3
       }
      ],
@@ -6899,7 +6899,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -6985,7 +6985,7 @@
        "propellant": "hydrolox",
        "engine": "exp-hydrolox",
        "engineCount": 2,
-       "propMass": 12000,
+       "propMass": 12500,
        "diameter": 3
       }
      ],
@@ -7072,7 +7072,7 @@
       "propellant": "hydrolox",
       "engine": "exp-hydrolox",
       "engineCount": 2,
-      "propMass": 12000,
+      "propMass": 12500,
       "diameter": 3
      }
     ],
@@ -7158,7 +7158,7 @@
        "propellant": "hydrolox",
        "engine": "exp-hydrolox",
        "engineCount": 2,
-       "propMass": 12000,
+       "propMass": 12500,
        "diameter": 3
       }
      ],

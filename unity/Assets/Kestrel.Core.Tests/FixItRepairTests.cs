@@ -295,12 +295,15 @@ namespace Kestrel.Core.Tests
         public void ReportFixIt_RanOutOfFuel_AddsFuelUntilItNoLongerRunsDry_ThenSaysTheMissRemains()
         {
             // #313: KH-6's rocket at half the upper-stage load no longer runs dry (it misses on flight-path angle). It runs
-            // dry at 16% of the load, on every seed. The report's Fix it adds propellant until the test ascent is not short
+            // dry at 14% of the load, on every seed. The report's Fix it adds propellant until the test ascent is not short
             // and no seed runs dry. Under the new rule the mission still has to pass: KH-6's starter then cuts off at the
-            // target energy at a bad flight-path angle (413.9 x -13.9 km against 200 km), so Fix it reports not fixed.
+            // target energy at a bad flight-path angle (413.9 x -14.3 km against 200 km), so Fix it reports not fixed.
+            // #335: 16% no longer runs dry - the fairing drop (89 kg shell off the top stage at the fairing event) gives
+            // the rocket enough delta-v to reach the energy cutoff at 16% (415.9 x -15.9 km, fpa-miss). 14% runs dry on
+            // every seed, so the run-dry fraction is now 0.14.
             var mission = campaign.Mission(6);
             var json = Kh6RawBuild();
-            TopStageProp(json, 0.16);
+            TopStageProp(json, 0.14);
             var raw = Fly(6, json);
             Assert.That(raw.TrueForAll(f => f.failure == "prop-depletion"), Seeds(mission, raw));
             Assert.That(DesignerRepair.FlightShort(catalog, json), "the designer's test ascent runs dry");
@@ -321,12 +324,13 @@ namespace Kestrel.Core.Tests
                 Assert.That(DesignerRepair.MissKind(mission, f), Is.EqualTo(DesignerRepair.FlightPathAngleMiss), "seed " + f.seed + Seeds(mission, flights));
             Assert.IsFalse(outcome.FullyFixed, outcome.Note);
             Assert.That(outcome.Note, Is.EqualTo("Fix it could not fully fix this rocket. It still fails 5 of 5 test flights. Lighten the cargo or change the rocket."));
-            // #313: the report text after Fix it, pinned (413.9 x -13.9 km), and following it: about 3x the fuel lands all 5.
+            // #313: the report text after Fix it, pinned (413.9 x -14.3 km), and following it: about 3.5x the fuel lands all 5.
+            // #335: 3.06x no longer lands it (303 x 97 km, low point under the band); 3.5x lands all 5 (204 x 196 km).
             var x = MissReason.Explain(mission, MissReason.FromFlight(flights[0], json.Arr("stages").Count));
             Assert.AreEqual("fpa-steep-suborbital", x.Code);
-            Assert.AreEqual("Missed the 200 km circle: the orbit flew -13.9 km × 414 km, and the high point needs 190 km to 210 km. The low point, -13.9 km, needs 190 km to 210 km. The engines cut off while it was still climbing, 1.8° up. Your rocket flew too steep and fell back down. Give stage 3 much more fuel (it can take double or more), so it burns long enough to level out.", x.Line);
+            Assert.AreEqual("Missed the 200 km circle: the orbit flew -14.3 km × 414 km, and the high point needs 190 km to 210 km. The low point, -14.3 km, needs 190 km to 210 km. The engines cut off while it was still climbing, 1.8° up. Your rocket flew too steep and fell back down. Give stage 3 much more fuel (it can take double or more), so it burns long enough to level out.", x.Line);
             var more = JsonMut.CloneObject(json);
-            TopStageProp(more, 3.06);
+            TopStageProp(more, 3.5);
             foreach (var f in Fly(6, more)) Assert.That(f.passed, "seed " + f.seed + Seeds(mission, Fly(6, more)));
         }
 

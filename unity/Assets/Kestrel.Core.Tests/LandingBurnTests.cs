@@ -58,10 +58,13 @@ namespace Kestrel.Core.Tests
         {
             // Holding full burn from the moment the burn opens wastes the reserve climbing, then the
             // stage comes down dry and fast. The failure is the existing named flow, not a crash of it.
+            // #335: m7's handover moved with the fairing drop + the starter retune (kick 6 -> 2, shape
+            // 0.5 -> 0), so holding full burn now hits fast (sink 178.3 m/s, Salvage) rather than
+            // running dry - the cause is recovery-fast, not recovery-fuel. m13 is still recovery-fast.
             var m7 = Drive(handovers["m7"], body => BurnStick(body, handovers["m7"].Craft,
                 LandingBurnInput.Held(1, 0), LandingBurnAssist.Assisted));
             Assert.IsTrue(m7.Verdict.PlayerFlown, "holding burn is player input");
-            Assert.AreEqual(RecoveryScore.Fuel, m7.Verdict.Cause, "m7 " + Dump(m7.Verdict));
+            Assert.AreEqual(RecoveryScore.Fast, m7.Verdict.Cause, "m7 " + Dump(m7.Verdict));
             Assert.IsNotNull(m7.Verdict.Failure, "the failure event is there for the card");
             Assert.AreEqual("Salvage", m7.Verdict.GradeName, "m7 " + Dump(m7.Verdict));
 

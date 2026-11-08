@@ -59,15 +59,16 @@ namespace Kestrel.Core.Tests
         public void Kh8PressurizedAtStrength1Point2_WarnsInTheSeedOneWind_AndStillReachesOrbit()
         {
             // KH-8's auto-built rocket with 0.5 bar tanks at strength 1.2. Seed-1 wind: the bending peaks at 89.6% of the
-            // allowance, the warning is set, and the flight carries on to orbit (629.7 x 170.3 km) with no failure:
-            // the note changes nothing. Calm air: 7.2%, no warning.
+            // allowance, the warning is set, and the flight carries on to orbit (632.9 x 167.1 km) with no failure:
+            // the note changes nothing. Calm air: 7.2%, no warning. (#335: the fairing mass jettison moved the
+            // orbit from 629.7 x 170.3 km; the energy is the same, the shape is a little more eccentric.)
             var m = campaign.Mission(8);
             var d = Pressurized(8, 1.2, 0.5);
             var windy = LivePadLoop.Fly(catalog, m, d, true);
             Assert.IsNull(windy.failure, LivePadLoop.Text(windy));
             Assert.AreEqual("orbit", windy.outcome, LivePadLoop.Text(windy));
-            Assert.AreEqual(629.7, windy.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(windy));
-            Assert.AreEqual(170.3, windy.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(632.9, windy.orbit.apoAlt / 1000, 0.5, LivePadLoop.Text(windy));
+            Assert.AreEqual(167.1, windy.orbit.periAlt / 1000, 0.5, LivePadLoop.Text(windy));
             Assert.AreEqual(0.896, windy.peakBendFraction, 0.001);
             var w = windy.bendWarning;
             Assert.IsNotNull(w, "the wind passes 80% of the bending allowance");

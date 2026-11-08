@@ -59,7 +59,7 @@ namespace Kestrel.Core.Tests
         // keeps the exact apo-high text in KH6_RawBuild_MissSaysWhyAndWhatToChange. KH-3's board design is now an 8.65° kick
         // (Physics, option b) and passes; its 8° build keeps the exact too-flat text in KH3_RawBuild_MissSaysWhyAndWhatToChange.
         [TestCase("m4", "fpa-flat",
-            "Missed the 500 km circle: the orbit flew 382 km × 618 km, and the high point needs 475 km to 525 km. The low point, 382 km, needs 475 km to 525 km. The engines cut off while it was already diving, 1.0° down.",
+            "Missed the 500 km circle: the orbit flew 377 km × 623 km, and the high point needs 475 km to 525 km. The low point, 377 km, needs 475 km to 525 km. The engines cut off while it was already diving, 1.0° down.",
             "Your rocket flew too flat. Use a larger pitch kick at launch (for example 6° → 6.5° in Guidance).")]
         [TestCase("m8", "reliability",
             "Reliability was 95.1%; this mission needs 98%.",
@@ -110,7 +110,7 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(flight.passed, "m6 raw build misses");
             Assert.IsNotNull(x, "m6 raw build has a reason");
             Assert.AreEqual("apo-high", x.Code);
-            Assert.AreEqual("Missed the 200 km circle: the orbit flew 188 km × 212 km, and both points need 190 km to 210 km. That is about 4 m/s too fast at the low point.", x.Reason);
+            Assert.AreEqual("Missed the 200 km circle: the orbit flew 183 km × 217 km, and both points need 190 km to 210 km. That is about 5 m/s too fast at the low point.", x.Reason);
             Assert.AreEqual("Add fuel to stage 3, about 2% at a time (up to 10%), until the high point comes down into the band.", x.Advice);
             Assert.AreEqual(x.Reason + " " + x.Advice, x.Line);
         }
@@ -133,7 +133,7 @@ namespace Kestrel.Core.Tests
             Assert.IsFalse(flight.passed, "m3 raw build misses");
             Assert.IsNotNull(x, "m3 raw build has a reason");
             Assert.AreEqual("fpa-flat", x.Code);
-            Assert.AreEqual("Missed the 200 km circle: the orbit flew 72.3 km × 328 km, and the high point needs 190 km to 210 km. The low point, 72.3 km, needs 190 km to 210 km. The engines cut off while it was already diving, 1.1° down.", x.Reason);
+            Assert.AreEqual("Missed the 200 km circle: the orbit flew 72.6 km × 327 km, and the high point needs 190 km to 210 km. The low point, 72.6 km, needs 190 km to 210 km. The engines cut off while it was already diving, 1.1° down.", x.Reason);
             Assert.AreEqual("Your rocket flew too flat. Use a larger pitch kick at launch (for example 8° → 8.5° in Guidance).", x.Advice);
             Assert.AreEqual(x.Reason + " " + x.Advice, x.Line);
         }
@@ -141,7 +141,7 @@ namespace Kestrel.Core.Tests
         /// <summary>The Nov 6 m3 "Tiny Orbit" debrief bug: the advice named a constant 6° no matter what the design flew,
         /// so on the board starter's 8.65° kick it told the player to set 6.5° — steeper, the opposite of the fix. The
         /// advice now names the flown kick: 8.65° reads as the designer shows it (8.7°) and the lever is one step up (9.2°).
-        /// Built on the raw build's own miss numbers (72.3 km × 328 km, diving 1.1°) against the 200 km circle.</summary>
+        /// Built on the raw build's own miss numbers (72.6 km × 327 km, diving 1.1°) against the 200 km circle.</summary>
         [Test]
         public void M3_BoardKick_FlatAdviceNamesTheFlownKick()
         {

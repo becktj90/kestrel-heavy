@@ -140,7 +140,11 @@ namespace Kestrel.Core.Designer
             double apo = MissionScore.FlownApoAltM(sim), peri = sim.orbit.periAlt;
             if (double.IsNaN(apo) || double.IsNaN(peri)) return null;
             if (MissionScore.TargetMet(mission.TargetKind, mission.ApoKm, mission.PeriKm, mission.C3Km2PerS2, apo, peri, 0, false, out _)) return null;
-            double mean = 0.5 * (sim.orbit.apoAlt + sim.orbit.periAlt);
+            // #335: the mean is the FLOWN apogee, not the Keplerian one. The energy cutoff fires when the specific
+            // orbital energy reaches the target, so the Keplerian (apo + peri) / 2 is exactly the target by construction
+            // and would always read Orbit for a cutoff flight - even one that climbed to 461 km and fell back (mean 184.9).
+            // MissReason.Suborbital judges the same flight by the flown apogee; the verdict must agree with the card.
+            double mean = 0.5 * (apo + peri);
             double low = 0.5 * (mission.ApoKm + mission.PeriKm) * 1000 * (1 - MissionScore.AltitudeFraction);
             return mean < low ? Short : Orbit;
         }

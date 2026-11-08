@@ -118,15 +118,15 @@ namespace Kestrel.Core.Tests
         {
             // #313 flipped this (was Kh3RawStarter_BreaksUpBeforeMeco_ReportDoesNotWaitForABooster). The board starter
             // (8.65° kick, strength 1.45, #343) in the seed-1 briefing wind with no wind-shear ease (#338): no breakup,
-            // separation at T+154.3, orbit 200.4 x 199.6 km inside the 200 km band (203.3 x 196.7 km while the ease still
-            // flew). Its expendable booster flies its landing attempt to the surface and the report waits for it, then
+            // separation at T+154.3, orbit 208.7 x 191.3 km inside the 200 km band (200.4 x 199.6 km before #335's fairing
+            // drop; 203.3 x 196.7 km while the ease still flew). Its expendable booster flies its landing attempt to the surface and the report waits for it, then
             // composes with the ascent's pass.
             var run = Play(3);
             TestContext.WriteLine(run.Log());
             Assert.IsNull(run.AscentFailure, "no breakup: " + run.Log());
             Assert.AreEqual("orbit", run.Result.outcome, run.Log());
-            Assert.AreEqual(200.4, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
-            Assert.AreEqual(199.6, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(208.7, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(191.3, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
             Assert.AreEqual(BoosterFate.Expendable, run.Landing.Fate);
             Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates");
             Assert.AreEqual(154.3, run.SeparatedAt, 0.5, run.Log());
@@ -150,15 +150,15 @@ namespace Kestrel.Core.Tests
         public void Kh3EightDegreeBuild_SeparatesAndMissesSuborbital_ThenTheExpendableBoosterLandsBeforeTheReport()
         {
             // The pre-retune 8° build (t432). While the wind-shear ease flew it reached 201.8 x 198.2 km in the seed-1 wind,
-            // carried by the ease; in calm air it misses too flat (MissReasonTests, 72.3 km × 328 km). With no ease (#338)
-            // the seed-1 wind flight misses the same way: separation at T+154.3, no breakup, suborbital 308.0 x 92.0 km.
+            // carried by the ease; in calm air it misses too flat (MissReasonTests, 72.6 km × 327 km). With no ease (#338)
+            // the seed-1 wind flight misses the same way: separation at T+154.3, no breakup, suborbital 307.3 x 92.7 km.
             // Its expendable booster still flies its landing attempt and the report waits for it, then shows the miss.
             var run = Play(3, double.NaN, 8.0);
             TestContext.WriteLine(run.Log());
             Assert.IsNull(run.AscentFailure, "no breakup: " + run.Log());
             Assert.AreEqual("suborbital", run.Result.outcome, run.Log());
-            Assert.AreEqual(308.0, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
-            Assert.AreEqual(92.0, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(307.3, run.Result.orbit.apoAlt / 1000, 0.5, run.Log());
+            Assert.AreEqual(92.7, run.Result.orbit.periAlt / 1000, 0.5, run.Log());
             Assert.AreEqual(BoosterFate.Expendable, run.Landing.Fate);
             Assert.That(run.SeparatedAt, Is.GreaterThan(0), "stage 1 separates");
             Assert.AreEqual(154.3, run.SeparatedAt, 0.5, run.Log());

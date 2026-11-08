@@ -426,7 +426,8 @@ namespace Kestrel.Core.Tests
                 s.Order.Remove("interstageMass");
             }
             double bare = Mass.Of(Golden.Catalog, Design.FromJson(scout)).liftoffMass;
-            Assert.AreEqual(44723.54, bare, 0.01, "absent key on version 1 is 0, matching JS (al-li tanks since #313; was 44129.78 on composite)");
+            // #335: scout S2 prop 6000 -> 5900 kg, so liftoff drops 105 kg (100 prop + 5 tank).
+            Assert.AreEqual(44618.52, bare, 0.01, "absent key on version 1 is 0, matching JS (al-li tanks since #313; was 44129.78 on composite)");
             Assert.AreEqual(200, stored - bare, 0.01, "dropping the keys also drops Scout's stored 200 kg");
 
             var migrated = DesignMigration.Migrate(JsonMut.CloneObject(scout));
@@ -438,7 +439,8 @@ namespace Kestrel.Core.Tests
             var native = JsonMut.CloneObject(scout);
             JsonMut.Set(native, "version", 2d);
             double derived = Mass.Of(Golden.Catalog, Design.FromJson(native)).liftoffMass;
-            Assert.AreEqual(44845.68, derived, 0.01, "version 2 still derives the frustum when the key is absent (was 44215.28 on composite)");
+            // #335: scout S2 prop 6000 -> 5900 kg, so the derived liftoff drops 105 kg too.
+            Assert.AreEqual(44740.67, derived, 0.01, "version 2 still derives the frustum when the key is absent (was 44215.28 on composite)");
             Assert.Greater(derived, bare);
         }
 

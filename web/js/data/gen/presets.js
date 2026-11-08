@@ -130,7 +130,7 @@ export default {
           "propellant": "methalox",
           "engine": "gg-methalox-small",
           "engineCount": 1,
-          "propMass": 6000,
+          "propMass": 5900,
           "diameter": 1.8
         }
       ],
@@ -211,7 +211,7 @@ export default {
           "propellant": "hydrolox",
           "engine": "exp-hydrolox",
           "engineCount": 2,
-          "propMass": 12000,
+          "propMass": 12500,
           "diameter": 3
         }
       ],
