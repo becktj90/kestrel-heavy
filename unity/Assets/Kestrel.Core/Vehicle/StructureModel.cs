@@ -29,6 +29,8 @@ namespace Kestrel.Core.Vehicle
         public const double SfRef = 1.4;
         public const double YieldRefMPa = 500;
         public const double BreakupG = 8;
+        /// <summary>#344: NASA SP-8007 knockdown for axial buckling of a thin cylindrical shell (γ ≈ 0.33).</summary>
+        public const double BucklingKnockdown = 0.33;
         public const string MaxQFailureKind = "structural-maxq";
 
         /// <summary>F_allow = σ·2πr·t/SF + p·πr². σ and p are converted from MPa and bar.</summary>
@@ -48,6 +50,29 @@ namespace Kestrel.Core.Vehicle
         {
             if (!(safetyFactor > 0) || !(yieldMPa > 0)) return 0;
             return QRefKPa * 1000.0 * (safetyFactor / SfRef) * (yieldMPa / YieldRefMPa);
+        }
+
+        /// <summary>#344: SP-8007 axial buckling critical stress for a thin cylindrical shell, σ_cr = γ·E·t/r.
+        /// γ is the knockdown for real (imperfect) shells. Result is pascals. E is GPa, t and r are metres.</summary>
+        public static double BucklingStressPa(double elasticGPa, double wallM, double radiusM)
+        {
+            if (!(elasticGPa > 0) || !(wallM > 0) || !(radiusM > 0)) return 0;
+            return BucklingKnockdown * elasticGPa * 1e9 * wallM / radiusM;
+        }
+
+        /// <summary>#344: unpressurized axial allowable. No pressure term, so the wall carries the load alone and
+        /// the governing stress is min(yield, SP-8007 buckling): F = min(σ_y, σ_cr)·2πr·t/SF. A thin unpressurized
+        /// shell usually buckles before it yields, so this is normally the buckling value.</summary>
+        public static double UnpressurizedFAllowN(StageSection stage, double elasticGPa)
+        {
+            if (stage == null) return 0;
+            double area = 2 * Math.PI * stage.radiusM * stage.wallM;
+            if (!(area > 0) || !(stage.safetyFactor > 0)) return 0;
+            double yieldPa = stage.yieldMPa * TankModel.MPaToPa;
+            double buckPa = BucklingStressPa(elasticGPa, stage.wallM, stage.radiusM);
+            double sigma = Math.Min(yieldPa, buckPa);
+            if (!(sigma > 0)) return 0;
+            return sigma * area / stage.safetyFactor;
         }
 
         public static Allowables Allowables(StageSection stage)

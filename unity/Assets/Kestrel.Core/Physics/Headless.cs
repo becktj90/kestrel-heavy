@@ -23,6 +23,9 @@ namespace Kestrel.Core.Physics
         public double payload = 0, targetAlt = 200e3, latitude = 28.5, dt = 0.05, tMax = 3000;
         public double kickSpeed = 60, kickAngleDeg = 4, sampleEvery = 0;
         public bool vacuum = false, rotate = true, cutoff = true;
+        /// <summary>#344: the design has strap-ons, so the sim's stage 0 is the combined strap-on+core phase
+        /// and the failure monitor checks the core as well as the strap-on during it.</summary>
+        public bool hasStrapOn;
         /// <summary>
         /// Energy cutoff (#313, Kestrel Physics): the engines cut off when the specific orbital energy
         /// v²/2 − μ/r reaches <see cref="cutoffEnergy"/>, located inside the step by bisection, so a 0.2 s
@@ -1024,6 +1027,10 @@ namespace Kestrel.Core.Physics
                 t = T, dt = dt, alt = alt, qPa = q, accel = aAxial, alphaRad = alpha,
                 mass = m, area = body.area, cd = body.cd, stageIndex = StageIdx, propFraction = propFrac,
                 thrusting = Thrusting, targetAlt = o.targetAlt,
+                // #344: the axial load is the mass above the section, not the whole stack. During the strap-on
+                // phase (stage 0) the core is the next stage, so the mass above it is upperMass[2].
+                massAboveKg = upperMass[si + 1],
+                massAboveCoreKg = o.hasStrapOn && StageIdx == 0 && st.Length > 2 ? upperMass[2] : 0,
             };
             return o.monitor.Consider(step);
         }
