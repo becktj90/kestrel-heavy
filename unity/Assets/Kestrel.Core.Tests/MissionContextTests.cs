@@ -138,7 +138,8 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("m2", next.Session.MissionId);
             Assert.AreEqual("KH-2", next.Session.Label);
             Assert.AreEqual(seed, next.Session.Seed);
-            Assert.AreEqual(SessionScreens.Missions, next.Screen);
+            // #416 item 9: Next goes straight to the next mission's designer.
+            Assert.AreEqual(SessionScreens.Design, next.Screen);
             Assert.AreEqual(SessionScreens.None, next.Overlay);
 
             var home = GameSession.Apply(RouteId.ExitHome);

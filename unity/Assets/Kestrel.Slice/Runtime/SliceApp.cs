@@ -41,15 +41,21 @@ namespace Kestrel.Slice
         FlightViewMode flightView = FlightViewMode.Auto;
         AscentHud ascentHud; Design flyingDesign;
         BirdFlockView birds;
-        VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg; Button again;
+        VisualElement ui, designPanel, designBody, hud; Button designToggle, homeButton; bool designCollapsed; float dragStartY; Label hT, hStage, hAlt, hVel, hMach, hQ, hThr, hDr, hMsg, hWarp; Button again;
         Material bodyMat, plumeMat; bool submitted; SkyRig sky;
         // U1 validation. Layer inputs are placeholders until save/Settings wiring (U4): simple by default.
         public int OrbitsCompleted; public bool EngineerEnabled;
         Label issueChip, launchReason; Button launchButton;
+        // Fun review item 13: the reason line keeps its room so the sheet does not jump as a tweak crosses a limit.
+        readonly LaunchReasonSlot reasonSlot = new LaunchReasonSlot();
+        float reasonFont = 14f;
         LaunchSequence sequence; bool counting;
         readonly LiftoffHandoff handoff = new LiftoffHandoff();
         bool ascentErrorLogged;
         double requiredMps, spareMps, hopGoalM; double? maxQKpa; string orbitLabel = "";
+        // Arcade P1: "Short on speed" reads the live spare (Δv on board against the Δv still needed), held below zero for
+        // LiveSpare.HoldS of sim time. Null when the design or its target can't be read; the pill then never shows.
+        LiveSpare liveSpare;
         VisualElement seqRow; Label hVerdict, hPulse, hCallout; Button skipCount;
         // Phase 1 Starter screen (PR 5): shown instead of the existing designer while every designer.* flag is off.
         StarterPanel starter; StarterRocket starterRocket; JsonObject starterEntryDesign; bool starterMode; FeatureFlags flagsSeen;
@@ -63,6 +69,8 @@ namespace Kestrel.Slice
                 Screen.orientation = ScreenOrientation.Portrait;
             Debug.Log("[Count] boot");
             handoff.Transitioned += line => Debug.Log("[Count] " + line);
+            // #416 item 9: the first liftoff marks the player as flown; every later count opens at T-5.
+            handoff.Transitioned += _ => { if (handoff.Phase == "ascending" && PlayerPrefs.GetInt(FlownPref, 0) == 0) { PlayerPrefs.SetInt(FlownPref, 1); PlayerPrefs.Save(); } };
             bodyMat = Resources.Load<Material>("Materials/KH_Body");
             plumeMat = Resources.Load<Material>("Materials/KH_Plume");
             BuildScene();
@@ -350,6 +358,8 @@ namespace Kestrel.Slice
             slicePanel = doc.panelSettings;
             doc.visualTreeAsset = Resources.Load<VisualTreeAsset>("UI/Slice");
             ui = doc.rootVisualElement;
+            // Web: no grey desktop scrollers; a bottom fade shows there is more (#416 item 8).
+            Kestrel.Game.Shell.WebScrollChrome.Watch(ui);
             designPanel = ui.Q("design"); hud = ui.Q(UiIds.ScreenFlight);
             designBody = ui.Q("design-body"); designToggle = ui.Q<Button>("design-toggle");
             ui.RegisterCallback<GeometryChangedEvent>(_ => { ApplyHudSafeArea(); ApplyDesignPanelMetrics(); ApplyDesignFraming(); });
@@ -366,7 +376,7 @@ namespace Kestrel.Slice
             homeButton.clicked += GoHome;
             homeButton.userData = (System.Action)GoHome;
             homeButton.tooltip = "Home. Back to the title screen.";
-            hT = ui.Q<Label>("h-t"); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
+            hT = ui.Q<Label>("h-t"); hWarp = FlightWarpChip.Build(hT); hStage = ui.Q<Label>("h-stage"); hAlt = ui.Q<Label>("h-alt"); hVel = ui.Q<Label>("h-vel");
             hMach = ui.Q<Label>("h-mach"); hQ = ui.Q<Label>("h-q"); hThr = ui.Q<Label>("h-thr"); hDr = ui.Q<Label>("h-dr"); hMsg = ui.Q<Label>("h-msg");
             hVerdict = ui.Q<Label>("h-verdict"); hPulse = ui.Q<Label>("h-pulse"); hCallout = ui.Q<Label>("h-callout");
             seqRow = ui.Q("h-seq"); skipCount = ui.Q<Button>(UiIds.FlightSkipCount);
@@ -380,6 +390,11 @@ namespace Kestrel.Slice
             explodeButton.clicked += () => SetExploded(!(hangarCam != null && hangarCam.Exploded));
             explodeButton.tooltip = "Exploded view: pull the parts apart";
             issueChip = ui.Q<Label>("issue-chip"); launchReason = ui.Q<Label>("launch-reason");
+            launchReason?.RegisterCallback<GeometryChangedEvent>(e =>
+            {
+                if (string.IsNullOrEmpty(launchReason.text)) return;
+                if (reasonSlot.Saw(reasonFont, e.newRect.height)) launchReason.style.minHeight = reasonSlot.Reserve(reasonFont);
+            });
             issueChip.RegisterCallback<ClickEvent>(_ => { panel?.Show(HangarPanel.Tab.Data); if (designCollapsed) SetDesignCollapsed(false); });
             again.clicked += BackToDesign;
             chrome = gameObject.AddComponent<FlightChrome>();
@@ -499,7 +514,9 @@ namespace Kestrel.Slice
             launchButton.style.flexShrink = 1;
             launchButton.style.whiteSpace = WhiteSpace.Normal;
             launchButton.style.overflow = Overflow.Visible;
-            launchReason.style.fontSize = 14f * upp;
+            reasonFont = 14f * upp;
+            launchReason.style.fontSize = reasonFont;
+            launchReason.style.minHeight = reasonSlot.Reserve(reasonFont);
 
             bool side = HangarPanelLayout.SidePanel(Screen.width, Screen.height);
             designPanel.EnableInClassList("side", side);
@@ -680,7 +697,9 @@ namespace Kestrel.Slice
             // The free designer's launch row already shows this reason with its Fix it. Showing it here
             // too printed the out-of-fuel warning twice on the first designer view.
             bool designerSaysIt = designer != null && designer.ShowsLaunchRow;
-            launchReason.EnableInClassList("hidden", ok || designerSaysIt);
+            // Keep the slot (empty when ready) instead of hiding it, so the sheet height holds still.
+            launchReason.EnableInClassList("hidden", designerSaysIt);
+            launchReason.style.minHeight = reasonSlot.Reserve(reasonFont);
             launchButton.tooltip = ok ? "Roll out and launch the current design"
                 : gate.state == LaunchGateState.Checking ? LaunchGate.Checking
                 : gate.CanLaunch ? "Launch anyway. " + reason : "Launch unavailable. " + reason;
@@ -925,10 +944,52 @@ namespace Kestrel.Slice
             }
             else
                 cam.transform.LookAt(look, Vector3.up);
+            FrameTheCoast(pose, up, fov);
             if (fx != null)
                 cam.transform.position = PadGround.ClampAboveGround(
                     cam.transform.position + cam.transform.right * fx.Shake.x + cam.transform.up * fx.Shake.y,
                     ground.position.y, clearance);
+        }
+
+        /// <summary>Seconds the climax framing glides in over (no cut when the coast starts).</summary>
+        const float CoastFrameSeconds = 0.6f;
+        float coastBlend;
+        readonly Vector3[] coastPts = new Vector3[8];
+
+        /// <summary>
+        /// #431 climax, for tests: x, y = the coast band (viewport y, 0 = bottom); z, w = the lowest and highest the
+        /// stack projects this frame; all 0 outside the coast or with no band.
+        /// </summary>
+        public Vector4 CoastTrace { get; private set; }
+
+        /// <summary>
+        /// #431 climax: during the coast the stack sat behind the Apogee! banner and Follow / Auto / Pause
+        /// (climax-apogee.png at 1085e8b7 and 38e8e1b5). Back the chase off along its own axes, rotation unchanged
+        /// (ChaseCamera.FitBand, the booster follow's framing), so the whole stack sits between the banner and the
+        /// tools row. Recomputed from this frame's chase pose, so nothing accumulates; it glides in over
+        /// CoastFrameSeconds and lets go when the coast ends.
+        /// </summary>
+        void FrameTheCoast(FlightPose pose, Vector3 up, float fov)
+        {
+            CoastTrace = Vector4.zero;
+            if (flight == null || !flight.Coasting || ascentHud == null || cam == null) { coastBlend = 0f; return; }
+            if (!FlightHudLayout.CoastBand(ascentHud.BannerCover(), ascentHud.BottomCover(), out float yMin, out float yMax)) return;
+            var rot = cam.transform.rotation;
+            var from = cam.transform.position;
+            var stackBase = U(pose.LookAt) - up * (float)(pose.Height * 0.5);
+            int n = ChaseCamera.StackPoints(coastPts, stackBase, up, (float)pose.Height, rocketRadius);
+            var fit = ChaseCamera.FitBand(rot, from, coastPts, n, fov, cam.aspect, yMin, yMax);
+            coastBlend = Mathf.MoveTowards(coastBlend, 1f, Time.unscaledDeltaTime / CoastFrameSeconds);
+            float w = coastBlend * coastBlend * (3f - 2f * coastBlend);
+            cam.transform.position = Vector3.Lerp(from, fit, w);
+            float lo = float.PositiveInfinity, hi = float.NegativeInfinity;
+            for (int i = 0; i < n; i++)
+            {
+                float y = cam.WorldToViewportPoint(coastPts[i]).y;
+                lo = Mathf.Min(lo, y);
+                hi = Mathf.Max(hi, y);
+            }
+            CoastTrace = new Vector4(yMin, yMax, lo, hi);
         }
 
         /// <summary>
@@ -1637,7 +1698,12 @@ namespace Kestrel.Slice
             if (hopGoalM > 0) requiredMps = hop.RequiredDeltaV();
             maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
             orbitLabel = sheet != null ? sheet.orbitLabel : "";
+            try { verdictKey = session.Design != null ? ReferenceAscent.CanonicalKey(session.catalog, session.Design) : null; }
+            catch (System.Exception) { verdictKey = null; }
+            try { liveSpare = session.Design != null ? LiveSpare.For(session.catalog, Design.FromJson(session.Design).payloadOrbit) : null; }
+            catch (System.Exception) { liveSpare = null; }
             handoff.Enter(OpenSequence());
+            handoff.Enter(OpenSequence(), LiftoffHandoff.OpenFor(PlayerPrefs.GetInt(FlownPref, 0)));
             sequence = handoff.Sequence;
             counting = handoff.Counting;
             ascentErrorLogged = false;
@@ -1659,6 +1725,9 @@ namespace Kestrel.Slice
         }
 
         Kestrel.Core.Flight.Narration.CallSchedule flightCalls;
+
+        /// <summary>Set after the first liftoff ever (#416 item 9): later counts open at LiftoffHandoff.RepeatOpenAt.</summary>
+        public const string FlownPref = "kh.count.flown";
 
         LaunchSequence OpenSequence()
         {
@@ -1912,9 +1981,8 @@ namespace Kestrel.Slice
             // Smooth the offset from the vehicle, not the absolute position: the vehicle teleports on every
             // floating-origin rebase and moves ~800 m/s at max-Q (see ChaseCamera).
             double qLim = maxQKpa.HasValue ? maxQKpa.Value * 1000.0 : 0;
-            double margin = requiredMps > 1 ? spareMps / requiredMps : 0;
             bool reduced = hangarCam != null && hangarCam.ReduceMotion;
-            if (juice != null) juice.Present(flight, rocketHeight, qLim, margin, reduced, Time.deltaTime);
+            if (juice != null) juice.Present(flight, rocketHeight, qLim, reduced, Time.deltaTime);
             StepFlightCamera(juice != null ? juice.Fov : FlightJuice.BaseFov, flight.Altitude, juice);
             if (flight.Plume != null) flight.Plume.SetHeightAboveDeck((float)flight.Altitude);
             staging?.Present();
@@ -1934,6 +2002,14 @@ namespace Kestrel.Slice
             RefreshWebcast(flight.SimTime, true);
             // Booster follow: the HUD reads the stage the camera is on (polled, like recovery.Aim above).
             bool onBooster = recovery != null && recovery.SteerCamera;
+            flight.CameraOnBooster = onBooster; // PR5: coast warp holds ×1 while the camera follows the booster
+            // Narrator Voice (#436): a non-interruptible line holds ×1; the picker sees the warp's lead.
+            var voice = flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>();
+            if (voice != null)
+            {
+                flight.NarrationBusy = voice.HoldsWarp;
+                voice.UseWarp(flight.Running ? flight.SecondsToNext : double.PositiveInfinity, flight.Warp, !flight.WarpOff);
+            }
             ascentHud?.SetBooster(onBooster ? recovery.HudReadout : (BoosterHudReadout?)null);
             ApplyHudFocus(BoosterHud.Focus(onBooster));
             ascentHud?.Present(flight);
@@ -1956,8 +2032,21 @@ namespace Kestrel.Slice
             }
             if (again != null)
             {
-                if (ascent) again.style.visibility = StyleKeyword.Null;
+                // #431 climax: MECO reveals BACK TO DESIGN, but during the time-warped coast the report is on its way
+                // and any tap skips the coast; the exit sat over the climax frame (climax-apogee.png). It comes back
+                // when the coast ends.
+                bool coasting = flight != null && flight.Coasting;
+                if (ascent && !coasting) again.style.visibility = StyleKeyword.Null;
                 else again.style.visibility = Visibility.Hidden;
+                // Out of the flow too while coasting, and the MECO line with it (the Apogee! / Orbit! banner is the
+                // call): on a short panel they held the tools row up into the coast band (FrameTheCoast).
+                if (coasting) again.style.display = DisplayStyle.None;
+                else again.style.display = StyleKeyword.Null;
+            }
+            if (hMsg != null)
+            {
+                if (flight != null && flight.Coasting) hMsg.style.display = DisplayStyle.None;
+                else hMsg.style.display = StyleKeyword.Null;
             }
         }
 
@@ -1966,6 +2055,7 @@ namespace Kestrel.Slice
             if (hT != null)
             {
                 hT.text = $"T+ {flight.SimTime:F1}";
+                FlightWarpChip.Show(hWarp, hT, flight.Warp, UnitsPerPoint());
                 DressClock(hT);
             }
             if (hStage != null) hStage.text = $"S{flight.Sim.StageIdx + 1}";
@@ -2089,15 +2179,25 @@ namespace Kestrel.Slice
             return gates;
         }
 
+        string verdictKey;
+
         void RefreshWebcast(double time, bool flying)
         {
             if (hVerdict == null) return;
             double alt = flying && flight != null ? flight.Altitude : 0;
             double spd = flying && flight != null ? flight.Speed : 0;
             double q = flying && flight != null ? flight.DynPressure : 0;
-            var pulse = flying && flight != null && flight.Lost
+            // DECISIONS #90: the in-flight "short" cue reads the live spare, held below zero for 3 s.
+            bool shortOnSpeed = false;
+            if (flying && flight != null && flight.Sim != null && liveSpare != null)
+                shortOnSpeed = liveSpare.Short(flight.Sim.T, liveSpare.Spare(flight.Sim));
+            // DECISIONS #83: the count line and in-flight "short" cue follow the predictor's verdict for this design.
+            var countVerdict = verdictKey != null ? FlightVerdict.Recall(verdictKey) : null;
+            var pulse = flying && flight != null && flight.Coasting
+                ? WebcastBoard.Coast(flight.Coast)
+                : flying && flight != null && flight.Lost
                 ? WebcastBoard.Lost(flight.Result.failure.kind, alt)
-                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM);
+                : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM, countVerdict, shortOnSpeed);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
             if (!flying && handoff != null && !handoff.Ascending)
@@ -2123,7 +2223,11 @@ namespace Kestrel.Slice
             }
             if (hCallout == null) return;
             string line = "";
-            if (juice != null && !string.IsNullOrEmpty(juice.Line)) line = juice.Line;
+            // DECISIONS #89: the max-Q beat (the design's own throttle law starting and ending) outranks the generic
+            // q line, never an airframe alarm. Null on a design with no max-Q setting.
+            string maxQBeat = flight != null && flight.Decisions != null ? flight.Decisions.MaxQBeatText : null;
+            if (!string.IsNullOrEmpty(maxQBeat) && !alarm && (juice == null || juice.Call != "AIRFRAME")) line = maxQBeat;
+            else if (juice != null && !string.IsNullOrEmpty(juice.Line)) line = juice.Line;
             else if (!flying && sequence != null)
             {
                 if (!string.IsNullOrEmpty(sequence.Label) && !Kestrel.Core.PlayerText.Leak(sequence.Label))
@@ -2192,6 +2296,7 @@ namespace Kestrel.Slice
                 w = panel > 8f ? panel * 0.55f : 160f * upp;
             }
             if (float.IsNaN(h) || h < 8f) h = FlightHudLayout.HeaderPt * upp;
+            // Portrait: the warp chip sits out of flow past the content-sized clock (FlightWarpChip), so the face is not cut for it.
             FlightDusk.Clock(clock, upp, FlightHudLayout.ClockFontPt(w / upp, h / upp));
         }
 

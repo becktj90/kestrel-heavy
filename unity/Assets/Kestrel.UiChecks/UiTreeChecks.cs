@@ -114,10 +114,17 @@ namespace Kestrel.UiChecks
         /// <summary>True when <paramref name="e"/> has overflow: hidden. Unity 6.3 exposes no computed overflow
         /// (IResolvedStyle has none), so: the inline value (element.style.overflow) when one is set, else the USS rules
         /// mirrored in <see cref="UiClipRules"/> (kept in sync with the .uss files by UiClipRulesUssTests).
-        /// Unknown means "does not clip", which can only add reports, never hide one.</summary>
+        /// Unknown means "does not clip", which can only add reports, never hide one.
+        /// A vertical ScrollView always clips its content to its viewport, whatever its styles say: the viewport's
+        /// overflow comes from Unity's default theme, which element.style cannot see (it reads inline only), so the
+        /// USS-rule list below never fires for it. Without this, a list that legitimately scrolls reads as its
+        /// below-fold rows drawing over whatever sits under it (the settings sheet's Close button, #441).
+        /// Mirrors TextFit's ScrollView check. The clip rect is the ScrollView's padding box (Clipped, below),
+        /// which is the viewport to within the scrollbar's width on the right.</summary>
         public static bool ClipsChildren(VisualElement e)
         {
             if (e == null) return false;
+            if (e is ScrollView sv && sv.mode != ScrollViewMode.Horizontal) return true;
             var inline = e.style.overflow;
             if (inline.keyword == StyleKeyword.Undefined) return inline.value == Overflow.Hidden;   // set inline
             if (inline.keyword == StyleKeyword.Initial) return false;                              // initial = visible

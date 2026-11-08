@@ -282,6 +282,28 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(opts.wind.Calm);
         }
 
+        /// <summary>DECISIONS #86: installed books let ForPad work with a null checkout (player build).</summary>
+        [Test]
+        public void InstalledBooks_ComposeWithoutACheckout()
+        {
+            BriefingBooks.Clear();
+            Assert.Throws<InvalidOperationException>(() => MissionBriefing.Load(null, 4, 1, 13));
+            BriefingBooks.UseJson(
+                File.ReadAllText(Path.Combine(Golden.Root, "data", "campaign.json")),
+                File.ReadAllText(Path.Combine(Golden.Root, "data", "sites.json")),
+                File.ReadAllText(Path.Combine(Golden.Root, "data", "weather.json")));
+            try
+            {
+                var fromDisk = MissionBriefing.Load(Golden.Root, 4, 1, 13);
+                var fromBooks = MissionBriefing.Load(null, 4, 1, 13);
+                AssertSameEnvironment(fromDisk, fromBooks);
+                var free = MissionBriefing.Free(null, 9, 13);
+                Assert.IsTrue(free.FreeBuild);
+                Assert.IsFalse(free.Wind.Calm);
+            }
+            finally { BriefingBooks.Clear(); }
+        }
+
         static void AssertSameEnvironment(MissionBriefing a, MissionBriefing b)
         {
             Assert.AreEqual(a.FlightCode, b.FlightCode);

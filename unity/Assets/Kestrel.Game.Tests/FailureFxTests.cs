@@ -212,5 +212,34 @@ namespace Kestrel.Game.Tests
             foreach (var v in lower.vertices) Assert.That(v.y, Is.LessThanOrEqualTo(1f + 1e-3f));
             foreach (var v in upper.vertices) Assert.That(v.y, Is.GreaterThanOrEqualTo(1f - 1e-3f));
         }
+
+        [Test]
+        public void TheCardWaitsForTheFailureToPlay_ExceptUnderReduceMotion()
+        {
+            foreach (var mode in new[] { FailureFx.BreakMode, FailureFx.TumbleMode, FailureFx.BellMode, FailureFx.SputterMode, FailureFx.GlowMode, FailureFx.FrostMode, FailureFx.FlameoutMode, FailureFx.BumpMode, FailureFx.FoldMode })
+            {
+                float d = FailureFx.CardDelaySeconds(mode, false);
+                Assert.That(d, Is.InRange(1.2f, 3f), mode + " plays on screen before its card");
+                Assert.That(FailureFx.CardDelaySeconds(mode, true), Is.EqualTo(0f), mode + ": Reduce Motion opens the card at once");
+            }
+            // The break gap is fully open (28 m) before the card covers it.
+            Assert.That(FailureFx.Gap(FailureFx.BreakMode, FailureFx.CardDelaySeconds(FailureFx.BreakMode, false), false), Is.EqualTo(28f).Within(0.01f));
+        }
+
+        [Test]
+        public void TheCardWaitsForTheLaterOf_TheFailureShow_AndTheBoosterLanding()
+        {
+            float due = FailureFx.CardDelaySeconds(FailureFx.BreakMode, false);
+            Assert.IsFalse(FailureFx.CardOpens(0f, due, false, false), "the break-up plays first");
+            Assert.IsTrue(FailureFx.CardOpens(due, due, false, false), "then the card");
+            Assert.IsTrue(FailureFx.CardOpens(0.1f, due, true, false), "a tap skips the show");
+            // #333: a booster still landing holds the card past the show, and a tap does not cut the landing short.
+            Assert.IsFalse(FailureFx.CardOpens(due + 30f, due, false, true), "the landing is still in the air");
+            Assert.IsFalse(FailureFx.CardOpens(0.1f, due, true, true), "a tap never skips the landing");
+            Assert.IsTrue(FailureFx.CardOpens(due + 30f, due, false, false), "the card opens once the landing ends");
+            // Reduce Motion: no show to wait for, but the landing still holds it.
+            Assert.IsTrue(FailureFx.CardOpens(0f, FailureFx.CardDelaySeconds(FailureFx.BreakMode, true), false, false));
+            Assert.IsFalse(FailureFx.CardOpens(0f, FailureFx.CardDelaySeconds(FailureFx.BreakMode, true), false, true));
+        }
     }
 }

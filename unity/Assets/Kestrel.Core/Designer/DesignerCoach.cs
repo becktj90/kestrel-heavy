@@ -1,5 +1,7 @@
 // Plain-language coach for the designer. The sentences quote the Codex kid lines and the live readout.
 // They do not add numbers the flight model does not already publish.
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Kestrel.Core.Codex;
 
@@ -8,6 +10,19 @@ namespace Kestrel.Core.Designer
     public static class DesignerCoach
     {
         public static readonly string[] Flow = { "Mission", "Engines", "Tanks", "Stages", "Landing", "Look", "Launch" };
+
+        /// <summary>
+        /// The step chips the rail still needs once the tab row is on screen. A step whose tab is already a chip
+        /// in the tab row is the same button twice (fun review item 10: two "Engines Tanks Stages Landing Look"
+        /// rows). Launch is never a tab, so it always stays; Mission stays when there is no Cargo tab.
+        /// </summary>
+        public static List<string> RailSteps(Func<string, bool> stepHasTab)
+        {
+            var steps = new List<string>();
+            foreach (var step in Flow)
+                if (step == "Launch" || stepHasTab == null || !stepHasTab(step)) steps.Add(step);
+            return steps;
+        }
         static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
         public static string Goal(string step)

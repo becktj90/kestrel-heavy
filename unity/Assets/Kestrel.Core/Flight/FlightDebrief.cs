@@ -119,6 +119,8 @@ namespace Kestrel.Core.Flight
         public string StarsLine = "No stars this flight.";
         public string MedalsLine = "No medal this flight.";
         public string KcLine = "";
+        /// <summary>Pass card hero money, "+2.0M Kc" (KcFormat.Signed of DeltaKc). Empty on a fail or before Kc settles.</summary>
+        public string KcHeadline = "";
         public string CosmeticLine = "";
         public string UnlockLine = "";
         public bool Passed;
@@ -391,6 +393,7 @@ namespace Kestrel.Core.Flight
             if (debrief.EconomySettled)
                 debrief.CostKc = debrief.CostMinor / (double)minorPerKc;
             debrief.KcLine = KcSentence(debrief, facts, free);
+            debrief.KcHeadline = KcHeadlineOf(debrief, free);
             debrief.UnlockLine = debrief.Unlocks.Count > 0 ? "New part: " + string.Join(", ", debrief.Unlocks) + "." : "";
             debrief.CosmeticLine = CosmeticSentence(debrief.Cosmetics);
 
@@ -589,6 +592,10 @@ namespace Kestrel.Core.Flight
         /// "7.6k Kc", "8.85M Kc".</summary>
         public static string Kc(double kc)
             => double.IsNaN(kc) || double.IsInfinity(kc) ? "0 Kc" : HomeRecord.Kc((long)Math.Round(kc, MidpointRounding.AwayFromZero));
+
+        /// <summary>#416 item 3: the pass card's big money line, "+2.0M Kc": empty unless the pass settled Kc.</summary>
+        static string KcHeadlineOf(FlightDebrief d, bool free)
+            => !free && d.EconomySettled && d.Passed ? KcFormat.Signed(d.DeltaKc) + " Kc" : "";
 
         static string N0(double x) => Math.Round(x).ToString(CultureInfo.InvariantCulture);
         static string N1(double x) => x.ToString("0.0", CultureInfo.InvariantCulture);
