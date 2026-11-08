@@ -401,6 +401,26 @@ namespace Kestrel.Slice
         }
 
         /// <summary>Portrait: the tested rail, inside the HUD's already-padded content box.</summary>
+        /// <summary>
+        /// #397: the health marks' face follows the rail they sit in (FlightHudLayout.HealthMarksFontPt), set in
+        /// the same pass that pins the rail — so the first frame already fits. The old fixed 11 pt (still the
+        /// pre-layout default in Layout) relied on TextFit shrinking the marks after the fact, but TextFit measures
+        /// the buttons' pre-layout widths: after the rail narrowed (rotation to landscape, or the banner-row flip at
+        /// staging) the first frame rendered 11 pt marks in buttons too small for them and they smeared together,
+        /// and only a later pass shrank them. TextFit stays as the backstop.
+        /// </summary>
+        void SetHealthFont(float railWpt)
+        {
+            if (healthButtons == null) return;
+            float face = Px(FlightHudLayout.HealthMarksFontPt(railWpt));
+            for (int i = 0; i < healthButtons.Length; i++)
+            {
+                var b = healthButtons[i];
+                if (b == null) continue;
+                b.style.fontSize = face;
+            }
+        }
+
         void LayoutRail()
         {
             if (plot == null || hud == null) return;
@@ -420,6 +440,8 @@ namespace Kestrel.Slice
             var frame = FlightHudLayout.Place(w / upp, h / upp, 0f, 0f, 0f, 0f, mode, bannerRowPt, nudgeRowOpen);
             railMode = mode;
             railNudges = nudgeRowOpen;
+            // #397: the portrait health row is frame.Health wide — fit its marks to that width in this pass.
+            SetHealthFont(frame.Health.W);
             if (plot.parent != hud) hud.Insert(0, plot);
             // #332 (TestFlight t432): the frame is in the HUD's content box, but absolute offsets start at its padding
             // edge. Pinned without the padding, the rail and the dock sat padTop higher than the flex rows: on a
@@ -821,6 +843,8 @@ namespace Kestrel.Slice
             Pin(root.Q("ascent-telemetry"), cellBox);
             Pin(health, Sc(f.Health));
             if (health != null) health.style.overflow = Overflow.Visible;
+            // #397: the landscape health rail is f.Health wide — fit its marks to that width in this pass.
+            SetHealthFont(f.Health.W);
             // The rail's frame box; SeatPlot fits it over the stack as laid out (after the pins below, and again
             // whenever a stack element moves).
             plotPinned = Sc(f.Plot);

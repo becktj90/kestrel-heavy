@@ -96,6 +96,20 @@ namespace Kestrel.Core.Flight
         public const float StackTop = 0.38f;
         public const float StackBottom = 0.62f;
         public const float LabelFontPt = 11f;
+        /// <summary>
+        /// #397: the health marks (Eng/Tnk/Hull/Guide/Fair) are widest at "Guide". On a narrow landscape rail
+        /// the 11 pt face does not fit its button, and the marks smeared together for one frame — TextFit only
+        /// shrinks them on a later pass, because it measures the buttons' pre-layout widths. The mark face now
+        /// follows the rail width in the layout math (see <see cref="HealthMarksFontPt"/>), so the first frame
+        /// already fits.
+        /// </summary>
+        public const string WidestHealthMark = "Guide";
+        /// <summary>Smallest face the health marks step down to before the rail itself has to widen.</summary>
+        public const float HealthMarkMinFontPt = 8f;
+        /// <summary>Per-tab allowance inside a health button: the 2 pt ring borders on both sides (HealthChip) plus
+        /// the 2 px label padding on both sides (AscentHud) — 4 px, which is 4 pt at upp 1 (the test harness and the
+        /// web panels), so 8 pt covers the worst case.</summary>
+        public const float HealthTabPadPt = 8f;
         public const float ValueFontPt = 12f;
         public const float FontAdvance = 0.62f;
         public const float CellGapPt = 4f;
@@ -252,6 +266,31 @@ namespace Kestrel.Core.Flight
         public const float MeasureFactor = 1.15f;
 
         public static float BudgetWidth(string text, float fontPt) => TextWidth(text, fontPt) * MeasureFactor;
+
+        /// <summary>
+        /// #397: the largest health-mark face that fits five tabs in a rail this wide — 11 pt down to
+        /// <see cref="HealthMarkMinFontPt"/> in half-point steps, by <see cref="BudgetWidth"/> — so a narrow
+        /// landscape rail never renders marks too wide for their buttons. Wide rails and portrait keep 11 pt.
+        /// </summary>
+        public static float HealthMarksFontPt(float railW)
+        {
+            for (float font = LabelFontPt; font > HealthMarkMinFontPt; font -= 0.5f)
+            {
+                float need = VehicleHealth.Count * (BudgetWidth(WidestHealthMark, font) + HealthTabPadPt)
+                    + (VehicleHealth.Count - 1) * GapPt;
+                if (need <= railW + 0.01f) return font;
+            }
+            return HealthMarkMinFontPt;
+        }
+
+        /// <summary>
+        /// #397: the narrowest landscape rail that still holds five health marks at
+        /// <see cref="HealthMarkMinFontPt"/> — the floor PlaceWide clamps the rail to, so the marks always fit
+        /// by budget and TextFit never has to rescue them on a later frame.
+        /// </summary>
+        public static float HealthRailMinPt =>
+            VehicleHealth.Count * (BudgetWidth(WidestHealthMark, HealthMarkMinFontPt) + HealthTabPadPt)
+            + (VehicleHealth.Count - 1) * GapPt;
 
         /// <summary>
         /// One line of prompt quote for a box <paramref name="boxW"/> points wide (the 18 pt quote row holds one line;
@@ -1005,7 +1044,10 @@ namespace Kestrel.Core.Flight
             float innerW = Math.Max(1f, right - left);
             float minCenter = Math.Max(120f, width * 0.28f);
             float railW = innerW * 0.22f;
-            if (railW < 132f) railW = 132f;
+            // #397: never narrower than five health marks at their floor face (see HealthRailMinPt) — below that
+            // the marks cannot fit their buttons at any legible size, and the first frame smears them (TextFit only
+            // shrinks them on a later pass, from pre-layout widths).
+            if (railW < HealthRailMinPt) railW = HealthRailMinPt;
             if (railW > 320f) railW = 320f;
             if (left + railW * 2f + minCenter > right)
                 railW = Math.Max(96f, (innerW - minCenter) * 0.5f);

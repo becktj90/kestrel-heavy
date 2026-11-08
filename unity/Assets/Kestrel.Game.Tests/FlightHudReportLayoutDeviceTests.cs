@@ -143,6 +143,39 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        // ---- #397: health marks fit their buttons -----------------------------------------------
+
+        // #397: one frame at T+140.5 showed the health marks smeared together. On a narrow landscape rail the
+        // 11 pt face did not fit its button, and TextFit only shrinks the marks on a later pass. The mark face now
+        // follows the rail width in the same layout pass, so every shown tab's mark fits its button by budget at
+        // the font it was actually laid out with — including the phone-landscape rails Sizes() does not cover.
+        // (The five-mark budget itself, Guide included, is covered by the Core test; this one proves the wiring.)
+        [Test]
+        public void HealthMarksFitTheirButtonsOnPhoneLandscapeRails()
+        {
+            var sizes = new List<Size>(Sizes());
+            sizes.Add(new Size { Name = "844x390 phone landscape", CssW = 844f, CssH = 390f, PanelW = 844f, PanelH = 390f, SafeTop = 0f, SafeBottom = 0f, Wide = true });
+            sizes.Add(new Size { Name = "667x375 SE landscape", CssW = 667f, CssH = 375f, PanelW = 667f, PanelH = 375f, SafeTop = 0f, SafeBottom = 0f, Wide = true });
+            foreach (var size in sizes)
+            using (var surface = DeviceSurface.Open(size.PanelW, size.PanelH))
+            {
+                var (hud, _, _) = Flight(surface, size, null);
+                string at = size.Name + " health marks";
+                // In this harness upp is 1: the resolved font size in panel px is the face in points, and the
+                // frame's rail is in the same units as the laid-out button widths. The 1 pt slack is whole-pixel
+                // rounding; a smeared 11 pt mark in a narrow rail would exceed its button by ~10 pt.
+                var tabs = new List<Button>(hud.Q("ascent-health").Query<Button>().ToList().FindAll(Shown));
+                Assert.That(tabs.Count, Is.GreaterThanOrEqualTo(3), at + " tabs");
+                foreach (var tab in tabs)
+                {
+                    float fontPt = tab.resolvedStyle.fontSize;
+                    Assert.That(fontPt, Is.GreaterThanOrEqualTo(FlightHudLayout.HealthMarkMinFontPt - 0.01f), at + " " + tab.text + " legible");
+                    float need = FlightHudLayout.BudgetWidth(tab.text, fontPt) + FlightHudLayout.HealthTabPadPt;
+                    Assert.That(need, Is.LessThanOrEqualTo(tab.layout.width + 1f), at + " " + tab.text + " fits at " + fontPt + " pt");
+                }
+            }
+        }
+
         // ---- L2: engine-out ---------------------------------------------------------------------
 
         [Test]
