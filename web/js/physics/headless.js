@@ -241,6 +241,23 @@ export function simulate(stagesIn, opts = {}) {
     if (q > maxQ) { maxQ = q; maxQTime = t; }
     const gl = MU_EARTH / (r * r);
     const v = Math.hypot(vx, vy);
+    // #440: same upper-stage alpha clamp as the C# sims (Headless.AscentSim, Ascent3Dof): in sensible air a
+    // stage with control authority must not hold a fixed pitch far off the air-relative velocity. Clamp the
+    // commanded in-plane angle of attack to the 15 deg the breakup rule allows (FailureModel.TumbleAlphaRad),
+    // slewed at 0.1745 rad/s (RecoverySim.PitchRate, ~10 deg/s) so the nose moves like the real vehicle.
+    // Below 20 kPa (TumbleQPa) the program pitch flies unchanged; a passive stage stays passive. Mode 2 is
+    // the gravity turn, whose thrust already follows the velocity (alpha = 0). No-input flights never command
+    // more than 15 deg in sensible air, so this is a no-op for them and their goldens stay bit-identical.
+    if (thrusting && mode !== 2 && q > 20000 && vrel > 1) {
+      const gammaAir = Math.atan2(avx * ux + avy * uy, avx * tx + avy * ty);
+      const lo = gammaAir - 15 * Math.PI / 180, hi = gammaAir + 15 * Math.PI / 180;
+      let want = pitchCmd;
+      if (want < lo) want = lo; else if (want > hi) want = hi;
+      const step = 0.1745 * dt;
+      if (want > pitchCmd + step) pitchCmd += step;
+      else if (want < pitchCmd - step) pitchCmd -= step;
+      else if (want !== pitchCmd) pitchCmd = want;
+    }
     if (thrusting && stageIdx < st.length) {
       const S = st[stageIdx];
       const F = S.mdot * G0 * ispAt(S.ispSL, S.ispVac, p);
