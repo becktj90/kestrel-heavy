@@ -1,0 +1,112 @@
+
+Welcome to .NET 8.0!
+---------------------
+SDK Version: 8.0.427
+
+Telemetry
+---------
+The .NET tools collect usage data in order to help us improve your experience. It is collected by Microsoft and shared with the community. You can opt-out of telemetry by setting the DOTNET_CLI_TELEMETRY_OPTOUT environment variable to '1' or 'true' using your favorite shell.
+
+Read more about .NET CLI Tools telemetry: https://aka.ms/dotnet-cli-telemetry
+
+----------------
+Installed an ASP.NET Core HTTPS development certificate.
+To trust the certificate, view the instructions: https://aka.ms/dotnet-https-linux
+
+----------------
+Write your first app: https://aka.ms/dotnet-hello-world
+Find out what's new: https://aka.ms/dotnet-whats-new
+Explore documentation: https://aka.ms/dotnet-docs
+Report issues and find source on GitHub: https://github.com/dotnet/core
+Use 'dotnet --help' to see available commands or visit: https://aka.ms/dotnet-cli
+--------------------------------------------------------------------------------------
+  Determining projects to restore...
+  Restored /workspace/kh-qa-2026-11-09/repo/unity/dotnet/Kestrel.Core/Kestrel.Core.csproj (in 52 ms).
+  Restored /workspace/kh-qa-2026-11-09/repo/unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj (in 327 ms).
+  Kestrel.Core -> /workspace/kh-qa-2026-11-09/repo/unity/dotnet/Kestrel.Core/bin/Debug/netstandard2.1/Kestrel.Core.dll
+/workspace/kh-qa-2026-11-09/repo/unity/Assets/Kestrel.Core.Tests/PayloadFitRuleTests.cs(138,13): warning CS0618: 'Assert.AreEqual(double, double?, double)' is obsolete: 'This method will be removed in NUnit 4.0.' [/workspace/kh-qa-2026-11-09/repo/unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj]
+/workspace/kh-qa-2026-11-09/repo/unity/Assets/Kestrel.Core.Tests/MissionBoardCardFitTests.cs(20,45): warning CS0649: Field 'MissionBoardCardFitTests.Size.Left' is never assigned to, and will always have its default value 0 [/workspace/kh-qa-2026-11-09/repo/unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj]
+/workspace/kh-qa-2026-11-09/repo/unity/Assets/Kestrel.Core.Tests/MissionBoardCardFitTests.cs(20,51): warning CS0649: Field 'MissionBoardCardFitTests.Size.Right' is never assigned to, and will always have its default value 0 [/workspace/kh-qa-2026-11-09/repo/unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj]
+  Kestrel.Core.Tests -> /workspace/kh-qa-2026-11-09/repo/unity/dotnet/Kestrel.Core.Tests/bin/Debug/net8.0/Kestrel.Core.Tests.dll
+Test run for /workspace/kh-qa-2026-11-09/repo/unity/dotnet/Kestrel.Core.Tests/bin/Debug/net8.0/Kestrel.Core.Tests.dll (.NETCoreApp,Version=v8.0)
+VSTest version 17.11.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+NUnit Adapter 4.6.0.0: Test execution started
+Running selected tests in /workspace/kh-qa-2026-11-09/repo/unity/dotnet/Kestrel.Core.Tests/bin/Debug/net8.0/Kestrel.Core.Tests.dll
+   NUnit3TestExecutor discovered 43 of 43 NUnit test cases using Current Discovery mode, Non-Explicit run
+  Passed BoardStarter_FixItOrOneStrengthEdit_WinsEveryMission [11 s]
+  Passed BoardStarter_FixItOrOneStrengthEdit_WinsTheLivePadInCalmAir [12 s]
+  Passed BoardStarters_LoadFromThePackWhenTheCheckoutIsGone [4 ms]
+  Passed CampaignViableDesigns_WinM1ThroughM10 [5 s]
+  Passed CampaignWinners_FlyPassOnEverySeed [11 s]
+  Passed Count_AbortSkipPauseAndRetry [34 ms]
+KH-1 hopper pass apo 9.8 q 49.0
+KH-2 hopper pass apo 100.3 q 45.7
+KH-3 workhorse pass apo 202.8 q 51.0
+KH-4 workhorse fail short apo 623.4 q 53.4
+KH-5 workhorse pass apo 402.8 q 53.8
+KH-6 workhorse pass apo 206.4 q 17.6
+KH-7 moonshot pass apo 203.8 q 17.7
+KH-8 workhorse fail short apo 412.1 q 50.5
+KH-9 moonshot pass apo 202.8 q 17.6
+KH-10 moonshot pass apo 203.2 q 17.8
+KH-11 workhorse pass apo 550.6 q 67.8
+KH-12 workhorse pass apo 600.1 q 48.2
+KH-13 workhorse pass apo 550.1 q 56.4
+KH-14 workhorse pass apo 406.5 q 50.4
+KH-15 moonshot pass apo 204.5 q 17.6
+KH-16 workhorse fail short apo 505.4 q 47.5
+KH-17 moonshot pass apo 204.4 q 17.7
+KH-18 moonshot pass apo 202.8 q 17.6
+KH-19 moonshot pass apo 204.9 q 17.6
+KH-20 moonshot pass apo 201.5 q 17.8
+
+  Passed EveryMission_StartsFromTheBoard_AndFliesTheStarter [2 s]
+  Passed Haven_SuccessTipAndMiss [3 ms]
+  Passed StageSeparation_UsesTheSpentStageNumber [13 ms]
+  Passed WinsPersistUnlocksMedalsAndPatches_AMissDoesNot [63 ms]
+  Passed CampaignTable_MatchesSpecWithRecordedTunes [20 ms]
+  Passed Career_BankRefundAndUnlocksInOrder [3 ms]
+  Passed EveryMission_HasThreeViableDesigns [15 s]
+  Passed RequiredDeltaV_MatchesStackForCatalogOrbits [1 ms]
+  Passed Score_MatchesSpecFormula [< 1 ms]
+  Passed Stars_FollowMarginBudgetAndLanding [< 1 ms]
+  Passed CrashingRocket_LiveSetup_ReachesTheReport_WithRetryAndDesigner("one-engine","m4") [289 ms]
+  Passed CrashingRocket_LiveSetup_ReachesTheReport_WithRetryAndDesigner("no-strength","m4") [26 ms]
+  Passed CrashingRocket_LiveSetup_ReachesTheReport_WithRetryAndDesigner("short-fuel","m1") [3 ms]
+  Passed EveryRoute_LandsOnANamedScreen_AndNeverThrows("fresh") [3 ms]
+  Passed EveryRoute_LandsOnANamedScreen_AndNeverThrows("campaign") [2 ms]
+  Passed EveryRoute_LandsOnANamedScreen_AndNeverThrows("free") [2 ms]
+KnownBug_NAV08_EscapeInFlight_NeverPauses: KNOWN BUG NAV-08 (NAV_BUGS.md). Expected: Escape / hardware back during flight opens the pause menu. Observed: MenuBack.FlightEscape is never assigned; AppShell.HandleEscape falls through to whatever back control is visible
+  Passed EveryScreen_HasAWayOut [2 ms]
+  Passed FreeBuild_DesignerBack_GoesHome [2 ms]
+  Passed HomeDesignFirst_OpensTheDesignerWithTheMission(0,"m1") [3 ms]
+  Passed HomeDesignFirst_OpensTheDesignerWithTheMission(5,"m6") [3 ms]
+  Passed HomeLaunch_BriefsTheNextMission_FreshAndFromASave(0,"m1") [5 ms]
+  Passed HomeLaunch_BriefsTheNextMission_FreshAndFromASave(5,"m6") [5 ms]
+  Passed HomeLaunch_BriefsTheNextMission_FreshAndFromASave(20,"m20") [5 ms]
+  Passed HomeLaunch_NoCampaignData_StillLandsOnMissions [9 ms]
+  Skipped KnownBug_NAV08_EscapeInFlight_NeverPauses [49 ms]
+  Passed MissionsBriefingDesigner_AndBackOutAgain [2 ms]
+  Passed NAV03_HomeLaunch_OpensTheDesigner_NotTheCountdown [4 ms]
+  Passed NAV04_Report_HasBackToDesigner [3 ms]
+  Passed NAV05_ReportWithoutDebrief_KeepsEveryExit [2 ms]
+  Passed NAV06_ReportNext_OpensTheNextMissionsDesigner [2 ms]
+  Passed NAV06_ReportNext_ShellArmsTheStarterAndBriefing [2 ms]
+  Passed NAV07_FromHome_EndsWhenTheDesignerTakesTheRocket_BriefingBackGoesToMissions [4 ms]
+  Passed QuitMidFlight_ThenContinue_ResumesTheMissionDraft [6 ms]
+  Passed Report_NextOnTheLastMission_StaysOnKh20 [2 ms]
+[golden] compared 0 values
+[golden] all compared values bit-identical
+NUnit Adapter 4.6.0.0: Test execution complete
+  Passed Report_RetryKeepsMissionAndSeed_MissionsAndHomeLeave [2 ms]
+  Passed Report_RetryOnAFreeBuildOrNoSession_StillOpensTheDesigner [2 ms]
+  Passed UnknownMission_StaysOnTheBoard [2 ms]
+
+Test Run Successful.
+Total tests: 43
+     Passed: 42
+    Skipped: 1
+ Total time: 1.0128 Minutes
