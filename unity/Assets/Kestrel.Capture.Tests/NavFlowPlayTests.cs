@@ -637,8 +637,13 @@ namespace Kestrel.Capture.Tests
             yield return ToThePad(null);
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             driver.ReduceMotionOverride = true;
+            Assert.IsFalse(driver.Held, "Reduce Motion flight must not start Held/paused");
             bool coasted = false;
-            yield return Until(() => { coasted |= driver.Coasting; return driver.Result != null; }, 150f);
+            yield return Until(() => {
+                Assert.IsFalse(driver.Held, "Reduce Motion flight must not become Held/paused mid-flight");
+                coasted |= driver.Coasting;
+                return driver.Result != null;
+            }, 150f);
             Assert.IsNotNull(driver.Result, "the flight ends");
             Assert.IsFalse(coasted, "Reduce Motion: no warped coast");
             Assert.AreEqual("reduced", driver.CoastEnd);

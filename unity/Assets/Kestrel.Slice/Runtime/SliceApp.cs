@@ -1655,6 +1655,8 @@ namespace Kestrel.Slice
         {
             if (chrome == null) return;
             if (ui != null && ui.Q(ReportView.RootName) != null) return;
+            // Only while a live ascent is running. A stuck Escape after MECO or on the pad must not Hold the driver.
+            if (flight == null || !flight.Running || flight.Result != null) return;
             SetFlightPaused(!chrome.Paused);
         }
 
