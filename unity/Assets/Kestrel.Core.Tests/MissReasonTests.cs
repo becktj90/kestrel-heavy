@@ -3,7 +3,8 @@
 // is pinned to its exact text, and the advice is checked by flying it. One reason shows, in fix order (orbit, fuel,
 // structure, reliability, setup), and the reason counts any other gate that missed with "(+N more issue)" (#324).
 // #313 (Physics): KH-3 and KH-4 cut off diving (too flat: a larger pitch kick lands them, and so does the fuel step);
-// KH-12's 6° build cuts off climbing (too steep: a smaller pitch kick lands it; its board starter flies 4.5°).
+// KH-12's 6° build cuts off climbing (too steep: a smaller pitch kick lands it; its board starter flies 6° with the
+// closed-loop guidance computer, #340).
 using System;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer;
@@ -53,8 +54,9 @@ namespace Kestrel.Core.Tests
         // #313 (closed-loop director, energy cutoff): the starters' misses are new numbers. KH-3, 4, 6 and 12 now cut off at
         // the target energy at a bad flight-path angle, so both the high and the low point are out of the band and the
         // reason names both. KH-8 now flies in the band and misses on reliability. KH-5 and KH-14 now pass (board rows
-        // "fly"), so they moved to PassingStarterHasNoReason. KH-12's board starter is now a fly row at a 4.5° kick (Physics,
-        // #313 on #324's 32,000 kg top stage); its 6° build keeps the exact steep text in KH12_SixDegreeBuild_MissSaysWhyAndWhatToChange.
+        // "fly"), so they moved to PassingStarterHasNoReason. KH-12's board starter is now a fly row at a 6° kick with the
+        // closed-loop guidance computer (#340); its raw 6° build (no computer) keeps the exact steep text in
+        // KH12_SixDegreeBuild_MissSaysWhyAndWhatToChange.
         // Calm-air retune: KH-6's board design is now strength 1.65 and passes (PassingStarterHasNoReason); its 1.35 build
         // keeps the exact apo-high text in KH6_RawBuild_MissSaysWhyAndWhatToChange. KH-3's board design is now an 8.65° kick
         // (Physics, option b) and passes; its 8° build keeps the exact too-flat text in KH3_RawBuild_MissSaysWhyAndWhatToChange.
@@ -244,22 +246,34 @@ namespace Kestrel.Core.Tests
         }
 
         /// <summary>KH-12 under #313 on #324's 32,000 kg top stage (Physics): the pitch kick is the lever, fuel is not. From the
-        /// 6° build, calm edges: 4.5° (the board starter) lands every batch seed and the live pad, calm and in seed-1 wind;
+        /// 6° build (no guidance computer), calm edges: 4.5° lands every batch seed and the live pad, calm and in seed-1 wind;
         /// 4.3° and 4.7° land every batch seed and the live pad in calm air; 4° misses calm on every seed (cuts off diving,
         /// 740 x 460 km); extra top-stage fuel alone, +4% to +21%, never lands a seed. Wind, separately: before #338 the
         /// wind-shear ease tipped 5° steep in the seed-1 wind (831 x 369 km, a miss); with the ease gone it lands
-        /// (629.3 x 570.7 km).</summary>
+        /// (629.3 x 570.7 km). #340: the board starter now flies 6° WITH the closed-loop guidance computer, so the kick
+        /// window above is the raw no-guidance build's, not the board starter's - the board starter passes at the robust
+        /// 6° kick and the knife-edge 4.3-4.7° window is no longer what the player flies.</summary>
         [Test]
         public void KH12_KickWindow_FourPointFiveLands_FourMisses_FuelAloneNever()
         {
             var m = Mission("m12");
             var board = Starter(m);
-            Assert.AreEqual(4.5, board.guidance.pitchKickDeg, 1e-9, "board starter kick");
-            AssertEverySeed(m, board, "kick 4.5°");
+            Assert.AreEqual(6, board.guidance.pitchKickDeg, 1e-9, "board starter kick");
+            Assert.IsTrue(board.guidanceComputer, "board starter flies the closed-loop guidance computer (#340)");
+            AssertEverySeed(m, board, "kick 6° + guidance");
             var calm = LivePadLoop.Fly(catalog, m, board, false);
             var windy = LivePadLoop.Fly(catalog, m, board, true);
-            Assert.IsTrue(LivePadLoop.InBand(m, calm), "4.5° live calm " + LivePadLoop.Text(calm));
-            Assert.IsTrue(LivePadLoop.InBand(m, windy), "4.5° live seed-1 wind " + LivePadLoop.Text(windy));
+            Assert.IsTrue(LivePadLoop.InBand(m, calm), "6° + guidance live calm " + LivePadLoop.Text(calm));
+            Assert.IsTrue(LivePadLoop.InBand(m, windy), "6° + guidance live seed-1 wind " + LivePadLoop.Text(windy));
+
+            // The kick window, on the raw no-guidance build (SixDegree strips the computer).
+            var fourFive = SixDegree(m);
+            fourFive.guidance.pitchKickDeg = 4.5;
+            AssertEverySeed(m, fourFive, "kick 4.5° (no guidance)");
+            var fourFiveCalm = LivePadLoop.Fly(catalog, m, fourFive, false);
+            var fourFiveWindy = LivePadLoop.Fly(catalog, m, fourFive, true);
+            Assert.IsTrue(LivePadLoop.InBand(m, fourFiveCalm), "4.5° live calm " + LivePadLoop.Text(fourFiveCalm));
+            Assert.IsTrue(LivePadLoop.InBand(m, fourFiveWindy), "4.5° live seed-1 wind " + LivePadLoop.Text(fourFiveWindy));
 
             var four = SixDegree(m);
             four.guidance.pitchKickDeg = 4;
@@ -310,10 +324,13 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(LivePadLoop.InBand(m, fiveWind), "5° live seed-1 wind lands: " + LivePadLoop.Text(fiveWind));
         }
 
-        /// <summary>KH-12's starter at the template's 6° kick: the board starter with only the kick put back.</summary>
+        /// <summary>KH-12's starter at the template's 6° kick: the board starter with only the kick put back, and the
+        /// guidance computer stripped (#340: the board starter now flies 6° with closed-loop guidance; the kick-window
+        /// tests below are about the raw no-guidance build, where the kick is still the lever).</summary>
         Design SixDegree(CampaignMission m)
         {
             var d = Starter(m);
+            d.guidanceComputer = false;
             d.guidance.pitchKickDeg = 6;
             return d;
         }
@@ -452,7 +469,7 @@ namespace Kestrel.Core.Tests
 
         /// <summary>#313 (Physics): KH-12's 6° build gets the steep advice, and its lever is the smaller pitch kick; following
         /// it (4.5°) lands every seed. One more upper engine is no longer advised: on #324's 32,000 kg top stage the upper stage
-        /// pushes at 0.584 g, over the 0.5 g weak-upper rule (it was 0.476 g at 40,000 kg), so weak-upper drops and Fix it
+        /// pushes at 0.583 g, over the 0.5 g weak-upper rule (it was 0.476 g at 40,000 kg), so weak-upper drops and Fix it
         /// no longer adds an engine. Fix it's edit (fins 1.10 → 3.10 m, max-Q throttle 95%) and the old engine advice by
         /// hand both tip it into a dive and miss every seed.</summary>
         [Test]
@@ -469,11 +486,12 @@ namespace Kestrel.Core.Tests
             kick.guidance.pitchKickDeg = 4.5;
             AssertEverySeed(m, kick, "the advice: kick 6° → 4.5°");
 
-            // weak-upper: 0.584 g on 32,000 kg (no warning), 0.476 g on 40,000 kg (warning). Rule: 0.5 g.
+            // weak-upper: 0.583 g on 32,000 kg (no warning), 0.476 g on 40,000 kg (warning). Rule: 0.5 g.
+            // #340: 0.584 -> 0.583 - the guidance computer's mass lowers the upper-stage TWR slightly.
             var json = JsonMut.CloneObject(HomeAutoBuild.Choose(catalog, hangar.templates, m).Design);
             JsonMut.Set(json.Obj("guidance"), "pitchKickDeg", 6.0);
             var quick = Readout.Quick(catalog, json);
-            Assert.AreEqual(0.584, quick.stages[quick.stages.Count - 1].twrVac, 0.0005);
+            Assert.AreEqual(0.583, quick.stages[quick.stages.Count - 1].twrVac, 0.0005);
             CollectionAssert.DoesNotContain(Validate.Engineering(catalog, json).warnings.ConvertAll(w => w.code), "weak-upper");
             var heavy = JsonMut.CloneObject(json);
             JsonMut.Set((JsonObject)heavy.Arr("stages")[1], "propMass", 40000.0);
@@ -482,7 +500,11 @@ namespace Kestrel.Core.Tests
             CollectionAssert.Contains(Validate.Engineering(catalog, heavy).warnings.ConvertAll(w => w.code), "weak-upper");
 
             // Fix it, exactly as the board runs it, on the 6° build: no engine, and it misses.
+            // #340: strip the computer here - the board starter now ships it, and with it the
+            // 6° build passes; this section is about the raw no-guidance build, where Fix it
+            // (max-Q 95%, no engine) cannot fix the steep miss.
             var fix = JsonMut.CloneObject(json);
+            JsonMut.Set(fix.Obj("avionics"), "guidanceComputer", false);
             Readout.Reference(catalog, fix);
             var report = StepperModel.Evaluate(catalog, fix);
             StepCheck check = null;
