@@ -160,7 +160,7 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 | G-3 | Unity Analytics / Ads / Purchasing / Cloud Diagnostics off | verified (config) | Arcade | `UnityConnectSettings.asset` all `m_Enabled: 0` |
 | G-4 | `submitAnalytics` | verified (config) via #479 | Arcade | **0** on the #479 branch / main after merge; see network evidence |
 | G-5 | Privacy label proof on built player | unverified | QA + Trevor | Framework inspect + proxy capture not run |
-| G-6 | Unity `PrivacyInfo.xcprivacy` inspected | unverified | Arcade | In-repo file is legacy Phaser wrapper only |
+| G-6 | Unity `PrivacyInfo.xcprivacy` pins tracking off + empty collected types | verified (CI) | Arcade | `IosXcodePostprocess.EnsurePrivacyManifests`; `IosPrivacyManifestTests`; next export after this PR |
 | G-7 | Export compliance `ITSAppUsesNonExemptEncryption = NO` (Game Center capability **not** added for 1.0; #478) | verified (code) | Arcade | `IosXcodePostprocess.cs`; exported plist unverified on next xcode-export |
 | G-8 | No unexpected network at runtime | unverified (Unity) | QA | Device airplane-mode step |
 | G-9 | Privacy policy page lists Unity Kestrel Heavy | unverified | Trevor | T1 |
@@ -212,5 +212,6 @@ Highest first:
 | 2026-11-09 | Refresh through #468; score 42/62 CI-verified, 0 device; point at `docs/appstore/` + `DEVICE_TEST_SCRIPT.md`. | Arcade |
 | 2026-11-09 | Export **215** = main `b2bd87b` (was wrongly called 214-lag); KH-1 Ready caveat → issue #473. | Arcade |
 | 2026-11-09 | Network evidence section; Trevor removes Game Center from 1.0 (9:58 AM ET). | Arcade |
+| 2026-11-09 | G-6: post-process PrivacyInfo.xcprivacy (tracking false, empty collected). Score 46/62. | Arcade |
 | 2026-11-09 | Resolve main merge after #478; N9 NAV-08 verified via #472; G-7 notes GC out. Score 45/62. | Arcade |
-| 2026-11-09 | Build tip: export 215 / TF 51 from b2bd87b; main +#475. Network evidence + #479; GC removed #478; score 45/62. | Arcade |
+| 2026-11-09 | Build tip: export 215 / TF 51 from b2bd87b; main +#475. Network evidence + #479; GC removed #478; score 46/62. | Arcade |
