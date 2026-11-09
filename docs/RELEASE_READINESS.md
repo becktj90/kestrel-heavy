@@ -155,7 +155,7 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 
 | ID | Item | Status | Owner | Proof |
 |---|---|---|---|---|
-| G-1 | Game Center in Unity | gap (blocker for GC claim) | Arcade | Still `NullGameCenter`; no GameKit package. Remove claim/capability or ship it |
+| G-1 | Game Center in Unity | decided (remove for 1.0) | Trevor + QA | **Trevor 2026-11-09 9:58 AM ET:** remove GC from 1.0. QA removes entitlement/GameKit (`chore/remove-game-center-1.0`). Listing omits GC. Not a store claim. |
 | G-2 | GC failures harmless offline | unverified (Unity) | Arcade | Code catches; no Unity test |
 | G-3 | Unity Analytics / Ads / Purchasing / Cloud Diagnostics off | verified (config) | Arcade | `UnityConnectSettings.asset` all `m_Enabled: 0` |
 | G-4 | `submitAnalytics: 1` in ProjectSettings | gap | Arcade | Confirm no shipping telemetry or clear the flag |
@@ -165,11 +165,27 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 | G-8 | No unexpected network at runtime | unverified (Unity) | QA | Device airplane-mode step |
 | G-9 | Privacy policy page lists Unity Kestrel Heavy | unverified | Trevor | T1 |
 
+
+## Network / Unity services evidence
+
+Cite [`audits/NETWORK_EVIDENCE_2026-11-09.md`](audits/NETWORK_EVIDENCE_2026-11-09.md) (from `/workspace/kh-network-evidence.md`, 2026-11-09).
+
+| Check | Result | Proof |
+|---|---|---|
+| Unity Connect Analytics / Ads / IAP / Crash / Perf | All `m_Enabled: 0` | `UnityConnectSettings.asset` |
+| Services packages in `manifest.json` | None (`com.unity.services.*` / ads / analytics / IAP absent) | Packages inventory in evidence file |
+| `submitAnalytics` | **Still 1** until QA PR lands; then re-verify as 0 | `ProjectSettings.asset`; evidence file refresh checklist |
+| First-party `UnityWebRequest` (non-Tests) | Local StreamingAssets audio only (`GuideClipPlayer`) | Evidence file table |
+| Game Center runtime | Stub / removing for 1.0 | Trevor 9:58 AM ET; QA removal branch |
+| Device packet capture | **Not claimed** | Optional for Trevor (G-5) |
+
+Do **not** tick ASC **Data Not Collected** until privacy URL (T1) is published and `submitAnalytics: 0` is on main (refresh evidence file).
+
 ## Gaps that need a decision before release
 
 Highest first:
 
-1. **G-1 Game Center stub** — wire it or drop ASC/Game Center claims and capability.
+1. **G-1 Game Center** — **decided removed for 1.0** (Trevor 9:58 AM ET); QA executes. Listing already omits GC.
 2. **Device script** — Trevor runs [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md); until then device score stays 0.
 3. **S-3 screenshots** — regenerate via existing workflow, pick finals, Trevor uploads.
 4. **G-5 / G-4 / G-6 / T1 privacy** — do not claim Data Not Collected until proof + policy page.
@@ -194,3 +210,4 @@ Highest first:
 | 2026-10-28 | First version at `39cb8490`. | QA |
 | 2026-11-09 | Refresh through #468; score 42/62 CI-verified, 0 device; point at `docs/appstore/` + `DEVICE_TEST_SCRIPT.md`. | Arcade |
 | 2026-11-09 | Export **215** = main `b2bd87b` (was wrongly called 214-lag); KH-1 Ready caveat → issue #473. | Arcade |
+| 2026-11-09 | Network evidence section; Trevor removes Game Center from 1.0 (9:58 AM ET). | Arcade |
