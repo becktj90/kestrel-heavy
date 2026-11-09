@@ -157,7 +157,7 @@ Source of truth: [APPSTORE_CONNECT.md](APPSTORE_CONNECT.md) (written Oct 11). Li
 
 | ID | Item | Status | Owner | Proof |
 |---|---|---|---|---|
-| G-1 | **Game Center in the Unity build:** the GameKit plug-in is not in `Packages/manifest.json`, so `GameCenterBridge` uses `NullGameCenter` (logs, returns false). The only board wired is the sandbox `kh.unityproto.meco_alt_m`, not `kh1` to `kh5` | gap (release blocker unless the claim is removed) | Arcade | [`GameCenterBridge.cs`](../unity/Assets/Kestrel.Slice/Runtime/GameCenterBridge.cs), [`AppleGameCenter.cs`](../unity/Assets/Kestrel.Slice/GameCenter/AppleGameCenter.cs) ("not compiled here. Verify on first open"), [unity/README.md §6](../unity/README.md). Either wire the plug-in and the real boards (and prove score parity with web) or drop the Game Center bullet and tick |
+| G-1 | **Game Center out of 1.0** (Trevor 2026-11-09, DECISIONS #98): no GameKit link, no `com.apple.developer.game-center` entitlement on the Unity iOS export. `NullGameCenter` stays. No Game Center UI or store claim for 1.0 | done (code; verify on next xcode-export) | Arcade | [`IosXcodePostprocess.cs`](../unity/Assets/Kestrel.Slice/Editor/IosXcodePostprocess.cs), [`GameCenterBridge.cs`](../unity/Assets/Kestrel.Slice/Runtime/GameCenterBridge.cs). Confirm pbxproj + entitlements on the next `xcode-export` push |
 | G-2 | Game Center failures are harmless offline: auth and submit catch exceptions and return false | unverified (in Unity) | Arcade | Code reads right; no Unity test. The offline check exists only for the Phaser demo ([`qa/`](../qa/README.md)). Device step D10, D11 |
 | G-3 | Unity Analytics, Ads, Purchasing, Cloud Diagnostics, Performance Reporting all off | verified (config) | Arcade | [`UnityConnectSettings.asset`](../unity/ProjectSettings/UnityConnectSettings.asset): all `m_Enabled: 0`. Packages: none for analytics, ads or crash reporting in `manifest.json`. Config only; not checked on a built player |
 | G-4 | `submitAnalytics: 0` in `ProjectSettings.asset` (CoS 2026-11-09) | done (config) | Arcade | Set to 0. Evidence: [`docs/playtest/kh-network-evidence-2026-11-09.md`](playtest/kh-network-evidence-2026-11-09.md) and `/workspace/kh-network-evidence.md`. No `com.unity.services.*`; Connect analytics/ads/IAP off; only local Guide clip `UnityWebRequest` |
@@ -171,7 +171,7 @@ Source of truth: [APPSTORE_CONNECT.md](APPSTORE_CONNECT.md) (written Oct 11). Li
 
 Highest first. "Blocker" = would make a store claim false, or cannot be tested without a person.
 
-1. **G-1 Game Center is a stub on Unity main** (blocker for the Game Center claim): wire it or remove the claim.
+1. **G-1 Game Center removed for 1.0** (DECISIONS #98): verify on the next xcode-export that GameKit and the entitlement are gone; do not claim Game Center in the listing.
 2. **P-4, D-series: no real-device run exists.** Trevor runs the script above, or names another tester.
 3. **V-4 / F-4: the magenta explosion fix** (#371) is the only open fix for something Trevor actually saw on a device. CI was pending at the snapshot; after merge, a TestFlight build must be checked at D4.
 4. **S-3 screenshots not started** and **S-2 listing text stale.**

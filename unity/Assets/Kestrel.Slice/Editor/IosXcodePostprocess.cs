@@ -1,5 +1,5 @@
 // iOS export post-process for the Xcode Cloud export (DECISIONS #59, docs/XCODE_CLOUD_PLAN.md).
-// Adds the Game Center capability (the only capability) and pins automatic signing for team 9TR6R5LV8M.
+// Pins automatic signing for team 9TR6R5LV8M. Game Center capability removed for 1.0 (DECISIONS #98, Trevor 2026-11-09).
 // Compiles only while the active build target is iOS (UNITY_IOS), so non-iOS editors are unaffected.
 #if UNITY_IOS
 using System.IO;
@@ -18,8 +18,7 @@ namespace Kestrel.Slice.Editor
         {
             if (report.summary.platform != BuildTarget.iOS) return;
             string root = report.summary.outputPath;
-            // The game uses only exempt OS HTTPS (Game Center). Without this declaration,
-            // processed Xcode Cloud builds stay unavailable as MISSING_EXPORT_COMPLIANCE.
+            // Exempt encryption declaration so processed Xcode Cloud builds are not held as MISSING_EXPORT_COMPLIANCE.
             string plistPath = Path.Combine(root, "Info.plist");
             var plist = new PlistDocument();
             plist.ReadFromFile(plistPath);
@@ -35,11 +34,8 @@ namespace Kestrel.Slice.Editor
                 proj.SetBuildProperty(t, "CODE_SIGN_STYLE", "Automatic");
                 proj.SetBuildProperty(t, "DEVELOPMENT_TEAM", PlayerSettings.iOS.appleDeveloperTeamID);
             }
+            // Do not link GameKit / com.apple.developer.game-center for 1.0. NullGameCenter stays the runtime stub.
             proj.WriteToFile(projPath);
-
-            var caps = new ProjectCapabilityManager(projPath, "Unity-iPhone/KestrelHeavy.entitlements", null, app);
-            caps.AddGameCenter();
-            caps.WriteToFile();
         }
     }
 }
