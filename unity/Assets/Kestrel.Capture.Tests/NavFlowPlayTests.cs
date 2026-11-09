@@ -706,14 +706,16 @@ namespace Kestrel.Capture.Tests
 
         [UnityTest]
         [Timeout(300000)]
-        public IEnumerator KnownBug_NAV08_EscapeInFlight_DoesNotPause()
+        public IEnumerator NAV08_EscapeInFlight_OpensThePauseMenu()
         {
             yield return ToThePad(null);
             AppShell.Instance.HandleEscape();
             yield return null;
             NothingThrew();
-            bool paused = NavIds.Shown(Find("screen-pause"));
-            Ignore("NAV-08", "Escape in flight opens the pause menu", paused ? null : "no pause menu; screen=" + flow.Current + "/" + flow.Overlay);
+            Assert.IsTrue(NavIds.Shown(Find("screen-pause")), "Escape in flight opens the pause menu");
+            AppShell.Instance.HandleEscape();
+            yield return null;
+            Assert.IsFalse(NavIds.Shown(Find("screen-pause")), "Escape again resumes");
         }
     }
 }
