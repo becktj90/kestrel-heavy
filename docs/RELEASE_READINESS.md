@@ -21,7 +21,7 @@ Honesty rules:
 
 1. **Nothing here is device-verified** unless Trevor (or a named tester) records a Pass in [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md). CI captures use llvmpipe (no GPU).
 2. Unity CI runs on pull requests, not on pushes to `main`. "Verified (CI)" means green on the merging PR, plus Core/Node on `main` where those run.
-3. Latest Xcode export tag: **`export/2.0.0-214`** from `main` `2f85c027` (#452). **Current `main` (`b2bd87b3`) is ahead of 214** — TestFlight 214 does **not** contain #453–#468. Export 213 (`21d6eef0`) had the Nov 4 P0s (#419/#425/#432/#427) only.
+3. Latest Xcode export tag: **`export/2.0.0-215`** from `main` `b2bd87b31b8a` (#468). **Up to date with current `main`** (same tip as this checklist). Prior: 214 from `2f85c027` (#452); 213 from `21d6eef0` (Nov 4 P0s).
 
 ## How to read this
 
@@ -72,8 +72,8 @@ Open PRs at snapshot: **none**. Open GitHub issues at snapshot: **none** (former
 | ID | Item | Status | Owner | Proof |
 |---|---|---|---|---|
 | D-1 | Starter designer: tiers / Why? / speed / X-ray | verified (CI) | UX | #366; `DesignerV3UiTests`, Starter device/capture tests |
-| D-2 | Campaign starters Ready / launchable | verified (CI) | Gameplay | #309, #421, #456; launch-gate / wind-gate tests |
-| D-3 | Honest Ready; framed preview | verified (CI) | UX | #352, #365; Starter designer/preview device tests |
+| D-2 | Campaign starters Ready / launchable | verified (CI) with gap | Gameplay | #309, #421, #456; launch-gate / wind-gate tests. **[#473](https://github.com/becktj90/kestrel-heavy/issues/473):** KH-1 designer says Ready while countdown says "89 m/s short" (flight still completes). Do not treat KH-1 pre-liftoff Ready as honest until #473 is fixed. |
+| D-3 | Honest Ready; framed preview | verified (CI) with gap | UX | #352, #365; Starter designer/preview device tests. Same #473 caveat on KH-1 countdown vs Ready copy. |
 | D-4 | KH-1 pad framing in designer | verified (CI capture) | Graphics | #368 |
 | D-5 | Designer Launch flies headless sim + fairing jettison | verified (CI) | Gameplay | #360 |
 | D-6 | Fairing joint = stage diameter, 15° shoulder | verified (CI) | Graphics | #375, #383; fairing joint/mesh tests + captures |
@@ -146,7 +146,7 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 | S-1 | Field lengths within Apple limits | verified | QA | `tools/asc/check_limits.mjs`, `asc-limits` Node test |
 | S-2 | Description matches Unity build | verified (docs) | Arcade | [`appstore/LISTING.md`](appstore/LISTING.md) refreshed 2026-11-09; still a **draft** until Trevor pastes into ASC |
 | S-3 | Screenshots at store sizes | gap | Graphics + QA | CI path exists (#381 / `appstore-screenshots` workflow) but **final set not selected / uploaded**. Plan: [`appstore/SCREENSHOTS.md`](appstore/SCREENSHOTS.md) |
-| S-4 | Version / build | unverified | Trevor | Marketing 2.0.0; export **214** latest tag; main ahead — need fresh export for submit |
+| S-4 | Version / build | verified (export tag) | Arcade | Marketing 2.0.0; export **`export/2.0.0-215`** from `b2bd87b31b8a` — matches current `main` / this checklist tip |
 | S-5 | Age rating 4+ / not Kids | unverified | Trevor | Draft in AGE_RATING + [`appstore/TREVOR_OPEN_ITEMS.md`](appstore/TREVOR_OPEN_ITEMS.md) T7 |
 | S-6 | TestFlight what-to-test text | verified (text) | QA | APPSTORE_CONNECT §11; update per build |
 | S-7 | ASC [TO CONFIRM] block | unverified | Trevor | Privacy URL, Marketing URL, DSA, SKU, agreements — T1–T10 |
@@ -173,8 +173,8 @@ Highest first:
 2. **Device script** — Trevor runs [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md); until then device score stays 0.
 3. **S-3 screenshots** — regenerate via existing workflow, pick finals, Trevor uploads.
 4. **G-5 / G-4 / G-6 / T1 privacy** — do not claim Data Not Collected until proof + policy page.
-5. **S-4 export** — bake current `main` (or a release cut) into a new `export/2.0.0-*` before App Review.
-6. **F-8 first-flight fairness** — needs a device Pass on KH-1.
+5. **[#473](https://github.com/becktj90/kestrel-heavy/issues/473) KH-1 Ready vs countdown short** — fix before claiming honest first-flight Ready copy.
+6. **F-8 first-flight fairness** — needs a device Pass on KH-1 (and #473 fixed).
 7. **D-7 discrepancy audit** — re-run or formally close Blockers against current main.
 8. **P-4 performance on device** — required for heat/ stutter confidence.
 9. **A-4 / T6 / T7** — license, AI-voice line, age-rating confirmation.
@@ -192,4 +192,5 @@ Highest first:
 | Date (ET) | Change | By |
 |---|---|---|
 | 2026-10-28 | First version at `39cb8490`. | QA |
-| 2026-11-09 | Refresh through #468; score 42/62 CI-verified, 0 device; point at `docs/appstore/` + `DEVICE_TEST_SCRIPT.md`; note export 214 lag vs main. | Arcade |
+| 2026-11-09 | Refresh through #468; score 42/62 CI-verified, 0 device; point at `docs/appstore/` + `DEVICE_TEST_SCRIPT.md`. | Arcade |
+| 2026-11-09 | Export **215** = main `b2bd87b` (was wrongly called 214-lag); KH-1 Ready caveat → issue #473. | Arcade |
