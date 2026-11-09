@@ -21,6 +21,7 @@ public class IosExportComplianceTests
                 (existingDeclaration ? "<key>ITSAppUsesNonExemptEncryption</key><true/>" : "")+"</dict></plist>");
             var report=new BuildReport { summary=new BuildSummary { platform=BuildTarget.iOS, outputPath=root } };
             ProjectCapabilityManager.AddGameCenterCalls = 0;
+            PBXProject.RemoveFrameworkCalls = 0;
             new IosXcodePostprocess().OnPostprocessBuild(report);
             new IosXcodePostprocess().OnPostprocessBuild(report);
             Assert.That(ProjectCapabilityManager.AddGameCenterCalls, Is.EqualTo(0),
