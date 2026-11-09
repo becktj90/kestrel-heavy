@@ -246,11 +246,11 @@ namespace Kestrel.Capture.Tests
             while (starter.MoveNext()) yield return starter.Current;
 
             // Night launch: force pad night and re-shoot the pad/starter sky as night-launch.
-            Kestrel.Game.Pad.PadLights.ForceNight = true;
+            Kestrel.Pad.PadLights.ForceNight = true;
             yield return null; yield return null;
             var night = ShootAll("night-launch", problems);
             while (night.MoveNext()) yield return night.Current;
-            Kestrel.Game.Pad.PadLights.ForceNight = null;
+            Kestrel.Pad.PadLights.ForceNight = null;
 
             // Launch: the held count.
             if (!app.FlightHudVisible) app.PressLaunch();
@@ -380,8 +380,8 @@ namespace Kestrel.Capture.Tests
                         RecoveryShow.HoldForCapture = false;
                         // Mission complete: release holds so the report card can appear, then shoot it.
                         if (driver != null) driver.Hold(false);
-                        for (int i = 0; i < 900 && !ReportVisible(app); i++) yield return null;
-                        if (ReportVisible(app))
+                        for (int i = 0; i < 900 && !ReportVisible(app.UiForCapture); i++) yield return null;
+                        if (ReportVisible(app.UiForCapture))
                         {
                             var mc = ShootAll("mission-complete", problems);
                             while (mc.MoveNext()) yield return mc.Current;
