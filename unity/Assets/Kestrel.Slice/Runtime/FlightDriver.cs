@@ -277,9 +277,18 @@ namespace Kestrel.Slice
 
         void Update()
         {
-            if (Held || !Running || Sim == null) return;
+            if (!Running || Sim == null) return;
             float frame = Time.deltaTime;
             if (frame <= 0f && Time.unscaledDeltaTime > 0f) frame = Time.unscaledDeltaTime;
+            // Climax coast is wall-clock spectacle (#431 / #472): it must advance even while Held/paused.
+            // Pause used to early-return before StepCoast, freezing Orbit!/Apogee! forever with no report card
+            // (Trevor KH-3 freeze). Escape already refuses to Hold during Coasting; Hold from Pause must not either.
+            if (Coasting)
+            {
+                StepCoast(frame);
+                return;
+            }
+            if (Held) return;
             SkipAdvancedSimS = 0;
             if (skipping)
             {

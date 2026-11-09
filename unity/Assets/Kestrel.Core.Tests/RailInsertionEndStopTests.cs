@@ -7,6 +7,7 @@
 // Time-sliced like the phone: FlightDriver's 1/60 s frames, the director, the played checks, RecoveryShow.Present
 // (Conclude, then Step) before AscentHud.Present (FeedTrajectory), and FailureHost's report gate.
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Kestrel.Core.Data;
 using Kestrel.Core.Designer.Stepper;
@@ -318,5 +319,50 @@ namespace Kestrel.Core.Tests
             w4.AscentOver(600);
             Assert.AreEqual(TrajectoryStop.Boostback, w4.At(530, 199600, 7363).Marks[w4.At(530, 199600, 7363).Upcoming].Stop);
         }
+        [Test]
+        public void Conclude_SpreadsSettleAcrossCalls_AndClearsActiveForKh3()
+        {
+            // Per-frame budget must still finish the KH-3 expendable booster and open the report within ReportWithinS.
+            Assert.That(BoosterLanding.ConcludeStepsPerCall, Is.LessThan(BoosterLanding.SettleSteps / 4),
+                "Conclude is budgeted, not a full Settle hitch");
+            var run = Play(3, true);
+            TestContext.WriteLine(run.Log());
+            Assert.AreEqual("orbit", run.Result.outcome, run.Log());
+            Assert.IsFalse(double.IsNaN(run.ReportClock), "report opens / " + run.Log());
+            Assert.LessOrEqual(run.ReportClock - run.AscentEndClock, ReportWithinS, run.Log());
+            Assert.IsFalse(RecoveryLog.Active, run.Log());
+            Assert.IsTrue(run.Landing.Touched, run.Log());
+        }
+
+        [Test]
+        public void Conclude_Source_ReleasesActiveWhenSettleCannotFinish()
+        {
+            // Source pin: after a budgeted Settle that leaves the booster short of Down past MaxTime, Conclude must
+            // RecoveryLog.Release so FailureHost is not held forever (Trevor KH-3 freeze).
+            string src = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Core", "Flight", "BoosterLanding.cs"));
+            StringAssert.Contains("ConcludeStepsPerCall", src);
+            StringAssert.Contains("RecoveryLog.Release()", src);
+            StringAssert.Contains("RecoverySim.MaxTime", src);
+            StringAssert.Contains("Never leave RecoveryLog.Active holding the report", src);
+        }
+
+
+        [Test]
+        public void FlightDriver_Source_StepsCoastEvenWhileHeld()
+        {
+            string src = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Slice", "Runtime", "FlightDriver.cs"));
+            StringAssert.Contains("if (Coasting)", src);
+            StringAssert.Contains("StepCoast(frame)", src);
+            // Held must not precede the Coasting StepCoast (Trevor KH-3 freeze).
+            int coast = src.IndexOf("// Climax coast is wall-clock spectacle", StringComparison.Ordinal);
+            int held = src.IndexOf("if (Held) return;", StringComparison.Ordinal);
+            Assert.That(coast, Is.GreaterThan(0));
+            Assert.That(held, Is.GreaterThan(coast), "Held return comes after Coasting StepCoast");
+            string slice = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Slice", "Runtime", "SliceApp.cs"));
+            StringAssert.Contains("hold = on && !(flight != null && flight.Coasting)", slice);
+            StringAssert.Contains("recovery.Present(0f)", slice);
+        }
+
+
     }
 }

@@ -41,6 +41,10 @@ namespace Kestrel.Core.Flight
         double swellAmpM = LandingBurnDirector.DefaultSwellAmpM;
         /// <summary>#79: the player gave throttle or tilt input while the Landing phase was flying.</summary>
         bool playerFlown;
+        /// <summary>True once Conclude has begun settling from a pre-Landing phase. Budgeted calls must keep
+        /// going through Landing to Down (the old one-shot Settle did); #79 only blocks when Landing was
+        /// already open before Conclude started.</summary>
+        bool concluding;
 
         public BoosterFate Fate { get; private set; }
         public int CoreSerial { get; private set; }
@@ -208,6 +212,7 @@ namespace Kestrel.Core.Flight
 
         void Begin()
         {
+            concluding = false;
             double rad = shotPitchDeg * Math.PI / 180.0;
             double vEast = shotSpeed * Math.Cos(rad);
             double vUp = shotSpeed * Math.Sin(rad);
@@ -311,13 +316,18 @@ namespace Kestrel.Core.Flight
         /// The verdict is bit-identical to stepping it out live with the same stick. True once it has touched down.
         /// <paramref name="sink"/> is passed to <see cref="Step"/>, so a settled touchdown still announces itself.
         /// </summary>
-        public bool Settle(in RecoveryStick stick, IFlightSimSink sink = null)
+        public bool Settle(in RecoveryStick stick, IFlightSimSink sink = null) => Settle(stick, sink, SettleSteps);
+
+        /// <summary>Like <see cref="Settle(in RecoveryStick, IFlightSimSink)"/> but stops after <paramref name="maxSteps"/> recovery steps (for per-frame Conclude).</summary>
+        public bool Settle(in RecoveryStick stick, IFlightSimSink sink, int maxSteps)
         {
             if (!Started) return false;
             if (Touched) return true;
+            if (maxSteps < 1) maxSteps = 1;
+            if (maxSteps > SettleSteps) maxSteps = SettleSteps;
             sink = GuardedFlightSink.Wrap(sink);
             int guard = 0;
-            while (body.Phase != RecoveryPhase.Down && guard++ < SettleSteps)
+            while (body.Phase != RecoveryPhase.Down && guard++ < maxSteps)
             {
                 RecoveryFrames.Axes(body.X, body.Y, out _, out double alt, out _, out _, out _, out _, out _);
                 double step = alt < RecoverySim.NearAlt ? RecoverySim.NearDt : RecoverySim.Dt;
@@ -382,22 +392,41 @@ namespace Kestrel.Core.Flight
         }
 
         /// <summary>
+        /// Steps of recovery physics one <see cref="Conclude"/> may run per call. Full <see cref="Settle"/> can be
+        /// tens of thousands of steps (KH-3 ~174 s still in the air at insertion); doing that on the main thread
+        /// after SECO froze the live view with no report card (Trevor, 2026-11-09). Spread across Present frames
+        /// instead; FailureHost still waits on <see cref="RecoveryLog.Active"/>.
+        /// </summary>
+        public const int ConcludeStepsPerCall = 512;
+
+        /// <summary>
         /// t466 (build 204, KH-3): the upper stage was in orbit, but the report waited for the booster (RecoveryLog.Active,
         /// FailureHost) and the rail for its Boostback, minutes of dead air. Once the ascent has ended without a failure
-        /// (insertion or a clean cutoff), a booster still in the air finishes its landing at once on Auto-assist (the
-        /// stage-sep spec's Stay path: the booster lands or is lost automatically and its result joins the report).
-        /// A lost ascent is left alone (its failure card does not wait for the booster). True when it settled here.
+        /// (insertion or a clean cutoff), a booster still in the air finishes on Auto-assist across Present frames
+        /// (<see cref="ConcludeStepsPerCall"/>). A lost ascent is left alone. True when it settled on this call.
         /// #79: a planned landing whose landing burn has already opened is never settled: the player is flying
-        /// the burn, and settling it would skip their touchdown. The burn is seconds long (the six landing
-        /// missions touch down before the ascent ends, so this gate is a safety net, not the common path);
-        /// the live loop keeps stepping it until it touches down, then the report opens. An expendable
-        /// attempt, and a planned landing still in boostback, entry or descent, settle as before.
+        /// the burn. If Settle cannot finish past MaxTime, Active is released so the report is never held forever.
         /// </summary>
         public bool Conclude(bool ascentOver, bool ascentLost, IFlightSimSink sink = null)
         {
             if (!ascentOver || ascentLost || !Started || Touched) return false;
-            if (Fate == BoosterFate.Planned && body.Phase == RecoveryPhase.Landing) return false;
-            return Settle(RecoveryStick.Assisted, sink);
+            // #79: do not settle an open player burn — but once we have already started a budgeted settle
+            // from boostback/entry/descent, keep going through Landing (one-shot Settle used to).
+            if (!concluding && Fate == BoosterFate.Planned && body.Phase == RecoveryPhase.Landing) return false;
+            concluding = true;
+            if (Settle(RecoveryStick.Assisted, sink, ConcludeStepsPerCall))
+            {
+                concluding = false;
+                return true;
+            }
+            // Budget only — still falling within MaxTime: keep Active and resume next Present frame.
+            if (body.Phase != RecoveryPhase.Down && body.T < RecoverySim.MaxTime && !double.IsNaN(body.T))
+                return false;
+            // Stuck or past MaxTime without touchdown. Never leave RecoveryLog.Active holding the report
+            // forever (Trevor KH-3 freeze: sky / lone stage / no results card).
+            concluding = false;
+            if (!Touched && RecoveryLog.Active) RecoveryLog.Release();
+            return false;
         }
 
         /// <summary>
