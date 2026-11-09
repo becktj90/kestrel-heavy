@@ -41,6 +41,10 @@ namespace Kestrel.Core.Flight
         double swellAmpM = LandingBurnDirector.DefaultSwellAmpM;
         /// <summary>#79: the player gave throttle or tilt input while the Landing phase was flying.</summary>
         bool playerFlown;
+        /// <summary>True once Conclude has begun settling from a pre-Landing phase. Budgeted calls must keep
+        /// going through Landing to Down (the old one-shot Settle did); #79 only blocks when Landing was
+        /// already open before Conclude started.</summary>
+        bool concluding;
 
         public BoosterFate Fate { get; private set; }
         public int CoreSerial { get; private set; }
@@ -208,6 +212,7 @@ namespace Kestrel.Core.Flight
 
         void Begin()
         {
+            concluding = false;
             double rad = shotPitchDeg * Math.PI / 180.0;
             double vEast = shotSpeed * Math.Cos(rad);
             double vUp = shotSpeed * Math.Sin(rad);
@@ -405,13 +410,21 @@ namespace Kestrel.Core.Flight
         public bool Conclude(bool ascentOver, bool ascentLost, IFlightSimSink sink = null)
         {
             if (!ascentOver || ascentLost || !Started || Touched) return false;
-            if (Fate == BoosterFate.Planned && body.Phase == RecoveryPhase.Landing) return false;
-            if (Settle(RecoveryStick.Assisted, sink, ConcludeStepsPerCall)) return true;
+            // #79: do not settle an open player burn — but once we have already started a budgeted settle
+            // from boostback/entry/descent, keep going through Landing (one-shot Settle used to).
+            if (!concluding && Fate == BoosterFate.Planned && body.Phase == RecoveryPhase.Landing) return false;
+            concluding = true;
+            if (Settle(RecoveryStick.Assisted, sink, ConcludeStepsPerCall))
+            {
+                concluding = false;
+                return true;
+            }
             // Budget only — still falling within MaxTime: keep Active and resume next Present frame.
             if (body.Phase != RecoveryPhase.Down && body.T < RecoverySim.MaxTime && !double.IsNaN(body.T))
                 return false;
             // Stuck or past MaxTime without touchdown. Never leave RecoveryLog.Active holding the report
             // forever (Trevor KH-3 freeze: sky / lone stage / no results card).
+            concluding = false;
             if (!Touched && RecoveryLog.Active) RecoveryLog.Release();
             return false;
         }
