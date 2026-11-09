@@ -24,7 +24,7 @@ Kestrel Heavy is a rocket design and launch game by Trevor Beck (Beckify).
 - We do not sell or share player data because we do not collect it.
 
 ### Optional Apple services
-If Apple Game Center is enabled for the app in the future and you are signed into Game Center on your device, scores may be submitted to **Apple's** Game Center service under Apple's terms. That is Apple's processing, not a Beckify analytics pipeline. Today the Unity build does not ship a working Game Center client; this paragraph is reserved for Trevor's Game Center decision.
+**1.0 does not use Game Center.** Trevor decided on 2026-11-09 at 9:58 AM ET (America/New_York) to remove Game Center from the first release; the QA stream removes the entitlement/GameKit link. Scores and progress stay on device only. A later version may revisit Game Center under a new decision.
 
 ### Children's privacy
 Kestrel Heavy is rated for a general audience (draft App Store age rating **4+**, not Made for Kids). We do not knowingly collect personal information from children because we do not collect personal information from anyone through this app.
