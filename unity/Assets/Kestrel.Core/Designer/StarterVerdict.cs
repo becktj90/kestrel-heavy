@@ -164,6 +164,30 @@ namespace Kestrel.Core.Designer
             if (mean < want - band) return Low;
             return Shape;
         }
+
+        /// <summary>#473 / DECISIONS #83: make sure the count card shares the Starter's remembered predictor verdict
+        /// before the first Pulse. When Recall is still Checking (key miss, race, or Chance), re-fly the practice
+        /// ascent and Remember so the card never falls back to sheet Δv that contradicts Ready on a hop.</summary>
+        public static FlightVerdict EnsureRemembered(Catalog c, JsonObject designJson, CampaignMission mission)
+        {
+            if (c == null || designJson == null) return FlightVerdict.Checking;
+            string key = ReferenceAscent.CanonicalKey(c, designJson);
+            var have = FlightVerdict.Recall(key);
+            if (have.Known) return have;
+            var design = Design.FromJson(designJson);
+            bool? fits = null;
+            if (mission != null)
+            {
+                var fit = PayloadFit.Check(design, new PayloadSpec { id = mission.PayloadId, volume = mission.VolumeM3, diameter = mission.DiameterM });
+                fits = fit.fits;
+            }
+            var sim = ReferenceAscent.Simulate(c, designJson);
+            ReferenceAscent.Store(key, sim);
+            var judged = Judge(c, design, mission, sim, fits);
+            var v = judged.AsFlightVerdict();
+            FlightVerdict.Remember(key, v);
+            return v;
+        }
     }
 
     /// <summary>One predictor flight for a Starter setting, advanced in wall-time slices (like <see cref="ReferenceJob"/>).

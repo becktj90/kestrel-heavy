@@ -122,9 +122,13 @@ namespace Kestrel.Core.Flight
             {
                 pulse.Verdict = VerdictCount;
                 string fromVerdict = FlightVerdict.CountLine(verdict, trip);
-                pulse.Detail = fromVerdict ?? (spareMps >= 0
+                // #473 / M-10: hops must not fall back to the sheet's orbital spare (it reads "short" on rockets that
+                // fly the hop). Until the predictor remembers, keep Checking — never "89 m/s short" next to Ready.
+                if (fromVerdict != null) pulse.Detail = fromVerdict;
+                else if (goalAltM > 0) pulse.Detail = "Checking the test flight…";
+                else pulse.Detail = spareMps >= 0
                     ? $"{spareMps:N0} m/s to spare for {trip}"
-                    : $"{-spareMps:N0} m/s short for {trip}");
+                    : $"{-spareMps:N0} m/s short for {trip}";
                 return pulse;
             }
             bool heating = heat >= HeatWarn;
