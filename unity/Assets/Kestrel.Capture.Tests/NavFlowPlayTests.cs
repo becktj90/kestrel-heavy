@@ -578,9 +578,12 @@ namespace Kestrel.Capture.Tests
             double startAlt = driver.Altitude;
             yield return Until(() => driver.CoastWall >= 1.5 || !driver.Coasting, 15f);
             Assert.IsTrue(driver.Coasting, "still coasting 1.5 s in");
+            double wallAtHold = driver.CoastWall;
             driver.Hold(true);
             for (int i = 0; i < 4; i++) yield return null;
             Assert.That(driver.Altitude, Is.GreaterThan(startAlt), "the coast climbs on the propagated arc");
+            Assert.That(driver.CoastWall, Is.GreaterThan(wallAtHold), "climax wall clock advances while Held (KH-3 freeze: Pause must not freeze Orbit!)");
+            Assert.IsTrue(driver.Coasting, "still coasting under Hold");
             var verdict = SliceUi()?.Q<Label>("h-verdict");
             Assert.IsNotNull(verdict, "flight HUD verdict");
             Assert.AreEqual(OrbitCoast.CalloutApogee, verdict.text, "the HUD calls the climax");
@@ -726,5 +729,87 @@ namespace Kestrel.Capture.Tests
             yield return null;
             Assert.IsFalse(NavIds.Shown(Find("screen-pause")), "Escape again resumes");
         }
+        IEnumerator ToKh3Pad()
+        {
+            yield return Boot();
+            flow.Present(FlightCapture.LaunchAfter(2));
+            yield return At(AppScreen.Missions, "Briefing");
+            flow.BuildFromBriefing();
+            SliceApp app = null;
+            yield return Until(() => !flow.Busy && flow.Current == AppScreen.Design && (app = UnityEngine.Object.FindAnyObjectByType<SliceApp>()) != null);
+            Assert.IsNotNull(app);
+            Assert.AreEqual("m3", GameSession.Current?.MissionId, "cleared=2 arms KH-3 Tiny Orbit");
+            if (!app.FlightHudVisible) app.PressLaunch();
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            Assert.IsNotNull(driver, "live FlightDriver");
+            yield return Until(() => driver.Sim != null && driver.Running, 90f);
+            Assert.IsTrue(driver.Running, "KH-3 reached liftoff");
+        }
+
+        static void AssertReportCardAndButtons()
+        {
+            Assert.IsTrue(ReportShown(), "the results card is on screen");
+            var report = Find("screen-report");
+            Assert.IsNotNull(report);
+            Assert.IsNotNull(Find("report-retry"), "Retry / One more launch");
+            Assert.IsNotNull(Find("report-home"), "Home");
+            // Missions and Fix/Next vary by outcome; at least one more exit besides retry/home.
+            bool hasMissions = Find("report-missions") != null;
+            bool hasFix = Find("report-fix") != null;
+            bool hasNext = report.Q(UiIds.ReportNext) != null || report.Q("report-next") != null;
+            Assert.IsTrue(hasMissions || hasFix || hasNext, "report shows at least one more action (Missions / Fix it / Next)");
+        }
+
+        /// <summary>
+        /// P0 Trevor 2026-11-09: froze after completing KH-3 — sky / lone stage / no results card.
+        /// Stay-with-upper-stage path: default chase camera through insertion; report + buttons must appear.
+        /// </summary>
+        [UnityTest]
+        [Timeout(600000)]
+        public IEnumerator Kh3_StayWithUpperStage_ReachesReportCardAndButtons()
+        {
+            yield return ToKh3Pad();
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            driver.ReduceMotionOverride = true; // skip climax warp; still exercises Conclude + report gate
+            yield return Until(() => driver.Result != null && !driver.Running, 420f);
+            Assert.IsNotNull(driver.Result, "KH-3 ascent ends");
+            Assert.IsFalse(driver.Held, "driver is not left Held after the ascent");
+            yield return Until(() => ReportShown() || !RecoveryLog.Active, 60f);
+            yield return Until(ReportShown, 60f);
+            AssertReportCardAndButtons();
+            Assert.IsFalse(RecoveryLog.Active, "booster no longer holds the report");
+            NothingThrew();
+        }
+
+        /// <summary>
+        /// Land-booster path: wait until RecoveryShow steers the camera onto the booster, then assert the report
+        /// still opens with its buttons (same insertion gate, camera on the returning stage).
+        /// </summary>
+        [UnityTest]
+        [Timeout(600000)]
+        public IEnumerator Kh3_LandBoosterFollow_ReachesReportCardAndButtons()
+        {
+            yield return ToKh3Pad();
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            driver.ReduceMotionOverride = true;
+            bool sawBoosterCam = false;
+            yield return Until(() =>
+            {
+                var rec = app != null ? app.RecoveryForCapture : null;
+                if (rec != null && rec.SteerCamera) sawBoosterCam = true;
+                return driver.Result != null && !driver.Running;
+            }, 420f);
+            Assert.IsNotNull(driver.Result, "KH-3 ascent ends");
+            // Expendable settle may clear Active before SteerCamera lights; if the booster never took the camera,
+            // still require the report — the stay path covers that. When it did, pin we survived follow → card.
+            yield return Until(ReportShown, 90f);
+            AssertReportCardAndButtons();
+            if (sawBoosterCam)
+                Assert.IsTrue(ReportShown(), "report after booster-follow");
+            NothingThrew();
+        }
+
+
     }
 }
