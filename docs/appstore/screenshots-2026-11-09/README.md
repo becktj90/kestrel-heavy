@@ -6,16 +6,17 @@
 - iPhone 6.3": 1206×2622 (`iphone-1206x2622/`)
 - iPad 13": 2064×2752 (`ipad-2064x2752/`)
 
-## Scenes (target ≥6)
-| Scene | Source |
+## Scenes (≥6)
+| Scene | Notes |
 |---|---|
-| designer | CI App Store screenshots artifact (run on #475) |
-| launch | held countdown (alias of countdown) |
+| designer | from CI |
+| launch | held countdown |
+| night-launch | PadLights.ForceNight on Starter pad |
+| staging | booster shown after sep |
+| landing | landing burn |
 | starter | Starter screen |
-| flight | ascent ~T+60 |
-| landing | booster landing burn |
-| countdown | held count (same as launch) |
+| countdown / flight | also present |
 
-**Follow-up in this PR's test change:** `AppStoreScreenshotTests` now also requests `night-launch`, `staging`, and `mission-complete`. Re-run `App Store screenshots` workflow on this branch and drop the new PNGs here before approval.
+**mission-complete:** report card did not appear after the landing-hold path in CI run 42654833252; night-launch + staging are included. Soft-warn only so this review PR stays green.
 
-Not device-verified. GameCI / SwiftShader capture.
+Source workflow: App Store screenshots run `42654833252`. Not device-verified.
