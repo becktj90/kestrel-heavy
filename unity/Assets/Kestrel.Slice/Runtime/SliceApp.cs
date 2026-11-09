@@ -1695,10 +1695,21 @@ namespace Kestrel.Slice
             spareMps = sheet != null ? sheet.totalDeltaV_mps - sheet.requiredDeltaV_mps : 0;
             var hop = AscentFlight.CurrentMission();
             hopGoalM = hop != null && hop.TargetKind == "apogee" ? hop.ApoKm * 1000.0 : 0;
-            if (hopGoalM > 0) requiredMps = hop.RequiredDeltaV();
+            // #473: hop required is the mission hop Δv, not the sheet's orbital required. Keep spare against the same need.
+            if (hopGoalM > 0)
+            {
+                requiredMps = hop.RequiredDeltaV();
+                if (sheet != null) spareMps = sheet.totalDeltaV_mps - requiredMps;
+            }
             maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
             orbitLabel = sheet != null ? sheet.orbitLabel : "";
-            try { verdictKey = session.Design != null ? ReferenceAscent.CanonicalKey(session.catalog, session.Design) : null; }
+            try
+            {
+                verdictKey = session.Design != null ? ReferenceAscent.CanonicalKey(session.catalog, session.Design) : null;
+                // DECISIONS #83 / #473: count card and Starter Ready share one remembered predictor verdict.
+                if (verdictKey != null && session.Design != null)
+                    StarterVerdict.EnsureRemembered(session.catalog, session.Design, hop);
+            }
             catch (System.Exception) { verdictKey = null; }
             try { liveSpare = session.Design != null ? LiveSpare.For(session.catalog, Design.FromJson(session.Design).payloadOrbit) : null; }
             catch (System.Exception) { liveSpare = null; }
