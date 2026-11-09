@@ -130,7 +130,8 @@ test('Game Center: one leaderboard per KH-n, bridged only in the iOS app', async
   assert.match(swift, /error != nil/);
   assert.match(swift, /com\.beckify\.kestrelheavy\.lb\./);
   const ent = fs.readFileSync(path.join(iosRoot, 'KestrelHeavy/KestrelHeavy.entitlements'), 'utf8');
-  assert.match(ent, /com\.apple\.developer\.game-center/);
+  // Trevor 2026-11-09 / DECISIONS #98: Game Center out of 1.0 — entitlement removed from the export.
+  assert.doesNotMatch(ent, /com\.apple\.developer\.game-center/);
   const doc = fs.readFileSync(path.join(__dirname, '..', 'docs/KESTREL_APP_STORE.md'), 'utf8');
   for (const id of ids) assert.ok(doc.includes(id), `listing doc documents ${id}`);
 });
