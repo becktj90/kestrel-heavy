@@ -63,7 +63,7 @@ Open PRs at snapshot: **none**. Open GitHub issues at snapshot: **none** (former
 | N6 | Flight camera picker; HUD touches never orbit | verified (CI) | Graphics | #364; `FlightCameraPickerDeviceTests` |
 | N7 | Corner character (Thrum) off by default; Settings switch | verified (CI) | UX | #374; `CornerCharacterSettingTests`; DECISIONS #72; `home.thrum: false` |
 | N8 | Next mission opens next designer | verified (CI) | Arcade | #426; `NAV06_ReportNext_OpensTheNextMissionsDesigner` |
-| N9 | Escape/back in flight does not open Pause (NAV-08) | gap (low on iPhone) | Arcade | Still KnownBug in Nav tests; on-screen Pause is the phone path |
+| N9 | Escape/back in flight opens Pause (NAV-08) | verified (CI) | Arcade | [#472](https://github.com/becktj90/kestrel-heavy/pull/472); `MenuBack.FlightEscape` wired in `SliceApp.EnterFlight`; Core + PlayMode pins |
 | N10 | CONTINUE label when cleared>0 and no draft (NAV-10) | gap (label only) | Arcade | Documented; not a dead end |
 | N11 | Lock-screen / app-switch resume mid-flight | unverified | Arcade | Device script §12 |
 
@@ -161,7 +161,7 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 | G-4 | `submitAnalytics` | verified (config) via #479 | Arcade | **0** on the #479 branch / main after merge; see network evidence |
 | G-5 | Privacy label proof on built player | unverified | QA + Trevor | Framework inspect + proxy capture not run |
 | G-6 | Unity `PrivacyInfo.xcprivacy` inspected | unverified | Arcade | In-repo file is legacy Phaser wrapper only |
-| G-7 | Export compliance + GC capability post-process | verified (code) | Arcade | `IosXcodePostprocess.cs`; exported plist unverified |
+| G-7 | Export compliance `ITSAppUsesNonExemptEncryption = NO` (Game Center capability **not** added for 1.0; #478) | verified (code) | Arcade | `IosXcodePostprocess.cs`; exported plist unverified on next xcode-export |
 | G-8 | No unexpected network at runtime | unverified (Unity) | QA | Device airplane-mode step |
 | G-9 | Privacy policy page lists Unity Kestrel Heavy | unverified | Trevor | T1 |
 
@@ -212,4 +212,5 @@ Highest first:
 | 2026-11-09 | Refresh through #468; score 42/62 CI-verified, 0 device; point at `docs/appstore/` + `DEVICE_TEST_SCRIPT.md`. | Arcade |
 | 2026-11-09 | Export **215** = main `b2bd87b` (was wrongly called 214-lag); KH-1 Ready caveat → issue #473. | Arcade |
 | 2026-11-09 | Network evidence section; Trevor removes Game Center from 1.0 (9:58 AM ET). | Arcade |
-| 2026-11-09 | Build tip: export 215 / TF 51 from b2bd87b; main +#475. Network evidence + #479; GC removed #478; score 44/62. | Arcade |
+| 2026-11-09 | Resolve main merge after #478; N9 NAV-08 verified via #472; G-7 notes GC out. Score 45/62. | Arcade |
+| 2026-11-09 | Build tip: export 215 / TF 51 from b2bd87b; main +#475. Network evidence + #479; GC removed #478; score 45/62. | Arcade |
