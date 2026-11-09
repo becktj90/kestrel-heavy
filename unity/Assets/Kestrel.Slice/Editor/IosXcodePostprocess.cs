@@ -48,6 +48,66 @@ namespace Kestrel.Slice.Editor
             StripGameKitFromPbxprojText(projPath);
             WriteCleanEntitlements(root);
             StripGameCenterEntitlementKeys(root);
+            EnsurePrivacyManifests(root);
+        }
+
+        /// <summary>
+        /// Unity emits PrivacyInfo.xcprivacy with required-reason APIs only.
+        /// Pin NSPrivacyTracking false and empty collected/tracking-domain lists (RELEASE_READINESS G-6).
+        /// </summary>
+        internal static void EnsurePrivacyManifests(string root)
+        {
+            if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return;
+            foreach (var path in Directory.GetFiles(root, "PrivacyInfo.xcprivacy", SearchOption.AllDirectories))
+                EnsurePrivacyManifest(path);
+        }
+
+        internal static void EnsurePrivacyManifest(string path)
+        {
+            var doc = File.Exists(path)
+                ? XDocument.Load(path)
+                : new XDocument(new XElement("plist", new XAttribute("version", "1.0"), new XElement("dict")));
+            var dict = doc.Root?.Element("dict");
+            if (dict == null)
+            {
+                doc = new XDocument(new XElement("plist", new XAttribute("version", "1.0"), new XElement("dict")));
+                dict = doc.Root.Element("dict");
+            }
+            SetPrivacyBoolean(dict, "NSPrivacyTracking", false);
+            EnsureEmptyPrivacyArray(dict, "NSPrivacyTrackingDomains");
+            EnsureEmptyPrivacyArray(dict, "NSPrivacyCollectedDataTypes");
+            doc.Save(path);
+        }
+
+        static void SetPrivacyBoolean(XElement dict, string key, bool value)
+        {
+            foreach (var el in dict.Elements("key"))
+            {
+                if (el.Value != key) continue;
+                var next = el.NextNode as XElement;
+                if (next != null) next.ReplaceWith(new XElement(value ? "true" : "false"));
+                else el.AddAfterSelf(new XElement(value ? "true" : "false"));
+                return;
+            }
+            dict.Add(new XElement("key", key), new XElement(value ? "true" : "false"));
+        }
+
+        static void EnsureEmptyPrivacyArray(XElement dict, string key)
+        {
+            foreach (var el in dict.Elements("key").ToList())
+            {
+                if (el.Value != key) continue;
+                var next = el.NextNode as XElement;
+                if (next != null && next.Name.LocalName == "array")
+                {
+                    next.RemoveNodes();
+                    return;
+                }
+                if (next != null) next.ReplaceWith(new XElement("array"));
+                else el.AddAfterSelf(new XElement("array"));
+                return;
+            }
+            dict.Add(new XElement("key", key), new XElement("array"));
         }
 
         /// <summary>
