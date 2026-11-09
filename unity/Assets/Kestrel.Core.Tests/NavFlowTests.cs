@@ -387,17 +387,16 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void KnownBug_NAV08_EscapeInFlight_NeverPauses()
+        public void NAV08_EscapeInFlight_WiresMenuBackFlightEscape()
         {
-            KnownBug("NAV-08", "Escape / hardware back during flight opens the pause menu", () =>
+            // SliceApp.EnterFlight assigns MenuBack.FlightEscape so AppShell.HandleEscape opens the pause menu.
+            bool wired = false;
+            foreach (var f in Directory.GetFiles(Path.Combine(Golden.Root, "unity", "Assets"), "*.cs", SearchOption.AllDirectories))
             {
-                foreach (var f in Directory.GetFiles(Path.Combine(Golden.Root, "unity", "Assets"), "*.cs", SearchOption.AllDirectories))
-                {
-                    if (f.Contains("Tests")) continue;
-                    if (File.ReadAllText(f).Contains("FlightEscape =")) return null;
-                }
-                return "MenuBack.FlightEscape is never assigned; AppShell.HandleEscape falls through to whatever back control is visible";
-            });
+                if (f.Contains("Tests")) continue;
+                if (File.ReadAllText(f).Contains("FlightEscape =")) { wired = true; break; }
+            }
+            Assert.IsTrue(wired, "MenuBack.FlightEscape must be assigned outside Tests (NAV-08)");
         }
 
         // ---------------------------------------------------------------- helpers

@@ -1611,6 +1611,7 @@ namespace Kestrel.Slice
         /// </summary>
         void ClearFlight()
         {
+            Kestrel.Game.Shell.MenuBack.FlightEscape = null;
             ReportCardChrome.Dismiss(ui);
             SetFlightPaused(false);
             handoff.Reset();
@@ -1649,6 +1650,18 @@ namespace Kestrel.Slice
             chrome?.Show(on);
         }
 
+        /// <summary>NAV-08: web Escape and the hardware back key open the pause menu in flight (and resume when it is already open).</summary>
+        void ToggleFlightPauseFromEscape()
+        {
+            if (chrome == null) return;
+            if (ui != null && ui.Q(ReportView.RootName) != null) return;
+            // Only while a live ascent is running. A stuck Escape after MECO or on the pad must not Hold the driver.
+            if (flight == null || !flight.Running || flight.Result != null) return;
+            // The climax coast advances on wall time only while !Held; Escape must not freeze it (#472 PlayMode).
+            if (flight.Coasting) return;
+            SetFlightPaused(!chrome.Paused);
+        }
+
         void EnterFlight()
         {
             if (session == null || design == null) return;
@@ -1656,6 +1669,8 @@ namespace Kestrel.Slice
             // and the retry never left the pad. Dismiss it, and put the HUD back.
             ReportCardChrome.Dismiss(ui);
             ReportCardChrome.RestoreFlight(ui);
+            // NAV-08: Escape / hardware back opens (and toggles) the in-flight pause menu.
+            Kestrel.Game.Shell.MenuBack.FlightEscape = ToggleFlightPauseFromEscape;
             if (rocketGO != null)
             {
                 var host = rocketGO.GetComponent<Kestrel.Game.Failure.FailureHost>();
@@ -1962,7 +1977,11 @@ namespace Kestrel.Slice
             }
             if (birds != null) birds.TrackFlight = hud != null && !hud.ClassListContains("hidden");
             if (ui != null && ui.Q(ReportView.RootName) != null)
+            {
+                // Report owns Escape via ReportCardChrome.Escape; do not open pause over the card.
+                Kestrel.Game.Shell.MenuBack.FlightEscape = null;
                 handoff.Finish();
+            }
             CheckDesignerLanding();
             if (chrome != null && chrome.Paused) return;
             bool inFlight = hud != null && !hud.ClassListContains("hidden");
