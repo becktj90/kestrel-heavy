@@ -48,6 +48,12 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("Test flight misses LEO", b.Detail);
             var c = WebcastBoard.Pulse(false, 0, 0, 7600, 420, 0, 35, "LEO", 0, FlightVerdict.Checking);
             StringAssert.Contains("m/s to spare for LEO", c.Detail, "unknown keeps the sheet line");
+            // #473: hop with unknown verdict must never show the sheet's orbital "short" next to Ready.
+            var hopCheck = WebcastBoard.Pulse(false, 0, 0, 1443, -89, 0, 35, "First Hop", 10000, FlightVerdict.Checking);
+            StringAssert.DoesNotContain("short", hopCheck.Detail);
+            StringAssert.Contains("Checking", hopCheck.Detail);
+            var hopPass = WebcastBoard.Pulse(false, 0, 0, 1443, -89, 0, 35, "First Hop", 10000, pass);
+            Assert.AreEqual("Test flight reaches First Hop", hopPass.Detail);
             // In flight the "short" cue reads the live spare (DECISIONS #90), not the speed share or the verdict:
             // a held live spare reads short even on a design the predictor passes, and a fine live spare reads on
             // track even at 13 % of the budget on a design the predictor fails. The verdict still drives the
