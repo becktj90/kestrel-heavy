@@ -1,5 +1,24 @@
 # Rocket designer × missions: discrepancy list
 
+## Re-run 2026-11-09 (Arcade)
+
+Harnesses: `tools/audit/designer-missions/verdict/run.sh` and `missions/ … campaign-winners live` on main tip before #472/#475.
+
+**Still open in harness output (not the shipping FlightDriver path):**
+- Verdict summary: 131 `BATCH_PASS_LIVE_FAIL` rows — many are the harness `full` profile still cutting at **t=600** on salt-flat, while the game uses `MissionFlightSetup` / `tMax ≥ 2500` (B-01 fixed in product).
+- `lat28-calm-t600` and `site-t2500` profiles show many winners pass when tMax/site match the batch.
+- KH-1/KH-2 home hoppers: harness live fail vs batch pass — investigate separately (seed/played checks); `campaign-search` on main still reports KH-1..KH-13 winners.
+
+**Product fixes already on main (tracker updated):** B-01, B-03 via `MissionFlightSetup` + `Stack.SimInputs` (`FlightDriver`).
+
+**Left for follow-up PRs (physics / fit / data):** B-02 (KH-3 20 kg vs designer min), B-04 (fit rule split), and remaining Majors — do not weaken tests; physics questions to Kestrel Physics.
+
+Logs: `/workspace/kh-qa-2026-11-09/out/audit/` (verdict + missions-live).
+
+---
+
+# Rocket designer × missions: discrepancy list
+
 Audit of `main` at b8ad6b9 (2026-10-19). Scope: every designer option (data catalogs, Hangar and v3 panels, guided stepper, edit ops), every campaign mission KH-1 to KH-20, the contract generator, and the path from the designer's verdict to the flight result.
 
 **Headline.** The campaign cannot be finished as built:
@@ -34,9 +53,9 @@ Paths are relative to the repo root. `Core/` = `unity/Assets/Kestrel.Core/`, `Sl
 
 | ID | Sev | Area | Missions | Title | Status |
 |---|---|---|---|---|---|
-| B-01 | Blocker | Flight | KH-3–20 | Live flight cut off at T+600 s, before orbit | Open |
+| B-01 | Blocker | Flight | KH-3–20 | Live flight cut off at T+600 s, before orbit | **Fixed** (MissionFlightSetup / Stack.SimInputs tMax≥2500; FlightDriver 2026-11) |
 | B-02 | Blocker | Mission data | KH-3, Flock contracts | KH-3 payload 20 kg is below the designer's 50 kg minimum, so KH-3 can never launch (campaign softlock) | Open |
-| B-03 | Blocker | Flight | KH-3–20 | Live flight setup differs from FlightBatch (cutoff on the ±5% edge, random pad and wind, boil-off, strap-on landing fuel) | Open |
+| B-03 | Blocker | Flight | KH-3–20 | Live flight setup differs from FlightBatch (cutoff on the ±5% edge, random pad and wind, boil-off, strap-on landing fuel) | **Fixed** (shared MissionFlightSetup with FlightBatch; see FlightDriver) |
 | B-04 | Blocker | Fit | KH-4–20 | Three different payload-fit rules: designer blocks 10 winners, passes 13 losers | Open |
 | B-05 | Blocker | Failure model | All | Failure model switched on by unrelated fields; prediction ≠ judge; red risks only warn; Simple says "ready" | Open |
 | B-06 | Blocker | Failure model | All | Cryo rule mismatch: any LOX propellant on composite or glass-phenolic fails at T+0, unwarned | Open |
