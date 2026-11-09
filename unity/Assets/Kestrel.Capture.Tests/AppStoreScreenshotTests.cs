@@ -245,6 +245,13 @@ namespace Kestrel.Capture.Tests
             var starter = ShootAll("starter", problems);
             while (starter.MoveNext()) yield return starter.Current;
 
+            // Night launch: force pad night and re-shoot the pad/starter sky as night-launch.
+            Kestrel.Game.Pad.PadLights.ForceNight = true;
+            yield return null; yield return null;
+            var night = ShootAll("night-launch", problems);
+            while (night.MoveNext()) yield return night.Current;
+            Kestrel.Game.Pad.PadLights.ForceNight = null;
+
             // Launch: the held count.
             if (!app.FlightHudVisible) app.PressLaunch();
             for (int i = 0; i < 600 && !app.CountingForCapture; i++) yield return null;
@@ -252,6 +259,9 @@ namespace Kestrel.Capture.Tests
             for (int i = 0; i < 150; i++) yield return null;   // FlightViewPose smoothing settles in about 1.5 s
             var count = ShootAll("countdown", problems);
             while (count.MoveNext()) yield return count.Current;
+            // CoS 2026-11-09: "launch" is the held count (same frame as countdown).
+            var launch = ShootAll("launch", problems);
+            while (launch.MoveNext()) yield return launch.Current;
 
             // The ascent, at T+60.
             SliceApp.HoldCountForCapture = false;
@@ -307,6 +317,8 @@ namespace Kestrel.Capture.Tests
                     for (int f = 0; f < 600 && !BoosterShown(rec) && driver != null && driver.Running; f++) yield return null;
                     TestContext.WriteLine("booster shown " + BoosterShown(rec) + " at T+" + app.FlightClockForCapture.ToString("0.0") + "; ascent held while the booster flies");
                     if (driver != null) driver.Hold(true);
+                    var stg = ShootAll("staging", problems);
+                    while (stg.MoveNext()) yield return stg.Current;
                     var seen = rec.PhaseForCapture;
                     TestContext.WriteLine("recovery phase " + seen + " at frame " + Time.frameCount);
                     for (int f = 0; f < MaxFlightFrames; f++)
@@ -366,6 +378,15 @@ namespace Kestrel.Capture.Tests
                         var ld = ShootAll("landing", problems);
                         while (ld.MoveNext()) yield return ld.Current;
                         RecoveryShow.HoldForCapture = false;
+                        // Mission complete: release holds so the report card can appear, then shoot it.
+                        if (driver != null) driver.Hold(false);
+                        for (int i = 0; i < 900 && !ReportVisible(app); i++) yield return null;
+                        if (ReportVisible(app))
+                        {
+                            var mc = ShootAll("mission-complete", problems);
+                            while (mc.MoveNext()) yield return mc.Current;
+                        }
+                        else problems.Add("mission-complete: report card never appeared");
                     }
                     else problems.Add("landing: the booster never reached its landing burn with the camera on it (last phase " + seen + ")");
                     if (driver != null) driver.Hold(false);
@@ -401,6 +422,13 @@ namespace Kestrel.Capture.Tests
         }
 
         /// <summary>The live "Short on speed" webcast pill is laid out and visible.</summary>
+        static bool ReportVisible(VisualElement ui)
+        {
+            if (ui == null) return false;
+            var r = ui.Q(ReportView.RootName);
+            return r != null && r.resolvedStyle.display != DisplayStyle.None && !r.ClassListContains("hidden");
+        }
+
         static bool ShortBannerShown(VisualElement ui)
         {
             if (ui == null) return false;
