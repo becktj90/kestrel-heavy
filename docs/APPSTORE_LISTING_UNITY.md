@@ -6,7 +6,7 @@
 
 > **Draft for Trevor. Nothing is entered in App Store Connect. Price is not set here ($0.99 is blocked on the Paid Applications bank agreement). Trevor alone submits to App Review.**
 
-**Last verified against main at commit b2bd87b31b8a966ce444ad9595a2dc63f0b5d0c1 (b2bd87b3) on 2026-11-09 (America/New_York).** Latest merge: #468 (KH-12 board starter fitted with closed-loop guidance computer). Latest export tag: `export/2.0.0-214` from main `2f85c027` (#452) — **main is ahead of 214**; re-export before submission. Previous listing check: 39cb8490 (2026-10-28).
+**Last verified against main at commit b2bd87b31b8a966ce444ad9595a2dc63f0b5d0c1 (b2bd87b3) on 2026-11-09 (America/New_York).** Latest merge: #468 (KH-12 board starter fitted with closed-loop guidance computer). Latest export tag: **`export/2.0.0-215`** from main `b2bd87b31b8a` — **up to date with current main**. Previous listing check: 39cb8490 (2026-10-28).
 
 Docs only. Character counts for the live draft are maintained in `docs/appstore/LISTING.md`. Facts used: portrait only, bundle `com.beckify.kestrelheavy` (iPhone), version 2.0.0, first Unity release. The Phaser build is a web demo only and is not described as the product.
 

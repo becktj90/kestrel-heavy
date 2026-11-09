@@ -2,7 +2,7 @@
 
 Docs only. **No App Store Connect edits, pricing, signing, icon or splash changes** without Trevor's explicit yes. Only Trevor submits to App Review.
 
-Snapshot: 2026-11-09 (America/New_York). `main` at `b2bd87b3` (#468). Latest Xcode export tag on the repo: **`export/2.0.0-214`** (from `main` `2f85c027`, #452) — **current `main` is ahead of that export**; a new export is needed before claiming the listing matches the build in TestFlight.
+Snapshot: 2026-11-09 (America/New_York). `main` at `b2bd87b3` (#468). Latest Xcode export tag: **`export/2.0.0-215`** from `main` `b2bd87b31b8a` — **up to date with current main** (same tip). Prior tip was 214 from `2f85c027`.
 
 ## Still Trevor's call
 
@@ -11,7 +11,7 @@ Snapshot: 2026-11-09 (America/New_York). `main` at `b2bd87b3` (#468). Latest Xco
 | T1 | **Privacy policy URL** | https://beckify.com/privacy — page must describe the **Unity** game (local saves, no analytics, no ads). Fetched earlier as still Phaser/WKWebView-oriented. | **Yes** |
 | T2 | **Marketing URL** | https://beckify.com/games/kestrel-heavy currently hosts the Phaser web demo, not the Unity product. Relabel as demo, point elsewhere, or drop. | Should fix before submit |
 | T3 | **Support URL** | https://beckify.com — confirm it shows contact info Apple accepts. | Should confirm |
-| T4 | **Game Center** | Unity build still uses `NullGameCenter` (GameKit plug-in not in `Packages/manifest.json`). Post-process still adds the Game Center capability. **Wire the feature or remove the claim and capability tick.** | **Yes** if ASC still ticks Game Center / leaderboards |
+| T4 | **Game Center** | Unity build still uses `NullGameCenter` (GameKit plug-in not in `Packages/manifest.json`). **Leave the iOS export Game Center entitlement / GameKit link alone** until Trevor decides. Listing copy must **not** claim Game Center (see LISTING.md). Open decision: wire the feature later, or clear the ASC Game Center tick — Trevor only. | Trevor decision (not a docs unblock) |
 | T5 | **iPad** | Project ships iPhone + iPad, `uIRequiresFullScreen: 1`, portrait only. iPad 13" screenshots become mandatory. Confirm keep iPad on the listing (DECISIONS #7 / #62). | Yes for screenshot set |
 | T6 | **AI-voice disclosure** | Description line: "The voices are AI-generated." ElevenLabs on Trevor's paid Creator plan (`docs/NARRATION_LICENSE.md`). Confirm keep for ASC content-rights. | Confirm |
 | T7 | **Age rating confirmation** | Draft **4+**, Made for Kids **No** (`docs/AGE_RATING_RECOMMENDATION.md`, DECISIONS #34). Re-check cartoon/fantasy violence against final explosion VFX; KH-8 crew capsule must not show harm. | Confirm |
