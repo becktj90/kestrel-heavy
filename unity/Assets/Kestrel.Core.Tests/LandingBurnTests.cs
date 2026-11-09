@@ -197,11 +197,26 @@ namespace Kestrel.Core.Tests
         [Test, Timeout(120000)]
         public void Conclude_SettlesBeforeTheBurnOpens_AndSettlesAnExpendableAttempt()
         {
+            // Same end state as the pre-budget test: settle from boostback/entry/descent before the
+            // player burn opens, and settle an expendable attempt. Conclude is budgeted per Present
+            // frame (ConcludeStepsPerCall); loop with a tight ceiling, not an open-ended "eventually".
+            int maxCalls = (int)(RecoverySim.MaxTime / RecoverySim.Dt / BoosterLanding.ConcludeStepsPerCall) + 8;
             var h = handovers["m7"];
             var landing = Arm(h, 0);
             Begin(landing, h);
-            Assert.IsTrue(landing.Conclude(true, false), "still in boostback/entry/descent, t466 settles as before");
-            Assert.IsTrue(landing.Touched, "settled to touchdown at once");
+            Assert.That(landing.Body.Phase, Is.Not.EqualTo(RecoveryPhase.Landing).And.Not.EqualTo(RecoveryPhase.Down),
+                "starts before the landing burn opens");
+            int calls = 0;
+            bool settled = false;
+            while (calls < maxCalls && !landing.Touched)
+            {
+                settled = landing.Conclude(true, false);
+                calls++;
+            }
+            Assert.IsTrue(landing.Touched && settled, "settled to touchdown before the burn opens (calls=" + calls + "/" + maxCalls + ")");
+            Assert.That(calls, Is.InRange(2, maxCalls), "budgeted Conclude finishes in a bounded number of Present frames");
+            Assert.IsNotNull(landing.Verdict, "planned landing is graded");
+            Assert.IsFalse(landing.Verdict.Expendable);
 
             // The same rocket with no landing picked: an expendable attempt settles as before, ungraded.
             var expendable = Design.FromJson(WinnerDoc("m7"));
@@ -209,8 +224,15 @@ namespace Kestrel.Core.Tests
             var lost = BoosterLanding.Arm(catalog, expendable, 0);
             Assert.AreEqual(BoosterFate.Expendable, lost.Fate, "no landing picked");
             Begin(lost, h);
-            Assert.IsTrue(lost.Conclude(true, false), "an expendable attempt settles");
-            Assert.IsTrue(lost.Touched, "settled to the surface");
+            calls = 0;
+            settled = false;
+            while (calls < maxCalls && !lost.Touched)
+            {
+                settled = lost.Conclude(true, false);
+                calls++;
+            }
+            Assert.IsTrue(lost.Touched && settled, "expendable settles to the surface (calls=" + calls + "/" + maxCalls + ")");
+            Assert.That(calls, Is.InRange(2, maxCalls), "expendable also finishes within the same Present-frame bound");
             Assert.IsTrue(lost.Verdict.Expendable, "never graded");
         }
 
