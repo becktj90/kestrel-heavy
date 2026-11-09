@@ -600,7 +600,11 @@ namespace Kestrel.Capture.Tests
             Assert.That(band.w - band.z, Is.GreaterThan(0.05f), "the stack is clearly there: " + band);
             yield return Frame("climax-apogee");
             driver.Hold(false);
-            yield return Until(() => driver.Result != null, 15f);
+            // If Escape opened the pause menu during the inspection Hold, resume so the climax wall clock can finish.
+            if (NavIds.Shown(Find("screen-pause")) && AppShell.Instance != null)
+                AppShell.Instance.HandleEscape();
+            Assert.IsFalse(driver.Held, "climax inspection Hold must be released");
+            yield return Until(() => driver.Result != null, 20f);
             Assert.IsNotNull(driver.Result, "the coast ends and hands over the result");
             Assert.AreEqual("played", driver.CoastEnd);
             Assert.That(driver.Altitude, Is.EqualTo(driver.Coast.EndAltM).Within(Math.Max(50.0, driver.Coast.EndAltM * 0.02)), "it ends at the apex");
@@ -637,8 +641,13 @@ namespace Kestrel.Capture.Tests
             yield return ToThePad(null);
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             driver.ReduceMotionOverride = true;
+            Assert.IsFalse(driver.Held, "Reduce Motion flight must not start Held/paused");
             bool coasted = false;
-            yield return Until(() => { coasted |= driver.Coasting; return driver.Result != null; }, 150f);
+            yield return Until(() => {
+                Assert.IsFalse(driver.Held, "Reduce Motion flight must not become Held/paused mid-flight");
+                coasted |= driver.Coasting;
+                return driver.Result != null;
+            }, 150f);
             Assert.IsNotNull(driver.Result, "the flight ends");
             Assert.IsFalse(coasted, "Reduce Motion: no warped coast");
             Assert.AreEqual("reduced", driver.CoastEnd);
@@ -706,14 +715,16 @@ namespace Kestrel.Capture.Tests
 
         [UnityTest]
         [Timeout(300000)]
-        public IEnumerator KnownBug_NAV08_EscapeInFlight_DoesNotPause()
+        public IEnumerator NAV08_EscapeInFlight_OpensThePauseMenu()
         {
             yield return ToThePad(null);
             AppShell.Instance.HandleEscape();
             yield return null;
             NothingThrew();
-            bool paused = NavIds.Shown(Find("screen-pause"));
-            Ignore("NAV-08", "Escape in flight opens the pause menu", paused ? null : "no pause menu; screen=" + flow.Current + "/" + flow.Overlay);
+            Assert.IsTrue(NavIds.Shown(Find("screen-pause")), "Escape in flight opens the pause menu");
+            AppShell.Instance.HandleEscape();
+            yield return null;
+            Assert.IsFalse(NavIds.Shown(Find("screen-pause")), "Escape again resumes");
         }
     }
 }
