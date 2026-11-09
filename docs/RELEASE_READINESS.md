@@ -3,25 +3,25 @@
 Shipping engine: **Unity** (iOS, **portrait only**). The Phaser build in `web/` is the beckify.com demo and is not release-gating.
 Owner of this file: Kestrel Arcade (merge queue) with QA. Merges to `main` and every App Store Connect, signing, privacy or spend action: **Trevor's yes**.
 
-_Snapshot: **2026-11-09** (America/New_York), `main` at `b2bd87b3` (#468). Last prior snapshot: 2026-10-28 `39cb8490` (#367)._
+_Snapshot: **2026-11-09** (America/New_York), `main` at `bbda86aa` (#475). Export/TF: **215 / 51** from `b2bd87b31b8a`. Last prior snapshot: 2026-10-28 `39cb8490` (#367)._
 
 ## Score
 
 | Bucket | Count | Notes |
 |---|---|---|
-| **Verified (CI / config)** | **42** | Green required checks on the PR that merged the claim, and/or committed config pins |
+| **Verified (CI / config)** | **44** | Green required checks on the PR that merged the claim, and/or committed config pins |
 | **Unverified (no CI/device proof)** | **11** | Includes "looks right in code" and audio-on-phone |
-| **Gap / release decision** | **9** | Store claim false, or needs Trevor |
+| **Gap / release decision** | **7** | Store claim false, or needs Trevor |
 | **Device-verified** | **0** | Nothing on a real iPhone/iPad has been signed off in-repo |
 
-**Overall: 42 / 62 checklist rows are verified (CI/config).**  
+**Overall: 44 / 62 checklist rows are verified (CI/config)** (includes #475 Ready/countdown + GC removal decision; G-4 flips when #479 merges).  
 **Device: 0 / 13 script steps passed in-repo** (see [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md)).
 
 Honesty rules:
 
 1. **Nothing here is device-verified** unless Trevor (or a named tester) records a Pass in [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md). CI captures use llvmpipe (no GPU).
 2. Unity CI runs on pull requests, not on pushes to `main`. "Verified (CI)" means green on the merging PR, plus Core/Node on `main` where those run.
-3. Latest Xcode export tag: **`export/2.0.0-215`** from `main` `b2bd87b31b8a` (#468). **Up to date with current `main`** (same tip as this checklist). Prior: 214 from `2f85c027` (#452); 213 from `21d6eef0` (Nov 4 P0s).
+3. Xcode export **`export/2.0.0-215`** from `main` `b2bd87b31b8a` (#468) = TestFlight / Xcode Cloud **build 51**. After that tip, **#475** merged (KH-1 Ready and countdown share one spare verdict) → current `main` is `bbda86aa`. TF 51 does not yet include #475; re-export when convenient. Prior: 214 / TF 50 from `2f85c027`.
 
 ## How to read this
 
@@ -72,8 +72,8 @@ Open PRs at snapshot: **none**. Open GitHub issues at snapshot: **none** (former
 | ID | Item | Status | Owner | Proof |
 |---|---|---|---|---|
 | D-1 | Starter designer: tiers / Why? / speed / X-ray | verified (CI) | UX | #366; `DesignerV3UiTests`, Starter device/capture tests |
-| D-2 | Campaign starters Ready / launchable | verified (CI) with gap | Gameplay | #309, #421, #456; launch-gate / wind-gate tests. **[#473](https://github.com/becktj90/kestrel-heavy/issues/473):** KH-1 designer says Ready while countdown says "89 m/s short" (flight still completes). Do not treat KH-1 pre-liftoff Ready as honest until #473 is fixed. |
-| D-3 | Honest Ready; framed preview | verified (CI) with gap | UX | #352, #365; Starter designer/preview device tests. Same #473 caveat on KH-1 countdown vs Ready copy. |
+| D-2 | Campaign starters Ready / launchable | verified (CI) | Gameplay | #309, #421, #456; launch-gate / wind-gate tests. **#473 fixed by [#475](https://github.com/becktj90/kestrel-heavy/pull/475)** (one spare verdict for Ready + countdown). |
+| D-3 | Honest Ready; framed preview | verified (CI) | UX | #352, #365; Starter designer/preview device tests. KH-1 countdown/Ready aligned by #475. |
 | D-4 | KH-1 pad framing in designer | verified (CI capture) | Graphics | #368 |
 | D-5 | Designer Launch flies headless sim + fairing jettison | verified (CI) | Gameplay | #360 |
 | D-6 | Fairing joint = stage diameter, 15° shoulder | verified (CI) | Graphics | #375, #383; fairing joint/mesh tests + captures |
@@ -146,7 +146,7 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 | S-1 | Field lengths within Apple limits | verified | QA | `tools/asc/check_limits.mjs`, `asc-limits` Node test |
 | S-2 | Description matches Unity build | verified (docs) | Arcade | [`appstore/LISTING.md`](appstore/LISTING.md) refreshed 2026-11-09; still a **draft** until Trevor pastes into ASC |
 | S-3 | Screenshots at store sizes | gap | Graphics + QA | CI path exists (#381 / `appstore-screenshots` workflow) but **final set not selected / uploaded**. Plan: [`appstore/SCREENSHOTS.md`](appstore/SCREENSHOTS.md) |
-| S-4 | Version / build | verified (export tag) | Arcade | Marketing 2.0.0; export **`export/2.0.0-215`** from `b2bd87b31b8a` — matches current `main` / this checklist tip |
+| S-4 | Version / build | verified (export tag) | Arcade | Marketing 2.0.0; export **215** / TestFlight **51** from `b2bd87b31b8a`. Main tip `bbda86aa` includes #475 (not in TF 51 yet) |
 | S-5 | Age rating 4+ / not Kids | unverified | Trevor | Draft in AGE_RATING + [`appstore/TREVOR_OPEN_ITEMS.md`](appstore/TREVOR_OPEN_ITEMS.md) T7 |
 | S-6 | TestFlight what-to-test text | verified (text) | QA | APPSTORE_CONNECT §11; update per build |
 | S-7 | ASC [TO CONFIRM] block | unverified | Trevor | Privacy URL, Marketing URL, DSA, SKU, agreements — T1–T10 |
@@ -155,10 +155,10 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 
 | ID | Item | Status | Owner | Proof |
 |---|---|---|---|---|
-| G-1 | Game Center in Unity | decided (remove for 1.0) | Trevor + QA | **Trevor 2026-11-09 9:58 AM ET:** remove GC from 1.0. QA removes entitlement/GameKit (`chore/remove-game-center-1.0`). Listing omits GC. Not a store claim. |
+| G-1 | Game Center in Unity | **done (removed for 1.0)** | Trevor + QA | Trevor decided **2026-11-09 9:58 AM ET**; removed in [#478](https://github.com/becktj90/kestrel-heavy/pull/478) (DECISIONS #98). Listing omits GC. |
 | G-2 | GC failures harmless offline | unverified (Unity) | Arcade | Code catches; no Unity test |
 | G-3 | Unity Analytics / Ads / Purchasing / Cloud Diagnostics off | verified (config) | Arcade | `UnityConnectSettings.asset` all `m_Enabled: 0` |
-| G-4 | `submitAnalytics: 1` in ProjectSettings | gap | Arcade | Confirm no shipping telemetry or clear the flag |
+| G-4 | `submitAnalytics` | verified (config) via #479 | Arcade | **0** on the #479 branch / main after merge; see network evidence |
 | G-5 | Privacy label proof on built player | unverified | QA + Trevor | Framework inspect + proxy capture not run |
 | G-6 | Unity `PrivacyInfo.xcprivacy` inspected | unverified | Arcade | In-repo file is legacy Phaser wrapper only |
 | G-7 | Export compliance + GC capability post-process | verified (code) | Arcade | `IosXcodePostprocess.cs`; exported plist unverified |
@@ -168,29 +168,30 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 
 ## Network / Unity services evidence
 
-Cite [`audits/NETWORK_EVIDENCE_2026-11-09.md`](audits/NETWORK_EVIDENCE_2026-11-09.md) (from `/workspace/kh-network-evidence.md`, 2026-11-09).
+Source: box `/workspace/kh-network-evidence.md`, mirrored in-repo as [`audits/NETWORK_EVIDENCE_2026-11-09.md`](audits/NETWORK_EVIDENCE_2026-11-09.md) / [`playtest/kh-network-evidence-2026-11-09.md`](playtest/kh-network-evidence-2026-11-09.md). Config change + evidence land with [#479](https://github.com/becktj90/kestrel-heavy/pull/479).
 
 | Check | Result | Proof |
 |---|---|---|
-| Unity Connect Analytics / Ads / IAP / Crash / Perf | All `m_Enabled: 0` | `UnityConnectSettings.asset` |
-| Services packages in `manifest.json` | None (`com.unity.services.*` / ads / analytics / IAP absent) | Packages inventory in evidence file |
-| `submitAnalytics` | **Still 1** until QA PR lands; then re-verify as 0 | `ProjectSettings.asset`; evidence file refresh checklist |
-| First-party `UnityWebRequest` (non-Tests) | Local StreamingAssets audio only (`GuideClipPlayer`) | Evidence file table |
-| Game Center runtime | Stub / removing for 1.0 | Trevor 9:58 AM ET; QA removal branch |
-| Device packet capture | **Not claimed** | Optional for Trevor (G-5) |
+| `submitAnalytics` | **0** (was 1) | #479 / `ProjectSettings.asset` |
+| Unity Connect Analytics / Ads / IAP / Perf | `m_Enabled: 0` | `UnityConnectSettings.asset` |
+| Services packages | None | `Packages/manifest.json` |
+| First-party `UnityWebRequest` | Local StreamingAssets guide audio only | `GuideClipPlayer` / evidence file |
+| Game Center | Removed for 1.0 | Trevor 9:58 AM ET; #478 |
+| Device packet capture | **Not claimed** | Optional Trevor (G-5) |
 
-Do **not** tick ASC **Data Not Collected** until privacy URL (T1) is published and `submitAnalytics: 0` is on main (refresh evidence file).
+Do **not** tick ASC **Data Not Collected** until the privacy URL (T1) is published.
+
+
 
 ## Gaps that need a decision before release
 
 Highest first:
 
-1. **G-1 Game Center** — **decided removed for 1.0** (Trevor 9:58 AM ET); QA executes. Listing already omits GC.
+1. **G-1 Game Center** — **removed for 1.0** (Trevor 9:58 AM ET; [#478](https://github.com/becktj90/kestrel-heavy/pull/478)). Listing omits GC.
 2. **Device script** — Trevor runs [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md); until then device score stays 0.
 3. **S-3 screenshots** — regenerate via existing workflow, pick finals, Trevor uploads.
 4. **G-5 / G-4 / G-6 / T1 privacy** — do not claim Data Not Collected until proof + policy page.
-5. **[#473](https://github.com/becktj90/kestrel-heavy/issues/473) KH-1 Ready vs countdown short** — fix before claiming honest first-flight Ready copy.
-6. **F-8 first-flight fairness** — needs a device Pass on KH-1 (and #473 fixed).
+5. **F-8 first-flight fairness** — needs a device Pass on KH-1 (#475 fixed the Ready/countdown copy mismatch).
 7. **D-7 discrepancy audit** — re-run or formally close Blockers against current main.
 8. **P-4 performance on device** — required for heat/ stutter confidence.
 9. **A-4 / T6 / T7** — license, AI-voice line, age-rating confirmation.
@@ -211,3 +212,4 @@ Highest first:
 | 2026-11-09 | Refresh through #468; score 42/62 CI-verified, 0 device; point at `docs/appstore/` + `DEVICE_TEST_SCRIPT.md`. | Arcade |
 | 2026-11-09 | Export **215** = main `b2bd87b` (was wrongly called 214-lag); KH-1 Ready caveat → issue #473. | Arcade |
 | 2026-11-09 | Network evidence section; Trevor removes Game Center from 1.0 (9:58 AM ET). | Arcade |
+| 2026-11-09 | Build tip: export 215 / TF 51 from b2bd87b; main +#475. Network evidence + #479; GC removed #478; score 44/62. | Arcade |
