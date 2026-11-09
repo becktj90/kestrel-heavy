@@ -600,7 +600,11 @@ namespace Kestrel.Capture.Tests
             Assert.That(band.w - band.z, Is.GreaterThan(0.05f), "the stack is clearly there: " + band);
             yield return Frame("climax-apogee");
             driver.Hold(false);
-            yield return Until(() => driver.Result != null, 15f);
+            // If Escape opened the pause menu during the inspection Hold, resume so the climax wall clock can finish.
+            if (NavIds.Shown(Find("screen-pause")) && AppShell.Instance != null)
+                AppShell.Instance.HandleEscape();
+            Assert.IsFalse(driver.Held, "climax inspection Hold must be released");
+            yield return Until(() => driver.Result != null, 20f);
             Assert.IsNotNull(driver.Result, "the coast ends and hands over the result");
             Assert.AreEqual("played", driver.CoastEnd);
             Assert.That(driver.Altitude, Is.EqualTo(driver.Coast.EndAltM).Within(Math.Max(50.0, driver.Coast.EndAltM * 0.02)), "it ends at the apex");

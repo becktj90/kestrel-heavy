@@ -1657,6 +1657,8 @@ namespace Kestrel.Slice
             if (ui != null && ui.Q(ReportView.RootName) != null) return;
             // Only while a live ascent is running. A stuck Escape after MECO or on the pad must not Hold the driver.
             if (flight == null || !flight.Running || flight.Result != null) return;
+            // The climax coast advances on wall time only while !Held; Escape must not freeze it (#472 PlayMode).
+            if (flight.Coasting) return;
             SetFlightPaused(!chrome.Paused);
         }
 
