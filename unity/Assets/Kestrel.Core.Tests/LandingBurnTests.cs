@@ -200,8 +200,12 @@ namespace Kestrel.Core.Tests
             var h = handovers["m7"];
             var landing = Arm(h, 0);
             Begin(landing, h);
-            Assert.IsTrue(landing.Conclude(true, false), "still in boostback/entry/descent, t466 settles as before");
-            Assert.IsTrue(landing.Touched, "settled to touchdown at once");
+            // Conclude is budgeted per call (KH-3 freeze: no main-thread Settle hitch). Present loops it.
+            int guard = 0;
+            while (!landing.Touched && guard++ < 10000)
+                landing.Conclude(true, false);
+            Assert.IsTrue(landing.Touched, "still in boostback/entry/descent, t466 settles across Present frames");
+            Assert.That(guard, Is.GreaterThan(1), "budgeted Conclude takes more than one call");
 
             // The same rocket with no landing picked: an expendable attempt settles as before, ungraded.
             var expendable = Design.FromJson(WinnerDoc("m7"));
@@ -209,8 +213,10 @@ namespace Kestrel.Core.Tests
             var lost = BoosterLanding.Arm(catalog, expendable, 0);
             Assert.AreEqual(BoosterFate.Expendable, lost.Fate, "no landing picked");
             Begin(lost, h);
-            Assert.IsTrue(lost.Conclude(true, false), "an expendable attempt settles");
-            Assert.IsTrue(lost.Touched, "settled to the surface");
+            guard = 0;
+            while (!lost.Touched && guard++ < 10000)
+                lost.Conclude(true, false);
+            Assert.IsTrue(lost.Touched, "an expendable attempt settles to the surface");
             Assert.IsTrue(lost.Verdict.Expendable, "never graded");
         }
 
