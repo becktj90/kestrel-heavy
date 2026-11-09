@@ -1611,6 +1611,7 @@ namespace Kestrel.Slice
         /// </summary>
         void ClearFlight()
         {
+            Kestrel.Game.Shell.MenuBack.FlightEscape = null;
             ReportCardChrome.Dismiss(ui);
             SetFlightPaused(false);
             handoff.Reset();
@@ -1649,6 +1650,18 @@ namespace Kestrel.Slice
             chrome?.Show(on);
         }
 
+        /// <summary>NAV-08: web Escape and the hardware back key open the pause menu in flight (and resume when it is already open).</summary>
+        void ToggleFlightPauseFromEscape()
+        {
+            if (chrome == null) return;
+            if (ui != null && ui.Q(ReportView.RootName) != null) return;
+            // Only while a live ascent is running. A stuck Escape after MECO or on the pad must not Hold the driver.
+            if (flight == null || !flight.Running || flight.Result != null) return;
+            // The climax coast advances on wall time only while !Held; Escape must not freeze it (#472 PlayMode).
+            if (flight.Coasting) return;
+            SetFlightPaused(!chrome.Paused);
+        }
+
         void EnterFlight()
         {
             if (session == null || design == null) return;
@@ -1656,6 +1669,8 @@ namespace Kestrel.Slice
             // and the retry never left the pad. Dismiss it, and put the HUD back.
             ReportCardChrome.Dismiss(ui);
             ReportCardChrome.RestoreFlight(ui);
+            // NAV-08: Escape / hardware back opens (and toggles) the in-flight pause menu.
+            Kestrel.Game.Shell.MenuBack.FlightEscape = ToggleFlightPauseFromEscape;
             if (rocketGO != null)
             {
                 var host = rocketGO.GetComponent<Kestrel.Game.Failure.FailureHost>();
@@ -1695,10 +1710,21 @@ namespace Kestrel.Slice
             spareMps = sheet != null ? sheet.totalDeltaV_mps - sheet.requiredDeltaV_mps : 0;
             var hop = AscentFlight.CurrentMission();
             hopGoalM = hop != null && hop.TargetKind == "apogee" ? hop.ApoKm * 1000.0 : 0;
-            if (hopGoalM > 0) requiredMps = hop.RequiredDeltaV();
+            // #473: hop required is the mission hop Δv, not the sheet's orbital required. Keep spare against the same need.
+            if (hopGoalM > 0)
+            {
+                requiredMps = hop.RequiredDeltaV();
+                if (sheet != null) spareMps = sheet.totalDeltaV_mps - requiredMps;
+            }
             maxQKpa = sheet != null ? sheet.maxQ_kPa : null;
             orbitLabel = sheet != null ? sheet.orbitLabel : "";
-            try { verdictKey = session.Design != null ? ReferenceAscent.CanonicalKey(session.catalog, session.Design) : null; }
+            try
+            {
+                verdictKey = session.Design != null ? ReferenceAscent.CanonicalKey(session.catalog, session.Design) : null;
+                // DECISIONS #83 / #473: count card and Starter Ready share one remembered predictor verdict.
+                if (verdictKey != null && session.Design != null)
+                    StarterVerdict.EnsureRemembered(session.catalog, session.Design, hop);
+            }
             catch (System.Exception) { verdictKey = null; }
             try { liveSpare = session.Design != null ? LiveSpare.For(session.catalog, Design.FromJson(session.Design).payloadOrbit) : null; }
             catch (System.Exception) { liveSpare = null; }
@@ -1951,7 +1977,11 @@ namespace Kestrel.Slice
             }
             if (birds != null) birds.TrackFlight = hud != null && !hud.ClassListContains("hidden");
             if (ui != null && ui.Q(ReportView.RootName) != null)
+            {
+                // Report owns Escape via ReportCardChrome.Escape; do not open pause over the card.
+                Kestrel.Game.Shell.MenuBack.FlightEscape = null;
                 handoff.Finish();
+            }
             CheckDesignerLanding();
             if (chrome != null && chrome.Paused) return;
             bool inFlight = hud != null && !hud.ClassListContains("hidden");
