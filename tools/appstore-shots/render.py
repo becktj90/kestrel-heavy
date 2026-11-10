@@ -54,7 +54,8 @@ class Set:
         for p in cfg["panels"]:
             if p.get("hero") == "right":
                 self.panels.append(dict(p, capture=None)); continue
-            cap = next((os.path.join(self.src_dir, s + ".png") for s in p["scene"] if os.path.exists(os.path.join(self.src_dir, s + ".png"))), None)
+            scenes = p.get("scene_by_size", {}).get(size_name, p["scene"])
+            cap = next((os.path.join(self.src_dir, s + ".png") for s in scenes if os.path.exists(os.path.join(self.src_dir, s + ".png"))), None)
             if cap is None:
                 if p.get("optional"):
                     print(f"  {size_name}: skip {p['id']} (no capture for {p['scene']})"); continue
