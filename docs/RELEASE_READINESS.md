@@ -156,7 +156,7 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 | ID | Item | Status | Owner | Proof |
 |---|---|---|---|---|
 | G-1 | Game Center in Unity | **done (removed for 1.0)** | Trevor + QA | Trevor decided **2026-11-09 9:58 AM ET**; removed in [#478](https://github.com/becktj90/kestrel-heavy/pull/478) (DECISIONS #98). Listing omits GC. |
-| G-2 | GC failures harmless offline | verified (CI) | Arcade | this PR; `GameCenterBridge.TryAuthenticate` / `TrySubmitScore` never throw; `GameCenterOfflineTests` |
+| G-2 | GC failures harmless offline | verified (CI) | Arcade | [#484](https://github.com/becktj90/kestrel-heavy/pull/484); `GameCenterBridge.TryAuthenticate` / `TrySubmitScore` never throw; `GameCenterOfflineTests` |
 | G-3 | Unity Analytics / Ads / Purchasing / Cloud Diagnostics off | verified (config) | Arcade | `UnityConnectSettings.asset` all `m_Enabled: 0` |
 | G-4 | `submitAnalytics` | verified (config) via #479 | Arcade | **0** on the #479 branch / main after merge; see network evidence |
 | G-5 | Privacy label proof on built player | unverified | QA + Trevor | Framework inspect + proxy capture not run |
