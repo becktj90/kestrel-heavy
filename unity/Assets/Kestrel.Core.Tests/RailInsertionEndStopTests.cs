@@ -348,19 +348,38 @@ namespace Kestrel.Core.Tests
 
 
         [Test]
-        public void FlightDriver_Source_StepsCoastEvenWhileHeld()
+        public void FlightDriver_StepsCoastEvenWhileHeld()
         {
+            // #482: the climax must keep moving while Held. #488 split Update into Advance
+            // and StepCoast(frame, unscaled); the pin follows that call, not the old
+            // exact "StepCoast(frame)" spelling. The live behaviour is also asserted in
+            // PlayMode (GoodRocket_FirstHop_CoastsToApogee_BeforeTheReport): CoastWall
+            // grows after Hold(true).
             string src = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Slice", "Runtime", "FlightDriver.cs"));
-            StringAssert.Contains("if (Coasting)", src);
-            StringAssert.Contains("StepCoast(frame)", src);
+            int tick = src.IndexOf("public void Advance(float frame, float unscaled)", StringComparison.Ordinal);
+            Assert.That(tick, Is.GreaterThan(0), "the frame tick is Advance (Update calls it)");
+            int beginCoast = src.IndexOf("bool BeginCoast(", tick, StringComparison.Ordinal);
+            Assert.That(beginCoast, Is.GreaterThan(tick));
+            string advance = src.Substring(tick, beginCoast - tick);
+            StringAssert.Contains("if (Coasting)", advance);
+            StringAssert.IsMatch(@"StepCoast\(frame(?:, unscaled)?\)", advance);
             // Held must not precede the Coasting StepCoast (Trevor KH-3 freeze).
-            int coast = src.IndexOf("// Climax coast is wall-clock spectacle", StringComparison.Ordinal);
-            int held = src.IndexOf("if (Held) return;", StringComparison.Ordinal);
-            Assert.That(coast, Is.GreaterThan(0));
-            Assert.That(held, Is.GreaterThan(coast), "Held return comes after Coasting StepCoast");
+            int coast = advance.IndexOf("if (Coasting)", StringComparison.Ordinal);
+            int step = advance.IndexOf("StepCoast(frame", StringComparison.Ordinal);
+            int held = advance.IndexOf("if (Held) return;", StringComparison.Ordinal);
+            Assert.That(step, Is.GreaterThan(coast), "Coasting branch calls StepCoast");
+            Assert.That(held, Is.GreaterThan(step), "Held return comes after Coasting StepCoast");
+            // A live climax must not be ended by the report failsafe on the frame it starts
+            // (PlayMode: CoastEnd=watchdog, First Hop / tap-to-skip).
+            string ready = src.Substring(src.IndexOf("public void EnsureReportReady(", StringComparison.Ordinal));
+            StringAssert.Contains("if (Coasting) return;", ready);
+            StringAssert.Contains("OrbitCoast.MaxWallSeconds + 2", ready);
             string slice = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Slice", "Runtime", "SliceApp.cs"));
             StringAssert.Contains("hold = on && !(flight != null && flight.Coasting)", slice);
             StringAssert.Contains("recovery.Present(0f)", slice);
+            string play = File.ReadAllText(Path.Combine(Golden.Root, "unity", "Assets", "Kestrel.Capture.Tests", "NavFlowPlayTests.cs"));
+            StringAssert.Contains("climax wall clock advances while Held", play);
+            StringAssert.Contains("driver.Hold(true)", play);
         }
 
 

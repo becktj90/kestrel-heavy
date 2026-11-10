@@ -245,7 +245,8 @@ namespace Kestrel.Slice
             BindCinematicSink();
             CinematicSink.VehicleRadiusM = Kestrel.Kit.FlightSinkMath.VehicleRadiusM(WidestDiameterM(d));
             Running = true;
-            clock = 0; Meco = false; Result = null; pending = null; Coast = null; coastOver = false; CoastWall = 0; CoastEnd = null; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
+            Held = false; // a new ascent must not inherit a pause Hold (frozen hop, no report)
+            clock = 0; Meco = false; Result = null; pending = null; Coast = null; coastOver = false; CoastWall = 0; CoastEnd = null; coastArmedAt = double.NaN; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             skipping = false; skipTarget = StageSkipTarget.None; SkipAdvancedSimS = 0; SkipStop = StageSkipStop.None; SkipReached = StageSkipTarget.None;
             AttitudeDeg = 90f; HasAttitude = false;
             seenEvents = 0; mecoSent = false; maxQBeatSeen = 0; warp = null;
@@ -275,17 +276,31 @@ namespace Kestrel.Slice
             }
         }
 
+        /// <summary>When true, <see cref="Update"/> does not tick — capture tests pump
+        /// <see cref="Advance"/> at a fixed step so a slow CI player cannot stall the sim on wall-clock.</summary>
+        public bool CaptureClock { get; set; }
+
+        double coastArmedAt = double.NaN;
+
         void Update()
         {
-            if (!Running || Sim == null) return;
+            if (CaptureClock) return;
             float frame = Time.deltaTime;
             if (frame <= 0f && Time.unscaledDeltaTime > 0f) frame = Time.unscaledDeltaTime;
+            Advance(frame, Time.unscaledDeltaTime);
+        }
+
+        /// <summary>One display-frame of flight, using <paramref name="frame"/> (sim clock) and
+        /// <paramref name="unscaled"/> (climax wall clock). Same path as <see cref="Update"/>.</summary>
+        public void Advance(float frame, float unscaled)
+        {
+            if (!Running || Sim == null) return;
             // Climax coast is wall-clock spectacle (#431 / #472): it must advance even while Held/paused.
             // Pause used to early-return before StepCoast, freezing Orbit!/Apogee! forever with no report card
             // (Trevor KH-3 freeze). Escape already refuses to Hold during Coasting; Hold from Pause must not either.
             if (Coasting)
             {
-                StepCoast(frame);
+                StepCoast(frame, unscaled);
                 return;
             }
             if (Held) return;
@@ -333,7 +348,7 @@ namespace Kestrel.Slice
             }
             if (Coasting)
             {
-                StepCoast(frame);
+                StepCoast(frame, unscaled);
                 return;
             }
             if (Sim.Done && Result == null)
@@ -388,11 +403,12 @@ namespace Kestrel.Slice
             return true;
         }
 
-        void StepCoast(float frame)
+        void StepCoast(float frame, float unscaled = -1f)
         {
             if (Coast == null) return;
             if (frame > 0f && TappedToSkip()) { SkipCoast(); return; }
-            CoastWall = OrbitCoast.Advance(CoastWall, frame, Time.unscaledDeltaTime);
+            if (unscaled < 0f) unscaled = Time.unscaledDeltaTime;
+            CoastWall = OrbitCoast.Advance(CoastWall, frame, unscaled);
             coastState = Coast.At(CoastWall);
             UpdateFrame(coastState.t, coastState.x, coastState.y, coastState.vx, coastState.vy, false);
             PublishAudio();
@@ -488,6 +504,38 @@ namespace Kestrel.Slice
         }
 
         /// <summary>
+        /// Failsafe: if the ascent is already over, publish <see cref="Result"/> and end a hung
+        /// climax coast so the report card can open (Trevor KH-3, TestFlight 218/219).
+        /// A live climax must play (or be skipped by the player). Ending it on the same
+        /// frame it starts made CoastEnd=watchdog and broke First Hop / tap-to-skip PlayMode.
+        /// </summary>
+        public void EnsureReportReady(double unscaledTime)
+        {
+            if (Coasting)
+            {
+                if (double.IsNaN(coastArmedAt)) coastArmedAt = unscaledTime;
+                if (Coast != null && Coast.Finished(CoastWall))
+                    EndCoast("played");
+                else if (Coast != null
+                    && unscaledTime - coastArmedAt >= Kestrel.Core.Flight.OrbitCoast.MaxWallSeconds + 2)
+                    EndCoast("watchdog");
+                // Still coasting: leave Result unset so StepCoast / SkipCoast can finish it.
+                if (Coasting) return;
+            }
+            else coastArmedAt = double.NaN;
+            if (Result != null)
+            {
+                if (Sim != null && Sim.Done) Running = false;
+                return;
+            }
+            if (Sim == null || !Sim.Done) return;
+            if (pending == null) pending = directed != null ? directed.Finish() : Sim.Finish();
+            coastOver = true;
+            Running = false;
+            Result = pending;
+        }
+
+        /// <summary>
         /// One more launch / Restart: put the driver back on the pad before the next count. The old flight stops
         /// (Running was still true after a mid-flight Restart, so the next T-0 resumed it instead of launching), the
         /// result is dropped (a rebuilt FailureHost must not replay it), and the floating origin, the anchored pad
@@ -497,6 +545,7 @@ namespace Kestrel.Slice
         {
             Running = false; Held = false;
             Result = null; Meco = false; mecoSent = false; seenEvents = 0;
+            coastArmedAt = double.NaN; Coast = null; coastOver = true; CoastEnd = "reset";
             skipping = false; skipTarget = StageSkipTarget.None; SkipAdvancedSimS = 0; SkipStop = StageSkipStop.None; SkipReached = StageSkipTarget.None;
             Sim = null; directed = null; checks = null;
             clock = 0; prevX = prevY = 0;
