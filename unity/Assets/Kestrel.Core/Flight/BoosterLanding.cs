@@ -57,6 +57,35 @@ namespace Kestrel.Core.Flight
         public RecoveryCraft Craft => craft;
         public RecoveryBody Body => body;
         public bool Expendable => Fate == BoosterFate.Expendable;
+
+        /// <summary>
+        /// The one booster outcome the flight shows (Trevor 2026-11-09, KH-3: "says booster lost but then shows it
+        /// landing with landing controls"). <see cref="Fate"/> is the single source: a Planned stage is shown landing
+        /// (follow camera, inset, Haven deck, phase callouts, booster HUD, burn panel) and is never called lost; an
+        /// Expendable stage is shown lost (the BOOSTER LOST line, then nothing about a landing) and is never shown
+        /// landing. The expendable attempt still flies underneath, ungraded, so the physics, the verdict and the
+        /// report are unchanged; only what the flight tells the player follows the outcome.
+        /// </summary>
+        public bool ShowsLanding => Started && Fate == BoosterFate.Planned;
+
+        /// <summary>True once an expendable stage has separated: the flight shows it lost, never landing.</summary>
+        public bool ShowsLost => Started && Fate == BoosterFate.Expendable;
+
+        /// <summary>
+        /// The recovery picture as the outcome allows it (<see cref="ShowsLanding"/>). A lost stage gets no follow
+        /// camera, no corner inset, no deck dust or splash and no crash picture: the camera stays with the upper stage
+        /// and the booster simply falls away. A planned landing's picture is returned unchanged.
+        /// </summary>
+        public static RecoveryPicture ForOutcome(BoosterFate fate, RecoveryPicture pic)
+        {
+            if (fate == BoosterFate.Planned) return pic;
+            pic.Follow = false;
+            pic.Inset = false;
+            pic.Dust = false;
+            pic.Splash = false;
+            pic.BoomKind = null;
+            return pic;
+        }
         /// <summary>#79: the Haven deck's swell amplitude in metres (0: the deck never moves, as before).</summary>
         public double SwellAmpM => swellAmpM;
         /// <summary>#79: where the swell has moved the deck at the booster's current clock.</summary>
@@ -241,7 +270,8 @@ namespace Kestrel.Core.Flight
         /// </summary>
         public RecoverySample Step(double dt, in RecoveryStick stick, IFlightSimSink sink = null)
         {
-            sink = GuardedFlightSink.Wrap(sink);
+            // A lost (expendable) stage announces no landing: no phase calls, no touchdown camera beat, no crash.
+            sink = Expendable ? null : GuardedFlightSink.Wrap(sink);
             if (!Started) return default;
             if (body.Phase != RecoveryPhase.Down)
             {
@@ -325,7 +355,7 @@ namespace Kestrel.Core.Flight
             if (Touched) return true;
             if (maxSteps < 1) maxSteps = 1;
             if (maxSteps > SettleSteps) maxSteps = SettleSteps;
-            sink = GuardedFlightSink.Wrap(sink);
+            sink = Expendable ? null : GuardedFlightSink.Wrap(sink);
             int guard = 0;
             while (body.Phase != RecoveryPhase.Down && guard++ < maxSteps)
             {
@@ -431,13 +461,18 @@ namespace Kestrel.Core.Flight
 
         /// <summary>
         /// The line over the flight. An expendable stage says it is lost and why for the first
-        /// seconds after separation; otherwise the phase callouts (BOOSTBACK ... TOUCHDOWN).
+        /// seconds after separation and then says nothing more: never a landing callout (BOOSTBACK, LANDING BURN,
+        /// TOUCHDOWN) for a stage the flight called lost. A planned landing gets the phase callouts and never the lost line.
         /// </summary>
         public RecoveryCallout Callout(in RecoverySample sample)
         {
             if (!Started) return default;
-            if (Expendable && !string.IsNullOrEmpty(LostWhy) && sample.Phase != RecoveryPhase.Down && sample.T < LostCallSec)
-                return new RecoveryCallout { Visible = true, Title = LostTitle, Line = LostTitle + "  " + LostWhy, NarrationId = "" };
+            if (Expendable)
+            {
+                if (!string.IsNullOrEmpty(LostWhy) && sample.Phase != RecoveryPhase.Down && sample.T < LostCallSec)
+                    return new RecoveryCallout { Visible = true, Title = LostTitle, Line = LostTitle + "  " + LostWhy, NarrationId = "" };
+                return default;
+            }
             return RecoveryViews.Callout(sample, TrimMarks());
         }
 

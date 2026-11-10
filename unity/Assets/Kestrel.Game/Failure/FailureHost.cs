@@ -26,6 +26,7 @@ namespace Kestrel.Game.Failure
         bool reported;
         SimResult closedResult;
         readonly ReportLatch latch = new ReportLatch();
+        readonly ReportWatchdog reportWatchdog = new ReportWatchdog();
         Mesh intactMesh;
         float age;
         bool reduce;
@@ -72,6 +73,7 @@ namespace Kestrel.Game.Failure
             // A rebuilt rocket gets a new host. The finished flight's result is still on the driver;
             // without this the next frame re-opened the card and swallowed the tap that left it.
             if (!played) latch.Arm(flight != null ? flight.Result : null);
+            reportWatchdog.Reset();
             ui = root;
             plume = flight != null ? flight.Plume : null;
             cue = FromRocket(built);
@@ -108,6 +110,7 @@ namespace Kestrel.Game.Failure
             // A pass never calls Begin, so baseRotation is still the default and the mesh is whole.
             bool broke = played;
             latch.Arm(flight != null ? flight.Result : null);
+            reportWatchdog.Reset();
             played = false;
             cardPending = false;
             cardTapped = false;
@@ -170,14 +173,22 @@ namespace Kestrel.Game.Failure
                 }
                 return;
             }
+            if (flight.Result == null)
+                flight.EnsureReportReady(Time.unscaledTime);
             var result = flight.Result;
             if (result == null) return;
             bool failed = result.failure != null;
+            // #482 left a hole: Conclude never Releases on a lost ascent or an open
+            // player burn, and Present may not run (HUD hidden). After the ascent is
+            // over, free the report so the card cannot stay blocked (Trevor, TF 218/219).
+            bool reportedAlready = reported || latch.Reported || Card != null;
+            reportWatchdog.TryRelease(true, RecoveryLog.Active, reportedAlready, Time.unscaledTime);
             // #333: wait for booster landing to complete before showing the failure card.
             // The latch's recovering wait covers the pass path only ("a failure opens at
             // once"), so the failure path checks RecoveryLog.Active itself, before the
             // latch, so the player gets their landing attempt. Checked before TryOpen so
             // the latch is not consumed while the recovery is still running.
+            // The watchdog above is what stops that wait from lasting forever.
             if (failed && RecoveryLog.Active) return;
             if (!latch.TryOpen(result, failed, flight.Running, RecoveryLog.Active)) return;
             reduce = ReduceMotionOverride ?? Comfort.ReduceMotion;

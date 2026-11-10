@@ -58,6 +58,9 @@ namespace Kestrel.Core.Flight
         public double PitchOffsetRad;
         public bool Lost;
         public string LossKind, LossKid, LossEngineer;
+        /// <summary>The player pressed JETTISON FAIRING: the fairing leaves the stack on the next step
+        /// (AscentSim.JettisonFairingNow). Only a touched press sets it; Auto-assist keeps the sim's own release.</summary>
+        public bool JettisonFairing;
     }
 
     /// <summary>Portrait HUD numbers. Points, not pixels. The action zone is the thumb reach.</summary>
@@ -415,6 +418,8 @@ namespace Kestrel.Core.Flight
         readonly List<Call> calls = new List<Call>();
         readonly AscentTrack track = new AscentTrack();
         readonly FairingHeatGate fairingGate;
+        /// <summary>The player pressed JETTISON FAIRING (see <see cref="AscentCommand.JettisonFairing"/>).</summary>
+        bool fairingOrdered;
         AscentSample last;
         double lastTrackT = -1;
         double engineScale = 1;
@@ -849,6 +854,10 @@ namespace Kestrel.Core.Flight
                         schedule.SetSep(c.Stage + 1, 1);
                     break;
                 case AscentCall.Fairing:
+                    // Trevor 2026-11-09 (KH-3): a pressed jettison is the jettison. The press is already judged for heat
+                    // here, so the sim drops the fairing at this state too (DirectedFlight.Apply), not at the release
+                    // height or heat gate tens of seconds later. Auto-assist and a lapsed window keep the sim's own release.
+                    if (touched && accept) fairingOrdered = true;
                     FairingT = s.T; FairingAltM = s.AltM; FairingSpeedMps = s.SpeedMps;
                     fairingFlux = AscentDecisions.HeatFlux(s.AltM, s.SpeedMps);
                     if (vehicle.MaxHeatFlux > 0 && fairingFlux >= vehicle.MaxHeatFlux) payloadDamaged = true;
@@ -922,6 +931,7 @@ namespace Kestrel.Core.Flight
                 LossKind = lossKind,
                 LossKid = lossKid,
                 LossEngineer = lossEngineer,
+                JettisonFairing = fairingOrdered,
             };
         }
 
