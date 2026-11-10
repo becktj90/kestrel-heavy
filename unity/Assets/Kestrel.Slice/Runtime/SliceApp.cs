@@ -1999,6 +1999,14 @@ namespace Kestrel.Slice
                     recovery.Present(0f);
                 return;
             }
+            // Capture tests pump Advance + recovery.Present at a fixed dt. Don't also tick them
+            // from wall-clock here (that would double-step). Still Conclude once Result is in.
+            if (flight != null && flight.CaptureClock)
+            {
+                if (recovery != null && flight.Result != null && !flight.Running)
+                    recovery.Present(0f);
+                return;
+            }
             bool inFlight = hud != null && !hud.ClassListContains("hidden");
             if (!handoff.Closed && !handoff.Ascending && (counting || (inFlight && (sequence != null || handoff.StartAttempts > 0))))
             {

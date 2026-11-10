@@ -729,6 +729,34 @@ namespace Kestrel.Capture.Tests
             yield return null;
             Assert.IsFalse(NavIds.Shown(Find("screen-pause")), "Escape again resumes");
         }
+        const float Kh3PumpDt = 1f / 60f;
+        // KH-3 insertion is ~174 sim s; this is a sim-time bound, not wall-clock.
+        const float Kh3MaxSimSeconds = 300f;
+
+        /// <summary>
+        /// Drive the live FlightDriver at a fixed 1/60 s step so a slow CI player cannot starve
+        /// the ascent (wall-clock Until(420s) left Result null after ~430 s on #476 PlayMode).
+        /// Recovery is ticked with the same dt so booster-follow can still appear.
+        /// </summary>
+        IEnumerator PumpKh3Until(FlightDriver driver, SliceApp app, Func<bool> done, float maxSim)
+        {
+            driver.CaptureClock = true;
+            float sim = 0f;
+            int steps = 0;
+            int maxSteps = (int)(maxSim / Kh3PumpDt) + 8;
+            while (!done() && sim < maxSim && steps < maxSteps)
+            {
+                driver.Advance(Kh3PumpDt, Kh3PumpDt);
+                var rec = app != null ? app.RecoveryForCapture : null;
+                if (rec != null) rec.Present(Kh3PumpDt);
+                sim += Kh3PumpDt;
+                steps++;
+                if (steps % 15 == 0)
+                    yield return null;
+            }
+            yield return null;
+        }
+
         IEnumerator ToKh3Pad()
         {
             yield return Boot();
@@ -770,9 +798,12 @@ namespace Kestrel.Capture.Tests
         {
             yield return ToKh3Pad();
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
             driver.ReduceMotionOverride = true; // skip climax warp; still exercises Conclude + report gate
-            yield return Until(() => driver.Result != null && !driver.Running, 420f);
-            Assert.IsNotNull(driver.Result, "KH-3 ascent ends");
+            yield return PumpKh3Until(driver, app, () => driver.Result != null && !driver.Running, Kh3MaxSimSeconds);
+            Assert.IsNotNull(driver.Result, "KH-3 ascent ends (simT=" + driver.SimTime
+                + " running=" + driver.Running + " held=" + driver.Held
+                + " alt=" + driver.Altitude + " recovery=" + RecoveryLog.Active + ")");
             Assert.IsFalse(driver.Held, "driver is not left Held after the ascent");
             yield return Until(() => ReportShown() || !RecoveryLog.Active, 60f);
             yield return Until(ReportShown, 60f);
@@ -794,13 +825,16 @@ namespace Kestrel.Capture.Tests
             var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
             driver.ReduceMotionOverride = true;
             bool sawBoosterCam = false;
-            yield return Until(() =>
+            yield return PumpKh3Until(driver, app, () =>
             {
                 var rec = app != null ? app.RecoveryForCapture : null;
                 if (rec != null && rec.SteerCamera) sawBoosterCam = true;
                 return driver.Result != null && !driver.Running;
-            }, 420f);
-            Assert.IsNotNull(driver.Result, "KH-3 ascent ends");
+            }, Kh3MaxSimSeconds);
+            Assert.IsNotNull(driver.Result, "KH-3 ascent ends (simT=" + driver.SimTime
+                + " running=" + driver.Running + " held=" + driver.Held
+                + " alt=" + driver.Altitude + " recovery=" + RecoveryLog.Active
+                + " boosterCam=" + sawBoosterCam + ")");
             // Expendable settle may clear Active before SteerCamera lights; if the booster never took the camera,
             // still require the report — the stay path covers that. When it did, pin we survived follow → card.
             yield return Until(ReportShown, 90f);

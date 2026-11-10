@@ -275,17 +275,29 @@ namespace Kestrel.Slice
             }
         }
 
+        /// <summary>When true, <see cref="Update"/> does not tick — capture tests pump
+        /// <see cref="Advance"/> at a fixed step so a slow CI player cannot stall the sim on wall-clock.</summary>
+        public bool CaptureClock { get; set; }
+
         void Update()
         {
-            if (!Running || Sim == null) return;
+            if (CaptureClock) return;
             float frame = Time.deltaTime;
             if (frame <= 0f && Time.unscaledDeltaTime > 0f) frame = Time.unscaledDeltaTime;
+            Advance(frame, Time.unscaledDeltaTime);
+        }
+
+        /// <summary>One display-frame of flight, using <paramref name="frame"/> (sim clock) and
+        /// <paramref name="unscaled"/> (climax wall clock). Same path as <see cref="Update"/>.</summary>
+        public void Advance(float frame, float unscaled)
+        {
+            if (!Running || Sim == null) return;
             // Climax coast is wall-clock spectacle (#431 / #472): it must advance even while Held/paused.
             // Pause used to early-return before StepCoast, freezing Orbit!/Apogee! forever with no report card
             // (Trevor KH-3 freeze). Escape already refuses to Hold during Coasting; Hold from Pause must not either.
             if (Coasting)
             {
-                StepCoast(frame);
+                StepCoast(frame, unscaled);
                 return;
             }
             if (Held) return;
@@ -333,7 +345,7 @@ namespace Kestrel.Slice
             }
             if (Coasting)
             {
-                StepCoast(frame);
+                StepCoast(frame, unscaled);
                 return;
             }
             if (Sim.Done && Result == null)
@@ -388,11 +400,12 @@ namespace Kestrel.Slice
             return true;
         }
 
-        void StepCoast(float frame)
+        void StepCoast(float frame, float unscaled = -1f)
         {
             if (Coast == null) return;
             if (frame > 0f && TappedToSkip()) { SkipCoast(); return; }
-            CoastWall = OrbitCoast.Advance(CoastWall, frame, Time.unscaledDeltaTime);
+            if (unscaled < 0f) unscaled = Time.unscaledDeltaTime;
+            CoastWall = OrbitCoast.Advance(CoastWall, frame, unscaled);
             coastState = Coast.At(CoastWall);
             UpdateFrame(coastState.t, coastState.x, coastState.y, coastState.vx, coastState.vy, false);
             PublishAudio();
