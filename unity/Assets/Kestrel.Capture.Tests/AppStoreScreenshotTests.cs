@@ -378,11 +378,39 @@ namespace Kestrel.Capture.Tests
                         var ld = ShootAll("landing", problems);
                         while (ld.MoveNext()) yield return ld.Current;
                         RecoveryShow.HoldForCapture = false;
-                        // Mission complete: release holds so the report card can appear, then shoot it.
+                        // Touchdown: let the booster finish its burn and settle on Haven's deck (camera still on it), then shoot
+                        // it standing on the barge. Soft: a missing frame is a warning, not a failure of this review-only job.
+                        for (int i = 0; i < 2000 && rec.StartedForCapture && rec.PhaseForCapture == RecoveryPhase.Landing; i++) yield return null;
+                        TestContext.WriteLine("after landing burn: phase " + rec.PhaseForCapture + " steer " + rec.SteerCamera + "; " + BoosterView(rec));
+                        if (rec.PhaseForCapture == RecoveryPhase.Down)
+                        {
+                            for (int i = 0; i < 20; i++) yield return null;   // legs settle, plume fades
+                            RecoveryShow.HoldForCapture = true;
+                            yield return null;
+                            TestContext.WriteLine("touchdown shot: steer " + rec.SteerCamera + "; " + BoosterView(rec));
+                            var td = ShootAll("touchdown", problems);
+                            while (td.MoveNext()) yield return td.Current;
+                            RecoveryShow.HoldForCapture = false;
+                        }
+                        else TestContext.WriteLine("WARNING touchdown: booster did not reach Down (phase " + rec.PhaseForCapture + ")");
+                        // Mission complete: release holds so the ascent can finish and the report card can appear, then shoot it.
+                        // Bounded by the flight budget, a stalled flight clock, and a short grace after the ascent stops running.
                         if (driver != null) driver.Hold(false);
-                        for (int i = 0; i < 900 && !ReportVisible(app.UiForCapture); i++) yield return null;
+                        {
+                            double rLast = app.FlightClockForCapture; int rStill = 0, afterStop = 0;
+                            for (int i = 0; i < MaxFlightFrames && !ReportVisible(app.UiForCapture); i++)
+                            {
+                                yield return null;
+                                double now = app.FlightClockForCapture;
+                                if (!(now <= rLast)) { rLast = now; rStill = 0; } else rStill++;
+                                if (driver == null || !driver.Running) { if (++afterStop > 900) break; }
+                                else if (rStill > StallFrames) break;
+                            }
+                            TestContext.WriteLine("report wait ended at T+" + app.FlightClockForCapture.ToString("0.0") + ", report " + ReportVisible(app.UiForCapture) + ", " + StallState(driver));
+                        }
                         if (ReportVisible(app.UiForCapture))
                         {
+                            for (int i = 0; i < 90; i++) yield return null;   // the card's entrance animation settles
                             var mc = ShootAll("mission-complete", problems);
                             while (mc.MoveNext()) yield return mc.Current;
                         }
