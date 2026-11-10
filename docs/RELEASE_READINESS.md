@@ -9,12 +9,12 @@ _Snapshot: **2026-11-09** (America/New_York), `main` at `bbda86aa` (#475). Expor
 
 | Bucket | Count | Notes |
 |---|---|---|
-| **Verified (CI / config)** | **44** | Green required checks on the PR that merged the claim, and/or committed config pins |
+| **Verified (CI / config)** | **47** | Green required checks on the PR that merged the claim, and/or committed config pins |
 | **Unverified (no CI/device proof)** | **11** | Includes "looks right in code" and audio-on-phone |
-| **Gap / release decision** | **7** | Store claim false, or needs Trevor |
+| **Gap / release decision** | **6** | Store claim false, or needs Trevor |
 | **Device-verified** | **0** | Nothing on a real iPhone/iPad has been signed off in-repo |
 
-**Overall: 44 / 62 checklist rows are verified (CI/config)** (includes #475 Ready/countdown + GC removal decision; G-4 flips when #479 merges).  
+**Overall: 47 / 62 checklist rows are verified (CI/config)** (includes #475 Ready/countdown, G-4 submitAnalytics, G-6 PrivacyInfo, N10 CONTINUE).  
 **Device: 0 / 13 script steps passed in-repo** (see [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md)).
 
 Honesty rules:
@@ -64,7 +64,7 @@ Open PRs at snapshot: **none**. Open GitHub issues at snapshot: **none** (former
 | N7 | Corner character (Thrum) off by default; Settings switch | verified (CI) | UX | #374; `CornerCharacterSettingTests`; DECISIONS #72; `home.thrum: false` |
 | N8 | Next mission opens next designer | verified (CI) | Arcade | #426; `NAV06_ReportNext_OpensTheNextMissionsDesigner` |
 | N9 | Escape/back in flight opens Pause (NAV-08) | verified (CI) | Arcade | [#472](https://github.com/becktj90/kestrel-heavy/pull/472); `MenuBack.FlightEscape` wired in `SliceApp.EnterFlight`; Core + PlayMode pins |
-| N10 | CONTINUE label when cleared>0 and no draft (NAV-10) | gap (label only) | Arcade | Documented; not a dead end |
+| N10 | CONTINUE label when cleared>0 and no draft (NAV-10) | verified (CI) | Arcade | [#483](https://github.com/becktj90/kestrel-heavy/pull/483); `ResumeOffer.Show` ignores cleared; `SaveResumeTests` / `NAV10_ClearedAlone_DoesNotOfferContinue` |
 | N11 | Lock-screen / app-switch resume mid-flight | unverified | Arcade | Device script §12 |
 
 ## Designer
@@ -213,5 +213,6 @@ Highest first:
 | 2026-11-09 | Export **215** = main `b2bd87b` (was wrongly called 214-lag); KH-1 Ready caveat → issue #473. | Arcade |
 | 2026-11-09 | Network evidence section; Trevor removes Game Center from 1.0 (9:58 AM ET). | Arcade |
 | 2026-11-09 | G-6: post-process PrivacyInfo.xcprivacy (tracking false, empty collected types). Score 46/62. | Arcade |
+| 2026-11-09 | N10: CONTINUE only with draft/saved design (not cleared alone). Score 47/62. | Arcade |
 | 2026-11-09 | Resolve main merge after #478; N9 NAV-08 verified via #472; G-7 notes GC out. Score 45/62. | Arcade |
 | 2026-11-09 | Build tip: export 215 / TF 51 from b2bd87b; main +#475. Network evidence + #479; GC removed #478; score 45/62. | Arcade |
