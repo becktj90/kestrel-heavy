@@ -9,12 +9,12 @@ _Snapshot: **2026-11-09** (America/New_York), `main` at `bbda86aa` (#475). Expor
 
 | Bucket | Count | Notes |
 |---|---|---|
-| **Verified (CI / config)** | **47** | Green required checks on the PR that merged the claim, and/or committed config pins |
-| **Unverified (no CI/device proof)** | **11** | Includes "looks right in code" and audio-on-phone |
+| **Verified (CI / config)** | **48** | Green required checks on the PR that merged the claim, and/or committed config pins |
+| **Unverified (no CI/device proof)** | **10** | Includes "looks right in code" and audio-on-phone |
 | **Gap / release decision** | **6** | Store claim false, or needs Trevor |
 | **Device-verified** | **0** | Nothing on a real iPhone/iPad has been signed off in-repo |
 
-**Overall: 47 / 62 checklist rows are verified (CI/config)** (includes #475 Ready/countdown, G-4 submitAnalytics, G-6 PrivacyInfo, N10 CONTINUE).  
+**Overall: 48 / 62 checklist rows are verified (CI/config)** (includes #475 Ready/countdown, G-4 submitAnalytics, G-6 PrivacyInfo, N10 CONTINUE, G-2 GC offline).  
 **Device: 0 / 13 script steps passed in-repo** (see [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md)).
 
 Honesty rules:
@@ -156,7 +156,7 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 | ID | Item | Status | Owner | Proof |
 |---|---|---|---|---|
 | G-1 | Game Center in Unity | **done (removed for 1.0)** | Trevor + QA | Trevor decided **2026-11-09 9:58 AM ET**; removed in [#478](https://github.com/becktj90/kestrel-heavy/pull/478) (DECISIONS #98). Listing omits GC. |
-| G-2 | GC failures harmless offline | unverified (Unity) | Arcade | Code catches; no Unity test |
+| G-2 | GC failures harmless offline | verified (CI) | Arcade | [#484](https://github.com/becktj90/kestrel-heavy/pull/484); `GameCenterBridge.TryAuthenticate` / `TrySubmitScore` never throw; `GameCenterOfflineTests` |
 | G-3 | Unity Analytics / Ads / Purchasing / Cloud Diagnostics off | verified (config) | Arcade | `UnityConnectSettings.asset` all `m_Enabled: 0` |
 | G-4 | `submitAnalytics` | verified (config) via #479 | Arcade | **0** on the #479 branch / main after merge; see network evidence |
 | G-5 | Privacy label proof on built player | unverified | QA + Trevor | Framework inspect + proxy capture not run |
@@ -214,5 +214,6 @@ Highest first:
 | 2026-11-09 | Network evidence section; Trevor removes Game Center from 1.0 (9:58 AM ET). | Arcade |
 | 2026-11-09 | G-6: post-process PrivacyInfo.xcprivacy (tracking false, empty collected types). Score 46/62. | Arcade |
 | 2026-11-09 | N10: CONTINUE only with draft/saved design (not cleared alone). Score 47/62. | Arcade |
+| 2026-11-09 | G-2: Game Center auth/submit cannot throw offline (Null or broken Impl). Score 48/62. | Arcade |
 | 2026-11-09 | Resolve main merge after #478; N9 NAV-08 verified via #472; G-7 notes GC out. Score 45/62. | Arcade |
 | 2026-11-09 | Build tip: export 215 / TF 51 from b2bd87b; main +#475. Network evidence + #479; GC removed #478; score 45/62. | Arcade |

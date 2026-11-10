@@ -77,7 +77,7 @@ namespace Kestrel.Slice
             BuildScene();
             BuildUI();
             Kestrel.Game.Audio.AudioDirector.Attach(flight);
-            _ = GameCenterBridge.Impl.Authenticate();
+            _ = GameCenterBridge.TryAuthenticate();
             StartSession();
             // Report "Back to designer" (#311's ReportActions.Designer / report-designer): BackToDesign puts the rocket
             // on the pad and ReturnToPad's ApplyStarterMode shows the Starter screen in Phase 1, where .starter-mode
@@ -2385,7 +2385,7 @@ namespace Kestrel.Slice
             if (submitted) return; submitted = true;
             hMsg.text = $"MECO  ·  {f.Altitude / 1000:F1} km  ·  {f.Speed:N0} m/s";
             again.RemoveFromClassList("hidden");
-            bool ok = await GameCenterBridge.Impl.SubmitScore(GameCenterBridge.MecoAltitudeBoard, (long)System.Math.Round(f.Altitude));
+            bool ok = await GameCenterBridge.TrySubmitScore(GameCenterBridge.MecoAltitudeBoard, (long)System.Math.Round(f.Altitude));
             hMsg.text += ok ? "\nScore sent to Game Center" : "";
         }
 
