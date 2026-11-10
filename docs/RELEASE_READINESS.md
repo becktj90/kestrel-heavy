@@ -64,7 +64,7 @@ Open PRs at snapshot: **none**. Open GitHub issues at snapshot: **none** (former
 | N7 | Corner character (Thrum) off by default; Settings switch | verified (CI) | UX | #374; `CornerCharacterSettingTests`; DECISIONS #72; `home.thrum: false` |
 | N8 | Next mission opens next designer | verified (CI) | Arcade | #426; `NAV06_ReportNext_OpensTheNextMissionsDesigner` |
 | N9 | Escape/back in flight opens Pause (NAV-08) | verified (CI) | Arcade | [#472](https://github.com/becktj90/kestrel-heavy/pull/472); `MenuBack.FlightEscape` wired in `SliceApp.EnterFlight`; Core + PlayMode pins |
-| N10 | CONTINUE label when cleared>0 and no draft (NAV-10) | verified (CI) | Arcade | this PR; `ResumeOffer.Show` ignores cleared; `SaveResumeTests` / `NAV10_ClearedAlone_DoesNotOfferContinue` |
+| N10 | CONTINUE label when cleared>0 and no draft (NAV-10) | verified (CI) | Arcade | [#483](https://github.com/becktj90/kestrel-heavy/pull/483); `ResumeOffer.Show` ignores cleared; `SaveResumeTests` / `NAV10_ClearedAlone_DoesNotOfferContinue` |
 | N11 | Lock-screen / app-switch resume mid-flight | unverified | Arcade | Device script §12 |
 
 ## Designer
