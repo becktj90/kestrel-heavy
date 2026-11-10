@@ -1,3 +1,4 @@
+using Kestrel.Core.Flight;
 using Kestrel.Slice;
 using NUnit.Framework;
 using UnityEngine;
@@ -173,6 +174,54 @@ namespace Kestrel.Game.Tests
                 var plain = ChaseCamera.FitBand(rot0, cam, pts, n, VFov, aspect, yMin, yMax);
                 if (plain.y >= Floor) Assert.That(Quaternion.Angle(rot, rot0), Is.LessThan(0.01f), $"{device} alt {alt}: horizon held when it can be");
             }
+        }
+
+        // iPad 13": Haven's deck sat behind the bottom tools row for the whole landing burn. Wide aspects
+        // include the deck in the fit band (RecoveryShow.IncludeDeckInFrame); phones keep the tighter follow.
+        [TestCase(2064f / 2752f, 0.186f, 0.393f, "iPad 13in")]
+        [TestCase(1668f / 2388f, 0.180f, 0.380f, "iPad 11in")]
+        public void FitBandAbove_KeepsHavenDeckAboveTheToolsRow_ThroughTheLandingBurn(float aspect, float topCover, float bottomCover, string device)
+        {
+            Assert.That(RecoveryShow.IncludeDeckInFrame(aspect), Is.True, device);
+            const float Booster = 26f, R = 1.85f, Flame = 12.2f, Deck = 0f, Floor = Deck + 1f, DeckR = (float)RecoverySim.DeckRadiusM;
+            float yMax = 1f - topCover - RecoveryShow.HudMargin, yMin = bottomCover + RecoveryShow.HudMargin;
+            var deckPts = new[]
+            {
+                new Vector3(0f, Deck, 0f),
+                new Vector3(-DeckR, Deck, 0f),
+                new Vector3(DeckR, Deck, 0f),
+            };
+            foreach (float alt in new[] { 200f, 120f, 40f, 15f, 3f })
+            {
+                var b = new Vector3(0f, Deck + alt, 0f);
+                var cam = b + ChaseCamera.DesiredOffset(Vector3.up, Booster, alt);
+                cam.y = Mathf.Max(cam.y, Floor);
+                var rot0 = ChaseCamera.Aim(cam, b + Vector3.up * Booster * 0.25f, VFov, alt, cam.y - Deck);
+                var pts = new Vector3[12]; int n = 0;
+                float lo = b.y - Flame, hiY = b.y + Booster;
+                for (int i = 0; i < 8; i++)
+                    pts[n++] = new Vector3((i & 1) == 0 ? -R : R, Mathf.Max(Deck, (i & 2) == 0 ? lo : hiY), (i & 4) == 0 ? -R : R);
+                pts[n++] = new Vector3(0f, Mathf.Max(Deck, lo - RecoveryShow.BelowHeights * Booster), 0f);
+                foreach (var d in deckPts) pts[n++] = d;
+                var rot = rot0;
+                var fit = ChaseCamera.FitBandAbove(ref rot, cam, pts, n, VFov, aspect, yMin, yMax, Floor);
+                Assert.That(fit.y, Is.GreaterThanOrEqualTo(Floor - 1e-3f), $"{device} alt {alt}: camera over the deck");
+                foreach (var d in deckPts)
+                {
+                    var v = Project(d, fit, rot, aspect);
+                    Assert.That(v.z, Is.GreaterThan(0f), $"{device} alt {alt}: deck in front");
+                    Assert.That(v.y, Is.GreaterThanOrEqualTo(yMin - 0.01f), $"{device} alt {alt}: deck {d} above the tools row (y={v.y:0.000}, yMin={yMin:0.000})");
+                }
+            }
+        }
+
+        [Test]
+        public void PhoneAspect_DoesNotPullTheLandingFrameBackToTheDeck()
+        {
+            Assert.That(RecoveryShow.IncludeDeckInFrame(390f / 844f), Is.False, "iPhone 390");
+            Assert.That(RecoveryShow.IncludeDeckInFrame(430f / 932f), Is.False, "iPhone 430");
+            Assert.That(RecoveryShow.IncludeDeckInFrame(1320f / 2868f), Is.False, "6.9in");
+            Assert.That(RecoveryShow.IncludeDeckInFrame(2064f / 2752f), Is.True, "iPad 13");
         }
 
         // #431 climax: the coasting stack sat behind the Apogee! banner and Follow / Auto / Pause (climax-apogee.png).
