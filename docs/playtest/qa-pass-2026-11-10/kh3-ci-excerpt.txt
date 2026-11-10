@@ -1,0 +1,41 @@
+KH-3 QA evidence excerpt — not a full suite log
+Source: Unity CI run 42883940266 on 962acb50 (#484 after merging main, includes #488/#486).
+#489 after that changed only .github/workflows/xcode-export.yml (no game code).
+
+PlayMode result=Skipped:Ignored passed=28 failed=0 duration=853.4174324s
+  Passed     0.790714s  Kestrel.Capture.Tests.FairingSeparationCaptureTests.FairingSeparation_BeforeAndAfter("m3")
+  Passed     0.784057s  Kestrel.Capture.Tests.FairingSeparationCaptureTests.FairingSeparation_BeforeAndAfter("m10")
+  Passed    20.911982s  Kestrel.Capture.Tests.FlightStartPlayTests.HomeLaunchReachesAltitude
+  Passed    14.877949s  Kestrel.Capture.Tests.NavFlowPlayTests.CrashingRocket_LiveFlight_ReachesTheReport_WithRetry
+  Passed    28.243675s  Kestrel.Capture.Tests.NavFlowPlayTests.GoodRocket_FirstHop_CoastsToApogee_BeforeTheReport
+  Passed    24.373244s  Kestrel.Capture.Tests.NavFlowPlayTests.GoodRocket_ReduceMotion_HasNoTimeWarp
+  Passed    24.751439s  Kestrel.Capture.Tests.NavFlowPlayTests.GoodRocket_TapSkipsTheClimax
+  Passed    70.719389s  Kestrel.Capture.Tests.NavFlowPlayTests.Kh3_LandBoosterFollow_ReachesReportCardAndButtons
+  Passed    72.911928s  Kestrel.Capture.Tests.NavFlowPlayTests.Kh3_ReportCardAndButtons_WhenRecoveryNeverClears
+  Passed    68.489036s  Kestrel.Capture.Tests.NavFlowPlayTests.Kh3_StayWithUpperStage_ReachesReportCardAndButtons
+  Passed    10.434923s  Kestrel.Capture.Tests.NavFlowPlayTests.PauseResume_ThenQuitMidFlight_ThenContinue
+
+EditMode result=Skipped:Ignored passed=2590 failed=0
+  Passed    22.236800s  Kestrel.Core.Tests.FairingHeatGateTests.AManualEarlyPress_WithAutoAssistOff_StillDamagesThePayload
+  Passed    22.551101s  Kestrel.Core.Tests.FairingHeatGateTests.EveryDefaultStarter_AutoAssistOff_LettingTheWindowRunOut_IsAlsoHeatSafe
+  Passed    22.611602s  Kestrel.Core.Tests.FairingHeatGateTests.EveryDefaultStarter_AutoAssistOn_JettisonsAtTheHeatGate_NoPayloadDamage_AndTheSimEventAgrees
+  Passed     0.000827s  Kestrel.Core.Tests.FairingHeatGateTests.Gate_OpensOnlyAfterTheHeatStaysUnderTheLimitFor2s_AboveTheArmingHeight
+  Passed     1.882216s  Kestrel.Core.Tests.FairingPressTests.AutoAssist_FliesTheSimsOwnRelease_Unchanged
+  Passed     0.032974s  Kestrel.Core.Tests.FairingPressTests.JettisonFairingNow_IsANoOpWithoutAFairingOrOnceItHasGone
+  Passed     1.816260s  Kestrel.Core.Tests.FairingPressTests.Kh3_PressedJettison_LeavesOnTheNextStep_NotAtTheReleaseHeight
+  Passed     2.738333s  Kestrel.Core.Tests.FlightToLandingPlaythroughTests.Kh3BoardStarter_SeparatesAndReachesOrbit_ThenTheExpendableBoosterLandsBeforeTheReport
+  Passed     3.105093s  Kestrel.Core.Tests.FlightToLandingPlaythroughTests.Kh3EightDegreeBuild_SeparatesAndMissesSuborbital_ThenTheExpendableBoosterLandsBeforeTheReport
+  Passed     2.612261s  Kestrel.Core.Tests.FlightToLandingPlaythroughTests.Kh3RestoredStarter_EitherLandsTheBooster_OrTheReportDoesNotWait
+  Passed     1.105333s  Kestrel.Core.Tests.LandingBurnTests.Conclude_SettlesBeforeTheBurnOpens_AndSettlesAnExpendableAttempt
+  Passed     1.174492s  Kestrel.Core.Tests.LandingBurnTests.LostStage_KeepsTheSamePhysics_AsBeforeTheOutcomeGate
+  Passed     2.326863s  Kestrel.Core.Tests.LandingBurnTests.OneBoosterOutcome_ALostStageIsNeverShownLanding_APlannedLandingIsNeverCalledLost
+  Passed     0.000475s  Kestrel.Core.Tests.ReportWatchdogTests.ALostAscentOrOpenLandingBurnCannotHoldTheCardForever
+  Passed     0.000181s  Kestrel.Core.Tests.ReportWatchdogTests.DoesNotReleaseBeforeTheDeadline
+  Passed     0.000140s  Kestrel.Core.Tests.ReportWatchdogTests.DoesNotReleaseWhileTheAscentIsStillFlying
+  Passed     0.003768s  Kestrel.Core.Tests.ReportWatchdogTests.FailureHostAndSliceAppArmTheWatchdog
+  Passed     0.000195s  Kestrel.Core.Tests.ReportWatchdogTests.ReleasesAStuckRecoveryAfterTheAscentEnds
+  Passed     0.000260s  Kestrel.Core.Tests.ReportWatchdogTests.ReproducesTheFreezeWhenTheWatchdogDoesNotRun
+  Passed     0.000164s  Kestrel.Core.Tests.ReportWatchdogTests.StaysQuietOnceTheCardHasOpened
+  Passed     0.006147s  Kestrel.Game.Tests.RecoveryDebugChromeTests.EngineerTier_NoLongerOpensTheDebugStickOrLine
+  Passed     0.002286s  Kestrel.Game.Tests.RecoveryDebugChromeTests.LandingChrome_FollowsTheOneBoosterOutcome
+  Passed     0.000630s  Kestrel.Game.Tests.RecoveryDebugChromeTests.ReleaseBuilds_NeverShowTheRecoveryStickOrNumbersLine_WhateverThePref

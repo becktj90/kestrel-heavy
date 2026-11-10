@@ -1,0 +1,12 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Kestrel.Core -> /workspace/kestrel-heavy/unity/dotnet/Kestrel.Core/bin/Debug/netstandard2.1/Kestrel.Core.dll
+/workspace/kestrel-heavy/unity/Assets/Kestrel.Core.Tests/PayloadFitRuleTests.cs(138,13): warning CS0618: 'Assert.AreEqual(double, double?, double)' is obsolete: 'This method will be removed in NUnit 4.0.' [/workspace/kestrel-heavy/unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj]
+/workspace/kestrel-heavy/unity/Assets/Kestrel.Core.Tests/MissionBoardCardFitTests.cs(20,51): warning CS0649: Field 'MissionBoardCardFitTests.Size.Right' is never assigned to, and will always have its default value 0 [/workspace/kestrel-heavy/unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj]
+/workspace/kestrel-heavy/unity/Assets/Kestrel.Core.Tests/MissionBoardCardFitTests.cs(20,45): warning CS0649: Field 'MissionBoardCardFitTests.Size.Left' is never assigned to, and will always have its default value 0 [/workspace/kestrel-heavy/unity/dotnet/Kestrel.Core.Tests/Kestrel.Core.Tests.csproj]
+  Kestrel.Core.Tests -> /workspace/kestrel-heavy/unity/dotnet/Kestrel.Core.Tests/bin/Debug/net8.0/Kestrel.Core.Tests.dll
+Test run for /workspace/kestrel-heavy/unity/dotnet/Kestrel.Core.Tests/bin/Debug/net8.0/Kestrel.Core.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    51, Skipped:     0, Total:    51, Duration: 49 s - Kestrel.Core.Tests.dll (net8.0)
+EXIT:0
