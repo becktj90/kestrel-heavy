@@ -1,3 +1,4 @@
+using Kestrel.Core.Flight;
 using Kestrel.Slice;
 using NUnit.Framework;
 using UnityEngine;
@@ -182,7 +183,7 @@ namespace Kestrel.Game.Tests
         public void FitBandAbove_KeepsHavenDeckAboveTheToolsRow_ThroughTheLandingBurn(float aspect, float topCover, float bottomCover, string device)
         {
             Assert.That(RecoveryShow.IncludeDeckInFrame(aspect), Is.True, device);
-            const float Booster = 26f, R = 1.85f, Flame = 12.2f, Deck = 0f, Floor = Deck + 1f, DeckR = 20f;
+            const float Booster = 26f, R = 1.85f, Flame = 12.2f, Deck = 0f, Floor = Deck + 1f, DeckR = (float)RecoverySim.DeckRadiusM;
             float yMax = 1f - topCover - RecoveryShow.HudMargin, yMin = bottomCover + RecoveryShow.HudMargin;
             var deckPts = new[]
             {
