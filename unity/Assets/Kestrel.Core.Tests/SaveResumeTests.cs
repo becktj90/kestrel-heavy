@@ -104,11 +104,23 @@ namespace Kestrel.Core.Tests
         [Test]
         public void ResumeOffer_HidesOnAFreshCareer()
         {
-            Assert.IsFalse(ResumeOffer.Show(false, 0, 0));
-            Assert.IsTrue(ResumeOffer.Show(true, 0, 0));
-            Assert.IsTrue(ResumeOffer.Show(false, 1, 0));
-            Assert.IsTrue(ResumeOffer.Show(false, 0, 1));
+            Assert.IsFalse(ResumeOffer.Show(false, 0, 0), "fresh: no CONTINUE");
+            Assert.IsTrue(ResumeOffer.Show(true, 0, 0), "draft: CONTINUE");
+            Assert.IsTrue(ResumeOffer.Show(false, 1, 0), "saved design: CONTINUE");
+            // NAV-10: cleared alone is not a resume — Home keeps LAUNCH (next-mission auto-build).
+            Assert.IsFalse(ResumeOffer.Show(false, 0, 1), "cleared>0 no draft: no CONTINUE");
+            Assert.IsFalse(ResumeOffer.Show(false, 0, 5), "cleared alone never CONTINUE");
             Assert.AreEqual("CONTINUE", ResumeOffer.ContinueLabel);
+        }
+
+        /// <summary>NAV-10: cleared missions alone must not rebrand Home LAUNCH as CONTINUE.</summary>
+        [Test]
+        public void NAV10_ClearedAlone_DoesNotOfferContinue()
+        {
+            Assert.IsFalse(ResumeOffer.Show(false, 0, 1));
+            Assert.IsFalse(ResumeOffer.Show(false, 0, 20));
+            Assert.IsTrue(ResumeOffer.Show(true, 0, 20), "draft still CONTINUE even with clears");
+            Assert.IsTrue(ResumeOffer.Show(false, 1, 20), "saved design still CONTINUE");
         }
 
         [Test]
