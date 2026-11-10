@@ -245,6 +245,7 @@ namespace Kestrel.Slice
             BindCinematicSink();
             CinematicSink.VehicleRadiusM = Kestrel.Kit.FlightSinkMath.VehicleRadiusM(WidestDiameterM(d));
             Running = true;
+            Held = false; // a new ascent must not inherit a pause Hold (frozen hop, no report)
             clock = 0; Meco = false; Result = null; pending = null; Coast = null; coastOver = false; CoastWall = 0; CoastEnd = null; coastArmedAt = double.NaN; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             skipping = false; skipTarget = StageSkipTarget.None; SkipAdvancedSimS = 0; SkipStop = StageSkipStop.None; SkipReached = StageSkipTarget.None;
             AttitudeDeg = 90f; HasAttitude = false;
