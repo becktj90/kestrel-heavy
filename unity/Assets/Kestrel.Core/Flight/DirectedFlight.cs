@@ -98,6 +98,8 @@ namespace Kestrel.Core.Flight
             else if (scale > 1) scale = 1;
             Sim.LiveThrottleScale = scale;
             Sim.LivePitchOffsetRad = cmd.PitchOffsetRad;
+            // A pressed jettison leaves now (no-op once the fairing is gone or for a design without one).
+            if (cmd.JettisonFairing) Sim.JettisonFairingNow();
             if (cmd.Lost && !ascentLost)
             {
                 ascentLost = true;
