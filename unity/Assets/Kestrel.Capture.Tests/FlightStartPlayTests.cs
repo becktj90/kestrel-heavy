@@ -56,18 +56,33 @@ namespace Kestrel.Capture.Tests
 
             var flight = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             Assert.IsNotNull(flight, "flight driver");
-            bool climbed = false;
-            float started = Time.realtimeSinceStartup;
-            // The count opens at T-12. A fast player needs many frames; a slow one needs wall clock.
-            for (int i = 0; i < 12000 && Time.realtimeSinceStartup - started < 90f; i++)
-            {
-                if (flight.Sim != null && flight.Altitude > 100)
-                {
-                    climbed = true;
-                    break;
-                }
+            Time.timeScale = 1f;
+            Time.captureDeltaTime = 0f;
+            // Count is wall-clock (SliceApp.TickCount). Wait until T-0 hands the sim off.
+            var countClock = System.Diagnostics.Stopwatch.StartNew();
+            for (int i = 0; i < 12000 && countClock.Elapsed.TotalSeconds < 90f && !(flight.Sim != null && flight.Running); i++)
                 yield return null;
+            Assert.IsTrue(flight.Sim != null && flight.Running,
+                "the count reached liftoff simT=" + flight.SimTime
+                + " running=" + flight.Running
+                + " alt=" + flight.Altitude);
+            // Climb is pumped at a fixed 1/60 so a slow CI player (this run: 173s wall,
+            // simT=1.73, alt=73m, never cleared 100m) cannot starve Update.
+            flight.Hold(false);
+            flight.CaptureClock = true;
+            const float dt = 1f / 60f;
+            float sim = 0f;
+            int steps = 0;
+            bool climbed = false;
+            while (!climbed && sim < 60f && steps < 60 * 60)
+            {
+                flight.Advance(dt, dt);
+                if (flight.Altitude > 100) climbed = true;
+                sim += dt;
+                steps++;
+                if (steps % 15 == 0) yield return null;
             }
+            flight.CaptureClock = false;
             Assert.IsTrue(climbed,
                 "liftoff simT=" + flight.SimTime
                 + " running=" + flight.Running
