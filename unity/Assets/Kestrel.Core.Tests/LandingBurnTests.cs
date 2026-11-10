@@ -256,6 +256,107 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("structural-maxq", crashy.Crashes[0], "the fast hit's boom kind");
         }
 
+        [Test, Timeout(120000)]
+        public void OneBoosterOutcome_ALostStageIsNeverShownLanding_APlannedLandingIsNeverCalledLost()
+        {
+            // Trevor 2026-11-09 (KH-3): "it says booster lost but then it also shows it landing with some landing
+            // controls". BoosterLanding.Fate is the one source: what the flight draws, calls out and announces follows it.
+            // The worst case is an expendable stage that kept fuel and legs: the attempt still flies underneath (the
+            // physics and the ungraded verdict are unchanged), but nothing on screen may say it is landing.
+            var h = handovers["m7"];
+
+            // Land-booster path: a planned landing is followed and called by phase, never "BOOSTER LOST".
+            var planned = Arm(h, 0);
+            Begin(planned, h);
+            var plannedSink = new RecordingSink();
+            bool followed = false;
+            int guard = 0;
+            while (!planned.Touched && guard++ < 300000)
+            {
+                var s = planned.Step(1.0 / 60.0, RecoveryStick.Assisted, plannedSink);
+                Assert.IsTrue(planned.ShowsLanding, "a planned landing is shown landing");
+                Assert.IsFalse(planned.ShowsLost, "and never shown lost");
+                var call = planned.Callout(s);
+                Assert.IsFalse(call.Visible && call.Line.StartsWith(BoosterLanding.LostTitle), "a planned landing is never called lost");
+                var raw = RecoveryViews.Of(s, planned.TrimMarks(), null, h.Craft.VLeg, s.Phase == RecoveryPhase.Down);
+                var shown = BoosterLanding.ForOutcome(planned.Fate, raw);
+                Assert.AreEqual(raw.Follow, shown.Follow);
+                Assert.AreEqual(raw.Inset, shown.Inset);
+                if (shown.Follow) followed = true;
+            }
+            Assert.IsTrue(followed, "the camera follows a planned landing");
+            Assert.AreEqual(1, plannedSink.Touchdowns.Count, "its touchdown is announced");
+
+            // Stay-with-upper-stage path (and any expendable stage): lost at separation, then never a landing.
+            var design = Design.FromJson(WinnerDoc("m7"));
+            design.recoveryMode = null;
+            var lost = BoosterLanding.Arm(catalog, design, 0);
+            Assert.AreEqual(BoosterFate.Expendable, lost.Fate, "no landing picked");
+            Begin(lost, h);
+            var lostSink = new RecordingSink();
+            bool calledLost = false;
+            guard = 0;
+            while (!lost.Touched && guard++ < 300000)
+            {
+                var s = lost.Step(1.0 / 60.0, RecoveryStick.Assisted, lostSink);
+                Assert.IsFalse(lost.ShowsLanding, "a lost stage is never shown landing (T+" + s.T.ToString("0.0") + " " + s.Phase + ")");
+                Assert.IsTrue(lost.ShowsLost);
+                var call = lost.Callout(s);
+                if (call.Visible)
+                {
+                    StringAssert.StartsWith(BoosterLanding.LostTitle, call.Line, "the only line a lost stage gets is BOOSTER LOST (" + s.Phase + ")");
+                    Assert.That(s.T, Is.LessThan(BoosterLanding.LostCallSec), "and only for the first seconds");
+                    calledLost = true;
+                }
+                var shown = BoosterLanding.ForOutcome(lost.Fate, RecoveryViews.Of(s, lost.TrimMarks(), RecoveryLog.Current?.Cause, h.Craft.VLeg, s.Phase == RecoveryPhase.Down));
+                Assert.IsFalse(shown.Follow, "no follow camera onto a lost stage (" + s.Phase + ")");
+                Assert.IsFalse(shown.Inset, "no corner inset of a lost stage (" + s.Phase + ")");
+                Assert.IsFalse(shown.Dust || shown.Splash, "no touchdown dust or splash");
+                Assert.IsNull(shown.BoomKind, "no landing crash picture");
+            }
+            Assert.IsTrue(calledLost, "BOOSTER LOST is said at separation");
+            Assert.IsTrue(lost.Touched, "the ungraded attempt still flies to the surface underneath");
+            Assert.IsTrue(lost.Verdict.Expendable, "never graded");
+            Assert.AreEqual(0, lostSink.Phases.Count, "no landing phase is announced for a lost stage");
+            Assert.AreEqual(0, lostSink.Touchdowns.Count, "no touchdown camera beat for a lost stage");
+            Assert.AreEqual(0, lostSink.Crashes.Count, "no landing crash for a lost stage");
+
+            // The post-insertion settle (Conclude, #482) is silent for a lost stage too.
+            RecoveryLog.Clear();
+            var settled = BoosterLanding.Arm(catalog, design, 0);
+            Begin(settled, h);
+            var settleSink = new RecordingSink();
+            guard = 0;
+            while (!settled.Touched && guard++ < 10000) settled.Conclude(true, false, settleSink);
+            Assert.IsTrue(settled.Touched);
+            Assert.AreEqual(0, settleSink.Phases.Count + settleSink.Touchdowns.Count + settleSink.Crashes.Count, "Conclude announces nothing for a lost stage");
+        }
+
+        [Test, Timeout(120000)]
+        public void LostStage_KeepsTheSamePhysics_AsBeforeTheOutcomeGate()
+        {
+            // The outcome gate is presentation only: an expendable attempt stepped with and without a sink lands the
+            // same verdict, bit for bit, so no flight, report or golden moves.
+            var h = handovers["m7"];
+            var design = Design.FromJson(WinnerDoc("m7"));
+            design.recoveryMode = null;
+            BoosterLanding Fly(IFlightSimSink sink)
+            {
+                RecoveryLog.Clear();
+                var l = BoosterLanding.Arm(catalog, design, 0);
+                Begin(l, h);
+                int g = 0;
+                while (!l.Touched && g++ < 300000) l.Step(1.0 / 60.0, RecoveryStick.Assisted, sink);
+                return l;
+            }
+            var quiet = Fly(null);
+            var loud = Fly(new RecordingSink());
+            Assert.AreEqual(quiet.Verdict.T, loud.Verdict.T, 0);
+            Assert.AreEqual(quiet.Verdict.Sink, loud.Verdict.Sink, 0);
+            Assert.AreEqual(quiet.Verdict.MissM, loud.Verdict.MissM, 0);
+            Assert.AreEqual(quiet.Verdict.Cause, loud.Verdict.Cause);
+        }
+
         // ---- the live loop, headless ----
 
         static RecoveryStick BurnStick(RecoveryBody body, RecoveryCraft craft, LandingBurnInput input, LandingBurnAssist assist)

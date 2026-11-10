@@ -400,6 +400,30 @@ namespace Kestrel.Core.Physics
         /// <summary>True when this sim's "fairing" event waits for the payload heat gate (SimOptions.fairingMaxHeatFlux).</summary>
         public bool FairingHeatGated => fairingGate != null;
 
+        /// <summary>True once the fairing has left the stack (its "fairing" event is in <see cref="Events"/>).</summary>
+        public bool FairingJettisoned => fairingSent;
+
+        /// <summary>
+        /// The player pressed JETTISON FAIRING (AscentDirector, a touched fairing call; Trevor 2026-11-09: the halves
+        /// waited for the release height or the heat gate, tens of seconds after the press, while the press was already
+        /// judged for heat). The fairing leaves now, at this state: the same mass drop, event and hook as the automatic
+        /// release below, so the picture, the mass and the heat verdict all describe one jettison. Nothing calls this
+        /// without a player press, so Auto-assist, the batch and every golden fly exactly as before. False (no-op) when
+        /// the design flies no fairing, it has already gone, or the flight is over.
+        /// </summary>
+        public bool JettisonFairingNow()
+        {
+            if (fairingSent || Done || !(o.fairingJettisonAltM > 0)) return false;
+            fairingSent = true;
+            fairingDropped = true;
+            Y[4] -= o.fairingMassKg;
+            double alt = JsMath.Hypot(Y[0], Y[1]) - Gravity.R_EARTH;
+            double spd = JsMath.Hypot(Y[2], Y[3]);
+            Events.Add(new SimEvent { t = T, type = "fairing", alt = alt, v = spd, mass = o.fairingMassKg });
+            hook?.OnFairingSeparation(T, Pos(), Vel());
+            return true;
+        }
+
         public AscentSim(IList<SimStage> stages, SimOptions opts)
         {
             stagesIn = stages; o = opts; st = Headless.Normalize(stages);

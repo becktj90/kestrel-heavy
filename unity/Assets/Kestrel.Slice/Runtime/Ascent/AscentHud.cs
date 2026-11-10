@@ -1430,7 +1430,8 @@ namespace Kestrel.Slice
             if (flight.Lost && flight.Result != null && flight.Result.failure != null)
                 kind = flight.Result.failure.kind ?? "";
             double alt = director.LiveAlt > 0 ? director.LiveAlt : flight.Altitude;
-            bool fairingOff = vehicle != null && vehicle.HasFairing && alt >= vehicle.JettisonAltM;
+            bool fairingOff = vehicle != null && vehicle.HasFairing
+                && (alt >= vehicle.JettisonAltM || (flight.Sim != null && flight.Sim.FairingJettisoned));
             bool engineOut = false;
             var prompts = director.OpenPrompts();
             if (prompts != null)
