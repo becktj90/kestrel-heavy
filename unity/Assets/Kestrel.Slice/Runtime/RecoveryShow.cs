@@ -186,6 +186,11 @@ namespace Kestrel.Slice
         public const float HudMargin = 0.03f;
         /// <summary>How far under the booster's lowest point the shot keeps in view (booster heights): its flame and, low down, the deck.</summary>
         public const float BelowHeights = 1.6f;
+        /// <summary>Portrait aspects at or above this (iPad 11/13 ~0.70–0.75; phones ~0.46) also frame Haven's deck
+        /// above the bottom controls for the whole landing burn. Narrow phone frames keep the tighter follow.</summary>
+        public const float WideAspect = 0.65f;
+
+        public static bool IncludeDeckInFrame(float aspect) => aspect >= WideAspect;
 
         /// <summary>
         /// Follow the booster, and keep the whole booster (renderer bounds: body, fins, legs, landing flame) plus the sea or deck
@@ -204,7 +209,7 @@ namespace Kestrel.Slice
             var rot = ChaseCamera.Aim(pos, target + Vector3.up * (h * 0.25f), cam.fieldOfView, alt, pos.y - groundY);
             if (topCover > 0f || bottomCover > 0f)
             {
-                int n = FramePoints(groundY, h);
+                int n = FramePoints(groundY, h, cam.aspect);
                 if (n > 0)
                 {
                     float yMax = 1f - Mathf.Clamp01(topCover) - HudMargin, yMin = Mathf.Clamp01(bottomCover) + HudMargin;
@@ -217,10 +222,12 @@ namespace Kestrel.Slice
         }
 
         readonly System.Collections.Generic.List<Renderer> boosterRenderers = new System.Collections.Generic.List<Renderer>();
-        readonly Vector3[] framePts = new Vector3[10];
+        readonly Vector3[] framePts = new Vector3[16];
 
-        /// <summary>The booster's drawn bounds (8 corners) and the point <see cref="BelowHeights"/> under it, not below the sea or deck.</summary>
-        int FramePoints(float groundY, float h)
+        /// <summary>The booster's drawn bounds (8 corners), the point <see cref="BelowHeights"/> under it (not below the
+        /// sea or deck), and on wide / iPad aspects the live Haven deck so it stays above the bottom controls
+        /// through the whole landing burn.</summary>
+        int FramePoints(float groundY, float h, float aspect)
         {
             staging.Booster.GetComponentsInChildren(false, boosterRenderers);
             bool any = false; var bounds = new Bounds();
@@ -235,6 +242,15 @@ namespace Kestrel.Slice
                 framePts[n++] = new Vector3((i & 1) == 0 ? mn.x : mx.x, (i & 2) == 0 ? mn.y : mx.y, (i & 4) == 0 ? mn.z : mx.z);
             float floorY = Mathf.Max(groundY, mn.y - BelowHeights * h);
             framePts[n++] = new Vector3(bounds.center.x, floorY, bounds.center.z);
+            if (IncludeDeckInFrame(aspect) && deck != null && deck.gameObject.activeInHierarchy && n + 3 <= framePts.Length)
+            {
+                var c = deck.position;
+                float r = Mathf.Abs(deck.lossyScale.x) * 0.5f;
+                float y = c.y + Mathf.Abs(deck.lossyScale.y) * 0.5f;
+                framePts[n++] = new Vector3(c.x, y, c.z);
+                framePts[n++] = new Vector3(c.x - r, y, c.z);
+                framePts[n++] = new Vector3(c.x + r, y, c.z);
+            }
             return n;
         }
 
