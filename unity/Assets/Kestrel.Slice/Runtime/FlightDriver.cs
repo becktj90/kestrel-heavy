@@ -505,15 +505,21 @@ namespace Kestrel.Slice
         /// <summary>
         /// Failsafe: if the ascent is already over, publish <see cref="Result"/> and end a hung
         /// climax coast so the report card can open (Trevor KH-3, TestFlight 218/219).
+        /// A live climax must play (or be skipped by the player). Ending it on the same
+        /// frame it starts made CoastEnd=watchdog and broke First Hop / tap-to-skip PlayMode.
         /// </summary>
         public void EnsureReportReady(double unscaledTime)
         {
             if (Coasting)
             {
                 if (double.IsNaN(coastArmedAt)) coastArmedAt = unscaledTime;
-                if (Coast != null && (Coast.Finished(CoastWall)
-                    || unscaledTime - coastArmedAt >= Kestrel.Core.Flight.OrbitCoast.MaxWallSeconds + 2))
+                if (Coast != null && Coast.Finished(CoastWall))
+                    EndCoast("played");
+                else if (Coast != null
+                    && unscaledTime - coastArmedAt >= Kestrel.Core.Flight.OrbitCoast.MaxWallSeconds + 2)
                     EndCoast("watchdog");
+                // Still coasting: leave Result unset so StepCoast / SkipCoast can finish it.
+                if (Coasting) return;
             }
             else coastArmedAt = double.NaN;
             if (Result != null)
@@ -523,13 +529,9 @@ namespace Kestrel.Slice
             }
             if (Sim == null || !Sim.Done) return;
             if (pending == null) pending = directed != null ? directed.Finish() : Sim.Finish();
-            if (Coasting) EndCoast("watchdog");
-            else
-            {
-                coastOver = true;
-                Running = false;
-                Result = pending;
-            }
+            coastOver = true;
+            Running = false;
+            Result = pending;
         }
 
         /// <summary>
