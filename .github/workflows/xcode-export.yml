@@ -170,29 +170,45 @@ jobs:
           full_sha = len(expected) == 40 and all(char in '0123456789abcdef' for char in expected)
           if start:
               import subprocess
-              if not full_sha:
-                  raise SystemExit('Manual cloud start requires the full verified export SHA')
               live = subprocess.check_output(['git', 'ls-remote', 'https://github.com/becktj90/kestrel-heavy.git',
                                              'refs/heads/xcode-export'], text=True).split()[0]
-              if live != expected:
+              if not full_sha:
+                  # credentials-only + ref=main (run 42761639724): do not start an
+                  # unverified SHA, but succeed when an auto-started Cloud run already
+                  # covers the current xcode-export tip (Cloud #56 had already started).
+                  existing = next((item for item in runs if (item['attributes'].get('sourceCommit') or {}).get('commitSha') == live), None)
+                  if existing is None:
+                      raise SystemExit('Manual cloud start requires the full verified export SHA')
+                  attr = existing['attributes']
+                  print('Cloud run already covers xcode-export tip:', json.dumps({
+                      'number': attr.get('number'),
+                      'progress': attr.get('executionProgress'),
+                      'result': attr.get('completionStatus'),
+                      'source': live,
+                      'reason': attr.get('startReason'),
+                  }), flush=True)
+                  print('Not starting an unverified SHA (ref was not a 40-char export SHA)', flush=True)
+                  start = False
+              elif live != expected:
                   raise SystemExit('Export branch moved; refusing to start a different source')
-              existing = next((item for item in runs if (item['attributes'].get('sourceCommit') or {}).get('commitSha') == expected), None)
-              if existing is None:
-                  candidates = [item for item in workflows if item['attributes']['isEnabled'] and item['attributes']['name'] == 'Kestrel Heavy']
-                  if len(candidates) != 1:
-                      raise SystemExit('Expected one enabled shipping cloud workflow')
-                  workflow = candidates[0]
-                  repository = request('/v1/ciWorkflows/' + workflow['id'] + '/repository')['data']
-                  refs = request('/v1/scmRepositories/' + repository['id'] + '/gitReferences?limit=200')['data']
-                  branches = [item for item in refs if item['attributes'].get('canonicalName') == 'refs/heads/xcode-export' and not item['attributes'].get('isDeleted')]
-                  if len(branches) != 1:
-                      raise SystemExit('Expected one live xcode-export branch in Apple source control')
-                  created = request('/v1/ciBuildRuns', {'data': {'type': 'ciBuildRuns', 'relationships': {
-                      'workflow': {'data': {'type': 'ciWorkflows', 'id': workflow['id']}},
-                      'sourceBranchOrTag': {'data': {'type': 'scmGitReferences', 'id': branches[0]['id']}}}}})['data']
-                  print('Started Xcode Cloud build:', created['attributes'].get('number'), flush=True)
               else:
-                  print('Exact export already has a cloud build; leaving it running', flush=True)
+                  existing = next((item for item in runs if (item['attributes'].get('sourceCommit') or {}).get('commitSha') == expected), None)
+                  if existing is None:
+                      candidates = [item for item in workflows if item['attributes']['isEnabled'] and item['attributes']['name'] == 'Kestrel Heavy']
+                      if len(candidates) != 1:
+                          raise SystemExit('Expected one enabled shipping cloud workflow')
+                      workflow = candidates[0]
+                      repository = request('/v1/ciWorkflows/' + workflow['id'] + '/repository')['data']
+                      refs = request('/v1/scmRepositories/' + repository['id'] + '/gitReferences?limit=200')['data']
+                      branches = [item for item in refs if item['attributes'].get('canonicalName') == 'refs/heads/xcode-export' and not item['attributes'].get('isDeleted')]
+                      if len(branches) != 1:
+                          raise SystemExit('Expected one live xcode-export branch in Apple source control')
+                      created = request('/v1/ciBuildRuns', {'data': {'type': 'ciBuildRuns', 'relationships': {
+                          'workflow': {'data': {'type': 'ciWorkflows', 'id': workflow['id']}},
+                          'sourceBranchOrTag': {'data': {'type': 'scmGitReferences', 'id': branches[0]['id']}}}}})['data']
+                      print('Started Xcode Cloud build:', created['attributes'].get('number'), flush=True)
+                  else:
+                      print('Exact export already has a cloud build; leaving it running', flush=True)
           if start and full_sha:
               for attempt in range(30):
                   runs = request('/v1/ciProducts/' + product['id'] + '/buildRuns?limit=200')['data']
