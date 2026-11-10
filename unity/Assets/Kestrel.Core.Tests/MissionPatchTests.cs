@@ -232,14 +232,16 @@ namespace Kestrel.Core.Tests
         public void SecondPassRgbaReusesTheBitmap()
         {
             MissionPatchArt.ClearCache();
+            var uncached = System.Diagnostics.Stopwatch.StartNew();
             for (int i = 1; i <= 20; i++)
             {
                 MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Open);
                 MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Medal);
                 MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Locked);
             }
+            uncached.Stop();
             long before = GC.GetAllocatedBytesForCurrentThread();
-            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var cached = System.Diagnostics.Stopwatch.StartNew();
             for (int pass = 0; pass < 2; pass++)
             {
                 for (int i = 1; i <= 20; i++)
@@ -252,9 +254,13 @@ namespace Kestrel.Core.Tests
                     Assert.AreSame(locked, MissionPatchArt.Rgba("m" + i, 96, PatchChrome.Locked));
                 }
             }
-            watch.Stop();
+            cached.Stop();
             long alloc = GC.GetAllocatedBytesForCurrentThread() - before;
-            Assert.That(watch.ElapsedMilliseconds, Is.LessThan(15), "cached patch pass " + watch.ElapsedMilliseconds + " ms");
+            // Reuse is AreSame + skipped-hot-path. An absolute 15 ms cap failed EditMode on
+            // #486 (16 ms) under CI load; the cache is still two orders faster than the fill.
+            Assert.That(cached.Elapsed, Is.LessThan(uncached.Elapsed / 5),
+                "cached patch pass " + cached.ElapsedMilliseconds + " ms must skip the hot path (uncached fill "
+                + uncached.ElapsedMilliseconds + " ms)");
             Assert.That(alloc, Is.LessThan(64 * 1024), "cached patch allocations " + alloc);
         }
 
