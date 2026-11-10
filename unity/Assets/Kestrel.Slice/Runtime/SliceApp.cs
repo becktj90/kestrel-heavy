@@ -1611,6 +1611,7 @@ namespace Kestrel.Slice
         /// </summary>
         void ClearFlight()
         {
+            Kestrel.Game.Shell.MenuBack.FlightEscape = null;
             ReportCardChrome.Dismiss(ui);
             SetFlightPaused(false);
             handoff.Reset();
@@ -1640,13 +1641,33 @@ namespace Kestrel.Slice
 
         void SetFlightPaused(bool on)
         {
-            if (flight != null) flight.Hold(on);
+            // During the climax coast the wall clock must keep moving (FlightDriver.StepCoast). Holding the
+            // driver here used to freeze Orbit!/Apogee! with no report (Trevor KH-3). Pause UI may still open
+            // for Exit / Home; the coast and its handoff to the report continue underneath.
+            bool hold = on && !(flight != null && flight.Coasting);
+            if (flight != null) flight.Hold(hold);
             var audio = flight != null ? flight.GetComponent<Kestrel.Game.Audio.AudioDirector>() : null;
-            if (audio != null) audio.Hold(on);
+            if (audio != null) audio.Hold(hold);
             var voice = flight != null ? flight.GetComponent<Kestrel.Game.Audio.NarrationPlayer>() : null;
-            if (voice != null) voice.Hold(on);
+            if (voice != null) voice.Hold(hold);
             Kestrel.Game.Audio.MusicPlayer.Instance?.SetPaused(on);
             chrome?.Show(on);
+        }
+
+        /// <summary>NAV-08: web Escape and the hardware back key open the pause menu in flight (and resume when it is already open).</summary>
+        void ToggleFlightPauseFromEscape()
+        {
+            if (chrome == null) return;
+            if (ui != null && ui.Q(ReportView.RootName) != null) return;
+            // Only while a live ascent is running. A stuck Escape after MECO or on the pad must not Hold the driver.
+            if (flight == null || !flight.Running || flight.Result != null) return;
+            // Climax coast: allow Escape to Resume an open pause menu, but never Hold/freeze the coast (#472 / KH-3 freeze).
+            if (flight.Coasting)
+            {
+                if (chrome.Paused) SetFlightPaused(false);
+                return;
+            }
+            SetFlightPaused(!chrome.Paused);
         }
 
         void EnterFlight()
@@ -1656,6 +1677,8 @@ namespace Kestrel.Slice
             // and the retry never left the pad. Dismiss it, and put the HUD back.
             ReportCardChrome.Dismiss(ui);
             ReportCardChrome.RestoreFlight(ui);
+            // NAV-08: Escape / hardware back opens (and toggles) the in-flight pause menu.
+            Kestrel.Game.Shell.MenuBack.FlightEscape = ToggleFlightPauseFromEscape;
             if (rocketGO != null)
             {
                 var host = rocketGO.GetComponent<Kestrel.Game.Failure.FailureHost>();
@@ -1962,9 +1985,20 @@ namespace Kestrel.Slice
             }
             if (birds != null) birds.TrackFlight = hud != null && !hud.ClassListContains("hidden");
             if (ui != null && ui.Q(ReportView.RootName) != null)
+            {
+                // Report owns Escape via ReportCardChrome.Escape; do not open pause over the card.
+                Kestrel.Game.Shell.MenuBack.FlightEscape = null;
                 handoff.Finish();
+            }
             CheckDesignerLanding();
-            if (chrome != null && chrome.Paused) return;
+            if (chrome != null && chrome.Paused)
+            {
+                // Pause must not stop BoosterLanding.Conclude: after insertion the report waits on
+                // RecoveryLog.Active, and Present is the only place that Settles it (KH-3 freeze).
+                if (recovery != null && flight != null && flight.Result != null && !flight.Running)
+                    recovery.Present(0f);
+                return;
+            }
             bool inFlight = hud != null && !hud.ClassListContains("hidden");
             if (!handoff.Closed && !handoff.Ascending && (counting || (inFlight && (sequence != null || handoff.StartAttempts > 0))))
             {

@@ -6,6 +6,7 @@ using Kestrel.Slice.Editor;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
+using UnityEditor.iOS.Xcode;
 
 public class IosExportComplianceTests
 {
@@ -19,8 +20,12 @@ public class IosExportComplianceTests
             File.WriteAllText(path,"<plist version=\"1.0\"><dict><key>CFBundleVersion</key><string>105</string>"+
                 (existingDeclaration ? "<key>ITSAppUsesNonExemptEncryption</key><true/>" : "")+"</dict></plist>");
             var report=new BuildReport { summary=new BuildSummary { platform=BuildTarget.iOS, outputPath=root } };
+            ProjectCapabilityManager.AddGameCenterCalls = 0;
+            PBXProject.RemoveFrameworkCalls = 0;
             new IosXcodePostprocess().OnPostprocessBuild(report);
             new IosXcodePostprocess().OnPostprocessBuild(report);
+            Assert.That(ProjectCapabilityManager.AddGameCenterCalls, Is.EqualTo(0),
+                "1.0 must not add the Game Center capability (Trevor 2026-11-09)");
             var dict=XDocument.Load(path).Root.Element("dict");
             var declaration=dict.Elements("key").Single(key=>key.Value=="ITSAppUsesNonExemptEncryption");
             Assert.That(((XElement)declaration.NextNode).Name.LocalName,Is.EqualTo("false"));

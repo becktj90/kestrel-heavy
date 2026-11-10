@@ -1,8 +1,12 @@
 // iOS export post-process for the Xcode Cloud export (DECISIONS #59, docs/XCODE_CLOUD_PLAN.md).
-// Adds the Game Center capability (the only capability) and pins automatic signing for team 9TR6R5LV8M.
+// Pins automatic signing for team 9TR6R5LV8M. Game Center out of 1.0 (DECISIONS #98, Trevor 2026-11-09):
+// strip GameKit.framework and com.apple.developer.game-center if Unity re-adds them; write a clean entitlements file.
 // Compiles only while the active build target is iOS (UNITY_IOS), so non-iOS editors are unaffected.
 #if UNITY_IOS
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -12,14 +16,15 @@ namespace Kestrel.Slice.Editor
 {
     public sealed class IosXcodePostprocess : IPostprocessBuildWithReport
     {
+        public const string EntitlementsRelPath = "Unity-iPhone/KestrelHeavy.entitlements";
+
         public int callbackOrder => 100;
 
         public void OnPostprocessBuild(BuildReport report)
         {
             if (report.summary.platform != BuildTarget.iOS) return;
             string root = report.summary.outputPath;
-            // The game uses only exempt OS HTTPS (Game Center). Without this declaration,
-            // processed Xcode Cloud builds stay unavailable as MISSING_EXPORT_COMPLIANCE.
+            // Exempt encryption declaration so processed Xcode Cloud builds are not held as MISSING_EXPORT_COMPLIANCE.
             string plistPath = Path.Combine(root, "Info.plist");
             var plist = new PlistDocument();
             plist.ReadFromFile(plistPath);
@@ -34,12 +39,128 @@ namespace Kestrel.Slice.Editor
             {
                 proj.SetBuildProperty(t, "CODE_SIGN_STYLE", "Automatic");
                 proj.SetBuildProperty(t, "DEVELOPMENT_TEAM", PlayerSettings.iOS.appleDeveloperTeamID);
+                // DECISIONS #98: drop GameKit even if Unity's Social/GameCenter module weakly re-adds it.
+                if (proj.ContainsFramework(t, "GameKit.framework"))
+                    proj.RemoveFrameworkFromProject(t, "GameKit.framework");
             }
             proj.WriteToFile(projPath);
 
-            var caps = new ProjectCapabilityManager(projPath, "Unity-iPhone/KestrelHeavy.entitlements", null, app);
-            caps.AddGameCenter();
-            caps.WriteToFile();
+            StripGameKitFromPbxprojText(projPath);
+            WriteCleanEntitlements(root);
+            StripGameCenterEntitlementKeys(root);
+            EnsurePrivacyManifests(root);
+        }
+
+        /// <summary>
+        /// Unity emits PrivacyInfo.xcprivacy with required-reason APIs only.
+        /// Pin NSPrivacyTracking false and empty collected/tracking-domain lists (RELEASE_READINESS G-6).
+        /// </summary>
+        internal static void EnsurePrivacyManifests(string root)
+        {
+            if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return;
+            foreach (var path in Directory.GetFiles(root, "PrivacyInfo.xcprivacy", SearchOption.AllDirectories))
+                EnsurePrivacyManifest(path);
+        }
+
+        internal static void EnsurePrivacyManifest(string path)
+        {
+            var doc = File.Exists(path)
+                ? XDocument.Load(path)
+                : new XDocument(new XElement("plist", new XAttribute("version", "1.0"), new XElement("dict")));
+            var dict = doc.Root?.Element("dict");
+            if (dict == null)
+            {
+                doc = new XDocument(new XElement("plist", new XAttribute("version", "1.0"), new XElement("dict")));
+                dict = doc.Root.Element("dict");
+            }
+            SetPrivacyBoolean(dict, "NSPrivacyTracking", false);
+            EnsureEmptyPrivacyArray(dict, "NSPrivacyTrackingDomains");
+            EnsureEmptyPrivacyArray(dict, "NSPrivacyCollectedDataTypes");
+            doc.Save(path);
+        }
+
+        static void SetPrivacyBoolean(XElement dict, string key, bool value)
+        {
+            foreach (var el in dict.Elements("key"))
+            {
+                if (el.Value != key) continue;
+                var next = el.NextNode as XElement;
+                if (next != null) next.ReplaceWith(new XElement(value ? "true" : "false"));
+                else el.AddAfterSelf(new XElement(value ? "true" : "false"));
+                return;
+            }
+            dict.Add(new XElement("key", key), new XElement(value ? "true" : "false"));
+        }
+
+        static void EnsureEmptyPrivacyArray(XElement dict, string key)
+        {
+            foreach (var el in dict.Elements("key").ToList())
+            {
+                if (el.Value != key) continue;
+                var next = el.NextNode as XElement;
+                if (next != null && next.Name.LocalName == "array")
+                {
+                    next.RemoveNodes();
+                    return;
+                }
+                if (next != null) next.ReplaceWith(new XElement("array"));
+                else el.AddAfterSelf(new XElement("array"));
+                return;
+            }
+            dict.Add(new XElement("key", key), new XElement("array"));
+        }
+
+        /// <summary>
+        /// Belt-and-suspenders text pass: PBXProject APIs differ across Unity minors; also drop any
+        /// GameKit.framework file refs a naive grep would flag. Does NOT touch UnityEngine.GameCenterModule*
+        /// il2cpp sources (engine Social stubs; not a GameKit link).
+        /// </summary>
+        internal static void StripGameKitFromPbxprojText(string projPath)
+        {
+            if (!File.Exists(projPath)) return;
+            var text = File.ReadAllText(projPath);
+            var cleaned = Regex.Replace(
+                text,
+                @"^[^\n]*GameKit\.framework[^\n]*\n",
+                "",
+                RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            if (cleaned != text) File.WriteAllText(projPath, cleaned);
+        }
+
+        /// <summary>Empty entitlements file with no Game Center capability (DECISIONS #98).</summary>
+        internal static void WriteCleanEntitlements(string root)
+        {
+            var path = Path.Combine(root, EntitlementsRelPath.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            File.WriteAllText(path,
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n" +
+                "<plist version=\"1.0\">\n<dict>\n</dict>\n</plist>\n");
+        }
+
+        internal static void StripGameCenterEntitlementKeys(string root)
+        {
+            if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return;
+            foreach (var path in Directory.GetFiles(root, "*.entitlements", SearchOption.AllDirectories))
+                StripGameCenterKey(path);
+        }
+
+        internal static void StripGameCenterKey(string path)
+        {
+            if (!File.Exists(path)) return;
+            var doc = XDocument.Load(path);
+            var dict = doc.Root?.Element("dict");
+            if (dict == null) return;
+            bool changed = false;
+            foreach (var key in dict.Elements("key").ToList())
+            {
+                if (key.Value != "com.apple.developer.game-center") continue;
+                var next = key.NextNode as XElement;
+                key.Remove();
+                next?.Remove();
+                changed = true;
+            }
+            if (changed) doc.Save(path);
         }
     }
 }

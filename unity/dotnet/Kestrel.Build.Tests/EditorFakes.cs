@@ -34,13 +34,17 @@ namespace UnityEditor.Build {
 namespace UnityEditor.iOS.Xcode {
     public sealed class PBXProject {
         public static string GetPBXProjectPath(string root) => System.IO.Path.Combine(root, "Unity-iPhone.xcodeproj/project.pbxproj");
+        public static int RemoveFrameworkCalls;
         public void ReadFromFile(string path) {} public void WriteToFile(string path) {}
         public string GetUnityMainTargetGuid() => "app"; public string GetUnityFrameworkTargetGuid() => "framework";
         public string ProjectGuid() => "project"; public void SetBuildProperty(string target, string key, string value) {}
+        public bool ContainsFramework(string target, string framework) => framework == "GameKit.framework";
+        public void RemoveFrameworkFromProject(string target, string framework) { RemoveFrameworkCalls++; }
     }
     public sealed class ProjectCapabilityManager {
+        public static int AddGameCenterCalls;
         public ProjectCapabilityManager(string path, string entitlements, string name, string target) {}
-        public void AddGameCenter() {} public void WriteToFile() {}
+        public void AddGameCenter() { AddGameCenterCalls++; } public void WriteToFile() {}
     }
     public sealed class PlistDocument {
         System.Xml.Linq.XDocument document;
