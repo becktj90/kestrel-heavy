@@ -509,7 +509,7 @@ namespace Kestrel.Slice
             return false;
         }
 
-        /// <summary>Body size of a line: the Test Flight card's own sizes (DECISIONS #100), else <see cref="BodyPt"/>.</summary>
+        /// <summary>Body size of a line: the Test Flight card's own sizes (DECISIONS #102), else <see cref="BodyPt"/>.</summary>
         static float LinePt(string name)
         {
             float test = TestFlightCardView.BodyPt(name);

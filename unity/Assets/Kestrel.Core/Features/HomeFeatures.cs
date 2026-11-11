@@ -19,7 +19,7 @@ namespace Kestrel.Core.Features
         public static HomeShow Current() => Read(FeatureFlags.Active);
 
         /// <summary>
-        /// Test Flight's Home tile (DECISIONS #100), shown from the first launch: not a home.* flag (it never hides). The
+        /// Test Flight's Home tile (DECISIONS #102), shown from the first launch: not a home.* flag (it never hides). The
         /// game's Home sets this before it builds (ScreenStub); a layout or panel test that leaves it off lays out the
         /// Home it always did.
         /// </summary>
@@ -56,7 +56,7 @@ namespace Kestrel.Core.Features
     public struct HomeShow
     {
         public bool DesignFirst, Codex, Thrum, Credits, Stats;
-        /// <summary>Test Flight's tile under LAUNCH (DECISIONS #100). Not one of the five extras: <see cref="None"/> and
+        /// <summary>Test Flight's tile under LAUNCH (DECISIONS #102). Not one of the five extras: <see cref="None"/> and
         /// <see cref="Full"/> leave it off, and <see cref="ToString"/> does not name it.</summary>
         public bool TestFlight;
         public static HomeShow None => default;

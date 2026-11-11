@@ -50,7 +50,7 @@ namespace Kestrel.Slice
 
         public static VisualElement Build(FailureEvent failure, TelemetryLog log, ReportFrame frame, bool reduceMotion, Action onFix, FlightDebrief debrief = null, ReportActions actions = null, TestCardActions test = null)
         {
-            // DECISIONS #100: a test flight shows its own card (nothing was scored, so there is no rewards card).
+            // DECISIONS #102: a test flight shows its own card (nothing was scored, so there is no rewards card).
             if (debrief != null && debrief.TestCard != null)
                 return TestFlightCardView.Build(debrief.TestCard, frame, reduceMotion, test ?? new TestCardActions { Retry = actions?.Designer, Home = actions?.Home });
             if (debrief != null)

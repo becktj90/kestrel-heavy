@@ -111,7 +111,7 @@ namespace Kestrel.Game.Shell
             root.Add(launchKey);
             var designKey = DesignBar(design);
             root.Add(designKey);
-            // Test Flight (DECISIONS #100): a full-width tile under LAUNCH / Design first, over the MISSIONS row. Only
+            // Test Flight (DECISIONS #102): a full-width tile under LAUNCH / Design first, over the MISSIONS row. Only
             // built when the game turns it on (HomeFeatures.TestFlightTile), so a Home without it has the old tree.
             if (HomeFeatures.TestFlightTile && testFlight != null) root.Add(Tile(MainMenuCopy.TestFlight, testFlight));
             var grid = new VisualElement { name = "mm-grid", pickingMode = PickingMode.Ignore };
@@ -226,7 +226,7 @@ namespace Kestrel.Game.Shell
         // ---- Starter Home (feat(home-simple)) ------------------------------------------------------
 
         /// <summary>Home elements each home.* flag hides (Kestrel.Core.Features.HomeFeatures). Starter: all hidden.</summary>
-        /// <summary>Test Flight's Home tile (DECISIONS #100).</summary>
+        /// <summary>Test Flight's Home tile (DECISIONS #102).</summary>
         public const string TestFlightId = UiIds.HomeTestFlight;
         public const string DesignId = UiIds.HomeDesign, CodexId = UiIds.HomeCodex, ThrumId = UiIds.HomeThrum, StatsId = "mm-stats";
         public const string CtaContinueClass = "kh-mm-cta-continue";

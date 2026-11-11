@@ -1,4 +1,4 @@
-// Test Flight (DECISIONS #100) strings in the text-fit sweep, worst-case values, at 335 portrait and the landscape
+// Test Flight (DECISIONS #102) strings in the text-fit sweep, worst-case values, at 335 portrait and the landscape
 // frames (UX spec: "Add every string with worst-case values to text-fit sweep at 335 px AND web landscape").
 using Kestrel.Core.Features;
 using Kestrel.Core.Flight;

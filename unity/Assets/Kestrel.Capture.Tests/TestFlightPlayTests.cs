@@ -1,4 +1,4 @@
-// Test Flight (DECISIONS #100) PlayMode: Home's Test Flight tile → the designer (a Sandbox free build flagged as a test)
+// Test Flight (DECISIONS #102) PlayMode: Home's Test Flight tile → the designer (a Sandbox free build flagged as a test)
 // → a live flight → the Test Flight card → Tweak & Retry, with progress and Kc unchanged.
 // UNVERIFIED LOCALLY: compiles against the Unity stubs (tools/cs-stubcheck); runs where GameCI runs PlayMode.
 using System;

@@ -1,4 +1,4 @@
-// Test Flight result card (DECISIONS #100, UX spec 2026-11-11). Same sheet as the report card (ReportCardChrome.Dress
+// Test Flight result card (DECISIONS #102, UX spec 2026-11-11). Same sheet as the report card (ReportCardChrome.Dress
 // lays it out): "TEST FLIGHT" eyebrow, a small reason icon, then title, kid line, engineer line and the "Try:" hint, in
 // that VoiceOver order. No red failure styling; a made orbit gets a gold burst (static, so Reduce Motion is the same).
 // Exits: Tweak & Retry full width, then New Design and Home side by side (ReportFit's 1 + 2 grid).

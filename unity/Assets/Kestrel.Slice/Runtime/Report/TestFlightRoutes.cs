@@ -1,4 +1,4 @@
-// Test Flight card exits (DECISIONS #100). Tweak & Retry and New Design stay in the flight scene, like the report's
+// Test Flight card exits (DECISIONS #102). Tweak & Retry and New Design stay in the flight scene, like the report's
 // Fix it: the session moves (GameSession routes TestRetry / TestNewDesign: a mission's "Test it" copy hands the mission
 // back), then the designer opens. Home is the report's own Home.
 using System;

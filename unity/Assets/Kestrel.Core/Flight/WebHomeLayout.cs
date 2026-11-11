@@ -23,7 +23,7 @@ namespace Kestrel.Core.Flight
         public bool Scroll;
         public WebHomeType Type;
         public HudBox Rocket, Menu, Title, Stats, Launch, Design, Missions, Codex, Gear, Exit, Audio, Hint;
-        /// <summary>Test Flight's tile (DECISIONS #100), MISSIONS-sized, directly under LAUNCH (and Design first). Empty
+        /// <summary>Test Flight's tile (DECISIONS #102), MISSIONS-sized, directly under LAUNCH (and Design first). Empty
         /// when <see cref="Kestrel.Core.Features.HomeShow.TestFlight"/> is off or the column has no room for it.</summary>
         public HudBox TestFlight;
         /// <summary>The CTA word's width at 100 px (LAUNCH, or CONTINUE with a save).</summary>

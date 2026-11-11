@@ -94,7 +94,7 @@ namespace Kestrel.Slice.DesignerV3
             root.style.minHeight = 0;
             root.style.overflow = Overflow.Hidden;
 
-            var testBand = TestFlightBand.For(ui);   // DECISIONS #100: "TEST FLIGHT" + rules note in a test
+            var testBand = TestFlightBand.For(ui);   // DECISIONS #102: "TEST FLIGHT" + rules note in a test
             if (testBand != null) root.Add(testBand);
 
             strip = ui.Row(0f);
