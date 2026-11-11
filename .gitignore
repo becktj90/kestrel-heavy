@@ -10,3 +10,6 @@ fastlane/README.md.bak
 *.p8
 *.mobileprovision
 *.p12
+
+# ElevenLabs raw TTS cache (local only, hash-keyed; never commit)
+tools/clipgen/.raw/
