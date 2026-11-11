@@ -40,3 +40,8 @@ See `loudness-report.md`. Flags still failing after one retake: 2.
 ## ready-2 additions (Physics second pass)
 
 Folded in 2 newly cleared B03 rows (4 takes) from ready-2.tsv: `host/color.recovery.g5-6#a` and `#b`. Name-free alternates were not recorded.
+
+## Loudness re-norm (no new ElevenLabs calls)
+
+On 2026-11-11, America/New_York, 2 takes that were still below −17 LUFS were re-normalized from their processed sources with makeup gain plus a −1.5 dBTP limiter. All 2 now meet −16 LUFS ±1 and ≤ −1.5 dBTP. No takes were dropped.
+
