@@ -3,7 +3,7 @@
 Target: −16 LUFS ±1, true peak ≤ −1.5 dBTP. In-flight calls ≤ 6 s, color lines ≤ 10 s, not silent.
 
 - Takes measured: **74** (37 lines)
-- Duration: 2.508–96.496 s (mean 12.287 s)
+- Duration: 2.508–96.496 s (mean 12.285 s)
 - LUFS: -17.00 to -16.35 (all inside −17…−15)
 - True peak: -3.72 to -1.51 dBTP (all ≤ −1.5)
 - Flags after measurement: **none** over duration cap, silent, or out of loudness spec.
@@ -21,4 +21,11 @@ Per-take values are in `loudness.csv` and `manifest.json`.
 - Quietest LUFS: host/idle.pad.g5-24#b t2: 6.766s, -17.00 LUFS, -1.60 dBTP
 - Loudest LUFS: cohost/codex.max-q.kid.g5-1 t1: 11.285s, -16.35 LUFS, -1.51 dBTP
 - Highest peak: cohost/codex.max-q.kid.g5-1 t1: 11.285s, -16.35 LUFS, -1.51 dBTP
+
+## Loudness re-norm (no new ElevenLabs calls)
+
+
+## ready-3.tsv
+
+Replaced `host/idle.pad.g5-27#c` (Newton, 2 takes) with the ready-3.tsv text.
 

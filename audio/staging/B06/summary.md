@@ -7,8 +7,8 @@ Recorded 2026-11-11, America/New_York. Model `eleven_multilingual_v2`. Voices: E
 - Ready rows in this batch: 37
 - Recorded: **37 lines, 74 takes**
 - Held: **0**
-- Planned character upper bound: 14014
-- ElevenLabs remaining before → after: 173576 → 167259 (used 6317)
+- Planned character upper bound: 14194
+- ElevenLabs remaining before → after: 173576 → 158440 (used 15136)
 - Output: `out/B06/raw/`, `out/B06/processed/`, `manifest.json`, `loudness.csv`, `loudness-report.md`
 
 ## Quality
@@ -28,3 +28,7 @@ See `loudness-report.md`. Flags still failing after one retake: 0.
 - `codex.twr.eng`: 1 lines (2 takes)
 - `codex.twr.kid`: 1 lines (2 takes)
 - `idle.pad`: 27 lines (54 takes)
+
+## ready-3.tsv update
+
+Replaced `host/idle.pad.g5-27#c` (Newton, 2 takes) with the ready-3.tsv text.
