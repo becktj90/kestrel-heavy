@@ -19,31 +19,25 @@ namespace Kestrel.Core.Tests
     {
         static readonly string[] Ids = { "delta-v", "twr", "isp", "staging", "max-q", "cg-cp", "orbits", "booster-landing" };
 
-        // NA (no-affiliation): Blue Origin, its vehicles and sites, any spacing, dot, underscore or dash.
-        // Allowed in sourced history, never in one sentence with our game content, never near a tie word.
+        // NA (no-affiliation, DECISIONS #101, same rule and names as tests/narration-facts-lint.test.cjs in
+        // PR #496): a string naming Blue Origin, its vehicles or sites must not also name our own world
+        // (OwnWorld) or use affiliation wording. Any spacing, dot, underscore or dash variant counts.
         const string Sep = @"[\s._\-\u2010-\u2015]*";
-        static readonly Regex Bo = new Regex(
+        static readonly Regex BoNames = new Regex(
             "blue" + Sep + "origin|new" + Sep + "glenn|new" + Sep + "shepard|jack" + Sep + "lyn|lc" + Sep + @"36(?!\d)", RegexOptions.IgnoreCase);
-        static readonly Regex Affil = new Regex(
-            @"\b(based on|modell?ed (on|after)|inspired by|licen[cs]ed?|official(ly)?|partner(ed|s|ship)?|endorse(d|s|ment)?|sponsor(ed|s)?|affiliated?|approved by|in collaboration|version of|cop(y|ied) of|clone|replica|tribute)\b",
+        static readonly Regex Affiliation = new Regex(
+            @"\b(our|ours|partner(s|ed|ship)?|official(ly)?|sponsor(s|ed)?|endorse[sd]?|endorsement|based on|modell?ed (on|after)|inspired by|licen[cs]ed?|affiliated?|approved by|in collaboration|version of|cop(y|ied) of|clone|replica|tribute)\b",
             RegexOptions.IgnoreCase);
-        const int Near = 80;
 
-        static IEnumerable<string> Affiliation(string s, Regex fiction)
+        static IEnumerable<string> AffiliationErrors(string t, Regex ownWorld)
         {
-            foreach (var sent in Regex.Split(s, @"(?<=[.!?])\s+|\n+"))
-            {
-                var b = Bo.Match(sent); if (!b.Success) continue;
-                var f = fiction.Match(sent);
-                if (f.Success) yield return b.Value + " with " + f.Value + " in one sentence";
-            }
-            foreach (Match m in Bo.Matches(s))
-            {
-                int a = Math.Max(0, m.Index - Near), z = Math.Min(s.Length, m.Index + m.Length + Near);
-                var w = Affil.Match(s.Substring(a, z - a));
-                if (w.Success) yield return m.Value + " near " + w.Value;
-            }
+            var n = BoNames.Match(t);
+            if (!n.Success) yield break;
+            var w = ownWorld.Match(t); var a = Affiliation.Match(t);
+            if (w.Success) yield return "names " + n.Value + " in the same text as " + w.Value + " (DECISIONS #101)";
+            if (a.Success) yield return "names " + n.Value + " with affiliation wording " + a.Value + " (DECISIONS #101)";
         }
+
         // Wording bans, unchanged, everywhere.
         static readonly string[] Wording = { "suicide", "RP-1", "\u2014", "\u2013" };
         // G2: real-world markers allowed only in a sourced History fact, never in title, kid or engineer.
@@ -53,7 +47,7 @@ namespace Kestrel.Core.Tests
             @"\b(1[89]\d\d|20\d\d)\b(?!\s*(m\b|km|kg|t\b|s\b|N\b|Pa|kPa|K\b|%|\u00b0|m/s|x\b|\.\d|,\d))");
         static readonly Regex SimSource = new Regex(@"^[A-Za-z0-9._/-]+$");
 
-        static Regex Fiction()
+        static Regex OwnWorld()
         {
             var sites = MiniJson.ParseObject(File.ReadAllText(Path.Combine(Golden.Root, "data", "sites.json"))).Arr("sites")
                 .Select(s => @"\b" + Regex.Escape(((JsonObject)s).Str("name")).Replace(@"\ ", Sep) + @"\b");
@@ -74,10 +68,10 @@ namespace Kestrel.Core.Tests
             var errs = new List<string>();
             var all = new List<string>();
             Strings(MiniJson.Parse(json), all);
-            var fiction = Fiction();
+            var ownWorld = OwnWorld();
             foreach (var s in all)
             {
-                foreach (var a in Affiliation(s, fiction)) errs.Add("NA no-affiliation: " + a);
+                foreach (var a in AffiliationErrors(s, ownWorld)) errs.Add("NA no-affiliation: " + a);
                 foreach (var w in Wording) if (s.Contains(w)) errs.Add("wording: " + w);
             }
             CodexBook book;
@@ -96,14 +90,14 @@ namespace Kestrel.Core.Tests
                 }
                 for (int i = 0; i < e.History.Count; i++)
                 {
-                    var fx = fiction.Match(e.History[i].Text);
+                    var fx = ownWorld.Match(e.History[i].Text);
                     if (fx.Success) errs.Add("G3 " + e.Id + ".history[" + i + "]: names game content " + fx.Value);
                     foreach (var r in e.History[i].Refs) used.Add(r);
                 }
             }
             foreach (var r in book.Refs.Values)
             {
-                var fx = fiction.Match(r.Title);
+                var fx = ownWorld.Match(r.Title);
                 if (fx.Success) errs.Add("G3 ref " + r.Id + ": names game content " + fx.Value);
                 if (!used.Contains(r.Id)) errs.Add("G4 ref " + r.Id + ": unused");
             }
@@ -195,7 +189,7 @@ namespace Kestrel.Core.Tests
                 Assert.IsTrue(Has(Sample(history: Fact("In 2025, this game was officially licensed by " + n + ".")), "NA"), "licensed " + n);
                 Assert.IsTrue(Has(Sample(history: Fact("In 2025, the design was based on " + n + ".")), "NA"), "based on " + n);
             }
-            Assert.IsTrue(Has(Sample(history: Fact("In 2025, New Glenn flew. A partner station is planned.")), "NA"));
+            Assert.IsTrue(Has(Sample(history: Fact("In 2025, New Glenn flew. Our station is planned.")), "NA"));
             Assert.IsFalse(Has(Sample(history: Fact("In 1969, LC-360 was a test stand name, officially.")), "NA"), "LC-360 is not LC-36");
             Assert.IsTrue(Has(Sample(kid: "New Glenn lands too."), "G2"), "G2 keeps the names out of game fields");
         }
