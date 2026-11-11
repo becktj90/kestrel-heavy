@@ -552,7 +552,9 @@ namespace Kestrel.Game.Failure
                 actions.Designer = () => { leave(); if (designer != null) designer(); };
                 actions.Fix = () => { leave(); FixField.Apply(ui, FixField.For(kind)); };
             }
-            Card = ReportView.Build(shown, log, frame, reduce, () => { reveal(); FixField.Apply(ui, FixField.For(kind)); }, debrief, actions);
+            // DECISIONS #100: a test flight's card has its own three exits.
+            var test = debrief != null && debrief.TestCard != null ? TestFlightRoutes.For(ui, debrief.TestCard, actions, reveal) : null;
+            Card = ReportView.Build(shown, log, frame, reduce, () => { reveal(); FixField.Apply(ui, FixField.For(kind)); }, debrief, actions, test);
             Card.userData = this;
             ReportCardChrome.Present(ui, Card, upp, top, bottom);
             if (ui.layout.width <= 1f)

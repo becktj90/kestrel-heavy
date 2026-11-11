@@ -211,7 +211,7 @@ namespace Kestrel.Slice
                 label.style.display = empty ? DisplayStyle.None : DisplayStyle.Flex;
                 if (empty) return;
                 bool heading = IsTitle(label.name);
-                lines.Add(new ReportFit.Line { Name = label.name, Text = label.text, FontPt = heading ? TitlePt : BodyPt, DropOrder = DropOrder(label.name) });
+                lines.Add(new ReportFit.Line { Name = label.name, Text = label.text, FontPt = heading ? TitlePt : LinePt(label.name), DropOrder = DropOrder(label.name) });
                 shown.Add(label);
             });
             float bodyRoom = hPt - footPt - topPt - 4f;
@@ -224,7 +224,7 @@ namespace Kestrel.Slice
                 bool heading = IsTitle(label.name);
                 bool drop = plan.Dropped.Contains(label.name);
                 label.style.display = drop ? DisplayStyle.None : DisplayStyle.Flex;
-                float pt = (heading ? TitlePt : BodyPt) * plan.Scale;
+                float pt = (heading ? TitlePt : LinePt(label.name)) * plan.Scale;
                 label.style.fontSize = pt * upp;
                 label.style.minHeight = 0;
                 label.style.whiteSpace = WhiteSpace.Normal;
@@ -240,6 +240,7 @@ namespace Kestrel.Slice
                 label.style.color = heading ? Cream : new Color(Cream.r, Cream.g, Cream.b, 0.94f);
                 if (label.name == UiIds.ReportHero) label.style.color = Win;
                 else if (label.name == UiIds.ReportKcHeadline) label.style.color = Sun;
+                else if (label.name == UiIds.TestCardEyebrow) label.style.color = TestFlightCardView.Gold;
                 if (heading && title != null) label.style.unityFontDefinition = titleDef;
                 else if (body != null) label.style.unityFontDefinition = bodyDef;
             }
@@ -508,8 +509,15 @@ namespace Kestrel.Slice
             return false;
         }
 
+        /// <summary>Body size of a line: the Test Flight card's own sizes (DECISIONS #100), else <see cref="BodyPt"/>.</summary>
+        static float LinePt(string name)
+        {
+            float test = TestFlightCardView.BodyPt(name);
+            return test > 0f ? test : BodyPt;
+        }
+
         public static bool IsTitle(string name)
-            => name == "failure-cause" || name == "report-stars" || name == UiIds.ReportHero || name == UiIds.ReportKcHeadline;
+            => name == "failure-cause" || name == UiIds.TestCardTitle || name == "report-stars" || name == UiIds.ReportHero || name == UiIds.ReportKcHeadline;
 
         /// <summary>Pass card roles: Next mission is the one green primary, every other exit is secondary.</summary>
         public static string PassRole(string name) => name == UiIds.ReportNext ? "primary" : "home";
@@ -524,6 +532,7 @@ namespace Kestrel.Slice
                 case UiIds.ReportDesigner: return "designer";
                 case "report-missions": return "missions";
                 case "report-home": return "home";
+                case UiIds.TestRetry: return "fix";
                 default: return "home";
             }
         }
