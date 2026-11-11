@@ -4,16 +4,16 @@ Recorded 2026-11-11, America/New_York. Model `eleven_multilingual_v2`. Voices: E
 
 ## Recorded
 
-- Ready rows in this batch: 69
-- Recorded: **69 lines, 138 takes**
+- Ready rows in this batch: 70
+- Recorded: **70 lines, 140 takes**
 - Held: **0**
-- Planned character upper bound: 12248
-- ElevenLabs remaining before → after: 188131 → 179782 (used 8349)
+- Planned character upper bound: 12474
+- ElevenLabs remaining before → after: 188131 → 158440 (used 29691)
 - Output: `out/B04/raw/`, `out/B04/processed/`, `manifest.json`, `loudness.csv`, `loudness-report.md`
 
 ## Quality
 
-See `loudness-report.md`. Flags still failing after one retake: 1.
+See `loudness-report.md`. Flags still failing after one retake: 0.
 
 ## Events recorded
 
@@ -31,16 +31,12 @@ See `loudness-report.md`. Flags still failing after one retake: 1.
 - `designer.propellant.methalox`: 3 lines (6 takes)
 - `designer.propellant.solid`: 3 lines (6 takes)
 - `designer.rcs`: 3 lines (6 takes)
+- `designer.recovery`: 1 lines (2 takes)
 - `designer.review`: 3 lines (6 takes)
 - `designer.staging`: 7 lines (14 takes)
 - `designer.strapons`: 3 lines (6 takes)
 - `idle.pad`: 6 lines (12 takes)
 
-## QC failures after retake
+## ready-3.tsv update
 
-- `host/designer.materials.g5-1#b` take 2: ['lufs:-17.02']
-
-## Loudness re-norm (no new ElevenLabs calls)
-
-On 2026-11-11, America/New_York, 1 takes that were still below −17 LUFS were re-normalized from their processed sources with makeup gain plus a −1.5 dBTP limiter. All 1 now meet −16 LUFS ±1 and ≤ −1.5 dBTP. No takes were dropped.
-
+Added `host/designer.recovery.g5-1#c` (2 takes) using the 22-word short text from ready-3.tsv. This clip was not in the earlier B04 staging set.
