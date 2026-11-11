@@ -102,7 +102,9 @@
   "sha256": "c349e9153ca82b64d5a118a25d07122fc4eac6adb7cd2ddb32be4700fdf87842",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.burnshort.g5-1",
@@ -123,7 +125,9 @@
   "sha256": "51274613a335a42bc93b0c4e063ed6accc639165e3d554980d2ff05771b371b4",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.burnshort.g5-2",
@@ -144,7 +148,9 @@
   "sha256": "b31d48282f8c89ad1a7946ad7a0345089f97652bf5253e39b7ca1cbec472b941",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.burnshort.g5-2",
@@ -165,7 +171,9 @@
   "sha256": "1a0d139d96b428e24b9956b5ce7cf2c271388838cf7f0f9f848562cd4b3d9be1",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.burnshort.g5-3",
@@ -186,7 +194,9 @@
   "sha256": "e890b1b46194f75fb5f8847952e9dadf2b45b3476ff4389db2b00629edc3ba41",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.burnshort.g5-3",
@@ -207,7 +217,9 @@
   "sha256": "16c498193615921bacb4d0716ec58161ad75f9ae1b9409199a1e82f4cbf40b5f",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.burnshort.g5-4",
@@ -228,7 +240,9 @@
   "sha256": "0521ae07c5502d345c472a1181cc2baa09c2c7fb83ecda50a96125b616e725ec",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.burnshort.g5-4",
@@ -249,7 +263,9 @@
   "sha256": "d392c67b02a7c1009213dc3a90dc7296a2665e1ea7a90a5ad23b0cf2a2fe0bc7",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.burnshort.g5-1",
@@ -270,7 +286,9 @@
   "sha256": "3a4a1eb51c9e0462274d64fded6c848be87ef1541eede2d249f0ddfd86bb1c82",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.burnshort.g5-1",
@@ -291,7 +309,9 @@
   "sha256": "d64d3edf7b7f9e48fd7fc0c4a81998f50243b94726a502dec01bd911894f1058",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.burnshort.g5-2",
@@ -312,7 +332,9 @@
   "sha256": "64fadd6c8351221a1e2428f6f2d493a5dd72af9aab032a141922e05aeb921bd6",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.burnshort.g5-2",
@@ -333,7 +355,9 @@
   "sha256": "025a661a0da30a9b4b8ad8bc3082579f85f508b572aa86d786ab48ef199d74ca",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.depart.g5-1",
@@ -354,7 +378,9 @@
   "sha256": "7442d7edd5f40127678913c46e915318fcc4d1956fce7a2bf5a9436552e516ea",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.depart.g5-1",
@@ -375,7 +401,9 @@
   "sha256": "56704b236c31b7093631c2f107466dc7bb802d2813b6a3e41938415f134c1567",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.depart.g5-2",
@@ -396,7 +424,9 @@
   "sha256": "c2f8e9423d81d92eb2543a9491a269b75c442fb7e8d352dff276077a37856fb9",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.depart.g5-2",
@@ -417,7 +447,9 @@
   "sha256": "3d871febc3a23f2573887d9b4a2ba80e3de24f3b043b9665c08c756eddc56b61",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.depart.g5-3",
@@ -438,7 +470,9 @@
   "sha256": "35e09f3232b6826790b69c2c41fbf354265545076f5382393b60fcfe723c98ff",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.depart.g5-3",
@@ -459,7 +493,9 @@
   "sha256": "da8b59439002720f94c62ae4cfd05e516505e0bbf3973c430fe6737319e644bd",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.depart.g5-4",
@@ -480,7 +516,9 @@
   "sha256": "11ff72fded21c4d107576cccce6b1cbdf8195d14850f9957a4aa2d7ee5f33966",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/outcome.depart.g5-4",
@@ -501,7 +539,9 @@
   "sha256": "1243ba41f5d283a13603b0ffc70415a1555a2f29ce2a929f14972011a3a67b8f",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.depart.g5-1",
@@ -522,7 +562,9 @@
   "sha256": "b042770fd2610fc058aa4f7561a35ad618b317013f12c852d38282d1013f3aa2",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.depart.g5-1",
@@ -543,7 +585,9 @@
   "sha256": "2e8d50d12317b179e194c96145667d4fc35c463250db5ea97a8848f39c2c13df",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.depart.g5-2",
@@ -564,7 +608,9 @@
   "sha256": "b5508a20416e76aa8dec540f76cc8d92fc2de14a57008f0e611a4eeced3df4a6",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.depart.g5-2",
@@ -585,7 +631,9 @@
   "sha256": "f6b6da92e86c5093a09898c0f2726b9670b4f08e0ce4fc8af874f4e63df58635",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.depart.g5-3",
@@ -606,7 +654,9 @@
   "sha256": "5c9ca145bf1bf1848e0d68a3dac4a2df9798065fde51f602cd4cbbc7f2285b0e",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "host/outcome.depart.g5-3",
@@ -627,7 +677,9 @@
   "sha256": "6611ff4a2b70a8d020857f0612e9ada5b9ca07e4ad7cef1bb5c1b4cb24b89989",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "transfer burn not flown in game (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/status.apogee.g5-1",

@@ -50,3 +50,21 @@ Takes that were still below −17 LUFS were re-normalized from their processed s
 
 Added new `host/color.pad.g5-1#a` and `#b` (1 take each) from ready-3.tsv.
 
+## Hold flags (2026-11-11, America/New_York)
+
+Marked 26 takes (13 clips) with `hold: true` and `hold_reason`: "transfer burn not flown in game (Physics 2026-11-11)". Audio files were not deleted.
+
+Clips:
+- `host/outcome.burnshort.g5-1`
+- `host/outcome.burnshort.g5-2`
+- `host/outcome.depart.g5-1`
+- `host/outcome.depart.g5-2`
+- `host/outcome.depart.g5-3`
+- `mission-control/outcome.burnshort.g5-1`
+- `mission-control/outcome.burnshort.g5-2`
+- `mission-control/outcome.burnshort.g5-3`
+- `mission-control/outcome.burnshort.g5-4`
+- `mission-control/outcome.depart.g5-1`
+- `mission-control/outcome.depart.g5-2`
+- `mission-control/outcome.depart.g5-3`
+- `mission-control/outcome.depart.g5-4`
