@@ -1,0 +1,57 @@
+id,take,file,voice,event,layer,duration_sec,LUFS,dBTP,in_spec,issues,variant,sources
+cohost/menu.home.tip.g6-10,1,cohost__menu.home.tip.g6-10.t1.mp3,Chris,menu.home.tip,menu,6.348,-16.43,-1.91,yes,,main,
+cohost/menu.home.tip.g6-10,2,cohost__menu.home.tip.g6-10.t2.mp3,Chris,menu.home.tip,menu,6.818,-16.98,-1.69,yes,,main,
+cohost/menu.home.tip.g6-11,1,cohost__menu.home.tip.g6-11.t1.mp3,Chris,menu.home.tip,menu,4.676,-16.68,-1.71,yes,,main,
+cohost/menu.home.tip.g6-11,2,cohost__menu.home.tip.g6-11.t2.mp3,Chris,menu.home.tip,menu,5.251,-16.28,-1.74,yes,,main,
+cohost/menu.home.tip.g6-12,1,cohost__menu.home.tip.g6-12.t1.mp3,Chris,menu.home.tip,menu,6.766,-16.76,-1.8,yes,,main,
+cohost/menu.home.tip.g6-12,2,cohost__menu.home.tip.g6-12.t2.mp3,Chris,menu.home.tip,menu,6.766,-16.43,-1.76,yes,,main,
+cohost/menu.home.tip.g6-9,1,cohost__menu.home.tip.g6-9.t1.mp3,Chris,menu.home.tip,menu,5.198,-16.88,-1.81,yes,,main,
+cohost/menu.home.tip.g6-9,2,cohost__menu.home.tip.g6-9.t2.mp3,Chris,menu.home.tip,menu,5.016,-16.9,-1.73,yes,,main,
+host/idle.pad.g6-38#a,1,host__idle.pad.g6-38__a.t1.mp3,Sarah,idle.pad,longform,7.34,-16.43,-3.18,yes,,main,
+host/idle.pad.g6-38#a,2,host__idle.pad.g6-38__a.t2.mp3,Sarah,idle.pad,longform,7.001,-16.43,-3.22,yes,,main,
+host/idle.pad.g6-38#b,1,host__idle.pad.g6-38__b.t1.mp3,Chris,idle.pad,longform,6.034,-16.74,-1.76,yes,,main,
+host/idle.pad.g6-38#b,2,host__idle.pad.g6-38__b.t2.mp3,Chris,idle.pad,longform,5.695,-16.43,-1.82,yes,,main,
+host/idle.pad.g6-38#c,1,host__idle.pad.g6-38__c.t1.mp3,Sarah,idle.pad,longform,3.997,-16.44,-3.31,yes,,main,
+host/idle.pad.g6-38#c,2,host__idle.pad.g6-38__c.t2.mp3,Sarah,idle.pad,longform,3.579,-16.44,-3.39,yes,,main,
+host/idle.pad.g6-39#a,1,host__idle.pad.g6-39__a.t1.mp3,Sarah,idle.pad,longform,5.564,-16.44,-3.3,yes,,main,G6-30 (src/gsources.py)
+host/idle.pad.g6-39#a,2,host__idle.pad.g6-39__a.t2.mp3,Sarah,idle.pad,longform,5.799,-16.46,-3.34,yes,,main,G6-30 (src/gsources.py)
+host/idle.pad.g6-39#b,1,host__idle.pad.g6-39__b.t1.mp3,Chris,idle.pad,longform,5.512,-16.44,-2.24,yes,,main,
+host/idle.pad.g6-39#b,2,host__idle.pad.g6-39__b.t2.mp3,Chris,idle.pad,longform,5.851,-16.44,-2.36,yes,,main,
+host/idle.pad.g6-39#c,1,host__idle.pad.g6-39__c.t1.mp3,Sarah,idle.pad,longform,3.997,-16.44,-2.81,yes,,main,
+host/idle.pad.g6-39#c,2,host__idle.pad.g6-39__c.t2.mp3,Sarah,idle.pad,longform,4.127,-16.44,-2.94,yes,,main,
+host/idle.pad.g6-40#a,1,host__idle.pad.g6-40__a.t1.mp3,Sarah,idle.pad,longform,5.982,-16.44,-3.26,yes,,main,G6-48 (src/gsources.py)
+host/idle.pad.g6-40#a,2,host__idle.pad.g6-40__a.t2.mp3,Sarah,idle.pad,longform,5.695,-16.45,-3.17,yes,,main,G6-48 (src/gsources.py)
+host/idle.pad.g6-40#b,1,host__idle.pad.g6-40__b.t1.mp3,Chris,idle.pad,longform,6.087,-16.45,-1.85,yes,,main,
+host/idle.pad.g6-40#b,2,host__idle.pad.g6-40__b.t2.mp3,Chris,idle.pad,longform,5.616,-16.86,-2.02,yes,,main,
+host/idle.pad.g6-40#c,1,host__idle.pad.g6-40__c.t1.mp3,Sarah,idle.pad,longform,6.217,-16.45,-3.15,yes,,main,
+host/idle.pad.g6-40#c,2,host__idle.pad.g6-40__c.t2.mp3,Sarah,idle.pad,longform,5.851,-16.44,-3.21,yes,,main,
+host/idle.pad.g6-41#a,1,host__idle.pad.g6-41__a.t1.mp3,Sarah,idle.pad,longform,7.236,-16.44,-3.21,yes,,main,G6-51 (src/gsources.py)
+host/idle.pad.g6-41#a,2,host__idle.pad.g6-41__a.t2.mp3,Sarah,idle.pad,longform,7.523,-16.45,-2.85,yes,,main,G6-51 (src/gsources.py)
+host/idle.pad.g6-41#b,1,host__idle.pad.g6-41__b.t1.mp3,Chris,idle.pad,longform,4.023,-16.72,-1.92,yes,,main,
+host/idle.pad.g6-41#b,2,host__idle.pad.g6-41__b.t2.mp3,Chris,idle.pad,longform,3.892,-16.87,-2.19,yes,,main,
+host/idle.pad.g6-41#c,1,host__idle.pad.g6-41__c.t1.mp3,Sarah,idle.pad,longform,4.676,-16.45,-3.28,yes,,main,
+host/idle.pad.g6-41#c,2,host__idle.pad.g6-41__c.t2.mp3,Sarah,idle.pad,longform,5.146,-16.46,-3.11,yes,,main,
+host/idle.pad.g6-42#a,1,host__idle.pad.g6-42__a.t1.mp3,Sarah,idle.pad,longform,8.255,-16.45,-3.21,yes,,main,
+host/idle.pad.g6-42#a,2,host__idle.pad.g6-42__a.t2.mp3,Sarah,idle.pad,longform,8.202,-16.43,-3.37,yes,,main,
+host/idle.pad.g6-42#b,1,host__idle.pad.g6-42__b.t1.mp3,Chris,idle.pad,longform,4.859,-16.43,-2.39,yes,,main,
+host/idle.pad.g6-42#b,2,host__idle.pad.g6-42__b.t2.mp3,Chris,idle.pad,longform,3.944,-16.96,-1.83,yes,,main,
+host/idle.pad.g6-42#c,1,host__idle.pad.g6-42__c.t1.mp3,Sarah,idle.pad,longform,4.963,-16.44,-3.37,yes,,main,
+host/idle.pad.g6-42#c,2,host__idle.pad.g6-42__c.t2.mp3,Sarah,idle.pad,longform,5.251,-16.45,-3.29,yes,,main,
+host/idle.pad.g6-43#a,1,host__idle.pad.g6-43__a.t1.mp3,Sarah,idle.pad,longform,6.818,-16.43,-3.37,yes,,main,G6-47 (src/gsources.py)
+host/idle.pad.g6-43#a,2,host__idle.pad.g6-43__a.t2.mp3,Sarah,idle.pad,longform,6.269,-16.43,-3.27,yes,,main,G6-47 (src/gsources.py)
+host/idle.pad.g6-43#b,1,host__idle.pad.g6-43__b.t1.mp3,Chris,idle.pad,longform,4.127,-16.64,-1.72,yes,,main,
+host/idle.pad.g6-43#b,2,host__idle.pad.g6-43__b.t2.mp3,Chris,idle.pad,longform,4.075,-16.69,-1.71,yes,,main,
+host/idle.pad.g6-43#c,1,host__idle.pad.g6-43__c.t1.mp3,Sarah,idle.pad,longform,4.78,-16.42,-2.93,yes,,main,
+host/idle.pad.g6-43#c,2,host__idle.pad.g6-43__c.t2.mp3,Sarah,idle.pad,longform,4.545,-16.42,-2.92,yes,,main,
+host/idle.pad.g6-44#a,1,host__idle.pad.g6-44__a.t1.mp3,Sarah,idle.pad,longform,7.941,-16.45,-3.28,yes,,main,G6-28 (src/gsources.py)
+host/idle.pad.g6-44#a,2,host__idle.pad.g6-44__a.t2.mp3,Sarah,idle.pad,longform,7.837,-16.43,-3.18,yes,,main,G6-28 (src/gsources.py)
+host/idle.pad.g6-44#b,1,host__idle.pad.g6-44__b.t1.mp3,Chris,idle.pad,longform,6.269,-16.44,-1.84,yes,,main,
+host/idle.pad.g6-44#b,2,host__idle.pad.g6-44__b.t2.mp3,Chris,idle.pad,longform,6.452,-16.44,-1.95,yes,,main,
+host/idle.pad.g6-44#c,1,host__idle.pad.g6-44__c.t1.mp3,Sarah,idle.pad,longform,4.18,-16.44,-3.28,yes,,main,
+host/idle.pad.g6-44#c,2,host__idle.pad.g6-44__c.t2.mp3,Sarah,idle.pad,longform,4.441,-16.44,-3.27,yes,,main,
+host/menu.home.idle.g6-17#a,1,host__menu.home.idle.g6-17__a.t1.mp3,Sarah,menu.home.idle,longform,7.001,-16.44,-3.32,yes,,main,G6-10 (src/gsources.py)
+host/menu.home.idle.g6-17#a,2,host__menu.home.idle.g6-17__a.t2.mp3,Sarah,menu.home.idle,longform,6.713,-16.44,-3.26,yes,,main,G6-10 (src/gsources.py)
+host/menu.home.idle.g6-17#b,1,host__menu.home.idle.g6-17__b.t1.mp3,Chris,menu.home.idle,longform,5.695,-16.95,-1.68,yes,,main,
+host/menu.home.idle.g6-17#b,2,host__menu.home.idle.g6-17__b.t2.mp3,Chris,menu.home.idle,longform,5.564,-16.45,-2.02,yes,,main,
+host/menu.home.idle.g6-17#c,1,host__menu.home.idle.g6-17__c.t1.mp3,Sarah,menu.home.idle,longform,5.616,-16.43,-2.95,yes,,main,
+host/menu.home.idle.g6-17#c,2,host__menu.home.idle.g6-17__c.t2.mp3,Sarah,menu.home.idle,longform,5.747,-16.44,-3.25,yes,,main,
