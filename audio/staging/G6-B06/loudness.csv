@@ -1,0 +1,159 @@
+id,take,file,voice,event,layer,duration_sec,LUFS,dBTP,in_spec,issues,variant,sources
+cohost/designer.cooling.tip.g6-1,1,cohost__designer.cooling.tip.g6-1.t1.mp3,Chris,designer.cooling.tip,menu,7.184,-16.45,-2.03,yes,,main,G6-35 (src/gsources.py)
+cohost/designer.cooling.tip.g6-1,2,cohost__designer.cooling.tip.g6-1.t2.mp3,Chris,designer.cooling.tip,menu,6.217,-16.46,-2.2,yes,,main,G6-35 (src/gsources.py)
+cohost/designer.cycles.tip.g6-1,1,cohost__designer.cycles.tip.g6-1.t1.mp3,Chris,designer.cycles.tip,menu,6.4,-16.67,-1.69,yes,,main,G6-33 (src/gsources.py)
+cohost/designer.cycles.tip.g6-1,2,cohost__designer.cycles.tip.g6-1.t2.mp3,Chris,designer.cycles.tip,menu,6.452,-16.59,-1.71,yes,,main,G6-33 (src/gsources.py)
+cohost/designer.deluge.tip.g6-1,1,cohost__designer.deluge.tip.g6-1.t1.mp3,Chris,designer.deluge.tip,menu,5.042,-16.44,-1.8,yes,,main,G6-40 (src/gsources.py)
+cohost/designer.deluge.tip.g6-1,2,cohost__designer.deluge.tip.g6-1.t2.mp3,Chris,designer.deluge.tip,menu,4.624,-16.52,-1.78,yes,,main,G6-40 (src/gsources.py)
+cohost/designer.holddown.tip.g6-1,1,cohost__designer.holddown.tip.g6-1.t1.mp3,Chris,designer.holddown.tip,menu,4.415,-16.56,-1.69,yes,,main,G6-41 (src/gsources.py)
+cohost/designer.holddown.tip.g6-1,2,cohost__designer.holddown.tip.g6-1.t2.mp3,Chris,designer.holddown.tip,menu,4.78,-16.36,-1.79,yes,,main,G6-41 (src/gsources.py)
+cohost/designer.landingburn.tip.g6-1,1,cohost__designer.landingburn.tip.g6-1.t1.mp3,Chris,designer.landingburn.tip,menu,6.165,-16.88,-1.61,yes,,main,G6-45 (src/gsources.py)
+cohost/designer.landingburn.tip.g6-1,2,cohost__designer.landingburn.tip.g6-1.t2.mp3,Chris,designer.landingburn.tip,menu,6.452,-16.52,-1.74,yes,,main,G6-45 (src/gsources.py)
+cohost/designer.massratio.tip.g6-1,1,cohost__designer.massratio.tip.g6-1.t1.mp3,Chris,designer.massratio.tip,menu,7.419,-16.46,-1.71,yes,,main,G6-47 (src/gsources.py)
+cohost/designer.massratio.tip.g6-1,2,cohost__designer.massratio.tip.g6-1.t2.mp3,Chris,designer.massratio.tip,menu,6.4,-16.32,-1.82,yes,,main,G6-47 (src/gsources.py)
+cohost/designer.nozzles.tip.g6-1,1,cohost__designer.nozzles.tip.g6-1.t1.mp3,Chris,designer.nozzles.tip,menu,7.367,-16.44,-1.94,yes,,main,G6-34 (src/gsources.py)
+cohost/designer.nozzles.tip.g6-1,2,cohost__designer.nozzles.tip.g6-1.t2.mp3,Chris,designer.nozzles.tip,menu,5.982,-16.44,-2.2,yes,,main,G6-34 (src/gsources.py)
+cohost/designer.pogo.tip.g6-1,1,cohost__designer.pogo.tip.g6-1.t1.mp3,Chris,designer.pogo.tip,menu,7.706,-16.83,-1.79,yes,,main,G6-36 (src/gsources.py)
+cohost/designer.pogo.tip.g6-1,2,cohost__designer.pogo.tip.g6-1.t2.mp3,Chris,designer.pogo.tip,menu,7.105,-16.87,-1.59,yes,,main,G6-36 (src/gsources.py)
+cohost/designer.power.tip.g6-1,1,cohost__designer.power.tip.g6-1.t1.mp3,Chris,designer.power.tip,menu,6.504,-16.45,-2.11,yes,,main,
+cohost/designer.power.tip.g6-1,2,cohost__designer.power.tip.g6-1.t2.mp3,Chris,designer.power.tip,menu,5.669,-16.44,-1.89,yes,,main,
+cohost/designer.reentry.tip.g6-1,1,cohost__designer.reentry.tip.g6-1.t1.mp3,Chris,designer.reentry.tip,menu,5.433,-16.85,-1.7,yes,,main,G6-44 (src/gsources.py)
+cohost/designer.reentry.tip.g6-1,2,cohost__designer.reentry.tip.g6-1.t2.mp3,Chris,designer.reentry.tip,menu,5.277,-16.44,-1.96,yes,,main,G6-44 (src/gsources.py)
+cohost/designer.residuals.tip.g6-1,1,cohost__designer.residuals.tip.g6-1.t1.mp3,Chris,designer.residuals.tip,menu,5.251,-16.97,-1.77,yes,,main,G6-46 (src/gsources.py)
+cohost/designer.residuals.tip.g6-1,2,cohost__designer.residuals.tip.g6-1.t2.mp3,Chris,designer.residuals.tip,menu,5.381,-16.7,-1.74,yes,,main,G6-46 (src/gsources.py)
+cohost/designer.rtls.tip.g6-1,1,cohost__designer.rtls.tip.g6-1.t1.mp3,Chris,designer.rtls.tip,menu,6.348,-16.65,-1.88,yes,,main,G6-27 (src/gsources.py)
+cohost/designer.rtls.tip.g6-1,2,cohost__designer.rtls.tip.g6-1.t2.mp3,Chris,designer.rtls.tip,menu,6.922,-16.45,-1.75,yes,,main,G6-27 (src/gsources.py)
+cohost/designer.slosh.tip.g6-1,1,cohost__designer.slosh.tip.g6-1.t1.mp3,Chris,designer.slosh.tip,menu,6.165,-16.43,-2.17,yes,,main,G6-37 (src/gsources.py)
+cohost/designer.slosh.tip.g6-1,2,cohost__designer.slosh.tip.g6-1.t2.mp3,Chris,designer.slosh.tip,menu,7.184,-16.44,-2.32,yes,,main,G6-37 (src/gsources.py)
+cohost/designer.telemetry.tip.g6-1,1,cohost__designer.telemetry.tip.g6-1.t1.mp3,Chris,designer.telemetry.tip,menu,4.18,-16.63,-1.8,yes,,main,
+cohost/designer.telemetry.tip.g6-1,2,cohost__designer.telemetry.tip.g6-1.t2.mp3,Chris,designer.telemetry.tip,menu,4.127,-16.85,-1.51,yes,,main,
+cohost/designer.turbopumps.tip.g6-1,1,cohost__designer.turbopumps.tip.g6-1.t1.mp3,Chris,designer.turbopumps.tip,menu,6.034,-16.77,-1.62,yes,,main,G6-38 (src/gsources.py)
+cohost/designer.turbopumps.tip.g6-1,2,cohost__designer.turbopumps.tip.g6-1.t2.mp3,Chris,designer.turbopumps.tip,menu,5.198,-16.72,-1.55,yes,,main,G6-38 (src/gsources.py)
+cohost/designer.weather.tip.g6-1,1,cohost__designer.weather.tip.g6-1.t1.mp3,Chris,designer.weather.tip,menu,5.433,-16.97,-1.77,yes,,main,G6-48 (src/gsources.py)
+cohost/designer.weather.tip.g6-1,2,cohost__designer.weather.tip.g6-1.t2.mp3,Chris,designer.weather.tip,menu,5.016,-16.43,-1.72,yes,,main,G6-48 (src/gsources.py)
+host/designer.cooling.g6-1#a,1,host__designer.cooling.g6-1__a.t1.mp3,Sarah,designer.cooling,longform,6.452,-16.45,-3.23,yes,,main,G6-35 (src/gsources.py)
+host/designer.cooling.g6-1#a,2,host__designer.cooling.g6-1__a.t2.mp3,Sarah,designer.cooling,longform,6.504,-16.43,-3.12,yes,,main,G6-35 (src/gsources.py)
+host/designer.cooling.g6-1#b,1,host__designer.cooling.g6-1__b.t1.mp3,Chris,designer.cooling,longform,5.982,-16.86,-1.78,yes,,main,
+host/designer.cooling.g6-1#b,2,host__designer.cooling.g6-1__b.t2.mp3,Chris,designer.cooling,longform,6.217,-16.45,-1.81,yes,,main,
+host/designer.cooling.g6-1#c,1,host__designer.cooling.g6-1__c.t1.mp3,Sarah,designer.cooling,longform,4.598,-16.49,-3.46,yes,,main,
+host/designer.cooling.g6-1#c,2,host__designer.cooling.g6-1__c.t2.mp3,Sarah,designer.cooling,longform,4.728,-16.44,-3.41,yes,,main,
+host/designer.cycles.g6-1#a,1,host__designer.cycles.g6-1__a.t1.mp3,Sarah,designer.cycles,longform,5.198,-16.42,-2.44,yes,,main,G6-33 (src/gsources.py)
+host/designer.cycles.g6-1#a,2,host__designer.cycles.g6-1__a.t2.mp3,Sarah,designer.cycles,longform,5.277,-16.44,-3.24,yes,,main,G6-33 (src/gsources.py)
+host/designer.cycles.g6-1#b,1,host__designer.cycles.g6-1__b.t1.mp3,Chris,designer.cycles,longform,4.31,-16.87,-1.75,yes,,main,
+host/designer.cycles.g6-1#b,2,host__designer.cycles.g6-1__b.t2.mp3,Chris,designer.cycles,longform,4.258,-16.81,-1.65,yes,,main,
+host/designer.cycles.g6-1#c,1,host__designer.cycles.g6-1__c.t1.mp3,Sarah,designer.cycles,longform,6.4,-16.44,-3.21,yes,,main,
+host/designer.cycles.g6-1#c,2,host__designer.cycles.g6-1__c.t2.mp3,Sarah,designer.cycles,longform,6.452,-16.43,-3.42,yes,,main,
+host/designer.deluge.g6-1#a,1,host__designer.deluge.g6-1__a.t1.mp3,Sarah,designer.deluge,longform,7.105,-16.44,-3.0,yes,,main,G6-40 (src/gsources.py)
+host/designer.deluge.g6-1#a,2,host__designer.deluge.g6-1__a.t2.mp3,Sarah,designer.deluge,longform,7.706,-16.43,-3.25,yes,,main,G6-40 (src/gsources.py)
+host/designer.deluge.g6-1#b,1,host__designer.deluge.g6-1__b.t1.mp3,Chris,designer.deluge,longform,5.747,-16.69,-1.73,yes,,main,
+host/designer.deluge.g6-1#b,2,host__designer.deluge.g6-1__b.t2.mp3,Chris,designer.deluge,longform,5.381,-16.86,-1.75,yes,,main,
+host/designer.deluge.g6-1#c,1,host__designer.deluge.g6-1__c.t1.mp3,Sarah,designer.deluge,longform,4.963,-16.43,-3.09,yes,,main,
+host/designer.deluge.g6-1#c,2,host__designer.deluge.g6-1__c.t2.mp3,Sarah,designer.deluge,longform,5.277,-16.42,-3.26,yes,,main,
+host/designer.holddown.g6-1#a,1,host__designer.holddown.g6-1__a.t1.mp3,Sarah,designer.holddown,longform,6.452,-16.44,-3.1,yes,,main,G6-41 (src/gsources.py)
+host/designer.holddown.g6-1#a,2,host__designer.holddown.g6-1__a.t2.mp3,Sarah,designer.holddown,longform,6.504,-16.42,-3.3,yes,,main,G6-41 (src/gsources.py)
+host/designer.holddown.g6-1#b,1,host__designer.holddown.g6-1__b.t1.mp3,Chris,designer.holddown,longform,6.87,-16.43,-1.78,yes,,main,
+host/designer.holddown.g6-1#b,2,host__designer.holddown.g6-1__b.t2.mp3,Chris,designer.holddown,longform,6.452,-16.64,-1.59,yes,,main,
+host/designer.holddown.g6-1#c,1,host__designer.holddown.g6-1__c.t1.mp3,Sarah,designer.holddown,longform,5.042,-16.43,-3.37,yes,,main,
+host/designer.holddown.g6-1#c,2,host__designer.holddown.g6-1__c.t2.mp3,Sarah,designer.holddown,longform,5.198,-16.44,-3.21,yes,,main,
+host/designer.landingburn.g6-1#a,1,host__designer.landingburn.g6-1__a.t1.mp3,Sarah,designer.landingburn,longform,7.131,-16.43,-3.11,yes,,main,G6-45 (src/gsources.py)
+host/designer.landingburn.g6-1#a,2,host__designer.landingburn.g6-1__a.t2.mp3,Sarah,designer.landingburn,longform,7.053,-16.45,-3.03,yes,,main,G6-45 (src/gsources.py)
+host/designer.landingburn.g6-1#b,1,host__designer.landingburn.g6-1__b.t1.mp3,Chris,designer.landingburn,longform,6.504,-16.45,-2.36,yes,,main,
+host/designer.landingburn.g6-1#b,2,host__designer.landingburn.g6-1__b.t2.mp3,Chris,designer.landingburn,longform,6.583,-16.44,-2.5,yes,,main,
+host/designer.landingburn.g6-1#c,1,host__designer.landingburn.g6-1__c.t1.mp3,Sarah,designer.landingburn,longform,4.963,-16.44,-3.15,yes,,main,
+host/designer.landingburn.g6-1#c,2,host__designer.landingburn.g6-1__c.t2.mp3,Sarah,designer.landingburn,longform,4.859,-16.43,-3.22,yes,,main,
+host/designer.massratio.g6-1#a,1,host__designer.massratio.g6-1__a.t1.mp3,Sarah,designer.massratio,longform,7.053,-16.44,-3.17,yes,,main,G6-47 (src/gsources.py)
+host/designer.massratio.g6-1#a,2,host__designer.massratio.g6-1__a.t2.mp3,Sarah,designer.massratio,longform,7.105,-16.44,-3.05,yes,,main,G6-47 (src/gsources.py)
+host/designer.massratio.g6-1#b,1,host__designer.massratio.g6-1__b.t1.mp3,Chris,designer.massratio,longform,5.146,-16.46,-1.95,yes,,main,
+host/designer.massratio.g6-1#b,2,host__designer.massratio.g6-1__b.t2.mp3,Chris,designer.massratio,longform,4.624,-16.44,-1.85,yes,,main,
+host/designer.massratio.g6-1#c,1,host__designer.massratio.g6-1__c.t1.mp3,Sarah,designer.massratio,longform,5.042,-16.43,-3.26,yes,,main,
+host/designer.massratio.g6-1#c,2,host__designer.massratio.g6-1__c.t2.mp3,Sarah,designer.massratio,longform,5.251,-16.44,-3.24,yes,,main,
+host/designer.nozzles.g6-1#a,1,host__designer.nozzles.g6-1__a.t1.mp3,Sarah,designer.nozzles,longform,6.034,-16.45,-3.3,yes,,main,G6-34 (src/gsources.py)
+host/designer.nozzles.g6-1#a,2,host__designer.nozzles.g6-1__a.t2.mp3,Sarah,designer.nozzles,longform,6.217,-16.44,-3.4,yes,,main,G6-34 (src/gsources.py)
+host/designer.nozzles.g6-1#b,1,host__designer.nozzles.g6-1__b.t1.mp3,Chris,designer.nozzles,longform,5.93,-16.58,-1.81,yes,,main,
+host/designer.nozzles.g6-1#b,2,host__designer.nozzles.g6-1__b.t2.mp3,Chris,designer.nozzles,longform,6.531,-16.43,-1.76,yes,,main,
+host/designer.nozzles.g6-1#c,1,host__designer.nozzles.g6-1__c.t1.mp3,Sarah,designer.nozzles,longform,5.878,-16.44,-2.98,yes,,main,
+host/designer.nozzles.g6-1#c,2,host__designer.nozzles.g6-1__c.t2.mp3,Sarah,designer.nozzles,longform,5.851,-16.44,-3.23,yes,,main,
+host/designer.pogo.g6-1#a,1,host__designer.pogo.g6-1__a.t1.mp3,Sarah,designer.pogo,longform,7.419,-16.44,-3.38,yes,,main,G6-36 (src/gsources.py)
+host/designer.pogo.g6-1#a,2,host__designer.pogo.g6-1__a.t2.mp3,Sarah,designer.pogo,longform,7.523,-16.45,-3.27,yes,,main,G6-36 (src/gsources.py)
+host/designer.pogo.g6-1#b,1,host__designer.pogo.g6-1__b.t1.mp3,Chris,designer.pogo,longform,4.362,-16.44,-2.33,yes,,main,
+host/designer.pogo.g6-1#b,2,host__designer.pogo.g6-1__b.t2.mp3,Chris,designer.pogo,longform,4.206,-16.44,-2.67,yes,,main,
+host/designer.pogo.g6-1#c,1,host__designer.pogo.g6-1__c.t1.mp3,Sarah,designer.pogo,longform,4.859,-16.46,-3.38,yes,,main,
+host/designer.pogo.g6-1#c,2,host__designer.pogo.g6-1__c.t2.mp3,Sarah,designer.pogo,longform,4.963,-16.43,-3.35,yes,,main,
+host/designer.power.g6-1#a,1,host__designer.power.g6-1__a.t1.mp3,Sarah,designer.power,longform,6.217,-16.43,-3.31,yes,,main,
+host/designer.power.g6-1#a,2,host__designer.power.g6-1__a.t2.mp3,Sarah,designer.power,longform,6.452,-16.45,-3.3,yes,,main,
+host/designer.power.g6-1#b,1,host__designer.power.g6-1__b.t1.mp3,Chris,designer.power,longform,4.441,-16.83,-1.85,yes,,main,
+host/designer.power.g6-1#b,2,host__designer.power.g6-1__b.t2.mp3,Chris,designer.power,longform,4.18,-16.73,-1.9,yes,,main,
+host/designer.power.g6-1#c,1,host__designer.power.g6-1__c.t1.mp3,Sarah,designer.power,longform,4.963,-16.42,-3.22,yes,,main,
+host/designer.power.g6-1#c,2,host__designer.power.g6-1__c.t2.mp3,Sarah,designer.power,longform,5.016,-16.43,-3.19,yes,,main,
+host/designer.reentry.g6-1#a,1,host__designer.reentry.g6-1__a.t1.mp3,Sarah,designer.reentry,longform,6.531,-16.44,-2.96,yes,,main,G6-44 (src/gsources.py)
+host/designer.reentry.g6-1#a,2,host__designer.reentry.g6-1__a.t2.mp3,Sarah,designer.reentry,longform,6.217,-16.44,-3.22,yes,,main,G6-44 (src/gsources.py)
+host/designer.reentry.g6-1#b,1,host__designer.reentry.g6-1__b.t1.mp3,Chris,designer.reentry,longform,5.094,-16.59,-1.71,yes,,main,
+host/designer.reentry.g6-1#b,2,host__designer.reentry.g6-1__b.t2.mp3,Chris,designer.reentry,longform,5.251,-16.92,-1.74,yes,,main,
+host/designer.reentry.g6-1#c,1,host__designer.reentry.g6-1__c.t1.mp3,Sarah,designer.reentry,longform,4.676,-16.45,-3.5,yes,,main,
+host/designer.reentry.g6-1#c,2,host__designer.reentry.g6-1__c.t2.mp3,Sarah,designer.reentry,longform,4.258,-16.44,-3.41,yes,,main,
+host/designer.residuals.g6-1#a,1,host__designer.residuals.g6-1__a.t1.mp3,Sarah,designer.residuals,longform,5.878,-16.43,-3.28,yes,,main,G6-46 (src/gsources.py)
+host/designer.residuals.g6-1#a,2,host__designer.residuals.g6-1__a.t2.mp3,Sarah,designer.residuals,longform,6.217,-16.46,-3.28,yes,,main,G6-46 (src/gsources.py)
+host/designer.residuals.g6-1#b,1,host__designer.residuals.g6-1__b.t1.mp3,Chris,designer.residuals,longform,4.206,-16.45,-1.93,yes,,main,
+host/designer.residuals.g6-1#b,2,host__designer.residuals.g6-1__b.t2.mp3,Chris,designer.residuals,longform,3.997,-16.44,-1.78,yes,,main,
+host/designer.residuals.g6-1#c,1,host__designer.residuals.g6-1__c.t1.mp3,Sarah,designer.residuals,longform,4.31,-16.43,-3.33,yes,,main,
+host/designer.residuals.g6-1#c,2,host__designer.residuals.g6-1__c.t2.mp3,Sarah,designer.residuals,longform,4.31,-16.45,-3.41,yes,,main,
+host/designer.rtls.g6-1#a,1,host__designer.rtls.g6-1__a.t1.mp3,Sarah,designer.rtls,longform,6.034,-16.44,-3.19,yes,,main,G6-27 (src/gsources.py)
+host/designer.rtls.g6-1#a,2,host__designer.rtls.g6-1__a.t2.mp3,Sarah,designer.rtls,longform,6.452,-16.44,-3.27,yes,,main,G6-27 (src/gsources.py)
+host/designer.rtls.g6-1#b,1,host__designer.rtls.g6-1__b.t1.mp3,Chris,designer.rtls,longform,6.531,-16.44,-2.27,yes,,main,
+host/designer.rtls.g6-1#b,2,host__designer.rtls.g6-1__b.t2.mp3,Chris,designer.rtls,longform,6.504,-16.82,-1.76,yes,,main,
+host/designer.rtls.g6-1#c,1,host__designer.rtls.g6-1__c.t1.mp3,Sarah,designer.rtls,longform,4.728,-16.44,-3.27,yes,,main,
+host/designer.rtls.g6-1#c,2,host__designer.rtls.g6-1__c.t2.mp3,Sarah,designer.rtls,longform,4.911,-16.44,-3.19,yes,,main,
+host/designer.slosh.g6-1#a,1,host__designer.slosh.g6-1__a.t1.mp3,Sarah,designer.slosh,longform,6.4,-16.44,-3.2,yes,,main,G6-37 (src/gsources.py)
+host/designer.slosh.g6-1#a,2,host__designer.slosh.g6-1__a.t2.mp3,Sarah,designer.slosh,longform,5.982,-16.43,-3.26,yes,,main,G6-37 (src/gsources.py)
+host/designer.slosh.g6-1#b,1,host__designer.slosh.g6-1__b.t1.mp3,Chris,designer.slosh,longform,4.362,-16.44,-2.17,yes,,main,
+host/designer.slosh.g6-1#b,2,host__designer.slosh.g6-1__b.t2.mp3,Chris,designer.slosh,longform,4.859,-16.8,-1.68,yes,,main,
+host/designer.slosh.g6-1#c,1,host__designer.slosh.g6-1__c.t1.mp3,Sarah,designer.slosh,longform,5.094,-16.44,-3.26,yes,,main,
+host/designer.slosh.g6-1#c,2,host__designer.slosh.g6-1__c.t2.mp3,Sarah,designer.slosh,longform,4.963,-16.44,-3.36,yes,,main,
+host/designer.telemetry.g6-1#a,1,host__designer.telemetry.g6-1__a.t1.mp3,Sarah,designer.telemetry,longform,7.34,-16.44,-3.04,yes,,main,
+host/designer.telemetry.g6-1#a,2,host__designer.telemetry.g6-1__a.t2.mp3,Sarah,designer.telemetry,longform,7.131,-16.44,-3.25,yes,,main,
+host/designer.telemetry.g6-1#b,1,host__designer.telemetry.g6-1__b.t1.mp3,Chris,designer.telemetry,longform,6.113,-16.7,-1.71,yes,,main,
+host/designer.telemetry.g6-1#b,2,host__designer.telemetry.g6-1__b.t2.mp3,Chris,designer.telemetry,longform,5.669,-16.92,-1.84,yes,,main,
+host/designer.telemetry.g6-1#c,1,host__designer.telemetry.g6-1__c.t1.mp3,Sarah,designer.telemetry,longform,6.113,-16.44,-3.21,yes,,main,
+host/designer.telemetry.g6-1#c,2,host__designer.telemetry.g6-1__c.t2.mp3,Sarah,designer.telemetry,longform,5.878,-16.45,-3.27,yes,,main,
+host/designer.turbopumps.g6-1#a,1,host__designer.turbopumps.g6-1__a.t1.mp3,Sarah,designer.turbopumps,longform,6.766,-16.45,-3.04,yes,,main,G6-38 (src/gsources.py)
+host/designer.turbopumps.g6-1#a,2,host__designer.turbopumps.g6-1__a.t2.mp3,Sarah,designer.turbopumps,longform,6.504,-16.43,-3.07,yes,,main,G6-38 (src/gsources.py)
+host/designer.turbopumps.g6-1#b,1,host__designer.turbopumps.g6-1__b.t1.mp3,Chris,designer.turbopumps,longform,4.362,-16.62,-1.68,yes,,main,
+host/designer.turbopumps.g6-1#b,2,host__designer.turbopumps.g6-1__b.t2.mp3,Chris,designer.turbopumps,longform,4.441,-16.43,-2.46,yes,,main,
+host/designer.turbopumps.g6-1#c,1,host__designer.turbopumps.g6-1__c.t1.mp3,Sarah,designer.turbopumps,longform,4.206,-16.43,-3.17,yes,,main,
+host/designer.turbopumps.g6-1#c,2,host__designer.turbopumps.g6-1__c.t2.mp3,Sarah,designer.turbopumps,longform,4.258,-16.43,-3.19,yes,,main,
+host/designer.weather.g6-1#a,1,host__designer.weather.g6-1__a.t1.mp3,Sarah,designer.weather,longform,6.766,-16.44,-3.27,yes,,main,G6-48 (src/gsources.py)
+host/designer.weather.g6-1#a,2,host__designer.weather.g6-1__a.t2.mp3,Sarah,designer.weather,longform,7.549,-16.44,-3.35,yes,,main,G6-48 (src/gsources.py)
+host/designer.weather.g6-1#b,1,host__designer.weather.g6-1__b.t1.mp3,Chris,designer.weather,longform,4.441,-16.53,-1.81,yes,,main,
+host/designer.weather.g6-1#b,2,host__designer.weather.g6-1__b.t2.mp3,Chris,designer.weather,longform,4.31,-16.44,-2.12,yes,,main,
+host/designer.weather.g6-1#c,1,host__designer.weather.g6-1__c.t1.mp3,Sarah,designer.weather,longform,5.016,-16.43,-3.0,yes,,main,
+host/designer.weather.g6-1#c,2,host__designer.weather.g6-1__c.t2.mp3,Sarah,designer.weather,longform,4.441,-16.47,-3.16,yes,,main,
+host/menu.home.idle.g6-1#a,1,host__menu.home.idle.g6-1__a.t1.mp3,Sarah,menu.home.idle,longform,6.949,-16.44,-3.03,yes,,main,G6-58 (src/gsources.py)
+host/menu.home.idle.g6-1#a,2,host__menu.home.idle.g6-1__a.t2.mp3,Sarah,menu.home.idle,longform,7.053,-16.43,-3.11,yes,,main,G6-58 (src/gsources.py)
+host/menu.home.idle.g6-1#b,1,host__menu.home.idle.g6-1__b.t1.mp3,Chris,menu.home.idle,longform,5.329,-16.44,-2.01,yes,,main,
+host/menu.home.idle.g6-1#b,2,host__menu.home.idle.g6-1__b.t2.mp3,Chris,menu.home.idle,longform,5.016,-16.96,-1.74,yes,,main,
+host/menu.home.idle.g6-1#c,1,host__menu.home.idle.g6-1__c.t1.mp3,Sarah,menu.home.idle,longform,6.452,-16.44,-3.35,yes,,main,
+host/menu.home.idle.g6-1#c,2,host__menu.home.idle.g6-1__c.t2.mp3,Sarah,menu.home.idle,longform,7.001,-16.44,-3.21,yes,,main,
+host/menu.home.idle.g6-2#a,1,host__menu.home.idle.g6-2__a.t1.mp3,Sarah,menu.home.idle,longform,6.687,-16.44,-3.2,yes,,main,G6-53 (src/gsources.py)
+host/menu.home.idle.g6-2#a,2,host__menu.home.idle.g6-2__a.t2.mp3,Sarah,menu.home.idle,longform,7.053,-16.45,-3.14,yes,,main,G6-53 (src/gsources.py)
+host/menu.home.idle.g6-2#b,1,host__menu.home.idle.g6-2__b.t1.mp3,Chris,menu.home.idle,longform,4.859,-16.84,-1.94,yes,,main,
+host/menu.home.idle.g6-2#b,2,host__menu.home.idle.g6-2__b.t2.mp3,Chris,menu.home.idle,longform,4.911,-16.77,-1.97,yes,,main,
+host/menu.home.idle.g6-2#c,1,host__menu.home.idle.g6-2__c.t1.mp3,Sarah,menu.home.idle,longform,4.911,-16.44,-3.36,yes,,main,
+host/menu.home.idle.g6-2#c,2,host__menu.home.idle.g6-2__c.t2.mp3,Sarah,menu.home.idle,longform,4.728,-16.45,-3.47,yes,,main,
+host/menu.home.idle.g6-3#a,1,host__menu.home.idle.g6-3__a.t1.mp3,Sarah,menu.home.idle,longform,7.654,-16.42,-3.3,yes,,main,G6-62 (src/gsources.py)
+host/menu.home.idle.g6-3#a,2,host__menu.home.idle.g6-3__a.t2.mp3,Sarah,menu.home.idle,longform,7.889,-16.44,-3.31,yes,,main,G6-62 (src/gsources.py)
+host/menu.home.idle.g6-3#b,1,host__menu.home.idle.g6-3__b.t1.mp3,Chris,menu.home.idle,longform,6.087,-16.75,-1.83,yes,,main,
+host/menu.home.idle.g6-3#b,2,host__menu.home.idle.g6-3__b.t2.mp3,Chris,menu.home.idle,longform,4.833,-16.76,-1.72,yes,,main,
+host/menu.home.idle.g6-3#c,1,host__menu.home.idle.g6-3__c.t1.mp3,Sarah,menu.home.idle,longform,4.31,-16.44,-3.17,yes,,main,
+host/menu.home.idle.g6-3#c,2,host__menu.home.idle.g6-3__c.t2.mp3,Sarah,menu.home.idle,longform,4.624,-16.45,-3.28,yes,,main,
+host/menu.home.idle.g6-4#a,1,host__menu.home.idle.g6-4__a.t1.mp3,Sarah,menu.home.idle,longform,6.296,-16.42,-3.3,yes,,main,G6-63 (src/gsources.py)
+host/menu.home.idle.g6-4#a,2,host__menu.home.idle.g6-4__a.t2.mp3,Sarah,menu.home.idle,longform,6.818,-16.44,-3.23,yes,,main,G6-63 (src/gsources.py)
+host/menu.home.idle.g6-4#b,1,host__menu.home.idle.g6-4__b.t1.mp3,Chris,menu.home.idle,longform,4.598,-16.44,-2.4,yes,,main,
+host/menu.home.idle.g6-4#b,2,host__menu.home.idle.g6-4__b.t2.mp3,Chris,menu.home.idle,longform,4.127,-16.44,-2.41,yes,,main,
+host/menu.home.idle.g6-4#c,1,host__menu.home.idle.g6-4__c.t1.mp3,Sarah,menu.home.idle,longform,6.452,-16.44,-3.3,yes,,main,
+host/menu.home.idle.g6-4#c,2,host__menu.home.idle.g6-4__c.t2.mp3,Sarah,menu.home.idle,longform,6.348,-16.44,-3.24,yes,,main,
+host/menu.home.idle.g6-5#a,1,host__menu.home.idle.g6-5__a.t1.mp3,Sarah,menu.home.idle,longform,5.669,-16.43,-3.45,yes,,main,G6-59 (src/gsources.py)
+host/menu.home.idle.g6-5#a,2,host__menu.home.idle.g6-5__a.t2.mp3,Sarah,menu.home.idle,longform,5.251,-16.45,-3.44,yes,,main,G6-59 (src/gsources.py)
+host/menu.home.idle.g6-5#b,1,host__menu.home.idle.g6-5__b.t1.mp3,Chris,menu.home.idle,longform,5.851,-16.74,-1.77,yes,,main,
+host/menu.home.idle.g6-5#b,2,host__menu.home.idle.g6-5__b.t2.mp3,Chris,menu.home.idle,longform,5.433,-16.43,-1.95,yes,,main,
+host/menu.home.idle.g6-5#c,1,host__menu.home.idle.g6-5__c.t1.mp3,Sarah,menu.home.idle,longform,6.4,-16.43,-3.31,yes,,main,
+host/menu.home.idle.g6-5#c,2,host__menu.home.idle.g6-5__c.t2.mp3,Sarah,menu.home.idle,longform,6.034,-16.43,-3.35,yes,,main,
