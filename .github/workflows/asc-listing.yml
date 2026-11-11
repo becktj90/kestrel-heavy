@@ -1,0 +1,52 @@
+# App Store Connect listing for Kestrel Heavy (tools/asc/listing-1.0.json), through the App Store Connect API key
+# already stored as repo secrets (ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8, same as xcode-export.yml).
+# Separate and non-required: it never builds, signs, uploads a binary, creates a version or submits for review.
+#   pull_request on these files -> "read" (GET only: shows the live listing next to the repo copy)
+#   workflow_dispatch mode=apply -> writes the listing, screenshots, age rating, price and availability, then reads back.
+name: App Store Connect listing
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/asc-listing.yml'
+      - 'tools/asc/asc_listing.py'
+      - 'tools/asc/listing-1.0.json'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'read (GET only) or apply'
+        required: true
+        default: read
+        type: choice
+        options: [read, apply]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: asc-listing
+  cancel-in-progress: false
+
+jobs:
+  listing:
+    name: App Store Connect listing (${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'read' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'read' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Lint listing text (limits, banned words)
+        run: python3 tools/asc/asc_listing.py lint
+      - name: App Store Connect ${{ env.MODE }}
+        if: env.ASC_KEY_ID != ''
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/v"
+          "$RUNNER_TEMP/v/bin/pip" install --disable-pip-version-check -q 'cryptography==50.0.0'
+          "$RUNNER_TEMP/v/bin/python" tools/asc/asc_listing.py "$MODE"

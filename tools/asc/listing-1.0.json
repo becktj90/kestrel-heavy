@@ -1,0 +1,41 @@
+{
+  "_note": "App Store Connect listing for Kestrel Heavy 1.0 (Unity 2.0.0). Text comes from docs/appstore/LISTING.md. Applied by tools/asc/asc_listing.py through the 'App Store Connect listing' workflow. Never contains secrets.",
+  "bundleId": "com.beckify.kestrelheavy",
+  "locale": "en-US",
+  "appInfo": {
+    "name": "Kestrel Heavy",
+    "subtitle": "Design, launch, land rockets",
+    "privacyPolicyUrl": "https://beckify.com/games/kestrel-heavy/privacy/"
+  },
+  "categories": {
+    "primaryCategory": "GAMES",
+    "primarySubcategoryOne": "GAMES_SIMULATION",
+    "primarySubcategoryTwo": "GAMES_ARCADE"
+  },
+  "contentRightsDeclaration": "USES_THIRD_PARTY_CONTENT",
+  "version": {
+    "copyright": "2026 Trevor Beck",
+    "releaseType": "MANUAL"
+  },
+  "versionLocalization": {
+    "description": "Kestrel Heavy is a rocket design and launch game for curious kids and working engineers.\n\nEvery flight starts in the designer. Pick a mission and you begin with a rocket built to try it. Then make it yours.\n\nTHE DESIGNER\n• Choose the engine fuel (kerosene or methane), the number of stages, how much fuel to carry, and side boosters on missions that allow them\n• A readiness check flies your rocket in the game's predictor and tells you in plain words when it expects trouble\n• See the speed you need to reach orbit next to the speed you have\n• Tap the ? on any row for a short \"Why?\" card\n• Open the X-ray cutaway to see the tanks, engines, fairing and cargo\n• Engineers: switch on Show full designer in Settings for the full parts workshop\n\nTHE LAUNCH\n• Watch the whole flight: countdown, liftoff, max-Q, staging, fairing separation and engine cutoff\n• Mission control and webcast-style commentary call the flight. The voices are AI-generated\n• Pick your own camera angle while you fly\n• Day, sunset and night launches from a detailed pad\n• On recovery missions the first stage turns around and tries to land on Haven, our recovery barge\n• When a flight falls short, the post-flight report shows the real cause and your stars, and takes you back to your rocket in the designer\n• Optional coast time-warp between calls; skip-to-next-stage when you want to move along\n\nTHE MISSIONS\n• 20 missions, KH-1 to KH-20, each with its own fictional payload and a mission patch\n• A Codex of short lessons on delta-v, thrust-to-weight, specific impulse, staging, max-Q, center of mass, orbits and booster landing\n• Your progress saves on your device, and Continue picks up where you left off\n• Settings for music, sound, commentary, subtitles, time warp and Reduce Motion\n\nTHE FINE PRINT\n• No ads. No in-app purchases. No accounts. No internet connection needed for play\n• Plays on iPhone and iPad, in portrait\n\nKestrel Heavy, Haven and the KH missions are original fiction. Not affiliated with any launch provider or space agency.",
+    "keywords": "orbit,space,booster,simulator,engineering,stem,science,builder,spaceflight,kids,missions,max-q",
+    "promotionalText": "Pick a mission, tune your rocket, then light it up. 20 KH missions, a built-in Codex and an X-ray cutaway. No ads, no in-app purchases.",
+    "marketingUrl": "https://beckify.com/games/kestrel-heavy/",
+    "supportUrl": "https://beckify.com/contact/"
+  },
+  "reviewNotes": "Kestrel Heavy needs no account or sign-in and works offline. To test: on Home tap CONTINUE or LAUNCH, read the mission briefing, and on the Starter designer change engine fuel, stages, fuel or boosters, then tap LAUNCH. X-ray opens a cutaway; ? opens Why? cards. Settings has music, sound, commentary, subtitles, time warp, Reduce Motion, Codex, and Show full designer. No in-app purchases, no ads, no analytics, no accounts. AI-generated voices: the mission control and commentary voices are AI-generated. The developer generated them ahead of time with ElevenLabs text-to-speech on a paid plan; they ship as bundled audio files and the app does not contact any voice service. Music and art are bundled. Fiction: Kestrel Heavy, Haven and the KH missions are original and not affiliated with any launch provider or space agency.",
+  "ageRating": "all NONE / false (no violence of any kind: rockets can fail and explode with no people shown or harmed; no weapons, horror, gambling, web access, chat, UGC, ads)",
+  "price": {
+    "baseTerritory": "USA",
+    "customerPrice": "0.99"
+  },
+  "unavailableTerritories": [
+    "CHN",
+    "VNM"
+  ],
+  "screenshots": {
+    "APP_IPHONE_67": "docs/appstore/screenshots-2026-11-09/store/iphone-1320x2868",
+    "APP_IPAD_PRO_3GEN_129": "docs/appstore/screenshots-2026-11-09/store/ipad-2064x2752"
+  }
+}

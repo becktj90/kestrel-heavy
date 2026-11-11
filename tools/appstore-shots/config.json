@@ -3,6 +3,11 @@
   "sources": "docs/appstore/screenshots-2026-11-09",
   "out": "docs/appstore/screenshots-2026-11-09/store",
   "sizes": {
+    "iphone-1320x2868": {
+      "w": 1320,
+      "h": 2868,
+      "kind": "phone"
+    },
     "iphone-1206x2622": {
       "w": 1206,
       "h": 2622,
