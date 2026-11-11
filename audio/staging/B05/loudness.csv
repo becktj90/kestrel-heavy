@@ -73,12 +73,12 @@ host/menu.home.idle.g5-1#b,1,host__menu.home.idle.g5-1__b.t1.mp3,Chris,menu.home
 host/menu.home.idle.g5-1#b,2,host__menu.home.idle.g5-1__b.t2.mp3,Chris,menu.home.idle,longform,4.963,-16.46,-2.52,yes,,main,
 host/menu.home.idle.g5-1#c,1,host__menu.home.idle.g5-1__c.t1.mp3,Sarah,menu.home.idle,longform,7.053,-16.44,-3.1,yes,,main,
 host/menu.home.idle.g5-1#c,2,host__menu.home.idle.g5-1__c.t2.mp3,Sarah,menu.home.idle,longform,6.635,-16.42,-3.11,yes,,main,
-host/menu.home.idle.g5-2#a,1,host__menu.home.idle.g5-2__a.t1.mp3,Sarah,menu.home.idle,longform,8.02,-16.42,-3.04,yes,,main,G28 (docs/narration-sources.md)
-host/menu.home.idle.g5-2#a,2,host__menu.home.idle.g5-2__a.t2.mp3,Sarah,menu.home.idle,longform,7.784,-16.44,-3.17,yes,,main,G28 (docs/narration-sources.md)
-host/menu.home.idle.g5-2#b,1,host__menu.home.idle.g5-2__b.t1.mp3,Chris,menu.home.idle,longform,7.184,-16.43,-2.08,yes,,main,
-host/menu.home.idle.g5-2#b,2,host__menu.home.idle.g5-2__b.t2.mp3,Chris,menu.home.idle,longform,6.87,-16.44,-1.86,yes,,main,
-host/menu.home.idle.g5-2#c,1,host__menu.home.idle.g5-2__c.t1.mp3,Sarah,menu.home.idle,longform,2.351,-16.42,-3.36,yes,,main,
-host/menu.home.idle.g5-2#c,2,host__menu.home.idle.g5-2__c.t2.mp3,Sarah,menu.home.idle,longform,2.403,-16.43,-3.25,yes,,main,
+host/menu.home.idle.g5-2#a,1,host__menu.home.idle.g5-2__a.t1.mp3,Sarah,menu.home.idle,longform,8.542,-16.44,-3.19,yes,,main,G28 (docs/narration-sources.md)
+host/menu.home.idle.g5-2#a,2,host__menu.home.idle.g5-2__a.t2.mp3,Sarah,menu.home.idle,longform,8.725,-16.45,-3.34,yes,,main,G28 (docs/narration-sources.md)
+host/menu.home.idle.g5-2#b,1,host__menu.home.idle.g5-2__b.t1.mp3,Chris,menu.home.idle,longform,6.635,-16.44,-1.93,yes,,main,
+host/menu.home.idle.g5-2#b,2,host__menu.home.idle.g5-2__b.t2.mp3,Chris,menu.home.idle,longform,6.113,-16.43,-1.92,yes,,main,
+host/menu.home.idle.g5-2#c,1,host__menu.home.idle.g5-2__c.t1.mp3,Sarah,menu.home.idle,longform,2.351,-16.45,-3.26,yes,,main,
+host/menu.home.idle.g5-2#c,2,host__menu.home.idle.g5-2__c.t2.mp3,Sarah,menu.home.idle,longform,2.325,-16.46,-2.8,yes,,main,
 host/menu.home.idle.g5-3#a,1,host__menu.home.idle.g5-3__a.t1.mp3,Sarah,menu.home.idle,longform,6.165,-16.43,-3.18,yes,,main,G29 (docs/narration-sources.md)
 host/menu.home.idle.g5-3#a,2,host__menu.home.idle.g5-3__a.t2.mp3,Sarah,menu.home.idle,longform,6.504,-16.43,-3.09,yes,,main,G29 (docs/narration-sources.md)
 host/menu.home.idle.g5-3#b,1,host__menu.home.idle.g5-3__b.t1.mp3,Chris,menu.home.idle,longform,4.493,-16.86,-1.94,yes,,main,
@@ -181,3 +181,7 @@ host/idle.pad.g5-18#c,1,host__idle.pad.g5-18__c.t1.mp3,Sarah,idle.pad,longform,7
 host/idle.pad.g5-18#c,2,host__idle.pad.g5-18__c.t2.mp3,Sarah,idle.pad,longform,8.542,-16.44,-3.25,yes,,main,
 host/idle.pad.g5-18#d,1,host__idle.pad.g5-18__d.t1.mp3,Chris,idle.pad,longform,3.605,-16.45,-1.71,yes,,main,
 host/idle.pad.g5-18#d,2,host__idle.pad.g5-18__d.t2.mp3,Chris,idle.pad,longform,3.579,-16.45,-1.84,yes,,main,
+host/menu.mission.m14.g5-1,1,host__menu.mission.m14.g5-1.t1.mp3,Sarah,menu.mission.m14,menu,8.176,-16.43,-3.21,yes,,main,
+host/menu.mission.m14.g5-1,2,host__menu.mission.m14.g5-1.t2.mp3,Sarah,menu.mission.m14,menu,7.967,-16.44,-3.13,yes,,main,
+host/menu.mission.m20.g5-1,1,host__menu.mission.m20.g5-1.t1.mp3,Sarah,menu.mission.m20,menu,6.217,-16.44,-3.14,yes,,main,
+host/menu.mission.m20.g5-1,2,host__menu.mission.m20.g5-1.t2.mp3,Sarah,menu.mission.m20,menu,6.348,-16.42,-3.31,yes,,main,

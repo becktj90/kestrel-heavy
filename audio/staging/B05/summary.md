@@ -4,16 +4,16 @@ Recorded 2026-11-11, America/New_York. Model `eleven_multilingual_v2`. Voices: E
 
 ## Recorded
 
-- Ready rows in this batch: 91
-- Recorded: **91 lines, 182 takes**
+- Ready rows in this batch: 93
+- Recorded: **93 lines, 186 takes**
 - Held: **0**
-- Planned character upper bound: 14006
-- ElevenLabs remaining before → after: 179782 → 167338 (used 12444)
+- Planned character upper bound: 15008
+- ElevenLabs remaining before → after: 179782 → 158440 (used 21342)
 - Output: `out/B05/raw/`, `out/B05/processed/`, `manifest.json`, `loudness.csv`, `loudness-report.md`
 
 ## Quality
 
-See `loudness-report.md`. Flags still failing after one retake: 1.
+See `loudness-report.md`. Flags still failing after one retake: 0.
 
 ## Events recorded
 
@@ -27,11 +27,13 @@ See `loudness-report.md`. Flags still failing after one retake: 1.
 - `menu.mission.m11`: 1 lines (2 takes)
 - `menu.mission.m12`: 1 lines (2 takes)
 - `menu.mission.m13`: 1 lines (2 takes)
+- `menu.mission.m14`: 1 lines (2 takes)
 - `menu.mission.m15`: 1 lines (2 takes)
 - `menu.mission.m16`: 1 lines (2 takes)
 - `menu.mission.m17`: 1 lines (2 takes)
 - `menu.mission.m18`: 1 lines (2 takes)
 - `menu.mission.m2`: 1 lines (2 takes)
+- `menu.mission.m20`: 1 lines (2 takes)
 - `menu.mission.m3`: 1 lines (2 takes)
 - `menu.mission.m4`: 1 lines (2 takes)
 - `menu.mission.m5`: 1 lines (2 takes)
@@ -41,11 +43,6 @@ See `loudness-report.md`. Flags still failing after one retake: 1.
 - `menu.missions`: 3 lines (6 takes)
 - `menu.settings.intro`: 2 lines (4 takes)
 
-## QC failures after retake
+## ready-3.tsv update
 
-- `host/idle.pad.g5-15#b` take 2: ['lufs:-17.33']
-
-## Loudness re-norm (no new ElevenLabs calls)
-
-On 2026-11-11, America/New_York, 1 takes that were still below −17 LUFS were re-normalized from their processed sources with makeup gain plus a −1.5 dBTP limiter. All 1 now meet −16 LUFS ±1 and ≤ −1.5 dBTP. No takes were dropped.
-
+Replaced `host/menu.home.idle.g5-2#a`–`#c` (fruit flies, 6 takes) with the real-name V-2 text from ready-3.tsv. Added `host/menu.mission.m14.g5-1` and `host/menu.mission.m20.g5-1` (2 takes each). m20 uses the Physics-approved text: "Far Hold: the highest orbit on the board. This far out, the Sun's pull starts to win over Earth's."
