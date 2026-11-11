@@ -1,5 +1,17 @@
 # Rocket designer × missions: discrepancy list
 
+## Re-run 2026-11-10 (Arcade)
+
+Re-scored on `main` `1a69b7c1`. Full writeup: [`rerun-2026-11-10/RESCORE.md`](rerun-2026-11-10/RESCORE.md).
+
+**Closed on this pass:** B-02 (payload min 10 kg; KH-3 launches), B-04 (one `PayloadFit` rule; `missions fit` clean on KH-1…20), B-06 (cryo named on Starter), B-09 (Hangar landing-fuel control), M-30 (fairing jettison altitude wired). B-01 and B-03 were already Fixed.
+
+**Still Open (product):** B-05, B-07, B-08; B-10 for the Experience *simple* layer only (Starter badge is honest). Remaining Majors/Minors not re-scored stay Open.
+
+**Harness vs game:** verdict t600 counts match the 2026-11-09 rerun (131 `BATCH_PASS_LIVE_FAIL`, 155 `LIVE_TIMEOUT`) because that profile still cuts at t=600. `out2500` drops those to 82 and 3. Shipping FlightDriver is B-01/B-03, not this profile.
+
+Logs: [`rerun-2026-11-10/`](rerun-2026-11-10/).
+
 ## Re-run 2026-11-09 (Arcade)
 
 Harnesses: `tools/audit/designer-missions/verdict/run.sh` and `missions/ … campaign-winners live` on main tip before #472/#475.
@@ -11,7 +23,7 @@ Harnesses: `tools/audit/designer-missions/verdict/run.sh` and `missions/ … cam
 
 **Product fixes already on main (tracker updated):** B-01, B-03 via `MissionFlightSetup` + `Stack.SimInputs` (`FlightDriver`).
 
-**Left for follow-up PRs (physics / fit / data):** B-02 (KH-3 20 kg vs designer min), B-04 (fit rule split), and remaining Majors — do not weaken tests; physics questions to Kestrel Physics.
+**Left for follow-up (as of 2026-11-09; see the 2026-11-10 re-score above):** B-02, B-04, and remaining Majors.
 
 Logs: `/workspace/kh-qa-2026-11-09/out/audit/` (verdict + missions-live).
 
@@ -21,9 +33,11 @@ Logs: `/workspace/kh-qa-2026-11-09/out/audit/` (verdict + missions-live).
 
 Audit of `main` at b8ad6b9 (2026-10-19). Scope: every designer option (data catalogs, Hangar and v3 panels, guided stepper, edit ops), every campaign mission KH-1 to KH-20, the contract generator, and the path from the designer's verdict to the flight result.
 
-**Headline.** The campaign cannot be finished as built:
+**Headline (2026-10-19 audit).** The campaign cannot be finished as built:
 - KH-3 can never launch (B-02).
 - Live flights to orbit stop at 600 s, before any of the 18 orbital golden winners reaches orbit (B-01).
+
+**Headline (2026-11-10 re-score).** B-01, B-02, B-03 and B-04 are Fixed on current main. The campaign can be launched through KH-3 and later board starters (`missions board`, `CampaignFlightLoopTests`). Remaining Open items are listed in the tracker.
 
 The designer's verdict also does not predict the mission result:
 - All 9 templates and presets fail all 20 missions. The designer allows launch for most of them, and the Simple layer says "ready to fly".
@@ -54,15 +68,15 @@ Paths are relative to the repo root. `Core/` = `unity/Assets/Kestrel.Core/`, `Sl
 | ID | Sev | Area | Missions | Title | Status |
 |---|---|---|---|---|---|
 | B-01 | Blocker | Flight | KH-3–20 | Live flight cut off at T+600 s, before orbit | **Fixed** (MissionFlightSetup / Stack.SimInputs tMax≥2500; FlightDriver 2026-11) |
-| B-02 | Blocker | Mission data | KH-3, Flock contracts | KH-3 payload 20 kg is below the designer's 50 kg minimum, so KH-3 can never launch (campaign softlock) | Open |
+| B-02 | Blocker | Mission data | KH-3, Flock contracts | KH-3 payload 20 kg was below the designer's 50 kg minimum (campaign softlock) | **Fixed** (payloadMassKg.min 10; KH-3 20 kg launches; 2026-11-10) |
 | B-03 | Blocker | Flight | KH-3–20 | Live flight setup differs from FlightBatch (cutoff on the ±5% edge, random pad and wind, boil-off, strap-on landing fuel) | **Fixed** (shared MissionFlightSetup with FlightBatch; see FlightDriver) |
-| B-04 | Blocker | Fit | KH-4–20 | Three different payload-fit rules: designer blocks 10 winners, passes 13 losers | Open |
+| B-04 | Blocker | Fit | KH-4–20 | Three different payload-fit rules (designer vs mission vs readout) | **Fixed** (one PayloadFit rule; PayloadFitRuleTests + missions fit; 2026-11-10) |
 | B-05 | Blocker | Failure model | All | Failure model switched on by unrelated fields; prediction ≠ judge; red risks only warn; Simple says "ready" | Open |
-| B-06 | Blocker | Failure model | All | Cryo rule mismatch: any LOX propellant on composite or glass-phenolic fails at T+0, unwarned | Open |
+| B-06 | Blocker | Failure model | All | Cryo rule mismatch: LOX on composite or glass-phenolic failed at T+0, unwarned | **Fixed** (Starter names cryo; StarterHonestReadyTests; 2026-11-10) |
 | B-07 | Blocker | Failure model | All | More than 9 engines with no heat shield fail on base heating; no rule and no heat-shield control | Open |
 | B-08 | Blocker | Failure model | All | Unguided solids exempt from max-Q in the designer, not in flight | Open |
-| B-09 | Blocker | Designer | KH-10, KH-19 | No control for booster landing fuel; boosters-must-land missions unwinnable from the designer | Open |
-| B-10 | Blocker | Designer | All | Simple layer says "This design is ready to fly." on 217 designs that fail 0/5 | Open |
+| B-09 | Blocker | Designer | KH-10, KH-19 | No control for booster landing fuel (boosters-must-land missions unwinnable from the designer) | **Fixed** (Hangar landing-fuel stepper + reserve checks; 2026-11-10) |
+| B-10 | Blocker | Designer | All | Simple layer says "This design is ready to fly." on 217 designs that fail 0/5 | Open (Starter badge honest; Experience simple layer still Ready on 228 fail-0/5 harness rows) |
 | M-01 | Major | Scoring | KH-7, 9, 10, 15, 17–20 | Ellipse and C3 missions pass on on-paper Δv, not flown Δv | Open |
 | M-02 | Major | Scoring | All | Hidden pass conditions (exact payload mass, fit, budget, gentle tier); debrief gives the wrong reason | Open |
 | M-03 | Major | Economy | All, contracts | Mission budgets and rewards about 1000× the real costs | Open |
@@ -92,7 +106,7 @@ Paths are relative to the repo root. `Core/` = `unity/Assets/Kestrel.Core/`, `Sl
 | M-27 | Major | Designer | All | Min-throttle lets solids and pressure-fed engines throttle | Open |
 | M-28 | Major | Validate | All | Gimbal 0° on stage 1 not treated as unguided | Open |
 | M-29 | Major | Designer | All | Add stage copies engine overrides, interstage mass and mixture onto the new vacuum stage | Open |
-| M-30 | Major | Physics | All | Fairing never jettisons in flight (release altitude not passed to the sim) | Open |
+| M-30 | Major | Physics | All | Fairing never jettisoned in flight (release altitude not passed to the sim) | **Fixed** (jettison altitude wired; FlightSimSinkContractTests; D-5; 2026-11-10) |
 | N-01 | Minor | Debrief | KH-9, 17, 18, 20 | Lunar debrief says "Goal 0 km" | Open |
 | N-02 | Minor | Data | Several | Catalog payloads ≠ mission payloads; catalog names "KH-1".."KH-5" clash with mission codes | Open |
 | N-03 | Minor | Data | All | campaign.json `score`/`tolerances`/`reuse` unread (hard-coded copies); sun-sync Δv subtracts Earth rotation | Open |
