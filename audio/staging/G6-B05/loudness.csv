@@ -1,0 +1,157 @@
+id,take,file,voice,event,layer,duration_sec,LUFS,dBTP,in_spec,issues,variant,sources
+cohost/designer.boiloff.tip.g6-1,1,cohost__designer.boiloff.tip.g6-1.t1.mp3,Chris,designer.boiloff.tip,menu,6.583,-16.43,-1.92,yes,,main,G6-32 (src/gsources.py)
+cohost/designer.boiloff.tip.g6-1,2,cohost__designer.boiloff.tip.g6-1.t2.mp3,Chris,designer.boiloff.tip,menu,5.433,-16.58,-1.81,yes,,main,G6-32 (src/gsources.py)
+cohost/designer.guidance.tip.g6-1,1,cohost__designer.guidance.tip.g6-1.t1.mp3,Chris,designer.guidance.tip,menu,7.131,-16.61,-1.65,yes,,main,G6-43 (src/gsources.py)
+cohost/designer.guidance.tip.g6-1,2,cohost__designer.guidance.tip.g6-1.t2.mp3,Chris,designer.guidance.tip,menu,6.504,-16.51,-1.7,yes,,main,G6-43 (src/gsources.py)
+cohost/designer.interstage.tip.g6-1,1,cohost__designer.interstage.tip.g6-1.t1.mp3,Chris,designer.interstage.tip,menu,5.982,-16.45,-2.23,yes,,main,G6-39 (src/gsources.py)
+cohost/designer.interstage.tip.g6-1,2,cohost__designer.interstage.tip.g6-1.t2.mp3,Chris,designer.interstage.tip,menu,6.949,-16.45,-1.98,yes,,main,G6-39 (src/gsources.py)
+cohost/designer.pressurization.tip.g6-1,1,cohost__designer.pressurization.tip.g6-1.t1.mp3,Chris,designer.pressurization.tip,menu,4.78,-16.85,-1.67,yes,,main,G6-31 (src/gsources.py)
+cohost/designer.pressurization.tip.g6-1,2,cohost__designer.pressurization.tip.g6-1.t2.mp3,Chris,designer.pressurization.tip,menu,4.676,-16.84,-1.66,yes,,main,G6-31 (src/gsources.py)
+cohost/designer.restart.tip.g6-1,1,cohost__designer.restart.tip.g6-1.t1.mp3,Chris,designer.restart.tip,menu,5.329,-16.93,-2.0,yes,,main,G6-42 (src/gsources.py)
+cohost/designer.restart.tip.g6-1,2,cohost__designer.restart.tip.g6-1.t2.mp3,Chris,designer.restart.tip,menu,6.034,-16.79,-1.53,yes,,main,G6-42 (src/gsources.py)
+cohost/designer.ullage.tip.g6-1,1,cohost__designer.ullage.tip.g6-1.t1.mp3,Chris,designer.ullage.tip,menu,5.669,-16.52,-1.79,yes,,main,G6-30 (src/gsources.py)
+cohost/designer.ullage.tip.g6-1,2,cohost__designer.ullage.tip.g6-1.t2.mp3,Chris,designer.ullage.tip,menu,5.198,-16.62,-1.72,yes,,main,G6-30 (src/gsources.py)
+host/brief.mission.m10.g6-1#a,1,host__brief.mission.m10.g6-1__a.t1.mp3,Sarah,brief.mission.m10,longform,6.217,-16.43,-3.34,yes,,main,G6-27 (src/gsources.py)
+host/brief.mission.m10.g6-1#a,2,host__brief.mission.m10.g6-1__a.t2.mp3,Sarah,brief.mission.m10,longform,5.878,-16.44,-3.13,yes,,main,G6-27 (src/gsources.py)
+host/brief.mission.m10.g6-1#b,1,host__brief.mission.m10.g6-1__b.t1.mp3,Chris,brief.mission.m10,longform,5.669,-16.87,-1.82,yes,,main,
+host/brief.mission.m10.g6-1#b,2,host__brief.mission.m10.g6-1__b.t2.mp3,Chris,brief.mission.m10,longform,5.512,-16.45,-2.09,yes,,main,
+host/brief.mission.m10.g6-1#c,1,host__brief.mission.m10.g6-1__c.t1.mp3,Sarah,brief.mission.m10,longform,4.833,-16.44,-3.14,yes,,main,
+host/brief.mission.m10.g6-1#c,2,host__brief.mission.m10.g6-1__c.t2.mp3,Sarah,brief.mission.m10,longform,4.78,-16.44,-3.24,yes,,main,
+host/brief.mission.m11.g6-1#a,1,host__brief.mission.m11.g6-1__a.t1.mp3,Sarah,brief.mission.m11,longform,6.687,-16.43,-3.21,yes,,main,G6-29 (src/gsources.py)
+host/brief.mission.m11.g6-1#a,2,host__brief.mission.m11.g6-1__a.t2.mp3,Sarah,brief.mission.m11,longform,6.4,-16.44,-3.27,yes,,main,G6-29 (src/gsources.py)
+host/brief.mission.m11.g6-1#b,1,host__brief.mission.m11.g6-1__b.t1.mp3,Chris,brief.mission.m11,longform,5.042,-16.89,-1.75,yes,,main,
+host/brief.mission.m11.g6-1#b,2,host__brief.mission.m11.g6-1__b.t2.mp3,Chris,brief.mission.m11,longform,5.146,-16.44,-2.07,yes,,main,
+host/brief.mission.m11.g6-1#c,1,host__brief.mission.m11.g6-1__c.t1.mp3,Sarah,brief.mission.m11,longform,6.531,-16.44,-3.19,yes,,main,
+host/brief.mission.m11.g6-1#c,2,host__brief.mission.m11.g6-1__c.t2.mp3,Sarah,brief.mission.m11,longform,5.982,-16.47,-3.21,yes,,main,
+host/brief.mission.m12.g6-1#a,1,host__brief.mission.m12.g6-1__a.t1.mp3,Sarah,brief.mission.m12,longform,5.747,-16.44,-3.27,yes,,main,
+host/brief.mission.m12.g6-1#a,2,host__brief.mission.m12.g6-1__a.t2.mp3,Sarah,brief.mission.m12,longform,6.269,-16.43,-3.16,yes,,main,
+host/brief.mission.m12.g6-1#b,1,host__brief.mission.m12.g6-1__b.t1.mp3,Chris,brief.mission.m12,longform,6.113,-16.45,-1.6,yes,,main,
+host/brief.mission.m12.g6-1#b,2,host__brief.mission.m12.g6-1__b.t2.mp3,Chris,brief.mission.m12,longform,4.728,-16.65,-1.65,yes,,main,
+host/brief.mission.m12.g6-1#c,1,host__brief.mission.m12.g6-1__c.t1.mp3,Sarah,brief.mission.m12,longform,6.034,-16.45,-3.21,yes,,main,
+host/brief.mission.m12.g6-1#c,2,host__brief.mission.m12.g6-1__c.t2.mp3,Sarah,brief.mission.m12,longform,5.93,-16.43,-3.36,yes,,main,
+host/brief.mission.m13.g6-1#a,1,host__brief.mission.m13.g6-1__a.t1.mp3,Sarah,brief.mission.m13,longform,6.713,-16.44,-3.21,yes,,main,G6-29 (src/gsources.py)
+host/brief.mission.m13.g6-1#a,2,host__brief.mission.m13.g6-1__a.t2.mp3,Sarah,brief.mission.m13,longform,6.217,-16.45,-3.34,yes,,main,G6-29 (src/gsources.py)
+host/brief.mission.m13.g6-1#b,1,host__brief.mission.m13.g6-1__b.t1.mp3,Chris,brief.mission.m13,longform,4.415,-16.45,-1.85,yes,,main,
+host/brief.mission.m13.g6-1#b,2,host__brief.mission.m13.g6-1__b.t2.mp3,Chris,brief.mission.m13,longform,4.362,-16.86,-2.21,yes,,main,
+host/brief.mission.m13.g6-1#c,1,host__brief.mission.m13.g6-1__c.t1.mp3,Sarah,brief.mission.m13,longform,5.277,-16.43,-3.24,yes,,main,
+host/brief.mission.m13.g6-1#c,2,host__brief.mission.m13.g6-1__c.t2.mp3,Sarah,brief.mission.m13,longform,5.433,-16.44,-3.15,yes,,main,
+host/brief.mission.m14.g6-1#a,1,host__brief.mission.m14.g6-1__a.t1.mp3,Sarah,brief.mission.m14,longform,5.277,-16.43,-3.3,yes,,main,
+host/brief.mission.m14.g6-1#a,2,host__brief.mission.m14.g6-1__a.t2.mp3,Sarah,brief.mission.m14,longform,4.728,-16.45,-3.26,yes,,main,
+host/brief.mission.m14.g6-1#b,1,host__brief.mission.m14.g6-1__b.t1.mp3,Chris,brief.mission.m14,longform,4.258,-16.44,-2.2,yes,,main,
+host/brief.mission.m14.g6-1#b,2,host__brief.mission.m14.g6-1__b.t2.mp3,Chris,brief.mission.m14,longform,3.944,-16.43,-2.25,yes,,main,
+host/brief.mission.m14.g6-1#c,1,host__brief.mission.m14.g6-1__c.t1.mp3,Sarah,brief.mission.m14,longform,4.728,-16.44,-3.07,yes,,main,
+host/brief.mission.m14.g6-1#c,2,host__brief.mission.m14.g6-1__c.t2.mp3,Sarah,brief.mission.m14,longform,4.963,-16.44,-3.04,yes,,main,
+host/brief.mission.m15.g6-1#a,1,host__brief.mission.m15.g6-1__a.t1.mp3,Sarah,brief.mission.m15,longform,6.165,-16.44,-3.29,yes,,main,G6-28 (src/gsources.py)
+host/brief.mission.m15.g6-1#a,2,host__brief.mission.m15.g6-1__a.t2.mp3,Sarah,brief.mission.m15,longform,6.348,-16.43,-3.06,yes,,main,G6-28 (src/gsources.py)
+host/brief.mission.m15.g6-1#b,1,host__brief.mission.m15.g6-1__b.t1.mp3,Chris,brief.mission.m15,longform,6.635,-16.43,-1.75,yes,,main,
+host/brief.mission.m15.g6-1#b,2,host__brief.mission.m15.g6-1__b.t2.mp3,Chris,brief.mission.m15,longform,7.367,-16.45,-1.87,yes,,main,
+host/brief.mission.m15.g6-1#c,1,host__brief.mission.m15.g6-1__c.t1.mp3,Sarah,brief.mission.m15,longform,4.206,-16.44,-3.32,yes,,main,
+host/brief.mission.m15.g6-1#c,2,host__brief.mission.m15.g6-1__c.t2.mp3,Sarah,brief.mission.m15,longform,4.598,-16.45,-3.24,yes,,main,
+host/brief.mission.m16.g6-1#a,1,host__brief.mission.m16.g6-1__a.t1.mp3,Sarah,brief.mission.m16,longform,5.251,-16.43,-3.21,yes,,main,
+host/brief.mission.m16.g6-1#a,2,host__brief.mission.m16.g6-1__a.t2.mp3,Sarah,brief.mission.m16,longform,5.042,-16.45,-3.23,yes,,main,
+host/brief.mission.m16.g6-1#b,1,host__brief.mission.m16.g6-1__b.t1.mp3,Chris,brief.mission.m16,longform,4.963,-16.45,-2.0,yes,,main,
+host/brief.mission.m16.g6-1#b,2,host__brief.mission.m16.g6-1__b.t2.mp3,Chris,brief.mission.m16,longform,4.624,-16.43,-1.74,yes,,main,
+host/brief.mission.m16.g6-1#c,1,host__brief.mission.m16.g6-1__c.t1.mp3,Sarah,brief.mission.m16,longform,4.963,-16.45,-2.87,yes,,main,
+host/brief.mission.m16.g6-1#c,2,host__brief.mission.m16.g6-1__c.t2.mp3,Sarah,brief.mission.m16,longform,5.251,-16.43,-2.99,yes,,main,
+host/brief.mission.m17.g6-1#a,1,host__brief.mission.m17.g6-1__a.t1.mp3,Sarah,brief.mission.m17,longform,5.982,-16.43,-3.3,yes,,main,
+host/brief.mission.m17.g6-1#a,2,host__brief.mission.m17.g6-1__a.t2.mp3,Sarah,brief.mission.m17,longform,6.034,-16.45,-3.21,yes,,main,
+host/brief.mission.m17.g6-1#b,1,host__brief.mission.m17.g6-1__b.t1.mp3,Chris,brief.mission.m17,longform,6.113,-16.43,-1.87,yes,,main,
+host/brief.mission.m17.g6-1#b,2,host__brief.mission.m17.g6-1__b.t2.mp3,Chris,brief.mission.m17,longform,5.93,-16.43,-2.23,yes,,main,
+host/brief.mission.m17.g6-1#c,1,host__brief.mission.m17.g6-1__c.t1.mp3,Sarah,brief.mission.m17,longform,6.087,-16.44,-3.35,yes,,main,
+host/brief.mission.m17.g6-1#c,2,host__brief.mission.m17.g6-1__c.t2.mp3,Sarah,brief.mission.m17,longform,6.034,-16.44,-3.29,yes,,main,
+host/brief.mission.m18.g6-1#a,1,host__brief.mission.m18.g6-1__a.t1.mp3,Sarah,brief.mission.m18,longform,4.859,-16.45,-2.93,yes,,main,G6-23 (src/gsources.py)
+host/brief.mission.m18.g6-1#a,2,host__brief.mission.m18.g6-1__a.t2.mp3,Sarah,brief.mission.m18,longform,4.362,-16.45,-3.34,yes,,main,G6-23 (src/gsources.py)
+host/brief.mission.m18.g6-1#b,1,host__brief.mission.m18.g6-1__b.t1.mp3,Chris,brief.mission.m18,longform,5.198,-16.44,-2.25,yes,,main,
+host/brief.mission.m18.g6-1#b,2,host__brief.mission.m18.g6-1__b.t2.mp3,Chris,brief.mission.m18,longform,6.766,-16.45,-2.12,yes,,main,
+host/brief.mission.m18.g6-1#c,1,host__brief.mission.m18.g6-1__c.t1.mp3,Sarah,brief.mission.m18,longform,5.329,-16.44,-3.29,yes,,main,
+host/brief.mission.m18.g6-1#c,2,host__brief.mission.m18.g6-1__c.t2.mp3,Sarah,brief.mission.m18,longform,5.616,-16.44,-3.4,yes,,main,
+host/brief.mission.m19.g6-1#a,1,host__brief.mission.m19.g6-1__a.t1.mp3,Sarah,brief.mission.m19,longform,6.583,-16.43,-3.0,yes,,main,G6-27 (src/gsources.py)
+host/brief.mission.m19.g6-1#a,2,host__brief.mission.m19.g6-1__a.t2.mp3,Sarah,brief.mission.m19,longform,6.818,-16.44,-3.31,yes,,main,G6-27 (src/gsources.py)
+host/brief.mission.m19.g6-1#b,1,host__brief.mission.m19.g6-1__b.t1.mp3,Chris,brief.mission.m19,longform,4.545,-16.42,-2.38,yes,,main,
+host/brief.mission.m19.g6-1#b,2,host__brief.mission.m19.g6-1__b.t2.mp3,Chris,brief.mission.m19,longform,4.415,-16.43,-2.0,yes,,main,
+host/brief.mission.m19.g6-1#c,1,host__brief.mission.m19.g6-1__c.t1.mp3,Sarah,brief.mission.m19,longform,5.381,-16.44,-3.05,yes,,main,
+host/brief.mission.m19.g6-1#c,2,host__brief.mission.m19.g6-1__c.t2.mp3,Sarah,brief.mission.m19,longform,5.146,-16.43,-3.18,yes,,main,
+host/brief.mission.m20.g6-1#a,1,host__brief.mission.m20.g6-1__a.t1.mp3,Sarah,brief.mission.m20,longform,5.094,-16.45,-3.27,yes,,main,G6-23 (src/gsources.py)
+host/brief.mission.m20.g6-1#a,2,host__brief.mission.m20.g6-1__a.t2.mp3,Sarah,brief.mission.m20,longform,5.016,-16.43,-3.35,yes,,main,G6-23 (src/gsources.py)
+host/brief.mission.m20.g6-1#b,1,host__brief.mission.m20.g6-1__b.t1.mp3,Chris,brief.mission.m20,longform,5.329,-16.45,-2.39,yes,,main,
+host/brief.mission.m20.g6-1#b,2,host__brief.mission.m20.g6-1__b.t2.mp3,Chris,brief.mission.m20,longform,5.93,-16.43,-1.78,yes,,main,
+host/brief.mission.m20.g6-1#c,1,host__brief.mission.m20.g6-1__c.t1.mp3,Sarah,brief.mission.m20,longform,4.676,-16.46,-3.32,yes,,main,
+host/brief.mission.m20.g6-1#c,2,host__brief.mission.m20.g6-1__c.t2.mp3,Sarah,brief.mission.m20,longform,5.094,-16.45,-3.33,yes,,main,
+host/brief.mission.m3.g6-1#a,1,host__brief.mission.m3.g6-1__a.t1.mp3,Sarah,brief.mission.m3,longform,5.616,-16.44,-3.35,yes,,main,G6-24 (src/gsources.py)
+host/brief.mission.m3.g6-1#a,2,host__brief.mission.m3.g6-1__a.t2.mp3,Sarah,brief.mission.m3,longform,5.46,-16.43,-3.28,yes,,main,G6-24 (src/gsources.py)
+host/brief.mission.m3.g6-1#b,1,host__brief.mission.m3.g6-1__b.t1.mp3,Chris,brief.mission.m3,longform,4.415,-16.93,-1.5,yes,,main,
+host/brief.mission.m3.g6-1#b,2,host__brief.mission.m3.g6-1__b.t2.mp3,Chris,brief.mission.m3,longform,4.18,-16.92,-1.88,yes,,main,
+host/brief.mission.m3.g6-1#c,1,host__brief.mission.m3.g6-1__c.t1.mp3,Sarah,brief.mission.m3,longform,4.676,-16.42,-3.26,yes,,main,
+host/brief.mission.m3.g6-1#c,2,host__brief.mission.m3.g6-1__c.t2.mp3,Sarah,brief.mission.m3,longform,4.833,-16.45,-3.46,yes,,main,
+host/brief.mission.m4.g6-1#a,1,host__brief.mission.m4.g6-1__a.t1.mp3,Sarah,brief.mission.m4,longform,4.833,-16.44,-3.44,yes,,main,G6-65 (src/gsources.py)
+host/brief.mission.m4.g6-1#a,2,host__brief.mission.m4.g6-1__a.t2.mp3,Sarah,brief.mission.m4,longform,5.433,-16.44,-3.04,yes,,main,G6-65 (src/gsources.py)
+host/brief.mission.m4.g6-1#b,1,host__brief.mission.m4.g6-1__b.t1.mp3,Chris,brief.mission.m4,longform,4.963,-16.85,-1.69,yes,,main,
+host/brief.mission.m4.g6-1#b,2,host__brief.mission.m4.g6-1__b.t2.mp3,Chris,brief.mission.m4,longform,5.329,-16.66,-1.66,yes,,main,
+host/brief.mission.m4.g6-1#c,1,host__brief.mission.m4.g6-1__c.t1.mp3,Sarah,brief.mission.m4,longform,5.094,-16.43,-3.13,yes,,main,
+host/brief.mission.m4.g6-1#c,2,host__brief.mission.m4.g6-1__c.t2.mp3,Sarah,brief.mission.m4,longform,5.146,-16.46,-3.27,yes,,main,
+host/brief.mission.m5.g6-1#a,1,host__brief.mission.m5.g6-1__a.t1.mp3,Sarah,brief.mission.m5,longform,5.695,-16.45,-3.12,yes,,main,G6-26 (src/gsources.py)
+host/brief.mission.m5.g6-1#a,2,host__brief.mission.m5.g6-1__a.t2.mp3,Sarah,brief.mission.m5,longform,6.269,-16.44,-3.14,yes,,main,G6-26 (src/gsources.py)
+host/brief.mission.m5.g6-1#b,1,host__brief.mission.m5.g6-1__b.t1.mp3,Chris,brief.mission.m5,longform,5.851,-16.52,-1.77,yes,,main,
+host/brief.mission.m5.g6-1#b,2,host__brief.mission.m5.g6-1__b.t2.mp3,Chris,brief.mission.m5,longform,5.878,-16.54,-1.82,yes,,main,
+host/brief.mission.m5.g6-1#c,1,host__brief.mission.m5.g6-1__c.t1.mp3,Sarah,brief.mission.m5,longform,5.042,-16.44,-3.34,yes,,main,
+host/brief.mission.m5.g6-1#c,2,host__brief.mission.m5.g6-1__c.t2.mp3,Sarah,brief.mission.m5,longform,5.016,-16.45,-3.13,yes,,main,
+host/brief.mission.m6.g6-1#a,1,host__brief.mission.m6.g6-1__a.t1.mp3,Sarah,brief.mission.m6,longform,5.198,-16.44,-3.25,yes,,main,G6-27 (src/gsources.py)
+host/brief.mission.m6.g6-1#a,2,host__brief.mission.m6.g6-1__a.t2.mp3,Sarah,brief.mission.m6,longform,5.251,-16.44,-3.35,yes,,main,G6-27 (src/gsources.py)
+host/brief.mission.m6.g6-1#b,1,host__brief.mission.m6.g6-1__b.t1.mp3,Chris,brief.mission.m6,longform,5.094,-16.69,-1.72,yes,,main,
+host/brief.mission.m6.g6-1#b,2,host__brief.mission.m6.g6-1__b.t2.mp3,Chris,brief.mission.m6,longform,5.094,-16.58,-1.81,yes,,main,
+host/brief.mission.m6.g6-1#c,1,host__brief.mission.m6.g6-1__c.t1.mp3,Sarah,brief.mission.m6,longform,5.669,-16.44,-3.44,yes,,main,
+host/brief.mission.m6.g6-1#c,2,host__brief.mission.m6.g6-1__c.t2.mp3,Sarah,brief.mission.m6,longform,5.851,-16.45,-3.35,yes,,main,
+host/brief.mission.m7.g6-1#a,1,host__brief.mission.m7.g6-1__a.t1.mp3,Sarah,brief.mission.m7,longform,6.034,-16.42,-3.21,yes,,main,G6-28 (src/gsources.py)
+host/brief.mission.m7.g6-1#a,2,host__brief.mission.m7.g6-1__a.t2.mp3,Sarah,brief.mission.m7,longform,6.113,-16.45,-3.23,yes,,main,G6-28 (src/gsources.py)
+host/brief.mission.m7.g6-1#b,1,host__brief.mission.m7.g6-1__b.t1.mp3,Chris,brief.mission.m7,longform,5.616,-16.59,-1.74,yes,,main,
+host/brief.mission.m7.g6-1#b,2,host__brief.mission.m7.g6-1__b.t2.mp3,Chris,brief.mission.m7,longform,5.799,-16.84,-1.78,yes,,main,
+host/brief.mission.m7.g6-1#c,1,host__brief.mission.m7.g6-1__c.t1.mp3,Sarah,brief.mission.m7,longform,5.669,-16.43,-3.38,yes,,main,
+host/brief.mission.m7.g6-1#c,2,host__brief.mission.m7.g6-1__c.t2.mp3,Sarah,brief.mission.m7,longform,5.982,-16.44,-2.93,yes,,main,
+host/brief.mission.m8.g6-1#a,1,host__brief.mission.m8.g6-1__a.t1.mp3,Sarah,brief.mission.m8,longform,5.669,-16.44,-3.26,yes,,main,
+host/brief.mission.m8.g6-1#a,2,host__brief.mission.m8.g6-1__a.t2.mp3,Sarah,brief.mission.m8,longform,5.799,-16.44,-3.34,yes,,main,
+host/brief.mission.m8.g6-1#b,1,host__brief.mission.m8.g6-1__b.t1.mp3,Chris,brief.mission.m8,longform,5.512,-16.86,-2.06,yes,,main,
+host/brief.mission.m8.g6-1#b,2,host__brief.mission.m8.g6-1__b.t2.mp3,Chris,brief.mission.m8,longform,5.016,-16.86,-2.08,yes,,main,
+host/brief.mission.m8.g6-1#c,1,host__brief.mission.m8.g6-1__c.t1.mp3,Sarah,brief.mission.m8,longform,4.911,-16.44,-3.37,yes,,main,
+host/brief.mission.m8.g6-1#c,2,host__brief.mission.m8.g6-1__c.t2.mp3,Sarah,brief.mission.m8,longform,4.598,-16.45,-3.39,yes,,main,
+host/brief.mission.m9.g6-1#a,1,host__brief.mission.m9.g6-1__a.t1.mp3,Sarah,brief.mission.m9,longform,5.146,-16.45,-3.17,yes,,main,
+host/brief.mission.m9.g6-1#a,2,host__brief.mission.m9.g6-1__a.t2.mp3,Sarah,brief.mission.m9,longform,5.46,-16.42,-3.17,yes,,main,
+host/brief.mission.m9.g6-1#b,1,host__brief.mission.m9.g6-1__b.t1.mp3,Chris,brief.mission.m9,longform,5.094,-16.44,-2.08,yes,,main,
+host/brief.mission.m9.g6-1#b,2,host__brief.mission.m9.g6-1__b.t2.mp3,Chris,brief.mission.m9,longform,5.747,-16.97,-1.84,yes,,main,
+host/brief.mission.m9.g6-1#c,1,host__brief.mission.m9.g6-1__c.t1.mp3,Sarah,brief.mission.m9,longform,6.296,-16.42,-3.29,yes,,main,
+host/brief.mission.m9.g6-1#c,2,host__brief.mission.m9.g6-1__c.t2.mp3,Sarah,brief.mission.m9,longform,5.93,-16.45,-3.24,yes,,main,
+host/designer.boiloff.g6-1#a,1,host__designer.boiloff.g6-1__a.t1.mp3,Sarah,designer.boiloff,longform,6.583,-16.45,-3.21,yes,,main,G6-32 (src/gsources.py)
+host/designer.boiloff.g6-1#a,2,host__designer.boiloff.g6-1__a.t2.mp3,Sarah,designer.boiloff,longform,6.583,-16.34,-3.22,yes,,main,G6-32 (src/gsources.py)
+host/designer.boiloff.g6-1#b,1,host__designer.boiloff.g6-1__b.t1.mp3,Chris,designer.boiloff,longform,6.087,-16.83,-1.71,yes,,main,
+host/designer.boiloff.g6-1#b,2,host__designer.boiloff.g6-1__b.t2.mp3,Chris,designer.boiloff,longform,6.165,-16.8,-1.71,yes,,main,
+host/designer.boiloff.g6-1#c,1,host__designer.boiloff.g6-1__c.t1.mp3,Sarah,designer.boiloff,longform,5.669,-16.44,-3.12,yes,,main,
+host/designer.boiloff.g6-1#c,2,host__designer.boiloff.g6-1__c.t2.mp3,Sarah,designer.boiloff,longform,5.094,-16.43,-3.2,yes,,main,
+host/designer.guidance.g6-1#a,1,host__designer.guidance.g6-1__a.t1.mp3,Sarah,designer.guidance,longform,7.001,-16.44,-3.11,yes,,main,G6-43 (src/gsources.py)
+host/designer.guidance.g6-1#a,2,host__designer.guidance.g6-1__a.t2.mp3,Sarah,designer.guidance,longform,7.602,-16.45,-3.33,yes,,main,G6-43 (src/gsources.py)
+host/designer.guidance.g6-1#b,1,host__designer.guidance.g6-1__b.t1.mp3,Chris,designer.guidance,longform,6.4,-16.44,-2.22,yes,,main,
+host/designer.guidance.g6-1#b,2,host__designer.guidance.g6-1__b.t2.mp3,Chris,designer.guidance,longform,5.982,-16.43,-1.89,yes,,main,
+host/designer.guidance.g6-1#c,1,host__designer.guidance.g6-1__c.t1.mp3,Sarah,designer.guidance,longform,6.034,-16.45,-3.29,yes,,main,
+host/designer.guidance.g6-1#c,2,host__designer.guidance.g6-1__c.t2.mp3,Sarah,designer.guidance,longform,5.851,-16.44,-3.1,yes,,main,
+host/designer.interstage.g6-1#a,1,host__designer.interstage.g6-1__a.t1.mp3,Sarah,designer.interstage,longform,6.296,-16.44,-3.33,yes,,main,G6-39 (src/gsources.py)
+host/designer.interstage.g6-1#a,2,host__designer.interstage.g6-1__a.t2.mp3,Sarah,designer.interstage,longform,6.217,-16.44,-3.34,yes,,main,G6-39 (src/gsources.py)
+host/designer.interstage.g6-1#b,1,host__designer.interstage.g6-1__b.t1.mp3,Chris,designer.interstage,longform,5.695,-16.88,-1.73,yes,,main,
+host/designer.interstage.g6-1#b,2,host__designer.interstage.g6-1__b.t2.mp3,Chris,designer.interstage,longform,5.146,-16.67,-1.57,yes,,main,
+host/designer.interstage.g6-1#c,1,host__designer.interstage.g6-1__c.t1.mp3,Sarah,designer.interstage,longform,4.206,-16.44,-3.24,yes,,main,
+host/designer.interstage.g6-1#c,2,host__designer.interstage.g6-1__c.t2.mp3,Sarah,designer.interstage,longform,4.493,-16.43,-3.1,yes,,main,
+host/designer.pressurization.g6-1#a,1,host__designer.pressurization.g6-1__a.t1.mp3,Sarah,designer.pressurization,longform,6.087,-16.44,-3.43,yes,,main,G6-31 (src/gsources.py)
+host/designer.pressurization.g6-1#a,2,host__designer.pressurization.g6-1__a.t2.mp3,Sarah,designer.pressurization,longform,5.878,-16.44,-3.36,yes,,main,G6-31 (src/gsources.py)
+host/designer.pressurization.g6-1#b,1,host__designer.pressurization.g6-1__b.t1.mp3,Chris,designer.pressurization,longform,6.034,-16.46,-1.78,yes,,main,
+host/designer.pressurization.g6-1#b,2,host__designer.pressurization.g6-1__b.t2.mp3,Chris,designer.pressurization,longform,5.564,-16.43,-1.98,yes,,main,
+host/designer.pressurization.g6-1#c,1,host__designer.pressurization.g6-1__c.t1.mp3,Sarah,designer.pressurization,longform,6.687,-16.44,-3.16,yes,,main,
+host/designer.pressurization.g6-1#c,2,host__designer.pressurization.g6-1__c.t2.mp3,Sarah,designer.pressurization,longform,6.713,-16.49,-2.99,yes,,main,
+host/designer.restart.g6-1#a,1,host__designer.restart.g6-1__a.t1.mp3,Sarah,designer.restart,longform,6.949,-16.43,-3.03,yes,,main,G6-42 (src/gsources.py)
+host/designer.restart.g6-1#a,2,host__designer.restart.g6-1__a.t2.mp3,Sarah,designer.restart,longform,7.131,-16.44,-2.73,yes,,main,G6-42 (src/gsources.py)
+host/designer.restart.g6-1#b,1,host__designer.restart.g6-1__b.t1.mp3,Chris,designer.restart,longform,5.93,-16.97,-1.84,yes,,main,
+host/designer.restart.g6-1#b,2,host__designer.restart.g6-1__b.t2.mp3,Chris,designer.restart,longform,5.851,-16.86,-1.89,yes,,main,
+host/designer.restart.g6-1#c,1,host__designer.restart.g6-1__c.t1.mp3,Sarah,designer.restart,longform,4.023,-16.45,-3.48,yes,,main,
+host/designer.restart.g6-1#c,2,host__designer.restart.g6-1__c.t2.mp3,Sarah,designer.restart,longform,4.31,-16.44,-3.37,yes,,main,
+host/designer.ullage.g6-1#a,1,host__designer.ullage.g6-1__a.t1.mp3,Sarah,designer.ullage,longform,6.949,-16.43,-3.16,yes,,main,G6-30 (src/gsources.py)
+host/designer.ullage.g6-1#a,2,host__designer.ullage.g6-1__a.t2.mp3,Sarah,designer.ullage,longform,6.713,-16.45,-3.1,yes,,main,G6-30 (src/gsources.py)
+host/designer.ullage.g6-1#b,1,host__designer.ullage.g6-1__b.t1.mp3,Chris,designer.ullage,longform,5.042,-16.44,-1.8,yes,,main,
+host/designer.ullage.g6-1#b,2,host__designer.ullage.g6-1__b.t2.mp3,Chris,designer.ullage,longform,5.016,-16.44,-1.72,yes,,main,
+host/designer.ullage.g6-1#c,1,host__designer.ullage.g6-1__c.t1.mp3,Sarah,designer.ullage,longform,5.695,-16.44,-3.18,yes,,main,
+host/designer.ullage.g6-1#c,2,host__designer.ullage.g6-1__c.t2.mp3,Sarah,designer.ullage,longform,5.512,-16.44,-3.24,yes,,main,
