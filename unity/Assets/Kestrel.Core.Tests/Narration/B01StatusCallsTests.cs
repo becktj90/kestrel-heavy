@@ -30,13 +30,13 @@ namespace Kestrel.Core.Tests.Narration
         {
             var s = new StatusCalls();
             s.OnVerdict(OnTrack, 1000, true, true, 1);
-            CollectionAssert.IsEmpty(Ids(s), "never before Climbing");
+            Assert.AreEqual(0, Ids(s).Count(), "never before Climbing");
             s.OnVerdict(Climbing, 1000, true, true, 2);
             s.OnVerdict(OnTrack, 1000, true, true, 3);
             CollectionAssert.AreEqual(new[] { StatusCalls.OnTrack }, Ids(s));
             s.OnVerdict(Climbing, 1000, true, true, 4);
             s.OnVerdict(OnTrack, 1000, true, true, 5);
-            CollectionAssert.IsEmpty(Ids(s), "once per flight");
+            Assert.AreEqual(0, Ids(s).Count(), "once per flight");
         }
 
         [Test]
@@ -47,7 +47,7 @@ namespace Kestrel.Core.Tests.Narration
                 var s = new StatusCalls();
                 s.OnVerdict(Climbing, 1000, true, spare, 1);
                 s.OnVerdict(OnTrack, 1000, true, spare, 2);
-                CollectionAssert.IsEmpty(Ids(s), "spare " + spare);
+                Assert.AreEqual(0, Ids(s).Count(), "spare " + spare);
             }
         }
 
@@ -57,15 +57,15 @@ namespace Kestrel.Core.Tests.Narration
             var s = new StatusCalls();
             s.OnVerdict(Climbing, 0, true, true, 1);
             s.OnVerdict(Short, 0, true, null, 2);
-            CollectionAssert.IsEmpty(Ids(s), "unknown spare: silent");
+            Assert.AreEqual(0, Ids(s).Count(), "unknown spare: silent");
             s.OnVerdict(OnTrack, 0, true, true, 3);
             CollectionAssert.AreEqual(new[] { StatusCalls.OnTrack }, Ids(s));
             s.OnVerdict(Short, 0, true, false, 4);
             CollectionAssert.AreEqual(new[] { StatusCalls.Short }, Ids(s));
             s.OnVerdict(OnTrack, 0, true, false, 5);
-            CollectionAssert.IsEmpty(Ids(s), "no clear while the spare is still negative");
+            Assert.AreEqual(0, Ids(s).Count(), "no clear while the spare is still negative");
             s.OnVerdict(Short, 0, true, false, 6);
-            CollectionAssert.IsEmpty(Ids(s), "no second short without a clear");
+            Assert.AreEqual(0, Ids(s).Count(), "no second short without a clear");
             s.OnVerdict(OnTrack, 0, true, true, 7);
             CollectionAssert.AreEqual(new[] { StatusCalls.ShortClear }, Ids(s));
             s.OnVerdict(Short, 0, true, false, 8);
@@ -77,13 +77,13 @@ namespace Kestrel.Core.Tests.Narration
         {
             var s = new StatusCalls();
             s.OnVerdict(Speed, 0, false, true, 1);
-            CollectionAssert.IsEmpty(Ids(s), "after cutoff the takes' 'stand by for cutoff' is false");
+            Assert.AreEqual(0, Ids(s).Count(), "after cutoff the takes' 'stand by for cutoff' is false");
             s.OnVerdict(OnTrack, 0, true, true, 2);
             s.OnVerdict(Speed, 0, true, true, 3);
             CollectionAssert.AreEqual(new[] { StatusCalls.Speed }, Ids(s));
             s.OnVerdict(OnTrack, 0, true, true, 4);
             s.OnVerdict(Speed, 0, true, true, 5);
-            CollectionAssert.IsEmpty(Ids(s));
+            Assert.AreEqual(0, Ids(s).Count());
         }
 
         [Test]
@@ -92,18 +92,18 @@ namespace Kestrel.Core.Tests.Narration
             var s = new StatusCalls();
             s.OnVerdict(Climbing, 20000, true, true, 1);
             s.OnVerdict(Heating, 19000, true, true, 2);
-            CollectionAssert.IsEmpty(Ids(s), "q falling: past the peak, 'coming up on max-Q' would be false");
+            Assert.AreEqual(0, Ids(s).Count(), "q falling: past the peak, 'coming up on max-Q' would be false");
             s.OnVerdict(Heating, 18000, true, true, 3);
-            CollectionAssert.IsEmpty(Ids(s));
+            Assert.AreEqual(0, Ids(s).Count());
 
             var r = new StatusCalls();
             r.OnVerdict(Heating, 20000, true, true, 1);
-            CollectionAssert.IsEmpty(Ids(r), "no earlier q sample: cannot tell rising, silent");
+            Assert.AreEqual(0, Ids(r).Count(), "no earlier q sample: cannot tell rising, silent");
             r.OnVerdict(Heating, 21000, true, true, 2);
             CollectionAssert.AreEqual(new[] { StatusCalls.Heating }, Ids(r));
             r.OnVerdict(Climbing, 22000, true, true, 3);
             r.OnVerdict(Heating, 23000, true, true, 4);
-            CollectionAssert.IsEmpty(Ids(r), "once per flight");
+            Assert.AreEqual(0, Ids(r).Count(), "once per flight");
         }
 
         [Test]
@@ -113,7 +113,7 @@ namespace Kestrel.Core.Tests.Narration
             s.OnVerdict(Climbing, 20000, true, true, 10);
             s.OnSimEvent(AscentDirector.MaxQThrottleEvent, 0, 10);
             s.OnVerdict(Heating, 21000, true, true, 14.9);
-            CollectionAssert.IsEmpty(Ids(s));
+            Assert.AreEqual(0, Ids(s).Count());
             s.OnVerdict(Heating, 22000, true, true, 15.1);
             CollectionAssert.AreEqual(new[] { StatusCalls.Heating }, Ids(s));
         }
@@ -126,7 +126,7 @@ namespace Kestrel.Core.Tests.Narration
             s.OnSimEvent("failure", 0, 2);
             s.OnVerdict(OnTrack, 0, true, true, 3);
             s.OnVerdict(Speed, 0, true, true, 4);
-            CollectionAssert.IsEmpty(Ids(s));
+            Assert.AreEqual(0, Ids(s).Count());
         }
 
         // ---- engine-out.ok ----
@@ -139,11 +139,11 @@ namespace Kestrel.Core.Tests.Narration
             s.OnSimEvent(StatusCalls.EngineOut, 1, 40);
             s.OnFlight(41, 9500);
             s.OnFlight(42.9, 9900);
-            CollectionAssert.IsEmpty(Ids(s));
+            Assert.AreEqual(0, Ids(s).Count());
             s.OnFlight(43.0, 10000);
             CollectionAssert.AreEqual(new[] { StatusCalls.EngineOutOk + ".1" }, Ids(s));
             s.OnFlight(44, 10200);
-            CollectionAssert.IsEmpty(Ids(s), "once");
+            Assert.AreEqual(0, Ids(s).Count(), "once");
         }
 
         [Test]
@@ -153,25 +153,25 @@ namespace Kestrel.Core.Tests.Narration
             falling.OnSimEvent(StatusCalls.EngineOut, 1, 40);
             falling.OnFlight(42.5, 9000);
             falling.OnFlight(43.1, 8900);
-            CollectionAssert.IsEmpty(Ids(falling), "not climbing");
+            Assert.AreEqual(0, Ids(falling).Count(), "not climbing");
 
             var lost = new StatusCalls();
             lost.OnSimEvent(StatusCalls.EngineOut, 1, 40);
             lost.OnFlight(42.5, 9000);
             lost.OnSimEvent("failure", 1, 42.8);
             lost.OnFlight(43.1, 9100);
-            CollectionAssert.IsEmpty(Ids(lost), "vehicle lost");
+            Assert.AreEqual(0, Ids(lost).Count(), "vehicle lost");
 
             var late = new StatusCalls();
             late.OnSimEvent(StatusCalls.EngineOut, 1, 40);
             late.OnFlight(40.5, 9000);
             late.OnFlight(48, 12000);
-            CollectionAssert.IsEmpty(Ids(late), "a warp step far past the moment is too late to say it");
+            Assert.AreEqual(0, Ids(late).Count(), "a warp step far past the moment is too late to say it");
 
             var none = new StatusCalls();
             none.OnFlight(42.5, 9000);
             none.OnFlight(43.1, 9100);
-            CollectionAssert.IsEmpty(Ids(none), "no engine-out, no call");
+            Assert.AreEqual(0, Ids(none).Count(), "no engine-out, no call");
         }
 
         // ---- booster landing callouts ----
@@ -198,7 +198,7 @@ namespace Kestrel.Core.Tests.Narration
             var coast = new StatusCalls();
             coast.OnBooster(true, false, 1100, 0, 1);
             coast.OnBooster(true, false, 900, 0, 1.1);
-            CollectionAssert.IsEmpty(Ids(coast), "not the landing burn");
+            Assert.AreEqual(0, Ids(coast).Count(), "not the landing burn");
             coast.OnBooster(true, true, 600, 0, 1.2);
             coast.OnBooster(true, true, 499, 0, 1.3);
             CollectionAssert.AreEqual(new[] { "landing.alt.500" }, Ids(coast), "1k passed before the burn is not news");
@@ -206,16 +206,16 @@ namespace Kestrel.Core.Tests.Narration
             var lost = new StatusCalls();
             lost.OnBooster(false, true, 1100, 0, 1);
             lost.OnBooster(false, true, 900, 0, 1.1);
-            CollectionAssert.IsEmpty(Ids(lost), "no planned landing");
+            Assert.AreEqual(0, Ids(lost).Count(), "no planned landing");
 
             var jump = new StatusCalls();
             jump.OnBooster(true, true, 1100, 0, 1);
             jump.OnBooster(true, true, 50, 0, 1.2);
-            CollectionAssert.IsEmpty(Ids(jump), "one step over two marks says neither");
+            Assert.AreEqual(0, Ids(jump).Count(), "one step over two marks says neither");
             var settle = new StatusCalls();
             settle.OnBooster(true, true, 1100, 0, 1);
             settle.OnBooster(true, true, 990, 0, 9);
-            CollectionAssert.IsEmpty(Ids(settle), "a long step is a skip, not a live callout");
+            Assert.AreEqual(0, Ids(settle).Count(), "a long step is a skip, not a live callout");
             settle.OnBooster(true, true, 400, 0, 9.1);
             CollectionAssert.AreEqual(new[] { "landing.alt.500" }, Ids(settle), "the next live step calls the one mark it passes; 1k is gone");
         }
@@ -226,17 +226,17 @@ namespace Kestrel.Core.Tests.Narration
             var s = new StatusCalls();
             s.OnBooster(true, true, 200, 0.0, 1);
             s.OnBooster(true, true, 190, 0.5, 1.1);
-            CollectionAssert.IsEmpty(Ids(s));
+            Assert.AreEqual(0, Ids(s).Count());
             s.OnBooster(true, true, 180, 1.0, 1.2);
             CollectionAssert.AreEqual(new[] { StatusCalls.LandingLegs }, Ids(s));
             s.OnBooster(true, true, 170, 0.5, 1.3);
             s.OnBooster(true, true, 160, 1.0, 1.4);
-            CollectionAssert.IsEmpty(Ids(s));
+            Assert.AreEqual(0, Ids(s).Count());
 
             var none = new StatusCalls();
             none.OnBooster(false, true, 200, 0.5, 1);
             none.OnBooster(false, true, 190, 1.0, 1.1);
-            CollectionAssert.IsEmpty(Ids(none), "no planned landing");
+            Assert.AreEqual(0, Ids(none).Count(), "no planned landing");
         }
 
         // ---- routes: sep-clear and engine-out ----
@@ -276,7 +276,7 @@ namespace Kestrel.Core.Tests.Narration
             t.CountTick(-15, null, 1, true);
             CollectionAssert.AreEqual(new[] { CallTriggers.HoldStart }, Drain(t, 1));
             t.CountTick(-15, null, 2, true);
-            CollectionAssert.IsEmpty(Drain(t, 2), "the same hold");
+            Assert.AreEqual(0, Drain(t, 2).Count(), "the same hold");
             t.CountTick(-15, null, 3, false);
             t.CountTick(-14, null, 4, true);
             Assert.IsTrue(t.DueIds.Contains(CallTriggers.HoldStart), "a new hold");
@@ -292,15 +292,15 @@ namespace Kestrel.Core.Tests.Narration
         {
             var t = new CallTriggers(CallSchedule.Empty, 2, false);
             t.Raise(StatusCalls.OnTrack, 0, 0, false);
-            CollectionAssert.IsEmpty(t.DueIds, "before liftoff");
+            Assert.AreEqual(0, t.DueIds.Count(), "before liftoff");
             t.Liftoff();
             t.Raise("landing.alt.500", 0, 1, true);
             Assert.IsFalse(t.Next(1, true, false, out _));
-            CollectionAssert.IsEmpty(t.DueIds, "dropped while a line plays");
+            Assert.AreEqual(0, t.DueIds.Count(), "dropped while a line plays");
             t.Raise(StatusCalls.OnTrack, 0, 2, false);
             Assert.IsFalse(t.Next(2, true, true, out _));
             CollectionAssert.AreEqual(new[] { StatusCalls.OnTrack }, t.DueIds.ToArray(), "a normal call waits");
-            CollectionAssert.IsEmpty(Drain(t, 7), "and still expires after FreshSec");
+            Assert.AreEqual(0, Drain(t, 7).Count(), "and still expires after FreshSec");
         }
 
         static List<string> Drain(CallTriggers t, double now)
