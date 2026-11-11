@@ -3,25 +3,25 @@
 Shipping engine: **Unity** (iOS, **portrait only**). The Phaser build in `web/` is the beckify.com demo and is not release-gating.
 Owner of this file: Kestrel Arcade (merge queue) with QA. Merges to `main` and every App Store Connect, signing, privacy or spend action: **Trevor's yes**.
 
-_Snapshot: **2026-11-09** (America/New_York), `main` at `bbda86aa` (#475). Export/TF: **215 / 51** from `b2bd87b31b8a`. Last prior snapshot: 2026-10-28 `39cb8490` (#367)._
+_Snapshot: **2026-11-10** (America/New_York), `main` at `b7d7f89f` (#490). Export: **223** / Xcode Cloud **#58 SUCCEEDED** from `5f6059a591d3` (`xcode-export` `80cd819a`). TestFlight not claimed in this snapshot. Last prior snapshot: 2026-11-09 (score 48/62, G-2)._
 
 ## Score
 
 | Bucket | Count | Notes |
 |---|---|---|
-| **Verified (CI / config)** | **48** | Green required checks on the PR that merged the claim, and/or committed config pins |
-| **Unverified (no CI/device proof)** | **10** | Includes "looks right in code" and audio-on-phone |
+| **Verified (CI / config)** | **49** | Green required checks on the PR that merged the claim, and/or committed config pins / export inspect |
+| **Unverified (no CI/device proof)** | **9** | Includes "looks right in code" and audio-on-phone |
 | **Gap / release decision** | **6** | Store claim false, or needs Trevor |
 | **Device-verified** | **0** | Nothing on a real iPhone/iPad has been signed off in-repo |
 
-**Overall: 48 / 62 checklist rows are verified (CI/config)** (includes #475 Ready/countdown, G-4 submitAnalytics, G-6 PrivacyInfo, N10 CONTINUE, G-2 GC offline).  
+**Overall: 49 / 62 checklist rows are verified (CI/config)** (includes #475 Ready/countdown, G-4 submitAnalytics, G-6 PrivacyInfo, N10 CONTINUE, G-2 GC offline, G-5 export 223 inspect).  
 **Device: 0 / 13 script steps passed in-repo** (see [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md)).
 
 Honesty rules:
 
 1. **Nothing here is device-verified** unless Trevor (or a named tester) records a Pass in [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md). CI captures use llvmpipe (no GPU).
 2. Unity CI runs on pull requests, not on pushes to `main`. "Verified (CI)" means green on the merging PR, plus Core/Node on `main` where those run.
-3. Xcode export **`export/2.0.0-215`** from `main` `b2bd87b31b8a` (#468) = TestFlight / Xcode Cloud **build 51**. After that tip, **#475** merged (KH-1 Ready and countdown share one spare verdict) → current `main` is `bbda86aa`. TF 51 does not yet include #475; re-export when convenient. Prior: 214 / TF 50 from `2f85c027`.
+3. Xcode export **223** (`xcode-export` `80cd819a`) from `main` `5f6059a591d3` (#489) = Xcode Cloud **#58 SUCCEEDED**. Current `main` `b7d7f89f` is the #490 docs-only QA writeup on top of that tip. TestFlight is **not** claimed in this snapshot. Prior: 222 / Cloud #57 from `c35d68cc`; 215 / TF 51 from `b2bd87b31b8a`.
 
 ## How to read this
 
@@ -146,7 +146,7 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 | S-1 | Field lengths within Apple limits | verified | QA | `tools/asc/check_limits.mjs`, `asc-limits` Node test |
 | S-2 | Description matches Unity build | verified (docs) | Arcade | [`appstore/LISTING.md`](appstore/LISTING.md) refreshed 2026-11-09; still a **draft** until Trevor pastes into ASC |
 | S-3 | Screenshots at store sizes | gap | Graphics + QA | CI path exists (#381 / `appstore-screenshots` workflow) but **final set not selected / uploaded**. Plan: [`appstore/SCREENSHOTS.md`](appstore/SCREENSHOTS.md) |
-| S-4 | Version / build | verified (export tag) | Arcade | Marketing 2.0.0; export **215** / TestFlight **51** from `b2bd87b31b8a`. Main tip `bbda86aa` includes #475 (not in TF 51 yet) |
+| S-4 | Version / build | verified (export tag) | Arcade | Marketing 2.0.0; export **223** / Xcode Cloud **#58 SUCCEEDED** from `5f6059a591d3` (`80cd819a`). Main tip `b7d7f89f` is #490 docs-only on top. TestFlight not claimed here. |
 | S-5 | Age rating 4+ / not Kids | unverified | Trevor | Draft in AGE_RATING + [`appstore/TREVOR_OPEN_ITEMS.md`](appstore/TREVOR_OPEN_ITEMS.md) T7 |
 | S-6 | TestFlight what-to-test text | verified (text) | QA | APPSTORE_CONNECT §11; update per build |
 | S-7 | ASC [TO CONFIRM] block | unverified | Trevor | Privacy URL, Marketing URL, DSA, SKU, agreements — T1–T10 |
@@ -159,9 +159,9 @@ Canonical drafts: [`docs/appstore/`](appstore/).
 | G-2 | GC failures harmless offline | verified (CI) | Arcade | [#484](https://github.com/becktj90/kestrel-heavy/pull/484); `GameCenterBridge.TryAuthenticate` / `TrySubmitScore` never throw; `GameCenterOfflineTests` |
 | G-3 | Unity Analytics / Ads / Purchasing / Cloud Diagnostics off | verified (config) | Arcade | `UnityConnectSettings.asset` all `m_Enabled: 0` |
 | G-4 | `submitAnalytics` | verified (config) via #479 | Arcade | **0** on the #479 branch / main after merge; see network evidence |
-| G-5 | Privacy label proof on built player | unverified | QA + Trevor | Framework inspect + proxy capture not run |
+| G-5 | Privacy label proof on built player | verified (export inspect) | QA + Trevor | export **223** `80cd819a` / Cloud #58: [`audits/EXPORT_223_PRIVACY_INSPECT.md`](audits/EXPORT_223_PRIVACY_INSPECT.md); `verify-privacy-export.sh` OK. **Proxy/device capture not claimed.** ASC **Data Not Collected** still needs T1 + Trevor. |
 | G-6 | Unity `PrivacyInfo.xcprivacy`: NSPrivacyTracking false, empty collected/tracking-domain arrays; required-reason APIs kept | verified (CI) | Arcade | `IosXcodePostprocess.EnsurePrivacyManifests`; `IosPrivacyManifestTests` |
-| G-7 | Export compliance `ITSAppUsesNonExemptEncryption = NO` (Game Center capability **not** added for 1.0; #478) | verified (code) | Arcade | `IosXcodePostprocess.cs`; exported plist unverified on next xcode-export |
+| G-7 | Export compliance `ITSAppUsesNonExemptEncryption = NO` (Game Center capability **not** added for 1.0; #478) | verified (code + export) | Arcade | `IosXcodePostprocess.cs` + `IosExportComplianceTests`; confirmed `false` on export **223** `Info.plist` ([`audits/EXPORT_223_PRIVACY_INSPECT.md`](audits/EXPORT_223_PRIVACY_INSPECT.md)) |
 | G-8 | No unexpected network at runtime | unverified (Unity) | QA | Device airplane-mode step |
 | G-9 | Privacy policy page lists Unity Kestrel Heavy | unverified | Trevor | T1 |
 
@@ -190,7 +190,7 @@ Highest first:
 1. **G-1 Game Center** — **removed for 1.0** (Trevor 9:58 AM ET; [#478](https://github.com/becktj90/kestrel-heavy/pull/478)). Listing omits GC.
 2. **Device script** — Trevor runs [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md); until then device score stays 0.
 3. **S-3 screenshots** — regenerate via existing workflow, pick finals, Trevor uploads.
-4. **G-5 / G-4 / G-6 / T1 privacy** — do not claim Data Not Collected until proof + policy page.
+4. **T1 privacy URL** — G-4 / G-6 verified; G-5 framework inspect of export 223 is done (proxy capture still not claimed). Do not tick ASC **Data Not Collected** until the policy page (T1) is published.
 5. **F-8 first-flight fairness** — needs a device Pass on KH-1 (#475 fixed the Ready/countdown copy mismatch).
 7. **D-7 discrepancy audit** — re-run or formally close Blockers against current main.
 8. **P-4 performance on device** — required for heat/ stutter confidence.
@@ -217,3 +217,4 @@ Highest first:
 | 2026-11-09 | G-2: Game Center auth/submit cannot throw offline (Null or broken Impl). Score 48/62. | Arcade |
 | 2026-11-09 | Resolve main merge after #478; N9 NAV-08 verified via #472; G-7 notes GC out. Score 45/62. | Arcade |
 | 2026-11-09 | Build tip: export 215 / TF 51 from b2bd87b; main +#475. Network evidence + #479; GC removed #478; score 45/62. | Arcade |
+| 2026-11-10 | G-5: framework inspect of export 223 / Cloud #58 (PrivacyInfo pins, encryption plist, no tracking frameworks). G-7 export plist confirmed. Score 49/62. TestFlight not claimed. | Arcade |
