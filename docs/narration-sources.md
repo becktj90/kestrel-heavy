@@ -1,7 +1,7 @@
 # Webcast "color" lines: sources (for Kestrel Codex review)
 
 Status: sources checked on 2026-10-28 (America/New_York) by web search; corrected 2026-10-28 evening after the Codex review (rows S1, S3-S6, S10, S11, S13-S16 revised). The lines are shipped in the manifest as `color.*` events and are inert until wired (docs/narration-webcast.md).
-Rules (S-rows): no company, vehicle, agency or person names in these spoken lines (STYLE_GUIDE). Since DECISIONS #100, real names, dates and commonly known companies are allowed on every surface; named lines use the G-rows below. History is stated generically ("a pioneer", "the first satellite"). Any fact about the flown rocket is tagged (requires/claims) and checked by tests/narration-facts-lint.test.cjs.
+Rules (S-rows): no company, vehicle, agency or person names in these spoken lines (STYLE_GUIDE). Since DECISIONS #100/#101, real names, dates and commonly known companies are allowed on every surface; named lines use the G-rows below. History is stated generically ("a pioneer", "the first satellite"). Any fact about the flown rocket is tagged (requires/claims) and checked by tests/narration-facts-lint.test.cjs.
 Items marked CHECK need a second read by Codex (only a search summary was available, the primary page blocked our fetch).
 
 | ID | Fact as spoken (generic wording) | Sources |
@@ -25,7 +25,7 @@ Items marked CHECK need a second read by Codex (only a search summary was availa
 
 ## G-rows: real-world facts on any surface (gen5 plan, DECISIONS #100)
 
-Status: listed 2026-11-11 (America/New_York) for the gen5 narration plan (color, phase, designer, idle or pad, and menu lines). Under DECISIONS #100, real names, dates and commonly known companies are allowed on every surface; Blue Origin, New Glenn, Jacklyn and LC-36 never are. Every source page below loaded on 2026-11-11. The figures are **CHECK** until Kestrel Codex (history) and, for physics claims, Kestrel Physics sign them off.
+Status: listed 2026-11-11 (America/New_York) for the gen5 narration plan (color, phase, designer, idle or pad, and menu lines). Under DECISIONS #100 and #101, real names, dates and commonly known companies are allowed on every surface; Blue Origin, New Glenn, Jacklyn and LC-36 may be named as relevant, sourced history, with no implied affiliation. Every source page below loaded on 2026-11-11. The figures are **CHECK** until Kestrel Codex (history) and, for physics claims, Kestrel Physics sign them off.
 
 | ID | Clip | Fact as spoken | Sources |
 |----|------|----------------|---------|
