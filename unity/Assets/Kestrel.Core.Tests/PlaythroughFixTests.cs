@@ -216,5 +216,30 @@ namespace Kestrel.Core.Tests
                 Assert.That(kid, Does.Not.Contain("{"), line.Id);
             }
         }
+
+        [Test]
+        public void LostBoosterTip_OnTheStarterScreen_NamesNoRecoveryTab()
+        {
+            foreach (var (fuel, legs) in new[] { (0.0, false), (0.0, true), (5000.0, false), (5000.0, true) })
+            {
+                var craft = new RecoveryCraft { DryKg = 20000, ReserveKg = fuel, Legs = legs, Mode = "none" };
+                BoosterLanding.Why(craft, true, out var starter, out _);
+                Assert.That(starter, Does.Not.Contain("Recovery"), starter);
+                StringAssert.EndsWith(BoosterLanding.StarterLandingFix, starter);
+                BoosterLanding.Why(craft, false, out var full, out _);
+                StringAssert.Contains("in Recovery", full, "the full designer keeps its Recovery section");
+            }
+            foreach (var label in new[] { Kestrel.Core.Designer.StarterScreen.EngineLabel, Kestrel.Core.Designer.StarterScreen.StagesLabel, Kestrel.Core.Designer.StarterScreen.FuelLabel, Kestrel.Core.Designer.StarterScreen.BoostersLabel })
+                Assert.AreNotEqual("Recovery", label, "the Starter screen has no Recovery control");
+            var saved = Kestrel.Core.Features.FeatureFlags.Active;
+            try
+            {
+                Kestrel.Core.Features.FeatureFlags.Active = new Kestrel.Core.Features.FeatureFlags();
+                Assume.That(Kestrel.Core.Designer.StarterScreen.UseStarter(Kestrel.Core.Features.FeatureFlags.Active));
+                BoosterLanding.Why(new RecoveryCraft { DryKg = 20000 }, out var shipped, out _);
+                Assert.That(shipped, Does.Not.Contain("Recovery"), "the shipping default is the Starter screen");
+            }
+            finally { Kestrel.Core.Features.FeatureFlags.Active = saved; }
+        }
     }
 }
