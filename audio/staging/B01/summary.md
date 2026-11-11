@@ -76,3 +76,15 @@ These wait for Codex and Physics (and one History check) before any ElevenLabs c
 | `host/outcome.missed.g5-1` | Sarah | Physics | Orbit size set by horizontal speed at cutoff | Not quite orbit this time. It needed more sideways speed. |
 
 Held credits reserved (not spent): 2448 (2,448 planned).
+
+
+## Follow-up commit
+
+Added **22** newly recorded B01 lines (**44** takes) into this same staging folder:
+
+- 11 leftover ready.tsv B01 rows that had been held for fact-checks (22 takes)
+- 11 Physics second-pass rows from ready-2.tsv (22 takes)
+
+No overlap with the original 360 takes. One retake (`cohost/status.heating.g5-3` t1) was slightly under −17 LUFS, re-recorded once, and is now in spec. **0** takes still failing.
+
+See `followup-manifest.json`, `followup-loudness.csv`, `followup-loudness-report.md`, and `followup-summary.md` for the new rows only. The main `manifest.json` and `loudness.csv` now include both the original and follow-up takes.
