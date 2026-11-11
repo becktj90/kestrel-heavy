@@ -79,3 +79,7 @@ Folded in 15 newly cleared B02 rows (24 takes) from ready-2.tsv. Skipped `cohost
 
 Per-second T-10 to T-1 clips (`count.n10`…`count.n1`) are new; main has no existing dedicated countdown-number takes, so they were recorded. T-60 / T-30 / T-15, poll, hold, scrub and recycle lines were also recorded.
 
+## Loudness re-norm (no new ElevenLabs calls)
+
+On 2026-11-11, America/New_York, 7 takes that were still below −17 LUFS were re-normalized from their processed sources with makeup gain plus a −1.5 dBTP limiter. All 7 now meet −16 LUFS ±1 and ≤ −1.5 dBTP. No takes were dropped.
+
