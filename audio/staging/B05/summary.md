@@ -44,3 +44,8 @@ See `loudness-report.md`. Flags still failing after one retake: 1.
 ## QC failures after retake
 
 - `host/idle.pad.g5-15#b` take 2: ['lufs:-17.33']
+
+## Loudness re-norm (no new ElevenLabs calls)
+
+On 2026-11-11, America/New_York, 1 takes that were still below −17 LUFS were re-normalized from their processed sources with makeup gain plus a −1.5 dBTP limiter. All 1 now meet −16 LUFS ±1 and ≤ −1.5 dBTP. No takes were dropped.
+

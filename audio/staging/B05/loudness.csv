@@ -158,7 +158,7 @@ host/idle.pad.g5-14#c,2,host__idle.pad.g5-14__c.t2.mp3,Sarah,idle.pad,longform,5
 host/idle.pad.g5-15#a,1,host__idle.pad.g5-15__a.t1.mp3,Sarah,idle.pad,longform,6.034,-16.44,-3.31,yes,,main,G34 (docs/narration-sources.md)
 host/idle.pad.g5-15#a,2,host__idle.pad.g5-15__a.t2.mp3,Sarah,idle.pad,longform,5.512,-16.45,-3.31,yes,,main,G34 (docs/narration-sources.md)
 host/idle.pad.g5-15#b,1,host__idle.pad.g5-15__b.t1.mp3,Chris,idle.pad,longform,4.598,-16.85,-1.92,yes,,main,
-host/idle.pad.g5-15#b,2,host__idle.pad.g5-15__b.t2.mp3,Chris,idle.pad,longform,5.016,-17.33,-2.24,no,lufs:-17.33,main,
+host/idle.pad.g5-15#b,2,host__idle.pad.g5-15__b.t2.mp3,Chris,idle.pad,longform,5.016,-16.41,-1.75,yes,,main,
 host/idle.pad.g5-15#c,1,host__idle.pad.g5-15__c.t1.mp3,Sarah,idle.pad,longform,6.348,-16.44,-3.3,yes,,main,
 host/idle.pad.g5-15#c,2,host__idle.pad.g5-15__c.t2.mp3,Sarah,idle.pad,longform,5.982,-16.44,-3.04,yes,,main,
 host/idle.pad.g5-16#a,1,host__idle.pad.g5-16__a.t1.mp3,Sarah,idle.pad,longform,5.042,-16.44,-3.36,yes,,main,G35 (docs/narration-sources.md)
