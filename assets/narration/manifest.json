@@ -1248,6 +1248,78 @@
    "neutralReason": "Max-Q explainer; no vehicle fact"
   },
   {
+   "id": "mission-control/maxq-throttle.1",
+   "event": "maxq-throttle",
+   "channel": "mc",
+   "text": "Throttling down for max-Q.",
+   "spokenText": "Throttling down for max-Q.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/maxq-throttle.1.mp3",
+   "durationSec": 1.672,
+   "lufs": -16.47,
+   "truePeakDb": -2.14,
+   "normalization": "linear",
+   "hash": "2d8e575c6219",
+   "sha256": "3fb031a592b3d1f857e38f436d45794564fb84a1a343c4238cdef039e44d08fe",
+   "requires": {
+    "throttle.maxq": true
+   },
+   "claims": [
+    "throttle.maxq"
+   ]
+  },
+  {
+   "id": "mission-control/maxq-throttle.2",
+   "event": "maxq-throttle",
+   "channel": "mc",
+   "text": "Throttling back. Approaching max-Q.",
+   "spokenText": "Throttling back. Approaching max-Q.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/maxq-throttle.2.mp3",
+   "durationSec": 2.168,
+   "lufs": -16.45,
+   "truePeakDb": -2.82,
+   "normalization": "linear",
+   "hash": "8ba844059266",
+   "sha256": "8dd5bef43b856b2fe1b4f2d6b06c80873ac9bbdc63efeb4afb723b73cd604baa",
+   "requires": {
+    "throttle.maxq": true
+   },
+   "claims": [
+    "throttle.maxq"
+   ]
+  },
+  {
+   "id": "cohost/maxq-throttle.1",
+   "event": "maxq-throttle",
+   "channel": "cohost",
+   "text": "They ease the throttle back so the air doesn't push too hard on the rocket.",
+   "spokenText": "They ease the throttle back so the air doesn't push too hard on the rocket.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/maxq-throttle.1.mp3",
+   "durationSec": 3.422,
+   "lufs": -16.44,
+   "truePeakDb": -1.73,
+   "normalization": "linear",
+   "hash": "178125154ecc",
+   "sha256": "cff84478e114ef1b62587a50e76f3e40b6cf1b6927fab63bff1cd4b2ee0d634f",
+   "requires": {
+    "throttle.maxq": true
+   },
+   "claims": [
+    "throttle.maxq"
+   ]
+  },
+  {
    "id": "mission-control/maxq-through.2",
    "event": "maxq-through",
    "channel": "mc",
@@ -1312,6 +1384,30 @@
    "normalization": "dynamic",
    "hash": "5dfd8c57255e",
    "sha256": "8f191224e48e006d5bad6d74e50f503f1ead543e37c56c3bc0dfc5e13586680a",
+   "requires": {
+    "throttle.maxq": true
+   },
+   "claims": [
+    "throttle.maxq"
+   ]
+  },
+  {
+   "id": "mission-control/maxq-through.1",
+   "event": "maxq-through",
+   "channel": "mc",
+   "text": "Through max-Q. Throttling back up.",
+   "spokenText": "Through max-Q. Throttling back up.",
+   "voice": "Eric",
+   "voiceId": "cjVigY5qzO86Huf0OWal",
+   "voiceDir": "mission-control",
+   "model": "eleven_multilingual_v2",
+   "file": "mission-control/maxq-through.1.mp3",
+   "durationSec": 2.168,
+   "lufs": -16.44,
+   "truePeakDb": -2.56,
+   "normalization": "linear",
+   "hash": "c105c44546e3",
+   "sha256": "ec26aa986a3229b8ecef29f4ffce26f0bc376edbc2838841730b769b39d06af0",
    "requires": {
     "throttle.maxq": true
    },
