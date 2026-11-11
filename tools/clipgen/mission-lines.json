@@ -272,9 +272,9 @@
    "id": "host/color.pad.m7.1",
    "mission": "m7",
    "sources": [
-    "H5"
+    "S16"
    ],
-   "text": "In November 2025, New Glenn's first stage landed on Jacklyn."
+   "text": "In December 2015, a Falcon 9 booster became the first from an orbital launch to land upright."
   },
   {
    "channel": "cohost",
@@ -282,9 +282,9 @@
    "id": "cohost/color.pad.m7.2",
    "mission": "m7",
    "sources": [
-    "H5"
+    "S16"
    ],
-   "text": "Jacklyn waited about six hundred kilometres downrange in the Atlantic."
+   "text": "Landing ships wait far downrange, so the booster needn't fly all the way back."
   },
   {
    "channel": "host",

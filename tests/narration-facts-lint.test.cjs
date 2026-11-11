@@ -27,10 +27,10 @@ const ALLOW = /SES-1|Max-Q|T-minus \d+/gi;
 // every narration surface. A take is "historical" (mission-gated) when it is gated to one campaign mission
 // AND carries sources. The banned-names rule (DECISIONS #100) applies to EVERY take, historical ones included.
 const BANNED = /blue origin|new glenn|jacklyn|lc-36/i;
-// Shipped takes that fail the banned-names rule and are waiting for a re-record (they cannot be fixed
-// without new audio, and host/color.pad.m7.1 is pinned by NarrationFactsTests.cs). This list may only
+// Shipped takes that fail the banned-names rule and are waiting for a re-record. This list may only
 // shrink: a test below fails if an id here no longer exists or no longer names a banned name.
-const BANNED_PENDING_RERECORD = new Set(['host/color.pad.m7.1', 'cohost/color.pad.m7.2']);
+// (Empty since host/color.pad.m7.1 and cohost/color.pad.m7.2 were re-recorded, 2026-11-11.)
+const BANNED_PENDING_RERECORD = new Set([]);
 const isHistorical = (c) => c.requires && typeof c.requires.mission === 'string'
   && Array.isArray(c.sources) && c.sources.length > 0;
 
@@ -253,7 +253,9 @@ function statedFacts(c) {
   if (/\bthird stage\b/i.test(t)) out.push(['third stage', /^(stages|lit\.stage)$/, (d, ctx) => d.stages.length >= 3 && (!ctx['lit.stage'] || ctx['lit.stage'] === 3)]);
   if (/another stage|carries the payload|final push|insertion (is )?complete/i.test(t)) out.push(['stage position', /^(stages|lit\.last|lit\.stage)$/, (d, ctx) => /another stage/i.test(t) ? ctx['lit.stage'] < d.stages.length : ctx['lit.stage'] === d.stages.length]);
   if (/\bupper\b/i.test(t)) out.push(['upper stage', /^(stages|lit\.stage|lit\.last)$/, (d) => d.stages.length >= 2]);
-  if (/\bbooster\b/i.test(t)) out.push(['booster', /^(stages|strapons|recovery|lit\.stage)/, (d) => d.stages.length >= 2 || !!(d.strapOns && d.strapOns.count > 0)]);
+  // A historical take's "booster" is history (for example the first upright landing in 2015), not a claim
+  // about the flown design, so like the oxygen rule below it does not apply to mission-gated historical takes.
+  if (/\bbooster\b/i.test(t) && !isHistorical(c)) out.push(['booster', /^(stages|strapons|recovery|lit\.stage)/, (d) => d.stages.length >= 2 || !!(d.strapOns && d.strapOns.count > 0)]);
   if (/Haven|barge|\bdeck\b|sea state|in the drink/i.test(t)) out.push(['Haven', /^recovery$/, (d) => recoveryOf(d) === 'barge']);
   if (/hit the ground/i.test(t)) out.push(['ground', /^recovery$/, (d) => recoveryOf(d) === 'rtls']);
   if (REC_EVENTS.has(c.event) && /\bpad\b/i.test(t)) out.push(['landing on the pad', /^recovery$/, (d) => recoveryOf(d) === 'rtls']);

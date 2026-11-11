@@ -37,9 +37,10 @@ shape of the mission-gated historical takes. A historical take:
 - has every fact sourced in `docs/plans/per-mission-commentary.md` (S-rows reuse
   `docs/narration-sources.md`; H-rows are checked there). Historical takes are no longer exempt
   from the banned-names rule (DECISIONS #100): the rule
-  (`blue origin|new glenn|jacklyn|lc-36`) fails every take, historical ones included. Two shipped
-  m7 takes that fail it are listed in `BANNED_PENDING_RERECORD` until they are re-recorded (that
-  list may only shrink). The lint also fails a mission-gated take that has no sources or does not
+  (`blue origin|new glenn|jacklyn|lc-36`) fails every take, historical ones included. The two m7 takes
+  that failed it were re-recorded on 2026-11-11, so `BANNED_PENDING_RERECORD` is empty (that list
+  may only shrink). As with "oxygen", a historical take's "booster" is history, not a design claim,
+  so the claim-vs-design verifier skips it on mission-gated historical takes. The lint also fails a mission-gated take that has no sources or does not
   claim `mission`.
 
 The game's own world stays fictional: pads, ships, missions and rockets keep their names (Pier 7,
