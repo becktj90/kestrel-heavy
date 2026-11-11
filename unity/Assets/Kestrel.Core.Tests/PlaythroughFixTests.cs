@@ -234,8 +234,8 @@ namespace Kestrel.Core.Tests
             var saved = Kestrel.Core.Features.FeatureFlags.Active;
             try
             {
-                Kestrel.Core.Features.FeatureFlags.Active = new Kestrel.Core.Features.FeatureFlags();
-                Assert.IsTrue(Kestrel.Core.Designer.StarterScreen.UseStarter(Kestrel.Core.Features.FeatureFlags.Active), "default flags are the Starter screen");
+                Kestrel.Core.Features.FeatureFlags.Active = Kestrel.Core.Features.FeatureFlags.Load(Golden.Root);
+                Assert.IsTrue(Kestrel.Core.Designer.StarterScreen.UseStarter(Kestrel.Core.Features.FeatureFlags.Active), "data/features.json ships the Starter screen");
                 BoosterLanding.Why(new RecoveryCraft { DryKg = 20000 }, out var shipped, out _);
                 Assert.That(shipped, Does.Not.Contain("Recovery"), "the shipping default is the Starter screen");
             }
@@ -252,6 +252,47 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual("Your last rocket \u00B7 free build", Kestrel.Core.Save.ResumeOffer.Caption(true, null, " "));
             Assert.AreEqual("Continue. Opens QA Saved Orbiter, free build.", Kestrel.Core.Save.ResumeOffer.Spoken("QA Saved Orbiter \u00B7 free build"));
             Assert.AreEqual(Kestrel.Core.Save.ResumeOffer.ContinueSpoken, Kestrel.Core.Save.ResumeOffer.Spoken(null));
+        }
+
+        [Test]
+        public void LandingBurnPanel_SitsUnderTheReadouts_AndAboveTheCalloutRow_At335()
+        {
+            float readoutsFoot = FlightHudLayout.HealthPt + FlightHudLayout.GapPt + FlightHudLayout.TelemetryPt;
+            Assert.GreaterOrEqual(LandingBurnHud.TopPt, readoutsFoot, "the banner no longer sits on ALT / DOWN / FUEL / TO PAD");
+            Assert.LessOrEqual(LandingBurnHud.BottomPt, FlightStaging.CalloutTopInsideHud(), "the burn buttons end above the callout row");
+            Assert.GreaterOrEqual(LandingBurnHud.ButtonPt, FlightHudLayout.HitPt, "burn buttons stay a full touch target");
+            Assert.IsTrue(LandingBurnHud.LineFits(LandingBurnHud.Title, 335f), "title on one line at 335 pt");
+            // A typical touchdown line keeps the full face; a wide one (three-digit sink at ignition, a four-digit miss)
+            // steps down but stays on one row at 335 pt and never below the floor.
+            var calm = new LandingBurnReadout(1.8, 2.0, -7, 36, 0.4, 8).Line();
+            Assert.GreaterOrEqual(LandingBurnHud.FontFor(calm, 335f), 10f, calm);
+            Assert.AreEqual(LandingBurnHud.FontPt, LandingBurnHud.FontFor(calm, 390f), calm);
+            var wide = new LandingBurnReadout(212.3, 2.0, -1880, 136, 12.5, 15).Line();
+            float pt = LandingBurnHud.FontFor(wide, 335f);
+            Assert.GreaterOrEqual(pt, LandingBurnHud.MinFontPt);
+            Assert.IsTrue(LandingBurnHud.LineFits(wide, 335f, pt), "SINK / OFF / TILT on one line at 335 pt: " + wide + " @ " + pt);
+            Assert.That(wide, Does.Not.Contain("LANDING BURN"), "the panel title already names the burn");
+        }
+
+        [Test]
+        public void StagingCallout_GoesStale_OnTheWallClock_WhenTheSimClockHolds()
+        {
+            Assert.IsFalse(FlightStaging.CalloutStale(0.5, FlightStaging.CalloutSec));
+            Assert.IsFalse(FlightStaging.CalloutStale(FlightStaging.CalloutSec + FlightStaging.CalloutWallSlackSec, FlightStaging.CalloutSec));
+            Assert.IsTrue(FlightStaging.CalloutStale(30, FlightStaging.CalloutSec), "MECO T+773.7 does not stay up for the landing");
+            double sepWindow = FlightStaging.IgniteDelaySec - FlightStaging.SepDelaySec;
+            Assert.IsFalse(FlightStaging.CalloutStale(sepWindow, sepWindow), "a long window still plays out");
+
+            // The window the callout reports is the one TryCallout picked: a lone cutoff (the upper stage's) gets CalloutSec.
+            var st = new FlightStaging();
+            st.Reset(false, 0, 0, false);
+            var events = new System.Collections.Generic.List<Kestrel.Core.Physics.SimEvent>
+            {
+                new Kestrel.Core.Physics.SimEvent { t = 773.7, type = "cutoff", stage = 2, alt = 550100, v = 7140 },
+            };
+            st.Advance(events, 773.7, 550100, 7140, 0, 0);
+            Assert.IsTrue(st.TryCallout(773.7, out var call));
+            Assert.AreEqual(FlightStaging.CalloutSec, call.WindowSec, 1e-9);
         }
     }
 }
