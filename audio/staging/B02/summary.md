@@ -4,16 +4,16 @@ Recorded 2026-11-11, America/New_York. Model `eleven_multilingual_v2`. Voices: E
 
 ## Recorded
 
-- Ready rows in this batch: 187
-- Recorded: **187 lines, 341 takes**
+- Ready rows in this batch: 189
+- Recorded: **189 lines, 343 takes**
 - Held: **0**
-- Planned character upper bound: 14652
-- ElevenLabs remaining before → after: 203776 → 188131 (used 15645)
+- Planned character upper bound: 1369
+- ElevenLabs remaining before → after: 188131 → 158440 (used 29691)
 - Output: `out/B02/raw/`, `out/B02/processed/`, `manifest.json`, `loudness.csv`, `loudness-report.md`
 
 ## Quality
 
-See `loudness-report.md`. Flags still failing after one retake: 7.
+See `loudness-report.md`. Flags still failing after one retake: 0.
 
 ## Events recorded
 
@@ -21,7 +21,7 @@ See `loudness-report.md`. Flags still failing after one retake: 7.
 - `color.ascent`: 14 lines (20 takes)
 - `color.coast`: 16 lines (22 takes)
 - `color.karman`: 8 lines (10 takes)
-- `color.pad`: 14 lines (20 takes)
+- `color.pad`: 16 lines (22 takes)
 - `color.recovery`: 10 lines (12 takes)
 - `count.hold`: 8 lines (16 takes)
 - `count.n1`: 1 lines (3 takes)
@@ -61,25 +61,6 @@ See `loudness-report.md`. Flags still failing after one retake: 7.
 - `tip`: 2 lines (4 takes)
 - `touchdown`: 5 lines (10 takes)
 
-## QC failures after retake
+## ready-3.tsv update
 
-- `mission-control/count.n8.g5-1` take 3: ['lufs:-18.13']
-- `mission-control/count.n7.g5-1` take 1: ['lufs:-17.76']
-- `mission-control/count.n7.g5-1` take 2: ['lufs:-17.03']
-- `mission-control/count.n7.g5-1` take 3: ['lufs:-17.48']
-- `mission-control/count.n5.g5-1` take 2: ['lufs:-17.56']
-- `mission-control/count.n5.g5-1` take 3: ['lufs:-17.2']
-- `host/color.karman.g5-4#b` take 1: ['lufs:-17.24']
-
-## ready-2 additions (Physics second pass)
-
-Folded in 15 newly cleared B02 rows (24 takes) from ready-2.tsv. Skipped `cohost/maxq-throttle.1` because that take is already on PR #494. Name-free alternates were not recorded.
-
-## Countdown
-
-Per-second T-10 to T-1 clips (`count.n10`…`count.n1`) are new; main has no existing dedicated countdown-number takes, so they were recorded. T-60 / T-30 / T-15, poll, hold, scrub and recycle lines were also recorded.
-
-## Loudness re-norm (no new ElevenLabs calls)
-
-On 2026-11-11, America/New_York, 7 takes that were still below −17 LUFS were re-normalized from their processed sources with makeup gain plus a −1.5 dBTP limiter. All 7 now meet −16 LUFS ±1 and ≤ −1.5 dBTP. No takes were dropped.
-
+Added new `host/color.pad.g5-1#a` and `#b` (1 take each) from ready-3.tsv.
