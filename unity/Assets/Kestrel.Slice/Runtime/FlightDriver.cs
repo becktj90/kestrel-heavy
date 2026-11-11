@@ -249,6 +249,7 @@ namespace Kestrel.Slice
             clock = 0; Meco = false; Result = null; pending = null; Coast = null; coastOver = false; CoastWall = 0; CoastEnd = null; coastArmedAt = double.NaN; OriginX = OriginY = 0; Rebases = 0; prevX = prevY = 0;
             skipping = false; skipTarget = StageSkipTarget.None; SkipAdvancedSimS = 0; SkipStop = StageSkipStop.None; SkipReached = StageSkipTarget.None;
             AttitudeDeg = 90f; HasAttitude = false;
+            Top.Reset();
             seenEvents = 0; mecoSent = false; maxQBeatSeen = 0; warp = null;
             // The origin is back at the pad, so the pad has to be too: after a flight past RebaseDistance the
             // anchored ground, deck and tower were left where the last rebase put them (a displaced pad on relaunch).
@@ -468,9 +469,13 @@ namespace Kestrel.Slice
 
         void UpdateFrame() => UpdateFrame(Sim.T, Sim.Y[0], Sim.Y[1], Sim.Y[2], Sim.Y[3], Sim.Thrusting);
 
+        /// <summary>The highest point this flight reached and the inertial speed there (Test Flight's result card).</summary>
+        public readonly Kestrel.Core.Flight.TestFlight.TopTracker Top = new Kestrel.Core.Flight.TestFlight.TopTracker();
+
         void UpdateFrame(double t, double x, double y, double svx, double svy, bool thrusting)
         {
             double r = Math.Sqrt(x * x + y * y);
+            Top.Watch(x, y, svx, svy);
             double padAngle = Math.PI / 2 + omegaAir * t;     // pad co-rotates with Earth (CCW)
             double ang = Math.Atan2(y, x);
             Downrange = Gravity.R_EARTH * (ang - padAngle);       // east positive

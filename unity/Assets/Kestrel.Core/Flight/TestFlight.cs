@@ -1,4 +1,4 @@
-// Test Flight (DECISIONS #86): build anything, fly it, see if it reaches orbit or blows up. Engine-free so the
+// Test Flight (DECISIONS #100): build anything, fly it, see if it reaches orbit or blows up. Engine-free so the
 // dotnet runner and Unity EditMode share the same tests.
 //
 // What it is: the existing free build (MissionMode.Free, the Home hangar route) flown with MissionContext.TestFlight
@@ -123,6 +123,23 @@ namespace Kestrel.Core.Flight
         /// <summary>The failure kind the card explains ("" for orbit, "no-liftoff" and "fell-short" for the non-events).</summary>
         public string Kind = "";
         public bool MadeOrbit => Outcome == TestOutcome.Orbit;
+        /// <summary>The designer field Tweak &amp; Retry highlights (FixField.For): the lever the hint names. "" on orbit.</summary>
+        public string FixKind
+        {
+            get
+            {
+                switch (Outcome)
+                {
+                    case TestOutcome.Orbit: return "";
+                    case TestOutcome.OutOfFuel: return "prop-depletion";   // More fuel → propellant load
+                    case TestOutcome.FellShort: return "prop-depletion";   // More fuel, or another stage
+                    case TestOutcome.NoLiftoff: return "engine-out";       // More engines → engine count
+                    case TestOutcome.MaxQBreakup: return "structural-maxq"; // a stronger frame → safety factor
+                    case TestOutcome.LostControl: return "tumble";         // more steering or fins → fins
+                    default: return Kind ?? "";
+                }
+            }
+        }
         /// <summary>The hint line as shown ("Try: …"), empty when there is no hint.</summary>
         public string HintLine => string.IsNullOrEmpty(Hint) ? "" : TestFlightCopy.HintPrefix + Hint;
         /// <summary>VoiceOver order: title, kid, engineer, hint.</summary>
@@ -139,7 +156,7 @@ namespace Kestrel.Core.Flight
     public static class TestFlight
     {
         /// <summary>
-        /// The test orbit (DECISIONS #86): the sim's own orbit rule. A coasting rocket whose perigee is above this
+        /// The test orbit (DECISIONS #100): the sim's own orbit rule. A coasting rocket whose perigee is above this
         /// height is in orbit (Headless.cs: outcome "orbit" when periAlt &gt; 120 km). The guidance aim is the free
         /// build's own: the design's catalog orbit, leo400 when unset (MissionFlightSetup).
         /// </summary>
@@ -385,10 +402,22 @@ namespace Kestrel.Core.Flight
                 if (!more) break;
             }
             var result = run.Finish();
-            double twr = double.NaN;
-            try { twr = Readout.Quick(catalog, designJson).liftoffTWR; }
-            catch (Exception) { twr = double.NaN; }
-            return Facts(result, result.failure, run.Sim, twr, top.AltM, top.SpeedMps);
+            return Facts(result, result.failure, run.Sim, LiftoffTwr(catalog, designJson), top.AltM, top.SpeedMps);
+        }
+
+        /// <summary>The design's liftoff thrust over weight, as the designer shows it (Readout.Quick). NaN when unreadable.</summary>
+        public static double LiftoffTwr(Catalog catalog, JsonObject designJson)
+        {
+            if (catalog == null || designJson == null) return double.NaN;
+            try { return Readout.Quick(catalog, designJson).liftoffTWR; }
+            catch (Exception) { return double.NaN; }
+        }
+
+        public static double LiftoffTwr(Catalog catalog, Design design)
+        {
+            if (design == null) return double.NaN;
+            try { return LiftoffTwr(catalog, design.ToJson()); }
+            catch (Exception) { return double.NaN; }
         }
 
         /// <summary>The highest point of a flight and the inertial speed there, watched one state at a time.</summary>
@@ -400,10 +429,15 @@ namespace Kestrel.Core.Flight
             public void Watch(double[] y)
             {
                 if (y == null || y.Length < 4) return;
-                double alt = Math.Sqrt(y[0] * y[0] + y[1] * y[1]) - Gravity.R_EARTH;
+                Watch(y[0], y[1], y[2], y[3]);
+            }
+
+            public void Watch(double x, double y, double vx, double vy)
+            {
+                double alt = Math.Sqrt(x * x + y * y) - Gravity.R_EARTH;
                 if (double.IsNaN(alt) || (!double.IsNaN(AltM) && alt <= AltM)) return;
                 AltM = alt;
-                SpeedMps = Math.Sqrt(y[2] * y[2] + y[3] * y[3]);
+                SpeedMps = Math.Sqrt(vx * vx + vy * vy);
             }
         }
 
