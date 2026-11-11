@@ -1,0 +1,139 @@
+id,take,file,voice,event,layer,duration_sec,LUFS,dBTP,in_spec,issues,variant,sources
+host/designer.legs.g5-2#a,1,host__designer.legs.g5-2__a.t1.mp3,Sarah,designer.legs,longform,6.713,-16.42,-3.01,yes,,main,Codex booster-landing
+host/designer.legs.g5-2#a,2,host__designer.legs.g5-2__a.t2.mp3,Sarah,designer.legs,longform,7.105,-16.43,-3.14,yes,,main,Codex booster-landing
+host/designer.legs.g5-2#b,1,host__designer.legs.g5-2__b.t1.mp3,Chris,designer.legs,longform,3.239,-16.45,-1.76,yes,,main,
+host/designer.legs.g5-2#b,2,host__designer.legs.g5-2__b.t2.mp3,Chris,designer.legs,longform,3.056,-16.45,-2.43,yes,,main,
+host/designer.legs.g5-2#c,1,host__designer.legs.g5-2__c.t1.mp3,Sarah,designer.legs,longform,4.206,-16.43,-3.38,yes,,main,
+host/designer.legs.g5-2#c,2,host__designer.legs.g5-2__c.t2.mp3,Sarah,designer.legs,longform,4.545,-16.44,-3.47,yes,,main,
+cohost/designer.legs.tip.g5-1,1,cohost__designer.legs.tip.g5-1.t1.mp3,Chris,designer.legs.tip,tip,2.769,-16.45,-2.28,yes,,main,
+cohost/designer.legs.tip.g5-1,2,cohost__designer.legs.tip.g5-1.t2.mp3,Chris,designer.legs.tip,tip,2.821,-16.44,-2.02,yes,,main,
+cohost/designer.legs.tip.g5-2,1,cohost__designer.legs.tip.g5-2.t1.mp3,Chris,designer.legs.tip,tip,2.743,-16.46,-1.91,yes,,main,
+cohost/designer.legs.tip.g5-2,2,cohost__designer.legs.tip.g5-2.t2.mp3,Chris,designer.legs.tip,tip,2.691,-16.89,-1.75,yes,,main,
+cohost/designer.legs.tip.g5-3,1,cohost__designer.legs.tip.g5-3.t1.mp3,Chris,designer.legs.tip,tip,3.291,-16.58,-1.85,yes,,main,
+cohost/designer.legs.tip.g5-3,2,cohost__designer.legs.tip.g5-3.t2.mp3,Chris,designer.legs.tip,tip,3.056,-16.43,-1.74,yes,,main,
+cohost/designer.legs.tip.g5-4,1,cohost__designer.legs.tip.g5-4.t1.mp3,Chris,designer.legs.tip,tip,3.344,-16.47,-2.37,yes,,main,
+cohost/designer.legs.tip.g5-4,2,cohost__designer.legs.tip.g5-4.t2.mp3,Chris,designer.legs.tip,tip,3.527,-16.44,-1.56,yes,,main,
+host/designer.gridfins.g5-1#a,1,host__designer.gridfins.g5-1__a.t1.mp3,Sarah,designer.gridfins,longform,5.198,-16.44,-3.16,yes,,main,G13 (docs/narration-sources.md); aero literature
+host/designer.gridfins.g5-1#a,2,host__designer.gridfins.g5-1__a.t2.mp3,Sarah,designer.gridfins,longform,4.833,-16.41,-3.17,yes,,main,G13 (docs/narration-sources.md); aero literature
+host/designer.gridfins.g5-1#b,1,host__designer.gridfins.g5-1__b.t1.mp3,Chris,designer.gridfins,longform,5.146,-16.44,-1.65,yes,,main,
+host/designer.gridfins.g5-1#b,2,host__designer.gridfins.g5-1__b.t2.mp3,Chris,designer.gridfins,longform,5.512,-16.44,-1.77,yes,,main,
+host/designer.gridfins.g5-1#c,1,host__designer.gridfins.g5-1__c.t1.mp3,Sarah,designer.gridfins,longform,8.49,-16.43,-3.18,yes,,main,
+host/designer.gridfins.g5-1#c,2,host__designer.gridfins.g5-1__c.t2.mp3,Sarah,designer.gridfins,longform,8.673,-16.43,-3.22,yes,,main,
+host/designer.gridfins.g5-1#d,1,host__designer.gridfins.g5-1__d.t1.mp3,Chris,designer.gridfins,longform,4.023,-16.43,-1.99,yes,,main,
+host/designer.gridfins.g5-1#d,2,host__designer.gridfins.g5-1__d.t2.mp3,Chris,designer.gridfins,longform,3.657,-16.42,-1.83,yes,,main,
+host/designer.gridfins.g5-2#a,1,host__designer.gridfins.g5-2__a.t1.mp3,Sarah,designer.gridfins,longform,6.217,-16.45,-3.24,yes,,main,G45 (docs/narration-sources.md); Codex
+host/designer.gridfins.g5-2#a,2,host__designer.gridfins.g5-2__a.t2.mp3,Sarah,designer.gridfins,longform,6.296,-16.43,-3.02,yes,,main,G45 (docs/narration-sources.md); Codex
+host/designer.gridfins.g5-2#b,1,host__designer.gridfins.g5-2__b.t1.mp3,Chris,designer.gridfins,longform,5.799,-16.45,-1.76,yes,,main,
+host/designer.gridfins.g5-2#b,2,host__designer.gridfins.g5-2__b.t2.mp3,Chris,designer.gridfins,longform,6.113,-16.44,-2.27,yes,,main,
+host/designer.gridfins.g5-2#c,1,host__designer.gridfins.g5-2__c.t1.mp3,Sarah,designer.gridfins,longform,5.251,-16.45,-3.06,yes,,main,
+host/designer.gridfins.g5-2#c,2,host__designer.gridfins.g5-2__c.t2.mp3,Sarah,designer.gridfins,longform,5.094,-16.44,-3.31,yes,,main,
+cohost/designer.gridfins.tip.g5-2,1,cohost__designer.gridfins.tip.g5-2.t1.mp3,Chris,designer.gridfins.tip,tip,2.769,-16.43,-1.84,yes,,main,
+cohost/designer.gridfins.tip.g5-2,2,cohost__designer.gridfins.tip.g5-2.t2.mp3,Chris,designer.gridfins.tip,tip,2.926,-16.47,-1.81,yes,,main,
+host/designer.materials.g5-1#a,1,host__designer.materials.g5-1__a.t1.mp3,Sarah,designer.materials,longform,7.367,-16.43,-3.05,yes,,main,G14 (docs/narration-sources.md); NASA SLWT fact sheet
+host/designer.materials.g5-1#a,2,host__designer.materials.g5-1__a.t2.mp3,Sarah,designer.materials,longform,6.531,-16.45,-3.16,yes,,main,G14 (docs/narration-sources.md); NASA SLWT fact sheet
+host/designer.materials.g5-1#b,1,host__designer.materials.g5-1__b.t1.mp3,Chris,designer.materials,longform,4.963,-16.71,-1.66,yes,,main,
+host/designer.materials.g5-1#b,2,host__designer.materials.g5-1__b.t2.mp3,Chris,designer.materials,longform,4.362,-17.02,-1.88,no,lufs:-17.02,main,
+host/designer.materials.g5-1#c,1,host__designer.materials.g5-1__c.t1.mp3,Sarah,designer.materials,longform,11.546,-16.44,-3.29,yes,,main,
+host/designer.materials.g5-1#c,2,host__designer.materials.g5-1__c.t2.mp3,Sarah,designer.materials,longform,11.468,-16.43,-3.13,yes,,main,
+host/designer.materials.g5-1#d,1,host__designer.materials.g5-1__d.t1.mp3,Chris,designer.materials,longform,4.18,-16.45,-2.05,yes,,main,
+host/designer.materials.g5-1#d,2,host__designer.materials.g5-1__d.t2.mp3,Chris,designer.materials,longform,3.997,-16.44,-1.76,yes,,main,
+host/designer.materials.g5-3#a,1,host__designer.materials.g5-3__a.t1.mp3,Sarah,designer.materials,longform,8.803,-16.43,-3.21,yes,,main,G16 (docs/narration-sources.md); NASA
+host/designer.materials.g5-3#a,2,host__designer.materials.g5-3__a.t2.mp3,Sarah,designer.materials,longform,8.385,-16.44,-3.17,yes,,main,G16 (docs/narration-sources.md); NASA
+host/designer.materials.g5-3#b,1,host__designer.materials.g5-3__b.t1.mp3,Chris,designer.materials,longform,6.87,-16.44,-1.94,yes,,main,
+host/designer.materials.g5-3#b,2,host__designer.materials.g5-3__b.t2.mp3,Chris,designer.materials,longform,6.113,-16.44,-2.24,yes,,main,
+host/designer.materials.g5-3#c,1,host__designer.materials.g5-3__c.t1.mp3,Sarah,designer.materials,longform,8.359,-16.44,-3.32,yes,,main,
+host/designer.materials.g5-3#c,2,host__designer.materials.g5-3__c.t2.mp3,Sarah,designer.materials,longform,8.307,-16.45,-3.21,yes,,main,
+cohost/designer.materials.tip.g5-1,1,cohost__designer.materials.tip.g5-1.t1.mp3,Chris,designer.materials.tip,tip,3.892,-16.46,-1.59,yes,,main,
+cohost/designer.materials.tip.g5-1,2,cohost__designer.materials.tip.g5-1.t2.mp3,Chris,designer.materials.tip,tip,3.944,-16.45,-1.83,yes,,main,
+cohost/designer.materials.tip.g5-2,1,cohost__designer.materials.tip.g5-2.t1.mp3,Chris,designer.materials.tip,tip,3.004,-16.45,-1.97,yes,,main,
+cohost/designer.materials.tip.g5-2,2,cohost__designer.materials.tip.g5-2.t2.mp3,Chris,designer.materials.tip,tip,3.109,-16.44,-1.95,yes,,main,
+cohost/designer.materials.tip.g5-3,1,cohost__designer.materials.tip.g5-3.t1.mp3,Chris,designer.materials.tip,tip,4.31,-16.57,-1.67,yes,,main,
+cohost/designer.materials.tip.g5-3,2,cohost__designer.materials.tip.g5-3.t2.mp3,Chris,designer.materials.tip,tip,4.258,-16.78,-1.76,yes,,main,
+cohost/designer.materials.tip.g5-4,1,cohost__designer.materials.tip.g5-4.t1.mp3,Chris,designer.materials.tip,tip,3.37,-16.45,-1.96,yes,,main,
+cohost/designer.materials.tip.g5-4,2,cohost__designer.materials.tip.g5-4.t2.mp3,Chris,designer.materials.tip,tip,2.926,-16.43,-1.88,yes,,main,
+host/designer.propellant.kerolox.g5-1#a,1,host__designer.propellant.kerolox.g5-1__a.t1.mp3,Sarah,designer.propellant.kerolox,longform,6.687,-16.42,-3.29,yes,,main,G17 (docs/narration-sources.md); data/propellants.json
+host/designer.propellant.kerolox.g5-1#a,2,host__designer.propellant.kerolox.g5-1__a.t2.mp3,Sarah,designer.propellant.kerolox,longform,7.105,-16.44,-3.47,yes,,main,G17 (docs/narration-sources.md); data/propellants.json
+host/designer.propellant.kerolox.g5-1#b,1,host__designer.propellant.kerolox.g5-1__b.t1.mp3,Chris,designer.propellant.kerolox,longform,7.549,-16.44,-1.78,yes,,main,
+host/designer.propellant.kerolox.g5-1#b,2,host__designer.propellant.kerolox.g5-1__b.t2.mp3,Chris,designer.propellant.kerolox,longform,7.889,-16.62,-1.81,yes,,main,
+host/designer.propellant.kerolox.g5-1#c,1,host__designer.propellant.kerolox.g5-1__c.t1.mp3,Sarah,designer.propellant.kerolox,longform,5.46,-16.44,-3.04,yes,,main,
+host/designer.propellant.kerolox.g5-1#c,2,host__designer.propellant.kerolox.g5-1__c.t2.mp3,Sarah,designer.propellant.kerolox,longform,5.851,-16.43,-3.06,yes,,main,
+host/designer.propellant.hydrolox.g5-1#a,1,host__designer.propellant.hydrolox.g5-1__a.t1.mp3,Sarah,designer.propellant.hydrolox,longform,7.131,-16.53,-3.22,yes,,main,data/propellants.json
+host/designer.propellant.hydrolox.g5-1#a,2,host__designer.propellant.hydrolox.g5-1__a.t2.mp3,Sarah,designer.propellant.hydrolox,longform,7.236,-16.44,-3.26,yes,,main,data/propellants.json
+host/designer.propellant.hydrolox.g5-1#b,1,host__designer.propellant.hydrolox.g5-1__b.t1.mp3,Chris,designer.propellant.hydrolox,longform,4.833,-16.59,-1.62,yes,,main,
+host/designer.propellant.hydrolox.g5-1#b,2,host__designer.propellant.hydrolox.g5-1__b.t2.mp3,Chris,designer.propellant.hydrolox,longform,4.78,-16.54,-1.63,yes,,main,
+host/designer.propellant.hydrolox.g5-1#c,1,host__designer.propellant.hydrolox.g5-1__c.t1.mp3,Sarah,designer.propellant.hydrolox,longform,7.34,-16.43,-3.27,yes,,main,
+host/designer.propellant.hydrolox.g5-1#c,2,host__designer.propellant.hydrolox.g5-1__c.t2.mp3,Sarah,designer.propellant.hydrolox,longform,6.818,-16.44,-3.25,yes,,main,
+host/designer.propellant.methalox.g5-1#a,1,host__designer.propellant.methalox.g5-1__a.t1.mp3,Sarah,designer.propellant.methalox,longform,5.146,-16.44,-3.36,yes,,main,data/propellants.json
+host/designer.propellant.methalox.g5-1#a,2,host__designer.propellant.methalox.g5-1__a.t2.mp3,Sarah,designer.propellant.methalox,longform,5.277,-16.43,-3.28,yes,,main,data/propellants.json
+host/designer.propellant.methalox.g5-1#b,1,host__designer.propellant.methalox.g5-1__b.t1.mp3,Chris,designer.propellant.methalox,longform,9.195,-16.45,-1.72,yes,,main,
+host/designer.propellant.methalox.g5-1#b,2,host__designer.propellant.methalox.g5-1__b.t2.mp3,Chris,designer.propellant.methalox,longform,9.43,-16.74,-1.75,yes,,main,
+host/designer.propellant.methalox.g5-1#c,1,host__designer.propellant.methalox.g5-1__c.t1.mp3,Sarah,designer.propellant.methalox,longform,6.818,-16.44,-3.22,yes,,main,
+host/designer.propellant.methalox.g5-1#c,2,host__designer.propellant.methalox.g5-1__c.t2.mp3,Sarah,designer.propellant.methalox,longform,7.184,-16.44,-3.15,yes,,main,
+host/designer.propellant.solid.g5-1#a,1,host__designer.propellant.solid.g5-1__a.t1.mp3,Sarah,designer.propellant.solid,longform,5.329,-16.44,-3.04,yes,,main,G46 (docs/narration-sources.md); data/propellants.json
+host/designer.propellant.solid.g5-1#a,2,host__designer.propellant.solid.g5-1__a.t2.mp3,Sarah,designer.propellant.solid,longform,5.433,-16.55,-3.11,yes,,main,G46 (docs/narration-sources.md); data/propellants.json
+host/designer.propellant.solid.g5-1#b,1,host__designer.propellant.solid.g5-1__b.t1.mp3,Chris,designer.propellant.solid,longform,6.687,-16.66,-1.78,yes,,main,
+host/designer.propellant.solid.g5-1#b,2,host__designer.propellant.solid.g5-1__b.t2.mp3,Chris,designer.propellant.solid,longform,6.583,-16.76,-1.92,yes,,main,
+host/designer.propellant.solid.g5-1#c,1,host__designer.propellant.solid.g5-1__c.t1.mp3,Sarah,designer.propellant.solid,longform,6.113,-16.44,-3.27,yes,,main,
+host/designer.propellant.solid.g5-1#c,2,host__designer.propellant.solid.g5-1__c.t2.mp3,Sarah,designer.propellant.solid,longform,5.93,-16.44,-3.23,yes,,main,
+host/designer.propellant.hybrid.g5-1#a,1,host__designer.propellant.hybrid.g5-1__a.t1.mp3,Sarah,designer.propellant.hybrid,longform,6.4,-16.45,-3.34,yes,,main,data/propellants.json
+host/designer.propellant.hybrid.g5-1#a,2,host__designer.propellant.hybrid.g5-1__a.t2.mp3,Sarah,designer.propellant.hybrid,longform,6.583,-16.44,-3.37,yes,,main,data/propellants.json
+host/designer.propellant.hybrid.g5-1#b,1,host__designer.propellant.hybrid.g5-1__b.t1.mp3,Chris,designer.propellant.hybrid,longform,5.016,-16.93,-1.71,yes,,main,
+host/designer.propellant.hybrid.g5-1#b,2,host__designer.propellant.hybrid.g5-1__b.t2.mp3,Chris,designer.propellant.hybrid,longform,5.146,-16.67,-1.62,yes,,main,
+host/designer.propellant.hybrid.g5-1#c,1,host__designer.propellant.hybrid.g5-1__c.t1.mp3,Sarah,designer.propellant.hybrid,longform,6.034,-16.43,-3.2,yes,,main,
+host/designer.propellant.hybrid.g5-1#c,2,host__designer.propellant.hybrid.g5-1__c.t2.mp3,Sarah,designer.propellant.hybrid,longform,6.034,-16.44,-3.03,yes,,main,
+host/designer.staging.g5-1#a,1,host__designer.staging.g5-1__a.t1.mp3,Sarah,designer.staging,longform,4.963,-16.44,-2.98,yes,,main,G47 (docs/narration-sources.md); Codex staging
+host/designer.staging.g5-1#a,2,host__designer.staging.g5-1__a.t2.mp3,Sarah,designer.staging,longform,5.277,-16.44,-3.27,yes,,main,G47 (docs/narration-sources.md); Codex staging
+host/designer.staging.g5-1#b,1,host__designer.staging.g5-1__b.t1.mp3,Chris,designer.staging,longform,4.023,-16.77,-1.89,yes,,main,
+host/designer.staging.g5-1#b,2,host__designer.staging.g5-1__b.t2.mp3,Chris,designer.staging,longform,4.075,-16.44,-1.82,yes,,main,
+host/designer.staging.g5-1#c,1,host__designer.staging.g5-1__c.t1.mp3,Sarah,designer.staging,longform,7.889,-16.44,-3.25,yes,,main,
+host/designer.staging.g5-1#c,2,host__designer.staging.g5-1__c.t2.mp3,Sarah,designer.staging,longform,7.889,-16.42,-3.09,yes,,main,
+host/designer.staging.g5-1#d,1,host__designer.staging.g5-1__d.t1.mp3,Chris,designer.staging,longform,6.348,-16.43,-1.87,yes,,main,
+host/designer.staging.g5-1#d,2,host__designer.staging.g5-1__d.t2.mp3,Chris,designer.staging,longform,7.105,-16.45,-1.77,yes,,main,
+host/designer.staging.g5-2#a,1,host__designer.staging.g5-2__a.t1.mp3,Sarah,designer.staging,longform,5.564,-16.45,-3.08,yes,,main,Codex staging
+host/designer.staging.g5-2#a,2,host__designer.staging.g5-2__a.t2.mp3,Sarah,designer.staging,longform,5.695,-16.45,-3.23,yes,,main,Codex staging
+host/designer.staging.g5-2#b,1,host__designer.staging.g5-2__b.t1.mp3,Chris,designer.staging,longform,5.016,-16.83,-1.7,yes,,main,
+host/designer.staging.g5-2#b,2,host__designer.staging.g5-2__b.t2.mp3,Chris,designer.staging,longform,5.094,-16.96,-1.73,yes,,main,
+host/designer.staging.g5-2#c,1,host__designer.staging.g5-2__c.t1.mp3,Sarah,designer.staging,longform,6.531,-16.43,-3.08,yes,,main,
+host/designer.staging.g5-2#c,2,host__designer.staging.g5-2__c.t2.mp3,Sarah,designer.staging,longform,6.269,-16.44,-2.98,yes,,main,
+host/designer.strapons.g5-1#a,1,host__designer.strapons.g5-1__a.t1.mp3,Sarah,designer.strapons,longform,6.034,-16.45,-3.1,yes,,main,G19 (docs/narration-sources.md); Codex staging SerialStages
+host/designer.strapons.g5-1#a,2,host__designer.strapons.g5-1__a.t2.mp3,Sarah,designer.strapons,longform,6.269,-16.43,-3.13,yes,,main,G19 (docs/narration-sources.md); Codex staging SerialStages
+host/designer.strapons.g5-1#b,1,host__designer.strapons.g5-1__b.t1.mp3,Chris,designer.strapons,longform,2.952,-16.44,-2.23,yes,,main,
+host/designer.strapons.g5-1#b,2,host__designer.strapons.g5-1__b.t2.mp3,Chris,designer.strapons,longform,3.056,-16.44,-2.33,yes,,main,
+host/designer.strapons.g5-1#c,1,host__designer.strapons.g5-1__c.t1.mp3,Sarah,designer.strapons,longform,7.367,-16.42,-3.2,yes,,main,
+host/designer.strapons.g5-1#c,2,host__designer.strapons.g5-1__c.t2.mp3,Sarah,designer.strapons,longform,7.602,-16.44,-3.2,yes,,main,
+host/designer.rcs.g5-1#a,1,host__designer.rcs.g5-1__a.t1.mp3,Sarah,designer.rcs,longform,4.728,-16.44,-3.44,yes,,main,Codex booster-landing
+host/designer.rcs.g5-1#a,2,host__designer.rcs.g5-1__a.t2.mp3,Sarah,designer.rcs,longform,4.911,-16.45,-3.31,yes,,main,Codex booster-landing
+host/designer.rcs.g5-1#b,1,host__designer.rcs.g5-1__b.t1.mp3,Chris,designer.rcs,longform,4.859,-16.45,-1.99,yes,,main,
+host/designer.rcs.g5-1#b,2,host__designer.rcs.g5-1__b.t2.mp3,Chris,designer.rcs,longform,5.564,-16.82,-1.65,yes,,main,
+host/designer.rcs.g5-1#c,1,host__designer.rcs.g5-1__c.t1.mp3,Sarah,designer.rcs,longform,3.344,-16.43,-3.02,yes,,main,
+host/designer.rcs.g5-1#c,2,host__designer.rcs.g5-1__c.t2.mp3,Sarah,designer.rcs,longform,3.004,-16.45,-3.18,yes,,main,
+host/designer.mission.g5-1#a,1,host__designer.mission.g5-1__a.t1.mp3,Sarah,designer.mission,longform,4.362,-16.44,-2.98,yes,,main,Codex delta-v
+host/designer.mission.g5-1#a,2,host__designer.mission.g5-1__a.t2.mp3,Sarah,designer.mission,longform,4.545,-16.42,-2.97,yes,,main,Codex delta-v
+host/designer.mission.g5-1#b,1,host__designer.mission.g5-1__b.t1.mp3,Chris,designer.mission,longform,4.859,-16.44,-2.24,yes,,main,
+host/designer.mission.g5-1#b,2,host__designer.mission.g5-1__b.t2.mp3,Chris,designer.mission,longform,5.251,-16.44,-1.99,yes,,main,
+host/designer.mission.g5-1#c,1,host__designer.mission.g5-1__c.t1.mp3,Sarah,designer.mission,longform,7.654,-16.43,-3.18,yes,,main,
+host/designer.mission.g5-1#c,2,host__designer.mission.g5-1__c.t2.mp3,Sarah,designer.mission,longform,7.941,-16.44,-3.09,yes,,main,
+host/designer.look.g5-1#a,1,host__designer.look.g5-1__a.t1.mp3,Sarah,designer.look,longform,5.251,-16.43,-3.25,yes,,main,G20 (docs/narration-sources.md); NASA
+host/designer.look.g5-1#a,2,host__designer.look.g5-1__a.t2.mp3,Sarah,designer.look,longform,4.963,-16.44,-3.22,yes,,main,G20 (docs/narration-sources.md); NASA
+host/designer.look.g5-1#b,1,host__designer.look.g5-1__b.t1.mp3,Chris,designer.look,longform,6.348,-16.45,-1.77,yes,,main,
+host/designer.look.g5-1#b,2,host__designer.look.g5-1__b.t2.mp3,Chris,designer.look,longform,6.165,-16.43,-2.02,yes,,main,
+host/designer.look.g5-1#c,1,host__designer.look.g5-1__c.t1.mp3,Sarah,designer.look,longform,2.743,-16.43,-3.46,yes,,main,
+host/designer.look.g5-1#c,2,host__designer.look.g5-1__c.t2.mp3,Sarah,designer.look,longform,2.508,-16.44,-2.95,yes,,main,
+host/designer.review.g5-1#a,1,host__designer.review.g5-1__a.t1.mp3,Sarah,designer.review,longform,6.113,-16.44,-3.23,yes,,main,data/guide.json
+host/designer.review.g5-1#a,2,host__designer.review.g5-1__a.t2.mp3,Sarah,designer.review,longform,5.747,-16.46,-3.3,yes,,main,data/guide.json
+host/designer.review.g5-1#b,1,host__designer.review.g5-1__b.t1.mp3,Chris,designer.review,longform,4.598,-16.46,-1.87,yes,,main,
+host/designer.review.g5-1#b,2,host__designer.review.g5-1__b.t2.mp3,Chris,designer.review,longform,4.598,-16.44,-1.91,yes,,main,
+host/designer.review.g5-1#c,1,host__designer.review.g5-1__c.t1.mp3,Sarah,designer.review,longform,5.042,-16.45,-3.19,yes,,main,
+host/designer.review.g5-1#c,2,host__designer.review.g5-1__c.t2.mp3,Sarah,designer.review,longform,5.251,-16.45,-3.02,yes,,main,
+host/idle.pad.g5-1#a,1,host__idle.pad.g5-1__a.t1.mp3,Sarah,idle.pad,longform,5.669,-16.44,-3.23,yes,,main,G21 (docs/narration-sources.md)
+host/idle.pad.g5-1#a,2,host__idle.pad.g5-1__a.t2.mp3,Sarah,idle.pad,longform,5.799,-16.45,-3.18,yes,,main,G21 (docs/narration-sources.md)
+host/idle.pad.g5-1#b,1,host__idle.pad.g5-1__b.t1.mp3,Chris,idle.pad,longform,5.381,-16.69,-1.71,yes,,main,
+host/idle.pad.g5-1#b,2,host__idle.pad.g5-1__b.t2.mp3,Chris,idle.pad,longform,5.251,-16.7,-1.59,yes,,main,
+host/idle.pad.g5-1#c,1,host__idle.pad.g5-1__c.t1.mp3,Sarah,idle.pad,longform,4.624,-16.42,-3.16,yes,,main,
+host/idle.pad.g5-1#c,2,host__idle.pad.g5-1__c.t2.mp3,Sarah,idle.pad,longform,4.415,-16.42,-3.23,yes,,main,
+host/idle.pad.g5-3#a,1,host__idle.pad.g5-3__a.t1.mp3,Sarah,idle.pad,longform,2.403,-16.44,-3.38,yes,,main,
+host/idle.pad.g5-3#a,2,host__idle.pad.g5-3__a.t2.mp3,Sarah,idle.pad,longform,2.273,-16.44,-3.4,yes,,main,
+host/idle.pad.g5-3#b,1,host__idle.pad.g5-3__b.t1.mp3,Chris,idle.pad,longform,5.46,-16.45,-1.88,yes,,main,
+host/idle.pad.g5-3#b,2,host__idle.pad.g5-3__b.t2.mp3,Chris,idle.pad,longform,5.042,-16.54,-1.75,yes,,main,
+host/idle.pad.g5-3#c,1,host__idle.pad.g5-3__c.t1.mp3,Sarah,idle.pad,longform,3.474,-16.45,-3.17,yes,,main,
+host/idle.pad.g5-3#c,2,host__idle.pad.g5-3__c.t2.mp3,Sarah,idle.pad,longform,3.187,-16.44,-3.24,yes,,main,
