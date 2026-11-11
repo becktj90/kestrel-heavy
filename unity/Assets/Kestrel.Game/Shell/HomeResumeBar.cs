@@ -52,14 +52,17 @@ namespace Kestrel.Game.Shell
         }
 
         /// <summary>Add the bar and pin it in the top-left corner band, clear of the title, stats, gear and EXIT.</summary>
-        public static void Mount(VisualElement root, long credits, bool showContinue, Action onContinue)
+        public static void Mount(VisualElement root, long credits, bool showContinue, Action onContinue) => Mount(root, credits, showContinue, onContinue, null);
+
+        /// <summary>As above; <paramref name="caption"/> is CONTINUE's sub-line, what it opens (ResumeActions.Caption).</summary>
+        public static void Mount(VisualElement root, long credits, bool showContinue, Action onContinue, string caption)
         {
             if (root == null) return;
             var old = root.Q(BarName);
             if (old != null) old.RemoveFromHierarchy();
             // Starter Home (feat(home-simple)): CONTINUE is the one primary CTA, so it rides Home's LAUNCH key and the
             // bar keeps only the credits chip, which home.creditsChip hides by default. Off Home the bar is unchanged.
-            bool onCta = MainMenuOverlay.UseContinue(root, showContinue ? onContinue : null);
+            bool onCta = MainMenuOverlay.UseContinue(root, showContinue ? onContinue : null, showContinue ? caption : null);
             var bar = Build(credits, showContinue && !onCta, onContinue);
             root.Add(bar);
             // home.creditsChip shows or hides the chip, now and whenever FeatureFlags.Changed fires.

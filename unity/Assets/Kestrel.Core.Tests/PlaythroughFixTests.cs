@@ -235,11 +235,23 @@ namespace Kestrel.Core.Tests
             try
             {
                 Kestrel.Core.Features.FeatureFlags.Active = new Kestrel.Core.Features.FeatureFlags();
-                Assume.That(Kestrel.Core.Designer.StarterScreen.UseStarter(Kestrel.Core.Features.FeatureFlags.Active));
+                Assert.IsTrue(Kestrel.Core.Designer.StarterScreen.UseStarter(Kestrel.Core.Features.FeatureFlags.Active), "default flags are the Starter screen");
                 BoosterLanding.Why(new RecoveryCraft { DryKg = 20000 }, out var shipped, out _);
                 Assert.That(shipped, Does.Not.Contain("Recovery"), "the shipping default is the Starter screen");
             }
             finally { Kestrel.Core.Features.FeatureFlags.Active = saved; }
+        }
+
+        [Test]
+        public void ContinueCaption_NamesWhatItOpens()
+        {
+            // The play-through: the newest save, no draft, no last mission -> it opened "QA Saved Orbiter" as a free build.
+            Assert.AreEqual("QA Saved Orbiter \u00B7 free build", Kestrel.Core.Save.ResumeOffer.Caption(false, null, "QA Saved Orbiter"));
+            Assert.AreEqual("QA Saved Orbiter \u00B7 KH-3", Kestrel.Core.Save.ResumeOffer.Caption(false, "KH-3 \u00B7 Tiny Orbit", "QA Saved Orbiter"));
+            Assert.AreEqual("KH-3 \u00B7 Tiny Orbit", Kestrel.Core.Save.ResumeOffer.Caption(true, "KH-3 \u00B7 Tiny Orbit", "KH-3 draft"), "a mission's draft resumes that mission");
+            Assert.AreEqual("Your last rocket \u00B7 free build", Kestrel.Core.Save.ResumeOffer.Caption(true, null, " "));
+            Assert.AreEqual("Continue. Opens QA Saved Orbiter, free build.", Kestrel.Core.Save.ResumeOffer.Spoken("QA Saved Orbiter \u00B7 free build"));
+            Assert.AreEqual(Kestrel.Core.Save.ResumeOffer.ContinueSpoken, Kestrel.Core.Save.ResumeOffer.Spoken(null));
         }
     }
 }
