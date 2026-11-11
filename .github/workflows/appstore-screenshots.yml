@@ -33,7 +33,7 @@ jobs:
   shots:
     name: App Store screenshots (PlayMode)
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 110
     env:
       HAS_LICENSE: ${{ secrets.UNITY_LICENSE != '' }}
     steps:
