@@ -1,0 +1,21 @@
+catalog minorPerKc=100000
+m1   payload kid-box mission vol 0.2 dia 0.6 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m2   payload kid-box mission vol 0.2 dia 0.6 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m3   payload cubesat mission vol 0.05 dia 0.4 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m4   payload leo-sat mission vol 12 dia 2 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m5   payload leo-sat mission vol 40 dia 3.2 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m6   payload leo-sat mission vol 30 dia 2.9 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m7   payload gto-comsat mission vol 60 dia 3.4 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m8   payload crew-capsule mission vol 25 dia 3.5 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m9   payload lunar-probe mission vol 15 dia 2.1 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m10  payload gto-comsat mission vol 70 dia 3.6 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m11  payload weather-sat mission vol 8 dia 2 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m12  payload space-telescope mission vol 10 dia 2.4 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m13  payload cubesat-dispenser mission vol 1.2 dia 1 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m14  payload cargo-capsule mission vol 35 dia 3.6 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m15  payload geo-relay mission vol 50 dia 3.2 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m16  payload crew-capsule mission vol 25 dia 3.5 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m17  payload lunar-lander mission vol 18 dia 2.6 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m18  payload lunar-probe mission vol 15 dia 2.1 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m19  payload gto-comsat mission vol 70 dia 3.6 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 
+m20  payload lunar-probe mission vol 16 dia 2.2 | designer-OK-but-mission-fails:  | designer-blocks-but-mission-fits: 

@@ -3,18 +3,18 @@
 Shipping engine: **Unity** (iOS, **portrait only**). The Phaser build in `web/` is the beckify.com demo and is not release-gating.
 Owner of this file: Kestrel Arcade (merge queue) with QA. Merges to `main` and every App Store Connect, signing, privacy or spend action: **Trevor's yes**.
 
-_Snapshot: **2026-11-10** (America/New_York), `main` at `b7d7f89f` (#490). Export: **223** / Xcode Cloud **#58 SUCCEEDED** from `5f6059a591d3` (`xcode-export` `80cd819a`). TestFlight not claimed in this snapshot. Last prior snapshot: 2026-11-09 (score 48/62, G-2)._
+_Snapshot: **2026-11-10** (America/New_York), `main` at `1a69b7c1` (#491). Export: **223** / Xcode Cloud **#58 SUCCEEDED** from `5f6059a591d3` (`xcode-export` `80cd819a`). TestFlight not claimed in this snapshot. Last prior snapshot: 2026-11-10 (score 49/62, G-5)._
 
 ## Score
 
 | Bucket | Count | Notes |
 |---|---|---|
-| **Verified (CI / config)** | **49** | Green required checks on the PR that merged the claim, and/or committed config pins / export inspect |
+| **Verified (CI / config)** | **50** | Green required checks on the PR that merged the claim, and/or committed config pins / export inspect |
 | **Unverified (no CI/device proof)** | **9** | Includes "looks right in code" and audio-on-phone |
-| **Gap / release decision** | **6** | Store claim false, or needs Trevor |
+| **Gap / release decision** | **5** | Store claim false, or needs Trevor |
 | **Device-verified** | **0** | Nothing on a real iPhone/iPad has been signed off in-repo |
 
-**Overall: 49 / 62 checklist rows are verified (CI/config)** (includes #475 Ready/countdown, G-4 submitAnalytics, G-6 PrivacyInfo, N10 CONTINUE, G-2 GC offline, G-5 export 223 inspect).  
+**Overall: 50 / 62 checklist rows are verified (CI/config)** (includes #475 Ready/countdown, G-4 submitAnalytics, G-6 PrivacyInfo, N10 CONTINUE, G-2 GC offline, G-5 export 223 inspect, D-7 audit re-score).  
 **Device: 0 / 13 script steps passed in-repo** (see [`DEVICE_TEST_SCRIPT.md`](DEVICE_TEST_SCRIPT.md)).
 
 Honesty rules:
@@ -77,7 +77,7 @@ Open PRs at snapshot: **none**. Open GitHub issues at snapshot: **none** (former
 | D-4 | KH-1 pad framing in designer | verified (CI capture) | Graphics | #368 |
 | D-5 | Designer Launch flies headless sim + fairing jettison | verified (CI) | Gameplay | #360 |
 | D-6 | Fairing joint = stage diameter, 15° shoulder | verified (CI) | Graphics | #375, #383; fairing joint/mesh tests + captures |
-| D-7 | Designer×mission discrepancy audit re-run | gap | Gameplay | [`audits/DESIGNER_MISSION_DISCREPANCIES.md`](audits/DESIGNER_MISSION_DISCREPANCIES.md) still the Oct 19 cut; many Blockers addressed by later PRs but audit not re-scored |
+| D-7 | Designer×mission discrepancy audit re-run | verified (audit re-run) | Gameplay | [`audits/rerun-2026-11-10/RESCORE.md`](audits/rerun-2026-11-10/RESCORE.md) on `1a69b7c1`: B-02/B-04/B-06/B-09/M-30 closed; B-05/B-07/B-08/B-10 (simple layer) and remaining majors stay in the audit |
 | D-8 | Starter vs flown landing Δv disagreement (#369) | verified (CI) | Gameplay | **Closed** by #408 |
 | D-9 | Touch feel on a real phone | unverified | UX | Device script §3 |
 
@@ -192,7 +192,7 @@ Highest first:
 3. **S-3 screenshots** — regenerate via existing workflow, pick finals, Trevor uploads.
 4. **T1 privacy URL** — G-4 / G-6 verified; G-5 framework inspect of export 223 is done (proxy capture still not claimed). Do not tick ASC **Data Not Collected** until the policy page (T1) is published.
 5. **F-8 first-flight fairness** — needs a device Pass on KH-1 (#475 fixed the Ready/countdown copy mismatch).
-7. **D-7 discrepancy audit** — re-run or formally close Blockers against current main.
+7. **D-7 discrepancy audit** — re-scored 2026-11-10. Remaining Open product items (B-05/B-07/B-08, B-10 simple layer, majors) stay in the audit; they are not a missing re-run.
 8. **P-4 performance on device** — required for heat/ stutter confidence.
 9. **A-4 / T6 / T7** — license, AI-voice line, age-rating confirmation.
 
@@ -218,3 +218,4 @@ Highest first:
 | 2026-11-09 | Resolve main merge after #478; N9 NAV-08 verified via #472; G-7 notes GC out. Score 45/62. | Arcade |
 | 2026-11-09 | Build tip: export 215 / TF 51 from b2bd87b; main +#475. Network evidence + #479; GC removed #478; score 45/62. | Arcade |
 | 2026-11-10 | G-5: framework inspect of export 223 / Cloud #58 (PrivacyInfo pins, encryption plist, no tracking frameworks). G-7 export plist confirmed. Score 49/62. TestFlight not claimed. | Arcade |
+| 2026-11-10 | D-7: re-score designer×mission audit on main 1a69b7c1 (B-02/B-04/B-06/B-09/M-30 Fixed). Score 50/62. | Arcade |
