@@ -46,6 +46,33 @@ enums. The mission id is threaded into `NarrationFacts` at the two narration ent
 (`FlightDriver` from the aimed mission, `SliceApp.BeginCountNarration` from
 `AscentFlight.CurrentMission()`); a flight with no mission id simply never hears these lines.
 
+### Factual history lines in any narration surface (DECISIONS #77, widened)
+
+Factual history lines may name real people and programs in **any narration surface**: webcast
+color, designer commentary, idle or pad time, menu commentary and mission previews. Each such line
+has a listed source id in `docs/narration-sources.md` and a Codex/Physics check
+(Codex for history and game facts, Physics for any physics claim, both for mixed lines) before it
+is recorded. Limits:
+
+- Name only **historical government programs, vehicles, agencies and people** (for example
+  Sputnik 1, the R-7, Apollo 11, Saturn V, the Soviet N1, Mercury-Atlas, Space Shuttle, Skylab,
+  Hubble, NASA, the Soviet space program, Gagarin, Leonov, Korolev).
+- **No current commercial companies or their vehicles**, and never Blue Origin, New Glenn,
+  Jacklyn or LC-36 (the banned-names lint still applies to these lines; only the mission-gated
+  historical takes above are exempt).
+- **Nothing that implies endorsement**, and nothing that compares the KH rocket to a real one as
+  if it were that rocket. A line may tell how a real rocket did something; it may not say the
+  player's stack *is*, or *is like*, that rocket.
+- No actors, films or celebrities; no invented quotes.
+- Each named line keeps a **name-free alternate** text, staged as a fallback.
+- The game's own world stays fictional (Pier 7, Haven, KH-n, the stack), and **Codex read-aloud
+  scripts stay name-free**.
+- Word caps: in-flight lines (feedback, status, color) stay at 14 words per spoken line;
+  menu, designer, idle and mission-preview lines may run up to 24 words.
+
+These lines are not mission-gated unless they also state a mission fact. Any fact about the flown
+design still needs `requires`/`claims` as usual; a history line that states none is `neutral`.
+
 Propellants: `kerolox`, `hydrolox`, `methalox`, `solid`, `storable`.
 
 ## `claims`

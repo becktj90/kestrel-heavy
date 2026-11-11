@@ -234,6 +234,13 @@ misspellings.
 - **Real brands and people:** no real companies, vehicles, ships, pads, people, or
   trademarks (Blue Origin, New Glenn, Jacklyn, LC-36, SpaceX, NASA marks, astronaut names,
   etc.). Applies to text, audio, code enums, file names, art.
+  **Exception (DECISIONS #77, widened):** factual history lines in any narration surface
+  (webcast color, designer, idle or pad, menu, mission preview) may name historical government
+  programs, vehicles, agencies and people, each with a listed source in
+  `docs/narration-sources.md` and a Codex/Physics check. No current commercial companies or their
+  vehicles, never Blue Origin, New Glenn, Jacklyn or LC-36, nothing that implies endorsement, and
+  nothing that compares the KH rocket to a real one as if it were that rocket. Each such line keeps
+  a name-free alternate. Codex read-aloud stays name-free. Full rule: `docs/narration-facts.md`.
 - **Scary or violent framing:** no death, injury, explosions described graphically, fire on
   people, weapons, military payloads, disaster imagery. Failures are "stack lost," "range safe."
 - **Monetization pressure:** no "buy now," no countdown offers, no FOMO, no "your friends
