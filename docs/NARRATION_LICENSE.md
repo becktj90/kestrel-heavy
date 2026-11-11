@@ -42,6 +42,28 @@ attribution is required**. Free-plan audio is not used anywhere in this game.
   `docs/plans/per-mission-commentary.md` (the script is kept out of the repo; the lines JSON
   is the committed source).
 
+## Per-mission technical commentary (added 2026-11-11)
+- 80 clips (`host/color.*.m<n>.t*`, `cohost/color.*.m<n>.t*`), 4 per campaign mission (KH-1..KH-20),
+  one engineering theme per mission. Generated with ElevenLabs text-to-speech
+  (`eleven_multilingual_v2`) on Trevor Beck's **paid Creator plan** — same model, voices
+  (Sarah host, Chris co-host) and settings as the 2026-10-11 narration, no new voices.
+- Script: `tools/clipgen/mission-tech-lines.json` (machine-readable source of truth);
+  plan, sources and per-mission character counts: `docs/plans/per-mission-technical-commentary.md`.
+- Characters sent: 4,666 (final script total 4,666). Account before: 9,258 used / 229,144.
+  Account after (counter read 2026-11-11): 11,206 used / 229,144 (delta 1,948 — the counter lags
+  the 4,666 sent; re-check before treating as final). Resets Dec 2, 2026. Hash-skipped: unchanged
+  lines were not re-billed (raw cache `tools/clipgen/.raw`, local only, gitignored).
+- One very quiet raw take (`cohost/color.recovery.m7.t1`) needed one extra loudnorm pass on the
+  normalized output to converge (−16.42 LUFS); no re-record, no setting change.
+- Every clip is gated to its own mission (`requires: {"mission": "m<n>"}`, `claims: ["mission"]`)
+  with a `sources` list, so it only plays on that mission and stays silent in sandbox.
+  Unlike the historical set, these lines name NO real companies, rockets, programs, ships or
+  people: generic engineering/physics facts only, so the claim-vs-design verifier stays green.
+- Per-clip details: `assets/narration/manifest.json` (byte-equal Unity copy). Regenerate:
+  `python3 tools/clipgen/gen_mission_tech.py` (committed; needs the sealed ElevenLabs
+  connection — never a raw key). Generator validates every take against the lint rules before
+  spending credits.
+
 ## Thrum guide voice (added 2026-10-15)
 - 78 clips in `assets/narration/guide/` (kid-line cards of `data/guide.json`, one file per card id, e.g. `first.2.c1.mp3`), voiced as Mabel "Thrum" Pike.
 - Generated with ElevenLabs text-to-speech (`eleven_multilingual_v2`) on Trevor Beck's **paid Creator plan**, no new spend. Voice: "Junie Pell v2", a voice generated on Trevor's own account (not a shared-library voice).

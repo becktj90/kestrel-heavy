@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-06",
+ "generatedAt": "2026-11-11",
  "model": "eleven_multilingual_v2",
  "format": "mp3 44.1kHz mono 96k",
  "loudness": {
@@ -8,7 +8,7 @@
   "lra": 7,
   "method": "pre-gain + alimiter (4x oversampled), then ffmpeg loudnorm two-pass linear"
  },
- "source": "web/js/narration/manifest.js (mc/host/cohost channels; token lines excluded); tools/clipgen/mission-lines.json (per-mission historical commentary, DECISIONS #77)",
+ "source": "web/js/narration/manifest.js (mc/host/cohost channels; token lines excluded); tools/clipgen/mission-lines.json (per-mission historical commentary, DECISIONS #77); tools/clipgen/mission-tech-lines.json (per-mission technical commentary)",
  "clips": [
   {
    "id": "mission-control/pad.1",
@@ -7349,6 +7349,2340 @@
    "claims": [
     "stages",
     "recovery"
+   ]
+  },
+  {
+   "id": "host/color.pad.m1.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Thrust must beat weight, or the rocket never leaves the pad.",
+   "spokenText": "Thrust must beat weight, or the rocket never leaves the pad.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m1.t1.mp3",
+   "durationSec": 3.344,
+   "lufs": -16.44,
+   "truePeakDb": -3.12,
+   "normalization": "linear",
+   "hash": "a6fc54213fe2",
+   "sha256": "cfde1407488e6144075adfb6d5278b48fe36294b8153dac324ae2004d8c8df63",
+   "requires": {
+    "mission": "m1"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m1",
+   "sources": [
+    "T1"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m1.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "A rocket lifts off only when thrust is stronger than weight.",
+   "spokenText": "A rocket lifts off only when thrust is stronger than weight.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m1.t2.mp3",
+   "durationSec": 2.833,
+   "lufs": -16.42,
+   "truePeakDb": -1.84,
+   "normalization": "linear",
+   "hash": "2a816b6dc7b6",
+   "sha256": "204f55468406ac2c85b774e9a6182a5754168d750c4cf97e639303bf6c57a8af",
+   "requires": {
+    "mission": "m1"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m1",
+   "sources": [
+    "T2"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m1.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "As propellant burns away, the rocket grows lighter and quicker.",
+   "spokenText": "As propellant burns away, the rocket grows lighter and quicker.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m1.t1.mp3",
+   "durationSec": 3.808,
+   "lufs": -16.43,
+   "truePeakDb": -3.41,
+   "normalization": "linear",
+   "hash": "fcb66780875e",
+   "sha256": "e89c923e04108a73c8a907b9ffc8fba295bcec3ab5c2fb2b36d7e1320e45b73c",
+   "requires": {
+    "mission": "m1"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m1",
+   "sources": [
+    "T1"
+   ]
+  },
+  {
+   "id": "cohost/color.ascent.m1.t2",
+   "event": "color.ascent",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Same push, less mass: the rocket speeds up more each second.",
+   "spokenText": "Same push, less mass: the rocket speeds up more each second.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.ascent.m1.t2.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.45,
+   "truePeakDb": -2.08,
+   "normalization": "linear",
+   "hash": "245b65f37394",
+   "sha256": "799e066f76c5ce06fb1825c15a07d293996c689ed1b81b1a4c0aabd5957f90c6",
+   "requires": {
+    "mission": "m1"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m1",
+   "sources": [
+    "T2"
+   ]
+  },
+  {
+   "id": "host/color.pad.m2.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Height alone is not orbit; sideways speed is the secret.",
+   "spokenText": "Height alone is not orbit; sideways speed is the secret.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m2.t1.mp3",
+   "durationSec": 3.576,
+   "lufs": -16.43,
+   "truePeakDb": -3.39,
+   "normalization": "linear",
+   "hash": "761115daa5ce",
+   "sha256": "56fc4bef03fa310aef9b22bc91d79eb9c237254ecd9d7bdf772aedd8665f2aac",
+   "requires": {
+    "mission": "m2"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m2",
+   "sources": [
+    "T3"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m2.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "To stay up there, a craft must race sideways, not just climb.",
+   "spokenText": "To stay up there, a craft must race sideways, not just climb.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m2.t2.mp3",
+   "durationSec": 3.344,
+   "lufs": -16.43,
+   "truePeakDb": -1.86,
+   "normalization": "linear",
+   "hash": "a09d1d982cd5",
+   "sha256": "073842ade9bbcad7858574b0996d84850770b00ec5c95f9df71d70a6ae8035f1",
+   "requires": {
+    "mission": "m2"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m2",
+   "sources": [
+    "T3"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m2.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Orbit needs sideways speed, so rockets lean over as they climb.",
+   "spokenText": "Orbit needs sideways speed, so rockets lean over as they climb.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m2.t1.mp3",
+   "durationSec": 3.901,
+   "lufs": -16.42,
+   "truePeakDb": -3.14,
+   "normalization": "linear",
+   "hash": "a8446f3b048d",
+   "sha256": "67405ce9bab3039c5ced6a9f98739fea84d3133698c165516b00aea5b500d057",
+   "requires": {
+    "mission": "m2"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m2",
+   "sources": [
+    "T3"
+   ]
+  },
+  {
+   "id": "cohost/color.karman.m2.t1",
+   "event": "color.karman",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Up here the air is too thin for wings to lift anything.",
+   "spokenText": "Up here the air is too thin for wings to lift anything.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.karman.m2.t1.mp3",
+   "durationSec": 2.74,
+   "lufs": -16.44,
+   "truePeakDb": -2.4,
+   "normalization": "linear",
+   "hash": "74c89adca0c0",
+   "sha256": "c7f285b0e8844bb6096a7ae27a1ba376c4ab13a12ceef80b1856421c6756bad7",
+   "requires": {
+    "mission": "m2"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m2",
+   "sources": [
+    "T4"
+   ]
+  },
+  {
+   "id": "host/color.pad.m3.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "A satellite never stops falling; it just keeps missing Earth.",
+   "spokenText": "A satellite never stops falling; it just keeps missing Earth.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m3.t1.mp3",
+   "durationSec": 3.901,
+   "lufs": -16.43,
+   "truePeakDb": -3.44,
+   "normalization": "linear",
+   "hash": "723d33c65a09",
+   "sha256": "51d1e4453d0ede2119529ae1308d59264670019f80eed934ecf33a95267c7194",
+   "requires": {
+    "mission": "m3"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m3",
+   "sources": [
+    "T3"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m3.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Gravity pulls it down while speed bends its path around Earth.",
+   "spokenText": "Gravity pulls it down while speed bends its path around Earth.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m3.t2.mp3",
+   "durationSec": 3.158,
+   "lufs": -16.43,
+   "truePeakDb": -2.07,
+   "normalization": "linear",
+   "hash": "b6d113ef574c",
+   "sha256": "6bd3182bd6f3abd21b56304df39577076150a83d027b65cdcfc72597c617006e",
+   "requires": {
+    "mission": "m3"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m3",
+   "sources": [
+    "T3"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m3.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Too slow and it sinks; too fast and it flies farther out.",
+   "spokenText": "Too slow and it sinks; too fast and it flies farther out.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m3.t1.mp3",
+   "durationSec": 3.994,
+   "lufs": -16.45,
+   "truePeakDb": -3.53,
+   "normalization": "linear",
+   "hash": "d8fb76e0d413",
+   "sha256": "6c335d8176c3700ec1375f346934defb72d8c5344fbb397119b804faaa5a97d9",
+   "requires": {
+    "mission": "m3"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m3",
+   "sources": [
+    "T5"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m3.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "In a circle, speed and gravity stay in perfect balance.",
+   "spokenText": "In a circle, speed and gravity stay in perfect balance.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m3.t1.mp3",
+   "durationSec": 2.74,
+   "lufs": -16.43,
+   "truePeakDb": -2.08,
+   "normalization": "linear",
+   "hash": "f2e727bcfadb",
+   "sha256": "778b5e33b7c7bf079c96d4577a25eefedee7aa2dd4106422b70601f951b65118",
+   "requires": {
+    "mission": "m3"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m3",
+   "sources": [
+    "T3"
+   ]
+  },
+  {
+   "id": "host/color.pad.m4.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Higher orbits take longer to circle Earth just once.",
+   "spokenText": "Higher orbits take longer to circle Earth just once.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m4.t1.mp3",
+   "durationSec": 3.111,
+   "lufs": -16.43,
+   "truePeakDb": -3.39,
+   "normalization": "linear",
+   "hash": "49d4d5af9c6f",
+   "sha256": "46fd532808ee9c40719c0a6447cff573cd8396b86cf1984aa853fe027ead10b9",
+   "requires": {
+    "mission": "m4"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m4",
+   "sources": [
+    "T6"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m4.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "A bigger loop means a slower lap around the planet.",
+   "spokenText": "A bigger loop means a slower lap around the planet.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m4.t2.mp3",
+   "durationSec": 2.694,
+   "lufs": -16.45,
+   "truePeakDb": -2.19,
+   "normalization": "linear",
+   "hash": "2dfdc5509e6b",
+   "sha256": "cee7bb17543d968e4e21c2a7bbe7604a7b5bff721c5150b35d7227e144dbaec3",
+   "requires": {
+    "mission": "m4"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m4",
+   "sources": [
+    "T6"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m4.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "From higher up, one view covers far more ground below.",
+   "spokenText": "From higher up, one view covers far more ground below.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m4.t1.mp3",
+   "durationSec": 3.622,
+   "lufs": -16.46,
+   "truePeakDb": -3.39,
+   "normalization": "linear",
+   "hash": "28b1253c4239",
+   "sha256": "f93c45f0c6f2de76b1037c8082353e38abc11947b327f7de61ee3f2aee627bae",
+   "requires": {
+    "mission": "m4"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m4",
+   "sources": [
+    "T7"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m4.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Closer views show fine detail; wider views show whole storms.",
+   "spokenText": "Closer views show fine detail; wider views show whole storms.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m4.t1.mp3",
+   "durationSec": 3.622,
+   "lufs": -16.97,
+   "truePeakDb": -1.95,
+   "normalization": "dynamic",
+   "hash": "548dff02f581",
+   "sha256": "5e43729dcfe6a6487cee28412f971c817d1794a99891d2af91f8095ddb88be97",
+   "requires": {
+    "mission": "m4"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m4",
+   "sources": [
+    "T7"
+   ]
+  },
+  {
+   "id": "host/color.pad.m5.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Most of a rocket is propellant, not metal or cargo.",
+   "spokenText": "Most of a rocket is propellant, not metal or cargo.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m5.t1.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.42,
+   "truePeakDb": -3.33,
+   "normalization": "linear",
+   "hash": "8a71b3d1cb34",
+   "sha256": "8bbf90ac690753d52f588d5bb96b864f3b25b1ce5375f555e53f21942a657f38",
+   "requires": {
+    "mission": "m5"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m5",
+   "sources": [
+    "T8"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m5.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Nine parts in ten can be propellant on a trip to orbit.",
+   "spokenText": "Nine parts in ten can be propellant on a trip to orbit.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m5.t2.mp3",
+   "durationSec": 2.833,
+   "lufs": -16.83,
+   "truePeakDb": -1.79,
+   "normalization": "linear",
+   "hash": "c984ba947333",
+   "sha256": "e68ffc6b90e5fe5db36b9d9ede21d945aed11602fa4330f01c639e914455618f",
+   "requires": {
+    "mission": "m5"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m5",
+   "sources": [
+    "T8"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m5.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Speed grows from the ratio of full mass to empty mass.",
+   "spokenText": "Speed grows from the ratio of full mass to empty mass.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m5.t1.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.44,
+   "truePeakDb": -3.1,
+   "normalization": "linear",
+   "hash": "5d1d610e48e0",
+   "sha256": "2297e63ab447e2e1e487b5c2dc90d5a86f86605a718d53671c1ed1a01be836d3",
+   "requires": {
+    "mission": "m5"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m5",
+   "sources": [
+    "T8"
+   ]
+  },
+  {
+   "id": "cohost/color.ascent.m5.t2",
+   "event": "color.ascent",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Dropping empty tanks lets the rest speed up far more easily.",
+   "spokenText": "Dropping empty tanks lets the rest speed up far more easily.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.ascent.m5.t2.mp3",
+   "durationSec": 2.926,
+   "lufs": -16.43,
+   "truePeakDb": -1.56,
+   "normalization": "linear",
+   "hash": "eba45b4d32fd",
+   "sha256": "784771ffc408604a0ed53b44cc54d5c176d767372e9a11609c9a27dbb2b608e4",
+   "requires": {
+    "mission": "m5"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m5",
+   "sources": [
+    "T2"
+   ]
+  },
+  {
+   "id": "host/color.pad.m6.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Returning is the hard part; speed must be shed with care.",
+   "spokenText": "Returning is the hard part; speed must be shed with care.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m6.t1.mp3",
+   "durationSec": 3.111,
+   "lufs": -16.41,
+   "truePeakDb": -3.25,
+   "normalization": "linear",
+   "hash": "a407a86687c2",
+   "sha256": "9c50428ff3e1f7c81531494daafe0e15e8a8df442c3d48874dc25ccf23a84a2c",
+   "requires": {
+    "mission": "m6"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m6",
+   "sources": [
+    "T9"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m6.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Air can brake a craft, but fast air turns speed into heat.",
+   "spokenText": "Air can brake a craft, but fast air turns speed into heat.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m6.t2.mp3",
+   "durationSec": 3.251,
+   "lufs": -16.44,
+   "truePeakDb": -1.72,
+   "normalization": "linear",
+   "hash": "750518a2a8b1",
+   "sha256": "c5c079fdefc1bc802c230fafe97fa1a56827ca8ada40f769f1ee40dba4bb8a46",
+   "requires": {
+    "mission": "m6"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m6",
+   "sources": [
+    "T9"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m6.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Thin air above slows a craft gently before the thick air.",
+   "spokenText": "Thin air above slows a craft gently before the thick air.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m6.t1.mp3",
+   "durationSec": 3.529,
+   "lufs": -16.44,
+   "truePeakDb": -3.35,
+   "normalization": "linear",
+   "hash": "0ae6105ce8d3",
+   "sha256": "4daaa0f15820c60d47b2b69014aad6b6ae7fab07d50f80352149187e8813a674",
+   "requires": {
+    "mission": "m6"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m6",
+   "sources": [
+    "T9"
+   ]
+  },
+  {
+   "id": "cohost/color.recovery.m6.t1",
+   "event": "color.recovery",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "A blunt shape spreads heat wide, shielding what sits behind it.",
+   "spokenText": "A blunt shape spreads heat wide, shielding what sits behind it.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.recovery.m6.t1.mp3",
+   "durationSec": 3.576,
+   "lufs": -16.45,
+   "truePeakDb": -1.94,
+   "normalization": "linear",
+   "hash": "ef7c1c0a534d",
+   "sha256": "03196eb2a14d0f28be5c339a33b6b18873f46edae892b6b1975c7fa0a1a24bdb",
+   "requires": {
+    "mission": "m6"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m6",
+   "sources": [
+    "T10"
+   ]
+  },
+  {
+   "id": "host/color.pad.m7.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "A push at the low point lifts the high point higher.",
+   "spokenText": "A push at the low point lifts the high point higher.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m7.t1.mp3",
+   "durationSec": 2.833,
+   "lufs": -16.44,
+   "truePeakDb": -3.4,
+   "normalization": "linear",
+   "hash": "1a40dd34410c",
+   "sha256": "6d94733178e45d313974070ea3b589d8f5e87ab5e866bdb48eea2508922af0d5",
+   "requires": {
+    "mission": "m7"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m7",
+   "sources": [
+    "T11"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m7.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Speed up low down, and the far side of the path rises.",
+   "spokenText": "Speed up low down, and the far side of the path rises.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m7.t2.mp3",
+   "durationSec": 2.879,
+   "lufs": -16.44,
+   "truePeakDb": -2.16,
+   "normalization": "linear",
+   "hash": "2456d5261bb7",
+   "sha256": "d831d8c477c5e72f3c13c4516f69713d842955c8b38a17f04642e7091529c561",
+   "requires": {
+    "mission": "m7"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m7",
+   "sources": [
+    "T11"
+   ]
+  },
+  {
+   "id": "host/color.coast.m7.t1",
+   "event": "color.coast",
+   "channel": "host",
+   "layer": "color",
+   "text": "The path stretches into a long loop between two circles.",
+   "spokenText": "The path stretches into a long loop between two circles.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.coast.m7.t1.mp3",
+   "durationSec": 3.576,
+   "lufs": -16.44,
+   "truePeakDb": -3.31,
+   "normalization": "linear",
+   "hash": "d8c19c5f972f",
+   "sha256": "c4a43f18353b9a677ccbab9d03f5a4ede604f2c5827dff3ab2d25b2d113f0b7f",
+   "requires": {
+    "mission": "m7"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m7",
+   "sources": [
+    "T11"
+   ]
+  },
+  {
+   "id": "cohost/color.recovery.m7.t1",
+   "event": "color.recovery",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "A second push at the far point rounds the path again.",
+   "spokenText": "A second push at the far point rounds the path again.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.recovery.m7.t1.mp3",
+   "durationSec": 2.461,
+   "lufs": -16.42,
+   "truePeakDb": -1.82,
+   "normalization": "linear",
+   "hash": "bd529b264cc3",
+   "sha256": "9b36718d927bd0f99c92c6904b2120ba4533c707dcf2ba171fda2cbc54a9f922",
+   "requires": {
+    "mission": "m7"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m7",
+   "sources": [
+    "T12"
+   ]
+  },
+  {
+   "id": "host/color.pad.m8.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Crew rides stay gentle, near three times Earth's gravity.",
+   "spokenText": "Crew rides stay gentle, near three times Earth's gravity.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m8.t1.mp3",
+   "durationSec": 3.437,
+   "lufs": -16.45,
+   "truePeakDb": -3.45,
+   "normalization": "linear",
+   "hash": "8be4f1a58b25",
+   "sha256": "156705f0ce2b3a1ad56ff74066e11b3a76d5364b2c95d07ec01bd089aa3b9e50",
+   "requires": {
+    "mission": "m8"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m8",
+   "sources": [
+    "T13"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m8.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "At three times your weight, lifting an arm feels heavy.",
+   "spokenText": "At three times your weight, lifting an arm feels heavy.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m8.t2.mp3",
+   "durationSec": 2.554,
+   "lufs": -16.44,
+   "truePeakDb": -2.23,
+   "normalization": "linear",
+   "hash": "2545855fd0ff",
+   "sha256": "2fe81cb753316b58009676a6aae3dd5e36419b670b2ba22030f01f374a93a9e4",
+   "requires": {
+    "mission": "m8"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m8",
+   "sources": [
+    "T13"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m8.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Crews feel each push as weight pressing them into seats.",
+   "spokenText": "Crews feel each push as weight pressing them into seats.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m8.t1.mp3",
+   "durationSec": 3.251,
+   "lufs": -16.43,
+   "truePeakDb": -3.23,
+   "normalization": "linear",
+   "hash": "0062d30344b6",
+   "sha256": "dd062a8738fb2e2ab799fc4a9338f479df33be4028fa3fa676e360ebe8682848",
+   "requires": {
+    "mission": "m8"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m8",
+   "sources": [
+    "T14"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m8.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "When the push stops, the crew floats free at once.",
+   "spokenText": "When the push stops, the crew floats free at once.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m8.t1.mp3",
+   "durationSec": 2.647,
+   "lufs": -16.45,
+   "truePeakDb": -2.38,
+   "normalization": "linear",
+   "hash": "ba860975d863",
+   "sha256": "cf9b3418f5c1d1a7213be7eeef958e540acd017ec261eb6e3258ba3e59514179",
+   "requires": {
+    "mission": "m8"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m8",
+   "sources": [
+    "T14"
+   ]
+  },
+  {
+   "id": "host/color.pad.m9.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Escape takes about eleven kilometers per second from Earth.",
+   "spokenText": "Escape takes about eleven kilometers per second from Earth.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m9.t1.mp3",
+   "durationSec": 3.39,
+   "lufs": -16.44,
+   "truePeakDb": -3.26,
+   "normalization": "linear",
+   "hash": "6f737fe86a08",
+   "sha256": "0042ec8ed45e3e7a1ec52be7abe0bd6bb126dbee33a12cab67f2e27a96c130c3",
+   "requires": {
+    "mission": "m9"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m9",
+   "sources": [
+    "T15"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m9.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "That is more than a third again the speed for a low orbit.",
+   "spokenText": "That is more than a third again the speed for a low orbit.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m9.t2.mp3",
+   "durationSec": 2.694,
+   "lufs": -16.44,
+   "truePeakDb": -2.07,
+   "normalization": "linear",
+   "hash": "ed893981bc45",
+   "sha256": "38a4ee312441bc691b44ee6eb1a03ed0043053242870abc233ae07bab5ec967b",
+   "requires": {
+    "mission": "m9"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m9",
+   "sources": [
+    "T15"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m9.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "The Moon is days away, along a curved path, not straight up.",
+   "spokenText": "The Moon is days away, along a curved path, not straight up.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m9.t1.mp3",
+   "durationSec": 3.715,
+   "lufs": -16.43,
+   "truePeakDb": -3.06,
+   "normalization": "linear",
+   "hash": "c24cb8916c93",
+   "sha256": "82268d49d995837a02394d3e8e5059cbbe4fe85a73bc65b8b8f11a2aaf5707a7",
+   "requires": {
+    "mission": "m9"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m9",
+   "sources": [
+    "T16"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m9.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Gravity slows the craft the whole way, yet it still arrives.",
+   "spokenText": "Gravity slows the craft the whole way, yet it still arrives.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m9.t1.mp3",
+   "durationSec": 3.065,
+   "lufs": -16.43,
+   "truePeakDb": -2.54,
+   "normalization": "linear",
+   "hash": "a9f24201367f",
+   "sha256": "776be0bb286929b00f12cf06ae8521424912eb07c646d58dbe0d25759b275906",
+   "requires": {
+    "mission": "m9"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m9",
+   "sources": [
+    "T17"
+   ]
+  },
+  {
+   "id": "host/color.pad.m10.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "A flown rocket gets checked top to bottom before its next flight.",
+   "spokenText": "A flown rocket gets checked top to bottom before its next flight.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m10.t1.mp3",
+   "durationSec": 3.855,
+   "lufs": -16.44,
+   "truePeakDb": -3.32,
+   "normalization": "linear",
+   "hash": "37715c55bdaa",
+   "sha256": "baf7f4277406093be7c6a9c1d3076b77d4b062cc270e070036c07ad93f0bbdf6",
+   "requires": {
+    "mission": "m10"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m10",
+   "sources": [
+    "T18"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m10.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Crews look for heat marks, cracks, and worn parts each time.",
+   "spokenText": "Crews look for heat marks, cracks, and worn parts each time.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m10.t2.mp3",
+   "durationSec": 2.926,
+   "lufs": -16.43,
+   "truePeakDb": -1.75,
+   "normalization": "linear",
+   "hash": "73757aadf9dc",
+   "sha256": "6d5a388b58aa6a6d85d49f1ab5ad37b672645773d1d48d6cbc22c464fc7861f8",
+   "requires": {
+    "mission": "m10"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m10",
+   "sources": [
+    "T18"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m10.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Sharing one build across many flights can cut the cost per flight.",
+   "spokenText": "Sharing one build across many flights can cut the cost per flight.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m10.t1.mp3",
+   "durationSec": 4.226,
+   "lufs": -16.45,
+   "truePeakDb": -3.37,
+   "normalization": "linear",
+   "hash": "d625cb8f4f7a",
+   "sha256": "a623021f76ff8fe7bc97f3bf7d0d1d5825d403fb1c4833515ca192e22296246e",
+   "requires": {
+    "mission": "m10"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m10",
+   "sources": [
+    "T19"
+   ]
+  },
+  {
+   "id": "cohost/color.recovery.m10.t1",
+   "event": "color.recovery",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Reuse pays only when checks and fixes cost less than new.",
+   "spokenText": "Reuse pays only when checks and fixes cost less than new.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.recovery.m10.t1.mp3",
+   "durationSec": 3.204,
+   "lufs": -16.43,
+   "truePeakDb": -2.36,
+   "normalization": "linear",
+   "hash": "83abbd7788ce",
+   "sha256": "f59ca939685a904fb3603b380848b8cafbfbcebf0d7c57444d3fbe2a6dba93a1",
+   "requires": {
+    "mission": "m10"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m10",
+   "sources": [
+    "T19"
+   ]
+  },
+  {
+   "id": "host/color.pad.m11.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "A sun-synchronous orbit crosses the equator at the same morning hour.",
+   "spokenText": "A sun-synchronous orbit crosses the equator at the same morning hour.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m11.t1.mp3",
+   "durationSec": 4.133,
+   "lufs": -16.43,
+   "truePeakDb": -3.46,
+   "normalization": "linear",
+   "hash": "3f40e5eb3f76",
+   "sha256": "9d1f9130c100ff9b7ad3b423a2f3507d799919e16d119af9327d07459fb78bfd",
+   "requires": {
+    "mission": "m11"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m11",
+   "sources": [
+    "T20"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m11.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Its path turns slowly, keeping step with the Sun through the year.",
+   "spokenText": "Its path turns slowly, keeping step with the Sun through the year.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m11.t2.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.44,
+   "truePeakDb": -1.78,
+   "normalization": "linear",
+   "hash": "524cfa3b2423",
+   "sha256": "52fed5595221abfaf222d45f5999ffdc3aeb76fc84e1eb03bb518ac7956371e8",
+   "requires": {
+    "mission": "m11"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m11",
+   "sources": [
+    "T20",
+    "T21"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m11.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Matching shadows let pictures from different days compare cleanly.",
+   "spokenText": "Matching shadows let pictures from different days compare cleanly.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m11.t1.mp3",
+   "durationSec": 4.365,
+   "lufs": -16.43,
+   "truePeakDb": -3.08,
+   "normalization": "linear",
+   "hash": "6c2c6ded8a44",
+   "sha256": "0985bba7c19ef9d4201c381a62666951d2ed007f0884f4c4cc9cf33e60859752",
+   "requires": {
+    "mission": "m11"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m11",
+   "sources": [
+    "T20"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m11.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "A dawn-to-dusk path can stay in sunlight nearly the whole year.",
+   "spokenText": "A dawn-to-dusk path can stay in sunlight nearly the whole year.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m11.t1.mp3",
+   "durationSec": 3.297,
+   "lufs": -16.68,
+   "truePeakDb": -2.03,
+   "normalization": "dynamic",
+   "hash": "72484cd7054b",
+   "sha256": "8d9e4a2a4ecb71961d00a4a154cb6540532cb997496002b44426a444c31a7124",
+   "requires": {
+    "mission": "m11"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m11",
+   "sources": [
+    "T21"
+   ]
+  },
+  {
+   "id": "host/color.pad.m12.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Moving air bends starlight, so stars twinkle and pictures blur.",
+   "spokenText": "Moving air bends starlight, so stars twinkle and pictures blur.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m12.t1.mp3",
+   "durationSec": 3.901,
+   "lufs": -16.43,
+   "truePeakDb": -3.14,
+   "normalization": "linear",
+   "hash": "2cacc75dd940",
+   "sha256": "c6ebc3a55d8ad4ed615ca224c1ec786bd9fb86afe6bbbefac33631c7b45a1cb2",
+   "requires": {
+    "mission": "m12"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m12",
+   "sources": [
+    "T22"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m12.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Above the air, a telescope sees steadier, sharper starlight.",
+   "spokenText": "Above the air, a telescope sees steadier, sharper starlight.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m12.t2.mp3",
+   "durationSec": 3.158,
+   "lufs": -16.45,
+   "truePeakDb": -2.14,
+   "normalization": "linear",
+   "hash": "0827251b8b08",
+   "sha256": "7ee49b0e894940873c44b68b125ffacc8483e45d2dfda9b908594b6c6af44c3b",
+   "requires": {
+    "mission": "m12"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m12",
+   "sources": [
+    "T23"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m12.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Air blocks much ultraviolet and infrared light from space.",
+   "spokenText": "Air blocks much ultraviolet and infrared light from space.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m12.t1.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.45,
+   "truePeakDb": -3.42,
+   "normalization": "linear",
+   "hash": "9b30a34d83e8",
+   "sha256": "ff416b0ddc452c217cc4ca41557f822a2d47897f795333e1ba17c06aac1853dc",
+   "requires": {
+    "mission": "m12"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m12",
+   "sources": [
+    "T22",
+    "T23"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m12.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "In space, a telescope can catch light the air hides.",
+   "spokenText": "In space, a telescope can catch light the air hides.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m12.t1.mp3",
+   "durationSec": 2.786,
+   "lufs": -16.88,
+   "truePeakDb": -1.85,
+   "normalization": "linear",
+   "hash": "243f51938788",
+   "sha256": "8f0388173adcce7c3b9c7e6357c03d853a9ecc40f85f25181fec6506f0621590",
+   "requires": {
+    "mission": "m12"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m12",
+   "sources": [
+    "T22"
+   ]
+  },
+  {
+   "id": "host/color.pad.m13.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Many small satellites can share one ride to orbit.",
+   "spokenText": "Many small satellites can share one ride to orbit.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m13.t1.mp3",
+   "durationSec": 3.111,
+   "lufs": -16.44,
+   "truePeakDb": -3.38,
+   "normalization": "linear",
+   "hash": "7c1869563b62",
+   "sha256": "d97a719a6443993aa3af3cf2f057e5a520e8f60078fc4683493f56afd5e73a15",
+   "requires": {
+    "mission": "m13"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m13",
+   "sources": [
+    "T24"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m13.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Sharing a ride spreads the cost across many teams.",
+   "spokenText": "Sharing a ride spreads the cost across many teams.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m13.t2.mp3",
+   "durationSec": 2.508,
+   "lufs": -16.45,
+   "truePeakDb": -1.86,
+   "normalization": "linear",
+   "hash": "8465872bd4f5",
+   "sha256": "ca12ed60bec44d79d9f2a18439333d4bd9fdb53593b851c64c60dad80ac1bcfc",
+   "requires": {
+    "mission": "m13"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m13",
+   "sources": [
+    "T24"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m13.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Small satellites are released from their carrier one by one.",
+   "spokenText": "Small satellites are released from their carrier one by one.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m13.t1.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.44,
+   "truePeakDb": -3.43,
+   "normalization": "linear",
+   "hash": "2e4f4dca8b1a",
+   "sha256": "15d2ea19b56c9e3249cfc1fe1b69525bb40c43862af7b07928caa7f53d40f200",
+   "requires": {
+    "mission": "m13"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m13",
+   "sources": [
+    "T25"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m13.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Each small satellite then follows its own path in orbit.",
+   "spokenText": "Each small satellite then follows its own path in orbit.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m13.t1.mp3",
+   "durationSec": 2.879,
+   "lufs": -16.43,
+   "truePeakDb": -2.35,
+   "normalization": "linear",
+   "hash": "d68c27b3970a",
+   "sha256": "826cabfc5f658b89c28e8c9fb5f33805d894e25c877f020018a05ca24f67d24e",
+   "requires": {
+    "mission": "m13"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m13",
+   "sources": [
+    "T25"
+   ]
+  },
+  {
+   "id": "host/color.pad.m14.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "To meet a station, a visitor must match its orbit exactly.",
+   "spokenText": "To meet a station, a visitor must match its orbit exactly.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m14.t1.mp3",
+   "durationSec": 3.669,
+   "lufs": -16.44,
+   "truePeakDb": -3.01,
+   "normalization": "linear",
+   "hash": "8a21919fb949",
+   "sha256": "43013ece5f350a51729e659c16238afc02a62bef5187909c1494895c785aec1c",
+   "requires": {
+    "mission": "m14"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m14",
+   "sources": [
+    "T26"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m14.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "A lower orbit is faster, so a visitor catches up from below.",
+   "spokenText": "A lower orbit is faster, so a visitor catches up from below.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m14.t2.mp3",
+   "durationSec": 3.204,
+   "lufs": -16.73,
+   "truePeakDb": -1.78,
+   "normalization": "dynamic",
+   "hash": "030716870d29",
+   "sha256": "da465282e41062685d11debee6fe0fe6c1479b02b70a7fc526ab639a76207357",
+   "requires": {
+    "mission": "m14"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m14",
+   "sources": [
+    "T26"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m14.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Speeding up lifts a craft higher, where it moves slower.",
+   "spokenText": "Speeding up lifts a craft higher, where it moves slower.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m14.t1.mp3",
+   "durationSec": 3.437,
+   "lufs": -16.44,
+   "truePeakDb": -3.27,
+   "normalization": "linear",
+   "hash": "50499fce5344",
+   "sha256": "4cdf79f586fcf0fdeb2a36154c4afce0b171323072efe1d94636723ffd0a465f",
+   "requires": {
+    "mission": "m14"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m14",
+   "sources": [
+    "T26",
+    "T27"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m14.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "At the end, two craft meet at almost no relative speed.",
+   "spokenText": "At the end, two craft meet at almost no relative speed.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m14.t1.mp3",
+   "durationSec": 2.786,
+   "lufs": -16.44,
+   "truePeakDb": -2.45,
+   "normalization": "linear",
+   "hash": "a112242a5f3b",
+   "sha256": "e5dfd81248c1d5142de3eee0eddf6fe46f3dfcd9d147527642aaa19d0abdf54f",
+   "requires": {
+    "mission": "m14"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m14",
+   "sources": [
+    "T27"
+   ]
+  },
+  {
+   "id": "host/color.pad.m15.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Thirty-six thousand kilometres up, a satellite matches Earth's spin.",
+   "spokenText": "Thirty-six thousand kilometres up, a satellite matches Earth's spin.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m15.t1.mp3",
+   "durationSec": 4.644,
+   "lufs": -16.42,
+   "truePeakDb": -3.27,
+   "normalization": "linear",
+   "hash": "0d235e203484",
+   "sha256": "79c04cdec74f3d3dabc618bcc563b1b19514ab3769a70198fc9acbc3d60dbdeb",
+   "requires": {
+    "mission": "m15"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m15",
+   "sources": [
+    "T28",
+    "T29"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m15.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "From the ground, that satellite seems to hang over one spot.",
+   "spokenText": "From the ground, that satellite seems to hang over one spot.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m15.t2.mp3",
+   "durationSec": 3.065,
+   "lufs": -16.43,
+   "truePeakDb": -1.81,
+   "normalization": "linear",
+   "hash": "307335a9da3d",
+   "sha256": "e7a196937145bf71d7aad39b78b4bf07501b43df28f23d8299116efd574d65cf",
+   "requires": {
+    "mission": "m15"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m15",
+   "sources": [
+    "T28"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m15.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "A signal takes about a quarter of a second there and back.",
+   "spokenText": "A signal takes about a quarter of a second there and back.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m15.t1.mp3",
+   "durationSec": 3.111,
+   "lufs": -16.44,
+   "truePeakDb": -3.34,
+   "normalization": "linear",
+   "hash": "c8ba9499e4df",
+   "sha256": "cf220bc2b2f83b5ab8892140b1904a5737dbd6ff4d6e5c94c07c7d77b79b9d9f",
+   "requires": {
+    "mission": "m15"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m15",
+   "sources": [
+    "T28",
+    "T29"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m15.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "A fixed dish can stay aimed at that still satellite.",
+   "spokenText": "A fixed dish can stay aimed at that still satellite.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m15.t1.mp3",
+   "durationSec": 2.647,
+   "lufs": -16.46,
+   "truePeakDb": -2.23,
+   "normalization": "linear",
+   "hash": "33895329590b",
+   "sha256": "ca9e6930c76e77d74f08d1651240318bb702dfcda07f4b54904fc4ddf4804fd8",
+   "requires": {
+    "mission": "m15"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m15",
+   "sources": [
+    "T28"
+   ]
+  },
+  {
+   "id": "host/color.pad.m16.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Astronauts float because their craft falls around Earth with them.",
+   "spokenText": "Astronauts float because their craft falls around Earth with them.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m16.t1.mp3",
+   "durationSec": 3.715,
+   "lufs": -16.44,
+   "truePeakDb": -3.2,
+   "normalization": "linear",
+   "hash": "832808ae45c7",
+   "sha256": "c831a4c1417022cc408e83be41aa4897f0112ad10e93b39e97a70912748e1f61",
+   "requires": {
+    "mission": "m16"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m16",
+   "sources": [
+    "T30"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m16.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Gravity is still there, pulling at about nine-tenths strength.",
+   "spokenText": "Gravity is still there, pulling at about nine-tenths strength.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m16.t2.mp3",
+   "durationSec": 3.111,
+   "lufs": -16.44,
+   "truePeakDb": -1.94,
+   "normalization": "linear",
+   "hash": "f09013f63bdd",
+   "sha256": "cfe6df3ee214281cf1c0d55a81f8dc23627305a0fcccdd39de8d692e971abeff",
+   "requires": {
+    "mission": "m16"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m16",
+   "sources": [
+    "T30"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m16.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "With no floor pushing up, floating feels like having no weight.",
+   "spokenText": "With no floor pushing up, floating feels like having no weight.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m16.t1.mp3",
+   "durationSec": 3.715,
+   "lufs": -16.42,
+   "truePeakDb": -3.22,
+   "normalization": "linear",
+   "hash": "6c56b8824406",
+   "sha256": "8b6c32b691a93ed420512335976366f147cf0140fd6fc98514176b7c1d66d164",
+   "requires": {
+    "mission": "m16"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m16",
+   "sources": [
+    "T31"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m16.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Orbit is a long fall that keeps missing the ground.",
+   "spokenText": "Orbit is a long fall that keeps missing the ground.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m16.t1.mp3",
+   "durationSec": 2.461,
+   "lufs": -16.46,
+   "truePeakDb": -1.82,
+   "normalization": "linear",
+   "hash": "5e5b2701e973",
+   "sha256": "27ba3a38cddb8a934f58e462f4008c6edda7ea35fc144e5759d87b0f28d95e9e",
+   "requires": {
+    "mission": "m16"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m16",
+   "sources": [
+    "T30",
+    "T31"
+   ]
+  },
+  {
+   "id": "host/color.pad.m17.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "The Moon has almost no air to slow a landing craft.",
+   "spokenText": "The Moon has almost no air to slow a landing craft.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m17.t1.mp3",
+   "durationSec": 3.297,
+   "lufs": -16.45,
+   "truePeakDb": -3.17,
+   "normalization": "linear",
+   "hash": "748baf8faa47",
+   "sha256": "3ba73f77ebe1481f70b1a5ede88b78651ecb1466dcfad27bc6e9a38e6045f89c",
+   "requires": {
+    "mission": "m17"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m17",
+   "sources": [
+    "T32",
+    "T33"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m17.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "With no air, parachutes cannot catch anything and slow it.",
+   "spokenText": "With no air, parachutes cannot catch anything and slow it.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m17.t2.mp3",
+   "durationSec": 2.926,
+   "lufs": -16.5,
+   "truePeakDb": -1.68,
+   "normalization": "linear",
+   "hash": "6bfc85d6ab08",
+   "sha256": "9d3b436ea0f4b6139fa8b14b65f91f19e37319d27c117fefa7fa769b9a13f8fb",
+   "requires": {
+    "mission": "m17"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m17",
+   "sources": [
+    "T32"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m17.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Rockets must do the braking, firing against the fall.",
+   "spokenText": "Rockets must do the braking, firing against the fall.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m17.t1.mp3",
+   "durationSec": 3.251,
+   "lufs": -16.46,
+   "truePeakDb": -3.04,
+   "normalization": "linear",
+   "hash": "6b375d088b7e",
+   "sha256": "083157973792b1d58eb658e022958a87b20fe5d9e9c209d7d6f4ad5059a3ba7f",
+   "requires": {
+    "mission": "m17"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m17",
+   "sources": [
+    "T32",
+    "T33"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m17.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Lunar gravity is about one-sixth of the pull on Earth.",
+   "spokenText": "Lunar gravity is about one-sixth of the pull on Earth.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m17.t1.mp3",
+   "durationSec": 2.879,
+   "lufs": -16.67,
+   "truePeakDb": -1.75,
+   "normalization": "linear",
+   "hash": "c5516b5199ea",
+   "sha256": "5ed903a704b66fedeca1bc728711cc2513a56789116b32a4afc0bedf0afc6c81",
+   "requires": {
+    "mission": "m17"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m17",
+   "sources": [
+    "T32",
+    "T33"
+   ]
+  },
+  {
+   "id": "host/color.pad.m18.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "A passing planet can lend a craft speed, like a slingshot.",
+   "spokenText": "A passing planet can lend a craft speed, like a slingshot.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m18.t1.mp3",
+   "durationSec": 3.251,
+   "lufs": -16.44,
+   "truePeakDb": -3.36,
+   "normalization": "linear",
+   "hash": "6b447ab47897",
+   "sha256": "f983ec8b473ae8dcb913ac5a430a1232f590b2b3f2f14f72ab364cfb81273d22",
+   "requires": {
+    "mission": "m18"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m18",
+   "sources": [
+    "T34",
+    "T35"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m18.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "The craft curves around the planet and leaves on a new path.",
+   "spokenText": "The craft curves around the planet and leaves on a new path.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m18.t2.mp3",
+   "durationSec": 3.019,
+   "lufs": -16.41,
+   "truePeakDb": -1.73,
+   "normalization": "dynamic",
+   "hash": "0daf5bcf77c4",
+   "sha256": "75f609c81ffd41104878fad6286cbf934d5cce69ad0524a0e456789aa4b5323d",
+   "requires": {
+    "mission": "m18"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m18",
+   "sources": [
+    "T34"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m18.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "The craft borrows motion from the planet, which barely slows.",
+   "spokenText": "The craft borrows motion from the planet, which barely slows.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m18.t1.mp3",
+   "durationSec": 3.669,
+   "lufs": -16.43,
+   "truePeakDb": -3.25,
+   "normalization": "linear",
+   "hash": "562b7ed1f6f5",
+   "sha256": "06ffecb38e2ae537c3ea28d9a34ce8316dcc4813c7863fa008f6dffd68d3c923",
+   "requires": {
+    "mission": "m18"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m18",
+   "sources": [
+    "T35"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m18.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "The same trick can also slow a craft down, if needed.",
+   "spokenText": "The same trick can also slow a craft down, if needed.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m18.t1.mp3",
+   "durationSec": 2.647,
+   "lufs": -16.45,
+   "truePeakDb": -1.63,
+   "normalization": "linear",
+   "hash": "b1485c48b862",
+   "sha256": "5b5005def290e3f70d8d8de5db8d26effa785e22e6692a1988d7fb2526ffda15",
+   "requires": {
+    "mission": "m18"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m18",
+   "sources": [
+    "T34"
+   ]
+  },
+  {
+   "id": "host/color.pad.m19.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "A returning rocket saves propellant for slowing down and touching down.",
+   "spokenText": "A returning rocket saves propellant for slowing down and touching down.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m19.t1.mp3",
+   "durationSec": 4.458,
+   "lufs": -16.44,
+   "truePeakDb": -3.32,
+   "normalization": "linear",
+   "hash": "68a768fba849",
+   "sha256": "b55fa5c6e6866b0b979f9ec635e478c1ed433e3508903052b29af6841a7f9226",
+   "requires": {
+    "mission": "m19"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m19",
+   "sources": [
+    "T36"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m19.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Saving propellant for landing leaves less for lifting cargo.",
+   "spokenText": "Saving propellant for landing leaves less for lifting cargo.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m19.t2.mp3",
+   "durationSec": 2.926,
+   "lufs": -16.46,
+   "truePeakDb": -2.24,
+   "normalization": "linear",
+   "hash": "1b2e0efbf83a",
+   "sha256": "bd4ca4565c5f9c97324b87904894543201738de2ed5fee402e94b52fe5ed96ed",
+   "requires": {
+    "mission": "m19"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m19",
+   "sources": [
+    "T36",
+    "T37"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m19.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "After landing, crews inspect the rocket before a later trip.",
+   "spokenText": "After landing, crews inspect the rocket before a later trip.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m19.t1.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.45,
+   "truePeakDb": -3.18,
+   "normalization": "linear",
+   "hash": "7b64e6b46d10",
+   "sha256": "cba4e01a13c697a43c5bc1a5fd822b38e0ecca497f82b1383a4932e11d95ddb5",
+   "requires": {
+    "mission": "m19"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m19",
+   "sources": [
+    "T36",
+    "T37"
+   ]
+  },
+  {
+   "id": "cohost/color.recovery.m19.t1",
+   "event": "color.recovery",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Checked parts can be reused, saving the cost of building new ones.",
+   "spokenText": "Checked parts can be reused, saving the cost of building new ones.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.recovery.m19.t1.mp3",
+   "durationSec": 3.576,
+   "lufs": -16.75,
+   "truePeakDb": -1.82,
+   "normalization": "dynamic",
+   "hash": "6ad3b0ac6a85",
+   "sha256": "bafcb6b4db352fe2a367037d852db9b8b5a1964bca4d9690150581f780e8e0bb",
+   "requires": {
+    "mission": "m19"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m19",
+   "sources": [
+    "T37"
+   ]
+  },
+  {
+   "id": "host/color.pad.m20.t1",
+   "event": "color.pad",
+   "channel": "host",
+   "layer": "color",
+   "text": "Radio waves travel at light speed, the fastest possible pace.",
+   "spokenText": "Radio waves travel at light speed, the fastest possible pace.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.pad.m20.t1.mp3",
+   "durationSec": 3.901,
+   "lufs": -16.42,
+   "truePeakDb": -3.16,
+   "normalization": "linear",
+   "hash": "2d4a7e63d16b",
+   "sha256": "42d8e4e5627d05af3fffbadcdf40e6aed175be55a7f72ec11d9da820ffd413ae",
+   "requires": {
+    "mission": "m20"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m20",
+   "sources": [
+    "T38"
+   ]
+  },
+  {
+   "id": "cohost/color.pad.m20.t2",
+   "event": "color.pad",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "Even at that speed, a far probe may answer hours later.",
+   "spokenText": "Even at that speed, a far probe may answer hours later.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.pad.m20.t2.mp3",
+   "durationSec": 2.694,
+   "lufs": -16.67,
+   "truePeakDb": -1.78,
+   "normalization": "linear",
+   "hash": "9eb3a988aad9",
+   "sha256": "c1b46964f9a1aacf5bbfbc43d627e9422410588d1c779788fccc02b7d5c08827",
+   "requires": {
+    "mission": "m20"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m20",
+   "sources": [
+    "T38"
+   ]
+  },
+  {
+   "id": "host/color.ascent.m20.t1",
+   "event": "color.ascent",
+   "channel": "host",
+   "layer": "color",
+   "text": "Giant dishes on Earth must track a whisper-quiet signal.",
+   "spokenText": "Giant dishes on Earth must track a whisper-quiet signal.",
+   "voice": "Sarah",
+   "voiceId": "EXAVITQu4vr4xnSDxMaL",
+   "voiceDir": "host",
+   "model": "eleven_multilingual_v2",
+   "file": "host/color.ascent.m20.t1.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.44,
+   "truePeakDb": -3.27,
+   "normalization": "linear",
+   "hash": "6fc349a3c0cd",
+   "sha256": "5a622f78e1be0d1bf17b58e705410452328a0d462e8b033116356acf0cef7360",
+   "requires": {
+    "mission": "m20"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m20",
+   "sources": [
+    "T38",
+    "T39"
+   ]
+  },
+  {
+   "id": "cohost/color.coast.m20.t1",
+   "event": "color.coast",
+   "channel": "cohost",
+   "layer": "color",
+   "text": "The farther the probe, the weaker and slower its messages grow.",
+   "spokenText": "The farther the probe, the weaker and slower its messages grow.",
+   "voice": "Chris",
+   "voiceId": "iP95p4xoKVk53GoZ742B",
+   "voiceDir": "cohost",
+   "model": "eleven_multilingual_v2",
+   "file": "cohost/color.coast.m20.t1.mp3",
+   "durationSec": 3.483,
+   "lufs": -16.45,
+   "truePeakDb": -2.23,
+   "normalization": "linear",
+   "hash": "7e40de4db48f",
+   "sha256": "1ae194f3f0564ccb2a5bf1c5c0eb6a28c19bc3ef2edd4cc8363b6271b96d946c",
+   "requires": {
+    "mission": "m20"
+   },
+   "claims": [
+    "mission"
+   ],
+   "mission": "m20",
+   "sources": [
+    "T38",
+    "T39"
    ]
   }
  ],

@@ -1,0 +1,1059 @@
+{
+ "_meta": {
+  "model": "eleven_multilingual_v2",
+  "note": "Per-mission technical/engineering commentary takes for Kestrel Heavy (Trevor-approved Nov 11 2026: the other half of his \"historical, technical, engineering commentary\" ask; historical set is tools/clipgen/mission-lines.json, DECISIONS #77). Source of truth for generation; docs/plans/per-mission-technical-commentary.md renders the same lines in readable tables. Each take is one single-speaker color-layer line (layer=color, interruptible=true), gated by requires.mission so it only ever plays on its own mission. Generic engineering/physics facts only: no real names, no claims about the flown design.",
+  "rules": "Every line at most 14 words (WRITING_BIBLE 6.2 / color lint), at most 80 characters, 1-2 sentences. Numbers as words, no digits, no dates. No line states a fact about the flown design (no engine counts, no \"booster\", no strap-ons, no Haven/pad/site claims) so the claim-vs-design verifier stays green with claims [\"mission\"] only. No banned words per tools/clipgen/gen_mission_tech.py."
+ },
+ "sources": {
+  "T1": {
+   "fact": "Thrust must be greater than weight for liftoff; as propellant burns, rocket mass falls and acceleration increases, so a rocket starts slowly and goes faster as it climbs.",
+   "publisher": "MIT",
+   "title": "Rocket Principles",
+   "url": "http://web.mit.edu/16.00/www/aec/rocket.html"
+  },
+  "T2": {
+   "fact": "Thrust-to-weight must be greater than 1 to lift off; as propellant burns the rocket gets lighter so the same thrust gives growing acceleration; staging drops empty tanks so a lighter vehicle takes over.",
+   "publisher": "FlowScholar",
+   "title": "Rocket Propulsion",
+   "url": "https://www.flowscholar.com/lessons/grade-8/engineering/aerospace-engineering/rocket-propulsion"
+  },
+  "T3": {
+   "fact": "A satellite stays in orbit by falling around Earth: gravity pulls it in while sideways speed keeps it missing the surface; circular speed is about 7.7 km/s at 400 km and gravity there is still about 89% of surface gravity.",
+   "publisher": "PhysicsTribune",
+   "title": "How Do Satellites Stay in Orbit? Physics Explained",
+   "url": "https://physicstribune.com/gravity/satellites/"
+  },
+  "T4": {
+   "fact": "At 100 km the air is far too thin for wings to lift a craft; above there a vehicle is held up by orbital motion rather than by air, and 99.99997% of the atmosphere lies below 100 km.",
+   "publisher": "MagmaTribune",
+   "title": "Karman Line: Where Space Begins (100 km)",
+   "url": "https://magmatribune.com/atmosphere/karman-line/"
+  },
+  "T5": {
+   "fact": "Too slow, and a spacecraft spirals back down into the atmosphere; too fast, and it flies off into a higher, more elongated orbit; in a circular orbit distance and speed stay constant.",
+   "publisher": "Lucsus",
+   "title": "What Is Orbital Velocity and How Satellites Stay in Orbit",
+   "url": "https://www.lucsus.com/articles/space-travel-and-distances/orbital-velocity-explained/"
+  },
+  "T6": {
+   "fact": "Kepler's third law: the square of orbital period is proportional to the cube of the semi-major axis; higher orbits are slower and take longer, and higher altitude increases the geometric horizon and footprint.",
+   "publisher": "DeltaV Academy",
+   "title": "Orbital Mechanics FAQ: How Satellites, Orbits, and SSA Actually Work",
+   "url": "https://www.deltavacademy.com/faq"
+  },
+  "T7": {
+   "fact": "Higher altitude means a longer orbital period under Kepler's third law; lower altitudes allow higher spatial resolution, while higher altitudes cover a larger area with each pass.",
+   "publisher": "TrueGeometry blog",
+   "title": "Sun-synchronous orbit altitude selection for specific mission requirements",
+   "url": "https://blog.truegeometry.com/api/exploreHTML/cb484cd32fc516807ff08ab90c2d0df5.exploreHTML"
+  },
+  "T8": {
+   "fact": "The rocket equation gives speed gain as exhaust velocity times the natural logarithm of full mass divided by empty mass; in the NASA Glenn example about 90% of launch weight is propellant and payload is only about 1%.",
+   "publisher": "Space Atlas",
+   "title": "The rocket equation explained: why reaching orbit takes so much fuel",
+   "url": "https://www.thespaceatlas.org/read/rocket-equation/"
+  },
+  "T9": {
+   "fact": "On the way back a craft starts at full speed and uses friction from air molecules like brakes to slow down; reentry friction can heat a shuttle to more than two thousand degrees Fahrenheit, and heating depends on speed and air thickness.",
+   "publisher": "Indiana Public Media (Moment of Science)",
+   "title": "Reentry Heat",
+   "url": "https://www.ipm.org/show/amomentofscience/2019-09-12/reentry-heat"
+  },
+  "T10": {
+   "fact": "A returning craft compresses air ahead of it into a shock layer reaching thousands of degrees; that is why reentry capsules are blunt rather than pointed, pushing the shock layer away from the structure.",
+   "publisher": "The Universe Episodes",
+   "title": "Why Do Spacecraft Get So Hot During Reentry?",
+   "url": "https://theuniverseepisodes.com/why-do-spacecraft-get-so-hot-during-reentry/"
+  },
+  "T11": {
+   "fact": "A Hohmann transfer places a craft in an elliptical transfer orbit tangential to both the lower and higher circular orbits; the first burn adds energy and raises the apoapsis, and a second burn at apoapsis raises the periapsis to match the larger circular orbit.",
+   "publisher": "Wikipedia (via Poast mirror)",
+   "title": "Hohmann transfer orbit",
+   "url": "https://wiki.poast.org/w/index.php?title=Hohmann_transfer_orbit&oldid=1322191753"
+  },
+  "T12": {
+   "fact": "A transfer orbit is a long ellipse whose perigee is as low as low orbit and whose apogee is as high as the target orbit; at apogee the satellite fires to make the orbit circular, and each burn at perigee raises the apogee.",
+   "publisher": "DigitallyLearn",
+   "title": "Types of Satellite Orbits: LEO, MEO, GEO, Polar and SSO",
+   "url": "https://digitallylearn.com/science-tech/all-types-of-satellite-orbits-and-their-features/"
+  },
+  "T13": {
+   "fact": "The maximum acceleration of the space shuttle is about 3 g, meaning astronauts feel a force three times their body weight, pushed back into their seats; acceleration is kept under a limit for crew health and safety.",
+   "publisher": "Vaia",
+   "title": "Problem 19: The maximum acceleration of the space shuttle",
+   "url": "https://www.vaia.com/en-us/textbooks/physics/physics-and-technology-for-future-presidents-10-edition/chapter-3/problem-19-the-maximum-acceleration-of-the-space-shuttle-is-/"
+  },
+  "T14": {
+   "fact": "By cutoff, shuttle astronauts felt about three times their normal weight pressing them into their seats; the instant thrust stops, the sensation flips to floating freely, often within a single second.",
+   "publisher": "BiologyInsights",
+   "title": "How Long Does It Take to Get to Space in a Rocket?",
+   "url": "https://biologyinsights.com/how-long-does-it-take-to-get-to-space-in-a-rocket/"
+  },
+  "T15": {
+   "fact": "Earth's escape velocity at sea level is 11.186 km/s, and escape velocity is always exactly the square root of two (about 1.41) times the circular orbital velocity at the same altitude.",
+   "publisher": "CalculatorPod",
+   "title": "Escape Velocity Calculator",
+   "url": "https://www.calculatorpod.com/science/rocketry/escape-velocity-calculator/"
+  },
+  "T16": {
+   "fact": "A spacecraft must reach about 11 kilometres per second to break free of Earth's gravity, and the time to travel to the Moon is approximately 3 days; the Moon is 384,400 km from Earth.",
+   "publisher": "Headed for Space",
+   "title": "How Fast Rockets Must Travel To Reach Orbit Or Escape Earth's Gravity Entirely",
+   "url": "https://headedforspace.com/how-fast-rockets-travel/"
+  },
+  "T17": {
+   "fact": "A rocket sent away from Earth at escape speed slows gradually under gravity, its speed falling step by step as it climbs away from Earth.",
+   "publisher": "Physics Forums",
+   "title": "What's the point of Escape Velocity?",
+   "url": "https://www.physicsforums.com/threads/whats-the-point-of-escape-velocity.672959/"
+  },
+  "T18": {
+   "fact": "A recovered vehicle is inspected for heat and stress damage, worn parts are replaced, and it is cleaned and tested before another launch; reuse saves money only when recovery and refurbishment cost less than building new.",
+   "publisher": "OrbitalIntel",
+   "title": "How Reusable Rockets Work: Landing and Reflight",
+   "url": "https://www.orbitalintel.org/launch/how-reusable-rockets-work/"
+  },
+  "T19": {
+   "fact": "Reuse saves money only if recovery, inspections and refurbishment cost less than building a new vehicle; flying the same hardware often spreads its build cost across more flights.",
+   "publisher": "FutureLens",
+   "title": "How reusable rockets cut the cost of reaching space",
+   "url": "https://futurelenshq.com/en/reusable-rockets.html"
+  },
+  "T20": {
+   "fact": "A sun-synchronous orbit crosses the equator at the same local solar time on every pass, keeping sunlight angle consistent so images from the same season can be compared without extreme shadow/lighting changes.",
+   "publisher": "NASA Science",
+   "title": "Catalog of Earth Satellite Orbits",
+   "url": "https://science.nasa.gov/earth/earth-observatory/catalog-of-earth-satellite-orbits/"
+  },
+  "T21": {
+   "fact": "The SSO plane turns eastward about 0.9856 degrees per day, in step with Earth around the Sun; a dawn-dusk orbit stays in sunlight for nearly the whole year.",
+   "publisher": "KeepTrack",
+   "title": "What Is a Sun-Synchronous Orbit (SSO)?",
+   "url": "https://keeptrack.space/space-terms/sun-synchronous-orbit"
+  },
+  "T22": {
+   "fact": "Pockets of air bend starlight and blur images; the atmosphere absorbs much ultraviolet and infrared light, so space opens wavelengths the ground cannot see.",
+   "publisher": "LoudComet",
+   "title": "Space Telescopes: Why We Put Observatories in Orbit",
+   "url": "https://www.loudcomet.com/space-telescopes-why-we-put-observatories-in-orbit"
+  },
+  "T23": {
+   "fact": "Above the atmosphere an orbiting telescope produces much finer detail than a ground telescope, and can observe ultraviolet and infrared light blocked by the atmosphere.",
+   "publisher": "Best in Science",
+   "title": "Hubble Space Telescope",
+   "url": "https://www.bestinscience.com/imaging/news/287-hubble-space-telescope"
+  },
+  "T24": {
+   "fact": "Dedicated rideshare flights carry many small payloads on one rocket, with operators paying for a slice instead of chartering a dedicated launch.",
+   "publisher": "New Space Economy",
+   "title": "How Has the SpaceX Transporter Program Reshaped Satellite Earth Observation?",
+   "url": "https://newspaceeconomy.ca/2026/10/20/how-has-the-spacex-transporter-program-reshaped-satellite-earth-observation/"
+  },
+  "T25": {
+   "fact": "Rideshare satellites get staggered deployment to precise and individual orbits, even when flying as a rideshare.",
+   "publisher": "Rocket Lab",
+   "title": "Electron Payload User Guide v8.0",
+   "url": "https://rocketlabcorp.com/assets/Rocket-Lab-Electron-Payload-User-Guide-8.0.pdf"
+  },
+  "T26": {
+   "fact": "Rendezvous requires matching orbit, velocity and position; a chaser in a lower orbit has higher orbital velocity and catches up, then rises to the target orbit.",
+   "publisher": "Wikipedia",
+   "title": "Space rendezvous",
+   "url": "https://en.wikipedia.org/wiki/Space_rendezvous"
+  },
+  "T27": {
+   "fact": "Speeding up raises a craft into a higher, slower orbit; the final docking approach is at only a few centimetres per second relative speed.",
+   "publisher": "EngineerFix",
+   "title": "How Space Rendezvous Works: The Engineering Behind the Maneuver",
+   "url": "https://engineerfix.com/how-space-rendezvous-works-the-engineering-behind-the-maneuver/"
+  },
+  "T28": {
+   "fact": "At 35,786 km above the equator a satellite circles once per Earth rotation and seems to hang in one place; a radio signal takes about a quarter of a second to go up and come back down.",
+   "publisher": "Celestrike",
+   "title": "Geostationary orbit: why satellites seem to stand still",
+   "url": "https://www.celestrike.com/geostationary-orbit"
+  },
+  "T29": {
+   "fact": "A geostationary satellite is about 36,000 km up; the up-and-down radio delay is 0.24 seconds, about a quarter of a second.",
+   "publisher": "Open University",
+   "title": "5.3 Signal speeds, propagation times and distance: the formula triangle",
+   "url": "https://www.open.edu/openlearn/mod/oucontent/view.php?id=2867&section=5.3"
+  },
+  "T30": {
+   "fact": "Astronauts float because station, crew and contents fall together around Earth; gravity at that height is still about 90% of surface strength; the station constantly falls toward Earth but moves sideways fast enough to keep missing the ground.",
+   "publisher": "Space Unpacked",
+   "title": "Why Astronauts Float: The Real Reason for Weightlessness",
+   "url": "https://www.spaceunpacked.com/explainers/why-astronauts-float-real-reason-weightlessness"
+  },
+  "T31": {
+   "fact": "Weightlessness is free fall: gravity still acts, but no support force pushes up, so everything accelerates together and seems to float.",
+   "publisher": "Fiveable",
+   "title": "Apparent Weightlessness in College Physics I",
+   "url": "https://fiveable.me/intro-college-physics/key-terms/apparent-weightlessness"
+  },
+  "T32": {
+   "fact": "The Moon has no atmosphere, so there is nothing to slow a spacecraft and no air for parachutes; rockets lower the probe all the way down, and lunar gravity is about one-sixth of Earth's.",
+   "publisher": "Popular Science",
+   "title": "Why India's Chandrayaan-3 moon landing is a big deal",
+   "url": "https://www.popsci.com/science/chandrayaan-3-moon-mission/"
+  },
+  "T33": {
+   "fact": "The lunar near-vacuum eliminates aerodynamic braking or parachutes; surface gravity is about 1.62 m/s2, or one-sixth of Earth's, and soft landing requires fully powered descent.",
+   "publisher": "Grokipedia",
+   "title": "Moon landing",
+   "url": "https://grokipedia.com/page/Moon_landing"
+  },
+  "T34": {
+   "fact": "A gravity assist uses a planet's motion and gravity to alter a spacecraft's path and speed, typically to save propellant; it can increase or decrease speed.",
+   "publisher": "Wikipedia",
+   "title": "Gravity assist",
+   "url": "https://en.wikipedia.org/wiki/Gravitational_slingshot"
+  },
+  "T35": {
+   "fact": "A spacecraft borrows some of a planet's orbital motion to gain speed without burning fuel; the planet is slowed by an immeasurably small amount.",
+   "publisher": "ScienceABC",
+   "title": "Gravitational Slingshot: How Did Gravity Assist Voyager 1 & 2?",
+   "url": "https://www.scienceabc.com/innovation/gravitational-slingshot-how-did-gravity-assist-voyager-1-2-in-escaping-the-solar-system"
+  },
+  "T36": {
+   "fact": "Recovery requires enough remaining propellant to slow the vehicle before touchdown, plus careful inspection between flights; reserving fuel for landing leaves less propellant for accelerating its payload.",
+   "publisher": "TrustAtoms",
+   "title": "Reusable Rockets and Launch Systems",
+   "url": "https://www.trustatoms.com/reusable-rockets-and-launch-systems/"
+  },
+  "T37": {
+   "fact": "Propellant saved for landing reduces payload delivered to orbit; recovered vehicles are inspected and refurbished before flying again.",
+   "publisher": "Orbital Radar",
+   "title": "What Is a Reusable Rocket? Booster Reuse Explained",
+   "url": "https://orbitalradar.com/glossary/reusable-rocket"
+  },
+  "T38": {
+   "fact": "Radio travels at the speed of light, about 299,792 km/s; a signal to the farthest probe takes more than 22 hours one way, and its weak signal needs colossal antennas to catch.",
+   "publisher": "New Space Economy",
+   "title": "A History of Deep Space Communications",
+   "url": "https://newspaceeconomy.ca/2025/11/22/a-history-of-deep-space-communications/"
+  },
+  "T39": {
+   "fact": "The Deep Space Network's largest dishes span 70 metres; a far probe's signal is whisper-weak (about a billionth of a billionth of a watt) and data rates fall as distance grows.",
+   "publisher": "Everything Space",
+   "title": "How We Talk to Spacecraft",
+   "url": "https://www.everythingspace.online/learn/how-we-talk-to-spacecraft"
+  }
+ },
+ "takes": [
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m1.t1",
+   "mission": "m1",
+   "sources": [
+    "T1"
+   ],
+   "text": "Thrust must beat weight, or the rocket never leaves the pad."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m1.t2",
+   "mission": "m1",
+   "sources": [
+    "T2"
+   ],
+   "text": "A rocket lifts off only when thrust is stronger than weight."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m1.t1",
+   "mission": "m1",
+   "sources": [
+    "T1"
+   ],
+   "text": "As propellant burns away, the rocket grows lighter and quicker."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.ascent",
+   "id": "cohost/color.ascent.m1.t2",
+   "mission": "m1",
+   "sources": [
+    "T2"
+   ],
+   "text": "Same push, less mass: the rocket speeds up more each second."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m2.t1",
+   "mission": "m2",
+   "sources": [
+    "T3"
+   ],
+   "text": "Height alone is not orbit; sideways speed is the secret."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m2.t2",
+   "mission": "m2",
+   "sources": [
+    "T3"
+   ],
+   "text": "To stay up there, a craft must race sideways, not just climb."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m2.t1",
+   "mission": "m2",
+   "sources": [
+    "T3"
+   ],
+   "text": "Orbit needs sideways speed, so rockets lean over as they climb."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.karman",
+   "id": "cohost/color.karman.m2.t1",
+   "mission": "m2",
+   "sources": [
+    "T4"
+   ],
+   "text": "Up here the air is too thin for wings to lift anything."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m3.t1",
+   "mission": "m3",
+   "sources": [
+    "T3"
+   ],
+   "text": "A satellite never stops falling; it just keeps missing Earth."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m3.t2",
+   "mission": "m3",
+   "sources": [
+    "T3"
+   ],
+   "text": "Gravity pulls it down while speed bends its path around Earth."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m3.t1",
+   "mission": "m3",
+   "sources": [
+    "T5"
+   ],
+   "text": "Too slow and it sinks; too fast and it flies farther out."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m3.t1",
+   "mission": "m3",
+   "sources": [
+    "T3"
+   ],
+   "text": "In a circle, speed and gravity stay in perfect balance."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m4.t1",
+   "mission": "m4",
+   "sources": [
+    "T6"
+   ],
+   "text": "Higher orbits take longer to circle Earth just once."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m4.t2",
+   "mission": "m4",
+   "sources": [
+    "T6"
+   ],
+   "text": "A bigger loop means a slower lap around the planet."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m4.t1",
+   "mission": "m4",
+   "sources": [
+    "T7"
+   ],
+   "text": "From higher up, one view covers far more ground below."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m4.t1",
+   "mission": "m4",
+   "sources": [
+    "T7"
+   ],
+   "text": "Closer views show fine detail; wider views show whole storms."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m5.t1",
+   "mission": "m5",
+   "sources": [
+    "T8"
+   ],
+   "text": "Most of a rocket is propellant, not metal or cargo."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m5.t2",
+   "mission": "m5",
+   "sources": [
+    "T8"
+   ],
+   "text": "Nine parts in ten can be propellant on a trip to orbit."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m5.t1",
+   "mission": "m5",
+   "sources": [
+    "T8"
+   ],
+   "text": "Speed grows from the ratio of full mass to empty mass."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.ascent",
+   "id": "cohost/color.ascent.m5.t2",
+   "mission": "m5",
+   "sources": [
+    "T2"
+   ],
+   "text": "Dropping empty tanks lets the rest speed up far more easily."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m6.t1",
+   "mission": "m6",
+   "sources": [
+    "T9"
+   ],
+   "text": "Returning is the hard part; speed must be shed with care."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m6.t2",
+   "mission": "m6",
+   "sources": [
+    "T9"
+   ],
+   "text": "Air can brake a craft, but fast air turns speed into heat."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m6.t1",
+   "mission": "m6",
+   "sources": [
+    "T9"
+   ],
+   "text": "Thin air above slows a craft gently before the thick air."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.recovery",
+   "id": "cohost/color.recovery.m6.t1",
+   "mission": "m6",
+   "sources": [
+    "T10"
+   ],
+   "text": "A blunt shape spreads heat wide, shielding what sits behind it."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m7.t1",
+   "mission": "m7",
+   "sources": [
+    "T11"
+   ],
+   "text": "A push at the low point lifts the high point higher."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m7.t2",
+   "mission": "m7",
+   "sources": [
+    "T11"
+   ],
+   "text": "Speed up low down, and the far side of the path rises."
+  },
+  {
+   "channel": "host",
+   "event": "color.coast",
+   "id": "host/color.coast.m7.t1",
+   "mission": "m7",
+   "sources": [
+    "T11"
+   ],
+   "text": "The path stretches into a long loop between two circles."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.recovery",
+   "id": "cohost/color.recovery.m7.t1",
+   "mission": "m7",
+   "sources": [
+    "T12"
+   ],
+   "text": "A second push at the far point rounds the path again."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m8.t1",
+   "mission": "m8",
+   "sources": [
+    "T13"
+   ],
+   "text": "Crew rides stay gentle, near three times Earth's gravity."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m8.t2",
+   "mission": "m8",
+   "sources": [
+    "T13"
+   ],
+   "text": "At three times your weight, lifting an arm feels heavy."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m8.t1",
+   "mission": "m8",
+   "sources": [
+    "T14"
+   ],
+   "text": "Crews feel each push as weight pressing them into seats."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m8.t1",
+   "mission": "m8",
+   "sources": [
+    "T14"
+   ],
+   "text": "When the push stops, the crew floats free at once."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m9.t1",
+   "mission": "m9",
+   "sources": [
+    "T15"
+   ],
+   "text": "Escape takes about eleven kilometers per second from Earth."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m9.t2",
+   "mission": "m9",
+   "sources": [
+    "T15"
+   ],
+   "text": "That is more than a third again the speed for a low orbit."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m9.t1",
+   "mission": "m9",
+   "sources": [
+    "T16"
+   ],
+   "text": "The Moon is days away, along a curved path, not straight up."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m9.t1",
+   "mission": "m9",
+   "sources": [
+    "T17"
+   ],
+   "text": "Gravity slows the craft the whole way, yet it still arrives."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m10.t1",
+   "mission": "m10",
+   "sources": [
+    "T18"
+   ],
+   "text": "A flown rocket gets checked top to bottom before its next flight."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m10.t2",
+   "mission": "m10",
+   "sources": [
+    "T18"
+   ],
+   "text": "Crews look for heat marks, cracks, and worn parts each time."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m10.t1",
+   "mission": "m10",
+   "sources": [
+    "T19"
+   ],
+   "text": "Sharing one build across many flights can cut the cost per flight."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.recovery",
+   "id": "cohost/color.recovery.m10.t1",
+   "mission": "m10",
+   "sources": [
+    "T19"
+   ],
+   "text": "Reuse pays only when checks and fixes cost less than new."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m11.t1",
+   "mission": "m11",
+   "sources": [
+    "T20"
+   ],
+   "text": "A sun-synchronous orbit crosses the equator at the same morning hour."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m11.t2",
+   "mission": "m11",
+   "sources": [
+    "T20",
+    "T21"
+   ],
+   "text": "Its path turns slowly, keeping step with the Sun through the year."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m11.t1",
+   "mission": "m11",
+   "sources": [
+    "T20"
+   ],
+   "text": "Matching shadows let pictures from different days compare cleanly."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m11.t1",
+   "mission": "m11",
+   "sources": [
+    "T21"
+   ],
+   "text": "A dawn-to-dusk path can stay in sunlight nearly the whole year."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m12.t1",
+   "mission": "m12",
+   "sources": [
+    "T22"
+   ],
+   "text": "Moving air bends starlight, so stars twinkle and pictures blur."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m12.t2",
+   "mission": "m12",
+   "sources": [
+    "T23"
+   ],
+   "text": "Above the air, a telescope sees steadier, sharper starlight."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m12.t1",
+   "mission": "m12",
+   "sources": [
+    "T22",
+    "T23"
+   ],
+   "text": "Air blocks much ultraviolet and infrared light from space."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m12.t1",
+   "mission": "m12",
+   "sources": [
+    "T22"
+   ],
+   "text": "In space, a telescope can catch light the air hides."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m13.t1",
+   "mission": "m13",
+   "sources": [
+    "T24"
+   ],
+   "text": "Many small satellites can share one ride to orbit."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m13.t2",
+   "mission": "m13",
+   "sources": [
+    "T24"
+   ],
+   "text": "Sharing a ride spreads the cost across many teams."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m13.t1",
+   "mission": "m13",
+   "sources": [
+    "T25"
+   ],
+   "text": "Small satellites are released from their carrier one by one."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m13.t1",
+   "mission": "m13",
+   "sources": [
+    "T25"
+   ],
+   "text": "Each small satellite then follows its own path in orbit."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m14.t1",
+   "mission": "m14",
+   "sources": [
+    "T26"
+   ],
+   "text": "To meet a station, a visitor must match its orbit exactly."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m14.t2",
+   "mission": "m14",
+   "sources": [
+    "T26"
+   ],
+   "text": "A lower orbit is faster, so a visitor catches up from below."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m14.t1",
+   "mission": "m14",
+   "sources": [
+    "T26",
+    "T27"
+   ],
+   "text": "Speeding up lifts a craft higher, where it moves slower."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m14.t1",
+   "mission": "m14",
+   "sources": [
+    "T27"
+   ],
+   "text": "At the end, two craft meet at almost no relative speed."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m15.t1",
+   "mission": "m15",
+   "sources": [
+    "T28",
+    "T29"
+   ],
+   "text": "Thirty-six thousand kilometres up, a satellite matches Earth's spin."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m15.t2",
+   "mission": "m15",
+   "sources": [
+    "T28"
+   ],
+   "text": "From the ground, that satellite seems to hang over one spot."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m15.t1",
+   "mission": "m15",
+   "sources": [
+    "T28",
+    "T29"
+   ],
+   "text": "A signal takes about a quarter of a second there and back."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m15.t1",
+   "mission": "m15",
+   "sources": [
+    "T28"
+   ],
+   "text": "A fixed dish can stay aimed at that still satellite."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m16.t1",
+   "mission": "m16",
+   "sources": [
+    "T30"
+   ],
+   "text": "Astronauts float because their craft falls around Earth with them."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m16.t2",
+   "mission": "m16",
+   "sources": [
+    "T30"
+   ],
+   "text": "Gravity is still there, pulling at about nine-tenths strength."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m16.t1",
+   "mission": "m16",
+   "sources": [
+    "T31"
+   ],
+   "text": "With no floor pushing up, floating feels like having no weight."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m16.t1",
+   "mission": "m16",
+   "sources": [
+    "T30",
+    "T31"
+   ],
+   "text": "Orbit is a long fall that keeps missing the ground."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m17.t1",
+   "mission": "m17",
+   "sources": [
+    "T32",
+    "T33"
+   ],
+   "text": "The Moon has almost no air to slow a landing craft."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m17.t2",
+   "mission": "m17",
+   "sources": [
+    "T32"
+   ],
+   "text": "With no air, parachutes cannot catch anything and slow it."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m17.t1",
+   "mission": "m17",
+   "sources": [
+    "T32",
+    "T33"
+   ],
+   "text": "Rockets must do the braking, firing against the fall."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m17.t1",
+   "mission": "m17",
+   "sources": [
+    "T32",
+    "T33"
+   ],
+   "text": "Lunar gravity is about one-sixth of the pull on Earth."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m18.t1",
+   "mission": "m18",
+   "sources": [
+    "T34",
+    "T35"
+   ],
+   "text": "A passing planet can lend a craft speed, like a slingshot."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m18.t2",
+   "mission": "m18",
+   "sources": [
+    "T34"
+   ],
+   "text": "The craft curves around the planet and leaves on a new path."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m18.t1",
+   "mission": "m18",
+   "sources": [
+    "T35"
+   ],
+   "text": "The craft borrows motion from the planet, which barely slows."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m18.t1",
+   "mission": "m18",
+   "sources": [
+    "T34"
+   ],
+   "text": "The same trick can also slow a craft down, if needed."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m19.t1",
+   "mission": "m19",
+   "sources": [
+    "T36"
+   ],
+   "text": "A returning rocket saves propellant for slowing down and touching down."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m19.t2",
+   "mission": "m19",
+   "sources": [
+    "T36",
+    "T37"
+   ],
+   "text": "Saving propellant for landing leaves less for lifting cargo."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m19.t1",
+   "mission": "m19",
+   "sources": [
+    "T36",
+    "T37"
+   ],
+   "text": "After landing, crews inspect the rocket before a later trip."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.recovery",
+   "id": "cohost/color.recovery.m19.t1",
+   "mission": "m19",
+   "sources": [
+    "T37"
+   ],
+   "text": "Checked parts can be reused, saving the cost of building new ones."
+  },
+  {
+   "channel": "host",
+   "event": "color.pad",
+   "id": "host/color.pad.m20.t1",
+   "mission": "m20",
+   "sources": [
+    "T38"
+   ],
+   "text": "Radio waves travel at light speed, the fastest possible pace."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.pad",
+   "id": "cohost/color.pad.m20.t2",
+   "mission": "m20",
+   "sources": [
+    "T38"
+   ],
+   "text": "Even at that speed, a far probe may answer hours later."
+  },
+  {
+   "channel": "host",
+   "event": "color.ascent",
+   "id": "host/color.ascent.m20.t1",
+   "mission": "m20",
+   "sources": [
+    "T38",
+    "T39"
+   ],
+   "text": "Giant dishes on Earth must track a whisper-quiet signal."
+  },
+  {
+   "channel": "cohost",
+   "event": "color.coast",
+   "id": "cohost/color.coast.m20.t1",
+   "mission": "m20",
+   "sources": [
+    "T38",
+    "T39"
+   ],
+   "text": "The farther the probe, the weaker and slower its messages grow."
+  }
+ ]
+}
