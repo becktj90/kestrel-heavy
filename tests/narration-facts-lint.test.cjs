@@ -187,6 +187,14 @@ function contexts(f) {
   const ev = [['pad', f], ['tankpress', lit(1)], ['ignition', lit(1)], ['liftoff', f], ['maxq', f], ['meco', lit(1)], ['fuel-low', lit(1)], ['abort-fuel', lit(1)], ['abort-corridor', f], ['deploy', f]];
   for (let k = 2; k <= f.stages; k++) ev.push(['ses1', lit(k)], ['fuel-low', lit(k)], ['abort-fuel', lit(k)], ['tankpress', lit(k)], ['seco', lit(k)]);
   if (f.stages >= 2) ev.push(['sep-clear', f]);
+  // B01 mission-status calls (StatusCalls / NarrationRoute): the board verdict calls and engine-out play on any rocket;
+  // engine-out.ok carries the lit core stage; the landing callouts only on a booster given a landing.
+  for (const e of ['status.ontrack', 'status.short', 'status.short.clear', 'status.speed', 'status.heating', 'engine-out']) ev.push([e, f]);
+  if (f['stage1.engines'] >= 2 && !f.strapons) ev.push(['engine-out.ok', lit(1)]);
+  if (f.recovery !== 'none' && f.stages >= 2) {
+    for (const e of ['landing.alt.1k', 'landing.alt.500', 'landing.alt.100', 'landing.alt.10']) ev.push([e, f]);
+    if (f.legs) ev.push(['landing.legs', f]);
+  }
   // maxq-throttle joins this list (floor 1) when its recorded takes ship; today it has none and stays silent (HUD banner only).
   if (f['throttle.maxq']) ev.push(['maxq-through', f]);
   if (f.fairing) ev.push(['fairing', f]);
@@ -221,7 +229,9 @@ test('coverage: every shipped design on every pad keeps true mission-control tak
 // Reads the spoken text of every take that is ELIGIBLE for a design and checks each fact it states against the raw
 // design JSON (not against the tags). A line that states a fact must be gated by a tag that carries that fact.
 const NUM = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, fifteen: 15, sixteen: 16 };
-const REC_EVENTS = new Set(['color.recovery', 'entry', 'landing', 'touchdown', 'recovered', 'salvage', 'tip', 'splash', 'abort-tip', 'abort-salvage', 'abort-splash', 'abort-fuelHaven', 'haven-maxq']);
+const REC_EVENTS = new Set(['color.recovery', 'entry', 'landing', 'touchdown', 'recovered', 'salvage', 'tip', 'splash', 'abort-tip', 'abort-salvage', 'abort-splash', 'abort-fuelHaven', 'haven-maxq',
+  // kh-gen5 triggers.md A.2: the landing callouts are recovery events too, so the "pad" word rule covers them.
+  'landing.alt.1k', 'landing.alt.500', 'landing.alt.100', 'landing.alt.10', 'landing.legs', 'landing.sink.good', 'landing.sink.high', 'landing.drift', 'landing.fuel-low']);
 // Facts a line states: [rule, key-family that must be claimed, check(design, ctx)].
 function statedFacts(c) {
   // A propellant named only as a comparison ("warmer than hydrogen") is a general fact, not a claim about the flown stage.
@@ -387,4 +397,39 @@ test('color: Codex fact-check corrections stay applied (no unsupported numbers o
   assert.match(SRC, /nas\.nasa\.gov/);
   assert.match(SRC, /spacenews\.com/);
   assert.match(SRC, /launch to landing/i);
+});
+
+// ---- B01 mission-status takes (PR #495, wired by tools/clipgen/wire_b01.py) ----
+const B01 = clips.filter((c) => c.batch === 'B01');
+const B01_WIRED = new Set(['status.ontrack', 'status.short', 'status.short.clear', 'status.speed', 'status.heating', 'engine-out', 'engine-out.ok',
+  'sep-clear', 'landing.alt.1k', 'landing.alt.500', 'landing.alt.100', 'landing.alt.10', 'landing.legs']);
+
+test('B01: no held clip, no outcome line, no fuel-low before a 12% trigger, never engine.roar.far.v3', () => {
+  const staged = JSON.parse(fs.readFileSync(path.join(root, 'audio/staging/B01/manifest.json'), 'utf8'));
+  const held = new Set(staged.filter((e) => e.hold).map((e) => e.id));
+  const errs = [];
+  for (const c of clips) {
+    if (c.hold) errs.push(`${c.id}: hold:true`);
+    if (held.has(c.id)) errs.push(`${c.id}: held in staging`);
+    if (/^outcome\./.test(c.event)) errs.push(`${c.id}: outcome.* has no emitter`);
+    if (/engine\.roar\.far\.v3/.test(`${c.id} ${c.event} ${c.file}`)) errs.push(`${c.id}: engine.roar.far.v3`);
+    if (c.batch === 'B01' && /fuel-low/.test(c.event)) errs.push(`${c.id}: fuel-low waits for a real 12% propellant trigger`);
+  }
+  assert.deepEqual(errs, []);
+});
+
+test('B01: calls under the 14-word cap, only on wired events, with the contract gates', () => {
+  assert.equal(B01.length, 91);
+  const errs = [];
+  for (const c of B01) {
+    if (!B01_WIRED.has(c.event)) errs.push(`${c.id}: ${c.event} has no trigger`);
+    if (c.layer !== 'call' || c.interruptible !== false) errs.push(`${c.id}: layer/interruptible`);
+    if (c.text.trim().split(/\s+/).length > 14) errs.push(`${c.id}: over 14 words`);
+    const r = c.requires || {};
+    if (c.event === 'sep-clear' && r.stages !== '>=2') errs.push(`${c.id}: sep-clear needs stages >= 2`);
+    if (/^landing\./.test(c.event) && JSON.stringify(r.recovery) !== JSON.stringify(['barge', 'rtls'])) errs.push(`${c.id}: landing callouts need barge|rtls`);
+    if (c.event === 'landing.legs' && r.legs !== true) errs.push(`${c.id}: legs line needs legs`);
+    if (c.event === 'engine-out.ok' && r['lit.engines'] !== '>=2') errs.push(`${c.id}: engine-out.ok needs lit.engines >= 2`);
+  }
+  assert.deepEqual(errs, []);
 });
