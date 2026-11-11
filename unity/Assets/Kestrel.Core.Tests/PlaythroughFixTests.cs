@@ -146,5 +146,75 @@ namespace Kestrel.Core.Tests
             }
             Assert.GreaterOrEqual(seen, 2, "KH-3 and KH-14 carry the margin bonus");
         }
+
+        // ---- full play-through (scope 2): every value/limit pair, at the pair's own precision ----
+
+        [TestCase(8.04, 8.0, 1, "8.04", "8.00")]     // "8.00 g past 8.0 g" (KH-3): one precision for both
+        [TestCase(8.004, 8.0, 1, "8.004", "8.000")]
+        [TestCase(8.6, 8.0, 1, "8.6", "8.0")]
+        [TestCase(75.3, 75.0, 0, "75.3", "75.0")]     // "75 kPa vs 75 kPa"
+        [TestCase(1.0, 6.0, 0, "1", "6")]
+        [TestCase(0.5, 0.5, 2, "0.50", "0.50")]
+        public void PairText_FromAnyPrecision_PrintsBothAlike_AndAddsPlacesOnlyWhileEqual(double a, double b, int decimals, string aText, string bText)
+        {
+            FlightDebrief.PairText(a, b, decimals, out var x, out var y);
+            Assert.AreEqual(aText, x);
+            Assert.AreEqual(bText, y);
+            int Places(string t) => t.Contains(".") ? t.Length - t.IndexOf('.') - 1 : 0;
+            Assert.AreEqual(Places(x), Places(y), "one precision for the pair");
+        }
+
+        [Test]
+        public void OverG_8004_Against8_ReadsDifferent_OnTheCard_KidLine_AndNarration()
+        {
+            var hit = new FailureHit { on = true, kind = FailureKind.OverG, cause = 0, value = 8.004, limit = 8.0, engine = -1, stage = 0 };
+            var ev = FailureModel.Explain(hit, 116, 0);
+            Assert.AreEqual("The push reached 8.004 g, past the 8.000 g limit.", FlightDebrief.NumberLine(ev, null, false));
+            StringAssert.Contains("felt 8.004 g", ev.kid);
+            StringAssert.Contains("rated 8.000 g", ev.kid);
+            var near = FailureModel.Explain(new FailureHit { on = true, kind = FailureKind.OverG, value = 8.04, limit = 8.0, engine = -1 }, 116, 0);
+            Assert.AreEqual("The push reached 8.04 g, past the 8.00 g limit.", FlightDebrief.NumberLine(near, null, false));
+            Assert.AreEqual("8.04 g against 8.00 g", FlightDebrief.Fill("{g} g against {glim} g", near, null, null));
+            Assert.AreEqual("8.04 vs 8.00", FlightDebrief.Fill("{value} vs {limit}", near, null, null));
+        }
+
+        [Test]
+        public void EveryPairedNumberLine_NeverReadsEqual_WhenTheValuesDiffer()
+        {
+            var kinds = new[] { "engine-overpressure", "bad-mixture", "separation-collision", "overg", "thermal", "leg-collapse", "recovery-fuel", "recovery-fast", "recovery-tilt", "recovery-miss" };
+            foreach (var kind in kinds)
+            foreach (var (v, l) in new[] { (75.3, 75.0), (8.004, 8.0), (1.04, 1.0), (300.2, 300.0) })
+            {
+                var ev = new FailureEvent { kind = kind, cause = kind == "thermal" ? "skin" : kind, value = v, limit = l, t = 10 };
+                string line = FlightDebrief.NumberLine(ev, null, false);
+                var nums = System.Text.RegularExpressions.Regex.Matches(line, @"\d+(\.\d+)?");
+                var shown = new List<string>();
+                foreach (System.Text.RegularExpressions.Match m in nums) shown.Add(m.Value);
+                Assert.GreaterOrEqual(shown.Count, 2, line);
+                Assert.AreNotEqual(shown[shown.Count - 2], shown[shown.Count - 1], kind + ": " + line);
+            }
+            var tumble = new FailureEvent { kind = "tumble", cause = "alpha", value = 12.3, limit = 12, t = 10 };
+            Assert.AreEqual("12.3 degrees sideways. The limit is 12.0 degrees.", FlightDebrief.NumberLine(tumble, null, false));
+        }
+
+        [Test]
+        public void EngineOut_EngineerLine_SaysHowManyQuit_AndTheRideThroughRule()
+        {
+            var hit = new FailureHit { on = true, kind = FailureKind.EngineOut, cause = 0, value = 1, limit = 6, engine = 2, stage = 0 };
+            var ev = FailureModel.Explain(hit, 0, 0);
+            Assert.AreEqual("1 of 6 engines quit at T+0.0 s. A stage rides through one out only with 7 or more engines, redundant avionics, and a thrust-to-weight above 1.05 on the rest.", ev.engineer);
+            Assert.That(ev.engineer, Does.Not.Contain("Reading"));
+            Assert.That(ev.engineer, Does.Not.Contain("limit"));
+            Assert.AreEqual("1 engine quit out of 6.", FlightDebrief.NumberLine(ev, null, false));
+            var pool = NarrationPool.Load(Golden.Root);
+            foreach (var line in pool.Lines)
+            {
+                if (line.Kind != "engine-out") continue;
+                string eng = FlightDebrief.Fill(line.Eng, ev, null, null), kid = FlightDebrief.Fill(line.Kid, ev, null, null);
+                Assert.That(eng, Does.Not.Contain("value").And.Not.Contain("limit").And.Not.Contain("1.00"), line.Id + ": " + eng);
+                Assert.That(eng, Does.Contain("1 of 6"), line.Id + ": " + eng);
+                Assert.That(kid, Does.Not.Contain("{"), line.Id);
+            }
+        }
     }
 }

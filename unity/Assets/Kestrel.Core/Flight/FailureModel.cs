@@ -342,6 +342,13 @@ namespace Kestrel.Core.Flight
             }
         }
 
+        /// <summary>One side of the hit's value/limit pair, as <see cref="FlightDebrief.PairText(double, double, int, out string, out string)"/> prints it.</summary>
+        static string Pair(FailureHit hit, int decimals, bool value)
+        {
+            FlightDebrief.PairText(hit.value, hit.limit, decimals, out var v, out var l);
+            return value ? v : l;
+        }
+
         static string Kid(FailureHit hit, double t, double qPa)
         {
             string ts = N0(t);
@@ -357,30 +364,28 @@ namespace Kestrel.Core.Flight
                     FlightDebrief.KpaPair(qPa, hit.limit, out var airQ, out var wallQ);
                     return "Your rocket bent in half at T+" + ts + " s. The air pushed " + airQ + " kPa, but your tanks could only take " + wallQ + " kPa. Try a higher safety factor or a lower max-Q throttle.";
                 case FailureKind.OverG:
-                    string peak = N1(hit.value);
-                    string lim = N1(hit.limit);
-                    if (peak == lim) peak = hit.value.ToString("0.00", CultureInfo.InvariantCulture);
+                    FlightDebrief.PairText(hit.value, hit.limit, 1, out var peak, out var lim);
                     return "The payload felt " + peak + " g at T+" + ts + " s. It is rated " + lim + " g. Throttle down, or set a g limit under " + lim + " g.";
                 case FailureKind.Tumble when hit.cause == 1:
                     return "Your rocket flipped at T+" + ts + " s. It was flying " + N0(hit.value) + "° sideways in thick air. Add fins or ease the turn.";
                 case FailureKind.Tumble:
                     return "Your rocket flipped at T+" + ts + " s. The heavy end was the wrong way around (stability " + N2(hit.value) + " cal). Add fins, more gimbal, or move mass up.";
                 case FailureKind.EngineOverpressure:
-                    return "An engine blew its nozzle at T+" + ts + " s. Chamber pressure was " + N0(hit.value) + " bar against a rated " + N0(hit.limit) + " bar. Lower the chamber pressure.";
+                    return "An engine blew its nozzle at T+" + ts + " s. Chamber pressure was " + Pair(hit, 0, true) + " bar against a rated " + Pair(hit, 0, false) + " bar. Lower the chamber pressure.";
                 case FailureKind.BadMixture:
                     return "An engine sputtered out at T+" + ts + " s. The mixture was " + N1(Math.Abs(hit.value)) + "% off. Put it back near the normal mix.";
                 case FailureKind.Thermal when hit.cause == 1:
                     return "The base of the rocket overheated at T+" + ts + " s. More than nine engines need a heat shield.";
                 case FailureKind.Thermal:
-                    return "The skin burned through at T+" + ts + " s. It reached " + N0(hit.value) + " K and the material handles " + N0(hit.limit) + " K. Add a heat shield or a cooler nose.";
+                    return "The skin burned through at T+" + ts + " s. It reached " + Pair(hit, 0, true) + " K and the material handles " + Pair(hit, 0, false) + " K. Add a heat shield or a cooler nose.";
                 case FailureKind.CryoMaterial:
                     return "The tanks cracked on the pad. This fuel is far too cold for that material. Pick a tank that can take the cold.";
                 case FailureKind.PropDepletion:
                     return "Your rocket ran out of fuel at T+" + ts + " s, short of the target. Load more propellant or add a stage.";
                 case FailureKind.SeparationCollision:
-                    return "The stages bumped at T+" + ts + " s. They only moved apart at " + N2(hit.value) + " m/s and needed " + N2(hit.limit) + " m/s. Use a stronger separation push.";
+                    return "The stages bumped at T+" + ts + " s. They only moved apart at " + Pair(hit, 2, true) + " m/s and needed " + Pair(hit, 2, false) + " m/s. Use a stronger separation push.";
                 case FailureKind.LegCollapse:
-                    return "The legs folded at touchdown. The booster was falling at " + N1(hit.value) + " m/s and the legs take " + N1(hit.limit) + " m/s. Use heavier legs or save more fuel for landing.";
+                    return "The legs folded at touchdown. The booster was falling at " + Pair(hit, 1, true) + " m/s and the legs take " + Pair(hit, 1, false) + " m/s. Use heavier legs or save more fuel for landing.";
                 case FailureKind.EngineOut:
                     return "An engine quit at T+" + ts + " s. The stage could not stay up on the ones left. Add engines and redundant avionics.";
                 case FailureKind.AxialOverload:
@@ -403,6 +408,11 @@ namespace Kestrel.Core.Flight
                     return "Peak " + hit.value.ToString("0.00", inv) + " g, past the " + hit.limit.ToString("0.00", inv) + " g limit.";
                 case FailureKind.Tumble:
                     return "Stability " + hit.value.ToString("0.000", inv) + " at T+" + t.ToString("0.00", inv) + " s.";
+                case FailureKind.EngineOut:
+                    // Playthrough 2026-11-11: this read "Reading 1.000, limit 6.000". value is the engines that quit, limit the
+                    // engines lit (the roll above); the ride-through rule is EngineOutMinCount, redundant avionics and EngineOutMinTwr.
+                    return N0(hit.value) + " of " + N0(hit.limit) + " engines quit at T+" + t.ToString("0.0", inv) + " s. A stage rides through one out only with "
+                        + N0(EngineOutMinCount) + " or more engines, redundant avionics, and a thrust-to-weight above " + EngineOutMinTwr.ToString("0.00", inv) + " on the rest.";
                 case FailureKind.AxialOverload:
                     return "Axial load margin " + hit.value.ToString("0.000", inv) + " at T+" + t.ToString("0.00", inv) + " s. The mass above, on its own, is past the wall's allowable.";
                 default:

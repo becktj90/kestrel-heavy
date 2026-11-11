@@ -187,7 +187,9 @@ namespace Kestrel.Game.Guide
             var ev = result != null ? result.failure : null;
             string kind = debrief.Kind ?? "";
             if (kind == "pass") kind = "";
-            double goal = mission != null && mission.Target != null ? mission.Target.ApoKm : double.NaN;
+            // A GTO or C3 goal is not an apogee the flight can be judged against ("goal 0" for C3): no apo-vs-goal line.
+            bool departs = mission != null && mission.Target != null && (mission.Target.Kind == "ellipse" || mission.Target.Kind == "c3");
+            double goal = mission != null && mission.Target != null && !departs ? mission.Target.ApoKm : double.NaN;
             double apo = result != null ? MissionScore.FlownApoAltM(result) / 1000.0 : double.NaN;
             double peri = result != null ? result.orbit.periAlt / 1000.0 : double.NaN;
             double q = double.NaN;
