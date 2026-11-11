@@ -26,9 +26,8 @@ AND over fact keys. Values: exact (number, bool, string), a comparison string on
 
 ## Historical commentary (DECISIONS #77)
 
-In-game commentary may name real companies, rockets, programs, ships and people when it tells true
-spaceflight history — for example Sputnik, Apollo, Saturn V, Falcon 9, New Glenn, Jacklyn. This
-supersedes WRITING_BIBLE §6.6 and §8 for the historical commentary lines only. A historical take:
+DECISIONS #100 (below) now sets the naming rule for every surface; this section only describes the
+shape of the mission-gated historical takes. A historical take:
 
 - is a color-layer take (`"layer": "color"`) on a `color.*` event, gated to exactly one mission:
   `"requires": {"mission": "m<n>"}`, `"claims": ["mission"]`, plus `"mission": "m<n>"` and
@@ -36,9 +35,12 @@ supersedes WRITING_BIBLE §6.6 and §8 for the historical commentary lines only.
 - states no fact about the flown design (no engine counts, no "booster", no strap-ons, no
   Haven/pad/site claims) — the claim-vs-design verifier only ever sees `claims: ["mission"]`;
 - has every fact sourced in `docs/plans/per-mission-commentary.md` (S-rows reuse
-  `docs/narration-sources.md`; H-rows are checked there). The lint exempts historical takes from
-  the banned-names rule (`blue origin|new glenn|jacklyn|lc-36`) and fails any other take that
-  names them, and fails a mission-gated take that has no sources or does not claim `mission`.
+  `docs/narration-sources.md`; H-rows are checked there). Historical takes are no longer exempt
+  from the banned-names rule (DECISIONS #100): the rule
+  (`blue origin|new glenn|jacklyn|lc-36`) fails every take, historical ones included. Two shipped
+  m7 takes that fail it are listed in `BANNED_PENDING_RERECORD` until they are re-recorded (that
+  list may only shrink). The lint also fails a mission-gated take that has no sources or does not
+  claim `mission`.
 
 The game's own world stays fictional: pads, ships, missions and rockets keep their names (Pier 7,
 Haven, KH-n, the stack), and no real brand or trade dress is used in art, UI, store copy or code
@@ -46,32 +48,28 @@ enums. The mission id is threaded into `NarrationFacts` at the two narration ent
 (`FlightDriver` from the aimed mission, `SliceApp.BeginCountNarration` from
 `AscentFlight.CurrentMission()`); a flight with no mission id simply never hears these lines.
 
-### Factual history lines in any narration surface (DECISIONS #77, widened)
+### Real names on every surface (DECISIONS #100)
 
-Factual history lines may name real people and programs in **any narration surface**: webcast
-color, designer commentary, idle or pad time, menu commentary and mission previews. Each such line
-has a listed source id in `docs/narration-sources.md` and a Codex/Physics check
-(Codex for history and game facts, Physics for any physics claim, both for mixed lines) before it
-is recorded. Limits:
+Trevor, 2026-11-11 8:28 AM ET: *"Use real names and real history and real dates. It should be
+educational. The kestrel heavy missions are fictional but all other things can use real world
+information. You can use other companies too as long as it's common knowledge."* This supersedes
+#77's narrower scope.
 
-- Name only **historical government programs, vehicles, agencies and people** (for example
-  Sputnik 1, the R-7, Apollo 11, Saturn V, the Soviet N1, Mercury-Atlas, Space Shuttle, Skylab,
-  Hubble, NASA, the Soviet space program, Gagarin, Leonov, Korolev).
-- **No current commercial companies or their vehicles**, and never Blue Origin, New Glenn,
-  Jacklyn or LC-36 (the banned-names lint still applies to these lines; only the mission-gated
-  historical takes above are exempt).
-- **Nothing that implies endorsement**, and nothing that compares the KH rocket to a real one as
-  if it were that rocket. A line may tell how a real rocket did something; it may not say the
-  player's stack *is*, or *is like*, that rocket.
-- No actors, films or celebrities; no invented quotes.
-- Each named line keeps a **name-free alternate** text, staged as a fallback.
-- The game's own world stays fictional (Pier 7, Haven, KH-n, the stack), and **Codex read-aloud
-  scripts stay name-free**.
-- Word caps: in-flight lines (feedback, status, color) stay at 14 words per spoken line;
-  menu, designer, idle and mission-preview lines may run up to 24 words.
+- Real names, history, dates and **commonly known companies** (for example Falcon 9) are allowed on
+  **every surface**: webcast color, mission previews, designer, idle or pad, menus, and Codex.
+- **Every fact needs a source id** (`docs/narration-sources.md` S- and G-rows, or
+  `docs/plans/per-mission-commentary.md` H-rows) **and a Codex or Physics check** (Codex for history
+  and game facts, Physics for physics claims, both for mixed lines) before it is recorded.
+- **The game's own world stays fictional**: KH missions, the KH rocket, the pad (Pier 7) and the
+  barge Haven are never presented as real, and no line says the player's stack is a real rocket.
+- **Never** Blue Origin, New Glenn, Jacklyn or LC-36, on any surface. The lint enforces this on every
+  narration take, the #77 per-mission takes included.
+- **No implied endorsement.**
+- Word caps: in-flight lines (feedback, status, color) stay at 14 words per spoken line; menu,
+  designer, idle and mission-preview lines may run up to 24 words.
 
-These lines are not mission-gated unless they also state a mission fact. Any fact about the flown
-design still needs `requires`/`claims` as usual; a history line that states none is `neutral`.
+Any fact about the flown design still needs `requires`/`claims` as usual; a history line that
+states none is `neutral`.
 
 Propellants: `kerolox`, `hydrolox`, `methalox`, `solid`, `storable`.
 

@@ -225,12 +225,12 @@ Theme: The first orbital booster landing (Falcon 9, 2015) and the tower catch (S
 
 Flight: 5,500 kg comsat to transfer orbit, booster lands on Haven.
 
-Theme: New Glenn lands on Jacklyn (2025) and the first droneship landing (2016).
+Theme: the first upright booster landing (2015) and the first droneship landing (2016). (Was: New Glenn on Jacklyn, 2025; removed under DECISIONS #100.)
 
 | Take | Window | Voice | Line | Sources |
 |------|--------|-------|------|---------|
-| `host/color.pad.m7.1` | `color.pad` | H | In November 2025, New Glenn's first stage landed on Jacklyn. | H5 |
-| `cohost/color.pad.m7.2` | `color.pad` | C | Jacklyn waited about six hundred kilometres downrange in the Atlantic. | H5 |
+| `host/color.pad.m7.1` | `color.pad` | H | ~~In November 2025, New Glenn's first stage landed on Jacklyn.~~ **Fails DECISIONS #100 (banned names); re-record as:** "In December 2015, a Falcon 9 booster first landed upright after reaching space." | ~~H5~~ S16 |
+| `cohost/color.pad.m7.2` | `color.pad` | C | ~~Jacklyn waited about six hundred kilometres downrange in the Atlantic.~~ **Fails DECISIONS #100 (banned names); re-record as:** "Landing ships wait far downrange, so the booster needn't fly all the way back." | ~~H5~~ S16, G49 |
 | `host/color.coast.m7.1` | `color.coast` | H | A transfer orbit stretches from low orbit out to thirty-six thousand kilometres. | H6 |
 | `cohost/color.recovery.m7.1` | `color.recovery` | C | The first droneship landing was a Falcon 9, in April 2016. | H7 |
 

@@ -23,10 +23,14 @@ const ENUM = (k) => (/propellant/.test(k) ? (k === 'propellant.all' ? [...PROPS,
 const CMP_RE = /^(>=|<=|!=|>|<)-?\d+$/;
 const FACT_WORDS = /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d+|engines?|cores?|cluster|chambers?|methane|LOX|kerosene|hydrogen|methalox|kerolox|hydrolox|solids?|strap-?ons?|boosters?|upper stage|(first|second|third)[- ]stage|legs|fins?|finless|halves|fairing|Haven|barge|landing|pad landing|Pier 7|Coastal Pad B|Salt Flat Pad|North Reach|strakes?)\b/i;
 const ALLOW = /SES-1|Max-Q|T-minus \d+/gi;
-// DECISIONS #77: historical commentary lines may name real companies, rockets, programs, ships and
-// people. A take is historical only when it is gated to one campaign mission AND carries sources;
-// those takes are exempt from the banned-names rule. Every other take still fails on a banned name.
+// DECISIONS #77, widened by #100: real names, history, dates and commonly known companies are allowed on
+// every narration surface. A take is "historical" (mission-gated) when it is gated to one campaign mission
+// AND carries sources. The banned-names rule (DECISIONS #100) applies to EVERY take, historical ones included.
 const BANNED = /blue origin|new glenn|jacklyn|lc-36/i;
+// Shipped takes that fail the banned-names rule and are waiting for a re-record (they cannot be fixed
+// without new audio, and host/color.pad.m7.1 is pinned by NarrationFactsTests.cs). This list may only
+// shrink: a test below fails if an id here no longer exists or no longer names a banned name.
+const BANNED_PENDING_RERECORD = new Set(['host/color.pad.m7.1', 'cohost/color.pad.m7.2']);
 const isHistorical = (c) => c.requires && typeof c.requires.mission === 'string'
   && Array.isArray(c.sources) && c.sources.length > 0;
 
@@ -89,7 +93,7 @@ test('every clip carries exactly one valid fact tag form', () => {
 test('fact-word lines are gated or carry a neutral reason; no banned names', () => {
   for (const c of clips) {
     for (const t of [c.text, c.spokenText]) {
-      assert.ok(isHistorical(c) || !BANNED.test(t), `${c.id}: banned name`);
+      assert.ok(BANNED_PENDING_RERECORD.has(c.id) || !BANNED.test(t), `${c.id}: banned name (DECISIONS #100)`);
       if (FACT_WORDS.test(t.replace(ALLOW, ''))) {
         assert.ok((c.claims && c.claims.length) || (c.neutral && c.neutralReason), `${c.id}: fact words need claims or neutralReason`);
       }
@@ -97,11 +101,11 @@ test('fact-word lines are gated or carry a neutral reason; no banned names', () 
   }
 });
 
-test('historical takes (DECISIONS #77): mission-gated, sourced, and the only takes that may name real programs', () => {
+test('historical takes (DECISIONS #77/#100): mission-gated and sourced; banned names fail on every take', () => {
   const errs = [];
   for (const c of clips) {
     if (BANNED.test(c.text) || BANNED.test(c.spokenText)) {
-      if (!isHistorical(c)) errs.push(`${c.id}: banned name on a non-historical take`);
+      if (!BANNED_PENDING_RERECORD.has(c.id)) errs.push(`${c.id}: banned name (DECISIONS #100 applies on every surface)`);
     }
     if (c.requires && 'mission' in c.requires) {
       if (!MISSIONS.includes(c.requires.mission)) errs.push(`${c.id}: bad mission ${c.requires.mission}`);
@@ -111,6 +115,15 @@ test('historical takes (DECISIONS #77): mission-gated, sourced, and the only tak
     }
   }
   assert.deepEqual(errs, []);
+});
+
+test('banned-name re-record list only shrinks (DECISIONS #100)', () => {
+  const byId = new Map(clips.map((c) => [c.id, c]));
+  for (const id of BANNED_PENDING_RERECORD) {
+    const c = byId.get(id);
+    assert.ok(c, `${id}: re-recorded or removed; drop it from BANNED_PENDING_RERECORD`);
+    assert.ok(BANNED.test(c.text) || BANNED.test(c.spokenText), `${id}: no longer names a banned name; drop it from BANNED_PENDING_RERECORD`);
+  }
 });
 
 test('every clip file exists in both trees with the recorded sha256, and loudness is in spec', () => {

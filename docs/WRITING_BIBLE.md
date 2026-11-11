@@ -147,7 +147,8 @@ are left out of the clip library (as PR #30 already does). Say "Score clipped." 
 ### 6.6 Names and trademarks
 
 - **Banned anywhere (spoken text, captions, code enums, file names):** Blue Origin, New
-  Glenn, Jacklyn, LC-36. Also avoid any other real company, vehicle, or ship name.
+  Glenn, Jacklyn, LC-36. Other real names, dates and commonly known companies are fine in
+  true, sourced facts (DECISIONS #100, see §8); the game's own world below stays fictional.
 - **Use instead:** missions `KH-n` (for example KH-3), launch site **Pier 7**, recovery
   barge **Haven**, rocket "the stack" / "the booster" / "the upper (stage)".
 - Generic aerospace terms are fine and encouraged: Max-Q, MECO, SECO, LOX, methane,
@@ -234,13 +235,12 @@ misspellings.
 - **Real brands and people:** no real companies, vehicles, ships, pads, people, or
   trademarks (Blue Origin, New Glenn, Jacklyn, LC-36, SpaceX, NASA marks, astronaut names,
   etc.). Applies to text, audio, code enums, file names, art.
-  **Exception (DECISIONS #77, widened):** factual history lines in any narration surface
-  (webcast color, designer, idle or pad, menu, mission preview) may name historical government
-  programs, vehicles, agencies and people, each with a listed source in
-  `docs/narration-sources.md` and a Codex/Physics check. No current commercial companies or their
-  vehicles, never Blue Origin, New Glenn, Jacklyn or LC-36, nothing that implies endorsement, and
-  nothing that compares the KH rocket to a real one as if it were that rocket. Each such line keeps
-  a name-free alternate. Codex read-aloud stays name-free. Full rule: `docs/narration-facts.md`.
+  **Exception (DECISIONS #100, superseding #77's narrower scope):** real names, real history,
+  real dates and commonly known companies (for example Falcon 9) are allowed on every surface,
+  Codex included, when they tell true facts. Each fact has a source id and a Codex or Physics
+  check. KH missions, the KH rocket, Pier 7 and Haven stay fictional and are never presented as
+  real. Blue Origin, New Glenn, Jacklyn and LC-36 are never allowed, anywhere. No implied
+  endorsement. Full rule: `docs/narration-facts.md`.
 - **Scary or violent framing:** no death, injury, explosions described graphically, fire on
   people, weapons, military payloads, disaster imagery. Failures are "stack lost," "range safe."
 - **Monetization pressure:** no "buy now," no countdown offers, no FOMO, no "your friends
