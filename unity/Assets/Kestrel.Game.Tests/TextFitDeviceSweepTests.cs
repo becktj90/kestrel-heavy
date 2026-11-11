@@ -25,7 +25,7 @@ using UnityEngine.UIElements;
 
 namespace Kestrel.Game.Tests
 {
-    public class TextFitDeviceSweepTests
+    public partial class TextFitDeviceSweepTests
     {
         const string ExperienceKey = Kestrel.Core.Features.ExperienceSettings.CornerCharacterPref;
         const string Tokens = "Assets/Kestrel.Game/Shell/UI/KH_Tokens.uss";
