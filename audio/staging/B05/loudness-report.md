@@ -3,7 +3,7 @@
 Target: −16 LUFS ±1, true peak ≤ −1.5 dBTP. In-flight calls ≤ 6 s, color lines ≤ 10 s, not silent.
 
 - Takes measured: **186** (93 lines)
-- Duration: 1.384–9.273 s (mean 4.827 s)
+- Duration: 1.384–9.273 s (mean 4.822 s)
 - LUFS: -16.86 to -16.38 (all inside −17…−15)
 - True peak: -3.71 to -1.51 dBTP (all ≤ −1.5)
 - Flags after measurement: **none** over duration cap, silent, or out of loudness spec.
@@ -30,5 +30,11 @@ Takes that were still below −17 LUFS were re-normalized from their processed s
 
 ## ready-3.tsv
 
-Replaced `host/menu.home.idle.g5-2#a`–`#c` (fruit flies, 6 takes) with the real-name V-2 text from ready-3.tsv. Added `host/menu.mission.m14.g5-1` and `host/menu.mission.m20.g5-1` (2 takes each). m20 uses the Physics-approved text: "Far Hold: the highest orbit on the board. This far out, the Sun's pull starts to win over Earth's."
+Replaced `host/menu.home.idle.g5-2#a`–`#c` (fruit flies, 6 takes) with the real-name V-2 text from ready-3.tsv. Added `host/menu.mission.m14.g5-1` and `host/menu.mission.m20.g5-1` (2 takes each). m20 uses the Physics-approved text: "Far Hold: the farthest target on the board. Out here, the Sun's pull already wins over Earth's."
 
+## m20 retake (Physics, 2026-11-11, America/New_York)
+
+Re-recorded both takes of `host/menu.mission.m20.g5-1` with the same Sarah voice (`EXAVITQu4vr4xnSDxMaL`), model `eleven_multilingual_v2`, and voice settings. Physics-approved text: "Far Hold: the farthest target on the board. Out here, the Sun's pull already wins over Earth's." This replaces the earlier "highest orbit" wording: m20 is not a stable Earth orbit. Manifest sha256 pins and loudness.csv were updated. Both takes in spec.
+
+- take 1: 5.799 s, −16.45 LUFS, −3.38 dBTP
+- take 2: 5.878 s, −16.44 LUFS, −3.30 dBTP

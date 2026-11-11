@@ -45,4 +45,11 @@ See `loudness-report.md`. Flags still failing after one retake: 0.
 
 ## ready-3.tsv update
 
-Replaced `host/menu.home.idle.g5-2#a`–`#c` (fruit flies, 6 takes) with the real-name V-2 text from ready-3.tsv. Added `host/menu.mission.m14.g5-1` and `host/menu.mission.m20.g5-1` (2 takes each). m20 uses the Physics-approved text: "Far Hold: the highest orbit on the board. This far out, the Sun's pull starts to win over Earth's."
+Replaced `host/menu.home.idle.g5-2#a`–`#c` (fruit flies, 6 takes) with the real-name V-2 text from ready-3.tsv. Added `host/menu.mission.m14.g5-1` and `host/menu.mission.m20.g5-1` (2 takes each). m20 uses the Physics-approved text: "Far Hold: the farthest target on the board. Out here, the Sun's pull already wins over Earth's."
+
+## m20 retake (Physics, 2026-11-11, America/New_York)
+
+Re-recorded both takes of `host/menu.mission.m20.g5-1` with the same Sarah voice (`EXAVITQu4vr4xnSDxMaL`), model `eleven_multilingual_v2`, and voice settings. Physics-approved text: "Far Hold: the farthest target on the board. Out here, the Sun's pull already wins over Earth's." This replaces the earlier "highest orbit" wording: m20 is not a stable Earth orbit. Manifest sha256 pins and loudness.csv were updated. Both takes in spec.
+
+- take 1: 5.799 s, −16.45 LUFS, −3.38 dBTP
+- take 2: 5.878 s, −16.44 LUFS, −3.30 dBTP
