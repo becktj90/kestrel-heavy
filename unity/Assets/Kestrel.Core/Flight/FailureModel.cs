@@ -354,7 +354,8 @@ namespace Kestrel.Core.Flight
                 case FailureKind.StructuralMaxQ when hit.cause == 1:
                     return "Your rocket bent in half at T+" + ts + " s. The stack was loaded past what the tanks can hold. Try a higher safety factor or a stronger material.";
                 case FailureKind.StructuralMaxQ:
-                    return "Your rocket bent in half at T+" + ts + " s. The air pushed " + N0(qPa / 1000.0) + " kPa, but your tanks could only take " + N0(hit.limit / 1000.0) + " kPa. Try a higher safety factor or a lower max-Q throttle.";
+                    FlightDebrief.KpaPair(qPa, hit.limit, out var airQ, out var wallQ);
+                    return "Your rocket bent in half at T+" + ts + " s. The air pushed " + airQ + " kPa, but your tanks could only take " + wallQ + " kPa. Try a higher safety factor or a lower max-Q throttle.";
                 case FailureKind.OverG:
                     string peak = N1(hit.value);
                     string lim = N1(hit.limit);

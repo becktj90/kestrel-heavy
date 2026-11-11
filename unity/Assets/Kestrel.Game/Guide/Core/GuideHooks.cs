@@ -264,6 +264,7 @@ namespace Kestrel.Game.Guide
             {
                 string q = Num(facts.QKpa, "0");
                 string lim = Num(facts.QLimKpa, "0");
+                if (q != null && lim != null) FlightDebrief.PairText(facts.QKpa, facts.QLimKpa, out q, out lim);
                 if (q != null && lim != null)
                     engine.Offer("abort", kind, new Dictionary<string, string> { ["q"] = q, ["qlim"] = lim }, "report", true);
             }
@@ -378,6 +379,7 @@ namespace Kestrel.Game.Guide
                 string q = read != null ? Num(read.maxQ_kPa ?? double.NaN, "0") : null;
                 string lim = read != null ? Num(read.qLim_kPa ?? double.NaN, "0") : null;
                 if (q == null || lim == null) return;
+                FlightDebrief.PairText(read.maxQ_kPa.Value, read.qLim_kPa.Value, out q, out lim);
                 tokens = new Dictionary<string, string> { ["q"] = q, ["qlim"] = lim };
             }
             else if (when == "odds")
@@ -460,6 +462,7 @@ namespace Kestrel.Game.Guide
             string q = Num(note.QKpa, "0");
             string lim = Num(note.QLimKpa, "0");
             if (q == null && lim == null) return null;
+            if (q != null && lim != null) FlightDebrief.PairText(note.QKpa, note.QLimKpa, out q, out lim);
             var tokens = new Dictionary<string, string>();
             if (q != null) tokens["q"] = q;
             if (lim != null) tokens["qlim"] = lim;

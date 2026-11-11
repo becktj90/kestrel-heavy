@@ -401,6 +401,28 @@ namespace Kestrel.Core.Flight
             return debrief;
         }
 
+        /// <summary>
+        /// Playthrough 2026-11-11: "Air pushed 25 kPa. The walls held 25 kPa." from 25.06 vs 25.00 kPa. Two values shown
+        /// side by side are rounded to whole numbers unless that makes them read equal; then one decimal, then two, then
+        /// three (1 Pa), the first precision where they differ. Values that are equal to 1 Pa read equal.
+        /// </summary>
+        public static void PairText(double a, double b, out string aText, out string bText)
+        {
+            aText = N0(a);
+            bText = N0(b);
+            if (aText != bText || double.IsNaN(a) || double.IsNaN(b) || a == b) return;
+            foreach (var fmt in new[] { "0.0", "0.00", "0.000" })
+            {
+                aText = a.ToString(fmt, CultureInfo.InvariantCulture);
+                bText = b.ToString(fmt, CultureInfo.InvariantCulture);
+                if (aText != bText) return;
+            }
+        }
+
+        /// <summary>Air load against the wall, in kPa, as <see cref="PairText"/> prints the pair.</summary>
+        public static void KpaPair(double valuePa, double limitPa, out string q, out string qlim) =>
+            PairText(valuePa / 1000.0, limitPa / 1000.0, out q, out qlim);
+
         public static string NumberLine(FailureEvent ev, FlightFacts facts, bool passed)
         {
             if (ev == null)
@@ -413,7 +435,8 @@ namespace Kestrel.Core.Flight
             switch (ev.kind)
             {
                 case "structural-maxq" when ev.cause == "q":
-                    return "Air pushed " + N0(ev.value / 1000.0) + " kPa. The walls held " + N0(ev.limit / 1000.0) + " kPa.";
+                    KpaPair(ev.value, ev.limit, out var airQ, out var wallQ);
+                    return "Air pushed " + airQ + " kPa. The walls held " + wallQ + " kPa.";
                 case "structural-maxq":
                     return "At T+" + N0(ev.t) + " s. Load margin " + N2(ev.value) + ".";
                 case "engine-overpressure":
@@ -469,8 +492,9 @@ namespace Kestrel.Core.Flight
             double goal = facts != null ? facts.GoalKm : 0;
             int stars = debrief != null ? debrief.Stars : 0;
             string s = template;
-            s = s.Replace("{q}", N0(value / 1000.0));
-            s = s.Replace("{qlim}", N0(limit / 1000.0));
+            KpaPair(value, limit, out var qText, out var qlimText);
+            s = s.Replace("{q}", qText);
+            s = s.Replace("{qlim}", qlimText);
             s = s.Replace("{qPa}", value.ToString("0.0", CultureInfo.InvariantCulture));
             s = s.Replace("{qlimPa}", limit.ToString("0.0", CultureInfo.InvariantCulture));
             s = s.Replace("{t}", N0(t));

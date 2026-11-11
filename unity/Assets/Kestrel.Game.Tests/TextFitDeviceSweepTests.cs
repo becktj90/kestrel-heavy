@@ -206,6 +206,68 @@ namespace Kestrel.Game.Tests
             }
         }
 
+        /// <summary>Playthrough 2026-11-11 strings at 335 and the web landscape panel: the failed card with the close
+        /// break-up numbers ("25.1 kPa" against "25.0 kPa") and Next relabelled "Missions" (KH-20 has no next mission, so
+        /// Next lands on the list whatever the save holds), and the KH-3 / KH-14 briefings with "Don't come up short on speed".</summary>
+        [Test]
+        public void PlaythroughStringsFitAt335AndWebLandscape()
+        {
+            var campaign = ScreenStub.LoadCampaign();
+            Assert.That(campaign, Is.Not.Null, "Resources/KestrelData/campaign is synced");
+            var raw = MiniJson.ParseObject(Resources.Load<TextAsset>("KestrelData/campaign").text);
+            var frames = new List<Frame>(Frames) { new Frame("web landscape", 1280f, 720f) };
+            var saved = GameSession.Current;
+            try
+            {
+                foreach (var frame in frames)
+                {
+                    MainMenuOverlay.ForceWide = frame.Landscape;
+                    using (var surface = DeviceSurface.Open(frame.W, frame.H))
+                    {
+                        foreach (var id in new[] { "m3", "m14" })
+                        {
+                            var ctx = MissionContext.FromCampaign(campaign, id);
+                            Assert.That(ctx, Is.Not.Null, id);
+                            ctx.BonusGoals.Clear();
+                            foreach (var o in raw.Arr("missions"))
+                                if (o is JsonObject m && m.Str("id") == id)
+                                    foreach (var b in m.Obj("briefing").Arr("bonuses"))
+                                        ctx.BonusGoals.Add(((JsonObject)b).Str("label"));
+                            Assert.That(ctx.BonusGoals, Does.Contain("Don't come up short on speed"), id);
+                            surface.Stage.Clear();
+                            var briefing = MountInColumn(surface.Stage, BriefingScreen.Build(ctx, () => { }, () => { }));
+                            surface.Pump(4);
+                            Settle(surface, briefing);
+                            AssertFits(briefing, frame.Name + " " + id + " briefing");
+                        }
+
+                        GameSession.Carry(MissionContext.FromCampaign(campaign, "m20"));
+                        var hit = new FailureHit { on = true, kind = FailureKind.StructuralMaxQ, cause = 0, value = 25056.6, limit = 25000, engine = -1, stage = 1 };
+                        var ev = FailureModel.Explain(hit, 4.84, 25056.6);
+                        var facts = new FlightFacts { Failure = ev, Passed = false, Seed = 1 };
+                        var debrief = FlightDebrief.Compose(null, GameSession.Current, facts, NarrationPool.Empty, 100000, null);
+                        Assert.That(debrief.Numbers, Is.EqualTo("Air pushed 25.1 kPa. The walls held 25.0 kPa."));
+                        surface.Stage.Clear();
+                        var card = ReportView.Build(ev, SampleLog(), ReportLayout.Solve(frame.W, frame.H, 0, 0, 0, 0, true), true, null, debrief, new ReportActions());
+                        surface.Stage.Add(card);
+                        ReportCardChrome.Present(surface.Stage, card, 1f, 0f, 0f);
+                        surface.Pump(6);
+                        Settle(surface, card);
+                        AssertFits(card, frame.Name + " failed card, Next to the list");
+                        var next = card.Q<Button>(UiIds.ReportNext);
+                        Assert.That(next.text, Is.EqualTo(ReportRoutes.NextLockedLabel), frame.Name);
+                        AssertStringInside(next, frame.Name + " Next relabelled");
+                        AssertStringInside(card.Q<Label>("failure-numbers"), frame.Name + " break-up numbers");
+                    }
+                }
+            }
+            finally
+            {
+                GameSession.Carry(saved);
+                MainMenuOverlay.ForceWide = null;
+            }
+        }
+
         [Test]
         public void EveryDesignerTabFitsAndTheGuidedFlowStillAdvances()
         {

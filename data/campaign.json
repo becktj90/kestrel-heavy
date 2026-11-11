@@ -168,7 +168,7 @@
         "bonuses": [
           {
             "id": "margin",
-            "label": "Finish with speed to spare"
+            "label": "Don't come up short on speed"
           }
         ],
         "customer": "Cinderwharf Rideshare",
@@ -724,7 +724,7 @@
         "payloadKind": "Cargo capsule",
         "customer": "Saltwharf Freight",
         "goal": "Lift a 10,000 kg cargo capsule to a 400 km circular orbit.",
-        "control": "Trunk-4 is 10,000 kg. A 400 km circle. Finish with speed to spare.",
+        "control": "Trunk-4 is 10,000 kg. A 400 km circle. Don't come up short on speed.",
         "whatItIs": "A cargo capsule packed with supplies.",
         "whatItDoes": "It carries ten tonnes to a station orbit.",
         "why": "Ten tonnes of supplies to a 400 km circle. About 8,760 m/s.",
@@ -733,7 +733,7 @@
         "bonuses": [
           {
             "id": "margin",
-            "label": "Finish with speed to spare"
+            "label": "Don't come up short on speed"
           },
           {
             "id": "strap-ons",
