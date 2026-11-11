@@ -2068,7 +2068,9 @@
   "dBTP": -3.0,
   "normalization": "linear",
   "sha256": "95e82dc343ee41ec528abd806cff102744e050d8ca93e1e2a98038364483ae92",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/fuel-low.g5-1",
@@ -2087,7 +2089,9 @@
   "dBTP": -3.14,
   "normalization": "linear",
   "sha256": "8978a9e0ae9bd298813a0db2d1492228514d52ec0ce7e77c8891d3bd8d0825e2",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/fuel-low.g5-2",
@@ -2106,7 +2110,9 @@
   "dBTP": -2.91,
   "normalization": "linear",
   "sha256": "b84fd4233053b5c728acc774e142527cc6f39cd4b35f44581be98f3861bdec86",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/fuel-low.g5-2",
@@ -2125,7 +2131,9 @@
   "dBTP": -3.02,
   "normalization": "linear",
   "sha256": "20af42b58e9ee854faa5517e696ced59f6d8c5cf3bc3af203b20b62a25aa881a",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/fuel-low.g5-3",
@@ -2144,7 +2152,9 @@
   "dBTP": -3.09,
   "normalization": "linear",
   "sha256": "3af4ccd2f17aa5d7252d8edd2c1a5bc498bb6b8d9b83d7aa6c6abe87036102f1",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/fuel-low.g5-3",
@@ -2163,7 +2173,9 @@
   "dBTP": -2.49,
   "normalization": "linear",
   "sha256": "87680bff99cffef95d58973e987ba6f4445bc4659a098cf750958f1478a6c0d9",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/fuel-low.g5-4",
@@ -2182,7 +2194,9 @@
   "dBTP": -3.02,
   "normalization": "linear",
   "sha256": "5e5a39f31d0fafa543992c5e400b9d5815b6f6d7765ce22484547c3eec4d5a7e",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/fuel-low.g5-4",
@@ -2201,7 +2215,9 @@
   "dBTP": -2.7,
   "normalization": "linear",
   "sha256": "6a26d4ab6561ba35b3c7e57d37405419cca677bf05d72e24cc6b3786107d71e1",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/fuel-low.g5-5",
@@ -2220,7 +2236,9 @@
   "dBTP": -2.53,
   "normalization": "linear",
   "sha256": "cd59df53c1843ea7dc8c6ee5f13fa908531d18cdcdc4c536993151c6579c51a4",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/fuel-low.g5-5",
@@ -2239,7 +2257,9 @@
   "dBTP": -3.0,
   "normalization": "linear",
   "sha256": "1fede5e98a0195c3ffca73b53cb3ca568961675f7de94e7baed3b2b879ec9b43",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "host/fuel-low.g5-1",
@@ -2258,7 +2278,9 @@
   "dBTP": -3.04,
   "normalization": "linear",
   "sha256": "62a5b67449d78168a1dc8cdd10074601330b989d72f870ba83cf88058773498c",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "host/fuel-low.g5-1",
@@ -2277,7 +2299,9 @@
   "dBTP": -3.27,
   "normalization": "linear",
   "sha256": "d413b888b1141cbfa53a9460c6a45b2fe9426e06f3ab1e793ddee89e83f36008",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "host/fuel-low.g5-3",
@@ -2296,7 +2320,9 @@
   "dBTP": -3.28,
   "normalization": "linear",
   "sha256": "428a7beaac4106de1336234731eadd05be3e64e55aeb3ec6f07becd2183a7382",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "host/fuel-low.g5-3",
@@ -2315,7 +2341,9 @@
   "dBTP": -3.29,
   "normalization": "linear",
   "sha256": "c2c11349c856439ea766ea947f63b6ebb5a9ba143739df35754faab47f0d84ed",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-1",
@@ -2334,7 +2362,9 @@
   "dBTP": -2.83,
   "normalization": "linear",
   "sha256": "900593c88ffb59c464dc2c14442818a6b0d4c7f87267d2a5c95b4a31c5da13ca",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-1",
@@ -2353,7 +2383,9 @@
   "dBTP": -3.32,
   "normalization": "linear",
   "sha256": "fb28fe7ba6fb7749b248f112032b398ed58fba3c678e5958d199d780f5e97b3f",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-2",
@@ -2372,7 +2404,9 @@
   "dBTP": -2.82,
   "normalization": "linear",
   "sha256": "3853720c7ff1be6f3a2f4c3575a727e492155678cc34d9b73bd182454162553e",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-2",
@@ -2391,7 +2425,9 @@
   "dBTP": -2.78,
   "normalization": "linear",
   "sha256": "e7c5172306fa1f13e590e78737ab1d94566691cfa63b4944518032ed3e173ee2",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-3",
@@ -2410,7 +2446,9 @@
   "dBTP": -3.05,
   "normalization": "linear",
   "sha256": "6f39f0428d32029e0c99756c74c77436001398019ca7eb29f12a98dc67ec65c8",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-3",
@@ -2429,7 +2467,9 @@
   "dBTP": -3.29,
   "normalization": "linear",
   "sha256": "2acbe0b471f14402f7442e1c2237daefb50310bc072fbece871201ee90fbb610",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-5",
@@ -2448,7 +2488,9 @@
   "dBTP": -3.16,
   "normalization": "linear",
   "sha256": "8a58431c13a272ec909d43a2aea04aadad324d27fce78da4eeb077a41298b6c9",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-5",
@@ -2467,7 +2509,9 @@
   "dBTP": -2.81,
   "normalization": "linear",
   "sha256": "95d275cdb172b5f3d3c19daa0f2b234a1315f3865eb3f02c40f2350b69512162",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-6",
@@ -2486,7 +2530,9 @@
   "dBTP": -3.05,
   "normalization": "linear",
   "sha256": "eb043517701905106ec6b46834a82a5569cdd2896e162d42feb4b3a0901b430d",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-6",
@@ -2505,7 +2551,9 @@
   "dBTP": -3.35,
   "normalization": "linear",
   "sha256": "7d3031843bb9bc0baa79d8773f7b18c37d0527905b6e3f72b5b54774dfd95c32",
-  "model": "eleven_multilingual_v2"
+  "model": "eleven_multilingual_v2",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/sep-clear.g5-1",
@@ -7026,7 +7074,9 @@
   "sha256": "664839bb4c6f0e46efd4734dc2ad0c6cf8449a316147c0ff586efb48e778fdac",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "host/fuel-low.g5-2",
@@ -7047,7 +7097,9 @@
   "sha256": "b7cb1f47d6afd0a150414fbcbabdb01bb80fa610cfdc6712256ba50f7f66928a",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-4",
@@ -7068,7 +7120,9 @@
   "sha256": "61976a1c56b0f0f0521de67b455a9562c562be135cf5ac85678d6e6bac85f332",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "mission-control/landing.fuel-low.g5-4",
@@ -7089,7 +7143,9 @@
   "sha256": "33a05be28a56d15c20ecfe4d95492f2ea3636e7890ce7eb22513e61b8cedfa7e",
   "model": "eleven_multilingual_v2",
   "variant": "main",
-  "sources": ""
+  "sources": "",
+  "hold": true,
+  "hold_reason": "no low-propellant trigger yet (Physics 2026-11-11)"
  },
  {
   "id": "host/sep-clear.g5-2",

@@ -19,3 +19,23 @@ Per-take values are in `loudness.csv` and `manifest.json`.
 - Quietest LUFS: mission-control/landing.sink.high.g5-5 t1: 1.802s, -16.75 LUFS, -1.83 dBTP
 - Loudest LUFS: mission-control/landing.fuel-low.g5-5 t1: 1.620s, -16.40 LUFS, -3.16 dBTP
 - Highest peak: mission-control/landing.sink.high.g5-5 t2: 1.698s, -16.44 LUFS, -1.79 dBTP
+
+## Hold flags (2026-11-11, America/New_York)
+
+Marked 28 takes (14 clips) with `hold: true` and `hold_reason`: "no low-propellant trigger yet (Physics 2026-11-11)". Audio files were not deleted.
+
+Clips:
+- `host/fuel-low.g5-1`
+- `host/fuel-low.g5-2`
+- `host/fuel-low.g5-3`
+- `mission-control/fuel-low.g5-1`
+- `mission-control/fuel-low.g5-2`
+- `mission-control/fuel-low.g5-3`
+- `mission-control/fuel-low.g5-4`
+- `mission-control/fuel-low.g5-5`
+- `mission-control/landing.fuel-low.g5-1`
+- `mission-control/landing.fuel-low.g5-2`
+- `mission-control/landing.fuel-low.g5-3`
+- `mission-control/landing.fuel-low.g5-4`
+- `mission-control/landing.fuel-low.g5-5`
+- `mission-control/landing.fuel-low.g5-6`

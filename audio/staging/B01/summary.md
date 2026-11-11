@@ -88,3 +88,23 @@ Added **22** newly recorded B01 lines (**44** takes) into this same staging fold
 No overlap with the original 360 takes. One retake (`cohost/status.heating.g5-3` t1) was slightly under −17 LUFS, re-recorded once, and is now in spec. **0** takes still failing.
 
 See `followup-manifest.json`, `followup-loudness.csv`, `followup-loudness-report.md`, and `followup-summary.md` for the new rows only. The main `manifest.json` and `loudness.csv` now include both the original and follow-up takes.
+
+## Hold flags (2026-11-11, America/New_York)
+
+Marked 28 takes (14 clips) with `hold: true` and `hold_reason`: "no low-propellant trigger yet (Physics 2026-11-11)". Audio files were not deleted.
+
+Clips:
+- `host/fuel-low.g5-1`
+- `host/fuel-low.g5-2`
+- `host/fuel-low.g5-3`
+- `mission-control/fuel-low.g5-1`
+- `mission-control/fuel-low.g5-2`
+- `mission-control/fuel-low.g5-3`
+- `mission-control/fuel-low.g5-4`
+- `mission-control/fuel-low.g5-5`
+- `mission-control/landing.fuel-low.g5-1`
+- `mission-control/landing.fuel-low.g5-2`
+- `mission-control/landing.fuel-low.g5-3`
+- `mission-control/landing.fuel-low.g5-4`
+- `mission-control/landing.fuel-low.g5-5`
+- `mission-control/landing.fuel-low.g5-6`
