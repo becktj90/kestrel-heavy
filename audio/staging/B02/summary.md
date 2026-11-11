@@ -65,21 +65,13 @@ See `loudness-report.md`. Flags still failing after one retake: 0.
 
 Added new `host/color.pad.g5-1#a` and `#b` (1 take each) from ready-3.tsv.
 
-## Hold flags (2026-11-11, America/New_York)
+## Transfer/departure retake (Physics, 2026-11-11, America/New_York)
 
-Marked 26 takes (13 clips) with `hold: true` and `hold_reason`: "transfer burn not flown in game (Physics 2026-11-11)". Audio files were not deleted.
+Re-recorded all 13 held `outcome.depart` and `outcome.burnshort` clips (26 takes) with Physics-approved parking-orbit wording and `requires` gates copied from gen6:
 
-Clips:
-- `host/outcome.burnshort.g5-1`
-- `host/outcome.burnshort.g5-2`
-- `host/outcome.depart.g5-1`
-- `host/outcome.depart.g5-2`
-- `host/outcome.depart.g5-3`
-- `mission-control/outcome.burnshort.g5-1`
-- `mission-control/outcome.burnshort.g5-2`
-- `mission-control/outcome.burnshort.g5-3`
-- `mission-control/outcome.burnshort.g5-4`
-- `mission-control/outcome.depart.g5-1`
-- `mission-control/outcome.depart.g5-2`
-- `mission-control/outcome.depart.g5-3`
-- `mission-control/outcome.depart.g5-4`
+- "transfer" lines play only on m7, m10, m15, and m19
+- "departure" / "energy" lines play only on m9, m17, m18, and m20
+
+`mission-control/outcome.depart.g5-4` uses "Departure energy is in the tank. Parking orbit holds."
+`host/outcome.depart.g5-3` uses "The departure is covered. The energy is right on the plan."
+Hold flags were removed. All 26 takes in spec (−16 LUFS ±1, true peak ≤ −1.5 dBTP, ≤ 6 s). Same voices, model `eleven_multilingual_v2`, and settings. Audio replaced in place; not wired.
