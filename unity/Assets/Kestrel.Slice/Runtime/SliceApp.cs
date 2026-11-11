@@ -2204,7 +2204,7 @@ namespace Kestrel.Slice
             try
             {
                 var mission = AscentFlight.CurrentMission();
-                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null).With("mission", mission != null ? mission.Id : null), flightCalls);
+                voice.BeginCount(Kestrel.Core.Flight.Narration.NarrationFacts.From(design, null).With("mission", Kestrel.Core.Flight.TestFlight.NarrationMission(mission != null ? mission.Id : null)), flightCalls);
                 voice.CountTick(sequence.Time, sequence.Fired, GuideSpeaking());
             }
             catch (System.Exception e) { Debug.LogWarning("[Count] narration: " + e.Message); }

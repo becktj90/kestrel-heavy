@@ -60,6 +60,8 @@ namespace Kestrel.Core.Flight
         public double RequiredMps;
         /// <summary>F4: why an intact flight missed (<see cref="MissReason.Explain"/>). Null on a pass or a failure event.</summary>
         public MissExplanation Miss;
+        /// <summary>DECISIONS #86: what a test flight did, for its result card. Null on a counted flight.</summary>
+        public TestFlightFacts Test;
 
         /// <summary>
         /// Every design tag true of the flight: the avionics/engine one, finless when the design has no fins, and
@@ -125,6 +127,10 @@ namespace Kestrel.Core.Flight
         public string UnlockLine = "";
         public bool Passed;
         public bool FreeBuild;
+        /// <summary>DECISIONS #86: a test flight. Nothing was written, and <see cref="TestCard"/> is the card.</summary>
+        public bool TestFlight;
+        /// <summary>The Test Flight result card (real sim numbers). Null unless <see cref="TestFlight"/>.</summary>
+        public TestFlightCard TestCard;
         public bool EconomySettled;
         public bool TriedSettle;
         public bool WroteCareer;
@@ -269,7 +275,10 @@ namespace Kestrel.Core.Flight
             if (pool == null) pool = NarrationPool.Empty;
             if (minorPerKc < 1) minorPerKc = 1;
             var ev = facts.Failure;
-            bool free = mission == null || mission.IsFree || mission.Mode == MissionMode.Free;
+            // DECISIONS #86: a test flight (Home's Test Flight or a mission's "Test it") writes nothing, like a free build,
+            // and earns no stars or medals.
+            bool test = mission != null && mission.TestFlight;
+            bool free = test || mission == null || mission.IsFree || mission.Mode == MissionMode.Free;
             // A booster miss explains itself. It fails the mission when landing was the job.
             // An orbit that did not ask for the booster still counts.
             bool recovery = ev != null && ev.kind != null && ev.kind.StartsWith("recovery-", System.StringComparison.Ordinal);
@@ -285,6 +294,7 @@ namespace Kestrel.Core.Flight
                 Engineer = ev != null && !string.IsNullOrEmpty(ev.engineer) ? ev.engineer : "",
                 Passed = passed,
                 FreeBuild = free,
+                TestFlight = test,
                 Seed = facts.Seed != 0 ? facts.Seed : (mission != null ? mission.Seed : 0),
                 MissionId = mission != null ? mission.MissionId : null,
             };
@@ -304,8 +314,8 @@ namespace Kestrel.Core.Flight
             bool perfectLanding = MissionScore.IsPerfect(facts.LandingGrade);
             double costKc = facts.CostKc;
             if (costKc == 0 && facts.CostMinor > 0) costKc = facts.CostMinor / (double)minorPerKc;
-            int stars = MissionScore.Stars(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingRequired, perfectLanding, facts.PeakG, facts.GLimit);
-            if (passed) stars = AscentDecisions.ApplyStars(stars, facts.TimingMedal);
+            int stars = test ? 0 : MissionScore.Stars(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingRequired, perfectLanding, facts.PeakG, facts.GLimit);
+            if (passed && !test) stars = AscentDecisions.ApplyStars(stars, facts.TimingMedal);
             double score = MissionScore.Points(passed, facts.Margin, costKc, facts.BudgetKc, facts.LandingGrade, facts.PlayerFlownBurn);
             debrief.Stars = stars;
             debrief.Score = score;
@@ -316,7 +326,7 @@ namespace Kestrel.Core.Flight
                 : stars == 1
                     ? "1 star."
                     : stars.ToString(CultureInfo.InvariantCulture) + " stars.";
-            CollectMedals(facts, debrief);
+            if (!test) CollectMedals(facts, debrief);
             debrief.MedalsLine = MedalSentence(debrief.Medals, passed);
 
             string narrKind = kind;
@@ -392,7 +402,13 @@ namespace Kestrel.Core.Flight
             debrief.BankKc = debrief.BankMinor / (double)minorPerKc;
             if (debrief.EconomySettled)
                 debrief.CostKc = debrief.CostMinor / (double)minorPerKc;
-            debrief.KcLine = KcSentence(debrief, facts, free);
+            debrief.KcLine = test ? TestFlightCopy.Rules : KcSentence(debrief, facts, free);
+            if (test)
+            {
+                debrief.TestCard = Kestrel.Core.Flight.TestFlight.Card(facts.Test ?? new TestFlightFacts { Failure = facts.Failure });
+                debrief.StarsLine = "";
+                debrief.MedalsLine = "";
+            }
             debrief.KcHeadline = KcHeadlineOf(debrief, free);
             debrief.UnlockLine = debrief.Unlocks.Count > 0 ? "New part: " + string.Join(", ", debrief.Unlocks) + "." : "";
             debrief.CosmeticLine = CosmeticSentence(debrief.Cosmetics);
