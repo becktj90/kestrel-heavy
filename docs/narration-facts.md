@@ -77,6 +77,11 @@ Jacklyn).
 Any fact about the flown design still needs `requires`/`claims` as usual; a history line that
 states none is `neutral`.
 
+**m20 (Far Hold) apogee note (Codex/Physics, 2026-11-11):** m20's C3 -0.25 path has an apogee of about
+3.2 million km. That is outside Earth's Hill sphere (about 1.5 million km), where in reality the Sun's
+gravity dominates. The game's two-body model keeps it bound to Earth, so "still tied to Earth" is fine
+as a game statement, but **no line may claim the real-world path comes back to Earth**.
+
 Propellants: `kerolox`, `hydrolox`, `methalox`, `solid`, `storable`.
 
 ## `claims`

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kestrel Heavy in-game Codex",
-  "description": "Kid explanation plus an engineer paragraph. Numbers match the sim and the catalogs. No real company or vehicle names.",
+  "description": "Kid explanation plus an engineer paragraph. Numbers match the sim and the catalogs. Real names, dates and commonly known companies are allowed in true, sourced facts (DECISIONS #100, #101); no implied affiliation or endorsement, and the game's own world (KH rocket, Pier 7, Haven) stays fictional.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "entries"],

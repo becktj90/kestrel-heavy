@@ -396,6 +396,8 @@ Flight: 3,200 kg probe on a C3 -0.25 path, 4-hour coast.
 
 Theme: Voyager 1, the farthest human-made object (1977– ).
 
+Note: m20's apogee is about 3.2 million km, outside Earth's Hill sphere (about 1.5 million km). The game's two-body model keeps it bound, but no line may claim the real path comes back (see `docs/narration-facts.md`).
+
 | Take | Window | Voice | Line | Sources |
 |------|--------|-------|------|---------|
 | `host/color.pad.m20.1` | `color.pad` | H | Voyager 1 launched in 1977 and is still flying, past the planets. | H22 |

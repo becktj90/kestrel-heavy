@@ -12,7 +12,8 @@ Mockups (labelled MOCKUP, rendered with Python/PIL at 2x/3x; flat stand-ins for 
 
 References: none copied. No third-party UI or reference library was used for these; layout follows Apple HIG
 (44 pt targets, safe areas, Reduce Motion). No trademarks: the vehicle is the generic Kestrel stack, the pad is
-"Pad 1". Never name real companies, vehicles or launch complexes.
+"Pad 1". The game's own pads, vehicles and launch sites stay fictional. Real names appear only in true, sourced
+history or facts (DECISIONS #100, #101), never as labels for the game's own world and never implying affiliation.
 
 Hard rules (unchanged): portrait only; themed fill edge to edge, never letterbox; kid-readable; Reduce Motion +
 in-game Reduced flash toggle; no energy, loot boxes, timers-to-return, FOMO, streak punishment, confirmshaming,
