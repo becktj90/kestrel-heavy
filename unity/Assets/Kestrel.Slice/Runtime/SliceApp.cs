@@ -35,6 +35,7 @@ namespace Kestrel.Slice
         // Feedback (PR 3): haptics and VoiceOver announcements after edits; see HangarFeel / HangarNative.
         FeelState feelBase, feelNow; float lastSnap = -1f, announceAt = -1f; string pendingAnnounce; bool nextIsUndo, nextIsRedo, nextIsLoad = true;
         Camera cam; Transform worldRoot, vehicleRoot, tower, ground, deck, deckTop; FlightDriver flight; Kestrel.Pad.PadLights padLights; FlightJuice juice; FlightStageShow staging; FlightFailureShow failureShow; RecoveryShow recovery; GameObject rocketGO;
+        readonly ReportWatchdog reportWatchdog = new ReportWatchdog();
         Kestrel.Vehicle.FinCluster landingFins; Kestrel.Vehicle.StrutCluster landingLegs;
         Kestrel.Vehicle.StrutCluster fairingSeams; // fairing seams + rings; FlightStageShow turns them off at separation
         FlightChrome chrome;
@@ -76,7 +77,7 @@ namespace Kestrel.Slice
             BuildScene();
             BuildUI();
             Kestrel.Game.Audio.AudioDirector.Attach(flight);
-            _ = GameCenterBridge.Impl.Authenticate();
+            _ = GameCenterBridge.TryAuthenticate();
             StartSession();
             // Report "Back to designer" (#311's ReportActions.Designer / report-designer): BackToDesign puts the rocket
             // on the pad and ReturnToPad's ApplyStarterMode shows the Starter screen in Phase 1, where .starter-mode
@@ -1623,6 +1624,8 @@ namespace Kestrel.Slice
             recovery?.Stop();
             ApplyHudFocus(FlightHudFocus.Ascent);
             RecoveryLog.Clear();
+            reportWatchdog.Reset();
+            ReportWatchdog.BlockRecoveryPresent = false;
             if (juice != null) juice.Reset();
             if (cam != null) cam.fieldOfView = FlightJuice.BaseFov;
             ascentHud?.Close();
@@ -1685,6 +1688,7 @@ namespace Kestrel.Slice
                 if (host != null) host.ResetFlight();
             }
             SetFlightPaused(false);
+            reportWatchdog.Reset();
             Kestrel.Game.Audio.MusicPlayer.Instance?.Play(Kestrel.Game.Audio.MusicBed.Flight);
             submitted = false;
             SetTankCutaway(false);
@@ -1899,6 +1903,23 @@ namespace Kestrel.Slice
 
         bool DesignerOnScreen => designPanel != null && !designPanel.ClassListContains("hidden");
 
+        void TickReportFailsafe()
+        {
+            if (flight == null) return;
+            flight.EnsureReportReady(Time.unscaledTime);
+            bool reported = ui != null && ui.Q(ReportView.RootName) != null;
+            bool over = flight.Result != null || (flight.Sim != null && flight.Sim.Done);
+            reportWatchdog.TryRelease(over, RecoveryLog.Active, reported, Time.unscaledTime);
+            if (flight.Coasting) flight.EnsureReportReady(Time.unscaledTime);
+        }
+
+        void PresentRecoveryIfAscentOver()
+        {
+            if (ReportWatchdog.BlockRecoveryPresent) return;
+            if (recovery != null && flight != null && flight.Result != null && !flight.Running)
+                recovery.Present(0f);
+        }
+
         void CheckDesignerLanding()
         {
             if (!landing.Armed) return;
@@ -1991,12 +2012,20 @@ namespace Kestrel.Slice
                 handoff.Finish();
             }
             CheckDesignerLanding();
+            TickReportFailsafe();
             if (chrome != null && chrome.Paused)
             {
                 // Pause must not stop BoosterLanding.Conclude: after insertion the report waits on
                 // RecoveryLog.Active, and Present is the only place that Settles it (KH-3 freeze).
-                if (recovery != null && flight != null && flight.Result != null && !flight.Running)
-                    recovery.Present(0f);
+                PresentRecoveryIfAscentOver();
+                return;
+            }
+            // Capture tests pump Advance + recovery.Present at a fixed dt. Don't also tick them
+            // from wall-clock here (that would double-step). Still run the report failsafe and
+            // Conclude once Result is in (unless a test is holding Present to reproduce the freeze).
+            if (flight != null && flight.CaptureClock)
+            {
+                PresentRecoveryIfAscentOver();
                 return;
             }
             bool inFlight = hud != null && !hud.ClassListContains("hidden");
@@ -2018,7 +2047,13 @@ namespace Kestrel.Slice
                 var renderer = pad != null ? pad.GetComponent<Kestrel.Pad.PadRenderer>() : null;
                 if (renderer != null) renderer.AdvanceTo(flight.SimTime);
             }
-            if (flight == null || flight.Sim == null || hud.ClassListContains("hidden")) return;
+            if (flight == null || flight.Sim == null || hud.ClassListContains("hidden"))
+            {
+                // HUD folded or hidden used to skip Conclude, leaving a sky / lone stage / no card
+                // (Trevor, TestFlight 218/219). The failsafe and a post-ascent Present still run.
+                PresentRecoveryIfAscentOver();
+                return;
+            }
             PaintAscentReadout();
             try
             {
@@ -2350,7 +2385,7 @@ namespace Kestrel.Slice
             if (submitted) return; submitted = true;
             hMsg.text = $"MECO  ·  {f.Altitude / 1000:F1} km  ·  {f.Speed:N0} m/s";
             again.RemoveFromClassList("hidden");
-            bool ok = await GameCenterBridge.Impl.SubmitScore(GameCenterBridge.MecoAltitudeBoard, (long)System.Math.Round(f.Altitude));
+            bool ok = await GameCenterBridge.TrySubmitScore(GameCenterBridge.MecoAltitudeBoard, (long)System.Math.Round(f.Altitude));
             hMsg.text += ok ? "\nScore sent to Game Center" : "";
         }
 

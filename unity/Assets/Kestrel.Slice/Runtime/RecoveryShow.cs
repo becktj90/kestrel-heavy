@@ -1,7 +1,10 @@
-// Player-facing booster recovery after the first stage lets go. Simple flies the
-// auto-assist law. Engineer sets pitch and throttle. The flight logic is Core's
+// Player-facing booster recovery after the first stage lets go. Boostback, entry and descent fly the
+// auto-assist law; a planned landing's final burn is the player's (#79). The flight logic is Core's
 // BoosterLanding (every released first stage gets its landing; an expendable one says
-// why it is lost and still flies the attempt, ungraded); this class draws it. The picture is the separated
+// why it is lost and still flies the attempt, ungraded); this class draws it, and draws only the one
+// outcome BoosterLanding.ShowsLanding names: a lost stage is never followed, inset, given a deck, a landing
+// callout or landing controls (Trevor 2026-11-09, KH-3). The raw Pitch/Thr stick and the numbers line are
+// developer tools (DevControls), never shown in a release build (Trevor 2026-10-21). The picture is the separated
 // stage: grid fins, legs, the landing plume, dust or splash, and a #247 break
 // when the touchdown is too hard. The ascent camera stays on the rocket until
 // entry, then follows the booster. Boostback keeps a corner inset.
@@ -53,6 +56,28 @@ namespace Kestrel.Slice
 
         public bool SteerCamera { get; private set; }
 
+        /// <summary>PlayerPrefs key that turns on the raw recovery stick (Pitch −/+, Thr −/+) and the recovery numbers
+        /// line ("Coast  sink 0.0 m/s  tilt 0.0°") outside the landing burn. Read only in development builds and the
+        /// editor (<see cref="Debug.isDebugBuild"/>), so a TestFlight/App Store or WebGL release never shows them.</summary>
+        public const string DevControlsPref = "kh.dev.recoveryStick";
+
+        /// <summary>
+        /// Trevor 2026-10-21 (stage-sep flow): the debug line and Pitch/Thr are hidden in normal play. They used to show
+        /// for every Engineer-tier player (Trevor's KH-3 report, 2026-11-09: Pitch −/+ and Thr −/+ under a "BOOSTER LOST"
+        /// booster, with "Coast sink 0.0 m/s tilt 0.0°" over it). They are developer tools now: a release build never
+        /// shows them, whatever the tier; a planned landing's own burn panel stays every player's control.
+        /// </summary>
+        public static bool DevControls(bool isDebugBuild, Func<string, int> readPref)
+            => isDebugBuild && readPref != null && readPref(DevControlsPref) == 1;
+
+        bool DevControlsOn()
+        {
+            try { return DevControls(Debug.isDebugBuild, k => PlayerPrefs.GetInt(k, 0)); }
+            catch (Exception) { return false; }
+        }
+
+        bool devControls;
+
         // Capture hooks (Kestrel.Capture.Tests AppStoreScreenshotTests). Nothing in play sets HoldForCapture.
         /// <summary>When set, the landing does not advance, so one moment can be shot at several screen sizes.</summary>
         public static bool HoldForCapture;
@@ -86,6 +111,7 @@ namespace Kestrel.Slice
             flight = driver;
             staging = stageShow;
             engineer = engineerDepth;
+            devControls = DevControlsOn();
             reduce = reduceMotion;
             // Before: only a design with recovery.mode and a landing craft armed here (TryFrom), so every
             // expendable starter (KH-3..KH-5 and the templates) dropped its booster with no landing and no word.
@@ -151,6 +177,8 @@ namespace Kestrel.Slice
             var sample = landing.Step(dt, Stick(), flight.CinematicSink);
             string cause = RecoveryLog.Current != null && RecoveryLog.Current.Attempted ? RecoveryLog.Current.Cause : null;
             var pic = RecoveryViews.Of(sample, landing.TrimMarks(), cause, craft.VLeg, sample.Phase == RecoveryPhase.Down);
+            // One booster outcome (BoosterLanding.ShowsLanding): a lost stage is never followed, inset or shown touching down.
+            pic = BoosterLanding.ForOutcome(landing.Fate, pic);
             pic.Call = landing.Callout(sample);
             Pose(sample);
             PoseHardware(sample);
@@ -175,6 +203,8 @@ namespace Kestrel.Slice
             if (HoldForCapture || !(simSeconds > 0) || landing == null || !landing.Started || landing.Touched) return StageSkipTarget.None;
             int maxSteps = (int)Math.Ceiling(simSeconds / RecoverySim.NearDt) + 8;
             var entered = landing.AdvanceSkip(Stick(), maxSteps, simSeconds);
+            // A lost stage keeps its clock in lockstep, but its burns are not events the skip stops for.
+            if (!landing.ShowsLanding) return StageSkipTarget.None;
             if (entered == RecoveryPhase.Entry) return StageSkipTarget.EntryBurn;
             if (entered == RecoveryPhase.Landing || entered == RecoveryPhase.Down) return StageSkipTarget.LandingBurn;
             return StageSkipTarget.None;
@@ -186,6 +216,11 @@ namespace Kestrel.Slice
         public const float HudMargin = 0.03f;
         /// <summary>How far under the booster's lowest point the shot keeps in view (booster heights): its flame and, low down, the deck.</summary>
         public const float BelowHeights = 1.6f;
+        /// <summary>Portrait aspects at or above this (iPad 11/13 ~0.70–0.75; phones ~0.46) also frame Haven's deck
+        /// above the bottom controls for the whole landing burn. Narrow phone frames keep the tighter follow.</summary>
+        public const float WideAspect = 0.65f;
+
+        public static bool IncludeDeckInFrame(float aspect) => aspect >= WideAspect;
 
         /// <summary>
         /// Follow the booster, and keep the whole booster (renderer bounds: body, fins, legs, landing flame) plus the sea or deck
@@ -204,7 +239,7 @@ namespace Kestrel.Slice
             var rot = ChaseCamera.Aim(pos, target + Vector3.up * (h * 0.25f), cam.fieldOfView, alt, pos.y - groundY);
             if (topCover > 0f || bottomCover > 0f)
             {
-                int n = FramePoints(groundY, h);
+                int n = FramePoints(groundY, h, cam.aspect);
                 if (n > 0)
                 {
                     float yMax = 1f - Mathf.Clamp01(topCover) - HudMargin, yMin = Mathf.Clamp01(bottomCover) + HudMargin;
@@ -217,10 +252,12 @@ namespace Kestrel.Slice
         }
 
         readonly System.Collections.Generic.List<Renderer> boosterRenderers = new System.Collections.Generic.List<Renderer>();
-        readonly Vector3[] framePts = new Vector3[10];
+        readonly Vector3[] framePts = new Vector3[16];
 
-        /// <summary>The booster's drawn bounds (8 corners) and the point <see cref="BelowHeights"/> under it, not below the sea or deck.</summary>
-        int FramePoints(float groundY, float h)
+        /// <summary>The booster's drawn bounds (8 corners), the point <see cref="BelowHeights"/> under it (not below the
+        /// sea or deck), and on wide / iPad aspects the live Haven deck so it stays above the bottom controls
+        /// through the whole landing burn.</summary>
+        int FramePoints(float groundY, float h, float aspect)
         {
             staging.Booster.GetComponentsInChildren(false, boosterRenderers);
             bool any = false; var bounds = new Bounds();
@@ -235,6 +272,15 @@ namespace Kestrel.Slice
                 framePts[n++] = new Vector3((i & 1) == 0 ? mn.x : mx.x, (i & 2) == 0 ? mn.y : mx.y, (i & 4) == 0 ? mn.z : mx.z);
             float floorY = Mathf.Max(groundY, mn.y - BelowHeights * h);
             framePts[n++] = new Vector3(bounds.center.x, floorY, bounds.center.z);
+            if (IncludeDeckInFrame(aspect) && deck != null && deck.gameObject.activeInHierarchy && n + 3 <= framePts.Length)
+            {
+                var c = deck.position;
+                float r = Mathf.Abs(deck.lossyScale.x) * 0.5f;
+                float y = c.y + Mathf.Abs(deck.lossyScale.y) * 0.5f;
+                framePts[n++] = new Vector3(c.x, y, c.z);
+                framePts[n++] = new Vector3(c.x - r, y, c.z);
+                framePts[n++] = new Vector3(c.x + r, y, c.z);
+            }
             return n;
         }
 
@@ -256,7 +302,8 @@ namespace Kestrel.Slice
             if (fins != null) fins.enabled = false;
             if (legs != null) legs.enabled = false;
             BuildHardware();
-            BuildDeck();
+            // The Haven deck is drawn only for a landing the flight shows (BoosterLanding.ShowsLanding).
+            if (landing != null && landing.ShowsLanding) BuildDeck();
             EnsureChrome();
         }
 
@@ -273,7 +320,8 @@ namespace Kestrel.Slice
                 return LandingBurnDirector.Stick(landing.Body, landing.Craft, input,
                     engineer ? LandingBurnAssist.Manual : LandingBurnAssist.Assisted);
             }
-            if (!engineer) return RecoveryStick.Assisted;
+            // The free pitch/throttle stick is a developer tool (DevControls), and only for a landing the flight shows.
+            if (!devControls || landing == null || !landing.ShowsLanding) return RecoveryStick.Assisted;
             return new RecoveryStick
             {
                 Auto = false,
@@ -282,6 +330,19 @@ namespace Kestrel.Slice
                 PlayerInput = throttleCmd > 0 || Math.Abs(RecoveryFrames.Wrap(pitchCmd - Math.PI / 2)) > 1e-9,
             };
         }
+
+        /// <summary>The developer stick and numbers line: dev builds with <see cref="DevControlsPref"/> set, on a shown landing only.</summary>
+        bool DevReadout() => devControls && landing != null && landing.ShowsLanding;
+
+        /// <summary>Capture/test hook: the recovery chrome currently displayed (callout, numbers, stick, burn panel).</summary>
+        public bool CalloutShownForCapture => callout != null && callout.style.display == DisplayStyle.Flex;
+        public string CalloutTextForCapture => callout != null ? callout.text : null;
+        public bool NumbersShownForCapture => numbers != null && numbers.style.display == DisplayStyle.Flex;
+        public bool StickShownForCapture => stick != null && stick.style.display == DisplayStyle.Flex;
+        public bool BurnPanelShownForCapture => burnPanel != null && burnPanel.style.display == DisplayStyle.Flex;
+        public bool InsetShownForCapture => inset != null && inset.enabled;
+        public bool DeckShownForCapture => deck != null && deck.gameObject.activeSelf;
+        public BoosterFate FateForCapture => landing != null ? landing.Fate : BoosterFate.None;
 
         /// <summary>#79: true while the burn panel is the player's (planned landing, Landing phase).</summary>
         bool BurnActive(in RecoverySample sample)
@@ -433,13 +494,14 @@ namespace Kestrel.Slice
                 // instruments, so every player sees them, not just Engineer. Outside the burn the
                 // numbers stay the engineer's extended line.
                 bool burn = BurnActive(sample);
-                numbers.style.display = burn || engineer ? DisplayStyle.Flex : DisplayStyle.None;
+                bool dev = DevReadout();
+                numbers.style.display = burn || dev ? DisplayStyle.Flex : DisplayStyle.None;
                 if (burn)
                 {
                     var burnReadout = LandingBurnDirector.Readout(sample, craft, landing != null ? landing.DeckOffsetM : 0);
                     numbers.text = "LANDING BURN  " + burnReadout.Line();
                 }
-                else if (engineer)
+                else if (dev)
                 {
                     // An expendable booster reports no landing miss or propellant: it was never going to land, so
                     // those numbers would read as a failed landing under the upper stage's "On track" badge.
@@ -448,7 +510,7 @@ namespace Kestrel.Slice
             }
             // The engineer's free pitch/throttle row stands down during the burn: the burn panel
             // is the control then, Manual for Engineer, Assisted for everyone else.
-            if (stick != null) stick.style.display = engineer && !BurnActive(sample) && sample.Phase != RecoveryPhase.Down ? DisplayStyle.Flex : DisplayStyle.None;
+            if (stick != null) stick.style.display = DevReadout() && !BurnActive(sample) && sample.Phase != RecoveryPhase.Down ? DisplayStyle.Flex : DisplayStyle.None;
             if (burnPanel != null) burnPanel.style.display = BurnActive(sample) ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
@@ -604,7 +666,7 @@ namespace Kestrel.Slice
                     host.Add(numbers);
                 }
             }
-            if (engineer && (stick == null || stick.parent != host))
+            if (devControls && (stick == null || stick.parent != host))
             {
                 stick = host.Q("recovery-stick");
                 if (stick == null)

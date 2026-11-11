@@ -111,6 +111,7 @@ namespace Kestrel.Capture.Tests
             }
             GameSession.Clear();
             PadHandoff.Clear();
+            ResetPlayClocks();
             // A shell left by an earlier fixture would survive Boot with its Home view gone (see MenuPlayWalkTests).
             if (AppShell.Instance != null)
             {
@@ -124,7 +125,7 @@ namespace Kestrel.Capture.Tests
         public IEnumerator Restore()
         {
             Application.logMessageReceived -= OnLog;
-            Time.timeScale = 1f;
+            ResetPlayClocks();
             Kestrel.Game.Failure.FailureHost.ReduceMotionOverride = null;
             GameSession.Clear();
             PadHandoff.Clear();
@@ -165,11 +166,36 @@ namespace Kestrel.Capture.Tests
             Assert.AreEqual(AppScreen.Home, flow.Current, "Boot lands on Home");
         }
 
+        /// <summary>Wait until <paramref name="done"/>, capped on a wall-clock stopwatch (not
+        /// <see cref="Time.realtimeSinceStartup"/>, which can stall under a leftover capture
+        /// clock and then trips the Unity Timeout instead of the assertion).</summary>
         IEnumerator Until(Func<bool> done, float seconds = 60f)
         {
-            float start = Time.realtimeSinceStartup;
-            for (int i = 0; i < 20000 && !done() && Time.realtimeSinceStartup - start < seconds; i++)
+            var start = System.Diagnostics.Stopwatch.StartNew();
+            int i = 0;
+            const int cap = 200000;
+            while (!done() && start.Elapsed.TotalSeconds < seconds && i++ < cap)
                 yield return null;
+        }
+
+        /// <summary>Clear capture / pause leftovers that survive Boot (DontDestroy FX, static holds).</summary>
+        static void ResetPlayClocks()
+        {
+            Time.timeScale = 1f;
+            Time.captureDeltaTime = 0f;
+            Kestrel.Kit.CinematicEvents.PresentationScale = 1.0;
+            SliceApp.HoldCountForCapture = false;
+            RecoveryShow.HoldForCapture = false;
+            ReportWatchdog.BlockRecoveryPresent = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Kestrel.Kit.CaptureCamera.Clear();
+#endif
+            var living = UnityEngine.Object.FindObjectsByType<FlightDriver>(FindObjectsSortMode.None);
+            for (int i = 0; i < living.Length; i++)
+            {
+                living[i].CaptureClock = false;
+                living[i].Hold(false);
+            }
         }
 
         IEnumerator At(AppScreen screen, string overlay = null)
@@ -342,8 +368,12 @@ namespace Kestrel.Capture.Tests
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             Assert.IsNotNull(driver, "live FlightDriver");
             yield return Until(() => driver.Sim != null && driver.Running, 90f);
+            ResetPlayClocks();
+            driver.Hold(false);
+            driver.CaptureClock = false;
             Assert.IsTrue(driver.Running, "the count reached liftoff (counting=" + app.CountingForCapture + " held=" + driver.Held
                 + " sim=" + (driver.Sim != null) + " timeScale=" + Time.timeScale + " hold=" + SliceApp.HoldCountForCapture + ")");
+            Assert.IsFalse(driver.Held, "liftoff must not start Held/paused");
         }
 
         /// <summary>
@@ -567,8 +597,10 @@ namespace Kestrel.Capture.Tests
         {
             yield return ToThePad(null);
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            var hopApp = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
             driver.ReduceMotionOverride = false;   // the CI player keeps the comfort prefs on (fast frames); this test is about the motion
-            yield return Until(() => driver.Coasting || driver.Result != null, 150f);
+            yield return PumpFlightUntil(driver, hopApp, () => driver.Coasting || driver.Result != null, 120f);
+            driver.CaptureClock = false;
             Assert.IsTrue(driver.Coasting, "the clean First Hop cutoff starts the climax (CoastEnd=" + driver.CoastEnd + ")");
             Assert.IsNull(driver.Result, "the result waits for the coast");
             Assert.IsTrue(driver.Running, "the flight is still on screen");
@@ -623,9 +655,13 @@ namespace Kestrel.Capture.Tests
         {
             yield return ToThePad(null);
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            var hopApp = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
             driver.ReduceMotionOverride = false;   // the CI player keeps the comfort prefs on (fast frames); this test is about the motion
-            yield return Until(() => driver.Coasting || driver.Result != null, 150f);
-            Assert.IsTrue(driver.Coasting, "the climax starts");
+            Assert.IsFalse(driver.Held, "tap-skip flight must not start Held/paused");
+            yield return PumpFlightUntil(driver, hopApp, () => driver.Coasting || driver.Result != null, 120f);
+            driver.CaptureClock = false;
+            Assert.IsTrue(driver.Coasting, "the climax starts (CoastEnd=" + driver.CoastEnd
+                + " simT=" + driver.SimTime + " held=" + driver.Held + " running=" + driver.Running + ")");
             yield return null;
             driver.SkipCoast();   // what a tap does (FlightDriver.TappedToSkip)
             Assert.AreEqual("skipped", driver.CoastEnd);
@@ -643,14 +679,16 @@ namespace Kestrel.Capture.Tests
         {
             yield return ToThePad(null);
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            var hopApp = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
             driver.ReduceMotionOverride = true;
             Assert.IsFalse(driver.Held, "Reduce Motion flight must not start Held/paused");
             bool coasted = false;
-            yield return Until(() => {
+            yield return PumpFlightUntil(driver, hopApp, () => {
                 Assert.IsFalse(driver.Held, "Reduce Motion flight must not become Held/paused mid-flight");
                 coasted |= driver.Coasting;
                 return driver.Result != null;
-            }, 150f);
+            }, 120f);
+            driver.CaptureClock = false;
             Assert.IsNotNull(driver.Result, "the flight ends");
             Assert.IsFalse(coasted, "Reduce Motion: no warped coast");
             Assert.AreEqual("reduced", driver.CoastEnd);
@@ -729,6 +767,49 @@ namespace Kestrel.Capture.Tests
             yield return null;
             Assert.IsFalse(NavIds.Shown(Find("screen-pause")), "Escape again resumes");
         }
+
+        const float Kh3PumpDt = 1f / 60f;
+        // KH-3 board starter reaches orbit at T+517 (RailInsertionEndStopTests). The 174 s
+        // figure is how long the expendable booster is still in the air at insertion, not
+        // ascent duration. A 300 s sim bound (and the old 420 s wall-clock Until) ended
+        // before SECO, which is why PlayMode reported "KH-3 ascent ends: Expected not null".
+        const float Kh3MaxSimSeconds = 800f;
+
+        /// <summary>
+        /// Drive the live FlightDriver at a fixed 1/60 s step so a slow CI player cannot starve
+        /// the ascent. Recovery is ticked with the same dt so booster-follow can still appear.
+        /// </summary>
+        IEnumerator PumpKh3Until(FlightDriver driver, SliceApp app, Func<bool> done, float maxSim)
+            => PumpFlightUntil(driver, app, done, maxSim);
+
+        /// <summary>
+        /// Drive the live FlightDriver at a fixed 1/60 s step so a slow or frozen wall clock
+        /// cannot stall the sim (GoodRocket_TapSkips hung 372 s after liftoff with no MECO
+        /// because Update never advanced and Until's realtime cap never fired).
+        /// </summary>
+        IEnumerator PumpFlightUntil(FlightDriver driver, SliceApp app, Func<bool> done, float maxSim)
+        {
+            driver.Hold(false);
+            driver.CaptureClock = true;
+            float sim = 0f;
+            int steps = 0;
+            int maxSteps = (int)(maxSim / Kh3PumpDt) + 8;
+            while (!done() && sim < maxSim && steps < maxSteps)
+            {
+                driver.Advance(Kh3PumpDt, Kh3PumpDt);
+                if (!ReportWatchdog.BlockRecoveryPresent)
+                {
+                    var rec = app != null ? app.RecoveryForCapture : null;
+                    if (rec != null) rec.Present(Kh3PumpDt);
+                }
+                sim += Kh3PumpDt;
+                steps++;
+                if (steps % 15 == 0)
+                    yield return null;
+            }
+            yield return null;
+        }
+
         IEnumerator ToKh3Pad()
         {
             yield return Boot();
@@ -744,6 +825,7 @@ namespace Kestrel.Capture.Tests
             Assert.IsNotNull(driver, "live FlightDriver");
             yield return Until(() => driver.Sim != null && driver.Running, 90f);
             Assert.IsTrue(driver.Running, "KH-3 reached liftoff");
+            ReportWatchdog.BlockRecoveryPresent = false;
         }
 
         static void AssertReportCardAndButtons()
@@ -770,9 +852,12 @@ namespace Kestrel.Capture.Tests
         {
             yield return ToKh3Pad();
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
             driver.ReduceMotionOverride = true; // skip climax warp; still exercises Conclude + report gate
-            yield return Until(() => driver.Result != null && !driver.Running, 420f);
-            Assert.IsNotNull(driver.Result, "KH-3 ascent ends");
+            yield return PumpKh3Until(driver, app, () => driver.Result != null && !driver.Running, Kh3MaxSimSeconds);
+            Assert.IsNotNull(driver.Result, "KH-3 ascent ends (simT=" + driver.SimTime
+                + " running=" + driver.Running + " held=" + driver.Held
+                + " alt=" + driver.Altitude + " recovery=" + RecoveryLog.Active + ")");
             Assert.IsFalse(driver.Held, "driver is not left Held after the ascent");
             yield return Until(() => ReportShown() || !RecoveryLog.Active, 60f);
             yield return Until(ReportShown, 60f);
@@ -794,13 +879,16 @@ namespace Kestrel.Capture.Tests
             var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
             driver.ReduceMotionOverride = true;
             bool sawBoosterCam = false;
-            yield return Until(() =>
+            yield return PumpKh3Until(driver, app, () =>
             {
                 var rec = app != null ? app.RecoveryForCapture : null;
                 if (rec != null && rec.SteerCamera) sawBoosterCam = true;
                 return driver.Result != null && !driver.Running;
-            }, 420f);
-            Assert.IsNotNull(driver.Result, "KH-3 ascent ends");
+            }, Kh3MaxSimSeconds);
+            Assert.IsNotNull(driver.Result, "KH-3 ascent ends (simT=" + driver.SimTime
+                + " running=" + driver.Running + " held=" + driver.Held
+                + " alt=" + driver.Altitude + " recovery=" + RecoveryLog.Active
+                + " boosterCam=" + sawBoosterCam + ")");
             // Expendable settle may clear Active before SteerCamera lights; if the booster never took the camera,
             // still require the report — the stay path covers that. When it did, pin we survived follow → card.
             yield return Until(ReportShown, 90f);
@@ -810,6 +898,39 @@ namespace Kestrel.Capture.Tests
             NothingThrew();
         }
 
-
+        /// <summary>
+        /// Reproduces the post-#482 freeze before the watchdog: ascent is over, but
+        /// RecoveryShow.Present / Conclude never run (HUD hidden, lost ascent, or an
+        /// open landing burn), so RecoveryLog.Active holds the card. After the fix the
+        /// watchdog releases the gate and the report + buttons still appear.
+        /// </summary>
+        [UnityTest]
+        [Timeout(600000)]
+        public IEnumerator Kh3_ReportCardAndButtons_WhenRecoveryNeverClears()
+        {
+            yield return ToKh3Pad();
+            var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
+            var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
+            driver.ReduceMotionOverride = true;
+            try
+            {
+                // Hold Present for the whole flight so Conclude cannot clear Active —
+                // the freeze Trevor hit when Present was skipped or Conclude refused to Release.
+                ReportWatchdog.BlockRecoveryPresent = true;
+                yield return PumpKh3Until(driver, app, () => driver.Result != null && !driver.Running, Kh3MaxSimSeconds);
+                Assert.IsNotNull(driver.Result, "KH-3 ascent ends before the stuck-recovery repro");
+                RecoveryLog.Engage();
+                Assert.IsFalse(ReportShown(), "the card is not already up before the watchdog window");
+                Assert.IsTrue(RecoveryLog.Active, "recovery holds the report, as on the frozen device");
+                yield return Until(ReportShown, ReportWatchdog.ReleaseAfterSeconds + 4f);
+                AssertReportCardAndButtons();
+                Assert.IsFalse(RecoveryLog.Active, "watchdog released the report gate");
+                NothingThrew();
+            }
+            finally
+            {
+                ReportWatchdog.BlockRecoveryPresent = false;
+            }
+        }
     }
 }
