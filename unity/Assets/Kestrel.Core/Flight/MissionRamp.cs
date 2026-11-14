@@ -129,7 +129,7 @@ namespace Kestrel.Core.Flight
         public double CoastHours, MaxG = double.NaN, ReliabilityMin = double.NaN;
         public bool MarginNonNegative, StrapOnsAllowed, NoRedRisks, RandomFailures, LandBoosters;
         public string LandingMode, LandingGrade, LandingSite;
-        public string Customer, Control, Goal, WhatItIs, WhatItDoes, Why, Form, CodexId, Band;
+        public string PayloadName, Customer, Control, Goal, WhatItIs, WhatItDoes, Why, Form, CodexId, Band;
         public readonly List<string> Unlocks = new List<string>();
 
         public bool HasInclination => TargetKind == "circular" || TargetKind == "ellipse" || TargetKind == "c3";
@@ -278,6 +278,7 @@ namespace Kestrel.Core.Flight
             var brief = o.Obj("briefing");
             if (brief != null)
             {
+                m.PayloadName = brief.Str("payloadName");
                 m.Customer = brief.Str("customer");
                 m.Control = brief.Str("control");
                 m.Goal = brief.Str("goal");
