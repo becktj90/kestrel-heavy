@@ -1,10 +1,18 @@
 {
   "version": 1,
   "spec": "docs/DESIGNER_V3_SPEC.md §4",
-  "note": "Twenty-mission designer campaign. KH-1 through KH-10 keep the tuned targets the viable designs fly. KH-11 through KH-20 continue that arc, and a mission marked hard asks for more than those designs have shown. Budgets and rewards are fictional Kc (kilocredits). 2 M in the spec is 2,000,000 Kc, the same M FormatKc prints. The spec table has no reward column, so each reward equals that mission's budget: a flight at the cap breaks even and a cheaper flight banks the difference. Haven wind assists stay in mission-ramp.json. No timers, no energy, no ads.",
+  "note": "Twenty-mission designer campaign. KH-1 through KH-10 keep the tuned targets the viable designs fly. KH-11 through KH-20 continue that arc, and a mission marked hard asks for more than those designs have shown. Budgets and rewards are fictional Kc (kilocredits). Each reward equals that mission's budget: a flight at the cap breaks even and a cheaper flight banks the difference. DECISIONS #87 (economy 2): the mission's Starter default (its campaign winner) costs about 11% of the reward, always inside 5-20% (docs/ECONOMY.md has the table), so hardware cost shows on the card without blocking anyone. The spec's 2 M-240 M budgets were economy 1; bankMigration rescales an economy 1 bank once. rangeFloorKc is the range credit: a settled flight never leaves the bank below it, and it is at least the dearest Starter default, so every Starter default stays affordable. Haven wind assists stay in mission-ramp.json. No timers, no energy, no ads, no purchases.",
   "currency": "Kc",
   "minorPerKc": 100000,
-  "startingBankKc": 2000000,
+  "economy": 2,
+  "startingBankKc": 100000,
+  "rangeFloorKc": 60000,
+  "bankMigration": {
+    "fromEconomy": 1,
+    "note": "Economy 1 paid the old rewards below. A bank saved under economy 1 is multiplied once by (startingBankKc + new rewards of the missions it cleared) / (old startingBankKc + old rewards of those missions), rounded to whole minor units, then lifted to rangeFloorKc. The save then records economy 2 and is never rescaled again. The pre-migration file is kept as .bak.",
+    "startingBankKc": 2000000,
+    "rewardKc": [2000000, 5000000, 15000000, 40000000, 90000000, 70000000, 110000000, 160000000, 180000000, 120000000, 80000000, 100000000, 90000000, 130000000, 140000000, 180000000, 190000000, 200000000, 210000000, 240000000]
+  },
   "starterUnlocks": [
     "core-stage",
     "engines",
@@ -61,8 +69,8 @@
         "apoKm": 10
       },
       "requirements": [],
-      "budgetKc": 2000000,
-      "rewardKc": 2000000,
+      "budgetKc": 40000,
+      "rewardKc": 40000,
       "unlocks": [
         "fins",
         "nose"
@@ -103,8 +111,8 @@
         "apoKm": 100
       },
       "requirements": [],
-      "budgetKc": 5000000,
-      "rewardKc": 5000000,
+      "budgetKc": 45000,
+      "rewardKc": 45000,
       "unlocks": [
         "stage-2"
       ],
@@ -155,8 +163,8 @@
           "min": 0
         }
       ],
-      "budgetKc": 15000000,
-      "rewardKc": 15000000,
+      "budgetKc": 70000,
+      "rewardKc": 70000,
       "unlocks": [
         "nozzle-expansion"
       ],
@@ -202,8 +210,8 @@
           "max": 6
         }
       ],
-      "budgetKc": 40000000,
-      "rewardKc": 40000000,
+      "budgetKc": 140000,
+      "rewardKc": 140000,
       "unlocks": [
         "pc",
         "throttle"
@@ -255,8 +263,8 @@
           "allow": true
         }
       ],
-      "budgetKc": 90000000,
-      "rewardKc": 90000000,
+      "budgetKc": 210000,
+      "rewardKc": 210000,
       "unlocks": [
         "crossfeed"
       ],
@@ -309,8 +317,8 @@
           "site": "pad"
         }
       ],
-      "budgetKc": 70000000,
-      "rewardKc": 70000000,
+      "budgetKc": 200000,
+      "rewardKc": 200000,
       "unlocks": [
         "legs",
         "grid-fins"
@@ -359,8 +367,8 @@
           "site": "Haven"
         }
       ],
-      "budgetKc": 110000000,
-      "rewardKc": 110000000,
+      "budgetKc": 280000,
+      "rewardKc": 280000,
       "unlocks": [
         "insulation"
       ],
@@ -422,8 +430,8 @@
           "id": "randomFailures"
         }
       ],
-      "budgetKc": 160000000,
-      "rewardKc": 160000000,
+      "budgetKc": 220000,
+      "rewardKc": 220000,
       "unlocks": [
         "redundant-avionics"
       ],
@@ -474,8 +482,8 @@
           "hours": 3
         }
       ],
-      "budgetKc": 180000000,
-      "rewardKc": 180000000,
+      "budgetKc": 210000,
+      "rewardKc": 210000,
       "unlocks": [
         "hydrolox-upper"
       ],
@@ -528,8 +536,8 @@
           "boosters": true
         }
       ],
-      "budgetKc": 120000000,
-      "rewardKc": 120000000,
+      "budgetKc": 380000,
+      "rewardKc": 380000,
       "unlocks": [],
       "gentleDefault": false,
       "briefing": {
@@ -572,8 +580,8 @@
         "incDeg": 97.6
       },
       "requirements": [],
-      "budgetKc": 80000000,
-      "rewardKc": 80000000,
+      "budgetKc": 150000,
+      "rewardKc": 150000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "achievable",
@@ -617,8 +625,8 @@
           "max": 5
         }
       ],
-      "budgetKc": 100000000,
-      "rewardKc": 100000000,
+      "budgetKc": 200000,
+      "rewardKc": 200000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "achievable",
@@ -665,8 +673,8 @@
           "site": "Haven"
         }
       ],
-      "budgetKc": 90000000,
-      "rewardKc": 90000000,
+      "budgetKc": 165000,
+      "rewardKc": 165000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "achievable",
@@ -714,8 +722,8 @@
           "allow": true
         }
       ],
-      "budgetKc": 130000000,
-      "rewardKc": 130000000,
+      "budgetKc": 215000,
+      "rewardKc": 215000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "achievable",
@@ -765,8 +773,8 @@
           "site": "Haven"
         }
       ],
-      "budgetKc": 140000000,
-      "rewardKc": 140000000,
+      "budgetKc": 330000,
+      "rewardKc": 330000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "achievable",
@@ -821,8 +829,8 @@
           "id": "randomFailures"
         }
       ],
-      "budgetKc": 180000000,
-      "rewardKc": 180000000,
+      "budgetKc": 230000,
+      "rewardKc": 230000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "hard",
@@ -866,8 +874,8 @@
           "hours": 3
         }
       ],
-      "budgetKc": 190000000,
-      "rewardKc": 190000000,
+      "budgetKc": 235000,
+      "rewardKc": 235000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "hard",
@@ -911,8 +919,8 @@
           "hours": 3
         }
       ],
-      "budgetKc": 200000000,
-      "rewardKc": 200000000,
+      "budgetKc": 200000,
+      "rewardKc": 200000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "hard",
@@ -959,8 +967,8 @@
           "boosters": true
         }
       ],
-      "budgetKc": 210000000,
-      "rewardKc": 210000000,
+      "budgetKc": 420000,
+      "rewardKc": 420000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "hard",
@@ -1004,8 +1012,8 @@
           "hours": 4
         }
       ],
-      "budgetKc": 240000000,
-      "rewardKc": 240000000,
+      "budgetKc": 230000,
+      "rewardKc": 230000,
       "unlocks": [],
       "gentleDefault": false,
       "band": "hard",
