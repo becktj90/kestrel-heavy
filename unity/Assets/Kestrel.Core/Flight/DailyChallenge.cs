@@ -28,6 +28,38 @@ namespace Kestrel.Core.Flight
         public const string PrefsKey = "kh.daily.day";
         public const string ClearedKey = "kh.daily.cleared";
 
+        static string pendingMissionId;
+        static ulong? pendingSeed;
+
+        /// <summary>Arm the board's daily pick so Launch/Design use today's seed, not the campaign default.</summary>
+        public static void Arm(in DailyPick pick)
+        {
+            pendingMissionId = pick.MissionId;
+            pendingSeed = string.IsNullOrEmpty(pick.MissionId) ? (ulong?)null : pick.Seed;
+        }
+
+        public static void ClearArm()
+        {
+            pendingMissionId = null;
+            pendingSeed = null;
+        }
+
+        /// <summary>Pending daily seed for this mission, if any. Does not clear.</summary>
+        public static ulong? PeekSeed(string missionId)
+        {
+            if (string.IsNullOrEmpty(missionId) || pendingMissionId != missionId || !pendingSeed.HasValue)
+                return null;
+            return pendingSeed;
+        }
+
+        /// <summary>Consume a pending daily seed when the mission matches; otherwise leave the campaign default.</summary>
+        public static ulong? TakeSeed(string missionId)
+        {
+            ulong? seed = PeekSeed(missionId);
+            if (seed.HasValue) ClearArm();
+            return seed;
+        }
+
         /// <summary>UTC calendar day key (yyyy-MM-dd). Everyone on Earth shares the same daily.</summary>
         public static string DayKey(DateTime utc)
             => utc.ToUniversalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);

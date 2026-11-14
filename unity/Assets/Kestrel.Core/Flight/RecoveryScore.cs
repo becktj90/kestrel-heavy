@@ -63,8 +63,9 @@ namespace Kestrel.Core.Flight
             var ev = new FailureEvent { t = end.T, kind = cause, stage = 1 };
             var inv = CultureInfo.InvariantCulture;
             bool tipped = end.TiltDeg > RecoverySim.TiltLimitDeg || end.Legs01 < 0.92;
-            bool onDeck = Math.Abs(end.MissM) <= RecoverySim.DeckRadiusM;
-            var gap = GapToGoal.Landing(onDeck ? "deck" : "water", end.Sink, Math.Abs(end.MissM), vLeg, RecoverySim.DeckRadiusM, tipped);
+            // A planned recovery that misses the deck is still graded against deck limits: GapToGoal's
+            // "water" branch is for ungraded splashdowns and would drop the offset shortfall / fix.
+            var gap = GapToGoal.Landing("deck", end.Sink, Math.Abs(end.MissM), vLeg, RecoverySim.DeckRadiusM, tipped);
             if (cause == Fuel)
             {
                 ev.cause = "out-of-fuel";

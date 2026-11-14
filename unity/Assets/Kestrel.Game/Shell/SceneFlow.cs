@@ -70,9 +70,10 @@ namespace Kestrel.Game.Shell
             var campaign = ScreenStub.LoadCampaign();
             MissionBriefing card = null;
             var mission = campaign != null ? campaign.ById(missionId) : null;
+            ulong seed = DailyChallenge.TakeSeed(missionId) ?? MissionContext.DefaultSeed(campaign);
             if (mission != null)
             {
-                try { card = LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
+                try { card = LoadBriefing(mission.Index, seed); }
                 catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
             }
             Present(BriefingBoard.BeforeDesign(GameSession.Apply(RouteId.MissionChosen, campaign, missionId, card)));
@@ -144,14 +145,16 @@ namespace Kestrel.Game.Shell
             var campaign = ScreenStub.LoadCampaign();
             var mission = campaign != null ? campaign.ById(missionId) : null;
             if (mission == null || mission.Index > ScreenStub.ClearedCount() + 1) return;
+            ulong? dailySeed = DailyChallenge.PeekSeed(missionId);
             var choice = HomeAutoBuild.Choose(ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, mission);
             if (choice != null && choice.LaunchEnabled && choice.Design != null)
             {
-                var ctx = MissionContext.FromMission(campaign, mission);
+                var ctx = MissionContext.FromMission(campaign, mission, dailySeed);
                 if (ctx != null)
                 {
+                    DailyChallenge.ClearArm();
                     MissionBriefing card = null;
-                    try { card = LoadBriefing(mission.Index, MissionContext.DefaultSeed(campaign)); }
+                    try { card = LoadBriefing(mission.Index, dailySeed ?? MissionContext.DefaultSeed(campaign)); }
                     catch (Exception e) { Debug.LogWarning("[Kestrel] briefing unavailable: " + e.Message); }
                     ctx.ApplyBriefing(card);
                     ctx.VehicleLine = choice.VehicleLine;
@@ -174,18 +177,20 @@ namespace Kestrel.Game.Shell
             var campaign = ScreenStub.LoadCampaign();
             var mission = campaign != null ? campaign.ById(missionId) : null;
             if (mission == null || mission.Index > ScreenStub.ClearedCount() + 1) return;
+            ulong? dailySeed = DailyChallenge.PeekSeed(missionId);
             var choice = HomeAutoBuild.Choose(ScreenStub.LoadCatalog(), ScreenStub.LoadHangar()?.templates, mission);
             if (choice == null || choice.Design == null)
             {
                 StartMission(missionId);
                 return;
             }
-            var ctx = MissionContext.FromMission(campaign, mission);
+            var ctx = MissionContext.FromMission(campaign, mission, dailySeed);
             if (ctx == null)
             {
                 StartMission(missionId);
                 return;
             }
+            DailyChallenge.ClearArm();
             ctx.VehicleLine = choice.VehicleLine;
             ctx.ReachLine = choice.ReachLine;
             ctx.AutoPad = false;

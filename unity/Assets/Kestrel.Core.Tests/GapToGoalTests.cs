@@ -67,5 +67,15 @@ namespace Kestrel.Core.Tests
             StringAssert.Contains("Short by 20 km", shortApo.Text);
             Assert.AreEqual(GapToGoal.RaiseApogee, shortApo.Fix);
         }
+
+        [Test]
+        public void OffDeckRecovery_StillQuotesOffsetShortfall()
+        {
+            // RecoveryScore grades a planned miss against deck limits (not GapToGoal's "water" ungraded branch).
+            var gap = GapToGoal.Landing("deck", 3, 80, 4, 36, false);
+            StringAssert.Contains("Short by", gap.Text);
+            StringAssert.Contains("offset", gap.Text);
+            Assert.AreEqual(GapToGoal.AimPaint, gap.Fix);
+        }
     }
 }
