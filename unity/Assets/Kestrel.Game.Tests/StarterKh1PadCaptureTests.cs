@@ -78,7 +78,7 @@ namespace Kestrel.Game.Tests
             float height = built.height, rr = built.mesh.bounds.extents.x;
             var b = built.mesh.bounds;
             float vehicleR = Mathf.Max(Mathf.Max(Mathf.Abs(b.min.x), Mathf.Abs(b.max.x)), Mathf.Max(Mathf.Abs(b.min.z), Mathf.Abs(b.max.z)));
-            var type = PadTower.DefaultArchetype(rr);
+            var type = PadTower.ArchetypeFor(catalog, design);
             TestContext.WriteLine("KH-1 First Hop: " + height.ToString("0.00") + " m tall, radius " + rr.ToString("0.00") + " m (reach " + vehicleR.ToString("0.00") + " m), pad " + type);
 
             var scene = new GameObject("kh-starter-kh1") { hideFlags = HideFlags.HideAndDontSave };
