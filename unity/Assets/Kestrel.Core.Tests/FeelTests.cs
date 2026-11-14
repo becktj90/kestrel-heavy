@@ -225,9 +225,18 @@ namespace Kestrel.Core.Tests
             Assert.That(p.Lifted, Is.True);
             Assert.AreEqual(36, p.HapticMs);
             Assert.That(Math.Abs(p.Shake.Vx) + Math.Abs(p.Shake.Vy), Is.GreaterThan(1));
+            Assert.AreEqual("LIFTOFF", p.Call);
+            Assert.That(p.Line, Does.Contain("LIFTOFF"));
+            // Hold keeps a readable banner and a decaying rumble — not a one-frame kick.
+            double shakeAfter = Math.Abs(p.Shake.Vx) + Math.Abs(p.Shake.Vy);
+            for (int i = 0; i < 20; i++) p.Step(s, 1.0 / 60.0, false);
+            Assert.AreEqual("LIFTOFF", p.Call, "hold still owns the banner ~0.3 s in");
+            Assert.That(Math.Abs(p.Shake.Vx) + Math.Abs(p.Shake.Vy), Is.GreaterThan(0.05), "rumble still alive in the hold");
+            Assert.That(p.LiftoffAge, Is.GreaterThan(0.2).And.LessThan(FlightPresenter.LiftoffHoldSec));
             s.Stage = 0;
             p.Step(s, 1.0 / 60.0, false);
             Assert.AreEqual(0, p.HapticMs);
+            Assert.That(shakeAfter, Is.GreaterThan(0));
             s.Stage = 1;
             p.Step(s, 1.0 / 60.0, false);
             Assert.AreEqual(14, p.HapticMs);

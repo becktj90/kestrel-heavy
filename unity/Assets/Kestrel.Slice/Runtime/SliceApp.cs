@@ -2280,6 +2280,13 @@ namespace Kestrel.Slice
                 : WebcastBoard.Pulse(flying, alt, spd, requiredMps, spareMps, q, maxQKpa, orbitLabel, hopGoalM, countVerdict, shortOnSpeed);
             hVerdict.text = pulse.Verdict;
             hPulse.text = pulse.Detail;
+            // Pad clear owns the banner for FlightPresenter.LiftoffHoldSec so the first second of flight
+            // reads as a product beat (the $0.99 / five-star bar), not a quiet "Climbing" pill.
+            if (flying && juice != null && juice.Call == "LIFTOFF")
+            {
+                hVerdict.text = "LIFTOFF";
+                if (hPulse != null) hPulse.text = "Clear of the tower";
+            }
             if (!flying && handoff != null && !handoff.Ascending)
             {
                 RefreshCountCard();
