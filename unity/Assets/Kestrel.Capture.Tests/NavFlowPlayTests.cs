@@ -633,11 +633,21 @@ namespace Kestrel.Capture.Tests
             Assert.That(driver.CoastWall, Is.GreaterThan(wallAtHold), "climax wall clock advances while Held (KH-3 freeze: Pause must not freeze Orbit!)");
             Assert.IsTrue(driver.Coasting, "still coasting under Hold");
             driver.CaptureClock = false;
-            // LateUpdate frames the coast only while CaptureClock is off, and this coroutine can
-            // resume before that LateUpdate. Two frames let the camera write CoastTrace. Each frame
-            // adds at most OrbitCoast.MaxStepSeconds, so a 3 s coast that is already 1.5 s in is still playing.
-            yield return null;
-            yield return null;
+            // The chase eases into the band over 0.6 s, and the pump left that ease at zero.
+            // Two fast frames wrote a band whose nose was still in the banner (run 43647984865:
+            // band (0.22, 0.43), nose at 0.59). Wait the ease out. At 60 fps that is ~0.6 s of
+            // coast wall, inside the 1.5 s still left on a 3 s coast.
+            float glide = 0f;
+            while (glide < 0.9f && driver.Coasting)
+            {
+                yield return null;
+                float dt = Time.unscaledDeltaTime;
+                if (float.IsNaN(dt) || dt < 0f) dt = 0f;
+                glide += dt;
+                var traced = hopApp.CoastTrace;
+                if (traced.y - traced.x > 0.1f && traced.w <= traced.y + 0.01f && traced.z >= traced.x - 0.01f)
+                    break;
+            }
             var verdict = SliceUi()?.Q<Label>("h-verdict");
             Assert.IsNotNull(verdict, "flight HUD verdict");
             Assert.AreEqual(OrbitCoast.CalloutApogee, verdict.text, "the HUD calls the climax");
