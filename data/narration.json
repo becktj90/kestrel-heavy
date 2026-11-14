@@ -71,7 +71,7 @@
       "when": "any",
       "design": "any",
       "kid": "Engine failure. {n0} of {n0lim} engines quit at T+{t} s.",
-      "eng": "{n0} engines quit out of {n0lim} at T+{t} s. More engines raise the odds of staying up."
+      "eng": "{n0} of {n0lim} engines quit at T+{t} s. More engines raise the odds of staying up."
     },
     {
       "id": "narr.engine.out.2",
@@ -79,7 +79,7 @@
       "when": "any",
       "design": "engine-out-cluster",
       "kid": "The cluster lost {n0} engine at T+{t} s. {n0lim} were lit.",
-      "eng": "engine-out value {value} of limit {limit}."
+      "eng": "{n0} of {n0lim} engines quit at T+{t} s. A stage rides through one out only with 7 or more engines and redundant avionics."
     },
     {
       "id": "narr.engine.out.redundant.1",
@@ -95,7 +95,7 @@
       "when": "any",
       "design": "redundant",
       "kid": "The spare brain could not cover {n0} quiet engine out of {n0lim}.",
-      "eng": "redundant avionics, engine-out {value} / {limit} at T+{t} s."
+      "eng": "Redundant avionics were aboard. {n0} of {n0lim} engines still quit at T+{t} s."
     },
     {
       "id": "narr.engine.mix.1",
@@ -111,7 +111,7 @@
       "when": "any",
       "design": "any",
       "kid": "Wrong feed. The mixture sat {n1} percent off nominal.",
-      "eng": "mixture offset {n1} percent at T+{t} s. Nominal is within {limit} percent."
+      "eng": "mixture offset {n1} percent at T+{t} s. Nominal is within {n1lim} percent."
     },
     {
       "id": "narr.tumble.alpha.1",
@@ -222,7 +222,7 @@
       "kind": "leg-collapse",
       "when": "any",
       "design": "any",
-      "kid": "The legs folded. She was falling at {n1} m/s. The legs take {limit} m/s.",
+      "kid": "The legs folded. She was falling at {n1} m/s. The legs take {n1lim} m/s.",
       "eng": "Sink {value} m/s, past the {limit} m/s the legs can take."
     },
     {
@@ -240,6 +240,22 @@
       "design": "any",
       "kid": "Up and done. {stars} for this flight.",
       "eng": "Pass at apogee {apo} km. The goal was {goal} km."
+    },
+    {
+      "id": "narr.pass.depart.1",
+      "kind": "pass",
+      "when": "departure",
+      "design": "any",
+      "kid": "She parked {park} with {dvleft} m/s still in the tanks. {stars} on the board.",
+      "eng": "Pass. Parked {park}, {dvleft} m/s left. The {burn} burn needs {dvneed} m/s; it is not flown."
+    },
+    {
+      "id": "narr.pass.depart.2",
+      "kind": "pass",
+      "when": "departure",
+      "design": "any",
+      "kid": "Parked and ready, with {dvleft} m/s left for the {burn} burn. {stars} on the board.",
+      "eng": "Pass. Parked {park}. Δv left {dvleft} m/s against {dvneed} m/s for the {burn} burn, which is not flown."
     },
     {
       "id": "narr.miss.1",
