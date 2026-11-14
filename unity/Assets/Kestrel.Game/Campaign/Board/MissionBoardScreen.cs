@@ -489,6 +489,7 @@ namespace Kestrel.Game.MissionSelect
                 if (_slots[i].Entry.MissionId == missionId) { slot = _slots[i]; break; }
             }
             if (slot == null) return;
+            DailyChallenge.ClearArm();
             _mode = MissionBoardMode.Mission;
             _selected = slot;
             _actId = slot.Entry.ActId;
@@ -552,6 +553,7 @@ namespace Kestrel.Game.MissionSelect
 
         public void SelectSandbox()
         {
+            DailyChallenge.ClearArm();
             _mode = MissionBoardMode.Sandbox;
             _selected = null;
             for (int i = 0; i < _slots.Count; i++)
@@ -579,6 +581,7 @@ namespace Kestrel.Game.MissionSelect
             {
                 string dailyId = _dailyMissionId;
                 if (string.IsNullOrEmpty(dailyId)) return;
+                DailyChallenge.Arm(_daily);
                 if (!string.IsNullOrEmpty(_card.Primary) && _card.Primary.StartsWith("Fly ", StringComparison.Ordinal))
                     _launch?.Invoke(dailyId);
                 else

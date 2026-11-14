@@ -35,5 +35,20 @@ namespace Kestrel.Core.Tests
             var pick = DailyChallenge.Pick(campaign, 0, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
             Assert.LessOrEqual(pick.MissionIndex, 1);
         }
+
+        [Test]
+        public void Arm_CarriesSeedUntilTaken()
+        {
+            DailyChallenge.ClearArm();
+            var campaign = Campaign.Load(Golden.Root);
+            var pick = DailyChallenge.Pick(campaign, 3, new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc));
+            DailyChallenge.Arm(pick);
+            Assert.AreEqual(pick.Seed, DailyChallenge.PeekSeed(pick.MissionId));
+            Assert.AreEqual(pick.Seed, DailyChallenge.PeekSeed(pick.MissionId), "peek does not clear");
+            Assert.AreEqual(pick.Seed, DailyChallenge.TakeSeed(pick.MissionId));
+            Assert.IsNull(DailyChallenge.PeekSeed(pick.MissionId));
+            Assert.IsNull(DailyChallenge.TakeSeed(pick.MissionId));
+            Assert.IsNull(DailyChallenge.TakeSeed("other"));
+        }
     }
 }
