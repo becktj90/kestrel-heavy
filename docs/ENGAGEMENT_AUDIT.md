@@ -30,6 +30,7 @@ Refs are to `main` at H1. The Phaser build is web demo only; findings feed the U
 7. Good: storage is local only (`web/js/storage.js:95-112`), no analytics, no IAP, no nagging.
 
 ## Unity plan (docs/UNITY_SHIP_PLAN.md)
-- U5 has a post-flight report + plot, but no debrief deltas, ghost or predict.
-- U8 has campaign/tutorial; no daily/weekly, goals or Next-up.
+- U5 has a post-flight report + plot; **H3 gap-to-goal and last-attempt ghost are now wired** (`GapToGoal` on the report + recovery engineer lines; `FlightGhost` on the trajectory rail).
+- U8 has campaign/tutorial/sandbox; **Daily (local seed) is on the mission board** (`DailyChallenge` + Daily tile). Per-metric personal bests land on the career record and the pass card (`PersonalBests`).
+- Predict still uses a single seeded run (0/1), not N-seed odds. Weekly / challenge lab / A/B flip remain open.
 - No restart-time budget in any U acceptance gate. **Fix:** H2–H6 below, mapped into U3–U9.

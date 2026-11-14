@@ -20,6 +20,8 @@ namespace Kestrel.Core.Economy
         public int Attempts;
         public long? LastSeed;
         public string LastDesignId;
+        /// <summary>Per-metric personal bests (ENGAGEMENT_SPEC §2). NaN until a pass sets them.</summary>
+        public readonly MissionMetrics Metrics = new MissionMetrics();
     }
 
     /// <summary>
@@ -93,6 +95,10 @@ namespace Kestrel.Core.Economy
         /// Attempts, last seed, and last design always follow this flight. Then both keys are saved.
         /// </summary>
         public MissionRecord RecordAttempt(string missionId, int stars, double score, IReadOnlyList<string> medals, long? seed, string designId)
+            => RecordAttempt(missionId, stars, score, medals, seed, designId, default);
+
+        /// <summary>Record one flight. Stars win, then score. Optional metrics update per-metric PBs on a pass.</summary>
+        public MissionRecord RecordAttempt(string missionId, int stars, double score, IReadOnlyList<string> medals, long? seed, string designId, PbSnapshot metrics)
         {
             if (!ValidMissionId(missionId)) throw new ArgumentException("invalid mission id", nameof(missionId));
             if (stars < 0 || stars > 3) throw new ArgumentOutOfRangeException(nameof(stars));
@@ -125,6 +131,7 @@ namespace Kestrel.Core.Economy
                     }
                 }
             }
+            PersonalBests.Apply(rec.Metrics, metrics);
             Save();
             return rec;
         }
@@ -312,8 +319,18 @@ namespace Kestrel.Core.Economy
                 rec.LastSeed = seed;
             string design = row.Str("lastDesignId");
             rec.LastDesignId = string.IsNullOrEmpty(design) ? null : design;
+            if (row.ContainsKey("bestCostKc") && row["bestCostKc"] is double cost && FiniteMetric(cost))
+                rec.Metrics.BestCostKc = cost;
+            if (row.ContainsKey("bestMassKg") && row["bestMassKg"] is double mass && FiniteMetric(mass))
+                rec.Metrics.BestMassKg = mass;
+            if (row.ContainsKey("bestMargin") && row["bestMargin"] is double margin && FiniteMetric(margin))
+                rec.Metrics.BestMargin = margin;
+            if (row.ContainsKey("bestLandingOffsetM") && row["bestLandingOffsetM"] is double offset && FiniteMetric(offset))
+                rec.Metrics.BestLandingOffsetM = offset;
             return rec;
         }
+
+        static bool FiniteMetric(double v) => !(double.IsNaN(v) || double.IsInfinity(v));
 
         JsonObject WriteCareer()
         {
@@ -352,6 +369,10 @@ namespace Kestrel.Core.Economy
                 row.Add("attempts", rec.Attempts);
                 row.Add("lastSeed", rec.LastSeed.HasValue ? (object)rec.LastSeed.Value : null);
                 row.Add("lastDesignId", rec.LastDesignId);
+                if (FiniteMetric(rec.Metrics.BestCostKc)) row.Add("bestCostKc", rec.Metrics.BestCostKc);
+                if (FiniteMetric(rec.Metrics.BestMassKg)) row.Add("bestMassKg", rec.Metrics.BestMassKg);
+                if (FiniteMetric(rec.Metrics.BestMargin)) row.Add("bestMargin", rec.Metrics.BestMargin);
+                if (FiniteMetric(rec.Metrics.BestLandingOffsetM)) row.Add("bestLandingOffsetM", rec.Metrics.BestLandingOffsetM);
                 data.Add(ids[i], row);
             }
             return data;
