@@ -187,8 +187,8 @@ function contexts(f) {
   const ev = [['pad', f], ['tankpress', lit(1)], ['ignition', lit(1)], ['liftoff', f], ['maxq', f], ['meco', lit(1)], ['fuel-low', lit(1)], ['abort-fuel', lit(1)], ['abort-corridor', f], ['deploy', f]];
   for (let k = 2; k <= f.stages; k++) ev.push(['ses1', lit(k)], ['fuel-low', lit(k)], ['abort-fuel', lit(k)], ['tankpress', lit(k)], ['seco', lit(k)]);
   if (f.stages >= 2) ev.push(['sep-clear', f]);
-  // maxq-throttle joins this list (floor 1) when its recorded takes ship; today it has none and stays silent (HUD banner only).
-  if (f['throttle.maxq']) ev.push(['maxq-through', f]);
+  // maxq-throttle / maxq-through: floor 1 (default) for designs with throttle.maxq.
+  if (f['throttle.maxq']) ev.push(['maxq-throttle', f], ['maxq-through', f]);
   if (f.fairing) ev.push(['fairing', f]);
   if (f.recovery !== 'none' && f.stages >= 2) {
     for (const e of ['entry', 'landing', 'touchdown', 'recovered', 'salvage', 'splash', 'abort-salvage', 'abort-splash', 'haven-maxq']) ev.push([e, f]);

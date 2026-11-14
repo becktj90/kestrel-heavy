@@ -390,7 +390,7 @@ namespace Kestrel.Game.Guide.Tests
         public void EveryNarrationClipHasASubtitle()
         {
             var clips = Clips();
-            Assert.AreEqual(354, clips.ClipCount);
+            Assert.AreEqual(358, clips.ClipCount);
             var seen = new HashSet<string>();
             foreach (var clip in clips.All)
             {
@@ -399,7 +399,7 @@ namespace Kestrel.Game.Guide.Tests
                 Assert.Greater(clip.Duration, 0.2f, clip.File);
                 seen.Add(clip.File);
             }
-            Assert.AreEqual(354, seen.Count);
+            Assert.AreEqual(358, seen.Count);
 
             Assert.IsTrue(clips.TryNext("liftoff", out var first));
             Assert.AreEqual(GuideSpeaker.MissionControl, first.Speaker);
