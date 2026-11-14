@@ -173,7 +173,8 @@ namespace Kestrel.Core.Designer
             float st = Math.Max(0f, i.SafeTop), sb = Math.Max(0f, i.SafeBottom), sl = Math.Max(0f, i.SafeLeft), sr = Math.Max(0f, i.SafeRight);
             float left = sl + Edge, right = i.Width - sr - Edge, bottom = i.Height - sb - Edge;
             Fonts(f);
-            if (!f.Wide && i.Height - st - sb < CompactBelow)
+            float availH = i.Height - st - sb;
+            if (!f.Wide && (availH < CompactBelow || (i.ReserveExit && i.LandingVisible && availH <= 700f)))
             {
                 f.Compact = true;
                 if (i.LandingVisible)
@@ -205,7 +206,10 @@ namespace Kestrel.Core.Designer
                 PlaceSwitch(f, i, resetRight);
                 barBottom = Math.Max(barBottom, f.Switch.Bottom);
             }
-            f.WhyOpen = i.Help && !string.IsNullOrEmpty(i.WhyText) && (i.WhyOpen != StarterKnob.Boosters || i.BoostersVisible) ? i.WhyOpen : StarterKnob.None;
+            f.WhyOpen = i.Help && !string.IsNullOrEmpty(i.WhyText)
+                && (i.WhyOpen != StarterKnob.Boosters || i.BoostersVisible)
+                && (i.WhyOpen != StarterKnob.Landing || i.LandingVisible)
+                ? i.WhyOpen : StarterKnob.None;
             f.WhyPt = f.Compact ? WhyCompactPt : WhyPt;
 
             if (f.Wide) PlaceWide(f, i, left, right, barBottom + WideGap, bottom);
@@ -316,8 +320,8 @@ namespace Kestrel.Core.Designer
             f.Launch = Box(innerL, y - f.LaunchPt, innerW, f.LaunchPt);
             y = f.Launch.Y - f.GapPt;
             y = PlaceReadiness(f, i, innerL, innerW, y);
-            // SE height: the speed bar steps aside while a Why? card is open, so the rocket keeps a window.
-            if (!(f.Compact && f.WhyOpen != StarterKnob.None)) y = PlaceSpeed(f, i, innerL, innerW, y);
+            // While a Why? card is open the speed bar steps aside so the sheet and rocket keep room.
+            if (f.WhyOpen == StarterKnob.None) y = PlaceSpeed(f, i, innerL, innerW, y);
             // Spend rides the readiness / hint copy (StarterPanel), so it does not steal another sheet line.
             if (!i.Help) y = PlaceHint(f, i, innerL, innerW, y - f.GapPt);
             y -= f.GapPt;
@@ -348,20 +352,34 @@ namespace Kestrel.Core.Designer
             f.Title = Box(innerL, y, innerW, f.TitleLines * Line(f.TitlePt));
             f.Subtitle = f.SubtitleLines > 0 ? Box(innerL, f.Title.Bottom + 2f, innerW, f.SubtitleLines * Line(f.SubtitlePt)) : default;
             f.Header = Box(innerL, y, innerW, (f.SubtitleLines > 0 ? f.Subtitle.Bottom : f.Title.Bottom) - y);
-            y = f.Header.Bottom + WideGap;
-            PlaceRows(f, i, innerL, innerW, y);
-            y += RowsHeight(f, i, innerW) + Gap;
-            // Hint under the controls (the open Why? card takes its place); spend rides readiness copy. Readiness and
-            // Launch at the bottom of the panel (one primary, bottom-right), the speed bar over the readiness line.
-            if (!i.Help)
-            {
-                f.HintLines = Lines(i.Hint, innerW, f.HintPt, HintMaxLines);
-                f.Hint = Box(innerL, y, innerW, f.HintLines * Line(f.HintPt));
-            }
+            // Anchor Launch and readiness at the bottom, then stack controls upward (same bottom-up order as portrait).
             float by = f.Sheet.Bottom - WidePad;
             f.Launch = Box(innerL, by - LaunchH, innerW, LaunchH);
-            float ry = PlaceReadiness(f, i, innerL, innerW, f.Launch.Y - Gap);
-            PlaceSpeed(f, i, innerL, innerW, ry);
+            float yUp = f.Launch.Y - Gap;
+            yUp = PlaceReadiness(f, i, innerL, innerW, yUp);
+            if (f.WhyOpen == StarterKnob.None) yUp = PlaceSpeed(f, i, innerL, innerW, yUp);
+            yUp -= Gap;
+            float minTop = f.Header.Bottom + WideGap;
+            float rowsH = RowsHeight(f, i, innerW);
+            float rowsTop = Math.Max(minTop, yUp - rowsH);
+            float shrink = f.OptionPt;
+            while (rowsTop > minTop + 0.5f && shrink > OptionMinPt && rowsTop + rowsH > yUp + 0.5f)
+            {
+                shrink -= 0.5f;
+                f.OptionPt = shrink;
+                rowsH = RowsHeight(f, i, innerW);
+                rowsTop = Math.Max(minTop, yUp - rowsH);
+            }
+            PlaceRows(f, i, innerL, innerW, rowsTop);
+            if (!i.Help)
+            {
+                float hintY = f.Header.Bottom + WideGap;
+                if (hintY + Line(f.HintPt) * HintMaxLines < rowsTop - Gap)
+                {
+                    f.HintLines = Lines(i.Hint, innerW, f.HintPt, HintMaxLines);
+                    f.Hint = Box(innerL, hintY, innerW, f.HintLines * Line(f.HintPt));
+                }
+            }
         }
 
         /// <summary>The speed bar ending a gap above <paramref name="aboveY"/>; returns its top (or aboveY when hidden).</summary>

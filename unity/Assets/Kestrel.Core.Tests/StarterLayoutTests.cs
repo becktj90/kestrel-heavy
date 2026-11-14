@@ -57,7 +57,10 @@ namespace Kestrel.Core.Tests
                 r.Stages = int.Parse(p[i + 1], CultureInfo.InvariantCulture);
                 r.FuelNotch = int.Parse(p[i + 2].Substring(1), CultureInfo.InvariantCulture);
                 r.Boosters = int.Parse(p[i + 3].Substring(1), CultureInfo.InvariantCulture);
-                if (land != null) r.Landing = (StarterLanding)int.Parse(land, CultureInfo.InvariantCulture);
+                // Keys omit "-lN" when landing is expend (same rule as StarterChoice.Key).
+                r.Landing = land != null
+                    ? (StarterLanding)int.Parse(land, CultureInfo.InvariantCulture)
+                    : StarterLanding.Expend;
                 Assert.AreEqual(key, r.Choice.Key, missionId + " setting");
             }
             return r;
