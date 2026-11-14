@@ -1,0 +1,13 @@
+id,variant,file_ogg,file_mp3,duration,LUFS,dBTP,loop,overlap,limiter,seam_click_vs_med,head_body,tail_body
+engine.roar.near.kerolox,1,engine.roar.near.kerolox.v1.ogg,engine.roar.near.kerolox.v1.mp3,29.92,-16.03,-1.89,True,roar-loop,False,1.038,0.871,0.978
+engine.roar.near.kerolox,2,engine.roar.near.kerolox.v2.ogg,engine.roar.near.kerolox.v2.mp3,29.92,-16.06,-1.68,True,roar-loop,True,1.058,1.122,1.090
+engine.roar.near.kerolox,3,engine.roar.near.kerolox.v3.ogg,engine.roar.near.kerolox.v3.mp3,29.92,-16.06,-1.69,True,roar-loop,True,1.281,1.096,1.158
+engine.roar.near.hydrolox,1,engine.roar.near.hydrolox.v1.ogg,engine.roar.near.hydrolox.v1.mp3,29.92,-16.23,-3.73,True,roar-loop,False,0.940,1.056,0.977
+engine.roar.near.hydrolox,2,engine.roar.near.hydrolox.v2.ogg,engine.roar.near.hydrolox.v2.mp3,29.92,-16.19,-2.78,True,roar-loop,False,1.055,1.122,0.916
+engine.roar.near.hydrolox,3,engine.roar.near.hydrolox.v3.ogg,engine.roar.near.hydrolox.v3.mp3,29.92,-16.28,-1.94,True,roar-loop,False,0.853,0.696,0.715
+engine.roar.near.methalox,1,engine.roar.near.methalox.v1.ogg,engine.roar.near.methalox.v1.mp3,29.92,-16.09,-1.58,True,roar-loop,True,0.981,0.969,0.925
+engine.roar.near.methalox,2,engine.roar.near.methalox.v2.ogg,engine.roar.near.methalox.v2.mp3,29.92,-16.09,-2.75,True,roar-loop,False,0.896,0.993,0.953
+engine.roar.near.methalox,3,engine.roar.near.methalox.v3.ogg,engine.roar.near.methalox.v3.mp3,29.92,-16.07,-1.55,True,roar-loop,True,1.014,0.845,0.850
+engine.roar.near.storable,1,engine.roar.near.storable.v1.ogg,engine.roar.near.storable.v1.mp3,29.92,-16.1,-2.15,True,roar-loop,False,1.072,1.123,0.909
+engine.roar.near.storable,2,engine.roar.near.storable.v2.ogg,engine.roar.near.storable.v2.mp3,29.92,-16.09,-2.52,True,roar-loop,False,0.982,1.057,1.005
+engine.roar.near.storable,3,engine.roar.near.storable.v3.ogg,engine.roar.near.storable.v3.mp3,29.92,-16.1,-1.58,True,roar-loop,True,0.898,1.013,1.011
