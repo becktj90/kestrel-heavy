@@ -114,6 +114,58 @@ namespace Kestrel.Game.Tests
                     }
         }
 
+        /// <summary>CONTINUE's sub-line (ResumeActions.Caption); null keeps the mission line, as before.</summary>
+        static string continueCaption;
+
+        /// <summary>Playthrough 2026-11-11: "CONTINUE · KH-1 · First Hop" opened the newest saved rocket as a free build. The
+        /// sub-line now names what CONTINUE opens; the longest real form (a saved name, then "free build") fits at 335 pt,
+        /// on every iOS size and in the web landscape, with no overlaps.</summary>
+        [Test]
+        public void ContinueNamesTheSavedRocket_AndFitsEverywhere()
+        {
+            foreach (var caption in new[]
+            {
+                Kestrel.Core.Save.ResumeOffer.Caption(false, null, "QA Saved Orbiter"),
+                Kestrel.Core.Save.ResumeOffer.Caption(false, "KH-20 · Far Hold", "Heavy Lifter Mk II"),
+                Kestrel.Core.Save.ResumeOffer.Caption(true, "KH-14 · Harbor Trunk", null),
+            })
+            {
+                continueCaption = caption;
+                try
+                {
+                    foreach (var mode in Modes)
+                    {
+                        foreach (var size in Sizes())
+                        {
+                            UseFlags(mode.Show);
+                            Portrait(size, mode.Show, true, size.Name + " " + mode.Name + " '" + caption + "'");
+                        }
+                        foreach (var (w, h) in WideSizes)
+                        {
+                            UseFlags(mode.Show);
+                            MainMenuOverlay.ForceWide = true;
+                            string n = w + "x" + h + " " + mode.Name + " '" + caption + "'";
+                            var s = new HomePhoneScreen { W = w, H = h, PerPoint = 1f };
+                            using (var surface = UiDeviceSurface.Open(w, h))
+                            {
+                                var shell = Shell(surface.Stage, s, out var safe, out var host);
+                                var overlay = Home(shell, host, true);
+                                surface.Pump(8);
+                                PlaceWideGear(shell, w, h);
+                                surface.Pump(3);
+                                TextFit.Apply(shell);
+                                surface.Pump(4);
+                                CheckCta(overlay, shell, true, n);
+                                NoOverlaps(Visible(overlay, shell, n), n);
+                            }
+                            MainMenuOverlay.ForceWide = false;
+                        }
+                    }
+                }
+                finally { continueCaption = null; }
+            }
+        }
+
         [Test]
         public void WideWebHomeHasOneCtaAndNoOverlaps()
         {
@@ -153,7 +205,7 @@ namespace Kestrel.Game.Tests
             MainMenuOverlay.SetMissionLine(overlay, Mission);
             MainMenuOverlay.SetRecord(overlay, LongRecord);
             MainMenuOverlay.SetMissionsFlown(overlay, 2, 20);
-            HomeResumeBar.Mount(overlay, 72, save, () => { });
+            HomeResumeBar.Mount(overlay, 72, save, () => { }, continueCaption);
             return overlay;
         }
 
@@ -170,7 +222,9 @@ namespace Kestrel.Game.Tests
             if (save)
             {
                 Assert.That(label.text, Is.EqualTo(HomePhoneLayout.Continue), n + " CTA word");
-                Assert.That(cap.text, Is.EqualTo(Mission), n + " CONTINUE sub-line");
+                Assert.That(cap.text, Is.EqualTo(continueCaption ?? Mission), n + " CONTINUE sub-line");
+                if (continueCaption != null)
+                    Assert.That(key.tooltip, Is.EqualTo(Kestrel.Core.Save.ResumeOffer.Spoken(continueCaption)), n + " CONTINUE says what it opens");
             }
             else if (label.text == "LAUNCH " + Mission)
                 Assert.That(cap.resolvedStyle.display, Is.EqualTo(DisplayStyle.None), n + " no sub-line under the whole label");
