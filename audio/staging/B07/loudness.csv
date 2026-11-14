@@ -1,0 +1,13 @@
+id,take,file,voice,event,layer,duration_sec,LUFS,dBTP,in_spec,issues,variant,sources
+cohost/codex.cg-cp.kid.g5-1,1,cohost__codex.cg-cp.kid.g5-1.t1.mp3,Chris,codex.cg-cp.kid,codex,15.177,-16.43,-1.78,yes,,main,
+cohost/codex.cg-cp.kid.g5-1,2,cohost__codex.cg-cp.kid.g5-1.t2.mp3,Chris,codex.cg-cp.kid,codex,15.595,-16.57,-1.75,yes,,main,
+host/codex.cg-cp.eng.g5-1,1,host__codex.cg-cp.eng.g5-1.t1.mp3,Sarah,codex.cg-cp.eng,codex,58.41,-16.44,-3.04,yes,,main,
+host/codex.cg-cp.eng.g5-1,2,host__codex.cg-cp.eng.g5-1.t2.mp3,Sarah,codex.cg-cp.eng,codex,57.496,-16.44,-3.24,yes,,main,
+cohost/codex.orbits.kid.g5-1,1,cohost__codex.orbits.kid.g5-1.t1.mp3,Chris,codex.orbits.kid,codex,18.991,-16.44,-1.97,yes,,main,
+cohost/codex.orbits.kid.g5-1,2,cohost__codex.orbits.kid.g5-1.t2.mp3,Chris,codex.orbits.kid,codex,18.155,-16.65,-1.73,yes,,main,
+host/codex.orbits.eng.g5-1,1,host__codex.orbits.eng.g5-1.t1.mp3,Sarah,codex.orbits.eng,codex,96.157,-16.43,-2.86,yes,,main,
+host/codex.orbits.eng.g5-1,2,host__codex.orbits.eng.g5-1.t2.mp3,Sarah,codex.orbits.eng,codex,96.392,-16.43,-3.21,yes,,main,
+cohost/codex.booster-landing.kid.g5-1,1,cohost__codex.booster-landing.kid.g5-1.t1.mp3,Chris,codex.booster-landing.kid,codex,16.614,-16.44,-1.92,yes,,main,
+cohost/codex.booster-landing.kid.g5-1,2,cohost__codex.booster-landing.kid.g5-1.t2.mp3,Chris,codex.booster-landing.kid,codex,14.864,-16.38,-1.8,yes,,main,
+host/codex.booster-landing.eng.g5-1,1,host__codex.booster-landing.eng.g5-1.t1.mp3,Sarah,codex.booster-landing.eng,codex,64.131,-16.44,-3.01,yes,,main,
+host/codex.booster-landing.eng.g5-1,2,host__codex.booster-landing.eng.g5-1.t2.mp3,Sarah,codex.booster-landing.eng,codex,63.478,-16.45,-3.26,yes,,main,
