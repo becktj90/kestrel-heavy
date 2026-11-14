@@ -2,6 +2,8 @@
 // The native side is Assets/Plugins/iOS/KHHangarNative.mm (UIKit only; no third-party code). Everywhere else
 // (Editor, tests, other platforms) these calls do nothing and Reduce Motion reads false.
 using System.Runtime.InteropServices;
+using Kestrel.Game.Environment;
+using Kestrel.Game.Shell;
 using UnityEngine;
 
 namespace Kestrel.Slice
@@ -20,6 +22,14 @@ namespace Kestrel.Slice
         public static int[] LastPattern { get; private set; } = System.Array.Empty<int>();
 
         public static bool HapticsOn => PlayerPrefs.GetInt(HangarFeel.HapticsPref, 1) != 0;
+
+        /// <summary>Wire OS Reduce Motion into Shell / Environment readers that cannot reference this assembly.</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void SeedOsReduceMotion()
+        {
+            MainMenuLayout.OsReduceMotion = () => SystemReduceMotion;
+            CameraFx.ReduceMotion = () => Comfort.ReduceMotion;
+        }
 
         /// <summary>Play a haptic with its designer-feel.json pattern: pulse, gap, pulse … in milliseconds (the web
         /// vibrate convention). On iOS each pulse is one Taptic tap, stronger for a longer pulse; gaps space them.</summary>

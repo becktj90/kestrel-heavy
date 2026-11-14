@@ -75,9 +75,11 @@ namespace Kestrel.Game.Shell
         public const float DriftYawDegrees = 0.35f;
         public const float DriftSlideMetres = 0.012f;
 
-        // Same PlayerPrefs the hangar already honours (HangarCamera / Comfort). Both kill the breathe and the drift.
+        // Same PlayerPrefs the hangar already honours (HangarCamera / Comfort / HangarFeel). Both kill the breathe and the drift.
         public const string ReduceMotionPref = "kh.a11y.reduceMotion";
         public const string ReduceFlashingPref = "kh.a11y.reduceFlashing";
+        /// <summary>Same key as HangarFeel.HapticsPref (Shell cannot reference Slice).</summary>
+        public const string HapticsPref = "kh.hangar.haptics";
 
         /// <summary>Whole-view lift (fraction of panel height, 0 = rest) set by MainMenuOverlay from where the controls really start.
         /// MainMenuController applies it as a camera lens shift, so rocket, hangar and telemetry move together.</summary>
@@ -151,8 +153,13 @@ namespace Kestrel.Game.Shell
         /// <summary>All menu type sizes for a panel (see MenuTypeScale).</summary>
         public static MenuTypeScale.Sizes TypeScale(float w, float h, float topInset = 0f, float bottomInset = 0f) => MenuTypeScale.Compute(w, h, topInset, bottomInset);
 
+        /// <summary>OS Reduce Motion. Slice seeds this to <c>HangarNative.SystemReduceMotion</c> at boot (Shell cannot reference Slice).</summary>
+        public static System.Func<bool> OsReduceMotion = () => false;
+
         public static bool ReducedMotion() =>
-            PlayerPrefs.GetInt(ReduceMotionPref, 0) != 0 || PlayerPrefs.GetInt(ReduceFlashingPref, 0) != 0;
+            (OsReduceMotion != null && OsReduceMotion())
+            || PlayerPrefs.GetInt(ReduceMotionPref, 0) != 0
+            || PlayerPrefs.GetInt(ReduceFlashingPref, 0) != 0;
 
         public static MenuPose Pose()
         {

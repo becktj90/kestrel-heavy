@@ -16,7 +16,11 @@ namespace Kestrel.Game.Tests
 {
     public class SettingsCommentaryTimeWarpTests
     {
-        static readonly string[] Keys = { Commentary.Pref, ExperienceSettings.LegacyNarrationMutePref, TimeWarpSetting.Pref };
+        static readonly string[] Keys =
+        {
+            Commentary.Pref, ExperienceSettings.LegacyNarrationMutePref, TimeWarpSetting.Pref,
+            MainMenuLayout.ReduceFlashingPref, MainMenuLayout.HapticsPref,
+        };
         bool[] had;
         int[] prev;
 
@@ -115,7 +119,28 @@ namespace Kestrel.Game.Tests
         {
             CollectionAssert.Contains(UiIds.SettingsControls, UiIds.SettingsCommentary);
             CollectionAssert.Contains(UiIds.SettingsControls, UiIds.SettingsTimeWarp);
+            CollectionAssert.Contains(UiIds.SettingsControls, UiIds.SettingsReduceFlashing);
+            CollectionAssert.Contains(UiIds.SettingsControls, UiIds.SettingsHaptics);
             Assert.That(UiIds.SettingsControls[UiIds.SettingsControls.Length - 1], Is.EqualTo(UiIds.SettingsClose));
+        }
+
+        [Test]
+        public void ReduceFlashingAndHapticsRows_TogglePrefs()
+        {
+            PlayerPrefs.DeleteKey(MainMenuLayout.ReduceFlashingPref);
+            PlayerPrefs.DeleteKey(MainMenuLayout.HapticsPref);
+            var full = OpenSettings();
+            var flash = full.Q<Button>(UiIds.SettingsReduceFlashing);
+            var hap = full.Q<Button>(UiIds.SettingsHaptics);
+            Assert.That(flash, Is.Not.Null);
+            Assert.That(hap, Is.Not.Null);
+            Assert.That(hap.Q<Label>(hap.name + "-state").text, Is.EqualTo("On"), "haptics default on");
+            Press(flash);
+            Assert.That(PlayerPrefs.GetInt(MainMenuLayout.ReduceFlashingPref, 0), Is.EqualTo(1));
+            Assert.That(flash.Q<Label>(flash.name + "-state").text, Is.EqualTo("On"));
+            Press(hap);
+            Assert.That(PlayerPrefs.GetInt(MainMenuLayout.HapticsPref, 1), Is.EqualTo(0));
+            Assert.That(hap.Q<Label>(hap.name + "-state").text, Is.EqualTo("Off"));
         }
 
         static void Press(Button button)

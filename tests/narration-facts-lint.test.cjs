@@ -135,6 +135,36 @@ test('every clip file exists in both trees with the recorded sha256, and loudnes
   }
 });
 
+test('unity Resources narration manifest matches assets, and guide clips exist on disk', () => {
+  const unityMan = JSON.parse(fs.readFileSync(U, 'utf8'));
+  assert.equal(unityMan.clips.length, clips.length, 'ClipCount assets vs Unity Resources');
+  assert.deepEqual(
+    unityMan.clips.map((c) => c.id).sort(),
+    clips.map((c) => c.id).sort(),
+    'clip ids must match between manifests',
+  );
+  const unityRoot = path.join(root, 'unity/Assets/Kestrel.Game/Audio/Runtime/Resources/Narration');
+  for (const c of unityMan.clips) {
+    assert.ok(fs.existsSync(path.join(unityRoot, c.file)), `unity manifest orphan: ${c.file}`);
+  }
+  // Every Resources Narration mp3 under voice dirs is listed in the Unity manifest (no stray takes).
+  const listed = new Set(unityMan.clips.map((c) => c.file));
+  for (const d of ['mission-control', 'host', 'cohost']) {
+    for (const f of fs.readdirSync(path.join(unityRoot, d)).filter((x) => x.endsWith('.mp3'))) {
+      assert.ok(listed.has(`${d}/${f}`), `Resources mp3 not in Unity manifest: ${d}/${f}`);
+    }
+  }
+  const guideManPath = path.join(root, 'assets/narration/guide/manifest.json');
+  assert.ok(fs.existsSync(guideManPath), 'assets/narration/guide/manifest.json');
+  const guide = JSON.parse(fs.readFileSync(guideManPath, 'utf8'));
+  assert.ok(Array.isArray(guide.clips) && guide.clips.length > 0, 'guide manifest has clips');
+  for (const c of guide.clips) {
+    // Guide manifest `file` is like "guide/first.1.c1.mp3" under assets/narration/.
+    const rel = c.file || `guide/${c.id}.mp3`;
+    assert.ok(fs.existsSync(path.join(root, 'assets/narration', rel)), `guide missing ${rel}`);
+  }
+});
+
 // ---- designs: every shipped starter, template, winner, preset and golden-viable design ----
 const PROP_ID = { kerolox: 'kerolox', hydrolox: 'hydrolox', methalox: 'methalox', 'solid-apcp': 'solid', 'mmh-nto': 'storable' };
 function designs() {
@@ -187,8 +217,8 @@ function contexts(f) {
   const ev = [['pad', f], ['tankpress', lit(1)], ['ignition', lit(1)], ['liftoff', f], ['maxq', f], ['meco', lit(1)], ['fuel-low', lit(1)], ['abort-fuel', lit(1)], ['abort-corridor', f], ['deploy', f]];
   for (let k = 2; k <= f.stages; k++) ev.push(['ses1', lit(k)], ['fuel-low', lit(k)], ['abort-fuel', lit(k)], ['tankpress', lit(k)], ['seco', lit(k)]);
   if (f.stages >= 2) ev.push(['sep-clear', f]);
-  // maxq-throttle joins this list (floor 1) when its recorded takes ship; today it has none and stays silent (HUD banner only).
-  if (f['throttle.maxq']) ev.push(['maxq-through', f]);
+  // maxq-throttle / maxq-through: floor 1 (default) for designs with throttle.maxq.
+  if (f['throttle.maxq']) ev.push(['maxq-throttle', f], ['maxq-through', f]);
   if (f.fairing) ev.push(['fairing', f]);
   if (f.recovery !== 'none' && f.stages >= 2) {
     for (const e of ['entry', 'landing', 'touchdown', 'recovered', 'salvage', 'splash', 'abort-salvage', 'abort-splash', 'haven-maxq']) ev.push([e, f]);

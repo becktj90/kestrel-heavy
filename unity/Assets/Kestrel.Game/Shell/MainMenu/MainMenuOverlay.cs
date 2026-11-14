@@ -1385,9 +1385,13 @@ namespace Kestrel.Game.Shell
             var subtitles = SettingButton(UiIds.SettingsSubtitles, "Subtitles");
             var sandbox = SettingButton(UiIds.SettingsSandbox, "Sandbox");
             var motion = SettingButton(UiIds.SettingsReduceMotion, "Reduce motion");
+            var flashing = SettingButton(UiIds.SettingsReduceFlashing, "Reduce flashing");
+            var haptics = SettingButton(UiIds.SettingsHaptics, "Haptics");
             var fullDesigner = SettingButton(FullDesignerId, "Show full designer");
             var cornerCharacter = SettingButton(UiIds.SettingsCornerCharacter, CornerCharacterLabel);
             motion.tooltip = "Reduce motion. Holds the menu still.";
+            flashing.tooltip = "Reduce flashing. Softens flashes and camera punch.";
+            haptics.tooltip = "Haptics. Light taps for key moments.";
             // UX after #384/#436: two choice rows. Same row as the others, with a wider state chip for "Calls only".
             var commentary = SettingButton(UiIds.SettingsCommentary, Kestrel.Core.Features.ExperienceSettings.CommentaryLabel);
             var timeWarp = SettingButton(UiIds.SettingsTimeWarp, Kestrel.Core.Features.ExperienceSettings.TimeWarpLabel);
@@ -1446,6 +1450,18 @@ namespace Kestrel.Game.Shell
                 PaintCaption(motion, on ? "Reduce motion on" : "Reduce motion", on);
                 motion.tooltip = on ? "Reduce motion is on." : "Reduce motion is off.";
             }
+            void PaintFlashing()
+            {
+                bool on = PlayerPrefs.GetInt(MainMenuLayout.ReduceFlashingPref, 0) != 0;
+                PaintCaption(flashing, on ? "Reduce flashing on" : "Reduce flashing", on);
+                flashing.tooltip = on ? "Reduce flashing is on." : "Reduce flashing is off.";
+            }
+            void PaintHaptics()
+            {
+                bool on = PlayerPrefs.GetInt(MainMenuLayout.HapticsPref, 1) != 0;
+                PaintCaption(haptics, on ? "Haptics on" : "Haptics", on);
+                haptics.tooltip = on ? "Haptics are on." : "Haptics are off.";
+            }
 
             music.clicked += () => { AudioPrefs.SetMusicMuted(!AudioPrefs.MusicMuted); PaintMix(); };
             sound.clicked += () => { AudioPrefs.SetSfxMuted(!AudioPrefs.SfxMuted); PaintMix(); };
@@ -1474,6 +1490,20 @@ namespace Kestrel.Game.Shell
                 PlayerPrefs.Save();
                 PaintMotion();
             };
+            flashing.clicked += () =>
+            {
+                int cur = PlayerPrefs.GetInt(MainMenuLayout.ReduceFlashingPref, 0);
+                PlayerPrefs.SetInt(MainMenuLayout.ReduceFlashingPref, cur == 0 ? 1 : 0);
+                PlayerPrefs.Save();
+                PaintFlashing();
+            };
+            haptics.clicked += () =>
+            {
+                int cur = PlayerPrefs.GetInt(MainMenuLayout.HapticsPref, 1);
+                PlayerPrefs.SetInt(MainMenuLayout.HapticsPref, cur == 0 ? 1 : 0);
+                PlayerPrefs.Save();
+                PaintHaptics();
+            };
             fullDesigner.clicked += () =>
             {
                 bool next = !Kestrel.Core.Features.ExperienceSettings.ShowFullDesigner(PlayerPrefs.HasKey, k => PlayerPrefs.GetInt(k, 0));
@@ -1495,6 +1525,8 @@ namespace Kestrel.Game.Shell
             PaintCornerCharacter();
             PaintSandbox();
             PaintMotion();
+            PaintFlashing();
+            PaintHaptics();
             PaintTimeWarp();
 
             list.Add(music);
@@ -1507,6 +1539,8 @@ namespace Kestrel.Game.Shell
             list.Add(subtitles);
             list.Add(sandbox);
             list.Add(motion);
+            list.Add(flashing);
+            list.Add(haptics);
             {
                 // Starter Home: Codex leaves the tiles and lives here (PHASED_DESIGNER_PLAN, Phase 1) while home.codexTile is off.
                 var codex = SettingButton(UiIds.SettingsCodex, "Codex");
@@ -1676,6 +1710,8 @@ namespace Kestrel.Game.Shell
                 PaintSubs();
                 PaintSandbox();
                 PaintMotion();
+                PaintFlashing();
+                PaintHaptics();
                 PaintFullDesigner();
                 PaintCornerCharacter();
                 ApplySettingsFeatures(full);

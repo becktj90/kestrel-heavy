@@ -31,13 +31,16 @@ namespace Kestrel.Slice
         Label toast;
         string viewNote;
         float toastLeft;
-        Button pause, follow, cameraBtn, music, sfx, narration;
+        Button pause, follow, cameraBtn, music, sfx, narration, restartBtn, exitBtn;
         FlightRig rig = FlightCameraRig.Following();
         Action<bool> setPaused;
+        Action restartFlight, exitHomeFlight;
         Action<FlightViewMode> viewChanged;
         FlightViewMode viewMode;
         bool tracking, blockGesture, pinching, pinchBlocked;
         float pinchDist, lastUpp = 1f;
+        /// <summary>Hangar-style two-tap: "restart" or "exit", cleared when the menu closes or Resume is tapped.</summary>
+        string pendingConfirm;
         /// <summary>The pad ground camera can see the rocket (SliceApp feeds FlightViewPose.PadInRange each frame).</summary>
         bool padInRange = true;
         /// <summary>Device pixels per UI point for drag distances (1 in tests, which feed points).</summary>
@@ -56,6 +59,8 @@ namespace Kestrel.Slice
         {
             hud = flightHud;
             setPaused = onPause;
+            restartFlight = restart;
+            exitHomeFlight = exitHome;
             viewChanged = onView;
             viewMode = initial;
             // Follow from Pad returns to the player's chasing view: seed it from the saved one (it was always Auto).
@@ -109,9 +114,11 @@ namespace Kestrel.Slice
             title.style.marginBottom = 12;
             title.pickingMode = PickingMode.Ignore;
             menu.Add(title);
-            menu.Add(MenuButton(UiIds.PauseResume, "Resume", "Resume the flight.", () => setPaused?.Invoke(false)));
-            menu.Add(MenuButton(UiIds.PauseRestart, "Restart", "Restart. Flies the same design again.", () => restart?.Invoke()));
-            menu.Add(MenuButton(UiIds.PauseExitHome, "Exit to Home", "Exit to Home.", () => exitHome?.Invoke()));
+            menu.Add(MenuButton(UiIds.PauseResume, "Resume", "Resume the flight.", () => { ClearPendingConfirm(); setPaused?.Invoke(false); }));
+            restartBtn = MenuButton(UiIds.PauseRestart, "Restart", "Restart. Flies the same design again. Tap again to confirm.", TapRestart);
+            exitBtn = MenuButton(UiIds.PauseExitHome, "Exit to Home", "Exit to Home. Tap again to confirm.", TapExitHome);
+            menu.Add(restartBtn);
+            menu.Add(exitBtn);
             music = MenuButton(UiIds.PauseMusic, "Music on", "Music. Tap to mute or unmute.", ToggleMusic);
             sfx = MenuButton(UiIds.PauseSfx, "Sound on", "Sound effects. Tap to mute or unmute.", ToggleSfx);
             narration = MenuButton(UiIds.PauseNarration, "Narration on", "Commentary. Tap to cycle full, calls only, off.", ToggleNarration);
@@ -235,7 +242,8 @@ namespace Kestrel.Slice
         public void Show(bool paused)
         {
             Paused = paused;
-            if (paused) { tracking = false; pinching = false; ClosePicker(); HideToast(); }
+            if (paused) { tracking = false; pinching = false; ClosePicker(); HideToast(); FeelSnap(); }
+            else ClearPendingConfirm();
             if (menu != null)
             {
                 menu.EnableInClassList("hidden", !paused);
@@ -246,6 +254,41 @@ namespace Kestrel.Slice
             }
             RefreshAudio();
         }
+
+        void TapRestart()
+        {
+            if (pendingConfirm == "restart")
+            {
+                ClearPendingConfirm();
+                restartFlight?.Invoke();
+                return;
+            }
+            pendingConfirm = "restart";
+            if (restartBtn != null) { restartBtn.text = "Tap again to restart"; restartBtn.tooltip = "Tap again to restart this flight."; }
+            if (exitBtn != null) { exitBtn.text = "Exit to Home"; exitBtn.tooltip = "Exit to Home. Tap again to confirm."; }
+        }
+
+        void TapExitHome()
+        {
+            if (pendingConfirm == "exit")
+            {
+                ClearPendingConfirm();
+                exitHomeFlight?.Invoke();
+                return;
+            }
+            pendingConfirm = "exit";
+            if (exitBtn != null) { exitBtn.text = "Tap again to exit"; exitBtn.tooltip = "Tap again to leave this flight."; }
+            if (restartBtn != null) { restartBtn.text = "Restart"; restartBtn.tooltip = "Restart. Flies the same design again. Tap again to confirm."; }
+        }
+
+        void ClearPendingConfirm()
+        {
+            pendingConfirm = null;
+            if (restartBtn != null) { restartBtn.text = "Restart"; restartBtn.tooltip = "Restart. Flies the same design again. Tap again to confirm."; }
+            if (exitBtn != null) { exitBtn.text = "Exit to Home"; exitBtn.tooltip = "Exit to Home. Tap again to confirm."; }
+        }
+
+        static void FeelSnap() => HangarNative.Play(Haptic.Snap, HangarFeel.Pattern(Haptic.Snap, SliceData.Feel));
 
         public void OnFlightStarted()
         {
