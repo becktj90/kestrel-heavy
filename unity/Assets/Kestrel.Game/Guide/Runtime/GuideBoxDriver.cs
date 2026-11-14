@@ -403,18 +403,26 @@ namespace Kestrel.Game.Guide
             var doc = Document != null ? Document : GetComponent<UIDocument>();
             var root = doc != null ? doc.rootVisualElement : null;
             var safe = root != null ? root.Q("safe") : null;
-            if (root == null || safe == null || panelPerPoint <= 0f) return;
+            if (root == null || safe == null) return;
             if (safe.worldBound.width < 1f || root.worldBound.width < 1f) return;
-            float inv = 1f / panelPerPoint;
-            float left = (safe.worldBound.xMin - root.worldBound.xMin) * inv;
-            float top = (safe.worldBound.yMin - root.worldBound.yMin) * inv;
-            float right = (root.worldBound.xMax - safe.worldBound.xMax) * inv;
-            float bottom = (root.worldBound.yMax - safe.worldBound.yMax) * inv;
+            // Lay the sheet out in panel pixels. Screen.dpi on the capture runner is not the device scale,
+            // and treating the panel as 2x points makes a 600 pt column cover a 1280-wide web Home.
+            panelPerPoint = 1f;
+            float left = safe.worldBound.xMin - root.worldBound.xMin;
+            float top = safe.worldBound.yMin - root.worldBound.yMin;
+            float right = root.worldBound.xMax - safe.worldBound.xMax;
+            float bottom = root.worldBound.yMax - safe.worldBound.yMax;
             if (left < 0f) left = 0f;
             if (top < 0f) top = 0f;
             if (right < 0f) right = 0f;
             if (bottom < 0f) bottom = 0f;
-            screen = new GuideScreen(screen.Width, screen.Height, top, bottom, left, right, screen.Header, screen.Compact, screen.Footer);
+            var title = root.Q("mm-title");
+            if (title != null && title.worldBound.height > 1f)
+            {
+                float titleBottom = title.worldBound.yMax - root.worldBound.yMin;
+                if (titleBottom > top) top = titleBottom;
+            }
+            screen = new GuideScreen(root.worldBound.width, root.worldBound.height, top, bottom, left, right, 0f, screen.Compact, 0f);
         }
 
         /// <summary>Home reports how far up from the panel bottom its controls reach, so the opening sheet sits above them.</summary>
@@ -431,6 +439,10 @@ namespace Kestrel.Game.Guide
             catch (System.Exception) { px = 0f; }
             if (float.IsNaN(px) || px < 1f) return;
             float pt = px / panelPerPoint + 8f;
+            // Leave the sheet on screen, under the title. A control in the header must not shove it above y=0.
+            float maxFooter = screen.Height - screen.DockTop - 8f;
+            if (maxFooter < 0f) maxFooter = 0f;
+            if (pt > maxFooter) pt = maxFooter;
             if (pt > screen.Footer) screen = screen.WithFooter(pt);
         }
 

@@ -134,6 +134,8 @@ namespace Kestrel.Capture.Tests
             Assert.IsTrue(app.FlightHudVisible, "LAUNCH leaves the pad");
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
             Assert.IsNotNull(driver, "live FlightDriver");
+            // The HUD is up for the countdown, before Launch() sets Running. CaptureClock freezes Update,
+            // so it waits until the count has handed the rocket over.
             yield return Until(() => driver.Sim != null && driver.Running, 90f);
             VisualElement card = null;
             const float pumpDt = 1f / 60f;
