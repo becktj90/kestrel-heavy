@@ -257,7 +257,6 @@ namespace Kestrel.Game.Guide
             }
             voice.Hold(paused);
             ApplyScreen();
-            if (welcomeStack != null) welcomeStack.Screen = screen;
             if (GuideClipPlayer.InFlight || !GuidePopLayout.Shows(Place) || (!welcome && Hidden()))
             {
                 if (voice != null && (voice.Sounding || voice.HasClip || voice.CardId.Length > 0)) Silence();
@@ -270,7 +269,12 @@ namespace Kestrel.Game.Guide
             if (welcome)
             {
                 EnsureWelcomeStack();
-                welcomeStack.Tick(Time.unscaledDeltaTime);
+                if (welcomeStack != null)
+                {
+                    welcomeStack.Screen = screen;
+                    welcomeStack.Tick(Time.unscaledDeltaTime);
+                    ParkWelcome();
+                }
                 if (pop != null) pop.Hide();
                 if (!WelcomePlaying(liveEngine)) TearDownWelcomeStack();
                 return;
@@ -376,6 +380,47 @@ namespace Kestrel.Game.Guide
             blipUntil = Time.unscaledTime + GuidePacing.BlipSeconds;
         }
 
+        /// <summary>
+        /// The layout screen is in device points. The Home panel is often a different size, so the
+        /// box was drawn on the Launch key or off the panel. Park it just above the primary key,
+        /// inside the panel.
+        /// </summary>
+        void ParkWelcome()
+        {
+            if (welcomeStack == null || welcomeStack.Root == null) return;
+            var stack = welcomeStack.Root.Q("guide-stack");
+            if (stack == null || stack.resolvedStyle.display == DisplayStyle.None) return;
+            if (stack.worldBound.height < 1f || stack.worldBound.width < 1f) return;
+            var doc = Document != null ? Document : GetComponent<UIDocument>();
+            var root = doc != null ? doc.rootVisualElement : null;
+            if (root == null || root.worldBound.width < 1f || root.worldBound.height < 1f) return;
+            var parent = stack.hierarchy.parent;
+            float originX = parent != null ? parent.worldBound.xMin : 0f;
+            float originY = parent != null ? parent.worldBound.yMin : 0f;
+            const float margin = 8f;
+            float rootL = root.worldBound.xMin + margin;
+            float rootR = root.worldBound.xMax - margin;
+            float rootT = root.worldBound.yMin + margin;
+            float width = stack.worldBound.width;
+            float maxW = rootR - rootL;
+            if (maxW > 40f && width > maxW) width = maxW;
+            stack.style.width = width;
+            var box = stack.Q("guide-box");
+            if (box != null) box.style.width = width;
+            float left = stack.worldBound.xMin;
+            if (left < rootL) left = rootL;
+            if (left + width > rootR) left = rootR - width;
+            stack.style.left = left - originX;
+
+            float bottom = root.worldBound.yMax - margin;
+            var primary = root.Q(UiIds.HomePrimary);
+            if (primary != null && primary.resolvedStyle.display != DisplayStyle.None && primary.worldBound.height > 1f)
+                bottom = primary.worldBound.yMin - margin;
+            float top = bottom - stack.worldBound.height;
+            if (top < rootT) top = rootT;
+            stack.style.top = top - originY;
+        }
+
         void ApplyScreen()
         {
             float dpr = Screen.dpi >= 10f ? Screen.dpi / 160f : 2f;
@@ -384,32 +429,6 @@ namespace Kestrel.Game.Guide
             float widthPt = Screen.width / dpr;
             float panelW = overlay != null && overlay.resolvedStyle.width > 1f ? overlay.resolvedStyle.width : widthPt;
             panelPerPoint = widthPt > 1f ? panelW / widthPt : 1f;
-            float footer = MenuFooterPoints();
-            if (footer > GuidePacing.MenuFooterPt) screen = screen.WithFooter(footer);
-        }
-
-        /// <summary>Points from the panel bottom up to the top of the Home keys, so the welcome box sits above them.</summary>
-        float MenuFooterPoints()
-        {
-            if (Place != GuidePlace.Menu || panelPerPoint <= 0f) return 0f;
-            var doc = Document != null ? Document : GetComponent<UIDocument>();
-            var root = doc != null ? doc.rootVisualElement : null;
-            if (root == null || root.worldBound.height < 1f) return 0f;
-            string[] ids = {
-                UiIds.HomePrimary, UiIds.HomeMissions, UiIds.HomeDesign, UiIds.HomeCodex, UiIds.HomeThrum,
-            };
-            float top = float.MaxValue;
-            for (int i = 0; i < ids.Length; i++)
-            {
-                var e = root.Q(ids[i]);
-                if (e == null || e.resolvedStyle.display == DisplayStyle.None) continue;
-                if (e.worldBound.height < 1f || e.worldBound.width < 1f) continue;
-                if (e.worldBound.yMin < top) top = e.worldBound.yMin;
-            }
-            if (top == float.MaxValue) return 0f;
-            float px = root.worldBound.yMax - top + 8f * panelPerPoint;
-            if (px < 1f) return 0f;
-            return px / panelPerPoint;
         }
 
         static string RepoRoot()

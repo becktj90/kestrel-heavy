@@ -327,7 +327,9 @@ namespace Kestrel.Game.Tests
             }
             if (label == "kh5-checking")
             {
-                Assert.AreEqual(StarterReadinessCopy.Current.Checking, lineLabel.text, where);
+                StringAssert.Contains(StarterReadinessCopy.Current.Checking, lineLabel.text, where);
+                StringAssert.Contains("Kc", lineLabel.text, where);
+                StringAssert.Contains("Holds", lineLabel.text, where);
                 Assert.AreEqual("", badgeLabel.text, where + " no Ready while checking");
                 Assert.IsTrue(launch.enabledSelf, where);
             }
