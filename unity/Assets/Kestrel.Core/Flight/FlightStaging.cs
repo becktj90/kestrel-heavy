@@ -55,6 +55,8 @@ namespace Kestrel.Core.Flight
         public string Title, Line, NarrationId;
         public int Stage;
         public double T, AltM, SpeedMps;
+        /// <summary>The callout's window on the sim clock, seconds (end - start).</summary>
+        public double WindowSec;
     }
 
     public struct StagingCue
@@ -315,7 +317,7 @@ namespace Kestrel.Core.Flight
                     start = prevEnd;
                     end = start + dur;
                 }
-                if (t + 1e-9 >= start && t < end) hit = i;
+                if (t + 1e-9 >= start && t < end) { hit = i; call.WindowSec = end - start; }
                 prevEnd = end;
             }
             if (hit < 0) return false;
@@ -331,6 +333,15 @@ namespace Kestrel.Core.Flight
             call.SpeedMps = b.Speed;
             return true;
         }
+
+        /// <summary>Playthrough 2026-11-11: a "MECO T+773.7" pill stayed up through the whole booster landing. The sim clock
+        /// holds at its last event while the report waits for touchdown, so a callout window measured on the sim clock never
+        /// closes. A callout is also bounded on the wall clock: its window plus this slack, then it goes.</summary>
+        public const double CalloutWallSlackSec = 1.0;
+
+        /// <summary>True once a callout has been on screen longer (wall clock) than its window allows.</summary>
+        public static bool CalloutStale(double shownWallSec, double windowSec)
+            => shownWallSec > Math.Max(windowSec, CalloutSec) + CalloutWallSlackSec;
 
         /// <summary>Screen-y of the callout inside the padded HUD, just under the plot and stages cards.
         /// #395: When a banner row is showing (e.g. BOOSTER LOST at MECO), the callout must sit below it,
@@ -564,6 +575,39 @@ namespace Kestrel.Core.Flight
             if (double.IsNaN(v) || v < 0) return 0;
             if (v > 1) return 1;
             return v;
+        }
+    }
+
+    /// <summary>
+    /// Playthrough 2026-11-11 (kh13 / kh06 booster-follow at 335 pt): the landing-burn panel was pinned to the bottom of
+    /// the HUD's top band, so its banner sat on the ALT / DOWN / FUEL / TO PAD readouts, and the SINK line sat on the
+    /// trajectory ladder. The panel now has one slot: under the readouts, in the plot row, ending above the callout row
+    /// (<see cref="FlightStaging.CalloutTopInsideHud"/>). Title, the SINK / OFF / TILT line, then the burn buttons.
+    /// </summary>
+    public static class LandingBurnHud
+    {
+        public const string Title = "YOUR LANDING BURN";
+        public const float FontPt = 11f, LinePt = 14f, RowGapPt = 2f, ButtonPt = FlightHudLayout.HitPt, SideInsetPt = 12f;
+
+        /// <summary>Top of the panel inside the HUD: just under the telemetry readouts.</summary>
+        public static float TopPt => FlightHudLayout.HealthPt + FlightHudLayout.GapPt + FlightHudLayout.TelemetryPt + FlightHudLayout.GapPt;
+
+        public static float HeightPt => LinePt + RowGapPt + LinePt + RowGapPt + ButtonPt;
+
+        public static float BottomPt => TopPt + HeightPt;
+
+        public const float MinFontPt = 8f;
+
+        /// <summary>The line fits one row of the panel at <paramref name="fontPt"/> (by <see cref="FlightHudLayout.BudgetWidth"/>).</summary>
+        public static bool LineFits(string text, float hudWidthPt, float fontPt = FontPt)
+            => FlightHudLayout.BudgetWidth(text ?? "", fontPt) <= hudWidthPt - 2f * SideInsetPt;
+
+        /// <summary>The largest face, <see cref="FontPt"/> down to <see cref="MinFontPt"/> in half points, that keeps the line on one row.</summary>
+        public static float FontFor(string text, float hudWidthPt)
+        {
+            for (float pt = FontPt; pt > MinFontPt; pt -= 0.5f)
+                if (LineFits(text, hudWidthPt, pt)) return pt;
+            return MinFontPt;
         }
     }
 }
