@@ -426,6 +426,7 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
+        // Opening intro (first.cta decision) queues before chatter finishes in the binder.
         public void Settings_ExistingDesignsSkipAForcedWelcome()
         {
             Assert.IsFalse(GuideState.Fresh(false, false).FirstRunDone);
