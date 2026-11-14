@@ -468,7 +468,11 @@ namespace Kestrel.Capture.Tests
             yield return ToThePad(SpoilForBreakUp);
             var app = UnityEngine.Object.FindAnyObjectByType<SliceApp>();
             var driver = UnityEngine.Object.FindAnyObjectByType<FlightDriver>();
-            yield return Until(ReportShownAfterRelaunch, 150f);
+            // Pump the sim: wall-clock Update can stall on CI (same hang class as GoodRocket_TapSkips /
+            // PlayMode #458) so Until's realtime cap never fires and the Unity Timeout trips instead.
+            yield return PumpFlightUntil(driver, app, () => driver.Result != null || ReportShownAfterRelaunch(), 180f);
+            driver.CaptureClock = false;
+            yield return Until(ReportShownAfterRelaunch, 30f);
             Assert.IsTrue(ReportShownAfterRelaunch(), "the break-up reaches the report");
             Assert.IsNotNull(driver.Result, "the report has a result");
             SliceApp.HoldCountForCapture = true;
@@ -499,6 +503,10 @@ namespace Kestrel.Capture.Tests
             SliceApp.HoldCountForCapture = true;
             try
             {
+                // Two-tap confirm (Hangar-style): first tap arms, second restarts.
+                Click(Find(UiIds.PauseRestart));
+                yield return null;
+                Assert.That(((Button)Find(UiIds.PauseRestart)).text, Does.Contain("Tap again"));
                 Click(Find(UiIds.PauseRestart));
                 for (int i = 0; i < 6; i++) yield return null;
                 Assert.IsFalse(NavIds.Shown(Find("screen-pause")), "Restart closes the pause menu");
@@ -743,7 +751,11 @@ namespace Kestrel.Capture.Tests
 
             Click(Find("flight-pause"));
             yield return null;
-            Click(Find("pause-exit-home"));
+            // Two-tap confirm (Hangar-style): first tap arms, second exits.
+            Click(Find(UiIds.PauseExitHome));
+            yield return null;
+            Assert.That(((Button)Find(UiIds.PauseExitHome)).text, Does.Contain("Tap again"));
+            Click(Find(UiIds.PauseExitHome));
             yield return At(AppScreen.Home);
             Assert.AreEqual(1f, Time.timeScale, "Exit to Home unfreezes time");
             var cont = NavIds.Find("home-primary", Shell);

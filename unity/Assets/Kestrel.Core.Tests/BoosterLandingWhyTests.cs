@@ -25,7 +25,7 @@ namespace Kestrel.Core.Tests
         public void Why_FuelWithoutLegs_DoesNotNameRecovery()
         {
             BoosterLanding.Why(Craft(5000, false), starter: true, out string kid, out _);
-            StringAssert.Contains("no legs", kid);
+            StringAssert.Contains("no landing legs", kid);
             StringAssert.DoesNotContain("Recovery", kid);
         }
 

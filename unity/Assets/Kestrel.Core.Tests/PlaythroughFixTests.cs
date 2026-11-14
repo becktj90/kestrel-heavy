@@ -227,7 +227,13 @@ namespace Kestrel.Core.Tests
                 Assert.That(starter, Does.Not.Contain("Recovery"), starter);
                 StringAssert.EndsWith(BoosterLanding.StarterLandingFix, starter);
                 BoosterLanding.Why(craft, false, out var full, out _);
-                StringAssert.Contains("in Recovery", full, "the full designer keeps its Recovery section");
+                // Rebase of #533: the full designer callout is factual too. Haven / pad under Landing arms
+                // legs and fuel, so the line no longer points at a Recovery tab.
+                Assert.That(full, Does.Not.Contain("Recovery"), full);
+                if (fuel <= 1 && !legs) StringAssert.Contains("falls into the sea", full);
+                else if (fuel > 1 && !legs) StringAssert.Contains("no landing legs", full);
+                else if (fuel <= 1) StringAssert.Contains("no landing fuel", full);
+                else StringAssert.Contains("No landing was picked", full);
             }
             foreach (var label in new[] { Kestrel.Core.Designer.StarterScreen.EngineLabel, Kestrel.Core.Designer.StarterScreen.StagesLabel, Kestrel.Core.Designer.StarterScreen.FuelLabel, Kestrel.Core.Designer.StarterScreen.BoostersLabel })
                 Assert.AreNotEqual("Recovery", label, "the Starter screen has no Recovery control");

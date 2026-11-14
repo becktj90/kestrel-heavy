@@ -10,6 +10,14 @@ namespace Kestrel.Game.Guide
     {
         public static readonly string[] BeatIds = { "first.1", "first.host", "first.cohost", "first.cta" };
 
+        public static bool IsWelcome(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+            for (int i = 0; i < BeatIds.Length; i++)
+                if (BeatIds[i] == id) return true;
+            return false;
+        }
+
         /// <summary>Optional narration manifest ids when read-aloud is added later. Subtitles do not depend on them.</summary>
         public const string HostClipId = "host/color.pad.m1.t1";
         public const string CohostClipId = "cohost/color.pad.m2.t1";
@@ -110,6 +118,7 @@ namespace Kestrel.Game.Guide
             return "10";
         }
 
+        /// <summary>KH-1, the first campaign row. Falls back to the first row when the index is missing.</summary>
         static CampaignMission First(Campaign campaign)
         {
             if (campaign?.Missions == null || campaign.Missions.Count == 0) return null;
