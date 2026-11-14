@@ -49,67 +49,17 @@
       ]
     },
     {
-      "id": "first.2",
+      "id": "first.cta",
       "trigger": "guide.first",
-      "when": "2",
+      "when": "cta",
       "speaker": "thrum",
-      "priority": "chatter",
+      "priority": "decision",
       "once": true,
       "cards": [
         {
-          "id": "first.2.c1",
-          "kid": "This is Dolores. She says hello. She also says you hold wrenches wrong.",
-          "eng": "Dolores is a wrench. A bad mix starts at a 6% offset from nominal."
-        },
-        {
-          "id": "first.2.c2",
-          "kid": "She is wrong. Today we build a rocket and send it up. Nothing here costs real money.",
-          "eng": "Kc stays in the game. The KH-1 budget is 2000000 Kc."
-        }
-      ]
-    },
-    {
-      "id": "first.3",
-      "trigger": "guide.first",
-      "when": "3",
-      "speaker": "thrum",
-      "priority": "chatter",
-      "once": true,
-      "cards": [
-        {
-          "id": "first.3.c1",
-          "kid": "A rocket is a pushy tube with a plan. Build it, pick a goal, press go.",
-          "eng": "Liftoff needs TWR >= 1.30. TWR is thrust over mass times 9.80665."
-        }
-      ]
-    },
-    {
-      "id": "first.4",
-      "trigger": "guide.first",
-      "when": "4",
-      "speaker": "thrum",
-      "priority": "chatter",
-      "once": true,
-      "cards": [
-        {
-          "id": "first.4.c1",
-          "kid": "I pop in with tips. Tap to move on. Tap SKIP and I hush. I take it well.",
-          "eng": "Tips play once. Safety lines repeat. Type runs at 40 characters a second."
-        }
-      ]
-    },
-    {
-      "id": "first.5",
-      "trigger": "guide.first",
-      "when": "5",
-      "speaker": "thrum",
-      "priority": "chatter",
-      "once": true,
-      "cards": [
-        {
-          "id": "first.5.c1",
-          "kid": "First job: the First Hop. Straight up ten kilometres. Let's go!",
-          "eng": "KH-1 apogee is 10 km. Pebble is 50 kg. The loss term is 1000 m/s."
+          "id": "first.cta.c1",
+          "kid": "Tap LAUNCH for KH-1 First Hop, or MISSIONS to see all twenty flights. Tap SKIP and I hush.",
+          "eng": "KH-1 apogee is 10 km. Pebble is 50 kg. KH-20 is mission 20 on the board."
         }
       ]
     },
