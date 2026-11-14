@@ -47,5 +47,25 @@ namespace Kestrel.Core.Tests
             Assert.AreEqual(a.Text, b.Text);
             Assert.AreEqual(GapToGoal.EaseBurn, a.Fix);
         }
+
+        [Test]
+        public void DeltaV_Shortfall_NamesOneFix()
+        {
+            var shortDv = GapToGoal.DeltaV(7000, 7312, 1900);
+            StringAssert.Contains("Short by 312 m/s", shortDv.Text);
+            StringAssert.Contains("1900 kg", shortDv.Text);
+            Assert.AreEqual(GapToGoal.AddTank, shortDv.Fix);
+            var covered = GapToGoal.DeltaV(8000, 7312);
+            StringAssert.Contains("Spare", covered.Text);
+            Assert.IsNull(covered.Fix);
+        }
+
+        [Test]
+        public void Apoapsis_Shortfall_NamesOneFix()
+        {
+            var shortApo = GapToGoal.Apoapsis(80, 100);
+            StringAssert.Contains("Short by 20 km", shortApo.Text);
+            Assert.AreEqual(GapToGoal.RaiseApogee, shortApo.Fix);
+        }
     }
 }
