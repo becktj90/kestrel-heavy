@@ -112,6 +112,7 @@ namespace Kestrel.Slice
                     {
                         extra.BoosterKnown = true;
                         extra.BoosterGrade = FlightBatch.PredictLandingGrade(catalog, design, result, row.LandingMode, true);
+                        facts.BoostersHome = MissionScore.IsGood(extra.BoosterGrade);
                     }
                     facts.Passed = FlightDebrief.GoalMet(row, intact, apo, peri, result.maxG, facts.LandingGrade, extra);
                     // F4: an intact miss says why and what to change, from the same gates. The advice names the
@@ -194,7 +195,8 @@ namespace Kestrel.Slice
                 facts.CostMinor = price.recurring;
                 facts.CostKc = (double)price.recurring / per;
                 bool home = MissionScore.IsGood(facts.LandingGrade);
-                facts.RecoveredHardwareMinor = home ? CostModel.RecoveredHardwareMinor(price, true, false) : 0;
+                // DECISIONS #87: landed boosters come home too, so reuse reads cheaper on the card.
+                facts.RecoveredHardwareMinor = home ? CostModel.RecoveredHardwareMinor(price, true, facts.BoostersHome) : 0;
                 facts.EconomyKnown = true;
                 if (string.IsNullOrEmpty(facts.ArticleKey)) facts.ArticleKey = "core";
             }
