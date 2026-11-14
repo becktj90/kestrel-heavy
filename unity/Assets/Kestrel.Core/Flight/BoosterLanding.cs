@@ -195,9 +195,10 @@ namespace Kestrel.Core.Flight
             return flownGrade;
         }
 
-        /// <summary>Why an expendable stage cannot land, in the words the flight shows. The fix names a control the player
-        /// can see: the full designer's Recovery section, or, on the Starter screen (which has no Recovery control), the
-        /// missions whose rocket comes with the landing built in.</summary>
+        /// <summary>Why an expendable stage cannot land, in the words the flight shows.
+        /// No branch names a Recovery tab: Starter Design has none, and the full designer lands by picking
+        /// Haven or the pad under Landing, which arms legs and landing fuel together. On the Starter screen
+        /// the line still ends with <see cref="StarterLandingFix"/>.</summary>
         public static void Why(in RecoveryCraft craft, out string kid, out string engineer)
             => Why(craft, Kestrel.Core.Designer.StarterScreen.UseStarter(Kestrel.Core.Features.FeatureFlags.Active), out kid, out engineer);
 
@@ -209,18 +210,21 @@ namespace Kestrel.Core.Flight
             var inv = CultureInfo.InvariantCulture;
             bool fuel = craft.ReserveKg > 1;
             bool legs = craft.Legs;
+            // Factual lines (PR #533). The full designer used to append "in Recovery"; that control is not
+            // where Haven is picked, so those callouts stay factual on every screen.
             if (!fuel && !legs)
-                kid = "This booster keeps no landing fuel and has no legs, so it falls into the sea. "
-                    + (starter ? StarterLandingFix : "Add landing fuel and legs in Recovery to land it on Haven.");
+                kid = "This booster keeps no landing fuel and has no legs, so it falls into the sea.";
             else if (!fuel)
-                kid = "This booster keeps no landing fuel, so it cannot slow down for Haven. "
-                    + (starter ? StarterLandingFix : "Add landing fuel in Recovery.");
+                kid = "This booster keeps no landing fuel, so it cannot slow down for Haven.";
             else if (!legs)
-                kid = "No landing was picked. The booster tries for Haven with its fuel, but it has no legs. "
-                    + (starter ? StarterLandingFix : "Pick a landing in Recovery.");
+                kid = starter
+                    ? "No landing was picked. The booster tries for Haven with its fuel, but it has no legs."
+                    : "This booster has no landing legs, so it cannot stand on Haven.";
             else
-                kid = "No landing was picked. The booster tries for Haven anyway. "
-                    + (starter ? "It is not graded. " + StarterLandingFix : "Pick a landing in Recovery to have it graded.");
+                kid = starter
+                    ? "No landing was picked. The booster tries for Haven anyway. It is not graded."
+                    : "No landing was picked. The booster tries for Haven anyway.";
+            if (starter) kid = kid + " " + StarterLandingFix;
             engineer = "Expendable first stage. Reserve " + craft.ReserveKg.ToString("0", inv) + " kg, legs "
                 + (legs ? "on" : "off") + ", grid fins " + (craft.GridFins ? "on" : "off") + ". Haven attempt, not graded.";
         }

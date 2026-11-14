@@ -49,10 +49,17 @@ namespace Kestrel.Core.Guide
                 return Face(t);
             if (rank >= GuidePriority.Rank(GuidePriority.Decision))
             {
+                // The opening CTA is a decision on the same guide.first trigger as the first card.
+                // It waits behind that card. Any other decision still drops chatter.
                 for (int i = pending.Count - 1; i >= 0; i--)
-                    if (GuidePriority.Rank(pending[i].Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter))
-                        pending.RemoveAt(i);
-                if (current != null && GuidePriority.Rank(current.Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter))
+                {
+                    if (GuidePriority.Rank(pending[i].Line.Priority) != GuidePriority.Rank(GuidePriority.Chatter)) continue;
+                    if (OpeningTogether(pending[i].Line, line)) continue;
+                    pending.RemoveAt(i);
+                }
+                if (current != null
+                    && GuidePriority.Rank(current.Line.Priority) == GuidePriority.Rank(GuidePriority.Chatter)
+                    && !OpeningTogether(current.Line, line))
                     current = null;
             }
             var slot = new Slot
@@ -67,7 +74,7 @@ namespace Kestrel.Core.Guide
             pending.Sort(Order);
             if (current == null)
                 StartHead(t);
-            else if (rank > GuidePriority.Rank(current.Line.Priority))
+            else if (rank > GuidePriority.Rank(current.Line.Priority) && !OpeningTogether(current.Line, line))
             {
                 pending.Add(current);
                 current = null;
@@ -235,6 +242,11 @@ namespace Kestrel.Core.Guide
 
         static bool Critical(Slot slot)
             => slot.Line.Priority == GuidePriority.Safety || slot.Line.Priority == GuidePriority.Decision;
+
+        /// <summary>The first-run lines share trigger guide.first. The CTA must not erase the card in front of it.</summary>
+        static bool OpeningTogether(GuideLine queued, GuideLine incoming)
+            => queued != null && incoming != null
+                && queued.Trigger == "guide.first" && incoming.Trigger == "guide.first";
 
         static int Order(Slot a, Slot b)
         {
