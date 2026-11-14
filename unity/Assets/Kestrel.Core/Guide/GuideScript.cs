@@ -273,9 +273,7 @@ namespace Kestrel.Core.Guide
                 if (all && letters >= 4)
                 {
                     string word = text.Substring(start, i - start);
-                    // UI labels, not shouting: SKIP, LAUNCH, MISSIONS, and flight callouts.
-                    if (word != "SKIP" && word != "LAUNCH" && word != "MISSIONS"
-                        && word != "MECO" && word != "SECO" && word != "RTLS") return true;
+                    if (word != "SKIP" && word != "MECO" && word != "SECO" && word != "RTLS") return true;
                 }
             }
             return false;
