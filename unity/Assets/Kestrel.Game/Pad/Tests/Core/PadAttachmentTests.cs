@@ -112,6 +112,9 @@ namespace Kestrel.Pad.Tests
                 {
                     var L = PadGenerator.Generate(seed, pad.Type, new PadFit(pad.H, pad.R));
                     foreach (var m in L.Members)
+                    {
+                        // Lightning catenaries overfly the stack on purpose (PAD_DETAIL_GRAMMAR §2).
+                        if (m.ParentId == "pad.wires") continue;
                         for (int i = 0; i <= 20; i++)
                         {
                             float t = i / 20f;
@@ -121,6 +124,7 @@ namespace Kestrel.Pad.Tests
                             float radial = (float)Math.Sqrt(x * x + z * z);
                             Assert.That(radial, Is.GreaterThan(pad.R + 0.3f), pad.Type + " seed " + seed + " " + m.Id + " at y " + y.ToString("0.0"));
                         }
+                    }
                 }
         }
 
