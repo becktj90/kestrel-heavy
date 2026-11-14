@@ -264,7 +264,7 @@ namespace Kestrel.Slice
                 thrustRef = Math.Max(1, stages[0].thrustVac);
                 omegaAir = opts.rotate ? Earth.SiteRotationSpeed(opts.latitude) / Gravity.R_EARTH : 0;
                 UpdateFrame();
-                (Sink as IFlightStageSink)?.BeginNarration(NarrationFacts.From(d, hook != null ? hook.SiteId : null).With("mission", aimed != null ? aimed.Id : null), Calls);
+                (Sink as IFlightStageSink)?.BeginNarration(NarrationFacts.From(d, hook != null ? hook.SiteId : null).With("mission", Kestrel.Core.Flight.TestFlight.NarrationMission(aimed != null ? aimed.Id : null)), Calls);
                 Sink?.OnEvent("flight.begin");
                 PumpEvents();
                 PublishAudio();
