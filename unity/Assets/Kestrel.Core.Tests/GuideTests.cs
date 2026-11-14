@@ -12,7 +12,7 @@ namespace Kestrel.Core.Tests
     public class GuideTests
     {
         static readonly string[] Ids = {
-            "first.1", "first.cta",
+            "first.1", "first.cta", "first.close",
             "brief.kh1", "brief.kh3", "brief.kh6", "brief.kh8", "brief.kh9",
             "brief.kh2", "brief.kh4", "brief.kh5", "brief.kh7", "brief.kh10",
             "brief.kh11", "brief.kh12", "brief.kh13", "brief.kh14", "brief.kh15",
