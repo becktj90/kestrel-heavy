@@ -193,11 +193,11 @@ namespace Kestrel.Core.Tests
                     Assert.IsTrue(Regex.IsMatch(card.Eng, @"\d"), card.Id);
                 }
             }
-            Plain("first.5", script.ById("first.5").Cards[0].Eng);
+            Plain("first.cta", script.ById("first.cta").Cards[0].Eng);
             Plain("win.final", script.ById("win.final").Cards[0].Eng);
             StringAssert.Contains("KH-20", script.ById("win.final").Cards[0].Eng);
             StringAssert.DoesNotContain("kid-box", script.ById("brief.kh1").Cards[1].Kid);
-            StringAssert.DoesNotContain("kid-box", script.ById("first.5").Cards[0].Eng);
+            StringAssert.DoesNotContain("kid-box", script.ById("first.cta").Cards[0].Eng);
         }
 
         static void AssertInside(string name, HudBox box, float left, float right)

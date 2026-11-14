@@ -72,7 +72,7 @@ namespace Kestrel.Game.Guide
             return false;
         }
 
-        /// <summary>The five-card welcome from the structure spec, so the box can show 1/5 before G7.</summary>
+        /// <summary>One beat per opening step so the box can show 1/4 before the live engine loads.</summary>
         public static GuideBeat FirstRun()
         {
             return new GuideBeat
@@ -82,11 +82,10 @@ namespace Kestrel.Game.Guide
                 Priority = GuidePriority.Chatter,
                 Cards = new[]
                 {
-                    new GuideCard { Kid = "Oh! A visitor! Mind the oil. I am Thrum. I keep this hangar, and I talk to wrenches." },
-                    new GuideCard { Kid = "This is Dolores. She says hello. She also says you hold wrenches wrong. She is wrong." },
-                    new GuideCard { Kid = "A rocket is just a pushy tube with a plan. Your job: build it, pick a goal, press go." },
-                    new GuideCard { Kid = "I will pop in with tips. Tap to move on. Tap SKIP and I will hush. I take it well. Mostly." },
-                    new GuideCard { Kid = "First job: the First Hop. Straight up ten kilometres. Easy as a sneeze. Let's go!" },
+                    new GuideCard { Kid = "Oh! A visitor. Mind the oil. I am Thrum. I keep this hangar, and I talk to wrenches." },
+                    new GuideCard { Kid = "Mission KH-1 · First Hop: toss Pebble to a 10 km apogee.", Id = "first.host.c1" },
+                    new GuideCard { Kid = "Twenty KH flights sit on the career board. Clear each job to unlock the next.", Id = "first.cohost.c1" },
+                    new GuideCard { Kid = "Tap LAUNCH for KH-1 First Hop, or MISSIONS to see all twenty flights.", Id = "first.cta.c1" },
                 }
             };
         }
