@@ -363,8 +363,12 @@ namespace Kestrel.Game.Tests
         {
             var r = new Kestrel.Core.Designer.QuickReadout { maxQ_kPa = 49.3, qLim_kPa = 83.6, maxQStale = false };
             Assert.AreEqual("49 / 84 kPa", DesignerV3Strip.Cells(r, true).Find(c => c.id == "q").value);
+            // PairText keeps whole kPa when they already differ (83.4 / 83.6 → 83 / 84). A decimal only when
+            // whole numbers would read equal (83.4 vs 83.1 both round to 83).
             r.maxQ_kPa = 83.4; r.qLim_kPa = 83.6;
-            Assert.AreEqual("83.4 / 83.6 kPa", DesignerV3Strip.Cells(r, false).Find(c => c.id == "q").value);
+            Assert.AreEqual("83 / 84 kPa", DesignerV3Strip.Cells(r, false).Find(c => c.id == "q").value);
+            r.maxQ_kPa = 83.4; r.qLim_kPa = 83.1;
+            Assert.AreEqual("83.4 / 83.1 kPa", DesignerV3Strip.Cells(r, false).Find(c => c.id == "q").value);
         }
 
         [Test]

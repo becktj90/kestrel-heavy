@@ -278,7 +278,9 @@ namespace Kestrel.Game.Tests
             Assert.That(campaign, Is.Not.Null, "Resources/KestrelData/campaign is synced");
             var row = campaign.ById("m18");
             var facts = new FlightFacts { Passed = true, ApoKm = 203, Seed = 1 };
-            facts.FillDeparture(row, 203000, 197000, new GoalCheck { DepartureDv = 4176, DepartureTW = 0.9, C3Km2PerS2 = row.C3Km2PerS2 });
+            // Parked: the sim is still in LEO. Passing the target C3 here would mark ReachedDirectly and drop Parked
+            // (DepartureCardTests uses a far-short C3 for the same reason).
+            facts.FillDeparture(row, 203000, 197000, new GoalCheck { DepartureDv = 4176, DepartureTW = 0.9, C3Km2PerS2 = -60 });
             Assert.IsTrue(facts.Parked, "KH-18 departs from parking");
             string numbers = FlightDebrief.NumberLine(null, facts, true);
             StringAssert.StartsWith("Parked in a 197 × 203 km orbit with 4176 m/s left.", numbers);
