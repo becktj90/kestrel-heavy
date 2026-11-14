@@ -59,7 +59,7 @@ namespace Kestrel.Game.Shell
                 Go(AppScreen.Missions);
                 return;
             }
-            // Home's Test Flight tile is the Sandbox free build (DECISIONS #100), the same route as the board's Sandbox.
+            // Home's Test Flight tile is the Sandbox free build (DECISIONS #102), the same route as the board's Sandbox.
             if (controlId == TestFlightControl) controlId = "hangar";
             if (!TryHomeControl(controlId, out var route)) return;
             MissionBriefing card = null;
@@ -215,7 +215,7 @@ namespace Kestrel.Game.Shell
             Present(new RouteResult(SessionScreens.Design, SessionScreens.None, ctx));
         }
 
-        /// <summary>Free build. The existing hangar route, not a new flight. Since DECISIONS #100 it is Test Flight.</summary>
+        /// <summary>Free build. The existing hangar route, not a new flight. Since DECISIONS #102 it is Test Flight.</summary>
         public void OpenSandbox()
         {
             if (!Busy) HomePressed("hangar");

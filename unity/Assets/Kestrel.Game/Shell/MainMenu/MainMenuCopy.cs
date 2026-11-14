@@ -40,7 +40,7 @@ namespace Kestrel.Game.Shell
             new Item("missions", "MISSIONS", "Pick any flight you've unlocked.", "Missions. Opens the mission list.", true, "planet"),
             new Item("codex", "CODEX", "Parts, places and flight notes.", "Codex. Coming soon.", false, "book"),
         };
-        /// <summary>Test Flight (DECISIONS #100): its own tile under LAUNCH, not one of <see cref="Tiles"/> (the row under
+        /// <summary>Test Flight (DECISIONS #102): its own tile under LAUNCH, not one of <see cref="Tiles"/> (the row under
         /// it). The flask is drawn (HomeGlyph "flask"): no shipped font has the emoji.</summary>
         public static readonly Item TestFlight = new Item("testflight", Kestrel.Core.Flight.TestFlightCopy.HomeLabel, Kestrel.Core.Flight.TestFlightCopy.HomeSub,
             "Test Flight. Build anything. See if it flies.", true, "flask");

@@ -1,4 +1,4 @@
-// Test Flight (DECISIONS #100) on the Sandbox free-build path: the rocket a test opens with. The last test rocket
+// Test Flight (DECISIONS #102) on the Sandbox free-build path: the rocket a test opens with. The last test rocket
 // (DesignLibrary.LoadTestFlight, its own save record), else a starter template, so the designer never opens empty.
 using System;
 using Kestrel.Core.Hangar;

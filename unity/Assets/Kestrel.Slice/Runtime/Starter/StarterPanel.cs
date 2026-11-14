@@ -53,7 +53,7 @@ namespace Kestrel.Slice
 
         public event Action LaunchRequested;
         public event Action BackRequested;
-        /// <summary>"Test it" (DECISIONS #100): fly this rocket as a test; the mission stays open.</summary>
+        /// <summary>"Test it" (DECISIONS #102): fly this rocket as a test; the mission stays open.</summary>
         public event Action TestRequested;
         /// <summary>The rocket window moved or resized (a Why? card opened or closed): the host re-frames its camera.</summary>
         public event Action RocketBoxChanged;
@@ -200,7 +200,7 @@ namespace Kestrel.Slice
             launch = new Button(() => { if (LaunchReady) LaunchRequested?.Invoke(); }) { name = UiIds.StarterLaunch, text = StarterScreen.LaunchText };
             Style(launch, LaunchRed, Color.white, true);
             sheet.Add(launch);
-            // Test Flight (DECISIONS #100): the secondary "Test it", left of LAUNCH. Any rocket may fly as a test, so it
+            // Test Flight (DECISIONS #102): the secondary "Test it", left of LAUNCH. Any rocket may fly as a test, so it
             // is never gated by Honest Ready. Hidden until the game turns it on (ShowTestIt).
             testIt = new Button(() => TestRequested?.Invoke()) { name = UiIds.StarterTestIt, text = TestFlightCopy.TestIt, tooltip = TestFlightCopy.TestItSpoken };
             Style(testIt, CornerBg, Color.white, true);

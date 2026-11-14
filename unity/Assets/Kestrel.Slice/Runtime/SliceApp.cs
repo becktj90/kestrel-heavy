@@ -86,7 +86,7 @@ namespace Kestrel.Slice
             TestFlightRoutes.Bind(TestNewDesign);
         }
 
-        /// <summary>Test Flight card's New Design (DECISIONS #100), no confirm: a mission's "Test it" goes back to the
+        /// <summary>Test Flight card's New Design (DECISIONS #102), no confirm: a mission's "Test it" goes back to the
         /// mission's Starter base (Reset); a free test gets the starter template. Then the designer, as Tweak &amp; Retry.</summary>
         void TestNewDesign()
         {
@@ -1363,7 +1363,7 @@ namespace Kestrel.Slice
                 starter = new StarterPanel(starterRocket, parent, hudEl != null ? parent.IndexOf(hudEl) : -1);
                 starter.LaunchRequested += StarterLaunch;
                 starter.BackRequested += StarterBack;
-                starter.TestRequested += StarterTest;   // DECISIONS #100: "Test it" left of LAUNCH
+                starter.TestRequested += StarterTest;   // DECISIONS #102: "Test it" left of LAUNCH
                 starter.ShowTestIt(true);
                 starter.RocketBoxChanged += ApplyDesignFraming;   // a Why? card resized the rocket window
                 starterRocket.Changed += OnStarterChanged;
@@ -1513,7 +1513,7 @@ namespace Kestrel.Slice
             Launch();
         }
 
-        /// <summary>"Test it" (DECISIONS #100): fly this rocket as a test copy of the mission (MissionContext.TestOf), so
+        /// <summary>"Test it" (DECISIONS #102): fly this rocket as a test copy of the mission (MissionContext.TestOf), so
         /// nothing is spent or scored and Tweak &amp; Retry comes back to this mission. No Honest Ready gate: any rocket
         /// may fly as a test. A design the sim cannot fly at all (session.LaunchEnabled off) keeps the mission.</summary>
         void StarterTest()
@@ -2444,7 +2444,7 @@ namespace Kestrel.Slice
             if (submitted) return; submitted = true;
             hMsg.text = $"MECO  ·  {f.Altitude / 1000:F1} km  ·  {f.Speed:N0} m/s";
             again.RemoveFromClassList("hidden");
-            // A test flight is not a scored flight (DECISIONS #100): nothing leaves the device.
+            // A test flight is not a scored flight (DECISIONS #102): nothing leaves the device.
             if (GameSession.IsTestFlight) return;
             bool ok = await GameCenterBridge.TrySubmitScore(GameCenterBridge.MecoAltitudeBoard, (long)System.Math.Round(f.Altitude));
             hMsg.text += ok ? "\nScore sent to Game Center" : "";

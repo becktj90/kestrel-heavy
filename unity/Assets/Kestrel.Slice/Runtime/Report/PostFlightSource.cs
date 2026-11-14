@@ -56,7 +56,7 @@ namespace Kestrel.Slice
             long minor = MinorPerKc();
             var look = Look();
             bool live = flight != null && flight.Result != null;
-            // DECISIONS #100: a test flight never opens the career save or the guide's memory. Compose writes nothing.
+            // DECISIONS #102: a test flight never opens the career save or the guide's memory. Compose writes nothing.
             bool test = GameSession.IsTestFlight;
             var card = !live || test
                 ? FlightDebrief.Compose(null, GameSession.Current, facts, pool, minor, look)

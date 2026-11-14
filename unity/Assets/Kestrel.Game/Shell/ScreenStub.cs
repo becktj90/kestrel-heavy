@@ -109,7 +109,7 @@ namespace Kestrel.Game.Shell
                 Action launch = () => shell.Flow.HomePressed("launch");
                 Action design = () => shell.Flow.HomePressed("design");
                 Action missions = () => shell.Flow.HomePressed("missions");
-                // Test Flight's tile (DECISIONS #100) is on in the game from the first launch. EditMode layout tests
+                // Test Flight's tile (DECISIONS #102) is on in the game from the first launch. EditMode layout tests
                 // build this Home without play mode and keep the Home they always measured unless they turn it on.
                 Action testFlight = () => shell.Flow.HomePressed(SceneFlow.TestFlightControl);
                 if (Application.isPlaying) HomeFeatures.TestFlightTile = true;

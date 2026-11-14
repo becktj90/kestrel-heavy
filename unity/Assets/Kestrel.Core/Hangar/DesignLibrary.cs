@@ -143,7 +143,7 @@ namespace Kestrel.Core.Hangar
             NoteDraft(nm, missionId);
         }
 
-        /// <summary>Test Flight's last rocket: its own record, never the draft or the progress record (DECISIONS #100).</summary>
+        /// <summary>Test Flight's last rocket: its own record, never the draft or the progress record (DECISIONS #102).</summary>
         public void SaveTestFlight(JsonObject design, string name)
         {
             if (design == null) return;

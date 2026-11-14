@@ -77,7 +77,7 @@ namespace Kestrel.Game.Shell
                 library.WatchDraft(session, () => GameSession.Current != null ? GameSession.Current.MissionId : null, () => GameSession.IsTestFlight);
             var wallet = CreditsPlay.Current;
             if (wallet == null || wallet.Table == null || session.Design == null) return;
-            // Test Flight: no Kc spent (DECISIONS #100). The wallet is not settled for a test rocket, and an edit made
+            // Test Flight: no Kc spent (DECISIONS #102). The wallet is not settled for a test rocket, and an edit made
             // while a test is open is free (checked per edit: the same designer can switch between a test and a mission).
             if (!GameSession.IsTestFlight)
             {

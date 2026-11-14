@@ -102,7 +102,7 @@ namespace Kestrel.Game.Shell
                     ? HomePhoneLayout.TileCaptionLines(t, grid, it.Caption)
                     : Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, it.Caption, t.TileCaption, grid - 2f * HomePhoneLayout.TileBorder - 2f * t.Pad)));
             }
-            // Test Flight's tile (DECISIONS #100) spans the column under LAUNCH, at the tile height.
+            // Test Flight's tile (DECISIONS #102) spans the column under LAUNCH, at the tile height.
             if (sh.TestFlight)
                 worstLines = Math.Max(worstLines, Math.Max(1, HomeTypeMetrics.Lines(HomeFace.GroteskMedium, MainMenuCopy.TestFlight.Caption, t.TileCaption, grid - 2f * HomePhoneLayout.TileBorder - 2f * t.Pad)));
             z.TileCaptionLines = worstLines;
