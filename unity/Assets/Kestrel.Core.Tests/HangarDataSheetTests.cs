@@ -144,7 +144,7 @@ namespace Kestrel.Core.Tests
         }
 
         [Test]
-        public void OverBudget_IsAWarningWithKidAndEngineerText()
+        public void OverBudget_BlocksLaunchWithKidAndEngineerText()
         {
             var c = Golden.Catalog;
             var d = HangarFixtures.Template("workhorse");
@@ -153,16 +153,19 @@ namespace Kestrel.Core.Tests
             Assert.IsTrue(session.Sheet.overBudget);
             var a = session.Advisories.Find(x => x.code == "over-budget");
             Assert.IsNotNull(a, "over-budget advisory");
-            Assert.AreEqual(AdvisorySeverity.Warn, a.severity);
+            Assert.AreEqual(AdvisorySeverity.Block, a.severity);
             Assert.AreEqual("Over budget", a.headline);
             StringAssert.Contains("costs more than your budget", a.kid);
-            StringAssert.Contains("over the 1,000 Kc budget", a.engineer);
-            Assert.IsTrue(session.LaunchEnabled, "budget never blocks Launch");
+            StringAssert.Contains("Over budget by", a.engineer);
+            Assert.IsFalse(session.LaunchEnabled, "Poly Bridge: over budget blocks Launch");
+            Assert.IsTrue(session.Report.blocks.Exists(b => b.code == "over-budget"));
+            StringAssert.Contains("Over budget by", session.Report.blocks.Find(b => b.code == "over-budget").msg);
 
             JsonMut.Set(d, "budgetKc", session.Sheet.cost_Kc / 0.95);
             var near = new HangarSession(c, H, d);
             Assert.IsTrue(near.Sheet.nearBudget);
             Assert.AreEqual(AdvisorySeverity.Note, near.Advisories.Find(x => x.code == "near-budget").severity);
+            Assert.IsTrue(near.LaunchEnabled);
         }
 
         [Test]

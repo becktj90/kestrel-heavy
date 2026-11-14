@@ -91,9 +91,9 @@ namespace Kestrel.Core.Designer
         /// <summary>
         /// The readiness line from the existing readout (Validate.Engineering + Readout.Quick) and the launch predictor
         /// (Honest Ready, audit B-10) on the rocket the controls built: a short badge and the rest in body colour.
-        /// Returns false (Launch off) only on a hard schema block, with its one plain reason. A rocket the predictor
-        /// says breaks up, cannot land or does not fit never reads Ready or Tight; it gets its cause's badge and one
-        /// plain sentence from data/starter-readiness.json, and still launches. No numbers: no line, Launch stays on.
+        /// Returns false (Launch off) only on a hard block (schema or over budget), with its one plain reason. A rocket
+        /// the predictor says breaks up or cannot land never reads Ready or Tight; it gets its cause's badge and one
+        /// plain sentence from data/starter-readiness.json, and still launches. Over budget names how far over and stays locked.
         /// Blocking: flies the predictor for this setting when it is not cached (tests and one-off callers).
         /// </summary>
         public static bool Readiness(StarterRocket r, out string badge, out string rest)

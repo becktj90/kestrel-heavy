@@ -2,7 +2,9 @@
 // Operates on the raw JSON tree: Design.FromJson truncates engineCount and hides schema errors.
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Kestrel.Core.Data;
+using Kestrel.Core.Economy;
 using Kestrel.Core.Json;
 using Kestrel.Core.Physics;
 using Kestrel.Core.Vehicle;
@@ -91,9 +93,36 @@ namespace Kestrel.Core.Designer
                 // Version 2 stability and max-Q wording lives in DesignRules. Emitting both would double the issues.
                 if ((int)design.Num("version") < 2)
                     AeroNotes(c, design, r, blocks, warnings);
+                // Poly Bridge / DECISIONS #100: over the mission budget is a hard pad block (not a post-flight miss).
+                BudgetBlock(c, design, r, blocks);
             }
             if (r != null) DesignRules.Append(c, design, blocks, warnings, r);
             return new EngineeringReport { ok = blocks.Count == 0, blocks = blocks, warnings = warnings, readout = r };
+        }
+
+        /// <summary>When the design stamps <c>budgetKc</c>, cost above that budget blocks launch and names how far over.</summary>
+        static void BudgetBlock(Catalog c, JsonObject design, QuickReadout r, List<Issue> blocks)
+        {
+            if (design == null || r == null) return;
+            double budgetKc = design.Num("budgetKc");
+            if (!(budgetKc > 0)) return;
+            long per = CostModel.MinorPerKc(c);
+            if (per <= 0) per = CostModel.DefaultMinorPerKc;
+            double costKc = r.cost / (double)per;
+            if (!(costKc > budgetKc)) return;
+            double over = costKc - budgetKc;
+            blocks.Add(Iss("over-budget", "stages",
+                "Over budget by " + CompactKc(over) + " Kc. Cheapen the rocket to launch."));
+        }
+
+        /// <summary>Kid-short Kc for the over-budget pad line (4.8k, 1.2M, or whole Kc).</summary>
+        public static string CompactKc(double kc)
+        {
+            double a = Math.Abs(kc);
+            var ci = CultureInfo.InvariantCulture;
+            if (a >= 1e6) return (kc / 1e6).ToString("0.#", ci) + "M";
+            if (a >= 1e3) return (kc / 1e3).ToString("0.#", ci) + "k";
+            return kc.ToString("0", ci);
         }
 
         /// <summary>

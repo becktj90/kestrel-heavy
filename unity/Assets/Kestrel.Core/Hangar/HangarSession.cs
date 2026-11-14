@@ -213,8 +213,8 @@ namespace Kestrel.Core.Hangar
 
         public List<Advisory> Advisories => advisories ??= Hangar.Advisories.From(Report, Sheet, Design);
 
-        /// <summary>Launch needs no blocks. Warnings (unstable, over budget, ...) never stop a launch.</summary>
-        public bool LaunchEnabled => Report.ok && Report.blocks.Count == 0;
+        /// <summary>Launch needs no blocks. Over budget is a hard block (Poly Bridge / DECISIONS #100); other warnings still fly.</summary>
+        public bool LaunchEnabled => Report.ok && Report.blocks.Count == 0 && (Sheet == null || !Sheet.overBudget);
 
         /// <summary>Validate.MakeItFly as one undoable step. Returns what it changed (empty when nothing).</summary>
         public List<string> MakeItFly()
